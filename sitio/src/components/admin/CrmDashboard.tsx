@@ -11,6 +11,7 @@ import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import ChurnTab from './crm/ChurnTab';
+import EmbudoTab from './crm/EmbudoTab';
 const OnboardingTab = lazySeguro(() => import('./crm/OnboardingTab'));
 import Wiki from './crm/Wiki';
 import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
@@ -84,7 +85,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -178,6 +179,7 @@ const NAV_SECTIONS = [
     label: 'Cuentas', sec: 'cuentas', icon: 'clientes',
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
+      { id: 'embudo' as Tab, label: 'Embudo', icon: 'dashboard' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
       /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
          cuando se va: mismo grupo, siguiente renglón. */
@@ -1086,6 +1088,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
+        ) : tab === 'embudo' ? (
+          <ErrorBoundary><EmbudoTab /></ErrorBoundary>
         ) : tab === 'churn' ? (
           <ErrorBoundary><ChurnTab /></ErrorBoundary>
         ) : tab === 'onboarding' ? (

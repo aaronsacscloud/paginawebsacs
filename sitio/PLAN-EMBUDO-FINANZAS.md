@@ -20,3 +20,11 @@ con probabilidad; cierre de mes (ingreso − gastos = utilidad) guardado; report
   Ingresos = `payments` confirmados del mes; por cobrar = `subscriptions` activas con `proxima_factura` en el mes;
   comisiones = `comision_lineas` del mes; pipeline = `deals` abiertos ponderados por probabilidad. Cierre guarda
   snapshot; reporte anual lee cierres + mes vivo.
+
+## Cola (pedidos que llegaron mientras se construía)
+- **Lead que vuelve solo después de meses/año con un «hola».** Hoy el agente lee 36 h de mensajes + `ti_perfil`.
+  Propuesta: si el hueco desde su último mensaje es > 45 días, antes de responder cargar un RESUMEN de toda la
+  historia (qué preguntó, cotizaciones, reuniones, por qué se enfrió, datos ya conocidos) y saludar reconociendo
+  el historial («la última vez veíamos X para tus 2 tiendas…»), retomar donde se quedó y NO volver a pedir los
+  tres datos que ya tenemos. Implementar como bloque «HISTORIAL» en decidirTurno cuando hay reactivación
+  espontánea; el resumen se genera con Haiku sobre los últimos 60 mensajes + perfil y se guarda en ti_perfil.resumen.

@@ -48,12 +48,33 @@ export function resolverCuerpo(pl: PlantillaViva | null, params: string[], respa
 const MIME: Record<string, string> = { IMAGE: 'image/jpeg', VIDEO: 'video/mp4', DOCUMENT: 'application/pdf' };
 
 /**
+ * LA REGLA DEL RESPALDO.
+ *
+ * Meta trata distinto las dos categorías: una plantilla de MARKETING no le
+ * llega a quien apagó ese tipo de mensajes, ni a quien ya recibió demasiados
+ * esta semana — y no falla en silencio siempre: a veces truena AL ENVIAR, con
+ * «Meta limitó los mensajes de marketing a este número».
+ *
+ * Cuando eso pasa, el lead se queda sin nada. Pasó de verdad: Michelle se
+ * registró el 2 de septiembre, se le mandó el primer mensaje de marketing,
+ * Meta lo rechazó en el acto y no salió NADA más.
+ *
+ * Regla del dueño (3-sep-2026): toda plantilla de marketing automática lleva
+ * SIEMPRE una de utilidad de respaldo. La de utilidad dice menos, pero pasa
+ * por donde la otra no pasa.
+ *
+ * Vive aquí, en el camino común, y no repetida en cada llamador: una regla
+ * copiada en cinco lugares se cumple en cuatro.
+ */
+export type Respaldo = { plantilla: string; params?: string[]; textoRespaldo?: string };
+
+/**
  * Manda la plantilla y la espeja. No lanza por el espejo: si el mensaje ya
  * salió, no poder anotarlo no lo deshace.
  *
- * Devuelve `enviado:false` con motivo cuando la plantilla no está aprobada —
- * quien llama decide si eso merece una alerta. Nunca se traga ese caso en
- * silencio inventando otro camino.
+ * Devuelve `enviado:false` con motivo cuando no salió NINGUNA —ni la principal
+ * ni su respaldo—; quien llama decide si eso merece una alerta. Nunca se traga
+ * ese caso en silencio inventando otro camino.
  */
 export async function mandarPlantilla(o: {
   telefono: string;
@@ -66,17 +87,53 @@ export async function mandarPlantilla(o: {
   textoRespaldo?: string;
   /** Para no volver a consultarla si el llamador ya la trae. */
   pl?: PlantillaViva | null;
-}): Promise<{ enviado: boolean; wamid: string | null; texto: string; motivo?: string }> {
+  /** La de UTILIDAD que sale si la principal no está aprobada o Meta la rechaza. */
+  respaldo?: Respaldo | null;
+}): Promise<{ enviado: boolean; wamid: string | null; texto: string; motivo?: string; via?: 'principal' | 'respaldo' }> {
   const idioma = o.idioma || 'es_MX';
+
+  /* El respaldo se intenta por las DOS razones por las que la principal puede
+     no salir: que no esté aprobada, y que Meta la rechace al enviarla. La
+     segunda es la que dejó a Michelle sin mensaje. */
+  const conRespaldo = async (motivo: string) => {
+    if (!o.respaldo?.plantilla) return { enviado: false, wamid: null, texto: '', motivo };
+    const rp = await plantillaAprobada(o.respaldo.plantilla, idioma);
+    if (!rp) return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; y «${o.respaldo.plantilla}» tampoco está aprobada` };
+    try {
+      const r = await mandarPlantilla({
+        telefono: o.telefono, plantilla: rp.nombre, idioma, pl: rp,
+        /* Sin params propios se reusan los de la principal, recortados a las
+           variables que declara el respaldo: mandarle de más a Meta es un 400 y
+           el mensaje no sale. */
+        params: o.respaldo.params ?? o.params.slice(0, Math.max(0, Number(rp.variables) || 0)),
+        autor: o.autor, textoRespaldo: o.respaldo.textoRespaldo,
+        /* Queda anotado de quién es respaldo: en el inbox se tiene que poder
+           ver que salió la segunda, no la que se pidió. */
+        metadata: { ...(o.metadata || {}), respaldo_de: o.plantilla, respaldo_motivo: motivo },
+      });
+      return { ...r, via: 'respaldo' as const };
+    } catch (e: any) {
+      return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; el respaldo también falló: ${String(e?.message || e).slice(0, 120)}` };
+    }
+  };
+
   const pl = o.pl !== undefined ? o.pl : await plantillaAprobada(o.plantilla, idioma);
-  if (!pl) return { enviado: false, wamid: null, texto: '', motivo: `«${o.plantilla}» no está aprobada` };
+  if (!pl) return conRespaldo(`«${o.plantilla}» no está aprobada`);
 
   const ht = String(pl.header_tipo || 'TEXT').toUpperCase();
   const media = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && pl.header_media_url
     ? { tipo: ht.toLowerCase() as 'image' | 'video' | 'document', link: String(pl.header_media_url) }
     : null;
 
-  const r = await enviarPlantilla(o.telefono, pl.nombre, idioma, o.params, media ? { headerMedia: media } : undefined);
+  let r: any;
+  try {
+    r = await enviarPlantilla(o.telefono, pl.nombre, idioma, o.params, media ? { headerMedia: media } : undefined);
+  } catch (e: any) {
+    /* Meta la rechazó AL ENVIAR. Es el caso de «Meta limitó los mensajes de
+       marketing a este número»: cae al respaldo en el acto, no en diez
+       minutos, porque aquí ya sabemos que no salió. */
+    return conRespaldo(String(e?.message || e).slice(0, 160));
+  }
   const wamid = r?.messages?.[0]?.id || null;
   const texto = resolverCuerpo(pl, o.params, o.textoRespaldo || '');
 
@@ -89,5 +146,5 @@ export async function mandarPlantilla(o: {
       metadata: { ...(o.metadata || {}), plantilla: pl.nombre, botones: pl.botones || null },
     }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
   }
-  return { enviado: true, wamid, texto };
+  return { enviado: true, wamid, texto, via: 'principal' };
 }

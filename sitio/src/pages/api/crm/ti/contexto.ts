@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     supabase.from('contacts').select('id, nombre, apellido, email, whatsapp, telefono, fuente, giro, sucursales_interes, lifecycle_stage, estatus_lead, created_at, last_contact_at, company_id, companies(nombre_comercial, nombre, giro, sucursales)').eq('id', cid).maybeSingle(),
     supabase.from('wa_conversaciones').select('id, telefono, ultimo_mensaje_at, asignado_a').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(5),
     supabase.from('ti_perfil').select('datos, resumen, agente_estado, silenciar_ia, temas_reunion').eq('contact_id', cid).maybeSingle(),
-    supabase.from('bookings').select('id, start_at, estado, event_type_id').eq('contact_id', cid).order('start_at', { ascending: false }).limit(5),
+    supabase.from('bookings').select('id, fecha, hora_inicio, estado, event_type_id').eq('contact_id', cid).order('fecha', { ascending: false }).limit(5),
     supabase.from('quotes').select('id, estado, total, created_at').eq('contact_id', cid).neq('estado', 'plantilla').order('created_at', { ascending: false }).limit(5),
   ]);
   const convIds = (convs || []).map(c => c.id);
