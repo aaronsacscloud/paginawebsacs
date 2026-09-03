@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AccionesVenta from './AccionesVenta';
 import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
+import DecisionSugerencia from '../ti/DecisionSugerencia';
 import { EsqueletoChat } from './Esqueletos';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
@@ -39,6 +40,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   /* «Agente IA» asignado = piloto automático: se pinta morado para que el asesor lo vea de un vistazo. */
   const esAgente = !!(conv?.asignado_a && (equipo || []).some((m: any) => m.id === conv.asignado_a && m.es_agente));
   const [agenteEstado, setAgenteEstado] = useState<any>(null);
+  const [liberadas, setLiberadas] = useState<string[]>([]);   // sugerencias rechazadas aquí: el compositor vuelve
+  const recargarAgente = () => { if (conv?.contact_id) fetch(`/api/crm/ti/agente-hilo?contact_id=${conv.contact_id}`).then(r => r.json()).then(setAgenteEstado).catch(() => {}); };
   const [composerN, setComposerN] = useState(0);
   const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
   const [buscando, setBuscando] = useState(false);
@@ -695,17 +698,16 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           </div>
         </>
       )}
-      {agenteEstado?.sugerencias?.length > 0 && (
-        <div style={{ margin: '0 12px 6px', border: '1px solid #d9d4ea', background: '#fbfaff', borderRadius: 12, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6', marginBottom: 4 }}>Sugerencia del agente (no se ha mandado)</div>
-          <div style={{ fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{agenteEstado.sugerencias[0].mensaje}</div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <button onClick={async () => { const sg = agenteEstado.sugerencias[0]; guardarBorrador(conv.id, sg.mensaje); setComposerN(n => n + 1); await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: conv.contact_id, accion: 'usar_sugerencia', envio_id: sg.id }) }).then(r => r.json()).then(setAgenteEstado).catch(() => {}); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Usar en el compositor</button>
-            <button onClick={async () => { const sg = agenteEstado.sugerencias[0]; await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: conv.contact_id, accion: 'descartar_sugerencia', envio_id: sg.id }) }).then(r => r.json()).then(setAgenteEstado).catch(() => {}); }} style={{ border: '1px solid #e8e5f0', background: '#fff', color: '#6b6580', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Descartar</button>
-          </div>
-        </div>
-      )}
+      {/* COMPUERTA DE SEGUIMIENTO (decisión del dueño, 2026-09-03): si el agente dejó una sugerencia para este lead, el
+          compositor no se puede usar hasta decidirla: Enviar · Modificar (y «Enviar con modificaciones») · Rechazar con
+          razón. Cada decisión califica al agente (paridad 9/10) y le enseña. Al rechazar, el compositor se libera. */}
       <div ref={cajaComposerRef}>
+      {agenteEstado?.sugerencias?.length > 0 && !liberadas.includes(agenteEstado.sugerencias[0].id) ? (
+        <div style={{ margin: '0 12px 8px', border: '1px solid #d9d4ea', background: '#fbfaff', borderRadius: 14, padding: '12px 14px', maxHeight: '52vh', overflowY: 'auto', flex: '0 0 auto' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6', marginBottom: 6 }}>El agente propone esta respuesta · decide antes de escribir</div>
+          <DecisionSugerencia sug={agenteEstado.sugerencias[0]} compacto onDecidido={(r) => { const id = agenteEstado.sugerencias[0].id; if (r?.decision === 'rechazar') setLiberadas(l => [...l, id]); recargarAgente(); api.refrescar?.(); }} />
+        </div>
+      ) : (
       <Composer key={`${conv.id || conv.email_only_id}-${composerN}`} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         alerta={conv.alerta || null}
@@ -717,6 +719,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
              lo que decide si el botón aparece: una conversación sin contacto
              ligado no puede crear una cuenta a nombre de nadie. */
           contact_id: conv.contacts?.id || null, prueba_estado: conv.contacts?.prueba_estado || null, prueba_cuenta: conv.contacts?.prueba_cuenta || null }} />
+      )}
       </div>
 
       {/* ── Lightbox ── */}
@@ -1076,7 +1079,7 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   useEffect(() => { setE(null); cargar(); const t = setInterval(cargar, 30000); return () => clearInterval(t); }, [contactId]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!e) return null;
   const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' } : e.estado === 'observando' ? { bg: '#f3f4f6', fg: '#4a4658', bd: '#e5e7eb' } : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
-  const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : 'Agente IA observando') : 'Agente IA apagado aquí';
+  const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : e.entrenando ? 'Agente IA en entrenamiento' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
   /* YA NO se encoge. Antes cedía espacio como los selects y acababa en «● I»
      con el texto cortado: había que pasar el ratón para saber si el agente

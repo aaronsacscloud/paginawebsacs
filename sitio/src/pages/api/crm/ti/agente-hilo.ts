@@ -16,7 +16,7 @@ async function estadoDe(contactId: string) {
     leerConfig() as Promise<any>, agenteTeamMemberId(),
     supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
     supabase.from('wa_conversaciones').select('id, asignado_a, telefono').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(1),
-    supabase.from('ti_envios').select('id, mensaje, created_at, salida').eq('contact_id', contactId).eq('estado', 'sugerencia').order('created_at', { ascending: false }).limit(3),
+    supabase.from('ti_envios').select('id, mensaje, created_at, salida, adjuntos, imagen_url, origen, conversation_id').eq('contact_id', contactId).eq('estado', 'sugerencia').order('created_at', { ascending: false }).limit(3),
   ]);
   const conv = convs?.[0]; const st: any = (pf?.agente_estado as any) || {};
   const asignado: 'agente' | 'humano' | null = !conv?.asignado_a ? null : conv.asignado_a === agId ? 'agente' : 'humano';
@@ -32,7 +32,9 @@ async function estadoDe(contactId: string) {
     if (asignado === 'humano' || modoSugerencia || (sombra && !esPrueba)) estado = 'observando';
   }
   const plan = await planSeguimiento(contactId).catch(() => null);
-  return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', conversation_id: conv?.id || null, sugerencias: sug || [], plan };
+  const dig10 = (t: string) => String(t || '').replace(/\D/g, '').slice(-10);
+  const entrenando = (cfg.agente_modo || 'sombra') === 'sombra' && !(cfg.agente_prueba_telefonos || []).some((t: string) => dig10(t) === dig10(conv?.telefono));
+  return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', entrenando, conversation_id: conv?.id || null, sugerencias: (sug || []).map((s: any) => ({ ...s, ultimo_mensaje: s.salida?.ultimo_mensaje || null, objetivo: s.salida?.objetivo || null, estado_guion: s.salida?.estado || null, salida: undefined })), plan };
 }
 
 export const GET: APIRoute = async ({ request, url }) => {

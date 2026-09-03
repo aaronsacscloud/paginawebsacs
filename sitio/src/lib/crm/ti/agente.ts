@@ -39,6 +39,10 @@ export const esPrueba = (cfg: any, telefono?: string | null) => {
   return lista.some(x => { const d = soloDigitos(x); return d && (t.endsWith(d.slice(-10)) || d.endsWith(t.slice(-10))); });
 };
 export const factorPrueba = (cfg: any) => Math.max(1, Number(cfg?.agente_prueba_factor) || 60);
+/** SEGUIMIENTO (3-sep): en entrenamiento (agente_modo sombra) todo lo que el agente redacta para un lead real nace como
+ *  «sugerencia» —la decide un consultor en el panel Seguimiento o en la compuerta del inbox—; los números de prueba y el
+ *  agente en vivo nacen «pendiente» y salen solos. Ver seguimiento.ts (paridad 9/10). */
+export const nace = (cfg: any, telefono?: string | null): 'pendiente' | 'sugerencia' => ((cfg?.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) ? 'sugerencia' : 'pendiente';
 
 export type SalidaAgente = {
   imagen?: { id: string; url?: string; nombre?: string; por_que?: string } | null;
@@ -74,12 +78,15 @@ async function charla(contactId: string, limite = 30) {
 async function ejemplosAprobados(estado?: string) {
   let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').order('created_at', { ascending: false }).limit(60);   // los de reactivación los lee su propio redactor
   const { data } = await q;
-  if (!(data || []).length) return '';
+  // SEGUIMIENTO: lo que los consultores rechazaron con razón se enseña aparte, como «no así» (no entra al bloque de arriba).
+  const { data: rech } = await supabase.from('ia_ejemplos').select('estado, mensaje_lead, pulida, por_que').eq('fuente', 'rechazo_consultor').order('created_at', { ascending: false }).limit(8);
+  const bloqueRech = (rech || []).length ? '\n\nLO QUE LOS CONSULTORES RECHAZARON (NO contestes así; corrige la causa):\n' + (rech || []).map(r => `[${r.estado}] Lead: ${String(r.mensaje_lead || '').slice(0, 160)}\nEl agente dijo: ${String(r.pulida || '').slice(0, 260)}\nPor qué no: ${String(r.por_que || '').replace(/^EVITAR:\s*/, '')}`).join('\n---\n') : '';
+  if (!(data || []).length) return bloqueRech;
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
   const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
   return '\n\nEJEMPLOS APROBADOS POR EL DUEÑO (así se contesta; imita el criterio, no el texto):\n'
-    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); const ev = String(e.por_que || '').match(/^EVITAR:\s*([^\n]+)/m); const partes = partirMensaje(e.pulida || ''); return `[${e.estado}] Lead: ${e.situacion}\nNosotros${partes.length > 1 ? ` (${partes.length} mensajes seguidos)` : ''}: ${partes.length > 1 ? partes.map((p, i) => `\n  Mensaje ${i + 1}: ${p}`).join('') : e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${ev ? `\nEvitar: ${ev[1].trim()}` : ''}${Array.isArray(e.adjuntos) && e.adjuntos.length ? `\n(con adjuntos: ${e.adjuntos.map((a: any) => `${TIPO_L[a.tipo as 'image'] || a.tipo} «${a.nombre}» [${a.id}]`).join(', ')})` : e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n');
+    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); const ev = String(e.por_que || '').match(/^EVITAR:\s*([^\n]+)/m); const partes = partirMensaje(e.pulida || ''); return `[${e.estado}] Lead: ${e.situacion}\nNosotros${partes.length > 1 ? ` (${partes.length} mensajes seguidos)` : ''}: ${partes.length > 1 ? partes.map((p, i) => `\n  Mensaje ${i + 1}: ${p}`).join('') : e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${ev ? `\nEvitar: ${ev[1].trim()}` : ''}${Array.isArray(e.adjuntos) && e.adjuntos.length ? `\n(con adjuntos: ${e.adjuntos.map((a: any) => `${TIPO_L[a.tipo as 'image'] || a.tipo} «${a.nombre}» [${a.id}]`).join(', ')})` : e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n') + bloqueRech;
 }
 
 /** Divisor para partir una respuesta en varios mensajes de WhatsApp: una línea con --- */
@@ -322,7 +329,7 @@ export async function toqueCotizacion(contactId: string, q: { id: string; numero
   if (hilo?.quien === 'humano') return { ok: false, motivo: 'hilo_humano' };
   const { data: ultAuto } = await supabase.from('ti_envios').select('enviado_at').eq('contact_id', contactId).eq('estado', 'enviado').gt('enviado_at', new Date(ahora.getTime() - 24 * 3600e3).toISOString()).limit(1);
   if ((ultAuto || []).length) return { ok: false, motivo: 'ya_hubo_automatico_24h' };
-  const { data: pend } = await supabase.from('ti_envios').select('id').eq('contact_id', contactId).in('estado', ['pendiente', 'enviando']).limit(1);
+  const { data: pend } = await supabase.from('ti_envios').select('id').eq('contact_id', contactId).in('estado', ['pendiente', 'enviando', 'sugerencia']).limit(1);
   if ((pend || []).length) return { ok: false, motivo: 'ya_hay_pendiente' };
   const sem = await puedeAutomatico(contactId, { origen: 'cotizacion' }); if (!sem.ok) return { ok: false, motivo: sem.motivo };
   const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', contactId).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
@@ -336,7 +343,7 @@ export async function toqueCotizacion(contactId: string, q: { id: string; numero
   const { data: c } = await supabase.from('contacts').select('nombre').eq('id', contactId).maybeSingle();
   const primer = String(c?.nombre || 'Hola').trim().split(/\s+/)[0];
   const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
-  const { data: env } = await supabase.from('ti_envios').insert({ contact_id: contactId, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cotizacion', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, quote_id: q.id, motivo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
+  const { data: env } = await supabase.from('ti_envios').insert({ contact_id: contactId, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cotizacion', estado: nace(cfg, d.telefono), mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, quote_id: q.id, motivo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
   if (!env?.id) return { ok: false, motivo: 'no_insertado' };
   await supabase.from('ti_perfil').upsert({ contact_id: contactId, agente_estado: { ...st, cot_toques: { ...usados, [q.id]: [...ya, motivo] } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
   await log({ accion: 'agente_toque_cotizacion', contact_id: contactId, contenido: d.salida.mensaje, razon: `${motivo} · #${q.numero || 's/n'} ${dinero}`, costo: d.costo });
@@ -419,7 +426,7 @@ export async function proponerRespuestas(): Promise<any> {
   const [{ data: cs }, { data: perf }, { data: pend }] = await Promise.all([
     supabase.from('contacts').select('id, lifecycle_stage, propiedades, archived_at, descarte_categoria').in('id', ids),
     supabase.from('ti_perfil').select('contact_id, silenciar_ia, do_not_contact_hasta, agente_estado').in('contact_id', ids),
-    supabase.from('ti_envios').select('id, contact_id, created_at').in('contact_id', ids).eq('estado', 'pendiente'),
+    supabase.from('ti_envios').select('id, contact_id, created_at').in('contact_id', ids).in('estado', ['pendiente', 'sugerencia']),
   ]);
   const porC: Record<string, any> = {}; for (const c of cs || []) porC[c.id] = c;
   const porP: Record<string, any> = {}; for (const p of perf || []) porP[p.contact_id] = p;
@@ -516,7 +523,7 @@ export async function proponerRespuestas(): Promise<any> {
       if (OPT_OUT_RE.test(txtBaja || '')) {
         await aplicarOptOut(cid, `escribió: «${String(txtBaja).slice(0, 120)}»`);
         const { data: cv0 } = await supabase.from('wa_conversaciones').select('id, telefono').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
-        if (cv0?.telefono) await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: cv0.id, telefono: String(cv0.telefono).replace(/\D/g, ''), origen: 'respuesta', estado: 'pendiente', mensaje: 'Entendido, no te vuelvo a escribir. Si un día quieres retomarlo, aquí estoy.', salida: { estado: 'descalificado', objetivo: 'Confirmar la baja', responder: true, accion: { tipo: 'opt_out' }, reconsiderado: true }, sale_at: ahora.toISOString(), modelo: 'regla' }).then(() => {}, () => {});
+        if (cv0?.telefono) await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: cv0.id, telefono: String(cv0.telefono).replace(/\D/g, ''), origen: 'respuesta', estado: nace(cfg, cv0.telefono), mensaje: 'Entendido, no te vuelvo a escribir. Si un día quieres retomarlo, aquí estoy.', salida: { estado: 'descalificado', objetivo: 'Confirmar la baja', responder: true, accion: { tipo: 'opt_out' }, reconsiderado: true }, sale_at: ahora.toISOString(), modelo: 'regla' }).then(() => {}, () => {});
         res.saltados++; continue;
       }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
@@ -540,7 +547,7 @@ export async function proponerRespuestas(): Promise<any> {
       if (s.interes?.nivel === 'alto' && ['proponiendo', 'agendada'].includes(s.estado)) await avisarLeadCaliente(cid, s);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const { error: eIns } = await supabase.from('ti_envios').insert({
-        contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'pendiente',
+        contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: nace(cfg, d.telefono),
         mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
       });
       if (eIns) {
@@ -615,6 +622,7 @@ async function guardarParHumano(e: any, h: { texto: string; at: string }, motivo
     });
   }
   await log({ accion: 'agente_superado_por_humano', contact_id: e.contact_id, razon: motivo, contenido: h.texto, detalle: { envio_id: e.id, propuesta: e.mensaje } });
+  try { const { calificarHumano } = await import('./seguimiento'); await calificarHumano(e, h); } catch { /* la paridad no detiene el despacho */ }
 }
 
 /** Lead caliente: aviso urgente al consultor (una vez por día por lead). */
@@ -682,7 +690,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       // En sombra la comparación es gratis: si el humano contestó este turno, el par se guarda.
       const h = await humanoContestoDespues(e);
       if (h) await guardarParHumano(e, h, 'sombra');
-      else await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() }).eq('id', e.id);
+      else await supabase.from('ti_envios').update({ estado: 'sugerencia', updated_at: ahora.toISOString() }).eq('id', e.id);   // entrenamiento: la decide un consultor (Seguimiento)
     }
     const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && e.origen !== 'reenganche').map(e => e.id);
     if (!(due || []).some(e => esPrueba(cfg, e.telefono) || e.aprobado_por)) return { agente: 'sombra', sombra: noPrueba.length };
@@ -721,7 +729,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         try {
           const d = await decidirTurno(e.contact_id, 'LA AGENDA CAMBIÓ después de tu propuesta anterior: el lead movió, creó o canceló la cita por su cuenta. Mira la CITA VIGENTE de arriba y responde a su último mensaje de acuerdo con eso; si ya la movió él, confírmasela con día y hora, sin ofrecer horarios ni pedirle nada más. No lo saludes de nuevo.');
           if (d.salida?.mensaje && d.salida.responder && d.telefono) {
-            await supabase.from('ti_envios').insert({ contact_id: e.contact_id, conversation_id: d.conversationId, telefono: d.telefono, origen: e.origen, estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, reconsiderado: true }, sale_at: new Date(ahora.getTime() + Math.max(0, Number(cfg.agente_veto_min ?? 10)) * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+            await supabase.from('ti_envios').insert({ contact_id: e.contact_id, conversation_id: d.conversationId, telefono: d.telefono, origen: e.origen, estado: nace(cfg, d.telefono), mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, reconsiderado: true }, sale_at: new Date(ahora.getTime() + Math.max(0, Number(cfg.agente_veto_min ?? 10)) * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
           }
         } catch (err: any) { await log({ accion: 'agente_error', contact_id: e.contact_id, razon: `reconsiderar: ${err?.message || err}` }); }
         continue;
@@ -1146,7 +1154,7 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
-      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: (opts.saleAt ? new Date(opts.saleAt.getTime() + (escalon++) * 3 * MS_MIN) : new Date(ahora.getTime() + ventanaMin * MS_MIN)).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: st.reenganche && validos === 0 ? 'pendiente' : nace(cfg, ultimo[cid].telefono), mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: (opts.saleAt ? new Date(opts.saleAt.getTime() + (escalon++) * 3 * MS_MIN) : new Date(ahora.getTime() + ventanaMin * MS_MIN)).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       if (!envIns?.id) { await log({ accion: 'agente_error', contact_id: cid, razon: 'toque de silencio no se pudo programar (ya había un pendiente): no cuenta como intento' }); continue; }
       const intento: Intento = { at: (opts.saleAt || ahora).toISOString(), tipo: par ? 'plantilla' : 'texto', franja: opts.saleAt ? franjaDe(opts.saleAt) : franjaAhora, envio_id: envIns.id, valido: null };
@@ -1374,7 +1382,7 @@ export async function prepararDemos(): Promise<any> {
       if (!d.salida?.mensaje || !d.telefono) continue;
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const plPrep = await plantillaSiVentanaCerrada(cid, 'preparacion', d.salida.mensaje, c.nombre);
-      const { error: ePrep } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'preparacion', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), adjuntos: plPrep ? [] : (d.salida.adjuntos || []), salida: { ...d.salida, booking_id: b.id }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: plPrep });
+      const { error: ePrep } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'preparacion', estado: nace(cfg, d.telefono), mensaje: d.salida.mensaje.trim(), adjuntos: plPrep ? [] : (d.salida.adjuntos || []), salida: { ...d.salida, booking_id: b.id }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: plPrep });
       if (ePrep) { await log({ accion: 'agente_error', contact_id: cid, razon: `preparación no programada (ya había un pendiente): ${ePrep.message}` }); continue; }
       await log({ accion: 'agente_preparacion', contact_id: cid, contenido: d.salida.mensaje, razon: `demo ${b.fecha} ${String(b.hora_inicio).slice(0, 5)}`, costo: d.costo });
       res.enviadas++;
@@ -1414,7 +1422,7 @@ export async function atenderCitas(): Promise<any> {
       if (d.salida.escalar?.si) await escalarAlHumano(cid, d.salida);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const plCita = await plantillaSiVentanaCerrada(cid, 'no_show', d.salida.mensaje, (c as any).nombre);
-      const { error: eCita } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cita', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: plCita ? [] : (d.salida.adjuntos || []), salida: { ...d.salida, evento: e.tipo }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: plCita });
+      const { error: eCita } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cita', estado: nace(cfg, d.telefono), mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: plCita ? [] : (d.salida.adjuntos || []), salida: { ...d.salida, evento: e.tipo }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: plCita });
       if (eCita) { await log({ accion: 'agente_error', contact_id: cid, razon: `cita: no se programó (ya había un pendiente): ${eCita.message}` }); res.saltadas++; continue; }
       await log({ accion: 'agente_cita', contact_id: cid, razon: e.tipo, contenido: d.salida.mensaje, costo: d.costo });
       res.atendidas++;

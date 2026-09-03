@@ -270,3 +270,28 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   temprano), pasos de WhatsApp de la cadencia humana (antes solo en modo vivo; ahora con el agente activo) y la válvula.
   La cadencia humana queda para correo y las llamadas T1/T2 si no hay agente.
 - Difusiones: la audiencia excluye a los leads en ciclo del agente (`enCicloAgente`).
+
+## 2026-09-03 · Seguimiento: paridad 9/10 antes de la autonomía
+
+- **Regla nueva:** mientras `agente_modo === 'sombra'` (entrenamiento), TODO lo que el agente redacta para un lead
+  real nace `estado: 'sugerencia'` (helper `nace(cfg, telefono)` en agente.ts; los teléfonos de prueba siguen
+  naciendo `pendiente`). Antes nacía `pendiente` y al vencer se marcaba `sombra` en silencio: nadie lo veía.
+- **Una decisión, tres salidas** (`decidirSugerencia` en seguimiento.ts): enviar (10) · modificar → «Enviar con
+  modificaciones» (9/8/6/4/2 según el parecido, Dice sobre bigramas) · rechazar con razón (0). Si el consultor
+  contestó por su cuenta (teléfono/otra sesión) el barrido `barrerSugerencias` compara y califica como «humano»;
+  a los 3 días sin decisión la sugerencia expira sin calificar.
+- **La paridad** = promedio de las últimas `paridad_ventana` (300) filas de `ti_calificaciones` contra `paridad_meta`
+  (9). Ventana llena + promedio ≥ meta ⇒ `revisarParidad` pone `agente_modo: 'vivo'` una sola vez, avisa y lo
+  registra (`paridad_alcanzada_at`). El dueño lo regresa desde Configuración → Agente IA → Seguimiento.
+- **Aprende de las tres:** modificar → `ia_ejemplos` fuente `correccion_dueno` aprobado (entra al few-shot con
+  CRITERIO); rechazar → `ia_ejemplos` fuente `rechazo_consultor` estado_rev `rechazado` + bloque nuevo en
+  `ejemplosAprobados`: «LO QUE LOS CONSULTORES RECHAZARON (NO contestes así)»; también `ia_log agente_vetado`
+  para el ciclo nocturno. Enviar tal cual NO crea ejemplo (inundaría el few-shot y taparía las correcciones).
+- **Compuerta del inbox** (Hilo.tsx): con sugerencia pendiente el `<Composer>` NO se monta; en su lugar va
+  `DecisionSugerencia` compacto. Rechazar libera el compositor (estado local `liberadas`). El mismo componente
+  vive en el panel Seguimiento (una tarjeta a la vez, atajos E/M/R).
+- **Trampa de QA vista hoy:** una sugerencia vieja (10 h) que ya había contestado un humano fue calificada 2/10
+  por el barrido apenas se convirtió: es lo correcto, pero al sembrar datos de prueba hay que sembrar en la
+  conversación de prueba del dueño y borrarlos después, no reciclar filas `sombra` reales.
+- **Índice único «un pendiente por lead»** solo cubre `pendiente`: para no acumular sugerencias por lead, el
+  reemplazo por nuevo mensaje (`previos`) y el check de cotización ahora incluyen `sugerencia`.

@@ -86,6 +86,7 @@ import Cargando, { Corazones } from './crm/ui/Cargando';
 import { SeccionWA } from './crm/whatsapp/ConfigWhatsApp';
 import TrabajoEnvios from './TrabajoEnvios';
 import TrabajoReactivacion from './TrabajoReactivacion';
+import TrabajoSeguimiento from './TrabajoSeguimiento';
 import { TI_CSS } from './TrabajoPanel';
 
 interface Client {
@@ -3987,6 +3988,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'reactivacion', ico: 'gente', t: 'Reactivación: plantilla, horario y tope', v: 'Marketing → utilidad puente · 10–18 h · 15/día',
                   d: 'Con qué plantilla salen los mensajes a leads viejos (marketing primero; utilidad como puente si Meta no entrega), a qué horas se reparten y cuántos al día. Las propuestas se aprueban en Trabajo inteligente → Reactivación.',
                   editor: <div className="ti-raiz" style={{ background: 'transparent' }}><TrabajoReactivacion soloAjustes /></div> },
+                { id: 'seguimiento', ico: 'gente', t: 'Seguimiento: paridad y modo del agente', v: 'Meta 9/10 en 300 · entrenamiento o autónomo',
+                  d: 'Qué promedio y en cuántas respuestas debe sostener el agente para responder solo; si hoy está en entrenamiento (todo pasa por un consultor) o autónomo; y los teléfonos de prueba que reciben el flujo en vivo.',
+                  editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><TrabajoSeguimiento soloAjustes /></div> },
               ]},
             ]},
             { g: 'Facturación', mods: [
