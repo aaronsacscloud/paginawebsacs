@@ -216,6 +216,12 @@ export const PUT: APIRoute = async ({ request }) => {
               reagendarUrl,
             ],
             metadata: { booking_id: current.id, motivo: 'no_llego' },
+            /* «reunion_no_llegaste» es MARKETING: a quien lo tenga bloqueado no
+               le llega, y justo a quien no llegó es a quien hay que alcanzar.
+               «demo_reagendar» es UTILITY y dice lo mismo en corto —«vi que tu
+               sesión sigue pendiente, si la agenda se te movió no pasa nada»—;
+               lleva una sola variable, así que va con el nombre. */
+            respaldo: { plantilla: 'demo_reagendar', params: [String(current.invitee_nombre || '').split(' ')[0] || 'hola'] },
           });
         } else {
           /* Si la plantilla no está aprobada, se DICE. Antes esto fallaba en

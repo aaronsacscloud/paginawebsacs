@@ -245,6 +245,14 @@ export const GET: APIRoute = async ({ request }) => {
                   telefono: tel, plantilla, idioma: IDIOMA_PLANTILLA, params,
                   textoRespaldo: textoPlantillaCliente(params, plantilla),
                   metadata: { booking_recordatorio: r.id, booking_id: b.id },
+                  /* Meta aprobó la de preparación como MARKETING —pide contexto
+                     y eso se lee como persuasión—, así que a quien tenga el
+                     marketing bloqueado no le llega. La corta es UTILITY y dice
+                     lo esencial: cuándo y dónde. Un recordatorio más seco llega;
+                     ninguno, no. Mismos 5 parámetros, así que se reusan. */
+                  respaldo: plantilla === PLANTILLA_CLIENTE_PREP
+                    ? { plantilla: PLANTILLA_CLIENTE_CERCA, textoRespaldo: textoPlantillaCliente(params, PLANTILLA_CLIENTE_CERCA) }
+                    : null,
                 });
                 const marcado = await marcarAvisado(b, r.id, 'whatsapp', cuanto);
                 out.whatsapps++; disparo = true;

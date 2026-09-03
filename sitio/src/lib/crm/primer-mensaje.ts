@@ -50,14 +50,20 @@ function params(pl: any, primerNombre: string, empresa?: string | null): string[
  * enseñaba «[Foto]» en vez de la imagen: quien abría el chat no podía saber
  * qué foto se le había mandado al cliente.
  */
-async function mandar(pl: any, telefono: string, primerNombre: string, empresa?: string | null) {
+async function mandar(pl: any, telefono: string, primerNombre: string, empresa?: string | null, respaldo?: string | null) {
   const ps = params(pl, primerNombre, empresa);
   const r = await mandarPlantilla({
     telefono, plantilla: pl.nombre, params: ps, pl,
     metadata: { motivo: 'primer_mensaje' },
+    /* La de utilidad como red. Antes, si Meta rechazaba la de marketing AL
+       ENVIAR, esto lanzaba y el lead se quedaba sin ningún mensaje: pasó con
+       Michelle el 2-sep. La espera de 10 minutos sigue existiendo para el otro
+       caso —Meta la acepta y después no la entrega—, pero un rechazo en el
+       acto no tiene por qué esperar diez minutos. */
+    respaldo: respaldo ? { plantilla: respaldo } : null,
   });
   if (!r.enviado) throw new Error(r.motivo || 'plantilla no disponible');
-  return { wamid: r.wamid, texto: r.texto };
+  return { wamid: r.wamid, texto: r.texto, via: r.via };
 }
 
 /**
@@ -124,13 +130,16 @@ export async function enviarPrimerMensaje(o: {
     }).catch(() => {});
   }
 
-  let salida: { wamid: string | null; texto: string };
+  let salida: { wamid: string | null; texto: string; via?: string };
   try {
-    salida = await mandar(usa, tel, primerNombre, o.empresa);
+    salida = await mandar(usa, tel, primerNombre, o.empresa, esMkt ? String(cfg.plantilla_utility) : null);
   } catch (e: any) {
     return { ok: false, motivo: String(e?.message || e).slice(0, 200) };
   }
   const wamid = salida.wamid;
+  /* Si ya salió por el respaldo, la de marketing NO llegó y no hay nada que
+     verificar dentro de diez minutos. */
+  const salioPorRespaldo = salida.via === 'respaldo';
 
   await supabase.from('wa_primer_mensaje').insert({
     telefono: tel, contact_id: o.contactId || null,
@@ -139,18 +148,20 @@ export async function enviarPrimerMensaje(o: {
     wamid,
     /* Si ya salió la de utilidad no hay nada que verificar: no existe un
        tercer escalón al cual caer. */
-    estado: esMkt ? 'esperando' : 'respaldo_enviado',
+    estado: esMkt && !salioPorRespaldo ? 'esperando' : 'respaldo_enviado',
     verificar_at: new Date(Date.now() + espera * 60000).toISOString(),
     detalle: { primera: usa.nombre, con_foto: usa.header_tipo === 'IMAGE' },
   }).then(() => {}, () => {});
 
   await supabase.from('activities').insert({
     contact_id: o.contactId || null, tipo: 'bienvenida_wa', automatico: true,
-    titulo: `Primer mensaje por WhatsApp (${esMkt ? 'marketing' : 'utilidad'}: ${usa.nombre})`,
-    metadata: { plantilla: usa.nombre, telefono: tel, categoria: esMkt ? 'MARKETING' : 'UTILITY' },
+    titulo: salioPorRespaldo
+      ? `Meta rechazó la de marketing: salió la de utilidad (${cfg.plantilla_utility})`
+      : `Primer mensaje por WhatsApp (${esMkt ? 'marketing' : 'utilidad'}: ${usa.nombre})`,
+    metadata: { plantilla: salioPorRespaldo ? cfg.plantilla_utility : usa.nombre, telefono: tel, categoria: esMkt && !salioPorRespaldo ? 'MARKETING' : 'UTILITY' },
   }).then(() => {}, () => {});
 
-  return { ok: true, via: esMkt ? 'marketing' : 'utility' };
+  return { ok: true, via: esMkt && !salioPorRespaldo ? 'marketing' : 'utility' };
 }
 
 /** ¿Llegó de verdad? Se pregunta pasada la espera, no al enviar. */

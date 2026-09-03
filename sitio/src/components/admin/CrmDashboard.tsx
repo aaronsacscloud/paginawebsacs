@@ -12,6 +12,7 @@ import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import ChurnTab from './crm/ChurnTab';
 import EmbudoTab from './crm/EmbudoTab';
+import FinanzasTab from './crm/FinanzasTab';
 const OnboardingTab = lazySeguro(() => import('./crm/OnboardingTab'));
 import Wiki from './crm/Wiki';
 import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
@@ -85,7 +86,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -199,6 +200,7 @@ const NAV_SECTIONS = [
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
+      { id: 'finanzas' as Tab, label: 'Finanzas', icon: 'pagos' },
     ],
   },
   {
@@ -1088,6 +1090,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
+        ) : tab === 'finanzas' ? (
+          <ErrorBoundary><FinanzasTab /></ErrorBoundary>
         ) : tab === 'embudo' ? (
           <ErrorBoundary><EmbudoTab /></ErrorBoundary>
         ) : tab === 'churn' ? (

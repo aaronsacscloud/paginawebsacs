@@ -108,3 +108,21 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Revisión de las 14:00** (`?modo=ventanas`, cron 20:00 UTC L–V): solo conversaciones cuya ventana de 24 h
   cierra hoy (último mensaje del lead hace 16–22 h) y donde la última palabra fue nuestra. Misma tabla
   `ti_revision` (única por día+lead: no duplica las de la mañana).
+
+## 2026-09-03 · Contexto del lead, Embudo y Finanzas (ver PLAN-EMBUDO-FINANZAS.md)
+
+- **Drawer «Ver conversación»** (`crm/ti/ContextoLead.tsx`, API `ti/contexto`): los últimos 20 mensajes de TODAS las
+  conversaciones del lead, marcando quién habló (lead / Agente IA / equipo: el agente se reconoce por el
+  `kapso_message_id` en `ti_envios`), llamadas con minuta, notas, citas, cotizaciones y `ti_perfil.datos`. Las
+  tarjetas le pasan `acciones` para decidir sin cerrar. Está en Revisión diaria, Próximos envíos, Aprendizaje,
+  Reactivación y en el desglose del Embudo.
+- **Embudo** (`v_embudo_contacto` + `api/crm/embudo` + `EmbudoTab`): las definiciones viven en la vista y en
+  `METRICAS` del tab; si cambian, cambiar los dos. Conversación real = ≥2 entrantes y ≥2 salientes o llamada
+  ≥120 s. El canal se decide en `CANALES` de la API (TikTok = fuente `tiktok%` o utm_source tiktok). La
+  inversión se guarda en `marketing_gastos` (existía vacía) y se prorratea al rango.
+- **Finanzas** (`lib/crm/finanzas.ts`): ingresos = `payments.estado='confirmado'` del mes; por cobrar =
+  suscripciones activas/pendientes/programadas con `proxima_factura` en el mes y sin pago ligado; comisiones =
+  `comision_lineas` del mes (si capturas un gasto de categoría `comision`, las calculadas NO se suman doble);
+  pipeline = deals abiertos ponderados por `probabilidad` (30 % si viene vacía). `fin_gastos.aplicaMes`: mensual
+  entre inicio/fin, anual mismo mes que inicio, único solo su mes. El cierre (`fin_cierres`) congela; el reporte
+  anual mezcla cierres y meses vivos.
