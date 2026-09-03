@@ -76,6 +76,11 @@ export function useMensajes(canalId: string | null, hiloDe: string | null, yo: {
     } catch { /* nada */ }
   }, []);
 
+  useEffect(() => {
+    const f = (e: Event) => { const d = (e as CustomEvent).detail; if (d?.canal_id === canalId && !hiloDe && d.hilo_de) refrescarUno(d.hilo_de); };
+    window.addEventListener('eq:enviado', f); return () => window.removeEventListener('eq:enviado', f);
+  }, [canalId, hiloDe, refrescarUno]);
+
   const alSenal = useCallback((s: Senal) => {
     if (!canalId) return;
     if (s.tipo === 'poll') { traerNuevos().catch(() => null); return; }
@@ -103,6 +108,9 @@ export function useMensajes(canalId: string | null, hiloDe: string | null, yo: {
     try {
       const r = await api.enviar({ canal_id: canalId, texto, adjuntos, responde_a: respondeA?.id || null, hilo_de: hiloDe, cid, ...extra });
       setLista(v => v.some(m => m.id === r.mensaje.id) ? v.filter(m => m.id !== opt.id) : v.map(m => m.id === opt.id ? r.mensaje : m));
+      // Lo que mandé yo no me llega como señal: avisar a la otra vista (la
+      // raíz en el canal cuando respondo en un hilo) para que se refresque.
+      window.dispatchEvent(new CustomEvent('eq:enviado', { detail: { canal_id: canalId, id: r.mensaje.id, hilo_de: hiloDe } }));
     } catch (e: any) {
       setLista(v => v.map(m => m.id === opt.id ? { ...m, fallo: e.message } : m));
       throw e;

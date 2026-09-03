@@ -6,7 +6,7 @@ import { P } from '../../../../lib/crm/paleta';
 
 export const CSS = `
 .eq{--eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-fondo:#fff;--eq-panel:#f8f7fd;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta};
-  display:flex;height:calc(100dvh - var(--eq-top,64px));min-height:480px;background:var(--eq-fondo);color:var(--eq-tinta);font-size:.875rem;overflow:hidden;border:1px solid var(--eq-linea);border-radius:12px}
+  display:flex;height:calc(100dvh - var(--eq-top,44px));min-height:480px;background:var(--eq-fondo);color:var(--eq-tinta);font-size:.875rem;overflow:hidden;border:1px solid var(--eq-linea);border-radius:12px}
 .eq *{box-sizing:border-box}
 .eq button{font:inherit;cursor:pointer}
 .eq-arbol{width:248px;flex:0 0 248px;background:var(--eq-panel);border-right:1px solid var(--eq-linea);display:flex;flex-direction:column;overflow:hidden}
@@ -207,7 +207,7 @@ export const CSS = `
 .eq-res .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8125rem}
 .eq-mas{display:flex;justify-content:center;padding:8px}
 @media (max-width:900px){
-  .eq{height:calc(100dvh - var(--eq-top,56px));border:0;border-radius:0}
+  .eq{height:calc(100dvh - var(--crm-bottomnav-h,64px) - env(safe-area-inset-top));border:0;border-radius:0}
   .eq-arbol{width:100%;flex:1 1 100%;border-right:0}
   .eq.en-canal .eq-arbol{display:none}
   .eq:not(.en-canal) .eq-canal{display:none}

@@ -202,7 +202,17 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Facturación', sec: 'facturacion', icon: 'cotizaciones',
+    /* VENTAS, no «Facturación» (decisión del dueño, 3-sep-2026). Facturación
+       nombraba el papeleo del final; lo que vive aquí es el trabajo completo de
+       vender: cotizar, cobrar, la suscripción que queda, y por dónde se le
+       habla al cliente para llegar hasta ahí.
+
+       Aquí se juntaron tres grupos que eran tres renglones del menú —Ventas,
+       WhatsApp y Automatización— porque son el mismo oficio visto en momentos
+       distintos, y separados obligaban a recordar en cuál de los tres estaba
+       cada pantalla. Comisiones NO se vino: es dinero que sale, y eso es
+       Finanzas. */
+    label: 'Ventas', sec: 'facturacion', icon: 'cotizaciones',
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       // Pagos se comió a Cobranza: eran el mismo trabajo —el dinero— visto en
@@ -210,6 +220,11 @@ const NAV_SECTIONS = [
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
+      { id: 'whatsapp' as Tab, label: 'WhatsApp', icon: 'whatsapp' },
+      { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
+      { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
+      { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
+      { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
     ],
   },
   {
@@ -218,6 +233,11 @@ const NAV_SECTIONS = [
     items: [
       { id: 'fin-gastos' as Tab, label: 'Gastos', icon: 'pagos' },
       { id: 'fin-ingresos' as Tab, label: 'Ingresos y flujo', icon: 'suscripciones' },
+      /* Comisiones se vino de Automatización: es dinero que SALE y tiene fecha
+         límite —el corte se arma solo cada lunes a las 5 am y hay que revisarlo
+         y pagarlo ese día—, así que su sitio es junto a los gastos, no junto a
+         lo que corre solo. */
+      { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'fin-cierre' as Tab, label: 'Cierre mensual y anual', icon: 'dashboard' },
     ],
   },
@@ -229,41 +249,10 @@ const NAV_SECTIONS = [
       { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
     ],
   },
-  {
-    /* WhatsApp deja de ser CUATRO renglones sueltos del menú: sus pantallas
-       —conversaciones, masivos, métricas, configuración— son vistas del mismo
-       canal, no cuatro módulos. Eran 4 de las 19 entradas. */
-    label: 'WhatsApp', sec: 'automatizacion', icon: 'whatsapp',
-    items: [
-      { id: 'whatsapp' as Tab, label: 'Conversaciones', icon: 'whatsapp' },
-      { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
-      /* Métricas de WhatsApp: fuera. Y la Configuración se fue a Ajustes, que
-         es donde vive la configuración de todo lo demás — tenerla colgando del
-         menú del canal obligaba a recordar que ESTE módulo guarda sus ajustes
-         en otro sitio que los demás. */
-    ],
-  },
-  {
-    // Se queda con lo que de verdad CORRE SOLO. Antes cargaba también con todo
-    // WhatsApp, que es un canal que se atiende a mano.
-    label: 'Automatización', sec: 'automatizacion', icon: 'automations',
-    items: [
-      /* Comisiones abre el grupo porque es lo único aquí con FECHA LÍMITE: el
-         corte se arma solo cada lunes a las 5 am y hay que revisarlo y pagarlo
-         ese mismo día. Lo demás corre solo y se mira cuando toca. */
-      { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
-      // Email vive junto a las automatizaciones porque es la misma pregunta
-      // ("qué le llega solo al cliente"), vista desde el canal.
-      { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
-      { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
-      { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
-      /* «Automatizaciones» y «Agentes IA» salieron del menú: están
-         descontinuados. Un destino que ya no se usa no es inofensivo — ocupa un
-         renglón en la lista que sí se lee todos los días y obliga a descartarlo
-         cada vez. Las pantallas siguen existiendo por si alguien llega con un
-         link viejo; lo que se quita es la puerta. */
-    ],
-  },
+  /* Los grupos «WhatsApp» y «Automatización» se disolvieron: sus pantallas
+     viven ahora dentro de Ventas, que es el trabajo del que forman parte. Eran
+     dos cabeceras más que abrir para llegar a algo que se usa a diario.
+     Comisiones, lo único que no era de venta, se fue a Finanzas. */
   {
     // "Colaboradores" no decía qué había adentro. Son los partners y lo que se
     // les paga; "Mi desempeño" se viene con ellos porque es el mismo tablero.
@@ -332,7 +321,7 @@ function TabCargando() {
   return <div aria-busy="true"><EsqueletoLista filas={8} mobile alInstante /></div>;
 }
 
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte', 'equipo'];
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).

@@ -92,11 +92,12 @@ export function pasaRitmo(clave: string, tope: number): boolean {
 // ── Personas ────────────────────────────────────────────────────────────────
 export type Persona = { id: string; nombre: string; foto_url: string | null; rol: string; activo: boolean };
 
-/** El equipo que puede estar en el chat: founders y cs activos, más el Agente IA. */
+/** El equipo que puede estar en el chat: founders y cs activos, más el Agente IA.
+ *  La cuenta genérica `admin` (admin@) no es una persona: no aparece. */
 export async function equipo(): Promise<Persona[]> {
   const { data } = await supabase.from('team_members')
     .select('id, nombre, foto_url, rol, activo')
-    .in('rol', ['founder', 'cs', 'soporte', 'admin']).eq('activo', true).order('nombre');
+    .in('rol', ['founder', 'cs', 'soporte']).eq('activo', true).order('nombre');
   return (data || []).filter((p: any) => p.rol !== 'soporte' || p.id === AGENTE_IA_ID) as Persona[];
 }
 
@@ -221,7 +222,7 @@ export function extraerMenciones(texto: string, personas: Persona[]): string[] {
   const out: string[] = [];
   const re = /@\[([^\]]+)\]\(([0-9a-f-]{36})\)/gi;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(texto))) if (esUuid(m[2]) && personas.some(p => p.id === m[2]) && !out.includes(m[2])) out.push(m[2]);
+  while ((m = re.exec(texto))) { const id = m[2]; if (esUuid(id) && personas.some(p => p.id === id) && !out.includes(id)) out.push(id); }
   return out.slice(0, LIMITES.menciones);
 }
 
