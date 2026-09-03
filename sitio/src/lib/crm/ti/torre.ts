@@ -54,7 +54,7 @@ export async function colaTorre() {
   for (const x of reacts || []) items.push({ nivel: 0, key: `reactivacion:${x.id}`, tipo: 'reactivacion', id: x.id, contact_id: x.contact_id, lead: lead((x as any).contacts, x.telefono), urgencia: 'semana', cuando: x.created_at, titulo: `Reactivación: ${x.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'} hace ${x.meses_sin_hablar} meses`, chip: 'Reactivación', resumen: x.resumen_lead || '', datos: { ...x, contacts: undefined } });
   for (const t of tareas || []) {
     const p: any = t.payload || {};
-    const urg: Urgencia = t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';
+    const urg: Urgencia = (t.tipo === 'dato' && t.prioridad >= 5) ? 'semana' : t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';   // el lote de higiene nunca es «ahora»
     const chip = t.tipo === 'llamada' ? 'Llamar' : t.tipo === 'veredicto' ? 'Decidir' : t.tipo === 'dato' ? (p.campo_clave?.startsWith('reunion_') ? 'Reunión' : p.campo_clave?.startsWith('cotizacion_') ? 'Cotización' : 'Dato') : t.tipo === 'responder' ? 'Responder' : t.tipo === 'wa_plantilla' ? 'Plantilla' : t.tipo === 'compromiso' ? 'Compromiso' : t.tipo;
     const ld = lead((t as any).contacts); if (!(t as any).contacts?.nombre && p.instruccion) ld.nombre = String(p.instruccion).split(' — ')[0].replace(/^¿/, '').slice(0, 60);   // tareas de empresa (Cuenta SACS, RFC): el nombre viene en la instrucción
     items.push({ nivel: 0, key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
