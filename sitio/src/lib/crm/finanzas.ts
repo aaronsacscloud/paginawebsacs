@@ -47,7 +47,12 @@ export async function resumenMes(m: Mes) {
   const d0 = Date.parse(ini(m)), d1 = Date.parse(finExcl(m));
   const marketingReal = (mk || []).reduce((s, g) => { const a = Math.max(d0, Date.parse(g.periodo_inicio)), b = Math.min(d1, Date.parse(g.periodo_fin) + 86400e3); const tot = Date.parse(g.periodo_fin) + 86400e3 - Date.parse(g.periodo_inicio); return s + (b > a && tot > 0 ? Number(g.monto) * (b - a) / tot : 0); }, 0);
   const pagadoPor = new Map((pagosG || []).map(p => [p.gasto_id, p]));
-  const aplicables = (gastos || []).filter(g => aplicaMes(g, m)).map(g => ({ ...g, pago: pagadoPor.get(g.id) || null }));
+  // Variables (probable): el estimado sigue al promedio de los últimos 3 pagos reales (Konfio: 7–10 mil según el mes).
+  const probIds = (gastos || []).filter(g => g.probable).map(g => g.id);
+  const { data: pagosProb } = probIds.length ? await supabase.from('fin_gastos_pagos').select('gasto_id, mes, monto').in('gasto_id', probIds).lt('mes', m).order('mes', { ascending: false }) : { data: [] as any[] };
+  const promProb = new Map<string, number>();
+  for (const id of probIds) { const ult = (pagosProb || []).filter(p => p.gasto_id === id && p.monto != null).slice(0, 3); if (ult.length) promProb.set(id, Math.round(ult.reduce((s, p) => s + Number(p.monto), 0) / ult.length)); }
+  const aplicables = (gastos || []).filter(g => aplicaMes(g, m)).map(g => ({ ...g, monto_base: g.monto, monto: g.probable && promProb.has(g.id) ? promProb.get(g.id) : Number(g.monto), estimado_por_promedio: g.probable && promProb.has(g.id), pago: pagadoPor.get(g.id) || null }));
   const porCat: Record<string, { previsto: number; pagado: number; n: number }> = {};
   for (const g of aplicables) { const c = porCat[g.categoria] || (porCat[g.categoria] = { previsto: 0, pagado: 0, n: 0 }); c.previsto += Number(g.monto); c.n++; if (g.pago) c.pagado += Number(g.pago.monto ?? g.monto); }
   const gastosPrevisto = aplicables.reduce((s, g) => s + Number(g.monto), 0);

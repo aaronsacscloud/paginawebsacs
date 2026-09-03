@@ -21,15 +21,14 @@ export function BotonContexto({ onClick, compacto }: { onClick: () => void; comp
   );
 }
 
-export default function ContextoLead({ contactId, open, onClose, acciones = [], titulo }: { contactId: string | null; open: boolean; onClose: () => void; acciones?: AccionContexto[]; titulo?: ReactNode }) {
+export default function ContextoLead({ contactId, open, onClose, acciones = [], titulo, inline }: { contactId: string | null; open: boolean; onClose: () => void; acciones?: AccionContexto[]; titulo?: ReactNode; inline?: boolean }) {
   const [d, setD] = useState<any>(null);
   const [n, setN] = useState(20);
-  useEffect(() => { if (!open || !contactId) return; setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${n}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [open, contactId, n]);
+  useEffect(() => { if ((!open && !inline) || !contactId) return; setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${n}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [open, contactId, n, inline]);
   const k = d?.contacto; const emp = k?.companies?.nombre_comercial || k?.companies?.nombre;
   const lab = { fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#8e88a8', margin: '14px 0 6px' };
-  return (
-    <Sheet open={open} onClose={onClose} width={640} zIndex={1200}
-      title={<span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}><span style={{ fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo || (k ? `${k.nombre || 'Sin nombre'}${emp ? ` · ${emp}` : ''}` : 'Conversación')}</span>{k && <span style={{ fontSize: 11, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '2px 8px', flexShrink: 0 }}>{ETAPA[k.lifecycle_stage] || k.lifecycle_stage}</span>}</span>}>
+  const cuerpo = (
+    <>
       <div style={{ padding: '4px 18px 90px', fontSize: 13.5, color: '#241d43' }}>
         {!d && <p style={{ color: '#8e88a8' }}>Cargando…</p>}
         {d?.error && <p style={{ color: '#b91c1c' }}>{d.error}</p>}
@@ -79,6 +78,13 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
           {acciones.map((a, i) => <button key={i} disabled={a.disabled} onClick={async () => { await a.onClick(); }} style={{ border: a.primario ? 'none' : '1px solid #e8e5f0', background: a.primario ? '#5B4BD6' : '#fff', color: a.primario ? '#fff' : '#241d43', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: a.disabled ? .5 : 1 }}>{a.label}</button>)}
         </div>
       )}
+    </>
+  );
+  if (inline) return <div style={{ height: '100%', overflowY: 'auto' }}>{cuerpo}</div>;
+  return (
+    <Sheet open={open} onClose={onClose} width={640} zIndex={1200}
+      title={<span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}><span style={{ fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo || (k ? `${k.nombre || 'Sin nombre'}${emp ? ` · ${emp}` : ''}` : 'Conversación')}</span>{k && <span style={{ fontSize: 11, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '2px 8px', flexShrink: 0 }}>{ETAPA[k.lifecycle_stage] || k.lifecycle_stage}</span>}</span>}>
+      {cuerpo}
     </Sheet>
   );
 }

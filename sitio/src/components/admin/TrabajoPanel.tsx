@@ -16,6 +16,7 @@ import TrabajoCalificacion from './TrabajoCalificacion';
 import TrabajoConsumo from './TrabajoConsumo';
 import TrabajoRevision from './TrabajoRevision';
 import TrabajoReactivacion from './TrabajoReactivacion';
+import TorreControl from './TorreControl';
 import TrabajoDatos from './TrabajoDatos';
 
 type Tarea = {
@@ -86,7 +87,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
-  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('dia');
+  const [vistaTab, setVistaTab] = useState<'torre' | 'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('torre');
   /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
      (el dueño lo vivió: editó, adjuntó, aprobó… y nada). Si un chunk falla, la página se recarga sola. */
   useEffect(() => {
@@ -338,6 +339,7 @@ export default function TrabajoPanel() {
         </div>
         <div className="ti-prog"><div style={{ width: plan && (plan.resumen.hechas_hoy + tareas.length) > 0 ? `${Math.round(100 * plan.resumen.hechas_hoy / (plan.resumen.hechas_hoy + tareas.length))}%` : '2%' }} /></div>
         <div className="ti-tabs">
+          <button className={'ti-tab' + (vistaTab === 'torre' ? ' on' : '')} onClick={() => setVistaTab('torre')}>Torre</button>
           <button className={'ti-tab' + (vistaTab === 'dia' ? ' on' : '')} onClick={() => setVistaTab('dia')}>El día</button>
           <button className={'ti-tab' + (vistaTab === 'datos' ? ' on' : '')} onClick={() => setVistaTab('datos')}>
             Datos {datos.length > 0 && <span className="ti-tab-n">{datos.length}</span>}
@@ -357,6 +359,7 @@ export default function TrabajoPanel() {
       {vistaTab === 'consumo' && <TrabajoConsumo />}
       {vistaTab === 'revision' && <TrabajoRevision />}
       {vistaTab === 'reactivacion' && <TrabajoReactivacion />}
+      {vistaTab === 'torre' && <div className="ti-lienzo" style={{ maxWidth: 1400 }}><TorreControl irA={(t) => setVistaTab(t as any)} /></div>}
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo" style={{ maxWidth: 980 }}>

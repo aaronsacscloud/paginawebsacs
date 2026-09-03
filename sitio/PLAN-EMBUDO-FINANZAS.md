@@ -42,3 +42,11 @@ con probabilidad; cierre de mes (ingreso − gastos = utilidad) guardado; report
 - Plan del día: sin `wa_libre` (lo lleva el agente); la llamada de rescate del agente pasa a prioridad 1 con
   `agendar_discovery`. Datos agrupa la cadena en «Reunión y cotización» (primer grupo cuando hay).
 - Embudo: nueva métrica «Reunión sin resultado» (`citas_sin_resultado`).
+
+## E. Torre de control (aprobada por el dueño 2026-09-03, dentro de Trabajo inteligente)
+- T1 hecho: `lib/crm/ti/torre.ts` + `api/crm/ti/torre` → una cola con envíos por aprobar, Revisión diaria, reactivaciones
+  y tareas del día (sin WhatsApp libre; datos de higiene solo como pulso), agrupada Ahora / Hoy / Esta semana; pulsos.
+- T2 hecho: `TorreControl.tsx` = pestaña «Torre» (default) con cola · acción (4 preguntas: quién es, qué pasó, qué
+  hago, qué pasa después) · contexto inline (`ContextoLead inline`). Teclado J/K/A/E/V. Acciones con las mismas APIs.
+- T3 hecho (primera versión): < 960 px → cola → acción con barra fija → contexto en hoja.
+- T4 pendiente: retirar pestañas viejas a «Más» cuando el dueño valide una semana de uso.
