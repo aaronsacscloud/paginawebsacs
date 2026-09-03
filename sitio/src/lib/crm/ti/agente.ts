@@ -160,6 +160,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta todo en UNA respuesta, en su orden, una oración por pregunta (aquí sí puedes pasar de 4 líneas; si son 3 o más, parte en dos burbujas con ---). Sin numerar, sin viñetas, sin repetir su pregunta antes de contestarla. Una sola pregunta tuya al final, o ninguna si él ya dijo qué sigue:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   const memoria = memoriaConversacion(msjs, c.nombre);
+  const regreso = await historialRegreso(contactId, msjs, c.nombre).catch(() => '');
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
     proximaCita(contactId).catch(() => null),
@@ -188,7 +189,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
       { type: 'text', text: (await ejemplosAprobados()) || ' ', cache_control: { type: 'ephemeral' } },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
@@ -261,6 +262,44 @@ function memoriaConversacion(msjs: any[], nombre: string | null): string {
 - Su nombre (${primer || '—'}) va ${nombreVeces} veces en nuestros últimos ${recientes.length} mensajes${nombreVeces >= 1 ? ': NO lo uses en este' : ''}.
 - ${audioPedido ? `Ya le pedimos audio ${audioPedido} vez/veces: no lo repitas.` : 'Aún no le hemos ofrecido contarlo por audio.'}
 - Nuestro último mensaje fue hace ${ultNos ?? '—'} h; el suyo hace ${ultEl ?? '—'} h.${preguntasNuestras.length ? `\n- Preguntas que ya hicimos (no las repitas): ${preguntasNuestras.join(' ')}` : ''}`;
+}
+
+/** EL LEAD QUE VUELVE SOLO (cola del dueño, 2026-09-03). Si su mensaje de hoy llega después de más de 45 días de silencio y
+ *  ya había una plática de fondo, el agente no puede tratarlo como nuevo: lee un resumen de lo anterior (cacheado en
+ *  ti_perfil.resumen_historial, Haiku sobre hasta 60 mensajes) y recibe las reglas de cómo retomar. */
+const DIAS_REGRESO = 45;
+async function historialRegreso(contactId: string, msjs: any[], nombre: string | null): Promise<string> {
+  const ultIn = [...msjs].reverse().find(m => m.direccion === 'entrante'); if (!ultIn) return '';
+  const tUlt = Date.parse(ultIn.created_at);
+  // La ráfaga actual: mensajes del lead pegados al último (menos de 2 días entre sí). Lo anterior a eso es "la historia".
+  let corte = tUlt; for (let i = msjs.length - 1; i >= 0; i--) { const t = Date.parse(msjs[i].created_at); if (corte - t > 2 * 86400e3) break; corte = t; }
+  const previos = msjs.filter(m => Date.parse(m.created_at) < corte - 2 * 86400e3);
+  if (previos.length < 3) return '';
+  const tPrev = Date.parse(previos[previos.length - 1].created_at);
+  const dias = Math.round((corte - tPrev) / 86400e3);
+  if (dias < DIAS_REGRESO) return '';
+  const { data: pf } = await supabase.from('ti_perfil').select('resumen_historial, resumen_historial_at').eq('contact_id', contactId).maybeSingle();
+  let resumen = pf?.resumen_historial || '';
+  if (!resumen || !pf?.resumen_historial_at || Date.parse(pf.resumen_historial_at) < tPrev) {
+    const { msjs: largos } = await charla(contactId, 60);
+    const viejos = largos.filter(m => Date.parse(m.created_at) <= tPrev);
+    const texto = viejos.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 10)}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
+    try {
+      const r = await anthropic.messages.create({ model: MODELS.haiku, max_tokens: 500, messages: [{ role: 'user', content: `Resume en 6 líneas máximo, en español y en tercera persona, esta conversación previa de ventas de Sacs (software para tiendas) con el lead ${nombre || ''}: qué negocio tiene (giro, tiendas), qué preguntó o quería resolver, qué le ofrecimos (precio, demo, promo), en qué punto se quedó y por qué se enfrió si se nota, y datos ya conocidos (nombre real, ciudad, sistema actual). Sin adornos.\n\n${texto}` }] });
+      resumen = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim();
+      if (resumen) await supabase.from('ti_perfil').upsert({ contact_id: contactId, resumen_historial: resumen, resumen_historial_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
+    } catch { resumen = ''; }
+  }
+  const ultimaFecha = new Date(tPrev).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  return `EL LEAD VOLVIÓ SOLO después de ${dias} días sin hablar (la última plática fue el ${ultimaFecha}). NO es un lead nuevo.
+LO QUE PASÓ ANTES:
+${resumen || '(no se pudo resumir; lee la conversación de abajo con calma)'}
+CÓMO SE RETOMA (obligatorio):
+- Reconoce en una frase que ya habían hablado, sin drama ni disculpas («qué gusto que me escribas de nuevo; la última vez veíamos X para tus tiendas»).
+- Retoma DONDE SE QUEDÓ, no desde cero: si ya pidió precio, no vuelvas a preguntar qué vende; si quedó una demo pendiente, ofrécela directo.
+- NO vuelvas a pedir los datos que ya tenemos; pregunta qué cambió desde entonces (¿sigue con las mismas tiendas? ¿qué usa hoy?).
+- No te presentes otra vez ni saludes como si fuera la primera vez.
+- Si lo que le ofrecimos ya cambió (precio, promo), dilo tú antes de que lo descubra.`;
 }
 
 /** ICP + calidad de la conversación: decide cuánto insistir. Determinista. */

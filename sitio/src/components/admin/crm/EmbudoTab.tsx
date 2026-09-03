@@ -50,7 +50,8 @@ export default function EmbudoTab() {
   const chip = (on: boolean) => ({ border: `1px solid ${on ? '#5B4BD6' : '#e8e5f0'}`, background: on ? '#EEECFE' : '#fff', color: on ? '#4c1d95' : '#4a4658', borderRadius: 999, padding: '6px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' });
   const paso = (k: string, base?: number) => {
     const v = r[k] || 0; const on = metrica === k;
-    return <KpiCard key={k} label={METRICAS[k].l} valor={v} sub={base !== undefined ? `${pct(v, base)} del paso anterior · ${costo(v)} c/u` : `${costo(v)} por lead`} onClick={() => setMetrica(k)} activo={on} />;
+    const rel = k === 'cotizacion' ? 'de las conversaciones reales' : 'del paso anterior';
+    return <KpiCard key={k} label={METRICAS[k].l} valor={v} sub={base !== undefined ? `${pct(v, base)} ${rel} · ${costo(v)} c/u` : `${costo(v)} por lead`} onClick={() => setMetrica(k)} activo={on} />;
   };
   return (
     <div style={{ padding: '18px 22px 60px', maxWidth: 1180, margin: '0 auto', fontFamily: 'inherit', color: '#241d43' }}>
@@ -72,7 +73,7 @@ export default function EmbudoTab() {
       {d && !d.error && (<>
         {/* El embudo: cada paso respecto al anterior */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginTop: 16 }}>
-          {paso('leads')}{paso('contactados', r.leads)}{paso('conversacion_real', r.contactados)}{paso('agendaron', r.conversacion_real)}{paso('completadas', r.agendaron)}{paso('cotizacion', r.completadas)}{paso('vendidos', r.cotizacion)}
+          {paso('leads')}{paso('contactados', r.leads)}{paso('conversacion_real', r.contactados)}{paso('agendaron', r.conversacion_real)}{paso('completadas', r.agendaron)}{paso('cotizacion', r.conversacion_real)}{paso('vendidos', r.cotizacion)}
         </div>
         {/* Lo que se cae en el camino */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginTop: 10 }}>

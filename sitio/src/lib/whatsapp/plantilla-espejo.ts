@@ -143,8 +143,68 @@ export async function mandarPlantilla(o: {
       cuerpo: texto, status: 'sent', autor: o.autor || 'Agenda',
       mediaUrl: media ? media.link : null,
       mime: media ? MIME[ht] : null,
-      metadata: { ...(o.metadata || {}), plantilla: pl.nombre, botones: pl.botones || null },
+      metadata: {
+        ...(o.metadata || {}), plantilla: pl.nombre, botones: pl.botones || null,
+        /* EL PLAN DE RESPALDO VIAJA CON EL MENSAJE.
+           Meta acepta la plantilla y reporta el fallo DESPUÉS, por webhook de
+           estado: al enviar no se sabe. Guardando aquí qué mandar en su lugar,
+           el webhook puede dispararlo en cuanto llega el «failed», sin esperar
+           al reloj de los diez minutos y sin que cada flujo tenga que
+           acordarse de su propia red. */
+        ...(o.respaldo?.plantilla ? { respaldo_plan: {
+          plantilla: o.respaldo.plantilla,
+          params: o.respaldo.params ?? o.params.slice(0, 6),
+          texto: o.respaldo.textoRespaldo || null,
+        } } : {}),
+      },
     }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
   }
   return { enviado: true, wamid, texto, via: 'principal' };
+}
+
+
+/**
+ * Meta reportó que el mensaje NO se entregó. Si llevaba plan de respaldo, sale
+ * ahora — no en diez minutos: ya sabemos que no llegó.
+ *
+ * Es el caso de 131049 («Meta limitó los mensajes de marketing a este número»)
+ * y de 130472 («el número está en un experimento de Meta»): la API acepta el
+ * envío y el rechazo llega después. Sin esto, el lead se queda sin nada.
+ */
+export async function respaldoPorFallo(kapsoMessageId: string, motivo?: string | null): Promise<boolean> {
+  if (!kapsoMessageId) return false;
+  const { data: m } = await supabase.from('wa_mensajes')
+    .select('id, metadata, conversation_id').eq('kapso_message_id', kapsoMessageId).maybeSingle();
+  const plan = (m as any)?.metadata?.respaldo_plan;
+  /* Una sola vez: Meta puede repetir el webhook de estado y no vamos a
+     mandarle al cliente el mismo mensaje tres veces. */
+  if (!plan?.plantilla || (m as any)?.metadata?.respaldo_disparado) return false;
+
+  const { data: conv } = await supabase.from('wa_conversaciones')
+    .select('telefono').eq('id', (m as any).conversation_id).maybeSingle();
+  if (!conv?.telefono) return false;
+
+  /* Se marca ANTES de mandar: si el envío tarda y el webhook se repite, no
+     salen dos. Vale más un respaldo perdido que dos mensajes al cliente. */
+  await supabase.from('wa_mensajes')
+    .update({ metadata: { ...((m as any).metadata || {}), respaldo_disparado: new Date().toISOString() } })
+    .eq('id', (m as any).id);
+
+  const r = await mandarPlantilla({
+    telefono: conv.telefono, plantilla: String(plan.plantilla),
+    params: Array.isArray(plan.params) ? plan.params : [],
+    textoRespaldo: plan.texto || undefined,
+    metadata: { respaldo_de: (m as any).metadata?.plantilla || null, respaldo_motivo: motivo || 'Meta no lo entregó' },
+  }).catch(() => ({ enviado: false }) as any);
+
+  /* Y se cierra la fila del PRIMER MENSAJE si era una de esas: el reloj de los
+     diez minutos revisa lo mismo y, sin esto, le mandaría al cliente una
+     segunda vez la de utilidad. Dos caminos hacia el mismo respaldo tienen que
+     saber uno del otro. */
+  if (r?.enviado) {
+    await supabase.from('wa_primer_mensaje')
+      .update({ estado: 'respaldo_enviado', updated_at: new Date().toISOString() })
+      .eq('wamid', kapsoMessageId).eq('estado', 'esperando');
+  }
+  return !!r?.enviado;
 }

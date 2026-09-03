@@ -260,6 +260,15 @@ export const POST: APIRoute = async ({ request, url }) => {
           ? errs.map((e: any) => { const x = explicarError(e); return `${x.codigo ? x.codigo + ' ' : ''}${x.titulo}${x.crudo ? ' · ' + x.crudo.slice(0, 200) : ''}`; }).join(' | ')
           : (status === 'failed' ? 'Meta no dio detalle del fallo' : null);
         await actualizarStatus(String(msj.id), status, status === 'failed' ? errores : null);
+        /* NO ENTREGADO: si el mensaje llevaba plan de respaldo, sale ahora.
+           Meta acepta la plantilla y reporta el rechazo por aquí, así que este
+           es el primer momento en que se sabe de verdad que no llegó —esperar
+           al reloj de los diez minutos es dejar al lead sin nada mientras
+           tanto—. Ver `respaldoPorFallo`. */
+        if (status === 'failed') {
+          const { respaldoPorFallo } = await import('../../../lib/whatsapp/plantilla-espejo');
+          await respaldoPorFallo(String(msj.id), errores).catch(e => console.warn('[wa-respaldo]', e?.message || e));
+        }
         return ok();
       }
 
