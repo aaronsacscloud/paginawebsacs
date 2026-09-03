@@ -132,7 +132,7 @@ export const GET: APIRoute = async ({ request }) => {
   if (res.correcciones_implicitas) { await notificar({ clave: `impl:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `${res.correcciones_implicitas} correcciones implícitas al agente`, detalle: 'Escribiste después del agente sin que el lead contestara. Quedaron como ejemplos dudosos para que confirmes cuáles enseñar.', destino: 'trabajo' }); res.avisos++; }
 
   // ── 4c) PATRÓN → REGLA: si un mismo tipo de corrección se repite 3 veces en 14 días, se propone como regla del guion, no solo como ejemplos. ──
-  const { data: corr14 } = await supabase.from('ia_ejemplos').select('estado, por_que, pulida').in('fuente', ['correccion_dueno', 'correccion_implicita']).gte('created_at', hace(14)).limit(200);
+  const { data: corr14 } = await supabase.from('ia_ejemplos').select('estado, por_que, pulida').in('fuente', ['correccion_dueno', 'correccion_implicita', 'rechazo_consultor']).gte('created_at', hace(14)).limit(200);
   const porEstado: Record<string, number> = {};
   for (const c of corr14 || []) porEstado[c.estado] = (porEstado[c.estado] || 0) + 1;
   for (const [est, n] of Object.entries(porEstado)) {

@@ -21,6 +21,8 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [ctx, setCtx] = useState<string | null>(null);
   const [saliendo, setSaliendo] = useState(false);
+  const [como, setComo] = useState(false);
+  const [activando, setActivando] = useState(false);
   const cargar = () => fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 45000); return () => clearInterval(t); }, []);
   const aviso = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); };
@@ -48,7 +50,17 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
             <div className="sg-barra"><i style={{ width: `${pct}%` }} className={p.alcanzada ? 'ok' : ''} /><em style={{ left: `${metaPct}%` }} title={`Meta ${p.meta}`} /></div>
             <div className="sg-sub">{p.llena ? `Ventana llena: últimas ${p.ventana} respuestas` : `${p.n} de ${p.ventana} respuestas calificadas · faltan ${p.faltan}`} · meta <b>{p.meta}</b>{p.tendencia?.reciente !== null && p.tendencia?.anterior !== null && p.tendencia?.reciente !== undefined && p.tendencia?.anterior !== undefined ? <> · últimas 50: <b>{p.tendencia.reciente.toFixed(1)}</b> vs {p.tendencia.anterior.toFixed(1)} antes</> : null}</div>
           </div>
-          <div className={'sg-modo' + (p.modo === 'vivo' ? ' vivo' : '')}>{p.modo === 'vivo' ? <>Autónomo{p.alcanzada_at ? ` desde ${fecha(p.alcanzada_at)}` : ''}</> : 'En entrenamiento: todo pasa por un consultor'}</div>
+          {p.modo !== 'vivo' && p.alcanzada ? (
+            <button className="sg-activar" disabled={activando} onClick={async () => {
+              if (!window.confirm(`El agente promedia ${p.promedio}/10 en las últimas ${p.n} respuestas. ¿Activar las respuestas automáticas? Desde ese momento manda directo a todos los leads sin esperar a nadie.`)) return;
+              setActivando(true);
+              const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'config', agente_modo: 'vivo' }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+              setActivando(false); if (r.error) aviso(r.error, false); else { aviso('Respuestas automáticas activadas.'); cargar(); }
+            }}>{activando ? 'Activando…' : 'Activar respuestas automáticas'}</button>
+          ) : (
+            <div className={'sg-modo' + (p.modo === 'vivo' ? ' vivo' : '')}>{p.modo === 'vivo' ? <>Automático{p.alcanzada_at ? ` desde ${fecha(p.alcanzada_at)}` : ''}</> : 'En entrenamiento: todo pasa por un consultor'}</div>
+          )}
+          <button className="sg-link" onClick={() => setComo(true)}>¿Cómo funciona?</button>
         </div>
         <div className="sg-fila2">
           <span><b>{p.tal_cual || 0}</b> tal cual</span><span><b>{p.modificadas || 0}</b> modificadas</span><span><b>{p.rechazadas || 0}</b> rechazadas</span><span><b>{p.humano || 0}</b> por su cuenta</span><span><b>{p.hoy || 0}</b> hoy</span>
@@ -91,6 +103,35 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
         </div>
       )}
       <ContextoLead contactId={ctx} open={!!ctx} onClose={() => setCtx(null)} />
+      {como && <ComoFunciona p={p} onCerrar={() => setComo(false)} />}
+    </div>
+  );
+}
+
+/* La explicación en un solo lugar (pedida por el dueño 3-sep): cómo se decide, cómo aprende, cada cuánto y qué cambia con cada acción. */
+function ComoFunciona({ p, onCerrar }: { p: any; onCerrar: () => void }) {
+  return (
+    <div className="sg-velo" onClick={onCerrar}>
+      <div className="sg-modal" onClick={e => e.stopPropagation()}>
+        <div className="sg-modal-cab"><b>Cómo funciona Seguimiento</b><button className="sg-x" onClick={onCerrar} aria-label="Cerrar">×</button></div>
+        <div className="sg-modal-cuerpo">
+          <h4>Cada cuánto y qué se analiza</h4>
+          <p>Cada <b>2 minutos</b> el agente revisa los mensajes nuevos de WhatsApp. Por cada lead que escribió lee la conversación completa (sus últimos mensajes, lo que ya sabemos de él, su etapa, la cita o cotización vigente), el guion de ventas y la wiki, los <b>ejemplos aprobados</b> (hasta 24, primero las correcciones de ustedes), lo que los consultores <b>rechazaron</b> (últimos 8) y la galería de imágenes, PDF y videos. Con eso redacta una respuesta y elige si conviene adjuntar algo.</p>
+          <p>En entrenamiento <b>no manda nada</b>: deja la respuesta como sugerencia aquí y en la conversación del inbox, encima del compositor. Aplica a todas las conversaciones, también a las que lleva un consultor. Solo los teléfonos de prueba reciben el flujo en vivo. Hay una sola sugerencia por lead: si vuelve a escribir antes de que decidan, la sugerencia se reemplaza por una nueva.</p>
+          <h4>Qué cambia con cada decisión</h4>
+          <ul>
+            <li><b>Enviar</b>: sale tal cual, con sus adjuntos, por el mismo canal del agente. Calificación <b>10</b>.</li>
+            <li><b>Modificar → Enviar con modificaciones</b>: sale tu versión. Se guarda como ejemplo aprobado con tu criterio y tus adjuntos; una imagen que subas queda en la galería y el agente la puede volver a mandar cuando el caso se parezca. Calificación <b>9, 8, 6, 4 o 2</b> según cuánto quedó de lo que él propuso.</li>
+            <li><b>Rechazar</b>: la razón es obligatoria y es la lección. Calificación <b>0</b>. Desde la siguiente redacción el agente ve ese caso en el bloque «no contestes así». El compositor se libera para que contestes tú.</li>
+            <li><b>Contestaste por tu cuenta</b> (desde el teléfono u otra sesión): tu respuesta se compara con la sugerencia y se califica como «por su cuenta». Tu texto y tus adjuntos quedan como ejemplo por revisar en Informes → Biblioteca.</li>
+            <li><b>Sin decisión 3 días</b>: la sugerencia expira y no cuenta.</li>
+          </ul>
+          <h4>Cómo aprende</h4>
+          <p><b>Inmediato:</b> cada nueva redacción vuelve a leer los ejemplos aprobados y los rechazos, así que una corrección de hoy ya pesa en la respuesta de dentro de dos minutos. <b>Nocturno (2:00 am):</b> si un mismo tipo de corrección o rechazo se repite 3 veces en 14 días, el agente propone una regla del guion para que la apruebes, y avisa de las preguntas que la wiki no cubrió. Nada se modifica solo: las reglas propuestas se aceptan en la Torre.</p>
+          <h4>Cuándo responde solo</h4>
+          <p>La meta es promedio <b>{p.meta}</b> en las últimas <b>{p.ventana}</b> decisiones. Cuando se cumple aparece arriba el botón <b>«Activar respuestas automáticas»</b>; nada cambia hasta que el dueño lo oprime. En automático manda directo, respetando el semáforo (horario de 8 a 21, un automático por día por lead, nunca a clientes ni a quien pidió que no le escriban) y sigue aprendiendo de cada veto o edición. Se puede regresar a entrenamiento en Configuración → Agente IA → Seguimiento.</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -147,6 +188,11 @@ const CSS = `
 .sg-cal.c10,.sg-cal.c9{background:#e7f7ee;color:#14532d}.sg-cal.c8,.sg-cal.c7,.sg-cal.c6{background:#fff4dc;color:#8a5a00}.sg-cal.c0,.sg-cal.c2,.sg-cal.c4{background:#fde7e5;color:#b3261e}
 .sg-dec{font-size:11px;font-weight:800;color:#5B4BD6;background:#EEECFE;border-radius:999px;padding:2px 8px}
 .sg-h-b{margin:8px 0 4px 38px;display:grid;gap:6px;font-size:13px;line-height:1.45;white-space:pre-wrap}.sg-h-b i{font-style:normal;color:#8e88a8}
+.sg-activar{border:none;background:#16a34a;color:#fff;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 8px 20px rgba(22,163,74,.25)}.sg-activar:disabled{opacity:.6}
+.sg-velo{position:fixed;inset:0;background:rgba(36,29,67,.35);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.sg-modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(36,29,67,.25)}
+.sg-modal-cab{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #ecebf2;font-size:16px}.sg-x{border:none;background:none;font-size:22px;cursor:pointer;color:#8e88a8}
+.sg-modal-cuerpo{padding:6px 20px 20px;overflow:auto;font-size:14px;line-height:1.55;color:#241d43}.sg-modal-cuerpo h4{margin:16px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5B4BD6}.sg-modal-cuerpo p{margin:0 0 8px}.sg-modal-cuerpo ul{margin:0 0 8px 18px;padding:0}.sg-modal-cuerpo li{margin-bottom:6px}
 .sg-aj{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.sg-aj label{display:grid;gap:4px;font-size:12px;font-weight:700;color:#6b6580}
 @media (max-width:820px){.sg-grid{grid-template-columns:1fr}.sg-pos{margin-left:0}}
 `;

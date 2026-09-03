@@ -7,14 +7,14 @@
  * cambió) o rechazar con razón (0). Si contestó por su cuenta desde el teléfono, la respuesta humana se
  * compara igual (decisión «humano»). Cada decisión es una calificación y una lección para el redactor.
  *
- * Promedio de las últimas `paridad_ventana` (300) ≥ `paridad_meta` (9.0) ⇒ el agente pasa a «vivo»: responde
- * solo todos los WhatsApps. Los números de prueba (agente_prueba_telefonos) siguen recibiendo el flujo en vivo.
+ * Promedio de las últimas `paridad_ventana` (100) ≥ `paridad_meta` (9.0) ⇒ se ABRE el botón «Activar respuestas
+ * automáticas» (nada cambia solo: el dueño lo enciende). En vivo responde solo todos los WhatsApps. Los números de prueba (agente_prueba_telefonos) siguen recibiendo el flujo en vivo.
  */
 import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
 
 export const META_DEFAULT = 9;
-export const VENTANA_DEFAULT = 300;
+export const VENTANA_DEFAULT = 100;   // decisión del dueño 3-sep: 100 respuestas, no 300
 
 const norm = (t: string) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ\s]/g, ' ').replace(/\s+/g, ' ').trim();
 /** Parecido entre dos textos (Dice sobre bigramas de caracteres, 0..1). Barato y estable para mensajes cortos. */
@@ -58,23 +58,24 @@ export async function paridad(cfgIn?: any) {
     hoy: filas.filter(f => new Date(f.created_at) >= hoy0).length,
     tendencia: { reciente: prom(rec), anterior: prom(ant) },
     por_usuario: Object.entries(porUsuario).map(([id, v]) => ({ id, nombre: (tm || []).find((t: any) => t.id === id)?.nombre || (id === 'sin_usuario' ? 'Desde el teléfono' : 'Consultor'), n: v.n, promedio: Math.round((v.suma / v.n) * 10) / 10 })).sort((a, b) => b.n - a.n),
-    modo: cfg.agente_modo || 'sombra', alcanzada_at: cfg.paridad_alcanzada_at || null, pruebas: (cfg.agente_prueba_telefonos || []).length,
+    modo: cfg.agente_modo || 'sombra', alcanzada_at: cfg.paridad_alcanzada_at || null, lista_at: cfg.paridad_lista_at || null, pruebas: (cfg.agente_prueba_telefonos || []).length,
   };
 }
 
-/** Si la ventana está llena y el promedio llegó a la meta, el agente pasa a vivo (una sola vez; el dueño puede regresarlo). */
-export async function revisarParidad(): Promise<{ cambio: boolean; paridad: any }> {
+/** Ventana llena y promedio en la meta ⇒ se marca «lista» UNA vez y se avisa. NO cambia el modo: el dueño enciende el
+ *  botón «Activar respuestas automáticas» (decisión 3-sep: que se abra el botón, no que se active solo). */
+export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolean; paridad: any }> {
   const cfg: any = await leerConfig();
   const p = await paridad(cfg);
-  if (!p.alcanzada || (cfg.agente_modo || 'sombra') === 'vivo') return { cambio: false, paridad: p };
+  if (!p.alcanzada || (cfg.agente_modo || 'sombra') === 'vivo' || cfg.paridad_lista_at) return { cambio: false, lista: !!p.alcanzada, paridad: p };
   const ahora = new Date().toISOString();
-  await supabase.from('ti_config').update({ valor: { ...cfg, agente_modo: 'vivo', paridad_alcanzada_at: ahora } }).eq('id', 1);
-  await supabase.from('ia_log').insert({ accion: 'agente_autonomo', razon: `paridad ${p.promedio}/10 en ${p.n} respuestas (meta ${p.meta})`, detalle: p }).then(() => {}, () => {});
+  await supabase.from('ti_config').update({ valor: { ...cfg, paridad_lista_at: ahora } }).eq('id', 1);
+  await supabase.from('ia_log').insert({ accion: 'paridad_lista', razon: `paridad ${p.promedio}/10 en ${p.n} respuestas (meta ${p.meta})`, detalle: p }).then(() => {}, () => {});
   try {
     const { avisoSistema } = await import('./agente');
-    await avisoSistema({ tipo: 'agente_autonomo', nivel: 'info', clave: `agente_autonomo:${ahora.slice(0, 10)}`, titulo: `El agente llegó a ${p.promedio}/10 en las últimas ${p.n} respuestas: ya contesta solo`, detalle: `Tal cual ${p.tal_cual} · modificadas ${p.modificadas} · rechazadas ${p.rechazadas}. Desde ahora responde todos los WhatsApps sin esperar aprobación.`, que_hacer: 'Si quieres regresarlo a entrenamiento: Configuración → Trabajo inteligente → Seguimiento.' });
+    await avisoSistema({ tipo: 'paridad_lista', nivel: 'info', clave: `paridad_lista:${ahora.slice(0, 10)}`, titulo: `El agente llegó a ${p.promedio}/10 en las últimas ${p.n} respuestas`, detalle: `Tal cual ${p.tal_cual} · modificadas ${p.modificadas} · rechazadas ${p.rechazadas}. Ya puedes activar las respuestas automáticas; hasta entonces sigue pasando todo por un consultor.`, que_hacer: 'Trabajo inteligente → Seguimiento → botón «Activar respuestas automáticas».' });
   } catch { /* el aviso no detiene nada */ }
-  return { cambio: true, paridad: { ...p, modo: 'vivo', alcanzada_at: ahora } };
+  return { cambio: false, lista: true, paridad: p };
 }
 
 type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null };
@@ -135,14 +136,14 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: o.detalle ? String(o.detalle).slice(0, 600) : null });
   const par = await revisarParidad();
-  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, paridad: par.paridad, autonomo: par.cambio };
+  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, paridad: par.paridad, lista: par.lista };
 }
 
 /** El humano contestó por su cuenta (teléfono, otra sesión): la sugerencia se compara y califica sola. */
-export async function calificarHumano(e: { id: string; contact_id: string | null; conversation_id: string | null; origen?: string | null; mensaje: string; salida?: any }, humano: { texto: string; at: string }) {
+export async function calificarHumano(e: { id: string; contact_id: string | null; conversation_id: string | null; origen?: string | null; mensaje: string; salida?: any }, humano: { texto: string; at: string; adjuntos?: any[] }) {
   const sim = similitud(e.mensaje, humano.texto);
   const cal = calificacionPor('humano', sim);
-  await supabase.from('ti_calificaciones').insert({ envio_id: e.id, contact_id: e.contact_id, conversation_id: e.conversation_id, usuario_id: null, origen: e.origen || null, estado_guion: e.salida?.estado || null, decision: 'humano', calificacion: cal, similitud: sim, mensaje_sugerido: e.mensaje, mensaje_final: humano.texto, motivo: 'El consultor contestó por su cuenta antes de decidir la sugerencia' }).then(() => {}, () => {});
+  await supabase.from('ti_calificaciones').insert({ envio_id: e.id, contact_id: e.contact_id, conversation_id: e.conversation_id, usuario_id: null, origen: e.origen || null, estado_guion: e.salida?.estado || null, decision: 'humano', calificacion: cal, similitud: sim, mensaje_sugerido: e.mensaje, mensaje_final: humano.texto, adjuntos: humano.adjuntos || [], motivo: 'El consultor contestó por su cuenta antes de decidir la sugerencia' }).then(() => {}, () => {});
   await revisarParidad().catch(() => {});
   return { calificacion: cal, similitud: sim };
 }
@@ -153,15 +154,20 @@ export async function barrerSugerencias() {
   const res = { humano: 0, expiradas: 0 };
   const limite = Date.now() - 3 * 864e5;
   for (const e of sug || []) {
-    let h: { texto: string; at: string } | null = null;
+    let h: { texto: string; at: string; adjuntos?: any[] } | null = null;
     if (e.conversation_id) {
-      const { data } = await supabase.from('wa_mensajes').select('cuerpo, created_at, metadata, autor').eq('conversation_id', e.conversation_id).eq('direccion', 'saliente').gt('created_at', e.created_at).is('borrado_at', null).order('created_at', { ascending: true }).limit(5);
-      const m = (data || []).find(x => (x.metadata as any)?.origen !== 'agente' && x.autor !== 'Agenda');
-      if (m && String(m.cuerpo || '').trim().length >= 4) h = { texto: String(m.cuerpo).trim(), at: m.created_at };
+      const { data } = await supabase.from('wa_mensajes').select('cuerpo, created_at, metadata, autor, tipo, media_url').eq('conversation_id', e.conversation_id).eq('direccion', 'saliente').gt('created_at', e.created_at).is('borrado_at', null).order('created_at', { ascending: true }).limit(6);
+      const humanos = (data || []).filter(x => (x.metadata as any)?.origen !== 'agente' && x.autor !== 'Agenda');
+      const m = humanos.find(x => String(x.cuerpo || '').trim().length >= 4);
+      // Lo que mandó el consultor por su cuenta se guarda completo: texto Y las imágenes/PDF que adjuntó (son parte de la lección).
+      const adjuntos = humanos.filter(x => x.media_url).map(x => ({ id: null, tipo: /video/.test(String(x.tipo || '')) ? 'video' : /image|imagen|sticker/.test(String(x.tipo || '')) ? 'image' : 'document', url: x.media_url, nombre: String(x.tipo || 'archivo') })).slice(0, 5);
+      if (m) h = { texto: String(m.cuerpo).trim(), at: m.created_at, adjuntos };
     }
     if (h) {
       await supabase.from('ti_envios').update({ estado: 'humano_respondio', humano_respuesta: h.texto, humano_at: h.at, updated_at: new Date().toISOString() }).eq('id', e.id).eq('estado', 'sugerencia');
       await calificarHumano(e as any, h); res.humano++;
+      // Ejemplo «dudoso» para que el dueño lo apruebe o descarte en Informes → Biblioteca (igual que el par agente/humano de siempre).
+      await supabase.from('ia_ejemplos').insert({ estado: (e.salida as any)?.estado || 'descubriendo', situacion: 'El consultor contestó por su cuenta en vez de decidir la sugerencia del agente', mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: h.texto, pulida: h.texto, adjuntos: h.adjuntos || [], por_que: `Par agente/humano · envio:${e.id} · el agente había propuesto: ${String(e.mensaje).slice(0, 300)}`, fuente: 'humano_antes', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'dudoso' }).then(() => {}, () => {});
     } else if (Date.parse(e.created_at) < limite) {
       await supabase.from('ti_envios').update({ estado: 'expirado', motivo_veto: 'sugerencia sin decisión en 3 días', updated_at: new Date().toISOString() }).eq('id', e.id).eq('estado', 'sugerencia'); res.expiradas++;
     }

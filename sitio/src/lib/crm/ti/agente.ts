@@ -75,7 +75,7 @@ async function charla(contactId: string, limite = 30) {
   return { msjs: msjs.slice(-limite), conversationId: convs?.[0]?.id || null, telefono: convs?.[0]?.telefono || null };
 }
 
-async function ejemplosAprobados(estado?: string) {
+export async function ejemplosAprobados(estado?: string) {
   let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').order('created_at', { ascending: false }).limit(60);   // los de reactivación los lee su propio redactor
   const { data } = await q;
   // SEGUIMIENTO: lo que los consultores rechazaron con razón se enseña aparte, como «no así» (no entra al bloque de arriba).
@@ -475,7 +475,8 @@ export async function proponerRespuestas(): Promise<any> {
     if (hilo.quien === 'humano' || (humanoReciente || []).length) {
       // MODO SUGERENCIA (decisión 2026-09-03): el consultor lleva el hilo, pero pidió borradores. El agente decide y deja la
       // propuesta como «sugerencia» (nunca se despacha): el consultor la usa, la edita o la descarta desde el inbox.
-      if (stPrev.modo === 'sugerir') {
+      // SEGUIMIENTO (3-sep): en entrenamiento TODA conversación recibe sugerencia, también la que lleva un consultor.
+      if (stPrev.modo === 'sugerir' || (cfg.agente_modo || 'sombra') === 'sombra') {
         try {
           const d = await decidirTurno(cid);
           if (d.salida?.mensaje && d.salida.responder) {

@@ -295,3 +295,11 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   conversación de prueba del dueño y borrarlos después, no reciclar filas `sombra` reales.
 - **Índice único «un pendiente por lead»** solo cubre `pendiente`: para no acumular sugerencias por lead, el
   reemplazo por nuevo mensaje (`previos`) y el check de cotización ahora incluyen `sugerencia`.
+- **Ajustes del dueño (mismo día):** ventana **100**, no 300; y al llegar a la meta NO se activa solo: se marca
+  `paridad_lista_at`, avisa y aparece el botón «Activar respuestas automáticas» (config `agente_modo: 'vivo'`, solo
+  founder). En entrenamiento también se sugiere en los hilos que lleva un consultor (antes «agente_calla»).
+- **Verificado con turno real (3-sep):** una corrección sembrada con imagen de la galería + un rechazo → el few-shot
+  incluyó ambos y `decidirTurno` adjuntó esa imagen en un caso parecido. Script: scratchpad/aprende-test.mts (siembra,
+  prueba y borra). Si vuelve a dudarse «¿sí aprende?», correr eso antes de tocar prompts.
+- Lo que el consultor manda por su cuenta (texto + media_url) se guarda en la calificación y como ejemplo «dudoso»;
+  los rechazos entran al patrón→regla del ciclo nocturno (fuente `rechazo_consultor`).
