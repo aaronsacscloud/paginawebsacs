@@ -6,7 +6,7 @@ export type Canal = {
   id: string; seccion_id: string | null; nombre: string; descripcion: string | null;
   tipo: 'charla' | 'sala' | 'directo' | 'sistema'; importante: boolean;
   regla_reunion: { dia_iso: number; hora: string } | null; participantes: string[]; orden: number;
-  no_leidos: number; menciones: number; ultimo_at: string | null; silenciado: boolean;
+  no_leidos: number; menciones: number; ultimo_at: string | null; silenciado: boolean; ultimo_leido_at: string | null;
 };
 export type Adjunto = {
   tipo: 'imagen' | 'audio' | 'gif' | 'archivo'; path?: string; thumb?: string; url?: string; thumb_url?: string;
@@ -48,6 +48,7 @@ export const api = {
     for (const [k, v] of Object.entries(p)) if (v) q.set(k, v);
     return pedir<{ mensajes: Mensaje[]; raiz?: Mensaje; hay_mas: boolean; hay_mas_despues?: boolean }>('GET', `/mensajes?${q}`);
   },
+  uno: (id: string) => pedir<{ mensaje: Mensaje }>('GET', `/mensajes?id=${id}`),
   enviar: (b: { canal_id: string; texto: string; responde_a?: string | null; hilo_de?: string | null; adjuntos?: Adjunto[]; cid: string; sesion_id?: string | null; punto_id?: string | null }) =>
     pedir<{ mensaje: Mensaje; repetido?: boolean }>('POST', '/mensajes', b),
   editar: (id: string, texto: string) => pedir<{ mensaje: Mensaje }>('PUT', '/mensajes', { id, texto }),

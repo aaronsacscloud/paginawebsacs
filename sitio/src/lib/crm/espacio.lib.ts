@@ -176,6 +176,16 @@ export async function darForma(rows: any[], yo: string) {
     if (h.created_at > e.ultima) e.ultima = h.created_at;
   }
 
+  // Los adjuntos viven en un bucket privado: cada uno sale con una URL firmada
+  // de una hora, TODAS en una sola llamada al storage.
+  const paths = rows.filter(r => !r.borrado_at).flatMap(r => (r.adjuntos || []).flatMap((a: any) => [a.path, a.thumb])).filter(Boolean) as string[];
+  const firmadas: Record<string, string> = {};
+  if (paths.length) {
+    const { data: f } = await supabase.storage.from('espacio').createSignedUrls(Array.from(new Set(paths)), 3600);
+    for (const x of f || []) if (x.path && x.signedUrl) firmadas[x.path] = x.signedUrl;
+  }
+  const conUrl = (a: any) => ({ ...a, url: a.tipo === 'gif' ? a.url : (a.path ? firmadas[a.path] || null : null), thumb_url: a.thumb ? firmadas[a.thumb] || null : undefined });
+
   const persona = (id: string) => {
     const p = personas[id] || autoresCitados[id];
     return p ? { id: p.id, nombre: p.nombre, foto_url: p.foto_url } : { id, nombre: 'Alguien', foto_url: null };
@@ -195,7 +205,7 @@ export async function darForma(rows: any[], yo: string) {
         texto: c.borrado_at ? 'mensaje eliminado' : (c.texto || (Array.isArray(c.adjuntos) && c.adjuntos.length ? (c.adjuntos[0].tipo === 'audio' ? 'audio' : 'imagen') : '')),
       } : { id: r.responde_a, autor: null, texto: 'mensaje eliminado' }) : null,
       menciones: (r.menciones || []).map(persona),
-      adjuntos: borrado ? [] : (r.adjuntos || []),
+      adjuntos: borrado ? [] : (r.adjuntos || []).map(conUrl),
       citas: borrado ? [] : (r.citas || []),
       sesion_id: r.sesion_id, punto_id: r.punto_id,
       reacciones: Object.entries(rx[r.id] || {}).map(([emoji, quienes]) => ({ emoji, n: quienes.length, mia: quienes.includes(yo), quienes: quienes.map(q => persona(q).nombre) })),

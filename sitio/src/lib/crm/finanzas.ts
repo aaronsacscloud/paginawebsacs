@@ -167,8 +167,29 @@ export async function resumenMes(m: Mes) {
 }
 
 /** Reporte por meses de un año: cierres guardados + meses vivos calculados al vuelo (solo dinero agregado). */
+/** Cuánto toca pagar de adeudos en un mes (cuota + atraso acumulado, menos prórrogas a futuro), con la misma fórmula del resumen. */
+function tocaAdeudos(adeudos: any[], abonos: any[], decs: any[], m: Mes) {
+  let toca = 0;
+  for (const a of adeudos || []) {
+    if (a.activo === false) continue;
+    const ab = (abonos || []).filter(x => x.adeudo_id === a.id && x.mes <= m);
+    const pagado = ab.reduce((s, x) => s + Number(x.monto), 0); const saldo = Math.max(0, Number(a.total) - pagado);
+    const inicioM = String(a.inicio).slice(0, 7); if (inicioM > m) continue;
+    const mesesRest = a.fecha_limite ? Math.max(1, mesesEntre(m, String(a.fecha_limite).slice(0, 7)) + 1) : null;
+    const cuota = Number(a.cuota) > 0 ? Number(a.cuota) : mesesRest ? Math.ceil(saldo / mesesRest) : null;
+    if (!cuota) continue;
+    const esperado = Math.min(Number(a.total), cuota * (Math.max(0, mesesEntre(inicioM, m)) + 1));
+    const prorr = (decs || []).filter(x => x.adeudo_id === a.id && x.decision === 'prorroga' && x.nueva_fecha && String(x.nueva_fecha).slice(0, 7) > m).reduce((s, x) => s + Number(x.monto || 0), 0);
+    toca += Math.min(saldo, Math.max(0, esperado - pagado - prorr));
+  }
+  return toca;
+}
+
 export async function reporteAnual(anio: number) {
-  const { data: abonosAnio } = await supabase.from('fin_adeudos_abonos').select('mes, monto').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`);
+  const [{ data: abonosAnio }, { data: adeudosAll }, { data: abonosAll }, { data: decsAdAll }] = await Promise.all([
+    supabase.from('fin_adeudos_abonos').select('mes, monto').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`),
+    supabase.from('fin_adeudos').select('*'), supabase.from('fin_adeudos_abonos').select('adeudo_id, mes, monto'), supabase.from('fin_adeudos_decisiones').select('*'),
+  ]);
   const { data: cortesAnio } = await supabase.from('comision_cortes').select('paga_el, total').gte('paga_el', `${anio}-01-01`).lt('paga_el', `${anio + 1}-01-01`);
   const [{ data: cierres }, { data: pagos }, { data: gastos }, { data: coms }, { data: pagosG }] = await Promise.all([
     supabase.from('fin_cierres').select('*').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`),
@@ -184,10 +205,12 @@ export async function reporteAnual(anio: number) {
     const m = `${anio}-${String(i).padStart(2, '0')}`;
     const c = porMesCierre.get(m);
     if (c) { meses.push({ mes: m, ingresos: Number(c.ingresos), gastos: Number(c.gastos), comisiones: Number(c.comisiones), utilidad: Number(c.utilidad), cerrado: true }); continue; }
-    if (m > hoy) { meses.push({ mes: m, ingresos: 0, gastos: (gastos || []).filter(g => aplicaMes(g, m)).reduce((s, g) => s + Number(g.monto), 0), comisiones: 0, utilidad: null, cerrado: false, futuro: true }); continue; }
+    if (m > hoy) { meses.push({ mes: m, ingresos: 0, gastos: (gastos || []).filter(g => aplicaMes(g, m)).reduce((s, g) => s + Number(g.monto) * ocurrenciasMes(g), 0) + tocaAdeudos(adeudosAll || [], abonosAll || [], decsAdAll || [], m), comisiones: 0, utilidad: null, cerrado: false, futuro: true }); continue; }
     const ing = (pagos || []).filter(p => String(p.fecha).slice(0, 7) === m).reduce((s, p) => s + Number(p.monto), 0);
     const apl = (gastos || []).filter(g => aplicaMes(g, m));
-    const gas = apl.reduce((s, g) => s + Number(g.monto), 0) + (abonosAnio || []).filter(x => x.mes === m).reduce((s, x) => s + Number(x.monto), 0);
+    // Mes vivo: gastos aplicables + lo que TOCA de adeudos (misma cifra que el KPI «Gastos del mes»). Los abonos reales sustituyen al «toca» cuando ya se pagó.
+    const abonadoM = (abonosAnio || []).filter(x => x.mes === m).reduce((s, x) => s + Number(x.monto), 0);
+    const gas = apl.reduce((s, g) => s + Number(g.monto) * ocurrenciasMes(g), 0) + Math.max(abonadoM, m === hoy ? tocaAdeudos(adeudosAll || [], abonosAll || [], decsAdAll || [], m) : abonadoM);
     const comLineas = (coms || []).filter(x => String(x.fecha).slice(0, 7) === m).reduce((s, x) => s + Number(x.monto || 0), 0);
     const cortesM = (cortesAnio || []).filter(c => String(c.paga_el).slice(0, 7) === m);
     const com = cortesM.length ? cortesM.reduce((s, c) => s + Number(c.total || 0), 0) : comLineas;

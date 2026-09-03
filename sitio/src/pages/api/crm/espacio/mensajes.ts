@@ -54,6 +54,17 @@ function limpiarCitas(c: any): any[] | string {
 export const GET: APIRoute = async ({ request, url }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'Sin sesión' }, 401);
+  const uno = url.searchParams.get('id');
+  if (uno) {
+    // Un solo mensaje, ya con forma: lo que se pide al llegar una señal de
+    // "cambió" o "reaccionaron" para no volver a bajar toda la página.
+    if (!esUuid(uno)) return json({ error: 'Id inválido' }, 400);
+    const { data: m } = await supabase.from('espacio_mensajes').select(SELECT_MENSAJE).eq('id', uno).maybeSingle();
+    if (!m) return json({ error: 'Mensaje no encontrado' }, 404);
+    const c1 = await canalDe(m.canal_id);
+    if (!c1 || !puedeVerCanal(c1, yo.id)) return json({ error: 'Mensaje no encontrado' }, 404);
+    return json({ mensaje: (await darForma([m], yo.id))[0] });
+  }
   const canal_id = url.searchParams.get('canal_id') || '';
   const c = await canalDe(canal_id);
   if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Canal no encontrado' }, 404);

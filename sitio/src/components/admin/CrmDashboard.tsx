@@ -53,6 +53,7 @@ const PasarelaMercadoPago = lazySeguro(() => import('./crm/PasarelaMercadoPago')
 const ContactProfile = lazySeguro(() => import('./crm/ContactProfile'));
 const DashboardTab = lazySeguro(() => import('./crm/DashboardTab'));
 const TrabajoPanel = lazySeguro(() => import('./TrabajoPanel'));
+const EquipoTab = lazySeguro(() => import('./crm/equipo/Equipo'));
 const PartnersTab = lazySeguro(() => import('./crm/PartnersTab'));
 const CommissionsTab = lazySeguro(() => import('./crm/CommissionsTab'));
 const ComisionesTab = lazySeguro(() => import('./crm/ComisionesTab'));
@@ -86,7 +87,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -98,6 +99,8 @@ type Tab = 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finan
 // lee "inicio", no una cuenta), Leads era un grupo de personas idéntico al de
 // Colaboradores, y Oportunidades era un rayo, que ahí no significa nada.
 const ICONS: Record<string, string> = {
+  // Equipo: dos globos de conversación, el de atrás en la tinta al 18 %.
+  equipo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h11a2 2 0 012 2v7a2 2 0 01-2 2h-1v3l-4-3H12" fill="currentColor" opacity=".18" stroke="none"/><path d="M3 9a2 2 0 012-2h9a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2z"/></svg>',
   trabajo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.2" fill="currentColor" opacity=".22"/></svg>',
   churn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21H5a2 2 0 01-2-2V5a2 2 0 012-2h9"/><path d="M17 8l4 4-4 4"/><path d="M21 12h-9"/></svg>',
   hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -176,6 +179,9 @@ const NAV_SECTIONS = [
       /* La sección PRINCIPAL del sistema, arriba de todo. Es un tab normal
          (el panel se abre ADENTRO del CRM); /admin/trabajo sigue existiendo
          para la pantalla completa. */
+      /* «Equipo» va arriba de todo: es donde el equipo se habla, y lo que
+         más veces al día se abre. */
+      { id: 'equipo' as Tab, label: 'Equipo', icon: 'equipo' },
       { id: 'trabajo' as Tab, label: 'Trabajo inteligente', icon: 'trabajo' },
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
     ],
@@ -428,6 +434,8 @@ export default function CrmDashboard() {
       window.history.replaceState({}, '', u);
     }
     switchTab(destino as Tab);
+    // Si la pestaña ya estaba abierta no se remonta: avisar para que lea la URL.
+    window.dispatchEvent(new Event('crm:destino'));
   };
 
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(() => grupoDeTab(getInitialTab()));
@@ -527,7 +535,7 @@ export default function CrmDashboard() {
   const colapsoPrevio = useRef<boolean | null>(null);
   useEffect(() => {
     if (isMobile) return;
-    if (tab === 'whatsapp' || (tab as any) === 'trabajo') {
+    if (tab === 'whatsapp' || (tab as any) === 'trabajo' || (tab as any) === 'equipo') {
       if (colapsoPrevio.current === null) {
         colapsoPrevio.current = sidebarCollapsed;
         setSidebarCollapsed(true);
@@ -929,7 +937,10 @@ export default function CrmDashboard() {
             transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
         <div key={tab} className={isMobile ? ('m-tabin' + (M_AUTO_DARK.includes(tab) ? ' m-auto-dark' : '')) : undefined}>
         <Suspense fallback={<TabCargando />}>
-        {(tab as any) === 'trabajo' ? (
+        {(tab as any) === 'equipo' ? (
+          /* El chat del equipo. Las ligas ?canal=&msg=&hilo= las lee él. */
+          <ErrorBoundary><EquipoTab /></ErrorBoundary>
+        ) : (tab as any) === 'trabajo' ? (
           /* La sección principal, ADENTRO del CRM: mismo panel de
              /admin/trabajo (que sigue viva para pantalla completa). */
           <ErrorBoundary><TrabajoPanel /></ErrorBoundary>

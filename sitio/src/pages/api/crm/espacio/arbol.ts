@@ -33,6 +33,7 @@ export const GET: APIRoute = async ({ request }) => {
     no_leidos: Number(nl[c.id]?.n || 0), menciones: Number(nl[c.id]?.menciones || 0),
     ultimo_at: nl[c.id]?.ultimo_at || null,
     silenciado: !!lec[c.id]?.silenciado,
+    ultimo_leido_at: lec[c.id]?.ultimo_leido_at || null,
   }));
 
   return json({
