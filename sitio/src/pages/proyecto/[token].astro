@@ -708,6 +708,7 @@ const fechaFirma = brief.firmado_at
   if (raiz) {
     const TOKEN = raiz.getAttribute('data-token');
     const SACS = !!raiz.getAttribute('data-sacs');
+    const FIRMADO = !!raiz.getAttribute('data-firmado');
 
     // ── Firma ──────────────────────────────────────────────────────────
     const lienzo = document.getElementById('f-canvas');
@@ -890,7 +891,15 @@ const fechaFirma = brief.firmado_at
       const enTurno = ETAPAS.find((e) => e.estado === 'abierta' || e.estado === 'cambios');
       const defTurno = enTurno ? DEF.find((d) => d.clave === enTurno.clave) : null;
 
-      if (totalPreg) {
+      if (!FIRMADO) {
+        // Sin firma todas las etapas están bloqueadas, y el caso "no hay nada
+        // que hacer" se leía como "estamos revisando lo que mandaste" — un
+        // mensaje sobre algo que el cliente todavía no manda.
+        banner = '<div class="pb-aviso-global">' +
+          '<strong>Empieza firmando el brief</strong>' +
+          '<span>Con la firma se abre la primera etapa. Son ocho, y solo se contesta una a la vez. ' +
+          '<a href="#firma" data-firma>Ir a la firma</a></span></div>';
+      } else if (totalPreg) {
         banner = '<div class="pb-aviso-global" data-tono="preguntas">' +
           '<strong>' + (totalPreg === 1 ? 'Hay una pregunta esperándote' : 'Hay ' + totalPreg + ' preguntas esperándote') + '</strong>' +
           '<span>' + conPreg.map((x) => '<a href="#" data-ver="' + x.clave + '">' + esc(x.titulo) + ' (' + x.n + ')</a>').join(' · ') + '</span>' +
