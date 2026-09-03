@@ -79,7 +79,9 @@ export async function planSeguimiento(contactId: string) {
   const ultimoIntento = intentos[intentos.length - 1] || null;
   const franjas = ['mañana', 'mediodía', 'tarde'];
   const siguienteFranja = ultimoIntento ? franjas[(franjas.indexOf(ultimoIntento.franja) + 1) % 3] : 'mañana';
-  const baseNext = ultimoIntento ? Date.parse(ultimoIntento.at) + 24 * 3600e3 : (st.base_at ? Date.parse(st.base_at) + 20 * 3600e3 : null);
+  let baseNext = ultimoIntento ? Date.parse(ultimoIntento.at) + 24 * 3600e3 : (st.base_at ? Date.parse(st.base_at) + 20 * 3600e3 : null);
+  const yaToca = baseNext != null && baseNext < Date.now();   // el plazo ya venció: se prepara en el próximo tick del horario laboral
+  if (yaToca) baseNext = null;
   return {
     activo: !(pf as any)?.silenciar_ia && !st.cerrado, cerrado: st.cerrado || null, pausa_hasta: st.pausa_hasta || null, reenganche: !!st.reenganche, fase: st.fase || null,
     ciclo: st.ciclo || 1, intento_actual: Math.min(n, 3), intentos_validos: validos, intentos_total: intentos.length, max: 3,
@@ -87,7 +89,7 @@ export async function planSeguimiento(contactId: string) {
     proximo: proximo ? { id: proximo.id, mensaje: proximo.mensaje, sale_at: proximo.sale_at, tipo: proximo.plantilla ? 'plantilla' : 'texto', origen: proximo.origen, aprobado: !!proximo.aprobado_por, probabilidad: pctDe(n, proximo.plantilla ? 'plantilla' : 'texto') } : null,
     si_no_contesta: validos + (proximo ? 1 : 0) >= 3
       ? { que: 'Se agotan los tres intentos reales: pasa a llamada humana y, si sigue callado, se sugiere descalificar con fundamentos.', cuando: null, probabilidad: null }
-      : { que: `Intento ${Math.min(validos + (proximo ? 2 : 1), 3)} de 3, en franja de ${siguienteFranja}, con otro ángulo (plantilla si la ventana está cerrada).`, cuando: baseNext && !proximo ? new Date(baseNext).toISOString() : proximo ? new Date(Date.parse(proximo.sale_at) + 24 * 3600e3).toISOString() : null, probabilidad: pctDe(Math.min(validos + (proximo ? 2 : 1), 3)) },
+      : { que: `Intento ${Math.min(validos + (proximo ? 2 : 1), 3)} de 3, en franja de ${siguienteFranja}, con otro ángulo (plantilla si la ventana está cerrada).${yaToca && !proximo ? ' Ya toca: el agente lo propone en el próximo tick dentro del horario (8:00 a 17:00).' : ''}`, cuando: baseNext && !proximo ? new Date(baseNext).toISOString() : proximo ? new Date(Date.parse(proximo.sale_at) + 24 * 3600e3).toISOString() : null, probabilidad: pctDe(Math.min(validos + (proximo ? 2 : 1), 3)) },
     tasas: { '1': pctDe(1), '2': pctDe(2), '3': pctDe(3), muestra: tasas['1']?.n || 0 },
     llamada_at: st.llamada_at || null, agendada_at: st.agendada_at || null,
   };

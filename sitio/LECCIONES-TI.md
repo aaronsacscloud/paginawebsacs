@@ -162,3 +162,21 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   (monto real, fecha, nota) e historial (promedio, variación del último pago, % a tiempo).
 - **Regla nueva del repo (CLAUDE.md):** cada push para los crons ~16 min. Commitear todo y hacer UN push por bloque.
   Hoy hubo 18 pushes en dos horas: por eso el latido avisó.
+
+## 2026-09-04 · Reenganche de los que callaron (frente A)
+
+- **Por qué no entraban:** el universo de `tocarSilencios` eran los envíos DEL AGENTE; las conversaciones contestadas
+  por humanos/respond.io y calladas después no tenían envío y nunca entraban. `enrolarReenganche` (cron horario
+  `ti-reenganche`) las marca en `agente_estado.reenganche` con `base_at` = nuestro último mensaje; el universo ahora
+  las suma. Primer barrido: 39 candidatas, 38 enroladas (una en «rezagado», fuera de ETAPAS_SDR).
+- **El primer toque es RETOMAR, no un toque frío:** nota `REENGANCHE` en el prompt (retoma su último tema, novedad
+  solo si sirve, pregunta fácil, empresa/giro reales, cero pitch). Sale con `origen: 'reenganche'`. Muestra real:
+  «me quedé con la duda de qué vende La Imperial; si es ropa, calzado o joyería, te platico corto cómo se lleva el
+  inventario por talla y color sin libreta ni Excel.»
+- **Práctica:** en sombra el toque queda pendiente; «Aprobar y enviar» (Torre, Próximos envíos o el panel del inbox)
+  fuerza el envío real (`despacharEnvios({forzar})`). Cada aprobación/edición/veto ya se guarda en `ti_envios`.
+- **Plan visible:** `planSeguimiento()` (agente-hilo → `plan`) en el panel del inbox: último, próximo (con
+  «Aprobar y enviar» / «Detener»), qué pasa si no contesta y la probabilidad medida (`tasasRespuesta`: % de leads que
+  escribieron en 72 h tras el intento k; arranca con 28/16/9 hasta tener 5 muestras).
+- **Inbox:** vista «Mensajes programados» (`fi=programados`, `counts.programados`) y chip «Programado HH:MM» en la
+  lista. La franja «ya toca» del plan no muestra fechas pasadas.
