@@ -79,6 +79,14 @@ export const CSS = `
 .eq-msg .borrado{color:var(--eq-gris);font-style:italic}
 .eq-men{background:var(--eq-lila);color:var(--eq-morado-tinta);border-radius:5px;padding:0 4px;font-weight:700}
 .eq-men.yo{background:rgba(244,168,205,.35);color:${P.rosaTinta}}
+.eq-ref{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:0 1px;padding:1px 8px 1px 4px;border:1px solid rgba(155,140,250,.45);border-radius:999px;background:#fff;color:var(--eq-morado-tinta);font:inherit;font-weight:700;line-height:1.35;cursor:pointer;vertical-align:baseline;white-space:nowrap}
+.eq-ref span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-ref small{flex:0 0 auto;font-size:.625rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:0 5px;border-radius:999px;background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-ref.cliente small{background:${P.verdeAgua};color:${P.verdeTinta}}
+.eq-ref.lead small{background:${P.azulAgua};color:${P.azulTinta}}
+.eq-ref.pago small{background:${P.verdeAgua};color:${P.verdeTinta}}
+.eq-ref.cobranza small{background:${P.ambarAgua};color:${P.ambarTinta}}
+.eq-ref:hover{background:var(--eq-lila);border-color:var(--eq-morado)}
 .eq-cita{display:flex;gap:8px;align-items:center;margin:2px 0 4px;padding:3px 8px;border-left:2px solid var(--eq-morado);background:var(--eq-panel);border-radius:0 6px 6px 0;font-size:.8125rem;color:var(--eq-gris);cursor:pointer;max-width:560px}
 .eq-cita b{color:var(--eq-morado-tinta)}
 .eq-cita span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -125,6 +133,20 @@ export const CSS = `
 .eq-menciones{min-width:240px;padding:4px}
 .eq-menciones button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:0;background:none;border-radius:8px;text-align:left;color:var(--eq-tinta)}
 .eq-menciones button.sel,.eq-menciones button:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-menciones{min-width:320px;max-width:min(460px,calc(100vw - 32px));max-height:min(380px,60vh);overflow-y:auto}
+.eq-menciones .grupo{font-size:.625rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--eq-gris);padding:8px 8px 3px}
+.eq-menciones button.it{align-items:flex-start;gap:9px;padding:6px 8px}
+.eq-menciones .tip{flex:0 0 auto;margin-top:2px;font-size:.625rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:999px;background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-menciones .tip.cliente,.eq-menciones .tip.pago{background:${P.verdeAgua};color:${P.verdeTinta}}
+.eq-menciones .tip.lead{background:${P.azulAgua};color:${P.azulTinta}}
+.eq-menciones .tip.cobranza{background:${P.ambarAgua};color:${P.ambarTinta}}
+.eq-menciones .dos{display:flex;flex-direction:column;min-width:0}
+.eq-menciones .dos b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-menciones .dos small{font-size:.6875rem;color:var(--eq-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-menciones button.sel .dos small,.eq-menciones button:hover .dos small{color:var(--eq-morado-tinta)}
+.eq-menciones .vacio{padding:10px 8px;font-size:.8125rem;color:var(--eq-gris)}
+.eq-menciones .pista{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 4px;border-top:1px solid var(--eq-linea)}
+.eq-menciones .pista button{width:auto;padding:2px 8px;border:1px solid var(--eq-linea);border-radius:999px;font-size:.75rem;font-weight:700;color:var(--eq-gris)}
 .eq-emojis{width:320px;max-width:calc(100vw - 32px)}
 .eq-emojis .rapidos{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid var(--eq-linea)}
 .eq-emojis .rapidos button,.eq-emojis .grid button{width:34px;height:34px;border:0;background:none;border-radius:8px;font-size:1.25rem;line-height:1;display:inline-flex;align-items:center;justify-content:center}
@@ -145,6 +167,35 @@ export const CSS = `
 .eq-grab .onda i{display:block;width:3px;border-radius:2px;background:var(--eq-morado);min-height:3px}
 .eq-lado{width:380px;flex:0 0 380px;border-left:1px solid var(--eq-linea);display:flex;flex-direction:column;background:var(--eq-fondo);min-width:0}
 .eq-lado .eq-cab h2{font-size:.9375rem}
+.eq-lado.ficha{width:min(760px,58%);flex-basis:min(760px,58%)}
+.eq-lado.ficha .eq-cab h2{flex:1;min-width:0;gap:8px}
+.eq-lado.ficha .eq-cab .eq-btn{font-size:.75rem;padding:5px 10px;white-space:nowrap}
+.eq-ficha-tipo{flex:0 0 auto;font-size:.625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-ficha-tipo.cliente,.eq-ficha-tipo.pago{background:${P.verdeAgua};color:${P.verdeTinta}}
+.eq-ficha-tipo.lead{background:${P.azulAgua};color:${P.azulTinta}}
+.eq-ficha-tipo.cobranza{background:${P.ambarAgua};color:${P.ambarTinta}}
+.eq-ficha-nombre{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-ficha{padding:14px 18px 24px;display:flex;flex-direction:column;gap:12px}
+.eq-ficha-cifra{background:linear-gradient(135deg,var(--eq-lila),rgba(244,168,205,.22));border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.eq-ficha-cifra small{font-size:.625rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--eq-gris)}
+.eq-ficha-cifra b{font-size:1.6rem;font-weight:800;color:${P.verdeTinta};letter-spacing:-.01em}
+.eq-ficha-cifra.mal b{color:${P.rojoTinta}}
+.eq-ficha-cifra.aviso b{color:${P.ambarTinta}}
+.eq-ficha-cifra.bien b{font-size:1.2rem}
+.eq-ficha-cifra span{font-size:.8125rem;color:var(--eq-gris)}
+.eq-datos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 14px}
+.eq-dato{display:flex;flex-direction:column;gap:1px;min-width:0}
+.eq-dato small{font-size:.625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--eq-gris)}
+.eq-dato span{font-size:.875rem;overflow-wrap:anywhere}
+.eq-ficha-liga{display:flex;flex-direction:column;gap:1px;text-align:left;border:1px solid var(--eq-linea);border-radius:10px;padding:10px 12px;background:#fff;font:inherit;color:inherit;cursor:pointer;border-left:3px solid var(--eq-morado)}
+.eq-ficha-liga:hover{background:var(--eq-lila)}
+.eq-ficha-liga.quieto{cursor:default}
+.eq-ficha-liga.quieto:hover{background:#fff}
+.eq-ficha-liga small{font-size:.625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--eq-gris)}
+.eq-ficha-liga b{font-weight:700}
+.eq-ficha-liga span{font-size:.75rem;color:var(--eq-gris)}
+.eq-ficha-acciones{display:flex;flex-wrap:wrap;gap:8px}
+.eq-ficha-acciones .eq-btn{font-size:.8125rem;text-decoration:none;display:inline-flex;align-items:center}
 .eq-vacio{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--eq-gris);padding:24px;text-align:center}
 .eq-vacio b{color:var(--eq-tinta);font-size:1rem}
 .eq-btn{border:1.5px solid var(--eq-morado);color:var(--eq-morado-tinta);background:#fff;border-radius:9px;padding:7px 12px;font-weight:700}
@@ -242,6 +293,8 @@ button.eq-punto-chip{cursor:pointer}
   .eq.en-canal .eq-arbol{display:none}
   .eq:not(.en-canal) .eq-canal{display:none}
   .eq-lado{position:fixed;inset:0;width:100%;flex:none;z-index:900;border-left:0}
+  .eq-lado.ficha{width:100%;flex-basis:auto}
+  .eq-ficha{padding:12px 14px 24px}
   .eq-msg .hora-h{display:none}
   .eq-acc{display:none!important}
   .eq-sec-mas{opacity:1}
@@ -279,7 +332,13 @@ export function Avatar({ p, size = 32, estado, borde }: { p: { nombre: string; f
 
 // ── El texto de un mensaje ──────────────────────────────────────────────────
 // Menciones guardadas como @[Nombre](uuid); ligas; `código`; **negrita**.
-const RE = /(@\[[^\]]+\]\([0-9a-f-]{36}\))|(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])|(`[^`\n]+`)|(\*\*[^*\n]+\*\*)/gi;
+// Las citas (@[Nombre](cotizacion:uuid)) se pintan como chip: al tocarlo se
+// abre la ficha a un lado del chat (evento crm:ficha, lo escucha Equipo).
+const RE = /(@\[[^\]]+\]\((?:[a-z]+:)?[0-9a-f-]{36}\))|(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])|(`[^`\n]+`)|(\*\*[^*\n]+\*\*)/gi;
+export const CITA_ETIQ: Record<string, string> = { cotizacion: 'Cotización', cliente: 'Cliente', lead: 'Lead', pago: 'Pago', cobranza: 'Cobranza' };
+export function abrirFicha(tipo: string, id: string, nombre?: string) {
+  window.dispatchEvent(new CustomEvent('crm:ficha', { detail: { tipo, id, nombre } }));
+}
 export function Texto({ t, yo }: { t: string; yo: string }) {
   const partes = useMemo(() => {
     const out: any[] = []; let i = 0; let m: RegExpExecArray | null; let k = 0;
@@ -287,7 +346,11 @@ export function Texto({ t, yo }: { t: string; yo: string }) {
     while ((m = RE.exec(t))) {
       if (m.index > i) out.push(t.slice(i, m.index));
       const s = m[0];
-      if (m[1]) { const mm = /^@\[([^\]]+)\]\(([^)]+)\)$/.exec(s)!; out.push(<span key={k++} className={'eq-men' + (mm[2] === yo ? ' yo' : '')}>@{mm[1]}</span>); }
+      if (m[1]) {
+        const mm = /^@\[([^\]]+)\]\((?:([a-z]+):)?([^)]+)\)$/i.exec(s)!;
+        if (mm[2]) out.push(<button key={k++} type="button" className={'eq-ref ' + mm[2]} onClick={() => abrirFicha(mm[2], mm[3], mm[1])} title={`Ver ${CITA_ETIQ[mm[2]] || mm[2]}`}><small>{CITA_ETIQ[mm[2]] || mm[2]}</small><span>{mm[1]}</span></button>);
+        else out.push(<span key={k++} className={'eq-men' + (mm[3] === yo ? ' yo' : '')}>@{mm[1]}</span>);
+      }
       else if (m[2]) out.push(<a key={k++} href={s} target="_blank" rel="noopener noreferrer">{s.length > 60 ? s.slice(0, 57) + '…' : s}</a>);
       else if (m[3]) out.push(<code key={k++}>{s.slice(1, -1)}</code>);
       else if (m[4]) out.push(<b key={k++}>{s.slice(2, -2)}</b>);

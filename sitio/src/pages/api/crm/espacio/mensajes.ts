@@ -11,7 +11,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import {
-  json, quien, esUuid, emitir, canalDe, puedeVerCanal, darForma, SELECT_MENSAJE, LIMITES,
+  json, quien, esUuid, emitir, canalDe, puedeVerCanal, darForma, SELECT_MENSAJE, LIMITES, extraerCitas, CITA_TIPOS_ARROBA,
   pasaRitmo, equipo, extraerMenciones, type Adjunto,
 } from '../../../../lib/crm/espacio.lib';
 import { avisar } from '../../../../lib/crm/espacio-avisos';
@@ -19,7 +19,7 @@ import { avisar } from '../../../../lib/crm/espacio-avisos';
 export const prerender = false;
 
 const ADJ_TIPOS = new Set(['imagen', 'audio', 'gif', 'archivo']);
-const CITA_TIPOS = new Set(['cliente', 'lead', 'tarea', 'reunion', 'cotizacion', 'corte', 'canal', 'wiki']);
+const CITA_TIPOS = new Set(['cliente', 'lead', 'tarea', 'reunion', 'cotizacion', 'corte', 'canal', 'wiki', 'pago', 'cobranza']);
 
 function limpiarAdjuntos(a: any): Adjunto[] | string {
   if (a === undefined || a === null) return [];
@@ -51,6 +51,14 @@ function limpiarCitas(c: any): any[] | string {
     out.push({ tipo: x.tipo, id: x.id, nombre: String(x.nombre || '').slice(0, 120) });
   }
   return out;
+}
+
+/** Las citas explícitas más las que van dentro del texto como @[Nombre](tipo:id),
+ *  sin repetir: la pastilla y el chip inline apuntan a lo mismo. */
+function unirCitas(explicitas: any[], texto: string): any[] {
+  const out = [...explicitas];
+  for (const c of extraerCitas(texto)) if (!out.some(x => x.tipo === c.tipo && x.id === c.id)) out.push(c);
+  return out.slice(0, 10);
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -132,8 +140,9 @@ export const POST: APIRoute = async ({ request }) => {
   const texto = String(b.texto ?? '').replace(/\r\n/g, '\n').trim();
   const adjuntos = limpiarAdjuntos(b.adjuntos);
   if (typeof adjuntos === 'string') return json({ error: adjuntos }, 400);
-  const citas = limpiarCitas(b.citas);
-  if (typeof citas === 'string') return json({ error: citas }, 400);
+  const citas0 = limpiarCitas(b.citas);
+  if (typeof citas0 === 'string') return json({ error: citas0 }, 400);
+  const citas = unirCitas(citas0, texto);
   if (!texto && !adjuntos.length) return json({ error: 'Escribe algo o adjunta algo' }, 400);
   if (texto.length > LIMITES.texto) return json({ error: `Máximo ${LIMITES.texto} caracteres` }, 400);
   if (!pasaRitmo(`msg:${yo.id}`, LIMITES.mensajes_por_minuto)) return json({ error: 'Muy rápido: espera un momento' }, 429);
@@ -249,7 +258,9 @@ export const PUT: APIRoute = async ({ request }) => {
   // editar_minutos = 0 → sin ventana: el autor corrige su texto cuando quiera (queda "(editado)").
   if (LIMITES.editar_minutos > 0 && Date.now() - new Date(m.created_at).getTime() > LIMITES.editar_minutos * 60_000) return json({ error: `Solo se edita en los primeros ${LIMITES.editar_minutos} minutos` }, 400);
   const menciones = extraerMenciones(texto, await equipo());
-  const { data, error } = await supabase.from('espacio_mensajes').update({ texto, menciones, editado_at: new Date().toISOString() }).eq('id', m.id).select(SELECT_MENSAJE).single();
+  // Al editar, las citas del texto se recalculan; las que puso el sistema (sin @ en el texto) se conservan.
+  const citas = unirCitas((m.citas || []).filter((c: any) => !CITA_TIPOS_ARROBA.has(c.tipo)), texto);
+  const { data, error } = await supabase.from('espacio_mensajes').update({ texto, menciones, citas, editado_at: new Date().toISOString() }).eq('id', m.id).select(SELECT_MENSAJE).single();
   if (error) return json({ error: error.message }, 500);
   await emitir({ tipo: 'msg_upd', canal_id: m.canal_id, id: m.id, hilo_de: m.hilo_de });
   return json({ ok: true, mensaje: (await darForma([data], yo.id))[0] });

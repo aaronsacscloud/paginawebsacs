@@ -2,13 +2,14 @@
 // búsqueda a la derecha. Ligas profundas: ?canal=&msg=&hilo= (las pone
 // irADestino desde una notificación y también sirven pegadas en el navegador).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Canal as C, Mensaje as M } from './api';
+import type { Canal as C, Mensaje as M, Cita } from './api';
 import { api, type Arbol as A, hace } from './api';
 import { useRealtime, type Senal } from './useRealtime';
 import { useCss, Avatar, Ic, useToast, textoPlano } from './ui';
 import Arbol from './Arbol';
 import { ModalCanal } from './Gestion';
 import Canal from './Canal';
+import Ficha from './Ficha';
 import Sala from './Sala';
 import Cargando from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
@@ -32,7 +33,8 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const [canalId, setCanalId] = useState<string | null>(null);
   const [irA, setIrA] = useState<string | null>(null);
   const [hilo, setHilo] = useState<M | null>(null);
-  const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | null>(null);
+  const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | 'ficha' | null>(null);
+  const [ficha, setFicha] = useState<Cita | null>(null);   // la cotización/cliente/lead/pago/cobranza citada con @ que se está viendo
   const [nFijados, setNFijados] = useState(0);
   const [luz, setLuz] = useState<string | null>(null);
   const [ajustes, setAjustes] = useState(false);          // el engrane de la cabecera: editar el canal abierto
@@ -122,6 +124,16 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
     try { const r = await api.abrirDirecto(personaId); const a = await cargarArbol(); abrir(r.canal.id, null, null, a); } catch (e: any) { toast(e.message); }
   };
   const abrirHilo = (m: M) => { setHilo(m); setLado('hilo'); };
+  // Un chip @cotización/@cliente/… en un mensaje (o una pastilla) pide su ficha a un lado del chat.
+  useEffect(() => {
+    const f = (e: Event) => {
+      const d = (e as CustomEvent).detail || {};
+      if (!d.tipo || !d.id) return;
+      setFicha({ tipo: d.tipo, id: d.id, nombre: d.nombre || '' }); setLado('ficha');
+    };
+    window.addEventListener('crm:ficha', f);
+    return () => window.removeEventListener('crm:ficha', f);
+  }, []);
   // El canal abierto se archivó o se borró (aquí o en el otro navegador): se sale de él sin dejar la URL apuntando a la nada.
   const cerrado = useCallback((id: string) => {
     if (id !== canalId) return;
@@ -187,6 +199,12 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
       {lado === 'fijados' && canal && (
         <aside className="eq-lado">
           <Fijados canal={canal} movil={movil} onCerrar={() => setLado(null)} onIr={(m) => { abrir(m.canal_id, m.id, m.hilo_de); if (movil) setLado(null); }} />
+        </aside>
+      )}
+      {lado === 'ficha' && ficha && (
+        <aside className="eq-lado ficha">
+          <Ficha key={ficha.tipo + ficha.id} cita={ficha} movil={movil} onCerrar={() => { setLado(null); setFicha(null); }}
+            onIr={d => window.dispatchEvent(new CustomEvent('crm:ir', { detail: d }))} onAbrirOtra={c => setFicha(c)} />
         </aside>
       )}
       {lado === 'buscar' && (

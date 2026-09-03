@@ -138,7 +138,9 @@ export type Adjunto = {
   transcripcion?: string | null; transcripcion_estado?: 'ok' | 'pendiente' | 'error';
 };
 
-export type Cita = { tipo: 'cliente' | 'lead' | 'tarea' | 'reunion' | 'cotizacion' | 'corte' | 'canal' | 'wiki'; id: string; nombre?: string };
+export type Cita = { tipo: 'cliente' | 'lead' | 'tarea' | 'reunion' | 'cotizacion' | 'corte' | 'canal' | 'wiki' | 'pago' | 'cobranza'; id: string; nombre?: string };
+/** Los tipos que se pueden etiquetar con @ desde la caja (los demás los escribe el sistema). */
+export const CITA_TIPOS_ARROBA = new Set(['cotizacion', 'cliente', 'lead', 'pago', 'cobranza']);
 
 export const SELECT_MENSAJE = 'id, canal_id, hilo_de, autor_id, texto, responde_a, menciones, adjuntos, citas, sesion_id, punto_id, editado_at, borrado_at, fijado_at, fijado_por, metadata, created_at';
 
@@ -226,6 +228,20 @@ export function extraerMenciones(texto: string, personas: Persona[]): string[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(texto))) { const id = m[2]; if (esUuid(id) && personas.some(p => p.id === id) && !out.includes(id)) out.push(id); }
   return out.slice(0, LIMITES.menciones);
+}
+
+/** Saca las @citas del texto: `@[Nombre](tipo:uuid)` → { tipo, id, nombre }.
+ *  Es el mismo formato de las menciones a personas con el tipo antepuesto, así
+ *  la caja inserta una sola cosa y el texto se sigue leyendo plano. */
+export function extraerCitas(texto: string): Cita[] {
+  const out: Cita[] = [];
+  const re = /@\[([^\]]{1,120})\]\(([a-z]+):([0-9a-f-]{36})\)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(texto))) {
+    const tipo = m[2].toLowerCase(), id = m[3].toLowerCase();
+    if (CITA_TIPOS_ARROBA.has(tipo) && esUuid(id) && !out.some(c => c.tipo === tipo && c.id === id)) out.push({ tipo: tipo as Cita['tipo'], id, nombre: m[1] });
+  }
+  return out.slice(0, 10);
 }
 
 /** ¿Esto parece una credencial? Aviso, no bloqueo: la regla es que van al gestor. */

@@ -8,6 +8,11 @@ export type Canal = {
   regla_reunion: { dia_iso: number; hora: string } | null; participantes: string[]; orden: number;
   no_leidos: number; menciones: number; ultimo_at: string | null; silenciado: boolean; ultimo_leido_at: string | null;
 };
+/** Lo que se puede etiquetar con @ además de las personas. */
+export type TipoCita = 'cotizacion' | 'cliente' | 'lead' | 'pago' | 'cobranza';
+export type Cita = { tipo: TipoCita; id: string; nombre: string };
+export type ItemMencion = Cita & { sub?: string; monto?: number; estado?: string; company_id?: string | null };
+export type GrupoMencion = { tipo: TipoCita; etiqueta: string; items: ItemMencion[] };
 export type Adjunto = {
   tipo: 'imagen' | 'audio' | 'gif' | 'archivo'; path?: string; thumb?: string; url?: string; thumb_url?: string;
   nombre?: string; bytes?: number; w?: number; h?: number; duracion_s?: number;
@@ -80,6 +85,9 @@ export const api = {
   subir: (b: { tipo: 'imagen' | 'audio' | 'thumb'; mime: string; bytes: number; nombre?: string }) => pedir<{ path: string; url: string; token: string }>('POST', '/subir', b),
   transcribir: (path: string) => pedir<{ texto: string | null; error?: string }>('POST', '/transcribir', { path }),
   gifs: (q: string) => pedir<{ gifs: { id: string; url: string; preview: string; w: number; h: number }[]; sin_llave?: boolean }>('GET', `/gifs?q=${encodeURIComponent(q)}`),
+  // El @ de la caja: cotizaciones, clientes, leads, pagos y cobranza por nombre.
+  menciones: (q: string, tipo?: string | null) => pedir<{ grupos: GrupoMencion[] }>('GET', `/menciones?q=${encodeURIComponent(q)}${tipo ? `&tipo=${tipo}` : ''}`),
+  ficha: (tipo: string, id: string) => pedir<{ ficha: any }>('GET', `/menciones?ficha=${tipo}&id=${id}`),
   buscar: (q: string, canal_id?: string) => pedir<{ resultados: Mensaje[] }>('GET', `/buscar?q=${encodeURIComponent(q)}${canal_id ? `&canal_id=${canal_id}` : ''}`),
   // Salas
   sala: (canal_id: string) => pedir<any>('GET', `/sala?canal_id=${canal_id}`),

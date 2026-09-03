@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import type { Mensaje as M } from './api';
 import { hora, hace } from './api';
-import { Avatar, Texto, Emojis, RAPIDOS, Ic, useFuera } from './ui';
+import { Avatar, Texto, Emojis, RAPIDOS, Ic, useFuera, abrirFicha } from './ui';
 
 export type Acciones = {
   reaccionar: (m: M, emoji: string) => void;
@@ -128,7 +128,10 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil,
 /* Las pastillas al registro: el lead, el cliente, la conversación o la pantalla
    de la que habla el mensaje. Mismo criterio que la campana: de lo más concreto
    (la conversación) a lo más vago (una pestaña). */
-const ETIQ: Record<string, string> = { lead: 'Lead', cliente: 'Cliente', tarea: 'Tarea', reunion: 'Reunión', cotizacion: 'Cotización', corte: 'Corte', canal: 'Canal', wiki: 'Wiki' };
+const ETIQ: Record<string, string> = { lead: 'Lead', cliente: 'Cliente', tarea: 'Tarea', reunion: 'Reunión', cotizacion: 'Cotización', corte: 'Corte', canal: 'Canal', wiki: 'Wiki', pago: 'Pago', cobranza: 'Cobranza' };
+// Estos cinco tienen ficha a un lado del chat (la misma info que carga el CRM);
+// el resto solo navega a su pestaña.
+const CON_FICHA = new Set(['cotizacion', 'cliente', 'lead', 'pago', 'cobranza']);
 function destinoCita(c: any): string | null {
   if (c.tipo === 'lead') return `pipeline?lead=${c.id}`;
   if (c.tipo === 'cliente') return `clientes?company=${c.id}`;
@@ -145,9 +148,12 @@ function Pastillas({ m, acc }: { m: M; acc: Acciones }) {
     : s.destino && !s.contact_id && !s.company_id ? { t: 'Abrir', d: s.destino } : null) : null;
   return (
     <div className="eq-pastillas">
-      {m.citas.filter(c => c && c.tipo !== 'reunion' && c.tipo !== 'canal').map((c: any, i: number) => {
+      {m.citas.filter(c => c && c.tipo !== 'reunion' && c.tipo !== 'canal'
+        // Las citas escritas con @ ya van como chip dentro del texto: no se repiten abajo.
+        && !(m.texto || '').includes(`](${c.tipo}:${c.id})`)).map((c: any, i: number) => {
+        const ficha = CON_FICHA.has(c.tipo);
         const d = destinoCita(c);
-        return <button key={i} className="eq-pastilla" disabled={!d} onClick={() => d && acc.irACrm(d)} title={d ? 'Abrir en el CRM' : undefined}><small>{ETIQ[c.tipo] || c.tipo}</small>{c.nombre || c.id.slice(0, 8)}</button>;
+        return <button key={i} className="eq-pastilla" disabled={!d && !ficha} onClick={() => ficha ? abrirFicha(c.tipo, c.id, c.nombre) : d && acc.irACrm(d)} title={ficha ? 'Ver la ficha' : d ? 'Abrir en el CRM' : undefined}><small>{ETIQ[c.tipo] || c.tipo}</small>{c.nombre || c.id.slice(0, 8)}</button>;
       })}
       {abrir && ('u' in abrir
         ? <a className="eq-pastilla ir" href={abrir.u!} target="_blank" rel="noopener">{abrir.t} →</a>
