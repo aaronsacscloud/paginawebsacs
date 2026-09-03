@@ -351,7 +351,20 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                         lo dice, se olvida. Igual que en el teléfono. */}
                     {hayBorrador(c.id)
                       ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
-                      : c.virtual ? 'Sin conversación' : <>{c.programado_at && <span title={`El agente tiene un mensaje programado (${c.programado_origen || 'respuesta'})`} style={{ display: 'inline-block', marginRight: 6, fontSize: 10, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '1px 7px', verticalAlign: 'middle' }}>Programado {new Date(c.programado_at).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' })}</span>}{`${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}</>}
+                      : c.virtual ? 'Sin conversación' : <>{c.programado_at && (() => {
+                      /* La hora sola MENTÍA: 40 conversaciones decían «Programado
+                         09:56» y solo una iba a salir. El resto esperaba un clic o
+                         se iba a volver sugerencia. Una hora es una promesa; si el
+                         mensaje no sale a esa hora, no se enseña como si saliera. */
+                      const hora = new Date(c.programado_at).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' });
+                      const E: Record<string, { txt: string; bg: string; fg: string; tit: string }> = {
+                        sale:      { txt: `Sale ${hora}`, bg: '#EEECFE', fg: '#4c1d95', tit: `Aprobado: sale solo a las ${hora}` },
+                        espera_ok: { txt: 'Espera tu OK', bg: '#fff8e8', fg: '#9a6a10', tit: 'Está listo pero NO sale hasta que lo apruebes en Trabajo inteligente' },
+                        propuesta: { txt: 'Propuesta', bg: '#f2f2f5', fg: '#6b6b76', tit: 'El agente está en sombra: esto no sale solo, se vuelve sugerencia para que un consultor la decida' },
+                      };
+                      const e = E[c.programado_estado || 'sale'] || E.sale;
+                      return <span title={`${e.tit} · origen: ${c.programado_origen || 'respuesta'}`} style={{ display: 'inline-block', marginRight: 6, fontSize: 10, fontWeight: 800, background: e.bg, color: e.fg, borderRadius: 999, padding: '1px 7px', verticalAlign: 'middle' }}>{e.txt}</span>;
+                    })()}{`${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}</>}
                   </span>
                   {/* Espera tu respuesta: el cliente escribió y nadie contestó. */}
                   {c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.no_leidos && (

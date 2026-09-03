@@ -21,7 +21,7 @@ const _GET: APIRoute = async () => {
   const [subsRes, goalsRes, compRes] = await Promise.all([
     // whatsapp/nombre_comercial: la lista de "por cobrar" manda el estado de
     // cuenta desde ahí, y para eso necesita a quién y con qué nombre.
-    supabase.from('subscriptions').select('*, contacts(nombre, whatsapp), companies(id, nombre, nombre_comercial, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre, whatsapp))').limit(2000),
+    supabase.from('subscriptions').select('*, contacts(nombre, whatsapp, telefono), companies(id, nombre, nombre_comercial, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre, whatsapp, telefono))').limit(2000),
     supabase.from('crm_goals').select('*'),
     supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, soporte_abiertos, soporte_estancado, soporte_sentimiento, contacts(nombre)').not('sacs_account', 'is', null),
   ]);
@@ -104,6 +104,12 @@ const _GET: APIRoute = async () => {
       company_id: co?.id || null,
       nombre_comercial: co?.nombre_comercial || null,
       whatsapp: (s as any).contacts?.whatsapp || co?.contacts?.[0]?.whatsapp || null,
+      /* El teléfono, para poder MARCAR desde la fila. Cobrar es llamar: tener
+         que abrir la ficha del cliente para copiar un número convierte cada
+         cobro en tres clics y una pestaña más. Se prefiere el WhatsApp porque
+         es el número por el que de verdad contestan; el fijo es el respaldo. */
+      telefono: (s as any).contacts?.telefono || co?.contacts?.[0]?.telefono || null,
+      contacto: (s as any).contacts?.nombre || co?.contacts?.[0]?.nombre || null,
     };
     // ── Las vitalicias NO se proyectan ──
     // Un pago único no vuelve a suceder: o ya entró, o entrará una sola vez.
@@ -151,6 +157,8 @@ const _GET: APIRoute = async () => {
       company_id: (s as any).companies?.id || null,
       nombre_comercial: (s as any).companies?.nombre_comercial || null,
       whatsapp: (s as any).contacts?.whatsapp || (s as any).companies?.contacts?.[0]?.whatsapp || null,
+      telefono: (s as any).contacts?.telefono || (s as any).companies?.contacts?.[0]?.telefono || null,
+      contacto: (s as any).contacts?.nombre || (s as any).companies?.contacts?.[0]?.nombre || null,
       dias_vencida: Math.floor((hoy.getTime() - new Date(s.proxima_factura).getTime()) / 86400000),
       monto: r2(Number(s.monto_proximo ?? s.precio) || 0),
     }))

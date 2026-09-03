@@ -19,10 +19,14 @@ import { confirmar } from '../../../../lib/ui/confirmar';
    y seis caminos: son ninguno. Estas tres son las que se usan a diario; el
    resto sigue a un clic de «Ver más», no escondido.
    Decisión del dueño (2-sep-2026). */
-/* «Mensajes programados» se suma a las de siempre (3-sep-2026): son mensajes
-   que YA van a salir solos, con fecha puesta. Escondido tras «Ver más», nadie
-   revisa lo que está a punto de mandarse — y eso es justo lo que hay que poder
-   frenar a tiempo. */
+/* La cola del agente se suma a las de siempre (3-sep-2026): escondida tras
+   «Ver más», nadie revisa lo que está a punto de mandarse — y eso es justo lo
+   que hay que poder frenar a tiempo.
+   Se llamaba «Mensajes programados» y el nombre mentía: de 40, UNO iba a salir
+   solo; 38 esperaban el OK del dueño y 1 se iba a volver sugerencia. Prometer
+   un envío que no ocurre es peor que no avisar: se espera un WhatsApp que
+   nunca llega. «Cola del agente» dice lo que hay —cosas encoladas— y cada
+   renglón dice su estado real. */
 const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta', 'programados'];
 
 const BANDEJAS = [
@@ -34,8 +38,9 @@ const BANDEJAS = [
   // esta bandeja es la contraria — te escribieron y nadie respondió.
   { id: 'no_leidas', label: 'No contestadas', Ico: IcoBurbuja },
   { id: 'sin_respuesta', label: 'Sin respuesta de ellos', Ico: IcoBurbuja },
-  // Lo que el agente va a mandar: el vendedor lo ve, lo aprueba o lo detiene desde aquí.
-  { id: 'programados', label: 'Mensajes programados', Ico: IcoCalendario },
+  // Lo que el agente PROPONE mandar: el vendedor lo ve, lo aprueba o lo detiene
+  // desde aquí. Casi nada sale solo — la etiqueta de cada fila dice cuál sí.
+  { id: 'programados', label: 'Cola del agente', Ico: IcoCalendario },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
   // El filtro existía en el backend y NO había cómo llegar a él: sacabas una
   // conversación del inbox y no volvías a verla nunca, aunque el código sí

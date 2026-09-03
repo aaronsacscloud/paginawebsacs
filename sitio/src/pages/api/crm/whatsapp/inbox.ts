@@ -18,6 +18,7 @@ import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { cumpleVista, type ConfigVista } from '../../../../lib/whatsapp/filtros';
+import { leerConfig as leerConfigAgente } from '../../../../lib/crm/ti/motor';
 
 export const prerender = false;
 
@@ -254,10 +255,36 @@ const _GET: APIRoute = async ({ request, url }) => {
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
   );
-  // MENSAJES PROGRAMADOS (decisión 2026-09-03): lo que el agente va a mandar, visible desde el inbox.
-  const { data: progr } = await supabase.from('ti_envios').select('conversation_id, sale_at, origen').in('estado', ['pendiente', 'enviando']).order('sale_at');
+  /* MENSAJES PROGRAMADOS (decisión 2026-09-03) · lo que el agente va a mandar.
+   *
+   * La hora SOLA mentía. Medido el 3-sep: 40 conversaciones enseñaban
+   * «Programado 09:56» y solo UNA iba a salir a esa hora. Las otras 39 estaban
+   * esperando un clic del dueño (reenganche) o iban a convertirse en sugerencia
+   * porque el agente está en sombra. El dueño lo reportó con las palabras
+   * exactas del síntoma: «no se entiende qué es ni qué esperar, y no me ha
+   * llegado el WhatsApp».
+   *
+   * Una hora es una promesa. Si el mensaje no sale a esa hora, la etiqueta no
+   * puede enseñarla como si fuera a salir. Ahora viaja el ESTADO REAL:
+   *   'sale'      → aprobado: a esa hora sale de verdad.
+   *   'espera_ok' → reenganche sin aprobar: no sale hasta que alguien lo apruebe.
+   *   'propuesta' → el agente está en sombra: al vencer la hora se vuelve
+   *                 sugerencia para que un consultor la decida. No sale sola. */
+  const { data: progr } = await supabase.from('ti_envios')
+    .select('conversation_id, sale_at, origen, aprobado_por, telefono')
+    .in('estado', ['pendiente', 'enviando']).order('sale_at');
+  const cfgAg: any = await leerConfigAgente();
+  const enSombra = (cfgAg?.agente_modo || 'sombra') === 'sombra' || !(await (await import('../../../../lib/whatsapp/permisos')).permitido('agente_sdr'));
+  const telsPrueba = new Set((cfgAg?.agente_prueba_telefonos || []).map((t: any) => String(t).replace(/\D/g, '')));
+  const esPruebaTel = (t: string | null) => !!t && telsPrueba.has(String(t).replace(/\D/g, ''));
   const programado = new Map<string, any>(); for (const p of progr || []) if (p.conversation_id && !programado.has(p.conversation_id)) programado.set(p.conversation_id, p);
-  for (const c of todas) { const p = programado.get(c.id); if (p) { c.programado_at = p.sale_at; c.programado_origen = p.origen; } }
+  for (const c of todas) {
+    const p = programado.get(c.id); if (!p) continue;
+    c.programado_at = p.sale_at; c.programado_origen = p.origen;
+    c.programado_estado = p.aprobado_por || esPruebaTel(p.telefono) ? 'sale'
+      : p.origen === 'reenganche' ? 'espera_ok'
+      : enSombra ? 'propuesta' : 'sale';
+  }
   const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, programados: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
     if (c.programado_at) counts.programados++;

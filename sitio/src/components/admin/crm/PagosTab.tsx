@@ -18,6 +18,7 @@ import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
+import PanelCobranzaWA from './PanelCobranzaWA';
 import CobranzaTab from './CobranzaTab';
 import KpiCard from './ui/KpiCard';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -62,6 +63,46 @@ function nombreEmpresa(co: any): string {
 }
 
 // Semáforo de mora: 1-7 días ámbar, 8-30 naranja, +30 rojo.
+/* El teléfono en la fila, marcable.
+ *
+ * Cobrar es llamar. Tener que abrir la ficha del cliente para copiar un número
+ * convierte cada cobro en tres clics y una pestaña más, y en una lista de 13
+ * vencidos eso es lo que hace que la lista no se trabaje.
+ *
+ * Se prefiere el WhatsApp sobre el fijo porque es el número por el que de
+ * verdad contestan. `tel:` marca en el celular y abre la app del escritorio;
+ * el icono de WhatsApp va aparte porque perseguir un cobro casi siempre
+ * empieza por ahí, no por una llamada.
+ *
+ * Sin número NO se pinta un hueco: se dice que falta y se ofrece ponerlo. Un
+ * guion no le dice a nadie qué hacer. */
+function TelefonoCobro({ cobro, onFicha }: { cobro: any; onFicha?: (companyId: string) => void }) {
+  const crudo = String(cobro?.whatsapp || cobro?.telefono || '').trim();
+  if (!crudo) return (
+    <button onClick={() => cobro.company_id && onFicha?.(cobro.company_id)}
+      style={{ background: 'none', border: 'none', padding: 0, marginTop: 2, fontSize: '0.7rem', color: '#b08900', cursor: cobro.company_id ? 'pointer' : 'default', fontFamily: 'inherit', textAlign: 'left' }}>
+      sin teléfono{cobro.company_id ? ' · agregar' : ''}
+    </button>
+  );
+  // `tel:` no acepta espacios ni paréntesis; el humano sí los quiere ver.
+  const marcable = crudo.replace(/[^\d+]/g, '');
+  const esWa = !!cobro?.whatsapp;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 }}>
+      <a href={`tel:${marcable}`} title="Marcar"
+        style={{ fontSize: '0.72rem', color: '#5B4BD6', textDecoration: 'none', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        {crudo}
+      </a>
+      {esWa && (
+        <a href={`https://wa.me/${marcable.replace(/^\+/, '')}`} target="_blank" rel="noopener" title="Escribirle por WhatsApp"
+          style={{ fontSize: '0.66rem', fontWeight: 700, color: '#1E8A63', background: '#eaf8f2', borderRadius: 5, padding: '1px 5px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          WA
+        </a>
+      )}
+    </div>
+  );
+}
+
 function moraBadge(dias: number) {
   const [bg, fg] = dias >= 30 ? ['#fde8e8', '#b93333'] : dias >= 8 ? ['#ffedd5', '#c2410c'] : ['#fef3c7', '#b45309'];
   return { background: bg, color: fg, padding: '2px 8px', borderRadius: 6, fontWeight: 700 as const, fontSize: 11 };
@@ -222,6 +263,7 @@ export default function PagosTab() {
   const [showPago, setShowPago] = useState(false);
   const [pagoPrefill, setPagoPrefill] = useState<any>(null);
   const [drawerCompany, setDrawerCompany] = useState<string | null>(null);
+  const [waCobranza, setWaCobranza] = useState<'vencidos' | 'proximos' | null>(null);
   // Menú de acciones de un pago: posición fija con las coordenadas del botón.
   // Un panel `absolute` dentro de la tabla queda recortado por el overflow y
   // solo se ve el de la primera fila — ya pasó en la ficha del cliente.
@@ -529,7 +571,8 @@ export default function PagosTab() {
       {/* ── Por cobrar (vencidos + próximos) ── */}
       {vista === 'cobrar' && (
       <div style={S.card}>
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Por cobrar
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontWeight: 800 }}>Por cobrar
           <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · {vencidasVis.length + proximosVis.length} cobros · {fmt([...vencidasVis, ...proximosVis].reduce((a, v) => a + (Number(v.monto) || 0), 0))}</span>
           {filtroCobrar && (
             <button onClick={() => setFiltroCobrar('')}
@@ -537,6 +580,21 @@ export default function PagosTab() {
               {filtroCobrar === 'semana' ? 'Solo esta semana' : 'Solo vencidos'} ✕
             </button>
           )}
+        </div>
+        {/* Escribirles a todos, desde aquí. El panel enseña la plantilla y el
+            texto exacto ANTES del botón: mandar a 13 clientes de un clic no se
+            puede deshacer, así que primero se lee y luego se manda.
+            Esto NO es la cobranza automática —ese interruptor sigue apagado—:
+            es una persona apretando enviar. */}
+        {(vencidasVis.length > 0 || proximosVis.length > 0) && (
+          <button onClick={() => setWaCobranza(vencidasVis.length ? 'vencidos' : 'proximos')}
+            style={{ ...S.btnSmall, marginLeft: 'auto', background: '#1E8A63', color: '#fff', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Escribirles por WhatsApp
+            <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 5, padding: '1px 6px', fontSize: 11 }}>
+              {vencidasVis.length || proximosVis.length}
+            </span>
+          </button>
+        )}
         </div>
         {(vencidasVis.length === 0 && proximosVis.length === 0) ? (
           <div style={{ color: '#16a34a', fontSize: 14 }}>✓ No hay cobros pendientes ni vencidos.</div>
@@ -550,6 +608,7 @@ export default function PagosTab() {
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{v.empresa}</div>
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>{v.plan} · {v.ciclo}{v.cuenta && v.cuenta !== v.empresa ? ` · ${v.cuenta}` : ''} · vence {fmtDate(v.vencida_desde)}</div>
+                <TelefonoCobro cobro={v} onFicha={setDrawerCompany} />
                 {(() => { const r = rechazoDe(v.subscription_id); return r ? (
                   <div style={{ fontSize: '0.72rem', color: '#b93333', marginTop: 4 }}>🔁 Mercado Pago no pudo cobrarle: {r.motivo || 'tarjeta rechazada'}</div>
                 ) : null; })()}
@@ -567,6 +626,7 @@ export default function PagosTab() {
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.empresa}</div>
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>{c.plan} · {c.ciclo}{c.cuenta && c.cuenta !== c.empresa ? ` · ${c.cuenta}` : ''} · {fmtDate(c.fecha)}</div>
+                <TelefonoCobro cobro={c} onFicha={setDrawerCompany} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
                   <BotonAccionesCobro cobro={c} onAbrir={setMenuCobro} />
@@ -582,7 +642,8 @@ export default function PagosTab() {
               {vencidasVis.map((v: any) => (
                 <tr key={'v' + v.subscription_id}>
                   <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
-                  <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}</td>
+                  <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}
+                    <TelefonoCobro cobro={v} onFicha={setDrawerCompany} /></td>
                   <td style={S.td}>{v.plan} <span style={{ color: '#999' }}>· {v.ciclo}</span>
                     {(() => { const r = rechazoDe(v.subscription_id); return r ? (
                       <div style={{ fontSize: '0.7rem', color: '#b93333' }} title={r.detalle_estado || ''}>🔁 MP no pudo cobrarle: {r.motivo || 'tarjeta rechazada'}</div>
@@ -599,7 +660,8 @@ export default function PagosTab() {
               {proximosVis.map((c: any) => (
                 <tr key={'p' + c.subscription_id}>
                   <td style={S.td}><span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span></td>
-                  <td style={S.td}>{c.empresa}{c.cuenta && c.cuenta !== c.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{c.cuenta}</div> : null}</td>
+                  <td style={S.td}>{c.empresa}{c.cuenta && c.cuenta !== c.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{c.cuenta}</div> : null}
+                    <TelefonoCobro cobro={c} onFicha={setDrawerCompany} /></td>
                   <td style={S.td}>{c.plan} <span style={{ color: '#999' }}>· {c.ciclo}</span></td>
                   <td style={S.td}>{fmtDate(c.fecha)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>
@@ -974,6 +1036,7 @@ export default function PagosTab() {
 
       </>)}
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
+      {waCobranza && <PanelCobranzaWA tipo={waCobranza} onCerrar={() => setWaCobranza(null)} onListo={() => loadBase()} />}
       {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
       {toast && <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>}
     </div>
