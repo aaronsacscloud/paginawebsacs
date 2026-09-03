@@ -32,6 +32,10 @@ export type Campo = {
   requerido?: boolean;
   /** El campo permite además escribir algo libre ("Otro: ..."). */
   otro?: boolean;
+  /** Para tipo 'links': qué se pregunta en la segunda casilla de cada fila.
+   *  Sin esto, todas preguntaban "¿qué exactamente te gustó?" — que no viene
+   *  al caso cuando el link es una carpeta de fotos. */
+  notaPh?: string;
   placeholder?: string;
 };
 
@@ -104,7 +108,7 @@ export const ETAPAS: Etapa[] = [
         tipo: 'texto',
         placeholder: 'Ej. Didot para títulos, Futura para textos',
       },
-      { id: 'tipografias_archivos', etiqueta: 'Archivos de tipografía', tipo: 'archivos' },
+      { id: 'tipografias_archivos', grupo: 'Tipografía y color', etiqueta: 'Archivos de tipografía', tipo: 'archivos' },
       {
         id: 'colores',
         grupo: 'Tipografía y color',
@@ -140,7 +144,7 @@ export const ETAPAS: Etapa[] = [
           '(Drive, Dropbox, WeTransfer) si pesa mucho.',
         tipo: 'archivos',
       },
-      { id: 'foto_links', etiqueta: 'Links a carpetas de fotografía', tipo: 'links' },
+      { id: 'foto_links', grupo: 'Lo que ya existe', etiqueta: 'Links a carpetas de fotografía', tipo: 'links', notaPh: 'Qué hay en esa carpeta' },
       {
         id: 'no_hacer',
         grupo: 'El manual y sus reglas',
@@ -300,6 +304,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'videos',
+        notaPh: '¿Qué te gustó de ese video?',
         grupo: 'Lo que les gusta',
         etiqueta: 'Videos de referencia',
         ayuda:
@@ -307,7 +312,7 @@ export const ETAPAS: Etapa[] = [
           'el archivo.',
         tipo: 'links',
       },
-      { id: 'videos_archivos', etiqueta: 'Archivos de video', tipo: 'archivos' },
+      { id: 'videos_archivos', grupo: 'Lo que les gusta', etiqueta: 'Archivos de video', tipo: 'archivos' },
       {
         id: 'efectos',
         grupo: 'Los efectos',
@@ -353,6 +358,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'no_gustan',
+        notaPh: '¿Por qué no?',
         grupo: 'Lo que no les gusta',
         etiqueta: 'Sitios que NO les gustan, y por qué',
         ayuda: 'Esto nos sirve más que los que sí les gustan. En serio.',
@@ -458,7 +464,7 @@ export const ETAPAS: Etapa[] = [
         tipo: 'parrafo',
         requerido: true,
       },
-      { id: 'hero_archivos', etiqueta: 'Fotos de esas piezas', tipo: 'archivos' },
+      { id: 'hero_archivos', grupo: 'Las piezas del lanzamiento', etiqueta: 'Fotos de esas piezas', tipo: 'archivos' },
       {
         id: 'configurador',
         grupo: 'Diamantes y configurador',
@@ -485,7 +491,7 @@ export const ETAPAS: Etapa[] = [
         tipo: 'parrafo',
         requerido: true,
       },
-      { id: 'api_archivos', etiqueta: 'Documentación del proveedor', tipo: 'archivos' },
+      { id: 'api_archivos', grupo: 'Diamantes y configurador', etiqueta: 'Documentación del proveedor', tipo: 'archivos' },
       {
         id: 'certificados',
         grupo: 'Diamantes y configurador',
@@ -625,7 +631,7 @@ export const ETAPAS: Etapa[] = [
         ayuda: 'Si ya está escrito, súbanlo. Si no, cuéntenlo como lo manejan hoy.',
         tipo: 'parrafo',
       },
-      { id: 'politicas_archivos', etiqueta: 'Políticas en archivo', tipo: 'archivos' },
+      { id: 'politicas_archivos', grupo: 'Envío y garantías', etiqueta: 'Políticas en archivo', tipo: 'archivos' },
       {
         id: 'legales',
         grupo: 'Datos fiscales',

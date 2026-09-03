@@ -465,6 +465,28 @@ const fechaFirma = brief.firmado_at
 }
 .pb-et-entrega b { color: var(--tinta); font-weight: 600; }
 
+.pb-grupo {
+  display: flex; align-items: center; gap: 12px;
+  margin: 30px 0 2px; padding-top: 22px; border-top: 1px solid var(--linea);
+}
+.pb-grupo::after { content: ''; flex: 1; height: 1px; background: var(--linea); }
+.pb-grupo span {
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--oro); font-weight: 600; white-space: nowrap;
+}
+.pb-grupo + .pb-campo { border-top: 0; padding-top: 14px; }
+
+.pb-avance { margin: 0 0 6px; }
+.pb-avance-riel {
+  height: 4px; border-radius: 3px; background: var(--linea); overflow: hidden; margin-bottom: 8px;
+}
+.pb-avance-riel span {
+  display: block; height: 100%; background: var(--oro); border-radius: 3px;
+  transition: width .3s ease;
+}
+.pb-avance-txt { font-size: .8rem; color: var(--tenue); }
+.pb-avance-txt b { color: var(--oro); }
+
 .pb-campo { padding: 20px 0; border-top: 1px solid var(--linea); }
 .pb-campo:first-of-type { border-top: 0; }
 .pb-campo-lab { font-size: 1rem; font-weight: 600; color: var(--tinta); margin-bottom: 5px; }
@@ -797,16 +819,27 @@ const fechaFirma = brief.firmado_at
           pintar();
         });
       });
-      conectar();
     }
 
     const editable = (f) => f.estado === 'abierta' || f.estado === 'cambios';
+
+    /** Bloques de la etapa, en el orden en que aparece cada uno por primera vez. */
+    function porGrupo(def) {
+      const m = new Map();
+      for (const c of def.campos) {
+        const g = c.grupo || '';
+        if (!m.has(g)) m.set(g, []);
+        m.get(g).push(c);
+      }
+      return [...m.entries()];
+    }
 
     function cuerpo(def, fila) {
       const puede = editable(fila);
       let h = '<div class="pb-et-cuerpo">';
       h += '<p class="pb-et-intro">' + esc(def.resumen) + '</p>';
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
+      if (puede) h += barra(def, borrador[fila.clave] || {});
 
       if (fila.estado === 'cambios' && fila.nota_sacs) {
         h += '<div class="pb-nota-sacs"><span class="pb-campo-t">Qué falta</span><p>' + esc(fila.nota_sacs) + '</p></div>';
@@ -828,7 +861,14 @@ const fechaFirma = brief.firmado_at
         return h + '</div>';
       }
 
-      for (const c of def.campos) h += campo(c, borrador[fila.clave] || {});
+      // Los campos se pintan POR BLOQUE, no en el orden del archivo. Si se
+      // recorriera el arreglo y solo se emitiera un encabezado al cambiar de
+      // grupo, un campo fuera de lugar repetiría el encabezado más abajo —
+      // ya pasó. Agrupando primero, el orden del archivo deja de importar.
+      for (const [titulo, campos] of porGrupo(def)) {
+        if (titulo) h += '<div class="pb-grupo"><span>' + esc(titulo) + '</span></div>';
+        for (const c of campos) h += campo(c, borrador[fila.clave] || {});
+      }
 
       h += '<div class="pb-et-pie">' +
         '<span class="pb-et-pie-nota">Se guarda solo. Puedes cerrar y volver después.</span>' +
@@ -858,6 +898,30 @@ const fechaFirma = brief.firmado_at
         h += '<div class="pb-et-pie-nota">El cliente todavía no la envía.</div>';
       }
       return h + '<div class="pb-error" data-reverr="' + fila.clave + '" hidden></div></div>';
+    }
+
+    // Cuántas preguntas llevan contestadas y cuántas faltan de las
+    // obligatorias. Se recalcula en cada repintado, sin pedirle nada al servidor.
+    function contar(def, resp) {
+      const lleno = (v) => !(v === undefined || v === null || v === '' ||
+        (Array.isArray(v) && !v.length) ||
+        (Array.isArray(v) && v.every((x) => x && typeof x === 'object' && !x.url && !x.nombre)));
+      const total = def.campos.length;
+      const hechas = def.campos.filter((c) => lleno(resp[c.id])).length;
+      const faltanReq = def.campos.filter((c) => c.requerido && !lleno(resp[c.id])).length;
+      return { total, hechas, faltanReq };
+    }
+
+    function barra(def, resp) {
+      const n = contar(def, resp);
+      const pct = Math.round((n.hechas / n.total) * 100);
+      return '<div class="pb-avance">' +
+        '<div class="pb-avance-riel"><span style="width:' + pct + '%"></span></div>' +
+        '<span class="pb-avance-txt">' + n.hechas + ' de ' + n.total + ' contestadas' +
+        (n.faltanReq
+          ? ' · faltan <b>' + n.faltanReq + '</b> obligatoria' + (n.faltanReq === 1 ? '' : 's')
+          : ' · ya puedes enviarla') +
+        '</span></div>';
     }
 
     function leible(c, v) {
@@ -912,14 +976,14 @@ const fechaFirma = brief.firmado_at
       } else if (c.tipo === 'links') {
         const filas = Array.isArray(v) && v.length ? v : [{ url: '', nota: '' }];
         h += '<div class="pb-links" data-links="' + c.id + '">';
-        for (const f of filas) h += filaLink(c.id, f);
+        for (const f of filas) h += filaLink(c.id, f, c.notaPh);
         h += '</div><button type="button" class="pb-agregar" data-mas="' + c.id + '">+ Agregar otro</button>';
 
       } else if (c.tipo === 'archivos') {
         const arr = Array.isArray(v) ? v : [];
         h += '<div class="pb-zona" data-zona="' + c.id + '">' +
-          '<div class="pb-zona-t"><b>Elige un archivo</b> o arrástralo aquí</div>' +
-          '<div class="pb-zona-s">Hasta 25 MB. Si pesa más, súbelo a Drive y pega el link.</div></div>' +
+          '<div class="pb-zona-t"><b>Elige tus archivos</b> o arrástralos aquí</div>' +
+          '<div class="pb-zona-s">Puedes subir varios a la vez. Hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.</div></div>' +
           '<input type="file" multiple hidden data-file="' + c.id + '" />' +
           '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
       }
@@ -927,10 +991,10 @@ const fechaFirma = brief.firmado_at
       return h + '</div>';
     }
 
-    const filaLink = (id, f) =>
-      '<div class="pb-link-fila">' +
+    const filaLink = (id, f, ph) =>
+      '<div class="pb-link-fila" data-ph="' + esc(ph || '¿Qué exactamente te gustó?') + '">' +
         '<input type="url" data-lu="' + id + '" placeholder="https://…" value="' + esc(f.url || '') + '" />' +
-        '<input type="text" data-ln="' + id + '" placeholder="¿Qué exactamente te gustó?" value="' + esc(f.nota || '') + '" />' +
+        '<input type="text" data-ln="' + id + '" placeholder="' + esc(ph || '¿Qué exactamente te gustó?') + '" value="' + esc(f.nota || '') + '" />' +
         '<button type="button" class="pb-quitar" data-menos="' + id + '" aria-label="Quitar">×</button>' +
       '</div>';
 
@@ -948,8 +1012,19 @@ const fechaFirma = brief.firmado_at
     function anotar(clave, id, valor) {
       borrador[clave] = borrador[clave] || {};
       borrador[clave][id] = valor;
+      refrescarBarra(clave);
       clearTimeout(pendiente);
       pendiente = setTimeout(() => guardar(clave), 900);
+    }
+
+    // Repintar la etapa entera en cada tecla perdería el foco del campo. Solo
+    // se actualiza la barra.
+    function refrescarBarra(clave) {
+      const et = cajaEtapas?.querySelector('.pb-et[data-clave="' + clave + '"]');
+      const caja = et?.querySelector('.pb-avance');
+      const def = DEF.find((d) => d.clave === clave);
+      if (!caja || !def) return;
+      caja.outerHTML = barra(def, borrador[clave] || {});
     }
 
     async function guardar(clave, enviar) {
@@ -964,47 +1039,25 @@ const fechaFirma = brief.firmado_at
       return null;
     }
 
-    function conectar() {
+    // Un solo juego de escuchas, DELEGADO en el contenedor y colgado una vez.
+    //
+    // Antes se re-colgaban escuchas sobre todos los elementos cada vez que se
+    // repintaba algo (conectar()), y el botón "+ Agregar otro" terminaba con
+    // dos, tres, cuatro escuchas encima: un clic agregaba cuatro filas. Con
+    // delegación el HTML nuevo funciona solo y no hay nada que volver a colgar.
+    function delegar() {
       const cont = cajaEtapas;
       if (!cont) return;
       const claveDe = (el) => el.closest('.pb-et')?.getAttribute('data-clave');
+      const campoDe = (el) => el.closest('.pb-campo')?.getAttribute('data-campo');
 
-      cont.querySelectorAll('[data-v]').forEach((el) => {
-        el.addEventListener('input', () => anotar(claveDe(el), el.getAttribute('data-v'), el.value));
-      });
-
-      cont.querySelectorAll('[data-op]').forEach((el) => {
-        el.addEventListener('change', () => {
-          const clave = claveDe(el), id = el.getAttribute('data-op');
-          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
-          if (el.type === 'radio') return anotar(clave, id, el.value);
-          const marcados = Array.from(campo.querySelectorAll('[data-op]:checked')).map((x) => x.value);
-          const otro = campo.querySelector('[data-otro]');
-          if (otro && otro.value.trim()) marcados.push(otro.value.trim());
-          anotar(clave, id, marcados);
-        });
-      });
-
-      cont.querySelectorAll('[data-otro]').forEach((el) => {
-        el.addEventListener('input', () => {
-          const clave = claveDe(el), id = el.getAttribute('data-otro');
-          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
-          const marcados = Array.from(campo.querySelectorAll('[data-op]:checked')).map((x) => x.value);
-          if (el.value.trim()) marcados.push(el.value.trim());
-          anotar(clave, id, marcados);
-        });
-      });
-
-      cont.querySelectorAll('[data-esc]').forEach((el) => {
-        el.addEventListener('click', () => {
-          const id = el.getAttribute('data-esc');
-          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
-          campo.querySelectorAll('[data-esc]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
-          el.setAttribute('aria-pressed', 'true');
-          anotar(claveDe(el), id, Number(el.getAttribute('data-n')));
-        });
-      });
-
+      const leerOpciones = (id) => {
+        const c = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
+        const marcados = Array.from(c.querySelectorAll('[data-op]:checked')).map((x) => x.value);
+        const otro = c.querySelector('[data-otro]');
+        if (otro && otro.value.trim()) marcados.push(otro.value.trim());
+        return marcados;
+      };
       const leerLinks = (id) => {
         const caja = cont.querySelector('[data-links="' + id + '"]');
         return Array.from(caja.querySelectorAll('.pb-link-fila')).map((f) => ({
@@ -1012,105 +1065,136 @@ const fechaFirma = brief.firmado_at
           nota: f.querySelector('[data-ln]').value.trim(),
         })).filter((x) => x.url);
       };
-      cont.querySelectorAll('[data-lu],[data-ln]').forEach((el) => {
-        el.addEventListener('input', () => {
+
+      cont.addEventListener('input', (e) => {
+        const el = e.target;
+        if (el.matches('[data-v]')) return anotar(claveDe(el), el.getAttribute('data-v'), el.value);
+        if (el.matches('[data-otro]')) {
+          const id = el.getAttribute('data-otro');
+          return anotar(claveDe(el), id, leerOpciones(id));
+        }
+        if (el.matches('[data-lu],[data-ln]')) {
           const id = el.getAttribute('data-lu') || el.getAttribute('data-ln');
-          anotar(claveDe(el), id, leerLinks(id));
-        });
+          return anotar(claveDe(el), id, leerLinks(id));
+        }
       });
-      cont.querySelectorAll('[data-mas]').forEach((el) => {
-        el.addEventListener('click', () => {
+
+      cont.addEventListener('change', (e) => {
+        const el = e.target;
+        if (el.matches('[data-op]')) {
+          const id = el.getAttribute('data-op');
+          return anotar(claveDe(el), id, el.type === 'radio' ? el.value : leerOpciones(id));
+        }
+        if (el.matches('[data-file]')) {
+          return subir(claveDe(el), el.getAttribute('data-file'), el.files);
+        }
+      });
+
+      cont.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev]');
+        if (!el || !cont.contains(el)) return;
+        const clave = claveDe(el);
+
+        if (el.hasAttribute('data-esc')) {
+          const id = el.getAttribute('data-esc');
+          const c = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
+          c.querySelectorAll('[data-esc]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          el.setAttribute('aria-pressed', 'true');
+          return anotar(clave, id, Number(el.getAttribute('data-n')));
+        }
+
+        if (el.hasAttribute('data-mas')) {
           const id = el.getAttribute('data-mas');
-          cont.querySelector('[data-links="' + id + '"]').insertAdjacentHTML('beforeend', filaLink(id, {}));
-          conectar();
-        });
-      });
-      cont.querySelectorAll('[data-menos]').forEach((el) => {
-        el.addEventListener('click', () => {
-          const id = el.getAttribute('data-menos'), clave = claveDe(el);
+          const caja = cont.querySelector('[data-links="' + id + '"]');
+          const ph = caja.querySelector('.pb-link-fila')?.getAttribute('data-ph');
+          caja.insertAdjacentHTML('beforeend', filaLink(id, {}, ph));
+          return;
+        }
+
+        if (el.hasAttribute('data-menos')) {
+          const id = el.getAttribute('data-menos');
           const caja = cont.querySelector('[data-links="' + id + '"]');
           if (caja.querySelectorAll('.pb-link-fila').length > 1) el.closest('.pb-link-fila').remove();
           else caja.querySelectorAll('input').forEach((i) => { i.value = ''; });
-          anotar(clave, id, leerLinks(id));
-        });
-      });
+          return anotar(clave, id, leerLinks(id));
+        }
 
-      // Archivos
-      cont.querySelectorAll('[data-zona]').forEach((zona) => {
-        const id = zona.getAttribute('data-zona');
-        const input = cont.querySelector('[data-file="' + id + '"]');
-        zona.addEventListener('click', () => input.click());
-        zona.addEventListener('dragover', (e) => { e.preventDefault(); zona.setAttribute('data-encima', ''); });
-        zona.addEventListener('dragleave', () => zona.removeAttribute('data-encima'));
-        zona.addEventListener('drop', (e) => {
-          e.preventDefault();
-          zona.removeAttribute('data-encima');
-          subir(claveDe(zona), id, e.dataTransfer.files);
-        });
-        input.addEventListener('change', () => subir(claveDe(zona), id, input.files));
-      });
-      cont.querySelectorAll('[data-quita-arch]').forEach((el) => {
-        el.addEventListener('click', () => {
+        if (el.hasAttribute('data-zona')) {
+          return cont.querySelector('[data-file="' + el.getAttribute('data-zona') + '"]')?.click();
+        }
+
+        if (el.hasAttribute('data-quita-arch')) {
           const url = el.getAttribute('data-quita-arch');
-          const id = el.closest('.pb-campo').getAttribute('data-campo');
-          const clave = claveDe(el);
+          const id = campoDe(el);
           const arr = (borrador[clave][id] || []).filter((a) => a.url !== url);
           borrador[clave][id] = arr;
           cont.querySelector('[data-lista="' + id + '"]').innerHTML = arr.map(chipArchivo).join('');
-          guardar(clave);
-          conectar();
-        });
+          refrescarBarra(clave);
+          return guardar(clave);
+        }
+
+        if (el.hasAttribute('data-enviar')) return enviarEtapa(el);
+        if (el.hasAttribute('data-rev')) return revisarEtapa(el);
       });
 
-      cont.querySelectorAll('[data-rev]').forEach((el) => {
-        el.addEventListener('click', async () => {
-          const clave = el.getAttribute('data-c');
-          const accion = el.getAttribute('data-rev');
-          const err = cont.querySelector('[data-reverr="' + clave + '"]');
-          const nota = cont.querySelector('[data-nota="' + clave + '"]');
-          if (err) err.hidden = true;
-          el.disabled = true;
-          const antes = el.textContent;
-          el.textContent = 'Aplicando…';
-          const res = await fetch('/api/proyecto/revisar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: TOKEN, clave, accion, nota: nota ? nota.value : '' }),
-          });
-          const d = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            el.disabled = false;
-            el.textContent = antes;
-            if (err) { err.textContent = d.error || 'No se pudo aplicar'; err.hidden = false; }
-            return;
-          }
-          abierta = accion === 'aprobar' ? (d.siguiente || null) : clave;
-          await cargar();
-        });
+      // Arrastrar y soltar sobre la zona del campo.
+      const zonaDe = (e) => e.target.closest?.('[data-zona]');
+      cont.addEventListener('dragover', (e) => {
+        const z = zonaDe(e); if (!z) return;
+        e.preventDefault(); z.setAttribute('data-encima', '');
       });
+      cont.addEventListener('dragleave', (e) => zonaDe(e)?.removeAttribute('data-encima'));
+      cont.addEventListener('drop', (e) => {
+        const z = zonaDe(e); if (!z) return;
+        e.preventDefault(); z.removeAttribute('data-encima');
+        subir(claveDe(z), z.getAttribute('data-zona'), e.dataTransfer.files);
+      });
+    }
 
-      cont.querySelectorAll('[data-enviar]').forEach((el) => {
-        el.addEventListener('click', async () => {
-          const clave = el.getAttribute('data-enviar');
-          const err = cont.querySelector('[data-err="' + clave + '"]');
-          err.hidden = true;
-          el.disabled = true;
-          el.textContent = 'Enviando…';
-          const fallo = await guardar(clave, true);
-          if (fallo) {
-            el.disabled = false;
-            el.textContent = 'Enviar etapa a revisión';
-            err.textContent = fallo.faltan
-              ? 'Falta contestar: ' + fallo.faltan.join(' · ')
-              : (fallo.error || 'No se pudo enviar');
-            err.hidden = false;
-            err.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-          }
-          abierta = null;
-          await cargar();
-        });
+    async function enviarEtapa(el) {
+      const clave = el.getAttribute('data-enviar');
+      const err = cajaEtapas.querySelector('[data-err="' + clave + '"]');
+      err.hidden = true;
+      el.disabled = true;
+      el.textContent = 'Enviando…';
+      const fallo = await guardar(clave, true);
+      if (fallo) {
+        el.disabled = false;
+        el.textContent = 'Enviar etapa a revisión';
+        err.textContent = fallo.faltan
+          ? 'Falta contestar: ' + fallo.faltan.join(' · ')
+          : (fallo.error || 'No se pudo enviar');
+        err.hidden = false;
+        err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      abierta = null;
+      await cargar();
+    }
+
+    async function revisarEtapa(el) {
+      const clave = el.getAttribute('data-c');
+      const accion = el.getAttribute('data-rev');
+      const err = cajaEtapas.querySelector('[data-reverr="' + clave + '"]');
+      const nota = cajaEtapas.querySelector('[data-nota="' + clave + '"]');
+      if (err) err.hidden = true;
+      el.disabled = true;
+      const antes = el.textContent;
+      el.textContent = 'Aplicando…';
+      const res = await fetch('/api/proyecto/revisar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: TOKEN, clave, accion, nota: nota ? nota.value : '' }),
       });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        el.disabled = false;
+        el.textContent = antes;
+        if (err) { err.textContent = d.error || 'No se pudo aplicar'; err.hidden = false; }
+        return;
+      }
+      abierta = accion === 'aprobar' ? (d.siguiente || null) : clave;
+      await cargar();
     }
 
     async function subir(clave, campoId, archivos) {
@@ -1134,7 +1218,6 @@ const fechaFirma = brief.firmado_at
           fila.remove();
           lista.innerHTML = borrador[clave][campoId].map(chipArchivo).join('');
           await guardar(clave);
-          conectar();
         } catch (e) {
           fila.querySelector('.pb-arch-p').textContent = e.message || 'error';
           fila.querySelector('.pb-arch-p').style.color = '#C0442F';
@@ -1142,6 +1225,7 @@ const fechaFirma = brief.firmado_at
       }
     }
 
+    delegar();
     cargar();
   }
 </script>
