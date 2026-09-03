@@ -3,6 +3,31 @@
 El sitio y el CRM viven en `sitio/` (Astro 6 + React, `output: 'static'`,
 adaptador de Vercel). Se despliega **en cada push a `main`**.
 
+## 🚦 COMMIT SIEMPRE, PUSH SOLO CUANDO EL DUEÑO LO DIGA
+
+**Regla del dueño (3-sep-2026). Aplica a TODA sesión que trabaje este repo.**
+
+Cada cambio o mejora se **commitea** en cuanto está listo y verificado, con su
+mensaje detallado en español, como siempre. Pero **no se sube**: `git push`
+solo cuando el dueño lo pida con esas palabras —«push», «sube», «sube todo»,
+«publica»— y entonces se suben **todos los commits acumulados de una vez**.
+
+Eso ES la agrupación: los commits son gratis, lo que cuesta es el push. Diez
+commits subidos juntos son un build y una sola ventana de despliegue; diez
+pushes son diez builds y diez ventanas en las que los crons no corren (ver la
+sección de costo, y el caso medido del agente).
+
+Cómo se trabaja con esto, para que no se vuelva una pila invisible:
+
+- Al terminar cada bloque, **di cuántos commits quedan esperando** y de qué
+  son. El dueño decide cuándo sale todo.
+- Si algo es urgente —producción rota, un cobro mal, un mensaje saliéndose a
+  un cliente— **dilo y pide subirlo**; no lo subas por tu cuenta ni lo dejes
+  esperando en silencio.
+- Un commit sin push no está desplegado. No digas «ya está en producción» ni
+  verifiques contra `www.sacscloud.com` esperando ver el cambio: ahí sigue
+  corriendo lo anterior.
+
 ## 💸 EL COSTO DE VERCEL ES EL BUILD — cuídalo en cada cambio
 
 **Agosto 2026 costó $100.22 y el 99% fue una sola línea: Build CPU Minutes
@@ -39,10 +64,9 @@ quedará viejo en 3 minutos.
    no le tocó correr. Las invocaciones programadas se pierden mientras Vercel
    cambia de despliegue.
 
-   Cómo se hace, en concreto: commitea todo lo que quieras —los commits son
-   gratis— y **haz UN `git push` al terminar el bloque de trabajo**, no uno por
-   commit. Diez commits pushados juntos son un build y una sola ventana; diez
-   pushes son diez ventanas.
+   Cómo se hace, en concreto: **ver la regla de arriba** —commitear siempre,
+   subir solo cuando el dueño lo pida—. Diez commits pushados juntos son un
+   build y una sola ventana; diez pushes son diez ventanas.
 
    Cuánto aguanta antes de doler: el observador arranca desde su última marca
    con tope de **60 minutos**, así que un hueco menor se recupera solo. Pasada
