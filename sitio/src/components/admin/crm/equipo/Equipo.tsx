@@ -8,6 +8,7 @@ import { useRealtime, type Senal } from './useRealtime';
 import { useCss, Avatar, Ic, useToast, textoPlano } from './ui';
 import Arbol from './Arbol';
 import Canal from './Canal';
+import Sala from './Sala';
 import Cargando from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 
@@ -22,11 +23,13 @@ export default function Equipo() {
   const [canalId, setCanalId] = useState<string | null>(null);
   const [irA, setIrA] = useState<string | null>(null);
   const [hilo, setHilo] = useState<M | null>(null);
-  const [lado, setLado] = useState<'hilo' | 'buscar' | null>(null);
+  const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | null>(null);
+  const [nFijados, setNFijados] = useState(0);
   const [luz, setLuz] = useState<string | null>(null);
   const [leidoAl, setLeidoAl] = useState<Record<string, string>>({});   // ultimo_leido por canal al abrirlo (para la línea "Nuevo")
   const senalCanal = useRef<((s: Senal) => void) | null>(null);
   const senalHilo = useRef<((s: Senal) => void) | null>(null);
+  const senalSala = useRef<((s: Senal) => void) | null>(null);
   const yo = arbol?.yo || null;
 
   const cargarArbol = useCallback(async () => {
@@ -66,7 +69,11 @@ export default function Equipo() {
     setCanalId(id); setIrA(hiloId ? null : (msg || null));
     try { localStorage.setItem(ULTIMO_KEY, id); } catch { /* nada */ }
     if (hiloId) { api.uno(hiloId).then(r => { setHilo(r.mensaje); setLado('hilo'); setIrA(msg || null); }).catch(() => null); }
-    else { setHilo(null); if (lado === 'hilo') setLado(null); }
+    else {
+      setHilo(null);
+      // En escritorio, una sala abre con su agenda a la vista; al salir de la sala, el panel se cierra.
+      setLado(l => c.tipo === 'sala' ? (!movil && (l === null || l === 'hilo' || l === 'sala' || l === 'fijados') ? 'sala' : l === 'hilo' ? null : l) : (l === 'hilo' || l === 'sala' || l === 'fijados') ? null : l);
+    }
     const u = new URL(window.location.href); u.searchParams.set('tab', 'equipo'); u.searchParams.set('canal', id);
     if (msg) u.searchParams.set('msg', msg); else u.searchParams.delete('msg');
     if (hiloId) u.searchParams.set('hilo', hiloId); else u.searchParams.delete('hilo');
@@ -89,7 +96,11 @@ export default function Equipo() {
       if (s.canal_id !== canalId || s.hilo_de) cargarArbol();
     }
     if (s.tipo === 'msg_upd' || s.tipo === 'reaccion') { senalCanal.current?.(s); senalHilo.current?.(s); }
+    if (s.tipo === 'msg_upd' && s.canal_id === canalId) contarFijados(s.canal_id);
+    if (s.tipo === 'reunion' || s.tipo === 'msg') senalSala.current?.(s);
   }, [canalId, yo?.id, cargarArbol]);
+  const contarFijados = useCallback((id: string) => { api.fijados(id).then(r => setNFijados(r.mensajes.length)).catch(() => null); }, []);
+  useEffect(() => { setNFijados(0); if (canalId) contarFijados(canalId); }, [canalId, contarFijados]);
   const { conectado, enLinea } = useRealtime(yo?.id || null, alSenal);
   useEffect(() => { const t = setInterval(cargarArbol, 120_000); return () => clearInterval(t); }, [cargarArbol]);
 
@@ -110,6 +121,8 @@ export default function Equipo() {
       <h2>{otro ? otro.nombre : <><span className="n" style={{ display: 'inline-flex' }}>{canal.tipo === 'sala' ? Ic.sala : canal.tipo === 'sistema' ? Ic.sistema : Ic.hash}</span>{canal.nombre}</>}{canal.importante && <span className="eq-imp" title="Importante" />}</h2>
       <span className="desc">{otro ? (enLinea.includes(otro.id) ? 'En línea' : otro.visto_at ? `Visto ${hace(otro.visto_at)}` : '') : canal.descripcion}</span>
       {canal.tipo === 'sala' && canal.regla_reunion && !movil && <span style={{ fontSize: '.75rem', color: 'var(--eq-gris)', display: 'inline-flex', gap: 4, alignItems: 'center' }}>{Ic.reloj}{['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][canal.regla_reunion.dia_iso]} {canal.regla_reunion.hora}</span>}
+      {canal.tipo === 'sala' && <button className={'eq-ib' + (lado === 'sala' ? ' on' : '')} title="Agenda y actas" onClick={() => setLado(lado === 'sala' ? null : 'sala')} style={movil ? { width: 'auto', padding: '0 10px', gap: 5, fontSize: '.8125rem', fontWeight: 700 } : undefined}>{Ic.sala}{movil ? 'Agenda' : null}</button>}
+      {nFijados > 0 && <button className={'eq-ib' + (lado === 'fijados' ? ' on' : '')} title={`${nFijados} ${nFijados === 1 ? 'mensaje fijado' : 'mensajes fijados'}`} onClick={() => setLado(lado === 'fijados' ? null : 'fijados')} style={{ width: 'auto', padding: '0 8px', gap: 3, fontSize: '.75rem', fontWeight: 800 }}>{Ic.pin}{nFijados}</button>}
       <button className={'eq-ib' + (lado === 'buscar' ? ' on' : '')} title="Buscar en este canal" onClick={() => setLado(lado === 'buscar' ? null : 'buscar')}>{Ic.lupa}</button>
       {canal.tipo !== 'directo' && <button className="eq-ib" title={canal.silenciado ? 'Silenciado: activar avisos' : 'Silenciar canal'} onClick={silenciar}>{canal.silenciado ? Ic.campanaOff : Ic.campana}</button>}
     </div>
@@ -123,7 +136,8 @@ export default function Equipo() {
         {canal ? (
           <Canal key={canal.id} canal={canal} yo={yo} personas={arbol.personas} movil={movil}
             irAMensaje={irA} onAbrirHilo={abrirHilo} onAviso={toast} onVerImagen={setLuz} onLeido={marcarLeido}
-            registrarSenal={f => { senalCanal.current = f; }} cabecera={cabecera} ultimoLeidoAt={leidoAl[canal.id] ?? null} />
+            registrarSenal={f => { senalCanal.current = f; }} cabecera={cabecera} ultimoLeidoAt={leidoAl[canal.id] ?? null}
+            salas={arbol.canales.filter(c => c.tipo === 'sala')} onCambioSala={() => senalSala.current?.({ tipo: 'reunion', canal_id: canal.id })} />
         ) : (
           <div className="eq-vacio"><b>Elige un canal</b>O escríbele a alguien del equipo desde la lista.</div>
         )}
@@ -139,6 +153,18 @@ export default function Equipo() {
             irAMensaje={irA} onAviso={toast} onVerImagen={setLuz} registrarSenal={f => { senalHilo.current = f; }} />
         </aside>
       )}
+      {lado === 'sala' && canal && canal.tipo === 'sala' && (
+        <aside className="eq-lado">
+          <Sala key={'s' + canal.id} canal={canal} yo={yo.id} role={yo.role} personas={arbol.personas} movil={movil}
+            onCerrar={() => setLado(null)} onAviso={toast} registrarSenal={f => { senalSala.current = f; }}
+            onIr={(c, m, h) => { abrir(c, m, h); if (movil) setLado(null); }} />
+        </aside>
+      )}
+      {lado === 'fijados' && canal && (
+        <aside className="eq-lado">
+          <Fijados canal={canal} movil={movil} onCerrar={() => setLado(null)} onIr={(m) => { abrir(m.canal_id, m.id, m.hilo_de); if (movil) setLado(null); }} />
+        </aside>
+      )}
       {lado === 'buscar' && (
         <aside className="eq-lado">
           <Buscar canal={canal} yo={yo.id} onCerrar={() => setLado(null)} onIr={(m) => { abrir(m.canal_id, m.id, m.hilo_de); if (movil) setLado(null); }} />
@@ -147,6 +173,33 @@ export default function Equipo() {
       {luz && <div className="eq-luz" onClick={() => setLuz(null)}><img src={luz} alt="" /></div>}
       {toastNodo}
     </div>
+  );
+}
+
+function Fijados({ canal, movil, onCerrar, onIr }: { canal: C; movil: boolean; onCerrar: () => void; onIr: (m: M) => void }) {
+  const [res, setRes] = useState<M[] | null>(null);
+  useEffect(() => { api.fijados(canal.id).then(r => setRes(r.mensajes)).catch(() => setRes([])); }, [canal.id]);
+  return (
+    <>
+      <div className="eq-cab">
+        {movil && <button className="eq-ib" onClick={onCerrar} aria-label="Volver">{Ic.atras}</button>}
+        <h2>{Ic.pin} Fijados</h2>
+        <span className="desc">en #{canal.nombre}{res ? ` · ${res.length} de 15` : ''}</span>
+        {!movil && <button className="eq-ib" onClick={onCerrar} aria-label="Cerrar">{Ic.cerrar}</button>}
+      </div>
+      <div className="eq-lista">
+        {!res && <Cargando texto="Cargando fijados…" alto={120} />}
+        {res && !res.length && <div className="eq-vacio"><b>Nada fijado</b>Fija lo que el equipo debe tener a la mano: acuerdos, ligas, reglas. Hasta 15 por canal.</div>}
+        {res && res.length > 0 && (
+          <div className="eq-res">{res.map(m => (
+            <button key={m.id} onClick={() => onIr(m)}>
+              <div className="m"><b>{m.autor.nombre}</b><span>{hace(m.created_at)}</span>{m.hilo_de && <span>· en hilo</span>}</div>
+              <div className="t" style={{ whiteSpace: 'pre-wrap', maxHeight: 64, overflow: 'hidden' }}>{textoPlano(m.texto).replace(/\*\*/g, '') || (m.adjuntos.length ? `[${m.adjuntos[0].tipo}]` : '')}</div>
+            </button>
+          ))}</div>
+        )}
+      </div>
+    </>
   );
 }
 

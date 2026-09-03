@@ -73,7 +73,7 @@ export const CSS = `
 .eq-acc{position:absolute;right:16px;top:-14px;display:none;gap:1px;background:#fff;border:1px solid var(--eq-linea);border-radius:9px;padding:2px;box-shadow:0 3px 12px rgba(30,20,60,.10);z-index:2}
 .eq-msg:hover .eq-acc,.eq-msg.menu .eq-acc{display:flex}
 .eq-acc button{width:30px;height:28px;border:0;background:none;border-radius:6px;color:var(--eq-gris);display:inline-flex;align-items:center;justify-content:center;font-size:.9375rem}
-.eq-acc button:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-acc button:hover,.eq-acc button.on{background:var(--eq-lila);color:var(--eq-morado-tinta)}
 .eq-rx{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .eq-rx button{border:1px solid var(--eq-linea);background:var(--eq-panel);border-radius:12px;padding:1px 8px;font-size:.8125rem;display:inline-flex;gap:4px;align-items:center;color:var(--eq-tinta)}
 .eq-rx button.mia{border-color:var(--eq-morado);background:var(--eq-lila);color:var(--eq-morado-tinta);font-weight:700}
@@ -205,6 +205,14 @@ export const CSS = `
 .eq-res .m{font-size:.6875rem;color:var(--eq-gris);display:flex;gap:6px;margin-bottom:2px}
 .eq-res .m b{color:var(--eq-morado-tinta)}
 .eq-res .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8125rem}
+.eq-punto-acc{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.eq-punto-acc .eq-btn{padding:3px 8px;font-size:.75rem;border-radius:7px}
+.eq-punto-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--eq-linea);background:#fff;border-radius:10px;padding:2px 8px 2px 4px;font-size:.75rem;color:var(--eq-gris)}
+.eq-punto-chip.on{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:#fff;font-weight:700}
+button.eq-punto-chip{cursor:pointer}
+.eq-fij{display:inline-flex;align-items:center;gap:3px;font-size:.6875rem;color:var(--eq-morado-tinta);font-weight:700}
+.eq-fij svg{width:11px;height:11px}
+.eq-msg.fijado{border-left:3px solid var(--eq-morado);padding-left:13px;background:#fcfbff}
 .eq-mas{display:flex;justify-content:center;padding:8px}
 @media (max-width:900px){
   .eq{height:calc(100dvh - var(--crm-bottomnav-h,64px) - env(safe-area-inset-top));border:0;border-radius:0}
@@ -335,5 +343,6 @@ export const Ic = {
   check: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7" /></svg>,
   play: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z" /></svg>,
   stop: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>,
+  pin: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z" /></svg>,
   info: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>,
 };

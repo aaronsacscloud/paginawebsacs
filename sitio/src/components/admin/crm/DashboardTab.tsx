@@ -23,6 +23,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { lazySeguro } from '../../../lib/ui/lazySeguro';
 const LeadsDashboard = lazySeguro(() => import('./LeadsDashboard'));
+/* En diferido como el de leads: son dos tableros pesados y quien entra al
+   Dashboard casi siempre se queda en «Negocio». */
+const EmbudoTab = lazySeguro(() => import('./EmbudoTab'));
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
@@ -82,13 +85,20 @@ export default function DashboardTab() {
      detrás de un selector «Lista · Dashboard». Allá uno entra a trabajar la
      lista; aquí, a ver cómo va todo. Se queda con la ruta en la URL para que
      un enlace a esta vista siga cayendo en ella. */
-  const [sub, setSub] = useState<'negocio' | 'leads'>(
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('sub') === 'leads' ? 'leads' : 'negocio');
-  const irA = (v: 'negocio' | 'leads') => {
+  /* El EMBUDO se vino aquí (3-sep-2026): estaba colgado de «Cuentas» como su
+     propia subsección, y no es una cuenta — es la misma pregunta que responde
+     este tablero, «cómo voy», vista por etapas. Junto a Leads, que es de donde
+     salen sus números. */
+  const [sub, setSub] = useState<'negocio' | 'leads' | 'embudo'>(() => {
+    if (typeof window === 'undefined') return 'negocio';
+    const v = new URLSearchParams(window.location.search).get('sub');
+    return v === 'leads' || v === 'embudo' ? v : 'negocio';
+  });
+  const irA = (v: 'negocio' | 'leads' | 'embudo') => {
     setSub(v);
     try {
       const u = new URL(window.location.href);
-      if (v === 'leads') u.searchParams.set('sub', 'leads'); else u.searchParams.delete('sub');
+      if (v === 'negocio') u.searchParams.delete('sub'); else u.searchParams.set('sub', v);
       window.history.replaceState({}, '', u.toString());
     } catch { /* sin URL utilizable, la vista igual cambia */ }
   };
@@ -117,7 +127,7 @@ export default function DashboardTab() {
      usuario en una pantalla roja sin salida. */
   const tira = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 16 }}>
-      {([['negocio', 'Negocio'], ['leads', 'Leads']] as const).map(([v, l]) => {
+      {([['negocio', 'Negocio'], ['leads', 'Leads'], ['embudo', 'Embudo']] as const).map(([v, l]) => {
         const on = sub === v;
         return (
           <button key={v} onClick={() => irA(v)} style={{
@@ -135,6 +145,13 @@ export default function DashboardTab() {
     <div style={S.wrap}>
       {tira}
       <Suspense fallback={<Cargando texto="Cargando el tablero de leads…" alto={280} />}><LeadsDashboard /></Suspense>
+    </div>
+  );
+
+  if (sub === 'embudo') return (
+    <div style={S.wrap}>
+      {tira}
+      <Suspense fallback={<Cargando texto="Cargando el embudo…" alto={280} />}><EmbudoTab /></Suspense>
     </div>
   );
 

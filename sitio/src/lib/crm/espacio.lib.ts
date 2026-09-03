@@ -140,7 +140,7 @@ export type Adjunto = {
 
 export type Cita = { tipo: 'cliente' | 'lead' | 'tarea' | 'reunion' | 'cotizacion' | 'corte' | 'canal' | 'wiki'; id: string; nombre?: string };
 
-export const SELECT_MENSAJE = 'id, canal_id, hilo_de, autor_id, texto, responde_a, menciones, adjuntos, citas, sesion_id, punto_id, editado_at, borrado_at, metadata, created_at';
+export const SELECT_MENSAJE = 'id, canal_id, hilo_de, autor_id, texto, responde_a, menciones, adjuntos, citas, sesion_id, punto_id, editado_at, borrado_at, fijado_at, fijado_por, metadata, created_at';
 
 /**
  * Da forma a un mensaje para el navegador: autor resuelto, la cita del mensaje
@@ -209,6 +209,7 @@ export async function darForma(rows: any[], yo: string) {
       adjuntos: borrado ? [] : (r.adjuntos || []).map(conUrl),
       citas: borrado ? [] : (r.citas || []),
       sesion_id: r.sesion_id, punto_id: r.punto_id,
+      fijado: !!r.fijado_at && !borrado,
       reacciones: Object.entries(rx[r.id] || {}).map(([emoji, quienes]) => ({ emoji, n: quienes.length, mia: quienes.includes(yo), quienes: quienes.map(q => persona(q).nombre) })),
       hilo: hilo[r.id] ? { n: hilo[r.id].n, autores: hilo[r.id].autores.map(persona), ultima: hilo[r.id].ultima } : null,
       cid: r.metadata?.cid || null,

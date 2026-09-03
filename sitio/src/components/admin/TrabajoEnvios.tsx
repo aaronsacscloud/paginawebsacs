@@ -5,7 +5,7 @@
 // «lo que propuso el agente / lo que contestó el consultor», con tu veredicto.
 // Sobrio, sin emoji, estándar enterprise.
 import { useEffect, useRef, useState } from 'react';
-import ContextoLead, { BotonContexto } from './crm/ti/ContextoLead';
+import ContextoLead, { BotonContexto, MiniHilo } from './crm/ti/ContextoLead';
 import { SelectorAdjuntos, GaleriaRecursos, type Recurso, type AdjuntoSel } from './RecursosAgente';
 
 type Envio = {
@@ -203,6 +203,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
               {prueba && <span className="ti-chip chip-p2">prueba</span>}
               <span className={'ti-envio-reloj' + (saldra ? '' : ' apagado')}>{saldra ? faltan(e.sale_at, ahora) : 'no saldrá (sombra)'}</span>
             </div>
+            {e.contact_id && <MiniHilo key={e.id} contactId={e.contact_id} n={12} onAbrir={() => setCtx(e)} />}
 
             {(s.ultimos_mensajes?.length > 1) ? <div className="ti-envio-lead"><span>{nombre(e)} dijo · {s.ultimos_mensajes.length} mensajes seguidos (el agente los leyó todos)</span><ol className="ti-rafaga">{s.ultimos_mensajes.map((t: string, i: number) => <li key={i}>{t}</li>)}</ol></div> : s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
             {s.objetivo && <div className="ti-envio-obj"><span>Qué busca el agente</span>{s.objetivo}</div>}

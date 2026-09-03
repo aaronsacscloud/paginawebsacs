@@ -190,7 +190,9 @@ const NAV_SECTIONS = [
     label: 'Cuentas', sec: 'cuentas', icon: 'clientes',
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
-      { id: 'embudo' as Tab, label: 'Embudo', icon: 'dashboard' },
+      /* El Embudo se fue al Dashboard, como pestaña junto a Leads: no es una
+         cuenta, es «cómo voy» visto por etapas. La pantalla sigue existiendo
+         para las ligas viejas (?tab=embudo). */
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
       /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
          cuando se va: mismo grupo, siguiente renglón. */
@@ -694,13 +696,18 @@ export default function CrmDashboard() {
                          el ESPACIO —secciones sueltas, subsecciones apretadas—
                          que no le quita atención a nada. */
                       fontSize: '0.78rem',
-                      fontWeight: tieneActivo || abierto ? 750 : 650,
-                      color: tieneActivo ? '#4C3BD0' : abierto ? '#2e2748' : '#3f3856',
+                      /* La cabecera solo se pinta de morado cuando el grupo está
+                         CERRADO y guarda la pantalla activa: ahí no hay hijo a la
+                         vista que lo diga. Abierto NO, porque entonces el hijo ya
+                         lleva su tarjeta blanca y tener los dos encendidos hace
+                         dudar de cuál es «donde estoy». */
+                      fontWeight: abierto ? 750 : tieneActivo ? 700 : 650,
+                      color: tieneActivo && !abierto ? '#4C3BD0' : abierto ? '#2e2748' : '#3f3856',
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', width: 20, flexShrink: 0, justifyContent: 'center', color: tieneActivo ? '#7C6BF0' : '#a49dbd' }}
+                    <span style={{ display: 'flex', width: 20, flexShrink: 0, justifyContent: 'center', color: tieneActivo && !abierto ? '#7C6BF0' : '#a49dbd' }}
                       dangerouslySetInnerHTML={{ __html: ICONS[section.items[0]?.icon] || '' }} />
                     <span style={{ flex: 1, minWidth: 0 }}>{section.label}</span>
                     {tieneActivo && !abierto && (
@@ -758,9 +765,12 @@ export default function CrmDashboard() {
                    icono por un punto: con el icono puesto se veía igual que la
                    cabecera y no se entendía que colgaba de ella. */
                 const enGrupo = !sidebarCollapsed && !!section.label;
-                /* «Trabajo inteligente» se pinta como lo que es: la sección
-                   principal — lila siempre, letra morada y un pelo más alto. */
-                const esTrabajo = (item.id as any) === 'trabajo';
+                /* «Trabajo inteligente» YA NO se pinta resaltado siempre.
+                   Con su lila fijo había DOS cosas encendidas a la vez —él y la
+                   pantalla en la que estás—, y un resaltado que nunca se apaga
+                   deja de significar «aquí estás» para volverse decoración: al
+                   final compite con el único que sí tenía que destacar.
+                   Se resalta cuando ES el activo, como todos. */
                 return (
                   <button
                     key={item.id}
@@ -784,15 +794,15 @@ export default function CrmDashboard() {
                       margin: sidebarCollapsed ? '2px auto' : (enGrupo ? '0 8px' : '3px 8px'),
                       minHeight: sidebarCollapsed ? 40 : (enGrupo ? 30 : 40),
                       borderRadius: sidebarCollapsed ? 11 : 9,
-                      background: esTrabajo ? 'linear-gradient(92deg,#EEECFE,rgba(244,168,205,.16))' : isActive ? '#fff' : 'transparent',
+                      background: isActive ? '#fff' : 'transparent',
                       boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
-                      color: esTrabajo ? '#4C3BD0' : isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
+                      color: isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       /* Nivel 2: más chico y más claro que su cabecera. Fuera
                        del grupo (Dashboard, que no cuelga de nada) conserva el
                        tamaño de siempre. */
                     fontSize: enGrupo ? '0.735rem' : '0.78rem',
-                    fontWeight: esTrabajo ? 750 : isActive ? 750 : enGrupo ? 500 : 600,
+                    fontWeight: isActive ? 750 : enGrupo ? 500 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
                       // desalineado del resto del menú.

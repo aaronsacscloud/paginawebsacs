@@ -20,7 +20,7 @@ export type Mensaje = {
   texto: string; borrado: boolean; editado_at: string | null;
   responde_a: { id: string; autor: { id: string; nombre: string } | null; texto: string } | null;
   menciones: { id: string; nombre: string }[]; adjuntos: Adjunto[]; citas: any[];
-  sesion_id: string | null; punto_id: string | null;
+  sesion_id: string | null; punto_id: string | null; fijado?: boolean;
   reacciones: Reaccion[]; hilo: { n: number; autores: { id: string; nombre: string; foto_url: string | null }[]; ultima: string } | null;
   cid: string | null; mio: boolean;
   // solo en el navegador
@@ -52,6 +52,8 @@ export const api = {
   enviar: (b: { canal_id: string; texto: string; responde_a?: string | null; hilo_de?: string | null; adjuntos?: Adjunto[]; cid: string; sesion_id?: string | null; punto_id?: string | null }) =>
     pedir<{ mensaje: Mensaje; repetido?: boolean }>('POST', '/mensajes', b),
   editar: (id: string, texto: string) => pedir<{ mensaje: Mensaje }>('PUT', '/mensajes', { id, texto }),
+  fijar: (id: string, fijar: boolean) => pedir<{ mensaje: Mensaje }>('PUT', '/mensajes', { id, fijar }),
+  fijados: (canal_id: string) => pedir<{ mensajes: Mensaje[] }>('GET', `/mensajes?canal_id=${canal_id}&fijados=1`),
   borrar: (id: string) => pedir('DELETE', `/mensajes?id=${id}`),
   reaccionar: (mensaje_id: string, emoji: string) => pedir<{ puesta: boolean }>('POST', '/reacciones', { mensaje_id, emoji }),
   leido: (canal_id: string, hasta?: string) => pedir('PUT', '/lecturas', { canal_id, hasta }),

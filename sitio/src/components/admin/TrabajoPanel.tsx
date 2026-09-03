@@ -42,7 +42,7 @@ const TIPO_L: Record<string, string> = {
   llamada: 'Llamada', wa_plantilla: 'WhatsApp · 1 clic', wa_libre: 'WhatsApp',
   correo: 'Correo', responder: 'WhatsApp', estafeta: 'Estafeta de la IA',
   veredicto: 'Veredicto propuesto', briefing: 'Briefing de la IA',
-  compromiso: 'Llamada pactada', dato: 'Dato',
+  compromiso: 'Llamada pactada', dato: 'Dato', acuerdo: 'Acuerdo de reunión',
 };
 
 function hechosDe(t: Tarea): any[] {

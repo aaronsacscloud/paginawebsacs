@@ -2,7 +2,7 @@
 // separadores de día y línea de "nuevo", carga hacia atrás al subir, y la caja.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Canal as C, Mensaje as M, Persona, Adjunto } from './api';
-import { diaEtiqueta, mismoDia } from './api';
+import { api, diaEtiqueta, mismoDia } from './api';
 import { useMensajes } from './useMensajes';
 import type { Senal } from './useRealtime';
 import Mensaje from './Mensaje';
@@ -28,6 +28,8 @@ export type CanalProps = {
   ultimoLeidoAt?: string | null;
   extraEnvio?: { sesion_id?: string | null; punto_id?: string | null };
   bloqueada?: string | null;
+  salas?: C[];                         // para "Llevar a la agenda de…"
+  onCambioSala?: (canalId: string) => void;
 };
 
 export default function Canal(p: CanalProps) {
@@ -36,6 +38,7 @@ export default function Canal(p: CanalProps) {
   const [respondeA, setRespondeA] = useState<M | null>(null);
   const [editando, setEditando] = useState<M | null>(null);
   const [menu, setMenu] = useState<M | null>(null);
+  const [agendar, setAgendar] = useState<M | null>(null);
   const [resaltado, setResaltado] = useState<string | null>(null);
   const lista = useRef<HTMLDivElement>(null);
   const alFondo = useRef(true);
@@ -106,9 +109,23 @@ export default function Canal(p: CanalProps) {
       if (m.hilo_de) u.searchParams.set('hilo', m.hilo_de); else u.searchParams.delete('hilo');
       navigator.clipboard?.writeText(u.toString()).then(() => p.onAviso('Liga copiada')).catch(() => p.onAviso(u.toString()));
     },
+    fijar: async m => {
+      try { await st.fijar(m.id, !m.fijado); p.onAviso(m.fijado ? 'Mensaje desfijado' : 'Fijado en el canal'); } catch (e: any) { p.onAviso(e.message); }
+    },
+    agendar: m => {
+      const salas = p.salas || [];
+      if (!salas.length) { p.onAviso('No hay salas de reunión'); return; }
+      if (salas.length === 1) llevarA(m, salas[0]); else setAgendar(m);
+    },
     irA,
     verImagen: p.onVerImagen,
     menuMovil: m => setMenu(m),
+  };
+  const llevarA = async (m: M, sala: C) => {
+    const titulo = (textoPlano(m.texto).split('\n')[0] || (m.adjuntos[0]?.transcripcion || '') || 'Ver este mensaje').slice(0, 120);
+    try { await api.salaAccion({ accion: 'proponer', canal_id: sala.id, titulo, origen_mensaje_id: m.id }); p.onAviso(`En la agenda de #${sala.nombre}`); p.onCambioSala?.(sala.id); }
+    catch (e: any) { p.onAviso(e.message); }
+    setAgendar(null);
   };
 
   const enviar = async (texto: string, adjuntos: Adjunto[]) => {
@@ -175,11 +192,14 @@ export default function Canal(p: CanalProps) {
         { label: 'Responder', icon: Ic.responder, onClick: () => { acc.responder(menu); setMenu(null); } },
         ...(!hilo ? [{ label: 'Abrir hilo', icon: Ic.hilo, onClick: () => { acc.abrirHilo(menu); setMenu(null); } }] : []),
         { label: 'Copiar liga', icon: Ic.liga, onClick: () => { acc.copiarLiga(menu); setMenu(null); } },
+        { label: menu.fijado ? 'Desfijar' : 'Fijar en el canal', icon: Ic.pin, onClick: () => { acc.fijar(menu); setMenu(null); } },
+        { label: 'Llevar a la agenda de…', icon: Ic.sala, onClick: () => { setMenu(null); acc.agendar(menu); } },
         ...(menu.mio ? [
           { label: 'Editar', icon: Ic.editar, onClick: () => { acc.editar(menu); setMenu(null); } },
           { label: 'Eliminar', icon: Ic.basura, danger: true, onClick: () => { acc.borrar(menu); setMenu(null); } },
         ] : []),
       ] : []} />
+      <ActionSheet open={!!agendar} onClose={() => setAgendar(null)} title="Llevar a la agenda de…" items={agendar ? (p.salas || []).map(s => ({ label: `#${s.nombre}`, icon: Ic.sala, onClick: () => llevarA(agendar, s) })) : []} />
     </>
   );
 }

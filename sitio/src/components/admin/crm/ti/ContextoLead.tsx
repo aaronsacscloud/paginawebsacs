@@ -88,3 +88,44 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
     </Sheet>
   );
 }
+
+
+/* ═══ MiniHilo ═══ Los últimos N mensajes del lead DENTRO de la tarjeta, sin abrir nada: para decidir rápido.
+   «Ver más» trae 15 más; «Abrir completa» abre el drawer. */
+export function MiniHilo({ contactId, n = 12, onAbrir }: { contactId: string; n?: number; onAbrir?: () => void }) {
+  const [d, setD] = useState<any>(null);
+  const [cuantos, setCuantos] = useState(n);
+  const [abierto, setAbierto] = useState(true);
+  useEffect(() => { setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${cuantos}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [contactId, cuantos]);
+  const k = d?.contacto;
+  return (
+    <div style={{ margin: '10px 0 4px', border: '1px solid #ecebf2', borderRadius: 12, background: '#faf9fc' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+        <button type="button" onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: 0 }}>{abierto ? '▾' : '▸'} Últimos mensajes{d?.mensajes ? ` (${d.mensajes.length})` : ''}</button>
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
+          {abierto && d?.mensajes?.length >= cuantos && <button type="button" onClick={() => setCuantos(c => c + 15)} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5 }}>ver 15 más</button>}
+          {onAbrir && <button type="button" onClick={onAbrir} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5 }}>abrir completa</button>}
+        </span>
+      </div>
+      {abierto && (
+        <div style={{ padding: '0 12px 10px', maxHeight: 320, overflowY: 'auto', display: 'grid', gap: 5 }}>
+          {!d && <span style={{ color: '#8e88a8', fontSize: 12 }}>Cargando…</span>}
+          {d?.error && <span style={{ color: '#b91c1c', fontSize: 12 }}>{d.error}</span>}
+          {d && !d.error && !d.mensajes.length && <span style={{ color: '#8e88a8', fontSize: 12 }}>Sin mensajes de WhatsApp con este lead.</span>}
+          {(d?.mensajes || []).map((m: any) => {
+            const lead = m.quien === 'lead'; const agente = m.quien === 'agente';
+            const texto = m.cuerpo || m.transcript || (m.tipo && m.tipo !== 'text' ? `[${m.tipo}]` : '');
+            return (
+              <div key={m.id} style={{ display: 'flex', justifyContent: lead ? 'flex-start' : 'flex-end' }}>
+                <div style={{ maxWidth: '86%', background: lead ? '#fff' : agente ? '#EEECFE' : '#e7f7ee', border: `1px solid ${lead ? '#e8e5f0' : agente ? '#d9d4ea' : '#c9ead6'}`, borderRadius: 10, padding: '5px 9px' }}>
+                  <div style={{ fontSize: 9.5, fontWeight: 800, color: lead ? '#8e88a8' : agente ? '#4c1d95' : '#14532d' }}>{lead ? (k?.nombre || 'Lead') : agente ? 'Agente IA' : (m.quien === 'equipo' ? 'Equipo' : m.quien)} · {fecha(m.created_at)}</div>
+                  <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.4, fontSize: 12.5 }}>{String(texto).slice(0, 600)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

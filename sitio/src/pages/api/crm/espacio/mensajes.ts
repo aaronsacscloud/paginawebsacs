@@ -1,6 +1,8 @@
 // GET    /api/crm/espacio/mensajes?canal_id=&antes=<iso>|desde=<iso>&hilo_de=&alrededor=<id>
 // POST   /api/crm/espacio/mensajes   { canal_id, texto, responde_a?, hilo_de?, adjuntos?, citas?, cid? }
 // PUT    /api/crm/espacio/mensajes   { id, texto }         → edita (15 min, solo el autor)
+// PUT    /api/crm/espacio/mensajes   { id, fijar: bool }   → fija/desfija (máx. 15 por canal)
+// GET    /api/crm/espacio/mensajes?canal_id=&fijados=1     → los fijados del canal
 // DELETE /api/crm/espacio/mensajes?id=                     → borra (marca; solo el autor)
 //
 // El navegador manda `cid` (id de cliente) con cada mensaje: si el socket se
@@ -69,6 +71,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   const c = await canalDe(canal_id);
   if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Canal no encontrado' }, 404);
 
+  if (url.searchParams.get('fijados')) {
+    const { data } = await supabase.from('espacio_mensajes').select(SELECT_MENSAJE).eq('canal_id', c.id).not('fijado_at', 'is', null).is('borrado_at', null)
+      .order('fijado_at', { ascending: false }).limit(LIMITES.fijados_por_canal);
+    return json({ mensajes: await darForma(data || [], yo.id), hay_mas: false });
+  }
   const hilo_de = url.searchParams.get('hilo_de');
   const antes = url.searchParams.get('antes');
   const desde = url.searchParams.get('desde');
@@ -155,9 +162,18 @@ export const POST: APIRoute = async ({ request }) => {
   const eq = await equipo();
   const menciones = extraerMenciones(texto, eq);
 
+  // En una sala con reunión abierta, lo que se escribe queda ligado a la
+  // sesión y al punto que se está tratando. Lo decide el servidor: el
+  // navegador puede tener la agenda vieja.
+  let sesion_id: string | null = null, punto_id: string | null = null;
+  if (c.tipo === 'sala' && !hilo_de) {
+    const { data: ab } = await supabase.from('espacio_reunion_sesiones').select('id, punto_actual_id').eq('canal_id', c.id).is('fin_at', null).maybeSingle();
+    if (ab) { sesion_id = ab.id; punto_id = ab.punto_actual_id || null; }
+  }
+
   const { data, error } = await supabase.from('espacio_mensajes').insert({
     canal_id: c.id, hilo_de, autor_id: yo.id, texto, responde_a, menciones, adjuntos, citas,
-    sesion_id: esUuid(b.sesion_id) ? b.sesion_id : null, punto_id: esUuid(b.punto_id) ? b.punto_id : null,
+    sesion_id, punto_id,
     metadata: cid ? { cid, ua: (request.headers.get('user-agent') || '').slice(0, 80) } : {},
   }).select(SELECT_MENSAJE).single();
   if (error) {
@@ -207,6 +223,23 @@ export const PUT: APIRoute = async ({ request }) => {
   if (!yo) return json({ error: 'Sin sesión' }, 401);
   const b = await request.json().catch(() => ({}));
   if (!esUuid(b.id)) return json({ error: 'Falta id' }, 400);
+  if (typeof b.fijar === 'boolean') {
+    // Fijar lo puede hacer cualquiera del equipo: lo fijado es del canal, no del autor.
+    const { data: m } = await supabase.from('espacio_mensajes').select('id, canal_id, hilo_de, borrado_at, fijado_at').eq('id', b.id).maybeSingle();
+    if (!m || m.borrado_at) return json({ error: 'Mensaje no encontrado' }, 404);
+    const c = await canalDe(m.canal_id);
+    if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Mensaje no encontrado' }, 404);
+    if (b.fijar && !m.fijado_at) {
+      const { count } = await supabase.from('espacio_mensajes').select('id', { count: 'exact', head: true }).eq('canal_id', c.id).not('fijado_at', 'is', null).is('borrado_at', null);
+      if ((count || 0) >= LIMITES.fijados_por_canal) return json({ error: `Ya hay ${LIMITES.fijados_por_canal} fijados en este canal: desfija alguno primero` }, 400);
+    }
+    const { data, error } = await supabase.from('espacio_mensajes')
+      .update(b.fijar ? { fijado_at: new Date().toISOString(), fijado_por: yo.id } : { fijado_at: null, fijado_por: null })
+      .eq('id', m.id).select(SELECT_MENSAJE).single();
+    if (error) return json({ error: error.message }, 500);
+    await emitir({ tipo: 'msg_upd', canal_id: m.canal_id, id: m.id, hilo_de: m.hilo_de });
+    return json({ ok: true, mensaje: (await darForma([data], yo.id))[0] });
+  }
   const texto = String(b.texto ?? '').trim();
   if (!texto || texto.length > LIMITES.texto) return json({ error: 'Texto inválido' }, 400);
   const { data: m } = await supabase.from('espacio_mensajes').select(SELECT_MENSAJE).eq('id', b.id).maybeSingle();

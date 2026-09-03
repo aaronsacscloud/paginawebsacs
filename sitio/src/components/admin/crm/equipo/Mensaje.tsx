@@ -13,6 +13,8 @@ export type Acciones = {
   editar: (m: M) => void;
   borrar: (m: M) => void;
   copiarLiga: (m: M) => void;
+  fijar: (m: M) => void;
+  agendar: (m: M) => void;            // "Llevar a la agenda de…" (una sala)
   irA: (id: string) => void;
   verImagen: (url: string) => void;
   menuMovil: (m: M) => void;
@@ -33,7 +35,7 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil 
   } : {};
 
   return (
-    <div ref={ref} id={'m-' + m.id} className={'eq-msg' + (seguido ? '' : ' inicio') + (resaltado ? ' resaltado' : '') + (emojis ? ' menu' : '')} {...alTocar}
+    <div ref={ref} id={'m-' + m.id} className={'eq-msg' + (seguido ? '' : ' inicio') + (resaltado ? ' resaltado' : '') + (emojis ? ' menu' : '') + (m.fijado ? ' fijado' : '')} {...alTocar}
       style={m.pendiente ? { opacity: .55 } : undefined}>
       <div className="gutter">
         {seguido ? <span className="hora-h">{hora(m.created_at)}</span> : <Avatar p={m.autor} size={36} />}
@@ -43,8 +45,10 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil 
           <div className="quien">
             <b>{m.autor.nombre}</b>
             <time dateTime={m.created_at} title={new Date(m.created_at).toLocaleString('es-MX')}>{hora(m.created_at)}</time>
+            {m.fijado && <span className="eq-fij">{Ic.pin}Fijado</span>}
           </div>
         )}
+        {seguido && m.fijado && <span className="eq-fij">{Ic.pin}Fijado</span>}
         {m.responde_a && (
           <div className="eq-cita" onClick={() => acc.irA(m.responde_a!.id)} title="Ir al mensaje">
             {Ic.responder}<b>{m.responde_a.autor?.nombre || ''}</b><span>{m.responde_a.texto.replace(/@\[([^\]]+)\]\([^)]+\)/g, '@$1')}</span>
@@ -103,6 +107,8 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil 
           {m.mio && <button onClick={() => acc.editar(m)} title="Editar">{Ic.editar}</button>}
           {m.mio && <button onClick={() => acc.borrar(m)} title="Eliminar">{Ic.basura}</button>}
           <button onClick={() => acc.copiarLiga(m)} title="Copiar liga">{Ic.liga}</button>
+          <button onClick={() => acc.fijar(m)} title={m.fijado ? 'Desfijar' : 'Fijar en el canal'} className={m.fijado ? 'on' : ''}>{Ic.pin}</button>
+          <button onClick={() => acc.agendar(m)} title="Llevar a la agenda de una sala">{Ic.sala}</button>
         </div>
       )}
       {emojis && (

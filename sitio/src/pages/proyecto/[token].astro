@@ -45,7 +45,7 @@ const fechaFirma = brief.firmado_at
           <span class="pb-top-sep"></span>
           <span class="pb-top-cli">{brief.cliente}</span>
         </div>
-        <div class="pb-top-est" id="pb-avance">Documento de trabajo</div>
+        <button type="button" class="pb-top-est" id="pb-avance">Documento de trabajo</button>
       </div>
       {esSacs && (
         <div class="pb-modo-sacs">
@@ -56,6 +56,10 @@ const fechaFirma = brief.firmado_at
     </header>
 
     <main class="pb-hoja">
+
+      <!-- Lo que le toca, antes que nada. Solo aparece con el brief firmado:
+           en la segunda visita y en la tercera, esto es lo único que importa. -->
+      {firmado && <div id="pb-puerta" class="pb-puerta" hidden></div>}
 
       <!-- ── Portada ── -->
       <section class="pb-portada">
@@ -73,10 +77,11 @@ const fechaFirma = brief.firmado_at
       <!-- ── Qué vamos a construir (contexto, sin nada comercial: los montos
            y las formas de pago viven en la propuesta, no en el brief) ── -->
       {r.alcance?.length && (
-        <section class="pb-sec">
-          <div class="pb-sec-h">
+        <section class="pb-sec pb-sec-plegable" data-plegada={firmado ? '1' : null}>
+          <div class="pb-sec-h" role={firmado ? 'button' : null} tabindex={firmado ? '0' : null}>
             <span class="pb-num">01</span>
             <h2>Lo que vamos a construir</h2>
+            {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
           </div>
           <ul class="pb-lista">
             {r.alcance.map((a: string) => <li>{a}</li>)}
@@ -86,10 +91,11 @@ const fechaFirma = brief.firmado_at
 
       <!-- ── Responsabilidades ── -->
       {(r.hace_sacs?.length || r.hace_cliente?.length) && (
-        <section class="pb-sec">
-          <div class="pb-sec-h">
+        <section class="pb-sec pb-sec-plegable" data-plegada={firmado ? '1' : null}>
+          <div class="pb-sec-h" role={firmado ? 'button' : null} tabindex={firmado ? '0' : null}>
             <span class="pb-num">02</span>
             <h2>Quién hace qué</h2>
+            {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
           </div>
           <div class="pb-dos">
             {r.hace_sacs?.length && (
@@ -110,10 +116,11 @@ const fechaFirma = brief.firmado_at
       )}
 
       <!-- ── Cómo trabajamos ── -->
-      <section class="pb-sec">
-        <div class="pb-sec-h">
+      <section class="pb-sec pb-sec-plegable" data-plegada={firmado ? '1' : null}>
+        <div class="pb-sec-h" role={firmado ? 'button' : null} tabindex={firmado ? '0' : null}>
           <span class="pb-num">03</span>
           <h2>Cómo se llena este brief</h2>
+          {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
         </div>
         <p class="pb-parr">
           El brief va por etapas. Se abre una a la vez: ustedes la contestan,
@@ -130,10 +137,11 @@ const fechaFirma = brief.firmado_at
       </section>
 
       <!-- ── Firma ── -->
-      <section class="pb-firma-sec" id="firma">
-        <div class="pb-sec-h">
+      <section class="pb-firma-sec pb-sec-plegable" id="firma" data-plegada={firmado ? '1' : null}>
+        <div class="pb-sec-h" role={firmado ? 'button' : null} tabindex={firmado ? '0' : null}>
           <span class="pb-num">04</span>
           <h2>Firma de conformidad</h2>
+          {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
         </div>
 
         {firmado ? (
@@ -217,6 +225,11 @@ const fechaFirma = brief.firmado_at
           Este link es privado. Quien lo tenga puede leer y contestar el brief —
           no lo compartan fuera del equipo.
         </div>
+        <div class="pb-pie-ayuda">
+          ¿Se atoraron con algo? Escríbannos por
+          <a href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          y lo resolvemos.
+        </div>
       </footer>
     </main>
 
@@ -228,7 +241,7 @@ const fechaFirma = brief.firmado_at
 .pb {
   --tinta: #14181D;
   --tinta-suave: #545C66;
-  --tenue: #8A929B;
+  --tenue: #7C848D;
   --linea: #E6E9ED;
   --linea-fuerte: #D3D9E0;
   --papel: #FFFFFF;
@@ -277,9 +290,12 @@ const fechaFirma = brief.firmado_at
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pb-top-est {
-  font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--tenue); white-space: nowrap;
+  font: inherit; font-family: var(--mono); font-size: .72rem; letter-spacing: .06em;
+  color: var(--tinta-suave); white-space: nowrap; background: none;
+  border: 1px solid var(--linea); border-radius: 20px; padding: 7px 13px;
+  cursor: pointer; min-height: 34px;
 }
+.pb-top-est:hover { border-color: var(--linea-fuerte); color: var(--tinta); }
 
 /* ── Hoja ── */
 .pb-hoja {
@@ -427,6 +443,75 @@ const fechaFirma = brief.firmado_at
 .pb-firmado-img { height: 46px; width: auto; margin-left: auto; opacity: .8; mix-blend-mode: multiply; }
 
 /* ── Etapas ── */
+/* La puerta de entrada */
+.pb-puerta {
+  margin-bottom: 30px; padding: 22px 24px; border-radius: 14px;
+  background: var(--tinta); color: #fff;
+}
+.pb-puerta-t { font-family: var(--serif); font-size: 1.42rem; font-weight: 600; margin-bottom: 6px; }
+.pb-puerta p { margin: 0; font-size: .95rem; color: rgba(255,255,255,.76); line-height: 1.5; }
+.pb-puerta p b { color: #fff; font-weight: 600; }
+.pb-puerta-btn {
+  margin-top: 18px; background: #fff; color: var(--tinta); min-height: 48px;
+}
+.pb-puerta-btn:hover { background: #F0F0F0; }
+
+/* Secciones plegadas del documento */
+.pb-sec-plegable[data-plegada] > .pb-sec-h { cursor: pointer; user-select: none; }
+.pb-sec-plegable[data-plegada] .pb-sec-h h2 { flex: 1; }
+.pb-sec-plegable[data-plegada] .pb-sec-h { display: flex; align-items: center; gap: 14px; }
+.pb-plegar {
+  width: 11px; height: 11px; flex: none; border-right: 2px solid var(--tenue);
+  border-bottom: 2px solid var(--tenue); transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .18s ease;
+}
+.pb-sec-plegable[data-plegada='0'] .pb-plegar { transform: rotate(-135deg) translate(-3px, -3px); }
+.pb-sec-plegable[data-plegada='1'] > *:not(.pb-sec-h) { display: none; }
+.pb-sec-plegable[data-plegada='1'] { margin-top: 20px; padding-bottom: 0; }
+.pb-sec-plegable[data-plegada='1'] + .pb-sec-plegable[data-plegada='1'] { margin-top: 0; border-top: 1px solid var(--linea); padding-top: 20px; }
+
+/* La respuesta ya enviada, cuando hay una pregunta abierta encima */
+.pb-ya {
+  margin: 4px 0 0; padding: 14px 16px; border-radius: 10px;
+  background: var(--papel-2); border: 1px solid var(--linea);
+}
+.pb-ya-t {
+  display: block; font-family: var(--mono); font-size: .7rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tenue); margin-bottom: 6px;
+}
+.pb-ya p { margin: 0; font-size: .95rem; color: var(--tinta); white-space: pre-wrap; line-height: 1.55; }
+.pb-editar {
+  margin-top: 12px; font: inherit; font-size: .87rem; font-weight: 600; color: var(--azul);
+  background: none; border: 0; padding: 8px 0; cursor: pointer; min-height: 44px;
+}
+.pb-editar:hover { text-decoration: underline; }
+.pb-oculto { display: none; }
+
+/* El sello de guardado */
+.pb-sello {
+  margin-top: 9px; font-size: .8rem; color: var(--tenue);
+  display: flex; align-items: center; gap: 7px;
+}
+.pb-sello::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--linea-fuerte); flex: none;
+}
+.pb-sello[data-e=escribiendo]::before { background: var(--ambar); }
+.pb-sello[data-e=ok] { color: var(--verde); }
+.pb-sello[data-e=ok]::before { background: var(--verde); }
+.pb-sello[data-e=error] { color: var(--rojo); }
+.pb-sello[data-e=error]::before { background: var(--rojo); }
+
+/* El chevron: la tarjeta se abre */
+.pb-chev {
+  width: 9px; height: 9px; flex: none; margin-left: 2px;
+  border-right: 2px solid var(--tenue); border-bottom: 2px solid var(--tenue);
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform .18s ease;
+}
+.pb-et[data-abierta] .pb-chev { transform: rotate(-135deg) translate(-3px, -3px); }
+
+.pb-pie-ayuda { margin-top: 10px; font-size: .82rem; color: var(--tinta-suave); }
+.pb-pie-ayuda a { color: var(--azul); }
+
 .pb-etapas { display: flex; flex-direction: column; gap: 14px; }
 
 .pb-aviso-global {
@@ -472,9 +557,9 @@ const fechaFirma = brief.firmado_at
 .pb-et[data-estado=bloqueada] .pb-et-tit strong { color: var(--tenue); }
 
 .pb-chip {
-  flex: none; font-family: var(--mono); font-size: .64rem; letter-spacing: .1em;
+  flex: none; font-family: var(--mono); font-size: .68rem; letter-spacing: .1em;
   text-transform: uppercase; font-weight: 600; padding: 5px 10px; border-radius: 20px;
-  background: #F0F2F5; color: var(--tenue); white-space: nowrap;
+  background: #EDEFF2; color: #6B737C; white-space: nowrap;
 }
 .pb-chip[data-e=abierta] { background: var(--azul-suave); color: var(--azul); }
 .pb-chip[data-e=enviada] { background: var(--ambar-suave); color: var(--ambar); }
@@ -618,10 +703,10 @@ const fechaFirma = brief.firmado_at
 
 .pb-nota-sacs {
   margin: 18px 0 0; padding: 15px 18px; border-radius: 10px;
-  background: var(--rojo-suave); border-left: 3px solid var(--rojo);
+  background: var(--ambar-suave); border-left: 3px solid var(--ambar);
 }
-.pb-nota-sacs .pb-campo-t { color: var(--rojo); }
-.pb-nota-sacs p { margin: 0; font-size: .93rem; color: #7A2E20; }
+.pb-nota-sacs .pb-campo-t { color: var(--ambar); }
+.pb-nota-sacs p { margin: 0; font-size: .93rem; color: #6C5017; }
 
 /* ── Correos de aviso ── */
 .pb-avisos { display: block; margin-bottom: 22px; }
@@ -632,22 +717,22 @@ const fechaFirma = brief.firmado_at
 /* ── Lo que falta contestar ── */
 .pb-pendientes {
   margin: 18px 0 4px; padding: 18px 20px; border-radius: 12px;
-  background: var(--ambar-suave); border: 1px solid #EFDFBF;
+  background: var(--papel-2); border: 1px solid var(--linea-fuerte);
 }
-.pb-pendientes .pb-campo-t { color: var(--ambar); margin-bottom: 12px; }
+.pb-pendientes .pb-campo-t { color: var(--tinta); margin-bottom: 12px; }
 .pb-pendientes ol { margin: 0; padding-left: 20px; }
 .pb-pendientes li { margin-bottom: 11px; font-size: .92rem; }
 .pb-pendientes li:last-child { margin-bottom: 0; }
-.pb-pendientes a { color: var(--tinta); text-decoration: none; border-bottom: 1px solid var(--ambar); }
-.pb-pendientes a:hover { color: var(--ambar); }
-.pb-pendientes span { display: block; color: #7A5A18; margin-top: 2px; }
+.pb-pendientes a { color: var(--tinta); text-decoration: none; border-bottom: 1px solid var(--tinta-suave); }
+.pb-pendientes a:hover { color: var(--azul); border-bottom-color: var(--azul); }
+.pb-pendientes span { display: block; color: var(--tinta-suave); margin-top: 2px; }
 
 /* ── Hilo de conversación ── */
 .pb-hilo {
   margin-top: 14px; padding: 14px 16px; border-radius: 11px;
   background: var(--papel-2); border: 1px solid var(--linea);
 }
-.pb-hilo-espera { background: var(--ambar-suave); border-color: #EFDFBF; }
+.pb-hilo-espera { background: var(--ambar-suave); border-color: #EFDFBF; border-left: 3px solid var(--ambar); }
 .pb-msg { margin-bottom: 12px; }
 .pb-msg:last-of-type { margin-bottom: 0; }
 .pb-msg-de {
@@ -716,19 +801,188 @@ const fechaFirma = brief.firmado_at
 .pb-btn-verde { background: var(--verde); }
 .pb-btn-verde:hover { background: #17734F; }
 
-@media (max-width: 560px) {
-  .pb-top-in { padding-left: 18px; padding-right: 18px; }
-  .pb-top-est { font-size: .6rem; letter-spacing: .08em; }
+/* ══════════════════════════════════════════════════════════════════
+   MÓVIL
+   Esto no es el escritorio encogido. Medido a 390×844 antes de tocarlo:
+   los 12 campos estaban a 15.2px —debajo de 16 iOS hace ZOOM en cada
+   toque—, las pastillas de estado a 9px, la cabecera a 9.6px, y había
+   2,884px de documento (3.4 pantallas) antes de llegar a lo que el
+   cliente viene a hacer. Aquí se arregla eso.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+
+  /* ── Lo que iOS castiga ──
+     Cualquier campo por debajo de 16px hace que Safari acerque la página
+     al enfocarlo, y al salir se queda torcida. No es preferencia: es la
+     diferencia entre poder contestar y pelearse con el zoom. */
+  .pb input[type=text], .pb input[type=email], .pb input[type=url], .pb textarea {
+    font-size: 16px;
+    padding: 13px 14px;
+  }
+  .pb textarea { min-height: 112px; }
+
+  /* ── La cabecera ──
+     "0 DE 12 ETAPAS APROBADAS" a 9.6px al lado del nombre del cliente en
+     390px no lo lee nadie. Se queda el contador corto, legible. */
+  .pb-top-in { padding: 11px 16px; gap: 10px; }
   .pb-marca img { height: 15px; }
-  .pb-et-cab { padding: 15px 16px; gap: 11px; }
-  .pb-et-cuerpo { padding-left: 16px; padding-right: 16px; }
-  .pb-chip { font-size: .56rem; padding: 4px 7px; }
-  .pb-et-tit strong { font-size: 1.04rem; }
-  .pb-et-tit span { font-size: .8rem; }
-  .pb-et-pie { flex-direction: column; align-items: stretch; }
-  .pb-et-pie .pb-btn { width: 100%; }
-  .pb-log-f { width: 84px; }
+  .pb-top-cli { font-size: .95rem; }
+  .pb-top-est { font-size: .72rem; letter-spacing: .06em; }
+
+  .pb-hoja { padding-left: 16px; padding-right: 16px; padding-top: 30px; }
+
+  /* ── Portada ──
+     El titular y la entrada ocupaban media pantalla cada uno. */
+  .pb-portada { padding-bottom: 4px; }
+  .pb h1 { font-size: 1.95rem; line-height: 1.1; }
+  .pb-lede { font-size: 1rem; line-height: 1.55; }
+  .pb-meta { grid-template-columns: 1fr 1fr; gap: 16px 18px; margin-top: 26px; padding-top: 20px; }
+  .pb-meta dt { font-size: .68rem; }
+  .pb-meta dd { font-size: .92rem; }
+
+  .pb-sec, .pb-firma-sec { margin-top: 40px; }
+  .pb-sec-h { margin-bottom: 16px; }
+  .pb h2 { font-size: 1.35rem; }
+  .pb-parr, .pb-lista li { font-size: .95rem; }
+
+  /* ── La tarjeta de etapa ──
+     En escritorio son tres columnas: número, título+bajada, pastilla. En
+     390px eso partía el título en dos y dejaba la bajada en un canal de
+     200px. Aquí se apila: número y título arriba, la pastilla como
+     etiqueta suya, y la bajada a todo lo ancho. */
+  .pb-et-cab {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-areas: 'n tit' 'x bajada';
+    align-items: center;
+    gap: 4px 12px;
+    padding: 16px;
+  }
+  .pb-et-n { grid-area: n; }
+  .pb-et-tit { grid-area: tit; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .pb-et-tit strong { font-size: 1.08rem; line-height: 1.25; }
+  .pb-et-tit span { grid-area: bajada; display: none; }
+  .pb-et-cab .pb-chip { grid-area: bajada; justify-self: start; margin-left: 42px; }
+
+  /* La bajada solo estorba en la lista: se lee al abrir la etapa, donde ya
+     está el mismo texto en "Al aprobarse". */
+  .pb-et[data-abierta] .pb-et-tit span { display: block; width: 100%; font-size: .85rem; margin-top: 3px; }
+
+  /* El estado, legible. Antes: 9px, mayúsculas, espaciado y gris — la peor
+     combinación posible para ojos de 55 años, y justo ahí vivía toda la
+     información de "qué me toca". */
+  .pb-chip {
+    font-family: var(--sans); font-size: .8rem; font-weight: 600;
+    padding: 5px 11px; letter-spacing: 0; text-transform: none;
+  }
+  .pb-msg-de, .pb-ya-t, .pb-campo-t, .pb-hilo-ok, .pb-previa li em {
+    font-size: .78rem; letter-spacing: .04em; text-transform: none;
+  }
+  .pb-grupo span { font-size: .78rem; letter-spacing: .1em; }
+  .pb-eyebrow, .pb-meta dt { font-size: .72rem; letter-spacing: .12em; }
+  .pb-avance-txt, .pb-sello { font-size: .85rem; }
+  .pb-log-f { font-size: .78rem; }
+
+  /* El tirador de redimensionar no sirve al tacto y se lee como suciedad. */
+  .pb textarea { resize: none; }
+
+  /* La cabecera a 390px: el nombre del cliente se cortaba en "Ruben'…"
+     porque la pastilla de estado le comía el renglón. El cliente ya sabe
+     quién es; lo que necesita saber es en qué etapa va. */
+  .pb-top-sep, .pb-top-cli { display: none; }
+  .pb-top-in { justify-content: space-between; }
+  .pb-top-est { min-height: 44px; font-size: .78rem; padding: 10px 14px; }
+
+  /* Los datos de la portada, uno por renglón: en dos columnas el tercero
+     quedaba solo con medio renglón vacío al lado. */
+  .pb-meta {
+    display: flex; flex-direction: column; gap: 0;
+    margin-top: 22px; padding-top: 18px;
+  }
+  .pb-meta div {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--linea);
+  }
+  .pb-meta div:last-child { border-bottom: 0; }
+  .pb-meta dt { margin-bottom: 0; }
+  .pb-meta dd { text-align: right; }
+
+  /* Ya firmado, la entrada de la portada es contexto que ya leyó. La puerta
+     de arriba dice lo que importa. */
+  .pb[data-firmado] .pb-lede { display: none; }
+  .pb[data-firmado] .pb-portada h1 { font-size: 1.6rem; }
+
+  /* Un encabezado plegable se toca con el pulgar. */
+  .pb-sec-plegable[data-plegada] > .pb-sec-h { min-height: 52px; padding: 6px 0; margin-bottom: 0; }
+  .pb-pie-ayuda a, .pb-pendientes a, .pb-aviso-global a { padding: 11px 0; display: inline-block; }
+
+  .pb-puerta { padding: 20px 18px; margin-bottom: 26px; }
+  .pb-puerta-t { font-size: 1.28rem; }
+  .pb-puerta-btn { width: 100%; min-height: 50px; font-size: 1rem; }
+
+  .pb-ya { padding: 13px 14px; }
+  .pb-editar { min-height: 48px; }
+
+  .pb-et-cuerpo { padding: 2px 16px 22px; }
+  .pb-et-intro { font-size: .95rem; margin-top: 16px; }
+  .pb-et-entrega { font-size: .88rem; padding: 12px 14px; margin-bottom: 20px; }
+
+  /* ── Las preguntas ── */
+  .pb-campo { padding: 18px 0; }
+  .pb-campo-lab { font-size: 1.02rem; line-height: 1.35; }
+  .pb-campo-ayuda { font-size: .89rem; }
+  .pb-grupo { margin-top: 26px; padding-top: 20px; }
+
+  /* Objetivos táctiles: una opción se toca con el pulgar, no con el ratón. */
+  .pb-op { padding: 12px; min-height: 48px; align-items: center; }
+  .pb-op input { width: 20px; height: 20px; margin-top: 0; }
+  .pb-escala-pt { width: 52px; height: 52px; font-size: 1rem; }
+  .pb-escala { justify-content: space-between; }
+  .pb-escala-ext { font-size: .78rem; max-width: 40%; }
+  .pb-quitar { width: 44px; height: 44px; }
+  .pb-arch .pb-quitar, .pb-link-fila .pb-quitar { width: 44px; height: 44px; }
+  .pb-agregar { padding: 10px 0; min-height: 44px; }
+  .pb-zona { padding: 22px 16px; }
+
+  /* ── El hilo ── */
+  .pb-hilo { padding: 14px; }
+  .pb-msg p { font-size: .95rem; }
+  .pb-hilo-caja .pb-btn-chico { width: 100%; min-height: 48px; }
+
+  .pb-pendientes { padding: 16px; }
+  .pb-pendientes ol { padding-left: 18px; }
+  .pb-pendientes li { font-size: .95rem; margin-bottom: 14px; }
+
+  .pb-aviso-global { padding: 16px; }
+  .pb-aviso-global strong { font-size: 1.08rem; }
+
+  /* ── Acciones a lo ancho ── */
+  .pb-et-pie { flex-direction: column; align-items: stretch; gap: 14px; }
+  .pb-et-pie .pb-btn { width: 100%; min-height: 50px; font-size: 1rem; }
+  .pb-et-pie-nota { order: 2; text-align: center; font-size: .84rem; }
+  .pb-rev-acc { flex-direction: column; }
+  .pb-rev-acc .pb-btn, .pb-rev-acc .pb-btn-tenue { width: 100%; min-height: 48px; }
+  .pb-firma-acc { flex-direction: column-reverse; align-items: stretch; }
+  .pb-firma-acc .pb-btn, .pb-firma-acc .pb-btn-tenue { width: 100%; min-height: 50px; }
+
+  .pb-campos { grid-template-columns: 1fr; gap: 12px; }
+  .pb-firma-caja { padding: 18px 16px; }
+  .pb-firma-lienzo { height: 180px; }
+
+  .pb-previa li b { font-size: .95rem; }
+  .pb-previa li span { font-size: .87rem; }
+  .pb-previa-g { font-size: .66rem; }
+  .pb-visitar { min-height: 46px; padding: 12px 16px; }
+
+  .pb-log-f { width: 82px; }
+  .pb-res dd { font-size: .95rem; }
+  .pb-nota-campo textarea { min-height: 90px; }
+
+  .pb-guardado { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Al saltar a una pregunta, la cabecera pegada se comía el título. */
+.pb-campo, .pb-et, .pb-res { scroll-margin-top: 76px; }
 
 .pb-guardado {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -911,7 +1165,27 @@ const fechaFirma = brief.firmado_at
     function pintar() {
       if (!cajaEtapas) return;
       const aprobadas = ETAPAS.filter((e) => e.estado === 'aprobada').length;
-      if (avance) avance.textContent = aprobadas + ' de ' + ETAPAS.length + ' etapas aprobadas';
+
+      // La cabecera es la única superficie que lo acompaña durante toda la
+      // página. Antes decía "0 de 12 aprobadas" — un cero que no se mueve en
+      // semanas. Ahora dice dónde va y, si le toca algo, cuánto; y se toca.
+      const enCurso = ETAPAS.find((e) => e.estado === 'cambios') || ETAPAS.find((e) => e.estado === 'abierta');
+      const defCurso = enCurso ? DEF.find((d) => d.clave === enCurso.clave) : null;
+      const faltan = defCurso
+        ? defCurso.campos.filter((c) => esperaCliente(hiloDe(enCurso.clave, c.id))).length
+        : 0;
+      if (avance) {
+        const corto = window.matchMedia('(max-width: 720px)').matches;
+        if (!FIRMADO) avance.textContent = 'Sin firmar';
+        else if (defCurso) {
+          avance.textContent = corto
+            ? 'Etapa ' + enCurso.orden + '/' + ETAPAS.length + (faltan ? ' · faltan ' + faltan : '')
+            : 'Etapa ' + enCurso.orden + ' de ' + ETAPAS.length + (faltan ? ' · te faltan ' + faltan : '');
+        } else if (aprobadas === ETAPAS.length) avance.textContent = 'Brief completo';
+        else avance.textContent = 'En revisión';
+        avance.setAttribute('data-a', enCurso ? enCurso.clave : '');
+      }
+      pintarPuerta(enCurso, defCurso, faltan, aprobadas);
 
       // Un vistazo antes de la lista: en qué va el brief y, si hay preguntas
       // esperando, cuántas y de qué etapas. Sin esto el cliente tiene que abrir
@@ -971,6 +1245,7 @@ const fechaFirma = brief.firmado_at
             '<span class="pb-et-tit"><strong>' + esc(def.titulo) + '</strong>' +
             '<span>' + esc(def.entrega) + '</span></span>' +
             '<span class="pb-chip" data-e="' + fila.estado + '">' + CHIP[fila.estado] + '</span>' +
+            '<span class="pb-chev" aria-hidden="true"></span>' +
           '</button>' +
           (desplegada ? cuerpo(def, fila) : '') +
         '</article>';
@@ -985,6 +1260,46 @@ const fechaFirma = brief.firmado_at
         });
       });
     }
+
+    /**
+     * Lo que le toca, arriba de todo y sin scroll.
+     *
+     * El documento mide ocho pantallas. Sin esto, cada visita nueva obligaba a
+     * recorrer la portada, el alcance, quién hace qué y la firma antes de
+     * llegar a la primera pregunta — tres pantallas de peaje, cada vez.
+     */
+    function pintarPuerta(enCurso, defCurso, faltan, aprobadas) {
+      const caja = document.getElementById('pb-puerta');
+      if (!caja) return;
+      if (!enCurso) {
+        if (aprobadas === ETAPAS.length) {
+          caja.hidden = false;
+          caja.innerHTML = '<div class="pb-puerta-t">El brief está completo</div>' +
+            '<p>Las ' + ETAPAS.length + ' etapas quedaron aprobadas. Nos ponemos en contacto para arrancar.</p>';
+        } else {
+          caja.hidden = false;
+          caja.innerHTML = '<div class="pb-puerta-t">Estamos revisando lo que mandaste</div>' +
+            '<p>Te avisamos por correo en cuanto quede aprobada o si nos falta algo. No hay nada que hacer por ahora.</p>';
+        }
+        return;
+      }
+      const n = contar(defCurso, borrador[enCurso.clave] || {});
+      caja.hidden = false;
+      caja.innerHTML =
+        '<div class="pb-puerta-t">' +
+          (faltan
+            ? (faltan === 1 ? 'Te falta una respuesta' : 'Te faltan ' + faltan + ' respuestas')
+            : 'Te toca contestar') +
+        '</div>' +
+        '<p><b>Etapa ' + enCurso.orden + ' · ' + esc(defCurso.titulo) + '</b><br>' +
+        n.hechas + ' de ' + n.total + ' contestadas' +
+        (n.faltanReq ? ' · faltan ' + n.faltanReq + ' obligatorias para poder enviarla' : ' · ya puedes enviarla') +
+        '</p>' +
+        '<button type="button" class="pb-btn pb-puerta-btn" data-ver="' + enCurso.clave + '">Continuar ahí</button>';
+    }
+
+    const vacioCliente = (v) =>
+      v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
 
     const editable = (f) => f.estado === 'abierta' || f.estado === 'cambios';
 
@@ -1037,14 +1352,23 @@ const fechaFirma = brief.firmado_at
      * puede ir juntando el material de las siguientes.
      */
     function vistaPrevia(def, fila) {
-      const previa = ETAPAS.filter((e) => e.orden < fila.orden).sort((a, b) => b.orden - a.orden)[0];
-      const defPrevia = previa ? DEF.find((d) => d.clave === previa.clave) : null;
+      // El motivo tiene que ser el REAL. Decir "se abre cuando firmes" a alguien
+      // que ya firmó, o nombrar una etapa que ya está aprobada, se lee como
+      // "no me registraron la firma" — y eso termina en una llamada.
+      const trabando = ETAPAS
+        .filter((e) => e.orden < fila.orden && e.estado !== 'aprobada')
+        .sort((a, b) => a.orden - b.orden)[0];
+      const defTrabando = trabando ? DEF.find((d) => d.clave === trabando.clave) : null;
+      let motivo;
+      if (!FIRMADO) motivo = 'Se abre en cuanto firmes el brief.';
+      else if (defTrabando) {
+        motivo = 'Se abre en cuanto quede aprobada la etapa ' + trabando.orden +
+          ', <b>' + esc(defTrabando.titulo) + '</b>.';
+      } else motivo = 'Se abre en cuanto terminemos la etapa anterior.';
+
       let h = '<div class="pb-previa-nota">' +
         '<span class="pb-campo-t">Todavía no se puede contestar</span>' +
-        '<p>' + (defPrevia
-          ? 'Se abre en cuanto quede aprobada <b>' + esc(defPrevia.titulo) + '</b>. Mientras tanto, esto es lo que va a pedir — sirve para ir juntando el material.'
-          : 'Se abre cuando firmes el brief.') +
-        '</p></div>';
+        '<p>' + motivo + ' Mientras tanto, esto es lo que va a pedir — sirve para ir juntando el material.</p></div>';
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
       h += '<ul class="pb-previa">';
       for (const [titulo, campos] of porGrupo(def)) {
@@ -1213,13 +1537,26 @@ const fechaFirma = brief.firmado_at
 
     function campo(c, resp, clave) {
       const v = resp[c.id];
-      let h = '<div class="pb-campo" data-campo="' + c.id + '">';
+      const esperando = clave ? esperaCliente(hiloDe(clave, c.id)) : false;
+      let h = '<div class="pb-campo" data-campo="' + c.id + '"' +
+        (esperando ? ' data-espera' : '') + '>';
       h += '<div class="pb-campo-lab">' + esc(c.etiqueta) +
         (c.requerido ? '<span class="pb-campo-req">obligatorio</span>' : '') + '</div>';
       if (c.ayuda) h += '<div class="pb-campo-ayuda">' + esc(c.ayuda) + '</div>';
       if (c.enlace) {
         h += '<a class="pb-visitar" href="' + esc(c.enlace.url) + '" target="_blank" rel="noopener noreferrer">' +
           'Abrir ' + esc(c.enlace.texto) + '<span aria-hidden="true">↗</span></a>';
+      }
+
+      // Con una pregunta de Sacs abierta, lo que ya contestó se LEE, y la caja
+      // para cambiarlo queda detrás de un botón. Así solo hay una caja viva.
+      if (esperando) {
+        const yaHay = !vacioCliente(v);
+        h += '<div class="pb-ya">' +
+          '<span class="pb-ya-t">Tu respuesta</span>' +
+          '<p>' + (yaHay ? esc(leible(c, v)).replace(/\n/g, '<br>') : '<i class="pb-vacio">Sin contestar</i>') + '</p>' +
+          '<button type="button" class="pb-editar" data-editar="' + c.id + '">Editar mi respuesta</button>' +
+          '</div><div class="pb-oculto" data-campo-edit="' + c.id + '">';
       }
 
       if (c.tipo === 'texto') {
@@ -1268,7 +1605,14 @@ const fechaFirma = brief.firmado_at
           '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
       }
 
+      if (esperando) h += '</div>';
       if (clave) h += hilo(clave, c.id, true);
+      // Se guarda solo, pero el cliente no tiene por qué saberlo. Sin esta
+      // línea escribe párrafos de dos renglones por miedo a perderlo, o llama
+      // a preguntar si se guardó.
+      if (clave && c.tipo !== 'archivos') {
+        h += '<div class="pb-sello" data-sello="' + c.id + '">Se guarda solo</div>';
+      }
       return h + '</div>';
     }
 
@@ -1290,12 +1634,22 @@ const fechaFirma = brief.firmado_at
 
     // ── Escritura ──────────────────────────────────────────────────────
     let pendiente = null;
+    let ultimoCampo = null;
     function anotar(clave, id, valor) {
       borrador[clave] = borrador[clave] || {};
       borrador[clave][id] = valor;
+      ultimoCampo = id;
+      sello(id, 'Escribiendo…', 'escribiendo');
       refrescarBarra(clave);
       clearTimeout(pendiente);
       pendiente = setTimeout(() => guardar(clave), 900);
+    }
+
+    function sello(id, texto, estado) {
+      const el = cajaEtapas?.querySelector('[data-sello="' + id + '"]');
+      if (!el) return;
+      el.textContent = texto;
+      el.setAttribute('data-e', estado);
     }
 
     // Repintar la etapa entera en cada tecla perdería el foco del campo. Solo
@@ -1315,8 +1669,15 @@ const fechaFirma = brief.firmado_at
         body: JSON.stringify({ token: TOKEN, clave, respuestas: borrador[clave] || {}, enviar: !!enviar }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) return d;
-      if (!enviar) decirGuardado();
+      if (!res.ok) {
+        if (ultimoCampo) sello(ultimoCampo, 'No se pudo guardar — revisa tu conexión', 'error');
+        return d;
+      }
+      if (!enviar) {
+        decirGuardado();
+        const hora = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        if (ultimoCampo) sello(ultimoCampo, 'Guardado · ' + hora, 'ok');
+      }
       return null;
     }
 
@@ -1347,6 +1708,20 @@ const fechaFirma = brief.firmado_at
         })).filter((x) => x.url);
       };
 
+      // El teclado del teléfono tapa la mitad de abajo. Al enfocar una caja se
+      // la trae al tercio superior para que ella Y su botón queden a la vista.
+      cont.addEventListener('focusin', (e) => {
+        const el = e.target;
+        if (!el.matches('textarea, input[type=text], input[type=email], input[type=url]')) return;
+        if (!window.matchMedia('(max-width: 720px)').matches) return;
+        setTimeout(() => {
+          const r = el.getBoundingClientRect();
+          if (r.top > window.innerHeight * 0.42) {
+            window.scrollBy({ top: r.top - window.innerHeight * 0.28, behavior: 'smooth' });
+          }
+        }, 260);
+      });
+
       cont.addEventListener('input', (e) => {
         const el = e.target;
         if (el.matches('[data-v]')) return anotar(claveDe(el), el.getAttribute('data-v'), el.value);
@@ -1372,7 +1747,7 @@ const fechaFirma = brief.firmado_at
       });
 
       cont.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder],[data-ver]');
+        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder],[data-ver],[data-editar]');
         if (!el || !cont.contains(el)) return;
         const clave = claveDe(el);
 
@@ -1414,6 +1789,13 @@ const fechaFirma = brief.firmado_at
           return guardar(clave);
         }
 
+        if (el.hasAttribute('data-editar')) {
+          const id = el.getAttribute('data-editar');
+          cont.querySelector('[data-campo-edit="' + id + '"]')?.removeAttribute('class');
+          el.closest('.pb-ya')?.remove();
+          cont.querySelector('.pb-campo[data-campo="' + id + '"] textarea, .pb-campo[data-campo="' + id + '"] input')?.focus();
+          return;
+        }
         if (el.hasAttribute('data-ver')) {
           e.preventDefault();
           abierta = el.getAttribute('data-ver');
@@ -1572,6 +1954,37 @@ const fechaFirma = brief.firmado_at
         }
       }
     }
+
+    // Secciones plegadas: con el brief firmado ya las leyó, y volver a
+    // pasarlas en cada visita es peaje puro.
+    document.querySelectorAll('.pb-sec-plegable').forEach((sec) => {
+      const cab = sec.querySelector('.pb-sec-h');
+      if (!cab || !sec.hasAttribute('data-plegada')) return;
+      const alternar = () => {
+        if (sec.getAttribute('data-plegada') === '1') sec.setAttribute('data-plegada', '0');
+        else sec.setAttribute('data-plegada', '1');
+      };
+      cab.addEventListener('click', alternar);
+      cab.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar(); }
+      });
+    });
+
+    document.getElementById('pb-puerta')?.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-ver]');
+      if (!b) return;
+      abierta = b.getAttribute('data-ver');
+      pintar();
+      cajaEtapas?.querySelector('.pb-et[data-abierta]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    avance?.addEventListener('click', () => {
+      const c = avance.getAttribute('data-a');
+      if (!c) { document.getElementById('firma')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      abierta = c;
+      pintar();
+      cajaEtapas?.querySelector('.pb-et[data-abierta]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     delegar();
     cargar();

@@ -123,6 +123,12 @@ export function useMensajes(canalId: string | null, hiloDe: string | null, yo: {
     setRaiz(x => x && x.id === id ? r.mensaje : x);
   }, []);
 
+  const fijar = useCallback(async (id: string, fijar: boolean) => {
+    const r = await api.fijar(id, fijar);
+    setLista(v => v.map(m => m.id === id ? r.mensaje : m));
+    setRaiz(x => x && x.id === id ? r.mensaje : x);
+  }, []);
+
   const borrar = useCallback(async (id: string) => {
     await api.borrar(id);
     setLista(v => v.map(m => m.id === id ? { ...m, borrado: true, texto: '', adjuntos: [], reacciones: [] } : m));
@@ -143,5 +149,5 @@ export function useMensajes(canalId: string | null, hiloDe: string | null, yo: {
     try { await api.reaccionar(m.id, emoji); } catch { refrescarUno(m.id); }
   }, [refrescarUno]);
 
-  return { lista, raiz, cargando, hayMas, error, masAntiguos, traerNuevos, alSenal, enviar, editar, borrar, reaccionar, cargar, refrescarUno, setLista };
+  return { lista, raiz, cargando, hayMas, error, masAntiguos, traerNuevos, alSenal, enviar, editar, fijar, borrar, reaccionar, cargar, refrescarUno, setLista };
 }
