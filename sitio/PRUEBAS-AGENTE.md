@@ -142,3 +142,21 @@ ofreció…». Si vuelves a pedir precio, no la repite como novedad.
 - La **tarjeta de decisión**: «no era lead» con motivo enseña exclusiones.
 - Cada noche (02:00 CDMX) el ciclo lee vetos, ediciones y resultados y deja propuestas en las notificaciones del CRM.
 - Las lecciones de construcción quedan en `LECCIONES-TI.md`.
+
+## Pruebas del 2026-09-03 · píldora, modo sugerencia, reactivación, Datos agrupados
+
+1. **Píldora en el hilo.** Abre cualquier conversación con contacto ligado: arriba, junto a Asignar, debe verse
+   «IA activa» (morado) en el número de prueba y «IA observa» (gris) en un lead real mientras el agente esté en
+   sombra. Clic → menú con Activar / Que me sugiera / Apagar aquí.
+2. **Consultor escribe → se apaga.** Con la píldora en «IA activa», manda un mensaje desde el inbox. La píldora
+   debe pasar a «IA observa» y el asignado a ti. Vuelve con «Activar».
+3. **Modo sugerencia.** En un hilo tuyo elige «Que me sugiera». Escribe desde el teléfono de prueba; en el
+   siguiente tick (≤2 min) debe aparecer la tarjeta «Sugerencia del agente» arriba del compositor. «Usar en el
+   compositor» la deja escrita como borrador; «Descartar» la registra como veto.
+4. **Reactivación.** Trabajo inteligente → Reactivación. «Redactar 5 ahora» genera propuestas (≈1 min cada una).
+   Cada tarjeta dice quién es, qué preguntó y la palanca. Aprobar programa el envío en el siguiente hueco
+   (10–18 CDMX, horas distintas); en modo sombra solo sale de verdad si el número es de prueba. Rechazar pide motivo.
+5. **Datos.** Subpestañas Facturación / Negocio…; lista de clientes a la izquierda; ficha con todos sus datos.
+   «Guardar los que llené» guarda solo los capturados.
+6. **Revisión de las 14:00.** A mano: `curl -H "Authorization: Bearer $CRON" ".../api/cron/ti-revision?modo=ventanas"`.
+   Solo debe revisar conversaciones cuya ventana cierra hoy y donde la última palabra fue nuestra.
