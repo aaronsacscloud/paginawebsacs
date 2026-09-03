@@ -126,3 +126,27 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   pipeline = deals abiertos ponderados por `probabilidad` (30 % si viene vacía). `fin_gastos.aplicaMes`: mensual
   entre inicio/fin, anual mismo mes que inicio, único solo su mes. El cierre (`fin_cierres`) congela; el reporte
   anual mezcla cierres y meses vivos.
+
+## 2026-09-03 (tarde) · La minuta manda, y lo que sale de ella
+
+- **La minuta de descubrimiento ya existía** (`MinutaLead.tsx` + `reuniones/estructurar`): pegas transcripción o notas y
+  la IA saca siete campos, requerimientos cotizables y la ficha. Lo que faltaba era la DECISIÓN: ahora la IA propone y
+  el consultor confirma «qué sigue» (cotizar / segunda reunión / retomar en fecha / sin interés). Se guarda en
+  `bookings.minuta.decision` y `reuniones-decision.ts` la aplica: cotizar → cadena de 48 h; segunda reunión → tarea de
+  agendar sin exigir cotización; retomar → `agente_estado.pausa_hasta` + `retomar{fecha,motivo}` y el agente vuelve solo
+  (`fueraDelAlcanceSDR` lo deja pasar si no hubo cotización ni reunión después); sin interés → descalificado + deal
+  perdido + agente cerrado.
+- **La tarea «Minuta» de Datos abre ese mismo modal** (payload `minuta_ia` + `reunion`/`lead`); al guardar se cierra la
+  tarea con `detalle.ya_escrito` para NO pisar la minuta estructurada con texto plano.
+- **Cancelar o reagendar exige motivo** en las dos puertas (`reuniones` PATCH y `bookings` PUT) y guarda `cancelado_por`
+  lead/sacs: el Embudo ya distingue «Canceló el lead».
+- **Cotización aceptada sin pago** (7 d) es su propio eslabón (`cotizacion_cobro`); en Finanzas es «por cobrar de venta
+  nueva» y sale del pipeline ponderado. Las `expired` entran al flujo de 30 días.
+- **RFC/razón social bloqueantes al pagar**: con pago confirmado en 30 días suben a prioridad 3 y se piden juntos; el
+  resto sigue en lote de 15.
+- **Demo sin consultor** (la agendó el agente): se asigna `consultor_default` y avisa en Sistema ANTES de la reunión.
+- **Puntualidad del consultor** en Calificación → Consultores: % a tiempo y horas promedio por eslabón, últimos 60 días.
+- **Finanzas**: gastos recurrentes del dueño sembrados (`seed-fin-gastos-2026-09.sql`: nómina en dos quincenas,
+  Anthropic ×4, Google anual en diciembre, GitHub, Asana, Intercom, Supabase ×2); `probable` = variable estimada; la
+  publicidad real capturada en Embudo sustituye al estimado; comisiones = cortes con `paga_el` en el mes (los lunes),
+  con «aceptado por la vendedora» = `recibido_at`.
