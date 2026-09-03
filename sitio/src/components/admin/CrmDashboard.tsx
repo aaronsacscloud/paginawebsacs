@@ -187,7 +187,8 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Cuentas', sec: 'cuentas', icon: 'clientes',
+    /* Abre la zona de los GRUPOS: de aquí para abajo todo tiene submenú. */
+    label: 'Cuentas', sec: 'cuentas', icon: 'clientes', separar: true,
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       /* El Embudo se fue al Dashboard, como pestaña junto a Leads: no es una
@@ -258,7 +259,10 @@ const NAV_SECTIONS = [
   {
     // "Colaboradores" no decía qué había adentro. Son los partners y lo que se
     // les paga; "Mi desempeño" se viene con ellos porque es el mismo tablero.
-    label: 'Partners', sec: 'colaboradores', icon: 'partners',
+    /* Su propia zona: no es el negocio de uno, son terceros y lo que se les
+       paga. Mezclado con Finanzas o Acompañamiento se buscaba en el sitio
+       equivocado. */
+    label: 'Partners', sec: 'colaboradores', icon: 'partners', separar: true,
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
       { id: 'commissions' as Tab, label: 'Comisiones de partners', icon: 'pagos' },
@@ -424,6 +428,13 @@ export default function CrmDashboard() {
     // Si la pestaña ya estaba abierta no se remonta: avisar para que lea la URL.
     window.dispatchEvent(new Event('crm:destino'));
   };
+  // Un panel hondo (una pastilla en el chat de Equipo) pide ir a otra pestaña
+  // sin cargar el prop por cinco niveles: manda `crm:ir` con el destino.
+  useEffect(() => {
+    const h = (e: Event) => { const d = (e as CustomEvent).detail; if (typeof d === 'string' && d) irADestino(d); };
+    window.addEventListener('crm:ir', h);
+    return () => window.removeEventListener('crm:ir', h);
+  });
 
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(() => grupoDeTab(getInitialTab()));
   // Al cambiar de pantalla (buscador global, atajo, link) se abre su grupo: si
@@ -673,10 +684,17 @@ export default function CrmDashboard() {
                   igual que una pantalla y uno hace clic esperando llegar a
                   algún lado.
 
-                  Una sola raya, entre los dos bloques. Una debajo de cada
-                  sección devolvería el menú a la tabla de renglones iguales que
-                  ya se había quitado: separar todo es no agrupar nada. */}
-              {si === 1 && !sidebarCollapsed && (
+                  Y una tercera zona: Partners, que no es del negocio de uno
+                  —son terceros y lo que se les paga— y por eso también se
+                  aparta.
+
+                  La raya la pide cada sección con `separar`, no el número de
+                  renglón: con un índice fijo, agregar o esconder una sección
+                  dejaba la línea en medio de otra cosa. Y son DOS en todo el
+                  menú: una debajo de cada sección lo devolvería a la tabla de
+                  renglones iguales que ya se había quitado a propósito —separar
+                  todo es no agrupar nada. */}
+              {(section as any).separar && !sidebarCollapsed && (
                 <div style={{ height: 1, background: '#e7e0f7', margin: '8px 14px 10px' }} />
               )}
               {/* El título del grupo deja de ser un rótulo muerto y se vuelve
