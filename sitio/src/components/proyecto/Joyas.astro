@@ -1,0 +1,87 @@
+---
+// El fondo de joyas y la banda del manifiesto.
+//
+// Dos piezas que trabajan juntas:
+//
+// 1. `.jo-film` — una capa FIJA detrás de todo el documento. Una pieza a la vez,
+//    muy velada y desenfocada, que se cruza con la siguiente cada ~9 s y se
+//    desplaza despacio. La hoja del brief se vuelve translúcida, así que la joya
+//    se ve DETRÁS del papel, como luz a través de un vellum. El desenfoque va en
+//    la capa (`filter`), no en el papel (`backdrop-filter`): el navegador lo
+//    resuelve una vez en el compositor en vez de recalcularlo en cada scroll —
+//    que es lo que hace inservible un backdrop-filter sobre un documento largo
+//    en un teléfono.
+//
+// 2. `.jo-banda` — el cierre. A pantalla completa, en negro, las piezas entran y
+//    salen con el scroll y de un punto de luz de cada una brota una frase. No
+//    va antes del formulario a propósito: el cliente que entra a trabajar tiene
+//    su bloque de "Continuar ahí" arriba, y esto lo encuentra al final.
+//
+// Todo respeta `prefers-reduced-motion`: sin movimiento queda una sola pieza
+// quieta y las frases fijas.
+
+const PIEZAS = [1, 2, 3, 4, 5, 6];
+
+const FRASES = [
+  {
+    texto: 'Una joya se compra con los ojos mucho antes que con la tarjeta.',
+    joya: 1,
+    origen: '68% 34%',
+  },
+  {
+    texto: 'Nadie compra alta joyería a un desconocido. Por eso preguntamos tanto.',
+    joya: 4,
+    origen: '38% 52%',
+  },
+  {
+    texto: 'Cada respuesta de este documento se vuelve una decisión de diseño.',
+    joya: 3,
+    origen: '55% 44%',
+  },
+  {
+    texto: 'Su cliente no va a leer este brief. Va a ver el resultado.',
+    joya: 6,
+    origen: '46% 58%',
+  },
+  {
+    texto: 'Lo que aquí se define, en 45 días está en línea.',
+    joya: 5,
+    origen: '60% 40%',
+  },
+];
+---
+
+<!-- Capa ambiental: vive detrás de TODO el documento -->
+<div class="jo-film" aria-hidden="true">
+  {PIEZAS.map((n, i) => (
+    <div class="jo-film-p" data-i={i} style={`background-image:url(/images/joyas/joya-${n}.webp)`}></div>
+  ))}
+  <div class="jo-film-velo"></div>
+</div>
+
+<!-- El cierre -->
+<section class="jo-banda" id="manifiesto">
+  <div class="jo-riel">
+    <div class="jo-pegado">
+      <div class="jo-piezas" aria-hidden="true">
+        {FRASES.map((f, i) => (
+          <div class="jo-pieza" data-i={i} style={`background-image:url(/images/joyas/joya-${f.joya}.webp)`}></div>
+        ))}
+      </div>
+      <canvas class="jo-brillos" aria-hidden="true"></canvas>
+      <div class="jo-frases">
+        {FRASES.map((f, i) => (
+          <p class="jo-frase" data-i={i} style={`--origen:${f.origen}`}>
+            {f.texto.split(' ').map((w, j) => (
+              <span style={`--w:${j}`}>{w}&nbsp;</span>
+            ))}
+          </p>
+        ))}
+      </div>
+      <div class="jo-pie">
+        <span class="jo-pie-r">Ruben's Bridal</span>
+        <span class="jo-pie-s">× Sacs</span>
+      </div>
+    </div>
+  </div>
+</section>

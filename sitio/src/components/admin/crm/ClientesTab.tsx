@@ -864,15 +864,26 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           sub={<>{kpis.riesgo} sin vender 3+ días · {kpis.vencidas} con renovación vencida</>} />
         <KpiCard style={kStyle} franja={CL.azul} label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
           sub={<>{money(tot?.vitalicias_pagado)} cobrado · fuera del ARR</>} />
-        {/* Los que ya se fueron. Se hace clic y se entra a ver qué pasó: el
-            motivo con el que se fue cada uno y cuánto ARR se llevó. */}
-        <KpiCard style={kStyle} franja={CL.rojo} label="Exclientes" value={tot?.exclientes ?? 0}
-          valueColor={CL.rojoTinta}
-          sub={<>{money(tot?.arr_perdido)} de ARR perdido · pagaron {money(tot?.pagaron_antes)}</>}
-          activo={verExclientes}
-          onClick={() => { setVerExclientes(v => !v); setSelEx(new Set()); }} />
+        {/* La tarjeta de EXCLIENTES se retiró de aquí (3-sep-2026): esta
+            pantalla es de los clientes que se tienen, y una tarjeta roja con
+            ARR perdido en la misma fila que el ARR activo hacía leer las dos
+            cifras juntas cuando son mundos distintos.
+
+            La lista NO se borra —dentro está la captura de por qué se fue cada
+            uno, y ese trabajo existe— pero baja a una liga discreta: quien
+            entra a Clientes viene a ver a los que están. */}
         </>); })()}
       </div>
+
+      {(tot?.exclientes ?? 0) > 0 && !verExclientes && (
+        <div style={{ marginBottom: 14, fontSize: 12.5, color: '#6b6580' }}>
+          <button onClick={() => { setVerExclientes(true); setSelEx(new Set()); }}
+            style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#5B4BD6', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            Ver los {tot?.exclientes} exclientes
+          </button>
+          <span> · {money(tot?.arr_perdido)} de ARR perdido</span>
+        </div>
+      )}
 
       {verExclientes && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FEF0EF', border: '1px solid #f7d9d6', borderRadius: 11, padding: '11px 14px', marginBottom: 14 }}>

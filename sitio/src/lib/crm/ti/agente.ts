@@ -302,6 +302,43 @@ CÓMO SE RETOMA (obligatorio):
 - Si lo que le ofrecimos ya cambió (precio, promo), dilo tú antes de que lo descubra.`;
 }
 
+/** SEÑAL DE COTIZACIÓN → mensaje del agente (decisión del dueño 2026-09-04). motivo: 'intencion' (la está leyendo con
+ *  intención: UN mensaje por cotización), 'dia3' (usa el mismo único si no se gastó), 'dia7' (segundo toque). Regla
+ *  anti-pesadez: nunca dos mensajes automáticos en 24 h al mismo lead; si el humano escribió en 4 h, el agente calla. */
+export async function toqueCotizacion(contactId: string, q: { id: string; numero?: string | null; total?: number | null }, motivo: 'intencion' | 'dia3' | 'dia7'): Promise<{ ok: boolean; motivo?: string; envio_id?: string }> {
+  const cfg: any = await leerConfig();
+  if (cfg.agente_activo !== true) return { ok: false, motivo: 'agente_apagado' };
+  const { data: pf } = await supabase.from('ti_perfil').select('agente_estado, silenciar_ia').eq('contact_id', contactId).maybeSingle();
+  const st: any = (pf as any)?.agente_estado || {}; if ((pf as any)?.silenciar_ia || st.cerrado) return { ok: false, motivo: 'silenciado' };
+  const usados: Record<string, string[]> = st.cot_toques || {};
+  const ya = usados[q.id] || [];
+  if (motivo !== 'dia7' && ya.length) return { ok: false, motivo: 'unico_ya_usado' };
+  if (motivo === 'dia7' && ya.includes('dia7')) return { ok: false, motivo: 'dia7_ya' };
+  const ahora = new Date();
+  const hilo = await duenoDelHilo(contactId).catch(() => ({ quien: 'agente' } as any));
+  if (hilo?.quien === 'humano') return { ok: false, motivo: 'hilo_humano' };
+  const { data: ultAuto } = await supabase.from('ti_envios').select('enviado_at').eq('contact_id', contactId).eq('estado', 'enviado').gt('enviado_at', new Date(ahora.getTime() - 24 * 3600e3).toISOString()).limit(1);
+  if ((ultAuto || []).length) return { ok: false, motivo: 'ya_hubo_automatico_24h' };
+  const { data: pend } = await supabase.from('ti_envios').select('id').eq('contact_id', contactId).in('estado', ['pendiente', 'enviando']).limit(1);
+  if ((pend || []).length) return { ok: false, motivo: 'ya_hay_pendiente' };
+  const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', contactId).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
+  const ventana = (ult || []).length && ahora.getTime() - Date.parse(ult![0].ocurrio_at) < 24 * 3600e3;
+  const par = ventana ? null : await parListoPara('seguimiento');
+  if (!ventana && !par) return { ok: false, motivo: 'sin_plantilla' };
+  const dinero = q.total ? `$${Math.round(Number(q.total)).toLocaleString('es-MX')}` : '';
+  const nota = `SEÑAL DE COTIZACIÓN (${motivo === 'intencion' ? 'la está leyendo con intención: varias aperturas o varios minutos' : motivo === 'dia3' ? 'lleva 3 días sin decidir' : 'lleva 7 días sin decidir'}). Cotización #${q.numero || 's/n'} ${dinero}. Escribe UN mensaje corto y amable: viste que está revisando la propuesta y te pones a la orden por si algo no cuadra o quiere ajustar algo. Cero presión, cero «¿ya la viste?», cero cierre forzado; una sola pregunta abierta. ${par ? 'SALE COMO PLANTILLA: escribe SOLO el ángulo, una oración de máximo 200 caracteres que continúe «Hola Ana, …», en minúscula, sin saludo, sin nombre, sin pregunta.' : 'Máximo 2 líneas.'}`;
+  const d = await decidirTurno(contactId, nota);
+  if (!d.salida?.mensaje) return { ok: false, motivo: d.motivo || 'sin_mensaje' };
+  const { data: c } = await supabase.from('contacts').select('nombre').eq('id', contactId).maybeSingle();
+  const primer = String(c?.nombre || 'Hola').trim().split(/\s+/)[0];
+  const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
+  const { data: env } = await supabase.from('ti_envios').insert({ contact_id: contactId, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cotizacion', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, quote_id: q.id, motivo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo, plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
+  if (!env?.id) return { ok: false, motivo: 'no_insertado' };
+  await supabase.from('ti_perfil').upsert({ contact_id: contactId, agente_estado: { ...st, cot_toques: { ...usados, [q.id]: [...ya, motivo] } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+  await log({ accion: 'agente_toque_cotizacion', contact_id: contactId, contenido: d.salida.mensaje, razon: `${motivo} · #${q.numero || 's/n'} ${dinero}`, costo: d.costo });
+  return { ok: true, envio_id: env.id };
+}
+
 /** ICP + calidad de la conversación: decide cuánto insistir. Determinista. */
 export async function evaluarLead(contactId: string): Promise<{ icp: 'alto' | 'medio' | 'bajo'; conversacion: number; razones: string[] }> {
   const [{ data: c }, { data: p }, { data: evs }] = await Promise.all([

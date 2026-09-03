@@ -15,6 +15,7 @@ export type ArbolProps = {
   onCambio: () => void;                 // recargar el árbol
   onAviso: (m: string) => void;
   onBuscar: () => void;
+  cerrar?: () => void;                  // la X del widget flotante (móvil)
 };
 
 const CERRADAS_KEY = 'eq_sec_cerradas';
@@ -55,6 +56,7 @@ export default function Arbol(p: ArbolProps) {
         <b style={{ flex: 1, fontSize: '1rem' }}>Equipo</b>
         <button className="eq-ib" title="Buscar mensajes" onClick={p.onBuscar}>{Ic.lupa}</button>
         <button className="eq-ib" title="Nueva sección" onClick={() => setModal({ tipo: 'seccion' })}>{Ic.mas}</button>
+        {p.cerrar && <button className="eq-ib" title="Cerrar Equipo" aria-label="Cerrar Equipo" onClick={p.cerrar} style={{ background: 'var(--eq-lila)', color: 'var(--eq-morado-tinta)' }}>{Ic.cerrar}</button>}
       </div>
       <div className="eq-arbol-scroll">
         {secciones.map(s => {

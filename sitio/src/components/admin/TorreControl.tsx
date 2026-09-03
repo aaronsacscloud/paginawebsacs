@@ -17,6 +17,24 @@ const MOTIVOS_VETO = ['Tono', 'Dato incorrecto', 'No es el momento', 'Lo tomo yo
 const MOTIVOS_REACT = ['No es el lead correcto', 'El ángulo no le pega', 'Muy vendedor', 'Todavía no'];
 const useAncho = () => { const [w, setW] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200); useEffect(() => { const f = () => setW(window.innerWidth); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []); return w; };
 
+/* Feed de señales: lo que el lead hizo y vale saber. Se lee, no se hace. Si el agente actuó por un umbral, lo dice. */
+function FeedSenales({ senales, onIr }: { senales: any[]; onIr: (cid: string) => void }) {
+  const hace = (iso: string) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60e3); return m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`; };
+  const que = (s: any) => { const d = s.detalle || {}; if (s.tipo === 'cotizacion_vista') return `abrió la cotización${d.numero ? ` #${d.numero}` : ''} (${d.vistas || 1}ª vez${d.aperturas_24h > 1 ? `, ${d.aperturas_24h} hoy` : ''}${d.segundos_max >= 60 ? `, ${Math.round(d.segundos_max / 60)} min leyendo` : ''})`; if (s.tipo === 'lead_nuevo') return `entró por ${d.canal || 'un canal'}`; return s.tipo.replace(/_/g, ' '); };
+  const acc = (s: any) => !s.umbral ? 'sin acción · solo registro' : s.accion === 'mensaje_unico' ? 'el agente mandó su mensaje único' : s.accion?.startsWith('sin_mensaje:unico_ya_usado') ? 'ya se le escribió por esta cotización · no se repite' : s.accion?.startsWith('sin_mensaje:') ? `umbral ${s.umbral} · ${s.accion.split(':')[1].replace(/_/g, ' ')}` : `umbral ${s.umbral}`;
+  return (
+    <div style={{ overflowY: 'auto', flex: 1 }}>
+      {!senales.length && <div className="tc-vacio"><p>Hoy no hay señales todavía.</p></div>}
+      {senales.map((s: any) => (
+        <button key={s.id} onClick={() => s.contact_id && onIr(s.contact_id)} style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: 8, width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid #f0eef6', background: 'transparent', padding: '9px 12px', cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>
+          <span style={{ fontSize: 10.5, color: '#8e88a8', fontWeight: 700, paddingTop: 2 }}>{hace(s.ocurrio_at)}</span>
+          <span><span style={{ fontSize: 12.5 }}><b>{s.nombre}</b>{s.empresa ? <span style={{ color: '#6b6580' }}> · {s.empresa}</span> : null} {que(s)}</span><span style={{ display: 'block', fontSize: 11, color: s.accion === 'mensaje_unico' ? '#14532d' : '#8e88a8', marginTop: 2 }}>{acc(s)}</span></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const [d, setD] = useState<any>(null);
   const [sel, setSel] = useState<string | null>(null);
@@ -31,6 +49,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const [minutaDe, setMinutaDe] = useState<any>(null);
   const [ctxAbierto, setCtxAbierto] = useState(false);   // móvil: hoja de contexto
   const [vistaMovil, setVistaMovil] = useState<'cola' | 'accion'>('cola');
+  const [verSenales, setVerSenales] = useState(false);   // el feed de señales sustituye al contexto mientras esté abierto
   const ancho = useAncho(); const movil = ancho < 960;
   const cargar = () => fetch('/api/crm/ti/torre').then(r => r.json()).then(j => { setD(j); }).catch(() => setD({ error: 'No se pudo cargar la torre' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 20000); return () => clearInterval(t); }, []);
@@ -80,7 +99,8 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const pulso = (k: string, l: string, v: any, sub?: string, tab?: string) => (
     <button key={k} onClick={() => tab ? irA?.(tab) : setFiltro(filtro === k ? 'todo' : k)} className={'tc-pulso' + (filtro === k ? ' on' : '')}><b>{v}</b><span>{l}</span>{sub && <small>{sub}</small>}</button>
   );
-  const grupos = ['ahora', 'hoy', 'semana'].map(u => ({ u, xs: items.filter(x => x.urgencia === u) })).filter(g => g.xs.length);
+  const NIV: Record<string, string> = d?.niveles || {};
+  const grupos = [1, 2, 3, 4, 5, 6, 7].map(n => ({ u: String(n), xs: items.filter(x => x.nivel === n) })).filter(g => g.xs.length);
   const chipStyle = (c: string) => ({ background: CHIP_COLOR[c]?.bg || '#f3f4f6', color: CHIP_COLOR[c]?.fg || '#4a4658' });
 
   /* ── la tarjeta de acción: cuatro preguntas ── */
@@ -163,7 +183,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const Cola = () => (
     <div className="tc-cola">
       {!items.length && <div className="tc-vacio"><b>Nada pendiente</b><p>Cuando el agente proponga un mensaje, la revisión sugiera algo o una reunión necesite resultado, aparece aquí.</p></div>}
-      {grupos.map(g => (<div key={g.u}><div className="tc-grp">{URG[g.u]} · {g.xs.length}</div>
+      {grupos.map(g => (<div key={g.u}><div className="tc-grp">{g.u}. {NIV[g.u] || URG[g.u] || g.u} · {g.xs.length}</div>
         {g.xs.map(x => <button key={x.key} className={'tc-item' + (actual?.key === x.key ? ' on' : '')} onClick={() => { setSel(x.key); setVistaMovil('accion'); }}><div className="tc-item-n">{x.lead.nombre}{x.lead.empresa ? <span> · {x.lead.empresa}</span> : null}</div><div className="tc-item-m"><span className="tc-chip chico" style={chipStyle(x.chip)}>{x.chip}</span> {x.tipo === 'envio' && x.cuando ? `sale ${hora(x.cuando)}` : x.titulo.slice(0, 60)}</div></button>)}
       </div>))}
     </div>
@@ -174,10 +194,12 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   return (
     <div className={'tc' + (movil ? ' movil' : '')}>
       <div className="tc-pulsos">
+        <button className={'tc-pulso' + (verSenales ? ' on' : '')} onClick={() => setVerSenales(v => !v)}><b>{p.senales || 0}</b><span>Señales hoy</span></button>
         {pulso('aprobar', 'Por aprobar', p.por_aprobar || 0)}{pulso('llamar', 'Llamadas', p.llamadas || 0)}{pulso('reunion', 'Reunión sin resultado', p.reunion || 0)}{pulso('cotizacion', 'Cotizaciones', p.cotizaciones || 0)}{pulso('datos', 'Datos faltantes', p.datos || 0, undefined, 'datos')}{pulso('aprendizaje', 'Aprendizaje', p.aprendizaje || 0, undefined, 'aprendizaje')}
         <div className={'tc-pulso agente ' + (p.agente?.activo ? (p.agente.vivo ? 'ok' : 'warn') : 'off')}><b>{p.agente?.activo ? (p.agente.modo === 'vivo' ? 'Activo' : 'Sombra') : 'Apagado'}</b><span>Agente · {p.agente?.latido_hace_min == null ? 'sin latido' : p.agente.latido_hace_min <= 5 ? 'al día' : `latido hace ${p.agente.latido_hace_min} min`}</span></div>
       </div>
       {msg && <div className={'tc-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
+      {movil && verSenales && <div className="tc-col" style={{ marginBottom: 10 }}><div className="tc-col-h">Señales de hoy<button className="tc-link" onClick={() => setVerSenales(false)}>cerrar</button></div><FeedSenales senales={d.senales || []} onIr={() => {}} /></div>}
       {movil ? (
         vistaMovil === 'cola' || !actual ? <Cola /> : (
           <div className="tc-accion-movil">
@@ -191,7 +213,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         <div className="tc-cols">
           <aside className="tc-col"><div className="tc-col-h">Cola · {items.length}{filtro !== 'todo' && <button className="tc-link" onClick={() => setFiltro('todo')}>quitar filtro</button>}</div><Cola /></aside>
           <main className="tc-col centro">{actual ? <Tarjeta it={actual} /> : <div className="tc-vacio"><b>Sin nada que decidir</b><p>Elige un pulso o espera a que el agente proponga.</p></div>}</main>
-          <aside className="tc-col ctx"><div className="tc-col-h">Contexto</div>{actual?.contact_id ? <ContextoLead key={actual.contact_id} inline contactId={actual.contact_id} open onClose={() => {}} /> : <div className="tc-vacio"><p>Sin contacto ligado.</p></div>}</aside>
+          <aside className="tc-col ctx">{verSenales ? <><div className="tc-col-h">Señales de hoy · solo lectura<button className="tc-link" onClick={() => setVerSenales(false)}>volver al contexto</button></div><FeedSenales senales={d.senales || []} onIr={(cid: string) => { const it = items.find(x => x.contact_id === cid); if (it) setSel(it.key); }} /></> : <><div className="tc-col-h">Contexto</div>{actual?.contact_id ? <ContextoLead key={actual.contact_id} inline contactId={actual.contact_id} open onClose={() => {}} /> : <div className="tc-vacio"><p>Sin contacto ligado.</p></div>}</>}</aside>
         </div>
       )}
       {minutaDe && <MinutaLead reunion={{ id: minutaDe.payload?.reunion?.id || minutaDe.payload?.sujeto, fecha: minutaDe.payload?.reunion?.fecha, event_types: { nombre: 'Demo' } }} lead={minutaDe.payload?.lead || {}} onClose={() => setMinutaDe(null)} onGuardado={async () => { const x = minutaDe; setMinutaDe(null); await postJ('/api/crm/ti/tarea', { id: x.id, accion: 'hecha', detalle: { campo: 'minuta', ya_escrito: true } }); listo('Minuta guardada y aplicada.'); cargar(); }} />}

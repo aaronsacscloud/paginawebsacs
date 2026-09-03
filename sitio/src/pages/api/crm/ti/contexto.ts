@@ -19,6 +19,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     supabase.from('bookings').select('id, fecha, hora_inicio, estado, event_type_id').eq('contact_id', cid).order('fecha', { ascending: false }).limit(5),
     supabase.from('quotes').select('id, estado, total, created_at').eq('contact_id', cid).neq('estado', 'plantilla').order('created_at', { ascending: false }).limit(5),
   ]);
+  const { data: senales } = await supabase.from('ti_senales').select('tipo, detalle, ocurrio_at, umbral, accion').eq('contact_id', cid).order('ocurrio_at', { ascending: false }).limit(10);
   const convIds = (convs || []).map(c => c.id);
   let mensajes: any[] = [], llamadas: any[] = [], notas: any[] = [], envios: any[] = [];
   if (convIds.length) {
@@ -35,7 +36,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   return json({
     contacto: k, conversaciones: convs || [],
     mensajes: mensajes.map(m => ({ ...m, quien: m.direccion === 'entrante' ? 'lead' : delAgente.has(m.kapso_message_id) ? 'agente' : (m.autor || 'equipo') })),
-    llamadas, notas, citas: bk || [], cotizaciones: qs || [],
+    llamadas, notas, citas: bk || [], cotizaciones: qs || [], senales: senales || [],
     perfil: pf ? { datos: (pf as any).datos || {}, resumen: (pf as any).resumen || '', silenciar_ia: (pf as any).silenciar_ia, temas_reunion: (pf as any).temas_reunion || [] } : null,
     agente: { ciclo: st.ciclo || 0, fase: st.fase || null, intentos: (st.intentos || []).length, validos: (st.intentos || []).filter((i: any) => i.valido).length, agendada_at: st.agendada_at || null, cerrado: st.cerrado || null, modo: st.modo || null },
   });

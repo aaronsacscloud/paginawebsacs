@@ -53,7 +53,9 @@ const PasarelaMercadoPago = lazySeguro(() => import('./crm/PasarelaMercadoPago')
 const ContactProfile = lazySeguro(() => import('./crm/ContactProfile'));
 const DashboardTab = lazySeguro(() => import('./crm/DashboardTab'));
 const TrabajoPanel = lazySeguro(() => import('./TrabajoPanel'));
-const EquipoTab = lazySeguro(() => import('./crm/equipo/Equipo'));
+/* Equipo no es una pestaña: es el widget flotante que vive encima de todo el
+   CRM (ver EquipoFlotante). Se abre a pantalla completa sin cambiar de tab. */
+const EquipoFlotante = lazySeguro(() => import('./crm/equipo/EquipoFlotante'));
 const PartnersTab = lazySeguro(() => import('./crm/PartnersTab'));
 const CommissionsTab = lazySeguro(() => import('./crm/CommissionsTab'));
 const ComisionesTab = lazySeguro(() => import('./crm/ComisionesTab'));
@@ -179,9 +181,9 @@ const NAV_SECTIONS = [
       /* La sección PRINCIPAL del sistema, arriba de todo. Es un tab normal
          (el panel se abre ADENTRO del CRM); /admin/trabajo sigue existiendo
          para la pantalla completa. */
-      /* «Equipo» va arriba de todo: es donde el equipo se habla, y lo que
-         más veces al día se abre. */
-      { id: 'equipo' as Tab, label: 'Equipo', icon: 'equipo' },
+      /* «Equipo» ya no está aquí: se abre veinte veces al día y como pestaña
+         uno perdía la pantalla en la que estaba. Es el widget flotante de
+         abajo a la derecha (?tab=equipo lo abre encima de lo que haya). */
       { id: 'trabajo' as Tab, label: 'Trabajo inteligente', icon: 'trabajo' },
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
     ],
@@ -323,7 +325,7 @@ function TabCargando() {
   return <div aria-busy="true"><EsqueletoLista filas={8} mobile alInstante /></div>;
 }
 
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte', 'equipo'];
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).
@@ -424,6 +426,9 @@ export default function CrmDashboard() {
       new URLSearchParams(qs).forEach((v2, k) => u.searchParams.set(k, v2));
       window.history.replaceState({}, '', u);
     }
+    // Equipo no es pestaña: se abre el widget encima de donde uno está, con
+    // ?canal=&msg=&hilo= ya puestos en la URL para que caiga en el mensaje.
+    if (destino === 'equipo') { window.dispatchEvent(new Event('crm:equipo')); window.dispatchEvent(new Event('crm:destino')); return; }
     switchTab(destino as Tab);
     // Si la pestaña ya estaba abierta no se remonta: avisar para que lea la URL.
     window.dispatchEvent(new Event('crm:destino'));
@@ -533,7 +538,7 @@ export default function CrmDashboard() {
   const colapsoPrevio = useRef<boolean | null>(null);
   useEffect(() => {
     if (isMobile) return;
-    if (tab === 'whatsapp' || (tab as any) === 'trabajo' || (tab as any) === 'equipo') {
+    if (tab === 'whatsapp' || (tab as any) === 'trabajo') {
       if (colapsoPrevio.current === null) {
         colapsoPrevio.current = sidebarCollapsed;
         setSidebarCollapsed(true);
@@ -678,7 +683,7 @@ export default function CrmDashboard() {
               {si > 0 && sidebarCollapsed && <div style={{ height: 1, background: '#e7e0f7', margin: '7px auto', width: 26 }} />}
               {/* UNA línea, no una por sección.
                   El menú tiene dos naturalezas distintas y ahora se ven: arriba
-                  las pantallas SUELTAS —Equipo, Trabajo inteligente, Dashboard,
+                  las pantallas SUELTAS —Trabajo inteligente, Dashboard,
                   las que se abren de un clic— y abajo las que son GRUPOS con
                   submenú. Sin nada que las separe, un grupo cerrado se lee
                   igual que una pantalla y uno hace clic esperando llegar a
@@ -995,10 +1000,7 @@ export default function CrmDashboard() {
             transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
         <div key={tab} className={isMobile ? ('m-tabin' + (M_AUTO_DARK.includes(tab) ? ' m-auto-dark' : '')) : undefined}>
         <Suspense fallback={<TabCargando />}>
-        {(tab as any) === 'equipo' ? (
-          /* El chat del equipo. Las ligas ?canal=&msg=&hilo= las lee él. */
-          <ErrorBoundary><EquipoTab /></ErrorBoundary>
-        ) : (tab as any) === 'trabajo' ? (
+        {(tab as any) === 'trabajo' ? (
           /* La sección principal, ADENTRO del CRM: mismo panel de
              /admin/trabajo (que sigue viva para pantalla completa). */
           <ErrorBoundary><TrabajoPanel /></ErrorBoundary>

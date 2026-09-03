@@ -14,7 +14,9 @@ import { useIsMobile } from '../../../../lib/ui/mobile';
 
 const ULTIMO_KEY = 'eq_ultimo_canal';
 
-export default function Equipo() {
+/** `onCerrar` llega cuando el chat vive en el widget flotante: en móvil pinta
+ *  la X en la cabecera del árbol (en escritorio la pone el propio widget). */
+export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   useCss();
   const movil = useIsMobile();
   const { toast, nodo: toastNodo } = useToast();
@@ -131,7 +133,7 @@ export default function Equipo() {
 
   return (
     <div className={'eq' + (canalId ? ' en-canal' : '')}>
-      <Arbol arbol={arbol} canalId={canalId} enLinea={enLinea} conectado={conectado}
+      <Arbol arbol={arbol} canalId={canalId} enLinea={enLinea} conectado={conectado} cerrar={movil ? onCerrar : undefined}
         onAbrir={id => abrir(id)} onDirecto={abrirDirecto} onCambio={cargarArbol} onAviso={toast} onBuscar={() => { setLado('buscar'); if (movil && !canalId) { const g = arbol.canales.find(c => c.nombre === 'general'); if (g) abrir(g.id); } }} />
       <section className="eq-canal">
         {canal ? (

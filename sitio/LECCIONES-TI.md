@@ -226,3 +226,20 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   etiquetas, activo. `aplicaMes` entiende las periodicidades nuevas y la pausa; `ocurrenciasMes` multiplica el monto.
 - **Trampa que costó el archivo:** `open(F,'w').write(open(F).read())` en Python trunca ANTES de leer: el motor quedó
   vacío y hubo que restaurarlo de git. Nunca abrir para escribir el mismo archivo que se va a leer en la misma línea.
+
+## 2026-09-04 · Señal, cadencia o decisión (aprobado por el dueño)
+
+- **Tres naturalezas:** señal (informa; `ti_senales`, feed y contexto; nunca tarjeta), cadencia (la lleva el agente con
+  tope), decisión (tarjeta en la cola). Regla: si pide juicio humano está en la cola; si solo se mira, en señales.
+- **Cotización:** la apertura es señal (`observador` ya no crea la llamada «está viendo su cotización»). Intención =
+  3+ aperturas en 24 h, ≥ 5 min o reabrir tras 3 días → `toqueCotizacion(..., 'intencion')`: UN mensaje por cotización
+  (`agente_estado.cot_toques[quote_id]`). Día 3 usa ese único si no se gastó; día 7 es un segundo toque. Llamada humana
+  a los 7 días solo si el lead respondió tras la cotización o el total ≥ `umbral_llamada_cotizacion` (20,000). Día 14
+  (veredicto) y día 30 (dormida) siguen siendo decisión.
+- **Anti-pesadez:** nunca dos automáticos en 24 h al mismo lead; hilo humano → el agente calla; pendiente previo → no
+  se apila.
+- **Apagados con el agente activo:** la llamada de bienvenida humana (enrolar T1) y «conversación viva sin cita».
+  `demo_cotiza` pasó de WhatsApp a acción «cotizar». Se retiraron 18 tareas de ruido (14 WhatsApp libres, 4 llamadas).
+- **Jerarquía de la cola (torre.ts `nivelDe`):** 1 te está esperando · 2 dinero en la mesa (aceptada sin pago, RFC tras
+  pago, cotización con respuesta) · 3 aprobaciones del agente · 4 cadena de la reunión · 5 rescate · 6 cierre · 7 datos.
+  La cola se agrupa por nivel; dentro, por urgencia y hora. Pulso «Señales hoy» abre el feed en la columna derecha.

@@ -114,36 +114,27 @@ export async function observar(): Promise<any> {
     }
   }
 
-  // ── 2) LA ESTÁ VIENDO: cotización enviada con vista nueva → P1 ──
+  // ── 2) LA ESTÁ VIENDO: es una SEÑAL, no una tarea (decisión 2026-09-04). Se registra en ti_senales; si la lectura
+  //    muestra intención (3+ aperturas en 24 h, ≥ 5 min, o reabrir tras 3+ días), el agente manda UN mensaje por cotización.
   const { data: vistas } = await supabase.from('quotes')
-    .select('id, numero, total, vistas, ultima_vista_at, contact_id, contacts!inner(id, nombre, whatsapp, owner_id, company_id)')
-    .eq('estado', 'sent').gt('ultima_vista_at', desde).not('contact_id', 'is', null).limit(50);
+    .select('id, numero, total, vistas, ultima_vista_at, primera_vista_at, contact_id, contacts!inner(id, nombre, whatsapp, owner_id, company_id)')
+    .in('estado', ['sent', 'accepted']).gt('ultima_vista_at', desde).not('contact_id', 'is', null).limit(50);
   for (const qv of vistas || []) {
     const c = (qv as any).contacts;
-    // idempotente: una tarea de vista por cotización por día
-    const { data: ya } = await supabase.from('ti_tareas')
-      .select('id').eq('contact_id', qv.contact_id).eq('estado', 'pendiente')
-      .eq('origen', 'evento').eq('tipo', 'llamada')
-      .gte('created_at', new Date(ahora.getTime() - 20 * 3600e3).toISOString())
-      .filter('payload->>quote_id', 'eq', String(qv.id)).maybeSingle();
-    if (ya) continue;
-    const nombre = String(c.nombre || 'El lead').trim().split(/\s+/)[0];
-    await supabase.from('ti_tareas').insert({
-      contact_id: qv.contact_id, company_id: c.company_id || null, owner_id: c.owner_id || null,
-      familia: 'avanzar', tipo: 'llamada', prioridad: 1, vence_at: ahora.toISOString(),
-      origen: 'evento', payload: {
-        instruccion: `${nombre} está viendo su cotización AHORA — llámale`,
-        porque: 'Abrió la cotización hace minutos: la está estudiando. Llamar en ese momento tiene tasa de cierre altísima — el ángulo es resolver la duda, no presionar.',
-        nombre: c.nombre, whatsapp: c.whatsapp, quote_id: String(qv.id),
-        tipo_llamada: 'Seguimiento de cotización',
-        resultados: { la_firma: 'La firma', pidio_cambios: 'Pidió cambios', la_rechazo: 'La rechazó', no_contesto: 'No contestó', buzon: 'Buzón' },
-        hechos: [
-          ['La cotización', `#${qv.numero || 's/n'}`, `$${Math.round(Number(qv.total) || 0).toLocaleString('es-MX')}`],
-          ['La abrió', `${qv.vistas || 1} veces`, 'la última: hace minutos', 'morado'],
-          ['Ventana', 'AHORA', 'está frente a ella', 'verde'],
-        ],
-      },
-    });
+    const clave = `cot:${qv.id}:${String(qv.ultima_vista_at).slice(0, 16)}`;
+    const { data: yaS } = await supabase.from('ti_senales').select('id').eq('clave', clave).maybeSingle();
+    if (yaS) continue;
+    const { data: vs } = await supabase.from('quote_vistas').select('created_at, segundos').eq('quote_id', qv.id).order('created_at', { ascending: false }).limit(20);
+    const lista = vs || []; const en24 = lista.filter(v => ahora.getTime() - Date.parse(v.created_at) < 24 * 3600e3);
+    const larga = lista.some(v => Number(v.segundos || 0) >= 300);
+    const anterior = lista[1] ? Date.parse(lista[1].created_at) : null;
+    const reabrio = anterior != null && Date.parse(lista[0]?.created_at || qv.ultima_vista_at) - anterior > 3 * 86400e3;
+    const umbral = en24.length >= 3 ? '3_aperturas_24h' : larga ? 'lectura_5min' : reabrio ? 'reabrio_3d' : null;
+    let accion: string | null = null, envioId: string | null = null;
+    if (umbral) {
+      try { const { toqueCotizacion } = await import('./agente'); const r = await toqueCotizacion(qv.contact_id, { id: String(qv.id), numero: qv.numero, total: Number(qv.total) || null }, 'intencion'); accion = r.ok ? 'mensaje_unico' : `sin_mensaje:${r.motivo}`; envioId = r.envio_id || null; } catch (e: any) { accion = `error:${String(e?.message || e).slice(0, 80)}`; }
+    }
+    await supabase.from('ti_senales').insert({ contact_id: qv.contact_id, tipo: 'cotizacion_vista', clave, ocurrio_at: qv.ultima_vista_at, detalle: { quote_id: qv.id, numero: qv.numero, total: qv.total, vistas: qv.vistas, aperturas_24h: en24.length, segundos_max: Math.max(0, ...lista.map(v => Number(v.segundos || 0))), nombre: c?.nombre }, umbral, accion, envio_id: envioId }).then(() => {}, () => {});
     res.vistas_cotizacion++;
   }
 

@@ -7,12 +7,27 @@ import { leerConfig } from './motor';
 
 export type Urgencia = 'ahora' | 'hoy' | 'semana';
 export type ItemTorre = {
+  nivel: number;   // 1 lead espera persona · 2 dinero en la mesa · 3 aprobaciones · 4 cadena reunión · 5 rescate · 6 cierre · 7 datos
   key: string; tipo: 'envio' | 'revision' | 'reactivacion' | 'tarea'; id: string; contact_id: string | null;
   lead: { nombre: string; empresa: string | null; giro: string | null; canal: string | null; etapa: string | null; telefono?: string | null };
   urgencia: Urgencia; cuando: string | null; titulo: string; chip: string; resumen: string; datos: any;
 };
 const cdmx = (d = new Date()) => new Date(d.getTime() - 6 * 3600e3);
 const primerNombre = (s: any) => String(s || '').trim().split(/\s+/)[0] || '';
+const NIVEL_L: Record<number, string> = { 1: 'Te está esperando', 2: 'Dinero en la mesa', 3: 'Aprobaciones del agente', 4: 'Cadena de la reunión', 5: 'Llamadas de rescate', 6: 'Decisiones de cierre', 7: 'Datos' };
+function nivelDe(it: { tipo: string; datos: any }): number {
+  const d = it.datos || {}; const p = d.payload || {};
+  if (it.tipo === 'envio' || it.tipo === 'revision' || it.tipo === 'reactivacion') return 3;
+  if (d.tipo === 'responder') return 1;
+  if (p.campo_clave === 'cotizacion_cobro') return 2;
+  if (p.campo_clave === 'rfc' && d.prioridad <= 3) return 2;
+  if (p.campo_clave === 'razon_social' && d.prioridad <= 3) return 2;
+  if (String(p.campo_clave || '').startsWith('reunion_') || p.reloj === 'segunda_reunion' || p.reloj === 'demo_cotiza' || d.tipo === 'cotizar') return 4;
+  if (d.tipo === 'llamada') return p.reloj === 'silencio_llamada' || p.agendar_discovery ? 5 : (p.reloj === 'cot_llamada' ? 2 : 5);
+  if (d.tipo === 'veredicto' || p.campo_clave === 'cotizacion_estado' || d.tipo === 'aprendizaje') return 6;
+  if (d.tipo === 'dato') return 7;
+  return 6;
+}
 
 export async function colaTorre() {
   const cfg: any = await leerConfig();
@@ -29,23 +44,27 @@ export async function colaTorre() {
   const items: ItemTorre[] = [];
   for (const e of envios || []) {
     const min = (Date.parse(e.sale_at) - ahora) / 60e3; const s: any = e.salida || {};
-    items.push({ key: `envio:${e.id}`, tipo: 'envio', id: e.id, contact_id: e.contact_id, lead: lead((e as any).contacts, e.telefono), urgencia: min <= 30 ? 'ahora' : String(cdmx(new Date(e.sale_at)).toISOString()).slice(0, 10) <= hoy ? 'hoy' : 'semana', cuando: e.sale_at, titulo: e.origen === 'reenganche' ? 'Aprobar reenganche (retomar conversación)' : e.origen === 'silencio' ? 'Aprobar toque de seguimiento' : e.origen === 'reactivacion' ? 'Aprobar reactivación programada' : e.origen === 'preparacion' ? 'Aprobar preparación de la demo' : 'Aprobar respuesta del agente', chip: 'Aprobar mensaje', resumen: s.objetivo || s.estado || '', datos: { ...e, contacts: undefined } });
+    items.push({ nivel: 0, key: `envio:${e.id}`, tipo: 'envio', id: e.id, contact_id: e.contact_id, lead: lead((e as any).contacts, e.telefono), urgencia: min <= 30 ? 'ahora' : String(cdmx(new Date(e.sale_at)).toISOString()).slice(0, 10) <= hoy ? 'hoy' : 'semana', cuando: e.sale_at, titulo: e.origen === 'reenganche' ? 'Aprobar reenganche (retomar conversación)' : e.origen === 'silencio' ? 'Aprobar toque de seguimiento' : e.origen === 'reactivacion' ? 'Aprobar reactivación programada' : e.origen === 'preparacion' ? 'Aprobar preparación de la demo' : 'Aprobar respuesta del agente', chip: 'Aprobar mensaje', resumen: s.objetivo || s.estado || '', datos: { ...e, contacts: undefined } });
   }
   for (const r of revs || []) {
     const p: any = r.propuesta || {};
-    items.push({ key: `revision:${r.id}`, tipo: 'revision', id: r.id, contact_id: r.contact_id, lead: lead((r as any).contacts), urgencia: 'hoy', cuando: r.created_at, titulo: `Revisión diaria: ${p.tipo === 'mensaje_extra' ? 'mensaje extra' : p.tipo === 'plantilla' ? 'plantilla' : p.tipo === 'llamada' ? 'llamada' : p.tipo === 'descalificar' ? 'descalificar' : p.tipo || 'propuesta'}`, chip: 'Revisión diaria', resumen: r.resumen || '', datos: { ...r, contacts: undefined } });
+    items.push({ nivel: 0, key: `revision:${r.id}`, tipo: 'revision', id: r.id, contact_id: r.contact_id, lead: lead((r as any).contacts), urgencia: 'hoy', cuando: r.created_at, titulo: `Revisión diaria: ${p.tipo === 'mensaje_extra' ? 'mensaje extra' : p.tipo === 'plantilla' ? 'plantilla' : p.tipo === 'llamada' ? 'llamada' : p.tipo === 'descalificar' ? 'descalificar' : p.tipo || 'propuesta'}`, chip: 'Revisión diaria', resumen: r.resumen || '', datos: { ...r, contacts: undefined } });
   }
-  for (const x of reacts || []) items.push({ key: `reactivacion:${x.id}`, tipo: 'reactivacion', id: x.id, contact_id: x.contact_id, lead: lead((x as any).contacts, x.telefono), urgencia: 'semana', cuando: x.created_at, titulo: `Reactivación: ${x.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'} hace ${x.meses_sin_hablar} meses`, chip: 'Reactivación', resumen: x.resumen_lead || '', datos: { ...x, contacts: undefined } });
+  for (const x of reacts || []) items.push({ nivel: 0, key: `reactivacion:${x.id}`, tipo: 'reactivacion', id: x.id, contact_id: x.contact_id, lead: lead((x as any).contacts, x.telefono), urgencia: 'semana', cuando: x.created_at, titulo: `Reactivación: ${x.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'} hace ${x.meses_sin_hablar} meses`, chip: 'Reactivación', resumen: x.resumen_lead || '', datos: { ...x, contacts: undefined } });
   for (const t of tareas || []) {
     const p: any = t.payload || {};
     if (t.tipo === 'dato' && t.prioridad >= 5) continue;   // el lote de higiene vive en Datos
     const urg: Urgencia = t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';
     const chip = t.tipo === 'llamada' ? 'Llamar' : t.tipo === 'veredicto' ? 'Decidir' : t.tipo === 'dato' ? (p.campo_clave?.startsWith('reunion_') ? 'Reunión' : p.campo_clave?.startsWith('cotizacion_') ? 'Cotización' : 'Dato') : t.tipo === 'responder' ? 'Responder' : t.tipo === 'wa_plantilla' ? 'Plantilla' : t.tipo === 'compromiso' ? 'Compromiso' : t.tipo;
     const ld = lead((t as any).contacts); if (!(t as any).contacts?.nombre && p.instruccion) ld.nombre = String(p.instruccion).split(' — ')[0].replace(/^¿/, '').slice(0, 60);   // tareas de empresa (Cuenta SACS, RFC): el nombre viene en la instrucción
-    items.push({ key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
+    items.push({ nivel: 0, key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
   }
+  for (const it of items) (it as any).nivel = nivelDe(it);
   const orden: Record<Urgencia, number> = { ahora: 0, hoy: 1, semana: 2 };
-  items.sort((a, b) => orden[a.urgencia] - orden[b.urgencia] || (Date.parse(a.cuando || '') || 0) - (Date.parse(b.cuando || '') || 0));
+  // Jerarquía (decisión 2026-09-04): primero el nivel, dentro del nivel la urgencia, y luego la hora.
+  items.sort((a, b) => (a.nivel - b.nivel) || (orden[a.urgencia] - orden[b.urgencia]) || (Date.parse(a.cuando || '') || 0) - (Date.parse(b.cuando || '') || 0));
+  // SEÑALES de hoy: solo lectura, en su propio feed.
+  const { data: senales } = await supabase.from('ti_senales').select('id, contact_id, tipo, detalle, ocurrio_at, umbral, accion, contacts(nombre, companies(nombre_comercial, nombre))').gte('ocurrio_at', `${hoy}T06:00:00.000Z`).order('ocurrio_at', { ascending: false }).limit(60);
   const esCadena = (t: any) => ['reunion_resultado', 'reunion_minuta', 'reunion_interes'].includes(t.payload?.campo_clave);
   const esCot = (t: any) => ['cotizacion_estado', 'cotizacion_cobro'].includes(t.payload?.campo_clave) || ['cot_decision', 'cot_llamada'].includes(t.payload?.reloj);
   const latidoAt = cfg.observado_hasta ? Date.parse(cfg.observado_hasta) : 0;
@@ -58,5 +77,5 @@ export async function colaTorre() {
     aprendizaje: ejemplosPend || 0,
     agente: { activo: cfg.agente_activo === true, modo: cfg.agente_modo || 'sombra', latido_hace_min: latidoAt ? Math.round((ahora - latidoAt) / 60e3) : null, vivo: latidoAt ? ahora - latidoAt < 10 * 60e3 : false },
   };
-  return { items, pulsos, hoy };
+  return { items, pulsos: { ...pulsos, senales: (senales || []).length }, niveles: NIVEL_L, senales: (senales || []).map(s => ({ ...s, nombre: (s as any).contacts?.nombre || (s.detalle as any)?.nombre || 'Lead', empresa: (s as any).contacts?.companies?.nombre_comercial || (s as any).contacts?.companies?.nombre || null, contacts: undefined })), hoy };
 }

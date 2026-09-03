@@ -98,7 +98,8 @@ export async function generarPlan() {
   // 0) EL SWITCH DEL ARRANQUE: con arranque_desde puesto, todo lead NUEVO que
   //    entró después de esa fecha se enrola solo (T1 speed-to-lead). Mientras
   //    sea null, nadie entra sin mano humana.
-  if (cfg.arranque_desde) {
+  // Con el agente activo, el primer contacto es suyo: la llamada de bienvenida humana (T1) se apaga (decisión 2026-09-04).
+  if (cfg.arranque_desde && (cfg as any).agente_activo !== true) {
     const { data: nuevos } = await supabase.from('contacts')
       .select('id, ti_cadencias(contact_id)')
       .eq('lifecycle_stage', 'lead').eq('estatus_lead', 'nuevo')
@@ -247,6 +248,11 @@ async function relojes(cfg: TiConfig, ahora: Date) {
         resultados: { extender: 'Extender 14 días (con razón)', rechazar: 'Marcar rechazada', seguir: 'Yo la sigo trabajando' },
       } });
     } else if (etapa[0] === 'cot_llamada') {
+      // Día 7: toque del agente. La llamada humana solo si el lead respondió algo después de la cotización o si el monto supera el umbral.
+      const { data: resp } = await supabase.from('ti_eventos').select('id').eq('contact_id', qv.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', qv.created_at).limit(1);
+      const umbral = Number((cfg as any).umbral_llamada_cotizacion ?? 20000);
+      try { const { toqueCotizacion } = await import('./agente'); await toqueCotizacion(qv.contact_id, { id: String(qv.id), numero: qv.numero, total: Number(qv.total) || null }, 'dia7'); } catch {}
+      if (!(resp || []).length && Number(qv.total || 0) < umbral) { res.reloj_cotizacion++; continue; }
       await supabase.from('ti_tareas').insert({ ...base, familia: 'avanzar', tipo: 'llamada', prioridad: 4, payload: {
         instruccion: `Llámale a ${nombre} — su cotización lleva ${dias} días sin decisión`,
         porque: 'El feedback por texto no la movió: la llamada resuelve la duda que la tiene detenida. El ángulo es resolver, no presionar.',
@@ -254,12 +260,8 @@ async function relojes(cfg: TiConfig, ahora: Date) {
         tipo_llamada: 'Seguimiento de cotización', resultados: RES_COTIZACION,
       } });
     } else {
-      await supabase.from('ti_tareas').insert({ ...base, familia: 'avanzar', tipo: 'wa_libre', prioridad: 4, payload: {
-        instruccion: `Pídele feedback a ${nombre} de su cotización`,
-        porque: `Se la mandaste hace ${dias} días${qv.vistas ? ` y la ha abierto ${qv.vistas} veces` : ' y no hay señal de que la abriera'}. Un empujón suave destraba más que esperar.`,
-        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'cot_feedback', sujeto: String(qv.id), quote_id: String(qv.id), hechos,
-        mensaje: `Hola ${nombre}, ¿pudiste ver la cotización que te mandé? Si algo no cuadra o quieres ajustar algo, dime y lo movemos — para eso estoy.`,
-      } });
+      // Día 3: lo manda el agente (si no gastó ya el mensaje único por intención). Nada para el humano.
+      try { const { toqueCotizacion } = await import('./agente'); await toqueCotizacion(qv.contact_id, { id: String(qv.id), numero: qv.numero, total: Number(qv.total) || null }, 'dia3'); } catch {}
     }
     res.reloj_cotizacion++;
   }
@@ -277,7 +279,7 @@ async function relojes(cfg: TiConfig, ahora: Date) {
     const nombre = primerNombre(c);
     await supabase.from('ti_tareas').insert({
       contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id,
-      familia: 'avanzar', tipo: 'wa_libre', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj',
+      familia: 'avanzar', tipo: 'cotizar', prioridad: 3, vence_at: ahora.toISOString(), origen: 'reloj',
       payload: {
         instruccion: `Cotízale a ${nombre} — la demo fue hace 2+ días`,
         porque: 'La demo salió y nadie cotizó: cada día que pasa la emoción se enfría. Mándale la cotización o di por qué no.',
@@ -289,7 +291,9 @@ async function relojes(cfg: TiConfig, ahora: Date) {
     res.reloj_demo++;
   }
 
-  // ── CONVERSACIÓN VIVA SIN CITA (3 días) ──
+  // ── CONVERSACIÓN VIVA SIN CITA (3 días) ── Solo sin agente: con el agente activo, él propone horarios (decisión 2026-09-04).
+  if ((cfg as any).agente_activo !== true) {
+
   const { data: charlas } = await supabase.from('ti_cadencias')
     .select('contact_id, updated_at, contacts!inner(id, nombre, whatsapp, owner_id, company_id, archived_at)')
     .eq('estado', 'conversacion').lt('updated_at', haceD(3)).limit(50);
@@ -316,6 +320,8 @@ async function relojes(cfg: TiConfig, ahora: Date) {
       },
     });
     res.reloj_charla++;
+  }
+
   }
 
   // ── DÍA 30: todo lead tiene ciclo de vida claro, sin excepción ──
