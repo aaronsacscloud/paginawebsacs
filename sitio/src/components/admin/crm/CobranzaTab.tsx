@@ -816,12 +816,33 @@ function Gestion({ f, onCerrar, onListo }: any) {
   const [nota, setNota] = useState(f.nota || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /* El comprobante es obligatorio para cobrar (decisión del dueño,
+     3-sep-2026). Esta es la OTRA puerta de captura a mano además del alta de
+     pago: dejarla sin la regla es lo mismo que no tener regla. */
+  const [comp, setComp] = useState<{ path: string; nombre: string } | null>(null);
+  const [subiendoComp, setSubiendoComp] = useState(false);
 
   const esCot = f.tipo === 'cotizacion';
+
+  async function subirComprobante(file: File) {
+    setSubiendoComp(true); setError('');
+    try {
+      const firma = await fetch('/api/crm/pagos/comprobante', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'firmar', nombre: file.name, mime: file.type, bytes: file.size }),
+      }).then(r => r.json());
+      if (firma?.error) throw new Error(firma.error);
+      const up = await fetch(firma.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!up.ok) throw new Error('No se pudo subir el archivo.');
+      setComp({ path: firma.path, nombre: file.name });
+    } catch (e: any) { setError(e?.message || 'No se pudo subir el comprobante.'); }
+    setSubiendoComp(false);
+  }
 
   async function guardar() {
     setBusy(true); setError('');
     if (esPago) {
+      if (!comp) { setBusy(false); setError('Falta el comprobante del pago: sin él no queda prueba de que entró.'); return; }
       // Cada dinero por su camino: el abono de una cotización se guarda como
       // pago de esa cotización —así cuadra el "lleva X de Y"—; el de una
       // suscripción pasa por el endpoint que recalcula próxima factura y ARR.
@@ -830,11 +851,11 @@ function Gestion({ f, onCerrar, onListo }: any) {
       const r = esCot
         ? await fetch('/api/revenue/payments', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ quote_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia }),
+            body: JSON.stringify({ quote_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia, captura: 'manual', comprobante_path: comp.path, comprobante_nombre: comp.nombre }),
           }).then(x => x.json()).catch(() => null)
         : await fetch('/api/crm/arr/register-payment', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia }),
+        body: JSON.stringify({ subscription_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia, captura: 'manual', comprobante_path: comp.path, comprobante_nombre: comp.nombre }),
       }).then(x => x.json()).catch(() => null);
       if (!r || r.error) { setBusy(false); setError(r?.error || 'No se pudo registrar el pago.'); return; }
       if (f.exhibicion) {
@@ -881,6 +902,16 @@ function Gestion({ f, onCerrar, onListo }: any) {
               </select></div>
             <div style={{ marginTop: 9 }}><div style={S.fl}>Referencia</div>
               <input style={S.fi} value={referencia} onChange={e => setReferencia(e.target.value)} placeholder="folio, últimos 4 dígitos…" /></div>
+            <div style={{ marginTop: 9 }}><div style={S.fl}>Comprobante *</div>
+              <label style={{
+                display: 'block', border: `1.5px dashed ${comp ? '#9fd8bf' : '#cfc6f2'}`, borderRadius: 9,
+                padding: '11px 12px', fontSize: '0.75rem', textAlign: 'center' as const, cursor: 'pointer',
+                color: comp ? '#1E8A63' : '#6b5fa8', background: comp ? '#f4fbf8' : '#fff',
+              }}>
+                {subiendoComp ? 'Subiendo…' : comp ? `✓ ${comp.nombre} · cambiar` : 'Adjuntar la ficha, el recibo o la captura'}
+                <input type="file" accept="application/pdf,image/*,application/xml,text/xml" style={{ display: 'none' }}
+                  onChange={e => { const x = e.target.files?.[0]; if (x) subirComprobante(x); }} />
+              </label></div>
           </>) : (<>
             <div style={S.fl}>En qué va</div>
             <select style={S.fi} value={estado} onChange={e => setEstado(e.target.value)}>
@@ -898,7 +929,7 @@ function Gestion({ f, onCerrar, onListo }: any) {
           </>)}
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8, marginTop: 13 }}>
-            <button style={{ ...S.btnP, opacity: busy ? .6 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }} disabled={busy} onClick={guardar}>
+            <button style={{ ...S.btnP, opacity: (busy || subiendoComp) ? .6 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }} disabled={busy || subiendoComp} onClick={guardar}>
               {busy ? <><Corazones size={9} color="#fff" /> Guardando…</> : esPago ? 'Registrar pago' : 'Guardar'}
             </button>
             <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>

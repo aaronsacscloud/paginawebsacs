@@ -8,6 +8,8 @@ import NuevaSuscripcionModal from './NuevaSuscripcionModal';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Sheet from './ui/Sheet';
 import Cargando, { Corazones } from './ui/Cargando';
+import DatosFiscales from './DatosFiscales';
+import { faltanFiscales, type Fiscales } from '../../../lib/crm/fiscal.ts';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -875,14 +877,39 @@ function LinkClienteModal({ sub, onClose }: { sub: Sub; onClose: () => void }) {
   );
 }
 
+/**
+ * Registrar un pago, en dos pasos.
+ *
+ * PASO 1 · el dinero: monto, método y COMPROBANTE, los tres obligatorios.
+ *   El comprobante no estaba y se notaba: 184 pagos capturados, UNO con
+ *   comprobante. Un cobro sin su prueba es la palabra de quien lo capturó
+ *   contra el banco, y cuando no cuadra el mes ya no hay dónde buscar.
+ *
+ * PASO 2 · los datos fiscales, SOLO si le faltan. Se piden aquí porque es el
+ *   único momento en que alguien tiene al cliente enfrente hablando de dinero.
+ *   Cuando pida su factura ya es tarde para andarle preguntando el régimen —y
+ *   medido: de 344 cuentas, 27 tenían RFC y CERO tenían régimen o C.P.
+ *
+ * La constancia es opcional a propósito: los cuatro campos bastan para
+ * facturar, y exigir un PDF que casi nadie trae a la mano frenaría el cobro.
+ */
 export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: Sub[]; prefill?: { subscription_id?: string } | null; onClose: () => void; onDone: () => void }) {
   const [modo, setModo] = useState<'existente' | 'nuevo'>('existente');
   const [subId, setSubId] = useState(prefill?.subscription_id || '');
   const [form, setForm] = useState<any>({ ciclo: 'anual', metodo: 'transferencia', fecha: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [paso, setPaso] = useState<1 | 2>(1);
+  // El comprobante se sube en cuanto se elige y se liga al pago después: si se
+  // subiera al final, un error de red dejaría el pago escrito y el archivo no.
+  const [comp, setComp] = useState<{ path: string; nombre: string } | null>(null);
+  const [subiendoComp, setSubiendoComp] = useState(false);
+  // Fiscales de la cuenta que paga. `null` = todavía no se sabe: mientras no
+  // se sepa NO se decide que faltan, o el paso 2 parpadearía en cada cambio.
+  const [fisc, setFisc] = useState<Fiscales | null>(null);
+  const [fiscPendiente, setFiscPendiente] = useState<any>(null);   // cliente nuevo: se guardan al crear la cuenta
   // Panel de éxito: comprobante generado (ver/copiar/enviar).
-  const [done, setDone] = useState<{ payment_id: string; numero_acuse: string; acuse_url: string } | null>(null);
+  const [done, setDone] = useState<{ payment_id: string; numero_acuse: string; acuse_url: string; aviso?: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [sendMsg, setSendMsg] = useState('');
 
@@ -898,15 +925,78 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
   // Prefill de la próxima fecha al abrir con una sub ya elegida.
   useEffect(() => { if (sel && form.nueva_proxima_factura === undefined) setForm((f: any) => ({ ...f, monto: f.monto ?? (sel.monto_proximo ?? sel.precio), nueva_proxima_factura: proximaSugerida(sel, f.fecha) })); }, [sel]);
 
-  async function guardar() {
-    setErr(null);
+  /* Los fiscales de la cuenta que paga. Se leen al elegir la suscripción —no
+     al apretar Registrar— para poder decir desde el principio si van a hacer
+     falta, en vez de sorprender con un paso extra cuando ya se dio por hecho
+     que terminó. */
+  const companyId = modo === 'existente' ? (sel?.company_id || null) : null;
+  useEffect(() => {
+    if (!companyId) { setFisc(null); return; }
+    let vivo = true;
+    setFisc(null);
+    fetch(`/api/crm/onboarding/cuenta?company_id=${companyId}&fiscales=1`)
+      .then(r => r.json())
+      .then(j => { if (vivo) setFisc(j.fiscales || {}); })
+      // Si no se pudieron leer se asume que faltan: pedirlos de más es una
+      // molestia; darlos por buenos sin saberlo es una factura que no sale.
+      .catch(() => { if (vivo) setFisc({}); });
+    return () => { vivo = false; };
+  }, [companyId]);
+
+  // Cliente nuevo: la cuenta no existe todavía, así que sus fiscales siempre
+  // se piden (y se guardan después, cuando el pago ya creó la empresa).
+  const faltanDatos = modo === 'nuevo' ? !fiscPendiente : (fisc !== null && faltanFiscales(fisc));
+
+  async function subirComprobante(file: File) {
+    setSubiendoComp(true); setErr(null);
+    try {
+      const firma = await fetch('/api/crm/pagos/comprobante', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'firmar', nombre: file.name, mime: file.type, bytes: file.size }),
+      }).then(r => r.json());
+      if (firma?.error) throw new Error(firma.error);
+      const up = await fetch(firma.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!up.ok) throw new Error('No se pudo subir el archivo.');
+      setComp({ path: firma.path, nombre: file.name });
+    } catch (e: any) { setErr(e?.message || 'No se pudo subir el comprobante.'); }
+    setSubiendoComp(false);
+  }
+
+  /** Lo que tiene que estar antes de tocar el servidor. Devuelve el primer
+   *  problema en el orden de la pantalla: mandar al último campo cuando el
+   *  primero también está mal hace dar dos vueltas. */
+  function revisarPaso1(): string | null {
+    if (modo === 'existente' && !subId) return 'Elige la suscripción que está pagando.';
+    if (modo === 'nuevo' && !String(form.empresa || '').trim()) return 'Ingresa el nombre de la empresa (o su cuenta SACS).';
     const monto = Number(form.monto);
-    if (!isFinite(monto) || monto <= 0) { setErr('Ingresa el monto del pago.'); return; }
-    if (modo === 'existente' && !subId) { setErr('Elige la suscripción que está pagando.'); return; }
-    if (modo === 'nuevo' && !String(form.empresa || '').trim()) { setErr('Ingresa el nombre de la empresa (o su cuenta SACS).'); return; }
+    if (!isFinite(monto) || monto <= 0) return 'Ingresa el monto del pago.';
+    if (!String(form.metodo || '').trim()) return 'Elige la forma de pago.';
+    if (!comp) return 'Falta el comprobante del pago: sin él no queda prueba de que entró.';
+    return null;
+  }
+
+  function siguiente() {
+    const problema = revisarPaso1();
+    if (problema) { setErr(problema); return; }
+    setErr(null);
+    if (faltanDatos) { setPaso(2); return; }
+    guardar();
+  }
+
+  async function guardar(fiscalesNuevas?: any) {
+    setErr(null);
+    const problema = revisarPaso1();
+    if (problema) { setErr(problema); setPaso(1); return; }
+    const monto = Number(form.monto);
+    const fiscales = fiscalesNuevas || fiscPendiente;
     setSaving(true);
     try {
-      const body: any = { monto, fecha: form.fecha, metodo: form.metodo, referencia: form.referencia || null, notas: form.notas || null };
+      const body: any = {
+        monto, fecha: form.fecha, metodo: form.metodo, referencia: form.referencia || null, notas: form.notas || null,
+        // `captura: 'manual'` enciende el candado del comprobante en el
+        // servidor. Los cobros de pasarela no lo mandan y siguen pasando.
+        captura: 'manual', comprobante_path: comp!.path, comprobante_nombre: comp!.nombre,
+      };
       if (modo === 'existente') { body.subscription_id = subId; if (form.nueva_proxima_factura) body.nueva_proxima_factura = form.nueva_proxima_factura; }
       else Object.assign(body, {
         empresa: form.empresa, sacs_account: form.sacs_account || null,
@@ -916,8 +1006,29 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
       const res = await fetch('/api/crm/arr/register-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await res.json();
       if (!res.ok || j.error) throw new Error(j.error || 'No se pudo registrar');
-      // Éxito: mostramos el comprobante en vez de cerrar. La lista se recarga
-      // al pulsar "Cerrar" (onDone). El ARR/fecha ya se actualizaron en el server.
+
+      // Cliente nuevo: la empresa nace con el pago, así que sus fiscales se
+      // guardan aquí, cuando por fin hay a qué cuenta pegarlos.
+      const nuevoCompany = j.subscription?.company_id || null;
+      if (fiscales && nuevoCompany) {
+        await fetch('/api/crm/onboarding/cuenta', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company_id: nuevoCompany, accion: 'fiscales', ...fiscales }),
+        }).catch(() => {});
+      }
+
+      /* Comisiones: el recálculo del día del pago, aquí mismo. El cron de las
+         4 am ya lo hacía, pero eso dejaba hasta 24 h en las que un pago
+         registrado no tenía comisión y la pantalla parecía estar mal. Es
+         idempotente —el mismo código del cron—, así que correrlo de más no
+         duplica nada. Best-effort: NUNCA tumba el pago. */
+      fetch('/api/crm/comisiones/periodo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'recalcular', desde: form.fecha, hasta: form.fecha }),
+      }).catch(() => {});
+
+      // Éxito: mostramos el acuse en vez de cerrar. La lista se recarga al
+      // pulsar "Cerrar" (onDone). El ARR/fecha ya se actualizaron en el server.
       setDone({ payment_id: j.payment_id, numero_acuse: j.numero_acuse || '', acuse_url: j.acuse_url || `/acuse/${j.payment_id}` });
       setSaving(false);
     } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
@@ -943,7 +1054,8 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
           <h3 style={{ margin: 0, fontWeight: 800 }}>✓ Pago registrado</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
-        <div style={{ fontSize: '0.84rem', color: '#555', marginBottom: 12 }}>Comprobante <b>{done.numero_acuse}</b> generado. El ARR y la próxima fecha se actualizaron.</div>
+        <div style={{ fontSize: '0.84rem', color: '#555', marginBottom: 12 }}>Acuse <b>{done.numero_acuse}</b> generado. El ARR, la próxima fecha y la comisión del día se actualizaron.</div>
+        {done.aviso && <div style={{ fontSize: '0.8rem', color: '#9a6a10', background: '#fff8e8', border: '1px solid #f0dfae', borderRadius: 9, padding: '9px 11px', marginBottom: 12 }}>{done.aviso}</div>}
         <input readOnly value={acuseUrl} onFocus={e => e.currentTarget.select()} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button style={{ ...S.btn, background: '#1E8A63', color: '#fff', flex: 1 }} onClick={() => window.open(done.acuse_url, '_blank', 'noopener')}>Ver / PDF</button>
@@ -960,9 +1072,13 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
     <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={S.modal}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ margin: 0, fontWeight: 800 }}>Registrar pago</h3>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>
+            Registrar pago
+            {faltanDatos && <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 700, color: '#6b5fa8' }}>· paso {paso} de 2</span>}
+          </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
+        {paso === 1 && (<>
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           <button onClick={() => setModo('existente')} style={{ ...S.btn, flex: 1, background: modo === 'existente' ? '#1a1a1a' : '#f2f2f2', color: modo === 'existente' ? '#fff' : '#555' }}>Cliente existente</button>
           <button onClick={() => setModo('nuevo')} style={{ ...S.btn, flex: 1, background: modo === 'nuevo' ? '#1a1a1a' : '#f2f2f2', color: modo === 'nuevo' ? '#fff' : '#555' }}>Cliente nuevo</button>
@@ -1004,10 +1120,48 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
         </div>
         <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas || ''} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 54, resize: 'vertical' }} /></div>
 
+        {/* EL COMPROBANTE, obligatorio. Va al final porque es lo último que se
+            tiene a la mano, y en su propio recuadro porque es lo único aquí
+            que no se escribe. Va a un bucket privado: una captura de
+            transferencia trae cuentas y saldos. */}
+        <div style={{ marginTop: 12 }}>
+          <label style={S.label}>Comprobante del pago *</label>
+          <label style={{
+            display: 'block', border: `1.5px dashed ${comp ? '#9fd8bf' : '#cfc6f2'}`, borderRadius: 10,
+            padding: '12px 13px', fontSize: '0.78rem', textAlign: 'center' as const, cursor: 'pointer',
+            color: comp ? '#1E8A63' : '#6b5fa8', background: comp ? '#f4fbf8' : '#fff',
+          }}>
+            {subiendoComp ? 'Subiendo…'
+              : comp ? `✓ ${comp.nombre} · cambiar`
+              : 'Adjuntar la ficha de transferencia, el recibo o la captura (PDF, XML o imagen)'}
+            <input type="file" accept="application/pdf,image/*,application/xml,text/xml" style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) subirComprobante(f); }} />
+          </label>
+        </div>
+        </>)}
+
+        {paso === 2 && (
+          <div style={{ marginTop: 4 }}>
+            <DatosFiscales
+              companyId={companyId}
+              fisc={fisc}
+              modo={modo === 'existente' ? 'guardar' : 'entregar'}
+              textoBoton={saving ? 'Registrando…' : 'Guardar y registrar el pago'}
+              ocupadoFuera={saving}
+              onCancelar={() => { setErr(null); setPaso(1); }}
+              onGuardado={async (datos) => { setFiscPendiente(datos); await guardar(datos); }}
+            />
+          </div>
+        )}
+
         {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: saving ? 0.6 : 1 }}>
-          {saving ? 'Registrando…' : 'Registrar pago y activar ARR'}
-        </button>
+        {paso === 1 && (
+          <button onClick={siguiente} disabled={saving || subiendoComp} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: (saving || subiendoComp) ? 0.6 : 1 }}>
+            {saving ? 'Registrando…'
+              : faltanDatos ? 'Continuar · faltan sus datos fiscales'
+              : 'Registrar pago y activar ARR'}
+          </button>
+        )}
       </div>
     </div>
   );

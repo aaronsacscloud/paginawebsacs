@@ -525,13 +525,41 @@ export const DELETE: APIRoute = async ({ request, url }) => {
   // Borrado real para borradores y plantillas (ninguno tiene valor histórico)
   const isDraft = estado === 'draft' || estado === 'plantilla';
 
-  // Desvincular el deal para no dejar referencias colgando (deals.quote_id es uuid sin FK).
-  if (prev.deal_id) {
-    try {
-      await supabase.from('deals').update({ quote_id: null }).eq('id', prev.deal_id).eq('quote_id', id);
-    } catch (e) {
-      console.error('[quotes DELETE] no se pudo desvincular el deal:', e);
+  /* ── La oportunidad que nació de esta cotización ──
+     Antes se desvinculaba SOLO si `quotes.deal_id` estaba puesto. El enlace es
+     de ida y vuelta pero casi siempre se escribe de un lado —el deal guarda
+     `quote_id`, la cotización no siempre guarda `deal_id`—, así que en la
+     mayoría de los casos no se desvinculaba nada. Y NUNCA se cerraba la
+     oportunidad: la cotización se iba y su monto seguía contando en el
+     forecast, apuntando a una fila que ya no existía.
+
+     Medido el 3-sep-2026 antes de arreglarlo: 11 oportunidades abiertas sin
+     documento detrás, $122,680 de pipeline inventado. Seis eran del mismo
+     contacto —alguien probando el cotizador en una hora—.
+
+     Ahora se busca por `deals.quote_id`, que es el lado que siempre está, y
+     las que sigan ABIERTAS se archivan: una oportunidad cuyo único documento
+     acaba de borrarse no es dinero sobre la mesa. Se archiva, no se borra: si
+     era buena, se revive quitándole `archived_at`.
+     Las ya cerradas —ganadas o perdidas— no se tocan: son historia. */
+  let oportunidadesCerradas = 0;
+  try {
+    const ids = new Set<string>();
+    const { data: porQuote } = await supabase.from('deals').select('id, stage, archived_at').eq('quote_id', id);
+    for (const d of porQuote || []) ids.add(d.id);
+    if (prev.deal_id) ids.add(prev.deal_id);
+    if (ids.size) {
+      const lista = [...ids];
+      await supabase.from('deals').update({ quote_id: null }).in('id', lista).eq('quote_id', id);
+      const { data: arch } = await supabase.from('deals')
+        .update({ archived_at: new Date().toISOString(), motivo_perdida: 'cotización borrada: oportunidad sin documento' })
+        .in('id', lista).is('archived_at', null)
+        .not('stage', 'in', '("cerrada_ganada","cerrada_perdida")')
+        .select('id');
+      oportunidadesCerradas = (arch || []).length;
     }
+  } catch (e) {
+    console.error('[quotes DELETE] no se pudo cerrar la oportunidad:', e);
   }
 
   if (isDraft) {
@@ -539,7 +567,7 @@ export const DELETE: APIRoute = async ({ request, url }) => {
     // quote_id están declarados ON DELETE SET NULL, así que no rompe auditoría.
     const { error } = await supabase.from('quotes').delete().eq('id', id);
     if (error) return jsonResponse({ error: error.message }, 500);
-    return jsonResponse({ ok: true, mode: 'deleted' });
+    return jsonResponse({ ok: true, mode: 'deleted', oportunidades_archivadas: oportunidadesCerradas });
   }
 
   // ARCHIVADO (soft): estado='deleted' + guardamos el estado previo en la meta
@@ -553,7 +581,7 @@ export const DELETE: APIRoute = async ({ request, url }) => {
     .update({ estado: 'deleted', notas: serializeMeta(text, meta) })
     .eq('id', id);
   if (error) return jsonResponse({ error: error.message }, 500);
-  return jsonResponse({ ok: true, mode: 'archived' });
+  return jsonResponse({ ok: true, mode: 'archived', oportunidades_archivadas: oportunidadesCerradas });
 };
 
 // REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 30s en la instancia.

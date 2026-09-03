@@ -36,6 +36,16 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
 
+  /* Captura a mano: el comprobante es obligatorio (decisión del dueño,
+     3-sep-2026). Mismo candado y misma redacción que register-payment: son dos
+     endpoints porque el dinero de una cotización y el de una suscripción se
+     asientan distinto, no porque las reglas del cobro sean distintas.
+     Se exige solo a quien se declara manual: los cobros de pasarela traen su
+     propia prueba y pedirle un archivo a un webhook rompería el automático. */
+  if (body.captura === 'manual' && !String(body.comprobante_path || '').trim()) {
+    return new Response(JSON.stringify({ error: 'Falta el comprobante del pago: sin él no queda prueba de que entró.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
+
   // Insert payment — schema accepts quote_id (added in migration-2026-04-payments-receipts.sql)
   const payload: any = {
     quote_id: body.quote_id || null,
@@ -47,6 +57,10 @@ export const POST: APIRoute = async ({ request }) => {
     metodo: body.metodo,
     referencia: body.referencia || null,
     comprobante_url: body.comprobante_url || null,
+    // El comprobante del cliente va al bucket PRIVADO: se guarda la ruta, no
+    // una URL firmada, que caduca en una hora.
+    comprobante_path: body.comprobante_path || null,
+    comprobante_nombre: body.comprobante_nombre || null,
     items_cubiertos: Array.isArray(body.items_cubiertos) ? body.items_cubiertos : null,
     notas: body.notas || null,
     estado: body.estado || 'confirmado',
@@ -54,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Retry without optional cols if migration aún no aplicada
   let { data, error } = await supabase.from('payments').insert(payload).select().single();
-  if (error && /quote_id|comprobante_url|items_cubiertos|notas|estado/.test(String(error.message))) {
+  if (error && /quote_id|comprobante_url|comprobante_path|comprobante_nombre|items_cubiertos|notas|estado/.test(String(error.message))) {
     const fallback: any = { quote_id: payload.quote_id, fecha: payload.fecha, monto: payload.monto, metodo: payload.metodo, referencia: payload.referencia };
     const retry = await supabase.from('payments').insert(fallback).select().single();
     data = retry.data; error = retry.error;

@@ -53,6 +53,19 @@ export const POST: APIRoute = async ({ request }) => {
   if (!body) return new Response(JSON.stringify({ error: 'bad json' }), { status: 400 });
   const monto = Number(body.monto);
   if (!isFinite(monto) || monto <= 0) return new Response(JSON.stringify({ error: 'monto requerido' }), { status: 400 });
+  /* ── Captura a mano: el comprobante es obligatorio (decisión del dueño,
+     3-sep-2026) ──
+     La regla NO puede vivir solo en el navegador: por aquí entran también la
+     cobranza y cualquier pantalla futura, y una regla que solo está en un
+     formulario se pierde en cuanto alguien hace otro formulario.
+     Se exige solo a la CAPTURA MANUAL. Un cobro de Stripe o Mercado Pago ya
+     trae su propia prueba —el id de la pasarela— y pedirle un archivo a un
+     webhook rompería el cobro automático, que es lo contrario de lo que se
+     busca. Por eso el candado se activa cuando el que llama se declara manual,
+     no por ausencia de pasarela. */
+  if (body.captura === 'manual' && !String(body.comprobante_path || '').trim()) {
+    return new Response(JSON.stringify({ error: 'Falta el comprobante del pago: sin él no queda prueba de que entró.' }), { status: 400 });
+  }
   const fecha = body.fecha || new Date().toISOString().slice(0, 10);
 
   try {
@@ -170,6 +183,10 @@ export const POST: APIRoute = async ({ request }) => {
       // pasarela. Condicional para no romper si el SQL aún no corrió.
       ...(body.pasarela ? { pasarela: body.pasarela } : {}),
       ...(body.mp_payment_id ? { mp_payment_id: String(body.mp_payment_id) } : {}),
+      // El comprobante del CLIENTE, en el MISMO insert que el pago. Ligarlo
+      // después dejaría una ventana en la que el pago existe sin su prueba —y
+      // esa ventana se cierra sola solo si nadie recarga en medio.
+      ...(body.comprobante_path ? { comprobante_path: String(body.comprobante_path), comprobante_nombre: String(body.comprobante_nombre || '').slice(0, 160) } : {}),
       ...(body.comision != null ? { comision: r2(Number(body.comision) || 0) } : {}),
       ...(body.neto != null ? { neto: r2(Number(body.neto) || 0) } : {}),
     }).select('id, numero_acuse').single();
