@@ -29,6 +29,8 @@ export const PUT: APIRoute = async ({ request }) => {
     // Nunca retroceder la marca: dos pestañas abiertas no deben "des-leer".
     const { data: prev } = await supabase.from('espacio_lecturas').select('ultimo_leido_at').eq('canal_id', c.id).eq('usuario_id', yo.id).maybeSingle();
     if (prev && new Date(prev.ultimo_leido_at) > hasta) return json({ ok: true, sin_cambio: true });
+    // La primera lectura de un canal de Sistema crea su renglón: nace silenciado.
+    if (!prev && c.tipo === 'sistema') row.silenciado = true;
     // Los avisos de este canal ya no hacen falta en la campana.
     await supabase.from('crm_notificaciones').update({ leida_at: new Date().toISOString() })
       .eq('para', yo.id).is('leida_at', null).eq('metadata->>canal_id', c.id).lte('created_at', hasta.toISOString());

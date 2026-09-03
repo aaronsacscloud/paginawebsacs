@@ -125,7 +125,8 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const c = await canalDe(b.canal_id);
   if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Canal no encontrado' }, 404);
-  if (c.tipo === 'sistema') return json({ error: 'En Sistema escribe el sistema; abre un hilo o responde en otro canal' }, 400);
+  // En Sistema escribe el sistema; la gente comenta en hilos ("este lead lo tomo yo").
+  if (c.tipo === 'sistema' && !b.hilo_de) return json({ error: 'En Sistema escribe el sistema; abre un hilo para comentar' }, 400);
   if (c.archivado_at) return json({ error: 'Este canal está archivado' }, 400);
 
   const texto = String(b.texto ?? '').replace(/\r\n/g, '\n').trim();

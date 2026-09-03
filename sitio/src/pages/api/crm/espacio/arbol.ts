@@ -4,12 +4,14 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { json, quien, equipo, puedeVerCanal, type Canal } from '../../../../lib/crm/espacio.lib';
+import { anotarDespliegue } from '../../../../lib/crm/espacio-sistema';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'Sin sesión' }, 401);
+  await anotarDespliegue();   // #commits: el despliegue que atiende, una vez
 
   const [{ data: secciones }, { data: canales }, personas, { data: noLeidos }, { data: presencia }, { data: lecturas }] = await Promise.all([
     supabase.from('espacio_secciones').select('id, nombre, orden').is('archivada_at', null).order('orden'),
@@ -32,7 +34,8 @@ export const GET: APIRoute = async ({ request }) => {
     importante: c.importante, regla_reunion: c.regla_reunion, participantes: c.participantes, orden: c.orden,
     no_leidos: Number(nl[c.id]?.n || 0), menciones: Number(nl[c.id]?.menciones || 0),
     ultimo_at: nl[c.id]?.ultimo_at || null,
-    silenciado: !!lec[c.id]?.silenciado,
+    // Sistema nace silenciado: es bitácora, no aviso. Cada quien lo enciende.
+    silenciado: lec[c.id] ? !!lec[c.id].silenciado : c.tipo === 'sistema',
     ultimo_leido_at: lec[c.id]?.ultimo_leido_at || null,
   }));
 

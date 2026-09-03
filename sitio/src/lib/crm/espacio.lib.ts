@@ -213,6 +213,7 @@ export async function darForma(rows: any[], yo: string) {
       reacciones: Object.entries(rx[r.id] || {}).map(([emoji, quienes]) => ({ emoji, n: quienes.length, mia: quienes.includes(yo), quienes: quienes.map(q => persona(q).nombre) })),
       hilo: hilo[r.id] ? { n: hilo[r.id].n, autores: hilo[r.id].autores.map(persona), ultima: hilo[r.id].ultima } : null,
       cid: r.metadata?.cid || null,
+      sistema: r.metadata?.sistema || null,
       mio: r.autor_id === yo,
     };
   });

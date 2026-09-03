@@ -125,6 +125,7 @@ export default function Equipo() {
       {nFijados > 0 && <button className={'eq-ib' + (lado === 'fijados' ? ' on' : '')} title={`${nFijados} ${nFijados === 1 ? 'mensaje fijado' : 'mensajes fijados'}`} onClick={() => setLado(lado === 'fijados' ? null : 'fijados')} style={{ width: 'auto', padding: '0 8px', gap: 3, fontSize: '.75rem', fontWeight: 800 }}>{Ic.pin}{nFijados}</button>}
       <button className={'eq-ib' + (lado === 'buscar' ? ' on' : '')} title="Buscar en este canal" onClick={() => setLado(lado === 'buscar' ? null : 'buscar')}>{Ic.lupa}</button>
       {canal.tipo !== 'directo' && <button className="eq-ib" title={canal.silenciado ? 'Silenciado: activar avisos' : 'Silenciar canal'} onClick={silenciar}>{canal.silenciado ? Ic.campanaOff : Ic.campana}</button>}
+      {arbol.yo.role === 'founder' && !movil && <a className="eq-ib" title="Exportar el canal a Markdown" href={`/api/crm/espacio/exportar?canal_id=${canal.id}`} download>{Ic.descargar}</a>}
     </div>
   ) : null;
 

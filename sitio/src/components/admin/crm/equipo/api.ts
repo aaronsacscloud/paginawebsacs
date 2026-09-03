@@ -23,6 +23,8 @@ export type Mensaje = {
   sesion_id: string | null; punto_id: string | null; fijado?: boolean;
   reacciones: Reaccion[]; hilo: { n: number; autores: { id: string; nombre: string; foto_url: string | null }[]; ultima: string } | null;
   cid: string | null; mio: boolean;
+  /** Mensaje escrito por el sistema (canales de Sistema): nivel y a dónde abre. */
+  sistema?: { nivel?: 'info' | 'alerta' | 'urgente'; tipo?: string; contact_id?: string | null; company_id?: string | null; conversation_id?: string | null; churn_caso_id?: string | null; destino?: string | null; url?: string | null; que_hacer?: string | null } | null;
   // solo en el navegador
   pendiente?: boolean; fallo?: string;
 };

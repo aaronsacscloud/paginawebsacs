@@ -41,7 +41,7 @@ export const CSS = `
 .eq-cab h2{margin:0;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:6px}
 .eq-cab h2 .n{color:var(--eq-gris);font-weight:600}
 .eq-cab .desc{color:var(--eq-gris);font-size:.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.eq-ib{width:34px;height:34px;border-radius:9px;border:0;background:none;color:var(--eq-gris);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.eq-ib{width:34px;height:34px;border-radius:9px;border:0;background:none;color:var(--eq-gris);text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
 .eq-ib:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
 .eq-ib.on{background:var(--eq-lila);color:var(--eq-morado-tinta)}
 .eq-lista{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0 12px;overscroll-behavior:contain}
@@ -211,6 +211,16 @@ export const CSS = `
 .eq-punto-chip.on{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:#fff;font-weight:700}
 button.eq-punto-chip{cursor:pointer}
 .eq-fij{display:inline-flex;align-items:center;gap:3px;font-size:.6875rem;color:var(--eq-morado-tinta);font-weight:700}
+.eq-nivel{font-size:.625rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:6px;background:${P.ambarAgua};color:${P.ambarTinta}}
+.eq-nivel.urgente{background:${P.rojoAgua};color:${P.rojoTinta}}
+.eq-pastillas{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+.eq-pastilla{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--eq-linea);background:var(--eq-panel);color:var(--eq-tinta);font-size:.75rem;font-weight:600;text-decoration:none;cursor:pointer}
+.eq-pastilla small{font-size:.625rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--eq-gris)}
+.eq-pastilla:disabled{cursor:default;opacity:.8}
+.eq-pastilla.ir{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:#fff}
+.eq-pastilla:not(:disabled):hover{border-color:var(--eq-morado);color:var(--eq-morado-tinta)}
+.eq-quehacer{flex-basis:100%;font-size:.8125rem;color:var(--eq-gris);line-height:1.4}
+.eq-quehacer b{color:var(--eq-tinta);font-weight:700}
 .eq-fij svg{width:11px;height:11px}
 .eq-msg.fijado{border-left:3px solid var(--eq-morado);padding-left:13px;background:#fcfbff}
 .eq-mas{display:flex;justify-content:center;padding:8px}
@@ -317,6 +327,7 @@ export function useToast() {
 }
 
 export const Ic = {
+  descargar: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M4 19h16" /></svg>,
   hash: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18" /></svg>,
   sala: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>,
   sistema: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /><circle cx="12" cy="12" r="4" /></svg>,

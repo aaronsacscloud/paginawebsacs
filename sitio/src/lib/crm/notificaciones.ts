@@ -10,6 +10,7 @@
 // puede volver a ver el mismo cobro. Tres reintentos del mismo pago tienen que
 // ser una sola notificación, o la campana se vuelve ruido y se deja de mirar.
 import { supabase } from '../supabase';
+import { espejarNotificacion } from './espacio-sistema';
 
 export type NivelNotif = 'info' | 'alerta' | 'urgente';
 
@@ -52,7 +53,11 @@ export async function notificar(n: Notificacion): Promise<boolean> {
       destino: n.destino || null,
       metadata: n.metadata || null,
     });
-    if (!error) return true;
+    if (!error) {
+      // Espejo en Equipo → Sistema (solo lo nuevo; el dedupe ya pasó aquí).
+      await espejarNotificacion(n).catch(() => {});
+      return true;
+    }
     if (/duplicate key|23505/i.test(error.message || '')) return false;  // ya se avisó
     console.error('[notificaciones] no se pudo avisar:', error.message);
     return false;

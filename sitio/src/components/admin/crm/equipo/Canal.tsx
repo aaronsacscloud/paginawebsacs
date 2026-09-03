@@ -118,6 +118,7 @@ export default function Canal(p: CanalProps) {
       if (salas.length === 1) llevarA(m, salas[0]); else setAgendar(m);
     },
     irA,
+    irACrm: d => window.dispatchEvent(new CustomEvent('crm:ir', { detail: d })),
     verImagen: p.onVerImagen,
     menuMovil: m => setMenu(m),
   };
@@ -185,7 +186,7 @@ export default function Canal(p: CanalProps) {
         editando={editando} onCancelarEdicion={() => setEditando(null)}
         onEnviar={enviar} onEditar={async (id, t) => { await st.editar(id, t); setEditando(null); }}
         onAviso={p.onAviso} autoFoco={!p.movil}
-        bloqueada={p.bloqueada || (p.canal.tipo === 'sistema' ? 'Aquí escribe el sistema. Abre un hilo para comentar.' : null)}
+        bloqueada={p.bloqueada || (p.canal.tipo === 'sistema' && !hilo ? 'Aquí escribe el sistema. Abre un hilo para comentar.' : null)}
       />
       <ActionSheet open={!!menu} onClose={() => setMenu(null)} title={menu ? textoPlano(menu.texto).slice(0, 60) || 'Mensaje' : ''} items={menu ? [
         { label: <span style={{ display: 'flex', gap: 10, fontSize: '1.25rem' }}>{RAPIDOS.slice(0, 6).map(e => <span key={e} onClick={(ev) => { ev.stopPropagation(); acc.reaccionar(menu, e); setMenu(null); }}>{e}</span>)}</span>, onClick: () => null },
