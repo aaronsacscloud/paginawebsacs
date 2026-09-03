@@ -351,7 +351,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                         lo dice, se olvida. Igual que en el teléfono. */}
                     {hayBorrador(c.id)
                       ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
-                      : c.virtual ? 'Sin conversación' : `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}
+                      : c.virtual ? 'Sin conversación' : <>{c.programado_at && <span title={`El agente tiene un mensaje programado (${c.programado_origen || 'respuesta'})`} style={{ display: 'inline-block', marginRight: 6, fontSize: 10, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '1px 7px', verticalAlign: 'middle' }}>Programado {new Date(c.programado_at).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' })}</span>}{`${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}</>}
                   </span>
                   {/* Espera tu respuesta: el cliente escribió y nadie contestó. */}
                   {c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.no_leidos && (

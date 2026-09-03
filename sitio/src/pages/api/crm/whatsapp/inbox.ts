@@ -254,8 +254,13 @@ const _GET: APIRoute = async ({ request, url }) => {
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
   );
-  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, por_etapa: {} as Record<string, number> };
+  // MENSAJES PROGRAMADOS (decisión 2026-09-03): lo que el agente va a mandar, visible desde el inbox.
+  const { data: progr } = await supabase.from('ti_envios').select('conversation_id, sale_at, origen').in('estado', ['pendiente', 'enviando']).order('sale_at');
+  const programado = new Map<string, any>(); for (const p of progr || []) if (p.conversation_id && !programado.has(p.conversation_id)) programado.set(p.conversation_id, p);
+  for (const c of todas) { const p = programado.get(c.id); if (p) { c.programado_at = p.sale_at; c.programado_origen = p.origen; } }
+  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, programados: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
+    if (c.programado_at) counts.programados++;
     // No cuentan en ninguna bandeja porque no son trabajo, pero SÍ se cuentan
     // aparte: esconder algo sin dejar ver cuánto escondiste es un agujero.
     if (c.interna) { counts.internas++; continue; }
@@ -386,6 +391,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
     if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
     if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
+    if (fi === 'programados') l = l.filter(c => !!c.programado_at).sort((a, b) => String(a.programado_at).localeCompare(String(b.programado_at)));
     if (fi === 'accion') l = l.filter(requiereAccion);
     if (f.etapa) l = l.filter(c => c.contacto?.lifecycle_stage === f.etapa);
     /* Los descalificados solo se ven cuando se piden. En cualquier otra vista

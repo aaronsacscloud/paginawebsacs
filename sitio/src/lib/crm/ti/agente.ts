@@ -51,7 +51,7 @@ export type SalidaAgente = {
 };
 
 /** Etapas que atiende el SDR (un lead calificado de la web también escribe por WhatsApp). */
-const ETAPAS_SDR = ['lead', 'lead_calificado', 'oportunidad'];
+export const ETAPAS_SDR = ['lead', 'lead_calificado', 'oportunidad'];
 
 async function log(o: { accion: string; contact_id?: string | null; razon?: string; contenido?: string | null; costo?: number; detalle?: any }) {
   await supabase.from('ia_log').insert({ accion: o.accion, contact_id: o.contact_id || null, razon: o.razon || null, contenido: o.contenido || null, modelo: MODELS.opus, costo_usd: o.costo ?? null, detalle: o.detalle || null });
@@ -982,6 +982,9 @@ export async function tocarSilencios(): Promise<any> {
     .eq('estado', 'enviado').gt('enviado_at', new Date(ahora.getTime() - 60 * 86400e3).toISOString()).order('enviado_at', { ascending: false }).limit(500);
   const ultimo: Record<string, any> = {};
   for (const e of envs || []) if (e.contact_id && !ultimo[e.contact_id]) ultimo[e.contact_id] = e;
+  // REENGANCHE: leads enrolados desde una conversación humana (sin envío del agente todavía) entran al universo con su último mensaje nuestro como base.
+  const { data: reeng } = await supabase.from('ti_perfil').select('contact_id, agente_estado').not('agente_estado->reenganche', 'is', null).limit(500);
+  for (const p of reeng || []) { const r = (p.agente_estado as any)?.reenganche; if (r && p.contact_id && !ultimo[p.contact_id]) ultimo[p.contact_id] = { contact_id: p.contact_id, conversation_id: r.conversation_id, telefono: r.telefono, enviado_at: r.ultimo_saliente_at, reenganche: true }; }
   const ids = Object.keys(ultimo);
   if (!ids.length) return res;
   const [{ data: cs }, { data: perf }] = await Promise.all([
@@ -1072,7 +1075,8 @@ export async function tocarSilencios(): Promise<any> {
         }
       }
       const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: escribe SOLO el ángulo, una oración de máximo 200 caracteres que continúe «Hola Ana, …»: empieza en minúscula, sin saludo, sin nombre, sin pregunta (la plantilla ya cierra con la suya). Habla de SU tienda con algo que él dijo, no de Sacs. Sin precios, promociones, ligas ni emojis.' : '';
-      const nota = `${cierreVentana ? 'CIERRE DE VENTANA: su ventana de 24 h está por cerrarse y tu último mensaje dejó una pregunta u horarios sin respuesta; este es un mensaje libre, único. ' : ''}TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (ciclo ${st.ciclo}). Lleva ${Math.round(horas)} h sin responder a tu último mensaje. ÁNGULO OBLIGATORIO: ${anguloObligatorio}. Ángulos ya usados (no repetir ni parafrasear): ${(st.angulos || []).join(' · ') || 'ninguno'}. Escribe como quien retoma una plática, no como quien «da seguimiento»: máximo 3 líneas, sin saludo si ya le escribiste hoy, sin su nombre, sin «solo quería», «te escribo para», «quedo atenta» ni «aprovecho». Retoma UNA cosa concreta que él dijo. Una sola pregunta, que se conteste con dos palabras. Para tu criterio, no lo menciones: ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100 (${st.eval.razones.join(', ')}). responder=true salvo razón para callar.${notaPlantilla}`;
+      const notaReenganche = st.reenganche && validos === 0 ? `REENGANCHE: esta conversación la llevó una persona del equipo y el lead dejó de contestar después de NUESTRO último mensaje («${String(st.reenganche.ultimo_texto || '').slice(0, 160)}»), hace ${Math.round(horas / 24)} días. NO es un toque frío: es RETOMAR. Lee toda la conversación, retoma SU último tema con sus palabras en una línea, una novedad concreta solo si le sirve, y una pregunta fácil. Si tiene empresa o giro reales, úsalos en una frase específica. Tono amable de abrir la puerta; cero presión, cero pitch, cero «quería darle seguimiento». ` : '';
+      const nota = `${notaReenganche}${cierreVentana ? 'CIERRE DE VENTANA: su ventana de 24 h está por cerrarse y tu último mensaje dejó una pregunta u horarios sin respuesta; este es un mensaje libre, único. ' : ''}TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (ciclo ${st.ciclo}). Lleva ${Math.round(horas)} h sin responder a tu último mensaje. ÁNGULO OBLIGATORIO: ${anguloObligatorio}. Ángulos ya usados (no repetir ni parafrasear): ${(st.angulos || []).join(' · ') || 'ninguno'}. Escribe como quien retoma una plática, no como quien «da seguimiento»: máximo 3 líneas, sin saludo si ya le escribiste hoy, sin su nombre, sin «solo quería», «te escribo para», «quedo atenta» ni «aprovecho». Retoma UNA cosa concreta que él dijo. Una sola pregunta, que se conteste con dos palabras. Para tu criterio, no lo menciones: ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100 (${st.eval.razones.join(', ')}). responder=true salvo razón para callar.${notaPlantilla}`;
       // Dos ticks del observador se pueden traslapar (cron + «enviar ya»/manual): si ya hay un toque de silencio
       // creado hace poco para este lead, este tick no mete otro (pasó: dos toques con 22 s de diferencia).
       const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
@@ -1081,7 +1085,7 @@ export async function tocarSilencios(): Promise<any> {
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
-      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       if (!envIns?.id) { await log({ accion: 'agente_error', contact_id: cid, razon: 'toque de silencio no se pudo programar (ya había un pendiente): no cuenta como intento' }); continue; }
       const intento: Intento = { at: ahora.toISOString(), tipo: par ? 'plantilla' : 'texto', franja: franjaAhora, envio_id: envIns.id, valido: null };

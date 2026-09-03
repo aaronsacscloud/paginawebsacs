@@ -30,6 +30,8 @@ const BANDEJAS = [
   // esta bandeja es la contraria — te escribieron y nadie respondió.
   { id: 'no_leidas', label: 'No contestadas', Ico: IcoBurbuja },
   { id: 'sin_respuesta', label: 'Sin respuesta de ellos', Ico: IcoBurbuja },
+  // Lo que el agente va a mandar: el vendedor lo ve, lo aprueba o lo detiene desde aquí.
+  { id: 'programados', label: 'Mensajes programados', Ico: IcoCalendario },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
   // El filtro existía en el backend y NO había cómo llegar a él: sacabas una
   // conversación del inbox y no volvías a verla nunca, aunque el código sí

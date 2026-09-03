@@ -29,7 +29,7 @@ export async function colaTorre() {
   const items: ItemTorre[] = [];
   for (const e of envios || []) {
     const min = (Date.parse(e.sale_at) - ahora) / 60e3; const s: any = e.salida || {};
-    items.push({ key: `envio:${e.id}`, tipo: 'envio', id: e.id, contact_id: e.contact_id, lead: lead((e as any).contacts, e.telefono), urgencia: min <= 30 ? 'ahora' : String(cdmx(new Date(e.sale_at)).toISOString()).slice(0, 10) <= hoy ? 'hoy' : 'semana', cuando: e.sale_at, titulo: e.origen === 'silencio' ? 'Aprobar toque de seguimiento' : e.origen === 'reactivacion' ? 'Aprobar reactivación programada' : e.origen === 'preparacion' ? 'Aprobar preparación de la demo' : 'Aprobar respuesta del agente', chip: 'Aprobar mensaje', resumen: s.objetivo || s.estado || '', datos: { ...e, contacts: undefined } });
+    items.push({ key: `envio:${e.id}`, tipo: 'envio', id: e.id, contact_id: e.contact_id, lead: lead((e as any).contacts, e.telefono), urgencia: min <= 30 ? 'ahora' : String(cdmx(new Date(e.sale_at)).toISOString()).slice(0, 10) <= hoy ? 'hoy' : 'semana', cuando: e.sale_at, titulo: e.origen === 'reenganche' ? 'Aprobar reenganche (retomar conversación)' : e.origen === 'silencio' ? 'Aprobar toque de seguimiento' : e.origen === 'reactivacion' ? 'Aprobar reactivación programada' : e.origen === 'preparacion' ? 'Aprobar preparación de la demo' : 'Aprobar respuesta del agente', chip: 'Aprobar mensaje', resumen: s.objetivo || s.estado || '', datos: { ...e, contacts: undefined } });
   }
   for (const r of revs || []) {
     const p: any = r.propuesta || {};

@@ -168,6 +168,42 @@ const ESTADO_SUB: Record<string, [string, string]> = { activa: [C.emerald50, C.e
    el agente solo, con la frase del lead como evidencia) más lo que el consultor
    agrega a mano. Es la agenda de la demo: se lee en 5 segundos antes de entrar y
    también viaja al evento del calendario. */
+/* ═══ Seguimiento del agente ═══ (decisión 2026-09-03) Lo que el agente mandó, lo que va a mandar y cuándo, con la
+   probabilidad medida en nuestros datos, y qué pasa si el lead no contesta. El vendedor lo ve aquí mientras habla con
+   el prospecto y puede aprobar o detener sin salir. */
+function SeguimientoAgente({ contactId }: { contactId: string }) {
+  const [d, setD] = useState<any>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const cargar = () => fetch(`/api/crm/ti/agente-hilo?contact_id=${contactId}`).then(r => r.json()).then(setD).catch(() => {});
+  useEffect(() => { setD(null); cargar(); const t = setInterval(cargar, 30000); return () => clearInterval(t); }, [contactId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const p = d?.plan; if (!d || !p) return null;
+  if (!p.activo && !p.proximo && !p.ultimo) return null;
+  const hora = (iso?: string | null) => iso ? new Date(iso).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+  const post = async (body: any) => { setOcupado(true); const r = await fetch('/api/crm/ti/envios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ error: 'sin red' })); setOcupado(false); if (r?.error) alert('No se pudo: ' + r.error); cargar(); };
+  const pct = (n: number | null) => n == null ? '' : ` · ${n}% suele contestar`;
+  return (
+    <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${d.estado === 'activo' ? '#d9d4ea' : C.g100}`, background: d.estado === 'activo' ? '#fbfaff' : 'rgba(250,250,252,.7)', padding: '10px 12px', fontSize: 12.5 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#5B4BD6' }}>Seguimiento del agente{p.reenganche ? ' · reenganche' : ''}</span>
+        <span style={{ fontSize: 11, color: C.g500 }}>{p.cerrado ? `cerrado (${p.cerrado})` : p.pausa_hasta && Date.parse(p.pausa_hasta) > Date.now() ? `en pausa hasta ${hora(p.pausa_hasta).split(',')[0]}` : d.estado === 'observando' ? 'observando' : `intento ${p.intento_actual} de ${p.max} · ciclo ${p.ciclo}`}</span>
+      </div>
+      {p.ultimo && <div style={{ marginTop: 6, color: C.g500 }}><b style={{ color: C.g700 }}>Último ({p.ultimo.tipo}):</b> «{String(p.ultimo.mensaje).slice(0, 110)}{String(p.ultimo.mensaje).length > 110 ? '…' : ''}» · {hora(p.ultimo.at)}</div>}
+      {p.proximo ? (
+        <div style={{ marginTop: 8, background: '#fff', border: '1px solid #EEECFE', borderRadius: 8, padding: '8px 10px' }}>
+          <div style={{ fontWeight: 800, color: '#4c1d95', fontSize: 11.5 }}>Sale {hora(p.proximo.sale_at)} · {p.proximo.tipo}{p.proximo.aprobado ? ' · aprobado' : ' · esperando tu visto bueno'}{pct(p.proximo.probabilidad)}</div>
+          <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: C.g700 }}>{p.proximo.mensaje}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button disabled={ocupado} onClick={() => post({ id: p.proximo.id, accion: 'enviar_ya' })} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Aprobar y enviar</button>
+            <button disabled={ocupado} onClick={() => { const m = prompt('¿Por qué lo detienes? (lo aprende)'); if (m) post({ id: p.proximo.id, accion: 'vetar', motivo: m }); }} style={{ border: '1px solid #e8e5f0', background: '#fff', color: '#6b6580', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Detener</button>
+          </div>
+        </div>
+      ) : p.activo && !p.cerrado ? <div style={{ marginTop: 6, color: C.g500 }}>Sin mensaje programado ahora{p.si_no_contesta?.cuando ? `; el siguiente se prepara ${hora(p.si_no_contesta.cuando)}` : ''}.</div> : null}
+      {p.activo && !p.cerrado && p.si_no_contesta && <div style={{ marginTop: 8, borderLeft: '3px solid #5B4BD6', paddingLeft: 8, color: C.g500 }}><b style={{ color: C.g700 }}>Si no contesta:</b> {p.si_no_contesta.que}{p.si_no_contesta.cuando ? ` Hacia ${hora(p.si_no_contesta.cuando)}.` : ''}{pct(p.si_no_contesta.probabilidad)}</div>}
+      {p.tasas?.muestra > 0 && <div style={{ marginTop: 6, fontSize: 10.5, color: C.g400 }}>Tasa de respuesta medida: 1º {p.tasas['1'] ?? '—'}% · 2º {p.tasas['2'] ?? '—'}% · 3º {p.tasas['3'] ?? '—'}% ({p.tasas.muestra} intentos)</div>}
+    </div>
+  );
+}
+
 function TemasReunion({ contactId, temas, onCambio }: { contactId: string; temas?: any[]; onCambio: (t: any[]) => void }) {
   const [nuevo, setNuevo] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -578,6 +614,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
         </Seccion>
       )}
+      {contactoBase && <SeguimientoAgente contactId={contactoBase.id} />}
       {contactoBase && (
         <TemasReunion contactId={contactoBase.id} temas={contacto?.propiedades?.temas_reunion} onCambio={(t: any[]) => setDCon((prev: any) => prev ? { ...prev, contact: prev.contact ? { ...prev.contact, propiedades: { ...(prev.contact.propiedades || {}), temas_reunion: t } } : prev.contact, propiedades: { ...(prev.propiedades || {}), temas_reunion: t } } : prev)} />
       )}

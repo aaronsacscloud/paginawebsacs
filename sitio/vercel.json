@@ -152,6 +152,10 @@
     {
       "path": "/api/cron/ti-reactivacion",
       "schedule": "30 15 * * 1-5"
+    },
+    {
+      "path": "/api/cron/ti-reenganche",
+      "schedule": "20 * * * *"
     }
   ]
 }

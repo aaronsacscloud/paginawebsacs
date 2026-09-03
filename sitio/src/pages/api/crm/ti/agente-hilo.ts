@@ -6,6 +6,7 @@ import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
 import { agenteTeamMemberId } from '../../../../lib/crm/ti/agente-asignacion';
+import { planSeguimiento } from '../../../../lib/crm/ti/reenganche';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -30,7 +31,8 @@ async function estadoDe(contactId: string) {
     const esPrueba = (cfg.agente_prueba_telefonos || []).some((t: string) => dig(t) === dig(conv?.telefono));
     if (asignado === 'humano' || modoSugerencia || (sombra && !esPrueba)) estado = 'observando';
   }
-  return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', conversation_id: conv?.id || null, sugerencias: sug || [] };
+  const plan = await planSeguimiento(contactId).catch(() => null);
+  return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', conversation_id: conv?.id || null, sugerencias: sug || [], plan };
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
