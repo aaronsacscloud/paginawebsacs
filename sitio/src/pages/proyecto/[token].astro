@@ -66,40 +66,21 @@ const fechaFirma = brief.firmado_at
         <dl class="pb-meta">
           <div><dt>Cliente</dt><dd>{brief.cliente}</dd></div>
           {brief.contacto && <div><dt>Contacto</dt><dd>{brief.contacto}</dd></div>}
-          {brief.quote_numero && <div><dt>Cotización</dt><dd>{brief.quote_numero}</dd></div>}
           {r.plazo && <div><dt>Plazo</dt><dd>{r.plazo}</dd></div>}
         </dl>
       </section>
 
-      <!-- ── El acuerdo ── -->
+      <!-- ── Qué vamos a construir (contexto, sin nada comercial: los montos
+           y las formas de pago viven en la propuesta, no en el brief) ── -->
       {r.alcance?.length && (
         <section class="pb-sec">
           <div class="pb-sec-h">
             <span class="pb-num">01</span>
-            <h2>Lo que se contrató</h2>
+            <h2>Lo que vamos a construir</h2>
           </div>
           <ul class="pb-lista">
             {r.alcance.map((a: string) => <li>{a}</li>)}
           </ul>
-
-          {r.inversion && (
-            <div class="pb-dinero">
-              <div class="pb-dinero-cifra">
-                <span class="pb-dinero-label">Inversión</span>
-                <strong>{r.inversion.total}</strong>
-                <span class="pb-dinero-mon">{r.inversion.moneda}</span>
-              </div>
-              {r.pagos?.length && (
-                <table class="pb-pagos">
-                  <tbody>
-                    {r.pagos.map((p: any) => (
-                      <tr><td>{p.fecha}</td><td class="pb-num-cell">{p.monto}</td></tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
         </section>
       )}
 
@@ -169,9 +150,9 @@ const fechaFirma = brief.firmado_at
         ) : (
           <div class="pb-firma-caja">
             <p class="pb-parr">
-              Al firmar confirman que el alcance, la inversión y los tiempos de
-              arriba son los acordados, y que a partir de hoy corre el brief.
-              La firma no sustituye a la cotización aceptada: la acompaña.
+              Firmar aquí abre el brief y deja asentado quién responde por él
+              del lado de {brief.cliente}. No es un documento comercial: los
+              montos y las formas de pago viven en la propuesta.
             </p>
             <div class="pb-campos">
               <label>
@@ -367,29 +348,6 @@ const fechaFirma = brief.firmado_at
   background: var(--oro-suave); border-radius: 0 8px 8px 0;
   font-size: .92rem; color: #6C5423;
 }
-
-/* ── Dinero ── */
-.pb-dinero {
-  margin-top: 26px; border: 1px solid var(--linea); border-radius: 12px;
-  overflow: hidden; background: var(--papel-2);
-}
-.pb-dinero-cifra {
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  padding: 20px 22px; border-bottom: 1px solid var(--linea); background: var(--papel);
-}
-.pb-dinero-label {
-  font-family: var(--mono); font-size: .66rem; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--tenue); margin-right: auto;
-}
-.pb-dinero-cifra strong {
-  font-family: var(--serif); font-size: 1.7rem; font-weight: 600;
-  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
-}
-.pb-dinero-mon { font-size: .8rem; color: var(--tenue); }
-.pb-pagos { width: 100%; border-collapse: collapse; font-size: .92rem; }
-.pb-pagos td { padding: 11px 22px; border-bottom: 1px solid var(--linea); color: var(--tinta-suave); }
-.pb-pagos tr:last-child td { border-bottom: 0; }
-.pb-num-cell { text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta); }
 
 /* ── Firma ── */
 .pb-firma-caja {
