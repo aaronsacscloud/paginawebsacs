@@ -41,7 +41,8 @@ export async function colaTorre() {
     if (t.tipo === 'dato' && t.prioridad >= 5) continue;   // el lote de higiene vive en Datos
     const urg: Urgencia = t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';
     const chip = t.tipo === 'llamada' ? 'Llamar' : t.tipo === 'veredicto' ? 'Decidir' : t.tipo === 'dato' ? (p.campo_clave?.startsWith('reunion_') ? 'Reunión' : p.campo_clave?.startsWith('cotizacion_') ? 'Cotización' : 'Dato') : t.tipo === 'responder' ? 'Responder' : t.tipo === 'wa_plantilla' ? 'Plantilla' : t.tipo === 'compromiso' ? 'Compromiso' : t.tipo;
-    items.push({ key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: lead((t as any).contacts), urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
+    const ld = lead((t as any).contacts); if (!(t as any).contacts?.nombre && p.instruccion) ld.nombre = String(p.instruccion).split(' — ')[0].replace(/^¿/, '').slice(0, 60);   // tareas de empresa (Cuenta SACS, RFC): el nombre viene en la instrucción
+    items.push({ key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
   }
   const orden: Record<Urgencia, number> = { ahora: 0, hoy: 1, semana: 2 };
   items.sort((a, b) => orden[a.urgencia] - orden[b.urgencia] || (Date.parse(a.cuando || '') || 0) - (Date.parse(b.cuando || '') || 0));
