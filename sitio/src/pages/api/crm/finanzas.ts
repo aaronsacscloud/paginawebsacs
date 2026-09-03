@@ -64,6 +64,34 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (b.accion === 'abono_borrar' && b.id) { await supabase.from('fin_adeudos_abonos').delete().eq('id', b.id); return json({ ok: true }); }
   if (b.accion === 'adeudo_borrar' && b.id) { await supabase.from('fin_adeudos').update({ activo: false, updated_at: ahora }).eq('id', b.id); return json({ ok: true }); }
+  // COMPROBANTES (punto 12): factura o recibo por pago/abono. Bucket privado; se lee con URL firmada de 1 h.
+  if (b.accion === 'comprobante_firmar') {
+    const mime = String(b.mime || ''); const bytes = Number(b.bytes || 0);
+    if (!/^(application\/pdf|image\/(jpeg|png|webp|heic)|application\/xml|text\/xml)$/.test(mime)) return json({ error: 'Solo PDF, XML o imagen' }, 400);
+    if (bytes > 15 * 1024 * 1024) return json({ error: 'Máximo 15 MB' }, 400);
+    const ext = String(b.nombre || '').split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+    const path = `${mesDe()}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    await supabase.storage.createBucket('comprobantes', { public: false }).catch(() => {});
+    const { data, error } = await supabase.storage.from('comprobantes').createSignedUploadUrl(path);
+    if (error || !data) return json({ error: error?.message || 'No se pudo firmar' }, 500);
+    return json({ ok: true, signedUrl: data.signedUrl, path });
+  }
+  if (b.accion === 'comprobante_guardar' && b.path) {
+    const fila = { comprobante_path: String(b.path), comprobante_nombre: String(b.nombre || '').slice(0, 160) };
+    if (b.tipo === 'abono' && b.abono_id) { const { error } = await supabase.from('fin_adeudos_abonos').update(fila).eq('id', b.abono_id); return error ? json({ error: error.message }, 500) : json({ ok: true }); }
+    if (b.tipo === 'pago' && b.gasto_id && b.mes) {
+      // Si el pago aún no está marcado, adjuntar el comprobante lo marca (la factura es la prueba del pago).
+      const mesK = String(b.mes).slice(0, 7);
+      const { data: ex } = await supabase.from('fin_gastos_pagos').select('gasto_id').eq('gasto_id', b.gasto_id).eq('mes', mesK).maybeSingle();
+      const { error } = ex ? await supabase.from('fin_gastos_pagos').update(fila).eq('gasto_id', b.gasto_id).eq('mes', mesK) : await supabase.from('fin_gastos_pagos').insert({ gasto_id: b.gasto_id, mes: mesK, pagado_at: ahora, pagado_por: uid, ...fila });
+      return error ? json({ error: error.message }, 500) : json({ ok: true, marcado: !ex });
+    }
+    return json({ error: 'Faltan datos del comprobante' }, 400);
+  }
+  if (b.accion === 'comprobante_ver' && b.path) {
+    const { data, error } = await supabase.storage.from('comprobantes').createSignedUrl(String(b.path), 3600);
+    return error || !data ? json({ error: error?.message || 'No disponible' }, 404) : json({ ok: true, url: data.signedUrl });
+  }
   if (b.accion === 'deal_editar' && b.id) return json(await editarOportunidad(String(b.id), b.cambios || {}, uid));
   if (b.accion === 'cerrar_mes' && b.mes) return json(await cerrarMes(String(b.mes).slice(0, 7), uid, b.notas));
   if (b.accion === 'reabrir_mes' && b.mes) { await supabase.from('fin_cierres').delete().eq('mes', String(b.mes).slice(0, 7)); return json({ ok: true }); }
