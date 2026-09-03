@@ -15,6 +15,8 @@ import TrabajoAprendizaje from './TrabajoAprendizaje';
 import TrabajoCalificacion from './TrabajoCalificacion';
 import TrabajoConsumo from './TrabajoConsumo';
 import TrabajoRevision from './TrabajoRevision';
+import TrabajoReactivacion from './TrabajoReactivacion';
+import TrabajoDatos from './TrabajoDatos';
 
 type Tarea = {
   id: string; contact_id: string; familia: string; tipo: string; paso: string | null;
@@ -84,7 +86,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
-  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision'>('dia');
+  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('dia');
   /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
      (el dueño lo vivió: editó, adjuntó, aprobó… y nada). Si un chunk falla, la página se recarga sola. */
   useEffect(() => {
@@ -341,6 +343,7 @@ export default function TrabajoPanel() {
           <button className={'ti-tab' + (vistaTab === 'aprendizaje' ? ' on' : '')} onClick={() => setVistaTab('aprendizaje')}>Aprendizaje</button>
           <button className={'ti-tab' + (vistaTab === 'calificacion' ? ' on' : '')} onClick={() => setVistaTab('calificacion')}>Calificación</button>
           <button className={'ti-tab' + (vistaTab === 'revision' ? ' on' : '')} onClick={() => setVistaTab('revision')}>Revisión diaria</button>
+          <button className={'ti-tab' + (vistaTab === 'reactivacion' ? ' on' : '')} onClick={() => setVistaTab('reactivacion')}>Reactivación</button>
           <button className={'ti-tab' + (vistaTab === 'consumo' ? ' on' : '')} onClick={() => setVistaTab('consumo')}>Consumo</button>
         </div>
       </div>
@@ -350,50 +353,13 @@ export default function TrabajoPanel() {
       {vistaTab === 'calificacion' && <TrabajoCalificacion />}
       {vistaTab === 'consumo' && <TrabajoConsumo />}
       {vistaTab === 'revision' && <TrabajoRevision />}
+      {vistaTab === 'reactivacion' && <TrabajoReactivacion />}
 
       {vistaTab === 'datos' && (
-        <div className="ti-lienzo">
-          {!datos.length ? (
-            <div className="ti-carta"><div className="ti-fin">
-              <h2>Sin datos pendientes</h2>
-              <p>El detector corre con cada plan: cuando falte un dato que importe, aparece aquí — nunca en medio de tus llamadas.</p>
-            </div></div>
-          ) : (() => { const x = datos[0]; const p = x.payload || {}; return (
-            <div className="ti-carta" key={x.id}>
-              <div className="ti-cab">
-                <div className="ti-chips">
-                  <span className="ti-chip chip-p2">Bloque de datos</span>
-                  <span className="ti-chip chip-tipo">{datos.length} en el lote</span>
-                </div>
-                <div className="ti-inst">{p.instruccion}</div>
-                {p.porque && <div className="ti-porque">{p.porque}</div>}
-              </div>
-              <div className="ti-accion">
-                {p.fuente && <div className="ti-burbuja sug"><div className="ti-b-eti">Sugerencia · {p.fuente}</div><b>{p.campo}:</b> {p.valor}</div>}
-                {Array.isArray(p.opciones)
-                  ? <div className="ti-res-chips" style={{ marginTop: 8 }}>
-                      {p.opciones.map((o: string) => (
-                        <button key={o} className={'ti-res-chip' + (valorDato === o ? ' on' : '')} onClick={() => setValorDato(o)}>{(p.opciones_l || {})[o] || o}</button>
-                      ))}
-                    </div>
-                  : !p.fuente && <input className="ti-campo" placeholder={p.input || p.campo} value={valorDato} onChange={e => setValorDato(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && valorDato) datoListo(x, valorDato); }} />}
-                <div className="ti-botones">
-                  <button className="ti-btn prim" disabled={guardando || (!valorDato && !p.valor)} onClick={() => datoListo(x, valorDato || p.valor)}>
-                    {p.fuente ? 'Confirmar y guardar' : 'Guardar y seguir'}
-                  </button>
-                </div>
-                {errEnvio && <div className="ti-error" style={{ marginTop: 12 }}>{errEnvio}</div>}
-              </div>
-              <div className="ti-pie">
-                <button className="ti-pie-txt" disabled={guardando} onClick={async () => {
-                  await fetch('/api/crm/ti/tarea', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: x.id, accion: 'posponer', horas: 24 }) });
-                  setValorDato(''); cargar();
-                }}>Saltar este dato</button>
-              </div>
-            </div>
-          ); })()}
+        <div className="ti-lienzo" style={{ maxWidth: 980 }}>
+          <TrabajoDatos datos={datos} guardando={guardando} error={errEnvio}
+            onGuardar={async (x, valor) => { await datoListo(x as any, valor); return true; }}
+            onPosponer={async (x) => { await fetch('/api/crm/ti/tarea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: x.id, accion: 'posponer', horas: 24 }) }); cargar(); }} />
         </div>
       )}
 

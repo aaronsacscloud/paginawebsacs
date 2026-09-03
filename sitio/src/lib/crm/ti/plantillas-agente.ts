@@ -15,7 +15,7 @@ type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechaz
 /* FAMILIAS POR MOMENTO (F7, decisión S4.1): el agente crea solo estas plantillas (Meta aprueba). Cada familia
    trae su par marketing → utility; el ángulo del momento viaja en {{2}}. Si una familia aún no está aprobada,
    se usa la de seguimiento. */
-export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre';
+export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre' | 'reactivacion';
 export const FAMILIAS: Record<Familia, { marketing: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] }; utility: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] } }> = {
   seguimiento: {
     marketing: { nombre: 'ti_seguimiento_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si quieres, lo vemos en 15 minutos con un consultor y con tus productos en pantalla. ¿Te queda esta semana?', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }] },
@@ -32,6 +32,10 @@ export const FAMILIAS: Record<Familia, { marketing: { nombre: string; cuerpo: st
   promo: {
     marketing: { nombre: 'ti_promo_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Te lo digo porque me preguntaste por precio y tiene fecha límite; no quería que se te pasara. ¿Lo vemos en 15 minutos con un consultor?', ejemplos: ['Ana', 'esta semana la implementación y la migración de tu Excel van sin costo con el plan anual.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'No, gracias' }] },
     utility: { nombre: 'ti_promo_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs; si quieres que te lo detalle, respóndeme por aquí.', ejemplos: ['Ana', 'tengo lista la información de precio que me pediste.'], botones: [] },
+  },
+  reactivacion: {
+    marketing: { nombre: 'ti_reactivacion_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si te late retomarlo, lo vemos en 15 minutos con un consultor y con tus productos en pantalla; y si no es el momento, con que me digas lo dejo aquí.', ejemplos: ['Ana', 'hace unos meses me preguntaste por el control de tallas entre tus dos tiendas y se nos quedó a medias; desde entonces salió el traspaso automático entre sucursales, que era justo lo tuyo. ¿Sigues con las dos tiendas?'], botones: [] },
+    utility: { nombre: 'ti_reactivacion_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs hace un tiempo; si prefieres que no te escriba, dímelo por aquí.', ejemplos: ['Ana', 'te escribo porque tu pregunta sobre el control de tallas quedó sin cerrar.'], botones: [] },
   },
   cierre: {
     marketing: { nombre: 'ti_cierre_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Es mi último mensaje sobre esto: si no es el momento, lo dejamos aquí sin problema; si sí, dime y buscamos 15 minutos esta semana.', ejemplos: ['Ana', 'te escribí un par de veces sobre el control de tallas en tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, esta semana' }, { tipo: 'QUICK_REPLY', texto: 'Lo dejamos' }] },
@@ -94,7 +98,7 @@ export async function asegurarPlantillas(): Promise<Registro> {
   }
   // 1b) Las demás FAMILIAS por momento (no_show, preparacion, promo, cierre), con el mismo tope diario.
   reg.familias = reg.familias || {};
-  for (const fam of ['no_show', 'preparacion', 'promo', 'cierre'] as Familia[]) {
+  for (const fam of ['no_show', 'preparacion', 'promo', 'cierre', 'reactivacion'] as Familia[]) {
     reg.familias[fam] = reg.familias[fam] || {};
     for (const k of ['marketing', 'utility'] as const) {
       if (apagadoCreacion || reg.familias[fam][k] || n >= 3) continue;

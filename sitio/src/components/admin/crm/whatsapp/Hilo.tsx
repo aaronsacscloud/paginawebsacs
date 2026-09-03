@@ -38,6 +38,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const conv = hilo?.conversacion;
   /* «Agente IA» asignado = piloto automático: se pinta morado para que el asesor lo vea de un vistazo. */
   const esAgente = !!(conv?.asignado_a && (equipo || []).some((m: any) => m.id === conv.asignado_a && m.es_agente));
+  const [agenteEstado, setAgenteEstado] = useState<any>(null);
+  const [composerN, setComposerN] = useState(0);
   const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState('');
@@ -380,6 +382,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
+        {conv.id && conv.contact_id && <PildoraAgente contactId={conv.contact_id} conversationId={conv.id} mobile={!!mobile} onEstado={setAgenteEstado} />}
         {conv.id && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
@@ -683,8 +686,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           </div>
         </>
       )}
+      {agenteEstado?.sugerencias?.length > 0 && (
+        <div style={{ margin: '0 12px 6px', border: '1px solid #d9d4ea', background: '#fbfaff', borderRadius: 12, padding: '10px 12px' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6', marginBottom: 4 }}>Sugerencia del agente (no se ha mandado)</div>
+          <div style={{ fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{agenteEstado.sugerencias[0].mensaje}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button onClick={async () => { const sg = agenteEstado.sugerencias[0]; guardarBorrador(conv.id, sg.mensaje); setComposerN(n => n + 1); await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: conv.contact_id, accion: 'usar_sugerencia', envio_id: sg.id }) }).then(r => r.json()).then(setAgenteEstado).catch(() => {}); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Usar en el compositor</button>
+            <button onClick={async () => { const sg = agenteEstado.sugerencias[0]; await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: conv.contact_id, accion: 'descartar_sugerencia', envio_id: sg.id }) }).then(r => r.json()).then(setAgenteEstado).catch(() => {}); }} style={{ border: '1px solid #e8e5f0', background: '#fff', color: '#6b6580', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Descartar</button>
+          </div>
+        </div>
+      )}
       <div ref={cajaComposerRef}>
-      <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
+      <Composer key={`${conv.id || conv.email_only_id}-${composerN}`} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         alerta={conv.alerta || null}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
@@ -1040,5 +1053,37 @@ function PanelMejorar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCe
         </div>
       </div>
     </div>
+  );
+}
+
+
+/* ═══ Píldora del agente en la conversación ═══
+ * Tres estados a la vista y un clic para cambiarlos: ACTIVO (piloto automático, morado), OBSERVANDO
+ * (hilo del consultor, modo sugerencia o sombra) y APAGADO AQUÍ. «Que me sugiera» deja borradores sin mandar. */
+function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contactId: string; conversationId: string; mobile: boolean; onEstado: (e: any) => void }) {
+  const [e, setE] = useState<any>(null);
+  const [abierto, setAbierto] = useState(false);
+  const cargar = () => fetch(`/api/crm/ti/agente-hilo?contact_id=${contactId}`).then(r => r.json()).then(x => { setE(x); onEstado(x); }).catch(() => {});
+  useEffect(() => { setE(null); cargar(); const t = setInterval(cargar, 30000); return () => clearInterval(t); }, [contactId]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!e) return null;
+  const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' } : e.estado === 'observando' ? { bg: '#f3f4f6', fg: '#4a4658', bd: '#e5e7eb' } : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
+  const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : 'Agente IA observando') : 'Agente IA apagado aquí';
+  const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
+  return (
+    <span style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setAbierto(a => !a)} title="Qué hace el agente en esta conversación" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9 }} />{mobile ? (e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? 'IA observa' : 'IA apagada') : label}
+      </button>
+      {abierto && (
+        <span style={{ position: 'absolute', top: '110%', right: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.14)', padding: 8, minWidth: 250, display: 'grid', gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: '2px 6px' }}>En esta conversación</span>
+          {[['activar', 'Activar: que conteste solo', e.estado === 'activo' && !e.modo_sugerencia], ['sugerir', 'Que me sugiera (no manda nada)', e.modo_sugerencia], ['apagar', 'Apagar aquí: no vuelve a tocar este lead', e.estado === 'apagado']].map(([a, l, on]: any) => (
+            <button key={a} onClick={() => accion(a)} style={{ textAlign: 'left', border: 'none', background: on ? '#EEECFE' : 'transparent', color: on ? '#4c1d95' : '#241d43', borderRadius: 8, padding: '7px 8px', fontSize: 12, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+          ))}
+          {e.sombra && <span style={{ fontSize: 10.5, color: '#8e88a8', padding: '4px 6px' }}>El agente está en modo sombra: solo manda a números de prueba.</span>}
+          {e.asignado === 'humano' && !e.modo_sugerencia && <span style={{ fontSize: 10.5, color: '#8e88a8', padding: '4px 6px' }}>El hilo es de un consultor: el agente observa hasta que lo actives.</span>}
+        </span>
+      )}
+    </span>
   );
 }

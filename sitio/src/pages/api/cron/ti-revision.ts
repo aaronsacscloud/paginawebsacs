@@ -7,6 +7,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 export const GET: APIRoute = async ({ request, url }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
   const horas = Number(url.searchParams.get('horas')) || 26;
-  const r = await revisionDiaria({ horas });
+  const soloVentanas = url.searchParams.get('modo') === 'ventanas';
+  const r = await revisionDiaria({ horas: soloVentanas ? 26 : horas, soloVentanas });
   return json({ ok: true, ...r });
 };

@@ -144,6 +144,14 @@
     {
       "path": "/api/cron/ti-latido",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/ti-revision?modo=ventanas",
+      "schedule": "0 20 * * 1-5"
+    },
+    {
+      "path": "/api/cron/ti-reactivacion",
+      "schedule": "30 15 * * 1-5"
     }
   ]
 }

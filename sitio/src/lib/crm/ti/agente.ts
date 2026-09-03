@@ -384,6 +384,20 @@ export async function proponerRespuestas(): Promise<any> {
     const hilo = await duenoDelHilo(cid);
     const { data: humanoReciente } = hilo.quien === 'agente' ? { data: [] as any[] } : await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_saliente').eq('actor', 'humano').gt('ocurrio_at', new Date(ahora.getTime() - 4 * 3600e3).toISOString()).limit(1);
     if (hilo.quien === 'humano' || (humanoReciente || []).length) {
+      // MODO SUGERENCIA (decisión 2026-09-03): el consultor lleva el hilo, pero pidió borradores. El agente decide y deja la
+      // propuesta como «sugerencia» (nunca se despacha): el consultor la usa, la edita o la descarta desde el inbox.
+      if (stPrev.modo === 'sugerir') {
+        try {
+          const d = await decidirTurno(cid);
+          if (d.salida?.mensaje && d.salida.responder) {
+            await registrarDatos(cid, d.salida.datos, d.salida.interes);
+            await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'sugerencia', mensaje: d.salida.mensaje.trim(), adjuntos: d.salida.adjuntos || [], salida: d.salida, sale_at: ahora.toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+            await log({ accion: 'agente_sugiere', contact_id: cid, contenido: d.salida.mensaje, razon: d.salida.objetivo, costo: d.costo });
+            res.sugeridos = (res.sugeridos || 0) + 1;
+          }
+        } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `sugerencia: ${err?.message || err}` }); }
+        continue;
+      }
       res.saltados++;
       await log({ accion: 'agente_calla', contact_id: cid, razon: hilo.quien === 'humano' ? 'hilo asignado a un consultor' : 'hilo del consultor (escribió hace menos de 4 h)' });
       try { const { texto } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 3600e3).toISOString(), 3); await tareaParaConsultor(cid, 'hilo_humano', texto); } catch { /* nada */ }

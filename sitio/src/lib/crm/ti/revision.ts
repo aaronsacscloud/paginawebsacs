@@ -31,7 +31,7 @@ Devuelve SOLO JSON: {"avance":"avanzo|igual|retrocedio","etapa_antes":"…","eta
   return { salida, costo: Number(costo) || 0 };
 }
 
-export async function revisionDiaria(opts: { horas?: number; limite?: number } = {}): Promise<any> {
+export async function revisionDiaria(opts: { horas?: number; limite?: number; soloVentanas?: boolean } = {}): Promise<any> {
   if (!hasApiKey()) return { error: 'sin_api_key' };
   const cfg: any = await leerConfig();
   const dia = hoyCdmx();
@@ -53,6 +53,12 @@ export async function revisionDiaria(opts: { horas?: number; limite?: number } =
     if (await fueraDelAlcanceSDR(cv.contact_id)) continue;   // ya tuvo reunión o tiene cotización: es del consultor
     const mensajes = (ms || []).reverse();
     if (!mensajes.some(m => m.direccion === 'entrante' && m.created_at >= desde)) continue;   // sin mensaje del lead ayer no hay qué revisar
+    if (opts.soloVentanas) {
+      // Pasada de las 14:00: solo conversaciones cuya ventana de 24 h cierra hoy (último mensaje del lead hace 16–22 h) y en las que la última palabra fue nuestra.
+      const ultIn = [...mensajes].reverse().find(m => m.direccion === 'entrante'); const ultimoMsg = mensajes[mensajes.length - 1];
+      const hIn = ultIn ? (Date.now() - Date.parse(ultIn.created_at)) / 3600e3 : 99;
+      if (!(hIn >= 16 && hIn <= 22) || ultimoMsg?.direccion === 'entrante') continue;
+    }
     try {
       const { salida, costo } = await analizar({ nombre: c.nombre || 'Lead', giro: c.giro, etapa: c.lifecycle_stage, indice: pf?.indice_vida ?? null, estadoIndice: pf?.indice_estado ?? null, mensajes, agenteEstado: pf?.agente_estado, cita: !!(cita || []).length });
       res.costo += costo; res.revisadas++;
@@ -69,11 +75,11 @@ export async function revisionDiaria(opts: { horas?: number; limite?: number } =
   await supabase.from('ia_log').insert({ accion: 'revision_diaria', razon: `${res.revisadas} conversaciones · ${res.propuestas} propuestas · ${res.automaticas} automáticas`, costo_usd: res.costo, detalle: res });
   // Resumen al dueño: notificación + WhatsApp (si su ventana está abierta; si no, queda la notificación).
   const { count: avanzaron } = await supabase.from('ti_revision').select('id', { count: 'exact', head: true }).eq('dia', dia).eq('avance', 'avanzo');
-  const titulo = `Revisión diaria: ${res.revisadas} conversaciones, ${avanzaron || 0} avanzaron, ${res.propuestas} propuestas${res.automaticas ? ` (${res.automaticas} ya salieron solas)` : ''}`;
-  await notificar({ clave: `ti_revision:${dia}`, tipo: 'ti_revision', nivel: res.propuestas ? 'alerta' : 'info', titulo, detalle: Object.entries(res.por_tipo).map(([k, v]) => `${k}: ${v}`).join(' · ') || 'Nada que proponer hoy.', destino: 'trabajo?vista=revision', metadata: { dia } });
+  const titulo = `${opts.soloVentanas ? 'Revisión de ventanas por cerrar' : 'Revisión diaria'}: ${res.revisadas} conversaciones, ${avanzaron || 0} avanzaron, ${res.propuestas} propuestas${res.automaticas ? ` (${res.automaticas} ya salieron solas)` : ''}`;
+  await notificar({ clave: `ti_revision:${dia}${opts.soloVentanas ? ':ventanas' : ''}`, tipo: 'ti_revision', nivel: res.propuestas ? 'alerta' : 'info', titulo, detalle: Object.entries(res.por_tipo).map(([k, v]) => `${k}: ${v}`).join(' · ') || 'Nada que proponer hoy.', destino: 'trabajo?vista=revision', metadata: { dia } });
   try {
     const tel = String(cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || '525610353669').replace(/\D/g, '');
-    if (tel && res.revisadas) {
+    if (tel && res.revisadas && (res.propuestas || !opts.soloVentanas)) {
       const { enviarTexto } = await import('../../whatsapp/kapso-api');
       await enviarTexto(tel, `${titulo}.\n${Object.entries(res.por_tipo).map(([k, v]) => `• ${k}: ${v}`).join('\n') || 'Nada que proponer hoy.'}\nRevísalas en Trabajo inteligente → Revisión diaria: https://www.sacscloud.com/admin/crm?tab=trabajo`);
     }

@@ -78,3 +78,33 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - 2026-09-03 · bug review (ventas + comunicación) aplicado al guion y a los textos: regla de los TRES DATOS (giro + tiendas + un dolor → horarios en ese mismo mensaje); PONLE NÚMERO AL DOLOR (una pregunta de magnitud por conversación, devuelta como implicación) y CUÁNDO DECIDE; SEÑALES DE COMPRA (migración, tiempos, socio, Excel, integración, «cómo contrato» → horarios ya) y de ENFRIAMIENTO; marco de precio sin «tipos de descuento» (un número mensual y su anual, pegado a SU número); HORARIOS CERCANOS (hoy si hay > 2 h, nunca a más de 4 días; `horariosParaDemo` a 3 días); micro-compromiso al confirmar (qué quiere ver primero, desde dónde entra, socio invitado); correo opcional a la segunda; CIERRAS CON LO QUE SIGUE (adiós a «¿algo más en lo que te apoye?»); 12 reglas verificables de CÓMO HABLAS (4 líneas, una pregunta, sin admiraciones, sin muletillas, sin nombres internos, cero emojis); SILENCIO reescrito (toque 1 repreguntar con sus palabras · 2 dato de valor · 3 llamada sin despedida); PROMO vencida por lead (nunca fecha nueva); 12 OBJECIONES modelo; cliente → escalar. Textos fijos y notas reescritos (sin correo, ocupado, fallo, sin Meet, reintentos, ráfaga, tercer mensaje, preparación, no-show/cancelación, plantilla) y las 10 plantillas por familia con {{2}} en la misma posición; `reschedule.ts` ya no manda «Listo, Hola:»; wiki moda-first (se quitó «sirve a papelerías»); Vende también lista implementación/migración; pregunta de magnitud por giro y nota de mayoreo en la ficha de ropa.
 - 2026-09-02 · dueño · «AGENTE IA» COMO ASIGNADO: miembro de sistema `agente-ia@sacscloud.com` (rol soporte por el check de roles; se identifica por correo). Cuando el agente manda un mensaje y nadie tiene el hilo, la conversación queda asignada a «Agente IA (piloto automático)» y el selector se pinta morado. Si un asesor escribe desde el inbox, la asignación pasa a él (evento en el hilo) y el agente se apaga en esa conversación; para reactivarlo se vuelve a elegir «Agente IA». Regla del agente: hilo asignado a humano → calla y deja tarea; asignado al agente → sigue aunque un humano haya escrito; sin asignar → regla de 4 h.
 - 2026-09-03 · dueño (6 decisiones tras el review) · (1) CASOS: solo los de sacscloud.com/casos-de-exito (Casa Maca, La Bella Pandita, Sandmade, Liveshow ya viven en conocimiento/casos.ts; el guion prohíbe cualquier otro nombre o cifra). (2) CORREO OPCIONAL: /book acepta cita solo con WhatsApp (correo null → sin invitación por correo, sin asistente en Calendar; la confirmación, la liga y los recordatorios van por WhatsApp); el agente pide el correo una vez pero agenda igual. (3) OPT-OUT: acción `opt_out` del agente + detección por frase («no me escribas», «baja», «stop»…) → `wa_optout`, silenciar_ia, cerrado opt_out, se vetan pendientes, se terminan cadencias/secuencias/tareas y se confirma en una línea. (4) El agente responde 24/7 (observador `*/2 * * * *`); los toques de silencio siguen en horario laboral y las citas solo de lunes a viernes (`horariosParaDemo` descarta sábado y domingo). (5) LATIDO: cron `ti-latido` cada 15 min: sin tick del observador > 10 min → aviso urgente en Sistema + WhatsApp al dueño; sin entrantes > 3 h en horario hábil → alerta. CACHÉ DE PROMPT: guion+wiki+límites y ejemplos van en bloques `cache_control: ephemeral` (decidirTurno, reescribir y revisión). (6) RESULTADO DE LA DEMO: ya existía como deuda en «Datos» (`reunion_resultado`: 24 h después de la cita sin estado → tarea de dato «Se hizo / No llegó»).
+
+## 2026-09-03 · Píldora del agente, modo sugerencia, reactivación y Datos agrupados
+
+- **Píldora en la cabecera del hilo** (`PildoraAgente` en Hilo.tsx, API `ti/agente-hilo`): tres estados a la vista,
+  ACTIVO (morado), OBSERVANDO (hilo de un consultor / modo sugerencia / sombra) y APAGADO AQUÍ. Apagar veta los
+  envíos pendientes y marca `ti_perfil.silenciar_ia`. Es la única palanca por conversación; «Silenciar IA» de la
+  pestaña es global.
+- **Consultor responde → el agente se apaga en ese hilo** (ya era así) y ahora el consultor puede pedir «que me
+  sugiera»: `agente_estado.modo = 'sugerir'`. El agente decide como siempre pero inserta `ti_envios` con
+  `estado='sugerencia'` (nunca se despacha; el índice único solo cubre `pendiente`). En el inbox aparece arriba
+  del compositor con «Usar en el compositor» (lo pone como borrador y remonta el Composer con `composerN`) o
+  «Descartar» (queda como veto con motivo → lección).
+- **Reactivación de leads viejos** (`reactivacion.ts`, tabla `ti_reactivacion`, vista
+  `v_ti_reactivacion_candidatos`, cron 9:30 CDMX L–V): segmento `intencion` (pidió precio/demo/cotización) y
+  `conversacion` (preguntó y no siguió); 60–365 días sin hablar; fuera opt-out, «no era lead», con cotización,
+  con reunión hecha/agendada, silenciados. Redacta Opus con instrucción implícita (reconocer el tiempo, retomar SU
+  pregunta, una novedad, una pregunta fácil, cero pitch, ≤300 caracteres porque va en el `{{2}}` de la plantilla
+  `ti_reactivacion_*_v1`; mientras Meta no la apruebe cae a la de seguimiento). Aprobar programa el envío en el
+  siguiente hueco (máx. 15/día, horas 10–18 distintas, sin fines de semana) y arranca el ciclo del agente
+  (`ciclo+1`, intento 1 = esta plantilla). Rampa `rampa_reactivacion`: 20 aprobadas seguidas sin editar → salen
+  solas con 10 min de veto; editar o rechazar la reinicia. Una sola fila por lead (índice parcial).
+- **Trampa medida:** Opus a veces devuelve bloques que no son `text` primero; leer `content[0].text` daba vacío
+  y la propuesta se perdía en silencio. Siempre `content.filter(type==='text')`.
+- **Datos agrupados** (`TrabajoDatos.tsx`): subpestañas por tipo (Facturación, Negocio, Cuenta Sacs, Reunión,
+  Contacto) por `campo_clave`, y ficha por cliente con TODOS sus datos pendientes juntos (aunque sean de otro
+  grupo), cada uno con su etiqueta y su «por qué». «Guardar los que llené» manda cada tarea por separado al mismo
+  endpoint de siempre.
+- **Revisión de las 14:00** (`?modo=ventanas`, cron 20:00 UTC L–V): solo conversaciones cuya ventana de 24 h
+  cierra hoy (último mensaje del lead hace 16–22 h) y donde la última palabra fue nuestra. Misma tabla
+  `ti_revision` (única por día+lead: no duplica las de la mañana).
