@@ -457,7 +457,7 @@ const fechaFirma = brief.firmado_at
   padding: 18px 22px; background: none; border: 0; font: inherit;
   text-align: left; cursor: pointer; color: inherit;
 }
-.pb-et[data-estado=bloqueada] .pb-et-cab { cursor: default; }
+.pb-et[data-estado=bloqueada] .pb-et-cab { cursor: pointer; }
 .pb-et-n {
   width: 30px; height: 30px; flex: none; border-radius: 50%;
   display: grid; place-items: center; font-family: var(--mono); font-size: .8rem; font-weight: 600;
@@ -482,6 +482,32 @@ const fechaFirma = brief.firmado_at
 .pb-chip[data-e=aprobada] { background: var(--verde-suave); color: var(--verde); }
 
 .pb-et-cuerpo { padding: 4px 22px 24px; border-top: 1px solid var(--linea); }
+
+.pb-previa-nota {
+  margin: 18px 0 4px; padding: 15px 18px; border-radius: 11px;
+  background: var(--papel-2); border: 1px dashed var(--linea-fuerte);
+}
+.pb-previa-nota p { margin: 0; font-size: .92rem; color: var(--tinta-suave); }
+.pb-previa { list-style: none; padding: 0; margin: 20px 0 0; }
+.pb-previa li { padding: 9px 0 9px 20px; position: relative; border-bottom: 1px solid var(--linea); }
+.pb-previa li:last-child { border-bottom: 0; }
+.pb-previa li::before {
+  content: ''; position: absolute; left: 3px; top: 17px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--linea-fuerte);
+}
+.pb-previa li b { font-size: .95rem; font-weight: 600; color: var(--tinta-suave); }
+.pb-previa li em {
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+  font-style: normal; color: var(--tenue); margin-left: 8px;
+}
+.pb-previa li span { display: block; font-size: .85rem; color: var(--tenue); margin-top: 2px; line-height: 1.45; }
+.pb-previa-g {
+  padding-left: 0 !important; border-bottom: 0 !important; margin-top: 16px;
+  font-family: var(--mono); font-size: .64rem; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--oro); font-weight: 600;
+}
+.pb-previa-g::before { display: none; }
+.pb-previa-g:first-child { margin-top: 0; }
 .pb-et-intro { color: var(--tinta-suave); font-size: .94rem; max-width: 64ch; margin: 18px 0 4px; }
 .pb-et-entrega {
   margin: 16px 0 26px; padding: 13px 16px; border-radius: 10px;
@@ -924,7 +950,10 @@ const fechaFirma = brief.firmado_at
       cajaEtapas.innerHTML = banner + ETAPAS.map((fila) => {
         const def = DEF.find((d) => d.clave === fila.clave);
         if (!def) return '';
-        const desplegada = abierta === fila.clave && fila.estado !== 'bloqueada';
+        // Una etapa bloqueada también se abre: se puede LEER lo que va a
+        // pedir, aunque no se pueda contestar. Saber lo que viene deja preparar
+        // el material con tiempo, que es la mitad del problema de un brief.
+        const desplegada = abierta === fila.clave;
         return '<article class="pb-et" data-estado="' + fila.estado + '" data-clave="' + fila.clave + '"' +
           (desplegada ? ' data-abierta' : '') + '>' +
           '<button type="button" class="pb-et-cab" data-toggle="' + fila.clave + '">' +
@@ -940,8 +969,7 @@ const fechaFirma = brief.firmado_at
       cajaEtapas.querySelectorAll('[data-toggle]').forEach((b) => {
         b.addEventListener('click', () => {
           const c = b.getAttribute('data-toggle');
-          const f = ETAPAS.find((e) => e.clave === c);
-          if (!f || f.estado === 'bloqueada') return;
+          if (!ETAPAS.some((e) => e.clave === c)) return;
           abierta = abierta === c ? null : c;
           pintar();
         });
@@ -992,6 +1020,35 @@ const fechaFirma = brief.firmado_at
       return out + '</div>';
     }
 
+    /**
+     * Lo que va a pedir una etapa que todavía no se abre. Se enseñan las
+     * preguntas —agrupadas y con su ayuda— pero sin un solo campo que se pueda
+     * llenar: la regla de "una a la vez" no se toca, y aun así el cliente
+     * puede ir juntando el material de las siguientes.
+     */
+    function vistaPrevia(def, fila) {
+      const previa = ETAPAS.filter((e) => e.orden < fila.orden).sort((a, b) => b.orden - a.orden)[0];
+      const defPrevia = previa ? DEF.find((d) => d.clave === previa.clave) : null;
+      let h = '<div class="pb-previa-nota">' +
+        '<span class="pb-campo-t">Todavía no se puede contestar</span>' +
+        '<p>' + (defPrevia
+          ? 'Se abre en cuanto quede aprobada <b>' + esc(defPrevia.titulo) + '</b>. Mientras tanto, esto es lo que va a pedir — sirve para ir juntando el material.'
+          : 'Se abre cuando firmes el brief.') +
+        '</p></div>';
+      h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
+      h += '<ul class="pb-previa">';
+      for (const [titulo, campos] of porGrupo(def)) {
+        if (titulo) h += '<li class="pb-previa-g">' + esc(titulo) + '</li>';
+        for (const c of campos) {
+          h += '<li><b>' + esc(c.etiqueta) + '</b>' +
+            (c.requerido ? '<span class="pb-campo-req">obligatorio</span>' : '') +
+            (c.tipo === 'archivos' ? '<em>archivos</em>' : '') +
+            (c.ayuda ? '<span>' + esc(c.ayuda) + '</span>' : '') + '</li>';
+        }
+      }
+      return h + '</ul>';
+    }
+
     /** Bloques de la etapa, en el orden en que aparece cada uno por primera vez. */
     function porGrupo(def) {
       const m = new Map();
@@ -1007,6 +1064,8 @@ const fechaFirma = brief.firmado_at
       const puede = editable(fila);
       let h = '<div class="pb-et-cuerpo">';
       h += '<p class="pb-et-intro">' + esc(def.resumen) + '</p>';
+
+      if (fila.estado === 'bloqueada') return h + vistaPrevia(def, fila) + '</div>';
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
       if (puede) h += barra(def, borrador[fila.clave] || {});
 

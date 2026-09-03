@@ -80,8 +80,19 @@ export async function etapasDe(briefId: string): Promise<EtapaFila[]> {
       f.orden = e.orden;
     }
   }
-  filas.sort((a, b) => a.orden - b.orden);
-  return filas;
+  // Una etapa que se quitó del cuestionario deja su fila en la base. Si se
+  // devolviera, el brief diría "0 de 12 etapas" cuando son 11, y el contador
+  // nunca llegaría al final. Se filtra, no se borra: si tenía respuestas, ahí
+  // siguen por si la etapa vuelve.
+  const vivas = new Set(ETAPAS.map((e) => e.clave));
+  const huerfanas = filas.filter((f) => !vivas.has(f.clave));
+  if (huerfanas.length) {
+    console.warn(`[proyecto] etapas fuera del cuestionario, ocultas: ${huerfanas.map((f) => f.clave).join(', ')}`);
+  }
+
+  const resultado = filas.filter((f) => vivas.has(f.clave));
+  resultado.sort((a, b) => a.orden - b.orden);
+  return resultado;
 }
 
 export async function bitacora(

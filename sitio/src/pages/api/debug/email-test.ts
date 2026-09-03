@@ -1,7 +1,7 @@
 // GET/POST /api/debug/email-test
-// Endpoint admin para diagnosticar la cadena de email Resend.
+// Endpoint admin para diagnosticar la cadena de correo (SendGrid).
 // GET → muestra config sin secretos
-// POST { to, template? } → manda email de prueba y devuelve respuesta cruda de Resend
+// POST { to, template? } → manda un correo de prueba y devuelve el resultado
 //
 // Uso:
 //   curl https://www.sacscloud.com/api/debug/email-test
@@ -12,30 +12,32 @@
 import type { APIRoute } from 'astro';
 import { notify, getSalesInbox } from '../../../lib/notify';
 import { getCurrentUser } from '../../../lib/auth/scope';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
 export const GET: APIRoute = async () => {
-  const hasKey = !!(import.meta.env.RESEND_API_KEY || '').trim();
-  const from = (import.meta.env.NOTIFY_FROM || '').trim();
-  const fromEffective = from || 'SACS <onboarding@resend.dev> (DEFAULT — solo envía a email registrado en Resend)';
+  const hasKey = !!(import.meta.env.SENDGRID_API_KEY || '').trim();
   const salesInbox = (import.meta.env.SALES_INBOX || '').trim() || 'ventas@sacscloud.com (default)';
 
+  // El remitente ya NO sale de una variable de entorno: sale del inquilino
+  // `sacs` en email_tenants, que es donde vive el dominio verificado.
+  const { data: t } = await supabase
+    .from('email_tenants')
+    .select('from_nombre, from_email, reply_to, sendgrid_domain_id')
+    .eq('slug', 'sacs')
+    .maybeSingle();
+
   return new Response(JSON.stringify({
-    resend_key_configured: hasKey,
-    notify_from: fromEffective,
-    notify_from_is_default: !from,
+    proveedor: 'sendgrid',
+    sendgrid_key_configured: hasKey,
+    remitente: t ? `${t.from_nombre} <${t.from_email}>` : null,
+    reply_to: t?.reply_to || null,
+    dominio_verificado: t?.sendgrid_domain_id || null,
     sales_inbox: salesInbox,
     warnings: [
-      ...(!hasKey ? ['RESEND_API_KEY no está configurado — emails desactivados completamente'] : []),
-      ...(!from ? ['NOTIFY_FROM no configurado — usando onboarding@resend.dev que SOLO envía a tu email registrado en Resend. Configura NOTIFY_FROM con dominio verificado para enviar a partners.'] : []),
-    ],
-    next_steps: [
-      '1. Verifica dominio en https://resend.com/domains (ej. sacscloud.com)',
-      '2. Configura NOTIFY_FROM en Vercel env: NOTIFY_FROM="SACS <hola@sacscloud.com>"',
-      '3. Prueba: POST a este endpoint con {"to":"tu_email@..."}',
-      '4. Si devuelve {ok:true} → ya funciona',
-      '5. Si devuelve {ok:false, reason:"..."} → mira el reason exacto',
+      ...(!hasKey ? ['SENDGRID_API_KEY no está configurado — no sale ningún correo'] : []),
+      ...(!t ? ['No existe el inquilino `sacs` en email_tenants — se usa el remitente de respaldo'] : []),
     ],
   }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };

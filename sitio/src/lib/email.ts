@@ -36,6 +36,8 @@ export interface SendEmailArgs {
   step_id?: string | null;
   /** Para el tablero y el webhook: 'relacion', 'cita', 'brief'… */
   categoria?: string | null;
+  /** A dónde contesta quien lo recibe. Si no viene, el del inquilino. */
+  replyTo?: string | null;
   /**
    * Correo TRANSACCIONAL: se salta la lista de bajas de marketing y no lleva
    * el grupo de supresión. Una baja de campaña no puede dejar a alguien sin la
@@ -129,7 +131,7 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
     texto,
     fromEmail: r.from_email,
     fromNombre: r.from_nombre,
-    replyTo: r.reply_to,
+    replyTo: args.replyTo || r.reply_to,
     // El grupo de supresión es de MARKETING. Ponérselo a una confirmación de
     // cita haría que una baja de campaña también la bloqueara.
     asmGroupId: args.transaccional ? null : r.sendgrid_asm_group_id,

@@ -811,18 +811,6 @@ export const ETAPAS: Etapa[] = [
         ],
       },
       {
-        id: 'api_proveedor',
-        grupo: 'Diamantes y configurador',
-        etiqueta: 'Catálogo de diamantes del proveedor',
-        ayuda:
-          'Nombre del proveedor, contacto técnico (correo y teléfono) y si ya ' +
-          'tienen credenciales o documentación del API. Esto es lo que más ' +
-          'atrasa un proyecto así, por eso lo pedimos desde ahora.',
-        tipo: 'parrafo',
-        requerido: true,
-      },
-      { id: 'api_archivos', grupo: 'Diamantes y configurador', etiqueta: 'Documentación del proveedor', tipo: 'archivos' },
-      {
         id: 'certificados',
         grupo: 'Diamantes y configurador',
         etiqueta: 'Certificado digital y en PVC',
@@ -1086,17 +1074,228 @@ export const ETAPAS: Etapa[] = [
 
   // ─────────────────────────────────────────────────────────────── 8 ──
   {
-    clave: 'operacion',
+    clave: 'api',
     orden: 8,
-    titulo: 'Operación y lanzamiento',
+    titulo: 'La API del proveedor',
     resumen:
-      'Lo que hace que el sitio pueda cobrar, enviar y salir al aire. Son ' +
-      'trámites, pero son los que detienen un lanzamiento el último día.',
-    entrega: 'Fecha de salida confirmada, cobros probados y su equipo capacitado.',
+      'La conexión con el catálogo de diamantes del proveedor. Es la única ' +
+      'parte del proyecto que no depende de nosotros ni de ustedes, sino de ' +
+      'un tercero — y por eso es la que más atrasa un lanzamiento. Entre más ' +
+      'pronto tengamos con quién hablar allá, mejor.',
+    entrega:
+      'La conexión probada de punta a punta: se consulta el inventario del ' +
+      'proveedor, se ve el precio Ruben’s y se puede pedir una piedra.',
     campos: [
       {
-        id: 'dominio',
-        grupo: 'El dominio',
+        id: 'api_proveedor_nombre',
+        grupo: 'Con quién hablamos',
+        etiqueta: '¿Quién es el proveedor y desde cuándo trabajan con él?',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'api_contacto',
+        grupo: 'Con quién hablamos',
+        etiqueta: 'El contacto TÉCNICO del proveedor',
+        ayuda:
+          'Nombre, correo y teléfono de quien ve el API — no el vendedor. Son ' +
+          'personas distintas y el vendedor no puede resolver esto.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'api_credenciales',
+        grupo: 'Con quién hablamos',
+        etiqueta: '¿Ya tienen credenciales o documentación?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, ya las tenemos',
+          'Las pedimos y estamos esperando',
+          'Todavía no las pedimos',
+          'No sabemos si el proveedor tiene API',
+        ],
+      },
+      {
+        id: 'api_archivos_doc',
+        grupo: 'Con quién hablamos',
+        etiqueta: 'La documentación, si ya la tienen',
+        ayuda: 'PDF, Excel, un correo con las instrucciones. Lo que sea.',
+        tipo: 'archivos',
+      },
+      {
+        id: 'api_datos',
+        grupo: 'Qué datos trae',
+        etiqueta: '¿Qué información nos da el proveedor de cada piedra?',
+        tipo: 'multiple',
+        requerido: true,
+        otro: true,
+        opciones: [
+          'Forma y quilataje',
+          'Color y claridad',
+          'Corte, pulido y simetría',
+          'Fluorescencia',
+          'Laboratorio y número de certificado',
+          'PDF del certificado',
+          'Fotos',
+          'Video 360°',
+          'Precio de costo',
+          'Disponibilidad en tiempo real',
+          'Ubicación de la piedra',
+        ],
+      },
+      {
+        id: 'api_precio',
+        grupo: 'Qué datos trae',
+        etiqueta: 'Del costo del proveedor al precio Ruben’s',
+        ayuda:
+          'El cliente ve un solo número. ¿Cómo se calcula? ¿Un margen fijo, ' +
+          'uno por rango de precio, o lo definen ustedes pieza por pieza?',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'api_moneda',
+        grupo: 'Qué datos trae',
+        etiqueta: '¿En qué moneda dan los precios y quién fija el tipo de cambio?',
+        ayuda:
+          'Casi todos los catálogos de diamantes vienen en dólares. Si el ' +
+          'dólar se mueve y el precio del sitio no, el margen se lo come el tipo de cambio.',
+        tipo: 'texto',
+      },
+      {
+        id: 'api_frecuencia',
+        grupo: 'Cómo se sincroniza',
+        etiqueta: '¿Cada cuánto se actualiza el catálogo?',
+        ayuda:
+          'En vivo en cada búsqueda es lo más fiel pero depende de que el ' +
+          'proveedor aguante; una copia que se refresca cada hora es más ' +
+          'rápida pero puede mostrar una piedra ya vendida.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'En vivo: cada búsqueda le pregunta al proveedor',
+          'Una copia que se refresca cada hora',
+          'Una copia que se refresca una vez al día',
+          'No sé — recomiéndennos',
+        ],
+      },
+      {
+        id: 'api_caida',
+        grupo: 'Cómo se sincroniza',
+        etiqueta: 'Si el proveedor se cae, ¿qué ve el cliente?',
+        ayuda:
+          'Se va a caer alguna vez. Decidirlo hoy es la diferencia entre una ' +
+          'página que se disculpa bien y una que se rompe.',
+        tipo: 'opcion',
+        opciones: [
+          'La última información que teníamos, avisando que puede haber cambiado',
+          'Un mensaje de "buscador no disponible" y el formulario de contacto',
+          'Que no se note: solo el catálogo propio de Ruben’s',
+        ],
+      },
+      {
+        id: 'api_reserva',
+        grupo: 'Cómo se sincroniza',
+        etiqueta: '¿El proveedor permite apartar una piedra?',
+        ayuda:
+          'Si no, una selección guardada es seguimiento comercial, no una ' +
+          'reserva — y hay que decirlo en el sitio para no prometer de más.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, se puede apartar y por cuánto tiempo',
+          'No, hasta que se paga no hay nada apartado',
+          'No sabemos, hay que preguntarle',
+        ],
+      },
+      {
+        id: 'api_pedido',
+        grupo: 'Cómo se pide una piedra',
+        etiqueta: '¿Cómo se le pide hoy una piedra al proveedor?',
+        ayuda: 'Por correo, por su portal, por WhatsApp. Y quién lo hace.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'api_tiempos',
+        grupo: 'Cómo se pide una piedra',
+        etiqueta: '¿Cuánto tarda en llegar a la boutique?',
+        ayuda: 'Y si cambia según el origen de la piedra.',
+        tipo: 'texto',
+        requerido: true,
+      },
+      {
+        id: 'api_pruebas',
+        grupo: 'Cómo se pide una piedra',
+        etiqueta: '¿Tiene ambiente de pruebas (sandbox)?',
+        ayuda:
+          'Sin uno, cada prueba nuestra es un pedido real. Vale la pena ' +
+          'preguntárselo aunque parezca detalle.',
+        tipo: 'opcion',
+        opciones: ['Sí', 'No', 'No sabemos, hay que preguntarle'],
+      },
+      {
+        id: 'api_otros',
+        grupo: 'Cómo se pide una piedra',
+        etiqueta: '¿Hay más de un proveedor, o van a agregar otro después?',
+        ayuda: 'Cambia cómo se construye: uno se conecta directo, varios piden un puente.',
+        tipo: 'parrafo',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────── 9 ──
+  {
+    clave: 'implementacion',
+    orden: 9,
+    titulo: 'Implementación',
+    resumen:
+      'Aquí ya no se recopila: se construye. Nosotros armamos el sitio con ' +
+      'todo lo anterior, ustedes revisan el diseño y la estructura, y se ' +
+      'prueba de verdad — con piezas reales, cobros reales y el catálogo del ' +
+      'proveedor conectado. Lo que se decide en esta etapa es cómo y con ' +
+      'quién se revisa.',
+    entrega:
+      'El sitio armado y probado: diseño aprobado, catálogo estructurado, ' +
+      'cobros funcionando y el dominio listo para apuntar.',
+    campos: [
+      {
+        id: 'imp_revisores',
+        grupo: 'Quién revisa',
+        etiqueta: '¿Quiénes de Ruben’s revisan y aprueban?',
+        ayuda:
+          'Nombres y correos. Si el que decide no es el que revisa, es mejor ' +
+          'saberlo hoy que en la última semana.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'imp_ritmo',
+        grupo: 'Quién revisa',
+        etiqueta: '¿Cada cuánto quieren ver avances?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Una revisión semanal en videollamada',
+          'Cada quince días',
+          'Solo cuando haya algo listo que aprobar',
+          'Que nos avisen por WhatsApp y nosotros entramos a ver',
+        ],
+      },
+      {
+        id: 'imp_plazo_revision',
+        grupo: 'Quién revisa',
+        etiqueta: '¿En cuántos días hábiles se comprometen a contestar una revisión?',
+        ayuda:
+          'El plazo de 45 días corre para los dos lados. Una revisión que ' +
+          'tarda dos semanas mueve la fecha de salida dos semanas.',
+        tipo: 'texto',
+        requerido: true,
+      },
+      {
+        id: 'imp_dominio',
+        grupo: 'Dominio y accesos',
         etiqueta: 'Dominio y quién controla el DNS',
         ayuda:
           'Qué dirección va a usar y quién tiene el acceso hoy: ustedes, una ' +
@@ -1105,8 +1304,18 @@ export const ETAPAS: Etapa[] = [
         requerido: true,
       },
       {
-        id: 'pagos',
-        grupo: 'Cómo van a cobrar',
+        id: 'imp_accesos',
+        grupo: 'Dominio y accesos',
+        etiqueta: 'Otros accesos que vamos a necesitar',
+        ayuda:
+          'Business Manager de Meta, Google Ads, Analytics, la ficha de ' +
+          'Google. No manden contraseñas por aquí: díganos quién las tiene y ' +
+          'las pedimos por donde toca.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'imp_pagos',
+        grupo: 'Cobros y envíos',
         etiqueta: '¿Cómo quieren cobrar?',
         tipo: 'multiple',
         requerido: true,
@@ -1122,14 +1331,14 @@ export const ETAPAS: Etapa[] = [
         ],
       },
       {
-        id: 'msi',
-        grupo: 'Cómo van a cobrar',
+        id: 'imp_msi',
+        grupo: 'Cobros y envíos',
         etiqueta: 'Si van meses sin intereses: banco o terminal, y a cuántos meses',
         tipo: 'texto',
       },
       {
-        id: 'envio',
-        grupo: 'Envío y garantías',
+        id: 'imp_envio',
+        grupo: 'Cobros y envíos',
         etiqueta: 'Envío de joyería',
         ayuda:
           'Paquetería, si va asegurado, quién empaca, si hay recolección en ' +
@@ -1138,51 +1347,226 @@ export const ETAPAS: Etapa[] = [
         requerido: true,
       },
       {
-        id: 'politicas',
-        grupo: 'Envío y garantías',
-        etiqueta: 'Devoluciones, garantía, resize y limpieza',
-        ayuda: 'Si ya está escrito, súbanlo. Si no, cuéntenlo como lo manejan hoy.',
-        tipo: 'parrafo',
-      },
-      { id: 'politicas_archivos', grupo: 'Envío y garantías', etiqueta: 'Políticas en archivo', tipo: 'archivos' },
-      {
-        id: 'legales',
-        grupo: 'Datos fiscales',
+        id: 'imp_legales',
+        grupo: 'Cobros y envíos',
         etiqueta: 'Razón social, RFC y domicilio fiscal',
         ayuda: 'Para el aviso de privacidad, los términos y la facturación.',
         tipo: 'parrafo',
         requerido: true,
       },
       {
-        id: 'admin',
-        grupo: 'El equipo',
+        id: 'imp_pruebas',
+        grupo: 'Las pruebas',
+        etiqueta: '¿Quién va a probar del lado de Ruben’s?',
+        ayuda:
+          'Alguien que no haya visto el sitio antes encuentra en diez minutos ' +
+          'lo que nosotros no vemos en dos semanas. Un vendedor de piso es ' +
+          'mejor probador que un director.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'imp_pruebas_que',
+        grupo: 'Las pruebas',
+        etiqueta: '¿Qué tiene que funcionar sí o sí antes de salir?',
+        tipo: 'multiple',
+        requerido: true,
+        otro: true,
+        opciones: [
+          'Comprar una pieza completa con tarjeta',
+          'Apartar con anticipo',
+          'Buscar y comparar diamantes del proveedor',
+          'Armar un anillo: montadura + diamante',
+          'Agendar una cita en boutique',
+          'Pedir una reparación o servicio',
+          'Que el stock baje solo al vender en boutique',
+          'Que se vea bien en celular',
+        ],
+      },
+      {
+        id: 'imp_dispositivos',
+        grupo: 'Las pruebas',
+        etiqueta: '¿En qué lo van a ver sus clientes?',
+        ayuda:
+          'Si el 80% entra por Instagram en iPhone, el celular no es "también": ' +
+          'es lo principal.',
+        tipo: 'texto',
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────── 10 ──
+  {
+    clave: 'entrega1',
+    orden: 10,
+    titulo: 'Fase 1 de entrega',
+    resumen:
+      'El sitio ya existe y ustedes lo recorren completo. Aquí se juntan las ' +
+      'mejoras y peticiones en UNA lista, no en mensajes sueltos por WhatsApp ' +
+      'a lo largo de tres semanas. Todo lo que entre aquí se atiende; lo que ' +
+      'llegue después de cerrar la lista se evalúa como alcance nuevo.',
+    entrega:
+      'La lista de ajustes acordada, con lo que entra en la versión 1.0 y lo ' +
+      'que queda para después.',
+    campos: [
+      {
+        id: 'e1_recorrido',
+        grupo: 'Lo que vieron',
+        etiqueta: '¿Quiénes recorrieron el sitio y en qué dispositivos?',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'e1_funciona',
+        grupo: 'Lo que vieron',
+        etiqueta: '¿Qué SÍ quedó como lo esperaban?',
+        ayuda:
+          'No es cortesía: saber qué funcionó nos dice qué no tocar al ' +
+          'arreglar lo demás.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'e1_ajustes',
+        grupo: 'Lo que hay que ajustar',
+        etiqueta: 'La lista de ajustes',
+        ayuda:
+          'Uno por renglón, y díganos dónde: "en la ficha de producto, el ' +
+          'precio se ve muy chico". Entre más concreto, más rápido se arregla.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'e1_archivos',
+        grupo: 'Lo que hay que ajustar',
+        etiqueta: 'Capturas de pantalla de lo que hay que cambiar',
+        ayuda: 'Una captura vale más que tres párrafos. Marquen con flechas si pueden.',
+        tipo: 'archivos',
+      },
+      {
+        id: 'e1_bloqueantes',
+        grupo: 'Lo que hay que ajustar',
+        etiqueta: 'De todo eso, ¿qué NO puede salir sin arreglarse?',
+        ayuda:
+          'Lo demás puede entrar en la versión 1.1. Esta respuesta es la que ' +
+          'protege la fecha de salida.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'e1_contenido',
+        grupo: 'Contenido que falta',
+        etiqueta: '¿Qué contenido falta o hay que cambiar?',
+        ayuda: 'Textos, fotos, piezas que ya no van, precios desactualizados.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'e1_contenido_archivos',
+        grupo: 'Contenido que falta',
+        etiqueta: 'El contenido nuevo',
+        tipo: 'archivos',
+      },
+      {
+        id: 'e1_nuevo',
+        grupo: 'Peticiones nuevas',
+        etiqueta: '¿Hay algo que quieran agregar que no estaba contemplado?',
+        ayuda:
+          'Pídanlo sin filtro. Nosotros les decimos qué cabe en la 1.0, qué ' +
+          'cabe después y qué es un proyecto aparte — con su costo, sin sorpresas.',
+        tipo: 'parrafo',
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────── 11 ──
+  {
+    clave: 'entrega_final',
+    orden: 11,
+    titulo: 'Entrega final · versión 1.0',
+    resumen:
+      'La última etapa. Se aplicaron los ajustes, se capacita al equipo y el ' +
+      'sitio sale al aire. Lo que se firma aquí es que el ecommerce quedó ' +
+      'como se acordó y que Ruben’s lo puede manejar sin depender de nosotros.',
+    entrega: 'El sitio en línea, su equipo capacitado y el proyecto cerrado.',
+    campos: [
+      {
+        id: 'ef_ajustes_ok',
+        grupo: 'El cierre',
+        etiqueta: '¿Quedaron atendidos los ajustes de la fase 1?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, todos',
+          'Casi todos — falta algo que anotamos abajo',
+          'Todavía no, hay que revisarlo juntos',
+        ],
+      },
+      {
+        id: 'ef_pendiente',
+        grupo: 'El cierre',
+        etiqueta: 'Si falta algo, ¿qué es?',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'ef_admin',
+        grupo: 'Capacitación',
         etiqueta: '¿Quién de Ruben’s va a administrar el sitio?',
         ayuda:
           'Nombre, puesto y correo. Es la persona a la que capacitamos y la ' +
-          'que después va a cambiar banners, precios y fotos sin depender de ' +
-          'nosotros.',
+          'que después cambia banners, precios y fotos sin depender de nosotros.',
         tipo: 'texto',
         requerido: true,
       },
       {
-        id: 'equipo',
-        grupo: 'El equipo',
-        etiqueta: '¿Quién más aprueba?',
-        ayuda:
-          'Si quien decide no es quien está contestando este brief, es mejor ' +
-          'saberlo hoy que en la revisión final.',
-        tipo: 'parrafo',
-      },
-      {
-        id: 'fecha',
-        grupo: 'El equipo',
-        etiqueta: '¿Hay una fecha que no se puede mover?',
-        ayuda: 'Una campaña, un aniversario, la temporada de bodas.',
+        id: 'ef_capacitacion',
+        grupo: 'Capacitación',
+        etiqueta: '¿Cuántas personas y en qué horario les acomoda?',
+        ayuda: 'La capacitación es en vivo y queda grabada para quien entre después.',
         tipo: 'texto',
+        requerido: true,
       },
       {
-        id: 'analitica',
-        grupo: 'Medición y campañas',
+        id: 'ef_temas',
+        grupo: 'Capacitación',
+        etiqueta: '¿Qué quieren aprender a hacer solos?',
+        tipo: 'multiple',
+        otro: true,
+        opciones: [
+          'Cargar y editar piezas',
+          'Cambiar banners y portada',
+          'Subir fotos y videos',
+          'Cambiar precios',
+          'Ver y atender pedidos',
+          'Sacar reportes de ventas',
+          'Publicar una colección nueva',
+          'Manejar el catálogo de diamantes',
+        ],
+      },
+      {
+        id: 'ef_fecha',
+        grupo: 'Salida al aire',
+        etiqueta: '¿Qué día quieren que el sitio esté público?',
+        ayuda: 'Y si hay una fecha que no se puede mover, díganla aquí.',
+        tipo: 'texto',
+        requerido: true,
+      },
+      {
+        id: 'ef_anuncio',
+        grupo: 'Salida al aire',
+        etiqueta: '¿Cómo lo van a anunciar?',
+        tipo: 'multiple',
+        otro: true,
+        opciones: [
+          'Publicación en redes',
+          'Correo a su base de clientes',
+          'WhatsApp a clientes frecuentes',
+          'Pauta pagada desde el día uno',
+          'En boutique, con los vendedores',
+          'Sin anuncio: primero probamos en silencio',
+        ],
+      },
+      {
+        id: 'ef_analitica',
+        grupo: 'Salida al aire',
         etiqueta: 'Medición y campañas',
         tipo: 'multiple',
         otro: true,
@@ -1193,6 +1577,29 @@ export const ETAPAS: Etapa[] = [
           'Google Ads',
           'WhatsApp Business API',
           'Nada todavía',
+        ],
+      },
+      {
+        id: 'ef_despues',
+        grupo: 'Después de la 1.0',
+        etiqueta: '¿Qué les gustaría que siguiera después de esta versión?',
+        ayuda:
+          'No compromete a nada. Sirve para que la 1.0 se construya sin ' +
+          'cerrarle la puerta a lo que viene.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'ef_conforme',
+        grupo: 'Después de la 1.0',
+        etiqueta: '¿Damos el proyecto por entregado?',
+        ayuda:
+          'Al aprobar esta etapa, el ecommerce queda entregado como versión ' +
+          '1.0. Lo que venga después se maneja como una petición nueva.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, lo damos por entregado',
+          'Todavía no — falta lo que anotamos arriba',
         ],
       },
     ],

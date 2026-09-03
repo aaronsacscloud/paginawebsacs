@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { sendEmail as enviarCorreo } from '../../../lib/email';
 import { permitido } from '../../../lib/whatsapp/permisos';
 import { deleteCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
@@ -10,7 +11,6 @@ import { avisarCancelacion } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
 
-const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
 
@@ -46,14 +46,15 @@ function buildEmailHtml(heading: string, body: string, extras: string = ''): str
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY || !to) return;
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: 'SACS <onboarding@resend.dev>', to: [to], subject, html }),
-    });
-  } catch {}
+  if (!to) return;
+  // Va por el `sendEmail` del sistema (SendGrid con el remitente verificado).
+  // Antes cada uno de los tres archivos de agenda tenía su propia copia que
+  // posteaba a Resend con `onboarding@resend.dev` —remitente de pruebas, solo
+  // entrega al dueño de la cuenta— y se tragaba el error con `catch {}`. O sea
+  // que las confirmaciones, cancelaciones y reagendas llevaban tiempo sin
+  // llegarle a nadie, sin dejar rastro. Marcado como transaccional: una baja
+  // de marketing no puede dejar a alguien sin el aviso de su propia cita.
+  await enviarCorreo({ to, subject, html, transaccional: true, categoria: 'cita-cancelada' });
 }
 
 export const POST: APIRoute = async ({ request }) => {

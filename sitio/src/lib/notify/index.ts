@@ -1,8 +1,7 @@
-// Notification wrapper — pluggable channels. v1 = email only (via Resend).
+// Notification wrapper — pluggable channels. v1 = email only (por SendGrid).
 // v2 will add WhatsApp (Kapso) without changing callsites.
+import { sendEmail } from '../email';
 
-const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
-const INTERNAL_FROM = (import.meta.env.NOTIFY_FROM || 'SACS <onboarding@resend.dev>').trim();
 const INTERNAL_SALES_EMAIL = (import.meta.env.SALES_INBOX || 'ventas@sacscloud.com').trim();
 
 export type NotifyChannel = 'email' | 'whatsapp'; // whatsapp not active yet
@@ -693,41 +692,41 @@ Agenda tu sesión de configuración: ${d.agendar_url || ''}`,
 
 };
 
-async function sendEmailViaResend(
+/**
+ * Los avisos internos también salen por SendGrid.
+ *
+ * Iban por Resend con `onboarding@resend.dev`, que sin dominio verificado solo
+ * entrega al dueño de la cuenta: los avisos de cobranza y de ARR no le
+ * llegaban a nadie más del equipo, y el error se devolvía como un `reason` que
+ * nadie miraba. Se conserva el nombre y la firma para no tocar a los
+ * llamadores; por dentro es el `sendEmail` del sistema, transaccional (un
+ * aviso interno no se suprime por una baja de marketing).
+ *
+ * El `cc` se manda como envíos separados: el proveedor va uno a uno para poder
+ * atribuir cada evento (entregado, abierto, rebotado) a su destinatario.
+ */
+async function enviarAviso(
   to: string,
   subject: string,
   html: string,
   text?: string,
   cc?: string[],
   replyTo?: string,
-) {
-  if (!RESEND_API_KEY) {
-    console.warn('[notify] RESEND_API_KEY not set — skipping email');
-    return { ok: false, reason: 'no_api_key' };
-  }
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: INTERNAL_FROM,
-        to: [to],
-        cc: cc && cc.length ? cc : undefined,
-        reply_to: replyTo || undefined,
-        subject,
-        html,
-        text,
-      }),
+): Promise<{ ok: boolean; reason?: string; id?: string }> {
+  const destinos = [...new Set([to, ...(cc || [])].filter(Boolean))];
+  if (!destinos.length) return { ok: false, reason: 'sin_destinatario' };
+
+  let primero: { ok: boolean; reason?: string; id?: string } | null = null;
+  for (const d of destinos) {
+    const r = await sendEmail({
+      to: d, subject, html, text, replyTo, transaccional: true, categoria: 'aviso-interno',
     });
-    const data = await res.json();
-    if (!res.ok) return { ok: false, reason: data?.message || 'provider_error' };
-    return { ok: true, id: data?.id };
-  } catch (err) {
-    return { ok: false, reason: String(err) };
+    const res = r.status === 'sent'
+      ? { ok: true, id: r.id }
+      : { ok: false, reason: r.error || r.status };
+    if (!primero) primero = res;
   }
+  return primero!;
 }
 
 export async function notify(args: NotifyArgs): Promise<{ ok: boolean; reason?: string; id?: string }> {
@@ -744,7 +743,7 @@ export async function notify(args: NotifyArgs): Promise<{ ok: boolean; reason?: 
   }
   const rendered = tpl(args.data || {});
   const subject = args.subject || rendered.subject;
-  return sendEmailViaResend(args.to, subject, rendered.html, rendered.text, args.cc, args.replyTo);
+  return enviarAviso(args.to, subject, rendered.html, rendered.text, args.cc, args.replyTo);
 }
 
 export function getSalesInbox() {
