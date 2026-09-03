@@ -150,3 +150,15 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   Anthropic ×4, Google anual en diciembre, GitHub, Asana, Intercom, Supabase ×2); `probable` = variable estimada; la
   publicidad real capturada en Embudo sustituye al estimado; comisiones = cortes con `paga_el` en el mes (los lunes),
   con «aceptado por la vendedora» = `recibido_at`.
+
+## 2026-09-03 (noche) · Adeudos, atrasados y la regla del push único
+
+- **Adeudos** (`fin_adeudos` + `fin_adeudos_abonos`): total, saldo (total − abonos), cuota del mes (fija o saldo ÷ meses
+  hasta la fecha límite), «toca este mes» = cuota + lo atrasado acumulado (esperado acumulado − pagado), abonos por
+  mes. Entra al total de gastos del mes por lo que TOCA, y al cierre por lo ABONADO.
+- **Atrasados**: gasto fijo de los 3 meses anteriores sin palomita se junta en el mes actual (banner rojo, «Ya lo
+  pagué» lo marca en su mes original). Los variables (`probable`) no se arrastran.
+- **Tabla de gastos**: días para pagar (vence = día de cobro del mes o fin de mes), orden por columna y drawer con pago
+  (monto real, fecha, nota) e historial (promedio, variación del último pago, % a tiempo).
+- **Regla nueva del repo (CLAUDE.md):** cada push para los crons ~16 min. Commitear todo y hacer UN push por bloque.
+  Hoy hubo 18 pushes en dos horas: por eso el latido avisó.

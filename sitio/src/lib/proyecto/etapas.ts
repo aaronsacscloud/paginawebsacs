@@ -20,6 +20,9 @@ export type CampoTipo =
 
 export type Campo = {
   id: string;
+  /** Bloque al que pertenece dentro de la etapa. Los campos consecutivos con
+   *  el mismo grupo se pintan bajo un solo encabezado. */
+  grupo?: string;
   etiqueta: string;
   ayuda?: string;
   tipo: CampoTipo;
@@ -58,6 +61,7 @@ export const ETAPAS: Etapa[] = [
     campos: [
       {
         id: 'logo_archivos',
+        grupo: 'El logo',
         etiqueta: 'Logo, en todos los formatos que tengan',
         ayuda:
           'Lo ideal es el vector: .ai, .eps, .svg o .pdf. Si solo existe un ' +
@@ -68,6 +72,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'logo_versiones',
+        grupo: 'El logo',
         etiqueta: '¿Qué versiones del logo existen?',
         tipo: 'multiple',
         opciones: [
@@ -83,12 +88,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'manual',
+        grupo: 'El manual y sus reglas',
         etiqueta: 'Manual de identidad',
         ayuda: 'El PDF con los usos de la marca, si existe. Si no, sáltenlo.',
         tipo: 'archivos',
       },
       {
         id: 'tipografias',
+        grupo: 'Tipografía y color',
         etiqueta: 'Tipografías de la marca',
         ayuda:
           'Nombres o archivos. Ojo con esto: si la tipografía es de pago, la ' +
@@ -100,6 +107,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'tipografias_archivos', etiqueta: 'Archivos de tipografía', tipo: 'archivos' },
       {
         id: 'colores',
+        grupo: 'Tipografía y color',
         etiqueta: 'Colores oficiales',
         ayuda:
           'En HEX o Pantone. Incluyan el tono del oro y del plateado si la ' +
@@ -110,6 +118,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'nombre_uso',
+        grupo: 'Cómo se escribe la marca',
         etiqueta: '¿Ruben’s o Ruben’s Bridal?',
         ayuda:
           '¿Cuándo se escribe cada una, lleva apóstrofo siempre y va en ' +
@@ -118,11 +127,13 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'claim',
+        grupo: 'Cómo se escribe la marca',
         etiqueta: 'Slogan o frase de la casa',
         tipo: 'texto',
       },
       {
         id: 'foto_actual',
+        grupo: 'Lo que ya existe',
         etiqueta: 'Fotografía de producto que ya tienen',
         ayuda:
           'Pueden subir muestras aquí o pegar el link de la carpeta ' +
@@ -132,6 +143,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'foto_links', etiqueta: 'Links a carpetas de fotografía', tipo: 'links' },
       {
         id: 'no_hacer',
+        grupo: 'El manual y sus reglas',
         etiqueta: 'Qué NO se puede hacer con la marca',
         ayuda:
           'Deformarla, cambiarle el color, ponerla sobre ciertos fondos, ' +
@@ -140,6 +152,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'redes',
+        grupo: 'Lo que ya existe',
         etiqueta: 'Redes y sitio actual',
         ayuda: 'Instagram, Facebook, TikTok y la página que tengan hoy.',
         tipo: 'texto',
@@ -163,6 +176,7 @@ export const ETAPAS: Etapa[] = [
     campos: [
       {
         id: 'objetivo_6m',
+        grupo: 'La meta',
         etiqueta: 'En 6 meses, ¿qué tiene que estar pasando para que digan «valió la pena»?',
         ayuda: 'Con un número si se puede. Vale más una meta incómoda que una bonita.',
         tipo: 'parrafo',
@@ -170,6 +184,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'modelo_venta',
+        grupo: 'Cómo se cierra una venta',
         etiqueta: '¿Qué queremos que pase con una pieza de alto valor?',
         tipo: 'opcion',
         requerido: true,
@@ -182,17 +197,20 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'umbral',
+        grupo: 'Cómo se cierra una venta',
         etiqueta: 'Si depende del monto: ¿arriba de cuánto la venta termina en boutique?',
         tipo: 'texto',
         placeholder: 'Ej. arriba de $80,000 solo agenda cita',
       },
       {
         id: 'ticket',
+        grupo: 'Cómo se cierra una venta',
         etiqueta: 'Ticket promedio hoy y meta mensual del canal en línea',
         tipo: 'texto',
       },
       {
         id: 'publico',
+        grupo: 'A quién le hablamos',
         etiqueta: '¿A quién le habla el sitio?',
         tipo: 'multiple',
         requerido: true,
@@ -209,6 +227,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'viaje',
+        grupo: 'A quién le hablamos',
         etiqueta: '¿Cuánto tiempo antes de la boda empiezan a buscar, y cuántas veces vuelven antes de decidir?',
         ayuda:
           'Un anillo de compromiso no se compra en una visita. Saber si son ' +
@@ -217,12 +236,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'hoy_whatsapp',
+        grupo: 'El terreno de hoy',
         etiqueta: 'Hoy, cuando alguien pregunta por WhatsApp o Instagram, ¿qué pasa?',
         ayuda: 'Quién contesta, con qué material, y en cuánto tiempo.',
         tipo: 'parrafo',
       },
       {
         id: 'no_queremos',
+        grupo: 'El terreno de hoy',
         etiqueta: '¿Qué NO queremos que pase?',
         ayuda:
           'Que se vea como tienda genérica, que compitan solo por precio, ' +
@@ -231,12 +252,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'competencia',
+        grupo: 'El terreno de hoy',
         etiqueta: 'Contra quién compiten',
         ayuda: 'En San Luis y en línea. Pongan nombres y links.',
         tipo: 'texto',
       },
       {
         id: 'kpi',
+        grupo: 'La meta',
         etiqueta: 'Qué vamos a medir juntos',
         tipo: 'multiple',
         otro: true,
@@ -267,6 +290,7 @@ export const ETAPAS: Etapa[] = [
     campos: [
       {
         id: 'sitios',
+        grupo: 'Lo que les gusta',
         etiqueta: 'Sitios que les gustan',
         ayuda:
           'Mínimo tres. Y en cada uno, qué exactamente: el video de portada, ' +
@@ -276,6 +300,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'videos',
+        grupo: 'Lo que les gusta',
         etiqueta: 'Videos de referencia',
         ayuda:
           'Un reel, un TikTok, el video de otra marca. Peguen el link o suban ' +
@@ -285,6 +310,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'videos_archivos', etiqueta: 'Archivos de video', tipo: 'archivos' },
       {
         id: 'efectos',
+        grupo: 'Los efectos',
         etiqueta: '¿Qué efectos quieren que existan?',
         ayuda:
           'Marquen todo lo que les interese. Después decidimos juntos cuáles ' +
@@ -309,6 +335,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'efecto_estrella',
+        grupo: 'Los efectos',
         etiqueta: 'Si solo pudiéramos hacer UNO increíble, ¿cuál?',
         ayuda:
           'Esta respuesta manda. Es la que va a la portada y la que la gente ' +
@@ -318,6 +345,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'tono',
+        grupo: 'Los efectos',
         etiqueta: '¿Qué tan lejos vamos?',
         tipo: 'escala',
         extremos: ['Sobrio y elegante', 'Espectacular y cinematográfico'],
@@ -325,17 +353,20 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'no_gustan',
+        grupo: 'Lo que no les gusta',
         etiqueta: 'Sitios que NO les gustan, y por qué',
         ayuda: 'Esto nos sirve más que los que sí les gustan. En serio.',
         tipo: 'links',
       },
       {
         id: 'moodboard',
+        grupo: 'Lo que les gusta',
         etiqueta: 'Moodboard, Pinterest, capturas',
         tipo: 'archivos',
       },
       {
         id: 'idioma',
+        grupo: 'Un detalle más',
         etiqueta: 'Idiomas del sitio',
         tipo: 'opcion',
         opciones: ['Solo español', 'Español e inglés', 'Español ahora, inglés después'],
@@ -359,6 +390,7 @@ export const ETAPAS: Etapa[] = [
     campos: [
       {
         id: 'colecciones',
+        grupo: 'Cómo se organizan las piezas',
         etiqueta: '¿Cómo se agrupan las piezas?',
         ayuda:
           'Colecciones, líneas, por ocasión, por metal, por precio. Escríbanlo ' +
@@ -369,6 +401,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'atributos',
+        grupo: 'Cómo se organizan las piezas',
         etiqueta: '¿Qué datos tiene que mostrar cada pieza?',
         tipo: 'multiple',
         requerido: true,
@@ -390,6 +423,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'precio_visible',
+        grupo: 'El precio',
         etiqueta: '¿El precio se ve?',
         tipo: 'opcion',
         requerido: true,
@@ -402,6 +436,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'precio_metal',
+        grupo: 'El precio',
         etiqueta: 'El oro se mueve todos los días. ¿El precio del sitio se recalcula solo?',
         ayuda:
           'Sacs ya sabe costear una pieza a partir del precio del metal y la ' +
@@ -417,6 +452,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'hero',
+        grupo: 'Las piezas del lanzamiento',
         etiqueta: 'Las 10 a 15 piezas con las que queremos abrir',
         ayuda: 'Las que enamoran. Nombre, código o foto — como lo tengan.',
         tipo: 'parrafo',
@@ -425,6 +461,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'hero_archivos', etiqueta: 'Fotos de esas piezas', tipo: 'archivos' },
       {
         id: 'configurador',
+        grupo: 'Diamantes y configurador',
         etiqueta: 'Montadura y diamante: ¿por separado o siempre pieza terminada?',
         ayuda:
           'Si van por separado, el cliente arma su anillo en el sitio: elige ' +
@@ -439,6 +476,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'api_proveedor',
+        grupo: 'Diamantes y configurador',
         etiqueta: 'Catálogo de diamantes del proveedor',
         ayuda:
           'Nombre del proveedor, contacto técnico (correo y teléfono) y si ya ' +
@@ -450,6 +488,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'api_archivos', etiqueta: 'Documentación del proveedor', tipo: 'archivos' },
       {
         id: 'certificados',
+        grupo: 'Diamantes y configurador',
         etiqueta: 'Certificado digital y en PVC',
         ayuda: 'Ya está incluido en lo contratado. Falta decidir dónde vive.',
         tipo: 'multiple',
@@ -462,6 +501,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'personalizacion',
+        grupo: 'Personalización',
         etiqueta: 'Personalización que ofrecen',
         tipo: 'multiple',
         otro: true,
@@ -476,12 +516,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'personalizacion_tiempos',
+        grupo: 'Personalización',
         etiqueta: 'Tiempos de cada personalización',
         ayuda: 'El cliente los va a ver en la ficha antes de comprar.',
         tipo: 'texto',
       },
       {
         id: 'fotografia',
+        grupo: 'La fotografía',
         etiqueta: 'La fotografía de las piezas',
         tipo: 'opcion',
         requerido: true,
@@ -494,12 +536,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'fotografia_360',
+        grupo: 'La fotografía',
         etiqueta: '¿Tienen fotografía 360° o video de las piezas?',
         tipo: 'opcion',
         opciones: ['Sí, de varias piezas', 'De unas cuantas', 'No, ninguna'],
       },
       {
         id: 'inventario',
+        grupo: 'El inventario',
         etiqueta: '¿El stock del sitio sale de Sacs en automático?',
         ayuda:
           'Lo natural es que sí: la pieza que se vende en boutique desaparece ' +
@@ -513,6 +557,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'catalogo_archivo',
+        grupo: 'El inventario',
         etiqueta: 'Su catálogo o inventario en Excel',
         ayuda: 'Si ya lo tienen en un archivo, súbanlo aunque esté sucio.',
         tipo: 'archivos',
@@ -532,6 +577,7 @@ export const ETAPAS: Etapa[] = [
     campos: [
       {
         id: 'dominio',
+        grupo: 'El dominio',
         etiqueta: 'Dominio y quién controla el DNS',
         ayuda:
           'Qué dirección va a usar y quién tiene el acceso hoy: ustedes, una ' +
@@ -541,6 +587,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'pagos',
+        grupo: 'Cómo van a cobrar',
         etiqueta: '¿Cómo quieren cobrar?',
         tipo: 'multiple',
         requerido: true,
@@ -557,11 +604,13 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'msi',
+        grupo: 'Cómo van a cobrar',
         etiqueta: 'Si van meses sin intereses: banco o terminal, y a cuántos meses',
         tipo: 'texto',
       },
       {
         id: 'envio',
+        grupo: 'Envío y garantías',
         etiqueta: 'Envío de joyería',
         ayuda:
           'Paquetería, si va asegurado, quién empaca, si hay recolección en ' +
@@ -571,6 +620,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'politicas',
+        grupo: 'Envío y garantías',
         etiqueta: 'Devoluciones, garantía, resize y limpieza',
         ayuda: 'Si ya está escrito, súbanlo. Si no, cuéntenlo como lo manejan hoy.',
         tipo: 'parrafo',
@@ -578,6 +628,7 @@ export const ETAPAS: Etapa[] = [
       { id: 'politicas_archivos', etiqueta: 'Políticas en archivo', tipo: 'archivos' },
       {
         id: 'legales',
+        grupo: 'Datos fiscales',
         etiqueta: 'Razón social, RFC y domicilio fiscal',
         ayuda: 'Para el aviso de privacidad, los términos y la facturación.',
         tipo: 'parrafo',
@@ -585,6 +636,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'admin',
+        grupo: 'El equipo',
         etiqueta: '¿Quién de Ruben’s va a administrar el sitio?',
         ayuda:
           'Nombre, puesto y correo. Es la persona a la que capacitamos y la ' +
@@ -595,6 +647,7 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'equipo',
+        grupo: 'El equipo',
         etiqueta: '¿Quién más aprueba?',
         ayuda:
           'Si quien decide no es quien está contestando este brief, es mejor ' +
@@ -603,12 +656,14 @@ export const ETAPAS: Etapa[] = [
       },
       {
         id: 'fecha',
+        grupo: 'El equipo',
         etiqueta: '¿Hay una fecha que no se puede mover?',
         ayuda: 'Una campaña, un aniversario, la temporada de bodas.',
         tipo: 'texto',
       },
       {
         id: 'analitica',
+        grupo: 'Medición y campañas',
         etiqueta: 'Medición y campañas',
         tipo: 'multiple',
         otro: true,

@@ -34,6 +34,9 @@ export default function FinanzasTab() {
   const [detalle, setDetalle] = useState<any>(null);          // gasto abierto en el drawer
   const [det, setDet] = useState<any>(null);                  // su ficha + historial
   const [pago, setPago] = useState({ monto: '', fecha: hoyCdmx(), nota: '' });
+  const [abono, setAbono] = useState<Record<string, { monto: string; fecha: string; nota: string }>>({});
+  const [adForm, setAdForm] = useState<any>(null);   // alta/edición de adeudo
+  const [verAbonos, setVerAbonos] = useState<string | null>(null);
   const abrirDetalle = (g: any) => { setDetalle(g); setDet(null); setPago({ monto: String(g.pago?.monto ?? g.monto), fecha: hoyCdmx(), nota: g.pago?.nota || '' }); fetch(`/api/crm/finanzas?gasto=${g.id}`).then(r => r.json()).then(setDet).catch(() => setDet({ error: 'No se pudo cargar' })); };
   const cargar = () => { fetch(`/api/crm/finanzas?mes=${mes}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); fetch(`/api/crm/finanzas?reporte=anual&anio=${mes.slice(0, 4)}`).then(r => r.json()).then(setAnual).catch(() => {}); };
   useEffect(() => { setD(null); cargar(); }, [mes]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -66,7 +69,7 @@ export default function FinanzasTab() {
           <KpiCard label="Cobrado este mes" valor={pesos(d.ingresos.cobrado)} color="#14532d" sub={`${d.ingresos.pagos.length} pagos confirmados`} onClick={() => setVista('ingresos')} activo={vista === 'ingresos'} />
           <KpiCard label="Por cobrar (renovaciones)" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={`${d.ingresos.por_cobrar_lista.length} suscripciones vencen este mes`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Por cobrar de venta nueva" valor={pesos(d.ingresos.ventas_aceptadas || 0)} color="#1e3a8a" sub={`${(d.ingresos.ventas_aceptadas_lista || []).length} cotizaciones aceptadas sin pago`} onClick={() => setVista('ingresos')} activo={false} />
-          <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} ya pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
+          <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}${d.adeudos?.toca ? ` + ${pesos(d.adeudos.toca)} adeudos` : ''}${d.atrasados?.total ? ` + ${pesos(d.atrasados.total)} atrasados` : ''}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
           <KpiCard label="Pipeline ponderado" valor={pesos(d.pipeline.ponderado)} color="#78350f" sub={`${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos`} onClick={() => setVista('pipeline')} activo={vista === 'pipeline'} />
           <KpiCard label="Utilidad estimada" valor={pesos(d.utilidad.estimada)} color={d.utilidad.estimada >= 0 ? '#14532d' : '#7f1d1d'} sub={`${pesos(d.utilidad.si_cobra_todo)} si cobras todo lo del mes`} onClick={() => setVista('cierre')} activo={vista === 'cierre'} />
         </div>
@@ -134,6 +137,78 @@ export default function FinanzasTab() {
                   </>)}
                 </tbody>
               </table></div>
+            </div>
+
+            {/* ATRASADOS: lo que no se pagó en meses anteriores se junta aquí */}
+            {(d.atrasados?.lista || []).length > 0 && (
+              <div style={{ marginTop: 14, background: '#fff', border: '1px solid #fecdd3', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><b style={{ color: '#7f1d1d' }}>Atrasado de meses anteriores</b><span style={{ color: '#7f1d1d', fontWeight: 800 }}>{pesos(d.atrasados.total)}</span></div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
+                  {d.atrasados.lista.map((g: any) => <tr key={`${g.id}:${g.mes}`}><td style={td}><b>{g.nombre}</b> <span style={{ color: '#8e88a8', fontSize: 11, textTransform: 'capitalize' }}>· {nombreMes(g.mes)}</span></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(g.monto)}</td><td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}><button onClick={async () => { await postJ({ accion: 'gasto_pagar', gasto_id: g.id, mes: g.mes, pagado: true }); cargar(); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Ya lo pagué</button></td></tr>)}
+                </tbody></table>
+              </div>
+            )}
+
+            {/* ADEUDOS: total, saldo, cuota del mes, atraso y abonos */}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div><b style={{ fontSize: 15 }}>Adeudos</b> <span style={{ color: '#6b6580', fontSize: 12.5 }}>· saldo total {pesos(d.adeudos?.saldo_total || 0)} · toca este mes {pesos(d.adeudos?.toca || 0)} · abonado {pesos(d.adeudos?.abonado || 0)}</span></div>
+                <button onClick={() => setAdForm({ id: '', nombre: '', acreedor: '', total: '', cuota: '', dia_pago: '', inicio: mes, fecha_limite: '', notas: '' })} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>+ Agregar adeudo</button>
+              </div>
+              {adForm && (
+                <div style={{ marginTop: 10, background: '#fff', border: '1px solid #d9d4ea', borderRadius: 14, padding: 16 }}>
+                  <b>{adForm.id ? 'Editar adeudo' : 'Nuevo adeudo'}</b>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginTop: 8 }}>
+                    <label style={lbl}>Nombre<input style={inp} value={adForm.nombre} onChange={e => setAdForm({ ...adForm, nombre: e.target.value })} /></label>
+                    <label style={lbl}>Acreedor<input style={inp} value={adForm.acreedor} onChange={e => setAdForm({ ...adForm, acreedor: e.target.value })} /></label>
+                    <label style={lbl}>Total que se debe<input style={inp} type="number" value={adForm.total} onChange={e => setAdForm({ ...adForm, total: e.target.value })} /></label>
+                    <label style={lbl}>Cuota mensual (opcional)<input style={inp} type="number" value={adForm.cuota} onChange={e => setAdForm({ ...adForm, cuota: e.target.value })} placeholder="si hay fecha límite se calcula" /></label>
+                    <label style={lbl}>Día de pago<input style={inp} type="number" min={1} max={31} value={adForm.dia_pago} onChange={e => setAdForm({ ...adForm, dia_pago: e.target.value })} /></label>
+                    <label style={lbl}>Desde (mes)<input style={inp} type="month" value={adForm.inicio} onChange={e => setAdForm({ ...adForm, inicio: e.target.value })} /></label>
+                    <label style={lbl}>Fecha límite (opcional)<input style={inp} type="date" value={adForm.fecha_limite} onChange={e => setAdForm({ ...adForm, fecha_limite: e.target.value })} /></label>
+                    <label style={{ ...lbl, gridColumn: '1 / -1' }}>Notas<input style={inp} value={adForm.notas} onChange={e => setAdForm({ ...adForm, notas: e.target.value })} /></label>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button onClick={async () => { const j = await postJ({ accion: 'adeudo_guardar', adeudo: adForm }); if (j.error) { setMsg(j.error); return; } setAdForm(null); cargar(); }} disabled={!adForm.nombre || !adForm.total} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar</button>
+                    <button onClick={() => setAdForm(null)} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                    {adForm.id && <button onClick={async () => { if (!confirm('¿Quitar este adeudo de Finanzas? (se conserva el historial)')) return; await postJ({ accion: 'adeudo_borrar', id: adForm.id }); setAdForm(null); cargar(); }} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#b91c1c', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Quitar</button>}
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12, marginTop: 10 }}>
+                {(d.adeudos?.lista || []).map((a: any) => { const pct = Math.min(100, Math.round(a.pagado_total / Number(a.total) * 100)); const ab = abono[a.id] || { monto: String(a.toca_este_mes - a.abonado_mes > 0 ? a.toca_este_mes - a.abonado_mes : a.cuota_mes || ''), fecha: hoyCdmx(), nota: '' }; return (
+                  <div key={a.id} style={{ background: '#fff', border: `1px solid ${a.liquidado ? '#86efac' : a.atraso > 0 ? '#fecdd3' : '#e8e5f0'}`, borderRadius: 14, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                      <div><b style={{ fontSize: 15 }}>{a.nombre}</b>{a.acreedor && a.acreedor !== a.nombre ? <span style={{ color: '#6b6580' }}> · {a.acreedor}</span> : null}<div style={{ color: '#8e88a8', fontSize: 11.5 }}>{a.dia_pago ? `día ${a.dia_pago}` : ''}{a.fecha_limite ? ` · límite ${a.fecha_limite}` : ''}{a.meses_restantes ? ` · ${a.meses_restantes} mes${a.meses_restantes === 1 ? '' : 'es'}` : ''}</div></div>
+                      <button onClick={() => setAdForm({ id: a.id, nombre: a.nombre, acreedor: a.acreedor || '', total: a.total, cuota: a.cuota || '', dia_pago: a.dia_pago || '', inicio: String(a.inicio).slice(0, 7), fecha_limite: a.fecha_limite || '', notas: a.notas || '' })} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button>
+                    </div>
+                    <div style={{ marginTop: 10, height: 8, background: '#f0eef6', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: a.liquidado ? '#22c55e' : '#5B4BD6' }} /></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b6580', marginTop: 4 }}><span>Pagado {pesos(a.pagado_total)} ({pct}%)</span><span>Saldo <b style={{ color: '#241d43' }}>{pesos(a.saldo)}</b> de {pesos(a.total)}</span></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
+                      <div><div style={{ fontSize: 10, fontWeight: 800, color: '#8e88a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Cuota</div><div style={{ fontWeight: 800 }}>{a.sin_cuota ? <span style={{ color: '#b45309' }}>define la cuota</span> : pesos(a.cuota_mes)}</div></div>
+                      <div><div style={{ fontSize: 10, fontWeight: 800, color: '#8e88a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Toca este mes</div><div style={{ fontWeight: 800, color: a.atraso > 0 ? '#b91c1c' : '#241d43' }}>{pesos(a.toca_este_mes)}{a.atraso > 0 ? <div style={{ fontSize: 11, fontWeight: 700 }}>incluye {pesos(a.atraso)} atrasado</div> : null}</div></div>
+                      <div><div style={{ fontSize: 10, fontWeight: 800, color: '#8e88a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Abonado en {MESES[Number(mes.slice(5, 7)) - 1]}</div><div style={{ fontWeight: 800, color: a.abonado_mes >= a.toca_este_mes && a.toca_este_mes > 0 ? '#14532d' : '#241d43' }}>{pesos(a.abonado_mes)}</div></div>
+                    </div>
+                    {!a.liquidado && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 10 }}>
+                        <input style={{ ...inp, marginTop: 0 }} type="number" placeholder="Monto" value={ab.monto} onChange={e => setAbono({ ...abono, [a.id]: { ...ab, monto: e.target.value } })} />
+                        <input style={{ ...inp, marginTop: 0 }} type="date" value={ab.fecha} onChange={e => setAbono({ ...abono, [a.id]: { ...ab, fecha: e.target.value } })} />
+                        <input style={{ ...inp, marginTop: 0, gridColumn: '1 / -1' }} placeholder="Nota (referencia)" value={ab.nota} onChange={e => setAbono({ ...abono, [a.id]: { ...ab, nota: e.target.value } })} />
+                        <button onClick={async () => { if (!(Number(ab.monto) > 0)) return; await postJ({ accion: 'adeudo_abonar', adeudo_id: a.id, mes, monto: ab.monto, fecha: ab.fecha, nota: ab.nota }); setAbono({ ...abono, [a.id]: { monto: '', fecha: hoyCdmx(), nota: '' } }); cargar(); }} style={{ gridColumn: '1 / -1', border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Registrar abono</button>
+                      </div>
+                    )}
+                    <button onClick={() => setVerAbonos(verAbonos === a.id ? null : a.id)} style={{ marginTop: 8, border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>{verAbonos === a.id ? 'Ocultar abonos' : `Ver abonos (${a.abonos.length})`}</button>
+                    {verAbonos === a.id && (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}><tbody>
+                        {a.abonos.map((x: any) => <tr key={x.id} style={{ borderTop: '1px solid #f0eef6' }}><td style={{ padding: '6px 2px' }}>{x.fecha}</td><td style={{ padding: '6px 2px', color: '#6b6580' }}>{x.nota || ''}</td><td style={{ padding: '6px 2px', textAlign: 'right', fontWeight: 800 }}>{pesos(x.monto)}</td><td style={{ padding: '6px 2px', textAlign: 'right' }}><button onClick={async () => { if (!confirm('¿Borrar este abono?')) return; await postJ({ accion: 'abono_borrar', id: x.id }); cargar(); }} style={{ border: 'none', background: 'transparent', color: '#b91c1c', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700 }}>borrar</button></td></tr>)}
+                        {!a.abonos.length && <tr><td style={{ padding: 8, color: '#8e88a8' }}>Sin abonos todavía.</td></tr>}
+                      </tbody></table>
+                    )}
+                    {a.notas && <div style={{ marginTop: 6, fontSize: 11.5, color: '#8e88a8' }}>{a.notas}</div>}
+                  </div>
+                ); })}
+                {!(d.adeudos?.lista || []).length && <div style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin adeudos activos.</div>}
+              </div>
             </div>
           </div>
         )}

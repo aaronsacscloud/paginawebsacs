@@ -13,7 +13,12 @@ const GRUPOS: { k: string; l: string; desc: string; claves: string[] }[] = [
   { k: 'contacto', l: 'Contacto', desc: 'Cómo localizarlo y con quién hablamos.', claves: ['email', 'telefono', 'nombre', 'puesto', 'whatsapp'] },
 ];
 const grupoDe = (p: any) => { const c = String(p?.campo_clave || p?.campo || '').toLowerCase(); return GRUPOS.find(g => g.claves.some(k => c === k || c.includes(k)))?.k || 'otros'; };
-const nombreDe = (p: any) => String(p?.instruccion || '').split(' — ')[0] || 'Sin nombre';
+const nombreDe = (p: any) => {
+  if (p?.lead?.nombre) return String(p.lead.nombre);
+  const ins = String(p?.instruccion || '');
+  const con = ins.match(/\bcon ([^?(¿]+?)(?:\s*\(|\?|:|$)/); if (con) return con[1].trim();
+  const antes = ins.split(/:| — /)[0].trim(); return antes.replace(/^¿/, '') || 'Sin nombre';
+};
 
 export default function TrabajoDatos({ datos, onGuardar, onPosponer, onRecargar, guardando, error }: { datos: Tarea[]; onGuardar: (x: Tarea, valor: any) => Promise<boolean>; onPosponer: (x: Tarea) => Promise<void>; onRecargar?: () => void; guardando: boolean; error: string }) {
   const [grupo, setGrupo] = useState<string>('todos');
@@ -21,7 +26,7 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, onRecargar,
   const [vals, setVals] = useState<Record<string, string>>({});
   const [ok, setOk] = useState('');
   const [minutaDe, setMinutaDe] = useState<any>(null);   // tarea de minuta abierta en el modal con IA
-  const conGrupo = useMemo(() => datos.map(x => ({ ...x, _g: grupoDe(x.payload), _n: nombreDe(x.payload), _k: x.payload?.sujeto || x.contact_id })), [datos]);
+  const conGrupo = useMemo(() => datos.map(x => ({ ...x, _g: grupoDe(x.payload), _n: nombreDe(x.payload), _k: x.contact_id || x.payload?.sujeto })), [datos]);
   const conteo: Record<string, number> = {}; for (const x of conGrupo) conteo[x._g] = (conteo[x._g] || 0) + 1;
   const visibles = grupo === 'todos' ? conGrupo : conGrupo.filter(x => x._g === grupo);
   // Clientes con al menos un dato en la subpestaña; la ficha muestra TODOS sus pendientes (de cualquier grupo).

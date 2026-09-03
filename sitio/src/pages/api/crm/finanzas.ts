@@ -49,6 +49,19 @@ export const POST: APIRoute = async ({ request }) => {
     const { error } = await supabase.from('fin_gastos_pagos').upsert({ gasto_id: b.gasto_id, mes: String(b.mes).slice(0, 7), pagado_at: pagadoAt, monto: b.monto != null && b.monto !== '' ? Number(b.monto) : null, nota: b.nota || null, pagado_por: uid }, { onConflict: 'gasto_id,mes' });
     return error ? json({ error: error.message }, 500) : json({ ok: true });
   }
+  if (b.accion === 'adeudo_guardar') {
+    const a = b.adeudo || {};
+    if (!a.nombre || !(Number(a.total) > 0)) return json({ error: 'Falta nombre o total' }, 400);
+    const fila: any = { nombre: String(a.nombre).trim(), acreedor: a.acreedor || null, total: Number(a.total), cuota: a.cuota ? Number(a.cuota) : null, dia_pago: a.dia_pago ? Number(a.dia_pago) : null, inicio: a.inicio ? `${String(a.inicio).slice(0, 7)}-01` : `${mesDe()}-01`, fecha_limite: a.fecha_limite || null, notas: a.notas || null, activo: a.activo !== false, updated_at: ahora };
+    const q = a.id ? supabase.from('fin_adeudos').update(fila).eq('id', a.id) : supabase.from('fin_adeudos').insert(fila);
+    const { error } = await q; return error ? json({ error: error.message }, 500) : json({ ok: true });
+  }
+  if (b.accion === 'adeudo_abonar' && b.adeudo_id && Number(b.monto) > 0) {
+    const { error } = await supabase.from('fin_adeudos_abonos').insert({ adeudo_id: b.adeudo_id, mes: String(b.mes || mesDe()).slice(0, 7), fecha: b.fecha ? String(b.fecha).slice(0, 10) : new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10), monto: Number(b.monto), nota: b.nota || null, pagado_por: uid });
+    return error ? json({ error: error.message }, 500) : json({ ok: true });
+  }
+  if (b.accion === 'abono_borrar' && b.id) { await supabase.from('fin_adeudos_abonos').delete().eq('id', b.id); return json({ ok: true }); }
+  if (b.accion === 'adeudo_borrar' && b.id) { await supabase.from('fin_adeudos').update({ activo: false, updated_at: ahora }).eq('id', b.id); return json({ ok: true }); }
   if (b.accion === 'cerrar_mes' && b.mes) return json(await cerrarMes(String(b.mes).slice(0, 7), uid, b.notas));
   if (b.accion === 'reabrir_mes' && b.mes) { await supabase.from('fin_cierres').delete().eq('mes', String(b.mes).slice(0, 7)); return json({ ok: true }); }
   return json({ error: 'Acción desconocida' }, 400);

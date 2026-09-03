@@ -7,6 +7,8 @@ import { supabase } from '../supabase';
 export type Mes = string; // 'YYYY-MM'
 export const mesDe = (d = new Date()) => new Date(d.getTime() - 6 * 3600e3).toISOString().slice(0, 7);
 const ini = (m: Mes) => `${m}-01`;
+const mesesEntre = (a: Mes, b: Mes) => (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + (Number(b.slice(5, 7)) - Number(a.slice(5, 7)));
+const mesMenos = (m: Mes, n: number) => { const d = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 - n, 1)); return d.toISOString().slice(0, 7); };
 const finExcl = (m: Mes) => { const [y, mm] = m.split('-').map(Number); return `${mm === 12 ? y + 1 : y}-${String(mm === 12 ? 1 : mm + 1).padStart(2, '0')}-01`; };
 
 /** ¿Un gasto aplica a este mes? mensual: desde inicio hasta fin; anual: mismo mes que inicio; único: solo su mes. */
@@ -59,19 +61,50 @@ export async function resumenMes(m: Mes) {
   const abiertos = (deals || []).filter(d => !aceptadasIds.has((d as any).quote_id)).map(d => ({ ...d, valor: Number(d.valor_total || 0) || Number(d.valor_mensual || 0) * 12, prob: Number(d.probabilidad ?? 30) }));
   const pipelineTotal = abiertos.reduce((s, d) => s + d.valor, 0);
   const pipelinePond = abiertos.reduce((s, d) => s + d.valor * d.prob / 100, 0);
+  // ADEUDOS (decisión 2026-09-03): total, saldo, cuota del mes y lo atrasado que se junta. Si hay fecha límite y no hay
+  // cuota fija, la cuota es saldo ÷ meses que faltan (SAT: 48,000 a octubre = 24,000 y 24,000).
+  const [{ data: adeudos }, { data: abonos }] = await Promise.all([
+    supabase.from('fin_adeudos').select('*').eq('activo', true).order('created_at'),
+    supabase.from('fin_adeudos_abonos').select('*').order('fecha', { ascending: false }),
+  ]);
+  const adeudosMes = (adeudos || []).map(a => {
+    const ab = (abonos || []).filter(x => x.adeudo_id === a.id);
+    const pagadoTotal = ab.reduce((s, x) => s + Number(x.monto), 0);
+    const saldo = Math.max(0, Number(a.total) - pagadoTotal);
+    const inicioM = String(a.inicio).slice(0, 7);
+    const mesesRest = a.fecha_limite ? Math.max(1, mesesEntre(m, String(a.fecha_limite).slice(0, 7)) + 1) : null;
+    const cuota = Number(a.cuota) > 0 ? Number(a.cuota) : mesesRest ? Math.ceil(saldo / mesesRest) : null;
+    const mesesCorridos = Math.max(0, mesesEntre(inicioM, m)) + 1;   // meses desde que empezó, incluido este
+    const esperadoAcum = cuota ? Math.min(Number(a.total), cuota * mesesCorridos) : 0;
+    const atraso = cuota ? Math.max(0, esperadoAcum - pagadoTotal) : 0;   // lo que debería llevar pagado menos lo pagado (incluye la cuota de este mes)
+    const abonosMes = ab.filter(x => x.mes === m); const abonadoMes = abonosMes.reduce((s, x) => s + Number(x.monto), 0);
+    const tocaEsteMes = cuota ? Math.min(saldo, Math.max(0, atraso)) : 0;
+    return { ...a, pagado_total: pagadoTotal, saldo, cuota_mes: cuota, meses_restantes: mesesRest, atraso: Math.max(0, atraso - (cuota || 0)), toca_este_mes: tocaEsteMes, abonado_mes: abonadoMes, abonos_mes: abonosMes, abonos: ab.slice(0, 24), sin_cuota: !cuota, liquidado: saldo <= 0 };
+  });
+  const adeudosToca = adeudosMes.reduce((s, a) => s + a.toca_este_mes, 0);
+  const adeudosAbonado = adeudosMes.reduce((s, a) => s + a.abonado_mes, 0);
+  // ATRASADOS: gastos de los 3 meses anteriores que aplicaban y no se marcaron pagados: se juntan aquí, no se olvidan.
+  const mesesPrev = [1, 2, 3].map(n => mesMenos(m, n)).filter(x => x >= '2026-09');
+  const { data: pagosPrev } = mesesPrev.length ? await supabase.from('fin_gastos_pagos').select('gasto_id, mes').in('mes', mesesPrev) : { data: [] as any[] };
+  const pagadoPrev = new Set((pagosPrev || []).map(p => `${p.gasto_id}:${p.mes}`));
+  const atrasados: any[] = [];
+  for (const mp of mesesPrev) for (const g of gastos || []) if (aplicaMes(g, mp) && !g.probable && !pagadoPrev.has(`${g.id}:${mp}`)) atrasados.push({ ...g, mes: mp });
+  const atrasadosTotal = atrasados.reduce((s, g) => s + Number(g.monto), 0);
   const probables = aplicables.filter(g => g.probable).reduce((s, g) => s + Number(g.monto), 0);
   // Comisiones del mes: si hay cortes programados en el mes, mandan ellos (es lo que de verdad se paga los lunes); si no, las líneas.
   const comisionesMes = cortesMes.length ? cortesTotal : comisiones;
   // Publicidad: si hay inversión real capturada en Embudo, sustituye al estimado «probable» de marketing.
   const marketingEstimado = aplicables.filter(g => g.probable && g.categoria === 'marketing').reduce((s, g) => s + Number(g.monto), 0);
   const ajusteMarketing = marketingReal > 0 ? marketingReal - marketingEstimado : 0;
-  const totalGastos = gastosPrevisto + ajusteMarketing + (porCat.comision ? 0 : comisionesMes);   // comisiones a mano → no se suman dos veces
+  const totalGastos = gastosPrevisto + ajusteMarketing + (porCat.comision ? 0 : comisionesMes) + adeudosToca + atrasadosTotal;   // comisiones a mano → no se suman dos veces
   return {
     mes: m, cierre: cierre || null,
     ingresos: { cobrado, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
     gastos: { lista: aplicables, previsto: gastosPrevisto + ajusteMarketing, pagado: gastosPagado, por_categoria: porCat, catalogo: gastos || [] },
     comisiones: { total: comisionesMes, lineas_total: comisiones, por_vendedor: porVendedor, lineas: (coms || []).length, cortes: cortesMes, por_pagar: cortesPorPagar },
     variables: { probables, marketing_real: Math.round(marketingReal), marketing_estimado: marketingEstimado },
+    adeudos: { lista: adeudosMes, toca: adeudosToca, abonado: adeudosAbonado, saldo_total: adeudosMes.reduce((s, a) => s + a.saldo, 0) },
+    atrasados: { lista: atrasados, total: atrasadosTotal },
     pipeline: { abiertos, total: pipelineTotal, ponderado: pipelinePond },
     utilidad: { estimada: cobrado - totalGastos, si_cobra_todo: cobrado + porCobrarMonto - totalGastos, total_gastos: totalGastos },
   };
@@ -79,6 +112,7 @@ export async function resumenMes(m: Mes) {
 
 /** Reporte por meses de un año: cierres guardados + meses vivos calculados al vuelo (solo dinero agregado). */
 export async function reporteAnual(anio: number) {
+  const { data: abonosAnio } = await supabase.from('fin_adeudos_abonos').select('mes, monto').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`);
   const { data: cortesAnio } = await supabase.from('comision_cortes').select('paga_el, total').gte('paga_el', `${anio}-01-01`).lt('paga_el', `${anio + 1}-01-01`);
   const [{ data: cierres }, { data: pagos }, { data: gastos }, { data: coms }, { data: pagosG }] = await Promise.all([
     supabase.from('fin_cierres').select('*').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`),
@@ -97,7 +131,7 @@ export async function reporteAnual(anio: number) {
     if (m > hoy) { meses.push({ mes: m, ingresos: 0, gastos: (gastos || []).filter(g => aplicaMes(g, m)).reduce((s, g) => s + Number(g.monto), 0), comisiones: 0, utilidad: null, cerrado: false, futuro: true }); continue; }
     const ing = (pagos || []).filter(p => String(p.fecha).slice(0, 7) === m).reduce((s, p) => s + Number(p.monto), 0);
     const apl = (gastos || []).filter(g => aplicaMes(g, m));
-    const gas = apl.reduce((s, g) => s + Number(g.monto), 0);
+    const gas = apl.reduce((s, g) => s + Number(g.monto), 0) + (abonosAnio || []).filter(x => x.mes === m).reduce((s, x) => s + Number(x.monto), 0);
     const comLineas = (coms || []).filter(x => String(x.fecha).slice(0, 7) === m).reduce((s, x) => s + Number(x.monto || 0), 0);
     const cortesM = (cortesAnio || []).filter(c => String(c.paga_el).slice(0, 7) === m);
     const com = cortesM.length ? cortesM.reduce((s, c) => s + Number(c.total || 0), 0) : comLineas;
@@ -111,8 +145,8 @@ export async function reporteAnual(anio: number) {
 
 export async function cerrarMes(m: Mes, userId?: string, notas?: string) {
   const r = await resumenMes(m);
-  const fila = { mes: m, ingresos: r.ingresos.cobrado, por_cobrar_pendiente: r.ingresos.por_cobrar, gastos: r.gastos.previsto, comisiones: r.comisiones.total, nomina: r.gastos.por_categoria.nomina?.previsto || 0, utilidad: r.utilidad.estimada, notas: notas || null, cerrado_por: userId || null, cerrado_at: new Date().toISOString(),
-    detalle: { gastos: r.gastos.lista.map(g => ({ nombre: g.nombre, categoria: g.categoria, monto: g.monto, pagado: !!g.pago })), por_categoria: r.gastos.por_categoria, comisiones_por_vendedor: r.comisiones.por_vendedor, pagos: r.ingresos.pagos.length, por_cobrar: r.ingresos.por_cobrar_lista.map((s: any) => ({ empresa: s.companies?.nombre_comercial || s.companies?.nombre, monto: s.monto, fecha: s.proxima_factura })), pipeline: { total: r.pipeline.total, ponderado: r.pipeline.ponderado, n: r.pipeline.abiertos.length } } };
+  const fila = { mes: m, ingresos: r.ingresos.cobrado, por_cobrar_pendiente: r.ingresos.por_cobrar, gastos: r.gastos.previsto + r.adeudos.abonado + r.atrasados.total, comisiones: r.comisiones.total, nomina: r.gastos.por_categoria.nomina?.previsto || 0, utilidad: r.utilidad.estimada, notas: notas || null, cerrado_por: userId || null, cerrado_at: new Date().toISOString(),
+    detalle: { gastos: r.gastos.lista.map(g => ({ nombre: g.nombre, categoria: g.categoria, monto: g.monto, pagado: !!g.pago })), por_categoria: r.gastos.por_categoria, comisiones_por_vendedor: r.comisiones.por_vendedor, pagos: r.ingresos.pagos.length, por_cobrar: r.ingresos.por_cobrar_lista.map((s: any) => ({ empresa: s.companies?.nombre_comercial || s.companies?.nombre, monto: s.monto, fecha: s.proxima_factura })), pipeline: { total: r.pipeline.total, ponderado: r.pipeline.ponderado, n: r.pipeline.abiertos.length }, adeudos: r.adeudos.lista.map((a: any) => ({ nombre: a.nombre, saldo: a.saldo, abonado_mes: a.abonado_mes })), atrasados: r.atrasados.total } };
   const { error } = await supabase.from('fin_cierres').upsert(fila, { onConflict: 'mes' });
   return error ? { error: error.message } : { ok: true, cierre: fila };
 }
