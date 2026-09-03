@@ -92,7 +92,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
+type Tab = 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -187,8 +187,17 @@ const NAV_SECTIONS = [
       /* «Equipo» ya no está aquí: se abre veinte veces al día y como pestaña
          uno perdía la pantalla en la que estaba. Es el widget flotante de
          abajo a la derecha (?tab=equipo lo abre encima de lo que haya). */
-      { id: 'trabajo' as Tab, label: 'Trabajo inteligente', icon: 'trabajo' },
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
+    ],
+  },
+  {
+    /* Trabajo inteligente con subsecciones (decisión 2026-09-04): Reactivación primero porque su análisis es el
+       que más vale leer; la Torre es donde se decide; Informes es lo que se mira. Los ajustes viven en Configuración. */
+    label: 'Trabajo inteligente', sec: 'trabajo', icon: 'trabajo',
+    items: [
+      { id: 'ti-reactivacion' as Tab, label: 'Reactivación', icon: 'trabajo' },
+      { id: 'trabajo' as Tab, label: 'Torre', icon: 'trabajo' },
+      { id: 'ti-informes' as Tab, label: 'Informes', icon: 'dashboard' },
     ],
   },
   {
@@ -555,7 +564,7 @@ export default function CrmDashboard() {
   const colapsoPrevio = useRef<boolean | null>(null);
   useEffect(() => {
     if (isMobile) return;
-    if (tab === 'whatsapp' || (tab as any) === 'trabajo') {
+    if (tab === 'whatsapp') {   // Trabajo inteligente ya no colapsa el menú: tiene subsecciones que se deben ver
       if (colapsoPrevio.current === null) {
         colapsoPrevio.current = sidebarCollapsed;
         setSidebarCollapsed(true);
@@ -1025,6 +1034,10 @@ export default function CrmDashboard() {
           /* La sección principal, ADENTRO del CRM: mismo panel de
              /admin/trabajo (que sigue viva para pantalla completa). */
           <ErrorBoundary><TrabajoPanel /></ErrorBoundary>
+        ) : tab === 'ti-reactivacion' ? (
+          <ErrorBoundary><TrabajoPanel inicial="reactivacion" /></ErrorBoundary>
+        ) : tab === 'ti-informes' ? (
+          <ErrorBoundary><TrabajoPanel inicial="informes" /></ErrorBoundary>
         ) : tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
              zonas — el Dashboard completo es de escritorio. */

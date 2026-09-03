@@ -72,7 +72,7 @@ function porqueDe(t: Tarea): string {
   return '';
 }
 
-export default function TrabajoPanel() {
+export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informes' | 'reactivacion' } = {}) {
   const [plan, setPlan] = useState<{ tareas: Tarea[]; resumen: any } | null>(null);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -89,7 +89,8 @@ export default function TrabajoPanel() {
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'torre' | 'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('torre');
   // v2 (decisión 2026-09-04): tres secciones. Torre = todo lo que pide decisión; Informes = lo que se mira; Ajustes = lo que se configura.
-  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes'>('torre');
+  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes' | 'reactivacion'>(inicial || 'torre');
+  useEffect(() => { if (inicial) setSeccion(inicial); }, [inicial]);
   const [infTab, setInfTab] = useState<'leads' | 'revision' | 'biblioteca' | 'consumo'>('leads');
   const [ajTab, setAjTab] = useState<'herramientas' | 'reactivacion'>('herramientas');
   /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
@@ -335,12 +336,12 @@ export default function TrabajoPanel() {
       <div className="ti-cab2">
         <span className="ti-cab2-tt">Trabajo inteligente</span>
         <nav className="ti-cab2-tabs">
-          {([['torre', 'Torre'], ['informes', 'Informes']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
-          <a className="ti-cab2-tab" href="/admin/crm?tab=config#agente" style={{ marginLeft: 'auto', textDecoration: 'none', color: '#8e88a8' }}>Ajustes del agente → Configuración</a>
+          {([['reactivacion', 'Reactivación'], ['torre', 'Torre'], ['informes', 'Informes']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
         </nav>
         {seccion === 'informes' && <nav className="ti-cab2-sub">{([['leads', 'Leads'], ['revision', 'Revisión diaria'], ['biblioteca', 'Biblioteca'], ['consumo', 'Consumo']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (infTab === k ? ' on' : '')} onClick={() => setInfTab(k)}>{l}</button>)}</nav>}
       </div>
       {seccion === 'torre' && <div className="ti-lienzo tc-full"><TorreControl irA={(t) => { if (t === 'aprendizaje') { setSeccion('informes'); setInfTab('biblioteca'); } }} /></div>}
+      {seccion === 'reactivacion' && <TrabajoReactivacion />}
       {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}
