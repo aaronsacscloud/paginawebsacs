@@ -131,7 +131,9 @@ export default function TrabajoPanel() {
   /* El lote de datos (higiene P5) vive en su pestaña — el valle del día.
      Las deudas bloqueantes/comerciales (P3/P4) siguen en la fila normal. */
   const datos = todas.filter(x => x.familia === 'higiene' && x.prioridad >= 5);
-  const tareas = todas.filter(x => !(x.familia === 'higiene' && x.prioridad >= 5));
+  // El WhatsApp lo lleva el agente (decisión 2026-09-03): el plan del día son llamadas, la cadena de la reunión,
+  // cotizaciones dormidas y datos. El WhatsApp libre ya no compite con el agente.
+  const tareas = todas.filter(x => !(x.familia === 'higiene' && x.prioridad >= 5) && x.tipo !== 'wa_libre');
   const t = (actualId && tareas.find(x => x.id === actualId)) || tareas[0] || null;
   useEffect(() => { if (t && t.id !== actualId) setActualId(t.id); }, [t?.id]);
   // Al cambiar de tarjeta, los campos arrancan con lo suyo.

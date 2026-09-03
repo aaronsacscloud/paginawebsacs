@@ -603,7 +603,7 @@ async function callarSilencioPendiente(contactId: string, motivo: string) {
 }
 
 /** Aviso del SISTEMA en la campana del CRM (pestaña «Sistema»): qué pasó y qué hacer, con clic al hilo. */
-async function avisoSistema(o: { tipo: string; nivel: 'info' | 'alerta' | 'urgente'; clave: string; titulo: string; detalle: string; que_hacer: string; contact_id?: string | null; conversation_id?: string | null; extra?: any }) {
+export async function avisoSistema(o: { tipo: string; nivel: 'info' | 'alerta' | 'urgente'; clave: string; titulo: string; detalle: string; que_hacer: string; contact_id?: string | null; conversation_id?: string | null; extra?: any }) {
   await notificar({ clave: o.clave, tipo: o.tipo, nivel: o.nivel, titulo: o.titulo, detalle: o.detalle, metadata: { origen: 'agente', que_hacer: o.que_hacer, contact_id: o.contact_id || null, conversation_id: o.conversation_id || null, ...(o.extra || {}) } }).catch(() => false);
 }
 
@@ -1088,8 +1088,8 @@ export async function tocarSilencios(): Promise<any> {
     if ((validos >= 3 || agotado) && !st.llamada_at && desdeUltimoH >= 24) {
       if (!sombra) {
         const n = String(c.nombre || 'el lead').split(/\s+/)[0];
-        await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: c.company_id, owner_id: c.owner_id, familia: 'contactar', tipo: 'llamada', prioridad: 3, vence_at: ahora.toISOString(), origen: 'reloj', payload: {
-          instruccion: `Llámale a ${n} — tres intentos reales del agente sin respuesta`, porque: `Tres intentos que sí llegaron (${intentos.filter(i => i.valido).map(i => i.tipo + ' ' + i.franja).join(', ')}) en días y franjas distintas, y silencio: la voz es lo único que falta antes de decidir si seguimos.`,
+        await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: c.company_id, owner_id: c.owner_id, familia: 'contactar', tipo: 'llamada', prioridad: 1, vence_at: ahora.toISOString(), origen: 'reloj', payload: {
+          instruccion: `Llámale a ${n}: el agente ya agotó sus intentos y no contesta`, agendar_discovery: true, porque: `Tres intentos que sí llegaron (${intentos.filter(i => i.valido).map(i => i.tipo + ' ' + i.franja).join(', ')}) en días y franjas distintas, y silencio: la voz es lo único que falta antes de decidir si seguimos.`,
           nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'silencio_llamada', sujeto: `c${st.ciclo}`, tipo_llamada: 'Llamada de rescate', resultados: RESULTADOS_LLAMADA_L,
           hechos: [['Toques del agente', '3', 'sin respuesta', 'ambar'], ['Silencio', `${Math.round(horas / 24)} días`, 'desde el último mensaje nuestro'], ['Interés estimado', p.etapa_interes || '—', `prob. ${Math.round((p.score_probabilidad || 0) * 100)}%`]],
         } });

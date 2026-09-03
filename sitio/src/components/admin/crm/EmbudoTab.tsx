@@ -26,6 +26,7 @@ const METRICAS: Record<string, { l: string; que: string; f: (r: Fila) => boolean
   completadas: { l: 'Demo completada', que: 'Al menos una reunión marcada como asistió.', f: r => r.citas_asistio > 0 },
   no_asistio: { l: 'No asistieron', que: 'Reunión marcada como no asistió y ninguna completada.', f: r => r.citas_no_asistio > 0 && r.citas_asistio === 0 },
   vigentes: { l: 'Demo por venir', que: 'Reunión agendada o confirmada todavía pendiente.', f: r => r.citas_vigentes > 0 },
+  sin_resultado: { l: 'Reunión sin resultado', que: 'La reunión ya pasó y nadie registró qué pasó. Es una deuda del consultor.', f: r => r.citas_sin_resultado > 0 },
   cotizacion: { l: 'En cotización', que: 'Al menos una cotización enviada, aceptada, pagada o vencida.', f: r => r.cot_total > 0 },
   vendidos: { l: 'Compraron', que: 'Con pago confirmado, cotización pagada o suscripción.', f: r => r.pagado > 0 || r.cot_pagadas > 0 || r.suscripciones > 0 },
 };
@@ -77,7 +78,7 @@ export default function EmbudoTab() {
         </div>
         {/* Lo que se cae en el camino */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginTop: 10 }}>
-          {['sin_contactar', 'nunca_contesto', 'respondio_algo', 'descalificados_hablados', 'descalificados_sin_hablar', 'no_asistio', 'vigentes'].map(k => <KpiCard key={k} label={METRICAS[k].l} valor={r[k] || 0} color="#6b6580" sub={pct(r[k] || 0, r.leads) + ' de los leads'} onClick={() => setMetrica(k)} activo={metrica === k} />)}
+          {['sin_contactar', 'nunca_contesto', 'respondio_algo', 'descalificados_hablados', 'descalificados_sin_hablar', 'no_asistio', 'sin_resultado', 'vigentes'].map(k => <KpiCard key={k} label={METRICAS[k].l} valor={r[k] || 0} color="#6b6580" sub={pct(r[k] || 0, r.leads) + ' de los leads'} onClick={() => setMetrica(k)} activo={metrica === k} />)}
         </div>
         {/* Dinero */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginTop: 10 }}>

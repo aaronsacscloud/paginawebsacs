@@ -553,11 +553,19 @@ export const POST: APIRoute = async ({ request }) => {
   const token_cancelar = generateToken();
   const token_reagendar = generateToken();
 
+  // DUEÑO DE LA REUNIÓN (decisión 2026-09-03): el consultor que la va a dar y a quien le nacen las tareas de la cadena
+  // (resultado → minuta → cotización). El anfitrión del calendario puede ser la cuenta del sistema; el dueño no.
+  let consultorId: string | null = null;
+  try {
+    if (contact_id) consultorId = (await supabase.from('contacts').select('owner_id').eq('id', contact_id).maybeSingle()).data?.owner_id || null;
+    if (!consultorId) consultorId = ((await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle()).data?.valor as any)?.consultor_default || null;
+  } catch { consultorId = null; }
   const { data: booking, error: bookErr } = await supabase
     .from('bookings')
     .insert({
       event_type_id: eventType.id,
       host_id: assignedHostId,
+      consultor_id: consultorId,
       contact_id,
       deal_id,
       fecha,

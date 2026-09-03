@@ -8,7 +8,7 @@ const GRUPOS: { k: string; l: string; desc: string; claves: string[] }[] = [
   { k: 'facturacion', l: 'Facturación', desc: 'Lo que hace falta para facturar sin frenar el cobro.', claves: ['rfc', 'razon_social', 'regimen', 'cp', 'uso_cfdi', 'domicilio_fiscal'] },
   { k: 'negocio', l: 'Negocio', desc: 'Con esto el agente habla del ramo del cliente y con casos de su giro.', claves: ['giro', 'sucursales', 'empleados', 'ciudad', 'sistema_actual', 'productos', 'ticket_promedio'] },
   { k: 'cuenta', l: 'Cuenta Sacs', desc: 'Sin la cuenta ligada no hay señales de uso ni salud.', claves: ['sacs_account', 'plan', 'cuenta'] },
-  { k: 'reunion', l: 'Reunión', desc: 'Qué pasó en la demo: decide si sigue el agente o el consultor.', claves: ['resultado_demo', 'resultado_reunion', 'asistio', 'siguiente_paso'] },
+  { k: 'reunion', l: 'Reunión y cotización', desc: 'La cadena después de la demo: resultado el mismo día, minuta en 24 h, cotización o decisión en 48 h; y cotizaciones dormidas.', claves: ['reunion', 'cotizacion', 'resultado_demo', 'asistio', 'siguiente_paso'] },
   { k: 'contacto', l: 'Contacto', desc: 'Cómo localizarlo y con quién hablamos.', claves: ['email', 'telefono', 'nombre', 'puesto', 'whatsapp'] },
 ];
 const grupoDe = (p: any) => { const c = String(p?.campo_clave || p?.campo || '').toLowerCase(); return GRUPOS.find(g => g.claves.some(k => c === k || c.includes(k)))?.k || 'otros'; };
@@ -25,7 +25,7 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, guardando, 
   // Clientes con al menos un dato en la subpestaña; la ficha muestra TODOS sus pendientes (de cualquier grupo).
   const clientes = useMemo(() => { const m = new Map<string, any[]>(); for (const x of visibles) { if (!m.has(x._k)) m.set(x._k, []); } for (const x of conGrupo) if (m.has(x._k)) m.get(x._k)!.push(x); return [...m.entries()].map(([k, xs]) => ({ k, nombre: xs[0]._n, xs })); }, [visibles, conGrupo]);
   const actual = clientes.find(c => c.k === sel) || clientes[0];
-  const grupos = [{ k: 'todos', l: 'Todos', desc: '' }, ...GRUPOS.filter(g => conteo[g.k]), ...(conteo.otros ? [{ k: 'otros', l: 'Otros', desc: '' }] : [])];
+  const grupos = [{ k: 'todos', l: 'Todos', desc: '' }, ...GRUPOS.filter(g => conteo[g.k]).sort((a, b) => (a.k === 'reunion' ? -1 : b.k === 'reunion' ? 1 : 0)), ...(conteo.otros ? [{ k: 'otros', l: 'Otros', desc: '' }] : [])];
   const gInfo = GRUPOS.find(g => g.k === grupo);
   const guardarTodo = async () => {
     if (!actual) return; setOk(''); let n = 0;
@@ -65,7 +65,9 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, guardando, 
                   {p.fuente && <div className="ti-burbuja sug" style={{ marginBottom: 6 }}><div className="ti-b-eti">Sugerencia · {p.fuente}</div>{p.valor}</div>}
                   {Array.isArray(p.opciones)
                     ? <div className="ti-res-chips">{p.opciones.map((o: string) => <button key={o} className={'ti-res-chip' + (v === o ? ' on' : '')} onClick={() => setVals(s => ({ ...s, [x.id]: o }))}>{(p.opciones_l || {})[o] || o}</button>)}</div>
-                    : <input className="ti-campo" style={{ margin: 0 }} placeholder={p.input || p.campo} value={v} onChange={e => setVals(s => ({ ...s, [x.id]: e.target.value }))} />}
+                    : p.multilinea
+                      ? <textarea className="ti-campo" rows={5} style={{ margin: 0, fontSize: 14 }} placeholder={p.input || p.campo} value={v} onChange={e => setVals(s => ({ ...s, [x.id]: e.target.value }))} />
+                      : <input className="ti-campo" style={{ margin: 0 }} placeholder={p.input || p.campo} value={v} onChange={e => setVals(s => ({ ...s, [x.id]: e.target.value }))} />}
                 </div>
               ); })}
             </div>

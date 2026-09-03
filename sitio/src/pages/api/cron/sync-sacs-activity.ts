@@ -294,7 +294,11 @@ export const GET: APIRoute = async ({ url, request }) => {
   // madrugada, junto con el barrido.
   if (avisos.length && ADMIN_WHATSAPP) {
     try {
-      await sendWhatsApp(ADMIN_WHATSAPP, '⚠️ CRM SACS — ' + avisos.length + ' alerta(s) nueva(s):\n\n' + avisos.slice(0, 8).join('\n\n') + (avisos.length > 8 ? '\n\n…y ' + (avisos.length - 8) + ' más en el CRM.' : ''));
+      /* Por `avisoInterno`: son alertas de operación con nombres de cuentas
+         de clientes dentro. Al chat equivocado sería filtrar datos de unos
+         clientes a otro. */
+      const { avisoInterno } = await import('../../../lib/whatsapp/interno');
+      await avisoInterno({ telefono: ADMIN_WHATSAPP, texto: '⚠️ CRM SACS — ' + avisos.length + ' alerta(s) nueva(s):\n\n' + avisos.slice(0, 8).join('\n\n') + (avisos.length > 8 ? '\n\n…y ' + (avisos.length - 8) + ' más en el CRM.' : '') });
     } catch { /* el resumen queda en activities de todos modos */ }
   }
   out.ms = transcurrido();

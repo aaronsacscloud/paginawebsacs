@@ -10,7 +10,7 @@
 import { supabase } from '../../supabase';
 
 type Captura =
-  | { tipo: 'texto'; placeholder: string }
+  | { tipo: 'texto'; placeholder: string; multilinea?: boolean }
   | { tipo: 'numero'; placeholder: string }
   | { tipo: 'opciones'; opciones: Record<string, string> };
 
@@ -18,18 +18,66 @@ export type CampoDef = {
   etiqueta: string;
   /** bloqueante (impide una acción) · comercial (con reloj) · higiene (lote) */
   clase: 'bloqueante' | 'comercial' | 'higiene';
-  tabla: 'contacts' | 'companies' | 'bookings';
+  tabla: 'contacts' | 'companies' | 'bookings' | 'quotes';
   columna: string;
   captura: Captura;
   nota: string;
+  /** Cada cuántos días se vuelve a pedir si sigue sin resolverse (default 30: una vez al mes). */
+  reintentoDias?: number;
+  /** Prioridad en el plan del día (default por clase: bloqueante 3, comercial 4, higiene 5). */
+  prioridad?: number;
+  /** Efectos colaterales permitidos al escribir (siguen siendo allow-list: solo lo que se declara aquí). */
+  despues?: (sujetoId: string, valor: string) => Promise<void>;
 };
 
 export const CAMPOS: Record<string, CampoDef> = {
+  // ── LA CADENA DESPUÉS DE LA REUNIÓN (decisión del dueño 2026-09-03): resultado el mismo día → minuta en 24 h →
+  //    interés/cotización en 48 h. Cada eslabón vencido se vuelve a pedir y escala (24 h al consultor, 48 h al dueño).
   reunion_resultado: {
-    etiqueta: 'Resultado de la reunión', clase: 'comercial',
+    etiqueta: 'Resultado de la reunión', clase: 'comercial', prioridad: 3, reintentoDias: 1,
     tabla: 'bookings', columna: 'estado',
-    captura: { tipo: 'opciones', opciones: { asistio: 'Se hizo — asistió', no_asistio: 'No llegó' } },
-    nota: 'Pasaron 24 h de la reunión y nadie registró qué pasó.',
+    captura: { tipo: 'opciones', opciones: { asistio: 'Se hizo: asistió', no_asistio: 'No llegó', cancelada: 'Se canceló' } },
+    nota: 'La reunión ya pasó y nadie registró qué pasó. Sin esto el agente no sabe si retirarse o insistir.',
+    despues: async (id, v) => {
+      const { data: b } = await supabase.from('bookings').select('contact_id').eq('id', id).maybeSingle();
+      if (!b?.contact_id) return;
+      if (v === 'asistio') await supabase.from('contacts').update({ estatus_lead: 'demo_hecha', estatus_lead_at: new Date().toISOString() }).eq('id', b.contact_id).in('estatus_lead', ['nuevo', 'contactado', 'respondio', 'agendado', 'sin_respuesta']);
+    },
+  },
+  reunion_minuta: {
+    etiqueta: 'Minuta de la reunión', clase: 'comercial', prioridad: 3, reintentoDias: 1,
+    tabla: 'bookings', columna: 'minuta',
+    captura: { tipo: 'texto', placeholder: 'Qué vimos, qué le dolió, qué prometimos, qué sigue…', multilinea: true },
+    nota: 'La reunión se hizo hace más de 24 h y no hay minuta. Sin minuta la cotización se arma de memoria y el agente no sabe qué pasó.',
+  },
+  reunion_interes: {
+    etiqueta: '¿Le interesó? (cotización)', clase: 'comercial', prioridad: 3, reintentoDias: 2,
+    tabla: 'contacts', columna: 'estatus_lead',
+    captura: { tipo: 'opciones', opciones: { cotizado: 'Sí le interesó: ya le coticé (o la mando hoy)', descartado: 'No le interesó' } },
+    nota: 'Pasaron 48 h de la minuta y no hay cotización ni una decisión. O se cotiza o se cierra con motivo.',
+    despues: async (id, v) => {
+      const ahora = new Date().toISOString();
+      if (v === 'descartado') await supabase.from('contacts').update({ lifecycle_stage: 'descalificado', descarte_categoria: 'sin_interes_post_demo', estatus_lead_at: ahora }).eq('id', id);
+      else await supabase.from('contacts').update({ estatus_lead_at: ahora }).eq('id', id);
+    },
+  },
+  cotizacion_estado: {
+    etiqueta: 'Cotización sin movimiento: ¿sigue viva?', clase: 'comercial', prioridad: 4, reintentoDias: 7,
+    tabla: 'quotes', columna: 'estado',
+    captura: { tipo: 'opciones', opciones: { sent: 'Sigue viva, la estoy trabajando', suspended: 'Suspendida por ahora', rejected: 'Sin interés' } },
+    nota: 'Lleva más de 30 días sin movimiento. Mientras no cambies el estatus, se te vuelve a pedir cada semana.',
+    despues: async (id, v) => {
+      const ahora = new Date().toISOString();
+      const { data: q } = await supabase.from('quotes').select('contact_id').eq('id', id).maybeSingle();
+      if (v === 'rejected') {
+        await supabase.from('deals').update({ stage: 'cerrada_perdida', motivo_perdida: 'sin movimiento 30+ días', closed_at: ahora, stage_changed_at: ahora }).eq('quote_id', id).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")');
+        if (q?.contact_id) await supabase.from('contacts').update({ estatus_lead: 'descartado', estatus_lead_at: ahora, descarte_categoria: 'cotizacion_sin_interes' }).eq('id', q.contact_id).neq('lifecycle_stage', 'cliente');
+      } else if (v === 'suspended') {
+        await supabase.from('deals').update({ probabilidad: 5, stage_changed_at: ahora, proximo_paso: 'Cotización suspendida: revisar en un mes' }).eq('quote_id', id).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")');
+      } else {
+        await supabase.from('quotes').update({ updated_at: ahora }).eq('id', id);   // «sigue viva» reinicia el reloj de 30 días
+      }
+    },
   },
   rfc: {
     etiqueta: 'RFC', clase: 'higiene',
@@ -78,16 +126,23 @@ export async function escribirDato(clave: string, sujetoId: string, valor: any) 
   const v = def.captura.tipo === 'numero' ? Number(valor) : String(valor).trim();
   if (def.captura.tipo === 'numero' && !Number.isFinite(v as number)) return { error: 'Debe ser un número' };
   const { error } = await supabase.from(def.tabla).update({ [def.columna]: v }).eq('id', sujetoId);
-  return error ? { error: error.message } : { ok: true };
+  if (error) return { error: error.message };
+  if (def.despues) { try { await def.despues(sujetoId, String(v)); } catch (e: any) { console.error('[campos] despues', clave, e?.message || e); } }
+  return { ok: true };
 }
 
 /** ¿Ya se pidió este campo para este sujeto hace poco? (no se pregunta dos
  *  veces la misma cosa el mismo mes, aunque siga vacío). */
 async function yaPedido(clave: string, sujeto: string) {
+  const dias = CAMPOS[clave]?.reintentoDias ?? 30;
+  // Pendiente = no se vuelve a pedir; resuelta/omitida hace poco = tampoco (se respeta el reintento).
+  const { data: pend } = await supabase.from('ti_tareas').select('id').eq('estado', 'pendiente')
+    .filter('payload->>campo_clave', 'eq', clave).filter('payload->>sujeto', 'eq', sujeto).limit(1);
+  if ((pend || []).length) return true;
   const { data } = await supabase.from('ti_tareas').select('id')
     .filter('payload->>campo_clave', 'eq', clave)
     .filter('payload->>sujeto', 'eq', sujeto)
-    .gt('created_at', new Date(Date.now() - 30 * 86400e3).toISOString())
+    .gt('created_at', new Date(Date.now() - dias * 86400e3).toISOString())
     .limit(1);
   return !!(data || []).length;
 }
@@ -102,7 +157,7 @@ async function crearDeuda(clave: string, sujeto: string, extra: {
   const cap: any = def.captura;
   await supabase.from('ti_tareas').insert({
     contact_id: extra.contact_id || null, company_id: extra.company_id || null, owner_id: extra.owner_id || null,
-    familia: 'higiene', tipo: 'dato', prioridad: P_CLASE[def.clase],
+    familia: 'higiene', tipo: 'dato', prioridad: def.prioridad ?? P_CLASE[def.clase],
     vence_at: new Date().toISOString(), origen: 'deuda', lote_tipo: def.clase,
     payload: {
       campo_clave: clave, sujeto,
@@ -110,7 +165,7 @@ async function crearDeuda(clave: string, sujeto: string, extra: {
       porque: extra.porque || def.nota,
       campo: def.etiqueta,
       // la forma que el panel ya pinta:
-      ...(cap.tipo === 'opciones' ? { opciones: Object.keys(cap.opciones), opciones_l: cap.opciones } : { input: cap.placeholder }),
+      ...(cap.tipo === 'opciones' ? { opciones: Object.keys(cap.opciones), opciones_l: cap.opciones } : { input: cap.placeholder, ...(cap.multilinea ? { multilinea: true } : {}) }),
       ...(extra.valor_sugerido ? { valor: extra.valor_sugerido, fuente: extra.fuente || 'sugerido' } : {}),
     },
   });
@@ -121,23 +176,71 @@ async function crearDeuda(clave: string, sujeto: string, extra: {
 export async function detectarDeudas() {
   const res: any = { deuda_reuniones: 0, deuda_facturacion: 0, deuda_sacs: 0, deuda_lead: 0 };
 
-  // 1) Reunión pasada sin resultado (24 h) — el ejemplo original del dueño.
+  // 1) LA CADENA DE LA REUNIÓN. El dueño de cada eslabón es el consultor de la reunión (consultor_id), si no el
+  //    owner del contacto, si no el consultor por default de la config.
+  const cfgFila = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
+  const consultorDefault = (cfgFila.data?.valor as any)?.consultor_default || null;
+  const ahoraCdmx = new Date(Date.now() - 6 * 3600e3); const hoy = ahoraCdmx.toISOString().slice(0, 10); const horaAhora = ahoraCdmx.toISOString().slice(11, 16);
+  const duenoDe = (r: any, c: any) => r.consultor_id || c?.owner_id || consultorDefault;
+  // 1a. Pasó la reunión (ayer, o hoy y ya terminó) y sigue en agendada/confirmada/reagendada → RESULTADO hoy mismo.
   const { data: reus } = await supabase.from('bookings')
-    .select('id, fecha, invitee_nombre, contact_id, contacts(id, nombre, owner_id, company_id)')
-    .eq('estado', 'confirmada').not('contact_id', 'is', null)
-    // «24 h después»: la reunión de AYER cuenta hoy — el corte es el día CDMX.
-    .lt('fecha', new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10)).limit(10);
+    .select('id, fecha, hora_fin, estado, consultor_id, invitee_nombre, contact_id, contacts(id, nombre, owner_id, company_id)')
+    .in('estado', ['agendada', 'confirmada', 'reagendada']).not('contact_id', 'is', null)
+    .lte('fecha', hoy).order('fecha', { ascending: false }).limit(40);
   for (const r of reus || []) {
+    if (r.fecha === hoy && String(r.hora_fin || '23:59').slice(0, 5) > horaAhora) continue;   // todavía no termina
     if (await yaPedido('reunion_resultado', String(r.id))) continue;
     const c: any = (r as any).contacts || {};
+    const n = (c.nombre || r.invitee_nombre || '').split(/\s+/)[0] || 'el lead';
     await crearDeuda('reunion_resultado', String(r.id), {
-      contact_id: r.contact_id, company_id: c.company_id, owner_id: c.owner_id,
+      contact_id: r.contact_id, company_id: c.company_id, owner_id: duenoDe(r, c),
       quien: c.nombre || r.invitee_nombre || 'la reunión',
-      instruccion: `¿Se hizo la reunión con ${(c.nombre || r.invitee_nombre || '').split(/\s+/)[0] || 'el lead'}?`,
-      porque: `Era el ${r.fecha} y nadie registró qué pasó — sin esto el seguimiento no sabe qué sigue.`,
+      instruccion: `¿Qué pasó en la reunión con ${n}?`,
+      porque: `Era el ${r.fecha}${r.hora_fin ? ` (terminaba ${String(r.hora_fin).slice(0, 5)})` : ''}. El resultado se registra el mismo día: de él depende si el agente se retira o insiste.`,
     });
     res.deuda_reuniones++;
   }
+  // 1b. Asistió y no hay minuta 24 h después → MINUTA.
+  const { data: sinMinuta } = await supabase.from('bookings')
+    .select('id, fecha, hora_fin, updated_at, consultor_id, invitee_nombre, contact_id, contacts(id, nombre, owner_id, company_id)')
+    .eq('estado', 'asistio').is('minuta', null).not('contact_id', 'is', null)
+    .gte('fecha', new Date(Date.now() - 45 * 86400e3).toISOString().slice(0, 10)).lt('updated_at', new Date(Date.now() - 24 * 3600e3).toISOString()).limit(40);
+  for (const r of sinMinuta || []) {
+    if (await yaPedido('reunion_minuta', String(r.id))) continue;
+    const c: any = (r as any).contacts || {}; const n = (c.nombre || r.invitee_nombre || '').split(/\s+/)[0] || 'el lead';
+    await crearDeuda('reunion_minuta', String(r.id), { contact_id: r.contact_id, company_id: c.company_id, owner_id: duenoDe(r, c), quien: c.nombre || r.invitee_nombre || 'la reunión', instruccion: `Minuta de la reunión con ${n} (${r.fecha})`, porque: 'Se hizo hace más de 24 h y no hay minuta. Escríbela aquí mismo: qué vimos, qué le dolió, qué prometimos y qué sigue.' });
+    res.deuda_minutas = (res.deuda_minutas || 0) + 1;
+  }
+  // 1c. Con minuta desde hace 48 h, sin cotización posterior y sin decisión → ¿LE INTERESÓ?
+  const { data: conMinuta } = await supabase.from('bookings')
+    .select('id, fecha, updated_at, consultor_id, invitee_nombre, contact_id, contacts(id, nombre, owner_id, company_id, estatus_lead, lifecycle_stage)')
+    .eq('estado', 'asistio').not('minuta', 'is', null).not('contact_id', 'is', null)
+    .gte('fecha', new Date(Date.now() - 45 * 86400e3).toISOString().slice(0, 10)).lt('updated_at', new Date(Date.now() - 48 * 3600e3).toISOString()).limit(40);
+  for (const r of conMinuta || []) {
+    const c: any = (r as any).contacts || {};
+    if (!c.id || ['cotizado', 'descartado'].includes(c.estatus_lead) || ['cliente', 'descalificado'].includes(c.lifecycle_stage)) continue;
+    const { data: q } = await supabase.from('quotes').select('id').eq('contact_id', c.id).not('estado', 'in', '("deleted","plantilla")').gte('created_at', `${r.fecha}T00:00:00`).limit(1);
+    if ((q || []).length) continue;
+    if (await yaPedido('reunion_interes', String(c.id))) continue;
+    const n = (c.nombre || r.invitee_nombre || '').split(/\s+/)[0] || 'el lead';
+    await crearDeuda('reunion_interes', String(c.id), { contact_id: c.id, company_id: c.company_id, owner_id: duenoDe(r, c), quien: c.nombre || 'el lead', instruccion: `${n}: ¿le interesó? Han pasado 48 h de la minuta sin cotización`, porque: 'Si le interesó, hoy sale la cotización; si no, se cierra con motivo y el lead deja de estorbar en el embudo.' });
+    res.deuda_interes = (res.deuda_interes || 0) + 1;
+  }
+  // 1d. COTIZACIÓN SIN MOVIMIENTO 30 DÍAS (enviada, aceptada sin pagar o vencida) → se pide cada 7 días hasta que cambie.
+  const { data: dormidas } = await supabase.from('quotes')
+    .select('id, numero, total, estado, created_at, updated_at, contact_id, contacts(id, nombre, owner_id, company_id, lifecycle_stage)')
+    .in('estado', ['sent', 'accepted', 'expired']).not('contact_id', 'is', null)
+    .lt('created_at', new Date(Date.now() - 30 * 86400e3).toISOString()).lt('updated_at', new Date(Date.now() - 30 * 86400e3).toISOString()).limit(60);
+  for (const q of dormidas || []) {
+    const c: any = (q as any).contacts || {}; if (!c.id || c.lifecycle_stage === 'cliente') continue;
+    if (await yaPedido('cotizacion_estado', String(q.id))) continue;
+    const dias = Math.floor((Date.now() - Date.parse(q.updated_at || q.created_at)) / 86400e3);
+    const n = (c.nombre || '').split(/\s+/)[0] || 'el lead';
+    await crearDeuda('cotizacion_estado', String(q.id), { contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id || consultorDefault, quien: c.nombre || 'el lead', instruccion: `Cotización #${q.numero || 's/n'} de ${n}: ${dias} días sin movimiento`, porque: `$${Math.round(Number(q.total) || 0).toLocaleString('es-MX')} en estado «${q.estado}» desde hace ${dias} días. Decide: sigue viva, suspendida o sin interés. Se vuelve a pedir cada semana hasta que cambies el estatus.` });
+    res.deuda_cotizaciones = (res.deuda_cotizaciones || 0) + 1;
+  }
+  // 1e. ESCALAMIENTO: deuda comercial pendiente > 24 h → aviso al consultor; > 48 h (segundo aviso) → también al dueño.
+  try { res.escaladas = await escalarDeudas(); } catch (e: any) { console.error('[campos] escalar', e?.message || e); }
 
   // 2) Cliente activo sin RFC / razón social (facturación) y sin cuenta SACS.
   const { data: emps } = await supabase.from('companies')
@@ -175,4 +278,23 @@ export async function detectarDeudas() {
   }
 
   return res;
+}
+
+
+/** Aviso en Sistema (campana) cuando un eslabón de la cadena vence: 24 h → consultor, 48 h y cada 24 h más → también el dueño. */
+async function escalarDeudas(): Promise<number> {
+  const { data: pend } = await supabase.from('ti_tareas').select('id, contact_id, owner_id, created_at, escalado_at, escalaciones, payload')
+    .eq('estado', 'pendiente').eq('tipo', 'dato').eq('lote_tipo', 'comercial').lt('created_at', new Date(Date.now() - 24 * 3600e3).toISOString()).limit(100);
+  let n = 0;
+  const { avisoSistema } = await import('./agente');
+  for (const t of pend || []) {
+    const desde = Date.parse(t.escalado_at || t.created_at);
+    if (Date.now() - desde < 24 * 3600e3) continue;
+    const p: any = t.payload || {}; const veces = (t.escalaciones || 0) + 1;
+    const horas = Math.round((Date.now() - Date.parse(t.created_at)) / 3600e3);
+    await avisoSistema({ tipo: 'sistema_dato', nivel: veces >= 2 ? 'urgente' : 'alerta', clave: `dato:${t.id}:${veces}`, titulo: `${veces === 1 ? 'Falta un dato' : `${veces}º aviso: falta un dato`} · ${p.instruccion || p.campo}`, detalle: `${p.porque || ''} Lleva ${horas} h sin capturarse.`, que_hacer: 'Trabajo inteligente → Datos → Reunión y cotización.', contact_id: t.contact_id, solo_dueno: veces >= 2 } as any).catch(() => {});
+    await supabase.from('ti_tareas').update({ escalado_at: new Date().toISOString(), escalaciones: veces }).eq('id', t.id);
+    n++;
+  }
+  return n;
 }

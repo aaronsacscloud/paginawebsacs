@@ -21,7 +21,18 @@ export const GET: APIRoute = async ({ request }) => {
   if (cfg.agente_activo === true && ultimoTick && ahora - ultimoTick > 10 * 60e3) {
     const nueva = await notificar({ clave: `sistema_latido:${hoyKey}`, tipo: 'sistema_latido', nivel: 'urgente', titulo: `El agente lleva ${res.ultimo_tick_min} min sin correr`, detalle: 'El observador (cron de cada 2 min) no ha marcado un tick. Mientras, nadie contesta a los leads ni salen los envíos aprobados.', metadata: { origen: 'agente', que_hacer: 'Revisa Vercel → Crons y el último deploy; si el cron corre pero falla, mira los logs de /api/cron/ti-observador.' } });
     res.aviso_tick = nueva;
-    if (nueva) { try { const { enviarTexto } = await import('../../../lib/whatsapp/kapso-api'); const tel = String(cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || '').replace(/\D/g, ''); if (tel) await enviarTexto(tel, `Aviso del sistema: el agente lleva ${res.ultimo_tick_min} min sin correr. Revisa Vercel → Crons.`); } catch { /* fuera de ventana */ } }
+    /* Por `avisoInterno`, que NO deja salir un aviso técnico a un número que no
+       sea del equipo. Este mensaje se coló al chat de un contacto el 2-sep
+       porque el destino salía de la config y nadie comprobaba de quién era.
+       Y el texto dice lo que CUESTA, no solo dónde mirar: «revisa Vercel» no
+       explica por qué urge. */
+    if (nueva) {
+      const { avisoInterno } = await import('../../../lib/whatsapp/interno');
+      res.aviso_wa = await avisoInterno({
+        telefono: cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || null,
+        texto: `El agente lleva ${res.ultimo_tick_min} min sin correr: mientras tanto nadie contesta a los leads ni salen los envíos aprobados. Revisa Vercel → Crons y el último deploy.`,
+      });
+    }
   }
   if (habil) {
     const { data: ult } = await supabase.from('wa_mensajes').select('created_at').eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(1);

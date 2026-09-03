@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     nunca_contesto: n(r => r.nunca_contesto && r.msgs_out > 0),
     sin_contactar: n(r => r.msgs_out === 0 && r.llamada_max_seg === 0 && r.msgs_in === 0),
     descalificados: n(r => r.descalificado), descalificados_hablados: n(r => r.descalificado && r.conversacion_real), descalificados_sin_hablar: n(r => r.descalificado && !r.conversacion_real),
-    agendaron: n(r => r.citas_total > 0), completadas: n(r => r.citas_asistio > 0), no_asistio: n(r => r.citas_no_asistio > 0 && r.citas_asistio === 0), vigentes: n(r => r.citas_vigentes > 0),
+    agendaron: n(r => r.citas_total > 0), completadas: n(r => r.citas_asistio > 0), no_asistio: n(r => r.citas_no_asistio > 0 && r.citas_asistio === 0), vigentes: n(r => r.citas_vigentes > 0), sin_resultado: n(r => r.citas_sin_resultado > 0),
     cotizacion: n(r => r.cot_total > 0), vendidos: n(r => r.pagado > 0 || r.cot_pagadas > 0 || r.suscripciones > 0),
     monto_vendido: rows.reduce((s, r) => s + Number(r.pagado || 0), 0), mrr_activo: rows.reduce((s, r) => s + Number(r.mrr_activo || 0), 0),
     cot_abierto_monto: rows.reduce((s, r) => s + Number(r.cot_abierto_monto || 0), 0),

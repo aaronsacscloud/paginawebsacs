@@ -44,10 +44,17 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   const email = await notify({ channel: 'email', to: getSalesInbox(), template: 'arr_weekly_summary', data }).catch(() => ({ ok: false }));
 
-  let wa = { sent: false };
+  /* Por `avisoInterno`: un resumen de ARR —cuánto factura la empresa, quién
+     está en riesgo— en el chat de un cliente sería mucho peor que técnico. Si
+     el número configurado no es del equipo, no sale y queda avisado. */
+  let wa: any = { sent: false };
   if (ADMIN_WHATSAPP) {
-    wa = await sendWhatsApp(ADMIN_WHATSAPP,
-      `📊 SACS ARR semanal\n\nARR activo: $${Math.round(k.arr_activo).toLocaleString('es-MX')} (${sum.meta?.progreso_pct || 0}% de la meta)\nCobros 7d: ${(pagos || []).length} por $${Math.round(cobrosSemana).toLocaleString('es-MX')}\nVencidas: ${v.length} ($${Math.round(vencMonto).toLocaleString('es-MX')})\nEn riesgo: ${riesgoN} clientes ($${Math.round(r?.arr_en_riesgo || 0).toLocaleString('es-MX')} ARR)\n\n${SITE}/admin/crm?tab=suscripciones`).catch(() => ({ sent: false }));
+    const { avisoInterno } = await import('../../../lib/whatsapp/interno');
+    /* `rWa`, no `r`: ya hay una `r` en este alcance con los datos de riesgo
+       y el texto del propio mensaje la usa. */
+    const rWa = await avisoInterno({ telefono: ADMIN_WHATSAPP, texto:
+      `📊 SACS ARR semanal\n\nARR activo: $${Math.round(k.arr_activo).toLocaleString('es-MX')} (${sum.meta?.progreso_pct || 0}% de la meta)\nCobros 7d: ${(pagos || []).length} por $${Math.round(cobrosSemana).toLocaleString('es-MX')}\nVencidas: ${v.length} ($${Math.round(vencMonto).toLocaleString('es-MX')})\nEn riesgo: ${riesgoN} clientes ($${Math.round(r?.arr_en_riesgo || 0).toLocaleString('es-MX')} ARR)\n\n${SITE}/admin/crm?tab=suscripciones` });
+    wa = { sent: rWa.enviado, motivo: rWa.motivo };
   }
 
   return new Response(JSON.stringify({ ok: true, email_ok: (email as any)?.ok, wa_ok: (wa as any)?.sent, data }, null, 2),
