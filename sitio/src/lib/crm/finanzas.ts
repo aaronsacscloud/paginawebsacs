@@ -3,7 +3,7 @@
 // mes), lo que hay que pagar (fin_gastos aplicables al mes + comisiones calculadas por el sistema) y la utilidad.
 // El cierre congela esos números en fin_cierres; el reporte anual mezcla cierres con meses vivos.
 import { supabase } from '../supabase';
-import { planDeCotizacion } from '../quotes/plan';
+import { parcialidadesDelMes } from '../quotes/plan';
 
 export type Mes = string; // 'YYYY-MM'
 export const mesDe = (d = new Date()) => new Date(d.getTime() - 6 * 3600e3).toISOString().slice(0, 7);
@@ -62,28 +62,7 @@ export async function resumenMes(m: Mes) {
   // este mes es tan «por cobrar» como una renovación. Vivía solo en Cobranza
   // (`meta.plan_pagos` vía planDeCotizacion) y Finanzas no la veía: el mes de
   // Ruben's se quedaba $30,000 corto.
-  const parcialidades: any[] = [];
-  const conPlan = new Set<string>();
-  for (const q of acept || []) {
-    const plan = planDeCotizacion(q, abonadoCot.get(q.id) || 0, hoyISO);
-    if (!plan.length) continue;
-    conPlan.add(q.id);
-    for (const x of plan) {
-      // Las de este mes, y las VENCIDAS de meses anteriores: ese dinero sigue
-      // sin entrar y ya debía haber entrado, así que se cobra ahora.
-      if (x.estado !== 'pendiente') continue;
-      const delMes = x.fecha.slice(0, 7) === m;
-      const vencidaPrevia = x.vencida && x.fecha.slice(0, 7) < m;
-      if (!delMes && !vencidaPrevia) continue;
-      parcialidades.push({
-        id: x.id, quote_id: q.id, numero: q.numero, tipo: 'parcialidad',
-        companies: (q as any).companies, contacts: (q as any).contacts,
-        nombre_plan: `${q.numero || 'Cotización'} · ${x.concepto}`,
-        ciclo: `${x.numero} de ${x.total}`, proxima_factura: x.fecha,
-        monto: x.monto, vencida: x.vencida, mes_original: x.fecha.slice(0, 7),
-      });
-    }
-  }
+  const { filas: parcialidades, conPlan } = parcialidadesDelMes(acept || [], abonadoCot, m, hoyISO);
   // Con plan, la cotización entra parcialidad por parcialidad: dejarla también
   // completa aquí contaría el mismo dinero dos veces.
   const aceptadas = (acept || []).filter(q => !conPlan.has(q.id))

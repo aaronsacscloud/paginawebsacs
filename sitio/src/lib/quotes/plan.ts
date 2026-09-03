@@ -8,7 +8,7 @@
 //
 // La regla de aplicación es la única que no inventa nada: sin recibo por
 // parcialidad, el dinero abonado cubre las exhibiciones EN ORDEN DE FECHA.
-import { parseMeta } from './meta';
+import { parseMeta } from './meta.ts';   // con extensión: así el contrato corre con `node` sin bundler
 
 export type Exhibicion = {
   id: string;
@@ -64,4 +64,40 @@ export function planDeCotizacion(quote: any, abonado: number, hoy: string): Exhi
 export function exhibicionExigible(plan: Exhibicion[]): Exhibicion | null {
   const pend = plan.filter(x => x.estado === 'pendiente');
   return pend.find(x => x.vencida) || pend[0] || null;
+}
+
+/**
+ * Las parcialidades que hay que COBRAR en un mes.
+ *
+ * Dos reglas, y la segunda es la que se olvida: entran las que vencen en el
+ * mes, y también las VENCIDAS de meses anteriores — ese dinero sigue sin
+ * entrar y ya debía haber entrado, así que se persigue ahora, no se pierde al
+ * pasar la hoja del calendario.
+ *
+ * @param quotes    cotizaciones aceptadas (necesitan `id`, `numero`, `notas`)
+ * @param abonado   cuánto se lleva pagado de cada una, por id
+ * @param m         'YYYY-MM'
+ * @param hoy       'YYYY-MM-DD'
+ */
+export function parcialidadesDelMes(quotes: any[], abonado: Map<string, number>, m: string, hoy: string) {
+  const filas: any[] = [];
+  const conPlan = new Set<string>();
+  for (const q of quotes || []) {
+    const plan = planDeCotizacion(q, abonado.get(q.id) || 0, hoy);
+    if (!plan.length) continue;
+    conPlan.add(q.id);
+    for (const x of plan) {
+      if (x.estado !== 'pendiente') continue;
+      const mes = x.fecha.slice(0, 7);
+      if (mes !== m && !(x.vencida && mes < m)) continue;
+      filas.push({
+        id: x.id, quote_id: q.id, numero: q.numero, tipo: 'parcialidad',
+        companies: q.companies, contacts: q.contacts,
+        nombre_plan: `${q.numero || 'Cotización'} · ${x.concepto}`,
+        ciclo: `${x.numero} de ${x.total}`, proxima_factura: x.fecha,
+        monto: x.monto, vencida: x.vencida, mes_original: mes,
+      });
+    }
+  }
+  return { filas, conPlan };
 }
