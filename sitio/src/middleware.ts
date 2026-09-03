@@ -40,6 +40,9 @@ const ADMIN_EXACT = new Set([
   '/api/partners/set-password',
   '/api/partners/recover-access',
   '/api/partners/onboarding',
+  // Revisar el brief de un proyecto (aprobar/devolver una etapa) lo hace
+  // Sacs, no el cliente: el resto de /api/proyecto/* sí es público por token.
+  '/api/proyecto/revisar',
   '/api/get-leads',
   '/api/update-lead',
   '/api/add-note',
@@ -128,6 +131,10 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
   { pre: '/api/crm/consultoria', sec: 'acompanamiento' },
   { pre: '/api/crm/expansion', sec: 'acompanamiento' },
   { pre: '/api/crm/salud', sec: 'acompanamiento' },
+  // Aprobar las etapas del brief de un proyecto es entrega/acompañamiento,
+  // no configuración: sin esta línea caía en el fallback 'config' y quien
+  // lleva la implementación no podría cerrar una etapa.
+  { pre: '/api/proyecto/', sec: 'acompanamiento' },
   // Automatización
   { pre: '/api/automations/', sec: 'automatizacion' },
   { pre: '/api/agents/', sec: 'automatizacion' },

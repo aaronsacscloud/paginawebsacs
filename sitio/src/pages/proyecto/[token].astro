@@ -1,0 +1,1189 @@
+---
+// Brief de proyecto por etapas. El cliente entra con un link — sin cuenta, sin
+// contraseña — firma la portada y a partir de ahí contesta una etapa a la vez.
+// Sacs aprueba cada etapa y esa aprobación abre la siguiente.
+//
+// La portada se pinta en el servidor (es un documento y tiene que verse
+// completa aunque el JS tarde). Las etapas se pintan en el navegador desde
+// /api/proyecto/estado, que es la única fuente de verdad de su estado.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { briefPorToken, etapasDe } from '../../lib/proyecto/store';
+import { getSessionFromRequest } from '../../lib/auth/session';
+
+export const prerender = false;
+
+const { token } = Astro.params;
+const brief = await briefPorToken(token || '');
+if (!brief) return Astro.redirect('/404');
+await etapasDe(brief.id);
+
+// Si quien abre el link es alguien de Sacs con sesión, la misma página le
+// muestra los controles de revisión. Un solo documento para los dos lados:
+// el cliente ve lo suyo, nosotros vemos además el botón de aprobar.
+const sesion = await getSessionFromRequest(Astro.request);
+const esSacs = !!sesion && (sesion.role === 'founder' || sesion.role === 'cs');
+
+const r: any = brief.resumen || {};
+const firmado = !!brief.firmado_at;
+const fechaFirma = brief.firmado_at
+  ? new Date(brief.firmado_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '';
+---
+
+<BaseLayout
+  title={`Brief de proyecto · ${brief.cliente}`}
+  description={`Documento de trabajo del proyecto ${brief.proyecto}`}
+  bareLayout={true}
+>
+  <div class="pb" data-token={brief.token} data-firmado={firmado ? '1' : ''} data-sacs={esSacs ? '1' : ''}>
+
+    <!-- ─────────────────────────── Encabezado ─────────────────────────── -->
+    <header class="pb-top">
+      <div class="pb-top-in">
+        <div class="pb-marca">
+          <img src="/images/sacs-wordmark.png" alt="Sacs" width="74" />
+          <span class="pb-top-sep"></span>
+          <span class="pb-top-cli">{brief.cliente}</span>
+        </div>
+        <div class="pb-top-est" id="pb-avance">Documento de trabajo</div>
+      </div>
+      {esSacs && (
+        <div class="pb-modo-sacs">
+          Estás viendo este brief como <b>Sacs</b>. Puedes aprobar o devolver
+          cada etapa; el cliente no ve estos controles.
+        </div>
+      )}
+    </header>
+
+    <main class="pb-hoja">
+
+      <!-- ── Portada ── -->
+      <section class="pb-portada">
+        <div class="pb-eyebrow">Brief de proyecto</div>
+        <h1>{brief.proyecto}</h1>
+        {r.entrada && <p class="pb-lede" set:html={r.entrada}></p>}
+
+        <dl class="pb-meta">
+          <div><dt>Cliente</dt><dd>{brief.cliente}</dd></div>
+          {brief.contacto && <div><dt>Contacto</dt><dd>{brief.contacto}</dd></div>}
+          {brief.quote_numero && <div><dt>Cotización</dt><dd>{brief.quote_numero}</dd></div>}
+          {r.plazo && <div><dt>Plazo</dt><dd>{r.plazo}</dd></div>}
+        </dl>
+      </section>
+
+      <!-- ── El acuerdo ── -->
+      {r.alcance?.length && (
+        <section class="pb-sec">
+          <div class="pb-sec-h">
+            <span class="pb-num">01</span>
+            <h2>Lo que se contrató</h2>
+          </div>
+          <ul class="pb-lista">
+            {r.alcance.map((a: string) => <li>{a}</li>)}
+          </ul>
+
+          {r.inversion && (
+            <div class="pb-dinero">
+              <div class="pb-dinero-cifra">
+                <span class="pb-dinero-label">Inversión</span>
+                <strong>{r.inversion.total}</strong>
+                <span class="pb-dinero-mon">{r.inversion.moneda}</span>
+              </div>
+              {r.pagos?.length && (
+                <table class="pb-pagos">
+                  <tbody>
+                    {r.pagos.map((p: any) => (
+                      <tr><td>{p.fecha}</td><td class="pb-num-cell">{p.monto}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      <!-- ── Responsabilidades ── -->
+      {(r.hace_sacs?.length || r.hace_cliente?.length) && (
+        <section class="pb-sec">
+          <div class="pb-sec-h">
+            <span class="pb-num">02</span>
+            <h2>Quién hace qué</h2>
+          </div>
+          <div class="pb-dos">
+            {r.hace_sacs?.length && (
+              <div class="pb-col">
+                <h3>Sacs</h3>
+                <ul class="pb-lista pb-lista-sm">{r.hace_sacs.map((x: string) => <li>{x}</li>)}</ul>
+              </div>
+            )}
+            {r.hace_cliente?.length && (
+              <div class="pb-col pb-col-oro">
+                <h3>{brief.cliente}</h3>
+                <ul class="pb-lista pb-lista-sm">{r.hace_cliente.map((x: string) => <li>{x}</li>)}</ul>
+              </div>
+            )}
+          </div>
+          {r.nota_tiempo && <p class="pb-aviso">{r.nota_tiempo}</p>}
+        </section>
+      )}
+
+      <!-- ── Cómo trabajamos ── -->
+      <section class="pb-sec">
+        <div class="pb-sec-h">
+          <span class="pb-num">03</span>
+          <h2>Cómo se llena este brief</h2>
+        </div>
+        <p class="pb-parr">
+          El brief va por etapas. Se abre una a la vez: ustedes la contestan,
+          la envían, Sacs la revisa y —cuando queda completa— la aprueba. Esa
+          aprobación abre la siguiente. Nada se pierde: lo que escriban se
+          guarda solo conforme lo escriben, y pueden volver otro día con el
+          mismo link.
+        </p>
+        <p class="pb-parr">
+          Se hace así por una razón práctica: si las cinco etapas se abren
+          juntas, se contestan a medias y el proyecto arranca sobre supuestos.
+          Una etapa aprobada es una decisión cerrada que ya no se rediscute.
+        </p>
+      </section>
+
+      <!-- ── Firma ── -->
+      <section class="pb-firma-sec" id="firma">
+        <div class="pb-sec-h">
+          <span class="pb-num">04</span>
+          <h2>Firma de conformidad</h2>
+        </div>
+
+        {firmado ? (
+          <div class="pb-firmado">
+            <div class="pb-firmado-check">✓</div>
+            <div>
+              <div class="pb-firmado-t">Brief firmado</div>
+              <div class="pb-firmado-d">
+                {brief.firmado_por}{brief.firmado_puesto ? ` · ${brief.firmado_puesto}` : ''} · {fechaFirma}
+              </div>
+            </div>
+            {brief.firma_png && <img class="pb-firmado-img" src={brief.firma_png} alt="Firma" />}
+          </div>
+        ) : (
+          <div class="pb-firma-caja">
+            <p class="pb-parr">
+              Al firmar confirman que el alcance, la inversión y los tiempos de
+              arriba son los acordados, y que a partir de hoy corre el brief.
+              La firma no sustituye a la cotización aceptada: la acompaña.
+            </p>
+            <div class="pb-campos">
+              <label>
+                <span>Nombre completo</span>
+                <input type="text" id="f-nombre" value={brief.contacto || ''} autocomplete="name" />
+              </label>
+              <label>
+                <span>Puesto</span>
+                <input type="text" id="f-puesto" placeholder="Ej. Director general" />
+              </label>
+              <label>
+                <span>Correo</span>
+                <input type="email" id="f-email" value={brief.email || ''} autocomplete="email" />
+              </label>
+            </div>
+            <div class="pb-firma-lienzo-w">
+              <span class="pb-firma-hint">Firma con el dedo o el mouse</span>
+              <canvas id="f-canvas" class="pb-firma-lienzo"></canvas>
+              <div class="pb-firma-linea"></div>
+            </div>
+            <div class="pb-firma-acc">
+              <button type="button" class="pb-btn-tenue" id="f-limpiar">Borrar firma</button>
+              <button type="button" class="pb-btn" id="f-firmar">Firmar y comenzar</button>
+            </div>
+            <div class="pb-error" id="f-error" hidden></div>
+          </div>
+        )}
+      </section>
+
+      <!-- ── Etapas ── -->
+      <section class="pb-sec" id="etapas">
+        <div class="pb-sec-h">
+          <span class="pb-num">05</span>
+          <h2>Las etapas</h2>
+        </div>
+        <div id="pb-etapas" class="pb-etapas">
+          <div class="pb-cargando">Cargando…</div>
+        </div>
+      </section>
+
+      <!-- ── Bitácora ── -->
+      <section class="pb-sec pb-sec-log" id="bitacora" hidden>
+        <div class="pb-sec-h">
+          <span class="pb-num">06</span>
+          <h2>Bitácora</h2>
+        </div>
+        <ol class="pb-log" id="pb-log"></ol>
+      </section>
+
+      <footer class="pb-pie">
+        <div>Sacscloud · Documento de trabajo del proyecto</div>
+        <div class="pb-pie-sm">
+          Este link es privado. Quien lo tenga puede leer y contestar el brief —
+          no lo compartan fuera del equipo.
+        </div>
+      </footer>
+    </main>
+
+    <div class="pb-guardado" id="pb-guardado" hidden>Guardado</div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+.pb {
+  --tinta: #14181D;
+  --tinta-suave: #545C66;
+  --tenue: #8A929B;
+  --linea: #E6E9ED;
+  --linea-fuerte: #D3D9E0;
+  --papel: #FFFFFF;
+  --papel-2: #FAFAF8;
+  --oro: #A9854F;
+  --oro-suave: #F7F1E5;
+  --azul: #4B7BE5;
+  --azul-suave: #EDF2FD;
+  --verde: #1E8E62;
+  --verde-suave: #E8F5EF;
+  --ambar: #B57A12;
+  --ambar-suave: #FBF2E0;
+  --rojo: #C0442F;
+  --rojo-suave: #FBEDEA;
+  --serif: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  background: var(--papel-2);
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.62;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.pb *, .pb *::before, .pb *::after { box-sizing: border-box; }
+
+/* ── Encabezado ── */
+.pb-top {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(255,255,255,.88);
+  backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--linea);
+}
+.pb-top-in {
+  max-width: 900px; margin: 0 auto;
+  padding: 13px clamp(20px, 5vw, 56px);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.pb-marca { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pb-marca img { display: block; height: 17px; width: auto; }
+.pb-top-sep { width: 1px; height: 16px; background: var(--linea-fuerte); }
+.pb-top-cli {
+  font-family: var(--serif); font-size: .98rem; color: var(--tinta);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pb-top-est {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--tenue); white-space: nowrap;
+}
+
+/* ── Hoja ── */
+.pb-hoja {
+  max-width: 900px; margin: 0 auto;
+  padding: clamp(36px, 6vw, 76px) clamp(20px, 5vw, 56px) 90px;
+  background: var(--papel);
+  border-left: 1px solid var(--linea);
+  border-right: 1px solid var(--linea);
+  min-height: calc(100vh - 52px);
+}
+@media (max-width: 940px) { .pb-hoja { border: 0; } }
+
+.pb-eyebrow {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--oro); font-weight: 600; margin-bottom: 16px;
+}
+.pb h1 {
+  font-family: var(--serif); font-weight: 600;
+  font-size: clamp(2rem, 5.4vw, 3rem); line-height: 1.06;
+  letter-spacing: -.015em; margin: 0 0 .38em; text-wrap: balance;
+}
+.pb-lede { font-size: 1.1rem; color: var(--tinta-suave); max-width: 58ch; margin: 0; }
+
+.pb-meta {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px 28px; margin: 34px 0 0;
+  padding-top: 26px; border-top: 1px solid var(--linea);
+}
+.pb-meta div { margin: 0; }
+.pb-meta dt {
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--tenue); margin-bottom: 5px;
+}
+.pb-meta dd { margin: 0; font-size: .96rem; color: var(--tinta); }
+
+/* ── Secciones ── */
+.pb-sec, .pb-firma-sec { margin: clamp(46px, 7vw, 72px) 0 0; }
+.pb-sec-h { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+.pb-num {
+  font-family: var(--mono); font-size: .72rem; color: var(--oro);
+  font-weight: 600; letter-spacing: .06em;
+}
+.pb h2 {
+  font-family: var(--serif); font-weight: 600; letter-spacing: -.01em;
+  font-size: clamp(1.32rem, 3vw, 1.68rem); margin: 0;
+}
+.pb h3 {
+  font-family: var(--sans); font-size: .74rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--tenue);
+  margin: 0 0 12px;
+}
+.pb-parr { color: var(--tinta-suave); max-width: 64ch; margin: 0 0 .9em; }
+.pb-parr:last-child { margin-bottom: 0; }
+
+.pb-lista { list-style: none; padding: 0; margin: 0; }
+.pb-lista li {
+  position: relative; padding: 9px 0 9px 22px;
+  border-bottom: 1px solid var(--linea); color: var(--tinta-suave);
+}
+.pb-lista li:last-child { border-bottom: 0; }
+.pb-lista li::before {
+  content: ''; position: absolute; left: 2px; top: 18px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--oro);
+}
+.pb-lista-sm li { font-size: .93rem; padding-top: 7px; padding-bottom: 7px; }
+
+.pb-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+@media (max-width: 700px) { .pb-dos { grid-template-columns: 1fr; gap: 20px; } }
+.pb-col { padding: 20px 22px; border: 1px solid var(--linea); border-radius: 12px; background: var(--papel-2); }
+.pb-col-oro { background: var(--oro-suave); border-color: #EADFC8; }
+.pb-col-oro .pb-lista li { border-bottom-color: #EADFC8; }
+
+.pb-aviso {
+  margin: 20px 0 0; padding: 14px 18px; border-left: 3px solid var(--oro);
+  background: var(--oro-suave); border-radius: 0 8px 8px 0;
+  font-size: .92rem; color: #6C5423;
+}
+
+/* ── Dinero ── */
+.pb-dinero {
+  margin-top: 26px; border: 1px solid var(--linea); border-radius: 12px;
+  overflow: hidden; background: var(--papel-2);
+}
+.pb-dinero-cifra {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 20px 22px; border-bottom: 1px solid var(--linea); background: var(--papel);
+}
+.pb-dinero-label {
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--tenue); margin-right: auto;
+}
+.pb-dinero-cifra strong {
+  font-family: var(--serif); font-size: 1.7rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+.pb-dinero-mon { font-size: .8rem; color: var(--tenue); }
+.pb-pagos { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.pb-pagos td { padding: 11px 22px; border-bottom: 1px solid var(--linea); color: var(--tinta-suave); }
+.pb-pagos tr:last-child td { border-bottom: 0; }
+.pb-num-cell { text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta); }
+
+/* ── Firma ── */
+.pb-firma-caja {
+  border: 1px solid var(--linea); border-radius: 14px;
+  padding: clamp(20px, 4vw, 30px); background: var(--papel-2);
+}
+.pb-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 22px 0 22px; }
+.pb-campos label { display: block; }
+.pb-campos span, .pb-campo-t {
+  display: block; font-family: var(--mono); font-size: .66rem;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--tenue); margin-bottom: 6px;
+}
+.pb input[type=text], .pb input[type=email], .pb input[type=url], .pb textarea {
+  width: 100%; font: inherit; font-size: .95rem; color: var(--tinta);
+  padding: 11px 13px; border: 1px solid var(--linea-fuerte); border-radius: 9px;
+  background: var(--papel); transition: border-color .15s, box-shadow .15s;
+}
+.pb textarea { resize: vertical; min-height: 96px; line-height: 1.55; }
+.pb input:focus, .pb textarea:focus {
+  outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px var(--azul-suave);
+}
+.pb input:disabled, .pb textarea:disabled { background: #F4F5F7; color: var(--tinta-suave); cursor: default; }
+
+.pb-firma-lienzo-w { position: relative; }
+.pb-firma-hint {
+  position: absolute; top: 10px; left: 14px; font-size: .76rem; color: var(--tenue);
+  pointer-events: none;
+}
+.pb-firma-lienzo {
+  width: 100%; height: 160px; display: block; border: 1px solid var(--linea-fuerte);
+  border-radius: 10px; background: var(--papel); touch-action: none; cursor: crosshair;
+}
+.pb-firma-linea {
+  position: absolute; left: 40px; right: 40px; bottom: 38px;
+  border-bottom: 1px dashed var(--linea-fuerte); pointer-events: none;
+}
+.pb-firma-acc { display: flex; gap: 10px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+
+.pb-btn {
+  font: inherit; font-size: .93rem; font-weight: 600; color: #fff;
+  background: var(--tinta); border: 0; border-radius: 10px; padding: 12px 22px;
+  cursor: pointer; transition: background .15s, transform .08s;
+}
+.pb-btn:hover { background: #000; }
+.pb-btn:active { transform: translateY(1px); }
+.pb-btn:disabled { background: var(--tenue); cursor: default; transform: none; }
+.pb-btn-tenue {
+  font: inherit; font-size: .88rem; color: var(--tinta-suave); background: transparent;
+  border: 1px solid var(--linea-fuerte); border-radius: 10px; padding: 11px 16px; cursor: pointer;
+}
+.pb-btn-tenue:hover { border-color: var(--tenue); color: var(--tinta); }
+
+.pb-error {
+  margin-top: 14px; padding: 11px 15px; border-radius: 9px;
+  background: var(--rojo-suave); color: var(--rojo); font-size: .9rem;
+}
+
+.pb-firmado {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 20px 22px; border: 1px solid #CFE7DC; background: var(--verde-suave); border-radius: 14px;
+}
+.pb-firmado-check {
+  width: 34px; height: 34px; flex: none; border-radius: 50%;
+  background: var(--verde); color: #fff; display: grid; place-items: center; font-size: 1rem;
+}
+.pb-firmado-t { font-weight: 700; color: #14543C; }
+.pb-firmado-d { font-size: .88rem; color: #2C6A50; }
+.pb-firmado-img { height: 46px; width: auto; margin-left: auto; opacity: .8; mix-blend-mode: multiply; }
+
+/* ── Etapas ── */
+.pb-etapas { display: flex; flex-direction: column; gap: 14px; }
+.pb-cargando { color: var(--tenue); font-size: .93rem; padding: 20px 0; }
+
+.pb-et {
+  border: 1px solid var(--linea); border-radius: 14px; background: var(--papel);
+  overflow: hidden; transition: border-color .18s, box-shadow .18s;
+}
+.pb-et[data-abierta] { border-color: var(--linea-fuerte); box-shadow: 0 1px 2px rgba(20,24,29,.04), 0 10px 30px rgba(20,24,29,.05); }
+.pb-et[data-estado=bloqueada] { background: var(--papel-2); }
+
+.pb-et-cab {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 18px 22px; background: none; border: 0; font: inherit;
+  text-align: left; cursor: pointer; color: inherit;
+}
+.pb-et[data-estado=bloqueada] .pb-et-cab { cursor: default; }
+.pb-et-n {
+  width: 30px; height: 30px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--mono); font-size: .8rem; font-weight: 600;
+  background: #F0F2F5; color: var(--tenue);
+}
+.pb-et[data-estado=abierta] .pb-et-n, .pb-et[data-estado=cambios] .pb-et-n { background: var(--tinta); color: #fff; }
+.pb-et[data-estado=enviada] .pb-et-n { background: var(--ambar-suave); color: var(--ambar); }
+.pb-et[data-estado=aprobada] .pb-et-n { background: var(--verde); color: #fff; }
+.pb-et-tit { flex: 1; min-width: 0; }
+.pb-et-tit strong { display: block; font-family: var(--serif); font-size: 1.14rem; font-weight: 600; }
+.pb-et-tit span { display: block; font-size: .85rem; color: var(--tenue); margin-top: 2px; }
+.pb-et[data-estado=bloqueada] .pb-et-tit strong { color: var(--tenue); }
+
+.pb-chip {
+  flex: none; font-family: var(--mono); font-size: .64rem; letter-spacing: .1em;
+  text-transform: uppercase; font-weight: 600; padding: 5px 10px; border-radius: 20px;
+  background: #F0F2F5; color: var(--tenue); white-space: nowrap;
+}
+.pb-chip[data-e=abierta] { background: var(--azul-suave); color: var(--azul); }
+.pb-chip[data-e=enviada] { background: var(--ambar-suave); color: var(--ambar); }
+.pb-chip[data-e=cambios] { background: var(--rojo-suave); color: var(--rojo); }
+.pb-chip[data-e=aprobada] { background: var(--verde-suave); color: var(--verde); }
+
+.pb-et-cuerpo { padding: 4px 22px 24px; border-top: 1px solid var(--linea); }
+.pb-et-intro { color: var(--tinta-suave); font-size: .94rem; max-width: 64ch; margin: 18px 0 4px; }
+.pb-et-entrega {
+  margin: 16px 0 26px; padding: 13px 16px; border-radius: 10px;
+  background: var(--papel-2); border: 1px solid var(--linea); font-size: .88rem; color: var(--tinta-suave);
+}
+.pb-et-entrega b { color: var(--tinta); font-weight: 600; }
+
+.pb-campo { padding: 20px 0; border-top: 1px solid var(--linea); }
+.pb-campo:first-of-type { border-top: 0; }
+.pb-campo-lab { font-size: 1rem; font-weight: 600; color: var(--tinta); margin-bottom: 5px; }
+.pb-campo-req { color: var(--oro); margin-left: 5px; font-weight: 400; }
+.pb-campo-ayuda { font-size: .88rem; color: var(--tenue); margin-bottom: 13px; max-width: 62ch; line-height: 1.5; }
+
+.pb-ops { display: flex; flex-direction: column; gap: 2px; }
+.pb-op {
+  display: flex; align-items: flex-start; gap: 11px; padding: 9px 12px;
+  border-radius: 9px; cursor: pointer; transition: background .12s;
+  font-size: .94rem; color: var(--tinta-suave);
+}
+.pb-op:hover { background: var(--papel-2); }
+.pb-op input { margin: 3px 0 0; accent-color: var(--tinta); flex: none; width: 15px; height: 15px; }
+.pb-op input:checked + span { color: var(--tinta); font-weight: 500; }
+
+.pb-escala { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pb-escala-ext { font-size: .82rem; color: var(--tenue); }
+.pb-escala-pts { display: flex; gap: 6px; }
+.pb-escala-pt {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--linea-fuerte);
+  background: var(--papel); cursor: pointer; font: inherit; font-size: .9rem; color: var(--tinta-suave);
+  transition: all .15s;
+}
+.pb-escala-pt[aria-pressed=true] { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+
+.pb-links { display: flex; flex-direction: column; gap: 9px; }
+.pb-link-fila { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr) auto; gap: 8px; align-items: center; }
+@media (max-width: 640px) { .pb-link-fila { grid-template-columns: 1fr; } }
+.pb-quitar {
+  width: 34px; height: 34px; flex: none; border: 1px solid var(--linea-fuerte); border-radius: 8px;
+  background: var(--papel); color: var(--tenue); cursor: pointer; font-size: 1rem; line-height: 1;
+}
+.pb-quitar:hover { color: var(--rojo); border-color: var(--rojo); }
+.pb-agregar {
+  align-self: flex-start; font: inherit; font-size: .87rem; color: var(--azul);
+  background: none; border: 0; padding: 4px 0; cursor: pointer;
+}
+.pb-agregar:hover { text-decoration: underline; }
+
+.pb-zona {
+  border: 1.5px dashed var(--linea-fuerte); border-radius: 12px; padding: 24px;
+  text-align: center; cursor: pointer; transition: all .15s; background: var(--papel-2);
+}
+.pb-zona:hover, .pb-zona[data-encima] { border-color: var(--azul); background: var(--azul-suave); }
+.pb-zona-t { font-size: .92rem; color: var(--tinta-suave); }
+.pb-zona-t b { color: var(--azul); }
+.pb-zona-s { font-size: .8rem; color: var(--tenue); margin-top: 4px; }
+
+.pb-archivos { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
+.pb-arch {
+  display: flex; align-items: center; gap: 11px; padding: 10px 13px;
+  border: 1px solid var(--linea); border-radius: 9px; background: var(--papel); font-size: .89rem;
+}
+.pb-arch-ext {
+  font-family: var(--mono); font-size: .6rem; font-weight: 700; letter-spacing: .05em;
+  padding: 4px 7px; border-radius: 5px; background: var(--oro-suave); color: var(--oro); flex: none;
+}
+.pb-arch-n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tinta); }
+.pb-arch-p { color: var(--tenue); font-size: .8rem; flex: none; }
+.pb-arch a { color: var(--tenue); text-decoration: none; font-size: .8rem; }
+.pb-arch a:hover { color: var(--azul); }
+
+.pb-et-pie {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--linea);
+}
+.pb-et-pie-nota { font-size: .85rem; color: var(--tenue); margin-right: auto; }
+
+.pb-nota-sacs {
+  margin: 18px 0 0; padding: 15px 18px; border-radius: 10px;
+  background: var(--rojo-suave); border-left: 3px solid var(--rojo);
+}
+.pb-nota-sacs .pb-campo-t { color: var(--rojo); }
+.pb-nota-sacs p { margin: 0; font-size: .93rem; color: #7A2E20; }
+
+.pb-resumen { display: flex; flex-direction: column; gap: 14px; }
+.pb-res { font-size: .93rem; }
+.pb-res dt { font-weight: 600; color: var(--tinta); margin-bottom: 3px; }
+.pb-res dd { margin: 0; color: var(--tinta-suave); white-space: pre-wrap; }
+
+/* ── Bitácora ── */
+.pb-log { list-style: none; padding: 0; margin: 0; }
+.pb-log li {
+  display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--linea); font-size: .9rem;
+}
+.pb-log li:last-child { border-bottom: 0; }
+.pb-log-f { font-family: var(--mono); font-size: .74rem; color: var(--tenue); flex: none; width: 108px; padding-top: 2px; }
+.pb-log-a { color: var(--tinta); }
+.pb-log-a span { color: var(--tenue); }
+
+.pb-pie {
+  margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--linea);
+  font-size: .82rem; color: var(--tenue);
+}
+.pb-pie-sm { margin-top: 5px; font-size: .78rem; }
+
+.pb-modo-sacs {
+  max-width: 900px; margin: 0 auto; padding: 9px clamp(20px, 5vw, 56px);
+  font-size: .82rem; color: #6C5423; background: var(--oro-suave);
+  border-top: 1px solid #EADFC8;
+}
+.pb-modo-sacs b { color: var(--oro); }
+
+.pb-rev {
+  margin-top: 22px; padding: 18px 20px; border: 1px solid #EADFC8;
+  background: var(--oro-suave); border-radius: 12px;
+}
+.pb-rev .pb-campo-t { color: var(--oro); }
+.pb-rev textarea { min-height: 70px; background: #fff; }
+.pb-rev-acc { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.pb-btn-verde { background: var(--verde); }
+.pb-btn-verde:hover { background: #17734F; }
+
+@media (max-width: 560px) {
+  .pb-top-in { padding-left: 18px; padding-right: 18px; }
+  .pb-top-est { font-size: .6rem; letter-spacing: .08em; }
+  .pb-marca img { height: 15px; }
+  .pb-et-cab { padding: 15px 16px; gap: 11px; }
+  .pb-et-cuerpo { padding-left: 16px; padding-right: 16px; }
+  .pb-chip { font-size: .56rem; padding: 4px 7px; }
+  .pb-et-tit strong { font-size: 1.04rem; }
+  .pb-et-tit span { font-size: .8rem; }
+  .pb-et-pie { flex-direction: column; align-items: stretch; }
+  .pb-et-pie .pb-btn { width: 100%; }
+  .pb-log-f { width: 84px; }
+}
+
+.pb-guardado {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--tinta); color: #fff; padding: 9px 18px; border-radius: 20px;
+  font-size: .84rem; z-index: 60; box-shadow: 0 6px 24px rgba(20,24,29,.24);
+  animation: pbsube .2s ease;
+}
+@keyframes pbsube { from { opacity: 0; transform: translate(-50%, 8px); } }
+</style>
+
+<script>
+  const raiz = document.querySelector('.pb');
+  if (raiz) {
+    const TOKEN = raiz.getAttribute('data-token');
+    const SACS = !!raiz.getAttribute('data-sacs');
+
+    // ── Firma ──────────────────────────────────────────────────────────
+    const lienzo = document.getElementById('f-canvas');
+    if (lienzo) {
+      const ctx = lienzo.getContext('2d');
+      let trazando = false, trazado = false;
+
+      const medir = () => {
+        const r = lienzo.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        // Redimensionar limpia el lienzo, así que solo se hace mientras no
+        // haya nada dibujado: si no, el teclado del teléfono al abrirse
+        // borraba la firma recién hecha.
+        if (trazado) return;
+        lienzo.width = Math.round(r.width * dpr);
+        lienzo.height = Math.round(r.height * dpr);
+        if (!ctx) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.strokeStyle = '#14181D';
+        ctx.lineWidth = 2.1;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      };
+      medir();
+      window.addEventListener('resize', medir);
+
+      const punto = (e) => {
+        const r = lienzo.getBoundingClientRect();
+        const t = e.touches && e.touches.length ? e.touches[0] : e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+      };
+      const abajo = (e) => {
+        trazando = true;
+        const p = punto(e);
+        ctx && (ctx.beginPath(), ctx.moveTo(p.x, p.y));
+      };
+      const mueve = (e) => {
+        if (!trazando || !ctx) return;
+        trazado = true;
+        const p = punto(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        const h = document.querySelector('.pb-firma-hint');
+        if (h) h.style.display = 'none';
+      };
+      const arriba = () => { trazando = false; };
+
+      lienzo.addEventListener('mousedown', abajo);
+      lienzo.addEventListener('mousemove', mueve);
+      window.addEventListener('mouseup', arriba);
+      lienzo.addEventListener('touchstart', (e) => { e.preventDefault(); abajo(e); }, { passive: false });
+      lienzo.addEventListener('touchmove', (e) => { e.preventDefault(); mueve(e); }, { passive: false });
+      lienzo.addEventListener('touchend', arriba);
+
+      document.getElementById('f-limpiar')?.addEventListener('click', () => {
+        ctx && ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+        trazado = false;
+        const h = document.querySelector('.pb-firma-hint');
+        if (h) h.style.display = '';
+      });
+
+      const err = document.getElementById('f-error');
+      const fallo = (m) => { if (err) { err.textContent = m; err.hidden = false; } };
+
+      document.getElementById('f-firmar')?.addEventListener('click', async (ev) => {
+        const btn = ev.currentTarget;
+        const nombre = (document.getElementById('f-nombre')?.value || '').trim();
+        if (nombre.length < 3) return fallo('Escribe tu nombre completo.');
+        if (!trazado) return fallo('Falta la firma: traza tu firma en el recuadro.');
+        if (err) err.hidden = true;
+        btn.disabled = true;
+        btn.textContent = 'Firmando…';
+        try {
+          const res = await fetch('/api/proyecto/firmar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: TOKEN,
+              nombre,
+              puesto: document.getElementById('f-puesto')?.value || '',
+              email: document.getElementById('f-email')?.value || '',
+              firma_png: lienzo.toDataURL('image/png'),
+            }),
+          });
+          const d = await res.json();
+          if (!res.ok) throw new Error(d.error || 'No se pudo firmar');
+          location.reload();
+        } catch (e) {
+          btn.disabled = false;
+          btn.textContent = 'Firmar y comenzar';
+          fallo(e.message || 'No se pudo firmar. Intenta de nuevo.');
+        }
+      });
+    }
+
+    // ── Etapas ─────────────────────────────────────────────────────────
+    const cajaEtapas = document.getElementById('pb-etapas');
+    const cajaLog = document.getElementById('pb-log');
+    const secLog = document.getElementById('bitacora');
+    const avance = document.getElementById('pb-avance');
+    const aviso = document.getElementById('pb-guardado');
+
+    let DEF = [];        // definición del cuestionario
+    let ETAPAS = [];     // estado en la base
+    let borrador = {};   // clave → respuestas en edición
+    let abierta = null;  // qué etapa está desplegada
+
+    const CHIP = {
+      bloqueada: 'Bloqueada',
+      abierta: 'Por contestar',
+      enviada: 'En revisión',
+      cambios: 'Cambios pedidos',
+      aprobada: 'Aprobada',
+    };
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const kb = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
+    let temporizador = null;
+    const decirGuardado = () => {
+      if (!aviso) return;
+      aviso.hidden = false;
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => { aviso.hidden = true; }, 1600);
+    };
+
+    async function cargar() {
+      const res = await fetch('/api/proyecto/estado?token=' + encodeURIComponent(TOKEN));
+      if (!res.ok) { if (cajaEtapas) cajaEtapas.innerHTML = '<div class="pb-cargando">No se pudo cargar.</div>'; return; }
+      const d = await res.json();
+      DEF = d.definicion || [];
+      ETAPAS = d.etapas || [];
+      for (const e of ETAPAS) if (!(e.clave in borrador)) borrador[e.clave] = { ...(e.respuestas || {}) };
+      // Se despliega sola la etapa en la que toca trabajar.
+      if (abierta === null) {
+        // El cliente aterriza en la etapa que le toca contestar; Sacs, en la
+        // que está esperando revisión.
+        const activa = SACS
+          ? (ETAPAS.find((e) => e.estado === 'enviada') || ETAPAS.find((e) => e.estado === 'cambios') || ETAPAS.find((e) => e.estado === 'abierta'))
+          : (ETAPAS.find((e) => e.estado === 'cambios') || ETAPAS.find((e) => e.estado === 'abierta'));
+        abierta = activa ? activa.clave : null;
+      }
+      pintar();
+      pintarLog(d.bitacora || []);
+    }
+
+    function pintarLog(log) {
+      if (!cajaLog || !secLog) return;
+      if (!log.length) return;
+      secLog.hidden = false;
+      cajaLog.innerHTML = log.map((l) => {
+        const f = new Date(l.at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return '<li><span class="pb-log-f">' + esc(f) + '</span>' +
+          '<span class="pb-log-a">' + esc(l.accion) +
+          (l.detalle ? ' <span>· ' + esc(l.detalle) + '</span>' : '') + '</span></li>';
+      }).join('');
+    }
+
+    function pintar() {
+      if (!cajaEtapas) return;
+      const aprobadas = ETAPAS.filter((e) => e.estado === 'aprobada').length;
+      if (avance) avance.textContent = aprobadas + ' de ' + ETAPAS.length + ' etapas aprobadas';
+
+      cajaEtapas.innerHTML = ETAPAS.map((fila) => {
+        const def = DEF.find((d) => d.clave === fila.clave);
+        if (!def) return '';
+        const desplegada = abierta === fila.clave && fila.estado !== 'bloqueada';
+        return '<article class="pb-et" data-estado="' + fila.estado + '" data-clave="' + fila.clave + '"' +
+          (desplegada ? ' data-abierta' : '') + '>' +
+          '<button type="button" class="pb-et-cab" data-toggle="' + fila.clave + '">' +
+            '<span class="pb-et-n">' + (fila.estado === 'aprobada' ? '✓' : def.orden) + '</span>' +
+            '<span class="pb-et-tit"><strong>' + esc(def.titulo) + '</strong>' +
+            '<span>' + esc(def.entrega) + '</span></span>' +
+            '<span class="pb-chip" data-e="' + fila.estado + '">' + CHIP[fila.estado] + '</span>' +
+          '</button>' +
+          (desplegada ? cuerpo(def, fila) : '') +
+        '</article>';
+      }).join('');
+
+      cajaEtapas.querySelectorAll('[data-toggle]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const c = b.getAttribute('data-toggle');
+          const f = ETAPAS.find((e) => e.clave === c);
+          if (!f || f.estado === 'bloqueada') return;
+          abierta = abierta === c ? null : c;
+          pintar();
+        });
+      });
+      conectar();
+    }
+
+    const editable = (f) => f.estado === 'abierta' || f.estado === 'cambios';
+
+    function cuerpo(def, fila) {
+      const puede = editable(fila);
+      let h = '<div class="pb-et-cuerpo">';
+      h += '<p class="pb-et-intro">' + esc(def.resumen) + '</p>';
+      h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
+
+      if (fila.estado === 'cambios' && fila.nota_sacs) {
+        h += '<div class="pb-nota-sacs"><span class="pb-campo-t">Qué falta</span><p>' + esc(fila.nota_sacs) + '</p></div>';
+      }
+
+      if (!puede) {
+        // Etapa enviada o aprobada: se lee, no se edita.
+        h += '<dl class="pb-resumen">';
+        for (const c of def.campos) {
+          const v = (fila.respuestas || {})[c.id];
+          if (v === undefined || v === null || (Array.isArray(v) && !v.length) || v === '') continue;
+          h += '<div class="pb-res"><dt>' + esc(c.etiqueta) + '</dt><dd>' + esc(leible(c, v)) + '</dd></div>';
+        }
+        h += '</dl>';
+        if (fila.estado === 'enviada' && !SACS) {
+          h += '<div class="pb-et-pie"><span class="pb-et-pie-nota">Enviada. Sacs la está revisando — te avisamos en cuanto quede aprobada o si falta algo.</span></div>';
+        }
+        if (SACS) h += revision(fila);
+        return h + '</div>';
+      }
+
+      for (const c of def.campos) h += campo(c, borrador[fila.clave] || {});
+
+      h += '<div class="pb-et-pie">' +
+        '<span class="pb-et-pie-nota">Se guarda solo. Puedes cerrar y volver después.</span>' +
+        '<button type="button" class="pb-btn" data-enviar="' + fila.clave + '">Enviar etapa a revisión</button>' +
+      '</div>';
+      h += '<div class="pb-error" data-err="' + fila.clave + '" hidden></div>';
+      if (SACS) h += revision(fila);
+      return h + '</div>';
+    }
+
+    // Controles de Sacs. Solo se pintan cuando la sesión es founder/cs; el
+    // servidor los vuelve a exigir, así que esconderlos no es la seguridad,
+    // es la interfaz.
+    function revision(fila) {
+      let h = '<div class="pb-rev"><span class="pb-campo-t">Revisión de Sacs</span>';
+      if (fila.estado === 'enviada') {
+        h += '<textarea data-nota="' + fila.clave + '" placeholder="Qué falta o qué hay que corregir (obligatorio si la devuelves)"></textarea>' +
+          '<div class="pb-rev-acc">' +
+            '<button type="button" class="pb-btn pb-btn-verde" data-rev="aprobar" data-c="' + fila.clave + '">Aprobar y abrir la siguiente</button>' +
+            '<button type="button" class="pb-btn-tenue" data-rev="cambios" data-c="' + fila.clave + '">Devolver con cambios</button>' +
+          '</div>';
+      } else if (fila.estado === 'aprobada') {
+        h += '<div class="pb-et-pie-nota" style="margin-bottom:10px">Aprobada' +
+          (fila.aprobada_at ? ' el ' + new Date(fila.aprobada_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '') + '.</div>' +
+          '<div class="pb-rev-acc"><button type="button" class="pb-btn-tenue" data-rev="reabrir" data-c="' + fila.clave + '">Reabrir para que la corrijan</button></div>';
+      } else {
+        h += '<div class="pb-et-pie-nota">El cliente todavía no la envía.</div>';
+      }
+      return h + '<div class="pb-error" data-reverr="' + fila.clave + '" hidden></div></div>';
+    }
+
+    function leible(c, v) {
+      if (Array.isArray(v)) {
+        if (v.length && typeof v[0] === 'object') {
+          return v.map((x) => x.url ? (x.url + (x.nota ? ' — ' + x.nota : '')) : (x.nombre || '')).join('\n');
+        }
+        return v.join(' · ');
+      }
+      if (c.tipo === 'escala') return v + ' de 5';
+      return String(v);
+    }
+
+    function campo(c, resp) {
+      const v = resp[c.id];
+      let h = '<div class="pb-campo" data-campo="' + c.id + '">';
+      h += '<div class="pb-campo-lab">' + esc(c.etiqueta) +
+        (c.requerido ? '<span class="pb-campo-req">obligatorio</span>' : '') + '</div>';
+      if (c.ayuda) h += '<div class="pb-campo-ayuda">' + esc(c.ayuda) + '</div>';
+
+      if (c.tipo === 'texto') {
+        h += '<input type="text" data-v="' + c.id + '" value="' + esc(v || '') + '"' +
+          (c.placeholder ? ' placeholder="' + esc(c.placeholder) + '"' : '') + ' />';
+
+      } else if (c.tipo === 'parrafo') {
+        h += '<textarea data-v="' + c.id + '"' + (c.placeholder ? ' placeholder="' + esc(c.placeholder) + '"' : '') +
+          '>' + esc(v || '') + '</textarea>';
+
+      } else if (c.tipo === 'opcion' || c.tipo === 'multiple') {
+        const multi = c.tipo === 'multiple';
+        const sel = multi ? (Array.isArray(v) ? v : []) : [v];
+        h += '<div class="pb-ops">';
+        for (const o of (c.opciones || [])) {
+          const marcado = sel.indexOf(o) >= 0 ? ' checked' : '';
+          h += '<label class="pb-op"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + c.id +
+            '" data-op="' + c.id + '" value="' + esc(o) + '"' + marcado + ' /><span>' + esc(o) + '</span></label>';
+        }
+        h += '</div>';
+        if (c.otro) {
+          const otro = multi ? (sel.filter((s) => (c.opciones || []).indexOf(s) < 0)[0] || '') : '';
+          h += '<input type="text" class="pb-otro" data-otro="' + c.id + '" placeholder="Otro (escríbelo)" value="' + esc(otro) + '" style="margin-top:10px" />';
+        }
+
+      } else if (c.tipo === 'escala') {
+        h += '<div class="pb-escala"><span class="pb-escala-ext">' + esc((c.extremos || [])[0] || '') + '</span><div class="pb-escala-pts">';
+        for (let i = 1; i <= 5; i++) {
+          h += '<button type="button" class="pb-escala-pt" data-esc="' + c.id + '" data-n="' + i +
+            '" aria-pressed="' + (Number(v) === i) + '">' + i + '</button>';
+        }
+        h += '</div><span class="pb-escala-ext">' + esc((c.extremos || [])[1] || '') + '</span></div>';
+
+      } else if (c.tipo === 'links') {
+        const filas = Array.isArray(v) && v.length ? v : [{ url: '', nota: '' }];
+        h += '<div class="pb-links" data-links="' + c.id + '">';
+        for (const f of filas) h += filaLink(c.id, f);
+        h += '</div><button type="button" class="pb-agregar" data-mas="' + c.id + '">+ Agregar otro</button>';
+
+      } else if (c.tipo === 'archivos') {
+        const arr = Array.isArray(v) ? v : [];
+        h += '<div class="pb-zona" data-zona="' + c.id + '">' +
+          '<div class="pb-zona-t"><b>Elige un archivo</b> o arrástralo aquí</div>' +
+          '<div class="pb-zona-s">Hasta 25 MB. Si pesa más, súbelo a Drive y pega el link.</div></div>' +
+          '<input type="file" multiple hidden data-file="' + c.id + '" />' +
+          '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
+      }
+
+      return h + '</div>';
+    }
+
+    const filaLink = (id, f) =>
+      '<div class="pb-link-fila">' +
+        '<input type="url" data-lu="' + id + '" placeholder="https://…" value="' + esc(f.url || '') + '" />' +
+        '<input type="text" data-ln="' + id + '" placeholder="¿Qué exactamente te gustó?" value="' + esc(f.nota || '') + '" />' +
+        '<button type="button" class="pb-quitar" data-menos="' + id + '" aria-label="Quitar">×</button>' +
+      '</div>';
+
+    const chipArchivo = (a) =>
+      '<div class="pb-arch">' +
+        '<span class="pb-arch-ext">' + esc((a.nombre || '').split('.').pop().slice(0, 5).toUpperCase() || 'FILE') + '</span>' +
+        '<span class="pb-arch-n">' + esc(a.nombre) + '</span>' +
+        '<span class="pb-arch-p">' + (a.peso ? kb(a.peso) : '') + '</span>' +
+        '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Ver</a>' +
+        '<button type="button" class="pb-quitar" data-quita-arch="' + esc(a.url) + '" aria-label="Quitar">×</button>' +
+      '</div>';
+
+    // ── Escritura ──────────────────────────────────────────────────────
+    let pendiente = null;
+    function anotar(clave, id, valor) {
+      borrador[clave] = borrador[clave] || {};
+      borrador[clave][id] = valor;
+      clearTimeout(pendiente);
+      pendiente = setTimeout(() => guardar(clave), 900);
+    }
+
+    async function guardar(clave, enviar) {
+      const res = await fetch('/api/proyecto/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: TOKEN, clave, respuestas: borrador[clave] || {}, enviar: !!enviar }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) return d;
+      if (!enviar) decirGuardado();
+      return null;
+    }
+
+    function conectar() {
+      const cont = cajaEtapas;
+      if (!cont) return;
+      const claveDe = (el) => el.closest('.pb-et')?.getAttribute('data-clave');
+
+      cont.querySelectorAll('[data-v]').forEach((el) => {
+        el.addEventListener('input', () => anotar(claveDe(el), el.getAttribute('data-v'), el.value));
+      });
+
+      cont.querySelectorAll('[data-op]').forEach((el) => {
+        el.addEventListener('change', () => {
+          const clave = claveDe(el), id = el.getAttribute('data-op');
+          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
+          if (el.type === 'radio') return anotar(clave, id, el.value);
+          const marcados = Array.from(campo.querySelectorAll('[data-op]:checked')).map((x) => x.value);
+          const otro = campo.querySelector('[data-otro]');
+          if (otro && otro.value.trim()) marcados.push(otro.value.trim());
+          anotar(clave, id, marcados);
+        });
+      });
+
+      cont.querySelectorAll('[data-otro]').forEach((el) => {
+        el.addEventListener('input', () => {
+          const clave = claveDe(el), id = el.getAttribute('data-otro');
+          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
+          const marcados = Array.from(campo.querySelectorAll('[data-op]:checked')).map((x) => x.value);
+          if (el.value.trim()) marcados.push(el.value.trim());
+          anotar(clave, id, marcados);
+        });
+      });
+
+      cont.querySelectorAll('[data-esc]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-esc');
+          const campo = cont.querySelector('.pb-campo[data-campo="' + id + '"]');
+          campo.querySelectorAll('[data-esc]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          el.setAttribute('aria-pressed', 'true');
+          anotar(claveDe(el), id, Number(el.getAttribute('data-n')));
+        });
+      });
+
+      const leerLinks = (id) => {
+        const caja = cont.querySelector('[data-links="' + id + '"]');
+        return Array.from(caja.querySelectorAll('.pb-link-fila')).map((f) => ({
+          url: f.querySelector('[data-lu]').value.trim(),
+          nota: f.querySelector('[data-ln]').value.trim(),
+        })).filter((x) => x.url);
+      };
+      cont.querySelectorAll('[data-lu],[data-ln]').forEach((el) => {
+        el.addEventListener('input', () => {
+          const id = el.getAttribute('data-lu') || el.getAttribute('data-ln');
+          anotar(claveDe(el), id, leerLinks(id));
+        });
+      });
+      cont.querySelectorAll('[data-mas]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-mas');
+          cont.querySelector('[data-links="' + id + '"]').insertAdjacentHTML('beforeend', filaLink(id, {}));
+          conectar();
+        });
+      });
+      cont.querySelectorAll('[data-menos]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-menos'), clave = claveDe(el);
+          const caja = cont.querySelector('[data-links="' + id + '"]');
+          if (caja.querySelectorAll('.pb-link-fila').length > 1) el.closest('.pb-link-fila').remove();
+          else caja.querySelectorAll('input').forEach((i) => { i.value = ''; });
+          anotar(clave, id, leerLinks(id));
+        });
+      });
+
+      // Archivos
+      cont.querySelectorAll('[data-zona]').forEach((zona) => {
+        const id = zona.getAttribute('data-zona');
+        const input = cont.querySelector('[data-file="' + id + '"]');
+        zona.addEventListener('click', () => input.click());
+        zona.addEventListener('dragover', (e) => { e.preventDefault(); zona.setAttribute('data-encima', ''); });
+        zona.addEventListener('dragleave', () => zona.removeAttribute('data-encima'));
+        zona.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zona.removeAttribute('data-encima');
+          subir(claveDe(zona), id, e.dataTransfer.files);
+        });
+        input.addEventListener('change', () => subir(claveDe(zona), id, input.files));
+      });
+      cont.querySelectorAll('[data-quita-arch]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const url = el.getAttribute('data-quita-arch');
+          const id = el.closest('.pb-campo').getAttribute('data-campo');
+          const clave = claveDe(el);
+          const arr = (borrador[clave][id] || []).filter((a) => a.url !== url);
+          borrador[clave][id] = arr;
+          cont.querySelector('[data-lista="' + id + '"]').innerHTML = arr.map(chipArchivo).join('');
+          guardar(clave);
+          conectar();
+        });
+      });
+
+      cont.querySelectorAll('[data-rev]').forEach((el) => {
+        el.addEventListener('click', async () => {
+          const clave = el.getAttribute('data-c');
+          const accion = el.getAttribute('data-rev');
+          const err = cont.querySelector('[data-reverr="' + clave + '"]');
+          const nota = cont.querySelector('[data-nota="' + clave + '"]');
+          if (err) err.hidden = true;
+          el.disabled = true;
+          const antes = el.textContent;
+          el.textContent = 'Aplicando…';
+          const res = await fetch('/api/proyecto/revisar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: TOKEN, clave, accion, nota: nota ? nota.value : '' }),
+          });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            el.disabled = false;
+            el.textContent = antes;
+            if (err) { err.textContent = d.error || 'No se pudo aplicar'; err.hidden = false; }
+            return;
+          }
+          abierta = accion === 'aprobar' ? (d.siguiente || null) : clave;
+          await cargar();
+        });
+      });
+
+      cont.querySelectorAll('[data-enviar]').forEach((el) => {
+        el.addEventListener('click', async () => {
+          const clave = el.getAttribute('data-enviar');
+          const err = cont.querySelector('[data-err="' + clave + '"]');
+          err.hidden = true;
+          el.disabled = true;
+          el.textContent = 'Enviando…';
+          const fallo = await guardar(clave, true);
+          if (fallo) {
+            el.disabled = false;
+            el.textContent = 'Enviar etapa a revisión';
+            err.textContent = fallo.faltan
+              ? 'Falta contestar: ' + fallo.faltan.join(' · ')
+              : (fallo.error || 'No se pudo enviar');
+            err.hidden = false;
+            err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          }
+          abierta = null;
+          await cargar();
+        });
+      });
+    }
+
+    async function subir(clave, campoId, archivos) {
+      const lista = cajaEtapas.querySelector('[data-lista="' + campoId + '"]');
+      for (const f of Array.from(archivos || [])) {
+        const fila = document.createElement('div');
+        fila.className = 'pb-arch';
+        fila.innerHTML = '<span class="pb-arch-ext">···</span><span class="pb-arch-n">' + esc(f.name) +
+          '</span><span class="pb-arch-p">subiendo…</span>';
+        lista.appendChild(fila);
+        const fd = new FormData();
+        fd.append('token', TOKEN);
+        fd.append('campo', campoId);
+        fd.append('file', f);
+        try {
+          const res = await fetch('/api/proyecto/subir', { method: 'POST', body: fd });
+          const d = await res.json();
+          if (!res.ok) throw new Error(d.error || 'No se pudo subir');
+          borrador[clave] = borrador[clave] || {};
+          borrador[clave][campoId] = (borrador[clave][campoId] || []).concat([d]);
+          fila.remove();
+          lista.innerHTML = borrador[clave][campoId].map(chipArchivo).join('');
+          await guardar(clave);
+          conectar();
+        } catch (e) {
+          fila.querySelector('.pb-arch-p').textContent = e.message || 'error';
+          fila.querySelector('.pb-arch-p').style.color = '#C0442F';
+        }
+      }
+    }
+
+    cargar();
+  }
+</script>
