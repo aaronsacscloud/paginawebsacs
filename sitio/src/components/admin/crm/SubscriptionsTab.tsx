@@ -1091,7 +1091,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
               <option value="">— elegir —</option>
               {cobrables.map(s => <option key={s.id} value={s.id}>{(s.companies?.nombre || '—') + ' · ' + s.nombre_plan + ' (' + s.ciclo + ') · próx ' + (s.proxima_factura || 's/f')}</option>)}
             </select>
-            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : 'Al registrar: pasa a ACTIVA, se genera el comprobante y el ARR se actualiza.'}</div>}
+            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : 'Al registrar: pasa a ACTIVA, se genera el acuse y el ARR se actualiza.'}</div>}
             {sel && sel.ciclo !== 'vitalicia' && (
               <div style={{ marginTop: 10 }}>
                 <label style={S.label}>Nueva fecha de próxima factura</label>
