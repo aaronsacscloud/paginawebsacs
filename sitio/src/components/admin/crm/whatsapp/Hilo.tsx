@@ -1070,9 +1070,10 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
   return (
-    <span style={{ position: 'relative', flexShrink: 0 }}>
-      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
+    <span style={{ position: 'relative', flexShrink: 1, minWidth: 30, maxWidth: 110 }}>
+      {/* Cede espacio como los selects: el texto se recorta con puntos, el punto de color nunca desaparece. */}
+      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
       </button>
       {abierto && (
         <span style={{ position: 'absolute', top: '110%', right: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.14)', padding: 8, minWidth: 250, display: 'grid', gap: 4 }}>
