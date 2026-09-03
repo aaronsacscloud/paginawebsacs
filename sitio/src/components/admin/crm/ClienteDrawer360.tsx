@@ -1863,13 +1863,20 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
      tarjeta "Cotizado" y la lista dirían números distintos mientras cargan. */
   const [deals, setDeals] = useState<any[] | null>(null);
   const [sueltas, setSueltas] = useState<any[]>([]);
+  /* Lo que la cuenta DEBE hoy. Va aquí arriba por lo mismo que lo cotizado: es
+     una de las cifras de la fila de tarjetas, y si la pidiera su propia sección
+     la tarjeta y la lista dirían números distintos mientras carga. */
+  const [porCobrar, setPorCobrar] = useState<{ total: number; vencido: number; lineas: any[] }>({ total: 0, vencido: 0, lineas: [] });
   function cargarCotizado() {
     fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
       .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
     fetch('/api/crm/deals/cotizaciones?company_id=' + companyId).then(r => r.json())
       .then(j => setSueltas(j.propias || [])).catch(() => setSueltas([]));
+    fetch('/api/crm/cuenta/por-cobrar?company_id=' + companyId).then(r => r.json())
+      .then(j => setPorCobrar({ total: Number(j.total || 0), vencido: Number(j.vencido || 0), lineas: j.lineas || [] }))
+      .catch(() => setPorCobrar({ total: 0, vencido: 0, lineas: [] }));
   }
-  useEffect(() => { setDeals(null); setSueltas([]); cargarCotizado(); }, [companyId]);
+  useEffect(() => { setDeals(null); setSueltas([]); setPorCobrar({ total: 0, vencido: 0, lineas: [] }); cargarCotizado(); }, [companyId]);
   // Estado de cuenta. Antes salía siempre con TODAS las suscripciones; ahora se
   // elige cuáles entran, porque mandarle el total de todo a quien le estás
   // cobrando una sola invita a la pregunta equivocada.
@@ -2196,6 +2203,24 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
             </div>
           )}
         </div>
+        {/* POR COBRAR: lo más concreto de la fila. Las otras cuatro dicen lo
+            que la cuenta genera, pagó o podría pagar; esta dice lo que DEBE y
+            para cuándo. Una venta ganada de un solo golpe —una personalización,
+            un desarrollo— no es ARR ni vitalicia ni está «sobre la mesa», así
+            que sin esta tarjeta se caía entre las otras y desaparecía. */}
+        <div style={{ ...D.kpi, borderLeft: `3px solid ${porCobrar.vencido > 0 ? '#EF7A72' : '#F2B441'}`, flex: '1 1 150px' }}>
+          <div style={D.kl}>Por cobrar</div>
+          <div style={{ ...D.kv, color: porCobrar.total > 0 ? (porCobrar.vencido > 0 ? '#C0554E' : '#9a6a10') : '#1a1a1a' }}>
+            {porCobrar.total > 0 ? money(porCobrar.total) : '—'}
+          </div>
+          {porCobrar.total > 0 ? (
+            <div style={{ fontSize: '0.68rem', color: porCobrar.vencido > 0 ? '#C0554E' : '#a7abb3', fontWeight: porCobrar.vencido > 0 ? 600 : 400 }}>
+              {porCobrar.vencido > 0
+                ? `${money(porCobrar.vencido)} ya vencido`
+                : `próximo: ${money(porCobrar.lineas[0].monto)} el ${fmtDate(porCobrar.lineas[0].fecha)}`}
+            </div>
+          ) : <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>al corriente</div>}
+        </div>
         {/* Las dos de la mesa: lo que se cotizó y sigue vivo, y lo que se cayó.
             Van en la misma fila y del mismo tamaño —son cifras de la cuenta
             igual que las otras tres— pero en azul y rojo, que es lo que ya
@@ -2215,6 +2240,29 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           </div>
         </div>
       </div>
+      {/* El detalle de lo que debe, con FECHA. Un total sin fechas no sirve
+          para cobrar: lo que se necesita saber es qué toca y cuándo. */}
+      {porCobrar.lineas.length > 0 && (
+        <div style={{ ...D.cardM, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0eef6', fontSize: '0.8rem', fontWeight: 700 }}>
+            Pendiente de cobro <span style={{ color: '#a7abb3', fontWeight: 400 }}>· {porCobrar.lineas.length} {porCobrar.lineas.length === 1 ? 'cobro' : 'cobros'}</span>
+          </div>
+          {porCobrar.lineas.map((l: any) => (
+            <div key={`${l.quote_id}:${l.fecha}:${l.concepto}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '9px 14px', borderTop: '1px solid #f7f5fb' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  {l.concepto}
+                  {l.vencida && <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 800, letterSpacing: .3, color: '#C0554E', background: '#fdeceb', borderRadius: 5, padding: '2px 5px' }}>VENCIDA</span>}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+                  {l.numero}{l.detalle ? ` · ${l.detalle}` : ''} · {l.vencida ? 'venció' : 'vence'} {fmtDate(l.fecha)}
+                </div>
+              </div>
+              <div style={{ fontWeight: 800, whiteSpace: 'nowrap', color: l.vencida ? '#C0554E' : '#1a1a1a' }}>{money(l.monto)}</div>
+            </div>
+          ))}
+        </div>
+      )}
       {archivosSub && (
         <ArchivosSuscripcion subId={archivosSub.id} nombre={archivosSub.nombre_plan}
           onCerrar={() => setArchivosSub(null)} onCambio={() => reload()} />
