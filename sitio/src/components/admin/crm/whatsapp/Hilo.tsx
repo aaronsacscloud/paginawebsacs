@@ -1071,12 +1071,12 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
   return (
     <span style={{ position: 'relative', flexShrink: 0 }}>
-      <button onClick={() => setAbierto(a => !a)} title="Qué hace el agente en esta conversación" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9 }} />{mobile ? (e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? 'IA observa' : 'IA apagada') : label}
+      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
       </button>
       {abierto && (
         <span style={{ position: 'absolute', top: '110%', right: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.14)', padding: 8, minWidth: 250, display: 'grid', gap: 4 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: '2px 6px' }}>En esta conversación</span>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: '2px 6px' }}>{label} · en esta conversación</span>
           {[['activar', 'Activar: que conteste solo', e.estado === 'activo' && !e.modo_sugerencia], ['sugerir', 'Que me sugiera (no manda nada)', e.modo_sugerencia], ['apagar', 'Apagar aquí: no vuelve a tocar este lead', e.estado === 'apagado']].map(([a, l, on]: any) => (
             <button key={a} onClick={() => accion(a)} style={{ textAlign: 'left', border: 'none', background: on ? '#EEECFE' : 'transparent', color: on ? '#4c1d95' : '#241d43', borderRadius: 8, padding: '7px 8px', fontSize: 12, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
           ))}

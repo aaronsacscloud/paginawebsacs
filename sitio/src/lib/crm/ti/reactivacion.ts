@@ -89,7 +89,7 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 
 Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que no es una tienda o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
-Responde SOLO con JSON: {"mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
+Responde SOLO con JSON: {"nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
   const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || '';
   if (!txt) console.error('[reactivacion] respuesta sin texto:', JSON.stringify(r).slice(0, 400));
@@ -98,6 +98,13 @@ Responde SOLO con JSON: {"mensaje": "...", "angulo": "en 6 palabras qué palanca
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
   if (j.descartar) return { mensaje: '', angulo: '', resumen_lead: '', pregunta_original: '', por_que: '', costo, descartar: String(j.descartar) };
   if (!j.mensaje) return null;
+  // Nombre genérico («Contacto 6917», vacío): si el agente lo encontró en la conversación, se corrige en el CRM y la plantilla saluda bien.
+  const generico = !c.nombre || /^contacto\s*\d*$/i.test(String(c.nombre).trim());
+  const nombreReal = String(j.nombre || '').trim().replace(/[^\p{L}\p{M} .'-]/gu, '').slice(0, 40);
+  if (generico && nombreReal && nombreReal.length >= 2) {
+    await supabase.from('contacts').update({ nombre: nombreReal }).eq('id', c.contact_id);
+    await supabase.from('activities').insert({ contact_id: c.contact_id, tipo: 'nota', descripcion: `Nombre detectado por el agente al preparar la reactivación: ${nombreReal} (antes «${c.nombre || 'vacío'}»)` }).then(() => {}, () => {});
+  }
   return { mensaje: String(j.mensaje).trim(), angulo: String(j.angulo || ''), resumen_lead: String(j.resumen_lead || ''), pregunta_original: String(j.pregunta_original || ''), por_que: String(j.por_que || ''), costo };
 }
 
@@ -139,7 +146,8 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
   const par = await parListoPara('reactivacion');
   if (!par) return { error: 'No hay plantilla aprobada por Meta todavía (ni la de reactivación ni la de seguimiento).' };
   const { data: k } = await supabase.from('contacts').select('nombre').eq('id', r.contact_id).maybeSingle();
-  const primer = String(k?.nombre || '').trim().split(/\s+/)[0] || 'qué tal';
+  const nombreK = String(k?.nombre || '').trim();
+  const primer = !nombreK || /^contacto\s*\d*$/i.test(nombreK) ? 'qué tal' : nombreK.split(/\s+/)[0];
   let saleAt = await siguienteHueco();
   if (o.automatica) saleAt = new Date(Math.max(saleAt.getTime(), Date.now() + VETO_MIN * 60e3));
   const { data: env, error } = await supabase.from('ti_envios').insert({ contact_id: r.contact_id, conversation_id: r.conversation_id, telefono: r.telefono, origen: 'reactivacion', estado: 'pendiente', mensaje, mensaje_original: r.mensaje_original, sale_at: saleAt.toISOString(), modelo: r.modelo, costo_usd: r.costo_usd, aprobado_por: o.userId || null, editado_por: editado ? o.userId || null : null, revisado_at: new Date().toISOString(), plantilla: { marketing: par.marketing, utility: par.utility, familia: par.familia, params: [primer, paramAngulo(mensaje)] }, salida: { objetivo: 'reactivar', angulo: r.angulo, segmento: r.segmento } }).select('id').maybeSingle();

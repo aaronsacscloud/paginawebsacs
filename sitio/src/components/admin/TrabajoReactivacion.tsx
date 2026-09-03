@@ -83,7 +83,7 @@ export default function TrabajoReactivacion() {
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Lo que va a decir {cambiado && <span style={{ color: '#b45309' }}>· se guardará tu versión</span>}</div>
-                <div style={{ fontSize: 12, color: '#8e88a8', marginBottom: 4 }}>Hola {String(k.nombre || '').split(' ')[0] || '…'},</div>
+                <div style={{ fontSize: 12, color: '#8e88a8', marginBottom: 4 }}>Hola {(!k.nombre || /^contacto\s*\d*$/i.test(String(k.nombre).trim())) ? 'qué tal' : String(k.nombre).trim().split(' ')[0]},</div>
                 {editable
                   ? <textarea className="ti-campo" rows={6} value={txt} onChange={e => setTextos(t => ({ ...t, [f.id]: e.target.value }))} style={{ fontSize: 14, margin: 0 }} />
                   : <div style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{f.mensaje}</div>}

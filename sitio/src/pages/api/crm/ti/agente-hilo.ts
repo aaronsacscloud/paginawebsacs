@@ -14,7 +14,7 @@ async function estadoDe(contactId: string) {
   const [cfg, agId, { data: pf }, { data: convs }, { data: sug }] = await Promise.all([
     leerConfig() as Promise<any>, agenteTeamMemberId(),
     supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
-    supabase.from('wa_conversaciones').select('id, asignado_a').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(1),
+    supabase.from('wa_conversaciones').select('id, asignado_a, telefono').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(1),
     supabase.from('ti_envios').select('id, mensaje, created_at, salida').eq('contact_id', contactId).eq('estado', 'sugerencia').order('created_at', { ascending: false }).limit(3),
   ]);
   const conv = convs?.[0]; const st: any = (pf?.agente_estado as any) || {};
@@ -23,7 +23,13 @@ async function estadoDe(contactId: string) {
   let estado: 'activo' | 'observando' | 'apagado' = 'activo';
   if (pf?.silenciar_ia || st.cerrado === 'opt_out') estado = 'apagado';
   else if (cfg.agente_activo !== true) estado = 'apagado';
-  else if (asignado === 'humano' || modoSugerencia || (cfg.agente_modo || 'sombra') === 'sombra' && !(cfg.agente_prueba_telefonos || []).length) estado = 'observando';
+  else {
+    // En modo sombra el agente solo manda a los números de prueba: para cualquier otro lead está OBSERVANDO (propone, no manda).
+    const sombra = (cfg.agente_modo || 'sombra') === 'sombra';
+    const dig = (t: string) => String(t || '').replace(/\D/g, '').slice(-10);
+    const esPrueba = (cfg.agente_prueba_telefonos || []).some((t: string) => dig(t) === dig(conv?.telefono));
+    if (asignado === 'humano' || modoSugerencia || (sombra && !esPrueba)) estado = 'observando';
+  }
   return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', conversation_id: conv?.id || null, sugerencias: sug || [] };
 }
 
