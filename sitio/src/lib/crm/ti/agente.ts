@@ -968,7 +968,10 @@ async function tareaParaConsultor(cid: string, motivo: string, ultimoTexto: stri
   await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: cc?.company_id || null, owner_id: cc?.owner_id || null, familia: 'responder', tipo: 'responder', prioridad: 2, vence_at: new Date().toISOString(), origen: 'evento', payload: { instruccion: `${String(cc?.nombre || 'El lead').split(/\s+/)[0]} escribió — ${motivo === 'reunion_hecha' ? 'ya tuvo su reunión' : motivo === 'cotizacion' ? 'ya tiene cotización' : 'el hilo es tuyo (escribiste hace poco)'}: te toca a ti`, porque: motivo === 'hilo_humano' ? 'Tú le escribiste en las últimas 4 h: el agente no se mete en tu conversación.' : 'Fuera del alcance del agente SDR: después de la reunión o con cotización, el seguimiento es del consultor.', nombre: cc?.nombre, whatsapp: cc?.whatsapp, entrante: String(ultimoTexto || '').slice(0, 300), alcance: motivo } });
 }
 
-export async function tocarSilencios(): Promise<any> {
+/** opts (práctica del dueño, 2026-09-04): soloReenganche = solo leads enrolados por reenganche; forzarHorario = preparar fuera del horario
+ *  laboral; saleAt = programar la salida a esa hora (escalonada 3 min por lead) en vez de la ventana de veto. */
+export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHorario?: boolean; saleAt?: Date } = {}): Promise<any> {
+  let escalon = 0;
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { silencio: 'apagado' };
   const sombraGlobal = (cfg.agente_modo || 'sombra') === 'sombra';
@@ -1005,7 +1008,8 @@ export async function tocarSilencios(): Promise<any> {
     if (await fueraDelAlcanceSDR(cid)) { res.con_consultor = (res.con_consultor || 0) + 1; continue; }
     const prueba = esPrueba(cfg, ultimo[cid].telefono);
     const sombra = sombraGlobal && !prueba;          // los de prueba viven el flujo completo
-    if (!laboral && !prueba) continue;                // fuera de horario solo se mueven las pruebas
+    if (opts.soloReenganche && !st.reenganche) continue;
+    if (!laboral && !prueba && !opts.forzarHorario) continue;                // fuera de horario solo se mueven las pruebas
     const acel = prueba ? factorPrueba(cfg) : 1;      // reloj acelerado: horas → minutos
     res.revisados++;
     const base = Date.parse(st.base_at || ultimo[cid].enviado_at);
@@ -1047,7 +1051,7 @@ export async function tocarSilencios(): Promise<any> {
     const ANGULOS = ['repreguntar CORTO lo que quedó abierto (una línea, sin presión, sin repetir lo ya dicho)', 'un DATO DE VALOR concreto para su giro: una imagen o un caso real de una tienda parecida, y una sola pregunta', 'ofrecer la LLAMADA RÁPIDA de 15 min con dos horarios reales de la lista (si acepta, accion agendar_llamada)'];
     const anguloObligatorio = st.angulo_sugerido ? `${st.angulo_sugerido} (sugerido por la revisión diaria)` : (validos >= 2 ? 'ofrecer la LLAMADA RÁPIDA de 15 min: si la lista LLAMADA RÁPIDA trae horarios, con dos de ellos; si no, preguntando si le queda mejor mañana en la mañana o en la tarde (sin hora fija; el horario se cierra cuando conteste)' : ANGULOS[Math.min(validos, ANGULOS.length - 1)]);
     // La mejor hora del lead: si hoy todavía no llega, se espera (dentro del horario).
-    if (!prueba && p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin && !ultimoIntento) continue;
+    if (!prueba && !opts.forzarHorario && p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin && !ultimoIntento) continue;
 
     // Antes del primer toque (y en cada ciclo) se evalúa: ICP + calidad de la conversación deciden
     // cuánto insistir: ICP bajo y charla pobre → 1 toque y a la tarjeta; medio → 2; alto → 3 + llamada.
@@ -1085,10 +1089,10 @@ export async function tocarSilencios(): Promise<any> {
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
-      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: (opts.saleAt ? new Date(opts.saleAt.getTime() + (escalon++) * 3 * MS_MIN) : new Date(ahora.getTime() + ventanaMin * MS_MIN)).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       if (!envIns?.id) { await log({ accion: 'agente_error', contact_id: cid, razon: 'toque de silencio no se pudo programar (ya había un pendiente): no cuenta como intento' }); continue; }
-      const intento: Intento = { at: ahora.toISOString(), tipo: par ? 'plantilla' : 'texto', franja: franjaAhora, envio_id: envIns.id, valido: null };
+      const intento: Intento = { at: (opts.saleAt || ahora).toISOString(), tipo: par ? 'plantilla' : 'texto', franja: opts.saleAt ? franjaDe(opts.saleAt) : franjaAhora, envio_id: envIns.id, valido: null };
       await guardar({ base_at: new Date(base).toISOString(), intentos: [...intentos, intento], ultimo_toque_at: ahora.toISOString(), fase: 'reconectar', cierre_ventana_at: cierreVentana ? ahora.toISOString() : st.cierre_ventana_at, angulo_sugerido: undefined, angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
       await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `intento ${intentos.length + 1} (${par ? 'plantilla' : 'texto'}, ${franjaAhora}) · válidos ${validos}/3 · ciclo ${st.ciclo}`, costo: d.costo });
       res.toques++;
