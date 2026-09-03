@@ -38,10 +38,12 @@ const CSS = `
 .eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.48),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.7)}
 .eqf-orbe:active{transform:scale(.96)}
 .eqf-orbe:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
-/* Axo: la cabeza en SVG (unos 2 KB, nítida en cualquier pantalla). Los iris se
-   mueven con --ox/--oy; el parpadeo y el "atento" son transforms sobre cada ojo. */
+/* Axo: la cabeza en SVG (unos 3 KB, nítida en cualquier pantalla), calcada de la
+   mascota: cejitas, ojos casi todo pupila con aro morado y dos brillos, naricita,
+   boca en w, rubor y branquias. La pupila se mueve con --ox/--oy; el parpadeo y el
+   "atento" son transforms sobre cada ojo. */
 .eqf-axo{width:74px;height:74px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 2px 3px rgba(90,60,160,.22))}
-.eqf-axo .iris{transform:translate(calc(var(--ox,0px)*.42),calc(var(--oy,0px)*.42));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
+.eqf-axo .pupila{transform:translate(calc(var(--ox,0px)*.34),calc(var(--oy,0px)*.34));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
 .eqf-axo .ojo{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease}
 .eqf-orbe:hover .eqf-axo .ojo{transform:scale(1.06)}
 .eqf-orbe.atento .eqf-axo .ojo{transform:scale(1.14)}
@@ -163,48 +165,55 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
   return (
     <svg className="eqf-axo" viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-        <radialGradient id="eqf-piel" cx="45%" cy="35%" r="70%"><stop offset="0" stopColor="#FFF7F9" /><stop offset=".7" stopColor="#FBE3EA" /><stop offset="1" stopColor="#F2C6D6" /></radialGradient>
-        <linearGradient id="eqf-bra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFB3D0" /><stop offset="1" stopColor="#EE6FA5" /></linearGradient>
-        <radialGradient id="eqf-iris" cx="40%" cy="35%" r="70%"><stop offset="0" stopColor="#A997FF" /><stop offset=".55" stopColor="#7A66EE" /><stop offset="1" stopColor="#4B3AB8" /></radialGradient>
+      <radialGradient id="eqf-piel" cx="42%" cy="30%" r="75%"><stop offset="0" stopColor="#FFEEEA"/><stop offset=".6" stopColor="#FBD7D0"/><stop offset="1" stopColor="#F3B9B1"/></radialGradient>
+      <linearGradient id="eqf-bra" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#F2A49C"/><stop offset="1" stopColor="#FFC9BF"/></linearGradient>
+      <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".58" stopColor="#3F309F"/><stop offset=".82" stopColor="#7B69E3"/><stop offset=".96" stopColor="#9A89F0"/><stop offset="1" stopColor="#5D4CC9"/></radialGradient>
+      <radialGradient id="eqf-rubor" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#F59AA0" stopOpacity=".75"/><stop offset="1" stopColor="#F59AA0" stopOpacity="0"/></radialGradient>
+      <filter id="eqf-suave" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".18"/></filter>
       </defs>
-      {/* branquias */}
-      <g className="branquia" fill="url(#eqf-bra)">
-        <ellipse cx="9" cy="22" rx="3.1" ry="7.5" transform="rotate(-38 9 22)" />
-        <ellipse cx="6.5" cy="31" rx="3.1" ry="7.5" transform="rotate(-82 6.5 31)" />
-        <ellipse cx="9" cy="40" rx="2.8" ry="6.5" transform="rotate(-124 9 40)" />
+      {/* branquias: tres hojas por lado, dos hacia arriba y una hacia el lado, bien afuera de la cara */}
+      <g className="branquia" fill="url(#eqf-bra)" filter="url(#eqf-suave)">
+      <path d="M14 27 C7 22 3 12 7 5 C13 8 16 18 15 26Z"/>
+      <path d="M10 32 C1 30 -3 22 0 14 C7 17 10 25 11 31Z"/>
+      <path d="M10 39 C2 41 -3 37 -2 31 C4 31 9 35 11 38Z"/>
       </g>
-      <g className="branquia der" fill="url(#eqf-bra)">
-        <ellipse cx="55" cy="22" rx="3.1" ry="7.5" transform="rotate(38 55 22)" />
-        <ellipse cx="57.5" cy="31" rx="3.1" ry="7.5" transform="rotate(82 57.5 31)" />
-        <ellipse cx="55" cy="40" rx="2.8" ry="6.5" transform="rotate(124 55 40)" />
+      <g className="branquia der" fill="url(#eqf-bra)" filter="url(#eqf-suave)">
+      <path d="M50 27 C57 22 61 12 57 5 C51 8 48 18 49 26Z"/>
+      <path d="M54 32 C63 30 67 22 64 14 C57 17 54 25 53 31Z"/>
+      <path d="M54 39 C62 41 67 37 66 31 C60 31 55 35 53 38Z"/>
       </g>
-      {/* cabeza */}
-      <path d="M32 11c13.5 0 22.5 8.5 22.5 20.5 0 11.5-9 21-22.5 21S9.5 43 9.5 31.5C9.5 19.5 18.5 11 32 11z" fill="url(#eqf-piel)" stroke="#EBB9CB" strokeWidth=".8" />
-      <ellipse cx="25" cy="17.5" rx="6.5" ry="2.4" fill="#fff" opacity=".45" />
-      {/* cachetes */}
-      <ellipse cx="17.5" cy="39" rx="4" ry="2.3" fill="#F7A3C0" opacity=".75" />
-      <ellipse cx="46.5" cy="39" rx="4" ry="2.3" fill="#F7A3C0" opacity=".75" />
-      {/* ojos */}
-      <g className="ojo">
-        <ellipse cx="23" cy="31" rx="6.4" ry="7" fill="#fff" stroke="#E4C6D2" strokeWidth=".6" />
-        <g className="iris">
-          <circle cx="23" cy="31.6" r="5" fill="url(#eqf-iris)" />
-          <circle cx="23" cy="31.8" r="2.7" fill="#231B4D" />
-          <circle cx="21.2" cy="29.6" r="1.7" fill="#fff" />
-          <circle cx="25" cy="33.6" r=".8" fill="#fff" opacity=".85" />
-        </g>
+      {/* cabeza: ancha, arriba plana, cachetes llenos */}
+      <path d="M32 12 C46 12 56.5 20 56.5 33 C56.5 46 46 55 32 55 C18 55 7.5 46 7.5 33 C7.5 20 18 12 32 12Z" fill="url(#eqf-piel)"/>
+      <ellipse cx="25" cy="16.5" rx="5" ry="1.8" fill="#fff" opacity=".28"/>
+      {/* rubor */}
+      <ellipse cx="15.5" cy="41" rx="5.5" ry="3.4" fill="url(#eqf-rubor)"/>
+      <ellipse cx="48.5" cy="41" rx="5.5" ry="3.4" fill="url(#eqf-rubor)"/>
+      {/* cejitas */}
+      <path d="M17 25.5 q4.5 -3.8 8.5 -1" fill="none" stroke="#EFA39C" strokeWidth="1.7" strokeLinecap="round"/>
+      <path d="M47 25.5 q-4.5 -3.8 -8.5 -1" fill="none" stroke="#EFA39C" strokeWidth="1.7" strokeLinecap="round"/>
+      {/* ojos: casi todo pupila, con aro morado y dos brillos */}
+      <g className="ojo"><g transform="rotate(-5 22 34)">
+      <ellipse cx="22" cy="34" rx="7" ry="7.7" fill="url(#eqf-iris)"/>
+      <g className="pupila">
+      <ellipse cx="22.4" cy="34.4" rx="5.6" ry="6.1" fill="#15112C"/>
+      <circle cx="20.2" cy="31.6" r="2.1" fill="#fff"/>
+      <circle cx="24.6" cy="37" r="1" fill="#fff" opacity=".9"/>
       </g>
-      <g className="ojo">
-        <ellipse cx="41" cy="31" rx="6.4" ry="7" fill="#fff" stroke="#E4C6D2" strokeWidth=".6" />
-        <g className="iris">
-          <circle cx="41" cy="31.6" r="5" fill="url(#eqf-iris)" />
-          <circle cx="41" cy="31.8" r="2.7" fill="#231B4D" />
-          <circle cx="39.2" cy="29.6" r="1.7" fill="#fff" />
-          <circle cx="43" cy="33.6" r=".8" fill="#fff" opacity=".85" />
-        </g>
+      <ellipse cx="22" cy="34" rx="7" ry="7.7" fill="none" stroke="#3E2F8F" strokeWidth=".5" opacity=".55"/>
+      </g></g>
+      <g className="ojo"><g transform="rotate(5 42 34)">
+      <ellipse cx="42" cy="34" rx="7" ry="7.7" fill="url(#eqf-iris)"/>
+      <g className="pupila">
+      <ellipse cx="41.6" cy="34.4" rx="5.6" ry="6.1" fill="#15112C"/>
+      <circle cx="39.4" cy="31.6" r="2.1" fill="#fff"/>
+      <circle cx="43.8" cy="37" r="1" fill="#fff" opacity=".9"/>
       </g>
-      {/* sonrisa */}
-      <path d="M28.2 42.2q3.8 3.6 7.6 0" fill="none" stroke="#C9587F" strokeWidth="1.5" strokeLinecap="round" />
+      <ellipse cx="42" cy="34" rx="7" ry="7.7" fill="none" stroke="#3E2F8F" strokeWidth=".5" opacity=".55"/>
+      </g></g>
+      {/* naricita y boca en w */}
+      <ellipse cx="32" cy="40.5" rx="2.2" ry="1.3" fill="#F6C6BF"/>
+      <circle cx="31.1" cy="40.6" r=".5" fill="#E39A94"/><circle cx="32.9" cy="40.6" r=".5" fill="#E39A94"/>
+      <path d="M27.8 44.2 q2.1 2.6 4.2 0 q2.1 2.6 4.2 0" fill="none" stroke="#D98B86" strokeWidth="1.3" strokeLinecap="round"/>
     </svg>
   );
 }
