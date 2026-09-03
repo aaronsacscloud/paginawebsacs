@@ -9,7 +9,7 @@ import { pushA } from './push-crm';
 
 export type Aviso = {
   para: string;
-  tipo: 'espacio_mencion' | 'espacio_respuesta' | 'espacio_acuerdo' | 'espacio_importante' | 'espacio_directo';
+  tipo: 'espacio_mencion' | 'espacio_respuesta' | 'espacio_acuerdo' | 'espacio_importante' | 'espacio_directo' | 'espacio_publicacion';
   titulo: string;
   detalle?: string;
   canal_id: string;

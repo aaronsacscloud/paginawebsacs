@@ -11,6 +11,7 @@ import { ModalCanal } from './Gestion';
 import Canal from './Canal';
 import Ficha from './Ficha';
 import Sala from './Sala';
+import Publicaciones from './Publicaciones';
 import Cargando from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 
@@ -33,15 +34,18 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const [canalId, setCanalId] = useState<string | null>(null);
   const [irA, setIrA] = useState<string | null>(null);
   const [hilo, setHilo] = useState<M | null>(null);
-  const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | 'ficha' | null>(null);
+  const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | 'ficha' | 'pubs' | null>(null);
   const [ficha, setFicha] = useState<Cita | null>(null);   // la cotización/cliente/lead/pago/cobranza citada con @ que se está viendo
   const [nFijados, setNFijados] = useState(0);
+  const [nPubs, setNPubs] = useState(0);                 // publicaciones abiertas del canal (el botón de la cabecera)
+  const [pubAbrir, setPubAbrir] = useState<string | null>(null);   // la tarjeta del chat que pidió abrirse
   const [luz, setLuz] = useState<string | null>(null);
   const [ajustes, setAjustes] = useState(false);          // el engrane de la cabecera: editar el canal abierto
   const [leidoAl, setLeidoAl] = useState<Record<string, string>>({});   // ultimo_leido por canal al abrirlo (para la línea "Nuevo")
   const senalCanal = useRef<((s: Senal) => void) | null>(null);
   const senalHilo = useRef<((s: Senal) => void) | null>(null);
   const senalSala = useRef<((s: Senal) => void) | null>(null);
+  const senalPubs = useRef<((s: Senal) => void) | null>(null);
   const yo = arbol?.yo || null;
 
   const cargarArbol = useCallback(async () => {
@@ -88,7 +92,7 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
     else {
       setHilo(null);
       // En escritorio, una sala abre con su agenda a la vista; al salir de la sala, el panel se cierra.
-      setLado(l => c.tipo === 'sala' ? (!movil && (l === null || l === 'hilo' || l === 'sala' || l === 'fijados') ? 'sala' : l === 'hilo' ? null : l) : (l === 'hilo' || l === 'sala' || l === 'fijados') ? null : l);
+      setLado(l => c.tipo === 'sala' ? (!movil && (l === null || l === 'hilo' || l === 'sala' || l === 'fijados') ? 'sala' : l === 'hilo' ? null : l) : (l === 'hilo' || l === 'sala' || l === 'fijados' || l === 'pubs') ? null : l);
     }
     const u = new URL(window.location.href); u.searchParams.set('tab', 'equipo'); u.searchParams.set('canal', id);
     if (msg) u.searchParams.set('msg', msg); else u.searchParams.delete('msg');
@@ -114,9 +118,12 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
     if (s.tipo === 'msg_upd' || s.tipo === 'reaccion') { senalCanal.current?.(s); senalHilo.current?.(s); }
     if (s.tipo === 'msg_upd' && s.canal_id === canalId) contarFijados(s.canal_id);
     if (s.tipo === 'reunion' || s.tipo === 'msg') senalSala.current?.(s);
+    if (s.tipo === 'pub') { senalPubs.current?.(s); if (s.canal_id === canalId) contarPubs(s.canal_id); }
   }, [canalId, yo?.id, cargarArbol]);
   const contarFijados = useCallback((id: string) => { api.fijados(id).then(r => setNFijados(r.mensajes.length)).catch(() => null); }, []);
   useEffect(() => { setNFijados(0); if (canalId) contarFijados(canalId); }, [canalId, contarFijados]);
+  const contarPubs = useCallback((id: string) => { api.publicaciones(id).then(r => setNPubs(r.publicaciones.filter(x => x.estado === 'abierta').length)).catch(() => null); }, []);
+  useEffect(() => { setNPubs(0); setPubAbrir(null); if (canalId) contarPubs(canalId); }, [canalId, contarPubs]);
   const { conectado, enLinea } = useRealtime(yo?.id || null, alSenal);
   useEffect(() => { const t = setInterval(cargarArbol, 120_000); return () => clearInterval(t); }, [cargarArbol]);
 
@@ -131,8 +138,10 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
       if (!d.tipo || !d.id) return;
       setFicha({ tipo: d.tipo, id: d.id, nombre: d.nombre || '' }); setLado('ficha');
     };
-    window.addEventListener('crm:ficha', f);
-    return () => window.removeEventListener('crm:ficha', f);
+    // La tarjeta de una publicación en el chat pide abrirla a un lado.
+    const g = (e: Event) => { const d = (e as CustomEvent).detail || {}; if (!d.id) return; setPubAbrir(d.id); setLado('pubs'); };
+    window.addEventListener('crm:ficha', f); window.addEventListener('crm:pub', g);
+    return () => { window.removeEventListener('crm:ficha', f); window.removeEventListener('crm:pub', g); };
   }, []);
   // El canal abierto se archivó o se borró (aquí o en el otro navegador): se sale de él sin dejar la URL apuntando a la nada.
   const cerrado = useCallback((id: string) => {
@@ -156,6 +165,7 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
       <span className="desc">{otro ? (enLinea.includes(otro.id) ? 'En línea' : otro.visto_at ? `Visto ${hace(otro.visto_at)}` : '') : canal.descripcion}</span>
       {canal.tipo === 'sala' && canal.regla_reunion && !movil && <span style={{ fontSize: '.75rem', color: 'var(--eq-gris)', display: 'inline-flex', gap: 4, alignItems: 'center' }}>{Ic.reloj}{['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][canal.regla_reunion.dia_iso]} {canal.regla_reunion.hora}</span>}
       {canal.tipo === 'sala' && <button className={'eq-ib' + (lado === 'sala' ? ' on' : '')} title="Agenda y actas" onClick={() => setLado(lado === 'sala' ? null : 'sala')} style={movil ? { width: 'auto', padding: '0 10px', gap: 5, fontSize: '.8125rem', fontWeight: 700 } : undefined}>{Ic.sala}{movil ? 'Agenda' : null}</button>}
+      {canal.tipo !== 'sistema' && <button className={'eq-ib' + (lado === 'pubs' ? ' on' : '')} title="Publicaciones: notas, checklists y proyectos del canal" onClick={() => { setPubAbrir(null); setLado(lado === 'pubs' ? null : 'pubs'); }} style={{ width: 'auto', padding: '0 8px', gap: 4, fontSize: '.75rem', fontWeight: 800 }}>{Ic.nota}{nPubs > 0 ? nPubs : null}</button>}
       {nFijados > 0 && <button className={'eq-ib' + (lado === 'fijados' ? ' on' : '')} title={`${nFijados} ${nFijados === 1 ? 'mensaje fijado' : 'mensajes fijados'}`} onClick={() => setLado(lado === 'fijados' ? null : 'fijados')} style={{ width: 'auto', padding: '0 8px', gap: 3, fontSize: '.75rem', fontWeight: 800 }}>{Ic.pin}{nFijados}</button>}
       <button className={'eq-ib' + (lado === 'buscar' ? ' on' : '')} title="Buscar en este canal" onClick={() => setLado(lado === 'buscar' ? null : 'buscar')}>{Ic.lupa}</button>
       {canal.tipo !== 'directo' && <button className="eq-ib" title={canal.silenciado ? 'Silenciado: activar avisos' : 'Silenciar canal'} onClick={silenciar}>{canal.silenciado ? Ic.campanaOff : Ic.campana}</button>}
@@ -194,6 +204,14 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
           <Sala key={'s' + canal.id} canal={canal} yo={yo.id} role={yo.role} personas={arbol.personas} movil={movil}
             onCerrar={() => setLado(null)} onAviso={toast} registrarSenal={f => { senalSala.current = f; }}
             onIr={(c, m, h) => { abrir(c, m, h); if (movil) setLado(null); }} />
+        </aside>
+      )}
+      {lado === 'pubs' && canal && (
+        <aside className="eq-lado">
+          <Publicaciones key={canal.id} canal={canal} yo={yo.id} role={yo.role} personas={arbol.personas} movil={movil} abrirId={pubAbrir}
+            onCerrar={() => { setLado(null); setPubAbrir(null); }} onAviso={toast} registrarSenal={f => { senalPubs.current = f; }}
+            onIr={(c, m, h) => { abrir(c, m, h); if (movil) setLado(null); }}
+            onComentarios={id => { api.uno(id).then(r => { setHilo(r.mensaje); setLado('hilo'); }).catch(() => toast('No se pudo abrir el hilo')); }} />
         </aside>
       )}
       {lado === 'fijados' && canal && (

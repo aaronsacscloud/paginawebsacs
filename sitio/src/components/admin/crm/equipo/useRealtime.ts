@@ -16,6 +16,7 @@ export type Senal =
   | { tipo: 'reaccion'; canal_id: string; id: string }
   | { tipo: 'canal'; canal_id?: string }
   | { tipo: 'reunion'; canal_id: string }
+  | { tipo: 'pub'; canal_id: string; id?: string }
   | { tipo: 'presencia' }
   | { tipo: 'poll' };
 

@@ -29,9 +29,20 @@ export type Mensaje = {
   reacciones: Reaccion[]; hilo: { n: number; autores: { id: string; nombre: string; foto_url: string | null }[]; ultima: string } | null;
   cid: string | null; mio: boolean;
   /** Mensaje escrito por el sistema (canales de Sistema): nivel y a dónde abre. */
+  /** Tarjeta de una publicación del canal (nota/checklist/proyecto) con su avance. */
+  publicacion?: PubResumen | null;
   sistema?: { nivel?: 'info' | 'alerta' | 'urgente'; tipo?: string; contact_id?: string | null; company_id?: string | null; conversation_id?: string | null; churn_caso_id?: string | null; destino?: string | null; url?: string | null; que_hacer?: string | null } | null;
   // solo en el navegador
   pendiente?: boolean; fallo?: string;
+};
+export type Quien = { id: string; nombre: string; foto_url: string | null } | null;
+export type PubTipo = 'nota' | 'checklist' | 'proyecto';
+export type PubResumen = { id: string; tipo: PubTipo; titulo: string; estado: 'abierta' | 'cerrada'; n: number; hechos: number; responsable: Quien; vence_at: string | null };
+export type PubItem = { id: string; publicacion_id: string; texto: string; grupo: string | null; orden: number; responsable_id: string | null; responsable: Quien; vence_at: string | null; hecho_at: string | null; hecho_por: string | null; hecho_por_p: Quien; created_at: string };
+export type Publicacion = {
+  id: string; canal_id: string; tipo: PubTipo; titulo: string; cuerpo: string; estado: 'abierta' | 'cerrada';
+  responsable_id: string | null; responsable: Quien; vence_at: string | null; fijada: boolean; autor_id: string; autor: Quien;
+  mensaje_id: string | null; cerrada_at: string | null; created_at: string; updated_at: string; items: PubItem[]; n: number; hechos: number;
 };
 export type CanalArchivado = { id: string; seccion_id: string | null; nombre: string; tipo: 'charla' | 'sala' | 'sistema'; archivado_at: string };
 export type SeccionArchivada = { id: string; nombre: string; archivada_at: string };
@@ -91,6 +102,9 @@ export const api = {
   buscar: (q: string, canal_id?: string) => pedir<{ resultados: Mensaje[] }>('GET', `/buscar?q=${encodeURIComponent(q)}${canal_id ? `&canal_id=${canal_id}` : ''}`),
   // Salas
   sala: (canal_id: string) => pedir<any>('GET', `/sala?canal_id=${canal_id}`),
+  publicaciones: (canal_id: string) => pedir<{ publicaciones: Publicacion[] }>('GET', `/publicaciones?canal_id=${canal_id}`),
+  publicacion: (id: string) => pedir<{ publicacion: Publicacion }>('GET', `/publicaciones?id=${id}`),
+  pubAccion: (b: any) => pedir<{ publicacion: Publicacion | null; ok?: boolean }>('POST', '/publicaciones', b),
   salaAccion: (b: any) => pedir<any>('POST', '/sala', b),
 };
 

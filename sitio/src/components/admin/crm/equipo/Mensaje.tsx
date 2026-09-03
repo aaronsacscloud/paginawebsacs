@@ -60,7 +60,7 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil,
         )}
         {m.borrado ? <div className="borrado">Mensaje eliminado</div> : (
           <>
-            {m.texto && <Texto t={m.texto} yo={yo} />}
+            {m.publicacion ? <TarjetaPub r={m.publicacion} /> : m.texto && <Texto t={m.texto} yo={yo} />}
             {(m.citas.length > 0 || m.sistema) && <Pastillas m={m} acc={acc} />}
             {m.fallo && <div style={{ color: '#C0554E', fontSize: '.75rem' }}>No se envió: {m.fallo}</div>}
             {m.editado_at && <span style={{ fontSize: '.6875rem', color: '#9a95ad' }}>(editado)</span>}
@@ -160,5 +160,25 @@ function Pastillas({ m, acc }: { m: M; acc: Acciones }) {
         : <button className="eq-pastilla ir" onClick={() => acc.irACrm(abrir.d!)}>{abrir.t} →</button>)}
       {s?.que_hacer && <div className="eq-quehacer"><b>Qué hacer:</b> {s.que_hacer}</div>}
     </div>
+  );
+}
+
+/* La tarjeta de una publicación del canal: tipo, título y avance en vivo. Al
+   tocarla se abre la publicación a un lado del chat (Equipo escucha crm:pub). */
+const ETIQ_PUB: Record<string, string> = { nota: 'Nota', checklist: 'Checklist', proyecto: 'Proyecto' };
+function TarjetaPub({ r }: { r: NonNullable<M['publicacion']> }) {
+  const pct = r.n ? Math.round(r.hechos / r.n * 100) : 0;
+  return (
+    <button className={'eq-pub tarjeta' + (r.estado === 'cerrada' ? ' cerrada' : '')} onClick={() => window.dispatchEvent(new CustomEvent('crm:pub', { detail: { id: r.id } }))}>
+      <div className="fila"><span className={'eq-pub-tipo ' + r.tipo}>{ETIQ_PUB[r.tipo] || 'Publicación'}</span><b>{r.titulo}</b></div>
+      {r.n > 0 && <div className="eq-pub-barra"><i style={{ width: pct + '%' }} /></div>}
+      <div className="meta">
+        {r.n > 0 && <span className={r.hechos === r.n ? 'ok' : ''}>{r.hechos}/{r.n}</span>}
+        {r.estado === 'cerrada' && <span>Cerrada</span>}
+        {r.responsable && <span className="quien">{r.responsable.nombre.split(' ')[0]}</span>}
+        {r.vence_at && <span className="fecha">{Ic.reloj}{r.vence_at.slice(5).split('-').reverse().join('/')}</span>}
+        <span className="t">Abrir</span>
+      </div>
+    </button>
   );
 }

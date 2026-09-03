@@ -61,6 +61,7 @@ export type Senal =
   | { tipo: 'reaccion'; canal_id: string; id: string }
   | { tipo: 'canal'; canal_id?: string }
   | { tipo: 'reunion'; canal_id: string }
+  | { tipo: 'pub'; canal_id: string; id?: string }
   | { tipo: 'presencia' };
 
 export async function emitir(s: Senal): Promise<void> {
@@ -216,6 +217,7 @@ export async function darForma(rows: any[], yo: string) {
       hilo: hilo[r.id] ? { n: hilo[r.id].n, autores: hilo[r.id].autores.map(persona), ultima: hilo[r.id].ultima } : null,
       cid: r.metadata?.cid || null,
       sistema: r.metadata?.sistema || null,
+      publicacion: r.metadata?.publicacion || null,
       mio: r.autor_id === yo,
     };
   });

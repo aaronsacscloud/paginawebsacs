@@ -205,15 +205,15 @@ export default function Arbol(p: ArbolProps) {
           const est = estadoDe(x);
           return (
             <button key={x.id} className="eq-per" onClick={() => p.onDirecto(x.id)} title={`Escribir a ${x.nombre}`}>
-              <Avatar p={x} size={28} estado={est} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</span>
+              <Avatar p={x} size={22} estado={est} />
+              <span className="nom">
+                <b>{x.nombre}</b>
                 <span className="est">{est === 'activo' ? 'En línea' : est === 'ausente' ? 'Ausente' : x.visto_at ? `Visto ${hace(x.visto_at)}` : 'Sin conectar'}</span>
               </span>
             </button>
           );
         })}
-        <div className="eq-conex" style={{ padding: '8px 4px 0' }}><i className={p.conectado ? 'on' : ''} />{p.conectado ? 'En vivo' : 'Actualizando cada 30 s'}</div>
+        <div className="eq-conex" style={{ padding: '4px 4px 0' }}><i className={p.conectado ? 'on' : ''} />{p.conectado ? 'En vivo' : 'Actualizando cada 30 s'}</div>
       </div>
       <ActionSheet open={!!menu} onClose={() => setMenu(null)} items={itemsMenu()}
         title={menu?.tipo === 'seccion' ? menu.seccion.nombre : menu ? `#${menu.canal.nombre}${menu.tipo === 'archivado' ? ' (archivado)' : ''}` : ''} />
