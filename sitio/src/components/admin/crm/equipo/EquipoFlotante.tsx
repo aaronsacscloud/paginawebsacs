@@ -11,7 +11,7 @@
 // Cerrada, el widget tiene su propio oído (useRealtime + árbol cada 2 min);
 // abierta, el oído es el del chat y este se calla, para no tener dos sockets
 // ni dos presencias del mismo usuario.
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { Arbol as A, Canal as C, Mensaje as M } from './api';
 import { api, hace } from './api';
 import { useRealtime, type Senal } from './useRealtime';
@@ -38,7 +38,12 @@ const CSS = `
 .eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.5),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.35)}
 .eqf-orbe:active{transform:scale(.96)}
 .eqf-orbe:focus-visible{outline:3px solid ${P.violetaAgua};outline-offset:2px}
-.eqf-orbe svg{filter:drop-shadow(0 1px 1px rgba(40,20,100,.25))}
+.eqf-ojos{position:relative;display:flex;gap:7px;align-items:center;justify-content:center;transform:translate(var(--ox,0px),var(--oy,0px));transition:transform .16s cubic-bezier(.2,.8,.2,1.1);pointer-events:none}
+.eqf-ojo{display:block;width:9px;height:17px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(255,255,255,.4),0 1px 3px rgba(40,20,100,.35);transform-origin:50% 50%;transition:transform .12s ease,height .08s ease}
+.eqf-ojo{transform:rotate(16deg)}   /* las dos inclinadas igual, como el bot de Grok */
+.eqf-orbe:hover .eqf-ojo{height:19px}
+.eqf-orbe.atento .eqf-ojo{height:20px;width:10px}
+.eqf-orbe.parpadea .eqf-ojo{height:2px;border-radius:2px}
 .eqf-orbe .brillo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.38),transparent 55%);pointer-events:none}
 .eqf-orbe .anillo{position:absolute;inset:-3px;border-radius:50%;border:2.5px solid ${P.violeta};opacity:0;pointer-events:none;background:transparent}
 .eqf-orbe.pulsa .anillo{animation:eqf-pulso 1.4s ease-out 3}
@@ -101,12 +106,56 @@ function usarCss() {
   }, []);
 }
 
-const ICONO = (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 5h11a2 2 0 012 2v7a2 2 0 01-2 2h-1v3l-4-3H12" fill="currentColor" opacity=".28" stroke="none" />
-    <path d="M3 9a2 2 0 012-2h9a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2z" />
-  </svg>
-);
+/** Los ojos del widget: siguen el puntero, parpadean y miran la burbuja cuando llega algo.
+ *  Sin puntero (móvil) curiosean solos. Con prefers-reduced-motion se quedan quietos. */
+function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; atento: number }) {
+  useEffect(() => {
+    const el = orbe.current; if (!el) return;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (quieto) return;
+    let raf = 0, ultimoMov = 0, mirando = 0;
+    const mirar = (x: number, y: number) => { el.style.setProperty('--ox', `${x.toFixed(1)}px`); el.style.setProperty('--oy', `${y.toFixed(1)}px`); };
+    // Sigue al puntero: la mirada apunta a donde está el mouse, con tope de 5 px.
+    const mov = (e: MouseEvent) => {
+      ultimoMov = Date.now();
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = e.clientX - cx, dy = e.clientY - cy; const d = Math.hypot(dx, dy) || 1;
+        const k = Math.min(1, d / 220) * 5;
+        mirar(dx / d * k, dy / d * k);
+      });
+    };
+    window.addEventListener('mousemove', mov, { passive: true });
+    // Sin puntero un rato, curiosea: mira a un lado, luego a otro, y vuelve.
+    const curioso = setInterval(() => {
+      if (Date.now() - ultimoMov < 4000) return;
+      mirando = (mirando + 1) % 4;
+      const p = [[-4, -1], [0, 0], [3, -3], [0, 0]][mirando];
+      mirar(p[0], p[1]);
+    }, 2200);
+    // Parpadeo: cada 2.5–6 s, a veces doble.
+    let t1 = 0, t2 = 0, t3 = 0;
+    const parpadear = () => {
+      el.classList.add('parpadea');
+      t2 = window.setTimeout(() => {
+        el.classList.remove('parpadea');
+        if (Math.random() < .25) { t3 = window.setTimeout(() => { el.classList.add('parpadea'); window.setTimeout(() => el.classList.remove('parpadea'), 130); }, 180); }
+      }, 140);
+      t1 = window.setTimeout(parpadear, 2500 + Math.random() * 3500);
+    };
+    t1 = window.setTimeout(parpadear, 1800);
+    return () => { window.removeEventListener('mousemove', mov); cancelAnimationFrame(raf); clearInterval(curioso); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [orbe]);
+  // Llega una burbuja: mira hacia arriba, donde sale (los ojos bien abiertos los pone la clase `atento` del orbe).
+  useEffect(() => {
+    const el = orbe.current; if (!el || !atento) return;
+    el.style.setProperty('--ox', '-3px'); el.style.setProperty('--oy', '-5px');
+    const t = window.setTimeout(() => { el.style.setProperty('--ox', '0px'); el.style.setProperty('--oy', '0px'); }, 2600);
+    return () => clearTimeout(t);
+  }, [orbe, atento]);
+  return <span className="eqf-ojos" aria-hidden="true"><span className="eqf-ojo" /><span className="eqf-ojo" /></span>;
+}
 
 /** Qué dice un mensaje en una línea, para la burbuja. */
 function resumen(m: M): string {
@@ -129,6 +178,7 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
   const [abierto, setAbierto] = useState(false);
   const [burbujas, setBurbujas] = useState<Burbuja[]>([]);
   const [pulsa, setPulsa] = useState(0);
+  const orbeRef = useRef<HTMLButtonElement | null>(null);
   const contadores = useRef<Record<string, number>>({});
   const vistos = useRef<Set<string>>(new Set());
   const yo = arbol?.yo || null;
@@ -281,9 +331,9 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
                 <span className="st">{presentes.length === 1 ? 'en línea' : `${presentes.length} en línea`}</span>
               </div>
             ) : null)}
-            <button key={pulsa} className={'eqf-orbe' + (pulsa ? ' pulsa latido' : '')} onClick={() => abrir()} aria-label={`Abrir Equipo${noLeidos ? `, ${noLeidos} sin leer` : ''}`} title="Equipo">
+            <button key={pulsa} ref={orbeRef} className={'eqf-orbe' + (pulsa ? ' pulsa latido' : '') + (burbujas.length ? ' atento' : '')} onClick={() => abrir()} aria-label={`Abrir Equipo${noLeidos ? `, ${noLeidos} sin leer` : ''}`} title="Equipo">
               <span className="brillo" /><span className="anillo" />
-              {ICONO}
+              <Ojos orbe={orbeRef} atento={pulsa} />
               {noLeidos > 0 && <span className={'eqf-n' + (menciones > 0 ? ' men' : '')}>{noLeidos > 99 ? '99+' : noLeidos}</span>}
             </button>
           </div>
