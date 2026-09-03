@@ -1429,6 +1429,17 @@ export const WIKI: PaginaWiki[] = [
 <p>La ventana rige <b>los dos canales</b>, no solo WhatsApp: si a esa hora no tiene sentido mandar, tampoco sale el correo.</p>
 <div class="w-caja"><span class="w-k">Dónde se cambia</span><p><b>Reuniones ▸ Editar un tipo ▸ Avisos al cliente ▸ «A qué horas se pueden mandar»</b>. La ventana es <b>global</b>: aplica a todos los tipos de reunión, aunque se edite desde uno.</p></div>
 
+<h3>Si Meta bloquea el de marketing, sale el de utilidad</h3>
+<p>WhatsApp trata distinto las dos categorías. Un mensaje de <b>marketing</b> no le llega a quien apagó ese tipo de mensajes, ni a quien ya recibió demasiados esa semana — y no siempre falla en silencio: a veces lo rechaza con «<i>Meta limitó los mensajes de marketing a este número</i>».</p>
+<p>La regla es que <b>nunca se queda sin mensaje</b>: cada plantilla de marketing automática lleva una de utilidad de respaldo. La de utilidad dice menos, pero pasa por donde la otra no pasa.</p>
+<table><tr><th>Si no llega esta…</th><th>…sale esta</th></tr>
+<tr><td>El primer mensaje (con foto y preguntas)</td><td>El aviso de que un asesor lo va a atender</td></tr>
+<tr><td>El recordatorio que pide contexto</td><td>El recordatorio corto: cuándo y dónde</td></tr>
+<tr><td>El «no logramos coincidir»</td><td>«Vi que tu sesión sigue pendiente»</td></tr></table>
+<div class="w-caja"><span class="w-k">Por qué hay tres momentos</span><p>Meta <b>acepta</b> la plantilla y a veces reporta el rechazo <b>minutos después</b>. Así que la red se activa en los tres momentos en que se puede saber: si la plantilla no está aprobada, si Meta la rechaza al enviarla, y si la rechaza después. Y si no entrega ni avisa, a los 10 minutos sale igual.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Lo que pasó sin esto</span><p>Michelle se registró el 2 de septiembre. Salió el primer mensaje de marketing, Meta lo rechazó, y <b>no salió nada más</b>. Un lead que acaba de dejar sus datos y no recibe ni una palabra.</p></div>
+<p>En el chat se distingue: el mensaje de respaldo queda marcado como tal, con el motivo por el que salió el segundo y no el primero.</p>
+
 <h3>Un cambio de horario ya no se contesta solo</h3>
 <p>Si alguien pide mover su reunión —toca «Reagendar» o lo escribe— el sistema <b>no le contesta</b>. Queda anotado en su ficha y te levanta aviso para que lo atiendas desde el inbox. Antes le mandaba una liga y una lista de horarios, y el cliente terminaba sin saber si su reunión seguía en pie.</p>
 
