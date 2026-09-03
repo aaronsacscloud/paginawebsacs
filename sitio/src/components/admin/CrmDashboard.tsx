@@ -855,13 +855,8 @@ export default function CrmDashboard() {
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.automations }} />Documentación
               </button>
 
-            {/* Salir va aquí, DESPUÉS de configuración y como un renglón más:
-                arriba estaba pegada a la flecha de plegar y se confundían. */}
-            <button
-              onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-              style={{ ...pieFila, color: '#B24C57' }}>
-              <span style={{ ...pieIcono, color: '#B24C57', opacity: .8 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
-            </button>
+            {/* Salir bajó a la barra de abajo, junto a plegar: es una acción
+                de una vez al día y ocupaba un renglón entero del pie. */}
             </div>
 
             {/* Quién entró. El día que haya más de una persona en el CRM, saber
@@ -897,14 +892,30 @@ export default function CrmDashboard() {
               </span>
             </button>
 
-            {/* La última franja es el control de plegar, con su texto: es lo
-                que estaba arriba y se confundía con salir. */}
+            {/* LA ÚLTIMA FRANJA: plegar y salir, partidas.
+                Salir estaba arriba como renglón completo del pie. Aquí ocupa la
+                mitad de una franja que ya existía, y el pie gana un renglón.
+
+                Estuvieron juntas antes y se confundían; ahora no, porque no se
+                parecen: las separa una línea, salir va en su rojo y con su
+                icono. Y no lleva confirmación a propósito —cerrar sesión no
+                destruye nada, se vuelve a entrar— pero sí `title`, para que un
+                clic de más no te saque sin haberlo querido leer. */}
+            <div style={{ display: 'flex', borderTop: '1px solid #ece6f8' }}>
             <button
               onClick={() => setSidebarCollapsed(true)}
               aria-label="Plegar menú"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '8px 14px', borderTop: '1px solid #ece6f8', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#8078a0', fontSize: '0.71rem', fontWeight: 650, fontFamily: 'inherit' }}>
-              <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar menú
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
+              <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar
             </button>
+            <span style={{ width: 1, background: '#ece6f8', margin: '7px 0' }} />
+            <button
+              onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
+              title="Cerrar sesión"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#B24C57', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
+              <span style={{ display: 'flex', opacity: .8 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
+            </button>
+            </div>
           </div>
         ) : !isMobile && (
           /* Plegado, el pie es el botón de ABRIR. Salir no se repite aquí: es
