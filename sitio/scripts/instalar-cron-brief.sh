@@ -27,7 +27,7 @@ if crontab -l 2>/dev/null | grep -q "brief-revision"; then
   exit 0
 fi
 
-LINEA="13 8,20 * * * cd $DIR && /home/aaron/.local/bin/claude -p \"\$(cat scripts/brief-revision.prompt.md)\" --allowedTools 'Bash(node scripts/brief-pendientes.mjs)' 'Bash(node scripts/brief-responder.mjs)' >> $LOG 2>&1"
+LINEA="13 8,20 * * * cd $DIR && /home/aaron/.local/bin/claude -p \"\$(cat scripts/brief-revision.prompt.md)\" --allowedTools 'Bash(node scripts/brief-pendientes.mjs:*)' 'Bash(node scripts/brief-responder.mjs:*)' >> $LOG 2>&1"
 
 { crontab -l 2>/dev/null || true; echo "$MARCA"; echo "$LINEA"; } | crontab -
 

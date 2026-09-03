@@ -55,15 +55,27 @@ for (const b of briefs) {
     proyecto: b.proyecto,
     firmado_por: b.firmado_por,
     avisa_a: b.avisos_email,
-    etapas: etapas.map((e) => ({
-      clave: e.clave,
-      esperando_desde: e.enviada_at,
-      horas_esperando: e.enviada_at
-        ? Math.round((Date.now() - new Date(e.enviada_at).getTime()) / 3600000)
-        : null,
-      respuestas: e.respuestas,
-      hilos: hilos.filter((h) => h.etapa_clave === e.clave),
-    })),
+    etapas: etapas.map((e) => {
+      const suyos = hilos.filter((h) => h.etapa_clave === e.clave);
+      // Cuántas veces ya revisamos ESTA etapa. Es el dato que impide que la
+      // rutina se quede repreguntando para siempre: en la primera ronda se
+      // profundiza, en la segunda se acota, en la tercera se cierra.
+      const ronda = suyos.reduce(
+        (max, h) => Math.max(max, (h.mensajes || []).filter((m) => m.de === 'sacs').length),
+        0,
+      ) + 1;
+      return {
+        clave: e.clave,
+        ronda,
+        esperando_desde: e.enviada_at,
+        horas_esperando: e.enviada_at
+          ? Math.round((Date.now() - new Date(e.enviada_at).getTime()) / 3600000)
+          : null,
+        campos_sin_contestar: Object.keys(e.respuestas || {}).length,
+        respuestas: e.respuestas,
+        hilos: suyos,
+      };
+    }),
   });
 }
 

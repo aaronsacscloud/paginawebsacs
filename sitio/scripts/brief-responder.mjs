@@ -1,5 +1,13 @@
 #!/usr/bin/env node
-// Manda la revisión de una etapa. Lee el JSON por stdin:
+// Manda la revisión de una etapa. El JSON puede ir como ARGUMENTO o por stdin:
+//
+//   node scripts/brief-responder.mjs '{"token":"…","clave":"…","notas":[…]}'
+//   echo '{…}' | node scripts/brief-responder.mjs
+//
+// El argumento existe porque la rutina desatendida corre con una lista blanca
+// de comandos: no puede escribir un archivo temporal ni encadenar un heredoc,
+// así que sin esta puerta el script era inalcanzable justo cuando la revisión
+// era larga. Pasó en una ronda de prueba: decidió bien y no pudo entregar.
 //
 //   { "token": "...", "clave": "identidad",
 //     "notas": [ { "campo": "colores", "texto": "...", "pregunta": true } ],
@@ -22,7 +30,16 @@ const cred = Object.fromEntries(
     .map((l) => l.split('=').map((x) => x.trim().replace(/^["']|["']$/g, ''))),
 );
 
-const cuerpo = JSON.parse(readFileSync(0, 'utf8'));
+const crudo = process.argv[2] && process.argv[2].trim().startsWith('{')
+  ? process.argv[2]
+  : readFileSync(0, 'utf8');
+let cuerpo;
+try {
+  cuerpo = JSON.parse(crudo);
+} catch (e) {
+  console.error('El cuerpo no es JSON válido:', e.message);
+  process.exit(1);
+}
 if (!cuerpo?.token || !cuerpo?.clave) {
   console.error('Falta token o clave'); process.exit(1);
 }
