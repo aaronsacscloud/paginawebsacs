@@ -19,7 +19,11 @@ import { confirmar } from '../../../../lib/ui/confirmar';
    y seis caminos: son ninguno. Estas tres son las que se usan a diario; el
    resto sigue a un clic de «Ver más», no escondido.
    Decisión del dueño (2-sep-2026). */
-const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta'];
+/* «Mensajes programados» se suma a las de siempre (3-sep-2026): son mensajes
+   que YA van a salir solos, con fecha puesta. Escondido tras «Ver más», nadie
+   revisa lo que está a punto de mandarse — y eso es justo lo que hay que poder
+   frenar a tiempo. */
+const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta', 'programados'];
 
 const BANDEJAS = [
   { id: 'accion', label: 'Requiere mi acción', Ico: IcoRayo },
