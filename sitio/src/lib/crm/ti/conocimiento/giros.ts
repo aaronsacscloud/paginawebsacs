@@ -55,6 +55,7 @@ export const GIROS: FichaGiro[] = [
   {
     id: 'ropa',
     nombre: 'Tiendas y marcas de ropa',
+    // MAYOREO DE ROPA cae aquí pero habla distinto: su cliente es una tienda (no «clienta»), vende por paquete/docena/surtido, lista de mayoreo y crédito, pedidos por WhatsApp o catálogo; una bodega puede ser cuenta grande. Tono neutro; módulos primero: cotización→pedido, listas mayoreo/menudeo, ventas a crédito y saldos, catálogo para que el cliente pida solo.
     alias: ['boutique', 'tienda de ropa', 'marca de ropa', 'ropa', 'mayoreo de ropa', 'venta a mayoreo', 'apparel', 'ropa de dama', 'ropa de caballero', 'ropa infantil', 'moda', 'bisutería', 'accesorios', 'bolsas'],
     landing: 'https://www.sacscloud.com/giros/marcas-de-ropa',
     queVenden: 'Prendas por talla y color: una blusa en seis tallas y cuatro colores son 24 existencias distintas que comprar, contar y reponer.',
@@ -69,6 +70,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['talla', 'curva', 'matriz', 'temporada', 'colección', 'drop', 'colgada', 'percha', 'cambio de talla', 'departamental', 'traspaso', 'sucursal', 'probador', 'look', 'outfit', 'remate'],
     preguntas: [
+      '¿Cuántas veces a la semana te piden una talla que no tienes o no sabes si está en la otra tienda?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cuántas tiendas tienes y vendes también en línea o por WhatsApp/Instagram?',
       '¿Cómo llevas hoy las tallas y colores: libreta, Excel u otro sistema?',
       '¿Qué te pasa más seguido: que se te acabe una talla sin darte cuenta, o que se te quede prenda colgada?',
@@ -100,6 +102,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['marca', 'proveedor', 'consigna', 'en firme', 'expo', 'percha', 'corte por marca', 'margen', 'etiquetar', 'look', 'apartado', 'vale'],
     preguntas: [
+      '¿Cuántos modelos dirías que tienes con la corrida rota (sin las tallas de en medio) ahora mismo?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Con cuántas marcas o proveedores trabajas, y alguna te deja mercancía en consigna?',
       '¿Cómo sabes hoy qué marca te está dejando y cuál no?',
       '¿La mercancía te llega con código de barras o la etiquetas tú?',
@@ -132,6 +135,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['consignante', 'comisión', 'contrato', 'pieza única', 'Live', 'saldo a favor', 'liquidación', 'retiro', 'vigencia', 'autenticidad', 'clóset'],
     preguntas: [
+      '¿Cuántas consignantes te preguntan a la semana «¿ya se vendió algo mío?»?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cuántas consignantes activas tienes y cómo les rindes cuentas hoy?',
       '¿Haces Lives o vendes en línea además del piso?',
       '¿Cómo llevas el contrato y la comisión de cada pieza: libreta, Excel, otro sistema?',
@@ -164,6 +168,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['módulo', 'venue', 'encore', 'preventa', 'fila', 'camión', 'gira', 'fecha', 'staff', 'corte', 'sin internet', 'bundle', 'kit'],
     preguntas: [
+      '¿Cuántas piezas se te quedan sin vender por evento por no saber qué talla llevar de cada diseño?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cuántos puntos de venta montas por fecha y cuántas fechas al mes?',
       '¿Qué te pasa cuando se cae el internet del venue?',
       '¿Cómo entregas hoy la preventa y cómo haces el corte de la noche?',
@@ -195,6 +200,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['apartado', 'abono', 'anticipo', 'fecha del evento', 'muestra', 'sobre pedido', 'taller', 'prueba', 'ajuste', 'entrega', 'novia', 'quinceañera'],
     preguntas: [
+      '¿Cuántos vestidos tienes apartados hoy y cuántas horas a la semana se te van en seguir anticipos y ajustes?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cuántos apartados vivos traes ahorita y cómo llevas los abonos?',
       '¿Vendes sobre pedido contra la fecha del evento o de muestras en piso?',
       '¿Tienes taller de ajustes propio?',
@@ -226,6 +232,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['drop', 'colorway', 'set', 'top', 'legging', 'restock', 'lote', 'showroom', 'sobreventa', 'TikTok Shop', 'comunidad', 'avísame'],
     preguntas: [
+      '¿Cuántos pedidos de tu tienda en línea se te caen al mes por talla agotada que sí tenías en tienda?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Vendes por drops? ¿En qué canales sale el drop y cómo evitas sobrevender?',
       '¿Cómo llevas hoy el set: como una pieza o como dos?',
       '¿Cuántas piezas produce un lote y cómo decides el siguiente?',
@@ -257,6 +264,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['corrida', 'número', 'medio número', 'par', 'horma', 'saldo', 'embarque', 'León', 'SAPICA', 'quincena', 'apartado', 'muro', 'caja'],
     preguntas: [
+      '¿Cuántos modelos tienes hoy con los números de en medio agotados? (eso ya es saldo aunque el reporte diga que hay pares)',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cuántas tiendas tienes y cómo sabes hoy qué números quedan de cada modelo?',
       '¿Compras por embarques de temporada? ¿Cómo te llega el pedido?',
       '¿Manejas apartados por quincena?',
@@ -288,6 +296,7 @@ export const GIROS: FichaGiro[] = [
     ],
     vocabulario: ['gramo', 'quilataje', 'kilataje', 'fino', 'colchón', 'repreciar', 'vitrina', 'charola', 'peso', 'argollas', 'apartado', 'taller', 'compra de oro', 'LFPIORPI'],
     preguntas: [
+      '¿Cuántas piezas tienes en vitrina con precio de antes de la última subida del oro?',   // pregunta de MAGNITUD: sin número no hay urgencia
       '¿Cómo pones hoy el precio: por pieza fija o por gramo según el oro?',
       '¿Qué haces cuando sube el oro: reetiquetas toda la vitrina?',
       '¿Cuántas vitrinas o sucursales tienes y manejas apartados largos?',

@@ -19,7 +19,7 @@ export const PLANES: { id: PlanId; nombre: string; mensual: number; anualMes: nu
       'Prendas por talla y color, sets y paquetes, etiquetas con código, talla y precio',
       'Facturación: 20 folios incluidos',
     ],
-    servicios: ['1 sucursal', 'Soporte 9 AM–5 PM por chat de Sacs y WhatsApp', 'Tickets resueltos en 30–90 min'],
+    servicios: ['1 sucursal', 'Soporte 9 AM–5 PM por chat de Sacs y WhatsApp', 'Tickets resueltos en 30–90 min', 'Implementación y migración de tu Excel o sistema (valor $9,500; sin costo solo con la promoción vigente)'],
   },
   {
     id: 'controla', nombre: 'Controla', mensual: 1215, anualMes: 790, anualTotal: 9477,

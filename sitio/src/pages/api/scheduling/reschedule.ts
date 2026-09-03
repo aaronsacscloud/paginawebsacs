@@ -336,7 +336,7 @@ export const POST: APIRoute = async ({ request }) => {
   // Send WhatsApp notification — PLANTILLA primero: el texto libre fuera de
   // la ventana de 24 h se "acepta" pero WhatsApp lo tira en silencio.
   if (oldBooking.invitee_whatsapp) {
-    const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
+    const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || '';   // sin nombre: sin nombre (antes salía «Listo, Hola:»)
     // Decisión del dueño (2026-09-02): si el lead está en conversación (ventana de 24 h abierta), el aviso es
     // NATURAL y COMPLETO —«vi que moviste la reunión, cancelé la anterior» + día, hora, liga de Meet, correo y
     // que los recordatorios ya son de la nueva fecha— con la voz del agente y espejado en el inbox. La plantilla
@@ -355,10 +355,9 @@ export const POST: APIRoute = async ({ request }) => {
         const vieja = etiquetaHorario(String(oldBooking.fecha), String(oldBooking.hora_inicio).slice(0, 5));
         const nueva = etiquetaHorario(String(nueva_fecha), String(nueva_hora).slice(0, 5));
         const texto = [
-          `Listo, ${nombreInv}: vi que moviste la reunión. Cancelé la del ${vieja} y quedó la nueva:`,
-          `📅 ${nueva} (hora CDMX)`,
-          newBooking.google_meet_link ? `📹 ${newBooking.google_meet_link}` : '',
-          `${oldBooking.invitee_email ? `Te llegó la invitación actualizada a ${oldBooking.invitee_email}. ` : ''}Los recordatorios ahora te llegan para esta fecha, los de la anterior ya no. Si algo vuelve a cambiar, respóndeme por aquí y lo movemos.`,
+          `Vi que moviste la reunión${nombreInv ? `, ${nombreInv}` : ''}: queda el ${nueva} (hora de CDMX) y la del ${vieja} ya está cancelada.`,
+          newBooking.google_meet_link ? `Es por Google Meet, esta es la liga: ${newBooking.google_meet_link}` : '',
+          `${oldBooking.invitee_email ? `La invitación actualizada ya te llegó a ${oldBooking.invitee_email} y los ` : 'Los '}recordatorios van con la fecha nueva. Si vuelve a cambiar algo, dime por aquí y lo movemos.`,
         ].filter(Boolean).join('\n');
         const r: any = await enviarTexto(oldBooking.invitee_whatsapp, texto);
         const wamid = r?.messages?.[0]?.id || null;
@@ -372,7 +371,7 @@ export const POST: APIRoute = async ({ request }) => {
         /* Espejada: era de las cuatro que salían sin quedar en el inbox. */
         const r = await mandarPlantilla({
           telefono: oldBooking.invitee_whatsapp, plantilla: 'sesion_reagendada',
-          params: [nombreInv, `${nueva_fecha} a las ${nueva_hora}`],
+          params: [nombreInv || 'Hola', `${nueva_fecha} a las ${nueva_hora}`],
           metadata: { booking_id: newBooking?.id || null, motivo: 'reagendo' },
         });
         if (!r.enviado) throw new Error(r.motivo || 'plantilla no disponible');

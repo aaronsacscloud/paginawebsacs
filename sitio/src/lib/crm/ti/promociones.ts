@@ -10,7 +10,7 @@ export type OfertaDicha = { promo_id: string; nombre: string; texto: string; dic
 
 const DEFAULT: Promo = {
   id: 'promo-35-implementacion', nombre: '35 % en anual + implementación y migración sin costo',
-  texto: '35 % de descuento en el plan anual, y la implementación y migración de tu Excel o sistema (que normalmente vale $9,500) sin costo',
+  texto: 'con el plan anual el precio baja 35 %, y la implementación y la migración de tu Excel o de tu sistema actual van sin costo (normalmente son $9,500)',
   valor: '$9,500', dias_ventana: 10, vence: '', rotar: true, activa: true, palabras: ['35 %', '35%', 'migraci', 'implementaci'],
 };
 
@@ -47,7 +47,7 @@ const diasHasta = (iso: string) => Math.max(0, Math.round((Date.parse(iso + 'T23
 /** Bloque para el prompt: la promoción vigente y, si ya se le dijo a este lead, cuándo y hasta cuándo. */
 export function promoTexto(p: Promo | null, dicha?: OfertaDicha | null): string {
   if (!p) return dicha ? `OFERTA YA DICHA A ESTE LEAD: «${dicha.texto}» (vencía el ${fechaLarga(dicha.vence)}, ya NO está vigente: no la repitas ni la prometas).` : '';
-  const base = `PROMOCIÓN VIGENTE: ${p.texto}. Vigente hasta el ${fechaLarga(p.vence)} (${diasHasta(p.vence)} días). Se dice UNA vez, como plus al hablar de precio, con naturalidad y sin sonar vendedor.`;
+  const base = `PROMOCIÓN VIGENTE (solo si el lead ya preguntó precio o ya le diste plan): ${p.texto}. Vigente hasta el ${fechaLarga(p.vence)} (${diasHasta(p.vence)} días). Se dice UNA vez, en una sola oración pegada al precio, como dato y no como gancho: sin «aprovecha», «solo por», «no te lo pierdas», admiraciones ni mayúsculas. La fecha límite se menciona una vez, sin cuenta regresiva. Si él no reacciona, no la vuelvas a traer.`;
   if (dicha && dicha.promo_id === p.id) {
     const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
     if (dicha.vence < hoy) return `OFERTA YA DICHA A ESTE LEAD: «${dicha.texto}», con vencimiento ${fechaLarga(dicha.vence)}, y ESA FECHA YA PASÓ. Aunque hoy haya una ventana nueva, a él NO le anuncies otra fecha ni digas que se extendió: si la trae a cuento, dile que esa condición venció y que el consultor puede ver si se la respeta; devuelve escalar.si=true con motivo «promo vencida, ver si se respeta». Nunca la ofrezcas como novedad.`;

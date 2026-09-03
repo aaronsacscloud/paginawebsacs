@@ -18,38 +18,38 @@ type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechaz
 export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre';
 export const FAMILIAS: Record<Familia, { marketing: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] }; utility: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] } }> = {
   seguimiento: {
-    marketing: { nombre: 'ti_seguimiento_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} ¿Te late que lo veamos en 15 minutos con un consultor, con tus propios productos?', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }] },
-    utility: { nombre: 'ti_seguimiento_utility_v1', cuerpo: 'Hola {{1}}, te escribo de Sacs para dar seguimiento a la solicitud que hiciste. {{2}} Si prefieres que lo dejemos aquí, dime y no te escribo más.', ejemplos: ['Ana', 'Quedé de mandarte cómo se ve la existencia por talla en cada tienda.'], botones: [] },
+    marketing: { nombre: 'ti_seguimiento_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si quieres, lo vemos en 15 minutos con un consultor y con tus productos en pantalla. ¿Te queda esta semana?', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }] },
+    utility: { nombre: 'ti_seguimiento_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs. Si prefieres que lo dejemos aquí, con que me digas basta.', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada tienda.'], botones: [] },
   },
   no_show: {
-    marketing: { nombre: 'ti_noshow_marketing_v1', cuerpo: 'Hola {{1}}, se nos cruzó la reunión y no pasa nada. {{2}} ¿La movemos a esta semana? Dime qué día te acomoda.', ejemplos: ['Ana', 'Tengo dos espacios: jueves a las 11 o viernes a las 4.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, movámosla' }, { tipo: 'QUICK_REPLY', texto: 'Ya no' }] },
-    utility: { nombre: 'ti_noshow_utility_v1', cuerpo: 'Hola {{1}}, no coincidimos en la reunión que tenías agendada con Sacs. {{2}} Si quieres reagendarla, respóndeme por aquí.', ejemplos: ['Ana', 'Quedan espacios esta semana en la mañana.'], botones: [] },
+    marketing: { nombre: 'ti_noshow_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Se nos cruzó la reunión y no pasa nada. Dime qué te acomoda y la dejo apartada.', ejemplos: ['Ana', 'tengo dos espacios: jueves a las 11 o viernes a las 4.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, la movemos' }, { tipo: 'QUICK_REPLY', texto: 'Ya no' }] },
+    utility: { nombre: 'ti_noshow_utility_v1', cuerpo: 'Hola {{1}}, {{2}} No coincidimos en la reunión que tenías agendada con Sacs; si quieres moverla, respóndeme por aquí y la dejo en el horario que me digas.', ejemplos: ['Ana', 'quedan espacios esta semana en la mañana.'], botones: [] },
   },
   preparacion: {
-    marketing: { nombre: 'ti_preparacion_marketing_v1', cuerpo: 'Hola {{1}}, mañana es tu demo con Sacs. {{2}} Así la vemos con lo tuyo y no con ejemplos genéricos.', ejemplos: ['Ana', 'Si tienes tu Excel de inventario o tres productos con tallas y colores, mándamelos por aquí.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Te lo mando' }, { tipo: 'QUICK_REPLY', texto: 'No tengo' }] },
-    utility: { nombre: 'ti_preparacion_utility_v1', cuerpo: 'Hola {{1}}, te recordamos tu demo de Sacs de mañana. {{2}} Responde por aquí si necesitas moverla.', ejemplos: ['Ana', 'Si puedes, comparte tu Excel de inventario para prepararla con tus productos.'], botones: [] },
+    marketing: { nombre: 'ti_preparacion_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Mañana nos vemos en tu demo de Sacs y así el consultor la arma con lo tuyo, no con ejemplos de otra tienda.', ejemplos: ['Ana', 'si tienes a la mano tu Excel de inventario o tres productos con tallas y colores, mándamelos por aquí.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Te lo mando' }, { tipo: 'QUICK_REPLY', texto: 'No lo tengo' }] },
+    utility: { nombre: 'ti_preparacion_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Mañana es tu demo con Sacs; si necesitas moverla, respóndeme por aquí.', ejemplos: ['Ana', 'si puedes, comparte tu Excel de inventario para prepararla con tus productos.'], botones: [] },
   },
   promo: {
-    marketing: { nombre: 'ti_promo_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Es por tiempo limitado y quería que lo supieras antes de que cierre. ¿Lo vemos en una llamada de 15 minutos?', ejemplos: ['Ana', 'esta semana la implementación y migración de tu Excel va sin costo con el plan anual.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'No, gracias' }] },
-    utility: { nombre: 'ti_promo_utility_v1', cuerpo: 'Hola {{1}}, seguimiento a tu solicitud con Sacs. {{2}} Responde por aquí si quieres los detalles.', ejemplos: ['Ana', 'Hay condiciones especiales vigentes esta semana para tu plan.'], botones: [] },
+    marketing: { nombre: 'ti_promo_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Te lo digo porque me preguntaste por precio y tiene fecha límite; no quería que se te pasara. ¿Lo vemos en 15 minutos con un consultor?', ejemplos: ['Ana', 'esta semana la implementación y la migración de tu Excel van sin costo con el plan anual.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'No, gracias' }] },
+    utility: { nombre: 'ti_promo_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs; si quieres que te lo detalle, respóndeme por aquí.', ejemplos: ['Ana', 'tengo lista la información de precio que me pediste.'], botones: [] },
   },
   cierre: {
-    marketing: { nombre: 'ti_cierre_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si este no es el momento, dímelo y lo dejamos aquí sin problema; si sí, te propongo 15 minutos esta semana.', ejemplos: ['Ana', 'te escribí un par de veces sobre el control de tallas en tus tiendas y no quiero insistir de más.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, esta semana' }, { tipo: 'QUICK_REPLY', texto: 'Lo dejamos' }] },
-    utility: { nombre: 'ti_cierre_utility_v1', cuerpo: 'Hola {{1}}, último seguimiento de Sacs a tu solicitud. {{2}} Si no respondes, no te volveremos a escribir.', ejemplos: ['Ana', 'Quedo atenta por si quieres retomar el tema de tus tiendas.'], botones: [] },
+    marketing: { nombre: 'ti_cierre_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Es mi último mensaje sobre esto: si no es el momento, lo dejamos aquí sin problema; si sí, dime y buscamos 15 minutos esta semana.', ejemplos: ['Ana', 'te escribí un par de veces sobre el control de tallas en tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, esta semana' }, { tipo: 'QUICK_REPLY', texto: 'Lo dejamos' }] },
+    utility: { nombre: 'ti_cierre_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es mi último mensaje sobre la solicitud que dejaste con Sacs: si no me contestas, lo doy por cerrado y no te escribo más. Si quieres retomarlo después, aquí estoy.', ejemplos: ['Ana', 'te escribí un par de veces por lo de tus tiendas.'], botones: [] },
   },
 };
 
 const PAR_BASE = {
   marketing: {
     nombre: 'ti_seguimiento_marketing_v1', categoria: 'MARKETING' as const,
-    cuerpo: 'Hola {{1}}, {{2}} ¿Te late que lo veamos en 15 minutos con un consultor, con tus propios productos?',
+    cuerpo: 'Hola {{1}}, {{2}} Si quieres, lo vemos en 15 minutos con un consultor y con tus productos en pantalla. ¿Te queda esta semana?',
     ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'],
     botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }],
   },
   utility: {
     nombre: 'ti_seguimiento_utility_v1', categoria: 'UTILITY' as const,
-    cuerpo: 'Hola {{1}}, te escribo de Sacs para dar seguimiento a la solicitud que hiciste. {{2}} Si prefieres que lo dejemos aquí, dime y no te escribo más.',
-    ejemplos: ['Ana', 'Quedé de mandarte cómo se ve la existencia por talla en cada tienda.'],
+    cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs. Si prefieres que lo dejemos aquí, con que me digas basta.',
+    ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada tienda.'],
     botones: [] as any[],
   },
 };

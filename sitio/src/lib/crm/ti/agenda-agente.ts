@@ -28,7 +28,7 @@ export const LIGA_AGENDA = `${BASE}/agendar/demo`;
 
 /** Los mejores horarios libres para una demo en los próximos días (hora CDMX). */
 export async function horariosParaDemo(opts: { slug?: string; dias?: number; mejorHora?: number | null; max?: number; horaMin?: number } = {}): Promise<Horario[]> {
-  const slug = opts.slug || 'demo', dias = opts.dias || 6, max = opts.max || 4;
+  const slug = opts.slug || 'demo', dias = opts.dias || 3, max = opts.max || 4;   // cercano primero: a más de 4 días se pierde la asistencia
   const hoy = new Date(Date.now() - 6 * 3600e3); // fecha CDMX
   const from = hoy.toISOString().slice(0, 10);
   const to = new Date(hoy.getTime() + dias * 86400e3).toISOString().slice(0, 10);
@@ -65,8 +65,8 @@ export async function horariosParaDemo(opts: { slug?: string; dias?: number; mej
 }
 
 export const horariosTexto = (hs: Horario[]) => hs.length
-  ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
-  : 'No hay horarios de demo disponibles en los próximos días: si el lead quiere agendar, dile que el consultor le confirma un horario hoy mismo y escala.';
+  ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí, los más cercanos primero): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Dilos como se hablan («el jueves a las 11 o el viernes a las 4»), nunca con fecha numérica, lista ni viñetas, y en una sola pregunta al final del mensaje. Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
+  : 'No hay horarios de demo en los próximos días: si quiere agendar, dile en una línea que el consultor le confirma un horario hoy mismo (una sola disculpa, sin explicar por qué) y escala.';
 
 /** Horarios reales para la LLAMADA DISCOVERY (15 min): desde las 11:00, próximos 4 días, dos opciones distintas. */
 export async function horariosParaLlamada(opts: { mejorHora?: number | null } = {}): Promise<Horario[]> {
@@ -88,7 +88,7 @@ export async function horariosParaLlamada(opts: { mejorHora?: number | null } = 
   return out;
 }
 export const llamadaTexto = (hs: Horario[]) => hs.length
-  ? `LLAMADA RÁPIDA (15 min, la hace el consultor; solo hoy o mañana, desde las 11:00 y con al menos 2 h de anticipación): horarios reales ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Ofrécela cuando el lead no responde sobre el horario de la demo, cuando pide hablar con alguien, o como tercer ángulo del seguimiento. Si acepta uno, devuelve accion.tipo="agendar_llamada" con esa fecha y hora (necesita correo, igual que la demo).`
+  ? `LLAMADA RÁPIDA (15 min, la hace el consultor; solo hoy o mañana, desde las 11:00 y con al menos 2 h de anticipación): horarios reales ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Ofrécela cuando el lead no responde sobre el horario de la demo, cuando pide hablar con alguien, o como tercer ángulo del seguimiento. Si acepta uno, devuelve accion.tipo="agendar_llamada" con esa fecha y hora (necesita correo, igual que la demo). Al lead se le dice «una llamada de 15 minutos con el consultor para que le platiques tu operación»: nunca «discovery», «llamada de descubrimiento» ni «llamada rápida».`
   : '';
 
 /** Crea la demo por el agendador real. Devuelve la reunión o el error legible.
@@ -143,5 +143,5 @@ export async function proximaCita(contactId: string) {
 }
 
 export const citaTexto = (b: any) => b
-  ? `CITA VIGENTE DEL LEAD: ${fmt(b.fecha, String(b.hora_inicio).slice(0, 5))} (${b.event_types?.nombre || 'reunión'}, estado ${b.estado})${b.google_meet_link ? `, liga de Meet: ${b.google_meet_link}` : ''}${b.token_reagendar ? `, liga para reagendar: ${BASE}/agendar/reagendar?token=${b.token_reagendar}` : ''}. Si pregunta por ella, dale TODA la información; si quiere moverla, mándale la liga de reagendar o pide día y bloque para ofrecerle horarios.`
+  ? `CITA VIGENTE DEL LEAD: ${fmt(b.fecha, String(b.hora_inicio).slice(0, 5))} (${b.event_types?.nombre || 'reunión'}, estado ${b.estado})${b.google_meet_link ? `, liga de Meet: ${b.google_meet_link}` : ''}${b.token_reagendar ? `, liga para reagendar: ${BASE}/agendar/reagendar?token=${b.token_reagendar}` : ''}. Si pregunta por ella, dale TODA la información: día, hora y que es por Google Meet en una sola frase, la liga en su propia línea; no digas el estado («confirmada»), ni el nombre interno del tipo de evento, ni «tu cita ha sido…». Si quiere moverla, mándale la liga de reagendar o pide día y bloque para ofrecerle horarios.`
   : '';

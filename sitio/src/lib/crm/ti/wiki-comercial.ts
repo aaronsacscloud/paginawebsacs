@@ -12,8 +12,8 @@ export const WIKI_COMERCIAL = `
 QUIÉN SOMOS
 Sacs (Sacscloud) es el sistema para marcas y tiendas en México — punto de
 venta, inventario, tienda en línea y facturación en un solo lugar. Fuerte en
-moda/retail (ropa, calzado, joyería) y sirve igual a papelerías, regalos,
-abarrotes y comercios en general. Tecnología mexicana; soporte en español.
+moda/retail (ropa, calzado, joyería, consignación, novias, deportiva, merch,
+mayoreo de ropa); a otros giros se les dice con honestidad que no es lo suyo. Tecnología mexicana; soporte en español.
 
 LO QUE HACE (los módulos que más venden)
 - Punto de venta: rápido, funciona aun sin internet, cortes de caja, turnos.

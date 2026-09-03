@@ -138,7 +138,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const textoDe = (m: any) => m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`);
   const idxUltSal = msjs.map(m => m.direccion).lastIndexOf('saliente');
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
-  const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta TODO lo que preguntó o dijo, en su orden, en UNA sola respuesta; no ignores ninguno:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
+  const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta todo en UNA respuesta, en su orden, una oración por pregunta (aquí sí puedes pasar de 4 líneas; si son 3 o más, parte en dos burbujas con ---). Sin numerar, sin viñetas, sin repetir su pregunta antes de contestarla. Una sola pregunta tuya al final, o ninguna si él ya dijo qué sigue:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   const memoria = memoriaConversacion(msjs, c.nombre);
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
@@ -388,7 +388,7 @@ export async function proponerRespuestas(): Promise<any> {
     if ((yaAtendido || []).length) { res.saltados++; continue; }
     try {
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
-      const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `ES TU TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada: después de contestar lo que preguntó, propón DIRECTO la demo o una llamada de 10 minutos con dos horarios concretos de la lista real. Sin rodeos.` : undefined;
+      const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
       const d = await decidirTurno(cid, notaAg);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
@@ -599,14 +599,14 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         const guardarSt = (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           // Sin correo NO hay cita (la invitación y el Meet viajan por correo). Se pide, y el horario elegido se recuerda.
-          mensaje = `Para mandarte la invitación con la liga de la videollamada necesito tu correo, ¿me lo pasas? En cuanto lo tenga te dejo apartado el ${etiqueta}.`;
+          mensaje = `Te aparto el ${etiqueta}. Solo me falta tu correo para mandarte la invitación con la liga, ¿cuál uso?`;
           await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, slug: esLlamada ? 'llamada-discovery' : 'demo', motivo: 'sin_correo', desde: ahora.toISOString() } });
           await log({ accion: 'agente_agenda_sin_correo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { email_dado: acc.email || null } });
         } else {
           const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, slug: esLlamada ? 'llamada-discovery' : 'demo', empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `${esLlamada ? 'Llamada discovery (15 min) agendada por el agente SDR' : 'Agendada por el agente SDR'}. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
           if (!r.ok && r.ocupado) {
             const otros = await (esLlamada ? horariosParaLlamada() : horariosParaDemo({ max: 2 })).catch(() => []);
-            mensaje = `Ese horario se acaba de ocupar, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`;
+            mensaje = `Justo se ocupó el ${etiqueta}, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : '¿Qué otro día te acomoda? Dime si mañana o tarde y te paso opciones.'}`;
             await guardarSt({ agenda_pendiente: null });
             await log({ accion: 'agente_agenda_ocupado', contact_id: e.contact_id, razon: r.error, detalle: acc });
           } else if (!r.ok) {
@@ -614,7 +614,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
             // se le dan horarios para que ÉL elija —el mismo u otros— y la liga de la agenda. Por detrás: tarea P1 con el
             // error crudo, aviso en la pestaña Sistema de la campana, y reintentarAgendas() por si no contesta.
             const otros = (await horariosParaDemo({ max: 3 }).catch(() => [])).filter(h => !(h.fecha === acc.fecha && h.hora === acc.hora)).slice(0, 2);
-            mensaje = `Perdón, se me trabó el sistema al apartar el ${etiqueta}, cosas que pasan. ¿Lo dejamos en ese mismo horario${otros.length ? `, o te acomoda mejor ${otros.map(h => h.etiqueta).join(' o ')}` : ''}? Y si prefieres apartarlo tú directo, aquí está la agenda: ${LIGA_AGENDA}`;
+            mensaje = `Se me trabó la agenda al apartar el ${etiqueta}, una disculpa. Lo sigo intentando en ese horario${otros.length ? `; si te acomoda más ${otros.map(h => h.etiqueta).join(' o ')}, dime` : ''}. Y si prefieres apartarlo tú directo: ${LIGA_AGENDA}`;
             await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, slug: esLlamada ? 'llamada-discovery' : 'demo', email, motivo: 'error', intentos: 1, error: String(r.error || '').slice(0, 200), desde: ahora.toISOString() } });
             await log({ accion: 'agente_agenda_fallo', contact_id: e.contact_id, razon: r.error, detalle: { ...acc, intentos: r.intentos } });
             await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `no se pudo agendar ${etiqueta}: ${r.error}` } });
@@ -625,7 +625,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
             await callarSilencioPendiente(e.contact_id, 'la cita ya quedó agendada');
             if (r.sinMeet) {
               // La cita existe pero Google Calendar no dio liga: no se promete lo que no hay.
-              mensaje = `${mensaje}\n\nLa liga de la videollamada te la mando por aquí en un momento.`;
+              mensaje = `${mensaje}\n\nLa liga de la videollamada te la paso por aquí en cuanto la tenga.`;
               await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `cita ${etiqueta} creada SIN liga de Meet (Google Calendar falló): mándale la liga` } });
               await avisoSistema({ tipo: 'sistema_agenda_sin_meet', nivel: 'urgente', clave: `sistema_agenda_sin_meet:${r.booking?.id || e.contact_id}`, titulo: `Cita de ${c?.nombre || 'un lead'} sin liga de Meet (${etiqueta})`, detalle: 'La cita se creó, pero Google Calendar no devolvió la liga de la videollamada. El agente le dijo al lead que se la manda en un momento.', que_hacer: 'Crea el evento en tu calendario y mándale la liga de Meet por el hilo.', contact_id: e.contact_id, conversation_id: e.conversation_id, extra: { booking_id: r.booking?.id || null } });
             }
@@ -972,8 +972,8 @@ export async function tocarSilencios(): Promise<any> {
           continue;
         }
       }
-      const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: el mensaje debe ser UNA sola oración corta (máx. 200 caracteres), sin saludo ni nombre (la plantilla ya dice «Hola {nombre}»), que continúe la frase «Hola Ana, …»: el ángulo concreto para su giro.' : '';
-      const nota = `${cierreVentana ? 'CIERRE DE VENTANA: la ventana de 24 h del lead está por cerrarse y tu último mensaje dejó una pregunta u horarios sin respuesta. ' : ''}TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (intento ${intentos.length + 1}; franja ${franjaAhora}; ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}). ÁNGULO OBLIGATORIO de este intento: ${anguloObligatorio}. Ángulos ya usados en este ciclo (no repetir): ${(st.angulos || []).join(' · ') || 'ninguno'}. El lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.${notaPlantilla}`;
+      const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: escribe SOLO el ángulo, una oración de máximo 200 caracteres que continúe «Hola Ana, …»: empieza en minúscula, sin saludo, sin nombre, sin pregunta (la plantilla ya cierra con la suya). Habla de SU tienda con algo que él dijo, no de Sacs. Sin precios, promociones, ligas ni emojis.' : '';
+      const nota = `${cierreVentana ? 'CIERRE DE VENTANA: su ventana de 24 h está por cerrarse y tu último mensaje dejó una pregunta u horarios sin respuesta; este es un mensaje libre, único. ' : ''}TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (ciclo ${st.ciclo}). Lleva ${Math.round(horas)} h sin responder a tu último mensaje. ÁNGULO OBLIGATORIO: ${anguloObligatorio}. Ángulos ya usados (no repetir ni parafrasear): ${(st.angulos || []).join(' · ') || 'ninguno'}. Escribe como quien retoma una plática, no como quien «da seguimiento»: máximo 3 líneas, sin saludo si ya le escribiste hoy, sin su nombre, sin «solo quería», «te escribo para», «quedo atenta» ni «aprovecho». Retoma UNA cosa concreta que él dijo. Una sola pregunta, que se conteste con dos palabras. Para tu criterio, no lo menciones: ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100 (${st.eval.razones.join(', ')}). responder=true salvo razón para callar.${notaPlantilla}`;
       // Dos ticks del observador se pueden traslapar (cron + «enviar ya»/manual): si ya hay un toque de silencio
       // creado hace poco para este lead, este tick no mete otro (pasó: dos toques con 22 s de diferencia).
       const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
@@ -1137,7 +1137,7 @@ export async function reintentarAgendas(): Promise<any> {
     const r = await agendarDemo({ nombre: c.nombre || 'Lead', email, whatsapp: telefono, fecha: pend.fecha, hora: pend.hora, contactId: cid, slug: pend.slug || 'demo', empresa: (c as any)?.companies?.nombre || null, giro: c.giro || null, sucursales: c.sucursales_interes || null, partnerId: c.referrer_partner_id || null, notas: 'Agendada por el agente SDR (reintento automático tras un error técnico)' });
     let texto: string | null = null;
     if (r.ok) {
-      texto = `Ya se destrabó: te dejé apartado el ${etiqueta} que habías elegido. Te llega la invitación a ${email}${r.sinMeet ? ' y la liga de la videollamada te la mando por aquí en un momento' : ' con la liga de la videollamada'}. Si prefieres otro horario, dime y lo muevo.`;
+      texto = `Listo, ya quedó apartado el ${etiqueta}. Te llega la invitación a ${email}${r.sinMeet ? '; la liga de la videollamada te la paso por aquí en cuanto la tenga' : ' con la liga de la videollamada'}. Si te acomoda mejor otro horario, dime y lo muevo.`;
       await guardarSt({ agenda_pendiente: null, agendada_at: ahora.toISOString() });
       await callarSilencioPendiente(cid, 'la cita ya quedó agendada (reintento)');
       await avisoSistema({ tipo: r.sinMeet ? 'sistema_agenda_sin_meet' : 'sistema_agenda_recuperada', nivel: r.sinMeet ? 'urgente' : 'info', clave: `sistema_agenda_recuperada:${r.booking?.id || cid}`, titulo: `Cita de ${c.nombre || 'un lead'} recuperada sola (${etiqueta})`, detalle: `El reintento ${intentos + 1} la dejó agendada y el lead ya recibió la confirmación por WhatsApp.${r.sinMeet ? ' Falta la liga de Meet.' : ''}`, que_hacer: r.sinMeet ? 'Mándale la liga de Meet por el hilo.' : 'Nada: la tarea que abrió el fallo ya se cerró.', contact_id: cid, extra: { booking_id: r.booking?.id || null } });
@@ -1147,7 +1147,7 @@ export async function reintentarAgendas(): Promise<any> {
       res.agendadas++;
     } else if (r.ocupado) {
       const otros = await horariosParaDemo({ max: 2 }).catch(() => []);
-      texto = `Ya pude revisar la agenda y el ${etiqueta} se ocupó mientras lo intentaba, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`;
+      texto = `Ya reaccionó la agenda, pero el ${etiqueta} se ocupó en el camino, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : '¿Qué otro día te acomoda? Dime si mañana o tarde y te paso opciones.'}`;
       await guardarSt({ agenda_pendiente: null });
       await log({ accion: 'agente_agenda_ocupado', contact_id: cid, razon: r.error, detalle: { ...pend, reintento: true } });
       res.ocupadas++;
@@ -1204,7 +1204,7 @@ export async function prepararDemos(): Promise<any> {
     if (await fueraDelAlcanceSDR(cid)) continue;
     res.revisadas++;
     const temas: any[] = Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion : [];
-    const nota = `MENSAJE DE PREPARACIÓN: mañana es su demo (${etiquetaHorario(String(b.fecha), String(b.hora_inicio).slice(0, 5))}). Escribe UN mensaje corto y natural: desde el interés por conocer su catálogo para que la demo sea muy específica con lo suyo, pídele —si lo tiene— su Excel de inventario, o tres productos con sus tallas y colores. Sin presión ni tono de tarea; si no lo tiene, no pasa nada. ${temas.length ? `Ya está anotado que quiere ver: ${temas.map(t => t.tema).join(', ')}; puedes mencionarlo en una línea.` : ''} No saludes como si fuera la primera vez. No devuelvas accion.`;
+    const nota = `MENSAJE DE PREPARACIÓN: mañana es su demo (${etiquetaHorario(String(b.fecha), String(b.hora_inicio).slice(0, 5))}). UN mensaje de 2-3 líneas, como quien prepara la reunión y no como recordatorio: el día y la hora van dentro de la primera frase, con naturalidad. Pídele —si lo tiene a la mano— su Excel de inventario o tres productos con tallas y colores, y di en media línea para qué (que el consultor se lo arme con lo suyo). Si no lo tiene, que quede claro que no pasa nada, sin «no te preocupes». ${temas.length ? `Ya está anotado que quiere ver: ${temas.map(t => t.tema).join(', ')}; menciónalo en una línea («ya quedó anotado lo de…»).` : ''} No saludes como primera vez, no uses su nombre, no digas «recordatorio» ni repitas «demo» más de una vez. Cierra con la petición, sin segunda pregunta. No devuelvas accion.`;
     try {
       const d = await decidirTurno(cid, nota);
       if (!d.salida?.mensaje || !d.telefono) continue;
@@ -1242,8 +1242,8 @@ export async function atenderCitas(): Promise<any> {
     if ((ya || []).length) { res.saltadas++; continue; }
     const segunda = (previos || []).length >= 1;
     const nota = e.tipo === 'cita_no_asistio'
-      ? `EL LEAD NO LLEGÓ a su cita (${(e.payload as any)?.fecha || ''}). ${segunda ? 'Es la SEGUNDA vez seguida: escribe con calidez, pregunta si sigue interesado y qué día le acomoda a él, y devuelve escalar.si=true para que el consultor lo tome.' : 'Escribe sin reproche (se cruzan cosas), y ofrece DOS horarios de la lista real o la liga de reagendar.'}`
-      : `EL LEAD CANCELÓ su cita (${(e.payload as any)?.fecha || ''}). Escribe con calidez, sin presión: ofrece dos horarios nuevos o pregunta qué día le acomoda; si dice que ya no, respeta y pregunta qué cambió.`;
+      ? `EL LEAD NO LLEGÓ a su cita (${(e.payload as any)?.fecha || ''}). ${segunda ? 'Es la SEGUNDA vez seguida: sin reclamo y sin «entiendo que estés ocupado». Dile en una línea que mejor te diga él cuándo le queda bien, o si prefiere dejarlo para después, y devuelve escalar.si=true.' : 'Escribe como si fuera lo más normal (lo es): nada de «te esperamos», «no te presentaste» ni «lamentamos». Una línea que dé por hecho que se cruzó algo y DOS horarios de la lista real (o la liga de reagendar) en una sola pregunta.'} Máximo 3 líneas, sin su nombre, sin explicar qué se perdió.`
+      : `EL LEAD CANCELÓ su cita (${(e.payload as any)?.fecha || ''}). Sin presión y sin «qué lástima»: da por hecho que tuvo razón para cancelar y ofrece dos horarios nuevos o pregúntale qué día le acomoda, en una sola pregunta. Si dice que ya no, respeta a la primera y pregunta en una línea qué cambió. Máximo 3 líneas.`;
     try {
       const d = await decidirTurno(cid, nota);
       if (!d.salida?.mensaje || !d.telefono) { res.saltadas++; continue; }
