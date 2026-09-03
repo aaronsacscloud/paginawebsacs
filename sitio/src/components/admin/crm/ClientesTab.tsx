@@ -194,6 +194,16 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [motivoMasivo, setMotivoMasivo] = useState(false);
   const [avisoEx, setAvisoEx] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  // Con qué pestaña abrir la ficha. Existe para poder enlazar directo a una
+  // sección concreta desde otra pantalla —el triaje de renovaciones manda aquí
+  // con `ct=renovacion`— en vez de dejar al usuario buscándola.
+  const [detailTab, setDetailTab] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const c = q.get('company');
+    if (c) { setDetailId(c); setDetailTab(q.get('ct') || undefined); }
+  }, []);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
   const isMobile = useIsMobile();
@@ -1037,7 +1047,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             ) : undefined} />
         );
       })()}
-      {detailId && <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}><ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} /></Suspense>}
+      {detailId && <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}><ClienteDrawer360 companyId={detailId} tabInicial={detailTab} onClose={() => { setDetailId(null); setDetailTab(undefined); }} onChanged={load} /></Suspense>}
 
       {motivoMasivo && (
         <MotivoBajaMasivo ids={Array.from(selEx)}

@@ -16,6 +16,7 @@ import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
+import RenovacionCuenta from './RenovacionCuenta';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -119,7 +120,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   tabInicial?: string }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>((tabInicial as any) || 'resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp' | 'renovacion'>((tabInicial as any) || 'resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -151,7 +152,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
       if (j.error) setErr(j.error); else setData(j);
     } catch (e: any) { setErr(e?.message || 'No se pudo cargar'); }
   }
-  useEffect(() => { setData(null); setTab('resumen'); load(); }, [companyId]);
+  // Al cambiar de cliente se vuelve al inicio, PERO respetando la pestaña con
+  // la que se pidió abrir la ficha: si no, un enlace directo a una sección
+  // —el triaje de renovaciones manda con `ct=renovacion`— aterrizaba siempre en
+  // Actividad y el usuario tenía que buscarla a mano.
+  useEffect(() => { setData(null); setTab((tabInicial as any) || 'resumen'); load(); }, [companyId]);
   useEffect(() => {
     let alive = true; setAlertasReu([]);
     fetch('/api/scheduling/reuniones?company_id=' + companyId)
@@ -182,6 +187,15 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   const contactos: any[] = data?.contacts || [];
   const principal = contactos.find(c => c.es_principal) || contactos[0] || null;
   const subs: any[] = data?.subscriptions || [];
+
+  /**
+   * Es cliente si tiene al menos una suscripción ACTIVA.
+   *
+   * No basta con tener suscripciones: una cancelada deja el registro pero ya no
+   * hay tasa que conservar ni meta que cumplir, y la pestaña de renovación
+   * saldría vacía prometiendo algo que no aplica.
+   */
+  const esCliente = subs.some((x: any) => x.estado === 'activa');
   const res = data?.resumen || {};
   const act = co?.actividad || null;
 
@@ -220,7 +234,9 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               const planCrudo = [...activas].sort((a: any, b: any) => Number(b.arr || 0) - Number(a.arr || 0))[0]?.nombre_plan || null;
               const planTop = planCrudo ? String(planCrudo).replace(/licencia\s+(anual|mensual)\s*/i, '').trim() : null;
               const planTxt = planTop ? (/^plan/i.test(planTop) ? cased(planTop) : 'Plan ' + cased(planTop)) : null;
-              const SEG: [string, string][] = [['resumen', 'Resumen'], ['info', 'Info'], ['subs', 'Licencias'], ['mejoras', 'Consultoría'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
+              const SEG: [string, string][] = [['resumen', 'Resumen'], ['info', 'Info'], ['subs', 'Licencias'],
+                ...(esCliente ? [['renovacion', 'Renovación'] as [string, string]] : []),
+                ['mejoras', 'Consultoría'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
               return (
                 <div style={{ background: '#fff' }}>
                   {!embebido && <div onClick={cerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', cursor: 'pointer' }} aria-label="Cerrar">
@@ -373,6 +389,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                     sabes qué buscas, no al abrir la ficha. */}
                 <button style={D.tab(tab === 'info')} onClick={() => irA('info')}>Info general</button>
                 <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
+                {/* Solo para clientes: una cuenta sin suscripción activa no
+                    tiene tasa que conservar ni meta que cumplir, y la pestaña
+                    saldría vacía prometiendo algo que no aplica. */}
+                {esCliente && <button style={D.tab(tab === 'renovacion')} onClick={() => irA('renovacion')}>Renovación</button>}
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
                 <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>
                   Consultoría
@@ -410,6 +430,9 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   No está acudiendo a lo que tiene contratado — ver reuniones.
                 </div>
               ))}
+              {tab === 'renovacion' && (
+                <RenovacionCuenta companyId={companyId} nombre={co.nombre_comercial || co.nombre || 'la cuenta'} />
+              )}
               {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
               {/* Ligar la cuenta de SACS es un trámite de una sola vez y estorbaba
                   debajo de las licencias, donde no pinta nada. Ahora solo aparece
