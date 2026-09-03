@@ -6,7 +6,8 @@
 // De ahí sale, sin interpretar nada, el "qué me falta contestar" que ve el
 // cliente arriba de su etapa.
 import { supabase } from '../supabase';
-import { sendEmail } from '../email';
+import { enviar } from '../email/proveedor';
+import { htmlATexto } from '../email/footer';
 import { ETAPAS_POR_CLAVE } from './etapas';
 
 export type Mensaje = { de: 'sacs' | 'cliente'; texto: string; at: string };
@@ -127,6 +128,50 @@ type BriefAviso = {
 };
 
 /**
+ * Manda el aviso por SendGrid con el remitente verificado del inquilino `sacs`.
+ *
+ * NO usa el `sendEmail()` genérico del sitio: ese va por Resend con el
+ * remitente de pruebas `onboarding@resend.dev`, que solo entrega al dueño de
+ * la cuenta — medido el 2026-09-03, un aviso a una dirección real falló con
+ * "You can only send testing emails to your own email address".
+ *
+ * Y va SIN el grupo de supresión de marketing a propósito: que alguien se
+ * haya dado de baja de una campaña no puede dejarlo sin las preguntas de su
+ * propio proyecto. Es correo transaccional, no promoción.
+ */
+let remitente: { from_email: string; from_nombre: string; reply_to: string | null } | null = null;
+
+async function mandar(to: string, asunto: string, html: string) {
+  if (!to || !to.includes('@')) return;
+  if (!remitente) {
+    const { data } = await supabase
+      .from('email_tenants')
+      .select('from_email, from_nombre, reply_to')
+      .eq('slug', 'sacs')
+      .maybeSingle();
+    remitente = {
+      from_email: data?.from_email || 'aaron@news.sacscloud.com',
+      from_nombre: data?.from_nombre || 'Sacs',
+      reply_to: data?.reply_to || null,
+    };
+  }
+  const r = await enviar({
+    para: to,
+    asunto,
+    html,
+    texto: htmlATexto(html),
+    fromEmail: remitente.from_email,
+    fromNombre: remitente.from_nombre,
+    replyTo: remitente.reply_to,
+    categorias: ['brief-proyecto'],
+  }).catch((e) => ({ ok: false, providerMessageId: null, error: String(e?.message || e) }));
+
+  // Nada de fallos silenciosos: si el aviso no sale, el cliente se queda
+  // esperando un correo que nunca llegó y nadie se entera.
+  if (!r.ok) console.error(`[brief] no salió el aviso a ${to}: ${r.error}`);
+}
+
+/**
  * Avisa que Sacs ya revisó una etapa. Va al cliente y a la copia interna.
  * Nunca truena hacia arriba: si el correo falla, la revisión ya quedó guardada
  * y perderla por un problema de envío sería peor.
@@ -171,10 +216,7 @@ export async function avisarRevision(
 
   const html = envoltura(titulo, cuerpo, url, aprobada ? 'Ver el brief' : 'Contestar las preguntas');
   const destinos = new Set([...(brief.avisos_email || []), ...(brief.avisos_copia || [])]);
-  for (const to of destinos) {
-    if (!to || !to.includes('@')) continue;
-    await sendEmail({ to, subject: `${brief.cliente} · ${titulo}`, html }).catch(() => null);
-  }
+  for (const to of destinos) await mandar(to, `${brief.cliente} · ${titulo}`, html);
 }
 
 /** Avisa a la copia interna que el cliente mandó (o volvió a mandar) una etapa. */
@@ -190,8 +232,5 @@ export async function avisarEnvioDelCliente(brief: BriefAviso, etapaClave: strin
     url,
     'Revisar la etapa',
   );
-  for (const to of new Set(brief.avisos_copia || [])) {
-    if (!to || !to.includes('@')) continue;
-    await sendEmail({ to, subject: titulo, html }).catch(() => null);
-  }
+  for (const to of new Set(brief.avisos_copia || [])) await mandar(to, titulo, html);
 }
