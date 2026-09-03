@@ -208,3 +208,21 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   motivo; cada cambio deja actividad `deal_cambio`), cotización con conceptos y aperturas, últimas actividades, otras
   oportunidades del mismo contacto. Clic en el contacto abre `LeadDrawer`.
 - Se asignó dueño a 18 oportunidades abiertas que estaban sin vendedor (owner del contacto o consultor por default).
+
+## 2026-09-04 · Lo que no se pagó, y el gasto flexible
+
+- **Regla por defecto:** un gasto fijo sin palomita se RECORRE: aparece en «Atrasado de meses anteriores» del mes
+  siguiente y suma al total. Las cuotas de adeudo no pagadas se ACUMULAN al «toca este mes» siguiente. Nada se pierde.
+- **Decisiones** (`fin_gastos_decisiones`, `fin_adeudos_decisiones`, por gasto/adeudo y mes original): `recorrer`
+  (default explícito), `prorroga` (nueva fecha: el renglón aparece en ESE mes como «prórroga de YYYY-MM», se paga contra
+  su mes original, no cuenta como atraso; en adeudos, el monto prorrogado se descuenta del atraso hasta su mes),
+  `condonado` (gasto: desaparece; adeudo: abono tipo `condonacion` que baja el saldo), `no_aplica` (gasto: desaparece
+  sin rastro). Se deciden en Cierre → «Qué hago con lo que no pagué», o desde el banner de atrasados.
+- **«Todos» = todo el mes:** gastos + adeudos que tocan + cortes de comisión + atrasados, y sus renglones aparecen en la
+  tabla (los de adeudo/comisión llevan a su pestaña). Antes solo sumaba gastos y por eso «no cuadraba» con el KPI.
+- **Gasto flexible:** categoría libre (datalist), USD con tipo de cambio (se guarda original y MXN), periodicidad semanal
+  (×4) / quincenal (×2) / bimestral / trimestral / semestral / anual / única, varios días de cobro, método y cuenta de
+  pago, deducible, centro de costo (empresa / personal / mixto), rango mín–máx, aviso N días antes, pausar hasta un mes,
+  etiquetas, activo. `aplicaMes` entiende las periodicidades nuevas y la pausa; `ocurrenciasMes` multiplica el monto.
+- **Trampa que costó el archivo:** `open(F,'w').write(open(F).read())` en Python trunca ANTES de leer: el motor quedó
+  vacío y hubo que restaurarlo de git. Nunca abrir para escribir el mismo archivo que se va a leer en la misma línea.
