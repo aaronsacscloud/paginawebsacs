@@ -931,10 +931,13 @@ export const WIKI: PaginaWiki[] = [
     cuerpo: `
 <p>El acuerdo se apoya en <b>una idea</b>: se paga por sostener y hacer crecer clientes, no por haberlos cerrado una vez. Todo lo demás sale de ahí.</p>
 <div class="w-caja"><span class="w-k">La regla que gobierna todo</span>
-<p><b>La tasa es del CLIENTE, no del primer año.</b> Cada cuenta entra con un porcentaje según de dónde salió, y lo conserva en todas sus renovaciones mientras se cumplan las tres condiciones.</p></div>
+<p><b>Traer la cuenta se paga una vez y caro. Conservarla se paga siempre y parejo.</b></p>
+<p>La primera venta paga según de dónde salió el cliente (35%, 55% o 70%). A partir de ahí, cada
+<b>anualidad paga 30%</b> —venga de donde venga— siempre que se cumplan las tres condiciones. Si no se
+cumplen, esa renovación baja al 15%.</p></div>
 <h3>Las tres partes</h3>
 <table class="w-tab"><thead><tr><th>Parte</th><th>De qué trata</th><th>Dónde leerlo</th></tr></thead><tbody>
-<tr><td><b>Compensación</b></td><td>Qué paga cada concepto, sobre qué base se calcula y cuándo cae el dinero.</td><td>Las 5 páginas de <i>Compensación</i></td></tr>
+<tr><td><b>Compensación</b></td><td>Qué paga cada concepto, sobre qué base se calcula y cuándo cae el dinero.</td><td>Las 6 páginas de <i>Compensación</i></td></tr>
 <tr><td><b>Responsabilidades</b></td><td>Qué le toca al consultor y qué le toca a Sacs, separado por tipo de actividad.</td><td>Las 3 páginas de <i>Responsabilidades</i></td></tr>
 <tr><td><b>Medición y reuniones</b></td><td>Con qué número se comprueba cada compromiso, y en qué junta se revisa.</td><td>Las 2 páginas de <i>Medición y reuniones</i></td></tr>
 </tbody></table>
@@ -948,6 +951,71 @@ export const WIKI: PaginaWiki[] = [
 <p><b>1. Se comisiona dinero cobrado</b>, no facturado ni prometido.</p>
 <p><b>2. Lo pagado no se recalcula.</b> Cambiar el modelo no reescribe la historia.</p>
 <p><b>3. Ante un dato que falta, no se castiga.</b> Si nadie evaluó una cuenta, esa cuenta paga completo.</p></div>`,
+  },
+  {
+    id: 'c-donde', seccion: 'consultores', grupo: 'El acuerdo', titulo: 'Dónde ves cada cosa',
+    bajada: 'Qué pantalla contesta cada pregunta. Si tienes prisa, esta es la única página que necesitas.',
+    cuerpo: `
+<p>Cuatro pantallas, y cada una contesta <b>una</b> pregunta. Si sabes cuál te estás haciendo, sabes a dónde ir.</p>
+
+<table class="w-tab"><thead><tr><th>Tu pregunta</th><th>Dónde</th><th>Qué encuentras</th></tr></thead><tbody>
+<tr>
+  <td><b>¿Cuánto me pagan esta semana?</b></td>
+  <td>Comisiones → <b>Cortes</b></td>
+  <td>El corte que se está juntando ahora, con lo que lleva hasta el momento, y los cortes ya armados.</td>
+</tr>
+<tr>
+  <td><b>¿Cuánto llevo, y de qué?</b></td>
+  <td>Comisiones → <b>Reporte</b></td>
+  <td>Mes a mes: qué se vendió, cuánta comisión generó, qué ya se pagó y qué falta.</td>
+</tr>
+<tr>
+  <td><b>¿Esta cuenta conserva su tasa?</b></td>
+  <td>Ficha del cliente → <b>Renovación</b></td>
+  <td>Las tres condiciones, cuánto le falta vender y cuándo se le cobra.</td>
+</tr>
+<tr>
+  <td><b>¿Qué le puedo vender a esta cuenta?</b></td>
+  <td>Ficha del cliente → <b>Renovación</b></td>
+  <td>Abajo, en la evidencia: los módulos que <b>nunca ha usado</b>. Esa es la lista.</td>
+</tr>
+</tbody></table>
+
+<h3>El corte, día por día</h3>
+<div class="w-caja w-ok"><span class="w-k">Lunes a domingo · revisión el lunes · pago el martes</span>
+<p>Todo lo que el cliente pague de <b>lunes a domingo</b> entra al mismo corte. El <b>lunes</b> el sistema lo
+arma solo y queda para revisión; el <b>martes</b> se paga el total.</p>
+<p class="w-mut">No hay que esperar al lunes para saber cuánto va a salir: la primera fila de Cortes es el
+corte en formación y se actualiza sola.</p></div>
+
+<h3>Qué te llega cuando se paga</h3>
+<p>Un <b>estado de cuenta</b> por enlace, con el detalle renglón por renglón: qué cliente pagó, cuánto,
+a qué tasa y con qué descuentos, y la cuenta escrita debajo de cada concepto. Se puede <b>firmar de
+recibido</b> ahí mismo. Cuando el dinero sale, el documento queda con el sello de <b>pagado</b> y su
+referencia bancaria.</p>
+
+<h3>Lo que hay que revisar en la ficha de cada cliente</h3>
+<p>La pestaña <b>Renovación</b> es el lugar donde se decide si una cuenta conserva su tasa. Trae:</p>
+<table class="w-tab"><thead><tr><th>Condición</th><th>Qué mira</th><th>Quién la resuelve</th></tr></thead><tbody>
+<tr><td><b>A · Seguimiento</b></td><td>Si hubo contacto y acompañamiento reales.</td><td><b>Tú lo marcas</b>, con la evidencia abajo: uso del sistema, reuniones, WhatsApp y tickets.</td></tr>
+<tr><td><b>B · Expansión</b></td><td>Venderle un 30% de su plan anual en vitalicias, plugins o servicios.</td><td>Se calcula sola. Muestra <b>cuánto falta</b>.</td></tr>
+<tr><td><b>C · Cobranza</b></td><td>Cobrar la anualidad a tiempo.</td><td>Sale de la fecha del pago. Muestra la <b>cuenta regresiva</b>.</td></tr>
+</tbody></table>
+<div class="w-caja w-warn"><span class="w-k">Lo que cuesta no revisarlas</span>
+<p>Si las tres no se cumplen, esa renovación paga <b>15%</b> en vez del 30%. Sobre una anualidad de
+$50,000 son <b>$6,300 menos</b> en una sola cuenta.</p>
+<p>Y mientras el seguimiento no se marque, <b>no se castiga nada</b>: la cuenta paga completo. El sistema
+nunca baja una tasa por un dato que nadie capturó.</p></div>
+
+<h3>Si algo no cuadra</h3>
+<ul>
+<li><b>Una comisión sale en $0</b> — ese SKU no tiene tarifa configurada. No es un error del cálculo: se ve
+así a propósito, para que se note y se arregle.</li>
+<li><b>Falta un pago</b> — puede estar sin consultor asignado. Aparece en el corte como pago sin comisionar,
+y desde ahí se agrega.</li>
+<li><b>Un renglón cobró distinto</b> — busca el distintivo: <i>Tasa de anualidad</i> (30% por ser renovación),
+<i>Tasa ajustada</i> (se acordó otra cosa, con el motivo escrito) o <i>Tasa reducida</i> (no cumplió las condiciones).</li>
+</ul>`,
   },
   {
     id: 'c-tasas', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tasas',
@@ -1177,7 +1245,7 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Sin evaluar no se castiga</span>
 <p>La condición B se calcula sola y la C sale de la fecha del pago, pero <b>la A la marca una persona</b>. Si nadie la marcó, la cuenta <b>paga completo</b>.</p>
 <p>Bajar una comisión por un dato que nadie capturó es peor que no tener la regla: cobra de menos por un descuido administrativo y nadie se entera hasta el reclamo.</p></div>
-<p class="w-mut">Se revisa en <b>Comisiones → Renovaciones</b>.</p>`,
+<p class="w-mut">Se revisa en la pestaña <b>Renovación</b> de la ficha del cliente.</p>`,
   },
   {
     id: 'c-act1', seccion: 'consultores', grupo: 'Responsabilidades', titulo: 'Actividad 1 · Cuentas asignadas',
@@ -1269,12 +1337,12 @@ export const WIKI: PaginaWiki[] = [
 <p>Sin una vara, un compromiso es una intención. Cada renglón dice <b>dónde se ve el número</b> que lo comprueba.</p>
 <h3>Cuentas asignadas</h3>
 <table class="w-tab"><thead><tr><th>Compromiso</th><th>De quién</th><th>Cómo se mide</th><th>Dónde se ve</th></tr></thead><tbody>
-<tr><td>Cuenta asignada con su origen</td><td><b>Sacs</b></td><td>% de cuentas con consultor y origen</td><td>Comisiones → Atribución</td></tr>
+<tr><td>Cuenta asignada con su origen</td><td><b>Sacs</b></td><td>% de cuentas con consultor y origen</td><td>Configuración → Comisiones</td></tr>
 <tr><td>Contexto completo de la cuenta</td><td><b>Sacs</b></td><td>Plan, módulos, pagos, tickets y cobranza en la ficha</td><td>Clientes → ficha 360</td></tr>
 <tr><td>Presentarse antes de la renovación</td><td>Consultor</td><td>Primer contacto vs. fecha de vencimiento</td><td>Clientes → actividades</td></tr>
 <tr><td>Sesión cada dos semanas</td><td>Consultor</td><td>Sesiones registradas ÷ semanas del periodo</td><td><span class="w-mut">falta instrumentar</span></td></tr>
 <tr><td>Que el uso crezca</td><td>Consultor</td><td>Uso del trimestre contra el anterior</td><td>Clientes → uso · snapshots</td></tr>
-<tr><td>Expandir 30% del plan anual</td><td>Consultor</td><td>Vitalicias + plugins + servicios ÷ plan anual</td><td>Comisiones → Renovaciones</td></tr>
+<tr><td>Expandir 30% del plan anual</td><td>Consultor</td><td>Vitalicias + plugins + servicios ÷ plan anual</td><td>Ficha del cliente → Renovación</td></tr>
 <tr><td>Que lo vendido se use</td><td>Consultor</td><td>Módulos contratados que registran actividad</td><td>Clientes → uso</td></tr>
 <tr><td>Cobrar a tiempo</td><td>Consultor</td><td>Días entre vencimiento y cobro, contra el margen de 5</td><td>Comisiones → Cortes</td></tr>
 </tbody></table>
