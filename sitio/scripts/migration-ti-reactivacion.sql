@@ -43,5 +43,8 @@ where k.archived_at is null
   and not exists (select 1 from quotes q where q.contact_id = k.id and q.estado not in ('deleted','plantilla'))
   and not exists (select 1 from bookings b where b.contact_id = k.id and b.estado in ('asistio','confirmada','agendada'))
   and not exists (select 1 from ti_perfil p where p.contact_id = k.id and p.silenciar_ia = true)
-  and not exists (select 1 from ti_reactivacion r where r.contact_id = k.id)
+  -- Una vez propuesto no vuelve, salvo que se haya rechazado con «Todavía no: esperar» hace más de 60 días.
+  and not exists (select 1 from ti_reactivacion r where r.contact_id = k.id and not (r.estado = 'rechazada' and r.error = 'Todavía no: esperar' and r.decidido_at < now() - interval '60 days'))
+  -- Si ya lo lleva el agente por reenganche (nos escribió al último y calló), no se duplica aquí.
+  and not exists (select 1 from ti_perfil p2 where p2.contact_id = k.id and p2.agente_estado ? 'reenganche')
 order by (u.pidio) desc, u.ult_in desc;

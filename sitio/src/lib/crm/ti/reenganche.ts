@@ -23,6 +23,9 @@ export async function enrolarReenganche(opts: { limite?: number; minHoras?: numb
     const st: any = (pf as any)?.agente_estado || {};
     if ((pf as any)?.silenciar_ia || st.cerrado === 'opt_out') { res.saltadas.silenciado++; continue; }
     if (st.reenganche || (Array.isArray(st.intentos) && st.intentos.length)) { res.saltadas.ya++; continue; }
+    // Si Reactivación ya lo tiene propuesto o programado, no se duplica aquí.
+    const { data: rx } = await supabase.from('ti_reactivacion').select('id').eq('contact_id', k.id).in('estado', ['propuesta', 'programada']).limit(1);
+    if ((rx || []).length) { res.saltadas.ya++; continue; }
     if (await fueraDelAlcanceSDR(k.id)) { res.saltadas.consultor++; continue; }
     const { data: cita } = await supabase.from('bookings').select('id').eq('contact_id', k.id).in('estado', ['agendada', 'confirmada', 'reagendada']).gte('fecha', new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10)).limit(1);
     if ((cita || []).length) { res.saltadas.cita++; continue; }
