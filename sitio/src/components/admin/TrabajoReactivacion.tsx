@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 const postJ = (body: any) => fetch('/api/crm/ti/reactivacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
 const ESTADO_L: Record<string, { l: string; c: string; bg: string }> = {
   propuesta: { l: 'Por aprobar', c: '#4c1d95', bg: '#EEECFE' }, programada: { l: 'Programado', c: '#1e3a8a', bg: '#e0e7ff' }, enviada: { l: 'Enviado', c: '#14532d', bg: '#dcfce7' },
-  respondio: { l: 'Respondió', c: '#14532d', bg: '#bbf7d0' }, rechazada: { l: 'Rechazado', c: '#7f1d1d', bg: '#fee2e2' }, error: { l: 'Error', c: '#7f1d1d', bg: '#fee2e2' },
+  respondio: { l: 'Respondió', c: '#14532d', bg: '#bbf7d0' }, descartada: { l: 'Descartado por el agente', c: '#4a4658', bg: '#f3f4f6' }, rechazada: { l: 'Rechazado', c: '#7f1d1d', bg: '#fee2e2' }, error: { l: 'Error', c: '#7f1d1d', bg: '#fee2e2' },
 };
 const MOTIVOS = ['No es el lead correcto', 'El ángulo no le pega', 'Muy vendedor', 'Todavía no: esperar', 'Otro'];
 const fecha = (iso?: string) => iso ? new Date(iso).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
@@ -79,6 +79,7 @@ export default function TrabajoReactivacion() {
                 {f.resumen_lead && <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45 }}>{f.resumen_lead}</div>}
                 {f.angulo && <div style={{ marginTop: 8, fontSize: 12, color: '#5B4BD6', fontWeight: 700 }}>Palanca: {f.angulo}</div>}
                 {f.por_que && <div style={{ marginTop: 4, fontSize: 12, color: '#6b6580' }}>{f.por_que}</div>}
+                {f.estado === 'descartada' && f.error && <div style={{ marginTop: 6, fontSize: 12.5, color: '#4a4658' }}>Motivo: {f.error}</div>}
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Lo que va a decir {cambiado && <span style={{ color: '#b45309' }}>· se guardará tu versión</span>}</div>

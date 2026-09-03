@@ -53,7 +53,7 @@ async function contexto(c: any) {
 }
 
 /** Redacta el primer contacto de UN lead. Instrucción implícita: reconocer el tiempo, retomar SU pregunta, una novedad, una pregunta fácil, cero pitch. */
-export async function redactarReactivacion(c: any): Promise<{ mensaje: string; angulo: string; resumen_lead: string; pregunta_original: string; por_que: string; costo: number } | null> {
+export async function redactarReactivacion(c: any): Promise<{ mensaje: string; angulo: string; resumen_lead: string; pregunta_original: string; por_que: string; costo: number; descartar?: string } | null> {
   if (!hasApiKey()) { console.error('[reactivacion] sin API key'); return null; }
   const cfg: any = await leerConfig();
   const { hilo, datos, resumen } = await contexto(c);
@@ -87,14 +87,17 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 5. Sin emojis, sin «espero que estés bien», sin «quería darle seguimiento», sin mayúsculas de énfasis. Máximo 300 caracteres: va dentro de una plantilla que ya trae «Hola {nombre},» al inicio y una salida amable al final, así que NO saludes ni te despidas ni ofrezcas la demo: eso ya lo dice la plantilla.
 6. Habla como habla la gente de tiendas en México, de tú.
 
+Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que no es una tienda o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
+
 Responde SOLO con JSON: {"mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
-  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: prompt }] });
+  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || '';
   if (!txt) console.error('[reactivacion] respuesta sin texto:', JSON.stringify(r).slice(0, 400));
   const m = txt.match(/\{[\s\S]*\}/); if (!m) { console.error('[reactivacion] sin JSON:', txt.slice(0, 300)); return null; }
   let j: any; try { j = JSON.parse(m[0]); } catch { console.error('[reactivacion] JSON inválido:', m[0].slice(0, 300)); return null; }
-  if (!j.mensaje) return null;
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
+  if (j.descartar) return { mensaje: '', angulo: '', resumen_lead: '', pregunta_original: '', por_que: '', costo, descartar: String(j.descartar) };
+  if (!j.mensaje) return null;
   return { mensaje: String(j.mensaje).trim(), angulo: String(j.angulo || ''), resumen_lead: String(j.resumen_lead || ''), pregunta_original: String(j.pregunta_original || ''), por_que: String(j.por_que || ''), costo };
 }
 
@@ -112,6 +115,11 @@ export async function generarLoteReactivacion(n = MAX_DIA): Promise<any> {
       const d = await redactarReactivacion(c);
       if (!d) { res.errores++; continue; }
       res.costo += d.costo;
+      if (d.descartar) {
+        // El agente vio que ya es cliente o no es tienda: queda registrado para no volver a proponerlo.
+        await supabase.from('ti_reactivacion').insert({ contact_id: c.contact_id, conversation_id: c.conversation_id, telefono: c.telefono, segmento: c.segmento, meses_sin_hablar: c.meses_sin_hablar, mensaje: '', estado: 'descartada', error: d.descartar, modelo: MODELS.opus, costo_usd: d.costo });
+        res.descartadas = (res.descartadas || 0) + 1; continue;
+      }
       const { data: fila, error: e2 } = await supabase.from('ti_reactivacion').insert({ contact_id: c.contact_id, conversation_id: c.conversation_id, telefono: c.telefono, segmento: c.segmento, meses_sin_hablar: c.meses_sin_hablar, resumen_lead: d.resumen_lead, pregunta_original: d.pregunta_original, angulo: d.angulo, mensaje: d.mensaje, mensaje_original: d.mensaje, por_que: d.por_que, modelo: MODELS.opus, costo_usd: d.costo, automatica: !!rampa.automatico }).select('id').maybeSingle();
       if (e2 || !fila) { res.errores++; continue; }
       res.propuestas++;
