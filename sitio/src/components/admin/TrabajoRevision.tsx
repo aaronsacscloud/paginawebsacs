@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ESTILOS_ENVIOS } from './TrabajoEnvios';
+import ContextoLead, { BotonContexto } from './crm/ti/ContextoLead';
 
 /* ═══ Revisión diaria ═══ Cada mañana, por conversación con actividad ayer: qué pasó, qué funcionó y UNA
    propuesta concreta con fundamento. Aceptar la ejecuta (mensaje programado, tarea, ángulo, descalificar);
@@ -14,6 +15,7 @@ export default function TrabajoRevision() {
   const [ocupado, setOcupado] = useState(false);
   const [msg, setMsg] = useState('');
   const [verTodo, setVerTodo] = useState(false);
+  const [ctx, setCtx] = useState<any>(null);   // fila abierta en el drawer de conversación
   const cargar = () => fetch('/api/crm/ti/revision?dias=3').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); }, []);
   if (!d) return <div className="ti-fin"><p>Cargando…</p></div>;
@@ -45,7 +47,7 @@ export default function TrabajoRevision() {
         const p = f.propuesta || {}; const av = AVANCE[f.avance] || AVANCE.igual;
         return (
           <div key={f.id} className="ti-envio">
-            <div className="ti-envio-cab"><b className="ti-envio-nombre">{f.contacto?.nombre || 'Lead'}</b>{f.contacto?.giro && <span className="ti-chip chip-tipo">{f.contacto.giro}</span>}<span className="ti-chip" style={{ color: av.c, borderColor: av.c }}>{av.l}{f.etapa_antes && f.etapa_despues && f.etapa_antes !== f.etapa_despues ? ` · ${f.etapa_antes} → ${f.etapa_despues}` : ''}</span><span className="ti-chip chip-p2">{TIPO_L[p.tipo] || p.tipo}</span>{p.riesgo && <span className="ti-chip chip-tipo">riesgo {p.riesgo}</span>}<span className="ti-suave" style={{ margin: '0 0 0 auto', fontSize: '.72rem' }}>{f.dia} · {f.estado}</span></div>
+            <div className="ti-envio-cab"><b className="ti-envio-nombre">{f.contacto?.nombre || 'Lead'}</b><BotonContexto compacto onClick={() => setCtx(f)} />{f.contacto?.giro && <span className="ti-chip chip-tipo">{f.contacto.giro}</span>}<span className="ti-chip" style={{ color: av.c, borderColor: av.c }}>{av.l}{f.etapa_antes && f.etapa_despues && f.etapa_antes !== f.etapa_despues ? ` · ${f.etapa_antes} → ${f.etapa_despues}` : ''}</span><span className="ti-chip chip-p2">{TIPO_L[p.tipo] || p.tipo}</span>{p.riesgo && <span className="ti-chip chip-tipo">riesgo {p.riesgo}</span>}<span className="ti-suave" style={{ margin: '0 0 0 auto', fontSize: '.72rem' }}>{f.dia} · {f.estado}</span></div>
             <div className="ti-envio-obj"><span>Qué pasó</span>{f.resumen}</div>
             {f.que_funciono && <div className="ti-envio-obj"><span>Qué funcionó</span>{f.que_funciono}</div>}
             {Array.isArray(f.preguntas_abiertas) && f.preguntas_abiertas.length > 0 && <div className="ti-envio-obj"><span>Preguntas abiertas</span>{f.preguntas_abiertas.join(' · ')}</div>}
@@ -64,6 +66,8 @@ export default function TrabajoRevision() {
           </div>
         );
       })}
+      <ContextoLead contactId={ctx?.contact_id || null} open={!!ctx} onClose={() => setCtx(null)}
+        acciones={ctx?.estado === 'propuesta' ? [{ label: 'Aceptar y programar', primario: true, disabled: ocupado, onClick: async () => { await decidir(ctx, 'aceptar'); setCtx(null); } }, { label: 'Rechazar', disabled: ocupado, onClick: async () => { await decidir(ctx, 'rechazar'); setCtx(null); } }] : []} />
     </div>
   );
 }

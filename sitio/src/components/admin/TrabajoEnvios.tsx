@@ -5,6 +5,7 @@
 // «lo que propuso el agente / lo que contestó el consultor», con tu veredicto.
 // Sobrio, sin emoji, estándar enterprise.
 import { useEffect, useRef, useState } from 'react';
+import ContextoLead, { BotonContexto } from './crm/ti/ContextoLead';
 import { SelectorAdjuntos, GaleriaRecursos, type Recurso, type AdjuntoSel } from './RecursosAgente';
 
 type Envio = {
@@ -109,6 +110,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [plantillas, setPlantillas] = useState<any[]>([]);
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
+  const [ctx, setCtx] = useState<any>(null);   // envío abierto en el drawer de conversación
   const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err'; aprendizaje?: boolean } | null>(null);
   const [saliendo, setSaliendo] = useState<{ id: string; sello: string } | null>(null);
   const [avisoRec, setAvisoRec] = useState<{ id: string; texto: string; tipo: 'ok' | 'err' } | null>(null);
@@ -183,11 +185,17 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
 
         {!actual && <div className="ti-fin"><h2>Nada por salir</h2><p>{cfg?.agente_activo ? 'Cuando un lead escriba, la respuesta del agente aparece aquí con su cuenta regresiva.' : 'El agente está apagado: no propone ni manda nada.'}</p></div>}
 
+        <ContextoLead contactId={ctx?.contact_id || null} open={!!ctx} onClose={() => setCtx(null)}
+          acciones={ctx && ctx.estado === 'pendiente' ? [
+            { label: 'Aprobar y enviar', primario: true, disabled: ocupado, onClick: async () => { const e = ctx; setCtx(null); const j = await despedir(e.id, 'Aprobada y enviada', () => post('/api/crm/ti/envios', { id: e.id, accion: 'enviar_ya' })); if (j) terminar(`Aprobada y enviada a ${nombre(e)}.`, 'Quedó en Aprendizaje como respuesta aprobada.'); } },
+            { label: 'Detener…', onClick: () => { setCtx(null); setVeto({ motivo: '', texto: '' }); } },
+          ] : []} />
         {actual && (() => { const e = actual; const s = e.salida || {}; const prueba = esPrueba(e); const saldra = cfg?.modo === 'vivo' || prueba; return (
           <div className={'ti-envio actual' + (saliendo?.id === e.id ? ' saliendo' : '')} key={e.id}>
             {saliendo?.id === e.id && <div className="ti-sello" aria-live="polite"><span className="ti-sello-check">✓</span><b>{saliendo.sello}</b><span>va a Aprendizaje</span></div>}
             <div className="ti-envio-cab">
               <b className="ti-envio-nombre">{nombre(e)}</b>
+              <BotonContexto compacto onClick={() => setCtx(e)} />
               {e.contacto?.giro && <span className="ti-chip chip-tipo">{e.contacto.giro}</span>}
               <span className="ti-chip chip-p2">{ESTADO_L[s.estado] || s.estado || '—'}</span>
               <span className="ti-chip chip-tipo">{ORIGEN_L[e.origen] || e.origen}</span>

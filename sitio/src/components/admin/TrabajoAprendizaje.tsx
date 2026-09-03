@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import ContextoLead, { BotonContexto } from './crm/ti/ContextoLead';
 import { ESTILOS_ENVIOS } from './TrabajoEnvios';
 import { SelectorAdjuntos, MiniRecurso, type Recurso, type AdjuntoSel } from './RecursosAgente';
 
@@ -81,7 +82,7 @@ const partir = (t: string) => String(t || '').split(DIVISOR).map(x => x.trim()).
 const CORREGIR = ['Muy largo', 'Muy corto', 'Tono no es el nuestro', 'No contestó todo', 'Información incorrecta', 'Sin siguiente paso', 'Demasiado vendedor', 'Repite saludo o nombre', 'Prometió algo que no hay'];
 type Valores = { pulida: string; criterio: string; evitar: string; adjuntos: string[]; reescrita_por_agente: boolean };
 
-function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, evitarInicial = '', adjuntosInicial, galeria, onNuevo, acciones, onHecho, guia, tituloRespuesta, tituloOriginal }: {
+function Ficha({ tipo, id, contactId, onContexto, titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, evitarInicial = '', adjuntosInicial, galeria, onNuevo, acciones, onHecho, guia, tituloRespuesta, tituloOriginal }: { contactId?: string | null; onContexto?: (id: string) => void;
   tipo: 'ejemplo' | 'envio'; id: string; titulo: string; chips: string[]; leadDijo?: string | null; contexto?: string | null; original?: string | null; guia?: string | null; tituloRespuesta?: string; tituloOriginal?: string; textoInicial: string; criterioInicial: string; evitarInicial?: string; adjuntosInicial: AdjuntoSel[]; galeria: Recurso[]; onNuevo: (r: Recurso) => void;
   acciones: { label: string | ((editado: boolean) => string); clase?: string; run: (v: Valores) => Promise<any> }[]; onHecho?: () => void;
 }) {
@@ -112,7 +113,7 @@ function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoIni
   const usarIa = () => { if (!ia) return; const p = partir(ia.mensaje); setEnDos(p.length > 1); setParte1(p[0] || ia.mensaje); setParte2(p.slice(1).join('\n---\n')); setReescrita(true); setIa(null); };
   return (
     <div className="apr-ficha">
-      <div className="apr-ficha-cab"><b>{titulo}</b>{chips.map((c, i) => <span key={i} className="ti-chip chip-tipo">{c}</span>)}</div>
+      <div className="apr-ficha-cab"><b>{titulo}</b>{contactId && onContexto && <BotonContexto compacto onClick={() => onContexto(contactId)} />}{chips.map((c, i) => <span key={i} className="ti-chip chip-tipo">{c}</span>)}</div>
       {guia && <div style={{ padding: '10px 18px', background: '#FFF7E6', borderBottom: '1px solid #F1E3C2', fontSize: '.82rem', color: '#4a3d1c', lineHeight: 1.45 }}><b style={{ color: '#B7791F' }}>Qué evalúas aquí:</b> {guia}</div>}
       <Paso n={1} titulo="Qué dijo el lead"><LeadDijo texto={leadDijo} contexto={contexto} /></Paso>
       <Paso n={2} titulo={reescrita ? 'La respuesta — versión reescrita por el agente con tu criterio' : editado ? 'La respuesta — tu versión (esto es lo que se guardará)' : (tituloRespuesta || 'La respuesta')}>
@@ -161,6 +162,7 @@ function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoIni
 }
 
 export default function TrabajoAprendizaje() {
+  const [ctxId, setCtxId] = useState<string | null>(null);
   const [d, setD] = useState<any>(null);
   const [sub, setSub] = useState<'revisar' | 'aprobado'>('revisar');
   const [filtro, setFiltro] = useState<'todo' | 'ejemplos' | 'envios' | 'pares'>('todo');
@@ -201,7 +203,7 @@ export default function TrabajoAprendizaje() {
     correccion_dueno: { guia: 'Tu corrección. Puedes afinarla, ponerle regla o adjuntos.', resp: 'Tu versión aprobada', orig: 'Ver lo que el agente había propuesto' },
   };
   const fichaEjemplo = (ej: Ej, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={ej.id} tipo="ejemplo" id={ej.id} evitarInicial={ej.evitar || ''} titulo={ej.contacto?.nombre || 'Ejemplo'} guia={!aprobado ? GUIA[ej.fuente]?.guia : null} tituloRespuesta={GUIA[ej.fuente]?.resp} tituloOriginal={GUIA[ej.fuente]?.orig} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
+    <Ficha key={ej.id} tipo="ejemplo" id={ej.id} contactId={(ej as any).contact_id} onContexto={setCtxId} evitarInicial={ej.evitar || ''} titulo={ej.contacto?.nombre || 'Ejemplo'} guia={!aprobado ? GUIA[ej.fuente]?.guia : null} tituloRespuesta={GUIA[ej.fuente]?.resp} tituloOriginal={GUIA[ej.fuente]?.orig} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
       leadDijo={ej.mensaje_lead} contexto={ej.situacion} original={ej.respuesta} textoInicial={ej.pulida || ej.respuesta || ''} criterioInicial={ej.criterio || ''} adjuntosInicial={Array.isArray(ej.adjuntos) ? ej.adjuntos : []} galeria={gal} onNuevo={addGal} onHecho={onHecho}
       acciones={aprobado ? [
         { label: (ed: boolean) => ed ? 'Guardar mi versión' : 'Guardar cambios', clase: 'primario', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, ...v }); return r.error ? r : { hecho: 'Guardado: el agente lo usa desde el siguiente turno.' }; } },
@@ -212,7 +214,7 @@ export default function TrabajoAprendizaje() {
       ]} />
   );
   const fichaEnvio = (e: Env, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={e.id} tipo="envio" id={e.id} titulo={e.contacto?.nombre || 'Lead'} guia={!aprobado ? 'Este mensaje del agente salió solo al vencer la ventana, sin tu aprobación. Si estuvo bien, apruébalo para que cuente como ejemplo; si no, corrígelo aquí; si no enseña nada, descártalo.' : null} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
+    <Ficha key={e.id} tipo="envio" id={e.id} contactId={e.contact_id} onContexto={setCtxId} titulo={e.contacto?.nombre || 'Lead'} guia={!aprobado ? 'Este mensaje del agente salió solo al vencer la ventana, sin tu aprobación. Si estuvo bien, apruébalo para que cuente como ejemplo; si no, corrígelo aquí; si no enseña nada, descártalo.' : null} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
       leadDijo={e.salida?.ultimo_mensaje} contexto={e.salida?.objetivo} original={e.mensaje_original || null} textoInicial={e.mensaje} criterioInicial="" galeria={gal} onNuevo={addGal} onHecho={onHecho}
       adjuntosInicial={Array.isArray(e.adjuntos) && e.adjuntos.length ? e.adjuntos : e.imagen_url ? [{ id: e.imagen_id || '', tipo: 'image', url: e.imagen_url, nombre: 'Imagen' }] : []}
       acciones={aprobado ? [
@@ -308,6 +310,7 @@ export default function TrabajoAprendizaje() {
           ))}
         </div>
       )}
+      <ContextoLead contactId={ctxId} open={!!ctxId} onClose={() => setCtxId(null)} />
     </div>
   );
 }

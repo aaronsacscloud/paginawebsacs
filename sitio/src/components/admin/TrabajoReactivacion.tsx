@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ContextoLead, { BotonContexto } from './crm/ti/ContextoLead';
 
 /* ═══ Reactivación de leads viejos ═══ El agente redacta un primer contacto personalizado por lead (qué preguntó,
    en qué se quedó, una novedad). Aquí se ve QUIÉN es cada uno antes del mensaje, se aprueba, se edita o se
@@ -18,6 +19,7 @@ export default function TrabajoReactivacion() {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [rechazando, setRechazando] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  const [ctx, setCtx] = useState<any>(null);
   const cargar = () => fetch('/api/crm/ti/reactivacion').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); }, []);
   if (!d) return <div className="ti-fin"><p>Cargando…</p></div>;
@@ -69,6 +71,7 @@ export default function TrabajoReactivacion() {
               <span className="ti-chip" style={{ background: f.segmento === 'intencion' ? '#fef3c7' : '#f3f4f6', color: f.segmento === 'intencion' ? '#78350f' : '#4a4658' }}>{seg[f.segmento]?.l || f.segmento}</span>
               <span className="ti-chip" style={{ background: es.bg, color: es.c }}>{es.l}{f.sale_at && f.estado === 'programada' ? ` · ${fecha(f.sale_at)}` : ''}</span>
               <span style={{ fontSize: 12, color: '#8e88a8' }}>hace {f.meses_sin_hablar} {f.meses_sin_hablar === 1 ? 'mes' : 'meses'}</span>
+              <span style={{ marginLeft: 'auto' }}><BotonContexto compacto onClick={() => setCtx(f)} /></span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 14 }}>
               <div style={{ background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 12, padding: '12px 14px' }}>
@@ -105,6 +108,8 @@ export default function TrabajoReactivacion() {
           </div>
         );
       })}
+      <ContextoLead contactId={ctx?.contact_id || null} open={!!ctx} onClose={() => setCtx(null)}
+        acciones={ctx?.estado === 'propuesta' ? [{ label: 'Aprobar y programar', primario: true, disabled: !!ocupado, onClick: async () => { await decidir(ctx, 'aprobar'); setCtx(null); } }, { label: 'Rechazar: no es el lead correcto', disabled: !!ocupado, onClick: async () => { await decidir(ctx, 'rechazar', 'No es el lead correcto'); setCtx(null); } }] : []} />
     </div>
   );
 }
