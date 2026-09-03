@@ -11,6 +11,21 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
   const mes = (url.searchParams.get('mes') || mesDe()).slice(0, 7);
   if (url.searchParams.get('reporte') === 'anual') return json(await reporteAnual(Number(url.searchParams.get('anio')) || Number(mes.slice(0, 4))));
+  // Detalle de UN gasto: la ficha + el historial de pagos de todos los meses (para medir y mejorar lo recurrente).
+  const gastoId = url.searchParams.get('gasto');
+  if (gastoId) {
+    const [{ data: g }, { data: pagos }] = await Promise.all([
+      supabase.from('fin_gastos').select('*').eq('id', gastoId).maybeSingle(),
+      supabase.from('fin_gastos_pagos').select('*').eq('gasto_id', gastoId).order('mes', { ascending: false }).limit(36),
+    ]);
+    if (!g) return json({ error: 'No existe' }, 404);
+    const hist = (pagos || []).map(p => ({ ...p, monto: Number(p.monto ?? g.monto) }));
+    const total = hist.reduce((s, p) => s + p.monto, 0);
+    const prom = hist.length ? total / hist.length : Number(g.monto);
+    // Puntualidad: pagado antes o el día de cobro del mes.
+    const aTiempo = hist.filter(p => { if (!g.dia_cobro) return true; const d = new Date(p.pagado_at); const cdmx = new Date(d.getTime() - 6 * 3600e3); return cdmx.toISOString().slice(0, 7) < p.mes || (cdmx.toISOString().slice(0, 7) === p.mes && cdmx.getUTCDate() <= Number(g.dia_cobro)); }).length;
+    return json({ gasto: g, historial: hist, stats: { pagos: hist.length, total, promedio: Math.round(prom), ultimo: hist[0]?.monto ?? null, variacion_pct: hist.length > 1 ? Math.round(((hist[0].monto - prom) / prom) * 100) : null, a_tiempo_pct: hist.length ? Math.round(aTiempo / hist.length * 100) : null } });
+  }
   try { return json(await resumenMes(mes)); } catch (e: any) { return json({ error: e?.message || String(e) }, 500); }
 };
 
@@ -30,7 +45,8 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.accion === 'gasto_borrar' && b.id) { await supabase.from('fin_gastos').delete().eq('id', b.id); return json({ ok: true }); }
   if (b.accion === 'gasto_pagar' && b.gasto_id && b.mes) {
     if (b.pagado === false) { await supabase.from('fin_gastos_pagos').delete().eq('gasto_id', b.gasto_id).eq('mes', b.mes); return json({ ok: true }); }
-    const { error } = await supabase.from('fin_gastos_pagos').upsert({ gasto_id: b.gasto_id, mes: String(b.mes).slice(0, 7), pagado_at: ahora, monto: b.monto != null ? Number(b.monto) : null, nota: b.nota || null, pagado_por: uid }, { onConflict: 'gasto_id,mes' });
+    const pagadoAt = b.fecha ? new Date(`${String(b.fecha).slice(0, 10)}T18:00:00.000Z`).toISOString() : ahora;
+    const { error } = await supabase.from('fin_gastos_pagos').upsert({ gasto_id: b.gasto_id, mes: String(b.mes).slice(0, 7), pagado_at: pagadoAt, monto: b.monto != null && b.monto !== '' ? Number(b.monto) : null, nota: b.nota || null, pagado_por: uid }, { onConflict: 'gasto_id,mes' });
     return error ? json({ error: error.message }, 500) : json({ ok: true });
   }
   if (b.accion === 'cerrar_mes' && b.mes) return json(await cerrarMes(String(b.mes).slice(0, 7), uid, b.notas));

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import KpiCard from './ui/KpiCard';
+import Sheet from './ui/Sheet';
 
 /* ═══ Finanzas ═══ Mes a mes: qué entró, qué falta por entrar (renovaciones), qué hay que pagar (suscripciones,
    nómina, comisiones…) con su palomita de pagado, qué traen los vendedores en pipeline y la utilidad. Cerrar el mes
@@ -14,6 +15,11 @@ const postJ = (body: any) => fetch('/api/crm/finanzas', { method: 'POST', header
 const vacio = { id: '', nombre: '', categoria: 'suscripcion', monto: '', periodicidad: 'mensual', dia_cobro: '', inicio: '', fin: '', proveedor: '', notas: '', probable: false };
 const inp = { display: 'block', width: '100%', marginTop: 3, padding: 8, borderRadius: 8, border: '1px solid #e8e5f0', fontFamily: 'inherit', boxSizing: 'border-box' as const, fontSize: 13 };
 const lbl = { fontSize: 11, color: '#8e88a8', fontWeight: 800 as const };
+const hoyCdmx = () => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+/** Fecha de vencimiento del gasto en el mes: su día de cobro (o el último día si no tiene / si el día no existe). */
+const venceEn = (g: any, mes: string) => { const y = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7)); const ult = new Date(Date.UTC(y, m, 0)).getUTCDate(); const d = Math.min(Number(g.dia_cobro) || ult, ult); return `${mes}-${String(d).padStart(2, '0')}`; };
+const diasPara = (fecha: string) => Math.round((Date.parse(fecha) - Date.parse(hoyCdmx())) / 86400e3);
+const textoDias = (n: number) => n === 0 ? 'hoy' : n > 0 ? `en ${n} día${n === 1 ? '' : 's'}` : `venció hace ${-n} día${n === -1 ? '' : 's'}`;
 
 export default function FinanzasTab() {
   const [mes, setMes] = useState(() => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7));
@@ -24,6 +30,11 @@ export default function FinanzasTab() {
   const [abierto, setAbierto] = useState(false);
   const [msg, setMsg] = useState('');
   const [notas, setNotas] = useState('');
+  const [orden, setOrden] = useState<{ k: 'nombre' | 'categoria' | 'dias' | 'monto'; asc: boolean }>({ k: 'dias', asc: true });
+  const [detalle, setDetalle] = useState<any>(null);          // gasto abierto en el drawer
+  const [det, setDet] = useState<any>(null);                  // su ficha + historial
+  const [pago, setPago] = useState({ monto: '', fecha: hoyCdmx(), nota: '' });
+  const abrirDetalle = (g: any) => { setDetalle(g); setDet(null); setPago({ monto: String(g.pago?.monto ?? g.monto), fecha: hoyCdmx(), nota: g.pago?.nota || '' }); fetch(`/api/crm/finanzas?gasto=${g.id}`).then(r => r.json()).then(setDet).catch(() => setDet({ error: 'No se pudo cargar' })); };
   const cargar = () => { fetch(`/api/crm/finanzas?mes=${mes}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); fetch(`/api/crm/finanzas?reporte=anual&anio=${mes.slice(0, 4)}`).then(r => r.json()).then(setAnual).catch(() => {}); };
   useEffect(() => { setD(null); cargar(); }, [mes]); // eslint-disable-line react-hooks/exhaustive-deps
   const guardar = async () => { setMsg(''); const j = await postJ({ accion: 'gasto_guardar', gasto: form }); if (j.error) { setMsg(j.error); return; } setForm(vacio); setAbierto(false); setMsg('Guardado.'); cargar(); };
@@ -32,6 +43,8 @@ export default function FinanzasTab() {
   const th = { textAlign: 'left' as const, padding: '8px 12px', fontWeight: 800, fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#8e88a8', background: '#faf9fc' };
   const td = { padding: '8px 12px', borderTop: '1px solid #f0eef6', fontSize: 12.5 };
   const cerrado = !!d?.cierre;
+  const filasGasto = (() => { if (!d) return []; const xs = d.gastos.lista.map((g: any) => ({ ...g, vence: venceEn(g, mes), dias: diasPara(venceEn(g, mes)) })); const dir = orden.asc ? 1 : -1; return xs.sort((a: any, b: any) => { if (orden.k === 'monto') return (Number(a.monto) - Number(b.monto)) * dir; if (orden.k === 'dias') { if (!!a.pago !== !!b.pago) return a.pago ? 1 : -1; return (a.dias - b.dias) * dir; } return String(a[orden.k] || '').localeCompare(String(b[orden.k] || ''), 'es') * dir; }); })();
+  const thSort = (k: typeof orden.k, l: string, right?: boolean) => <th style={{ ...th, textAlign: right ? 'right' : 'left', cursor: 'pointer', userSelect: 'none', color: orden.k === k ? '#4c1d95' : th.color }} onClick={() => setOrden(o => ({ k, asc: o.k === k ? !o.asc : k !== 'monto' }))} title="Ordenar">{l}{orden.k === k ? (orden.asc ? ' ↑' : ' ↓') : ''}</th>;
   return (
     <div style={{ padding: '18px 22px 60px', maxWidth: 1180, margin: '0 auto', color: '#241d43' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
@@ -97,17 +110,17 @@ export default function FinanzasTab() {
             )}
             <div style={{ marginTop: 12, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
-                <thead><tr><th style={th}>Pagado</th><th style={th}>Gasto</th><th style={th}>Categoría</th><th style={th}>Periodicidad</th><th style={th}>Día</th><th style={{ ...th, textAlign: 'right' }}>Monto</th><th style={th}></th></tr></thead>
+                <thead><tr><th style={th}>Pagado</th>{thSort('nombre', 'Gasto')}{thSort('categoria', 'Categoría')}<th style={th}>Periodicidad</th>{thSort('dias', 'Vence')}{thSort('monto', 'Monto', true)}<th style={th}></th></tr></thead>
                 <tbody>
-                  {d.gastos.lista.map((g: any) => (
-                    <tr key={g.id} style={{ opacity: g.pago ? .75 : 1 }}>
-                      <td style={td}><input type="checkbox" checked={!!g.pago} onChange={e => pagar(g, e.target.checked)} title={g.pago ? `Pagado ${new Date(g.pago.pagado_at).toLocaleDateString('es-MX')}` : 'Marcar como pagado este mes'} style={{ width: 18, height: 18, accentColor: '#5B4BD6', cursor: 'pointer' }} /></td>
+                  {filasGasto.map((g: any) => (
+                    <tr key={g.id} style={{ opacity: g.pago ? .75 : 1, cursor: 'pointer' }} onClick={() => abrirDetalle(g)}>
+                      <td style={td} onClick={e => e.stopPropagation()}><input type="checkbox" checked={!!g.pago} onChange={e => pagar(g, e.target.checked)} title={g.pago ? `Pagado ${new Date(g.pago.pagado_at).toLocaleDateString('es-MX')}` : 'Marcar como pagado este mes'} style={{ width: 18, height: 18, accentColor: '#5B4BD6', cursor: 'pointer' }} /></td>
                       <td style={td}><b>{g.nombre}</b>{g.proveedor ? <span style={{ color: '#6b6580' }}> · {g.proveedor}</span> : null}{g.probable ? <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, background: '#fef3c7', color: '#78350f', borderRadius: 999, padding: '1px 7px' }}>variable</span> : null}{g.notas ? <div style={{ color: '#8e88a8', fontSize: 11 }}>{g.notas}</div> : null}</td>
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>{CATS[g.categoria] || g.categoria}</span></td>
                       <td style={td}>{PER[g.periodicidad] || g.periodicidad}</td>
-                      <td style={td}>{g.dia_cobro ? `día ${g.dia_cobro}` : '—'}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>{g.pago ? <span style={{ color: '#14532d', fontWeight: 700 }}>pagado {new Date(g.pago.pagado_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span> : <span style={{ fontWeight: 800, color: g.dias < 0 ? '#b91c1c' : g.dias <= 3 ? '#b45309' : '#241d43' }}>{textoDias(g.dias)}</span>}<div style={{ color: '#8e88a8', fontSize: 11 }}>{g.dia_cobro ? `día ${g.dia_cobro}` : 'fin de mes'}</div></td>
                       <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(g.monto)}</td>
-                      <td style={{ ...td, textAlign: 'right' }}><button onClick={() => { setForm({ id: g.id, nombre: g.nombre, categoria: g.categoria, monto: g.monto, periodicidad: g.periodicidad, dia_cobro: g.dia_cobro || '', inicio: String(g.inicio).slice(0, 7), fin: g.fin ? String(g.fin).slice(0, 7) : '', proveedor: g.proveedor || '', notas: g.notas || '', probable: !!g.probable }); setAbierto(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button></td>
+                      <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}><button onClick={() => { setForm({ id: g.id, nombre: g.nombre, categoria: g.categoria, monto: g.monto, periodicidad: g.periodicidad, dia_cobro: g.dia_cobro || '', inicio: String(g.inicio).slice(0, 7), fin: g.fin ? String(g.fin).slice(0, 7) : '', proveedor: g.proveedor || '', notas: g.notas || '', probable: !!g.probable }); setAbierto(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button></td>
                     </tr>
                   ))}
                   {!d.gastos.lista.length && <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#8e88a8', padding: 20 }}>Todavía no capturas gastos. Empieza por las suscripciones que pagas cada mes.</td></tr>}
@@ -197,6 +210,47 @@ export default function FinanzasTab() {
           </div>
         )}
       </>)}
+      <Sheet open={!!detalle} onClose={() => setDetalle(null)} width={560} zIndex={1200} title={detalle ? <span>{detalle.nombre}{detalle.proveedor ? <span style={{ color: '#8e88a8', fontWeight: 600 }}> · {detalle.proveedor}</span> : null}</span> : ''}>
+        {detalle && (
+          <div style={{ padding: '4px 18px 40px', fontSize: 13.5, color: '#241d43' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', fontSize: 12.5, color: '#6b6580' }}>
+              <span>{CATS[detalle.categoria] || detalle.categoria}</span><span>{PER[detalle.periodicidad] || detalle.periodicidad}</span><span>Vence <b style={{ color: '#241d43' }}>{venceEn(detalle, mes)}</b> · {textoDias(diasPara(venceEn(detalle, mes)))}</span><span>Monto previsto <b style={{ color: '#241d43' }}>{pesos(detalle.monto)}</b></span>
+            </div>
+            {detalle.notas && <div style={{ marginTop: 8, color: '#6b6580', fontSize: 12.5 }}>{detalle.notas}</div>}
+            {/* Pagar este mes */}
+            <div style={{ marginTop: 14, background: detalle.pago ? '#e7f7ee' : '#faf9fc', border: '1px solid #ecebf2', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: detalle.pago ? '#14532d' : '#8e88a8' }}>{detalle.pago ? `Pagado el ${new Date(detalle.pago.pagado_at).toLocaleDateString('es-MX')}` : `Pagar ${nombreMes(mes)}`}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                <label style={lbl}>Monto pagado<input style={inp} type="number" value={pago.monto} onChange={e => setPago({ ...pago, monto: e.target.value })} /></label>
+                <label style={lbl}>Fecha<input style={inp} type="date" value={pago.fecha} onChange={e => setPago({ ...pago, fecha: e.target.value })} /></label>
+                <label style={{ ...lbl, gridColumn: '1 / -1' }}>Nota (referencia, quién, por qué cambió)<input style={inp} value={pago.nota} onChange={e => setPago({ ...pago, nota: e.target.value })} /></label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={async () => { await postJ({ accion: 'gasto_pagar', gasto_id: detalle.id, mes, pagado: true, monto: pago.monto, fecha: pago.fecha, nota: pago.nota }); cargar(); abrirDetalle({ ...detalle, pago: { pagado_at: `${pago.fecha}T18:00:00Z`, monto: pago.monto, nota: pago.nota } }); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{detalle.pago ? 'Actualizar pago' : 'Marcar pagado'}</button>
+                {detalle.pago && <button onClick={async () => { await postJ({ accion: 'gasto_pagar', gasto_id: detalle.id, mes, pagado: false }); cargar(); abrirDetalle({ ...detalle, pago: null }); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Quitar pago</button>}
+                <button onClick={() => { setDetalle(null); setForm({ id: detalle.id, nombre: detalle.nombre, categoria: detalle.categoria, monto: detalle.monto, periodicidad: detalle.periodicidad, dia_cobro: detalle.dia_cobro || '', inicio: String(detalle.inicio).slice(0, 7), fin: detalle.fin ? String(detalle.fin).slice(0, 7) : '', proveedor: detalle.proveedor || '', notas: detalle.notas || '', probable: !!detalle.probable }); setAbierto(true); setVista('gastos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Editar gasto</button>
+              </div>
+            </div>
+            {/* Historial */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Historial de pagos</div>
+              {!det && <p style={{ color: '#8e88a8' }}>Cargando…</p>}
+              {det?.error && <p style={{ color: '#b91c1c' }}>{det.error}</p>}
+              {det && !det.error && (<>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  {[['Pagos', det.stats.pagos], ['Total', pesos(det.stats.total)], ['Promedio', pesos(det.stats.promedio)], ['A tiempo', det.stats.a_tiempo_pct == null ? '—' : `${det.stats.a_tiempo_pct}%`]].map(([l, v]: any) => <div key={l} style={{ background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 10, padding: '8px 10px' }}><div style={{ fontSize: 10, fontWeight: 800, color: '#8e88a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>{l}</div><div style={{ fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{v}</div></div>)}
+                </div>
+                {det.stats.variacion_pct != null && <div style={{ marginTop: 8, fontSize: 12.5, color: det.stats.variacion_pct > 10 ? '#b91c1c' : det.stats.variacion_pct < -10 ? '#14532d' : '#6b6580' }}>El último pago fue {det.stats.variacion_pct > 0 ? `${det.stats.variacion_pct}% arriba` : det.stats.variacion_pct < 0 ? `${-det.stats.variacion_pct}% abajo` : 'igual'} del promedio.</div>}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10, fontSize: 12.5 }}>
+                  <thead><tr style={{ color: '#8e88a8', fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' }}><th style={{ textAlign: 'left', padding: '6px 4px' }}>Mes</th><th style={{ textAlign: 'left', padding: '6px 4px' }}>Pagado el</th><th style={{ textAlign: 'right', padding: '6px 4px' }}>Monto</th><th style={{ textAlign: 'left', padding: '6px 4px' }}>Nota</th></tr></thead>
+                  <tbody>{det.historial.map((p: any) => <tr key={p.mes} style={{ borderTop: '1px solid #f0eef6' }}><td style={{ padding: '7px 4px', textTransform: 'capitalize', fontWeight: 700 }}>{nombreMes(p.mes)}</td><td style={{ padding: '7px 4px' }}>{new Date(p.pagado_at).toLocaleDateString('es-MX')}</td><td style={{ padding: '7px 4px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800, color: Number(p.monto) > Number(detalle.monto) ? '#b91c1c' : undefined }}>{pesos(p.monto)}</td><td style={{ padding: '7px 4px', color: '#6b6580' }}>{p.nota || ''}</td></tr>)}
+                  {!det.historial.length && <tr><td colSpan={4} style={{ padding: 12, color: '#8e88a8', textAlign: 'center' }}>Todavía no hay pagos registrados de este gasto.</td></tr>}</tbody>
+                </table>
+              </>)}
+            </div>
+          </div>
+        )}
+      </Sheet>
     </div>
   );
 }
