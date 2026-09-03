@@ -167,7 +167,9 @@ export async function avisarRevision(
         ? `<p>Ya se abrió la siguiente: <b>${escapar(sig)}</b>.</p>`
         : `<p>Con esta se terminó el brief. Nos ponemos en contacto para arrancar.</p>`);
   } else {
-    titulo = `Revisamos “${nombreEtapa}” — quedaron ${preguntas.length} ${preguntas.length === 1 ? 'pregunta' : 'preguntas'}`;
+    titulo = preguntas.length === 1
+      ? `Revisamos “${nombreEtapa}” — quedó una pregunta`
+      : `Revisamos “${nombreEtapa}” — quedaron ${preguntas.length} preguntas`;
     const lista = preguntas
       .slice(0, 8)
       .map(

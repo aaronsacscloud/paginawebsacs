@@ -36,6 +36,10 @@ export type Campo = {
    *  Sin esto, todas preguntaban "¿qué exactamente te gustó?" — que no viene
    *  al caso cuando el link es una carpeta de fotos. */
   notaPh?: string;
+  /** Un enlace que la pregunta le pide VISITAR al cliente antes de contestar.
+   *  Se usa en el recorrido de referencias: no basta con nombrar un sitio, hay
+   *  que llevarlo hasta él. */
+  enlace?: { url: string; texto: string };
   placeholder?: string;
 };
 
@@ -710,10 +714,251 @@ export const ETAPAS: Etapa[] = [
     ],
   },
 
-  // ─────────────────────────────────────────────────────────────── 4 ──
+  // ─────────────────────────────────────────────────────────────── 6 ──
+  {
+    clave: 'renders',
+    orden: 6,
+    titulo: 'Renders, video y efectos',
+    resumen:
+      'Esta es la parte que más ilusión les hace y la que más se malentiende. ' +
+      'Un render 3D, un video de portada y un efecto de scroll son tres cosas ' +
+      'distintas, cuestan distinto y tardan distinto. Aquí vemos qué tienen ' +
+      'ya, qué hay que producir, y —lo más útil de todo— nos dicen qué les ' +
+      'gusta y qué no de sitios que van a recorrer con sus propios ojos.',
+    entrega:
+      'La lista de efectos que sí se construyen, con su costo en tiempo, y el ' +
+      'inventario de material 3D y de video que sirve tal cual.',
+    campos: [
+      {
+        id: 'r_tienen',
+        grupo: 'Lo que ya tienen',
+        etiqueta: '¿Qué material 3D o de video existe hoy?',
+        tipo: 'multiple',
+        requerido: true,
+        otro: true,
+        opciones: [
+          'Renders 3D de piezas',
+          'Video de campaña o institucional',
+          'Fotografía 360° de piezas',
+          'Animaciones para redes',
+          'Fotografía de producto en estudio',
+          'Nada todavía',
+        ],
+      },
+      {
+        id: 'r_archivos',
+        grupo: 'Lo que ya tienen',
+        etiqueta: 'Súbanlo aquí',
+        ayuda:
+          'Lo que quepa. Si pesa más de 25 MB, pónganlo en Drive o WeTransfer ' +
+          'y peguen el link abajo.',
+        tipo: 'archivos',
+      },
+      {
+        id: 'r_links',
+        grupo: 'Lo que ya tienen',
+        etiqueta: 'Links a las carpetas del material',
+        tipo: 'links',
+        notaPh: 'Qué hay en esa carpeta',
+      },
+      {
+        id: 'r_originales',
+        grupo: 'Lo que ya tienen',
+        etiqueta: '¿Tienen los ARCHIVOS ORIGINALES o solo el video ya exportado?',
+        ayuda:
+          'Esta es la pregunta que decide todo. Con el archivo fuente (.blend, ' +
+          '.c4d, .fbx, .obj, .glb) la pieza se puede girar, cambiar de metal y ' +
+          'meter al sitio en 3D de verdad. Con un MP4 ya renderizado solo se ' +
+          'puede reproducir — para hacer lo otro habría que modelarla de nuevo.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, tenemos los archivos originales',
+          'Solo los videos e imágenes ya exportados',
+          'Algunos sí y otros no',
+          'No sabemos — hay que preguntarle a quien los hizo',
+        ],
+      },
+      {
+        id: 'r_quien_hizo',
+        grupo: 'Lo que ya tienen',
+        etiqueta: '¿Quién los hizo y sigue disponible?',
+        ayuda:
+          'Nombre y contacto. Si podemos pedirle los archivos fuente ' +
+          'directamente, nos ahorramos semanas.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'r_derechos',
+        grupo: 'Lo que ya tienen',
+        etiqueta: '¿El material es de Ruben’s o del proveedor que lo produjo?',
+        ayuda:
+          'Pasa seguido: la marca pagó el video pero los derechos y los ' +
+          'archivos se quedaron con el estudio. Mejor saberlo hoy.',
+        tipo: 'opcion',
+        opciones: [
+          'Es nuestro, sin condiciones',
+          'Es nuestro pero los archivos los tiene el estudio',
+          'Es del estudio y lo usamos con permiso',
+          'No sabemos',
+        ],
+      },
+
+      {
+        id: 'r_ver_jamesallen',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: 'James Allen — el diamante que se gira con el dedo',
+        ayuda:
+          'Entren a un anillo cualquiera y giren la piedra. Es el estándar de ' +
+          'la industria en visualización 360° de diamantes. ¿Les sirve algo ' +
+          'así? ¿Qué le sobra y qué le falta?',
+        enlace: { url: 'https://www.jamesallen.com', texto: 'jamesallen.com' },
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'r_ver_bluenile',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: 'Blue Nile — el buscador y el comparador',
+        ayuda:
+          'Vean el buscador de diamantes con sus filtros y la comparación lado ' +
+          'a lado. Es lo más parecido a lo que va a hacer el catálogo de su ' +
+          'proveedor. ¿Se entiende? ¿Es demasiado técnico para su cliente?',
+        enlace: { url: 'https://www.bluenile.com', texto: 'bluenile.com' },
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'r_ver_brilliantearth',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: 'Brilliant Earth — armar el anillo paso a paso',
+        ayuda:
+          'Elijan una montadura y después un diamante. Ese es exactamente el ' +
+          'configurador del que hablamos. ¿Así lo quieren, más simple, o más ' +
+          'guiado por un asesor?',
+        enlace: { url: 'https://www.brilliantearth.com', texto: 'brilliantearth.com' },
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'r_ver_tiffany',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: 'Tiffany & Co. — cómo se siente una casa grande',
+        ayuda:
+          'No lo vean por los efectos: véanlo por el tono, el ritmo, cuánto ' +
+          'aire dejan y cómo hablan de las piezas. ¿Qué se les antoja de ahí y ' +
+          'qué les parece frío?',
+        enlace: { url: 'https://www.tiffany.com', texto: 'tiffany.com' },
+        tipo: 'parrafo',
+      },
+      {
+        id: 'r_ver_cartier',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: 'Cartier — video y movimiento en la portada',
+        ayuda:
+          'Fíjense en cómo usan el video y las transiciones sin que estorben ' +
+          'para comprar. ¿Es el nivel de espectáculo que quieren, o se pasa?',
+        enlace: { url: 'https://www.cartier.com', texto: 'cartier.com' },
+        tipo: 'parrafo',
+      },
+      {
+        id: 'r_ver_otros',
+        grupo: 'Recorran estos sitios y díganos qué opinan',
+        etiqueta: '¿Encontraron otro sitio con un efecto que quieren?',
+        ayuda: 'Peguen el link y díganos exactamente qué parte.',
+        tipo: 'links',
+        notaPh: '¿Qué efecto exactamente?',
+      },
+
+      {
+        id: 'r_home',
+        grupo: 'El home',
+        etiqueta: '¿Qué quieren que pase cuando alguien entra a la página?',
+        ayuda:
+          'Cuéntenlo como una escena: "se ve un video de la pieza girando y ' +
+          'aparece el nombre de la colección". Sin términos técnicos.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'r_home_video',
+        grupo: 'El home',
+        etiqueta: '¿La portada lleva video?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, video a pantalla completa',
+          'Sí, pero chico y sin sonido',
+          'No: una foto muy buena',
+          'Que se decida cuando veamos el material',
+        ],
+      },
+      {
+        id: 'r_peso',
+        grupo: 'El home',
+        etiqueta: 'Un video pesado se ve increíble y tarda en cargar. ¿Qué prefieren?',
+        ayuda:
+          'No hay respuesta correcta, hay una decisión. En joyería fina mucha ' +
+          'gente entra desde el celular con datos.',
+        tipo: 'escala',
+        extremos: ['Que cargue rapidísimo', 'Que se vea espectacular'],
+        requerido: true,
+      },
+      {
+        id: 'r_ficha',
+        grupo: 'El home',
+        etiqueta: 'Y en la ficha de una pieza, ¿qué quieren que se pueda hacer?',
+        tipo: 'multiple',
+        otro: true,
+        opciones: [
+          'Girarla 360°',
+          'Zoom macro al engaste',
+          'Verla en distintos metales',
+          'Video corto de la pieza en la mano',
+          'Ver el certificado',
+          'Probarla en realidad aumentada',
+        ],
+      },
+
+      {
+        id: 'r_produccion',
+        grupo: 'Lo que hay que producir',
+        etiqueta: '¿Quién va a hacer los renders y videos que falten?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Ya tenemos con quién',
+          'Queremos que Sacs lo produzca o nos consiga a alguien',
+          'Todavía no lo hemos pensado',
+          'Con lo que ya tenemos alcanza',
+        ],
+      },
+      {
+        id: 'r_cuantas',
+        grupo: 'Lo que hay que producir',
+        etiqueta: '¿De cuántas piezas quieren render o video para el lanzamiento?',
+        ayuda:
+          'Sean realistas: cinco piezas bien hechas pesan más que treinta a ' +
+          'medias. Y cada una tiene su costo y su tiempo.',
+        tipo: 'texto',
+      },
+      {
+        id: 'r_fecha_material',
+        grupo: 'Lo que hay que producir',
+        etiqueta: '¿Para cuándo puede estar ese material?',
+        ayuda:
+          'Es de las dos o tres cosas que de verdad pueden mover la fecha de ' +
+          'salida. Si no está, el sitio sale con fotos y el video entra después.',
+        tipo: 'texto',
+        requerido: true,
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────── 7 ──
   {
     clave: 'catalogo',
-    orden: 6,
+    orden: 7,
     titulo: 'Catálogo, piezas y diamantes',
     resumen:
       'De aquí sale la ficha de producto y el buscador. Es la etapa más ' +
@@ -893,7 +1138,7 @@ export const ETAPAS: Etapa[] = [
   // ─────────────────────────────────────────────────────────────── 7 ──
   {
     clave: 'servicio',
-    orden: 7,
+    orden: 8,
     titulo: 'Servicio y post-venta',
     resumen:
       'Reparaciones es hoy el segundo módulo más usado de su cuenta en Sacs, y ' +
@@ -1075,7 +1320,7 @@ export const ETAPAS: Etapa[] = [
   // ─────────────────────────────────────────────────────────────── 8 ──
   {
     clave: 'api',
-    orden: 8,
+    orden: 9,
     titulo: 'La API del proveedor',
     resumen:
       'La conexión con el catálogo de diamantes del proveedor. Es la única ' +
@@ -1248,7 +1493,7 @@ export const ETAPAS: Etapa[] = [
   // ─────────────────────────────────────────────────────────────── 9 ──
   {
     clave: 'implementacion',
-    orden: 9,
+    orden: 10,
     titulo: 'Implementación',
     resumen:
       'Aquí ya no se recopila: se construye. Nosotros armamos el sitio con ' +
@@ -1398,7 +1643,7 @@ export const ETAPAS: Etapa[] = [
   // ────────────────────────────────────────────────────────────── 10 ──
   {
     clave: 'entrega1',
-    orden: 10,
+    orden: 11,
     titulo: 'Fase 1 de entrega',
     resumen:
       'El sitio ya existe y ustedes lo recorren completo. Aquí se juntan las ' +
@@ -1480,7 +1725,7 @@ export const ETAPAS: Etapa[] = [
   // ────────────────────────────────────────────────────────────── 11 ──
   {
     clave: 'entrega_final',
-    orden: 11,
+    orden: 12,
     titulo: 'Entrega final · versión 1.0',
     resumen:
       'La última etapa. Se aplicaron los ajustes, se capacita al equipo y el ' +
