@@ -30,6 +30,30 @@ quedará viejo en 3 minutos.
 2. **Agrupa los pushes.** Diez `git push` seguidos son diez builds; el
    candado salva la mayoría, pero el último de cada ráfaga se paga completo.
    Si vas a hacer 5 commits en 10 minutos, pushéalos juntos.
+
+   **Y no es solo dinero: cada despliegue PARA LOS CRONS.** Medido el 3-sep-2026:
+   18 commits entre las 23:05 y las 00:48 UTC —un despliegue cada seis
+   minutos— y el agente de Trabajo Inteligente estuvo 16 minutos sin correr,
+   justo entre el despliegue de las 00:32 y el de las 00:48. Reanudó solo tres
+   minutos después del siguiente, con cero errores en su bitácora: no se cayó,
+   no le tocó correr. Las invocaciones programadas se pierden mientras Vercel
+   cambia de despliegue.
+
+   Cómo se hace, en concreto: commitea todo lo que quieras —los commits son
+   gratis— y **haz UN `git push` al terminar el bloque de trabajo**, no uno por
+   commit. Diez commits pushados juntos son un build y una sola ventana; diez
+   pushes son diez ventanas.
+
+   Cuánto aguanta antes de doler: el observador arranca desde su última marca
+   con tope de **60 minutos**, así que un hueco menor se recupera solo. Pasada
+   esa hora, los mensajes anteriores al corte ya no se miran — ahí sí se
+   pierden leads. El latido (`/api/cron/ti-latido`) avisa distinto según de qué
+   lado del corte esté, y se calla cuando el hueco coincide con un despliegue.
+
+   ⚠️ **Una máquina más grande NO arregla esto.** El cuello no es el CPU: está
+   medido abajo que `turbo` (30 vCPU) tarda lo mismo que `standard` (4) porque
+   el build usa 0.77 de un núcleo. Subir de máquina paga más por el mismo
+   problema.
 3. **Assets pesados: piénsalo dos veces.** `sitio/public/` ya trae 191 MB
    (846 imágenes webp + 31 videos) y el `.git` pesa 318 MB. No engorda el
    *build* (ver trampas), pero sí el clone y la carga del usuario. Video

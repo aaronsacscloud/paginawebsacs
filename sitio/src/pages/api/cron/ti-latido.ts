@@ -40,12 +40,21 @@ export const GET: APIRoute = async ({ request }) => {
   res.despliegue_cambio = huboDespliegue;
 
   const huecoMin = ultimoTick ? (ahora - ultimoTick) / 60e3 : 0;
+  /* EL BORDE QUE SÍ DUELE. El observador arranca desde su última marca, pero
+     con tope de 60 minutos (`observar()`): un hueco menor se recupera solo —
+     por eso los 16 minutos del 3-sep no perdieron nada—, pero pasando esa hora
+     los mensajes anteriores al corte YA NO SE MIRAN. Ahí sí se pierden leads,
+     y el aviso tiene que decirlo con esas palabras en vez de repetir «lleva N
+     min sin correr», que suena igual a los 12 que a los 70. */
+  const cercaDelCorte = huecoMin >= 45;
   /* Sin id de despliegue no se supone nada: si no se puede saber, se avisa.
      Callar por si acaso es cómo se pierde una caída de verdad. */
   const explicadoPorDeploy = huboDespliegue && huecoMin < 30;
 
   if (cfg.agente_activo === true && ultimoTick && ahora - ultimoTick > 10 * 60e3 && !explicadoPorDeploy) {
-    const nueva = await notificar({ clave: `sistema_latido:${hoyKey}`, tipo: 'sistema_latido', nivel: 'urgente', titulo: `El agente lleva ${res.ultimo_tick_min} min sin correr`, detalle: 'El observador (cron de cada 2 min) no ha marcado un tick. Mientras, nadie contesta a los leads ni salen los envíos aprobados.', metadata: { origen: 'agente', que_hacer: 'Revisa Vercel → Crons y el último deploy; si el cron corre pero falla, mira los logs de /api/cron/ti-observador.' } });
+    const nueva = await notificar({ clave: `sistema_latido:${hoyKey}`, tipo: 'sistema_latido', nivel: cercaDelCorte ? 'urgente' : 'alerta', titulo: cercaDelCorte
+      ? `El agente lleva ${res.ultimo_tick_min} min sin correr — a la hora empieza a perder mensajes`
+      : `El agente lleva ${res.ultimo_tick_min} min sin correr`, detalle: 'El observador (cron de cada 2 min) no ha marcado un tick. Mientras, nadie contesta a los leads ni salen los envíos aprobados.', metadata: { origen: 'agente', que_hacer: 'Revisa Vercel → Crons y el último deploy; si el cron corre pero falla, mira los logs de /api/cron/ti-observador.' } });
     res.aviso_tick = nueva;
     /* Por `avisoInterno`, que NO deja salir un aviso técnico a un número que no
        sea del equipo. Este mensaje se coló al chat de un contacto el 2-sep
@@ -57,6 +66,9 @@ export const GET: APIRoute = async ({ request }) => {
       res.aviso_wa = await avisoInterno({
         telefono: cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || null,
         texto: `El agente lleva ${res.ultimo_tick_min} min sin correr: mientras tanto nadie contesta a los leads ni salen los envíos aprobados.`
+          + (cercaDelCorte
+              ? ` ⚠️ Pasada 1 hora deja de ponerse al día y los mensajes de antes ya no los mira: ahí sí se pierden leads.`
+              : ' Se pone al día solo cuando vuelva, mientras el hueco no llegue a 1 hora.')
           + (huboDespliegue ? ' Coincide con un despliegue, así que empieza por ahí.' : ' Revisa Vercel → Crons y el último deploy.'),
       });
     }
