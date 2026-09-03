@@ -105,7 +105,7 @@ export default function TrabajoReactivacion() {
         {ajustes && (
           <div className="rx-ajustes">
             <div>
-              <div className="rx-lbl">Plantilla con la que sale (marketing primero; si Meta no la entrega en 10 min, cae sola a la de utilidad)</div>
+              <div className="rx-lbl">Plantilla con la que sale (marketing primero; si Meta no la entrega en 10 min, sale la de utilidad como puente: una línea neutra, y cuando conteste el agente manda el mensaje completo con todo el contexto)</div>
               <div className="rx-fams">{(panel.plantillas || []).filter((p: any) => ['reactivacion', 'seguimiento', 'promo'].includes(p.familia)).map((p: any) => <button key={p.familia} className={'rx-chip' + ((panel.familia_usada === p.familia) ? ' on' : '')} disabled={!p.aprobada} title={p.aprobada ? '' : 'Meta aún no la aprueba; mientras, cae a la de seguimiento'} onClick={() => guardarConfig({ familia: p.familia })}>{FAM_L[p.familia] || p.familia}{!p.aprobada ? ' · pendiente en Meta' : ''}</button>)}</div>
               <div className="rx-cuerpos"><div><span>Marketing</span>{cuerpoDe().m}</div><div><span>Utilidad (respaldo)</span>{cuerpoDe().u}</div></div>
             </div>
@@ -149,7 +149,7 @@ export default function TrabajoReactivacion() {
                 <Preview cuerpo={cu.m} nombre={nombre} texto={txt} />
                 {editable ? <textarea className="ti-campo rx-ta" rows={4} value={txt} onChange={e => setTexto(t => ({ ...t, [f.id]: e.target.value }))} /> : null}
                 {editable && cambiado && <input className="ti-campo" style={{ margin: '6px 0 0' }} placeholder="Criterio para el redactor (lo que aprende): «no menciones precio si no preguntó», «usa su ciudad»…" value={criterio[f.id] || ''} onChange={e => setCriterio(c => ({ ...c, [f.id]: e.target.value }))} />}
-                <div className="rx-suave" style={{ marginTop: 6 }}>Sale como plantilla <b>{FAM_L[fam] || fam}</b>{!cu.aprobada ? ' (pendiente en Meta: mientras, cae a Seguimiento)' : ''} · si Meta no la entrega en 10 min, cae sola a la de utilidad · próximo hueco {fecha(panel.proximo_hueco)}
+                <div className="rx-suave" style={{ marginTop: 6 }}>Sale como plantilla <b>{FAM_L[fam] || fam}</b>{!cu.aprobada ? ' (pendiente en Meta: mientras, cae a Seguimiento)' : ''} · si Meta no la entrega en 10 min, sale la de utilidad como <b>puente</b> (una línea neutra) y en cuanto conteste el agente le manda este mensaje completo · próximo hueco {fecha(panel.proximo_hueco)}
                   {editable && <> · <select value={fam || ''} onChange={e => setFamilia(x => ({ ...x, [f.id]: e.target.value }))} style={{ border: '1px solid #e8e5f0', borderRadius: 6, padding: '1px 4px', fontFamily: 'inherit', fontSize: 11 }}>{(panel.plantillas || []).filter((p: any) => p.aprobada && ['reactivacion', 'seguimiento', 'promo'].includes(p.familia)).map((p: any) => <option key={p.familia} value={p.familia}>{FAM_L[p.familia] || p.familia}</option>)}</select></>}
                 </div>
                 {editable && !rechazando && (

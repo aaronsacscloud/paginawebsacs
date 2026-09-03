@@ -7,6 +7,7 @@
 //
 // La escritura es por ALLOW-LIST: solo puede escribirse lo que este registro
 // declara, en la tabla y columna que declara. Nada de updates arbitrarios.
+import { planDeCotizacion } from '../../quotes/plan.ts';
 import { supabase } from '../../supabase';
 
 type Captura =
@@ -240,12 +241,23 @@ export async function detectarDeudas() {
     res.deuda_interes = (res.deuda_interes || 0) + 1;
   }
   // 1d. COTIZACIÓN SIN MOVIMIENTO 30 DÍAS (enviada, aceptada sin pagar o vencida) → se pide cada 7 días hasta que cambie.
-  const { data: dormidas } = await supabase.from('quotes')
-    .select('id, numero, total, estado, created_at, updated_at, contact_id, contacts(id, nombre, owner_id, company_id, lifecycle_stage)')
+  //
+  // Este detector estuvo MUERTO desde siempre: pedía `updated_at`, columna que
+  // no existía en quotes, así que la consulta devolvía error y `dormidas`
+  // quedaba en null. Se corrigió con la migración 2026-09-quotes-updated-at.
+  const { data: dormidas, error: errDorm } = await supabase.from('quotes')
+    .select('id, numero, total, estado, created_at, updated_at, notas, contact_id, contacts(id, nombre, owner_id, company_id, lifecycle_stage)')
     .in('estado', ['sent', 'accepted', 'expired']).not('contact_id', 'is', null)
     .lt('created_at', new Date(Date.now() - 30 * 86400e3).toISOString()).lt('updated_at', new Date(Date.now() - 30 * 86400e3).toISOString()).limit(60);
+  if (errDorm) console.error('[ti] cotizaciones dormidas:', errDorm.message);
+  const hoyMX = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
   for (const q of dormidas || []) {
     const c: any = (q as any).contacts || {}; if (!c.id || c.lifecycle_stage === 'cliente') continue;
+    // Una cotización con PLAN DE PAGOS no está dormida: está en calendario.
+    // Preguntarle al consultor «¿sigue viva o sin interés?» por un cliente que
+    // abona cada mes es ruido, y encima la acción correcta es otra —cobrar la
+    // parcialidad— y esa ya la persigue Cobranza.
+    if (planDeCotizacion(q, 0, hoyMX).length) continue;
     if (await yaPedido('cotizacion_estado', String(q.id))) continue;
     const dias = Math.floor((Date.now() - Date.parse(q.updated_at || q.created_at)) / 86400e3);
     const n = (c.nombre || '').split(/\s+/)[0] || 'el lead';
@@ -253,14 +265,40 @@ export async function detectarDeudas() {
     res.deuda_cotizaciones = (res.deuda_cotizaciones || 0) + 1;
   }
   // 1f. COTIZACIÓN ACEPTADA SIN PAGO (7 días): cuarto estado con reloj propio; en Finanzas es «por cobrar de venta nueva».
-  const { data: aceptadas } = await supabase.from('quotes')
-    .select('id, numero, total, updated_at, contact_id, contacts(id, nombre, owner_id, company_id)')
+  // Este también estaba muerto por `updated_at` (ver 1d).
+  const { data: aceptadas, error: errAcep } = await supabase.from('quotes')
+    .select('id, numero, total, updated_at, notas, contact_id, contacts(id, nombre, owner_id, company_id)')
     .eq('estado', 'accepted').not('contact_id', 'is', null).lt('updated_at', new Date(Date.now() - 7 * 86400e3).toISOString()).limit(40);
+  if (errAcep) console.error('[ti] cotizaciones aceptadas sin pago:', errAcep.message);
+  // Lo abonado a cada una: «no ha pagado» tiene que ser verdad. Una aceptada
+  // con anticipo SÍ pagó, y decirle al consultor que no lo hizo lo manda a
+  // cobrar algo que ya está cobrado.
+  const idsAcep = (aceptadas || []).map(q => q.id);
+  const { data: pagosAcep } = idsAcep.length
+    ? await supabase.from('payments').select('quote_id, monto').in('quote_id', idsAcep).neq('estado', 'reembolsado')
+    : { data: [] as any[] };
+  const abonadoAcep = new Map<string, number>();
+  for (const pg of pagosAcep || []) abonadoAcep.set(pg.quote_id, (abonadoAcep.get(pg.quote_id) || 0) + Number(pg.monto || 0));
   for (const q of aceptadas || []) {
     const c: any = (q as any).contacts || {}; if (!c.id) continue;
+    // Con PLAN DE PAGOS el reloj no es de 7 días: es el calendario pactado, y
+    // quien persigue la parcialidad es Cobranza. Solo entra si va atrasada.
+    const plan = planDeCotizacion(q, abonadoAcep.get(q.id) || 0, hoyMX);
+    if (plan.length && !plan.some(x => x.vencida)) continue;
     if (await yaPedido('cotizacion_cobro', String(q.id))) continue;
     const dias = Math.floor((Date.now() - Date.parse(q.updated_at)) / 86400e3);
-    await crearDeuda('cotizacion_cobro', String(q.id), { contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id || consultorDefault, quien: c.nombre || 'el lead', instruccion: `${(c.nombre || '').split(/\s+/)[0] || 'El lead'} aceptó la cotización #${q.numero || 's/n'} hace ${dias} días y no ha pagado`, porque: `$${Math.round(Number(q.total) || 0).toLocaleString('es-MX')} aceptados sin pago. Cóbrala o marca que se cayó.` });
+    const abon = abonadoAcep.get(q.id) || 0;
+    const tot = Math.round(Number(q.total) || 0);
+    const venc = plan.filter(x => x.vencida);
+    const instruccion = venc.length
+      ? `${(c.nombre || '').split(/\s+/)[0] || 'El lead'}: parcialidad vencida de la cotización #${q.numero || 's/n'}`
+      : `${(c.nombre || '').split(/\s+/)[0] || 'El lead'} aceptó la cotización #${q.numero || 's/n'} hace ${dias} días y ${abon > 0 ? 'no ha liquidado' : 'no ha pagado'}`;
+    const porque = venc.length
+      ? `${venc.map(x => `${x.concepto} de $${Math.round(x.monto).toLocaleString('es-MX')} venció el ${x.fecha}`).join('; ')}. Cóbrala o reagenda el plan.`
+      : abon > 0
+        ? `Lleva $${Math.round(abon).toLocaleString('es-MX')} de $${tot.toLocaleString('es-MX')}. Cobra el saldo o marca que se cayó.`
+        : `$${tot.toLocaleString('es-MX')} aceptados sin pago. Cóbrala o marca que se cayó.`;
+    await crearDeuda('cotizacion_cobro', String(q.id), { contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id || consultorDefault, quien: c.nombre || 'el lead', instruccion, porque });
     res.deuda_cobro = (res.deuda_cobro || 0) + 1;
   }
   // 1g. DEMO PRÓXIMA SIN CONSULTOR (el lead agendó con el agente y nadie la tiene): se asigna el consultor por default y se avisa ANTES.

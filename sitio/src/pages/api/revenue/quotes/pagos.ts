@@ -44,6 +44,9 @@ async function recalcular(quoteId: string, quien: string, evento: string) {
   const { text, meta } = parseMeta(q.notas);
   meta.timeline = [...(meta.timeline || []), { event: 'abono', at: new Date().toISOString(), por: quien, detalle: evento }];
   upd.notas = serializeMeta(text, meta);
+  // Un abono ES movimiento: sin esto, Trabajo Inteligente sigue reclamando
+  // «cotización sin movimiento 30 días» a un cliente que acaba de pagar.
+  upd.updated_at = new Date().toISOString();
   await supabase.from('quotes').update(upd).eq('id', quoteId);
 
   if (q.company_id || q.contact_id) {

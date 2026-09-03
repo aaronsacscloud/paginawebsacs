@@ -38,21 +38,16 @@ const CSS = `
 .eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.48),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.7)}
 .eqf-orbe:active{transform:scale(.96)}
 .eqf-orbe:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
-/* Axo: la cabeza en SVG (unos 3 KB, nítida en cualquier pantalla), calcada de la
-   mascota: cejitas, ojos casi todo pupila con aro morado y dos brillos, naricita,
-   boca en w, rubor y branquias. La pupila se mueve con --ox/--oy; el parpadeo y el
-   "atento" son transforms sobre cada ojo. */
-.eqf-axo{width:74px;height:74px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 2px 3px rgba(90,60,160,.22))}
-.eqf-axo .pupila{transform:translate(calc(var(--ox,0px)*.34),calc(var(--oy,0px)*.34));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
+/* Los ojos de Axo, y nada más (minimalista, como pidió el dueño): iris morado con
+   estrías y aro oscuro, pupila azul noche, brillo grande arriba-izquierda y uno
+   chico abajo-derecha. SVG inline de ~2 KB. La pupila sigue al puntero (--ox/--oy);
+   parpadeo y "atento" son transforms sobre cada ojo. */
+.eqf-axo{width:66px;height:66px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 1px 2px rgba(60,40,140,.25))}
+.eqf-axo .pupila{transform:translate(calc(var(--ox,0px)*.45),calc(var(--oy,0px)*.45));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
 .eqf-axo .ojo{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease}
 .eqf-orbe:hover .eqf-axo .ojo{transform:scale(1.06)}
 .eqf-orbe.atento .eqf-axo .ojo{transform:scale(1.14)}
 .eqf-orbe.parpadea .eqf-axo .ojo{transform:scaleY(.06)}
-.eqf-axo .branquia{transform-box:fill-box;transform-origin:100% 50%;animation:eqf-branquia 3.2s ease-in-out infinite}
-.eqf-axo .branquia.der{transform-origin:0% 50%;animation-delay:-1.6s}
-@keyframes eqf-branquia{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
-.eqf-axo .branquia.der{animation-name:eqf-branquia-der}
-@keyframes eqf-branquia-der{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
 .eqf-orbe .anillo{position:absolute;inset:-3px;border-radius:50%;border:2.5px solid ${P.violeta};opacity:0;pointer-events:none;background:transparent}
 .eqf-orbe.pulsa .anillo{animation:eqf-pulso 1.4s ease-out 3}
 @keyframes eqf-pulso{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.55);opacity:0}}
@@ -165,55 +160,31 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
   return (
     <svg className="eqf-axo" viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-      <radialGradient id="eqf-piel" cx="42%" cy="30%" r="75%"><stop offset="0" stopColor="#FFEEEA"/><stop offset=".6" stopColor="#FBD7D0"/><stop offset="1" stopColor="#F3B9B1"/></radialGradient>
-      <linearGradient id="eqf-bra" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#F2A49C"/><stop offset="1" stopColor="#FFC9BF"/></linearGradient>
-      <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".58" stopColor="#3F309F"/><stop offset=".82" stopColor="#7B69E3"/><stop offset=".96" stopColor="#9A89F0"/><stop offset="1" stopColor="#5D4CC9"/></radialGradient>
-      <radialGradient id="eqf-rubor" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#F59AA0" stopOpacity=".75"/><stop offset="1" stopColor="#F59AA0" stopOpacity="0"/></radialGradient>
-      <filter id="eqf-suave" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".18"/></filter>
+      <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".50" stopColor="#3A2A8E"/><stop offset=".72" stopColor="#6C55D6"/><stop offset=".90" stopColor="#A48CF2"/><stop offset="1" stopColor="#7A64DD"/></radialGradient>
+      <radialGradient id="eqf-pup" cx="42%" cy="40%" r="60%"><stop offset="0" stopColor="#1E1840"/><stop offset="1" stopColor="#0C0A20"/></radialGradient>
       </defs>
-      {/* branquias: tres hojas por lado, dos hacia arriba y una hacia el lado, bien afuera de la cara */}
-      <g className="branquia" fill="url(#eqf-bra)" filter="url(#eqf-suave)">
-      <path d="M14 27 C7 22 3 12 7 5 C13 8 16 18 15 26Z"/>
-      <path d="M10 32 C1 30 -3 22 0 14 C7 17 10 25 11 31Z"/>
-      <path d="M10 39 C2 41 -3 37 -2 31 C4 31 9 35 11 38Z"/>
-      </g>
-      <g className="branquia der" fill="url(#eqf-bra)" filter="url(#eqf-suave)">
-      <path d="M50 27 C57 22 61 12 57 5 C51 8 48 18 49 26Z"/>
-      <path d="M54 32 C63 30 67 22 64 14 C57 17 54 25 53 31Z"/>
-      <path d="M54 39 C62 41 67 37 66 31 C60 31 55 35 53 38Z"/>
-      </g>
-      {/* cabeza: ancha, arriba plana, cachetes llenos */}
-      <path d="M32 12 C46 12 56.5 20 56.5 33 C56.5 46 46 55 32 55 C18 55 7.5 46 7.5 33 C7.5 20 18 12 32 12Z" fill="url(#eqf-piel)"/>
-      <ellipse cx="25" cy="16.5" rx="5" ry="1.8" fill="#fff" opacity=".28"/>
-      {/* rubor */}
-      <ellipse cx="15.5" cy="41" rx="5.5" ry="3.4" fill="url(#eqf-rubor)"/>
-      <ellipse cx="48.5" cy="41" rx="5.5" ry="3.4" fill="url(#eqf-rubor)"/>
-      {/* cejitas */}
-      <path d="M17 25.5 q4.5 -3.8 8.5 -1" fill="none" stroke="#EFA39C" strokeWidth="1.7" strokeLinecap="round"/>
-      <path d="M47 25.5 q-4.5 -3.8 -8.5 -1" fill="none" stroke="#EFA39C" strokeWidth="1.7" strokeLinecap="round"/>
-      {/* ojos: casi todo pupila, con aro morado y dos brillos */}
-      <g className="ojo"><g transform="rotate(-5 22 34)">
-      <ellipse cx="22" cy="34" rx="7" ry="7.7" fill="url(#eqf-iris)"/>
+      <g className="ojo">
+      <circle cx="21" cy="32" r="9.6" fill="#F4F0FF"/>
+      <circle cx="21" cy="32" r="9" fill="url(#eqf-iris)"/>
+      <g stroke="#D8CDFF" strokeWidth=".55" opacity=".45" strokeLinecap="round"><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(9.0 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(34.714285714285715 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(60.42857142857143 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(86.14285714285714 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(111.85714285714286 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(137.57142857142858 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(163.28571428571428 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(189.0 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(214.71428571428572 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(240.42857142857142 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(266.14285714285717 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(291.85714285714283 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(317.57142857142856 21 32)"/><line x1="21" y1="26.8" x2="21" y2="23.4" transform="rotate(343.2857142857143 21 32)"/></g>
       <g className="pupila">
-      <ellipse cx="22.4" cy="34.4" rx="5.6" ry="6.1" fill="#15112C"/>
-      <circle cx="20.2" cy="31.6" r="2.1" fill="#fff"/>
-      <circle cx="24.6" cy="37" r="1" fill="#fff" opacity=".9"/>
+      <circle cx="21.3" cy="32.3" r="6.3" fill="url(#eqf-pup)"/>
+      <circle cx="18.6" cy="29.2" r="2.6" fill="#fff"/>
+      <circle cx="24.2" cy="35.4" r="1.15" fill="#fff" opacity=".92"/>
       </g>
-      <ellipse cx="22" cy="34" rx="7" ry="7.7" fill="none" stroke="#3E2F8F" strokeWidth=".5" opacity=".55"/>
-      </g></g>
-      <g className="ojo"><g transform="rotate(5 42 34)">
-      <ellipse cx="42" cy="34" rx="7" ry="7.7" fill="url(#eqf-iris)"/>
+      <circle cx="21" cy="32" r="9.3" fill="none" stroke="#2A1F6E" strokeWidth=".7" opacity=".5"/>
+      </g>
+      <g className="ojo">
+      <circle cx="43" cy="32" r="9.6" fill="#F4F0FF"/>
+      <circle cx="43" cy="32" r="9" fill="url(#eqf-iris)"/>
+      <g stroke="#D8CDFF" strokeWidth=".55" opacity=".45" strokeLinecap="round"><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(9.0 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(34.714285714285715 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(60.42857142857143 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(86.14285714285714 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(111.85714285714286 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(137.57142857142858 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(163.28571428571428 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(189.0 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(214.71428571428572 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(240.42857142857142 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(266.14285714285717 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(291.85714285714283 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(317.57142857142856 43 32)"/><line x1="43" y1="26.8" x2="43" y2="23.4" transform="rotate(343.2857142857143 43 32)"/></g>
       <g className="pupila">
-      <ellipse cx="41.6" cy="34.4" rx="5.6" ry="6.1" fill="#15112C"/>
-      <circle cx="39.4" cy="31.6" r="2.1" fill="#fff"/>
-      <circle cx="43.8" cy="37" r="1" fill="#fff" opacity=".9"/>
+      <circle cx="42.7" cy="32.3" r="6.3" fill="url(#eqf-pup)"/>
+      <circle cx="40.6" cy="29.2" r="2.6" fill="#fff"/>
+      <circle cx="46.2" cy="35.4" r="1.15" fill="#fff" opacity=".92"/>
       </g>
-      <ellipse cx="42" cy="34" rx="7" ry="7.7" fill="none" stroke="#3E2F8F" strokeWidth=".5" opacity=".55"/>
-      </g></g>
-      {/* naricita y boca en w */}
-      <ellipse cx="32" cy="40.5" rx="2.2" ry="1.3" fill="#F6C6BF"/>
-      <circle cx="31.1" cy="40.6" r=".5" fill="#E39A94"/><circle cx="32.9" cy="40.6" r=".5" fill="#E39A94"/>
-      <path d="M27.8 44.2 q2.1 2.6 4.2 0 q2.1 2.6 4.2 0" fill="none" stroke="#D98B86" strokeWidth="1.3" strokeLinecap="round"/>
+      <circle cx="43" cy="32" r="9.3" fill="none" stroke="#2A1F6E" strokeWidth=".7" opacity=".5"/>
+      </g>
     </svg>
   );
 }

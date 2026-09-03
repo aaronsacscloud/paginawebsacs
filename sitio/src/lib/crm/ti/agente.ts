@@ -171,6 +171,8 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   ]);
   const bloquePromo = promoTexto(promo, ultimaOferta(c.propiedades));
   const pend: any = (perfil?.agente_estado as any)?.agenda_pendiente;
+  const puente: any = (perfil?.agente_estado as any)?.puente_pendiente;
+  const puenteTxt = puente?.mensaje_completo ? `\n\nMENSAJE PUENTE: al lead le llegó solo una línea neutra (la plantilla completa no se entregó) y ACABA DE CONTESTAR: la ventana está abierta. Este turno manda el mensaje completo que estaba preparado, adaptado a lo que acaba de decir (sin repetir el saludo si ya saludaste): «${String(puente.mensaje_completo).slice(0, 600)}». Si lo que dijo cambia el panorama (ya no tiene la tienda, ya compró otro sistema), responde a eso y deja el mensaje preparado de lado.` : '';
   const pendTxt = pend?.fecha && pend?.hora
     ? (pend.motivo === 'sin_correo'
       ? `AGENDA PENDIENTE: el lead YA ELIGIÓ ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] ${pend.slug === 'llamada-discovery' ? 'para la LLAMADA de 15 min' : 'para la demo'} y solo falta su correo. Si en este mensaje lo da (o el CRM ya lo tiene), devuelve accion.tipo="${pend.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con ESA fecha/hora y el correo, sin volver a ofrecer horarios. No lo saludes de nuevo.`
@@ -189,7 +191,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
       { type: 'text', text: (await ejemplosAprobados()) || ' ', cache_control: { type: 'ephemeral' } },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
@@ -542,6 +544,8 @@ export async function proponerRespuestas(): Promise<any> {
         if (/23505|duplicate key/i.test(eIns.message)) { res.saltados++; await log({ accion: 'agente_duplicado_evitado', contact_id: cid, razon: 'otro tick ya dejó un pendiente para este lead' }); continue; }
         throw new Error(eIns.message);
       }
+      // El puente ya cumplió: el mensaje completo va en esta respuesta.
+      if ((stPrev as any)?.puente_pendiente) await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...stPrev, puente_pendiente: undefined, puente_usado_at: ahora.toISOString() }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
       await log({ accion: 'agente_propone', contact_id: cid, contenido: s.mensaje, costo: d.costo, razon: s.objetivo, detalle: { estado: s.estado, interes: s.interes, ventana_min: ventana } });
       res.propuestos++;
       await contarMensajeAgendar(cid, c, p, s).catch(() => {});
@@ -1412,7 +1416,7 @@ export async function atenderCitas(): Promise<any> {
 export async function revisarFallbacks(): Promise<any> {
   const ahora = new Date();
   const res: any = { entregadas: 0, utility: 0, sin_utility: 0 };
-  const { data: pend } = await supabase.from('ti_envios').select('id, contact_id, telefono, kapso_message_id, plantilla, enviado_at, salida').eq('fallback_estado', 'pendiente').lte('fallback_at', ahora.toISOString()).limit(20);
+  const { data: pend } = await supabase.from('ti_envios').select('id, contact_id, telefono, kapso_message_id, plantilla, enviado_at, salida, origen, mensaje').eq('fallback_estado', 'pendiente').lte('fallback_at', ahora.toISOString()).limit(20);
   // IMAGEN RECHAZADA por WhatsApp después de aceptarla (p. ej. 131053 WebP): el lead se quedó sin el mensaje.
   // Sale el texto solo, la imagen deja de ofrecerse y el dueño lo ve en la pestaña Sistema.
   try {
@@ -1453,12 +1457,25 @@ export async function revisarFallbacks(): Promise<any> {
     if (!fallo) continue; // todavía sin estado: se revisa en el siguiente tick
     const pl = e.plantilla as any;
     if (!pl?.utility) { await supabase.from('ti_envios').update({ fallback_estado: 'sin_utility', updated_at: ahora.toISOString() }).eq('id', e.id); res.sin_utility++; continue; }
+    // PUENTE (decisión del dueño 2026-09-04): en recuperaciones (reactivación, reenganche, cotización), la utility NO lleva el
+    // mensaje largo: lleva una línea neutra que abre la puerta. Cuando el lead conteste, se abre la ventana de 24 h y el agente le
+    // manda el mensaje completo con todo el contexto (guardado en agente_estado.puente_pendiente). Así se lee de verdad.
+    const esRecuperacion = ['reactivacion', 'reenganche', 'cotizacion', 'silencio'].includes(String((e as any).origen || ''));
+    let params = pl.params || [];
+    if (esRecuperacion) {
+      const { data: kc } = await supabase.from('contacts').select('nombre, companies(nombre_comercial, nombre)').eq('id', e.contact_id).maybeSingle();
+      const emp = (kc as any)?.companies?.nombre_comercial || (kc as any)?.companies?.nombre;
+      params = [params[0] || 'qué tal', `quedó pendiente una plática${emp ? ` sobre ${emp}` : ' sobre tu tienda'} y quiero retomarla contigo cuando tengas un minuto; si me contestas por aquí te cuento en corto.`];
+      const { data: pfp } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+      const stp: any = (pfp as any)?.agente_estado || {};
+      await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...stp, puente_pendiente: { envio_id: e.id, mensaje_completo: (e as any).mensaje, origen: (e as any).origen, at: ahora.toISOString() } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    }
     try {
-      const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', pl.params || []);
+      const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', params);
       const wamid = r?.messages?.[0]?.id || null;
       // La utility pasa a ser la pieza vigente del envío: el intento cuenta cuando ELLA se entrega (la marketing falló).
-      if (wamid) await supabase.from('ti_envios').update({ kapso_message_id: wamid, salida: { ...((e as any).salida || {}), marketing_wamid: e.kapso_message_id, plantilla_usada: pl.utility } }).eq('id', e.id);
-      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'template', cuerpo: `[plantilla ${pl.utility}] ${pl.params?.[1] || ''}`, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, plantilla: pl.utility, fallback_de: pl.marketing } });
+      if (wamid) await supabase.from('ti_envios').update({ kapso_message_id: wamid, salida: { ...((e as any).salida || {}), marketing_wamid: e.kapso_message_id, plantilla_usada: pl.utility, puente: esRecuperacion ? { texto: params[1], mensaje_completo: (e as any).mensaje } : undefined } }).eq('id', e.id);
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'template', cuerpo: `[plantilla ${pl.utility}] ${params?.[1] || ''}`, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, plantilla: pl.utility, fallback_de: pl.marketing } });
       await supabase.from('ti_envios').update({ fallback_estado: 'utility_enviada', updated_at: ahora.toISOString() }).eq('id', e.id);
       await log({ accion: 'plantilla_fallback', contact_id: e.contact_id, razon: `marketing falló (${String(m?.error || '').slice(0, 60)}) → utility ${pl.utility}` });
       res.utility++;
