@@ -1482,6 +1482,11 @@ export const WIKI: PaginaWiki[] = [
 <p>No hace falta ir a ningún lado a comprobarlo: si no está en el chat, no salió.</p>
 <div class="w-caja w-bad"><span class="w-k">Lo que pasaba antes</span><p>Cuatro mensajes salían <b>sin dejar rastro</b>: la cancelación, la reagendada, el «no llegaste» y la bienvenida. El cliente sabía que le habíamos escrito y nosotros no. Y los que sí quedaban guardaban un remedo: la palabra «[Foto]» donde iba la foto.</p></div>
 
+<h3>Los avisos técnicos no pueden salirse al cliente</h3>
+<p>El sistema se avisa a sí mismo por WhatsApp cuando algo se rompe —«el agente lleva 16 minutos sin correr», «hay 3 alertas nuevas», el resumen semanal de facturación—. Esos mensajes <b>solo pueden llegar a un número del equipo</b>.</p>
+<p>Cuenta como del equipo el que está en la ficha de una persona del equipo, el de una conversación marcada como interna, y los teléfonos de prueba del agente. Si el número configurado no es ninguno de esos, <b>el mensaje no sale</b> y te llega una alerta diciendo a dónde iba a ir.</p>
+<div class="w-caja w-bad"><span class="w-k">Por qué existe esta regla</span><p>El 2 de septiembre uno de esos avisos —«Revisa Vercel → Crons»— apareció dentro de la conversación de un contacto. Era el número de pruebas, así que no lo leyó un cliente, pero nada lo impedía: el destino salía de una llave de configuración y nadie comprobaba de quién era. Un mensaje técnico en el chat de un cliente le enseña las tripas del sistema, le dice que algo está roto, y se queda en su historial para siempre.</p></div>
+
 <h3>Los dos canales dicen lo mismo</h3>
 <p>El correo y el WhatsApp de un mismo recordatorio salen <b>juntos y con el mismo trato</b>: si el WhatsApp de un día antes pide contexto, el correo de ese recordatorio también lo pide —con la diferencia de que ahí puedes responder el correo directo—. Y el horario de 8:00 a 18:00 aplica a los dos: el candado está antes de que se separen los canales.</p>`,
   },
