@@ -1078,12 +1078,12 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' } : e.estado === 'observando' ? { bg: '#f3f4f6', fg: '#4a4658', bd: '#e5e7eb' } : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
   const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
+  /* YA NO se encoge. Antes cedía espacio como los selects y acababa en «● I»
+     con el texto cortado: había que pasar el ratón para saber si el agente
+     estaba contestando solo, sugiriendo o apagado — y eso es lo primero que
+     necesitas saber antes de escribirle a este lead. El header ahora envuelve,
+     así que hay dónde ponerlo entero. */
   return (
-    {/* YA NO se encoge. Antes cedía espacio como los selects y acababa en
-        «● I» con el texto cortado: había que pasar el ratón para saber si el
-        agente estaba contestando solo, sugiriendo o apagado — y eso es lo
-        primero que necesitas saber antes de escribirle a este lead. El header
-        ahora envuelve, así que hay dónde ponerlo entero. */}
     <span style={{ position: 'relative', flexShrink: 0 }}>
       <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
         <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}

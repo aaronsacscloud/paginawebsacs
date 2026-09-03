@@ -168,6 +168,15 @@ const fechaFirma = brief.firmado_at
                 <input type="email" id="f-email" value={brief.email || ''} autocomplete="email" />
               </label>
             </div>
+            <label class="pb-avisos">
+              <span>¿A qué correos les avisamos?</span>
+              <input type="text" id="f-avisos" value={brief.email || ''}
+                placeholder="correo@ejemplo.com, otro@ejemplo.com" />
+              <small>
+                Cada vez que revisemos una etapa les llega ahí el aviso, con las
+                preguntas que hayan quedado. Pueden poner varios, separados por comas.
+              </small>
+            </label>
             <div class="pb-firma-lienzo-w">
               <span class="pb-firma-hint">Firma con el dedo o el mouse</span>
               <canvas id="f-canvas" class="pb-firma-lienzo"></canvas>
@@ -563,10 +572,65 @@ const fechaFirma = brief.firmado_at
 .pb-nota-sacs .pb-campo-t { color: var(--rojo); }
 .pb-nota-sacs p { margin: 0; font-size: .93rem; color: #7A2E20; }
 
+/* ── Correos de aviso ── */
+.pb-avisos { display: block; margin-bottom: 22px; }
+.pb-avisos small {
+  display: block; margin-top: 7px; font-size: .82rem; color: var(--tenue); line-height: 1.5;
+}
+
+/* ── Lo que falta contestar ── */
+.pb-pendientes {
+  margin: 18px 0 4px; padding: 18px 20px; border-radius: 12px;
+  background: var(--ambar-suave); border: 1px solid #EFDFBF;
+}
+.pb-pendientes .pb-campo-t { color: var(--ambar); margin-bottom: 12px; }
+.pb-pendientes ol { margin: 0; padding-left: 20px; }
+.pb-pendientes li { margin-bottom: 11px; font-size: .92rem; }
+.pb-pendientes li:last-child { margin-bottom: 0; }
+.pb-pendientes a { color: var(--tinta); text-decoration: none; border-bottom: 1px solid var(--ambar); }
+.pb-pendientes a:hover { color: var(--ambar); }
+.pb-pendientes span { display: block; color: #7A5A18; margin-top: 2px; }
+
+/* ── Hilo de conversación ── */
+.pb-hilo {
+  margin-top: 14px; padding: 14px 16px; border-radius: 11px;
+  background: var(--papel-2); border: 1px solid var(--linea);
+}
+.pb-hilo-espera { background: var(--ambar-suave); border-color: #EFDFBF; }
+.pb-msg { margin-bottom: 12px; }
+.pb-msg:last-of-type { margin-bottom: 0; }
+.pb-msg-de {
+  display: block; font-family: var(--mono); font-size: .64rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--tenue); margin-bottom: 4px;
+}
+.pb-msg[data-de=sacs] .pb-msg-de { color: var(--ambar); }
+.pb-msg p { margin: 0; font-size: .93rem; color: var(--tinta); line-height: 1.55; }
+.pb-hilo-caja { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
+.pb-hilo-caja textarea { min-height: 74px; }
+.pb-hilo-ok {
+  margin-top: 10px; font-family: var(--mono); font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--verde);
+}
+.pb-btn-chico {
+  font: inherit; font-size: .86rem; font-weight: 600; color: #fff; background: var(--tinta);
+  border: 0; border-radius: 9px; padding: 9px 18px; cursor: pointer;
+}
+.pb-btn-chico:hover { background: #000; }
+.pb-btn-chico:disabled { background: var(--tenue); cursor: default; }
+
+/* ── Caja de revisión por pregunta (solo Sacs) ── */
+.pb-nota-campo { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.pb-nota-campo textarea { min-height: 62px; font-size: .9rem; }
+.pb-esq { display: flex; align-items: center; gap: 8px; font-size: .84rem; color: var(--tinta-suave); cursor: pointer; }
+.pb-esq input { accent-color: var(--ambar); width: 15px; height: 15px; }
+.pb-vacio { color: var(--tenue); font-style: italic; }
+
 .pb-resumen { display: flex; flex-direction: column; gap: 14px; }
 .pb-res { font-size: .93rem; }
 .pb-res dt { font-weight: 600; color: var(--tinta); margin-bottom: 3px; }
 .pb-res dd { margin: 0; color: var(--tinta-suave); white-space: pre-wrap; }
+.pb-res { padding-bottom: 14px; border-bottom: 1px solid var(--linea); }
+.pb-res:last-child { border-bottom: 0; }
 
 /* ── Bitácora ── */
 .pb-log { list-style: none; padding: 0; margin: 0; }
@@ -710,6 +774,7 @@ const fechaFirma = brief.firmado_at
               nombre,
               puesto: document.getElementById('f-puesto')?.value || '',
               email: document.getElementById('f-email')?.value || '',
+              avisos: document.getElementById('f-avisos')?.value || '',
               firma_png: lienzo.toDataURL('image/png'),
             }),
           });
@@ -733,6 +798,7 @@ const fechaFirma = brief.firmado_at
 
     let DEF = [];        // definición del cuestionario
     let ETAPAS = [];     // estado en la base
+    let HILOS = [];      // conversación por pregunta
     let borrador = {};   // clave → respuestas en edición
     let abierta = null;  // qué etapa está desplegada
 
@@ -763,6 +829,7 @@ const fechaFirma = brief.firmado_at
       const d = await res.json();
       DEF = d.definicion || [];
       ETAPAS = d.etapas || [];
+      HILOS = d.hilos || [];
       for (const e of ETAPAS) if (!(e.clave in borrador)) borrador[e.clave] = { ...(e.respuestas || {}) };
       // Se despliega sola la etapa en la que toca trabajar.
       if (abierta === null) {
@@ -823,6 +890,48 @@ const fechaFirma = brief.firmado_at
 
     const editable = (f) => f.estado === 'abierta' || f.estado === 'cambios';
 
+    const hiloDe = (clave, campo) =>
+      HILOS.find((h) => h.etapa_clave === clave && h.campo_id === campo) || null;
+
+    /** Un hilo está esperando al CLIENTE si sigue abierto y hablamos nosotros al final. */
+    const esperaCliente = (h) =>
+      !!h && h.estado === 'abierto' && h.mensajes.length > 0 &&
+      h.mensajes[h.mensajes.length - 1].de === 'sacs';
+
+    const cuando = (iso) => {
+      const d = new Date(iso);
+      const min = Math.round((Date.now() - d.getTime()) / 60000);
+      if (min < 60) return 'hace ' + Math.max(1, min) + ' min';
+      if (min < 1440) return 'hace ' + Math.round(min / 60) + ' h';
+      return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+    };
+
+    /**
+     * El hilo debajo de una pregunta. `responder` decide si se pinta la caja
+     * para contestar — solo cuando la etapa es del cliente y el hilo lo espera.
+     */
+    function hilo(clave, campoId, responder) {
+      const h = hiloDe(clave, campoId);
+      if (!h || !h.mensajes.length) return '';
+      const espera = esperaCliente(h);
+      let out = '<div class="pb-hilo' + (espera ? ' pb-hilo-espera' : '') + '" data-hilo="' + campoId + '">';
+      for (const m of h.mensajes) {
+        out += '<div class="pb-msg" data-de="' + m.de + '">' +
+          '<span class="pb-msg-de">' + (m.de === 'sacs' ? 'Sacs' : 'Ustedes') +
+          ' · ' + cuando(m.at) + '</span>' +
+          '<p>' + esc(m.texto).replace(/\n/g, '<br>') + '</p></div>';
+      }
+      if (espera && responder) {
+        out += '<div class="pb-hilo-caja">' +
+          '<textarea data-resp="' + campoId + '" placeholder="Contesta aquí"></textarea>' +
+          '<button type="button" class="pb-btn-chico" data-enviaresp="' + campoId + '">Contestar</button>' +
+          '</div>';
+      } else if (h.estado === 'resuelto') {
+        out += '<div class="pb-hilo-ok">Cerrado</div>';
+      }
+      return out + '</div>';
+    }
+
     /** Bloques de la etapa, en el orden en que aparece cada uno por primera vez. */
     function porGrupo(def) {
       const m = new Map();
@@ -841,23 +950,58 @@ const fechaFirma = brief.firmado_at
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
       if (puede) h += barra(def, borrador[fila.clave] || {});
 
+      // Lo que falta contestar, arriba y en una lista: el cliente no debería
+      // tener que recorrer 16 preguntas buscando cuál tiene un comentario.
+      const pend = def.campos.filter((c) => esperaCliente(hiloDe(fila.clave, c.id)));
+      if (pend.length) {
+        h += '<div class="pb-pendientes"><span class="pb-campo-t">Te faltan ' + pend.length +
+          (pend.length === 1 ? ' respuesta' : ' respuestas') + '</span><ol>';
+        for (const c of pend) {
+          const hh = hiloDe(fila.clave, c.id);
+          const ultimo = hh.mensajes[hh.mensajes.length - 1];
+          h += '<li><a href="#" data-ir="' + c.id + '"><b>' + esc(c.etiqueta) + '</b></a>' +
+            '<span>' + esc(ultimo.texto.slice(0, 130)) + (ultimo.texto.length > 130 ? '…' : '') + '</span></li>';
+        }
+        h += '</ol></div>';
+      }
       if (fila.estado === 'cambios' && fila.nota_sacs) {
-        h += '<div class="pb-nota-sacs"><span class="pb-campo-t">Qué falta</span><p>' + esc(fila.nota_sacs) + '</p></div>';
+        h += '<div class="pb-nota-sacs"><span class="pb-campo-t">De parte de Sacs</span><p>' + esc(fila.nota_sacs) + '</p></div>';
       }
 
       if (!puede) {
-        // Etapa enviada o aprobada: se lee, no se edita.
+        // Etapa enviada o aprobada: se lee, no se edita. Para Sacs, además,
+        // cada respuesta trae su caja para comentar o repreguntar.
+        const revisando = SACS && fila.estado === 'enviada';
         h += '<dl class="pb-resumen">';
         for (const c of def.campos) {
           const v = (fila.respuestas || {})[c.id];
-          if (v === undefined || v === null || (Array.isArray(v) && !v.length) || v === '') continue;
-          h += '<div class="pb-res"><dt>' + esc(c.etiqueta) + '</dt><dd>' + esc(leible(c, v)) + '</dd></div>';
+          const vacia = v === undefined || v === null || (Array.isArray(v) && !v.length) || v === '';
+          if (vacia && !revisando) { h += hilo(fila.clave, c.id, false); continue; }
+          h += '<div class="pb-res" data-campo="' + c.id + '"><dt>' + esc(c.etiqueta) + '</dt>' +
+            '<dd>' + (vacia ? '<i class="pb-vacio">Sin contestar</i>' : esc(leible(c, v))) + '</dd>';
+          h += hilo(fila.clave, c.id, false);
+          if (revisando) {
+            h += '<div class="pb-nota-campo">' +
+              '<textarea data-nota-campo="' + c.id + '" placeholder="Comentario o pregunta sobre esta respuesta"></textarea>' +
+              '<label class="pb-esq"><input type="checkbox" data-es-preg="' + c.id + '" />' +
+              '<span>Es una pregunta que deben contestar</span></label>' +
+              '</div>';
+          }
+          h += '</div>';
         }
         h += '</dl>';
-        if (fila.estado === 'enviada' && !SACS) {
-          h += '<div class="pb-et-pie"><span class="pb-et-pie-nota">Enviada. Sacs la está revisando — te avisamos en cuanto quede aprobada o si falta algo.</span></div>';
+        if (revisando) {
+          h += '<div class="pb-rev"><span class="pb-campo-t">Cierre de la revisión</span>' +
+            '<textarea data-cierre="' + fila.clave + '" placeholder="Un párrafo para ellos (opcional)"></textarea>' +
+            '<div class="pb-rev-acc">' +
+            '<button type="button" class="pb-btn pb-btn-verde" data-responder="' + fila.clave + '">Mandar la revisión</button>' +
+            '<span class="pb-et-pie-nota">Si dejas al menos una pregunta, la etapa regresa a ellos. Si no dejas ninguna, se aprueba y se abre la siguiente.</span>' +
+            '</div><div class="pb-error" data-reverr="' + fila.clave + '" hidden></div></div>';
         }
-        if (SACS) h += revision(fila);
+        if (fila.estado === 'enviada' && !SACS) {
+          h += '<div class="pb-et-pie"><span class="pb-et-pie-nota">Enviada. La estamos revisando — te avisamos por correo en cuanto quede aprobada o si nos falta algo.</span></div>';
+        }
+        if (SACS && fila.estado === 'aprobada') h += revision(fila);
         return h + '</div>';
       }
 
@@ -867,7 +1011,7 @@ const fechaFirma = brief.firmado_at
       // ya pasó. Agrupando primero, el orden del archivo deja de importar.
       for (const [titulo, campos] of porGrupo(def)) {
         if (titulo) h += '<div class="pb-grupo"><span>' + esc(titulo) + '</span></div>';
-        for (const c of campos) h += campo(c, borrador[fila.clave] || {});
+        for (const c of campos) h += campo(c, borrador[fila.clave] || {}, fila.clave);
       }
 
       h += '<div class="pb-et-pie">' +
@@ -935,7 +1079,7 @@ const fechaFirma = brief.firmado_at
       return String(v);
     }
 
-    function campo(c, resp) {
+    function campo(c, resp, clave) {
       const v = resp[c.id];
       let h = '<div class="pb-campo" data-campo="' + c.id + '">';
       h += '<div class="pb-campo-lab">' + esc(c.etiqueta) +
@@ -988,6 +1132,7 @@ const fechaFirma = brief.firmado_at
           '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
       }
 
+      if (clave) h += hilo(clave, c.id, true);
       return h + '</div>';
     }
 
@@ -1091,7 +1236,7 @@ const fechaFirma = brief.firmado_at
       });
 
       cont.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev]');
+        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder]');
         if (!el || !cont.contains(el)) return;
         const clave = claveDe(el);
 
@@ -1133,6 +1278,15 @@ const fechaFirma = brief.firmado_at
           return guardar(clave);
         }
 
+        if (el.hasAttribute('data-ir')) {
+          e.preventDefault();
+          const destino = cont.querySelector('.pb-campo[data-campo="' + el.getAttribute('data-ir') + '"]');
+          destino?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          destino?.querySelector('textarea[data-resp]')?.focus();
+          return;
+        }
+        if (el.hasAttribute('data-enviaresp')) return contestarHilo(el, clave);
+        if (el.hasAttribute('data-responder')) return mandarRevision(el);
         if (el.hasAttribute('data-enviar')) return enviarEtapa(el);
         if (el.hasAttribute('data-rev')) return revisarEtapa(el);
       });
@@ -1149,6 +1303,57 @@ const fechaFirma = brief.firmado_at
         e.preventDefault(); z.removeAttribute('data-encima');
         subir(claveDe(z), z.getAttribute('data-zona'), e.dataTransfer.files);
       });
+    }
+
+    async function contestarHilo(el, clave) {
+      const campo = el.getAttribute('data-enviaresp');
+      const caja = cajaEtapas.querySelector('textarea[data-resp="' + campo + '"]');
+      const texto = (caja?.value || '').trim();
+      if (!texto) { caja?.focus(); return; }
+      el.disabled = true;
+      el.textContent = 'Enviando…';
+      const res = await fetch('/api/proyecto/contestar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: TOKEN, clave, campo, texto }),
+      });
+      if (!res.ok) {
+        el.disabled = false;
+        el.textContent = 'Contestar';
+        return;
+      }
+      await cargar();
+    }
+
+    async function mandarRevision(el) {
+      const clave = el.getAttribute('data-responder');
+      const err = cajaEtapas.querySelector('[data-reverr="' + clave + '"]');
+      if (err) err.hidden = true;
+      const notas = [];
+      cajaEtapas.querySelectorAll('[data-nota-campo]').forEach((t) => {
+        const texto = (t.value || '').trim();
+        if (!texto) return;
+        const campo = t.getAttribute('data-nota-campo');
+        const chk = cajaEtapas.querySelector('[data-es-preg="' + campo + '"]');
+        notas.push({ campo, texto, pregunta: !!(chk && chk.checked) });
+      });
+      const cierre = cajaEtapas.querySelector('[data-cierre="' + clave + '"]')?.value || '';
+      el.disabled = true;
+      el.textContent = 'Mandando…';
+      const res = await fetch('/api/proyecto/responder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: TOKEN, clave, notas, cierre }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        el.disabled = false;
+        el.textContent = 'Mandar la revisión';
+        if (err) { err.textContent = d.error || 'No se pudo mandar'; err.hidden = false; }
+        return;
+      }
+      abierta = d.aprobada ? (d.siguiente || null) : clave;
+      await cargar();
     }
 
     async function enviarEtapa(el) {

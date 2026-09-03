@@ -18,6 +18,8 @@ export type Brief = {
   firmado_email: string | null;
   firmado_at: string | null;
   firma_png: string | null;
+  avisos_email: string[] | null;
+  avisos_copia: string[] | null;
   created_at: string;
 };
 
@@ -66,8 +68,19 @@ export async function etapasDe(briefId: string): Promise<EtapaFila[]> {
     }));
     const { data: creadas } = await supabase.from('proyecto_etapa').insert(nuevas).select('*');
     filas.push(...(((creadas || []) as EtapaFila[]) || []));
-    filas.sort((a, b) => a.orden - b.orden);
   }
+
+  // Si se intercala una etapa nueva, las viejas se quedarían con el orden de
+  // antes y la secuencia "aprobar abre la siguiente" saltaría etapas. Aquí se
+  // sincroniza contra la definición, que es la única fuente de verdad.
+  for (const e of ETAPAS) {
+    const f = filas.find((x) => x.clave === e.clave);
+    if (f && f.orden !== e.orden) {
+      await supabase.from('proyecto_etapa').update({ orden: e.orden }).eq('id', f.id);
+      f.orden = e.orden;
+    }
+  }
+  filas.sort((a, b) => a.orden - b.orden);
   return filas;
 }
 

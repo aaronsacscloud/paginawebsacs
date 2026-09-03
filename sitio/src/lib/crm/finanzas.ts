@@ -28,7 +28,7 @@ export async function resumenMes(m: Mes) {
     supabase.from('fin_gastos').select('*').order('categoria').order('nombre'),
     supabase.from('fin_gastos_pagos').select('*').eq('mes', m),
     supabase.from('comision_lineas').select('id, owner_id, monto, fecha, estado, concepto, team_members:owner_id(nombre)').gte('fecha', ini(m)).lt('fecha', finExcl(m)),
-    supabase.from('deals').select('id, nombre, stage, quote_id, valor_total, valor_mensual, mrr, probabilidad, fecha_cierre_esperada, owner_id, companies(nombre_comercial, nombre), contacts(nombre), team_members:owner_id(nombre)').is('archived_at', null).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")').order('valor_total', { ascending: false }),
+    supabase.from('deals').select('id, nombre, stage, stage_changed_at, created_at, quote_id, contact_id, company_id, valor_total, valor_mensual, mrr, probabilidad, fecha_cierre_esperada, proximo_paso, proximo_paso_at, owner_id, companies(nombre_comercial, nombre), contacts(nombre, created_at, fuente, whatsapp), team_members:owner_id(nombre)').is('archived_at', null).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")').order('valor_total', { ascending: false }),
     supabase.from('fin_cierres').select('*').eq('mes', m).maybeSingle(),
   ]);
   // Cotizaciones ACEPTADAS sin pago: por cobrar de venta nueva (no pipeline): salen de deals y entran aquí.
@@ -66,9 +66,34 @@ export async function resumenMes(m: Mes) {
   const cobradoSubs = new Set((pagos || []).map(p => p.subscription_id).filter(Boolean));
   const porCobrar = (subs || []).filter(s => !cobradoSubs.has(s.id)).map(s => ({ ...s, monto: Number(s.monto_proximo ?? s.precio ?? 0) }));
   const porCobrarMonto = porCobrar.reduce((s, x) => s + x.monto, 0);
-  const abiertos = (deals || []).filter(d => !aceptadasIds.has((d as any).quote_id)).map(d => ({ ...d, valor: Number(d.valor_total || 0) || Number(d.valor_mensual || 0) * 12, prob: Number(d.probabilidad ?? 30) }));
+  // PIPELINE CON CONTEXTO (frente C): probabilidad por etapa (20/40/60/90, decisión del dueño) salvo ajuste manual,
+  // vistas de la cotización, última actividad, cliente nuevo vs expansión, días en etapa, duplicados por contacto.
+  const PROB_ETAPA: Record<string, number> = { calificacion: 20, demo_agendada: 40, demo_realizada: 50, cotizacion_enviada: 60, negociacion: 75, aceptada: 90 };
+  const dealsAb = (deals || []).filter(d => !aceptadasIds.has((d as any).quote_id));
+  const qIds = dealsAb.map(d => d.quote_id).filter(Boolean); const cIds = [...new Set(dealsAb.map(d => d.contact_id).filter(Boolean))]; const coIds = [...new Set(dealsAb.map(d => d.company_id).filter(Boolean))];
+  const [{ data: qs }, { data: acts }, { data: subsAct }] = await Promise.all([
+    qIds.length ? supabase.from('quotes').select('id, vistas, ultima_vista_at, primera_vista_at, estado, numero, total, vigencia').in('id', qIds) : Promise.resolve({ data: [] as any[] }),
+    cIds.length ? supabase.from('activities').select('contact_id, tipo, titulo, created_at').in('contact_id', cIds).order('created_at', { ascending: false }).limit(400) : Promise.resolve({ data: [] as any[] }),
+    coIds.length ? supabase.from('subscriptions').select('company_id').in('company_id', coIds).eq('estado', 'activa') : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const qPor = new Map((qs || []).map(q => [q.id, q])); const actPor = new Map<string, any>(); for (const a of acts || []) if (!actPor.has(a.contact_id)) actPor.set(a.contact_id, a);
+  const expansionSet = new Set((subsAct || []).map(s => s.company_id));
+  const porContacto: Record<string, number> = {}; for (const d of dealsAb) if (d.contact_id) porContacto[d.contact_id] = (porContacto[d.contact_id] || 0) + 1;
+  const abiertos = dealsAb.map(d => {
+    const q: any = d.quote_id ? qPor.get(d.quote_id) : null; const k: any = (d as any).contacts || {}; const a = d.contact_id ? actPor.get(d.contact_id) : null;
+    const manual = d.probabilidad != null && Number(d.probabilidad) !== 20;   // 20 era el default plano: se trata como «sin ajustar»
+    const prob = manual ? Number(d.probabilidad) : (PROB_ETAPA[d.stage] ?? 30);
+    const diasEtapa = Math.floor((Date.now() - Date.parse(d.stage_changed_at || d.created_at)) / 86400e3);
+    return { ...d, valor: Number(d.valor_total || 0) || Number(d.valor_mensual || 0) * 12, prob, prob_manual: manual, vistas: Number(q?.vistas || 0), ultima_vista_at: q?.ultima_vista_at || null, cot_estado: q?.estado || null, cot_numero: q?.numero || null, contacto_nombre: k.nombre || null, lead_desde: k.created_at || null, canal: k.fuente || null, whatsapp: k.whatsapp || null, expansion: !!(d.company_id && expansionSet.has(d.company_id)), ultima_actividad: a ? { tipo: a.tipo, titulo: a.titulo, at: a.created_at } : null, dias_etapa: diasEtapa, estancada: diasEtapa > 14, duplicados: d.contact_id ? porContacto[d.contact_id] : 1, cierre_en_mes: !!d.fecha_cierre_esperada && String(d.fecha_cierre_esperada).slice(0, 7) === m, sin_fecha_cierre: !d.fecha_cierre_esperada, cierre_vencido: !!d.fecha_cierre_esperada && String(d.fecha_cierre_esperada) < new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10) };
+  });
   const pipelineTotal = abiertos.reduce((s, d) => s + d.valor, 0);
   const pipelinePond = abiertos.reduce((s, d) => s + d.valor * d.prob / 100, 0);
+  const esperadoPipelineMes = abiertos.filter(d => d.cierre_en_mes).reduce((s, d) => s + d.valor * d.prob / 100, 0);
+  const forecast: Record<string, { vendedor: string; n: number; total: number; ponderado: number; comprometido: number; este_mes: number }> = {};
+  for (const d of abiertos) { const v = (d as any).team_members?.nombre || 'Sin vendedor'; const fc = forecast[v] || (forecast[v] = { vendedor: v, n: 0, total: 0, ponderado: 0, comprometido: 0, este_mes: 0 }); fc.n++; fc.total += d.valor; fc.ponderado += d.valor * d.prob / 100; if (d.prob >= 60) fc.comprometido += d.valor; if (d.cierre_en_mes) fc.este_mes += d.valor * d.prob / 100; }
+  // Conversión últimos 90 días por canal: ganadas / cerradas (ganadas + perdidas).
+  const { data: cerradas } = await supabase.from('deals').select('stage, closed_at, contacts(fuente)').in('stage', ['cerrada_ganada', 'cerrada_perdida']).gte('closed_at', new Date(Date.now() - 90 * 86400e3).toISOString()).limit(500);
+  const conv: Record<string, { ganadas: number; perdidas: number }> = {}; for (const c of cerradas || []) { const canal = (c as any).contacts?.fuente || '(sin canal)'; const x = conv[canal] || (conv[canal] = { ganadas: 0, perdidas: 0 }); if (c.stage === 'cerrada_ganada') x.ganadas++; else x.perdidas++; }
   // ADEUDOS (decisión 2026-09-03): total, saldo, cuota del mes y lo atrasado que se junta. Si hay fecha límite y no hay
   // cuota fija, la cuota es saldo ÷ meses que faltan (SAT: 48,000 a octubre = 24,000 y 24,000).
   const [{ data: adeudos }, { data: abonos }] = await Promise.all([
@@ -107,13 +132,13 @@ export async function resumenMes(m: Mes) {
   const totalGastos = gastosPrevisto + ajusteMarketing + (porCat.comision ? 0 : comisionesMes) + adeudosToca + atrasadosTotal;   // comisiones a mano → no se suman dos veces
   return {
     mes: m, cierre: cierre || null,
-    ingresos: { cobrado, cobrado_neto: cobradoNeto, comisiones_pasarela: comisionesPasarela, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
+    ingresos: { cobrado, cobrado_neto: cobradoNeto, comisiones_pasarela: comisionesPasarela, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto + esperadoPipelineMes, esperado_pipeline: esperadoPipelineMes, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
     gastos: { lista: aplicables, previsto: gastosPrevisto + ajusteMarketing, pagado: gastosPagado, por_categoria: porCat, catalogo: gastos || [] },
     comisiones: { total: comisionesMes, lineas_total: comisiones, por_vendedor: porVendedor, lineas: (coms || []).length, cortes: cortesMes, por_pagar: cortesPorPagar },
     variables: { probables, marketing_real: Math.round(marketingReal), marketing_estimado: marketingEstimado },
     adeudos: { lista: adeudosMes, toca: adeudosToca, abonado: adeudosAbonado, saldo_total: adeudosMes.reduce((s, a) => s + a.saldo, 0) },
     atrasados: { lista: atrasados, total: atrasadosTotal },
-    pipeline: { abiertos, total: pipelineTotal, ponderado: pipelinePond },
+    pipeline: { abiertos, total: pipelineTotal, ponderado: pipelinePond, esperado_mes: esperadoPipelineMes, forecast: Object.values(forecast).sort((a, b) => b.ponderado - a.ponderado), conversion: Object.entries(conv).map(([canal, x]) => ({ canal, ...x, pct: x.ganadas + x.perdidas ? Math.round(x.ganadas / (x.ganadas + x.perdidas) * 100) : null })).sort((a, b) => (b.ganadas + b.perdidas) - (a.ganadas + a.perdidas)) },
     utilidad: { estimada: cobradoNeto - totalGastos, si_cobra_todo: cobradoNeto + porCobrarMonto - totalGastos, total_gastos: totalGastos },
     flujo: flujoSemanal(m, { pagos: pagos || [], porCobrar, aceptadas, aplicables, cortesMes, adeudosMes, atrasados }),
   };
@@ -181,4 +206,41 @@ function flujoSemanal(m: Mes, d: { pagos: any[]; porCobrar: any[]; aceptadas: an
   for (const g of d.atrasados) semanas[0].salidas.push({ tipo: 'atrasado', que: `${g.nombre} (${g.mes})`, monto: Number(g.monto), fecha: semanas[0].desde, real: false });
   let acum = 0;
   return semanas.map((s, i) => { const e = s.entradas.reduce((a: number, x: any) => a + x.monto, 0); const o = s.salidas.reduce((a: number, x: any) => a + x.monto, 0); acum += e - o; return { n: i + 1, desde: s.desde, hasta: s.hasta, entradas: e, salidas: o, neto: e - o, acumulado: acum, detalle_entradas: s.entradas.sort((a: any, b: any) => a.fecha.localeCompare(b.fecha)), detalle_salidas: s.salidas.sort((a: any, b: any) => a.fecha.localeCompare(b.fecha)) }; });
+}
+
+
+/** Detalle de UNA oportunidad para el modal: cotización con vistas, actividades, contacto y si es expansión. */
+export async function detalleOportunidad(dealId: string) {
+  const { data: d } = await supabase.from('deals').select('*, companies(id, nombre_comercial, nombre, giro, sucursales), contacts(id, nombre, apellido, email, whatsapp, fuente, created_at, lifecycle_stage, giro), team_members:owner_id(nombre)').eq('id', dealId).maybeSingle();
+  if (!d) return null;
+  const [{ data: q }, { data: vistas }, { data: acts }, { data: subs }, { data: otras }] = await Promise.all([
+    d.quote_id ? supabase.from('quotes').select('id, numero, estado, total, items, vistas, primera_vista_at, ultima_vista_at, vigencia, created_at, plan, sucursales, periodo').eq('id', d.quote_id).maybeSingle() : Promise.resolve({ data: null as any }),
+    d.quote_id ? supabase.from('quote_vistas').select('created_at, segundos').eq('quote_id', d.quote_id).order('created_at', { ascending: false }).limit(20) : Promise.resolve({ data: [] as any[] }),
+    d.contact_id ? supabase.from('activities').select('id, tipo, titulo, descripcion, created_at').eq('contact_id', d.contact_id).order('created_at', { ascending: false }).limit(12) : Promise.resolve({ data: [] as any[] }),
+    d.company_id ? supabase.from('subscriptions').select('id, nombre_plan, mrr, estado').eq('company_id', d.company_id).eq('estado', 'activa') : Promise.resolve({ data: [] as any[] }),
+    d.contact_id ? supabase.from('deals').select('id, nombre, stage, valor_total, created_at').eq('contact_id', d.contact_id).neq('id', dealId).is('archived_at', null) : Promise.resolve({ data: [] as any[] }),
+  ]);
+  return { deal: d, cotizacion: q, vistas: vistas || [], actividades: acts || [], suscripciones_activas: subs || [], expansion: (subs || []).length > 0, otras_oportunidades: otras || [], url_cotizacion: d.quote_id ? `https://www.sacscloud.com/cotizacion/${d.quote_id}` : null };
+}
+
+/** Editar desde el modal: probabilidad, fecha de cierre, etapa (perder exige motivo), siguiente paso. Deja historial en activities. */
+export async function editarOportunidad(dealId: string, cambios: any, userId?: string | null) {
+  const { data: prev } = await supabase.from('deals').select('id, contact_id, company_id, stage, probabilidad, fecha_cierre_esperada, proximo_paso, motivo_perdida').eq('id', dealId).maybeSingle();
+  if (!prev) return { error: 'No existe' };
+  const upd: any = { stage_changed_at: undefined };
+  if (cambios.probabilidad != null) upd.probabilidad = Math.max(0, Math.min(100, Number(cambios.probabilidad)));
+  if ('fecha_cierre_esperada' in cambios) upd.fecha_cierre_esperada = cambios.fecha_cierre_esperada || null;
+  if ('proximo_paso' in cambios) upd.proximo_paso = cambios.proximo_paso || null;
+  if ('proximo_paso_at' in cambios) upd.proximo_paso_at = cambios.proximo_paso_at || null;
+  if (cambios.stage && cambios.stage !== prev.stage) {
+    if (/perdid/i.test(cambios.stage) && !String(cambios.motivo_perdida || '').trim()) return { error: 'Escribe por qué se perdió: es lo único que después permite corregir precio, producto o seguimiento.' };
+    upd.stage = cambios.stage; upd.stage_changed_at = new Date().toISOString();
+    if (/perdid/i.test(cambios.stage)) { upd.motivo_perdida = cambios.motivo_perdida; upd.closed_at = new Date().toISOString(); }
+  }
+  delete upd.stage_changed_at; if (cambios.stage && cambios.stage !== prev.stage) upd.stage_changed_at = new Date().toISOString();
+  const { error } = await supabase.from('deals').update(upd).eq('id', dealId);
+  if (error) return { error: error.message };
+  const dif = Object.entries(upd).filter(([k]) => k !== 'stage_changed_at' && k !== 'closed_at').map(([k, v]) => `${k}: ${(prev as any)[k] ?? '—'} → ${v ?? '—'}`);
+  if (dif.length) await supabase.from('activities').insert({ contact_id: prev.contact_id, company_id: prev.company_id, deal_id: dealId, tipo: 'deal_cambio', titulo: 'Oportunidad actualizada', descripcion: dif.join(' · '), created_by: userId || null, automatico: false }).then(() => {}, () => {});
+  return { ok: true };
 }

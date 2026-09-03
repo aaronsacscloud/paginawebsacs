@@ -43,6 +43,7 @@ const ADMIN_EXACT = new Set([
   // Revisar el brief de un proyecto (aprobar/devolver una etapa) lo hace
   // Sacs, no el cliente: el resto de /api/proyecto/* sí es público por token.
   '/api/proyecto/revisar',
+  '/api/proyecto/responder',
   '/api/get-leads',
   '/api/update-lead',
   '/api/add-note',

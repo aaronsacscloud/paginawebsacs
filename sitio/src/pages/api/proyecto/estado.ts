@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { briefPorToken, etapasDe, json } from '../../../lib/proyecto/store';
 import { ETAPAS } from '../../../lib/proyecto/etapas';
+import { hilosDe, pendientesDelCliente } from '../../../lib/proyecto/hilos';
 
 export const prerender = false;
 
@@ -12,6 +13,7 @@ export const GET: APIRoute = async ({ url }) => {
   if (!brief) return json({ error: 'No encontrado' }, 404);
 
   const etapas = await etapasDe(brief.id);
+  const hilos = await hilosDe(brief.id);
 
   // Contador de vistas: sirve para saber si el cliente ya lo abrió antes de
   // llamarle. No es analítica, es seguimiento.
@@ -38,9 +40,12 @@ export const GET: APIRoute = async ({ url }) => {
       firmado_por: brief.firmado_por,
       firmado_puesto: brief.firmado_puesto,
       firmado_at: brief.firmado_at,
+      avisos_email: brief.avisos_email || [],
       created_at: brief.created_at,
     },
     etapas,
+    hilos,
+    pendientes: pendientesDelCliente(hilos).map((h) => ({ etapa: h.etapa_clave, campo: h.campo_id })),
     definicion: ETAPAS,
     bitacora: log || [],
   });

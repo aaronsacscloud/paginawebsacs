@@ -9,7 +9,7 @@ export const prerender = false;
 // es la que vale y no se puede sobrescribir desde aquí.
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   const body = await request.json().catch(() => ({}));
-  const { token, nombre, puesto, email, firma_png } = body || {};
+  const { token, nombre, puesto, email, firma_png, avisos } = body || {};
 
   const brief = await briefPorToken(token);
   if (!brief) return json({ error: 'No encontrado' }, 404);
@@ -24,9 +24,18 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     : null;
   if (!firma) return json({ error: 'Falta la firma' }, 400);
 
+  // A qué correos avisamos cada vez que revisemos una etapa. Se pide aquí y no
+  // después porque es el único momento en que tenemos su atención completa.
+  const correos = String(avisos || email || '')
+    .split(/[,;\s]+/)
+    .map((x: string) => x.trim().toLowerCase())
+    .filter((x: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))
+    .slice(0, 6);
+
   await supabase
     .from('proyecto_brief')
     .update({
+      avisos_email: correos,
       firmado_por: n,
       firmado_puesto: String(puesto || '').trim().slice(0, 120) || null,
       firmado_email: String(email || '').trim().slice(0, 160) || null,

@@ -193,3 +193,18 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Adeudos** tiene proyección (meses que faltan y mes de liquidación contra la fecha límite).
 - **Cierre guiado**: checklist de lo pendiente antes del botón. **Alertas** diarias 8:00 (`fin-alertas`): vence en ≤3
   días, adeudo por abonar, corte del lunes, atrasados.
+
+## 2026-09-04 · Pipeline con contexto (frente C)
+
+- Probabilidad por etapa (calificación 20, demo agendada 40, demo realizada 50, cotización 60, negociación 75,
+  aceptada 90); un valor manual distinto de 20 se respeta (20 era el default plano). El ponderado real pasó de 52 mil a
+  125 mil: antes todo valía 20 %.
+- La fila trae: cliente nuevo vs expansión (empresa con suscripción activa), lead desde, canal, vistas y última
+  apertura de la cotización, última actividad, siguiente paso, días en etapa (estancada > 14), duplicados por contacto,
+  fecha de cierre (vencida / este mes / sin fecha). Filtros por tipo, vendedor, etapa y orden.
+- Forecast por vendedor (comprometido = prob ≥ 60) y conversión por canal a 90 días. Fecha de cierre en el mes →
+  «esperado del pipeline» en Ingresos (ponderado), separado de renovaciones y aceptadas.
+- Modal de la oportunidad (`?oportunidad=id`): editar etapa/probabilidad/fecha de cierre/siguiente paso (perder exige
+  motivo; cada cambio deja actividad `deal_cambio`), cotización con conceptos y aperturas, últimas actividades, otras
+  oportunidades del mismo contacto. Clic en el contacto abre `LeadDrawer`.
+- Se asignó dueño a 18 oportunidades abiertas que estaban sin vendedor (owner del contacto o consultor por default).

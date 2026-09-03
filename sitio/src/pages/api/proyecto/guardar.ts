@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { briefPorToken, etapasDe, bitacora, json } from '../../../lib/proyecto/store';
 import { ETAPAS_POR_CLAVE, faltantes } from '../../../lib/proyecto/etapas';
+import { avisarEnvioDelCliente } from '../../../lib/proyecto/hilos';
 
 export const prerender = false;
 
@@ -53,7 +54,13 @@ export const POST: APIRoute = async ({ request }) => {
   await supabase.from('proyecto_etapa').update(parche).eq('id', fila.id);
 
   if (enviar) {
-    await bitacora(brief.id, 'cliente', 'Etapa enviada a revisión', def.clave, def.titulo);
+    const reenvio = fila.estado === 'cambios';
+    await bitacora(
+      brief.id, 'cliente',
+      reenvio ? 'Etapa reenviada con las correcciones' : 'Etapa enviada a revisión',
+      def.clave, def.titulo,
+    );
+    await avisarEnvioDelCliente(brief as any, def.clave, reenvio);
   }
 
   return json({ ok: true, estado: parche.estado || fila.estado });

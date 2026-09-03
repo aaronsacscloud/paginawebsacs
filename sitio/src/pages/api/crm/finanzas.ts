@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { resumenMes, reporteAnual, cerrarMes, mesDe } from '../../../lib/crm/finanzas';
+import { resumenMes, reporteAnual, cerrarMes, mesDe, detalleOportunidad, editarOportunidad } from '../../../lib/crm/finanzas';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -11,6 +11,8 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
   const mes = (url.searchParams.get('mes') || mesDe()).slice(0, 7);
   if (url.searchParams.get('reporte') === 'anual') return json(await reporteAnual(Number(url.searchParams.get('anio')) || Number(mes.slice(0, 4))));
+  const opId = url.searchParams.get('oportunidad');
+  if (opId) { const r = await detalleOportunidad(opId); return r ? json(r) : json({ error: 'No existe' }, 404); }
   // Detalle de UN gasto: la ficha + el historial de pagos de todos los meses (para medir y mejorar lo recurrente).
   const gastoId = url.searchParams.get('gasto');
   if (gastoId) {
@@ -62,6 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (b.accion === 'abono_borrar' && b.id) { await supabase.from('fin_adeudos_abonos').delete().eq('id', b.id); return json({ ok: true }); }
   if (b.accion === 'adeudo_borrar' && b.id) { await supabase.from('fin_adeudos').update({ activo: false, updated_at: ahora }).eq('id', b.id); return json({ ok: true }); }
+  if (b.accion === 'deal_editar' && b.id) return json(await editarOportunidad(String(b.id), b.cambios || {}, uid));
   if (b.accion === 'cerrar_mes' && b.mes) return json(await cerrarMes(String(b.mes).slice(0, 7), uid, b.notas));
   if (b.accion === 'reabrir_mes' && b.mes) { await supabase.from('fin_cierres').delete().eq('mes', String(b.mes).slice(0, 7)); return json({ ok: true }); }
   return json({ error: 'Acción desconocida' }, 400);

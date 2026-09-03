@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import KpiCard from './ui/KpiCard';
 import Sheet from './ui/Sheet';
+import LeadDrawer from './LeadDrawer';
 
 /* ═══ Finanzas ═══ Mes a mes: qué entró, qué falta por entrar (renovaciones), qué hay que pagar (suscripciones,
    nómina, comisiones…) con su palomita de pagado, qué traen los vendedores en pipeline y la utilidad. Cerrar el mes
@@ -28,6 +29,12 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
   const [vista, setVistaRaw] = useState<'gastos' | 'adeudos' | 'ingresos' | 'pipeline' | 'cierre'>(pagina || 'gastos');
   const setVista = (v: any) => setVistaRaw(pagina ? (v === 'pipeline' ? 'ingresos' : pagina) : v);
   const [semana, setSemana] = useState<number | null>(null);
+  const [fOp, setFOp] = useState<{ tipo: 'todos' | 'nuevo' | 'expansion'; vendedor: string; etapa: string; orden: 'ponderado' | 'valor' | 'dias' | 'vistas' | 'cierre' }>({ tipo: 'todos', vendedor: '', etapa: '', orden: 'ponderado' });
+  const [opId, setOpId] = useState<string | null>(null);      // oportunidad abierta en el modal
+  const [op, setOp] = useState<any>(null);
+  const [opEdit, setOpEdit] = useState<any>({});
+  const [leadId, setLeadId] = useState<string | null>(null);  // contacto abierto en el drawer
+  const abrirOp = (id: string) => { setOpId(id); setOp(null); setOpEdit({}); fetch(`/api/crm/finanzas?oportunidad=${id}`).then(r => r.json()).then(setOp).catch(() => setOp({ error: 'No se pudo cargar' })); };
   const [form, setForm] = useState<any>(vacio);
   const [abierto, setAbierto] = useState(false);
   const [msg, setMsg] = useState('');
@@ -72,7 +79,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           <KpiCard label="Por cobrar (renovaciones)" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={`${d.ingresos.por_cobrar_lista.length} suscripciones vencen este mes`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Por cobrar de venta nueva" valor={pesos(d.ingresos.ventas_aceptadas || 0)} color="#1e3a8a" sub={`${(d.ingresos.ventas_aceptadas_lista || []).length} cotizaciones aceptadas sin pago`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}${d.adeudos?.toca ? ` + ${pesos(d.adeudos.toca)} adeudos` : ''}${d.atrasados?.total ? ` + ${pesos(d.atrasados.total)} atrasados` : ''}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
-          <KpiCard label="Pipeline ponderado" valor={pesos(d.pipeline.ponderado)} color="#78350f" sub={`${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos`} onClick={() => setVista('pipeline')} activo={vista === 'pipeline'} />
+          <KpiCard label="Pipeline ponderado" valor={pesos(d.pipeline.ponderado)} color="#78350f" sub={`${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos · ${pesos(d.pipeline.esperado_mes || 0)} con cierre este mes`} onClick={() => setVista('pipeline')} activo={vista === 'pipeline'} />
           <KpiCard label="Utilidad estimada" valor={pesos(d.utilidad.estimada)} color={d.utilidad.estimada >= 0 ? '#14532d' : '#7f1d1d'} sub={`${pesos(d.utilidad.si_cobra_todo)} si cobras todo lo del mes`} onClick={() => setVista('cierre')} activo={vista === 'cierre'} />
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 16 }}>
@@ -270,16 +277,62 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           </div>
         )}
 
-        {(vista === 'pipeline' || (vista === 'ingresos' && pagina)) && (
-          <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Oportunidades abiertas</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.pipeline.total)} brutos · {pesos(d.pipeline.ponderado)} ponderados por probabilidad</span></div>
-            <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
-              <thead><tr><th style={th}>Oportunidad</th><th style={th}>Etapa</th><th style={th}>Vendedor</th><th style={th}>Cierre esperado</th><th style={{ ...th, textAlign: 'right' }}>Valor</th><th style={{ ...th, textAlign: 'right' }}>Prob.</th><th style={{ ...th, textAlign: 'right' }}>Ponderado</th></tr></thead>
-              <tbody>{d.pipeline.abiertos.map((o: any) => <tr key={o.id}><td style={td}><b>{o.companies?.nombre_comercial || o.companies?.nombre || o.contacts?.nombre || o.nombre}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{o.nombre}</div></td><td style={td}>{o.stage}</td><td style={td}>{o.team_members?.nombre || '—'}</td><td style={td}>{o.fecha_cierre_esperada || '—'}</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pesos(o.valor)}</td><td style={{ ...td, textAlign: 'right' }}>{o.prob}%</td><td style={{ ...td, textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{pesos(o.valor * o.prob / 100)}</td></tr>)}
-              {!d.pipeline.abiertos.length && <tr><td colSpan={7} style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Sin oportunidades abiertas.</td></tr>}</tbody>
-            </table></div>
-          </div>
-        )}
+        {(vista === 'pipeline' || (vista === 'ingresos' && pagina)) && (() => {
+          const ETQ: Record<string, string> = { calificacion: 'Calificación', demo_agendada: 'Demo agendada', demo_realizada: 'Demo realizada', cotizacion_enviada: 'Cotización enviada', negociacion: 'Negociación', aceptada: 'Aceptada' };
+          const vendedores = [...new Set(d.pipeline.abiertos.map((o: any) => o.team_members?.nombre || 'Sin vendedor'))] as string[];
+          const etapas = [...new Set(d.pipeline.abiertos.map((o: any) => o.stage))] as string[];
+          let lista = d.pipeline.abiertos.filter((o: any) => (fOp.tipo === 'todos' || (fOp.tipo === 'expansion' ? o.expansion : !o.expansion)) && (!fOp.vendedor || (o.team_members?.nombre || 'Sin vendedor') === fOp.vendedor) && (!fOp.etapa || o.stage === fOp.etapa));
+          lista = [...lista].sort((a: any, b: any) => fOp.orden === 'valor' ? b.valor - a.valor : fOp.orden === 'dias' ? b.dias_etapa - a.dias_etapa : fOp.orden === 'vistas' ? b.vistas - a.vistas : fOp.orden === 'cierre' ? String(a.fecha_cierre_esperada || '9999').localeCompare(String(b.fecha_cierre_esperada || '9999')) : b.valor * b.prob - a.valor * a.prob);
+          const tot = lista.reduce((x: number, o: any) => x + o.valor, 0), pond = lista.reduce((x: number, o: any) => x + o.valor * o.prob / 100, 0);
+          const fechaC = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '';
+          const ch = (on: boolean) => ({ border: `1px solid ${on ? '#5B4BD6' : '#e8e5f0'}`, background: on ? '#EEECFE' : '#fff', color: on ? '#4c1d95' : '#4a4658', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' });
+          return (<div style={{ marginTop: 14 }}>
+            {/* Forecast por vendedor + conversión por canal */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
+              <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0eef6' }}><b>Forecast por vendedor</b> <span style={{ color: '#8e88a8', fontSize: 12 }}>· comprometido = probabilidad ≥ 60 %</span></div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr><th style={th}>Vendedor</th><th style={{ ...th, textAlign: 'right' }}>Op.</th><th style={{ ...th, textAlign: 'right' }}>Bruto</th><th style={{ ...th, textAlign: 'right' }}>Comprometido</th><th style={{ ...th, textAlign: 'right' }}>Probable</th><th style={{ ...th, textAlign: 'right' }}>Este mes</th></tr></thead>
+                  <tbody>{(d.pipeline.forecast || []).map((fc: any) => <tr key={fc.vendedor} style={{ cursor: 'pointer' }} onClick={() => setFOp({ ...fOp, vendedor: fOp.vendedor === fc.vendedor ? '' : fc.vendedor })}><td style={{ ...td, fontWeight: 800 }}>{fc.vendedor}</td><td style={{ ...td, textAlign: 'right' }}>{fc.n}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.total)}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.comprometido)}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800 }}>{pesos(fc.ponderado)}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.este_mes)}</td></tr>)}</tbody></table>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0eef6' }}><b>Conversión por canal</b> <span style={{ color: '#8e88a8', fontSize: 12 }}>· cerradas en 90 días</span></div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr><th style={th}>Canal</th><th style={{ ...th, textAlign: 'right' }}>Ganadas</th><th style={{ ...th, textAlign: 'right' }}>Perdidas</th><th style={{ ...th, textAlign: 'right' }}>Tasa</th></tr></thead>
+                  <tbody>{(d.pipeline.conversion || []).map((c: any) => <tr key={c.canal}><td style={td}>{c.canal}</td><td style={{ ...td, textAlign: 'right', color: '#14532d' }}>{c.ganadas}</td><td style={{ ...td, textAlign: 'right', color: '#7f1d1d' }}>{c.perdidas}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800 }}>{c.pct == null ? '—' : `${c.pct}%`}</td></tr>)}{!(d.pipeline.conversion || []).length && <tr><td colSpan={4} style={{ ...td, color: '#8e88a8', textAlign: 'center' }}>Sin cierres en 90 días.</td></tr>}</tbody></table>
+              </div>
+            </div>
+            {/* Filtros */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 14, alignItems: 'center' }}>
+              {(['todos', 'nuevo', 'expansion'] as const).map(t => <button key={t} style={ch(fOp.tipo === t)} onClick={() => setFOp({ ...fOp, tipo: t })}>{t === 'todos' ? 'Todas' : t === 'nuevo' ? 'Cliente nuevo' : 'Expansión (ya es cliente)'}</button>)}
+              <select value={fOp.vendedor} onChange={e => setFOp({ ...fOp, vendedor: e.target.value })} style={{ ...inp, marginTop: 0, width: 'auto', padding: '5px 8px', fontSize: 12 }}><option value="">Todos los vendedores</option>{vendedores.map(v => <option key={v} value={v}>{v}</option>)}</select>
+              <select value={fOp.etapa} onChange={e => setFOp({ ...fOp, etapa: e.target.value })} style={{ ...inp, marginTop: 0, width: 'auto', padding: '5px 8px', fontSize: 12 }}><option value="">Todas las etapas</option>{etapas.map(v => <option key={v} value={v}>{ETQ[v] || v}</option>)}</select>
+              <select value={fOp.orden} onChange={e => setFOp({ ...fOp, orden: e.target.value as any })} style={{ ...inp, marginTop: 0, width: 'auto', padding: '5px 8px', fontSize: 12 }}><option value="ponderado">Orden: ponderado</option><option value="valor">Orden: valor</option><option value="dias">Orden: días en etapa</option><option value="vistas">Orden: vistas</option><option value="cierre">Orden: fecha de cierre</option></select>
+              <span style={{ marginLeft: 'auto', color: '#6b6580', fontSize: 12.5 }}>{lista.length} oportunidades · {pesos(tot)} brutos · <b>{pesos(pond)}</b> ponderados</span>
+            </div>
+            <div style={{ marginTop: 10, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+                <thead><tr><th style={th}>Oportunidad</th><th style={th}>Etapa</th><th style={th}>Vendedor</th><th style={th}>Vistas</th><th style={th}>Última actividad</th><th style={th}>Cierre</th><th style={{ ...th, textAlign: 'right' }}>Valor</th><th style={{ ...th, textAlign: 'right' }}>Prob.</th><th style={{ ...th, textAlign: 'right' }}>Ponderado</th></tr></thead>
+                <tbody>{lista.map((o: any) => <tr key={o.id} style={{ cursor: 'pointer' }} onClick={() => abrirOp(o.id)}>
+                  <td style={td}><b>{o.companies?.nombre_comercial || o.companies?.nombre || o.nombre}</b>{o.contacto_nombre ? <span style={{ color: '#6b6580' }}> · <a onClick={e => { e.stopPropagation(); if (o.contact_id) setLeadId(o.contact_id); }} style={{ color: '#5B4BD6', fontWeight: 700, cursor: 'pointer' }}>{o.contacto_nombre}</a></span> : null}
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 3 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, borderRadius: 999, padding: '1px 7px', background: o.expansion ? '#dcfce7' : '#EEECFE', color: o.expansion ? '#14532d' : '#4c1d95' }}>{o.expansion ? 'Expansión' : 'Cliente nuevo'}</span>
+                      {o.lead_desde && <span style={{ fontSize: 10.5, color: '#8e88a8' }}>lead desde {fechaC(o.lead_desde)}</span>}
+                      {o.canal && <span style={{ fontSize: 10.5, color: '#8e88a8' }}>· {o.canal}</span>}
+                      {o.duplicados > 1 && <span style={{ fontSize: 10, fontWeight: 800, borderRadius: 999, padding: '1px 7px', background: '#fef3c7', color: '#78350f' }}>{o.duplicados} oportunidades de este contacto</span>}
+                    </div></td>
+                  <td style={td}>{ETQ[o.stage] || o.stage}<div style={{ fontSize: 11, color: o.estancada ? '#b91c1c' : '#8e88a8', fontWeight: o.estancada ? 800 : 500 }}>{o.dias_etapa} días{o.estancada ? ' · estancada' : ''}</div></td>
+                  <td style={td}>{o.team_members?.nombre || <span style={{ color: '#b45309' }}>sin vendedor</span>}</td>
+                  <td style={td}>{o.quote_id ? <>{o.vistas}{o.ultima_vista_at ? <div style={{ fontSize: 11, color: '#8e88a8' }}>última {fechaC(o.ultima_vista_at)}</div> : <div style={{ fontSize: 11, color: '#b45309' }}>sin abrir</div>}</> : <span style={{ color: '#8e88a8' }}>sin cotización</span>}</td>
+                  <td style={{ ...td, maxWidth: 220 }}>{o.ultima_actividad ? <><div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.ultima_actividad.titulo || o.ultima_actividad.tipo}</div><div style={{ fontSize: 11, color: '#8e88a8' }}>{fechaC(o.ultima_actividad.at)}</div></> : <span style={{ color: '#8e88a8' }}>—</span>}{o.proximo_paso ? <div style={{ fontSize: 11, color: '#4c1d95' }}>Sigue: {o.proximo_paso}</div> : null}</td>
+                  <td style={td}>{o.fecha_cierre_esperada ? <span style={{ color: o.cierre_vencido ? '#b91c1c' : o.cierre_en_mes ? '#14532d' : '#241d43', fontWeight: 700 }}>{o.fecha_cierre_esperada}{o.cierre_vencido ? ' · venció' : ''}</span> : <span style={{ color: '#b45309', fontSize: 12 }}>sin fecha</span>}</td>
+                  <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pesos(o.valor)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{o.prob}%{o.prob_manual ? <div style={{ fontSize: 10, color: '#8e88a8' }}>manual</div> : null}</td>
+                  <td style={{ ...td, textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{pesos(o.valor * o.prob / 100)}</td>
+                </tr>)}
+                {!lista.length && <tr><td colSpan={9} style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Sin oportunidades con este filtro.</td></tr>}</tbody>
+              </table></div>
+            </div>
+          </div>);
+        })()}
 
         {vista === 'cierre' && (
           <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>
@@ -358,6 +411,59 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                 </table>
               </>)}
             </div>
+          </div>
+        )}
+      </Sheet>
+      {leadId && <LeadDrawer contactId={leadId} onClose={() => setLeadId(null)} />}
+      <Sheet open={!!opId} onClose={() => setOpId(null)} width={620} zIndex={1150} title={op?.deal ? <span>{op.deal.companies?.nombre_comercial || op.deal.companies?.nombre || op.deal.nombre}{op.expansion ? <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, background: '#dcfce7', color: '#14532d', borderRadius: 999, padding: '2px 8px' }}>Expansión</span> : <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '2px 8px' }}>Cliente nuevo</span>}</span> : 'Oportunidad'}>
+        {opId && (
+          <div style={{ padding: '4px 18px 40px', fontSize: 13.5, color: '#241d43' }}>
+            {!op && <p style={{ color: '#8e88a8' }}>Cargando…</p>}{op?.error && <p style={{ color: '#b91c1c' }}>{op.error}</p>}
+            {op?.deal && (() => { const dl = op.deal; const k = dl.contacts || {}; const q = op.cotizacion; const ed = { probabilidad: opEdit.probabilidad ?? dl.probabilidad ?? '', fecha_cierre_esperada: opEdit.fecha_cierre_esperada ?? dl.fecha_cierre_esperada ?? '', stage: opEdit.stage ?? dl.stage, motivo_perdida: opEdit.motivo_perdida ?? dl.motivo_perdida ?? '', proximo_paso: opEdit.proximo_paso ?? dl.proximo_paso ?? '', proximo_paso_at: opEdit.proximo_paso_at ?? (dl.proximo_paso_at ? String(dl.proximo_paso_at).slice(0, 10) : '') };
+              const guardar = async () => { const r = await postJ({ accion: 'deal_editar', id: dl.id, cambios: opEdit }); if (r.error) { alert(r.error); return; } setOpEdit({}); abrirOp(dl.id); cargar(); };
+              return (<>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', fontSize: 12.5, color: '#6b6580' }}>
+                  <span>Contacto: <a onClick={() => k.id && setLeadId(k.id)} style={{ color: '#5B4BD6', fontWeight: 800, cursor: 'pointer' }}>{k.nombre || '—'} {k.apellido || ''}</a></span>
+                  {k.created_at && <span>Lead desde <b style={{ color: '#241d43' }}>{String(k.created_at).slice(0, 10)}</b></span>}{k.fuente && <span>Canal <b style={{ color: '#241d43' }}>{k.fuente}</b></span>}<span>Vendedor <b style={{ color: '#241d43' }}>{dl.team_members?.nombre || '—'}</b></span>
+                  {op.expansion && <span>Suscripciones activas: <b style={{ color: '#14532d' }}>{op.suscripciones_activas.map((s: any) => `${s.nombre_plan} (${pesos(s.mrr)}/mes)`).join(', ')}</b></span>}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                  {op.url_cotizacion && <a href={op.url_cotizacion} target="_blank" rel="noopener" style={{ border: '1px solid #e8e5f0', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, color: '#5B4BD6', textDecoration: 'none' }}>Abrir cotización pública</a>}
+                  {k.whatsapp && <a href={`/admin/crm?tab=whatsapp&q=${encodeURIComponent(k.whatsapp)}`} style={{ border: '1px solid #e8e5f0', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, color: '#5B4BD6', textDecoration: 'none' }}>Ir al chat</a>}
+                  <a href={`/admin/crm?tab=pipeline&lead=${k.id}`} style={{ border: '1px solid #e8e5f0', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, color: '#5B4BD6', textDecoration: 'none' }}>Ficha completa</a>
+                </div>
+                {/* Editar lo que decide el forecast */}
+                <div style={{ marginTop: 14, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8' }}>Lo que decide el forecast</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                    <label style={lbl}>Etapa<select style={inp} value={ed.stage} onChange={e => setOpEdit({ ...opEdit, stage: e.target.value })}>{['calificacion', 'demo_agendada', 'demo_realizada', 'cotizacion_enviada', 'negociacion', 'cerrada_ganada', 'cerrada_perdida'].map(v => <option key={v} value={v}>{v.replace(/_/g, ' ')}</option>)}</select></label>
+                    <label style={lbl}>Probabilidad %<input style={inp} type="number" min={0} max={100} value={ed.probabilidad} onChange={e => setOpEdit({ ...opEdit, probabilidad: e.target.value })} placeholder="por etapa: 20/40/60/90" /></label>
+                    <label style={lbl}>Fecha de cierre<input style={inp} type="date" value={ed.fecha_cierre_esperada} onChange={e => setOpEdit({ ...opEdit, fecha_cierre_esperada: e.target.value })} /></label>
+                    <label style={lbl}>Siguiente paso · fecha<input style={inp} type="date" value={ed.proximo_paso_at} onChange={e => setOpEdit({ ...opEdit, proximo_paso_at: e.target.value })} /></label>
+                    <label style={{ ...lbl, gridColumn: '1 / -1' }}>Siguiente paso<input style={inp} value={ed.proximo_paso} onChange={e => setOpEdit({ ...opEdit, proximo_paso: e.target.value })} placeholder="Llamar el lunes para cerrar; mandar comparativa…" /></label>
+                    {/perdid/.test(ed.stage) && <label style={{ ...lbl, gridColumn: '1 / -1' }}>Motivo de pérdida (obligatorio)<input style={inp} value={ed.motivo_perdida} onChange={e => setOpEdit({ ...opEdit, motivo_perdida: e.target.value })} placeholder="precio / se fue con X / no era el momento / sin seguimiento" /></label>}
+                  </div>
+                  <button onClick={guardar} disabled={!Object.keys(opEdit).length} style={{ marginTop: 10, border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: Object.keys(opEdit).length ? 1 : .5 }}>Guardar cambios</button>
+                </div>
+                {/* Cotización */}
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Cotización {q ? `#${q.numero || 's/n'} · ${q.estado} · ${pesos(q.total)}` : ''}</div>
+                  {!q && <p style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin cotización ligada.</p>}
+                  {q && (<>
+                    <div style={{ fontSize: 12.5, color: '#6b6580' }}>{q.plan ? `Plan ${q.plan} · ` : ''}{q.sucursales ? `${q.sucursales} sucursales · ` : ''}{q.periodo || ''}{q.vigencia ? ` · vigente hasta ${String(q.vigencia).slice(0, 10)}` : ''}</div>
+                    <div style={{ fontSize: 12.5, marginTop: 4 }}><b>{q.vistas || 0} vistas</b>{q.primera_vista_at ? ` · primera ${String(q.primera_vista_at).slice(0, 16).replace('T', ' ')}` : ''}{q.ultima_vista_at ? ` · última ${String(q.ultima_vista_at).slice(0, 16).replace('T', ' ')}` : ' · todavía no la abre'}</div>
+                    {Array.isArray(q.items) && q.items.length > 0 && <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6, fontSize: 12.5 }}><tbody>{q.items.slice(0, 12).map((it: any, i: number) => <tr key={i} style={{ borderTop: '1px solid #f0eef6' }}><td style={{ padding: '5px 2px' }}>{it.nombre || it.titulo || it.concepto || it.descripcion || 'Concepto'}{it.cantidad ? <span style={{ color: '#8e88a8' }}> × {it.cantidad}</span> : null}</td><td style={{ padding: '5px 2px', textAlign: 'right', fontWeight: 700 }}>{it.total != null ? pesos(it.total) : it.precio != null ? pesos(it.precio) : ''}</td></tr>)}</tbody></table>}
+                    {op.vistas.length > 0 && <div style={{ marginTop: 6, fontSize: 11.5, color: '#8e88a8' }}>Aperturas: {op.vistas.slice(0, 8).map((v: any) => `${String(v.created_at).slice(5, 16).replace('T', ' ')}${v.segundos ? ` (${v.segundos}s)` : ''}`).join(' · ')}</div>}
+                  </>)}
+                </div>
+                {/* Actividades */}
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Últimas actividades del prospecto</div>
+                  {!op.actividades.length && <p style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin actividades registradas.</p>}
+                  {op.actividades.map((a: any) => <div key={a.id} style={{ padding: '6px 0', borderTop: '1px solid #f0eef6', fontSize: 12.5 }}><span style={{ color: '#8e88a8' }}>{String(a.created_at).slice(0, 16).replace('T', ' ')}</span> · <b>{a.titulo || a.tipo}</b>{a.descripcion ? <div style={{ color: '#6b6580' }}>{String(a.descripcion).slice(0, 220)}</div> : null}</div>)}
+                </div>
+                {op.otras_oportunidades.length > 0 && <div style={{ marginTop: 14, background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, color: '#78350f' }}><b>Este contacto tiene {op.otras_oportunidades.length} oportunidad(es) más:</b> {op.otras_oportunidades.map((o: any) => `${o.nombre} (${o.stage}, ${pesos(o.valor_total || 0)})`).join(' · ')}. Si son la misma venta, ciérralas como perdidas con motivo «duplicada».</div>}
+              </>); })()}
           </div>
         )}
       </Sheet>
