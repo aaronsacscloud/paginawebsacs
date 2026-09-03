@@ -28,3 +28,17 @@ con probabilidad; cierre de mes (ingreso − gastos = utilidad) guardado; report
   el historial («la última vez veíamos X para tus 2 tiendas…»), retomar donde se quedó y NO volver a pedir los
   tres datos que ya tenemos. Implementar como bloque «HISTORIAL» en decidirTurno cuando hay reactivación
   espontánea; el resumen se genera con Haiku sobre los últimos 60 mensajes + perfil y se guarda en ti_perfil.resumen.
+
+## D. Cadena de la reunión y plan del día (decisiones 2026-09-03, construido)
+- Relojes: resultado el mismo día en que termina la reunión; minuta 24 h después de «asistió»; interés/cotización 48 h
+  después de la minuta. Todo vive en `CAMPOS` (campos.ts): `reunion_resultado`, `reunion_minuta`, `reunion_interes`,
+  `cotizacion_estado`, con `reintentoDias` (se vuelve a pedir hasta resolverse) y `despues` (efectos permitidos:
+  demo_hecha, descalificado sin interés, deal perdido/suspendido).
+- Cotización sin movimiento 30 días: aviso cada 7 días hasta que el consultor cambie el estatus (viva / suspendida / sin
+  interés). Nada cambia solo (decisión del dueño). «Sigue viva» reinicia el reloj (updated_at).
+- Escalamiento (`escalarDeudas`): deuda comercial > 24 h → aviso en Sistema; a las 48 h y cada 24 h, aviso «Nº» urgente.
+- Dueño de la reunión: `bookings.consultor_id` = owner del contacto o `ti_config.consultor_default` al agendar; las
+  tareas de la cadena nacen con ese owner.
+- Plan del día: sin `wa_libre` (lo lleva el agente); la llamada de rescate del agente pasa a prioridad 1 con
+  `agendar_discovery`. Datos agrupa la cadena en «Reunión y cotización» (primer grupo cuando hay).
+- Embudo: nueva métrica «Reunión sin resultado» (`citas_sin_resultado`).
