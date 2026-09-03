@@ -83,7 +83,10 @@ export const GET: APIRoute = async ({ url }) => {
     const { data: contactos } = await supabase.from('contacts')
       .select('id, nombre, apellido, whatsapp, telefono, tipo, company_id, wa_optout, companies(nombre)')
       .is('archived_at', null).eq('wa_optout', false).limit(3000);
-    const audiencia = (contactos || [])
+    // Los leads que lleva el agente no entran a difusiones: se cruzarían con su ciclo (decisión 2026-09-04).
+    const { enCicloAgente } = await import('../../../../lib/crm/ti/semaforo');
+    const enCiclo = await enCicloAgente((contactos || []).map((c: any) => c.id));
+    const audiencia = (contactos || []).filter((c: any) => !enCiclo.has(c.id))
       .map((c: any) => ({
         contact_id: c.id,
         nombre: `${c.nombre || ''} ${c.apellido || ''}`.trim() || '(sin nombre)',

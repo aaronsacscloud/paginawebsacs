@@ -164,7 +164,8 @@ export async function generarPlan() {
   // (T3, T5, T6, T8) y las llamadas a ciegas 3ª y 4ª (T4, T7) son del agente y
   // su reloj de silencio; el humano se queda con T1 y T2 (las llamadas con
   // mayor tasa de contacto), la llamada de rescate y la tarjeta de decisión.
-  const agenteVivo = (cfg as any).agente_activo === true && (cfg as any).agente_modo === 'vivo';
+  // Con el agente ACTIVO (sombra o vivo) los pasos de WhatsApp de la cadencia humana son suyos: la cadencia queda solo para correo y recordatorios fijos (decisión 2026-09-04).
+  const agenteVivo = (cfg as any).agente_activo === true;
   const PASOS_DEL_AGENTE = new Set(['T3', 'T4', 'T5', 'T6', 'T7', 'T8']);
   for (const cad of cads || []) {
     const c = (cad as any).contacts;
@@ -365,7 +366,7 @@ async function relojes(cfg: TiConfig, ahora: Date) {
   //    pero SOLO si su plantilla de Meta está configurada (cfg.plantillas_meta).
   //    Sin config, se desliza como cualquier tarea: nunca texto libre solo. ──
   const mapa = (cfg as any).plantillas_meta || {};
-  if (Object.keys(mapa).length && await permitido('valvula_ti')) {
+  if (Object.keys(mapa).length && (cfg as any).agente_activo !== true && await permitido('valvula_ti')) {   // con el agente activo, la válvula no manda plantillas sola
     const { data: vencidas } = await supabase.from('ti_tareas')
       .select('id, paso, contact_id, payload')
       .eq('estado', 'pendiente').eq('tipo', 'wa_plantilla')

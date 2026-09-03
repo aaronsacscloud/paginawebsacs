@@ -24,6 +24,7 @@ import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUs
 import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './promociones';
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
+import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
 
@@ -323,6 +324,7 @@ export async function toqueCotizacion(contactId: string, q: { id: string; numero
   if ((ultAuto || []).length) return { ok: false, motivo: 'ya_hubo_automatico_24h' };
   const { data: pend } = await supabase.from('ti_envios').select('id').eq('contact_id', contactId).in('estado', ['pendiente', 'enviando']).limit(1);
   if ((pend || []).length) return { ok: false, motivo: 'ya_hay_pendiente' };
+  const sem = await puedeAutomatico(contactId, { origen: 'cotizacion' }); if (!sem.ok) return { ok: false, motivo: sem.motivo };
   const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', contactId).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
   const ventana = (ult || []).length && ahora.getTime() - Date.parse(ult![0].ocurrio_at) < 24 * 3600e3;
   const par = ventana ? null : await parListoPara('seguimiento');
@@ -432,6 +434,8 @@ export async function proponerRespuestas(): Promise<any> {
       await log({ accion: 'lead_revivido', contact_id: cid, razon: 'escribió después de descalificado por silencio' });
       c.lifecycle_stage = 'lead';
     }
+    // EL LEAD RESPONDIÓ: lo automático que estuviera programado para él se cancela; solo sale la respuesta.
+    try { const n = await alResponderElLead(cid); if (n) res.cancelados_por_respuesta = (res.cancelados_por_respuesta || 0) + n; } catch {}
     if (!ETAPAS_SDR.includes(c.lifecycle_stage)) {
       // CANDADO DE CLIENTE (S5.1): el agente no propone, no toca ni manda plantillas. Si un cliente escribe, va a soporte como tarea (una por cliente abierta).
       res.saltados++;
@@ -688,6 +692,15 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   if (enSombra) { const tels = (cfg.agente_prueba_telefonos || []).map((t: any) => String(t).replace(/\D/g, '')).filter(Boolean).join(','); q = q.or(`aprobado_por.not.is.null${tels ? `,telefono.in.(${tels})` : ''}`); }   // en sombra salen los de prueba y lo aprobado por una persona
   const { data: pend } = await q;
   if (!(pend || []).length) return res;
+  // COMPUERTA FINAL: un automático (no respuesta, sin aprobación humana) vuelve a pasar el semáforo justo antes de salir.
+  const listos: any[] = [];
+  for (const e of pend || []) {
+    if (e.origen === 'respuesta' || e.aprobado_por || esPrueba(cfg, e.telefono)) { listos.push(e); continue; }
+    const sem = await puedeAutomatico(e.contact_id, { telefono: e.telefono, origen: e.origen });
+    if (sem.ok) listos.push(e); else { await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: `semáforo: ${sem.motivo}`, updated_at: ahora.toISOString() }).eq('id', e.id); await log({ accion: 'agente_semaforo', contact_id: e.contact_id, razon: `${e.origen} detenido: ${sem.motivo}` }); res.semaforo = (res.semaforo || 0) + 1; }
+  }
+  pend!.length = 0; pend!.push(...listos);
+  if (!pend!.length) return res;
   const { enviarTexto } = await import('../../whatsapp/kapso-api');
   const { registrarMensaje } = await import('../../whatsapp/espejo');
   for (const e of pend || []) {
@@ -1128,6 +1141,7 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
       // creado hace poco para este lead, este tick no mete otro (pasó: dos toques con 22 s de diferencia).
       const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
       if ((reciente || []).length) continue;
+      if (!prueba) { const sem = await puedeAutomatico(cid, { telefono: ultimo[cid].telefono, origen: 'silencio' }); if (!sem.ok) { res.semaforo = res.semaforo || {}; res.semaforo[sem.motivo] = (res.semaforo[sem.motivo] || 0) + 1; continue; } }
       const d = await decidirTurno(cid, nota);
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));

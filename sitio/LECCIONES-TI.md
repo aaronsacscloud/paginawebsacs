@@ -255,3 +255,18 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   envíos, Aprendizaje, Calificación, Revisión, Reactivación y Consumo como entradas de primer nivel. Los componentes
   siguen existiendo (se reutilizan dentro de Informes/Ajustes); `vistaTab` queda como resto sin uso hasta limpiarlo.
 - Regla: si pide decisión → cola de la Torre; si solo se mira → Informes; si se configura → Ajustes. Señales → pulso y feed.
+
+## 2026-09-04 · Semáforo de automáticos (para que los flujos no se crucen)
+
+- `lib/crm/ti/semaforo.ts` → `puedeAutomatico(contactId, {telefono, origen, aprobadoHumano})`. Lo consultan el toque de
+  silencio, el toque por cotización, la aprobación de reactivación (solo dedupe) y la COMPUERTA FINAL del despachador
+  (todo automático sin aprobación humana vuelve a pasar antes de salir; si no pasa, queda `reemplazado` con el motivo).
+  Reglas: horas silenciosas 21–8 CDMX (solo se responde), opt-out/píldora, humano escribió < 4 h, un automático cada
+  24 h por lead Y por teléfono, tope semanal (3), no apilar pendientes del mismo teléfono. Config en ti_config:
+  `silencio_automaticos`, `tope_semanal_automaticos`.
+- `alResponderElLead`: cuando el lead escribe, todo lo automático programado para él pasa a `reemplazado`; solo sale la
+  respuesta. Va en `proponerRespuestas`.
+- Apagados con el agente activo: autorrespuestas del inbox (bienvenida / fuera de horario: `alRecibirMensaje` sale
+  temprano), pasos de WhatsApp de la cadencia humana (antes solo en modo vivo; ahora con el agente activo) y la válvula.
+  La cadencia humana queda para correo y las llamadas T1/T2 si no hay agente.
+- Difusiones: la audiencia excluye a los leads en ciclo del agente (`enCicloAgente`).

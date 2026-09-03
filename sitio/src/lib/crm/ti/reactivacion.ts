@@ -9,6 +9,7 @@ import { leerConfig } from './motor';
 import { parListoPara, paramAngulo, FAMILIAS, type Familia } from './plantillas-agente';
 import { promoVigente, promoTexto } from './promociones';
 import { notificar } from '../notificaciones';
+import { puedeAutomatico } from './semaforo';
 
 export const SEGMENTOS: Record<string, { l: string; corto: string; desc: string }> = {
   intencion: { l: 'Pidió precio o demo y se enfrió', corto: 'Pidió precio/demo', desc: 'Llegó a preguntar precio, planes, costo o demo. Intención clara que no cerró.' },
@@ -154,6 +155,8 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
   const familia = (o.familia || cfgP.reactivacion_familia || 'reactivacion') as Familia;
   const par = await parListoPara(familia);
   if (!par) return { error: 'No hay plantilla aprobada por Meta todavía (ni la de reactivación ni la de seguimiento).' };
+  const sem = await puedeAutomatico(r.contact_id, { telefono: r.telefono, origen: 'reactivacion', aprobadoHumano: true });
+  if (!sem.ok && !['horas_silenciosas'].includes(sem.motivo)) return { error: `El semáforo lo detiene: ${sem.motivo.replace(/_/g, ' ')}. Se puede volver a intentar mañana.` };
   const { data: k } = await supabase.from('contacts').select('nombre').eq('id', r.contact_id).maybeSingle();
   const nombreK = String(k?.nombre || '').trim();
   const primer = !nombreK || /^contacto\s*\d*$/i.test(nombreK) ? 'qué tal' : nombreK.split(/\s+/)[0];

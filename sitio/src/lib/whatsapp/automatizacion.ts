@@ -32,6 +32,8 @@ async function mandarAuto(convId: string, telefono: string, texto: string, marca
 
 /** Se llama tras espejar un mensaje ENTRANTE nuevo. */
 export async function alRecibirMensaje(convId: string) {
+  // Con el agente activo, él contesta 24/7: las autorrespuestas de bienvenida y «fuera de horario» serían una segunda voz (decisión 2026-09-04).
+  try { const { leerConfig } = await import('../crm/ti/motor'); const cfgA: any = await leerConfig(); if (cfgA?.agente_activo === true) return; } catch { /* sin config: sigue el flujo normal */ }
   const { data: cfg } = await supabase.from('wa_config').select('*').eq('id', 1).maybeSingle();
   if (!cfg) return;
   const { data: conv } = await supabase.from('wa_conversaciones')
