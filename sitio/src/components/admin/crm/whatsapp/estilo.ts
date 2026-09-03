@@ -57,10 +57,19 @@ export const toolBtn = (activo?: boolean, accent?: boolean): CSSProperties => ({
  * el número queda corrido por el padding: medido, seguía saliéndose 5 px—.
  * Quien use esta función DEBE poner también className="wa-pop".
  */
+/**
+ * Los desplegables de la barra del composer. Se abren HACIA ARRIBA.
+ *
+ * `maxHeight` no es un detalle: sin él, una lista larga crece más allá del
+ * borde de la ventana y se pierden las primeras opciones, que además son las
+ * más usadas —arriba va lo importante—. Con tope, lo que no cabe rueda por
+ * dentro y siempre se ve dónde empieza la lista.
+ */
 export const popup = (w: number, left = 0): CSSProperties => ({
   position: 'absolute', bottom: '100%', marginBottom: 8, left, width: w, zIndex: 950,
   background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12,
-  boxShadow: '0 12px 32px rgba(17,24,39,.14)', overflow: 'hidden',
+  boxShadow: '0 12px 32px rgba(17,24,39,.14)',
+  maxHeight: 'min(62dvh, 460px)', overflowY: 'auto', overflowX: 'hidden',
 });
 
 /** Burbujas del hilo. */

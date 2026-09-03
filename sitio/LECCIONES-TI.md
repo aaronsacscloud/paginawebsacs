@@ -180,3 +180,16 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   escribieron en 72 h tras el intento k; arranca con 28/16/9 hasta tener 5 muestras).
 - **Inbox:** vista «Mensajes programados» (`fi=programados`, `counts.programados`) y chip «Programado HH:MM» en la
   lista. La franja «ya toca» del plan no muestra fechas pasadas.
+
+## 2026-09-04 · Finanzas como grupo (frente B)
+
+- Cuatro páginas (`fin-gastos`, `fin-adeudos`, `fin-ingresos`, `fin-cierre`) sobre el MISMO componente
+  (`FinanzasTab pagina=…`) y el mismo motor: no hay dos verdades. `?tab=finanzas` sigue abriendo Gastos.
+- **Flujo semanal** (`flujoSemanal` en finanzas.ts): semanas lunes–domingo recortadas al mes; entradas = cobrado neto
+  real + renovaciones por `proxima_factura` + venta aceptada a +7 días; salidas = gastos por día de cobro (pagados en su
+  fecha real), adeudos por día de pago, cortes por `paga_el`, atrasados en la semana 1. Septiembre: la semana 3 y la 5
+  concentran nómina, Anthropic y SAT; el acumulado cierra en −97 mil si no entra más.
+- **Neto real**: `payments.neto`/`comision` cuando existen; la utilidad usa el neto y el KPI muestra el bruto.
+- **Adeudos** tiene proyección (meses que faltan y mes de liquidación contra la fecha límite).
+- **Cierre guiado**: checklist de lo pendiente antes del botón. **Alertas** diarias 8:00 (`fin-alertas`): vence en ≤3
+  días, adeudo por abonar, corte del lunes, atrasados.

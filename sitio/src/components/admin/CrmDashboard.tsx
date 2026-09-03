@@ -86,7 +86,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -200,7 +200,16 @@ const NAV_SECTIONS = [
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
-      { id: 'finanzas' as Tab, label: 'Finanzas', icon: 'pagos' },
+    ],
+  },
+  {
+    // Finanzas del negocio (decisión 2026-09-03): cuatro páginas, cada una con un solo trabajo.
+    label: 'Finanzas', sec: 'finanzas', icon: 'pagos',
+    items: [
+      { id: 'fin-gastos' as Tab, label: 'Gastos', icon: 'pagos' },
+      { id: 'fin-adeudos' as Tab, label: 'Adeudos', icon: 'cobros' },
+      { id: 'fin-ingresos' as Tab, label: 'Ingresos y flujo', icon: 'suscripciones' },
+      { id: 'fin-cierre' as Tab, label: 'Cierre mensual y anual', icon: 'dashboard' },
     ],
   },
   {
@@ -1090,8 +1099,14 @@ export default function CrmDashboard() {
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
-        ) : tab === 'finanzas' ? (
-          <ErrorBoundary><FinanzasTab /></ErrorBoundary>
+        ) : tab === 'finanzas' || tab === 'fin-gastos' ? (
+          <ErrorBoundary><FinanzasTab pagina="gastos" /></ErrorBoundary>
+        ) : tab === 'fin-adeudos' ? (
+          <ErrorBoundary><FinanzasTab pagina="adeudos" /></ErrorBoundary>
+        ) : tab === 'fin-ingresos' ? (
+          <ErrorBoundary><FinanzasTab pagina="ingresos" /></ErrorBoundary>
+        ) : tab === 'fin-cierre' ? (
+          <ErrorBoundary><FinanzasTab pagina="cierre" /></ErrorBoundary>
         ) : tab === 'embudo' ? (
           <ErrorBoundary><EmbudoTab /></ErrorBoundary>
         ) : tab === 'churn' ? (

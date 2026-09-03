@@ -10,6 +10,7 @@ import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
 import { optimizarImagen } from '../../../../lib/crm/imagen';
+import { CATS_EMOJI, TODOS_EMOJI, buscarEmoji } from '../../../../lib/crm/emojis';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCotizacion, IcoCalendario, IcoCamara } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
@@ -20,19 +21,6 @@ type Modo = 'wa' | 'correo' | 'nota';
 type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar' | 'prueba';
 
 // ── Catálogos portados ──
-const EMOJI_CATS: { id: string; icono: string; nombre: string; lista: string[] }[] = [
-  { id: 'frecuentes', icono: '🕐', nombre: 'Frecuentes', lista: ['👍', '❤️', '😂', '🙏', '😊', '🎉', '👏', '🔥', '✅', '😍', '🙌', '💪', '👌', '😅', '🤝', '💯', '🥳', '😉', '🙂', '☺️'] },
-  { id: 'smileys', icono: '😀', nombre: 'Smileys', lista: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤗', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😔', '😕', '🙁', '☹️', '😖', '😞', '😟', '😤', '😢', '😭', '😩', '🥺', '😬', '🤯', '😳', '🥵', '🥶', '😱', '😨'] },
-  { id: 'manos', icono: '👋', nombre: 'Manos', lista: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '💪'] },
-  { id: 'corazones', icono: '❤️', nombre: 'Corazones', lista: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '♥️'] },
-  { id: 'animales', icono: '🐶', nombre: 'Animales', lista: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦄', '🐝', '🦋', '🐙', '🐳', '🦉'] },
-  { id: 'comida', icono: '🍕', nombre: 'Comida', lista: ['🍕', '🍔', '🌮', '🌯', '🍟', '🍗', '🥗', '🍰', '🎂', '🍩', '🍪', '☕', '🍺', '🍷', '🥤', '🍎', '🍌', '🍇', '🍓', '🥑'] },
-  { id: 'actividades', icono: '⚽', nombre: 'Actividades', lista: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎯', '🎮', '🎲', '🎸', '🎤', '🎧', '🎬', '🎨', '🏆', '🥇', '🎁', '🎈', '🎊', '🎉'] },
-  { id: 'viajes', icono: '🚗', nombre: 'Viajes', lista: ['🚗', '🚕', '🚌', '🚚', '✈️', '🚀', '🛳️', '🏠', '🏢', '🏪', '🏬', '🏦', '🗺️', '📍', '🌎', '🌙', '☀️', '⛅', '🌧️', '⚡'] },
-  { id: 'objetos', icono: '💡', nombre: 'Objetos', lista: ['💡', '📱', '💻', '⌚', '📷', '📦', '📄', '📝', '📌', '📎', '✂️', '🔑', '🔒', '💳', '💰', '💵', '🛒', '🛍️', '🎟️', '📣'] },
-  { id: 'simbolos', icono: '✅', nombre: 'Símbolos', lista: ['✅', '❌', '⚠️', '❗', '❓', '💯', '🔴', '🟢', '🟡', '🔵', '⭐', '✨', '💫', '🔔', '🔕', '➡️', '⬅️', '🔄', '🆕', '🆓'] },
-];
-
 const VARIABLES = [
   { key: 'nombre', l: 'Nombre' }, { key: 'primer_nombre', l: 'Primer nombre' }, { key: 'email', l: 'Email' },
   { key: 'telefono', l: 'Teléfono' }, { key: 'empresa', l: 'Empresa' }, { key: 'plan', l: 'Plan' }, { key: 'etapa', l: 'Etapa' },
@@ -382,7 +370,13 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           todo raro". La altura se anima para que crezca en vez de saltar —
           160 ms, lo justo para que el ojo lo siga sin sentir que va lento. Quien
           pide menos movimiento no ve animación, solo el resultado. */}
-      <div className="wa-comp-caja" style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: movil ? 'visible' : 'hidden' }}>
+      {/* `overflow: visible` también en escritorio. Con `hidden`, los
+          desplegables de la barra —emoji, variables, snippets, adjuntar— se
+          abrían hacia arriba y esta caja los CORTABA: el de variables enseñaba
+          «Empresa / Plan / Etapa» con la primera línea partida a la mitad, y
+          parecía que la lista empezaba en medio. En el teléfono ya estaba en
+          `visible` justamente por esto. */}
+      <div className="wa-comp-caja" style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: 'visible' }}>
         {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
             no se escribe: en reposo el composer es una línea y ya. */}
         {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
@@ -758,14 +752,24 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           banda apilada bajo el composer (tabs + composer + barra + esto) y se
           comían medio hilo. El comentario interno vive en la barra, tras
           «Más». */}
-      {!movil && (
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 6, gap: 8 }}>
-          {waDisponible && (
-            <button onClick={() => { setComentario(true); setTexto(''); }}
-              style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: C.g500, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 6px', borderRadius: 6 }}>
-              <IcoBurbuja size={14} /> Añadir comentario
-            </button>
-          )}
+      {/* «Añadir comentario» estaba aquí abajo en gris de 11 px, debajo del
+          composer y a veces medio tapado por el borde de la ventana. Es de lo
+          más útil del hilo —lo que el equipo se dice sobre este cliente, y solo
+          lo ve el equipo— y se leía como un pie de página.
+
+          Ahora vive DENTRO de la caja, con su marco morado, el mismo color con
+          el que se pinta la nota cuando queda escrita. Así se entiende antes de
+          tocarlo que lo que escribas ahí NO le llega al cliente. */}
+      {!movil && waDisponible && !comentario && (
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 8, gap: 8 }}>
+          <button onClick={() => { setComentario(true); setTexto(''); }}
+            title="Una nota que solo ve el equipo — el cliente no la recibe"
+            style={{ border: `1px solid ${C.moradoAgua}`, background: C.moradoSuave, cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12.5, fontWeight: 700, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '8px 14px', borderRadius: 999, minHeight: 36 }}>
+            <IcoBurbuja size={15} /> Añadir comentario
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: '#8b84bb' }}>solo lo ve el equipo</span>
+          </button>
           <span style={{ flex: 1 }} />
         </div>
       )}
@@ -846,36 +850,62 @@ function PopIA({ onAccion }: { onAccion: (instr: string) => void }) {
 function PopEmoji({ onElegir, left }: { onElegir: (e: string) => void; left: number }) {
   const [cat, setCat] = useState('frecuentes');
   const [q, setQ] = useState('');
-  const c = EMOJI_CATS.find(x => x.id === cat)!;
-  // «Frecuentes» era una lista FIJA: se llamaba frecuentes y nunca aprendía de
-  // nadie. Ahora son de verdad los últimos que usaste, y la lista de fábrica
-  // solo rellena lo que falta para que la pestaña nunca se vea vacía el primer
-  // día. Se lee al abrir (no en cada tecla) porque toca localStorage.
+  /* «Frecuentes» son de verdad los últimos que usaste; la lista de fábrica solo
+     rellena lo que falta para que no se vea vacía el primer día. Se lee al
+     abrir (no en cada tecla) porque toca localStorage. */
   const mios = useMemo(() => (cat === 'frecuentes' ? leerRecientes('emoji') : []), [cat]);
-  const frecuentes = [...mios, ...c.lista.filter(e => !mios.includes(e))];
-  const lista = q
-    ? EMOJI_CATS.flatMap(x => x.lista).filter((e, i, a) => a.indexOf(e) === i).slice(0, 60)
-    : (cat === 'frecuentes' ? frecuentes : c.lista);
+
+  /* La búsqueda es por NOMBRE. Antes «buscar» solo aplanaba las mismas listas
+     y devolvía los primeros 60 sin mirar lo escrito: teclear «corazon» daba lo
+     mismo que teclear cualquier cosa. Ahora cada emoji tiene su nombre en
+     español —y se busca sin acentos— así que «cora», «dinero» o «envio»
+     encuentran. Ver `lib/crm/emojis.ts`. */
+  const lista: string[] = useMemo(() => {
+    if (q.trim()) return buscarEmoji(q).map(x => x.e);
+    if (cat === 'frecuentes') {
+      const base = CATS_EMOJI[0].lista.map(x => x.e);
+      return [...mios, ...base.filter(e => !mios.includes(e))];
+    }
+    return (CATS_EMOJI.find(x => x.id === cat)?.lista || []).map(x => x.e);
+  }, [q, cat, mios]);
+  const titulo = q.trim() ? `Resultados (${lista.length})`
+    : cat === 'frecuentes' ? 'Los que más usas'
+    : CATS_EMOJI.find(x => x.id === cat)?.nombre || '';
+  const nombreDe = (e: string) => TODOS_EMOJI.find(x => x.e === e)?.n || '';
+
   return (
-    <div className="wa-pop" style={popup(320, left)}>
-      <div style={{ display: 'flex', borderBottom: `1px solid ${C.g100}` }}>
-        {EMOJI_CATS.map(x => (
+    <div className="wa-pop" style={popup(352, left)}>
+      {/* La barra de categorías NO rueda con la rejilla: si se va con el
+          scroll, a media búsqueda ya no sabes en cuál estás. */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${C.g100}`, position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
+        <button onClick={() => { setCat('frecuentes'); setQ(''); }} title="Los que más usas"
+          style={{ flex: 1, border: 'none', background: cat === 'frecuentes' && !q ? C.moradoSuave : 'none', cursor: 'pointer', padding: '9px 0 7px', fontSize: 17, position: 'relative' }}>
+          🕐{cat === 'frecuentes' && !q && <span style={{ position: 'absolute', bottom: 0, left: 6, right: 6, height: 2, background: C.morado, borderRadius: 999 }} />}
+        </button>
+        {CATS_EMOJI.map(x => (
           <button key={x.id} onClick={() => { setCat(x.id); setQ(''); }} title={x.nombre}
-            style={{ flex: 1, border: 'none', background: cat === x.id ? C.moradoSuave : 'none', cursor: 'pointer', padding: '7px 0 5px', fontSize: 14, position: 'relative' }}>
+            style={{ flex: 1, border: 'none', background: cat === x.id && !q ? C.moradoSuave : 'none', cursor: 'pointer', padding: '9px 0 7px', fontSize: 17, position: 'relative' }}>
             {x.icono}
-            {cat === x.id && <span style={{ position: 'absolute', bottom: 0, left: 6, right: 6, height: 2, background: C.morado, borderRadius: 999 }} />}
+            {cat === x.id && !q && <span style={{ position: 'absolute', bottom: 0, left: 6, right: 6, height: 2, background: C.morado, borderRadius: 999 }} />}
           </button>
         ))}
       </div>
-      <div style={{ padding: '8px 10px 0' }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar…"
-          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '5px 8px', fontSize: 12, fontFamily: 'inherit' }} />
+      <div style={{ padding: '9px 10px 0', position: 'sticky', top: 41, background: '#fff', zIndex: 2 }}>
+        <input value={q} onChange={e => setQ(e.target.value)} autoFocus
+          placeholder="Busca: corazón, dinero, envío, listo…"
+          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit' }} />
       </div>
-      <div style={{ padding: '6px 10px 2px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>{q ? 'Resultados' : c.nombre}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 2, padding: '0 10px 10px', maxHeight: 200, overflowY: 'auto' }}>
+      <div style={{ padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>{titulo}</div>
+      {!lista.length && (
+        <div style={{ padding: '4px 12px 14px', fontSize: 12, color: C.g400 }}>Nada con «{q}». Prueba con una palabra más corta.</div>
+      )}
+      {/* 8 por fila en vez de 10, y de 36 px: a 30 px con letra de 18 no se
+          distingue un 😅 de un 😂, que es justo lo que se viene a elegir. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 2, padding: '0 10px 12px' }}>
         {lista.map((e, i) => (
-          <button key={`${e}-${i}`} onClick={() => { marcarReciente('emoji', e, 16); onElegir(e); }}
-            style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, borderRadius: 6 }}
+          <button key={`${e}-${i}`} onClick={() => { marcarReciente('emoji', e, 24); onElegir(e); }}
+            title={nombreDe(e)} aria-label={nombreDe(e) || e}
+            style={{ width: 36, height: 36, border: 'none', background: 'none', cursor: 'pointer', fontSize: 24, lineHeight: 1, borderRadius: 8 }}
             onMouseEnter={ev => (ev.currentTarget.style.background = C.g100)} onMouseLeave={ev => (ev.currentTarget.style.background = 'none')}>{e}</button>
         ))}
       </div>

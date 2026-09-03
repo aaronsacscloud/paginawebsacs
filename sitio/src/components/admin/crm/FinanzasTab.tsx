@@ -21,11 +21,13 @@ const venceEn = (g: any, mes: string) => { const y = Number(mes.slice(0, 4)), m 
 const diasPara = (fecha: string) => Math.round((Date.parse(fecha) - Date.parse(hoyCdmx())) / 86400e3);
 const textoDias = (n: number) => n === 0 ? 'hoy' : n > 0 ? `en ${n} día${n === 1 ? '' : 's'}` : `venció hace ${-n} día${n === -1 ? '' : 's'}`;
 
-export default function FinanzasTab() {
+export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' | 'ingresos' | 'cierre' } = {}) {
   const [mes, setMes] = useState(() => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7));
   const [d, setD] = useState<any>(null);
   const [anual, setAnual] = useState<any>(null);
-  const [vista, setVista] = useState<'gastos' | 'ingresos' | 'pipeline' | 'cierre'>('gastos');
+  const [vista, setVistaRaw] = useState<'gastos' | 'adeudos' | 'ingresos' | 'pipeline' | 'cierre'>(pagina || 'gastos');
+  const setVista = (v: any) => setVistaRaw(pagina ? (v === 'pipeline' ? 'ingresos' : pagina) : v);
+  const [semana, setSemana] = useState<number | null>(null);
   const [form, setForm] = useState<any>(vacio);
   const [abierto, setAbierto] = useState(false);
   const [msg, setMsg] = useState('');
@@ -52,7 +54,7 @@ export default function FinanzasTab() {
     <div style={{ padding: '18px 22px 60px', maxWidth: 1180, margin: '0 auto', color: '#241d43' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#5B4BD6' }}>Finanzas</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#5B4BD6' }}>Finanzas{pagina ? ` · ${({ gastos: 'Gastos', adeudos: 'Adeudos', ingresos: 'Ingresos y flujo', cierre: 'Cierre mensual y anual' } as any)[pagina]}` : ''}</div>
           <h1 style={{ margin: '4px 0 2px', fontSize: 26, textTransform: 'capitalize' }}>{nombreMes(mes)} {cerrado && <span style={{ fontSize: 12, verticalAlign: 'middle', background: '#dcfce7', color: '#14532d', borderRadius: 999, padding: '3px 10px', textTransform: 'none', fontWeight: 800 }}>Mes cerrado</span>}</h1>
           <p style={{ margin: 0, color: '#6b6580', fontSize: 13.5 }}>Lo que entró, lo que falta por entrar, lo que hay que pagar y lo que queda.</p>
         </div>
@@ -66,7 +68,7 @@ export default function FinanzasTab() {
       {d?.error && <p style={{ color: '#b91c1c' }}>{d.error}</p>}
       {d && !d.error && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 16 }}>
-          <KpiCard label="Cobrado este mes" valor={pesos(d.ingresos.cobrado)} color="#14532d" sub={`${d.ingresos.pagos.length} pagos confirmados`} onClick={() => setVista('ingresos')} activo={vista === 'ingresos'} />
+          <KpiCard label="Cobrado este mes (neto)" valor={pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado)} color="#14532d" sub={`${d.ingresos.pagos.length} pagos · bruto ${pesos(d.ingresos.cobrado)}${d.ingresos.comisiones_pasarela ? ` · pasarela −${pesos(d.ingresos.comisiones_pasarela)}` : ''}`} onClick={() => setVista('ingresos')} activo={vista === 'ingresos'} />
           <KpiCard label="Por cobrar (renovaciones)" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={`${d.ingresos.por_cobrar_lista.length} suscripciones vencen este mes`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Por cobrar de venta nueva" valor={pesos(d.ingresos.ventas_aceptadas || 0)} color="#1e3a8a" sub={`${(d.ingresos.ventas_aceptadas_lista || []).length} cotizaciones aceptadas sin pago`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}${d.adeudos?.toca ? ` + ${pesos(d.adeudos.toca)} adeudos` : ''}${d.atrasados?.total ? ` + ${pesos(d.atrasados.total)} atrasados` : ''}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
@@ -74,7 +76,7 @@ export default function FinanzasTab() {
           <KpiCard label="Utilidad estimada" valor={pesos(d.utilidad.estimada)} color={d.utilidad.estimada >= 0 ? '#14532d' : '#7f1d1d'} sub={`${pesos(d.utilidad.si_cobra_todo)} si cobras todo lo del mes`} onClick={() => setVista('cierre')} activo={vista === 'cierre'} />
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 16 }}>
-          {(['gastos', 'ingresos', 'pipeline', 'cierre'] as const).map(v => <button key={v} style={chip(vista === v)} onClick={() => setVista(v)}>{{ gastos: 'Gastos y suscripciones', ingresos: 'Ingresos', pipeline: 'Pipeline de ventas', cierre: 'Cierre y reporte anual' }[v]}</button>)}
+          {!pagina && (['gastos', 'adeudos', 'ingresos', 'pipeline', 'cierre'] as const).map(v => <button key={v} style={chip(vista === v)} onClick={() => setVista(v)}>{{ gastos: 'Gastos y suscripciones', adeudos: 'Adeudos', ingresos: 'Ingresos y flujo', pipeline: 'Pipeline de ventas', cierre: 'Cierre y reporte anual' }[v]}</button>)}
         </div>
 
         {vista === 'gastos' && (
@@ -149,6 +151,11 @@ export default function FinanzasTab() {
               </div>
             )}
 
+          </div>
+        )}
+
+        {(vista === 'adeudos' || (vista === 'gastos' && !pagina)) && (
+          <div style={{ marginTop: 14 }}>
             {/* ADEUDOS: total, saldo, cuota del mes, atraso y abonos */}
             <div style={{ marginTop: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -210,6 +217,30 @@ export default function FinanzasTab() {
                 {!(d.adeudos?.lista || []).length && <div style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin adeudos activos.</div>}
               </div>
             </div>
+            {vista === 'adeudos' && (d.adeudos?.lista || []).length > 0 && (
+              <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, padding: 16 }}>
+                <b style={{ fontSize: 15 }}>Proyección</b>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, fontSize: 13 }}><thead><tr style={{ color: '#8e88a8', fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>Adeudo</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Saldo</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Cuota</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Meses que faltan</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Se liquida</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Atraso</th></tr></thead>
+                  <tbody>{d.adeudos.lista.map((a: any) => { const meses = a.cuota_mes ? Math.ceil(a.saldo / a.cuota_mes) : null; const fin = meses ? mover(mes, meses - 1) : null; return <tr key={a.id} style={{ borderTop: '1px solid #f0eef6' }}><td style={{ padding: '8px', fontWeight: 800 }}>{a.nombre}</td><td style={{ padding: '8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pesos(a.saldo)}</td><td style={{ padding: '8px', textAlign: 'right' }}>{a.cuota_mes ? pesos(a.cuota_mes) : <span style={{ color: '#b45309' }}>sin cuota</span>}</td><td style={{ padding: '8px', textAlign: 'right' }}>{meses ?? '—'}</td><td style={{ padding: '8px', textTransform: 'capitalize' }}>{fin ? nombreMes(fin) : '—'}{a.fecha_limite ? <div style={{ fontSize: 11, color: fin && fin > a.fecha_limite.slice(0, 7) ? '#b91c1c' : '#8e88a8' }}>límite {a.fecha_limite}</div> : null}</td><td style={{ padding: '8px', textAlign: 'right', color: a.atraso > 0 ? '#b91c1c' : undefined, fontWeight: a.atraso > 0 ? 800 : undefined }}>{a.atraso > 0 ? pesos(a.atraso) : '—'}</td></tr>; })}</tbody></table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {vista === 'ingresos' && (d.flujo || []).length > 0 && (
+          <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><b>Flujo de caja por semana</b><span style={{ color: '#6b6580', fontSize: 12.5 }}>Cobrado neto real + renovaciones + venta nueva, contra gastos, adeudos, comisiones y atrasados. Toca una semana para ver el detalle.</span></div>
+            <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+              <thead><tr><th style={th}>Semana</th><th style={{ ...th, textAlign: 'right' }}>Entradas</th><th style={{ ...th, textAlign: 'right' }}>Salidas</th><th style={{ ...th, textAlign: 'right' }}>Neto</th><th style={{ ...th, textAlign: 'right' }}>Acumulado</th></tr></thead>
+              <tbody>{d.flujo.map((s: any) => (<>
+                <tr key={s.n} onClick={() => setSemana(semana === s.n ? null : s.n)} style={{ cursor: 'pointer', background: semana === s.n ? '#faf9fc' : undefined }}><td style={td}><b>Semana {s.n}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{s.desde.slice(8)} al {s.hasta.slice(8)}</div></td><td style={{ ...td, textAlign: 'right', color: '#14532d', fontVariantNumeric: 'tabular-nums' }}>{pesos(s.entradas)}</td><td style={{ ...td, textAlign: 'right', color: '#7f1d1d', fontVariantNumeric: 'tabular-nums' }}>{pesos(s.salidas)}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: s.neto >= 0 ? '#14532d' : '#7f1d1d' }}>{pesos(s.neto)}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: s.acumulado >= 0 ? '#14532d' : '#7f1d1d' }}>{pesos(s.acumulado)}</td></tr>
+                {semana === s.n && <tr key={s.n + 'd'}><td colSpan={5} style={{ ...td, background: '#faf9fc' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div><div style={{ fontSize: 10.5, fontWeight: 800, color: '#14532d', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Entradas</div>{s.detalle_entradas.map((x: any, i: number) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, padding: '3px 0' }}><span>{x.fecha.slice(8)} · {x.que} <span style={{ color: '#8e88a8' }}>{x.real ? '' : `(${x.tipo === 'renovacion' ? 'por cobrar' : 'esperado'})`}</span></span><b>{pesos(x.monto)}</b></div>)}{!s.detalle_entradas.length && <div style={{ color: '#8e88a8', fontSize: 12.5 }}>Nada esta semana.</div>}</div>
+                    <div><div style={{ fontSize: 10.5, fontWeight: 800, color: '#7f1d1d', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Salidas</div>{s.detalle_salidas.map((x: any, i: number) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, padding: '3px 0', opacity: x.real ? .7 : 1 }}><span>{x.fecha.slice(8)} · {x.que} <span style={{ color: '#8e88a8' }}>{x.real ? '(pagado)' : ''}</span></span><b>{pesos(x.monto)}</b></div>)}{!s.detalle_salidas.length && <div style={{ color: '#8e88a8', fontSize: 12.5 }}>Nada esta semana.</div>}</div>
+                  </div></td></tr>}
+              </>))}</tbody>
+            </table></div>
           </div>
         )}
 
@@ -239,7 +270,7 @@ export default function FinanzasTab() {
           </div>
         )}
 
-        {vista === 'pipeline' && (
+        {(vista === 'pipeline' || (vista === 'ingresos' && pagina)) && (
           <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Oportunidades abiertas</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.pipeline.total)} brutos · {pesos(d.pipeline.ponderado)} ponderados por probabilidad</span></div>
             <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
@@ -258,13 +289,17 @@ export default function FinanzasTab() {
               </div>
               {cerrado ? (
                 <div style={{ marginTop: 12, fontSize: 12.5, color: '#6b6580' }}>Cerrado el {new Date(d.cierre.cerrado_at).toLocaleDateString('es-MX')}{d.cierre.notas ? ` · ${d.cierre.notas}` : ''}. Los números de arriba son los vivos; el reporte anual usa los congelados. <button onClick={async () => { if (!confirm('¿Reabrir el mes? Se borra el cierre guardado.')) return; await postJ({ accion: 'reabrir_mes', mes }); cargar(); }} style={{ border: 'none', background: 'transparent', color: '#b91c1c', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Reabrir</button></div>
-              ) : (
+              ) : (<>
+                <div style={{ marginTop: 12, fontSize: 12.5 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 4 }}>Antes de cerrar</div>
+                  {[[d.gastos.lista.filter((g: any) => !g.pago && !g.probable).length, 'gastos fijos sin palomita de pagado'], [(d.adeudos?.lista || []).filter((a: any) => a.toca_este_mes > a.abonado_mes).length, 'adeudos con abono pendiente este mes'], [d.ingresos.por_cobrar_lista.length, 'renovaciones del mes sin cobrar'], [(d.atrasados?.lista || []).length, 'gastos atrasados de meses anteriores']].map(([n, l]: any) => <div key={l} style={{ color: n ? '#b45309' : '#14532d' }}>{n ? '•' : '✓'} {n ? `${n} ${l}` : `Sin ${l}`}</div>)}
+                </div>
                 <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   <input style={{ ...inp, marginTop: 0, flex: 1, minWidth: 220 }} placeholder="Nota del cierre (opcional)" value={notas} onChange={e => setNotas(e.target.value)} />
                   <button onClick={async () => { const j = await postJ({ accion: 'cerrar_mes', mes, notas }); if (j.error) { setMsg(j.error); return; } setNotas(''); cargar(); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cerrar {MESES[Number(mes.slice(5, 7)) - 1]}</button>
                   <span style={{ fontSize: 11.5, color: '#8e88a8' }}>Congela ingresos, gastos, comisiones y utilidad de este mes para el reporte.</span>
                 </div>
-              )}
+              </>)}
             </div>
             {anual && (
               <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>

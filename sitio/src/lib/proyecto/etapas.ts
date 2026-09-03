@@ -165,10 +165,340 @@ export const ETAPAS: Etapa[] = [
     ],
   },
 
+
   // ─────────────────────────────────────────────────────────────── 2 ──
   {
-    clave: 'objetivo',
+    clave: 'palabras',
     orden: 2,
+    titulo: 'La historia y las palabras',
+    resumen:
+      'De aquí sale la sección "Nosotros" y el tono de todo el sitio. Es la ' +
+      'etapa que más se subestima y la que más vende: en joyería fina nadie ' +
+      'compra una pieza de un desconocido. Cuéntenlo como lo cuentan en la ' +
+      'casa, sin acomodarlo — nosotros lo acomodamos.',
+    entrega:
+      'La página "Nosotros" escrita, el tono de voz definido y quién redacta ' +
+      'cada pieza nueva.',
+    campos: [
+      {
+        id: 'historia_origen',
+        grupo: 'La historia de la casa',
+        etiqueta: '¿En qué año abrió Ruben’s y quién la fundó?',
+        ayuda:
+          'Cuéntenlo como se cuenta en la familia, no como se escribiría en un ' +
+          'folleto. Si empezó en un local chico o en una mesa, eso es lo que ' +
+          'hay que decir.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'historia_hitos',
+        grupo: 'La historia de la casa',
+        etiqueta: 'Los momentos que marcaron la casa',
+        ayuda:
+          'La primera boutique. La que más costó abrir. Un cambio de ' +
+          'generación. Un reconocimiento. Una pieza que se recuerda.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'historia_oficio',
+        grupo: 'La historia de la casa',
+        etiqueta: '¿Hay taller propio? ¿Quién hace las piezas?',
+        ayuda:
+          'Un maestro joyero con nombre y años de oficio vale más que ' +
+          'cualquier adjetivo. Si el taller es externo, también sirve saberlo.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'historia_porque',
+        grupo: 'La historia de la casa',
+        etiqueta: '¿Por qué una pareja debería comprar su anillo aquí y no en una cadena?',
+        ayuda: 'La respuesta honesta, no la de comercial. Esa es la que convence.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'historia_cliente',
+        grupo: 'La historia de la casa',
+        etiqueta: 'Una historia real de un cliente que se acuerden',
+        ayuda:
+          'El señor que volvió a los 25 años por las bodas de plata. La pieza ' +
+          'que se rehízo tres veces. Sin nombres si no quieren.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'historia_caras',
+        grupo: 'La historia de la casa',
+        etiqueta: '¿Quiénes son las caras de la casa?',
+        ayuda:
+          'Nombres, puesto y años en Ruben’s de quienes van a aparecer en ' +
+          '"Nosotros". La gente compra de personas.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'historia_archivos',
+        grupo: 'La historia de la casa',
+        etiqueta: 'Fotos antiguas, recortes, reconocimientos',
+        ayuda:
+          'La foto del primer local, del fundador, del taller. Aunque estén ' +
+          'maltratadas: eso es exactamente lo que se ve bien en esta sección.',
+        tipo: 'archivos',
+      },
+      {
+        id: 'tono_trato',
+        grupo: 'Cómo habla la marca',
+        etiqueta: '¿De usted o de tú?',
+        ayuda: 'Define el sitio entero y no se cambia a media obra.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'De usted, siempre',
+          'De tú',
+          'De usted en las piezas de alto valor, de tú en el resto',
+          'No sé — recomiéndennos',
+        ],
+      },
+      {
+        id: 'tono_ejemplo',
+        grupo: 'Cómo habla la marca',
+        etiqueta: 'Peguen un texto suyo que sientan que “suena a Ruben’s”',
+        ayuda:
+          'Un post, una descripción, un mensaje de WhatsApp. Con uno bueno ' +
+          'sacamos el tono de todo lo demás.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'tono_tres',
+        grupo: 'Cómo habla la marca',
+        etiqueta: 'Tres palabras que describan a Ruben’s — y tres que NO',
+        ayuda: 'Las tres que no sirven más que las tres que sí.',
+        tipo: 'texto',
+        placeholder: 'Sí: … · No: …',
+      },
+      {
+        id: 'tono_prohibidas',
+        grupo: 'Cómo habla la marca',
+        etiqueta: 'Palabras que no usamos nunca',
+        ayuda:
+          '“Barato”, “oferta”, “promoción”, “bisutería”… En alta joyería ' +
+          'algunas casas no las escriben jamás.',
+        tipo: 'texto',
+      },
+      {
+        id: 'escribe_quien',
+        grupo: 'Quién escribe',
+        etiqueta: '¿Quién escribe las descripciones de las piezas nuevas?',
+        ayuda:
+          'Las que ya tienen están muy bien escritas. La pregunta es quién ' +
+          'sostiene ese nivel cuando entren 50 piezas más.',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Nosotros, como hasta ahora',
+          'Sacs las redacta y ustedes las aprueban',
+          'AXO las redacta y ustedes las aprueban',
+          'Entre los dos: ustedes la ficha técnica, nosotros el texto',
+        ],
+      },
+      {
+        id: 'escribe_ritmo',
+        grupo: 'Quién escribe',
+        etiqueta: '¿Cuántas piezas nuevas entran al mes?',
+        ayuda: 'Define si hace falta carga masiva o alcanza con capturarlas a mano.',
+        tipo: 'texto',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────── 4 ──
+  {
+    clave: 'mercado',
+    orden: 4,
+    titulo: 'El mercado y su gente',
+    resumen:
+      'De dónde va a llegar la gente y cuándo compra. Sin esto se puede ' +
+      'entregar la vitrina más espectacular de México y que la vean cuarenta ' +
+      'personas al mes. No es marketing: es información que cambia cómo se ' +
+      'construye el sitio y qué se termina primero.',
+    entrega:
+      'El plan de tráfico, las temporadas que mandan sobre el calendario de ' +
+      'entrega y la lista con la que se lanza.',
+    campos: [
+      {
+        id: 'google_negocio',
+        grupo: 'Dónde los buscan hoy',
+        etiqueta: 'Su ficha de Google',
+        ayuda:
+          'Peguen el link y díganos quién la administra. Para una joyería con ' +
+          'boutique física es de donde llega la mitad de la gente.',
+        tipo: 'texto',
+        requerido: true,
+      },
+      {
+        id: 'resenas',
+        grupo: 'Dónde los buscan hoy',
+        etiqueta: '¿Cuántas reseñas tienen, de cuánto, y quién las contesta?',
+        tipo: 'texto',
+      },
+      {
+        id: 'busquedas',
+        grupo: 'Dónde los buscan hoy',
+        etiqueta: '¿Qué escribe la gente en Google cuando los busca?',
+        ayuda:
+          '“Anillos de compromiso San Luis Potosí” no es lo mismo que “alta ' +
+          'joyería”. Escríbanlo tal cual creen que lo teclean.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'sitio_anterior',
+        grupo: 'Dónde los buscan hoy',
+        etiqueta: '¿Hay un sitio anterior?',
+        ayuda:
+          'URL y quién lo hizo. Si existe y muere sin redirecciones, se pierde ' +
+          'lo poco que hoy posiciona — y eso no se recupera.',
+        tipo: 'texto',
+      },
+      {
+        id: 'sitio_anterior_destino',
+        grupo: 'Dónde los buscan hoy',
+        etiqueta: 'Ese sitio, ¿se apaga o se conserva?',
+        tipo: 'opcion',
+        opciones: [
+          'Se apaga y todo se va al nuevo',
+          'Se conserva aparte',
+          'No existe',
+          'No sabemos quién lo controla',
+        ],
+      },
+      {
+        id: 'pauta',
+        grupo: 'Publicidad',
+        etiqueta: '¿Dónde se anuncian hoy?',
+        tipo: 'multiple',
+        otro: true,
+        opciones: [
+          'Facebook e Instagram (pauta pagada)',
+          'Google Ads',
+          'Influencers o creadores',
+          'Radio',
+          'Espectaculares o impresos',
+          'Ferias y eventos',
+          'Solo orgánico, sin pagar',
+        ],
+      },
+      {
+        id: 'pauta_quien',
+        grupo: 'Publicidad',
+        etiqueta: '¿Quién la maneja y con cuánto al mes?',
+        ayuda: 'Agencia, alguien de la casa, o nadie fijo.',
+        tipo: 'texto',
+      },
+      {
+        id: 'pauta_resultado',
+        grupo: 'Publicidad',
+        etiqueta: '¿Qué les ha funcionado mejor hasta hoy y qué fue dinero tirado?',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'temporadas',
+        grupo: 'El calendario del año',
+        etiqueta: '¿Cuáles son sus temporadas fuertes?',
+        tipo: 'multiple',
+        requerido: true,
+        otro: true,
+        opciones: [
+          '14 de febrero',
+          '10 de mayo',
+          'Temporada de bodas',
+          'Graduaciones',
+          'XV años y primeras comuniones',
+          'Buen Fin',
+          'Navidad y Reyes',
+          'Aniversario de la casa',
+        ],
+      },
+      {
+        id: 'temporada_fuerte',
+        grupo: 'El calendario del año',
+        etiqueta: 'De todas, ¿cuál es LA más fuerte y con cuánta anticipación la preparan?',
+        ayuda:
+          'Esta respuesta decide qué se termina primero. Si la más fuerte es ' +
+          'diciembre, el sitio tiene que estar vendiendo en noviembre, no en ' +
+          'diciembre.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'temporada_baja',
+        grupo: 'El calendario del año',
+        etiqueta: '¿Cuál es el mes más flojo del año?',
+        ayuda: 'Es el mejor mes para lanzar y para capacitar sin prisa.',
+        tipo: 'texto',
+      },
+      {
+        id: 'base_clientes',
+        grupo: 'Su gente',
+        etiqueta: '¿Tienen base de clientes fuera de SACS?',
+        ayuda:
+          'Correos, WhatsApp, el cuaderno de la boutique, el Excel de alguien. ' +
+          'Díganos cuántos son más o menos. En su cuenta hoy hay 6 clientes ' +
+          'capturados: lanzar sin lista es lanzar al vacío.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'base_archivo',
+        grupo: 'Su gente',
+        etiqueta: 'La base, si la tienen en archivo',
+        ayuda: 'Excel, CSV, exportación de Mailchimp. Aunque esté sucia.',
+        tipo: 'archivos',
+      },
+      {
+        id: 'base_permiso',
+        grupo: 'Su gente',
+        etiqueta: '¿Esos clientes aceptaron recibir correos o mensajes?',
+        ayuda:
+          'No es un trámite: mandar correo a quien no lo aceptó quema el ' +
+          'dominio y en México tiene consecuencias legales.',
+        tipo: 'opcion',
+        opciones: [
+          'Sí, se les pregunta al registrarlos',
+          'Algunos sí, otros no sabemos',
+          'No, nunca se les preguntó',
+        ],
+      },
+      {
+        id: 'mercado_geo',
+        grupo: 'Su gente',
+        etiqueta: '¿Hasta dónde venden?',
+        tipo: 'multiple',
+        otro: true,
+        opciones: [
+          'San Luis Potosí y alrededores',
+          'Todo el Bajío',
+          'Toda la República',
+          'Estados Unidos',
+          'Otros países',
+        ],
+      },
+      {
+        id: 'cliente_vuelve',
+        grupo: 'Su gente',
+        etiqueta: '¿Cada cuánto vuelve un cliente y a qué vuelve?',
+        ayuda:
+          'Compromiso → argollas → aniversario → bautizo. Si ese camino existe, ' +
+          'el sitio lo puede acompañar solo.',
+        tipo: 'parrafo',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────── 3 ──
+  {
+    clave: 'objetivo',
+    orden: 3,
     titulo: 'Objetivo del ecommerce',
     resumen:
       'Para qué es el sitio. Aquí se decide lo más importante de todo el ' +
@@ -282,7 +612,7 @@ export const ETAPAS: Etapa[] = [
   // ─────────────────────────────────────────────────────────────── 3 ──
   {
     clave: 'referencias',
-    orden: 3,
+    orden: 5,
     titulo: 'Referencias e innovación',
     resumen:
       'Lo que quieren que se sienta. Aquí es donde se decide qué tan lejos ' +
@@ -383,7 +713,7 @@ export const ETAPAS: Etapa[] = [
   // ─────────────────────────────────────────────────────────────── 4 ──
   {
     clave: 'catalogo',
-    orden: 4,
+    orden: 6,
     titulo: 'Catálogo, piezas y diamantes',
     resumen:
       'De aquí sale la ficha de producto y el buscador. Es la etapa más ' +
@@ -571,10 +901,193 @@ export const ETAPAS: Etapa[] = [
     ],
   },
 
-  // ─────────────────────────────────────────────────────────────── 5 ──
+
+  // ─────────────────────────────────────────────────────────────── 7 ──
+  {
+    clave: 'servicio',
+    orden: 7,
+    titulo: 'Servicio y post-venta',
+    resumen:
+      'Reparaciones es hoy el segundo módulo más usado de su cuenta en Sacs, y ' +
+      'en lo contratado van las membresías de reparaciones y servicios. En ' +
+      'joyería el servicio no es post-venta: es la razón por la que un cliente ' +
+      'vuelve a los diez años. Aquí se decide cuánto de eso se ve en el sitio.',
+    entrega:
+      'El catálogo de servicios con sus precios y tiempos, la membresía ' +
+      'definida y la garantía escrita pieza por pieza.',
+    campos: [
+      {
+        id: 'servicios',
+        grupo: 'Lo que ya hacen',
+        etiqueta: '¿Qué servicios dan hoy?',
+        tipo: 'multiple',
+        requerido: true,
+        otro: true,
+        opciones: [
+          'Limpieza y pulido',
+          'Cambio de talla (resize)',
+          'Baño de rodio',
+          'Soldadura y reparación de cadena',
+          'Reengaste de piedra',
+          'Cambio de piedra',
+          'Restauración de pieza antigua',
+          'Grabado',
+          'Avalúo o tasación',
+          'Cambio de pila y servicio de reloj',
+          'Diseño de pieza a la medida',
+        ],
+      },
+      {
+        id: 'servicios_precio',
+        grupo: 'Lo que ya hacen',
+        etiqueta: '¿Cuáles son gratis y cuáles se cobran?',
+        ayuda:
+          'Con precios, aunque sean "desde". Si la limpieza de por vida es ' +
+          'gratis para quien compró aquí, eso va en la ficha de cada pieza — ' +
+          'es de las cosas que más cierran una venta en línea.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'servicios_tiempo',
+        grupo: 'Lo que ya hacen',
+        etiqueta: '¿Cuánto tarda cada uno?',
+        ayuda: 'El cliente lo va a ver antes de pedirlo.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'taller',
+        grupo: 'Lo que ya hacen',
+        etiqueta: 'El taller: ¿propio o externo?',
+        ayuda:
+          '¿En qué boutique está? ¿Se puede reparar joyería que no se compró ' +
+          'en Ruben’s? Eso último abre un negocio entero.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'membresia_que',
+        grupo: 'La membresía',
+        etiqueta: '¿Qué incluye la membresía de servicio?',
+        ayuda:
+          'Ya está contratada la personalización. Falta decidir qué vende: ' +
+          'limpiezas al año, un resize gratis, revisión de engaste, prioridad ' +
+          'en el taller, garantía extendida.',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'membresia_precio',
+        grupo: 'La membresía',
+        etiqueta: '¿Cuánto cuesta y cada cuándo se paga?',
+        tipo: 'texto',
+      },
+      {
+        id: 'membresia_venta',
+        grupo: 'La membresía',
+        etiqueta: '¿Cómo llega a manos del cliente?',
+        tipo: 'multiple',
+        opciones: [
+          'Se vende en el sitio, como un producto más',
+          'Se vende solo en boutique',
+          'Se regala con las piezas de cierto monto',
+          'Va incluida siempre, sin costo',
+        ],
+      },
+      {
+        id: 'membresia_alcance',
+        grupo: 'La membresía',
+        etiqueta: '¿Aplica solo a piezas compradas en Ruben’s, o a cualquier joya?',
+        ayuda:
+          'Si aplica a cualquier joya, la membresía es una puerta de entrada ' +
+          'para clientes nuevos, no solo un beneficio para los de casa.',
+        tipo: 'opcion',
+        opciones: [
+          'Solo piezas compradas aquí',
+          'Cualquier joya, venga de donde venga',
+          'Cualquier joya, pero a distinto precio',
+        ],
+      },
+      {
+        id: 'garantia_que',
+        grupo: 'La garantía',
+        etiqueta: '¿Qué cubre la garantía y por cuánto tiempo?',
+        tipo: 'parrafo',
+        requerido: true,
+      },
+      {
+        id: 'garantia_no',
+        grupo: 'La garantía',
+        etiqueta: '¿Qué NO cubre?',
+        ayuda:
+          'Golpes, pérdida de piedra por uso, trabajo hecho en otro taller. ' +
+          'Decirlo claro desde el principio evita el pleito después.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'garantia_papel',
+        grupo: 'La garantía',
+        etiqueta: '¿Cómo comprueba el cliente que la pieza es suya y está en garantía?',
+        ayuda:
+          'Nota, certificado, número de serie. Aquí se conecta con los ' +
+          'certificados digitales y en PVC que ya están contratados.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'devolucion_real',
+        grupo: 'La garantía',
+        etiqueta: '¿Aceptan devoluciones? ¿En qué casos y en cuántos días?',
+        ayuda:
+          'En línea la ley pide algo distinto que en mostrador. Digan lo que ' +
+          'hacen hoy de verdad y nosotros lo ajustamos.',
+        tipo: 'parrafo',
+      },
+      {
+        id: 'sitio_reparacion',
+        grupo: 'Qué de esto vive en el sitio',
+        etiqueta: '¿El cliente puede pedir una reparación desde el sitio?',
+        tipo: 'opcion',
+        requerido: true,
+        opciones: [
+          'Sí, que levante la orden y le den cita',
+          'Que solo pida informes y el taller le contesta',
+          'No, eso se hace en boutique',
+        ],
+      },
+      {
+        id: 'sitio_estatus',
+        grupo: 'Qué de esto vive en el sitio',
+        etiqueta: '¿Puede ver en qué va su reparación?',
+        ayuda:
+          'El dato ya existe en Sacs — hoy son 15 órdenes. Enseñarlo es de las ' +
+          'cosas más baratas y más agradecidas del proyecto.',
+        tipo: 'opcion',
+        opciones: [
+          'Sí, con un folio y sin cuenta',
+          'Sí, pero entrando con su correo',
+          'No hace falta',
+        ],
+      },
+      {
+        id: 'sitio_avisos',
+        grupo: 'Qué de esto vive en el sitio',
+        etiqueta: '¿Le avisamos cuando su pieza está lista?',
+        tipo: 'multiple',
+        opciones: ['Por WhatsApp', 'Por correo', 'Le hablamos por teléfono', 'No, él llama'],
+      },
+      {
+        id: 'servicios_archivos',
+        grupo: 'Qué de esto vive en el sitio',
+        etiqueta: 'Su lista de precios de servicios, si la tienen en papel o Excel',
+        tipo: 'archivos',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────── 8 ──
   {
     clave: 'operacion',
-    orden: 5,
+    orden: 8,
     titulo: 'Operación y lanzamiento',
     resumen:
       'Lo que hace que el sitio pueda cobrar, enviar y salir al aire. Son ' +

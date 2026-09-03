@@ -23,7 +23,7 @@ export function aplicaMes(g: any, m: Mes) {
 
 export async function resumenMes(m: Mes) {
   const [{ data: pagos }, { data: subs }, { data: gastos }, { data: pagosG }, { data: coms }, { data: deals }, { data: cierre }] = await Promise.all([
-    supabase.from('payments').select('id, fecha, monto, metodo, pasarela, contact_id, company_id, subscription_id, companies(nombre_comercial, nombre), contacts(nombre)').eq('estado', 'confirmado').gte('fecha', ini(m)).lt('fecha', finExcl(m)).order('fecha', { ascending: false }),
+    supabase.from('payments').select('id, fecha, monto, neto, comision, metodo, pasarela, contact_id, company_id, subscription_id, companies(nombre_comercial, nombre), contacts(nombre)').eq('estado', 'confirmado').gte('fecha', ini(m)).lt('fecha', finExcl(m)).order('fecha', { ascending: false }),
     supabase.from('subscriptions').select('id, nombre_plan, ciclo, estado, precio, monto_proximo, proxima_factura, company_id, companies(nombre_comercial, nombre), cobranza_estado').in('estado', ['activa', 'pendiente_pago', 'programada']).gte('proxima_factura', ini(m)).lt('proxima_factura', finExcl(m)).order('proxima_factura'),
     supabase.from('fin_gastos').select('*').order('categoria').order('nombre'),
     supabase.from('fin_gastos_pagos').select('*').eq('mes', m),
@@ -60,6 +60,9 @@ export async function resumenMes(m: Mes) {
   const comisiones = (coms || []).reduce((s, c) => s + Number(c.monto || 0), 0);
   const porVendedor: Record<string, number> = {}; for (const c of coms || []) { const k = (c as any).team_members?.nombre || 'Sin asignar'; porVendedor[k] = (porVendedor[k] || 0) + Number(c.monto || 0); }
   const cobrado = (pagos || []).reduce((s, p) => s + Number(p.monto || 0), 0);
+  // NETO real: cuando el pago trae la comisión de la pasarela (Stripe / Mercado Pago), la utilidad usa el neto.
+  const cobradoNeto = (pagos || []).reduce((s, p) => s + Number(p.neto ?? (Number(p.monto || 0) - Number(p.comision || 0))), 0);
+  const comisionesPasarela = cobrado - cobradoNeto;
   const cobradoSubs = new Set((pagos || []).map(p => p.subscription_id).filter(Boolean));
   const porCobrar = (subs || []).filter(s => !cobradoSubs.has(s.id)).map(s => ({ ...s, monto: Number(s.monto_proximo ?? s.precio ?? 0) }));
   const porCobrarMonto = porCobrar.reduce((s, x) => s + x.monto, 0);
@@ -104,14 +107,15 @@ export async function resumenMes(m: Mes) {
   const totalGastos = gastosPrevisto + ajusteMarketing + (porCat.comision ? 0 : comisionesMes) + adeudosToca + atrasadosTotal;   // comisiones a mano → no se suman dos veces
   return {
     mes: m, cierre: cierre || null,
-    ingresos: { cobrado, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
+    ingresos: { cobrado, cobrado_neto: cobradoNeto, comisiones_pasarela: comisionesPasarela, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
     gastos: { lista: aplicables, previsto: gastosPrevisto + ajusteMarketing, pagado: gastosPagado, por_categoria: porCat, catalogo: gastos || [] },
     comisiones: { total: comisionesMes, lineas_total: comisiones, por_vendedor: porVendedor, lineas: (coms || []).length, cortes: cortesMes, por_pagar: cortesPorPagar },
     variables: { probables, marketing_real: Math.round(marketingReal), marketing_estimado: marketingEstimado },
     adeudos: { lista: adeudosMes, toca: adeudosToca, abonado: adeudosAbonado, saldo_total: adeudosMes.reduce((s, a) => s + a.saldo, 0) },
     atrasados: { lista: atrasados, total: atrasadosTotal },
     pipeline: { abiertos, total: pipelineTotal, ponderado: pipelinePond },
-    utilidad: { estimada: cobrado - totalGastos, si_cobra_todo: cobrado + porCobrarMonto - totalGastos, total_gastos: totalGastos },
+    utilidad: { estimada: cobradoNeto - totalGastos, si_cobra_todo: cobradoNeto + porCobrarMonto - totalGastos, total_gastos: totalGastos },
+    flujo: flujoSemanal(m, { pagos: pagos || [], porCobrar, aceptadas, aplicables, cortesMes, adeudosMes, atrasados }),
   };
 }
 
@@ -154,4 +158,27 @@ export async function cerrarMes(m: Mes, userId?: string, notas?: string) {
     detalle: { gastos: r.gastos.lista.map(g => ({ nombre: g.nombre, categoria: g.categoria, monto: g.monto, pagado: !!g.pago })), por_categoria: r.gastos.por_categoria, comisiones_por_vendedor: r.comisiones.por_vendedor, pagos: r.ingresos.pagos.length, por_cobrar: r.ingresos.por_cobrar_lista.map((s: any) => ({ empresa: s.companies?.nombre_comercial || s.companies?.nombre, monto: s.monto, fecha: s.proxima_factura })), pipeline: { total: r.pipeline.total, ponderado: r.pipeline.ponderado, n: r.pipeline.abiertos.length }, adeudos: r.adeudos.lista.map((a: any) => ({ nombre: a.nombre, saldo: a.saldo, abonado_mes: a.abonado_mes })), atrasados: r.atrasados.total } };
   const { error } = await supabase.from('fin_cierres').upsert(fila, { onConflict: 'mes' });
   return error ? { error: error.message } : { ok: true, cierre: fila };
+}
+
+
+/* ── FLUJO DE CAJA SEMANAL (B2) ──
+   Semanas del mes (lunes a domingo, recortadas al mes). Entradas: cobrado real (fecha del pago), renovaciones por
+   cobrar (proxima_factura), venta nueva aceptada (se espera a 7 días de aceptada). Salidas: gastos por día de cobro (los
+   pagados, en la fecha real), adeudos por día de pago (lo que toca), cortes de comisión por paga_el, atrasados en la
+   semana 1. Saldo = acumulado de entradas − salidas. */
+function flujoSemanal(m: Mes, d: { pagos: any[]; porCobrar: any[]; aceptadas: any[]; aplicables: any[]; cortesMes: any[]; adeudosMes: any[]; atrasados: any[] }) {
+  const y = Number(m.slice(0, 4)), mm = Number(m.slice(5, 7)); const ult = new Date(Date.UTC(y, mm, 0)).getUTCDate();
+  const dia = (n: number) => `${m}-${String(Math.min(Math.max(1, n), ult)).padStart(2, '0')}`;
+  const semanas: any[] = []; let ini = 1;
+  while (ini <= ult) { const dt = new Date(Date.UTC(y, mm - 1, ini)); const dow = (dt.getUTCDay() + 6) % 7; const fin = Math.min(ult, ini + (6 - dow)); semanas.push({ desde: dia(ini), hasta: dia(fin), entradas: [] as any[], salidas: [] as any[] }); ini = fin + 1; }
+  const sem = (fecha: string) => { const f = String(fecha).slice(0, 10); if (f < semanas[0].desde) return semanas[0]; if (f > semanas[semanas.length - 1].hasta) return semanas[semanas.length - 1]; return semanas.find(s => f >= s.desde && f <= s.hasta) || semanas[semanas.length - 1]; };
+  for (const p of d.pagos) sem(p.fecha).entradas.push({ tipo: 'cobrado', que: p.companies?.nombre_comercial || p.companies?.nombre || p.contacts?.nombre || 'Pago', monto: Number(p.neto ?? p.monto), fecha: p.fecha, real: true });
+  for (const s of d.porCobrar) sem(s.proxima_factura).entradas.push({ tipo: 'renovacion', que: s.companies?.nombre_comercial || s.companies?.nombre || 'Renovación', monto: s.monto, fecha: s.proxima_factura, real: false });
+  for (const q of d.aceptadas) { const f = new Date(Date.parse(q.updated_at) + 7 * 86400e3).toISOString().slice(0, 10); if (f.slice(0, 7) === m) sem(f).entradas.push({ tipo: 'venta', que: q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Venta', monto: q.monto, fecha: f, real: false }); }
+  for (const g of d.aplicables) { const f = g.pago ? String(g.pago.pagado_at).slice(0, 10) : dia(Number(g.dia_cobro) || ult); sem(f).salidas.push({ tipo: g.categoria, que: g.nombre, monto: Number(g.pago?.monto ?? g.monto), fecha: f, real: !!g.pago }); }
+  for (const a of d.adeudosMes) if (a.toca_este_mes > 0) sem(dia(Number(a.dia_pago) || ult)).salidas.push({ tipo: 'adeudo', que: a.nombre, monto: a.toca_este_mes, fecha: dia(Number(a.dia_pago) || ult), real: a.abonado_mes >= a.toca_este_mes });
+  for (const c of d.cortesMes) sem(c.paga_el).salidas.push({ tipo: 'comision', que: `Comisión ${c.vendedor}`, monto: c.monto, fecha: c.paga_el, real: c.pagado });
+  for (const g of d.atrasados) semanas[0].salidas.push({ tipo: 'atrasado', que: `${g.nombre} (${g.mes})`, monto: Number(g.monto), fecha: semanas[0].desde, real: false });
+  let acum = 0;
+  return semanas.map((s, i) => { const e = s.entradas.reduce((a: number, x: any) => a + x.monto, 0); const o = s.salidas.reduce((a: number, x: any) => a + x.monto, 0); acum += e - o; return { n: i + 1, desde: s.desde, hasta: s.hasta, entradas: e, salidas: o, neto: e - o, acumulado: acum, detalle_entradas: s.entradas.sort((a: any, b: any) => a.fecha.localeCompare(b.fecha)), detalle_salidas: s.salidas.sort((a: any, b: any) => a.fecha.localeCompare(b.fecha)) }; });
 }
