@@ -641,71 +641,12 @@ export default function CrmDashboard() {
               lados opuestos del menú. */}
         </div>
 
-        {/* Search (sidebar) */}
-        {!sidebarCollapsed && (
-          <div style={{ padding: '10px 12px 6px' }}>
-            <div className="crm-search-wrapper" style={{ position: 'relative' }}>
-              <input
-                ref={searchRef}
-                value={searchQuery}
-                onChange={async (e) => {
-                  setSearchQuery(e.target.value);
-                  if (e.target.value.length >= 2) {
-                    const res = await fetch(`/api/crm/search?q=${encodeURIComponent(e.target.value)}`);
-                    const data = await res.json();
-                    setSearchResults(data.results || []);
-                    setShowSearch(true);
-                  } else { setShowSearch(false); }
-                }}
-                onFocus={() => { if (searchResults.length) setShowSearch(true); }}
-                placeholder={isTouchDevice() ? 'Buscar…' : 'Buscar…  (⌘K)'}
-                style={{
-                  width: '100%', padding: '8px 10px 8px 30px', fontSize: '0.75rem',
-                  border: '1px solid #eae4f8', borderRadius: 9,
-                  background: '#fff', color: '#241d43', outline: 'none',
-                  fontFamily: 'inherit', boxSizing: 'border-box',
-                }}
-              />
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2"
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              {showSearch && searchResults.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-                  background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                  maxHeight: 300, overflowY: 'auto', zIndex: 300,
-                }}>
-                  {searchResults.map((r: any, i: number) => {
-                    const icons: Record<string, string> = { contact: '👤', company: '🏢', deal: '💰', quote: '📄' };
-                    const colors: Record<string, string> = { contact: '#4B7BE5', company: '#6C5CE7', deal: '#2AB5A0', quote: '#F39C12' };
-                    return (
-                      <div key={i} onClick={() => {
-                          if (r.type === 'contact') setProfileContactId(r.id);
-                          /* Oportunidades se retiró: un resultado de ese tipo
-                             ya no tiene a dónde ir, así que no se ofrece. */
-                          else if (r.type === 'company') switchTab('clientes');
-                          else if (r.type === 'quote') switchTab('cotizaciones');
-                          setShowSearch(false); setSearchQuery('');
-                        }}
-                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8f9fb'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
-                      >
-                        <span>{icons[r.type] || '📎'}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.nombre || r.numero || r.empresa}</div>
-                          <div style={{ fontSize: '0.625rem', color: '#999' }}>{r.email || r.plan || r.stage || ''}</div>
-                        </div>
-                        <span style={{ fontSize: '0.5rem', fontWeight: 700, color: colors[r.type] || '#999', background: (colors[r.type] || '#999') + '15', padding: '1px 5px', borderRadius: 8 }}>{r.type}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* EL BUSCADOR SALIÓ DE AQUÍ (3-sep-2026).
+            Ocupaba el mejor sitio del menú —arriba del todo, ancho completo—
+            para algo que se usa de vez en cuando, y empujaba hacia abajo lo
+            que sí se usa a diario. No se pierde: ⌘K lo abre en el centro de la
+            pantalla, que además es donde uno ya lo busca por costumbre. Ver
+            `BuscadorGlobal`. */
 
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>

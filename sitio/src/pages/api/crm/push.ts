@@ -10,16 +10,18 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getPublicKey } from '../../../lib/push/send';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
 const j = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
-/** El equipo se identifica por la cookie de sesión del CRM. */
-function quien(request: Request): string | null {
-  const cookie = request.headers.get('cookie') || '';
-  const m = cookie.match(/sacs_session=([^;]+)/);
-  return m ? m[1].slice(0, 120) : null;
+/** La suscripción es de la PERSONA (team_members.id), no de la cookie: así
+ * "Equipo" puede mandar un push solo a quien mencionaron. Antes se guardaba el
+ * valor crudo de la cookie, que además dejaba un token de sesión en la tabla. */
+async function quien(request: Request): Promise<string | null> {
+  const u = await getCurrentUser(request);
+  return u?.id || null;
 }
 
 export const GET: APIRoute = async () => {
@@ -29,7 +31,7 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-  const usuario = quien(request);
+  const usuario = await quien(request);
   if (!usuario) return j({ error: 'sin_sesion' }, 401);
   const b = await request.json().catch(() => null);
 

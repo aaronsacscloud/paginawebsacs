@@ -175,8 +175,13 @@ const SIN_SECCION = new Set([
 // La ESCRITURA sigue exigiendo Facturación con nivel edit.
 const LECTURA_LIBRE = new Set(['/api/crm/propiedades', '/api/crm/pipelines', '/api/crm/arr/plans']);
 
+// "Equipo" (el chat) es de todo el equipo interno, no una sección con permiso:
+// basta tener sesión. Cada ruta rechaza partners por su cuenta (quien()).
+const SIN_SECCION_PREFIJO = ['/api/crm/espacio/'];
+
 function seccionDe(path: string): Seccion | null {
   if (SIN_SECCION.has(path)) return null;
+  if (SIN_SECCION_PREFIJO.some(p => path.startsWith(p))) return null;
   for (const r of SECCION_POR_RUTA) if (path.startsWith(r.pre)) return r.sec;
   return 'config';
 }

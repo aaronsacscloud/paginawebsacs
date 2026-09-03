@@ -16,10 +16,14 @@ export function aplicaMes(g: any, m: Mes) {
   if (g.activo === false) return false;
   const i = String(g.inicio || '').slice(0, 7); if (!i || i > m) return false;
   if (g.fin && String(g.fin).slice(0, 7) < m) return false;
-  if (g.periodicidad === 'anual') return i.slice(5) === m.slice(5);
+  if (g.pausado_hasta && String(g.pausado_hasta).slice(0, 7) >= m) return false;   // pausado: no aplica hasta ese mes inclusive
+  const cada: Record<string, number> = { bimestral: 2, trimestral: 3, semestral: 6, anual: 12 };
   if (g.periodicidad === 'unico') return i === m;
-  return true;
+  if (cada[g.periodicidad]) return mesesEntre(i, m) % cada[g.periodicidad] === 0;
+  return true;   // mensual, quincenal, semanal: cada mes (con 2 o 4 ocurrencias)
 }
+/** Cuántas veces se paga en el mes (quincenal 2, semanal 4, lo demás 1) → el monto del mes es monto × ocurrencias. */
+export const ocurrenciasMes = (g: any) => g.periodicidad === 'quincenal' ? 2 : g.periodicidad === 'semanal' ? 4 : 1;
 
 export async function resumenMes(m: Mes) {
   const [{ data: pagos }, { data: subs }, { data: gastos }, { data: pagosG }, { data: coms }, { data: deals }, { data: cierre }] = await Promise.all([
@@ -52,7 +56,17 @@ export async function resumenMes(m: Mes) {
   const { data: pagosProb } = probIds.length ? await supabase.from('fin_gastos_pagos').select('gasto_id, mes, monto').in('gasto_id', probIds).lt('mes', m).order('mes', { ascending: false }) : { data: [] as any[] };
   const promProb = new Map<string, number>();
   for (const id of probIds) { const ult = (pagosProb || []).filter(p => p.gasto_id === id && p.monto != null).slice(0, 3); if (ult.length) promProb.set(id, Math.round(ult.reduce((s, p) => s + Number(p.monto), 0) / ult.length)); }
-  const aplicables = (gastos || []).filter(g => aplicaMes(g, m)).map(g => ({ ...g, monto_base: g.monto, monto: g.probable && promProb.has(g.id) ? promProb.get(g.id) : Number(g.monto), estimado_por_promedio: g.probable && promProb.has(g.id), pago: pagadoPor.get(g.id) || null }));
+  // DECISIONES sobre lo no pagado (2026-09-04): recorrer (se junta como atrasado), prórroga (se paga en otra fecha sin contar
+  // como atraso), condonado / no aplica (desaparece). Se guardan por (gasto, mes original).
+  const { data: decs } = await supabase.from('fin_gastos_decisiones').select('*');
+  const decDe = (gid: string, mm: string) => (decs || []).find(x => x.gasto_id === gid && x.mes === mm) || null;
+  const base = (gastos || []).filter(g => aplicaMes(g, m)).map(g => { const dec = decDe(g.id, m); return { ...g, mes_pago: m, monto_base: g.monto, monto: (g.probable && promProb.has(g.id) ? promProb.get(g.id)! : Number(g.monto)) * ocurrenciasMes(g), ocurrencias: ocurrenciasMes(g), estimado_por_promedio: g.probable && promProb.has(g.id), pago: pagadoPor.get(g.id) || null, decision: dec }; })
+    .filter(g => !(g.decision && ['condonado', 'no_aplica'].includes(g.decision.decision)));
+  // Prórrogas que CAEN en este mes (vienen de un mes anterior): se pagan aquí como renglón normal, con su fecha nueva.
+  const prorrogas = (decs || []).filter(x => x.decision === 'prorroga' && x.nueva_fecha && String(x.nueva_fecha).slice(0, 7) === m && x.mes !== m);
+  const { data: pagosProrr } = prorrogas.length ? await supabase.from('fin_gastos_pagos').select('gasto_id, mes, pagado_at, monto, nota, comprobante_path, comprobante_nombre').in('gasto_id', prorrogas.map(x => x.gasto_id)) : { data: [] as any[] };
+  const filasProrroga = prorrogas.map(x => { const g = (gastos || []).find(gg => gg.id === x.gasto_id); if (!g) return null; const pago = (pagosProrr || []).find(p => p.gasto_id === x.gasto_id && p.mes === x.mes) || null; return { ...g, id: g.id, mes_pago: x.mes, prorroga_de: x.mes, dia_cobro: Number(String(x.nueva_fecha).slice(8, 10)), monto: Number(x.monto ?? g.monto), monto_base: g.monto, ocurrencias: 1, pago, decision: x, nombre: `${g.nombre} · prórroga de ${x.mes}` }; }).filter(Boolean) as any[];
+  const aplicables = [...base, ...filasProrroga];
   const porCat: Record<string, { previsto: number; pagado: number; n: number }> = {};
   for (const g of aplicables) { const c = porCat[g.categoria] || (porCat[g.categoria] = { previsto: 0, pagado: 0, n: 0 }); c.previsto += Number(g.monto); c.n++; if (g.pago) c.pagado += Number(g.pago.monto ?? g.monto); }
   const gastosPrevisto = aplicables.reduce((s, g) => s + Number(g.monto), 0);
@@ -100,19 +114,23 @@ export async function resumenMes(m: Mes) {
     supabase.from('fin_adeudos').select('*').eq('activo', true).order('created_at'),
     supabase.from('fin_adeudos_abonos').select('*').order('fecha', { ascending: false }),
   ]);
+  const { data: decsAd } = await supabase.from('fin_adeudos_decisiones').select('*');
   const adeudosMes = (adeudos || []).map(a => {
     const ab = (abonos || []).filter(x => x.adeudo_id === a.id);
-    const pagadoTotal = ab.reduce((s, x) => s + Number(x.monto), 0);
+    const pagadoTotal = ab.reduce((s, x) => s + Number(x.monto), 0);   // incluye condonaciones (tipo='condonacion'): bajan el saldo
+    const misDecs = (decsAd || []).filter(x => x.adeudo_id === a.id);
+    // Prórrogas de cuota: lo pendiente de un mes se mueve a la fecha nueva; hasta entonces no cuenta como atraso.
+    const prorrogadoPendiente = misDecs.filter(x => x.decision === 'prorroga' && x.nueva_fecha && String(x.nueva_fecha).slice(0, 7) > m).reduce((s, x) => s + Number(x.monto || 0), 0);
     const saldo = Math.max(0, Number(a.total) - pagadoTotal);
     const inicioM = String(a.inicio).slice(0, 7);
     const mesesRest = a.fecha_limite ? Math.max(1, mesesEntre(m, String(a.fecha_limite).slice(0, 7)) + 1) : null;
     const cuota = Number(a.cuota) > 0 ? Number(a.cuota) : mesesRest ? Math.ceil(saldo / mesesRest) : null;
     const mesesCorridos = Math.max(0, mesesEntre(inicioM, m)) + 1;   // meses desde que empezó, incluido este
     const esperadoAcum = cuota ? Math.min(Number(a.total), cuota * mesesCorridos) : 0;
-    const atraso = cuota ? Math.max(0, esperadoAcum - pagadoTotal) : 0;   // lo que debería llevar pagado menos lo pagado (incluye la cuota de este mes)
+    const atraso = cuota ? Math.max(0, esperadoAcum - pagadoTotal - prorrogadoPendiente) : 0;   // lo que debería llevar pagado menos lo pagado y menos lo prorrogado a futuro
     const abonosMes = ab.filter(x => x.mes === m); const abonadoMes = abonosMes.reduce((s, x) => s + Number(x.monto), 0);
     const tocaEsteMes = cuota ? Math.min(saldo, Math.max(0, atraso)) : 0;
-    return { ...a, pagado_total: pagadoTotal, saldo, cuota_mes: cuota, meses_restantes: mesesRest, atraso: Math.max(0, atraso - (cuota || 0)), toca_este_mes: tocaEsteMes, abonado_mes: abonadoMes, abonos_mes: abonosMes, abonos: ab.slice(0, 24), sin_cuota: !cuota, liquidado: saldo <= 0 };
+    return { ...a, decisiones: misDecs, prorrogado_pendiente: prorrogadoPendiente, pagado_total: pagadoTotal, saldo, cuota_mes: cuota, meses_restantes: mesesRest, atraso: Math.max(0, atraso - (cuota || 0)), toca_este_mes: tocaEsteMes, abonado_mes: abonadoMes, abonos_mes: abonosMes, abonos: ab.slice(0, 24), sin_cuota: !cuota, liquidado: saldo <= 0 };
   });
   const adeudosToca = adeudosMes.reduce((s, a) => s + a.toca_este_mes, 0);
   const adeudosAbonado = adeudosMes.reduce((s, a) => s + a.abonado_mes, 0);
@@ -121,7 +139,11 @@ export async function resumenMes(m: Mes) {
   const { data: pagosPrev } = mesesPrev.length ? await supabase.from('fin_gastos_pagos').select('gasto_id, mes').in('mes', mesesPrev) : { data: [] as any[] };
   const pagadoPrev = new Set((pagosPrev || []).map(p => `${p.gasto_id}:${p.mes}`));
   const atrasados: any[] = [];
-  for (const mp of mesesPrev) for (const g of gastos || []) if (aplicaMes(g, mp) && !g.probable && !pagadoPrev.has(`${g.id}:${mp}`)) atrasados.push({ ...g, mes: mp });
+  for (const mp of mesesPrev) for (const g of gastos || []) if (aplicaMes(g, mp) && !g.probable && !pagadoPrev.has(`${g.id}:${mp}`)) {
+    const dec = decDe(g.id, mp);
+    if (dec && dec.decision !== 'recorrer') continue;   // prórroga (ya aparece en su mes nuevo), condonado o no aplica: no se juntan
+    atrasados.push({ ...g, mes: mp, monto: Number(g.monto) * ocurrenciasMes(g), decision: dec });
+  }
   const atrasadosTotal = atrasados.reduce((s, g) => s + Number(g.monto), 0);
   const probables = aplicables.filter(g => g.probable).reduce((s, g) => s + Number(g.monto), 0);
   // Comisiones del mes: si hay cortes programados en el mes, mandan ellos (es lo que de verdad se paga los lunes); si no, las líneas.

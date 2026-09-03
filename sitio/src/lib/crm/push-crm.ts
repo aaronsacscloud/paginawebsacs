@@ -35,6 +35,29 @@ export async function pushAlEquipo(payload: PushPayload): Promise<{ enviados: nu
   return { enviados, borrados };
 }
 
+/** El push a UNA persona: los avisos de "Equipo" (menciones, respuestas) son
+ * de quien los recibe, no del equipo entero. Misma limpieza de suscripciones. */
+export async function pushA(usuario: string, payload: PushPayload): Promise<{ enviados: number; borrados: number }> {
+  const { data: subs } = await supabase
+    .from('crm_push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('usuario', usuario)
+    .limit(10);
+  if (!subs?.length) return { enviados: 0, borrados: 0 };
+  let enviados = 0, borrados = 0;
+  await Promise.all(subs.map(async (s: any) => {
+    const r = await sendPushTo({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload);
+    if (r.ok) {
+      enviados++;
+      await supabase.from('crm_push_subscriptions').update({ ultima_ok_at: new Date().toISOString(), fallos: 0 }).eq('endpoint', s.endpoint);
+    } else if (r.statusCode === 404 || r.statusCode === 410) {
+      borrados++;
+      await supabase.from('crm_push_subscriptions').delete().eq('endpoint', s.endpoint);
+    }
+  }));
+  return { enviados, borrados };
+}
+
 /** El push de un lead nuevo: quién es, por dónde llegó y a un toque de abrirlo. */
 export async function pushLeadNuevo(c: { id: string; nombre?: string | null; apellido?: string | null; whatsapp?: string | null; telefono?: string | null; email?: string | null; campana?: string | null; fuente?: string | null }) {
   const nombre = [c.nombre, c.apellido].filter(Boolean).join(' ') || c.whatsapp || c.telefono || 'Sin nombre';

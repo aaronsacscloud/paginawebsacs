@@ -40,9 +40,32 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.accion === 'gasto_guardar') {
     const g = b.gasto || {};
     if (!g.nombre || !(Number(g.monto) >= 0)) return json({ error: 'Falta nombre o monto' }, 400);
-    const fila: any = { nombre: String(g.nombre).trim(), categoria: g.categoria || 'suscripcion', monto: Number(g.monto), moneda: g.moneda || 'MXN', periodicidad: g.periodicidad || 'mensual', dia_cobro: g.dia_cobro ? Number(g.dia_cobro) : null, inicio: g.inicio ? `${String(g.inicio).slice(0, 7)}-01` : `${mesDe()}-01`, fin: g.fin ? `${String(g.fin).slice(0, 7)}-01` : null, proveedor: g.proveedor || null, notas: g.notas || null, activo: g.activo !== false, probable: !!g.probable, updated_at: ahora };
+    // Moneda: si viene en USD con tipo de cambio, el monto que manda el motor es en MXN; se guarda el original para actualizarlo.
+    const tc = Number(g.tipo_cambio) || null; const enUsd = String(g.moneda_original || g.moneda || 'MXN').toUpperCase() === 'USD';
+    const montoMxn = enUsd && tc ? Math.round(Number(g.monto_original ?? g.monto) * tc) : Number(g.monto);
+    const dias = Array.isArray(g.dias_cobro) ? g.dias_cobro.map(Number).filter((n: number) => n >= 1 && n <= 31) : String(g.dias_cobro || '').split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 31);
+    const fila: any = { nombre: String(g.nombre).trim(), categoria: String(g.categoria || 'suscripcion').trim().toLowerCase(), monto: montoMxn, moneda: 'MXN', moneda_original: enUsd ? 'USD' : 'MXN', monto_original: enUsd ? Number(g.monto_original ?? g.monto) : null, tipo_cambio: enUsd ? tc : null, periodicidad: g.periodicidad || 'mensual', dia_cobro: dias[0] ?? (g.dia_cobro ? Number(g.dia_cobro) : null), dias_cobro: dias.length ? dias : null, inicio: g.inicio ? `${String(g.inicio).slice(0, 7)}-01` : `${mesDe()}-01`, fin: g.fin ? `${String(g.fin).slice(0, 7)}-01` : null, proveedor: g.proveedor || null, notas: g.notas || null, activo: g.activo !== false, probable: !!g.probable, metodo_pago: g.metodo_pago || null, cuenta_pago: g.cuenta_pago || null, deducible: g.deducible == null ? null : !!g.deducible, centro_costo: g.centro_costo || 'empresa', monto_min: g.monto_min ? Number(g.monto_min) : null, monto_max: g.monto_max ? Number(g.monto_max) : null, recordatorio_dias: g.recordatorio_dias != null && g.recordatorio_dias !== '' ? Number(g.recordatorio_dias) : 3, pausado_hasta: g.pausado_hasta ? `${String(g.pausado_hasta).slice(0, 7)}-01` : null, etiquetas: Array.isArray(g.etiquetas) ? g.etiquetas : String(g.etiquetas || '').split(',').map((x: string) => x.trim()).filter(Boolean), updated_at: ahora };
+    if (!fila.etiquetas.length) fila.etiquetas = null;
     const q = g.id ? supabase.from('fin_gastos').update(fila).eq('id', g.id) : supabase.from('fin_gastos').insert(fila);
     const { error } = await q; return error ? json({ error: error.message }, 500) : json({ ok: true });
+  }
+  if (b.accion === 'decision_gasto' && b.gasto_id && b.mes && b.decision) {
+    if (!['recorrer', 'prorroga', 'condonado', 'no_aplica', 'quitar'].includes(b.decision)) return json({ error: 'Decisión desconocida' }, 400);
+    if (b.decision === 'quitar') { await supabase.from('fin_gastos_decisiones').delete().eq('gasto_id', b.gasto_id).eq('mes', String(b.mes).slice(0, 7)); return json({ ok: true }); }
+    if (b.decision === 'prorroga' && !b.nueva_fecha) return json({ error: 'La prórroga necesita la fecha nueva' }, 400);
+    const { error } = await supabase.from('fin_gastos_decisiones').upsert({ gasto_id: b.gasto_id, mes: String(b.mes).slice(0, 7), decision: b.decision, nueva_fecha: b.nueva_fecha || null, monto: b.monto ? Number(b.monto) : null, nota: b.nota || null, decidido_por: uid, decidido_at: ahora }, { onConflict: 'gasto_id,mes' });
+    return error ? json({ error: error.message }, 500) : json({ ok: true });
+  }
+  if (b.accion === 'decision_adeudo' && b.adeudo_id && b.mes && b.decision) {
+    if (!['recorrer', 'prorroga', 'condonado', 'quitar'].includes(b.decision)) return json({ error: 'Decisión desconocida' }, 400);
+    const mesK = String(b.mes).slice(0, 7);
+    if (b.decision === 'quitar') { await supabase.from('fin_adeudos_decisiones').delete().eq('adeudo_id', b.adeudo_id).eq('mes', mesK); await supabase.from('fin_adeudos_abonos').delete().eq('adeudo_id', b.adeudo_id).eq('mes', mesK).eq('tipo', 'condonacion'); return json({ ok: true }); }
+    if (b.decision === 'prorroga' && (!b.nueva_fecha || !(Number(b.monto) > 0))) return json({ error: 'La prórroga necesita monto y fecha nueva' }, 400);
+    const { error } = await supabase.from('fin_adeudos_decisiones').upsert({ adeudo_id: b.adeudo_id, mes: mesK, decision: b.decision, nueva_fecha: b.nueva_fecha || null, monto: b.monto ? Number(b.monto) : null, nota: b.nota || null, decidido_por: uid, decidido_at: ahora }, { onConflict: 'adeudo_id,mes' });
+    if (error) return json({ error: error.message }, 500);
+    // Condonación: el acreedor perdonó esa parte → baja el saldo como un abono de tipo condonación.
+    if (b.decision === 'condonado' && Number(b.monto) > 0) { await supabase.from('fin_adeudos_abonos').delete().eq('adeudo_id', b.adeudo_id).eq('mes', mesK).eq('tipo', 'condonacion'); await supabase.from('fin_adeudos_abonos').insert({ adeudo_id: b.adeudo_id, mes: mesK, fecha: new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10), monto: Number(b.monto), nota: `Condonado${b.nota ? `: ${b.nota}` : ''}`, tipo: 'condonacion', pagado_por: uid }); }
+    return json({ ok: true });
   }
   if (b.accion === 'gasto_borrar' && b.id) { await supabase.from('fin_gastos').delete().eq('id', b.id); return json({ ok: true }); }
   if (b.accion === 'gasto_pagar' && b.gasto_id && b.mes) {
