@@ -631,14 +631,15 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   if (enSombra) {
     // Los teléfonos de PRUEBA sí salen; el resto se marca sombra.
     // APROBADO POR UNA PERSONA = sale de verdad aunque el agente esté en sombra (práctica del dueño, 2026-09-03): la aprobación es el permiso.
-    const { data: due } = await supabase.from('ti_envios').select('id, telefono, conversation_id, contact_id, created_at, mensaje, salida, aprobado_por').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
-    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por)) {
+    const { data: due } = await supabase.from('ti_envios').select('id, telefono, conversation_id, contact_id, created_at, mensaje, salida, aprobado_por, origen').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
+    // El reenganche espera el clic del dueño: no se marca sombra al vencer su hora, se queda en la fila hasta que lo apruebe o lo detenga.
+    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por && x.origen !== 'reenganche')) {
       // En sombra la comparación es gratis: si el humano contestó este turno, el par se guarda.
       const h = await humanoContestoDespues(e);
       if (h) await guardarParHumano(e, h, 'sombra');
       else await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() }).eq('id', e.id);
     }
-    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por).map(e => e.id);
+    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && e.origen !== 'reenganche').map(e => e.id);
     if (!(due || []).some(e => esPrueba(cfg, e.telefono) || e.aprobado_por)) return { agente: 'sombra', sombra: noPrueba.length };
   }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
