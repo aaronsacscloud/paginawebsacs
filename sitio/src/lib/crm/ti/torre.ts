@@ -8,7 +8,7 @@ import { leerConfig } from './motor';
 export type Urgencia = 'ahora' | 'hoy' | 'semana';
 export type ItemTorre = {
   nivel: number;   // 1 lead espera persona · 2 dinero en la mesa · 3 aprobaciones · 4 cadena reunión · 5 rescate · 6 cierre · 7 datos
-  key: string; tipo: 'envio' | 'revision' | 'reactivacion' | 'tarea'; id: string; contact_id: string | null;
+  key: string; tipo: 'envio' | 'revision' | 'reactivacion' | 'tarea' | 'aprendizaje'; id: string; contact_id: string | null;
   lead: { nombre: string; empresa: string | null; giro: string | null; canal: string | null; etapa: string | null; telefono?: string | null };
   urgencia: Urgencia; cuando: string | null; titulo: string; chip: string; resumen: string; datos: any;
 };
@@ -18,6 +18,7 @@ const NIVEL_L: Record<number, string> = { 1: 'Te está esperando', 2: 'Dinero en
 function nivelDe(it: { tipo: string; datos: any }): number {
   const d = it.datos || {}; const p = d.payload || {};
   if (it.tipo === 'envio' || it.tipo === 'revision' || it.tipo === 'reactivacion') return 3;
+  if (it.tipo === 'aprendizaje') return 6;
   if (d.tipo === 'responder') return 1;
   if (p.campo_clave === 'cotizacion_cobro') return 2;
   if (p.campo_clave === 'rfc' && d.prioridad <= 3) return 2;
@@ -32,12 +33,12 @@ function nivelDe(it: { tipo: string; datos: any }): number {
 export async function colaTorre() {
   const cfg: any = await leerConfig();
   const ahora = Date.now(); const hoy = cdmx().toISOString().slice(0, 10);
-  const [{ data: envios }, { data: revs }, { data: reacts }, { data: tareas }, { count: ejemplosPend }, { count: datosHig }] = await Promise.all([
+  const [{ data: envios }, { data: revs }, { data: reacts }, { data: tareas }, { data: ejemplos }, { count: datosHig }] = await Promise.all([
     supabase.from('ti_envios').select('id, contact_id, telefono, mensaje, sale_at, origen, salida, adjuntos, plantilla, created_at, contacts(nombre, giro, fuente, lifecycle_stage, companies(nombre_comercial, nombre))').eq('estado', 'pendiente').order('sale_at').limit(60),
     supabase.from('ti_revision').select('id, contact_id, dia, avance, riesgo, resumen, que_funciono, preguntas_abiertas, propuesta, created_at, contacts(nombre, giro, fuente, lifecycle_stage, companies(nombre_comercial, nombre))').eq('estado', 'propuesta').order('created_at', { ascending: false }).limit(40),
     supabase.from('ti_reactivacion').select('id, contact_id, telefono, segmento, meses_sin_hablar, resumen_lead, pregunta_original, angulo, mensaje, mensaje_original, por_que, created_at, contacts(nombre, giro, fuente, lifecycle_stage, companies(nombre_comercial, nombre))').eq('estado', 'propuesta').order('created_at', { ascending: false }).limit(40),
-    supabase.from('ti_tareas').select('id, contact_id, company_id, owner_id, familia, tipo, prioridad, vence_at, atrasada, origen, lote_tipo, payload, created_at, contacts(nombre, giro, fuente, lifecycle_stage, whatsapp, companies(nombre_comercial, nombre))').eq('estado', 'pendiente').neq('tipo', 'wa_libre').order('prioridad').order('vence_at').limit(200),
-    supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('estado_rev', 'pendiente'),
+    supabase.from('ti_tareas').select('id, contact_id, company_id, owner_id, familia, tipo, prioridad, vence_at, atrasada, origen, lote_tipo, payload, created_at, contacts(nombre, giro, fuente, lifecycle_stage, whatsapp, companies(nombre_comercial, nombre))').eq('estado', 'pendiente').neq('tipo', 'wa_libre').order('prioridad').order('vence_at').limit(400),
+    supabase.from('ia_ejemplos').select('id, contact_id, situacion, respuesta, pulida, fuente, por_que, created_at, contacts(nombre, giro, fuente, lifecycle_stage, companies(nombre_comercial, nombre))').eq('estado_rev', 'pendiente').order('created_at', { ascending: false }).limit(40),
     supabase.from('ti_tareas').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente').eq('tipo', 'dato').gte('prioridad', 5),
   ]);
   const lead = (c: any, fallbackTel?: string | null) => ({ nombre: c?.nombre || (fallbackTel ? `Lead ${String(fallbackTel).slice(-4)}` : 'Lead'), empresa: c?.companies?.nombre_comercial || c?.companies?.nombre || null, giro: c?.giro || null, canal: c?.fuente || null, etapa: c?.lifecycle_stage || null, telefono: c?.whatsapp || fallbackTel || null });
@@ -53,12 +54,12 @@ export async function colaTorre() {
   for (const x of reacts || []) items.push({ nivel: 0, key: `reactivacion:${x.id}`, tipo: 'reactivacion', id: x.id, contact_id: x.contact_id, lead: lead((x as any).contacts, x.telefono), urgencia: 'semana', cuando: x.created_at, titulo: `Reactivación: ${x.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'} hace ${x.meses_sin_hablar} meses`, chip: 'Reactivación', resumen: x.resumen_lead || '', datos: { ...x, contacts: undefined } });
   for (const t of tareas || []) {
     const p: any = t.payload || {};
-    if (t.tipo === 'dato' && t.prioridad >= 5) continue;   // el lote de higiene vive en Datos
     const urg: Urgencia = t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';
     const chip = t.tipo === 'llamada' ? 'Llamar' : t.tipo === 'veredicto' ? 'Decidir' : t.tipo === 'dato' ? (p.campo_clave?.startsWith('reunion_') ? 'Reunión' : p.campo_clave?.startsWith('cotizacion_') ? 'Cotización' : 'Dato') : t.tipo === 'responder' ? 'Responder' : t.tipo === 'wa_plantilla' ? 'Plantilla' : t.tipo === 'compromiso' ? 'Compromiso' : t.tipo;
     const ld = lead((t as any).contacts); if (!(t as any).contacts?.nombre && p.instruccion) ld.nombre = String(p.instruccion).split(' — ')[0].replace(/^¿/, '').slice(0, 60);   // tareas de empresa (Cuenta SACS, RFC): el nombre viene en la instrucción
     items.push({ nivel: 0, key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
   }
+  for (const ej of ejemplos || []) items.push({ nivel: 0, key: `aprendizaje:${ej.id}`, tipo: 'aprendizaje', id: ej.id, contact_id: ej.contact_id, lead: lead((ej as any).contacts), urgencia: 'semana', cuando: ej.created_at, titulo: `Revisar ejemplo del agente (${ej.fuente || 'respuesta'})`, chip: 'Aprendizaje', resumen: String(ej.situacion || '').slice(0, 200), datos: { ...ej, contacts: undefined } });
   for (const it of items) (it as any).nivel = nivelDe(it);
   const orden: Record<Urgencia, number> = { ahora: 0, hoy: 1, semana: 2 };
   // Jerarquía (decisión 2026-09-04): primero el nivel, dentro del nivel la urgencia, y luego la hora.
@@ -74,7 +75,7 @@ export async function colaTorre() {
     reunion: (tareas || []).filter(esCadena).length,
     cotizaciones: (tareas || []).filter(esCot).length,
     datos: datosHig || 0,
-    aprendizaje: ejemplosPend || 0,
+    aprendizaje: (ejemplos || []).length,
     agente: { activo: cfg.agente_activo === true, modo: cfg.agente_modo || 'sombra', latido_hace_min: latidoAt ? Math.round((ahora - latidoAt) / 60e3) : null, vivo: latidoAt ? ahora - latidoAt < 10 * 60e3 : false },
   };
   return { items, pulsos: { ...pulsos, senales: (senales || []).length }, niveles: NIVEL_L, senales: (senales || []).map(s => ({ ...s, nombre: (s as any).contacts?.nombre || (s.detalle as any)?.nombre || 'Lead', empresa: (s as any).contacts?.companies?.nombre_comercial || (s as any).contacts?.companies?.nombre || null, contacts: undefined })), hoy };

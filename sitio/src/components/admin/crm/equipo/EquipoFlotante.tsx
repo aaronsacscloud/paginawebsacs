@@ -15,7 +15,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import type { Arbol as A, Canal as C, Mensaje as M } from './api';
 import { api, hace } from './api';
 import { useRealtime, type Senal } from './useRealtime';
-import { Avatar, textoPlano } from './ui';
+import { Avatar, textoPlano, useCss } from './ui';
 import { P } from '../../../../lib/crm/paleta';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { useIsMobile } from '../../../../lib/ui/mobile';
@@ -39,7 +39,7 @@ const CSS = `
 .eqf-orbe:focus-visible{outline:3px solid ${P.violetaAgua};outline-offset:2px}
 .eqf-orbe svg{filter:drop-shadow(0 1px 1px rgba(40,20,100,.25))}
 .eqf-orbe .brillo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.38),transparent 55%);pointer-events:none}
-.eqf-orbe .anillo{position:absolute;inset:-4px;border-radius:50%;border:2px solid ${P.violeta};opacity:0;pointer-events:none}
+.eqf-orbe .anillo{position:absolute;inset:-3px;border-radius:50%;border:2.5px solid ${P.violeta};opacity:0;pointer-events:none;background:transparent}
 .eqf-orbe.pulsa .anillo{animation:eqf-pulso 1.4s ease-out 3}
 @keyframes eqf-pulso{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.55);opacity:0}}
 .eqf-orbe.latido{animation:eqf-latido .5s ease-out}
@@ -64,8 +64,9 @@ const CSS = `
 .eqf-bur:hover{border-color:${P.violeta}}
 .eqf-bur.imp{border-color:${P.ambar};box-shadow:0 14px 40px rgba(232,168,56,.22),0 2px 6px rgba(0,0,0,.06)}
 .eqf-bur.men{border-color:${P.rosa}}
-.eqf-bur .q{font-size:.75rem;color:#6f6a86;display:flex;gap:5px;align-items:center;margin-bottom:2px;min-width:0}
-.eqf-bur .q b{color:#1e1a33;font-weight:800}
+.eqf-bur .q{font-size:.75rem;color:#6f6a86;display:flex;gap:5px;align-items:center;margin-bottom:3px;min-width:0;white-space:nowrap}
+.eqf-bur .q>*{flex:0 0 auto}
+.eqf-bur .q b{color:#1e1a33;font-weight:800;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
 .eqf-bur .q .imp{color:${P.ambarTinta};font-weight:800;text-transform:uppercase;font-size:.625rem;letter-spacing:.06em;background:${P.ambarAgua};padding:1px 6px;border-radius:6px}
 .eqf-bur .q .men{color:${P.rosaTinta};font-weight:800;text-transform:uppercase;font-size:.625rem;letter-spacing:.06em;background:${P.rosaAgua};padding:1px 6px;border-radius:6px}
 .eqf-bur .t{font-size:.8125rem;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
@@ -118,6 +119,7 @@ function resumen(m: M): string {
 }
 
 export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
+  useCss();   // el avatar y los colores son los del chat
   usarCss();
   const movil = useIsMobile();
   const [arbol, setArbol] = useState<A | null>(null);
@@ -214,7 +216,7 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('tab') === 'equipo') setAbierto(true);
     const ab = () => { setBurbujas([]); setAbierto(true); };
-    const ce = () => setAbierto(false);
+    const ce = (e: Event) => { if (!String((e as CustomEvent).detail || '').startsWith('equipo')) setAbierto(false); };
     window.addEventListener('crm:equipo', ab);
     window.addEventListener('crm:ir', ce);
     return () => { window.removeEventListener('crm:equipo', ab); window.removeEventListener('crm:ir', ce); };

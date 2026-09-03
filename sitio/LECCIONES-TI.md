@@ -243,3 +243,15 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Jerarquía de la cola (torre.ts `nivelDe`):** 1 te está esperando · 2 dinero en la mesa (aceptada sin pago, RFC tras
   pago, cotización con respuesta) · 3 aprobaciones del agente · 4 cadena de la reunión · 5 rescate · 6 cierre · 7 datos.
   La cola se agrupa por nivel; dentro, por urgencia y hora. Pulso «Señales hoy» abre el feed en la columna derecha.
+
+## 2026-09-04 · Trabajo inteligente v2: Torre · Informes · Ajustes
+
+- La sección tiene tres pestañas. **Torre** (default, pantalla completa) trae TODO lo que pide decisión: envíos,
+  revisión, reactivación, tareas, datos de higiene (nivel 7) y ejemplos de aprendizaje por revisar (nivel 6). La cola se
+  filtra con dos selects (Tipo, Cuándo) y, en Datos, «Agrupar por cliente» abre la ficha de `TrabajoDatos` en el centro.
+  **Informes**: Leads (Calificación), Revisión diaria, Biblioteca (Aprendizaje aprobado), Consumo. **Ajustes del
+  agente**: Herramientas (`TrabajoEnvios soloHerramientas`: promociones, recursos, plantillas) y Reactivación.
+- Se retiraron la barra «Tarea 1 de N · atrasadas · Ver fila · Silenciar IA» y las pestañas El día, Datos, Próximos
+  envíos, Aprendizaje, Calificación, Revisión, Reactivación y Consumo como entradas de primer nivel. Los componentes
+  siguen existiendo (se reutilizan dentro de Informes/Ajustes); `vistaTab` queda como resto sin uso hasta limpiarlo.
+- Regla: si pide decisión → cola de la Torre; si solo se mira → Informes; si se configura → Ajustes. Señales → pulso y feed.

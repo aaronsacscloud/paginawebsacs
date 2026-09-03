@@ -88,6 +88,10 @@ export default function TrabajoPanel() {
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'torre' | 'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('torre');
+  // v2 (decisión 2026-09-04): tres secciones. Torre = todo lo que pide decisión; Informes = lo que se mira; Ajustes = lo que se configura.
+  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes'>('torre');
+  const [infTab, setInfTab] = useState<'leads' | 'revision' | 'biblioteca' | 'consumo'>('leads');
+  const [ajTab, setAjTab] = useState<'herramientas' | 'reactivacion'>('herramientas');
   /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
      (el dueño lo vivió: editó, adjuntó, aprobó… y nada). Si un chunk falla, la página se recarga sola. */
   useEffect(() => {
@@ -328,30 +332,17 @@ export default function TrabajoPanel() {
       {avisoP1 && (
         <div className="ti-p1aviso" role="status"><i />{avisoP1}. Termina esta con calma.</div>
       )}
-      <div className="ti-barra">
-        <div className="ti-barra-fila">
-          <span className="ti-tt">Trabajo inteligente</span>
-          <span className="ti-num">{plan ? (tareas.length ? `Tarea 1 de ${tareas.length}` : 'Día terminado') : 'Cargando…'}</span>
-          {!!plan?.resumen?.hechas_hoy && <span className="ti-badge verde">{plan.resumen.hechas_hoy} hechas hoy</span>}
-          {!!plan?.resumen?.atrasadas && <span className="ti-badge ambar">{plan.resumen.atrasadas} atrasadas</span>}
-          <button className="ti-verfila" onClick={() => setHojaFila(true)}>Ver fila</button>
-          {t?.contact_id && <button className="ti-verfila" title="El agente deja de escribirle a este lead; lo que iba a salir se detiene" onClick={async () => { if (!confirm('¿Silenciar la IA con este lead? Lo que iba a salir se detiene y el agente ya no le escribe.')) return; await fetch('/api/crm/ti/silenciar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: t.contact_id, silenciar: true }) }); setAvisoP1('IA silenciada para este lead'); setTimeout(() => setAvisoP1(''), 4000); }}>Silenciar IA</button>}
-        </div>
-        <div className="ti-prog"><div style={{ width: plan && (plan.resumen.hechas_hoy + tareas.length) > 0 ? `${Math.round(100 * plan.resumen.hechas_hoy / (plan.resumen.hechas_hoy + tareas.length))}%` : '2%' }} /></div>
-        <div className="ti-tabs">
-          <button className={'ti-tab' + (vistaTab === 'torre' ? ' on' : '')} onClick={() => setVistaTab('torre')}>Torre</button>
-          <button className={'ti-tab' + (vistaTab === 'dia' ? ' on' : '')} onClick={() => setVistaTab('dia')}>El día</button>
-          <button className={'ti-tab' + (vistaTab === 'datos' ? ' on' : '')} onClick={() => setVistaTab('datos')}>
-            Datos {datos.length > 0 && <span className="ti-tab-n">{datos.length}</span>}
-          </button>
-          <button className={'ti-tab' + (vistaTab === 'envios' ? ' on' : '')} onClick={() => setVistaTab('envios')}>Próximos envíos</button>
-          <button className={'ti-tab' + (vistaTab === 'aprendizaje' ? ' on' : '')} onClick={() => setVistaTab('aprendizaje')}>Aprendizaje</button>
-          <button className={'ti-tab' + (vistaTab === 'calificacion' ? ' on' : '')} onClick={() => setVistaTab('calificacion')}>Calificación</button>
-          <button className={'ti-tab' + (vistaTab === 'revision' ? ' on' : '')} onClick={() => setVistaTab('revision')}>Revisión diaria</button>
-          <button className={'ti-tab' + (vistaTab === 'reactivacion' ? ' on' : '')} onClick={() => setVistaTab('reactivacion')}>Reactivación</button>
-          <button className={'ti-tab' + (vistaTab === 'consumo' ? ' on' : '')} onClick={() => setVistaTab('consumo')}>Consumo</button>
-        </div>
+      <div className="ti-cab2">
+        <span className="ti-cab2-tt">Trabajo inteligente</span>
+        <nav className="ti-cab2-tabs">
+          {([['torre', 'Torre'], ['informes', 'Informes'], ['ajustes', 'Ajustes del agente']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
+        </nav>
+        {seccion === 'informes' && <nav className="ti-cab2-sub">{([['leads', 'Leads'], ['revision', 'Revisión diaria'], ['biblioteca', 'Biblioteca'], ['consumo', 'Consumo']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (infTab === k ? ' on' : '')} onClick={() => setInfTab(k)}>{l}</button>)}</nav>}
+        {seccion === 'ajustes' && <nav className="ti-cab2-sub">{([['herramientas', 'Herramientas'], ['reactivacion', 'Reactivación']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (ajTab === k ? ' on' : '')} onClick={() => setAjTab(k)}>{l}</button>)}</nav>}
       </div>
+      {seccion === 'torre' && <div className="ti-lienzo tc-full"><TorreControl irA={(t) => { if (t === 'aprendizaje') { setSeccion('informes'); setInfTab('biblioteca'); } }} /></div>}
+      {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
+      {seccion === 'ajustes' && (ajTab === 'herramientas' ? <TrabajoEnvios soloHerramientas /> : <TrabajoReactivacion />)}
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}
       {vistaTab === 'aprendizaje' && <TrabajoAprendizaje />}
@@ -359,7 +350,6 @@ export default function TrabajoPanel() {
       {vistaTab === 'consumo' && <TrabajoConsumo />}
       {vistaTab === 'revision' && <TrabajoRevision />}
       {vistaTab === 'reactivacion' && <TrabajoReactivacion />}
-      {vistaTab === 'torre' && <div className="ti-lienzo" style={{ maxWidth: 1400 }}><TorreControl irA={(t) => setVistaTab(t as any)} /></div>}
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo" style={{ maxWidth: 980 }}>
@@ -500,6 +490,15 @@ const CSS = `
   --azul-t:#7DA6F5; --azul-a:#1b2740; --neutro:#232329; --burbuja-in:#26262e;
   --sombra:0 1px 3px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); } }
 .ti-raiz button, .ti-raiz input, .ti-raiz textarea { font-family:inherit; }
+.ti-cab2 { position:sticky; top:0; z-index:50; background:var(--carta); border-bottom:1px solid var(--linea); padding:8px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ti-cab2-tt { font-weight:800; font-size:1rem; letter-spacing:-.01em; }
+.ti-cab2-tabs, .ti-cab2-sub { display:flex; gap:2px; }
+.ti-cab2-sub { margin-left:auto; }
+.ti-cab2-tab { border:none; background:transparent; border-radius:9px; padding:7px 11px; font-weight:700; font-size:.86rem; color:var(--texto); cursor:pointer; }
+.ti-cab2-tab.on { background:#EEECFE; color:#4c1d95; }
+.ti-cab2-tab.chico { font-size:.8rem; padding:5px 9px; }
+.tc-full { max-width:none !important; padding:12px 16px 40px !important; }
+@media (max-width:700px){ .ti-cab2 { padding:8px 10px; gap:8px; } .ti-cab2-tt { display:none; } .ti-cab2-sub { margin-left:0; width:100%; overflow-x:auto; } }
 .ti-barra { position:sticky; top:0; z-index:50; background:var(--carta); border-bottom:1px solid var(--linea); padding:12px 18px 10px; }
 .ti-barra-fila { display:flex; align-items:baseline; gap:9px; max-width:760px; margin:0 auto; }
 .ti-tt { font-size:.95rem; font-weight:800; color:var(--tinta); letter-spacing:-.01em; white-space:nowrap; }

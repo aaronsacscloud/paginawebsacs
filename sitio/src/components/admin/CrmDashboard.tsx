@@ -75,10 +75,13 @@ const SacsUsuariosTab = lazySeguro(() => import('./crm/SacsUsuariosTab'));
 const OportunidadesTab = lazySeguro(() => import('./crm/OportunidadesTab'));
 const SoporteTab = lazySeguro(() => import('./crm/soporte/SoporteTab'));
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolean }, { error: string | null }> {
   state = { error: null as string | null };
   static getDerivedStateFromError(error: Error) { return { error: error.message }; }
   render() {
+    // `silencioso`: un widget que se cae (Equipo) desaparece; no pinta un
+    // cartel rojo al pie de una pantalla que no tiene nada que ver.
+    if (this.state.error && this.props.silencioso) { console.error('[crm] widget caído:', this.state.error); return null; }
     if (this.state.error) return (
       <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>
         <h3>Error en el componente</h3>
@@ -948,7 +951,11 @@ export default function CrmDashboard() {
                 icono. Y no lleva confirmación a propósito —cerrar sesión no
                 destruye nada, se vuelve a entrar— pero sí `title`, para que un
                 clic de más no te saque sin haberlo querido leer. */}
-            <div style={{ display: 'flex', borderTop: '1px solid #ece6f8' }}>
+            {/* Línea más marcada: es la que separa la navegación de las dos
+                acciones de salida, y a #ece6f8 se perdía contra el fondo lila
+                del menú — parecía que «Plegar» y «Salir» colgaban del bloque de
+                arriba. */}
+            <div style={{ display: 'flex', borderTop: '1px solid #d9d0f0' }}>
             <button
               onClick={() => setSidebarCollapsed(true)}
               aria-label="Plegar menú"
@@ -1178,6 +1185,11 @@ export default function CrmDashboard() {
           <ContactProfile contactId={profileContactId} onClose={() => setProfileContactId(null)} />
         </Suspense>
       )}
+
+      {/* Equipo: la esfera flotante de abajo a la derecha, en todas las
+          pantallas. Cerrada enseña lo que llegó; abierta es el chat completo
+          encima del CRM, sin salir de la pestaña en la que uno estaba. */}
+      <ErrorBoundary silencioso><Suspense fallback={null}><EquipoFlotante tabActual={tab} /></Suspense></ErrorBoundary>
 
       {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}
       {/* El volado del grupo. Fijo y anclado al botón: la lista del menú tiene

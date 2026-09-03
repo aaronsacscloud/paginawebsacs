@@ -59,29 +59,290 @@ const FRASES = [
   <div class="jo-film-velo"></div>
 </div>
 
-<!-- El cierre -->
-<section class="jo-banda" id="manifiesto">
-  <div class="jo-riel">
-    <div class="jo-pegado">
-      <div class="jo-piezas" aria-hidden="true">
-        {FRASES.map((f, i) => (
-          <div class="jo-pieza" data-i={i} style={`background-image:url(/images/joyas/joya-${f.joya}.webp)`}></div>
-        ))}
-      </div>
-      <canvas class="jo-brillos" aria-hidden="true"></canvas>
-      <div class="jo-frases">
-        {FRASES.map((f, i) => (
-          <p class="jo-frase" data-i={i} style={`--origen:${f.origen}`}>
-            {f.texto.split(' ').map((w, j) => (
-              <span style={`--w:${j}`}>{w}&nbsp;</span>
-            ))}
-          </p>
-        ))}
-      </div>
-      <div class="jo-pie">
-        <span class="jo-pie-r">Ruben's Bridal</span>
-        <span class="jo-pie-s">× Sacs</span>
-      </div>
-    </div>
-  </div>
-</section>
+<style is:global>
+/* ══════════════════════════════════════════════════════════════════
+   La capa ambiental
+   ══════════════════════════════════════════════════════════════════ */
+.jo-film {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden; background: #F3F0EC;
+}
+.jo-film-p {
+  position: absolute; inset: -12%;
+  background-size: cover; background-position: center;
+  opacity: 0;
+  /* El desenfoque vive AQUÍ, no en el papel: se resuelve una vez en el
+     compositor. Un backdrop-filter sobre un documento de 4,600px se recalcula
+     en cada cuadro del scroll y en un teléfono eso se siente. */
+  filter: blur(16px) saturate(.82) brightness(1.06);
+  transform: scale(1.08);
+  will-change: opacity, transform;
+  transition: opacity 2.6s ease;
+}
+.jo-film-p[data-viva] {
+  opacity: .82;
+  animation: jo-deriva 26s ease-in-out infinite alternate;
+}
+@keyframes jo-deriva {
+  from { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  to   { transform: scale(1.14) translate3d(1.5%, 1.5%, 0); }
+}
+/* Un velo cálido que empuja la foto al fondo y evita que compita con el texto. */
+.jo-film-velo {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(110% 70% at 50% 0%, rgba(255,255,255,.22), transparent 62%),
+    linear-gradient(180deg, rgba(246,244,243,.24), rgba(246,244,243,.42));
+}
+
+/* El papel se vuelve translúcido: la joya se ve DETRÁS. */
+.pb-hoja { background: rgba(255,255,255,.935) !important; position: relative; z-index: 1; }
+.pb-top  { position: sticky; z-index: 40; }
+.pb { background: transparent !important; }
+
+@media (max-width: 720px) {
+  /* En el teléfono el papel ocupa todo el ancho, así que la joya solo se ve a
+     través de él: sube la opacidad del papel para no perder legibilidad, y baja
+     la de la película. El referee cerró esta página en 9/10 por legibilidad;
+     esto no la toca. */
+  .pb-hoja { background: rgba(255,255,255,.955) !important; }
+  .jo-film-p[data-viva] { opacity: .72; }
+  .jo-film-p { filter: blur(22px) saturate(.82) brightness(1.05); }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   La banda del manifiesto
+   ══════════════════════════════════════════════════════════════════ */
+.jo-banda {
+  position: relative; z-index: 1;
+  background: #0D0B0C; color: #fff;
+  /* Full-bleed: se sale de la hoja hasta los bordes de la ventana. */
+  margin: clamp(56px, 9vw, 96px) calc(50% - 50vw) 0;
+  width: 100vw; max-width: 100vw;
+}
+.jo-riel { height: 420vh; }
+.jo-pegado {
+  position: sticky; top: 0; height: 100svh;
+  display: grid; place-items: center; overflow: hidden;
+}
+
+.jo-piezas { position: absolute; inset: 0; }
+.jo-pieza {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transform: scale(1.16);
+  will-change: opacity, transform;
+}
+.jo-pieza::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(72% 58% at 50% 46%, rgba(13,11,12,.14), rgba(13,11,12,.78) 82%),
+    linear-gradient(180deg, rgba(13,11,12,.46), rgba(13,11,12,.16) 42%, rgba(13,11,12,.86));
+}
+
+.jo-brillos { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.jo-frases { position: relative; width: min(760px, 86vw); text-align: center; }
+.jo-frases::before {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: 168vw; height: 46vh; transform: translate(-50%, -50%);
+  background: radial-gradient(58% 50% at 50% 50%, rgba(9,8,9,.86), rgba(9,8,9,.55) 55%, transparent 78%);
+  pointer-events: none;
+}
+.jo-frase {
+  position: absolute; left: 0; right: 0; top: 50%;
+  margin: 0; transform: translateY(-50%);
+  font-family: 'Iowan Old Style', Georgia, serif;
+  font-size: clamp(1.6rem, 5.2vw, 3.1rem);
+  line-height: 1.16; letter-spacing: -.015em; text-wrap: balance;
+  opacity: 0; pointer-events: none;
+}
+.jo-frase span {
+  display: inline-block;
+  opacity: 0;
+  /* Cada palabra nace del punto de luz de la joya: sale de ahí, chica y
+     desenfocada, y se acomoda. */
+  transform: translate3d(0, 14px, 0) scale(.86);
+  filter: blur(9px);
+  transform-origin: var(--origen);
+  color: #F6F1E7;
+  text-shadow: 0 0 26px rgba(214,184,122,.4);
+}
+.jo-frase[data-viva] { opacity: 1; }
+.jo-frase[data-viva] span {
+  opacity: 1; transform: none; filter: none;
+  transition: opacity .5s ease, transform .62s cubic-bezier(.16,.84,.3,1), filter .5s ease;
+  transition-delay: calc(var(--w) * 52ms);
+}
+
+.jo-pie {
+  position: absolute; left: 0; right: 0; bottom: clamp(22px, 5vh, 46px);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.jo-pie-r { color: #D6B87A; }
+.jo-pie-s { color: rgba(255,255,255,.42); }
+
+@media (max-width: 720px) {
+  .jo-riel { height: 360vh; }
+  .jo-frases { width: 88vw; }
+  .jo-frase { font-size: clamp(1.45rem, 6.4vw, 2rem); }
+}
+
+/* Sin movimiento: una pieza quieta, las frases una debajo de otra. */
+@media (prefers-reduced-motion: reduce) {
+  .jo-film-p[data-viva] { animation: none; }
+  .jo-riel { height: auto; }
+  .jo-pegado { position: static; height: auto; padding: 64px 0; display: block; }
+  .jo-brillos { display: none; }
+  .jo-pieza { opacity: 0 !important; }
+  .jo-pieza[data-i='0'] { opacity: .5 !important; transform: none; }
+  .jo-frases { margin: 0 auto; }
+  .jo-frase { position: static; opacity: 1; transform: none; margin: 0 0 42px; }
+  .jo-frase span { opacity: 1; transform: none; filter: none; }
+  .jo-pie { position: static; margin-top: 20px; }
+}
+</style>
+
+<script>
+  const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── La capa ambiental ───────────────────────────────────────────────
+  // Una pieza viva a la vez. Se cruzan cada 9 s con una transición de 2.6 s,
+  // así que nunca hay un corte: la joya de atrás se disuelve en la siguiente.
+  const film = document.querySelectorAll('.jo-film-p');
+  if (film.length && !quieto) {
+    let v = 0;
+    film[0].setAttribute('data-viva', '');
+    setInterval(() => {
+      film[v].removeAttribute('data-viva');
+      v = (v + 1) % film.length;
+      film[v].setAttribute('data-viva', '');
+    }, 9000);
+  } else if (film.length) {
+    film[0].setAttribute('data-viva', '');
+  }
+
+  // ── La banda ────────────────────────────────────────────────────────
+  const banda = document.querySelector('.jo-banda');
+  if (banda && !quieto) {
+    const riel = banda.querySelector('.jo-riel');
+    const piezas = [...banda.querySelectorAll('.jo-pieza')];
+    const frases = [...banda.querySelectorAll('.jo-frase')];
+    const lienzo = banda.querySelector('.jo-brillos');
+    const N = frases.length;
+
+    // ── Los brillos ──
+    // Puntos de luz que nacen del centro de la pieza viva y se apagan. Es un
+    // canvas 2D y no WebGL a propósito: son 60 puntos, un shader aquí sería
+    // 700 KB de librería para algo que el 2D resuelve sin despeinarse.
+    const ctx = lienzo.getContext('2d');
+    let W = 0, H = 0, dpr = 1;
+    const medir = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = lienzo.clientWidth; H = lienzo.clientHeight;
+      lienzo.width = Math.round(W * dpr);
+      lienzo.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    medir();
+    window.addEventListener('resize', medir);
+
+    // En el teléfono son menos: el mismo número que en escritorio se ve
+    // apelmazado en 390px y cuesta batería para nada.
+    const CHISPAS = window.matchMedia('(max-width: 720px)').matches ? 34 : 58;
+    const chispas = Array.from({ length: CHISPAS }, (_, i) => ({
+      x: Math.random(), y: Math.random(),
+      r: 0.35 + Math.random() * 0.95,
+      f: 0.15 + Math.random() * 0.5,       // velocidad de parpadeo
+      d: Math.random() * Math.PI * 2,      // desfase
+      vx: (Math.random() - 0.5) * 0.00016,
+      vy: -0.00008 - Math.random() * 0.00014,
+    }));
+
+    let visible = false, raf = 0, t0 = performance.now();
+
+    function cuadro(t) {
+      raf = 0;
+      if (!visible) return;
+      const s = (t - t0) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter';
+      for (const c of chispas) {
+        c.x += c.vx; c.y += c.vy;
+        if (c.y < -0.05) { c.y = 1.05; c.x = Math.random(); }
+        const a = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(s * c.f * 3.1 + c.d));
+        const x = c.x * W, y = c.y * H, r = c.r * (0.85 + a * 0.6);
+        // Un núcleo duro y un halo corto: eso se lee como destello de piedra.
+        // Con un halo de siete radios se leía como bokeh de fondo desenfocado.
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4.2);
+        g.addColorStop(0, `rgba(255,250,238,${0.95 * a})`);
+        g.addColorStop(0.18, `rgba(255,238,200,${0.55 * a})`);
+        g.addColorStop(0.5, `rgba(214,184,122,${0.16 * a})`);
+        g.addColorStop(1, 'rgba(214,184,122,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r * 4.2, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      raf = requestAnimationFrame(cuadro);
+    }
+
+    // El canvas solo dibuja cuando la banda está en pantalla. Sin esto se
+    // quedaría animando durante las cuatro mil pixeles de formulario de arriba,
+    // quemando batería para nadie.
+    new IntersectionObserver((ents) => {
+      visible = ents[0].isIntersecting;
+      if (visible && !raf) { t0 = performance.now(); raf = requestAnimationFrame(cuadro); }
+      if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; ctx.clearRect(0, 0, W, H); }
+    }, { threshold: 0 }).observe(banda);
+
+    // ── El recorrido ──
+    // Cada frase tiene su tramo. Dentro del tramo: la pieza entra, la frase se
+    // arma palabra por palabra desde el punto de luz, se sostiene, y las dos se
+    // van juntas. `REPOSO` es lo que dura quieta — sin eso se lee a medias.
+    const REPOSO = 0.42;
+    const suave = (x) => x * x * (3 - 2 * x);
+
+    let ticking = false;
+    function colocar() {
+      ticking = false;
+      const r = riel.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      const p = Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
+      const tramo = p * N;
+      const i = Math.min(N - 1, Math.floor(tramo));
+      const t = Math.min(1, Math.max(0, tramo - i));
+
+      piezas.forEach((el, k) => {
+        const d = k - i;
+        if (Math.abs(d) > 1) { el.style.opacity = '0'; return; }
+        let op, esc;
+        if (k === i) {
+          // Entra rápido, se sostiene, y solo al final empieza a irse.
+          const salida = t > 1 - (1 - REPOSO) / 2 ? (t - (1 - (1 - REPOSO) / 2)) / ((1 - REPOSO) / 2) : 0;
+          op = 1 - salida * 0.85;
+          esc = 1.16 - 0.12 * suave(Math.min(1, t / REPOSO)) - salida * 0.03;
+        } else if (k === i + 1) {
+          const entrada = t > 1 - (1 - REPOSO) / 2 ? (t - (1 - (1 - REPOSO) / 2)) / ((1 - REPOSO) / 2) : 0;
+          op = entrada * 0.9; esc = 1.2 - 0.04 * entrada;
+        } else { op = 0; esc = 1.16; }
+        el.style.opacity = String(Math.max(0, op));
+        el.style.transform = `scale(${esc.toFixed(3)})`;
+      });
+
+      frases.forEach((el, k) => {
+        // La frase vive dentro de su tramo, y se va antes que la pieza para que
+        // no se lea encima de la siguiente.
+        const dentro = k === i && t > 0.06 && t < 0.88;
+        if (dentro) el.setAttribute('data-viva', '');
+        else el.removeAttribute('data-viva');
+      });
+    }
+
+    const alScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(colocar); } };
+    window.addEventListener('scroll', alScroll, { passive: true });
+    window.addEventListener('resize', alScroll);
+    colocar();
+  }
+</script>

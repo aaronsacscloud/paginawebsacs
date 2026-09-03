@@ -97,7 +97,7 @@ export const ESTILOS_ENVIOS = `
 .ti-apr-ultimos li { font-size:.86rem; border-left:3px solid var(--morado,#6d28d9); padding:2px 0 2px 10px; } .ti-apr-ultimos li div { margin-top:3px; white-space:pre-wrap; }
       `;
 
-export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: () => void } = {}) {
+export default function TrabajoEnvios({ onIrAprendizaje, soloHerramientas }: { onIrAprendizaje?: () => void; soloHerramientas?: boolean } = {}) {
   const [pend, setPend] = useState<Envio[]>([]);
   const [rec, setRec] = useState<Envio[]>([]);
   const [cfg, setCfg] = useState<{ agente_activo: boolean; veto_min: number; modo?: string; pruebas?: string[]; sin_credito_desde?: string | null } | null>(null);
@@ -161,7 +161,8 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const esPrueba = (e: Envio) => (cfg?.pruebas || []).some(t => String(t).replace(/\D/g, '').slice(-10) === String(e.telefono).replace(/\D/g, '').slice(-10));
 
   return (
-    <div className="ti-lienzo">
+    <div className="ti-lienzo" data-solo={soloHerramientas ? '1' : undefined}>
+      {soloHerramientas && <style>{`.ti-lienzo[data-solo] > *:not(.ti-herr-carta){display:none !important}`}</style>}
       {banner && (
         <div className={'ti-banner ' + banner.tipo} role="status">
           <b>{banner.tipo === 'ok' ? '✓ ' : ''}{banner.texto}</b>{banner.sub && <span>{banner.sub}</span>}
@@ -275,7 +276,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
 
       {/* HERRAMIENTAS DEL AGENTE: lo que tiene a la mano para escribir mejor. Cada tarjeta se abre a su editor.
           Lo que el agente APRENDIÓ vive en la pestaña Aprendizaje, no aquí. */}
-      <div className="ti-carta">
+      <div className="ti-carta ti-herr-carta">
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
           <h3 className="ti-h3" style={{ margin: 0 }}>Herramientas del agente</h3>
           <span className="ti-suave" style={{ margin: 0 }}>Promociones, recursos y plantillas que usa al escribir. Lo que ha aprendido de ti está en la pestaña Aprendizaje.</span>

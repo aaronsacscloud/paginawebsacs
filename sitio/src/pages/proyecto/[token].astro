@@ -9,6 +9,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { briefPorToken, etapasDe } from '../../lib/proyecto/store';
 import { getSessionFromRequest } from '../../lib/auth/session';
+import Joyas from '../../components/proyecto/Joyas.astro';
+import JoyasBanda from '../../components/proyecto/JoyasBanda.astro';
 
 export const prerender = false;
 
@@ -35,6 +37,7 @@ const fechaFirma = brief.firmado_at
   description={`Documento de trabajo del proyecto ${brief.proyecto}`}
   bareLayout={true}
 >
+  <Joyas />
   <div class="pb" data-token={brief.token} data-firmado={firmado ? '1' : ''} data-sacs={esSacs ? '1' : ''}>
 
     <!-- ─────────────────────────── Encabezado ─────────────────────────── -->
@@ -222,6 +225,8 @@ const fechaFirma = brief.firmado_at
         </div>
         <ol class="pb-log" id="pb-log"></ol>
       </section>
+
+      <JoyasBanda />
 
       <footer class="pb-pie">
         <div>Sacscloud · Documento de trabajo del proyecto</div>

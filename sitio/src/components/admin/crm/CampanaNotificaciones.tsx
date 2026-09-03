@@ -231,17 +231,25 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
             margin: '1px 8px', padding: '7px 10px', borderRadius: 9,
             fontSize: '0.79rem', fontWeight: 700, color: '#5a5a63',
           }}>
-          <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: '#9B8CFA' }}>{icono}</span>
+          {/* Lo urgente lo dice un PUNTO en la campana, no el color de toda la
+              pastilla. La regla original era buena —rojo solo si hay algo
+              urgente— pero con 99+ sin leer siempre hay algo urgente, así que
+              el rojo estaba puesto de forma permanente: un bloque rojo fijo en
+              la esquina del menú, que ya no avisa de nada y ensucia todo el
+              pie. Un punto dice lo mismo y cabe en 6 píxeles. */}
+          <span style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0, color: '#9B8CFA' }}>
+            {icono}
+            {hayUrgente && noLeidas > 0 && (
+              <span title="Hay algo urgente sin leer"
+                style={{ position: 'absolute', top: -1, right: -2, width: 6, height: 6, borderRadius: 99, background: '#C0554E', boxShadow: '0 0 0 1.5px #F8F6FE' }} />
+            )}
+          </span>
           Notificaciones
           {noLeidas > 0 && (
-            /* Morado, no rojo: en este módulo el rojo significa "atiéndelo hoy"
-               —vencidos, eliminados, inasistencias— y unas notificaciones
-               normales gastaban esa señal. Vuelve al rojo SOLO si alguna sin
-               leer es urgente; así, cuando aparece, se le hace caso. */
             <span style={{
-              marginLeft: 'auto', minWidth: 22, textAlign: 'center', borderRadius: 20,
-              background: hayUrgente ? '#C0554E' : '#9B8CFA', color: '#fff',
-              fontSize: '0.63rem', fontWeight: 800, padding: '3px 8px',
+              marginLeft: 'auto', minWidth: 20, textAlign: 'center', borderRadius: 20,
+              background: '#EEECFE', color: '#5B4BD6',
+              fontSize: '0.63rem', fontWeight: 800, padding: '2px 7px',
             }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
           )}
         </button>

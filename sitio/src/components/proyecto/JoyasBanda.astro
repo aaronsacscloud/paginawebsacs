@@ -1,0 +1,59 @@
+---
+// El cierre del brief. Los estilos y la lógica viven en Joyas.astro, que se
+// monta arriba: aquí solo va el marcado, para que la banda quede al final de
+// la página y no le meta peaje al cliente que entra a contestar.
+const FRASES = [
+  {
+    texto: 'Una joya se compra con los ojos mucho antes que con la tarjeta.',
+    joya: 1,
+    origen: '68% 34%',
+  },
+  {
+    texto: 'Nadie compra alta joyería a un desconocido. Por eso preguntamos tanto.',
+    joya: 4,
+    origen: '38% 52%',
+  },
+  {
+    texto: 'Cada respuesta de este documento se vuelve una decisión de diseño.',
+    joya: 3,
+    origen: '55% 44%',
+  },
+  {
+    texto: 'Su cliente no va a leer este brief. Va a ver el resultado.',
+    joya: 6,
+    origen: '46% 58%',
+  },
+  {
+    texto: 'Lo que aquí se define, en 45 días está en línea.',
+    joya: 5,
+    origen: '60% 40%',
+  },
+];
+---
+
+<section class="jo-banda" id="manifiesto">
+  <div class="jo-riel">
+    <div class="jo-pegado">
+      <div class="jo-piezas" aria-hidden="true">
+        {FRASES.map((f, i) => (
+          <div class="jo-pieza" data-i={i} style={`background-image:url(/images/joyas/joya-${f.joya}.webp)`}></div>
+        ))}
+      </div>
+      <canvas class="jo-brillos" aria-hidden="true"></canvas>
+      <div class="jo-frases">
+        {FRASES.map((f, i) => (
+          <p class="jo-frase" data-i={i} style={`--origen:${f.origen}`}>
+            {f.texto.split(' ').map((w, j) => (
+              <span style={`--w:${j}`}>{w}&nbsp;</span>
+            ))}
+          </p>
+        ))}
+      </div>
+      <div class="jo-pie">
+        <span class="jo-pie-r">Ruben's Bridal</span>
+        <span class="jo-pie-s">× Sacs</span>
+      </div>
+    </div>
+  </div>
+</section>
+

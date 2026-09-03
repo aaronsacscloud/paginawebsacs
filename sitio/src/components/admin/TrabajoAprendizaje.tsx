@@ -161,10 +161,10 @@ function Ficha({ tipo, id, contactId, onContexto, titulo, chips, leadDijo, conte
   );
 }
 
-export default function TrabajoAprendizaje() {
+export default function TrabajoAprendizaje({ inicial }: { inicial?: 'revisar' | 'aprobado' } = {}) {
   const [ctxId, setCtxId] = useState<string | null>(null);
   const [d, setD] = useState<any>(null);
-  const [sub, setSub] = useState<'revisar' | 'aprobado'>('revisar');
+  const [sub, setSub] = useState<'revisar' | 'aprobado'>(inicial || 'revisar');
   const [filtro, setFiltro] = useState<'todo' | 'ejemplos' | 'envios' | 'pares'>('todo');
   const [hechos, setHechos] = useState<Record<string, string>>({});
   const [idx, setIdx] = useState(0);

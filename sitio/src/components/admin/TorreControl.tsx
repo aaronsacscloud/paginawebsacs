@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ContextoLead from './crm/ti/ContextoLead';
 import MinutaLead from './crm/MinutaLead';
+import TrabajoDatos from './TrabajoDatos';
 
 /* ═══ TORRE DE CONTROL ═══ (goal del dueño 2026-09-03)
    Una pantalla: la COLA de lo que sigue (izquierda), la ACCIÓN con las cuatro preguntas (centro) y el CONTEXTO del
@@ -12,7 +13,7 @@ const hora = (iso?: string | null) => iso ? new Date(iso).toLocaleTimeString('es
 const fechaCorta = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short' }) : '';
 const ETAPA: Record<string, string> = { lead: 'Lead', lead_calificado: 'Calificado', oportunidad: 'Oportunidad', cliente: 'Cliente', descalificado: 'Descalificado', rezagado: 'Rezagado', churned: 'Churn' };
 const URG: Record<string, string> = { ahora: 'Ahora', hoy: 'Hoy', semana: 'Esta semana' };
-const CHIP_COLOR: Record<string, { bg: string; fg: string }> = { 'Aprobar mensaje': { bg: '#EEECFE', fg: '#4c1d95' }, 'Llamar': { bg: '#fde7e5', fg: '#b3261e' }, 'Reunión': { bg: '#fff1dc', fg: '#a15c0a' }, 'Cotización': { bg: '#fff1dc', fg: '#a15c0a' }, 'Revisión diaria': { bg: '#EEECFE', fg: '#4c1d95' }, 'Reactivación': { bg: '#e0e7ff', fg: '#1e3a8a' }, 'Decidir': { bg: '#fde7e5', fg: '#b3261e' } };
+const CHIP_COLOR: Record<string, { bg: string; fg: string }> = { 'Aprobar mensaje': { bg: '#EEECFE', fg: '#4c1d95' }, 'Llamar': { bg: '#fde7e5', fg: '#b3261e' }, 'Reunión': { bg: '#fff1dc', fg: '#a15c0a' }, 'Cotización': { bg: '#fff1dc', fg: '#a15c0a' }, 'Revisión diaria': { bg: '#EEECFE', fg: '#4c1d95' }, 'Reactivación': { bg: '#e0e7ff', fg: '#1e3a8a' }, 'Decidir': { bg: '#fde7e5', fg: '#b3261e' }, 'Aprendizaje': { bg: '#fff1dc', fg: '#a15c0a' }, 'Dato': { bg: '#f3f4f6', fg: '#4a4658' } };
 const MOTIVOS_VETO = ['Tono', 'Dato incorrecto', 'No es el momento', 'Lo tomo yo', 'Otro'];
 const MOTIVOS_REACT = ['No es el lead correcto', 'El ángulo no le pega', 'Muy vendedor', 'Todavía no'];
 const useAncho = () => { const [w, setW] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200); useEffect(() => { const f = () => setW(window.innerWidth); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []); return w; };
@@ -38,7 +39,10 @@ function FeedSenales({ senales, onIr }: { senales: any[]; onIr: (cid: string) =>
 export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const [d, setD] = useState<any>(null);
   const [sel, setSel] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<string>('todo');
+  const [fTipo, setFTipo] = useState<string>('todo');
+  const [fCuando, setFCuando] = useState<string>('todo');
+  const [agrupar, setAgrupar] = useState<'lead' | 'cliente'>('lead');
+  const filtro = fTipo; const setFiltro = setFTipo;
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [edit, setEdit] = useState<Record<string, string>>({});
@@ -53,15 +57,23 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const ancho = useAncho(); const movil = ancho < 960;
   const cargar = () => fetch('/api/crm/ti/torre').then(r => r.json()).then(j => { setD(j); }).catch(() => setD({ error: 'No se pudo cargar la torre' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 20000); return () => clearInterval(t); }, []);
+  const TIPOS: [string, string, (x: Item) => boolean][] = [
+    ['todo', 'Todo', () => true],
+    ['aprobar', 'Aprobar mensajes', x => x.tipo === 'envio' || x.tipo === 'revision'],
+    ['reenganche', 'Reenganche', x => x.tipo === 'envio' && x.datos?.origen === 'reenganche'],
+    ['reactivacion', 'Reactivación', x => x.tipo === 'reactivacion' || (x.tipo === 'envio' && x.datos?.origen === 'reactivacion')],
+    ['llamar', 'Llamar', x => x.tipo === 'tarea' && x.datos?.tipo === 'llamada'],
+    ['reunion', 'Reunión', x => x.chip === 'Reunión' || x.datos?.tipo === 'cotizar' || x.datos?.payload?.reloj === 'segunda_reunion'],
+    ['cotizacion', 'Cotización', x => x.chip === 'Cotización' || String(x.datos?.payload?.reloj || '').startsWith('cot_')],
+    ['datos', 'Datos', x => x.tipo === 'tarea' && x.datos?.tipo === 'dato' && !String(x.datos?.payload?.campo_clave || '').startsWith('reunion_') && !String(x.datos?.payload?.campo_clave || '').startsWith('cotizacion_')],
+    ['aprendizaje', 'Aprendizaje', x => x.tipo === 'aprendizaje'],
+    ['decidir', 'Decidir', x => x.tipo === 'tarea' && x.datos?.tipo === 'veredicto'],
+  ];
   const items: Item[] = useMemo(() => {
     const all: Item[] = d?.items || [];
-    if (filtro === 'todo') return all;
-    if (filtro === 'aprobar') return all.filter(x => ['envio', 'revision', 'reactivacion'].includes(x.tipo));
-    if (filtro === 'llamar') return all.filter(x => x.tipo === 'tarea' && x.datos.tipo === 'llamada');
-    if (filtro === 'reunion') return all.filter(x => x.chip === 'Reunión');
-    if (filtro === 'cotizacion') return all.filter(x => x.chip === 'Cotización' || x.datos?.payload?.reloj?.startsWith?.('cot_'));
-    return all;
-  }, [d, filtro]);
+    const ft = TIPOS.find(t => t[0] === fTipo)?.[2] || (() => true);
+    return all.filter(x => ft(x) && (fCuando === 'todo' || x.urgencia === fCuando));
+  }, [d, fTipo, fCuando]); // eslint-disable-line react-hooks/exhaustive-deps
   const actual: Item | null = useMemo(() => items.find(x => x.key === sel) || items[0] || null, [items, sel]);
   useEffect(() => { if (actual && actual.key !== sel) setSel(actual.key); }, [actual?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const siguiente = (dir = 1) => { if (!actual) return; const i = items.findIndex(x => x.key === actual.key); const n = items[(i + dir + items.length) % items.length]; if (n) setSel(n.key); };
@@ -155,6 +167,16 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         <div className="tc-despues"><b>Después:</b> sale en el siguiente hueco (máx. 15 al día, horas distintas). Si contesta, entra al ciclo normal del agente.</div>
       </div>);
     }
+    if (it.tipo === 'aprendizaje') {
+      const txt = edit[x.id] ?? (x.pulida || x.respuesta || ''); const cambiado = txt.trim() !== String(x.pulida || x.respuesta || '').trim();
+      const decidir = async (decision: 'aprobar' | 'rechazar') => { setOcupado(true); return tras(await postJ('/api/crm/ti/aprendizaje', { accion: 'ejemplo', id: x.id, decision, pulida: decision === 'aprobar' ? txt : undefined, criterio: criterio[x.id] || undefined }), decision === 'aprobar' ? 'Aprobado: el agente lo usa desde el siguiente mensaje.' : 'Rechazado: no lo repite.'); };
+      return (<div className="tc-tarjeta">{cab}
+        <div className="tc-bloque"><div className="tc-lbl">Qué pasó · {x.fuente || 'respuesta'}</div><div className="tc-txt">{x.situacion || 'El agente no está seguro de haber respondido bien.'}</div></div>
+        <div className="tc-bloque"><div className="tc-lbl">Qué hago · la respuesta que quedó {cambiado && <em>· se guardará tu versión</em>}</div><textarea ref={texareaRef} className="tc-ta" rows={5} value={txt} onChange={ev => setEdit({ ...edit, [x.id]: ev.target.value })} /><input className="tc-in" placeholder="Criterio para el agente (lo que aprende): «cuando pregunte X, primero Y»" value={criterio[x.id] || ''} onChange={ev => setCriterio({ ...criterio, [x.id]: ev.target.value })} /></div>
+        <div className="tc-btns"><button className="tc-btn p" disabled={ocupado} onClick={() => decidir('aprobar')}>{cambiado ? 'Aprobar mi versión' : 'Aprobar'}</button><button className="tc-btn" disabled={ocupado} onClick={() => decidir('rechazar')}>Rechazar</button></div>
+        <div className="tc-despues"><b>Después:</b> lo aprobado entra a la biblioteca de ejemplos que el agente lee en cada respuesta; lo rechazado se guarda como lo que evita.</div>
+      </div>);
+    }
     // tarea
     const pl = x.payload || {}; const resultados: Record<string, string> = pl.resultados || {};
     const esDato = x.tipo === 'dato'; const opciones: string[] | null = Array.isArray(pl.opciones) ? pl.opciones : null;
@@ -195,7 +217,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
     <div className={'tc' + (movil ? ' movil' : '')}>
       <div className="tc-pulsos">
         <button className={'tc-pulso' + (verSenales ? ' on' : '')} onClick={() => setVerSenales(v => !v)}><b>{p.senales || 0}</b><span>Señales hoy</span></button>
-        {pulso('aprobar', 'Por aprobar', p.por_aprobar || 0)}{pulso('llamar', 'Llamadas', p.llamadas || 0)}{pulso('reunion', 'Reunión sin resultado', p.reunion || 0)}{pulso('cotizacion', 'Cotizaciones', p.cotizaciones || 0)}{pulso('datos', 'Datos faltantes', p.datos || 0, undefined, 'datos')}{pulso('aprendizaje', 'Aprendizaje', p.aprendizaje || 0, undefined, 'aprendizaje')}
+        {pulso('aprobar', 'Por aprobar', p.por_aprobar || 0)}{pulso('llamar', 'Llamadas', p.llamadas || 0)}{pulso('reunion', 'Reunión sin resultado', p.reunion || 0)}{pulso('cotizacion', 'Cotizaciones', p.cotizaciones || 0)}{pulso('datos', 'Datos faltantes', p.datos || 0)}{pulso('aprendizaje', 'Aprendizaje', p.aprendizaje || 0)}
         <div className={'tc-pulso agente ' + (p.agente?.activo ? (p.agente.vivo ? 'ok' : 'warn') : 'off')}><b>{p.agente?.activo ? (p.agente.modo === 'vivo' ? 'Activo' : 'Sombra') : 'Apagado'}</b><span>Agente · {p.agente?.latido_hace_min == null ? 'sin latido' : p.agente.latido_hace_min <= 5 ? 'al día' : `latido hace ${p.agente.latido_hace_min} min`}</span></div>
       </div>
       {msg && <div className={'tc-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
@@ -211,8 +233,22 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         )
       ) : (
         <div className="tc-cols">
-          <aside className="tc-col"><div className="tc-col-h">Cola · {items.length}{filtro !== 'todo' && <button className="tc-link" onClick={() => setFiltro('todo')}>quitar filtro</button>}</div><Cola /></aside>
-          <main className="tc-col centro">{actual ? <Tarjeta it={actual} /> : <div className="tc-vacio"><b>Sin nada que decidir</b><p>Elige un pulso o espera a que el agente proponga.</p></div>}</main>
+          <aside className="tc-col">
+            <div className="tc-selects">
+              <select value={fTipo} onChange={e => setFTipo(e.target.value)}>{TIPOS.map(([k, l, fn]) => <option key={k} value={k}>{l}{k !== 'todo' ? ` · ${(d?.items || []).filter(fn).length}` : ''}</option>)}</select>
+              <select value={fCuando} onChange={e => setFCuando(e.target.value)}><option value="todo">Cuándo: todo</option><option value="ahora">Ahora</option><option value="hoy">Hoy</option><option value="semana">Esta semana</option></select>
+            </div>
+            <div className="tc-selects sub">
+              {fTipo === 'datos' && <select value={agrupar} onChange={e => setAgrupar(e.target.value as any)}><option value="lead">Agrupar: por dato</option><option value="cliente">Agrupar: por cliente</option></select>}
+              <span className="tc-cuenta">{items.length} pendiente{items.length === 1 ? '' : 's'}</span>
+            </div>
+            <Cola />
+          </aside>
+          <main className="tc-col centro">{fTipo === 'datos' && agrupar === 'cliente'
+            ? <TrabajoDatos datos={items.map(x => x.datos)} guardando={ocupado} error="" onRecargar={cargar}
+                onGuardar={async (x: any, valor: any) => { setOcupado(true); const r = await postJ('/api/crm/ti/tarea', { id: x.id, accion: 'hecha', detalle: { campo: x.payload?.campo || x.payload?.campo_clave, valor } }); setOcupado(false); if (r?.error) { listo('No se pudo: ' + r.error, false); return false; } cargar(); return true; }}
+                onPosponer={async (x: any) => { await postJ('/api/crm/ti/tarea', { id: x.id, accion: 'posponer', horas: 24 }); cargar(); }} />
+            : actual ? <Tarjeta it={actual} /> : <div className="tc-vacio"><b>Sin nada que decidir</b><p>Elige un tipo o espera a que el agente proponga.</p></div>}</main>
           <aside className="tc-col ctx">{verSenales ? <><div className="tc-col-h">Señales de hoy · solo lectura<button className="tc-link" onClick={() => setVerSenales(false)}>volver al contexto</button></div><FeedSenales senales={d.senales || []} onIr={(cid: string) => { const it = items.find(x => x.contact_id === cid); if (it) setSel(it.key); }} /></> : <><div className="tc-col-h">Contexto</div>{actual?.contact_id ? <ContextoLead key={actual.contact_id} inline contactId={actual.contact_id} open onClose={() => {}} /> : <div className="tc-vacio"><p>Sin contacto ligado.</p></div>}</>}</aside>
         </div>
       )}
@@ -226,6 +262,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         .tc-cols{display:grid;grid-template-columns:280px minmax(0,1fr) 360px;gap:12px;height:calc(100vh - 230px);min-height:520px}
         .tc-col{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
         .tc-col-h{padding:10px 14px;border-bottom:1px solid #f0eef6;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+        .tc-selects{display:flex;gap:6px;padding:10px 10px 0}.tc-selects.sub{padding:6px 10px 4px;align-items:center;justify-content:space-between}.tc-selects select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:7px 8px;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);background:#fff}.tc-cuenta{font-size:11px;color:var(--mute);font-weight:800;margin-left:auto}
         .tc-cola{overflow-y:auto;padding:8px;flex:1}.tc-grp{font-size:10px;font-weight:800;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin:8px 4px 6px}
         .tc-item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font-family:inherit;color:var(--ink)}
         .tc-item.on{border-color:var(--acc);background:var(--accs)}.tc-item-n{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tc-item-n span{font-weight:600;color:#6b6580}.tc-item-m{font-size:11.5px;color:var(--mute);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
