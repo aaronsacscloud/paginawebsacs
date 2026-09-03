@@ -78,7 +78,6 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [catalogId, setCatalogId] = useState<string | null>(null);
   useEffect(() => { fetch('/api/crm/whatsapp/ajustes').then(r => r.json()).then(j => setCatalogId(j?.catalog_id || null)).catch(() => {}); }, []);
   const [programados, setProgramados] = useState<any[]>([]);
-  const [sugerirSiguiente, setSugerirSiguiente] = useState(false);
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
   // Elegir un snippet (desde "/" o desde el popup): texto + su adjunto si lo tiene.
   const usarSnippet = (r: any) => {
@@ -232,7 +231,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       setTexto(''); setComentario(false); return;
     }
     if (!t && !staged.length && !remotos.length) return;
-    setOcupado(true); setError(''); setAviso(''); setSugerirSiguiente(false);
+    setOcupado(true); setError(''); setAviso('');
     let r: any;
     if (modo === 'correo') {
       if (necesitaAsunto && !asunto.trim()) { setOcupado(false); setError('Un correo nuevo necesita asunto.'); return; }
@@ -266,7 +265,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     // se repite del día y mirar la pantalla para saber si entró es el impuesto
     // que se está quitando. Dos golpes = falló, y eso se distingue sin ver.
     if (r?.error) ticError(); else ticListo();
-    if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente && !r?.encolado) setSugerirSiguiente(true); }
+    if (!r?.error) onQuitarCita?.();
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
     if (r?.error) { setError(r.error, r.error_detalle || null); return; }
     // Quedó en la cola: el texto se limpia igual (el mensaje ya no vive aquí,
@@ -518,15 +517,14 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
               </div>
             )}
             {aviso && <div style={{ padding: '6px 12px', fontSize: 11, color: avisoTono === 'espera' ? '#9a6a10' : C.emerald700, background: avisoTono === 'espera' ? '#FFF4E5' : C.emerald50 }}>{aviso}</div>}
-            {sugerirSiguiente && siguiente && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 11, color: C.moradoTinta, background: C.moradoAgua }}>
-                <span>Enviado.</span>
-                <button onClick={() => { if (!siguiente()) setAviso('No quedan conversaciones sin responder.'); setSugerirSiguiente(false); }}
-                  style={{ border: 'none', background: C.morado, color: '#fff', borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Siguiente sin responder</button>
-                <kbd style={{ fontSize: 9, border: `1px solid ${C.g200}`, borderRadius: 4, padding: '0 4px', color: C.g500, background: '#fff' }}>n</kbd>
-                <button onClick={() => setSugerirSiguiente(false)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400 }}>✕</button>
-              </div>
-            )}
+            {/* «Enviado. [Siguiente sin responder] [n] ✕» — quitado (3-sep-2026).
+                Aparecía en morado justo después de mandar un mensaje, en el
+                sitio donde uno mira si SALIÓ, y no se entendía: mezclaba un
+                acuse («Enviado.») con una invitación a irse a otra
+                conversación y con un atajo de teclado. Tres cosas distintas en
+                una franja de 20 px.
+                El acceso no se pierde: el atajo ⌘J y su leyenda siguen en la
+                pantalla vacía del inbox, que es donde se lee sin estorbar. */}
             {programados.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '6px 12px', background: C.g50, borderBottom: `1px solid ${C.g100}` }}>
                 {programados.map(p => (
@@ -780,7 +778,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {modalInteractivo && <ModalInteractivo equipo={equipo} yo={api.yo?.()} contacto={contacto} catalogId={catalogId} onCerrar={() => setModalInteractivo(false)}
         onEnviar={async (body) => {
           const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, cita: cita?.kapso_message_id || undefined, ...body }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
-          if (!r?.error) { onQuitarCita?.(); api.refrescar?.(); if (modo === 'wa' && siguiente) setSugerirSiguiente(true); }
+          if (!r?.error) { onQuitarCita?.(); api.refrescar?.(); }
           return r;
         }} />}
       {biblioteca && <Biblioteca onClose={() => setBiblioteca(false)} onElegir={async (a) => {
