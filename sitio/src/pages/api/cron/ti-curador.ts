@@ -5,6 +5,8 @@
 //   higiene     → duplicados y promos vencidas fuera de la biblioteca
 //   reglas      → prueba (con/sin + juez) hasta 2 reglas propuestas que aún no tienen prueba
 //   resultados  → ¿el lead contestó en 48 h? ¿agendó en 7 d? para calificaciones y envíos
+//   ofertas     → el momento de cada demo/llamada ofrecida: prematuras y qué pasó después
+//   autopsias   → oportunidades ganadas/perdidas/no-show de los últimos 2 días, leídas completas por Opus
 //   calificacion→ índice de vida de los leads (F4) · presupuesto → aviso al 80 % (F5)
 import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
@@ -45,13 +47,15 @@ async function reglasSinPrueba() {
 export const GET: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
   const { correr } = await import('../../../lib/crm/ti/corridas');
-  const { higieneBiblioteca, curarPendientes, medirResultados } = await import('../../../lib/crm/ti/biblioteca');
+  const { higieneBiblioteca, curarPendientes, medirResultados, medirOfertas, autopsias } = await import('../../../lib/crm/ti/biblioteca');
   const corrida = await correr('ti-curador', {
     pares,
     pendientes: () => curarPendientes(7, 20),
     higiene: higieneBiblioteca,
     reglas: reglasSinPrueba,
     resultados: medirResultados,
+    ofertas: medirOfertas,
+    autopsias: () => autopsias(5),
     calificacion: async () => { const { calificarLeads } = await import('../../../lib/crm/ti/agente'); return calificarLeads(); },
     presupuesto: async () => { const { revisarPresupuesto } = await import('../../../lib/crm/ti/consumo'); return revisarPresupuesto(); },
   });

@@ -44,6 +44,14 @@ export const factorPrueba = (cfg: any) => Math.max(1, Number(cfg?.agente_prueba_
  *  «sugerencia» —la decide un consultor en el panel Seguimiento o en la compuerta del inbox—; los números de prueba y el
  *  agente en vivo nacen «pendiente» y salen solos. Ver seguimiento.ts (paridad 9/10). */
 async function msjsTurnoAsync(cid: string) { const { count } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('contact_id', cid).in('estado', ['enviado', 'pendiente', 'sugerencia']); return (count || 0) + 1; }
+/** SEÑALES DE INTERÉS en la conversación (3-sep): precio, quiere ver, le interesa. Se guardan en ti_senales para medir el momento de la oferta. */
+export const senalDeInteres = (t: string): string | null => {
+  const x = String(t || '').toLowerCase();
+  if (/(cu[aá]nto (cuesta|sale|vale|es)|precio|costo|mensualidad|\bplan(es)?\b|cotiza)/.test(x)) return 'precio';
+  if (/(quiero ver|me lo muestras|ver(lo)? (c[oó]mo|funciona)|una demo|demostraci[oó]n|ens[eé]ñame)/.test(x)) return 'quiere_ver';
+  if (/(me interesa|s[ií] me interesa|quiero contratar|c[oó]mo (le hago|contrato|empiezo|me registro))/.test(x)) return 'interes';
+  return null;
+};
 export const nace = (cfg: any, telefono?: string | null): 'pendiente' | 'sugerencia' => ((cfg?.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) ? 'sugerencia' : 'pendiente';
 
 export type SalidaAgente = {
@@ -92,7 +100,7 @@ export async function ejemplosAprobados(estado?: string, mensaje?: string) {
     data = viejos || [];
   }
   // SEGUIMIENTO: lo que los consultores rechazaron con razón se enseña aparte, como «no así» (no entra al bloque de arriba).
-  const { data: rech } = await supabase.from('ia_ejemplos').select('estado, mensaje_lead, pulida, por_que').eq('fuente', 'rechazo_consultor').order('created_at', { ascending: false }).limit(8);
+  const { data: rech } = await supabase.from('ia_ejemplos').select('estado, mensaje_lead, pulida, por_que').in('fuente', ['rechazo_consultor', 'autopsia_perdida']).order('created_at', { ascending: false }).limit(8);
   const bloqueRech = (rech || []).length ? '\n\nLO QUE LOS CONSULTORES RECHAZARON (NO contestes así; corrige la causa):\n' + (rech || []).map(r => `[${r.estado}] Lead: ${String(r.mensaje_lead || '').slice(0, 160)}\nEl agente dijo: ${String(r.pulida || '').slice(0, 260)}\nPor qué no: ${String(r.por_que || '').replace(/^EVITAR:\s*/, '')}`).join('\n---\n') : '';
   if (!(data || []).length) return bloqueRech;
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
@@ -540,6 +548,7 @@ export async function proponerRespuestas(): Promise<any> {
         if (cv0?.telefono) await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: cv0.id, telefono: String(cv0.telefono).replace(/\D/g, ''), origen: 'respuesta', estado: nace(cfg, cv0.telefono), mensaje: 'Entendido, no te vuelvo a escribir. Si un día quieres retomarlo, aquí estoy.', salida: { estado: 'descalificado', objetivo: 'Confirmar la baja', responder: true, accion: { tipo: 'opt_out' }, reconsiderado: true }, sale_at: ahora.toISOString(), modelo: 'regla' }).then(() => {}, () => {});
         res.saltados++; continue;
       }
+      { const senal = senalDeInteres(txtBaja || ''); if (senal) await supabase.from('ti_senales').insert({ contact_id: cid, tipo: 'interes_conversacion', clave: `interes:${cid}:${ultimoPor[cid]}`, ocurrio_at: ultimoPor[cid], detalle: { senal, texto: String(txtBaja || '').slice(0, 200) } }).then(() => {}, () => {}); }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
       const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
       const d = await decidirTurno(cid, notaAg);
@@ -576,7 +585,10 @@ export async function proponerRespuestas(): Promise<any> {
       // (giro, tiendas, dolor, nº de turno). Con eso se mide después si fue el momento correcto (contestó, agendó).
       if (/\b(demo|15 minutos|agendar|llamada|te llamo|una llamada)\b/i.test(s.mensaje)) {
         const turno = await msjsTurnoAsync(cid);
-        const sabia = { giro: !!(c?.giro), tiendas: !!(c?.sucursales_interes || (c as any)?.companies?.sucursales), dolor: (s.datos || []).some((x: any) => x.campo === 'dolor') || /dolor|necesidad/.test(JSON.stringify((p as any)?.agente_estado || {})), interes: s.interes?.nivel || null };
+        const { data: pfO } = await supabase.from('ti_perfil').select('intenciones').eq('contact_id', cid).maybeSingle();
+        const intn: any[] = Array.isArray(pfO?.intenciones) ? pfO!.intenciones : [];
+        const tiene = (campo: string) => intn.some(x => x?.campo === campo && x?.valor) || (s.datos || []).some((x: any) => x.campo === campo && x.valor);
+        const sabia = { giro: !!(c?.giro) || tiene('giro'), tiendas: !!(c?.sucursales_interes || (c as any)?.companies?.sucursales) || tiene('sucursales'), dolor: tiene('dolor'), sistema_actual: tiene('sistema_actual'), interes: s.interes?.nivel || null, senal: senalDeInteres(txtBaja || '') };
         await log({ accion: 'oferta_siguiente_paso', contact_id: cid, razon: /llamada|te llamo/i.test(s.mensaje) ? 'llamada' : 'demo', detalle: { estado: s.estado, turno, sabia, datos_completos: sabia.giro && sabia.tiendas && sabia.dolor } });
       }
       res.propuestos++;
@@ -873,6 +885,8 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
         ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
+      // MUESTREO CIEGO (3-sep): en automático, 1 de cada 10 envíos va a calificación sin decir quién lo escribió, para que la paridad siga medida.
+      if ((cfg.agente_modo || 'sombra') === 'vivo' && !e.aprobado_por && Math.random() < 0.1) await supabase.from('ia_ejemplos').insert({ estado: (e.salida as any)?.estado || 'descubriendo', situacion: 'MUESTREO CIEGO: califica esta respuesta como si no supieras quién la escribió', mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje, adjuntos: (e as any).adjuntos || [], por_que: `Muestreo ciego · envio:${e.id}`, fuente: 'muestreo', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'pendiente' }).then(() => {}, () => {});
       try { const pr = await promoVigente(); if (await registrarOfertaDicha(e.contact_id, e.mensaje, pr)) await log({ accion: 'oferta_dicha', contact_id: e.contact_id, razon: pr?.nombre, detalle: { envio_id: e.id, vence: pr?.vence } }); } catch { /* la oferta no bloquea el envío */ }
       await supabase.from('contacts').update({ last_contact_at: ahora.toISOString() }).eq('id', e.contact_id);
       await agenteTomaHilo(e.conversation_id).catch(() => {});

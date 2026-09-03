@@ -119,6 +119,16 @@ async function cuerpo() {
 
   // 4d/4e/4f (curador de pares, calificación masiva, presupuesto) viven en /api/cron/ti-curador desde el 3-sep: son los pasos pesados.
 
+  // ── 4g) LUNES: recordatorio de la revisión semanal de reglas (10 min: qué está vigente y qué mueve resultados) ──
+  if (new Date(ahora.getTime() - 6 * 3600e3).getUTCDay() === 1) {
+    const [{ count: act }, { count: prop }] = await Promise.all([
+      supabase.from('ti_reglas').select('id', { count: 'exact', head: true }).eq('clave', 'regla_guion').eq('estado', 'activa'),
+      supabase.from('ti_reglas').select('id', { count: 'exact', head: true }).eq('clave', 'regla_guion').eq('estado', 'propuesta').not('texto', 'is', null),
+    ]);
+    await notificar({ clave: `reglas_semana:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `Revisión semanal de reglas: ${act || 0} vigentes, ${prop || 0} por decidir`, detalle: 'Diez minutos en Seguimiento → Reglas: mira responden 48 h y agendan 7 d, retira la regla que no mueva nada y decide las propuestas probadas.', destino: 'trabajo' } as any);
+    res.avisos++;
+  }
+
   // ── 5) MÉTRICA NORTE: citas agendadas ayer, por quién ──
   const { data: citas } = await supabase.from('bookings').select('utm_source, estado').gte('created_at', hace(1)).limit(500);
   res.citas_ayer = { agente: (citas || []).filter(b => b.utm_source === 'agente_ia').length, humanas: (citas || []).filter(b => b.utm_source !== 'agente_ia').length };

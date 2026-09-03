@@ -75,3 +75,80 @@ export async function resumenResultados() {
   for (const e of env || []) { const k = e.origen || 'otro'; porOrigen[k] = porOrigen[k] || []; porOrigen[k].push(e); }
   return { por_decision: porDecision, por_origen: Object.fromEntries(Object.entries(porOrigen).map(([k, xs]) => [k, { n: xs.length, responden_48h: tasa(xs, 'respondio_48h'), agendan_7d: tasa(xs.filter((x: any) => x.resultado?.definitivo_agenda), 'agendo_7d') }])), total: { n: (env || []).length, responden_48h: tasa(env || [], 'respondio_48h'), agendan_7d: tasa((env || []).filter(x => x.resultado?.definitivo_agenda), 'agendo_7d') } };
 }
+
+/* ── EL MOMENTO DE LA OFERTA (3-sep): ofertas de demo/llamada del agente en 30 días, prematuras (sin giro+tiendas+necesidad)
+   y qué pasó después (contestó en 48 h, agendó en 7 d). Se mide de noche y se guarda en cfg.metricas_ofertas. ── */
+export async function medirOfertas() {
+  const desde = new Date(Date.now() - 30 * 86400e3).toISOString();
+  const { data: of } = await supabase.from('ia_log').select('contact_id, razon, detalle, created_at').eq('accion', 'oferta_siguiente_paso').gte('created_at', desde).order('created_at', { ascending: false }).limit(300);
+  const lista = of || [];
+  const ahora = Date.now();
+  const res: any = { at: new Date().toISOString(), total_30d: lista.length, demo: lista.filter(x => x.razon === 'demo').length, llamada: lista.filter(x => x.razon === 'llamada').length, prematuras: lista.filter(x => (x.detalle as any)?.datos_completos === false).length, por_turno: {} as Record<string, number>, completas: { n: 0, responden: 0, agendan: 0 }, prematuras_res: { n: 0, responden: 0, agendan: 0 } };
+  for (const x of lista) { const t = String(Math.min(9, Number((x.detalle as any)?.turno) || 0)); res.por_turno[t] = (res.por_turno[t] || 0) + 1; }
+  res.pct_prematuras = lista.length ? Math.round(100 * res.prematuras / lista.length) : null;
+  // Resultado: solo las que ya cumplieron 48 h (máx. 120 para no eternizar la corrida).
+  for (const x of lista.filter(x => ahora - Date.parse(x.created_at) >= 48 * 3600e3).slice(0, 120)) {
+    if (!x.contact_id) continue;
+    const t = Date.parse(x.created_at);
+    const [{ data: ent }, { data: bk }] = await Promise.all([
+      supabase.from('ti_eventos').select('id').eq('contact_id', x.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', x.created_at).lt('ocurrio_at', new Date(t + 48 * 3600e3).toISOString()).limit(1),
+      supabase.from('bookings').select('id').eq('contact_id', x.contact_id).gt('created_at', x.created_at).lt('created_at', new Date(t + 7 * 86400e3).toISOString()).limit(1),
+    ]);
+    const b = (x.detalle as any)?.datos_completos === false ? res.prematuras_res : res.completas;
+    b.n++; if ((ent || []).length) b.responden++; if ((bk || []).length) b.agendan++;
+  }
+  for (const k of ['completas', 'prematuras_res']) { const b = res[k]; b.pct_responden = b.n ? Math.round(100 * b.responden / b.n) : null; b.pct_agendan = b.n ? Math.round(100 * b.agendan / b.n) : null; }
+  const cfg: any = await leerConfig();
+  await supabase.from('ti_config').update({ valor: { ...cfg, metricas_ofertas: res } }).eq('id', 1);
+  return { total: res.total_30d, prematuras: res.prematuras, medidas: res.completas.n + res.prematuras_res.n };
+}
+export async function resumenOfertas() { const cfg: any = await leerConfig(); return cfg.metricas_ofertas || null; }
+
+/** Rechazos de consultores por «momento» o «no entendió»: últimos 14 días vs los 14 anteriores. */
+export async function rechazosPorMomento() {
+  const MOT = ['No era el momento de mandar nada', 'No entendió lo que preguntó'];
+  const d14 = new Date(Date.now() - 14 * 86400e3).toISOString(), d28 = new Date(Date.now() - 28 * 86400e3).toISOString();
+  const [{ count: a }, { count: b }] = await Promise.all([
+    supabase.from('ti_calificaciones').select('id', { count: 'exact', head: true }).eq('decision', 'rechazar').in('motivo', MOT).gte('created_at', d14),
+    supabase.from('ti_calificaciones').select('id', { count: 'exact', head: true }).eq('decision', 'rechazar').in('motivo', MOT).gte('created_at', d28).lt('created_at', d14),
+  ]);
+  return { ultimos_14: a || 0, anteriores_14: b || 0 };
+}
+
+/* ── AUTOPSIA DE OPORTUNIDADES CERRADAS (3-sep): ganada, perdida o no-show → Opus lee la conversación completa y saca dónde se
+   decidió, qué objeción hubo, qué mensaje la giró, en qué momento se ofreció la demo y con qué datos, y una lección. ── */
+export async function autopsias(max = 5, dias = 2) {
+  if (!hasApiKey()) return { hechas: 0, motivo: 'sin_api_key' };
+  const hace2 = new Date(Date.now() - dias * 86400e3).toISOString();
+  const casos: { clave: string; contact_id: string; resultado: 'ganada' | 'perdida' | 'no_show'; motivo?: string | null }[] = [];
+  const { data: deals } = await supabase.from('deals').select('id, contact_id, stage, motivo_perdida, closed_at, updated_at').in('stage', ['cerrada_ganada', 'cerrada_perdida']).gte('updated_at', hace2).limit(20);
+  for (const d of deals || []) if (d.contact_id) casos.push({ clave: `deal:${d.id}`, contact_id: d.contact_id, resultado: d.stage === 'cerrada_ganada' ? 'ganada' : 'perdida', motivo: d.motivo_perdida });
+  const { data: bks } = await supabase.from('bookings').select('id, contact_id, estado, fecha').eq('estado', 'no_asistio').gte('fecha', new Date(Date.now() - (dias + 1) * 86400e3).toISOString().slice(0, 10)).limit(20);
+  for (const b of bks || []) if (b.contact_id) casos.push({ clave: `booking:${b.id}`, contact_id: b.contact_id, resultado: 'no_show' });
+  const res = { hechas: 0, ejemplos: 0, reglas: 0, costo: 0 };
+  for (const c of casos) {
+    if (res.hechas >= max) break;
+    const { data: ya } = await supabase.from('ia_log').select('id').eq('accion', 'autopsia').filter('detalle->>clave', 'eq', c.clave).limit(1);
+    if ((ya || []).length) continue;
+    const { data: conv } = await supabase.from('wa_conversaciones').select('id').eq('contact_id', c.contact_id).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+    if (!conv) continue;
+    const { data: msjs } = await supabase.from('wa_mensajes').select('direccion, cuerpo, tipo, created_at, autor, metadata').eq('conversation_id', conv.id).is('borrado_at', null).order('created_at', { ascending: false }).limit(40);
+    const hilo = (msjs || []).reverse().map((m, i) => `${i + 1}. ${m.direccion === 'entrante' ? 'LEAD' : (m.metadata as any)?.origen === 'agente' ? 'AGENTE' : 'CONSULTOR'} (${String(m.created_at).slice(5, 16).replace('T', ' ')}): ${m.tipo === 'text' || !m.tipo ? String(m.cuerpo || '').slice(0, 300) : `[${m.tipo}] ${String(m.cuerpo || '').slice(0, 120)}`}`).join('\n');
+    if (hilo.length < 200) continue;
+    try {
+      const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: `Autopsia de una oportunidad de Sacs (software para tiendas de moda, WhatsApp). Resultado final: ${c.resultado.toUpperCase()}${c.motivo ? ` (motivo registrado: ${c.motivo})` : ''}.\n\nCONVERSACIÓN:\n${hilo}\n\nAnaliza como director comercial. Responde SOLO JSON:\n{"donde_se_decidio":"nº de mensaje y por qué ahí","objecion":"la objeción real o vacío","mensaje_clave":"el texto NUESTRO que más ayudó (ganada) o más dañó (perdida/no_show), copiado literal, o vacío","momento_demo":{"mensaje":n|null,"tenia_datos":"qué sabíamos del negocio en ese punto","hubo_senal":true|false,"fue_prematuro":true|false},"leccion":"UNA regla operativa de 1-2 líneas que evitaría repetir lo malo o repetiría lo bueno","regla_para_el_guion":true|false}` }] });
+      const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
+      const m = t.match(/\{[\s\S]*\}/); if (!m) continue; const j = JSON.parse(m[0]);
+      res.costo += ((r.usage?.input_tokens || 0) * 15 + (r.usage?.output_tokens || 0) * 75) / 1e6;
+      await supabase.from('ia_log').insert({ accion: 'autopsia', contact_id: c.contact_id, razon: c.resultado, detalle: { clave: c.clave, ...j } });
+      if (j.mensaje_clave && String(j.mensaje_clave).length >= 20) {
+        const leadAntes = (() => { const idx = (msjs || []).slice().reverse().findIndex(m => m.direccion !== 'entrante' && String(m.cuerpo || '').includes(String(j.mensaje_clave).slice(0, 40))); const prev = idx > 0 ? (msjs || []).slice().reverse().slice(0, idx).reverse().find(m => m.direccion === 'entrante') : null; return prev ? String(prev.cuerpo || '').slice(0, 300) : null; })();
+        await supabase.from('ia_ejemplos').insert({ estado: c.resultado === 'ganada' ? 'proponiendo' : 'descubriendo', situacion: `AUTOPSIA ${c.resultado}: ${String(j.donde_se_decidio || '').slice(0, 200)}`, mensaje_lead: leadAntes, respuesta: String(j.mensaje_clave).slice(0, 1200), pulida: String(j.mensaje_clave).slice(0, 1200), por_que: `${c.resultado === 'ganada' ? 'CRITERIO' : 'EVITAR'}: ${String(j.leccion || '').slice(0, 300)}`, fuente: c.resultado === 'ganada' ? 'autopsia' : 'autopsia_perdida', contact_id: c.contact_id, conversation_id: conv.id, estado_rev: c.resultado === 'ganada' ? 'propuesta' : 'rechazado' }).then(() => {}, () => {});
+        res.ejemplos++;
+      }
+      if (j.regla_para_el_guion && j.leccion) { const { proponerRegla } = await import('./guion-datos'); const p: any = await proponerRegla({ texto: String(j.leccion).slice(0, 400), etapa: null, origen: 'autopsia', evidencias: [`${c.resultado}: ${String(j.donde_se_decidio || '').slice(0, 160)}`, j.objecion ? `Objeción: ${String(j.objecion).slice(0, 160)}` : ''].filter(Boolean), nota: `Autopsia ${c.clave}` }); if (p.ok) res.reglas++; }
+      res.hechas++;
+    } catch { /* siguiente */ }
+  }
+  return res;
+}

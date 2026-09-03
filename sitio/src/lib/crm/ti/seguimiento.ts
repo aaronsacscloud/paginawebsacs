@@ -12,6 +12,7 @@
  */
 import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
+import { anthropic, MODELS, hasApiKey } from '../../ai/client';
 
 export const META_DEFAULT = 9;
 export const VENTANA_DEFAULT = 100;   // decisión del dueño 3-sep: 100 respuestas, no 300
@@ -67,7 +68,22 @@ export async function paridad(cfgIn?: any) {
 export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolean; paridad: any }> {
   const cfg: any = await leerConfig();
   const p = await paridad(cfg);
-  if (!p.alcanzada || (cfg.agente_modo || 'sombra') === 'vivo' || cfg.paridad_lista_at) return { cambio: false, lista: !!p.alcanzada, paridad: p };
+  if ((cfg.agente_modo || 'sombra') === 'vivo') {
+    // RAMPA DE BAJADA (3-sep): en automático, si las últimas 30 calificaciones (muestreo ciego, vetos, ediciones) bajan de 8, vuelve a entrenamiento y avisa.
+    const { data: ult } = await supabase.from('ti_calificaciones').select('calificacion').order('created_at', { ascending: false }).limit(30);
+    if ((ult || []).length >= 30) {
+      const prom = ult!.reduce((s, x) => s + Number(x.calificacion || 0), 0) / ult!.length;
+      if (prom < 8) {
+        const ahora = new Date().toISOString();
+        await supabase.from('ti_config').update({ valor: { ...cfg, agente_modo: 'sombra', paridad_lista_at: null, paridad_bajada_at: ahora } }).eq('id', 1);
+        await supabase.from('ia_log').insert({ accion: 'agente_bajada', razon: `últimas 30 en ${prom.toFixed(2)} (<8): vuelve a entrenamiento`, detalle: { promedio30: prom } }).then(() => {}, () => {});
+        try { const { avisoSistema } = await import('./agente'); await avisoSistema({ tipo: 'agente_bajada', nivel: 'alerta', clave: `agente_bajada:${ahora.slice(0, 10)}`, titulo: `El agente volvió a entrenamiento: sus últimas 30 respuestas promedian ${prom.toFixed(1)}`, detalle: 'En automático, 1 de cada 10 envíos se califica a ciegas. Bajó de 8, así que otra vez todo pasa por un consultor hasta recuperar la paridad.', que_hacer: 'Revisa Seguimiento → historial: qué está fallando, y corrige con reglas.' }); } catch { /* nada */ }
+        return { cambio: true, lista: false, paridad: { ...p, modo: 'sombra' } };
+      }
+    }
+    return { cambio: false, lista: true, paridad: p };
+  }
+  if (!p.alcanzada || cfg.paridad_lista_at) return { cambio: false, lista: !!p.alcanzada, paridad: p };
   const ahora = new Date().toISOString();
   await supabase.from('ti_config').update({ valor: { ...cfg, paridad_lista_at: ahora } }).eq('id', 1);
   await supabase.from('ia_log').insert({ accion: 'paridad_lista', razon: `paridad ${p.promedio}/10 en ${p.n} respuestas (meta ${p.meta})`, detalle: p }).then(() => {}, () => {});
@@ -114,7 +130,10 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
       sim = mismoTexto ? 0.95 : similitud(e.mensaje, mensaje);
       const img = adjuntos.find(a => a.tipo === 'image') || null;
       await supabase.from('ti_envios').update({ mensaje, mensaje_original: e.mensaje_original || e.mensaje, editado_por: o.userId || null, adjuntos, imagen_id: img?.id || null, imagen_url: img?.url || null, updated_at: ahora }).eq('id', e.id);
-      const criterio = String(o.detalle || '').trim().slice(0, 600);
+      // CRITERIO INFERIDO (3-sep): si el consultor no escribió la regla detrás del cambio, se deduce del cambio (una línea) para que la lección sea criterio, no solo texto.
+      let criterio = String(o.detalle || '').trim().slice(0, 600); let criterioInferido: string | null = null;
+      if (!criterio) { criterioInferido = await inferirCriterio(e.mensaje, mensaje, mensajeLead).catch(() => null); if (criterioInferido) criterio = criterioInferido; }
+      (o as any).criterio_inferido = criterioInferido;
       await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El consultor corrigió la sugerencia del agente antes de mandarla (${e.origen})`, mensaje_lead: mensajeLead, respuesta: mensaje, pulida: mensaje, adjuntos, imagen_id: img?.id || null, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}El consultor corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
       await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'modificación en Seguimiento', detalle: { envio_id: e.id, original: e.mensaje, criterio: criterio || null, similitud: sim } }).then(() => {}, () => {});
     }
@@ -136,7 +155,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: o.detalle ? String(o.detalle).slice(0, 600) : null });
   const par = await revisarParidad();
-  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, paridad: par.paridad, lista: par.lista };
+  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null };
 }
 
 /** El humano contestó por su cuenta (teléfono, otra sesión): la sugerencia se compara y califica sola. */
@@ -192,4 +211,12 @@ export async function historialCalificaciones(limit = 60) {
     uids.length ? supabase.from('team_members').select('id, nombre').in('id', uids) : Promise.resolve({ data: [] as any[] }),
   ]);
   return (data || []).map(d => ({ ...d, contacto: (cs || []).find((c: any) => c.id === d.contact_id)?.nombre || null, usuario: (us || []).find((u: any) => u.id === d.usuario_id)?.nombre || null }));
+}
+
+/** Deduce en una línea la regla detrás de una corrección (original → final). Sonnet, barato; se guarda como CRITERIO. */
+export async function inferirCriterio(original: string, final: string, mensajeLead?: string | null): Promise<string | null> {
+  if (!hasApiKey()) return null;
+  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 120, messages: [{ role: 'user', content: `Un consultor corrigió la respuesta de un agente de WhatsApp (ventas de software para tiendas de moda). Deduce la REGLA general detrás del cambio, en una sola línea imperativa y concreta que sirva para casos parecidos (no describas el cambio, formula la regla). Si el cambio es solo de estilo trivial, dilo en la regla igual («corta a dos frases»).\nLead: «${String(mensajeLead || '').slice(0, 240)}»\nAgente: «${String(original).slice(0, 500)}»\nConsultor: «${String(final).slice(0, 500)}»\nResponde SOLO la regla, sin comillas ni prefijo.` }] });
+  const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim().split('\n')[0].slice(0, 220);
+  return t.length >= 10 ? t : null;
 }

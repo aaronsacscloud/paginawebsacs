@@ -330,3 +330,28 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Momento de la oferta:** cada vez que el agente propone demo o llamada se registra `ia_log oferta_siguiente_paso` con turno y
   qué sabía del lead (giro, tiendas, dolor, interés). Con eso se cruza después contra respuesta/cita.
 - Métricas de ángulos (`metricas_silencio`) se retiraron: nadie las leía; el resultado real por origen sale de `resumenResultados`.
+
+## 2026-09-03 (tarde) · «Adelante full»: reglas activas, momento de la oferta, autopsias, muestreo ciego
+
+- **5 reglas vigentes** (todas probadas con-vs-sin): no ofrecer demo sin giro+tiendas+necesidad (6.7 vs 6.2) · agendada: un
+  solo mensaje corto (8.4 vs 3.7) · demo solo con señal en el último mensaje, versión corta (6.9 vs 6.1) · no insistir con la
+  demo (6.5 vs 6.1) · llamada en vez de demo cuando desconfía/encadena precios (6.3 vs 5.5). Rechazadas: «descubriendo: una
+  pregunta» (empeoró), «nuevo: no activar demo» (empeoró), «momento con dos condiciones» (empeoró), «empatía antes de proponer»
+  (+0.29, marginal). **Criterio de activación automática:** delta ≥ 0.3 y violaciones ≤ sin+1 (una violación de más es ruido
+  del juez; la primera pasada con «≤ sin» rechazó 3 reglas que sí mejoraban).
+- **Momento de la oferta:** `ia_log oferta_siguiente_paso` lleva `sabia` desde ti_perfil.intenciones (giro, tiendas, dolor,
+  sistema_actual) + `senal` del último mensaje. `medirOfertas` (curador) guarda `cfg.metricas_ofertas` (30 d: prematuras %, por
+  turno, responden/agendan con datos vs sin); Seguimiento lo muestra junto con «rechazos por momento» (14 d vs 14 d).
+- **Señales conversacionales:** `senalDeInteres()` (precio / quiere_ver / interes) → `ti_senales` tipo interes_conversacion en
+  cada turno del lead. Salen en el feed de señales de la Torre.
+- **Autopsias** (`autopsias(max, dias)` en biblioteca.ts, curador 5/noche sobre 2 días): deals cerrada_ganada/perdida y bookings
+  no_asistio → Opus lee la conversación completa → ia_log autopsia + ejemplo (ganada: fuente autopsia, propuesta; perdida/no-show:
+  fuente autopsia_perdida, rechazado → entra al bloque «no contestes así») + regla propuesta si aplica. Probado con 60 días: 3
+  autopsias, 3 lecciones útiles (p. ej. «cuando el lead ya dijo que sí, el método de pago nunca es barrera: link de tarjeta en el
+  mismo minuto»).
+- **Muestreo ciego + rampa de bajada:** en vivo, 10 % de los envíos del agente → ia_ejemplos fuente muestreo estado_rev pendiente
+  (Torre); al decidirlo, `aprendizaje.ts` inserta la calificación (10/6/0). `revisarParidad` en vivo: últimas 30 < 8 → vuelve a
+  sombra y avisa (`paridad_bajada_at`).
+- **Criterio inferido:** al modificar sin escribir criterio, Sonnet deduce la regla del cambio (`inferirCriterio`) y se guarda
+  como CRITERIO; el toast lo enseña («El agente entendió: …»).
+- Recordatorio de revisión semanal de reglas: lunes en ti-aprender (notificación con vigentes/propuestas).

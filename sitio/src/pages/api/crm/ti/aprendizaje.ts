@@ -79,6 +79,12 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: ej } = await supabase.from('ia_ejemplos').select(COLS).eq('id', b.id).maybeSingle();
     if (!ej) return json({ error: 'No existe ese ejemplo' }, 404);
     const pulida = String(b.pulida ?? ej.pulida ?? ej.respuesta ?? '').trim();
+    // MUESTREO CIEGO → calificación de paridad (10 tal cual · 6 si lo corrigió · 0 si lo rechazó), ligada al envío.
+    if (ej.fuente === 'muestreo' && ['aprobar', 'rechazar'].includes(b.decision)) {
+      const envioId = (String(ej.por_que || '').match(/envio:([0-9a-f-]{36})/) || [])[1] || null;
+      const tal = b.decision === 'aprobar' && pulida === String(ej.pulida || '').trim();
+      await supabase.from('ti_calificaciones').insert({ envio_id: envioId, contact_id: ej.contact_id, conversation_id: (ej as any).conversation_id || null, usuario_id: user.id, decision: b.decision === 'rechazar' ? 'rechazar' : tal ? 'enviar' : 'modificar', calificacion: b.decision === 'rechazar' ? 0 : tal ? 10 : 6, mensaje_sugerido: ej.pulida, mensaje_final: b.decision === 'rechazar' ? null : pulida, motivo: 'Muestreo ciego en automático', detalle: criterio || null }).then(() => {}, () => {});
+    }
     if (b.decision === 'rechazar') {
       await supabase.from('ia_ejemplos').update({ estado_rev: 'rechazado', revisado_at: ahora, por_que: conCriterio(ej.por_que, criterio ? `rechazado: ${criterio}` : criterioDe(ej.por_que), evitar || evitarDe(ej.por_que)) }).eq('id', ej.id);
       await supabase.from('ia_log').insert({ accion: 'ejemplo_rechazado', contact_id: ej.contact_id, razon: criterio || 'rechazado por el dueño', detalle: { ejemplo_id: ej.id, por: user.id } });

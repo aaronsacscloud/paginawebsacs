@@ -38,7 +38,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const onDecidido = (r: any) => {
     setSaliendo(true);
     const cal = r.calificacion;
-    aviso(r.decision === 'rechazar' ? 'Rechazada: el agente toma la razón como lección. Contéstale tú desde el inbox.' : r.decision === 'modificar' ? `Enviada con tus cambios · calificación ${cal}/10${r.autonomo ? ' · ¡Llegó a la meta: ya responde solo!' : ''}` : `Enviada tal cual · 10/10${r.autonomo ? ' · ¡Llegó a la meta: ya responde solo!' : ''}`, r.decision !== 'rechazar');
+    aviso(r.decision === 'rechazar' ? 'Rechazada: el agente toma la razón como lección. Contéstale tú desde el inbox.' : r.decision === 'modificar' ? `Enviada con tus cambios · calificación ${cal}/10${r.criterio_inferido ? ` · El agente entendió: «${r.criterio_inferido}»` : ''}${r.lista ? ' · ¡Llegó a la meta: ya puedes activar el automático!' : ''}` : `Enviada tal cual · 10/10${r.autonomo ? ' · ¡Llegó a la meta: ya responde solo!' : ''}`, r.decision !== 'rechazar');
     setTimeout(async () => { setSaliendo(false); await cargar(); }, 380);
   };
   return (
@@ -66,6 +66,8 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
         <div className="sg-fila2">
           <span><b>{p.tal_cual || 0}</b> tal cual</span><span><b>{p.modificadas || 0}</b> modificadas</span><span><b>{p.rechazadas || 0}</b> rechazadas</span><span><b>{p.humano || 0}</b> por su cuenta</span><span><b>{p.hoy || 0}</b> hoy</span>
           {(p.por_usuario || []).slice(0, 4).map((u: any) => <span key={u.id} className="sg-u">{u.nombre}: {u.promedio} en {u.n}</span>)}
+          {d.ofertas && d.ofertas.total_30d > 0 && <span className="sg-u" title="Demos o llamadas que el agente propuso sin conocer giro, tiendas y necesidad (30 días). Meta: menos del 10 %">ofertas prematuras <b>{d.ofertas.pct_prematuras}%</b> de {d.ofertas.total_30d}{d.ofertas.completas?.n > 3 && d.ofertas.prematuras_res?.n > 3 ? ` · agendan ${d.ofertas.completas.pct_agendan}% con datos vs ${d.ofertas.prematuras_res.pct_agendan}% sin` : ''}</span>}
+          {d.rechazos_momento && (d.rechazos_momento.ultimos_14 > 0 || d.rechazos_momento.anteriores_14 > 0) && <span className="sg-u" title="Rechazos por «no era el momento» o «no entendió», últimos 14 días vs los 14 anteriores">rechazos por momento <b>{d.rechazos_momento.ultimos_14}</b> vs {d.rechazos_momento.anteriores_14}</span>}
           {d.resultados?.total?.n > 0 && <span className="sg-u" title="Resultado real de lo enviado: contestó en 48 h · agendó en 7 días">responden 48 h <b>{d.resultados.total.responden_48h ?? '—'}%</b>{d.resultados.por_decision?.enviar?.n > 2 && d.resultados.por_decision?.modificar?.n > 2 ? ` (tal cual ${d.resultados.por_decision.enviar.responden_48h}% · modificadas ${d.resultados.por_decision.modificar.responden_48h}%)` : ''} · agendan 7 d <b>{d.resultados.total.agendan_7d ?? '—'}%</b></span>}
           <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir{pend.length > 1 ? ` · ${Math.min(idx, pend.length - 1) + 1} de ${pend.length}` : ''} · </> : null}{vista !== 'pendientes' && <><button className="sg-link" onClick={() => { setVista('pendientes'); setIdx(0); }}>por decidir</button> · </>}{vista !== 'historial' && <><button className="sg-link" onClick={() => setVista('historial')}>historial</button> · </>}{vista !== 'reglas' && <button className="sg-link" onClick={() => setVista('reglas')}>reglas</button>}</span>
         </div>

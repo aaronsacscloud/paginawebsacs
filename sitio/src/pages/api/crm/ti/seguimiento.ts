@@ -19,9 +19,9 @@ export const GET: APIRoute = async ({ request, url }) => {
     return json({ pendientes: todas.filter(p => p.contact_id === cid), paridad: await paridad() });
   }
   const { galeriaActiva } = await import('../../../../lib/crm/ti/imagenes-agente');
-  const { resumenResultados } = await import('../../../../lib/crm/ti/biblioteca');
-  const [p, pendientes, historial, galeria, cfg, resultados] = await Promise.all([paridad(), sugerenciasPendientes(80), historialCalificaciones(80), galeriaActiva().catch(() => []), leerConfig() as Promise<any>, resumenResultados().catch(() => null)]);
-  return json({ paridad: p, pendientes, historial, galeria, resultados, config: { agente_activo: cfg.agente_activo === true, agente_modo: cfg.agente_modo || 'sombra', paridad_meta: p.meta, paridad_ventana: p.ventana, agente_prueba_telefonos: cfg.agente_prueba_telefonos || [], veto_min: Number(cfg.agente_veto_min ?? 10) } });
+  const { resumenResultados, resumenOfertas, rechazosPorMomento } = await import('../../../../lib/crm/ti/biblioteca');
+  const [p, pendientes, historial, galeria, cfg, resultados, ofertas, rechazos_momento] = await Promise.all([paridad(), sugerenciasPendientes(80), historialCalificaciones(80), galeriaActiva().catch(() => []), leerConfig() as Promise<any>, resumenResultados().catch(() => null), resumenOfertas().catch(() => null), rechazosPorMomento().catch(() => null)]);
+  return json({ paridad: p, pendientes, historial, galeria, resultados, ofertas, rechazos_momento, config: { agente_activo: cfg.agente_activo === true, agente_modo: cfg.agente_modo || 'sombra', paridad_meta: p.meta, paridad_ventana: p.ventana, agente_prueba_telefonos: cfg.agente_prueba_telefonos || [], veto_min: Number(cfg.agente_veto_min ?? 10) } });
 };
 
 export const POST: APIRoute = async ({ request }) => {
