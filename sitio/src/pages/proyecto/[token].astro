@@ -428,6 +428,21 @@ const fechaFirma = brief.firmado_at
 
 /* ── Etapas ── */
 .pb-etapas { display: flex; flex-direction: column; gap: 14px; }
+
+.pb-aviso-global {
+  padding: 18px 22px; border-radius: 13px; border: 1px solid var(--linea-fuerte);
+  background: var(--papel-2); display: flex; flex-direction: column; gap: 5px;
+}
+.pb-aviso-global strong { font-family: var(--serif); font-size: 1.16rem; font-weight: 600; }
+.pb-aviso-global span { font-size: .9rem; color: var(--tinta-suave); }
+.pb-aviso-global a { color: var(--tinta); text-decoration: none; border-bottom: 1px solid currentColor; }
+.pb-aviso-global[data-tono=preguntas] { background: var(--ambar-suave); border-color: #EFDFBF; }
+.pb-aviso-global[data-tono=preguntas] strong { color: var(--ambar); }
+.pb-aviso-global[data-tono=preguntas] span, .pb-aviso-global[data-tono=preguntas] a { color: #7A5A18; }
+.pb-aviso-global[data-tono=listo] { background: var(--verde-suave); border-color: #CFE7DC; }
+.pb-aviso-global[data-tono=listo] strong { color: var(--verde); }
+.pb-aviso-global[data-tono=espera] { background: var(--azul-suave); border-color: #CFE0FA; }
+.pb-aviso-global[data-tono=espera] strong { color: var(--azul); }
 .pb-cargando { color: var(--tenue); font-size: .93rem; padding: 20px 0; }
 
 .pb-et {
@@ -861,7 +876,43 @@ const fechaFirma = brief.firmado_at
       const aprobadas = ETAPAS.filter((e) => e.estado === 'aprobada').length;
       if (avance) avance.textContent = aprobadas + ' de ' + ETAPAS.length + ' etapas aprobadas';
 
-      cajaEtapas.innerHTML = ETAPAS.map((fila) => {
+      // Un vistazo antes de la lista: en qué va el brief y, si hay preguntas
+      // esperando, cuántas y de qué etapas. Sin esto el cliente tiene que abrir
+      // las ocho para saber si le toca algo.
+      let banner = '';
+      const conPreg = ETAPAS.map((f) => {
+        const def = DEF.find((d) => d.clave === f.clave);
+        if (!def) return null;
+        const n = def.campos.filter((c) => esperaCliente(hiloDe(f.clave, c.id))).length;
+        return n ? { titulo: def.titulo, clave: f.clave, n } : null;
+      }).filter(Boolean);
+      const totalPreg = conPreg.reduce((a, x) => a + x.n, 0);
+      const enTurno = ETAPAS.find((e) => e.estado === 'abierta' || e.estado === 'cambios');
+      const defTurno = enTurno ? DEF.find((d) => d.clave === enTurno.clave) : null;
+
+      if (totalPreg) {
+        banner = '<div class="pb-aviso-global" data-tono="preguntas">' +
+          '<strong>' + (totalPreg === 1 ? 'Hay una pregunta esperándote' : 'Hay ' + totalPreg + ' preguntas esperándote') + '</strong>' +
+          '<span>' + conPreg.map((x) => '<a href="#" data-ver="' + x.clave + '">' + esc(x.titulo) + ' (' + x.n + ')</a>').join(' · ') + '</span>' +
+          '</div>';
+      } else if (defTurno) {
+        const f = ETAPAS.find((e) => e.clave === defTurno.clave);
+        const n = contar(defTurno, borrador[defTurno.clave] || {});
+        banner = '<div class="pb-aviso-global">' +
+          '<strong>Te toca: ' + esc(defTurno.titulo) + '</strong>' +
+          '<span>' + n.hechas + ' de ' + n.total + ' contestadas' +
+          (n.faltanReq ? ' · faltan ' + n.faltanReq + ' obligatorias para poder enviarla' : ' · ya puedes enviarla') +
+          '</span></div>';
+      } else if (aprobadas === ETAPAS.length) {
+        banner = '<div class="pb-aviso-global" data-tono="listo">' +
+          '<strong>El brief está completo</strong><span>Las ocho etapas quedaron aprobadas. Nos ponemos en contacto para arrancar.</span></div>';
+      } else {
+        banner = '<div class="pb-aviso-global" data-tono="espera">' +
+          '<strong>Estamos revisando lo que mandaste</strong>' +
+          '<span>Te avisamos por correo en cuanto quede aprobada o si nos falta algo.</span></div>';
+      }
+
+      cajaEtapas.innerHTML = banner + ETAPAS.map((fila) => {
         const def = DEF.find((d) => d.clave === fila.clave);
         if (!def) return '';
         const desplegada = abierta === fila.clave && fila.estado !== 'bloqueada';
@@ -1237,7 +1288,7 @@ const fechaFirma = brief.firmado_at
       });
 
       cont.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder]');
+        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder],[data-ver]');
         if (!el || !cont.contains(el)) return;
         const clave = claveDe(el);
 
@@ -1279,6 +1330,13 @@ const fechaFirma = brief.firmado_at
           return guardar(clave);
         }
 
+        if (el.hasAttribute('data-ver')) {
+          e.preventDefault();
+          abierta = el.getAttribute('data-ver');
+          pintar();
+          cajaEtapas.querySelector('.pb-et[data-abierta]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
         if (el.hasAttribute('data-ir')) {
           e.preventDefault();
           const destino = cont.querySelector('.pb-campo[data-campo="' + el.getAttribute('data-ir') + '"]');
