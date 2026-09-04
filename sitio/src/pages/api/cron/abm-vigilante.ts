@@ -36,10 +36,8 @@ export const GET: APIRoute = async ({ request, url }) => {
   const secret = (import.meta.env.CRON_SECRET || process.env.CRON_SECRET || '').trim();
   if (secret && auth !== `Bearer ${secret}`) return json({ error: 'no autorizado' }, 401);
 
-  // Por tandas: 60 cuentas por corrida, las que llevan más sin revisar. Las 810
-  // completas se recorren en dos semanas sin castigar a nadie con 810 peticiones.
-  // 594 cuentas tienen sitio. A 60 por semana tardaba diez semanas en dar la
-  // vuelta, y las señales son justamente lo que tiene que estar fresco.
+  // Por tandas, las que llevan más sin revisar: 594 cuentas tienen sitio, así
+  // que a 200 por corrida se da la vuelta completa en tres semanas.
   const cuantas = Math.min(300, Number(url.searchParams.get('cuantas') || 200));
   const { data: cuentas } = await supabase.from('abm_cuentas')
     .select('id, nombre, sitio, sitio_http, sitio_carrito, plataforma_web, revisado_at')

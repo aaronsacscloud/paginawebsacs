@@ -219,7 +219,14 @@ async function espejarEventos() {
     // cadencia. Marcarlo como "respondió" y frenar ahí apagaba el seguimiento
     // justo sobre la señal más caliente que hay.
     if (n.tipo === 'clic') {
-      await supabase.from('abm_senales').insert({ cuenta_id: n.cuenta_id, tipo: 'clic', detalle: 'Hizo clic en un correo de la cadencia', peso: 3 });
+      // El peso de la fila MANDA sobre la tabla de tipos, así que este insert
+      // tiene que traerlo bien; y sin `origen` nacería etiquetado 'estudio'.
+      await supabase.from('abm_senales').insert({
+        cuenta_id: n.cuenta_id, tipo: 'clic', peso: 6, origen: 'sistema',
+        detalle: 'Hizo clic en un correo de la cadencia',
+        fecha: new Date().toISOString().slice(0, 10),
+        caduca_at: new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10),
+      });
       await repuntuar(n.cuenta_id);
     }
     if (n.tipo === 'rebote' || n.tipo === 'spam') {
