@@ -524,3 +524,8 @@ El mismo caso real escrito por Opus y por Sonnet, calificado 1-10 por un juez qu
   mensaje nunca llega y nadie se entera. Medido con los dos mensajes de prueba al teléfono del dueño. Ahora, antes
   de mandar, si no hay ventana y el envío no trae plantilla, se le cuelga la de su familia y el texto viaja como
   puente; si no hay plantilla aprobada, se veta en vez de fingir que salió.
+- **Un solo mensaje en la fila por lead (4-sep):** el índice único solo cubre `pendiente`, así que en entrenamiento
+  —donde todo nace `sugerencia`— el reloj de silencio y el seguimiento de 1 a 4 días escribían para el mismo lead y el
+  segundo reemplazaba al primero. Medido: $2.59 en 4 días en mensajes que nunca salieron. Ahora `tocarSilencios` salta
+  a quien ya tiene algo esperando decisión (`pendiente|enviando|sugerencia`) y `generarSeguimientos` ya no reemplaza,
+  deja lo que haya. Primera corrida con el candado: 51 leads saltados, 0 mensajes nuevos, la fila quedó igual.
