@@ -90,6 +90,7 @@ const E = {
   input: { padding: '8px 12px', border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, outline: 'none', background: '#fff', color: '#333', height: 36, boxSizing: 'border-box' as const } as const,
   btn: { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '0 14px', height: 36, border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   btnDark: { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '0 16px', height: 36, border: 'none', borderRadius: 10, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff', boxShadow: '0 1px 2px rgba(16,24,40,0.18)' } as const,
+  td: { padding: '11px 14px', fontSize: '0.78rem', color: '#3a3a44', borderBottom: '1px solid #f1f1f4', verticalAlign: 'middle' as const },
   th: { textAlign: 'left' as const, padding: '10px 14px', fontSize: '0.64rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid #e9eaee', whiteSpace: 'nowrap' as const, background: '#f9fafb', position: 'sticky' as const, top: 0, zIndex: 1, cursor: 'default' },
   chip: { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#eef2fe', color: '#3764c4', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700 } as const,
   tab: (act: boolean) => ({ padding: '9px 13px', border: 'none', borderBottom: act ? '2px solid #1a1a1a' : '2px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 700 : 600, fontSize: '0.8rem', color: act ? '#16181d' : '#6b7078', whiteSpace: 'nowrap' as const, display: 'inline-flex', alignItems: 'center', gap: 6 }) as const,
@@ -512,13 +513,22 @@ export default function TablaEnterprise({
                   <tr key={rowKey(r)} style={{ cursor: onRowClick ? 'pointer' : 'default' }} onClick={() => onRowClick?.(r)}>
                     {visibles.map(c => {
                       const celda = c.render!(r);
-                      if (!c.fija) return cloneElement(celda, { key: c.key });
-                      // El fondo tiene que ser opaco: si no, al desplazar se ve
-                      // el contenido de las otras columnas pasando por debajo.
-                      return cloneElement(celda, {
-                        key: c.key,
-                        style: { ...(celda.props?.style || {}), position: 'sticky', left: 0, zIndex: 2, background: '#fff', boxShadow: '6px 0 10px -6px rgba(36,29,67,.20)', clipPath: 'inset(0 -14px 0 0)' },
-                      });
+                      // Las pantallas devuelven el CONTENIDO de la celda, no la
+                      // celda: un <span> suelto dentro de <tr> se pinta inline y
+                      // las columnas dejan de cuadrar con sus encabezados (se
+                      // veía en Outbound, Clientes y Leads). Aquí se envuelve.
+                      const esCelda = (celda as any)?.type === 'td';
+                      const pegada = c.fija
+                        // El fondo tiene que ser opaco: si no, al desplazar se ve
+                        // el contenido de las otras columnas pasando por debajo.
+                        ? { position: 'sticky' as const, left: 0, zIndex: 2, background: '#fff', boxShadow: '6px 0 10px -6px rgba(36,29,67,.20)', clipPath: 'inset(0 -14px 0 0)' }
+                        : {};
+                      if (esCelda) return cloneElement(celda, { key: c.key, style: { ...(celda.props?.style || {}), ...pegada } });
+                      return (
+                        <td key={c.key} style={{ ...E.td, ...(c.num ? { textAlign: 'right' as const } : {}), ...(c.width ? { width: c.width } : {}), ...pegada }}>
+                          {celda}
+                        </td>
+                      );
                     })}
                   </tr>
                 ))}
