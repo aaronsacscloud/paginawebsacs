@@ -101,21 +101,29 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
                 background: c.etapa === e ? P.violeta : '#fff', color: c.etapa === e ? '#fff' : '#666',
               }}>{ETAPA_TONO[e].l}</button>
           ))}
-          {seguro ? (
-            <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-              <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>Se cancelan sus correos y se bloquean sus canales, para siempre.</span>
-              <button onClick={() => { accion({ accion: 'no_contactar' }); setSeguro(false); }}
-                style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: 'none', background: P.rojoTinta, color: '#fff' }}>Sí, no contactar</button>
-              <button onClick={() => setSeguro(false)}
-                style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #e0dee8', background: '#fff', color: '#666' }}>Cancelar</button>
-            </span>
-          ) : (
-            <button onClick={() => setSeguro(true)}
-              style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #f0c4bd', background: '#fff', color: P.rojoTinta, marginLeft: 'auto' }}>
-              No contactar
-            </button>
-          )}
+          <button onClick={() => setSeguro(true)}
+            style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #f0c4bd', background: '#fff', color: P.rojoTinta, marginLeft: 'auto' }}>
+            No contactar
+          </button>
         </div>
+        {/* Lo destructivo NUNCA va relleno, y no comparte renglón con las
+            etapas: un botón sólido rojo sería el más llamativo de la ficha, y
+            es el que borra. */}
+        {seguro && (
+          <div style={{ marginTop: 12, background: P.rojoAgua, borderRadius: 9, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '.8125rem', color: P.rojoTinta, flex: 1, minWidth: 220 }}>
+              Se cancelan sus correos pendientes y se bloquean todos sus canales, para siempre.
+            </span>
+            <button onClick={() => { accion({ accion: 'no_contactar' }); setSeguro(false); }}
+              style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '7px 13px', borderRadius: 8, cursor: 'pointer', border: '1.5px solid #f0c4bd', background: '#fff', color: P.rojoTinta }}>
+              Sí, no contactar
+            </button>
+            <button onClick={() => setSeguro(false)}
+              style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '7px 13px', borderRadius: 8, cursor: 'pointer', border: '1px solid #e0dee8', background: '#fff', color: '#666' }}>
+              Mejor no
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Las tres cifras del encaje ── */}
@@ -150,7 +158,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
         <div style={CAJA}>
           <p style={H}>Lo que investigamos</p>
           <Dato etiqueta="Sucursales" valor={c.sucursales ? String(c.sucursales) : 'sin dato'} fuente={fuentePor('general')} extra={c.sucursales_confianza} />
-          <Dato etiqueta="Tecnología del sitio" valor={c.plataforma_web || (c.sitio_http === 0 ? 'el sitio no responde' : 'sin detectar')} extra={c.sitio_carrito === false ? 'no vende en línea' : undefined} />
+          <Dato etiqueta="Tecnología del sitio" valor={corta(c.plataforma_web, 70) || (c.sitio_http === 0 ? 'el sitio no responde' : 'sin detectar')} titulo={c.plataforma_web} extra={c.sitio_carrito === false ? 'no vende en línea' : undefined} />
           <Dato etiqueta="Redes" valor={[c.instagram, c.tiktok ? 'TikTok' : null, c.facebook ? 'Facebook' : null].filter(Boolean).join(' · ') || 'sin redes'} extra={c.ig_seguidores || undefined} />
           {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{c.contexto}</p>}
           {c.senal_expansion && (
@@ -197,7 +205,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
               <div style={{ display: 'flex', gap: 7 }}>
                 <button disabled={!nueva.nombre.trim() || guardando}
                   onClick={() => { accion({ accion: 'persona', ...nueva, es_dueno: true }); setNueva(null); }}
-                  style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '7px 13px', borderRadius: 8, cursor: 'pointer', border: 'none', background: P.violeta, color: '#fff' }}>Guardar</button>
+                  style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '7px 13px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${P.violeta}`, background: '#fff', color: P.violetaTinta }}>Guardar</button>
                 <button onClick={() => setNueva(null)} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '7px 13px', borderRadius: 8, cursor: 'pointer', border: '1px solid #e0dee8', background: '#fff', color: '#666' }}>Cancelar</button>
               </div>
             </div>
@@ -268,7 +276,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             onKeyDown={e => { if (e.key === 'Enter' && nota.trim()) { accion({ accion: 'nota', texto: nota }); setNota(''); } }}
             style={{ flex: 1, font: 'inherit', fontSize: '.8125rem', padding: '8px 11px', borderRadius: 8, border: '1px solid #e0dee8' }} />
           <button disabled={!nota.trim() || guardando} onClick={() => { accion({ accion: 'nota', texto: nota }); setNota(''); }}
-            style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: P.violeta, color: '#fff' }}>Apuntar</button>
+            style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${P.violeta}`, background: '#fff', color: P.violetaTinta }}>Apuntar</button>
         </div>
         {(d.actividad || []).length === 0 && (
           <EstadoVacio titulo="Todavía no pasa nada con esta cuenta"
@@ -351,7 +359,7 @@ function ToqueManual({ id, onListo }: { id: string; onListo: () => void }) {
           <div>
             <button disabled={enviando || !texto.trim()} onClick={guardar} style={{
               font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8,
-              border: 'none', background: P.violeta, color: '#fff', cursor: 'pointer', opacity: texto.trim() ? 1 : .5,
+              border: `1.5px solid ${P.violeta}`, background: '#fff', color: P.violetaTinta, cursor: 'pointer', opacity: texto.trim() ? 1 : .5,
             }}>Guardar el toque</button>
           </div>
         </div>
@@ -360,11 +368,19 @@ function ToqueManual({ id, onListo }: { id: string; onListo: () => void }) {
   );
 }
 
-function Dato({ etiqueta, valor, fuente, extra }: { etiqueta: string; valor: string; fuente?: any; extra?: string }) {
+/** Varias plataformas vienen como párrafo ("desarrollo propio (catálogo con
+ *  SKU y filtros por color/talla, HTML server-side…)"): sin recorte se sale de
+ *  su caja y se imprime encima de lo de al lado. */
+export function corta(v: any, max: number): string {
+  const t = String(v || '').replace(/\s+/g, ' ').trim();
+  return t.length <= max ? t : t.slice(0, max).replace(/[\s,(.;:-]+$/, '') + '…';
+}
+
+function Dato({ etiqueta, valor, fuente, extra, titulo }: { etiqueta: string; valor: string; fuente?: any; extra?: string; titulo?: string }) {
   return (
     <div style={{ marginBottom: 9 }}>
       <div style={{ fontSize: '.6875rem', color: '#999', fontWeight: 700 }}>{etiqueta}</div>
-      <div style={{ fontSize: '.875rem', color: '#333' }}>
+      <div style={{ fontSize: '.875rem', color: '#333' }} title={titulo || undefined}>
         {valor} {extra && <span style={{ fontSize: '.6875rem', color: '#999' }}>({extra})</span>}
       </div>
     </div>

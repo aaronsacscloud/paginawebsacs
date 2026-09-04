@@ -27,11 +27,14 @@ export const CONFIANZA_TONO: Record<string, { l: string; fg: string; bg: string 
   confirmada: { l: 'confirmada',      fg: P.verdeTinta, bg: P.verdeAgua },
 };
 
-export function Pastilla({ tono, children, titulo }: { tono: { bg: string; fg: string }; children: ReactNode; titulo?: string }) {
+export function Pastilla({ tono, children, titulo, max }: { tono: { bg: string; fg: string }; children: ReactNode; titulo?: string; max?: number }) {
   return (
     <span title={titulo} style={{
       display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '.6875rem', fontWeight: 700,
       padding: '3px 9px', borderRadius: 999, background: tono.bg, color: tono.fg, whiteSpace: 'nowrap',
+      // Sin tope, un valor largo (hay plataformas descritas en un párrafo) se
+      // sale de su celda y se imprime encima de la columna de al lado.
+      maxWidth: max ?? 200, overflow: 'hidden', textOverflow: 'ellipsis',
     }}>{children}</span>
   );
 }

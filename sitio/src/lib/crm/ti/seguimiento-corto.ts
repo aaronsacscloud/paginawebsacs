@@ -26,20 +26,27 @@ import { puedeAutomatico } from './semaforo';
 export type Situacion = 'nunca_respondio' | 'quedo_en_demo' | 'falta_dato' | 'pregunto_precio' | 'pensandolo' | 'dijo_no' | 'otro';
 
 export const SITUACIONES: Record<Situacion, { label: string; corto: string; comoEscribir: string }> = {
+  // ── CÓMO SE ESCRIBE UN SEGUIMIENTO (reescrito 4-sep tras la revisión del dueño) ──
+  // El árbitro calificó la cola en 4.03/10: «suena a plantilla», «no muestra interés real en su negocio», «no rescata
+  // nada del contexto». El guion premia brevedad y una sola pregunta, y eso estaba aplastando la calidez. La forma
+  // correcta del mensaje son DOS burbujas separadas por una línea con ---:
+  //   1) la PIZCA: una cosa concreta que Sacs le resuelve a ÉL, dicha con lo que ya sabemos de su negocio;
+  //   2) el SIGUIENTE PASO con tiempo real (esta semana o la próxima), alternando demo y llamada.
+  // Si no sabemos lo suficiente para la pizca, la burbuja 1 profundiza en algo que ÉL dijo y no exploramos.
   nunca_respondio: { label: 'Nunca contestó', corto: 'Nunca contestó',
-    comoEscribir: 'NUNCA te ha contestado un solo mensaje: no puedes dar por hecho que leyó lo anterior ni referirte a «lo que platicamos». Una sola pregunta, la más fácil de contestar del mundo (qué vende), enganchada a lo poco que sabemos de él (su registro, su marca, su anuncio). Sin resumir lo que ya le mandaste.' },
+    comoEscribir: 'NUNCA te ha contestado: no des por hecho que leyó lo anterior ni te refieras a «lo que platicamos». Primera burbuja: engancha con lo poco que sabemos de él (su marca, su giro, de dónde llegó) y dile en una línea qué le resolvería Sacs en ESE negocio, concreto, no genérico. Segunda burbuja, después de ---: la pregunta más fácil del mundo, y ofrécele que te mande una nota de voz si le es más cómodo. Que se sienta que queremos entender su negocio, no colocarle algo.' },
   quedo_en_demo: { label: 'Quiere la demo, falta info', corto: 'Quiere demo',
-    comoEscribir: 'Él YA dijo que quiere ver el sistema; lo único que falta es lo necesario para agendarla. No vuelvas a venderle la demo ni a preguntarle si le interesa: retoma que quedaron en verla y pide SOLO el dato que falta, o propón directamente dos horarios si ya no falta nada.' },
+    comoEscribir: 'Él YA dijo que quiere ver el sistema. Primera burbuja: retoma que quedaron en verla y dale UNA pizca concreta de lo que va a ver aplicado a SU operación (sus tallas, sus tiendas, su dolor). Segunda burbuja: pide el dato que falta, o si no falta nada propón dos horarios reales con margen («esta semana o la próxima»). No le vuelvas a vender la demo.' },
   falta_dato: { label: 'Falta un dato para avanzar', corto: 'Falta dato',
-    comoEscribir: 'La conversación se frenó porque falta un dato que solo él tiene. Pídelo en una línea, explicando en media línea para qué lo necesitas (que la respuesta le sirva a él), sin repetir todo el contexto.' },
+    comoEscribir: 'Falta un dato que solo él tiene. Primera burbuja: antes de pedirlo, dale algo — una línea con lo que Sacs le resuelve según lo que YA sabemos de su negocio, para que la pregunta tenga sentido y no parezca trámite. Segunda burbuja: el dato que falta, en una sola pregunta, diciendo en media línea para qué le sirve a ÉL. Nunca pidas dos datos a la vez.' },
   pregunto_precio: { label: 'Preguntó precio y no siguió', corto: 'Precio',
-    comoEscribir: 'Preguntó por precio o plan y ya no contestó. No repitas la lista de precios: retoma con lo que hace que el precio tenga sentido para SU caso (su tamaño, su dolor) y ofrece resolver la duda concreta que suele frenar ahí. Si ya tienes giro y tamaño, puedes cerrar con la demo.' },
+    comoEscribir: 'Preguntó precio y no siguió. No repitas la lista. Primera burbuja: el precio del plan que le toca según su tamaño, y en la misma línea qué obtiene por eso en SU operación, concreto. Segunda burbuja: el siguiente paso con tiempo real, alternando — si ya se le ofreció demo, ofrécele una llamada corta; si ya se le ofreció llamada, la demo. Con opciones esta semana o la próxima.' },
   pensandolo: { label: 'Dijo que lo iba a ver', corto: 'Lo va a ver',
-    comoEscribir: 'Dijo que lo iba a revisar o que ahorita no. No lo presiones ni le preguntes «¿ya lo viste?». Da un motivo nuevo y concreto para retomar (algo útil de su giro) y deja la puerta abierta con una pregunta suave; si él marcó un tiempo, respétalo.' },
+    comoEscribir: 'Dijo que lo iba a revisar. Nunca le preguntes «¿ya lo viste?». Primera burbuja: un motivo NUEVO y concreto para retomar, algo que le resuelve a él y que no le habíamos dicho. Segunda burbuja: el siguiente paso sin presión y con tiempo real, alternando demo y llamada según lo que ya se le ofreció. Si él marcó un tiempo, respétalo y dilo.' },
   dijo_no: { label: 'Dijo que no le interesa', corto: 'Dijo que no',
     comoEscribir: 'NO se le escribe.' },
   otro: { label: 'Otro', corto: 'Otro',
-    comoEscribir: 'Retoma lo último que él dijo, contesta lo que haya quedado sin responder y haz una sola pregunta que mueva la conversación al siguiente paso.' },
+    comoEscribir: 'Primera burbuja: contesta lo que quedó sin responder y dale una pizca concreta de cómo Sacs le resuelve eso en su caso. Segunda burbuja: profundiza en algo que ÉL dijo y no hemos explorado, o propón el siguiente paso con tiempo real. Una sola pregunta, al final.' },
 };
 
 /** Los leads de la ventana: le escribimos, no contestó, y llevan entre 20 h y 4 días. */
@@ -153,7 +160,9 @@ export async function generarSeguimientos(opts: { max?: number; soloContactId?: 
 Lo que quedó: ${cl.resumen}
 ${cl.falta ? `Lo que falta: ${cl.falta}` : ''}
 Ángulo para retomar: ${cl.angulo}
-Es un SEGUIMIENTO, no el primer mensaje: no te presentes de nuevo, no repitas lo que ya le dijiste y no le reclames el silencio ("no me contestaste", "te escribí"). Una sola pregunta, al final.`;
+Es un SEGUIMIENTO, no el primer mensaje: no te presentes de nuevo, no repitas lo que ya le dijiste y no le reclames el silencio ("no me contestaste", "te escribí").
+FORMA OBLIGATORIA: dos burbujas separadas por una línea con --- . La primera DA algo (lo que Sacs le resuelve a ÉL, con lo que ya sabemos de su negocio; si no sabemos lo suficiente, profundiza en algo que él dijo y no exploramos). La segunda pide UNA cosa: el dato que falta, o el siguiente paso con tiempo real ("tengo espacio esta semana o la próxima"), alternando demo y llamada según lo que ya se le ofreció.
+Que se lea como alguien que quiere entender su negocio, no como un vendedor cobrando una lista. Una sola pregunta en todo el mensaje, al final.`;
       const d = await decidirTurno(c.contact_id, nota, { tarea: 'seguimiento' });
       res.costo += d.costo || 0;
       if (!d.salida?.mensaje || !d.telefono) { res.saltados++; res.errores.push(`${c.nombre}: el agente no propuso mensaje`); continue; }

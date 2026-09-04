@@ -31,6 +31,9 @@ export default function AbmTab() {
   const [resumen, setResumen] = useState<any>(null);
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [truncado, setTruncado] = useState(false);
+  const [busca, setBusca] = useState('');
+  const [filtro, setFiltro] = useState<null | 'calientes' | 'diagnostico' | 'correo' | 'sinvia'>(null);
   const [giro, setGiro] = useState('');
   const [cargando, setCargando] = useState(true);
   const [abierta, setAbierta] = useState<string | null>(null);
@@ -42,11 +45,20 @@ export default function AbmTab() {
     setCargando(true);
     const p = new URLSearchParams({ orden: 'puntaje', todo: '1' });
     if (giro) p.set('giro', giro);
+    if (busca.trim()) p.set('q', busca.trim());
     fetch(`/api/crm/abm/cuentas?${p}`).then(r => r.json()).then(r => {
-      setCuentas(r.cuentas || []); setTotal(r.total || 0); setCargando(false);
+      setCuentas(r.cuentas || []); setTotal(r.total || 0); setTruncado(!!r.truncado); setCargando(false);
     }).catch(() => setCargando(false));
   };
   useEffect(traer, [giro]);
+
+  // Si la lista vino truncada, el buscador de la tabla mentiría (buscaría solo
+  // en lo que alcanzó a llegar). En ese caso se busca en el servidor.
+  useEffect(() => {
+    if (!truncado && !busca) return;
+    const t = setTimeout(traer, 350);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   const canalesDe = (row: any) => {
     const c = row.canales || [];
@@ -90,7 +102,7 @@ export default function AbmTab() {
       key: 'tecnologia', label: 'Su sistema hoy', width: 165, val: (r) => r.plataforma_web || '',
       render: (r) => (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {r.plataforma_web && <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }}>{r.plataforma_web}</Pastilla>}
+          {r.plataforma_web && <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={r.plataforma_web} max={150}>{r.plataforma_web}</Pastilla>}
           {(r.sitio_http === 0 || Number(r.sitio_http) >= 400) && <Pastilla tono={{ bg: P.rojoAgua, fg: P.rojoTinta }}>sitio caído</Pastilla>}
           {r.sitio_carrito === false && <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }}>sin tienda en línea</Pastilla>}
           {!r.plataforma_web && r.sitio_http !== 0 && !r.sitio && <span style={{ color: '#bbb' }}>sin sitio</span>}
@@ -120,6 +132,20 @@ export default function AbmTab() {
         : <span style={{ fontSize: '.75rem', color: '#888' }}>demo</span>,
     },
     {
+      key: 'accion', label: '', width: 92, sortable: false,
+      render: (r) => {
+        const { mail, wa } = canalesDe(r);
+        const url = mail ? enlaceDe(mail.tipo, mail.valor) : wa ? enlaceDe(wa.tipo, wa.valor) : null;
+        if (!url) return <span style={{ fontSize: '.6875rem', color: '#bbb' }}>—</span>;
+        return (
+          <a href={url} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}
+            style={{ fontSize: '.6875rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            {mail ? 'Escribir' : 'WhatsApp'}
+          </a>
+        );
+      },
+    },
+    {
       key: 'etapa', label: 'Etapa', width: 130, ftype: 'select',
       options: Object.entries(ETAPA_TONO).map(([v, t]) => ({ v, l: t.l })),
       val: (r) => r.etapa,
@@ -134,8 +160,11 @@ export default function AbmTab() {
     { key: 'sintocar', nombre: 'Sin tocar', fija: true, config: { conds: [{ campo: 'etapa', op: 'es', v1: 'sin_tocar' }], sort: { key: 'puntaje', dir: -1 } } },
   ], []);
 
-  const kpi = (etiqueta: string, valor: any, pie: string, color: string, tinta: string) => (
-    <div style={tarjetaKpi(color)}>
+  const kpi = (etiqueta: string, valor: any, pie: string, color: string, tinta: string, alTocar?: () => void) => (
+    <div style={{ ...tarjetaKpi(color), ...(alTocar ? { cursor: 'pointer' } : {}) }}
+      onClick={alTocar} role={alTocar ? 'button' : undefined} tabIndex={alTocar ? 0 : undefined}
+      onKeyDown={alTocar ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alTocar(); } } : undefined}
+      title={alTocar ? 'Ver solo estas' : undefined}>
       <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>{etiqueta}</div>
       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: tinta, lineHeight: 1.15 }}>{valor}</div>
       <div style={{ fontSize: '.6875rem', color: '#888' }}>{pie}</div>
@@ -168,11 +197,11 @@ export default function AbmTab() {
 
       {resumen && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 18 }}>
-          {kpi('Cuentas', fmt(resumen.total), 'negocios verificados', P.violeta, P.violetaTinta)}
-          {kpi('Calientes', fmt(resumen.calientes), 'puntaje de 60 o más', P.violeta, P.violetaTinta)}
-          {kpi('Van a diagnóstico', fmt(resumen.diagnostico), 'cinco o más sucursales', P.azul, P.azulTinta)}
-          {kpi('Con correo', fmt(resumen.con_email), `y ${fmt(resumen.con_wa)} con WhatsApp`, P.verde, P.verdeTinta)}
-          {kpi('Sin ninguna vía', fmt(resumen.sin_canal), 'hay que buscarles contacto', P.rojo, P.rojoTinta)}
+          {kpi('Cuentas', fmt(resumen.total), 'negocios verificados', P.violeta, P.violetaTinta, () => setFiltro(null))}
+          {kpi('Calientes', fmt(resumen.calientes), 'puntaje de 60 o más', P.violeta, P.violetaTinta, () => setFiltro('calientes'))}
+          {kpi('Van a diagnóstico', fmt(resumen.diagnostico), 'cinco o más sucursales', P.azul, P.azulTinta, () => setFiltro('diagnostico'))}
+          {kpi('Con correo', fmt(resumen.con_email), `y ${fmt(resumen.con_wa)} con WhatsApp`, P.verde, P.verdeTinta, () => setFiltro('correo'))}
+          {kpi('Sin ninguna vía', fmt(resumen.sin_canal), 'hay que buscarles contacto', P.rojo, P.rojoTinta, () => setFiltro('sinvia'))}
         </div>
       )}
 
@@ -192,9 +221,22 @@ export default function AbmTab() {
         <Cargando texto="Cargando las cuentas…" />
       ) : (
         <>
+          {truncado && (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: P.ambarAgua, borderRadius: 9, padding: '10px 13px', marginBottom: 12 }}>
+              <span style={{ fontSize: '.8125rem', color: P.ambarTinta, flex: 1, minWidth: 240 }}>
+                Son {fmt(total)} cuentas y aquí caben {fmt(cuentas.length)}. Para no buscar solo en lo que se alcanzó a traer, escribe aquí y la búsqueda se hace sobre todas.
+              </span>
+              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={`Buscar en las ${fmt(total)}…`}
+                style={{ font: 'inherit', fontSize: '.8125rem', padding: '7px 11px', borderRadius: 8, border: `1px solid ${P.ambar}`, minWidth: 220 }} />
+            </div>
+          )}
           <TablaEnterprise
             tabla="abm_cuentas"
-            data={cuentas}
+            data={filtro ? cuentas.filter(r =>
+              filtro === 'calientes' ? (r.puntaje || 0) >= 60
+              : filtro === 'diagnostico' ? r.ruta === 'diagnostico'
+              : filtro === 'correo' ? r.tiene_email
+              : !r.canales_n) : cuentas}
             cols={cols}
             vistasBase={vistas}
             headerTint
@@ -217,7 +259,7 @@ export default function AbmTab() {
                   {canalesDe(r).wa ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla> : null}
                   {r.sucursales ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>{r.sucursales} tiendas</Pastilla> : null}
                   {r.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(r.google_rating).toFixed(1)} ★</Pastilla> : null}
-                  {r.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }}>{r.plataforma_web}</Pastilla> : null}
+                  {r.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={r.plataforma_web} max={160}>{r.plataforma_web}</Pastilla> : null}
                   <Pastilla tono={ETAPA_TONO[r.etapa] || ETAPA_TONO.sin_tocar}>{(ETAPA_TONO[r.etapa] || ETAPA_TONO.sin_tocar).l}</Pastilla>
                 </div>
               </div>

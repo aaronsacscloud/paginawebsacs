@@ -6,6 +6,14 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-04 · Mensajes de seguimiento más cálidos y con una pizca de solución.** «Hay algunos que están muy
+      duros, no invitan a la respuesta y no se entiende que queríamos conocer más del negocio o cómo Sacs puede
+      ayudarlo. Si tenemos algo de información del prospecto, darle una pizca de cómo podemos ayudarle, y de ahí
+      decirle que lo mejor sería agendar una demo con opciones esta semana o la próxima. Si ya le ofreciste demo y
+      dijo que no, ofrecer una llamada, o al revés. Variar dentro del mensaje, y siempre dar una solución más
+      concreta a lo que busca o preguntarle más sobre algo que dijo y no hemos profundizado. Regenerar las
+      respuestas con esto.» → SE HACE ANTES DEL ÁRBITRO: cambia los criterios que el árbitro va a medir.
+
 - [ ] **2026-09-04 · Plan de revisión y árbitro de calidad.** «Haz un plan de revisión y dime qué otra cosa no
       estoy viendo o qué otras cosas debemos mejorar en el entendimiento de la IA de qué mensaje enviar para
       asegurar que siempre sea el mejor mensaje posible. Utiliza un referee que analice bien cada respuesta hasta

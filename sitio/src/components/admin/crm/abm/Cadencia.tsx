@@ -121,8 +121,10 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
 
 const btn = (primario: boolean) => ({
   font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '7px 13px', borderRadius: 8, cursor: 'pointer',
-  border: primario ? 'none' : '1px solid #e0dee8',
-  background: primario ? P.violeta : '#fff', color: primario ? '#fff' : '#666',
+  // Secundario = borde morado, no gris: el gris es para lo que casi nunca se
+  // toca, y editar el correo antes de que salga se toca todo el tiempo.
+  border: primario ? 'none' : `1.5px solid ${P.violeta}`,
+  background: primario ? P.violeta : '#fff', color: primario ? '#fff' : P.violetaTinta,
 });
 const btnMal = () => ({
   font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '7px 13px', borderRadius: 8, cursor: 'pointer',

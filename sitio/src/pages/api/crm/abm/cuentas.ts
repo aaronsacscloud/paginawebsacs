@@ -87,6 +87,10 @@ export const GET: APIRoute = async ({ request, url }) => {
   return json({
     cuentas: (data || []).map((c: any) => ({ ...c, canales: porCuenta[c.id] || [] })),
     total: count || 0, pagina, por: POR,
+    // Cuando la lista no cupo completa, la pantalla NO puede seguir filtrando
+    // del lado del navegador: buscaría dentro de lo que alcanzó a traer y
+    // diría que no existe una cuenta que sí existe.
+    truncado: (count || 0) > POR,
   });
 };
 

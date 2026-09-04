@@ -130,7 +130,7 @@ export const GET: APIRoute = async ({ request }) => {
     .select('id, cuenta_id, destino, asunto, cuerpo, programado_at')
     .eq('estado', 'aprobado').eq('canal', 'email')
     .lte('programado_at', new Date().toISOString())
-    .order('programado_at').limit(restante * 6);
+    .order('programado_at').limit(3000);   // la cola completa cabe: el programa son 2,639 toques
 
   // Una cadencia empezada vale más que una por empezar: si el cupo se lo comen
   // los primeros toques de cuentas nuevas, las secuencias en curso se cortan a
@@ -174,7 +174,12 @@ export const GET: APIRoute = async ({ request }) => {
     if (tocadosHoy.has(destino)) continue;
     const dueno = duenoDelBuzon.get(destino);
     if (dueno && dueno !== t.cuenta_id) {
-      await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'ese buzón ya está recibiendo la cadencia de otro negocio' }).eq('id', t.id);
+      // La cadencia entera, no este toque: si no, se cancela uno por corrida y
+      // la cuenta se apaga a pedacitos sin que nadie lo note.
+      await supabase.from('abm_toques')
+        .update({ estado: 'cancelado', resultado: 'ese buzón ya está recibiendo la cadencia de otro negocio' })
+        .eq('cuenta_id', t.cuenta_id).in('estado', ['borrador', 'aprobado', 'programado', 'enviando']);
+      await apuntar(t.cuenta_id, 'email', 'nota', { texto: `Cadencia cancelada: ${destino} ya está en la cadencia de otro negocio` });
       continue;
     }
     if (!CORREO_OK.test(destino) || bloqueadas.has(destino)) {
@@ -201,25 +206,40 @@ export const GET: APIRoute = async ({ request }) => {
     // dolor de un vistazo sí ayuda.
     const { count: orden } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
       .eq('cuenta_id', t.cuenta_id).eq('estado', 'enviado');
-    let pieza = '';
+    let pieza = ''; let piezaTitulo = '';
     if ((orden || 0) >= 3) {
       const { count: interes } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
         .eq('cuenta_id', t.cuenta_id).in('tipo', ['apertura', 'clic']);
       if (interes) {
         const { data: cta } = await supabase.from('abm_cuentas').select('giro').eq('id', t.cuenta_id).maybeSingle();
-        const { data: pz } = await supabase.from('abm_plantillas')
-          .select('cuerpo').eq('canal', 'pieza').eq('giro', cta?.giro || '').maybeSingle();
-        if (pz?.cuerpo) pieza = pz.cuerpo;
+        // .limit(1) y no maybeSingle(): con dos filas, maybeSingle devuelve
+        // null y la pieza se apagaría en silencio.
+        const { data: pzs } = await supabase.from('abm_plantillas')
+          .select('cuerpo, asunto').eq('canal', 'pieza').eq('giro', cta?.giro || '').limit(1);
+        const pz = (pzs || [])[0];
+        if (pz?.cuerpo) { pieza = pz.cuerpo; piezaTitulo = pz.asunto || ''; }
       }
     }
+
+    // Se reclama el toque antes de mandarlo. Si el proceso muriera entre el
+    // POST a SendGrid y el update, el toque seguiría 'aprobado' y la corrida
+    // de las 13:00 lo mandaría OTRA VEZ al mismo negocio.
+    const { data: reclamado } = await supabase.from('abm_toques')
+      .update({ estado: 'enviando', enviado_at: new Date().toISOString() })
+      .eq('id', t.id).eq('estado', 'aprobado').select('id').maybeSingle();
+    if (!reclamado) continue;
 
     const r = await enviarCorreo({
       para: t.destino, asunto,
       // Texto plano de verdad: el correo en frío que parece boletín no se lee
       // y además entrega peor. El HTML es el mismo texto con saltos de línea.
-      texto: t.cuerpo || '',
+      // La versión de texto menciona la pieza: un HTML con una tabla que el
+      // texto plano ignora es una discrepancia que los filtros puntúan.
+      texto: (t.cuerpo || '') + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : ''),
       html: aHtml(t.cuerpo || '') + pieza,
       categoria: 'abm', tenantId: inquilino.id,
+      // Los tres primeros van limpios: sin pixel y sin enlaces envueltos.
+      sinRastreo: (orden || 0) < 3,
     });
     const ok = r.enviado;
     await supabase.from('abm_toques').update({

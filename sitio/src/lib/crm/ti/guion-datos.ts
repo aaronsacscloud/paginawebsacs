@@ -107,6 +107,14 @@ async function juzgar(regla: string, caso: any, a: string, b: string) {
   const sa = Number(j.a) || 0, sb = Number(j.b) || 0; const va = !!j.viola_a, vb = !!j.viola_b;
   return { sin: swap ? sb : sa, con: swap ? sa : sb, viola_sin: swap ? vb : va, viola_con: swap ? va : vb, costo: calculateCost(MODELS.sonnet, (r.usage || {}) as any).cost_usd };
 }
+/** Firma de la línea base: si el guion o las reglas vigentes cambian, las respuestas «sin la regla» se rehacen. */
+async function firmaBase() {
+  const g = await guionActual(); const r = await reglasVigentes();
+  const s = `${g.versiones.guion}.${g.versiones.wiki}.${g.versiones.limites}|${r.reglas.map(x => `${x.id}:${x.version}`).join(',')}`;
+  let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+  return `v${Math.abs(h)}`;
+}
+
 export async function evaluarRegla(id: string): Promise<any> {
   const { data: r } = await supabase.from('ti_reglas').select('id, texto, etapa').eq('id', id).maybeSingle();
   if (!r?.texto) return { error: 'La regla no tiene texto' };
@@ -117,13 +125,21 @@ export async function evaluarRegla(id: string): Promise<any> {
   const deSuCaso = rel.relevantes;
   if (casos.length < 6) { const extra = await casosDePrueba(r.etapa || null, tope); for (const c of extra) if (casos.length < tope && !casos.some(x => x.id === c.id)) casos.push(c); }
   if (casos.length < 6) return { error: `Solo hay ${casos.length} casos para probar; hacen falta al menos 6` };
-  const [sinRegla, conRegla] = await Promise.all([bloqueSistemaBase(), bloqueSistemaBase(r.texto)]);
+  const [sinRegla, conRegla, firma] = await Promise.all([bloqueSistemaBase(), bloqueSistemaBase(r.texto), firmaBase()]);
   let costo = 0; const res: any[] = [];
   for (let i = 0; i < casos.length; i += 6) {
     const lote = casos.slice(i, i + 6);
     const parte = await Promise.all(lote.map(async c => {
       try {
-        const [a, b] = await Promise.all([redactarCaso(sinRegla, c), redactarCaso(conRegla, c)]);
+        // La mitad «sin la regla» no depende de la regla: se cachea por firma del guion y se reusa entre pruebas.
+        const { data: cache } = await supabase.from('ti_baseline').select('texto').eq('caso_id', c.id).eq('firma', firma).maybeSingle();
+        let a: { texto: string; costo: number };
+        if (cache?.texto) a = { texto: cache.texto, costo: 0 };
+        else {
+          a = await redactarCaso(sinRegla, c);
+          await supabase.from('ti_baseline').insert({ caso_id: c.id, firma, texto: a.texto, modelo: MODELS.opus }).then(() => {}, () => {});
+        }
+        const b = await redactarCaso(conRegla, c);
         const j = await juzgar(r.texto!, c, a.texto, b.texto);
         costo += a.costo + b.costo + j.costo;
         return { id: c.id, etapa: c.estado, lead: String(c.mensaje_lead).slice(0, 120), sin: j.sin, con: j.con, viola_sin: j.viola_sin, viola_con: j.viola_con, resp_sin: a.texto.slice(0, 300), resp_con: b.texto.slice(0, 300) };

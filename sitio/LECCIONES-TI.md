@@ -550,3 +550,21 @@ Medido en las mismas reglas, antes y después:
 
 Dos reglas que se habían rechazado sí servían. Quedan como propuestas para que el dueño las apruebe.
 **Lección general: una prueba mal diseñada es peor que no probar, porque da falsa confianza en la decisión contraria.**
+
+## 2026-09-04 · Dónde se fueron los $20 (respuesta exacta, ya con `ia_uso`)
+
+| Concepto | Llamadas | Gasto |
+|---|---|---|
+| **Pruebas de reglas** (generar cada caso 2× con Opus) | 264 | **$11.54** |
+| Respuestas y seguimientos del agente | 100 | $5.26 |
+| Jueces y clasificaciones (Sonnet) | 133 | $0.29 |
+| Otros | — | $2.87 |
+| **Total** | 956 (330 fallidas por falta de crédito) | **$19.96** |
+
+**El 58 % se fue en verificar, no en trabajar.** Cada prueba de regla generaba TODOS sus casos dos veces con Opus
+(con la regla y sin ella). La mitad «sin la regla» es idéntica entre pruebas mientras no cambien el guion ni las
+reglas vigentes: ahora se cachea en `ti_baseline` con una firma de versión y se paga UNA vez. Con eso una prueba
+baja de ~$0.45 a ~$0.22, y la segunda prueba del día sobre los mismos casos es casi gratis.
+
+**Regla de oficio:** medir cuesta, y si no se instrumenta no se sabe. La instrumentación (`ia_uso`) se pagó sola en
+un día: sin ella habríamos culpado al agente en vez de al arnés de pruebas.

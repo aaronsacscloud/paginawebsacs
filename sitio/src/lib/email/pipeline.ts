@@ -60,6 +60,13 @@ export interface Solicitud {
   variante?: string | null;
   /** Fila ya materializada de email_sends a reusar (campañas). */
   reusarSendId?: string | null;
+  /** Sin pixel de apertura ni envoltura de enlaces.
+   *  Para los primeros correos en frío, que van en texto plano: un correo de
+   *  90 palabras cuyo ÚNICO html es un rastreador de 1×1 es justo la
+   *  proporción que el filtro sabe leer. Y la envoltura deja el enlace del
+   *  aviso de privacidad convertido en un redirector visible EN CRUDO dentro
+   *  de la versión de texto — un delator peor que el pixel, porque se lee. */
+  sinRastreo?: boolean;
 }
 
 export interface Resultado {
@@ -293,7 +300,7 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   // para medir. Así el link de baja del footer queda excluido del redirector
   // (envolverLinks lo respeta) y el pixel va al final de todo.
   let html = `${s.html}\n${footerHtml(t, base, token)}`;
-  html = agregarPixel(envolverLinks(html, base, send.id), base, send.id);
+  if (!s.sinRastreo) html = agregarPixel(envolverLinks(html, base, send.id), base, send.id);
   const texto = `${s.texto?.trim() || htmlATexto(s.html)}\n${footerTexto(t, base, token)}`;
 
   const r = await enviarProveedor({

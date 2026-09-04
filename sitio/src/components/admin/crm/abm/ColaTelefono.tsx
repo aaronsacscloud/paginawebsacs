@@ -25,6 +25,7 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
   const [captura, setCaptura] = useState<{ nombre: string; cargo: string; email: string; whatsapp: string } | null>(null);
   const [nota, setNota] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [fallo, setFallo] = useState<string | null>(null);
 
   const traer = () => {
     setCargando(true);
@@ -36,15 +37,20 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
   const c = cola[i];
   const registrar = async (resultado: string) => {
     if (!c) return;
-    setGuardando(true);
+    setGuardando(true); setFallo(null);
     try {
-      await fetch('/api/crm/abm/cola', {
+      const r = await fetch('/api/crm/abm/cola', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cuenta_id: c.id, resultado, nota, ...(captura || {}) }),
       });
+      // Si no se guardó, NO se avanza: el vendedor acaba de colgar y perdería
+      // lo que le dijeron sin enterarse.
+      if (!r.ok) { const j = await r.json().catch(() => ({})); setFallo(j?.error || 'No se pudo guardar. Vuelve a intentar.'); return; }
       setCaptura(null); setNota('');
       if (i + 1 >= cola.length) traer(); else setI(i + 1);
       onCambio?.();
+    } catch {
+      setFallo('No se pudo guardar. Revisa la conexión y vuelve a intentar.');
     } finally { setGuardando(false); }
   };
 
@@ -77,7 +83,7 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
           {c.sucursales ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>{c.sucursales} sucursales</Pastilla> : null}
           {c.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(c.google_rating).toFixed(1)} ★{c.google_resenas ? ` · ${fmt(c.google_resenas)}` : ''}</Pastilla> : null}
-          {c.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }}>{c.plataforma_web}</Pastilla> : null}
+          {c.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={c.plataforma_web} max={230}>{c.plataforma_web}</Pastilla> : null}
         </div>
         {c.senal_expansion && <p style={{ fontSize: '.8125rem', color: '#555', margin: '0 0 8px', lineHeight: 1.5 }}><b style={{ color: P.verdeTinta }}>Crece:</b> {c.senal_expansion}</p>}
 
@@ -105,6 +111,10 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
 
       <textarea value={nota} onChange={e => setNota(e.target.value)} rows={2} placeholder="Qué pasó en la llamada…"
         style={{ font: 'inherit', fontSize: '.8125rem', padding: '9px 11px', borderRadius: 8, border: '1px solid #e0dee8', resize: 'vertical' }} />
+
+      {fallo && (
+        <div style={{ fontSize: '.8125rem', color: P.rojoTinta, background: P.rojoAgua, borderRadius: 8, padding: '9px 12px' }}>{fallo}</div>
+      )}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {RESULTADOS.map(r => (
