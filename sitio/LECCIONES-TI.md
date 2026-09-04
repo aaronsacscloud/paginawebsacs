@@ -394,3 +394,8 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   de dejarlo abierto).
 - Las decisiones se aplican por `/api/crm/ti/tarea` (el mismo camino que la Torre), así la rampa de descalificación sigue
   contando coincidencias hacia el automático.
+- **El saludo cálido es intención del dueño, no un typo (4-sep):** «Holaaa», «Buenooos días». Quedó como regla vigente
+  («de vez en cuando, uno de cada tres, nunca dos seguidas al mismo lead; alarga solo la vocal del saludo y el resto bien
+  escrito»). La prueba con-vs-sin dio neutro (7.17 vs 7.25, cero violaciones de un lado y del otro): se activó forzada
+  porque es una decisión de estilo del dueño, no una hipótesis que el juez deba premiar. Lo único que sí se corrigió del
+  ejemplo original fue «díaa» → «días».
