@@ -20,8 +20,10 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
   const { galeriaActiva } = await import('../../../../lib/crm/ti/imagenes-agente');
   const { resumenResultados, resumenOfertas, rechazosPorMomento } = await import('../../../../lib/crm/ti/biblioteca');
+  const { panelSeguimientoCorto } = await import('../../../../lib/crm/ti/seguimiento-corto');
   const [p, pendientes, historial, galeria, cfg, resultados, ofertas, rechazos_momento] = await Promise.all([paridad(), sugerenciasPendientes(80), historialCalificaciones(80), galeriaActiva().catch(() => []), leerConfig() as Promise<any>, resumenResultados().catch(() => null), resumenOfertas().catch(() => null), rechazosPorMomento().catch(() => null)]);
-  return json({ paridad: p, pendientes, historial, galeria, resultados, ofertas, rechazos_momento, config: { agente_activo: cfg.agente_activo === true, agente_modo: cfg.agente_modo || 'sombra', paridad_meta: p.meta, paridad_ventana: p.ventana, agente_prueba_telefonos: cfg.agente_prueba_telefonos || [], veto_min: Number(cfg.agente_veto_min ?? 10) } });
+  const corto = await panelSeguimientoCorto().catch(() => null);
+  return json({ paridad: p, pendientes, historial, galeria, resultados, ofertas, rechazos_momento, corto, config: { agente_activo: cfg.agente_activo === true, agente_modo: cfg.agente_modo || 'sombra', paridad_meta: p.meta, paridad_ventana: p.ventana, agente_prueba_telefonos: cfg.agente_prueba_telefonos || [], veto_min: Number(cfg.agente_veto_min ?? 10) } });
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -44,6 +46,11 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('ti_config').update({ valor: { ...cfg, ...parche } }).eq('id', 1);
     await supabase.from('ia_log').insert({ accion: 'seguimiento_config', razon: Object.keys(parche).join(', '), detalle: { ...parche, por: user.id } }).then(() => {}, () => {});
     return json({ ok: true, paridad: await paridad({ ...cfg, ...parche }) });
+  }
+  if (b.accion === 'generar_seguimientos') {
+    const { generarSeguimientos } = await import('../../../../lib/crm/ti/seguimiento-corto');
+    const r = await generarSeguimientos({ max: Number(b.max) || 12, soloContactId: b.contact_id });
+    return json(r, (r as any)?.error ? 400 : 200);
   }
   if (b.accion === 'revisar') return json(await revisarParidad());
   return json({ error: 'Acción desconocida' }, 400);

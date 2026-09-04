@@ -24,6 +24,8 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const [saliendo, setSaliendo] = useState(false);
   const [como, setComo] = useState(false);
   const [activando, setActivando] = useState(false);
+  const [preparando, setPreparando] = useState(false);
+  const [filtro, setFiltro] = useState('todos');   // por tipo de mensaje: la cola mezcla respuestas, seguimientos y cotizaciones
   const cargar = () => fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 45000); return () => clearInterval(t); }, []);
   const aviso = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); };
@@ -31,7 +33,10 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   if (!d) return <div className="ti-lienzo"><div className="ti-suave">Cargando…</div></div>;
   if (d.error) return <div className="ti-lienzo"><div className="ti-card">{d.error}</div></div>;
   const p = d.paridad || {};
-  const pend: any[] = d.pendientes || [];
+  const todasPend: any[] = d.pendientes || [];
+  const ORIGEN_L: Record<string, string> = { respuesta: 'Respuestas a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toques por silencio', cotizacion: 'Seguimiento de cotización', reenganche: 'Reenganche', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita' };
+  const origenes = [...new Set(todasPend.map(x => x.origen).filter(Boolean))];
+  const pend: any[] = filtro === 'todos' ? todasPend : todasPend.filter(x => x.origen === filtro);
   const actual = pend[Math.min(idx, Math.max(0, pend.length - 1))] || null;
   const pct = p.promedio !== null && p.promedio !== undefined ? Math.max(0, Math.min(100, (p.promedio / 10) * 100)) : 0;
   const metaPct = (p.meta / 10) * 100;
@@ -69,11 +74,34 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
           {d.ofertas && d.ofertas.total_30d > 0 && <span className="sg-u" title="Demos o llamadas que el agente propuso sin conocer giro, tiendas y necesidad (30 días). Meta: menos del 10 %">ofertas prematuras <b>{d.ofertas.pct_prematuras}%</b> de {d.ofertas.total_30d}{d.ofertas.completas?.n > 3 && d.ofertas.prematuras_res?.n > 3 ? ` · agendan ${d.ofertas.completas.pct_agendan}% con datos vs ${d.ofertas.prematuras_res.pct_agendan}% sin` : ''}</span>}
           {d.rechazos_momento && (d.rechazos_momento.ultimos_14 > 0 || d.rechazos_momento.anteriores_14 > 0) && <span className="sg-u" title="Rechazos por «no era el momento» o «no entendió», últimos 14 días vs los 14 anteriores">rechazos por momento <b>{d.rechazos_momento.ultimos_14}</b> vs {d.rechazos_momento.anteriores_14}</span>}
           {d.resultados?.total?.n > 0 && <span className="sg-u" title="Resultado real de lo enviado: contestó en 48 h · agendó en 7 días">responden 48 h <b>{d.resultados.total.responden_48h ?? '—'}%</b>{d.resultados.por_decision?.enviar?.n > 2 && d.resultados.por_decision?.modificar?.n > 2 ? ` (tal cual ${d.resultados.por_decision.enviar.responden_48h}% · modificadas ${d.resultados.por_decision.modificar.responden_48h}%)` : ''} · agendan 7 d <b>{d.resultados.total.agendan_7d ?? '—'}%</b></span>}
+          {vista === 'pendientes' && origenes.length > 1 && (
+            <select className="sg-sel" value={filtro} onChange={e => { setFiltro(e.target.value); setIdx(0); }}>
+              <option value="todos">Todos ({todasPend.length})</option>
+              {origenes.map(o => <option key={o} value={o}>{ORIGEN_L[o] || o} ({todasPend.filter(x => x.origen === o).length})</option>)}
+            </select>
+          )}
           <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir{pend.length > 1 ? ` · ${Math.min(idx, pend.length - 1) + 1} de ${pend.length}` : ''} · </> : null}{vista !== 'pendientes' && <><button className="sg-link" onClick={() => { setVista('pendientes'); setIdx(0); }}>por decidir</button> · </>}{vista !== 'historial' && <><button className="sg-link" onClick={() => setVista('historial')}>historial</button> · </>}{vista !== 'reglas' && <button className="sg-link" onClick={() => setVista('reglas')}>reglas</button>}</span>
         </div>
         {msg && <div className={'sg-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
 
+      {vista === 'pendientes' && d.corto && d.corto.ventana > 0 && (
+        <div className="sg-corto">
+          <div>
+            <b>{d.corto.ventana} prospectos</b> llevan entre 1 y 4 días sin contestarnos
+            <span> · {d.corto.respondieron_antes} ya nos habían contestado antes, {d.corto.nunca_respondieron} nunca</span>
+            {d.corto.por_preparar > 0 && <span> · <b>{d.corto.por_preparar}</b> por preparar</span>}
+            {d.corto.listos > 0 && <span> · <b>{d.corto.listos}</b> con mensaje listo{Object.entries(d.corto.por_situacion || {}).length > 0 ? `: ${Object.entries(d.corto.por_situacion).map(([k, n]) => `${(d.corto.etiquetas || {})[k] || k} ${n}`).join(' · ')}` : ''}</span>}
+          </div>
+          <button className="sg-prep" onClick={async () => {
+            setPreparando(true);
+            const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'generar_seguimientos', max: 12 }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+            setPreparando(false);
+            if (r.error) aviso(r.error, false);
+            else { aviso(`${r.mensajes} mensajes listos${r.descalificar ? ` · ${r.descalificar} para descalificar (van a la Torre)` : ''}${r.quedan ? ` · quedan ${r.quedan}` : ''}.`); cargar(); }
+          }} disabled={preparando || !d.corto.por_preparar}>{preparando ? 'Leyendo conversaciones…' : !d.corto.por_preparar ? 'Todos preparados' : d.corto.listos > 0 ? `Preparar los ${d.corto.por_preparar} que faltan` : `Preparar los ${d.corto.por_preparar} mensajes`}</button>
+        </div>
+      )}
       {vista === 'pendientes' && !actual && (
         <div className="ti-card sg-vacio"><b>Nada por decidir.</b><div className="ti-suave">Cuando un lead escriba, el agente redacta y la sugerencia aparece aquí y en su conversación del inbox.</div></div>
       )}
@@ -84,6 +112,13 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
               <div className="sg-lbl">Quién es</div>
               <div className="sg-nombre">{actual.contacto?.nombre || 'Sin nombre'}{actual.contacto?.empresa ? <span> · {actual.contacto.empresa}</span> : null}</div>
               <div className="ti-suave" style={{ margin: 0 }}>{actual.telefono}{actual.contacto?.etapa ? ` · ${actual.contacto.etapa}` : ''}{actual.contacto?.giro ? ` · ${actual.contacto.giro}` : ''} · propuesta {fecha(actual.created_at)}</div>
+              {actual.seguimiento && (
+                <div className="sg-sit">
+                  <div><span className="sg-sit-chip">{actual.seguimiento.label}</span><span className="ti-suave" style={{ margin: 0 }}>{actual.seguimiento.horas} h sin contestar · {actual.seguimiento.respondio_antes ? 'ya nos había contestado antes' : 'nunca nos ha contestado'}</span></div>
+                  <div className="sg-p" style={{ marginTop: 6 }}>{actual.seguimiento.resumen}</div>
+                  {actual.seguimiento.falta && <div className="sg-p"><span>Falta:</span> {actual.seguimiento.falta}</div>}
+                </div>
+              )}
               {actual.ultimo_mensaje && <div className="sg-p"><span>Escribió:</span> «{actual.ultimo_mensaje}»</div>}
               {actual.objetivo && <div className="sg-p"><span>El agente busca:</span> {actual.objetivo}</div>}
               {actual.contact_id && <MiniHilo contactId={actual.contact_id} n={10} onAbrir={() => setCtx(actual.contact_id)} />}
@@ -181,7 +216,8 @@ const CSS = `
 .sg-sub{font-size:12px;color:#8e88a8;margin-top:6px}.sg-sub b{color:#241d43}
 .sg-modo{font-size:12px;font-weight:800;color:#8a5a00;background:#fff4dc;border-radius:999px;padding:6px 10px}.sg-modo.vivo{color:#14532d;background:#e7f7ee}
 .sg-fila2{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px;color:#6b6580}.sg-fila2 b{color:#241d43}.sg-u{color:#8e88a8}
-.sg-pos{margin-left:auto}.sg-link{border:none;background:none;color:#5B4BD6;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;padding:0}
+.sg-pos{margin-left:auto}
+.sg-sel{border:1px solid #e8e5f0;border-radius:8px;padding:4px 8px;font-family:inherit;font-size:12px;font-weight:700;color:#4a4658;background:#fff}.sg-link{border:none;background:none;color:#5B4BD6;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;padding:0}
 .sg-msg{margin-top:8px;font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:8px}.sg-msg.ok{background:#e7f7ee;color:#14532d}.sg-msg.err{background:#fde7e5;color:#b3261e}
 .sg-card{padding:18px 20px;transition:opacity .35s,transform .35s}.sg-card.saliendo{opacity:0;transform:translateX(24px)}
 .sg-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:18px}
@@ -190,6 +226,11 @@ const CSS = `
 .sg-nombre{font-weight:800;font-size:16px}.sg-nombre span{font-weight:600;color:#6b6580}
 .sg-p{margin-top:8px;font-size:13px;line-height:1.45}.sg-p span{color:#8e88a8}
 .sg-vacio{text-align:center;padding:40px 20px}
+.sg-corto{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#f3f0ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5}
+.sg-corto span{color:#6b6580}
+.sg-prep{border:none;background:#5B4BD6;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}.sg-prep:disabled{opacity:.6}
+.sg-sit{background:#fff;border:1px solid #ecebf2;border-radius:10px;padding:10px 12px;margin-top:10px}
+.sg-sit-chip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#3d2fb0;background:#EEECFE;border-radius:999px;padding:3px 9px;margin-right:8px}
 .sg-h{border-top:1px solid #f0eef5;padding:8px 0}.sg-h summary{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:13px;flex-wrap:wrap;list-style:none}
 .sg-cal{display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#ecebf2;color:#241d43}
 .sg-cal.c10,.sg-cal.c9{background:#e7f7ee;color:#14532d}.sg-cal.c8,.sg-cal.c7,.sg-cal.c6{background:#fff4dc;color:#8a5a00}.sg-cal.c0,.sg-cal.c2,.sg-cal.c4{background:#fde7e5;color:#b3261e}

@@ -355,3 +355,21 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Criterio inferido:** al modificar sin escribir criterio, Sonnet deduce la regla del cambio (`inferirCriterio`) y se guarda
   como CRITERIO; el toast lo enseña («El agente entendió: …»).
 - Recordatorio de revisión semanal de reglas: lunes en ti-aprender (notificación con vigentes/propuestas).
+
+## 2026-09-04 · Seguimiento de 1 a 4 días (la ventana corta, clasificada)
+
+- **Vista `v_ti_seguimiento_corto`**: lo último fue nuestro, entre 20 h y 4 días, etapa lead/lead_calificado/oportunidad/rezagado,
+  sin cita futura ni asistida, sin opt-out. Expone `envio_id/envio_origen/envio_mensaje`: el reloj de silencio suele haber dejado ya
+  un mensaje genérico de reenganche para esos mismos leads (25 de 32 el primer día), y la clasificación decide si lo reemplaza.
+- **El criterio no es el tiempo, es en qué quedó.** `clasificar()` (Opus, lee el hilo completo) devuelve una de seis situaciones:
+  nunca_respondio · quedo_en_demo · falta_dato · pregunto_precio · pensandolo · dijo_no, más `falta`, `angulo` y `resumen`.
+  Cada situación trae su propio `comoEscribir` que entra como nota a `decidirTurno` (así el mensaje pasa por guion + reglas
+  vigentes + ejemplos por parecido).
+- **`dijo_no` NO recibe mensaje:** se veta lo que hubiera en la fila y se propone descalificar como tarea de veredicto en la Torre.
+- Todo nace `sugerencia` (en entrenamiento): se evalúa en Seguimiento o en la compuerta del inbox. La tarjeta muestra la
+  situación, el resumen de en qué quedó y qué falta. Selector por tipo de mensaje en la cola (la cola mezcla respuestas,
+  seguimientos y cotizaciones).
+- **Trampa medida:** la primera versión reprocesaba a los mismos leads en cada pasada (la vista los sigue devolviendo porque
+  ahora tienen envío en fila) y reemplazaba su propio mensaje: ~$0.11 por lead tirados. Se salta a los que ya tienen
+  `envio_origen='seguimiento'`; el botón dice cuántos faltan y se apaga cuando no queda ninguno.
+- Costo real medido: ~$0.11 por lead (clasificación Opus + redacción Opus).
