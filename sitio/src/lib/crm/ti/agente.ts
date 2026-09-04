@@ -1005,6 +1005,7 @@ async function validarIntentos(intentos: Intento[], ahora: Date): Promise<Intent
    primero con clic del dueño, y tras 20 coincidencias seguidas entre su veredicto y la propuesta, automático. */
 export type IndiceVida = { indice: number; estado: 'seguir' | 'bajar_ritmo' | 'sugerir_descalificar' | 'nutricion' | 'esperando_reunion' | 'con_consultor'; detalle: any };
 export async function calcularIndiceVida(cid: string): Promise<IndiceVida> {
+  const cfg: any = await leerConfig().catch(() => ({}));
   const [ev, { data: p }, cita, { data: ult }] = await Promise.all([
     evaluarLead(cid),
     supabase.from('ti_perfil').select('agente_estado, ultima_respuesta_at').eq('contact_id', cid).maybeSingle(),
@@ -1027,7 +1028,8 @@ export async function calcularIndiceVida(cid: string): Promise<IndiceVida> {
   if (alcance) estado = 'con_consultor';
   else if (cita) estado = 'esperando_reunion';
   else if (st.cerrado) estado = 'nutricion';
-  else if (indice < 35 && (validos >= 3 || st.llamada_at)) estado = 'sugerir_descalificar';
+  // Cinco intentos ENTREGADOS sin una sola respuesta antes de proponer cerrar (decisión del dueño, 4-sep; era 3).
+  else if (indice < 35 && (validos >= (Number(cfg.intentos_antes_descalificar) || 5) || st.llamada_at)) estado = 'sugerir_descalificar';
   else if (indice <= 60) estado = 'bajar_ritmo';
   const detalle = { alcance, icp: ev.icp, conversacion: ev.conversacion, razones: ev.razones, dias_sin_respuesta: dias == null ? null : Math.round(dias * 10) / 10, intentos_validos: validos, intentos_no_entregados: noEntregadas, llamada: !!st.llamada_at, puntos: { icp: icpPts, conversacion: convPts, recencia: recPts, senales: senalPts, castigo }, cita: !!cita };
   return { indice, estado, detalle };

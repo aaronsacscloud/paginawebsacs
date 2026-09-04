@@ -154,12 +154,31 @@ export const GET: APIRoute = async ({ request }) => {
     // deja pasar cabeceras propias.
     const asunto = t.asunto || '';
 
+    // La pieza visual del giro va SOLO del cuarto correo en adelante y SOLO si
+    // la cuenta ya dio señal de vida. Los primeros van en texto plano a
+    // propósito: el correo en frío que parece boletín entrega peor. Cuando ya
+    // hubo apertura o clic, la conversación cambia y una pieza que explique el
+    // dolor de un vistazo sí ayuda.
+    const { count: orden } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
+      .eq('cuenta_id', t.cuenta_id).eq('estado', 'enviado');
+    let pieza = '';
+    if ((orden || 0) >= 3) {
+      const { count: interes } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
+        .eq('cuenta_id', t.cuenta_id).in('tipo', ['apertura', 'clic']);
+      if (interes) {
+        const { data: cta } = await supabase.from('abm_cuentas').select('giro').eq('id', t.cuenta_id).maybeSingle();
+        const { data: pz } = await supabase.from('abm_plantillas')
+          .select('cuerpo').eq('canal', 'pieza').eq('giro', cta?.giro || '').maybeSingle();
+        if (pz?.cuerpo) pieza = pz.cuerpo;
+      }
+    }
+
     const r = await enviarCorreo({
       para: t.destino, asunto,
       // Texto plano de verdad: el correo en frío que parece boletín no se lee
       // y además entrega peor. El HTML es el mismo texto con saltos de línea.
       texto: t.cuerpo || '',
-      html: aHtml(t.cuerpo || ''),
+      html: aHtml(t.cuerpo || '') + pieza,
       categoria: 'abm',
     });
     const ok = r.enviado;

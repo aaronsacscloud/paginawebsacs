@@ -53,7 +53,10 @@ export const GET: APIRoute = async ({ request, url }) => {
   const q = limpiar(url.searchParams.get('q') || '', 80);
   const orden = url.searchParams.get('orden') || 'puntaje';
   const pagina = Math.max(0, Number(url.searchParams.get('pagina') || 0));
-  const POR = 60;
+  // La tabla del CRM filtra, ordena y pagina del lado del navegador. Si le
+  // mandamos 60 filas, su buscador busca en 60 y dice "no hay" de una cuenta
+  // que sí existe. Se le manda la lista completa.
+  const POR = url.searchParams.get('todo') === '1' ? 1000 : 60;
 
   let sel = supabase.from('abm_cuentas').select(SEL, { count: 'exact' });
   if (giro) sel = sel.eq('giro', giro);

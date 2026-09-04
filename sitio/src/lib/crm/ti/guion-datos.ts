@@ -75,6 +75,15 @@ Escribe la regla en 1 o 2 líneas, imperativa, concreta y verificable (qué hace
 }
 
 /* ── PROBAR ANTES DE APLICAR: casos reales, con y sin la regla, y un juez ── */
+/* Los casos tienen que ser DEL CASO que la regla gobierna (4-sep). Antes se tomaban ejemplos aprobados al azar: una
+   regla que solo aplica «cuando el lead dice que no le interesa» se probaba contra conversaciones donde nadie dijo que
+   no, así que solo metía ruido y salía peor. Ahora se buscan por parecido al texto de la regla; si no hay suficientes
+   parecidos, se completa con los de su etapa y se dice cuántos eran realmente del caso. */
+async function casosRelevantes(regla: string, etapa: string | null, n = 12) {
+  const { data: par } = await supabase.rpc('ti_ejemplos_parecidos', { q: regla.slice(0, 600), etapa, n: n * 2 });
+  const buenos = (par || []).filter((c: any) => c.score > 0.12 && String(c.pulida || '').length >= 20);
+  return { casos: buenos.slice(0, n), relevantes: buenos.length };
+}
 async function casosDePrueba(etapa: string | null, n = 12) {   // 12 y no 24: cada caso se genera dos veces con Opus (~$0.04); con 12 la señal es la misma y la prueba baja de ~$0.9 a ~$0.45
   const base = supabase.from('ia_ejemplos').select('id, estado, situacion, mensaje_lead, pulida, fuente').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').not('mensaje_lead', 'is', null).order('created_at', { ascending: false });
   const { data: propios } = etapa ? await base.eq('estado', etapa).limit(n) : { data: [] as any[] };
@@ -102,8 +111,12 @@ export async function evaluarRegla(id: string): Promise<any> {
   const { data: r } = await supabase.from('ti_reglas').select('id, texto, etapa').eq('id', id).maybeSingle();
   if (!r?.texto) return { error: 'La regla no tiene texto' };
   if (!hasApiKey()) return { error: 'Sin API key' };
-  const casos = await casosDePrueba(r.etapa || null, Number(process.env.TI_CASOS_PRUEBA) || 12);
-  if (casos.length < 6) return { error: `Solo hay ${casos.length} casos aprobados para probar; hacen falta al menos 6` };
+  const tope = Number(process.env.TI_CASOS_PRUEBA) || 12;
+  const rel = await casosRelevantes(r.texto!, r.etapa || null, tope).catch(() => ({ casos: [] as any[], relevantes: 0 }));
+  let casos: any[] = rel.casos;
+  const deSuCaso = rel.relevantes;
+  if (casos.length < 6) { const extra = await casosDePrueba(r.etapa || null, tope); for (const c of extra) if (casos.length < tope && !casos.some(x => x.id === c.id)) casos.push(c); }
+  if (casos.length < 6) return { error: `Solo hay ${casos.length} casos para probar; hacen falta al menos 6` };
   const [sinRegla, conRegla] = await Promise.all([bloqueSistemaBase(), bloqueSistemaBase(r.texto)]);
   let costo = 0; const res: any[] = [];
   for (let i = 0; i < casos.length; i += 6) {
@@ -120,7 +133,7 @@ export async function evaluarRegla(id: string): Promise<any> {
   }
   const ok = res.filter(x => !x.error && x.sin && x.con);
   const prom = (k: 'sin' | 'con') => ok.length ? Math.round((ok.reduce((s, x) => s + x[k], 0) / ok.length) * 100) / 100 : null;
-  const prueba = { n: ok.length, sin: prom('sin'), con: prom('con'), delta: prom('con') !== null && prom('sin') !== null ? Math.round((prom('con')! - prom('sin')!) * 100) / 100 : null, mejora_en: ok.filter(x => x.con > x.sin).length, empeora_en: ok.filter(x => x.con < x.sin).length, viola_sin: ok.filter(x => x.viola_sin).length, viola_con: ok.filter(x => x.viola_con).length, at: new Date().toISOString(), costo: Math.round(costo * 1000) / 1000, casos: res.slice(0, 30) };
+  const prueba = { n: ok.length, del_caso: deSuCaso, sin: prom('sin'), con: prom('con'), delta: prom('con') !== null && prom('sin') !== null ? Math.round((prom('con')! - prom('sin')!) * 100) / 100 : null, mejora_en: ok.filter(x => x.con > x.sin).length, empeora_en: ok.filter(x => x.con < x.sin).length, viola_sin: ok.filter(x => x.viola_sin).length, viola_con: ok.filter(x => x.viola_con).length, at: new Date().toISOString(), costo: Math.round(costo * 1000) / 1000, casos: res.slice(0, 30) };
   await supabase.from('ti_reglas').update({ prueba, updated_at: new Date().toISOString() }).eq('id', id);
   await supabase.from('ia_log').insert({ accion: 'regla_probada', razon: `${prueba.con} con vs ${prueba.sin} sin (n=${prueba.n})`, costo_usd: costo, detalle: { regla_id: id, delta: prueba.delta } }).then(() => {}, () => {});
   return { ok: true, prueba };

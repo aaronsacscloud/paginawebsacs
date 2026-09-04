@@ -65,6 +65,10 @@ export const METODO_ETIQ: Record<string, string> = {
  * La accesibilidad NO entra: ordenar por ella era ordenar por "a quién le
  * hallamos el correo", y eso escondía las cuentas grandes que valen la pena
  * trabajar a mano. Sigue calculándose y se muestra aparte, como filtro. */
+/** Los máximos de cada componente. La pantalla los lee de aquí: escritos a
+ *  mano se desfasan del motor y acaban enseñando 50/40. */
+export const TOPES = { encaje: 50, dolor: 50, accesibilidad: 25, puntaje: 100 } as const;
+
 const ECOMMERCE = /shopify|woo|vtex|wix|tiendanube|magento|prestashop|squarespace|shopline/i;
 
 export function calcularPuntaje(c: any, senales: any[] = []): { encaje: number; dolor: number; accesibilidad: number; puntaje: number } {

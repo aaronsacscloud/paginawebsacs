@@ -529,3 +529,24 @@ El mismo caso real escrito por Opus y por Sonnet, calificado 1-10 por un juez qu
   segundo reemplazaba al primero. Medido: $2.59 en 4 días en mensajes que nunca salieron. Ahora `tocarSilencios` salta
   a quien ya tiene algo esperando decisión (`pendiente|enviando|sugerencia`) y `generarSeguimientos` ya no reemplaza,
   deja lo que haya. Primera corrida con el candado: 51 leads saltados, 0 mensajes nuevos, la fila quedó igual.
+
+## 2026-09-04 · La prueba de reglas estaba midiendo mal (y por eso rechazó reglas buenas)
+
+`casosDePrueba` tomaba ejemplos aprobados cualesquiera. Una regla que solo gobierna un caso («cuando diga que no le
+interesa») se probaba contra conversaciones donde nadie dijo que no: la regla no aplicaba, solo metía ruido, y salía
+peor. **Invertía veredictos.** Ahora `casosRelevantes()` busca por parecido al TEXTO de la regla (RPC
+`ti_ejemplos_parecidos`) y solo completa con los de la etapa si no alcanzan; el resultado guarda `del_caso` para
+saber cuántos eran realmente del caso.
+
+Medido en las mismas reglas, antes y después:
+
+| Regla | Antes (casos al azar) | Ahora (casos del caso) |
+|---|---|---|
+| Dijo que no: aceptar y cerrar | 6.25 vs 7.42 ❌ | **7.42 vs 7.00** ✅ |
+| Precio sin conocer tamaño | 6.25 vs 6.33 ❌ | **7.25 vs 6.00** ✅ |
+| Primer contacto + nota de voz | 6.83 vs 6.83 = | **6.33 vs 5.75** ✅ |
+| Empatía antes de proponer | 5.5 vs 5.21 (rechazada) | **6.33 vs 5.92** ✅ vuelve a propuesta |
+| «nuevo»: no activar demo sin datos | 5.24 vs 5.9 (rechazada) | **6.33 vs 5.00** ✅ vuelve a propuesta |
+
+Dos reglas que se habían rechazado sí servían. Quedan como propuestas para que el dueño las apruebe.
+**Lección general: una prueba mal diseñada es peor que no probar, porque da falsa confianza en la decisión contraria.**
