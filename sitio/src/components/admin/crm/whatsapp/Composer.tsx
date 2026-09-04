@@ -41,6 +41,55 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
+/* El velo de «la IA está reescribiendo».
+ *
+ * Antes era un texto de 11 px en la barra de herramientas, entre nueve iconos y
+ * en la esquina contraria a donde estás mirando: se perdía, y como la petición
+ * tarda unos segundos parecía que el botón no había hecho nada.
+ *
+ * Va ENCIMA del texto, que es donde va a aparecer el resultado. Tres cosas lo
+ * hacen legible de un vistazo:
+ *  · el barrido se MUEVE — es lo único que distingue «trabajando» de «trabado»;
+ *  · el texto de abajo se sigue viendo, atenuado: se entiende que es ESE el que
+ *    está cambiando, y no que la pantalla se bloqueó;
+ *  · dice qué está haciendo, no «Procesando».
+ *
+ * `pointerEvents: none` a propósito: tapa, no secuestra. Y con
+ * `prefers-reduced-motion` se queda quieto; el letrero basta. */
+function VeloIA({ etiqueta = 'Reescribiendo tu mensaje…' }: { etiqueta?: string }) {
+  return (
+    <div aria-live="polite" style={{
+      position: 'absolute', inset: 0, borderRadius: 12, zIndex: 5,
+      background: 'rgba(255,255,255,.72)', backdropFilter: 'blur(1.5px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      pointerEvents: 'none', overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes ia-barrido { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
+        @keyframes ia-latido  { 0%,100% { opacity: .6 } 50% { opacity: 1 } }
+        .ia-barrido{position:absolute;inset:0;background:linear-gradient(100deg,
+          transparent 20%, rgba(124,92,247,.22) 50%, transparent 80%);
+          animation:ia-barrido 1.25s linear infinite}
+        .ia-chip{animation:ia-latido 1.6s ease-in-out infinite}
+        @media (prefers-reduced-motion: reduce){
+          .ia-barrido{animation:none;background:rgba(124,92,247,.10)}
+          .ia-chip{animation:none}
+        }
+      `}</style>
+      <div className="ia-barrido" />
+      <div className="ia-chip" style={{
+        position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#fff', border: `1px solid ${C.morado}`, color: C.moradoTinta,
+        borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 700,
+        boxShadow: '0 4px 14px rgba(76,59,208,.18)', whiteSpace: 'nowrap',
+      }}>
+        <IcoChispas size={14} />
+        {etiqueta}
+      </div>
+    </div>
+  );
+}
+
 export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [], movil, alerta }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
   cita?: any; onQuitarCita?: () => void;
@@ -377,6 +426,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           parecía que la lista empezaba en medio. En el teléfono ya estaba en
           `visible` justamente por esto. */}
       <div className="wa-comp-caja" style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: 'visible' }}>
+        {iaProcesando && <VeloIA />}
         {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
             no se escribe: en reposo el composer es una línea y ya. */}
         {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
@@ -639,7 +689,16 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   // Nada de scroll horizontal aquí: una barra de acciones que se
                   // desliza esconde opciones sin decir que existen, y el botón
                   // de enviar —que vive al final— dejaría de estar a la mano.
-                  ...(movil ? { flexWrap: 'wrap' as const, rowGap: 2 } : {}) }}>
+                  //
+                  // Y envuelve TAMBIÉN en escritorio (4-sep-2026). El panel del
+                  // inbox es angosto aunque la pantalla sea ancha: con la barra
+                  // en una sola fila rígida, el botón de enviar salía del cuadro
+                  // y quedaba cortado contra el borde —la caja tiene
+                  // `overflow: visible` para que los popups puedan asomarse, así
+                  // que en vez de recortarse se derramaba—. Envolver mueve el
+                  // botón a un segundo renglón, donde se ve completo y se puede
+                  // tocar. Que baje es feo; que se corte lo hace inservible.
+                  flexWrap: 'wrap' as const, rowGap: 2 }}>
                 {/* En el teléfono la barra deja a la vista lo que se usa en cada
                     mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
                     tras «Más». Nueve iconos de 18 px en 390 px eran una fila
@@ -684,18 +743,24 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   </button>
                 )}
                 <span style={{ flex: 1 }} />
-                {iaProcesando && <span style={{ fontSize: 11, color: C.moradoTinta, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Corazones size={8} /> Procesando con IA…</span>}
-                <span className="wa-solo-desktop" style={{ fontSize: 11, color: C.g400, marginRight: 6 }}>Presiona "Enter"</span>
+                {/* El aviso de la IA YA NO vive aquí: era un texto de 11 px
+                    perdido entre nueve iconos, en la esquina contraria a donde
+                    estás mirando. Ahora es un velo sobre el propio texto que se
+                    está reescribiendo (ver VeloIA), que es donde va a aparecer
+                    el resultado. */}
+                {/* Lo primero que sobra cuando falta espacio: es una pista, no
+                    un control. Se recorta antes de que se recorte un botón. */}
+                <span className="wa-solo-desktop" style={{ fontSize: 11, color: C.g400, marginRight: 6, flexShrink: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>Presiona "Enter"</span>
                 {modo === 'wa' && canales?.wa_id && (!movil || masHerramientas) && (
                   <button onClick={() => setPopProgramar(p => !p)} title="Programar envío / recordarme si no contesta" aria-label="Programar"
-                    style={{ width: 26, height: 32, borderRadius: 8, border: `1px solid ${popProgramar ? C.morado : C.g200}`, background: popProgramar ? C.moradoAgua : '#fff', color: popProgramar ? C.moradoTinta : C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>
+                    style={{ width: 26, height: 32, flexShrink: 0, borderRadius: 8, border: `1px solid ${popProgramar ? C.morado : C.g200}`, background: popProgramar ? C.moradoAgua : '#fff', color: popProgramar ? C.moradoTinta : C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                   </button>
                 )}
                 {/* aria-label: es un círculo de 32 px con un icono y nada más;
                     sin esto, un lector de pantalla lo anuncia como "botón". */}
                 <button onClick={enviar} aria-label="Enviar mensaje" title="Enviar" disabled={ocupado || (!texto.trim() && !staged.length && !remotos.length) || bloqueadoCorreo}
-                  style={{ width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? C.morado : C.g200, color: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? '#fff' : C.g400 }}>
+                  style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? C.morado : C.g200, color: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? '#fff' : C.g400 }}>
                   {ocupado ? <Corazones size={8} color="#fff" /> : <IcoEnviar size={15} />}
                 </button>
 

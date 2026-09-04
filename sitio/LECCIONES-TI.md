@@ -399,3 +399,28 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   escrito»). La prueba con-vs-sin dio neutro (7.17 vs 7.25, cero violaciones de un lado y del otro): se activó forzada
   porque es una decisión de estilo del dueño, no una hipótesis que el juez deba premiar. Lo único que sí se corrigió del
   ejemplo original fue «díaa» → «días».
+
+## 2026-09-04 · Reactivación v2 (4 segmentos + tamaño + investigación) y el selector de plantilla
+
+- **Cuatro segmentos, no dos** (`v_ti_reactivacion_candidatos` v2): `sin_respuesta` (nunca contestó por WhatsApp),
+  `ambiguo` (solo saludó, ≤2 entrantes y ninguno >25 caracteres), `conversacion`, `intencion`. Cada uno con su
+  `comoEscribir` en SEGMENTOS. Ojo con el matiz: «nunca contestó» es **por WhatsApp**; puede haber historia real por
+  otro canal (agendó demo, formulario) y esa SÍ se cita con fecha. La primera redacción del prompt lo prohibía y
+  empeoraba los mensajes.
+- **El reloj cambia:** si nunca contestó, la ventana de 60-365 días se mide desde NUESTRO último mensaje. Antes esos
+  leads (59 en total, 39 en la ventana) no entraban nunca a reactivación.
+- **Tamaño (`tamano`)**: una / pocas / cadena / desconocido, desde `contacts.sucursales_interes` o
+  `companies.sucursales`. Cambia el argumento: a una tienda no se le habla de traspasos; a una cadena no se le dice
+  «tu tiendita».
+- **Investigación en línea** (`investigacion.ts`): búsqueda web de Anthropic (`web_search_20250305`, máx. 3 usos,
+  ~$0.09-0.18 por lead) → qué venden, dónde, sucursales, Instagram y UNA señal para abrir. Se cachea 90 días en
+  `ti_perfil.investigacion`. Prohibido inventar: si no encuentra, `encontrado:false` y el bloque no entra al prompt.
+  Ya evitó un mensaje malo (descartó una tienda que resultó ser de comida).
+- **Trampa medida:** cambiar la VISTA en la base afecta a producción al instante, aunque el código no esté pusheado.
+  El cron de reactivación consumió 18 candidatos nuevos con la vista v2 y el redactor viejo; hubo que borrar y
+  regenerar los 9 de segmentos nuevos.
+- **Selector de plantilla** (`opcionesPlantilla` + UI): con la ventana cerrada ya no dice «la plantilla aprobada».
+  Dice cuál, si es marketing (lleva el texto completo) o utilidad (línea neutra), enseña cómo le llega al lead con
+  los parámetros puestos, ofrece las otras familias aprobadas en un selector y explica el escenario (marketing
+  primero; a los 10 min sin entrega cae a utilidad y el mensaje completo llega cuando conteste). La familia elegida
+  viaja en la decisión.

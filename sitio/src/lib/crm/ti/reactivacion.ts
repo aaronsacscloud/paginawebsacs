@@ -13,9 +13,23 @@ import { puedeAutomatico } from './semaforo';
 import { sendEmail } from '../../email';
 import { LIGA_AGENDA } from './agenda-agente';
 
-export const SEGMENTOS: Record<string, { l: string; corto: string; desc: string }> = {
-  intencion: { l: 'Pidió precio o demo y se enfrió', corto: 'Pidió precio/demo', desc: 'Llegó a preguntar precio, planes, costo o demo. Intención clara que no cerró.' },
-  conversacion: { l: 'Preguntó y no siguió', corto: 'Preguntó', desc: 'Escribió alguna vez con una duda y la conversación se quedó a medias.' },
+export const SEGMENTOS: Record<string, { l: string; corto: string; desc: string; comoEscribir: string }> = {
+  intencion: { l: 'Pidió precio o demo y se enfrió', corto: 'Pidió precio/demo', desc: 'Llegó a preguntar precio, planes, costo o demo. Intención clara que no cerró.',
+    comoEscribir: 'Sabe qué es Sacs y llegó a pedir precio o demo. Retoma SU pregunta con sus palabras y dale la novedad que se la responde. No le expliques qué es Sacs: eso ya lo sabe.' },
+  conversacion: { l: 'Preguntó y no siguió', corto: 'Preguntó', desc: 'Escribió alguna vez con una duda y la conversación se quedó a medias.',
+    comoEscribir: 'Tuvo una plática real con nosotros. Retoma exactamente donde se quedó, con la duda que dejó abierta. Una sola novedad, la que le sirva a esa duda.' },
+  // Los dos de abajo (decisión del dueño, 4-sep) NO saben qué hacemos: el mensaje tiene que decírselo en una línea.
+  ambiguo: { l: 'Solo saludó y ya', corto: 'Solo saludó', desc: 'Contestó un saludo o un «ok» y nunca más. Sabe que existimos, no qué hacemos.',
+    comoEscribir: 'Solo alcanzó a saludar: nunca supo qué hacemos. Di en UNA línea qué es Sacs con palabras de tienda (no «software»: «el sistema donde llevas tus ventas y tu inventario por talla y color»), amárralo a algo real de SU negocio y cierra con una pregunta muy fácil. Nada de «retomando nuestra conversación»: no hubo conversación.' },
+  sin_respuesta: { l: 'Nunca contestó', corto: 'Nunca contestó', desc: 'Dejó sus datos o entró por un anuncio, le escribimos y nunca respondió nada.',
+    comoEscribir: 'Nunca nos contestó POR WHATSAPP, así que no te refieras a «lo que platicamos» ni a «tu mensaje». Ojo: sí puede haber historia por otro lado (agendó una demo, dejó datos en un formulario, entró por un anuncio): eso SÍ es real y se cita con fecha. Si no hay nada de eso, es un primer contacto: di en UNA línea qué es Sacs con palabras de tienda (no «software»: «el sistema donde llevas tus ventas y tu inventario por talla y color»), engancha con algo concreto de SU negocio y cierra con la pregunta más fácil del mundo. Siempre dale salida honesta: si ya no le interesa, que lo diga y lo dejamos.' },
+};
+/** Lo que cambia según el tamaño: a una tienda no le hablas de sucursales ni a una cadena de «tu tiendita». */
+export const TAMANOS: Record<string, { l: string; comoEscribir: string }> = {
+  una: { l: '1 tienda', comoEscribir: 'Tiene una sola tienda: háblale de vender más rápido en el mostrador, no perder ventas por no saber qué talla queda y vender también en línea con el mismo inventario. Nunca menciones sucursales ni traspasos.' },
+  pocas: { l: '2 a 5 tiendas', comoEscribir: 'Tiene entre 2 y 5 tiendas: lo que le duele es no saber qué hay en cada una y mover mercancía entre ellas. Habla de inventario por tienda, traspasos y ver los números de todas juntas.' },
+  cadena: { l: '6 o más', comoEscribir: 'Es una cadena: háblale como a un operador serio. Control por sucursal, nivelación de inventario entre tiendas, reportes por vendedor y por tienda. Nada de «tu tiendita».' },
+  desconocido: { l: 'no sabemos', comoEscribir: 'No sabemos de qué tamaño es: no supongas. Si hace falta, la pregunta de cierre puede ser justo esa (¿una tienda o varias?).' },
 };
 const MAX_DIA = 15;
 const HORAS_CDMX = [10, 11, 12, 13, 15, 16, 17, 18];
@@ -64,6 +78,12 @@ export async function redactarReactivacion(c: any): Promise<{ mensaje: string; a
   const cfg: any = await leerConfig();
   const { hilo, datos, resumen } = await contexto(c);
   const promo = await promoVigente();
+  // Investigación en línea (4-sep): al que nunca contestó hay que llegarle con algo real de su negocio, no con una plantilla.
+  const { investigarEmpresa, textoInvestigacion } = await import('./investigacion');
+  const inv = ['sin_respuesta', 'ambiguo'].includes(c.segmento) || !hilo
+    ? await investigarEmpresa({ contactId: c.contact_id, nombre: c.nombre, empresa: c.empresa, giro: c.giro }).catch(() => null)
+    : await (await import('./investigacion')).investigacionGuardada(c.contact_id).catch(() => null);
+  const invTexto = textoInvestigacion(inv);
   const { data: ejs } = await supabase.from('ia_ejemplos').select('situacion, pulida, por_que, fuente').eq('estado', 'reactivacion').in('estado_rev', ['aprobado', 'rechazado']).order('revisado_at', { ascending: false }).limit(12);
   const buenos = (ejs || []).filter(e => !String(e.por_que || '').startsWith('EVITAR')).slice(0, 6);
   const malos = (ejs || []).filter(e => String(e.por_que || '').startsWith('EVITAR')).slice(0, 4);
@@ -78,7 +98,11 @@ export async function redactarReactivacion(c: any): Promise<{ mensaje: string; a
   const prompt = `Eres Andrea, asesora de Sacs (software para tiendas de moda en México). Vas a RETOMAR el contacto con un lead que escribió hace ${c.meses_sin_hablar} meses y se quedó a medias. Es un PRIMER mensaje después de mucho tiempo: sale por WhatsApp como plantilla y el lead no espera nada de ti.
 
 QUIÉN ES
-Nombre: ${c.nombre || 'sin nombre'} · Empresa: ${c.empresa || 'no la sabemos'} · Segmento: ${SEGMENTOS[c.segmento]?.l}
+Nombre: ${c.nombre || 'sin nombre'} · Empresa: ${c.empresa || 'no la sabemos'} · Segmento: ${SEGMENTOS[c.segmento]?.l} · Tamaño: ${TAMANOS[c.tamano || 'desconocido']?.l}${c.giro ? ` · Giro: ${c.giro}` : ''}
+
+EN QUÉ QUEDÓ Y CÓMO SE LE ESCRIBE A ESTE (manda sobre cualquier otra instrucción de tono)
+${SEGMENTOS[c.segmento]?.comoEscribir}
+${TAMANOS[c.tamano || 'desconocido']?.comoEscribir}${invTexto}
 Datos que tenemos: ${JSON.stringify(datos).slice(0, 600)}
 Resumen previo: ${resumen || 'ninguno'}
 
@@ -91,7 +115,7 @@ ${promo ? `Promoción vigente (menciónala SOLO si el lead preguntó por precio)
 
 CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 1. Reconoce el tiempo que pasó sin disculparte de más («hace unos meses», «en ${c.meses_sin_hablar > 5 ? 'primavera' : 'estos meses'}» no: usa hechos: «en tu mensaje de mayo»).
-2. Retoma SU pregunta original con sus palabras, para que sepa que sí lo leíste.
+2. Si él escribió algo alguna vez, retómalo con sus palabras para que sepa que sí lo leíste. Si NUNCA escribió, no finjas que hubo plática: engánchalo con lo que sabemos de su negocio.
 3. Una sola novedad concreta que le sirva a esa pregunta. Cero lista de funciones.
 4. Cierra con UNA pregunta fácil de contestar con sí/no o con un dato («¿sigues con las dos tiendas?»), no con «¿agendamos?».
 5. Sin emojis, sin «espero que estés bien», sin «quería darle seguimiento», sin mayúsculas de énfasis. Máximo 300 caracteres: va dentro de una plantilla que ya trae «Hola {nombre},» al inicio y una salida amable al final, así que NO saludes ni te despidas ni ofrezcas la demo: eso ya lo dice la plantilla.

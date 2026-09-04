@@ -186,3 +186,54 @@ export async function tableroPlantillas() {
 
 /** El ángulo como parámetro de plantilla: una sola línea, sin saltos ni tabs, corto. */
 export const paramAngulo = (texto: string) => String(texto || '').replace(/\s+/g, ' ').trim().replace(/^[¡!]+/, '').slice(0, 280);
+
+/* ── QUÉ PLANTILLA VA A SALIR (decisión del dueño, 4-sep) ──
+   Fuera de la ventana de 24 h no basta con decir «sale la plantilla aprobada»: hay varias y no dicen lo mismo.
+   La de MARKETING lleva el texto completo que escribió el agente y cierra invitando; la de UTILITY es neutra y
+   solo sirve de puente para reabrir la conversación. Esto arma, para un envío concreto, cuál se recomienda, con
+   qué texto exacto le llega al lead, cuál es el respaldo y qué pasa en cada escenario. */
+export const FAMILIA_L: Record<Familia, string> = {
+  seguimiento: 'Seguimiento', no_show: 'No llegó a la demo', preparacion: 'Antes de la demo',
+  promo: 'Promoción vigente', cierre: 'Último mensaje', reactivacion: 'Retomar después de meses',
+};
+/** La familia que le toca a cada tipo de mensaje del agente. */
+export const familiaDe = (origen?: string | null): Familia =>
+  origen === 'cita' ? 'no_show' : origen === 'preparacion' ? 'preparacion'
+  : origen === 'reactivacion' || origen === 'reenganche' ? 'reactivacion'
+  : origen === 'cotizacion' ? 'promo' : 'seguimiento';
+
+const vista = (cuerpo: string, nombre: string, texto: string) =>
+  String(cuerpo).replace('{{1}}', nombre || 'Hola').replace('{{2}}', texto || '');
+
+export type OpcionPlantilla = { familia: Familia; label: string; categoria: 'MARKETING' | 'UTILITY'; nombre: string; aprobada: boolean; cuerpo: string; vista_previa: string };
+
+export async function opcionesPlantilla(o: { origen?: string | null; mensaje: string; nombre?: string | null; empresa?: string | null; familia?: Familia }) {
+  const reg = await leer();
+  const primer = String(o.nombre || '').trim().split(/\s+/)[0] || 'qué tal';
+  // El texto del agente va como parámetro {{2}} de la marketing; la utility lleva una línea neutra (el puente).
+  const puente = `quedó pendiente una plática${o.empresa ? ` sobre ${o.empresa}` : ' sobre tu tienda'} y quiero retomarla contigo cuando tengas un minuto; si me contestas por aquí te cuento en corto.`;
+  const arma = (f: Familia, cat: 'marketing' | 'utility'): OpcionPlantilla | null => {
+    const def = (FAMILIAS as any)[f]?.[cat]; if (!def) return null;
+    const est = (reg.familias as any)?.[f]?.[cat] || (f === 'seguimiento' ? (cat === 'marketing' ? reg.marketing : reg.utility) : null);
+    return { familia: f, label: FAMILIA_L[f], categoria: cat === 'marketing' ? 'MARKETING' : 'UTILITY', nombre: def.nombre, aprobada: est?.estado === 'APPROVED',
+      cuerpo: def.cuerpo, vista_previa: vista(def.cuerpo, primer, cat === 'marketing' ? o.mensaje : puente) };
+  };
+  const sugerida = o.familia || familiaDe(o.origen);
+  const opciones: { familia: Familia; label: string; marketing: OpcionPlantilla | null; utility: OpcionPlantilla | null; disponible: boolean }[] = [];
+  for (const f of Object.keys(FAMILIAS) as Familia[]) {
+    const m = arma(f, 'marketing'), u = arma(f, 'utility');
+    opciones.push({ familia: f, label: FAMILIA_L[f], marketing: m, utility: u, disponible: !!(m?.aprobada || u?.aprobada) });
+  }
+  const elegida = opciones.find(x => x.familia === sugerida && x.disponible) || opciones.find(x => x.familia === 'seguimiento' && x.disponible) || opciones.find(x => x.disponible) || null;
+  const recomendada = elegida?.marketing?.aprobada ? elegida.marketing : elegida?.utility?.aprobada ? elegida.utility : null;
+  const respaldo = recomendada?.categoria === 'MARKETING' && elegida?.utility?.aprobada ? elegida.utility : null;
+  return {
+    familia: elegida?.familia || null,
+    por_que: elegida ? `Es la familia que le toca a este mensaje (${FAMILIA_L[elegida.familia].toLowerCase()}).` : 'No hay ninguna plantilla aprobada en Meta todavía.',
+    recomendada, respaldo,
+    escenario: recomendada?.categoria === 'MARKETING'
+      ? `Sale la de marketing con TU texto completo. Si Meta no la entrega en 10 minutos${respaldo ? `, sale la de utilidad (${respaldo.nombre}) con una línea neutra y tu mensaje completo le llega en cuanto conteste` : ', el envío queda marcado como no entregado'}.`
+      : recomendada ? 'Solo hay utilidad aprobada: sale una línea neutra para reabrir y tu mensaje completo le llega en cuanto conteste.' : 'Sin plantilla aprobada no se puede escribir fuera de la ventana de 24 h.',
+    opciones: opciones.filter(x => x.disponible),
+  };
+}

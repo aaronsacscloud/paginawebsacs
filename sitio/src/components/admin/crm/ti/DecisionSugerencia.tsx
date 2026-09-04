@@ -12,7 +12,7 @@ export const MOTIVOS_RECHAZO = ['El tono no es el nuestro', 'Información incorr
 const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
 const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map(x => x.trim()).filter(Boolean);
 
-export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
+export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; plantillas?: any; nombre_lead?: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
 
 export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onDecidido }: { sug: Sugerencia; galeria?: Recurso[]; compacto?: boolean; atajos?: boolean; onDecidido: (r: any) => void }) {
   const [modo, setModo] = useState<'ver' | 'modificar' | 'rechazar'>('ver');
@@ -22,9 +22,11 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
   const [motivo, setMotivo] = useState('');
   const [detalle, setDetalle] = useState('');
   const [gal, setGal] = useState<Recurso[]>(galeria || []);
+  const [familia, setFamilia] = useState<string>('');
+  const [verPlantilla, setVerPlantilla] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [err, setErr] = useState('');
-  useEffect(() => { setModo('ver'); setTexto(sug.mensaje); setAdj((Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' }))); setCriterio(''); setMotivo(''); setDetalle(''); setErr(''); }, [sug.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setModo('ver'); setTexto(sug.mensaje); setAdj((Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' }))); setCriterio(''); setMotivo(''); setDetalle(''); setErr(''); setFamilia(''); setVerPlantilla(false); }, [sug.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (galeria) setGal(galeria); }, [galeria]);
   useEffect(() => { if (modo === 'modificar' && !gal.length) fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(d => setGal(d.galeria || [])).catch(() => {}); }, [modo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -34,6 +36,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
     setOcupado(true); setErr('');
     const body: any = { accion: 'decidir', envio_id: sug.id, decision };
     if (decision === 'modificar') { body.mensaje = texto; body.adjuntos = adj; body.detalle = criterio; }
+    if (familia) body.familia = familia;
     if (decision === 'rechazar') { body.motivo = motivo; body.detalle = detalle; }
     const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setOcupado(false);
@@ -62,9 +65,40 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
           {adj.length > 0 && <div className="ds-adj">{adj.map(a => <div key={a.id || a.url} className="ds-adj-i"><MiniRecurso r={a} size={44} /><span>{a.nombre}</span></div>)}</div>}
         </div>
       )}
-      {sug.ventana_abierta === false && (
-        <div className="ds-ventana">La ventana de 24 h de WhatsApp está cerrada (él no ha escrito en un día). Al enviar sale la <b>plantilla aprobada</b> con una línea neutra, y este mensaje completo le llega en cuanto conteste.</div>
-      )}
+      {sug.ventana_abierta === false && (() => {
+        const pl = sug.plantillas;
+        if (!pl?.recomendada) return <div className="ds-ventana">La ventana de 24 h está cerrada y no hay plantilla aprobada de Meta para este momento. No se puede enviar hasta que él escriba.</div>;
+        const fam = familia || pl.familia;
+        const grupo = (pl.opciones || []).find((x: any) => x.familia === fam) || null;
+        const elegida = grupo?.marketing?.aprobada ? grupo.marketing : grupo?.utility?.aprobada ? grupo.utility : pl.recomendada;
+        const resp = elegida?.categoria === 'MARKETING' && grupo?.utility?.aprobada ? grupo.utility : null;
+        const previa = elegida?.cuerpo ? String(elegida.cuerpo).replace('{{1}}', String(sug.nombre_lead || 'Hola')).replace('{{2}}', elegida.categoria === 'MARKETING' ? (modo === 'modificar' ? texto : sug.mensaje) : String(elegida.vista_previa || '')) : '';
+        return (
+          <div className="ds-ventana">
+            <div className="ds-v-cab">
+              <b>La ventana de 24 h está cerrada</b>, así que WhatsApp solo acepta plantillas. Va a salir esta:
+              <button className="ds-v-link" onClick={() => setVerPlantilla(v => !v)}>{verPlantilla ? 'ocultar' : 'ver cómo le llega'}</button>
+            </div>
+            <div className="ds-v-fila">
+              <span className={'ds-v-tag ' + (elegida.categoria === 'MARKETING' ? 'mk' : 'ut')}>{elegida.categoria === 'MARKETING' ? 'Marketing · lleva tu texto completo' : 'Utilidad · línea neutra'}</span>
+              <code>{elegida.nombre}</code>
+              {(pl.opciones || []).length > 1 && (
+                <select className="ds-v-sel" value={fam} onChange={e => setFamilia(e.target.value)}>
+                  {(pl.opciones || []).map((x: any) => <option key={x.familia} value={x.familia}>{x.label}{x.marketing?.aprobada ? '' : ' (solo utilidad)'}</option>)}
+                </select>
+              )}
+            </div>
+            {verPlantilla && (
+              <div className="ds-v-prev">
+                <div className="ds-v-lbl">Así le llega</div>
+                <div className="ds-v-burb">{elegida.categoria === 'MARKETING' ? previa : elegida.vista_previa}</div>
+                {resp && <div className="ds-v-nota">Si Meta no la entrega en 10 minutos sale <code>{resp.nombre}</code> con una línea neutra, y tu mensaje completo le llega en cuanto conteste.</div>}
+              </div>
+            )}
+            <div className="ds-v-esc">{elegida.categoria === 'MARKETING' ? `Sale con tu texto completo dentro de la plantilla.${resp ? ' Si Meta no la entrega en 10 min, cae a la de utilidad y el mensaje completo llega cuando conteste.' : ''}` : 'Sale una línea neutra para reabrir; tu mensaje completo le llega en cuanto conteste.'}</div>
+          </div>
+        );
+      })()}
       {modo === 'ver' && (
         <div className="ds-acciones">
           <button className="ds-btn p" disabled={ocupado} onClick={() => decidir('enviar')}>{ocupado ? 'Enviando…' : 'Enviar'}{atajos && <small>E</small>}</button>
@@ -123,6 +157,15 @@ const CSS = `
 .ds .ti-btn{border:1px solid #e8e5f0;background:#fff;color:#241d43;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .ds .ti-chip-btn{border:1px solid #e8e5f0;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#4a4658}.ds .ti-chip-btn.on{background:#241d43;border-color:#241d43;color:#fff}
 .ds .ti-suave{color:#8e88a8;font-size:12px}.ds .ti-campo{border:1px solid #e8e5f0;border-radius:10px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box}
-.ds-ventana{margin-top:8px;font-size:12.5px;line-height:1.45;background:#fff4dc;color:#8a5a00;border-radius:8px;padding:8px 10px}
+.ds-ventana{margin-top:8px;font-size:12.5px;line-height:1.5;background:#fff4dc;color:#8a5a00;border-radius:10px;padding:10px 12px}
+.ds-v-cab{margin-bottom:6px}.ds-v-link{border:none;background:none;color:#8a5a00;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:12px;margin-left:6px;padding:0}
+.ds-v-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ds-v-tag{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 8px}.ds-v-tag.mk{background:#e7f7ee;color:#14532d}.ds-v-tag.ut{background:#ecebf2;color:#4a4658}
+.ds-ventana code{font-size:11.5px;background:#fff;border-radius:5px;padding:1px 5px;color:#6b6580}
+.ds-v-sel{border:1px solid #e6d5a8;border-radius:8px;padding:3px 6px;font-family:inherit;font-size:12px;font-weight:700;color:#8a5a00;background:#fff}
+.ds-v-prev{margin-top:8px}.ds-v-lbl{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.8;margin-bottom:4px}
+.ds-v-burb{background:#fff;border-radius:10px 10px 10px 4px;padding:9px 11px;color:#241d43;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.ds-v-nota{margin-top:6px;font-size:11.5px;opacity:.9}
+.ds-v-esc{margin-top:6px;font-size:11.5px;opacity:.9}
 .ds-err{margin-top:8px;font-size:12.5px;font-weight:700;color:#b3261e;background:#fde7e5;border-radius:8px;padding:6px 10px}
 `;

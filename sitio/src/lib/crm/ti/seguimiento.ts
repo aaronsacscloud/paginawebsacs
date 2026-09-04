@@ -95,7 +95,7 @@ export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolea
   return { cambio: false, lista: true, paridad: p };
 }
 
-type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null };
+type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null; familia?: string };
 
 /** La decisión del consultor sobre una sugerencia. Enviar/modificar mandan de verdad (por el despachador del agente). */
 export async function decidirSugerencia(envioId: string, o: Decision): Promise<any> {
@@ -147,7 +147,8 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
     const abierta = await ventanaAbierta(e.contact_id).catch(() => true);
     if (!abierta) {
       const { data: k } = await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle();
-      const familia = ['reactivacion', 'reenganche'].includes(String(e.origen)) ? 'promo' : e.origen === 'cita' ? 'no_show' : e.origen === 'preparacion' ? 'preparacion' : 'seguimiento';
+      const { familiaDe } = await import('./plantillas-agente');
+      const familia = o.familia || familiaDe(e.origen);   // la que eligió el consultor en la pantalla, o la que le toca
       const pl = await plantillaSiVentanaCerrada(e.contact_id, familia as any, mensaje, k?.nombre).catch(() => null);
       if (!pl) return { error: 'La ventana de 24 horas se cerró y no hay plantilla aprobada de Meta para este momento. Escríbele desde el inbox con una plantilla, o espera a que él conteste.' };
       await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
@@ -224,7 +225,7 @@ export async function sugerenciasPendientes(limit = 60) {
   // Ventana de 24 h por lead: si está cerrada, lo que salga será una plantilla y el texto viaja como puente.
   const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24) : { data: [] as any[] };
   const abiertos = new Set((ent || []).map((x: any) => x.contact_id));
-  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {}; return { ...s, salida: undefined, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
+  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {}; return { ...s, salida: undefined, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
 }
 
 export async function historialCalificaciones(limit = 60) {

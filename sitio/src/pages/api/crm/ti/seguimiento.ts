@@ -23,6 +23,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { panelSeguimientoCorto } = await import('../../../../lib/crm/ti/seguimiento-corto');
   const [p, pendientes, historial, galeria, cfg, resultados, ofertas, rechazos_momento] = await Promise.all([paridad(), sugerenciasPendientes(80), historialCalificaciones(80), galeriaActiva().catch(() => []), leerConfig() as Promise<any>, resumenResultados().catch(() => null), resumenOfertas().catch(() => null), rechazosPorMomento().catch(() => null)]);
   const corto = await panelSeguimientoCorto().catch(() => null);
+  // Qué plantilla saldría en cada sugerencia con la ventana cerrada (decisión 4-sep: que se vea cuál y por qué).
+  const { opcionesPlantilla } = await import('../../../../lib/crm/ti/plantillas-agente');
+  for (const s of pendientes) {
+    if ((s as any).ventana_abierta) continue;
+    (s as any).plantillas = await opcionesPlantilla({ origen: (s as any).origen, mensaje: (s as any).mensaje, nombre: (s as any).contacto?.nombre, empresa: (s as any).contacto?.empresa }).catch(() => null);
+  }
   return json({ paridad: p, pendientes, historial, galeria, resultados, ofertas, rechazos_momento, corto, config: { agente_activo: cfg.agente_activo === true, agente_modo: cfg.agente_modo || 'sombra', paridad_meta: p.meta, paridad_ventana: p.ventana, agente_prueba_telefonos: cfg.agente_prueba_telefonos || [], veto_min: Number(cfg.agente_veto_min ?? 10) } });
 };
 
@@ -32,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   if (b.accion === 'decidir') {
     if (!b.envio_id || !['enviar', 'modificar', 'rechazar'].includes(b.decision)) return json({ error: 'Falta envio_id o decisión' }, 400);
-    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, userId: user.id });
+    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, familia: b.familia, userId: user.id });
     return json(r, r?.error ? 400 : 200);
   }
   if (b.accion === 'config') {
