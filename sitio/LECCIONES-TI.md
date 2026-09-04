@@ -498,3 +498,23 @@ Medido: bloque 1 (guion 6 440 + wiki 1 362 + límites 318 + reglas 584) ≈ **8 
   por mensaje, marcarlo cuesta dinero en vez de ahorrarlo.
 - Comprimir el guion es la palanca MENOR mientras el bloque fijo se cachee bien (leerlo cuesta la décima parte).
   Antes de recortar texto hay que confirmar con `ia_uso` (cache_read vs cache_write) que el caché está pegando.
+
+## 2026-09-04 · A/B de modelos a ciegas (con juez y posiciones alternadas)
+
+El mismo caso real escrito por Opus y por Sonnet, calificado 1-10 por un juez que no sabe cuál es cuál:
+
+| Tarea | Opus | Sonnet | Veredicto |
+|---|---|---|---|
+| Toque de silencio / reenganche (n=6) | 6.33 | **7.83** | Sonnet mejor |
+| Seguimiento de 1 a 4 días (n=6) | 6.67 | **7.83** | Sonnet mejor |
+| Respuesta a un lead vivo (n=4) | **7.50** | 5.50 | Opus, y por mucho |
+
+- **Por qué Sonnet gana en los toques:** el juez lo dijo solo — «B es más corta, directa y con una pregunta clara;
+  A tiene dos preguntas». Un toque es UNA línea dentro de una plantilla; el modelo grande se pone a agregar datos
+  y satura. Justo lo que el guion prohíbe.
+- **Por qué Opus gana contestando:** «A responde la duda real, suena humano y cierra con opciones; B ignora el
+  'heyyy hoalaa' y pregunta por una demo que no pidieron». Ahí hay conversación viva y contexto que interpretar.
+- **Costos reales medidos en `ia_uso`:** Opus $0.0889 por llamada (antes del arreglo de caché: $0.1239) y Sonnet
+  $0.0249. El caché ya pega: 42 de 57 llamadas leyeron caché y solo 2 escribieron.
+- El juez marcó dos veces el saludo alargado («pierde naturalidad con 'Holaaa'»). Es decisión de estilo del dueño y
+  se queda; queda anotado que al juez no le gusta.
