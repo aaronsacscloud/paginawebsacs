@@ -74,6 +74,18 @@ export const GET: APIRoute = async ({ request }) => {
   // cae en el respaldo por dirección, que falla justo en el caso más común —le
   // escribes a contacto@ y la dueña contesta desde su gmail—. Sin eso, la
   // cadencia le sigue escribiendo a quien ya respondió. No se manda nada.
+  // El correo en frío NO puede salir por el inquilino de casa: es el mismo
+  // remitente de las facturas y las confirmaciones de cita, y en SendGrid una
+  // queja de spam suprime a nivel de CUENTA, no de campaña. Sin un inquilino
+  // propio configurado, no se manda.
+  const tenantSlug = (cfg.tenant_slug || '').trim();
+  if (!tenantSlug) {
+    return json({ pausado: true, motivo: 'falta abm_config.tenant_slug: el correo en frío no sale por el remitente de los clientes', espejo });
+  }
+  const { data: inquilino } = await supabase.from('email_tenants').select('id, slug, from_email').eq('slug', tenantSlug).maybeSingle();
+  if (!inquilino) {
+    return json({ pausado: true, motivo: `no existe el inquilino de correo «${tenantSlug}»`, espejo });
+  }
   if (!(import.meta.env.EMAIL_REPLY_DOMAIN || '').trim()) {
     return json({ pausado: true, motivo: 'falta EMAIL_REPLY_DOMAIN: sin dominio de respuestas, una contestación no frena la cadencia', espejo });
   }
@@ -114,11 +126,22 @@ export const GET: APIRoute = async ({ request }) => {
     return json({ enviados: 0, pausado_por: motivo, espejo });
   }
 
-  const { data: toques } = await supabase.from('abm_toques')
+  const { data: pendientes } = await supabase.from('abm_toques')
     .select('id, cuenta_id, destino, asunto, cuerpo, programado_at')
     .eq('estado', 'aprobado').eq('canal', 'email')
     .lte('programado_at', new Date().toISOString())
-    .order('programado_at').limit(restante * 4);
+    .order('programado_at').limit(restante * 6);
+
+  // Una cadencia empezada vale más que una por empezar: si el cupo se lo comen
+  // los primeros toques de cuentas nuevas, las secuencias en curso se cortan a
+  // media conversación. Primero los seguimientos.
+  const { data: yaTocadas } = await supabase.from('abm_toques')
+    .select('cuenta_id').eq('estado', 'enviado').limit(5000);
+  const enCurso = new Set((yaTocadas || []).map((r: any) => r.cuenta_id));
+  const toques = (pendientes || []).sort((a: any, b: any) => {
+    const ea = enCurso.has(a.cuenta_id) ? 0 : 1, eb = enCurso.has(b.cuenta_id) ? 0 : 1;
+    return ea !== eb ? ea - eb : String(a.programado_at).localeCompare(String(b.programado_at));
+  });
 
   const bloqueadas = new Set<string>();
   const { data: no } = await supabase.from('abm_no_contactar').select('valor');
@@ -130,6 +153,18 @@ export const GET: APIRoute = async ({ request }) => {
   const { data: hoyYa } = await supabase.from('abm_toques').select('destino').eq('estado', 'enviado').gte('enviado_at', hoy + 'T00:00:00Z');
   for (const r of hoyYa || []) tocadosHoy.add(String(r.destino || '').toLowerCase());
 
+  // Diez direcciones pertenecen a DOS negocios distintos: sin esto ese buzón
+  // recibiría dos cadencias encimadas —catorce correos en frío en el mes— y
+  // marcaría spam con toda la razón. Un buzón, una cadencia a la vez.
+  const { data: vivas } = await supabase.from('abm_toques')
+    .select('destino, cuenta_id').eq('estado', 'enviado')
+    .gte('enviado_at', new Date(Date.now() - 35 * 864e5).toISOString()).limit(5000);
+  const duenoDelBuzon = new Map<string, string>();
+  for (const r of vivas || []) {
+    const d = String(r.destino || '').toLowerCase();
+    if (d && !duenoDelBuzon.has(d)) duenoDelBuzon.set(d, r.cuenta_id);
+  }
+
   const CORREO_OK = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
   let enviados = 0; const fallos: string[] = [];
 
@@ -137,6 +172,11 @@ export const GET: APIRoute = async ({ request }) => {
     if (enviados >= restante) break;
     const destino = String(t.destino || '').toLowerCase();
     if (tocadosHoy.has(destino)) continue;
+    const dueno = duenoDelBuzon.get(destino);
+    if (dueno && dueno !== t.cuenta_id) {
+      await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'ese buzón ya está recibiendo la cadencia de otro negocio' }).eq('id', t.id);
+      continue;
+    }
     if (!CORREO_OK.test(destino) || bloqueadas.has(destino)) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: CORREO_OK.test(destino) ? 'está en la lista de no contactar' : 'la dirección no tiene forma de dirección' }).eq('id', t.id);
       continue;
@@ -179,7 +219,7 @@ export const GET: APIRoute = async ({ request }) => {
       // y además entrega peor. El HTML es el mismo texto con saltos de línea.
       texto: t.cuerpo || '',
       html: aHtml(t.cuerpo || '') + pieza,
-      categoria: 'abm',
+      categoria: 'abm', tenantId: inquilino.id,
     });
     const ok = r.enviado;
     await supabase.from('abm_toques').update({

@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { P } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
+import EstadoVacio from '../ui/EstadoVacio';
 import { Pastilla, fechaHora } from './ui';
 
 const PASOS: { v: 'abre' | 'sigue' | 'cierra'; l: string; pie: string }[] = [
@@ -38,7 +39,10 @@ export default function Whatsapp({ cuentaId, onCambio }: { cuentaId: string; onC
   };
 
   if (cargando && !d) return <Cargando texto="Preparando el mensaje…" />;
-  if (d?.error) return <p style={{ fontSize: '.8125rem', color: '#888', margin: 0 }}>{d.error}</p>;
+  if (d?.error) return (
+    <EstadoVacio titulo={d.error.charAt(0).toUpperCase() + d.error.slice(1)}
+      pista="El WhatsApp que tenemos sale de lo que el negocio publica. Si no hay, la cola de llamadas es el camino." />
+  );
 
   const enlace = d?.enlace ? d.enlace.split('?text=')[0] + '?text=' + encodeURIComponent(texto) : null;
 

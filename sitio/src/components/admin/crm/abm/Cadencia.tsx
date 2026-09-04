@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { P } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
+import EstadoVacio from '../ui/EstadoVacio';
 import { Pastilla, fecha } from './ui';
 
 const ESTADO: Record<string, { l: string; bg: string; fg: string }> = {

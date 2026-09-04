@@ -3,6 +3,11 @@
 import type { ReactNode } from 'react';
 import { P } from '../../../../lib/crm/paleta';
 
+/** Los máximos de cada componente del puntaje. Viven aquí y no en abm.lib.ts
+ *  porque esa librería importa el cliente de Supabase del servidor: usarla
+ *  desde React arrastra ese cliente al navegador y la pantalla no monta. */
+export const TOPES = { encaje: 50, dolor: 50, accesibilidad: 25, puntaje: 100 } as const;
+
 export const ETAPA_TONO: Record<string, { l: string; bg: string; fg: string }> = {
   sin_tocar:    { l: 'Sin tocar',    bg: '#F4F4F6',        fg: '#6B7280' },
   en_cadencia:  { l: 'En cadencia',  bg: P.violetaAgua,    fg: P.violetaTinta },

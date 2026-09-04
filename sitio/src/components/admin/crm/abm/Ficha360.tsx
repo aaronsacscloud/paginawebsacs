@@ -4,9 +4,10 @@
 import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
+import EstadoVacio from '../ui/EstadoVacio';
 import Cadencia from './Cadencia';
 import Whatsapp from './Whatsapp';
-import { ETAPA_TONO, CONFIANZA_TONO, Pastilla, Puntaje, fecha, fechaHora, enlaceDe } from './ui';
+import { ETAPA_TONO, CONFIANZA_TONO, Pastilla, Puntaje, TOPES, fecha, fechaHora, enlaceDe } from './ui';
 
 const GIROS: Record<string, string> = {
   cadenas: 'Cadenas de moda', boutiques: 'Boutiques', renta: 'Renta de vestidos y trajes', novias: 'Novias',
@@ -46,6 +47,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
   const [nota, setNota] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [nueva, setNueva] = useState<{ nombre: string; cargo: string; whatsapp: string; email: string } | null>(null);
+  const [seguro, setSeguro] = useState(false);
 
   const traer = () => {
     setCargando(true);
@@ -87,6 +89,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             {c.ruta === 'diagnostico' && <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>va a diagnóstico</Pastilla>}
             {c.ya_es_cliente && <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }} titulo={`En el CRM como ${c.ya_es_cliente}`}>ya es cliente</Pastilla>}
             <Puntaje v={c.puntaje || 0} ancho={70} />
+            <span style={{ fontSize: '.6875rem', color: '#999' }}>de {TOPES.puntaje}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
@@ -98,10 +101,20 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
                 background: c.etapa === e ? P.violeta : '#fff', color: c.etapa === e ? '#fff' : '#666',
               }}>{ETAPA_TONO[e].l}</button>
           ))}
-          <button onClick={() => { if (confirm('¿Marcar esta cuenta como NO CONTACTAR? Se cancelan sus toques y se bloquean todos sus canales, para siempre.')) accion({ accion: 'no_contactar' }); }}
-            style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #f0c4bd', background: '#fff', color: P.rojoTinta, marginLeft: 'auto' }}>
-            No contactar
-          </button>
+          {seguro ? (
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>Se cancelan sus correos y se bloquean sus canales, para siempre.</span>
+              <button onClick={() => { accion({ accion: 'no_contactar' }); setSeguro(false); }}
+                style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: 'none', background: P.rojoTinta, color: '#fff' }}>Sí, no contactar</button>
+              <button onClick={() => setSeguro(false)}
+                style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #e0dee8', background: '#fff', color: '#666' }}>Cancelar</button>
+            </span>
+          ) : (
+            <button onClick={() => setSeguro(true)}
+              style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: '1px solid #f0c4bd', background: '#fff', color: P.rojoTinta, marginLeft: 'auto' }}>
+              No contactar
+            </button>
+          )}
         </div>
       </div>
 
@@ -109,18 +122,21 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 11 }}>
         <div style={tarjetaKpi(P.violeta)}>
           <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>Encaje</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.violetaTinta, lineHeight: 1.1 }}>{c.encaje}<span style={{ fontSize: '.8125rem', color: '#999' }}>/40</span></div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.violetaTinta, lineHeight: 1.1 }}>{c.encaje}<span style={{ fontSize: '.8125rem', color: '#999' }}>/{TOPES.encaje}</span></div>
           <div style={{ fontSize: '.6875rem', color: '#888' }}>{c.sucursales ? `${c.sucursales} sucursales` : 'sin conteo de tiendas'}</div>
         </div>
         <div style={tarjetaKpi(P.ambar)}>
           <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>Dolor</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.ambarTinta, lineHeight: 1.1 }}>{c.dolor}<span style={{ fontSize: '.8125rem', color: '#999' }}>/35</span></div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.ambarTinta, lineHeight: 1.1 }}>{c.dolor}<span style={{ fontSize: '.8125rem', color: '#999' }}>/{TOPES.dolor}</span></div>
           <div style={{ fontSize: '.6875rem', color: '#888' }}>{c.plataforma_web ? `corre en ${c.plataforma_web}` : c.sitio_http === 0 ? 'sitio caído' : 'sin señal técnica'}</div>
         </div>
+        {/* La accesibilidad NO suma al puntaje —ordenar por ella era ordenar
+            por "a quién le hallamos el correo"—, así que aquí se lee como lo
+            que es: por dónde se le entra, no qué tan buen prospecto es. */}
         <div style={tarjetaKpi(P.verde)}>
-          <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>Accesibilidad</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.verdeTinta, lineHeight: 1.1 }}>{c.accesibilidad}<span style={{ fontSize: '.8125rem', color: '#999' }}>/25</span></div>
-          <div style={{ fontSize: '.6875rem', color: '#888' }}>{(d.canales || []).length} vías de contacto</div>
+          <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>Vías de contacto</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.verdeTinta, lineHeight: 1.1 }}>{(d.canales || []).length}</div>
+          <div style={{ fontSize: '.6875rem', color: '#888' }}>{c.accesibilidad >= 17 ? 'fácil de alcanzar' : c.accesibilidad >= 8 ? 'se le puede entrar' : 'difícil de alcanzar'}</div>
         </div>
         <div style={tarjetaKpi(P.azul)}>
           <div style={{ fontSize: '.625rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>En Google</div>
@@ -192,7 +208,10 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
       {/* ── Por dónde entrarle ── */}
       <div style={CAJA}>
         <p style={H}>Por dónde entrarle</p>
-        {(d.canales || []).length === 0 && <p style={{ fontSize: '.8125rem', color: '#888', margin: 0 }}>Esta cuenta no tiene ninguna vía verificada. Antes de cualquier cadencia hay que encontrarle una.</p>}
+        {(d.canales || []).length === 0 && (
+          <EstadoVacio titulo="Sin ninguna vía verificada"
+            pista="Antes de escribirle hay que encontrarle un correo o un teléfono. La cola de llamadas sirve para eso." />
+        )}
         <div style={{ display: 'grid', gap: 8 }}>
           {(d.canales || []).map((ch: any) => {
             const url = enlaceDe(ch.tipo, ch.valor);
@@ -251,7 +270,10 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
           <button disabled={!nota.trim() || guardando} onClick={() => { accion({ accion: 'nota', texto: nota }); setNota(''); }}
             style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: P.violeta, color: '#fff' }}>Apuntar</button>
         </div>
-        {(d.actividad || []).length === 0 && <p style={{ fontSize: '.8125rem', color: '#888', margin: 0 }}>Todavía no pasa nada con esta cuenta.</p>}
+        {(d.actividad || []).length === 0 && (
+          <EstadoVacio titulo="Todavía no pasa nada con esta cuenta"
+            pista="En cuanto salga el primer correo, o alguien llame, aquí queda el rastro." />
+        )}
         <div style={{ display: 'grid', gap: 10 }}>
           {(d.actividad || []).map((a: any) => (
             <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -330,7 +352,7 @@ function ToqueManual({ id, onListo }: { id: string; onListo: () => void }) {
             <button disabled={enviando || !texto.trim()} onClick={guardar} style={{
               font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8,
               border: 'none', background: P.violeta, color: '#fff', cursor: 'pointer', opacity: texto.trim() ? 1 : .5,
-            }}>Apuntar</button>
+            }}>Guardar el toque</button>
           </div>
         </div>
       )}

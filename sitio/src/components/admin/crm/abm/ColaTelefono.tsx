@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
+import EstadoVacio from '../ui/EstadoVacio';
 import { Pastilla, Puntaje, fmt } from './ui';
 
 const RESULTADOS = [
@@ -49,9 +50,8 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
 
   if (cargando) return <Cargando texto="Armando la cola de llamadas…" />;
   if (!c) return (
-    <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>
-      Ya no hay a quién llamar con los datos de hoy. Cuando el barrido encuentre teléfonos nuevos, aparecerán aquí.
-    </div>
+    <EstadoVacio tono="bien" titulo="Ya llamaste a todos los de hoy"
+      pista="Cuando el vigilante encuentre teléfonos nuevos, o alguien capture uno, la cola se vuelve a llenar." />
   );
 
   return (
@@ -83,7 +83,7 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
           {c.telefono && <a href={`tel:${String(c.telefono).replace(/[^\d+]/g, '')}`} style={enlace(P.violeta)}>Llamar {c.telefono}</a>}
-          {c.whatsapp && <a href={c.whatsapp.startsWith('http') ? c.whatsapp : `https://wa.me/${String(c.whatsapp).replace(/\D/g, '')}`} target="_blank" rel="noopener" style={enlace(P.verde)}>WhatsApp</a>}
+          {c.whatsapp && <a href={c.whatsapp.startsWith('http') ? c.whatsapp : `https://wa.me/${String(c.whatsapp).replace(/\D/g, '')}`} target="_blank" rel="noopener" style={enlaceSuave()}>WhatsApp</a>}
         </div>
       </div>
 
@@ -127,4 +127,11 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
 const enlace = (color: string) => ({
   fontSize: '.875rem', fontWeight: 700, color: '#fff', background: color,
   padding: '9px 15px', borderRadius: 9, textDecoration: 'none', display: 'inline-block',
+});
+/** Secundario, de puro borde: dos botones sólidos juntos compiten, y el verde
+ *  claro con letra blanca no llega ni a 3:1 de contraste. */
+const enlaceSuave = () => ({
+  fontSize: '.875rem', fontWeight: 700, color: P.verdeTinta, background: '#fff',
+  border: `1.5px solid ${P.verde}`, padding: '8px 15px', borderRadius: 9,
+  textDecoration: 'none', display: 'inline-block',
 });

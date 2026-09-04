@@ -31,7 +31,6 @@ export default function AbmTab() {
   const [resumen, setResumen] = useState<any>(null);
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
-  const [pagina, setPagina] = useState(0);
   const [giro, setGiro] = useState('');
   const [cargando, setCargando] = useState(true);
   const [abierta, setAbierta] = useState<string | null>(null);
@@ -41,13 +40,13 @@ export default function AbmTab() {
 
   const traer = () => {
     setCargando(true);
-    const p = new URLSearchParams({ orden: 'puntaje', pagina: String(pagina) });
+    const p = new URLSearchParams({ orden: 'puntaje', todo: '1' });
     if (giro) p.set('giro', giro);
     fetch(`/api/crm/abm/cuentas?${p}`).then(r => r.json()).then(r => {
       setCuentas(r.cuentas || []); setTotal(r.total || 0); setCargando(false);
     }).catch(() => setCargando(false));
   };
-  useEffect(traer, [giro, pagina]);
+  useEffect(traer, [giro]);
 
   const canalesDe = (row: any) => {
     const c = row.canales || [];
@@ -180,11 +179,11 @@ export default function AbmTab() {
       {/* Los giros, que es como se piensa este mercado */}
       {resumen?.porGiro && (
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
-          <BotonGiro activo={!giro} onClick={() => { setGiro(''); setPagina(0); }} etiqueta="Todos" n={resumen.total} />
+          <BotonGiro activo={!giro} onClick={() => { setGiro(''); }} etiqueta="Todos" n={resumen.total} />
           {Object.entries(resumen.porGiro)
             .sort((a: any, b: any) => b[1].n - a[1].n)
             .map(([g, v]: any) => (
-              <BotonGiro key={g} activo={giro === g} onClick={() => { setGiro(g); setPagina(0); }} etiqueta={GIROS[g] || g} n={v.n} pts={v.puntaje} />
+              <BotonGiro key={g} activo={giro === g} onClick={() => { setGiro(g); }} etiqueta={GIROS[g] || g} n={v.n} pts={v.puntaje} />
             ))}
         </div>
       )}
@@ -211,7 +210,11 @@ export default function AbmTab() {
                   <Puntaje v={r.puntaje || 0} ancho={40} />
                 </div>
                 <div style={{ fontSize: '.75rem', color: '#888' }}>{GIROS[r.giro] || r.giro} · {r.ciudad || 'México'}</div>
+                <div style={{ fontSize: '.75rem', color: canalesDe(r).mail ? P.violetaTinta : P.rojoTinta, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {canalesDe(r).mail ? canalesDe(r).mail.valor : canalesDe(r).wa ? 'Solo WhatsApp' : 'Sin vía verificada'}
+                </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {canalesDe(r).wa ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla> : null}
                   {r.sucursales ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>{r.sucursales} tiendas</Pastilla> : null}
                   {r.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(r.google_rating).toFixed(1)} ★</Pastilla> : null}
                   {r.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }}>{r.plataforma_web}</Pastilla> : null}
@@ -220,17 +223,6 @@ export default function AbmTab() {
               </div>
             )}
           />
-          {total > cuentas.length && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', margin: '16px 0 30px' }}>
-              <button disabled={pagina === 0} onClick={() => setPagina(p => Math.max(0, p - 1))}
-                style={btnPag(pagina === 0)}>Anteriores</button>
-              <span style={{ fontSize: '.8125rem', color: '#777' }}>
-                {pagina * 60 + 1}–{Math.min(total, (pagina + 1) * 60)} de {fmt(total)}
-              </span>
-              <button disabled={(pagina + 1) * 60 >= total} onClick={() => setPagina(p => p + 1)}
-                style={btnPag((pagina + 1) * 60 >= total)}>Siguientes</button>
-            </div>
-          )}
         </>
       )}
 
@@ -242,12 +234,6 @@ export default function AbmTab() {
     </div>
   );
 }
-
-const btnPag = (off: boolean) => ({
-  font: 'inherit', fontSize: '.8125rem', fontWeight: 600, padding: '7px 14px', borderRadius: 9,
-  border: `1.5px solid ${off ? '#e6e4ee' : P.violeta}`, background: '#fff', color: off ? '#bbb' : P.violetaTinta,
-  cursor: off ? 'default' : 'pointer',
-});
 
 function BotonGiro({ activo, onClick, etiqueta, n, pts }: { activo: boolean; onClick: () => void; etiqueta: string; n: number; pts?: number }) {
   return (
