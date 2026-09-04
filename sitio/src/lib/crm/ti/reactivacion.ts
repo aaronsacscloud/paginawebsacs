@@ -10,6 +10,7 @@ import { parListoPara, paramAngulo, FAMILIAS, type Familia } from './plantillas-
 import { promoVigente, promoTexto } from './promociones';
 import { notificar } from '../notificaciones';
 import { puedeAutomatico } from './semaforo';
+import { modeloPara } from './agente';
 import { sendEmail } from '../../email';
 import { LIGA_AGENDA } from './agenda-agente';
 
@@ -124,12 +125,12 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que NO es una tienda (restaurante, cafetería, comida, servicios, escuela, consultorio) o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
 Responde SOLO con JSON: {"correo": ${c.email ? '{"asunto": "asunto corto y concreto, sin signos de exclamación", "cuerpo": "tres párrafos cortos en texto plano separados por línea en blanco: 1) en una línea quiénes somos (Sacs: sistema para tiendas de moda y retail en México: ventas, inventario por talla y color, tienda en línea y WhatsApp conectados al mismo inventario), por si ya no se acuerda; 2) lo que sabemos de SU negocio y su pregunta original, con la novedad que le sirve; 3) invitación concreta a contestar por WhatsApp o agendar 15 minutos. Máximo 130 palabras, de tú, sin emojis, sin promesas."}' : 'null'}, "nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
-  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
+  const r = await anthropic.messages.create({ model: modeloPara('reactivacion', cfg), max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || '';
   if (!txt) console.error('[reactivacion] respuesta sin texto:', JSON.stringify(r).slice(0, 400));
   const m = txt.match(/\{[\s\S]*\}/); if (!m) { console.error('[reactivacion] sin JSON:', txt.slice(0, 300)); return null; }
   let j: any; try { j = JSON.parse(m[0]); } catch { console.error('[reactivacion] JSON inválido:', m[0].slice(0, 300)); return null; }
-  const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
+  const costo = calculateCost(modeloPara('reactivacion', cfg), r.usage as any).cost_usd;
   if (j.descartar) return { mensaje: '', angulo: '', resumen_lead: '', pregunta_original: '', por_que: '', costo, descartar: String(j.descartar) };
   if (!j.mensaje) return null;
   // Nombre genérico («Contacto 6917», vacío): si el agente lo encontró en la conversación, se corrige en el CRM y la plantilla saluda bien.

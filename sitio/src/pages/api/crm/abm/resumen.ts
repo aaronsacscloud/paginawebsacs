@@ -1,0 +1,59 @@
+// El tablero del motor: qué hay, en qué etapa, qué está caliente y qué toca hoy.
+// GET /api/crm/abm/resumen
+import type { APIRoute } from 'astro';
+import { supabase } from '../../../../lib/supabase';
+import { json, quien } from '../../../../lib/crm/abm.lib';
+
+export const prerender = false;
+
+export const GET: APIRoute = async ({ request }) => {
+  const yo = await quien(request);
+  if (!yo) return json({ error: 'sin sesión' }, 401);
+
+  const [cuentas, canales, actividad, toques, senales] = await Promise.all([
+    supabase.from('abm_cuentas').select('giro, etapa, ruta, puntaje, sucursales, google_rating').limit(5000),
+    supabase.from('abm_canales').select('cuenta_id, tipo, estado').limit(20000),
+    supabase.from('abm_actividad').select('tipo, ocurrio_at').gte('ocurrio_at', new Date(Date.now() - 30 * 864e5).toISOString()).limit(5000),
+    supabase.from('abm_toques').select('id, estado, programado_at, canal').in('estado', ['aprobado', 'programado']).limit(2000),
+    supabase.from('abm_senales').select('tipo, fecha').gte('fecha', new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10)).limit(5000),
+  ]);
+
+  const cs = cuentas.data || [];
+  const cuenta = (f: (c: any) => boolean) => cs.filter(f).length;
+  const porGiro: Record<string, { n: number; puntaje: number; diagnostico: number }> = {};
+  for (const c of cs) {
+    const g = (porGiro[c.giro] ||= { n: 0, puntaje: 0, diagnostico: 0 });
+    g.n++; g.puntaje += c.puntaje || 0; if (c.ruta === 'diagnostico') g.diagnostico++;
+  }
+  for (const g of Object.values(porGiro)) g.puntaje = Math.round(g.puntaje / Math.max(1, g.n));
+
+  const porEtapa: Record<string, number> = {};
+  for (const c of cs) porEtapa[c.etapa] = (porEtapa[c.etapa] || 0) + 1;
+
+  const conCanal = new Set<string>(); const conEmail = new Set<string>(); const conWa = new Set<string>();
+  for (const c of canales.data || []) {
+    conCanal.add(c.cuenta_id);
+    if (c.tipo.startsWith('email')) conEmail.add(c.cuenta_id);
+    if (c.tipo.startsWith('whatsapp')) conWa.add(c.cuenta_id);
+  }
+
+  const act: Record<string, number> = {};
+  for (const a of actividad.data || []) act[a.tipo] = (act[a.tipo] || 0) + 1;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const pendientesHoy = (toques.data || []).filter((t: any) => (t.programado_at || '').slice(0, 10) <= hoy).length;
+
+  const seDisparo: Record<string, number> = {};
+  for (const s of senales.data || []) seDisparo[s.tipo] = (seDisparo[s.tipo] || 0) + 1;
+
+  return json({
+    total: cs.length,
+    calientes: cuenta(c => (c.puntaje || 0) >= 60),
+    diagnostico: cuenta(c => c.ruta === 'diagnostico'),
+    multisucursal: cuenta(c => (c.sucursales || 0) >= 2),
+    sin_canal: cs.length - conCanal.size,
+    con_email: conEmail.size, con_wa: conWa.size,
+    porGiro, porEtapa, actividad: act, senales: seDisparo,
+    toques_pendientes: (toques.data || []).length, toques_hoy: pendientesHoy,
+  });
+};

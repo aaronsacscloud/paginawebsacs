@@ -466,3 +466,19 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   `DecisionSugerencia` recibe `movil` y pone `style={{minHeight:46}}` en cada botón. Además, en móvil la acción
   principal ocupa el ancho, las otras dos se reparten abajo, la burbuja y el textarea se hacen scrollables (34 vh /
   32 vh) y al editar los botones quedan pegados al fondo de la compuerta.
+
+## 2026-09-04 · Dónde se van los tokens de verdad (medido en 4 días)
+
+- **$13.5 gastados, $2.06 llegaron a un lead.** 190 mensajes redactados, 20 enviados. El desglose por estado es la
+  respuesta a «gastamos demasiado»: reemplazados $4.67 (62), pendientes en fila $3.00 (60), sugerencias esperando
+  decisión $2.61 (38), enviados $2.06 (20).
+- **La causa del desperdicio grande:** dos sistemas escriben para el mismo lead. El reloj de silencio redacta con
+  Opus y horas después el seguimiento de 1 a 4 días lo reclasifica y lo reemplaza ($2.59 en 4 días). Pendiente:
+  que el reloj de silencio no toque leads que están dentro de la ventana corta.
+- **Modelo por tarea** (`MODELO_TAREA` + `modeloPara(tarea, cfg)`, ajustable sin deploy con `cfg.modelos`):
+  Opus se queda donde hay conversación viva (respuesta a un lead que escribió, seguimiento de cotización); todo lo
+  demás —toques de silencio, reenganche, reactivación, preparación, cita, seguimiento corto, clasificación,
+  curador— pasa a Sonnet, porque es UNA línea que además viaja dentro de una plantilla fija. Medido: respuesta
+  $0.1239 vs toque $0.065; con Sonnet el toque baja a ~$0.02.
+- **Falta comprobarlo con el juez:** el mismo arnés de `evaluarRegla` (generar con y sin, calificar 1-10) sirve para
+  A/B de modelos. Correrlo en cuanto haya crédito antes de dar por buena la baja de calidad cero.

@@ -52,6 +52,22 @@ export const senalDeInteres = (t: string): string | null => {
   if (/(me interesa|s[ií] me interesa|quiero contratar|c[oó]mo (le hago|contrato|empiezo|me registro))/.test(x)) return 'interes';
   return null;
 };
+/* ── MODELO POR TAREA (decisión del dueño, 4-sep) ──
+   Medido en 4 días: de $13.5 gastados, solo $2.06 llegó a un lead. Contestar a alguien que ESTÁ escribiendo es
+   conversación viva y ahí Opus se paga solo; un toque de silencio o una reactivación es UNA línea que además viaja
+   dentro de una plantilla fija, y ahí Sonnet hace lo mismo por la cuarta parte. Se puede mover sin deploy con
+   cfg.modelos = { respuesta: 'opus', toque: 'sonnet', ... }. */
+export const MODELO_TAREA: Record<string, 'opus' | 'sonnet' | 'haiku'> = {
+  respuesta: 'opus',        // el lead escribió y le estamos contestando: aquí no se ahorra
+  cotizacion: 'opus',       // dinero en la mesa
+  silencio: 'sonnet', reenganche: 'sonnet', reactivacion: 'sonnet',
+  preparacion: 'sonnet', cita: 'sonnet', seguimiento: 'sonnet',
+  clasificar: 'sonnet', curador: 'sonnet', autopsia: 'sonnet',
+};
+export function modeloPara(tarea: string, cfg?: any): string {
+  const elegido = (cfg?.modelos || {})[tarea] || MODELO_TAREA[tarea] || 'opus';
+  return (MODELS as any)[elegido] || MODELS.opus;
+}
 export const nace = (cfg: any, telefono?: string | null): 'pendiente' | 'sugerencia' => ((cfg?.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) ? 'sugerencia' : 'pendiente';
 
 export type SalidaAgente = {
@@ -172,7 +188,7 @@ export async function aplicarOptOut(contactId: string, motivo: string) {
 const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
-export async function decidirTurno(contactId: string, nota?: string): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
+export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
@@ -212,8 +228,10 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
+  const cfgMod: any = await leerConfig().catch(() => ({}));
+  const modelo = modeloPara(opts.tarea || 'respuesta', cfgMod);
   const r = await anthropic.messages.create({
-    model: MODELS.opus, max_tokens: 1800,
+    model: modelo, max_tokens: 1800,
     // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
     system: [
       { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
@@ -223,7 +241,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
-  const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
+  const costo = calculateCost(modelo, r.usage as any).cost_usd;
   let salida: any = null;
   try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
   if (salida) {
@@ -359,7 +377,7 @@ export async function toqueCotizacion(contactId: string, q: { id: string; numero
   if (!ventana && !par) return { ok: false, motivo: 'sin_plantilla' };
   const dinero = q.total ? `$${Math.round(Number(q.total)).toLocaleString('es-MX')}` : '';
   const nota = `SEÑAL DE COTIZACIÓN (${motivo === 'intencion' ? 'la está leyendo con intención: varias aperturas o varios minutos' : motivo === 'dia3' ? 'lleva 3 días sin decidir' : 'lleva 7 días sin decidir'}). Cotización #${q.numero || 's/n'} ${dinero}. Escribe UN mensaje corto y amable: viste que está revisando la propuesta y te pones a la orden por si algo no cuadra o quiere ajustar algo. Cero presión, cero «¿ya la viste?», cero cierre forzado; una sola pregunta abierta. ${par ? 'SALE COMO PLANTILLA: escribe SOLO el ángulo, una oración de máximo 200 caracteres que continúe «Hola Ana, …», en minúscula, sin saludo, sin nombre, sin pregunta.' : 'Máximo 2 líneas.'}`;
-  const d = await decidirTurno(contactId, nota);
+  const d = await decidirTurno(contactId, nota, { tarea: 'cotizacion' });
   if (!d.salida?.mensaje) return { ok: false, motivo: d.motivo || 'sin_mensaje' };
   const { data: c } = await supabase.from('contacts').select('nombre').eq('id', contactId).maybeSingle();
   const primer = String(c?.nombre || 'Hola').trim().split(/\s+/)[0];
@@ -1189,7 +1207,7 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
       const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
       if ((reciente || []).length) continue;
       if (!prueba) { const sem = await puedeAutomatico(cid, { telefono: ultimo[cid].telefono, origen: 'silencio' }); if (!sem.ok) { res.semaforo = res.semaforo || {}; res.semaforo[sem.motivo] = (res.semaforo[sem.motivo] || 0) + 1; continue; } }
-      const d = await decidirTurno(cid, nota);
+      const d = await decidirTurno(cid, nota, { tarea: st.reenganche && validos === 0 ? 'reenganche' : 'silencio' });
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
@@ -1423,7 +1441,7 @@ export async function prepararDemos(): Promise<any> {
     const temas: any[] = Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion : [];
     const nota = `MENSAJE DE PREPARACIÓN: mañana es su demo (${etiquetaHorario(String(b.fecha), String(b.hora_inicio).slice(0, 5))}). UN mensaje de 2-3 líneas, como quien prepara la reunión y no como recordatorio: el día y la hora van dentro de la primera frase, con naturalidad. Pídele —si lo tiene a la mano— su Excel de inventario o tres productos con tallas y colores, y di en media línea para qué (que el consultor se lo arme con lo suyo). Si no lo tiene, que quede claro que no pasa nada, sin «no te preocupes». ${temas.length ? `Ya está anotado que quiere ver: ${temas.map(t => t.tema).join(', ')}; menciónalo en una línea («ya quedó anotado lo de…»).` : ''} No saludes como primera vez, no uses su nombre, no digas «recordatorio» ni repitas «demo» más de una vez. Cierra con la petición, sin segunda pregunta. No devuelvas accion.`;
     try {
-      const d = await decidirTurno(cid, nota);
+      const d = await decidirTurno(cid, nota, { tarea: 'preparacion' });
       if (!d.salida?.mensaje || !d.telefono) continue;
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const plPrep = await plantillaSiVentanaCerrada(cid, 'preparacion', d.salida.mensaje, c.nombre);
@@ -1462,7 +1480,7 @@ export async function atenderCitas(): Promise<any> {
       ? `EL LEAD NO LLEGÓ a su cita (${(e.payload as any)?.fecha || ''}). ${segunda ? 'Es la SEGUNDA vez seguida: sin reclamo y sin «entiendo que estés ocupado». Dile en una línea que mejor te diga él cuándo le queda bien, o si prefiere dejarlo para después, y devuelve escalar.si=true.' : 'Escribe como si fuera lo más normal (lo es): nada de «te esperamos», «no te presentaste» ni «lamentamos». Una línea que dé por hecho que se cruzó algo y DOS horarios de la lista real (o la liga de reagendar) en una sola pregunta.'} Máximo 3 líneas, sin su nombre, sin explicar qué se perdió.`
       : `EL LEAD CANCELÓ su cita (${(e.payload as any)?.fecha || ''}). Sin presión y sin «qué lástima»: da por hecho que tuvo razón para cancelar y ofrece dos horarios nuevos o pregúntale qué día le acomoda, en una sola pregunta. Si dice que ya no, respeta a la primera y pregunta en una línea qué cambió. Máximo 3 líneas.`;
     try {
-      const d = await decidirTurno(cid, nota);
+      const d = await decidirTurno(cid, nota, { tarea: 'cita' });
       if (!d.salida?.mensaje || !d.telefono) { res.saltadas++; continue; }
       if (d.salida.escalar?.si) await escalarAlHumano(cid, d.salida);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));

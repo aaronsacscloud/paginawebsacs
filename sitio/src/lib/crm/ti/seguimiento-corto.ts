@@ -20,7 +20,7 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
-import { decidirTurno, nace, avisoSistema } from './agente';
+import { decidirTurno, nace, avisoSistema, modeloPara } from './agente';
 import { puedeAutomatico } from './semaforo';
 
 export type Situacion = 'nunca_respondio' | 'quedo_en_demo' | 'falta_dato' | 'pregunto_precio' | 'pensandolo' | 'dijo_no' | 'otro';
@@ -65,6 +65,7 @@ export async function clasificar(c: any): Promise<{ situacion: Situacion; por_qu
   if (!hasApiKey()) return null;
   const h = await hiloDe(c.contact_id);
   if (h.n < 1) return null;
+  const cfgC: any = await leerConfig().catch(() => ({}));
   const prompt = `Eres quien decide el seguimiento de un agente de ventas por WhatsApp (Sacs: sistema para tiendas de moda y retail en México). A este prospecto le escribimos nosotros al final y lleva ${c.horas_sin_respuesta} horas sin contestar.
 
 LEAD: ${c.nombre || 'sin nombre'}${c.giro ? ` · giro: ${c.giro}` : ''} · etapa CRM: ${c.lifecycle_stage} · ${c.respondio_alguna_vez ? `nos ha contestado ${c.n_entrantes} veces` : 'NUNCA nos ha contestado un mensaje'}.
@@ -89,7 +90,7 @@ Responde SOLO JSON:
   let j: any = null; let costo = 0;
   for (const intento of [0, 1]) {
     const p = intento === 0 ? prompt : prompt.replace(h.texto.slice(0, 9000), h.texto.slice(-3500));
-    const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: p }] });
+    const r = await anthropic.messages.create({ model: modeloPara('clasificar', cfgC), max_tokens: 700, messages: [{ role: 'user', content: p }] });
     costo += calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd;
     const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
     const m = txt.match(/\{[\s\S]*\}/);
@@ -151,7 +152,7 @@ Lo que quedó: ${cl.resumen}
 ${cl.falta ? `Lo que falta: ${cl.falta}` : ''}
 Ángulo para retomar: ${cl.angulo}
 Es un SEGUIMIENTO, no el primer mensaje: no te presentes de nuevo, no repitas lo que ya le dijiste y no le reclames el silencio ("no me contestaste", "te escribí"). Una sola pregunta, al final.`;
-      const d = await decidirTurno(c.contact_id, nota);
+      const d = await decidirTurno(c.contact_id, nota, { tarea: 'seguimiento' });
       res.costo += d.costo || 0;
       if (!d.salida?.mensaje || !d.telefono) { res.saltados++; res.errores.push(`${c.nombre}: el agente no propuso mensaje`); continue; }
 
