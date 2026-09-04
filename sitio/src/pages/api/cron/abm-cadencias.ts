@@ -70,6 +70,13 @@ export const GET: APIRoute = async ({ request }) => {
       pausado = 'no';
     }
   }
+  // Sin EMAIL_REPLY_DOMAIN el Reply-To no lleva el id del envío: quien conteste
+  // cae en el respaldo por dirección, que falla justo en el caso más común —le
+  // escribes a contacto@ y la dueña contesta desde su gmail—. Sin eso, la
+  // cadencia le sigue escribiendo a quien ya respondió. No se manda nada.
+  if (!(import.meta.env.EMAIL_REPLY_DOMAIN || '').trim()) {
+    return json({ pausado: true, motivo: 'falta EMAIL_REPLY_DOMAIN: sin dominio de respuestas, una contestación no frena la cadencia', espejo });
+  }
   if (pausado === 'si') return json({ pausado: true, motivo: 'abm_config.pausado = si', espejo });
   if (pausado === 'auto') return json({ pausado: true, motivo: 'pausa automática por rebotes, se levanta mañana', espejo });
 
@@ -92,11 +99,19 @@ export const GET: APIRoute = async ({ request }) => {
   // El disyuntor cuenta REBOTES DE VERDAD (los que reporta SendGrid tras
   // entregar), no los fallos por una dirección mal escrita: seis direcciones
   // truncadas bastaban para apagar el sistema entero el primer día.
-  const { count: rebotesHoy } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
-    .eq('tipo', 'rebote').eq('canal', 'email').gte('ocurrio_at', hoy + 'T00:00:00Z');
-  if ((rebotesHoy || 0) >= Math.max(3, Math.round(cupo * 0.05))) {
-    await supabase.from('abm_config').update({ valor: 'auto', hasta: hoy, nota: `pausado el ${hoy} por ${rebotesHoy} rebotes` }).eq('clave', 'pausado');
-    return json({ enviados: 0, pausado_por_rebotes: rebotesHoy, espejo });
+  const [{ count: rebotesHoy }, { count: quejasHoy }] = await Promise.all([
+    supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
+      .eq('tipo', 'rebote').eq('canal', 'email').gte('ocurrio_at', hoy + 'T00:00:00Z'),
+    supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
+      .eq('tipo', 'spam').eq('canal', 'email').gte('ocurrio_at', hoy + 'T00:00:00Z'),
+  ]);
+  // Una queja de spam pesa muchísimo más que un rebote: Gmail corta arriba de
+  // 0.3%, que con 120 correos al día es menos de una queja diaria. Por eso el
+  // umbral de quejas es UNA, no tres.
+  if ((quejasHoy || 0) >= 1 || (rebotesHoy || 0) >= Math.max(3, Math.round(cupo * 0.05))) {
+    const motivo = (quejasHoy || 0) >= 1 ? `${quejasHoy} queja(s) de spam` : `${rebotesHoy} rebotes`;
+    await supabase.from('abm_config').update({ valor: 'auto', hasta: hoy, nota: `pausado el ${hoy} por ${motivo}` }).eq('clave', 'pausado');
+    return json({ enviados: 0, pausado_por: motivo, espejo });
   }
 
   const { data: toques } = await supabase.from('abm_toques')

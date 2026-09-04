@@ -54,11 +54,14 @@ export async function revisarFreno(tenantId: string): Promise<EstadoFreno> {
   const minima = Number(t?.freno_muestra_minima ?? 50);
   const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
-  // Solo cuenta el marketing: un rebote de un aviso de cobro a un correo mal
-  // escrito por el propio cliente no dice nada de la reputación de la lista.
+  // Marketing y prospección en frío: un rebote de un aviso de cobro a un correo
+  // mal escrito por el propio cliente no dice nada de la reputación de la lista,
+  // pero el frío sí — es justo el tráfico que genera quejas, porque nadie lo
+  // pidió. Dejarlo fuera de la muestra era darle un freno que obedece pero que
+  // nunca puede activar.
   const base = () => supabase.from('email_sends')
     .select('id', { count: 'exact', head: true })
-    .eq('tenant_id', tenantId).eq('categoria', 'marketing').gte('created_at', desde);
+    .eq('tenant_id', tenantId).in('categoria', ['marketing', 'abm']).gte('created_at', desde);
 
   const [{ count: enviados }, { count: quejas }, { count: rebotes }] = await Promise.all([
     base().in('estado', ['sent', 'delivered', 'opened', 'clicked', 'spam', 'bounced']),

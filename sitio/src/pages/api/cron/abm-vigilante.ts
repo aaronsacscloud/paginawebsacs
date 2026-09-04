@@ -38,7 +38,9 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // Por tandas: 60 cuentas por corrida, las que llevan más sin revisar. Las 810
   // completas se recorren en dos semanas sin castigar a nadie con 810 peticiones.
-  const cuantas = Math.min(120, Number(url.searchParams.get('cuantas') || 60));
+  // 594 cuentas tienen sitio. A 60 por semana tardaba diez semanas en dar la
+  // vuelta, y las señales son justamente lo que tiene que estar fresco.
+  const cuantas = Math.min(300, Number(url.searchParams.get('cuantas') || 200));
   const { data: cuentas } = await supabase.from('abm_cuentas')
     .select('id, nombre, sitio, sitio_http, sitio_carrito, plataforma_web, revisado_at')
     .not('sitio', 'is', null).neq('etapa', 'no_contactar')
@@ -49,7 +51,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   const ahora = new Date().toISOString();
   const hoy = ahora.slice(0, 10);
 
-  for (const c of cuentas) {
+  // De ocho en ocho: 200 peticiones seguidas de 15 segundos no caben en el
+  // tiempo de una función.
+  const tandas: any[][] = [];
+  for (let i = 0; i < cuentas.length; i += 8) tandas.push(cuentas.slice(i, i + 8));
+  for (const tanda of tandas) await Promise.all(tanda.map(async (c: any) => {
     const r = await mirar(String(c.sitio));
     const caido = r.http === 0 || r.http >= 400;
     const carrito = r.html ? CARRITO.test(r.html) : null;
@@ -73,11 +79,11 @@ export const GET: APIRoute = async ({ request, url }) => {
         nuevas++;
       }
     }
+    // Si el sitio SANÓ, la señal vieja deja de valer. Insertar una nueva sumaba
+    // dolor por una buena noticia.
     if (!caido && (c.sitio_http === 0 || Number(c.sitio_http) >= 400)) {
-      await supabase.from('abm_senales').insert({
-        cuenta_id: c.id, tipo: 'contexto', origen: 'vigilante', peso: 1,
-        detalle: 'Su sitio volvió a responder', fecha: hoy,
-      });
+      await supabase.from('abm_senales').update({ vigente: false })
+        .eq('cuenta_id', c.id).eq('tipo', 'sitio_caido');
       cambios++;
     }
     if (c.sitio_carrito === false && carrito === true) {
@@ -89,6 +95,6 @@ export const GET: APIRoute = async ({ request, url }) => {
       nuevas++; cambios++;
     }
     await repuntuar(c.id);
-  }
+  }));
   return json({ revisadas: cuentas.length, senales_nuevas: nuevas, cambios });
 };
