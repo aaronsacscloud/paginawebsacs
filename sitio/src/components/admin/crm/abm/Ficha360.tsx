@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
 import Cadencia from './Cadencia';
+import Whatsapp from './Whatsapp';
 import { ETAPA_TONO, CONFIANZA_TONO, Pastilla, Puntaje, fecha, fechaHora, enlaceDe } from './ui';
 
 const GIROS: Record<string, string> = {
@@ -227,6 +228,12 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
         </div>
       </div>
 
+      {/* ── WhatsApp: lo manda una persona, con el mensaje ya escrito ── */}
+      <div style={CAJA}>
+        <p style={H}>WhatsApp</p>
+        <Whatsapp cuentaId={id} onCambio={() => { traer(); onCambio?.(); }} />
+      </div>
+
       {/* ── La cadencia, con el texto que se va a mandar ── */}
       <div style={CAJA}>
         <p style={H}>Su cadencia</p>
@@ -236,6 +243,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
       {/* ── Bitácora ── */}
       <div style={CAJA}>
         <p style={H}>Todo lo que ha pasado</p>
+        <ToqueManual id={id} onListo={() => { traer(); onCambio?.(); }} />
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Apuntar algo de esta cuenta…"
             onKeyDown={e => { if (e.key === 'Enter' && nota.trim()) { accion({ accion: 'nota', texto: nota }); setNota(''); } }}
@@ -264,6 +272,68 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Lo que no tiene API: la llamada, el mensaje directo, la junta. Si el CRM no
+ *  lo guarda, el vendedor cree que tocó una cuenta que nunca tocó — y peor: la
+ *  cadencia le sigue escribiendo a quien ya dijo que no. */
+function ToqueManual({ id, onListo }: { id: string; onListo: () => void }) {
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const [texto, setTexto] = useState('');
+  const [transcripcion, setTranscripcion] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  const TIPOS = [
+    { v: 'llamada', canal: 'llamada', l: 'Llamé', ayuda: 'Qué pasó en la llamada. Si la grabaste, pega abajo la transcripción.' },
+    { v: 'dm', canal: 'dm_ig', l: 'Mandé un DM', ayuda: 'Instagram o Facebook: no hay API para iniciar, así que se manda a mano y se apunta aquí.' },
+    { v: 'respuesta', canal: 'email', l: 'Me contestaron', ayuda: 'Qué contestaron. Esto DETIENE la cadencia.' },
+    { v: 'reunion', canal: 'reunion', l: 'Junta agendada', ayuda: 'Cuándo y con quién.' },
+  ];
+  const t = TIPOS.find(x => x.v === abierto);
+
+  const guardar = async () => {
+    if (!t) return;
+    setEnviando(true);
+    try {
+      await fetch('/api/crm/abm/actividad', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cuenta_id: id, canal: t.canal, tipo: t.v, texto, transcripcion }),
+      });
+      setAbierto(null); setTexto(''); setTranscripcion(''); onListo();
+    } finally { setEnviando(false); }
+  };
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {TIPOS.map(x => (
+          <button key={x.v} onClick={() => setAbierto(abierto === x.v ? null : x.v)} style={{
+            font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+            border: abierto === x.v ? `1.5px solid ${P.violeta}` : '1px solid #e6e4ee',
+            background: abierto === x.v ? P.violetaAgua : '#fff', color: abierto === x.v ? P.violetaTinta : '#666',
+          }}>{x.l}</button>
+        ))}
+      </div>
+      {t && (
+        <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+          <p style={{ fontSize: '.75rem', color: '#888', margin: 0 }}>{t.ayuda}</p>
+          <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2} placeholder="Qué pasó…"
+            style={{ font: 'inherit', fontSize: '.8125rem', padding: '9px 11px', borderRadius: 8, border: '1px solid #e0dee8', resize: 'vertical' }} />
+          {t.v === 'llamada' && (
+            <textarea value={transcripcion} onChange={e => setTranscripcion(e.target.value)} rows={4}
+              placeholder="Transcripción de la llamada, si la tienes. Sirve para escribirle mejor la próxima vez."
+              style={{ font: 'inherit', fontSize: '.75rem', padding: '9px 11px', borderRadius: 8, border: '1px solid #e0dee8', resize: 'vertical' }} />
+          )}
+          <div>
+            <button disabled={enviando || !texto.trim()} onClick={guardar} style={{
+              font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '8px 14px', borderRadius: 8,
+              border: 'none', background: P.violeta, color: '#fff', cursor: 'pointer', opacity: texto.trim() ? 1 : .5,
+            }}>Apuntar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
