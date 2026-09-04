@@ -3,6 +3,29 @@
 El sitio y el CRM viven en `sitio/` (Astro 6 + React, `output: 'static'`,
 adaptador de Vercel). Se despliega **en cada push a `main`**.
 
+## 📥 COLA DE TRABAJO: lo que llegue a media tarea NO interrumpe
+
+**Regla del dueño (4-sep-2026). Aplica a TODA sesión que trabaje este repo.**
+
+El dueño manda cosas mientras estás trabajando. Eso **no es una interrupción
+ni un cambio de prioridad**: es la siguiente tarea. La regla es:
+
+1. **Termina por completo lo que estás haciendo.** Nada de dejar la tarea en
+   curso a medias para atender lo nuevo. «Por completo» incluye su prueba, su
+   commit y decirle cómo quedó.
+2. **Lo que llegue en medio se anota en `sitio/COLA.md`** en cuanto llega, con
+   fecha y el texto del dueño tal cual. Se le confirma en una línea que quedó
+   en la cola, sin abandonar lo que se está haciendo.
+3. **Al terminar, se toma lo siguiente de la cola** en el orden en que llegó y
+   se marca lo hecho.
+4. **Excepción única:** si lo nuevo dice que algo está roto en producción, se
+   está cobrando mal o le está saliendo un mensaje malo a un cliente, eso
+   manda: se atiende primero y se dice que se pausó lo anterior.
+5. Si el dueño dice «deja eso y haz esto», manda él: se mueve la tarea en
+   curso a la cola y se atiende lo nuevo.
+
+Así puede mandar tres cosas seguidas sin romper nada y sin tener que esperar.
+
 ## 🚦 COMMIT SIEMPRE, PUSH SOLO CUANDO EL DUEÑO LO DIGA
 
 **Regla del dueño (3-sep-2026). Aplica a TODA sesión que trabaje este repo.**
