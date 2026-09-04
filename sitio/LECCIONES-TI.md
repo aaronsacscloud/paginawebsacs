@@ -424,3 +424,18 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   los parámetros puestos, ofrece las otras familias aprobadas en un selector y explica el escenario (marketing
   primero; a los 10 min sin entrega cae a utilidad y el mensaje completo llega cuando conteste). La familia elegida
   viaja en la decisión.
+
+## 2026-09-04 · El lead que llega por WhatsApp desde la web (y por qué se perdía)
+
+- **Caso real:** alguien entra a `/prueba-gratis`, el botón abre WhatsApp con «Hola 👋 Quiero solicitar una prueba
+  gratis de SACS, por favor», lo manda… y no pasaba nada. `ligarContacto` solo BUSCA un contacto por teléfono, nunca
+  lo crea, así que la conversación nacía con `contact_id = null`. El agente itera CONTACTOS: sin contacto, invisible.
+  Se perdieron 6 leads en 7 días, todos de alta intención (prueba gratis o demo).
+- **Arreglo** (`lead-entrante.ts`): al espejar un ENTRANTE de número desconocido se crea el contacto (nombre del
+  perfil de WhatsApp si sirve, `fuente: whatsapp_web`, `utm_source: sitio_web`) y se guarda en `propiedades` la
+  intención, el mensaje inicial, la URL de origen y el referido. Idempotente y con guarda para el backfill silencioso.
+- **Seis intenciones con su propia secuencia** (`INTENCIONES`): prueba_gratis, demo, info, precios, partners, otro.
+  `notaDeIntencion()` se la pasa al agente SOLO en el primer turno (si ya hubo ida y vuelta, manda el hilo).
+  La de prueba gratis pide una sola cosa (qué vende) y deja correo y tienda para el mensaje siguiente; partners no se
+  vende, se escala.
+- Los 7 huérfanos se recuperaron a mano (6 con contacto nuevo; uno sin mensaje entrante legible).

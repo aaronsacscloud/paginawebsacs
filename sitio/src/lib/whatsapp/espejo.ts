@@ -119,6 +119,16 @@ export async function registrarMensaje(o: {
   });
   if (!conv) return { inserted: false };
   if (o.phoneNumberId) await supabase.from('wa_conversaciones').update({ phone_number_id: o.phoneNumberId }).eq('id', conv.id).is('phone_number_id', null);
+  // LEAD NUEVO POR WHATSAPP (4-sep): si escribe un número desconocido, se crea el contacto ahí mismo. Antes la
+  // conversación quedaba huérfana y el agente —que trabaja sobre contactos— ni la veía: se perdieron leads que
+  // venían de la web pidiendo prueba o demo. Ver lead-entrante.ts.
+  if (o.direccion === 'entrante' && !conv.contactId && !o.silencioso) {
+    try {
+      const { asegurarContactoDeConversacion } = await import('./lead-entrante');
+      const r = await asegurarContactoDeConversacion({ conversationId: conv.id, telefono: o.telefono, texto: o.cuerpo || o.transcript || null, nombrePerfil: o.nombrePerfil });
+      if (r.contactId) conv.contactId = r.contactId;
+    } catch { /* que no tumbe el espejo del mensaje */ }
+  }
 
   const texto = o.cuerpo || o.transcript || (o.tipo && o.tipo !== 'text' ? `[${etiquetaTipo(o.tipo)}]` : '') || '';
   // Hora REAL del mensaje (replays y entregas fuera de orden no deben mandar

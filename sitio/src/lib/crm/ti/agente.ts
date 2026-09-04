@@ -549,9 +549,13 @@ export async function proponerRespuestas(): Promise<any> {
         res.saltados++; continue;
       }
       { const senal = senalDeInteres(txtBaja || ''); if (senal) await supabase.from('ti_senales').insert({ contact_id: cid, tipo: 'interes_conversacion', clave: `interes:${cid}:${ultimoPor[cid]}`, ocurrio_at: ultimoPor[cid], detalle: { senal, texto: String(txtBaja || '').slice(0, 200) } }).then(() => {}, () => {}); }
+      // Si llegó por un botón de la web (prueba gratis, demo, informes), el primer mensaje se contesta con la
+      // secuencia de ESA intención, no con el discurso genérico.
+      let notaWeb: string | null = null;
+      try { const { notaDeIntencion } = await import('../../whatsapp/lead-entrante'); notaWeb = await notaDeIntencion(cid); } catch { /* opcional */ }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
       const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
-      const d = await decidirTurno(cid, notaAg);
+      const d = await decidirTurno(cid, [notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
       await registrarDatos(cid, s.datos, s.interes);
