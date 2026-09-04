@@ -118,7 +118,9 @@ export async function generarSeguimientos(opts: { max?: number; soloContactId?: 
   for (const c of lista) {
     if (res.revisados >= max) break;
     // Ya clasificado y con su mensaje esperando decisión: no se vuelve a redactar (cada pasada cuesta y lo reemplazaría por otro igual).
-    if (c.envio_origen === 'seguimiento' && !opts.soloContactId) { res.sin_cambio++; continue; }
+    // Ya hay un mensaje esperando decisión para este lead (de este mismo módulo o del reloj de silencio): no se
+    // escribe otro. Antes se reemplazaba, y eso era pagar dos veces por el mismo lead sin que saliera ninguno.
+    if (c.envio_id && !opts.soloContactId) { res.sin_cambio++; continue; }
     try {
       const cl = await clasificar(c);
       if (!cl) { res.saltados++; continue; }

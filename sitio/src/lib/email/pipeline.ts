@@ -38,7 +38,10 @@ import { envolverLinks, agregarPixel } from './tracking';
 import { frenado } from './freno';
 import { escalonCalentamiento, direccionRespuesta } from './puro';
 
-export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional';
+// 'abm' = prospección en frío a NEGOCIOS (Cuentas objetivo). Es marketing en
+// todo menos en dos reglas que están pensadas para el boletín y que aquí
+// estorban: el buzón de rol y la presión semanal. Ver evaluarDestinatario.
+export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional' | 'abm';
 
 export interface Solicitud {
   tenantId?: string | null;
@@ -196,15 +199,24 @@ export async function evaluarDestinatario(
   // El freno de emergencia manda sobre todo lo demás en marketing. El correo
   // de relación —cobros, renovaciones— sigue saliendo: si el dominio se está
   // quemando, eso es justo lo último que quieres detener.
-  if (categoria === 'marketing' && (await frenado(t.id)).si) return 'frenado';
-  if (categoria !== 'prueba' && esRoleAccount(e)) return 'role_account';
+  if ((categoria === 'marketing' || categoria === 'abm') && (await frenado(t.id)).si) return 'frenado';
+  // El buzón de rol se rechaza en marketing porque un contacto real dio su
+  // correo personal. En prospección en frío a comercios es al revés: el
+  // `contacto@` que la boutique publica en su propio aviso de privacidad ES el
+  // canal legítimo, y en la mitad de los casos es el único que existe.
+  if (categoria !== 'prueba' && categoria !== 'abm' && esRoleAccount(e)) return 'role_account';
   const sup = await estaSuprimido(t.id, e);
   if (sup.suprimido) return 'suprimido';
   if (cuentaParaPresion(categoria)) {
     const p = await excedePresion(t, e, companyId);
     if (p) return p;
   }
-  if (categoria !== 'prueba' && await excedeLimiteDiario(t)) return 'limite_diario';
+  // El ABM no comparte el cupo diario del inquilino ni la presión semanal:
+  // trae sus propios frenos, más estrictos (rampa de calentamiento por días
+  // con envíos, uno por buzón al día, disyuntor por rebotes). Con la presión
+  // de 2 por semana, el correo 3 de toda cadencia —el que enseña el dolor—
+  // no salía nunca, para nadie, y sin dar un solo error visible.
+  if (categoria !== 'prueba' && categoria !== 'abm' && await excedeLimiteDiario(t)) return 'limite_diario';
   return null;
 }
 
@@ -222,7 +234,7 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   if (!proveedorListo()) {
     return { enviado: false, motivo: 'sin_proveedor', sendId: null, detalle: 'Falta SENDGRID_API_KEY.' };
   }
-  if (categoria === 'marketing') {
+  if (categoria === 'marketing' || categoria === 'abm') {
     const f = await frenado(t.id);
     if (f.si) return { enviado: false, motivo: 'frenado', sendId: null, detalle: f.motivo };
   }

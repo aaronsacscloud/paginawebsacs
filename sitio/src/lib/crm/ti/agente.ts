@@ -1145,10 +1145,17 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
   ]);
   const porC: Record<string, any> = {}; for (const c of cs || []) porC[c.id] = c;
   const porP: Record<string, any> = {}; for (const p of perf || []) porP[p.contact_id] = p;
+  // UN SOLO MENSAJE EN LA FILA POR LEAD (4-sep). El índice único solo cubre «pendiente», así que en entrenamiento
+  // —donde todo nace «sugerencia»— este reloj escribía encima de lo que ya había dejado el seguimiento de 1 a 4 días
+  // (o al revés) y el segundo reemplazaba al primero: $2.59 en cuatro días en mensajes que nunca salieron. Si ya hay
+  // algo esperando decisión para ese lead, aquí no se escribe nada.
+  const { data: enFila } = await supabase.from('ti_envios').select('contact_id').in('contact_id', ids).in('estado', ['pendiente', 'enviando', 'sugerencia']);
+  const ocupados = new Set((enFila || []).map((x: any) => x.contact_id));
 
   for (const cid of ids) { try {
     const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || !ETAPAS_SDR.includes(c.lifecycle_stage) || p.silenciar_ia) continue;
+    if (ocupados.has(cid)) { res.ya_en_fila = (res.ya_en_fila || 0) + 1; continue; }
     if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
     // Una cita atorada por error nuestro la lleva reintentarAgendas; un lead CON cita vigente lo llevan los recordatorios. Aquí no se le insiste.
     if (st.agenda_pendiente?.motivo === 'error') continue;

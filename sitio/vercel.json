@@ -6,6 +6,10 @@
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "crons": [
     {
+      "path": "/api/cron/abm-vigilante",
+      "schedule": "30 8 * * 1"
+    },
+    {
       "path": "/api/cron/abm-cadencias",
       "schedule": "0 16,19 * * 1-5"
     },

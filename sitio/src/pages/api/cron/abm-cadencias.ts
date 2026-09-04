@@ -132,15 +132,12 @@ export const GET: APIRoute = async ({ request }) => {
       continue;
     }
 
-    // Del tercer correo en adelante se contesta DENTRO del mismo hilo: el
-    // prospecto ve el contexto sin buscar y el proveedor lo lee como
-    // conversación, no como campaña.
-    const { data: previos } = await supabase.from('abm_toques')
-      .select('mensaje_id, asunto, enviado_at').eq('cuenta_id', t.cuenta_id).eq('estado', 'enviado')
-      .not('mensaje_id', 'is', null).order('enviado_at').limit(1);
-    const raiz = (previos || [])[0];
-    const enHilo = !!raiz;   // el hilo se sostiene con el asunto Re: (el pipeline arma sus propias cabeceras)
-    const asunto = enHilo ? (String(raiz.asunto || t.asunto).startsWith('Re:') ? raiz.asunto : `Re: ${raiz.asunto}`) : t.asunto || '';
+    // Nota: el seguimiento DENTRO del mismo hilo (Re: + In-Reply-To +
+    // References) queda pendiente a propósito. Un "Re:" sin las cabeceras de
+    // hilo no agrupa la conversación y sí es una heurística de spam conocida:
+    // o se hacen las tres piezas, o no se hace ninguna. El pipeline todavía no
+    // deja pasar cabeceras propias.
+    const asunto = t.asunto || '';
 
     const r = await enviarCorreo({
       para: t.destino, asunto,
@@ -148,7 +145,7 @@ export const GET: APIRoute = async ({ request }) => {
       // y además entrega peor. El HTML es el mismo texto con saltos de línea.
       texto: t.cuerpo || '',
       html: aHtml(t.cuerpo || ''),
-      categoria: 'marketing',
+      categoria: 'abm',
     });
     const ok = r.enviado;
     await supabase.from('abm_toques').update({

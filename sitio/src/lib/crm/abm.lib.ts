@@ -91,16 +91,23 @@ export function calcularPuntaje(c: any, senales: any[] = []): { encaje: number; 
   if (c.sitio_http === 0 || Number(c.sitio_http || 200) >= 400) dolor += 12;
   if (c.sitio_carrito === false) dolor += 8;
   if (c.google_rating && Number(c.google_rating) < 4.5 && suc >= 3) dolor += 10;   // se le cae al crecer
+  // Las señales pesan según lo que son, y las que llevan fecha además caducan.
+  // Una señal SIN fecha es contexto del estudio: pesa poco y no vence — antes
+  // todas cargaban la fecha del día en que se sembró la base, así que a los seis
+  // meses 578 cuentas iban a perder su dolor el mismo día, por un artefacto.
+  const PESO: Record<string, number> = { expansion: 10, vacante: 10, resena_mala: 8, sitio_caido: 8, clic: 6, apertura_correo: 4, post: 2, contexto: 2 };
   const hoy = Date.now();
   for (const s of senales) {
-    const dias = s.fecha ? (hoy - new Date(s.fecha + 'T00:00:00Z').getTime()) / 864e5 : 999;
-    if (dias > 180) continue;                                    // una señal vieja ya no duele
-    dolor += s.tipo === 'apertura' ? 8 : s.tipo === 'vacante' ? 8 : s.tipo === 'sitio_caido' ? 6 : s.tipo === 'resena_mala' ? 6 : 3;
+    if (s.fecha) {
+      const dias = (hoy - new Date(String(s.fecha) + 'T00:00:00Z').getTime()) / 864e5;
+      if (dias > 180) continue;                                  // un hecho viejo ya no duele
+    }
+    dolor += PESO[s.tipo] ?? 2;
   }
   dolor = Math.min(50, dolor);
 
   // ACCESIBILIDAD (0-25): aparte del puntaje, para saber por dónde entrarle.
-  const acc = Math.min(25, (c.tiene_email ? 12 : 0) + (c.tiene_wa ? 8 : 0) + (c.per || c.tiene_persona ? 5 : 0));
+  const acc = Math.min(25, (c.tiene_email ? 12 : 0) + (c.tiene_wa ? 8 : 0) + (c.tiene_persona ? 5 : 0));
   return { encaje, dolor, accesibilidad: acc, puntaje: encaje + dolor };
 }
 
@@ -111,7 +118,11 @@ export async function repuntuar(cuenta_id: string) {
   const { data: c } = await supabase.from('abm_cuentas').select('*').eq('id', cuenta_id).maybeSingle();
   if (!c) return;
   const { data: senales } = await supabase.from('abm_senales').select('tipo, fecha').eq('cuenta_id', cuenta_id);
-  const p = calcularPuntaje(c, senales || []);
+  // `tiene_persona` no es una columna: se pregunta. Antes se leía de la cuenta
+  // —donde no existe— y capturar al dueño BAJABA cinco puntos en vez de subirlos.
+  const { count: personas } = await supabase.from('abm_personas')
+    .select('id', { count: 'exact', head: true }).eq('cuenta_id', cuenta_id);
+  const p = calcularPuntaje({ ...c, tiene_persona: (personas || 0) > 0 }, senales || []);
   await supabase.from('abm_cuentas').update({ ...p, updated_at: new Date().toISOString() }).eq('id', cuenta_id);
 }
 
