@@ -13,6 +13,7 @@
 import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
 import { anthropic, MODELS, hasApiKey } from '../../ai/client';
+import { plantillaSiVentanaCerrada, ventanaAbierta } from './agente';
 
 export const META_DEFAULT = 9;
 export const VENTANA_DEFAULT = 100;   // decisión del dueño 3-sep: 100 respuestas, no 300
@@ -138,6 +139,25 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
       await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'modificación en Seguimiento', detalle: { envio_id: e.id, original: e.mensaje, criterio: criterio || null, similitud: sim } }).then(() => {}, () => {});
     }
   }
+  // VENTANA DE 24 H (4-sep): si el lead no ha escrito en 24 h, WhatsApp NO acepta texto libre y Kapso devuelve 422.
+  // Antes eso reventaba en la cara del consultor. Ahora se le cuelga la plantilla aprobada al envío y el texto que
+  // escribió viaja como «puente»: en cuanto el lead conteste, el agente le manda el mensaje completo.
+  let comoSale: 'texto' | 'plantilla' = 'texto';
+  if (!(e as any).plantilla && e.contact_id) {
+    const abierta = await ventanaAbierta(e.contact_id).catch(() => true);
+    if (!abierta) {
+      const { data: k } = await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle();
+      const familia = ['reactivacion', 'reenganche'].includes(String(e.origen)) ? 'promo' : e.origen === 'cita' ? 'no_show' : e.origen === 'preparacion' ? 'preparacion' : 'seguimiento';
+      const pl = await plantillaSiVentanaCerrada(e.contact_id, familia as any, mensaje, k?.nombre).catch(() => null);
+      if (!pl) return { error: 'La ventana de 24 horas se cerró y no hay plantilla aprobada de Meta para este momento. Escríbele desde el inbox con una plantilla, o espera a que él conteste.' };
+      await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
+      const { data: pf } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+      const st: any = (pf?.agente_estado as any) || {};
+      await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st, puente_pendiente: { envio_id: e.id, mensaje_completo: mensaje, origen: e.origen, at: ahora } }, updated_at: ahora }, { onConflict: 'contact_id' });
+      comoSale = 'plantilla';
+    }
+  } else if ((e as any).plantilla) comoSale = 'plantilla';
+
   // Sale de verdad: la aprobación de una persona es el permiso aunque el agente esté en entrenamiento.
   await supabase.from('ti_envios').update({ estado: 'pendiente', sale_at: ahora, aprobado_por: o.userId || null, revisado_at: ahora, updated_at: ahora }).eq('id', e.id);
   let enviado = false; let errorEnvio: string | null = null;
@@ -147,6 +167,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
     enviado = Number(r?.enviados) === 1;
     if (!enviado) { const { data: e2 } = await supabase.from('ti_envios').select('estado, error').eq('id', e.id).maybeSingle(); errorEnvio = e2?.error || (e2?.estado && e2.estado !== 'enviado' ? `quedó ${e2.estado}` : null); enviado = e2?.estado === 'enviado'; }
   } catch (err: any) { errorEnvio = String(err?.message || err); }
+  if (errorEnvio && /24-hour window|non-template/i.test(errorEnvio)) errorEnvio = 'La ventana de 24 horas se cerró: WhatsApp solo acepta plantillas. Revisa que la plantilla de Meta esté aprobada en Configuración → Agente IA.';
   if (!enviado) {
     // No se manda = no se califica. Se regresa a sugerencia para que no se pierda ni se cuente.
     await supabase.from('ti_envios').update({ estado: 'sugerencia', aprobado_por: null, updated_at: new Date().toISOString() }).eq('id', e.id).eq('estado', 'pendiente');
@@ -155,7 +176,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: o.detalle ? String(o.detalle).slice(0, 600) : null });
   const par = await revisarParidad();
-  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null };
+  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null };
 }
 
 /** El humano contestó por su cuenta (teléfono, otra sesión): la sugerencia se compara y califica sola. */
@@ -196,10 +217,14 @@ export async function barrerSugerencias() {
 
 /** Cola del panel: sugerencias por decidir, con quién es el lead. */
 export async function sugerenciasPendientes(limit = 60) {
-  const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, mensaje, adjuntos, imagen_url, salida, created_at, sale_at').eq('estado', 'sugerencia').order('created_at', { ascending: true }).limit(limit);
+  const desde24 = new Date(Date.now() - 24 * 3600e3).toISOString();
+  const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, mensaje, adjuntos, imagen_url, plantilla, salida, created_at, sale_at').eq('estado', 'sugerencia').order('created_at', { ascending: true }).limit(limit);
   const ids = [...new Set((sug || []).map(s => s.contact_id).filter(Boolean))] as string[];
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, email, lifecycle_stage, giro, company_id, companies(nombre_comercial, nombre)').in('id', ids) : { data: [] as any[] };
-  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {}; return { ...s, salida: undefined, seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
+  // Ventana de 24 h por lead: si está cerrada, lo que salga será una plantilla y el texto viaja como puente.
+  const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24) : { data: [] as any[] };
+  const abiertos = new Set((ent || []).map((x: any) => x.contact_id));
+  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {}; return { ...s, salida: undefined, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
 }
 
 export async function historialCalificaciones(limit = 60) {

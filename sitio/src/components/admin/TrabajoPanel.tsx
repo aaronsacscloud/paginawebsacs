@@ -17,6 +17,7 @@ import TrabajoConsumo from './TrabajoConsumo';
 import TrabajoRevision from './TrabajoRevision';
 import TrabajoReactivacion from './TrabajoReactivacion';
 import TrabajoSeguimiento from './TrabajoSeguimiento';
+import TrabajoDescalificar from './TrabajoDescalificar';
 import TorreControl from './TorreControl';
 import TrabajoDatos from './TrabajoDatos';
 
@@ -73,7 +74,7 @@ function porqueDe(t: Tarea): string {
   return '';
 }
 
-export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informes' | 'reactivacion' | 'seguimiento' } = {}) {
+export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informes' | 'reactivacion' | 'seguimiento' | 'descalificar' } = {}) {
   const [plan, setPlan] = useState<{ tareas: Tarea[]; resumen: any } | null>(null);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -90,7 +91,7 @@ export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informe
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'torre' | 'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('torre');
   // v2 (decisión 2026-09-04): tres secciones. Torre = todo lo que pide decisión; Informes = lo que se mira; Ajustes = lo que se configura.
-  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes' | 'reactivacion' | 'seguimiento'>(inicial || 'torre');
+  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes' | 'reactivacion' | 'seguimiento' | 'descalificar'>(inicial || 'torre');
   useEffect(() => { if (inicial) setSeccion(inicial); }, [inicial]);
   const [infTab, setInfTab] = useState<'leads' | 'revision' | 'biblioteca' | 'consumo'>('leads');
   const [ajTab, setAjTab] = useState<'herramientas' | 'reactivacion'>('herramientas');
@@ -338,6 +339,7 @@ export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informe
       {seccion === 'torre' && <div className="ti-lienzo tc-full"><TorreControl irA={(t) => { if (t === 'aprendizaje') { setSeccion('informes'); setInfTab('biblioteca'); } }} /></div>}
       {seccion === 'reactivacion' && <TrabajoReactivacion />}
       {seccion === 'seguimiento' && <TrabajoSeguimiento />}
+      {seccion === 'descalificar' && <TrabajoDescalificar />}
       {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}

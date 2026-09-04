@@ -171,7 +171,7 @@ Es un SEGUIMIENTO, no el primer mensaje: no te presentes de nuevo, no repitas lo
       });
       if (error) { res.saltados++; res.errores.push(`${c.nombre}: ${error.message}`); continue; }
       res.mensajes++;
-      await supabase.from('ia_log').insert({ accion: 'seguimiento_clasifica', contact_id: c.contact_id, contenido: d.salida.mensaje, razon: `${cl.situacion} · ${c.horas_sin_respuesta} h`, costo: cl.costo + (d.costo || 0), detalle: { ...cl, costo: undefined } }).then(() => {}, () => {});
+      await supabase.from('ia_log').insert({ accion: 'seguimiento_clasifica', contact_id: c.contact_id, contenido: d.salida.mensaje, razon: `${cl.situacion} · ${c.horas_sin_respuesta} h`, costo_usd: cl.costo + (d.costo || 0), detalle: { ...cl, costo: undefined } }).then(() => {}, () => {});
     } catch (e: any) { res.errores.push(`${c.nombre || c.contact_id}: ${String(e?.message || e).slice(0, 160)}`); }
   }
   res.costo = Math.round(res.costo * 1000) / 1000;

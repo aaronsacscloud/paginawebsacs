@@ -92,7 +92,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -196,6 +196,7 @@ const NAV_SECTIONS = [
     label: 'Trabajo inteligente', sec: 'trabajo', icon: 'trabajo',
     items: [
       { id: 'ti-seguimiento' as Tab, label: 'Seguimiento', icon: 'trabajo' },
+    { id: 'ti-descalificar' as Tab, label: 'Por descalificar', icon: 'trabajo' },
     { id: 'ti-reactivacion' as Tab, label: 'Reactivación', icon: 'trabajo' },
       { id: 'trabajo' as Tab, label: 'Torre', icon: 'trabajo' },
       { id: 'ti-informes' as Tab, label: 'Informes', icon: 'dashboard' },
@@ -1037,6 +1038,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><TrabajoPanel /></ErrorBoundary>
         ) : tab === 'ti-seguimiento' ? (
           <ErrorBoundary><TrabajoPanel inicial="seguimiento" /></ErrorBoundary>
+        ) : tab === 'ti-descalificar' ? (
+          <ErrorBoundary><TrabajoPanel inicial="descalificar" /></ErrorBoundary>
         ) : tab === 'ti-reactivacion' ? (
           <ErrorBoundary><TrabajoPanel inicial="reactivacion" /></ErrorBoundary>
         ) : tab === 'ti-informes' ? (

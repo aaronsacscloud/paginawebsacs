@@ -9,10 +9,10 @@ import { useEffect, useState } from 'react';
 import { SelectorAdjuntos, MiniRecurso, type AdjuntoSel, type Recurso } from '../../RecursosAgente';
 
 export const MOTIVOS_RECHAZO = ['El tono no es el nuestro', 'Información incorrecta', 'No entendió lo que preguntó', 'No era el momento de mandar nada', 'Muy largo o muy vendedor', 'Este lead lo llevo yo', 'Otro'];
-const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
+const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
 const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map(x => x.trim()).filter(Boolean);
 
-export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
+export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
 
 export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onDecidido }: { sug: Sugerencia; galeria?: Recurso[]; compacto?: boolean; atajos?: boolean; onDecidido: (r: any) => void }) {
   const [modo, setModo] = useState<'ver' | 'modificar' | 'rechazar'>('ver');
@@ -61,6 +61,9 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
           {partes(sug.mensaje).map((p, i) => <div key={i} className="ds-burbuja">{p}</div>)}
           {adj.length > 0 && <div className="ds-adj">{adj.map(a => <div key={a.id || a.url} className="ds-adj-i"><MiniRecurso r={a} size={44} /><span>{a.nombre}</span></div>)}</div>}
         </div>
+      )}
+      {sug.ventana_abierta === false && (
+        <div className="ds-ventana">La ventana de 24 h de WhatsApp está cerrada (él no ha escrito en un día). Al enviar sale la <b>plantilla aprobada</b> con una línea neutra, y este mensaje completo le llega en cuanto conteste.</div>
       )}
       {modo === 'ver' && (
         <div className="ds-acciones">
@@ -120,5 +123,6 @@ const CSS = `
 .ds .ti-btn{border:1px solid #e8e5f0;background:#fff;color:#241d43;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .ds .ti-chip-btn{border:1px solid #e8e5f0;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#4a4658}.ds .ti-chip-btn.on{background:#241d43;border-color:#241d43;color:#fff}
 .ds .ti-suave{color:#8e88a8;font-size:12px}.ds .ti-campo{border:1px solid #e8e5f0;border-radius:10px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box}
+.ds-ventana{margin-top:8px;font-size:12.5px;line-height:1.45;background:#fff4dc;color:#8a5a00;border-radius:8px;padding:8px 10px}
 .ds-err{margin-top:8px;font-size:12.5px;font-weight:700;color:#b3261e;background:#fde7e5;border-radius:8px;padding:6px 10px}
 `;

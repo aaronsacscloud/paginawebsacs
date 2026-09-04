@@ -373,3 +373,24 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   ahora tienen envío en fila) y reemplazaba su propio mensaje: ~$0.11 por lead tirados. Se salta a los que ya tienen
   `envio_origen='seguimiento'`; el botón dice cuántos faltan y se apaga cuando no queda ninguno.
 - Costo real medido: ~$0.11 por lead (clasificación Opus + redacción Opus).
+- **Ventana de 24 h (4-sep):** enviar una sugerencia con la ventana cerrada reventaba con «Kapso HTTP 422: Cannot send
+  non-template messages outside the 24-hour window» en la cara del consultor. Ahora `decidirSugerencia` detecta la ventana
+  antes de despachar, le cuelga al envío la plantilla aprobada de la familia que toca y guarda el texto como
+  `puente_pendiente`: sale la plantilla y, en cuanto el lead conteste, le llega el mensaje completo. La tarjeta lo avisa
+  antes de que le den a Enviar y el error de Kapso ya se traduce a español.
+- **Bug de registro silencioso:** `ia_log` tiene `costo_usd`, no `costo`. Dos inserts (seguimiento_clasifica, regla_probada)
+  usaban `costo` y fallaban en silencio porque el error iba a un `.then(()=>{},()=>{})`. Si un log «no aparece», revisar
+  primero los nombres de columna, no la lógica.
+- **El aprendizaje amplifica los errores de dedo:** el dueño editó un mensaje con «Buenoooooos díaa»; el criterio inferido
+  guardó «alarga el saludo de forma más cálida» y a las pocas horas tres mensajes decían «Buenos díaaas». Se corrigió solo la
+  ortografía (se respetó el saludo largo, que sí era intención). Vale la pena revisar los ejemplos aprobados que introducen
+  formas raras antes de que se repliquen.
+
+## 2026-09-04 · «Por descalificar» como sección propia
+- Vive en Trabajo inteligente, debajo de Seguimiento (`ti-descalificar` → `TrabajoPanel inicial="descalificar"`).
+- `colaDescalificar()` junta las tareas de veredicto con `payload.propuesta === 'descalificar'` (índice de vida y
+  clasificador `dijo_no`) y les arma el contexto: qué dijo, cuánto lleva, cuántas veces contestó, cuántos mensajes le
+  mandamos, si dejó cotización o demo, y las razones de por qué la decisión importa (dinero que sale del pipeline vs. costo
+  de dejarlo abierto).
+- Las decisiones se aplican por `/api/crm/ti/tarea` (el mismo camino que la Torre), así la rampa de descalificación sigue
+  contando coincidencias hacia el automático.

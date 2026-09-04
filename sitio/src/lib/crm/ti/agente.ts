@@ -1381,7 +1381,13 @@ export async function reintentarAgendas(): Promise<any> {
  *  productos con tallas y colores, desde el interés por conocer su catálogo para una demo muy específica. Una vez. */
 /** Fuera de la ventana de 24 h solo puede salir plantilla: si la ventana del lead está cerrada, el texto del agente viaja como
  *  ángulo {{2}} de la familia del momento (preparación, no-show…) y el despachador manda marketing → utility. */
-async function plantillaSiVentanaCerrada(cid: string, familia: 'preparacion' | 'no_show' | 'seguimiento' | 'promo' | 'cierre', mensaje: string, nombre?: string | null) {
+/** ¿La ventana de 24 h de WhatsApp sigue abierta? (el lead escribió hace menos de 24 h). Fuera de ella solo entran plantillas. */
+export async function ventanaAbierta(contactId: string): Promise<boolean> {
+  const { data } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', contactId).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
+  return (data || []).length > 0 && Date.now() - Date.parse(data![0].ocurrio_at) < 24 * H;
+}
+
+export async function plantillaSiVentanaCerrada(cid: string, familia: 'preparacion' | 'no_show' | 'seguimiento' | 'promo' | 'cierre', mensaje: string, nombre?: string | null) {
   const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
   const abierta = (ult || []).length > 0 && Date.now() - Date.parse(ult![0].ocurrio_at) < 24 * H;
   if (abierta) return null;

@@ -122,7 +122,7 @@ export async function evaluarRegla(id: string): Promise<any> {
   const prom = (k: 'sin' | 'con') => ok.length ? Math.round((ok.reduce((s, x) => s + x[k], 0) / ok.length) * 100) / 100 : null;
   const prueba = { n: ok.length, sin: prom('sin'), con: prom('con'), delta: prom('con') !== null && prom('sin') !== null ? Math.round((prom('con')! - prom('sin')!) * 100) / 100 : null, mejora_en: ok.filter(x => x.con > x.sin).length, empeora_en: ok.filter(x => x.con < x.sin).length, viola_sin: ok.filter(x => x.viola_sin).length, viola_con: ok.filter(x => x.viola_con).length, at: new Date().toISOString(), costo: Math.round(costo * 1000) / 1000, casos: res.slice(0, 30) };
   await supabase.from('ti_reglas').update({ prueba, updated_at: new Date().toISOString() }).eq('id', id);
-  await supabase.from('ia_log').insert({ accion: 'regla_probada', razon: `${prueba.con} con vs ${prueba.sin} sin (n=${prueba.n})`, costo, detalle: { regla_id: id, delta: prueba.delta } }).then(() => {}, () => {});
+  await supabase.from('ia_log').insert({ accion: 'regla_probada', razon: `${prueba.con} con vs ${prueba.sin} sin (n=${prueba.n})`, costo_usd: costo, detalle: { regla_id: id, delta: prueba.delta } }).then(() => {}, () => {});
   return { ok: true, prueba };
 }
 
