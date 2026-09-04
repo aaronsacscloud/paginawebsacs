@@ -1113,13 +1113,15 @@ y desde ahí se agrega.</li>
   },
   {
     id: 'c-cobro', seccion: 'consultores', grupo: 'Compensación', titulo: 'El ciclo: cuándo y cómo se paga',
-    bajada: 'La semana, el lunes de revisión, el martes de pago, y qué pasa si el dinero se va para atrás.',
+    bajada: 'La semana, el aviso del lunes en el chat, quién autoriza, el martes de pago, y qué pasa si el dinero se va para atrás.',
     cuerpo: `
 <h3>El ciclo, en tres días</h3>
 <div class="w-caja w-ok"><span class="w-k">Lunes a domingo · revisión el lunes · pago el martes</span>
 <table class="w-tab"><thead><tr><th>Cuándo</th><th>Qué pasa</th></tr></thead><tbody>
 <tr><td><b>Lunes a domingo</b></td><td>Se va juntando todo lo que el cliente pague en esos siete días. La semana cierra el <b>domingo a la última hora</b>.</td></tr>
-<tr><td><b>Lunes, 5:00 am</b></td><td>El sistema arma el corte solo y lo deja <b>listo para revisión</b>. Ese día se revisa, se corrige lo que haga falta y se envía.</td></tr>
+<tr><td><b>Lunes, 5:00 am</b></td><td>El sistema arma el corte solo y lo deja <b>listo para revisión</b>.</td></tr>
+<tr><td><b>Lunes, 9:00 am</b></td><td>El aviso cae solo en <b>#pago-de-comisiones</b>, el canal del chat del CRM: un renglón por consultor con su monto y <b>su enlace al estado de cuenta</b>, el total, y lo que quedó por revisar.</td></tr>
+<tr><td><b>Lunes, durante el día</b></td><td><b>Andy revisa</b> cada estado de cuenta y confirma <b>en el hilo de ese mensaje</b>. Su confirmación es la que manda el corte a pago.</td></tr>
 <tr><td><b>Martes</b></td><td><b>Se paga el total</b> del corte.</td></tr>
 </tbody></table></div>
 <p><b>Son siete días y no cinco a propósito.</b> El dinero no sabe de días hábiles: un cargo automático o una transferencia entran en sábado igual que en martes. Con una semana de lunes a viernes, los fines de semana no caían en ningún corte y esa comisión no se pagaba nunca.</p>
@@ -1133,6 +1135,28 @@ y desde ahí se agrega.</li>
 </ul>
 <div class="w-caja w-ok"><span class="w-k">Ejemplo</span>
 <p>Un cliente paga el <b>martes</b> y otro el <b>domingo</b>: las dos comisiones entran al mismo corte, se revisa el <b>lunes</b> y se liquidan el <b>martes</b>.</p></div>
+
+<h3>El lunes, paso a paso</h3>
+<p>El lunes no hay que acordarse de nada ni entrar a buscarlo: el corte llega solo al chat donde el equipo ya está.</p>
+<table class="w-tab"><thead><tr><th>Quién</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>El sistema</b></td><td>A las 5:00 am arma el corte. A las 9:00 am publica el aviso en <b>#pago-de-comisiones</b> con el enlace de cada consultor. No paga ni envía nada.</td></tr>
+<tr><td><b>Andy</b></td><td>Abre cada enlace, revisa que los montos y las tasas estén bien, corrige lo que haga falta y <b>confirma en el hilo</b>.</td></tr>
+<tr><td><b>Después de su OK</b></td><td>El corte se manda a pago y <b>el martes queda liquidado el total</b>.</td></tr>
+</tbody></table>
+<div class="w-caja w-warn"><span class="w-k">La regla que no se salta</span>
+<p><b>Sin la confirmación de Andy no sale dinero.</b> El sistema deja el corte a la vista y calculado, que es distinto de darlo por bueno. Ningún automatismo paga una comisión.</p></div>
+<div class="w-caja"><span class="w-k">Por qué a las 9:00 y no a las 5:00</span>
+<p>El corte se arma a las 5:00 am y el aviso sale a las 9:00. Las cuatro horas de diferencia son a propósito: el mensaje llega con el <b>cálculo terminado</b>. Anunciarlo mientras se arma haría que el enlace no abriera nada justo en el mensaje que pide abrirlo.</p></div>
+<div class="w-caja"><span class="w-k">Si el aviso no llega</span>
+<p>Si el canal no existe o el mensaje falla, salta una <b>alerta en la campana</b> diciendo que el aviso del lunes no se publicó y cuántos cortes están esperando revisión. Un aviso que se pierde en silencio es justo lo que esto vino a evitar.</p>
+<p>Y si una semana <b>no hubo cortes</b>, no se publica nada: una semana sin ventas no necesita un mensaje, y el canal tiene que seguir siendo creíble el día que sí traiga algo.</p></div>
+<div class="w-caja"><span class="w-k">Qué revisar antes de confirmar</span>
+<ul>
+<li>Que el <b>total</b> del corte cuadre con lo que se cobró esa semana.</li>
+<li>Los <b>pagos sin comisionar</b>, si el aviso los marca: son cobros que entraron y no generaron línea. Se resuelven <b>antes</b> de aprobar, no después.</li>
+<li>Los <b>rezagados</b> de semanas anteriores y los <b>ajustes</b> que se están descontando: los dos vienen señalados aparte en el estado de cuenta.</li>
+<li>Que ningún corte aparezca ya como <b>pagado</b>: si lo está, alguien lo liquidó por fuera y hay que entender por qué.</li>
+</ul></div>
 
 <h3>Verlo antes de que exista</h3>
 <p>En <b>Comisiones → Cortes</b>, la primera fila es el corte que <b>se está juntando ahora</b>: su periodo, cuánto lleva hasta el momento y cuándo se arma. No hay que esperar al lunes para saber cuánto va a salir.</p>
