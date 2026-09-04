@@ -44,6 +44,7 @@ const AutomationsTab = lazySeguro(() => import('./crm/AutomationsTab'));
 const EmailTab = lazySeguro(() => import('./crm/email/EmailTab'));
 const SecuenciasTab = lazySeguro(() => import('./crm/SecuenciasTab'));
 const OutboundTab = lazySeguro(() => import('./crm/outbound/OutboundTab'));
+const AbmTab = lazySeguro(() => import('./crm/abm/AbmTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
 const WaMasivos = lazySeguro(() => import('./crm/whatsapp/Masivos'));
 const ConfigWhatsApp = lazySeguro(() => import('./crm/whatsapp/ConfigWhatsApp'));
@@ -92,7 +93,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -127,6 +128,7 @@ const ICONS: Record<string, string> = {
   automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" opacity=".18"/><rect x="4" y="7" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="4" fill="currentColor" opacity=".18"/><circle cx="9" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 10.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  abm: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>',
   outbound: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10v4l11 5V5L3 10z" fill="currentColor" opacity=".18"/><path d="M3 10v4l11 5V5L3 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9a4 4 0 010 6M7 14.5V18a2 2 0 002 2h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   sacs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="2" y="3" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="2" y="13" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M6 7h.01M6 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
@@ -258,6 +260,10 @@ const NAV_SECTIONS = [
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
       { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
+      /* Prospección en frío de moda: 810 negocios investigados con su
+         procedencia. Vive junto a Outbound porque es el mismo trabajo —
+         salir a buscar— pero con cuentas que todavía no son de nadie. */
+      { id: 'abm' as Tab, label: 'Cuentas objetivo', icon: 'abm' },
     ],
   },
   {
@@ -1102,6 +1108,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><MetricasWA /></ErrorBoundary>
         ) : tab === 'wa-numero' ? (
           <ErrorBoundary><ConfigWhatsApp inicial="numero" /></ErrorBoundary>
+        ) : tab === 'abm' ? (
+          <AbmTab />
         ) : tab === 'outbound' ? (
           <ErrorBoundary><OutboundTab /></ErrorBoundary>
         ) : tab === 'automations' ? (

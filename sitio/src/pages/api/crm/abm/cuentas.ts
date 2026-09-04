@@ -21,7 +21,7 @@ export const prerender = false;
 const SEL = 'id, nombre, giro, subgiro, ciudad, pais, moneda, sucursales, sucursales_confianza, tamano, ruta, ' +
   'sitio, plataforma_web, sitio_http, sitio_carrito, sitio_seg, instagram, ig_seguidores, tiktok, facebook, linkedin, ' +
   'google_rating, google_resenas, contexto, senal_expansion, ultima_publicacion, nota, ' +
-  'encaje, dolor, accesibilidad, puntaje, etapa, responsable_id, ya_es_cliente, created_at, updated_at';
+  'encaje, dolor, accesibilidad, puntaje, etapa, responsable_id, ya_es_cliente, tiene_email, tiene_wa, canales_n, created_at, updated_at';
 
 export const GET: APIRoute = async ({ request, url }) => {
   const yo = await quien(request);
@@ -60,12 +60,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (etapa) sel = sel.eq('etapa', etapa);
   if (ruta) sel = sel.eq('ruta', ruta);
   if (q) sel = sel.or(`nombre.ilike.%${q}%,ciudad.ilike.%${q}%,contexto.ilike.%${q}%,nota.ilike.%${q}%`);
-  if (canal) {
-    const tipos = canal === 'email' ? ['email_direccion', 'email_generico'] : canal === 'wa' ? ['whatsapp_tienda', 'whatsapp_dueno'] : [canal];
-    const { data: ids } = await supabase.from('abm_canales').select('cuenta_id').in('tipo', tipos).limit(5000);
-    const lista = Array.from(new Set((ids || []).map((r: any) => r.cuenta_id)));
-    sel = lista.length ? sel.in('id', lista) : sel.eq('id', '00000000-0000-0000-0000-000000000000');
-  }
+  // Por columna derivada, no por subconsulta: abm_canales tiene 2,534 filas y
+  // Supabase corta en mil — el filtro dejaba fuera cuentas que sí tenían correo.
+  if (canal === 'email') sel = sel.eq('tiene_email', true);
+  else if (canal === 'wa') sel = sel.eq('tiene_wa', true);
+  else if (canal === 'ninguno') sel = sel.eq('canales_n', 0);
   sel = orden === 'nombre' ? sel.order('nombre')
       : orden === 'rating' ? sel.order('google_rating', { ascending: false, nullsFirst: false })
       : orden === 'sucursales' ? sel.order('sucursales', { ascending: false, nullsFirst: false })

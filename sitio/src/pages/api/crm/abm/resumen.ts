@@ -10,9 +10,11 @@ export const GET: APIRoute = async ({ request }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'sin sesión' }, 401);
 
-  const [cuentas, canales, actividad, toques, senales] = await Promise.all([
-    supabase.from('abm_cuentas').select('giro, etapa, ruta, puntaje, sucursales, google_rating').limit(5000),
-    supabase.from('abm_canales').select('cuenta_id, tipo, estado').limit(20000),
+  // Los contadores de canales viven en la cuenta (columnas derivadas con
+  // trigger): contar filas de abm_canales aquí daba un número mentiroso,
+  // porque Supabase corta la lectura en mil filas y había 2,534.
+  const [cuentas, actividad, toques, senales] = await Promise.all([
+    supabase.from('abm_cuentas').select('giro, etapa, ruta, puntaje, sucursales, google_rating, tiene_email, tiene_wa, canales_n').limit(5000),
     supabase.from('abm_actividad').select('tipo, ocurrio_at').gte('ocurrio_at', new Date(Date.now() - 30 * 864e5).toISOString()).limit(5000),
     supabase.from('abm_toques').select('id, estado, programado_at, canal').in('estado', ['aprobado', 'programado']).limit(2000),
     supabase.from('abm_senales').select('tipo, fecha').gte('fecha', new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10)).limit(5000),
@@ -30,12 +32,6 @@ export const GET: APIRoute = async ({ request }) => {
   const porEtapa: Record<string, number> = {};
   for (const c of cs) porEtapa[c.etapa] = (porEtapa[c.etapa] || 0) + 1;
 
-  const conCanal = new Set<string>(); const conEmail = new Set<string>(); const conWa = new Set<string>();
-  for (const c of canales.data || []) {
-    conCanal.add(c.cuenta_id);
-    if (c.tipo.startsWith('email')) conEmail.add(c.cuenta_id);
-    if (c.tipo.startsWith('whatsapp')) conWa.add(c.cuenta_id);
-  }
 
   const act: Record<string, number> = {};
   for (const a of actividad.data || []) act[a.tipo] = (act[a.tipo] || 0) + 1;
@@ -51,8 +47,8 @@ export const GET: APIRoute = async ({ request }) => {
     calientes: cuenta(c => (c.puntaje || 0) >= 60),
     diagnostico: cuenta(c => c.ruta === 'diagnostico'),
     multisucursal: cuenta(c => (c.sucursales || 0) >= 2),
-    sin_canal: cs.length - conCanal.size,
-    con_email: conEmail.size, con_wa: conWa.size,
+    sin_canal: cuenta(c => !c.canales_n),
+    con_email: cuenta(c => c.tiene_email), con_wa: cuenta(c => c.tiene_wa),
     porGiro, porEtapa, actividad: act, senales: seDisparo,
     toques_pendientes: (toques.data || []).length, toques_hoy: pendientesHoy,
   });

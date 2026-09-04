@@ -147,7 +147,7 @@ export async function reescribirRespuesta(o: { contactId?: string | null; estado
   const galeria = await galeriaActiva().catch(() => []);
   const system: any = [
     { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
-    { type: 'text', text: (await ejemplosAprobados(o.estado || undefined)) || ' ', cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: (await ejemplosAprobados(o.estado || undefined)) || ' ' },   // varía por caso: no se cachea (ver decidirTurno)
     { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c?.giro)}` },
   ];
   const user = `EJERCICIO DE ENTRENAMIENTO CON EL DUEÑO. Vas a REESCRIBIR una respuesta tuya de un momento concreto, aplicando su criterio. No es una conversación en vivo: no saludes, no inventes datos, no agendes.
@@ -188,7 +188,7 @@ export async function aplicarOptOut(contactId: string, motivo: string) {
 const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
-export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
+export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
@@ -229,13 +229,16 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const cfgMod: any = await leerConfig().catch(() => ({}));
-  const modelo = modeloPara(opts.tarea || 'respuesta', cfgMod);
+  const modelo = opts.modelo || modeloPara(opts.tarea || 'respuesta', cfgMod);   // opts.modelo: solo para el A/B de modelos
   const r = await anthropic.messages.create({
     model: modelo, max_tokens: 1800,
     // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
     system: [
       { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
-      { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined)) || ' ', cache_control: { type: 'ephemeral' } },
+      // SIN cache_control a propósito (4-sep): desde que los ejemplos se eligen por parecido al mensaje del lead,
+      // este bloque cambia en CADA llamada. Marcarlo para caché no ahorraba nada y encima cobraba la escritura del
+      // prefijo completo (guion incluido) cada vez. El bloque de arriba, que sí es fijo, se sigue cacheando.
+      { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined)) || ' ' },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],

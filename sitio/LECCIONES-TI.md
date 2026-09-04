@@ -482,3 +482,19 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   $0.1239 vs toque $0.065; con Sonnet el toque baja a ~$0.02.
 - **Falta comprobarlo con el juez:** el mismo arnés de `evaluarRegla` (generar con y sin, calificar 1-10) sirve para
   A/B de modelos. Correrlo en cuanto haya crédito antes de dar por buena la baja de calidad cero.
+
+## 2026-09-04 · El peso del prompt y el caché (dónde se van los tokens)
+
+Medido: bloque 1 (guion 6 440 + wiki 1 362 + límites 318 + reglas 584) ≈ **8 714 tokens**; bloque 2 (ejemplos)
+≈ 1 614. Dentro del guion, tres secciones son el 79 %: «QUIÉN ERES» (8 758 chars), «SI DICE QUE NO» (5 155) y
+«LO QUE SE INSTALA POR GIRO» (4 336).
+
+- **El error caro:** desde que los ejemplos se eligen POR PARECIDO, el bloque 2 cambia en cada llamada, pero seguía
+  marcado con `cache_control`. Un punto de caché guarda el PREFIJO hasta ahí, así que cada respuesta pagaba la
+  escritura de guion + ejemplos (~10 300 tokens a 1.25× = ~$0.06) y no leía nada. Eso explica por qué una respuesta
+  costaba $0.1239 en vez de ~$0.05. Se le quitó el `cache_control` al bloque de ejemplos; el bloque 1, que sí es
+  fijo, se sigue cacheando.
+- **Regla para el futuro:** un bloque solo lleva `cache_control` si es IDÉNTICO entre llamadas. Si varía por lead o
+  por mensaje, marcarlo cuesta dinero en vez de ahorrarlo.
+- Comprimir el guion es la palanca MENOR mientras el bloque fijo se cachee bien (leerlo cuesta la décima parte).
+  Antes de recortar texto hay que confirmar con `ia_uso` (cache_read vs cache_write) que el caché está pegando.
