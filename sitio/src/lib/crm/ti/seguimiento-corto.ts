@@ -18,7 +18,7 @@
  * otro ángulo, se reemplaza (el viejo queda como «reemplazado», con su motivo).
  */
 import { supabase } from '../../supabase';
-import { anthropic, MODELS, hasApiKey } from '../../ai/client';
+import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
 import { decidirTurno, nace, avisoSistema } from './agente';
 import { puedeAutomatico } from './semaforo';
@@ -90,7 +90,7 @@ Responde SOLO JSON:
   for (const intento of [0, 1]) {
     const p = intento === 0 ? prompt : prompt.replace(h.texto.slice(0, 9000), h.texto.slice(-3500));
     const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: p }] });
-    costo += ((r.usage?.input_tokens || 0) * 15 + (r.usage?.output_tokens || 0) * 75) / 1e6;
+    costo += calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd;
     const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
     const m = txt.match(/\{[\s\S]*\}/);
     if (m) { try { j = JSON.parse(m[0]); break; } catch { /* reintenta */ } }

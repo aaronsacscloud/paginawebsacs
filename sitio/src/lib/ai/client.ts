@@ -5,8 +5,59 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const ANTHROPIC_KEY = (import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim();
 
-export const anthropic = new Anthropic({
+const anthropicRaw = new Anthropic({
   apiKey: ANTHROPIC_KEY,
+});
+
+/* ── CADA LLAMADA QUEDA REGISTRADA (4-sep-2026) ──
+   Antes cada módulo calculaba su costo por su cuenta (y algunos con precios viejos: 15/75 en vez de 5/25) y
+   muchos ni lo guardaban. Cuando se acabó el crédito no se pudo decir en qué se fue. Ahora `messages.create`
+   pasa por aquí: se mide, se cobra con la tabla PRICING —una sola fuente— y se escribe en ia_uso, incluidas
+   las búsquedas web (que se cobran aparte, ~$0.01 cada una). Si el registro falla, la llamada NO se cae. */
+const proposito = () => {
+  const linea = (new Error().stack || '').split('\n').find(l => /\/src\/(lib|pages)\//.test(l) && !/ai\/client/.test(l)) || '';
+  const m = linea.match(/\/src\/(.+?):(\d+):/);
+  return m ? `${m[1]}:${m[2]}` : 'desconocido';
+};
+async function registrarUso(o: { modelo: string; usage?: any; ok: boolean; error?: string; ms: number; desde: string }) {
+  try {
+    const { supabase } = await import('../supabase');
+    const u = o.usage || {};
+    const busquedas = Number(u?.server_tool_use?.web_search_requests) || 0;
+    const c = o.ok ? calculateCost(o.modelo, u) : null;
+    await supabase.from('ia_uso').insert({
+      modelo: o.modelo, proposito: o.desde,
+      input_tokens: u.input_tokens || 0, output_tokens: u.output_tokens || 0,
+      cache_read: u.cache_read_input_tokens || 0, cache_write: u.cache_creation_input_tokens || 0,
+      busquedas_web: busquedas,
+      costo_usd: (c?.cost_usd || 0) + busquedas * 0.01,
+      ok: o.ok, error: o.error ? String(o.error).slice(0, 300) : null, ms: o.ms,
+    });
+  } catch { /* medir no puede romper lo que mide */ }
+}
+
+export const anthropic = new Proxy(anthropicRaw, {
+  get(target, prop, receiver) {
+    if (prop !== 'messages') return Reflect.get(target, prop, receiver);
+    const messages = Reflect.get(target, prop, receiver);
+    return new Proxy(messages, {
+      get(mTarget, mProp, mReceiver) {
+        const fn = Reflect.get(mTarget, mProp, mReceiver);
+        if (mProp !== 'create' || typeof fn !== 'function') return fn;
+        return async (...args: any[]) => {
+          const t0 = Date.now(); const desde = proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
+          try {
+            const r: any = await (fn as any).apply(mTarget, args);
+            registrarUso({ modelo, usage: r?.usage, ok: true, ms: Date.now() - t0, desde });
+            return r;
+          } catch (e: any) {
+            registrarUso({ modelo, ok: false, error: e?.message || String(e), ms: Date.now() - t0, desde });
+            throw e;
+          }
+        };
+      },
+    });
+  },
 });
 
 // Model constants (centralized for easy version bump via canary)

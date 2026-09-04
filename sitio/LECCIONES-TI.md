@@ -446,3 +446,17 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - **Costo (4-sep):** las pruebas de reglas eran lo más caro ($8.07 en 12 pruebas) porque generan cada caso DOS veces
   con Opus. Bajaron de 24 a 12 casos (~$0.45 por prueba, misma señal). El otro gasto grande fue regenerar mensajes ya
   redactados: $2.83 en 40 reemplazados. Presupuesto de IA fijado en $60/mes para que avise al 80 %.
+
+## 2026-09-04 · Dónde se fue el crédito (y por qué no se podía saber)
+
+- **Cada llamada a la IA se registra ahora en `ia_uso`** (modelo, tokens, caché, búsquedas web, costo, ms, de qué
+  archivo:línea salió, y si falló). Se hace con un Proxy sobre `anthropic.messages.create` en `ai/client.ts`, así que
+  cubre los 32 puntos de llamada sin tocarlos. Si el registro falla, la llamada sigue.
+- **Dos errores propios que hacían imposible la cuenta:** (1) `seguimiento-corto`, `guion-datos` y `biblioteca`
+  calculaban el costo de Opus a 15/75 por millón cuando la tabla central `PRICING` dice 5/25 → inflaban 3×; ya usan
+  `calculateCost`. (2) Muchas llamadas (clasificaciones, curador, crons, scripts de prueba) no guardaban costo en
+  ningún lado, así que el total real siempre iba a quedar corto.
+- **Lo caro de verdad:** las pruebas de reglas generan cada caso DOS veces con Opus (con y sin la regla). A 24 casos
+  eran ~$0.9 por prueba; ya son 12. Y regenerar mensajes ya escritos costó $2.83 en 40 reemplazos.
+- Presupuesto de IA fijado en $60/mes (avisa al 80 %). La pregunta «¿en qué se fue?» ya se contesta con:
+  `select proposito, round(sum(costo_usd)::numeric,2), count(*) from ia_uso where created_at::date=current_date group by 1 order by 2 desc`

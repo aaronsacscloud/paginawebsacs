@@ -221,11 +221,17 @@ export async function sugerenciasPendientes(limit = 60) {
   const desde24 = new Date(Date.now() - 24 * 3600e3).toISOString();
   const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, mensaje, adjuntos, imagen_url, plantilla, salida, created_at, sale_at').eq('estado', 'sugerencia').order('created_at', { ascending: true }).limit(limit);
   const ids = [...new Set((sug || []).map(s => s.contact_id).filter(Boolean))] as string[];
-  const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, email, lifecycle_stage, giro, company_id, companies(nombre_comercial, nombre)').in('id', ids) : { data: [] as any[] };
+  const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, email, lifecycle_stage, giro, company_id, propiedades, fuente, companies(nombre_comercial, nombre)').in('id', ids) : { data: [] as any[] };
   // Ventana de 24 h por lead: si está cerrada, lo que salga será una plantilla y el texto viaja como puente.
   const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24) : { data: [] as any[] };
   const abiertos = new Set((ent || []).map((x: any) => x.contact_id));
-  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {}; return { ...s, salida: undefined, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
+  return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {};
+     const prop: any = c.propiedades || {};
+    // LEAD NUEVO DE LA WEB (4-sep): se marca para que el dueño evalúe la secuencia del primer contacto.
+    const leadWeb = prop.intencion_inicial && prop.intencion_inicial !== 'otro'
+      ? { intencion: prop.intencion_inicial, url: prop.url_origen || null, referido: prop.referido_por || null, mensaje_inicial: prop.mensaje_inicial || null, desde: c.fuente || null }
+      : null;
+    return { ...s, salida: undefined, lead_web: leadWeb, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
 }
 
 export async function historialCalificaciones(limit = 60) {

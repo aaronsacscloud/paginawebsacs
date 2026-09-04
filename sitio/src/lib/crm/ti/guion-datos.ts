@@ -9,7 +9,7 @@
  *    regla, un juez califica) y el dueño las aprueba en la Torre. Nada entra al prompt sin aprobación.
  */
 import { supabase } from '../../supabase';
-import { anthropic, MODELS, hasApiKey } from '../../ai/client';
+import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { GUION_AGENTE } from './agente-guion';
 import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 
@@ -70,7 +70,7 @@ Escribe la regla en 1 o 2 líneas, imperativa, concreta y verificable (qué hace
   const m = txt.match(/\{[\s\S]*\}/); if (!m) return null;
   let j: any; try { j = JSON.parse(m[0]); } catch { return null; }
   if (!j.regla) return null;
-  const costo = ((r.usage?.input_tokens || 0) * 15 + (r.usage?.output_tokens || 0) * 75) / 1e6;
+  const costo = calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd;
   return { regla: String(j.regla).trim().slice(0, 400), evidencias: (Array.isArray(j.evidencias) ? j.evidencias : []).slice(0, 3).map(String), alcance: j.alcance === 'global' ? 'global' : 'etapa', costo };
 }
 
@@ -88,7 +88,7 @@ async function redactarCaso(system: string, caso: any) {
   // Genera con el MISMO modelo que el agente (Opus): la prueba tiene que ser fiel, aunque cueste más (~$0.6 por regla).
   const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 350, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: `CASO DE PRUEBA. Etapa del guion: ${caso.estado}. Situación: ${caso.situacion || ''}.\nEl lead escribió: «${caso.mensaje_lead}».\nEscribe SOLO el mensaje de WhatsApp que mandarías (sin JSON, sin explicación).` }] });
   const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim();
-  return { texto: t, costo: ((r.usage?.input_tokens || 0) * 15 + (r.usage?.output_tokens || 0) * 75) / 1e6 };
+  return { texto: t, costo: calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd };
 }
 async function juzgar(regla: string, caso: any, a: string, b: string) {
   const swap = Math.random() < 0.5; const A = swap ? b : a, B = swap ? a : b;
@@ -96,7 +96,7 @@ async function juzgar(regla: string, caso: any, a: string, b: string) {
   const t = (r.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('');
   const m = t.match(/\{[\s\S]*\}/); let j: any = {}; try { j = m ? JSON.parse(m[0]) : {}; } catch { /* vacío */ }
   const sa = Number(j.a) || 0, sb = Number(j.b) || 0; const va = !!j.viola_a, vb = !!j.viola_b;
-  return { sin: swap ? sb : sa, con: swap ? sa : sb, viola_sin: swap ? vb : va, viola_con: swap ? va : vb, costo: ((r.usage?.input_tokens || 0) * 3 + (r.usage?.output_tokens || 0) * 15) / 1e6 };
+  return { sin: swap ? sb : sa, con: swap ? sa : sb, viola_sin: swap ? vb : va, viola_con: swap ? va : vb, costo: calculateCost(MODELS.sonnet, (r.usage || {}) as any).cost_usd };
 }
 export async function evaluarRegla(id: string): Promise<any> {
   const { data: r } = await supabase.from('ti_reglas').select('id, texto, etapa').eq('id', id).maybeSingle();

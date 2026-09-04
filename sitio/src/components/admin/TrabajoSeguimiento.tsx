@@ -13,6 +13,8 @@ import ContextoLead, { MiniHilo } from './crm/ti/ContextoLead';
 import ReglasAgente from './ReglasAgente';
 
 const fecha = (s?: string | null) => s ? new Date(s).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' }) : '—';
+const WEB_L: Record<string, string> = { prueba_gratis: 'Pide prueba gratis', demo: 'Quiere agendar demo', info: 'Pide información', precios: 'Pregunta precios', partners: 'Programa de partners' };
+const WEB_SEC: Record<string, string> = { prueba_gratis: 'Le confirmamos la prueba, le preguntamos qué vende y cuántas tiendas, y le damos a elegir entre la prueba por su cuenta o la demo con un especialista.', demo: 'Le confirmamos la demo y le preguntamos qué vende y cuántas tiendas, para que sea con sus flujos y no genérica.', info: 'Le preguntamos qué vende y qué le está costando, para darle una respuesta que sí le sirva.', precios: 'Le preguntamos cuántas tiendas maneja para darle el plan que le aplica, no la lista completa.', partners: 'No se le vende: se escala a una persona.' };
 const DEC_L: Record<string, string> = { enviar: 'Tal cual', modificar: 'Modificada', rechazar: 'Rechazada', humano: 'Contestó por su cuenta' };
 
 export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: boolean } = {}) {
@@ -112,6 +114,15 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
               <div className="sg-lbl">Quién es</div>
               <div className="sg-nombre">{actual.contacto?.nombre || 'Sin nombre'}{actual.contacto?.empresa ? <span> · {actual.contacto.empresa}</span> : null}</div>
               <div className="ti-suave" style={{ margin: 0 }}>{actual.telefono}{actual.contacto?.etapa ? ` · ${actual.contacto.etapa}` : ''}{actual.contacto?.giro ? ` · ${actual.contacto.giro}` : ''} · propuesta {fecha(actual.created_at)}</div>
+              {actual.lead_web && (
+                <div className="sg-sit sg-web">
+                  <div><span className="sg-sit-chip web">Lead nuevo de la página · {WEB_L[actual.lead_web.intencion] || actual.lead_web.intencion}</span></div>
+                  {actual.lead_web.mensaje_inicial && <div className="sg-p"><span>Llegó diciendo:</span> «{actual.lead_web.mensaje_inicial}»</div>}
+                  {actual.lead_web.url && <div className="ti-suave" style={{ margin: '4px 0 0' }}>Venía de {actual.lead_web.url}</div>}
+                  {actual.lead_web.referido && <div className="ti-suave" style={{ margin: '4px 0 0' }}>Referido por {actual.lead_web.referido}</div>}
+                  <div className="sg-p"><span>Secuencia:</span> {WEB_SEC[actual.lead_web.intencion] || '—'}</div>
+                </div>
+              )}
               {actual.seguimiento && (
                 <div className="sg-sit">
                   <div><span className="sg-sit-chip">{actual.seguimiento.label}</span><span className="ti-suave" style={{ margin: 0 }}>{actual.seguimiento.horas} h sin contestar · {actual.seguimiento.respondio_antes ? 'ya nos había contestado antes' : 'nunca nos ha contestado'}</span></div>
@@ -230,6 +241,7 @@ const CSS = `
 .sg-corto span{color:#6b6580}
 .sg-prep{border:none;background:#5B4BD6;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}.sg-prep:disabled{opacity:.6}
 .sg-sit{background:#fff;border:1px solid #ecebf2;border-radius:10px;padding:10px 12px;margin-top:10px}
+.sg-web{border-color:#ddd6fe;background:#f8f6ff}.sg-sit-chip.web{background:#5B4BD6;color:#fff}
 .sg-sit-chip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#3d2fb0;background:#EEECFE;border-radius:999px;padding:3px 9px;margin-right:8px}
 .sg-h{border-top:1px solid #f0eef5;padding:8px 0}.sg-h summary{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:13px;flex-wrap:wrap;list-style:none}
 .sg-cal{display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#ecebf2;color:#241d43}

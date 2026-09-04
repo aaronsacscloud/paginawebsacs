@@ -1,6 +1,6 @@
 /** HIGIENE DE LA BIBLIOTECA y RESULTADO DEL LEAD (3-sep). */
 import { supabase } from '../../supabase';
-import { anthropic, MODELS, hasApiKey } from '../../ai/client';
+import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
 
 /** Duplicados (pulida casi igual) → el más viejo queda «duplicado»; promos vencidas mencionadas → «caducado». */
@@ -39,7 +39,7 @@ export async function curarPendientes(dias = 7, max = 20) {
       const ok = j.decision === 'aprobar';
       await supabase.from('ia_ejemplos').update({ estado_rev: ok ? 'aprobado' : 'rechazado', revisado_at: new Date().toISOString(), por_que: `${String(e.por_que || '')}\nCurador (${dias}d sin revisión): ${j.razon || ''}`.trim().slice(0, 1200) }).eq('id', e.id);
       res.curados++; if (ok) res.aprobados++; else res.rechazados++;
-      res.costo += ((r.usage?.input_tokens || 0) * 3 + (r.usage?.output_tokens || 0) * 15) / 1e6;
+      res.costo += calculateCost(MODELS.sonnet, (r.usage || {}) as any).cost_usd;
     } catch { /* siguiente */ }
   }
   return res;
@@ -139,7 +139,7 @@ export async function autopsias(max = 5, dias = 2) {
       const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: `Autopsia de una oportunidad de Sacs (software para tiendas de moda, WhatsApp). Resultado final: ${c.resultado.toUpperCase()}${c.motivo ? ` (motivo registrado: ${c.motivo})` : ''}.\n\nCONVERSACIÓN:\n${hilo}\n\nAnaliza como director comercial. Responde SOLO JSON:\n{"donde_se_decidio":"nº de mensaje y por qué ahí","objecion":"la objeción real o vacío","mensaje_clave":"el texto NUESTRO que más ayudó (ganada) o más dañó (perdida/no_show), copiado literal, o vacío","momento_demo":{"mensaje":n|null,"tenia_datos":"qué sabíamos del negocio en ese punto","hubo_senal":true|false,"fue_prematuro":true|false},"leccion":"UNA regla operativa de 1-2 líneas que evitaría repetir lo malo o repetiría lo bueno","regla_para_el_guion":true|false}` }] });
       const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
       const m = t.match(/\{[\s\S]*\}/); if (!m) continue; const j = JSON.parse(m[0]);
-      res.costo += ((r.usage?.input_tokens || 0) * 15 + (r.usage?.output_tokens || 0) * 75) / 1e6;
+      res.costo += calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd;
       await supabase.from('ia_log').insert({ accion: 'autopsia', contact_id: c.contact_id, razon: c.resultado, detalle: { clave: c.clave, ...j } });
       if (j.mensaje_clave && String(j.mensaje_clave).length >= 20) {
         const leadAntes = (() => { const idx = (msjs || []).slice().reverse().findIndex(m => m.direccion !== 'entrante' && String(m.cuerpo || '').includes(String(j.mensaje_clave).slice(0, 40))); const prev = idx > 0 ? (msjs || []).slice().reverse().slice(0, idx).reverse().find(m => m.direccion === 'entrante') : null; return prev ? String(prev.cuerpo || '').slice(0, 300) : null; })();
