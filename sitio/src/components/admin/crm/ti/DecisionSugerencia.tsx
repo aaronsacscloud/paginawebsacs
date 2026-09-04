@@ -14,7 +14,7 @@ const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map
 
 export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; plantillas?: any; nombre_lead?: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
 
-export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onDecidido }: { sug: Sugerencia; galeria?: Recurso[]; compacto?: boolean; atajos?: boolean; onDecidido: (r: any) => void }) {
+export default function DecisionSugerencia({ sug, galeria, compacto, atajos, movil, onDecidido }: { sug: Sugerencia; galeria?: Recurso[]; compacto?: boolean; atajos?: boolean; movil?: boolean; onDecidido: (r: any) => void }) {
   const [modo, setModo] = useState<'ver' | 'modificar' | 'rechazar'>('ver');
   const [texto, setTexto] = useState(sug.mensaje);
   const [adj, setAdj] = useState<AdjuntoSel[]>(() => (Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' })));
@@ -49,6 +49,9 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 46 px inline y no por CSS: la regla global del CRM móvil fija 36 px con !important y solo perdona a quien
+  // declara su propio min-height en el atributo style (ver el comentario del «piso que funcionaba como techo»).
+  const alto = movil ? { minHeight: 46 } : undefined;
   const cambiado = texto.trim() !== String(sug.mensaje || '').trim() || JSON.stringify(adj.map(a => a.url)) !== JSON.stringify((sug.adjuntos || []).map((a: any) => a.url));
   return (
     <div className={'ds' + (compacto ? ' compacto' : '')}>
@@ -101,9 +104,9 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
       })()}
       {modo === 'ver' && (
         <div className="ds-acciones">
-          <button className="ds-btn p" disabled={ocupado} onClick={() => decidir('enviar')}>{ocupado ? 'Enviando…' : 'Enviar'}{atajos && <small>E</small>}</button>
-          <button className="ds-btn" disabled={ocupado} onClick={() => setModo('modificar')}>Modificar{atajos && <small>M</small>}</button>
-          <button className="ds-btn" disabled={ocupado} onClick={() => setModo('rechazar')}>Rechazar{atajos && <small>R</small>}</button>
+          <button className="ds-btn p" style={alto} disabled={ocupado} onClick={() => decidir('enviar')}>{ocupado ? 'Enviando…' : 'Enviar'}{atajos && <small>E</small>}</button>
+          <button className="ds-btn" style={alto} disabled={ocupado} onClick={() => setModo('modificar')}>Modificar{atajos && <small>M</small>}</button>
+          <button className="ds-btn" style={alto} disabled={ocupado} onClick={() => setModo('rechazar')}>Rechazar{atajos && <small>R</small>}</button>
         </div>
       )}
       {modo === 'modificar' && (
@@ -113,8 +116,8 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
           <div style={{ margin: '8px 0' }}><SelectorAdjuntos valor={adj} galeria={gal} onChange={setAdj} onNuevo={r => setGal(g => [r, ...g])} /></div>
           <input className="ds-in" placeholder="Qué debe considerar el agente la próxima vez (opcional, vale oro): «no repitas el precio si ya lo dio», «usa su nombre de tienda»…" value={criterio} onChange={e => setCriterio(e.target.value)} />
           <div className="ds-acciones">
-            <button className="ds-btn p" disabled={ocupado || texto.trim().length < 2} onClick={() => decidir(cambiado ? 'modificar' : 'enviar')}>{ocupado ? 'Enviando…' : cambiado ? 'Enviar con modificaciones' : 'Enviar (sin cambios)'}</button>
-            <button className="ds-btn ghost" disabled={ocupado} onClick={() => { setModo('ver'); setTexto(sug.mensaje); }}>Volver</button>
+            <button className="ds-btn p" style={alto} disabled={ocupado || texto.trim().length < 2} onClick={() => decidir(cambiado ? 'modificar' : 'enviar')}>{ocupado ? 'Enviando…' : cambiado ? 'Enviar con modificaciones' : 'Enviar (sin cambios)'}</button>
+            <button className="ds-btn ghost" style={alto} disabled={ocupado} onClick={() => { setModo('ver'); setTexto(sug.mensaje); }}>Volver</button>
           </div>
         </div>
       )}
@@ -124,8 +127,8 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, onD
           <div className="ds-chips">{MOTIVOS_RECHAZO.map(m => <button key={m} className={'ds-chip' + (motivo === m ? ' on' : '')} onClick={() => setMotivo(m)}>{m}</button>)}</div>
           <input className="ds-in" placeholder="Detalle (opcional): qué viste, qué faltó, qué sí hubiera funcionado" value={detalle} onChange={e => setDetalle(e.target.value)} />
           <div className="ds-acciones">
-            <button className="ds-btn peligro" disabled={ocupado || !motivo} onClick={() => decidir('rechazar')}>{ocupado ? 'Guardando…' : 'Rechazar y responder yo'}</button>
-            <button className="ds-btn ghost" disabled={ocupado} onClick={() => { setModo('ver'); setMotivo(''); setDetalle(''); }}>Volver</button>
+            <button className="ds-btn peligro" style={alto} disabled={ocupado || !motivo} onClick={() => decidir('rechazar')}>{ocupado ? 'Guardando…' : 'Rechazar y responder yo'}</button>
+            <button className="ds-btn ghost" style={alto} disabled={ocupado} onClick={() => { setModo('ver'); setMotivo(''); setDetalle(''); }}>Volver</button>
           </div>
         </div>
       )}
@@ -167,5 +170,24 @@ const CSS = `
 .ds-v-burb{background:#fff;border-radius:10px 10px 10px 4px;padding:9px 11px;color:#241d43;font-size:13px;line-height:1.5;white-space:pre-wrap}
 .ds-v-nota{margin-top:6px;font-size:11.5px;opacity:.9}
 .ds-v-esc{margin-top:6px;font-size:11.5px;opacity:.9}
+/* MÓVIL (4-sep): en el teléfono los tres botones no caben en una fila —«Rechazar» salía cortado— y 36 px de alto
+   quedan por debajo del dedo. Se apilan: la acción principal ocupa el ancho y las otras dos se reparten abajo.
+   Y la burbuja del mensaje se hace scrollable para que los botones nunca se pierdan fuera de la pantalla. */
+@media (max-width:560px){
+  .ds-acciones{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ds-acciones .ds-btn{width:100%;justify-content:center;min-height:46px;font-size:14.5px;padding:12px 10px}
+  .ds-acciones .ds-btn.p,.ds-acciones .ds-btn.peligro{grid-column:1 / -1}
+  .ds-btn small{display:none}
+  .ds-burbuja,.ds.compacto .ds-burbuja{max-height:34vh;overflow-y:auto;font-size:14px}
+  .ds-ta{font-size:16px !important}      /* 16 px o iOS hace zoom al enfocar */
+  .ds-in{font-size:15px}
+  .ds-chip{padding:9px 12px;font-size:12.5px}
+  .ds-cab{font-size:11.5px}
+  .ds-v-fila{gap:6px}.ds-v-sel{flex:1 1 100%;min-height:38px}
+  /* Al editar, la tarjeta crece y los botones se iban abajo del pliegue: se quedan pegados al fondo de la compuerta. */
+  .ds.compacto .ds-editor .ds-acciones{position:sticky;bottom:0;background:#fbfaff;padding:8px 0 2px;margin-top:8px;box-shadow:0 -8px 12px -8px rgba(36,29,67,.18)}
+  .ds.compacto .ds-ta{max-height:32vh}
+  .ds-v-burb{max-height:26vh;overflow-y:auto}
+}
 .ds-err{margin-top:8px;font-size:12.5px;font-weight:700;color:#b3261e;background:#fde7e5;border-radius:8px;padding:6px 10px}
 `;

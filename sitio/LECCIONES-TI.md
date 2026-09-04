@@ -460,3 +460,9 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   eran ~$0.9 por prueba; ya son 12. Y regenerar mensajes ya escritos costó $2.83 en 40 reemplazos.
 - Presupuesto de IA fijado en $60/mes (avisa al 80 %). La pregunta «¿en qué se fue?» ya se contesta con:
   `select proposito, round(sum(costo_usd)::numeric,2), count(*) from ia_uso where created_at::date=current_date group by 1 order by 2 desc`
+- **La compuerta en el teléfono (4-sep):** los tres botones no cabían en una fila («Rechazar» salía cortado) y se
+  quedaban en 36 px de alto. La causa del alto es la regla global `.m-tabin button:not(...):not([style*="min-height"])
+  { min-height:36px !important }` —el piso que funciona como techo—, y su escape es declarar el alto INLINE. Por eso
+  `DecisionSugerencia` recibe `movil` y pone `style={{minHeight:46}}` en cada botón. Además, en móvil la acción
+  principal ocupa el ancho, las otras dos se reparten abajo, la burbuja y el textarea se hacen scrollables (34 vh /
+  32 vh) y al editar los botones quedan pegados al fondo de la compuerta.

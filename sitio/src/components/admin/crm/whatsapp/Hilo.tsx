@@ -703,9 +703,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           razón. Cada decisión califica al agente (paridad 9/10) y le enseña. Al rechazar, el compositor se libera. */}
       <div ref={cajaComposerRef}>
       {agenteEstado?.sugerencias?.length > 0 && !liberadas.includes(agenteEstado.sugerencias[0].id) ? (
-        <div style={{ margin: '0 12px 8px', border: '1px solid #d9d4ea', background: '#fbfaff', borderRadius: 14, padding: '12px 14px', maxHeight: '52vh', overflowY: 'auto', flex: '0 0 auto' }}>
+        <div style={{ margin: '0 12px 8px', border: '1px solid #d9d4ea', background: '#fbfaff', borderRadius: 14, padding: '12px 14px', maxHeight: mobile ? '62vh' : '52vh', overflowY: 'auto', flex: '0 0 auto' }}>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6', marginBottom: 6 }}>El agente propone esta respuesta · decide antes de escribir</div>
-          <DecisionSugerencia sug={agenteEstado.sugerencias[0]} compacto onDecidido={(r) => { const id = agenteEstado.sugerencias[0].id; if (r?.decision === 'rechazar') setLiberadas(l => [...l, id]); recargarAgente(); api.refrescar?.(); }} />
+          <DecisionSugerencia sug={agenteEstado.sugerencias[0]} compacto movil={!!mobile} onDecidido={(r) => { const id = agenteEstado.sugerencias[0].id; if (r?.decision === 'rechazar') setLiberadas(l => [...l, id]); recargarAgente(); api.refrescar?.(); }} />
         </div>
       ) : (
       <Composer key={`${conv.id || conv.email_only_id}-${composerN}`} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
