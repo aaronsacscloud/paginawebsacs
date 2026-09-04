@@ -845,6 +845,31 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         const { confirmoAsistencia } = await import('../../scheduling/reagendar-wa');
         await confirmoAsistencia(e.conversation_id, e.telefono).catch(() => false);
       }
+      // VENTANA DE 24 H, EN EL DESPACHADOR (4-sep): antes esto solo se revisaba en la pantalla de Seguimiento, así que
+      // cualquier otro camino —«enviar ya» desde la Torre, un cron— mandaba texto libre con la ventana cerrada: Meta lo
+      // acepta, devuelve wamid y luego lo marca «failed». El mensaje se daba por enviado y nunca llegaba. Caso medido:
+      // los dos mensajes de prueba al teléfono del dueño. Ahora, si no hay ventana y no trae plantilla, se le cuelga la
+      // que le toca y el texto viaja como puente.
+      if (!e.plantilla && e.contact_id) {
+        const abierta = await ventanaAbierta(e.contact_id).catch(() => true);
+        if (!abierta) {
+          const { data: kc } = await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle();
+          const fam = e.origen === 'cita' ? 'no_show' : e.origen === 'preparacion' ? 'preparacion' : ['reactivacion', 'reenganche'].includes(String(e.origen)) ? 'promo' : 'seguimiento';
+          const pl = await plantillaSiVentanaCerrada(e.contact_id, fam as any, mensaje, kc?.nombre).catch(() => null);
+          if (pl) {
+            (e as any).plantilla = pl;
+            await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
+            const { data: pfv } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+            const stv: any = (pfv as any)?.agente_estado || {};
+            await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...stv, puente_pendiente: { envio_id: e.id, mensaje_completo: mensaje, origen: e.origen, at: ahora.toISOString() } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' }).then(() => {}, () => {});
+            await log({ accion: 'agente_plantilla_por_ventana', contact_id: e.contact_id, razon: `ventana cerrada: sale ${pl.marketing || pl.utility}`, detalle: { envio_id: e.id } });
+          } else {
+            await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: 'ventana de 24 h cerrada y sin plantilla aprobada para este momento', updated_at: ahora.toISOString() }).eq('id', e.id);
+            await log({ accion: 'agente_error', contact_id: e.contact_id, razon: 'ventana cerrada y sin plantilla: no se manda texto libre (Meta lo marcaría fallido)' });
+            continue;
+          }
+        }
+      }
       let r: any, plantillaUsada: string | null = null;
       if (e.plantilla) {
         const { enviarPlantilla } = await import('../../whatsapp/kapso-api');

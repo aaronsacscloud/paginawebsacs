@@ -91,13 +91,18 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: c } = await supabase.from('abm_cuentas').select('*').eq('id', b.cuenta_id).maybeSingle();
     if (!c) return json({ error: 'no existe' }, 404);
     if (c.etapa === 'no_contactar') return json({ error: 'esta cuenta pidió no ser contactada' }, 409);
+    // A un cliente que ya nos paga no se le manda correo en frío.
+    if (c.ya_es_cliente) return json({ error: `ya es cliente nuestro (${c.ya_es_cliente}): no entra a prospección en frío` }, 409);
 
     const [{ data: canales }, { data: personas }, { data: senales }] = await Promise.all([
       supabase.from('abm_canales').select('*').eq('cuenta_id', c.id).neq('estado', 'opt_out'),
       supabase.from('abm_personas').select('*').eq('cuenta_id', c.id).order('confirmado', { ascending: false }),
       supabase.from('abm_senales').select('*').eq('cuenta_id', c.id).order('fecha', { ascending: false }).limit(5),
     ]);
-    const correo = (canales || []).find(x => x.tipo.startsWith('email'));
+    // Solo una dirección con forma de dirección: seis truncadas sin dominio
+    // bastaban para disparar el disyuntor de rebotes el primer día.
+    const CORREO_OK = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
+    const correo = (canales || []).find(x => x.tipo.startsWith('email') && x.estado !== 'invalido' && x.estado !== 'rebote' && CORREO_OK.test(String(x.valor || '')));
     if (!correo) return json({ error: 'esta cuenta no tiene correo verificado: su cadencia empieza por otro canal' }, 409);
 
     // Nadie recibe dos veces: si ya hay toques vivos, no se genera otra cadencia.

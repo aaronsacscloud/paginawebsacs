@@ -60,19 +60,59 @@ export const METODO_ETIQ: Record<string, string> = {
   directorio: 'un directorio de terceros', escaner: 'el escaneo de su sitio', investigacion: 'la investigación',
 };
 
-/** Puntaje 0-100: encaje (0-40) + dolor (0-35) + accesibilidad (0-25). */
-export function calcularPuntaje(c: any): { encaje: number; dolor: number; accesibilidad: number; puntaje: number } {
+/** Puntaje 0-100 = encaje (0-50) + dolor (0-50).
+ *
+ * La accesibilidad NO entra: ordenar por ella era ordenar por "a quién le
+ * hallamos el correo", y eso escondía las cuentas grandes que valen la pena
+ * trabajar a mano. Sigue calculándose y se muestra aparte, como filtro. */
+const ECOMMERCE = /shopify|woo|vtex|wix|tiendanube|magento|prestashop|squarespace|shopline/i;
+
+export function calcularPuntaje(c: any, senales: any[] = []): { encaje: number; dolor: number; accesibilidad: number; puntaje: number } {
   const suc = Number(c.sucursales || 0);
-  const encaje = Math.min(40, 10 + (suc >= 2 ? 12 : 0) + (suc >= 5 ? 10 : 0) + (suc >= 15 ? 8 : 0));
+  const sinConteo = c.sucursales === null || c.sucursales === undefined;
+
+  // ENCAJE (0-50). Cuando no verificamos el tamaño no se castiga a la cuenta por
+  // un hueco NUESTRO: se estima por lo que sí sabemos (reseñas y seguidores).
+  let encaje: number;
+  if (sinConteo) {
+    const resenas = Number(c.google_resenas || 0);
+    const segui = Number(String(c.ig_seguidores || '').replace(/[^\d.]/g, '')) * (/k/i.test(String(c.ig_seguidores || '')) ? 1000 : 1);
+    encaje = 18 + (resenas >= 300 || segui >= 30000 ? 8 : resenas >= 100 || segui >= 10000 ? 4 : 0);
+  } else {
+    encaje = 12 + (suc >= 2 ? 12 : 0) + (suc >= 5 ? 12 : 0) + (suc >= 15 ? 8 : 0) + (suc >= 30 ? 6 : 0);
+  }
+  encaje = Math.min(50, encaje);
+
+  // DOLOR (0-50). Lo que de verdad duele, no "si el investigador escribió un
+  // párrafo": vender en línea sin ver el piso, el sitio roto, la calificación
+  // cayéndose al crecer, y las señales VIVAS que juntó la investigación.
   let dolor = 0;
-  if (['Shopify', 'VTEX', 'WooCommerce', 'Wix', 'Tiendanube'].includes(c.plataforma_web) && suc >= 3) dolor += 15;
+  if (ECOMMERCE.test(String(c.plataforma_web || '')) && (suc >= 2 || sinConteo)) dolor += 16;
   if (c.sitio_http === 0 || Number(c.sitio_http || 200) >= 400) dolor += 12;
   if (c.sitio_carrito === false) dolor += 8;
-  if (c.senal_expansion) dolor += 10;
-  if (c.google_rating && Number(c.google_rating) < 4.5 && suc >= 3) dolor += 10;
-  dolor = Math.min(35, dolor);
-  const acc = Math.min(25, (c.tiene_email ? 12 : 0) + (c.tiene_wa ? 8 : 0) + (c.tiene_persona ? 5 : 0));
-  return { encaje, dolor, accesibilidad: acc, puntaje: encaje + dolor + acc };
+  if (c.google_rating && Number(c.google_rating) < 4.5 && suc >= 3) dolor += 10;   // se le cae al crecer
+  const hoy = Date.now();
+  for (const s of senales) {
+    const dias = s.fecha ? (hoy - new Date(s.fecha + 'T00:00:00Z').getTime()) / 864e5 : 999;
+    if (dias > 180) continue;                                    // una señal vieja ya no duele
+    dolor += s.tipo === 'apertura' ? 8 : s.tipo === 'vacante' ? 8 : s.tipo === 'sitio_caido' ? 6 : s.tipo === 'resena_mala' ? 6 : 3;
+  }
+  dolor = Math.min(50, dolor);
+
+  // ACCESIBILIDAD (0-25): aparte del puntaje, para saber por dónde entrarle.
+  const acc = Math.min(25, (c.tiene_email ? 12 : 0) + (c.tiene_wa ? 8 : 0) + (c.per || c.tiene_persona ? 5 : 0));
+  return { encaje, dolor, accesibilidad: acc, puntaje: encaje + dolor };
+}
+
+/** Recalcula y guarda. Se llama cada vez que la cuenta cambia de verdad —
+ *  confirmar sucursales, capturar al dueño, agregar un canal—, porque un
+ *  puntaje que se calculó una vez al sembrar es un puntaje que miente. */
+export async function repuntuar(cuenta_id: string) {
+  const { data: c } = await supabase.from('abm_cuentas').select('*').eq('id', cuenta_id).maybeSingle();
+  if (!c) return;
+  const { data: senales } = await supabase.from('abm_senales').select('tipo, fecha').eq('cuenta_id', cuenta_id);
+  const p = calcularPuntaje(c, senales || []);
+  await supabase.from('abm_cuentas').update({ ...p, updated_at: new Date().toISOString() }).eq('id', cuenta_id);
 }
 
 /** La ruta la decide el tamaño: cinco sucursales o más merecen diagnóstico. */
@@ -103,15 +143,39 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
   return {
     nombre: c.nombre || '',
     ciudad: c.ciudad || '',
-    sucursales: c.sucursales ? String(c.sucursales) : '',
+    // No se presume un número de tiendas que no verificamos: equivocarse con
+    // "sus 14 tiendas" cuando son 3 tumba la credibilidad del correo entero.
+    sucursales: c.sucursales && c.sucursales_confianza !== 'baja' ? String(c.sucursales) : '',
     rating: c.google_rating ? Number(c.google_rating).toFixed(1) : '',
     resenas: c.google_resenas ? String(c.google_resenas) : '',
-    plataforma: c.plataforma_web || '',
+    plataforma: plataformaLimpia(c.plataforma_web),
     persona: (persona?.nombre || '').split(' ')[0] || '',
     giro_nombre: GIROS[c.giro] || c.giro || '',
-    ultima_publicacion: c.ultima_publicacion || '',
-    senal: c.senal_expansion || '',
+    ultima_publicacion: recorte(c.ultima_publicacion, 90),
+    senal: recorte(c.senal_expansion, 90),
   };
+}
+
+/** Solo plataformas de verdad. "Facebook (sin sitio propio)" o "no verificable
+ *  (el dominio ya no resuelve)" metidos en la frase "su tienda en línea en X"
+ *  producen correos absurdos; mejor vacío, que borra la frase completa. */
+const PLATAFORMAS = ['Shopify', 'WooCommerce', 'VTEX', 'Wix', 'Tiendanube', 'Magento', 'PrestaShop', 'Squarespace'];
+export function plataformaLimpia(v: any): string {
+  const t = String(v || '');
+  for (const p of PLATAFORMAS) if (new RegExp(p.replace('WooCommerce', 'woo'), 'i').test(t)) return p;
+  return '';
+}
+
+/** Una frase, no un volcado de la investigación. La señal más larga que hay
+ *  mide 413 caracteres: pegada a media frase, el correo deja de parecer escrito
+ *  por una persona. Mejor vacía que larga: el bloque [[si …]] la borra sola. */
+export function recorte(v: any, max: number): string {
+  const t = String(v || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  if (t.length <= max) return t.replace(/[.;:,]+$/, '');
+  const corte = t.slice(0, max);
+  const i = Math.max(corte.lastIndexOf(','), corte.lastIndexOf(';'), corte.lastIndexOf('.'));
+  return i > 30 ? corte.slice(0, i) : '';
 }
 
 export function rellenar(texto: string, v: Record<string, string>): string {

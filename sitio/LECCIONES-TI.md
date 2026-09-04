@@ -518,3 +518,9 @@ El mismo caso real escrito por Opus y por Sonnet, calificado 1-10 por un juez qu
   $0.0249. El caché ya pega: 42 de 57 llamadas leyeron caché y solo 2 escribieron.
 - El juez marcó dos veces el saludo alargado («pierde naturalidad con 'Holaaa'»). Es decisión de estilo del dueño y
   se queda; queda anotado que al juez no le gusta.
+- **La ventana de 24 h se revisa en el DESPACHADOR, no en una pantalla (4-sep):** el arreglo original vivía en
+  `decidirSugerencia`, así que «enviar ya» desde la Torre y los crons seguían mandando texto libre con la ventana
+  cerrada. Meta lo ACEPTA, devuelve wamid y el envío queda «enviado»… y luego lo marca `failed` en el webhook: el
+  mensaje nunca llega y nadie se entera. Medido con los dos mensajes de prueba al teléfono del dueño. Ahora, antes
+  de mandar, si no hay ventana y el envío no trae plantilla, se le cuelga la de su familia y el texto viaja como
+  puente; si no hay plantilla aprobada, se veta en vez de fingir que salió.

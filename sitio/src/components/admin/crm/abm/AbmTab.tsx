@@ -15,6 +15,7 @@ import Sheet from '../ui/Sheet';
 import Cargando from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import Ficha360 from './Ficha360';
+import ColaTelefono from './ColaTelefono';
 import { ETAPA_TONO, Pastilla, Puntaje, fmt, enlaceDe } from './ui';
 
 const GIROS: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function AbmTab() {
   const [giro, setGiro] = useState('');
   const [cargando, setCargando] = useState(true);
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [vista, setVista] = useState<'lista' | 'llamadas'>('lista');
 
   useEffect(() => { fetch('/api/crm/abm/resumen').then(r => r.json()).then(setResumen).catch(() => {}); }, []);
 
@@ -150,6 +152,21 @@ export default function AbmTab() {
         qué tanto les duele y qué tan fácil es alcanzarlos.
       </p>
 
+      <div style={{ display: 'flex', gap: 2, marginBottom: 16, borderBottom: '1px solid #ececec' }}>
+        {([['lista', 'Las cuentas'], ['llamadas', 'Cola de teléfono']] as const).map(([v, l]) => (
+          <button key={v} onClick={() => setVista(v)} style={{
+            font: 'inherit', fontSize: '.875rem', fontWeight: vista === v ? 800 : 500, padding: '9px 15px',
+            border: 'none', borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent',
+            background: vista === v ? P.violetaAgua : 'transparent', color: vista === v ? P.violetaTinta : '#666',
+            borderRadius: '9px 9px 0 0', cursor: 'pointer',
+          }}>{l}</button>
+        ))}
+      </div>
+
+      {vista === 'llamadas' ? (
+        <ColaTelefono onCambio={() => { fetch('/api/crm/abm/resumen').then(r => r.json()).then(setResumen).catch(() => {}); }} />
+      ) : (<>
+
       {resumen && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 18 }}>
           {kpi('Cuentas', fmt(resumen.total), 'negocios verificados', P.violeta, P.violetaTinta)}
@@ -216,6 +233,8 @@ export default function AbmTab() {
           )}
         </>
       )}
+
+      </>)}
 
       <Sheet open={!!abierta} onClose={() => setAbierta(null)} title="Cuenta objetivo" width={860}>
         {abierta && <Ficha360 id={abierta} onCerrar={() => setAbierta(null)} onCambio={traer} />}

@@ -194,6 +194,33 @@ export const POST: APIRoute = async ({ request, url }) => {
       adjuntos, send_id: sendId,
     });
 
+    // ── Cuentas objetivo: una respuesta FRENA la cadencia ──
+    // Sin esto, a quien contestó "sí me interesa" le siguen llegando los
+    // correos 2 al 7 de una secuencia en frío. No hay forma más rápida de
+    // convertir un interés en un reporte de spam.
+    try {
+      const { data: toque } = sendId
+        ? await supabase.from('abm_toques').select('id, cuenta_id').eq('send_id', sendId).maybeSingle()
+        : { data: null as any };
+      const { data: porCorreo } = !toque
+        ? await supabase.from('abm_toques').select('id, cuenta_id').ilike('destino', email).order('enviado_at', { ascending: false }).limit(1).maybeSingle()
+        : { data: null as any };
+      const t = toque || porCorreo;
+      if (t) {
+        await supabase.from('abm_actividad').insert({
+          cuenta_id: t.cuenta_id, toque_id: t.id, canal: 'email', tipo: 'respuesta',
+          texto: (texto || asunto || '').slice(0, 2000), ocurrio_at: new Date().toISOString(),
+        });
+        await supabase.from('abm_cuentas')
+          .update({ etapa: 'respondio', updated_at: new Date().toISOString() })
+          .eq('id', t.cuenta_id).in('etapa', ['sin_tocar', 'en_cadencia']);
+        const { count } = await supabase.from('abm_toques')
+          .update({ estado: 'cancelado', resultado: 'contestó el correo' }, { count: 'exact' })
+          .eq('cuenta_id', t.cuenta_id).in('estado', ['borrador', 'aprobado', 'programado']);
+        console.log(`[inbound] cuenta objetivo ${t.cuenta_id} respondió: ${count || 0} correos cancelados`);
+      }
+    } catch (e) { console.warn('[inbound] cuentas objetivo:', e); }
+
     // El hilo también vive en la ficha del contacto.
     if (contactId) {
       await supabase.from('activities').insert({

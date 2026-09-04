@@ -14,7 +14,7 @@
 //   no_contactar { id, motivo? }                 ← se honra en TODOS los canales, para siempre
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { json, quien, esUuid, limpiar, apuntar, calcularPuntaje, rutaDe, ETAPAS } from '../../../../lib/crm/abm.lib';
+import { json, quien, esUuid, limpiar, apuntar, repuntuar, rutaDe, ETAPAS } from '../../../../lib/crm/abm.lib';
 
 export const prerender = false;
 
@@ -65,6 +65,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (canal === 'email') sel = sel.eq('tiene_email', true);
   else if (canal === 'wa') sel = sel.eq('tiene_wa', true);
   else if (canal === 'ninguno') sel = sel.eq('canales_n', 0);
+  if (url.searchParams.get('sin_cliente') === '1') sel = sel.is('ya_es_cliente', null);
   sel = orden === 'nombre' ? sel.order('nombre')
       : orden === 'rating' ? sel.order('google_rating', { ascending: false, nullsFirst: false })
       : orden === 'sucursales' ? sel.order('sucursales', { ascending: false, nullsFirst: false })
@@ -120,6 +121,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { error } = await supabase.from('abm_cuentas').update(patch).eq('id', id);
     if (error) return json({ error: error.message }, 500);
     await supabase.from('abm_fuentes').insert({ cuenta_id: id, campo, valor: String(valor ?? ''), metodo: 'confirmado_por_el_prospecto', confianza: 'alta', agente: yo.nombre });
+    await repuntuar(id);
     await apuntar(id, 'sistema', 'nota', { texto: `${yo.nombre} confirmó ${campo}: ${valor}` });
     return json({ ok: true });
   }
@@ -136,6 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (error) return json({ error: error.message }, 500);
     if (b.whatsapp) await supabase.from('abm_canales').insert({ cuenta_id: id, persona_id: data.id, tipo: 'whatsapp_dueno', valor: limpiar(b.whatsapp, 60), confianza: 'alta', es_de_la_tienda: false, estado: 'valido' });
     if (b.email) await supabase.from('abm_canales').insert({ cuenta_id: id, persona_id: data.id, tipo: 'email_direccion', valor: limpiar(b.email, 200), confianza: 'alta', es_de_la_tienda: false, estado: 'valido' });
+    await repuntuar(id);
     await apuntar(id, 'sistema', 'nota', { texto: `${yo.nombre} capturó a ${nombre}${b.cargo ? ' (' + b.cargo + ')' : ''}` });
     return json({ ok: true, persona_id: data.id });
   }
@@ -147,6 +150,7 @@ export const POST: APIRoute = async ({ request }) => {
       cuenta_id: id, tipo, valor, confianza: b.confianza || 'alta',
       es_de_la_tienda: b.es_de_la_tienda !== false, estado: 'valido', verificado_at: new Date().toISOString(),
     });
+    if (!error) await repuntuar(id);
     return error ? json({ error: error.message }, 500) : json({ ok: true });
   }
 
