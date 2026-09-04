@@ -75,7 +75,7 @@ Escribe la regla en 1 o 2 líneas, imperativa, concreta y verificable (qué hace
 }
 
 /* ── PROBAR ANTES DE APLICAR: casos reales, con y sin la regla, y un juez ── */
-async function casosDePrueba(etapa: string | null, n = 24) {
+async function casosDePrueba(etapa: string | null, n = 12) {   // 12 y no 24: cada caso se genera dos veces con Opus (~$0.04); con 12 la señal es la misma y la prueba baja de ~$0.9 a ~$0.45
   const base = supabase.from('ia_ejemplos').select('id, estado, situacion, mensaje_lead, pulida, fuente').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').not('mensaje_lead', 'is', null).order('created_at', { ascending: false });
   const { data: propios } = etapa ? await base.eq('estado', etapa).limit(n) : { data: [] as any[] };
   let casos = (propios || []).filter(c => String(c.mensaje_lead || '').length >= 8 && String(c.pulida || '').length >= 20);
@@ -102,7 +102,7 @@ export async function evaluarRegla(id: string): Promise<any> {
   const { data: r } = await supabase.from('ti_reglas').select('id, texto, etapa').eq('id', id).maybeSingle();
   if (!r?.texto) return { error: 'La regla no tiene texto' };
   if (!hasApiKey()) return { error: 'Sin API key' };
-  const casos = await casosDePrueba(r.etapa || null);
+  const casos = await casosDePrueba(r.etapa || null, Number(process.env.TI_CASOS_PRUEBA) || 12);
   if (casos.length < 6) return { error: `Solo hay ${casos.length} casos aprobados para probar; hacen falta al menos 6` };
   const [sinRegla, conRegla] = await Promise.all([bloqueSistemaBase(), bloqueSistemaBase(r.texto)]);
   let costo = 0; const res: any[] = [];

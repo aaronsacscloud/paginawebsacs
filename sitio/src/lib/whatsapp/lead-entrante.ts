@@ -18,15 +18,29 @@ export type Intencion = 'prueba_gratis' | 'demo' | 'info' | 'precios' | 'partner
 
 export const INTENCIONES: Record<Intencion, { label: string; secuencia: string }> = {
   prueba_gratis: { label: 'Pide prueba gratis',
-    secuencia: 'Viene de la página de prueba gratis: YA decidió probar, no hay que convencerlo de nada. Confírmale que sí en media línea y pide UNA sola cosa: qué vende (ropa, calzado, joyería), que es lo que define cómo se le deja configurada. El correo y el nombre de la tienda se piden en el SIGUIENTE mensaje, no todo junto. Nunca le mandes precios ni pitch aquí.' },
+    secuencia: `Viene de la página de prueba gratis: YA decidió probar, no hay que convencerlo. Este primer mensaje hace tres cosas y nada más (decisión del dueño, 4-sep):
+1) Confirma en media línea que sí se la damos.
+2) Pregunta, en una sola línea y como un solo bloque, QUÉ VENDE (ropa, calzado, joyería) y CUÁNTAS TIENDAS o sucursales maneja: con eso se le deja configurada a su medida y no genérica.
+3) Le pone las DOS opciones en dos renglones cortos y le pregunta cuál prefiere:
+   · la prueba por su cuenta, con su cuenta lista y sus funciones activadas;
+   · o una demo con un especialista, menos de una hora, donde se le muestra todo funcionando con SUS flujos y sus productos.
+Cierra preguntando cuál de las dos le acomoda. Nada de precios ni de folleto aquí. El correo y el nombre de la tienda se piden hasta el mensaje siguiente, cuando ya haya elegido.` },
   demo: { label: 'Quiere agendar demo',
-    secuencia: 'Viene de la página a pedir demo: quiere verlo, no que le expliquen. Confirma que se la agendas y pide lo mínimo para que no sea genérica: qué vende y cuántas tiendas. Si ya lo sabes, propón dos horarios concretos de una vez.' },
+    secuencia: `Viene de la página a pedir demo: quiere verlo, no que le expliquen. Este primer mensaje:
+1) Confirma que se la agendas.
+2) Pregunta, en una sola línea, qué vende y cuántas tiendas maneja, para que la demo sea con SUS flujos y no una genérica.
+3) Menciona en un renglón que la demo con el especialista dura menos de una hora y ahí se ve todo funcionando con lo suyo; y que si prefiere empezar probándolo por su cuenta, también se le puede dejar la prueba lista.
+Cierra preguntando qué prefiere, o proponiendo dos horarios concretos si ya sabes qué vende y cuántas tiendas tiene.` },
   info: { label: 'Pide información',
     secuencia: 'Pidió información desde la web. No le sueltes el folleto: pregúntale qué vende y qué es lo que más le está costando hoy, y con eso dale UNA respuesta que le sirva.' },
   precios: { label: 'Pregunta precios',
     secuencia: 'Llega preguntando precio. Dáselo, pero el que le aplica: pregunta primero cuántas tiendas maneja si no lo sabes, y da el plan que le toca, no la lista completa.' },
   partners: { label: 'Programa de partners',
     secuencia: 'Pregunta por el programa de partners: NO es un lead de tienda. Pásalo con una persona (escalar) en vez de venderle Sacs.' },
+  // Lo que sigue DESPUÉS de que elige (el agente lo aplica solo, leyendo el hilo):
+  //   eligió prueba → pide correo y nombre de la tienda, la deja activada con las funciones de su giro y le avisa;
+  //                   y le ofrece igual 15 minutos con un consultor para arrancarla sin perderse.
+  //   eligió demo   → propone DOS horarios concretos y confirma con quién será.
   otro: { label: 'Escribió por su cuenta',
     secuencia: 'Escribió por su cuenta, sin venir de un botón de la web. Contesta lo que preguntó y averigua qué vende.' },
 };

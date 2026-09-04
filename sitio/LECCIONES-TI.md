@@ -439,3 +439,10 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   La de prueba gratis pide una sola cosa (qué vende) y deja correo y tienda para el mensaje siguiente; partners no se
   vende, se escala.
 - Los 7 huérfanos se recuperaron a mano (6 con contacto nuevo; uno sin mensaje entrante legible).
+- **La secuencia del primer mensaje (4-sep, dueño):** prueba gratis y demo preguntan en un solo bloque QUÉ VENDE y
+  CUÁNTAS TIENDAS, y cierran ofreciendo las DOS opciones —prueba por su cuenta, o demo con especialista en menos de
+  una hora con sus propios flujos— preguntando cuál prefiere. El correo y el nombre de la tienda se piden hasta que
+  eligió. Según la decisión el agente sigue solo: prueba → correo + tienda + activarla; demo → dos horarios.
+- **Costo (4-sep):** las pruebas de reglas eran lo más caro ($8.07 en 12 pruebas) porque generan cada caso DOS veces
+  con Opus. Bajaron de 24 a 12 casos (~$0.45 por prueba, misma señal). El otro gasto grande fue regenerar mensajes ya
+  redactados: $2.83 en 40 reemplazados. Presupuesto de IA fijado en $60/mes para que avise al 80 %.
