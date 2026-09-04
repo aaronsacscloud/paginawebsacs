@@ -90,3 +90,36 @@ export async function apuntar(cuenta_id: string, canal: string, tipo: string, ex
   });
   if (error) console.error('[abm] no se pudo apuntar la actividad:', error.message);
 }
+
+// ── Rellenar una plantilla con los datos REALES de la cuenta ────────────────
+//
+// Dos formas, y las dos importan:
+//   {{variable}}          se sustituye por el dato; si no hay dato, queda vacío
+//   [[si variable]]…[[/si]]  el trozo entero desaparece cuando el dato falta
+//
+// Lo segundo es lo que evita el ridículo de "con  sucursales" o "Hola ,". Una
+// frase que depende de un dato que no tenemos no se escribe: se borra.
+export function variablesDe(c: any, persona?: any): Record<string, string> {
+  return {
+    nombre: c.nombre || '',
+    ciudad: c.ciudad || '',
+    sucursales: c.sucursales ? String(c.sucursales) : '',
+    rating: c.google_rating ? Number(c.google_rating).toFixed(1) : '',
+    resenas: c.google_resenas ? String(c.google_resenas) : '',
+    plataforma: c.plataforma_web || '',
+    persona: (persona?.nombre || '').split(' ')[0] || '',
+    giro_nombre: GIROS[c.giro] || c.giro || '',
+    ultima_publicacion: c.ultima_publicacion || '',
+    senal: c.senal_expansion || '',
+  };
+}
+
+export function rellenar(texto: string, v: Record<string, string>): string {
+  let t = String(texto || '');
+  // Primero los condicionales: si la variable está vacía, se va el bloque entero.
+  t = t.replace(/\[\[si\s+([a-z_]+)\]\]([\s\S]*?)\[\[\/si\]\]/gi, (_m, k, cuerpo) => (v[k] ? cuerpo : ''));
+  t = t.replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_m, k) => v[k] ?? '');
+  // Limpieza de las costuras que deja quitar un trozo.
+  return t.replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:])/g, '$1')
+          .replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+}

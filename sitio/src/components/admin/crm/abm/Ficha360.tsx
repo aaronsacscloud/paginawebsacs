@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
 import Cargando from '../ui/Cargando';
+import Cadencia from './Cadencia';
 import { ETAPA_TONO, CONFIANZA_TONO, Pastilla, Puntaje, fecha, fechaHora, enlaceDe } from './ui';
 
 const GIROS: Record<string, string> = {
@@ -224,6 +225,12 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── La cadencia, con el texto que se va a mandar ── */}
+      <div style={CAJA}>
+        <p style={H}>Su cadencia</p>
+        <Cadencia cuentaId={id} onCambio={() => { traer(); onCambio?.(); }} />
       </div>
 
       {/* ── Bitácora ── */}
