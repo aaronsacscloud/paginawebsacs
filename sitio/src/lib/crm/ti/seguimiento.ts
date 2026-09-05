@@ -95,7 +95,7 @@ export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolea
   return { cambio: false, lista: true, paridad: p };
 }
 
-type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null; familia?: string; cambios?: string[] };
+type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null; familia?: string; cambios?: string[]; alcance?: 'siempre' | 'aqui' };
 
 /** La decisión del consultor sobre una sugerencia. Enviar/modificar mandan de verdad (por el despachador del agente). */
 export async function decidirSugerencia(envioId: string, o: Decision): Promise<any> {
@@ -105,6 +105,10 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const ahora = new Date().toISOString();
   const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
   const mensajeLead = (e.salida as any)?.ultimo_mensaje || null;
+  // SITUACIÓN RICA (5-sep): los ejemplos se buscan por parecido con «mensaje del lead + situación». Con la situación genérica
+  // de antes («El consultor corrigió la sugerencia…»), las correcciones de silencio/seguimiento (sin mensaje del lead) no las
+  // encontraba nadie después de salir de las 4 más recientes. Ahora la situación dice etapa, origen, objetivo y lo último del lead.
+  const situacionRica = (prefijo: string) => `${prefijo} (${e.origen}, etapa ${estadoGuion}). ${(e.salida as any)?.objetivo ? `El agente buscaba: ${String((e.salida as any).objetivo).slice(0, 160)}. ` : ''}${mensajeLead ? `Lo último que dijo el lead: «${String(mensajeLead).slice(0, 200)}»` : 'El lead no había escrito nada nuevo (toque nuestro).'}`;
   const base = { envio_id: e.id, contact_id: e.contact_id, conversation_id: e.conversation_id, usuario_id: o.userId || null, origen: e.origen, estado_guion: estadoGuion, mensaje_sugerido: e.mensaje };
 
   if (o.decision === 'rechazar') {
@@ -136,7 +140,17 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
       if (!criterio) { criterioInferido = await inferirCriterio(e.mensaje, mensaje, mensajeLead).catch(() => null); if (criterioInferido) criterio = criterioInferido; }
       (o as any).criterio_inferido = criterioInferido;
       const cambiosTxt = Array.isArray(o.cambios) && o.cambios.length ? `CAMBIOS: ${o.cambios.join(', ')}\n` : '';
-      await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El consultor corrigió la sugerencia del agente antes de mandarla (${e.origen})`, mensaje_lead: mensajeLead, respuesta: mensaje, pulida: mensaje, adjuntos, imagen_id: img?.id || null, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}${cambiosTxt}El consultor corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
+      await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: situacionRica('El consultor corrigió la sugerencia del agente antes de mandarla'), mensaje_lead: mensajeLead, respuesta: mensaje, pulida: mensaje, adjuntos, imagen_id: img?.id || null, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}${o.alcance === 'siempre' ? 'ALCANCE: siempre (propuesta como regla)\n' : ''}${cambiosTxt}El consultor corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
+      // «APLICA SIEMPRE» (5-sep): el criterio se vuelve regla PROPUESTA ese mismo minuto (no hasta el ciclo nocturno) y se
+      // prueba con/sin en segundo plano; el dueño la aprueba en Reglas con el resultado a la vista.
+      if (o.alcance === 'siempre' && criterio && criterio.length >= 12) {
+        try {
+          const { proponerRegla, evaluarRegla } = await import('./guion-datos');
+          const pr: any = await proponerRegla({ texto: criterio, etapa: estadoGuion === 'silencio' ? null : estadoGuion, evidencias: [e.id], origen: 'consultor', userId: o.userId || null, nota: `Marcada «aplica siempre» al corregir una sugerencia (${e.origen}).` });
+          (o as any).regla_id = pr?.id || null;
+          if (pr?.id) evaluarRegla(pr.id).catch(() => {});
+        } catch { /* la regla es un extra: la corrección ya quedó guardada */ }
+      }
       await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'modificación en Seguimiento', detalle: { envio_id: e.id, original: e.mensaje, criterio: criterio || null, similitud: sim } }).then(() => {}, () => {});
     }
   }
@@ -184,7 +198,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: [Array.isArray(o.cambios) && o.cambios.length ? `cambios: ${o.cambios.join(', ')}` : null, o.detalle ? String(o.detalle).slice(0, 600) : null].filter(Boolean).join(' · ') || null });
   const par = await revisarParidad();
-  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null };
+  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null, regla_id: (o as any).regla_id || null };
 }
 
 /** El humano contestó por su cuenta (teléfono, otra sesión): la sugerencia se compara y califica sola. */

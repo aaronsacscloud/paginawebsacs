@@ -10,7 +10,7 @@ import { SelectorAdjuntos, MiniRecurso, type AdjuntoSel, type Recurso } from '..
 
 export const CAMBIOS = ['Tono', 'Un dato estaba mal', 'No era el momento', 'Muy largo', 'El saludo', 'La pregunta', 'Agregué contexto suyo', 'Quité el pitch', 'Adjunto'];
 export const MOTIVOS_RECHAZO = ['El tono no es el nuestro', 'Información incorrecta', 'No entendió lo que preguntó', 'No era el momento de mandar nada', 'Muy largo o muy vendedor', 'Este lead lo llevo yo', 'Otro'];
-const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', reenganche: 'Reenganche (lead que reconectó)', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
+const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
 const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map(x => x.trim()).filter(Boolean);
 
 export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; plantillas?: any; nombre_lead?: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
@@ -20,6 +20,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
   const [texto, setTexto] = useState(sug.mensaje);
   const [adj, setAdj] = useState<AdjuntoSel[]>(() => (Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' })));
   const [criterio, setCriterio] = useState('');
+  const [siempre, setSiempre] = useState(false);
   const [cambios, setCambios] = useState<string[]>([]);
   const [motivo, setMotivo] = useState('');
   const [detalle, setDetalle] = useState('');
@@ -37,7 +38,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
     if (decision === 'rechazar' && !motivo) { setErr('Elige por qué: eso es lo que aprende.'); return; }
     setOcupado(true); setErr('');
     const body: any = { accion: 'decidir', envio_id: sug.id, decision };
-    if (decision === 'modificar') { body.mensaje = texto; body.adjuntos = adj; body.detalle = criterio; body.cambios = cambios; }
+    if (decision === 'modificar') { body.mensaje = texto; body.adjuntos = adj; body.detalle = criterio; body.cambios = cambios; body.alcance = siempre && criterio.trim().length >= 12 ? 'siempre' : 'aqui'; }
     if (familia) body.familia = familia;
     if (decision === 'rechazar') { body.motivo = motivo; body.detalle = detalle; }
     const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -119,6 +120,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
           <div className="ds-lbl" style={{ marginTop: 8 }}>Qué cambiaste (para que aprenda por qué, no solo el texto)</div>
           <div className="ds-chips">{CAMBIOS.map(m => <button key={m} className={'ds-chip' + (cambios.includes(m) ? ' on' : '')} onClick={() => setCambios(x => x.includes(m) ? x.filter(y => y !== m) : [...x, m])}>{m}</button>)}</div>
           <input className="ds-in" placeholder="Qué debe considerar el agente la próxima vez (opcional, vale oro): «no repitas el precio si ya lo dio», «usa su nombre de tienda»…" value={criterio} onChange={e => setCriterio(e.target.value)} />
+          {criterio.trim().length >= 12 && <label className="ds-lbl" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, cursor: 'pointer' }}><input type="checkbox" checked={siempre} onChange={e => setSiempre(e.target.checked)} style={{ width: 18, height: 18, margin: 0 }} /> Aplica siempre: se vuelve regla, se prueba con y sin ella, y la apruebas en Reglas</label>}
           <div className="ds-acciones">
             <button className="ds-btn p" style={alto} disabled={ocupado || texto.trim().length < 2} onClick={() => decidir(cambiado ? 'modificar' : 'enviar')}>{ocupado ? 'Enviando…' : cambiado ? 'Enviar con modificaciones' : 'Enviar (sin cambios)'}</button>
             <button className="ds-btn ghost" style={alto} disabled={ocupado} onClick={() => { setModo('ver'); setTexto(sug.mensaje); }}>Volver</button>

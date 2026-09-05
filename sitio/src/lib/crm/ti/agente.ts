@@ -102,7 +102,7 @@ async function charla(contactId: string, limite = 30) {
   return { msjs: msjs.slice(-limite), conversationId: convs?.[0]?.id || null, telefono: convs?.[0]?.telefono || null };
 }
 
-export async function ejemplosAprobados(estado?: string, mensaje?: string) {
+export async function ejemplosAprobados(estado?: string, mensaje?: string, out?: { ids: string[] }) {
   // POR PARECIDO, no por fecha (3-sep): los 8 más parecidos al mensaje del lead (trigramas + empujón por etapa y por ser
   // corrección de una persona) + las 4 correcciones más recientes siempre. Si no hay mensaje, cae al orden por fecha.
   let data: any[] = [];
@@ -123,6 +123,9 @@ export async function ejemplosAprobados(estado?: string, mensaje?: string) {
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
   const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
+  // Qué ejemplos entraron a ESTE prompt: se cuentan (usos) y viajan en la salida, para poder correlacionarlos con si el lead contestó.
+  if (out) out.ids = lista.map((e: any) => e.id).filter(Boolean);
+  if (lista.length) supabase.rpc('ti_ejemplos_usar', { ids: lista.map((e: any) => e.id).filter(Boolean) }).then(() => {}, () => {});
   return '\n\nEJEMPLOS APROBADOS POR EL DUEÑO (así se contesta; imita el criterio, no el texto):\n'
     + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); const ev = String(e.por_que || '').match(/^EVITAR:\s*([^\n]+)/m); const partes = partirMensaje(e.pulida || ''); return `[${e.estado}] Lead: ${e.situacion}\nNosotros${partes.length > 1 ? ` (${partes.length} mensajes seguidos)` : ''}: ${partes.length > 1 ? partes.map((p, i) => `\n  Mensaje ${i + 1}: ${p}`).join('') : e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${ev ? `\nEvitar: ${ev[1].trim()}` : ''}${Array.isArray(e.adjuntos) && e.adjuntos.length ? `\n(con adjuntos: ${e.adjuntos.map((a: any) => `${TIPO_L[a.tipo as 'image'] || a.tipo} «${a.nombre}» [${a.id}]`).join(', ')})` : e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n') + bloqueRech;
 }
@@ -267,6 +270,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const cfgMod: any = await leerConfig().catch(() => ({}));
+  const ejemplosOut = { ids: [] as string[] };
   const modelo = opts.modelo || modeloPara(opts.tarea || 'respuesta', cfgMod);   // opts.modelo: solo para el A/B de modelos
   const r = await anthropic.messages.create({
     model: modelo, max_tokens: 1800,
@@ -276,7 +280,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       // SIN cache_control a propósito (4-sep): desde que los ejemplos se eligen por parecido al mensaje del lead,
       // este bloque cambia en CADA llamada. Marcarlo para caché no ahorraba nada y encima cobraba la escritura del
       // prefijo completo (guion incluido) cada vez. El bloque de arriba, que sí es fijo, se sigue cacheando.
-      { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined)) || ' ' },
+      { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined, ejemplosOut)) || ' ' },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${bloqueNom}${nota ? `\n\n${nota}` : ''}${rafagaTxt}${fotoTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
@@ -289,6 +293,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     salida.ultimo_mensaje = (rafaga.length ? rafaga.map(textoDe).join(' ⏎ ') : String(ultimo?.cuerpo || ultimo?.transcript || '')).slice(0, 600);
     salida.cita_snapshot = cita ? { id: cita.id, fecha: cita.fecha, hora: String(cita.hora_inicio).slice(0, 5), estado: cita.estado } : null;
     salida.ultimos_mensajes = rafaga.map(m => textoDe(m).slice(0, 300));
+    salida.ejemplos_usados = ejemplosOut.ids;
     // Los horarios que el modelo dice haber mencionado, solo si existen de verdad (lista actual o ya ofrecidos): el
     // siguiente turno los lee para el «sí, el que sea».
     const reales = [...horarios.map(h => ({ ...h, slug: 'demo' })), ...horariosLlamada.map(h => ({ ...h, slug: 'llamada-discovery' })), ...ofrecidos];

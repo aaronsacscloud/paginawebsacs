@@ -40,3 +40,5 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 - [x] **2026-09-04 · Cola de trabajo.** «Quiero enviarte tareas mientras haces esta, pero en general, cuando mando
       algo mientras trabajas, que siempre sea considerado para agregarlo en una cola de trabajo hasta terminar por
       completo la tarea en curso.» → Regla escrita en `CLAUDE.md` y esta cola creada.
+
+- 2026-09-05 · «ahorita lo único que importa es seguirla entrenando; lo que sí quiero que veas es si cuando modifico una respuesta realmente está aprendiendo o faltan más campos para poder mejorar el prompt, o qué me falta» → tomada al cerrar el fix del reenganche.

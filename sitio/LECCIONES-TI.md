@@ -694,3 +694,8 @@ del dueño.
 ## 2026-09-05 · Contratación
 - **Lo que el lead dice en este mensaje tiene que contar en este turno.** El estado se actualizaba con los `datos` del modelo DESPUÉS de responder, así que «pásame los datos de transferencia» recibía un «te los paso en un momento». Ahora se parsea el texto antes de armar la nota.
 - **Dos vías para la misma verdad son un bug.** La cuenta bancaria pública de /terminos (DTA) no es la que cobra (Kiether). El agente usa una constante única (`CUENTA_PAGO`) y `bank_accounts` la tiene cargada para las cotizaciones.
+
+## 2026-09-05 · ¿De verdad aprende cuando el consultor modifica?
+- **Sí guarda, pero no siempre encuentra.** La corrección entraba como ejemplo aprobado al instante, pero los ejemplos se buscan por parecido con «mensaje del lead + situación», y la situación era un texto genérico. Las correcciones de toques (silencio/seguimiento, sin mensaje del lead) solo vivían en «las 4 más recientes» y luego desaparecían del prompt. Ahora la situación dice etapa, origen, objetivo y lo último del lead, y el parecido también mira el CRITERIO.
+- **Un criterio no es una regla hasta que alguien lo prueba.** El criterio se mostraba pegado al ejemplo; convertirlo en regla dependía del ciclo nocturno. Ahora la casilla «aplica siempre» lo propone como regla y lo prueba en el momento.
+- **Sin `usos` ni `ejemplos_usados` no hay forma de saber qué lección sirvió.** Ahora cada prompt cuenta qué ejemplos usó y la salida los lleva, para correlacionar con si el lead contestó.

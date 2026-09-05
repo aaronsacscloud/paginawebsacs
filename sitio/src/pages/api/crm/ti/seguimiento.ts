@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   if (b.accion === 'decidir') {
     if (!b.envio_id || !['enviar', 'modificar', 'rechazar'].includes(b.decision)) return json({ error: 'Falta envio_id o decisión' }, 400);
-    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, familia: b.familia, cambios: b.cambios, userId: user.id });
+    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, familia: b.familia, cambios: b.cambios, alcance: b.alcance, userId: user.id });
     return json(r, r?.error ? 400 : 200);
   }
   if (b.accion === 'config') {
