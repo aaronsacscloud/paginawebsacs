@@ -13,7 +13,7 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       estoy de viaje o llámame en 3 días (registrar una llamada de discovery) o contáctame en 3 semanas. Cuando pide
       una acción concreta: responder con empatía y programar internamente el seguimiento; si pide llamada un día
       específico, preguntar hora y agendar; si dice contáctame en 30 días, programar el seguimiento a 30 días. Eso va
-      en otra subsección de Trabajo inteligente tipo mensajes por agenda. Considerar otros 50 casos típicos.» → EN CURSO.
+      en otra subsección de Trabajo inteligente tipo mensajes por agenda. Considerar otros 50 casos típicos.» → HECHO (5-sep): motor de compromisos + sección Programados + respuesta en vivo 24 h + Evaluar en el inbox + chips de cambios.
 
 - [ ] **2026-09-05 · El nombre y los mensajes de bot.** «Verifica que el nombre esté bien, que sea un nombre real, y
       llámala por su nombre; el nombre al inicio es importante. En los primeros dos mensajes sí se usa, como "Hola,
@@ -33,7 +33,7 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       estoy viendo o qué otras cosas debemos mejorar en el entendimiento de la IA de qué mensaje enviar para
       asegurar que siempre sea el mejor mensaje posible. Utiliza un referee que analice bien cada respuesta hasta
       que sea 10/10 y avísame cuando se hayan cubierto los criterios de aceptación de cada caso por el cual llega
-      un lead, se le da seguimiento y también la descalificación.» → EN CURSO.
+      un lead, se le da seguimiento y también la descalificación.» → HECHO (5-sep).
 
 ## Hecho
 

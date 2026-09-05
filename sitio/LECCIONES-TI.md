@@ -662,3 +662,26 @@ Lo que NO se puede arreglar solo con código: en entrenamiento cada respuesta es
 Si se quiere contestar en minutos de forma fiable, la opción es dejar que el agente conteste solo a las
 conversaciones ACTIVAS (el lead escribió hace menos de 30 min) y que el resto siga pasando por revisión. Es decisión
 del dueño.
+
+## 2026-09-05 · Compromisos con fecha, respuesta en vivo y evaluación después de enviado
+
+- **`compromisos.ts` + tabla `ti_compromisos`**: cuando el lead pide algo con tiempo («llámame el jueves», «en 30 días»,
+  «después de quincena», «estoy de viaje, regreso el 20», «lo checo»), Sonnet lo detecta con la fecha de hoy y el día
+  de la semana (10/10 en frases reales, $0.003 por mensaje), se programa el seguimiento EXACTO y el agente contesta
+  confirmándolo con empatía. Mientras tanto **silencio total** (decisión del dueño): se escribe `agente_estado.pausa_hasta`
+  y ni el reloj de silencio ni el seguimiento corto lo tocan. Al vencer, el observador genera el mensaje con el
+  contexto («el 5 dijo que…») y, si era llamada, deja la tarea al consultor a esa hora.
+- **La hora es la SUYA** (`horaParaEl`): la que pidió → `mejor_hora_wa` → la hora a la que escribió → 10; acotada a
+  9-19. Fin de semana → lunes (`ajustarFecha`). «Márcame» sin hora → estado `preguntando_hora` y el agente pregunta.
+  «Lo checo» (el más común) → contesta amigable ofreciendo la otra semana o preguntar por aquí, y se programa a 5 días;
+  si tampoco entonces contesta, va camino a descalificarse.
+- **Sección «Programados»** (Trabajo inteligente → `ti-compromisos`): agrupado en sin hora / hoy / mañana / semana /
+  después, con qué dijo textual, qué haremos, cuándo y por qué esa hora; mover, fijar hora, enviar ahora, cancelar.
+- **Respuesta en vivo las 24 h** (decisión del dueño): si el lead escribió hace ≤30 min, el envío nace `pendiente` con
+  `salida.auto_vivo=true` y el despachador lo manda aunque el agente esté en entrenamiento (`cfg.auto_en_vivo=false`
+  lo apaga). Probado: en sombra lo INTENTA mandar (falló solo por la llave local de Kapso), no lo deja en revisión.
+- **Evaluar después de enviado** (`evaluarEnviado`): botón «Evaluar» en cada burbuja del agente en el inbox → nota
+  1-10, qué falló (chips), la versión que hubieras mandado y el criterio. Cuenta para la paridad y la versión entra
+  como ejemplo aprobado. Así se prueban los tiempos sin perder el aprendizaje.
+- **Campos ricos al modificar**: chips «qué cambiaste» (tono, dato, momento, largo, saludo, pregunta, contexto, pitch,
+  adjunto) → `CAMBIOS:` en el ejemplo y en la calificación. La lección deja de ser solo el texto.
