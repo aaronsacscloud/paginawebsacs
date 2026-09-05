@@ -27,6 +27,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
   const [gal, setGal] = useState<Recurso[]>(galeria || []);
   const [familia, setFamilia] = useState<string>('');
   const [verPlantilla, setVerPlantilla] = useState(false);
+  const [verVentana, setVerVentana] = useState(false);   // móvil: la explicación de la plantilla va plegada en una línea
   const [ocupado, setOcupado] = useState(false);
   const [err, setErr] = useState('');
   useEffect(() => { setModo('ver'); setTexto(sug.mensaje); setAdj((Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' }))); setCriterio(''); setCambios([]); setMotivo(''); setDetalle(''); setErr(''); setFamilia(''); setVerPlantilla(false); }, [sug.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -62,7 +63,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
       <div className="ds-cab">
         <span className="ds-tag">{ORIGEN_L[sug.origen || ''] || 'Sugerencia del agente'}</span>
         {sug.estado_guion && <span className="ds-suave">· etapa {sug.estado_guion}</span>}
-        {sug.objetivo && <span className="ds-suave" title={sug.objetivo}>· {sug.objetivo}</span>}
+        {sug.objetivo && !movil && <span className="ds-suave" title={sug.objetivo}>· {sug.objetivo}</span>}
       </div>
       {sug.ultimo_mensaje && modo === 'ver' && compacto && <div className="ds-lead"><span>El lead:</span> «{sug.ultimo_mensaje}»</div>}
       {modo !== 'modificar' && (
@@ -79,6 +80,9 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
         const elegida = grupo?.marketing?.aprobada ? grupo.marketing : grupo?.utility?.aprobada ? grupo.utility : pl.recomendada;
         const resp = elegida?.categoria === 'MARKETING' && grupo?.utility?.aprobada ? grupo.utility : null;
         const previa = elegida?.cuerpo ? String(elegida.cuerpo).replace('{{1}}', String(sug.nombre_lead || 'Hola')).replace('{{2}}', elegida.categoria === 'MARKETING' ? (modo === 'modificar' ? texto : sug.mensaje) : String(elegida.vista_previa || '')) : '';
+        if (movil && !verVentana) return (
+          <div className="ds-ventana min">Ventana de 24 h cerrada: sale dentro de la plantilla <b>{grupo?.label || elegida.nombre}</b>{elegida.categoria === 'MARKETING' ? ' con tu texto completo' : ' (línea neutra; tu texto llega cuando conteste)'}. <button className="ds-v-link" onClick={() => setVerVentana(true)}>cambiar</button></div>
+        );
         return (
           <div className="ds-ventana">
             <div className="ds-v-cab">
@@ -144,56 +148,57 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
 }
 
 const CSS = `
-.ds{font-family:inherit;color:#241d43}
+.ds{font-family:inherit;color:var(--texto,#4a4756)}
 .ds-cab{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:12px}
-.ds-tag{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5B4BD6;background:#EEECFE;border-radius:999px;padding:3px 8px}
-.ds-suave{color:#8e88a8;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ds-lead{font-size:12.5px;color:#4a4658;margin:0 0 8px;line-height:1.4}.ds-lead span{color:#8e88a8}
+.ds-tag{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--morado-tinta,#5B4BD6);background:var(--morado-agua,#EEECFE);border-radius:999px;padding:3px 8px}
+.ds-suave{color:var(--suave,#71707C);font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-lead{font-size:12.5px;color:var(--texto,#4a4756);margin:0 0 8px;line-height:1.4}.ds-lead span{color:var(--suave,#71707C)}
 .ds-burbujas{display:grid;gap:6px}
-.ds-burbuja{background:#e7f7ee;border-radius:12px 12px 12px 4px;padding:10px 12px;font-size:14px;line-height:1.5;white-space:pre-wrap;max-width:640px}
+.ds-burbuja{background:var(--verde-a,#e7f7ee);color:var(--tinta,#241d43);border-radius:12px 12px 12px 4px;padding:10px 12px;font-size:14px;line-height:1.5;white-space:pre-wrap;max-width:640px}
 .ds.compacto .ds-burbuja{font-size:13.5px;padding:8px 10px}
-.ds-adj{display:flex;gap:8px;flex-wrap:wrap}.ds-adj-i{display:flex;align-items:center;gap:6px;border:1px solid #e8e5f0;border-radius:10px;padding:4px 8px 4px 4px;font-size:12px;font-weight:700;background:#fff}
+.ds-adj{display:flex;gap:8px;flex-wrap:wrap}.ds-adj-i{display:flex;align-items:center;gap:6px;border:1px solid var(--linea,#e8e5f0);border-radius:10px;padding:4px 8px 4px 4px;font-size:12px;font-weight:700;background:var(--carta,#fff);color:var(--tinta,#241d43)}
 .ds-acciones{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.ds-btn{border:1px solid #e8e5f0;background:#fff;color:#241d43;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:10px}
-.ds-btn.p{flex:1;justify-content:center;background:#5B4BD6;border-color:#5B4BD6;color:#fff;box-shadow:0 8px 20px rgba(91,75,214,.22)}
-.ds-btn.peligro{background:#b3261e;border-color:#b3261e;color:#fff}.ds-btn.ghost{border-color:transparent;color:#8e88a8}
+.ds-btn{border:1px solid var(--linea,#e8e5f0);background:var(--carta,#fff);color:var(--tinta,#241d43);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:10px}
+.ds-btn.p{flex:1;justify-content:center;background:var(--morado-tinta,#5B4BD6);border-color:var(--morado-tinta,#5B4BD6);color:#fff}
+.ds-btn.peligro{background:var(--rojo-t,#b3261e);border-color:var(--rojo-t,#b3261e);color:#fff}.ds-btn.ghost{border-color:transparent;color:var(--suave,#71707C)}
 .ds-btn small{font-size:10px;font-weight:800;border:1px solid currentColor;border-radius:5px;padding:0 5px;opacity:.7}.ds-btn:disabled{opacity:.5;cursor:default}
 .ds.compacto .ds-btn{padding:9px 12px;font-size:13px;border-radius:10px}
-.ds-editor{margin-top:6px}.ds-lbl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8e88a8;margin:6px 0}
-.ds-ta,.ds-in{width:100%;box-sizing:border-box;border:1px solid #e8e5f0;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;line-height:1.45;background:#fff;color:#241d43}
-.ds-in{font-size:12.5px;padding:8px 10px;margin-top:4px}.ds-ta:focus,.ds-in:focus{outline:none;border-color:#5B4BD6;box-shadow:0 0 0 3px rgba(91,75,214,.12)}
-.ds-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.ds-chip{border:1px solid #e8e5f0;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#4a4658}.ds-chip.on{background:#241d43;border-color:#241d43;color:#fff}
-.ds .ti-btn{border:1px solid #e8e5f0;background:#fff;color:#241d43;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
-.ds .ti-chip-btn{border:1px solid #e8e5f0;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#4a4658}.ds .ti-chip-btn.on{background:#241d43;border-color:#241d43;color:#fff}
-.ds .ti-suave{color:#8e88a8;font-size:12px}.ds .ti-campo{border:1px solid #e8e5f0;border-radius:10px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box}
-.ds-ventana{margin-top:8px;font-size:12.5px;line-height:1.5;background:#fff4dc;color:#8a5a00;border-radius:10px;padding:10px 12px}
-.ds-v-cab{margin-bottom:6px}.ds-v-link{border:none;background:none;color:#8a5a00;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:12px;margin-left:6px;padding:0}
+.ds-editor{margin-top:6px}.ds-lbl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--suave,#71707C);margin:6px 0}
+.ds-ta,.ds-in{width:100%;box-sizing:border-box;border:1px solid var(--linea,#e8e5f0);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;line-height:1.45;background:var(--carta,#fff);color:var(--tinta,#241d43)}
+.ds-in{font-size:12.5px;padding:8px 10px;margin-top:4px}.ds-ta:focus,.ds-in:focus{outline:none;border-color:var(--morado-tinta,#5B4BD6);box-shadow:0 0 0 3px rgba(91,75,214,.15)}
+.ds-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.ds-chip{border:1px solid var(--linea,#e8e5f0);background:var(--carta,#fff);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--texto,#4a4756)}.ds-chip.on{background:var(--morado-tinta,#5B4BD6);border-color:var(--morado-tinta,#5B4BD6);color:#fff}
+.ds .ti-btn{border:1px solid var(--linea,#e8e5f0);background:var(--carta,#fff);color:var(--tinta,#241d43);border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.ds .ti-chip-btn{border:1px solid var(--linea,#e8e5f0);background:var(--carta,#fff);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--texto,#4a4756)}.ds .ti-chip-btn.on{background:var(--morado-tinta,#5B4BD6);border-color:var(--morado-tinta,#5B4BD6);color:#fff}
+.ds .ti-suave{color:var(--suave,#71707C);font-size:12px}.ds .ti-campo{border:1px solid var(--linea,#e8e5f0);border-radius:10px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box;background:var(--carta,#fff);color:var(--tinta,#241d43)}
+.ds-ventana{margin-top:8px;font-size:12.5px;line-height:1.5;background:var(--neutro,#f2f2f5);color:var(--texto,#4a4756);border-radius:10px;padding:10px 12px}.ds-ventana b{color:var(--tinta,#241d43)}
+.ds-ventana.min{font-size:12px;padding:8px 10px}
+.ds-v-cab{margin-bottom:6px}.ds-v-link{border:none;background:none;color:var(--morado-tinta,#5B4BD6);font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:12px;margin-left:6px;padding:0}
 .ds-v-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ds-v-tag{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 8px}.ds-v-tag.mk{background:#e7f7ee;color:#14532d}.ds-v-tag.ut{background:#ecebf2;color:#4a4658}
-.ds-ventana code{font-size:11.5px;background:#fff;border-radius:5px;padding:1px 5px;color:#6b6580}
-.ds-v-sel{border:1px solid #e6d5a8;border-radius:8px;padding:3px 6px;font-family:inherit;font-size:12px;font-weight:700;color:#8a5a00;background:#fff}
+.ds-v-tag{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 8px;background:var(--carta,#fff);color:var(--texto,#4a4756);border:1px solid var(--linea,#e8e5f0)}
+.ds-ventana code{font-size:11.5px;background:var(--carta,#fff);border-radius:5px;padding:1px 5px;color:var(--suave,#71707C)}
+.ds-v-sel{border:1px solid var(--linea,#e8e5f0);border-radius:8px;padding:3px 6px;font-family:inherit;font-size:12px;font-weight:700;color:var(--tinta,#241d43);background:var(--carta,#fff)}
 .ds-v-prev{margin-top:8px}.ds-v-lbl{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.8;margin-bottom:4px}
-.ds-v-burb{background:#fff;border-radius:10px 10px 10px 4px;padding:9px 11px;color:#241d43;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.ds-v-burb{background:var(--carta,#fff);border-radius:10px 10px 10px 4px;padding:9px 11px;color:var(--tinta,#241d43);font-size:13px;line-height:1.5;white-space:pre-wrap}
 .ds-v-nota{margin-top:6px;font-size:11.5px;opacity:.9}
 .ds-v-esc{margin-top:6px;font-size:11.5px;opacity:.9}
 /* MÓVIL (4-sep): en el teléfono los tres botones no caben en una fila —«Rechazar» salía cortado— y 36 px de alto
    quedan por debajo del dedo. Se apilan: la acción principal ocupa el ancho y las otras dos se reparten abajo.
    Y la burbuja del mensaje se hace scrollable para que los botones nunca se pierdan fuera de la pantalla. */
-@media (max-width:560px){
+@media (max-width:899px){
   .ds-acciones{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .ds-acciones .ds-btn{width:100%;justify-content:center;min-height:46px;font-size:14.5px;padding:12px 10px}
+  .ds-acciones .ds-btn{width:100%;justify-content:center;min-height:48px;font-size:15px;padding:12px 10px}
   .ds-acciones .ds-btn.p,.ds-acciones .ds-btn.peligro{grid-column:1 / -1}
   .ds-btn small{display:none}
-  .ds-burbuja,.ds.compacto .ds-burbuja{max-height:34vh;overflow-y:auto;font-size:14px}
+  .ds-burbuja,.ds.compacto .ds-burbuja{max-height:38vh;overflow-y:auto;font-size:15px;line-height:1.5}
   .ds-ta{font-size:16px !important}      /* 16 px o iOS hace zoom al enfocar */
   .ds-in{font-size:15px}
   .ds-chip{padding:9px 12px;font-size:12.5px}
   .ds-cab{font-size:11.5px}
   .ds-v-fila{gap:6px}.ds-v-sel{flex:1 1 100%;min-height:38px}
   /* Al editar, la tarjeta crece y los botones se iban abajo del pliegue: se quedan pegados al fondo de la compuerta. */
-  .ds.compacto .ds-editor .ds-acciones{position:sticky;bottom:0;background:#fbfaff;padding:8px 0 2px;margin-top:8px;box-shadow:0 -8px 12px -8px rgba(36,29,67,.18)}
+  .ds.compacto .ds-editor .ds-acciones{position:sticky;bottom:0;background:var(--carta,#fbfaff);padding:8px 0 2px;margin-top:8px}
   .ds.compacto .ds-ta{max-height:32vh}
   .ds-v-burb{max-height:26vh;overflow-y:auto}
 }
-.ds-err{margin-top:8px;font-size:12.5px;font-weight:700;color:#b3261e;background:#fde7e5;border-radius:8px;padding:6px 10px}
+.ds-err{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--rojo-t,#b3261e);background:var(--rojo-a,#fde7e5);border-radius:8px;padding:6px 10px}
 `;

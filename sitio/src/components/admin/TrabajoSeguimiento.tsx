@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import DecisionSugerencia from './crm/ti/DecisionSugerencia';
 import ContextoLead, { MiniHilo } from './crm/ti/ContextoLead';
 import ReglasAgente from './ReglasAgente';
+import { useIsMobile } from '../../lib/ui/mobile';
 
 const fecha = (s?: string | null) => s ? new Date(s).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' }) : '—';
 const WEB_L: Record<string, string> = { prueba_gratis: 'Pide prueba gratis', demo: 'Quiere agendar demo', info: 'Pide información', precios: 'Pregunta precios', partners: 'Programa de partners' };
@@ -28,6 +29,8 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const [activando, setActivando] = useState(false);
   const [preparando, setPreparando] = useState(false);
   const [filtro, setFiltro] = useState('todos');   // por tipo de mensaje: la cola mezcla respuestas, seguimientos y cotizaciones
+  const [verMas, setVerMas] = useState(false);       // móvil: los números finos y el bloque de 1-4 días van plegados
+  const isMobile = useIsMobile();
   const cargar = () => fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 45000); return () => clearInterval(t); }, []);
   const aviso = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); };
@@ -36,7 +39,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   if (d.error) return <div className="ti-lienzo"><div className="ti-card">{d.error}</div></div>;
   const p = d.paridad || {};
   const todasPend: any[] = d.pendientes || [];
-  const ORIGEN_L: Record<string, string> = { respuesta: 'Respuestas a su mensaje', reenganche: 'Reenganches (leads que reconectaron)', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toques por silencio', cotizacion: 'Seguimiento de cotización', reenganche: 'Reenganche', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita' };
+  const ORIGEN_L: Record<string, string> = { respuesta: 'Respuestas a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toques por silencio', cotizacion: 'Seguimiento de cotización', reenganche: 'Reenganche', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita' };
   const origenes = [...new Set(todasPend.map(x => x.origen).filter(Boolean))];
   const pend: any[] = filtro === 'todos' ? todasPend : todasPend.filter(x => x.origen === filtro);
   const actual = pend[Math.min(idx, Math.max(0, pend.length - 1))] || null;
@@ -70,7 +73,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
           )}
           <button className="sg-link" onClick={() => setComo(true)}>¿Cómo funciona?</button>
         </div>
-        <div className="sg-fila2">
+        <div className={"sg-fila2" + (isMobile && !verMas ? " oculta" : "")}>
           <span><b>{p.tal_cual || 0}</b> tal cual</span><span><b>{p.modificadas || 0}</b> modificadas</span><span><b>{p.rechazadas || 0}</b> rechazadas</span><span><b>{p.humano || 0}</b> por su cuenta</span><span><b>{p.hoy || 0}</b> hoy</span>
           {(p.por_usuario || []).slice(0, 4).map((u: any) => <span key={u.id} className="sg-u">{u.nombre}: {u.promedio} en {u.n}</span>)}
           {d.ofertas && d.ofertas.total_30d > 0 && <span className="sg-u" title="Demos o llamadas que el agente propuso sin conocer giro, tiendas y necesidad (30 días). Meta: menos del 10 %">ofertas prematuras <b>{d.ofertas.pct_prematuras}%</b> de {d.ofertas.total_30d}{d.ofertas.completas?.n > 3 && d.ofertas.prematuras_res?.n > 3 ? ` · agendan ${d.ofertas.completas.pct_agendan}% con datos vs ${d.ofertas.prematuras_res.pct_agendan}% sin` : ''}</span>}
@@ -84,13 +87,27 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
           )}
           <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir{pend.length > 1 ? ` · ${Math.min(idx, pend.length - 1) + 1} de ${pend.length}` : ''} · </> : null}{vista !== 'pendientes' && <><button className="sg-link" onClick={() => { setVista('pendientes'); setIdx(0); }}>por decidir</button> · </>}{vista !== 'historial' && <><button className="sg-link" onClick={() => setVista('historial')}>historial</button> · </>}{vista !== 'reglas' && <button className="sg-link" onClick={() => setVista('reglas')}>reglas</button>}</span>
         </div>
+        {isMobile && (
+          <div className="sg-mfila">
+            {vista === 'pendientes' && origenes.length > 1 && (
+              <select className="sg-sel" value={filtro} onChange={e => { setFiltro(e.target.value); setIdx(0); }}>
+                <option value="todos">Todos ({todasPend.length})</option>
+                {origenes.map(o => <option key={o} value={o}>{ORIGEN_L[o] || o} ({todasPend.filter(x => x.origen === o).length})</option>)}
+              </select>
+            )}
+            <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir</> : <button className="sg-link" onClick={() => { setVista('pendientes'); setIdx(0); }}>por decidir</button>}</span>
+            <button className="sg-link" onClick={() => setVista('historial')}>historial</button>
+            <button className="sg-link" onClick={() => setVista('reglas')}>reglas</button>
+            <button className="sg-link" onClick={() => setVerMas(v => !v)}>{verMas ? 'menos' : 'detalles'}</button>
+          </div>
+        )}
         {msg && <div className={'sg-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
 
       {vista === 'pendientes' && pend.filter((x: any) => x.urgencia === 'ahora').length > 0 && (
         <div className="sg-urge" style={{ marginBottom: 12 }}><b>{pend.filter((x: any) => x.urgencia === 'ahora').length}</b> te están esperando ahora mismo: escribieron hace menos de 30 minutos y ya están al principio de la cola.</div>
       )}
-      {vista === 'pendientes' && d.corto && d.corto.ventana > 0 && (
+      {vista === 'pendientes' && d.corto && d.corto.ventana > 0 && (!isMobile || verMas || (d.corto.por_preparar > 0 && !pend.length)) && (
         <div className="sg-corto">
           <div>
             <b>{d.corto.ventana} prospectos</b> llevan entre 1 y 4 días sin contestarnos
@@ -111,37 +128,47 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
         <div className="ti-card sg-vacio"><b>Nada por decidir.</b><div className="ti-suave">Cuando un lead escriba, el agente redacta y la sugerencia aparece aquí y en su conversación del inbox.</div></div>
       )}
       {vista === 'pendientes' && actual && (
-        <div className={'ti-card sg-card' + (saliendo ? ' saliendo' : '')} key={actual.id}>
+        <div className={'ti-card sg-card' + (saliendo ? ' saliendo' : '') + (isMobile ? ' movil' : '')} key={actual.id}>
           <div className="sg-grid">
             <div className="sg-quien">
-              <div className="sg-lbl">Quién es</div>
+              {!isMobile && <div className="sg-lbl">Quién es</div>}
               <div className="sg-nombre">{actual.contacto?.nombre || 'Sin nombre'}{actual.contacto?.empresa ? <span> · {actual.contacto.empresa}</span> : null}</div>
-              <div className="ti-suave" style={{ margin: 0 }}>{actual.telefono}{actual.contacto?.etapa ? ` · ${actual.contacto.etapa}` : ''}{actual.contacto?.giro ? ` · ${actual.contacto.giro}` : ''} · propuesta {fecha(actual.created_at)}</div>
+              <div className="sg-meta">{isMobile ? [actual.contacto?.giro, actual.contacto?.etapa].filter(Boolean).join(' · ') || actual.telefono : <>{actual.telefono}{actual.contacto?.etapa ? ` · ${actual.contacto.etapa}` : ''}{actual.contacto?.giro ? ` · ${actual.contacto.giro}` : ''} · propuesta {fecha(actual.created_at)}</>}</div>
               {actual.lead_web && (
                 <div className="sg-sit sg-web">
                   <div><span className="sg-sit-chip web">Lead nuevo de la página · {WEB_L[actual.lead_web.intencion] || actual.lead_web.intencion}</span></div>
                   {actual.lead_web.mensaje_inicial && <div className="sg-p"><span>Llegó diciendo:</span> «{actual.lead_web.mensaje_inicial}»</div>}
-                  {actual.lead_web.url && <div className="ti-suave" style={{ margin: '4px 0 0' }}>Venía de {actual.lead_web.url}</div>}
-                  {actual.lead_web.referido && <div className="ti-suave" style={{ margin: '4px 0 0' }}>Referido por {actual.lead_web.referido}</div>}
-                  <div className="sg-p"><span>Secuencia:</span> {WEB_SEC[actual.lead_web.intencion] || '—'}</div>
+                  {!isMobile && actual.lead_web.url && <div className="sg-meta" style={{ margin: '4px 0 0' }}>Venía de {actual.lead_web.url}</div>}
+                  {actual.lead_web.referido && <div className="sg-meta" style={{ margin: '4px 0 0' }}>Referido por {actual.lead_web.referido}</div>}
+                  {!isMobile && <div className="sg-p"><span>Secuencia:</span> {WEB_SEC[actual.lead_web.intencion] || '—'}</div>}
                 </div>
               )}
               {actual.seguimiento && (
                 <div className="sg-sit">
-                  <div><span className="sg-sit-chip">{actual.seguimiento.label}</span><span className="ti-suave" style={{ margin: 0 }}>{actual.seguimiento.horas} h sin contestar · {actual.seguimiento.respondio_antes ? 'ya nos había contestado antes' : 'nunca nos ha contestado'}</span></div>
-                  <div className="sg-p" style={{ marginTop: 6 }}>{actual.seguimiento.resumen}</div>
-                  {actual.seguimiento.falta && <div className="sg-p"><span>Falta:</span> {actual.seguimiento.falta}</div>}
+                  <div className="sg-sit-fila"><span className="sg-sit-chip">{actual.seguimiento.label}</span><span className="sg-meta">{actual.seguimiento.horas} h sin contestar{isMobile ? '' : ` · ${actual.seguimiento.respondio_antes ? 'ya nos había contestado antes' : 'nunca nos ha contestado'}`}</span></div>
+                  {!isMobile && <div className="sg-p" style={{ marginTop: 6 }}>{actual.seguimiento.resumen}</div>}
+                  {!isMobile && actual.seguimiento.falta && <div className="sg-p"><span>Falta:</span> {actual.seguimiento.falta}</div>}
                 </div>
               )}
-              {actual.ultimo_mensaje && <div className="sg-p"><span>Escribió:</span> «{actual.ultimo_mensaje}»</div>}
-              {actual.objetivo && <div className="sg-p"><span>El agente busca:</span> {actual.objetivo}</div>}
-              {actual.contact_id && <MiniHilo contactId={actual.contact_id} n={10} onAbrir={() => setCtx(actual.contact_id)} />}
+              {actual.ultimo_mensaje && <div className="sg-p sg-dijo"><span>Escribió:</span> «{actual.ultimo_mensaje}»</div>}
+              {!isMobile && actual.objetivo && <div className="sg-p"><span>El agente busca:</span> {actual.objetivo}</div>}
+              {!isMobile && actual.contact_id && <MiniHilo contactId={actual.contact_id} n={10} onAbrir={() => setCtx(actual.contact_id)} />}
             </div>
             <div className="sg-dice">
-              <div className="sg-lbl">Así respondería el agente</div>
-              <DecisionSugerencia sug={actual} galeria={d.galeria || []} atajos onDecidido={onDecidido} />
+              {!isMobile && <div className="sg-lbl">Así respondería el agente</div>}
+              <DecisionSugerencia sug={actual} galeria={d.galeria || []} atajos={!isMobile} movil={isMobile} onDecidido={onDecidido} />
             </div>
           </div>
+          {isMobile && (
+            <details className="sg-ctx">
+              <summary>Contexto y conversación</summary>
+              {actual.seguimiento?.resumen && <div className="sg-p">{actual.seguimiento.resumen}</div>}
+              {actual.seguimiento?.falta && <div className="sg-p"><span>Falta:</span> {actual.seguimiento.falta}</div>}
+              {actual.objetivo && <div className="sg-p"><span>El agente busca:</span> {actual.objetivo}</div>}
+              <div className="sg-meta" style={{ marginTop: 6 }}>{actual.telefono} · propuesta {fecha(actual.created_at)}</div>
+              {actual.contact_id && <MiniHilo contactId={actual.contact_id} n={8} abiertoInicial onAbrir={() => setCtx(actual.contact_id)} />}
+            </details>
+          )}
         </div>
       )}
       {vista === 'reglas' && <ReglasAgente />}
@@ -220,42 +247,59 @@ function PanelAjustes({ d, onGuardado }: { d: any; onGuardado: () => void }) {
 }
 
 const CSS = `
-.sg{max-width:1120px}
+.sg{max-width:1120px;color:var(--texto)}
 .sg-head{margin:0 0 14px}
 .sg-fila1{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.sg-num{display:flex;align-items:baseline;gap:4px}.sg-num b{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1}.sg-num span{font-size:13px;color:#8e88a8;font-weight:700}
+.sg-num{display:flex;align-items:baseline;gap:4px}.sg-num b{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--tinta)}.sg-num span{font-size:13px;color:var(--suave);font-weight:700}
 .sg-barra-wrap{flex:1;min-width:240px}
-.sg-barra{position:relative;height:10px;background:#ecebf2;border-radius:999px;overflow:visible}.sg-barra i{display:block;height:100%;background:#5B4BD6;border-radius:999px;transition:width .5s}.sg-barra i.ok{background:#16a34a}
-.sg-barra em{position:absolute;top:-4px;width:2px;height:18px;background:#241d43;border-radius:2px;transform:translateX(-1px)}
-.sg-sub{font-size:12px;color:#8e88a8;margin-top:6px}.sg-sub b{color:#241d43}
-.sg-modo{font-size:12px;font-weight:800;color:#8a5a00;background:#fff4dc;border-radius:999px;padding:6px 10px}.sg-modo.vivo{color:#14532d;background:#e7f7ee}
-.sg-fila2{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px;color:#6b6580}.sg-fila2 b{color:#241d43}.sg-u{color:#8e88a8}
+.sg-barra{position:relative;height:10px;background:var(--neutro);border-radius:999px;overflow:visible}.sg-barra i{display:block;height:100%;background:var(--morado-tinta);border-radius:999px;transition:width .5s}.sg-barra i.ok{background:var(--verde-t)}
+.sg-barra em{position:absolute;top:-4px;width:2px;height:18px;background:var(--tinta);border-radius:2px;transform:translateX(-1px)}
+.sg-sub{font-size:12px;color:var(--suave);margin-top:6px}.sg-sub b{color:var(--tinta)}
+.sg-modo{font-size:12px;font-weight:800;color:var(--ambar-t);background:var(--ambar-a);border-radius:999px;padding:6px 10px}.sg-modo.vivo{color:var(--verde-t);background:var(--verde-a)}
+.sg-fila2{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--suave)}.sg-fila2 b{color:var(--tinta)}.sg-u{color:var(--tenue)}
+.sg-fila2.oculta{display:none}
+.sg-mfila{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--suave)}.sg-mfila b{color:var(--tinta)}.sg-mfila .sg-sel{flex:1 1 100%;min-height:40px;font-size:14px}
 .sg-pos{margin-left:auto}
-.sg-sel{border:1px solid #e8e5f0;border-radius:8px;padding:4px 8px;font-family:inherit;font-size:12px;font-weight:700;color:#4a4658;background:#fff}.sg-link{border:none;background:none;color:#5B4BD6;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;padding:0}
-.sg-msg{margin-top:8px;font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:8px}.sg-msg.ok{background:#e7f7ee;color:#14532d}.sg-msg.err{background:#fde7e5;color:#b3261e}
+.sg-sel{border:1px solid var(--linea);border-radius:8px;padding:4px 8px;font-family:inherit;font-size:12px;font-weight:700;color:var(--tinta);background:var(--carta)}.sg-link{border:none;background:none;color:var(--morado-tinta);font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;padding:0}
+.sg-msg{margin-top:8px;font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:8px}.sg-msg.ok{background:var(--verde-a);color:var(--verde-t)}.sg-msg.err{background:var(--rojo-a);color:var(--rojo-t)}
 .sg-card{padding:18px 20px;transition:opacity .35s,transform .35s}.sg-card.saliendo{opacity:0;transform:translateX(24px)}
 .sg-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:18px}
-.sg-quien{background:#faf9fc;border:1px solid #ecebf2;border-radius:12px;padding:12px 14px;min-width:0}
-.sg-lbl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8e88a8;margin-bottom:6px}
-.sg-nombre{font-weight:800;font-size:16px}.sg-nombre span{font-weight:600;color:#6b6580}
-.sg-p{margin-top:8px;font-size:13px;line-height:1.45}.sg-p span{color:#8e88a8}
+.sg-quien{background:var(--neutro);border:1px solid var(--linea);border-radius:12px;padding:12px 14px;min-width:0}
+.sg-lbl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--suave);margin-bottom:6px}
+.sg-nombre{font-weight:800;font-size:16px;color:var(--tinta)}.sg-nombre span{font-weight:600;color:var(--suave)}
+.sg-meta{font-size:12px;color:var(--suave);line-height:1.4}
+.sg-p{margin-top:8px;font-size:13px;line-height:1.45;color:var(--texto)}.sg-p span{color:var(--suave)}
 .sg-vacio{text-align:center;padding:40px 20px}
-.sg-corto{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#f3f0ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5}
-.sg-corto span{color:#6b6580}
-.sg-prep{border:none;background:#5B4BD6;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}.sg-prep:disabled{opacity:.6}
-.sg-sit{background:#fff;border:1px solid #ecebf2;border-radius:10px;padding:10px 12px;margin-top:10px}
-.sg-web{border-color:#ddd6fe;background:#f8f6ff}.sg-sit-chip.web{background:#5B4BD6;color:#fff}
-.sg-sit-chip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#3d2fb0;background:#EEECFE;border-radius:999px;padding:3px 9px;margin-right:8px}
-.sg-h{border-top:1px solid #f0eef5;padding:8px 0}.sg-h summary{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:13px;flex-wrap:wrap;list-style:none}
-.sg-cal{display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#ecebf2;color:#241d43}
-.sg-cal.c10,.sg-cal.c9{background:#e7f7ee;color:#14532d}.sg-cal.c8,.sg-cal.c7,.sg-cal.c6{background:#fff4dc;color:#8a5a00}.sg-cal.c0,.sg-cal.c2,.sg-cal.c4{background:#fde7e5;color:#b3261e}
-.sg-dec{font-size:11px;font-weight:800;color:#5B4BD6;background:#EEECFE;border-radius:999px;padding:2px 8px}
-.sg-h-b{margin:8px 0 4px 38px;display:grid;gap:6px;font-size:13px;line-height:1.45;white-space:pre-wrap}.sg-h-b i{font-style:normal;color:#8e88a8}
-.sg-activar{border:none;background:#16a34a;color:#fff;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 8px 20px rgba(22,163,74,.25)}.sg-activar:disabled{opacity:.6}
-.sg-velo{position:fixed;inset:0;background:rgba(36,29,67,.35);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
-.sg-modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(36,29,67,.25)}
-.sg-modal-cab{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #ecebf2;font-size:16px}.sg-x{border:none;background:none;font-size:22px;cursor:pointer;color:#8e88a8}
-.sg-modal-cuerpo{padding:6px 20px 20px;overflow:auto;font-size:14px;line-height:1.55;color:#241d43}.sg-modal-cuerpo h4{margin:16px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5B4BD6}.sg-modal-cuerpo p{margin:0 0 8px}.sg-modal-cuerpo ul{margin:0 0 8px 18px;padding:0}.sg-modal-cuerpo li{margin-bottom:6px}
-.sg-aj{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.sg-aj label{display:grid;gap:4px;font-size:12px;font-weight:700;color:#6b6580}
-@media (max-width:820px){.sg-grid{grid-template-columns:1fr}.sg-pos{margin-left:0}}
+.sg-corto{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--morado-agua);border:1px solid var(--linea);border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5;color:var(--texto)}
+.sg-corto span{color:var(--suave)}.sg-corto b{color:var(--tinta)}
+.sg-prep{border:none;background:var(--morado-tinta);color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}.sg-prep:disabled{opacity:.6}
+.sg-urge{background:var(--morado-agua);color:var(--tinta);border-radius:12px;padding:10px 14px;font-size:13px}
+.sg-sit{background:var(--carta);border:1px solid var(--linea);border-radius:10px;padding:10px 12px;margin-top:10px}
+.sg-sit-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sg-web{border-color:var(--morado);background:var(--morado-agua)}.sg-sit-chip.web{background:var(--morado-tinta);color:#fff}
+.sg-sit-chip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--morado-tinta);background:var(--morado-agua);border-radius:999px;padding:3px 9px}
+.sg-h{border-top:1px solid var(--linea2);padding:8px 0}.sg-h summary{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:13px;flex-wrap:wrap;list-style:none;color:var(--tinta)}
+.sg-cal{display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--neutro);color:var(--tinta)}
+.sg-cal.c10,.sg-cal.c9{background:var(--verde-a);color:var(--verde-t)}.sg-cal.c8,.sg-cal.c7,.sg-cal.c6{background:var(--ambar-a);color:var(--ambar-t)}.sg-cal.c0,.sg-cal.c2,.sg-cal.c4{background:var(--rojo-a);color:var(--rojo-t)}
+.sg-dec{font-size:11px;font-weight:800;color:var(--morado-tinta);background:var(--morado-agua);border-radius:999px;padding:2px 8px}
+.sg-h-b{margin:8px 0 4px 38px;display:grid;gap:6px;font-size:13px;line-height:1.45;white-space:pre-wrap;color:var(--texto)}.sg-h-b i{font-style:normal;color:var(--suave)}
+.sg-activar{border:none;background:var(--verde-t);color:#fff;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}.sg-activar:disabled{opacity:.6}
+.sg-velo{position:fixed;inset:0;background:rgba(12,11,18,.5);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.sg-modal{background:var(--carta);color:var(--texto);border-radius:16px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--sombra)}
+.sg-modal-cab{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--linea);font-size:16px;color:var(--tinta)}.sg-x{border:none;background:none;font-size:22px;cursor:pointer;color:var(--suave)}
+.sg-modal-cuerpo{padding:6px 20px 20px;overflow:auto;font-size:14px;line-height:1.55;color:var(--texto)}.sg-modal-cuerpo h4{margin:16px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--morado-tinta)}.sg-modal-cuerpo p{margin:0 0 8px}.sg-modal-cuerpo ul{margin:0 0 8px 18px;padding:0}.sg-modal-cuerpo li{margin-bottom:6px}.sg-modal-cuerpo b{color:var(--tinta)}
+.sg-aj{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.sg-aj label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--suave)}
+.sg-ctx{margin-top:12px;border-top:1px solid var(--linea2);padding-top:10px}.sg-ctx summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:800;color:var(--morado-tinta);min-height:40px;display:flex;align-items:center}.sg-ctx summary::-webkit-details-marker{display:none}.sg-ctx summary::before{content:'›';display:inline-block;margin-right:8px;transition:transform .2s}.sg-ctx[open] summary::before{transform:rotate(90deg)}
+@media (max-width:899px){
+  .sg-fila1{gap:10px}.sg-num b{font-size:30px}.sg-barra-wrap{min-width:0;flex:1 1 100%;order:3}.sg-modo{font-size:11px;padding:5px 9px}
+  .sg-sub{font-size:11.5px}
+  .sg-grid{grid-template-columns:1fr;gap:12px}
+  .sg-card{padding:14px 14px 12px}
+  .sg-quien{background:transparent;border:none;padding:0}
+  .sg-nombre{font-size:17px}
+  .sg-sit{margin-top:8px;padding:0;border:none;background:transparent}
+  .sg-dijo{background:var(--neutro);border-radius:10px;padding:8px 10px;margin-top:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .sg-corto{font-size:12.5px;padding:10px 12px;gap:8px}.sg-corto>div{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.sg-prep{flex:1 1 100%;min-height:44px}
+  .sg-pos{margin-left:0}
+}
 `;

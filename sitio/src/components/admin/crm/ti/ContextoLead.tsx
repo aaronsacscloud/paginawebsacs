@@ -93,10 +93,10 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
 
 /* ═══ MiniHilo ═══ Los últimos N mensajes del lead DENTRO de la tarjeta, sin abrir nada: para decidir rápido.
    «Ver más» trae 15 más; «Abrir completa» abre el drawer. */
-export function MiniHilo({ contactId, n = 12, onAbrir }: { contactId: string; n?: number; onAbrir?: () => void }) {
+export function MiniHilo({ contactId, n = 12, onAbrir, abiertoInicial = true }: { contactId: string; n?: number; onAbrir?: () => void; abiertoInicial?: boolean }) {
   const [d, setD] = useState<any>(null);
   const [cuantos, setCuantos] = useState(n);
-  const [abierto, setAbierto] = useState(true);
+  const [abierto, setAbierto] = useState(abiertoInicial);
   useEffect(() => { setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${cuantos}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [contactId, cuantos]);
   const k = d?.contacto;
   return (
