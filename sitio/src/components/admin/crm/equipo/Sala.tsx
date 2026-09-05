@@ -14,7 +14,9 @@ type Punto = { id: string; titulo: string; estado: string; votos: number; vote: 
 type Acuerdo = { id: string; sesion_id: string; punto_id: string | null; texto: string; responsable: Quien; vence_at: string | null; hecho_at: string | null; tarea_id: string | null };
 type Sesion = { id: string; inicio_at: string; fin_at: string | null; asistentes: string[]; asistentes_p: Quien[]; punto_actual_id: string | null; resumen_ia: string | null; acta: any; acuerdos: Acuerdo[]; puntos?: Punto[]; nota_cierre: string | null };
 type Cita = { id: string; fecha: string; hora: string; nombre: string; empresa: string | null; con: string | null };
-type Datos = { proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[] };
+/** Un bloque del guion: quién presenta y qué dice, en orden. */
+type BloqueGuion = { bloque: string; quien: string; puntos: string[] };
+type Datos = { proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
 
 const TZ = 'America/Mexico_City';
 // Todo se muestra en hora de México aunque el navegador esté en otra zona.
@@ -34,7 +36,7 @@ export type SalaProps = {
 export default function Sala(p: SalaProps) {
   const [d, setD] = useState<Datos | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<'agenda' | 'historial'>('agenda');
+  const [tab, setTab] = useState<'agenda' | 'guion' | 'historial'>('agenda');
   const [nuevo, setNuevo] = useState('');
   const [acordando, setAcordando] = useState<string | null | false>(false);   // id del punto, null = suelto, false = cerrado
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -80,10 +82,31 @@ export default function Sala(p: SalaProps) {
       </div>
       <div className="eq-tabs">
         <button className={tab === 'agenda' ? 'on' : ''} onClick={() => setTab('agenda')}>Agenda</button>
+        {/* GUION y AGENDA son dos cosas distintas y por eso van en dos pestañas.
+            El guion es lo FIJO —quién presenta qué, cada semana—; la agenda es
+            lo de ESTA semana, que se propone, se trata y se cierra. Mezclarlos
+            haría que el guion se «tratara» y desapareciera en la primera junta. */}
+        {!!d?.guion?.length && <button className={tab === 'guion' ? 'on' : ''} onClick={() => setTab('guion')}>Guion</button>}
         <button className={tab === 'historial' ? 'on' : ''} onClick={() => setTab('historial')}>Actas{d?.historial.length ? ` · ${d.historial.length}` : ''}</button>
       </div>
       {!d && !err && <Cargando texto="Abriendo la sala…" />}
       {err && <div className="eq-vacio"><b>No se pudo abrir la sala</b>{err}<button className="eq-btn" onClick={cargar}>Reintentar</button></div>}
+      {d && tab === 'guion' && (
+        <div className="eq-sala">
+          <div className="eq-guion">
+            <p className="eq-guion-int">Esto es lo que se ve <b>siempre</b> en esta junta, en este orden. Lo que traigas de la semana va en <b>Agenda</b>.</p>
+            {(d.guion || []).map((b, i) => (
+              <div key={i} className="eq-guion-b">
+                <div className="eq-guion-h">
+                  <span className="q">{b.quien}</span>
+                  <b>{b.bloque}</b>
+                </div>
+                <ol>{(b.puntos || []).map((t, j) => <li key={j}>{t}</li>)}</ol>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {d && tab === 'agenda' && (
         <div className="eq-sala">
           {ab ? (

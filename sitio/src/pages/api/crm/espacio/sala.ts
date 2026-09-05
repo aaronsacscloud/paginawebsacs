@@ -112,7 +112,12 @@ export const GET: APIRoute = async ({ request, url }) => {
     .gte('fecha', hoy).lte('fecha', en7).in('estado', ['confirmada', 'pendiente', 'reagendada']).order('fecha').order('hora_inicio').limit(30);
   const hosts = await personasPorId((citas || []).map((x: any) => x.host_id).filter(Boolean));
   return json({
-    ok: true, proxima: proximaReunion(c.regla_reunion), regla: c.regla_reunion, ...sala,
+    ok: true, proxima: proximaReunion(c.regla_reunion), regla: c.regla_reunion,
+    /* El GUION: lo fijo de esta junta, quién presenta qué. No son puntos de
+       agenda —esos se consumen al tratarlos— sino el orden que se repite cada
+       semana, para que nadie llegue preguntándose de qué se habla. */
+    guion: (c as any).guion || null,
+    ...sala,
     citas: (citas || []).map((x: any) => ({ id: x.id, fecha: x.fecha, hora: String(x.hora_inicio || '').slice(0, 5), nombre: x.invitee_nombre, empresa: x.invitee_empresa, con: hosts[x.host_id]?.nombre || null, estado: x.estado })),
   });
 };

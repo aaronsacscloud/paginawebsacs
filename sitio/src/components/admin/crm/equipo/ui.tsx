@@ -222,6 +222,21 @@ export const CSS = `
 .eq-conex i{width:7px;height:7px;border-radius:50%;background:#c9c5d8;display:inline-block}
 .eq-conex i.on{background:${P.verde}}
 .eq-sala{flex:1;overflow-y:auto;padding:12px 14px 20px;display:flex;flex-direction:column;gap:14px}
+/* EL GUION de la junta: lo fijo, lo que se lee en voz alta cada semana.
+   Se ve distinto de la agenda a propósito —fondo, no tarjetas— porque no es
+   una lista de pendientes que se palomea: es el orden del día. */
+.eq-guion{display:flex;flex-direction:column;gap:12px}
+.eq-guion-int{margin:0 0 2px;font-size:12.5px;line-height:1.5;color:var(--eq-gris)}
+.eq-guion-b{border:1px solid var(--eq-linea);border-radius:12px;overflow:hidden;background:var(--eq-panel)}
+.eq-guion-h{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--eq-lila);border-bottom:1px solid var(--eq-linea)}
+.eq-guion-h b{font-size:13px;line-height:1.3;color:var(--eq-tinta)}
+/* Quién presenta va PRIMERO y en pastilla: en una junta de dos, saber a quién
+   le toca hablar es la mitad de la información. */
+.eq-guion-h .q{flex-shrink:0;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+  color:var(--eq-morado-tinta);background:#fff;border:1px solid var(--eq-linea);border-radius:999px;padding:2px 8px}
+.eq-guion-b ol{margin:0;padding:10px 14px 12px 30px;display:flex;flex-direction:column;gap:7px}
+.eq-guion-b li{font-size:13px;line-height:1.5;color:var(--eq-tinta)}
+.eq-guion-b li::marker{color:var(--eq-gris);font-size:11.5px}
 .eq-bloque{border:1px solid var(--eq-linea);border-radius:12px;background:#fff;overflow:hidden}
 .eq-bloque .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--eq-linea);background:var(--eq-panel)}
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}
