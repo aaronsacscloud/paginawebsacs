@@ -38,7 +38,11 @@ function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
   if (p) l.push(`Persona que decide: ${p.nombre}${p.cargo ? `, ${p.cargo}` : ''}`);
   const cs = canales.map(x => x.tipo).join(', ');
   l.push(`Canales disponibles: ${cs || 'ninguno verificado'}`);
-  for (const s of senales.slice(0, 4)) l.push(`Señal (${s.fecha}): ${s.detalle}`);
+  // Las quejas de sus clientes van aparte y marcadas: son lo mejor que
+  // tenemos para abrir, porque el problema lo dice su comprador, no nosotros.
+  const quejas = senales.filter((s: any) => s.tipo === 'resena_mala');
+  for (const s of quejas.slice(0, 3)) l.push(`QUEJA DE UN CLIENTE SUYO en Google: "${s.detalle}"`);
+  for (const s of senales.filter((s: any) => s.tipo !== 'resena_mala').slice(0, 3)) l.push(`Señal (${s.fecha || 'del estudio'}): ${s.detalle}`);
   return l.join('\n');
 }
 
@@ -52,7 +56,12 @@ const REGLAS = `Reglas de escritura, sin excepción:
 - Prohibido inventar cifras de resultados. El único caso que puedes citar: en un cliente nuestro,
   cadena de moda, encontramos 1.2 millones de pesos mal repartidos entre su centro de distribución
   y sus tiendas, con apenas 50 claves de producto.
-- No prometas llamadas ni juntas largas: se ofrece un diagnóstico de 15 minutos con sus datos.`;
+- No prometas llamadas ni juntas largas: se ofrece un diagnóstico de 15 minutos con sus datos.
+- Si el expediente trae una QUEJA DE UN CLIENTE SUYO, úsala en el primer correo, pero
+  CON CUIDADO: se alude a lo que pasó, no se restriega ni se cita entre comillas. "Vi que a
+  alguien le pasó que…" suena a reproche; "cuando hay varias tiendas, lo típico es que se
+  venda algo que ya no está" reconoce el problema sin humillar a nadie. Nunca digas que
+  leíste sus reseñas malas.`;
 
 export const GET: APIRoute = async ({ request, url }) => {
   const yo = await quien(request);

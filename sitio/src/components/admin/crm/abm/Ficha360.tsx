@@ -253,6 +253,24 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
         </div>
       </div>
 
+      {/* ── Lo que dicen sus clientes ── */}
+      {(d.senales || []).some((s: any) => s.tipo === 'resena_mala') && (
+        <div style={{ ...CAJA, borderLeft: `3px solid ${P.ambar}` }}>
+          <p style={H}>Lo que dicen sus clientes</p>
+          <p style={{ fontSize: '.75rem', color: '#888', margin: '0 0 10px' }}>
+            De sus reseñas de Google. Es el problema que resolvemos, contado por su propio cliente: cítalo en el primer correo.
+          </p>
+          <div style={{ display: 'grid', gap: 9 }}>
+            {(d.senales || []).filter((s: any) => s.tipo === 'resena_mala').slice(0, 4).map((s: any) => (
+              <div key={s.id} style={{ fontSize: '.8125rem', color: '#444', lineHeight: 1.55, borderLeft: `2px solid ${P.ambarAgua}`, paddingLeft: 10 }}>
+                «{s.detalle}»
+                {s.fecha && <span style={{ fontSize: '.6875rem', color: '#a0a0a0' }}> · {fecha(s.fecha)}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── De dónde salió cada dato ── */}
       <div style={CAJA}>
         <p style={H}>De dónde salió cada dato</p>
