@@ -260,6 +260,35 @@ export const POST: APIRoute = async ({ request, url }) => {
           ? errs.map((e: any) => { const x = explicarError(e); return `${x.codigo ? x.codigo + ' ' : ''}${x.titulo}${x.crudo ? ' · ' + x.crudo.slice(0, 200) : ''}`; }).join(' | ')
           : (status === 'failed' ? 'Meta no dio detalle del fallo' : null);
         await actualizarStatus(String(msj.id), status, status === 'failed' ? errores : null);
+
+        /* CUENTAS OBJETIVO · el número que NO tiene WhatsApp.
+           Meta quitó el endpoint que decía si un número está en WhatsApp, así
+           que la única validación honesta es el primer envío: si el número no
+           existe en la red, responde 131026 y el mensaje NO se cobra. Aquí se
+           captura para marcar ese canal y que nadie vuelva a intentarlo — es
+           el equivalente del rebote duro del correo. */
+        if (status === 'failed' && /\b(131026|131052|1013)\b/.test(errores || '')) {
+          try {
+            const dest = String(msj.to || msj.recipient || kapso?.to || '').replace(/\D/g, '');
+            if (dest.length >= 10) {
+              const cola = dest.slice(-10);
+              const { data: canales } = await supabase.from('abm_canales')
+                .select('id, cuenta_id, valor').like('tipo', 'whatsapp%').neq('estado', 'invalido');
+              const tocados = (canales || []).filter((c: any) => String(c.valor).replace(/\D/g, '').endsWith(cola));
+              for (const c of tocados) {
+                await supabase.from('abm_canales').update({ estado: 'invalido', confianza: 'baja' }).eq('id', c.id);
+                await supabase.from('abm_actividad').insert({
+                  cuenta_id: c.cuenta_id, canal: 'whatsapp', tipo: 'rebote',
+                  texto: `El número ${c.valor} no tiene WhatsApp (Meta: ${errores})`,
+                });
+                await supabase.from('abm_cuentas').update({
+                  tiene_wa: false, updated_at: new Date().toISOString(),
+                }).eq('id', c.cuenta_id);
+              }
+              if (tocados.length) console.log(`[wa-webhook] ${tocados.length} canal(es) de cuentas objetivo marcados: el número no tiene WhatsApp`);
+            }
+          } catch (e) { console.warn('[wa-webhook] cuentas objetivo:', e); }
+        }
         /* NO ENTREGADO: si el mensaje llevaba plan de respaldo, sale ahora.
            Meta acepta la plantilla y reporta el rechazo por aquí, así que este
            es el primer momento en que se sabe de verdad que no llegó —esperar

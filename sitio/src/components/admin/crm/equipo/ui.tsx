@@ -237,6 +237,13 @@ export const CSS = `
 .eq-guion-b ol{margin:0;padding:10px 14px 12px 30px;display:flex;flex-direction:column;gap:7px}
 .eq-guion-b li{font-size:13px;line-height:1.5;color:var(--eq-tinta)}
 .eq-guion-b li::marker{color:var(--eq-gris);font-size:11.5px}
+/* Los minutos del bloque, a la derecha del título: la junta tiene forma antes
+   de empezar, no a la mitad. */
+.eq-guion-h .m{margin-left:auto;flex-shrink:0;font-size:11px;font-weight:700;color:var(--eq-gris);font-variant-numeric:tabular-nums}
+/* La fuente del dato, debajo del punto: dónde se saca ese número. Va en otra
+   línea y en gris porque es instrucción, no contenido de la junta. */
+.eq-guion-b li .f{display:block;margin-top:3px;font-size:11px;font-weight:600;color:var(--eq-morado-tinta);
+  background:var(--eq-lila);border-radius:6px;padding:2px 7px;width:fit-content;max-width:100%}
 .eq-bloque{border:1px solid var(--eq-linea);border-radius:12px;background:#fff;overflow:hidden}
 .eq-bloque .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--eq-linea);background:var(--eq-panel)}
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}

@@ -56,7 +56,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   // La tabla del CRM filtra, ordena y pagina del lado del navegador. Si le
   // mandamos 60 filas, su buscador busca en 60 y dice "no hay" de una cuenta
   // que sí existe. Se le manda la lista completa.
-  const POR = url.searchParams.get('todo') === '1' ? 1000 : 60;
+  // Supabase no entrega más de mil filas por lectura, así que "todo" se arma
+  // por páginas. Sin esto, con 2,100 cuentas la pantalla mostraba mil y decía
+  // que eran todas.
+  const TODO = url.searchParams.get('todo') === '1';
+  const POR = TODO ? 1000 : 60;
 
   let sel = supabase.from('abm_cuentas').select(SEL, { count: 'exact' });
   if (giro) sel = sel.eq('giro', giro);
@@ -73,7 +77,21 @@ export const GET: APIRoute = async ({ request, url }) => {
       : orden === 'rating' ? sel.order('google_rating', { ascending: false, nullsFirst: false })
       : orden === 'sucursales' ? sel.order('sucursales', { ascending: false, nullsFirst: false })
       : sel.order('puntaje', { ascending: false });
-  const { data, count, error } = await sel.range(pagina * POR, pagina * POR + POR - 1);
+  let data: any[] | null = null; let count: number | null = null; let error: any = null;
+  if (TODO) {
+    const acc: any[] = [];
+    for (let desde = 0; desde < 20000; desde += 1000) {
+      const r = await sel.range(desde, desde + 999);
+      if (r.error) { error = r.error; break; }
+      count = r.count ?? count;
+      acc.push(...(r.data || []));
+      if ((r.data || []).length < 1000) break;
+    }
+    data = acc;
+  } else {
+    const r = await sel.range(pagina * POR, pagina * POR + POR - 1);
+    data = r.data; count = r.count; error = r.error;
+  }
   if (error) return json({ error: error.message }, 500);
 
   // Los canales de la página, para que la tabla muestre por dónde entrarle
@@ -97,7 +115,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     // Cuando la lista no cupo completa, la pantalla NO puede seguir filtrando
     // del lado del navegador: buscaría dentro de lo que alcanzó a traer y
     // diría que no existe una cuenta que sí existe.
-    truncado: (count || 0) > POR,
+    truncado: !TODO && (count || 0) > POR,
   });
 };
 

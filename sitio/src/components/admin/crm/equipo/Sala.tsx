@@ -14,8 +14,11 @@ type Punto = { id: string; titulo: string; estado: string; votos: number; vote: 
 type Acuerdo = { id: string; sesion_id: string; punto_id: string | null; texto: string; responsable: Quien; vence_at: string | null; hecho_at: string | null; tarea_id: string | null };
 type Sesion = { id: string; inicio_at: string; fin_at: string | null; asistentes: string[]; asistentes_p: Quien[]; punto_actual_id: string | null; resumen_ia: string | null; acta: any; acuerdos: Acuerdo[]; puntos?: Punto[]; nota_cierre: string | null };
 type Cita = { id: string; fecha: string; hora: string; nombre: string; empresa: string | null; con: string | null };
-/** Un bloque del guion: quién presenta y qué dice, en orden. */
-type BloqueGuion = { bloque: string; quien: string; puntos: string[] };
+/** Un punto del guion. Texto suelto cuando es de criterio; con `fuente` cuando
+ *  es un dato y hay que decir de qué pantalla sale. */
+type PuntoGuion = string | { t: string; fuente?: string };
+/** Un bloque: quién presenta, cuánto dura y qué muestra, en orden. */
+type BloqueGuion = { bloque: string; quien: string; minutos?: number; puntos: PuntoGuion[] };
 type Datos = { proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
 
 const TZ = 'America/Mexico_City';
@@ -94,14 +97,31 @@ export default function Sala(p: SalaProps) {
       {d && tab === 'guion' && (
         <div className="eq-sala">
           <div className="eq-guion">
-            <p className="eq-guion-int">Esto es lo que se ve <b>siempre</b> en esta junta, en este orden. Lo que traigas de la semana va en <b>Agenda</b>.</p>
+            <p className="eq-guion-int">
+              Esto es lo que se ve <b>siempre</b> en esta junta, en este orden. Lo que traigas de la semana va en <b>Agenda</b>.
+              {/* El total sale de sumar los bloques: si la junta se está yendo
+                  de tiempo, se ve aquí antes de empezar y no a la mitad. */}
+              {(() => { const m = (d.guion || []).reduce((a, b) => a + (Number(b.minutos) || 0), 0); return m ? <> Dura <b>{m} min</b>.</> : null; })()}
+            </p>
             {(d.guion || []).map((b, i) => (
               <div key={i} className="eq-guion-b">
                 <div className="eq-guion-h">
                   <span className="q">{b.quien}</span>
                   <b>{b.bloque}</b>
+                  {!!b.minutos && <span className="m">{b.minutos} min</span>}
                 </div>
-                <ol>{(b.puntos || []).map((t, j) => <li key={j}>{t}</li>)}</ol>
+                <ol>{(b.puntos || []).map((p, j) => {
+                  const t = typeof p === 'string' ? p : p.t;
+                  const fuente = typeof p === 'string' ? null : p.fuente;
+                  return (
+                    <li key={j}>
+                      {t}
+                      {/* De dónde sale el número. Sin esto cada quien busca por
+                          su lado y llegan con cifras distintas —o sin ellas—. */}
+                      {fuente && <span className="f">{fuente}</span>}
+                    </li>
+                  );
+                })}</ol>
               </div>
             ))}
           </div>

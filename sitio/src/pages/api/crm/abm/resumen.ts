@@ -13,8 +13,27 @@ export const GET: APIRoute = async ({ request }) => {
   // Los contadores de canales viven en la cuenta (columnas derivadas con
   // trigger): contar filas de abm_canales aquí daba un número mentiroso,
   // porque Supabase corta la lectura en mil filas y había 2,534.
+  // Supabase corta TODA lectura en mil filas, pase lo que pase el .limit():
+  // con 2,100 cuentas el tablero decía 1,000 y nadie lo notaba. Lo que se
+  // cuenta se cuenta con `count`, y lo que se agrupa se lee por páginas.
+  const cuentaExacta = async (f: (q: any) => any) => {
+    const { count } = await f(supabase.from('abm_cuentas').select('id', { count: 'exact', head: true }));
+    return count || 0;
+  };
+  const todasLasCuentas = async () => {
+    const filas: any[] = [];
+    for (let desde = 0; desde < 20000; desde += 1000) {
+      const { data } = await supabase.from('abm_cuentas')
+        .select('giro, etapa, ruta, puntaje, sucursales, google_rating, tiene_email, tiene_wa, canales_n')
+        .range(desde, desde + 999);
+      if (!data?.length) break;
+      filas.push(...data);
+      if (data.length < 1000) break;
+    }
+    return { data: filas };
+  };
   const [cuentas, actividad, toques, senales] = await Promise.all([
-    supabase.from('abm_cuentas').select('giro, etapa, ruta, puntaje, sucursales, google_rating, tiene_email, tiene_wa, canales_n').limit(5000),
+    todasLasCuentas(),
     supabase.from('abm_actividad').select('tipo, ocurrio_at').gte('ocurrio_at', new Date(Date.now() - 30 * 864e5).toISOString()).limit(5000),
     supabase.from('abm_toques').select('id, estado, programado_at, canal').in('estado', ['aprobado', 'programado']).limit(2000),
     supabase.from('abm_senales').select('tipo, fecha').gte('fecha', new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10)).limit(5000),
