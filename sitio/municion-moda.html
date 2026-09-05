@@ -1,0 +1,501 @@
+<title>Qué Sí Podemos Decir</title>
+
+<style>
+:root{
+  --paper:#FAFAF8;
+  --surface:#FFFFFF;
+  --ink:#16171A;
+  --ink-2:#3C3E44;
+  --muted:#6E7076;
+  --rule:#E3E2DD;
+  --rule-soft:#EFEEEA;
+  --accent:#A82F28;
+  --ok:#2C6349;
+  --ok-bg:#EAF2ED;
+  --warn:#8A5E12;
+  --warn-bg:#F7F0E0;
+  --no:#A82F28;
+  --no-bg:#F8EAE8;
+  --code-bg:#F2F1EC;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141518;
+    --surface:#1B1C20;
+    --ink:#E9E8E4;
+    --ink-2:#C3C2BD;
+    --muted:#94949A;
+    --rule:#2E2F35;
+    --rule-soft:#25262B;
+    --accent:#E0766C;
+    --ok:#7FBF9F;
+    --ok-bg:#18241E;
+    --warn:#D9AE63;
+    --warn-bg:#241E12;
+    --no:#E0766C;
+    --no-bg:#26191A;
+    --code-bg:#232429;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141518;
+  --surface:#1B1C20;
+  --ink:#E9E8E4;
+  --ink-2:#C3C2BD;
+  --muted:#94949A;
+  --rule:#2E2F35;
+  --rule-soft:#25262B;
+  --accent:#E0766C;
+  --ok:#7FBF9F;
+  --ok-bg:#18241E;
+  --warn:#D9AE63;
+  --warn-bg:#241E12;
+  --no:#E0766C;
+  --no-bg:#26191A;
+  --code-bg:#232429;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- masthead ---------- */
+.mast{padding:72px 0 28px;border-bottom:2px solid var(--ink)}
+.kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 20px;font-weight:600;
+}
+h1{
+  font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,6vw,3.4rem);
+  line-height:1.06;letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance;
+}
+.dek{font-size:1.08rem;color:var(--ink-2);margin:0;max-width:60ch}
+.meta{
+  display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:26px;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.02em;
+}
+
+/* ---------- reading rule ---------- */
+.rule-note{
+  margin:34px 0 0;padding:20px 22px;background:var(--surface);
+  border:1px solid var(--rule);border-left:3px solid var(--accent);
+}
+.rule-note p{margin:0;font-size:.95rem;color:var(--ink-2)}
+.rule-note p + p{margin-top:11px}
+
+/* ---------- sections ---------- */
+section{margin-top:72px;scroll-margin-top:20px}
+.sec-head{display:flex;gap:16px;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:8px}
+.sec-num{
+  font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);
+  letter-spacing:.08em;flex-shrink:0;padding-top:6px;
+}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.5rem,3.6vw,2rem);line-height:1.15;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sec-sub{color:var(--muted);font-size:.93rem;margin:12px 0 30px;max-width:64ch}
+
+h3{
+  font-family:var(--sans);font-size:1.02rem;font-weight:650;margin:38px 0 4px;
+  letter-spacing:-.005em;line-height:1.35;
+}
+h3:first-of-type{margin-top:26px}
+p{margin:0 0 14px;max-width:68ch}
+ul{margin:0 0 14px;padding-left:20px;max-width:68ch}
+li{margin-bottom:7px}
+li::marker{color:var(--muted)}
+strong{font-weight:650}
+
+/* ---------- status chips ---------- */
+.chip{
+  display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;
+  border-radius:2px;vertical-align:2px;margin-left:8px;white-space:nowrap;
+}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.part{background:var(--warn-bg);color:var(--warn)}
+.chip.no{background:var(--no-bg);color:var(--no)}
+
+/* ---------- evidence line ---------- */
+.ev{
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  line-height:1.65;margin:8px 0 16px;padding-left:13px;
+  border-left:2px solid var(--rule);word-break:break-word;max-width:76ch;
+}
+.ev b{color:var(--ink-2);font-weight:600}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);padding:1px 5px;border-radius:2px}
+
+/* ---------- pull quote ---------- */
+blockquote{
+  margin:18px 0;padding:16px 20px;background:var(--surface);
+  border:1px solid var(--rule);font-family:var(--serif);
+  font-size:1.02rem;line-height:1.5;color:var(--ink-2);max-width:66ch;
+}
+blockquote p{margin:0}
+blockquote cite{display:block;font-family:var(--mono);font-style:normal;font-size:10.5px;color:var(--muted);margin-top:10px;letter-spacing:.04em}
+
+/* ---------- claim blocks ---------- */
+.claim{border-top:1px solid var(--rule);padding:26px 0 4px}
+.claim:first-of-type{border-top:2px solid var(--ink)}
+.claim-say{
+  font-family:var(--serif);font-size:1.22rem;line-height:1.36;
+  color:var(--ink);margin:0 0 16px;max-width:60ch;
+}
+.claim-say::before{content:"“";color:var(--accent)}
+.claim-say::after{content:"”";color:var(--accent)}
+.defend{font-size:.93rem;color:var(--ink-2)}
+.defend-lbl{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:5px;
+}
+
+.claim.bad .claim-say{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--no);text-decoration-thickness:1px}
+
+/* ---------- table ---------- */
+.tbl-wrap{overflow-x:auto;margin:20px 0 8px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem;background:var(--surface)}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+thead th{
+  font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;border-bottom:1px solid var(--rule);background:var(--paper);
+}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+td.who{font-weight:600;white-space:nowrap}
+
+/* ---------- footer ---------- */
+footer{margin-top:80px;padding-top:22px;border-top:2px solid var(--ink);font-size:.87rem;color:var(--muted)}
+footer p{max-width:70ch}
+
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:600px){
+  .mast{padding-top:48px}
+  .sec-head{gap:11px}
+  section{margin-top:56px}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="kicker">Fuente de verdad · Secuencia de 10 correos · Leads de moda post-demo</p>
+  <h1>Qué sí podemos decir</h1>
+  <p class="dek">Munición verificada contra el código de SACSCloud, no contra el sitio. Cada afirmación de esta página tiene un archivo detrás; cada afirmación prohibida tiene la razón por la que no se sostiene.</p>
+  <div class="meta">
+    <span>Verificado 29 ago 2026</span>
+    <span>Repos: sacs3 · sacs_api · paginawebsacs</span>
+    <span>Método: lectura de código + sitio en vivo</span>
+  </div>
+</header>
+
+<div class="rule-note">
+  <p><strong>La regla de esta página.</strong> El sitio <em>no</em> es evidencia. Las páginas de giro de sacscloud.com están construidas con maquetas de HTML inline — dibujos, no capturas del producto — y el archivo que las genera lo dice en su propio comentario. Varias de esas maquetas describen cosas que el producto no hace.</p>
+  <p>Por eso todo aquí lleva estado: <span class="chip ok">confirmado</span> lo leí en el código y cito el archivo. <span class="chip part">parcial</span> existe pero no como suena. <span class="chip no">no existe</span> lo busqué y no está.</p>
+  <p><strong>El lead ya vio la demo.</strong> No hay que explicarle qué es una matriz de tallas: hay que demostrarle que quien construyó esto había visto una tienda de ropa por dentro. Los detalles raros de abajo son la prueba — nadie escribe ese código por casualidad.</p>
+</div>
+
+<!-- ══════════════ 1 ══════════════ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Lo que solo construye quien entiende moda</h2></div>
+  <p class="sec-sub">No son features de folleto. Son decisiones de ingeniería que solo se toman después de que un cliente real te reclamó algo muy específico.</p>
+
+  <h3>El hueco de curva: la talla agotada no vendió porque no la había<span class="chip ok">confirmado</span></h3>
+  <p>Este es el mejor argumento del arsenal y el más difícil de copiar. Un POS genérico lee el reporte de ventas y concluye que la talla M no se vende, porque tiene cero ventas. En moda eso es exactamente al revés: tiene cero ventas <em>porque se agotó en la primera semana</em>. Recomprar según ese reporte mata el estilo.</p>
+  <p>SACS detecta esas celdas y las estima con <strong>cinco métodos que el cliente elige</strong>: promedio de las tallas hermanas que sí venden, mínimo fijo, la venta histórica de esa misma talla en una ventana larga, la plantilla de curva de su categoría, o ninguno (solo marcar el hueco y que decida el humano).</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/ordenCompra.js</b> · L2062 <code>metodoHueco</code>, L2177 «agrupa por producto PADRE y analiza TODAS sus variantes, incluidas las que NO vendieron (huecos de curva: la talla agotada no aparece en el reporte de ventas)», L2284 la estimación</div>
+
+  <h3>Score de salud de la curva, por color<span class="chip ok">confirmado</span></h3>
+  <p>El motor de curvas no cuenta piezas: califica de 0 a 100 la salud de cada colorway, con una fórmula que es puro criterio de piso de venta.</p>
+  <ul>
+    <li><strong>50% cobertura del núcleo.</strong> El núcleo son las tallas que acumulan el 80% del vendido. Sin historial, usa el tercio central de la corrida.</li>
+    <li><strong>30% continuidad.</strong> Penaliza los huecos <em>intermedios</em> — no que falte la XXL, sino que falte la M entre la S y la L. El comentario del código lo dice así: «huecos entre tallas con stock rompen la percha».</li>
+    <li><strong>20% profundidad contra amplitud.</strong></li>
+  </ul>
+  <p>Y el score del producto promedia los colores <strong>ponderando por venta</strong>, con una razón explícita en el código: para que un colorway muerto no hunda la salud del modelo entero si casi no vende.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/resurtidoAnalisis.js</b> · L806-1400 (modo curvas), L1176 núcleo 80%, L1196-1226 score por color, L1233 ponderación por venta</div>
+
+  <h3>Los dos detalles que delatan años de calzado real<span class="chip ok">confirmado</span></h3>
+  <p>Estos dos valen más que cualquier lista de features en un correo, porque son inventables solo si te pasó:</p>
+  <ul>
+    <li><strong>La talla 22.5 tronaba la base de datos.</strong> El valor de la talla se usa como llave de documento en Mongo, y Mongo no acepta puntos en una llave. El código reemplaza el punto por un punto de ancho completo. El comentario dice que una talla 22.5 «rutinaria en calzado» habría roto el insert.</li>
+    <li><strong>Las tallas se ordenan distinto según el giro.</strong> Si todas las tallas del modelo son numéricas, ordena por número (calzado). Si no, alfabético estable (S/M/L). Y <code>(SIN TALLA)</code> siempre al final.</li>
+  </ul>
+  <p>De la misma familia: el tope defensivo del motor está calibrado con un comentario que dice «un producto tipo zapatería puede traer ~160 variantes (14 tallas × 11 colores)».</p>
+  <div class="ev"><b>resurtidoAnalisis.js</b> · L822 <code>_normEje</code>, L838 <code>_ordenarTallas</code>, L32-44 topes</div>
+
+  <h3>SKU es el modelo; el código de barras es la talla<span class="chip ok">confirmado</span></h3>
+  <p>Detalle que un operador de moda reconoce al instante. Las variantes hermanas del mismo modelo <strong>comparten el SKU por diseño</strong>; lo único irrepetible por variante es el código de barras. La validación de unicidad excluye a las hermanas para el SKU pero no para el código. Es exactamente cómo una marca piensa su catálogo: un estilo, muchos códigos.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/modules/articulos.js</b> · ~L1805 <code>setArticuloVarianteUpdate</code></div>
+
+  <h3>Curvas de compra por categoría y PDF al proveedor en cuadrícula<span class="chip ok">confirmado</span></h3>
+  <p>Se define la curva objetivo de cada categoría con pesos por talla. El ejemplo que trae la propia pantalla: <strong>Vestido XV → S:1, M:3, L:3, XL:2</strong> — por cada S se piden 3 M, 3 L y 2 XL. Tope de 50 curvas × 60 tallas.</p>
+  <p>Y el remate operativo: <strong>el PDF que se manda al proveedor agrupa las variantes como cuadrícula talla × color</strong>, no como lista de renglones. Quien ha mandado una orden de 24 SKUs a un taller sabe la diferencia.</p>
+  <div class="ev"><b>/opt/sacs/sacs3/src/views/configuracion/config-ordencompra.html</b> · «Captura por matriz (talla × color)», «Curvas de tallas por categoría» · backend <b>class/ordenCompra.js</b> L208 <code>_sanCurvas</code></div>
+
+  <h3>Open-to-Buy por temporada<span class="chip ok">confirmado</span></h3>
+  <p>Presupuesto de compra por temporada y por categoría, con una definición de «comprometido» que es contable de verdad: solo cuentan las órdenes en estado enviada, recibida, facturada o cerrada. <strong>Un borrador no compromete dinero.</strong> Si el candado está activo, la orden que rebasa el presupuesto no se emite.</p>
+  <p><strong>Ojo, esto está sub-vendido:</strong> la página de planes marca «Presupuesto de compra por temporada (OTB)» como <em>pronto</em>, pero el motor existe y funciona. Vale la pena confirmarlo con producto antes de prometerlo — puede que no esté expuesto en la interfaz de todos los planes.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/ordenCompra.js</b> · L139 config <code>otb</code>, L2343-2450 <code>otbStatus</code> y <code>_guardOtb</code> · contra <b>sitio/src/data/plans.ts</b> L141</div>
+
+  <h3>Traspasos entre tiendas que no se pueden corromper<span class="chip ok">confirmado</span></h3>
+  <p>La transición de estado no se valida con un <code>if</code> en el servidor: <strong>el filtro de la escritura en Mongo es la validación</strong>. Para enviar, la actualización busca el documento «con este id <em>y</em> en estado Por enviar». Si dos personas la envían al mismo tiempo, la segunda no encuentra nada y recibe el estado real. El estado intermedio «Procesando» es el candado.</p>
+  <p>Recepción parcial con ajuste automático por la diferencia. Nace de un bug documentado en el propio código: sin esa validación, una transferencia quedaba «en limbo».</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/transferencias.js</b> · L610-625 <code>send()</code>, L816-861 <code>receive()</code></div>
+
+  <h3>Nivelación entre tiendas<span class="chip ok">confirmado</span></h3>
+  <p>Cerca de <strong>18,300 líneas</strong> en 7 clases. Reparte un CEDIS finito con reparto justo cuando no alcanza para todos, y tiene tres carriles: CEDIS → traspaso lateral entre tiendas → compra. Detalles de moda dentro: ventana de demanda por <strong>rango de temporada</strong> (las mismas fechas del año pasado, no los últimos 30 días), un <code>factorTemporada</code> que escala demanda y margen de error juntos, y una lista de etiquetas que <strong>no se resurten</strong>: liquidación, descontinuado, fin de temporada.</p>
+  <p>El perfil de datos clasifica cada modelo en <strong>básico o novedad</strong> — continuity contra fashion item — y en regular o irregular. Regla dura del código: lo «sin clasificar» siempre es un bucket visible, nunca se reparte en silencio.</p>
+  <p><strong>Importante y a favor:</strong> nada se mueve solo. La propuesta siempre pasa por aprobación humana. Eso se vende como control, no como limitación.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/</b> nivelacionRun.js (8,294 L) · nivelacion.js (3,655 L) · nivelacionCubo.js (3,620 L) · nivelacionPerfil.js (2,191 L) + 3 más</div>
+
+  <h3>Catálogo de tallas de calzado CM/EU con dependencia de género<span class="chip ok">confirmado</span></h3>
+  <p>Al encender la suite de consignación, el sistema siembra 35 tallas en formato <code>CM-22.0 / EU-35.0 (MUJER)</code> hasta <code>CM-31.0 / EU-49.0 (HOMBRE)</code>, 24 colores de moda (incluido Animal Print) y 5 géneros. La talla <strong>depende</strong> del género: el asistente solo muestra las tallas del género elegido, para que nadie ponga talla de hombre en una pieza de mujer.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/consignacionTaxonomia.js</b> · L26-49</div>
+</section>
+
+<!-- ══════════════ 2 ══════════════ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Lo que demuestra madurez operativa</h2></div>
+  <p class="sec-sub">Cosas que solo se construyen después de que algo se rompió en una tienda llena. Aquí la credibilidad está en las cicatrices, no en las features.</p>
+
+  <h3>El POS sin internet, con sus límites exactos<span class="chip ok">confirmado</span></h3>
+  <p>Es el módulo más endurecido del sistema, y cada capa nació de algo que se rompió. Los datos viven en IndexedDB con <strong>33 almacenes locales, esquema versión 23</strong>. Sí cobra sin conexión, en efectivo, tarjeta y transferencia, imprime el ticket desde memoria y descuenta el stock local para que el buscador no vuelva a ofrecer lo que ya se vendió.</p>
+  <p>Cuatro detalles que un operador reconoce como cicatrices, no como features:</p>
+  <ul>
+    <li><strong>No le cree a <code>navigator.onLine</code>.</strong> Hay un gestor de conexión propio que hace ping cada 5 segundos y, para volver a declararse en línea, exige <strong>cinco pings buenos seguidos</strong>. Y si la señal está intermitente, <em>castiga el parpadeo</em> alargando la ventana de validación: 60 segundos la primera vez, 120 la segunda, 180 la tercera. Porque una venta enviada con señal moribunda es una venta colgada.</li>
+    <li><strong>Escribe la venta en una bitácora local antes de imprimir el ticket</strong>, y esa bitácora nunca se borra. El comentario dice para qué: «sirve para diagnóstico cuando una venta "desaparece"».</li>
+    <li><strong>Precachea las fotos como miniaturas de ~12 KB</strong> en vez del original de hasta 9 MB, con caché de 100 MB y desalojo por antigüedad. Alguien entendió que no se puede vender ropa desde una caja que no muestra la prenda.</li>
+    <li><strong>Cada venta que falla viaja con su autopsia.</strong> Se adjuntan memoria del dispositivo, tipo de red, latencia, si la pestaña estaba visible y cuánto llevaba abierta — y la venta fallida se respalda también en el servidor, no solo en la tableta.</li>
+  </ul>
+  <p><strong>Lo que NO funciona sin internet.</strong> Decirlo de frente es más creíble que ocultarlo, y desactiva la objeción antes de la demo técnica:</p>
+  <ul>
+    <li><strong>No se cierra la caja.</strong> El corte, el arqueo y los movimientos de caja requieren conexión.</li>
+    <li><strong>No se cobra con crédito, monedero de lealtad ni tarjeta de regalo</strong> — son saldos que solo el servidor puede dar por buenos. Efectivo, tarjeta y transferencia sí.</li>
+    <li>No se consulta la existencia de otras sucursales, ni pedidos y apartados, ni promociones, ni pausar una venta.</li>
+  </ul>
+  <div class="ev"><b>/opt/sacs/sacs3/src/behaviors/dixieBehavior.js</b> (4,603 L) · <b>src/elem/offline/offline-check.html</b> anti-parpadeo · <b>src/elem/puntoventa_BETA/desktop/puntoventa2.js</b> L13039 corte bloqueado, L13656 <code>filtrarOffline()</code> · <b>src/views/ventasFallidas/</b></div>
+
+  <h3>Tres candados para que una venta no se duplique<span class="chip ok">confirmado</span></h3>
+  <p>Argumento fuerte para quien vendió en un Buen Fin con red mala. Cuando la cola sube las ventas guardadas, hay tres redes independientes: una llave de idempotencia que <strong>guarda la respuesta del primer intento y la repite</strong> ante un reintento — el comentario lo resume en una frase vendible: <em>«un timeout de red no es una venta nueva»</em>; un folio local estable generado en el dispositivo; y un índice único en la base que rechaza el duplicado aunque las dos anteriores fallen.</p>
+  <p>Todo esto salió de un caso real que el código nombra: varias instancias fantasma del punto de venta subieron la misma venta <strong>ocho veces</strong>. Hoy hay además un vigilante que barre en busca de duplicados con una firma muy específica — misma caja, mismo total, folios consecutivos, menos de 180 segundos de diferencia y el mismo conjunto de SKUs — y que a propósito <em>no</em> marca como duplicado dos ventas del mismo importe con productos distintos.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/lib/idempotencia.lib.js</b> · <b>modules/ventas.js</b> L109 índice único <code>folio_auxiliar</code> · <b>modules/duplicadosMonitorCron.js</b></div>
+
+  <h3>Cortes por turno, corte ciego y continuidad de efectivo<span class="chip ok">confirmado</span></h3>
+  <p>2,861 líneas solo en la clase de corte. Lo destacable para un correo:</p>
+  <ul>
+    <li><strong>Corte ciego:</strong> el cajero cuenta sin ver el esperado. Se configura por cuenta y oculta esperado, cascada de ingreso y auditoría.</li>
+    <li><strong>Continuidad de efectivo entre turnos:</strong> el corte registra cuánto se queda en el cajón para la próxima apertura, <em>con el desglose en billetes</em> — porque el relevo cuenta billetes, no un total — y ese desglose se descarta si no cuadra, «un desglose que no suma sería peor que no tenerlo».</li>
+    <li><strong>Reglas de horario por caja y sucursal</strong>, con cupo escalonado (con horarios a las 15:00 y 23:00, a las 16:00 solo se permite un corte). Y anclado <strong>al día en que abrió el turno, no al reloj del cierre</strong>, para que un negocio nocturno que cierra de madrugada no se quede con la caja bloqueada 19 horas.</li>
+    <li><strong>El PIN de supervisor está bien hecho:</strong> hash SHA-256 validado en el servidor, con límite de <strong>5 intentos fallidos en 5 minutos</strong> por caja. El comentario dice por qué: «sin esto, un script recorre 0000-9999 en minutos y "autoriza" su propio corte».</li>
+    <li>Y una regla contable que solo escribe alguien que cuadró cajas: el método «Crédito» se excluye del corte porque es otorgamiento, no dinero que entró — con una advertencia en mayúsculas de comparar <strong>exacto y nunca por substring</strong>, porque «Tarjeta de crédito» sí es dinero.</li>
+  </ul>
+  <div class="ev"><b>/opt/sacs/sacs_api/class/corte.js</b> · L12-30 regla del crédito · L186-410 control de cortes y PIN · L1206-1520 continuidad de efectivo</div>
+
+  <h3>Candados de descuento: lo que sí y lo que no<span class="chip part">parcial</span></h3>
+  <p>Aquí hay que ser quirúrgico, porque es fácil prometer de más. Lo que existe:</p>
+  <ul>
+    <li><strong>Permisos granulares por grupo:</strong> aplicar descuento, y por separado <em>descuento por porcentaje</em> y <em>descuento por importe</em>, editar precio, precio personalizado, eliminar del carrito, cancelar, hacer corte, hacer arqueo. Se validan también fuera de la interfaz, «por si el binding se saltó», y el punto de venta <strong>falla cerrado</strong>: si no logra leer permisos, niega todo.</li>
+    <li><strong>Topes porcentuales:</strong> dos independientes, uno por producto y otro sobre la venta completa. Si se excede, el descuento no se auto-ajusta en silencio: queda en cero y el botón se deshabilita. Y el punto de venta <strong>vuelve a leer el tope del servidor cada vez que se abre el modal</strong>, porque una caja puede quedar abierta días y el tope pudo cambiar.</li>
+    <li><strong>Autorización de supervisor sobre el tope — pero solo en apartados</strong>, y ahí sí con validación en el servidor: el autorizador debe existir y tener el permiso. El comentario es la frase que vale para el correo: <em>«NO se confía en un nombre tecleado por el cliente»</em>.</li>
+  </ul>
+  <p><strong>Lo que NO existe y no hay que decir:</strong> un tope <em>por rol</em> — «la gerente de Polanco hasta 20%, la vendedora hasta 5%». Los topes son de la cuenta; lo que cambia por persona es el permiso de sí o no. Y el flujo de «supervisor autoriza sobre el tope» <strong>está en apartados, no en la venta directa</strong>.</p>
+  <div class="ev"><b>/opt/sacs/sacs3/src/views/configuracion/config-grupos.js</b> L2378-2402 · <b>puntoventa2.js</b> L10723 fail-closed, L11457 validación, L11795 topes · <b>/opt/sacs/sacs_api/class/pedidos.js</b> L3580-3680</div>
+
+  <h3>Las bitácoras no se pueden editar, ni por el dueño de la cuenta<span class="chip ok">confirmado</span></h3>
+  <p>Este párrafo es oro para un cliente que ha tenido problemas de faltantes. Tres colecciones de auditoría — aperturas de caja, bitácora de control de cortes y plantillas de nivelación — están declaradas <strong>de solo lectura en la API</strong>: se leen para los reportes, pero no se pueden escribir ni borrar desde el cliente. El comentario que lo justifica se puede citar casi literal:</p>
+  <blockquote>
+    <p>Un rastro de auditoría que el auditado puede editar no es un rastro. Sin este candado, cualquier usuario podía tapar lo que hizo con una línea: borrar el renglón que lo delata… y el reporte mentiría.</p>
+    <cite>/opt/sacs/sacs_api/middleware/rest-guards.js</cite>
+  </blockquote>
+  <p>En la misma línea: cuando un PIN es incorrecto, la bitácora escribe el estado «bloqueado» de forma explícita en vez de dejar que se deduzca de la diferencia — porque un lector lo pintaría como «cuadró», y el código lo llama «el peor error posible en una bitácora».</p>
+
+  <h3>La cicatriz que mejor vende<span class="chip ok">confirmado</span></h3>
+  <p>Si hay un solo párrafo para demostrar que esto opera retail de verdad, es este. El 8 de agosto de 2026, durante un evento en vivo, el punto de venta dejó de imprimir tickets aunque las ventas seguían entrando. La causa: Mongo saturado.</p>
+  <blockquote>
+    <p>314 operaciones lentas, <code>listDatabases</code> de 25 segundos, la máquina horas al 89% de CPU. 48 consultas zombis, una de 56 minutos, con la cola de Mongo en 762 lectores.</p>
+    <cite>/opt/sacs/sacs_api/documentacion/RIESGOS_MONGO_PENDIENTES.md</cite>
+  </blockquote>
+  <p>De ahí salió una regla escrita en mayúsculas en el manual del repo: <strong>«La aplicación NO crea índices. Nunca. En ningún camino de petición.»</strong> Se rastrearon ~156 lugares que lo hacían y se movieron a un script manual. Eso es un postmortem convertido en arquitectura — y es un lenguaje que un director de operaciones entiende sin traducción.</p>
+
+  <h3>Dos detalles pequeños que valen un párrafo entero<span class="chip ok">confirmado</span></h3>
+  <ul>
+    <li><strong>Factura global del público en general.</strong> No es «facturación», es la que un retail necesita de verdad: se timbra un comprobante con <em>un concepto por venta</em>, filtrando por sucursal y caja, excluyendo lo ya facturado o cancelado, e incluyendo correctamente las ventas que tuvieron devolución con neto positivo. Y si el timbrado falla, hay reversión de las ventas ya marcadas. Eso es lo que separa un sistema mexicano de uno traducido.</li>
+    <li><strong>El configurador de tickets cuenta centímetros de papel.</strong> Al escribir la leyenda del pie, la pantalla estima cuánto rollo va a gastar. Es un detalle diminuto y es exactamente el tipo de cosa que solo se construye cuando un cliente reclamó el gasto en consumibles.</li>
+  </ul>
+  <div class="ev"><b>/opt/sacs/sacs_api/modules/cfdi/cfdi.global.service.js</b> (1,876 L) · <b>/opt/sacs/sacs3/src/views/configuracion/config-ticket.js</b> <code>_estimarPapelCm</code></div>
+
+  <h3>Seguridad aprendida a golpes<span class="chip ok">confirmado</span></h3>
+  <ul>
+    <li>La pertenencia del usuario a la cuenta <strong>no se verifica contra el token</strong>, sino contra la base de la cuenta. El comentario del código explica por qué: «ese lo manipuló el intruso».</li>
+    <li>El nombre de cuenta se valida con expresión regular porque mandarlo como arreglo abría la base de otro cliente.</li>
+    <li>La API REST genérica tiene un guardián de ~51 KB que veta colecciones, oculta campos (llaves del SAT, tokens, costos) y prohíbe cruces hacia colecciones vetadas.</li>
+    <li>Un endpoint de diagnóstico que listaba todas las cuentas de la plataforma fue <strong>desactivado</strong> en julio de 2026 tras un incidente.</li>
+  </ul>
+  <div class="ev"><b>/opt/sacs/sacs_api/middleware/auth.js</b> · <b>middleware/rest-guards.js</b> · <b>lib/mongo.lib.js</b> L38 · <b>index.js</b> L390</div>
+
+  <h3>El sistema avisa cuando te está mintiendo<span class="chip ok">confirmado</span></h3>
+  <p>Un techo de paginación truncaba resultados en silencio y Configuración «perdía» sucursales — el equipo lo bautizó internamente por el bug que lo destapó. Hoy la respuesta incluye una bandera <code>posible_truncado</code> y hay una prueba automatizada que impide que vuelva. Detalle honesto que refuerza: el caso que rompió el techo fue <strong>un cliente con 150 sucursales</strong>.</p>
+  <div class="ev"><b>/opt/sacs/sacs_api/modules/genericController.js</b> L25-53 · <b>tests/rest-generico-techo.test.js</b></div>
+</section>
+
+<!-- ══════════════ 3 ══════════════ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Lo que soporta escala</h2></div>
+  <p class="sec-sub">Números reales del repositorio. Todos citables. Ninguno es el que está en el sitio.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Dato</th><th>Valor</th><th>Dónde está</th></tr></thead>
+    <tbody>
+      <tr><td class="who">Tiendas en producción</td><td class="num">~555 bases <code>sacs3_*</code></td><td>Citas fechadas y crecientes: 539 · 550 · 552 · 554 · 561</td></tr>
+      <tr><td class="who">Arquitectura</td><td class="num">1 base de Mongo por cuenta</td><td><code>lib/mongo.lib.js</code> · dos clústeres (VM 4.0 + Atlas 8.0)</td></tr>
+      <tr><td class="who">Cuenta más grande</td><td class="num">4.4M ventas</td><td>10.8M renglones de detalle · 13.5M de kardex · 443 usuarios · 31 sucursales</td></tr>
+      <tr><td class="who">Base más pesada</td><td class="num">70 GB</td><td><code>sacs_api/CLAUDE.md</code></td></tr>
+      <tr><td class="who">Máximo de sucursales visto</td><td class="num">150</td><td><code>modules/genericController.js</code> L37</td></tr>
+      <tr><td class="who">Antigüedad del producto</td><td class="num">Desde nov 2016</td><td>Primer commit de sacs3: 2016-11-30 · 24,647 commits</td></tr>
+      <tr><td class="who">Tamaño del backend</td><td class="num">296,745 líneas</td><td>301 módulos · 122 clases · 2,333 rutas · 303 pruebas</td></tr>
+      <tr><td class="who">Índices de base de datos</td><td class="num">496 especificaciones</td><td>188 colecciones por cuenta · 134 únicos</td></tr>
+      <tr><td class="who">Trabajos programados</td><td class="num">37 jobs</td><td>Un despachador multi-inquilino: 1 job ↔ N tiendas</td></tr>
+      <tr><td class="who">Integraciones de venta reales</td><td class="num">4</td><td>WooCommerce · Shopify · Tienda Nube · TikTok Shop</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>El argumento de escala que de verdad impresiona<span class="chip ok">confirmado</span></h3>
+  <p>No es «tenemos muchos clientes». Es que el sistema está diseñado para que el costo <em>no</em> crezca con ellos. Cuando midieron los procesos nocturnos, descubrieron que recorrían las 539 tiendas para encontrar a las pocas que usaban cada módulo: <strong>14 de 539</strong> tenían metas y comisiones activas; 2 de 539, colecciones automáticas. Cada barrido costaba 43 segundos de base de datos buscando a nadie.</p>
+  <p>La solución fue invertirlo: la tienda <strong>se apunta sola</strong> el día que enciende la función, y el proceso solo visita a las apuntadas. El comentario del código lo cierra mejor de lo que lo haría un correo:</p>
+  <blockquote>
+    <p>Una plataforma de 5,000 cuentas costaría lo mismo que hoy si los que usan el módulo siguen siendo 14.</p>
+    <cite>/opt/sacs/sacs_api/lib/registro-cuentas.lib.js · L15</cite>
+  </blockquote>
+
+  <h3>Las cuatro integraciones son espejos, no parches<span class="chip ok">confirmado</span></h3>
+  <p>Cada integración de venta en línea se construyó copiando la arquitectura de la anterior — el código lo dice literalmente: Tienda Nube es «espejo arquitectónico de Shopify», TikTok Shop es «espejo arquitectónico de Tienda Nube». Todas comparten el mismo patrón: OAuth con estado firmado, credenciales cifradas que nunca llegan al navegador, webhooks validados con firma HMAC, reconciliador programado y sincronización masiva reanudable con pausa y cancelación.</p>
+  <p>Argumento para el lead: la quinta integración no es una aventura, es una repetición.</p>
+</section>
+
+<!-- ══════════════ 4 ══════════════ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Frente a lo que el lead está evaluando</h2></div>
+  <p class="sec-sub">Incluido dónde SACS no gana. Eso es lo que hace utilizable el resto.</p>
+
+  <div class="rule-note" style="margin-top:0;margin-bottom:30px">
+    <p><strong>Advertencia sobre el material existente.</strong> El sitio ya tiene cuatro matrices comparativas contra Shopify, Square, Lightspeed, SICAR, Pulpos, Size&nbsp;&amp;&nbsp;Color, BindERP y Alegra, con celdas «total / parcial / nada». <strong>No citan una sola fuente.</strong> Son criterio interno de marketing. Sirven para orientar el ángulo; no para afirmar nada en un correo que el lead pueda cuestionar. Y no pude verificar las capacidades de los competidores en esta investigación — todo lo de abajo sobre ellos es criterio, no evidencia.</p>
+  </div>
+
+  <h3>Reencuadre: dos de los seis no son competidores</h3>
+  <p><strong>Shopify y Tienda Nube son canales con los que SACS se integra</strong>, no alternativas excluyentes — y la integración es real, con código y documentación de verificación de punta a punta. Si el lead los está evaluando, el correo no debería pelear: debería decir que su tienda en línea puede quedarse donde está, y que lo que cambia es quién manda el inventario. Es una objeción convertida en argumento.</p>
+
+  <h3>Dónde SACS gana de forma demostrable</h3>
+  <ul>
+    <li><strong>Contra Eleventa y SICAR:</strong> son fuertes en punto de venta y facturación para una tienda. No tienen el aparato de moda multitienda — curva de tallas, hueco de curva, salud de corrida por color, nivelación con reparto justo desde CEDIS, Open-to-Buy. Ese es el terreno.</li>
+    <li><strong>Contra Shopify POS:</strong> operación física mexicana. CFDI 4.0 desde el ticket, cortes por turno con arqueo, apartados con abonos, traspasos entre sucursales con máquina de estados, precio flat en pesos sin comisión por transacción.</li>
+    <li><strong>Contra Alegra:</strong> Alegra es contabilidad y facturación; SACS es operación de piso e inventario. No compiten en el mismo eje — conviene decirlo.</li>
+    <li><strong>Contra un desarrollo a la medida:</strong> el argumento más honesto de todos. Casi 10 años, ~555 tiendas, 303 pruebas automatizadas y postmortems escritos. Un desarrollo a la medida empieza en cero el día uno.</li>
+  </ul>
+
+  <h3>Dónde SACS no gana — no prometer aquí</h3>
+  <ul>
+    <li><strong>Comercio electrónico puro.</strong> Shopify tiene temas, checkout optimizado, pagos internacionales y un ecosistema de apps con el que SACS no compite. Por eso la integración es la respuesta correcta.</li>
+    <li><strong>Mercado Libre y Amazon: no existen.</strong> Cero código en los dos repos. Solo hay entradas de menú creadas el mismo día como reorganización visual. Si el lead vende en Mercado Libre, esto es un hueco real.</li>
+    <li><strong>Contabilidad.</strong> Hoy se exporta a Excel y CSV. Las integraciones con Contpaqi, Aspel y Siigo están en roadmap según el propio sitio.</li>
+    <li><strong>Paqueterías.</strong> Existen Skydropx y Envía; el sitio admite que la integración directa con otras es roadmap.</li>
+    <li><strong>Simplicidad y precio de entrada</strong> para una sola tienda pequeña. Eleventa y SICAR son más baratos y más simples. SACS empieza a ganar en la segunda sucursal — de hecho el propio manual interno de ventas dice que de dos en adelante «es nuestro terreno».</li>
+    <li><strong>La app móvil va detrás de la web.</strong> Conviene no venderla como equivalente.</li>
+  </ul>
+</section>
+
+<!-- ══════════════ 5 ══════════════ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Tres afirmaciones 100% defendibles</h2></div>
+  <p class="sec-sub">Si el lead las cuestiona en la llamada, aquí está lo que se le enseña.</p>
+
+  <div class="claim">
+    <p class="claim-say">Tu sistema actual cree que la talla M no se vende. Se agotó en la primera semana. Nosotros sabemos la diferencia.</p>
+    <p class="defend"><span class="defend-lbl">Con qué se defiende</span>El motor agrupa por modelo padre y analiza <em>todas</em> las variantes, incluidas las que no registraron venta, y estima la demanda del hueco con cinco métodos que el cliente elige. Se puede mostrar en pantalla: es una casilla llamada «Analizar por curva de tallas» en órdenes de compra. Archivo: <code>class/ordenCompra.js</code> L2062 y L2177-2300.</p>
+  </div>
+
+  <div class="claim">
+    <p class="claim-say">Llevamos desde 2016 construyendo esto, y hoy corre en unas 555 tiendas. La más grande lleva 4.4 millones de ventas en el sistema.</p>
+    <p class="defend"><span class="defend-lbl">Con qué se defiende</span>Primer commit del producto: 30 de noviembre de 2016; 24,647 cambios registrados. El conteo de tiendas y el volumen de la cuenta mayor están escritos en los comentarios y en el manual técnico del repositorio, con fechas. Es un número que se puede sostener a la baja y con precisión, que es justo lo contrario de lo que hace el sitio hoy.</p>
+  </div>
+
+  <div class="claim">
+    <p class="claim-say">Si se cae el internet un sábado, la caja sigue cobrando y no se pierde una sola venta. Cuando vuelve la red, todo sube solo.</p>
+    <p class="defend"><span class="defend-lbl">Con qué se defiende</span>La venta se escribe en una bitácora local antes incluso de imprimir el ticket, se encola con folio propio y sube al reconectar, con tres candados independientes para que no se duplique. El gestor de conexión exige cinco pings buenos seguidos antes de dar la red por recuperada, justamente para no mandar ventas con señal moribunda. <strong>Acompañarla siempre del límite</strong>: sin internet se cobra en efectivo, tarjeta y transferencia, pero no con crédito, monedero ni tarjeta de regalo, y no se puede cerrar la caja. Decir el límite es lo que hace creíble la promesa.</p>
+  </div>
+</section>
+
+<!-- ══════════════ 6 ══════════════ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>Tres afirmaciones prohibidas</h2></div>
+  <p class="sec-sub">Las tres están hoy en el sitio o en el material de ventas. Ninguna sobrevive a un cliente que pregunte.</p>
+
+  <div class="claim bad">
+    <p class="claim-say">Más de 3,000 marcas en México y Latinoamérica ya operan con SACS.</p>
+    <p class="defend"><span class="defend-lbl">Por qué no</span>La evidencia del código apunta a <strong>~555 bases de datos</strong>, y el propio repositorio advierte que ese conteo incluye bases que pueden estar vacías o huérfanas — no hay censo de cuentas activas. El número real defendible es cinco a seis veces menor que el publicado. Aparece en planes, contacto, registro, cotización y varias páginas de giro. <strong>Es el riesgo de credibilidad más grande del material actual</strong>, precisamente porque estos leads ya vieron la demo y ya tienen cotización: son los que más probablemente pidan referencias.</p>
+  </div>
+
+  <div class="claim bad">
+    <p class="claim-say">Lo que dejas en la departamental, bajo control: entregas 40 vestidos y sabes cuáles siguen colgados.</p>
+    <p class="defend"><span class="defend-lbl">Por qué no</span>La suite de consignación de SACS es <strong>entrante, no saliente</strong>. Está construida para que personas consignen piezas <em>a</em> la tienda — el módulo se llama internamente «Vende tu Clóset» y va de reventa y luxury resale. No existe consignación hacia departamentales: la búsqueda de «departamental», «Liverpool», «Palacio de Hierro», «Sears» y «Coppel» en los dos repositorios no devuelve nada funcional. La sección completa que hoy vive en la página de marcas de ropa, con su ejemplo «Departamental · centro», describe algo que el producto no hace. <strong>Además, la suite se cotiza aparte del plan</strong> — no asumir que está incluida en la cotización que el lead ya tiene.</p>
+  </div>
+
+  <div class="claim bad">
+    <p class="claim-say">Mercado Libre, Shopify, TikTok Shop y tu propia tienda, con un mismo catálogo. Conecta con más de 600 apps.</p>
+    <p class="defend"><span class="defend-lbl">Por qué no</span>Shopify y TikTok Shop sí; <strong>Mercado Libre no tiene una sola línea de código</strong> en el backend, solo una entrada de menú. Y sobre las 600 apps, el propio sitio ya se desdice en su sección de preguntas: «"+600 apps" es la meta del ecosistema a mediano plazo». Decir cuatro integraciones reales y verificadas es más fuerte que decir 600 imaginarias, sobre todo ante un lead que puede pedir una demo de la que le importa.</p>
+  </div>
+</section>
+
+<!-- ══════════════ 7 ══════════════ -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h2>Suena bien pero no lo pude confirmar</h2></div>
+  <p class="sec-sub">No usar sin validar con producto. Varias vienen del propio sitio y algunas están marcadas como roadmap en una página mientras se venden como hechas en otra.</p>
+
+  <h3>Cifras del sitio sin respaldo localizable</h3>
+  <ul>
+    <li><strong>+$7,600 millones transaccionados</strong>, <strong>99.9% de disponibilidad</strong>, <strong>4.8/5 en Google</strong>, <strong>20+ personas de soporte</strong>. Aparecen en varias páginas; no encontré de dónde salen.</li>
+    <li><strong>«Hasta 4 ventas por minuto por punto»</strong> en merchandising de eventos.</li>
+    <li><strong>Los casos de éxito.</strong> La Bella Pandita se presenta con 42 sucursales, pero el código de esa misma cuenta menciona 31. Vale confirmar antes de repetir cualquier cifra de los casos.</li>
+  </ul>
+
+  <h3>Contradicciones internas del propio sitio</h3>
+  <ul>
+    <li><strong>WhatsApp.</strong> Los planes venden «avisos automáticos por WhatsApp»; la página de producto dice «la integración nativa con WhatsApp Business está en roadmap — no está disponible aún».</li>
+    <li><strong>Puntos de lealtad en línea.</strong> Los planes dicen que valen en mostrador y en línea; la página de producto dice que el canje vive solo en el punto de venta.</li>
+    <li><strong>Membresías y tarjetas de regalo.</strong> Listadas como features del plan Fideliza; las preguntas frecuentes las describen como roadmap y fase piloto respectivamente.</li>
+    <li><strong>Nivelación.</strong> Una pregunta frecuente la da por roadmap; el motor existe y tiene 18,300 líneas. Esa página está desactualizada en contra del producto.</li>
+  </ul>
+
+  <h3>Funciones de la página de moda que no encontré en el código</h3>
+  <ul>
+    <li><strong>Ficha de clienta con su talla habitual y sus colores recurrentes</strong>, y aviso automático cuando entra su talla.</li>
+    <li><strong>Sugerencia de look completo al cobrar.</strong> Existe un servicio de venta cruzada, pero no verifiqué que arme conjuntos ni que aplique el descuento por llevarse el look.</li>
+    <li><strong>Temporadas y colecciones como eje transversal.</strong> Hay etiquetas, colecciones para la tienda en línea y un factor de temporada en nivelación, pero <strong>no encontré sell-through por colección o temporada</strong>, que es justo lo que la página promete.</li>
+    <li><strong>Matriz 3D talla × ancho × color</strong> para calzado, <strong>pre-órdenes</strong> y <strong>descuentos progresivos por antigüedad de temporada</strong>. Aparecen en un catálogo interno de suites que resultó ser una página de venta sin producto detrás: no tiene activación, ni banderas de función, ni backend, y su botón es un WhatsApp.</li>
+    <li><strong>Agentes de IA que ejecutan acciones solos.</strong> Hay mucha infraestructura de IA real, pero no verifiqué el grado de autonomía. La página de producto dice que ningún movimiento ocurre sin aprobación humana — conviene vender eso, que además es mejor argumento.</li>
+  </ul>
+
+  <h3>No verificable desde el código</h3>
+  <ul>
+    <li>Cuántas de las ~555 bases corresponden a clientes <strong>activos y pagando</strong>. No hay censo, y el intento de contarlo directamente en la base de producción quedó bloqueado por permisos en esta sesión.</li>
+    <li>Usuarios simultáneos reales. El «~500 usuarios activos» que aparece en un comentario es la estimación de quien lo escribió, no una métrica medida.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Documento generado leyendo <code>/opt/sacs/sacs3</code>, <code>/opt/sacs/sacs_api</code> y <code>/opt/sacs/paginawebsacs/sitio</code>, más las páginas en vivo de sacscloud.com. Las rutas citadas son verificables. Donde no encontré evidencia, lo dice — esa es la parte que hace confiable el resto.</p>
+</footer>
+
+</div>

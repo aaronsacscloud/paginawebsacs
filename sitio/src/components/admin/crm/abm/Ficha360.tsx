@@ -88,12 +88,17 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             <Pastilla tono={ETAPA_TONO[c.etapa] || ETAPA_TONO.sin_tocar}>{(ETAPA_TONO[c.etapa] || ETAPA_TONO.sin_tocar).l}</Pastilla>
             {c.ruta === 'diagnostico' && <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>va a diagnóstico</Pastilla>}
             {c.ya_es_cliente && <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }} titulo={`En el CRM como ${c.ya_es_cliente}`}>ya es cliente</Pastilla>}
+            {c.etapa === 'en_pausa' && c.pausa_hasta && (
+              <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo={c.pausa_motivo || undefined}>
+                vuelve el {fecha(c.pausa_hasta)}
+              </Pastilla>
+            )}
             <Puntaje v={c.puntaje || 0} ancho={70} />
             <span style={{ fontSize: '.6875rem', color: '#999' }}>de {TOPES.puntaje}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
-          {['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida'].map(e => (
+          {['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'en_pausa', 'perdida'].map(e => (
             <button key={e} disabled={guardando || c.etapa === e} onClick={() => accion({ accion: 'etapa', etapa: e })}
               style={{
                 font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: c.etapa === e ? 'default' : 'pointer',

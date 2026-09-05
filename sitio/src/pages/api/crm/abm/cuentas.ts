@@ -21,7 +21,7 @@ export const prerender = false;
 const SEL = 'id, nombre, giro, subgiro, ciudad, pais, moneda, sucursales, sucursales_confianza, tamano, ruta, ' +
   'sitio, plataforma_web, sitio_http, sitio_carrito, sitio_seg, instagram, ig_seguidores, tiktok, facebook, linkedin, ' +
   'google_rating, google_resenas, contexto, senal_expansion, ultima_publicacion, nota, ' +
-  'encaje, dolor, accesibilidad, puntaje, etapa, responsable_id, ya_es_cliente, tiene_email, tiene_wa, canales_n, created_at, updated_at';
+  'encaje, dolor, accesibilidad, puntaje, etapa, responsable_id, ya_es_cliente, tiene_email, tiene_wa, canales_n, pausa_hasta, pausa_motivo, fatiga, created_at, updated_at';
 
 export const GET: APIRoute = async ({ request, url }) => {
   const yo = await quien(request);
