@@ -155,6 +155,13 @@ export async function generarSeguimientos(opts: { max?: number; soloContactId?: 
       const sem = await puedeAutomatico(c.contact_id, { telefono: c.whatsapp, origen: 'seguimiento' });
       if (!sem.ok && sem.motivo !== 'pendiente_mismo_telefono') { res.saltados++; res.errores.push(`${c.nombre}: ${sem.motivo}`); continue; }
 
+      // SIN DATOS NO HAY PIZCA (5-sep): el árbitro calificó la cola en 4.5/10 y su queja era siempre la misma, «no dice
+      // nada concreto de su negocio». Al mirarlo: el giro estaba VACÍO en todos. No es que el agente escriba mal, es que
+      // no sabe qué venden. Así que antes de redactar se busca el negocio en línea (lo mismo que ya hace reactivación).
+      const { investigarEmpresa, textoInvestigacion } = await import('./investigacion');
+      const { data: emp } = c.company_id ? await supabase.from('companies').select('nombre_comercial, nombre, ciudad').eq('id', c.company_id).maybeSingle() : { data: null as any };
+      const inv = (!c.giro || !cl.falta) ? await investigarEmpresa({ contactId: c.contact_id, nombre: c.nombre, empresa: emp?.nombre_comercial || emp?.nombre, giro: c.giro, ciudad: emp?.ciudad }).catch(() => null) : null;
+      const bloqueInv = textoInvestigacion(inv);
       const S = SITUACIONES[cl.situacion];
       const nota = `SEGUIMIENTO CORTO (${c.horas_sin_respuesta} h sin respuesta). Situación: ${S.label}. ${S.comoEscribir}
 Lo que quedó: ${cl.resumen}
@@ -162,7 +169,9 @@ ${cl.falta ? `Lo que falta: ${cl.falta}` : ''}
 Ángulo para retomar: ${cl.angulo}
 Es un SEGUIMIENTO, no el primer mensaje: no te presentes de nuevo, no repitas lo que ya le dijiste y no le reclames el silencio ("no me contestaste", "te escribí").
 FORMA OBLIGATORIA: dos burbujas separadas por una línea con --- . La primera DA algo (lo que Sacs le resuelve a ÉL, con lo que ya sabemos de su negocio; si no sabemos lo suficiente, profundiza en algo que él dijo y no exploramos). La segunda pide UNA cosa: el dato que falta, o el siguiente paso con tiempo real ("tengo espacio esta semana o la próxima"), alternando demo y llamada según lo que ya se le ofreció.
-Que se lea como alguien que quiere entender su negocio, no como un vendedor cobrando una lista. Una sola pregunta en todo el mensaje, al final.`;
+Que se lea como alguien que quiere entender su negocio, no como un vendedor cobrando una lista. Una sola pregunta en todo el mensaje, al final.
+PROHIBIDO enumerar funciones («traspasos, conteo, pedidos a proveedor, más de 50 reportes»): eso es lista de catálogo, no es una pizca. La pizca es UNA cosa, la que le resuelve SU problema.
+Si de verdad no sabes nada de su negocio, no finjas que sí: pregunta con curiosidad genuina por lo suyo y ofrécele que te mande una nota de voz.${bloqueInv}`;
       const d = await decidirTurno(c.contact_id, nota, { tarea: 'seguimiento' });
       res.costo += d.costo || 0;
       if (!d.salida?.mensaje || !d.telefono) { res.saltados++; res.errores.push(`${c.nombre}: el agente no propuso mensaje`); continue; }

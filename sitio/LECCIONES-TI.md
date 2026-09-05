@@ -568,3 +568,19 @@ baja de ~$0.45 a ~$0.22, y la segunda prueba del día sobre los mismos casos es 
 
 **Regla de oficio:** medir cuesta, y si no se instrumenta no se sabe. La instrumentación (`ia_uso`) se pagó sola en
 un día: sin ella habríamos culpado al agente en vez de al arnés de pruebas.
+
+## 2026-09-05 · Por qué los seguimientos sonaban a plantilla (y no era el guion)
+
+El dueño dijo que los mensajes estaban «muy duros» y el árbitro se lo confirmó: la cola promediaba **4.03/10**, los
+38 por debajo de 8, y la queja se repetía palabra por palabra: «no dice nada concreto de su negocio», «suena a
+plantilla». Se reescribió la forma del mensaje (dos partes: la primera DA algo, la segunda pide UNA cosa) y solo
+subió a **4.47**.
+
+**La causa real:** `contacts.giro` estaba VACÍO en los 38. No es que el agente escriba mal: **no sabe qué venden.**
+Pedirle una «pizca concreta» sobre un negocio del que no sabemos nada solo produce relleno genérico, que es justo
+lo que el árbitro castigaba. Por eso ahora el seguimiento corto usa la MISMA investigación en línea que ya hacía
+reactivación (`investigarEmpresa`) cuando falta el giro, y el prompt prohíbe explícitamente enumerar funciones
+(«traspasos, conteo, pedidos a proveedor, más de 50 reportes» es catálogo, no es una pizca).
+
+**Lección de método:** cuando el juez repite la misma queja en todos los casos, el problema no está en la redacción
+sino en la ENTRADA. Antes de reescribir el prompt por tercera vez, hay que mirar qué datos tiene realmente el agente.
