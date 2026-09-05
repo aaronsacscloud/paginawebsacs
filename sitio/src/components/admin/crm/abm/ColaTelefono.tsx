@@ -64,8 +64,16 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
     <div style={{ display: 'grid', gap: 14, maxWidth: 760 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <span style={{ fontSize: '.8125rem', color: '#777' }}>{i + 1} de {cola.length} en la cola de hoy</span>
-        <button onClick={() => setI(Math.min(cola.length - 1, i + 1))} style={{ marginLeft: 'auto', font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, border: '1px solid #e6e4ee', background: '#fff', color: '#666', cursor: 'pointer' }}>
+        <button disabled={i === 0} onClick={() => setI(Math.max(0, i - 1))}
+          style={{ marginLeft: 'auto', font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, border: '1px solid #e6e4ee', background: '#fff', color: i === 0 ? '#bbb' : '#666', cursor: i === 0 ? 'default' : 'pointer' }}>
+          Anterior
+        </button>
+        <button onClick={() => setI(Math.min(cola.length - 1, i + 1))} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, border: '1px solid #e6e4ee', background: '#fff', color: '#666', cursor: 'pointer' }}>
           Saltar
+        </button>
+        <button onClick={() => window.dispatchEvent(new CustomEvent('crm:abm-ficha', { detail: { id: c?.id } }))}
+          style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1.5px solid ${P.violeta}`, background: '#fff', color: P.violetaTinta, cursor: 'pointer' }}>
+          Ver la ficha
         </button>
       </div>
 

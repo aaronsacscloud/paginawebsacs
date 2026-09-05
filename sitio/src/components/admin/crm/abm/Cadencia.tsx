@@ -104,7 +104,9 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
                 {t.estado !== 'enviado' && t.estado !== 'cancelado' && (
                   <div style={{ display: 'flex', gap: 7, marginTop: 10, flexWrap: 'wrap' }}>
                     {t.estado === 'borrador' && (
-                      <button disabled={trabajando} onClick={() => pedir({ accion: 'aprobar', toque_id: t.id })} style={btn(true)}>Aprobar</button>
+                      // Secundario: el principal del bloque es "Aprobar los N"
+                      // de arriba. Siete sólidos en fila no jerarquizan nada.
+                      <button disabled={trabajando} onClick={() => pedir({ accion: 'aprobar', toque_id: t.id })} style={btn(false)}>Aprobar</button>
                     )}
                     <button onClick={() => { setEditando(t.id); setBorr({ asunto: t.asunto || '', cuerpo: t.cuerpo || '' }); }} style={btn(false)}>Editar</button>
                     <button disabled={trabajando} onClick={() => pedir({ accion: 'cancelar', toque_id: t.id })} style={btnMal()}>Quitar</button>

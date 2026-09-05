@@ -154,12 +154,20 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
       </div>
 
       {/* ── Las dos verdades ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 11 }}>
+      {/* alignItems:start — si no, la caja de "lo que nos dijeron" se estira a
+          la altura del contexto y quedan 380 px de blanco al lado. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 11, alignItems: 'start' }}>
         <div style={CAJA}>
           <p style={H}>Lo que investigamos</p>
-          <Dato etiqueta="Sucursales" valor={c.sucursales ? String(c.sucursales) : 'sin dato'} fuente={fuentePor('general')} extra={c.sucursales_confianza} />
+          <Dato etiqueta="Sucursales" valor={c.sucursales ? String(c.sucursales) : 'sin dato'} fuente={fuentePor('general')}
+            extra={(CONFIANZA_TONO[c.sucursales_confianza] || {}).l} />
           <Dato etiqueta="Tecnología del sitio" valor={corta(c.plataforma_web, 70) || (c.sitio_http === 0 ? 'el sitio no responde' : 'sin detectar')} titulo={c.plataforma_web} extra={c.sitio_carrito === false ? 'no vende en línea' : undefined} />
-          <Dato etiqueta="Redes" valor={[c.instagram, c.tiktok ? 'TikTok' : null, c.facebook ? 'Facebook' : null].filter(Boolean).join(' · ') || 'sin redes'} extra={c.ig_seguidores || undefined} />
+          {/* Los seguidores son de Instagram: colgados al final parecían de
+              Facebook, que era el último de la lista. */}
+          <Dato etiqueta="Redes" valor={[
+            c.instagram ? `${c.instagram}${c.ig_seguidores ? ` (${c.ig_seguidores})` : ''}` : null,
+            c.tiktok ? 'TikTok' : null, c.facebook ? 'Facebook' : null,
+          ].filter(Boolean).join(' · ') || 'sin redes'} />
           {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{c.contexto}</p>}
           {c.senal_expansion && (
             <p style={{ fontSize: '.8125rem', margin: '10px 0 0', color: '#555', lineHeight: 1.5 }}>

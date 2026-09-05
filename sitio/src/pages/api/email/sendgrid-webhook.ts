@@ -30,26 +30,46 @@ const A_SUPRESION: Record<string, 'rebote_duro' | 'rebote_suave' | 'queja' | 'ba
   group_unsubscribe: 'baja',
 };
 
+/** Las claves públicas del webhook, en orden. Son VARIAS a propósito: cuando
+ *  haya una segunda cuenta de SendGrid —la del correo en frío, separada para
+ *  que una queja de spam no suprima las facturas—, cada cuenta firma con la
+ *  suya. Con una sola clave configurada esto se comporta exactamente igual que
+ *  antes; lo peligroso era lo contrario: al pegar la clave nueva encima, los
+ *  eventos de la cuenta vieja dejaban de validar y se descartaban en silencio
+ *  con un 200. Los de facturas, o los del frío — y en ese caso el disyuntor
+ *  contaría cero quejas para siempre mientras el dominio se quema. */
+function clavesWebhook(): string[] {
+  const v = [
+    import.meta.env.SENDGRID_WEBHOOK_KEY,
+    import.meta.env.SENDGRID_WEBHOOK_KEY_FRIO,
+    import.meta.env.SENDGRID_WEBHOOK_KEY_2,
+  ];
+  return v.map(x => String(x || '').trim()).filter(Boolean);
+}
+
 function firmaValida(raw: string, sig: string | null, ts: string | null): boolean {
-  const pub = (import.meta.env.SENDGRID_WEBHOOK_KEY || '').trim();
+  const claves = clavesWebhook();
   // FALLA CERRADO. Antes esto devolvía `true` cuando no había clave, y como la
   // ruta está exenta de CSRF, cualquiera en internet podía mandar un arreglo de
   // eventos `spamreport` con los correos de la cartera y suprimirla entera,
   // cancelando de paso sus inscripciones a embudos. Sin clave no se procesa
   // nada — y el log lo dice, para que no sea un silencio.
-  if (!pub) {
+  if (!claves.length) {
     console.warn('[sendgrid-webhook] falta SENDGRID_WEBHOOK_KEY: evento descartado');
     return false;
   }
   if (!sig || !ts) return false;
-  try {
-    const verifier = crypto.createVerify('sha256');
-    verifier.update(ts + raw);
-    const key = crypto.createPublicKey({
-      key: Buffer.from(pub, 'base64'), format: 'der', type: 'spki',
-    });
-    return verifier.verify(key, Buffer.from(sig, 'base64'));
-  } catch { return false; }
+  for (const pub of claves) {
+    try {
+      const verifier = crypto.createVerify('sha256');
+      verifier.update(ts + raw);
+      const key = crypto.createPublicKey({
+        key: Buffer.from(pub, 'base64'), format: 'der', type: 'spki',
+      });
+      if (verifier.verify(key, Buffer.from(sig, 'base64'))) return true;
+    } catch { /* una clave mal escrita no puede tumbar a las demás */ }
+  }
+  return false;
 }
 
 export const POST: APIRoute = async ({ request }) => {

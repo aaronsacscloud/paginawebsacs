@@ -77,12 +77,19 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (error) return json({ error: error.message }, 500);
 
   // Los canales de la página, para que la tabla muestre por dónde entrarle
+  // En tandas: `in` con 810 UUID hace una URL de más de 29 mil caracteres y
+  // PostgREST la rechaza. El error se perdía en el destructuring y la columna
+  // que da nombre a la pantalla —por dónde entrarle— decía "sin vía
+  // verificada" en las 810 filas, debajo de un KPI que dice 377 con correo.
   const ids = (data || []).map((c: any) => c.id);
-  const { data: cans } = ids.length
-    ? await supabase.from('abm_canales').select('cuenta_id, tipo, valor, confianza, estado').in('cuenta_id', ids)
-    : { data: [] as any[] };
   const porCuenta: Record<string, any[]> = {};
-  for (const c of cans || []) (porCuenta[c.cuenta_id] ||= []).push(c);
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data: cans, error: eCan } = await supabase
+      .from('abm_canales').select('cuenta_id, tipo, valor, confianza, estado')
+      .in('cuenta_id', ids.slice(i, i + 150));
+    if (eCan) return json({ error: `no se pudieron leer los canales: ${eCan.message}` }, 500);
+    for (const c of cans || []) (porCuenta[c.cuenta_id] ||= []).push(c);
+  }
 
   return json({
     cuentas: (data || []).map((c: any) => ({ ...c, canales: porCuenta[c.id] || [] })),
