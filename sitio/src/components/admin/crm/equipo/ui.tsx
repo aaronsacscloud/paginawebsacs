@@ -244,6 +244,55 @@ export const CSS = `
    línea y en gris porque es instrucción, no contenido de la junta. */
 .eq-guion-b li .f{display:block;margin-top:3px;font-size:11px;font-weight:600;color:var(--eq-morado-tinta);
   background:var(--eq-lila);border-radius:6px;padding:2px 7px;width:fit-content;max-width:100%}
+
+/* ══ La sala, rediseñada (5-sep-2026) ══════════════════════════════════════ */
+
+/* LO QUE VIENE DE LA JUNTA PASADA. Va arriba y se ve distinto: es lo único de
+   la sala que YA se prometió una vez. En ámbar, no en rojo — es un pendiente,
+   no un error. */
+.eq-antes{border-color:#f0dfae;background:#fffdf7}
+.eq-antes>.cab{background:#fff8e8;border-bottom-color:#f0dfae}
+.eq-antes>.cab b{color:#7a5c14}
+.eq-antes>.cab .n{background:#f7ecd0;color:#7a5c14}
+/* «Pasar a hoy»: el clic que cierra el ciclo. Va a la derecha de la fila, en su
+   propia columna, para que nunca compita con la palomita de «hecho». */
+.eq-acuerdo .pasa{flex-shrink:0;align-self:center;white-space:nowrap;border-color:#e3c98f;color:#7a5c14}
+.eq-acuerdo .pasa:hover:not(:disabled){background:#fff8e8}
+.eq-acuerdo .veces{color:#9a6a10;font-weight:700}
+
+/* La cuenta regresiva cuando la junta está cerca: deja de ser dato y pasa a ser
+   aviso. */
+.eq-ya{color:var(--eq-morado-tinta);background:var(--eq-lila);border-radius:6px;padding:1px 6px}
+
+/* De quién son los puntos. Una tira delgada, no una tarjeta: separa sin robar
+   el espacio que necesitan los puntos. */
+.eq-quien{display:flex;align-items:center;gap:6px;padding:7px 12px 3px;font-size:11.5px;font-weight:800;
+  color:var(--eq-gris);text-transform:uppercase;letter-spacing:.02em}
+.eq-quien .c{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:700;color:var(--eq-gris)}
+
+/* Un vacío que dice QUÉ HACER. «Vacía» no le sirve a nadie. */
+.eq-nota{padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--eq-gris)}
+
+/* Confirmar en el mismo botón, sin diálogo del sistema. */
+.eq-btn.peligro{border-color:#f7c9c5;background:#fef0ef;color:#c0554e;font-weight:700}
+
+/* ── ESPACIO ──────────────────────────────────────────────────────────────
+   La sala se lee de arriba abajo y lo importante está arriba, así que lo que
+   sobra es el aire ENTRE bloques, no dentro de ellos. */
+.eq-sala{gap:10px;padding:10px 12px 24px}
+@media (max-width:760px){
+  /* En el teléfono, cada bloque pega con el siguiente y el texto baja un punto:
+     entran dos bloques más por pantalla sin que nada se apretuje. */
+  .eq-sala{gap:8px;padding:8px 10px 28px}
+  .eq-guion-b ol{padding:9px 12px 10px 26px;gap:6px}
+  .eq-guion-b li{font-size:12.5px}
+  .eq-guion-h{padding:8px 10px}
+  .eq-quien{padding:6px 10px 2px}
+  /* El botón de «Pasar a hoy» baja a su propia línea: en 390 px, al lado del
+     texto lo dejaba en dos palabras por renglón. */
+  .eq-acuerdo{flex-wrap:wrap}
+  .eq-acuerdo .pasa{margin-left:26px}
+}
 .eq-bloque{border:1px solid var(--eq-linea);border-radius:12px;background:var(--eq-alza);overflow:hidden}
 .eq-bloque .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--eq-linea);background:var(--eq-panel)}
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}

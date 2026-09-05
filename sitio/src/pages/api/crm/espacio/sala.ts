@@ -13,6 +13,7 @@
 //   marcar     { punto_id, estado: tratado|pospuesto|propuesto }
 //   acordar    { sesion_id, punto_id?, texto, responsable_id, vence_at? }
 //   hecho      { acuerdo_id, hecho: bool }        (también cierra/abre la tarea de TI)
+//   arrastrar  { acuerdo_id, sesion_id, vence_at? }  → lo incumplido pasa a HOY
 //   cerrar     { sesion_id, nota? }               → acta, arrastres, tareas, resumen IA
 //   resumen    { sesion_id, texto }               (editar el borrador de la IA, 24 h)
 //
@@ -29,7 +30,7 @@ export const prerender = false;
 
 const SEL_PUNTO = 'id, canal_id, titulo, propuesto_por, origen_mensaje_id, contexto, votos, orden, estado, sesion_id, arrastres, created_at, updated_at';
 const SEL_SESION = 'id, canal_id, inicio_at, fin_at, asistentes, resumen_ia, acta, abierta_por, cerrada_por, punto_actual_id, nota_cierre';
-const SEL_ACUERDO = 'id, sesion_id, punto_id, texto, responsable_id, vence_at, tarea_id, hecho_at, created_at';
+const SEL_ACUERDO = 'id, sesion_id, punto_id, texto, responsable_id, vence_at, tarea_id, hecho_at, created_at, reemplazado_por';
 
 /** La próxima reunión según la regla semanal (hora de México, UTC-6 fija). */
 export function proximaReunion(regla: { dia_iso: number; hora: string } | null): string | null {
@@ -75,9 +76,19 @@ async function salaCompleta(canalId: string, yo: string) {
   // de la sesión abierta en cualquier estado (para verlo tratarse en vivo).
   const agenda = ordenarPuntos((puntos || []).filter((x: any) => abierta ? (x.sesion_id === abierta.id || (x.estado === 'propuesto' && !x.sesion_id)) : (x.estado === 'propuesto' && !x.sesion_id)));
   const formaPunto = (x: any) => ({ ...x, propuesto_por: p(x.propuesto_por), votos: x.votos?.length || 0, vote: (x.votos || []).includes(yo) });
-  const formaAcuerdo = (a: any) => ({ ...a, responsable: p(a.responsable_id), hecho_at: a.hecho_at || (a.tarea_id ? hechas[a.tarea_id] || null : null) });
+  /* Cuántas veces se ha arrastrado este acuerdo. Es LA pregunta cuando algo
+     lleva un mes sin cumplirse: «se pasó a la próxima» tres veces seguidas
+     significa otra cosa que la primera vez, y sin el número las tres se ven
+     iguales. Se cuenta hacia atrás por la cadena de `reemplazado_por`. */
+  const previo = new Map<string, string>();   // acuerdo → el que lo reemplazó
+  for (const a of acuerdos || []) if ((a as any).reemplazado_por) previo.set((a as any).reemplazado_por, a.id);
+  const arrastresDe = (id: string) => { let n = 0, cur = previo.get(id); while (cur && n < 20) { n++; cur = previo.get(cur); } return n; };
+  const formaAcuerdo = (a: any) => ({ ...a, responsable: p(a.responsable_id), arrastres: arrastresDe(a.id), hecho_at: a.hecho_at || (a.tarea_id ? hechas[a.tarea_id] || null : null) });
   const acs = (acuerdos || []).map(formaAcuerdo);
-  const pendientes = acs.filter((a: any) => !a.hecho_at);
+  /* Pendiente = no está hecho Y no fue arrastrado a otra junta. Sin lo segundo,
+     pasar un acuerdo a la reunión de hoy lo contaría DOS veces —el viejo y su
+     continuación—, y a la tercera junta serían tres. */
+  const pendientes = acs.filter((a: any) => !a.hecho_at && !a.reemplazado_por);
 
   // Mensajes de la sesión abierta por punto: "3 mensajes sobre este punto".
   const porPunto: Record<string, number> = {};
@@ -240,7 +251,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, sesion: data });
   }
 
-  if (accion === 'asistentes' || accion === 'tratar' || accion === 'cerrar' || accion === 'resumen' || accion === 'acordar') {
+  if (accion === 'asistentes' || accion === 'tratar' || accion === 'cerrar' || accion === 'resumen' || accion === 'acordar' || accion === 'arrastrar') {
     const s = await sesionDe(b.sesion_id);
     if (!s) return json({ error: 'Sesión no encontrada' }, 404);
     const c = await canalDe(s.canal_id);
@@ -277,6 +288,35 @@ export const POST: APIRoute = async ({ request }) => {
       await emitir({ tipo: 'reunion', canal_id: c.id });
       return json({ ok: true });
     }
+    /* ARRASTRAR · lo que no se cumplió pasa a ser acuerdo de HOY, con un clic.
+       Antes esto era «lo vemos la próxima» dicho en voz alta: el compromiso
+       seguía vivo en pendientes, nadie volvía a ponerle fecha y a los dos meses
+       nadie sabía de qué junta venía.
+       Se copia el texto y el responsable —lo que no cambió— y se le pone fecha
+       nueva; el viejo queda apuntando al nuevo, así sale de pendientes sin
+       borrarse ni darse por hecho. No se hizo, y eso tiene que poder verse. */
+    if (accion === 'arrastrar') {
+      const { data: viejo } = await supabase.from('espacio_acuerdos').select(SEL_ACUERDO).eq('id', b.acuerdo_id).maybeSingle();
+      if (!viejo) return json({ error: 'Ese acuerdo no existe' }, 404);
+      if (viejo.hecho_at) return json({ error: 'Ese acuerdo ya está hecho: no hay qué arrastrar' }, 400);
+      if (viejo.reemplazado_por) return json({ error: 'Ese acuerdo ya se pasó a otra reunión' }, 400);
+      if (viejo.sesion_id === s.id) return json({ error: 'Ese acuerdo ya es de esta reunión' }, 400);
+
+      let vence_at: string | null = b.vence_at || null;
+      if (vence_at && !/^\d{4}-\d{2}-\d{2}$/.test(String(vence_at))) return json({ error: 'Fecha inválida' }, 400);
+      // Sin fecha nueva, una semana: arrastrarlo sin plazo lo deja igual de
+      // huérfano que estaba.
+      if (!vence_at) vence_at = new Date(Date.now() + 7 * 86400e3 - 6 * 3600e3).toISOString().slice(0, 10);
+
+      const { data: nuevo, error } = await supabase.from('espacio_acuerdos')
+        .insert({ sesion_id: s.id, punto_id: null, texto: viejo.texto, responsable_id: viejo.responsable_id, vence_at })
+        .select(SEL_ACUERDO).single();
+      if (error) return json({ error: error.message }, 500);
+      await supabase.from('espacio_acuerdos').update({ reemplazado_por: nuevo.id }).eq('id', viejo.id);
+      await emitir({ tipo: 'reunion', canal_id: c.id });
+      return json({ ok: true, acuerdo: nuevo });
+    }
+
     if (accion === 'acordar') {
       const texto = String(b.texto || '').replace(/\s+/g, ' ').trim();
       if (texto.length < 3 || texto.length > 500) return json({ error: 'El acuerdo va de 3 a 500 caracteres' }, 400);
