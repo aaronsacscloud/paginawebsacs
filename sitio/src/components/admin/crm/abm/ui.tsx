@@ -66,15 +66,28 @@ export const fechaHora = (v: any) => {
   catch { return '—'; }
 };
 
-/** Enlace de contacto: correo, WhatsApp o teléfono, listo para tocar. */
-export function enlaceDe(tipo: string, valor: string): string | null {
+/** Enlace de contacto: correo, WhatsApp o teléfono, listo para tocar.
+ *
+ *  Devuelve null cuando NO se puede abrir. Dos motivos, los dos aprendidos:
+ *  el canal marcado como inválido en la base (33 WhatsApp que no eran números:
+ *  dos teléfonos en un campo, listas de sucursales, hasta una frase), y el
+ *  número demasiado largo — 24 dígitos son dos teléfonos pegados, y pasaban el
+ *  filtro de "al menos 10". Un enlace que no abre nada no es una vía. */
+export function enlaceDe(tipo: string, valor: string, estado?: string): string | null {
+  if (estado === 'invalido' || estado === 'opt_out') return null;
   if (tipo.startsWith('email')) return `mailto:${valor}`;
   if (tipo.startsWith('whatsapp')) {
-    if (valor.startsWith('http')) return valor;
-    const n = valor.replace(/\D/g, '');
-    return n.length >= 10 ? `https://wa.me/${n.length === 10 ? '52' + n : n}` : null;
+    let n = String(valor || '');
+    if (n.startsWith('http')) { const m = n.match(/(\d{10,15})/); n = m ? m[1] : ''; }
+    n = n.replace(/\D/g, '');
+    if (n.length === 10) n = '52' + n;
+    if (n.length === 11 && n.startsWith('1')) n = '52' + n.slice(1);
+    return n.length >= 10 && n.length <= 13 ? `https://wa.me/${n}` : null;
   }
-  if (tipo === 'telefono') return `tel:${valor.replace(/[^\d+]/g, '')}`;
+  if (tipo === 'telefono') {
+    const n = valor.replace(/[^\d+]/g, '');
+    return n.replace(/\D/g, '').length >= 8 && n.replace(/\D/g, '').length <= 13 ? `tel:${n}` : null;
+  }
   if (valor.startsWith('http')) return valor;
   return null;
 }

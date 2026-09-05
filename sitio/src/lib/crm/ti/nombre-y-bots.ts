@@ -83,3 +83,23 @@ export function bloqueNombre(nombre: string | null, vecesUsado: number): string 
   if (vecesUsado >= 2) return `\n\nSU NOMBRE es ${nombre}, pero YA se lo dijimos ${vecesUsado} veces en mensajes anteriores: esta vez NO lo uses, ya sonaría a robot. Entra directo.`;
   return `\n\nSU NOMBRE es ${nombre} y es la primera o segunda vez que le escribimos: úsalo al inicio, natural, variando la forma («Hola ${nombre}», «${nombre}, …», «Qué tal ${nombre}»). Una sola vez en todo el mensaje.`;
 }
+
+/**
+ * CÓMO SALUDA UNA PERSONA (decisión del dueño, 5-sep, y medido en los mensajes reales del equipo).
+ * De 1 988 mensajes con los que el equipo REABRIÓ una conversación después de más de 20 h:
+ *   · 80 % saluda («Hola Ana»)   · 54 % pregunta cómo está   · 72 % usa saltos de línea   · 176 caracteres de media.
+ * En cambio, dentro del mismo día nadie vuelve a saludar: se sigue la plática.
+ */
+export function bloqueSaludo(horasDesdeUltimo: number | null, nombre: string | null, vecesNombre: number): string {
+  const h = horasDesdeUltimo ?? 999;
+  const conNombre = nombre && vecesNombre < 2 ? nombre : null;
+  if (h < 20) {
+    return '\n\nSALUDO: siguen en la misma plática (menos de un día). NO saludes ni preguntes cómo está: se siente robótico. Entra directo a lo que sigue.';
+  }
+  const ej = conNombre
+    ? `«Hola ${conNombre}, ¿cómo estás?», «Hola ${conNombre}, ¿qué tal?», «${conNombre}, ¿cómo te va?», «Qué tal ${conNombre}»`
+    : '«Hola, ¿qué tal?», «Hola, ¿cómo va todo?», «Hola de nuevo»';
+  const dias = Math.round(h / 24);
+  return `\n\nSALUDO: pasaron ${dias >= 1 ? `${dias} día${dias === 1 ? '' : 's'}` : 'varias horas'} desde el último mensaje, así que ABRE saludando y preguntando cómo está, como haría una persona que retoma: ${ej}. Varía la forma, no uses siempre la misma. Prohibido «espero que estés bien» y «quería darle seguimiento»: eso es relleno, no es saludar.
+FORMA: separa el mensaje en párrafos con una línea en blanco (el saludo por un lado, el fondo por otro). Un bloque compacto se ve automático; con aire se lee como escrito por alguien.`;
+}

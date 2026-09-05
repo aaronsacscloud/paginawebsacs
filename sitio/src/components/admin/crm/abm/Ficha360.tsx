@@ -168,7 +168,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             c.instagram ? `${c.instagram}${c.ig_seguidores ? ` (${c.ig_seguidores})` : ''}` : null,
             c.tiktok ? 'TikTok' : null, c.facebook ? 'Facebook' : null,
           ].filter(Boolean).join(' · ') || 'sin redes'} />
-          {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{c.contexto.replace(/[\s·,;]+$/, '')}{/\w$/.test(c.contexto.trim()) ? '' : ''}</p>}
+          {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{(() => { const t = c.contexto.replace(/[\s·,;-]+$/, ''); return /[.!?]$/.test(t) ? t : t + '…'; })()}</p>}
           {c.senal_expansion && (
             <p style={{ fontSize: '.8125rem', margin: '10px 0 0', color: '#555', lineHeight: 1.5 }}>
               <b style={{ color: P.verdeTinta }}>Crece:</b> {c.senal_expansion}
@@ -230,7 +230,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
         )}
         <div style={{ display: 'grid', gap: 8 }}>
           {(d.canales || []).map((ch: any) => {
-            const url = enlaceDe(ch.tipo, ch.valor);
+            const url = enlaceDe(ch.tipo, ch.valor, ch.estado);
             const tono = CONFIANZA_TONO[ch.confianza] || CONFIANZA_TONO.media;
             return (
               <div key={ch.id} style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid #f2f1f6' }}>

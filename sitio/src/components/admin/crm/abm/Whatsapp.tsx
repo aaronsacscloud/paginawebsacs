@@ -70,7 +70,8 @@ export default function Whatsapp({ cuentaId, onCambio }: { cuentaId: string; onC
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         {enlace && (
           <a href={enlace} target="_blank" rel="noopener" onClick={marcar}
-            style={{ font: 'inherit', fontSize: '.8125rem', fontWeight: 700, padding: '9px 15px', borderRadius: 9, background: P.violeta, color: '#fff', textDecoration: 'none' }}>
+            // Secundario: el principal de la ficha es escribir la cadencia.
+            style={{ font: 'inherit', fontSize: '.8125rem', fontWeight: 700, padding: '8px 15px', borderRadius: 9, background: '#fff', border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, textDecoration: 'none' }}>
             Abrir WhatsApp con este mensaje
           </a>
         )}

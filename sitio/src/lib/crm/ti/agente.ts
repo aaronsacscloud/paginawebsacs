@@ -25,7 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
-import { nombreUsable, limpiarHilo, bloqueNombre } from './nombre-y-bots';
+import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -211,7 +211,9 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const nom = nombreUsable(c.nombre);
   const vecesNombre = nom ? msjs.filter(m => m.direccion === 'saliente' && String(m.cuerpo || '').toLowerCase().includes(nom.toLowerCase())).length : 0;
   const avisoBots = limpio.bots ? '\n\nOJO: ' + limpio.bots + ' de sus mensajes son respuestas automaticas de su propio bot, no de la persona. ' + (limpio.huboHumano ? 'Armate con lo ultimo que si escribio una persona.' : 'En realidad NUNCA ha contestado una persona: tratalo como primer contacto.') : '';
-  const bloqueNom = bloqueNombre(nom, vecesNombre) + avisoBots;
+  const ultimoMsj = msjs.length ? Date.parse(String(msjs[msjs.length - 1].created_at)) : null;
+  const horasDesde = ultimoMsj ? (Date.now() - ultimoMsj) / 3600e3 : null;
+  const bloqueNom = bloqueNombre(nom, vecesNombre) + bloqueSaludo(horasDesde, nom, vecesNombre) + avisoBots;
   const memoria = memoriaConversacion(msjs, c.nombre);
   const regreso = await historialRegreso(contactId, msjs, c.nombre).catch(() => '');
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([

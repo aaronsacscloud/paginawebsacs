@@ -137,11 +137,20 @@ export default function AbmTab() {
         if (!n) return <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>sin vía verificada</span>;
         return (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            {mail && <a href={enlaceDe(mail.tipo, mail.valor) || '#'} onClick={e => e.stopPropagation()} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{mail.valor}</a>}
-            {wa && (enlaceDe(wa.tipo, wa.valor)
-              ? <a href={enlaceDe(wa.tipo, wa.valor)!} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>
+            {mail && <a href={enlaceDe(mail.tipo, mail.valor, mail.estado) || '#'} title={mail.valor} onClick={e => e.stopPropagation()} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 196 }}>{mail.valor}</a>}
+            {wa && (enlaceDe(wa.tipo, wa.valor, wa.estado)
+              ? <a href={enlaceDe(wa.tipo, wa.valor, wa.estado)!} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>
               : <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo={wa.valor}>WhatsApp sin número usable</Pastilla>)}
-            {!mail && !wa && <span style={{ fontSize: '.75rem', color: '#888' }}>{n} {n === 1 ? 'vía' : 'vías'}</span>}
+            {!mail && !wa && (() => {
+              const otros = (r.canales || []).filter((x: any) => x.estado !== 'invalido');
+              const ETIQ: Record<string, string> = { telefono: 'Teléfono', dm_ig: 'Instagram', dm_fb: 'Facebook', linkedin: 'LinkedIn' };
+              const tel = otros.find((x: any) => x.tipo === 'telefono');
+              const url = tel && enlaceDe(tel.tipo, tel.valor, tel.estado);
+              const nombres = otros.map((x: any) => ETIQ[x.tipo] || x.tipo).join(' · ') || `${n} ${n === 1 ? 'vía' : 'vías'}`;
+              return url
+                ? <a href={url} onClick={e => e.stopPropagation()} title={tel.valor} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none' }}>{nombres}</a>
+                : <span style={{ fontSize: '.75rem', color: '#888' }}>{nombres}</span>;
+            })()}
           </div>
         );
       },
