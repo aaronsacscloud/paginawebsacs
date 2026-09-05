@@ -41,7 +41,7 @@ export const GIROS: Record<string, string> = {
   aliados: 'Consultoras y escuelas', canal: 'Canal mayorista',
 };
 
-export const ETAPAS = ['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida', 'no_contactar'] as const;
+export const ETAPAS = ['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida', 'en_pausa', 'no_contactar'] as const;
 export const ETAPA_ETIQ: Record<string, string> = {
   sin_tocar: 'Sin tocar', en_cadencia: 'En cadencia', respondio: 'Respondió', reunion: 'Reunión',
   diagnostico: 'Diagnóstico', propuesta: 'Propuesta', ganada: 'Ganada', perdida: 'Perdida', no_contactar: 'No contactar',

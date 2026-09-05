@@ -217,21 +217,37 @@ export async function barrerSugerencias() {
 }
 
 /** Cola del panel: sugerencias por decidir, con quién es el lead. */
+/* ── QUIÉN TE ESTÁ ESPERANDO AHORA (decisión del dueño, 5-sep) ──
+   Medido en 30 días: la mediana para contestarle a un lead son 5 minutos, pero 126 de 662 respuestas tardaron MÁS
+   DE UNA HORA. Y la cola venía ordenada por antigüedad, o sea al revés: el que acaba de escribir quedaba hasta abajo. */
+export type Urgencia = 'ahora' | 'hoy' | 'normal';
+export function urgenciaDe(ultimoEntrante?: string | null): { urgencia: Urgencia; minutos: number | null; porque: string } {
+  if (!ultimoEntrante) return { urgencia: 'normal', minutos: null, porque: '' };
+  const min = Math.round((Date.now() - Date.parse(ultimoEntrante)) / 60000);
+  if (min <= 30) return { urgencia: 'ahora', minutos: min, porque: `escribió hace ${min} min y está esperando` };
+  if (min <= 240) return { urgencia: 'hoy', minutos: min, porque: `escribió hace ${Math.round(min / 60)} h` };
+  return { urgencia: 'normal', minutos: min, porque: '' };
+}
+
 export async function sugerenciasPendientes(limit = 60) {
   const desde24 = new Date(Date.now() - 24 * 3600e3).toISOString();
   const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, mensaje, adjuntos, imagen_url, plantilla, salida, created_at, sale_at').eq('estado', 'sugerencia').order('created_at', { ascending: true }).limit(limit);
   const ids = [...new Set((sug || []).map(s => s.contact_id).filter(Boolean))] as string[];
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, email, lifecycle_stage, giro, company_id, propiedades, fuente, companies(nombre_comercial, nombre)').in('id', ids) : { data: [] as any[] };
   // Ventana de 24 h por lead: si está cerrada, lo que salga será una plantilla y el texto viaja como puente.
-  const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24) : { data: [] as any[] };
+  const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id, ocurrio_at').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24).order('ocurrio_at', { ascending: false }) : { data: [] as any[] };
   const abiertos = new Set((ent || []).map((x: any) => x.contact_id));
+  const ultEnt = new Map<string, string>();
+  for (const e of ent || []) if (!ultEnt.has((e as any).contact_id)) ultEnt.set((e as any).contact_id, (e as any).ocurrio_at);
   return (sug || []).map(s => { const c: any = (cs || []).find((x: any) => x.id === s.contact_id) || {}; const sal: any = s.salida || {};
      const prop: any = c.propiedades || {};
     // LEAD NUEVO DE LA WEB (4-sep): se marca para que el dueño evalúe la secuencia del primer contacto.
     const leadWeb = prop.intencion_inicial && prop.intencion_inicial !== 'otro'
       ? { intencion: prop.intencion_inicial, url: prop.url_origen || null, referido: prop.referido_por || null, mensaje_inicial: prop.mensaje_inicial || null, desde: c.fuente || null }
       : null;
-    return { ...s, salida: undefined, lead_web: leadWeb, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; });
+    const urg = urgenciaDe(ultEnt.get(s.contact_id as string) || null);
+    return { ...s, salida: undefined, lead_web: leadWeb, urgencia: urg.urgencia, espera_min: urg.minutos, porque_urge: urg.porque, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; })
+    .sort((a: any, b: any) => { const o: Record<string, number> = { ahora: 0, hoy: 1, normal: 2 }; return (o[a.urgencia] - o[b.urgencia]) || ((a.espera_min ?? 1e9) - (b.espera_min ?? 1e9)); });
 }
 
 export async function historialCalificaciones(limit = 60) {

@@ -87,6 +87,9 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
         {msg && <div className={'sg-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
 
+      {vista === 'pendientes' && pend.filter((x: any) => x.urgencia === 'ahora').length > 0 && (
+        <div className="sg-urge" style={{ marginBottom: 12 }}><b>{pend.filter((x: any) => x.urgencia === 'ahora').length}</b> te están esperando ahora mismo: escribieron hace menos de 30 minutos y ya están al principio de la cola.</div>
+      )}
       {vista === 'pendientes' && d.corto && d.corto.ventana > 0 && (
         <div className="sg-corto">
           <div>

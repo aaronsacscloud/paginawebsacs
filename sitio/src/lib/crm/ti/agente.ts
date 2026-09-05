@@ -613,7 +613,11 @@ export async function proponerRespuestas(): Promise<any> {
       if (!d.telefono) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: 'sin teléfono' }); continue; }
       // LEAD CALIENTE: interés alto en una conversación madura → el consultor se entera ahora, no en el digest.
       if (s.interes?.nivel === 'alto' && ['proponiendo', 'agendada'].includes(s.estado)) await avisarLeadCaliente(cid, s);
-      const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
+      // SIN ESPERA SI ESTÁ EN VIVO (5-sep): la ventana de veto existe para poder detener un mensaje antes de que
+      // salga, pero si el lead ACABA de escribir, 10 minutos de retraso es lo que lo enfría. Si escribió hace menos
+      // de 30 min, sale de inmediato.
+      const minsDesdeSuMensaje = (ahora.getTime() - Date.parse(ultimoPor[cid])) / 60000;
+      const ventana = minsDesdeSuMensaje <= 30 ? 0 : Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const { error: eIns } = await supabase.from('ti_envios').insert({
         contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: nace(cfg, d.telefono),
         mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,

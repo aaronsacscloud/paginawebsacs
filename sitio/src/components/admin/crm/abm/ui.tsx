@@ -17,6 +17,9 @@ export const ETAPA_TONO: Record<string, { l: string; bg: string; fg: string }> =
   propuesta:    { l: 'Propuesta',    bg: P.ambarAgua,      fg: P.ambarTinta },
   ganada:       { l: 'Ganada',       bg: P.verdeAgua,      fg: P.verdeTinta },
   perdida:      { l: 'Perdida',      bg: P.rojoAgua,       fg: P.rojoTinta },
+  // "No ahora" no es "no": la cuenta duerme y vuelve sola, o antes si aparece
+  // una señal. Ámbar porque es un estado de espera, no un fracaso.
+  en_pausa:     { l: 'En pausa',     bg: P.ambarAgua,      fg: P.ambarTinta },
   no_contactar: { l: 'No contactar', bg: P.rojoAgua,       fg: P.rojoTinta },
 };
 

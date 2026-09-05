@@ -643,3 +643,22 @@ en cada mensaje, añadiendo una segunda petición. Las dos son condicionales aho
 Falso positivo del juez que conviene recordar: acusó de inventar el nombre «Yunuks» cuando el contacto se llama
 Kukys y su empresa Yunuks. Los dos datos eran reales. **El juez también se equivoca: antes de cambiar el prompt por
 su queja, hay que verificar el dato.**
+
+## 2026-09-05 · El lead que contesta rápido (y cuánto tardamos de verdad)
+
+Medido en 662 respuestas de 30 días: mediana **5 minutos**, pero **126 (19 %) tardaron más de una hora** y el p90 son
+4.3 horas. La mitad se atiende rápido; una de cada cinco se enfría esperando.
+
+Tres cosas lo causaban y las tres están arregladas:
+
+1. **La cola estaba al revés.** `sugerenciasPendientes` ordenaba por antigüedad, así que el que acababa de escribir
+   quedaba hasta abajo. Ahora cada sugerencia trae `urgencia` (ahora ≤30 min · hoy ≤4 h · normal) y la cola pone
+   primero a quien está esperando en vivo, con un aviso rojo arriba y en la tarjeta.
+2. **La ventana de veto retrasaba 10 minutos a todos.** Existe para poder detener un mensaje antes de que salga,
+   pero si el lead acaba de escribir es justo lo que lo enfría. Si escribió hace menos de 30 min, `ventana = 0`.
+3. El observador corre cada 2 min, así que el techo real ahora es ~2 min de detección + la decisión humana.
+
+Lo que NO se puede arreglar solo con código: en entrenamiento cada respuesta espera a que una persona la apruebe.
+Si se quiere contestar en minutos de forma fiable, la opción es dejar que el agente conteste solo a las
+conversaciones ACTIVAS (el lead escribió hace menos de 30 min) y que el resto siga pasando por revisión. Es decisión
+del dueño.

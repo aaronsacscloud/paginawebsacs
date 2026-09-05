@@ -18,6 +18,11 @@ export const prerender = false;
 
 /** Lo que hay que decir, en una frase, según el giro. */
 function guion(c: any): string {
+  if (c.pausa_motivo === 'abre y no contesta: toca llamada') {
+    return `Buenas tardes, le hablo de Sacscloud. Le mandé un par de correos sobre inventario `
+      + `y no quiero seguir insistiendo por ahí sin saber si le sirve. `
+      + `¿Le late que le cuente en dos minutos y usted me dice si tiene sentido para ${c.nombre}?`;
+  }
   const quePasa = c.giro === 'joyeria' ? 'cómo sacan el costo de sus piezas cuando se mueve el precio del oro'
     : c.giro === 'renta' || c.giro === 'novias' ? 'cómo llevan las piezas apartadas entre sus tiendas'
     : c.giro === 'telas' ? 'cómo llevan el metraje que les queda de cada rollo'
@@ -35,9 +40,14 @@ export const GET: APIRoute = async ({ request, url }) => {
   const giro = url.searchParams.get('giro') || '';
   const limite = Math.min(60, Number(url.searchParams.get('limite') || 25));
 
-  let q = supabase.from('abm_cuentas')
-    .select('id, nombre, giro, subgiro, ciudad, sucursales, google_rating, google_resenas, plataforma_web, contexto, senal_expansion, puntaje, etapa, tiene_email, tiene_wa')
-    .eq('tiene_email', false).neq('etapa', 'no_contactar').is('ya_es_cliente', null)
+  // Dos poblaciones, y la segunda es la mejor: las que NO tienen correo (para
+  // conseguirlo) y las que abrieron el correo varias veces sin contestar. Esa
+  // segunda ya leyó, ya sabe quiénes somos y solo falta hablarle — insistir
+  // por correo ahí es lo único que no funciona.
+  const SEL = 'id, nombre, giro, subgiro, ciudad, sucursales, google_rating, google_resenas, plataforma_web, contexto, senal_expansion, puntaje, etapa, tiene_email, tiene_wa, pausa_motivo';
+  let q = supabase.from('abm_cuentas').select(SEL)
+    .neq('etapa', 'no_contactar').is('ya_es_cliente', null)
+    .or('tiene_email.eq.false,pausa_motivo.eq.abre y no contesta: toca llamada')
     .order('puntaje', { ascending: false }).limit(limite * 3);
   if (giro) q = q.eq('giro', giro);
   const { data: cuentas } = await q;
@@ -62,6 +72,8 @@ export const GET: APIRoute = async ({ request, url }) => {
       telefono: (porCuenta[c.id] || []).find(x => x.tipo === 'telefono')?.valor || null,
       whatsapp: (porCuenta[c.id] || []).find(x => x.tipo === 'whatsapp_tienda')?.valor || null,
       guion: guion(c),
+      // Si abrió correos, el guion cambia por completo: ya no es presentarse.
+      abrio: c.pausa_motivo === 'abre y no contesta: toca llamada',
     }));
   return json({ cola, sin_llamar: cuentas.length - yaLlamadas.size });
 };
