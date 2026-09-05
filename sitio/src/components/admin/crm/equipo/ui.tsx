@@ -299,12 +299,13 @@ export const CSS = `
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}
 .eq-bloque .cab .n{font-size:.75rem;color:var(--eq-gris)}
 /* «Viene de la junta pasada», DESPUÉS de las genéricas de .eq-bloque.
-   El orden no es estético: `.eq-antes>.cab b` y `.eq-bloque .cab b` tienen la
-   MISMA especificidad, así que gana la última del archivo. Estando arriba solo
-   pegaba el `background` del chip —lo único que la genérica no define— y todo
-   lo demás se quedaba gris: el bloque se veía igual que los otros y el ámbar no
-   aparecía por ningún lado. Lo descubrió el QA con navegador; leyendo el CSS no
-   se ve. */
+   El orden no es estético: .eq-antes>.cab b y .eq-bloque .cab b tienen la MISMA
+   especificidad, así que gana la última del archivo. Estando arriba solo pegaba
+   el background del chip —lo único que la genérica no define— y todo lo demás
+   se quedaba gris: el bloque se veía igual que los otros y el ámbar no aparecía
+   por ningún lado. Lo descubrió el QA con navegador; leyendo el CSS no se ve.
+   OJO: aquí NO se escriben acentos graves. Todo esto vive dentro de un template
+   literal y uno solo lo corta a media hoja. */
 .eq-antes{border-color:var(--eq-ambar-linea);background:var(--eq-ambar-fondo)}
 .eq-antes>.cab{background:var(--eq-ambar-cab);border-bottom-color:var(--eq-ambar-linea)}
 .eq-antes>.cab b{color:var(--eq-ambar-tinta)}
