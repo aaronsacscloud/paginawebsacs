@@ -335,6 +335,17 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
 
   if (sinAcceso || !arbol || !yo) return null;
 
+  /* En el INBOX y en teléfono, la esfera se esconde.
+     Vive abajo a la derecha, que es exactamente donde el inbox pone su botón de
+     enviar: en una pantalla de 390 px se encimaban y el dedo daba en la esfera.
+     Un chat que impide contestar un WhatsApp no es un atajo, es un estorbo.
+     Se esconde solo lo CERRADO —la esfera y las burbujas—. Si el chat ya está
+     abierto se queda: lo abrió una persona, ocupa toda la pantalla y no tapa
+     nada del inbox; cerrarlo de golpe por cambiar de pestaña sería quitarle
+     algo que estaba usando.
+     Y no deja a nadie sin chat: Equipo sigue en el menú. */
+  const estorbaElComposer = movil && tabActual === 'whatsapp';
+
   const otros = arbol.personas.filter(x => x.id !== yo.id && x.id !== 'a7de2512-2bbc-4234-82e9-db4e6b706abf');
   const estadoDe = (x: typeof otros[number]) => enLinea.includes(x.id) ? 'activo' : (x.estado !== 'fuera' && x.visto_at && Date.now() - new Date(x.visto_at).getTime() < 15 * 60_000 ? 'ausente' : 'fuera');
   const presentes = otros.map(x => ({ p: x, e: estadoDe(x) })).filter(x => x.e !== 'fuera');
@@ -342,7 +353,7 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
 
   return (
     <>
-      {!abierto && (
+      {!abierto && !estorbaElComposer && (
         <div className={'eqf' + (movil ? ' movil' : '')}>
           {burbujas.length > 0 && (
             <div className="eqf-burbujas">
