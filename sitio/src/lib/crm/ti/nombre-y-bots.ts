@@ -103,3 +103,17 @@ export function bloqueSaludo(horasDesdeUltimo: number | null, nombre: string | n
   return `\n\nSALUDO: pasaron ${dias >= 1 ? `${dias} día${dias === 1 ? '' : 's'}` : 'varias horas'} desde el último mensaje, así que ABRE saludando y preguntando cómo está, como haría una persona que retoma: ${ej}. Varía la forma, no uses siempre la misma. Prohibido «espero que estés bien» y «quería darle seguimiento»: eso es relleno, no es saludar.
 FORMA: separa el mensaje en párrafos con una línea en blanco (el saludo por un lado, el fondo por otro). Un bloque compacto se ve automático; con aire se lee como escrito por alguien.`;
 }
+
+/**
+ * SIN EMOJIS, POR CÓDIGO (5-sep). El guion los prohíbe desde el principio y aun así se colaban («confírmame con un
+ * 👍», «le diste ❤️ al link»). Pedirlo en el prompt no alcanza: se quitan al salir y se deja registro de que el
+ * modelo desobedeció, para saber si el guion necesita otra vuelta. El saludo alargado («Holaaa») NO se toca: eso lo
+ * pidió el dueño y es estilo, no emoji.
+ */
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{2764}\u{2665}]/gu;
+export function sinEmojis(texto: string): { texto: string; quitados: number } {
+  const original = String(texto || '');
+  const limpio = original.replace(EMOJI, '').replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').trim();
+  const quitados = (original.match(EMOJI) || []).length;
+  return { texto: limpio, quitados };
+}

@@ -597,3 +597,23 @@ sino en la ENTRADA. Antes de reescribir el prompt por tercera vez, hay que mirar
   propio bot («gracias por escribir, en breve te atendemos», «nuestro horario es…», menús numerados). El agente los
   leía como respuesta de la persona y contestaba cosas absurdas dando por hecho que había conversación. Ahora se
   marcan en el hilo, se le dice cuántos son, y si NUNCA hubo un humano se trata como primer contacto.
+
+## 2026-09-05 · Cómo escribe una persona (medido en 14 088 mensajes reales del equipo)
+
+En vez de suponer qué es «más humano», se midió en los mensajes que el equipo mandó de verdad:
+
+| | Todos los mensajes | Los que REABREN tras >20 h (n=1 988) |
+|---|---|---|
+| Largo medio | 115 caracteres | 176 |
+| Empiezan saludando | 18 % | **80 %** |
+| Preguntan cómo está | 10 % | **54 %** |
+| Usan saltos de línea | 7 % | **72 %** |
+
+O sea: dentro del mismo día nadie vuelve a saludar, pero al retomar después de días **sí se saluda y se pregunta
+cómo está**, y el mensaje va en párrafos. Eso es `bloqueSaludo(horas, nombre, veces)`: con menos de 20 h prohíbe
+saludar; con más, exige saludo con variación («Hola Ana, ¿cómo estás?», «Ana, ¿cómo te va?», «Qué tal Ana») y
+párrafos separados por una línea en blanco. «Espero que estés bien» sigue prohibido: es relleno, no es saludar.
+
+**Y los emojis se quitan por código.** El guion los prohíbe desde el principio y aun así se colaban («confírmame
+con un 👍»). `sinEmojis()` los borra al salir de `decidirTurno` y deja un `ia_log emoji_quitado` para saber cuántas
+veces desobedece el modelo. El saludo alargado («Holaaa») NO se toca: eso es estilo pedido por el dueño.

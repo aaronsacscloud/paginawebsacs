@@ -25,7 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
-import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo } from './nombre-y-bots';
+import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -274,7 +274,12 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       else salida.accion.email = salida.accion.email || c.email || null;
     }
   }
-  return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+    // El guion prohíbe emojis y aun así se colaban: se quitan aquí, no se confía en que el modelo obedezca.
+  if (salida?.mensaje) {
+    const limpioMsj = sinEmojis(salida.mensaje);
+    if (limpioMsj.quitados) { salida.mensaje = limpioMsj.texto; await log({ accion: 'emoji_quitado', contact_id: contactId, razon: `el modelo puso ${limpioMsj.quitados} emoji(s) pese al guion`, detalle: { modelo } }).catch(() => {}); }
+  }
+return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
 }
 
 /** Si el lead mandó su página o sus redes, el agente la LEE (una vez, se

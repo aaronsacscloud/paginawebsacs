@@ -80,6 +80,34 @@ export default function AbmTab() {
     return { mail, wa, n: c.length };
   };
 
+  /** Por dónde entrarle, en una sola función: la tabla y la tarjeta de móvil
+   *  enseñaban distinto de la misma cuenta porque cada arreglo llegaba a una
+   *  sola de las dos. */
+  const porDondeEntrarle = (r: any, anchoCorreo: number) => {
+    const { mail, wa, n } = canalesDe(r);
+    if (!n) return <span style={{ fontSize: '.75rem', color: P.rojoTinta, fontWeight: 600 }}>Sin vía verificada</span>;
+    const ETIQ: Record<string, string> = { telefono: 'Teléfono', dm_ig: 'Instagram', dm_fb: 'Facebook', linkedin: 'LinkedIn' };
+    const waUrl = wa && enlaceDe(wa.tipo, wa.valor, wa.estado);
+    return (
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', minWidth: 0 }}>
+        {mail && <a href={enlaceDe(mail.tipo, mail.valor, mail.estado) || '#'} title={mail.valor} onClick={e => e.stopPropagation()}
+          style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: anchoCorreo }}>{mail.valor}</a>}
+        {wa && (waUrl
+          ? <a href={waUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>
+          : <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo={wa.valor}>WhatsApp sin número usable</Pastilla>)}
+        {!mail && !wa && (() => {
+          const otros = (r.canales || []).filter((x: any) => x.estado !== 'invalido');
+          const tel = otros.find((x: any) => x.tipo === 'telefono');
+          const url = tel && enlaceDe(tel.tipo, tel.valor, tel.estado);
+          const nombres = otros.map((x: any) => ETIQ[x.tipo] || x.tipo).join(' · ') || `${n} ${n === 1 ? 'vía' : 'vías'}`;
+          return url
+            ? <a href={url} onClick={e => e.stopPropagation()} title={tel.valor} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none' }}>{nombres}</a>
+            : <span style={{ fontSize: '.75rem', color: '#888' }}>{nombres}</span>;
+        })()}
+      </div>
+    );
+  };
+
   const cuentasFiltradas = filtro ? cuentas.filter(r =>
     filtro === 'calientes' ? (r.puntaje || 0) >= 60
     : filtro === 'diagnostico' ? r.ruta === 'diagnostico'
@@ -132,28 +160,7 @@ export default function AbmTab() {
       // Esta columna ES la acción: el correo abre el cliente de correo y la
       // pastilla abre WhatsApp, sin salir de la lista ni abrir la ficha.
       key: 'contacto', label: 'Por dónde entrarle', width: 230, ftype: 'number', val: (r) => canalesDe(r).n,
-      render: (r) => {
-        const { mail, wa, n } = canalesDe(r);
-        if (!n) return <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>sin vía verificada</span>;
-        return (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            {mail && <a href={enlaceDe(mail.tipo, mail.valor, mail.estado) || '#'} title={mail.valor} onClick={e => e.stopPropagation()} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 196 }}>{mail.valor}</a>}
-            {wa && (enlaceDe(wa.tipo, wa.valor, wa.estado)
-              ? <a href={enlaceDe(wa.tipo, wa.valor, wa.estado)!} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>
-              : <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo={wa.valor}>WhatsApp sin número usable</Pastilla>)}
-            {!mail && !wa && (() => {
-              const otros = (r.canales || []).filter((x: any) => x.estado !== 'invalido');
-              const ETIQ: Record<string, string> = { telefono: 'Teléfono', dm_ig: 'Instagram', dm_fb: 'Facebook', linkedin: 'LinkedIn' };
-              const tel = otros.find((x: any) => x.tipo === 'telefono');
-              const url = tel && enlaceDe(tel.tipo, tel.valor, tel.estado);
-              const nombres = otros.map((x: any) => ETIQ[x.tipo] || x.tipo).join(' · ') || `${n} ${n === 1 ? 'vía' : 'vías'}`;
-              return url
-                ? <a href={url} onClick={e => e.stopPropagation()} title={tel.valor} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none' }}>{nombres}</a>
-                : <span style={{ fontSize: '.75rem', color: '#888' }}>{nombres}</span>;
-            })()}
-          </div>
-        );
-      },
+      render: (r) => porDondeEntrarle(r, 196),
     },
     {
       key: 'etapa', label: 'Etapa', width: 120, ftype: 'select',
@@ -293,14 +300,8 @@ export default function AbmTab() {
                   <Puntaje v={r.puntaje || 0} ancho={40} />
                 </div>
                 <div style={{ fontSize: '.75rem', color: '#888' }}>{GIROS[r.giro] || r.giro} · {r.ciudad || 'México'}</div>
-                <div style={{ fontSize: '.75rem', color: canalesDe(r).n ? P.violetaTinta : P.rojoTinta, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {canalesDe(r).mail ? canalesDe(r).mail.valor
-                    : canalesDe(r).wa ? 'Por WhatsApp'
-                    : canalesDe(r).n ? `${canalesDe(r).n} ${canalesDe(r).n === 1 ? 'vía' : 'vías'} (sin correo)`
-                    : 'Sin vía verificada'}
-                </div>
+                {porDondeEntrarle(r, 240)}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {canalesDe(r).wa ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla> : null}
                   {r.sucursales ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>{r.sucursales} tiendas</Pastilla> : null}
                   {r.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(r.google_rating).toFixed(1)} en Google</Pastilla> : null}
                   {r.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={r.plataforma_web} max={160}>{r.plataforma_web}</Pastilla> : null}
