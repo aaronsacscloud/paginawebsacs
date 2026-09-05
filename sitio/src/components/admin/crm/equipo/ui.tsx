@@ -6,6 +6,11 @@ import { P } from '../../../../lib/crm/paleta';
 
 export const CSS = `
 .eq{--eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-fondo:#fff;--eq-panel:#f8f7fd;--eq-alza:#fff;--eq-apagado:#c9c5d8;--eq-toast-fondo:#1e1a33;--eq-toast-tinta:#fff;--eq-realce:rgba(155,140,250,.10);--eq-sombra:rgba(60,30,140,.08);--rol-founder:#2E9E78;--rol-partner:#A76A12;--rol-soporte:#2C5FC4;--rol-admin:#9c3d70;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta};
+  /* Ámbar: «viene de la junta pasada». Va en tokens y no en hex sueltos por la
+     razón que dice el bloque OSCURO de más abajo — la primera versión los puso
+     a mano y en tema oscuro la pastilla del conteo quedó amarillo sobre
+     amarillo, ilegible. */
+  --eq-ambar-fondo:#fffdf7;--eq-ambar-cab:#fff8e8;--eq-ambar-linea:#f0dfae;--eq-ambar-tinta:#7a5c14;--eq-ambar-chip:#f7ecd0;
   display:flex;height:calc(100dvh - var(--eq-top,44px));min-height:480px;background:var(--eq-fondo);color:var(--eq-tinta);font-size:.875rem;overflow:hidden;border:1px solid var(--eq-linea);border-radius:12px}
 .eq *{box-sizing:border-box}
 .eq button{font:inherit;cursor:pointer}
@@ -250,15 +255,15 @@ export const CSS = `
 /* LO QUE VIENE DE LA JUNTA PASADA. Va arriba y se ve distinto: es lo único de
    la sala que YA se prometió una vez. En ámbar, no en rojo — es un pendiente,
    no un error. */
-.eq-antes{border-color:#f0dfae;background:#fffdf7}
-.eq-antes>.cab{background:#fff8e8;border-bottom-color:#f0dfae}
-.eq-antes>.cab b{color:#7a5c14}
-.eq-antes>.cab .n{background:#f7ecd0;color:#7a5c14}
+.eq-antes{border-color:var(--eq-ambar-linea);background:var(--eq-ambar-fondo)}
+.eq-antes>.cab{background:var(--eq-ambar-cab);border-bottom-color:var(--eq-ambar-linea)}
+.eq-antes>.cab b{color:var(--eq-ambar-tinta)}
+.eq-antes>.cab .n{background:var(--eq-ambar-chip);color:var(--eq-ambar-tinta)}
 /* «Pasar a hoy»: el clic que cierra el ciclo. Va a la derecha de la fila, en su
    propia columna, para que nunca compita con la palomita de «hecho». */
-.eq-acuerdo .pasa{flex-shrink:0;align-self:center;white-space:nowrap;border-color:#e3c98f;color:#7a5c14}
-.eq-acuerdo .pasa:hover:not(:disabled){background:#fff8e8}
-.eq-acuerdo .veces{color:#9a6a10;font-weight:700}
+.eq-acuerdo .pasa{flex-shrink:0;align-self:center;white-space:nowrap;border-color:var(--eq-ambar-linea);color:var(--eq-ambar-tinta)}
+.eq-acuerdo .pasa:hover:not(:disabled){background:var(--eq-ambar-cab)}
+.eq-acuerdo .veces{color:var(--eq-ambar-tinta);font-weight:700}
 
 /* La cuenta regresiva cuando la junta está cerca: deja de ser dato y pasa a ser
    aviso. */
@@ -484,6 +489,20 @@ button.eq-punto-chip{cursor:pointer}
   --eq-lila:#362c55;--eq-morado:#A78BFA;--eq-morado-tinta:#B7A8F7;
   --eq-apagado:#4a4a57;--eq-toast-fondo:#F2F1F7;--eq-toast-tinta:#131318;
   --eq-realce:rgba(167,139,250,.14);--eq-sombra:rgba(0,0,0,.5);--rol-founder:#5FD3A6;--rol-partner:#E8B04B;--rol-soporte:#8FB4F7;--rol-admin:#EFA6CA}
+/* Ámbar en oscuro: fondos casi negros con un tinte cálido, tinta clara. El
+   mensaje —«esto se prometió y no se cumplió»— se lee igual; lo que cambia es
+   sobre qué se lee. */
+[data-crm-dark="1"] .eq{
+  --eq-ambar-fondo:#23200f;--eq-ambar-cab:#2b2712;--eq-ambar-linea:#544a24;
+  --eq-ambar-tinta:#E8C978;--eq-ambar-chip:#3c3518}
+/* «Próxima reunión» / «En reunión»: el degradado es claro y fijo, así que en
+   oscuro su texto —que usa --eq-morado-tinta, un lila claro— quedaba lila sobre
+   lila y no se leía. Es la tarjeta que se mira PRIMERO al abrir la sala.
+   Se apaga el degradado y el texto vuelve a ser el de la app. */
+[data-crm-dark="1"] .eq-sesion-viva{
+  background:linear-gradient(92deg,rgba(167,139,250,.16),rgba(244,168,205,.10));
+  border-color:#3b3358}
+[data-crm-dark="1"] .eq-sesion-viva b{color:var(--eq-tinta)}
 [data-crm-dark="1"] .eq-modal-fondo{background:rgba(0,0,0,.66)}
 /* Las imágenes y los adjuntos no llevan fondo claro detrás. */
 [data-crm-dark="1"] .eq-img img,[data-crm-dark="1"] .eq-pre .it{background:var(--eq-alza)}
