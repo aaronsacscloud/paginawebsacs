@@ -7,6 +7,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { equipo, AGENTE_IA_ID } from '../../../lib/crm/espacio.lib';
 import { pushA } from '../../../lib/crm/push-crm';
+import { puedeEmpujar } from '../../../lib/crm/push-reglas';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -34,7 +35,9 @@ export const GET: APIRoute = async ({ request }) => {
         clave: `espacio_agenda:${s.id}:${dia}:${p.id}`, tipo: 'espacio_agenda', nivel: 'info', titulo, detalle,
         destino: `equipo?canal=${s.id}`, para: p.id, metadata: { canal_id: s.id, fecha: dia, puntos: n, arrastrados: arr },
       }, { onConflict: 'clave', ignoreDuplicates: true });
-      if (!error) { avisos++; pushA(p.id, { title: titulo, body: detalle, url: `/admin/crm?tab=equipo&canal=${s.id}`, tag: `agenda-${s.id}` }).catch(() => null); }
+      // El push pasa por la lista de push-reglas como todos los demás: si un día
+      // se decide que sobra, se apaga desde ahí y no hay que venir a buscarlo.
+      if (!error) { avisos++; if (puedeEmpujar('reunion_manana')) pushA(p.id, { title: titulo, body: detalle, url: `/admin/crm?tab=equipo&canal=${s.id}`, tag: `agenda-${s.id}`, data: { clase: 'reunion_manana' } }).catch(() => null); }
     }
   }
   return json({ ok: true, salas: mananaSalas.map((s: any) => s.nombre), avisos });

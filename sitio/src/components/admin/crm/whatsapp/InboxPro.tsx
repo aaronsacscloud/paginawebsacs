@@ -31,6 +31,7 @@ const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
 const NuevoChat = lazySeguro(() => import('./NuevoChat'));
 import type { Condicion } from '../../../../lib/whatsapp/filtros';
 import { leerSnap, guardarSnap } from '../../../../lib/crm/snapshot';
+import { cerrarAviso, tagAviso } from '../../../../lib/ui/cerrar-aviso';
 
 export type Filtros = { filtro: string; etapa: string; search: string };
 export const FILTROS_BASE: Filtros = { filtro: 'todas', etapa: '', search: '' };
@@ -201,6 +202,12 @@ export default function InboxPro() {
   }, [filtros.filtro, filtros.etapa, vistaActiva?.id]);
 
   const activaRef = useRef(activa); activaRef.current = activa;
+
+  /* Al abrir un hilo, se apaga su aviso del teléfono. El push se queda en la
+     pantalla de bloqueo hasta que alguien lo toca; si ya entraste y leíste, ese
+     aviso dejó de ser aviso —es basura que te hace revisar dos veces lo mismo—.
+     El tag es el mismo que puso quien mandó el push (push-reglas → tagDe). */
+  useEffect(() => { if (activa?.id) cerrarAviso(tagAviso.conversacion(activa.id)); }, [activa?.id]);
   // Última marca de tiempo conocida por conversación (E2.2). Empieza vacío a
   // propósito: en la primera carga no se avisa de nada, solo se toma la foto.
   const ultimoAtRef = useRef<Map<string, string>>(new Map());

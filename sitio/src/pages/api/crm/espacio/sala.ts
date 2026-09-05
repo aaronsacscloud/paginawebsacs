@@ -196,6 +196,33 @@ export const POST: APIRoute = async ({ request }) => {
     }).select(SEL_PUNTO).single();
     if (error) return json({ error: error.message }, 500);
     await emitir({ tipo: 'reunion', canal_id: c.id });
+
+    /* AVISO A LOS DEMÁS (5-sep-2026, pedido del dueño). Un punto nuevo es de
+       las pocas cosas del chat que le cambian el día a otra persona: mañana
+       hay que llegar con eso preparado. Antes no avisaba nada — el punto
+       aparecía en la sala y se descubría al entrar a la junta.
+       A los DEMÁS, no a quien lo propuso: nadie necesita que le avisen de lo
+       que acaba de escribir. Best-effort: el aviso nunca tumba el punto. */
+    try {
+      const { puedeEmpujar, tagDe } = await import('../../../../lib/crm/push-reglas');
+      if (puedeEmpujar('reunion_punto')) {
+        const { pushA } = await import('../../../../lib/crm/push-crm');
+        const eq = await equipo();
+        const quienEs = eq.find(x => x.id === yo.id)?.nombre?.split(' ')[0] || 'Alguien';
+        for (const persona of eq) {
+          if (persona.id === yo.id || persona.rol === 'soporte') continue;
+          await pushA(persona.id, {
+            title: `Punto nuevo en ${c.descripcion || '#' + c.nombre}`,
+            body: `${quienEs}: ${titulo}`,
+            tag: tagDe.sala(c.id),
+            url: `/admin/crm?tab=equipo&canal=${c.id}&sala=1`,
+            requireInteraction: false,
+            data: { canal_id: c.id, clase: 'reunion_punto' },
+          }).catch(() => null);
+        }
+      }
+    } catch (e) { console.warn('[sala] aviso de punto nuevo:', e); }
+
     return json({ ok: true, punto: data, sala: c.nombre });
   }
 

@@ -115,6 +115,30 @@ self.addEventListener('push', (e) => {
   })());
 });
 
+// ══ Apagar un aviso al LEERLO dentro de la app ════════════════════════════
+// El push se queda en la pantalla de bloqueo hasta que alguien lo toca. Si
+// abriste el hilo desde el CRM y ya leíste el mensaje, ese aviso ya no es un
+// aviso: es basura que te hace revisar dos veces lo mismo.
+// La app manda {tipo:'cerrar-aviso', tag} al abrir una conversación o un canal,
+// y aquí se cierran las notificaciones de ese tag. El badge se recalcula con lo
+// que quede.
+self.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.tipo !== 'cerrar-aviso' || !d.tag) return;
+  e.waitUntil((async () => {
+    try {
+      if (!self.registration.getNotifications) return;
+      const ns = await self.registration.getNotifications({ tag: d.tag });
+      ns.forEach(n => n.close());
+      const quedan = await self.registration.getNotifications();
+      if (self.navigator && self.navigator.setAppBadge) {
+        if (quedan.length) await self.navigator.setAppBadge(quedan.length);
+        else if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+      }
+    } catch (_) { /* navegador sin soporte: el aviso se queda, no pasa nada grave */ }
+  })());
+});
+
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/admin/crm';

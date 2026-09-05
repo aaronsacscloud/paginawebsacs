@@ -14,6 +14,7 @@ import Sala from './Sala';
 import Publicaciones from './Publicaciones';
 import Cargando from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
+import { cerrarAviso, tagAviso } from '../../../../lib/ui/cerrar-aviso';
 
 const ULTIMO_KEY = 'eq_ultimo_canal';
 
@@ -32,6 +33,18 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const [arbol, setArbol] = useState<A | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canalId, setCanalId] = useState<string | null>(null);
+
+  /* Lo mismo en el chat: al pararte en un canal, se apaga su aviso. Se cierran
+     los DOS tags —el del canal y el de la sala— sin preguntar de qué tipo es:
+     cerrar un tag que no existe no hace nada, y así no hay que esperar a que el
+     árbol cargue para saber si el canal era sala.
+     Va sobre `canalId` y no sobre el canal resuelto: el id existe desde el
+     primer render, el objeto llega después. */
+  useEffect(() => {
+    if (!canalId) return;
+    cerrarAviso(tagAviso.canal(canalId));
+    cerrarAviso(tagAviso.sala(canalId));
+  }, [canalId]);
   const [irA, setIrA] = useState<string | null>(null);
   const [hilo, setHilo] = useState<M | null>(null);
   const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | 'ficha' | 'pubs' | null>(null);
