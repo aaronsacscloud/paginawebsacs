@@ -584,3 +584,16 @@ reactivación (`investigarEmpresa`) cuando falta el giro, y el prompt prohíbe e
 
 **Lección de método:** cuando el juez repite la misma queja en todos los casos, el problema no está en la redacción
 sino en la ENTRADA. Antes de reescribir el prompt por tercera vez, hay que mirar qué datos tiene realmente el agente.
+
+## 2026-09-05 · El nombre y los bots del lead
+
+- **El nombre solo si es de verdad** (`nombreUsable`): en la base hay «Contacto 6917», «WhatsApp 3669», «G», «Im»,
+  «Mama🩷2 L» y razones sociales en el campo nombre. Escribir «Hola G» es peor que no saludar. Reglas: sin dígitos,
+  mínimo 3 letras, sin marcadores de empresa (S.A., boutique, tienda, shop…), máximo 3 palabras, se salta el
+  tratamiento («Sr Ramírez» → Ramírez) y recapitaliza («MARIA FERNANDA» → Maria).
+- **Se usa en los dos primeros mensajes nuestros y ya.** El prompt cuenta cuántas veces lo dijimos: a la tercera
+  suena a robot y se entra directo. Y se pide variar la forma («Hola Ana», «Ana, …», «Qué tal Ana»).
+- **Los mensajes automáticos del lead no cuentan** (`esMensajeDeBot` + `limpiarHilo`): muchas tiendas tienen su
+  propio bot («gracias por escribir, en breve te atendemos», «nuestro horario es…», menús numerados). El agente los
+  leía como respuesta de la persona y contestaba cosas absurdas dando por hecho que había conversación. Ahora se
+  marcan en el hilo, se le dice cuántos son, y si NUNCA hubo un humano se trata como primer contacto.

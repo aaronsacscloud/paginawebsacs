@@ -40,11 +40,12 @@ const A_SUPRESION: Record<string, 'rebote_duro' | 'rebote_suave' | 'queja' | 'ba
  *  contaría cero quejas para siempre mientras el dominio se quema. */
 function clavesWebhook(): string[] {
   const v = [
+    ...String(import.meta.env.SENDGRID_WEBHOOK_KEYS || '').split(','),   // varias, separadas por coma
     import.meta.env.SENDGRID_WEBHOOK_KEY,
     import.meta.env.SENDGRID_WEBHOOK_KEY_FRIO,
     import.meta.env.SENDGRID_WEBHOOK_KEY_2,
   ];
-  return v.map(x => String(x || '').trim()).filter(Boolean);
+  return Array.from(new Set(v.map(x => String(x || '').trim()).filter(Boolean)));
 }
 
 function firmaValida(raw: string, sig: string | null, ts: string | null): boolean {

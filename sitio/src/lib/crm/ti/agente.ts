@@ -25,6 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
+import { nombreUsable, limpiarHilo, bloqueNombre } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -204,6 +205,13 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const idxUltSal = msjs.map(m => m.direccion).lastIndexOf('saliente');
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta todo en UNA respuesta, en su orden, una oración por pregunta (aquí sí puedes pasar de 4 líneas; si son 3 o más, parte en dos burbujas con ---). Sin numerar, sin viñetas, sin repetir su pregunta antes de contestarla. Una sola pregunta tuya al final, o ninguna si él ya dijo qué sigue:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
+  // Los mensajes que en realidad mando el BOT del lead se marcan: no son respuesta suya (decision del dueno, 5-sep).
+  const limpio = limpiarHilo(msjs as any);
+  // EL NOMBRE: solo si es un nombre de verdad, y solo en los dos primeros mensajes nuestros.
+  const nom = nombreUsable(c.nombre);
+  const vecesNombre = nom ? msjs.filter(m => m.direccion === 'saliente' && String(m.cuerpo || '').toLowerCase().includes(nom.toLowerCase())).length : 0;
+  const avisoBots = limpio.bots ? '\n\nOJO: ' + limpio.bots + ' de sus mensajes son respuestas automaticas de su propio bot, no de la persona. ' + (limpio.huboHumano ? 'Armate con lo ultimo que si escribio una persona.' : 'En realidad NUNCA ha contestado una persona: tratalo como primer contacto.') : '';
+  const bloqueNom = bloqueNombre(nom, vecesNombre) + avisoBots;
   const memoria = memoriaConversacion(msjs, c.nombre);
   const regreso = await historialRegreso(contactId, msjs, c.nombre).catch(() => '');
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([
@@ -241,7 +249,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined)) || ' ' },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${bloqueNom}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(modelo, r.usage as any).cost_usd;

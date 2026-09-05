@@ -106,8 +106,22 @@ const cuentaParaPresion = (c: Categoria) => c === 'marketing';
 
 // ── Chequeos (exportados: el panel los usa para explicar ANTES de enviar) ──
 
-export async function estaSuprimido(tenantId: string, email: string): Promise<{ suprimido: boolean; motivo?: string }> {
+export async function estaSuprimido(tenantId: string, email: string, categoria?: Categoria): Promise<{ suprimido: boolean; motivo?: string }> {
   const e = normalizarEmail(email);
+
+  // Quien se dio de baja o marcó spam en UN inquilino no puede seguir
+  // recibiendo publicidad desde otro: con la cuenta de correo frío separada,
+  // la baja de un prospecto no protegería nada si solo se mirara su propio
+  // inquilino. Aplica SOLO a publicidad y SOLO a motivos definitivos: si
+  // alcanzara al correo de relación, una baja de marketing dejaría a un
+  // cliente sin su factura ni su aviso de cobro, en silencio.
+  if (categoria === 'marketing' || categoria === 'abm') {
+    const { data: ajenas } = await supabase.from('email_suppressions')
+      .select('motivo').eq('email', e).neq('tenant_id', tenantId)
+      .is('restaurado_at', null).is('pausado_hasta', null)
+      .in('motivo', ['baja', 'spam', 'rebote_duro']).limit(1);
+    if ((ajenas || []).length) return { suprimido: true, motivo: `${ajenas![0].motivo} (en otro remitente nuestro)` };
+  }
 
   // Se consultan las DOS tablas a propósito. `email_unsubscribes` es la tabla
   // vieja del CRM, y el link de baja que viaja en todos los correos ya
@@ -212,7 +226,7 @@ export async function evaluarDestinatario(
   // `contacto@` que la boutique publica en su propio aviso de privacidad ES el
   // canal legítimo, y en la mitad de los casos es el único que existe.
   if (categoria !== 'prueba' && categoria !== 'abm' && esRoleAccount(e)) return 'role_account';
-  const sup = await estaSuprimido(t.id, e);
+  const sup = await estaSuprimido(t.id, e, categoria);
   if (sup.suprimido) return 'suprimido';
   if (cuentaParaPresion(categoria)) {
     const p = await excedePresion(t, e, companyId);
