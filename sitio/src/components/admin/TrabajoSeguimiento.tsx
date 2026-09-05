@@ -291,7 +291,8 @@ const CSS = `
 .sg-aj{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.sg-aj label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--suave)}
 .sg-ctx{margin-top:12px;border-top:1px solid var(--linea2);padding-top:10px}.sg-ctx summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:800;color:var(--morado-tinta);min-height:40px;display:flex;align-items:center}.sg-ctx summary::-webkit-details-marker{display:none}.sg-ctx summary::before{content:'›';display:inline-block;margin-right:8px;transition:transform .2s}.sg-ctx[open] summary::before{transform:rotate(90deg)}
 @media (max-width:899px){
-  .sg-fila1{gap:10px}.sg-num b{font-size:30px}.sg-barra-wrap{min-width:0;flex:1 1 100%;order:3}.sg-modo{font-size:11px;padding:5px 9px}
+  .sg-fila1{gap:10px}.sg-num b{font-size:30px}.sg-barra-wrap{min-width:0;flex:1 1 100%;order:3}.sg-modo{font-size:11px;padding:5px 9px}.sg-fila1>.sg-link{order:4;margin-top:2px}
+  .sg-head{margin-bottom:4px}.sg-card.movil{margin-top:0}
   .sg-sub{font-size:11.5px}
   .sg-grid{grid-template-columns:1fr;gap:12px}
   .sg-card{padding:14px 14px 12px}
