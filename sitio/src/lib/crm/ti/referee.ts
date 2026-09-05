@@ -106,7 +106,7 @@ export const CASOS: Caso[] = [
 async function juez(caso: Caso, mensaje: string, contexto: string) {
   const debe = [...caso.debe, ...SIEMPRE_DEBE].map((x, i) => `${i + 1}. ${x}`).join('\n');
   const nunca = [...caso.nunca, ...SIEMPRE_NUNCA].map((x, i) => `${i + 1}. ${x}`).join('\n');
-  const r: any = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 700, messages: [{ role: 'user', content: `Eres el árbitro de calidad del agente de ventas de Sacs (sistema para tiendas de moda en México, se vende por WhatsApp). Tu trabajo es ser exigente: un 10 significa que NO se le puede mejorar nada.
+  const r: any = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1600, messages: [{ role: 'user', content: `Eres el árbitro de calidad del agente de ventas de Sacs (sistema para tiendas de moda en México, se vende por WhatsApp). Tu trabajo es ser exigente: un 10 significa que NO se le puede mejorar nada.
 
 CASO: ${caso.titulo}. Por dónde llega: ${caso.porQueLlega}. Momento: ${caso.momento}.
 CONTEXTO DEL LEAD: ${contexto.slice(0, 1200)}
@@ -125,6 +125,8 @@ Califica del 1 al 10. Baja un punto por cada «debe» que falte y dos por cada �
 Responde SOLO JSON: {"nota": n, "faltantes": ["los «debe» que no cumple, textual"], "violaciones": ["los «nunca» que sí aparecen, textual"], "que_le_falta_para_10": "1 línea concreta y accionable", "regla_sugerida": "si el fallo se repetiría en otros leads, la regla que lo evitaría; si no, vacío"}` }] });
   const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
   const m = t.match(/\{[\s\S]*\}/); let j: any = {}; try { j = m ? JSON.parse(m[0]) : {}; } catch { /* nada */ }
+  if (!j.nota) { const m2 = t.match(/"nota"\s*:\s*(\d+(?:\.\d+)?)/); if (m2) j.nota = Number(m2[1]); }
+  if (!j.nota) throw new Error(`el juez no devolvió nota legible: ${t.slice(0, 120)}`);
   return { nota: Number(j.nota) || 0, faltantes: j.faltantes || [], violaciones: j.violaciones || [], para10: j.que_le_falta_para_10 || '', regla: j.regla_sugerida || '', costo: calculateCost(MODELS.opus, r.usage as any).cost_usd };
 }
 

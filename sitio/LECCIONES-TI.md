@@ -617,3 +617,29 @@ párrafos separados por una línea en blanco. «Espero que estés bien» sigue p
 **Y los emojis se quitan por código.** El guion los prohíbe desde el principio y aun así se colaban («confírmame
 con un 👍»). `sinEmojis()` los borra al salir de `decidirTurno` y deja un `ia_log emoji_quitado` para saber cuántas
 veces desobedece el modelo. El saludo alargado («Holaaa») NO se toca: eso es estilo pedido por el dueño.
+
+## 2026-09-05 · El árbitro por caso: primer tablero
+
+`referee.ts` toma un lead REAL en cada estado, corre el agente tal cual corre en producción y lo califica contra los
+criterios de aceptación de ESE caso. Primer tablero completo: **promedio 5.25**, ningún 10.
+
+| Caso | Nota |
+|---|---|
+| Ya sabemos giro y tamaño: toca proponer | **9** |
+| Preguntó hace meses (reactivación) | 8 |
+| Lleva 1 a 4 días sin contestar | 7 |
+| Lleva semanas en silencio | 5 |
+| Contestó y falta saber de su negocio | 4 |
+| Web prueba gratis · Web demo · TikTok | 3 |
+
+**El patrón es claro: el agente es bueno cuando tiene contexto y flojo en el primer contacto.** Y eso no se arregla
+escribiendo mejor: de los 38 leads en cola, **0 tienen giro**, 23 nunca han escrito una palabra y la búsqueda en
+línea solo encuentra 11 de 38. El formulario de TikTok llega con `respuestas: {}` vacío.
+
+Dos cosas que el árbitro cazó y ya se corrigieron: el saludo «¿cómo va todo?» se estaba metiendo también en los
+toques que viajan DENTRO de una plantilla (que ya saluda por su nombre), y la invitación a mandar audio se repetía
+en cada mensaje, añadiendo una segunda petición. Las dos son condicionales ahora.
+
+Falso positivo del juez que conviene recordar: acusó de inventar el nombre «Yunuks» cuando el contacto se llama
+Kukys y su empresa Yunuks. Los dos datos eran reales. **El juez también se equivoca: antes de cambiar el prompt por
+su queja, hay que verificar el dato.**

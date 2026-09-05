@@ -25,7 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
-import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis } from './nombre-y-bots';
+import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -213,7 +213,12 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const avisoBots = limpio.bots ? '\n\nOJO: ' + limpio.bots + ' de sus mensajes son respuestas automaticas de su propio bot, no de la persona. ' + (limpio.huboHumano ? 'Armate con lo ultimo que si escribio una persona.' : 'En realidad NUNCA ha contestado una persona: tratalo como primer contacto.') : '';
   const ultimoMsj = msjs.length ? Date.parse(String(msjs[msjs.length - 1].created_at)) : null;
   const horasDesde = ultimoMsj ? (Date.now() - ultimoMsj) / 3600e3 : null;
-  const bloqueNom = bloqueNombre(nom, vecesNombre) + bloqueSaludo(horasDesde, nom, vecesNombre) + avisoBots;
+  // ¿Este texto va a viajar dentro de una plantilla? (los toques de silencio y reenganche sí, y ya saludan solas)
+  const enPlantilla = ['silencio', 'reenganche', 'reactivacion'].includes(String(opts.tarea || ''));
+  const yaLeOfrecimosAudio = msjs.some(m => m.direccion === 'saliente' && /audio|nota de voz/i.test(String(m.cuerpo || '')));
+  const bloqueNom = bloqueNombre(nom, vecesNombre) + bloqueSaludo(horasDesde, nom, vecesNombre, enPlantilla) + bloqueEmpresa((c as any).companies?.nombre_comercial || (c as any).companies?.nombre)
+    + bloqueSinGiro(!!(c.giro || (c as any).companies?.giro), !!(((perfil as any)?.intenciones as any[]) || []).some((x: any) => x?.campo === 'dolor'), !yaLeOfrecimosAudio)
+    + avisoBots;
   const memoria = memoriaConversacion(msjs, c.nombre);
   const regreso = await historialRegreso(contactId, msjs, c.nombre).catch(() => '');
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([

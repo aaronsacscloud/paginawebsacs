@@ -90,8 +90,11 @@ export function bloqueNombre(nombre: string | null, vecesUsado: number): string 
  *   · 80 % saluda («Hola Ana»)   · 54 % pregunta cómo está   · 72 % usa saltos de línea   · 176 caracteres de media.
  * En cambio, dentro del mismo día nadie vuelve a saludar: se sigue la plática.
  */
-export function bloqueSaludo(horasDesdeUltimo: number | null, nombre: string | null, vecesNombre: number): string {
+export function bloqueSaludo(horasDesdeUltimo: number | null, nombre: string | null, vecesNombre: number, dentroDePlantilla = false): string {
   const h = horasDesdeUltimo ?? 999;
+  // Un toque de silencio viaja DENTRO de una plantilla que ya trae «Hola {{1}},»: saludar otra vez lo duplica y
+  // además el texto tiene que caber en una línea. Ahí no se saluda (lo cazó el árbitro, 5-sep).
+  if (dentroDePlantilla) return '\n\nSALUDO: este texto va DENTRO de una plantilla que ya saluda por su nombre. NO saludes ni preguntes cómo está: entra directo al ángulo, en una sola línea.';
   const conNombre = nombre && vecesNombre < 2 ? nombre : null;
   if (h < 20) {
     return '\n\nSALUDO: siguen en la misma plática (menos de un día). NO saludes ni preguntes cómo está: se siente robótico. Entra directo a lo que sigue.';
@@ -116,4 +119,32 @@ export function sinEmojis(texto: string): { texto: string; quitados: number } {
   const limpio = original.replace(EMOJI, '').replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').trim();
   const quitados = (original.match(EMOJI) || []).length;
   return { texto: limpio, quitados };
+}
+
+/**
+ * EL NOMBRE DEL NEGOCIO (5-sep). Muchas tiendas se llaman con una frase: «No se qué ponerme», «Mi Bella Pandita»,
+ * «Que Onda Wey». Metidas crudas en una oración salen mal: «si sigues viendo opciones para No se qué ponerme».
+ * Se le dice al modelo cómo presentarlas: antecedidas de «tu tienda» o entre comillas, nunca sueltas.
+ */
+export function bloqueEmpresa(empresa?: string | null): string {
+  const e = String(empresa || '').trim();
+  if (!e || e.length < 2) return '';
+  const palabras = e.split(/\s+/).length;
+  const esFrase = palabras >= 3 || /\b(que|qué|no|se|de|la|el|mi|tu)\b/i.test(e.split(/\s+/)[0]);
+  if (!esFrase) return `\n\nSU NEGOCIO se llama ${e}: puedes nombrarlo con naturalidad («en ${e}…»).`;
+  return `\n\nSU NEGOCIO se llama «${e}», que es una frase: NO la metas suelta en la oración (queda «opciones para ${e}» y se lee raro). Dila como «tu tienda ${e}» o entre comillas, o simplemente di «tu tienda».`;
+}
+
+/**
+ * CUANDO NO SABEMOS SU GIRO (decisión del dueño, 5-sep). No es un hueco que haya que disimular: es LA pregunta.
+ * Sin saber qué vende no se puede armar una demo que sirva, y decírselo así —con la razón— es más honesto y más
+ * persuasivo que fingir que ya lo entendemos. El dueño lo pidió textual: «hacerle entender por qué necesitamos
+ * entender su giro y cómo, basado en eso, podemos hacerle una demo personalizada».
+ */
+export function bloqueSinGiro(sabemosGiro: boolean, sabemosDolor: boolean, primerContacto = true): string {
+  if (sabemosGiro && sabemosDolor) return '';
+  const falta = !sabemosGiro && !sabemosDolor ? 'qué vende y qué le está costando hoy'
+    : !sabemosGiro ? 'qué vende exactamente' : 'qué es lo que más le cuesta hoy';
+  return `\n\nNO SABEMOS ${falta.toUpperCase()}, y eso es justo lo que hay que preguntar. No lo disimules ni inventes una «solución» genérica: díselo con su razón, que es verdad y además convence — sin saber ${falta} cualquier demo sería genérica, y lo que sirve es verle SU caso (sus productos, sus tallas y colores, su forma de cobrar) en pantalla.
+Dilo en una línea, como quien quiere hacer bien su trabajo, no como quien llena un formulario: «para no mandarte cosas que no te sirven», «para que la demo sea con lo tuyo y no con ejemplos de otra tienda». ${primerContacto ? ' Y ofrécele la salida fácil: que te mande una nota de voz y te lo platique.' : ' NO le ofrezcas mandar audio: ya se lo ofrecimos antes y repetirlo agrega una segunda petición al mensaje.'}`;
 }
