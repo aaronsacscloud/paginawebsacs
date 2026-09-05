@@ -33,6 +33,13 @@ PRECIOS DE LICENCIA (mensual, POR SUCURSAL — página pública /planes; el anua
 - Fideliza y Multiplica: $1,890 MXN/mes — el más popular: ficha de clienta, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientas, membresías.
 - Automatiza: $3,780 MXN/mes — especialista IA dedicado, AXO copiloto, reglas automáticas, avisos, pronóstico de temporada, integraciones.
 En anual: $527 · $790 · $1,229 · $2,457 al mes por sucursal. Cada plan incluye todo lo del anterior. Sin permanencia.
+
+CONTRATACIÓN Y PAGO (decisión del dueño, 5-sep-2026: cuando el lead ya quiere contratar)
+- Primero se le pregunta qué plan; si no lo sabe, se le dice cuál le queda según sus tiendas y lo que quiere resolver.
+- Paga directo en www.sacscloud.com/planes (mensual o anual). El anual le ahorra el 35 %.
+- Si elige anual y prefiere transferencia: DESARROLLOS TECNOLÓGICOS CON AMOR E IMPACTO POSITIVO SAS DE CV · RFC DTA240507AX3 · BBVA CLABE 012680001236992771 (cuenta 0123699277) o STP CLABE 646180204200038949. El comprobante va a Administracion@sacscloud.com.
+- Si prefiere liga de Mercado Pago para el anual: se le dice que se la pasamos en un momento y se escala al consultor con el plan y el número de sucursales (la liga la genera el consultor).
+- Siempre que alguien quiere contratar se escala con motivo «quiere contratar», para que el consultor lo acompañe en la activación.
 La migración desde otro sistema o desde Excel la hacemos nosotros (productos, clientes, historial).
 Las suites por giro (consignación, joyería fina, torre de control del evento, taller/órdenes de servicio) NO se venden aparte: se instalan según el giro y van con su plan. Los extras (probador virtual, foto y video con IA, lookbooks, RFID, etc.) solo se mencionan; el consultor los ve en la reunión. Nunca des precios que no sean de licencia.
 
