@@ -90,7 +90,7 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
           {c.sucursales ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>{c.sucursales} sucursales</Pastilla> : null}
-          {c.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(c.google_rating).toFixed(1)} ★{c.google_resenas ? ` · ${fmt(c.google_resenas)}` : ''}</Pastilla> : null}
+          {c.google_rating ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>{Number(c.google_rating).toFixed(1)} en Google{c.google_resenas ? ` · ${fmt(c.google_resenas)} reseñas` : ''}</Pastilla> : null}
           {c.plataforma_web ? <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={c.plataforma_web} max={230}>{c.plataforma_web}</Pastilla> : null}
         </div>
         {c.senal_expansion && <p style={{ fontSize: '.8125rem', color: '#555', margin: '0 0 8px', lineHeight: 1.5 }}><b style={{ color: P.verdeTinta }}>Crece:</b> {c.senal_expansion}</p>}
@@ -107,7 +107,7 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
       </div>
 
       {captura && (
-        <div style={{ display: 'grid', gap: 8, background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '14px 16px' }}>
+        <div style={{ display: 'grid', gap: 8, background: '#fff', border: `1px solid ${P.linea}`, borderRadius: 10, padding: '14px 16px' }}>
           <div style={{ fontSize: '.75rem', fontWeight: 700, color: '#666' }}>Lo que nos dijeron</div>
           {(['nombre', 'cargo', 'email', 'whatsapp'] as const).map(k => (
             <input key={k} value={captura[k]} onChange={e => setCaptura({ ...captura, [k]: e.target.value })}
@@ -129,10 +129,12 @@ export default function ColaTelefono({ onCambio }: { onCambio?: () => void }) {
           <button key={r.v} disabled={guardando}
             onClick={() => { if (r.v === 'dieron_datos' && !captura) { setCaptura({ nombre: '', cargo: '', email: '', whatsapp: '' }); return; } registrar(r.v); }}
             style={{
+              // El único sólido de esta pantalla es "Llamar": es lo que hay que
+              // hacer. Los resultados se registran DESPUÉS de colgar.
               font: 'inherit', fontSize: '.8125rem', fontWeight: 700, padding: '9px 15px', borderRadius: 9, cursor: 'pointer',
-              border: r.tono === 'bueno' ? 'none' : r.tono === 'malo' ? '1px solid #f0c4bd' : '1px solid #e0dee8',
-              background: r.tono === 'bueno' ? P.violeta : '#fff',
-              color: r.tono === 'bueno' ? '#fff' : r.tono === 'malo' ? P.rojoTinta : '#555',
+              border: r.tono === 'bueno' ? `1.5px solid ${P.violeta}` : r.tono === 'malo' ? '1px solid #f0c4bd' : '1px solid #e0dee8',
+              background: '#fff',
+              color: r.tono === 'bueno' ? P.violetaTinta : r.tono === 'malo' ? P.rojoTinta : '#555',
             }}>
             {r.v === 'dieron_datos' && !captura ? 'Me dieron con quién…' : r.l}
           </button>

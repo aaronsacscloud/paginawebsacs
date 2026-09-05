@@ -66,7 +66,9 @@ export default function AbmTab() {
   // Si la lista vino truncada, el buscador de la tabla mentiría (buscaría solo
   // en lo que alcanzó a llegar). En ese caso se busca en el servidor.
   useEffect(() => {
-    if (!truncado && !busca) return;
+    // También cuando se BORRA: antes salía por aquí y la lista se quedaba en
+    // los dos resultados de la última búsqueda, sin forma de volver.
+    if (!modoServidor && !busca) return;
     const t = setTimeout(traer, 350);
     return () => clearTimeout(t);
   }, [busca]);
@@ -86,7 +88,7 @@ export default function AbmTab() {
 
   const cols: ColDef[] = useMemo(() => [
     {
-      key: 'nombre', label: 'Cuenta', fija: true, width: 300, val: (r) => r.nombre,
+      key: 'nombre', label: 'Cuenta', fija: true, width: 250, val: (r) => r.nombre,
       render: (r) => (
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: '.875rem', color: '#222', display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -100,23 +102,23 @@ export default function AbmTab() {
       ),
     },
     {
-      key: 'puntaje', label: 'Puntaje', num: true, width: 130, val: (r) => r.puntaje || 0,
+      key: 'puntaje', label: 'Puntaje', num: true, width: 108, val: (r) => r.puntaje || 0,
       render: (r) => <Puntaje v={r.puntaje || 0} />,
     },
     {
-      key: 'sucursales', label: 'Tiendas', num: true, width: 95, ftype: 'number', val: (r) => r.sucursales || 0,
+      key: 'sucursales', label: 'Tiendas', num: true, width: 82, ftype: 'number', val: (r) => r.sucursales || 0,
       render: (r) => r.sucursales
         ? <span style={{ fontWeight: 700, color: r.sucursales >= 5 ? P.azulTinta : '#444' }}>{r.sucursales}</span>
         : <span style={{ color: '#bbb' }}>—</span>,
     },
     {
-      key: 'google_rating', label: 'Google', num: true, width: 100, val: (r) => Number(r.google_rating || 0),
+      key: 'google_rating', label: 'Google', num: true, width: 92, val: (r) => Number(r.google_rating || 0),
       render: (r) => r.google_rating
         ? <span><b style={{ color: P.verdeTinta }}>{Number(r.google_rating).toFixed(1)}</b>{r.google_resenas ? <span style={{ color: '#aaa', fontSize: '.6875rem' }}> · {fmt(r.google_resenas)}</span> : null}</span>
         : <span style={{ color: '#bbb' }}>—</span>,
     },
     {
-      key: 'tecnologia', label: 'Su sistema hoy', width: 165, val: (r) => r.plataforma_web || '',
+      key: 'tecnologia', label: 'Su sistema hoy', width: 150, val: (r) => r.plataforma_web || '',
       render: (r) => (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {r.plataforma_web && <Pastilla tono={{ bg: P.violetaAgua, fg: P.violetaTinta }} titulo={r.plataforma_web} max={150}>{r.plataforma_web}</Pastilla>}
@@ -127,43 +129,25 @@ export default function AbmTab() {
       ),
     },
     {
-      key: 'contacto', label: 'Por dónde entrarle', width: 240, ftype: 'number', val: (r) => canalesDe(r).n,
+      // Esta columna ES la acción: el correo abre el cliente de correo y la
+      // pastilla abre WhatsApp, sin salir de la lista ni abrir la ficha.
+      key: 'contacto', label: 'Por dónde entrarle', width: 230, ftype: 'number', val: (r) => canalesDe(r).n,
       render: (r) => {
         const { mail, wa, n } = canalesDe(r);
         if (!n) return <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>sin vía verificada</span>;
         return (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {mail && <a href={enlaceDe(mail.tipo, mail.valor) || '#'} onClick={e => e.stopPropagation()} style={{ fontSize: '.75rem', fontWeight: 600, color: P.violetaTinta, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{mail.valor}</a>}
-            {wa && <a href={enlaceDe(wa.tipo, wa.valor) || '#'} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>}
-            {!mail && !wa && <span style={{ fontSize: '.75rem', color: '#888' }}>{n} vías</span>}
+            {wa && (enlaceDe(wa.tipo, wa.valor)
+              ? <a href={enlaceDe(wa.tipo, wa.valor)!} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}><Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla></a>
+              : <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo={wa.valor}>WhatsApp sin número usable</Pastilla>)}
+            {!mail && !wa && <span style={{ fontSize: '.75rem', color: '#888' }}>{n} {n === 1 ? 'vía' : 'vías'}</span>}
           </div>
         );
       },
     },
     {
-      key: 'ruta', label: 'Va a', width: 120, ftype: 'select',
-      options: [{ v: 'demo', l: 'Demo' }, { v: 'diagnostico', l: 'Diagnóstico' }],
-      val: (r) => r.ruta || 'demo',
-      render: (r) => r.ruta === 'diagnostico'
-        ? <Pastilla tono={{ bg: P.azulAgua, fg: P.azulTinta }}>diagnóstico</Pastilla>
-        : <span style={{ fontSize: '.75rem', color: '#888' }}>demo</span>,
-    },
-    {
-      key: 'accion', label: '', width: 92, sortable: false,
-      render: (r) => {
-        const { mail, wa } = canalesDe(r);
-        const url = mail ? enlaceDe(mail.tipo, mail.valor) : wa ? enlaceDe(wa.tipo, wa.valor) : null;
-        if (!url) return <span style={{ fontSize: '.6875rem', color: '#bbb' }}>—</span>;
-        return (
-          <a href={url} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}
-            style={{ fontSize: '.6875rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            {mail ? 'Escribir' : 'WhatsApp'}
-          </a>
-        );
-      },
-    },
-    {
-      key: 'etapa', label: 'Etapa', width: 130, ftype: 'select',
+      key: 'etapa', label: 'Etapa', width: 120, ftype: 'select',
       options: Object.entries(ETAPA_TONO).map(([v, t]) => ({ v, l: t.l })),
       val: (r) => r.etapa,
       render: (r) => <Pastilla tono={ETAPA_TONO[r.etapa] || ETAPA_TONO.sin_tocar}>{(ETAPA_TONO[r.etapa] || ETAPA_TONO.sin_tocar).l}</Pastilla>,
@@ -211,7 +195,7 @@ export default function AbmTab() {
       )}
 
       <div style={{ display: 'flex', gap: 2, marginBottom: 16, borderBottom: `1px solid ${P.linea}` }}>
-        {([['lista', 'Las cuentas', resumen?.total], ['llamadas', 'Cola de teléfono', resumen ? resumen.total - resumen.con_email : null]] as const).map(([v, l, n]) => (
+        {([['lista', 'Las cuentas', resumen?.total], ['llamadas', 'Cola de teléfono', resumen?.para_llamar]] as const).map(([v, l, n]) => (
           <button key={v} onClick={() => setVista(v as any)} style={{
             font: 'inherit', fontSize: '.875rem', fontWeight: vista === v ? 800 : 500, padding: '9px 15px',
             border: 'none', borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent',
@@ -230,13 +214,13 @@ export default function AbmTab() {
 
       {resumen && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fit,minmax(160px,1fr))', gap: isMobile ? 8 : 12, marginBottom: 18 }}>
-          {kpi('Cuentas', fmt(resumen.total), 'negocios verificados', P.violeta, P.violetaTinta, () => setFiltro(null))}
+          {kpi('Cuentas', fmt(giro ? cuentas.length : resumen.total), giro ? `de ${GIROS[giro] || giro}` : 'negocios verificados', P.violeta, P.violetaTinta, () => setFiltro(null))}
           {/* Ámbar, no morado: la franja dice de qué habla el número, y lo que
               urge no puede tener el mismo color que el total. */}
-          {kpi('Calientes', fmt(resumen.calientes), 'puntaje de 60 o más', P.ambar, P.ambarTinta, () => setFiltro('calientes'), 'calientes')}
-          {kpi('Van a diagnóstico', fmt(resumen.diagnostico), 'cinco o más sucursales', P.azul, P.azulTinta, () => setFiltro('diagnostico'), 'diagnostico')}
-          {kpi('Con correo', fmt(resumen.con_email), `y ${fmt(resumen.con_wa)} con WhatsApp`, P.verde, P.verdeTinta, () => setFiltro('correo'), 'correo')}
-          {kpi('Sin ninguna vía', fmt(resumen.sin_canal), 'hay que buscarles contacto', P.rojo, P.rojoTinta, () => setFiltro('sinvia'), 'sinvia')}
+          {kpi('Calientes', fmt(giro ? cuentas.filter(c => (c.puntaje || 0) >= 60).length : resumen.calientes), 'puntaje de 60 o más', P.ambar, P.ambarTinta, () => setFiltro('calientes'), 'calientes')}
+          {kpi('Van a diagnóstico', fmt(giro ? cuentas.filter(c => c.ruta === 'diagnostico').length : resumen.diagnostico), 'cinco o más sucursales', P.azul, P.azulTinta, () => setFiltro('diagnostico'), 'diagnostico')}
+          {kpi('Con correo', fmt(giro ? cuentas.filter(c => c.tiene_email).length : resumen.con_email), giro ? `y ${fmt(cuentas.filter(c => c.tiene_wa).length)} con WhatsApp` : `y ${fmt(resumen.con_wa)} con WhatsApp`, P.verde, P.verdeTinta, () => setFiltro('correo'), 'correo')}
+          {kpi('Sin ninguna vía', fmt(giro ? cuentas.filter(c => !c.canales_n).length : resumen.sin_canal), 'hay que buscarles contacto', P.rojo, P.rojoTinta, () => setFiltro('sinvia'), 'sinvia')}
         </div>
       )}
 
@@ -270,10 +254,15 @@ export default function AbmTab() {
           {(truncado || modoServidor) && (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: P.ambarAgua, borderRadius: 9, padding: '10px 13px', marginBottom: 12 }}>
               <span style={{ fontSize: '.8125rem', color: P.ambarTinta, flex: 1, minWidth: 240 }}>
-                Son {fmt(total)} cuentas y aquí caben {fmt(cuentas.length)}. Para no buscar solo en lo que se alcanzó a traer, escribe aquí y la búsqueda se hace sobre todas.
+                {busca ? `Buscando "${busca}" sobre todas las cuentas.` : `La lista no cupo completa. Escribe aquí y la búsqueda se hace sobre todas, no solo sobre las ${fmt(cuentas.length)} que se alcanzaron a traer.`}
               </span>
-              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={`Buscar en las ${fmt(total)}…`}
+              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar en todas las cuentas…"
                 style={{ font: 'inherit', fontSize: '.8125rem', padding: '7px 11px', borderRadius: 8, border: `1px solid ${P.ambar}`, minWidth: 220 }} />
+              {busca && (
+                <button onClick={() => setBusca('')} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '7px 12px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${P.ambar}`, background: '#fff', color: P.ambarTinta }}>
+                  Quitar la búsqueda
+                </button>
+              )}
             </div>
           )}
           <div style={{ opacity: cargando ? .5 : 1, transition: 'opacity .15s' }}>
@@ -295,8 +284,11 @@ export default function AbmTab() {
                   <Puntaje v={r.puntaje || 0} ancho={40} />
                 </div>
                 <div style={{ fontSize: '.75rem', color: '#888' }}>{GIROS[r.giro] || r.giro} · {r.ciudad || 'México'}</div>
-                <div style={{ fontSize: '.75rem', color: canalesDe(r).mail ? P.violetaTinta : P.rojoTinta, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {canalesDe(r).mail ? canalesDe(r).mail.valor : canalesDe(r).wa ? 'Solo WhatsApp' : 'Sin vía verificada'}
+                <div style={{ fontSize: '.75rem', color: canalesDe(r).n ? P.violetaTinta : P.rojoTinta, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {canalesDe(r).mail ? canalesDe(r).mail.valor
+                    : canalesDe(r).wa ? 'Por WhatsApp'
+                    : canalesDe(r).n ? `${canalesDe(r).n} ${canalesDe(r).n === 1 ? 'vía' : 'vías'} (sin correo)`
+                    : 'Sin vía verificada'}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {canalesDe(r).wa ? <Pastilla tono={{ bg: P.verdeAgua, fg: P.verdeTinta }}>WhatsApp</Pastilla> : null}

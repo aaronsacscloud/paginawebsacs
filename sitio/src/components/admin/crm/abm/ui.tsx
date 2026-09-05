@@ -9,7 +9,7 @@ import { P } from '../../../../lib/crm/paleta';
 export const TOPES = { encaje: 50, dolor: 50, accesibilidad: 25, puntaje: 100 } as const;
 
 export const ETAPA_TONO: Record<string, { l: string; bg: string; fg: string }> = {
-  sin_tocar:    { l: 'Sin tocar',    bg: '#F4F4F6',        fg: '#6B7280' },
+  sin_tocar:    { l: 'Sin tocar',    bg: '#F4F4F6',        fg: P.suave },
   en_cadencia:  { l: 'En cadencia',  bg: P.violetaAgua,    fg: P.violetaTinta },
   respondio:    { l: 'Respondió',    bg: P.verdeAgua,      fg: P.verdeTinta },
   reunion:      { l: 'Reunión',      bg: P.azulAgua,       fg: P.azulTinta },

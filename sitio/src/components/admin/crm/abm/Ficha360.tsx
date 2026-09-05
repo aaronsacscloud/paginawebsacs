@@ -39,7 +39,7 @@ const ACT_COLOR: Record<string, string> = {
 };
 
 const H = { fontSize: '.625rem', letterSpacing: '.1em', textTransform: 'uppercase' as const, fontWeight: 800, color: '#999', margin: '0 0 8px' };
-const CAJA = { background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '15px 17px' };
+const CAJA = { background: '#fff', border: `1px solid ${P.linea}`, borderRadius: 10, padding: '15px 17px' };
 
 export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCerrar: () => void; onCambio?: () => void }) {
   const [d, setD] = useState<any>(null);
@@ -168,7 +168,7 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
             c.instagram ? `${c.instagram}${c.ig_seguidores ? ` (${c.ig_seguidores})` : ''}` : null,
             c.tiktok ? 'TikTok' : null, c.facebook ? 'Facebook' : null,
           ].filter(Boolean).join(' · ') || 'sin redes'} />
-          {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{c.contexto}</p>}
+          {c.contexto && <p style={{ fontSize: '.8125rem', color: '#555', margin: '10px 0 0', lineHeight: 1.5 }}>{c.contexto.replace(/[\s·,;]+$/, '')}{/\w$/.test(c.contexto.trim()) ? '' : ''}</p>}
           {c.senal_expansion && (
             <p style={{ fontSize: '.8125rem', margin: '10px 0 0', color: '#555', lineHeight: 1.5 }}>
               <b style={{ color: P.verdeTinta }}>Crece:</b> {c.senal_expansion}

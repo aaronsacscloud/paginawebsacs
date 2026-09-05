@@ -10,7 +10,7 @@ import EstadoVacio from '../ui/EstadoVacio';
 import { Pastilla, fecha } from './ui';
 
 const ESTADO: Record<string, { l: string; bg: string; fg: string }> = {
-  borrador:   { l: 'Por revisar', bg: '#F4F4F6',     fg: '#6B7280' },
+  borrador:   { l: 'Por revisar', bg: '#F4F4F6',     fg: P.suave },
   aprobado:   { l: 'Aprobado',    bg: P.verdeAgua,   fg: P.verdeTinta },
   programado: { l: 'Programado',  bg: P.azulAgua,    fg: P.azulTinta },
   enviado:    { l: 'Enviado',     bg: P.violetaAgua, fg: P.violetaTinta },
@@ -79,7 +79,7 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
         const est = ESTADO[t.estado] || ESTADO.borrador;
         const abierto = editando === t.id;
         return (
-          <div key={t.id} style={{ border: '1px solid #ececec', borderRadius: 10, padding: '13px 15px', background: '#fff' }}>
+          <div key={t.id} style={{ border: `1px solid ${P.linea}`, borderRadius: 10, padding: '13px 15px', background: '#fff' }}>
             <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
               <span style={{ fontSize: '.6875rem', fontWeight: 800, color: '#aaa' }}>{i + 1}</span>
               <Pastilla tono={est}>{est.l}</Pastilla>

@@ -36,6 +36,26 @@ export const GET: APIRoute = async ({ request }) => {
   const act: Record<string, number> = {};
   for (const a of actividad.data || []) act[a.tipo] = (act[a.tipo] || 0) + 1;
 
+  // Cuántas se pueden LLAMAR de verdad: sin correo, con teléfono o WhatsApp y
+  // sin llamada previa. Poner "sin correo" en la pestaña decía 433 sobre una
+  // cola de 40.
+  const { data: sinCorreo } = await supabase.from('abm_cuentas')
+    .select('id').eq('tiene_email', false).neq('etapa', 'no_contactar').is('ya_es_cliente', null).limit(2000);
+  const idsSin = (sinCorreo || []).map((c: any) => c.id);
+  const conTel = new Set<string>();
+  for (let i = 0; i < idsSin.length; i += 150) {
+    const { data } = await supabase.from('abm_canales').select('cuenta_id')
+      .in('cuenta_id', idsSin.slice(i, i + 150)).in('tipo', ['telefono', 'whatsapp_tienda', 'whatsapp_dueno']);
+    for (const c of data || []) conTel.add(c.cuenta_id);
+  }
+  const yaLlamadas = new Set<string>();
+  for (let i = 0; i < idsSin.length; i += 150) {
+    const { data } = await supabase.from('abm_actividad').select('cuenta_id')
+      .in('cuenta_id', idsSin.slice(i, i + 150)).eq('canal', 'llamada');
+    for (const a of data || []) yaLlamadas.add(a.cuenta_id);
+  }
+  const para_llamar = [...conTel].filter(id => !yaLlamadas.has(id)).length;
+
   const hoy = new Date().toISOString().slice(0, 10);
   const pendientesHoy = (toques.data || []).filter((t: any) => (t.programado_at || '').slice(0, 10) <= hoy).length;
 
@@ -49,6 +69,7 @@ export const GET: APIRoute = async ({ request }) => {
     multisucursal: cuenta(c => (c.sucursales || 0) >= 2),
     sin_canal: cuenta(c => !c.canales_n),
     con_email: cuenta(c => c.tiene_email), con_wa: cuenta(c => c.tiene_wa),
+    para_llamar,
     porGiro, porEtapa, actividad: act, senales: seDisparo,
     toques_pendientes: (toques.data || []).length, toques_hoy: pendientesHoy,
   });
