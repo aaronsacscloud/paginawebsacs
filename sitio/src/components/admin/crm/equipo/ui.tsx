@@ -255,10 +255,6 @@ export const CSS = `
 /* LO QUE VIENE DE LA JUNTA PASADA. Va arriba y se ve distinto: es lo único de
    la sala que YA se prometió una vez. En ámbar, no en rojo — es un pendiente,
    no un error. */
-.eq-antes{border-color:var(--eq-ambar-linea);background:var(--eq-ambar-fondo)}
-.eq-antes>.cab{background:var(--eq-ambar-cab);border-bottom-color:var(--eq-ambar-linea)}
-.eq-antes>.cab b{color:var(--eq-ambar-tinta)}
-.eq-antes>.cab .n{background:var(--eq-ambar-chip);color:var(--eq-ambar-tinta)}
 /* «Pasar a hoy»: el clic que cierra el ciclo. Va a la derecha de la fila, en su
    propia columna, para que nunca compita con la palomita de «hecho». */
 .eq-acuerdo .pasa{flex-shrink:0;align-self:center;white-space:nowrap;border-color:var(--eq-ambar-linea);color:var(--eq-ambar-tinta)}
@@ -302,6 +298,19 @@ export const CSS = `
 .eq-bloque .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--eq-linea);background:var(--eq-panel)}
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}
 .eq-bloque .cab .n{font-size:.75rem;color:var(--eq-gris)}
+/* «Viene de la junta pasada», DESPUÉS de las genéricas de .eq-bloque.
+   El orden no es estético: `.eq-antes>.cab b` y `.eq-bloque .cab b` tienen la
+   MISMA especificidad, así que gana la última del archivo. Estando arriba solo
+   pegaba el `background` del chip —lo único que la genérica no define— y todo
+   lo demás se quedaba gris: el bloque se veía igual que los otros y el ámbar no
+   aparecía por ningún lado. Lo descubrió el QA con navegador; leyendo el CSS no
+   se ve. */
+.eq-antes{border-color:var(--eq-ambar-linea);background:var(--eq-ambar-fondo)}
+.eq-antes>.cab{background:var(--eq-ambar-cab);border-bottom-color:var(--eq-ambar-linea)}
+.eq-antes>.cab b{color:var(--eq-ambar-tinta)}
+.eq-antes>.cab .n{background:var(--eq-ambar-chip);color:var(--eq-ambar-tinta)}
+/* El chip pega contra el borde: se le da aire para que no se lea cortado. */
+.eq-antes>.cab .n{padding:1px 7px;border-radius:999px;font-weight:700}
 .eq-punto{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid var(--eq-linea)}
 .eq-punto:last-child{border-bottom:0}
 .eq-punto .num{width:22px;height:22px;border-radius:7px;background:var(--eq-lila);color:var(--eq-morado-tinta);font-weight:800;font-size:.75rem;display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px}
