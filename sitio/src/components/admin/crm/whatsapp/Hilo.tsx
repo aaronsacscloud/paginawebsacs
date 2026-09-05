@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AccionesVenta from './AccionesVenta';
 import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
-import DecisionSugerencia from '../ti/DecisionSugerencia';
+import DecisionSugerencia, { CAMBIOS } from '../ti/DecisionSugerencia';
 import { EsqueletoChat } from './Esqueletos';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
@@ -40,7 +40,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   /* «Agente IA» asignado = piloto automático: se pinta morado para que el asesor lo vea de un vistazo. */
   const esAgente = !!(conv?.asignado_a && (equipo || []).some((m: any) => m.id === conv.asignado_a && m.es_agente));
   const [agenteEstado, setAgenteEstado] = useState<any>(null);
-  const [liberadas, setLiberadas] = useState<string[]>([]);   // sugerencias rechazadas aquí: el compositor vuelve
+  const [liberadas, setLiberadas] = useState<string[]>([]);
+  const [evaluando, setEvaluando] = useState<any>(null);   // mensaje del agente que se está evaluando (post-envío)   // sugerencias rechazadas aquí: el compositor vuelve
   const recargarAgente = () => { if (conv?.contact_id) fetch(`/api/crm/ti/agente-hilo?contact_id=${conv.contact_id}`).then(r => r.json()).then(setAgenteEstado).catch(() => {}); };
   const [composerN, setComposerN] = useState(0);
   const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
@@ -658,6 +659,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   mismoAutorQueElAnterior={mismoAutor}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
+                  onEvaluar={setEvaluando}
                   onMejorar={conv.id ? setMejorar : undefined}
                   onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined}
                   onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined}
@@ -722,6 +724,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       )}
       </div>
 
+      {evaluando && (
+        <EvaluarEnviado item={evaluando} onCerrar={() => setEvaluando(null)} onListo={() => { setEvaluando(null); recargarAgente(); }} />
+      )}
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
       {mejorar && <PanelMejorar mensaje={mejorar} api={api} onCerrar={() => setMejorar(null)} />}
@@ -1102,5 +1107,46 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
         </span>
       )}
     </span>
+  );
+}
+
+
+/** EVALUAR DESPUÉS DE ENVIADO (decisión del dueño, 5-sep): cuando el agente contesta solo a un lead en vivo, el
+ *  consultor lo califica aquí. Nota, qué falló, la versión que hubiera mandado y el criterio: cuenta para la paridad
+ *  y la versión entra como ejemplo aprobado. Así se prueban los tiempos sin perder el aprendizaje. */
+function EvaluarEnviado({ item, onCerrar, onListo }: { item: any; onCerrar: () => void; onListo: () => void }) {
+  const [nota, setNota] = useState<number>(0);
+  const [fallas, setFallas] = useState<string[]>([]);
+  const [version, setVersion] = useState('');
+  const [criterio, setCriterio] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [err, setErr] = useState('');
+  const enviar = async () => {
+    if (!nota) { setErr('Ponle una nota del 1 al 10.'); return; }
+    setOcupado(true); setErr('');
+    const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'evaluar_enviado', envio_id: item.metadata?.envio_id || null, wamid: item.kapso_message_id || null, nota, fallas, version, criterio }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r?.error) { setErr(r.error); return; }
+    onListo();
+  };
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(36,29,67,.35)', zIndex: 70, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onCerrar}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', width: '100%', maxWidth: 640, borderRadius: '16px 16px 0 0', padding: '16px 18px 22px', maxHeight: '86vh', overflowY: 'auto', fontFamily: 'inherit' }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6', marginBottom: 6 }}>Evaluar lo que mandó el agente</div>
+        <div style={{ background: '#e7f7ee', borderRadius: 10, padding: '9px 11px', fontSize: 13.5, lineHeight: 1.5, whiteSpace: 'pre-wrap', marginBottom: 12 }}>{item.cuerpo}</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Nota</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>{Array.from({ length: 10 }, (_, i) => i + 1).map(n => <button key={n} onClick={() => setNota(n)} style={{ minWidth: 40, minHeight: 40, borderRadius: 10, border: '1px solid ' + (nota === n ? '#241d43' : '#e8e5f0'), background: nota === n ? '#241d43' : '#fff', color: nota === n ? '#fff' : '#241d43', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{n}</button>)}</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Qué falló o qué cambiarías</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>{CAMBIOS.map(c => <button key={c} onClick={() => setFallas(f => f.includes(c) ? f.filter(x => x !== c) : [...f, c])} style={{ borderRadius: 999, padding: '9px 12px', border: '1px solid ' + (fallas.includes(c) ? '#241d43' : '#e8e5f0'), background: fallas.includes(c) ? '#241d43' : '#fff', color: fallas.includes(c) ? '#fff' : '#4a4658', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>{c}</button>)}</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', marginBottom: 6 }}>Cómo lo hubieras mandado tú (opcional, es lo que más enseña)</div>
+        <textarea value={version} onChange={e => setVersion(e.target.value)} rows={4} style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e8e5f0', borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 16, lineHeight: 1.45, marginBottom: 8 }} placeholder="Tu versión del mensaje" />
+        <input value={criterio} onChange={e => setCriterio(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e8e5f0', borderRadius: 10, padding: '9px 11px', fontFamily: 'inherit', fontSize: 14, marginBottom: 12 }} placeholder="La regla detrás: qué debe considerar el agente la próxima vez" />
+        {err && <div style={{ color: '#b3261e', fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>{err}</div>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={enviar} disabled={ocupado} style={{ flex: 1, minHeight: 46, border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 800, fontSize: 14.5, cursor: 'pointer', fontFamily: 'inherit' }}>{ocupado ? 'Guardando…' : 'Guardar evaluación'}</button>
+          <button onClick={onCerrar} style={{ minHeight: 46, border: '1px solid #e8e5f0', background: '#fff', borderRadius: 12, padding: '0 16px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cerrar</button>
+        </div>
+      </div>
+    </div>
   );
 }

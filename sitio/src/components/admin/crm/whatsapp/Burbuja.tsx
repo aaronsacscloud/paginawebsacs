@@ -139,7 +139,7 @@ function tragarSiguienteClick() {
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, mismoAutorQueElAnterior }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, onEvaluar, mismoAutorQueElAnterior }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
@@ -149,6 +149,8 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   onIrACita?: (id: string) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
+  /** Evaluar un mensaje que el agente mandó solo (decisión del dueño, 5-sep): nota, qué falló, versión mejor. */
+  onEvaluar?: (item: any) => void;
   /** Mensajes del AGENTE SDR: «Mejorar respuesta» → lección de máxima prioridad. */
   onMejorar?: (item: any) => void;
   onReenviar?: (item: any) => void;
@@ -362,6 +364,9 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
             {item.metadata?.editado && <span style={{ fontSize: 9, opacity: .7 }}>editado</span>}
             <span style={{ fontSize: 10, color: saliente ? '#A7F3D0' : C.g400 }}>{horaDe(item.enviado_at || item.created_at)}</span>
             <EstadoEntrega status={item.status} direccion={item.direccion} error={item.error} />
+            {onEvaluar && item.direccion === 'saliente' && (item.metadata as any)?.origen === 'agente' && (
+              <button onClick={() => onEvaluar(item)} title="Evaluar esta respuesta del agente: nota, qué falló y cómo la hubieras mandado" style={{ border: 'none', background: 'rgba(91,75,214,.12)', color: '#4c1d95', borderRadius: 999, padding: '1px 8px', fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginLeft: 4 }}>Evaluar</button>
+            )}
           </span>
         </span>
         {!item.borrado_at && item.kapso_message_id && (onCitar || onReenviar) && (
