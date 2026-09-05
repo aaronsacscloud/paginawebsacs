@@ -150,6 +150,7 @@ export async function observar(): Promise<any> {
     // Las plantillas del agente (par marketing+utility) se crean/refrescan solas; se usan fuera de la ventana de 24 h.
     try { const { asegurarPlantillas } = await import('./plantillas-agente'); const pl: any = await asegurarPlantillas(); res.plantillas = { marketing: pl.marketing?.estado || null, utility: pl.utility?.estado || null }; } catch (e: any) { res.plantillas_error = String(e?.message || e); }
     try { res.agente_silencio = await tocarSilencios(); } catch (e: any) { res.silencio_error = String(e?.message || e); }
+    try { const { dispararCompromisos } = await import('./compromisos'); res.compromisos = await dispararCompromisos(); } catch (e: any) { res.compromisos_error = String(e?.message || e); }
     try { res.agente_despacho = await despacharEnvios(); } catch (e: any) { res.despacho_error = String(e?.message || e); }
     try { const { barrerSugerencias } = await import('./seguimiento'); res.sugerencias = await barrerSugerencias(); } catch (e: any) { res.sugerencias_error = String(e?.message || e); }
     try { const { reintentarAgendas } = await import('./agente'); res.agente_reintentos = await reintentarAgendas(); } catch (e: any) { res.reintentos_error = String(e?.message || e); }

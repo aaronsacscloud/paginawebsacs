@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { SelectorAdjuntos, MiniRecurso, type AdjuntoSel, type Recurso } from '../../RecursosAgente';
 
+export const CAMBIOS = ['Tono', 'Un dato estaba mal', 'No era el momento', 'Muy largo', 'El saludo', 'La pregunta', 'Agregué contexto suyo', 'Quité el pitch', 'Adjunto'];
 export const MOTIVOS_RECHAZO = ['El tono no es el nuestro', 'Información incorrecta', 'No entendió lo que preguntó', 'No era el momento de mandar nada', 'Muy largo o muy vendedor', 'Este lead lo llevo yo', 'Otro'];
 const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
 const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map(x => x.trim()).filter(Boolean);
@@ -19,6 +20,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
   const [texto, setTexto] = useState(sug.mensaje);
   const [adj, setAdj] = useState<AdjuntoSel[]>(() => (Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' })));
   const [criterio, setCriterio] = useState('');
+  const [cambios, setCambios] = useState<string[]>([]);
   const [motivo, setMotivo] = useState('');
   const [detalle, setDetalle] = useState('');
   const [gal, setGal] = useState<Recurso[]>(galeria || []);
@@ -26,7 +28,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
   const [verPlantilla, setVerPlantilla] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [err, setErr] = useState('');
-  useEffect(() => { setModo('ver'); setTexto(sug.mensaje); setAdj((Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' }))); setCriterio(''); setMotivo(''); setDetalle(''); setErr(''); setFamilia(''); setVerPlantilla(false); }, [sug.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setModo('ver'); setTexto(sug.mensaje); setAdj((Array.isArray(sug.adjuntos) ? sug.adjuntos : []).map((a: any) => ({ id: a.id, tipo: a.tipo || 'image', url: a.url, nombre: a.nombre || 'Adjunto' }))); setCriterio(''); setCambios([]); setMotivo(''); setDetalle(''); setErr(''); setFamilia(''); setVerPlantilla(false); }, [sug.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (galeria) setGal(galeria); }, [galeria]);
   useEffect(() => { if (modo === 'modificar' && !gal.length) fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(d => setGal(d.galeria || [])).catch(() => {}); }, [modo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -35,7 +37,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
     if (decision === 'rechazar' && !motivo) { setErr('Elige por qué: eso es lo que aprende.'); return; }
     setOcupado(true); setErr('');
     const body: any = { accion: 'decidir', envio_id: sug.id, decision };
-    if (decision === 'modificar') { body.mensaje = texto; body.adjuntos = adj; body.detalle = criterio; }
+    if (decision === 'modificar') { body.mensaje = texto; body.adjuntos = adj; body.detalle = criterio; body.cambios = cambios; }
     if (familia) body.familia = familia;
     if (decision === 'rechazar') { body.motivo = motivo; body.detalle = detalle; }
     const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -114,6 +116,8 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
           <div className="ds-lbl">Tu versión: se manda tal cual y el agente aprende la diferencia</div>
           <textarea className="ds-ta" rows={compacto ? 5 : 6} value={texto} onChange={e => setTexto(e.target.value)} autoFocus />
           <div style={{ margin: '8px 0' }}><SelectorAdjuntos valor={adj} galeria={gal} onChange={setAdj} onNuevo={r => setGal(g => [r, ...g])} /></div>
+          <div className="ds-lbl" style={{ marginTop: 8 }}>Qué cambiaste (para que aprenda por qué, no solo el texto)</div>
+          <div className="ds-chips">{CAMBIOS.map(m => <button key={m} className={'ds-chip' + (cambios.includes(m) ? ' on' : '')} onClick={() => setCambios(x => x.includes(m) ? x.filter(y => y !== m) : [...x, m])}>{m}</button>)}</div>
           <input className="ds-in" placeholder="Qué debe considerar el agente la próxima vez (opcional, vale oro): «no repitas el precio si ya lo dio», «usa su nombre de tienda»…" value={criterio} onChange={e => setCriterio(e.target.value)} />
           <div className="ds-acciones">
             <button className="ds-btn p" style={alto} disabled={ocupado || texto.trim().length < 2} onClick={() => decidir(cambiado ? 'modificar' : 'enviar')}>{ocupado ? 'Enviando…' : cambiado ? 'Enviar con modificaciones' : 'Enviar (sin cambios)'}</button>

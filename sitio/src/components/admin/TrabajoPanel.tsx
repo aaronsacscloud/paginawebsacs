@@ -18,6 +18,7 @@ import TrabajoRevision from './TrabajoRevision';
 import TrabajoReactivacion from './TrabajoReactivacion';
 import TrabajoSeguimiento from './TrabajoSeguimiento';
 import TrabajoDescalificar from './TrabajoDescalificar';
+import TrabajoCompromisos from './TrabajoCompromisos';
 import TorreControl from './TorreControl';
 import TrabajoDatos from './TrabajoDatos';
 
@@ -74,7 +75,7 @@ function porqueDe(t: Tarea): string {
   return '';
 }
 
-export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informes' | 'reactivacion' | 'seguimiento' | 'descalificar' } = {}) {
+export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informes' | 'reactivacion' | 'seguimiento' | 'descalificar' | 'compromisos' } = {}) {
   const [plan, setPlan] = useState<{ tareas: Tarea[]; resumen: any } | null>(null);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -91,7 +92,7 @@ export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informe
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'torre' | 'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion' | 'consumo' | 'revision' | 'reactivacion'>('torre');
   // v2 (decisión 2026-09-04): tres secciones. Torre = todo lo que pide decisión; Informes = lo que se mira; Ajustes = lo que se configura.
-  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes' | 'reactivacion' | 'seguimiento' | 'descalificar'>(inicial || 'torre');
+  const [seccion, setSeccion] = useState<'torre' | 'informes' | 'ajustes' | 'reactivacion' | 'seguimiento' | 'descalificar' | 'compromisos'>(inicial || 'torre');
   useEffect(() => { if (inicial) setSeccion(inicial); }, [inicial]);
   const [infTab, setInfTab] = useState<'leads' | 'revision' | 'biblioteca' | 'consumo'>('leads');
   const [ajTab, setAjTab] = useState<'herramientas' | 'reactivacion'>('herramientas');
@@ -340,6 +341,7 @@ export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informe
       {seccion === 'reactivacion' && <TrabajoReactivacion />}
       {seccion === 'seguimiento' && <TrabajoSeguimiento />}
       {seccion === 'descalificar' && <TrabajoDescalificar />}
+      {seccion === 'compromisos' && <TrabajoCompromisos />}
       {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}

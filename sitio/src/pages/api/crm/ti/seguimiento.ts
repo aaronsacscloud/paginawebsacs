@@ -5,7 +5,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
-import { paridad, decidirSugerencia, sugerenciasPendientes, historialCalificaciones, revisarParidad } from '../../../../lib/crm/ti/seguimiento';
+import { paridad, decidirSugerencia, sugerenciasPendientes, historialCalificaciones, revisarParidad, evaluarEnviado } from '../../../../lib/crm/ti/seguimiento';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   if (b.accion === 'decidir') {
     if (!b.envio_id || !['enviar', 'modificar', 'rechazar'].includes(b.decision)) return json({ error: 'Falta envio_id o decisión' }, 400);
-    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, familia: b.familia, userId: user.id });
+    const r = await decidirSugerencia(String(b.envio_id), { decision: b.decision, mensaje: b.mensaje, adjuntos: b.adjuntos, motivo: b.motivo, detalle: b.detalle, familia: b.familia, cambios: b.cambios, userId: user.id });
     return json(r, r?.error ? 400 : 200);
   }
   if (b.accion === 'config') {
@@ -58,6 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
     const r = await generarSeguimientos({ max: Number(b.max) || 12, soloContactId: b.contact_id });
     return json(r, (r as any)?.error ? 400 : 200);
   }
+  if (b.accion === 'evaluar_enviado') { const r = await evaluarEnviado({ envioId: b.envio_id, wamid: b.wamid, nota: b.nota, fallas: b.fallas, version: b.version, criterio: b.criterio, userId: user.id }); return json(r, (r as any)?.error ? 400 : 200); }
   if (b.accion === 'revisar') return json(await revisarParidad());
   return json({ error: 'Acción desconocida' }, 400);
 };

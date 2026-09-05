@@ -594,9 +594,23 @@ export async function proponerRespuestas(): Promise<any> {
       // secuencia de ESA intención, no con el discurso genérico.
       let notaWeb: string | null = null;
       try { const { notaDeIntencion } = await import('../../whatsapp/lead-entrante'); notaWeb = await notaDeIntencion(cid); } catch { /* opcional */ }
+      // COMPROMISOS (5-sep): si el lead pidió algo con fecha («llámame el jueves», «en 30 días», «lo checo»), se
+      // programa el seguimiento exacto y el agente contesta confirmándolo con empatía. Mientras, silencio total.
+      let notaCompromiso: string | null = null;
+      try {
+        const { detectarCompromiso, programarCompromiso } = await import('./compromisos');
+        const det = await detectarCompromiso(txtBaja || '');
+        if (det?.hay && det.confianza >= 0.6) {
+          const { data: cvC } = await supabase.from('wa_conversaciones').select('id').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+          const hMsg = new Date(Date.parse(ultimoPor[cid]) - 6 * 3600e3).getUTCHours();
+          const pr = await programarCompromiso({ contactId: cid, conversationId: cvC?.id || null, det, horaDeSuMensaje: hMsg });
+          notaCompromiso = pr.nota;
+          await log({ accion: 'compromiso_detectado', contact_id: cid, razon: `${det.tipo} · ${det.interpretacion}`, contenido: det.pidio, detalle: { compromiso_id: pr.id, programado: pr.programado, hora: pr.hora, porque_hora: pr.porqueHora, confianza: det.confianza } });
+        }
+      } catch (e: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `compromiso: ${e?.message || e}` }); }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
       const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
-      const d = await decidirTurno(cid, [notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
+      const d = await decidirTurno(cid, [notaCompromiso, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
       await registrarDatos(cid, s.datos, s.interes);
@@ -619,8 +633,11 @@ export async function proponerRespuestas(): Promise<any> {
       const minsDesdeSuMensaje = (ahora.getTime() - Date.parse(ultimoPor[cid])) / 60000;
       const ventana = minsDesdeSuMensaje <= 30 ? 0 : Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const { error: eIns } = await supabase.from('ti_envios').insert({
-        contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: nace(cfg, d.telefono),
-        mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+        contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta',
+        // EN VIVO (decisión del dueño, 5-sep): si el lead escribió hace menos de 30 min, se le contesta SOLO, las 24 h,
+        // aunque el agente esté en entrenamiento. Todo lo demás sigue pasando por revisión. cfg.auto_en_vivo=false lo apaga.
+        estado: (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) ? 'pendiente' : nace(cfg, d.telefono),
+        mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: { ...s, auto_vivo: (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) || undefined }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
       });
       if (eIns) {
         // Índice único «un pendiente por lead»: otro tick se adelantó. No es error: se descarta esta copia.
@@ -768,18 +785,18 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     // APROBADO POR UNA PERSONA = sale de verdad aunque el agente esté en sombra (práctica del dueño, 2026-09-03): la aprobación es el permiso.
     const { data: due } = await supabase.from('ti_envios').select('id, telefono, conversation_id, contact_id, created_at, mensaje, salida, aprobado_por, origen').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
     // El reenganche espera el clic del dueño: no se marca sombra al vencer su hora, se queda en la fila hasta que lo apruebe o lo detenga.
-    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por && x.origen !== 'reenganche')) {
+    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por && x.origen !== 'reenganche' && !(x.salida as any)?.auto_vivo)) {
       // En sombra la comparación es gratis: si el humano contestó este turno, el par se guarda.
       const h = await humanoContestoDespues(e);
       if (h) await guardarParHumano(e, h, 'sombra');
       else await supabase.from('ti_envios').update({ estado: 'sugerencia', updated_at: ahora.toISOString() }).eq('id', e.id);   // entrenamiento: la decide un consultor (Seguimiento)
     }
-    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && e.origen !== 'reenganche').map(e => e.id);
-    if (!(due || []).some(e => esPrueba(cfg, e.telefono) || e.aprobado_por)) return { agente: 'sombra', sombra: noPrueba.length };
+    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && e.origen !== 'reenganche' && !(e.salida as any)?.auto_vivo).map(e => e.id);
+    if (!(due || []).some(e => esPrueba(cfg, e.telefono) || e.aprobado_por || (e.salida as any)?.auto_vivo)) return { agente: 'sombra', sombra: noPrueba.length };
   }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
   if (opts.soloId) q = q.eq('id', opts.soloId);
-  if (enSombra) { const tels = (cfg.agente_prueba_telefonos || []).map((t: any) => String(t).replace(/\D/g, '')).filter(Boolean).join(','); q = q.or(`aprobado_por.not.is.null${tels ? `,telefono.in.(${tels})` : ''}`); }   // en sombra salen los de prueba y lo aprobado por una persona
+  if (enSombra) { const tels = (cfg.agente_prueba_telefonos || []).map((t: any) => String(t).replace(/\D/g, '')).filter(Boolean).join(','); q = q.or(`aprobado_por.not.is.null,salida->>auto_vivo.eq.true${tels ? `,telefono.in.(${tels})` : ''}`); }   // en sombra salen los de prueba y lo aprobado por una persona
   const { data: pend } = await q;
   if (!(pend || []).length) return res;
   // COMPUERTA FINAL: un automático (no respuesta, sin aprobación humana) vuelve a pasar el semáforo justo antes de salir.

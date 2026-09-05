@@ -95,7 +95,7 @@ export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolea
   return { cambio: false, lista: true, paridad: p };
 }
 
-type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null; familia?: string };
+type Decision = { decision: 'enviar' | 'modificar' | 'rechazar'; mensaje?: string; adjuntos?: any[]; motivo?: string; detalle?: string; userId?: string | null; familia?: string; cambios?: string[] };
 
 /** La decisión del consultor sobre una sugerencia. Enviar/modificar mandan de verdad (por el despachador del agente). */
 export async function decidirSugerencia(envioId: string, o: Decision): Promise<any> {
@@ -135,7 +135,8 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
       let criterio = String(o.detalle || '').trim().slice(0, 600); let criterioInferido: string | null = null;
       if (!criterio) { criterioInferido = await inferirCriterio(e.mensaje, mensaje, mensajeLead).catch(() => null); if (criterioInferido) criterio = criterioInferido; }
       (o as any).criterio_inferido = criterioInferido;
-      await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El consultor corrigió la sugerencia del agente antes de mandarla (${e.origen})`, mensaje_lead: mensajeLead, respuesta: mensaje, pulida: mensaje, adjuntos, imagen_id: img?.id || null, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}El consultor corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
+      const cambiosTxt = Array.isArray(o.cambios) && o.cambios.length ? `CAMBIOS: ${o.cambios.join(', ')}\n` : '';
+      await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El consultor corrigió la sugerencia del agente antes de mandarla (${e.origen})`, mensaje_lead: mensajeLead, respuesta: mensaje, pulida: mensaje, adjuntos, imagen_id: img?.id || null, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}${cambiosTxt}El consultor corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
       await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'modificación en Seguimiento', detalle: { envio_id: e.id, original: e.mensaje, criterio: criterio || null, similitud: sim } }).then(() => {}, () => {});
     }
   }
@@ -175,7 +176,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
     return { error: `No se pudo enviar: ${errorEnvio || 'sin detalle'}` };
   }
   const cal = calificacionPor(o.decision, sim);
-  await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: o.detalle ? String(o.detalle).slice(0, 600) : null });
+  await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: [Array.isArray(o.cambios) && o.cambios.length ? `cambios: ${o.cambios.join(', ')}` : null, o.detalle ? String(o.detalle).slice(0, 600) : null].filter(Boolean).join(' · ') || null });
   const par = await revisarParidad();
   return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null };
 }
@@ -267,4 +268,33 @@ export async function inferirCriterio(original: string, final: string, mensajeLe
   const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 120, messages: [{ role: 'user', content: `Un consultor corrigió la respuesta de un agente de WhatsApp (ventas de software para tiendas de moda). Deduce la REGLA general detrás del cambio, en una sola línea imperativa y concreta que sirva para casos parecidos (no describas el cambio, formula la regla). Si el cambio es solo de estilo trivial, dilo en la regla igual («corta a dos frases»).\nLead: «${String(mensajeLead || '').slice(0, 240)}»\nAgente: «${String(original).slice(0, 500)}»\nConsultor: «${String(final).slice(0, 500)}»\nResponde SOLO la regla, sin comillas ni prefijo.` }] });
   const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim().split('\n')[0].slice(0, 220);
   return t.length >= 10 ? t : null;
+}
+
+
+/**
+ * EVALUAR UN MENSAJE QUE YA SALIÓ (decisión del dueño, 5-sep). Cuando el agente contesta solo (conversación en vivo),
+ * el consultor lo evalúa DESPUÉS desde el inbox: nota, qué falló, la versión que hubiera mandado y el criterio.
+ * Cuenta para la paridad igual que una decisión previa, y la versión corregida entra como ejemplo aprobado.
+ */
+export async function evaluarEnviado(o: { envioId?: string | null; wamid?: string | null; nota: number; fallas?: string[]; version?: string; criterio?: string; userId?: string | null }) {
+  let e: any = null;
+  if (o.envioId) e = (await supabase.from('ti_envios').select('*').eq('id', o.envioId).maybeSingle()).data;
+  if (!e && o.wamid) e = (await supabase.from('ti_envios').select('*').eq('kapso_message_id', o.wamid).maybeSingle()).data;
+  if (!e) return { error: 'No encontré el envío del agente para ese mensaje' };
+  const nota = Math.max(1, Math.min(10, Math.round(Number(o.nota) || 0)));
+  const ahora = new Date().toISOString();
+  const version = String(o.version || '').trim(); const criterio = String(o.criterio || '').trim().slice(0, 600);
+  const fallas = Array.isArray(o.fallas) ? o.fallas.filter(Boolean).slice(0, 6) : [];
+  const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
+  const { data: ya } = await supabase.from('ti_calificaciones').select('id').eq('envio_id', e.id).maybeSingle();
+  const fila = { envio_id: e.id, contact_id: e.contact_id, conversation_id: e.conversation_id, usuario_id: o.userId || null, origen: e.origen, estado_guion: estadoGuion, decision: version && version !== e.mensaje ? 'modificar' : nota >= 8 ? 'enviar' : 'rechazar', calificacion: nota, similitud: version ? similitud(e.mensaje, version) : null, mensaje_sugerido: e.mensaje, mensaje_final: version || e.mensaje, motivo: fallas.join(', ') || (nota >= 8 ? 'Evaluado después de enviado: bien' : 'Evaluado después de enviado'), detalle: criterio || null };
+  if (ya?.id) await supabase.from('ti_calificaciones').update(fila).eq('id', ya.id); else await supabase.from('ti_calificaciones').insert(fila);
+  if (version && version !== e.mensaje) {
+    await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El consultor evaluó un mensaje ya enviado por el agente (${e.origen}) y escribió la versión que hubiera mandado`, mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: version, pulida: version, por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}${fallas.length ? `CAMBIOS: ${fallas.join(', ')}\n` : ''}Nota ${nota}/10. El agente había mandado: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora }).then(() => {}, () => {});
+  } else if (nota <= 5 && fallas.length) {
+    await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `Mensaje enviado por el agente que el consultor calificó ${nota}/10 (${e.origen})`, mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: e.mensaje, pulida: e.mensaje, por_que: `EVITAR: ${fallas.join(', ')}${criterio ? ` · ${criterio}` : ''}`, fuente: 'rechazo_consultor', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'rechazado', revisado_at: ahora }).then(() => {}, () => {});
+  }
+  await supabase.from('ia_log').insert({ accion: 'evaluado_enviado', contact_id: e.contact_id, razon: `${nota}/10${fallas.length ? ` · ${fallas.join(', ')}` : ''}`, detalle: { envio_id: e.id, por: o.userId, version: !!version } }).then(() => {}, () => {});
+  const par = await revisarParidad();
+  return { ok: true, nota, paridad: par.paridad };
 }
