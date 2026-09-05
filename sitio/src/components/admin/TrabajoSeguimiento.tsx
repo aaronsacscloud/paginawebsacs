@@ -36,7 +36,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   if (d.error) return <div className="ti-lienzo"><div className="ti-card">{d.error}</div></div>;
   const p = d.paridad || {};
   const todasPend: any[] = d.pendientes || [];
-  const ORIGEN_L: Record<string, string> = { respuesta: 'Respuestas a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toques por silencio', cotizacion: 'Seguimiento de cotización', reenganche: 'Reenganche', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita' };
+  const ORIGEN_L: Record<string, string> = { respuesta: 'Respuestas a su mensaje', reenganche: 'Reenganches (leads que reconectaron)', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toques por silencio', cotizacion: 'Seguimiento de cotización', reenganche: 'Reenganche', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita' };
   const origenes = [...new Set(todasPend.map(x => x.origen).filter(Boolean))];
   const pend: any[] = filtro === 'todos' ? todasPend : todasPend.filter(x => x.origen === filtro);
   const actual = pend[Math.min(idx, Math.max(0, pend.length - 1))] || null;

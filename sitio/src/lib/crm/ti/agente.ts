@@ -821,14 +821,14 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     // Los teléfonos de PRUEBA sí salen; el resto se marca sombra.
     // APROBADO POR UNA PERSONA = sale de verdad aunque el agente esté en sombra (práctica del dueño, 2026-09-03): la aprobación es el permiso.
     const { data: due } = await supabase.from('ti_envios').select('id, telefono, conversation_id, contact_id, created_at, mensaje, salida, aprobado_por, origen').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
-    // El reenganche espera el clic del dueño: no se marca sombra al vencer su hora, se queda en la fila hasta que lo apruebe o lo detenga.
-    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por && x.origen !== 'reenganche' && !(x.salida as any)?.auto_vivo)) {
+    // El reenganche sigue la MISMA regla que todo (decisión del dueño, 5-sep): en entrenamiento pasa a sugerencia y lo decide el consultor en Seguimiento; en vivo sale solo. Ya no espera un clic aparte (33 se quedaron atorados y bloqueaban al resto).
+    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono) && !x.aprobado_por && !(x.salida as any)?.auto_vivo)) {
       // En sombra la comparación es gratis: si el humano contestó este turno, el par se guarda.
       const h = await humanoContestoDespues(e);
       if (h) await guardarParHumano(e, h, 'sombra');
       else await supabase.from('ti_envios').update({ estado: 'sugerencia', updated_at: ahora.toISOString() }).eq('id', e.id);   // entrenamiento: la decide un consultor (Seguimiento)
     }
-    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && e.origen !== 'reenganche' && !(e.salida as any)?.auto_vivo).map(e => e.id);
+    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono) && !e.aprobado_por && !(e.salida as any)?.auto_vivo).map(e => e.id);
     if (!(due || []).some(e => esPrueba(cfg, e.telefono) || e.aprobado_por || (e.salida as any)?.auto_vivo)) return { agente: 'sombra', sombra: noPrueba.length };
   }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
@@ -1326,7 +1326,7 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
-      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: st.reenganche && validos === 0 ? 'pendiente' : nace(cfg, ultimo[cid].telefono), mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: (opts.saleAt ? new Date(opts.saleAt.getTime() + (escalon++) * 3 * MS_MIN) : new Date(ahora.getTime() + ventanaMin * MS_MIN)).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+      const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: st.reenganche && validos === 0 ? 'reenganche' : 'silencio', estado: nace(cfg, ultimo[cid].telefono), mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: (opts.saleAt ? new Date(opts.saleAt.getTime() + (escalon++) * 3 * MS_MIN) : new Date(ahora.getTime() + ventanaMin * MS_MIN)).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       if (!envIns?.id) { await log({ accion: 'agente_error', contact_id: cid, razon: 'toque de silencio no se pudo programar (ya había un pendiente): no cuenta como intento' }); continue; }
       const intento: Intento = { at: (opts.saleAt || ahora).toISOString(), tipo: par ? 'plantilla' : 'texto', franja: opts.saleAt ? franjaDe(opts.saleAt) : franjaAhora, envio_id: envIns.id, valido: null };
