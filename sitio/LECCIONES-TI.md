@@ -685,3 +685,8 @@ del dueño.
   como ejemplo aprobado. Así se prueban los tiempos sin perder el aprendizaje.
 - **Campos ricos al modificar**: chips «qué cambiaste» (tono, dato, momento, largo, saludo, pregunta, contexto, pitch,
   adjunto) → `CAMBIOS:` en el ejemplo y en la calificación. La lección deja de ser solo el texto.
+
+## 2026-09-05 · Fotos, «sí el que sea», socio y sin dinero
+- **227 fotos entrantes en 90 días que el agente nunca vio.** El hilo las mostraba como `[image]`. Ahora se describen una vez (Sonnet, ~$0.007) y quedan en `transcript`. Lección: cada tipo de mensaje que no sea texto necesita su traductor o el agente lo ignora en silencio.
+- **Para probar «qué contestaría si dijera X» no hace falta escribir en la base.** `simularEntrante` mete el mensaje solo en memoria. Antes la tentación era insertar un `wa_mensajes` falso, que el cron de producción habría contestado de verdad.
+- **El «sí» sin horario elegido no debe volver a preguntar.** El modelo ahora reporta qué horarios mencionó y el turno siguiente los recuerda; sin eso, cada «sí» reabría la pregunta.

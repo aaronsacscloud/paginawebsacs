@@ -19,6 +19,8 @@ export type Caso = {
   /** La instrucción con la que el flujo real llama al agente en este caso (null = ninguna). */
   nota?: string | null;
   tarea?: string;
+  /** Un mensaje entrante simulado (no se guarda): para casos que dependen de lo que el lead acaba de decir. */
+  simular?: string;
   /** Lo que el mensaje DEBE tener. */
   debe: string[];
   /** Lo que NO puede tener. */
@@ -60,6 +62,33 @@ export const CASOS: Caso[] = [
     buscar: () => unLeadCon(q => q.eq('fuente', 'whatsapp_web').filter('propiedades->>intencion_inicial', 'eq', 'prueba_gratis'), 'prueba gratis'),
     debe: ['Confirmar en media línea que sí se le da la prueba', 'Preguntar qué vende y cuántas tiendas, en un solo bloque', 'Ofrecer las dos opciones: probarlo por su cuenta o una demo con especialista de menos de una hora con sus flujos', 'Cerrar preguntando cuál de las dos prefiere'],
     nunca: ['Pedir el correo o el nombre de la tienda antes de que elija', 'Mandar precios', 'Explicar funciones que no preguntó'] },
+  // ── Decisiones del dueño del 5-sep (catálogo de casos): se prueban con un mensaje simulado sobre un lead real ──
+  { id: 'si_cualquiera', titulo: 'Dice «sí, el que sea» a los horarios', porQueLlega: 'Cualquiera', momento: 'Proponiendo: ya se le ofrecieron horarios',
+    buscar: () => unLeadConEnvio('respuesta', 'con envío reciente'), simular: 'Sí, el que sea está bien',
+    debe: ['Elegir UN horario real y agendarlo (accion agendar o agendar_llamada con fecha y hora)', 'Decir que ya quedó apartado ese día a esa hora y que la invitación le llega por aquí', 'Pedirle que confirme con un «va»'],
+    nunca: ['Volver a preguntar qué horario prefiere', 'Ofrecer dos horarios otra vez', 'Pedir el correo antes de apartar'] },
+  { id: 'socio', titulo: 'Lo tiene que ver con su socio', porQueLlega: 'Cualquiera', momento: 'Descubriendo o proponiendo',
+    buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'lead'), 'con socio'), simular: 'Lo tengo que ver con mi socio, él decide eso',
+    debe: ['Dar las DOS salidas en una sola pregunta: agendar cuando puedan los dos, o hacer la demo con él y mandarle la grabación al socio', 'Dejar que él elija'],
+    nunca: ['Insistir en una sola de las dos', 'Dejarlo en «avísame cuando lo veas»', 'Pedir el correo del socio antes de que elija'] },
+  { id: 'sin_dinero', titulo: 'Dice que se le bajó la venta', porQueLlega: 'Cualquiera', momento: 'Descubriendo',
+    buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'lead'), 'sin dinero'), simular: 'Se me bajó mucho la venta, espero pronto poder',
+    nota: 'EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (Se me bajó mucho la venta, espero pronto poder). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas. Si sabes qué vende, puedes cerrar con una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.',
+    debe: ['Empatía real en dos líneas, sin vender', 'Dejar la puerta abierta para cuando repunte'],
+    nunca: ['Ofrecer demo, horarios o precios', 'Hacer preguntas', '«Aprovecha», «justo por eso», «es una inversión»'] },
+  { id: 'foto', titulo: 'Mandó una foto de su tienda o producto', porQueLlega: 'Cualquiera', momento: 'Su último mensaje es una foto',
+    buscar: async () => {
+      const { data } = await supabase.from('wa_mensajes').select('conversation_id, created_at').eq('tipo', 'image').eq('direccion', 'entrante').is('borrado_at', null).order('created_at', { ascending: false }).limit(12);
+      for (const m of data || []) {
+        const { count } = await supabase.from('wa_mensajes').select('id', { count: 'exact', head: true }).eq('conversation_id', m.conversation_id).eq('direccion', 'saliente').gt('created_at', m.created_at);
+        if (count) continue;   // ya le contestamos después de la foto
+        const { data: cv } = await supabase.from('wa_conversaciones').select('contact_id').eq('id', m.conversation_id).maybeSingle();
+        if (cv?.contact_id) return { contactId: cv.contact_id as string, pista: 'su último mensaje es una foto' };
+      }
+      return null;
+    },
+    debe: ['Mencionar UNA cosa concreta que se ve en la foto (que note que la miró)', 'Dar contexto de lo que eso dice de su negocio', 'Una pregunta sobre su tienda u operación a partir de eso'],
+    nunca: ['Describir la foto entera', 'Halagos vacíos («qué bonita tienda»)', 'Ofrecer la demo en este mensaje'] },
   { id: 'web_demo', titulo: 'Llega de la web queriendo agendar demo', porQueLlega: 'Botón de demo en el sitio', momento: 'Primer mensaje',
     buscar: () => unLeadCon(q => q.eq('fuente', 'whatsapp_web').filter('propiedades->>intencion_inicial', 'eq', 'demo'), 'demo'),
     debe: ['Confirmar que se le agenda', 'Preguntar qué vende y cuántas tiendas para que la demo sea con lo suyo', 'Dejar claro que la demo dura menos de una hora y es con sus propios flujos'],
@@ -138,7 +167,7 @@ export async function correrReferee(soloIds?: string[]) {
     const encontrado = await caso.buscar().catch(() => null);
     if (!encontrado) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: 'sin lead real en ese estado' }); continue; }
     try {
-      const d = await decidirTurno(encontrado.contactId, caso.nota || undefined, { tarea: caso.tarea || 'respuesta' });
+      const d = await decidirTurno(encontrado.contactId, caso.nota || undefined, { tarea: caso.tarea || 'respuesta', simularEntrante: caso.simular });
       costo += d.costo || 0;
       if (!d.salida?.mensaje) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: `el agente no propuso mensaje (${d.motivo || 'sin motivo'})` }); continue; }
       const j = await juez(caso, d.salida.mensaje, `${encontrado.pista || ''} · etapa ${d.salida.estado} · último del lead: ${String(d.salida.ultimo_mensaje || '').slice(0, 300)}`);

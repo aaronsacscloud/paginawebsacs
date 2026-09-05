@@ -387,6 +387,7 @@ Responde SOLO un JSON con esta forma:
  "interes": {"nivel": "alto|medio|bajo", "razon": "qué en su mensaje lo dice"},
  "accion": {"tipo": "ninguna|agendar|agendar_llamada|confirmar_asistencia|liga_reagendar|opt_out", "fecha": "YYYY-MM-DD (agendar / agendar_llamada)", "hora": "HH:MM (agendar / agendar_llamada)", "email": "correo del lead si lo dio o el CRM lo tiene"},
  "adjuntos": [{"id": "id de RECURSOS QUE PUEDES ADJUNTAR", "por_que": "qué aporta aquí"}],
+ "horarios_ofrecidos": ["YYYY-MM-DD HH:MM de cada horario que MENCIONASTE en el mensaje, tal cual viene entre corchetes en la lista (vacío si no ofreciste ninguno; agrega ' llamada' si es de la llamada rápida)"],
  "siguiente_toque": {"en_horas": número o null, "angulo": "qué dirías si no responde"}
 }
 `;

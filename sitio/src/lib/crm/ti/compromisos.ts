@@ -19,8 +19,8 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 
-export type TipoCompromiso = 'retomar' | 'llamar' | 'agendar' | 'esperar_evento' | 'vago';
-export const TIPO_L: Record<TipoCompromiso, string> = { retomar: 'Volver a escribirle', llamar: 'Llamarle', agendar: 'Agendar con él', esperar_evento: 'Esperar a que pase algo', vago: 'Dijo que lo revisa' };
+export type TipoCompromiso = 'retomar' | 'llamar' | 'agendar' | 'esperar_evento' | 'vago' | 'sin_dinero';
+export const TIPO_L: Record<TipoCompromiso, string> = { retomar: 'Volver a escribirle', llamar: 'Llamarle', agendar: 'Agendar con él', esperar_evento: 'Esperar a que pase algo', vago: 'Dijo que lo revisa', sin_dinero: 'Ahora no tiene presupuesto' };
 
 const TZ = -6;   // CDMX sin horario de verano
 const cdmx = (d: Date) => new Date(d.getTime() + TZ * 3600e3);
@@ -51,7 +51,7 @@ export async function detectarCompromiso(texto: string, ahora = new Date()): Pro
   const t = String(texto || '').trim();
   if (t.length < 4) return null;
   // Filtro barato antes de gastar: si no hay ni una palabra de tiempo o de acción, no hay compromiso.
-  if (!/(d[ií]a|semana|mes|ma[ñn]ana|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|hora|tarde|noche|luego|despu[eé]s|ahorita|viaje|vacacion|regres|checo|chequ|reviso|lo veo|d[eé]jame|ll[aá]ma|m[aá]rca|marc|contacta|busca|escr[ií]be|quincena|fin de mes|pr[oó]xim|siguiente|otra semana|\d)/i.test(t)) return null;
+  if (!/(d[ií]a|semana|mes|ma[ñn]ana|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|hora|tarde|noche|luego|despu[eé]s|ahorita|viaje|vacacion|regres|checo|chequ|reviso|lo veo|d[eé]jame|ll[aá]ma|m[aá]rca|marc|contacta|busca|escr[ií]be|quincena|fin de mes|pr[oó]xim|siguiente|otra semana|venta|dinero|presupuesto|flojo|floja|lana|econom|caro|pagar|\d)/i.test(t)) return null;
   const hoy = cdmx(ahora); const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const prompt = `Hoy es ${dias[hoy.getUTCDay()]} ${hoy.getUTCDate()}/${hoy.getUTCMonth() + 1}/${hoy.getUTCFullYear()}, ${hoy.getUTCHours()}:${String(hoy.getUTCMinutes()).padStart(2, '0')} hora de la Ciudad de México.
 Un prospecto le escribió esto a una asesora de ventas por WhatsApp:
@@ -63,6 +63,7 @@ Un prospecto le escribió esto a una asesora de ventas por WhatsApp:
 - "agendar": que se agende algo (demo, reunión) en un momento que él propone.
 - "esperar_evento": esperar a que pase algo suyo sin fecha clara («cuando abra la tienda», «cuando me autoricen el presupuesto»).
 - "vago": lo va a revisar sin fecha («lo checo», «déjame ver», «lo veo y te digo»).
+- "sin_dinero": dice que ahora no tiene presupuesto o que las ventas están bajas y por eso lo deja («se me bajó la venta, espero pronto», «está flojo», «ahorita no tengo presupuesto», «cuando haya lana», «está caro para mí ahorita»). Es un freno de dinero, no una fecha: fecha null.
 Si NO pide nada de eso (solo pregunta, agradece, dice que sí o que no), "hay": false.
 
 Calcula la FECHA concreta en que quiere que actuemos (si dijo «la otra semana» → el martes de la próxima semana; «en 3 días» → hoy+3; «después de quincena» → el 16 o el 1 siguiente; «el jueves» → el jueves más próximo que no sea hoy si ya es tarde). Si dijo una hora («después de las 4», «en la mañana»→10, «en la tarde»→16), ponla.
@@ -76,7 +77,7 @@ Responde SOLO JSON: {"hay":bool,"tipo":"retomar|llamar|agendar|esperar_evento|va
     if (!j.hay) return { hay: false, tipo: 'vago', fecha: null, hora_pedida: null, necesita_hora: false, pidio: '', interpretacion: '', confianza: Number(j.confianza) || 0, costo };
     let fecha: Deteccion['fecha'] = null;
     if (j.fecha && /^\d{4}-\d{2}-\d{2}$/.test(j.fecha)) { const [y, mo, d] = j.fecha.split('-').map(Number); fecha = { y, m: mo - 1, d }; }
-    return { hay: true, tipo: (['retomar', 'llamar', 'agendar', 'esperar_evento', 'vago'].includes(j.tipo) ? j.tipo : 'vago'), fecha, hora_pedida: Number.isFinite(Number(j.hora_pedida)) && j.hora_pedida !== null ? Number(j.hora_pedida) : null, necesita_hora: !!j.necesita_hora, pidio: String(j.pidio || t).slice(0, 240), interpretacion: String(j.interpretacion || '').slice(0, 240), confianza: Math.max(0, Math.min(1, Number(j.confianza) || 0)), costo };
+    return { hay: true, tipo: (['retomar', 'llamar', 'agendar', 'esperar_evento', 'vago', 'sin_dinero'].includes(j.tipo) ? j.tipo : 'vago'), fecha, hora_pedida: Number.isFinite(Number(j.hora_pedida)) && j.hora_pedida !== null ? Number(j.hora_pedida) : null, necesita_hora: !!j.necesita_hora, pidio: String(j.pidio || t).slice(0, 240), interpretacion: String(j.interpretacion || '').slice(0, 240), confianza: Math.max(0, Math.min(1, Number(j.confianza) || 0)), costo };
   } catch { return null; }
 }
 
@@ -86,6 +87,29 @@ export async function programarCompromiso(o: { contactId: string; conversationId
   const { data: pf } = await supabase.from('ti_perfil').select('mejor_hora_wa, agente_estado').eq('contact_id', o.contactId).maybeSingle();
   const st: any = (pf as any)?.agente_estado || {};
   const ahora = new Date(); const hoy = cdmx(ahora);
+
+  // SIN DINERO (decisión del dueño, 5-sep, catálogo de casos · duda 1): «se me bajó la venta, espero pronto» NO se
+  // programa: va a Por descalificar. El agente contesta con empatía y sin vender; el consultor decide (descalificar,
+  // seguir o pausar hasta una fecha). Mientras decide, el agente se calla una semana para no insistirle.
+  if (det.tipo === 'sin_dinero') {
+    const { data: c } = await supabase.from('contacts').select('nombre, whatsapp, company_id, owner_id').eq('id', o.contactId).maybeSingle();
+    const { data: abierta } = await supabase.from('ti_tareas').select('id').eq('contact_id', o.contactId).eq('estado', 'pendiente').eq('tipo', 'veredicto').limit(1);
+    let tareaId: string | null = (abierta || [])[0]?.id || null;
+    if (!tareaId) {
+      const n = String(c?.nombre || 'el lead').split(/\s+/)[0];
+      const { data: t } = await supabase.from('ti_tareas').insert({ contact_id: o.contactId, company_id: c?.company_id || null, owner_id: c?.owner_id || null, familia: 'decidir', tipo: 'veredicto', prioridad: 4, vence_at: ahora.toISOString(), origen: 'compromiso', payload: {
+        instruccion: `${n}: dijo que ahora no tiene presupuesto · se sugiere descalificar`, porque: `Escribió: «${det.pidio}». Es un freno de dinero, no de interés; el agente ya le contestó con empatía y sin vender. Decisión del dueño: estos casos van a descalificación, salvo que quieras pausarlo hasta una fecha.`,
+        nombre: c?.nombre, whatsapp: c?.whatsapp, sujeto: 'compromiso', propuesta: 'descalificar',
+        hechos: [['Qué dijo', det.pidio, '', 'ambar'], ['Cómo se leyó', det.interpretacion, '']],
+        resultados: { descalificar: 'Descalificar: sin presupuesto ahora', seguir: 'Que siga (el agente lo busca en unas semanas)', pausar: 'Pausar hasta una fecha' },
+      } }).select('id').maybeSingle();
+      tareaId = t?.id || null;
+    }
+    const pausa = new Date(ahora.getTime() + 7 * 86400e3);
+    await supabase.from('ti_perfil').upsert({ contact_id: o.contactId, agente_estado: { ...st, pausa_hasta: pausa.toISOString(), sin_dinero: { dijo: det.pidio, at: ahora.toISOString(), tarea_id: tareaId } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    const nota = `EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (${det.pidio}). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas. Si sabes qué vende, puedes cerrar con una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.`;
+    return { id: null, programado: null, nota, hora: 0, porqueHora: 'no aplica: va a Por descalificar' };
+  }
   const { hora, porque } = horaParaEl({ mejorHoraWa: (pf as any)?.mejor_hora_wa, horaDeSuMensaje: o.horaDeSuMensaje, horaPedida: det.hora_pedida });
 
   // Sin fecha: «vago» a 5 días; «esperar_evento» a 14 días para preguntar cómo va; llamar sin hora → primero se le pregunta.

@@ -144,6 +144,8 @@ export async function observar(): Promise<any> {
     const { proponerRespuestas, despacharEnvios, tocarSilencios, atenderCitas } = await import('./agente');
     // Los audios primero: el agente debe leer lo que el lead DIJO, no «[audio]».
     try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
+    // Fotos del lead sin mirar (5-sep): se describen una vez y quedan en el hilo para el agente y el consultor.
+    try { const { describirFotosPendientes } = await import('./fotos-lead'); res.fotos = await describirFotosPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.fotos_error = String(e?.message || e); }
     try { res.agente = await proponerRespuestas(); } catch (e: any) { res.agente_error = String(e?.message || e); }
     try { res.agente_citas = await atenderCitas(); } catch (e: any) { res.citas_error = String(e?.message || e); }
     try { const { prepararDemos } = await import('./agente'); res.agente_preparacion = await prepararDemos(); } catch (e: any) { res.preparacion_error = String(e?.message || e); }
