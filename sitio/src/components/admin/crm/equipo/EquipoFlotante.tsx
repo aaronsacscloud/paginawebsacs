@@ -94,7 +94,7 @@ const CSS = `
 /* Abierto: el chat entero encima del CRM. */
 .eqf-fondo{position:fixed;inset:0;z-index:960;background:rgba(20,14,44,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:eqf-fade .2s ease-out}
 @keyframes eqf-fade{from{opacity:0}to{opacity:1}}
-.eqf-panel{position:fixed;inset:12px;z-index:961;border-radius:18px;overflow:hidden;background:#fff;--eq-top:24px;
+.eqf-panel{position:fixed;inset:12px;z-index:961;border-radius:18px;overflow:hidden;background:var(--eqf-panel-fondo,#fff);--eq-top:24px;
   box-shadow:0 30px 90px rgba(20,14,44,.45),0 0 0 1px rgba(255,255,255,.4);animation:eqf-sube .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes eqf-sube{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 .eqf-panel .eq{height:calc(100dvh - 24px);min-height:0;border:0;border-radius:0}
@@ -104,6 +104,9 @@ const CSS = `
 .eqf-x:hover{transform:scale(1.08) rotate(90deg)}
 .eqf-panel.movil{inset:0;border-radius:0;box-shadow:none;padding-top:env(safe-area-inset-top)}
 .eqf-panel.movil .eq{height:calc(100dvh - env(safe-area-inset-top))}
+/* El panel es el lienzo de atrás del chat: si se queda blanco, asoma por los
+   bordes y por debajo de la caja de escribir aunque .eq ya esté oscuro. */
+[data-crm-dark="1"] .eqf-panel{--eqf-panel-fondo:#1d1d24}
 @media (prefers-reduced-motion:reduce){.eqf *,.eqf-panel,.eqf-fondo{animation:none!important;transition:none!important}}
 `;
 

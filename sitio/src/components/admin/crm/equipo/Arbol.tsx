@@ -6,7 +6,7 @@ import type { Arbol as A, Canal, CanalArchivado, Persona, Seccion } from './api'
 import { api, hace } from './api';
 import ActionSheet, { type ActionItem } from '../ui/ActionSheet';
 import { ModalCanal, ModalConfirmar, ModalSeccion } from './Gestion';
-import { Avatar, Ic } from './ui';
+import { Avatar, Ic, ROLES, rolDe } from './ui';
 
 export type ArbolProps = {
   arbol: A;
@@ -112,6 +112,25 @@ export default function Arbol(p: ArbolProps) {
   const otros = personas.filter(x => x.id !== yo.id);
   const estadoDe = (x: Persona) => p.enLinea.includes(x.id) ? 'activo' : (x.estado === 'ausente' && x.visto_at && Date.now() - new Date(x.visto_at).getTime() < 15 * 60_000 ? 'ausente' : 'fuera');
 
+  // La lista de gente, agrupada como Discord: primero quien ESTÁ, partido por
+  // rol y con su conteo, y hasta el final los desconectados en un solo bloque.
+  // El porqué: una lista plana de veinte nombres grises no dice nada; lo que
+  // uno busca es "¿hay alguien de dirección conectado ahora?".
+  // El orden de los roles es el de ROLES (no alfabético) — es jerarquía, y
+  // ordenarlo por nombre la borraría. Quien traiga un rol desconocido cae en
+  // "Equipo", nunca se pierde de la lista.
+  const gruposDeGente = useMemo(() => {
+    const conectados = otros.filter(x => estadoDe(x) !== 'fuera');
+    const fuera = otros.filter(x => estadoDe(x) === 'fuera');
+    const grupos: { clave: string; etiqueta: string; gente: Persona[] }[] = [];
+    for (const clave of [...Object.keys(ROLES), '_otros']) {
+      const gente = conectados.filter(x => (rolDe(x.rol)?.clave || '_otros') === clave);
+      if (gente.length) grupos.push({ clave, etiqueta: ROLES[clave]?.etiqueta || 'Equipo', gente });
+    }
+    if (fuera.length) grupos.push({ clave: '_fuera', etiqueta: 'Sin conexión', gente: fuera });
+    return grupos;
+  }, [otros, p.enLinea]);
+
   const filaCanal = (c: Canal) => {
     const activo = c.id === p.canalId;
     const nuevo = c.no_leidos > 0 && !c.silenciado;
@@ -201,18 +220,24 @@ export default function Arbol(p: ArbolProps) {
         {!directos.length && <div style={{ padding: '4px 18px', fontSize: '.75rem', color: 'var(--eq-gris)' }}>Toca a alguien abajo para escribirle</div>}
       </div>
       <div className="eq-gente">
-        {otros.map(x => {
-          const est = estadoDe(x);
-          return (
-            <button key={x.id} className="eq-per" onClick={() => p.onDirecto(x.id)} title={`Escribir a ${x.nombre}`}>
-              <Avatar p={x} size={22} estado={est} />
-              <span className="nom">
-                <b>{x.nombre}</b>
-                <span className="est">{est === 'activo' ? 'En línea' : est === 'ausente' ? 'Ausente' : x.visto_at ? `Visto ${hace(x.visto_at)}` : 'Sin conectar'}</span>
-              </span>
-            </button>
-          );
-        })}
+        {gruposDeGente.map(g => (
+          <div key={g.clave}>
+            <div className="eq-gente-grupo">{g.etiqueta}<span className="n">— {g.gente.length}</span></div>
+            {g.gente.map(x => {
+              const est = estadoDe(x);
+              const r = rolDe(x.rol);
+              return (
+                <button key={x.id} className="eq-per" onClick={() => p.onDirecto(x.id)} title={`Escribir a ${x.nombre}`}>
+                  <Avatar p={x} size={22} estado={est} />
+                  <span className="nom">
+                    <b className={r ? 'eq-rol ' + r.clave : undefined}>{x.nombre}</b>
+                    <span className="est">{est === 'activo' ? 'En línea' : est === 'ausente' ? 'Ausente' : x.visto_at ? `Visto ${hace(x.visto_at)}` : 'Sin conectar'}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
         <div className="eq-conex" style={{ padding: '4px 4px 0' }}><i className={p.conectado ? 'on' : ''} />{p.conectado ? 'En vivo' : 'Actualizando cada 30 s'}</div>
       </div>
       <ActionSheet open={!!menu} onClose={() => setMenu(null)} items={itemsMenu()}

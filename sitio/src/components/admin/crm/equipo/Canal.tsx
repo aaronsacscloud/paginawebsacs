@@ -1,6 +1,6 @@
 // La conversación de un canal (o de un hilo, con enHilo): cabecera, lista con
 // separadores de día y línea de "nuevo", carga hacia atrás al subir, y la caja.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Canal as C, Mensaje as M, Persona, Adjunto } from './api';
 import { api, diaEtiqueta, mismoDia } from './api';
 import { useMensajes } from './useMensajes';
@@ -42,6 +42,10 @@ export default function Canal(p: CanalProps) {
   const [agendar, setAgendar] = useState<M | null>(null);
   const [porBorrar, setPorBorrar] = useState<M | null>(null);
   const founder = p.yo.role === 'founder';
+  // id → rol, para pintar el nombre del autor con el color de su rol. El API de
+  // mensajes NO manda el rol (solo id/nombre/foto), pero el árbol ya trae
+  // `personas` con todo — así que se resuelve aquí y no se pide nada extra.
+  const rolPorId = useMemo(() => new Map(p.personas.map(x => [x.id, x.rol || null])), [p.personas]);
   const [resaltado, setResaltado] = useState<string | null>(null);
   const lista = useRef<HTMLDivElement>(null);
   const alFondo = useRef(true);
@@ -155,7 +159,7 @@ export default function Canal(p: CanalProps) {
         )}
         {hilo && st.raiz && (
           <>
-            <Mensaje m={st.raiz} yo={p.yo.id} seguido={false} enHilo acc={acc} movil={p.movil} admin={founder} />
+            <Mensaje m={st.raiz} yo={p.yo.id} seguido={false} enHilo acc={acc} movil={p.movil} admin={founder} rol={rolPorId.get(st.raiz.autor.id)} />
             <div className="eq-dia">{st.lista.length ? `${st.lista.length} ${st.lista.length === 1 ? 'respuesta' : 'respuestas'}` : 'Sin respuestas todavía'}</div>
           </>
         )}
@@ -170,7 +174,7 @@ export default function Canal(p: CanalProps) {
             <div key={m.id}>
               {cambioDia && !hilo && <div className="eq-dia">{diaEtiqueta(m.created_at)}</div>}
               {nuevo && <div className="eq-nuevo">Nuevo</div>}
-              <Mensaje m={m} yo={p.yo.id} seguido={seguido && !nuevo} enHilo={!!hilo} resaltado={resaltado === m.id} acc={acc} movil={p.movil} admin={founder} />
+              <Mensaje m={m} yo={p.yo.id} seguido={seguido && !nuevo} enHilo={!!hilo} resaltado={resaltado === m.id} acc={acc} movil={p.movil} admin={founder} rol={rolPorId.get(m.autor.id)} />
             </div>
           );
         })}

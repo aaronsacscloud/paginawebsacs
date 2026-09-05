@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import type { Mensaje as M } from './api';
 import { hora, hace } from './api';
-import { Avatar, Texto, Emojis, RAPIDOS, Ic, useFuera, abrirFicha } from './ui';
+import { Avatar, Texto, Emojis, RAPIDOS, Ic, useFuera, abrirFicha, rolDe } from './ui';
 
 export type Acciones = {
   reaccionar: (m: M, emoji: string) => void;
@@ -21,11 +21,17 @@ export type Acciones = {
   menuMovil: (m: M) => void;
 };
 
-export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil, admin }: {
+export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil, admin, rol }: {
   m: M; yo: string; seguido: boolean; enHilo?: boolean; resaltado?: boolean; acc: Acciones; movil: boolean;
   /** Un founder puede eliminar mensajes de otros (editar, solo el autor). */
   admin?: boolean;
+  /** Rol del autor, ya resuelto por Canal: el API de mensajes no lo manda,
+   *  pero el árbol sí lo tiene en `personas`. Lo usamos para pintar el nombre
+   *  con el color de su rol, como Discord — es lo que deja saber quién habla
+   *  sin conocer al equipo de memoria. */
+  rol?: string | null;
 }) {
+  const r = rolDe(rol);
   const [emojis, setEmojis] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useFuera(ref, () => setEmojis(false), emojis);
@@ -46,7 +52,8 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil,
       <div className="col">
         {!seguido && (
           <div className="quien">
-            <b>{m.autor.nombre}</b>
+            <b className={r ? 'eq-rol ' + r.clave : undefined}>{m.autor.nombre}</b>
+            {r && <span className={'eq-insignia eq-rol ' + r.clave} title={r.etiqueta}>{r.corta}</span>}
             <time dateTime={m.created_at} title={new Date(m.created_at).toLocaleString('es-MX')}>{hora(m.created_at)}</time>
             {m.fijado && <span className="eq-fij">{Ic.pin}Fijado</span>}
             {m.sistema?.nivel && m.sistema.nivel !== 'info' && <span className={'eq-nivel ' + m.sistema.nivel}>{m.sistema.nivel === 'urgente' ? 'Urgente' : 'Atención'}</span>}

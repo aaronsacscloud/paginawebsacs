@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { P } from '../../../../lib/crm/paleta';
 
 export const CSS = `
-.eq{--eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-fondo:#fff;--eq-panel:#f8f7fd;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta};
+.eq{--eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-fondo:#fff;--eq-panel:#f8f7fd;--eq-alza:#fff;--eq-apagado:#c9c5d8;--eq-toast-fondo:#1e1a33;--eq-toast-tinta:#fff;--eq-realce:rgba(155,140,250,.10);--eq-sombra:rgba(60,30,140,.08);--rol-founder:#2E9E78;--rol-partner:#A76A12;--rol-soporte:#2C5FC4;--rol-admin:#9c3d70;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta};
   display:flex;height:calc(100dvh - var(--eq-top,44px));min-height:480px;background:var(--eq-fondo);color:var(--eq-tinta);font-size:.875rem;overflow:hidden;border:1px solid var(--eq-linea);border-radius:12px}
 .eq *{box-sizing:border-box}
 .eq button{font:inherit;cursor:pointer}
@@ -30,8 +30,8 @@ export const CSS = `
 .eq-peligro{display:flex;gap:8px;justify-content:flex-end;padding-top:10px;margin-top:2px;border-top:1px dashed var(--eq-linea)}
 .eq-peligro .eq-btn{display:inline-flex;align-items:center;gap:6px;font-size:.8125rem;padding:6px 10px}
 .eq-can{display:flex;align-items:center;gap:8px;width:calc(100% - 12px);margin:1px 6px;padding:6px 8px 6px 10px;border-radius:8px;border:0;background:none;color:var(--eq-gris);text-align:left;min-height:32px}
-.eq-can:hover{background:rgba(155,140,250,.10);color:var(--eq-tinta)}
-.eq-can.activo{background:#fff;color:var(--eq-morado-tinta);font-weight:700;box-shadow:0 1px 6px rgba(60,30,140,.08)}
+.eq-can:hover{background:var(--eq-realce);color:var(--eq-tinta)}
+.eq-can.activo{background:var(--eq-alza);color:var(--eq-morado-tinta);font-weight:700;box-shadow:0 1px 6px var(--eq-sombra)}
 .eq-can.nuevo{color:var(--eq-tinta);font-weight:700}
 .eq-can .n{opacity:.55;font-weight:600}
 .eq-can.activo .n{opacity:.8}
@@ -43,16 +43,16 @@ export const CSS = `
 .eq-per{display:flex;align-items:center;gap:7px;padding:3px 4px;border-radius:7px;width:100%;border:0;background:none;text-align:left;color:var(--eq-tinta);font-size:.8125rem}
 .eq-per .nom{flex:1;min-width:0;display:flex;align-items:baseline;gap:6px}
 .eq-per .nom b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.eq-per:hover{background:rgba(155,140,250,.10)}
+.eq-per:hover{background:var(--eq-realce)}
 .eq-per .est{font-size:.625rem;color:var(--eq-gris);white-space:nowrap;flex:0 0 auto}
 .eq-av{position:relative;flex:0 0 auto;border-radius:50%;background:var(--eq-lila);color:var(--eq-morado-tinta);font-weight:800;display:inline-flex;align-items:center;justify-content:center;overflow:visible}
 .eq-av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
-.eq-av .pt{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;border:2px solid var(--eq-panel);background:#c9c5d8}
+.eq-av .pt{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;border:2px solid var(--eq-panel);background:var(--eq-apagado)}
 .eq-av .pt.activo{background:${P.verde}}
 .eq-av .pt.ausente{background:${P.ambar}}
 .eq-canal{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--eq-fondo)}
 .eq-cab{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--eq-linea);min-height:54px}
-.eq-cab h2{margin:0;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:6px}
+.eq-cab h2{margin:0;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--eq-tinta)}
 .eq-cab h2 .n{color:var(--eq-gris);font-weight:600}
 .eq-cab .desc{color:var(--eq-gris);font-size:.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .eq-ib{width:34px;height:34px;border-radius:9px;border:0;background:none;color:var(--eq-gris);text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -65,7 +65,7 @@ export const CSS = `
 .eq-nuevo:after{content:'';flex:1;height:1px;background:${P.rosaSuave}}
 .eq-msg{position:relative;display:flex;gap:10px;padding:2px 16px 2px 16px}
 .eq-msg.inicio{margin-top:10px;padding-top:4px}
-.eq-msg:hover{background:#fbfaff}
+.eq-msg:hover{background:var(--eq-alza)}
 .eq-msg.resaltado{background:${P.violetaAgua};animation:eq-fl 2.4s ease-out forwards}
 @keyframes eq-fl{0%{background:${P.violetaAgua}}100%{background:transparent}}
 .eq-msg .col{flex:1;min-width:0}
@@ -81,7 +81,7 @@ export const CSS = `
 .eq-msg .borrado{color:var(--eq-gris);font-style:italic}
 .eq-men{background:var(--eq-lila);color:var(--eq-morado-tinta);border-radius:5px;padding:0 4px;font-weight:700}
 .eq-men.yo{background:rgba(244,168,205,.35);color:${P.rosaTinta}}
-.eq-ref{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:0 1px;padding:1px 8px 1px 4px;border:1px solid rgba(155,140,250,.45);border-radius:999px;background:#fff;color:var(--eq-morado-tinta);font:inherit;font-weight:700;line-height:1.35;cursor:pointer;vertical-align:baseline;white-space:nowrap}
+.eq-ref{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:0 1px;padding:1px 8px 1px 4px;border:1px solid rgba(155,140,250,.45);border-radius:999px;background:var(--eq-alza);color:var(--eq-morado-tinta);font:inherit;font-weight:700;line-height:1.35;cursor:pointer;vertical-align:baseline;white-space:nowrap}
 .eq-ref span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .eq-ref small{flex:0 0 auto;font-size:.625rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:0 5px;border-radius:999px;background:var(--eq-lila);color:var(--eq-morado-tinta)}
 .eq-ref.cliente small{background:${P.verdeAgua};color:${P.verdeTinta}}
@@ -92,7 +92,7 @@ export const CSS = `
 .eq-cita{display:flex;gap:8px;align-items:center;margin:2px 0 4px;padding:3px 8px;border-left:2px solid var(--eq-morado);background:var(--eq-panel);border-radius:0 6px 6px 0;font-size:.8125rem;color:var(--eq-gris);cursor:pointer;max-width:560px}
 .eq-cita b{color:var(--eq-morado-tinta)}
 .eq-cita span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.eq-acc{position:absolute;right:16px;top:-14px;display:none;gap:1px;background:#fff;border:1px solid var(--eq-linea);border-radius:9px;padding:2px;box-shadow:0 3px 12px rgba(30,20,60,.10);z-index:2}
+.eq-acc{position:absolute;right:16px;top:-14px;display:none;gap:1px;background:var(--eq-alza);border:1px solid var(--eq-linea);border-radius:9px;padding:2px;box-shadow:0 3px 12px rgba(30,20,60,.10);z-index:2}
 .eq-msg:hover .eq-acc,.eq-msg.menu .eq-acc{display:flex}
 .eq-acc button{width:30px;height:28px;border:0;background:none;border-radius:6px;color:var(--eq-gris);display:inline-flex;align-items:center;justify-content:center;font-size:.9375rem}
 .eq-acc button:hover,.eq-acc button.on{background:var(--eq-lila);color:var(--eq-morado-tinta)}
@@ -103,7 +103,7 @@ export const CSS = `
 .eq-hilo{display:inline-flex;align-items:center;gap:6px;margin-top:5px;padding:3px 8px 3px 4px;border-radius:8px;border:0;background:none;color:var(--eq-morado-tinta);font-weight:700;font-size:.8125rem}
 .eq-hilo:hover{background:var(--eq-lila)}
 .eq-hilo .avs{display:flex}
-.eq-hilo .avs .eq-av{margin-right:-6px;border:2px solid #fff}
+.eq-hilo .avs .eq-av{margin-right:-6px;border:2px solid var(--eq-panel)}
 .eq-hilo .cuando{color:var(--eq-gris);font-weight:500}
 .eq-adj{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .eq-img{border-radius:10px;border:1px solid var(--eq-linea);background:var(--eq-panel);overflow:hidden;cursor:zoom-in;display:block;max-width:100%}
@@ -114,7 +114,7 @@ export const CSS = `
 .eq-audio .tr.pend{color:var(--eq-gris);font-style:italic}
 .eq-audio .tr b{color:var(--eq-gris);font-weight:700;font-size:.6875rem;text-transform:uppercase;letter-spacing:.05em;margin-right:6px}
 .eq-caja{padding:8px 14px 12px;border-top:1px solid var(--eq-linea);background:var(--eq-fondo)}
-.eq-caja .marco{position:relative;border:1.5px solid var(--eq-linea);border-radius:12px;background:#fff;transition:border-color .12s}
+.eq-caja .marco{position:relative;border:1.5px solid var(--eq-linea);border-radius:12px;background:var(--eq-alza);transition:border-color .12s}
 .eq-caja .marco:focus-within{border-color:var(--eq-morado);box-shadow:0 0 0 3px rgba(155,140,250,.15)}
 .eq-caja textarea{width:100%;border:0;outline:0;resize:none;background:transparent;padding:10px 12px 4px;font:inherit;line-height:1.45;max-height:200px;min-height:42px;color:var(--eq-tinta)}
 .eq-caja .barra{display:flex;align-items:center;gap:2px;padding:2px 6px 6px}
@@ -130,7 +130,7 @@ export const CSS = `
 .eq-pre .it{position:relative;border:1px solid var(--eq-linea);border-radius:8px;overflow:hidden;background:var(--eq-panel);min-width:64px;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--eq-gris);padding:4px 8px}
 .eq-pre .it img{height:64px;width:auto;display:block}
 .eq-pre .it .x{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(30,20,60,.75);color:#fff;font-size:.75rem;line-height:1;display:inline-flex;align-items:center;justify-content:center}
-.eq-pop{position:absolute;bottom:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--eq-linea);border-radius:12px;box-shadow:0 8px 30px rgba(30,20,60,.14);z-index:5;overflow:hidden}
+.eq-pop{position:absolute;bottom:calc(100% + 6px);left:0;background:var(--eq-alza);border:1px solid var(--eq-linea);border-radius:12px;box-shadow:0 8px 30px rgba(30,20,60,.14);z-index:5;overflow:hidden}
 .eq-pop.der{left:auto;right:0}
 .eq-menciones{min-width:240px;padding:4px}
 .eq-menciones button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:0;background:none;border-radius:8px;text-align:left;color:var(--eq-tinta)}
@@ -189,10 +189,10 @@ export const CSS = `
 .eq-dato{display:flex;flex-direction:column;gap:1px;min-width:0}
 .eq-dato small{font-size:.625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--eq-gris)}
 .eq-dato span{font-size:.875rem;overflow-wrap:anywhere}
-.eq-ficha-liga{display:flex;flex-direction:column;gap:1px;text-align:left;border:1px solid var(--eq-linea);border-radius:10px;padding:10px 12px;background:#fff;font:inherit;color:inherit;cursor:pointer;border-left:3px solid var(--eq-morado)}
+.eq-ficha-liga{display:flex;flex-direction:column;gap:1px;text-align:left;border:1px solid var(--eq-linea);border-radius:10px;padding:10px 12px;background:var(--eq-alza);font:inherit;color:inherit;cursor:pointer;border-left:3px solid var(--eq-morado)}
 .eq-ficha-liga:hover{background:var(--eq-lila)}
 .eq-ficha-liga.quieto{cursor:default}
-.eq-ficha-liga.quieto:hover{background:#fff}
+.eq-ficha-liga.quieto:hover{background:var(--eq-alza)}
 .eq-ficha-liga small{font-size:.625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--eq-gris)}
 .eq-ficha-liga b{font-weight:700}
 .eq-ficha-liga span{font-size:.75rem;color:var(--eq-gris)}
@@ -200,7 +200,7 @@ export const CSS = `
 .eq-ficha-acciones .eq-btn{font-size:.8125rem;text-decoration:none;display:inline-flex;align-items:center}
 .eq-vacio{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--eq-gris);padding:24px;text-align:center}
 .eq-vacio b{color:var(--eq-tinta);font-size:1rem}
-.eq-btn{border:1.5px solid var(--eq-morado);color:var(--eq-morado-tinta);background:#fff;border-radius:9px;padding:7px 12px;font-weight:700}
+.eq-btn{border:1.5px solid var(--eq-morado);color:var(--eq-morado-tinta);background:var(--eq-alza);border-radius:9px;padding:7px 12px;font-weight:700}
 .eq-btn.p{background:var(--eq-morado);color:#fff;border-color:var(--eq-morado)}
 .eq-btn.p:hover{background:${P.violetaHondo}}
 .eq-btn.t{border-color:var(--eq-linea);color:var(--eq-gris)}
@@ -213,13 +213,13 @@ export const CSS = `
 .eq-form .fila{display:flex;gap:8px;align-items:center}
 .eq-form .err{color:${P.rojoTinta};font-size:.8125rem}
 .eq-modal-f{position:fixed;inset:0;background:rgba(20,14,40,.45);z-index:960;display:flex;align-items:center;justify-content:center;padding:16px}
-.eq-modal{background:#fff;border-radius:14px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(20,14,40,.3);overflow:hidden}
+.eq-modal{background:var(--eq-alza);border-radius:14px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(20,14,40,.3);overflow:hidden}
 .eq-modal h3{margin:0;padding:14px 16px;border-bottom:1px solid var(--eq-linea);font-size:.9375rem}
 .eq-luz{position:fixed;inset:0;background:rgba(10,8,20,.9);z-index:980;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 .eq-luz img{max-width:96vw;max-height:92vh;border-radius:8px;box-shadow:0 10px 60px rgba(0,0,0,.5)}
-.eq-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1e1a33;color:#fff;padding:9px 14px;border-radius:10px;font-size:.8125rem;z-index:990;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.eq-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--eq-toast-fondo);color:var(--eq-toast-tinta);padding:9px 14px;border-radius:10px;font-size:.8125rem;z-index:990;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .eq-conex{font-size:.6875rem;color:var(--eq-gris);display:flex;align-items:center;gap:5px;padding:0 12px 6px}
-.eq-conex i{width:7px;height:7px;border-radius:50%;background:#c9c5d8;display:inline-block}
+.eq-conex i{width:7px;height:7px;border-radius:50%;background:var(--eq-apagado);display:inline-block}
 .eq-conex i.on{background:${P.verde}}
 .eq-sala{flex:1;overflow-y:auto;padding:12px 14px 20px;display:flex;flex-direction:column;gap:14px}
 /* EL GUION de la junta: lo fijo, lo que se lee en voz alta cada semana.
@@ -233,7 +233,7 @@ export const CSS = `
 /* Quién presenta va PRIMERO y en pastilla: en una junta de dos, saber a quién
    le toca hablar es la mitad de la información. */
 .eq-guion-h .q{flex-shrink:0;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--eq-morado-tinta);background:#fff;border:1px solid var(--eq-linea);border-radius:999px;padding:2px 8px}
+  color:var(--eq-morado-tinta);background:var(--eq-alza);border:1px solid var(--eq-linea);border-radius:999px;padding:2px 8px}
 .eq-guion-b ol{margin:0;padding:10px 14px 12px 30px;display:flex;flex-direction:column;gap:7px}
 .eq-guion-b li{font-size:13px;line-height:1.5;color:var(--eq-tinta)}
 .eq-guion-b li::marker{color:var(--eq-gris);font-size:11.5px}
@@ -244,7 +244,7 @@ export const CSS = `
    línea y en gris porque es instrucción, no contenido de la junta. */
 .eq-guion-b li .f{display:block;margin-top:3px;font-size:11px;font-weight:600;color:var(--eq-morado-tinta);
   background:var(--eq-lila);border-radius:6px;padding:2px 7px;width:fit-content;max-width:100%}
-.eq-bloque{border:1px solid var(--eq-linea);border-radius:12px;background:#fff;overflow:hidden}
+.eq-bloque{border:1px solid var(--eq-linea);border-radius:12px;background:var(--eq-alza);overflow:hidden}
 .eq-bloque .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--eq-linea);background:var(--eq-panel)}
 .eq-bloque .cab b{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris)}
 .eq-bloque .cab .n{font-size:.75rem;color:var(--eq-gris)}
@@ -254,14 +254,14 @@ export const CSS = `
 .eq-punto .tt{flex:1;min-width:0}
 .eq-punto .tt b{display:block;font-weight:700}
 .eq-punto .tt small{color:var(--eq-gris);font-size:.75rem}
-.eq-punto .votos{border:1px solid var(--eq-linea);background:#fff;border-radius:10px;padding:1px 8px;font-size:.75rem;color:var(--eq-gris)}
+.eq-punto .votos{border:1px solid var(--eq-linea);background:var(--eq-alza);border-radius:10px;padding:1px 8px;font-size:.75rem;color:var(--eq-gris)}
 .eq-punto .votos.mio{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:var(--eq-lila);font-weight:700}
 .eq-punto.tratando{background:${P.violetaAgua}}
 .eq-punto.acordado .num{background:${P.verdeAgua};color:${P.verdeTinta}}
 .eq-punto.pospuesto{opacity:.6}
 .eq-acuerdo{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid var(--eq-linea)}
 .eq-acuerdo:last-child{border-bottom:0}
-.eq-acuerdo .chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--eq-morado);background:#fff;flex:0 0 18px;margin-top:2px;display:inline-flex;align-items:center;justify-content:center;color:#fff}
+.eq-acuerdo .chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--eq-morado);background:var(--eq-alza);flex:0 0 18px;margin-top:2px;display:inline-flex;align-items:center;justify-content:center;color:#fff}
 .eq-acuerdo.hecho .chk{background:${P.verde};border-color:${P.verde}}
 .eq-acuerdo.hecho .tt b{text-decoration:line-through;color:var(--eq-gris)}
 .eq-acuerdo .tt{flex:1;min-width:0}
@@ -284,7 +284,7 @@ export const CSS = `
 .eq-tabs button.on{background:var(--eq-lila);color:var(--eq-morado-tinta);font-weight:800;border-bottom-color:var(--eq-morado)}
 .eq-busca{position:relative;flex:1;max-width:280px}
 .eq-busca input{width:100%;border:1.5px solid var(--eq-linea);border-radius:9px;padding:6px 10px 6px 30px;font:inherit;outline:0;background:var(--eq-panel)}
-.eq-busca input:focus{border-color:var(--eq-morado);background:#fff}
+.eq-busca input:focus{border-color:var(--eq-morado);background:var(--eq-alza)}
 .eq-busca svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--eq-gris)}
 .eq-res{padding:4px 0}
 .eq-res button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 14px;border-bottom:1px solid var(--eq-linea);color:var(--eq-tinta)}
@@ -294,8 +294,8 @@ export const CSS = `
 .eq-res .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8125rem}
 .eq-punto-acc{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
 .eq-punto-acc .eq-btn{padding:3px 8px;font-size:.75rem;border-radius:7px}
-.eq-punto-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--eq-linea);background:#fff;border-radius:10px;padding:2px 8px 2px 4px;font-size:.75rem;color:var(--eq-gris)}
-.eq-punto-chip.on{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:#fff;font-weight:700}
+.eq-punto-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--eq-linea);background:var(--eq-alza);border-radius:10px;padding:2px 8px 2px 4px;font-size:.75rem;color:var(--eq-gris)}
+.eq-punto-chip.on{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:var(--eq-alza);font-weight:700}
 button.eq-punto-chip{cursor:pointer}
 .eq-fij{display:inline-flex;align-items:center;gap:3px;font-size:.6875rem;color:var(--eq-morado-tinta);font-weight:700}
 .eq-nivel{font-size:.625rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:6px;background:${P.ambarAgua};color:${P.ambarTinta}}
@@ -304,18 +304,18 @@ button.eq-punto-chip{cursor:pointer}
 .eq-pastilla{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--eq-linea);background:var(--eq-panel);color:var(--eq-tinta);font-size:.75rem;font-weight:600;text-decoration:none;cursor:pointer}
 .eq-pastilla small{font-size:.625rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--eq-gris)}
 .eq-pastilla:disabled{cursor:default;opacity:.8}
-.eq-pastilla.ir{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:#fff}
+.eq-pastilla.ir{border-color:var(--eq-morado);color:var(--eq-morado-tinta);background:var(--eq-alza)}
 .eq-pastilla:not(:disabled):hover{border-color:var(--eq-morado);color:var(--eq-morado-tinta)}
 .eq-quehacer{flex-basis:100%;font-size:.8125rem;color:var(--eq-gris);line-height:1.4}
 .eq-quehacer b{color:var(--eq-tinta);font-weight:700}
 .eq-fij svg{width:11px;height:11px}
-.eq-msg.fijado{border-left:3px solid var(--eq-morado);padding-left:13px;background:#fcfbff}
+.eq-msg.fijado{border-left:3px solid var(--eq-morado);padding-left:13px;background:var(--eq-alza)}
 .eq-mas{display:flex;justify-content:center;padding:8px}
 /* ── Publicaciones (notas, checklists y proyectos del canal) ── */
 .eq-pub-nueva{display:flex;gap:6px;padding:10px 12px 2px;flex-wrap:wrap}
 .eq-pub-nueva .eq-btn{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;padding:5px 9px}
 .eq-pubs{flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:8px}
-.eq-pub{display:flex;flex-direction:column;gap:7px;text-align:left;border:1px solid var(--eq-linea);border-radius:12px;background:#fff;padding:10px 12px;cursor:pointer;font:inherit;color:var(--eq-tinta);width:100%}
+.eq-pub{display:flex;flex-direction:column;gap:7px;text-align:left;border:1px solid var(--eq-linea);border-radius:12px;background:var(--eq-alza);padding:10px 12px;cursor:pointer;font:inherit;color:var(--eq-tinta);width:100%}
 .eq-pub:hover{border-color:var(--eq-morado);background:var(--eq-panel)}
 .eq-pub.cerrada{opacity:.7}
 .eq-pub.cerrada .fila b{text-decoration:line-through;color:var(--eq-gris)}
@@ -342,11 +342,11 @@ button.eq-punto-chip{cursor:pointer}
 .eq-pub-meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
 .eq-pub-meta .dato{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;color:var(--eq-tinta)}
 .eq-pub-meta .dato small,.eq-pub-sel small{font-size:.625rem;text-transform:uppercase;letter-spacing:.05em;color:var(--eq-gris);font-weight:700}
-.eq-pub-sel{position:relative;display:inline-flex;align-items:center;gap:5px;font-size:.75rem;padding:3px 8px;border-radius:8px;border:1px solid var(--eq-linea);background:#fff;cursor:pointer;color:var(--eq-tinta)}
+.eq-pub-sel{position:relative;display:inline-flex;align-items:center;gap:5px;font-size:.75rem;padding:3px 8px;border-radius:8px;border:1px solid var(--eq-linea);background:var(--eq-alza);cursor:pointer;color:var(--eq-tinta)}
 .eq-pub-sel:hover{border-color:var(--eq-morado)}
 .eq-pub-sel.vacio{color:var(--eq-gris);border-style:dashed}
 .eq-pub-sel.chico{padding:1px 6px;font-size:.6875rem;border-color:transparent;background:none}
-.eq-pub-sel.chico:hover{border-color:var(--eq-linea);background:#fff}
+.eq-pub-sel.chico:hover{border-color:var(--eq-linea);background:var(--eq-alza)}
 .eq-pub-sel.chico.vacio{opacity:0;}
 .eq-renglon:hover .eq-pub-sel.chico.vacio,.eq-renglon.editando .eq-pub-sel.chico.vacio{opacity:.7}
 .eq-pub-sel.vencido{color:${P.rojoTinta};font-weight:700}
@@ -359,7 +359,7 @@ button.eq-punto-chip{cursor:pointer}
 .eq-pub-cuerpo{white-space:pre-wrap;line-height:1.5;font-size:.875rem;padding:10px 12px;border-radius:10px;background:var(--eq-panel)}
 .eq-renglon{display:flex;gap:10px;align-items:flex-start;padding:8px 10px 8px 12px;border-bottom:1px solid var(--eq-linea)}
 .eq-renglon:last-of-type{border-bottom:0}
-.eq-renglon .caja,.eq-pub-agregar .caja{flex:0 0 auto;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--eq-morado);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;margin-top:1px;padding:0}
+.eq-renglon .caja,.eq-pub-agregar .caja{flex:0 0 auto;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--eq-morado);background:var(--eq-alza);display:inline-flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;margin-top:1px;padding:0}
 .eq-renglon .caja.on{background:var(--eq-morado);border-color:var(--eq-morado)}
 .eq-renglon .caja:disabled{opacity:.5;cursor:default}
 .eq-pub-agregar .caja{border-style:dashed;border-color:#cfcae6;cursor:default}
@@ -384,7 +384,7 @@ button.eq-punto-chip{cursor:pointer}
 .eq-pub-tipos{display:flex;gap:6px}
 .eq-pub-tipos .eq-btn{flex:1;font-size:.8125rem;padding:6px 8px}
 .eq-pub-editor .pista{font-size:.75rem;color:var(--eq-gris);font-weight:500}
-.eq-pub-etiq{display:flex;flex-direction:column;gap:6px;border:1.5px solid var(--eq-morado);border-radius:9px;padding:8px;background:#fff;font-weight:500}
+.eq-pub-etiq{display:flex;flex-direction:column;gap:6px;border:1.5px solid var(--eq-morado);border-radius:9px;padding:8px;background:var(--eq-alza);font-weight:500}
 .eq-pub-etiq input{border:0!important;border-bottom:1px solid var(--eq-linea)!important;border-radius:0!important;padding:4px 2px!important}
 .eq-pub-etiq .grupo{display:flex;flex-direction:column}
 .eq-pub-etiq .grupo small{font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--eq-gris);padding:4px 2px}
@@ -413,6 +413,90 @@ button.eq-punto-chip{cursor:pointer}
   .eq-cab{padding:8px 10px}
   .eq-img img{max-height:240px}
 }
+
+/* ── OSCURO ────────────────────────────────────────────────────────────────
+   El CRM corre con [data-crm-dark="1"] y Equipo nacía siempre claro: abrir el
+   chat encima del CRM oscuro era un fogonazo blanco. Se resuelve SOLO con los
+   tokens de la raíz —por eso arriba no quedó ni un "background:#fff" suelto—;
+   los "color:#fff" que quedan son texto SOBRE color (badge, botón morado,
+   enviar) y esos no cambian en ningún tema.
+
+   La jerarquía es la de Discord y no es capricho: la barra lateral va MÁS
+   OSCURA que el río de mensajes, para que el ojo entienda que el contenido
+   está al frente y la navegación atrás. En claro pasa al revés (panel gris,
+   río blanco), que es la misma idea con los valores invertidos.
+   Los valores son los del CRM (#131318, #1d1d24, #26262e, #F2F1F7…) para que
+   el chat no se lea como otro producto. */
+[data-crm-dark="1"] .eq{
+  --eq-tinta:#F2F1F7;--eq-gris:#918fa0;--eq-linea:#2c2c36;
+  --eq-panel:#17171d;        /* barra lateral: lo más hondo */
+  --eq-fondo:#1d1d24;        /* río de mensajes: un escalón arriba */
+  --eq-alza:#26262e;         /* lo que flota: modales, popover, caja de texto */
+  --eq-lila:#362c55;--eq-morado:#A78BFA;--eq-morado-tinta:#B7A8F7;
+  --eq-apagado:#4a4a57;--eq-toast-fondo:#F2F1F7;--eq-toast-tinta:#131318;
+  --eq-realce:rgba(167,139,250,.14);--eq-sombra:rgba(0,0,0,.5);--rol-founder:#5FD3A6;--rol-partner:#E8B04B;--rol-soporte:#8FB4F7;--rol-admin:#EFA6CA}
+[data-crm-dark="1"] .eq-modal-fondo{background:rgba(0,0,0,.66)}
+/* Las imágenes y los adjuntos no llevan fondo claro detrás. */
+[data-crm-dark="1"] .eq-img img,[data-crm-dark="1"] .eq-pre .it{background:var(--eq-alza)}
+/* El widget flotante comparte la misma raíz. */
+[data-crm-dark="1"] .eqf{--eq-tinta:#F2F1F7;--eq-gris:#918fa0;--eq-linea:#2c2c36;--eq-panel:#1d1d24}
+[data-crm-dark="1"] .eqf-bur{background:#1d1d24;color:#F2F1F7;border-color:#33304a}
+[data-crm-dark="1"] .eqf-bur .q{color:#918fa0}
+[data-crm-dark="1"] .eqf-bur .q b{color:#F2F1F7}
+[data-crm-dark="1"] .eqf-bur .x{color:#918fa0}
+[data-crm-dark="1"] .eqf-gente{background:rgba(35,35,41,.94);border-color:#33304a;color:#E6E4F0}
+[data-crm-dark="1"] .eqf-gente .pila .eq-av,[data-crm-dark="1"] .eqf-gente .eq-av .pt{border-color:#1d1d24}
+[data-crm-dark="1"] .eqf-n{border-color:#131318}
+
+/* ── MÓVIL · densidad y remates ────────────────────────────────────────────
+   Lo que se veía mal al entrar por el widget, en orden de qué tan molesto era. */
+@media (max-width:900px){
+  /* 1. El nombre del canal partía en DOS renglones ("preguntas-\nimportantes")
+        y empujaba la cabecera al doble de alto. Discord nunca parte el título:
+        lo corta. El min-width:0 es obligatorio — sin él, flex se niega a
+        encoger el h2 y el ellipsis no aparece nunca. */
+  /* El color va explícito y no heredado: el sitio trae una regla GLOBAL
+     "h1,h2,h3,h4{color:var(--color-text-primary)}", y un selector de ELEMENTO le
+     gana siempre a la herencia (heredar tiene especificidad cero). Sin esto el
+     título del canal salía en el negro del sitio público, invisible sobre el
+     oscuro. En claro nadie lo notaba porque negro sobre blanco se lee bien. */
+  .eq-cab h2{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:.9375rem;line-height:1.3;color:var(--eq-tinta)}
+  .eq-cab h2 .n{display:inline-flex;vertical-align:-2px;margin-right:2px}
+  .eq-cab .desc{display:none}          /* no cabe junto al título; en móvil estorba */
+  .eq-cab{min-height:48px;gap:4px}
+  .eq-ib{width:36px;height:36px}       /* 36 y no 34: piso táctil */
+  /* 2. El ⋯ de cada canal estaba a opacidad 1 en TODOS los renglones: veinte
+        puntos suspensivos compitiendo con los nombres. Se queda accesible
+        (sigue siendo un botón de 34px) pero deja de gritar. */
+  .eq-can-mas{opacity:.38}
+  .eq-can-fila.activo .eq-can-mas{opacity:.7}
+  /* 3. Secciones más apretadas: se ganan ~2 canales de alto por pantalla. */
+  .eq-sec{padding:10px 12px 1px}
+  .eq-can{min-height:42px;margin:1px 8px;width:calc(100% - 16px)}
+  /* 4. La caja de escribir se comía 200px. Discord la deja en una sola fila. */
+  .eq-caja{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+  .eq-caja .marco{border-radius:14px}
+  .eq-caja .enviar{width:36px;height:36px}
+}
+
+/* ── ROLES · la lógica de Discord ──────────────────────────────────────────
+   En Discord el rol no es un dato escondido en un perfil: se ve en el color
+   del nombre y en la lista de gente agrupada por rol con su conteo. Eso es lo
+   que deja leer una conversación sin conocer al equipo — de un vistazo sabes
+   quién manda, quién da soporte y quién es de fuera.
+   El color va por TOKEN y no en línea porque tiene que cambiar con el tema:
+   el verde que se lee sobre blanco se apaga sobre #1d1d24, y al revés. */
+.eq-rol.founder{color:var(--rol-founder)}
+.eq-rol.partner{color:var(--rol-partner)}
+.eq-rol.soporte{color:var(--rol-soporte)}
+.eq-rol.admin{color:var(--rol-admin)}
+.eq-gente-grupo{display:flex;align-items:center;gap:6px;padding:9px 6px 3px;font-size:.6875rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--eq-gris)}
+.eq-gente-grupo .n{font-weight:700;opacity:.75}
+/* Insignia junto al nombre (el "DEV"/"APP" de Discord). Va en el mensaje, no
+   en la lista: ahí es donde hace falta saber quién habla. */
+.eq-insignia{flex:0 0 auto;font-size:.5625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:1px 5px;border-radius:4px;border:1px solid currentColor;opacity:.85;line-height:1.5}
 `;
 
 let cssPuesto = false;
@@ -422,6 +506,21 @@ export function useCss() {
     const s = document.createElement('style'); s.id = 'eq-css'; s.textContent = CSS;
     document.head.appendChild(s); cssPuesto = true;
   }, []);
+}
+
+// ── Roles ───────────────────────────────────────────────────────────────────
+// Los cuatro roles REALES de `team_members` (medidos en la base: founder,
+// partner, soporte, admin). Si aparece uno nuevo, `rolDe` devuelve null y todo
+// sigue funcionando en el color neutro — nunca se pinta un rol inventado.
+export const ROLES: Record<string, { etiqueta: string; corta: string }> = {
+  founder: { etiqueta: 'Dirección', corta: 'DIR' },
+  partner: { etiqueta: 'Partners', corta: 'PAR' },
+  soporte: { etiqueta: 'Soporte', corta: 'SOP' },
+  admin: { etiqueta: 'Administración', corta: 'ADM' },
+};
+export function rolDe(rol?: string | null) {
+  const k = String(rol || '').toLowerCase();
+  return ROLES[k] ? { clave: k, ...ROLES[k] } : null;
 }
 
 // ── Avatar ──────────────────────────────────────────────────────────────────
