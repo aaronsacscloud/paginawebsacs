@@ -18,6 +18,9 @@ export const FORMATOS = [
   { id: 'coachmark', etiqueta: 'Coachmark', desc: 'Al entrar a un módulo', interruptivo: true },
   { id: 'agenda', etiqueta: 'Agendar cita', desc: 'Modal con el calendario para reservar', interruptivo: true },
   { id: 'compra', etiqueta: 'Comprar / upgrade', desc: 'Modal con precio personalizado y pago', interruptivo: true },
+  // Un párrafo no puede mostrar que una línea está vencida y otra al corriente
+  // —el caso de Sativa—, y es justo la diferencia que evita el reclamo.
+  { id: 'estado_cuenta', etiqueta: 'Estado de cuenta', desc: 'Modal con los conceptos, su monto y su fecha', interruptivo: true },
 ] as const;
 
 // Host FIJO del agendador embebible. La campaña solo elige el SLUG de un tipo
@@ -46,6 +49,7 @@ export const DESTINOS_MODULO = [
   { id: 'solicitudmercancia', etiqueta: 'Solicitud de mercancía' },
   { id: 'gastos', etiqueta: 'Gastos' },
   { id: 'cuentasefectivo', etiqueta: 'Cuentas de efectivo y bancos' },
+  { id: 'suscripcion', etiqueta: 'Mi suscripción / estado de cuenta' },
   { id: 'reporteventas', etiqueta: 'Reporte de ventas' },
   { id: 'integraciones', etiqueta: 'Integraciones' },
   { id: 'proveedores', etiqueta: 'Proveedores' },
@@ -76,6 +80,8 @@ export function urlSacsValida(u: string): boolean {
 // puente, no promesas. `valor` según tipo: uso_modulo → nombre EXACTO del
 // catálogo de módulos del puente; plugin_activo → slug del plugin; plan → slug.
 export const METAS = [
+  // Cobranza: el cron la comprueba a diario y termina la campaña sola.
+  { id: 'sin_saldo_vencido', etiqueta: 'Se puso al corriente (pagó)', necesita: null },
   { id: 'uso_modulo', etiqueta: 'Usó el módulo…', necesita: 'modulo' },
   { id: 'plugin_activo', etiqueta: 'Activó el plugin…', necesita: 'texto' },
   { id: 'plan', etiqueta: 'Subió al plan…', necesita: 'texto' },
@@ -131,6 +137,9 @@ export const CATALOGO_AUDIENCIA: Array<{ id: string; etiqueta: string; tipo: 'op
   { id: 'giro', etiqueta: 'Giro', tipo: 'texto', operadores: ['es'] },
   { id: 'meses_activo', etiqueta: 'Meses como cliente', tipo: 'numero', operadores: ['mayor_que', 'menor_que'] },
   { id: 'renovacion_proxima_dias', etiqueta: 'Renovación en los próximos (días)', tipo: 'numero', operadores: ['menor_que'] },
+  // Cobranza escalonada: el tono no puede ser el mismo para quien debe desde
+  // ayer que para quien debe desde hace un mes. Con esto, una campaña por tramo.
+  { id: 'dias_vencido', etiqueta: 'Días con saldo vencido', tipo: 'numero', operadores: ['mayor_que', 'menor_que'] },
 ];
 
 export const GRUPO_SUPER_ADMIN = '-LaRW9St-VNoA6rL27Cs';

@@ -8,6 +8,7 @@
 import crypto from 'node:crypto';
 import { supabase } from '../supabase';
 import { cuentasPorEmpresa, normCuenta } from '../crm/sacs-cuentas';
+import { usaVariables, valoresPorCuenta, contenidoResuelto } from './variables';
 import { urlSacsValida, DESTINOS_MODULO, ACCIONES_BOTON, FORMATOS, MODULOS_PUENTE, slugAgendaValido, type AudienciaDef, type CondicionUso } from './catalogo';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
@@ -40,6 +41,10 @@ interface EmpresaEval {
   sacs_account: string | null;
   uso_sacs: any;
   intereses: any;
+  /** Días con algo vencido. Lo llena `resolverAudiencia` desde las
+   *  suscripciones; 0 = al corriente. Sirve para escalonar el tono de la
+   *  cobranza: no es lo mismo deber desde ayer que desde hace un mes. */
+  dias_vencido?: number;
 }
 
 function cumpleCondicion(e: EmpresaEval, c: CondicionUso): boolean {
@@ -50,6 +55,10 @@ function cumpleCondicion(e: EmpresaEval, c: CondicionUso): boolean {
     case 'giro': return (e.giro || '').toLowerCase() === String(c.valor || '').toLowerCase();
     case 'dias_sin_venta': {
       const v = num(e.dias_sin_venta); if (v == null) return false;
+      return c.operador === 'mayor_que' ? v > Number(c.valor) : v < Number(c.valor);
+    }
+    case 'dias_vencido': {
+      const v = Number(e.dias_vencido || 0);
       return c.operador === 'mayor_que' ? v > Number(c.valor) : v < Number(c.valor);
     }
     case 'meses_activo': {
@@ -113,6 +122,22 @@ export async function resolverAudiencia(def: AudienciaDef): Promise<AudienciaRes
   if (error) throw new Error('No se pudieron leer las empresas: ' + error.message);
 
   const grupos = (def && Array.isArray(def.grupos)) ? def.grupos.filter(g => g && Array.isArray(g.condiciones) && g.condiciones.length) : [];
+  /* `dias_vencido` sale de las suscripciones, no de la tabla de empresas: solo
+     se consulta si alguna condición lo pide, para no cobrarle esta vuelta a
+     todas las campañas que no hablan de cobranza. */
+  if (grupos.some(g => g.condiciones.some((c: any) => c.campo === 'dias_vencido'))) {
+    const { data: subsV } = await supabase.from('subscriptions')
+      .select('company_id, proxima_factura').eq('estado', 'pendiente_pago')
+      .in('company_id', (data || []).map((e: any) => e.id));
+    const hoy = Date.now();
+    const peor: Record<string, number> = {};
+    for (const s2 of (subsV || [])) {
+      if (!s2.proxima_factura) continue;
+      const d = Math.floor((hoy - Date.parse(String(s2.proxima_factura).slice(0, 10) + 'T12:00:00')) / 86400000);
+      if (d > 0) peor[s2.company_id] = Math.max(peor[s2.company_id] || 0, d);
+    }
+    for (const e of (data || []) as any[]) e.dias_vencido = peor[e.id] || 0;
+  }
   const todasSinCondicion = grupos.length === 0;
 
   const candidatas = (data || []).filter((e: any) =>
@@ -181,6 +206,17 @@ export function validarCampana(c: any): string[] {
       errores.push('El formato "Agendar cita" necesita un tipo de reunión del catálogo (slug inválido o vacío).');
     }
   }
+  if (c.formato === 'estado_cuenta') {
+    const lineas = Array.isArray(c.contenido?.lineas) ? c.contenido.lineas : [];
+    if (!lineas.length) errores.push('El estado de cuenta necesita al menos un concepto.');
+    if (lineas.length > 8) errores.push('Máximo 8 conceptos: más que eso no se lee en un modal.');
+    for (const l of lineas) {
+      if (!String(l?.concepto || '').trim()) errores.push('Un concepto del estado de cuenta va sin nombre.');
+      if (l?.estado && !['vencido', 'por_vencer', 'al_corriente'].includes(String(l.estado))) {
+        errores.push(`Estado de línea desconocido: "${l.estado}".`);
+      }
+    }
+  }
   if (c.formato === 'compra') {
     const of = ct.oferta || {};
     if (!String(of.concepto || '').trim()) errores.push('La oferta necesita un concepto (qué se vende).');
@@ -206,7 +242,7 @@ export function validarCampana(c: any): string[] {
 // ── Materialización + publicación ────────────────────────────────────────────
 
 /** Doc que viaja a sacs3_global.campanas_inapp (lo que sacs_api sirve tal cual). */
-export function docParaSacs(c: any, cuentas: string[]) {
+export function docParaSacs(c: any, cuentas: string[], porCuenta?: Record<string, any>) {
   const nivel = c.nivel || { tipo: 'todos' };
   return {
     campana_id: c.id,
@@ -223,6 +259,9 @@ export function docParaSacs(c: any, cuentas: string[]) {
       hasta: c.vigencia_hasta ? new Date(c.vigencia_hasta).toISOString() : null,
     },
     contenido: c.contenido || {},
+    // Contenido POR CUENTA cuando el texto usa variables: el servidor de
+    // entrega elige el de la cuenta y, si no hay, cae al genérico de arriba.
+    contenido_por_cuenta: porCuenta && Object.keys(porCuenta).length ? porCuenta : null,
     comportamiento: c.comportamiento || {},
     objetivo: {
       cuentas,
@@ -260,7 +299,15 @@ export async function publicarCampana(c: any, opts: { congelada?: boolean; react
     ? { cuentas: congeladas, companies: [], exclusiones: c.materializada?.exclusiones || {} } as any
     : await resolverAudiencia((c.audiencia || {}) as AudienciaDef);
   if (!res.cuentas.length) throw new Error('La audiencia resuelve a 0 cuentas — no hay a quién publicar.');
-  const doc: any = docParaSacs(c, res.cuentas);
+  // Variables: se resuelven aquí, una vez, y viajan ya sustituidas. La deuda
+  // vive en el CRM y la entrega en Mongo; que el segundo pregunte al primero
+  // por cada sesión sería una consulta por usuario para un dato diario.
+  let porCuenta: Record<string, any> = {};
+  if (usaVariables(c.contenido)) {
+    const vals = await valoresPorCuenta(res.cuentas);
+    for (const [cta, v] of Object.entries(vals)) porCuenta[cta] = contenidoResuelto(c.contenido, v);
+  }
+  const doc: any = docParaSacs(c, res.cuentas, porCuenta);
   if (opts.reactivar) doc.reactivar = true;
   await llamarSacs('/interno/crm/campanas-publicar', { campanas: [doc] });
   await supabase.from('inapp_campanas').update({

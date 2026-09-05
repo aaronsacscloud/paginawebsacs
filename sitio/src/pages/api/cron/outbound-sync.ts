@@ -11,6 +11,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { resolverAudiencia, docParaSacs, despublicarCampana, leerPaginado } from '../../../lib/outbound/motor';
 import { normCuenta } from '../../../lib/crm/sacs-cuentas';
 import { cortesEscala } from '../../../lib/outbound/catalogo';
+import { usaVariables, valoresPorCuenta, contenidoResuelto, cuentasConSaldoVencido } from '../../../lib/outbound/variables';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { quitarCuentaCSAT } from '../../../lib/soporte/csat';
 
@@ -367,6 +368,12 @@ async function reevaluarContinuas(deadline: number): Promise<number> {
     if ((c.materializada?.at || '').slice(0, 10) === hoy) continue; // ya se re-evaluó hoy
     try {
       const res = await resolverAudiencia(c.audiencia || {});
+      /* Cobranza: el aviso se apaga solo el día que pagan. Sin esto seguiría
+         saliéndole a quien ya pagó, que es la forma más rápida de que un aviso
+         de cobro se vuelva un reclamo. */
+      if (c.meta?.tipo === 'sin_saldo_vencido' && res.cuentas.length) {
+        res.cuentas = await cuentasConSaldoVencido(res.cuentas);
+      }
       /* Quedarse en CERO no es «no hay nada que hacer»: es que esta campaña ya
          no le toca a nadie, y lo publicado en SACS sigue vivo hasta que se
          retire. Con el `continue` de antes, una campaña mal publicada se
@@ -380,14 +387,25 @@ async function reevaluarContinuas(deadline: number): Promise<number> {
         if (c.publicada_at) {
           await despublicarCampana(c.id);
           await supabase.from('inapp_campanas').update({
-            materializada: { cuentas: 0, companies: 0, cuentas_lista: [], at: new Date().toISOString(), retirada_por: 'audiencia vacía' },
+            // Una campaña de cobranza sin nadie debiendo se TERMINA, no se
+            // queda activa esperando: ya cumplió.
+            ...(c.meta?.tipo === 'sin_saldo_vencido' ? { estado: 'terminada' } : {}),
+            materializada: { cuentas: 0, companies: 0, cuentas_lista: [], at: new Date().toISOString(),
+              retirada_por: c.meta?.tipo === 'sin_saldo_vencido' ? 'ya pagaron' : 'audiencia vacía' },
             updated_at: new Date().toISOString(),
           }).eq('id', c.id);
           re++;
         }
         continue;
       }
-      await sacs('/interno/crm/campanas-publicar', { campanas: [docParaSacs(c, res.cuentas)] });
+      /* Las variables se vuelven a resolver CADA DÍA. Sin esto, «vencido hace
+         4 días» se quedaría en 4 para siempre y el aviso envejecería mintiendo. */
+      let porCuenta: Record<string, any> = {};
+      if (usaVariables(c.contenido)) {
+        const vals = await valoresPorCuenta(res.cuentas);
+        for (const [cta, v] of Object.entries(vals)) porCuenta[cta] = contenidoResuelto(c.contenido, v);
+      }
+      await sacs('/interno/crm/campanas-publicar', { campanas: [docParaSacs(c, res.cuentas, porCuenta)] });
       await supabase.from('inapp_campanas').update({
         publicada_at: c.publicada_at || new Date().toISOString(),
         materializada: {
