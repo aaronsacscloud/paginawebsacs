@@ -160,8 +160,14 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
     }
   } else if ((e as any).plantilla) comoSale = 'plantilla';
 
+  // UN PENDIENTE POR LEAD (índice único uq_ti_envios_pendiente_por_lead): si ese lead ya tenía otro pendiente esperando
+  // (típico: un reenganche que aguarda el clic del dueño y nunca vence), la sugerencia que una persona aprueba MANDA y el
+  // viejo se marca reemplazado. Sin esto el update de abajo fallaba en silencio y el consultor veía «No se pudo enviar:
+  // quedó sugerencia» (bug del 5-sep: Karina y otros 5 leads).
+  if (e.contact_id) await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: `reemplazado por la sugerencia aprobada (${e.origen})`, updated_at: ahora }).eq('contact_id', e.contact_id).eq('estado', 'pendiente').neq('id', e.id);
   // Sale de verdad: la aprobación de una persona es el permiso aunque el agente esté en entrenamiento.
-  await supabase.from('ti_envios').update({ estado: 'pendiente', sale_at: ahora, aprobado_por: o.userId || null, revisado_at: ahora, updated_at: ahora }).eq('id', e.id);
+  const { error: eUp } = await supabase.from('ti_envios').update({ estado: 'pendiente', sale_at: ahora, aprobado_por: o.userId || null, revisado_at: ahora, updated_at: ahora }).eq('id', e.id);
+  if (eUp) return { error: `No se pudo poner en la fila de envío: ${eUp.message}` };
   let enviado = false; let errorEnvio: string | null = null;
   try {
     const { despacharEnvios } = await import('./agente');
