@@ -146,6 +146,18 @@ export async function observar(): Promise<any> {
     try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
     // Fotos del lead sin mirar (5-sep): se describen una vez y quedan en el hilo para el agente y el consultor.
     try { const { describirFotosPendientes } = await import('./fotos-lead'); res.fotos = await describirFotosPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.fotos_error = String(e?.message || e); }
+    // Contrataciones a medias (5-sep): recordatorio único a las 24 h sin comprobante; llamada P1 a las 72 h.
+    try {
+      const { revisarContrataciones } = await import('./contratacion');
+      const { decidirTurno, nace } = await import('./agente');
+      const { leerConfig } = await import('./motor');
+      const cfg: any = await leerConfig().catch(() => ({}));
+      res.contrataciones = await revisarContrataciones(async (cid, nota) => {
+        const d = await decidirTurno(cid, nota);
+        if (!d.salida?.responder || !d.salida.mensaje || !d.telefono) return null;
+        return supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'contratacion', estado: nace(cfg, d.telefono), mensaje: d.salida.mensaje.trim(), adjuntos: [], salida: { ...d.salida, recordatorio_pago: true }, sale_at: new Date().toISOString(), modelo: 'opus', costo_usd: d.costo });
+      });
+    } catch (e: any) { res.contrataciones_error = String(e?.message || e); }
     try { res.agente = await proponerRespuestas(); } catch (e: any) { res.agente_error = String(e?.message || e); }
     try { res.agente_citas = await atenderCitas(); } catch (e: any) { res.citas_error = String(e?.message || e); }
     try { const { prepararDemos } = await import('./agente'); res.agente_preparacion = await prepararDemos(); } catch (e: any) { res.preparacion_error = String(e?.message || e); }

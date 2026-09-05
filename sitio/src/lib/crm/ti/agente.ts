@@ -201,11 +201,14 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // agente ante «sí, el que sea», «lo veo con mi socio», etc. Nunca se guarda ni se manda.
   if (opts.simularEntrante) msjs.push({ direccion: 'entrante', cuerpo: opts.simularEntrante, tipo: 'text', autor: null, created_at: new Date().toISOString(), conversation_id: conversationId, telefono });
   // FOTOS DEL LEAD (5-sep): si mandó imágenes que todavía no se han mirado, se describen ahora y se guardan una sola vez.
-  if (msjs.some(m => m.direccion === 'entrante' && m.tipo === 'image' && m.media_url && !m.transcript)) {
+  if (msjs.some(m => m.direccion === 'entrante' && ['image', 'document', 'file'].includes(m.tipo) && m.media_url && !m.transcript)) {
     try { const { describirFotosDe } = await import('./fotos-lead'); await describirFotosDe(msjs); } catch { /* sin descripción sigue como «[foto]» */ }
   }
   // Audio → su transcripción; foto → lo que se ve en ella (fotos-lead.ts); lo demás, el texto.
-  const textoDe = (m: any) => m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : m.tipo === 'image' ? (m.transcript ? `[foto que mandó: ${m.transcript}]${m.cuerpo ? ' ' + m.cuerpo : ''}` : '[foto]') : String(m.cuerpo || `[${m.tipo}]`);
+  const textoDe = (m: any) => m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]')
+    : m.tipo === 'image' ? (m.transcript ? `[foto que mandó: ${m.transcript}]${m.cuerpo ? ' ' + m.cuerpo : ''}` : '[foto]')
+    : (m.tipo === 'document' || m.tipo === 'file') ? (m.transcript ? `[documento que mandó: ${m.transcript}]${m.cuerpo ? ' ' + m.cuerpo : ''}` : '[documento]')
+    : String(m.cuerpo || `[${m.tipo}]`);
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${textoDe(m).slice(0, 500)}`).join('\n');
   const ultimo = [...msjs].reverse().find(m => m.direccion === 'entrante');
   // LA RÁFAGA: todo lo que el lead mandó desde nuestra última respuesta. Varios mensajes seguidos son UN turno:
@@ -637,12 +640,17 @@ export async function proponerRespuestas(): Promise<any> {
           await log({ accion: 'compromiso_detectado', contact_id: cid, razon: `${det.tipo} · ${det.interpretacion}`, contenido: det.pidio, detalle: { compromiso_id: pr.id, programado: pr.programado, hora: pr.hora, porque_hora: pr.porqueHora, confianza: det.confianza } });
         }
       } catch (e: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `compromiso: ${e?.message || e}` }); }
+      // CONTRATACIÓN (decisión del dueño, 5-sep): «quiero contratar» → plan → pago → comprobante → acceso en el mismo minuto.
+      // Cuando el lead está contratando, esta nota manda sobre las demás (no se le ofrece demo ni se le da seguimiento genérico).
+      let notaContratacion: string | null = null;
+      try { const { contratacionAntesDelTurno } = await import('./contratacion'); notaContratacion = await contratacionAntesDelTurno(cid, txtBaja || ''); } catch (e: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `contratacion: ${e?.message || e}` }); }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
-      const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
-      const d = await decidirTurno(cid, [notaCompromiso, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
+      const notaAg = !notaContratacion && nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
+      const d = await decidirTurno(cid, [notaContratacion, notaContratacion ? null : notaCompromiso, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
       await registrarDatos(cid, s.datos, s.interes);
+      if (notaContratacion) { try { const { contratacionDespuesDelTurno } = await import('./contratacion'); await contratacionDespuesDelTurno(cid, s.datos as any); } catch { /* el siguiente turno lo recoge */ } }
       if (previos.length) await supabase.from('ti_envios').update({ estado: 'reemplazado', updated_at: ahora.toISOString() }).in('id', previos.map(x => x.id));
       if (s.escalar?.si) {
         res.escalados++;

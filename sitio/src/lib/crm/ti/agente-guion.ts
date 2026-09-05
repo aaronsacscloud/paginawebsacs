@@ -382,7 +382,7 @@ Responde SOLO un JSON con esta forma:
  "objetivo": "qué persigues con ESTE mensaje, en una línea",
  "mensaje": "el texto que se le manda al lead (vacío si no debes responder)",
  "responder": true|false,
- "datos": [{"campo":"nombre|apellido|email|empresa|giro|sucursales|ciudad|estado|sitio_web|instagram|puesto|plan_interes|sistema_actual|dolor|mejor_hora|canal_preferido|cuando_decide|tema_reunion|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":true|false}],
+ "datos": [{"campo":"nombre|apellido|email|empresa|giro|sucursales|ciudad|estado|sitio_web|instagram|puesto|plan_interes|sistema_actual|dolor|mejor_hora|canal_preferido|cuando_decide|tema_reunion|plan_elegido|periodo_pago|via_pago|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":true|false}],
  "escalar": {"si": true|false, "motivo": "por qué lo ve el consultor (si aplica)"},
  "interes": {"nivel": "alto|medio|bajo", "razon": "qué en su mensaje lo dice"},
  "accion": {"tipo": "ninguna|agendar|agendar_llamada|confirmar_asistencia|liga_reagendar|opt_out", "fecha": "YYYY-MM-DD (agendar / agendar_llamada)", "hora": "HH:MM (agendar / agendar_llamada)", "email": "correo del lead si lo dio o el CRM lo tiene"},

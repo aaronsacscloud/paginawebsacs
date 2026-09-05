@@ -21,6 +21,8 @@ export type Caso = {
   tarea?: string;
   /** Un mensaje entrante simulado (no se guarda): para casos que dependen de lo que el lead acaba de decir. */
   simular?: string;
+  /** Nota calculada como en producción (p. ej. la de contratación), a partir del lead y el mensaje simulado. */
+  nota_de?: (contactId: string, simular: string) => Promise<string | null>;
   /** Lo que el mensaje DEBE tener. */
   debe: string[];
   /** Lo que NO puede tener. */
@@ -63,6 +65,11 @@ export const CASOS: Caso[] = [
     debe: ['Confirmar en media línea que sí se le da la prueba', 'Preguntar qué vende y cuántas tiendas, en un solo bloque', 'Ofrecer las dos opciones: probarlo por su cuenta o una demo con especialista de menos de una hora con sus flujos', 'Cerrar preguntando cuál de las dos prefiere'],
     nunca: ['Pedir el correo o el nombre de la tienda antes de que elija', 'Mandar precios', 'Explicar funciones que no preguntó'] },
   // ── Decisiones del dueño del 5-sep (catálogo de casos): se prueban con un mensaje simulado sobre un lead real ──
+  { id: 'contratar', titulo: 'Dice que quiere contratar', porQueLlega: 'Cualquiera', momento: 'Ya decidió comprar',
+    buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'lead').not('sucursales_interes', 'is', null), 'con tiendas conocidas'), simular: 'Ya lo pensé y quiero contratar, ¿cómo le hago?',
+    nota_de: async (cid, sim) => { const { contratacionAntesDelTurno } = await import('./contratacion'); return contratacionAntesDelTurno(cid, sim); },
+    debe: ['Decir el total claro: mensual, y anual con el 35 % de ahorro', 'Dar las vías de pago en una línea cada una (tarjeta en /planes, transferencia, liga)', 'Pedir o confirmar el correo para el acceso', 'Preguntar cuál prefiere'],
+    nunca: ['Mandarlo a demo o a llamada', 'Poner el pago como barrera o hacerlo esperar', 'Listas de funciones', 'Más de dos preguntas'] },
   { id: 'si_cualquiera', titulo: 'Dice «sí, el que sea» a los horarios', porQueLlega: 'Cualquiera', momento: 'Proponiendo: ya se le ofrecieron horarios',
     buscar: () => unLeadConEnvio('respuesta', 'con envío reciente'), simular: 'Sí, el que sea está bien',
     debe: ['Elegir UN horario real y agendarlo (accion agendar o agendar_llamada con fecha y hora)', 'Decir que ya quedó apartado ese día a esa hora y que la invitación le llega por aquí', 'Pedirle que confirme con un «va»'],
@@ -167,7 +174,8 @@ export async function correrReferee(soloIds?: string[]) {
     const encontrado = await caso.buscar().catch(() => null);
     if (!encontrado) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: 'sin lead real en ese estado' }); continue; }
     try {
-      const d = await decidirTurno(encontrado.contactId, caso.nota || undefined, { tarea: caso.tarea || 'respuesta', simularEntrante: caso.simular });
+      const notaCaso = caso.nota_de && caso.simular ? await caso.nota_de(encontrado.contactId, caso.simular).catch(() => null) : null;
+      const d = await decidirTurno(encontrado.contactId, notaCaso || caso.nota || undefined, { tarea: caso.tarea || 'respuesta', simularEntrante: caso.simular });
       costo += d.costo || 0;
       if (!d.salida?.mensaje) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: `el agente no propuso mensaje (${d.motivo || 'sin motivo'})` }); continue; }
       const j = await juez(caso, d.salida.mensaje, `${encontrado.pista || ''} · etapa ${d.salida.estado} · último del lead: ${String(d.salida.ultimo_mensaje || '').slice(0, 300)}`);

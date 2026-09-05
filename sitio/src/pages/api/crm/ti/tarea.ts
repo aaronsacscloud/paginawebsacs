@@ -65,6 +65,12 @@ export const POST: APIRoute = async ({ request }) => {
     try { const { extraerYAplicar } = await import('../../../../lib/crm/ti/datos-lead'); await extraerYAplicar(tarea.contact_id, String(b.detalle.nota), 'llamada_nota'); } catch { /* no bloquea la tarea */ }
   }
 
+  // CONTRATACIÓN (5-sep): confirmar el depósito vuelve cliente al lead y abre su onboarding; «no llegó» bloquea la cuenta.
+  if (tarea.tipo === 'activacion' && b.resultado) {
+    const { resolverActivacion } = await import('../../../../lib/crm/ti/contratacion');
+    const ra = await resolverActivacion(tarea, b.resultado, user.id);
+    return json({ ...r, ok: true, activacion: ra });
+  }
   // Los veredictos EJECUTAN la decisión, no solo la registran.
   if (tarea.tipo === 'veredicto' && b.resultado && (tarea.payload as any)?.reloj === 'silencio_agente') {
     const { aplicarVeredictoSilencio } = await import('../../../../lib/crm/ti/agente');

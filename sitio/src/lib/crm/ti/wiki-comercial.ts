@@ -34,12 +34,12 @@ PRECIOS DE LICENCIA (mensual, POR SUCURSAL — página pública /planes; el anua
 - Automatiza: $3,780 MXN/mes — especialista IA dedicado, AXO copiloto, reglas automáticas, avisos, pronóstico de temporada, integraciones.
 En anual: $527 · $790 · $1,229 · $2,457 al mes por sucursal. Cada plan incluye todo lo del anterior. Sin permanencia.
 
-CONTRATACIÓN Y PAGO (decisión del dueño, 5-sep-2026: cuando el lead ya quiere contratar)
-- Primero se le pregunta qué plan; si no lo sabe, se le dice cuál le queda según sus tiendas y lo que quiere resolver.
-- Paga directo en www.sacscloud.com/planes (mensual o anual). El anual le ahorra el 35 %.
-- Si elige anual y prefiere transferencia: DESARROLLOS TECNOLÓGICOS CON AMOR E IMPACTO POSITIVO SAS DE CV · RFC DTA240507AX3 · BBVA CLABE 012680001236992771 (cuenta 0123699277) o STP CLABE 646180204200038949. El comprobante va a Administracion@sacscloud.com.
-- Si prefiere liga de Mercado Pago para el anual: se le dice que se la pasamos en un momento y se escala al consultor con el plan y el número de sucursales (la liga la genera el consultor).
-- Siempre que alguien quiere contratar se escala con motivo «quiere contratar», para que el consultor lo acompañe en la activación.
+CONTRATACIÓN Y PAGO (decisión del dueño, 5-sep-2026: cuando el lead ya quiere contratar, el sistema lleva el proceso y te da la nota de cada paso)
+1. Plan: se le pregunta cuál quiere; si no sabe, se le recomienda por tiendas y necesidad. No se le manda a demo: ya quiere comprar.
+2. Total claro (mensual, y anual con 35 % de ahorro) y tres vías: tarjeta en www.sacscloud.com/planes (el acceso le llega al correo al terminar), transferencia (anual) o liga de Mercado Pago (la genera el consultor).
+3. Transferencia, datos EXACTOS (van en una burbuja aparte): Empresa Kiether (la pagadora) · RFC PTK230413KK1 · BBVA · Cuenta 0120641979 · CLABE 012180001206419797 · Concepto «Desarrollo de software». El comprobante lo manda por este WhatsApp y, si puede, a administracion@sacscloud.com.
+4. En cuanto manda el comprobante, EN ESE MISMO MOMENTO: su acceso queda creado y se le envía (app.sacscloud.com, su correo y una contraseña temporal), con la Academia dentro de Sacs para aprender paso a paso, la liga para agendar su sesión de arranque (kickoff) con un consultor en www.sacscloud.com/agendar/onboarding, y el chat de soporte dentro de su Sacs para cualquier duda.
+5. Por detrás: el comprobante va a administración y el consultor confirma el depósito desde su tarea; eso lo vuelve cliente y abre su onboarding. Para crear el acceso hace falta su CORREO: si no lo tenemos, se pide junto con la vía de pago.
 La migración desde otro sistema o desde Excel la hacemos nosotros (productos, clientes, historial).
 Las suites por giro (consignación, joyería fina, torre de control del evento, taller/órdenes de servicio) NO se venden aparte: se instalan según el giro y van con su plan. Los extras (probador virtual, foto y video con IA, lookbooks, RFID, etc.) solo se mencionan; el consultor los ve en la reunión. Nunca des precios que no sean de licencia.
 
