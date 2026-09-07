@@ -75,9 +75,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!esUuid(b.edicion_id)) return json({ error: 'edicion_id' }, 400);
     // Las notas se pueden ir guardando desde antes; el cierre (cerrada_at + «fuimos»)
     // solo cuando la edición ya terminó, que es cuando los números están completos.
-    const { data: edR } = await supabase.from('ev_ediciones').select('fin, inicio, retro').eq('id', b.edicion_id).maybeSingle();
+    const { data: edR } = await supabase.from('ev_ediciones').select('fin, inicio, retro, participacion').eq('id', b.edicion_id).maybeSingle();
     const termino = !!edR && (edR.fin || edR.inicio) < ahora.slice(0, 10);
-    const cierra = termino && b.cerrar !== false;
+    // Solo se cierra lo que se vivió: una edición en «no vamos» o «sin decidir» guarda
+    // las notas pero no pasa a «fuimos» — si no, el histórico dice que fuimos a ferias
+    // a las que nunca fuimos.
+    const vivida = edR?.participacion === 'vamos' || edR?.participacion === 'fuimos';
+    const cierra = termino && vivida && b.cerrar !== false;
     const previo = (edR?.retro || {}) as any;
     const retro = { que_funciono: limpiar(b.que_funciono, 2000) || null, que_no: limpiar(b.que_no, 2000) || null, aprendizajes: limpiar(b.aprendizajes, 2000) || null, repetir: b.repetir == null ? null : !!b.repetir, cerrada_at: cierra ? (previo.cerrada_at || ahora) : previo.cerrada_at || null, por: cierra ? (previo.por || yo.nombre) : previo.por || null };
     const { error } = await supabase.from('ev_ediciones').update({ retro, ...(cierra ? { participacion: 'fuimos' } : {}), updated_at: ahora }).eq('id', b.edicion_id);
@@ -88,27 +92,41 @@ export const POST: APIRoute = async ({ request }) => {
     if (!esUuid(b.edicion_id)) return json({ error: 'edicion_id' }, 400);
     const { data: ed } = await supabase.from('ev_ediciones').select('id, nombre, ev_eventos(slug, nombre)').eq('id', b.edicion_id).maybeSingle();
     if (!ed) return json({ error: 'no existe' }, 404);
-    const nombreEv = String((ed as any).ev_eventos?.nombre || '').split(/\s+/)[0];
-    if (!nombreEv) return json({ error: 'el evento no tiene nombre' }, 400);
-    // Las cuentas investigadas guardan «Expositor de Intermoda IM85, stand 9019, 9021» en su contexto.
-    let cuentas: any[] = []; let desde = 0;
-    while (true) {
-      const { data } = await supabase.from('abm_cuentas').select('id, nombre, contexto, puntaje').ilike('contexto', `%Expositor de ${nombreEv}%`).neq('etapa', 'no_contactar').order('puntaje', { ascending: false }).range(desde, desde + 999);
-      cuentas = cuentas.concat(data || []); if (!data || data.length < 1000) break; desde += 1000;
-    }
+    const nombreCompleto = String((ed as any).ev_eventos?.nombre || '').trim();
+    if (!nombreCompleto) return json({ error: 'el evento no tiene nombre' }, 400);
+    // Las cuentas investigadas guardan «Expositor de Intermoda IM85, stand 9019, 9021» en su
+    // contexto. Se cruza por el nombre completo y, si no hay nada, por la primera palabra —
+    // salvo que sea una palabra que comparten media docena de ferias («Expo», «Feria»…):
+    // ahí cruzar traería los expositores de otro evento.
+    const primera = nombreCompleto.split(/\s+/)[0];
+    const generica = /^(expo|feria|salón|salon|semana|congreso|festival|encuentro|foro)$/i.test(primera);
+    const buscar = async (patron: string) => {
+      let cuentas: any[] = []; let desde = 0;
+      while (true) {
+        const { data } = await supabase.from('abm_cuentas').select('id, nombre, contexto, puntaje').ilike('contexto', `%Expositor de ${patron}%`).neq('etapa', 'no_contactar').order('puntaje', { ascending: false }).range(desde, desde + 999);
+        cuentas = cuentas.concat(data || []); if (!data || data.length < 1000) break; desde += 1000;
+      }
+      return cuentas;
+    };
+    let cuentas = await buscar(nombreCompleto);
+    if (!cuentas.length && !generica) cuentas = await buscar(primera);
     const filas = cuentas.map(c => {
       const m = /stand[s]?\s*([^·\n]+)/i.exec(String(c.contexto || ''));
       const stand = m ? m[1].trim().slice(0, 60) : null;
-      const pab = stand ? String(stand).replace(/\D/g, '').slice(0, 1) : null;
+      // El pabellón se deduce del primer dígito solo en stands de hasta 4 cifras: en
+      // «11063» el pabellón es el 11, no el 1, y eso son 40 minutos al pabellón equivocado.
+      const digitos = stand ? String(stand).replace(/\D/g, '') : '';
+      const pab = digitos.length >= 3 && digitos.length <= 4 ? digitos.slice(0, 1) : null;
       return { edicion_id: b.edicion_id, abm_cuenta_id: c.id, nombre: c.nombre, stand, pabellon: pab ? `Pabellón ${pab}` : null };
     });
-    let insertadas = 0;
+    // «Nuevas» se mide contando antes y después: el upsert con ignoreDuplicates no devuelve filas.
+    const contar = async () => { const { count } = await supabase.from('ev_expositores').select('id', { count: 'exact', head: true }).eq('edicion_id', b.edicion_id); return count || 0; };
+    const antes = await contar();
     for (let i = 0; i < filas.length; i += 200) {
-      const { data, error } = await supabase.from('ev_expositores').upsert(filas.slice(i, i + 200), { onConflict: 'edicion_id,abm_cuenta_id', ignoreDuplicates: true }).select('id');
+      const { error } = await supabase.from('ev_expositores').upsert(filas.slice(i, i + 200), { onConflict: 'edicion_id,abm_cuenta_id', ignoreDuplicates: true });
       if (error) return json({ error: error.message }, 500);
-      insertadas += (data || []).length;
     }
-    return json({ ok: true, encontradas: filas.length, nuevas: insertadas });
+    return json({ ok: true, encontradas: filas.length, nuevas: Math.max(0, await contar() - antes) });
   }
   if (b.accion === 'visitado') {
     if (!esUuid(b.expositor_id)) return json({ error: 'expositor_id' }, 400);

@@ -106,6 +106,14 @@ export const GET: APIRoute = async ({ url }) => {
       .order('ultimo_uso_at', { ascending: false }).limit(3);
     return json({ plantillas: data || [] });
   }
+  // ?aprobadas=1 · solo las que se pueden mandar, del espejo, sin ir a Meta. Es
+  // lo que llena un selector (p. ej. la bienvenida de un evento): barato y rápido.
+  if (url.searchParams.get('aprobadas')) {
+    const { data } = await supabase.from('wa_plantillas')
+      .select('nombre, idioma, cuerpo, variables, categoria, header_tipo')
+      .eq('status', 'APPROVED').order('nombre');
+    return json({ plantillas: data || [] });
+  }
   try {
     await sincronizarPlantillas();
   } catch (e: any) {

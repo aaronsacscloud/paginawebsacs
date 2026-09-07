@@ -125,7 +125,7 @@ create table if not exists ev_expositores (
   created_at timestamptz default now()
 );
 create index if not exists ev_expositores_edicion_ix on ev_expositores (edicion_id, visitado, stand);
-create unique index if not exists ev_expositores_ux on ev_expositores (edicion_id, abm_cuenta_id) where abm_cuenta_id is not null;
+create unique index if not exists ev_expositores_ux on ev_expositores (edicion_id, abm_cuenta_id);  -- completo, no parcial: PostgREST no manda el predicado en ON CONFLICT
 
 alter table ev_eventos     enable row level security;
 alter table ev_ediciones   enable row level security;

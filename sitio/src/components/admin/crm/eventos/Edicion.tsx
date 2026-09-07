@@ -11,7 +11,7 @@ import Sheet from '../ui/Sheet';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import FormRegistro, { sincronizarCola, pendientesDe } from './FormRegistro';
 import ModoStand from './ModoStand';
-import { ROL_ETIQ, PARTICIPACION_TONO, TEMP_TONO, GIROS, Pastilla, Btn, Campo, INPUT, Seccion, fmt, dinero, rango, relativo, fechaHora, fechaCorta, diasHasta, post } from './ui';
+import { ROL_ETIQ, PARTICIPACION_TONO, TEMP_TONO, GIROS, Pastilla, Btn, Campo, INPUT, Seccion, fmt, dinero, rango, relativo, fechaHora, fechaCorta, diasHasta, diaMX, post } from './ui';
 
 type Vista = 'resumen' | 'preparacion' | 'registros' | 'buscar' | 'gastos' | 'cierre';
 const FASES: [string, string][] = [['antes', 'Antes'], ['durante', 'Durante'], ['despues', 'Después']];
@@ -31,7 +31,7 @@ export default function Edicion({ id, onCambio }: { id: string; onCambio: () => 
   // Lo que quedó en el teléfono sin red se manda en cuanto se abre la edición con señal.
   useEffect(() => { sincronizarCola(id).then(k => { if (k) traer(); }); }, [id]);
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = diaMX();
   const ed = d?.edicion;
   const fase: 'antes' | 'durante' | 'despues' = !ed ? 'antes' : ed.inicio > hoy ? 'antes' : (ed.fin || ed.inicio) >= hoy ? 'durante' : 'despues';
   // La pestaña de inicio sigue al momento: antes se prepara, durante se captura, después se cierra.
@@ -53,7 +53,9 @@ export default function Edicion({ id, onCambio }: { id: string; onCambio: () => 
   if (!d) return <Cargando texto="Cargando la edición…" />;
   const ev = ed.ev_eventos;
   const vamos = ed.participacion === 'vamos' || ed.participacion === 'fuimos';
-  const urlQr = ed.token_publico ? `${location.origin}/e/${ed.token_publico}` : '';
+  // El QR se imprime: siempre al dominio público. Generado desde localhost o desde una
+  // preview de Vercel, un QR con esa dirección se muere en la imprenta.
+  const urlQr = ed.token_publico ? `https://www.sacscloud.com/e/${ed.token_publico}` : '';
 
   const pest: [Vista, string, number | null][] = [
     ['resumen', 'Resumen', null],
@@ -179,7 +181,7 @@ function Resumen({ ed, e, isMobile, urlQr, onCambiar, onIr }: { ed: any; e: any;
 
       {(ed.participacion === 'vamos') && !ed.plantilla_wa && (
         <div style={{ ...tarjetaKpi(P.ambar), fontSize: '.8125rem', color: '#444', lineHeight: 1.5, marginBottom: 14 }}>
-          <b style={{ color: P.ambarTinta }}>Sin plantilla de WhatsApp.</b> Quien se registre no recibirá bienvenida por WhatsApp (solo correo, si lo deja). Pon abajo el nombre de la plantilla UTILITY aprobada en Meta antes del evento.
+          <b style={{ color: P.ambarTinta }}>Sin plantilla de WhatsApp.</b> Quien se registre no recibirá bienvenida por WhatsApp (solo correo, si lo deja). Elige abajo una plantilla aprobada antes del evento.
         </div>
       )}
       {urlQr && (
@@ -209,7 +211,7 @@ function Resumen({ ed, e, isMobile, urlQr, onCambiar, onIr }: { ed: any; e: any;
           <Campo label="Presupuesto (MXN)"><input style={INPUT} type="number" value={f.presupuesto} onChange={x => set('presupuesto', x.target.value)} /></Campo>
           <Campo label="Límite para apartar stand"><input style={INPUT} type="date" value={f.limite_registro} onChange={x => set('limite_registro', x.target.value)} /></Campo>
           <Campo label="URL de registro del organizador"><input style={INPUT} value={f.url_registro} onChange={x => set('url_registro', x.target.value)} /></Campo>
-          <Campo label="Plantilla de WhatsApp de bienvenida" ayuda="nombre exacto de la plantilla UTILITY aprobada en Meta; vacío = no se manda WhatsApp"><input style={INPUT} value={f.plantilla_wa} onChange={x => set('plantilla_wa', x.target.value)} placeholder="bienvenida_evento" /></Campo>
+          <SelectorPlantilla valor={f.plantilla_wa} onChange={v => set('plantilla_wa', v)} evento={ed.ev_eventos?.nombre} />
         </div>
         <Campo label="Notas de la edición"><textarea style={{ ...INPUT, minHeight: 60, resize: 'vertical', marginTop: 8 }} value={f.notas} onChange={x => set('notas', x.target.value)} /></Campo>
       </Seccion>
@@ -373,7 +375,7 @@ function Buscar({ expositores, evento, isMobile, onCargar, onVisitado, onRegistr
 }
 
 function Gastos({ gastos, categorias, embudo, presupuesto, onAgregar, onBorrar }: { gastos: any[]; categorias: Record<string, string>; embudo: any; presupuesto: number | null; onAgregar: (g: any) => void; onBorrar: (g: any) => void }) {
-  const [g, setG] = useState({ concepto: '', categoria: 'stand', monto: '', fecha: new Date().toISOString().slice(0, 10), nota: '' });
+  const [g, setG] = useState({ concepto: '', categoria: 'stand', monto: '', fecha: diaMX(), nota: '' });
   const total = embudo.costo || 0;
   return (
     <div>
@@ -434,5 +436,28 @@ function Cierre({ ed, e, fase, onGuardar }: { ed: any; e: any; fase: 'antes' | '
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── La plantilla de bienvenida se ELIGE, no se teclea ──
+   El nombre a mano se escribía mal, o con una plantilla que Meta ya había pausado, y el
+   error salía hasta el día de la feria con 300 registros. Aquí solo aparecen las
+   aprobadas, y la vista previa enseña lo que va a leer la persona con su nombre y la
+   feria puestos. Una plantilla con más de 2 variables no sirve: no hay con qué llenarlas. */
+function SelectorPlantilla({ valor, onChange, evento }: { valor: string; onChange: (v: string) => void; evento?: string }) {
+  const [lista, setLista] = useState<any[] | null>(null);
+  useEffect(() => { fetch('/api/crm/whatsapp/plantillas?aprobadas=1').then(r => r.json()).then(j => setLista((j.plantillas || []).filter((p: any) => Number(p.variables || 0) <= 2))).catch(() => setLista([])); }, []);
+  const p = lista?.find(x => x.nombre === valor);
+  const vista = p ? String(p.cuerpo || '').replace('{{1}}', 'Mariana').replace('{{2}}', evento || 'la feria') : '';
+  return (
+    <Campo label="Bienvenida por WhatsApp" ayuda={p ? `${p.categoria === 'UTILITY' ? 'Utilidad' : 'Marketing'} · ${p.variables} variable${p.variables === 1 ? '' : 's'}: {{1}} nombre${p.variables >= 2 ? ', {{2}} feria' : ''}` : 'vacío = no se manda WhatsApp al registrarse'}>
+      <select style={INPUT} value={valor} onChange={x => onChange(x.target.value)}>
+        <option value="">Sin bienvenida por WhatsApp</option>
+        {valor && lista && !p && <option value={valor}>{valor} (ya no está aprobada)</option>}
+        {(lista || []).map(x => <option key={x.nombre} value={x.nombre}>{x.nombre}</option>)}
+      </select>
+      {vista && <div style={{ fontSize: '.75rem', color: '#555', background: '#f7f7fb', border: `1px solid ${P.linea}`, borderRadius: 8, padding: '8px 10px', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{vista}</div>}
+      {lista && !lista.length && <span style={{ fontSize: '.6875rem', color: P.ambarTinta }}>No hay plantillas aprobadas de 1 o 2 variables. Créala en WhatsApp → Plantillas.</span>}
+    </Campo>
   );
 }

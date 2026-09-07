@@ -14,11 +14,11 @@ import EstadoVacio from '../ui/EstadoVacio';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import EventoFicha from './EventoFicha';
 import Edicion from './Edicion';
-import { TIPO_ETIQ, DECISION_TONO, PARTICIPACION_TONO, GIROS_EVENTO, Pastilla, Fit, Btn, fmt, rango, relativo, mesLargo, d, post } from './ui';
+import { TIPO_ETIQ, DECISION_TONO, PARTICIPACION_TONO, GIROS_EVENTO, Pastilla, Fit, Btn, fmt, rango, relativo, mesLargo, d, post, diaMX } from './ui';
 
 export default function EventosTab() {
   const isMobile = useIsMobile();
-  const [datos, setDatos] = useState<{ eventos: any[]; resumen: any; hoy: string } | null>(null);
+  const [datos, setDatos] = useState<{ eventos: any[]; resumen: any; hoy: string; urge?: any[] } | null>(null);
   const [error, setError] = useState('');
   const [vista, setVista] = useState<'lista' | 'calendario'>('lista');
   const [giro, setGiro] = useState('');
@@ -33,10 +33,17 @@ export default function EventosTab() {
   const traer = () => fetch('/api/crm/eventos').then(r => r.json()).then(j => { if (j.error) setError(j.error); else setDatos(j); }).catch(e => setError(String(e)));
   useEffect(() => { traer(); }, []);
 
-  // Abrir una edición desde fuera (p. ej. desde el Hoy o un enlace con ?edicion=).
+  // Abrir una edición desde fuera: un enlace con ?edicion= al cargar, o la campana
+  // (el cron de eventos deja avisos con destino `eventos?edicion=<id>`) cuando la
+  // pestaña ya estaba montada — ahí no hay remount, así que se escucha crm:destino.
   useEffect(() => {
-    const q = new URLSearchParams(location.search).get('edicion');
-    if (q) setEdicionAbierta(q);
+    const abrir = () => {
+      const q = new URLSearchParams(location.search).get('edicion');
+      if (q) setEdicionAbierta(q);
+    };
+    abrir();
+    window.addEventListener('crm:destino', abrir);
+    return () => window.removeEventListener('crm:destino', abrir);
   }, []);
 
   const porGiro = useMemo(() => {
@@ -45,7 +52,7 @@ export default function EventosTab() {
     return m;
   }, [datos]);
 
-  const hoy = datos?.hoy || new Date().toISOString().slice(0, 10);
+  const hoy = datos?.hoy || diaMX();
   const eventos = useMemo(() => {
     let l = datos?.eventos || [];
     if (giro) l = l.filter(e => (e.giros || []).includes(giro));
@@ -103,13 +110,31 @@ export default function EventosTab() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fit,minmax(160px,1fr))', gap: isMobile ? 8 : 12, marginBottom: 18 }}>
-        {kpi('En el radar', fmt(r.eventos), 'eventos investigados', P.violeta, P.violetaTinta, '')}
-        {kpi('Vamos', fmt(r.vamos), 'decididos que sí', P.verde, P.verdeTinta, 'ir')}
-        {kpi('Por evaluar', fmt(r.por_evaluar), 'falta decidir', P.ambar, P.ambarTinta, 'evaluar')}
+        {kpi('Vamos', fmt(r.vamos), `${fmt(r.con_participacion)} ${r.con_participacion === 1 ? 'edición confirmada' : 'ediciones confirmadas'}`, P.verde, P.verdeTinta, 'ir')}
+        {kpi('Por evaluar', fmt(r.por_evaluar), `de ${fmt(r.eventos)} en el radar`, P.ambar, P.ambarTinta, 'evaluar')}
         {kpi('Próximas fechas', fmt(r.proximas), 'ediciones por venir', P.azul, P.azulTinta, 'proximas')}
-        {kpi('Confirmadas', fmt(r.con_participacion), 'ediciones a las que vamos', P.verde, P.verdeTinta, 'vamos')}
         {kpi('Registros', fmt(r.registros_total), 'personas conocidas en eventos', P.violeta, P.violetaTinta, '')}
       </div>
+
+      {/* Lo que urge: plazos que vencen, ferias que encajan y siguen sin decisión, tareas
+          vencidas. Ordenado por fecha. Es lo primero que se ve porque es lo único que
+          cambia de un día a otro; el resto del catálogo no. */}
+      {!!datos.urge?.length && (
+        <div style={{ ...tarjetaKpi(P.ambar), padding: '12px 16px', marginBottom: 18 }}>
+          <div style={{ fontSize: '.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Lo que urge</div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {datos.urge.slice(0, 6).map((u: any, i: number) => (
+              <button key={i} onClick={() => setEdicionAbierta(u.edicion_id)} style={{ font: 'inherit', textAlign: 'left', background: 'none', border: 'none', padding: isMobile ? '4px 0' : 0, cursor: 'pointer', display: isMobile ? 'grid' : 'flex', gap: isMobile ? 2 : 10, alignItems: 'baseline', minWidth: 0 }}>
+                <span style={{ fontSize: '.75rem', fontWeight: 800, color: u.tipo === 'tareas' ? P.rojoTinta : P.ambarTinta, whiteSpace: 'nowrap', minWidth: isMobile ? 0 : 130 }}>
+                  {u.tipo === 'plazo' ? `Apartar ${relativo(u.fecha)}` : u.tipo === 'decidir' ? `Decidir · es ${relativo(u.fecha)}` : `${u.n} ${u.n === 1 ? 'tarea vencida' : 'tareas vencidas'}`}
+                </span>
+                <span style={{ fontSize: '.8125rem', color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><b>{u.evento}</b> · {u.edicion}</span>
+              </button>
+            ))}
+            {datos.urge.length > 6 && <span style={{ fontSize: '.75rem', color: '#888' }}>y {datos.urge.length - 6} más</span>}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 2, marginBottom: 14, borderBottom: `1px solid ${P.linea}`, alignItems: 'flex-end' }}>
         {([['lista', 'A dónde ir'], ['calendario', 'Calendario']] as const).map(([v, l]) => (
@@ -197,7 +222,7 @@ function ListaEventos({ eventos, hoy, isMobile, onAbrir, onDecidir, onEdicion }:
         <div key={k}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <Pastilla tono={DECISION_TONO[k]}>{titulo}</Pastilla>
-            <span style={{ fontSize: '.75rem', color: '#999' }}>{lista.length} {lista.length === 1 ? 'fecha' : 'fechas'}{k === 'ir' ? ' · ordenados por encaje' : ''}</span>
+            <span style={{ fontSize: '.75rem', color: '#999' }}>{lista.length} {lista.length === 1 ? 'evento' : 'eventos'}{k === 'ir' ? ' · ordenados por encaje' : ''}</span>
           </div>
           <div style={{ display: 'grid', gap: 10, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(420px,1fr))', opacity: k === 'no_ir' ? .75 : 1 }}>
             {lista.sort((a, b) => (b.fit_puntaje || 0) - (a.fit_puntaje || 0)).map(e => <TarjetaEvento key={e.id} e={e} hoy={hoy} onAbrir={() => onAbrir(e.id)} onDecidir={(d) => onDecidir(e.id, d)} onEdicion={onEdicion} />)}

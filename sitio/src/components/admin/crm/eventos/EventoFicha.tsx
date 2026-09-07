@@ -205,6 +205,6 @@ const Etq = ({ children }: any) => <div style={{ fontSize: '.625rem', fontWeight
 const Cifra = ({ children, c, chica }: any) => <div style={{ fontSize: chica ? '.9375rem' : '1.375rem', fontWeight: 800, color: c, marginTop: 3, lineHeight: 1.2 }}>{children}</div>;
 // Dos líneas y punto: la investigación llena estos campos con párrafos, y una
 // tarjeta de KPI que crece a 300 px deja de ser un KPI. El texto completo va abajo.
-const Sub = ({ children }: any) => <div style={{ fontSize: '.6875rem', color: '#888', marginTop: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{children}</div>;
+const Sub = ({ children }: any) => <div style={{ fontSize: '.6875rem', color: '#888', marginTop: 3, display: '-webkit-box', WebkitLineClamp: '2', lineClamp: '2', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{children}</div>;
 const Parrafo = ({ children }: any) => <p style={{ fontSize: '.875rem', color: '#333', lineHeight: 1.55, margin: '4px 0 8px', whiteSpace: 'pre-line' }}>{children}</p>;
 const Texto = ({ titulo, children, tono }: any) => <Seccion titulo={titulo}><p style={{ fontSize: '.875rem', color: tono || '#333', lineHeight: 1.55, margin: 0, whiteSpace: 'pre-line' }}>{children}</p></Seccion>;

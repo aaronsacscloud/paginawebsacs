@@ -61,6 +61,9 @@ export const fechaHora = (v: any) => {
   if (!v) return ''; const x = new Date(v);
   return `${x.getDate()} ${MESES[x.getMonth()]} ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
 };
+/** Día calendario en hora de México. `toISOString()` da el día UTC: a las 18:00 en
+ *  CDMX ya es mañana en UTC y el contador del stand se ponía en cero a media feria. */
+export const diaMX = (v?: any) => new Date(v || Date.now()).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 export const diasHasta = (s: string) => Math.round((d(s).getTime() - new Date(new Date().toDateString()).getTime()) / 864e5);
 /** «en 3 semanas», «en 4 meses», «hace 12 días», «hoy». Se lee sin calcular. */
 export const relativo = (s: string) => {
@@ -106,7 +109,7 @@ export function Btn({ nivel = 'secundario', children, onClick, disabled, chico, 
   );
 }
 
-export const INPUT: CSSProperties = { font: 'inherit', fontSize: '.875rem', padding: '8px 11px', borderRadius: 8, border: `1px solid ${P.linea}`, width: '100%', boxSizing: 'border-box', background: '#fff', color: '#222' };
+export const INPUT: CSSProperties = { font: 'inherit', fontSize: '.875rem', padding: '8px 11px', borderRadius: 8, border: `1px solid ${P.linea}`, width: '100%', minWidth: 0, boxSizing: 'border-box', background: '#fff', color: '#222' };
 export function Campo({ label, children, ancho, ayuda }: { label: string; children: ReactNode; ancho?: number | string; ayuda?: string }) {
   return (
     <label style={{ display: 'grid', gap: 4, minWidth: 0, gridColumn: ancho ? `span ${ancho}` : undefined }}>

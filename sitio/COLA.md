@@ -6,6 +6,21 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-07 · Cuentas objetivo: piezas visuales de los 14 giros que faltan + diagnóstico hecho antes de escribir.**
+      Propuesto por mí y el dueño respondió «HAZ ESTO [eventos] Y DE AHÍ REFINAMOS LA OTRO». Se toma al cerrar Eventos.
+
+- [ ] **2026-09-07 · Eventos físicos (ferias) como módulo del CRM.** «hacer una sección clara y un calendario claro ahí
+      mismo de los eventos más importantes: cuándo es SAPICA, cuándo Intermoda, cuándo son los lugares donde van a
+      comprar textiles las boutiques, qué más hay como Intermoda, qué más hay como SAPICA, qué más hay de renta de
+      vestidos de novia. Saquemos toda la data: explicación del evento, participantes que van, si es buen fit para
+      poner un stand y ganar ahí muchos clientes. Necesito una lista clara de lugares donde debemos asistir y ahí
+      mismo todo lo necesario para agregar a los registrados del evento, medir conversiones, medir todo lo requerido
+      para llevar una gestión recurrente correcta de cada evento físico. Analiza el caso, considera huecos escondidos,
+      crea un plan con todo lo que debe tener el sistema y ejecuta hasta lograr el /goal. Referee de UI/UX/lógica de
+      negocio y referee de innovación que simplifique el proceso.» → HECHO 2026-09-07 (commits sin push). Quedan
+      del referee: service worker para la cola sin red de /e/[token] (hoy el texto dice la verdad: hay que dejar la
+      página abierta o volver a abrir el QR), y el OK del dueño para borrar 4 eventos viejos duplicados.
+
 - [ ] **2026-09-05 · Respuestas libres + evaluación desde el inbox + acciones pedidas por el prospecto.** «Ya me
       gustaría dejar estas respuestas libres pero que desde el inbox pueda evaluar la respuesta y mejorarla para
       futuras, para probar los tiempos, y que al editar un mensaje me ponga más campos para llenarte los datos que

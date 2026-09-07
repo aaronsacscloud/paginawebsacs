@@ -8,7 +8,7 @@ const env = Object.fromEntries(readFileSync('/opt/sacs/paginawebsacs/.crm-login'
 const nav = await chromium.launch({ args: ['--no-sandbox'] });
 const movil = process.argv.includes('--movil');
 const pg = await nav.newPage({ viewport: movil ? { width: 390, height: 844 } : { width: 1360, height: 900 }, ...(movil ? { isMobile: true, hasTouch: true } : {}) });
-const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type()==='error') errs.push(m.text()); });
+const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type()==='error') errs.push(m.text()); }); pg.on('response', async r => { if (r.status() >= 500) errs.push(r.status() + ' ' + r.request().method() + ' ' + r.url() + ' body=' + (r.request().postData() || '') + ' → ' + (await r.text().catch(() => '')).slice(0, 300)); });
 const shot = async (n) => { await pg.waitForTimeout(700); await pg.screenshot({ path: `${S}/ev-${n}.png` }); console.log('shot', n); };
 await pg.goto('http://localhost:4321/admin/login', { waitUntil: 'networkidle' });
 await pg.fill('input[type="email"]', env.CRM_EMAIL); await pg.fill('input[type="password"]', env.CRM_PASSWORD); await pg.click('button[type="submit"]');

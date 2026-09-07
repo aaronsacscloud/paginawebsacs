@@ -10,7 +10,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { json, quien, esUuid, limpiar } from '../../../../lib/crm/abm.lib';
-import { generarTareas, tokenPublico } from '../../../../lib/crm/eventos.lib';
+import { generarTareas, tokenPublico, diaMX } from '../../../../lib/crm/eventos.lib';
 
 export const prerender = false;
 
@@ -21,7 +21,7 @@ const ENTEROS_EDICION = ['meta_registros', 'meta_demos', 'meta_clientes'];
 export const GET: APIRoute = async ({ request }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'sin sesión' }, 401);
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = diaMX(null);
   const desde = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10);
   const hasta = new Date(Date.now() + 550 * 864e5).toISOString().slice(0, 10);
   const [{ data: eventos, error: e1 }, { data: ediciones, error: e2 }] = await Promise.all([
@@ -29,13 +29,39 @@ export const GET: APIRoute = async ({ request }) => {
     supabase.from('ev_ediciones').select('id, evento_id, nombre, inicio, fin, estado_fecha, ciudad, sede, limite_registro, url_registro, participacion, rol, stand_numero, meta_registros, meta_demos, meta_clientes, presupuesto, token_publico, retro').gte('inicio', desde).lte('inicio', hasta).order('inicio'),
   ]);
   if (e1 || e2) return json({ error: (e1 || e2)!.message }, 500);
-  // Cuántos registros trae cada edición (una consulta, no una por edición).
+  // Cuántos registros trae cada edición. Se pagina a mano: PostgREST corta en 1000
+  // filas sin avisar y el KPI se congelaba ahí.
   const ids = (ediciones || []).map(e => e.id);
   const conteo: Record<string, number> = {};
   for (let i = 0; i < ids.length; i += 150) {
-    const { data } = await supabase.from('ev_registros').select('edicion_id').in('edicion_id', ids.slice(i, i + 150));
-    for (const r of data || []) conteo[r.edicion_id] = (conteo[r.edicion_id] || 0) + 1;
+    for (let desde = 0; ; desde += 1000) {
+      const { data } = await supabase.from('ev_registros').select('edicion_id').in('edicion_id', ids.slice(i, i + 150)).order('id').range(desde, desde + 999);
+      for (const r of data || []) conteo[r.edicion_id] = (conteo[r.edicion_id] || 0) + 1;
+      if (!data || data.length < 1000) break;
+    }
   }
+  // Lo que urge: plazos para apartar en los próximos 30 días (de eventos que vamos o que
+  // encajan) y tareas vencidas de las ediciones a las que vamos. Es lo primero que se ve.
+  const vamosIds = (ediciones || []).filter(e => e.participacion === 'vamos' && (e.fin || e.inicio) >= hoy).map(e => e.id);
+  const vencidas: Record<string, number> = {};
+  if (vamosIds.length) {
+    const { data: tv } = await supabase.from('ev_tareas').select('edicion_id').in('edicion_id', vamosIds).eq('hecha', false).lt('vence', hoy);
+    for (const t of tv || []) vencidas[t.edicion_id] = (vencidas[t.edicion_id] || 0) + 1;
+  }
+  const en30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), en60 = new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10);
+  const porEventoId = new Map((eventos || []).map(e => [e.id, e]));
+  const urge = (ediciones || []).flatMap(ed => {
+    const ev: any = porEventoId.get(ed.evento_id); const out: any[] = [];
+    const encaja = ev && (ev.decision === 'ir' || Number(ev.fit_puntaje || 0) >= 8 || ed.participacion === 'vamos');
+    if (encaja && ed.participacion !== 'no_vamos' && ed.limite_registro && ed.limite_registro >= hoy && ed.limite_registro <= en30)
+      out.push({ tipo: 'plazo', edicion_id: ed.id, evento: ev.nombre, edicion: ed.nombre, fecha: ed.limite_registro, participacion: ed.participacion });
+    // Encaja, es en menos de 60 días y nadie ha dicho si vamos: eso también urge, aunque
+    // no haya plazo capturado (la mayoría de las ferias no lo publican).
+    else if (encaja && ed.participacion === 'sin_decidir' && ed.inicio >= hoy && ed.inicio <= en60)
+      out.push({ tipo: 'decidir', edicion_id: ed.id, evento: ev.nombre, edicion: ed.nombre, fecha: ed.inicio, participacion: ed.participacion });
+    if (vencidas[ed.id]) out.push({ tipo: 'tareas', edicion_id: ed.id, evento: ev?.nombre, edicion: ed.nombre, n: vencidas[ed.id], inicio: ed.inicio });
+    return out;
+  }).sort((a, b) => String(a.fecha || a.inicio).localeCompare(String(b.fecha || b.inicio)));
   const porEvento: Record<string, any[]> = {};
   for (const ed of ediciones || []) (porEvento[ed.evento_id] ||= []).push({ ...ed, registros: conteo[ed.id] || 0 });
   const lista = (eventos || []).map(ev => ({ ...ev, ediciones: porEvento[ev.id] || [] }));
@@ -47,7 +73,7 @@ export const GET: APIRoute = async ({ request }) => {
     con_participacion: (ediciones || []).filter(e => e.participacion === 'vamos' && e.inicio >= hoy).length,
     registros_total: Object.values(conteo).reduce((a, b) => a + b, 0),
   };
-  return json({ eventos: lista, resumen, hoy });
+  return json({ eventos: lista, resumen, hoy, urge });
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -97,7 +123,9 @@ export const POST: APIRoute = async ({ request }) => {
     for (const k of CAMPOS_EDICION) if (k in b && k !== 'inicio') fila[k] = limpiar(b[k], 400) || null;
     if (!fila.nombre) { const { data: ev } = await supabase.from('ev_eventos').select('nombre').eq('id', b.evento_id).maybeSingle(); fila.nombre = `${ev?.nombre || 'Edición'} ${b.inicio.slice(0, 7)}`; }
     fila.estado_fecha = ['confirmada', 'estimada', 'pasada'].includes(fila.estado_fecha) ? fila.estado_fecha : 'estimada';
-    if (!fila.limite_registro) { const d = new Date(b.inicio + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - 90); fila.limite_registro = d.toISOString().slice(0, 10); }
+    // Plazo para apartar: 90 días antes si eso todavía está en el futuro; si ya pasó, se
+    // deja vacío — un plazo "vencido" de fábrica ni avisa ni sirve para decidir.
+    if (!fila.limite_registro) { const d = new Date(b.inicio + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - 90); const lim = d.toISOString().slice(0, 10); fila.limite_registro = lim > diaMX(null) ? lim : null; }
     fila.participacion = 'sin_decidir';
     const { data, error } = await supabase.from('ev_ediciones').insert(fila).select('id').single();
     return error ? json({ error: error.message }, 500) : json({ ok: true, id: data.id });
@@ -119,7 +147,8 @@ export const POST: APIRoute = async ({ request }) => {
     if ('limite_registro' in fila && fila.limite_registro && !/^\d{4}-\d{2}-\d{2}$/.test(fila.limite_registro)) delete fila.limite_registro;
     const { error } = await supabase.from('ev_ediciones').update(fila).eq('id', b.edicion_id);
     if (error) return json({ error: error.message }, 500);
-    // Decir «vamos» arma la lista de preparación en el acto: las fechas límite empiezan a correr desde hoy.
+    // Decir «vamos» arma la lista de preparación en el acto: las fechas cuentan desde el
+    // evento, y lo que ya habría vencido se corre a partir de mañana (ver generarTareas).
     let tareas: any = null;
     if (fila.participacion === 'vamos' || (fila.rol && b.regenerar_tareas)) tareas = await generarTareas(b.edicion_id);
     return json({ ok: true, tareas });

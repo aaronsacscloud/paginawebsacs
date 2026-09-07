@@ -17,9 +17,12 @@ const evento = ed?.ev_eventos?.nombre || '';
 // Abre 45 días antes (para probar el QR impreso y para quien recibe la liga por adelantado)
 // y cierra 30 después: pasado eso, quien llegue es un lead de web, no de feria.
 const antes = !!ed && Date.now() < Date.parse(ed.inicio) - 45 * 864e5;
+const abreEl = ed ? new Date(Date.parse(ed.inicio) - 45 * 864e5).toISOString().slice(0, 10) : '';
 const abierto = !!ed && !antes && Date.now() <= Date.parse(ed.fin || ed.inicio) + 30 * 864e5;
 const fechaLarga = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-const GIROS = ['Boutique', 'Zapatería', 'Marca / fabricante', 'Distribuidor / mayoreo', 'Novias y renta de vestidos', 'Joyería o relojería', 'Botas western', 'Ropa deportiva', 'Uniformes', 'Tallas extra / maternidad / bebé', 'Óptica', 'Otro'];
+// Mismas claves que el formulario del CRM (ui.tsx → GIROS): contacts.giro no puede
+// quedar en dos idiomas según por qué puerta entró la persona.
+const GIROS: [string, string][] = [['boutiques', 'Boutique'], ['zapaterias', 'Zapatería'], ['fabricantes', 'Marca / fabricante'], ['distribuidores', 'Distribuidor / mayoreo'], ['novias', 'Novias y XV'], ['renta', 'Renta de vestidos'], ['joyeria', 'Joyería o relojería'], ['western', 'Botas western'], ['scrubs', 'Uniformes'], ['tallas', 'Tallas extra / maternidad / bebé'], ['opticas', 'Óptica'], ['telas', 'Telas y mercería'], ['otro', 'Otro']];
 ---
 <!doctype html>
 <html lang="es-MX">
@@ -63,32 +66,33 @@ const GIROS = ['Boutique', 'Zapatería', 'Marca / fabricante', 'Distribuidor / m
   <div class="marca"><img src="/images/sacs-wordmark.png" alt="Sacs"><span>Sistema para marcas de moda</span></div>
   {!ed || !abierto ? (
     <div class="cerrado">
-      <h1>{!ed ? 'Esta liga no existe' : antes ? `El registro para ${evento} abre el ${fechaLarga(ed.inicio)}` : 'El registro de este evento ya cerró'}</h1>
+      <h1>{!ed ? 'Esta liga no existe' : antes ? `El registro para ${evento} abre el ${fechaLarga(abreEl)}` : 'El registro de este evento ya cerró'}</h1>
       <p>Escríbenos por WhatsApp y te atendemos: <a href="https://wa.me/5215536634392">+52 1 55 3663 4392</a></p>
     </div>
   ) : (
     <>
       <h1>Nos dio gusto conocerte en {evento}</h1>
-      <p class="sub">Déjanos tus datos y te mandamos por WhatsApp el diagnóstico gratuito de tu negocio y la fecha para tu demo. Toma 20 segundos.</p>
+      <p class="sub">Déjanos tus datos y te escribimos por WhatsApp desde nuestro número oficial (+52 1 55 3663 4392) con el diagnóstico gratuito de tu negocio. Toma 20 segundos.</p>
       <form id="f" autocomplete="on">
         <label>Tu nombre <input name="nombre" required placeholder="Nombre y apellido" autocomplete="name"></label>
         <label>Tu negocio o marca <input name="empresa" required placeholder="Cómo se llama tu tienda" autocomplete="organization"></label>
+        <input name="sitio_web" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
         <label>WhatsApp <input name="whatsapp" type="tel" inputmode="numeric" required placeholder="10 dígitos" pattern="[0-9 ]{10,14}" autocomplete="tel"></label>
         <label>Correo <span style="font-weight:500;color:#8a8994">(opcional)</span> <input name="email" type="email" placeholder="tu@correo.com" autocomplete="email"></label>
         <div class="fila">
-          <label>Giro <select name="giro">{GIROS.map(g => <option value={g}>{g}</option>)}</select></label>
+          <label>Giro <select name="giro"><option value="">Elige…</option>{GIROS.map(([k, g]) => <option value={k}>{g}</option>)}</select></label>
           <label>Tiendas <input name="sucursales" type="number" inputmode="numeric" min="0" max="999" placeholder="1"></label>
         </div>
-        <label class="check"><input type="checkbox" name="quiere_demo" value="1" checked> Quiero una demo de 20 minutos con mi propio negocio</label>
-        <label class="check"><input type="checkbox" name="consentimiento" value="1" required oninvalid="this.setCustomValidity('Necesitamos tu permiso para escribirte')" onchange="this.setCustomValidity('')"> Acepto que Sacscloud me escriba por WhatsApp y correo. <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a></label>
+        <label class="check"><input type="checkbox" name="quiere_demo" value="1"> Quiero una demo de 20 minutos con mi propio negocio</label>
+        <label class="check"><input type="checkbox" name="consentimiento" value="1" required oninvalid="this.setCustomValidity('Necesitamos tu permiso para escribirte')" onchange="this.setCustomValidity('')"> Acepto que Sacscloud use estos datos para escribirme por WhatsApp y correo sobre su sistema. Puedo pedir que dejen de hacerlo cuando quiera. <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a></label>
         <div class="error" id="err"></div>
-        <div class="cola" id="cola">Sin señal por ahora: tu registro quedó guardado en este teléfono y se enviará solo cuando vuelva la red. Puedes cerrar esta página.</div>
+        <div class="cola" id="cola">Sin señal por ahora. Tu registro quedó guardado en este teléfono: deja esta página abierta y se envía solo en cuanto haya red. Si la cierras, vuelve a abrir el QR más tarde y se enviará entonces.</div>
         <button type="submit" id="btn">Registrarme</button>
         <div class="aviso">Sin costo y sin compromiso. Solo te escribimos si nos dices que sí.</div>
       </form>
       <div class="listo" id="ok" style="display:none">
         <h2>Listo, ya quedaste</h2>
-        <p>En unos minutos te llega un WhatsApp desde nuestro número oficial. Si quieres adelantarte, escríbenos:</p>
+        <p>Te escribimos por WhatsApp desde el +52 1 55 3663 4392 (guárdalo para reconocernos). Si quieres adelantarte:</p>
         <a href="https://wa.me/5215536634392?text=Hola,%20me%20registré%20en%20el%20stand%20de%20Sacscloud">Abrir WhatsApp</a>
       </div>
     </>
@@ -105,14 +109,25 @@ const GIROS = ['Boutique', 'Zapatería', 'Marca / fabricante', 'Distribuidor / m
       return fetch('/api/eventos/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })
         .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); });
     }
+    var mandando = false;
     function reintentar() {
-      var l = leerCola(); if (!l.length) return;
+      var l = leerCola(); if (!l.length || mandando) return;
+      mandando = true;
       var d = l[0];
       enviar(d).then(function (r) {
-        if (r.status === 200 || r.status === 400 || r.status === 404 || r.status === 410) { l.shift(); guardarCola(l); if (l.length) reintentar(); }
-      }).catch(function () {});
+        mandando = false;
+        if (r.status === 200 || r.status === 400 || r.status === 404 || r.status === 410) {
+          l.shift(); guardarCola(l);
+          // Lo que estaba esperando ya se fue: se lo decimos, para que no se quede
+          // cuidando la página sin necesidad.
+          if (r.status === 200 && cola.style.display === 'block') { cola.textContent = 'Volvió la señal: tu registro ya se envió. Ya puedes cerrar esta página.'; cola.style.background = '#EAF8F2'; cola.style.color = '#1E8A63'; }
+          if (l.length) reintentar();
+        }
+      }).catch(function () { mandando = false; });
     }
-    window.addEventListener('online', reintentar); reintentar();
+    // «online» no siempre se dispara en una feria con señal que va y viene: además se
+    // intenta cada 20 s mientras la página siga abierta y haya algo en la cola.
+    window.addEventListener('online', reintentar); reintentar(); setInterval(reintentar, 20000);
     f.addEventListener('submit', function (e) {
       e.preventDefault(); err.style.display = 'none'; cola.style.display = 'none';
       var fd = new FormData(f), d = { token: token, cliente_local_id: 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7) };
