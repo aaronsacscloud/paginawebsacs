@@ -45,6 +45,7 @@ const EmailTab = lazySeguro(() => import('./crm/email/EmailTab'));
 const SecuenciasTab = lazySeguro(() => import('./crm/SecuenciasTab'));
 const OutboundTab = lazySeguro(() => import('./crm/outbound/OutboundTab'));
 const AbmTab = lazySeguro(() => import('./crm/abm/AbmTab'));
+const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
 const WaMasivos = lazySeguro(() => import('./crm/whatsapp/Masivos'));
 const ConfigWhatsApp = lazySeguro(() => import('./crm/whatsapp/ConfigWhatsApp'));
@@ -93,7 +94,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -128,6 +129,7 @@ const ICONS: Record<string, string> = {
   automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" opacity=".18"/><rect x="4" y="7" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="4" fill="currentColor" opacity=".18"/><circle cx="9" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 10.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  eventos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 9h16v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19V9z" fill="currentColor" opacity=".18"/><rect x="4" y="5" width="16" height="15.5" rx="1.8" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M8 3.5v3.5M16 3.5v3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 14.5l2.3 2.2 4.7-4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   abm: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>',
   outbound: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10v4l11 5V5L3 10z" fill="currentColor" opacity=".18"/><path d="M3 10v4l11 5V5L3 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9a4 4 0 010 6M7 14.5V18a2 2 0 002 2h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   sacs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="2" y="3" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="2" y="13" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M6 7h.01M6 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
@@ -265,6 +267,9 @@ const NAV_SECTIONS = [
          procedencia. Vive junto a Outbound porque es el mismo trabajo —
          salir a buscar— pero con cuentas que todavía no son de nadie. */
       { id: 'abm' as Tab, label: 'Cuentas objetivo', icon: 'abm' },
+      /* Las ferias donde ese mismo mercado se junta en persona: Intermoda,
+         SAPICA… Es prospección también, nada más que con stand y gafete. */
+      { id: 'eventos' as Tab, label: 'Ferias y eventos', icon: 'eventos' },
     ],
   },
   {
@@ -375,7 +380,7 @@ const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reunio
    `@media (prefers-color-scheme: dark)`), así que el panel se ponía oscuro solo
    —pero el marco de la app se quedaba blanco alrededor—. Solo faltaba
    registrarlas para que el lienzo acompañe. */
-const M_DARK_TABS: Tab[] = ['cobranza', 'hoy', 'onboarding', 'embudo', 'marca', 'cobros', 'pipelines', 'comisiones', 'abm', 'sacs', 'wa-plantillas', 'wa-numero', 'agenda', 'ti-seguimiento', 'ti-descalificar', 'ti-compromisos', 'ti-reactivacion', 'ti-informes', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+const M_DARK_TABS: Tab[] = ['cobranza', 'hoy', 'onboarding', 'embudo', 'marca', 'cobros', 'pipelines', 'comisiones', 'abm', 'eventos', 'sacs', 'wa-plantillas', 'wa-numero', 'agenda', 'ti-seguimiento', 'ti-descalificar', 'ti-compromisos', 'ti-reactivacion', 'ti-informes', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1117,6 +1122,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><ConfigWhatsApp inicial="numero" /></ErrorBoundary>
         ) : tab === 'abm' ? (
           <AbmTab />
+        ) : tab === 'eventos' ? (
+          <EventosTab />
         ) : tab === 'outbound' ? (
           <ErrorBoundary><OutboundTab /></ErrorBoundary>
         ) : tab === 'automations' ? (
