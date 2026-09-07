@@ -263,8 +263,18 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const ofrecidos: { fecha: string; hora: string; slug?: string }[] = Array.isArray((ultEnv?.salida as any)?.horarios_ofrecidos) ? (ultEnv!.salida as any).horarios_ofrecidos : [];
   const ofrecidosTxt = ofrecidos.length
     ? `\nHORARIOS QUE YA LE OFRECISTE EN TU ÚLTIMO MENSAJE: ${ofrecidos.map(h => `${etiquetaHorario(h.fecha, h.hora)} [${h.fecha} ${h.hora}${h.slug === 'llamada-discovery' ? ' · llamada' : ''}]`).join(' · ')}. Si contesta que sí, «el que sea», «cualquiera» o «me da igual» sin elegir uno, NO vuelvas a preguntar: elige tú el primero de estos (el más cercano), devuelve accion.tipo="${ofrecidos[0]?.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con esa fecha y hora exactas, y en el mensaje dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora: «martes 8 a las 10 de la mañana»), que la invitación le llega por aquí, y pídele que te confirme con un «va». Ese «va» es la ÚNICA pregunta del mensaje: nada de preguntas de contexto en el mismo turno, y sin mencionar horarios que ya pasaron ni el tiempo transcurrido: abre directo con el día y la hora apartados. Si elige uno de los dos, agéndalo igual y confírmaselo.`
-    : `\nSi el lead dice que sí a la demo, la reunión o la llamada pero no eligió horario, mándale dos horarios reales de la lista en una sola pregunta. Si dice «el que sea» o «cualquiera» sin que le hayas ofrecido ninguno, elige tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora), pidiéndole que te confirme con un «va»: ese «va» es la ÚNICA pregunta del mensaje, sin preguntas de contexto en el mismo turno y sin mencionar horarios que ya pasaron.`;
-  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}${ofrecidosTxt}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
+    : `\nSi el lead acaba de decir que SÍ quiere verlo (sin elegir horario), este turno le ofreces DOS horarios reales de la lista en una sola pregunta, sin agendar todavía. Solo si dice literalmente «el que sea», «cualquiera» o «tú dime» eliges tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora), pidiéndole que te confirme con un «va»: ese «va» es la ÚNICA pregunta del mensaje, sin preguntas de contexto en el mismo turno y sin mencionar horarios que ya pasaron.`;
+  // DEMO EN DOS PASOS (decisión del dueño, 7-sep): primero se resuelve su duda con criterio y se le PREGUNTA si le gustaría verlo
+  // con un consultor; los horarios solo aparecen cuando él dijo que sí (o cuando él mismo pidió la demo/llamada). Ofrecer horarios
+  // antes suena desesperado. Si ya se le ofrecieron y no eligió, no se repiten.
+  const acepto = aceptoDemo(msjs, c);
+  const yaOfrecioSinRespuesta = ofrecidos.length > 0 && !acepto.si;
+  const agendaHorarios = acepto.si && !yaOfrecioSinRespuesta
+    ? `${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}${ofrecidosTxt}`
+    : yaOfrecioSinRespuesta
+      ? `HORARIOS: ya se le ofrecieron (${ofrecidos.map(h => etiquetaHorario(h.fecha, h.hora)).join(' y ')}) y NO eligió ni dijo que sí. NO los repitas ni propongas otros: contesta lo que preguntó con calma y deja la puerta abierta en una frase («cuando quieras lo vemos, tú me dices»), sin pregunta de horario. Si en este mensaje él dice que sí o pide la demo, devuelve accion.tipo="agendar" con el primero de esos horarios que siga vigente y confírmaselo.`
+      : `HORARIOS: TODAVÍA NO. ${acepto.porque}. Primero resuelve su duda como consultor que sabe del giro; cuando ya tengas su giro, sus tiendas y algo que le cuesta, pregúntale en una oración amable si le gustaría que un consultor se lo enseñe con sus propios productos (15 minutos, sin costo). Es una pregunta de sí o no, sin horarios, sin insistir si no responde a eso. Los horarios se ofrecen en el siguiente turno, cuando diga que sí.`;
+  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${agendaHorarios}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
@@ -311,7 +321,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       const lista = salida.accion.tipo === 'agendar_llamada' ? horariosLlamada : horarios;
       const recordado = pend?.fecha === salida.accion.fecha && pend?.hora === String(salida.accion.hora || '').slice(0, 5);   // el horario que ya había elegido
       const yaOfrecido = ofrecidos.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));   // si se ocupó, agendarDemo lo detecta y ofrece otros
-      const ok = recordado || yaOfrecido || lista.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));
+      const ok = (recordado || yaOfrecido || lista.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5))) && (acepto.si || yaOfrecido || recordado);
       if (!ok) { salida.accion = { tipo: 'ninguna', rechazada: 'horario fuera de la lista real' }; }
       else salida.accion.email = salida.accion.email || c.email || null;
     }
@@ -322,6 +332,23 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     if (limpioMsj.quitados) { salida.mensaje = limpioMsj.texto; await log({ accion: 'emoji_quitado', contact_id: contactId, razon: `el modelo puso ${limpioMsj.quitados} emoji(s) pese al guion`, detalle: { modelo } }).catch(() => {}); }
   }
 return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+}
+
+/** ¿El lead ya dijo que SÍ quiere la demo o la llamada? Determinista, para que los horarios no salgan antes de tiempo (7-sep).
+ *  Sí cuando: pidió demo/reunión/llamada con sus palabras; o llegó de la web pidiendo demo; o nuestro último mensaje le preguntó si
+ *  quería verlo con un consultor y él contestó afirmativo. */
+export function aceptoDemo(msjs: any[], c: any): { si: boolean; porque: string } {
+  const entr = msjs.filter(m => m.direccion === 'entrante');
+  const ultIn = entr[entr.length - 1];
+  const txtIn = String(ultIn?.cuerpo || ultIn?.transcript || '').toLowerCase();
+  if (/\b(demo|reuni[oó]n|videollamada|ll[aá]mame|m[aá]rcame|agendar|agenda|cu[aá]ndo (podemos|lo vemos|me la|ser[ií]a)|quiero verlo|me lo (muestran|enseñan)|s[ií] me interesa (ver|la demo))\b/.test(txtIn)) return { si: true, porque: 'él pidió verlo o hablar' };
+  if (String((c?.propiedades as any)?.intencion_inicial || '') === 'demo' && !msjs.some(m => m.direccion === 'entrante' && /no\b/.test(String(m.cuerpo || '').toLowerCase().slice(0, 4)))) return { si: true, porque: 'llegó de la web pidiendo demo' };
+  const idxUlt = msjs.lastIndexOf(ultIn);
+  const nuestroPrevio = [...msjs.slice(0, Math.max(0, idxUlt))].reverse().find(m => m.direccion === 'saliente');
+  const preguntamos = /(consultor|demo|te lo enseñ|te lo muestr|videollamada|15 min).*\?/is.test(String(nuestroPrevio?.cuerpo || ''));
+  const afirma = /^\s*(s[ií]|va|vale|claro|ok|okey|dale|[oó]rale|perfecto|por supuesto|me interesa|est[aá] bien|sale|de acuerdo|me late)\b/.test(txtIn) || /\b(s[ií],? (me interesa|est[aá] bien|va|claro)|me gustar[ií]a)\b/.test(txtIn);
+  if (preguntamos && afirma) return { si: true, porque: 'le preguntaste si quería verlo y dijo que sí' };
+  return { si: false, porque: preguntamos ? 'le preguntaste si quería verlo y todavía no dijo que sí' : 'todavía no le has preguntado si quiere verlo con un consultor' };
 }
 
 /** Si el lead mandó su página o sus redes, el agente la LEE (una vez, se
@@ -520,7 +547,7 @@ export async function proponerRespuestas(): Promise<any> {
   const topeLectura = (evs || []).length >= 100 ? Date.parse((evs || [])[(evs || []).length - 1].ocurrio_at) : Infinity;
   // Si el lead sigue escribiendo (último mensaje hace < 75 s), se espera al siguiente tick para leer la ráfaga
   // completa. La marca no avanza más allá de esos mensajes, para no perderlos.
-  const ESPERA_RAFAGA_MS = 75e3;
+  const ESPERA_RAFAGA_MS = 120e3;   // 7-sep: 75 s partía las ráfagas en dos respuestas; 2 min deja que termine de escribir
   let marcaSegura = Math.min(ahora.getTime(), topeLectura);
   for (const cid of Object.keys(ultimoPor)) {
     const t = Date.parse(ultimoPor[cid]);
@@ -584,6 +611,7 @@ export async function proponerRespuestas(): Promise<any> {
       // SEGUIMIENTO (3-sep): en entrenamiento TODA conversación recibe sugerencia, también la que lleva un consultor.
       if (stPrev.modo === 'sugerir' || (cfg.agente_modo || 'sombra') === 'sombra') {
         try {
+          { const { data: lk } = await supabase.rpc('ti_lock', { p_clave: `respuesta:${cid}`, p_segundos: 180 }); if (lk === false) { res.saltados++; continue; } }
           const d = await decidirTurno(cid);
           if (d.salida?.mensaje && d.salida.responder) {
             await registrarDatos(cid, d.salida.datos, d.salida.interes);
@@ -626,9 +654,15 @@ export async function proponerRespuestas(): Promise<any> {
     // Si ya hay un envío (pendiente o salido) posterior a su último mensaje, este mensaje ya se atendió (la marca puede volver atrás por una ráfaga).
     const { data: yaAtendido } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).gt('created_at', ultimoPor[cid]).neq('estado', 'vetado').limit(1);
     if ((yaAtendido || []).length) { res.saltados++; continue; }
+    // CANDADO (7-sep): dos ciclos a la vez (cron + panel abierto) redactaban los dos y el lead recibía DOBLE respuesta al mismo
+    // mensaje (Yalile y Rafael, 10 s de diferencia). Solo uno toma el turno; el otro lo deja pasar.
+    { const { data: lk } = await supabase.rpc('ti_lock', { p_clave: `respuesta:${cid}`, p_segundos: 180 }); if (lk === false) { res.saltados++; continue; } }
     try {
       // Baja explícita en su propio mensaje: se respeta sin pasar por el modelo (y se confirma en una línea).
       const { texto: txtBaja } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 60e3).toISOString(), 2);
+      // EL BOT DEL LEAD NO ES EL LEAD (7-sep): si lo único nuevo es su respuesta automática («Gracias por contactar a…»), no se le
+      // contesta al bot; se espera a que escriba la persona.
+      { const { esMensajeDeBot } = await import('./nombre-y-bots'); const piezas = String(txtBaja || '').split(' ⏎ ').filter(Boolean); if (piezas.length && piezas.every(t => esMensajeDeBot(t))) { res.saltados++; await log({ accion: 'agente_calla', contact_id: cid, razon: 'solo contestó el bot del lead; se espera a la persona' }); continue; } }
       if (OPT_OUT_RE.test(txtBaja || '')) {
         await aplicarOptOut(cid, `escribió: «${String(txtBaja).slice(0, 120)}»`);
         const { data: cv0 } = await supabase.from('wa_conversaciones').select('id, telefono').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
@@ -659,7 +693,7 @@ export async function proponerRespuestas(): Promise<any> {
       let notaContratacion: string | null = null;
       try { const { contratacionAntesDelTurno } = await import('./contratacion'); notaContratacion = await contratacionAntesDelTurno(cid, txtBaja || ''); } catch (e: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `contratacion: ${e?.message || e}` }); }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
-      const notaAg = !notaContratacion && nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
+      const notaAg = !notaContratacion && nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto y con criterio de consultor. Luego, en UNA oración amable y como consecuencia de lo que ya platicaron (cita algo que él dijo), pregúntale si le gustaría que un consultor se lo enseñe con sus propios productos, en 15 minutos. SIN horarios: los horarios van hasta que diga que sí. Sin «aprovecho para», sin justificar, sin adjetivos de venta. Una sola pregunta al final.` : undefined;
       const d = await decidirTurno(cid, [notaContratacion, notaContratacion ? null : notaCompromiso, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
