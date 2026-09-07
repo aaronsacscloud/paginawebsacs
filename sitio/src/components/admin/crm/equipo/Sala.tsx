@@ -263,6 +263,22 @@ export default function Sala(p: SalaProps) {
                       <span style={{ color: '#9a6a10', fontWeight: 700 }}>sin verse ×{pt.arrastres}</span>
                     </small>
                   </div>
+                  {/* Apartar TAMBIÉN desde aquí. El selector vivía solo en el
+                      bloque de "puntos extra", pero un tema con arrastres se
+                      pinta en ESTE bloque, no en aquél: justo los temas que
+                      llevan semanas esperando —los que uno querría mandar a una
+                      junta concreta— eran los únicos sin el control. */}
+                  {!ab && (
+                    <select className="eq-in" style={{ fontSize: '.75rem', padding: '4px 7px', marginLeft: 'auto' }}
+                      value={pt.para_ocurrencia_id || ''}
+                      onChange={e => accion({ accion: 'agendar', punto_id: pt.id, ocurrencia_id: e.target.value || null },
+                        e.target.value ? 'Tema apartado para esa junta' : 'Tema devuelto a la próxima junta')}>
+                      <option value="">A la próxima</option>
+                      {d.ocurrencias.filter(o => o.estado === 'pendiente' && o.id !== d.actual?.id).map(o => (
+                        <option key={o.id} value={o.id}>Para el {fCorta(o.inicio_at)}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               ))}
               {!vienenDeAntes.length && (
