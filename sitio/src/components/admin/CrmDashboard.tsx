@@ -365,7 +365,11 @@ function TabCargando() {
   return <div aria-busy="true"><EsqueletoLista filas={8} mobile alInstante /></div>;
 }
 
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
+/* Pantallas que traen su PROPIA cabecera (m-hdr con título y su acción): a
+   esas se les esconde la barra de la app, o el nombre sale dos veces —una
+   arriba y otra 20 px abajo—, que es lo que el referee marcó en las tres de
+   Finanzas el 7-sep. Si agregas una pantalla con m-hdr, va aquí. */
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos'];
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).

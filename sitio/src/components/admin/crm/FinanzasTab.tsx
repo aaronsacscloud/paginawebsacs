@@ -57,10 +57,15 @@ const TITULO_M: Record<string, string> = {
 };
 
 const CIFRA_M = (d: any): Record<string, { l: string; v: string; s: string; color: string }> => ({
-  gastos: {
-    l: 'Gastos del mes', v: pesos(d.utilidad.total_gastos), color: '#C0554E',
-    s: `${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}`,
-  },
+  gastos: (() => {
+    const falta = Math.max(0, Number(d.utilidad.total_gastos || 0) - Number(d.gastos.pagado || 0));
+    return {
+      l: 'Falta pagar este mes', v: pesos(falta), color: '#C0554E',
+      s: Number(d.gastos.pagado) > 0
+        ? `${pesos(d.gastos.pagado)} ya pagados de ${pesos(d.utilidad.total_gastos)}`
+        : `de ${pesos(d.utilidad.total_gastos)} en total · nada pagado todavía`,
+    };
+  })(),
   ingresos: {
     l: 'Cobrado este mes', v: pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado), color: '#1E8A63',
     s: `${d.ingresos.pagos.length} ${d.ingresos.pagos.length === 1 ? 'pago' : 'pagos'} · faltan ${pesos(d.ingresos.por_cobrar)} por cobrar`,
@@ -214,11 +219,19 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
               —lo reportó el dueño—. */}
           {(() => {
             const c = CIFRA_M(d)[vista] || CIFRA_M(d).gastos;
+            const faltaCobrar = vista === 'ingresos' && Number(d.ingresos.por_cobrar) > 0;
             return (
               <div className="m-cifra">
                 <div className="m-cifra-l">{c.l}</div>
                 <div className="m-cifra-v" style={{ color: c.color }}>{c.v}</div>
-                <div className="m-cifra-s">{c.s}</div>
+                {faltaCobrar ? (
+                  <button onClick={() => setIngTab('por_cobrar')}
+                    style={{ border: 'none', background: 'none', padding: 0, marginTop: 3, font: 'inherit', fontSize: '0.88rem', fontWeight: 700, color: '#2C5FC4', cursor: 'pointer' }}>
+                    {pesos(d.ingresos.por_cobrar)} por cobrar · {d.ingresos.por_cobrar_lista.length} cobros ›
+                  </button>
+                ) : (
+                  <div className="m-cifra-s">{c.s}</div>
+                )}
               </div>
             );
           })()}
@@ -226,7 +239,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           {/* Lo demás del mes, plegado. Está a un toque, no a la vista: quien
               entra a Gastos viene a pagar, no a leer el estado del negocio. */}
           <details className="m-plegable">
-            <summary>Todo el mes</summary>
+            <summary>Los otros números del mes</summary>
             {resumen.map(([l, v, c]) => (
               <div key={l} className="m-row" style={{ cursor: 'default' }}>
                 <div className="m-n1" style={{ flex: 1 }}>{l}</div>
@@ -242,7 +255,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
             <div className="m-chips">
               {cats.map(([k, l, v]) => (
                 <button key={k} className={'m-chip' + (catTab === k ? ' on' : '')} onClick={() => setCatTab(k)}>
-                  {l}{catTab === k ? ` ${pesos(v)}` : ''}
+                  {l}{catTab === k && k !== 'todos' ? ` ${pesos(v)}` : ''}
                 </button>
               ))}
             </div>
@@ -255,7 +268,17 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                   <span className={'m-check' + (x.pago ? ' on' : '')} aria-hidden>{x.pago ? '✓' : ''}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="m-n1">{x.nombre}</div>
-                    <div className="m-n2">{x.categoria}{x.vence ? ` · ${textoDias(x.dias)}` : ''}</div>
+                    <div className="m-n2">
+                      {x.categoria}
+                      {x.vence && (
+                        /* Lo vencido en rojo y en negritas: antes «venció hace
+                           5 días» y «en 8 días» se veían idénticos, y lo urgente
+                           no se distinguía de lo que puede esperar. */
+                        <span style={!x.pago && x.dias < 0 ? { color: '#C0554E', fontWeight: 700 } : undefined}>
+                          {' · '}{textoDias(x.dias)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="m-m1" style={{ fontWeight: 800, textDecoration: x.pago ? 'line-through' : undefined, opacity: x.pago ? .55 : 1 }}>{pesos(x.monto)}</div>
                 </div>
@@ -274,7 +297,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                  ['por_cobrar', 'Por cobrar', d.ingresos.por_cobrar],
                  ['venta', 'Venta nueva', d.ingresos.ventas_aceptadas || 0]] as any[]).map(([k, l, v]) => (
                 <button key={k} className={'m-chip' + (ingTab === k ? ' on' : '')} onClick={() => setIngTab(k)}>
-                  {l}{ingTab === k ? ` ${pesos(v)}` : ''}
+                  {l}{ingTab === k && k !== 'cobrado' ? ` ${pesos(v)}` : ''}
                 </button>
               ))}
             </div>
