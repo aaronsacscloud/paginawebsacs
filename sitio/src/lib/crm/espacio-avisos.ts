@@ -10,7 +10,7 @@ import { puedeEmpujar, tagDe, ENFRIAMIENTO_MIN } from './push-reglas';
 
 export type Aviso = {
   para: string;
-  tipo: 'espacio_mencion' | 'espacio_respuesta' | 'espacio_acuerdo' | 'espacio_importante' | 'espacio_directo' | 'espacio_publicacion';
+  tipo: 'espacio_mencion' | 'espacio_respuesta' | 'espacio_acuerdo' | 'espacio_importante' | 'espacio_directo' | 'espacio_publicacion' | 'espacio_reunion';
   titulo: string;
   detalle?: string;
   canal_id: string;

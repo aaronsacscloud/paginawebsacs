@@ -1,7 +1,8 @@
 // La sala de reunión (canal tipo 'sala'): agenda, sesión en curso, acuerdos e
 // historial de actas.
 //
-// GET  /api/crm/espacio/sala?canal_id=      → todo lo que pinta el panel de la sala
+// GET  /api/crm/espacio/sala?canal_id=&actas=  → todo lo que pinta el panel de la sala
+//      `actas` (default 12, tope 120): cuántas actas del historial traer.
 // POST /api/crm/espacio/sala { accion, … }
 //   proponer   { canal_id, titulo, origen_mensaje_id?, contexto?, adjuntos? }
 //   votar      { punto_id }                       (alterna mi voto)
@@ -14,10 +15,12 @@
 //   acordar    { sesion_id, punto_id?, texto, responsable_id, vence_at?, adjuntos? }
 //   hecho      { acuerdo_id, hecho: bool }        (también cierra/abre la tarea de TI)
 //   arrastrar  { acuerdo_id, sesion_id, vence_at? }  → lo incumplido pasa a HOY
-//   cerrar     { sesion_id, nota? }               → acta, arrastres, tareas, resumen IA
+//   cerrar     { sesion_id, nota?, asistentes? }   → acta, arrastres, tareas, resumen IA
 //   resumen    { sesion_id, texto }               (editar el borrador de la IA, 24 h)
 //   mover      { canal_id, ocurrencia_id, inicio_at, motivo? }  → reagendar UNA junta
 //   saltar     { ocurrencia_id, motivo? }         → esta semana no hay, con motivo
+//   reabrir    { ocurrencia_id }                  → deshacer un "no hay junta"
+//   guion      { canal_id, guion: Bloque[] }      → el orden fijo de la junta
 //   agendar    { punto_id, ocurrencia_id|null }   → apartar un tema para otra junta
 //
 // Reglas que valen aquí: un acuerdo exige responsable; lo pospuesto (o lo que
@@ -60,16 +63,30 @@ const HORIZONTE_DIAS = 28;
 /** El día de hoy en hora de México (YYYY-MM-DD). */
 const ymdCdmx = (ms = Date.now()) => new Date(ms - 6 * 3600e3).toISOString().slice(0, 10);
 
-/** Las juntas que la regla produce de hoy en adelante, con su hora real en UTC. */
-function fechasDeRegla(regla: { dia_iso: number; hora: string } | null, dias = HORIZONTE_DIAS) {
+/** Las juntas que la regla produce de hoy en adelante, con su hora real en UTC.
+ *
+ *  `cada_semanas` (1 por default) permite quincenal, cada tres o mensual-ish
+ *  sin cambiar el modelo: la regla sigue siendo "tal día de la semana". Para
+ *  saber CUÁL de las semanas toca hace falta un ancla —si no, "cada 2 semanas"
+ *  no dice si es esta o la siguiente—, así que se guarda `ancla`: una fecha que
+ *  SÍ es junta. Se compara por semanas completas transcurridas desde el ancla.
+ *  Sin ancla se cae a semanal, que es lo que hacía antes: una regla vieja sigue
+ *  comportándose igual. */
+function fechasDeRegla(regla: { dia_iso: number; hora: string; cada_semanas?: number; ancla?: string } | null, dias = HORIZONTE_DIAS) {
   if (!regla || !regla.dia_iso || !regla.hora) return [] as { fecha: string; inicio_at: string }[];
   const [hh, mm] = String(regla.hora).split(':').map(Number);
+  const cada = Math.min(Math.max(Number(regla.cada_semanas) || 1, 1), 8);
+  const anclaMs = cada > 1 && regla.ancla ? Date.parse(regla.ancla + 'T00:00:00Z') : NaN;
   const base = new Date(Date.now() - 6 * 3600e3);          // "ahora" en CDMX, leído como UTC
   const out: { fecha: string; inicio_at: string }[] = [];
   for (let i = 0; i <= dias; i++) {
     const d = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + i));
     const iso = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
     if (iso !== Number(regla.dia_iso)) continue;
+    if (cada > 1 && !isNaN(anclaMs)) {
+      const semanas = Math.round((d.getTime() - anclaMs) / (7 * 86400e3));
+      if (((semanas % cada) + cada) % cada !== 0) continue;   // el % de JS puede dar negativo
+    }
     const inicio = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hh || 0, mm || 0) + 6 * 3600e3);
     out.push({ fecha: d.toISOString().slice(0, 10), inicio_at: inicio.toISOString() });
   }
@@ -117,12 +134,18 @@ function ordenarPuntos(ps: any[]) {
   return [...ps].sort((a, b) => (b.arrastres - a.arrastres) || ((b.votos?.length || 0) - (a.votos?.length || 0)) || (a.orden - b.orden) || a.created_at.localeCompare(b.created_at));
 }
 
-async function salaCompleta(canalId: string, yo: string) {
+/* `actas` = cuántas actas traer. El default de 12 no era una decisión: a una
+   junta por semana son tres meses, y más atrás la historia existía pero era
+   invisible desde la app —sin manera de pedir más—. Ahora el panel las pide de
+   doce en doce y el GET dice cuántas hay en total, para saber si queda algo. */
+async function salaCompleta(canalId: string, yo: string, actas = 12) {
   const [{ data: abierta }, { data: puntos }, { data: sesiones }] = await Promise.all([
     supabase.from('espacio_reunion_sesiones').select(SEL_SESION).eq('canal_id', canalId).is('fin_at', null).maybeSingle(),
     supabase.from('espacio_reunion_puntos').select(SEL_PUNTO).eq('canal_id', canalId).neq('estado', 'retirado').order('created_at', { ascending: true }).limit(300),
-    supabase.from('espacio_reunion_sesiones').select(SEL_SESION).eq('canal_id', canalId).not('fin_at', 'is', null).order('inicio_at', { ascending: false }).limit(12),
+    supabase.from('espacio_reunion_sesiones').select(SEL_SESION).eq('canal_id', canalId).not('fin_at', 'is', null).order('inicio_at', { ascending: false }).limit(Math.min(Math.max(actas, 1), 120)),
   ]);
+  const { count: actasTotal } = await supabase.from('espacio_reunion_sesiones')
+    .select('id', { count: 'exact', head: true }).eq('canal_id', canalId).not('fin_at', 'is', null);
   const sesIds = [...(sesiones || []).map((s: any) => s.id), ...(abierta ? [abierta.id] : [])];
   const { data: acuerdos } = sesIds.length
     ? await supabase.from('espacio_acuerdos').select(SEL_ACUERDO).in('sesion_id', sesIds).order('created_at', { ascending: true })
@@ -191,7 +214,7 @@ async function salaCompleta(canalId: string, yo: string) {
     for (const m of ms || []) porPunto[m.punto_id] = (porPunto[m.punto_id] || 0) + 1;
   }
   return {
-    ocurrencias, actual, puntos_por_ocurrencia: puntosPorOcurrencia,
+    ocurrencias, actual, puntos_por_ocurrencia: puntosPorOcurrencia, actas_total: actasTotal || 0,
     proximas: proximas.map(formaPunto),
     abierta: abierta ? { ...abierta, asistentes_p: (abierta.asistentes || []).map(p).filter(Boolean), abierta_por: p(abierta.abierta_por), acuerdos: acs.filter((a: any) => a.sesion_id === abierta.id) } : null,
     agenda: agenda.map(x => ({ ...formaPunto(x), mensajes: porPunto[x.id] || 0 })),
@@ -215,7 +238,7 @@ export const GET: APIRoute = async ({ request, url }) => {
      barrer, una junta saltada seguiría viéndose pendiente hasta que corriera el
      cron. Es barato (un upsert idempotente y un update por índice parcial). */
   await asegurarOcurrencias(c as any);
-  const sala = await salaCompleta(c.id, yo.id);
+  const sala = await salaCompleta(c.id, yo.id, parseInt(url.searchParams.get('actas') || '12', 10) || 12);
   // "Esta semana con clientes": las citas agendadas de los próximos 7 días.
   const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
   const en7 = new Date(Date.now() - 6 * 3600e3 + 7 * 86400e3).toISOString().slice(0, 10);
@@ -362,6 +385,20 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, punto: data });
   }
 
+  /* Avisar al EQUIPO de un cambio de calendario. Sin esto, mover o saltar una
+     junta solo refrescaba los paneles que estuvieran abiertos en ese momento:
+     quien no entrara a la sala se enteraba el día que llegaba y no había nadie.
+     Un cambio de horario es justo lo que le cambia el día a otra persona. */
+  const avisarCalendario = async (canal: any, titulo: string, detalle: string) => {
+    try {
+      const eq = await equipo();
+      for (const per of eq) {
+        if (per.id === yo.id) continue;                    // el que lo movió ya lo sabe
+        await avisar({ para: per.id, tipo: 'espacio_reunion', titulo, detalle, canal_id: canal.id, nivel: 'alerta' });
+      }
+    } catch { /* la campana no puede tumbar el cambio de calendario */ }
+  };
+
   /* ── mover: reagendar UNA junta sin tocar la regla ───────────────────────
      Antes esto no se podía: solo existía la regla semanal, así que mover el
      lunes 10:00 al martes 4 p.m. "solo esta semana" obligaba a cambiar la regla
@@ -388,6 +425,8 @@ export const POST: APIRoute = async ({ request }) => {
       .update({ fecha, inicio_at: nuevo.toISOString(), motivo: (b.motivo || '').trim().slice(0, 300) || null, movida_por: yo.id })
       .eq('id', occ.id);
     if (error) return json({ error: error.message }, 500);
+    const cuando = nuevo.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+    await avisarCalendario(c, `Se movió la junta de #${c.nombre}`, `Ahora es el ${cuando}.${b.motivo ? ` ${String(b.motivo).slice(0, 140)}` : ''}`);
     await emitir({ tipo: 'reunion', canal_id: c.id });
     return json({ ok: true });
   }
@@ -405,8 +444,82 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('espacio_reunion_ocurrencias')
       .update({ estado: 'saltada', motivo: (b.motivo || '').trim().slice(0, 300) || null, cerrada_at: ahora() }).eq('id', occ.id);
     const n = await arrastrarPuntosDe(occ.canal_id, occ.id, occ.inicio_at);
+    const dia = new Date(occ.inicio_at).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', day: 'numeric', month: 'long' });
+    await avisarCalendario(c, `No hay junta de #${c.nombre}`, `Se saltó la del ${dia}.${b.motivo ? ` ${String(b.motivo).slice(0, 140)}` : ''}${n ? ` ${n} tema${n === 1 ? '' : 's'} pasan a la siguiente.` : ''}`);
     await emitir({ tipo: 'reunion', canal_id: occ.canal_id });
     return json({ ok: true, arrastrados: n });
+  }
+
+  /* ── guion: editar el orden fijo de la junta ─────────────────────────────
+     Era una columna jsonb del canal SIN editor: lo que hace que la junta corra
+     igual cada semana solo se podía cambiar metiendo mano a la base. Se valida
+     aquí y no se confía en el front: es la única puerta.
+     Bloques con su responsable, sus minutos y sus puntos. Un guion vacío
+     (arreglo sin elementos) lo apaga, y la pestaña deja de salir. */
+  if (accion === 'guion') {
+    const c = await canalDe(b.canal_id);
+    if (!c || c.tipo !== 'sala' || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
+    if (!Array.isArray(b.guion)) return json({ error: 'Guion inválido' }, 400);
+    if (b.guion.length > 12) return json({ error: 'Máximo 12 bloques' }, 400);
+    /* ⚠️ LA `fuente` DE CADA PUNTO SE CONSERVA.
+       Un punto del guion puede ser texto suelto o {t, fuente} —"de dónde sale
+       el número", que es lo que evita que cada quien llegue con cifras
+       distintas—. El editor manda los puntos como TEXTO PLANO (un renglón por
+       punto), así que guardar tal cual BORRABA las fuentes: medido, 12 de 12 se
+       perdieron en un guardado que ni siquiera cambió nada.
+       Se rescatan por TEXTO, no por posición: mover un bloque de lugar o
+       reordenar los puntos no debe costar su fuente, y un punto reescrito la
+       pierde a propósito (ya no es el mismo punto). */
+    const { data: canalPrev } = await supabase.from('espacio_canales').select('guion').eq('id', c.id).maybeSingle();
+    const fuentePrevia = new Map<string, string>();
+    for (const bl of ((canalPrev?.guion as any[]) || [])) {
+      for (const q of (bl?.puntos || [])) if (q && typeof q !== 'string' && q.t && q.fuente) fuentePrevia.set(String(q.t).trim(), String(q.fuente));
+    }
+    const limpio = [];
+    for (const x of b.guion) {
+      const bloque = String(x?.bloque || '').trim().slice(0, 80);
+      if (!bloque) continue;                                   // un bloque sin nombre no es un bloque
+      const puntos = (Array.isArray(x.puntos) ? x.puntos : [])
+        .map((q: any) => (typeof q === 'string' ? q : String(q?.t || '')).trim().slice(0, 200))
+        .filter(Boolean).slice(0, 20)
+        .map((t: string) => {
+          // Si el front ya mandó la fuente, esa manda; si no, la que tenía.
+          const dada = (Array.isArray(x.puntos) ? x.puntos : []).find((q: any) => q && typeof q !== 'string' && String(q.t || '').trim() === t)?.fuente;
+          const f = dada || fuentePrevia.get(t);
+          return f ? { t, fuente: String(f).slice(0, 80) } : t;
+        });
+      const min = Number(x.minutos);
+      limpio.push({
+        bloque, quien: String(x?.quien || '').trim().slice(0, 60),
+        ...(min > 0 && min <= 240 ? { minutos: Math.round(min) } : {}),
+        puntos,
+      });
+    }
+    const { error } = await supabase.from('espacio_canales').update({ guion: limpio.length ? limpio : null }).eq('id', c.id);
+    if (error) return json({ error: error.message }, 500);
+    await emitir({ tipo: 'reunion', canal_id: c.id });
+    return json({ ok: true, guion: limpio });
+  }
+
+  /* ── reabrir: deshacer un "no hay junta" ─────────────────────────────────
+     Marcar saltada por error, o que el barrido la cerrara porque ese día nadie
+     alcanzó a abrirla, no tenía vuelta atrás: la junta se quedaba cerrada para
+     siempre. Solo las `saltada` — una `hecha` tiene sesión y acta detrás, y
+     "deshacerla" sería borrar el acta, que es otra cosa y no se hace de un
+     clic. Los arrastres que sumó al saltarse NO se deshacen: el tiempo que el
+     tema estuvo esperando sí pasó. */
+  if (accion === 'reabrir') {
+    const { data: occ } = await supabase.from('espacio_reunion_ocurrencias')
+      .select('id, canal_id, estado').eq('id', b.ocurrencia_id).maybeSingle();
+    if (!occ) return json({ error: 'Esa junta no existe' }, 404);
+    const c = await canalDe(occ.canal_id);
+    if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
+    if (occ.estado === 'hecha') return json({ error: 'Esa junta sí se hizo: tiene acta. No se puede reabrir desde aquí.' }, 409);
+    if (occ.estado !== 'saltada') return json({ error: 'Esa junta ya está pendiente' }, 409);
+    await supabase.from('espacio_reunion_ocurrencias')
+      .update({ estado: 'pendiente', motivo: null, cerrada_at: null }).eq('id', occ.id);
+    await emitir({ tipo: 'reunion', canal_id: occ.canal_id });
+    return json({ ok: true });
   }
 
   /* ── agendar: apartar un tema para una junta POSTERIOR ───────────────────
@@ -559,6 +672,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // ── cerrar ───────────────────────────────────────────────────────────
+    /* Asistentes CONFIRMADOS. Al iniciar se toma a quien esté en línea en los
+       últimos 5 min, que es una suposición: el que llega tarde no aparece y el
+       que dejó la pestaña abierta sí. Y de esa lista salen los responsables de
+       los acuerdos, así que la suposición se propaga al acta. Al cerrar hay un
+       humano mirando y sí puede decir quién estuvo. Si no manda nada, queda lo
+       de antes: cerrar nunca se bloquea por esto. */
+    if (Array.isArray(b.asistentes)) {
+      const eqCerrar = await equipo();
+      const conf = b.asistentes.filter(esUuid).filter((x: string) => eqCerrar.some(pp => pp.id === x));
+      await supabase.from('espacio_reunion_sesiones').update({ asistentes: conf }).eq('id', s.id);
+      (s as any).asistentes = conf;
+    }
     const fin = ahora();
     const [{ data: puntos }, { data: acuerdos }, { data: msgs }] = await Promise.all([
       supabase.from('espacio_reunion_puntos').select(SEL_PUNTO).eq('sesion_id', s.id).neq('estado', 'retirado'),

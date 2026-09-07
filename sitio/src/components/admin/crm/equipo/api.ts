@@ -101,7 +101,7 @@ export const api = {
   ficha: (tipo: string, id: string) => pedir<{ ficha: any }>('GET', `/menciones?ficha=${tipo}&id=${id}`),
   buscar: (q: string, canal_id?: string) => pedir<{ resultados: Mensaje[] }>('GET', `/buscar?q=${encodeURIComponent(q)}${canal_id ? `&canal_id=${canal_id}` : ''}`),
   // Salas
-  sala: (canal_id: string) => pedir<any>('GET', `/sala?canal_id=${canal_id}`),
+  sala: (canal_id: string, actas?: number) => pedir<any>('GET', `/sala?canal_id=${canal_id}${actas ? `&actas=${actas}` : ''}`),
   publicaciones: (canal_id: string) => pedir<{ publicaciones: Publicacion[] }>('GET', `/publicaciones?canal_id=${canal_id}`),
   publicacion: (id: string) => pedir<{ publicacion: Publicacion }>('GET', `/publicaciones?id=${id}`),
   pubAccion: (b: any) => pedir<{ publicacion: Publicacion | null; ok?: boolean }>('POST', '/publicaciones', b),

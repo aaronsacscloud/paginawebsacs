@@ -91,9 +91,31 @@ export function ModalCanal({ seccion, canal, secciones, founder, onClose, onHech
   const [tipo, setTipo] = useState<'charla' | 'sala'>(canal ? (canal.tipo === 'sala' ? 'sala' : 'charla') : (seccion?.nombre === 'Reuniones' ? 'sala' : 'charla'));
   const [importante, setImportante] = useState(!!canal?.importante);
   const [dia, setDia] = useState(canal?.regla_reunion?.dia_iso || 1); const [hora, setHora] = useState(canal?.regla_reunion?.hora || '09:00');
+  /* Cada cuántas semanas y cuánto dura. Antes la regla solo sabía ser semanal,
+     así que una junta quincenal o mensual no se podía modelar y había que
+     saltarse a mano las semanas que no tocaban. El `ancla` se calcula al
+     guardar: es la primera fecha que cae en el día elegido, y desde ahí se
+     cuentan las semanas. Sin ancla el motor se cae a semanal, así que las
+     reglas que ya existen siguen comportándose igual. */
+  const [cada, setCada] = useState<number>((canal?.regla_reunion as any)?.cada_semanas || 1);
+  const [duracion, setDuracion] = useState<number>((canal?.regla_reunion as any)?.duracion_min || 60);
   const [secId, setSecId] = useState(secInicial);
   const [err, setErr] = useState<string | null>(null); const [ocupado, setOcupado] = useState(false);
   const [confirmar, setConfirmar] = useState<null | 'borrar'>(null);
+  /** La primera fecha (de hoy en adelante) que cae en el día elegido. */
+  const anclaDe = (diaIso: number) => {
+    const base = new Date(Date.now() - 6 * 3600e3);
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + i));
+      if ((d.getUTCDay() === 0 ? 7 : d.getUTCDay()) === diaIso) return d.toISOString().slice(0, 10);
+    }
+    return undefined;
+  };
+  const reglaDe = () => ({
+    dia_iso: dia, hora,
+    ...(cada > 1 ? { cada_semanas: cada, ancla: (canal?.regla_reunion as any)?.ancla || anclaDe(dia) } : {}),
+    ...(duracion && duracion !== 60 ? { duracion_min: duracion } : {}),
+  });
   const slug = aSlug(nombre);
   const seccionesVivas = secciones.filter(s => s.nombre !== 'Sistema' || sistema);
 
@@ -105,13 +127,13 @@ export function ModalCanal({ seccion, canal, secciones, founder, onClose, onHech
         if (!sistema) {
           if (slug !== canal.nombre) b.nombre = slug;
           b.tipo = tipo;
-          b.regla_reunion = tipo === 'sala' ? { dia_iso: dia, hora } : null;
+          b.regla_reunion = tipo === 'sala' ? reglaDe() : null;
         }
         if (secId && secId !== (canal.seccion_id || '')) b.seccion_id = secId;
         await api.editarCanal(b);
         onAviso(`#${b.nombre || canal.nombre} guardado`); onHecho(canal.id);
       } else if (seccion) {
-        const r = await api.crearCanal({ seccion_id: secId || seccion.id, nombre: slug, descripcion: desc.trim() || undefined, tipo, importante, regla_reunion: tipo === 'sala' ? { dia_iso: dia, hora } : undefined });
+        const r = await api.crearCanal({ seccion_id: secId || seccion.id, nombre: slug, descripcion: desc.trim() || undefined, tipo, importante, regla_reunion: tipo === 'sala' ? reglaDe() : undefined });
         onAviso(`#${r.canal.nombre} creado`); onHecho(r.canal.id);
       }
     } catch (x: any) { setErr(x.message); } finally { setOcupado(false); }
@@ -154,6 +176,13 @@ export function ModalCanal({ seccion, canal, secciones, founder, onClose, onHech
             <div className="fila">
               <label style={{ flex: 1 }}>Día<select value={dia} onChange={e => setDia(+e.target.value)}>{DIAS.slice(1).map((d, i) => <option key={d} value={i + 1}>{d}</option>)}</select></label>
               <label style={{ flex: 1 }}>Hora<input type="time" value={hora} onChange={e => setHora(e.target.value)} /></label>
+              <label style={{ flex: 1 }}>Cada<select value={cada} onChange={e => setCada(+e.target.value)}>
+                <option value={1}>semana</option><option value={2}>2 semanas</option>
+                <option value={3}>3 semanas</option><option value={4}>4 semanas</option>
+              </select></label>
+              <label style={{ flex: 1 }}>Dura<select value={duracion} onChange={e => setDuracion(+e.target.value)}>
+                {[30, 45, 60, 90, 120, 180].map(m => <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60} h`}</option>)}
+              </select></label>
             </div>
           )}
           {editando && seccionesVivas.length > 1 && (

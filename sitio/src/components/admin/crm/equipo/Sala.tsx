@@ -24,7 +24,7 @@ type BloqueGuion = { bloque: string; quien: string; minutos?: number; puntos: Pu
  *  que una junta que nadie inició no dejaba rastro: la próxima se recalculaba y
  *  la de hoy desaparecía en el instante en que se cumplía su hora. */
 type Ocurrencia = { id: string; fecha: string; inicio_at: string; programada_at: string; estado: 'pendiente' | 'hecha' | 'saltada'; motivo: string | null; sesion_id: string | null; movida: boolean; movida_por: Quien };
-type Datos = { ocurrencias: Ocurrencia[]; actual: Ocurrencia | null; proximas: Punto[]; puntos_por_ocurrencia: Record<string, number>; proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
+type Datos = { actas_total: number; ocurrencias: Ocurrencia[]; actual: Ocurrencia | null; proximas: Punto[]; puntos_por_ocurrencia: Record<string, number>; proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
 
 const TZ = 'America/Mexico_City';
 // Todo se muestra en hora de México aunque el navegador esté en otra zona.
@@ -73,13 +73,23 @@ export default function Sala(p: SalaProps) {
   // dedo se va a otro lado.
   const [retirando, setRetirando] = useState<string | null>(null);
   const [cerrando, setCerrando] = useState<string | null>(null);   // null = no se está cerrando
+  /* El guion en edición. Los puntos se editan como TEXTO con un renglón por
+     punto, no como una lista de campos: escribir cinco puntos con cinco botones
+     de "+" es más lento que escribirlos y ya, y pegar un guion desde otro lado
+     funciona solo. Al guardar se parten por renglón. */
+  type FilaGuion = { bloque: string; quien: string; minutos: number; puntos: string };
+  const [editGuion, setEditGuion] = useState<FilaGuion[] | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [, tic] = useState(0);
   const t = useRef<any>(null);
 
+  /* Cuántas actas pedir. Sube de doce en doce con "Ver más": traer las 60 de
+     un año en la primera carga por si acaso sería pagar el viaje siempre para
+     el caso raro. */
+  const [nActas, setNActas] = useState(12);
   const cargar = useCallback(async () => {
-    try { const r = await api.sala(p.canal.id); setD(r); setErr(null); } catch (e: any) { setErr(e.message); }
-  }, [p.canal.id]);
+    try { const r = await api.sala(p.canal.id, nActas); setD(r); setErr(null); } catch (e: any) { setErr(e.message); }
+  }, [p.canal.id, nActas]);
   useEffect(() => { setD(null); cargar(); }, [cargar]);
   // Señales: lo que cambie en la sala (o un mensaje de la sesión) refresca el panel.
   useEffect(() => {
@@ -173,7 +183,9 @@ export default function Sala(p: SalaProps) {
             El guion es lo FIJO —quién presenta qué, cada semana—; la agenda es
             lo de ESTA semana, que se propone, se trata y se cierra. Mezclarlos
             haría que el guion se «tratara» y desapareciera en la primera junta. */}
-        {!!d?.guion?.length && <button className={tab === 'guion' ? 'on' : ''} onClick={() => setTab('guion')}>Guion</button>}
+        {/* La pestaña sale aunque el guion esté vacío: si solo aparece cuando
+            ya existe, no hay por dónde crear el primero. */}
+        <button className={tab === 'guion' ? 'on' : ''} onClick={() => setTab('guion')}>Guion</button>
         <button className={tab === 'historial' ? 'on' : ''} onClick={() => setTab('historial')}>Actas{(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length ? ` · ${(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length}` : ''}</button>
         {/* Expandir. Solo en escritorio: en el teléfono el panel ya ocupa la
             pantalla entera y el botón no tendría a dónde crecer. Cicla los tres
@@ -198,7 +210,26 @@ export default function Sala(p: SalaProps) {
                   de tiempo, se ve aquí antes de empezar y no a la mitad. */}
               {(() => { const m = (d.guion || []).reduce((a, b) => a + (Number(b.minutos) || 0), 0); return m ? <> Dura <b>{m} min</b>.</> : null; })()}
             </p>
-            {(d.guion || []).map((b, i) => (
+            {/* Editar el guion. Antes era una columna jsonb sin editor: lo que
+                hace que la junta corra igual cada semana solo se podía cambiar
+                metiendo mano a la base de datos. */}
+            {!editGuion && (
+              <button className="eq-btn t" style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+                onClick={() => setEditGuion((d.guion || []).map(b => ({ bloque: b.bloque, quien: b.quien || '', minutos: b.minutos || 0, puntos: (b.puntos || []).map(q => (typeof q === 'string' ? q : q.t)).join('\n') })))}>
+                {d.guion?.length ? 'Editar el guion' : 'Crear el guion'}
+              </button>
+            )}
+            {editGuion && <EditorGuion filas={editGuion} setFilas={setEditGuion}
+              onCancelar={() => setEditGuion(null)}
+              onGuardar={async () => {
+                const g = editGuion.filter(f => f.bloque.trim()).map(f => ({ bloque: f.bloque, quien: f.quien, minutos: Number(f.minutos) || 0, puntos: f.puntos.split('\n').map(x => x.trim()).filter(Boolean) }));
+                const r = await accion({ accion: 'guion', canal_id: p.canal.id, guion: g }, 'Guion guardado');
+                if (r) setEditGuion(null);
+              }} />}
+            {!editGuion && !d.guion?.length && (
+              <div className="eq-vacio"><b>Esta junta no tiene guion</b>El guion es lo que se ve SIEMPRE, en orden, sin que nadie lo proponga. Créalo una vez y la junta corre sola.</div>
+            )}
+            {!editGuion && (d.guion || []).map((b, i) => (
               <div key={i} className="eq-guion-b">
                 <div className="eq-guion-h">
                   <span className="q">{b.quien}</span>
@@ -244,9 +275,23 @@ export default function Sala(p: SalaProps) {
                   <input autoFocus value={cerrando} maxLength={400} placeholder="Nota para el acta (opcional)"
                     onChange={e => setCerrando(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Escape') setCerrando(null); }} />
+                  {/* ¿Quiénes estuvieron? La lista se podía corregir durante la
+                      junta, pero nadie la miraba: quedaba la suposición del
+                      arranque (quien estuviera en línea en los últimos 5 min) y
+                      con ella se firmaba el acta. Preguntarlo AQUÍ es el único
+                      momento en que hay un humano viendo y ya sabe la respuesta. */}
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <small style={{ color: 'var(--eq-gris)' }}>¿Quiénes estuvieron?</small>
+                    {gente.map(g => {
+                      const dentro = ab.asistentes.includes(g.id);
+                      return <button key={g.id} type="button" className={'eq-punto-chip' + (dentro ? ' on' : '')}
+                        onClick={() => accion({ accion: 'asistentes', sesion_id: ab.id, asistentes: dentro ? ab.asistentes.filter(x => x !== g.id) : [...ab.asistentes, g.id] })}>
+                        <Avatar p={g} size={15} />{primero(g.nombre)}</button>;
+                    })}
+                  </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button className="eq-btn p" disabled={ocupado === ab.id} onClick={async () => {
-                      const r = await accion({ accion: 'cerrar', sesion_id: ab.id, nota: cerrando || null }, 'Acta lista y fijada en el canal');
+                      const r = await accion({ accion: 'cerrar', sesion_id: ab.id, nota: cerrando || null, asistentes: ab.asistentes }, 'Acta lista y fijada en el canal');
                       setCerrando(null); if (r) setTab('historial');
                     }}>Cerrar y levantar el acta</button>
                     <button className="eq-btn t" onClick={() => setCerrando(null)}>Cancelar</button>
@@ -529,6 +574,12 @@ export default function Sala(p: SalaProps) {
                     <b>{fCorta(o.inicio_at)} · {fHora(o.inicio_at)}</b>
                     <small>{o.motivo ? o.motivo : 'Nadie la abrió ese día.'}{o.movida ? ` · se había movido de las ${fHora(o.programada_at)}` : ''}</small>
                   </div>
+                  {/* Deshacer. Marcar saltada por error —o que el barrido la
+                      cerrara porque ese día nadie alcanzó— no tenía vuelta
+                      atrás. Los arrastres que sumó no se deshacen: el tiempo
+                      que el tema estuvo esperando sí pasó. */}
+                  <button className="eq-btn t" style={{ marginLeft: 'auto' }}
+                    onClick={() => accion({ accion: 'reabrir', ocurrencia_id: o.id }, 'Junta reabierta: vuelve a estar pendiente')}>Reabrir</button>
                 </div>
               ))}
             </div>
@@ -537,6 +588,11 @@ export default function Sala(p: SalaProps) {
           {d.historial.length > 0 && (
             <div className="eq-bloque eq-pasadas">
               {d.historial.map((s, i) => <Acta key={s.id} s={s} abierta={i === 0} canalId={p.canal.id} onIr={p.onIr} onToggle={a => accion({ accion: 'hecho', acuerdo_id: a.id, hecho: !a.hecho_at })} onResumen={txt => accion({ accion: 'resumen', sesion_id: s.id, texto: txt }, 'Resumen guardado')} />)}
+              {d.actas_total > d.historial.length && (
+                <button className="eq-btn t" style={{ margin: '8px 12px' }} onClick={() => setNActas(n => n + 12)}>
+                  Ver 12 actas más · quedan {d.actas_total - d.historial.length}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -563,6 +619,38 @@ function Adjuntos({ lista }: { lista?: any[] }) {
         }
         return <a key={i} className="eq-apartado" href={a.url || undefined} target="_blank" rel="noopener">{a.nombre || a.tipo}</a>;
       })}
+    </div>
+  );
+}
+
+/* El editor del guion: bloques con su responsable, sus minutos y sus puntos.
+   Un bloque sin nombre se descarta al guardar (el servidor hace lo mismo), así
+   que agregar uno de más y dejarlo en blanco no rompe nada. */
+function EditorGuion({ filas, setFilas, onGuardar, onCancelar }: {
+  filas: { bloque: string; quien: string; minutos: number; puntos: string }[];
+  setFilas: (f: any) => void; onGuardar: () => Promise<void>; onCancelar: () => void;
+}) {
+  const set = (i: number, k: string, v: any) => setFilas(filas.map((f, j) => j === i ? { ...f, [k]: v } : f));
+  const total = filas.reduce((a, f) => a + (Number(f.minutos) || 0), 0);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {filas.map((f, i) => (
+        <div key={i} className="eq-bloque" style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <input className="eq-in" style={{ flex: '2 1 150px' }} placeholder="Nombre del bloque" value={f.bloque} maxLength={80} onChange={e => set(i, 'bloque', e.target.value)} />
+            <input className="eq-in" style={{ flex: '1 1 110px' }} placeholder="Quién presenta" value={f.quien} maxLength={60} onChange={e => set(i, 'quien', e.target.value)} />
+            <input className="eq-in" style={{ flex: '0 0 80px' }} type="number" min={0} max={240} placeholder="min" value={f.minutos || ''} onChange={e => set(i, 'minutos', +e.target.value)} />
+            <button className="eq-btn t" title="Quitar el bloque" onClick={() => setFilas(filas.filter((_, j) => j !== i))}>Quitar</button>
+          </div>
+          <textarea className="eq-in" rows={3} placeholder="Un punto por renglón" value={f.puntos} onChange={e => set(i, 'puntos', e.target.value)} />
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button className="eq-btn t" onClick={() => setFilas([...filas, { bloque: '', quien: '', minutos: 0, puntos: '' }])}>+ Bloque</button>
+        <button className="eq-btn p" onClick={onGuardar}>Guardar guion</button>
+        <button className="eq-btn t" onClick={onCancelar}>Cancelar</button>
+        {total > 0 && <small style={{ color: 'var(--eq-gris)', marginLeft: 'auto' }}>Dura {total} min</small>}
+      </div>
     </div>
   );
 }
@@ -614,7 +702,8 @@ function ProximaJunta({ d, canal, ocupado, accion }: {
         <div className="t">
           {fCorta(o.inicio_at)} · {fHora(o.inicio_at)}
           {o.movida && <> · <i>movida de las {fHora(o.programada_at)}</i></>}
-          {!o.movida && dia && <> · cada {dia}</>}
+          {!o.movida && dia && <> · {(canal.regla_reunion as any)?.cada_semanas > 1 ? `cada ${(canal.regla_reunion as any).cada_semanas} semanas, ${dia}` : `cada ${dia}`}</>}
+          {(canal.regla_reunion as any)?.duracion_min && <> · {(canal.regla_reunion as any).duracion_min >= 60 ? `${(canal.regla_reunion as any).duracion_min / 60} h` : `${(canal.regla_reunion as any).duracion_min} min`}</>}
           {' · '}<b className={c.cerca ? 'eq-ya' : undefined}>{c.txt}</b>
           {n > 0 && <> · {n} tema{n === 1 ? '' : 's'} apartado{n === 1 ? '' : 's'}</>}
         </div>
