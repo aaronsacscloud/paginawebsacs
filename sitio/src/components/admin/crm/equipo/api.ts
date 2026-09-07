@@ -141,3 +141,16 @@ export function hace(iso: string | null | undefined): string {
 }
 
 export const mismoDia = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
+
+/** Sube un archivo al bucket privado y devuelve su `path`.
+ *
+ *  Dos pasos y ninguno pasa el binario por nuestra función: se pide una URL
+ *  firmada (POST /subir) y el navegador hace PUT directo al storage. Vive aquí
+ *  y no en Caja.tsx porque desde el 7-sep-2026 también lo usa la sala, para los
+ *  adjuntos de los puntos de agenda. */
+export async function subirBlob(tipo: 'imagen' | 'audio' | 'thumb', blob: Blob, nombre?: string): Promise<string> {
+  const { path, url } = await api.subir({ tipo, mime: blob.type, bytes: blob.size, nombre });
+  const r = await fetch(url, { method: 'PUT', headers: { 'Content-Type': blob.type, 'x-upsert': 'true' }, body: blob });
+  if (!r.ok) throw new Error(`No se pudo subir (${r.status})`);
+  return path;
+}

@@ -596,6 +596,24 @@ button.eq-punto-chip{cursor:pointer}
 /* Los temas apartados para una junta posterior. */
 .eq-apartado{display:inline-flex;align-items:center;gap:4px;font-size:.6875rem;font-weight:700;
   color:var(--eq-morado-tinta);background:var(--eq-lila);border-radius:6px;padding:1px 6px;white-space:nowrap}
+
+/* ── ANCHO DEL PANEL LATERAL ───────────────────────────────────────────────
+   380 px fijos metían agenda, guion, actas y citas de la semana en una columna
+   donde un acta con seis acuerdos se lee como una lista de palabras sueltas.
+   Tres anchos, cada uno para algo distinto: "normal" es consultar de reojo sin
+   perder el canal; "medio" es leer un acta completa; "full" es trabajar la
+   junta con el canal fuera del camino.
+   Se usa min-width además de flex-basis porque ".eq-lado" es un flex item y sin
+   el mínimo el río de mensajes se lo come cuando hay poco espacio. */
+.eq-lado.ancho-medio{width:min(620px,58vw);flex-basis:min(620px,58vw);min-width:420px}
+.eq-lado.ancho-full{width:100%;flex-basis:100%;min-width:0}
+/* En "full" el río de mensajes estorba: el panel ES la pantalla. */
+.eq.en-canal .eq-lado.ancho-full ~ *,.eq-lado.ancho-full + *{display:none}
+.eq-canal:has(+ .eq-lado.ancho-full){display:none}
+.eq-ancho{margin-left:auto;flex:0 0 auto;width:30px;height:30px;border:0;background:none;border-radius:8px;
+  color:var(--eq-gris);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.eq-ancho:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-ancho:focus-visible{outline:2px solid var(--eq-morado);outline-offset:1px}
 `;
 
 let cssPuesto = false;
@@ -719,6 +737,9 @@ export const Ic = {
   mas: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>,
   atras: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>,
   cerrar: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>,
+  // Flechas hacia afuera / hacia adentro: el gesto de ensanchar y de encoger.
+  expandir: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 4H4v5M15 20h5v-5M4 4l6 6M20 20l-6-6" /></svg>,
+  contraer: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9h5V4M20 15h-5v5M4 4l5 5M20 20l-5-5" /></svg>,
   enviar: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>,
   emoji: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5s1.2 2 3.5 2 3.5-2 3.5-2M9 10h.01M15 10h.01" /></svg>,
   gif: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M9 10H7.5a1 1 0 00-1 1v2a1 1 0 001 1H9v-2h-1M12 10v4M15 14v-4h2.5M15 12h2" /></svg>,

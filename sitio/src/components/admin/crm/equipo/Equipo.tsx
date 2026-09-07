@@ -17,6 +17,7 @@ import { useIsMobile } from '../../../../lib/ui/mobile';
 import { cerrarAviso, tagAviso } from '../../../../lib/ui/cerrar-aviso';
 
 const ULTIMO_KEY = 'eq_ultimo_canal';
+const ANCHO_KEY = 'eq_ancho_lado';
 
 /** `onCerrar` llega cuando el chat vive en el widget flotante: en móvil pinta
  *  la X en la cabecera del árbol (en escritorio la pone el propio widget). */
@@ -48,6 +49,18 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const [irA, setIrA] = useState<string | null>(null);
   const [hilo, setHilo] = useState<M | null>(null);
   const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | 'ficha' | 'pubs' | null>(null);
+
+  /* Cuánto espacio se lleva el panel lateral. La sala metía agenda, guion,
+     actas y citas de la semana en 380 px fijos mientras los mensajes se
+     quedaban con todo lo demás; un acta con seis acuerdos ahí dentro es una
+     columna de palabras sueltas. Tres anchos y no dos porque los dos extremos
+     sirven para cosas distintas: 'medio' es leer el acta sin perder de vista el
+     canal, 'full' es trabajar la junta. Se recuerda entre sesiones: quien
+     ensancha una vez lo quiere ensanchado siempre. */
+  const [ancho, setAncho] = useState<'normal' | 'medio' | 'full'>(() => {
+    try { return (localStorage.getItem(ANCHO_KEY) as any) || 'normal'; } catch { return 'normal'; }
+  });
+  useEffect(() => { try { localStorage.setItem(ANCHO_KEY, ancho); } catch { /* sin storage */ } }, [ancho]);
   const [ficha, setFicha] = useState<Cita | null>(null);   // la cotización/cliente/lead/pago/cobranza citada con @ que se está viendo
   const [nFijados, setNFijados] = useState(0);
   const [nPubs, setNPubs] = useState(0);                 // publicaciones abiertas del canal (el botón de la cabecera)
@@ -213,8 +226,9 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
         </aside>
       )}
       {lado === 'sala' && canal && canal.tipo === 'sala' && (
-        <aside className="eq-lado">
+        <aside className={'eq-lado ancho-' + ancho}>
           <Sala key={'s' + canal.id} canal={canal} yo={yo.id} role={yo.role} personas={arbol.personas} movil={movil}
+            ancho={ancho} onAncho={setAncho}
             onCerrar={() => setLado(null)} onAviso={toast} registrarSenal={f => { senalSala.current = f; }}
             onIr={(c, m, h) => { abrir(c, m, h); if (movil) setLado(null); }} />
         </aside>

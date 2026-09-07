@@ -4,14 +4,14 @@
 // semana, para que la junta del lunes empiece sabiendo a quién se va a ver.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Canal as C, Persona } from './api';
-import { api, hace } from './api';
+import { api, hace, subirBlob } from './api';
 import type { Senal } from './useRealtime';
 import { Ic, Avatar } from './ui';
 import Cargando from '../ui/Cargando';
 
 type Quien = { id: string; nombre: string; foto_url: string | null } | null;
-type Punto = { id: string; titulo: string; para_ocurrencia_id?: string | null; estado: string; votos: number; vote: boolean; arrastres: number; sesion_id: string | null; propuesto_por: Quien; contexto: any[]; created_at: string; mensajes: number; arrastrado?: boolean };
-type Acuerdo = { id: string; sesion_id: string; punto_id: string | null; texto: string; responsable: Quien; vence_at: string | null; hecho_at: string | null; tarea_id: string | null ; arrastres?: number };
+type Punto = { id: string; titulo: string; para_ocurrencia_id?: string | null; adjuntos?: any[]; estado: string; votos: number; vote: boolean; arrastres: number; sesion_id: string | null; propuesto_por: Quien; contexto: any[]; created_at: string; mensajes: number; arrastrado?: boolean };
+type Acuerdo = { id: string; sesion_id: string; adjuntos?: any[]; punto_id: string | null; texto: string; responsable: Quien; vence_at: string | null; hecho_at: string | null; tarea_id: string | null ; arrastres?: number };
 type Sesion = { id: string; inicio_at: string; fin_at: string | null; asistentes: string[]; asistentes_p: Quien[]; punto_actual_id: string | null; resumen_ia: string | null; acta: any; acuerdos: Acuerdo[]; puntos?: Punto[]; nota_cierre: string | null };
 type Cita = { id: string; fecha: string; hora: string; nombre: string; empresa: string | null; con: string | null };
 /** Un punto del guion. Texto suelto cuando es de criterio; con `fuente` cuando
@@ -55,6 +55,10 @@ export type SalaProps = {
   onCerrar: () => void; onAviso: (m: string) => void;
   onIr: (canalId: string, msgId: string, hiloDe?: string | null) => void;
   registrarSenal: (fn: ((s: Senal) => void) | null) => void;
+  /** Ancho del panel y cómo cambiarlo. Vive en Equipo porque la clase va en
+   *  el <aside>, no aquí dentro. */
+  ancho?: 'normal' | 'medio' | 'full';
+  onAncho?: (a: 'normal' | 'medio' | 'full') => void;
 };
 
 export default function Sala(p: SalaProps) {
@@ -93,9 +97,30 @@ export default function Sala(p: SalaProps) {
     finally { setOcupado(null); }
   };
 
+  /* Imágenes del punto que se está proponiendo. Se suben ANTES de proponer (al
+     elegirlas) y solo viaja el `path`: así el botón de Proponer no se queda
+     esperando la subida, que es donde la gente cree que la app se colgó. */
+  const [errTop, setErrTop] = useState<string | null>(null);
+  const [adjNuevos, setAdjNuevos] = useState<any[]>([]);
+  const [subiendo, setSubiendo] = useState(0);
+  const elegirArchivos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    for (const f of Array.from(files).slice(0, 4)) {
+      if (!/^image\//.test(f.type)) { setErrTop('Por ahora solo imágenes.'); continue; }
+      setSubiendo(n => n + 1);
+      try {
+        const path = await subirBlob('imagen', f, f.name);
+        // `url` local para verla mientras no se recarga: el servidor la firmará
+        // en la próxima lectura.
+        setAdjNuevos(l => [...l, { tipo: 'imagen', path, nombre: f.name, bytes: f.size, url: URL.createObjectURL(f) }]);
+      } catch (e: any) { setErrTop(e?.message || 'No se pudo subir la imagen'); }
+      finally { setSubiendo(n => n - 1); }
+    }
+  };
   const proponer = async () => {
     const titulo = nuevo.trim(); if (titulo.length < 3) return;
-    const r = await accion({ accion: 'proponer', canal_id: p.canal.id, titulo }); if (r) setNuevo('');
+    const r = await accion({ accion: 'proponer', canal_id: p.canal.id, titulo, adjuntos: adjNuevos.map(({ url, ...x }) => x) });
+    if (r) { setNuevo(''); setAdjNuevos([]); }
   };
 
   const gente = p.personas.filter(x => x.rol !== 'soporte');
@@ -150,6 +175,17 @@ export default function Sala(p: SalaProps) {
             haría que el guion se «tratara» y desapareciera en la primera junta. */}
         {!!d?.guion?.length && <button className={tab === 'guion' ? 'on' : ''} onClick={() => setTab('guion')}>Guion</button>}
         <button className={tab === 'historial' ? 'on' : ''} onClick={() => setTab('historial')}>Actas{(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length ? ` · ${(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length}` : ''}</button>
+        {/* Expandir. Solo en escritorio: en el teléfono el panel ya ocupa la
+            pantalla entera y el botón no tendría a dónde crecer. Cicla los tres
+            anchos en vez de abrir un menú — es un botón que se aprende
+            apretándolo, y el título dice a dónde va el siguiente toque. */}
+        {!p.movil && p.onAncho && (
+          <button className="eq-ancho" title={p.ancho === 'full' ? 'Volver al ancho normal' : p.ancho === 'medio' ? 'Ocupar toda la pantalla' : 'Ensanchar el panel'}
+            aria-label="Cambiar el ancho del panel"
+            onClick={() => p.onAncho!(p.ancho === 'normal' ? 'medio' : p.ancho === 'medio' ? 'full' : 'normal')}>
+            {p.ancho === 'full' ? Ic.contraer : Ic.expandir}
+          </button>
+        )}
       </div>
       {!d && !err && <Cargando texto="Abriendo la sala…" />}
       {err && <div className="eq-vacio"><b>No se pudo abrir la sala</b>{err}<button className="eq-btn" onClick={cargar}>Reintentar</button></div>}
@@ -265,6 +301,7 @@ export default function Sala(p: SalaProps) {
                       {pt.propuesto_por ? `${primero(pt.propuesto_por.nombre)} · ` : ''}
                       <span style={{ color: '#9a6a10', fontWeight: 700 }}>sin verse ×{pt.arrastres}</span>
                     </small>
+                    <Adjuntos lista={pt.adjuntos} />
                   </div>
                   {/* Apartar TAMBIÉN desde aquí. El selector vivía solo en el
                       bloque de "puntos extra", pero un tema con arrastres se
@@ -334,6 +371,7 @@ export default function Sala(p: SalaProps) {
                       {origen && <> · <a onClick={() => p.onIr(origen.canal_id, origen.id, origen.hilo_de)} style={{ cursor: 'pointer', color: 'var(--eq-morado-tinta)' }}>desde #{origen.canal}</a></>}
                       {pt.mensajes > 0 && ` · ${pt.mensajes} ${pt.mensajes === 1 ? 'mensaje' : 'mensajes'}`}
                     </small>
+                    <Adjuntos lista={pt.adjuntos} />
                     {ab && (
                       <div className="eq-punto-acc">
                         {!tratando && pt.estado !== 'acordado' && <button className="eq-btn t" onClick={() => accion({ accion: 'tratar', sesion_id: ab.id, punto_id: pt.id })}>Tratar</button>}
@@ -405,13 +443,29 @@ export default function Sala(p: SalaProps) {
                   onKeyDown={e => { if (e.key === 'Enter') proponer(); }} maxLength={120}
                   placeholder={ab ? 'Agregar un punto sobre la marcha…' : 'Un punto extra para esta junta…'}
                   style={{ flex: 1, border: '1.5px solid var(--eq-linea)', borderRadius: 9, padding: '7px 10px', font: 'inherit', outline: 0, minWidth: 0 }} />
-                <button className="eq-btn" disabled={nuevo.trim().length < 3 || ocupado === 'proponer'} onClick={proponer}>Proponer</button>
+                <label className="eq-btn t" title="Agregar una imagen al punto" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', flex: '0 0 auto' }}>
+                  {Ic.imagen || '🖼'}
+                  <input type="file" accept="image/*" multiple hidden onChange={e => { elegirArchivos(e.target.files); e.currentTarget.value = ''; }} />
+                </label>
+                <button className="eq-btn" disabled={nuevo.trim().length < 3 || ocupado === 'proponer' || subiendo > 0} onClick={proponer}>{subiendo > 0 ? 'Subiendo…' : 'Proponer'}</button>
               </div>
               {/* Antes el botón simplemente no hacía nada con menos de 3
                   caracteres, sin decir por qué: se leía como que la app estaba
                   rota. Ahora lo dice, y solo cuando ya empezaste a escribir. */}
               {nuevo.trim().length > 0 && nuevo.trim().length < 3 && (
                 <div className="eq-nota" style={{ padding: '6px 2px 0' }}>Escribe al menos 3 letras.</div>
+              )}
+              {errTop && <div className="eq-nota" style={{ padding: '6px 2px 0', color: 'var(--eq-rojo,#A33227)' }}>{errTop}</div>}
+              {adjNuevos.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 8 }}>
+                  {adjNuevos.map((a, i) => (
+                    <span key={i} style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={a.url} alt="" style={{ height: 54, borderRadius: 8, display: 'block', border: '1px solid var(--eq-linea)' }} />
+                      <button aria-label="Quitar" onClick={() => setAdjNuevos(l => l.filter((_, j) => j !== i))}
+                        style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, border: 0, background: 'var(--eq-toast-fondo)', color: 'var(--eq-toast-tinta)', fontSize: 12, lineHeight: 1, cursor: 'pointer' }}>×</button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -488,6 +542,28 @@ export default function Sala(p: SalaProps) {
         </div>
       )}
     </>
+  );
+}
+
+/* Los adjuntos de un punto o de un acuerdo. Se pintan chicos: aquí la imagen
+   acompaña al texto, no lo sustituye —a diferencia del chat, donde la imagen
+   suele SER el mensaje—. Un clic abre la original en otra pestaña. */
+function Adjuntos({ lista }: { lista?: any[] }) {
+  if (!lista?.length) return null;
+  return (
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+      {lista.map((a, i) => {
+        const src = a.thumb_url || a.url;
+        if (a.tipo === 'imagen' || a.tipo === 'gif') {
+          return src
+            ? <a key={i} href={a.url || src} target="_blank" rel="noopener" title={a.nombre || 'Ver imagen'}>
+                <img src={src} alt={a.nombre || ''} style={{ height: 62, width: 'auto', borderRadius: 8, display: 'block', border: '1px solid var(--eq-linea)' }} />
+              </a>
+            : <span key={i} className="eq-apartado">imagen</span>;
+        }
+        return <a key={i} className="eq-apartado" href={a.url || undefined} target="_blank" rel="noopener">{a.nombre || a.tipo}</a>;
+      })}
+    </div>
   );
 }
 
@@ -586,6 +662,7 @@ function FilaAcuerdo({ a, onToggle, onArrastrar, ocupado }: {
       <button className="chk" style={{ minHeight: 18 }} onClick={onToggle} title={a.hecho_at ? 'Marcar pendiente' : 'Marcar hecho'}>{a.hecho_at ? Ic.check : null}</button>
       <div className="tt">
         <b>{a.texto}</b>
+        <Adjuntos lista={a.adjuntos} />
         <small className={vencido ? 'vencido' : ''}>
           {a.responsable ? primero(a.responsable.nombre) : 'Sin responsable'}
           {a.vence_at ? ` · para el ${fFecha(a.vence_at)}` : ''}

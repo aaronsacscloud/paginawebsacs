@@ -139,6 +139,62 @@ export type Adjunto = {
   transcripcion?: string | null; transcripcion_estado?: 'ok' | 'pendiente' | 'error';
 };
 
+/** Valida y normaliza una lista de adjuntos.
+ *
+ *  Vive AQUÍ y no en mensajes.ts porque desde el 7-sep-2026 los usan tres
+ *  cosas: los mensajes, los puntos de agenda y los acuerdos. Una segunda copia
+ *  significaría un segundo validador que mantener y una segunda manera de que
+ *  se cuele un adjunto sin revisar — que es justo lo que este código evita.
+ *
+ *  Devuelve la lista limpia, o un STRING con el motivo del rechazo. */
+const ADJ_TIPOS = new Set(['imagen', 'audio', 'gif', 'archivo']);
+export function limpiarAdjuntos(a: any, tope = LIMITES.adjuntos): Adjunto[] | string {
+  if (a === undefined || a === null) return [];
+  if (!Array.isArray(a)) return 'Adjuntos inválidos';
+  if (a.length > tope) return `Máximo ${tope} adjuntos`;
+  const out: Adjunto[] = [];
+  for (const x of a) {
+    if (!x || !ADJ_TIPOS.has(x.tipo)) return 'Adjunto inválido';
+    // Un adjunto propio vive en el bucket (path); un GIF de Tenor trae url.
+    if (x.tipo === 'gif') { if (!/^https:\/\/media\.tenor\.com\//.test(String(x.url || ''))) return 'GIF inválido'; }
+    else if (!/^[a-z0-9]{4,}\/[\w./-]{8,}$/i.test(String(x.path || ''))) return 'Adjunto sin archivo';
+    out.push({
+      tipo: x.tipo, path: x.path, thumb: x.thumb, url: x.url, nombre: String(x.nombre || '').slice(0, 120) || undefined,
+      bytes: Number(x.bytes) || undefined, w: Number(x.w) || undefined, h: Number(x.h) || undefined,
+      duracion_s: Number(x.duracion_s) || undefined,
+      transcripcion: typeof x.transcripcion === 'string' ? x.transcripcion.slice(0, 4000) : null,
+      transcripcion_estado: x.transcripcion_estado,
+    });
+  }
+  return out;
+}
+
+/** Firma los adjuntos de varias filas de un jalón.
+ *
+ *  El bucket `espacio` es PRIVADO: lo que se guarda es el `path`, y para
+ *  pintarlo hace falta una URL firmada. `darForma` ya lo hacía para los
+ *  mensajes; desde que los puntos de agenda y los acuerdos también llevan
+ *  adjuntos, la sala necesitaba lo mismo — y en UNA sola llamada al storage,
+ *  no una por imagen: una junta con doce puntos con foto serían doce viajes.
+ *
+ *  Muta las filas en su sitio (les pone `url` y `thumb_url`), que es como ya
+ *  las consume el front. */
+export async function firmarAdjuntos(filas: { adjuntos?: any[] }[]): Promise<void> {
+  const paths = filas.flatMap(r => (r.adjuntos || []).flatMap((a: any) => [a.path, a.thumb])).filter(Boolean) as string[];
+  if (!paths.length) return;
+  const firmadas: Record<string, string> = {};
+  const { data: f } = await supabase.storage.from('espacio').createSignedUrls(Array.from(new Set(paths)), 3600);
+  for (const x of f || []) if (x.path && x.signedUrl) firmadas[x.path] = x.signedUrl;
+  for (const r of filas) {
+    if (!Array.isArray(r.adjuntos)) continue;
+    r.adjuntos = r.adjuntos.map((a: any) => ({
+      ...a,
+      url: a.tipo === 'gif' ? a.url : (a.path ? firmadas[a.path] || null : null),
+      thumb_url: a.thumb ? firmadas[a.thumb] || null : undefined,
+    }));
+  }
+}
+
 export type Cita = { tipo: 'cliente' | 'lead' | 'tarea' | 'reunion' | 'cotizacion' | 'corte' | 'canal' | 'wiki' | 'pago' | 'cobranza'; id: string; nombre?: string };
 /** Los tipos que se pueden etiquetar con @ desde la caja (los demás los escribe el sistema). */
 export const CITA_TIPOS_ARROBA = new Set(['cotizacion', 'cliente', 'lead', 'pago', 'cobranza']);

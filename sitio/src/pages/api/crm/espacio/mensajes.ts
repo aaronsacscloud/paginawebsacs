@@ -12,36 +12,15 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import {
   json, quien, esUuid, emitir, canalDe, puedeVerCanal, darForma, SELECT_MENSAJE, LIMITES, extraerCitas, CITA_TIPOS_ARROBA,
-  pasaRitmo, equipo, extraerMenciones, type Adjunto,
+  pasaRitmo, equipo, extraerMenciones, limpiarAdjuntos, type Adjunto,
 } from '../../../../lib/crm/espacio.lib';
 import { avisar } from '../../../../lib/crm/espacio-avisos';
 
 export const prerender = false;
 
-const ADJ_TIPOS = new Set(['imagen', 'audio', 'gif', 'archivo']);
+// limpiarAdjuntos y ADJ_TIPOS viven en espacio.lib: los comparten los
+// mensajes, los puntos de agenda y los acuerdos.
 const CITA_TIPOS = new Set(['cliente', 'lead', 'tarea', 'reunion', 'cotizacion', 'corte', 'canal', 'wiki', 'pago', 'cobranza']);
-
-function limpiarAdjuntos(a: any): Adjunto[] | string {
-  if (a === undefined || a === null) return [];
-  if (!Array.isArray(a)) return 'Adjuntos inválidos';
-  if (a.length > LIMITES.adjuntos) return `Máximo ${LIMITES.adjuntos} adjuntos`;
-  const out: Adjunto[] = [];
-  for (const x of a) {
-    if (!x || !ADJ_TIPOS.has(x.tipo)) return 'Adjunto inválido';
-    // Un adjunto propio vive en el bucket (path); un GIF de Tenor trae url.
-    if (x.tipo === 'gif') { if (!/^https:\/\/media\.tenor\.com\//.test(String(x.url || ''))) return 'GIF inválido'; }
-    else if (!/^[a-z0-9]{4,}\/[\w./-]{8,}$/i.test(String(x.path || ''))) return 'Adjunto sin archivo';
-    out.push({
-      tipo: x.tipo, path: x.path, thumb: x.thumb, url: x.url, nombre: String(x.nombre || '').slice(0, 120) || undefined,
-      bytes: Number(x.bytes) || undefined, w: Number(x.w) || undefined, h: Number(x.h) || undefined,
-      duracion_s: Number(x.duracion_s) || undefined,
-      transcripcion: typeof x.transcripcion === 'string' ? x.transcripcion.slice(0, 4000) : null,
-      transcripcion_estado: x.transcripcion_estado,
-    });
-  }
-  return out;
-}
-
 function limpiarCitas(c: any): any[] | string {
   if (c === undefined || c === null) return [];
   if (!Array.isArray(c) || c.length > 10) return 'Citas inválidas';

@@ -5,7 +5,7 @@
 // deja pasar cuerpos de más de 4.5 MB por la función).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Adjunto, GrupoMencion, ItemMencion, Mensaje, Persona, TipoCita } from './api';
-import { api } from './api';
+import { api, subirBlob } from './api';
 import { Emojis, Ic, useFuera, textoPlano, Avatar } from './ui';
 
 type Candidato = { k: string; persona?: Persona; item?: ItemMencion; grupo?: string };
@@ -58,12 +58,7 @@ function encoger(img: HTMLImageElement, max: number, calidad: number): Promise<{
   c.getContext('2d')!.drawImage(img, 0, 0, w, h);
   return new Promise(ok => c.toBlob(b => ok({ blob: b!, w, h }), 'image/jpeg', calidad));
 }
-async function subirBlob(tipo: 'imagen' | 'audio' | 'thumb', blob: Blob, nombre?: string): Promise<string> {
-  const { path, url } = await api.subir({ tipo, mime: blob.type, bytes: blob.size, nombre });
-  const r = await fetch(url, { method: 'PUT', headers: { 'Content-Type': blob.type, 'x-upsert': 'true' }, body: blob });
-  if (!r.ok) throw new Error(`No se pudo subir (${r.status})`);
-  return path;
-}
+// `subirBlob` vive en api.ts: lo comparten la caja de mensajes y la sala.
 
 export default function Caja(p: CajaProps) {
   const [texto, setTexto] = useState('');

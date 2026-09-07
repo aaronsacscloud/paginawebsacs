@@ -3,7 +3,7 @@
 //
 // GET  /api/crm/espacio/sala?canal_id=      → todo lo que pinta el panel de la sala
 // POST /api/crm/espacio/sala { accion, … }
-//   proponer   { canal_id, titulo, origen_mensaje_id?, contexto? }
+//   proponer   { canal_id, titulo, origen_mensaje_id?, contexto?, adjuntos? }
 //   votar      { punto_id }                       (alterna mi voto)
 //   editar     { punto_id, titulo }
 //   retirar    { punto_id }                       (quien lo propuso o un founder)
@@ -11,7 +11,7 @@
 //   asistentes { sesion_id, asistentes: uuid[] }
 //   tratar     { sesion_id, punto_id | null }     (el punto que se está viendo)
 //   marcar     { punto_id, estado: tratado|pospuesto|propuesto }
-//   acordar    { sesion_id, punto_id?, texto, responsable_id, vence_at? }
+//   acordar    { sesion_id, punto_id?, texto, responsable_id, vence_at?, adjuntos? }
 //   hecho      { acuerdo_id, hecho: bool }        (también cierra/abre la tarea de TI)
 //   arrastrar  { acuerdo_id, sesion_id, vence_at? }  → lo incumplido pasa a HOY
 //   cerrar     { sesion_id, nota? }               → acta, arrastres, tareas, resumen IA
@@ -26,14 +26,14 @@
 // lee de la tarea. El acta no se edita después de 24 h.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { json, quien, esUuid, emitir, canalDe, puedeVerCanal, personasPorId, equipo, darForma, SELECT_MENSAJE } from '../../../../lib/crm/espacio.lib';
+import { json, quien, esUuid, emitir, canalDe, puedeVerCanal, personasPorId, equipo, darForma, limpiarAdjuntos, firmarAdjuntos, SELECT_MENSAJE } from '../../../../lib/crm/espacio.lib';
 import { avisar } from '../../../../lib/crm/espacio-avisos';
 
 export const prerender = false;
 
-const SEL_PUNTO = 'id, canal_id, titulo, propuesto_por, origen_mensaje_id, contexto, votos, orden, estado, sesion_id, arrastres, para_ocurrencia_id, created_at, updated_at';
+const SEL_PUNTO = 'id, canal_id, titulo, propuesto_por, origen_mensaje_id, contexto, votos, orden, estado, sesion_id, arrastres, para_ocurrencia_id, adjuntos, created_at, updated_at';
 const SEL_SESION = 'id, canal_id, inicio_at, fin_at, asistentes, resumen_ia, acta, abierta_por, cerrada_por, punto_actual_id, nota_cierre';
-const SEL_ACUERDO = 'id, sesion_id, punto_id, texto, responsable_id, vence_at, tarea_id, hecho_at, created_at, reemplazado_por';
+const SEL_ACUERDO = 'id, sesion_id, punto_id, texto, responsable_id, vence_at, tarea_id, hecho_at, adjuntos, created_at, reemplazado_por';
 
 /** La próxima reunión según la regla semanal (hora de México, UTC-6 fija). */
 export function proximaReunion(regla: { dia_iso: number; hora: string } | null): string | null {
@@ -134,6 +134,8 @@ async function salaCompleta(canalId: string, yo: string) {
     const { data: ts } = await supabase.from('ti_tareas').select('id, estado, hecho_at').in('id', tareaIds);
     for (const t of ts || []) if (t.estado === 'hecha' && t.hecho_at) hechas[t.id] = t.hecho_at;
   }
+  // Los adjuntos del bucket privado salen firmados, todos en UN viaje.
+  await firmarAdjuntos([...(puntos || []), ...(acuerdos || [])] as any[]);
   const ids = new Set<string>();
   for (const p of puntos || []) ids.add(p.propuesto_por);
   for (const a of acuerdos || []) ids.add(a.responsable_id);
@@ -276,6 +278,11 @@ export const POST: APIRoute = async ({ request }) => {
     if (!c || c.tipo !== 'sala' || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
     const titulo = String(b.titulo || '').replace(/\s+/g, ' ').trim();
     if (titulo.length < 3 || titulo.length > 120) return json({ error: 'El punto va de 3 a 120 caracteres' }, 400);
+    /* Adjuntos del punto: MISMO validador que los mensajes (espacio.lib). Un
+       punto como "revisar la portada nueva" tiene que poder traer la portada;
+       antes solo cargaba `contexto`, que son referencias a mensajes. */
+    const adj = limpiarAdjuntos(b.adjuntos);
+    if (typeof adj === 'string') return json({ error: adj }, 400);
     let origen: string | null = null, contexto: any[] = [];
     if (b.origen_mensaje_id) {
       if (!esUuid(b.origen_mensaje_id)) return json({ error: 'Mensaje inválido' }, 400);
@@ -289,7 +296,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: abierta } = await supabase.from('espacio_reunion_sesiones').select('id').eq('canal_id', c.id).is('fin_at', null).maybeSingle();
     const { data: ult } = await supabase.from('espacio_reunion_puntos').select('orden').eq('canal_id', c.id).order('orden', { ascending: false }).limit(1).maybeSingle();
     const { data, error } = await supabase.from('espacio_reunion_puntos').insert({
-      canal_id: c.id, titulo, propuesto_por: yo.id, origen_mensaje_id: origen, contexto, votos: [yo.id], orden: (ult?.orden || 0) + 1,
+      canal_id: c.id, titulo, propuesto_por: yo.id, origen_mensaje_id: origen, contexto, adjuntos: adj, votos: [yo.id], orden: (ult?.orden || 0) + 1,
       sesion_id: abierta?.id || null,   // si la reunión ya va, entra a la de hoy
     }).select(SEL_PUNTO).single();
     if (error) return json({ error: error.message }, 500);
@@ -521,7 +528,9 @@ export const POST: APIRoute = async ({ request }) => {
       if (!vence_at) vence_at = new Date(Date.now() + 7 * 86400e3 - 6 * 3600e3).toISOString().slice(0, 10);
 
       const { data: nuevo, error } = await supabase.from('espacio_acuerdos')
-        .insert({ sesion_id: s.id, punto_id: null, texto: viejo.texto, responsable_id: viejo.responsable_id, vence_at })
+        // El archivo viaja con el compromiso: si se arrastra sin sus adjuntos,
+        // a la segunda junta nadie encuentra de qué se hablaba.
+        .insert({ sesion_id: s.id, punto_id: null, texto: viejo.texto, responsable_id: viejo.responsable_id, vence_at, adjuntos: (viejo as any).adjuntos || [] })
         .select(SEL_ACUERDO).single();
       if (error) return json({ error: error.message }, 500);
       await supabase.from('espacio_acuerdos').update({ reemplazado_por: nuevo.id }).eq('id', viejo.id);
@@ -538,7 +547,11 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.vence_at) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.vence_at))) return json({ error: 'Fecha inválida' }, 400); vence_at = b.vence_at; }
       let punto_id: string | null = null;
       if (b.punto_id) { const pt = await puntoDe(b.punto_id); if (!pt || pt.canal_id !== c.id) return json({ error: 'Punto no encontrado' }, 404); punto_id = pt.id; }
-      const { data, error } = await supabase.from('espacio_acuerdos').insert({ sesion_id: s.id, punto_id, texto, responsable_id: b.responsable_id, vence_at }).select(SEL_ACUERDO).single();
+      /* "Mandar el comparativo" tiene que poder llevar el comparativo: sin
+         esto el acta terminaba mandando a buscar el archivo en el chat. */
+      const adjA = limpiarAdjuntos(b.adjuntos);
+      if (typeof adjA === 'string') return json({ error: adjA }, 400);
+      const { data, error } = await supabase.from('espacio_acuerdos').insert({ sesion_id: s.id, punto_id, texto, responsable_id: b.responsable_id, vence_at, adjuntos: adjA }).select(SEL_ACUERDO).single();
       if (error) return json({ error: error.message }, 500);
       if (punto_id) await supabase.from('espacio_reunion_puntos').update({ estado: 'acordado', sesion_id: s.id, updated_at: ahora() }).eq('id', punto_id);
       await emitir({ tipo: 'reunion', canal_id: c.id });
