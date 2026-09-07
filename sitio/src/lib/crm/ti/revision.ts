@@ -76,13 +76,19 @@ export async function revisionDiaria(opts: { horas?: number; limite?: number; so
   await supabase.from('ia_log').insert({ accion: 'revision_diaria', razon: `${res.revisadas} conversaciones · ${res.propuestas} propuestas · ${res.automaticas} automáticas`, costo_usd: res.costo, detalle: res });
   // Resumen al dueño: notificación + WhatsApp (si su ventana está abierta; si no, queda la notificación).
   const { count: avanzaron } = await supabase.from('ti_revision').select('id', { count: 'exact', head: true }).eq('dia', dia).eq('avance', 'avanzo');
+  // LO QUE ESCRIBIÓ EL EQUIPO (7-sep): los mensajes humanos del día ya entraron como ejemplos; el resumen dice cuántos y de qué tipo.
+  try {
+    const { aprenderDeHumanos } = await import('./aprendizaje-humano'); await aprenderDeHumanos({ horas: opts.horas || 26, max: 60 });
+    const { data: hum } = await supabase.from('ia_ejemplos').select('estado, estado_rev').eq('fuente', 'humano_inbox').gte('created_at', desde);
+    res.humanos = { total: (hum || []).length, seguimientos: (hum || []).filter(h => h.estado === 'silencio').length, respuestas: (hum || []).filter(h => h.estado !== 'silencio').length, por_curar: (hum || []).filter(h => h.estado_rev === 'dudoso').length };
+  } catch { /* opcional */ }
   const titulo = `${opts.soloVentanas ? 'Revisión de ventanas por cerrar' : 'Revisión diaria'}: ${res.revisadas} conversaciones, ${avanzaron || 0} avanzaron, ${res.propuestas} propuestas${res.automaticas ? ` (${res.automaticas} ya salieron solas)` : ''}`;
   await notificar({ clave: `ti_revision:${dia}${opts.soloVentanas ? ':ventanas' : ''}`, tipo: 'ti_revision', nivel: res.propuestas ? 'alerta' : 'info', titulo, detalle: Object.entries(res.por_tipo).map(([k, v]) => `${k}: ${v}`).join(' · ') || 'Nada que proponer hoy.', destino: 'trabajo?vista=revision', metadata: { dia } });
   try {
     const tel = String(cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || '525610353669').replace(/\D/g, '');
     if (tel && res.revisadas && (res.propuestas || !opts.soloVentanas)) {
       const { enviarTexto } = await import('../../whatsapp/kapso-api');
-      await enviarTexto(tel, `${titulo}.\n${Object.entries(res.por_tipo).map(([k, v]) => `• ${k}: ${v}`).join('\n') || 'Nada que proponer hoy.'}\nRevísalas en Trabajo inteligente → Revisión diaria: https://www.sacscloud.com/admin/crm?tab=trabajo`);
+      await enviarTexto(tel, `${titulo}.\n${Object.entries(res.por_tipo).map(([k, v]) => `• ${k}: ${v}`).join('\n') || 'Nada que proponer hoy.'}${res.humanos?.total ? `\nAprendí ${res.humanos.total} mensajes escritos por el equipo (${res.humanos.respuestas} respuestas, ${res.humanos.seguimientos} seguimientos${res.humanos.por_curar ? `, ${res.humanos.por_curar} por curar` : ''}).` : ''}\nRevísalas en Trabajo inteligente → Revisión diaria: https://www.sacscloud.com/admin/crm?tab=trabajo`);
     }
   } catch { /* fuera de ventana: queda la notificación */ }
   return res;

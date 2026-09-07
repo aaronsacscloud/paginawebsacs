@@ -109,7 +109,7 @@ export async function ejemplosAprobados(estado?: string, mensaje?: string, out?:
   if (mensaje && mensaje.trim().length >= 6) {
     const { data: par } = await supabase.rpc('ti_ejemplos_parecidos', { q: mensaje.slice(0, 600), etapa: estado || null, n: 8 });
     data = par || [];
-    const { data: rec } = await supabase.from('ia_ejemplos').select('id, estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').in('fuente', ['correccion_dueno', 'correccion_implicita']).order('created_at', { ascending: false }).limit(4);
+    const { data: rec } = await supabase.from('ia_ejemplos').select('id, estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').in('fuente', ['correccion_dueno', 'correccion_implicita', 'humano_inbox']).order('created_at', { ascending: false }).limit(4);
     for (const r of rec || []) if (!data.some((x: any) => x.id === r.id)) data.push(r);
   }
   if (!data.length) {
@@ -121,7 +121,7 @@ export async function ejemplosAprobados(estado?: string, mensaje?: string, out?:
   const bloqueRech = (rech || []).length ? '\n\nLO QUE LOS CONSULTORES RECHAZARON (NO contestes así; corrige la causa):\n' + (rech || []).map(r => `[${r.estado}] Lead: ${String(r.mensaje_lead || '').slice(0, 160)}\nEl agente dijo: ${String(r.pulida || '').slice(0, 260)}\nPor qué no: ${String(r.por_que || '').replace(/^EVITAR:\s*/, '')}`).join('\n---\n') : '';
   if (!(data || []).length) return bloqueRech;
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
-  const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
+  const orden = (e: any) => (e.fuente === 'correccion_dueno' || e.fuente === 'humano_inbox' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
   // Qué ejemplos entraron a ESTE prompt: se cuentan (usos) y viajan en la salida, para poder correlacionarlos con si el lead contestó.
   if (out) out.ids = lista.map((e: any) => e.id).filter(Boolean);

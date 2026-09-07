@@ -90,7 +90,7 @@ async function casosDePrueba(etapa: string | null, n = 12) {   // 12 y no 24: ca
   let casos = (propios || []).filter(c => String(c.mensaje_lead || '').length >= 8 && String(c.pulida || '').length >= 20);
   if (casos.length < 12) { const { data: otros } = await supabase.from('ia_ejemplos').select('id, estado, situacion, mensaje_lead, pulida, fuente').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').not('mensaje_lead', 'is', null).order('created_at', { ascending: false }).limit(60); for (const o of otros || []) if (casos.length < n && !casos.some(c => c.id === o.id) && String(o.mensaje_lead || '').length >= 8 && String(o.pulida || '').length >= 20) casos.push(o); }
   // Correcciones primero: son los casos donde más importa.
-  casos.sort((a, b) => (a.fuente === 'correccion_dueno' ? 0 : 1) - (b.fuente === 'correccion_dueno' ? 0 : 1));
+  casos.sort((a, b) => (['correccion_dueno', 'humano_inbox'].includes(a.fuente) ? 0 : 1) - (['correccion_dueno', 'humano_inbox'].includes(b.fuente) ? 0 : 1));
   return casos.slice(0, n);
 }
 async function redactarCaso(system: string, caso: any) {
@@ -198,7 +198,7 @@ export async function redactarPropuestasPendientes(limite = 4) {
   let n = 0, costo = 0;
   for (const r of sin || []) {
     const etapa = String((r.valor as any)?.estado || 'descubriendo');
-    const { data: corr } = await supabase.from('ia_ejemplos').select('mensaje_lead, pulida, por_que, fuente').eq('estado', etapa).in('fuente', ['correccion_dueno', 'correccion_implicita', 'rechazo_consultor']).order('created_at', { ascending: false }).limit(8);
+    const { data: corr } = await supabase.from('ia_ejemplos').select('mensaje_lead, pulida, por_que, fuente').eq('estado', etapa).in('fuente', ['correccion_dueno', 'correccion_implicita', 'rechazo_consultor', 'humano_inbox']).order('created_at', { ascending: false }).limit(8);
     const muestras = (corr || []).map(c => ({ mensaje_lead: c.mensaje_lead, pulida: c.pulida, por_que: c.por_que, fuente: c.fuente, original: (String(c.por_que || '').match(/Original:\s*([\s\S]{0,320})/) || [])[1] || (String(c.por_que || '').match(/había (?:propuesto|dicho):\s*([\s\S]{0,320})/) || [])[1] || null }));
     if (muestras.length < 2) continue;
     const red = await redactarReglaConIA({ etapa, muestras }).catch(() => null);
