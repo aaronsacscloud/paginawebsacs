@@ -371,7 +371,11 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsa
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
 const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
-const M_DARK_TABS: Tab[] = ['fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+/* Trabajo inteligente ya traía su PROPIO tema oscuro (TI_CSS: tokens y
+   `@media (prefers-color-scheme: dark)`), así que el panel se ponía oscuro solo
+   —pero el marco de la app se quedaba blanco alrededor—. Solo faltaba
+   registrarlas para que el lienzo acompañe. */
+const M_DARK_TABS: Tab[] = ['comisiones', 'abm', 'sacs', 'wa-plantillas', 'wa-numero', 'agenda', 'ti-seguimiento', 'ti-descalificar', 'ti-compromisos', 'ti-reactivacion', 'ti-informes', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1620,6 +1624,41 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
       /* Finanzas en oscuro. La casilla sin marcar necesita un borde que se vea
          sobre negro: el gris claro del tema claro desaparecía. */
+      /* ══ LA PALETA COMPARTIDA, en oscuro (7-sep-2026) ═══════════════════
+         lib/crm/paleta.ts la usan casi todas las pantallas y sus valores se
+         escriben EN LÍNEA, así que ninguna cambiaba de tema: tarjetas blancas
+         en medio de una app negra, que es lo que reportó el dueño.
+         Un bloque aquí arregla todas de un golpe; el alternativo era tocar
+         cuarenta archivos y que el siguiente naciera igual de blanco.
+
+         Los selectores llevan el texto EXACTO que serializa el navegador —se
+         leyó del DOM, no se adivinó—: React escribe background:'#fff' como
+         "background: rgb(255, 255, 255)", y backgroundColor como
+         "background-color: …". Son dos cadenas distintas y hacen falta las dos:
+         esa es la trampa clásica de este patrón.
+         OJO: aquí NO se escriben acentos graves — todo esto vive dentro de un
+         template literal y uno solo lo corta a media hoja. */
+      [data-crm-dark="1"] [style*="background: rgb(255, 255, 255)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(255, 255, 255)"] { background-color: #1d1d24 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(245, 246, 248)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(245, 246, 248)"] { background-color: #131318 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(238, 236, 254)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(238, 236, 254)"] { background-color: #2a2440 !important; }
+      /* Tintas de la paleta: tinta, texto y el morado de los títulos. */
+      [data-crm-dark="1"] [style*="color: rgb(36, 29, 67)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(74, 74, 82)"] { color: #d7d5de !important; }
+      [data-crm-dark="1"] [style*="color: rgb(91, 75, 214)"] { color: #B7A8F7 !important; }
+      /* Grises sueltos que no salen de la paleta (#444, #666, #999): los
+         escribió alguien a mano y sobre negro desaparecen. Se listan por valor
+         porque no hay de dónde derivarlos. */
+      [data-crm-dark="1"] [style*="color: rgb(68, 68, 68)"],
+      [data-crm-dark="1"] [style*="color: rgb(102, 102, 102)"] { color: #c9c7d3 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(153, 153, 153)"] { color: #918fa0 !important; }
+      /* Líneas: van en el border corto («1px solid rgb(236,236,236)»), así que
+         se busca el color con el «solid» delante para no pisar un fondo igual. */
+      [data-crm-dark="1"] [style*="solid rgb(236, 236, 236)"],
+      [data-crm-dark="1"] [style*="solid rgb(245, 244, 248)"],
+      [data-crm-dark="1"] [style*="solid rgb(221, 221, 221)"] { border-color: #26262e !important; }
       [data-crm-dark="1"] .m-check { border-color: #45444f; }
       [data-crm-dark="1"] .m-plegable { border-color: #26262e; }
       [data-crm-dark="1"] .m-cifra-l, [data-crm-dark="1"] .m-cifra-s { color: #918fa0; }

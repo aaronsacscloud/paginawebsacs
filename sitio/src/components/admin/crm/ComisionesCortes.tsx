@@ -256,6 +256,36 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         <div style={{ ...E.card, color: P.suave, fontSize: '0.85rem' }}>
           Todavía no hay cortes ni comisiones juntándose. Si esperabas ver algo, revisa que las cuentas con pagos tengan consultor asignado en <b>Configuración › Comisiones</b>.
         </div>
+      ) : movil ? (
+        /* TELÉFONO · la tabla de siete columnas se vuelve renglones.
+           A 390 px medía 760 y se leía de lado, que es como no leerla.
+           Se queda lo que sirve DE UN VISTAZO —de quién es y cuánto— y el
+           periodo debajo. Líneas y ajustes viven en el detalle: son para
+           revisar el corte, no para decidir si lo abres. */
+        <div style={{ ...E.card, padding: 0, overflow: 'hidden' }}>
+          {cortes.map((c: any) => {
+            const t = TONO[c.estado] || TONO.abierto;
+            return (
+              <div key={c.id} onClick={() => setAbierto(abierto === c.id ? null : c.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 15px', minHeight: 60,
+                  borderTop: `1px solid ${P.lineaSuave}`, cursor: 'pointer',
+                  background: abierto === c.id ? P.violetaAgua : undefined }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: P.tinta, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.team_members?.nombre || '—'}
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: P.suave, marginTop: 2 }}>
+                    {fecha(c.desde)} — {fecha(c.hasta)} · paga {fecha(c.paga_el)}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: P.tinta, fontVariantNumeric: 'tabular-nums' }}>{pesos(Number(c.total))}</div>
+                  <span style={{ ...E.chip, background: t.bg, color: t.fg, marginTop: 3, display: 'inline-block' }}>{t.label}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div style={{ ...E.card, padding: 0, overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
