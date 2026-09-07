@@ -38,7 +38,7 @@ export function horaAmPm(hora: string): string {
  *  por dónde entra — más cómo cancelar sin tener que escribir. */
 export function textoConfirmacion(o: {
   nombre?: string | null; evento: string; fecha: string; hora: string;
-  duracion?: number | null; host?: string | null; meet?: string | null; tokenCancelar?: string | null;
+  duracion?: number | null; host?: string | null; meet?: string | null; tokenCancelar?: string | null; lugar?: string | null;
 }): string {
   const saludo = String(o.nombre || '').trim().split(/\s+/)[0];
   return [
@@ -48,15 +48,16 @@ export function textoConfirmacion(o: {
     o.duracion ? `⏱ ${o.duracion} minutos` : '',
     o.host ? `👤 Te atiende ${o.host}` : '',
     o.meet ? `📹 Entras por aquí: ${o.meet}` : '',
+    o.lugar ? `📍 ${o.lugar}` : '',
     ``,
-    `La invitación de calendario también te llegó por correo.`,
+    o.lugar ? `Te esperamos ahí; si llegas antes, pregunta por nosotros en el stand.` : `La invitación de calendario también te llegó por correo.`,
     o.tokenCancelar ? `Si necesitas moverla o cancelarla: https://www.sacscloud.com/agendar/cancelar?token=${o.tokenCancelar}` : '',
   ].filter(Boolean).join('\n');
 }
 
 /** Manda la confirmación al cliente y la deja espejada en su conversación.
  *  No lanza: una cita agendada no se cae porque el aviso falle. */
-export async function confirmarCitaPorWhatsApp(bookingId: string): Promise<{ ok: boolean; motivo?: string }> {
+export async function confirmarCitaPorWhatsApp(bookingId: string, extra?: { lugar?: string | null }): Promise<{ ok: boolean; motivo?: string }> {
   if (!(await permitido('agenda_confirmacion'))) return { ok: false, motivo: 'pausado' };
   try {
     const { data: b } = await supabase.from('bookings')
@@ -83,7 +84,7 @@ export async function confirmarCitaPorWhatsApp(bookingId: string): Promise<{ ok:
       fecha: b.fecha as string, hora: String(b.hora_inicio),
       duracion: (tipo as any)?.duracion_minutos || null,
       host: (host as any)?.nombre || null, meet: b.google_meet_link || null,
-      tokenCancelar: b.token_cancelar || null,
+      tokenCancelar: b.token_cancelar || null, lugar: extra?.lugar || null,
     });
 
     // Si ya existe conversación con ese número, se responde POR SU NÚMERO

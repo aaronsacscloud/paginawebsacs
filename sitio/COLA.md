@@ -6,10 +6,12 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
-- [ ] **2026-09-07 · Eventos: los 10 puntos de la propuesta.** «ok dale a los 10 puntos haz commit y push al terminar y
-      de ahí regresamos con todo el tema outboubd» → EN CURSO. (1 bandeja después de la feria, 2 agendar demo en el
-      stand, 3 citas en el stand antes, 4 comparador, 5 presupuesto anual con ROI, 6 captura por gafete/tarjeta,
-      7 turnos del equipo, 8 ruta del recorrido, 9 fit real vs papel, 10 calendario iCal).
+- [x] **2026-09-07 · Eventos: los 10 puntos de la propuesta.** «ok dale a los 10 puntos haz commit y push al terminar y
+      de ahí regresamos con todo el tema outboubd» → HECHO 2026-09-07 (commit + push). (1 bandeja después de la feria,
+      2 agendar demo en el stand, 3 citas en el stand antes, 4 comparador, 5 presupuesto anual con ROI, 6 captura por
+      gafete/tarjeta, 7 turnos del equipo, 8 ruta del recorrido, 9 fit medido vs papel, 10 calendario iCal). Quedan del
+      dueño: plantilla de bienvenida por edición «vamos», plantilla de invitación aprobada con hasta 4 variables
+      (nombre, feria, stand, liga), y el horario_stand de prueba (10–18 h, 30 min, cupo 2) que dejé en JOYA Octubre 2026.
 
 - [ ] **2026-09-07 · Outbound.** «de ahí regresamos con todo el tema outboubd» → sigue al cerrar los 10 puntos de eventos.
 

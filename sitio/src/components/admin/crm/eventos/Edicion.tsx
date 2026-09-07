@@ -11,9 +11,11 @@ import Sheet from '../ui/Sheet';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import FormRegistro, { sincronizarCola, pendientesDe } from './FormRegistro';
 import ModoStand from './ModoStand';
+import { Seguimiento, Turnos, Citas, Ruta, AsignarRuta } from './EdicionExtras';
 import { ROL_ETIQ, PARTICIPACION_TONO, TEMP_TONO, GIROS, Pastilla, Btn, Campo, INPUT, Seccion, fmt, dinero, rango, relativo, fechaHora, fechaCorta, diasHasta, diaMX, post } from './ui';
 
-type Vista = 'resumen' | 'preparacion' | 'registros' | 'buscar' | 'gastos' | 'cierre';
+type Vista = 'resumen' | 'preparacion' | 'registros' | 'seguimiento' | 'citas' | 'turnos' | 'buscar' | 'gastos' | 'cierre';
+const VISTAS: Vista[] = ['resumen', 'preparacion', 'registros', 'seguimiento', 'citas', 'turnos', 'buscar', 'gastos', 'cierre'];
 const FASES: [string, string][] = [['antes', 'Antes'], ['durante', 'Durante'], ['despues', 'Después']];
 
 export default function Edicion({ id, onCambio }: { id: string; onCambio: () => void }) {
@@ -35,7 +37,14 @@ export default function Edicion({ id, onCambio }: { id: string; onCambio: () => 
   const ed = d?.edicion;
   const fase: 'antes' | 'durante' | 'despues' = !ed ? 'antes' : ed.inicio > hoy ? 'antes' : (ed.fin || ed.inicio) >= hoy ? 'durante' : 'despues';
   // La pestaña de inicio sigue al momento: antes se prepara, durante se captura, después se cierra.
-  useEffect(() => { if (ed) setVista(fase === 'durante' ? 'registros' : fase === 'despues' && !ed.retro?.cerrada_at && ed.participacion !== 'no_vamos' ? 'cierre' : 'resumen'); }, [ed?.id, fase]);
+  useEffect(() => {
+    if (!ed) return;
+    // La campana manda a una vista concreta (eventos?edicion=<id>&vista=seguimiento); solo aplica a ESA edición.
+    const qs = new URLSearchParams(location.search);
+    const pedida = qs.get('vista') as Vista | null;
+    if (pedida && VISTAS.includes(pedida) && qs.get('edicion') === ed.id) return setVista(pedida);
+    setVista(fase === 'durante' ? 'registros' : fase === 'despues' && !ed.retro?.cerrada_at && ed.participacion !== 'no_vamos' ? 'cierre' : 'resumen');
+  }, [ed?.id, fase]);
 
   const cambiar = async (campos: any) => { try { await post('/api/crm/eventos', { accion: 'guardar_edicion', edicion_id: id, ...campos }); traer(); onCambio(); } catch (e: any) { alert(e.message); } };
   const accion = async (body: any) => { try { const r = await post('/api/crm/eventos/edicion', { edicion_id: id, ...body }); traer(); return r; } catch (e: any) { alert(e.message); } };
@@ -56,11 +65,16 @@ export default function Edicion({ id, onCambio }: { id: string; onCambio: () => 
   // El QR se imprime: siempre al dominio público. Generado desde localhost o desde una
   // preview de Vercel, un QR con esa dirección se muere en la imprenta.
   const urlQr = ed.token_publico ? `https://www.sacscloud.com/e/${ed.token_publico}` : '';
+  const urlCita = urlQr ? `${urlQr}/cita` : '';
+  const sinContacto = d.registros.filter((r: any) => r.consentimiento && !r.contactado_at && !r.demo_at).length;
+  const citasVivas = d.citas.filter((c: any) => c.estado === 'agendada').length;
 
   const pest: [Vista, string, number | null][] = [
     ['resumen', 'Resumen', null],
     ['preparacion', 'Preparación', tareasPend.length || null],
     ['registros', 'Registros', d.registros.length || null],
+    ['seguimiento', 'Seguimiento', sinContacto || null],
+    ...(vamos && ed.rol === 'stand' ? [['citas', 'Citas', citasVivas || null] as [Vista, string, number | null], ['turnos', 'Turnos', d.turnos.length || null] as [Vista, string, number | null]] : []),
     ['buscar', 'A quién buscar', d.expositores.filter((x: any) => !x.visitado).length || null],
     ['gastos', 'Gastos', d.gastos.length || null],
     ['cierre', 'Cierre', null],
@@ -120,8 +134,12 @@ export default function Edicion({ id, onCambio }: { id: string; onCambio: () => 
         </div>
       )}
 
+      {vista === 'seguimiento' && <Seguimiento registros={d.registros} edicion={ed} equipo={d.equipo} isMobile={isMobile} accion={accion} />}
+      {vista === 'citas' && <Citas citas={d.citas} invitacion={d.invitacion} edicion={ed} registros={d.registros} urlCita={urlCita} isMobile={isMobile} accion={accion} onCambiarEdicion={cambiar} onListo={() => { traer(); onCambio(); }} />}
+      {vista === 'turnos' && <Turnos turnos={d.turnos} equipo={d.equipo} edicion={ed} isMobile={isMobile} accion={accion} />}
+
       {vista === 'buscar' && (
-        <Buscar expositores={d.expositores} evento={ev} isMobile={isMobile} onCargar={async () => { const r = await accion({ accion: 'cargar_expositores' }); if (r) alert(`${fmt(r.encontradas)} cuentas objetivo exponen en ${ev.nombre}; ${fmt(r.nuevas)} nuevas en la lista.`); }}
+        <Buscar expositores={d.expositores} evento={ev} equipo={d.equipo} isMobile={isMobile} accion={accion} onCargar={async () => { const r = await accion({ accion: 'cargar_expositores' }); if (r) alert(`${fmt(r.encontradas)} cuentas objetivo exponen en ${ev.nombre}; ${fmt(r.nuevas)} nuevas en la lista.`); }}
           onVisitado={(x, v) => accion({ accion: 'visitado', expositor_id: x.id, visitado: v })} onRegistrar={setRegistrarExp} />
       )}
 
@@ -323,9 +341,11 @@ function ListaRegistros({ registros, isMobile, onBorrar }: { registros: any[]; i
   );
 }
 
-function Buscar({ expositores, evento, isMobile, onCargar, onVisitado, onRegistrar }: { expositores: any[]; evento: any; isMobile: boolean; onCargar: () => void; onVisitado: (x: any, v: boolean) => void; onRegistrar: (x: any) => void }) {
+function Buscar({ expositores, evento, equipo, isMobile, accion, onCargar, onVisitado, onRegistrar }: { expositores: any[]; evento: any; equipo: any[]; isMobile: boolean; accion: (b: any) => Promise<any>; onCargar: () => void; onVisitado: (x: any, v: boolean) => void; onRegistrar: (x: any) => void }) {
   const [q, setQ] = useState('');
   const [ocultarVisitados, setOcultar] = useState(true);
+  // Lista plana para buscar un nombre; ruta por pabellón y stand para caminar los pasillos.
+  const [modo, setModo] = useState<'lista' | 'ruta'>('lista');
   const l = expositores.filter(x => (!ocultarVisitados || !x.visitado) && (!q || `${x.nombre} ${x.stand || ''} ${x.pabellon || ''}`.toLowerCase().includes(q.toLowerCase())));
   const visitados = expositores.filter(x => x.visitado).length;
   return (
@@ -339,6 +359,16 @@ function Buscar({ expositores, evento, isMobile, onCargar, onVisitado, onRegistr
         <Btn nivel="secundario" chico onClick={onCargar}>{expositores.length ? 'Actualizar la lista' : 'Armar la lista'}</Btn>
       </div>
       {expositores.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(['lista', 'ruta'] as const).map(v => <button key={v} onClick={() => setModo(v)} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '5px 11px', borderRadius: 99, cursor: 'pointer', border: `1.5px solid ${modo === v ? P.violeta : '#e4e4e4'}`, background: modo === v ? P.violeta : '#fff', color: modo === v ? '#fff' : '#555' }}>{v === 'lista' ? 'Lista' : 'Ruta por pabellón'}</button>)}
+          </div>
+          <span style={{ flex: 1 }} />
+          {modo === 'ruta' && <AsignarRuta expositores={expositores} equipo={equipo} accion={accion} />}
+        </div>
+      )}
+      {expositores.length > 0 && modo === 'ruta' && <Ruta expositores={expositores} isMobile={isMobile} accion={accion} onRegistrar={onRegistrar} />}
+      {expositores.length > 0 && modo === 'lista' && (
         <>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
             <input style={{ ...INPUT, flex: 1 }} value={q} onChange={x => setQ(x.target.value)} placeholder="Nombre o stand…" />

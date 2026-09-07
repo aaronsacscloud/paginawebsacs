@@ -15,9 +15,10 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import {
-  crearBroadcast, agregarDestinatarios, enviarBroadcast, programarBroadcast,
-  obtenerBroadcast, listarDestinatarios, resolverTemplateId, sanearParam, KapsoError, limpiarDestinatarios } from '../../../../lib/whatsapp/kapso-api';
+  agregarDestinatarios, enviarBroadcast, programarBroadcast,
+  obtenerBroadcast, listarDestinatarios, KapsoError, limpiarDestinatarios } from '../../../../lib/whatsapp/kapso-api';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
+import { crearMasivo } from '../../../../lib/whatsapp/masivos.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -185,59 +186,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // ── Crear ──
-  const _V = 'v11.1';   // marcador de despliegue (diagnóstico)
-  const nombre = String(b.nombre || '').trim();
-  if (!nombre) return json({ error: 'Falta el nombre del masivo' }, 400);
-  const { data: plantilla } = await supabase.from('wa_plantillas')
-    .select('*').eq('id', b.plantilla_id || '').maybeSingle();
-  if (!plantilla) return json({ error: 'Plantilla no encontrada' }, 404);
-  if (plantilla.status !== 'APPROVED') return json({ error: `La plantilla está ${plantilla.status}: solo una APPROVED puede salir en masivo` }, 400);
-
-  const crudos: any[] = Array.isArray(b.destinatarios) ? b.destinatarios : [];
-  const vistos = new Set<string>();
-  const listos: Array<{ telefono: string; contact_id: string | null; company_id: string | null; params: string[] }> = [];
-  const descartados: string[] = [];
-  for (const d of crudos) {
-    const tel = telefonoWhatsApp(d.telefono);
-    if (!tel) { descartados.push(String(d.telefono || '¿?')); continue; }
-    if (vistos.has(tel)) continue;
-    vistos.add(tel);
-    listos.push({
-      telefono: tel, contact_id: d.contact_id || null, company_id: d.company_id || null,
-      params: (Array.isArray(d.params) ? d.params : []).map(sanearParam),
-    });
-  }
-  if (!listos.length) return json({ error: 'Ningún destinatario con teléfono utilizable', descartados }, 400);
-
-  try {
-    const templateId = await resolverTemplateId(plantilla.nombre, plantilla.idioma, plantilla.meta_template_id);
-    if (!templateId) return json({ error: 'No pude resolver el id de la plantilla en Kapso' }, 502);
-
-    const creado = await crearBroadcast(nombre, templateId);
-    const kapsoId = String(creado?.id || '');
-    if (!kapsoId) return json({ error: 'Kapso no devolvió el id del broadcast' }, 502);
-
-    const { data: fila } = await supabase.from('wa_broadcasts').insert({
-      kapso_broadcast_id: kapsoId, nombre,
-      plantilla_nombre: plantilla.nombre, template_id: templateId,
-      status: 'borrador', total: listos.length,
-    }).select('id').single();
-
-    await supabase.from('wa_broadcast_destinatarios').insert(listos.map(d => ({
-      broadcast_id: fila!.id, telefono: d.telefono,
-      contact_id: d.contact_id, company_id: d.company_id,
-      params: d.params,
-    })));
-
-    await agregarDestinatarios(kapsoId, listos.map(d => ({
-      phone_number: d.telefono,
-      ...(d.params.length ? {
-        template_components: [{ type: 'body', parameters: d.params.map(p => ({ type: 'text', text: p })) }],
-      } : {}),
-    })));
-
-    return json({ ok: true, id: fila!.id, total: listos.length, descartados, _v: _V });
-  } catch (e: any) {
-    return json({ error: e instanceof KapsoError ? e.message : String(e), _v: _V }, 502);
-  }
+  const r = await crearMasivo(b);
+  return json(r.cuerpo, r.status);
 };

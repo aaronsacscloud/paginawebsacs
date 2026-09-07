@@ -14,13 +14,15 @@ import EstadoVacio from '../ui/EstadoVacio';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import EventoFicha from './EventoFicha';
 import Edicion from './Edicion';
+import Comparador from './Comparador';
 import { TIPO_ETIQ, DECISION_TONO, PARTICIPACION_TONO, GIROS_EVENTO, Pastilla, Fit, Btn, fmt, rango, relativo, mesLargo, d, post, diaMX } from './ui';
 
 export default function EventosTab() {
   const isMobile = useIsMobile();
   const [datos, setDatos] = useState<{ eventos: any[]; resumen: any; hoy: string; urge?: any[] } | null>(null);
   const [error, setError] = useState('');
-  const [vista, setVista] = useState<'lista' | 'calendario'>('lista');
+  const [vista, setVista] = useState<'lista' | 'calendario' | 'comparar'>('lista');
+  const [calendario, setCalendario] = useState<{ url: string; webcal: string } | null>(null);
   const [giro, setGiro] = useState('');
   const [filtro, setFiltro] = useState<'' | 'ir' | 'evaluar' | 'proximas' | 'vamos'>('');
   // El calendario esconde los descartados: una expo de XV años cada quince días
@@ -105,7 +107,10 @@ export default function EventosTab() {
               un costo por cliente, para que la siguiente decisión sea con números y no con la sensación de que «estuvo lleno».
             </p>
           </div>
-          <Btn nivel="primario" onClick={() => setNuevo(true)}>Nuevo evento</Btn>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Btn nivel="terciario" onClick={() => fetch('/api/crm/eventos/ical').then(r => r.json()).then(j => j.url ? setCalendario(j) : alert(j.error || 'No se pudo'))}>Suscribirse al calendario</Btn>
+            <Btn nivel="primario" onClick={() => setNuevo(true)}>Nuevo evento</Btn>
+          </div>
         </div>
       )}
 
@@ -137,22 +142,32 @@ export default function EventosTab() {
       )}
 
       <div style={{ display: 'flex', gap: 2, marginBottom: 14, borderBottom: `1px solid ${P.linea}`, alignItems: 'flex-end' }}>
-        {([['lista', 'A dónde ir'], ['calendario', 'Calendario']] as const).map(([v, l]) => (
-          <button key={v} onClick={() => setVista(v)} style={{
-            font: 'inherit', fontSize: '.875rem', fontWeight: vista === v ? 800 : 500, padding: '9px 15px', border: 'none',
-            borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent', background: vista === v ? P.violetaAgua : 'transparent',
-            color: vista === v ? P.violetaTinta : '#666', borderRadius: '9px 9px 0 0', cursor: 'pointer',
-          }}>{l}</button>
-        ))}
-        <div style={{ flex: 1 }} />
-        {vista === 'calendario' && (
-          <label style={{ fontSize: '.75rem', color: '#666', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, cursor: 'pointer' }}>
+        <div style={{ display: 'flex', gap: 2, flex: 1, minWidth: 0, ...(isMobile ? { overflowX: 'auto' } : {}) }}>
+          {([['lista', 'A dónde ir'], ['calendario', 'Calendario'], ['comparar', 'Comparar ferias']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setVista(v)} style={{
+              font: 'inherit', fontSize: '.875rem', fontWeight: vista === v ? 800 : 500, padding: isMobile ? '9px 11px' : '9px 15px', border: 'none', whiteSpace: 'nowrap',
+              borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent', background: vista === v ? P.violetaAgua : 'transparent',
+              color: vista === v ? P.violetaTinta : '#666', borderRadius: '9px 9px 0 0', cursor: 'pointer',
+            }}>{l}</button>
+          ))}
+        </div>
+        {!isMobile && vista === 'calendario' && (
+          <label style={{ fontSize: '.75rem', color: '#666', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             <input type="checkbox" checked={conDescartados} onChange={e => setConDescartados(e.target.checked)} /> incluir los que no vamos
           </label>
         )}
         {isMobile && <Btn nivel="primario" chico onClick={() => setNuevo(true)} style={{ marginBottom: 6 }}>Nuevo</Btn>}
       </div>
+      {isMobile && vista === 'calendario' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <label style={{ fontSize: '.75rem', color: '#666', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+            <input type="checkbox" checked={conDescartados} onChange={e => setConDescartados(e.target.checked)} /> incluir los que no vamos
+          </label>
+          <Btn nivel="terciario" chico onClick={() => fetch('/api/crm/eventos/ical').then(r => r.json()).then(j => j.url ? setCalendario(j) : alert(j.error || 'No se pudo'))}>Suscribirse al calendario</Btn>
+        </div>
+      )}
 
+      {vista === 'comparar' ? <Comparador onAbrirEdicion={setEdicionAbierta} /> : <>
       <div style={{ display: 'flex', gap: 7, marginBottom: 16, ...(isMobile ? { overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 } : { flexWrap: 'wrap' }) }}>
         <Chip activo={!giro} onClick={() => setGiro('')}>Todos los giros</Chip>
         {Object.entries(porGiro).sort((a, b) => b[1] - a[1]).map(([g, n]) => <Chip key={g} activo={giro === g} onClick={() => setGiro(giro === g ? '' : g)}>{GIROS_EVENTO[g] || g} <span style={{ opacity: .6 }}>{n}</span></Chip>)}
@@ -180,6 +195,11 @@ export default function EventosTab() {
           })}
         </div>
       )}
+      </>}
+
+      <Sheet open={!!calendario} onClose={() => setCalendario(null)} width={560} title="Suscribirse al calendario">
+        {calendario && <SuscripcionCalendario cal={calendario} onRotar={async () => { const j = await post('/api/crm/eventos/ical', { accion: 'rotar' }); setCalendario(j); }} />}
+      </Sheet>
 
       <Sheet open={!!abierto && !edicionAbierta} onClose={() => setAbierto(null)} width={880} title={evAbierto?.nombre || 'Evento'}>
         {evAbierto && <EventoFicha evento={evAbierto} hoy={hoy} onCambio={traer} onEdicion={(id) => setEdicionAbierta(id)} onCerrar={() => { setAbierto(null); traer(); }} />}
@@ -208,6 +228,36 @@ function Chip({ activo, onClick, children }: { activo: boolean; onClick: () => v
 }
 
 /** La lista de «a dónde ir»: agrupada por decisión y ordenada por encaje. */
+function SuscripcionCalendario({ cal, onRotar }: { cal: { url: string; webcal: string }; onRotar: () => Promise<void> }) {
+  const [copiado, setCopiado] = useState(false);
+  const copiar = () => navigator.clipboard?.writeText(cal.url).then(() => { setCopiado(true); setTimeout(() => setCopiado(false), 2000); });
+  return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      <p style={{ fontSize: '.875rem', color: '#444', margin: 0, lineHeight: 1.55 }}>
+        Las ferias a las que vamos, las que están por decidir, la fecha límite para apartar stand y las tareas pendientes, en el calendario
+        del teléfono o de la compu. Se actualiza solo: lo que cambie aquí aparece allá en unas horas.
+      </p>
+      <div style={{ ...tarjetaKpi(P.violeta), display: 'grid', gap: 8 }}>
+        <div style={{ fontSize: '.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>Liga del calendario</div>
+        <code style={{ fontSize: '.75rem', color: '#333', wordBreak: 'break-all', lineHeight: 1.4 }}>{cal.url}</code>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Btn nivel="primario" chico onClick={copiar}>{copiado ? 'Copiada' : 'Copiar liga'}</Btn>
+          <a href={cal.webcal} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, padding: '5px 11px', borderRadius: 8, background: '#fff', color: P.violetaTinta, border: `1.5px solid ${P.violeta}`, textDecoration: 'none' }}>Abrir en Apple / Outlook</a>
+        </div>
+      </div>
+      <div style={{ fontSize: '.8125rem', color: '#555', lineHeight: 1.6 }}>
+        <b>Google Calendar:</b> Otros calendarios → + → Desde URL → pega la liga.<br />
+        <b>iPhone / Mac / Outlook:</b> el botón de arriba lo agrega directo.
+      </div>
+      <div style={{ fontSize: '.75rem', color: '#888', lineHeight: 1.5 }}>
+        La liga lleva una clave: quien la tenga ve el calendario sin entrar al CRM. Si se compartió de más,
+        <button onClick={() => { if (confirm('¿Cambiar la clave? Los calendarios ya suscritos dejan de actualizarse y hay que volver a agregarlos.')) onRotar(); }} style={{ font: 'inherit', fontSize: '.75rem', fontWeight: 700, color: P.rojoTinta, background: 'none', border: 'none', padding: '0 3px', cursor: 'pointer' }}>cámbiala aquí</button>
+        y vuelve a suscribir los calendarios.
+      </div>
+    </div>
+  );
+}
+
 function ListaEventos({ eventos, hoy, isMobile, onAbrir, onDecidir, onEdicion }: {
   eventos: any[]; hoy: string; isMobile: boolean; onAbrir: (id: string) => void; onDecidir: (id: string, d: string) => void; onEdicion: (id: string) => void;
 }) {
@@ -243,7 +293,14 @@ function TarjetaEvento({ e, hoy, onAbrir, onDecidir, onEdicion }: { e: any; hoy:
           <button onClick={onAbrir} style={{ font: 'inherit', fontSize: '1rem', fontWeight: 800, color: '#222', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>{e.nombre}</button>
           <div style={{ fontSize: '.75rem', color: '#888', marginTop: 2 }}>{TIPO_ETIQ[e.tipo] || e.tipo} · {e.ciudad || 'México'}{e.frecuencia ? ` · ${e.frecuencia}` : ''}</div>
         </div>
-        <Fit v={e.fit_puntaje} />
+        <div style={{ display: 'grid', gap: 3, justifyItems: 'end' }}>
+          <Fit v={e.fit_puntaje} />
+          {e.fit_medido != null && (
+            <span title={e.fit_medido_nota || 'Fit medido con lo que pasó en las ediciones a las que fuimos'} style={{ fontSize: '.6875rem', color: e.fit_medido < e.fit_puntaje - 1 ? P.rojoTinta : '#777', whiteSpace: 'nowrap' }}>
+              medido <b style={{ fontVariantNumeric: 'tabular-nums' }}>{e.fit_medido}</b>
+            </span>
+          )}
+        </div>
       </div>
       {e.fit_por_que && <div style={{ fontSize: '.8125rem', color: '#444', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.fit_por_que}</div>}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>

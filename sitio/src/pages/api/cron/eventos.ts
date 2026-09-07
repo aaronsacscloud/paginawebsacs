@@ -11,6 +11,8 @@
 //   2. Tareas de preparación vencidas, UN aviso por edición (no 17).
 //   3. Registros de las últimas 72 h con consentimiento y sin ninguna bienvenida.
 //   4. Ediciones que ya pasaron hace 7+ días sin retro (el aprendizaje se enfría).
+//   5. Calientes (o que pidieron demo) con 48 h capturados y nadie les ha escrito
+//      aparte de la bienvenida automática: un caliente se enfría en tres días.
 import type { APIRoute } from 'astro';
 import { diaMX } from '../../../lib/crm/eventos.lib';
 import { supabase } from '../../../lib/supabase';
@@ -27,7 +29,7 @@ const fecha = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('e
 export const GET: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'no autorizado' }, 401);
   const hoy = diaMX(null);
-  const res = { limites: 0, vencidos: 0, tareas: 0, sin_bienvenida: 0, sin_retro: 0 };
+  const res = { limites: 0, vencidos: 0, tareas: 0, sin_bienvenida: 0, sin_retro: 0, sin_contacto: 0 };
 
   // 1. Se acaba el plazo para apartar.
   const { data: lims } = await supabase.from('ev_ediciones')
@@ -121,6 +123,38 @@ export const GET: APIRoute = async ({ request }) => {
       destino: `eventos?edicion=${ed.id}`, metadata: { edicion_id: ed.id },
     });
     if (nuevo) res.sin_retro++;
+  }
+
+  // 5. Calientes que nadie ha tocado.
+  const hace48 = new Date(Date.now() - 48 * 3600e3).toISOString();
+  const hace21d = new Date(Date.now() - 21 * 864e5).toISOString();
+  const { data: frios } = await supabase.from('ev_registros').select('id, edicion_id, contact_id, nombre, empresa, quiere_demo, capturado_at')
+    .eq('consentimiento', true).is('contactado_at', null).is('demo_at', null).lte('capturado_at', hace48).gte('capturado_at', hace21d)
+    .or('temperatura.eq.caliente,quiere_demo.eq.true').limit(500);
+  const porEdF = new Map<string, any[]>();
+  for (const r of frios || []) {
+    // Si el contacto ya tuvo actividad humana después de capturarse (nota, llamada,
+    // mensaje del inbox), no está olvidado aunque nadie apretó «Le escribí».
+    if (r.contact_id) {
+      const { count } = await supabase.from('activities').select('id', { count: 'exact', head: true }).eq('contact_id', r.contact_id)
+        .gt('created_at', r.capturado_at).eq('automatico', false);
+      if (count) continue;
+    }
+    (porEdF.get(r.edicion_id) || porEdF.set(r.edicion_id, []).get(r.edicion_id)!).push(r);
+  }
+  if (porEdF.size) {
+    const { data: eds } = await supabase.from('ev_ediciones').select('id, nombre, ev_eventos(nombre)').in('id', Array.from(porEdF.keys()));
+    for (const ed of (eds || []) as any[]) {
+      const l = porEdF.get(ed.id)!;
+      const nombres = l.slice(0, 3).map(r => r.empresa || r.nombre).filter(Boolean).join(', ');
+      const nuevo = await notificar({
+        clave: `ev_sin_contacto:${ed.id}:${hoy}`, tipo: 'evento_sin_contacto', nivel: 'urgente',
+        titulo: `${ed.ev_eventos?.nombre} · ${ed.nombre}: ${l.length === 1 ? '1 caliente lleva' : l.length + ' calientes llevan'} 2 días sin que nadie les escriba`,
+        detalle: `${nombres}${l.length > 3 ? ' y ' + (l.length - 3) + ' más' : ''}. Un caliente de feria se enfría en tres días: escríbeles hoy desde Seguimiento.`,
+        destino: `eventos?edicion=${ed.id}&vista=seguimiento`, metadata: { edicion_id: ed.id, registros: l.map(r => r.id) },
+      });
+      if (nuevo) res.sin_contacto++;
+    }
   }
 
   return json({ ok: true, hoy, ...res });

@@ -138,6 +138,11 @@ export const POST: APIRoute = async ({ request }) => {
     for (const k of ENTEROS_EDICION) if (k in b) fila[k] = b[k] === '' || b[k] == null ? null : Math.max(0, Math.round(Number(b[k]) || 0));
     if ('presupuesto' in b) fila.presupuesto = b.presupuesto === '' || b.presupuesto == null ? null : Math.max(0, Number(b.presupuesto) || 0);
     if ('email_bienvenida' in b) fila.email_bienvenida = !!b.email_bienvenida;
+    if ('horario_stand' in b) {
+      const h = b.horario_stand || {};
+      const hora = (v: any, def: string) => /^\d{2}:\d{2}$/.test(String(v || '')) ? String(v) : def;
+      fila.horario_stand = b.horario_stand ? { desde: hora(h.desde, '10:00'), hasta: hora(h.hasta, '18:00'), duracion: Math.min(60, Math.max(10, Number(h.duracion) || 15)), cupo: Math.min(6, Math.max(1, Number(h.cupo) || 1)) } : null;
+    }
     if ('equipo' in b) fila.equipo = Array.isArray(b.equipo) ? b.equipo.slice(0, 20).map((p: any) => ({ id: esUuid(p?.id) ? p.id : null, nombre: limpiar(p?.nombre, 80) })) : [];
     if (fila.participacion && !['sin_decidir', 'vamos', 'no_vamos', 'fuimos'].includes(fila.participacion)) delete fila.participacion;
     if (fila.rol && !['stand', 'recorrido', 'visitante', 'patrocinio'].includes(fila.rol)) delete fila.rol;

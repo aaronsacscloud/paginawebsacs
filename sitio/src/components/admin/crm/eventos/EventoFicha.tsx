@@ -99,6 +99,11 @@ export default function EventoFicha({ evento, hoy, onCambio, onEdicion, onCerrar
         <span style={{ fontSize: '.8125rem', color: '#666' }}>{[e.sede, e.ciudad, e.estado_geo].filter(Boolean).join(' · ')}{e.frecuencia ? ` · ${e.frecuencia}` : ''}</span>
         <span style={{ flex: 1 }} />
         <Fit v={e.fit_puntaje} />
+        {e.fit_medido != null && (
+          <span title={e.fit_medido_nota || ''} style={{ fontSize: '.75rem', color: e.fit_medido < e.fit_puntaje - 1 ? P.rojoTinta : '#777', whiteSpace: 'nowrap' }}>
+            medido <b style={{ fontVariantNumeric: 'tabular-nums' }}>{e.fit_medido}</b>
+          </span>
+        )}
         <Btn chico nivel="terciario" onClick={() => setEditando(true)}>Editar</Btn>
       </div>
 
@@ -169,6 +174,7 @@ export default function EventoFicha({ evento, hoy, onCambio, onEdicion, onCerrar
         </Seccion>
       )}
       {e.quien_es_prospecto && <Texto titulo="Quién de ahí es nuestro prospecto">{e.quien_es_prospecto}</Texto>}
+      {e.fit_medido_nota && <Texto titulo={`Lo que dicen los números · fit medido ${e.fit_medido}`}>{e.fit_medido_nota}</Texto>}
       {e.fit_por_que && <Texto titulo="Por qué encaja (o no)">{e.fit_por_que}{e.prospectos_alcanzables && e.prospectos_alcanzables.length > 60 ? `\n\nProspectos alcanzables: ${e.prospectos_alcanzables}` : ''}</Texto>}
       {(e.costo_stand || e.costo_entrada || e.como_participar) && (
         <Seccion titulo="Cuánto cuesta y cómo se participa">

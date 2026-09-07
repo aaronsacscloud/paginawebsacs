@@ -97,5 +97,53 @@ export async function pedirJSON(msg: Msg): Promise<any> {
   throw new Error('Ningún modelo de IA contestó. ' + fallos.join(' · '));
 }
 
+/**
+ * Lo mismo, pero con una imagen (data URL). Se usa para leer una tarjeta de
+ * presentación en el stand. Los modelos que ven imágenes son menos: aquí solo
+ * se prueban esos, sin el recuerdo del elegido (un modelo que sirve para texto
+ * no sirve necesariamente para imagen).
+ */
+export async function pedirJSONImagen(msg: Msg & { imagen: string }): Promise<any> {
+  const ok = import.meta.env.OPENAI_API_KEY;
+  const ak = import.meta.env.ANTHROPIC_API_KEY;
+  if (!ok && !ak) throw new Error('No hay ninguna llave de IA configurada en el servidor.');
+  const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(msg.imagen || '');
+  if (!m) throw new Error('La imagen no viene como data URL.');
+  const fallos: string[] = [];
+  if (ok) {
+    for (const modelo of ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o']) {
+      try {
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ok}` },
+          body: JSON.stringify({ model: modelo, temperature: 0, response_format: { type: 'json_object' }, messages: [
+            { role: 'system', content: msg.system },
+            { role: 'user', content: [{ type: 'text', text: msg.user }, { type: 'image_url', image_url: { url: msg.imagen, detail: 'high' } }] },
+          ] }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(j?.error?.message || `OpenAI respondió ${r.status}`);
+        return JSON.parse(limpiaJSON(j?.choices?.[0]?.message?.content || '{}'));
+      } catch (e: any) { fallos.push(`${modelo}: ${String(e?.message || e).slice(0, 90)}`); }
+    }
+  }
+  if (ak) {
+    for (const modelo of ANTHROPIC) {
+      try {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ak, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: modelo, max_tokens: 2048, temperature: 0, system: msg.system, messages: [
+            { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } }, { type: 'text', text: msg.user }] },
+            { role: 'assistant', content: '{' },
+          ] }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(j?.error?.message || `Anthropic respondió ${r.status}`);
+        return JSON.parse(limpiaJSON('{' + (j?.content || []).map((c: any) => c?.text || '').join('')));
+      } catch (e: any) { fallos.push(`${modelo}: ${String(e?.message || e).slice(0, 90)}`); }
+    }
+  }
+  throw new Error('Ningún modelo de IA pudo leer la imagen. ' + fallos.join(' · '));
+}
+
 /** Qué proveedor y modelo quedaron funcionando (para diagnóstico). */
 export const modeloEnUso = () => elegido;

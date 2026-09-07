@@ -110,7 +110,7 @@ export const GET: APIRoute = async ({ url }) => {
   // lo que llena un selector (p. ej. la bienvenida de un evento): barato y rápido.
   if (url.searchParams.get('aprobadas')) {
     const { data } = await supabase.from('wa_plantillas')
-      .select('nombre, idioma, cuerpo, variables, categoria, header_tipo')
+      .select('id, nombre, idioma, cuerpo, variables, categoria, header_tipo')
       .eq('status', 'APPROVED').order('nombre');
     return json({ plantillas: data || [] });
   }

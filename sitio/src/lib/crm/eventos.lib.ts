@@ -10,6 +10,7 @@
 //   3. El teléfono en el stand no tiene red. El registro se acepta con `cliente_local_id` y
 //      se puede reintentar: dos veces el mismo id = un solo registro.
 import { supabase } from '../supabase';
+export { GIROS, GIROS_EVENTO } from './eventos-catalogos';
 import { limpiar } from './abm.lib';
 
 export const TIPOS: Record<string, string> = {
@@ -94,6 +95,16 @@ export interface Registro {
   stand_visitado?: string; consentimiento?: boolean; consentimiento_version?: string;
   cliente_local_id?: string; capturado_por?: string | null; capturado_por_nombre?: string | null;
   abm_cuenta_id?: string | null;
+  capturado_via?: 'manual' | 'gafete_qr' | 'tarjeta' | 'cita';
+  cita_booking_id?: string | null;
+}
+
+/** Quién está en el stand AHORA según los turnos (día y hora de México). Null si nadie. */
+export async function turnoActivo(edicionId: string): Promise<{ usuario_id: string; nombre: string | null } | null> {
+  const hoy = diaMX(Date.now());
+  const hora = new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Mexico_City', hour12: false }).slice(0, 5);
+  const { data } = await supabase.from('ev_turnos').select('usuario_id, nombre, desde, hasta').eq('edicion_id', edicionId).eq('dia', hoy).lte('desde', hora).gte('hasta', hora).order('desde').limit(1).maybeSingle();
+  return data ? { usuario_id: data.usuario_id, nombre: data.nombre } : null;
 }
 
 export async function registrar(r: Registro): Promise<{ ok: boolean; id?: string; contact_id?: string; duplicado?: boolean; ya_era?: string | null; motivo?: string }> {
@@ -161,9 +172,11 @@ export async function registrar(r: Registro): Promise<{ ok: boolean; id?: string
   const seguimiento = diasSeg == null ? null : sumar(new Date().toISOString().slice(0, 10), diasSeg);
   const proximoPaso = `Lo conocimos en ${ev?.nombre || 'un evento'} (${ed.nombre})${r.quiere_demo ? ' · pidió demo' : ''}${limpiar(r.nota, 140) ? ' · ' + limpiar(r.nota, 140) : ''}`;
   // El QR no trae quién captura, y un registro con fecha de seguimiento pero sin dueño no
-  // le aparece a nadie. Dueño por defecto: quien está trabajando el stand (el último que
-  // capturó a mano en esta edición), si no el primero del equipo, si no quien decidió ir.
+  // le aparece a nadie. Dueño por defecto: quien tiene el TURNO del stand a esta hora; si
+  // no hay turnos, el último que capturó a mano en esta edición, si no el primero del
+  // equipo, si no quien decidió ir.
   let dueno: string | null = r.capturado_por || null;
+  if (!dueno) dueno = (await turnoActivo(ed.id))?.usuario_id || null;
   if (!dueno) {
     const { data: ult } = await supabase.from('ev_registros').select('capturado_por').eq('edicion_id', ed.id).not('capturado_por', 'is', null).order('capturado_at', { ascending: false }).limit(1).maybeSingle();
     dueno = ult?.capturado_por || null;
@@ -208,7 +221,7 @@ export async function registrar(r: Registro): Promise<{ ok: boolean; id?: string
   const { data: reg, error: eReg } = await supabase.from('ev_registros').insert({
     edicion_id: r.edicion_id, contact_id: contactId, company_id: contacto?.company_id || null, abm_cuenta_id: abmId,
     capturado_por: r.capturado_por || null, capturado_por_nombre: r.capturado_por_nombre || null,
-    modo: r.modo || 'stand',
+    modo: r.modo || 'stand', capturado_via: r.capturado_via || 'manual', cita_booking_id: r.cita_booking_id || null,
     nombre, empresa: limpiar(r.empresa, 120) || null, puesto: limpiar(r.puesto, 80) || null, giro: limpiar(r.giro, 60) || null,
     sucursales: Number(r.sucursales) || null, sistema_actual: limpiar(r.sistema_actual, 80) || null,
     whatsapp: wa, email, ciudad: limpiar(r.ciudad, 80) || null, instagram: limpiar(r.instagram, 80) || null,
@@ -321,7 +334,7 @@ export async function embudoDe(edicionId: string) {
   // PostgREST corta en 1000 filas sin avisar; una feria grande pasa de ahí.
   let lista: any[] = [];
   for (let desde = 0; ; desde += 1000) {
-    const { data } = await supabase.from('ev_registros').select('id, contact_id, company_id, consentimiento, bienvenida_wa_at, bienvenida_email_at, temperatura, quiere_demo, capturado_por_nombre, capturado_at, modo, sistema_actual, ya_era').eq('edicion_id', edicionId).order('capturado_at').range(desde, desde + 999);
+    const { data } = await supabase.from('ev_registros').select('id, contact_id, company_id, consentimiento, bienvenida_wa_at, bienvenida_email_at, temperatura, quiere_demo, capturado_por_nombre, capturado_at, modo, sistema_actual, ya_era, contactado_at, respondio_at, demo_at, demo_booking_id, cita_booking_id, capturado_via').eq('edicion_id', edicionId).order('capturado_at').range(desde, desde + 999);
     lista = lista.concat(data || []);
     if (!data || data.length < 1000) break;
   }
@@ -347,16 +360,25 @@ export async function embudoDe(edicionId: string) {
     deals = deals.concat(data || []);
     const { data: a } = await supabase.from('activities').select('contact_id, created_at').in('contact_id', ids.slice(i, i + 150)).in('tipo', ['demo_agendada', 'demo_realizada']);
     demosAct = demosAct.concat(a || []);
+    // Las demos agendadas desde la liga pública NO dejan actividad: solo el booking.
+    const { data: b } = await supabase.from('bookings').select('contact_id, created_at').in('contact_id', ids.slice(i, i + 150)).not('estado', 'in', '("cancelada","reagendada")');
+    demosAct = demosAct.concat(b || []);
   }
   const { data: gastos } = await supabase.from('ev_gastos').select('monto, categoria').eq('edicion_id', edicionId);
   const costo = (gastos || []).reduce((a: number, g: any) => a + Number(g.monto || 0), 0);
 
   const registros = lista.length;
   const con_consentimiento = lista.filter((r: any) => r.consentimiento).length;
-  const contactados = lista.filter((r: any) => r.bienvenida_wa_at || r.bienvenida_email_at).length;
-  const respondieron = lista.filter((r: any) => { const c = porId.get(r.contact_id); return c && enVentana(c.respondio_at); }).length;
+  const contactados = lista.filter((r: any) => r.bienvenida_wa_at || r.bienvenida_email_at || r.contactado_at).length;
+  const respondieron = lista.filter((r: any) => { const c = porId.get(r.contact_id); return r.respondio_at || (c && enVentana(c.respondio_at)); }).length;
   const conDemo = new Set(demosAct.filter(a => enVentana(a.created_at)).map(a => a.contact_id));
-  const demos = lista.filter((r: any) => conDemo.has(r.contact_id)).length;
+  const demos = lista.filter((r: any) => r.demo_at || conDemo.has(r.contact_id)).length;
+  // Punto 1: a quién NO se le ha escrito todavía (calientes y los que pidieron demo).
+  const sin_contacto = lista.filter((r: any) => (r.temperatura === 'caliente' || r.quiere_demo) && !r.contactado_at && !r.bienvenida_wa_at && !r.bienvenida_email_at).length;
+  // Punto 3: citas agendadas antes de la feria que sí llegaron al stand (llegar = tener registro).
+  const citas_llegaron = lista.filter((r: any) => r.cita_booking_id).length;
+  const por_via: Record<string, number> = {};
+  for (const r of lista as any[]) { const k = r.capturado_via || 'manual'; por_via[k] = (por_via[k] || 0) + 1; }
   // Oportunidad = un deal abierto o ganado que nació después de la feria. Los perdidos
   // y los de antes no son mérito del stand.
   const conDeal = new Set(deals.filter(d => d.stage !== 'cerrada_perdida' && enVentana(d.created_at)).map(d => d.contact_id));
@@ -383,7 +405,7 @@ export async function embudoDe(edicionId: string) {
   for (const r of lista as any[]) { const k = diaMX(r.capturado_at); porDia[k] = (porDia[k] || 0) + 1; }
 
   return {
-    registros, con_consentimiento, contactados, respondieron, demos, oportunidades, clientes, ya_clientes, arr, calientes, quieren_demo,
+    registros, con_consentimiento, contactados, respondieron, demos, oportunidades, clientes, ya_clientes, arr, calientes, quieren_demo, sin_contacto, citas_llegaron, por_via,
     costo, costo_por_registro: registros ? Math.round(costo / registros) : null, costo_por_cliente: clientes ? Math.round(costo / clientes) : null,
     roi: costo > 0 ? Math.round(((arr - costo) / costo) * 100) : null,
     por_persona: porPersona, por_dia: porDia, sistemas, ventana_desde: piso, ventana_hasta: tope,
