@@ -111,6 +111,9 @@ export default function Sala(p: SalaProps) {
      abajo, donde nadie llega. */
   const vienenDeAntes = (d?.pendientes || []).filter(a => !ab || a.sesion_id !== ab.id);
   const arrastrados = (d?.agenda || []).filter(x => x.arrastres > 0);
+  // Las juntas saltadas, de la más reciente a la más vieja: es el orden en que
+  // se leen las actas, y una junta que no se hizo se consulta igual que un acta.
+  const saltadas = (d?.ocurrencias || []).filter(o => o.estado === 'saltada').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const nuevosDeLaSemana = (d?.agenda || []).filter(x => !x.arrastres);
 
   /* Los puntos agrupados por quién los propuso: en una junta de dos, saber de
@@ -146,7 +149,7 @@ export default function Sala(p: SalaProps) {
             lo de ESTA semana, que se propone, se trata y se cierra. Mezclarlos
             haría que el guion se «tratara» y desapareciera en la primera junta. */}
         {!!d?.guion?.length && <button className={tab === 'guion' ? 'on' : ''} onClick={() => setTab('guion')}>Guion</button>}
-        <button className={tab === 'historial' ? 'on' : ''} onClick={() => setTab('historial')}>Actas{d?.historial.length ? ` · ${d.historial.length}` : ''}</button>
+        <button className={tab === 'historial' ? 'on' : ''} onClick={() => setTab('historial')}>Actas{(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length ? ` · ${(d?.historial.length || 0) + (d?.ocurrencias || []).filter(o => o.estado === 'saltada').length}` : ''}</button>
       </div>
       {!d && !err && <Cargando texto="Abriendo la sala…" />}
       {err && <div className="eq-vacio"><b>No se pudo abrir la sala</b>{err}<button className="eq-btn" onClick={cargar}>Reintentar</button></div>}
@@ -455,7 +458,28 @@ export default function Sala(p: SalaProps) {
       )}
       {d && tab === 'historial' && (
         <div className="eq-sala">
-          {!d.historial.length && <div className="eq-vacio"><b>Todavía no hay actas</b>Al cerrar la primera reunión aquí queda su acta: puntos, acuerdos, quién estuvo y cuánto duró.</div>}
+          {/* ── LAS QUE NO SE HICIERON ──
+              El renglón de una junta saltada se guardaba con su motivo y NADIE
+              podía leerlo: el panel solo pintaba la junta vigente, así que «queda
+              el motivo» era cierto únicamente dentro de la base de datos. Van
+              aquí, entre las actas, porque la pregunta es la misma —«¿qué pasó
+              con la junta del 7?»— y la respuesta «no se hizo, por esto» vale
+              tanto como un acta. */}
+          {saltadas.length > 0 && (
+            <div className="eq-bloque">
+              <div className="cab"><b>Juntas que no se hicieron</b><span className="n">{saltadas.length}</span></div>
+              {saltadas.map(o => (
+                <div key={o.id} className="eq-punto" style={{ padding: '8px 12px' }}>
+                  <span className="num" title="No se abrió">—</span>
+                  <div className="tt">
+                    <b>{fCorta(o.inicio_at)} · {fHora(o.inicio_at)}</b>
+                    <small>{o.motivo ? o.motivo : 'Nadie la abrió ese día.'}{o.movida ? ` · se había movido de las ${fHora(o.programada_at)}` : ''}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!d.historial.length && !saltadas.length && <div className="eq-vacio"><b>Todavía no hay actas</b>Al cerrar la primera reunión aquí queda su acta: puntos, acuerdos, quién estuvo y cuánto duró.</div>}
           {d.historial.length > 0 && (
             <div className="eq-bloque eq-pasadas">
               {d.historial.map((s, i) => <Acta key={s.id} s={s} abierta={i === 0} canalId={p.canal.id} onIr={p.onIr} onToggle={a => accion({ accion: 'hecho', acuerdo_id: a.id, hecho: !a.hecho_at })} onResumen={txt => accion({ accion: 'resumen', sesion_id: s.id, texto: txt }, 'Resumen guardado')} />)}
