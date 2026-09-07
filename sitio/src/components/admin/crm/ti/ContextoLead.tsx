@@ -26,11 +26,11 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
   const [n, setN] = useState(20);
   useEffect(() => { if ((!open && !inline) || !contactId) return; setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${n}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [open, contactId, n, inline]);
   const k = d?.contacto; const emp = k?.companies?.nombre_comercial || k?.companies?.nombre;
-  const lab = { fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#8e88a8', margin: '14px 0 6px' };
+  const lab = { fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: 'var(--suave, #8e88a8)', margin: '14px 0 6px' };
   const cuerpo = (
     <>
       <div style={{ padding: '4px 18px 90px', fontSize: 13.5, color: '#241d43' }}>
-        {!d && <p style={{ color: '#8e88a8' }}>Cargando…</p>}
+        {!d && <p style={{ color: 'var(--suave, #8e88a8)' }}>Cargando…</p>}
         {d?.error && <p style={{ color: '#b91c1c' }}>{d.error}</p>}
         {d && !d.error && (<>
           {/* Quién es, en una tira */}
@@ -41,23 +41,23 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
             {k?.estatus_lead && <span>Estatus: <b style={{ color: '#241d43' }}>{k.estatus_lead}</b></span>}
             {k?.created_at && <span>Llegó: <b style={{ color: '#241d43' }}>{fecha(k.created_at)}</b></span>}
           </div>
-          {d.perfil?.resumen && <div style={{ marginTop: 10, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.45 }}>{d.perfil.resumen}</div>}
+          {d.perfil?.resumen && <div style={{ marginTop: 10, background: 'var(--carta, #faf9fc)', border: '1px solid var(--linea2, #ecebf2)', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.45 }}>{d.perfil.resumen}</div>}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
             <span style={{ fontSize: 11, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '3px 9px', fontWeight: 700 }}>Agente: ciclo {d.agente.ciclo} · {d.agente.validos}/{d.agente.intentos} intentos válidos{d.agente.fase ? ` · ${d.agente.fase}` : ''}{d.agente.modo === 'sugerir' ? ' · sugiere' : ''}{d.perfil?.silenciar_ia ? ' · apagado' : ''}</span>
             {(d.citas || []).slice(0, 2).map((c: any) => <span key={c.id} style={{ fontSize: 11, background: c.estado === 'asistio' ? '#dcfce7' : '#e0e7ff', color: c.estado === 'asistio' ? '#14532d' : '#1e3a8a', borderRadius: 999, padding: '3px 9px', fontWeight: 700 }}>Cita {CITA[c.estado] || c.estado} · {c.fecha} {String(c.hora_inicio || '').slice(0, 5)}</span>)}
             {(d.cotizaciones || []).slice(0, 2).map((q: any) => <span key={q.id} style={{ fontSize: 11, background: '#fef3c7', color: '#78350f', borderRadius: 999, padding: '3px 9px', fontWeight: 700 }}>Cotización {COTI[q.estado] || q.estado}{q.total ? ` · $${Number(q.total).toLocaleString('es-MX')}` : ''}</span>)}
           </div>
 
-          {(d.senales || []).length > 0 && (<><div style={lab}>Señales</div><div style={{ display: 'grid', gap: 3, fontSize: 12 }}>{d.senales.slice(0, 5).map((s: any, i: number) => <div key={i} style={{ color: '#4a4658' }}><span style={{ color: '#8e88a8' }}>{new Date(s.ocurrio_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span> · {s.tipo === 'cotizacion_vista' ? `abrió la cotización${s.detalle?.numero ? ` #${s.detalle.numero}` : ''}${s.detalle?.aperturas_24h > 1 ? ` (${s.detalle.aperturas_24h} veces hoy)` : ''}` : s.tipo.replace(/_/g, ' ')}{s.accion === 'mensaje_unico' ? <span style={{ color: '#14532d' }}> · el agente le escribió</span> : null}</div>)}</div></>)}
+          {(d.senales || []).length > 0 && (<><div style={lab}>Señales</div><div style={{ display: 'grid', gap: 3, fontSize: 12 }}>{d.senales.slice(0, 5).map((s: any, i: number) => <div key={i} style={{ color: '#4a4658' }}><span style={{ color: 'var(--suave, #8e88a8)' }}>{new Date(s.ocurrio_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span> · {s.tipo === 'cotizacion_vista' ? `abrió la cotización${s.detalle?.numero ? ` #${s.detalle.numero}` : ''}${s.detalle?.aperturas_24h > 1 ? ` (${s.detalle.aperturas_24h} veces hoy)` : ''}` : s.tipo.replace(/_/g, ' ')}{s.accion === 'mensaje_unico' ? <span style={{ color: '#14532d' }}> · el agente le escribió</span> : null}</div>)}</div></>)}
           <div style={lab}>Últimos {d.mensajes.length} mensajes {d.mensajes.length >= n && <button onClick={() => setN(n + 20)} style={{ marginLeft: 8, border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, letterSpacing: 0, textTransform: 'none' }}>ver 20 más</button>}</div>
-          {!d.mensajes.length && <p style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin mensajes de WhatsApp con este lead.</p>}
+          {!d.mensajes.length && <p style={{ color: 'var(--suave, #8e88a8)', fontSize: 12.5 }}>Sin mensajes de WhatsApp con este lead.</p>}
           <div style={{ display: 'grid', gap: 6 }}>
             {d.mensajes.map((m: any) => {
               const lead = m.quien === 'lead'; const agente = m.quien === 'agente';
               const texto = m.cuerpo || m.transcript || (m.tipo && m.tipo !== 'text' ? `[${m.tipo}${m.filename ? `: ${m.filename}` : ''}]` : '');
               return (
                 <div key={m.id} style={{ display: 'flex', justifyContent: lead ? 'flex-start' : 'flex-end' }}>
-                  <div style={{ maxWidth: '84%', background: lead ? '#fff' : agente ? '#EEECFE' : '#e7f7ee', border: `1px solid ${lead ? '#e8e5f0' : agente ? '#d9d4ea' : '#c9ead6'}`, borderRadius: 12, padding: '7px 11px' }}>
+                  <div style={{ maxWidth: '84%', background: lead ? 'var(--carta, #fff)' : agente ? 'var(--morado-agua, #EEECFE)' : 'var(--verde-a, #e7f7ee)', color: 'var(--tinta, #241d43)', border: `1px solid ${lead ? 'var(--linea2, #e8e5f0)' : agente ? 'var(--linea2, #d9d4ea)' : 'var(--linea2, #c9ead6)'}`, borderRadius: 12, padding: '7px 11px' }}>
                     <div style={{ fontSize: 10, fontWeight: 800, color: lead ? '#8e88a8' : agente ? '#4c1d95' : '#14532d', marginBottom: 2 }}>{lead ? (k?.nombre || 'Lead') : agente ? 'Agente IA' : (m.quien === 'equipo' ? 'Equipo' : m.quien)} · {fecha(m.created_at)}{m.status === 'failed' ? ' · falló' : ''}</div>
                     <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, fontSize: 13 }}>{texto}</div>
                   </div>
@@ -71,7 +71,7 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
           {!!(d.notas || []).length && (<><div style={lab}>Notas del equipo</div>
             {d.notas.map((x: any) => <div key={x.id} style={{ fontSize: 12.5, padding: '6px 0', borderTop: '1px solid #f0eef6' }}><b>{x.autor || 'Equipo'}</b> · {fecha(x.created_at)}<div style={{ color: '#6b6580', marginTop: 2 }}>{x.texto}</div></div>)}</>)}
           {d.perfil && Object.keys(d.perfil.datos || {}).length > 0 && (<><div style={lab}>Lo que el agente ya sabe</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{Object.entries(d.perfil.datos).filter(([, v]) => v !== null && v !== '' && typeof v !== 'object').slice(0, 14).map(([kk, v]) => <span key={kk} style={{ fontSize: 11.5, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 8, padding: '3px 8px' }}><span style={{ color: '#8e88a8' }}>{kk}:</span> {String(v)}</span>)}</div></>)}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{Object.entries(d.perfil.datos).filter(([, v]) => v !== null && v !== '' && typeof v !== 'object').slice(0, 14).map(([kk, v]) => <span key={kk} style={{ fontSize: 11.5, background: 'var(--carta, #faf9fc)', border: '1px solid var(--linea2, #ecebf2)', borderRadius: 8, padding: '3px 8px' }}><span style={{ color: 'var(--suave, #8e88a8)' }}>{kk}:</span> {String(v)}</span>)}</div></>)}
         </>)}
       </div>
       {!!acciones.length && (
@@ -100,9 +100,9 @@ export function MiniHilo({ contactId, n = 12, onAbrir, abiertoInicial = true }: 
   useEffect(() => { setD(null); fetch(`/api/crm/ti/contexto?contact_id=${contactId}&n=${cuantos}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [contactId, cuantos]);
   const k = d?.contacto;
   return (
-    <div style={{ margin: '10px 0 4px', border: '1px solid #ecebf2', borderRadius: 12, background: '#faf9fc' }}>
+    <div style={{ margin: '10px 0 4px', border: '1px solid var(--linea2, #ecebf2)', borderRadius: 12, background: 'var(--carta, #faf9fc)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
-        <button type="button" onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: 0 }}>{abierto ? '▾' : '▸'} Últimos mensajes{d?.mensajes ? ` (${d.mensajes.length})` : ''}</button>
+        <button type="button" onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--suave, #8e88a8)', padding: 0 }}>{abierto ? '▾' : '▸'} Últimos mensajes{d?.mensajes ? ` (${d.mensajes.length})` : ''}</button>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
           {abierto && d?.mensajes?.length >= cuantos && <button type="button" onClick={() => setCuantos(c => c + 15)} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5 }}>ver 15 más</button>}
           {onAbrir && <button type="button" onClick={onAbrir} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5 }}>abrir completa</button>}
@@ -110,15 +110,15 @@ export function MiniHilo({ contactId, n = 12, onAbrir, abiertoInicial = true }: 
       </div>
       {abierto && (
         <div style={{ padding: '0 12px 10px', maxHeight: 320, overflowY: 'auto', display: 'grid', gap: 5 }}>
-          {!d && <span style={{ color: '#8e88a8', fontSize: 12 }}>Cargando…</span>}
+          {!d && <span style={{ color: 'var(--suave, #8e88a8)', fontSize: 12 }}>Cargando…</span>}
           {d?.error && <span style={{ color: '#b91c1c', fontSize: 12 }}>{d.error}</span>}
-          {d && !d.error && !d.mensajes.length && <span style={{ color: '#8e88a8', fontSize: 12 }}>Sin mensajes de WhatsApp con este lead.</span>}
+          {d && !d.error && !d.mensajes.length && <span style={{ color: 'var(--suave, #8e88a8)', fontSize: 12 }}>Sin mensajes de WhatsApp con este lead.</span>}
           {(d?.mensajes || []).map((m: any) => {
             const lead = m.quien === 'lead'; const agente = m.quien === 'agente';
             const texto = m.cuerpo || m.transcript || (m.tipo && m.tipo !== 'text' ? `[${m.tipo}]` : '');
             return (
               <div key={m.id} style={{ display: 'flex', justifyContent: lead ? 'flex-start' : 'flex-end' }}>
-                <div style={{ maxWidth: '86%', background: lead ? '#fff' : agente ? '#EEECFE' : '#e7f7ee', border: `1px solid ${lead ? '#e8e5f0' : agente ? '#d9d4ea' : '#c9ead6'}`, borderRadius: 10, padding: '5px 9px' }}>
+                <div style={{ maxWidth: '86%', background: lead ? 'var(--carta, #fff)' : agente ? 'var(--morado-agua, #EEECFE)' : 'var(--verde-a, #e7f7ee)', color: 'var(--tinta, #241d43)', border: `1px solid ${lead ? 'var(--linea2, #e8e5f0)' : agente ? 'var(--linea2, #d9d4ea)' : 'var(--linea2, #c9ead6)'}`, borderRadius: 10, padding: '5px 9px' }}>
                   <div style={{ fontSize: 9.5, fontWeight: 800, color: lead ? '#8e88a8' : agente ? '#4c1d95' : '#14532d' }}>{lead ? (k?.nombre || 'Lead') : agente ? 'Agente IA' : (m.quien === 'equipo' ? 'Equipo' : m.quien)} · {fecha(m.created_at)}</div>
                   <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.4, fontSize: 12.5 }}>{String(texto).slice(0, 600)}</div>
                 </div>

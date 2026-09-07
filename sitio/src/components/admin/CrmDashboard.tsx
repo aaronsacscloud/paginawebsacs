@@ -375,7 +375,7 @@ const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reunio
    `@media (prefers-color-scheme: dark)`), así que el panel se ponía oscuro solo
    —pero el marco de la app se quedaba blanco alrededor—. Solo faltaba
    registrarlas para que el lienzo acompañe. */
-const M_DARK_TABS: Tab[] = ['comisiones', 'abm', 'sacs', 'wa-plantillas', 'wa-numero', 'agenda', 'ti-seguimiento', 'ti-descalificar', 'ti-compromisos', 'ti-reactivacion', 'ti-informes', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+const M_DARK_TABS: Tab[] = ['cobranza', 'hoy', 'onboarding', 'embudo', 'marca', 'cobros', 'pipelines', 'comisiones', 'abm', 'sacs', 'wa-plantillas', 'wa-numero', 'agenda', 'ti-seguimiento', 'ti-descalificar', 'ti-compromisos', 'ti-reactivacion', 'ti-informes', 'fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1613,7 +1613,7 @@ const CRM_MOBILE_CSS = `
         --m-neutro: #232329; --m-acc: #A78BFA; --m-acc-suave: #2a2440;
         --m-dinero: #34D399; --m-rojo: #F0857A; --m-ambar: #E8B04B;
       }
-      [data-crm-dark="1"] body, [data-crm-dark="1"] [style*="Plus Jakarta"], [data-crm-dark="1"] [style*="transition: margin-left"] { background: #131318 !important; }
+      [data-crm-dark="1"] body, [data-crm-dark="1"] [style*="Plus Jakarta"], [data-crm-dark="1"] [style*="transition: margin-left"] { background: #131318 !important; color: #F2F1F7; }
       /* Lienzos de pantalla con #fff inline: en dark toman el fondo del tema
          (era la mitad blanca con texto claro ilegible que reportó el usuario) */
       [data-crm-dark="1"] .m-lienzo { background: #131318 !important; }
@@ -1654,6 +1654,81 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="color: rgb(68, 68, 68)"],
       [data-crm-dark="1"] [style*="color: rgb(102, 102, 102)"] { color: #c9c7d3 !important; }
       [data-crm-dark="1"] [style*="color: rgb(153, 153, 153)"] { color: #918fa0 !important; }
+      /* Segunda tanda, medida con el arnés sobre las 7 pantallas que quedaban:
+         los mismos grises y negros se repetían en todas. Se listan por valor
+         porque están escritos a mano, fuera de la paleta. */
+      [data-crm-dark="1"] [style*="color: rgb(26, 26, 26)"],
+      [data-crm-dark="1"] [style*="color: rgb(0, 0, 0)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(51, 51, 51)"],
+      [data-crm-dark="1"] [style*="color: rgb(74, 70, 88)"],
+      [data-crm-dark="1"] [style*="color: rgb(85, 85, 85)"] { color: #c9c7d3 !important; }
+      /* Superficies casi blancas: #f6f8fa, #fcfbfe, #fafafa. */
+      [data-crm-dark="1"] [style*="background: rgb(246, 248, 250)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(246, 248, 250)"],
+      [data-crm-dark="1"] [style*="background: rgb(252, 251, 254)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(252, 251, 254)"],
+      [data-crm-dark="1"] [style*="background: rgb(250, 250, 250)"] { background-color: #1d1d24 !important; }
+      /* Tintas de pastilla: el morado y el azul hondos se pintaron para fondo
+         claro y sobre negro se hunden. Se suben al tono claro de su familia. */
+      [data-crm-dark="1"] [style*="color: rgb(76, 29, 149)"],
+      [data-crm-dark="1"] [style*="color: rgb(124, 58, 237)"],
+      [data-crm-dark="1"] [style*="color: rgb(108, 92, 231)"] { color: #C4B5FD !important; }
+      [data-crm-dark="1"] [style*="color: rgb(75, 123, 229)"] { color: #7DA6F5 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(74, 74, 74)"] { color: #c9c7d3 !important; }
+      /* Los títulos toman su color de una hoja global (h1..h3 en #1a1a1a), no
+         de un style propio, así que ningún selector [style*=] los alcanzaba: el
+         título de la pantalla salía negro sobre negro. Sin !important, para que
+         una pantalla que sí declare su color siga mandando. */
+      [data-crm-dark="1"] h1, [data-crm-dark="1"] h2,
+      [data-crm-dark="1"] h3, [data-crm-dark="1"] h4 { color: #F2F1F7; }
+      /* Campos: nacen blancos con borde claro. Sin esto quedaban como recuadros
+         encendidos en medio de la pantalla, y el arnés los marcaba como
+         superficies claras sin texto. */
+      [data-crm-dark="1"] input:not([type=checkbox]):not([type=radio]),
+      [data-crm-dark="1"] textarea, [data-crm-dark="1"] select {
+        background-color: #1d1d24 !important; color: #F2F1F7 !important; border-color: #33333d !important;
+      }
+      [data-crm-dark="1"] input::placeholder, [data-crm-dark="1"] textarea::placeholder { color: #7e7b89; }
+      /* Avisos en ámbar y en verde: nacen con fondo casi blanco (#fff9ef,
+         #fff8ec, #f0fdf4) y sobre negro se leen como un recuadro encendido.
+         Se les da el ámbar/verde oscuro de la app, no gris: el color dice qué
+         tipo de aviso es y esa información no se tira. */
+      [data-crm-dark="1"] [style*="background: rgb(255, 249, 239)"],
+      [data-crm-dark="1"] [style*="background: rgb(255, 248, 236)"],
+      [data-crm-dark="1"] [style*="background: rgb(255, 251, 235)"] { background-color: #33280f !important; border-color: #544a24 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(240, 253, 244)"],
+      [data-crm-dark="1"] [style*="background: rgb(234, 248, 242)"] { background-color: #14312a !important; border-color: #245040 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(254, 240, 239)"],
+      [data-crm-dark="1"] [style*="background: rgb(254, 242, 242)"] { background-color: #3a201e !important; border-color: #5a2f2b !important; }
+      /* Flechitas de ordenar: iban en rgba(16,16,16,.3), otra cadena distinta. */
+      [data-crm-dark="1"] [style*="rgba(16, 16, 16"] { color: #918fa0 !important; }
+      /* Y sus tintas: el ámbar hondo sobre el ámbar oscuro seguía sin leerse. */
+      [data-crm-dark="1"] [style*="color: rgb(122, 90, 16)"],
+      [data-crm-dark="1"] [style*="color: rgb(154, 106, 16)"],
+      [data-crm-dark="1"] [style*="color: rgb(160, 102, 0)"] { color: #E8C978 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(8, 145, 178)"] { color: #67D8EF !important; }
+      [data-crm-dark="1"] [style*="color: rgb(22, 24, 29)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(245, 245, 245)"],
+      [data-crm-dark="1"] [style*="background-color: rgb(245, 245, 245)"] { background-color: #232329 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(255, 244, 229)"] { background-color: #33280f !important; }
+      /* Las opciones de un select las pinta el sistema operativo con sus
+         colores claros: se les da el fondo del tema o quedan como una lista
+         blanca saliendo de un campo oscuro. */
+      [data-crm-dark="1"] option { background-color: #1d1d24; color: #F2F1F7; }
+      /* Pastillas de estado: nacen con fondo casi blanco (#f1f5f9 y parientes)
+         y el texto oscuro de su familia. */
+      [data-crm-dark="1"] [style*="background: rgb(241, 245, 249)"],
+      [data-crm-dark="1"] [style*="background: rgb(243, 244, 246)"],
+      [data-crm-dark="1"] [style*="background: rgb(249, 250, 251)"] { background-color: #232329 !important; }
+      /* Los tonos hondos de las cifras (verde 900, ámbar 900, azul 900, rojo
+         700): pintados para fondo claro, sobre negro se hunden. */
+      [data-crm-dark="1"] [style*="color: rgb(20, 83, 45)"] { color: #34D399 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(120, 53, 15)"] { color: #E8B04B !important; }
+      [data-crm-dark="1"] [style*="color: rgb(30, 58, 138)"] { color: #7DA6F5 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(185, 28, 28)"],
+      [data-crm-dark="1"] [style*="color: rgb(127, 29, 29)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] [style*="color: rgb(185, 51, 51)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] [style*="color: rgb(100, 116, 139)"] { color: #9CA3AF !important; }
       /* Líneas: van en el border corto («1px solid rgb(236,236,236)»), así que
          se busca el color con el «solid» delante para no pisar un fondo igual. */
       [data-crm-dark="1"] [style*="solid rgb(236, 236, 236)"],
