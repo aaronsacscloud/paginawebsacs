@@ -98,7 +98,8 @@ export const bloqueBancario = () => `Empresa: ${CUENTA_PAGO.empresa}\nRFC: ${CUE
  * ANTES DEL TURNO. Lee el último mensaje del lead, avanza la fase si toca (comprobante recibido, «quiero contratar»)
  * y devuelve la nota con la que el agente escribe. Null si el lead no está contratando.
  */
-export async function contratacionAntesDelTurno(contactId: string, textoLead: string, conversationId?: string | null): Promise<string | null> {
+export async function contratacionAntesDelTurno(contactId: string, textoLead: string, conversationId?: string | null, opts: { simular?: boolean } = {}): Promise<string | null> {
+  // simular=true (árbitro): calcula la nota como en producción pero NO guarda estado, ni crea cuenta, tareas ni correos.
   const { st: prev, agente_estado } = await leer(contactId);
   let st: Contratacion | null = prev && !['cancelada'].includes(prev.fase) ? { ...prev } : null;
   const ahora = new Date().toISOString();
@@ -138,6 +139,10 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
     }
   }
 
+  // UN TURNO MENOS (árbitro 7-sep, caso «contratar» 3/10): si ya sabemos cuántas tiendas tiene, no se le pregunta el plan
+  // aparte: se le recomienda el que le queda y en el mismo mensaje va el total, las vías de pago y el correo.
+  let planSugerido = false;
+  if (!st.plan && st.sucursales && st.fase === 'plan') { st.plan = st.sucursales >= 2 ? 'controla' : 'vende'; planSugerido = true; }
   let nota: string;
   const plan = st.plan ? PLANES.find(p => p.clave === st!.plan)! : null;
   const tot = plan ? totales(plan, st.sucursales) : null;
@@ -146,8 +151,8 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
 
   if (st.fase === 'comprobante') {
     // Crear el acceso ahora mismo si ya hay correo; si no, pedirlo (y se crea en cuanto lo dé).
-    if (!st.cuenta && f.email) await crearAcceso(contactId, st, f);
-    await tareaYCorreo(contactId, st, f).catch(() => {});
+    if (!opts.simular && !st.cuenta && f.email) await crearAcceso(contactId, st, f);
+    if (!opts.simular) await tareaYCorreo(contactId, st, f).catch(() => {});
     nota = st.cuenta
       ? `EL LEAD MANDÓ SU COMPROBANTE DE PAGO (${st.comprobante?.descripcion.slice(0, 200)}). Ya se pasó a administración y SU ACCESO YA ESTÁ CREADO. Escribe DOS burbujas (sepáralas con ---). Burbuja 1: gracias, que ya lo pasaste a administración y que en este momento queda listo su acceso. Burbuja 2, tal cual estos datos: entra en ${LIGA_APP} con el correo ${f.email} y la contraseña temporal «${st.error_acceso ? '' : (st as any)._password || ''}» (la cambia al entrar); adentro tiene la Academia para aprender paso a paso, y el chat de soporte dentro de su Sacs para cualquier duda; y que agende su sesión de arranque con un consultor para su kickoff aquí: ${LIGA_KICKOFF}. Sin vender nada más, sin preguntas. Cálido y concreto.`
       : st.error_acceso
@@ -161,7 +166,7 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
     st.fase = 'plan';
   } else if (!st.via && plan && tot) {
     st.fase = 'pago';
-    nota = `EL LEAD QUIERE CONTRATAR el plan ${plan.nombre}${st.sucursales ? ` para ${tot.n} tienda(s)` : ' (si no sabes cuántas tiendas, pregúntalo)'}. Fase PAGO. Dile el total claro: ${mxn(tot.mensual)} al mes, o si lo toma anual ${mxn(tot.anual_mes)} al mes (${mxn(tot.anual_total)} en un solo pago) con el 35 % de ahorro. Las vías, en una línea cada una: pagar con tarjeta en ${LIGA_PLANES} (mensual o anual, el acceso le llega al correo al terminar), o si prefiere el anual por transferencia le pasas los datos por aquí, o si quiere liga de pago se la mandas. Pregúntale cuál prefiere. ${correoTxt} ${reporta} Máximo dos preguntas en total (vía y correo si falta).`;
+    nota = `EL LEAD QUIERE CONTRATAR${planSugerido ? `. Por sus ${tot.n} tienda(s) le queda el plan ${plan.nombre} (${plan.para}); díselo como recomendación en una línea y sigue, sin preguntarle qué plan quiere (si él prefiere otro, se cambia)` : ` el plan ${plan.nombre}${st.sucursales ? ` para ${tot.n} tienda(s)` : ' (si no sabes cuántas tiendas, pregúntalo)'}`}. Fase PAGO. Dile el total claro: ${mxn(tot.mensual)} al mes, o si lo toma anual ${mxn(tot.anual_mes)} al mes (${mxn(tot.anual_total)} en un solo pago) con el 35 % de ahorro. FORMA OBLIGATORIA, dos burbujas (sepáralas con ---). Burbuja 1, máximo 3 líneas: el plan (una línea) y el total mensual y anual. Burbuja 2: las vías, UNA POR LÍNEA y cortas: «Tarjeta en ${LIGA_PLANES} (mensual o anual): el acceso te llega al correo al terminar» / «Transferencia (anual): te paso los datos por aquí» / «Liga de pago: te la mando». Cierra preguntando cuál prefiere. ${correoTxt} ${reporta} Máximo dos preguntas en total (vía y correo si falta). Si hay PROMOCIÓN vigente en el bloque de promo, una sola frase corta; si no, nada de descuentos ni fechas.`;
   } else if (st.via === 'transferencia' && st.fase !== 'esperando_comprobante') {
     st.fase = 'esperando_comprobante'; st.pago_enviado_at = ahora;
     nota = `EL LEAD VA A PAGAR POR TRANSFERENCIA el plan ${plan?.nombre} ${st.periodo === 'anual' && tot ? `anual: ${mxn(tot.anual_total)}` : tot ? `(${mxn(tot.mensual)} al mes; si lo paga anual son ${mxn(tot.anual_total)} con 35 % de ahorro)` : ''}. Escribe DOS burbujas (sepáralas con ---). Burbuja 1: el monto y que en cuanto te mande el comprobante por aquí queda listo su acceso en ese mismo momento. Burbuja 2, EXACTAMENTE estos datos, uno por línea y sin cambiar nada:\n${bloqueBancario()}\nDespués de los datos, una línea: que el comprobante lo mande por aquí mismo y, si puede, también a ${CUENTA_PAGO.correo}. ${correoTxt} Nada más.`;
@@ -169,7 +174,7 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
     nota = `EL LEAD VA A PAGAR CON TARJETA en ${LIGA_PLANES}. Dile que ahí elige ${plan?.nombre || 'su plan'}${st.periodo === 'anual' ? ' anual' : ''}, paga, y su acceso le llega al correo al terminar; que en cuanto lo haga le escribes para agendar su sesión de arranque con el consultor. Si ya pagó, pídele que te diga y agradécele. Sin repetir precios.`;
   } else if (st.via === 'mercadopago') {
     nota = `EL LEAD QUIERE LIGA DE PAGO (Mercado Pago) para el plan ${plan?.nombre} ${st.periodo || ''}. Dile que se la pasas en un momento por aquí. ${correoTxt} Sin nada más.`;
-    await tareaLiga(contactId, st, f).catch(() => {});
+    if (!opts.simular) await tareaLiga(contactId, st, f).catch(() => {});
   } else if (st.fase === 'esperando_comprobante') {
     nota = `EL LEAD ESTÁ POR PAGAR POR TRANSFERENCIA (ya le mandaste los datos bancarios el ${String(st.pago_enviado_at).slice(0, 10)}). Contesta lo que pregunte; si pregunta los datos, repítelos exactos en una burbuja aparte:\n${bloqueBancario()}\nSi dice que ya pagó pero no ha mandado comprobante, pídele la captura por aquí para dejarle el acceso en ese momento. ${correoTxt}`;
   } else if (st.fase === 'acceso_enviado') {
@@ -177,7 +182,7 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
   } else {
     nota = `EL LEAD ESTÁ CONTRATANDO (fase ${st.fase}). Contesta lo que pregunte y avanza al pago. ${reporta}`;
   }
-  await guardar(contactId, agente_estado, st);
+  if (!opts.simular) await guardar(contactId, agente_estado, st);
   return nota;
 }
 

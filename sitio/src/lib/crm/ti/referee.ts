@@ -67,7 +67,7 @@ export const CASOS: Caso[] = [
   // ── Decisiones del dueño del 5-sep (catálogo de casos): se prueban con un mensaje simulado sobre un lead real ──
   { id: 'contratar', titulo: 'Dice que quiere contratar', porQueLlega: 'Cualquiera', momento: 'Ya decidió comprar',
     buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'lead').not('sucursales_interes', 'is', null), 'con tiendas conocidas'), simular: 'Ya lo pensé y quiero contratar, ¿cómo le hago?',
-    nota_de: async (cid, sim) => { const { contratacionAntesDelTurno } = await import('./contratacion'); return contratacionAntesDelTurno(cid, sim); },
+    nota_de: async (cid, sim) => { const { contratacionAntesDelTurno } = await import('./contratacion'); return contratacionAntesDelTurno(cid, sim, null, { simular: true }); },
     debe: ['Decir el total claro: mensual, y anual con el 35 % de ahorro', 'Dar las vías de pago en una línea cada una (tarjeta en /planes, transferencia, liga)', 'Pedir o confirmar el correo para el acceso', 'Preguntar cuál prefiere'],
     nunca: ['Mandarlo a demo o a llamada', 'Poner el pago como barrera o hacerlo esperar', 'Listas de funciones', 'Más de dos preguntas'] },
   { id: 'si_cualquiera', titulo: 'Dice «sí, el que sea» a los horarios', porQueLlega: 'Cualquiera', momento: 'Proponiendo: ya se le ofrecieron horarios',
@@ -80,8 +80,8 @@ export const CASOS: Caso[] = [
     nunca: ['Insistir en una sola de las dos', 'Dejarlo en «avísame cuando lo veas»', 'Pedir el correo del socio antes de que elija'] },
   { id: 'sin_dinero', titulo: 'Dice que se le bajó la venta', porQueLlega: 'Cualquiera', momento: 'Descubriendo',
     buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'lead'), 'sin dinero'), simular: 'Se me bajó mucho la venta, espero pronto poder',
-    nota: 'EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (Se me bajó mucho la venta, espero pronto poder). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas. Si sabes qué vende, puedes cerrar con una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.',
-    debe: ['Empatía real en dos líneas, sin vender', 'Dejar la puerta abierta para cuando repunte'],
+    nota: 'EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (Se me bajó mucho la venta, espero pronto poder). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas: este mensaje NO lleva signo de interrogación; cierra con UNA sola invitación en condicional («cuando lo veas mejor, me avisas y lo vemos»). Sin pronósticos sobre su negocio («ya repuntará», «pasará la temporada») ni consuelos genéricos («no eres el único»): reconoce lo que él dijo. Si sabes qué vende, puedes dejarle una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.',
+    debe: ['Empatía real en dos líneas, sin vender', 'Dejar la puerta abierta para cuando repunte', 'EXCEPCIÓN a la regla general de «una pregunta al final»: este mensaje cierra con una invitación sin signo de interrogación («me avisas y lo vemos»)'],
     nunca: ['Ofrecer demo, horarios o precios', 'Hacer preguntas', '«Aprovecha», «justo por eso», «es una inversión»'] },
   { id: 'foto', titulo: 'Mandó una foto de su tienda o producto', porQueLlega: 'Cualquiera', momento: 'Su último mensaje es una foto',
     buscar: async () => {
@@ -145,7 +145,7 @@ async function juez(caso: Caso, mensaje: string, contexto: string) {
   const r: any = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1600, messages: [{ role: 'user', content: `Eres el árbitro de calidad del agente de ventas de Sacs (sistema para tiendas de moda en México, se vende por WhatsApp). Tu trabajo es ser exigente: un 10 significa que NO se le puede mejorar nada.
 
 CASO: ${caso.titulo}. Por dónde llega: ${caso.porQueLlega}. Momento: ${caso.momento}.
-CONTEXTO DEL LEAD: ${contexto.slice(0, 1200)}
+CONTEXTO DEL LEAD (lo que dice el CRM es VERDAD: nombres de persona y de tienda, correo, tiendas, y las promociones con fecha que el agente menciona vienen del CRM; no lo marques como inventado): ${contexto.slice(0, 1400)}
 
 EL MENSAJE QUE ESCRIBIÓ EL AGENTE:
 «${mensaje}»
@@ -162,7 +162,7 @@ Responde SOLO JSON: {"nota": n, "faltantes": ["los «debe» que no cumple, textu
   const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
   const m = t.match(/\{[\s\S]*\}/); let j: any = {}; try { j = m ? JSON.parse(m[0]) : {}; } catch { /* nada */ }
   if (!j.nota) { const m2 = t.match(/"nota"\s*:\s*(\d+(?:\.\d+)?)/); if (m2) j.nota = Number(m2[1]); }
-  if (!j.nota) throw new Error(`el juez no devolvió nota legible: ${t.slice(0, 120)}`);
+  if (!j.nota) throw new Error(`el juez no devolvió nota legible: stop=${r.stop_reason} tipos=${(r.content || []).map((b: any) => b.type).join(',')} texto=${t.slice(0, 160)}`);
   return { nota: Number(j.nota) || 0, faltantes: j.faltantes || [], violaciones: j.violaciones || [], para10: j.que_le_falta_para_10 || '', regla: j.regla_sugerida || '', costo: calculateCost(MODELS.opus, r.usage as any).cost_usd };
 }
 
@@ -178,7 +178,10 @@ export async function correrReferee(soloIds?: string[]) {
       const d = await decidirTurno(encontrado.contactId, notaCaso || caso.nota || undefined, { tarea: caso.tarea || 'respuesta', simularEntrante: caso.simular });
       costo += d.costo || 0;
       if (!d.salida?.mensaje) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: `el agente no propuso mensaje (${d.motivo || 'sin motivo'})` }); continue; }
-      const j = await juez(caso, d.salida.mensaje, `${encontrado.pista || ''} · etapa ${d.salida.estado} · último del lead: ${String(d.salida.ultimo_mensaje || '').slice(0, 300)}`);
+      const { data: k } = await supabase.from('contacts').select('nombre, email, giro, sucursales_interes, companies(nombre, nombre_comercial)').eq('id', encontrado.contactId).maybeSingle();
+      const co: any = (k as any)?.companies || {};
+      const crm = k ? `CRM: persona «${k.nombre || '?'}», tienda/empresa «${co.nombre_comercial || co.nombre || 'desconocida'}», correo ${k.email ? 'SÍ lo tenemos' : 'no lo tenemos'}, giro ${k.giro || 'desconocido'}, tiendas ${k.sucursales_interes ?? 'desconocido'}` : '';
+      const j = await juez(caso, d.salida.mensaje, `${crm} · ${encontrado.pista || ''} · etapa ${d.salida.estado} · último del lead: ${String(d.salida.ultimo_mensaje || '').slice(0, 300)}`);
       costo += j.costo;
       res.push({ id: caso.id, titulo: caso.titulo, momento: caso.momento, lead: encontrado.pista, nota: j.nota, mensaje: d.salida.mensaje, faltantes: j.faltantes, violaciones: j.violaciones, para10: j.para10, regla: j.regla });
     } catch (e: any) { res.push({ id: caso.id, titulo: caso.titulo, nota: null, motivo: String(e?.message || e).slice(0, 140) }); }

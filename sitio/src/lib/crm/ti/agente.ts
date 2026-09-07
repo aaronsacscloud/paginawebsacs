@@ -262,8 +262,8 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const { data: ultEnv } = await supabase.from('ti_envios').select('salida, enviado_at').eq('contact_id', contactId).eq('estado', 'enviado').gte('enviado_at', new Date(Date.now() - 72 * 3600e3).toISOString()).order('enviado_at', { ascending: false }).limit(1).maybeSingle();
   const ofrecidos: { fecha: string; hora: string; slug?: string }[] = Array.isArray((ultEnv?.salida as any)?.horarios_ofrecidos) ? (ultEnv!.salida as any).horarios_ofrecidos : [];
   const ofrecidosTxt = ofrecidos.length
-    ? `\nHORARIOS QUE YA LE OFRECISTE EN TU ÚLTIMO MENSAJE: ${ofrecidos.map(h => `${etiquetaHorario(h.fecha, h.hora)} [${h.fecha} ${h.hora}${h.slug === 'llamada-discovery' ? ' · llamada' : ''}]`).join(' · ')}. Si contesta que sí, «el que sea», «cualquiera» o «me da igual» sin elegir uno, NO vuelvas a preguntar: elige tú el primero de estos (el más cercano), devuelve accion.tipo="${ofrecidos[0]?.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con esa fecha y hora exactas, y en el mensaje dile que ya quedó apartado ese día a esa hora, que la invitación le llega por aquí, y pídele que te confirme con un «va». Si elige uno de los dos, agéndalo igual y confírmaselo.`
-    : `\nSi el lead dice que sí a la demo, la reunión o la llamada pero no eligió horario, mándale dos horarios reales de la lista en una sola pregunta. Si dice «el que sea» o «cualquiera» sin que le hayas ofrecido ninguno, elige tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora, pidiéndole que te confirme con un «va».`;
+    ? `\nHORARIOS QUE YA LE OFRECISTE EN TU ÚLTIMO MENSAJE: ${ofrecidos.map(h => `${etiquetaHorario(h.fecha, h.hora)} [${h.fecha} ${h.hora}${h.slug === 'llamada-discovery' ? ' · llamada' : ''}]`).join(' · ')}. Si contesta que sí, «el que sea», «cualquiera» o «me da igual» sin elegir uno, NO vuelvas a preguntar: elige tú el primero de estos (el más cercano), devuelve accion.tipo="${ofrecidos[0]?.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con esa fecha y hora exactas, y en el mensaje dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora: «martes 8 a las 10 de la mañana»), que la invitación le llega por aquí, y pídele que te confirme con un «va». Ese «va» es la ÚNICA pregunta del mensaje: nada de preguntas de contexto en el mismo turno, y sin mencionar horarios que ya pasaron ni el tiempo transcurrido: abre directo con el día y la hora apartados. Si elige uno de los dos, agéndalo igual y confírmaselo.`
+    : `\nSi el lead dice que sí a la demo, la reunión o la llamada pero no eligió horario, mándale dos horarios reales de la lista en una sola pregunta. Si dice «el que sea» o «cualquiera» sin que le hayas ofrecido ninguno, elige tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora), pidiéndole que te confirme con un «va»: ese «va» es la ÚNICA pregunta del mensaje, sin preguntas de contexto en el mismo turno y sin mencionar horarios que ya pasaron.`;
   const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}${ofrecidosTxt}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
@@ -273,7 +273,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const ejemplosOut = { ids: [] as string[] };
   const modelo = opts.modelo || modeloPara(opts.tarea || 'respuesta', cfgMod);   // opts.modelo: solo para el A/B de modelos
   const r = await anthropic.messages.create({
-    model: modelo, max_tokens: 1800,
+    model: modelo, max_tokens: 2400,
     // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
     system: [
       { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
@@ -288,7 +288,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(modelo, r.usage as any).cost_usd;
   let salida: any = null;
-  try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
+  try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; await log({ accion: 'json_invalido', contact_id: contactId, razon: `stop=${(r as any).stop_reason} · ${t.length} chars`, detalle: { inicio: t.slice(0, 400), fin: t.slice(-300), modelo, tarea: opts.tarea || 'respuesta' } }).catch(() => {}); }
   if (salida) {
     salida.ultimo_mensaje = (rafaga.length ? rafaga.map(textoDe).join(' ⏎ ') : String(ultimo?.cuerpo || ultimo?.transcript || '')).slice(0, 600);
     salida.cita_snapshot = cita ? { id: cita.id, fecha: cita.fecha, hora: String(cita.hora_inicio).slice(0, 5), estado: cita.estado } : null;

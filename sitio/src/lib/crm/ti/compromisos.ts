@@ -67,7 +67,7 @@ Un prospecto le escribió esto a una asesora de ventas por WhatsApp:
 Si NO pide nada de eso (solo pregunta, agradece, dice que sí o que no), "hay": false.
 
 Calcula la FECHA concreta en que quiere que actuemos (si dijo «la otra semana» → el martes de la próxima semana; «en 3 días» → hoy+3; «después de quincena» → el 16 o el 1 siguiente; «el jueves» → el jueves más próximo que no sea hoy si ya es tarde). Si dijo una hora («después de las 4», «en la mañana»→10, «en la tarde»→16), ponla.
-Responde SOLO JSON: {"hay":bool,"tipo":"retomar|llamar|agendar|esperar_evento|vago","fecha":"YYYY-MM-DD o null","hora_pedida":n o null,"necesita_hora":bool,"pidio":"cita textual corta de lo que pidió","interpretacion":"1 línea en español: qué quiere y cuándo","confianza":0.0-1.0}`;
+Responde SOLO JSON: {"hay":bool,"tipo":"retomar|llamar|agendar|esperar_evento|vago|sin_dinero","fecha":"YYYY-MM-DD o null","hora_pedida":n o null,"necesita_hora":bool,"pidio":"cita textual corta de lo que pidió","interpretacion":"1 línea en español: qué quiere y cuándo","confianza":0.0-1.0}`;
   try {
     const r: any = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 300, messages: [{ role: 'user', content: prompt }] });
     const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
@@ -107,7 +107,7 @@ export async function programarCompromiso(o: { contactId: string; conversationId
     }
     const pausa = new Date(ahora.getTime() + 7 * 86400e3);
     await supabase.from('ti_perfil').upsert({ contact_id: o.contactId, agente_estado: { ...st, pausa_hasta: pausa.toISOString(), sin_dinero: { dijo: det.pidio, at: ahora.toISOString(), tarea_id: tareaId } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
-    const nota = `EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (${det.pidio}). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas. Si sabes qué vende, puedes cerrar con una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.`;
+    const nota = `EL LEAD DIJO QUE AHORA NO TIENE DINERO O QUE LA VENTA ESTÁ BAJA (${det.pidio}). Contesta con empatía en dos líneas y SIN vender: que lo entiendes, que las temporadas flojas pasan, y que cuando repunte aquí estás para verlo con calma. Nada de demo, horarios, precios, «aprovecha» ni preguntas: este mensaje NO lleva signo de interrogación; cierra con UNA sola invitación en condicional («cuando lo veas mejor, me avisas y lo vemos»). Sin pronósticos sobre su negocio («ya repuntará», «pasará la temporada») ni consuelos genéricos («no eres el único»): reconoce lo que él dijo. Si sabes qué vende, puedes dejarle una sola idea útil y gratis para mover venta esta semana (una, concreta, sin mencionar Sacs). No se le vuelve a escribir por ahora.`;
     return { id: null, programado: null, nota, hora: 0, porqueHora: 'no aplica: va a Por descalificar' };
   }
   const { hora, porque } = horaParaEl({ mejorHoraWa: (pf as any)?.mejor_hora_wa, horaDeSuMensaje: o.horaDeSuMensaje, horaPedida: det.hora_pedida });
