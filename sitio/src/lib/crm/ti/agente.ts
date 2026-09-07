@@ -587,6 +587,8 @@ export async function proponerRespuestas(): Promise<any> {
           const d = await decidirTurno(cid);
           if (d.salida?.mensaje && d.salida.responder) {
             await registrarDatos(cid, d.salida.datos, d.salida.interes);
+            // Una sola sugerencia de respuesta por lead: si otro tick (o el barrido de huérfanos) ya dejó una, se reemplaza (7-sep: Cinthya salió doble).
+            await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'reemplazada por una sugerencia más nueva', updated_at: ahora.toISOString() }).eq('contact_id', cid).eq('estado', 'sugerencia').eq('origen', 'respuesta').then(() => {}, () => {});
             await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'sugerencia', mensaje: d.salida.mensaje.trim(), adjuntos: d.salida.adjuntos || [], salida: d.salida, sale_at: ahora.toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
             await log({ accion: 'agente_sugiere', contact_id: cid, contenido: d.salida.mensaje, razon: d.salida.objetivo, costo: d.costo });
             res.sugeridos = (res.sugeridos || 0) + 1;
