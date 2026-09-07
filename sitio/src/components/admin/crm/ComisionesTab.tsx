@@ -60,17 +60,23 @@ export default function ComisionesTab() {
 
   return (
     <div style={WRAP}>
-      <div style={{ marginBottom: 14 }}>
+      {/* En el teléfono la barra de arriba YA dice «Comisiones»: el título y el
+          párrafo de manual repetían y empujaban el número 350 px hacia abajo
+          (referee 7-sep). El texto no se pierde: sigue en escritorio, que es
+          donde alguien lee para entender el modelo. */}
+      <div style={{ marginBottom: movil ? 10 : 14, display: movil ? 'none' : 'block' }}>
         <h1 style={{ margin: 0, fontSize: movil ? '1.15rem' : '1.4rem', fontWeight: 800, color: P.tinta }}>Comisiones</h1>
         <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: P.suave, maxWidth: '72ch' }}>
           Se calculan sobre los pagos <b>cobrados</b>, con el porcentaje que le toca a cada SKU según el origen del cliente. Se recalculan solas cada madrugada. <b>Cortes</b> es lo que hay que pagar: cada renglón se puede ajustar antes de enviarlo.
         </p>
       </div>
 
-      <div role="tablist" style={{ display: 'flex', gap: 2, borderBottom: `1px solid ${P.linea}`, marginBottom: 16, overflowX: 'auto' }}>
+      <div role="tablist" style={movil
+        ? { display: 'flex', gap: 8, marginBottom: 14, overflowX: 'auto' }
+        : { display: 'flex', gap: 2, borderBottom: `1px solid ${P.linea}`, marginBottom: 16, overflowX: 'auto' }}>
         {([['cortes', 'Cortes'], ['reporte', 'Reporte']] as [Vista, string][]).map(([v, l]) => (
           <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} style={{
-            padding: '9px 15px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+            padding: movil ? '6px 13px' : '9px 15px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             background: vista === v ? P.violetaAgua : 'transparent',
             borderRadius: '9px 9px 0 0',
             borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent',

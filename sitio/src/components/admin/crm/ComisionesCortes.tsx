@@ -205,21 +205,32 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   const cortes = d?.cortes || [];
   const porPagar = cortes.filter((c: any) => c.estado !== 'pagado')
     .reduce((a: number, c: any) => a + Number(c.total || 0), 0);
+  /* En el teléfono se parten: arriba lo que se debe, abajo lo ya liquidado.
+     Con un solo corte abierto la pantalla moría al 55% y se leía como rota
+     (referee 7-sep); lo pagado le da historia sin inventar nada. */
+  const abiertos = cortes.filter((c: any) => c.estado !== 'pagado');
+  const pagados = cortes.filter((c: any) => c.estado === 'pagado');
 
   return (
     <>
       {error && <div style={{ ...E.card, borderLeft: `3px solid ${P.rojo}`, marginBottom: 12, color: P.rojoTinta, fontSize: '0.82rem' }}>{error}</div>}
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
-        <button onClick={() => setAsistente(true)} style={{ ...E.btn, padding: '10px 18px', fontSize: '0.85rem' }}>Crear nuevo corte</button>
-        {d?.en_formacion && (
-          <span style={{ fontSize: '0.82rem', color: P.texto }}>
-            Próximo corte: <b>{fechaLarga(d.en_formacion.se_arma_el)}</b> a las {d.en_formacion.hora}
-          </span>
-        )}
-        <div style={{ flex: 1 }} />
-        <a href="/admin/crm?tab=config&cfg=comisiones" style={{ ...E.btn3, textDecoration: 'none' }}>Configurar el ciclo</a>
-      </div>
+      {/* En el teléfono estos tres controles se van del pliegue (referee 7-sep):
+          «Crear nuevo corte» ocupaba un renglón morado ANTES del dato, y
+          «Configurar el ciclo» es administración que se toca una vez al año.
+          Bajan al pie, en un solo renglón. El número va primero. */}
+      {!movil && (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+          <button onClick={() => setAsistente(true)} style={{ ...E.btn, padding: '10px 18px', fontSize: '0.85rem' }}>Crear nuevo corte</button>
+          {d?.en_formacion && (
+            <span style={{ fontSize: '0.82rem', color: P.texto }}>
+              Próximo corte: <b>{fechaLarga(d.en_formacion.se_arma_el)}</b> a las {d.en_formacion.hora}
+            </span>
+          )}
+          <div style={{ flex: 1 }} />
+          <a href="/admin/crm?tab=config&cfg=comisiones" style={{ ...E.btn3, textDecoration: 'none' }}>Configurar el ciclo</a>
+        </div>
+      )}
 
       {asistente && <Asistente sugerido={d?.sugerido} ciclo={d?.ciclo}
         onCerrar={() => setAsistente(false)}
@@ -241,16 +252,32 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${movil ? '140px' : '170px'}, 1fr))`, gap: 11, marginBottom: 14 }}>
-        <div style={tarjetaKpi(P.ambar)}>
-          <span style={E.lbl}>Por pagar en cortes abiertos</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.ambarTinta }}>{pesos(porPagar)}</div>
+      {/* EL número, arriba del todo y sin caja (referee 7-sep: estaba a 440 px
+          de alto, chico y dentro de una tarjeta con borde amarillo).
+          La tarjeta «Cortes · 1» se fue: no es un KPI, es el conteo de la lista
+          que está justo debajo y se ve entera. */}
+      {movil ? (
+        <div style={{ padding: '2px 0 16px' }}>
+          <div style={{ fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-0.03em', color: P.ambarTinta, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            {pesos(porPagar)}
+          </div>
+          <div style={{ fontSize: '0.82rem', color: P.suave, marginTop: 5 }}>
+            Por pagar · {cortes.length} {cortes.length === 1 ? 'corte abierto' : 'cortes abiertos'}
+            {cortes[0]?.paga_el ? ` · paga ${fecha(cortes[0].paga_el)}` : ''}
+          </div>
         </div>
-        <div style={tarjetaKpi(P.violeta)}>
-          <span style={E.lbl}>Cortes</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.violetaTinta }}>{cortes.length}</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 11, marginBottom: 14 }}>
+          <div style={tarjetaKpi(P.ambar)}>
+            <span style={E.lbl}>Por pagar en cortes abiertos</span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.ambarTinta }}>{pesos(porPagar)}</div>
+          </div>
+          <div style={tarjetaKpi(P.violeta)}>
+            <span style={E.lbl}>Cortes</span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: P.violetaTinta }}>{cortes.length}</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {cortes.length === 0 && !(d?.en_formacion?.consultores || []).length ? (
         <div style={{ ...E.card, color: P.suave, fontSize: '0.85rem' }}>
@@ -263,7 +290,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
            periodo debajo. Líneas y ajustes viven en el detalle: son para
            revisar el corte, no para decidir si lo abres. */
         <div style={{ ...E.card, padding: 0, overflow: 'hidden' }}>
-          {cortes.map((c: any) => {
+          {(abiertos.length ? abiertos : cortes).map((c: any) => {
             const t = TONO[c.estado] || TONO.abierto;
             return (
               <div key={c.id} onClick={() => setAbierto(abierto === c.id ? null : c.id)}
@@ -282,6 +309,13 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: P.tinta, fontVariantNumeric: 'tabular-nums' }}>{pesos(Number(c.total))}</div>
                   <span style={{ ...E.chip, background: t.bg, color: t.fg, marginTop: 3, display: 'inline-block' }}>{t.label}</span>
                 </div>
+                {/* El chevron dice que el renglón se toca. Sin él, el corte se
+                    leía como un dato y no como la puerta a revisarlo y
+                    aprobarlo, que es a lo que el dueño entra (referee 7-sep). */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={P.suave} strokeWidth="2.5"
+                  style={{ flexShrink: 0, transform: abierto === c.id ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }}>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </div>
             );
           })}
@@ -384,6 +418,47 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         onAccion={(a) => accionCorte(abierto, a)}
         onCambio={async () => { await cargar(); await cargarDetalle(abierto); }}
         onError={setError} />}
+
+      {/* El pie: UN bloque, no tres cosas sueltas separadas por líneas gruesas
+          (referee 7-sep). La hora exacta del corte se fue: es detalle de
+          configuración y no ayuda a decidir nada a primera vista.
+          padding abajo para que la mascota flotante no se pare encima del
+          último renglón. */}
+      {movil && pagados.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: P.suave, marginBottom: 6 }}>
+            Ya pagados
+          </div>
+          {pagados.slice(0, 5).map((c: any) => (
+            <div key={c.id} onClick={() => setAbierto(abierto === c.id ? null : c.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52, padding: '8px 0',
+                borderBottom: `1px solid ${P.lineaSuave}`, cursor: 'pointer' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.86rem', color: P.texto, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {c.team_members?.nombre || '—'}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: P.suave }}>{fecha(c.desde)} — {fecha(c.hasta)}</div>
+              </div>
+              <div style={{ fontSize: '0.86rem', color: P.suave, fontVariantNumeric: 'tabular-nums' }}>{pesos(Number(c.total))}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {movil && (
+        <div style={{ marginTop: 18, paddingTop: 14, paddingBottom: 96, borderTop: `1px solid ${P.lineaSuave}` }}>
+          <button onClick={() => setAsistente(true)}
+            style={{ display: 'flex', alignItems: 'center', width: '100%', minHeight: 48, padding: 0, border: 'none', background: 'none',
+              fontFamily: 'inherit', fontSize: '0.88rem', fontWeight: 700, color: P.violetaTinta, cursor: 'pointer', textAlign: 'left' }}>
+            Crear un corte ahora
+          </button>
+          <a href="/admin/crm?tab=config&cfg=comisiones"
+            style={{ display: 'block', fontSize: '0.8rem', color: P.suave, textDecoration: 'none', paddingTop: 2 }}>
+            Configurar el ciclo{d?.en_formacion ? ` · el próximo se arma el ${fechaLarga(d.en_formacion.se_arma_el)}` : ''}
+          </a>
+        </div>
+      )}
+
     </>
   );
 }
