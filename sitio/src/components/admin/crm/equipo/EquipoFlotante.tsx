@@ -29,7 +29,7 @@ const CSS = `
 .eqf{position:fixed;right:22px;bottom:22px;z-index:899;display:flex;flex-direction:column;align-items:flex-end;gap:10px;font-family:inherit;
   --eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-panel:#fff;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta}}
 .eqf *{box-sizing:border-box}
-.eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 38px)}
+.eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 56px)}
 .eqf-fila{display:flex;align-items:flex-end;gap:10px}
 .eqf-orbe{position:relative;width:58px;height:58px;border-radius:50%;border:0;cursor:pointer;padding:0;overflow:visible;
   background:radial-gradient(circle at 50% 36%,#FBE7E2 0%,#F5CFC8 58%,#EBB4AC 100%);

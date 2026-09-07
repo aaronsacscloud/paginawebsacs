@@ -1560,6 +1560,12 @@ const CRM_MOBILE_CSS = `
     .m-check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #cfcddb; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
     .m-check.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     .m-vacio-txt { padding: 22px 24px; color: var(--m-soft); font-size: 0.86rem; line-height: 1.5; }
+    /* AIRE ABAJO (referee 7-sep, lo dijo en tres pantallas de cuatro): el
+       último renglón de toda lista quedaba DEBAJO de la barra de 5 destinos y
+       se veía cortado —parecía un fallo de render, no un final de lista—.
+       La barra mide --crm-bottomnav-h; se le suma el alto de la esfera para que
+       tampoco se pare encima del último renglón. */
+    .m-bleed, .m-lienzo { padding-bottom: calc(var(--crm-bottomnav-h, 64px) + 76px); }
     /* Etiqueta corta dentro de un renglón: «pago diferido», «vencida». Va junto
        al nombre porque cambia lo que significa el renglón, no al lado del monto. */
     .m-eti { margin-left: 6px; font-size: 0.6rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;

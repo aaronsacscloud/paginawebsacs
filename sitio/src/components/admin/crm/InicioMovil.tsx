@@ -90,10 +90,15 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   return (
     <div className="m-lienzo" style={{ background: '#fff', minHeight: '60vh' }}>
       {/* saludo + avatar (referencia: misma fila, avatar 44px a la derecha) */}
+      {/* El saludo baja de tamaño (referee 7-sep): a 32 px era el elemento MÁS
+          grande de la pantalla y no ayuda a decidir nada; se comía el tercio de
+          arriba compitiendo con la cifra, que es a lo que se entra. Se queda
+          —abrir la app y que te salude está bien— pero como línea, no como
+          titular. */}
       <div className="m-hdr" style={{ alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: '0.8rem', color: '#8f8d98' }}>{fecha}</div>
-          <div className="m-tt">{saludo}</div>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--m-ink)' }}>{saludo}</div>
+          <div style={{ fontSize: '0.78rem', color: '#8f8d98', marginTop: 1 }}>{fecha}</div>
         </div>
         <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '1.02rem' }}>A</div>
       </div>
@@ -109,12 +114,15 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
         )}
       </div>
 
-      {/* Hoy */}
-      <div className="m-sec">Hoy <span className="m-vt" onClick={() => onIrA('reuniones')}>Agenda ›</span></div>
+      {/* Hoy · un estado vacío no debe ocupar más que un dato lleno (referee
+          7-sep): eran cuatro renglones de alto para decir que no hay nada.
+          Sin reuniones, se colapsa a una línea junto al propio rótulo. */}
+      <div className="m-sec">
+        Hoy
+        {!cargando && reuniones.length === 0 && <span style={{ fontWeight: 400, color: '#9CA3AF' }}> · sin reuniones</span>}
+        <span className="m-vt" onClick={() => onIrA('reuniones')}>Agenda ›</span>
+      </div>
       {cargando && !reuniones.length && <div className="m-skel" style={{ height: 52, margin: '4px 20px' }} />}
-      {!cargando && reuniones.length === 0 && (
-        <div style={{ padding: '12px 24px 22px', fontSize: '0.94rem', color: '#9CA3AF', borderBottom: '1px solid #efeef2' }}>Sin reuniones hoy.</div>
-      )}
       {reuniones.map((r: any, i: number) => (
         <div key={r.id || i} className="m-row" onClick={() => onIrA('reuniones')}>
           <div style={{ flex: 'none', width: 56, fontWeight: 600, fontSize: '0.9rem', color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>

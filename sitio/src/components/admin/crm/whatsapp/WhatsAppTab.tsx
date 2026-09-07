@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { S, Aviso, FOCO } from '../email/ui';
 import InboxPro from './InboxPro';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 
 export default function WhatsAppTab() {
   const [setup, setSetup] = useState<any>(null);
@@ -17,6 +18,7 @@ export default function WhatsAppTab() {
   const faltan: string[] = setup?.faltantes || [];
   const sinWebhook = setup && !setup.webhook_registrado && !faltan.length;
 
+  const movilWA = useIsMobile();
   const registrarWebhook = async () => {
     await fetch('/api/crm/whatsapp/setup', { method: 'POST' }).catch(() => {});
     revisar();
@@ -25,7 +27,13 @@ export default function WhatsAppTab() {
   return (
     <div className="em-sec">
       <style>{FOCO}</style>
-      {faltan.length > 0 && (
+      {/* Los dos avisos de configuración NO van en el teléfono (referee 7-sep).
+          Ocupaban la sexta parte de la pantalla, empujaban la lista fuera del
+          pulgar y están escritos para un programador —nombres de variables de
+          Vercel—: el dueño abre el Inbox a contestarle a alguien, y no puede
+          hacer nada con eso desde ahí. Siguen en escritorio, que es donde se
+          configura. */}
+      {!movilWA && faltan.length > 0 && (
         <div style={{ ...S.wrap, paddingBottom: 0 }}>
           <Aviso tono="aviso" titulo="WhatsApp a medio conectar">
             Faltan variables en Vercel: {faltan.join(' · ')}.
@@ -36,7 +44,7 @@ export default function WhatsAppTab() {
           </Aviso>
         </div>
       )}
-      {sinWebhook && (
+      {!movilWA && sinWebhook && (
         <div style={{ ...S.wrap, paddingBottom: 0 }}>
           <Aviso tono="aviso" titulo="Falta el webhook de Kapso"
             accion={<button style={S.btnP} onClick={registrarWebhook}>Registrarlo</button>}>

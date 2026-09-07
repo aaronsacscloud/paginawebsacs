@@ -937,18 +937,31 @@ export default function LeadsTab() {
               <button className="m-cta" onClick={() => setNuevo(true)}>＋ Nuevo</button>
             </div>
           </div>
-          <div className="m-hero">
-            <div className="m-hl">{etapa === 'todos' ? 'Todos los leads' : (VISTAS.find(v => v.v === etapa) || VISTAS[0]).l}</div>
-            <div className="m-hv">{conteos[etapa] ?? lista.length}</div>
-            <div className="m-hd">{etapa === 'todos' ? `${conteos.nuevos ?? 0} nuevos sin atender` : `${conteos.todos ?? 0} en total`}</div>
-          </div>
+          {/* El héroe era «Todos los leads · 174»: el total del universo, que no
+              es una decisión —no dice a quién atender— y además repetía el
+              número de la pastilla activa tres renglones abajo (referee 7-sep).
+              Ahora el protagonista es lo ACCIONABLE: cuántos esperan. Si no hay
+              ninguno, no se pinta: una pantalla no abre con un cero. */}
+          {(conteos.nuevos ?? 0) > 0 && etapa === 'todos' && (
+            <div className="m-hero">
+              <div className="m-hl">Esperan que los atiendas</div>
+              <div className="m-hv">{conteos.nuevos}</div>
+              <div className="m-hd">de {conteos.todos ?? lista.length} leads en total</div>
+            </div>
+          )}
+          {/* Cada pastilla trae SU conteo, no solo la activa: sin él se toca una
+              y se llega a una lista vacía sin haber podido saberlo antes. Las
+              que están en cero se ven apagadas, no escondidas: que existan es
+              información. */}
           <div className="m-chips">
             {[VISTAS[VISTAS.length - 1], ...VISTAS.slice(0, -1)].map(v => {
               const on = etapa === v.v;
               const chipL = v.v === 'nuevos' ? 'Nuevos' : v.l;
+              const n = conteos[v.v] ?? 0;
               return (
-                <button key={v.v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setEtapa(v.v)}>
-                  {chipL}{on ? ' ' + (conteos[v.v] ?? 0) : ''}
+                <button key={v.v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setEtapa(v.v)}
+                  style={!on && n === 0 ? { opacity: .45 } : undefined}>
+                  {chipL} {n}
                 </button>
               );
             })}

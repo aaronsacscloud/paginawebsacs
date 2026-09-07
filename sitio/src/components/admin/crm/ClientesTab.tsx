@@ -733,6 +733,11 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             .filter(Boolean).join(' ').toLowerCase().includes(t));
         const nActivos = listaM.length;
         const nRiesgo = listaM.filter(enRiesgo).length;
+        /* El referee (7-sep) señaló la falta más grave de esta pantalla: ocho
+           números medianos y ninguno manda. El dueño abre Clientes y no ve
+           cuánto vale su cartera ni cuánto está en riesgo. */
+        const arrCartera = listaM.reduce((a: number, c: any) => a + (Number(c.arr) || (Number(c.mrr) || 0) * 12), 0);
+        const arrRiesgo = listaM.filter(enRiesgo).reduce((a: number, c: any) => a + (Number(c.arr) || (Number(c.mrr) || 0) * 12), 0);
         if (chipCl === 'riesgo') listaM = listaM.filter(enRiesgo);
         listaM = [...listaM].sort((a: any, b: any) => (arrAsc ? 1 : -1) * (Number(a.arr || 0) - Number(b.arr || 0)));
         const iniciales = (n: string) => {
@@ -745,6 +750,21 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             <div className="m-hdr">
               <div className="m-tt">Clientes</div>
               <button className="m-cta" onClick={() => setShowNuevo(true)}>＋ Nuevo</button>
+            </div>
+            {/* El número protagonista: lo que vale la cartera. Y debajo, en una
+                línea TOCABLE, lo que está en riesgo — que es la única cifra de
+                esta pantalla sobre la que hay que hacer algo hoy. */}
+            <div className="m-cifra">
+              <div className="m-cifra-l">ARR de la cartera</div>
+              <div className="m-cifra-v">{money(arrCartera)}</div>
+              {nRiesgo > 0 ? (
+                <button onClick={() => setChipCl('riesgo')}
+                  style={{ border: 'none', background: 'none', padding: 0, marginTop: 2, font: 'inherit', fontSize: '0.8rem', fontWeight: 700, color: '#C0554E', cursor: 'pointer' }}>
+                  {nRiesgo} en riesgo · {money(arrRiesgo)} ›
+                </button>
+              ) : (
+                <div className="m-cifra-s">{nActivos} cuentas · ninguna en riesgo</div>
+              )}
             </div>
             <div style={{ margin: '4px 24px 12px', position: 'relative' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a98a4" strokeWidth="2" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
