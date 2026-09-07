@@ -348,7 +348,11 @@ export function aceptoDemo(msjs: any[], c: any): { si: boolean; porque: string }
   const preguntamos = /(consultor|demo|te lo enseñ|te lo muestr|videollamada|15 min).*\?/is.test(String(nuestroPrevio?.cuerpo || ''));
   const afirma = /^\s*(s[ií]|va|vale|claro|ok|okey|dale|[oó]rale|perfecto|por supuesto|me interesa|est[aá] bien|sale|de acuerdo|me late)\b/.test(txtIn) || /\b(s[ií],? (me interesa|est[aá] bien|va|claro)|me gustar[ií]a)\b/.test(txtIn);
   if (preguntamos && afirma) return { si: true, porque: 'le preguntaste si quería verlo y dijo que sí' };
-  return { si: false, porque: preguntamos ? 'le preguntaste si quería verlo y todavía no dijo que sí' : 'todavía no le has preguntado si quiere verlo con un consultor' };
+  const vecesPreguntado = msjs.filter(m => m.direccion === 'saliente' && /(te gustar[ií]a|quieres|te late).{0,60}(consultor|demo|te lo enseñ|te lo muestr)/is.test(String(m.cuerpo || ''))).length;
+  if (vecesPreguntado >= 1) return { si: false, porque: `ya le preguntaste ${vecesPreguntado} vez/veces si quería verlo y no ha dicho que sí: NO lo vuelvas a preguntar en este mensaje; sigue ayudándole con lo suyo y deja la puerta abierta en media línea («cuando quieras lo vemos»). Solo si en ESTE mensaje él muestra interés de nuevo, ofrécelo con otras palabras (máximo dos veces en toda la conversación)` };
+  const rechazo = /\b(no,? gracias|ahorita no|no por ahora|luego|despu[eé]s lo veo|no me interesa la demo|mejor (una llamada|ll[aá]mame|por aqu[ií]|la prueba))\b/.test(txtIn);
+  if (rechazo) return { si: false, porque: 'acaba de decir que no o que después, o pidió otra vía: respétalo a la primera. Si pidió llamada o prueba por su cuenta, dásela con la misma amabilidad (accion agendar_llamada solo si él la pide)' };
+  return { si: false, porque: 'todavía no le has preguntado si quiere verlo con un consultor' };
 }
 
 /** Si el lead mandó su página o sus redes, el agente la LEE (una vez, se

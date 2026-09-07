@@ -67,7 +67,7 @@ export async function horariosParaDemo(opts: { slug?: string; dias?: number; mej
 }
 
 export const horariosTexto = (hs: Horario[]) => hs.length
-  ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí, los más cercanos primero): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Dilos como se hablan («el jueves a las 11 o el viernes a las 4»), nunca con fecha numérica, lista ni viñetas, y en una sola pregunta al final del mensaje. Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
+  ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí, los más cercanos primero): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Dilos como se hablan («el jueves a las 11 o el viernes a las 4»), nunca con fecha numérica, lista ni viñetas, y en una sola pregunta al final del mensaje, SIN IMPONER: ofrécelos como opciones y deja abierta la puerta a otro momento («¿te queda el jueves a las 11 o el viernes a las 4? y si te acomoda otro día, tú me dices»). Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
   : 'No hay horarios de demo en los próximos días: si quiere agendar, dile en una línea que el consultor le confirma un horario hoy mismo (una sola disculpa, sin explicar por qué) y escala.';
 
 /** Horarios reales para la LLAMADA DISCOVERY (15 min): desde las 11:00, próximos 4 días, dos opciones distintas. */
