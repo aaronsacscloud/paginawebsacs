@@ -109,14 +109,14 @@ export async function asegurarContactoDeConversacion(o: {
 }
 
 /** La nota que se le pasa al agente cuando el lead llegó por un botón de la web y es su primer turno. */
-export async function notaDeIntencion(contactId: string): Promise<string | null> {
+export async function notaDeIntencion(contactId: string, opts: { forzar?: boolean } = {}): Promise<string | null> {
   const { data } = await supabase.from('contacts').select('propiedades').eq('id', contactId).maybeSingle();
   const p: any = (data as any)?.propiedades || {};
   const i: Intencion = p.intencion_inicial;
   if (!i || !INTENCIONES[i] || i === 'otro') return null;
   // Solo aplica al primer turno: si ya hubo ida y vuelta, el hilo manda.
   const { count } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('contact_id', contactId).in('estado', ['enviado', 'sugerencia', 'pendiente']);
-  if ((count || 0) > 1) return null;
+  if ((count || 0) > 1 && !opts.forzar) return null;   // forzar: el árbitro simula el primer mensaje sobre un lead con historial
   return `LLEGÓ DESDE LA PÁGINA: ${INTENCIONES[i].label}.${p.url_origen ? ` Venía de ${p.url_origen}.` : ''}${p.referido_por ? ` Referido por ${p.referido_por}.` : ''}\n${INTENCIONES[i].secuencia}`;
 }
 

@@ -62,6 +62,8 @@ export const SIEMPRE_NUNCA = [
 export const CASOS: Caso[] = [
   { id: 'web_prueba', titulo: 'Llega de la web pidiendo prueba gratis', porQueLlega: 'Botón de prueba gratis en sacscloud.com', momento: 'Primer mensaje',
     buscar: () => unLeadCon(q => q.eq('fuente', 'whatsapp_web').filter('propiedades->>intencion_inicial', 'eq', 'prueba_gratis'), 'prueba gratis'),
+    // Se prueba como en producción: su PRIMER mensaje simulado + la nota de intención de la web (antes se medía un seguimiento días después).
+    simular: 'Hola, quiero la prueba gratis', nota_de: async (cid) => { const { notaDeIntencion } = await import('../../whatsapp/lead-entrante'); return notaDeIntencion(cid, { forzar: true }); },
     debe: ['Confirmar en media línea que sí se le da la prueba', 'Preguntar qué vende y cuántas tiendas, en un solo bloque', 'Ofrecer las dos opciones: probarlo por su cuenta o una demo con especialista de menos de una hora con sus flujos', 'Cerrar preguntando cuál de las dos prefiere'],
     nunca: ['Pedir el correo o el nombre de la tienda antes de que elija', 'Mandar precios', 'Explicar funciones que no preguntó'] },
   // ── Decisiones del dueño del 5-sep (catálogo de casos): se prueban con un mensaje simulado sobre un lead real ──
@@ -98,6 +100,7 @@ export const CASOS: Caso[] = [
     nunca: ['Describir la foto entera', 'Halagos vacíos («qué bonita tienda»)', 'Ofrecer la demo en este mensaje'] },
   { id: 'web_demo', titulo: 'Llega de la web queriendo agendar demo', porQueLlega: 'Botón de demo en el sitio', momento: 'Primer mensaje',
     buscar: () => unLeadCon(q => q.eq('fuente', 'whatsapp_web').filter('propiedades->>intencion_inicial', 'eq', 'demo'), 'demo'),
+    simular: 'Hola, me gustaría agendar una demo', nota_de: async (cid) => { const { notaDeIntencion } = await import('../../whatsapp/lead-entrante'); return notaDeIntencion(cid, { forzar: true }); },
     debe: ['Confirmar que se le agenda', 'Preguntar qué vende y cuántas tiendas para que la demo sea con lo suyo', 'Dejar claro que la demo dura menos de una hora y es con sus propios flujos'],
     nunca: ['Volver a venderle la demo como si no la hubiera pedido', 'Pedir tres datos a la vez'] },
   { id: 'form_tiktok', titulo: 'Llega por formulario de TikTok', porQueLlega: 'Anuncio de TikTok (la fuente número uno: 86 leads)', momento: 'Primer contacto, nunca ha escrito',
@@ -110,7 +113,7 @@ export const CASOS: Caso[] = [
     nunca: ['Pedir un bloque de tres datos', 'Ofrecer la demo sin saber giro, tamaño y al menos una necesidad'] },
   { id: 'proponiendo', titulo: 'Ya sabemos giro y tamaño: toca proponer', porQueLlega: 'Cualquiera', momento: 'Proponiendo',
     buscar: () => unLeadCon(q => q.eq('lifecycle_stage', 'oportunidad'), 'proponiendo'),
-    debe: ['Demostrar en una línea que entendimos su situación, con algo concreto que él dijo', 'Proponer el siguiente paso con dos horarios concretos'],
+    debe: ['Demostrar en una línea que entendió su situación', 'Preguntar de forma amable si le gustaría que un consultor se lo enseñe con sus productos (sí o no, SIN horarios); si él ya había dicho que sí, entonces dos horarios concretos'],
     nunca: ['Proponer la demo si no dio ninguna señal de interés en su último mensaje', 'Repetir la lista de funciones'] },
   { id: 'seg_corto', titulo: 'Le escribimos y lleva 1 a 4 días sin contestar', porQueLlega: 'Cualquiera', momento: 'Seguimiento corto',
     buscar: () => unLeadConEnvio('seguimiento', '1-4 días'),
