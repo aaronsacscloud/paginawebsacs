@@ -16,6 +16,9 @@
 //   arrastrar  { acuerdo_id, sesion_id, vence_at? }  → lo incumplido pasa a HOY
 //   cerrar     { sesion_id, nota? }               → acta, arrastres, tareas, resumen IA
 //   resumen    { sesion_id, texto }               (editar el borrador de la IA, 24 h)
+//   mover      { canal_id, ocurrencia_id, inicio_at, motivo? }  → reagendar UNA junta
+//   saltar     { ocurrencia_id, motivo? }         → esta semana no hay, con motivo
+//   agendar    { punto_id, ocurrencia_id|null }   → apartar un tema para otra junta
 //
 // Reglas que valen aquí: un acuerdo exige responsable; lo pospuesto (o lo que
 // no se alcanzó a ver) pasa a la siguiente con "arrastrado ×N"; cada acuerdo
@@ -28,7 +31,7 @@ import { avisar } from '../../../../lib/crm/espacio-avisos';
 
 export const prerender = false;
 
-const SEL_PUNTO = 'id, canal_id, titulo, propuesto_por, origen_mensaje_id, contexto, votos, orden, estado, sesion_id, arrastres, created_at, updated_at';
+const SEL_PUNTO = 'id, canal_id, titulo, propuesto_por, origen_mensaje_id, contexto, votos, orden, estado, sesion_id, arrastres, para_ocurrencia_id, created_at, updated_at';
 const SEL_SESION = 'id, canal_id, inicio_at, fin_at, asistentes, resumen_ia, acta, abierta_por, cerrada_por, punto_actual_id, nota_cierre';
 const SEL_ACUERDO = 'id, sesion_id, punto_id, texto, responsable_id, vence_at, tarea_id, hecho_at, created_at, reemplazado_por';
 
@@ -42,6 +45,72 @@ export function proximaReunion(regla: { dia_iso: number; hora: string } | null):
   const candidato = new Date(Date.UTC(cdmx.getUTCFullYear(), cdmx.getUTCMonth(), cdmx.getUTCDate() + dias, hh || 0, mm || 0));
   if (candidato.getTime() <= cdmx.getTime()) candidato.setUTCDate(candidato.getUTCDate() + 7);
   return new Date(candidato.getTime() + 6 * 3600e3).toISOString();   // de vuelta a UTC real
+}
+
+/* ═══ LAS OCURRENCIAS ══════════════════════════════════════════════════════
+   `regla_reunion` es un PATRÓN semanal, no un evento: no se puede mover, ni
+   saltar, ni preparar. Y `proximaReunion` es una función pura de la regla y el
+   reloj, así que en el instante en que se cumplía la hora le sumaba 7 días —la
+   junta de hoy se evaporaba sin dejar rastro—. La ocurrencia es el sustantivo
+   que faltaba: «la junta del lunes 7», con estado propio.
+   Se materializan por demanda (al leer la sala y en el cron diario), solo de
+   HOY hacia adelante: inventar ocurrencias del pasado sería mentir sobre
+   juntas que quizá sí se hicieron antes de que esto existiera. */
+const HORIZONTE_DIAS = 28;
+/** El día de hoy en hora de México (YYYY-MM-DD). */
+const ymdCdmx = (ms = Date.now()) => new Date(ms - 6 * 3600e3).toISOString().slice(0, 10);
+
+/** Las juntas que la regla produce de hoy en adelante, con su hora real en UTC. */
+function fechasDeRegla(regla: { dia_iso: number; hora: string } | null, dias = HORIZONTE_DIAS) {
+  if (!regla || !regla.dia_iso || !regla.hora) return [] as { fecha: string; inicio_at: string }[];
+  const [hh, mm] = String(regla.hora).split(':').map(Number);
+  const base = new Date(Date.now() - 6 * 3600e3);          // "ahora" en CDMX, leído como UTC
+  const out: { fecha: string; inicio_at: string }[] = [];
+  for (let i = 0; i <= dias; i++) {
+    const d = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + i));
+    const iso = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+    if (iso !== Number(regla.dia_iso)) continue;
+    const inicio = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hh || 0, mm || 0) + 6 * 3600e3);
+    out.push({ fecha: d.toISOString().slice(0, 10), inicio_at: inicio.toISOString() });
+  }
+  return out;
+}
+
+/** Suma un arrastre a los temas que esperaban esa junta. El contador contesta
+ *  «¿cuánto lleva esto esperando?», se haya hecho la junta o no (decisión del
+ *  dueño, 7-sep-2026): un tema de hace tres semanas no se puede ver igual que
+ *  uno de ayer. Corre UNA vez por ocurrencia porque quien llama ya movió su
+ *  estado y no vuelve a encontrarla pendiente. */
+async function arrastrarPuntosDe(canalId: string, occId: string, corte: string) {
+  const { data: ps } = await supabase.from('espacio_reunion_puntos')
+    .select('id, arrastres').eq('canal_id', canalId).eq('estado', 'propuesto').is('sesion_id', null)
+    .or(`para_ocurrencia_id.is.null,para_ocurrencia_id.eq.${occId}`).lt('created_at', corte).limit(300);
+  for (const x of ps || []) {
+    await supabase.from('espacio_reunion_puntos')
+      .update({ arrastres: (x.arrastres || 0) + 1, para_ocurrencia_id: null, updated_at: ahora() }).eq('id', x.id);
+  }
+  return (ps || []).length;
+}
+
+/** Materializa las juntas que vienen y cierra las que ya se pasaron de día. */
+export async function asegurarOcurrencias(canal: { id: string; regla_reunion: any }) {
+  const hoy = ymdCdmx();
+  const futuras = fechasDeRegla(canal.regla_reunion);
+  if (futuras.length) {
+    // ignoreDuplicates + la llave (canal_id, fecha): dos pestañas del CRM
+    // materializando a la vez no duplican la junta.
+    await supabase.from('espacio_reunion_ocurrencias').upsert(
+      futuras.map(f => ({ canal_id: canal.id, fecha: f.fecha, inicio_at: f.inicio_at, programada_at: f.inicio_at })),
+      { onConflict: 'canal_id,fecha', ignoreDuplicates: true });
+  }
+  // Se vence por DÍA y no por hora, a propósito: hasta la medianoche la junta
+  // sigue viva y se puede iniciar tarde. Ese es el hueco que hoy no existía.
+  const { data: vencidas } = await supabase.from('espacio_reunion_ocurrencias')
+    .update({ estado: 'saltada', cerrada_at: ahora() })
+    .eq('canal_id', canal.id).eq('estado', 'pendiente').lt('fecha', hoy)
+    .select('id, inicio_at');
+  for (const v of vencidas || []) await arrastrarPuntosDe(canal.id, v.id, v.inicio_at);
+  return (vencidas || []).length;
 }
 
 function ordenarPuntos(ps: any[]) {
@@ -74,7 +143,12 @@ async function salaCompleta(canalId: string, yo: string) {
 
   // La agenda: lo propuesto que no pertenece a una sesión ya cerrada, más lo
   // de la sesión abierta en cualquier estado (para verlo tratarse en vivo).
-  const agenda = ordenarPuntos((puntos || []).filter((x: any) => abierta ? (x.sesion_id === abierta.id || (x.estado === 'propuesto' && !x.sesion_id)) : (x.estado === 'propuesto' && !x.sesion_id)));
+  const agenda = ordenarPuntos((puntos || []).filter((x: any) => abierta ? (x.sesion_id === abierta.id || (x.estado === 'propuesto' && !x.sesion_id && !x.para_ocurrencia_id)) : (x.estado === 'propuesto' && !x.sesion_id && !x.para_ocurrencia_id)));
+  /* Lo apartado para una junta POSTERIOR se lista aparte, no en la agenda de
+     hoy: apartar un tema para el 3 de octubre y que igual salga en la junta de
+     hoy sería no haber apartado nada. Sin junta asignada (lo normal) siguen
+     cayendo en la agenda de siempre. */
+  const proximas = ordenarPuntos((puntos || []).filter((x: any) => x.estado === 'propuesto' && !x.sesion_id && x.para_ocurrencia_id));
   const formaPunto = (x: any) => ({ ...x, propuesto_por: p(x.propuesto_por), votos: x.votos?.length || 0, vote: (x.votos || []).includes(yo) });
   /* Cuántas veces se ha arrastrado este acuerdo. Es LA pregunta cuando algo
      lleva un mes sin cumplirse: «se pasó a la próxima» tres veces seguidas
@@ -90,6 +164,24 @@ async function salaCompleta(canalId: string, yo: string) {
      continuación—, y a la tercera junta serían tres. */
   const pendientes = acs.filter((a: any) => !a.hecho_at && !a.reemplazado_por);
 
+  /* Las juntas del calendario: la de hoy si toca (aunque ya pasó la hora), las
+     que vienen, y las últimas saltadas para que la ausencia deje rastro. Es lo
+     que antes no existía: el panel calculaba "la próxima" y la de hoy
+     desaparecía en el instante en que se cumplía su hora. */
+  const hoyYmd = ymdCdmx();
+  const { data: occs } = await supabase.from('espacio_reunion_ocurrencias')
+    .select('id, fecha, inicio_at, programada_at, estado, motivo, sesion_id, movida_por')
+    .eq('canal_id', canalId).gte('fecha', new Date(Date.now() - 6 * 3600e3 - 21 * 86400e3).toISOString().slice(0, 10))
+    .order('fecha', { ascending: true }).limit(40);
+  const ocurrencias = (occs || []).map((o: any) => ({ ...o, movida: o.inicio_at !== o.programada_at, movida_por: p(o.movida_por) }));
+  /* La junta VIGENTE: la de hoy si sigue pendiente —haya pasado la hora o no—,
+     y si no, la siguiente pendiente. Devolverla aparte evita que el front tenga
+     que repetir esta decisión, que es donde estaba el bug. */
+  const actual = ocurrencias.find((o: any) => o.estado === 'pendiente' && o.fecha === hoyYmd)
+    || ocurrencias.find((o: any) => o.estado === 'pendiente' && o.fecha > hoyYmd) || null;
+  const puntosPorOcurrencia: Record<string, number> = {};
+  for (const x of puntos || []) if (x.para_ocurrencia_id && x.estado === 'propuesto' && !x.sesion_id) puntosPorOcurrencia[x.para_ocurrencia_id] = (puntosPorOcurrencia[x.para_ocurrencia_id] || 0) + 1;
+
   // Mensajes de la sesión abierta por punto: "3 mensajes sobre este punto".
   const porPunto: Record<string, number> = {};
   if (abierta) {
@@ -97,6 +189,8 @@ async function salaCompleta(canalId: string, yo: string) {
     for (const m of ms || []) porPunto[m.punto_id] = (porPunto[m.punto_id] || 0) + 1;
   }
   return {
+    ocurrencias, actual, puntos_por_ocurrencia: puntosPorOcurrencia,
+    proximas: proximas.map(formaPunto),
     abierta: abierta ? { ...abierta, asistentes_p: (abierta.asistentes || []).map(p).filter(Boolean), abierta_por: p(abierta.abierta_por), acuerdos: acs.filter((a: any) => a.sesion_id === abierta.id) } : null,
     agenda: agenda.map(x => ({ ...formaPunto(x), mensajes: porPunto[x.id] || 0 })),
     arrastrados: agenda.filter((x: any) => x.arrastres > 0).length,
@@ -115,6 +209,10 @@ export const GET: APIRoute = async ({ request, url }) => {
   const c = await canalDe(url.searchParams.get('canal_id') || '');
   if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
   if (c.tipo !== 'sala') return json({ error: 'Este canal no es una sala' }, 400);
+  /* Materializar y barrer ANTES de leer: si el panel calculara sobre datos sin
+     barrer, una junta saltada seguiría viéndose pendiente hasta que corriera el
+     cron. Es barato (un upsert idempotente y un update por índice parcial). */
+  await asegurarOcurrencias(c as any);
   const sala = await salaCompleta(c.id, yo.id);
   // "Esta semana con clientes": las citas agendadas de los próximos 7 días.
   const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
@@ -257,6 +355,75 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, punto: data });
   }
 
+  /* ── mover: reagendar UNA junta sin tocar la regla ───────────────────────
+     Antes esto no se podía: solo existía la regla semanal, así que mover el
+     lunes 10:00 al martes 4 p.m. "solo esta semana" obligaba a cambiar la regla
+     y acordarse de regresarla — y mientras tanto el aviso de la noche anterior
+     salía con la regla nueva. `programada_at` conserva dónde la había puesto la
+     regla, para poder decir "movida de las 10:00". */
+  if (accion === 'mover') {
+    const c = await canalDe(b.canal_id);
+    if (!c || c.tipo !== 'sala' || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
+    const nuevo = new Date(String(b.inicio_at || ''));
+    if (isNaN(nuevo.getTime())) return json({ error: 'Fecha y hora no válidas' }, 400);
+    await asegurarOcurrencias(c as any);
+    const { data: occ } = await supabase.from('espacio_reunion_ocurrencias')
+      .select('id, estado, programada_at').eq('canal_id', c.id).eq('id', b.ocurrencia_id).maybeSingle();
+    if (!occ) return json({ error: 'Esa junta no existe' }, 404);
+    if (occ.estado !== 'pendiente') return json({ error: 'Esa junta ya se cerró: solo se pueden mover las que siguen pendientes' }, 409);
+    // La fecha sigue al día en que de verdad va a pasar. Si ya hay otra junta
+    // ese día, se avisa en vez de reventar contra la llave única.
+    const fecha = ymdCdmx(nuevo.getTime());
+    const { data: choca } = await supabase.from('espacio_reunion_ocurrencias')
+      .select('id').eq('canal_id', c.id).eq('fecha', fecha).neq('id', occ.id).maybeSingle();
+    if (choca) return json({ error: 'Ya hay una junta de esta sala ese día' }, 409);
+    const { error } = await supabase.from('espacio_reunion_ocurrencias')
+      .update({ fecha, inicio_at: nuevo.toISOString(), motivo: (b.motivo || '').trim().slice(0, 300) || null, movida_por: yo.id })
+      .eq('id', occ.id);
+    if (error) return json({ error: error.message }, 500);
+    await emitir({ tipo: 'reunion', canal_id: c.id });
+    return json({ ok: true });
+  }
+
+  /* ── saltar: decir en voz alta que esta semana no hay junta ──────────────
+     Distinto de dejarla morir: queda el motivo y sus temas suman arrastre, así
+     que la próxima ya sabe que llevan una semana más esperando. */
+  if (accion === 'saltar') {
+    const { data: occ } = await supabase.from('espacio_reunion_ocurrencias')
+      .select('id, canal_id, estado, inicio_at').eq('id', b.ocurrencia_id).maybeSingle();
+    if (!occ) return json({ error: 'Esa junta no existe' }, 404);
+    const c = await canalDe(occ.canal_id);
+    if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
+    if (occ.estado !== 'pendiente') return json({ error: 'Esa junta ya se cerró' }, 409);
+    await supabase.from('espacio_reunion_ocurrencias')
+      .update({ estado: 'saltada', motivo: (b.motivo || '').trim().slice(0, 300) || null, cerrada_at: ahora() }).eq('id', occ.id);
+    const n = await arrastrarPuntosDe(occ.canal_id, occ.id, occ.inicio_at);
+    await emitir({ tipo: 'reunion', canal_id: occ.canal_id });
+    return json({ ok: true, arrastrados: n });
+  }
+
+  /* ── agendar: apartar un tema para una junta POSTERIOR ───────────────────
+     null = «a la próxima que toque», que es como se comportaba todo antes. Con
+     ocurrencia, el tema no entra a la junta de hoy aunque se le dé play. */
+  if (accion === 'agendar') {
+    const { data: pt } = await supabase.from('espacio_reunion_puntos').select('id, canal_id, sesion_id').eq('id', b.punto_id).maybeSingle();
+    if (!pt) return json({ error: 'Ese punto no existe' }, 404);
+    const c = await canalDe(pt.canal_id);
+    if (!c || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
+    if (pt.sesion_id) return json({ error: 'Ese punto ya está en una reunión' }, 409);
+    let occId: string | null = null;
+    if (b.ocurrencia_id) {
+      const { data: occ } = await supabase.from('espacio_reunion_ocurrencias')
+        .select('id, estado').eq('id', b.ocurrencia_id).eq('canal_id', pt.canal_id).maybeSingle();
+      if (!occ) return json({ error: 'Esa junta no existe' }, 404);
+      if (occ.estado !== 'pendiente') return json({ error: 'Esa junta ya pasó' }, 409);
+      occId = occ.id;
+    }
+    await supabase.from('espacio_reunion_puntos').update({ para_ocurrencia_id: occId, updated_at: ahora() }).eq('id', pt.id);
+    await emitir({ tipo: 'reunion', canal_id: pt.canal_id });
+    return json({ ok: true });
+  }
+
   if (accion === 'iniciar') {
     const c = await canalDe(b.canal_id);
     if (!c || c.tipo !== 'sala' || !puedeVerCanal(c, yo.id)) return json({ error: 'Sala no encontrada' }, 404);
@@ -272,8 +439,26 @@ export const POST: APIRoute = async ({ request }) => {
     const eq = await equipo(); asistentes = asistentes.filter(a => eq.some(p => p.id === a));
     const { data, error } = await supabase.from('espacio_reunion_sesiones').insert({ canal_id: c.id, asistentes, abierta_por: yo.id }).select(SEL_SESION).single();
     if (error) return json({ error: /unique|duplicate/i.test(error.message) ? 'Ya hay una reunión abierta en esta sala' : error.message }, 500);
-    // La agenda de hoy: todo lo propuesto entra a esta sesión.
-    await supabase.from('espacio_reunion_puntos').update({ sesion_id: data.id, updated_at: ahora() }).eq('canal_id', c.id).eq('estado', 'propuesto').is('sesion_id', null);
+    /* ¿A qué junta del calendario pertenece este play? A la de HOY, si toca.
+       El botón NUNCA se bloquea (decisión del dueño, 7-sep-2026): una junta que
+       arranca 20 min tarde es lo normal, y bloquear el play lograría que la
+       gente deje de usarlo y el acta no exista. Pero si hoy había junta, la
+       sesión queda amarrada a ella y esa junta se marca hecha — así «el día se
+       marca» cuando le das play, no cuando pasa la hora. Si le das play un día
+       sin junta programada, es una sesión extraordinaria y no toca el
+       calendario. */
+    await asegurarOcurrencias(c as any);
+    const { data: occHoy } = await supabase.from('espacio_reunion_ocurrencias')
+      .select('id').eq('canal_id', c.id).eq('fecha', ymdCdmx()).eq('estado', 'pendiente').maybeSingle();
+    if (occHoy) await supabase.from('espacio_reunion_ocurrencias')
+      .update({ estado: 'hecha', sesion_id: data.id, cerrada_at: ahora() }).eq('id', occHoy.id);
+    /* Los puntos que entran: los de siempre (sin junta apartada) MÁS los que
+       alguien apartó para esta junta. Los apartados para una junta posterior no
+       entran — ese es justamente el sentido de poder prepararla. */
+    const base = supabase.from('espacio_reunion_puntos').update({ sesion_id: data.id, updated_at: ahora() })
+      .eq('canal_id', c.id).eq('estado', 'propuesto').is('sesion_id', null);
+    if (occHoy) await base.or(`para_ocurrencia_id.is.null,para_ocurrencia_id.eq.${occHoy.id}`);
+    else await base.is('para_ocurrencia_id', null);
     await emitir({ tipo: 'reunion', canal_id: c.id });
     return json({ ok: true, sesion: data });
   }

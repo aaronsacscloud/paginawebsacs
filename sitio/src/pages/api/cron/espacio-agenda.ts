@@ -8,6 +8,7 @@ import { supabase } from '../../../lib/supabase';
 import { equipo, AGENTE_IA_ID } from '../../../lib/crm/espacio.lib';
 import { pushA } from '../../../lib/crm/push-crm';
 import { puedeEmpujar } from '../../../lib/crm/push-reglas';
+import { asegurarOcurrencias } from '../crm/espacio/sala';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -18,8 +19,15 @@ export const GET: APIRoute = async ({ request }) => {
   const manana = new Date(cdmx.getTime() + 86400e3);
   const isoManana = manana.getUTCDay() === 0 ? 7 : manana.getUTCDay();
   const { data: salas } = await supabase.from('espacio_canales').select('id, nombre, regla_reunion').eq('tipo', 'sala').is('archivado_at', null);
+
+  /* De paso, materializar y barrer las ocurrencias de TODAS las salas. El panel
+     ya lo hace al abrirse, pero si nadie entra en toda la semana una junta
+     saltada seguiría figurando como pendiente. Aquí la verdad no depende de que
+     alguien mire. */
+  let saltadas = 0;
+  for (const s of salas || []) { try { saltadas += await asegurarOcurrencias(s as any); } catch { /* una sala mal configurada no tumba el cron */ } }
   const mananaSalas = (salas || []).filter((s: any) => Number(s.regla_reunion?.dia_iso) === isoManana);
-  if (!mananaSalas.length) return json({ ok: true, avisos: 0, motivo: 'mañana no hay reunión' });
+  if (!mananaSalas.length) return json({ ok: true, avisos: 0, saltadas, motivo: 'mañana no hay reunión' });
 
   const gente = (await equipo()).filter(p => p.id !== AGENTE_IA_ID);
   let avisos = 0;
@@ -40,5 +48,5 @@ export const GET: APIRoute = async ({ request }) => {
       if (!error) { avisos++; if (puedeEmpujar('reunion_manana')) pushA(p.id, { title: titulo, body: detalle, url: `/admin/crm?tab=equipo&canal=${s.id}`, tag: `agenda-${s.id}`, data: { clase: 'reunion_manana' } }).catch(() => null); }
     }
   }
-  return json({ ok: true, salas: mananaSalas.map((s: any) => s.nombre), avisos });
+  return json({ ok: true, salas: mananaSalas.map((s: any) => s.nombre), avisos, saltadas });
 };

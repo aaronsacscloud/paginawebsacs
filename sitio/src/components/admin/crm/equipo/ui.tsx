@@ -575,6 +575,21 @@ button.eq-punto-chip{cursor:pointer}
    en la lista: ahí es donde hace falta saber quién habla. */
 .eq-insignia{flex:0 0 auto;font-size:.5625rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
   padding:1px 5px;border-radius:4px;border:1px solid currentColor;opacity:.85;line-height:1.5}
+
+/* ── LA JUNTA DE HOY QUE VA TARDE ──────────────────────────────────────────
+   Un estado que antes no existía: la hora ya pasó, nadie apretó play y la junta
+   sigue viva hasta la medianoche. Se pinta en ámbar (algo que atender), no en
+   rojo: no está roto, está esperando a alguien. */
+.eq-tarde{background:var(--eq-tarde-fondo,linear-gradient(92deg,#FDF4E3,#FBF1DF));border:1px solid var(--eq-tarde-borde,#EBD9AE)}
+.eq-tarde b{color:var(--eq-tarde-tinta,#8A5B0F)}
+[data-crm-dark="1"] .eq-tarde{--eq-tarde-fondo:#2A2317;--eq-tarde-borde:#4A3C1E;--eq-tarde-tinta:#E8B04B}
+/* Campo de texto/fecha dentro de la sala. */
+.eq-in{font:inherit;font-size:.8125rem;color:var(--eq-tinta);background:var(--eq-alza);border:1px solid var(--eq-linea);
+  border-radius:9px;padding:7px 10px;min-width:0}
+.eq-in:focus{outline:0;border-color:var(--eq-morado)}
+/* Los temas apartados para una junta posterior. */
+.eq-apartado{display:inline-flex;align-items:center;gap:4px;font-size:.6875rem;font-weight:700;
+  color:var(--eq-morado-tinta);background:var(--eq-lila);border-radius:6px;padding:1px 6px;white-space:nowrap}
 `;
 
 let cssPuesto = false;

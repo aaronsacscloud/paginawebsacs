@@ -10,7 +10,7 @@ import { Ic, Avatar } from './ui';
 import Cargando from '../ui/Cargando';
 
 type Quien = { id: string; nombre: string; foto_url: string | null } | null;
-type Punto = { id: string; titulo: string; estado: string; votos: number; vote: boolean; arrastres: number; sesion_id: string | null; propuesto_por: Quien; contexto: any[]; created_at: string; mensajes: number; arrastrado?: boolean };
+type Punto = { id: string; titulo: string; para_ocurrencia_id?: string | null; estado: string; votos: number; vote: boolean; arrastres: number; sesion_id: string | null; propuesto_por: Quien; contexto: any[]; created_at: string; mensajes: number; arrastrado?: boolean };
 type Acuerdo = { id: string; sesion_id: string; punto_id: string | null; texto: string; responsable: Quien; vence_at: string | null; hecho_at: string | null; tarea_id: string | null ; arrastres?: number };
 type Sesion = { id: string; inicio_at: string; fin_at: string | null; asistentes: string[]; asistentes_p: Quien[]; punto_actual_id: string | null; resumen_ia: string | null; acta: any; acuerdos: Acuerdo[]; puntos?: Punto[]; nota_cierre: string | null };
 type Cita = { id: string; fecha: string; hora: string; nombre: string; empresa: string | null; con: string | null };
@@ -19,7 +19,12 @@ type Cita = { id: string; fecha: string; hora: string; nombre: string; empresa: 
 type PuntoGuion = string | { t: string; fuente?: string };
 /** Un bloque: quién presenta, cuánto dura y qué muestra, en orden. */
 type BloqueGuion = { bloque: string; quien: string; minutos?: number; puntos: PuntoGuion[] };
-type Datos = { proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
+/** Una junta CONCRETA del calendario ("la del lunes 7"), con estado propio.
+ *  Antes solo existían la regla semanal y la sesión (que nace al dar play), así
+ *  que una junta que nadie inició no dejaba rastro: la próxima se recalculaba y
+ *  la de hoy desaparecía en el instante en que se cumplía su hora. */
+type Ocurrencia = { id: string; fecha: string; inicio_at: string; programada_at: string; estado: 'pendiente' | 'hecha' | 'saltada'; motivo: string | null; sesion_id: string | null; movida: boolean; movida_por: Quien };
+type Datos = { ocurrencias: Ocurrencia[]; actual: Ocurrencia | null; proximas: Punto[]; puntos_por_ocurrencia: Record<string, number>; proxima: string | null; abierta: Sesion | null; agenda: Punto[]; arrastrados: number; pendientes: Acuerdo[]; historial: Sesion[]; citas: Cita[]; guion: BloqueGuion[] | null };
 
 const TZ = 'America/Mexico_City';
 // Todo se muestra en hora de México aunque el navegador esté en otra zona.
@@ -222,10 +227,7 @@ export default function Sala(p: SalaProps) {
                 : <button className="eq-btn t" style={{ alignSelf: 'flex-start' }} onClick={() => setAcordando(null)}>+ Acuerdo sin punto</button>}
             </div>
           ) : (
-            <div className="eq-sesion-viva">
-              <div style={{ flex: 1 }}><b>Próxima reunión</b><div className="t">{proximaTxt}{p.canal.regla_reunion ? ` · cada ${['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'][p.canal.regla_reunion.dia_iso]}` : ''}</div></div>
-              <button className="eq-btn p" disabled={ocupado === 'iniciar'} onClick={() => accion({ accion: 'iniciar', canal_id: p.canal.id }, 'Reunión abierta: lo que se escriba queda en el acta')}>{Ic.play} Iniciar</button>
-            </div>
+            <ProximaJunta d={d} canal={p.canal} ocupado={ocupado} accion={accion} />
           )}
 
           {/* ── LO QUE QUEDÓ DE LA JUNTA PASADA · va PRIMERO ──
@@ -350,6 +352,20 @@ export default function Sala(p: SalaProps) {
                             texto que se está editando. Editar es en línea y
                             retirar pide confirmación con el mismo botón. */}
                         <button className="eq-btn t" onClick={() => setEditando({ id: pt.id, texto: pt.titulo })}>Editar</button>
+                        {/* Apartar el tema para una junta POSTERIOR. Sin esto, el
+                            único destino de un punto era "la próxima que toque":
+                            preparar la agenda del 3 de octubre metía el tema en la
+                            junta de hoy. Vacío = a la próxima, que es como se
+                            comportaba todo antes. */}
+                        <select className="eq-in" style={{ fontSize: '.75rem', padding: '5px 8px' }}
+                          value={pt.para_ocurrencia_id || ''}
+                          onChange={e => accion({ accion: 'agendar', punto_id: pt.id, ocurrencia_id: e.target.value || null },
+                            e.target.value ? 'Tema apartado para esa junta' : 'Tema devuelto a la próxima junta')}>
+                          <option value="">A la próxima junta</option>
+                          {d.ocurrencias.filter(o => o.estado === 'pendiente' && o.id !== d.actual?.id).map(o => (
+                            <option key={o.id} value={o.id}>Para el {fCorta(o.inicio_at)}</option>
+                          ))}
+                        </select>
                         <button className={'eq-btn t' + (retirando === pt.id ? ' peligro' : '')}
                           onClick={() => { if (retirando === pt.id) { accion({ accion: 'retirar', punto_id: pt.id }); setRetirando(null); } else { setRetirando(pt.id); setTimeout(() => setRetirando(x => x === pt.id ? null : x), 4000); } }}>
                           {retirando === pt.id ? '¿Seguro?' : 'Retirar'}
@@ -381,6 +397,27 @@ export default function Sala(p: SalaProps) {
             </div>
           </div>
 
+          {/* ── APARTADOS PARA MÁS ADELANTE ──
+              Van aparte de la agenda a propósito: si salieran mezclados, apartar
+              un tema para el 3 de octubre no habría servido de nada. Aquí se ve
+              qué se está preparando y para cuándo, y se puede devolver a la
+              próxima con el mismo selector. */}
+          {d.proximas.length > 0 && (
+            <div className="eq-bloque">
+              <div className="cab"><b>Apartados para más adelante</b><span className="n">{d.proximas.length}</span></div>
+              {d.proximas.map(pt => {
+                const o = d.ocurrencias.find(x => x.id === pt.para_ocurrencia_id);
+                return (
+                  <div key={pt.id} className="eq-punto" style={{ padding: '8px 12px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ flex: '1 1 160px', minWidth: 0 }}>{pt.titulo}</span>
+                    {o && <span className="eq-apartado">{fCorta(o.inicio_at)}</span>}
+                    <button className="eq-btn t" onClick={() => accion({ accion: 'agendar', punto_id: pt.id, ocurrencia_id: null }, 'Tema devuelto a la próxima junta')}>Traer a la próxima</button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {ab && ab.acuerdos.length > 0 && (
             <div className="eq-bloque">
               <div className="cab"><b>Acordado hoy</b><span className="n">{ab.acuerdos.length}</span></div>
@@ -411,6 +448,92 @@ export default function Sala(p: SalaProps) {
         </div>
       )}
     </>
+  );
+}
+
+/* ═══ LA PRÓXIMA JUNTA ═════════════════════════════════════════════════════
+   Lo que se veía antes: "Próxima reunión: lun 14 sep · en 6 d" y un botón
+   Iniciar. El problema es que esa fecha se CALCULABA con la regla y el reloj,
+   así que a las 10:00:01 de un lunes de junta la tarjeta ya apuntaba al lunes
+   siguiente: la junta de hoy desaparecía mientras el equipo todavía se estaba
+   sentando. Ahora la tarjeta habla de una junta CONCRETA (la ocurrencia) y
+   distingue tres momentos que antes eran uno solo:
+
+     · falta para la junta          → cuenta regresiva, como siempre
+     · ya empezó y sigue pendiente  → "empezó hace 3 h · todavía puedes
+                                       iniciarla". Vive hasta la medianoche.
+     · el día pasó                  → quedó como saltada y se ve en el historial
+
+   Y deja hacer las dos cosas que no se podían: mover ESTA junta sin tocar la
+   regla semanal, y decir "esta semana no hay" con su motivo. */
+function ProximaJunta({ d, canal, ocupado, accion }: {
+  d: Datos; canal: C; ocupado: string | null;
+  accion: (b: any, ok?: string) => Promise<any>;
+}) {
+  const [modo, setModo] = useState<null | 'mover' | 'saltar'>(null);
+  const [cuando, setCuando] = useState('');
+  const [motivo, setMotivo] = useState('');
+  const o = d.actual;
+  const dia = canal.regla_reunion ? ['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'][canal.regla_reunion.dia_iso] : null;
+
+  if (!o) return (
+    <div className="eq-sesion-viva">
+      <div style={{ flex: 1 }}><b>Sin día fijo</b><div className="t">Esta sala no tiene reunión programada. Puedes iniciar una cuando quieras.</div></div>
+      <button className="eq-btn p" disabled={ocupado === 'iniciar'} onClick={() => accion({ accion: 'iniciar', canal_id: canal.id }, 'Reunión abierta: lo que se escriba queda en el acta')}>{Ic.play} Iniciar</button>
+    </div>
+  );
+
+  const c = faltan(o.inicio_at);
+  const esHoy = o.fecha === hoyYmd();
+  // "Va tarde": es HOY, ya pasó la hora y nadie le ha dado play. Este estado no
+  // existía —la tarjeta saltaba directo a la semana siguiente— y es justo el
+  // momento en que alguien tiene que apretar el botón.
+  const tarde = esHoy && c.pasada;
+  const n = d.puntos_por_ocurrencia[o.id] || 0;
+
+  return (
+    <div className={'eq-sesion-viva' + (tarde ? ' eq-tarde' : '')} style={{ flexWrap: 'wrap' }}>
+      <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+        <b>{tarde ? 'La junta de hoy sigue sin abrirse' : esHoy ? 'La junta es hoy' : 'Próxima reunión'}</b>
+        <div className="t">
+          {fCorta(o.inicio_at)} · {fHora(o.inicio_at)}
+          {o.movida && <> · <i>movida de las {fHora(o.programada_at)}</i></>}
+          {!o.movida && dia && <> · cada {dia}</>}
+          {' · '}<b className={c.cerca ? 'eq-ya' : undefined}>{c.txt}</b>
+          {n > 0 && <> · {n} tema{n === 1 ? '' : 's'} apartado{n === 1 ? '' : 's'}</>}
+        </div>
+        {tarde && <div className="t" style={{ marginTop: 2 }}>Sigue viva hasta la medianoche: ábrela y el acta queda con la fecha de hoy. Si ya no se hizo, márcala como saltada para que quede el motivo.</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button className="eq-btn p" disabled={ocupado === 'iniciar'} onClick={() => accion({ accion: 'iniciar', canal_id: canal.id }, 'Reunión abierta: lo que se escriba queda en el acta')}>{Ic.play} Iniciar</button>
+        <button className="eq-btn t" onClick={() => { setModo(modo === 'mover' ? null : 'mover'); setCuando(o.inicio_at.slice(0, 16)); }}>Mover</button>
+        <button className="eq-btn t" onClick={() => setModo(modo === 'saltar' ? null : 'saltar')}>No hay</button>
+      </div>
+      {modo === 'mover' && (
+        <div style={{ flex: '1 1 100%', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingTop: 8 }}>
+          {/* Mueve SOLO esta junta. La regla semanal no se toca: antes había que
+              cambiarla y acordarse de regresarla, y mientras tanto el aviso de
+              la noche anterior salía con la regla equivocada. */}
+          <input type="datetime-local" value={cuando} onChange={e => setCuando(e.target.value)} className="eq-in" style={{ flex: '1 1 190px' }} />
+          <input placeholder="Motivo (opcional)" value={motivo} onChange={e => setMotivo(e.target.value)} className="eq-in" style={{ flex: '1 1 190px' }} />
+          <button className="eq-btn p" disabled={!cuando || ocupado === 'mover'} onClick={async () => {
+            const r = await accion({ accion: 'mover', canal_id: canal.id, ocurrencia_id: o.id, inicio_at: new Date(cuando).toISOString(), motivo }, 'Junta movida · la regla semanal no cambió');
+            if (r) { setModo(null); setMotivo(''); }
+          }}>Mover solo esta</button>
+          <button className="eq-btn t" onClick={() => setModo(null)}>Cancelar</button>
+        </div>
+      )}
+      {modo === 'saltar' && (
+        <div style={{ flex: '1 1 100%', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingTop: 8 }}>
+          <input placeholder="¿Por qué no hay junta?" value={motivo} onChange={e => setMotivo(e.target.value)} className="eq-in" style={{ flex: '1 1 240px' }} />
+          <button className="eq-btn p" disabled={ocupado === 'saltar'} onClick={async () => {
+            const r = await accion({ accion: 'saltar', ocurrencia_id: o.id, motivo }, 'Junta marcada como saltada · sus temas suman un arrastre');
+            if (r) { setModo(null); setMotivo(''); }
+          }}>Marcar saltada</button>
+          <button className="eq-btn t" onClick={() => setModo(null)}>Cancelar</button>
+        </div>
+      )}
+    </div>
   );
 }
 
