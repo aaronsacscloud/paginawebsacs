@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import KpiCard from './ui/KpiCard';
 import Sheet from './ui/Sheet';
 import LeadDrawer from './LeadDrawer';
@@ -51,6 +52,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
   const [mes, setMes] = useState(() => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7));
   const [d, setD] = useState<any>(null);
   const [anual, setAnual] = useState<any>(null);
+  const isMobile = useIsMobile();
   const [vista, setVistaRaw] = useState<'gastos' | 'adeudos' | 'ingresos' | 'pipeline' | 'cierre'>(pagina || 'gastos');
   const setVista = (v: any) => setVistaRaw(pagina ? (v === 'pipeline' ? 'ingresos' : pagina) : v);
   const [semana, setSemana] = useState<number | null>(null);
@@ -93,6 +95,144 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
   const [catTab, setCatTab] = useState<string>('todos');
   const filasGasto = (() => { if (!d) return []; const xs = d.gastos.lista.filter((g: any) => catTab === 'todos' || g.categoria === catTab).map((g: any) => ({ ...g, vence: venceEn(g, mes), dias: diasPara(venceEn(g, mes)) })); const dir = orden.asc ? 1 : -1; return xs.sort((a: any, b: any) => { if (orden.k === 'monto') return (Number(a.monto) - Number(b.monto)) * dir; if (orden.k === 'dias') { if (!!a.pago !== !!b.pago) return a.pago ? 1 : -1; return (a.dias - b.dias) * dir; } return String(a[orden.k] || '').localeCompare(String(b[orden.k] || ''), 'es') * dir; }); })();
   const thSort = (k: typeof orden.k, l: string, right?: boolean) => <th style={{ ...th, textAlign: right ? 'right' : 'left', cursor: 'pointer', userSelect: 'none', color: orden.k === k ? '#4c1d95' : th.color }} onClick={() => setOrden(o => ({ k, asc: o.k === k ? !o.asc : k !== 'monto' }))} title="Ordenar">{l}{orden.k === k ? (orden.asc ? ' ↑' : ' ↓') : ''}</th>;
+  /* El formulario de alta, UNA sola vez. Lo usan el escritorio y el teléfono:
+     dos copias del mismo formulario se desincronizan en cuanto alguien agrega
+     un campo en una y no en la otra. */
+  const hojaGasto = abierto && (
+            <div style={{ marginTop: 12, background: '#fff', border: '1px solid #d9d4ea', borderRadius: 14, padding: 16 }}>
+              <b>{form.id ? 'Editar gasto' : 'Nuevo gasto'}</b>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginTop: 8 }}>
+                <label style={lbl}>Nombre<input style={inp} value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Vercel, Kapso, Andrea…" /></label>
+                <label style={lbl}>Categoría <span style={{ fontWeight: 500, color: '#8e88a8' }}>(elige o escribe una nueva)</span><input style={inp} list="fin-cats" value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} placeholder="suscripcion, nomina, impuestos…" /><datalist id="fin-cats">{Object.entries({ ...CATS_TODAS, ...Object.fromEntries((d?.gastos?.catalogo || []).map((g: any) => [g.categoria, CATS[g.categoria] || g.categoria])) }).map(([k, l]) => <option key={k} value={k}>{l as string}</option>)}</datalist></label>
+                <label style={lbl}>Monto {form.moneda_original === 'USD' ? 'USD' : 'MXN'}<div style={{ display: 'flex', gap: 6 }}><input style={{ ...inp, flex: 1 }} type="number" value={form.moneda_original === 'USD' ? form.monto_original : form.monto} onChange={e => setForm(form.moneda_original === 'USD' ? { ...form, monto_original: e.target.value, monto: String(Math.round(Number(e.target.value) * (Number(form.tipo_cambio) || 0))) } : { ...form, monto: e.target.value })} /><select style={{ ...inp, width: 82 }} value={form.moneda_original} onChange={e => setForm({ ...form, moneda_original: e.target.value })}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>{form.moneda_original === 'USD' && <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: 12 }}>Tipo de cambio <input style={{ ...inp, width: 90, marginTop: 0 }} type="number" step="0.01" value={form.tipo_cambio} onChange={e => setForm({ ...form, tipo_cambio: e.target.value, monto: String(Math.round(Number(form.monto_original) * (Number(e.target.value) || 0))) })} placeholder="18.50" /> = {pesos(Number(form.monto) || 0)} MXN</div>}</label>
+                <label style={lbl}>Periodicidad<select style={inp} value={form.periodicidad} onChange={e => setForm({ ...form, periodicidad: e.target.value })}>{Object.entries(PER_TODAS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
+                <label style={lbl}>Día(s) de cobro <span style={{ fontWeight: 500, color: '#8e88a8' }}>(uno o varios: 15, 30)</span><input style={inp} value={form.dias_cobro || form.dia_cobro} onChange={e => setForm({ ...form, dias_cobro: e.target.value, dia_cobro: e.target.value.split(/[,\s]+/)[0] || '' })} placeholder="15" /></label>
+                <label style={lbl}>Desde (mes)<input style={inp} type="month" value={form.inicio} onChange={e => setForm({ ...form, inicio: e.target.value })} /></label>
+                <label style={lbl}>Hasta (opcional)<input style={inp} type="month" value={form.fin} onChange={e => setForm({ ...form, fin: e.target.value })} /></label>
+                <label style={lbl}>Proveedor<input style={inp} value={form.proveedor} onChange={e => setForm({ ...form, proveedor: e.target.value })} /></label>
+                <label style={{ ...lbl, gridColumn: '1 / -1' }}>Notas<input style={inp} value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} /></label>
+                <button type="button" onClick={() => setMasOpciones(!masOpciones)} style={{ gridColumn: '1 / -1', justifySelf: 'start', border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, padding: 0 }}>{masOpciones ? '− Menos opciones' : '+ Más opciones (método de pago, deducible, rango, recordatorio, pausa, etiquetas)'}</button>
+                {masOpciones && (<>
+                  <label style={lbl}>Método de pago<select style={inp} value={form.metodo_pago} onChange={e => setForm({ ...form, metodo_pago: e.target.value })}><option value="">—</option><option value="tarjeta">Tarjeta</option><option value="domiciliado">Domiciliado</option><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option><option value="paypal">PayPal</option></select></label>
+                  <label style={lbl}>Cuenta o tarjeta de la que sale<input style={inp} value={form.cuenta_pago} onChange={e => setForm({ ...form, cuenta_pago: e.target.value })} placeholder="BBVA empresa, Konfio…" /></label>
+                  <label style={lbl}>Deducible<select style={inp} value={String(form.deducible)} onChange={e => setForm({ ...form, deducible: e.target.value })}><option value="">No sé</option><option value="true">Sí, con factura</option><option value="false">No</option></select></label>
+                  <label style={lbl}>Centro de costo<select style={inp} value={form.centro_costo} onChange={e => setForm({ ...form, centro_costo: e.target.value })}><option value="empresa">Empresa</option><option value="personal">Personal (reembolso)</option><option value="mixto">Mixto</option></select></label>
+                  <label style={lbl}>Rango si es variable (mín)<input style={inp} type="number" value={form.monto_min} onChange={e => setForm({ ...form, monto_min: e.target.value })} /></label>
+                  <label style={lbl}>Rango si es variable (máx)<input style={inp} type="number" value={form.monto_max} onChange={e => setForm({ ...form, monto_max: e.target.value })} /></label>
+                  <label style={lbl}>Avisar días antes<input style={inp} type="number" min={0} max={30} value={form.recordatorio_dias} onChange={e => setForm({ ...form, recordatorio_dias: e.target.value })} /></label>
+                  <label style={lbl}>Pausar hasta (mes)<input style={inp} type="month" value={form.pausado_hasta} onChange={e => setForm({ ...form, pausado_hasta: e.target.value })} /></label>
+                  <label style={{ ...lbl, gridColumn: '1 / -1' }}>Etiquetas (coma)<input style={inp} value={form.etiquetas} onChange={e => setForm({ ...form, etiquetas: e.target.value })} placeholder="ia, infraestructura, equipo…" /></label>
+                  <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={form.activo !== false} onChange={e => setForm({ ...form, activo: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#5B4BD6' }} />Activo (desmarcar lo quita de los meses futuros sin borrar el historial)</label>
+                </>)}
+                <label style={{ ...lbl, gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={!!form.probable} onChange={e => setForm({ ...form, probable: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#5B4BD6' }} />Variable probable: no es fijo, es un estimado (publicidad, viáticos…). Si capturas la inversión real en Embudo, sustituye al estimado.</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={guardar} disabled={!form.nombre || form.monto === ''} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar</button>
+                <button onClick={() => { setAbierto(false); setForm(vacio); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                {form.id && <button onClick={async () => { if (!confirm('¿Borrar este gasto de todos los meses?')) return; await postJ({ accion: 'gasto_borrar', id: form.id }); setAbierto(false); setForm(vacio); cargar(); }} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#b91c1c', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Borrar</button>}
+              </div>
+              {msg && <div style={{ marginTop: 8, fontSize: 12.5, color: '#14532d', fontWeight: 700 }}>{msg}</div>}
+            </div>
+  );
+
+  /* ══ TELÉFONO ══════════════════════════════════════════════════════════
+     Esta pantalla enseñaba el escritorio encogido: seis tarjetas de KPI en
+     rejilla, pestañas con dos renglones de texto y una tabla de siete columnas
+     con scroll lateral. Y en blanco, en medio de una app oscura, porque el
+     tema va por pantalla adaptada y esta no lo estaba.
+
+     En el teléfono no caben seis números: cabe UNO. Si entraste a Gastos, el
+     número es lo que hay que pagar; lo demás baja a un resumen que se abre si
+     lo pides. La tabla se vuelve renglones —el patrón de Clientes y Leads— y
+     la casilla de pagado es lo único que se toca. */
+  if (isMobile) {
+    const g = d?.gastos;
+    const cats: [string, string, number][] = d ? [
+      ['todos', 'Todos', Number(d.utilidad.total_gastos || 0)],
+      ...Object.entries(d.gastos.por_categoria || {}).map(([k, v]: any) => [k, k.charAt(0).toUpperCase() + k.slice(1), Number(v.previsto || 0)] as [string, string, number]),
+    ] : [];
+    const resumen: [string, string, string][] = d ? [
+      ['Cobrado', pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado), '#1E8A63'],
+      ['Por cobrar', pesos(d.ingresos.por_cobrar), '#2C5FC4'],
+      ['Pipeline', pesos(d.pipeline.ponderado), '#a06600'],
+      ['Utilidad estimada', pesos(d.utilidad.estimada), d.utilidad.estimada >= 0 ? '#1E8A63' : '#C0554E'],
+    ] : [];
+    return (
+      <div className="m-bleed m-lienzo">
+        <div className="m-hdr">
+          <div className="m-tt">{pagina === 'ingresos' ? 'Ingresos' : pagina === 'cierre' ? 'Cierre' : 'Gastos'}</div>
+          {vista === 'gastos' && d && !d.error && (
+            <button className="m-cta" onClick={() => { setForm({ ...vacio, inicio: mes }); setAbierto(true); }}>＋ Gasto</button>
+          )}
+        </div>
+        {/* El mes, en pastillas: es lo primero que se cambia y tiene que estar
+            a un pulgar, no en una esquina. */}
+        <div className="m-chips">
+          <button className="m-chip" onClick={() => setMes(mover(mes, -1))}>‹ {MESES[Number(mover(mes, -1).slice(5, 7)) - 1]}</button>
+          <button className="m-chip on" onClick={() => setMes(new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7))}>{nombreMes(mes)}</button>
+          <button className="m-chip" onClick={() => setMes(mover(mes, 1))}>{MESES[Number(mover(mes, 1).slice(5, 7)) - 1]} ›</button>
+        </div>
+
+        {!d && <div className="m-vacio-txt">Calculando…</div>}
+        {d?.error && <div className="m-vacio-txt" style={{ color: '#C0554E' }}>{d.error}</div>}
+
+        {d && !d.error && (<>
+          {/* EL número. Uno, grande, con su contexto debajo. */}
+          <div className="m-cifra">
+            <div className="m-cifra-l">Gastos del mes</div>
+            <div className="m-cifra-v" style={{ color: '#C0554E' }}>{pesos(d.utilidad.total_gastos)}</div>
+            <div className="m-cifra-s">{pesos(d.gastos.pagado)} pagados de {pesos(d.gastos.previsto)}</div>
+          </div>
+
+          {/* Lo demás del mes, plegado. Está a un toque, no a la vista: quien
+              entra a Gastos viene a pagar, no a leer el estado del negocio. */}
+          <details className="m-plegable">
+            <summary>Todo el mes</summary>
+            {resumen.map(([l, v, c]) => (
+              <div key={l} className="m-row" style={{ cursor: 'default' }}>
+                <div className="m-n1" style={{ flex: 1 }}>{l}</div>
+                <div className="m-m1" style={{ color: c, fontWeight: 800 }}>{v}</div>
+              </div>
+            ))}
+          </details>
+
+          <div className="m-chips">
+            {cats.map(([k, l, v]) => (
+              <button key={k} className={'m-chip' + (catTab === k ? ' on' : '')} onClick={() => setCatTab(k)}>
+                {l}{catTab === k ? ` ${pesos(v)}` : ''}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            {filasGasto.map((x: any) => (
+              <div key={x.id} className="m-row" onClick={() => pagar(x, !x.pago)}>
+                {/* La casilla es la acción: en el teléfono lo único que se hace
+                    aquí es marcar que ya se pagó. Todo el renglón la activa —un
+                    cuadro de 18 px no es un blanco para el pulgar—. */}
+                <span className={'m-check' + (x.pago ? ' on' : '')} aria-hidden>{x.pago ? '✓' : ''}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="m-n1">{x.nombre}</div>
+                  <div className="m-n2">{x.categoria}{x.vence ? ` · ${textoDias(x.dias)}` : ''}</div>
+                </div>
+                <div className="m-m1" style={{ fontWeight: 800, textDecoration: x.pago ? 'line-through' : undefined, opacity: x.pago ? .55 : 1 }}>{pesos(x.monto)}</div>
+              </div>
+            ))}
+            {!filasGasto.length && (
+              <div className="m-vacio-txt">
+                {catTab === 'todos' ? 'No hay gastos capturados en este mes.' : 'Nada en esta categoría este mes.'}
+              </div>
+            )}
+          </div>
+        </>)}
+
+        {/* La hoja de alta es la MISMA del escritorio: no hay dos formularios
+            que se puedan desincronizar. */}
+        {abierto && hojaGasto}
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '18px 22px 60px', maxWidth: 1180, margin: '0 auto', color: '#241d43' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
@@ -141,42 +281,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                 {d.variables?.marketing_real > 0 && <span>Publicidad real (Embudo) <b style={{ color: '#241d43' }}>{pesos(d.variables.marketing_real)}</b></span>}
               </div>
             )}
-            {abierto && (
-              <div style={{ marginTop: 12, background: '#fff', border: '1px solid #d9d4ea', borderRadius: 14, padding: 16 }}>
-                <b>{form.id ? 'Editar gasto' : 'Nuevo gasto'}</b>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginTop: 8 }}>
-                  <label style={lbl}>Nombre<input style={inp} value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Vercel, Kapso, Andrea…" /></label>
-                  <label style={lbl}>Categoría <span style={{ fontWeight: 500, color: '#8e88a8' }}>(elige o escribe una nueva)</span><input style={inp} list="fin-cats" value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} placeholder="suscripcion, nomina, impuestos…" /><datalist id="fin-cats">{Object.entries({ ...CATS_TODAS, ...Object.fromEntries((d?.gastos?.catalogo || []).map((g: any) => [g.categoria, CATS[g.categoria] || g.categoria])) }).map(([k, l]) => <option key={k} value={k}>{l as string}</option>)}</datalist></label>
-                  <label style={lbl}>Monto {form.moneda_original === 'USD' ? 'USD' : 'MXN'}<div style={{ display: 'flex', gap: 6 }}><input style={{ ...inp, flex: 1 }} type="number" value={form.moneda_original === 'USD' ? form.monto_original : form.monto} onChange={e => setForm(form.moneda_original === 'USD' ? { ...form, monto_original: e.target.value, monto: String(Math.round(Number(e.target.value) * (Number(form.tipo_cambio) || 0))) } : { ...form, monto: e.target.value })} /><select style={{ ...inp, width: 82 }} value={form.moneda_original} onChange={e => setForm({ ...form, moneda_original: e.target.value })}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>{form.moneda_original === 'USD' && <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: 12 }}>Tipo de cambio <input style={{ ...inp, width: 90, marginTop: 0 }} type="number" step="0.01" value={form.tipo_cambio} onChange={e => setForm({ ...form, tipo_cambio: e.target.value, monto: String(Math.round(Number(form.monto_original) * (Number(e.target.value) || 0))) })} placeholder="18.50" /> = {pesos(Number(form.monto) || 0)} MXN</div>}</label>
-                  <label style={lbl}>Periodicidad<select style={inp} value={form.periodicidad} onChange={e => setForm({ ...form, periodicidad: e.target.value })}>{Object.entries(PER_TODAS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-                  <label style={lbl}>Día(s) de cobro <span style={{ fontWeight: 500, color: '#8e88a8' }}>(uno o varios: 15, 30)</span><input style={inp} value={form.dias_cobro || form.dia_cobro} onChange={e => setForm({ ...form, dias_cobro: e.target.value, dia_cobro: e.target.value.split(/[,\s]+/)[0] || '' })} placeholder="15" /></label>
-                  <label style={lbl}>Desde (mes)<input style={inp} type="month" value={form.inicio} onChange={e => setForm({ ...form, inicio: e.target.value })} /></label>
-                  <label style={lbl}>Hasta (opcional)<input style={inp} type="month" value={form.fin} onChange={e => setForm({ ...form, fin: e.target.value })} /></label>
-                  <label style={lbl}>Proveedor<input style={inp} value={form.proveedor} onChange={e => setForm({ ...form, proveedor: e.target.value })} /></label>
-                  <label style={{ ...lbl, gridColumn: '1 / -1' }}>Notas<input style={inp} value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} /></label>
-                  <button type="button" onClick={() => setMasOpciones(!masOpciones)} style={{ gridColumn: '1 / -1', justifySelf: 'start', border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, padding: 0 }}>{masOpciones ? '− Menos opciones' : '+ Más opciones (método de pago, deducible, rango, recordatorio, pausa, etiquetas)'}</button>
-                  {masOpciones && (<>
-                    <label style={lbl}>Método de pago<select style={inp} value={form.metodo_pago} onChange={e => setForm({ ...form, metodo_pago: e.target.value })}><option value="">—</option><option value="tarjeta">Tarjeta</option><option value="domiciliado">Domiciliado</option><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option><option value="paypal">PayPal</option></select></label>
-                    <label style={lbl}>Cuenta o tarjeta de la que sale<input style={inp} value={form.cuenta_pago} onChange={e => setForm({ ...form, cuenta_pago: e.target.value })} placeholder="BBVA empresa, Konfio…" /></label>
-                    <label style={lbl}>Deducible<select style={inp} value={String(form.deducible)} onChange={e => setForm({ ...form, deducible: e.target.value })}><option value="">No sé</option><option value="true">Sí, con factura</option><option value="false">No</option></select></label>
-                    <label style={lbl}>Centro de costo<select style={inp} value={form.centro_costo} onChange={e => setForm({ ...form, centro_costo: e.target.value })}><option value="empresa">Empresa</option><option value="personal">Personal (reembolso)</option><option value="mixto">Mixto</option></select></label>
-                    <label style={lbl}>Rango si es variable (mín)<input style={inp} type="number" value={form.monto_min} onChange={e => setForm({ ...form, monto_min: e.target.value })} /></label>
-                    <label style={lbl}>Rango si es variable (máx)<input style={inp} type="number" value={form.monto_max} onChange={e => setForm({ ...form, monto_max: e.target.value })} /></label>
-                    <label style={lbl}>Avisar días antes<input style={inp} type="number" min={0} max={30} value={form.recordatorio_dias} onChange={e => setForm({ ...form, recordatorio_dias: e.target.value })} /></label>
-                    <label style={lbl}>Pausar hasta (mes)<input style={inp} type="month" value={form.pausado_hasta} onChange={e => setForm({ ...form, pausado_hasta: e.target.value })} /></label>
-                    <label style={{ ...lbl, gridColumn: '1 / -1' }}>Etiquetas (coma)<input style={inp} value={form.etiquetas} onChange={e => setForm({ ...form, etiquetas: e.target.value })} placeholder="ia, infraestructura, equipo…" /></label>
-                    <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={form.activo !== false} onChange={e => setForm({ ...form, activo: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#5B4BD6' }} />Activo (desmarcar lo quita de los meses futuros sin borrar el historial)</label>
-                  </>)}
-                  <label style={{ ...lbl, gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={!!form.probable} onChange={e => setForm({ ...form, probable: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#5B4BD6' }} />Variable probable: no es fijo, es un estimado (publicidad, viáticos…). Si capturas la inversión real en Embudo, sustituye al estimado.</label>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={guardar} disabled={!form.nombre || form.monto === ''} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar</button>
-                  <button onClick={() => { setAbierto(false); setForm(vacio); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
-                  {form.id && <button onClick={async () => { if (!confirm('¿Borrar este gasto de todos los meses?')) return; await postJ({ accion: 'gasto_borrar', id: form.id }); setAbierto(false); setForm(vacio); cargar(); }} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#b91c1c', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Borrar</button>}
-                </div>
-                {msg && <div style={{ marginTop: 8, fontSize: 12.5, color: '#14532d', fontWeight: 700 }}>{msg}</div>}
-              </div>
-            )}
+            {hojaGasto}
             <div style={{ marginTop: 12, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               {/* ══ PESTAÑAS DE CATEGORÍA, PEGADAS A LA TABLA ══
                   Eran pastillas sueltas flotando entre los KPIs y la tabla:

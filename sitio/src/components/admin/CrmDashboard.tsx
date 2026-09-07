@@ -371,7 +371,7 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsa
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
 const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+const M_DARK_TABS: Tab[] = ['fin-gastos', 'fin-ingresos', 'fin-cierre', 'fin-adeudos', 'finanzas', 'dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1527,6 +1527,28 @@ const CRM_MOBILE_CSS = `
     /* Saca el bloque del padding de 16px del wrap: gutter = solo los 24px de m-* */
     .m-bleed { margin-left: -16px; margin-right: -16px; }
     /* Chips de filtro (≤3; solo el activo lleva conteo) */
+    /* ── FINANZAS en el teléfono (7-sep-2026) ────────────────────────────
+       La pantalla enseñaba el escritorio encogido: seis KPIs en rejilla y una
+       tabla de siete columnas con scroll lateral. En un teléfono no caben seis
+       números: cabe UNO. Estas tres clases son ese uno, lo demás plegado, y la
+       casilla de pagado. */
+    /* EL número del mes. Grande y solo, con su contexto debajo. */
+    .m-cifra { padding: 6px 24px 14px; }
+    .m-cifra-l { font-size: 0.7rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--m-soft); }
+    .m-cifra-v { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .m-cifra-s { font-size: 0.8rem; color: var(--m-soft); margin-top: 2px; }
+    /* Lo demás del mes, a un toque. Quien entra a Gastos viene a pagar, no a
+       leer el estado del negocio: está disponible, no encima. */
+    .m-plegable { border-top: 1px solid var(--m-line); border-bottom: 1px solid var(--m-line); margin-bottom: 4px; }
+    .m-plegable > summary { padding: 12px 24px; font-size: 0.82rem; font-weight: 700; color: var(--m-acc); cursor: pointer; list-style: none; }
+    .m-plegable > summary::-webkit-details-marker { display: none; }
+    .m-plegable > summary::after { content: ' ▾'; color: var(--m-soft); }
+    .m-plegable[open] > summary::after { content: ' ▴'; }
+    /* La casilla ES la acción, y el renglón entero la activa: un cuadro de
+       18 px no es un blanco para el pulgar. */
+    .m-check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #cfcddb; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
+    .m-check.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
+    .m-vacio-txt { padding: 22px 24px; color: var(--m-soft); font-size: 0.86rem; line-height: 1.5; }
     .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     /* Aire al final del carril: el último chip quedaba rebanado por el marco. */
     .m-chips::after { content: ''; flex: none; width: 16px; }
@@ -1596,6 +1618,11 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-row .m-n1, [data-crm-dark="1"] .m-row .m-m1 { color: var(--m-ink); }
       [data-crm-dark="1"] .m-row .m-ini { color: #b3b1bd; }
       [data-crm-dark="1"] .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
+      /* Finanzas en oscuro. La casilla sin marcar necesita un borde que se vea
+         sobre negro: el gris claro del tema claro desaparecía. */
+      [data-crm-dark="1"] .m-check { border-color: #45444f; }
+      [data-crm-dark="1"] .m-plegable { border-color: #26262e; }
+      [data-crm-dark="1"] .m-cifra-l, [data-crm-dark="1"] .m-cifra-s { color: #918fa0; }
       [data-crm-dark="1"] .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
