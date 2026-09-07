@@ -92,8 +92,17 @@ export const POST: APIRoute = async ({ request, url }) => {
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
           metadata: p.metadata,
           status: entrante ? 'received' : (kapso.status || 'sent'),
-          nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || null,
+          nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name || msj?.profile_name || kapso?.contact_name || kapso?.profile_name || null,
         });
+        // DIAGNÓSTICO (7-sep): en 298 conversaciones el nombre de perfil llegó vacío. Si en un entrante no viene, se
+        // anota qué llaves trae el payload (una vez por hora) para ajustar la ruta sin adivinar.
+        if (entrante && !(payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name)) {
+          try {
+            const desde = new Date(Date.now() - 3600e3).toISOString();
+            const { data: ya } = await supabase.from('ia_log').select('id').eq('accion', 'wa_perfil_diag').gte('created_at', desde).limit(1);
+            if (!(ya || []).length) await supabase.from('ia_log').insert({ accion: 'wa_perfil_diag', razon: 'entrante sin nombre de perfil', detalle: { payload_keys: Object.keys(payload || {}), contact: payload?.contact || null, kapso_keys: Object.keys(kapso || {}), msj_keys: Object.keys(msj || {}), msj_from: msj?.from || null } });
+          } catch { /* solo diagnóstico */ }
+        }
         // ── El cliente tocó uno de los horarios que le mandamos ──────────
         // Va ANTES de la automatización: si la respuesta es una reserva, lo
         // que toca es agendar, no dispararle la bienvenida.

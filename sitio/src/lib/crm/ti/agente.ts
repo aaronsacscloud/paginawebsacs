@@ -25,7 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
-import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro } from './nombre-y-bots';
+import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro, saludoParaPlantilla } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -509,6 +509,13 @@ export async function proponerRespuestas(): Promise<any> {
     .eq('tipo', 'wa_entrante').gt('ocurrio_at', desde).not('contact_id', 'is', null).order('ocurrio_at', { ascending: true }).limit(100);
   const ultimoPor: Record<string, string> = {};
   for (const e of evs || []) ultimoPor[e.contact_id] = e.ocurrio_at;
+  // HUÉRFANOS (7-sep): si la marca avanzó mientras el agente fallaba (sin créditos, caída), los leads que escribieron en
+  // ese hueco quedaban sin respuesta para siempre. Cualquier hilo cuya última pieza sea del lead (7 días) y no tenga un
+  // envío nuestro después vuelve a la fila, sin importar la marca. Caso Cinthya y 5 más tras el corte del 5-sep.
+  try {
+    const { data: hu } = await supabase.rpc('ti_huerfanos', { dias: 7 });
+    for (const h of (hu || []) as any[]) if (h.contact_id && !ultimoPor[h.contact_id]) { ultimoPor[h.contact_id] = h.ocurrio_at; res.huerfanos = (res.huerfanos || 0) + 1; }
+  } catch { /* la función puede no existir en un entorno viejo */ }
   // Si se llenó el límite, la marca no debe saltar lo que no se leyó.
   const topeLectura = (evs || []).length >= 100 ? Date.parse((evs || [])[(evs || []).length - 1].ocurrio_at) : Infinity;
   // Si el lead sigue escribiendo (último mensaje hace < 75 s), se espera al siguiente tick para leer la ráfaga
@@ -957,9 +964,25 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       if (e.plantilla) {
         const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
         const pl = e.plantilla as any;
+        // LOS PARÁMETROS SE ARMAN AL SALIR, no al nacer (7-sep): {{1}} con el nombre de HOY (o saludo neutro: nunca «Hola
+        // WhatsApp»), y {{2}} con el texto que el consultor dejó si lo modificó (antes salía el original aunque lo cambiara).
+        {
+          const { data: kn } = e.contact_id ? await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle() : { data: null as any };
+          const p1 = saludoParaPlantilla(kn?.nombre);
+          const p2 = e.editado_por ? paramAngulo(mensaje) : (pl.params?.[1] || paramAngulo(mensaje));
+          pl.params = [p1, p2];
+          await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
+        }
         plantillaUsada = pl.marketing || pl.utility;
         r = await enviarPlantilla(e.telefono, plantillaUsada!, 'es_MX', pl.params || []);
         mensaje = `[plantilla ${plantillaUsada}] ${pl.params?.[1] || mensaje}`;
+        // RESPALDO INMEDIATO (7-sep): si sale la de marketing y hay utility, el espejo lleva el plan de respaldo. Cuando Meta
+        // reporte el fallo (131049 «limitó marketing a este número»), respaldoPorFallo manda la utility EN ESE MOMENTO, no a
+        // los 10 minutos. El puente (mensaje completo) queda guardado para cuando conteste.
+        if (plantillaUsada === pl.marketing && pl.utility && e.contact_id) {
+          const { params: pu } = await paramsUtility(e, pl, mensaje);
+          (e as any)._respaldo_plan = { plantilla: pl.utility, params: pu, envio_id: e.id };
+        }
       } else if (((e as any).adjuntos || []).length || (e as any).imagen_url) {
         // Con adjuntos (imagen / PDF / video, máximo dos). El texto va como pie del primero si cabe (≤1024) y el
         // primero es imagen o video; si no, primero el texto y luego los adjuntos. Cada pieza se espeja en el inbox.
@@ -1012,7 +1035,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       }
       const wamid = r?.messages?.[0]?.id || null;
       const conAdjuntos = ((e as any).adjuntos || []).length || (e as any).imagen_url || !mensaje;
-      if (wamid && !conAdjuntos) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
+      if (wamid && !conAdjuntos) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, ...((e as any)._respaldo_plan ? { respaldo_plan: (e as any)._respaldo_plan, plantilla: plantillaUsada } : {}), estado_agente: (e.salida as any)?.estado || null } });
       if (!mensaje) mensaje = e.mensaje;
       await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(), ...(plantillaUsada ? { salida: { ...((e.salida as any) || {}), plantilla_usada: plantillaUsada } } : {}),
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
@@ -1535,7 +1558,7 @@ export async function plantillaSiVentanaCerrada(cid: string, familia: 'preparaci
   if (abierta) return null;
   const par = await parListoPara(familia).catch(() => null);
   if (!par) return null;
-  const primer = String(nombre || 'Hola').trim().split(/\s+/)[0];
+  const primer = saludoParaPlantilla(nombre);   // nunca «Hola WhatsApp»: nombre real o saludo neutro (7-sep)
   return { marketing: par.marketing, utility: par.utility, familia: par.familia, params: [primer, paramAngulo(mensaje)] };
 }
 
@@ -1617,7 +1640,24 @@ export async function atenderCitas(): Promise<any> {
 }
 
 
-/** Marketing → 10 min → utility: si Meta no entregó la plantilla de marketing (131049/130472, pausada…), sale la utility. */
+/** Los parámetros de la UTILITY de respaldo: mismo {{1}}; en recuperaciones (reactivación, reenganche, cotización, silencio) el {{2}} es
+ *  una línea neutra que abre la puerta y el mensaje completo se guarda como puente para cuando conteste. */
+export async function paramsUtility(e: any, pl: any, mensajeCompleto: string): Promise<{ params: string[]; esRecuperacion: boolean }> {
+  const esRecuperacion = ['reactivacion', 'reenganche', 'cotizacion', 'silencio'].includes(String(e.origen || ''));
+  let params: string[] = pl.params || [];
+  if (esRecuperacion) {
+    const { data: kc } = await supabase.from('contacts').select('nombre, companies(nombre_comercial, nombre)').eq('id', e.contact_id).maybeSingle();
+    const emp = (kc as any)?.companies?.nombre_comercial || (kc as any)?.companies?.nombre;
+    params = [params[0] || saludoParaPlantilla(kc?.nombre), `quedó pendiente una plática${emp ? ` sobre ${emp}` : ' sobre tu tienda'} y quiero retomarla contigo cuando tengas un minuto; si me contestas por aquí te cuento en corto.`];
+    const { data: pfp } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+    const stp: any = (pfp as any)?.agente_estado || {};
+    await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...stp, puente_pendiente: { envio_id: e.id, mensaje_completo: mensajeCompleto, origen: e.origen, at: new Date().toISOString() } }, updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
+  }
+  return { params, esRecuperacion };
+}
+
+/** Marketing → 10 min → utility: si Meta no entregó la plantilla de marketing (131049/130472, pausada…), sale la utility.
+ *  Es la RED de seguridad: el camino rápido es respaldoPorFallo (webhook de fallo → utility al instante). */
 export async function revisarFallbacks(): Promise<any> {
   const ahora = new Date();
   const res: any = { entregadas: 0, utility: 0, sin_utility: 0 };
@@ -1653,7 +1693,9 @@ export async function revisarFallbacks(): Promise<any> {
   const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
   const { registrarMensaje } = await import('../../whatsapp/espejo');
   for (const e of pend || []) {
-    const { data: m } = e.kapso_message_id ? await supabase.from('wa_mensajes').select('status, error').eq('kapso_message_id', e.kapso_message_id).maybeSingle() : { data: null as any };
+    const { data: m } = e.kapso_message_id ? await supabase.from('wa_mensajes').select('status, error, metadata').eq('kapso_message_id', e.kapso_message_id).maybeSingle() : { data: null as any };
+    // El respaldo inmediato (webhook) ya la mandó: no se manda dos veces.
+    if ((m as any)?.metadata?.respaldo_disparado) { await supabase.from('ti_envios').update({ fallback_estado: 'utility_enviada', updated_at: ahora.toISOString() }).eq('id', e.id); res.utility_por_webhook = (res.utility_por_webhook || 0) + 1; continue; }
     const fallo = m?.status === 'failed';
     const entregada = m && ['delivered', 'read'].includes(m.status);
     // Sin noticia en 30 min se da por entregada (Meta a veces no reporta delivered).
@@ -1665,16 +1707,7 @@ export async function revisarFallbacks(): Promise<any> {
     // PUENTE (decisión del dueño 2026-09-04): en recuperaciones (reactivación, reenganche, cotización), la utility NO lleva el
     // mensaje largo: lleva una línea neutra que abre la puerta. Cuando el lead conteste, se abre la ventana de 24 h y el agente le
     // manda el mensaje completo con todo el contexto (guardado en agente_estado.puente_pendiente). Así se lee de verdad.
-    const esRecuperacion = ['reactivacion', 'reenganche', 'cotizacion', 'silencio'].includes(String((e as any).origen || ''));
-    let params = pl.params || [];
-    if (esRecuperacion) {
-      const { data: kc } = await supabase.from('contacts').select('nombre, companies(nombre_comercial, nombre)').eq('id', e.contact_id).maybeSingle();
-      const emp = (kc as any)?.companies?.nombre_comercial || (kc as any)?.companies?.nombre;
-      params = [params[0] || 'qué tal', `quedó pendiente una plática${emp ? ` sobre ${emp}` : ' sobre tu tienda'} y quiero retomarla contigo cuando tengas un minuto; si me contestas por aquí te cuento en corto.`];
-      const { data: pfp } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
-      const stp: any = (pfp as any)?.agente_estado || {};
-      await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...stp, puente_pendiente: { envio_id: e.id, mensaje_completo: (e as any).mensaje, origen: (e as any).origen, at: ahora.toISOString() } }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
-    }
+    const { params, esRecuperacion } = await paramsUtility(e, pl, (e as any).mensaje);
     try {
       const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', params);
       const wamid = r?.messages?.[0]?.id || null;
@@ -1683,6 +1716,7 @@ export async function revisarFallbacks(): Promise<any> {
       if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'template', cuerpo: `[plantilla ${pl.utility}] ${params?.[1] || ''}`, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, plantilla: pl.utility, fallback_de: pl.marketing } });
       await supabase.from('ti_envios').update({ fallback_estado: 'utility_enviada', updated_at: ahora.toISOString() }).eq('id', e.id);
       await log({ accion: 'plantilla_fallback', contact_id: e.contact_id, razon: `marketing falló (${String(m?.error || '').slice(0, 60)}) → utility ${pl.utility}` });
+      { const { notaSistema } = await import('../../whatsapp/espejo'); await notaSistema(e.telefono, `Meta no entregó la plantilla de marketing (${String(m?.error || 'sin detalle').slice(0, 90)}). Salió la plantilla de utilidad ${pl.utility} a las ${ahora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' })}${esRecuperacion ? '; el mensaje completo le llega en cuanto conteste' : ''}.`, { envio_id: e.id, fallback: 'reloj' }); }
       res.utility++;
     } catch (err: any) {
       await supabase.from('ti_envios').update({ fallback_estado: 'error', updated_at: ahora.toISOString() }).eq('id', e.id);

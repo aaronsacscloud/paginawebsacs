@@ -196,6 +196,12 @@ export async function registrarMensaje(o: {
     if (cvv?.contact_id) {
       if (o.direccion === 'entrante') {
         await marcarRespondio(cvv.contact_id).catch(() => {});
+        // EL LEAD ESCRIBIÓ (7-sep): los toques que teníamos preparados (silencio, seguimiento, reenganche, reactivación,
+        // cita) hablaban de un silencio que ya no existe. Se retiran al instante; el agente vuelve a leer el hilo y
+        // propone sobre lo que acaba de decir. Las respuestas en fila se quedan (la ráfaga las reemplaza sola).
+        await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'el lead escribió: el agente vuelve a leer el hilo', updated_at: new Date().toISOString() }).eq('contact_id', cvv.contact_id).in('estado', ['sugerencia', 'pendiente']).neq('origen', 'respuesta').is('aprobado_por', null).then(() => {}, () => {});
+        // El nombre del perfil de WhatsApp sustituye a «WhatsApp 0021» si es un nombre de persona (7-sep).
+        if (o.nombrePerfil) { try { const { mejorarNombreDesdePerfil } = await import('./lead-entrante'); await mejorarNombreDesdePerfil(cvv.contact_id, o.nombrePerfil); } catch { /* no bloquea */ } }
         // Contacto CONOCIDO que escribe: marcarRespondio no alcanza — solo mueve
         // a quien está en 'nuevo'/'contactado'/'sin_respuesta', así que alguien
         // en 'cotizado' no cambiaba nada y nadie se enteraba. Si el texto viene
@@ -206,7 +212,22 @@ export async function registrarMensaje(o: {
           texto: o.cuerpo || o.transcript || null, mensajeId: o.kapsoMessageId || null,
         }).catch(e => console.warn('[wa-intencion]', e?.message || e));
       }
-      else if (o.autorId) await marcarContactado(cvv.contact_id).catch(() => {});
+      else if (o.autorId) {
+        await marcarContactado(cvv.contact_id).catch(() => {});
+        // EL CONSULTOR CONTESTÓ (7-sep): lo que el agente tenía en fila para este lead ya no aplica. Las sugerencias se
+        // califican como «humano» (barrerSugerencias lo hacía hasta 45 min después; ahora al instante) y los pendientes
+        // automáticos se vetan. Así el inbox y Seguimiento nunca muestran una propuesta de una conversación ya superada.
+        try {
+          const ahoraIso = new Date().toISOString(); const txt = String(o.cuerpo || o.transcript || '').trim();
+          const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, origen, mensaje, salida').eq('contact_id', cvv.contact_id).eq('estado', 'sugerencia');
+          if ((sug || []).length) {
+            const { calificarHumano } = await import('../crm/ti/seguimiento');
+            for (const e of sug || []) { await calificarHumano(e as any, { texto: txt, at: ahoraIso }).catch(() => {}); }
+            await supabase.from('ti_envios').update({ estado: 'humano_respondio', humano_respuesta: txt.slice(0, 2000) || null, humano_at: ahoraIso, updated_at: ahoraIso }).eq('contact_id', cvv.contact_id).eq('estado', 'sugerencia');
+          }
+          await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: 'el consultor contestó antes', updated_at: ahoraIso }).eq('contact_id', cvv.contact_id).eq('estado', 'pendiente').is('aprobado_por', null);
+        } catch { /* no bloquea el espejo */ }
+      }
     } else {
       // LA PUERTA (Leads v2): número sin contacto → alta automática con
       // triaje (entrante) o alta directa (saliente humano). Ver alta-wa.ts.
@@ -296,4 +317,10 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
       if (m?.conversation_id) await supabase.from('wa_conversaciones').update({ alerta: `${x.titulo}: ${x.que_hacer}` }).eq('id', m.conversation_id);
     }
   }
+}
+
+/** Una línea de SISTEMA en el hilo (la pinta el inbox como separador, no como mensaje al cliente): qué hizo el sistema y cuándo.
+ *  No manda nada por WhatsApp; solo deja constancia visible. */
+export async function notaSistema(telefono: string, texto: string, metadata: any = {}): Promise<void> {
+  await registrarMensaje({ kapsoMessageId: `sys-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, telefono, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'sent', autor: 'Sistema', silencioso: true, metadata: { sistema: true, ...metadata } }).catch(() => {});
 }

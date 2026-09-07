@@ -4,6 +4,7 @@
 // el dueño aprueba con rampa (20 sin editar → salen solas con ventana de veto) y a partir de la respuesta
 // entra el ciclo de siempre. Máximo 15 al día, en horas distintas, solo entre semana.
 import { supabase } from '../../supabase';
+import { saludoParaPlantilla } from './nombre-y-bots';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
 import { parListoPara, paramAngulo, FAMILIAS, type Familia } from './plantillas-agente';
@@ -187,7 +188,7 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
   if (!sem.ok && !['horas_silenciosas'].includes(sem.motivo)) return { error: `El semáforo lo detiene: ${sem.motivo.replace(/_/g, ' ')}. Se puede volver a intentar mañana.` };
   const { data: k } = await supabase.from('contacts').select('nombre').eq('id', r.contact_id).maybeSingle();
   const nombreK = String(k?.nombre || '').trim();
-  const primer = !nombreK || /^contacto\s*\d*$/i.test(nombreK) ? 'qué tal' : nombreK.split(/\s+/)[0];
+  const primer = saludoParaPlantilla(nombreK);
   let saleAt = await siguienteHueco();
   if (o.automatica) saleAt = new Date(Math.max(saleAt.getTime(), Date.now() + VETO_MIN * 60e3));
   const { data: env, error } = await supabase.from('ti_envios').insert({ contact_id: r.contact_id, conversation_id: r.conversation_id, telefono: r.telefono, origen: 'reactivacion', estado: 'pendiente', mensaje, mensaje_original: r.mensaje_original, sale_at: saleAt.toISOString(), modelo: r.modelo, costo_usd: r.costo_usd, aprobado_por: o.userId || null, editado_por: editado ? o.userId || null : null, revisado_at: new Date().toISOString(), plantilla: { marketing: par.marketing, utility: par.utility, familia: par.familia, params: [primer, paramAngulo(mensaje)] }, salida: { objetivo: 'reactivar', angulo: r.angulo, segmento: r.segmento } }).select('id').maybeSingle();
@@ -306,7 +307,7 @@ export async function enviarCorreoReactivacion(id: string, o: { asunto?: string;
   const asunto = String(o.asunto || r.correo_asunto || 'Retomamos lo de tu tienda').trim();
   const cuerpo = String(o.cuerpo || r.correo_cuerpo || '').trim();
   if (cuerpo.length < 40) return { error: 'El correo está vacío' };
-  const nombre = String(k?.nombre || '').trim().split(/\s+/)[0] || 'qué tal';
+  const nombre = saludoParaPlantilla(k?.nombre);
   const empresa = (k as any)?.companies?.nombre_comercial || (k as any)?.companies?.nombre || null;
   const html = htmlCorreoReactivacion({ nombre, empresa, cuerpo, contactId: r.contact_id });
   const res: any = await sendEmail({ to: email, subject: asunto, html, text: `Hola ${nombre},\n\n${cuerpo}\n\nEscríbeme por WhatsApp: https://wa.me/${WA_VENTAS}\nAgendar 15 minutos: ${LIGA_AGENDA}\n\nAndrea Gutiérrez · Sacs`, contactId: r.contact_id, tipo: 'reactivacion' } as any);

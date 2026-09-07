@@ -6,6 +6,13 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-07 · Eventos: los 10 puntos de la propuesta.** «ok dale a los 10 puntos haz commit y push al terminar y
+      de ahí regresamos con todo el tema outboubd» → EN CURSO. (1 bandeja después de la feria, 2 agendar demo en el
+      stand, 3 citas en el stand antes, 4 comparador, 5 presupuesto anual con ROI, 6 captura por gafete/tarjeta,
+      7 turnos del equipo, 8 ruta del recorrido, 9 fit real vs papel, 10 calendario iCal).
+
+- [ ] **2026-09-07 · Outbound.** «de ahí regresamos con todo el tema outboubd» → sigue al cerrar los 10 puntos de eventos.
+
 - [ ] **2026-09-07 · Cuentas objetivo: piezas visuales de los 14 giros que faltan + diagnóstico hecho antes de escribir.**
       Propuesto por mí y el dueño respondió «HAZ ESTO [eventos] Y DE AHÍ REFINAMOS LA OTRO». Se toma al cerrar Eventos.
 
@@ -57,3 +64,9 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       completo la tarea en curso.» → Regla escrita en `CLAUDE.md` y esta cola creada.
 
 - 2026-09-05 · «ahorita lo único que importa es seguirla entrenando; lo que sí quiero que veas es si cuando modifico una respuesta realmente está aprendiendo o faltan más campos para poder mejorar el prompt, o qué me falta» → tomada al cerrar el fix del reenganche.
+
+- 2026-09-07 · «cuando llega el WhatsApp desde la página web no se le asigna nombre y se le pone WhatsApp… 1) jalar su nombre de WhatsApp e insertarlo; si no es un nombre real o dice WhatsApp, omitir el nombre y mandar solo hola; aplica en conversación en marcha y en plantilla; analizar muy bien el caso e implementar» → tomada de inmediato (mensajes saliendo mal a leads).
+
+- 2026-09-07 · «cambié el mensaje antes de enviarlo y lo mandó igual (plantilla); si Meta rechaza la de marketing que mande la utility en automático y lo diga en el inbox con el tiempo; si cambio el mensaje ligado a plantilla, que use la de marketing con la mejora y aprenda» → tomada junto con el fix del nombre (mismo flujo).
+
+- 2026-09-07 · «ya respondí y ya respondió el lead pero me sigue sugiriendo algo de la conversación pasada; que siempre esté actualizado aunque yo responda de repente» + «aquí la siguiente sugerencia sería descalificarlo y mandarlo a nutrición porque dijo que no tiene dinero» (Cinthya) → tomadas ahora (mismo bloque).

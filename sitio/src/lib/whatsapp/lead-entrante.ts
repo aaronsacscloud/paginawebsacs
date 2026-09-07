@@ -119,3 +119,26 @@ export async function notaDeIntencion(contactId: string): Promise<string | null>
   if ((count || 0) > 1) return null;
   return `LLEGÓ DESDE LA PÁGINA: ${INTENCIONES[i].label}.${p.url_origen ? ` Venía de ${p.url_origen}.` : ''}${p.referido_por ? ` Referido por ${p.referido_por}.` : ''}\n${INTENCIONES[i].secuencia}`;
 }
+
+/**
+ * EL NOMBRE DEL PERFIL DE WHATSAPP MEJORA UN PLACEHOLDER (decisión del dueño, 7-sep-2026).
+ * Un lead que llegó desde la web se creó como «WhatsApp 0021». Cuando él escribe, Meta manda el nombre de su perfil: si es
+ * un nombre de persona usable, sustituye al placeholder (y queda rastro); si es una marca, un emoji o algo dudoso, NO se
+ * usa como nombre (se guarda aparte para el consultor) y los mensajes salen con saludo neutro. Nunca pisa un nombre real.
+ */
+export async function mejorarNombreDesdePerfil(contactId: string, perfil?: string | null): Promise<{ cambiado: boolean; nombre?: string }> {
+  const p = String(perfil || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+  if (!p || !contactId) return { cambiado: false };
+  const { esNombrePlaceholder, nombreUsable } = await import('../crm/ti/nombre-y-bots');
+  const { data: c } = await supabase.from('contacts').select('id, nombre, propiedades').eq('id', contactId).maybeSingle();
+  if (!c) return { cambiado: false };
+  const props: any = (c as any).propiedades || {};
+  if (props.nombre_perfil_wa !== p) await supabase.from('contacts').update({ propiedades: { ...props, nombre_perfil_wa: p } }).eq('id', contactId).then(() => {}, () => {});
+  if (!esNombrePlaceholder((c as any).nombre)) return { cambiado: false };           // ya tiene un nombre de verdad: no se toca
+  if (!nombreUsable(p)) return { cambiado: false };                                  // el perfil no es un nombre de persona
+  const ahora = new Date().toISOString();
+  await supabase.from('contacts').update({ nombre: p, propiedades: { ...props, nombre_perfil_wa: p, nombre_origen: 'perfil_whatsapp', nombre_anterior: (c as any).nombre, nombre_actualizado_at: ahora }, updated_at: ahora }).eq('id', contactId);
+  await supabase.from('activities').insert({ contact_id: contactId, tipo: 'nota', titulo: `Nombre tomado de su perfil de WhatsApp: ${p}`, descripcion: `Antes decía «${(c as any).nombre}».`, automatico: true }).then(() => {}, () => {});
+  await supabase.from('ia_log').insert({ accion: 'nombre_desde_perfil', contact_id: contactId, razon: `«${(c as any).nombre}» → «${p}»` }).then(() => {}, () => {});
+  return { cambiado: true, nombre: p };
+}

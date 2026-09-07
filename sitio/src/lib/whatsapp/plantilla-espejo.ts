@@ -205,6 +205,17 @@ export async function respaldoPorFallo(kapsoMessageId: string, motivo?: string |
     await supabase.from('wa_primer_mensaje')
       .update({ estado: 'respaldo_enviado', updated_at: new Date().toISOString() })
       .eq('wamid', kapsoMessageId).eq('estado', 'esperando');
+    // Envío del AGENTE (7-sep): la utility pasa a ser la pieza vigente, el reloj de 10 min ya no la repite, y el hilo lo dice.
+    const envioId = plan.envio_id || (m as any)?.metadata?.envio_id || null;
+    const hora = new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' });
+    if (envioId) {
+      const { data: env } = await supabase.from('ti_envios').select('salida, origen').eq('id', envioId).maybeSingle();
+      const esRecuperacion = ['reactivacion', 'reenganche', 'cotizacion', 'silencio'].includes(String((env as any)?.origen || ''));
+      await supabase.from('ti_envios').update({ fallback_estado: 'utility_enviada', kapso_message_id: r.wamid || null, salida: { ...(((env as any)?.salida) || {}), marketing_wamid: kapsoMessageId, plantilla_usada: String(plan.plantilla), respaldo: 'webhook' }, updated_at: new Date().toISOString() }).eq('id', envioId).then(() => {}, () => {});
+      await supabase.from('ia_log').insert({ accion: 'plantilla_fallback', razon: `marketing falló (${String(motivo || '').slice(0, 60)}) → utility ${plan.plantilla} al instante`, detalle: { envio_id: envioId, via: 'webhook' } }).then(() => {}, () => {});
+      const { notaSistema } = await import('./espejo');
+      await notaSistema(conv.telefono, `Meta no entregó la plantilla de marketing${motivo ? ` (${String(motivo).slice(0, 90)})` : ''}. Salió la plantilla de utilidad ${plan.plantilla} a las ${hora}${esRecuperacion ? '; el mensaje completo le llega en cuanto conteste' : ''}.`, { envio_id: envioId, fallback: 'webhook' });
+    }
   }
   return !!r?.enviado;
 }

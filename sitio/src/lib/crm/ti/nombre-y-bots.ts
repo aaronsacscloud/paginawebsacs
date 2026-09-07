@@ -78,6 +78,22 @@ export function limpiarHilo(msjs: { direccion: string; cuerpo?: string | null; c
 }
 
 /** La instrucción sobre el nombre para el prompt: si se usa, cómo y por qué no. */
+/** ¿Es un nombre de relleno que puso el sistema («WhatsApp 0021», «Contacto 6917», un teléfono)? */
+export function esNombrePlaceholder(nombre?: string | null): boolean {
+  const b = String(nombre || '').trim();
+  return !b || PLACEHOLDER.test(b) || /^[\d+\s()-]+$/.test(b);
+}
+
+/** EL {{1}} DE LAS PLANTILLAS «Hola {{1}}, …» (decisión del dueño, 7-sep-2026): el primer nombre si es de verdad; si no
+ *  (placeholder, teléfono, marca, iniciales), un saludo neutro según la hora de CDMX, para que nunca salga «Hola WhatsApp»
+ *  ni «Hola Contacto». Con «buenas tardes» la plantilla lee «Hola buenas tardes, vi que…», que es como se escribe aquí. */
+export function saludoParaPlantilla(nombre?: string | null, ahora = new Date()): string {
+  const n = nombreUsable(nombre);
+  if (n) return n;
+  const h = (ahora.getUTCHours() + 18) % 24;   // CDMX = UTC-6
+  return h < 12 ? 'buen día' : h < 19 ? 'buenas tardes' : 'buenas noches';
+}
+
 export function bloqueNombre(nombre: string | null, vecesUsado: number): string {
   if (!nombre) return '\n\nSU NOMBRE: no tenemos un nombre confiable (viene un teléfono, una marca o un placeholder). NO inventes uno ni escribas «Hola» seco con un nombre raro: entra directo al mensaje.';
   if (vecesUsado >= 2) return `\n\nSU NOMBRE es ${nombre}, pero YA se lo dijimos ${vecesUsado} veces en mensajes anteriores: esta vez NO lo uses, ya sonaría a robot. Entra directo.`;

@@ -14,6 +14,7 @@ import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
 import { anthropic, MODELS, hasApiKey } from '../../ai/client';
 import { plantillaSiVentanaCerrada, ventanaAbierta } from './agente';
+import { saludoParaPlantilla } from './nombre-y-bots';
 
 export const META_DEFAULT = 9;
 export const VENTANA_DEFAULT = 100;   // decisión del dueño 3-sep: 100 respuestas, no 300
@@ -172,7 +173,19 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
       await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st, puente_pendiente: { envio_id: e.id, mensaje_completo: mensaje, origen: e.origen, at: ahora } }, updated_at: ahora }, { onConflict: 'contact_id' });
       comoSale = 'plantilla';
     }
-  } else if ((e as any).plantilla) comoSale = 'plantilla';
+  } else if ((e as any).plantilla) {
+    comoSale = 'plantilla';
+    // La plantilla ya venía colgada desde que nació la sugerencia: si el consultor cambió el texto, ese texto es el que va en
+    // {{2}} y en el puente (7-sep: antes salía el original aunque lo hubiera modificado).
+    if (o.decision === 'modificar' && e.contact_id) {
+      const { paramAngulo } = await import('./plantillas-agente');
+      const pl: any = { ...(e as any).plantilla, params: [saludoParaPlantilla((await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle()).data?.nombre), paramAngulo(mensaje)] };
+      await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
+      const { data: pf2 } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+      const st2: any = (pf2?.agente_estado as any) || {};
+      if (st2.puente_pendiente?.envio_id === e.id || !st2.puente_pendiente) await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st2, puente_pendiente: { envio_id: e.id, mensaje_completo: mensaje, origen: e.origen, at: ahora } }, updated_at: ahora }, { onConflict: 'contact_id' });
+    }
+  }
 
   // UN PENDIENTE POR LEAD (índice único uq_ti_envios_pendiente_por_lead): si ese lead ya tenía otro pendiente esperando
   // (típico: un reenganche que aguarda el clic del dueño y nunca vence), la sugerencia que una persona aprueba MANDA y el
@@ -267,7 +280,7 @@ export async function sugerenciasPendientes(limit = 60) {
       ? { intencion: prop.intencion_inicial, url: prop.url_origen || null, referido: prop.referido_por || null, mensaje_inicial: prop.mensaje_inicial || null, desde: c.fuente || null }
       : null;
     const urg = urgenciaDe(ultEnt.get(s.contact_id as string) || null);
-    return { ...s, salida: undefined, lead_web: leadWeb, urgencia: urg.urgencia, espera_min: urg.minutos, porque_urge: urg.porque, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: String(c.nombre || '').trim().split(/\s+/)[0] || 'Hola', seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; })
+    return { ...s, salida: undefined, lead_web: leadWeb, urgencia: urg.urgencia, espera_min: urg.minutos, porque_urge: urg.porque, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: saludoParaPlantilla(c.nombre), seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; })
     .sort((a: any, b: any) => { const o: Record<string, number> = { ahora: 0, hoy: 1, normal: 2 }; return (o[a.urgencia] - o[b.urgencia]) || ((a.espera_min ?? 1e9) - (b.espera_min ?? 1e9)); });
 }
 

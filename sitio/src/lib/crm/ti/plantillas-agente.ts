@@ -202,14 +202,15 @@ export const familiaDe = (origen?: string | null): Familia =>
   : origen === 'reactivacion' || origen === 'reenganche' ? 'reactivacion'
   : origen === 'cotizacion' ? 'promo' : 'seguimiento';
 
+import { saludoParaPlantilla } from './nombre-y-bots';
 const vista = (cuerpo: string, nombre: string, texto: string) =>
-  String(cuerpo).replace('{{1}}', nombre || 'Hola').replace('{{2}}', texto || '');
+  String(cuerpo).replace('{{1}}', nombre || saludoParaPlantilla(null)).replace('{{2}}', texto || '');
 
 export type OpcionPlantilla = { familia: Familia; label: string; categoria: 'MARKETING' | 'UTILITY'; nombre: string; aprobada: boolean; cuerpo: string; vista_previa: string };
 
 export async function opcionesPlantilla(o: { origen?: string | null; mensaje: string; nombre?: string | null; empresa?: string | null; familia?: Familia }) {
   const reg = await leer();
-  const primer = String(o.nombre || '').trim().split(/\s+/)[0] || 'qué tal';
+  const primer = saludoParaPlantilla(o.nombre);   // nombre real o saludo neutro; nunca un placeholder (7-sep)
   // El texto del agente va como parámetro {{2}} de la marketing; la utility lleva una línea neutra (el puente).
   const puente = `quedó pendiente una plática${o.empresa ? ` sobre ${o.empresa}` : ' sobre tu tienda'} y quiero retomarla contigo cuando tengas un minuto; si me contestas por aquí te cuento en corto.`;
   const arma = (f: Familia, cat: 'marketing' | 'utility'): OpcionPlantilla | null => {
