@@ -1553,6 +1553,11 @@ const CRM_MOBILE_CSS = `
     .m-check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #cfcddb; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
     .m-check.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     .m-vacio-txt { padding: 22px 24px; color: var(--m-soft); font-size: 0.86rem; line-height: 1.5; }
+    /* Etiqueta corta dentro de un renglón: «pago diferido», «vencida». Va junto
+       al nombre porque cambia lo que significa el renglón, no al lado del monto. */
+    .m-eti { margin-left: 6px; font-size: 0.6rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+      border-radius: 5px; padding: 2px 5px; background: var(--m-acc-suave); color: var(--m-acc); vertical-align: middle; }
+    .m-eti.mal { background: #fdeceb; color: #C0554E; }
     .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     /* Aire al final del carril: el último chip quedaba rebanado por el marco. */
     .m-chips::after { content: ''; flex: none; width: 16px; }
@@ -1765,6 +1770,7 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="solid rgb(221, 221, 221)"] { border-color: #26262e !important; }
       [data-crm-dark="1"] .m-check { border-color: #45444f; }
       [data-crm-dark="1"] .m-plegable { border-color: #26262e; }
+      [data-crm-dark="1"] .m-eti.mal { background: #3a201e; color: #F0857A; }
       [data-crm-dark="1"] .m-cifra-l, [data-crm-dark="1"] .m-cifra-s { color: #918fa0; }
       [data-crm-dark="1"] .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }

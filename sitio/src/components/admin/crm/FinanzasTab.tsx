@@ -48,6 +48,37 @@ const venceEn = (g: any, mes: string) => { const y = Number(mes.slice(0, 4)), m 
 const diasPara = (fecha: string) => Math.round((Date.parse(fecha) - Date.parse(hoyCdmx())) / 86400e3);
 const textoDias = (n: number) => n === 0 ? 'hoy' : n > 0 ? `en ${n} día${n === 1 ? '' : 's'}` : `venció hace ${-n} día${n === -1 ? '' : 's'}`;
 
+/* El título y la cifra protagonista de cada sección de Finanzas en el
+   teléfono. Están juntos a propósito: si alguien agrega una sección y olvida
+   su cifra, se ve aquí en una línea vacía y no dentro de 600 de JSX. */
+const TITULO_M: Record<string, string> = {
+  gastos: 'Gastos', ingresos: 'Ingresos y flujo', adeudos: 'Adeudos',
+  cierre: 'Cierre del mes', pipeline: 'Oportunidades',
+};
+
+const CIFRA_M = (d: any): Record<string, { l: string; v: string; s: string; color: string }> => ({
+  gastos: {
+    l: 'Gastos del mes', v: pesos(d.utilidad.total_gastos), color: '#C0554E',
+    s: `${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}`,
+  },
+  ingresos: {
+    l: 'Cobrado este mes', v: pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado), color: '#1E8A63',
+    s: `${d.ingresos.pagos.length} ${d.ingresos.pagos.length === 1 ? 'pago' : 'pagos'} · faltan ${pesos(d.ingresos.por_cobrar)} por cobrar`,
+  },
+  adeudos: {
+    l: 'Toca pagar este mes', v: pesos(d.adeudos?.toca || 0), color: '#9a6a10',
+    s: `${pesos(d.adeudos?.abonado || 0)} abonado · ${(d.adeudos?.lista || []).length} adeudos`,
+  },
+  cierre: {
+    l: 'Utilidad estimada', v: pesos(d.utilidad.estimada), color: d.utilidad.estimada >= 0 ? '#1E8A63' : '#C0554E',
+    s: `${pesos(d.utilidad.si_cobra_todo)} si cobras todo lo del mes`,
+  },
+  pipeline: {
+    l: 'Pipeline ponderado', v: pesos(d.pipeline.ponderado), color: '#9a6a10',
+    s: `${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos`,
+  },
+});
+
 export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' | 'ingresos' | 'cierre' } = {}) {
   const [mes, setMes] = useState(() => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7));
   const [d, setD] = useState<any>(null);
@@ -160,7 +191,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
     return (
       <div className="m-bleed m-lienzo">
         <div className="m-hdr">
-          <div className="m-tt">{pagina === 'ingresos' ? 'Ingresos' : pagina === 'cierre' ? 'Cierre' : 'Gastos'}</div>
+          <div className="m-tt">{TITULO_M[vista] || 'Finanzas'}</div>
           {vista === 'gastos' && d && !d.error && (
             <button className="m-cta" onClick={() => { setForm({ ...vacio, inicio: mes }); setAbierto(true); }}>＋ Gasto</button>
           )}
@@ -177,12 +208,20 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
         {d?.error && <div className="m-vacio-txt" style={{ color: '#C0554E' }}>{d.error}</div>}
 
         {d && !d.error && (<>
-          {/* EL número. Uno, grande, con su contexto debajo. */}
-          <div className="m-cifra">
-            <div className="m-cifra-l">Gastos del mes</div>
-            <div className="m-cifra-v" style={{ color: '#C0554E' }}>{pesos(d.utilidad.total_gastos)}</div>
-            <div className="m-cifra-s">{pesos(d.gastos.pagado)} pagados de {pesos(d.gastos.previsto)}</div>
-          </div>
+          {/* EL número de ESTA sección. Uno, grande, con su contexto debajo.
+              Va por `vista`: la primera versión pintaba siempre el de gastos y
+              entrar a Ingresos enseñaba la pantalla de Gastos con otro título
+              —lo reportó el dueño—. */}
+          {(() => {
+            const c = CIFRA_M(d)[vista] || CIFRA_M(d).gastos;
+            return (
+              <div className="m-cifra">
+                <div className="m-cifra-l">{c.l}</div>
+                <div className="m-cifra-v" style={{ color: c.color }}>{c.v}</div>
+                <div className="m-cifra-s">{c.s}</div>
+              </div>
+            );
+          })()}
 
           {/* Lo demás del mes, plegado. Está a un toque, no a la vista: quien
               entra a Gastos viene a pagar, no a leer el estado del negocio. */}
@@ -196,34 +235,121 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
             ))}
           </details>
 
-          <div className="m-chips">
-            {cats.map(([k, l, v]) => (
-              <button key={k} className={'m-chip' + (catTab === k ? ' on' : '')} onClick={() => setCatTab(k)}>
-                {l}{catTab === k ? ` ${pesos(v)}` : ''}
-              </button>
-            ))}
-          </div>
-
-          <div>
-            {filasGasto.map((x: any) => (
-              <div key={x.id} className="m-row" onClick={() => pagar(x, !x.pago)}>
-                {/* La casilla es la acción: en el teléfono lo único que se hace
-                    aquí es marcar que ya se pagó. Todo el renglón la activa —un
-                    cuadro de 18 px no es un blanco para el pulgar—. */}
-                <span className={'m-check' + (x.pago ? ' on' : '')} aria-hidden>{x.pago ? '✓' : ''}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="m-n1">{x.nombre}</div>
-                  <div className="m-n2">{x.categoria}{x.vence ? ` · ${textoDias(x.dias)}` : ''}</div>
+          {/* Las pastillas y la lista, POR SECCIÓN. Antes eran siempre las
+              categorías de gasto y la lista de gastos: por eso entrar a
+              Ingresos enseñaba la pantalla de Gastos. */}
+          {vista === 'gastos' && (<>
+            <div className="m-chips">
+              {cats.map(([k, l, v]) => (
+                <button key={k} className={'m-chip' + (catTab === k ? ' on' : '')} onClick={() => setCatTab(k)}>
+                  {l}{catTab === k ? ` ${pesos(v)}` : ''}
+                </button>
+              ))}
+            </div>
+            <div>
+              {filasGasto.map((x: any) => (
+                <div key={x.id} className="m-row" onClick={() => pagar(x, !x.pago)}>
+                  {/* La casilla es la acción: en el teléfono lo único que se hace
+                      aquí es marcar que ya se pagó. Todo el renglón la activa —un
+                      cuadro de 18 px no es un blanco para el pulgar—. */}
+                  <span className={'m-check' + (x.pago ? ' on' : '')} aria-hidden>{x.pago ? '✓' : ''}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="m-n1">{x.nombre}</div>
+                    <div className="m-n2">{x.categoria}{x.vence ? ` · ${textoDias(x.dias)}` : ''}</div>
+                  </div>
+                  <div className="m-m1" style={{ fontWeight: 800, textDecoration: x.pago ? 'line-through' : undefined, opacity: x.pago ? .55 : 1 }}>{pesos(x.monto)}</div>
                 </div>
-                <div className="m-m1" style={{ fontWeight: 800, textDecoration: x.pago ? 'line-through' : undefined, opacity: x.pago ? .55 : 1 }}>{pesos(x.monto)}</div>
-              </div>
-            ))}
-            {!filasGasto.length && (
-              <div className="m-vacio-txt">
-                {catTab === 'todos' ? 'No hay gastos capturados en este mes.' : 'Nada en esta categoría este mes.'}
-              </div>
-            )}
-          </div>
+              ))}
+              {!filasGasto.length && (
+                <div className="m-vacio-txt">
+                  {catTab === 'todos' ? 'No hay gastos capturados en este mes.' : 'Nada en esta categoría este mes.'}
+                </div>
+              )}
+            </div>
+          </>)}
+
+          {vista === 'ingresos' && (<>
+            <div className="m-chips">
+              {([['cobrado', 'Cobrado', d.ingresos.cobrado_neto ?? d.ingresos.cobrado],
+                 ['por_cobrar', 'Por cobrar', d.ingresos.por_cobrar],
+                 ['venta', 'Venta nueva', d.ingresos.ventas_aceptadas || 0]] as any[]).map(([k, l, v]) => (
+                <button key={k} className={'m-chip' + (ingTab === k ? ' on' : '')} onClick={() => setIngTab(k)}>
+                  {l}{ingTab === k ? ` ${pesos(v)}` : ''}
+                </button>
+              ))}
+            </div>
+            <div>
+              {ingTab === 'cobrado' && d.ingresos.pagos.map((x: any) => (
+                <div key={x.id} className="m-row" style={{ cursor: 'default' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="m-n1">{x.companies?.nombre_comercial || x.companies?.nombre || x.contacts?.nombre || 'Pago'}</div>
+                    <div className="m-n2">{String(x.fecha).slice(0, 10)}{x.metodo ? ` · ${x.metodo}` : ''}</div>
+                  </div>
+                  <div className="m-m1" style={{ fontWeight: 800, color: '#1E8A63' }}>{pesos(x.monto)}</div>
+                </div>
+              ))}
+              {ingTab === 'por_cobrar' && d.ingresos.por_cobrar_lista.map((x: any) => (
+                <div key={x.id} className="m-row" style={{ cursor: 'default' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="m-n1">
+                      {x.companies?.nombre_comercial || x.companies?.nombre || x.contacts?.nombre || 'Cuenta'}
+                      {x.tipo === 'parcialidad' && <span className="m-eti">pago diferido</span>}
+                      {x.vencida && <span className="m-eti mal">vencida</span>}
+                    </div>
+                    <div className="m-n2">{x.nombre_plan} · vence {x.proxima_factura}</div>
+                  </div>
+                  <div className="m-m1" style={{ fontWeight: 800 }}>{pesos(x.monto)}</div>
+                </div>
+              ))}
+              {ingTab === 'venta' && (d.ingresos.ventas_aceptadas_lista || []).map((x: any) => (
+                <div key={x.id} className="m-row" style={{ cursor: 'default' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="m-n1">{x.companies?.nombre_comercial || x.companies?.nombre || x.contacts?.nombre || 'Cotización'}</div>
+                    <div className="m-n2">#{x.numero || 's/n'}</div>
+                  </div>
+                  <div className="m-m1" style={{ fontWeight: 800 }}>{pesos(x.monto)}</div>
+                </div>
+              ))}
+              {((ingTab === 'cobrado' && !d.ingresos.pagos.length)
+                || (ingTab === 'por_cobrar' && !d.ingresos.por_cobrar_lista.length)
+                || (ingTab === 'venta' && !(d.ingresos.ventas_aceptadas_lista || []).length)) && (
+                <div className="m-vacio-txt">Nada en este apartado para {nombreMes(mes)}.</div>
+              )}
+            </div>
+          </>)}
+
+          {vista === 'adeudos' && (
+            <div>
+              {(d.adeudos?.lista || []).map((a: any) => (
+                <div key={a.id} className="m-row" style={{ cursor: 'default' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="m-n1">{a.nombre}</div>
+                    <div className="m-n2">saldo {pesos(a.saldo)}{a.cuota_mes ? ` · cuota ${pesos(a.cuota_mes)}` : ''}</div>
+                  </div>
+                  <div className="m-m1" style={{ fontWeight: 800, color: a.toca_este_mes > 0 ? '#9a6a10' : undefined }}>
+                    {pesos(a.toca_este_mes || 0)}
+                  </div>
+                </div>
+              ))}
+              {!(d.adeudos?.lista || []).length && <div className="m-vacio-txt">No hay adeudos registrados.</div>}
+            </div>
+          )}
+
+          {vista === 'cierre' && (
+            <div>
+              {([['Cobrado (neto)', pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado), '#1E8A63'],
+                 ['Por cobrar', pesos(d.ingresos.por_cobrar), '#2C5FC4'],
+                 ['Gastos del mes', pesos(d.utilidad.total_gastos), '#C0554E'],
+                 ['Comisiones', pesos(d.comisiones.total), '#C0554E'],
+                 ['Utilidad estimada', pesos(d.utilidad.estimada), d.utilidad.estimada >= 0 ? '#1E8A63' : '#C0554E']] as any[]).map(([l, v, c]) => (
+                <div key={l} className="m-row" style={{ cursor: 'default' }}>
+                  <div className="m-n1" style={{ flex: 1 }}>{l}</div>
+                  <div className="m-m1" style={{ color: c, fontWeight: 800 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </>)}
 
         {/* La hoja de alta es la MISMA del escritorio: no hay dos formularios
