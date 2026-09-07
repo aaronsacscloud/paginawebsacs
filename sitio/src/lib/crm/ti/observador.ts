@@ -167,6 +167,8 @@ export async function observar(): Promise<any> {
     try { const { dispararCompromisos } = await import('./compromisos'); res.compromisos = await dispararCompromisos(); } catch (e: any) { res.compromisos_error = String(e?.message || e); }
     try { res.agente_despacho = await despacharEnvios(); } catch (e: any) { res.despacho_error = String(e?.message || e); }
     try { const { barrerSugerencias } = await import('./seguimiento'); res.sugerencias = await barrerSugerencias(); } catch (e: any) { res.sugerencias_error = String(e?.message || e); }
+    // Sugerencias marcadas por una lección nueva (7-sep): se reescriben hasta 12 por tick con el guion y las reglas de ahora.
+    try { const { regenerarPendientes } = await import('./regeneracion'); res.regeneradas = await regenerarPendientes(12); } catch (e: any) { res.regeneradas_error = String(e?.message || e); }
     try { const { reintentarAgendas } = await import('./agente'); res.agente_reintentos = await reintentarAgendas(); } catch (e: any) { res.reintentos_error = String(e?.message || e); }
     try { const { revisarFallbacks } = await import('./agente'); res.agente_fallbacks = await revisarFallbacks(); } catch (e: any) { res.fallbacks_error = String(e?.message || e); }
   } catch (e: any) { res.agente_error = String(e?.message || e); }

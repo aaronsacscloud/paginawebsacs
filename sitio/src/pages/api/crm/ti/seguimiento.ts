@@ -59,6 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json(r, (r as any)?.error ? 400 : 200);
   }
   if (b.accion === 'evaluar_enviado') { const r = await evaluarEnviado({ envioId: b.envio_id, wamid: b.wamid, nota: b.nota, fallas: b.fallas, version: b.version, criterio: b.criterio, userId: user.id }); return json(r, (r as any)?.error ? 400 : 200); }
+  if (b.accion === 'regenerar') { const { regenerarSugerencia } = await import('../../../../lib/crm/ti/regeneracion'); return json(await regenerarSugerencia(String(b.envio_id), b.motivo || null)); }
   if (b.accion === 'revisar') return json(await revisarParidad());
   return json({ error: 'Acción desconocida' }, 400);
 };

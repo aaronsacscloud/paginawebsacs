@@ -152,6 +152,9 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
           if (pr?.id) evaluarRegla(pr.id).catch(() => {});
         } catch { /* la regla es un extra: la corrección ya quedó guardada */ }
       }
+      // REGENERACIÓN INMEDIATA (7-sep): la lección de esta corrección se aplica YA a las demás sugerencias del mismo tipo que
+      // esperan en la fila (el observador las reescribe en ≤2 min; la tarjeta trae «Reescribir ahora»).
+      if (criterio || (Array.isArray(o.cambios) && o.cambios.length)) { try { const { marcarParaRegenerar } = await import('./regeneracion'); const mr = await marcarParaRegenerar({ origen: e.origen, motivo: `criterio del consultor: ${(criterio || o.cambios!.join(', ')).slice(0, 160)}`, exceptoId: e.id }); (o as any).regenerar_marcadas = mr.marcadas; } catch { /* opcional */ } }
       await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'modificación en Seguimiento', detalle: { envio_id: e.id, original: e.mensaje, criterio: criterio || null, similitud: sim } }).then(() => {}, () => {});
     }
   }
@@ -211,7 +214,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: [Array.isArray(o.cambios) && o.cambios.length ? `cambios: ${o.cambios.join(', ')}` : null, o.detalle ? String(o.detalle).slice(0, 600) : null].filter(Boolean).join(' · ') || null });
   const par = await revisarParidad();
-  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null, regla_id: (o as any).regla_id || null };
+  return { ok: true, decision: o.decision, calificacion: cal, similitud: sim, enviado: true, como_sale: comoSale, paridad: par.paridad, lista: par.lista, criterio_inferido: (o as any).criterio_inferido || null, regla_id: (o as any).regla_id || null, regenerar_marcadas: (o as any).regenerar_marcadas || 0 };
 }
 
 /** El humano contestó por su cuenta (teléfono, otra sesión): la sugerencia se compara y califica sola. */
@@ -280,7 +283,7 @@ export async function sugerenciasPendientes(limit = 60) {
       ? { intencion: prop.intencion_inicial, url: prop.url_origen || null, referido: prop.referido_por || null, mensaje_inicial: prop.mensaje_inicial || null, desde: c.fuente || null }
       : null;
     const urg = urgenciaDe(ultEnt.get(s.contact_id as string) || null);
-    return { ...s, salida: undefined, lead_web: leadWeb, urgencia: urg.urgencia, espera_min: urg.minutos, porque_urge: urg.porque, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: saludoParaPlantilla(c.nombre), seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; })
+    return { ...s, salida: undefined, regenerar: (s.salida as any)?.regenerar || null, regenerado: (s.salida as any)?.regenerado ? { at: (s.salida as any).regenerado.at, motivo: (s.salida as any).regenerado.motivo } : null, lead_web: leadWeb, urgencia: urg.urgencia, espera_min: urg.minutos, porque_urge: urg.porque, ventana_abierta: abiertos.has(s.contact_id), plantilla: (s as any).plantilla || null, nombre_lead: saludoParaPlantilla(c.nombre), seguimiento: sal.seguimiento || null, ultimo_mensaje: sal.ultimo_mensaje || null, ultimos_mensajes: sal.ultimos_mensajes || [], objetivo: sal.objetivo || null, estado_guion: sal.estado || null, interes: sal.interes || null, contacto: { nombre: c.nombre || null, email: c.email || null, etapa: c.lifecycle_stage || null, giro: c.giro || null, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null } }; })
     .sort((a: any, b: any) => { const o: Record<string, number> = { ahora: 0, hoy: 1, normal: 2 }; return (o[a.urgencia] - o[b.urgencia]) || ((a.espera_min ?? 1e9) - (b.espera_min ?? 1e9)); });
 }
 

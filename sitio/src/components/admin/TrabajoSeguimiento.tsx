@@ -28,6 +28,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const [como, setComo] = useState(false);
   const [activando, setActivando] = useState(false);
   const [preparando, setPreparando] = useState(false);
+  const [reescribiendo, setReescribiendo] = useState(false);
   const [filtro, setFiltro] = useState('todos');   // por tipo de mensaje: la cola mezcla respuestas, seguimientos y cotizaciones
   const [verMas, setVerMas] = useState(false);       // móvil: los números finos y el bloque de 1-4 días van plegados
   const isMobile = useIsMobile();
@@ -48,6 +49,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const onDecidido = (r: any) => {
     setSaliendo(true);
     const cal = r.calificacion;
+    if (r.regenerar_marcadas > 0) setTimeout(() => aviso(`Tu criterio se está aplicando a ${r.regenerar_marcadas} sugerencias más de la fila.`), 4200);
     aviso(r.decision === 'rechazar' ? 'Rechazada: el agente toma la razón como lección. Contéstale tú desde el inbox.' : r.decision === 'modificar' ? `Enviada con tus cambios · calificación ${cal}/10${r.criterio_inferido ? ` · El agente entendió: «${r.criterio_inferido}»` : ''}${r.lista ? ' · ¡Llegó a la meta: ya puedes activar el automático!' : ''}` : `Enviada tal cual · 10/10${r.autonomo ? ' · ¡Llegó a la meta: ya responde solo!' : ''}`, r.decision !== 'rechazar');
     setTimeout(async () => { setSaliendo(false); await cargar(); }, 380);
   };
@@ -156,6 +158,18 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
             </div>
             <div className="sg-dice">
               {!isMobile && <div className="sg-lbl">Así respondería el agente</div>}
+              {actual.regenerar && (
+                <div className="sg-regen">
+                  <span>Se va a reescribir con tu última lección ({actual.regenerar.motivo}) en menos de dos minutos.</span>
+                  <button className="sg-link" disabled={reescribiendo} onClick={async () => {
+                    setReescribiendo(true);
+                    const r = await fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'regenerar', envio_id: actual.id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+                    setReescribiendo(false);
+                    if (r.error) aviso(r.error, false); else { aviso('Reescrita con tu criterio.'); cargar(); }
+                  }}>{reescribiendo ? 'Reescribiendo…' : 'Reescribir ahora'}</button>
+                </div>
+              )}
+              {!actual.regenerar && actual.regenerado && <div className="sg-meta" style={{ marginBottom: 6 }}>Reescrita con tu criterio de las {new Date(actual.regenerado.at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' })}.</div>}
               <DecisionSugerencia sug={actual} galeria={d.galeria || []} atajos={!isMobile} movil={isMobile} onDecidido={onDecidido} />
             </div>
           </div>
@@ -289,6 +303,7 @@ const CSS = `
 .sg-modal-cab{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--linea);font-size:16px;color:var(--tinta)}.sg-x{border:none;background:none;font-size:22px;cursor:pointer;color:var(--suave)}
 .sg-modal-cuerpo{padding:6px 20px 20px;overflow:auto;font-size:14px;line-height:1.55;color:var(--texto)}.sg-modal-cuerpo h4{margin:16px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--morado-tinta)}.sg-modal-cuerpo p{margin:0 0 8px}.sg-modal-cuerpo ul{margin:0 0 8px 18px;padding:0}.sg-modal-cuerpo li{margin-bottom:6px}.sg-modal-cuerpo b{color:var(--tinta)}
 .sg-aj{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.sg-aj label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--suave)}
+.sg-regen{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--morado-agua);color:var(--tinta);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12.5px}
 .sg-ctx{margin-top:12px;border-top:1px solid var(--linea2);padding-top:10px}.sg-ctx summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:800;color:var(--morado-tinta);min-height:40px;display:flex;align-items:center}.sg-ctx summary::-webkit-details-marker{display:none}.sg-ctx summary::before{content:'›';display:inline-block;margin-right:8px;transition:transform .2s}.sg-ctx[open] summary::before{transform:rotate(90deg)}
 @media (max-width:899px){
   .sg-fila1{gap:10px}.sg-num b{font-size:30px}.sg-barra-wrap{min-width:0;flex:1 1 100%;order:3}.sg-modo{font-size:11px;padding:5px 9px}.sg-fila1>.sg-link{order:4;margin-top:2px}

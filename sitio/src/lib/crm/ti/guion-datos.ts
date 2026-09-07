@@ -163,7 +163,9 @@ export async function decidirRegla(id: string, o: { decision: 'aprobar' | 'recha
   if (o.decision === 'editar') {
     const t = String(o.texto || '').trim(); if (t.length < 12) return { error: 'La regla quedó muy corta' };
     await supabase.from('ti_reglas').update({ texto: t, version: (r.version || 1) + (r.estado === 'activa' ? 1 : 0), prueba: t !== r.texto ? null : r.prueba, updated_at: ahora }).eq('id', id);
-    invalidarCaches(); return { ok: true };
+    invalidarCaches();
+    if (r.estado === 'activa') { try { const { marcarParaRegenerar } = await import('./regeneracion'); await marcarParaRegenerar({ motivo: `regla editada: ${t.slice(0, 120)}` }); } catch { /* opcional */ } }
+    return { ok: true };
   }
   if (o.decision === 'aprobar') {
     const t = String(o.texto || r.texto || '').trim(); if (t.length < 12) return { error: 'La regla no tiene texto' };
@@ -171,6 +173,8 @@ export async function decidirRegla(id: string, o: { decision: 'aprobar' | 'recha
     await supabase.from('ti_reglas').update({ texto: t, estado: 'activa', activa_desde: ahora, decidida_por: o.userId || null, decidida_at: ahora, nota: o.nota || r.nota, retirada_at: null, updated_at: ahora }).eq('id', id);
     invalidarCaches();
     await supabase.from('ia_log').insert({ accion: 'regla_activada', razon: t.slice(0, 200), detalle: { regla_id: id, etapa: r.etapa, por: o.userId, prueba: r.prueba ? { con: r.prueba.con, sin: r.prueba.sin, n: r.prueba.n } : null } }).then(() => {}, () => {});
+    // REGENERACIÓN INMEDIATA (7-sep): una regla nueva se aplica a todo lo que espera en la fila, no solo a lo que se redacte después.
+    try { const { marcarParaRegenerar } = await import('./regeneracion'); await marcarParaRegenerar({ motivo: `regla nueva: ${t.slice(0, 120)}` }); } catch { /* opcional */ }
     return { ok: true, estado: 'activa' };
   }
   // rechazar (propuesta) o retirar (activa): las dos terminan en «retirada», que es la memoria de «ya lo decidí».
