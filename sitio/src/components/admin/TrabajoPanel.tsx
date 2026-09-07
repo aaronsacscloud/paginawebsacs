@@ -477,13 +477,13 @@ const icoFlecha = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" st
 export const TI_CSS = `
 .ti-raiz { --fondo:#f6f5f9; --carta:#fff; --tinta:#241d43; --texto:#4a4756; --suave:#71707C;
   --tenue:#a5a2af; --linea:#ececec; --linea2:#f0eef7; --morado:#9B8CFA; --morado-tinta:#5B4BD6;
-  --morado-hondo:#4536BE; --morado-agua:#EEECFE; --verde-t:#1E8A63; --verde-a:#EAF8F2;
+  --morado-hondo:#4536BE; --morado-agua:var(--morado-agua, #EEECFE); --verde-t:#1E8A63; --verde-a:#EAF8F2;
   --rojo-t:#C0554E; --rojo-a:#FEF0EF; --ambar-t:#9a6a10; --ambar-a:#FFF4E5;
   --azul-t:#2C5FC4; --azul-a:#E3EDFD; --neutro:#f2f2f5; --burbuja-in:#f2f2f5;
   --sombra:0 1px 3px rgba(16,24,40,.08),0 8px 28px rgba(16,24,40,.07);
   min-height:100dvh; background:var(--fondo); color:var(--texto); overflow-x:clip;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; }
-@media (prefers-color-scheme: dark) { .ti-raiz { --fondo:#131318; --carta:#1d1d24; --tinta:#F2F1F7;
+@media (prefers-color-scheme: dark) { .ti-raiz, [data-crm-dark="1"] { --fondo:#131318; --carta:#1d1d24; --tinta:#F2F1F7;
   --texto:#d7d5de; --suave:#9b98a6; --tenue:#7e7b89; --linea:#26262e; --linea2:#232329;
   --morado-tinta:#A78BFA; --morado-hondo:#8E7DEF; --morado-agua:#2a2440; --verde-t:#4FBF95;
   --verde-a:#14312a; --rojo-t:#EF7A72; --rojo-a:#3a201e; --ambar-t:#E8B04B; --ambar-a:#33280f;
@@ -495,7 +495,7 @@ export const TI_CSS = `
 .ti-cab2-tabs, .ti-cab2-sub { display:flex; gap:2px; }
 .ti-cab2-sub { margin-left:auto; }
 .ti-cab2-tab { border:none; background:transparent; border-radius:9px; padding:7px 11px; font-weight:700; font-size:.86rem; color:var(--texto); cursor:pointer; }
-.ti-cab2-tab.on { background:#EEECFE; color:#4c1d95; }
+.ti-cab2-tab.on { background:var(--morado-agua, #EEECFE); color:var(--morado-tinta,#4c1d95); }
 .ti-cab2-tab.chico { font-size:.8rem; padding:5px 9px; }
 .tc-full { max-width:none !important; padding:12px 16px 12px !important; }
 @media (max-width:700px){ .ti-cab2 { padding:8px 10px; gap:8px; } .ti-cab2-tt { display:none; } .ti-cab2-sub { margin-left:0; width:100%; overflow-x:auto; } }
@@ -558,7 +558,7 @@ export const TI_CSS = `
 .ti-campo { width:100%; box-sizing:border-box; border:1px solid var(--linea); border-radius:11px; background:var(--carta); color:var(--tinta); padding:11px 13px; font-size:16px; outline:none; margin-top:8px; min-height:44px; }
 .ti-campo-l { font-size:.62rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--tenue); margin:12px 0 5px; }
 .ti-botones { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
-.ti-btn { border:none; border-radius:12px; min-height:48px; padding:0 22px; font-size:.92rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:9px; cursor:pointer; text-decoration:none; box-sizing:border-box; }
+.ti-btn { background:var(--neutro,#f1f0f5); color:var(--tinta,#241d43); border:none; border-radius:12px; min-height:48px; padding:0 22px; font-size:.92rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:9px; cursor:pointer; text-decoration:none; box-sizing:border-box; }
 .ti-btn.prim { background:var(--morado); color:#fff; flex:1 1 220px; }
 .ti-btn.prim:hover { background:var(--morado-hondo); }
 .ti-btn.prim:disabled { opacity:.55; cursor:default; }

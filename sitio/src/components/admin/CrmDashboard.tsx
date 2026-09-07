@@ -1714,7 +1714,36 @@ const CRM_MOBILE_CSS = `
       /* Las opciones de un select las pinta el sistema operativo con sus
          colores claros: se les da el fondo del tema o quedan como una lista
          blanca saliendo de un campo oscuro. */
-      [data-crm-dark="1"] option { background-color: #1d1d24; color: #F2F1F7; }
+      [data-crm-dark="1"] option { background-color: #1d1d24 !important; color: #F2F1F7 !important; }
+      /* Un button sin color propio lo pinta el navegador de NEGRO (buttontext),
+         no lo hereda del padre: por eso las flechitas de ordenar y varios
+         botones de texto salían negros sobre negro y ningún selector por valor
+         los alcanzaba —no tenían valor que buscar—.
+         Solo a los que NO declaran color: el que trae el suyo sigue mandando. */
+      [data-crm-dark="1"] button:not([style*="color"]):not([class]) { color: inherit; }
+      /* Pastillas y avisos que quedaban: grises claros (#f2f2f2, #f4f4f6),
+         azul agua (#e3edfd) y rojo agua (#fdecea). Se les da el tono oscuro de
+         su familia, no gris parejo: el color de la pastilla es su significado.
+         Todos leídos del DOM, uno por uno, con el arnés. */
+      [data-crm-dark="1"] [style*="background: rgb(242, 242, 242)"],
+      [data-crm-dark="1"] [style*="background: rgb(244, 244, 246)"] { background-color: #232329 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(227, 237, 253)"] { background-color: #1b2740 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(253, 236, 234)"],
+      [data-crm-dark="1"] [style*="background: rgb(253, 231, 229)"] { background-color: #3a201e !important; }
+      [data-crm-dark="1"] [style*="color: rgb(44, 95, 196)"] { color: #7DA6F5 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(235, 241, 252)"] { background-color: #1b2740 !important; }
+      /* Los últimos, de pantallas que YA estaban en oscuro y nadie había
+         medido: avisos en ámbar (#fff6e3, #fffdf8), rojo (#ffe5e5) y azul
+         (#eef2fe). Cada uno conserva su familia. */
+      [data-crm-dark="1"] [style*="background: rgb(255, 246, 227)"],
+      [data-crm-dark="1"] [style*="background: rgb(255, 253, 248)"] { background-color: #33280f !important; border-color: #544a24 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(255, 229, 229)"] { background-color: #3a201e !important; }
+      [data-crm-dark="1"] [style*="background: rgb(238, 242, 254)"] { background-color: #2a2440 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(154, 107, 21)"] { color: #E8C978 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(55, 100, 196)"] { color: #7DA6F5 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(69, 54, 190)"] { color: #C4B5FD !important; }
+      [data-crm-dark="1"] [style*="background: rgb(42, 36, 64)"] [style*="color: rgb(76, 29, 149)"],
+      [data-crm-dark="1"] [style*="color: rgb(76, 29, 149)"] { color: #C4B5FD !important; }
       /* Pastillas de estado: nacen con fondo casi blanco (#f1f5f9 y parientes)
          y el texto oscuro de su familia. */
       [data-crm-dark="1"] [style*="background: rgb(241, 245, 249)"],

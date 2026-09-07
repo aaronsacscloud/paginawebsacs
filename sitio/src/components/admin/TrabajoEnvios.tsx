@@ -66,7 +66,7 @@ export const ESTILOS_ENVIOS = `
 .ti-envio-pista { font-size:.78rem; color:var(--suave,#6b7280); }
 .ti-envio-veto { margin-top:10px; padding:10px 12px; border:1px dashed var(--linea,#e5e7eb); border-radius:10px; }
 .ti-envio-motivos { display:flex; flex-wrap:wrap; gap:6px; }
-.ti-chip-btn { border:1px solid var(--linea,#e5e7eb); background:var(--carta,#fff); border-radius:20px; padding:4px 10px; font:inherit; font-size:.78rem; cursor:pointer; }
+.ti-chip-btn { border:1px solid var(--linea,#e5e7eb); background:var(--carta,#fff); color:var(--texto,#241d43); border-radius:20px; padding:4px 10px; font:inherit; font-size:.78rem; cursor:pointer; }
 .ti-chip-btn.on { background:var(--morado-agua,#ede9fe); border-color:var(--morado,#6d28d9); color:var(--morado-tinta,#4c1d95); font-weight:700; }
 .ti-envio-aviso { margin-top:10px; padding:9px 12px; border-radius:9px; font-size:.86rem; font-weight:600; }
 .ti-envio-aviso.ok { background:var(--verde-agua, #dcfce7); color:var(--verde-tinta, #14532d); } .ti-envio-aviso.err { background:#fee2e2; color:#7f1d1d; }

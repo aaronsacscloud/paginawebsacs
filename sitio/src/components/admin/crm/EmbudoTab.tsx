@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import KpiCard from './ui/KpiCard';
 import ContextoLead from './ti/ContextoLead';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ Embudo por ciclo de vida ═══ La pregunta del dueño: de los leads de un canal (TikTok primero), ¿con cuántos
    hubo conversación real, cuántos nunca contestaron, cuántos descalificamos después de hablar, cuántas demos se
@@ -33,6 +34,7 @@ const METRICAS: Record<string, { l: string; que: string; f: (r: Fila) => boolean
 };
 
 export default function EmbudoTab() {
+  const movil = useIsMobile();
   const [rango, setRango] = useState('30');
   const [canal, setCanal] = useState('tiktok');
   const [d, setD] = useState<any>(null);
@@ -97,6 +99,34 @@ export default function EmbudoTab() {
             <div><b style={{ fontSize: 15 }}>{METRICAS[metrica]?.l}</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {lista.length} leads</span></div>
             <span style={{ color: '#6b6580', fontSize: 12.5 }}>{METRICAS[metrica]?.que}</span>
           </div>
+          {/* TELÉFONO · la tabla de diez columnas medía 1007 px y se leía de
+              lado. Se queda lo que sirve para decidir a quién abrir —quién es,
+              por dónde llegó, en qué etapa va y cuánto pagó—; el resto
+              (mensajes, llamada, demos, cotización) vive en la ficha, que es
+              donde se revisa un lead, no en una lista para escanear. */}
+          {movil ? (
+            <div>
+              {lista.slice(0, 300).map((x: Fila) => (
+                <div key={x.contact_id} onClick={() => setCtx(x.contact_id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', minHeight: 60, borderTop: '1px solid #f0eef6', cursor: 'pointer' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {x.nombre || 'Sin nombre'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6b6580', marginTop: 2 }}>
+                      {x.fuente || 'sin canal'} · {fecha(x.created_at)}
+                    </div>
+                  </div>
+                  {x.pagado ? (
+                    <div style={{ fontWeight: 800, fontSize: 13.5, fontVariantNumeric: 'tabular-nums' }}>{pesos(x.pagado)}</div>
+                  ) : (
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#6b6580' }}>{x.lifecycle_stage || '—'}</span>
+                  )}
+                </div>
+              ))}
+              {!lista.length && <div style={{ padding: 20, color: '#8e88a8', textAlign: 'center', fontSize: 13 }}>Nadie en esta métrica para este rango y canal.</div>}
+            </div>
+          ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 900 }}>
               <thead><tr style={{ background: '#faf9fc', color: '#8e88a8', fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' }}>
@@ -124,6 +154,7 @@ export default function EmbudoTab() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
         {/* Inversión */}

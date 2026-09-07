@@ -266,6 +266,30 @@ export default function CommissionsTab() {
               </div>
             )}
           </div>
+        ) : esMovilCom ? (
+          /* TELÉFONO · la tabla de ocho columnas medía 914 px. Se queda lo que
+             decide si abres la fila —de quién, cuánto y en qué estado— y el
+             resto (tipo, concepto, acciones) vive en el escritorio, que es
+             donde se opera un lote de comisiones. */
+          <div>
+            {filtered.map(c => {
+              const sc = STATUS_COLOR[c.status] || { bg: '#f5f5f5', color: '#666' };
+              return (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 14px', minHeight: 60, borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.team_members?.nombre || c.team_members?.email || 'Sin partner'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{fmtDate(c.created_at)}{c.deals?.nombre ? ` · ${c.deals.nombre}` : ''} · {TIPO_LABEL[c.tipo] || c.tipo}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{fmt(c.commission_amount)}</div>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, background: sc.bg, color: sc.color, borderRadius: 6, padding: '2px 7px', marginTop: 3, display: 'inline-block' }}>{c.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>

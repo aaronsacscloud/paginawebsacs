@@ -84,7 +84,7 @@ export default function ContextoLead({ contactId, open, onClose, acciones = [], 
   if (inline) return <div style={{ height: '100%', overflowY: 'auto' }}>{cuerpo}</div>;
   return (
     <Sheet open={open} onClose={onClose} width={640} zIndex={1200}
-      title={<span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}><span style={{ fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo || (k ? `${k.nombre || 'Sin nombre'}${emp ? ` · ${emp}` : ''}` : 'Conversación')}</span>{k && <span style={{ fontSize: 11, fontWeight: 800, background: '#EEECFE', color: '#4c1d95', borderRadius: 999, padding: '2px 8px', flexShrink: 0 }}>{ETAPA[k.lifecycle_stage] || k.lifecycle_stage}</span>}</span>}>
+      title={<span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}><span style={{ fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo || (k ? `${k.nombre || 'Sin nombre'}${emp ? ` · ${emp}` : ''}` : 'Conversación')}</span>{k && <span style={{ fontSize: 11, fontWeight: 800, background: 'var(--morado-agua, #EEECFE)', color: '#4c1d95', borderRadius: 999, padding: '2px 8px', flexShrink: 0 }}>{ETAPA[k.lifecycle_stage] || k.lifecycle_stage}</span>}</span>}>
       {cuerpo}
     </Sheet>
   );

@@ -41,18 +41,51 @@ Playwright · 390×844 · isMobile · colorScheme dark
 
 ---
 
-## Avance
+## Avance · COMPLETO
 
-**50 pantallas · 40 adaptadas · 10 por adaptar**
+**46 pantallas medidas · 46 pasan el arnés.** 0 fallan.
 
-### ✅ Hechas
-Las 24 originales (dashboard, pipeline, clientes, churn, cotizaciones, pagos,
-soporte, whatsapp, suscripciones, mejoras, oportunidades, reuniones,
-commissions, email, automations, outbound, wa-metricas, wa-masivos, agents,
-secuencias, partners, content-review, desempeno, wa-config)
-+ **Finanzas ×5** (fin-gastos, fin-ingresos, fin-cierre, fin-adeudos, finanzas)
-— commit `1be3acfb`, verificada en teléfono:
-https://code.sacscloud.com/shots/ec8ea9dcf5d3a6e6.png
+Barrido del 7-sep-2026, en 390×844 y oscuro, contra el dev local:
+lo que se sale de 390 px, superficies claras sobre fondo oscuro y contraste
+texto/fondo. Cuatro bloques, todos en verde.
+
+### Lo que hizo posible cerrarlo
+
+**La paleta compartida.** `lib/crm/paleta.ts` la usan casi todas las pantallas y
+sus valores van EN LÍNEA. Un bloque de overrides —con la cadena EXACTA que
+serializa el navegador, leída del DOM— arregló once de golpe. Tocar cuarenta
+archivos habría dejado que la siguiente naciera igual de blanca.
+
+**Los tres agujeros que no se ven leyendo código:**
+1. Los títulos no traían color propio: venía de una hoja global (h1..h4 en
+   #1a1a1a), así que ningún selector por valor los alcanzaba.
+2. `body` no tenía color en oscuro: todo lo que no declaraba el suyo caía al
+   gris del tema claro.
+3. Un `<button>` sin color lo pinta el navegador de NEGRO (`buttontext`), no lo
+   hereda. Por eso flechas y botones de texto salían negros sobre negro sin
+   tener ningún valor que buscar.
+
+**Las tablas que se volvieron renglones:** comisiones (760 px), campañas
+(1007 px), commissions (914 px). Siete a diez columnas en 390 px se leen de
+lado, que es como no leerlas.
+
+### Lo que aprendí a la mala
+
+⚠️ **Un componente con tema propio no se pisa con reglas genéricas.** Trabajo
+inteligente ya tenía su tema oscuro; mis overrides le aclararon el texto de dos
+paneles que conservaban fondos claros fijos, y quedó gris claro sobre verde
+claro. Se arregla completándole los huecos —pasar esos literales a SUS tokens—,
+no excluyéndolo.
+
+⚠️ **En el CSS de `CrmDashboard.tsx` no se escriben acentos graves.** Vive dentro
+de un template literal y uno solo lo corta a media hoja. Pasó dos veces; la
+segunda llegó a producción.
+
+⚠️ **El arnés también miente si está mal hecho.** La primera versión dio «ok» a
+una pantalla que la captura mostraba rota: el contraste texto/fondo no detecta
+una tarjeta blanca con letra negra, porque por dentro tiene contraste perfecto.
+Y la segunda marcaba como ilegibles pastillas que se leen bien, por no componer
+el alfa del fondo sobre su padre.
 
 ### 🔑 La palanca: la paleta compartida
 `lib/crm/paleta.ts` la usan casi todas las pantallas y sus valores se escriben

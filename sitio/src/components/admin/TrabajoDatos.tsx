@@ -51,7 +51,7 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, onRecargar,
         <div className="ti-carta" style={{ padding: 8, maxHeight: 520, overflowY: 'auto' }}>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8e88a8', padding: '6px 8px' }}>{clientes.length} cliente{clientes.length === 1 ? '' : 's'}</div>
           {clientes.map(c => (
-            <button key={c.k} onClick={() => { setSel(c.k); setOk(''); }} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', borderRadius: 10, padding: '8px 10px', background: actual?.k === c.k ? '#EEECFE' : 'transparent', color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button key={c.k} onClick={() => { setSel(c.k); setOk(''); }} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', borderRadius: 10, padding: '8px 10px', background: actual?.k === c.k ? 'var(--morado-agua, #EEECFE)' : 'transparent', color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' }}>
               <div style={{ fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre}</div>
               <div style={{ fontSize: 11, color: '#8e88a8' }}>{c.xs.length === 1 ? c.xs[0].payload?.campo : `${c.xs.length} datos: ${c.xs.map((x: any) => x.payload?.campo).join(', ')}`}</div>
             </button>
