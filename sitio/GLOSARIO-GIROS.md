@@ -59,5 +59,26 @@ Cada uno con base propia de 3 puntos y preguntas propias (por definir). Ropa inf
 
 **Mayorista · varias bodegas o puntos:** lo anterior más existencia por bodega y traspasos · vendedores con metas y comisiones · compra y reabasto con datos por punto · cuentas por pagar a proveedores y bancos.
 
+## JOYERÍA (oro, plata y gemas; la bisutería se trata como accesorios)
+
+**Base (siempre):**
+1. Precio por gramo con tu factor por quilataje: cada pieza vale lo que pesa, no lo que dice una etiqueta vieja.
+2. Repreciar la vitrina en masa cuando sube el oro: simulas, aplicas y salen etiquetas nuevas sin cerrar la cortina.
+3. Costo histórico y margen real por pieza, aunque el metal haya cambiado de precio.
+4. Órdenes de reparación y servicio (sumamente importante, ya existe en Sacs): la pieza del cliente, el joyero propio o externo, el avance y la entrega, con su cobro.
+5. Apartados largos con abonos y recordatorio, y lo que vendes en línea baja del mismo inventario.
+
+**Taller propio o fabricante · 1 vitrina:** compra de oro y metal con costo por lote (de ahí sale el costo de cada pieza) · pieza sobre pedido con diseño, anticipo y fecha, visible para el taller · catálogo con foto y venta en línea de piezas únicas sin duplicarlas · cumplimiento LFPIORPI desde el sistema.
+
+**Taller propio o fabricante · varias sucursales (2+):** un solo precio del gramo para todas las sucursales · existencia por vitrina y traspasos pieza por pieza · taller central con las órdenes de todas las sucursales, con fecha y responsable · vendedores con metas y comisiones por sucursal sobre margen real.
+
+**Distribuidora de marcas o proveedores · 1 vitrina:** marca y proveedor en cada pieza con su costo (qué línea sí vende) · consigna del proveedor separada de lo propio, con liquidación calculada · catálogo con foto y venta en línea y WhatsApp con el mismo inventario · ficha de cliente con fechas y aniversarios para avisarle.
+
+**Distribuidora de marcas o proveedores · varias sucursales (2+):** un solo precio del gramo para todas · existencia por vitrina y traspasos de piezas · corte por marca y por sucursal · vendedores con metas y comisiones por sucursal.
+
+**Mayorista · 1 bodega o punto:** precio por gramo por lista de cliente (menudeo, mayoreo, distribuidor) · crédito y estado de cuenta por cliente joyería · pedidos por catálogo o WhatsApp con existencia real · venta por peso y por lote con el total calculado por peso y quilate.
+
+**Mayorista · varias bodegas o puntos:** lo anterior más existencia por bodega y traspasos pieza por pieza · vendedores o rutas con metas y comisiones · compra de metal y reabasto con datos por punto · cuentas por pagar a proveedores y bancos.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
