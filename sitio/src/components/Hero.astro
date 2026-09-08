@@ -24,11 +24,11 @@ const steps = [
     subtitle: 'Piso, tienda en línea, WhatsApp y TikTok Shop sobre un solo inventario por talla y color.',
     bgKey: 'pos',
     subs: [
-      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra por talla y color desde iPad, celular o computadora, con o sin internet. La vendedora ve al instante si la M está en el piso, en bodega o en otra sucursal, y el ticket sale por WhatsApp.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
-      { id: 'pos-cambios', label: 'Cambios de talla', desc: '"No me quedó" se resuelve en un minuto: cambio de talla o color con ticket o sin él, vale a favor o monedero. La prenda regresa a su talla en el inventario, no a un limbo.', href: '/producto/punto-de-venta', image: null },
-      { id: 'pos-movil', label: 'Cobro en el piso', desc: 'La vendedora escanea la prenda junto al probador, cobra y manda el ticket por WhatsApp desde su celular. En hora pico y en el día del drop nadie se va por la fila.', href: '/producto/punto-de-venta', image: null },
-      { id: 'pos-apartados', label: 'Apartados con anticipo', desc: 'La clienta aparta el vestido en su talla con un anticipo: esa pieza se bloquea en todos los canales, se cobra a plazos y se vuelve venta al liquidar. Recordatorios por WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
-      { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea vende sobre el mismo inventario que el piso: cuando se vende la última S en la sucursal, esa talla se apaga en línea al segundo. Sin sobreventa, sin cancelar pedidos.', href: '/producto/tienda-en-linea', image: null },
+      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra por talla y color desde iPad, celular o computadora, con o sin internet. La vendedora ve al instante si esa talla o ese número está en el piso, en bodega o en otra sucursal, y el ticket sale por WhatsApp.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
+      { id: 'pos-cambios', label: 'Cambios de talla', desc: '"No me quedó" se resuelve en un minuto: cambio de talla, número o color con ticket o sin él, vale a favor o monedero. La prenda o el par regresa a su talla en el inventario, no a un limbo.', href: '/producto/punto-de-venta', image: null },
+      { id: 'pos-movil', label: 'Cobro en el piso', desc: 'La vendedora escanea la prenda o la caja de zapatos junto al probador, cobra y manda el ticket por WhatsApp desde su celular. En hora pico y en el día del drop nadie se va por la fila.', href: '/producto/punto-de-venta', image: null },
+      { id: 'pos-apartados', label: 'Apartados con anticipo', desc: 'La clienta aparta la prenda o el par en su talla con un anticipo: esa pieza se bloquea en todos los canales, se cobra a plazos y se vuelve venta al liquidar. Recordatorios por WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
+      { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea vende sobre el mismo inventario que el piso: cuando se vende la última pieza de una talla o un número en la sucursal, se apaga en línea al segundo. Sin sobreventa, sin cancelar pedidos.', href: '/producto/tienda-en-linea', image: null },
       { id: 'pos-social', label: 'Instagram, Facebook y TikTok Shop', desc: 'Publica el drop una sola vez y véndelo en Instagram, Facebook y TikTok Shop con las mismas tallas, precios y existencias. Cada venta baja del inventario correcto.', href: '/producto/social-commerce', image: null },
     ],
   },
@@ -40,9 +40,9 @@ const steps = [
     subtitle: 'Un solo inventario por talla y color, en todas tus sucursales.',
     bgKey: 'stock',
     subs: [
-      { id: 'stock-inventario', label: 'Inventario por talla y color', desc: 'Cada prenda con su matriz talla × color y su existencia por sucursal y bodega. Ves de un vistazo qué curva está completa, cuál se rompió y qué talla se vendió de más en cada tienda.', href: '/producto/inventario-omnicanal', image: null },
-      { id: 'stock-conteo', label: 'Conteo físico desde el celular', desc: 'Escanea rack por rack y cuadra por talla, no por pieza. Sabes qué prenda falta, en qué talla y en qué sucursal, sin cerrar la tienda ni bajar nada a Excel.', href: '/producto/conteo-fisico', image: null },
-      { id: 'stock-alertas', label: 'Recepción por curva', desc: 'Recibe la caja del proveedor contra tu orden de compra: ves qué tallas llegaron completas y cuáles vinieron cortas, y todo entra al inventario con su código de barras al instante.', href: '/producto/ordenes-de-compra', image: null },
+      { id: 'stock-inventario', label: 'Inventario por talla y color', desc: 'Cada prenda o modelo de calzado con su matriz talla × color (o número × color) y su existencia por sucursal y bodega. Ves de un vistazo qué curva o corrida está completa, cuál se rompió y qué talla se vendió de más en cada tienda.', href: '/producto/inventario-omnicanal', image: null },
+      { id: 'stock-conteo', label: 'Conteo físico desde el celular', desc: 'Escanea rack por rack y cuadra por talla, no por pieza. Sabes qué prenda o qué par falta, en qué talla o número y en qué sucursal, sin cerrar la tienda ni bajar nada a Excel.', href: '/producto/conteo-fisico', image: null },
+      { id: 'stock-alertas', label: 'Recepción por curva', desc: 'Recibe la caja del proveedor contra tu orden de compra: ves qué tallas o números llegaron completos, qué curva o corrida vino corta, y todo entra al inventario con su código de barras al instante.', href: '/producto/ordenes-de-compra', image: null },
     ],
   },
   {
@@ -54,7 +54,7 @@ const steps = [
     bgKey: 'crm',
     subs: [
       { id: 'crm-lealtad', label: 'Monedero electrónico', desc: 'Cashback en cada compra, guardado en su monedero y canjeable en el piso o en línea. Sin tarjetas ni apps: con su número de teléfono.', href: '/producto/programa-de-lealtad', image: null },
-      { id: 'crm-seguimiento', label: 'Recomendaciones por talla', desc: 'Sugiere a cada clienta prendas que existen en su talla y combinan con lo que ya compró, desde el punto de venta y en la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-seguimiento', label: 'Recomendaciones por talla', desc: 'Sugiere a cada clienta prendas o calzado que existen en su talla o número y combinan con lo que ya compró, desde el punto de venta y en la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
       { id: 'crm-omnicanal', label: 'Una ficha por clienta', desc: 'Talla, marcas favoritas y compras en tienda, en línea y por WhatsApp en una sola ficha. Segmentos que se arman solos: quien compra cada temporada, quien no volvió, quien siempre aparta.', href: '/producto/clientes-y-crm', image: null },
       { id: 'crm-email', label: 'Email marketing', desc: 'Campañas de nueva colección, rebajas de temporada y "llegó tu talla" con editor visual y resultados medidos en ventas reales, no en aperturas.', href: '/producto/marketing-por-correo', image: null },
       { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Avisos a segmentos con plantillas aprobadas por Meta: la clienta que compra tu marca recibe el drop antes que nadie. Conectado al CRM, con pedidos que caen al mismo inventario.', href: '/producto/marketing-por-whatsapp', image: null },
@@ -68,7 +68,7 @@ const steps = [
     subtitle: 'Sacs aprende de tus ventas y decide antes de que abras la tienda.',
     bgKey: 'ai',
     subs: [
-      { id: 'ai-empresarial', label: 'Sacs IA para Moda', desc: 'Te dice qué talla se te va a acabar y en qué tienda sobra, propone el traspaso, arma el resurtido por curva con lo que de verdad rotó y responde por WhatsApp con tu catálogo real.', href: '/producto/axo-copiloto-ia', image: null },
+      { id: 'ai-empresarial', label: 'Sacs IA para Moda', desc: 'Te dice qué talla se te va a acabar y en qué tienda sobra, propone el traspaso, arma el resurtido por curva o corrida con lo que de verdad rotó y responde por WhatsApp con tu catálogo real.', href: '/producto/axo-copiloto-ia', image: null },
     ],
   },
 ];
@@ -1235,7 +1235,7 @@ const useCases = [
       <div class="sq-features-content">
         <div class="sq-feature-block sq-feature-block--sc active" data-sq-idx="0" data-sq-img="/images/wa-chat-step1.webp">
           <h3 class="sq-feature-title">Tu clienta te escribe</h3>
-          <p class="sq-feature-desc">Pregunta por el vestido que vio en Instagram. Sacs contesta al momento con el catálogo y las tallas disponibles.</p>
+          <p class="sq-feature-desc">Pregunta por la prenda o los zapatos que vio en Instagram. Sacs contesta al momento con el catálogo y las tallas disponibles.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.5" data-sq-img="/images/wa-chat-step2.webp">
           <h3 class="sq-feature-title">Explora el catálogo</h3>
@@ -1243,7 +1243,7 @@ const useCases = [
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.6" data-sq-img="/images/wa-chat-step3.webp">
           <h3 class="sq-feature-title">Detalle del producto</h3>
-          <p class="sq-feature-desc">Foto, descripción, tallas y colores disponibles y el botón de agregar. Si la M ya no está, no se ofrece.</p>
+          <p class="sq-feature-desc">Foto, descripción, tallas o números y colores disponibles y el botón de agregar. Si esa talla ya no está, no se ofrece.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.7" data-sq-img="/images/wa-chat-step4.webp">
           <h3 class="sq-feature-title">Pago y confirmación</h3>
@@ -3094,7 +3094,7 @@ const useCases = [
           <div class="mc-card-visual mc-card-visual--dark"><img src="/images/screen-ecommerce.webp" alt="eCommerce SACS" loading="lazy" width="800" height="500"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Tienda en línea</div>
-            <div class="mc-card-desc">La última S del piso se apaga en línea al segundo.</div>
+            <div class="mc-card-desc">La última pieza de una talla se apaga en línea al segundo.</div>
           </div>
         </div>
         <div class="mc-card">
@@ -3186,7 +3186,7 @@ const useCases = [
           </div>
           <div class="mc-card-body">
             <div class="mc-card-title">Inventario por talla y color</div>
-            <div class="mc-card-desc">Matriz talla × color por sucursal: qué curva está completa y cuál se rompió.</div>
+            <div class="mc-card-desc">Matriz talla × color por sucursal: qué curva o corrida está completa y cuál se rompió.</div>
           </div>
         </div>
         <div class="mc-card">
@@ -3224,7 +3224,7 @@ const useCases = [
           <div class="mc-card-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones de productos" loading="lazy" width="900" height="1340"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Recomendaciones por talla</div>
-            <div class="mc-card-desc">Prendas que existen en su talla y combinan con lo que ya compró.</div>
+            <div class="mc-card-desc">Prendas o calzado en su talla o número, que combinan con lo que ya compró.</div>
           </div>
         </div>
       </div>
@@ -3243,7 +3243,7 @@ const useCases = [
           </div>
           <div class="mc-card-body">
             <div class="mc-card-title">Sacs IA para Moda</div>
-            <div class="mc-card-desc">Qué talla se acaba, dónde sobra, el traspaso y el resurtido por curva.</div>
+            <div class="mc-card-desc">Qué talla se acaba, dónde sobra, el traspaso y el resurtido por curva o corrida.</div>
           </div>
         </div>
       </div>
@@ -3269,7 +3269,7 @@ const useCases = [
       <div class="inv-intel-text">
         <span class="inv-intel-eyebrow">Inventario Inteligente</span>
         <h2 class="inv-intel-title">La talla correcta, en la tienda correcta, siempre.</h2>
-        <p class="inv-intel-desc">Sacs nivela tu inventario por talla y color entre tiendas: te dice qué talla resurtir, cuál traspasar de la sucursal donde sobra a la que se está quedando sin ella, qué rematar y cuánto comprar de cada curva. Sin hojas de cálculo, con lo que de verdad se vendió.</p>
+        <p class="inv-intel-desc">Sacs nivela tu inventario por talla y color entre tiendas: te dice qué talla resurtir, cuál traspasar de la sucursal donde sobra a la que se está quedando sin ella, qué rematar y cuánto comprar de cada curva o corrida. Sin hojas de cálculo, con lo que de verdad se vendió.</p>
       </div>
       <div class="inv-intel-visual">
         <img
