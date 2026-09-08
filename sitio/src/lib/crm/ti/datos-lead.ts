@@ -22,9 +22,9 @@ import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 export type DatoLead = { campo: string; valor: string; confianza?: number; evidencia?: string; corrige?: boolean };
 export type FuenteDato = 'agente' | 'humano_respondio' | 'llamada' | 'llamada_nota' | 'accion' | 'formulario';
 
-export const CAMPOS_LEAD = ['nombre', 'apellido', 'email', 'empresa', 'giro', 'sucursales', 'ciudad', 'estado', 'sitio_web', 'instagram', 'puesto', 'plan_interes', 'sistema_actual', 'dolor', 'mejor_hora', 'canal_preferido', 'cuando_decide', 'tema_reunion', 'otro'] as const;
+export const CAMPOS_LEAD = ['nombre', 'apellido', 'email', 'empresa', 'giro', 'sucursales', 'ciudad', 'estado', 'sitio_web', 'instagram', 'puesto', 'modelo_negocio', 'plan_interes', 'sistema_actual', 'dolor', 'mejor_hora', 'canal_preferido', 'cuando_decide', 'tema_reunion', 'otro'] as const;
 
-const ETIQUETA: Record<string, string> = { nombre: 'Nombre', apellido: 'Apellido', email: 'Correo', empresa: 'Marca / tienda', giro: 'Giro', sucursales: 'Sucursales', ciudad: 'Ciudad', estado: 'Estado', sitio_web: 'Sitio web', instagram: 'Instagram', puesto: 'Puesto', plan_interes: 'Plan de interés', sistema_actual: 'Sistema actual', dolor: 'Dolor', mejor_hora: 'Mejor hora', canal_preferido: 'Canal preferido', cuando_decide: 'Cuándo decide', tema_reunion: 'Para la reunión' };
+const ETIQUETA: Record<string, string> = { nombre: 'Nombre', apellido: 'Apellido', email: 'Correo', empresa: 'Marca / tienda', giro: 'Giro', sucursales: 'Sucursales', ciudad: 'Ciudad', estado: 'Estado', sitio_web: 'Sitio web', instagram: 'Instagram', puesto: 'Puesto', modelo_negocio: 'Modelo de negocio', plan_interes: 'Plan de interés', sistema_actual: 'Sistema actual', dolor: 'Dolor', mejor_hora: 'Mejor hora', canal_preferido: 'Canal preferido', cuando_decide: 'Cuándo decide', tema_reunion: 'Para la reunión' };
 
 const limpio = (v: any, max = 120) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const esPlaceholderNombre = (n?: string | null) => { const s = limpio(n).toLowerCase(); return !s || s === 'lead' || /^\+?\d[\d\s-]{6,}$/.test(s) || s === 'desconocido' || s === 'sin nombre'; };
@@ -103,6 +103,14 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
           const { data: otro } = await supabase.from('contacts').select('id').eq('email', e).neq('id', contactId).limit(1).maybeSingle();
           if (!otro) { upC.email = e; cambios.push({ campo: 'email', antes: c.email, despues: e, evidencia: d.evidencia, tabla: 'contacts' }); }
         }
+        break;
+      }
+      case 'modelo_negocio': {
+        // multimarca | monomarca | fabricante | mayorista | otro (8-sep): se normaliza lo que diga el lead.
+        const t = v.toLowerCase();
+        const mn = /multi ?marca|varias marcas|revend|distribu/.test(t) ? 'multimarca' : /mono ?marca|mi (propia )?marca|marca propia/.test(t) ? 'monomarca' : /fabric|maquil|produc|taller|confecci/.test(t) ? 'fabricante' : /mayor|mayoreo|al por mayor|docena|paquete/.test(t) ? 'mayorista' : 'otro';
+        const cAny: any = c;
+        if (!cAny.modelo_negocio ? puedeLlenar(d) : puedePisar(d) && cAny.modelo_negocio !== mn) { upC.modelo_negocio = mn; cambios.push({ campo: 'modelo_negocio', antes: cAny.modelo_negocio, despues: mn, evidencia: d.evidencia, tabla: 'contacts' }); }
         break;
       }
       case 'puesto': if (!c.puesto ? puedeLlenar(d) : puedePisar(d) && limpio(c.puesto).toLowerCase() !== v.toLowerCase()) { upC.puesto = v.slice(0, 60); cambios.push({ campo: 'puesto', antes: c.puesto, despues: v, evidencia: d.evidencia, tabla: 'contacts' }); } break;
