@@ -174,7 +174,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                             role="tab"
                             aria-selected={idx === 0 ? 'true' : 'false'}
                           >
-                            <span class="gw-th"><img src={sector.ficha?.img ?? sector.image} alt="" loading="lazy" width="38" height="38" /></span>
+                            <span class="gw-th"><img src={sector.ficha?.img ?? sector.image} alt="" loading="lazy" width="48" height="48" /></span>
                             <span class="gw-name">{sector.label}</span>
                             <svg class="gw-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
                           </a>
@@ -1168,33 +1168,33 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     overflow-y: auto;
   }
   .sectors-dropdown .mega-dropdown-inner { padding-top: 24px; padding-bottom: 18px; }
-  .gw-split { display: grid; grid-template-columns: 300px 1fr; gap: 44px; align-items: start; }
+  .gw-split { display: grid; grid-template-columns: 320px 1fr; gap: 56px; align-items: start; }
   .gw-eyebrow {
     display: block; font-size: 0.6563rem; font-weight: 700; letter-spacing: 0.2em;
-    text-transform: uppercase; color: #9A9690; margin-bottom: 10px;
+    text-transform: uppercase; color: #9A9690; margin-bottom: 14px;
   }
   .gw-rows { list-style: none; margin: 0; padding: 0; }
   .gw-row {
-    display: flex; align-items: center; gap: 13px; padding: 8px 6px 8px 0;
+    display: flex; align-items: center; gap: 16px; padding: 12px 8px 12px 0;
     border-top: 1px solid rgba(0, 0, 0, 0.08); text-decoration: none; color: #1a1a1a;
     transition: padding 0.25s ease, color 0.25s ease;
   }
   .gw-rows li:last-child .gw-row { border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
   .gw-row:hover { text-decoration: none; }
   .gw-th {
-    width: 36px; height: 36px; border-radius: 3px; overflow: hidden; flex: none; background: #EEEBE4;
+    width: 48px; height: 48px; border-radius: 4px; overflow: hidden; flex: none; background: #EEEBE4;
     opacity: 0.55; filter: grayscale(1); transition: opacity 0.3s ease, filter 0.3s ease;
   }
   .gw-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gw-name {
-    flex: 1; font-family: var(--font-display); font-size: 1.125rem; font-weight: 400;
+    flex: 1; font-family: var(--font-display); font-size: 1.1875rem; font-weight: 400;
     letter-spacing: -0.02em; line-height: 1.1; color: #8C8C8C; transition: color 0.25s ease;
   }
   .gw-arrow { color: #1a1a1a; opacity: 0; transform: translateX(-4px); transition: 0.25s ease; }
   .gw-row:hover .gw-name, .gw-row.active .gw-name { color: #1a1a1a; }
   .gw-row.active .gw-name { font-weight: 600; }
   .gw-row:hover .gw-th, .gw-row.active .gw-th { opacity: 1; filter: none; }
-  .gw-row.active { padding-left: 8px; }
+  .gw-row.active { padding-left: 10px; }
   .gw-row.active .gw-arrow { opacity: 1; transform: none; }
   .gw-todos { display: inline-block; margin-top: 14px; font-size: 0.8125rem; color: #8C8C8C; text-decoration: none; transition: color 0.2s ease; line-height: 1.45; }
   .gw-todos b { color: #1a1a1a; font-weight: 600; }
