@@ -111,5 +111,7 @@ Cancelación de apartado con reglas de devolución de abonos · corte de caja qu
 3. Cambio de talla aunque la compra fue en línea, con el inventario actualizado.
 4. Lote nuevo con datos del drop anterior: qué talla y colorway sobró o se agotó.
 
+**Según el caso, se suma:** showroom con POS y fila afuera (misma línea, empaque y envíos del mismo inventario) · comunidad: lista de avísame y campañas de restock · varias sedes o bodegas: existencia por sede y traspasos · envíos y devoluciones con guía desde el sistema.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
