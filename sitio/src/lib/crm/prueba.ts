@@ -47,7 +47,7 @@ const SECRETO_PUENTE = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 /** Los días de prueba por omisión. Es el largo de la cadencia de onboarding:
  *  si se cambia uno hay que cambiar el otro, o el correo del día 14 llega
  *  cuando la cuenta ya está bloqueada. */
-export const DIAS_PRUEBA = 14;
+export const DIAS_PRUEBA = 7;   // decisión del dueño, 8-sep-2026: la prueba gratis es de 7 días
 
 export const WHATSAPP_VENTAS = '12058920417';
 
