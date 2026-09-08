@@ -130,5 +130,14 @@ Incluye el manejo completo del evento y también los pop-ups y las tiendas que v
 3. Reposición por talla y copa con datos: qué combinaciones se agotan primero.
 4. Venta discreta por WhatsApp y catálogo con talla y copa disponibles, que baja del mismo inventario.
 
+## Sub-giro WESTERN Y VAQUERO (botas, sombreros, cintos, ropa vaquera)
+1. Botas por número, horma y punta, con medios números: sabes qué pares quedan de cada uno.
+2. Sombreros por talla y cintos por medida como existencias distintas, con aviso de agotados.
+3. Temporadas de feria y palenque con inventario por punto: lo que se lleva sale como almacén aparte y se cobra sin internet.
+4. Apartados por quincena y cambio de número en mostrador aunque se compró en otra tienda.
+
+## TRANSVERSAL · la MATRIZ de tallas y colores (dicho por el dueño en western; aplica a calzado, jeans, trajes de baño y toda prenda con muchas tallas y colores)
+Mencionar siempre la visualización por matriz: ver las existencias en la matriz talla × color, por sucursal, con aviso de agotados; y hacer la compra y el traspaso desde la misma matriz. Es de lo más importante en swimwear, calzado y jeans.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
