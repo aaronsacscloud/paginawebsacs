@@ -58,3 +58,7 @@ pasa a descalificado → embudo de nutrición.
 - Escasez real, máximo 3.
 - A/B: 200 por variante y por caso.
 - Paso 1 con lista numerada (excepción única a la regla de «sin listas»).
+- Cadencia tras la oferta confirmada: día 1 «¿es de tu interés?» (A/B), día 2 presión con horarios reales, día 3 despedida, +24 h descalificado. Silencio en paso 2: reactivación al día siguiente sobre su problema.
+- Audio: se ofrece siempre desde el primer mensaje del paso 0.
+
+## Ronda 1 cerrada (8-sep). Siguiente: implementación (fichas de giro con puntos, guion por pasos, compuertas por datos, planificador nocturno 22:00 → 09:00, A/B del paso 5, casos del árbitro).
