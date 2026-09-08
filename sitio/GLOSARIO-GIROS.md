@@ -103,5 +103,13 @@ Cancelación de apartado con reglas de devolución de abonos · corte de caja qu
 
 **Según el caso, se suma:** mixta (compra mercancía propia): lo firme separado de la consigna, margen y comisión por separado · varias tiendas: pieza por tienda y traspasos · lista de espera y recepción por cita con reglas de lo que se acepta · autenticidad y disputas: pieza en revisión con evidencia y resolución registradas.
 
+## ACTIVEWEAR (marcas de ropa deportiva, sets, drops)
+
+**Base (siempre):**
+1. Drop con un solo inventario en todos los canales: sale a la hora exacta y la talla agotada se apaga sola en Shopify, TikTok, Instagram y showroom.
+2. El set como kit con el descase visible: top y legging juntos o sueltos, y ves por talla cuál se quedó viudo.
+3. Cambio de talla aunque la compra fue en línea, con el inventario actualizado.
+4. Lote nuevo con datos del drop anterior: qué talla y colorway sobró o se agotó.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
