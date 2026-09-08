@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
     let acuseGenerated: any = null;
     let createdPaymentId: string | null = null;
     try {
-      const { data: q } = await supabase.from('quotes').select('total, company_id, deal_id').eq('id', quoteId).single();
+      const { data: q } = await supabase.from('quotes').select('total, company_id, contact_id, deal_id').eq('id', quoteId).single();
       const total = Number(q?.total || 0);
       // Suma de pagos existentes
       const { data: existing } = await supabase.from('payments').select('monto, estado').eq('quote_id', quoteId);
@@ -67,6 +67,13 @@ export const POST: APIRoute = async ({ request }) => {
       const saldo = Math.max(0, total - yaPagado);
       const montoPago = Number(monto || saldo); // si no hay saldo, no creamos pago duplicado
       if (montoPago > 0) {
+        // ⚠️ `company_id`/`contact_id` NO son opcionales aunque la columna los
+        // acepte nulos: sin empresa el pago queda huérfano y desaparece de la
+        // ficha del cliente, del ingreso del año y de la expansión —el
+        // recálculo de comisiones filtra `.not('company_id','is',null)`—.
+        // Medido: 13 pagos por $307,341 quedaron así, entre ellos los $119,764
+        // de ARTIK, que la cuenta reportaba como $0. El endpoint hermano
+        // (revenue/quotes/pagos.ts, los abonos) siempre los escribió; este no.
         const { data: paymentRow, error: pErr } = await supabase.from('payments').insert({
           quote_id: quoteId,
           fecha: fecha || nowIso.slice(0, 10),
@@ -74,6 +81,8 @@ export const POST: APIRoute = async ({ request }) => {
           metodo: metodo || 'otro',
           referencia: referencia || null,
           estado: 'confirmado',
+          company_id: q?.company_id || null,
+          contact_id: (q as any)?.contact_id || null,
         }).select().single();
         if (!pErr && paymentRow?.id) {
           createdPaymentId = paymentRow.id;
