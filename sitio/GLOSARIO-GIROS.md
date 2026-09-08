@@ -124,5 +124,11 @@ Cancelación de apartado con reglas de devolución de abonos · corte de caja qu
 6. Torre de control: traspasos entre puntos en tiempo real y semáforo por módulo (para giras y eventos grandes).
 Incluye el manejo completo del evento y también los pop-ups y las tiendas que venden merch antes y después del concierto.
 
+## Sub-giro LENCERÍA (se suma a la novedad de IA y a la base de ropa)
+1. Talla y copa como existencias distintas: un mismo brasier en 34B, 34C y 36B son tres existencias; sabes cuál se está acabando.
+2. Conjuntos y babydoll por talla y color, sin mezclar con la copa.
+3. Reposición por talla y copa con datos: qué combinaciones se agotan primero.
+4. Venta discreta por WhatsApp y catálogo con talla y copa disponibles, que baja del mismo inventario.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
