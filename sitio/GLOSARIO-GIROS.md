@@ -101,5 +101,7 @@ Cancelación de apartado con reglas de devolución de abonos · corte de caja qu
 3. Contrato con firma remota y vigencia: recepción de piezas firmada desde el celular, con fecha de retiro o rebaja.
 4. Lives y tienda en línea con un solo inventario: lo vendido en el Live se baja al momento; piezas únicas sin duplicarse.
 
+**Según el caso, se suma:** mixta (compra mercancía propia): lo firme separado de la consigna, margen y comisión por separado · varias tiendas: pieza por tienda y traspasos · lista de espera y recepción por cita con reglas de lo que se acepta · autenticidad y disputas: pieza en revisión con evidencia y resolución registradas.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
