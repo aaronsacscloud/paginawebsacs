@@ -17,6 +17,21 @@ export interface SectorPersonalization {
   description: string;
 }
 
+/** La ficha de producto que se reconfigura sola en el mega-menú "Tu negocio":
+ *  la misma pantalla de Sacs con los campos de cada giro. Los valores admiten
+ *  <em> para resaltar el dato que solo ese giro tiene. */
+export interface FichaGiro {
+  crumb: string;
+  img: string;
+  cat: string;
+  name: string;
+  price: string;
+  fields: [string, string][];
+  tags: string[];
+  /** La frase "Solo aquí": qué hace Sacs con ese giro que nadie más. */
+  only: string;
+}
+
 export interface BusinessSector {
   label: string;
   description: string;
@@ -25,6 +40,8 @@ export interface BusinessSector {
   color: string;
   bgColor: string;
   image?: string;
+  /** Solo giros de moda: alimenta la ficha viva del mega-menú. */
+  ficha?: FichaGiro;
   personalizations: SectorPersonalization[];
   /** Giros del nicho moda: son los únicos que se promueven en el mega-menú y
    *  encabezan /giros. Los demás siguen vivos por URL pero no se empujan. */
@@ -191,6 +208,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#EC4899',
     bgColor: 'rgba(236, 72, 153, 0.1)',
     image: '/images/verticales/tiendas-de-ropa.webp',
+    ficha: {
+      crumb: 'Catálogo › Ropa › Ficha de producto', img: '/images/blusa-negra.webp', cat: 'Blusas', name: 'Blusa lino manga larga', price: '$1,290.00',
+      fields: [['Tallas', 'XS · S · <em>M</em> · L · XL'], ['Colores', 'Negro · Hueso · Olivo'], ['Temporada', 'Primavera–Verano 26'], ['Existencia', '<em>34</em> piezas en 3 sucursales']],
+      tags: ['Curva de tallas', 'Color', 'Temporada'],
+      only: 'La <b>curva</b> avisa antes de que se rompa: si se acaba la M, el resto de las tallas deja de venderse solo.',
+    },
   },
   {
     label: 'Boutique Multimarca',
@@ -201,6 +224,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#C2185B',
     bgColor: '#FCE4EC',
     image: '/images/verticales/boutique-multimarca.webp',
+    ficha: {
+      crumb: 'Catálogo › Multimarca › Ficha de producto', img: '/images/prod-pantalon-camel.webp', cat: 'Pantalón', name: 'Pantalón wide leg camel', price: '$1,850.00',
+      fields: [['Marca', '<em>Ámbar Studio</em> · proveedor 12'], ['Condición', 'En firme · <em>consigna 30 %</em>'], ['Curva de la marca', 'La <em>M</em> de Ámbar es la S de Nudo'], ['Percha vs venta', '12 % de percha · <em>19 %</em> de venta']],
+      tags: ['Por marca', 'Firme o consigna', 'Rotación'],
+      only: 'La <b>percha se la gana la marca que rota</b>: rotación, margen y pedido por proveedor, marca por marca.',
+    },
     personalizations: [
       { label: 'Marca y proveedor en cada prenda', description: 'La mercancía entra con su marca, su proveedor y su costo. Todo se lee por marca: qué hay, qué se vendió, qué se quedó.' },
       { label: 'Etiquetado al recibir', description: 'La mercancía llega sin código. Recibes contra tu pedido e imprimes las etiquetas con código de barras ahí mismo.' },
@@ -222,6 +251,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#7C3AED',
     bgColor: '#F5F3FF',
     image: '/images/verticales/consignacion.webp',
+    ficha: {
+      crumb: 'Catálogo › Consignación › Ficha de producto', img: '/images/consig-vestido.webp', cat: 'Vestido · preloved', name: 'Vestido midi seda estampado', price: '$2,400.00',
+      fields: [['Consignante', '<em>Mariana L.</em> · clienta'], ['Comisión', '<em>40 %</em> para la tienda'], ['Contrato', 'Firmado a distancia · <em>48 h</em>'], ['Apartado', 'Sin reloj · <em>se despublica solo</em>']],
+      tags: ['Consignante', 'Comisión', 'Contrato'],
+      only: 'El contrato con <b>firma remota</b>, el saldo a favor y la regla de no-venta viven <b>en la prenda</b>, no en un cuaderno.',
+    },
     personalizations: [
       { label: 'Cada pieza con su dueña', description: 'La pieza entra a nombre de su consignante, con su comisión pactada y su fecha. Nunca se confunde con inventario tuyo. Es la Suite de Consignación, se cotiza aparte.' },
       { label: 'Contrato con firma remota', description: 'El contrato sale con piezas, precios y comisiones congelados. Tu clienta firma en el mostrador o desde su casa con un link de 48 horas.' },
@@ -243,6 +278,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#EF4444',
     bgColor: '#FEF2F2',
     image: '/images/verticales/merch-eventos.webp',
+    ficha: {
+      crumb: 'Catálogo › Merch de eventos › Ficha de producto', img: '/images/merch-tiedye.webp', cat: 'Playera de gira', name: 'Playera tie-dye tour', price: '$650.00',
+      fields: [['Diseño', 'Tour 26 · <em>tie-dye</em>'], ['Curva por módulo', 'S–XXL · <em>por puesto</em>'], ['Módulo', '<em>Puerta 4</em> · Foro Sol'], ['Existencia', '120 en 6 módulos']],
+      tags: ['Por módulo', 'Curva por diseño', 'Evento'],
+      only: 'La M no se acaba: <b>se acaba en el módulo equivocado</b>. El semáforo por puesto lo dice en vivo.',
+    },
     personalizations: [
       { label: 'Cobra sin internet', description: 'El venue se queda sin WiFi y la caja no lo nota: cobra toda la noche y sincroniza cuando vuelve la conexión.' },
       { label: 'Un almacén por módulo', description: 'Cada punto de venta con su inventario, todo consolidado en vivo. El corte sale por módulo y por fecha.' },
@@ -264,6 +305,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#DB2777',
     bgColor: '#FDF2F8',
     image: '/images/verticales/novias-fiesta.webp',
+    ficha: {
+      crumb: 'Catálogo › Novias › Ficha de producto', img: '/images/novia-sirena.webp', cat: 'Vestido de novia', name: 'Vestido corte sirena', price: '$38,500.00',
+      fields: [['Fecha del evento', '<em>14 feb 2027</em>'], ['Pruebas', '2 de 3 · <em>próxima 12 oct</em>'], ['Ajustes', 'Talle y bastilla'], ['Apartado', '$12,000 abonados']],
+      tags: ['Fecha de evento', 'Pruebas', 'Ajustes'],
+      only: 'Todo se cuenta <b>hacia atrás desde la fecha de la boda</b>: pruebas, ajustes y entrega con su responsable.',
+    },
     personalizations: [
       { label: 'Apartado con fecha de evento', description: 'El anticipo aparta el vestido y la boda queda adentro del apartado. Todo se cuenta hacia atrás desde esa fecha.' },
       { label: 'Abonos largos con recordatorio', description: 'El plan cierra dos semanas antes del evento y cada abono se registra en segundos, con recordatorios.' },
@@ -285,6 +332,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#0D9488',
     bgColor: '#F0FDFA',
     image: '/images/verticales/activewear.webp',
+    ficha: {
+      crumb: 'Catálogo › Activewear › Ficha de producto', img: '/images/active-legging.webp', cat: 'Legging', name: 'Legging alta compresión', price: '$1,150.00',
+      fields: [['Tallas', 'XS a XL · <em>set completo</em>'], ['Colorway', 'Negro · Vino · <em>Olivo</em>'], ['Drop', '<em>Drop 04</em> — sept 26'], ['Set', 'Top + legging como kit']],
+      tags: ['Colorway', 'Drop', 'Sets'],
+      only: 'El <b>drop</b> se programa con fecha y hora: se publica solo en tienda, redes y TikTok Shop al mismo tiempo.',
+    },
     personalizations: [
       { label: 'Sets como kits', description: 'El set top + legging con precio de set y cada pieza suelta con el suyo. El conjunto camina parejo.' },
       { label: 'El descase a la vista', description: 'Qué pieza se adelanta y en qué talla — el set roto se ve en el reporte antes que en el rack.' },
@@ -317,6 +370,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#F97316',
     bgColor: 'rgba(249, 115, 22, 0.1)',
     image: '/images/verticales/zapaterias.webp',
+    ficha: {
+      crumb: 'Catálogo › Zapaterías › Ficha de producto', img: '/images/botin-cafe.webp', cat: 'Botín', name: 'Botín piel casual', price: '$2,450.00',
+      fields: [['Numeración', '22 al 27 · <em>del 25</em>'], ['Corrida', '<em>Completa</em> — 6 números'], ['Unidad', '<em>Pares</em>, no piezas'], ['Existencia', '18 pares en 2 tiendas']],
+      tags: ['Numeración', 'Corrida', 'Pares'],
+      only: 'Sacs cuenta <b>pares</b> y entiende la <b>corrida completa</b> como una sola unidad de compra.',
+    },
   },
   {
     label: 'Joyerías',
@@ -338,6 +397,12 @@ export const businessSectors: BusinessSector[] = [
     color: '#3B82F6',
     bgColor: 'rgba(59, 130, 246, 0.1)',
     image: '/images/verticales/joyerias.webp',
+    ficha: {
+      crumb: 'Catálogo › Joyerías › Ficha de producto', img: '/images/joyas/joya-1.webp', cat: 'Arete', name: 'Arete oro 14k huggie', price: '$4,180.00',
+      fields: [['Metal y pureza', 'Oro <em>14k</em>'], ['Peso', '<em>2.8 g</em>'], ['Precio por gramo', '$1,492 <em>· hoy</em>'], ['Mano de obra', '$320.00']],
+      tags: ['Gramos', 'Quilates', 'Precio del día'],
+      only: 'El precio se <b>recalcula con el oro del día</b>. Y cada venta grande revisa el umbral de <b>LFPIORPI</b> sola.',
+    },
   },
   {
     label: 'Retail de Entretenimiento',

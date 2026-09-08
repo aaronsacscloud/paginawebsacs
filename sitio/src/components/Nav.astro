@@ -160,72 +160,67 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
           {link.sectors && (
             <div class="mega-dropdown sectors-dropdown">
               <div class="mega-dropdown-inner container">
-                <div class="sectors-header">
-                  <div>
-                    <span class="sectors-eyebrow">Software para el retail de moda</span>
-                    <h3 class="sectors-headline">Dinos qué vendes y cómo operas — el sistema ya viene configurado.</h3>
+                <div class="gw-split">
+                  <div class="gw-lista">
+                    <span class="gw-eyebrow">¿Qué vendes?</span>
+                    <ul class="gw-rows" role="tablist" aria-label="Giros de moda">
+                      {link.sectors.map((sector, idx) => (
+                        <li>
+                          <a
+                            href={getLocalizedUrl(sector.href, locale)}
+                            class:list={['gw-row', { active: idx === 0 }]}
+                            data-sector-idx={idx}
+                            role="tab"
+                            aria-selected={idx === 0 ? 'true' : 'false'}
+                          >
+                            <span class="gw-th"><img src={sector.ficha?.img ?? sector.image} alt="" loading="lazy" width="38" height="38" /></span>
+                            <span class="gw-name">{sector.label}</span>
+                            <svg class="gw-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    <a href={getLocalizedUrl('/giros', locale)} class="gw-todos">
+                      ¿Vendes otra cosa? Sacs también opera otros comercios · <b>Ver todos los giros →</b>
+                    </a>
                   </div>
-                  <a href={getLocalizedUrl('/giros', locale)} class="sectors-header-link">
-                    Ver todos los giros
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </a>
-                </div>
 
-                <div class="sectors-split">
-                  <ul class="sectors-list" role="tablist" style={`--sc-rows:${Math.ceil(link.sectors.length / 2)};`}>
-                    {link.sectors.map((sector, idx) => (
-                      <li>
-                        <a
-                          href={getLocalizedUrl(sector.href, locale)}
-                          class:list={['sector-row', { active: idx === 0 }]}
-                          data-sector-idx={idx}
-                          style={`--sc-color:${sector.color};`}
-                        >
-                          <span class="sector-row-icon" set:html={sectorIcons[sector.iconId]} />
-                          <span class="sector-row-name">{sector.label}</span>
-                          <svg class="sector-row-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div class="sectors-panels">
-                    {link.sectors.map((sector, idx) => (
-                      <div
-                        class:list={['sector-panel', { active: idx === 0 }]}
-                        data-panel-idx={idx}
-                        style={`--sc-color:${sector.color}; --sc-bg:${sector.bgColor};`}
-                      >
-                        <div class="sp-head">
-                          <span class="sp-icon" set:html={sectorIcons[sector.iconId]} />
-                          <div>
-                            <span class="sp-eyebrow">{sector.label}</span>
-                            <h4 class="sp-title">{sector.description}</h4>
+                  <div class="gw-stage">
+                    <span class="gw-lead">La misma pantalla de Sacs, configurada para tu giro:</span>
+                    {link.sectors.map((sector, idx) => sector.ficha && (
+                      <div class:list={['gw-panel', { active: idx === 0 }]} data-panel-idx={idx}>
+                        <div class="gw-win">
+                          <div class="gw-bar"><i></i><i></i><i></i><span>{sector.ficha.crumb}</span></div>
+                          <div class="gw-body">
+                            <div class="gw-pimg"><img src={sector.ficha.img} alt={sector.ficha.name} loading="lazy" /></div>
+                            <div class="gw-pinfo">
+                              <span class="gw-pcat">{sector.ficha.cat}</span>
+                              <div class="gw-pname">{sector.ficha.name}</div>
+                              <div class="gw-pprice">{sector.ficha.price}</div>
+                              <div class="gw-fields">
+                                {sector.ficha.fields.map(([k, v]) => (
+                                  <div class="gw-f"><span class="gw-k">{k}</span><span class="gw-v" set:html={v} /></div>
+                                ))}
+                              </div>
+                              <div class="gw-tags">{sector.ficha.tags.map((t) => <span class="gw-tag">{t}</span>)}</div>
+                              <div class="gw-only"><span class="gw-only-b">Solo aquí</span><p set:html={sector.ficha.only} /></div>
+                            </div>
                           </div>
                         </div>
-                        <div class="sp-features">
-                          {sector.personalizations.map((p) => (
-                            <div class="sp-feature">
-                              <span class="sp-feature-dot" aria-hidden="true"></span>
-                              <span class="sp-feature-label">{p.label}</span>
-                              <span class="sp-feature-desc">{p.description}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div class="sp-actions">
+                        <div class="gw-actions">
                           <a
                             href={waDemoGiro(sector.label, sector.description)}
-                            class="sp-cta-demo"
+                            class="gw-cta-demo"
                             data-giro-contexto="menu"
                             target="_blank"
                             rel="noopener noreferrer"
                             data-giro={sector.label}
                             aria-label={`Agenda una demo en línea de SACS para ${sector.label} por WhatsApp`}
                           >
-                            <span class="sp-cta-demo-icon" set:html={waGlyph} />
+                            <span class="gw-cta-demo-icon" set:html={waGlyph} />
                             Agenda una demo de {sector.label}
                           </a>
-                          <a href={getLocalizedUrl(sector.href, locale)} class="sp-cta">
+                          <a href={getLocalizedUrl(sector.href, locale)} class="gw-cta">
                             Ver más sobre {sector.label}
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                           </a>
@@ -235,14 +230,14 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                   </div>
                 </div>
 
-                <div class="sectors-modelos" aria-label="Modelos de negocio">
-                  <span class="sm-label">¿Cómo opera tu negocio?</span>
-                  <div class="sm-items">
+                <div class="gw-modelos" aria-label="Modelos de negocio">
+                  <span class="gw-eyebrow">¿Cómo opera tu negocio?</span>
+                  <div class="gw-mitems">
                     {modelosNegocio.map((m) => (
-                      <a href={getLocalizedUrl(m.href, locale)} class="sm-item">
-                        <span class="sm-item-name">{m.label}</span>
-                        <span class="sm-item-desc">{m.description}</span>
-                        <svg class="sm-item-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                      <a href={getLocalizedUrl(m.href, locale)} class="gw-mitem">
+                        <span class="gw-mname">{m.label}</span>
+                        <span class="gw-mdesc">{m.description}</span>
+                        <svg class="gw-marrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                       </a>
                     ))}
                   </div>
@@ -1181,332 +1176,91 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     }
   }
 
-  /* ─── Sectors dropdown (Desktop) — Split view: list + featured panel ─── */
-  .sectors-dropdown .mega-dropdown-inner {
-    padding-top: 28px;
-    padding-bottom: 28px;
-  }
-
-  .sectors-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    padding: 0 4px 24px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .sectors-eyebrow {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary, #9ca3af);
-    margin-bottom: 6px;
-  }
-
-  .sectors-headline {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-    margin: 0;
-  }
-
-  .sectors-header-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--color-text-tertiary, #9ca3af);
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: color 0.2s ease, gap 0.2s ease;
-  }
-
-  .sectors-header-link:hover {
-    color: #1a1a2e;
-    gap: 9px;
-    text-decoration: none;
-  }
-
-  .sectors-split {
-    display: grid;
-    grid-template-columns: 420px 1fr;
-    gap: 24px;
-    /* Alto para las 9 especialidades del panel (3×3) + el CTA, sin recortes. */
-    min-height: 470px;
-    /* Tope: con 16 giros el dropdown se salía del viewport y el CTA del panel
-       quedaba abajo del doblez. */
-    max-height: calc(100vh - 180px);
-  }
-
-  /* — Left: list of sectors — */
-  .sectors-list {
-    list-style: none;
-    margin: 0;
-    padding: 8px 16px 8px 0;
-    /* Dos columnas de alto igual: --sc-rows lo calcula el componente a partir
-       del número de giros, así que agregar uno no descuadra la retícula. */
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(var(--sc-rows, 8), minmax(38px, auto));
-    grid-auto-flow: column;
-    gap: 2px 6px;
-    align-content: start;
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  /* ─── Mega-menú "Tu negocio" (escritorio) — editorial oscuro: la ficha que se
+     reconfigura sola por giro. Aprobado sobre el mockup /menu-mockup/giros.html:
+     no dice "ya viene configurado", lo enseña. ─── */
+  .sectors-dropdown {
+    background: #111;
+    border-top-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    max-height: calc(100vh - 71px);
     overflow-y: auto;
-    scrollbar-width: thin;
   }
+  .sectors-dropdown .mega-dropdown-inner { padding-top: 32px; padding-bottom: 24px; }
+  .gw-split { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 48px; align-items: start; }
+  .gw-eyebrow {
+    display: block; font-size: 0.6563rem; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: rgba(255, 255, 255, 0.42); margin-bottom: 12px;
+  }
+  .gw-rows { list-style: none; margin: 0; padding: 0; }
+  .gw-row {
+    display: flex; align-items: center; gap: 14px; padding: 9px 6px 9px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.11); text-decoration: none; color: #fff;
+    transition: padding 0.25s ease, color 0.25s ease;
+  }
+  .gw-rows li:last-child .gw-row { border-bottom: 1px solid rgba(255, 255, 255, 0.11); }
+  .gw-row:hover { text-decoration: none; }
+  .gw-th {
+    width: 38px; height: 38px; border-radius: 2px; overflow: hidden; flex: none; background: #222;
+    opacity: 0.34; filter: grayscale(1); transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+  .gw-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gw-name {
+    flex: 1; font-family: var(--font-display); font-size: 1.25rem; font-weight: 400;
+    letter-spacing: -0.02em; line-height: 1.1; color: rgba(255, 255, 255, 0.6); transition: color 0.25s ease;
+  }
+  .gw-arrow { color: rgba(255, 255, 255, 0.35); opacity: 0; transform: translateX(-4px); transition: 0.25s ease; }
+  .gw-row:hover .gw-name, .gw-row.active .gw-name { color: #fff; }
+  .gw-row.active .gw-name { font-weight: 500; }
+  .gw-row:hover .gw-th, .gw-row.active .gw-th { opacity: 1; filter: none; }
+  .gw-row.active { padding-left: 8px; }
+  .gw-row.active .gw-arrow { opacity: 1; transform: none; }
+  .gw-todos { display: inline-block; margin-top: 16px; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.45); text-decoration: none; transition: color 0.2s ease; }
+  .gw-todos b { color: rgba(255, 255, 255, 0.85); font-weight: 600; }
+  .gw-todos:hover { color: #fff; text-decoration: none; }
+  .gw-todos:hover b { color: #fff; }
 
-  .sectors-list li {
-    display: flex;
+  .gw-lead { display: block; font-size: 0.78rem; color: rgba(255, 255, 255, 0.42); margin-bottom: 12px; }
+  .gw-panel { display: none; }
+  .gw-panel.active { display: block; }
+  .gw-win { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5); color: #1a1a1a; }
+  .gw-bar { background: #F5F3EE; border-bottom: 1px solid rgba(0, 0, 0, 0.07); padding: 9px 14px; display: flex; align-items: center; gap: 7px; }
+  .gw-bar i { width: 9px; height: 9px; border-radius: 50%; background: #d6d2ca; display: block; }
+  .gw-bar span { margin-left: 9px; font-size: 0.6875rem; color: #8C8C8C; }
+  .gw-body { display: grid; grid-template-columns: 148px 1fr; gap: 18px; padding: 16px 18px; }
+  .gw-pimg { border-radius: 4px; overflow: hidden; aspect-ratio: 3 / 4; background: #f0eee9; }
+  .gw-pimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gw-pinfo { min-width: 0; }
+  .gw-pcat { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary); }
+  .gw-pname { font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; margin: 4px 0 2px; letter-spacing: -0.02em; color: #1a1a1a; }
+  .gw-pprice { font-size: 0.875rem; font-weight: 600; color: #4A4A4A; margin-bottom: 8px; }
+  .gw-f {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.09); font-size: 0.78rem;
+    animation: gw-pop 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
   }
-
-  .sector-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 9px 10px;
-    border-radius: 9px;
-    text-decoration: none;
-    color: var(--color-text-secondary, #6b7280);
-    transition: background 0.16s ease, color 0.16s ease;
-    cursor: pointer;
+  .gw-f:nth-child(1) { animation-delay: 0.02s; } .gw-f:nth-child(2) { animation-delay: 0.07s; }
+  .gw-f:nth-child(3) { animation-delay: 0.12s; } .gw-f:nth-child(4) { animation-delay: 0.17s; }
+  @keyframes gw-pop { from { opacity: 0; transform: translateY(7px); } }
+  .gw-k { color: #8C8C8C; font-weight: 500; }
+  .gw-v { font-weight: 600; color: #1a1a1a; text-align: right; }
+  .gw-v :global(em) { font-style: normal; color: var(--color-primary); }
+  .gw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .gw-tag { font-size: 0.6563rem; font-weight: 600; background: rgba(75, 123, 229, 0.1); color: var(--color-primary); border-radius: 5px; padding: 4px 9px; }
+  .gw-only { margin-top: 12px; background: #111; border-radius: 6px; padding: 12px 14px; display: flex; gap: 11px; align-items: flex-start; }
+  .gw-only-b { font-size: 0.594rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #E8A838; flex: none; margin-top: 2px; }
+  .gw-only p { margin: 0; font-size: 0.78rem; color: rgba(255, 255, 255, 0.86); line-height: 1.45; }
+  .gw-only p :global(b) { color: #fff; }
+  .gw-actions { display: flex; align-items: center; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
+  .gw-cta-demo {
+    display: inline-flex; align-items: center; gap: 9px; background: #25D366; color: #fff; font-weight: 700;
+    font-size: 0.875rem; padding: 12px 20px; border-radius: 999px; text-decoration: none; transition: background 0.2s ease, transform 0.2s ease;
   }
-
-  .sector-row:hover,
-  .sector-row.active {
-    background: rgba(0, 0, 0, 0.035);
-    color: #1a1a2e;
-    text-decoration: none;
-  }
-
-  .sector-row.active {
-    color: #4B7BE5;
-  }
-
-  .sector-row-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    color: currentColor;
-    opacity: 0.85;
-  }
-
-  .sector-row-icon :global(svg) {
-    width: 18px;
-    height: 18px;
-  }
-
-  .sector-row-name {
-    flex: 1;
-    min-width: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.3;
-    color: #1a1a2e;
-    letter-spacing: -0.005em;
-  }
-
-  .sector-row.active .sector-row-name {
-    color: #1a1a2e;
-  }
-
-  .sector-row-arrow {
-    flex-shrink: 0;
-    opacity: 0;
-    transform: translateX(-4px);
-    color: #4B7BE5;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-  }
-
-  .sector-row.active .sector-row-arrow {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  /* — Right: featured panel — */
-  .sectors-panels {
-    position: relative;
-    padding: 8px 4px 8px 12px;
-  }
-
-  .sector-panel {
-    position: absolute;
-    inset: 8px 4px 8px 12px;
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(8px);
-    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0.22s;
-    pointer-events: none;
-  }
-
-  .nav-item.is-open .sector-panel.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s;
-    pointer-events: auto;
-  }
-
-  .sp-head {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  .sp-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    border-radius: 12px;
-    background: #f4f5f7;
-    color: #1a1a2e;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-  }
-
-  .sp-icon :global(svg) {
-    width: 24px;
-    height: 24px;
-  }
-
-  .sp-eyebrow {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #4B7BE5;
-    margin-bottom: 4px;
-  }
-
-  .sp-title {
-    font-family: var(--font-display);
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
-    margin: 0;
-  }
-
-  .sp-features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px 22px;
-    margin-bottom: 22px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
-
-  .sp-feature {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding-left: 14px;
-    position: relative;
-  }
-
-  .sp-feature-dot {
-    position: absolute;
-    left: 0;
-    top: 8px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #4B7BE5;
-  }
-
-  .sp-feature-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-  }
-
-  .sp-feature-desc {
-    font-size: 0.75rem;
-    color: var(--color-text-secondary, #6b7280);
-    line-height: 1.5;
-  }
-
-  .sp-actions {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-top: auto;
-    padding-top: 18px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .sp-cta-demo {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    padding: 11px 20px;
-    border-radius: 10px;
-    background: #25D366;
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    text-decoration: none;
-    transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-  }
-
-  .sp-cta-demo:hover {
-    background: #1EBE5A;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28);
-    text-decoration: none;
-    color: #fff;
-  }
-
-  .sp-cta-demo-icon {
-    display: inline-flex;
-    flex-shrink: 0;
-  }
-
-  .sp-cta-demo-icon :global(svg) {
-    width: 17px;
-    height: 17px;
-  }
-
-  .sp-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #4B7BE5;
-    text-decoration: none;
-    transition: gap 0.18s ease;
-  }
-
-  .sp-cta:hover {
-    gap: 10px;
-    text-decoration: none;
-  }
+  .gw-cta-demo:hover { background: #1ebe5b; color: #fff; text-decoration: none; transform: translateY(-1px); }
+  .gw-cta-demo-icon { width: 18px; height: 18px; display: inline-flex; flex: none; }
+  .gw-cta-demo-icon :global(svg) { width: 100%; height: 100%; }
+  .gw-cta { display: inline-flex; align-items: center; gap: 6px; color: rgba(255, 255, 255, 0.8); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: color 0.2s ease, gap 0.2s ease; }
+  .gw-cta:hover { color: #fff; gap: 9px; text-decoration: none; }
 
   /* ─── Mobile sectors — Minimal list ─── */
   .mobile-sectors-list {
@@ -1641,59 +1395,18 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     }
   }
 
-  /* ─── Fila de modelos de negocio del mega-menú "Tu negocio" ─── */
-  .sectors-modelos {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid var(--color-border-light);
+  /* ─── Fila de modelos de negocio del mega-menú "Tu negocio" (oscura) ─── */
+  .gw-modelos { margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+  .gw-mitems { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .gw-mitem {
+    display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center;
+    padding: 13px 16px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px;
+    text-decoration: none; color: #fff; transition: border-color 0.2s ease, background 0.2s ease;
   }
-  .sm-label {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-  }
-  .sm-items {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    flex: 1;
-  }
-  .sm-item {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    align-items: center;
-    column-gap: 8px;
-    padding: 10px 14px;
-    border: 1px solid var(--color-border-light);
-    border-radius: 10px;
-    text-decoration: none;
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-  .sm-item:hover {
-    border-color: var(--color-primary);
-    background: var(--color-bg-primary);
-  }
-  .sm-item-name {
-    font-family: var(--font-display);
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-  .sm-item-desc {
-    grid-column: 1 / -1;
-    font-size: 0.75rem;
-    line-height: 1.35;
-    color: var(--color-text-secondary);
-  }
-  .sm-item-arrow { color: var(--color-primary); }
+  .gw-mitem:hover { border-color: rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.04); text-decoration: none; color: #fff; }
+  .gw-mname { font-family: var(--font-display); font-size: 1rem; font-weight: 500; letter-spacing: -0.01em; }
+  .gw-mdesc { grid-column: 1; font-size: 0.78rem; color: rgba(255, 255, 255, 0.55); margin-top: 3px; line-height: 1.4; }
+  .gw-marrow { grid-column: 2; grid-row: 1 / 3; color: #E8A838; }
 
   .mobile-modelos {
     display: flex;
@@ -1976,33 +1689,47 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     });
   }
 
-  // ─── Sectors dropdown: swap featured panel on CLICK ───
-  const sectorRows = document.querySelectorAll<HTMLElement>('.sector-row[data-sector-idx]');
-  const sectorPanels = document.querySelectorAll<HTMLElement>('.sector-panel[data-panel-idx]');
+  // ─── Mega-menú "Tu negocio": la ficha que se reconfigura sola ───
+  const sectorRows = document.querySelectorAll<HTMLElement>('.gw-row[data-sector-idx]');
+  const sectorPanels = document.querySelectorAll<HTMLElement>('.gw-panel[data-panel-idx]');
   function activateSector(idx: string) {
-    sectorRows.forEach((r) => r.classList.toggle('active', r.dataset.sectorIdx === idx));
+    sectorRows.forEach((r) => {
+      const on = r.dataset.sectorIdx === idx;
+      r.classList.toggle('active', on);
+      r.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
     sectorPanels.forEach((p) => p.classList.toggle('active', p.dataset.panelIdx === idx));
   }
 
   // El clic en los CTA de giro (data-giro) lo maneja BaseLayout para todo el
   // sitio: tracking + registro del intento. Aquí no se duplica.
 
+  let gwTimer: number | undefined;
   sectorRows.forEach((row) => {
-    // Antes cambiaba con mouseenter: al mover el mouse hacia el panel se
-    // atravesaban otros giros y el contenido saltaba solo. Ahora el cambio es
-    // deliberado.
+    // Hover con intención (120 ms): la lista va en UNA columna y la ficha a la
+    // derecha, así que del renglón a la ficha no se atraviesa ningún otro giro
+    // (eso era lo que hacía saltar el panel en la versión de dos columnas). El
+    // retraso evita que un paso rápido por la lista cambie la ficha.
+    row.addEventListener('mouseenter', () => {
+      window.clearTimeout(gwTimer);
+      gwTimer = window.setTimeout(() => {
+        const idx = row.dataset.sectorIdx;
+        if (idx) activateSector(idx);
+      }, 120);
+    });
+    row.addEventListener('mouseleave', () => window.clearTimeout(gwTimer));
     row.addEventListener('click', (e) => {
       const idx = row.dataset.sectorIdx;
       if (!idx) return;
       // El renglón es un <a> al giro: se conserva el href para que funcione sin
       // JS y para el SEO, pero con JS el clic SELECCIONA en vez de navegar.
-      // Para ir a la página está el "Ver más sobre …" dentro del panel.
+      // Para ir a la página está el "Ver más sobre …" dentro de la ficha.
       // Se respetan los atajos del navegador (ctrl/cmd/medio = abrir en pestaña).
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
       e.preventDefault();
       activateSector(idx);
     });
-    // Teclado: al tabular por la lista el panel sigue al foco.
+    // Teclado: al tabular por la lista la ficha sigue al foco.
     row.addEventListener('focus', () => {
       const idx = row.dataset.sectorIdx;
       if (idx) activateSector(idx);
