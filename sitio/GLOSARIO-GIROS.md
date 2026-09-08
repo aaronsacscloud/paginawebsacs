@@ -80,5 +80,13 @@ Cada uno con base propia de 3 puntos y preguntas propias (por definir). Ropa inf
 
 **Mayorista · varias bodegas o puntos:** lo anterior más existencia por bodega y traspasos pieza por pieza · vendedores o rutas con metas y comisiones · compra de metal y reabasto con datos por punto · cuentas por pagar a proveedores y bancos.
 
+## NOVIAS Y FIESTA (novia, XV años, graduación) y TRAJES DE CABALLERO
+
+**Regla del dueño (8-sep):** en este giro el modelo de negocio que se pregunta PRIMERO es distinto: ¿vende el producto directo, lo renta, o ambas? De ahí parten los detalles. (Multimarca / marca propia / mayorista aplica en segundo plano si sale en la plática.)
+
+**VENDE el producto:** apartado con la fecha del evento adentro, con abonos y recordatorio · muestras de piso vs. pedido sobre medida (qué se pidió y cuándo llega) · taller de ajustes por etapas con órdenes de servicio · ficha de la familia y sus eventos, y lo que vendes en línea baja del mismo inventario.
+
+**RENTA (o renta y venta), se suma:** calendario de renta por prenda sin empalmes · depósito, entrega y devolución registrados con el estado en que volvió · tintorería y arreglo entre rentas con fecha de disponibilidad · historial de cada prenda (rentas y desgaste) para saber cuándo retirarla.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
