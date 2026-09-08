@@ -138,7 +138,7 @@ export async function programarCompromiso(o: { contactId: string; conversationId
   else if (necesitaHora) nota = `EL LEAD PIDIÓ QUE LE LLAMEMOS (${det.pidio}) pero no dijo hora. Contesta con gusto y pregúntale SOLO la hora que le acomoda («¿te marco hoy en la tarde o mañana temprano?»). En cuanto la diga, se agenda la llamada de descubrimiento con el consultor.`;
   else if (det.tipo === 'llamar') nota = `EL LEAD PIDIÓ QUE LE LLAMEMOS ${det.pidio}. Confírmale con calidez que le marcamos el ${fechaTxt} a las ${hora}:00, y nada más. Ya quedó agendada la llamada con el consultor.`;
   else if (det.tipo === 'esperar_evento') nota = `EL LEAD DIJO QUE ESPERA A QUE PASE ALGO SUYO (${det.pidio}). Contesta con empatía, dile que entonces lo buscas cuando eso pase y que si quiere le escribes en dos semanas para ver cómo va. NO vendas. Ya quedó programado para el ${fechaTxt}.`;
-  else nota = `EL LEAD PIDIÓ QUE LO BUSQUEMOS DESPUÉS (${det.pidio}). Contesta con empatía y CONFÍRMALE la fecha en una línea («va, te busco el ${fechaTxt}»), sin vender ni pedir nada más. Hasta entonces no se le escribe: ya está programado.`;
+  else nota = `EL LEAD PIDIÓ QUE LO BUSQUEMOS DESPUÉS (${det.pidio}). Contesta con empatía y CONFÍRMALE la fecha en una línea («perfecto, te busco el ${fechaTxt}»), sin vender ni pedir nada más. Hasta entonces no se le escribe: ya está programado.`;
   return { id: fila?.id || null, programado, nota, hora, porqueHora: porque };
 }
 

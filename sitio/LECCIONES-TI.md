@@ -713,3 +713,8 @@ del dueño.
 - **Los horarios eran el problema, no el modelo.** El guion decía «horarios YA» ante cualquier señal y «si al tercer mensaje no ofreciste horarios algo hiciste mal». Resultado: tres ofertas de horario a un lead que preguntó «¿para qué?». Ahora los horarios solo entran al prompt cuando `aceptoDemo()` es verdadero (pidió verlo, o dijo que sí a la pregunta). Regla del dueño: demo en dos pasos.
 - **La frase dura venía del prompt.** «Para no mandarte cosas que no te sirvan» estaba como ejemplo en `bloqueSinGiro`. Lo que se pone como ejemplo, sale tal cual.
 - **El árbitro medía mal los casos de web.** Sin mensaje simulado, el lead viejo recibe un seguimiento y el juez califica un primer contacto: 1 y 2 de 10 que no eran del agente. Los casos con «primer mensaje» deben simularlo y usar la nota de intención.
+
+## 2026-09-07 · Voz de Fernanda
+- **El registro se pule por código, no solo por prompt.** Igual que los emojis: lo que el guion prohíbe se cuela; `pulirRegistro` lo corrige al salir y deja rastro para afinar el guion.
+- **Versionar una plantilla de Meta sin quedarse sin plantilla.** La v1 aprobada se conserva como `*_anterior` y sigue saliendo hasta que la v2 esté aprobada.
+- **Los créditos se acabaron dos veces en tres días.** El análisis de 4,000 mensajes, el árbitro y las regeneraciones cuestan; sin vigilante de gasto, el agente se apaga en silencio. Primera tarea cuando haya crédito: la alarma.

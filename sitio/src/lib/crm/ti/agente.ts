@@ -25,7 +25,7 @@ import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 import { bloqueSistemaBase } from './guion-datos';
-import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro, saludoParaPlantilla } from './nombre-y-bots';
+import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro, saludoParaPlantilla, pulirRegistro, moderarEmojis, moderarAdmiraciones } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -262,8 +262,8 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const { data: ultEnv } = await supabase.from('ti_envios').select('salida, enviado_at').eq('contact_id', contactId).eq('estado', 'enviado').gte('enviado_at', new Date(Date.now() - 72 * 3600e3).toISOString()).order('enviado_at', { ascending: false }).limit(1).maybeSingle();
   const ofrecidos: { fecha: string; hora: string; slug?: string }[] = Array.isArray((ultEnv?.salida as any)?.horarios_ofrecidos) ? (ultEnv!.salida as any).horarios_ofrecidos : [];
   const ofrecidosTxt = ofrecidos.length
-    ? `\nHORARIOS QUE YA LE OFRECISTE EN TU ÚLTIMO MENSAJE: ${ofrecidos.map(h => `${etiquetaHorario(h.fecha, h.hora)} [${h.fecha} ${h.hora}${h.slug === 'llamada-discovery' ? ' · llamada' : ''}]`).join(' · ')}. Si dice literalmente «el que sea», «cualquiera», «me da igual» o «tú dime», elige tú el primero de estos (el más cercano), devuelve accion.tipo="${ofrecidos[0]?.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con esa fecha y hora exactas, y en el mensaje dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora: «martes 8 a las 10 de la mañana»), que la invitación le llega por aquí, y pídele que te confirme con un «va». Ese «va» es la ÚNICA pregunta del mensaje: nada de preguntas de contexto en el mismo turno, y sin mencionar horarios que ya pasaron ni el tiempo transcurrido: abre directo con el día y la hora apartados. Si elige uno de los dos, agéndalo y confírmaselo. Si solo dice que sí sin elegir, NO apartes nada: vuelve a ponerle los dos como opciones en una pregunta amable («¿cuál te queda mejor?») y con la puerta a otro día.`
-    : `\nSi el lead acaba de decir que SÍ quiere verlo (sin elegir horario), este turno le ofreces DOS horarios reales de la lista en una sola pregunta, sin agendar todavía. Solo si dice literalmente «el que sea», «cualquiera» o «tú dime» eliges tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora), pidiéndole que te confirme con un «va»: ese «va» es la ÚNICA pregunta del mensaje, sin preguntas de contexto en el mismo turno y sin mencionar horarios que ya pasaron.`;
+    ? `\nHORARIOS QUE YA LE OFRECISTE EN TU ÚLTIMO MENSAJE: ${ofrecidos.map(h => `${etiquetaHorario(h.fecha, h.hora)} [${h.fecha} ${h.hora}${h.slug === 'llamada-discovery' ? ' · llamada' : ''}]`).join(' · ')}. Si dice literalmente «el que sea», «cualquiera», «me da igual» o «tú dime», elige tú el primero de estos (el más cercano), devuelve accion.tipo="${ofrecidos[0]?.slug === 'llamada-discovery' ? 'agendar_llamada' : 'agendar'}" con esa fecha y hora exactas, y en el mensaje dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora: «martes 8 a las 10 de la mañana»), que la invitación le llega por aquí, y pídele que te confirme por aquí («¿me confirmas?»). Esa confirmación es la ÚNICA pregunta del mensaje: nada de preguntas de contexto en el mismo turno, y sin mencionar horarios que ya pasaron ni el tiempo transcurrido: abre directo con el día y la hora apartados. Si elige uno de los dos, agéndalo y confírmaselo. Si solo dice que sí sin elegir, NO apartes nada: vuelve a ponerle los dos como opciones en una pregunta amable («¿cuál te queda mejor?») y con la puerta a otro día.`
+    : `\nSi el lead acaba de decir que SÍ quiere verlo (sin elegir horario), este turno le ofreces DOS horarios reales de la lista en una sola pregunta, sin agendar todavía. Solo si dice literalmente «el que sea», «cualquiera» o «tú dime» eliges tú el primero de HORARIOS REALES, devuelve accion.tipo="agendar" con él y dile que ya quedó apartado ese día a esa hora (día de la semana con su número y la hora), pidiéndole que te confirme por aquí: esa confirmación es la ÚNICA pregunta del mensaje, sin preguntas de contexto en el mismo turno y sin mencionar horarios que ya pasaron.`;
   // DEMO EN DOS PASOS (decisión del dueño, 7-sep): primero se resuelve su duda con criterio y se le PREGUNTA si le gustaría verlo
   // con un consultor; los horarios solo aparecen cuando él dijo que sí (o cuando él mismo pidió la demo/llamada). Ofrecer horarios
   // antes suena desesperado. Si ya se le ofrecieron y no eligió, no se repiten.
@@ -272,7 +272,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const agendaHorarios = acepto.si && !yaOfrecioSinRespuesta
     ? `${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}${ofrecidosTxt}`
     : yaOfrecioSinRespuesta
-      ? `HORARIOS: ya se le ofrecieron (${ofrecidos.map(h => etiquetaHorario(h.fecha, h.hora)).join(' y ')}) y NO eligió ni dijo que sí. NO los repitas ni propongas otros: contesta lo que preguntó con calma y deja la puerta abierta en una frase («cuando quieras lo vemos, tú me dices»), sin pregunta de horario. Si en este mensaje él dice que sí o pide la demo, devuelve accion.tipo="agendar" con el primero de esos horarios que siga vigente y confírmaselo.`
+      ? `HORARIOS: ya se le ofrecieron (${ofrecidos.map(h => etiquetaHorario(h.fecha, h.hora)).join(' y ')}) y NO eligió ni dijo que sí. NO los repitas ni propongas otros: contesta lo que preguntó con calma y deja la puerta abierta en una frase («cuando gustes lo vemos, me avisas»), sin pregunta de horario. Si en este mensaje él dice que sí o pide la demo, devuelve accion.tipo="agendar" con el primero de esos horarios que siga vigente y confírmaselo.`
       : `HORARIOS: TODAVÍA NO. ${acepto.porque}. Primero resuelve su duda como consultor que sabe del giro; cuando ya tengas su giro, sus tiendas y algo que le cuesta, pregúntale en una oración amable si le gustaría que un consultor se lo enseñe con sus propios productos (15 minutos, sin costo). Es una pregunta de sí o no, sin horarios, sin insistir si no responde a eso. Los horarios se ofrecen en el siguiente turno, cuando diga que sí.`;
   const agenda = `${citaTexto(cita)}\n${pendTxt}\n${agendaHorarios}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
@@ -328,8 +328,12 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   }
     // El guion prohíbe emojis y aun así se colaban: se quitan aquí, no se confía en que el modelo obedezca.
   if (salida?.mensaje) {
-    const limpioMsj = sinEmojis(salida.mensaje);
-    if (limpioMsj.quitados) { salida.mensaje = limpioMsj.texto; await log({ accion: 'emoji_quitado', contact_id: contactId, razon: `el modelo puso ${limpioMsj.quitados} emoji(s) pese al guion`, detalle: { modelo } }).catch(() => {}); }
+    // REGISTRO DE FERNANDA (7-sep): emojis y admiraciones con moderación (máximo uno de cada), y modismos informales
+    // reemplazados por código («te late» → «te parece»). Se deja registro de lo que hubo que pulir para afinar el guion.
+    const modE = moderarEmojis(salida.mensaje);
+    const pul = pulirRegistro(moderarAdmiraciones(modE.texto));
+    salida.mensaje = pul.texto;
+    if (modE.quitados || pul.cambios.length) await log({ accion: 'registro_pulido', contact_id: contactId, razon: `${modE.quitados ? `${modE.quitados} emoji(s) de más` : ''}${pul.cambios.length ? ` · ${pul.cambios.join(', ')}` : ''}`.trim(), detalle: { modelo } }).catch(() => {});
   }
 return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
 }
@@ -349,7 +353,7 @@ export function aceptoDemo(msjs: any[], c: any): { si: boolean; porque: string }
   const afirma = /^\s*(s[ií]|va|vale|claro|ok|okey|dale|[oó]rale|perfecto|por supuesto|me interesa|est[aá] bien|sale|de acuerdo|me late)\b/.test(txtIn) || /\b(s[ií],? (me interesa|est[aá] bien|va|claro)|me gustar[ií]a)\b/.test(txtIn);
   if (preguntamos && afirma) return { si: true, porque: 'le preguntaste si quería verlo y dijo que sí' };
   const vecesPreguntado = msjs.filter(m => m.direccion === 'saliente' && /(te gustar[ií]a|quieres|te late).{0,60}(consultor|demo|te lo enseñ|te lo muestr)/is.test(String(m.cuerpo || ''))).length;
-  if (vecesPreguntado >= 1) return { si: false, porque: `ya le preguntaste ${vecesPreguntado} vez/veces si quería verlo y no ha dicho que sí: NO lo vuelvas a preguntar en este mensaje; sigue ayudándole con lo suyo y deja la puerta abierta en media línea («cuando quieras lo vemos»). Solo si en ESTE mensaje él muestra interés de nuevo, ofrécelo con otras palabras (máximo dos veces en toda la conversación)` };
+  if (vecesPreguntado >= 1) return { si: false, porque: `ya le preguntaste ${vecesPreguntado} vez/veces si quería verlo y no ha dicho que sí: NO lo vuelvas a preguntar en este mensaje; sigue ayudándole con lo suyo y deja la puerta abierta en media línea («cuando gustes lo vemos»). Solo si en ESTE mensaje él muestra interés de nuevo, ofrécelo con otras palabras (máximo dos veces en toda la conversación)` };
   const rechazo = /\b(no,? gracias|ahorita no|no por ahora|luego|despu[eé]s lo veo|no me interesa la demo|mejor (una llamada|ll[aá]mame|por aqu[ií]|la prueba))\b/.test(txtIn);
   if (rechazo) return { si: false, porque: 'acaba de decir que no o que después, o pidió otra vía: respétalo a la primera. Si pidió llamada o prueba por su cuenta, dásela con la misma amabilidad (accion agendar_llamada solo si él la pide)' };
   return { si: false, porque: 'todavía no le has preguntado si quiere verlo con un consultor' };

@@ -16,7 +16,7 @@ type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechaz
    trae su par marketing → utility; el ángulo del momento viaja en {{2}}. Si una familia aún no está aprobada,
    se usa la de seguimiento. */
 export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre' | 'reactivacion';
-export const FAMILIAS: Record<Familia, { marketing: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] }; utility: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] } }> = {
+export const FAMILIAS: Record<Familia, { marketing: { nombre: string; anterior?: string; cuerpo: string; ejemplos: string[]; botones: any[] }; utility: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] } }> = {
   seguimiento: {
     marketing: { nombre: 'ti_seguimiento_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si quieres, lo vemos en 15 minutos con un consultor y con tus productos en pantalla. ¿Te queda esta semana?', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }] },
     utility: { nombre: 'ti_seguimiento_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs. Si prefieres que lo dejemos aquí, con que me digas basta.', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada tienda.'], botones: [] },
@@ -34,7 +34,7 @@ export const FAMILIAS: Record<Familia, { marketing: { nombre: string; cuerpo: st
     utility: { nombre: 'ti_promo_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs; si quieres que te lo detalle, respóndeme por aquí.', ejemplos: ['Ana', 'tengo lista la información de precio que me pediste.'], botones: [] },
   },
   reactivacion: {
-    marketing: { nombre: 'ti_reactivacion_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si te late retomarlo, lo vemos en 15 minutos con un consultor y con tus productos en pantalla; y si no es el momento, con que me digas lo dejo aquí.', ejemplos: ['Ana', 'hace unos meses me preguntaste por el control de tallas entre tus dos tiendas y se nos quedó a medias; desde entonces salió el traspaso automático entre sucursales, que era justo lo tuyo. ¿Sigues con las dos tiendas?'], botones: [] },
+    marketing: { nombre: 'ti_reactivacion_marketing_v2', anterior: 'ti_reactivacion_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si te parece bien retomarlo, lo vemos en 15 minutos con un consultor y con tus productos en pantalla; y si no es el momento, con que me digas lo dejo aquí.', ejemplos: ['Ana', 'hace unos meses me preguntaste por el control de tallas entre tus dos tiendas y se nos quedó a medias; desde entonces salió el traspaso automático entre sucursales, que era justo lo tuyo. ¿Sigues con las dos tiendas?'], botones: [] },
     utility: { nombre: 'ti_reactivacion_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs hace un tiempo; si prefieres que no te escriba, dímelo por aquí.', ejemplos: ['Ana', 'te escribo porque tu pregunta sobre el control de tallas quedó sin cerrar.'], botones: [] },
   },
   cierre: {
@@ -101,8 +101,11 @@ export async function asegurarPlantillas(): Promise<Registro> {
   for (const fam of ['no_show', 'preparacion', 'promo', 'cierre', 'reactivacion'] as Familia[]) {
     reg.familias[fam] = reg.familias[fam] || {};
     for (const k of ['marketing', 'utility'] as const) {
+      const def = FAMILIAS[fam][k] as any;
+      // VERSIÓN NUEVA (7-sep): si la definición cambió de nombre (v1 → v2), la anterior aprobada se conserva como respaldo
+      // hasta que Meta apruebe la nueva; así nunca nos quedamos sin plantilla por cambiar una palabra.
+      if (reg.familias[fam][k] && reg.familias[fam][k]!.nombre !== def.nombre) { (reg.familias[fam] as any)[k + '_anterior'] = reg.familias[fam][k]; reg.familias[fam][k] = undefined; cambios = true; }
       if (apagadoCreacion || reg.familias[fam][k] || n >= 3) continue;
-      const def = FAMILIAS[fam][k];
       try {
         await crearPlantillaMeta({ nombre: def.nombre, idioma: 'es_MX', categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', cuerpo: def.cuerpo, ejemplos: def.ejemplos, botones: def.botones as any });
         reg.familias[fam][k] = { nombre: def.nombre, categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', estado: 'PENDING', creada_at: new Date().toISOString() };
@@ -122,7 +125,7 @@ export async function asegurarPlantillas(): Promise<Registro> {
   if (Date.now() - ultima > 10 * 60e3 && (reg.marketing || reg.utility)) {
     try {
       const lista: any[] = await listarPlantillasMeta();
-      const todas: EstadoPlantilla[] = [reg.marketing, reg.utility, ...Object.values(reg.familias || {}).flatMap(f => [f.marketing, f.utility])].filter(Boolean) as EstadoPlantilla[];
+      const todas: EstadoPlantilla[] = [reg.marketing, reg.utility, ...Object.values(reg.familias || {}).flatMap((f: any) => [f.marketing, f.utility, f.marketing_anterior, f.utility_anterior])].filter(Boolean) as EstadoPlantilla[];
       for (const r of todas) {
         if (!r) continue;
         const m = lista.find((x: any) => x.name === r.nombre && (x.language === 'es_MX' || !x.language));
@@ -151,8 +154,8 @@ export async function parListo(): Promise<{ marketing: string | null; utility: s
 export async function parListoPara(familia: Familia): Promise<{ marketing: string | null; utility: string | null; familia: Familia } | null> {
   const reg = await leer();
   const ok = (p?: EstadoPlantilla) => p && p.estado === 'APPROVED' ? p.nombre : null;
-  const f = reg.familias?.[familia];
-  if (f && (ok(f.marketing) || ok(f.utility))) return { marketing: ok(f.marketing), utility: ok(f.utility), familia };
+  const f: any = reg.familias?.[familia];
+  if (f && (ok(f.marketing) || ok(f.marketing_anterior) || ok(f.utility) || ok(f.utility_anterior))) return { marketing: ok(f.marketing) || ok(f.marketing_anterior), utility: ok(f.utility) || ok(f.utility_anterior), familia };
   const base = await parListo();
   return base ? { ...base, familia: 'seguimiento' } : null;
 }

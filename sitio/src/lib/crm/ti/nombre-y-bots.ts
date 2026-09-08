@@ -116,8 +116,8 @@ export function bloqueSaludo(horasDesdeUltimo: number | null, nombre: string | n
     return '\n\nSALUDO: siguen en la misma plática (menos de un día). NO saludes ni preguntes cómo está: se siente robótico. Entra directo a lo que sigue.';
   }
   const ej = conNombre
-    ? `«Hola ${conNombre}, ¿cómo estás?», «Hola ${conNombre}, ¿qué tal?», «${conNombre}, ¿cómo te va?», «Qué tal ${conNombre}»`
-    : '«Hola, ¿qué tal?», «Hola, ¿cómo va todo?», «Hola de nuevo»';
+    ? `«Hola ${conNombre}, ¿cómo estás?», «Hola ${conNombre}, ¿cómo has estado?», «${conNombre}, espero que vaya todo bien», «Hola de nuevo, ${conNombre}»`
+    : '«Hola, ¿cómo estás?», «Hola, ¿cómo has estado?», «Hola de nuevo»';
   const dias = Math.round(h / 24);
   return `\n\nSALUDO: pasaron ${dias >= 1 ? `${dias} día${dias === 1 ? '' : 's'}` : 'varias horas'} desde el último mensaje, así que ABRE saludando y preguntando cómo está, como haría una persona que retoma: ${ej}. Varía la forma, no uses siempre la misma. Prohibido «espero que estés bien» y «quería darle seguimiento»: eso es relleno, no es saludar.
 FORMA: separa el mensaje en párrafos con una línea en blanco (el saludo por un lado, el fondo por otro). Un bloque compacto se ve automático; con aire se lee como escrito por alguien.`;
@@ -163,4 +163,38 @@ export function bloqueSinGiro(sabemosGiro: boolean, sabemosDolor: boolean, prime
     : !sabemosGiro ? 'qué vende exactamente' : 'qué es lo que más le cuesta hoy';
   return `\n\nNO SABEMOS ${falta.toUpperCase()}, y eso es justo lo que hay que preguntar. No lo disimules ni inventes una «solución» genérica: díselo con su razón, que es verdad y además convence — sin saber ${falta} cualquier demo sería genérica, y lo que sirve es verle SU caso (sus productos, sus tallas y colores, su forma de cobrar) en pantalla.
 Dilo en una línea cálida, como un consultor que quiere entender su tienda, no como quien llena un formulario ni como quien se disculpa: «cuéntame un poco de tu tienda, ¿qué es lo que más vendes?», «para platicarte con ejemplos de lo tuyo, ¿qué manejas más: ropa, calzado o accesorios?». PROHIBIDO «para no mandarte cosas que no te sirvan» y variantes. ${primerContacto ? ' Y ofrécele la salida fácil: que te mande una nota de voz y te lo platique.' : ' NO le ofrezcas mandar audio: ya se lo ofrecimos antes y repetirlo agrega una segunda petición al mensaje.'}`;
+}
+
+/**
+ * REGISTRO DE FERNANDA (decisión del dueño, 2026-09-07): formal y amable, de tú, voz femenina, sin modismos informales.
+ * Se pule POR CÓDIGO al salir, además de pedirlo en el guion: lo que el modelo dice como «te late» sale como «te parece».
+ */
+const REEMPLAZOS: [RegExp, string][] = [
+  [/\bte late\b/gi, 'te parece'], [/\bte later[ií]a\b/gi, 'te gustaría'], [/\bles late\b/gi, 'les parece'],
+  [/\bnom[aá]s\b/gi, 'solo'], [/(^|[^\p{L}])[oó]rale\b[,.]?\s*/giu, '$1'], [/\bchido\b/gi, 'muy bien'], [/\bgacho\b/gi, 'difícil'],
+  [/\bbatallas\b/gi, 'te cuesta trabajo'], [/\bbatallar\b/gi, 'costar trabajo'], [/\bbatalla\b(?! de)/gi, 'cuesta trabajo'], [/\bbatallando\b/gi, 'costando trabajo'],
+  [/\bahorita\b/gi, 'en este momento'], [/\bch[eé]calo\b/gi, 'revísalo'], [/\bchecar\b/gi, 'revisar'], [/\bcheca\b/gi, 'revisa'], [/\bcheco\b/gi, 'reviso'], [/\bchecamos\b/gi, 'revisamos'],
+  [/\btantito\b/gi, 'un poco'], [/\bratito\b/gi, 'un momento'], [/\bplaticamos\b/gi, 'conversamos'],
+  [/\bque traes\b/gi, 'que manejas'], [/\blo que traes\b/gi, 'lo que manejas'],
+  [/(^|\n)\s*va[,.]\s*/gi, '$1De acuerdo, '], [/(^|\n)\s*sale[,.]\s*/gi, '$1De acuerdo, '], [/\bcon un «?va»?/gi, 'por aquí'], [/\bcon un «?sale»?/gi, 'por aquí'],
+  [/\bte soy honesto\b/gi, 'te soy honesta'], [/\bencantado\b/gi, 'encantada'], [/\bestoy seguro\b/gi, 'estoy segura'], [/\bmuy contento\b/gi, 'muy contenta'],
+];
+export function pulirRegistro(texto: string): { texto: string; cambios: string[] } {
+  let t = String(texto || ''); const cambios: string[] = [];
+  for (const [re, rep] of REEMPLAZOS) { const antes = t; t = t.replace(re, rep); if (antes !== t) cambios.push(re.source.slice(0, 24)); }
+  t = t.replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').replace(/(^|\n)De acuerdo, ([a-záéíóúñ])/g, (_m, a, b) => `${a}De acuerdo, ${b}`);
+  return { texto: t.trim(), cambios };
+}
+
+/** Emojis y admiraciones CON MODERACIÓN (7-sep): se deja el primero de cada uno y se quitan los demás. */
+export function moderarEmojis(texto: string): { texto: string; quitados: number } {
+  const original = String(texto || '');
+  let visto = 0;
+  const limpio = original.replace(EMOJI, (m) => (++visto <= 1 ? m : '')).replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').trim();
+  const quitados = Math.max(0, visto - 1);
+  return { texto: limpio, quitados };
+}
+export function moderarAdmiraciones(texto: string): string {
+  let t = String(texto || ''); let n = 0;
+  return t.replace(/¡([^!]*)!/g, (m, inner) => (++n <= 1 ? m : `${inner}.`)).replace(/!{2,}/g, '!');
 }

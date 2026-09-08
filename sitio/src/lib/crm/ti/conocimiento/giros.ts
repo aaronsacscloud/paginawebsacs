@@ -342,7 +342,8 @@ POR TAMAÑO — averigua cuántas tiendas tiene antes de proponer nada:
 Lo que le importa al evaluar: ${g.lesImporta.map(d => `· ${d}`).join(' ')}
 Lo que busca de verdad cuando escribe: ${g.buscan.map(d => `· ${d}`).join(' ')}
 Cómo hablarle: ${g.tono.map(d => `· ${d}`).join(' ')}
-Preguntas de descubrimiento que sirven: ${g.preguntas.map(p => `· ${p}`).join(' ')}
+Preguntas de descubrimiento que sirven (usa UNA, específica de este giro, nunca una genérica): ${g.preguntas.map(p => `· ${p}`).join(' ')}
+Palabras del oficio que ellos usan (úsalas tú también): ${g.vocabulario.slice(0, 12).join(', ')}
 Lo primero que se le enseña: ${g.moduloPrincipal}
 Cómo se resume Sacs para este giro: ${g.argumento}
 Lo que se instala por ser de este giro (NO se vende aparte, va con su plan): ${g.incluidoPorGiro.join(' ')}
