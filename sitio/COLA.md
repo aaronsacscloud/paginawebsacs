@@ -74,3 +74,20 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 - 2026-09-07 · «ya respondí y ya respondió el lead pero me sigue sugiriendo algo de la conversación pasada; que siempre esté actualizado aunque yo responda de repente» + «aquí la siguiente sugerencia sería descalificarlo y mandarlo a nutrición porque dijo que no tiene dinero» (Cinthya) → tomadas ahora (mismo bloque).
 
 - 2026-09-07 · «los mensajes que yo envíe de forma autónoma en el día (que se registren como enviados por un humano) que también sirvan de aprendizaje, se clasifiquen en el análisis diario y mejoren respuestas y seguimiento» → tomada al cerrar la regeneración.
+
+## 8-sep-2026 · llegaron mientras se construía el reporte de trabajo
+
+**1. Rediseñar la vista de Renovación** (pendiente, con prototipo antes)
+> "quiero que revises la vista de renovacion no me parece que este respetando el
+> flujo limpio de las demas vistas es por ello que quiero que me muestres como se
+> puede ver la ifnrmacion de mejor maneja cosniderando que basado en eso se deben
+> de pagar las comisiones es importa te que se puedan poner lo que se pago
+> adicional a desde las reuniones de consultoria, el tema de reuniones asignadas,
+> mejoras y gestiones levantadas me puedes dar prototipo de vista."
+
+**2. Sacar los datos fiscales de Actividad** (pendiente)
+> "esta en actividad esos datos son datos del cliente de pago en primera no deben
+> de ser obligatorios para registrar el pago y en caso de que se regstren en el
+> pago deben de estar en la informaicon del cliente solo revisa que no dupliquen
+> campos no pierdas la logica pero muevelo de actividad por que ahi no va respeta
+> el diseno limpio"

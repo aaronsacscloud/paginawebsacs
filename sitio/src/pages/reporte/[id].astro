@@ -1,0 +1,256 @@
+---
+// La liga pública del reporte de trabajo: lo que el cliente abre.
+//
+// Lee la FOTO guardada (`reportes_trabajo.hechos`), no la base viva. Es lo que
+// permite que la liga diga en diciembre lo mismo que decía en septiembre; un
+// documento que cambia solo no se puede defender en una junta.
+//
+// No pide sesión —es para el cliente— y por eso no expone nada que no sea suyo:
+// solo lo que se guardó en ese reporte. Las mejoras marcadas como internas
+// (`visible_cliente: false`) no salen.
+import { supabase } from '../../lib/supabase';
+import CSS from './_estilos';
+import JS from './_guion';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const UUID = /^[0-9a-f-]{36}$/i;
+
+let rep: any = null;
+if (id && UUID.test(id)) {
+  const { data } = await supabase.from('reportes_trabajo')
+    .select('id, folio, desde, hasta, hechos, narrativa, reaccion').eq('id', id).maybeSingle();
+  rep = data || null;
+}
+if (!rep) return new Response('Reporte no encontrado', { status: 404 });
+
+const h = rep.hechos || {};
+const n = rep.narrativa || null;
+
+const money = (v: any) => '$' + Math.round(Number(v || 0)).toLocaleString('es-MX');
+const num = (v: any) => Number(v || 0).toLocaleString('es-MX');
+const dCorta = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '')
+  : '';
+const dLarga = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '';
+
+// Lo interno no sale en la liga del cliente.
+const entregadas = (h.entregadas || []).filter((m: any) => m.visible_cliente !== false);
+const cortesias = entregadas.filter((m: any) => m.cortesia);
+const cobradas = entregadas.filter((m: any) => !m.cortesia);
+const cobros = (h.pagado?.cobros || []).filter((c: any) => c.partidas?.length);
+const partidas = cobros.flatMap((c: any) => c.partidas.map((p: any) => ({ ...p, fecha: c.fecha, numero: c.numero })));
+const sop = h.soporte || { folios: 0, resueltos: 0, abiertos: 0, temas: [] };
+const opo = h.oportunidades;
+const maxTema = Math.max(1, ...(sop.temas || []).map((t: any) => t.n));
+const reuniones = h.reuniones?.lista || [];
+
+const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{`Reporte ${rep.folio} · ${h.cliente || ''}`}</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" />
+  <style set:html={CSS}></style>
+</head>
+<body>
+<div class="shell">
+  <div class="bar"><b>{h.cliente}</b>
+    <button class="btn" onclick="window.print()">Descargar PDF</button></div>
+
+  <div class="doc">
+    <div class="cinta"></div>
+
+    <div class="hero">
+      <div class="top">
+        <div><div class="wm">Sacscloud</div><div class="wsub">Reporte de trabajo</div></div>
+        <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
+      </div>
+      <h1>{titulo}</h1>
+      <p class="sub">{h.cliente} · del {dLarga(rep.desde)} al {dLarga(rep.hasta)}</p>
+      <div class="quien">
+        {h.cuenta_sacs && <div><div class="k">Cuenta</div><div class="v">{h.cuenta_sacs}</div></div>}
+        {h.licencia && <div><div class="k">Plan</div><div class="v">{h.licencia.nombre} · {h.licencia.ciclo}</div></div>}
+        {h.licencia?.proxima_factura && <div><div class="k">Renovación</div><div class="v">{dLarga(h.licencia.proxima_factura)}</div></div>}
+      </div>
+    </div>
+
+    <div class="ancla">
+      <div><div class="n" data-n={entregadas.length}>0</div><div class="l">mejoras entregadas</div></div>
+      <div><div class="n v" data-n={cortesias.length}>0</div><div class="l">sin costo adicional</div></div>
+      <div><div class="n" data-n={sop.folios}>0</div><div class="l">folios de soporte</div></div>
+      <div><div class="n" data-n={h.reuniones?.total || 0}>0</div><div class="l">sesiones de consultoría</div></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="on" data-t="resumen">Resumen</button>
+      <button data-t="entregado">Lo entregado<span class="cn">{entregadas.length}</span></button>
+      {sop.folios > 0 && <button data-t="soporte">Soporte<span class="cn">{sop.folios}</span></button>}
+      <button data-t="cuenta">Tu cuenta</button>
+      {opo && opo.sin_usar > 0 && <button data-t="oportunidades">Oportunidades<span class="cn">{opo.sin_usar}</span></button>}
+    </div>
+
+    <section class="panel on" data-p="resumen">
+      <div class="st"><span class="x">El periodo en corto</span><span class="ln"></span></div>
+      {n?.resumen
+        ? <p class="p">{n.resumen}</p>
+        : <p class="p">En {h.periodo?.dias} días se entregaron <b>{entregadas.length} mejoras</b> a tu cuenta{sop.folios ? <>, se atendieron <b>{sop.folios} folios de soporte</b>{sop.resueltos ? ` —${sop.resueltos} ya cerrados${sop.dias_promedio ? `, en ${sop.dias_promedio} días promedio` : ''}—` : ''}</> : ''}{h.reuniones?.total ? <> y se sostuvieron <b>{h.reuniones.total} sesiones de consultoría</b></> : ''}.</p>}
+      {cortesias.length > 0 && <p class="p" style="margin-top:9px">{cortesias.length === 1 ? 'Una de esas mejoras se hizo' : `${cortesias.length} de esas mejoras se hicieron`} <b>sin cobro adicional</b>.</p>}
+
+      {h.pagado?.total > 0 && (
+        <div class="lila" style="margin-top:16px">
+          <div class="t">Inversión del periodo</div>
+          <div class="c">{money(h.pagado.total)}</div>
+          <div class="d">{cobros.length === 1 && cobros[0].numero
+            ? `Cotización ${cobros[0].numero}, pagada el ${dLarga(cobros[0].fecha)}.`
+            : `${cobros.length || 1} cobro(s) en el periodo.`}</div>
+        </div>
+      )}
+
+      <div class="mini" style="margin-top:12px">
+        {cortesias.length > 0 && <div class="v"><div class="n">{cortesias.length}</div><div class="l">mejoras sin cargo</div></div>}
+        {sop.dias_promedio != null && <div><div class="n">{sop.dias_promedio} días</div><div class="l">promedio de resolución</div></div>}
+        <div><div class="n">{h.reuniones?.inasistencias ?? 0}</div><div class="l">inasistencias</div></div>
+      </div>
+    </section>
+
+    <section class="panel" data-p="entregado">
+      {partidas.length > 0 && (<>
+        <div class="st"><span class="x">Lo que contrataste</span><span class="ln"></span></div>
+        <div class="lista">
+          {partidas.map((p: any) => (
+            <div class="fila">
+              <button class="cab"><span class="ck">✓</span><span class="tx">{p.nombre}</span><span class="fe">{dCorta(p.fecha)}</span><span class="mt">{money(p.neto)}</span><span class="fl">▾</span></button>
+              {p.descripcion && <div class="det">{p.descripcion}</div>}
+            </div>
+          ))}
+          <div class="tot"><span>Entregado del contrato</span><span class="mt">{money(h.pagado.total)}</span></div>
+        </div>
+      </>)}
+
+      {cobradas.length > 0 && (<>
+        <div class="st" style={partidas.length ? 'margin-top:26px' : ''}><span class="x">Mejoras entregadas</span><span class="ln"></span></div>
+        <div class="lista">
+          {cobradas.map((m: any) => (
+            <div class="fila">
+              <button class="cab"><span class="ck">✓</span><span class="tx">{m.titulo}</span><span class="fe">{dCorta(m.fecha)}</span><span class="mt"></span><span class="fl">▾</span></button>
+              {m.descripcion && <div class="det">{m.descripcion}</div>}
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {cortesias.length > 0 && (<>
+        <div class="st" style="margin-top:26px"><span class="x">Lo que se hizo sin cobrarte</span><span class="ln"></span></div>
+        <p class="p">Salieron de tus juntas y se hicieron <b>sin cargo</b>. Van aquí para que sepas que existen y los uses.</p>
+        <div class="lista">
+          {cortesias.map((m: any) => (
+            <div class="fila cor">
+              <button class="cab"><span class="ck">✓</span><span class="tx">{m.titulo}</span><span class="fe">{dCorta(m.fecha)}</span><span class="mt">sin costo</span><span class="fl">▾</span></button>
+              {m.descripcion && <div class="det">{m.descripcion}</div>}
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {reuniones.length > 0 && (<>
+        <div class="st" style="margin-top:26px"><span class="x">Consultoría y capacitación</span><span class="ln"></span></div>
+        <div class="lista">
+          {reuniones.map((r: any) => (
+            <div class="fila">
+              <button class="cab"><span class="ck">{r.asistio ? '✓' : '·'}</span><span class="tx">{r.asunto}</span><span class="fe">{dCorta(r.fecha)}</span><span class="mt"></span><span class="fl">▾</span></button>
+              <div class="det">{r.asistio ? 'Sesión realizada.' : 'No se pudo realizar.'}</div>
+            </div>
+          ))}
+        </div>
+        {h.reuniones.inasistencias === 0 && <p class="p" style="margin-top:10px">Asististe a todas. Sin inasistencias en el periodo.</p>}
+      </>)}
+    </section>
+
+    {sop.folios > 0 && (
+      <section class="panel" data-p="soporte">
+        <div class="st"><span class="x">Soporte atendido</span><span class="ln"></span></div>
+        <div class="mini">
+          <div><div class="n">{sop.folios}</div><div class="l">folios recibidos</div></div>
+          <div class="v"><div class="n">{sop.resueltos}</div><div class="l">resueltos y cerrados</div></div>
+          {sop.dias_promedio != null && <div><div class="n">{sop.dias_promedio} días</div><div class="l">promedio de resolución</div></div>}
+        </div>
+        {sop.abiertos > 0 && <p class="p" style="margin-top:14px">Quedan <b>{sop.abiertos}</b> en curso.</p>}
+        <div style="margin-top:8px" id="temas">
+          {(sop.temas || []).map((t: any) => (
+            <div class="tema"><span class="nm">{t.etiqueta}</span><span class="ba"><i data-w={Math.round(t.n / maxTema * 100)}></i></span><span class="nn">{t.n}</span></div>
+          ))}
+        </div>
+        {sop.csat && <p class="p" style="margin-top:14px">Calificación promedio de tus folios: <b>{sop.csat.promedio}</b> ({sop.csat.n} calificados).</p>}
+      </section>
+    )}
+
+    <section class="panel" data-p="cuenta">
+      <div class="st"><span class="x">Tu cuenta hoy</span><span class="ln"></span></div>
+      {h.cuenta_hoy ? (<>
+        <div class="mini">
+          <div><div class="n">{num(h.cuenta_hoy.usuarios)}</div><div class="l">personas operando</div></div>
+          <div><div class="n">{num(h.cuenta_hoy.ventas_30d)}</div><div class="l">ventas en 30 días</div></div>
+          <div><div class="n">{num(h.cuenta_hoy.clientes)}</div><div class="l">clientes registrados</div></div>
+        </div>
+        <p class="p" style="margin-top:14px">Medido el {dLarga(h.cuenta_hoy.fecha)} sobre la operación real de tu cuenta.</p>
+      </>) : <p class="p">Todavía no hay lecturas de uso de tu cuenta para este periodo.</p>}
+      {h.licencia?.proxima_factura && (
+        <div class="lila" style="margin-top:14px">
+          <div class="t">Tu próxima renovación</div>
+          <div class="c">{dLarga(h.licencia.proxima_factura)}</div>
+          <div class="d">{h.licencia.nombre} {h.licencia.ciclo}.</div>
+        </div>
+      )}
+    </section>
+
+    {opo && opo.sin_usar > 0 && (
+      <section class="panel" data-p="oportunidades">
+        <div class="st"><span class="x">Lo que todavía no estás aprovechando</span><span class="ln"></span></div>
+        <div class="aprov">
+          <div class="top"><span class="big"><span id="usa">0</span> de {opo.total}</span><span class="lb">módulos con movimiento</span></div>
+          <div class="barra">
+            <i class="usa" data-w={Math.round(opo.en_uso / opo.total * 100)}></i>
+            <i class="no" data-w={Math.round(opo.sin_usar / opo.total * 100)}></i>
+          </div>
+          <div class="leg"><span><i style="background:#4FBF95"></i>En uso ({opo.en_uso})</span><span><i style="background:#E0DCEF"></i>Sin movimiento ({opo.sin_usar})</span></div>
+        </div>
+        <p class="p" style="margin-top:14px">Los {opo.sin_usar} de abajo <b>ya están incluidos en tu licencia</b>. Activarlos no cuesta más.</p>
+        {opo.familias.map((f: any) => (
+          <div class="fam"><div class="h">{f.familia}</div>
+            <div class="m">{f.modulos.map((m: string) => <span>{m}</span>)}</div></div>
+        ))}
+      </section>
+    )}
+
+    {n?.siguiente?.length > 0 && (
+      <div class="cta">
+        <div class="k2">Lo que sigue</div>
+        <div class="f">{n.siguiente.join(' ')}</div>
+      </div>
+    )}
+
+    <div class="reac">
+      <div class="q">¿Te sirvió este reporte?</div>
+      <div class="bs">
+        <button class="rb" data-r="si">Sí, claro</button>
+        <button class="rb" data-r="mas">Quiero más detalle</button>
+        <button class="rb" data-r="dudas">Tengo dudas</button>
+      </div>
+      <div class="gracias" id="gr">Gracias. Tu consultor lo va a ver hoy mismo.</div>
+    </div>
+
+    <div class="pie"><b>Sacscloud</b> · Reporte de trabajo · {h.cliente} · {dCorta(rep.desde)} al {dCorta(rep.hasta)} <span>{rep.folio}</span></div>
+  </div>
+</div>
+<script define:vars={{ REP: rep.id }} set:html={JS}></script>
+</body>
+</html>

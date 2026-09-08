@@ -24,11 +24,44 @@ export default function ReporteMejoras({ companyId, cliente, onCerrar }: any) {
   const [cargando, setCargando] = useState(false);
   const [rep, setRep] = useState<any>(null);
   const [error, setError] = useState('');
+  /* El reporte PUBLICADO: el que tiene liga propia y se le puede mandar. Se
+     guarda aparte del que se ve aquí porque publicar congela una foto de los
+     hechos, y esa foto es la que el cliente va a poder abrir en diciembre. */
+  const [pub, setPub] = useState<any>(null);
+  const [pubBusy, setPubBusy] = useState('');
+  const [aviso, setAviso] = useState('');
+  const liga = pub ? `${typeof window !== 'undefined' ? window.location.origin : ''}/reporte/${pub.id}` : '';
+
+  async function publicar() {
+    setPubBusy('publicando'); setAviso('');
+    const r = await fetch('/api/crm/reportes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId, desde, hasta, narrativa: rep?.narrativa || null }),
+    }).then(x => x.json()).catch(() => null);
+    setPubBusy('');
+    if (!r || r.error) { setAviso(r?.error || 'No se pudo publicar.'); return; }
+    setPub(r);
+  }
+  async function copiarLiga() {
+    try { await navigator.clipboard.writeText(liga); setAviso('Liga copiada.'); }
+    catch { setAviso(liga); }
+  }
+  async function enviar() {
+    setPubBusy('enviando'); setAviso('');
+    const r = await fetch('/api/crm/reportes/enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pub.id }),
+    }).then(x => x.json()).catch(() => null);
+    setPubBusy('');
+    if (!r || r.error) { setAviso(r?.error || 'No se pudo enviar.'); return; }
+    setAviso(`Enviado a ${r.para}.`);
+    setPub((p: any) => ({ ...p, enviado_a: r.para }));
+  }
 
   const preset = (d: Date, h: Date) => { setDesde(iso(d)); setHasta(iso(h)); };
 
   async function generar() {
-    setCargando(true); setError(''); setRep(null);
+    setCargando(true); setError(''); setRep(null); setPub(null); setAviso('');
     const r = await fetch('/api/crm/mejoras/reporte', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ company_id: companyId, desde, hasta }),
@@ -193,8 +226,23 @@ export default function ReporteMejoras({ companyId, cliente, onCerrar }: any) {
         </div>
 
         {rep && (
-          <div style={{ padding: '12px 18px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8 }}>
-            <button style={S.btn} onClick={copiar}>Copiar como texto</button>
+          <div style={{ padding: '12px 18px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {!pub ? (
+              <button style={S.btn} onClick={publicar} disabled={!!pubBusy}>
+                {pubBusy === 'publicando' ? 'Publicando…' : 'Publicar y obtener liga'}
+              </button>
+            ) : (<>
+              {/* La liga se enseña completa a propósito: el consultor la manda
+                  por WhatsApp tan seguido como por correo. */}
+              <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.7rem', color: '#5B4BD6', background: '#EEECFE', borderRadius: 7, padding: '5px 9px', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{liga}</span>
+              <button style={S.btnG} onClick={copiarLiga}>Copiar liga</button>
+              <a style={{ ...S.btnG, textDecoration: 'none', display: 'inline-block' }} href={liga} target="_blank" rel="noreferrer">Verlo como el cliente</a>
+              <button style={S.btn} onClick={enviar} disabled={!!pubBusy}>
+                {pubBusy === 'enviando' ? 'Enviando…' : pub.enviado_a ? 'Volver a enviar' : 'Enviar por correo'}
+              </button>
+            </>)}
+            <button style={S.btnG} onClick={copiar}>Copiar como texto</button>
+            {aviso && <span style={{ fontSize: '0.73rem', color: '#1E8A63', fontWeight: 600 }}>{aviso}</span>}
             <button style={{ ...S.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cerrar</button>
           </div>
         )}
