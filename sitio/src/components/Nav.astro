@@ -181,9 +181,6 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                         </li>
                       ))}
                     </ul>
-                    <a href={getLocalizedUrl('/giros', locale)} class="gw-todos">
-                      ¿Vendes otra cosa? Sacs también opera otros comercios · <b>Ver todos los giros →</b>
-                    </a>
                   </div>
 
                   <div class="gw-stage">
@@ -225,18 +222,6 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                   </div>
                 </div>
 
-                <div class="gw-modelos" aria-label="Modelos de negocio">
-                  <span class="gw-eyebrow">¿Cómo opera tu negocio?</span>
-                  <div class="gw-mitems">
-                    {modelosNegocio.map((m) => (
-                      <a href={getLocalizedUrl(m.href, locale)} class="gw-mitem">
-                        <span class="gw-mname">{m.label}</span>
-                        <span class="gw-mdesc">{m.description}</span>
-                        <svg class="gw-marrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                      </a>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           )}

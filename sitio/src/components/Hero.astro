@@ -20,58 +20,59 @@ const steps = [
     id: 'pos',
     step: 1,
     verb: 'Vende',
-    title: 'Vende más en cada punto',
-    subtitle: 'Una plataforma, todos los canales.',
+    title: 'Vende cada talla, en cada canal',
+    subtitle: 'Piso, tienda en línea, WhatsApp y TikTok Shop sobre un solo inventario por talla y color.',
     bgKey: 'pos',
     subs: [
-      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Funciona en línea y sin internet — sin perder una sola venta. Cobra con tarjeta, efectivo, transferencia o monedero y combínalos en una sola venta, desde iPad, celular o computadora. El cajero nunca se queda parado.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
-      { id: 'pos-cambios', label: 'Cambios y devoluciones', desc: 'Cambia talla, devuelve con ticket o sin él, abona a monedero o reembolsa al método original. Política configurable, autorización por gerente y trazabilidad completa.', href: '/producto/punto-de-venta', image: null },
-      { id: 'pos-movil', label: 'Cobro móvil — line-busting', desc: 'Acerca al cliente desde el piso de venta: escanea, cobra y envía ticket por WhatsApp desde el celular del vendedor. Sin filas en hora pico, sin perder ventas.', href: '/producto/punto-de-venta', image: null },
-      { id: 'pos-apartados', label: 'Pedidos y Apartados', desc: 'Toma anticipo, bloquea el stock, cobra a plazos y convierte el apartado en venta cuando termina. Recordatorios automáticos por email y WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
-      { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea conectada al mismo inventario, clientes y precios. Cada venta online baja stock en la sucursal correcta al segundo.', href: '/producto/tienda-en-linea', image: null },
-      { id: 'pos-social', label: 'Vende en META & TikTok Shop', desc: 'Conecta tu catálogo a Instagram, Facebook y TikTok Shop con stock y cobro sincronizados — sin re-publicar nada.', href: '/producto/social-commerce', image: null },
+      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra por talla y color desde iPad, celular o computadora, con o sin internet. La vendedora ve al instante si la M está en el piso, en bodega o en otra sucursal, y el ticket sale por WhatsApp.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
+      { id: 'pos-cambios', label: 'Cambios de talla', desc: '"No me quedó" se resuelve en un minuto: cambio de talla o color con ticket o sin él, vale a favor o monedero. La prenda regresa a su talla en el inventario, no a un limbo.', href: '/producto/punto-de-venta', image: null },
+      { id: 'pos-movil', label: 'Cobro en el piso', desc: 'La vendedora escanea la prenda junto al probador, cobra y manda el ticket por WhatsApp desde su celular. En hora pico y en el día del drop nadie se va por la fila.', href: '/producto/punto-de-venta', image: null },
+      { id: 'pos-apartados', label: 'Apartados con anticipo', desc: 'La clienta aparta el vestido en su talla con un anticipo: esa pieza se bloquea en todos los canales, se cobra a plazos y se vuelve venta al liquidar. Recordatorios por WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
+      { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea vende sobre el mismo inventario que el piso: cuando se vende la última S en la sucursal, esa talla se apaga en línea al segundo. Sin sobreventa, sin cancelar pedidos.', href: '/producto/tienda-en-linea', image: null },
+      { id: 'pos-social', label: 'Instagram, Facebook y TikTok Shop', desc: 'Publica el drop una sola vez y véndelo en Instagram, Facebook y TikTok Shop con las mismas tallas, precios y existencias. Cada venta baja del inventario correcto.', href: '/producto/social-commerce', image: null },
     ],
   },
   {
     id: 'stock',
     step: 2,
     verb: 'Controla',
-    title: 'Controla tu operación en tiempo real',
-    subtitle: 'Un solo inventario, todas tus sucursales.',
+    title: 'Controla tallas, colores y curvas',
+    subtitle: 'Un solo inventario por talla y color, en todas tus sucursales.',
     bgKey: 'stock',
     subs: [
-      { id: 'stock-inventario', label: 'Inventario multi-sucursal', desc: 'Stock por sucursal y CEDIS en tiempo real, sincronizado al segundo. Vende donde sea, descuenta donde corresponde.', href: '/producto/inventario-omnicanal', image: null },
-      { id: 'stock-conteo', label: 'Auditoría y conteo físico', desc: 'Escanea códigos de barras con tu celular y actualiza el inventario en segundos. Audita por sucursal, sin laptops, sin Excel y sin paros operativos.', href: '/producto/conteo-fisico', image: null },
-      { id: 'stock-alertas', label: 'Recepción de mercancía', desc: 'Recibe pedidos escaneando cajas, valida cantidades contra la OC y actualiza tu inventario al instante.', href: '/producto/ordenes-de-compra', image: null },
+      { id: 'stock-inventario', label: 'Inventario por talla y color', desc: 'Cada prenda con su matriz talla × color y su existencia por sucursal y bodega. Ves de un vistazo qué curva está completa, cuál se rompió y qué talla se vendió de más en cada tienda.', href: '/producto/inventario-omnicanal', image: null },
+      { id: 'stock-conteo', label: 'Conteo físico desde el celular', desc: 'Escanea rack por rack y cuadra por talla, no por pieza. Sabes qué prenda falta, en qué talla y en qué sucursal, sin cerrar la tienda ni bajar nada a Excel.', href: '/producto/conteo-fisico', image: null },
+      { id: 'stock-alertas', label: 'Recepción por curva', desc: 'Recibe la caja del proveedor contra tu orden de compra: ves qué tallas llegaron completas y cuáles vinieron cortas, y todo entra al inventario con su código de barras al instante.', href: '/producto/ordenes-de-compra', image: null },
     ],
   },
   {
     id: 'crm',
     step: 3,
     verb: 'Fideliza',
-    title: 'Fideliza a cada cliente',
-    subtitle: 'Cada cliente reconocido en cada visita.',
+    title: 'Fideliza a cada clienta',
+    subtitle: 'Su talla, sus marcas y sus compras, reconocidas en cada visita.',
     bgKey: 'crm',
     subs: [
-      { id: 'crm-lealtad', label: 'Monedero electrónico', desc: 'Saldo recargable con cashback automático en cada compra. El cliente lo acumula y canjea desde el POS o el portal — sin apps extra, sin tarjetas físicas, sin terceros.', href: '/producto/programa-de-lealtad', image: null },
-      { id: 'crm-seguimiento', label: 'Recomendaciones de productos', desc: 'Sugiere prendas y artículos basados en las últimas compras de cada cliente — desde el POS y desde la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
-      { id: 'crm-omnicanal', label: 'CRM Omnicanal', desc: 'Una sola ficha por cliente con su historial de tienda física, ecommerce, redes sociales y WhatsApp — segmentación automática por comportamiento real.', href: '/producto/clientes-y-crm', image: null },
-      { id: 'crm-email', label: 'Email marketing', desc: 'Editor visual, segmentación por comportamiento de compra, A/B testing y métricas en tiempo real. Sin Mailchimp, sin tarifas extra — todo conectado a tus ventas reales.', href: '/producto/marketing-por-correo', image: null },
-      { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Broadcasts a segmentos con plantillas pre-aprobadas por Meta. 90% de apertura, conectado al CRM, métricas reales — sin pagar por mensaje fallido.', href: '/producto/marketing-por-whatsapp', image: null },
+      { id: 'crm-lealtad', label: 'Monedero electrónico', desc: 'Cashback en cada compra, guardado en su monedero y canjeable en el piso o en línea. Sin tarjetas ni apps: con su número de teléfono.', href: '/producto/programa-de-lealtad', image: null },
+      { id: 'crm-seguimiento', label: 'Recomendaciones por talla', desc: 'Sugiere a cada clienta prendas que existen en su talla y combinan con lo que ya compró, desde el punto de venta y en la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-omnicanal', label: 'Una ficha por clienta', desc: 'Talla, marcas favoritas y compras en tienda, en línea y por WhatsApp en una sola ficha. Segmentos que se arman solos: quien compra cada temporada, quien no volvió, quien siempre aparta.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-email', label: 'Email marketing', desc: 'Campañas de nueva colección, rebajas de temporada y "llegó tu talla" con editor visual y resultados medidos en ventas reales, no en aperturas.', href: '/producto/marketing-por-correo', image: null },
+      { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Avisos a segmentos con plantillas aprobadas por Meta: la clienta que compra tu marca recibe el drop antes que nadie. Conectado al CRM, con pedidos que caen al mismo inventario.', href: '/producto/marketing-por-whatsapp', image: null },
     ],
   },
   {
     id: 'ai',
     step: 4,
     verb: 'Automatiza',
-    title: 'Automatiza con inteligencia',
-    subtitle: 'AXO opera por ti, 24/7.',
+    title: 'La IA que sabe qué talla te va a faltar',
+    subtitle: 'Sacs aprende de tus ventas y decide antes de que abras la tienda.',
     bgKey: 'ai',
     subs: [
-      { id: 'ai-empresarial', label: 'IA Empresarial', desc: 'AXO analiza tus ventas, predice demanda, automatiza órdenes de compra y responde por WhatsApp con tu catálogo real.', href: '/producto/axo-copiloto-ia', image: null },
+      { id: 'ai-empresarial', label: 'Sacs IA para Moda', desc: 'Te dice qué talla se te va a acabar y en qué tienda sobra, propone el traspaso, arma el resurtido por curva con lo que de verdad rotó y responde por WhatsApp con tu catálogo real.', href: '/producto/axo-copiloto-ia', image: null },
     ],
   },
 ];
+
 
 const allSubs = steps.flatMap((s, stepIdx) =>
   s.subs.map((sub) => ({ ...sub, stepIdx, stepId: s.id, stepTitle: s.title, bgKey: s.bgKey }))
@@ -1214,8 +1215,8 @@ const useCases = [
   <section class="sq-features sq-features--sc sq-features--unified">
     <div class="sq-features-header sq-header-reveal">
       <span class="sc-eyebrow">WhatsApp Commerce</span>
-      <h2 class="sc-title">Vende por WhatsApp.<br>Sin trabajo manual.</h2>
-      <p class="sc-subtitle">Tu cliente pregunta, SACS responde con catálogo, toma el pedido, cobra y confirma la entrega. Todo automático, directo en WhatsApp.</p>
+      <h2 class="sc-title">Vende por WhatsApp.<br>Con tallas reales.</h2>
+      <p class="sc-subtitle">La clienta pregunta por una prenda, Sacs responde con el catálogo, le enseña las tallas que sí hay, cobra y confirma la entrega. Directo en WhatsApp, sin capturar nada.</p>
     </div>
     <div class="sq-features-inner">
       <div class="sq-features-media sq-media-reveal">
@@ -1233,24 +1234,24 @@ const useCases = [
       </div>
       <div class="sq-features-content">
         <div class="sq-feature-block sq-feature-block--sc active" data-sq-idx="0" data-sq-img="/images/wa-chat-step1.webp">
-          <h3 class="sq-feature-title">Tu cliente te escribe</h3>
-          <p class="sq-feature-desc">El cliente pregunta por un producto en WhatsApp. SACS responde automáticamente con el catálogo disponible.</p>
+          <h3 class="sq-feature-title">Tu clienta te escribe</h3>
+          <p class="sq-feature-desc">Pregunta por el vestido que vio en Instagram. Sacs contesta al momento con el catálogo y las tallas disponibles.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.5" data-sq-img="/images/wa-chat-step2.webp">
           <h3 class="sq-feature-title">Explora el catálogo</h3>
-          <p class="sq-feature-desc">El cliente navega tu catálogo directo en WhatsApp. Productos, precios y stock sincronizados desde SACS en tiempo real.</p>
+          <p class="sq-feature-desc">Navega por colección, categoría o marca dentro de WhatsApp. Precios y existencias por talla, sincronizados con el piso.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.6" data-sq-img="/images/wa-chat-step3.webp">
           <h3 class="sq-feature-title">Detalle del producto</h3>
-          <p class="sq-feature-desc">Ficha completa con foto, descripción, precio y botón de agregar al carrito. Todo dentro de WhatsApp.</p>
+          <p class="sq-feature-desc">Foto, descripción, tallas y colores disponibles y el botón de agregar. Si la M ya no está, no se ofrece.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.7" data-sq-img="/images/wa-chat-step4.webp">
           <h3 class="sq-feature-title">Pago y confirmación</h3>
-          <p class="sq-feature-desc">El cliente paga directo en el chat. Recibe confirmación, link de seguimiento y factura automática.</p>
+          <p class="sq-feature-desc">Paga en el chat con tarjeta o transferencia. Recibe confirmación, guía de envío y factura sin que nadie las haga a mano.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.8" data-sq-img="/images/wa-chat-step5.webp">
           <h3 class="sq-feature-title">Pedido completado</h3>
-          <p class="sq-feature-desc">Orden confirmada con link de pago y opciones de entrega. El pedido llega automáticamente a tu sistema SACS.</p>
+          <p class="sq-feature-desc">El pedido cae a Sacs con la talla y la sucursal correctas, y baja del inventario al instante.</p>
         </div>
       </div>
     </div>
@@ -1915,7 +1916,7 @@ const useCases = [
       <div class="ops-admin-header">
         <span class="ops-admin-eyebrow">Operación administrativa</span>
         <h2 class="ops-admin-title" id="ops-admin-title">Y todo lo que mueve el dinero,<br />también bajo control.</h2>
-        <p class="ops-admin-desc">Gastos, compras, cuentas por pagar y por cobrar, conciliación bancaria — toda la administración en un solo lugar, conectada a tus ventas y a tu inventario.</p>
+        <p class="ops-admin-desc">Compras por temporada, cuentas por pagar a proveedores y marcas, gastos y conciliación bancaria, conectados a lo que vendiste por talla y a lo que tienes colgado.</p>
       </div>
       <div class="inv-intel-grid ops-admin-grid">
         <div class="inv-intel-card" style="--i:0">
@@ -2943,7 +2944,7 @@ const useCases = [
       <div class="loyalty-pro-header">
         <span class="loyalty-pro-eyebrow">CRM y marketing relacional</span>
         <h2 class="loyalty-pro-title" id="loyalty-pro-title">Y todo lo que convierte una visita<br />en una relación de años.</h2>
-        <p class="loyalty-pro-desc">CRM con ficha viva por cliente, segmentación automática por comportamiento, y campañas de WhatsApp + email integradas al POS. Cada interacción, conectada al historial real de compra.</p>
+        <p class="loyalty-pro-desc">Una ficha viva por clienta con su talla y su historial, segmentos que se arman solos y campañas de WhatsApp y correo integradas al punto de venta. Cada mensaje sale de una compra real.</p>
       </div>
       <div class="inv-intel-grid loyalty-pro-grid">
         <div class="inv-intel-card" style="--i:0">
@@ -3079,21 +3080,21 @@ const useCases = [
     <div class="mc-step" id="mc-step-1" data-mc-step="1">
       <div class="mc-step-header">
         <div class="mc-step-num">1</div>
-        <h2 class="mc-step-title">Vende más en cada punto</h2>
+        <h2 class="mc-step-title">Vende cada talla, en cada canal</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/screen-pos.webp" alt="Punto de Venta SACS" loading="lazy" width="800" height="500"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Punto de Venta</div>
-            <div class="mc-card-desc">Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo.</div>
+            <div class="mc-card-desc">Cobra por talla y color, con o sin internet, desde cualquier dispositivo.</div>
           </div>
         </div>
         <div class="mc-card">
           <div class="mc-card-visual mc-card-visual--dark"><img src="/images/screen-ecommerce.webp" alt="eCommerce SACS" loading="lazy" width="800" height="500"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Tienda en línea</div>
-            <div class="mc-card-desc">Tu tienda en línea conectada al mismo inventario y clientes.</div>
+            <div class="mc-card-desc">La última S del piso se apaga en línea al segundo.</div>
           </div>
         </div>
         <div class="mc-card">
@@ -3121,15 +3122,15 @@ const useCases = [
             </div>
           </div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Pedidos y Apartados</div>
-            <div class="mc-card-desc">Configura apartados con anticipo, plazos y recordatorios automáticos.</div>
+            <div class="mc-card-title">Apartados con anticipo</div>
+            <div class="mc-card-desc">Aparta la pieza en su talla con anticipo, plazos y recordatorios.</div>
           </div>
         </div>
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/social-commerce-devices.webp" alt="Redes Sociales y IA SACS" loading="lazy" width="800" height="600"></div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Redes Sociales & IA</div>
-            <div class="mc-card-desc">Vende en TikTok, Instagram, Facebook y ChatGPT con stock sincronizado.</div>
+            <div class="mc-card-title">Instagram, Facebook y TikTok Shop</div>
+            <div class="mc-card-desc">Publica el drop una vez y vende con las mismas tallas y existencias.</div>
           </div>
         </div>
       </div>
@@ -3139,7 +3140,7 @@ const useCases = [
     <div class="mc-step mc-step--alt" id="mc-step-2" data-mc-step="2">
       <div class="mc-step-header">
         <div class="mc-step-num">2</div>
-        <h2 class="mc-step-title">Controla tu operación en tiempo real</h2>
+        <h2 class="mc-step-title">Controla tallas, colores y curvas</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
@@ -3184,22 +3185,22 @@ const useCases = [
             </div>
           </div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Inventario multi-sucursal</div>
-            <div class="mc-card-desc">Stock por sucursal y CEDIS en tiempo real, siempre sincronizado.</div>
+            <div class="mc-card-title">Inventario por talla y color</div>
+            <div class="mc-card-desc">Matriz talla × color por sucursal: qué curva está completa y cuál se rompió.</div>
           </div>
         </div>
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/conteo-fisico-real.webp" alt="Conteo físico de inventario" loading="lazy" width="900" height="1117"></div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Auditoría y conteo físico</div>
-            <div class="mc-card-desc">Escanea con tu celular y actualiza el inventario en segundos.</div>
+            <div class="mc-card-title">Conteo físico desde el celular</div>
+            <div class="mc-card-desc">Escanea rack por rack y cuadra por talla, sin cerrar la tienda.</div>
           </div>
         </div>
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/recepcion-mercancia.webp" alt="Recepción de mercancía" loading="lazy" width="1200" height="1560" style="object-position:center 75%;"></div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Recepción de mercancía</div>
-            <div class="mc-card-desc">Recibe pedidos escaneando cajas y actualiza tu inventario al instante.</div>
+            <div class="mc-card-title">Recepción por curva</div>
+            <div class="mc-card-desc">Qué tallas llegaron completas y cuáles vinieron cortas, contra tu orden.</div>
           </div>
         </div>
       </div>
@@ -3209,21 +3210,21 @@ const useCases = [
     <div class="mc-step" id="mc-step-3" data-mc-step="3">
       <div class="mc-step-header">
         <div class="mc-step-num">3</div>
-        <h2 class="mc-step-title">Fideliza a cada cliente</h2>
+        <h2 class="mc-step-title">Fideliza a cada clienta</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/fideliza-loyalty.webp" alt="Monedero electrónico" loading="lazy" width="1000" height="795"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Monedero electrónico</div>
-            <div class="mc-card-desc">Saldo recargable con cashback automático, integrado al POS.</div>
+            <div class="mc-card-desc">Cashback en su monedero, canjeable en piso y en línea con su teléfono.</div>
           </div>
         </div>
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones de productos" loading="lazy" width="900" height="1340"></div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Recomendaciones de productos</div>
-            <div class="mc-card-desc">Sugiere prendas basadas en las últimas compras de cada cliente.</div>
+            <div class="mc-card-title">Recomendaciones por talla</div>
+            <div class="mc-card-desc">Prendas que existen en su talla y combinan con lo que ya compró.</div>
           </div>
         </div>
       </div>
@@ -3233,7 +3234,7 @@ const useCases = [
     <div class="mc-step mc-step--alt" id="mc-step-4" data-mc-step="4">
       <div class="mc-step-header">
         <div class="mc-step-num">4</div>
-        <h2 class="mc-step-title">Tu negocio con IA integrada</h2>
+        <h2 class="mc-step-title">La IA que sabe qué talla te va a faltar</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
@@ -3241,8 +3242,8 @@ const useCases = [
             <video autoplay muted loop playsinline><source src="/images/ai-empresarial.mp4" type="video/mp4"></video>
           </div>
           <div class="mc-card-body">
-            <div class="mc-card-title">IA Empresarial</div>
-            <div class="mc-card-desc">AXO analiza tus ventas, predice demanda y automatiza órdenes de compra.</div>
+            <div class="mc-card-title">Sacs IA para Moda</div>
+            <div class="mc-card-desc">Qué talla se acaba, dónde sobra, el traspaso y el resurtido por curva.</div>
           </div>
         </div>
       </div>
@@ -3255,7 +3256,7 @@ const useCases = [
 <section class="zt-section" id="zt-section">
   <div class="zt-sticky">
     <div class="zt-text-wrap">
-      <h2 class="zt-text" id="zt-text">Bienvenido a la era del comercio unificado, <span class="zt-strike-text">tu punto de venta ya no es suficiente</span></h2>
+      <h2 class="zt-text" id="zt-text">Bienvenido a la era del comercio unificado, <span class="zt-strike-text">un punto de venta que no sabe de tallas ya no alcanza</span></h2>
     </div>
   </div>
 </section>
@@ -3267,8 +3268,8 @@ const useCases = [
     <div class="inv-intel-hero">
       <div class="inv-intel-text">
         <span class="inv-intel-eyebrow">Inventario Inteligente</span>
-        <h2 class="inv-intel-title">El producto correcto, en la sucursal correcta, siempre.</h2>
-        <p class="inv-intel-desc">Buscamos que nuestros clientes den una experiencia extraordinaria multisucursal. Por eso SACS nivela tu inventario automáticamente — decide qué resurtir, qué transferir, qué liquidar y qué comprar más. Sin hojas de cálculo, sin adivinar.</p>
+        <h2 class="inv-intel-title">La talla correcta, en la tienda correcta, siempre.</h2>
+        <p class="inv-intel-desc">Sacs nivela tu inventario por talla y color entre tiendas: te dice qué talla resurtir, cuál traspasar de la sucursal donde sobra a la que se está quedando sin ella, qué rematar y cuánto comprar de cada curva. Sin hojas de cálculo, con lo que de verdad se vendió.</p>
       </div>
       <div class="inv-intel-visual">
         <img
@@ -3340,7 +3341,7 @@ const useCases = [
 <!-- ═══ BLOQUE 2.4: Casos de éxito — Reels ═══ -->
 <section class="reels-section">
   <div class="reels-header">
-    <span class="reels-eyebrow">La plataforma de retail #1 de habla hispana</span>
+    <span class="reels-eyebrow">Marcas y tiendas de moda que ya operan con Sacs</span>
     <h2 class="reels-title">Líderes del retail ya crecen con <span class="reels-title-logo">Sacs</span></h2>
     <p class="reels-subtitle">Desde una boutique hasta cadenas con 100+ tiendas — el mismo sistema. Estos son algunos de los casos más recientes.</p>
     <div class="reels-stats" role="list">
