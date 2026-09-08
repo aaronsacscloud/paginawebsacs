@@ -93,5 +93,13 @@ Cada uno con base propia de 3 puntos y preguntas propias (por definir). Ropa inf
 ## TRANSVERSAL · apartados, corte y finanzas (dicho por el dueño en novias, aplica a cualquier giro con apartados)
 Cancelación de apartado con reglas de devolución de abonos · corte de caja que refleja cancelaciones · comisiones sobre la venta completa del apartado y sus abonos · factura a público en general automática por ventas y abonos · gastos, cuentas por pagar y contabilidad.
 
+## CONSIGNACIÓN Y SEGUNDA MANO (bazar, preloved, clóset)
+
+**Base (siempre):**
+1. Cada pieza con su dueña y su comisión por contrato: al vender, la liquidación sale sola con el porcentaje pactado.
+2. Estado de cuenta que la consignante ve sola en su portal, con saldo a favor y retiros.
+3. Contrato con firma remota y vigencia: recepción de piezas firmada desde el celular, con fecha de retiro o rebaja.
+4. Lives y tienda en línea con un solo inventario: lo vendido en el Live se baja al momento; piezas únicas sin duplicarse.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
