@@ -692,12 +692,10 @@ export const navLinks: NavLink[] = [
     href: '/giros',
     sectors: modaSectors,
   },
-  {
-    label: 'Temporada e IA',
-    href: '/planes',
-    temporada: cicloTemporada,
-    extraordinarios: modulosExtraordinarios,
-  },
+  // 'Temporada e IA' (ciclo + módulos extraordinarios) sale del menú hasta que esté listo
+  // (2026-09-08). La página /extraordinarios sigue viva por URL; para reponerla, volver a
+  // agregar aquí { label: 'Temporada e IA', href: '/planes', temporada: cicloTemporada,
+  // extraordinarios: modulosExtraordinarios }.
   { label: 'Partners', href: '/partners' },
   { label: 'Planes', href: '/planes' },
   { label: 'Casos de éxito', href: '/casos-de-exito' },
