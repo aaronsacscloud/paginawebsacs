@@ -15,7 +15,8 @@ import { supabase } from '../../supabase';
 import { anthropic, MODELS, calculateCost, hasApiKey } from '../../ai/client';
 import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
-import { contextoParaLead } from './conocimiento/index.ts';
+import { contextoParaLead, detectarGiro } from './conocimiento/index.ts';
+import { puntosPara, bloquePuntos, detectarSubgiro } from './conocimiento/puntos-giro.ts';
 import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA, horariosParaLlamada, llamadaTexto } from './agenda-agente';
 import { notificar } from '../notificaciones';
@@ -241,9 +242,29 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // ¿Este texto va a viajar dentro de una plantilla? (los toques de silencio y reenganche sí, y ya saludan solas)
   const enPlantilla = ['silencio', 'reenganche', 'reactivacion'].includes(String(opts.tarea || ''));
   const yaLeOfrecimosAudio = msjs.some(m => m.direccion === 'saliente' && /audio|nota de voz/i.test(String(m.cuerpo || '')));
+  // EL FLUJO DE FERNANDA (ronda 1 cerrada con el dueño, 8-sep · sitio/FLUJO-FERNANDA.md). El paso se decide por DATOS, no por
+  // intuición del modelo: paso 0 mientras falte modelo de negocio, giro o sucursales; paso 1 cuando ya están y aún no se
+  // dijeron los puntos; de ahí en adelante manda el hilo (resolver, ofrecer, agendar) con las compuertas de aceptoDemo.
+  const coG: any = (c as any).companies || {};
+  const modeloNeg = String((c as any).modelo_negocio || '').trim() || null;
+  const giroTxt = c.giro || coG.giro || null;
+  const sucN = Number(c.sucursales_interes ?? coG.sucursales) || null;
+  const esNovias = /novia|xv|quince|fiesta|traje|graduaci|renta de vestidos/i.test(`${giroTxt || ''} ${texto.slice(-1500)}`);
+  const faltan = [!modeloNeg ? (esNovias ? 'si VENDE el producto, lo RENTA o ambas' : 'su modelo de negocio (¿maneja varias marcas, su propia marca, fabrica o vende al mayoreo?)') : null, !giroTxt ? 'qué vende exactamente (su giro)' : null, !sucN ? 'cuántas sucursales o puntos de venta tiene' : null].filter(Boolean) as string[];
+  const puntosYaDichos = msjs.some(m => m.direccion === 'saliente' && /(^|\n)\s*1\.\s.+\n\s*2\.\s/.test(String(m.cuerpo || '')));
+  let bloqueFlujo = '';
+  if (faltan.length) {
+    bloqueFlujo = `\n\nPASO 0 DEL FLUJO — TODAVÍA NO TENEMOS ${faltan.length === 3 ? 'LOS TRES DATOS' : 'TODO'}: falta ${faltan.join(', ')}. En este mensaje NO hables de funciones de Sacs ni ofrezcas nada: contesta lo que preguntó en una línea si preguntó algo, y pide SOLO lo que falta, con interés genuino en su negocio y en una sola pregunta (si faltan dos datos, júntalos en la misma frase). Si es su primer mensaje, preséntate («Soy Fernanda, asesora comercial de Sacscloud»). Ofrece siempre el audio: «si te es más cómodo, mándame un audio y me platicas de tu negocio y de lo que buscas». Reporta en "datos" lo que diga (modelo_negocio, giro, sucursales).`;
+  } else if (!puntosYaDichos) {
+    const gid = (ctxGiroId(giroTxt, texto) || null) as any;
+    const pts = puntosPara({ giroId: gid, modelo: modeloNeg as any, sucursales: sucN, subgiro: detectarSubgiro(`${giroTxt || ''} ${texto.slice(-2000)}`), texto: texto.slice(-2000) });
+    bloqueFlujo = `\n\nPASO 1 DEL FLUJO — YA TENEMOS LOS TRES DATOS (${modeloNeg}, ${giroTxt}, ${sucN} sucursal(es)) y todavía no le has dicho cómo le ayuda Sacs. Este mensaje: reconoce en una línea lo que te contó, y luego, con naturalidad y en sus palabras, los puntos de abajo.` + bloquePuntos(pts) + ` Nada de demo ni horarios en este mensaje.`;
+  } else {
+    bloqueFlujo = `\n\nFLUJO — los datos están y los puntos ya se dijeron. Toca RESOLVER lo que él plantee con criterio de consultora (paso 2): primero cómo Sacs resuelve exactamente eso con un ejemplo de su producto; si el mensaje lo permite, en una segunda burbuja (---) pregunta si hay algún otro tema que quiera resolver («entre más detalle me des, más específica puede ser la reunión»). La oferta del paso 3 (especialista en línea y sin costo, con IA, o prueba gratis de 7 días; pregunta de sí o no, sin horarios) va solo cuando ya hubo de una a tres respuestas útiles suyas y muestra interés; las compuertas de HORARIOS de abajo mandan.`;
+  }
   const bloqueNom = bloqueNombre(nom, vecesNombre) + bloqueSaludo(horasDesde, nom, vecesNombre, enPlantilla) + bloqueEmpresa((c as any).companies?.nombre_comercial || (c as any).companies?.nombre)
-    + bloqueSinGiro(!!(c.giro || (c as any).companies?.giro), !!(((perfil as any)?.intenciones as any[]) || []).some((x: any) => x?.campo === 'dolor'), !yaLeOfrecimosAudio)
-    + avisoBots;
+    + (faltan.length ? '' : bloqueSinGiro(!!(c.giro || (c as any).companies?.giro), !!(((perfil as any)?.intenciones as any[]) || []).some((x: any) => x?.campo === 'dolor'), !yaLeOfrecimosAudio))
+    + bloqueFlujo + avisoBots;
   const memoria = memoriaConversacion(msjs, c.nombre);
   const regreso = await historialRegreso(contactId, msjs, c.nombre).catch(() => '');
   const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([
@@ -281,7 +302,10 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     : yaOfrecioSinRespuesta
       ? `HORARIOS: ya se le ofrecieron (${ofrecidos.map(h => etiquetaHorario(h.fecha, h.hora)).join(' y ')}) y NO eligió ni dijo que sí. NO los repitas ni propongas otros: contesta lo que preguntó con calma y deja la puerta abierta en una frase («cuando gustes lo vemos, me avisas»), sin pregunta de horario. Si en este mensaje él dice que sí o pide la demo, devuelve accion.tipo="agendar" con el primero de esos horarios que siga vigente y confírmaselo.`
       : `HORARIOS: TODAVÍA NO. ${acepto.porque}. Primero resuelve su duda como consultor que sabe del giro; cuando ya tengas su giro, sus tiendas y algo que le cuesta, pregúntale en una oración amable si le gustaría que un consultor se lo enseñe con sus propios productos (15 minutos, sin costo). Es una pregunta de sí o no, sin horarios, sin insistir si no responde a eso. Los horarios se ofrecen en el siguiente turno, cuando diga que sí.`;
-  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${agendaHorarios}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
+  const finSemana = (() => { const d = new Date(Date.now() - 6 * 3600e3); const dow = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + (7 - dow)); return d.toISOString().slice(0, 10); })();
+  const hayEstaSemana = horarios.some(h => h.fecha <= finSemana);
+  const notaSemana = `\nOFERTA DEL PASO 3: di «esta semana tenemos la opción…» SOLO si hay horarios esta semana (${hayEstaSemana ? 'SÍ hay' : 'NO hay: di «tenemos la opción…» sin «esta semana»'}). Las dos opciones siempre: especialista en Sacs en línea y sin costo que muestra paso a paso cómo resolver sus flujos y automatizar con el sistema y con inteligencia artificial, o prueba gratis de 7 días. Pregunta de sí o no, sin horarios. Si dice que sí a la reunión: DOS burbujas (---): «Perfecto, déjame revisar la agenda del consultor.» y luego «Ya revisé la agenda y estos son los horarios más cercanos que tiene disponibles: X o Y. ¿Cuál te acomoda mejor?».`;
+  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${agendaHorarios}${notaSemana}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, modelo de negocio ${(c as any).modelo_negocio || 'desconocido (multimarca, monomarca, fabricante o mayorista)'}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
@@ -343,6 +367,11 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     if (modE.quitados || pul.cambios.length) await log({ accion: 'registro_pulido', contact_id: contactId, razon: `${modE.quitados ? `${modE.quitados} emoji(s) de más` : ''}${pul.cambios.length ? ` · ${pul.cambios.join(', ')}` : ''}`.trim(), detalle: { modelo } }).catch(() => {});
   }
 return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+}
+
+/** El id de giro (ropa, zapateria, joyeria…) a partir del giro del CRM o del hilo. */
+function ctxGiroId(giroCrm: string | null, conversacion: string): string | null {
+  try { return (detectarGiro(giroCrm || '') || detectarGiro(conversacion))?.id || null; } catch { return null; }
 }
 
 /** ¿El lead ya dijo que SÍ quiere la demo o la llamada? Determinista, para que los horarios no salgan antes de tiempo (7-sep).

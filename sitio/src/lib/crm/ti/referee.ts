@@ -57,7 +57,7 @@ export const SIEMPRE_NUNCA = [
   'Modismos informales: «te late», «nomás», «órale», «chido», «gacho», «va», «sale», «ahorita», «batallar», «checar», diminutivos',
   'Hablar de sí misma en masculino, o presentarse como asistente o bot',
   'Arranques tipo «¡Excelente!», «¡Claro que sí!», «Espero que estés bien», «quería darle seguimiento»',
-  'Viñetas, numeración, negritas o listas de funciones',
+  'Viñetas, negritas o listas de funciones (EXCEPCIÓN: la lista numerada 1. 2. 3. del paso 1, cuando ya se saben modelo, giro y sucursales)',
   'Prometer algo que no sabemos que es verdad hoy',
   'Reclamarle el silencio («no me contestaste», «te escribí y no supe de ti»)',
 ];
