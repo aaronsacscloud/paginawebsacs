@@ -217,6 +217,16 @@ que esa variable siga puesta. En local el navegador ya está en
 dueño: quien la tenga entra al CRM completo. Si se filtra, se cambia desde
 `/admin` — no se busca en el historial.
 
+### Token de Vercel (variables de entorno por API)
+
+Vive en **`.vercel-token`** en la raíz del repo (perms 600, **ignorado por
+git**). Es un token de cuenta (`vcp_…`): sirve para leer/crear variables de
+entorno del proyecto `prj_YknbNODDtDpknGYan5AnWIn4UW5B` (team
+`team_ZvEj1xlcOMkBXpp0GVurBvPr`) sin depender del login de la CLI, que caduca
+a los pocos días. Una variable nueva NO entra al despliegue vivo: aplica en el
+siguiente build. Si da 403 `invalidToken`, se pide otro en
+vercel.com → Settings → Tokens y se reescribe ese archivo.
+
 ### Management API de Supabase (correr SQL sin depender de nadie)
 
 El token personal del dueño vive en **`.supabase-token`** en la raíz del repo

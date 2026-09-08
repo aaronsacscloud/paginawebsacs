@@ -30,3 +30,4 @@ leads-captura-token.txt
 # Credenciales del CRM para QA con navegador: nunca al historial.
 .crm-login
 .cron-secret-prod
+.vercel-token
