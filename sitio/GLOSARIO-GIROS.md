@@ -88,5 +88,10 @@ Cada uno con base propia de 3 puntos y preguntas propias (por definir). Ropa inf
 
 **RENTA (o renta y venta), se suma:** calendario de renta por prenda sin empalmes · depósito, entrega y devolución registrados con el estado en que volvió · tintorería y arreglo entre rentas con fecha de disponibilidad · historial de cada prenda (rentas y desgaste) para saber cuándo retirarla.
 
+**Varias sucursales (2+), se suma:** qué muestra o prenda está en qué sucursal y traspasos · taller central con las órdenes de todas las sucursales · calendario de renta compartido entre sucursales · vendedores con metas y comisiones por sucursal · apartados multisucursal · cancelación de apartados con reglas (si se devuelve o no lo abonado) · corte de caja ligado a las cancelaciones · comisiones sobre la venta completa del apartado y sus abonos · factura a público en general automática según ventas y abonos · gastos y contabilidad (les interesa mucho).
+
+## TRANSVERSAL · apartados, corte y finanzas (dicho por el dueño en novias, aplica a cualquier giro con apartados)
+Cancelación de apartado con reglas de devolución de abonos · corte de caja que refleja cancelaciones · comisiones sobre la venta completa del apartado y sus abonos · factura a público en general automática por ventas y abonos · gastos, cuentas por pagar y contabilidad.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
