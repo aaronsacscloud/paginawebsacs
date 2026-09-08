@@ -113,5 +113,16 @@ Cancelación de apartado con reglas de devolución de abonos · corte de caja qu
 
 **Según el caso, se suma:** showroom con POS y fila afuera (misma línea, empaque y envíos del mismo inventario) · comunidad: lista de avísame y campañas de restock · varias sedes o bodegas: existencia por sede y traspasos · envíos y devoluciones con guía desde el sistema.
 
+## MERCH DE EVENTOS (conciertos, festivales, giras, pop-ups, y tiendas que venden merch antes y después del concierto)
+
+**Base (siempre):**
+1. Cobrar sin internet en el venue: el POS sigue cobrando aunque se caiga la señal y sincroniza después.
+2. Un almacén por módulo y traspasos en vivo: la M que se acabó en un módulo y sobra en otro se mueve durante el show, con registro.
+3. Entrega de preventa con escáner, sin lista impresa.
+4. Corte por módulo y por fecha al terminar la noche, sin contar de madrugada.
+5. Reporte especial del evento con la comisión del promotor o del artista, y conciliación de mercancía al cerrar el evento.
+6. Torre de control: traspasos entre puntos en tiempo real y semáforo por módulo (para giras y eventos grandes).
+Incluye el manejo completo del evento y también los pop-ups y las tiendas que venden merch antes y después del concierto.
+
 ## Pendientes
 - Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
