@@ -139,5 +139,15 @@ Incluye el manejo completo del evento y también los pop-ups y las tiendas que v
 ## TRANSVERSAL · la MATRIZ de tallas y colores (dicho por el dueño en western; aplica a calzado, jeans, trajes de baño y toda prenda con muchas tallas y colores)
 Mencionar siempre la visualización por matriz: ver las existencias en la matriz talla × color, por sucursal, con aviso de agotados; y hacer la compra y el traspaso desde la misma matriz. Es de lo más importante en swimwear, calzado y jeans.
 
-## Pendientes
-- Zapatería, joyería, novias, consignación, activewear, merch, multimarca como giro propio.
+## Sub-giro UNIFORMES (escolares, empresariales, médicos)
+1. Listas por escuela o empresa: cada una con su lista de prendas, tallas y precios; el pedido se arma desde la lista.
+2. Pedidos por talla con anticipo, saldo y fecha de entrega, sin cuaderno.
+3. Temporada de regreso a clases con inventario por punto: el módulo en la escuela sale como almacén aparte y cobra sin internet.
+4. Bordado o personalización como orden de servicio, con taller y fecha de entrega.
+
+## Notas de estructura
+- «Boutique multimarca» no es giro aparte: es ropa (o calzado) con modelo de negocio multimarca.
+- Bisutería se trata como accesorios dentro de ropa (talla única), no como joyería.
+- Ropa infantil se queda dentro de ropa.
+
+## Estado: glosario completo (8-sep-2026). Siguiente paso: cargarlo como fichas de giro en conocimiento/giros.ts con modelo × tamaño, y el paso 1 del flujo lo arma con la novedad de IA primero, la base y los puntos de la combinación.
