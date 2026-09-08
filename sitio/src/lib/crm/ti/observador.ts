@@ -144,6 +144,25 @@ export async function observar(): Promise<any> {
     const { proponerRespuestas, despacharEnvios, tocarSilencios, atenderCitas } = await import('./agente');
     // Los audios primero: el agente debe leer lo que el lead DIJO, no «[audio]».
     try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
+    // PRESUPUESTO Y CANDADO (8-sep): los extras (fotos, contrataciones, humanos, regeneraciones) corren en UN solo observador a
+    // la vez y solo si el gasto del día no pasó el presupuesto (cfg.presupuesto_diario_usd, 15 por defecto). Las respuestas a
+    // leads no se detienen por presupuesto: lo que se frena es lo opcional. Al 80 % y al 100 % se avisa en Sistema.
+    const { data: lkx } = await supabase.rpc('ti_lock', { p_clave: 'observador:extras', p_segundos: 100 });
+    const inicioDia = new Date(); inicioDia.setUTCHours(6, 0, 0, 0); if (inicioDia.getTime() > Date.now()) inicioDia.setUTCDate(inicioDia.getUTCDate() - 1);   // día CDMX
+    const { data: gasto } = await supabase.from('ia_uso').select('costo_usd').gte('created_at', inicioDia.toISOString()).eq('ok', true).limit(5000);
+    const gastoHoy = (gasto || []).reduce((a, x: any) => a + Number(x.costo_usd || 0), 0);
+    const presupuesto = Number(cfg.presupuesto_diario_usd) > 0 ? Number(cfg.presupuesto_diario_usd) : 15;
+    res.gasto_hoy = Math.round(gastoHoy * 100) / 100; res.presupuesto = presupuesto;
+    const sobrePresupuesto = gastoHoy >= presupuesto;
+    try {
+      const { avisoSistema } = await import('./agente');
+      const dia = inicioDia.toISOString().slice(0, 10);
+      if (sobrePresupuesto) await avisoSistema({ tipo: 'presupuesto_ia', nivel: 'alerta', clave: `presupuesto_ia:${dia}:100`, titulo: `El agente llegó al presupuesto del día: $${gastoHoy.toFixed(2)} de $${presupuesto}`, detalle: 'Las respuestas a leads siguen. Se detienen hasta mañana las reescrituras, la lectura de fotos, los recordatorios de pago y el aprendizaje de humanos.', que_hacer: 'Si quieres más margen hoy, sube presupuesto_diario_usd en la configuración del agente.' });
+      else if (gastoHoy >= presupuesto * 0.8) await avisoSistema({ tipo: 'presupuesto_ia', nivel: 'info', clave: `presupuesto_ia:${dia}:80`, titulo: `El agente va en $${gastoHoy.toFixed(2)} de $${presupuesto} hoy (80 %)`, detalle: 'Aviso para que no te tome por sorpresa.', que_hacer: 'Nada por ahora.' });
+    } catch { /* el aviso no detiene nada */ }
+    if (lkx === false) { res.extras = 'otro observador los está corriendo'; }
+    else if (sobrePresupuesto) { res.extras = 'presupuesto del día agotado'; }
+    else {
     // Fotos del lead sin mirar (5-sep): se describen una vez y quedan en el hilo para el agente y el consultor.
     try { const { describirFotosPendientes } = await import('./fotos-lead'); res.fotos = await describirFotosPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.fotos_error = String(e?.message || e); }
     // Contrataciones a medias (5-sep): recordatorio único a las 24 h sin comprobante; llamada P1 a las 72 h.
@@ -170,7 +189,9 @@ export async function observar(): Promise<any> {
     // Lo que escribió un humano por su cuenta (7-sep) se vuelve ejemplo: aprobado si es del dueño/admin/teléfono, dudoso si es de un partner.
     try { const { aprenderDeHumanos } = await import('./aprendizaje-humano'); res.humanos = await aprenderDeHumanos({ horas: 3, max: 20 }); } catch (e: any) { res.humanos_error = String(e?.message || e); }
     // Sugerencias marcadas por una lección nueva (7-sep): se reescriben hasta 12 por tick con el guion y las reglas de ahora.
-    try { const { regenerarPendientes } = await import('./regeneracion'); res.regeneradas = await regenerarPendientes(12); } catch (e: any) { res.regeneradas_error = String(e?.message || e); }
+    try { const { regenerarPendientes } = await import('./regeneracion'); res.regeneradas = await regenerarPendientes(4); } catch (e: any) { res.regeneradas_error = String(e?.message || e); }
+    await supabase.from('ti_locks').delete().eq('clave', 'observador:extras').then(() => {}, () => {});
+    }
     try { const { reintentarAgendas } = await import('./agente'); res.agente_reintentos = await reintentarAgendas(); } catch (e: any) { res.reintentos_error = String(e?.message || e); }
     try { const { revisarFallbacks } = await import('./agente'); res.agente_fallbacks = await revisarFallbacks(); } catch (e: any) { res.fallbacks_error = String(e?.message || e); }
   } catch (e: any) { res.agente_error = String(e?.message || e); }

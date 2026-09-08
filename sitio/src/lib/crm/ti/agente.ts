@@ -194,6 +194,7 @@ const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[a�
 /** Un turno del agente para un contacto: lee, decide, no envía. */
 export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
+  if (!(globalThis as any).__ia_proposito) (globalThis as any).__ia_proposito = `agente:${opts.tarea || 'respuesta'}`;   // atribución del gasto en ia_uso
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
     supabase.from('contacts').select('id, nombre, apellido, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id, puesto, companies(nombre, nombre_comercial, ciudad, sitio_web, sucursales, giro)').eq('id', contactId).maybeSingle(),
@@ -1085,6 +1086,8 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
         ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
+      // Ya salió un mensaje a este lead: cualquier otra sugerencia que esperaba para él ya no aplica (8-sep: Arturo recibía dos).
+      if (e.contact_id) await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'ya se le envió otro mensaje', updated_at: ahora.toISOString() }).eq('contact_id', e.contact_id).eq('estado', 'sugerencia').neq('id', e.id).then(() => {}, () => {});
       // MUESTREO CIEGO (3-sep): en automático, 1 de cada 10 envíos va a calificación sin decir quién lo escribió, para que la paridad siga medida.
       if ((cfg.agente_modo || 'sombra') === 'vivo' && !e.aprobado_por && Math.random() < 0.1) await supabase.from('ia_ejemplos').insert({ estado: (e.salida as any)?.estado || 'descubriendo', situacion: 'MUESTREO CIEGO: califica esta respuesta como si no supieras quién la escribió', mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje, adjuntos: (e as any).adjuntos || [], por_que: `Muestreo ciego · envio:${e.id}`, fuente: 'muestreo', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'pendiente' }).then(() => {}, () => {});
       try { const pr = await promoVigente(); if (await registrarOfertaDicha(e.contact_id, e.mensaje, pr)) await log({ accion: 'oferta_dicha', contact_id: e.contact_id, razon: pr?.nombre, detalle: { envio_id: e.id, vence: pr?.vence } }); } catch { /* la oferta no bloquea el envío */ }

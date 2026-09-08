@@ -45,7 +45,7 @@ export const anthropic = new Proxy(anthropicRaw, {
         const fn = Reflect.get(mTarget, mProp, mReceiver);
         if (mProp !== 'create' || typeof fn !== 'function') return fn;
         return async (...args: any[]) => {
-          const t0 = Date.now(); const desde = proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
+          const t0 = Date.now(); const desde = (globalThis as any).__ia_proposito || proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
           try {
             const r: any = await (fn as any).apply(mTarget, args);
             registrarUso({ modelo, usage: r?.usage, ok: true, ms: Date.now() - t0, desde });

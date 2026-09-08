@@ -48,7 +48,9 @@ export async function regenerarSugerencia(envioId: string, motivoExtra?: string 
   const nota = `REESCRITURA: este ${tipo} ya estaba redactado y se vuelve a escribir porque el consultor acaba de dejar una lección nueva (${motivo}). Mismo tipo de mensaje y mismo propósito${contexto ? `. ${contexto}` : ''}. Aplica las REGLAS VIGENTES y los EJEMPLOS APROBADOS tal como están ahora; si la lección nueva aplica a este lead, que se note. Versión anterior, para no repetirla palabra por palabra: «${String(e.mensaje || '').slice(0, 500)}».`;
   try {
     const { decidirTurno } = await import('./agente');
+    (globalThis as any).__ia_proposito = 'regeneracion';
     const d = await decidirTurno(e.contact_id, nota, { tarea: String(e.origen || 'respuesta') });
+    (globalThis as any).__ia_proposito = null;
     const ahora = new Date().toISOString();
     if (!d.salida?.mensaje || d.salida.responder === false) {
       await supabase.from('ti_envios').update({ salida: { ...s, regenerar: null, regeneracion_error: d.motivo || 'el agente no propuso mensaje' }, updated_at: ahora }).eq('id', envioId);
@@ -62,7 +64,7 @@ export async function regenerarSugerencia(envioId: string, motivoExtra?: string 
       salida: { ...s, ...d.salida, regenerar: null, regeneracion_error: null, regenerado: { at: ahora, motivo: String(motivo).slice(0, 240), anterior: String(e.mensaje || '').slice(0, 1500) }, regeneraciones: [...historial, { at: ahora, motivo: String(motivo).slice(0, 120) }].slice(-5) },
       costo_usd: Number(e.costo_usd || 0) + Number(d.costo || 0), updated_at: ahora,
     }).eq('id', envioId).eq('estado', 'sugerencia');
-    await supabase.from('ia_log').insert({ accion: 'sugerencia_regenerada', contact_id: e.contact_id, razon: String(motivo).slice(0, 200), contenido: nuevo, costo: d.costo, detalle: { envio_id: envioId, origen: e.origen, anterior: String(e.mensaje || '').slice(0, 400) } }).then(() => {}, () => {});
+    await supabase.from('ia_log').insert({ accion: 'sugerencia_regenerada', contact_id: e.contact_id, razon: String(motivo).slice(0, 200), contenido: nuevo, costo_usd: d.costo, detalle: { envio_id: envioId, origen: e.origen, anterior: String(e.mensaje || '').slice(0, 400) } }).then(() => {}, () => {});
     return { ok: true, mensaje: nuevo, anterior: String(e.mensaje || ''), costo: d.costo };
   } catch (err: any) {
     await supabase.from('ti_envios').update({ salida: { ...s, regenerar: null, regeneracion_error: String(err?.message || err).slice(0, 200) }, updated_at: new Date().toISOString() }).eq('id', envioId);
@@ -71,15 +73,25 @@ export async function regenerarSugerencia(envioId: string, motivoExtra?: string 
 }
 
 /** Observador: reescribe las marcadas, las más viejas primero, `max` por tick. */
-export async function regenerarPendientes(max = 12): Promise<{ regeneradas: number; fallidas: number; costo: number; quedan: number }> {
-  const res = { regeneradas: 0, fallidas: 0, costo: 0, quedan: 0 };
-  const { data } = await supabase.from('ti_envios').select('id').eq('estado', 'sugerencia').not('salida->regenerar', 'is', null).order('created_at', { ascending: true }).limit(max + 1);
+export async function regenerarPendientes(max = 4): Promise<{ regeneradas: number; fallidas: number; costo: number; quedan: number; saltado?: string }> {
+  const res: any = { regeneradas: 0, fallidas: 0, costo: 0, quedan: 0 };
+  // UN SOLO CORREDOR (8-sep): el cron y el panel abierto lanzaban observadores en paralelo y cada uno reescribía las MISMAS 12
+  // sugerencias antes de que la primera terminara. Eso multiplicó el gasto (cientos de llamadas en media hora). Candado + reclamo
+  // atómico por fila + 4 por tick: lo demás se reescribe cuando el consultor abre la tarjeta («Reescribir ahora» automático).
+  const { data: lk } = await supabase.rpc('ti_lock', { p_clave: 'regenerar', p_segundos: 150 });
+  if (lk === false) { res.saltado = 'otro corredor activo'; return res; }
+  const { data } = await supabase.from('ti_envios').select('id, salida').eq('estado', 'sugerencia').not('salida->regenerar', 'is', null).order('created_at', { ascending: true }).limit(max + 1);
   const lista = data || [];
   for (const e of lista.slice(0, max)) {
-    const r = await regenerarSugerencia(e.id);
+    // Reclamo atómico: si otro proceso ya la tomó (regenerar en null), no se repite.
+    const s: any = e.salida || {};
+    const { data: tomada } = await supabase.from('ti_envios').update({ salida: { ...s, regenerar: null, regenerando: { at: new Date().toISOString(), motivo: s.regenerar?.motivo || null } } }).eq('id', e.id).not('salida->regenerar', 'is', null).select('id');
+    if (!(tomada || []).length) continue;
+    const r = await regenerarSugerencia(e.id, s.regenerar?.motivo || null);
     if (r.ok) res.regeneradas++; else res.fallidas++;
     res.costo += Number(r.costo || 0);
   }
   res.quedan = Math.max(0, lista.length - max);
+  await supabase.from('ti_locks').delete().eq('clave', 'regenerar').then(() => {}, () => {});
   return res;
 }

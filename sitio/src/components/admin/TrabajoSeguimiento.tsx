@@ -33,6 +33,9 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const [verMas, setVerMas] = useState(false);       // móvil: los números finos y el bloque de 1-4 días van plegados
   const isMobile = useIsMobile();
   const cargar = () => fetch('/api/crm/ti/seguimiento').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
+  // La tarjeta que tienes enfrente se reescribe sola si quedó marcada por una lección nueva (8-sep): así el observador solo
+  // reescribe 4 por ciclo y el resto se paga solo cuando alguien la va a ver.
+  const [autoRegen, setAutoRegen] = useState<string | null>(null);
   useEffect(() => { cargar(); const t = setInterval(cargar, 45000); return () => clearInterval(t); }, []);
   const aviso = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); };
   if (soloAjustes) return <PanelAjustes d={d} onGuardado={cargar} />;
@@ -46,6 +49,15 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
   const actual = pend[Math.min(idx, Math.max(0, pend.length - 1))] || null;
   const pct = p.promedio !== null && p.promedio !== undefined ? Math.max(0, Math.min(100, (p.promedio / 10) * 100)) : 0;
   const metaPct = (p.meta / 10) * 100;
+  useEffect(() => {
+    const a: any = (d?.pendientes || []).find((x: any) => x.regenerar);
+    const primera: any = (d?.pendientes || [])[0];
+    const objetivo = primera && primera.regenerar ? primera : null;
+    if (!objetivo || autoRegen === objetivo.id) return;
+    setAutoRegen(objetivo.id);
+    fetch('/api/crm/ti/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'regenerar', envio_id: objetivo.id }) }).then(x => x.json()).then(() => cargar()).catch(() => {});
+    void a;
+  }, [d]); // eslint-disable-line react-hooks/exhaustive-deps
   const onDecidido = (r: any) => {
     setSaliendo(true);
     const cal = r.calificacion;

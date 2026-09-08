@@ -211,6 +211,7 @@ export async function decidirSugerencia(envioId: string, o: Decision): Promise<a
     await supabase.from('ti_envios').update({ estado: 'sugerencia', aprobado_por: null, updated_at: new Date().toISOString() }).eq('id', e.id).eq('estado', 'pendiente');
     return { error: `No se pudo enviar: ${errorEnvio || 'sin detalle'}` };
   }
+  if (e.contact_id) await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'ya se le envió otro mensaje', updated_at: new Date().toISOString() }).eq('contact_id', e.contact_id).eq('estado', 'sugerencia').neq('id', e.id).then(() => {}, () => {});
   const cal = calificacionPor(o.decision, sim);
   await supabase.from('ti_calificaciones').insert({ ...base, decision: o.decision, calificacion: cal, similitud: sim, mensaje_final: mensaje, adjuntos, detalle: [Array.isArray(o.cambios) && o.cambios.length ? `cambios: ${o.cambios.join(', ')}` : null, o.detalle ? String(o.detalle).slice(0, 600) : null].filter(Boolean).join(' · ') || null });
   const par = await revisarParidad();
