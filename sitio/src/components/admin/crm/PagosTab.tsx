@@ -440,18 +440,39 @@ export default function PagosTab() {
                 : 'Nada vencido. Todo al día.'}</div>
             </div>
             {vencidas.length > 0 && <div className="m-sec">Vencidas</div>}
-            {vencidas.map((v: any) => (
-              <div key={'v' + v.subscription_id} className="m-row" onClick={() => abonar(v.subscription_id)}>
-                <div className="m-tx">
-                  <div className="m-n1">{cased(v.empresa)}</div>
-                  <div className="m-n2">{[v.plan, v.vencida_desde ? 'venció ' + fmtDate(v.vencida_desde).replace(/ de \d{4}| \d{4}/, '') : null].filter(Boolean).join(' · ')}</div>
+            {/* El renglón, según el referee (7-sep):
+                · «venció 30 ago» y «9 días» eran el MISMO dato dos veces: se va
+                  la fecha y el atraso sube junto al nombre, como etiqueta.
+                · La columna derecha apilaba monto y días, y eso volvía a leerse
+                  como tabla. Ahora el monto va solo.
+                · Y la pantalla no dejaba HACER: se veían 8 deudores y no había
+                  forma de escribirles. El renglón registra el pago; el atajo de
+                  WhatsApp abre la conversación con quien hay que cobrarle. */}
+            {vencidas.map((v: any) => {
+              const tel = String(v.whatsapp || v.telefono || '').replace(/[^\d+]/g, '');
+              return (
+                <div key={'v' + v.subscription_id} className="m-row" onClick={() => abonar(v.subscription_id)}>
+                  <div className="m-tx">
+                    <div className="m-n1">
+                      {cased(v.empresa)}
+                      <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, color: '#C0554E', background: 'rgba(192,85,78,.16)', borderRadius: 5, padding: '2px 6px' }}>
+                        {v.dias_vencida === 1 ? '1 día' : `${v.dias_vencida} días`}
+                      </span>
+                    </div>
+                    <div className="m-n2">{v.plan || '—'}</div>
+                  </div>
+                  <div className="m-fin"><div className="m-m1">{fmtM(v.monto)}</div></div>
+                  {tel && (
+                    <a href={`https://wa.me/${tel.replace(/^\+/, '')}`} target="_blank" rel="noopener"
+                      onClick={e => e.stopPropagation()} title={`Escribirle a ${v.empresa}`}
+                      style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 999, background: 'rgba(30,138,99,.16)', color: '#4FBF95',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', fontWeight: 800, fontSize: 11 }}>
+                      WA
+                    </a>
+                  )}
                 </div>
-                <div className="m-fin">
-                  <div className="m-m1">{fmtM(v.monto)}</div>
-                  <div className="m-m2" style={{ color: '#C0554E' }}>{v.dias_vencida === 1 ? '1 día' : `${v.dias_vencida} días`}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {proxOrden.length > 0 && <div className="m-sec">Próximas</div>}
             {proxOrden.map((c: any) => (
               <div key={'p' + c.subscription_id} className="m-row" onClick={() => abonar(c.subscription_id)}>

@@ -12,6 +12,7 @@ import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando, { Corazones } from './ui/Cargando';
 import KpiCard from './ui/KpiCard';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
@@ -146,6 +147,8 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
   });
   const filas = filtra(activa.filas);
 
+  const movilCob = useIsMobile();
+
   const Fila = ({ f }: any) => {
     const g = GESTION[f.gestion] || GESTION.sin_contactar;
     const se = f.senal ? SENAL[f.senal] : null;
@@ -228,7 +231,48 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
     );
   };
 
-  const Tabla = ({ filas }: any) => (
+  /* TELÉFONO · la tabla de ocho columnas se vuelve renglones que DEJAN HACER.
+     El referee (7-sep) lo dijo así: «la pantalla informa pero no deja hacer» —se
+     veían 8 deudores y no había forma de escribirles ni de registrar el pago
+     desde el renglón—. Y la columna derecha apilaba monto y días, lo que la
+     hacía leerse como tabla otra vez.
+     Ahora: el atraso va como etiqueta JUNTO AL NOMBRE, el monto solo a la
+     derecha, el renglón entero abre «Registrar pago», y si hay teléfono aparece
+     el atajo a WhatsApp. Fuera «venció 30 ago»: era el mismo dato que «8 días»
+     dicho dos veces. */
+  const FilaMovil = ({ f }: any) => {
+    const tel = String(f.telefono || '').replace(/[^\d+]/g, '');
+    const tono = f.dias > 90 ? '#C0554E' : f.dias > 30 ? '#9a6a10' : '#5B4BD6';
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 2px', minHeight: 62, borderBottom: '1px solid #f0eef6' }}>
+        <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setGestion({ ...f, modo: 'pago' })}>
+          <div style={{ fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {f.cliente}
+            <span style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 800, color: tono, background: tono + '22', borderRadius: 5, padding: '2px 6px' }}>
+              {f.dias}d
+            </span>
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.plan}</div>
+        </div>
+        <div style={{ fontWeight: 800, fontSize: '0.92rem', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{money(f.deuda)}</div>
+        {tel && (
+          <a href={`https://wa.me/${tel.replace(/^\+/, '')}`} target="_blank" rel="noopener"
+            title={`Escribirle a ${f.contacto || f.cliente}`} onClick={e => e.stopPropagation()}
+            style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 999, background: '#eaf8f2', color: '#1E8A63',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', fontWeight: 800, fontSize: 11 }}>
+            WA
+          </a>
+        )}
+      </div>
+    );
+  };
+
+  const Tabla = ({ filas }: any) => movilCob ? (
+    <div>
+      {filas.length === 0 && <div style={{ padding: '18px 2px', color: '#c9c7d0', fontSize: '0.85rem' }}>Nada por cobrar aquí.</div>}
+      {filas.map((f: any) => <FilaMovil key={f.id} f={f} />)}
+    </div>
+  ) : (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', minWidth: 900, borderCollapse: 'collapse' }}>
         <thead>

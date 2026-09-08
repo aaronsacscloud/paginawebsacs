@@ -36,7 +36,7 @@ const _GET: APIRoute = async () => {
     supabase.from('subscriptions')
       .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
       .in('estado', ['activa', 'pendiente_pago']),
-    supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, ultima_venta_at').is('archived_at', null),
+    supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, ultima_venta_at, contacts(nombre, whatsapp, telefono)').is('archived_at', null),
     supabase.from('cobros_programados').select('*').neq('estado', 'cancelada').order('numero'),
     // El detalle del mes, no solo la suma: un KPI que nadie puede abrir es un
     // número que hay que creer. Aquí se ve de quién salió cada peso.
@@ -104,6 +104,8 @@ const _GET: APIRoute = async () => {
       return {
         id: s.id, company_id: s.company_id,
         cliente: co.nombre_comercial || co.nombre || 'Cuenta', cuenta: co.sacs_account || null,
+        contacto: (co as any).contacts?.[0]?.nombre || null,
+        telefono: (co as any).contacts?.[0]?.whatsapp || (co as any).contacts?.[0]?.telefono || null,
         plan: s.nombre_plan, ciclo: s.ciclo, vence, dias: d, deuda: Math.round(deuda), detalle,
         precio: Math.round(precio), pagado: Math.round(num(s.total_pagado)), pagos: num(s.pagos_realizados),
         link: s.mp_link_pago || null,
