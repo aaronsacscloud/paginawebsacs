@@ -13,7 +13,7 @@
 import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
 import { anthropic, MODELS, hasApiKey } from '../../ai/client';
-import { plantillaSiVentanaCerrada, ventanaAbierta } from './agente';
+import { plantillaSiVentanaCerrada, ventanaAbierta, enAlcanceSDR } from './agente';
 import { saludoParaPlantilla } from './nombre-y-bots';
 
 export const META_DEFAULT = 9;
@@ -272,6 +272,9 @@ export async function sugerenciasPendientes(limit = 60) {
   const { data: sug } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, mensaje, adjuntos, imagen_url, plantilla, salida, created_at, sale_at').eq('estado', 'sugerencia').order('created_at', { ascending: true }).limit(limit);
   const ids = [...new Set((sug || []).map(s => s.contact_id).filter(Boolean))] as string[];
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, email, lifecycle_stage, giro, company_id, propiedades, fuente, companies(nombre_comercial, nombre)').in('id', ids) : { data: [] as any[] };
+  // Defensa (8-sep): un lead que ya es del consultor no aparece en la cola aunque tuviera algo preparado.
+  const fueraIds = new Set((cs || []).filter((c: any) => !enAlcanceSDR(c.lifecycle_stage)).map((c: any) => c.id));
+  if (fueraIds.size) { for (let i = (sug || []).length - 1; i >= 0; i--) if (fueraIds.has((sug || [])[i].contact_id as string)) (sug || []).splice(i, 1); }
   // Ventana de 24 h por lead: si está cerrada, lo que salga será una plantilla y el texto viaja como puente.
   const { data: ent } = ids.length ? await supabase.from('ti_eventos').select('contact_id, ocurrio_at').eq('tipo', 'wa_entrante').in('contact_id', ids).gte('ocurrio_at', desde24).order('ocurrio_at', { ascending: false }) : { data: [] as any[] };
   const abiertos = new Set((ent || []).map((x: any) => x.contact_id));

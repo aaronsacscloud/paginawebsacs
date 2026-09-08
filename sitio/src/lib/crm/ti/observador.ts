@@ -186,6 +186,13 @@ export async function observar(): Promise<any> {
     try { const { dispararCompromisos } = await import('./compromisos'); res.compromisos = await dispararCompromisos(); } catch (e: any) { res.compromisos_error = String(e?.message || e); }
     try { res.agente_despacho = await despacharEnvios(); } catch (e: any) { res.despacho_error = String(e?.message || e); }
     try { const { barrerSugerencias } = await import('./seguimiento'); res.sugerencias = await barrerSugerencias(); } catch (e: any) { res.sugerencias_error = String(e?.message || e); }
+    // ALCANCE (8-sep): si un lead pasó a oportunidad (o más allá), lo que el agente tenía preparado para él se retira.
+    try {
+      const { ETAPAS_SDR } = await import('./agente');
+      const { data: vivos } = await supabase.from('ti_envios').select('id, contact_id, contacts!inner(lifecycle_stage)').in('estado', ['sugerencia', 'pendiente']).is('aprobado_por', null).limit(300);
+      const fuera = (vivos || []).filter((e: any) => !ETAPAS_SDR.includes(String(e.contacts?.lifecycle_stage || ''))).map((e: any) => e.id);
+      if (fuera.length) { await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'el lead ya es del consultor (etapa fuera del alcance del agente)', updated_at: ahora.toISOString() }).in('id', fuera); res.fuera_de_alcance = fuera.length; }
+    } catch (e: any) { res.alcance_error = String(e?.message || e); }
     // Lo que escribió un humano por su cuenta (7-sep) se vuelve ejemplo: aprobado si es del dueño/admin/teléfono, dudoso si es de un partner.
     try { const { aprenderDeHumanos } = await import('./aprendizaje-humano'); res.humanos = await aprenderDeHumanos({ horas: 3, max: 20 }); } catch (e: any) { res.humanos_error = String(e?.message || e); }
     // Sugerencias marcadas por una lección nueva (7-sep): se reescriben hasta 12 por tick con el guion y las reglas de ahora.

@@ -83,7 +83,10 @@ export type SalidaAgente = {
 };
 
 /** Etapas que atiende el SDR (un lead calificado de la web también escribe por WhatsApp). */
-export const ETAPAS_SDR = ['lead', 'lead_calificado', 'oportunidad'];
+/** ALCANCE DEL AGENTE (decisión del dueño, 8-sep-2026): nutre al lead NUEVO y al REZAGADO hasta que muestre interés y se agende
+ *  la demo. En «oportunidad» (y de ahí en adelante: prueba gratis, cliente) el hilo es del consultor y la IA no propone nada. */
+export const ETAPAS_SDR = ['lead', 'lead_calificado', 'rezagado'];
+export const enAlcanceSDR = (etapa?: string | null) => ETAPAS_SDR.includes(String(etapa || ''));
 
 async function log(o: { accion: string; contact_id?: string | null; razon?: string; contenido?: string | null; costo?: number; detalle?: any }) {
   await supabase.from('ia_log').insert({ accion: o.accion, contact_id: o.contact_id || null, razon: o.razon || null, contenido: o.contenido || null, modelo: MODELS.opus, costo_usd: o.costo ?? null, detalle: o.detalle || null });
@@ -201,6 +204,9 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
   ]);
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
+  // FUERA DE ALCANCE (8-sep): en oportunidad, prueba, cliente… el consultor lleva el hilo. Ninguna ruta (respuesta, silencio,
+  // seguimiento, reenganche, reactivación, compromiso, reescritura) redacta para ese lead. Es el candado central.
+  if (!enAlcanceSDR(c.lifecycle_stage)) return { salida: null, costo: 0, conversationId, telefono, motivo: `fuera_de_alcance:${c.lifecycle_stage || 'sin_etapa'}` };
   // SIMULACIÓN (solo pruebas y árbitro): un mensaje entrante que NO existe en la base, para ver qué contestaría el
   // agente ante «sí, el que sea», «lo veo con mi socio», etc. Nunca se guarda ni se manda.
   if (opts.simularEntrante) msjs.push({ direccion: 'entrante', cuerpo: opts.simularEntrante, tipo: 'text', autor: null, created_at: new Date().toISOString(), conversation_id: conversationId, telefono });
@@ -1241,7 +1247,8 @@ export async function calificarLeads(opts: { limite?: number } = {}): Promise<an
 /** ALCANCE DEL SDR (decisión del dueño, 2026-09-02): el agente acompaña HASTA agendar la demo o la llamada discovery.
  *  Cuando el lead ya TUVO su reunión (asistió) o ya tiene una COTIZACIÓN, el seguimiento es del consultor:
  *  el agente no propone, no toca ni prepara nada; si el lead escribe, abre tarea para el consultor. */
-export async function fueraDelAlcanceSDR(contactId: string): Promise<null | 'reunion_hecha' | 'cotizacion'> {
+export async function fueraDelAlcanceSDR(contactId: string): Promise<null | 'reunion_hecha' | 'cotizacion' | 'etapa_consultor'> {
+  { const { data: k } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contactId).maybeSingle(); if (k && !enAlcanceSDR(k.lifecycle_stage)) return 'etapa_consultor'; }
   const hace2h = new Date(Date.now() - 2 * 3600e3);
   const hoyCd = new Date(hace2h.getTime() - 6 * 3600e3).toISOString().slice(0, 10);
   const [{ data: reu }, { data: cot }, { data: pasada }] = await Promise.all([
