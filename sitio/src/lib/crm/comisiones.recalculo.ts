@@ -15,6 +15,7 @@
 //  · pagos sin dueño asignado — no hay a quién pagarle. Se cuentan aparte y la
 //    pantalla los muestra como "sin atribuir", que es el trabajo pendiente.
 import { supabase } from '../supabase';
+import { cotizacionEsUnico } from './pagos-unicos';
 import {
   calcularLinea, calcularOverride, aplicarPctManual, aplicarCuenta, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
   type Modelo, type Regla, type Origen, type LineaCalculada,
@@ -353,7 +354,7 @@ export async function evaluarRenovaciones(anio: number) {
   // Todo lo que no es la licencia recurrente (plugins, servicios,
   // personalizaciones) más las licencias vitalicias, que son pago único.
   const { filas: pagos } = await leerTodo(() => supabase.from('payments')
-    .select('company_id, monto, reembolsado, estado, subscriptions(ciclo, plans(categoria))')
+    .select('company_id, monto, reembolsado, estado, quote_id, subscriptions(ciclo, plans(categoria)), quotes(items)')
     .gte('fecha', desde).lte('fecha', hasta)
     .not('company_id', 'is', null)
     .or('estado.is.null,estado.not.in.(anulado,cancelado,duplicado)')
@@ -364,9 +365,26 @@ export async function evaluarRenovaciones(anio: number) {
     if (p.reembolsado === true) continue;
     const cat = (p as any).subscriptions?.plans?.categoria;
     const ciclo = (p as any).subscriptions?.ciclo;
-    // Sin SKU no se puede saber si expandió: no cuenta ni a favor ni en contra.
-    if (!cat) continue;
-    const expande = cat !== 'plan' || ciclo === 'vitalicia';
+    let expande: boolean;
+    if (cat) {
+      expande = cat !== 'plan' || ciclo === 'vitalicia';
+    } else if (p.quote_id) {
+      /* ── Lo cobrado por COTIZACIÓN también expande ──
+         Antes se descartaba todo pago sin SKU ("sin SKU no se puede saber si
+         expandió"). El razonamiento valía cuando lo único que se cobraba eran
+         licencias; hoy los plugins y las personalizaciones se cobran por
+         cotización y no cuelgan de ninguna licencia, así que caían aquí y
+         desaparecían. Medido: ARTIK cobró $119,764 en julio de 2026 y su
+         renovación decía "VENDIDO $0 · NO CUMPLE" con la meta intacta.
+         La cotización SÍ dice qué se vendió: si ninguna de sus partidas es una
+         licencia, el cobro es expansión. Si alguna lo es, no —renovar no es
+         crecer— y es el caso de elenaboutique ("Renovación Plan Controla") y
+         Okulany ("controla"). */
+      expande = cotizacionEsUnico((p as any).quotes?.items);
+    } else {
+      // Sin SKU y sin cotización sigue sin poderse saber: ni a favor ni en contra.
+      continue;
+    }
     if (!expande) continue;
     vendido.set(p.company_id, r2((vendido.get(p.company_id) || 0) + Number(p.monto || 0)));
   }

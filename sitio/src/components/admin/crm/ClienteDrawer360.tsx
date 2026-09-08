@@ -1867,7 +1867,14 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
      una de las cifras de la fila de tarjetas, y si la pidiera su propia sección
      la tarjeta y la lista dirían números distintos mientras carga. */
   const [porCobrar, setPorCobrar] = useState<{ total: number; vencido: number; lineas: any[] }>({ total: 0, vencido: 0, lineas: [] });
+  /* Los pagos ÚNICOS —plugins, personalizaciones, implementaciones, vitalicias—
+     viven aparte del ARR porque no se repiten. Se piden aquí, con lo cotizado,
+     por la misma razón: la tarjeta de arriba y el desglose de abajo tienen que
+     decir el MISMO número mientras cargan. */
+  const [unicos, setUnicos] = useState<any>(null);
   function cargarCotizado() {
+    fetch('/api/crm/arr/pagos-unicos?company_id=' + companyId).then(r => r.json())
+      .then(j => setUnicos(j && !j.error ? j : null)).catch(() => setUnicos(null));
     fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
       .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
     fetch('/api/crm/deals/cotizaciones?company_id=' + companyId).then(r => r.json())
@@ -1876,7 +1883,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       .then(j => setPorCobrar({ total: Number(j.total || 0), vencido: Number(j.vencido || 0), lineas: j.lineas || [] }))
       .catch(() => setPorCobrar({ total: 0, vencido: 0, lineas: [] }));
   }
-  useEffect(() => { setDeals(null); setSueltas([]); setPorCobrar({ total: 0, vencido: 0, lineas: [] }); cargarCotizado(); }, [companyId]);
+  useEffect(() => { setDeals(null); setSueltas([]); setUnicos(null); setPorCobrar({ total: 0, vencido: 0, lineas: [] }); cargarCotizado(); }, [companyId]);
   // Estado de cuenta. Antes salía siempre con TODAS las suscripciones; ahora se
   // elige cuáles entran, porque mandarle el total de todo a quien le estás
   // cobrando una sola invita a la pregunta equivocada.
@@ -2131,7 +2138,14 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // Un pago único —vitalicia o pago de una sola vez— NO es recurrencia: va
   // aparte para que nadie lo sume al ARR. Se cuenta lo efectivamente pagado.
   const vitalicias = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')));
-  const unicoPagado = vitalicias.reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
+  /* Antes esta cifra SOLO miraba vitalicias, así que un plugin cobrado por
+     cotización no existía: ARTIK pagó $119,764 y la tarjeta decía "—". El
+     endpoint ya suma las dos vías (y descarta las cotizaciones que en realidad
+     son renovación de licencia, que no son crecimiento). Mientras carga se usa
+     lo que se puede calcular en el cliente para no parpadear en cero. */
+  const unicoPagado = unicos
+    ? Number(unicos.total || 0)
+    : vitalicias.reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
 
   /* ── Lo que está sobre la mesa ──
      Una oportunidad ABIERTA es la que no se ganó ni se perdió. Las ganadas no
@@ -2196,6 +2210,12 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           {unicoPagado === 0 && vitaliciasSinCobro > 0 ? (
             <div style={{ fontSize: '0.68rem', color: '#9a6a10', fontWeight: 600 }}>
               {vitaliciasSinCobro} vitalicia{vitaliciasSinCobro === 1 ? '' : 's'} de {money(vitaliciasValor)} sin pago capturado
+            </div>
+          ) : unicos && unicos.anio_actual > 0 ? (
+            /* Lo que importa de esta cifra es el AÑO: sirve para saber si la
+               cuenta crece por esta vía, no solo cuánto acumuló desde siempre. */
+            <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+              {money(unicos.anio_actual)} este año{unicos.ultimo?.fecha ? ` · último ${fmtDate(unicos.ultimo.fecha)}` : ''}
             </div>
           ) : (
             <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
@@ -2655,6 +2675,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       </div>
 
       {/* Lo cotizado, debajo de las licencias: es el ANTES de cada una. */}
+      <PagosUnicos datos={unicos} />
+
       <SeccionCotizaciones abiertos={abiertos} resueltos={nResueltas} companyId={companyId}
         flash={flash} cargar={cargarCotizado} reload={reload} />
 
@@ -3912,6 +3934,73 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
           <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cerrar</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─────────── Pagos únicos: lo que entró y no se repite ───────────
+   Va aquí, pegado a Cotizado, porque el dinero de una cotización cobrada es
+   justamente lo que el dueño venía a buscar y no encontraba. Partido por AÑO
+   con su variación: la pregunta no es cuánto pagó, sino si la cuenta CRECE por
+   esta vía año con año. Cada cobro trae su fecha y sus partidas — sin eso, la
+   cifra no se puede defender frente al cliente. */
+function PagosUnicos({ datos }: any) {
+  const [abierto, setAbierto] = useState<number | null>(null);
+  if (!datos || !Number(datos.total)) return null;
+  const anios = (datos.por_anio || []).filter((a: any) => a.total > 0 || a.pagos?.length);
+  if (!anios.length) return null;
+  return (
+    <div style={D.cardA}>
+      <div style={{ ...D.hA, marginBottom: 10 }}>
+        <span>Pagos únicos</span>
+        <span style={{ flex: 1 }} />
+        <span style={D.hNota}>no suman al ARR</span>
+        <span style={{ fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums', fontSize: '0.85rem' }}>{money(datos.total)}</span>
+      </div>
+      {anios.map((a: any) => {
+        const ab = abierto === a.anio;
+        return (
+          <div key={a.anio} style={{ border: '1px solid #ececec', borderRadius: 9, marginBottom: 7, overflow: 'hidden' }}>
+            <button
+              onClick={() => setAbierto(ab ? null : a.anio)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f7f6fb', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{a.anio}</span>
+              {/* La variación es el dato de esta pantalla: sin ella el año es
+                  un número suelto y no se ve si la cuenta creció. */}
+              {a.delta == null
+                ? <span style={{ fontSize: '0.66rem', fontWeight: 700, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px' }}>primer año con dato</span>
+                : a.delta === 0
+                ? <span style={{ fontSize: '0.66rem', color: '#a7abb3' }}>igual que {a.anio - 1}</span>
+                : <span style={{ fontSize: '0.66rem', fontWeight: 700, borderRadius: 20, padding: '2px 8px', background: a.delta > 0 ? '#EAF8F2' : '#FEF0EF', color: a.delta > 0 ? '#1E8A63' : '#C0554E' }}>
+                    {a.delta > 0 ? '+' : '−'}{money(Math.abs(a.delta))} vs {a.anio - 1}
+                  </span>}
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: '0.72rem', color: '#a7abb3' }}>{a.pagos.length} cobro{a.pagos.length === 1 ? '' : 's'}</span>
+              <span style={{ fontWeight: 800, color: '#5B4BD6', fontVariantNumeric: 'tabular-nums' }}>{money(a.total)}</span>
+            </button>
+            {ab && a.pagos.map((p: any) => (
+              <div key={p.id} style={{ borderTop: '1px solid #f3f2f7', padding: '8px 12px' }}>
+                <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', fontSize: '0.8rem' }}>
+                  <span style={{ color: '#8f8d98', minWidth: 82, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(p.fecha)}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>{p.numero || p.partidas?.[0]?.nombre || 'Cobro'}{p.metodo ? <span style={{ color: '#a7abb3' }}> · {p.metodo}</span> : null}</span>
+                  <span style={{ fontWeight: 800, color: '#5B4BD6', fontVariantNumeric: 'tabular-nums' }}>{money(p.monto)}</span>
+                </div>
+                {(p.partidas || []).length > 0 && (
+                  <div style={{ marginTop: 5, marginLeft: 91, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {p.partidas.map((it: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'baseline', fontSize: '0.74rem', color: '#6b6b74' }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>{it.nombre}</span>
+                        <span style={{ fontSize: '0.62rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74', borderRadius: 20, padding: '1px 7px' }}>{it.categoria}</span>
+                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

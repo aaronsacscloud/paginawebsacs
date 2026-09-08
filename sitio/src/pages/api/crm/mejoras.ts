@@ -56,6 +56,10 @@ function limpia(b: any) {
   if (b?.visible_cliente !== undefined) p.visible_cliente = !!b.visible_cliente;
   if ('booking_id' in b) p.booking_id = b.booking_id || null;
   if ('quote_id' in b) p.quote_id = b.quote_id || null;
+  // Qué PARTIDA de esa cotización cubre la entrega. Con solo la cotización no
+  // se puede saber si dos entregas salieron del mismo cobro, y el dinero se
+  // contaría dos veces.
+  if ('quote_item' in b) p.quote_item = String(b.quote_item || '').slice(0, 300) || null;
   if ('deal_id' in b) p.deal_id = b.deal_id || null;
   // El módulo sale del catálogo, no de lo que alguien escriba: en texto libre
   // la misma pantalla acaba como "conteos", "Conteo físico" y "conteos fisicos".

@@ -12,6 +12,12 @@ import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modul
 import { computarSenales } from '../../../lib/crm/senales';
 import { confirmar } from '../../../lib/ui/confirmar';
 
+// Cómo se lee el estado de una cotización dentro de la ficha. En inglés crudo
+// ("paid", "sent") el menú obliga a traducir mentalmente cada renglón.
+const ESTADO_COT_L: Record<string, string> = {
+  draft: 'borrador', sent: 'enviada', accepted: 'aceptada',
+  paid: 'pagada', rejected: 'rechazada', expired: 'vencida',
+};
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
 
@@ -61,6 +67,10 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
   const [reuniones, setReuniones] = useState<any[]>([]);
+  // Las cotizaciones de la cuenta, con sus partidas y su monto YA con descuento.
+  // Es lo que permite decir "esto se cobró en tal partida" en vez de teclear
+  // una cifra que nadie puede verificar después.
+  const [cots, setCots] = useState<any[]>([]);
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
@@ -76,6 +86,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       .then(j => { if (alive) { setRows(j.data || []); setVencidas(j.vencidas || []); } }).catch(() => { if (alive) setRows([]); });
     fetch('/api/scheduling/reuniones?company_id=' + companyId).then(r => r.json())
       .then(j => { if (alive) setReuniones(j.data || []); }).catch(() => {});
+    fetch('/api/crm/mejoras/cotizaciones?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (alive) setCots(j.cotizaciones || []); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -385,17 +397,17 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         </Hito>
       </div>
 
-      {editando && <EditorMejora m={editando} reuniones={reuniones} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
+      {editando && <EditorMejora m={editando} reuniones={reuniones} cots={cots} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
       {reporte && <ReporteMejoras companyId={companyId} cliente={cliente} onCerrar={() => setReporte(false)} />}
     </div>
   );
 }
 
-function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
+function EditorMejora({ m, reuniones, cots = [], onCerrar, onGuardar }: any) {
   const [f, setF] = useState<any>({
     titulo: '', descripcion: '', estado: 'idea', categoria: 'personalizacion',
     valor: 0, cortesia: false, visible_cliente: true, booking_id: '', fecha_entrega: '', fecha_compromiso: '',
-    modo: 'junta', url: '', modulo: '', origen: '', ...m,
+    modo: 'junta', url: '', modulo: '', origen: '', quote_id: '', quote_item: '', ...m,
   });
   const [guardando, setGuardando] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -497,6 +509,84 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
                   <option key={r.id} value={r.id}>{fmtDate(r.fecha)} · {r.asunto || r.event_types?.nombre || 'Reunión'}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {/* ── ¿Ya se cobró? ──
+              El dinero de una entrega no se teclea: sale de la partida que se
+              le cotizó. Elegirla llena el monto con lo que REALMENTE entró —el
+              de lista menos el descuento global de la cotización— y deja el
+              rastro de dónde salió, que es lo que se puede defender frente al
+              cliente seis meses después. */}
+          {!esCap && !esPend && cots.length > 0 && (
+            <div style={{ border: '1px solid #ececec', borderRadius: 10, padding: '10px 11px', marginBottom: 10, background: '#faf9fd' }}>
+              <div style={S.lbl}>¿Se cotizó?</div>
+              <select value={f.quote_id || ''} style={S.input}
+                onChange={e => { set('quote_id', e.target.value); set('quote_item', ''); }}>
+                <option value="">— todavía no se cotiza —</option>
+                {cots.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.numero || 'Cotización'} · {ESTADO_COT_L[c.estado] || c.estado}{c.pagado_fecha ? ` ${fmtDate(c.pagado_fecha)}` : ''} · {money(c.total)}
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                const cot = cots.find((c: any) => c.id === f.quote_id);
+                if (!cot) return null;
+                if (!cot.partidas.length) return <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 6 }}>Esta cotización no tiene partidas con monto; captura el importe abajo.</div>;
+                const sel = cot.partidas.find((x: any) => x.clave === f.quote_item);
+                // "Ya tomada" = otra entrega de ESTA cuenta cuelga de la misma
+                // partida. Si las dos se llevan el monto completo, el cliente
+                // aparece pagando el doble por un solo cobro.
+                const otras = sel ? sel.tomada.filter((t: any) => t.id !== m.id) : [];
+                return (<>
+                  <div style={{ ...S.lbl, marginTop: 9 }}>¿Qué se le cobró de esta cotización?</div>
+                  {cot.partidas.map((it: any) => {
+                    const on = f.quote_item === it.clave;
+                    const ocupada = it.tomada.filter((t: any) => t.id !== m.id);
+                    return (
+                      <button key={it.clave} type="button"
+                        onClick={() => { set('quote_item', it.clave); set('valor', it.neto); set('cortesia', false); }}
+                        style={{
+                          width: '100%', textAlign: 'left', fontFamily: 'inherit', color: 'inherit', cursor: 'pointer',
+                          border: `1px solid ${on ? '#9B8CFA' : '#e6e3ef'}`, background: on ? '#f3f0ff' : '#fff',
+                          borderRadius: 9, padding: '7px 10px', marginBottom: 5, display: 'flex', gap: 9, alignItems: 'center',
+                          boxShadow: on ? '0 0 0 2px #EEECFE' : 'none',
+                        }}>
+                        <span style={{ width: 13, height: 13, borderRadius: '50%', flex: 'none', border: `1.5px solid ${on ? '#5B4BD6' : '#c8c1e4'}`, background: on ? '#5B4BD6' : 'transparent', boxShadow: on ? 'inset 0 0 0 2.5px #fff' : 'none' }} />
+                        <span style={{ flex: 1, minWidth: 0, fontSize: '0.79rem' }}>
+                          {it.nombre}
+                          {ocupada.length > 0 && <small style={{ display: 'block', fontSize: '0.66rem', color: '#9a6a10', fontWeight: 700 }}>ya la usa «{ocupada[0].titulo}»</small>}
+                        </span>
+                        <span style={{ textAlign: 'right', flex: 'none' }}>
+                          <span style={{ display: 'block', fontWeight: 800, color: '#5B4BD6', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</span>
+                          {it.neto !== it.lista && <span style={{ fontSize: '0.66rem', color: '#a5a2af', textDecoration: 'line-through' }}>{money(it.lista)}</span>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {cot.descuento > 0 && (
+                    <div style={{ fontSize: '0.67rem', color: '#a5a2af', lineHeight: 1.45 }}>
+                      Los montos ya traen el <b>{cot.descuento}% de descuento</b> de la cotización: es lo que realmente entró. Tachado, el precio de lista.
+                    </div>
+                  )}
+                  {otras.length > 0 && (
+                    <div style={{ borderLeft: '3px solid #E8A838', background: '#FFF4E5', borderRadius: '0 8px 8px 0', padding: '8px 10px', fontSize: '0.73rem', color: '#5b5570', marginTop: 7 }}>
+                      <b>Esa partida ya está tomada.</b> «{otras[0].titulo}» también salió de ahí. Son dos entregas de un solo cobro de {money(sel.neto)}.
+                      <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => set('valor', Math.round(sel.neto / (otras.length + 1)))}
+                          style={{ fontFamily: 'inherit', fontSize: '0.71rem', fontWeight: 700, borderRadius: 7, padding: '5px 9px', cursor: 'pointer', border: '1px solid #E8A838', background: '#fff', color: '#9a6a10' }}>
+                          Repartir {money(Math.round(sel.neto / (otras.length + 1)))} a cada una
+                        </button>
+                        <button type="button" onClick={() => set('valor', 0)}
+                          style={{ fontFamily: 'inherit', fontSize: '0.71rem', fontWeight: 700, borderRadius: 7, padding: '5px 9px', cursor: 'pointer', border: '1px solid #E8A838', background: '#fff', color: '#9a6a10' }}>
+                          Esta va incluida ($0)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>);
+              })()}
             </div>
           )}
 

@@ -108,7 +108,17 @@ export default function RenovacionCuenta({ companyId, nombre }: { companyId: str
   );
 
   const meta = Number(ev.meta || 0);
-  const vendido = Number(ev.vendido || 0);
+  /* El VENDIDO se toma del cálculo VIVO, no de la evaluación guardada.
+     La evaluación es una foto que se genera de madrugada; la lista de abajo se
+     arma en cada carga. Cuando no coinciden, la pantalla se contradice a sí
+     misma: decía "VENDIDO $0 · NO CUMPLE" con los $119,764 de ARTIK listados
+     tres renglones más abajo. El número de arriba tiene que ser la suma de lo
+     que se está enseñando. */
+  const vivo = Number(d.expansion?.vendido || 0);
+  const vendido = d.expansion?.lineas?.length ? vivo : Number(ev.vendido || 0);
+  // Y el veredicto sale de ese mismo número. Con `ev.cumple_b` guardado, el
+  // sello decía "NO CUMPLE" junto a una barra llena y un "FALTA: Nada".
+  const cumpleB = meta > 0 ? vendido >= meta : !!ev.cumple_b;
   const falta = Math.max(0, meta - vendido);
   const pct = meta > 0 ? Math.min(100, Math.round((vendido / meta) * 100)) : 0;
   const prox = d.proxima_anualidad;
@@ -157,7 +167,7 @@ export default function RenovacionCuenta({ companyId, nombre }: { companyId: str
       </Condicion>
 
       {/* ── B · Expansión ── */}
-      <Condicion letra="B" titulo="Expandir la cuenta un 30%" estado={ev.cumple_b ? 'ok' : 'no'}>
+      <Condicion letra="B" titulo="Expandir la cuenta un 30%" estado={cumpleB ? 'ok' : 'no'}>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 9 }}>
           <div><span style={E.lbl}>Plan anual</span><div style={{ fontWeight: 700 }}>{pesos(ev.base_anterior)}</div></div>
           <div><span style={E.lbl}>Meta (30%)</span><div style={{ fontWeight: 700 }}>{pesos(meta)}</div></div>
@@ -168,7 +178,7 @@ export default function RenovacionCuenta({ companyId, nombre }: { companyId: str
           </div>
         </div>
         <div style={{ height: 8, borderRadius: 5, background: P.lineaSuave, overflow: 'hidden', marginBottom: 8 }}>
-          <div style={{ width: `${pct}%`, height: '100%', background: ev.cumple_b ? P.verde : P.ambar }} />
+          <div style={{ width: `${pct}%`, height: '100%', background: cumpleB ? P.verde : P.ambar }} />
         </div>
         <p style={{ margin: 0, fontSize: '0.75rem', color: P.suave }}>
           Cuenta la <b>expansión</b> —vitalicias, plugins y servicios—, no la renovación de la propia licencia.

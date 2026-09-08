@@ -11,6 +11,7 @@
 // POST { anio }                                 — recalcular la condición B
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { cotizacionEsUnico, categoriaDePartida } from '../../../../lib/crm/pagos-unicos';
 import { evaluarRenovaciones } from '../../../../lib/crm/comisiones.recalculo';
 
 export const prerender = false;
@@ -39,13 +40,47 @@ export const GET: APIRoute = async ({ url }) => {
     // base. Renovar la propia licencia no cuenta —eso es conservar, no crecer—,
     // y esa distinción es justamente lo que mide la condición.
     const { data: lineas } = await supabase.from('comision_lineas')
-      .select('fecha, concepto, categoria, monto_bruto, monto, es_renovacion, dias_atraso, fuera_de_tiempo, tasa_reducida')
+      .select('payment_id, fecha, concepto, categoria, monto_bruto, monto, es_renovacion, dias_atraso, fuera_de_tiempo, tasa_reducida')
       .eq('company_id', company_id)
       .gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`)
       .neq('estado', 'cancelada')
       .order('fecha');
 
-    const expansion = (lineas || []).filter((l: any) => l.categoria && l.categoria !== 'plan');
+    const expansion: any[] = (lineas || []).filter((l: any) => l.categoria && l.categoria !== 'plan');
+
+    /* ── Lo cobrado por COTIZACIÓN también es expansión ──
+       Una línea de comisión saca su categoría del plan de la licencia. Un
+       plugin o una personalización cobrados por cotización no cuelgan de
+       ninguna licencia: la línea nace sin categoría y el filtro de arriba la
+       tira. Resultado medido: ARTIK cobró $119,764 en julio y esta pantalla
+       decía "VENDIDO $0 · NO CUMPLE" con el 30% de meta intacto.
+       Se leen aquí los pagos únicos del año y se suman los que la comisión no
+       alcanzó a categorizar. El cruce es por `payment_id`: sin él, una cuenta
+       con su línea ya bien categorizada contaría el mismo dinero dos veces. */
+    const yaContados = new Set((lineas || []).map((l: any) => l.payment_id).filter(Boolean));
+    const { data: pagosCot } = await supabase.from('payments')
+      .select('id, fecha, monto, quote_id, subscription_id, estado, quotes(numero, items)')
+      .eq('company_id', company_id).is('subscription_id', null).not('quote_id', 'is', null)
+      .gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`);
+    const ANULADOS = ['anulado', 'cancelado', 'duplicado', 'reembolsado'];
+    for (const p of (pagosCot || [])) {
+      if (yaContados.has(p.id)) continue;
+      if (ANULADOS.includes(String(p.estado || '').toLowerCase())) continue;
+      const items = (p as any).quotes?.items;
+      // Una cotización que vende licencia NO es expansión: renovar no es crecer.
+      if (!cotizacionEsUnico(items)) continue;
+      const nombres = (Array.isArray(items) ? items : [])
+        .filter((i: any) => Number(i?.monto) > 0).map((i: any) => i.nombre);
+      expansion.push({
+        fecha: p.fecha,
+        concepto: nombres.join(' · ') || (p as any).quotes?.numero || 'Cobro por cotización',
+        categoria: nombres.length ? categoriaDePartida(nombres[0]) : 'plugin',
+        monto_bruto: Number(p.monto || 0), monto: Number(p.monto || 0),
+        es_renovacion: false, dias_atraso: null, fuera_de_tiempo: false, tasa_reducida: false,
+        origen_cotizacion: (p as any).quotes?.numero || null,
+      });
+    }
+    expansion.sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
 
     // La próxima anualidad: la fecha que decide la condición C. Sin ella no se
     // puede avisar a tiempo, que es para lo que sirve esta pantalla.
