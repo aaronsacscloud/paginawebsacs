@@ -28,6 +28,7 @@ import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plant
 import { bloqueSistemaBase } from './guion-datos';
 import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro, saludoParaPlantilla, pulirRegistro, moderarEmojis, moderarAdmiraciones } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
+import { parcharConfig } from './config-parche';
 
 const MS_MIN = 60e3;
 
@@ -823,7 +824,7 @@ async function contarMensajeAgendar(cid: string, c: any, p: any, s: SalidaAgente
 
 async function guardarMarca(ahora: Date) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_marca: ahora.toISOString() } }).eq('id', 1);
+  await parcharConfig({ agente_marca: ahora.toISOString() });
 }
 
 /** ¿Un HUMANO (no el agente) le escribió al lead después de que nació esta propuesta?
@@ -1269,7 +1270,7 @@ export async function calificarLeads(opts: { limite?: number } = {}): Promise<an
   }
   // La config se re-lee justo antes de escribir: el loop tarda y otros procesos (observador, dueño) escriben mientras tanto.
   const { data: cfgFresca } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...((cfgFresca?.valor as any) || {}), calificacion_marca: ahora.toISOString() } }).eq('id', 1);
+  await parcharConfig({ calificacion_marca: ahora.toISOString() });
   return res;
 }
 
@@ -1314,6 +1315,9 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
   let escalon = 0;
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { silencio: 'apagado' };
+  // FLUJO V2 (8-sep): con cfg.flujo_v2 los toques de silencio los decide el planificador nocturno (22:00 → 09:00); este reloj
+  // intradía se apaga para no duplicar. Se conserva por si hay que volver atrás con un solo interruptor.
+  if (cfg.flujo_v2 === true && !opts.soloReenganche) return { silencio: 'flujo_v2: lo lleva el planificador nocturno' };
   const sombraGlobal = (cfg.agente_modo || 'sombra') === 'sombra';
   const ahora = new Date();
   const res: any = { toques: 0, sin_ventana: 0, llamadas: 0, tarjetas: 0, revisados: 0 };
@@ -1516,7 +1520,7 @@ export async function aplicarVeredictoSilencio(tarea: any, resultado: string, de
       r.coincidencias = coincide ? (Number(r.coincidencias) || 0) + 1 : 0;
       r.ultimo_at = ahora;
       if (!r.automatico && r.coincidencias >= 20) { r.automatico = true; r.automatico_desde = ahora; await avisoSistema({ tipo: 'sistema_rampa_descalificar', nivel: 'info', clave: `rampa_descalificar_auto:${ahora.slice(0, 10)}`, titulo: 'Descalificar ya es automático', detalle: 'Tus últimos 20 veredictos coincidieron con la propuesta del agente: desde ahora las sugerencias de descalificar se aplican solas y quedan registradas en Calificación.', que_hacer: 'Nada. Si quieres volver al clic, apágalo en Calificación.' }); }
-      await supabase.from('ti_config').update({ valor: { ...cfgR, rampa_descalificar: r } }).eq('id', 1);
+      await parcharConfig({ rampa_descalificar: r });
     } catch { /* la rampa no bloquea el veredicto */ }
   }
   const { data: p } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', cid).maybeSingle();
@@ -1718,7 +1722,7 @@ export async function atenderCitas(): Promise<any> {
     } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `cita: ${err?.message || err}` }); }
   }
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_citas_marca: ahora.toISOString() } }).eq('id', 1);
+  await parcharConfig({ agente_citas_marca: ahora.toISOString() });
   return res;
 }
 

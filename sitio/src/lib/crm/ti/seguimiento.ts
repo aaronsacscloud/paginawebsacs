@@ -15,6 +15,7 @@ import { leerConfig } from './motor';
 import { anthropic, MODELS, hasApiKey } from '../../ai/client';
 import { plantillaSiVentanaCerrada, ventanaAbierta, enAlcanceSDR } from './agente';
 import { saludoParaPlantilla } from './nombre-y-bots';
+import { parcharConfig } from './config-parche';
 
 export const META_DEFAULT = 9;
 export const VENTANA_DEFAULT = 100;   // decisión del dueño 3-sep: 100 respuestas, no 300
@@ -77,7 +78,7 @@ export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolea
       const prom = ult!.reduce((s, x) => s + Number(x.calificacion || 0), 0) / ult!.length;
       if (prom < 8) {
         const ahora = new Date().toISOString();
-        await supabase.from('ti_config').update({ valor: { ...cfg, agente_modo: 'sombra', paridad_lista_at: null, paridad_bajada_at: ahora } }).eq('id', 1);
+        await parcharConfig({ agente_modo: 'sombra', paridad_lista_at: null, paridad_bajada_at: ahora });
         await supabase.from('ia_log').insert({ accion: 'agente_bajada', razon: `últimas 30 en ${prom.toFixed(2)} (<8): vuelve a entrenamiento`, detalle: { promedio30: prom } }).then(() => {}, () => {});
         try { const { avisoSistema } = await import('./agente'); await avisoSistema({ tipo: 'agente_bajada', nivel: 'alerta', clave: `agente_bajada:${ahora.slice(0, 10)}`, titulo: `El agente volvió a entrenamiento: sus últimas 30 respuestas promedian ${prom.toFixed(1)}`, detalle: 'En automático, 1 de cada 10 envíos se califica a ciegas. Bajó de 8, así que otra vez todo pasa por un consultor hasta recuperar la paridad.', que_hacer: 'Revisa Seguimiento → historial: qué está fallando, y corrige con reglas.' }); } catch { /* nada */ }
         return { cambio: true, lista: false, paridad: { ...p, modo: 'sombra' } };
@@ -87,7 +88,7 @@ export async function revisarParidad(): Promise<{ cambio: boolean; lista: boolea
   }
   if (!p.alcanzada || cfg.paridad_lista_at) return { cambio: false, lista: !!p.alcanzada, paridad: p };
   const ahora = new Date().toISOString();
-  await supabase.from('ti_config').update({ valor: { ...cfg, paridad_lista_at: ahora } }).eq('id', 1);
+  await parcharConfig({ paridad_lista_at: ahora });
   await supabase.from('ia_log').insert({ accion: 'paridad_lista', razon: `paridad ${p.promedio}/10 en ${p.n} respuestas (meta ${p.meta})`, detalle: p }).then(() => {}, () => {});
   try {
     const { avisoSistema } = await import('./agente');

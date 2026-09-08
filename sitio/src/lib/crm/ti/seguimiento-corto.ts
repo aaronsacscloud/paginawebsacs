@@ -116,6 +116,7 @@ export async function generarSeguimientos(opts: { max?: number; soloContactId?: 
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { error: 'El agente está apagado' };
   if (!hasApiKey()) return { error: 'Sin API key de Anthropic' };
+  if (cfg.flujo_v2 === true && !opts.soloContactId) return { error: 'Con el flujo v2 los seguimientos los programa el planificador nocturno (22:00 → 09:00).' };
   const max = Math.min(Number(opts.max) || 12, 25);
   let lista = await cohorte(60);
   if (opts.soloContactId) lista = lista.filter((x: any) => x.contact_id === opts.soloContactId);

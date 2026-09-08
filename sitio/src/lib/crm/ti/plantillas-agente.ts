@@ -8,6 +8,7 @@
 // Candados: máx. 3 plantillas nuevas por día, nombres con prefijo ti_, sin
 // precios ni promociones en el cuerpo, y se apaga sola con 3 rechazos.
 import { supabase } from '../../supabase';
+import { parcharConfig } from './config-parche';
 
 export type EstadoPlantilla = { nombre: string; categoria: 'MARKETING' | 'UTILITY'; estado: string; creada_at: string; revisada_at?: string; motivo?: string | null };
 type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechazos?: number; apagado?: boolean; creadas_hoy?: { dia: string; n: number }; familias?: Record<string, { marketing?: EstadoPlantilla; utility?: EstadoPlantilla }> };
@@ -64,7 +65,7 @@ async function leer(): Promise<Registro> {
 }
 async function guardar(reg: Registro) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), plantillas_agente: reg } }).eq('id', 1);
+  await parcharConfig({ plantillas_agente: reg });
 }
 
 /** Crea el par base si no existe y refresca su estado en Meta. Idempotente; corre con el observador. */

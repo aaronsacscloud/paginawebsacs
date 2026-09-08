@@ -5,6 +5,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
+import { parcharConfig } from '../../../../lib/crm/ti/config-parche';
 import { paridad, decidirSugerencia, sugerenciasPendientes, historialCalificaciones, revisarParidad, evaluarEnviado } from '../../../../lib/crm/ti/seguimiento';
 
 export const prerender = false;
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.paridad_ventana !== undefined) { const v = Math.round(Number(b.paridad_ventana)); if (!(v >= 20 && v <= 2000)) return json({ error: 'La ventana va de 20 a 2000 respuestas' }, 400); parche.paridad_ventana = v; }
     if (b.agente_modo !== undefined) { if (!['sombra', 'vivo'].includes(b.agente_modo)) return json({ error: 'Modo inválido' }, 400); parche.agente_modo = b.agente_modo; if (b.agente_modo === 'sombra') { parche.paridad_alcanzada_at = null; parche.paridad_lista_at = null; } else parche.paridad_alcanzada_at = new Date().toISOString(); }
     if (Array.isArray(b.agente_prueba_telefonos)) parche.agente_prueba_telefonos = b.agente_prueba_telefonos.map((t: any) => String(t).replace(/\D/g, '')).filter((t: string) => t.length >= 10).slice(0, 10);
-    await supabase.from('ti_config').update({ valor: { ...cfg, ...parche } }).eq('id', 1);
+    await parcharConfig(parche);
     await supabase.from('ia_log').insert({ accion: 'seguimiento_config', razon: Object.keys(parche).join(', '), detalle: { ...parche, por: user.id } }).then(() => {}, () => {});
     return json({ ok: true, paridad: await paridad({ ...cfg, ...parche }) });
   }

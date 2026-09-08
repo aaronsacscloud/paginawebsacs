@@ -11,12 +11,13 @@
 // tarea viva). El resto del inbox no es asunto de este motor.
 import { supabase } from '../../supabase';
 import { leerConfig } from './motor';
+import { parcharConfig } from './config-parche';
 
 const MS_MIN = 60e3;
 
 async function marcarObservado(hasta: string) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...(data?.valor || {}), observado_hasta: hasta } }).eq('id', 1);
+  await parcharConfig({ observado_hasta: hasta });
 }
 
 export async function observar(): Promise<any> {

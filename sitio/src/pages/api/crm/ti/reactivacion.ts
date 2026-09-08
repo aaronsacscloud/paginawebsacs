@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
+import { parcharConfig } from '../../../../lib/crm/ti/config-parche';
 import { SEGMENTOS, generarLoteReactivacion, aprobarReactivacion, rechazarReactivacion, sincronizarReactivaciones, panelReactivacion, completarCorreos, enviarCorreoReactivacion } from '../../../../lib/crm/ti/reactivacion';
 
 export const prerender = false;
@@ -31,16 +32,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.accion === 'correo_enviar' && b.id) return json(await enviarCorreoReactivacion(String(b.id), { asunto: b.asunto, cuerpo: b.cuerpo }));
   if (b.accion === 'correos_completar') return json(await completarCorreos(Math.min(Number(b.n) || 10, 12)));
   if (b.accion === 'config') {
-    const cfg: any = await leerConfig(); const v: any = { ...cfg };
+    const v: any = {};
     if (b.familia) v.reactivacion_familia = String(b.familia);
     if (Array.isArray(b.horas)) v.reactivacion_horas = b.horas.map(Number).filter((h: number) => h >= 7 && h <= 20).sort((a: number, c: number) => a - c);
     if (b.max_dia) v.reactivacion_max_dia = Math.max(1, Math.min(60, Number(b.max_dia)));
-    await supabase.from('ti_config').update({ valor: v }).eq('id', 1); return json({ ok: true });
+    await parcharConfig(v); return json({ ok: true });
   }
   if (b.accion === 'rechazar') return json(await rechazarReactivacion(String(b.id), String(b.motivo || ''), uid));
   if (b.accion === 'rampa') {
     const cfg: any = await leerConfig(); const r: any = cfg.rampa_reactivacion || {};
-    await supabase.from('ti_config').update({ valor: { ...cfg, rampa_reactivacion: { ...r, automatico: !!b.automatico, sin_editar: b.automatico ? r.sin_editar : 0 }, reactivacion_activa: b.activa !== false } }).eq('id', 1);
+    await parcharConfig({ rampa_reactivacion: { ...r, automatico: !!b.automatico, sin_editar: b.automatico ? r.sin_editar : 0 }, reactivacion_activa: b.activa !== false });
     return json({ ok: true });
   }
   return json({ error: 'Acción desconocida' }, 400);

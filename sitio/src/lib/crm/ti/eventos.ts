@@ -11,6 +11,7 @@
 // ti-eventos con ?dias=N para el backfill. Devuelve los contact_id tocados
 // para que perfil.ts recalcule solo esos.
 import { supabase } from '../../supabase';
+import { parcharConfig } from './config-parche';
 
 export type Evento = {
   contact_id: string | null;
@@ -36,7 +37,7 @@ async function marcas(): Promise<Record<string, string>> {
 }
 async function guardarMarcas(m: Record<string, string>) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-  await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), eventos_marca: m } }).eq('id', 1);
+  await parcharConfig({ eventos_marca: m });
 }
 
 /* ── escribir en lotes, ignorando duplicados ── */

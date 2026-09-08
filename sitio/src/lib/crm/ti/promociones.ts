@@ -4,6 +4,7 @@
 // menciona como plus al dar precio, sin sonar vendedor, y se guarda por lead QUÉ oferta se le dijo y
 // hasta cuándo, para que el consultor lo vea y el agente no prometa lo vencido.
 import { supabase } from '../../supabase';
+import { parcharConfig } from './config-parche';
 
 export type Promo = { id: string; nombre: string; texto: string; valor?: string | null; dias_ventana: number; vence: string; rotar: boolean; activa: boolean; palabras?: string[] };
 export type OfertaDicha = { promo_id: string; nombre: string; texto: string; dicho_at: string; vence: string };
@@ -15,7 +16,7 @@ const DEFAULT: Promo = {
 };
 
 async function cfg() { const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle(); return (data?.valor as any) || {}; }
-async function guardarCfg(parche: any) { const v = await cfg(); await supabase.from('ti_config').update({ valor: { ...v, ...parche } }).eq('id', 1); }
+async function guardarCfg(parche: any) { await parcharConfig(parche); }
 
 /** La promoción vigente (rotando la ventana si venció y así está configurado). */
 export async function promoVigente(): Promise<Promo | null> {

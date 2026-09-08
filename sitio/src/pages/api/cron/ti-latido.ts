@@ -4,6 +4,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { leerConfig } from '../../../lib/crm/ti/motor';
+import { parcharConfig } from '../../../lib/crm/ti/config-parche';
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
@@ -35,7 +36,7 @@ export const GET: APIRoute = async ({ request }) => {
   if (despliegue && despliegue !== despliegueAntes) {
     /* Se escribe con merge sobre lo que hay: `valor` es un solo jsonb y
        pisarlo entero borraría el horario, la rampa y todo lo demás. */
-    await supabase.from('ti_config').update({ valor: { ...(cfg as any), latido_despliegue: despliegue } }).eq('id', 1).then(() => {}, () => {});
+    await parcharConfig({ latido_despliegue: despliegue }).then(() => {}, () => {});
   }
   res.despliegue_cambio = huboDespliegue;
 

@@ -9,6 +9,7 @@ import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
 import { notificar } from '../notificaciones';
 import { guionActual } from './guion-datos';
+import { parcharConfig } from './config-parche';
 
 export type TipoPropuesta = 'mensaje_extra' | 'plantilla' | 'llamada' | 'adjunto' | 'cambiar_angulo' | 'descalificar' | 'ninguna';
 const BAJO_RIESGO: TipoPropuesta[] = ['mensaje_extra', 'cambiar_angulo', 'adjunto'];
@@ -105,7 +106,7 @@ export async function ejecutarPropuesta(id: string, userId: string | null, decis
   if (decision === 'rechazar') {
     await supabase.from('ti_revision').update({ estado: 'rechazada', motivo: String(motivo || '').slice(0, 300) || null, decidido_por: userId, decidido_at: ahora }).eq('id', id);
     await supabase.from('ia_log').insert({ accion: 'revision_rechazada', contact_id: r.contact_id, razon: motivo || null, detalle: { propuesta: r.propuesta, por: userId } });
-    if (userId) await supabase.from('ti_config').update({ valor: { ...cfg, rampa_revision: { ...rampa, aceptadas: 0 } } }).eq('id', 1);
+    if (userId) await parcharConfig({ rampa_revision: { ...rampa, aceptadas: 0 } });
     return { ok: true, hecho: 'Rechazada. Queda como lección.' };
   }
   const p: any = r.propuesta || {}; const tipo: TipoPropuesta = p.tipo;
@@ -149,7 +150,7 @@ export async function ejecutarPropuesta(id: string, userId: string | null, decis
   if (userId) {
     const n = editada ? 0 : (Number(rampa.aceptadas) || 0) + 1;
     const nueva = { ...rampa, aceptadas: n, automatico: rampa.automatico || n >= 20, ...(n >= 20 && !rampa.automatico ? { automatico_desde: ahora } : {}) };
-    await supabase.from('ti_config').update({ valor: { ...cfg, rampa_revision: nueva } }).eq('id', 1);
+    await parcharConfig({ rampa_revision: nueva });
     if (n >= 20 && !rampa.automatico) await notificar({ clave: `rampa_revision_auto:${ahora.slice(0, 10)}`, tipo: 'sistema_rampa_revision', nivel: 'info', titulo: 'Las propuestas de bajo riesgo de la Revisión diaria ya salen solas', detalle: '20 aceptadas seguidas sin cambios. Mensaje extra, cambiar ángulo y adjunto salen con ventana de veto; descalificar y llamada siguen con tu clic.', metadata: { origen: 'agente', que_hacer: 'Nada; si quieres volver al clic, apágalo en Revisión diaria.' } });
   }
   return { ok: true, hecho };

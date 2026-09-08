@@ -14,6 +14,7 @@ import { puedeAutomatico } from './semaforo';
 import { modeloPara } from './agente';
 import { sendEmail } from '../../email';
 import { LIGA_AGENDA } from './agenda-agente';
+import { parcharConfig } from './config-parche';
 
 export const SEGMENTOS: Record<string, { l: string; corto: string; desc: string; comoEscribir: string }> = {
   intencion: { l: 'Pidió precio o demo y se enfrió', corto: 'Pidió precio/demo', desc: 'Llegó a preguntar precio, planes, costo o demo. Intención clara que no cerró.',
@@ -204,7 +205,7 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
     const cfg: any = await leerConfig(); const rampa: any = cfg.rampa_reactivacion || { sin_editar: 0, automatico: false };
     const nueva = editado ? { ...rampa, sin_editar: 0 } : { ...rampa, sin_editar: (rampa.sin_editar || 0) + 1 };
     if (nueva.sin_editar >= RAMPA_META && !nueva.automatico) { nueva.automatico = true; nueva.automatico_desde = new Date().toISOString(); }
-    await supabase.from('ti_config').update({ valor: { ...cfg, rampa_reactivacion: nueva } }).eq('id', 1);
+    await parcharConfig({ rampa_reactivacion: nueva });
   }
   if (editado) await supabase.from('ia_log').insert({ accion: 'agente_editado', contact_id: r.contact_id, contenido: mensaje, razon: 'reactivación editada por el dueño', detalle: { original: r.mensaje_original, reactivacion_id: id } });
   // APRENDE: cada aprobación humana es un ejemplo que el redactor lee la próxima vez (las editadas pesan más).
@@ -225,7 +226,7 @@ export async function rechazarReactivacion(id: string, motivo: string, userId?: 
   if (r.estado === 'programada' && r.envio_id) await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: motivo || 'reactivación rechazada', vetado_por: userId || null }).eq('id', r.envio_id).eq('estado', 'pendiente');
   await supabase.from('ti_reactivacion').update({ estado: 'rechazada', error: motivo || null, decidido_por: userId || null, decidido_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
   const cfg: any = await leerConfig(); const rampa: any = cfg.rampa_reactivacion || {};
-  await supabase.from('ti_config').update({ valor: { ...cfg, rampa_reactivacion: { ...rampa, sin_editar: 0 } } }).eq('id', 1);
+  await parcharConfig({ rampa_reactivacion: { ...rampa, sin_editar: 0 } });
   await supabase.from('ia_log').insert({ accion: 'agente_vetado', contact_id: r.contact_id, contenido: r.mensaje, razon: motivo || 'reactivación rechazada', detalle: { reactivacion_id: id, segmento: r.segmento } });
   await supabase.from('ia_ejemplos').insert({ estado: 'reactivacion', situacion: `Reenganchar a un lead que preguntó hace ${r.meses_sin_hablar} meses. ${r.resumen_lead || ''}`.slice(0, 600), respuesta: r.mensaje, pulida: r.mensaje, por_que: `EVITAR: ${motivo || 'rechazado por el dueño'}`, fuente: 'reactivacion', contact_id: r.contact_id, estado_rev: 'rechazado', revisado_at: new Date().toISOString() }).then(() => {}, () => {});
   return { ok: true };

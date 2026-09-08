@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
+import { parcharConfig } from '../../../../lib/crm/ti/config-parche';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -70,7 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.accion === 'rampa') {
     const cfg: any = await leerConfig();
     const r = { ...(cfg.rampa_descalificar || { coincidencias: 0 }), automatico: !!b.automatico, cambiado_por: user.id, cambiado_at: new Date().toISOString() };
-    await supabase.from('ti_config').update({ valor: { ...cfg, rampa_descalificar: r } }).eq('id', 1);
+    await parcharConfig({ rampa_descalificar: r });
     return json({ ok: true, rampa: r });
   }
   if (b.accion === 'revivir' && b.contact_id) {

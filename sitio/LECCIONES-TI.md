@@ -718,3 +718,19 @@ del dueño.
 - **El registro se pule por código, no solo por prompt.** Igual que los emojis: lo que el guion prohíbe se cuela; `pulirRegistro` lo corrige al salir y deja rastro para afinar el guion.
 - **Versionar una plantilla de Meta sin quedarse sin plantilla.** La v1 aprobada se conserva como `*_anterior` y sigue saliendo hasta que la v2 esté aprobada.
 - **Los créditos se acabaron dos veces en tres días.** El análisis de 4,000 mensajes, el árbitro y las regeneraciones cuestan; sin vigilante de gasto, el agente se apaga en silencio. Primera tarea cuando haya crédito: la alarma.
+
+## 8-sep-2026 · La configuración se borró sola y la regeneración entró en bucle
+
+**Qué pasó.** A las ~19:30 UTC `ti_config` perdió `agente_activo`, `agente_modo`, `arranque_desde` y las rampas: el agente
+quedó «apagado» dos horas sin que nadie lo apagara (ni toques, ni respuestas, ni planificador). Causa: veinte lugares
+escribían la configuración como «leer la fila → `{...valor, cambio}` → update». Una sola lectura fallida en silencio
+(`data` en null, error ignorado) y el update reescribe la fila con solo el cambio. El escritor más probable fue un script
+mío de esa hora (pausa de `auto_en_vivo`) con exactamente ese patrón.
+
+**Y el bucle.** Al terminar una reescritura se dejaba `regenerar: null`. El filtro `salida->regenerar is not null` ve el
+null de JSON como NO nulo, así que cada tick volvía a tomar las mismas cuatro sugerencias: 288 reescrituras, $12.69, hasta
+que el presupuesto del día las frenó. (Esto también explica parte del «se acabaron los créditos otra vez» del día anterior.)
+
+**Regla.** Config: solo `parcharConfig()` (RPC `ti_config_parche`, `valor || parche`; concatenar no puede borrar llaves) y
+`ti_config_hist` guarda el valor anterior de cada cambio. JSONB: para «¿tiene marca?» usar `->>` (texto), nunca `->`; y
+para quitar una marca se QUITA la llave, no se pone en null. Regeneración: máximo 2 por sugerencia y tope de gasto por tick.

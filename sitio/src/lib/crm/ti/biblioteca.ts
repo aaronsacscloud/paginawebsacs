@@ -2,6 +2,7 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
+import { parcharConfig } from './config-parche';
 
 /** Duplicados (pulida casi igual) → el más viejo queda «duplicado»; promos vencidas mencionadas → «caducado». */
 export async function higieneBiblioteca() {
@@ -99,7 +100,7 @@ export async function medirOfertas() {
   }
   for (const k of ['completas', 'prematuras_res']) { const b = res[k]; b.pct_responden = b.n ? Math.round(100 * b.responden / b.n) : null; b.pct_agendan = b.n ? Math.round(100 * b.agendan / b.n) : null; }
   const cfg: any = await leerConfig();
-  await supabase.from('ti_config').update({ valor: { ...cfg, metricas_ofertas: res } }).eq('id', 1);
+  await parcharConfig({ metricas_ofertas: res });
   return { total: res.total_30d, prematuras: res.prematuras, medidas: res.completas.n + res.prematuras_res.n };
 }
 export async function resumenOfertas() { const cfg: any = await leerConfig(); return cfg.metricas_ofertas || null; }
