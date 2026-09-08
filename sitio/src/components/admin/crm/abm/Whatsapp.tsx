@@ -61,6 +61,11 @@ export default function Whatsapp({ cuentaId, onCambio }: { cuentaId: string; onC
             es el número de la tienda
           </Pastilla>
         )}
+        {d?.sin_confirmar && (
+          <Pastilla tono={{ bg: P.ambarAgua, fg: P.ambarTinta }} titulo="Es el teléfono que publica en Google Maps; no está confirmado que tenga WhatsApp. Si no abre, queda la llamada.">
+            teléfono, WhatsApp sin confirmar
+          </Pastilla>
+        )}
       </div>
       <p style={{ fontSize: '.75rem', color: '#888', margin: 0 }}>{PASOS.find(p => p.v === paso)?.pie}</p>
 

@@ -43,16 +43,21 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const [{ data: plantilla }, { data: canales }, { data: personas }] = await Promise.all([
     supabase.from('abm_plantillas').select('cuerpo').eq('giro', c.giro).eq('canal', 'whatsapp').eq('nombre', paso).maybeSingle(),
-    supabase.from('abm_canales').select('tipo, valor, estado').eq('cuenta_id', id).like('tipo', 'whatsapp%'),
+    supabase.from('abm_canales').select('tipo, valor, estado').eq('cuenta_id', id).in('tipo', ['whatsapp_dueno', 'whatsapp_tienda', 'telefono']),
     supabase.from('abm_personas').select('nombre').eq('cuenta_id', id).order('confirmado', { ascending: false }).limit(1),
   ]);
   if (!plantilla) return json({ error: `todavía no hay mensaje de WhatsApp escrito para ${c.giro}` }, 409);
 
   // El del dueño gana sobre el de la tienda: si alguien ya nos dio su directo,
   // ahí se escribe.
-  const wa = (canales || []).find(x => x.tipo === 'whatsapp_dueno' && x.estado !== 'opt_out')
-          || (canales || []).find(x => x.estado !== 'opt_out');
-  if (!wa) return json({ error: 'esta cuenta no tiene WhatsApp' }, 409);
+  // Si solo hay el teléfono del mostrador (lo que da Google Maps), también se
+  // abre: en México casi todo celular de negocio tiene WhatsApp. Pero va
+  // marcado como no confirmado, porque eso es lo que es.
+  const vivos = (canales || []).filter(x => x.estado !== 'opt_out' && x.estado !== 'invalido');
+  const wa = vivos.find(x => x.tipo === 'whatsapp_dueno')
+          || vivos.find(x => x.tipo === 'whatsapp_tienda')
+          || vivos.find(x => x.tipo === 'telefono');
+  if (!wa) return json({ error: 'esta cuenta no tiene WhatsApp ni teléfono' }, 409);
 
   const texto = rellenar(plantilla.cuerpo, variablesDe(c, (personas || [])[0]));
   const enlace = aLink(wa.valor, texto);
@@ -64,6 +69,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   return json({
     texto, enlace, numero: wa.valor,
     es_de_la_tienda: wa.tipo !== 'whatsapp_dueno',
+    sin_confirmar: wa.tipo === 'telefono',
     previos: previos || [],
   });
 };
