@@ -32,14 +32,8 @@ export async function quien(request: Request): Promise<Quien | null> {
   return { id: (u as any).id, nombre: (u as any).name || (u as any).email || 'equipo', role: (u as any).role || 'cs' };
 }
 
-// ── Los quince giros del estudio, con su nombre en la pantalla ──────────────
-export const GIROS: Record<string, string> = {
-  cadenas: 'Cadenas de moda', boutiques: 'Boutiques', renta: 'Renta de vestidos y trajes',
-  novias: 'Novias', zapaterias: 'Zapaterías', western: 'Botas western', vintage: 'Vintage y segunda mano',
-  joyeria: 'Joyería', charro: 'Charro y danza', scrubs: 'Uniformes médicos', telas: 'Telas y mercería',
-  tallas: 'Tallas extra, maternidad y bebé', operadores: 'Operadores y concept stores',
-  aliados: 'Consultoras y escuelas', canal: 'Canal mayorista',
-};
+import { GIROS } from './abm-giros';
+export { GIROS };
 
 export const ETAPAS = ['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida', 'en_pausa', 'no_contactar'] as const;
 export const ETAPA_ETIQ: Record<string, string> = {

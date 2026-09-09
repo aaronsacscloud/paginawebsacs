@@ -3,19 +3,13 @@
 // DIJERON (gana siempre). Más la bitácora de todo lo que ha pasado.
 import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
+import { GIROS } from '../../../../lib/crm/abm-giros';
 import Cargando from '../ui/Cargando';
 import EstadoVacio from '../ui/EstadoVacio';
 import Cadencia from './Cadencia';
 import Whatsapp from './Whatsapp';
 import { ETAPA_TONO, CONFIANZA_TONO, Pastilla, Puntaje, TOPES, fecha, fechaHora, enlaceDe } from './ui';
 
-const GIROS: Record<string, string> = {
-  cadenas: 'Cadenas de moda', boutiques: 'Boutiques', renta: 'Renta de vestidos y trajes', novias: 'Novias',
-  zapaterias: 'Zapaterías', western: 'Botas western', vintage: 'Vintage y segunda mano', joyeria: 'Joyería',
-  charro: 'Charro y danza', scrubs: 'Uniformes médicos', telas: 'Telas y mercería',
-  tallas: 'Tallas extra, maternidad y bebé', operadores: 'Operadores y concept stores',
-  aliados: 'Consultoras y escuelas', canal: 'Canal mayorista',
-};
 const CANAL_ETIQ: Record<string, string> = {
   email_direccion: 'Correo de dirección', email_generico: 'Correo general',
   whatsapp_tienda: 'WhatsApp de la tienda', whatsapp_dueno: 'WhatsApp del dueño',

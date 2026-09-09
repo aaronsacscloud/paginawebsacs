@@ -28,6 +28,14 @@ function guion(c: any): string {
     : c.giro === 'telas' ? 'cómo llevan el metraje que les queda de cada rollo'
     : c.giro === 'western' || c.giro === 'zapaterias' ? 'cómo llevan las tallas entre sus tiendas'
     : c.giro === 'canal' || c.giro === 'aliados' ? 'cómo llevan el inventario los negocios que les compran'
+    : c.giro === 'jeans' ? 'cómo saben qué tallas de cada modelo se les acaban primero'
+    : c.giro === 'trajesbano' ? 'cómo le hacen con lo que les sobra cuando pasa la temporada'
+    : c.giro === 'scrubs' || c.giro === 'deportiva' ? 'cómo llevan las tallas y colores de cada uniforme'
+    : c.giro === 'disfraces' ? 'cómo llevan las piezas que rentan y las que venden en octubre'
+    : c.giro === 'sublimado' ? 'cómo llevan los pedidos personalizados y la playera en blanco'
+    : c.giro === 'relojerias' ? 'cómo llevan las piezas en reparación junto con lo que venden'
+    : c.giro === 'outlets' ? 'cómo saben qué lote de saldo ya no se está moviendo'
+    : c.giro === 'fabricantes' || c.giro === 'distribuidores' ? 'cómo llevan lo que le deben entregar a cada cliente'
     : 'cómo llevan el inventario entre sus tiendas';
   return `Buenas tardes, le hablo de Sacscloud, hacemos sistemas para negocios de moda. `
     + `No le llamo para venderle nada por teléfono: quería preguntarle ${quePasa}. `

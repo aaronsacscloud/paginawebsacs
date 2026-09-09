@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { WRAP } from '../../../../lib/crm/layout';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
+import { GIROS } from '../../../../lib/crm/abm-giros';
 import TablaEnterprise, { type ColDef, type VistaDef } from '../TablaEnterprise';
 import Sheet from '../ui/Sheet';
 import Cargando from '../ui/Cargando';
@@ -19,13 +20,6 @@ import ColaTelefono from './ColaTelefono';
 import PorResolver from './PorResolver';
 import { ETAPA_TONO, Pastilla, Puntaje, fmt, enlaceDe } from './ui';
 
-const GIROS: Record<string, string> = {
-  cadenas: 'Cadenas de moda', boutiques: 'Boutiques', renta: 'Renta de vestidos y trajes', novias: 'Novias',
-  zapaterias: 'Zapaterías', western: 'Botas western', vintage: 'Vintage y segunda mano', joyeria: 'Joyería',
-  charro: 'Charro y danza', scrubs: 'Uniformes médicos', telas: 'Telas y mercería',
-  tallas: 'Tallas extra, maternidad y bebé', operadores: 'Operadores y concept stores',
-  aliados: 'Consultoras y escuelas', canal: 'Canal mayorista',
-};
 
 export default function AbmTab() {
   const isMobile = useIsMobile();
