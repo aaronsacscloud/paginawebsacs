@@ -71,6 +71,12 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   // Es lo que permite decir "esto se cobró en tal partida" en vez de teclear
   // una cifra que nadie puede verificar después.
   const [cots, setCots] = useState<any[]>([]);
+  /* Los reportes que ya se le mandaron, con su seguimiento. Van en la pestaña y
+     no dentro del modal a propósito: "se lo mandé el martes y no lo ha abierto"
+     es algo que hay que ver AL ENTRAR, no algo que se busca. */
+  const [reportes, setReportes] = useState<any[]>([]);
+  const cargarReportes = () => fetch('/api/crm/reportes?company_id=' + companyId)
+    .then(r => r.json()).then(j => setReportes(j.reportes || [])).catch(() => {});
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
@@ -88,6 +94,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       .then(j => { if (alive) setReuniones(j.data || []); }).catch(() => {});
     fetch('/api/crm/mejoras/cotizaciones?company_id=' + companyId).then(r => r.json())
       .then(j => { if (alive) setCots(j.cotizaciones || []); }).catch(() => {});
+    fetch('/api/crm/reportes?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (alive) setReportes(j.reportes || []); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -312,6 +320,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         <button style={{ ...S.btn, flexShrink: 0 }} onClick={() => setReporte(true)}>Generar reporte</button>
       </div>
 
+      <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
+
       <div style={{ position: 'relative', paddingLeft: 26 }}>
         {/* El hilo en el lila del sistema y no en gris: sobre el fondo de la
             ficha un #ececec desaparece y los tres puntos quedan sueltos. */}
@@ -398,7 +408,115 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       </div>
 
       {editando && <EditorMejora m={editando} reuniones={reuniones} cots={cots} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
-      {reporte && <ReporteMejoras companyId={companyId} cliente={cliente} onCerrar={() => setReporte(false)} />}
+      {reporte && <ReporteMejoras companyId={companyId} cliente={cliente}
+        onCerrar={() => { setReporte(false); cargarReportes(); }} />}
+    </div>
+  );
+}
+
+/* ─────────── Seguimiento de los reportes enviados ───────────
+   La pregunta que contesta este bloque no es "qué le mandé" sino "¿lo leyó?".
+   Por eso el estado manda sobre el folio: un reporte enviado hace seis días y
+   sin abrir es una llamada pendiente, y eso tiene que verse sin abrir nada.
+
+   Los tres estados que importan:
+     · generado y sin mandar  → falta el paso que sirve
+     · mandado y sin abrir    → con los días encima, porque a los 3 ya urge
+     · abierto                → cuántas veces y cuánto tiempo le dedicó
+
+   El tiempo es la diferencia entre "lo abrió" y "lo leyó": treinta segundos es
+   un vistazo, cuatro minutos es que se lo tomó en serio y hay de qué hablar. */
+function SeguimientoReportes({ reportes, flash, recargar }: any) {
+  const [busy, setBusy] = useState('');
+  if (!reportes?.length) return null;
+
+  const dias = (d?: string | null) => d == null ? null
+    : Math.floor((Date.now() - Date.parse(d)) / 86400000);
+  const hace = (d?: string | null) => {
+    const n = dias(d);
+    if (n == null) return '';
+    if (n === 0) return 'hoy';
+    if (n === 1) return 'ayer';
+    return `hace ${n} días`;
+  };
+  const tiempo = (seg: number) => {
+    if (!seg) return null;
+    if (seg < 60) return `${seg} s`;
+    return `${Math.round(seg / 60)} min`;
+  };
+
+  async function reenviar(r: any) {
+    setBusy(r.id);
+    const j = await fetch('/api/crm/reportes/enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: r.id }),
+    }).then(x => x.json()).catch(() => null);
+    setBusy('');
+    if (!j || j.error) { flash(j?.error || 'No se pudo enviar'); return; }
+    flash(`Enviado a ${j.para}`);
+    recargar();
+  }
+  async function copiar(r: any) {
+    const liga = `${window.location.origin}/reporte/${r.id}`;
+    try { await navigator.clipboard.writeText(liga); flash('Liga copiada'); }
+    catch { flash(liga); }
+  }
+
+  const REACC: Record<string, { t: string; bg: string; fg: string }> = {
+    si: { t: 'Le sirvió', bg: '#EAF8F2', fg: '#1E8A63' },
+    mas: { t: 'Quiere más detalle', bg: '#EEECFE', fg: '#5B4BD6' },
+    dudas: { t: 'Tiene dudas', bg: '#FFF4E5', fg: '#9a6a10' },
+  };
+
+  return (
+    <div style={{ border: '1px solid #ececec', borderRadius: 11, marginBottom: 18, overflow: 'hidden' }}>
+      <div style={{ padding: '9px 15px', background: '#faf9fd', borderBottom: '1px solid #f1eff7', fontSize: '0.63rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#8f8d98' }}>
+        Reportes que le mandaste
+      </div>
+      {reportes.map((r: any) => {
+        const abierto = r.vistas > 0;
+        const enviado = !!r.enviado_at;
+        const sinAbrir = enviado && !abierto;
+        const d = sinAbrir ? dias(r.enviado_at) : null;
+        // A los 3 días sin abrir deja de ser dato y pasa a ser pendiente.
+        const urge = sinAbrir && (d ?? 0) >= 3;
+        const rc = r.reaccion ? REACC[r.reaccion] : null;
+        return (
+          <div key={r.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 15px', borderTop: '1px solid #f7f6fa', flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', whiteSpace: 'nowrap',
+              background: abierto ? '#EAF8F2' : urge ? '#FEF0EF' : enviado ? '#FFF4E5' : '#f4f3f6',
+              color: abierto ? '#1E8A63' : urge ? '#C0554E' : enviado ? '#9a6a10' : '#6b6b74',
+            }}>
+              {abierto ? 'Abierto' : urge ? `Sin abrir · ${d} días` : enviado ? 'Sin abrir' : 'Sin enviar'}
+            </span>
+
+            <span style={{ flex: 1, minWidth: 170, fontSize: '0.79rem' }}>
+              <b style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: '#5B4BD6' }}>{r.folio}</b>
+              <span style={{ color: '#8f8d98' }}> · {fmtDate(r.desde)} al {fmtDate(r.hasta)}</span>
+              <span style={{ display: 'block', fontSize: '0.72rem', color: '#a5a2af', marginTop: 2 }}>
+                {!enviado && 'Generado, todavía no se lo mandas.'}
+                {sinAbrir && `Enviado ${hace(r.enviado_at)} a ${r.enviado_a}.`}
+                {abierto && <>
+                  {r.vistas === 1 ? 'Lo abrió una vez' : `Lo abrió ${r.vistas} veces`}
+                  {r.ultima_vista_at ? `, la última ${hace(r.ultima_vista_at)}` : ''}
+                  {tiempo(r.segundos) ? ` · ${tiempo(r.segundos)} de lectura` : ''}
+                </>}
+              </span>
+            </span>
+
+            {rc && <span style={{ fontSize: '0.62rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: rc.bg, color: rc.fg, whiteSpace: 'nowrap' }}>{rc.t}</span>}
+
+            <button style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem' }} onClick={() => copiar(r)}>Copiar liga</button>
+            <a style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem', textDecoration: 'none', display: 'inline-block' }}
+               href={`/reporte/${r.id}`} target="_blank" rel="noreferrer">Ver</a>
+            <button style={{ ...(urge ? S.btn : S.btnG), padding: '5px 10px', fontSize: '0.71rem' }}
+                    disabled={busy === r.id} onClick={() => reenviar(r)}>
+              {busy === r.id ? 'Enviando…' : enviado ? 'Reenviar' : 'Enviar'}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

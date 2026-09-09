@@ -26,7 +26,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     .select('id, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por')
     .eq('company_id', companyId).order('created_at', { ascending: false }).limit(30);
   if (error) return json({ error: error.message }, 500);
-  return json({ reportes: data || [] });
+
+  // Cuánto TIEMPO le dedicó. Es la diferencia entre "lo abrió" y "lo leyó":
+  // treinta segundos es un vistazo, cuatro minutos es que se lo tomó en serio.
+  const ids = (data || []).map(r => r.id);
+  const tiempos: Record<string, { segundos: number; aperturas: number }> = {};
+  if (ids.length) {
+    const { data: vistas } = await supabase.from('reporte_vistas')
+      .select('reporte_id, segundos').in('reporte_id', ids);
+    for (const v of (vistas || [])) {
+      const t = tiempos[v.reporte_id] || (tiempos[v.reporte_id] = { segundos: 0, aperturas: 0 });
+      t.aperturas++;
+      t.segundos += Number(v.segundos || 0);
+    }
+  }
+
+  return json({
+    reportes: (data || []).map(r => ({ ...r, ...(tiempos[r.id] || { segundos: 0, aperturas: 0 }) })),
+  });
 };
 
 export const POST: APIRoute = async ({ request }) => {
