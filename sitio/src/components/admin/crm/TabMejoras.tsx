@@ -494,14 +494,20 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
             <span style={{ flex: 1, minWidth: 170, fontSize: '0.79rem' }}>
               <b style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: '#5B4BD6' }}>{r.folio}</b>
               <span style={{ color: '#8f8d98' }}> · {fmtDate(r.desde)} al {fmtDate(r.hasta)}</span>
+              {/* Los tres estados NO son excluyentes: una liga se puede abrir
+                  sin haberla mandado por correo —se pega en WhatsApp— y
+                  entonces se pintaban las dos frases juntas y contradictorias
+                  ("todavía no se lo mandas" y "lo abrió 2 veces"). Que lo haya
+                  abierto manda sobre todo lo demás. */}
               <span style={{ display: 'block', fontSize: '0.72rem', color: '#a5a2af', marginTop: 2 }}>
-                {!enviado && 'Generado, todavía no se lo mandas.'}
-                {sinAbrir && `Enviado ${hace(r.enviado_at)} a ${r.enviado_a}.`}
-                {abierto && <>
+                {abierto ? <>
                   {r.vistas === 1 ? 'Lo abrió una vez' : `Lo abrió ${r.vistas} veces`}
                   {r.ultima_vista_at ? `, la última ${hace(r.ultima_vista_at)}` : ''}
                   {tiempo(r.segundos) ? ` · ${tiempo(r.segundos)} de lectura` : ''}
-                </>}
+                  {!enviado && ' · por liga, no por correo'}
+                </> : enviado
+                  ? `Enviado ${hace(r.enviado_at)} a ${r.enviado_a}.`
+                  : 'Generado, todavía no se lo mandas.'}
               </span>
             </span>
 
