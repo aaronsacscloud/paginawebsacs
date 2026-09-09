@@ -1,0 +1,92 @@
+Aguascalientes
+Mexicali
+Tijuana
+Ensenada
+La Paz Baja California Sur
+Los Cabos
+Campeche
+Ciudad del Carmen
+Tuxtla Gutiérrez
+Tapachula
+Chihuahua
+Ciudad Juárez
+Delicias Chihuahua
+Ciudad de México
+Coyoacán CDMX
+Polanco CDMX
+Iztapalapa CDMX
+Gustavo A. Madero CDMX
+Saltillo
+Torreón
+Monclova
+Piedras Negras
+Colima
+Manzanillo
+Durango
+Guanajuato
+León Guanajuato
+Irapuato
+Celaya
+Salamanca Guanajuato
+San Miguel de Allende
+Chilpancingo
+Acapulco
+Zihuatanejo
+Pachuca
+Tulancingo
+Guadalajara
+Zapopan
+Tlaquepaque
+Tonalá Jalisco
+Puerto Vallarta
+Tepatitlán
+Toluca
+Naucalpan
+Ecatepec
+Tlalnepantla
+Nezahualcóyotl
+Cuautitlán Izcalli
+Texcoco
+Morelia
+Uruapan
+Zamora Michoacán
+Cuernavaca
+Cuautla Morelos
+Tepic
+Monterrey
+San Pedro Garza García
+San Nicolás de los Garza
+Guadalupe Nuevo León
+Apodaca
+Oaxaca de Juárez
+Puebla
+Tehuacán
+Querétaro
+San Juan del Río
+Chetumal
+Cancún
+Playa del Carmen
+San Luis Potosí
+Ciudad Valles
+Culiacán
+Mazatlán
+Los Mochis
+Hermosillo
+Ciudad Obregón
+Nogales Sonora
+Villahermosa
+Ciudad Victoria
+Tampico
+Reynosa
+Matamoros
+Nuevo Laredo
+Tlaxcala
+Xalapa
+Veracruz
+Coatzacoalcos
+Poza Rica
+Córdoba Veracruz
+Orizaba
+Mérida
+Zacatecas
+Fresnillo

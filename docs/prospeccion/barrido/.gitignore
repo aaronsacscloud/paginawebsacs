@@ -1,0 +1,7 @@
+pool-*/
+sqlout/
+log-w*.txt
+*-fusion.json
+barrido-fin.txt
+cola.tsv
+__pycache__/
