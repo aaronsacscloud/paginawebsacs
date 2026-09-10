@@ -72,9 +72,10 @@ function DisplayName({ info }: { info: any }) {
     <div style={S.card}>
       <b style={{ fontSize: 13 }}>Nombre visible (display name)</b>
       <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 8px', lineHeight: 1.5 }}>Es lo que el cliente ve en lugar del número. Actual: <b>{info.verified_name}</b> · estado <b>{info.name_status === 'DECLINED' ? 'rechazado' : info.name_status === 'APPROVED' ? 'aprobado' : String(info.name_status || '—').toLowerCase()}</b>. Meta aprueba nombres que coincidan con la marca (sitio web, redes, registro).</p>
+      {info.name_status === 'PENDING_REVIEW' && <Aviso tono="aviso">Meta está revisando el nombre actual («{info.verified_name}») y no acepta otro hasta que termine (1-3 días). Cuando el estado cambie, vuelve a solicitar aquí.</Aviso>}
       <div style={{ display: 'flex', gap: 6 }}>
         <input style={inp} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Sacscloud" />
-        <button style={S.btnP} onClick={pedir}>Solicitar</button>
+        <button style={info.name_status === 'PENDING_REVIEW' ? { ...S.btnP, opacity: .5, cursor: 'not-allowed' } : S.btnP} disabled={info.name_status === 'PENDING_REVIEW'} onClick={pedir}>Solicitar</button>
       </div>
       {msg && <div style={{ fontSize: 11, color: /enviada/i.test(msg) ? C.emerald700 : C.rojo700, marginTop: 6 }}>{msg}</div>}
       {lista.length > 0 && <div style={{ marginTop: 8 }}>{lista.slice(0, 5).map((s: any) => <div key={s.id} style={{ fontSize: 11, color: C.g500, padding: '3px 0', borderTop: `1px solid ${C.g50}` }}><b>{s.requested_display_name}</b> · {EST[s.status] || s.status} · {new Date(s.submitted_at || s.created_at).toLocaleDateString('es-MX')}{s.meta_error_message ? ` · ${s.meta_error_message}` : ''}</div>)}</div>}
