@@ -302,6 +302,14 @@ const useCases = [
         <div class="hero-tablet-frame pillar-frame">
           <div class="tablet-camera"></div>
           <div class="tablet-screen">
+            {/* ── La historia pasa dentro de la tablet: la cámara entra a la tienda y,
+                   al llegar, aparece el sistema. Escenas por sub en el script (HISTORIAS). ── */}
+            <div class="historia" data-historia aria-hidden="true">
+              <img class="historia-still" alt="" decoding="async" />
+              <video class="historia-clip" muted playsinline preload="none"></video>
+              <div class="historia-cap"><i></i><span></span></div>
+              <div class="historia-barra"></div>
+            </div>
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
               <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" loading="lazy" />
@@ -4755,6 +4763,38 @@ const useCases = [
   .pillar-frame .tablet-slide {
     transition: opacity 0.24s ease;
   }
+
+  /* ─── La historia dentro de la tablet (pilar Vende) ─── */
+  .pillar-section--pos .tablet-screen { position: relative; }
+  .historia {
+    position: absolute; inset: 0; z-index: 5; background: #0E0D0C;
+    opacity: 0; pointer-events: none; transition: opacity 0.6s ease;
+  }
+  .historia.is-on { opacity: 1; }
+  .historia-still, .historia-clip {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+  .historia-still { transition: opacity 0.5s ease, transform 4s ease-out; transform: scale(1); }
+  .historia-still.is-on, .historia-clip.is-on { opacity: 1; }
+  .historia-still.is-kb { transform: scale(1.12); }
+  .historia-cap {
+    position: absolute; left: 18px; bottom: 16px; display: flex; align-items: center; gap: 10px;
+    background: rgba(14, 13, 12, 0.72); backdrop-filter: blur(8px); color: #fff; border-radius: 999px;
+    padding: 8px 14px; font-family: var(--font-display); font-size: 11.5px; letter-spacing: 0.14em;
+    text-transform: uppercase; opacity: 0; transition: opacity 0.4s;
+  }
+  .historia-cap.is-on { opacity: 1; }
+  .historia-cap i { width: 7px; height: 7px; border-radius: 50%; background: #E8A838; animation: historiaPulso 1.4s infinite; }
+  @keyframes historiaPulso { 50% { opacity: 0.3; } }
+  .historia-barra { position: absolute; left: 0; bottom: 0; height: 3px; background: #E8A838; width: 0; transition: width 0.2s linear; }
+  /* el sistema "aparece": crece desde donde está la tablet en la escena */
+  @keyframes desdeTablet {
+    from { opacity: 0; transform: scale(0.32) translate(18%, 42%); }
+    to   { opacity: 1; transform: none; }
+  }
+  .tablet-slide.active.desde-tablet { animation: desdeTablet 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  @media (prefers-reduced-motion: reduce) { .historia { display: none; } .tablet-slide.active.desde-tablet { animation: none; } }
 
   /* Mobile: hide the legacy mobile-cards (mc-tabs + mc-step×4),
      mostramos los pillar-section completos en stack vertical.
@@ -18060,6 +18100,59 @@ const useCases = [
     if (apartadosTimer) { clearInterval(apartadosTimer); apartadosTimer = null; }
   }
 
+  // ─── Historia dentro de la tablet (pilar Vende): clip de cámara → aparece el sistema ───
+  const HISTORIAS: Record<string, { clip: string | null; still: string; cap: string }> = {
+    'pos-pdv':       { clip: '/tienda/video/v00-corte-mostrador.mp4',   still: '/tienda/50-corte.webp',     cap: 'Del piso al mostrador' },
+    'pos-cambios':   { clip: '/tienda/video/v01-mostrador-probador.mp4', still: '/tienda/56-mostrador.webp', cap: 'Del mostrador al probador' },
+    'pos-movil':     { clip: '/tienda/video/v02-probador-calzado.mp4',   still: '/tienda/53-probador.webp',  cap: 'Del probador al calzado' },
+    'pos-apartados': { clip: null, still: '/tienda/54-calzado.webp', cap: 'En el calzado' },
+    'pos-ecommerce': { clip: null, still: '/tienda/52-fachada.webp', cap: 'Desde el aparador' },
+    'pos-social':    { clip: null, still: '/tienda/51-plaza.webp',   cap: 'Desde la plaza' },
+  };
+  let historiaToken = 0;
+  function cuentaHistoria(section: HTMLElement, slide: HTMLElement | undefined) {
+    const h = section.querySelector<HTMLElement>('[data-historia]');
+    if (!h || !slide || prefersReducedMotion) return;
+    const esc = HISTORIAS[slide.dataset.slide || ''];
+    if (!esc) return;
+    const t = ++historiaToken;
+    const still = h.querySelector<HTMLImageElement>('.historia-still')!;
+    const clip = h.querySelector<HTMLVideoElement>('.historia-clip')!;
+    const cap = h.querySelector<HTMLElement>('.historia-cap')!;
+    const barra = h.querySelector<HTMLElement>('.historia-barra')!;
+    let raf = 0;
+    clip.pause(); clip.onended = null; cancelAnimationFrame(raf);
+    slide.classList.remove('desde-tablet');
+    still.classList.remove('is-kb'); clip.classList.remove('is-on'); barra.style.width = '0';
+    still.src = esc.still; still.classList.add('is-on');
+    cap.querySelector('span')!.textContent = esc.cap; cap.classList.add('is-on');
+    h.classList.add('is-on');
+    const llega = () => {
+      if (t !== historiaToken) return;
+      barra.style.width = '100%';
+      h.classList.remove('is-on'); cap.classList.remove('is-on');
+      slide.classList.add('desde-tablet');
+      setTimeout(() => { if (t === historiaToken) { clip.classList.remove('is-on'); clip.removeAttribute('src'); clip.load(); } }, 700);
+    };
+    if (esc.clip) {
+      clip.src = esc.clip; clip.currentTime = 0;
+      const play = () => {
+        if (t !== historiaToken) return;
+        clip.classList.add('is-on');
+        clip.play().catch(llega);
+        const tick = () => { if (t !== historiaToken) return; if (clip.duration) barra.style.width = (clip.currentTime / clip.duration * 100) + '%'; raf = requestAnimationFrame(tick); };
+        tick();
+        clip.onended = llega;
+        setTimeout(() => { if (t === historiaToken && h.classList.contains('is-on')) llega(); }, 6500);
+      };
+      if (clip.readyState >= 2) play(); else clip.addEventListener('loadeddata', play, { once: true });
+      clip.load();
+    } else {
+      requestAnimationFrame(() => still.classList.add('is-kb'));
+      setTimeout(llega, 2600);
+    }
+  }
+
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
     const slides = section.querySelectorAll<HTMLDivElement>('.tablet-slide');
@@ -18093,6 +18186,8 @@ const useCases = [
       slides.forEach((s, i) => s.classList.toggle('active', i === idx));
       // Mobile: mover el tablet visual dentro del accordion abierto
       moveVisualInto(idx);
+      // Vende: la cámara entra a la tienda y luego aparece el sistema
+      if (section.dataset.pillar === 'pos') cuentaHistoria(section, slides[idx] as HTMLElement | undefined);
       // Trigger apartados loop if its slide just became active
       const activeSlide = slides[idx] as HTMLElement | undefined;
       if (activeSlide?.dataset.slide === 'pos-apartados') {
@@ -18145,6 +18240,14 @@ const useCases = [
     // Bootstrap apartados loop if its slide is the initially active one
     const initiallyActive = section.querySelector<HTMLElement>('.tablet-slide.active');
     if (initiallyActive?.dataset.slide === 'pos-apartados') startApartadosLoop(initiallyActive);
+    // Vende: la primera historia arranca sola cuando la tablet entra en pantalla
+    if (section.dataset.pillar === 'pos' && initiallyActive) {
+      const frame = section.querySelector<HTMLElement>('.pillar-frame');
+      if (frame && 'IntersectionObserver' in window) {
+        const ioH = new IntersectionObserver((es) => { if (es[0].isIntersecting) { cuentaHistoria(section, initiallyActive); ioH.disconnect(); } }, { threshold: 0.5 });
+        ioH.observe(frame);
+      }
+    }
   });
 
   // ═══ Apple-level scroll choreography ═══
