@@ -14,7 +14,7 @@
 // es el que se sabe vivo porque se usa todo el día.
 import { supabase } from '../supabase';
 import { permitido } from '../whatsapp/permisos';
-import { enviarTexto, enviarPlantilla, usarNumero, KapsoError } from '../whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla, enContexto, KapsoError } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { telefonoWhatsApp } from '../telefono';
 
@@ -87,12 +87,8 @@ export async function confirmarCitaPorWhatsApp(bookingId: string, extra?: { luga
       tokenCancelar: b.token_cancelar || null, lugar: extra?.lugar || null,
     });
 
-    // Si ya existe conversación con ese número, se responde POR SU NÚMERO
-    // (multi-número: contestar por otro abre un hilo paralelo del lado del
-    // cliente y rompe la ventana de 24 h de la conversación real).
-    const { data: conv } = await supabase.from('wa_conversaciones')
-      .select('id, phone_number_id').eq('telefono', destino).maybeSingle();
-    usarNumero((conv as any)?.phone_number_id || null);
+    // Multilínea: se responde por la línea de su conversación (o la regla de «citas»); lo resuelve lineaPara().
+    enContexto('cita');
 
     // Meta no deja mandar texto libre fuera de la ventana de 24 h. Quien
     // agenda desde el inbox acaba de escribir, así que su ventana está

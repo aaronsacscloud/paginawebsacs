@@ -41,7 +41,7 @@ export default function NuevoChat({ lista, api, telefono, onAbrir, onClose }: {
   };
 
   if (telPlantilla) {
-    return <SelectorPlantilla telefono={telPlantilla} api={api} contacto={contactoDe} onClose={onClose} />;
+    return <SelectorPlantilla telefono={telPlantilla} api={api} contacto={contactoDe} onClose={onClose} elegirLinea />;
   }
 
   return (

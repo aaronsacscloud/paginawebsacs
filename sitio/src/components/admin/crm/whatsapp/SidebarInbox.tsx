@@ -3,6 +3,7 @@
 // con acciones que se revelan en hover, colapso a 64px y footer discreto.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, L, label } from './estilo';
+import { useLineas } from './useLineas';
 import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
 import EtapasModal from './EtapasModal';
 import { useLifecycle, cargarLifecycle } from '../../../../lib/crm/lifecycle';
@@ -78,6 +79,7 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   const etapasCat = useLifecycle();
   const [giros, setGiros] = useState<{ v: string; l: string }[]>([]);
   const [cierres, setCierres] = useState<{ v: string; l: string }[]>([]);
+  const { lineas } = useLineas();
   useEffect(() => { fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCierres((j.categorias || []).map((c: any) => ({ v: c.nombre, l: c.nombre })))).catch(() => {}); }, []);
   useEffect(() => {
     fetch('/api/crm/propiedades?entidad=company').then(r => r.json()).then(j => {
@@ -90,11 +92,12 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
     etapas: etapasCat.map(e => ({ v: e.id, l: e.label })),
     equipo: equipo.map((m: any) => ({ v: m.id, l: m.nombre })),
     giros, cierres,
+    lineas: lineas.map(l => ({ v: l.id, l: `${l.numero}${l.nombre ? ` · ${l.nombre}` : ''}` })),
     fuentes: [
       { v: 'web', l: 'Sitio web' }, { v: 'tiktok', l: 'TikTok Ads' }, { v: 'agenda', l: 'Agendador' },
       { v: 'whatsapp', l: 'WhatsApp' }, { v: 'referido', l: 'Referido' }, { v: 'import', l: 'Importado' },
     ],
-  }), [cat, equipo, giros, cierres]);
+  }), [cat, equipo, giros, cierres, lineas]);
 }
 
 export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo, yo, tick = 0, onGuardarVistaExterna }: {

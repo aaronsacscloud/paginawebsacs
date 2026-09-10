@@ -778,10 +778,10 @@ export default function InboxPro() {
         .then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
     },
-    enviarPlantilla: async (plantilla: any, telefono?: string) => {
+    enviarPlantilla: async (plantilla: any, telefono?: string, phoneNumberId?: string) => {
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(telefono ? { telefono, plantilla } : { conversation_id: waId(), plantilla }),
+        body: JSON.stringify(telefono ? { telefono, plantilla, ...(phoneNumberId ? { phone_number_id: phoneNumberId } : {}) } : { conversation_id: waId(), plantilla }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       if (r.conversation_id && r.conversation_id !== activaRef.current?.wa) setActiva({ id: r.conversation_id, wa: r.conversation_id, email: null });
       refrescar(); return r;

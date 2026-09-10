@@ -125,6 +125,17 @@ export async function registrarMensaje(o: {
     const q = supabase.from('wa_conversaciones').update({ phone_number_id: o.phoneNumberId }).eq('id', conv.id);
     await (o.direccion === 'entrante' && !o.silencioso ? q.neq('phone_number_id', o.phoneNumberId) : q.is('phone_number_id', null));
   }
+  // La ventana de 24 h es por (línea, cliente): un entrante abre la ventana SOLO en la línea por la que llegó.
+  // Se guarda en `ventanas` {phone_number_id: cuándo} y el composer avisa si la línea elegida no tiene ventana.
+  if (o.phoneNumberId && o.direccion === 'entrante' && o.tipo !== 'reaction') {
+    const cuando = o.timestamp ? (/^\d+$/.test(String(o.timestamp)) ? new Date(Number(o.timestamp) * 1000) : new Date(o.timestamp)) : new Date();
+    if (!isNaN(cuando.getTime())) {
+      const { data: v } = await supabase.from('wa_conversaciones').select('ventanas').eq('id', conv.id).maybeSingle();
+      const mapa = (v?.ventanas && typeof v.ventanas === 'object') ? { ...(v.ventanas as any) } : {};
+      const prevL = mapa[o.phoneNumberId] ? new Date(mapa[o.phoneNumberId]).getTime() : 0;
+      if (cuando.getTime() > prevL) { mapa[o.phoneNumberId] = cuando.toISOString(); await supabase.from('wa_conversaciones').update({ ventanas: mapa }).eq('id', conv.id).then(() => {}, () => {}); }
+    }
+  }
   // LEAD NUEVO POR WHATSAPP (4-sep): si escribe un número desconocido, se crea el contacto ahí mismo. Antes la
   // conversación quedaba huérfana y el agente —que trabaja sobre contactos— ni la veía: se perdieron leads que
   // venían de la web pidiendo prueba o demo. Ver lead-entrante.ts.

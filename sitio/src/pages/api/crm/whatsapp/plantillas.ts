@@ -14,7 +14,7 @@
 //   nombre (_v2) y la vieja se deja morir sola.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { listarPlantillasMeta, crearPlantillaMeta, borrarPlantillaMeta, ingestarHandle, enviarPlantilla, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { listarPlantillasMeta, crearPlantillaMeta, borrarPlantillaMeta, ingestarHandle, enviarPlantilla, sanearParam, enContexto, KapsoError } from '../../../../lib/whatsapp/kapso-api';
 import { notificar } from '../../../../lib/crm/notificaciones';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { explicarError } from '../../../../lib/whatsapp/errores';
@@ -132,6 +132,7 @@ export const POST: APIRoute = async ({ request }) => {
     const tel = telefonoWhatsApp(b.telefono);
     if (!tel) return json({ error: `Teléfono no utilizable para WhatsApp: ${b.telefono || '(vacío)'}` }, 400);
     try {
+      enContexto('inbox');
       const r = await enviarPlantilla(tel, String(b.nombre || ''), String(b.idioma || 'es_MX'),
         (Array.isArray(b.params) ? b.params : []).map(sanearParam));
       return json({ ok: true, message_id: r?.messages?.[0]?.id || null });

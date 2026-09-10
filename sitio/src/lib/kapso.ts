@@ -10,12 +10,11 @@
 // sale por la MISMA vía que el inbox —la que se usa todo el día y por lo tanto
 // se sabe viva— y además queda espejado en la conversación del cliente, que es
 // donde alguien lo va a buscar.
-import { enviarTexto, usarNumero, KapsoError } from './whatsapp/kapso-api';
+import { enviarTexto, enContexto, KapsoError } from './whatsapp/kapso-api';
 import { registrarMensaje } from './whatsapp/espejo';
 import { telefonoWhatsApp } from './telefono';
-import { supabase } from './supabase';
 
-export async function sendWhatsApp(to: string, message: string, autor = 'Sistema'): Promise<{ sent: boolean; error?: string }> {
+export async function sendWhatsApp(to: string, message: string, autor = 'Sistema', contexto: 'cliente' | 'cita' | 'sistema' | 'lead' | 'evento' = 'sistema'): Promise<{ sent: boolean; error?: string }> {
   // Estricto a propósito: si el número no sirve, NO se manda con algo
   // inventado. Un mensaje a un número que no existe se cobra igual y
   // desaparece sin error.
@@ -24,11 +23,9 @@ export async function sendWhatsApp(to: string, message: string, autor = 'Sistema
   if (!String(message || '').trim()) return { sent: false, error: 'Mensaje vacío' };
 
   try {
-    // Multi-número: si ya hay conversación con ese cliente se le responde por
-    // el número por el que habla, no por el de default.
-    const { data: conv } = await supabase.from('wa_conversaciones')
-      .select('phone_number_id').eq('telefono', phone).maybeSingle();
-    usarNumero((conv as any)?.phone_number_id || null);
+    // Multilínea: la línea la resuelve lineaPara() por el teléfono (su conversación → reglas del
+    // contexto → default). Aquí solo se dice QUÉ tipo de envío es.
+    enContexto(contexto);
 
     const r = await enviarTexto(phone, message);
     const wamid = r?.messages?.[0]?.id;

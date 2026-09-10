@@ -277,7 +277,7 @@ export const POST: APIRoute = async ({ request }) => {
         suggestionsText,
       ].join('\n');
 
-      await sendWhatsApp(booking.invitee_whatsapp, smsMessage);
+      await sendWhatsApp(booking.invitee_whatsapp, smsMessage, 'Sistema', 'cita');
     } catch { /* SMS is non-critical */ }
   }
 

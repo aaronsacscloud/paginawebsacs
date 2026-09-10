@@ -22,8 +22,8 @@ import { registrarMensaje, actualizarStatus, upsertConversacion } from '../../..
 import { esRespuestaDeAgenda, agendarDesdeRespuesta } from '../../../lib/whatsapp/agenda-auto';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
 import { explicarError } from '../../../lib/whatsapp/errores';
-import { marcarLeido } from '../../../lib/whatsapp/kapso-api';
-import { alRecibirMensaje } from '../../../lib/whatsapp/automatizacion';
+import { marcarLeido, usarNumero } from '../../../lib/whatsapp/kapso-api';
+import { alRecibirMensaje, redirigirSiToca } from '../../../lib/whatsapp/automatizacion';
 import { telefonoWhatsApp, telefonoLegible } from '../../../lib/telefono';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
@@ -79,10 +79,14 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (!msj.id || !telefono) return ok();
         const entrante = evento === 'whatsapp.message.received';
         const p = parsearMensaje(msj);
+        // MULTILÍNEA: todo lo que este webhook mande de vuelta (leído, bienvenida, agenda, agente) sale por
+        // la línea por la que ENTRÓ el mensaje. Antes salía por la default aunque el cliente escribiera al +1.
+        const lineaEntrada = kapso.phone_number_id || payload?.phone_number_id || conv.phone_number_id || null;
+        if (lineaEntrada) usarNumero(String(lineaEntrada));
         const r = await registrarMensaje({
           kapsoMessageId: String(msj.id),
           kapsoConversationId: conv.id ? String(conv.id) : null,
-          phoneNumberId: kapso.phone_number_id || payload?.phone_number_id || conv.phone_number_id || null,
+          phoneNumberId: lineaEntrada ? String(lineaEntrada) : null,
           telefono,
           direccion: entrante ? 'entrante' : 'saliente',
           tipo: p.tipo,
@@ -154,6 +158,8 @@ export const POST: APIRoute = async ({ request, url }) => {
              SOLO si nadie contestó ya. Un toque de botón que la agenda acaba
              de responder no necesita además que le digan «dame unos
              minutos»: es hablarle dos veces con dos voces distintas. */
+          // Multilínea · si escribió a una línea que se está retirando, se le da el número nuevo (una vez a la semana).
+          await redirigirSiToca(String(r.conversationId), telefono, lineaEntrada ? String(lineaEntrada) : null).catch(() => false);
           if (!atendido) await alRecibirMensaje(r.conversationId).catch(e => console.warn('[wa-auto]', e));
           // "Escribiendo…" hacia el cliente: señal de que alguien lo vio llegar.
           // La confirmación de LECTURA real la manda el hilo al abrirse.

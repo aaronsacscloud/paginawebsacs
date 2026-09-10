@@ -9,7 +9,7 @@ import { supabase } from '../../../lib/supabase';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { telefonoLegible } from '../../../lib/telefono';
-import { enviarTexto, enviarMediaLink, listarMensajesKapso, KapsoError } from '../../../lib/whatsapp/kapso-api';
+import { enviarTexto, enviarMediaLink, listarMensajesKapso, usarNumero, enContexto, KapsoError } from '../../../lib/whatsapp/kapso-api';
 import { registrarMensaje, actualizarStatus } from '../../../lib/whatsapp/espejo';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
 import { explicarError } from '../../../lib/whatsapp/errores';
@@ -42,12 +42,16 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   // ── 3/4) Programados vencidos ──
-  const { data: prog } = await supabase.from('wa_programados').select('*, wa_conversaciones(telefono, ultimo_entrante_at, contacts(nombre, apellido))')
+  const { data: prog } = await supabase.from('wa_programados').select('*, wa_conversaciones(telefono, ultimo_entrante_at, phone_number_id, contacts(nombre, apellido))')
     .eq('estado', 'pendiente').lte('ejecutar_at', new Date().toISOString()).limit(50);
   let enviados = 0, recordados = 0;
   for (const p of prog || []) {
     const conv: any = p.wa_conversaciones;
     try {
+      // Sale por la línea que se fijó al programarlo (o la de la conversación hoy): el cliente
+      // sigue viendo el mismo número con el que ya hablaba.
+      enContexto('inbox');
+      usarNumero(p.phone_number_id || conv?.phone_number_id || null);
       if (p.tipo === 'envio') {
         let r: any;
         if (p.payload?.texto) r = await enviarTexto(conv.telefono, p.payload.texto, p.payload.cita || null);

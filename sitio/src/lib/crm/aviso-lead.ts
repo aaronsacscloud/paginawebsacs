@@ -7,7 +7,7 @@
 // mantener su ventana abierta (o después migramos a plantilla UTILITY).
 import { supabase } from '../supabase';
 import { pushLeadNuevo } from './push-crm';
-import { enviarTexto, enviarPlantilla } from '../whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla, enContexto } from '../whatsapp/kapso-api';
 
 const URL_LEAD = (id: string) => `https://www.sacscloud.com/admin/crm?tab=pipeline&lead=${id}`;
 
@@ -24,6 +24,7 @@ async function destinos(): Promise<string[]> {
 async function mandar(texto: string, vars?: [string, string, string]): Promise<{ tel: string; ok: boolean; via?: string; error?: string }[]> {
   const tels = await destinos();
   const res: { tel: string; ok: boolean; via?: string; error?: string }[] = [];
+  enContexto('interno');   // avisos al EQUIPO: salen por la línea de su conversación o la default
   for (const t of tels) {
     if (vars) {
       // aviso_pendiente_crm es la UTILITY nueva (tono operativo, sin lenguaje

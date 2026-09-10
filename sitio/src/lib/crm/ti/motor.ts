@@ -377,7 +377,8 @@ async function relojes(cfg: TiConfig, ahora: Date) {
       const tel = (v.payload as any)?.whatsapp;
       if (!nombreMeta || !tel) continue;
       try {
-        const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
+        const { enviarPlantilla, enContexto } = await import('../../whatsapp/kapso-api');
+        enContexto('lead');
         await enviarPlantilla(tel, nombreMeta, 'es_MX', [String((v.payload as any)?.nombre || '').split(/\s+/)[0] || 'Hola']);
         await supabase.from('ti_tareas').update({
           estado: 'hecha', resultado: 'valvula_automatica', hecho_at: ahora.toISOString(), updated_at: ahora.toISOString(),

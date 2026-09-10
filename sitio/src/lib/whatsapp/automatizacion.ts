@@ -30,6 +30,41 @@ async function mandarAuto(convId: string, telefono: string, texto: string, marca
   }
 }
 
+/** Idea 6 · Redirección de línea: si el cliente escribe a un número que se está retirando (la línea
+ *  tiene `redirigir_a`), se le contesta UNA vez cada 7 días desde esa misma línea con el número nuevo
+ *  y un botón que abre el chat ahí. No se toca la conversación: sigue viva en la línea vieja hasta
+ *  que el cliente escriba a la nueva (el webhook la muda solo). Devuelve true si mandó algo. */
+export async function redirigirSiToca(convId: string, telefono: string, lineaEntrada: string | null): Promise<boolean> {
+  if (!lineaEntrada) return false;
+  try {
+    const { infoLinea } = await import('./linea');
+    const l = await infoLinea(lineaEntrada);
+    if (!l?.redirigir_a) return false;
+    const { data: conv } = await supabase.from('wa_conversaciones').select('id, auto_redirigir_at, interna').eq('id', convId).maybeSingle();
+    if (!conv || conv.interna) return false;
+    if (conv.auto_redirigir_at && Date.now() - new Date(conv.auto_redirigir_at).getTime() < 7 * 86400e3) return false;
+    const digitos = String(l.redirigir_a).replace(/\D/g, '');
+    const { infoLinea: _i, todasLasLineas } = await import('./linea');
+    const destino = (await todasLasLineas()).find(x => x.id === l.redirigir_a || x.numero.replace(/\D/g, '') === digitos);
+    const numeroLegible = destino?.numero || (digitos ? `+${digitos}` : String(l.redirigir_a));
+    const wa = destino ? destino.numero.replace(/\D/g, '') : digitos;
+    const texto = (l.redirigir_texto || `Hola, este número de Sacscloud está cambiando. Escríbenos al nuevo: ${numeroLegible}. Ahí seguimos con tu conversación.`).replace('{numero}', numeroLegible);
+    // Marcar ANTES de mandar: si el webhook reintenta, no salen dos.
+    await supabase.from('wa_conversaciones').update({ auto_redirigir_at: new Date().toISOString() }).eq('id', convId);
+    const { enviarInteractivo, enviarTexto: envTxt, usarNumero, enContexto } = await import('./kapso-api');
+    enContexto('sistema'); usarNumero(lineaEntrada);
+    let r: any;
+    if (wa) {
+      try { r = await enviarInteractivo(telefono, { tipo: 'cta_url', cuerpo: texto, texto_boton: 'Abrir chat nuevo', url: `https://wa.me/${wa}` } as any); }
+      catch { r = await envTxt(telefono, `${texto}\nhttps://wa.me/${wa}`); }
+    } else r = await envTxt(telefono, texto);
+    const wamid = r?.messages?.[0]?.id;
+    if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono, direccion: 'saliente', tipo: wa ? 'interactive' : 'text', cuerpo: texto, status: 'sent', autor: 'Sistema', phoneNumberId: lineaEntrada, metadata: { auto: 'redireccion_linea', hacia: numeroLegible } } as any);
+    await supabase.from('wa_eventos').insert({ conversation_id: convId, tipo: 'sistema', autor: 'Sistema', detalle: `Redirección automática: se le dio el número nuevo (${numeroLegible})` });
+    return true;
+  } catch (e) { console.warn('[wa-redirigir]', e); return false; }
+}
+
 /** Se llama tras espejar un mensaje ENTRANTE nuevo. */
 export async function alRecibirMensaje(convId: string) {
   // Con el agente activo, él contesta 24/7: las autorrespuestas de bienvenida y «fuera de horario» serían una segunda voz (decisión 2026-09-04).

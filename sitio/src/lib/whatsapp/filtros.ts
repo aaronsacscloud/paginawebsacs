@@ -43,6 +43,7 @@ export function catalogoCampos(din: {
   fuentes?: { v: string; l: string }[];
   cierres?: { v: string; l: string }[];
   etapas?: { v: string; l: string }[];
+  lineas?: { v: string; l: string }[];
 } = {}): CampoFiltro[] {
   return [
     // ── Bandeja ──
@@ -50,6 +51,7 @@ export function catalogoCampos(din: {
     { id: 'asignado', label: 'Asignado a', grupo: 'Bandeja', ops: OPS.es, valores: [{ v: 'nadie', l: 'Sin asignar' }, ...(din.equipo || [])] },
     { id: 'sin_respuesta', label: 'Sin respuesta desde', grupo: 'Bandeja', ops: [{ id: 'hace_mas', label: 'hace más de' }], valores: [] },
     { id: 'canal', label: 'Canal', grupo: 'Bandeja', ops: OPS.esSolo, valores: [{ v: 'wa', l: 'WhatsApp' }, { v: 'email', l: 'Correo' }] },
+    ...((din.lineas || []).length > 1 ? [{ id: 'linea', label: 'Línea de WhatsApp', grupo: 'Bandeja', ops: OPS.esSolo, valores: din.lineas! }] : []),
     { id: 'no_leidos', label: 'No leídos', grupo: 'Bandeja', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Con pendientes' }, { v: 'no', l: 'Al día' }] },
     // ── Lead ──
     { id: 'etapa', label: 'Etapa del ciclo', grupo: 'Lead', ops: OPS.es, valores: din.etapas || [
@@ -124,6 +126,7 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
       break;
     }
     case 'canal': ok = (fila.canales || ['wa']).includes(c.valor); break;
+    case 'linea': ok = (fila.phone_number_id || '') === c.valor; break;
     case 'no_leidos': ok = (c.valor === 'si') === ((fila.no_leidos || 0) > 0); break;
     case 'etapa': ok = fila.contacto?.lifecycle_stage === c.valor; break;
     case 'tipo': ok = fila.contacto?.tipo === c.valor; break;

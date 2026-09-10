@@ -5,11 +5,12 @@
 import { supabase } from '../supabase';
 import { crearBroadcast, agregarDestinatarios, resolverTemplateId, sanearParam, KapsoError } from './kapso-api';
 import { telefonoWhatsApp } from '../telefono';
+import { lineaPara, infoLinea, cupoLinea } from './linea';
 
 export interface DestinatarioCrudo { telefono?: string | null; contact_id?: string | null; company_id?: string | null; params?: string[] }
 
 /** Devuelve {status, cuerpo}: el endpoint lo responde tal cual; otros llamadores leen cuerpo.ok / cuerpo.id. */
-export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; destinatarios?: DestinatarioCrudo[]; origen?: string }): Promise<{ status: number; cuerpo: any }> {
+export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; destinatarios?: DestinatarioCrudo[]; origen?: string; phone_number_id?: string | null; contexto?: 'masivo' | 'evento' | 'prospeccion'; forzar_cupo?: boolean }): Promise<{ status: number; cuerpo: any }> {
   const _V = 'v11.1';   // marcador de despliegue (diagnóstico)
   const nombre = String(b.nombre || '').trim();
   if (!nombre) return { status: 400, cuerpo: { error: 'Falta el nombre del masivo' } };
@@ -34,18 +35,32 @@ export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; d
   }
   if (!listos.length) return { status: 400, cuerpo: { error: 'Ningún destinatario con teléfono utilizable', descartados } };
 
+  // ── La línea por la que sale el masivo ──
+  // Explícita (el wizard la eligió) o por reglas (contexto masivo/evento → línea). Una línea en pausa
+  // (calidad baja o pausa a mano) NO acepta masivos, y el tope diario de la línea se respeta.
+  const contexto = b.contexto || 'masivo';
+  const pn = b.phone_number_id ? String(b.phone_number_id) : await lineaPara({ contexto, origen: b.origen || null });
+  if (!pn) return { status: 400, cuerpo: { error: 'No hay una línea de WhatsApp activa por la que mandar el masivo' } };
+  const linea = await infoLinea(pn);
+  if (!linea || !linea.activo) return { status: 400, cuerpo: { error: 'Esa línea no está activa' } };
+  if (linea.pausada) return { status: 409, cuerpo: { error: `La línea ${linea.numero} está en pausa${linea.pausada_motivo ? ` (${linea.pausada_motivo})` : ''}: elige otra línea o quita la pausa en Ajustes.`, linea_pausada: true } };
+  const cupo = await cupoLinea(pn).catch(() => null);
+  if (cupo && cupo.tope != null && cupo.libres != null && listos.length > cupo.libres && !b.forzar_cupo) {
+    return { status: 409, cuerpo: { error: `La línea ${linea.numero} tiene ${cupo.libres} envíos libres hoy (tope ${cupo.tope}, ya van ${cupo.usados}) y el masivo lleva ${listos.length}. Reduce la lista, programa para mañana o cambia de línea.`, cupo, se_puede_forzar: true } };
+  }
+
   try {
     const templateId = await resolverTemplateId(plantilla.nombre, plantilla.idioma, plantilla.meta_template_id);
     if (!templateId) return { status: 502, cuerpo: { error: 'No pude resolver el id de la plantilla en Kapso' } };
 
-    const creado = await crearBroadcast(nombre, templateId);
+    const creado = await crearBroadcast(nombre, templateId, pn);
     const kapsoId = String(creado?.id || '');
     if (!kapsoId) return { status: 502, cuerpo: { error: 'Kapso no devolvió el id del broadcast' } };
 
     const { data: fila } = await supabase.from('wa_broadcasts').insert({
       kapso_broadcast_id: kapsoId, nombre,
       plantilla_nombre: plantilla.nombre, template_id: templateId,
-      status: 'borrador', total: listos.length,
+      status: 'borrador', total: listos.length, phone_number_id: pn,
     }).select('id').single();
 
     await supabase.from('wa_broadcast_destinatarios').insert(listos.map(d => ({
@@ -61,7 +76,7 @@ export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; d
       } : {}),
     })));
 
-    return { status: 200, cuerpo: { ok: true, id: fila!.id, total: listos.length, descartados, _v: _V } };
+    return { status: 200, cuerpo: { ok: true, id: fila!.id, total: listos.length, descartados, phone_number_id: pn, _v: _V } };
   } catch (e: any) {
     return { status: 502, cuerpo: { error: e instanceof KapsoError ? e.message : String(e), _v: _V } };
   }

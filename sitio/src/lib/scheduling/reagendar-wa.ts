@@ -10,7 +10,7 @@
 // que la respuesta SÍ puede ir en texto libre: es el único caso de este módulo
 // donde no hace falta plantilla.
 import { supabase } from '../supabase';
-import { enviarTexto } from '../whatsapp/kapso-api';
+import { enviarTexto, enContexto } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { fmtFechaLarga, fmtHora, inicioMs } from './recordatorios';
 import { permitido } from '../whatsapp/permisos';
@@ -105,6 +105,7 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
       ].join('\n');
 
   try {
+    enContexto('cita');
     const r = await enviarTexto(telefono, texto);
     await registrarMensaje({
       kapsoMessageId: r?.messages?.[0]?.id || null, telefono, direccion: 'saliente',

@@ -24,7 +24,7 @@ import { notificar } from '../../../lib/crm/notificaciones';
 import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/presion';
 import { entregarInapp, retirarInapp, cuentaDelLead, campanasDeSecuencia } from '../../../lib/crm/secuencia-inapp';
 import { ctxRenovacion } from '../../../lib/crm/renovacion';
-import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
+import { enviarPlantilla, enContexto } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
@@ -716,6 +716,7 @@ export const GET: APIRoute = async ({ url }) => {
             if (!presion.ok) { res.saltados.push({ lead: c.id, motivo: 'presion_wa', libre_en: presion.libreEn?.toISOString() }); continue; }
             if (await cadenciaPausadaPorPersona(c.whatsapp)) { res.saltados.push({ lead: c.id, motivo: 'la tomo una persona' }); continue; }
             if (!(await permitido('cadencia_leads'))) { res.saltados.push({ lead: c.id, motivo: 'cadencia pausada' }); continue; }
+            enContexto('lead', (c as any).fuente || null);
             await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', [primerNombre || '👋']);
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {

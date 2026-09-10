@@ -286,7 +286,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { crearMasivo } = await import('../../../../lib/whatsapp/masivos.lib');
     // {{1}} nombre · {{2}} feria · {{3}} stand · {{4}} liga para agendar. La plantilla dice cuántas trae.
     const r = await crearMasivo({
-      nombre: `Invitación al stand · ${evento} · ${ed.nombre}`.slice(0, 120), plantilla_id: b.plantilla_id,
+      nombre: `Invitación al stand · ${evento} · ${ed.nombre}`.slice(0, 120), plantilla_id: b.plantilla_id, contexto: 'evento', phone_number_id: b.phone_number_id || null, forzar_cupo: !!b.forzar_cupo,
       destinatarios: elegidos.map(c => ({ telefono: c.telefono, contact_id: c.contact_id, company_id: c.company_id, params: [c.nombre.split(/\s+/)[0] || 'Hola', evento, ed.stand_numero || 'Sacscloud', liga].slice(0, n) })),
     });
     if (r.cuerpo?.ok) await supabase.from('ev_ediciones').update({ invitacion_broadcast_id: r.cuerpo.id, updated_at: ahora }).eq('id', ed.id);

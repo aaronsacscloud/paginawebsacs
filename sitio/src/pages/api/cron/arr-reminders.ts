@@ -99,7 +99,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         if (vencidaDias >= 3 && await permitido('cobranza') && !(await yaAvisado(s.id, 'dunning_wa_' + s.proxima_factura))) {
           if (contacto.whatsapp) {
             await sendWhatsApp(contacto.whatsapp,
-              `Hola ${contacto.nombre || ''} 👋 Te escribimos de SACS: el pago de tu suscripción ${s.nombre_plan} venció el ${fmtD(s.proxima_factura)} ($${monto.toLocaleString('es-MX')} MXN). ¿Te ayudamos a regularizarlo? Si ya pagaste, mándanos tu comprobante por aquí. 🙌`).catch(() => null);
+              `Hola ${contacto.nombre || ''} 👋 Te escribimos de SACS: el pago de tu suscripción ${s.nombre_plan} venció el ${fmtD(s.proxima_factura)} ($${monto.toLocaleString('es-MX')} MXN). ¿Te ayudamos a regularizarlo? Si ya pagaste, mándanos tu comprobante por aquí. 🙌`, 'Sistema', 'cliente').catch(() => null);
             out.dunning_wa++;
           }
           await marcarAviso(s, 'dunning_wa_' + s.proxima_factura, `📱 Dunning día 3 (WhatsApp): ${empresa} · $${monto.toLocaleString('es-MX')}`);

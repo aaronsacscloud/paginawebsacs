@@ -29,8 +29,10 @@ export const POST: APIRoute = async ({ request }) => {
     ? (b.payload?.texto ? { texto: String(b.payload.texto).slice(0, 4000), cita: b.payload.cita || null } : b.payload?.media_url ? { media_url: b.payload.media_url, clase: b.payload.clase, nombre: b.payload.nombre, caption: b.payload.caption || null } : null)
     : { nota: String(b.payload?.nota || 'Sin respuesta del cliente').slice(0, 300), desde: new Date().toISOString() };
   if (!payload) return json({ error: 'El envío necesita texto o archivo' }, 400);
+  // La línea se congela al programar: si la conversación se muda después, el programado sale por la de entonces… salvo que la línea ya no exista (lo resuelve el cron).
+  const { data: cv } = await supabase.from('wa_conversaciones').select('phone_number_id').eq('id', b.conversation_id).maybeSingle();
   const { data, error } = await supabase.from('wa_programados').insert({
-    conversation_id: b.conversation_id, tipo: b.tipo, ejecutar_at: cuando.toISOString(), payload,
+    conversation_id: b.conversation_id, tipo: b.tipo, ejecutar_at: cuando.toISOString(), payload, phone_number_id: b.phone_number_id || cv?.phone_number_id || null,
     autor_id: yo?.id || null, autor: (yo as any)?.nombre || yo?.email || null,
   }).select('*').single();
   if (error) return json({ error: error.message }, 500);

@@ -120,13 +120,26 @@ export const GET: APIRoute = async ({ request, url }) => {
   const ultimoEntrante = entrantes.reduce((u: any, m: any) => (!u || new Date(m.enviado_at || m.created_at) > new Date(u.enviado_at || u.created_at)) ? m : u, null as any);
   const base = Math.max(ultimoEntrante ? new Date(ultimoEntrante.enviado_at || ultimoEntrante.created_at).getTime() : 0, conv.ultimo_entrante_at ? new Date(conv.ultimo_entrante_at).getTime() : 0);
   const expira = base + 24 * 3600 * 1000;
-  const ventana = { abierta: base > 0 && Date.now() < expira, expira_at: base ? new Date(expira).toISOString() : null };
+  let ventana = { abierta: base > 0 && Date.now() < expira, expira_at: base ? new Date(expira).toISOString() : null };
+  // Multilínea: la ventana es POR LÍNEA (el cliente le escribió a un número, no al negocio). Si la
+  // conversación ya lleva su mapa `ventanas`, manda ese reloj para la línea en la que vive; la vista
+  // global de arriba queda como respaldo para conversaciones anteriores al mapa.
+  const { ventanaEnLinea, lineasActivas: _lineas } = await import('../../../../lib/whatsapp/linea');
+  const mapaVentanas = (conv.ventanas && typeof conv.ventanas === 'object') ? conv.ventanas : {};
+  if (conv.phone_number_id && Object.keys(mapaVentanas).length) {
+    const vl = ventanaEnLinea(conv, conv.phone_number_id);
+    ventana = { abierta: vl.abierta, expira_at: vl.expira_at };
+  }
+  const lineasHilo = await _lineas().catch(() => []);
+  const ventanas = Object.fromEntries(lineasHilo.map(l => { const v = ventanaEnLinea(conv, l.id); return [l.id, v]; }));
 
   // ── Canales disponibles para el composer ──
   const t = await resolverTenant().catch(() => null);
   const correoOk = !!emailContacto && !!t && puedeEnviar(t);
   const canales = {
     whatsapp: !!conv.id,
+    linea: conv.phone_number_id || null,
+    ventanas,
     correo: {
       ok: correoOk,
       email: emailContacto || null,

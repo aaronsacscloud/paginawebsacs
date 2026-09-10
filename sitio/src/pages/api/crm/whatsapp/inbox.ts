@@ -169,6 +169,7 @@ const _GET: APIRoute = async ({ request, url }) => {
       no_leidos: leidoAt.has(c.id) ? (pendientesPersonal.get(c.id) || 0) : (c.no_leidos || 0),
       ventana_expira_at: c.ultimo_entrante_at ? new Date(new Date(c.ultimo_entrante_at).getTime() + 24 * 3600e3).toISOString() : null,
       alerta: c.alerta || null, mencion: mencionesPend.has(c.id), tiene_notas: conNota.has(c.id),
+      phone_number_id: c.phone_number_id || null,   // multilínea: la línea por la que vive (chip y filtro «Línea»)
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
       // La fila se arma con una lista EXPLÍCITA de campos, no con ...c: si no
       // se nombra aquí, el filtro de más abajo nunca lo ve. Marcar una

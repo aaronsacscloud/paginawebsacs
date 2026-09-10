@@ -11,7 +11,7 @@
 // 422 de Kapso se traduce a { ventana_cerrada: true } y el mensaje NO se espeja.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { usarNumero, enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError, enviarInteractivo, enviarUbicacion, enviarContacto, enviarSticker, enviarReaccion, type Interactivo } from '../../../../lib/whatsapp/kapso-api';
+import { usarNumero, enContexto, enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError, enviarInteractivo, enviarUbicacion, enviarContacto, enviarSticker, enviarReaccion, type Interactivo } from '../../../../lib/whatsapp/kapso-api';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
@@ -19,6 +19,7 @@ import { puedeMandarWa } from '../../../../lib/whatsapp/presion';
 import { textoConSv, conSv } from '../../../../lib/tracking/identidad';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
+import { lineaPara, ventanaEnLinea } from '../../../../lib/whatsapp/linea';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -41,27 +42,37 @@ const MIMES: Record<string, 'image' | 'document' | 'audio' | 'video'> = {
 const claseDeMime = (m: string) => MIMES[m] || ((m.startsWith('application/') || m.startsWith('text/')) ? 'document' : undefined);
 const MAX_BYTES = 4 * 1024 * 1024; // el límite real de la función serverless es ~4.5 MB
 
-/** El teléfono E.164 de la conversación (o del body) y su id de espejo. */
-async function resolverDestino(b: { conversation_id?: string; telefono?: string; phone_number_id?: string | null }) {
+/** El teléfono E.164 de la conversación (o del body), su id de espejo y la línea por la que sale. */
+type Destino = { convId: string; telefono: string; contactId: string | null; linea: string | null; conv: any };
+async function resolverDestino(b: { conversation_id?: string; telefono?: string; phone_number_id?: string | null }): Promise<Destino | null> {
+  let conv: any = null;
   if (b.conversation_id) {
     const { data } = await supabase.from('wa_conversaciones')
-      .select('id, telefono, phone_number_id, contact_id').eq('id', b.conversation_id).maybeSingle();
+      .select('id, telefono, phone_number_id, contact_id, ventanas, ultimo_entrante_at').eq('id', b.conversation_id).maybeSingle();
     if (!data) return null;
-    // multi-número: se responde desde la línea de la conversación; si el agente eligió otra, se muda.
-    if (b.phone_number_id && b.phone_number_id !== data.phone_number_id) await supabase.from('wa_conversaciones').update({ phone_number_id: b.phone_number_id }).eq('id', data.id);
-    usarNumero(b.phone_number_id || data.phone_number_id || null);
-    return { convId: data.id as string, telefono: data.telefono as string, contactId: (data as any).contact_id as string | null };
+    conv = data;
+  } else {
+    const tel = telefonoWhatsApp(b.telefono);
+    if (!tel) return null;
+    const c0 = await upsertConversacion({ telefono: tel });
+    if (!c0) return null;
+    const { data } = await supabase.from('wa_conversaciones')
+      .select('id, telefono, phone_number_id, contact_id, ventanas, ultimo_entrante_at').eq('id', c0.id).maybeSingle();
+    if (!data) return null;
+    conv = data;
   }
-  const tel = telefonoWhatsApp(b.telefono);
-  if (!tel) return null;
-  const conv = await upsertConversacion({ telefono: tel });
-  if (!conv) return null;
-  // Chat por teléfono: la línea es la que ya tenía la conversación (o la elegida); si es nueva, se fija.
-  const { data: c } = await supabase.from('wa_conversaciones').select('phone_number_id').eq('id', conv.id).maybeSingle();
-  const linea = b.phone_number_id || c?.phone_number_id || null;
-  if (linea && linea !== c?.phone_number_id) await supabase.from('wa_conversaciones').update({ phone_number_id: linea }).eq('id', conv.id);
+  // multi-número: se responde desde la línea de la conversación; si el agente eligió otra, se muda.
+  // Si la conversación no tiene línea (o la suya está retirada), la decide el resolutor (reglas → default).
+  let linea: string | null = b.phone_number_id ? String(b.phone_number_id) : null;
+  if (!linea) {
+    try { linea = await lineaPara({ telefono: conv.telefono, conversationId: conv.id, contexto: 'inbox', fijar: false }); } catch { linea = conv.phone_number_id || null; }
+  }
+  if (linea && linea !== conv.phone_number_id) {
+    await supabase.from('wa_conversaciones').update({ phone_number_id: linea }).eq('id', conv.id);
+    conv.phone_number_id = linea;
+  }
   usarNumero(linea);
-  return { convId: conv.id, telefono: tel, contactId: (conv as any).contact_id || null };
+  return { convId: conv.id as string, telefono: conv.telefono as string, contactId: (conv.contact_id as string | null) || null, linea, conv };
 }
 
 // El error que ve el agente: título + qué pasó + qué hacer, nunca el JSON de Meta.
@@ -82,6 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
   let autorId: string | null = null, autor: string | null = null;
   try { const u: any = await getSessionFromRequest(request); autorId = u?.id || null; autor = u?.nombre || u?.name || u?.email || null; } catch { /* sin sesión */ }
   const firma = { autorId, autor };
+  enContexto('inbox');
 
   // ── Archivo (multipart) ──
   if (ct.includes('multipart/form-data')) {
@@ -96,7 +108,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!clase) return json({ error: `Tipo no permitido: ${file.type}` }, 400);
     if (file.size > MAX_BYTES) return json({ error: 'Máximo 4 MB (límite del servidor)' }, 400);
 
-    const destino = await resolverDestino({ conversation_id: convIdIn });
+    const destino = await resolverDestino({ conversation_id: convIdIn, phone_number_id: String(form.get('phone_number_id') || '') || null });
     if (!destino) return json({ error: 'Conversación no encontrada' }, 404);
 
     // ── Nota de voz: sube a Meta por ID (voice:true) con transcoding si hace falta ──
@@ -110,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
       if (mime === 'audio/webm') return json({ error: 'audio/webm no es compatible con WhatsApp. Graba en ogg/opus o mp4.' }, 400);
       try {
-        const mediaId = await subirMediaKapso(bytes, mime, mime === 'audio/ogg' ? 'voz.ogg' : file.name || 'audio');
+        const mediaId = await subirMediaKapso(bytes, mime, mime === 'audio/ogg' ? 'voz.ogg' : file.name || 'audio', destino.telefono);
         const r = await enviarMediaId(destino.telefono, 'audio', mediaId, { voice: esVoz });
         const wamid = r?.messages?.[0]?.id;
         // Copia en Storage para que el agente pueda volver a escucharla en el hilo.
@@ -280,6 +292,14 @@ export const POST: APIRoute = async ({ request }) => {
 
   const texto = String(b.texto || '').trim();
   if (!texto) return json({ error: 'Falta texto' }, 400);
+  // Ventana de 24 h POR LÍNEA: si el cliente nunca escribió a esta línea (o ya pasaron 24 h),
+  // Meta rechaza el texto libre. Se avisa antes de gastar el viaje, con el mismo contrato del 422 de Kapso.
+  if (destino.linea && !b.forzar_ventana) {
+    const v = ventanaEnLinea(destino.conv, destino.linea);
+    if (!v.abierta && Object.keys(destino.conv?.ventanas || {}).length > 0) {
+      return json({ error: 'En esta línea no hay ventana de 24 h abierta: manda una plantilla o cambia de línea.', ventana_cerrada: true, linea: destino.linea }, 422);
+    }
+  }
   try {
     const cita = b.cita ? String(b.cita) : null;
     // ── Candado anti-duplicado (cola de envío del inbox) ──────────────────

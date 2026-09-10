@@ -47,6 +47,9 @@ export default function NumeroWA() {
         </div>
       </div>
 
+      {/* Multilínea: tablero por línea, identidad, pausa, redirección, reglas y migración */}
+      <Lineas />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 14 }}>
         <DisplayName info={info} />
         <Username />
@@ -217,6 +220,205 @@ function SetupLink() {
       <div style={{ display: 'flex', gap: 6 }}><input style={inp} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre del cliente" /><button style={S.btnP} onClick={crear}>Generar link</button></div>
       {msg && <div style={{ fontSize: 11, color: /Link/.test(msg) ? C.emerald700 : C.rojo700, marginTop: 6, wordBreak: 'break-all' }}>{msg}</div>}
       {d?.links?.length > 0 && <div style={{ marginTop: 8 }}>{d.links.slice(0, 5).map((l: any, i: number) => <div key={l.id || i} style={{ fontSize: 11, color: C.g500, padding: '3px 0', borderTop: `1px solid ${C.g50}`, wordBreak: 'break-all' }}>{l.url || l.setup_url || JSON.stringify(l).slice(0, 120)} · {l.status || ''}</div>)}</div>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Multilínea (ideas 1-10): cada número es una línea con su cupo, calidad,
+// identidad y reglas. Solo aparece cuando hay más de una línea en Kapso.
+// ─────────────────────────────────────────────────────────────────────────
+const CALIDAD: Record<string, [string, string]> = { GREEN: ['#EAF8F2', '#1E8A63'], YELLOW: ['#FFF4E5', '#9a6a10'], RED: ['#FEF0EF', '#C0554E'] };
+const fmtNum = (n?: string | null) => String(n || '');
+
+async function postLinea(body: any) {
+  return fetch('/api/crm/whatsapp/linea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+}
+
+function Lineas() {
+  const [d, setD] = useState<any>(null);
+  const cargar = () => fetch('/api/crm/whatsapp/linea?resumen=1').then(r => r.json()).then(setD).catch(() => setD({ lineas: [] }));
+  useEffect(() => { cargar(); }, []);
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Contando lo de cada línea…" /></div>;
+  const lineas: any[] = d.lineas || [];
+  if (lineas.length < 2) return null;
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '4px 0 8px' }}>
+        <b style={{ fontSize: 14 }}>Líneas</b>
+        <span style={{ fontSize: 12, color: C.g500 }}>Cada conversación vive en una línea; el cliente siempre recibe respuesta por el número al que escribió.</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 14 }}>
+        {lineas.map(l => <TarjetaLinea key={l.id} l={l} esDefault={d.default?.id === l.id} recargar={cargar} />)}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 14, marginTop: 14 }}>
+        <Reglas lineas={lineas} />
+        <Migracion lineas={lineas} />
+      </div>
+    </div>
+  );
+}
+
+function TarjetaLinea({ l, esDefault, recargar }: { l: any; esDefault: boolean; recargar: () => void }) {
+  const [f, setF] = useState<any>({ firma: l.firma || '', agente_nombre: l.agente_nombre || '', tope_diario: l.tope_diario ?? '', redirigir_a: l.redirigir_a || '', redirigir_texto: l.redirigir_texto || '', pausada_motivo: l.pausada_motivo || '' });
+  const [msg, setMsg] = useState('');
+  const [abierto, setAbierto] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const cal = CALIDAD[l.calidad] || ['#f3f3f5', C.g500];
+  const franja = !l.activo ? C.g200 : l.pausada ? '#E8A838' : (CALIDAD[l.calidad]?.[1] || '#9B8CFA');
+  const guardar = async (cambios: any, ok = 'Guardado.') => {
+    setOcupado(true); setMsg('');
+    const r = await postLinea({ accion: 'linea', phone_number_id: l.id, ...cambios });
+    setOcupado(false); setMsg(r.error || ok); if (!r.error) recargar();
+  };
+  const uso = l.tope ? Math.min(100, Math.round((l.enviados_hoy / l.tope) * 100)) : null;
+  return (
+    <div style={{ ...S.card, borderLeft: `3px solid ${franja}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <b style={{ fontSize: 14 }}>{fmtNum(l.numero)}</b>
+        <span style={{ fontSize: 12, color: C.g500 }}>{l.nombre}</span>
+        {esDefault && <span style={{ fontSize: 9, fontWeight: 700, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 7px' }}>default</span>}
+        {!l.activo && <span style={{ fontSize: 9, fontWeight: 700, background: '#f3f3f5', color: C.g500, borderRadius: 999, padding: '1px 7px' }}>inactiva</span>}
+        {l.retirada_at && <span style={{ fontSize: 9, fontWeight: 700, background: '#FEF0EF', color: '#C0554E', borderRadius: 999, padding: '1px 7px' }}>en retiro</span>}
+        {l.pausada && <span style={{ fontSize: 9, fontWeight: 700, background: '#FFF4E5', color: '#9a6a10', borderRadius: 999, padding: '1px 7px' }} title={l.pausada_motivo || ''}>pausada · masivos detenidos</span>}
+        <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, background: cal[0], color: cal[1], borderRadius: 999, padding: '2px 8px' }}>Calidad {l.calidad || '—'}{l.tier ? ` · ${String(l.tier).replace('TIER_', '')}` : ''}</span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 10 }}>
+        {[
+          ['Hoy', `${l.enviados_hoy}${l.tope ? ` / ${l.tope}` : ''}`, l.tope ? `${l.libres} libres` : 'sin tope'],
+          ['Chats activos', String(l.convs_activas), 'últimos 7 días'],
+          ['Entregados', l.semana?.entregados_pct == null ? '—' : `${l.semana.entregados_pct}%`, `${l.semana?.enviados || 0} enviados / 7 d`],
+          ['Leídos', l.semana?.leidos_pct == null ? '—' : `${l.semana.leidos_pct}%`, l.semana?.fallidos ? `${l.semana.fallidos} fallidos` : 'sin fallidos'],
+        ].map(([t, v, s2]) => (
+          <div key={t} style={{ background: '#fafafa', borderRadius: 8, padding: '8px 10px' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>{t}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.moradoTinta, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+            <div style={{ fontSize: 10, color: C.g400 }}>{s2}</div>
+          </div>
+        ))}
+      </div>
+      {uso != null && <div style={{ height: 4, background: C.g100, borderRadius: 999, marginTop: 8, overflow: 'hidden' }}><div style={{ width: `${uso}%`, height: '100%', background: uso >= 90 ? '#E8A838' : '#9B8CFA' }} /></div>}
+      {l.pausada && l.pausada_motivo && <div style={{ fontSize: 11, color: '#9a6a10', marginTop: 6 }}>Motivo: {l.pausada_motivo}</div>}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        {l.pausada
+          ? <button style={S.btnG} disabled={ocupado} onClick={() => guardar({ pausada: false }, 'Línea reanudada.')}>Reanudar masivos</button>
+          : <button style={S.btnG} disabled={ocupado} onClick={() => guardar({ pausada: true, pausada_motivo: 'manual' }, 'Línea pausada: no salen masivos ni cadencias por aquí.')}>Pausar masivos</button>}
+        <button style={S.btnG} onClick={() => setAbierto(a => !a)}>{abierto ? 'Cerrar' : 'Identidad y ajustes'}</button>
+        {msg && <span style={{ fontSize: 11, alignSelf: 'center', color: /error|No |no está/i.test(msg) ? C.rojo700 : C.emerald700 }}>{msg}</span>}
+      </div>
+
+      {abierto && (
+        <div style={{ marginTop: 10, borderTop: `1px solid ${C.g50}`, paddingTop: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><label style={label()}>Nombre del agente IA en esta línea</label><input style={inp} value={f.agente_nombre} placeholder="Como se presenta el agente (vacío = el general)" onChange={e => setF({ ...f, agente_nombre: e.target.value })} /></div>
+            <div><label style={label()}>Tope de salientes por día</label><input style={inp} type="number" min={0} value={f.tope_diario} placeholder="Sin tope" onChange={e => setF({ ...f, tope_diario: e.target.value })} /></div>
+          </div>
+          <label style={label()}>Firma de esta línea</label>
+          <input style={inp} value={f.firma} placeholder="Va al final de lo que mandan los asesores y el agente por este número" onChange={e => setF({ ...f, firma: e.target.value })} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+            <div><label style={label()}>Redirigir a (número nuevo)</label><input style={inp} value={f.redirigir_a} placeholder="5214152838733" onChange={e => setF({ ...f, redirigir_a: e.target.value })} /></div>
+            <div><label style={label()}>Texto de la redirección</label><input style={inp} value={f.redirigir_texto} placeholder="Vacío = el aviso estándar. Usa {numero} para el número nuevo." onChange={e => setF({ ...f, redirigir_texto: e.target.value })} /></div>
+          </div>
+          <p style={{ fontSize: 11, color: C.g400, margin: '4px 0 8px', lineHeight: 1.45 }}>Si pones un número, a quien escriba a esta línea se le contesta una vez (cada 7 días) con un botón para abrir el chat en el nuevo. Se usa cuando este número se está retirando.</p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button style={S.btnP} disabled={ocupado} onClick={() => guardar({ firma: f.firma, agente_nombre: f.agente_nombre, tope_diario: f.tope_diario === '' ? null : +f.tope_diario, redirigir_a: f.redirigir_a, redirigir_texto: f.redirigir_texto })}>Guardar</button>
+            {l.retirada_at
+              ? <button style={S.btnG} disabled={ocupado} onClick={() => guardar({ retirada: false }, 'La línea vuelve a estar en uso normal.')}>Cancelar retiro</button>
+              : <button style={{ ...S.btnG, color: C.rojo700, borderColor: '#f0c4bd' }} disabled={ocupado} onClick={() => guardar({ retirada: true, pausada: true, pausada_motivo: 'en retiro' }, 'Marcada en retiro: el agente lo sabe y los masivos no salen por aquí.')}>Marcar en retiro</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Reglas({ lineas }: { lineas: any[] }) {
+  const [d, setD] = useState<any>(null);
+  const [msg, setMsg] = useState('');
+  const [nueva, setNueva] = useState<any>({ contexto: 'masivo', origen: '', phone_number_id: '' });
+  const cargar = () => fetch('/api/crm/whatsapp/linea?reglas=1').then(r => r.json()).then(setD).catch(() => setD({ reglas: [], contextos: [] }));
+  useEffect(() => { cargar(); }, []);
+  const activas = lineas.filter(l => l.activo);
+  const nombre = (pn: string) => { const l = lineas.find(x => x.id === pn); return l ? fmtNum(l.numero) : pn; };
+  const guardar = async () => {
+    if (!nueva.phone_number_id) { setMsg('Elige la línea.'); return; }
+    setMsg(''); const r = await postLinea({ accion: 'regla', regla: { contexto: nueva.contexto, origen: nueva.origen || null, phone_number_id: nueva.phone_number_id } });
+    setMsg(r.error || 'Regla guardada.'); if (!r.error) { setNueva({ ...nueva, origen: '' }); cargar(); }
+  };
+  const borrar = async (id: string) => { const r = await postLinea({ accion: 'regla_borrar', id }); setMsg(r.error || 'Regla quitada.'); cargar(); };
+  return (
+    <div style={S.card}>
+      <b style={{ fontSize: 13 }}>Por dónde sale cada cosa</b>
+      <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 8px', lineHeight: 1.5 }}>Sin regla, todo lo nuevo sale por la línea default. Una regla manda un tipo de envío (y opcionalmente un origen de lead) por otra línea. Lo que ya tiene conversación sigue en su línea.</p>
+      {!d ? <Cargando texto="Leyendo reglas…" /> : (
+        <>
+          {!d.reglas.length && <div style={{ fontSize: 12, color: C.g400, padding: '6px 0' }}>Sin reglas: todo sale por el default.</div>}
+          {d.reglas.map((r: any) => { const cx = (d.contextos || []).find((c: any) => c.id === r.contexto); return (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderTop: `1px solid ${C.g50}`, fontSize: 12 }}>
+              <span style={{ flex: 1 }}><b>{cx?.label || r.contexto}</b>{r.origen ? <span style={{ color: C.g500 }}> · origen {r.origen}</span> : ''} → {nombre(r.phone_number_id)}{r.nota ? <span style={{ display: 'block', fontSize: 10, color: C.g400 }}>{r.nota}</span> : null}</span>
+              <button style={{ ...S.btnG, padding: '4px 9px', color: C.rojo700 }} onClick={() => borrar(r.id)}>Quitar</button>
+            </div>); })}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.2fr auto', gap: 6, marginTop: 8, alignItems: 'end' }}>
+            <div><label style={label()}>Envío</label><select style={inp} value={nueva.contexto} onChange={e => setNueva({ ...nueva, contexto: e.target.value })}>{(d.contextos || []).map((c: any) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></div>
+            <div><label style={label()}>Origen (opcional)</label><input style={inp} value={nueva.origen} placeholder="tiktok, meta…" onChange={e => setNueva({ ...nueva, origen: e.target.value })} /></div>
+            <div><label style={label()}>Sale por</label><select style={inp} value={nueva.phone_number_id} onChange={e => setNueva({ ...nueva, phone_number_id: e.target.value })}><option value="">Elige…</option>{activas.map(l => <option key={l.id} value={l.id}>{fmtNum(l.numero)}</option>)}</select></div>
+            <button style={S.btnP} onClick={guardar}>Agregar</button>
+          </div>
+          {nueva.contexto && <div style={{ fontSize: 10, color: C.g400, marginTop: 4 }}>{(d.contextos || []).find((c: any) => c.id === nueva.contexto)?.ayuda}</div>}
+          {msg && <div style={{ fontSize: 11, color: /guardada|quitada/i.test(msg) ? C.emerald700 : C.rojo700, marginTop: 6 }}>{msg}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Migracion({ lineas }: { lineas: any[] }) {
+  const [d, setD] = useState<any>(null);
+  const [f, setF] = useState<any>(null);
+  const [msg, setMsg] = useState('');
+  const cargar = () => fetch('/api/crm/whatsapp/linea?migracion=1').then(r => r.json()).then(j => { setD(j); setF({ migracion_desde: j.migracion?.migracion_desde || (j.lineas || []).find((l: any) => !l.es_default && l.activo)?.id || '', migracion_hacia: j.migracion?.migracion_hacia || (j.lineas || []).find((l: any) => l.es_default)?.id || '', migracion_plantilla: j.migracion?.migracion_plantilla || '', migracion_tope_diario: j.migracion?.migracion_tope_diario || 40, migracion_dias_actividad: j.migracion?.migracion_dias_actividad || 180 }); }).catch(() => setD({ migracion: {}, plantillas: [] }));
+  useEffect(() => { cargar(); }, []);
+  const guardar = async (extra: any = {}) => { setMsg(''); const r = await postLinea({ accion: 'migracion', ...f, ...extra }); setMsg(r.error || 'Guardado.'); if (!r.error) cargar(); };
+  if (!d || !f) return <div style={S.card}><Cargando texto="Leyendo la migración…" /></div>;
+  const activa = !!d.migracion?.migracion_activa; const a = d.avance;
+  const pct = a && (a.en_vieja + a.en_nueva) ? Math.round(a.en_nueva / (a.en_vieja + a.en_nueva) * 100) : null;
+  return (
+    <div style={{ ...S.card, borderLeft: `3px solid ${activa ? '#9B8CFA' : C.g200}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <b style={{ fontSize: 13 }}>Mudar a la gente al número nuevo</b>
+        <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, background: activa ? C.moradoAgua : '#f3f3f5', color: activa ? C.moradoTinta : C.g500, borderRadius: 999, padding: '2px 8px' }}>{activa ? 'Encendida · diario 11:00' : 'Apagada'}</span>
+      </div>
+      <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 8px', lineHeight: 1.5 }}>Cada día, por el número nuevo, se avisa en tandas a quien hablaba con el viejo y tiene actividad reciente: «este es nuestro nuevo número». Usa una plantilla aprobada; el cliente que conteste ya queda en la línea nueva.</p>
+      {a && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
+          {[['En la vieja', a.en_vieja], ['En la nueva', a.en_nueva], ['Avisados', a.migradas], ['Por avisar', a.candidatos]].map(([t, v]) => (
+            <div key={String(t)} style={{ background: '#fafafa', borderRadius: 8, padding: '8px 10px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>{t}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.moradoTinta, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+            </div>))}
+        </div>
+      )}
+      {pct != null && <div style={{ height: 4, background: C.g100, borderRadius: 999, marginBottom: 8, overflow: 'hidden' }} title={`${pct}% de los chats ya viven en la línea nueva`}><div style={{ width: `${pct}%`, height: '100%', background: '#4FBF95' }} /></div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div><label style={label()}>Línea vieja</label><select style={inp} value={f.migracion_desde} onChange={e => setF({ ...f, migracion_desde: e.target.value })}><option value="">Elige…</option>{lineas.map(l => <option key={l.id} value={l.id}>{fmtNum(l.numero)}</option>)}</select></div>
+        <div><label style={label()}>Línea nueva</label><select style={inp} value={f.migracion_hacia} onChange={e => setF({ ...f, migracion_hacia: e.target.value })}><option value="">Elige…</option>{lineas.filter(l => l.activo).map(l => <option key={l.id} value={l.id}>{fmtNum(l.numero)}</option>)}</select></div>
+      </div>
+      <label style={label()}>Plantilla del aviso (aprobada por Meta)</label>
+      <select style={inp} value={f.migracion_plantilla} onChange={e => setF({ ...f, migracion_plantilla: e.target.value })}><option value="">Elige…</option>{(d.plantillas || []).map((p: any) => <option key={p.nombre} value={p.nombre}>{p.nombre}{p.variables ? ` (${p.variables} variable)` : ''}</option>)}</select>
+      {f.migracion_plantilla && d.migracion?.migracion_plantilla === f.migracion_plantilla && d.plantilla_status && d.plantilla_status !== 'APPROVED' && <div style={{ fontSize: 11, color: C.rojo700, marginTop: 4 }}>Esa plantilla está en {d.plantilla_status}: no se puede encender hasta que Meta la apruebe.</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div><label style={label()}>Avisos por día</label><input style={inp} type="number" min={1} max={500} value={f.migracion_tope_diario} onChange={e => setF({ ...f, migracion_tope_diario: e.target.value })} /></div>
+        <div><label style={label()}>Solo con actividad en los últimos (días)</label><input style={inp} type="number" min={1} value={f.migracion_dias_actividad} onChange={e => setF({ ...f, migracion_dias_actividad: e.target.value })} /></div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button style={S.btnG} onClick={() => guardar()}>Guardar</button>
+        {activa
+          ? <button style={{ ...S.btnG, color: C.rojo700, borderColor: '#f0c4bd' }} onClick={() => guardar({ migracion_activa: false })}>Apagar</button>
+          : <button style={S.btnP} onClick={() => guardar({ migracion_activa: true })}>Encender</button>}
+        {msg && <span style={{ fontSize: 11, color: /Guardado/.test(msg) ? C.emerald700 : C.rojo700 }}>{msg}</span>}
+      </div>
     </div>
   );
 }

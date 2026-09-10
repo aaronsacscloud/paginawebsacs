@@ -134,6 +134,12 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: masivo } = await supabase.from('wa_broadcasts').select('*').eq('id', b.id).maybeSingle();
     if (!masivo?.kapso_broadcast_id) return json({ error: 'Masivo no encontrado' }, 404);
     if (!['borrador', 'programado'].includes(masivo.status)) return json({ error: `Ya está ${masivo.status}` }, 409);
+    // Disyuntor por línea: si la línea del masivo entró en pausa después de crearlo (calidad baja), no sale.
+    if (masivo.phone_number_id) {
+      const { infoLinea } = await import('../../../../lib/whatsapp/linea');
+      const l = await infoLinea(masivo.phone_number_id);
+      if (l?.pausada) return json({ error: `La línea ${l.numero} está en pausa${l.pausada_motivo ? ` (${l.pausada_motivo})` : ''}: el masivo no sale hasta quitar la pausa.`, linea_pausada: true }, 409);
+    }
     try {
       if (b.accion === 'programar') {
         if (!b.scheduled_at) return json({ error: 'Falta scheduled_at' }, 400);

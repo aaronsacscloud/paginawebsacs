@@ -37,12 +37,16 @@ export default function Masivos() {
   // ── Wizard ──
   const [plantillas, setPlantillas] = useState<any[]>([]);
   const [audiencia, setAudiencia] = useState<any[] | null>(null);
+  const [lineas, setLineas] = useState<any[]>([]);   // multilínea: por cuál número sale (con cupo del día)
   const abrirWizard = () => {
     setWizard({ paso: 1, nombre: '', plantilla: null, seleccion: new Set<string>(), params: [], busca: '' });
     fetch('/api/crm/whatsapp/plantillas').then(r => r.json())
       .then(j => setPlantillas((j.plantillas || []).filter((p: any) => p.status === 'APPROVED')));
     fetch('/api/crm/whatsapp/broadcasts?audiencia=1').then(r => r.json())
       .then(j => setAudiencia(j.audiencia || []));
+    fetch('/api/crm/whatsapp/linea?resumen=1').then(r => r.json())
+      .then(j => { const ls = (j.lineas || []).filter((l: any) => l.activo); setLineas(ls); setWizard((w: any) => w ? { ...w, linea: w.linea || (ls.find((l: any) => l.id === j.default && !l.pausada) || ls.find((l: any) => !l.pausada) || ls[0])?.id || '' } : w); })
+      .catch(() => {});
   };
 
   const crearYEnviar = async (programa?: string) => {
@@ -55,9 +59,14 @@ export default function Masivos() {
     }));
     const creado = await fetch('/api/crm/whatsapp/broadcasts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: wizard.nombre, plantilla_id: wizard.plantilla.id, destinatarios }),
+      body: JSON.stringify({ nombre: wizard.nombre, plantilla_id: wizard.plantilla.id, destinatarios, phone_number_id: wizard.linea || null, forzar_cupo: !!wizard.forzar_cupo }),
     }).then(r => r.json()).catch(e => ({ error: String(e) }));
-    if (creado.error) { setOcupado(false); setMsg({ tono: 'malo', texto: creado.error }); return; }
+    if (creado.error) {
+      setOcupado(false); setMsg({ tono: 'malo', texto: creado.error });
+      // Tope de la línea: se puede forzar una vez, a sabiendas (el aviso ya dijo cuántos caben).
+      if (creado.se_puede_forzar && !wizard.forzar_cupo) setWizard({ ...wizard, forzar_cupo: true, aviso_cupo: creado.error });
+      return;
+    }
 
     const accion = await fetch('/api/crm/whatsapp/broadcasts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -163,6 +172,26 @@ export default function Masivos() {
             <label style={S.lbl}>Nombre del masivo (interno)</label>
             <input style={S.inp} value={wizard.nombre} onChange={e => setWizard({ ...wizard, nombre: e.target.value })}
               placeholder="Aviso de renovación agosto" />
+            {lineas.length > 1 && (<>
+              <label style={{ ...S.lbl, marginTop: 12 }}>Línea por la que sale</label>
+              <div role="radiogroup" aria-label="Línea por la que sale" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {lineas.map(l => {
+                  const activa = wizard.linea === l.id;
+                  return (
+                    <div key={l.id} role="radio" aria-checked={activa} tabIndex={l.pausada ? -1 : 0} aria-disabled={l.pausada}
+                      onClick={() => !l.pausada && setWizard({ ...wizard, linea: l.id, forzar_cupo: false })} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && !l.pausada) { e.preventDefault(); setWizard({ ...wizard, linea: l.id, forzar_cupo: false }); } }} title={l.pausada ? `En pausa${l.pausada_motivo ? `: ${l.pausada_motivo}` : ''}` : ''}
+                      style={{ display: 'block', flex: '1 1 190px', minHeight: 44, boxSizing: 'border-box', textAlign: 'left', cursor: l.pausada ? 'not-allowed' : 'pointer', fontFamily: 'inherit', borderRadius: 10, padding: '9px 12px', minWidth: 190, opacity: l.pausada ? 0.55 : 1,
+                        border: activa ? '2px solid #9B8CFA' : '1px solid #e2e4e9', background: activa ? '#f7f4ff' : '#fff' }}>
+                      <b style={{ fontSize: '0.8rem' }}>{l.numero}</b>{l.nombre ? <span style={{ color: '#777', fontSize: '0.74rem' }}> · {l.nombre}</span> : null}
+                      <div style={{ fontSize: '0.72rem', color: '#666', marginTop: 3 }}>
+                        {l.pausada ? 'En pausa' : l.tope != null ? `${l.libres} libres hoy de ${l.tope}` : `${l.enviados_hoy} enviados hoy`}
+                        {l.calidad ? ` · calidad ${l.calidad === 'GREEN' ? 'alta' : l.calidad === 'YELLOW' ? 'media' : l.calidad === 'RED' ? 'baja' : l.calidad.toLowerCase()}` : ''}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>)}
             <label style={{ ...S.lbl, marginTop: 12 }}>Plantilla (solo aprobadas por Meta)</label>
             {!plantillas.length && <Aviso tono="aviso">No hay plantillas APPROVED. Crea una en el tab Plantillas y espera la aprobación de Meta.</Aviso>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -238,9 +267,13 @@ export default function Masivos() {
                 <b>{wizard.nombre}</b> · plantilla <b>{wizard.plantilla.nombre}</b> ·{' '}
                 <b>{wizard.seleccion.size}</b> destinatarios
                 {wizard.params.some((p: string) => p === '[nombre]') && <> · con nombre personalizado</>}
+                {lineas.length > 1 && wizard.linea && <> · sale por <b>{lineas.find(l => l.id === wizard.linea)?.numero || wizard.linea}</b></>}
               </div>
               <div style={{ fontSize: '0.76rem', color: '#555', marginTop: 6, whiteSpace: 'pre-wrap' }}>{wizard.plantilla.cuerpo}</div>
             </div>
+            {wizard.forzar_cupo && wizard.aviso_cupo && (
+              <Aviso tono="aviso">{wizard.aviso_cupo} Si vuelves a enviar, sale de todos modos pasando el tope de la línea.</Aviso>
+            )}
             {wizard.plantilla.categoria === 'MARKETING' && (
               <Aviso tono="aviso">Es plantilla de marketing: quien haya pedido no recibir promos saldrá como «suppressed» y no se le cobra.</Aviso>
             )}

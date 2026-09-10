@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Corazones } from '../ui/Cargando';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import { C, toolBtn, popup } from './estilo';
+import { useLineas, numeroCorto } from './useLineas';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
 import { optimizarImagen } from '../../../../lib/crm/imagen';
@@ -109,17 +110,40 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   // DOS LÍNEAS (10-sep): si hay más de un número activo en Kapso, el agente elige por cuál sale este chat.
   // La elección se guarda en la conversación (POST linea) y TODOS los envíos —texto, archivo, plantilla,
   // interactivo— la respetan en el servidor, así no hay que pasar el número en cada llamada.
-  const [lineas, setLineas] = useState<{ id: string; numero: string; nombre: string; es_default: boolean }[]>([]);
+  const { lineas, def: lineaDef } = useLineas();
   const [linea, setLinea] = useState<string>(canales?.linea || '');
   const [lineaMsg, setLineaMsg] = useState('');
-  useEffect(() => { fetch('/api/crm/whatsapp/linea').then(r => r.json()).then(j => { setLineas(j.lineas || []); if (!canales?.linea) setLinea(j.default || j.lineas?.[0]?.id || ''); }).catch(() => {}); }, []);
+  useEffect(() => { if (!canales?.linea && !linea && lineaDef) setLinea(lineaDef); }, [lineaDef]);
   useEffect(() => { if (canales?.linea) setLinea(canales.linea); }, [canales?.linea]);
   const cambiarLinea = async (id: string) => {
+    if (id === linea) return;
     const antes = linea; setLinea(id); setLineaMsg('');
     const r = await fetch('/api/crm/whatsapp/linea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, phone_number_id: id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setLinea(antes); setLineaMsg(r.error); return; }
-    setLineaMsg('Guardado'); setTimeout(() => setLineaMsg(''), 3000); api.refrescar?.();
+    // La ventana de 24 h es por línea: si el cliente nunca escribió a ESTA línea, lo que salga va como plantilla.
+    if (r?.ventana_abierta === false) setLineaMsg('En esta línea no hay ventana abierta: se envía como plantilla');
+    else { setLineaMsg('Guardado'); setTimeout(() => setLineaMsg(''), 3000); }
+    api.refrescar?.();
   };
+  // Ventana por línea (la manda /hilo en canales.ventanas); si no hay mapa, se asume la global.
+  const ventanaDe = (id: string): boolean | null => { const v = canales?.ventanas?.[id]; return v ? !!v.abierta : null; };
+  /** Píldoras de línea: las dos a la vista, la elegida en morado. El punto dice si la ventana de 24 h está abierta en esa línea. */
+  const pildorasLinea = (compacto: boolean) => (
+    <div role="radiogroup" aria-label="Línea por la que sale este chat" style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: C.g100, flexShrink: 0 }}>
+      {lineas.map(l => {
+        const activa = l.id === linea; const v = ventanaDe(l.id);
+        return (
+          <button key={l.id} type="button" role="radio" aria-checked={activa} onClick={() => cambiarLinea(l.id)}
+            title={`${l.numero}${l.nombre ? ` · ${l.nombre}` : ''}${v === null ? '' : v ? ' · ventana abierta' : ' · sin ventana: sale como plantilla'}`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: activa ? `1px solid ${C.morado}` : '1px solid transparent', borderRadius: 999, padding: compacto ? '7px 10px' : '3px 9px', minHeight: compacto ? 36 : undefined,
+              background: activa ? C.moradoAgua : 'transparent', color: activa ? C.moradoTinta : C.g500, fontSize: compacto ? 12 : 11.5, fontWeight: activa ? 700 : 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+            {v !== null && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
+            {compacto ? numeroCorto(l.numero) : l.numero}
+          </button>
+        );
+      })}
+    </div>
+  );
   const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
@@ -351,19 +375,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {/* En el teléfono, el badge verde repetía lo que el selector de al lado ya
           dice con letras; era el único verde decorativo que quedaba. */}
       {movil ? (modo === 'correo' ? <BadgeCorreo size={16} /> : null) : (modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />)}
-      {!movil && (modo === 'wa' && lineas.length > 1
-        ? <select value={linea} onChange={e => cambiarLinea(e.target.value)} title="Línea por la que sale este chat"
-            style={{ border: 'none', background: 'transparent', fontSize: 12, fontWeight: 600, color: C.g700, fontFamily: 'inherit', cursor: 'pointer', padding: 0, maxWidth: 190 }}>
-            {lineas.map(l => <option key={l.id} value={l.id}>WhatsApp {l.numero}{l.es_default ? '' : ' (anterior)'}</option>)}
-          </select>
-        : <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>)}
-      {movil && modo === 'wa' && lineas.length > 1 && (
-        <select value={linea} onChange={e => cambiarLinea(e.target.value)} aria-label="Línea"
-          style={{ border: `1px solid ${C.g200}`, borderRadius: 10, minHeight: 44, fontSize: 13, padding: '0 10px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer', maxWidth: 170 }}>
-          {lineas.map(l => <option key={l.id} value={l.id}>{l.numero}{l.es_default ? '' : ' (anterior)'}</option>)}
-        </select>
-      )}
-      {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : C.rojo700, whiteSpace: 'nowrap', flexShrink: 0 }}>{lineaMsg}</span>}
+      {!movil && <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>}
+      {modo === 'wa' && lineas.length > 1 && pildorasLinea(!!movil)}
+      {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : lineaMsg.startsWith('En esta línea') ? C.ambar700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
       {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
@@ -455,7 +469,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         {iaProcesando && <VeloIA />}
         {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
             no se escribe: en reposo el composer es una línea y ya. */}
-        {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
+        {/* Con dos líneas la fila trae un control (las píldoras), no solo etiqueta: en el teléfono
+            se queda a la vista aunque no se esté escribiendo, si no con la ventana cerrada no hay
+            forma de cambiar a la línea donde sí está abierta. */}
+        {(!movil || escribiendoMovil || !!texto || (modo === 'wa' && lineas.length > 1)) && <FilaCanal />}
         {cita && modo === 'wa' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.emerald50, borderBottom: `1px solid #A7F3D0`, fontSize: 11 }}>
             <span style={{ width: 3, alignSelf: 'stretch', background: C.emerald500, borderRadius: 2 }} />
@@ -1271,7 +1288,12 @@ export function valorVariable(campo: string, contacto: any, yo: any): string {
   }
 }
 
-export function SelectorPlantilla({ telefono, api, onClose, contacto, preseleccion }: { telefono: string; api: any; onClose: () => void; contacto?: any; preseleccion?: string | null }) {
+export function SelectorPlantilla({ telefono, api, onClose, contacto, preseleccion, elegirLinea }: { telefono: string; api: any; onClose: () => void; contacto?: any; preseleccion?: string | null;
+  /** Chat NUEVO (desde «Nuevo chat»): todavía no hay conversación, así que aquí se elige por cuál línea arranca. */
+  elegirLinea?: boolean }) {
+  const { lineas: lineasSel, def: lineaDefSel } = useLineas();
+  const [lineaSel, setLineaSel] = useState('');
+  useEffect(() => { if (!lineaSel && lineaDefSel) setLineaSel(lineaDefSel); }, [lineaDefSel]);
   // Este selector se abre desde el composer, que en el teléfono es lo que más
   // se usa. No recibe `movil` por props porque lo montan tres pantallas
   // distintas; se pregunta solo.
@@ -1308,7 +1330,7 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
   const nRecPl = q ? 0 : Math.min(cuantosRecientes('plantillas', coinciden, p => p.nombre), visibles.length);
   const enviar = async () => {
     setOcupado(true); setError('');
-    const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params, header_media_url: headerUrl || undefined, otp: otp || undefined }, telefono);
+    const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params, header_media_url: headerUrl || undefined, otp: otp || undefined }, telefono, elegirLinea && lineaSel ? lineaSel : undefined);
     setOcupado(false);
     if (r?.error) { setError(r.error_detalle ? `${r.error_detalle.titulo}. ${r.error_detalle.que_hacer}` : r.error); return; }
     // Reciente = la que SÍ salió. Marcarla al seleccionarla llenaría la lista
@@ -1334,6 +1356,19 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
             <BadgeWhatsApp size={20} />
             <span><b style={{ fontSize: 14, display: 'block' }}>Enviar plantilla de mensaje</b><span style={{ fontSize: 11, color: C.g400 }}>Solo se envían plantillas aprobadas por Meta.</span></span>
           </div>
+          {elegirLinea && lineasSel.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.g500 }}>Sale por</span>
+              <div role="radiogroup" aria-label="Línea" style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: C.g100 }}>
+                {lineasSel.map(l => { const a = l.id === lineaSel; return (
+                  <button key={l.id} type="button" role="radio" aria-checked={a} onClick={() => setLineaSel(l.id)} title={l.nombre || l.numero}
+                    style={{ border: a ? `1px solid ${C.morado}` : '1px solid transparent', borderRadius: 999, padding: movilPl ? '7px 10px' : '3px 9px', background: a ? C.moradoAgua : 'transparent', color: a ? C.moradoTinta : C.g500, fontSize: 11.5, fontWeight: a ? 700 : 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    {movilPl ? numeroCorto(l.numero) : l.numero}
+                  </button>
+                ); })}
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
             {(['aprobadas', 'todas'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, padding: '6px 0', color: tab === t ? C.moradoTinta : C.g400, borderBottom: `2px solid ${tab === t ? C.morado : 'transparent'}`, textTransform: 'capitalize' }}>{t}</button>

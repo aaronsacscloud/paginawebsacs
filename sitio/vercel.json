@@ -26,6 +26,14 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/wa-salud",
+      "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/cron/wa-migrar-linea",
+      "schedule": "0 17 * * *"
+    },
+    {
       "path": "/api/cron/email-campanas",
       "schedule": "*/5 * * * *"
     },

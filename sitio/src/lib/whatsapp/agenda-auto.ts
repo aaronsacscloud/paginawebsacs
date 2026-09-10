@@ -45,11 +45,11 @@ export async function agendarDesdeRespuesta(o: {
   if (!oferta) return { agendada: false, motivo: 'No encontré la oferta' };
 
   if (oferta.estado === 'agendada') {
-    await sendWhatsApp(o.telefono, 'Esa reunión ya está agendada — te llegó la confirmación por WhatsApp y por correo. Si necesitas moverla, dime y la cambiamos.', 'Agenda');
+    await sendWhatsApp(o.telefono, 'Esa reunión ya está agendada — te llegó la confirmación por WhatsApp y por correo. Si necesitas moverla, dime y la cambiamos.', 'Agenda', 'cita');
     return { agendada: false, motivo: 'La oferta ya se usó' };
   }
   if (new Date(oferta.expira_at as string) < new Date()) {
-    await sendWhatsApp(o.telefono, 'Esos horarios ya vencieron. Dime qué día te queda bien y te mando opciones nuevas.', 'Agenda');
+    await sendWhatsApp(o.telefono, 'Esos horarios ya vencieron. Dime qué día te queda bien y te mando opciones nuevas.', 'Agenda', 'cita');
     await supabase.from('wa_agenda_ofertas').update({ estado: 'vencida' }).eq('id', oferta.id);
     return { agendada: false, motivo: 'La oferta venció' };
   }
@@ -74,7 +74,7 @@ export async function agendarDesdeRespuesta(o: {
     const ocupado = /disponible|available|ocupad|taken|slot/i.test(String(r.error));
     await sendWhatsApp(o.telefono, ocupado
       ? 'Ese horario se acaba de ocupar. Dime otro que te sirva y lo aparto, o te mando opciones nuevas.'
-      : 'No pude apartar ese horario. Ya le avisé al equipo para que te confirme en un momento.', 'Agenda');
+      : 'No pude apartar ese horario. Ya le avisé al equipo para que te confirme en un momento.', 'Agenda', 'cita');
     if (oferta.conversation_id) {
       await supabase.from('wa_eventos').insert({
         conversation_id: oferta.conversation_id, tipo: 'agenda', autor: 'Agenda',

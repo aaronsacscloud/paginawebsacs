@@ -96,7 +96,7 @@ async function log(o: { accion: string; contact_id?: string | null; razon?: stri
 
 /** La conversación del contacto, en orden, con audios transcritos si los hay. */
 async function charla(contactId: string, limite = 30) {
-  const { data: convs } = await supabase.from('wa_conversaciones').select('id, telefono').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(3);
+  const { data: convs } = await supabase.from('wa_conversaciones').select('id, telefono, phone_number_id').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(3);
   let msjs: any[] = [];
   for (const cv of convs || []) {
     const { data } = await supabase.from('wa_mensajes').select('id, direccion, cuerpo, tipo, transcript, autor, created_at, media_url, mime')
@@ -104,7 +104,22 @@ async function charla(contactId: string, limite = 30) {
     msjs = msjs.concat((data || []).map(m => ({ ...m, conversation_id: cv.id, telefono: cv.telefono })));
   }
   msjs.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
-  return { msjs: msjs.slice(-limite), conversationId: convs?.[0]?.id || null, telefono: convs?.[0]?.telefono || null };
+  return { msjs: msjs.slice(-limite), conversationId: convs?.[0]?.id || null, telefono: convs?.[0]?.telefono || null, phoneNumberId: convs?.[0]?.phone_number_id || null };
+}
+
+/** Multilínea · identidad de la línea por la que habla el agente (número, nombre visible, firma). Vacío si solo hay una. */
+async function bloqueLinea(pn: string | null): Promise<string> {
+  try {
+    const { infoLinea, lineasActivas } = await import('../../whatsapp/linea');
+    const activas = await lineasActivas();
+    const l = await infoLinea(pn) || activas.find(x => x.es_default) || null;
+    if (!l || activas.length < 2) return '';
+    const partes = [`LÍNEA POR LA QUE HABLAS: ${l.numero}${l.nombre ? ` («${l.nombre}»)` : ''}.`];
+    if (l.agente_nombre) partes.push(`En esta línea te presentas como «${l.agente_nombre}».`);
+    if (l.firma) partes.push(`Firma/identidad de esta línea: ${l.firma}.`);
+    if (l.redirigir_a) partes.push('Esta línea se está retirando: si viene al caso, invita al lead a seguir por el número nuevo.');
+    return `\n\n${partes.join(' ')} No menciones el número salvo que el lead pregunte desde dónde le escribes.`;
+  } catch { return ''; }
 }
 
 export async function ejemplosAprobados(estado?: string, mensaje?: string, out?: { ids: string[] }) {
@@ -200,7 +215,7 @@ const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[a�
 export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   if (!(globalThis as any).__ia_proposito) (globalThis as any).__ia_proposito = `agente:${opts.tarea || 'respuesta'}`;   // atribución del gasto en ia_uso
-  const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
+  const [{ msjs, conversationId, telefono, phoneNumberId }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
     supabase.from('contacts').select('id, nombre, apellido, giro, modelo_negocio, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id, puesto, companies(nombre, nombre_comercial, ciudad, sitio_web, sucursales, giro)').eq('id', contactId).maybeSingle(),
     supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
@@ -323,7 +338,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       // este bloque cambia en CADA llamada. Marcarlo para caché no ahorraba nada y encima cobraba la escritura del
       // prefijo completo (guion incluido) cada vez. El bloque de arriba, que sí es fijo, se sigue cacheando.
       { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined, ejemplosOut)) || ' ' },
-      { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
+      { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}${await bloqueLinea(phoneNumberId)}` },
     ] as any,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${bloqueNom}${nota ? `\n\n${nota}` : ''}${rafagaTxt}${fotoTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
@@ -938,7 +953,8 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   }
   pend!.length = 0; pend!.push(...listos);
   if (!pend!.length) return res;
-  const { enviarTexto } = await import('../../whatsapp/kapso-api');
+  const { enviarTexto, enContexto } = await import('../../whatsapp/kapso-api');
+  enContexto('agente');
   const { registrarMensaje } = await import('../../whatsapp/espejo');
   for (const e of pend || []) {
     // Si el lead volvió a escribir después de que se propuso, esta respuesta ya no aplica.
@@ -1042,6 +1058,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         }
       }
       let r: any, plantillaUsada: string | null = null;
+      { const { enContexto } = await import('../../whatsapp/kapso-api'); enContexto('agente', (e as any).fuente || null); }
       if (e.plantilla) {
         const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
         const pl = e.plantilla as any;

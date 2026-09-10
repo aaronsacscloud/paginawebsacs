@@ -10,6 +10,8 @@
 // la apikey en el body. Ese cliente sigue vivo para los envíos transaccionales
 // existentes; este es el nuevo, para todo lo del Inbox.
 
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 const ENV: any = (import.meta as any).env || process.env || {};
 const API_KEY = (ENV.KAPSO_API_KEY || '').trim();
 const PHONE_NUMBER_ID = (ENV.KAPSO_PHONE_NUMBER_ID || '').trim();
@@ -154,7 +156,7 @@ export async function listarLlamadasKapso(params: Record<string, string> = {}) {
 
 /** Texto libre. Fuera de la ventana de 24 h Kapso devuelve 422: se propaga. */
 export async function enviarTexto(telefono: string, texto: string, citaWamid?: string | null) {
-  return meta(`/${PN()}/messages`, {
+  return meta(`/${await pnPara(telefono)}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', to: telefono,
@@ -168,12 +170,32 @@ export async function enviarTexto(telefono: string, texto: string, citaWamid?: s
 
 /** Número desde el que se manda: el de la conversación (multi-número) o el default del entorno. */
 export const numeroPara = (pn?: string | null) => pn || PHONE_NUMBER_ID;
-let PN_ACTUAL: string | null = null;
-/** Fija el número para las llamadas siguientes de ESTA petición (enviar.ts lo pone a partir de la conversación). */
-export const usarNumero = (pn?: string | null) => { PN_ACTUAL = pn || null; };
-const PN = () => PN_ACTUAL || PHONE_NUMBER_ID;
-const mensaje = (telefono: string, cuerpo: any, citaWamid?: string | null) =>
-  meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono, ...cuerpo, ...(citaWamid ? { context: { message_id: citaWamid } } : {}) }) });
+
+// ── MULTILÍNEA (10-sep): la línea de ESTA petición vive en un AsyncLocalStorage, no en una variable del
+// módulo. Con una variable global dos peticiones concurrentes en la misma instancia se pisaban la línea.
+// usarNumero(pn) la fija explícitamente (el selector del composer, el webhook con la línea de entrada);
+// enContexto('lead') solo dice QUÉ tipo de envío es y deja que lineaPara() aplique las reglas.
+// Si nadie fijó nada, cada envío resuelve la línea por el teléfono del cliente (su conversación) — así
+// los 12 puntos de envío que no sabían de líneas quedaron cubiertos sin tocarlos uno por uno.
+type CtxLinea = { pn?: string | null; contexto?: string | null; origen?: string | null };
+const als = new AsyncLocalStorage<CtxLinea>();
+const ctx = () => als.getStore() || {};
+export const usarNumero = (pn?: string | null) => { als.enterWith({ ...ctx(), pn: pn || null }); };
+export const enContexto = (contexto: string | null, origen?: string | null) => { als.enterWith({ ...ctx(), contexto: contexto || null, origen: origen ?? ctx().origen ?? null }); };
+/** Corre fn con esa línea/contexto y al salir restaura lo que había (para bucles de crons que alternan líneas). */
+export const conLinea = <T,>(o: CtxLinea, fn: () => Promise<T>): Promise<T> => als.run({ ...ctx(), ...o }, fn);
+export const lineaFijada = () => ctx().pn || null;
+const PN = () => ctx().pn || PHONE_NUMBER_ID;
+/** La línea para mandarle a este teléfono: la fijada, o la que resuelve lineaPara (conversación → reglas → default). */
+async function pnPara(telefono: string): Promise<string> {
+  if (ctx().pn) return ctx().pn!;
+  try {
+    const { lineaPara } = await import('./linea');
+    return (await lineaPara({ telefono, contexto: ctx().contexto || 'sistema', origen: ctx().origen || null })) || PHONE_NUMBER_ID;
+  } catch { return PHONE_NUMBER_ID; }
+}
+const mensaje = async (telefono: string, cuerpo: any, citaWamid?: string | null) =>
+  meta(`/${await pnPara(telefono)}/messages`, { method: 'POST', body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono, ...cuerpo, ...(citaWamid ? { context: { message_id: citaWamid } } : {}) }) });
 
 export type Interactivo =
   | { tipo: 'botones'; cuerpo: string; header?: string | null; footer?: string | null; botones: { id: string; titulo: string }[] }
@@ -288,7 +310,7 @@ export async function enviarPlantilla(telefono: string, nombre: string, idioma: 
     components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.otp }] });
   } else if (params.length) components.push({ type: 'body', parameters: params.map((p) => ({ type: 'text', text: p })) });
   if (extra?.botonUrlParam) components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.botonUrlParam }] });
-  return meta(`/${PN()}/messages`, {
+  return meta(`/${await pnPara(telefono)}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', to: telefono,
@@ -304,17 +326,18 @@ export async function enviarMediaLink(telefono: string, clase: 'image' | 'docume
   if (citaWamid) cuerpo.context = { message_id: citaWamid };
   cuerpo[clase] = clase === 'document' ? { link, filename: nombre || 'documento' } : { link };
   if (caption) cuerpo[clase].caption = caption;
-  return meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+  return meta(`/${await pnPara(telefono)}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
 /** Sube un binario a Meta vía Kapso y devuelve el media id. */
-export async function subirMediaKapso(bytes: Uint8Array | ArrayBuffer, mime: string, nombre = 'archivo'): Promise<string> {
+export async function subirMediaKapso(bytes: Uint8Array | ArrayBuffer, mime: string, nombre = 'archivo', telefono?: string | null): Promise<string> {
   if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
+  const pn = telefono ? await pnPara(telefono) : PN();
   const fd = new FormData();
   fd.append('messaging_product', 'whatsapp');
   fd.append('type', mime);
   fd.append('file', new Blob([bytes as any], { type: mime }), nombre);
-  const res = await fetch(`${META}/${PN()}/media`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: fd });
+  const res = await fetch(`${META}/${pn}/media`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: fd });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new KapsoError(res.status, j?.error || j);
   const id = j?.id || j?.data?.id;
@@ -329,7 +352,7 @@ export async function enviarMediaId(telefono: string, clase: 'image' | 'document
   if (o.caption && clase !== 'audio') cuerpo[clase].caption = o.caption;
   if (o.filename && clase === 'document') cuerpo[clase].filename = o.filename;
   if (o.voice && clase === 'audio') cuerpo[clase].voice = true;
-  return meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+  return meta(`/${await pnPara(telefono)}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
 // ── Plantillas (Meta passthrough) ──
@@ -342,7 +365,7 @@ export async function listarPlantillasMeta(): Promise<any[]> {
 
 /** Sube una URL pública a Meta como "resumable asset" y devuelve el handle (h:…) que exige el HEADER de media de una plantilla. */
 export async function ingestarHandle(url: string, mime?: string | null, filename?: string | null): Promise<string> {
-  const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: PHONE_NUMBER_ID, source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
+  const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: PN(), source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
   const h = r?.target?.handle || r?.data?.target?.handle || r?.handle || r?.data?.handle;
   if (!h) throw new KapsoError(502, { error: `Kapso no devolvió handle: ${JSON.stringify(r).slice(0, 200)}` });
   return String(h);
@@ -425,13 +448,13 @@ export async function resolverTemplateId(nombre: string, idioma: string, metaId?
 
 // ── Broadcasts (Platform) ──
 
-export async function crearBroadcast(nombre: string, templateId: string) {
+export async function crearBroadcast(nombre: string, templateId: string, phoneNumberId?: string | null) {
   // Kapso envuelve el body en `whatsapp_broadcast` (con `broadcast` responde
   // "missing_parameter") y la plantilla va como `whatsapp_template_id`.
   return platform('/whatsapp/broadcasts', {
     method: 'POST',
     body: JSON.stringify({
-      whatsapp_broadcast: { name: nombre, phone_number_id: PHONE_NUMBER_ID, whatsapp_template_id: templateId },
+      whatsapp_broadcast: { name: nombre, phone_number_id: phoneNumberId || PN(), whatsapp_template_id: templateId },
     }),
   });
 }

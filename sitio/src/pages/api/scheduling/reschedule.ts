@@ -382,6 +382,7 @@ export const POST: APIRoute = async ({ request }) => {
         await sendWhatsApp(
           oldBooking.invitee_whatsapp,
           `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
+          'Sistema', 'cita',
         );
       } catch {}
     }

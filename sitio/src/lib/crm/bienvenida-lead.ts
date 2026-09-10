@@ -11,7 +11,7 @@
 // humano lo trabaje o él responda — la automatización abre, no vende.
 import { supabase } from '../supabase';
 import { permitido } from '../whatsapp/permisos';
-import { enviarPlantilla } from '../whatsapp/kapso-api';
+import { enviarPlantilla, enContexto } from '../whatsapp/kapso-api';
 import { resolverTenant } from '../email/tenant';
 import { enviarCorreo } from '../email/pipeline';
 import { compilar, compilarTexto, interpolar } from '../email/plantillas';
@@ -139,6 +139,7 @@ export async function enviarBienvenidaTikTok(contactId: string, telefono: string
 
   const primerNombre = String(nombre || '').trim().split(/\s+/)[0] || '👋';
   try {
+    enContexto('lead', 'tiktok');
     await enviarPlantilla(telefono, cfg.bienvenida_tiktok_plantilla, 'es_MX', [primerNombre]);
   } catch (e: any) {
     console.warn('[bienvenida-tiktok] plantilla falló:', e?.message || e);
