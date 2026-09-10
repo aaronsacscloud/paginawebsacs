@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { C, L, horaRelativa } from './estilo';
+import { useLineas, numeroCorto } from './useLineas';
 import { IcoBuscar, IcoChevronAbajo, IcoUsuarioMas, IcoPuntos, IcoMegafono } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import EstadoEntrega from './EstadoEntrega';
@@ -97,6 +98,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
   onAsignar?: (c: any, asignadoA: string | null) => Promise<void>;
   onGuardarVista?: (cfg: any) => void;
 }) {
+  const { lineas, def: lineaDef } = useLineas();
   const [popover, setPopover] = useState(false);
   const [menuFila, setMenuFila] = useState<{ id: string; x: number; y: number } | null>(null);
   const [cargandoMas, setCargandoMas] = useState(false);
@@ -285,6 +287,14 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
           const asignado = equipo.find((m: any) => m.id === c.asignado_a);
           const canal = c.virtual ? 'crm' : (c.ultimo_canal === 'email' ? 'email' : 'wa');
           const resuelta = c.estado_crm === 'resuelta';
+          // Asignada a ALGUIEN MÁS: que diga «→ Ana» sirve; que diga «→ tú» en
+          // todas las tuyas es ruido. Se calcula aquí para poder preguntar si
+          // el renglón de chips tiene algo que enseñar antes de pintarlo.
+          const asignadoOtro = asignado && (!yo || c.asignado_a !== yo.id) ? asignado : null;
+          // Por cuál línea entra el chat, solo si NO es la principal.
+          const lineaOtra = lineas.length > 1 && c.phone_number_id && c.phone_number_id !== lineaDef
+            ? (lineas.find(x => x.id === c.phone_number_id) || { numero: null as string | null })
+            : null;
           return (
             <button key={c.id} onClick={() => onAbrir(c)} className="wa-fila-hover"
               onContextMenu={e => { if (!c.wa_id || !onAsignar) return; e.preventDefault(); setMenuFila({ id: c.id, x: e.clientX, y: e.clientY }); }}
@@ -295,32 +305,33 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                    pantalla y entrar al inbox era encontrarse un muro. Con 17px
                    caben la mitad, cada una se distingue y el resto sigue a un
                    scroll. Decisión del dueño (2-sep-2026). */
-                padding: '17px 14px', alignItems: 'flex-start',
+                padding: '17px 14px', alignItems: 'flex-start', position: 'relative',
                 background: activa ? 'rgba(238,236,254,.6)' : resuelta ? 'rgba(249,250,251,.4)' : '#fff',
                 borderLeft: activa ? `3px solid ${C.morado}` : '3px solid transparent',
               }}>
               <Avatar nombre={c.contacto?.nombre} telefono={String(c.telefono || '?')} canal={canal as any} />
               <span style={{ flex: 1, minWidth: 0 }}>
+                {/* ── RENGLÓN 1 · ES DEL NOMBRE ────────────────────────────
+                    Aquí llegaron a pelearse trece cosas —nombre, «de
+                    WhatsApp», línea, Pendiente, nota, Resuelta, asignado,
+                    hora, @, dos puntos de alerta, llamar y asignar— en una
+                    columna de 300 px. El nombre traía `maxWidth: 140` y era
+                    el único que cedía: quedaba en «Ce…», «Xi…», «G…», y el
+                    chip de asignado se cortaba a «→ …», que no dice nada.
+
+                    Regla: el nombre SIEMPRE se ve. Es lo único flexible de
+                    este renglón (`flex: 1`), todo lo demás es `flexShrink: 0`
+                    y se queda del tamaño que le toca. Lo descriptivo —los
+                    chips que cuentan CÓMO está la conversación, no CON QUIÉN—
+                    se fue al renglón de abajo, donde había espacio de sobra.
+                    Solo queda arriba lo que se lee de un vistazo: la hora y
+                    las señales que piden acción. */}
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <b style={{ fontSize: 13.5, color: resuelta ? C.g400 : C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+                  <b title={c.contacto?.nombre || c.telefono}
+                    style={{ flex: '1 1 auto', minWidth: 0, fontSize: 13.5, color: resuelta ? C.g400 : C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.contacto?.nombre || c.telefono}
                   </b>
-                  {/* El nombre viene del perfil de WhatsApp, no del CRM: se
-                      enseña —es mejor que un número pelón— pero se dice de
-                      dónde salió. No es lo mismo un nombre que alguien capturó
-                      que el que el cliente puso en su teléfono. */}
-                  {c.contacto?.de_perfil && (
-                    <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
-                      style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>de WhatsApp</span>
-                  )}
-                  {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px' }}>Pendiente</span>}
-                  {/* E8.1 · Nota interna del equipo: se sabe antes de abrir. */}
-                  {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
-                  {resuelta && <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px', textTransform: 'uppercase' }}>Resuelta</span>}
-                  {asignado && (!yo || c.asignado_a !== yo.id) && (
-                    <span style={{ fontSize: 9, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 72 }}>→ {asignado.nombre.split(' ')[0]}</span>
-                  )}
-                  <span style={{ marginLeft: 'auto', fontSize: 11, color: c.no_leidos ? C.moradoTinta : C.g400, fontWeight: c.no_leidos ? 700 : 400, flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, color: c.no_leidos ? C.moradoTinta : C.g400, fontWeight: c.no_leidos ? 700 : 400, flexShrink: 0 }}>
                     {c.virtual ? <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px' }}>CRM</span> : horaRelativa(c.ultimo_mensaje_at)}
                   </span>
                   {c.mencion && <span title="Te mencionaron en una nota" style={{ fontSize: 9, fontWeight: 800, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 5px', flexShrink: 0 }}>@</span>}
@@ -328,42 +339,81 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                   {!c.alerta && c.ventana_expira_at && c.ultima_direccion === 'entrante' && (() => { const r = new Date(c.ventana_expira_at).getTime() - Date.now(); return r > 0 && r < 4 * 3600e3; })() && (
                     <span title={`La ventana de 24 h cierra en ${Math.max(1, Math.round((new Date(c.ventana_expira_at).getTime() - Date.now()) / 60000))} min`} style={{ width: 8, height: 8, borderRadius: 999, background: C.ambar400, flexShrink: 0, display: 'inline-block' }} />
                   )}
-                  {/* ☎ LLAMAR DESDE LA FILA · un clic y marca, sin abrir el
-                      chat. La validación va aquí y no en el clic: si el
-                      teléfono de la conversación no se puede normalizar a
-                      E.164 el ícono NO se pinta, porque un botón que solo
-                      sirve para enseñar un error es peor que no tenerlo. */}
-                  {(() => {
-                    const e164 = telefonoWhatsApp(c.telefono);
-                    if (!e164) return null;
-                    const nombre = c.contacto?.nombre || null;
-                    return (
-                      <span role="button" className="wa-fila-accion wa-fila-llamar"
-                        title={`Llamar a ${telefonoLegible(e164)}`} aria-label={`Llamar a ${nombre || telefonoLegible(e164)}`}
-                        onClick={e => {
-                          e.stopPropagation(); e.preventDefault();
-                          // En el celular manda el marcador del sistema: ya trae
-                          // micrófono, red y altavoz resueltos.
-                          if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) { window.location.href = `tel:${e164}`; return; }
-                          document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: e164, nombre } }));
-                        }}
-                        style={{ width: 20, height: 20, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0 }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" /></svg>
-                      </span>
-                    );
-                  })()}
-                  {c.wa_id && onAsignar && (
-                    <span role="button" className="wa-fila-accion" title="Asignar" aria-label="Asignar"
-                      onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuFila({ id: c.id, x: r.left, y: r.bottom + 4 }); }}
-                      style={{ width: 18, height: 18, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0, fontSize: 13, lineHeight: 1 }}>⋯</span>
-                  )}
                 </span>
-                {etapa && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6 }} />
-                    <span style={{ fontSize: 11, color: C.g400 }}>{etapa.label}{c.empresa?.nombre ? ` · ${c.empresa.nombre}` : ''}</span>
+
+                {/* ── RENGLÓN 2 · ETAPA, EMPRESA Y LOS CHIPS DE ESTADO ──────
+                    El texto es lo flexible y los chips no se encogen: si algo
+                    tiene que cortarse, que sea el nombre de la empresa y no
+                    un chip que quede en «→ …». */}
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.tiene_notas || resuelta || asignadoOtro || lineaOtra) && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                    {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
+                    {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
+                        un solo texto flexible, «Rezagado · Los 3 garcia» se
+                        quedaba en «Re…» y se perdían las dos. Separadas, la
+                        etapa —que son cuatro palabras contadas— siempre cabe
+                        entera y lo que cede es el nombre de la empresa, que
+                        al menos se entiende a medias. */}
+                    {etapa && <span style={{ fontSize: 11, color: C.g400, flexShrink: 0, whiteSpace: 'nowrap' }}>{etapa.label}</span>}
+                    <span style={{ flex: '1 1 auto', minWidth: 0, fontSize: 11, color: C.g400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.empresa?.nombre ? `${etapa ? '· ' : ''}${c.empresa.nombre}` : ''}
+                    </span>
+                    {/* El nombre viene del perfil de WhatsApp, no del CRM: se
+                        enseña —es mejor que un número pelón— pero se dice de
+                        dónde salió. No es lo mismo un nombre que alguien
+                        capturó que el que el cliente puso en su teléfono. */}
+                    {c.contacto?.de_perfil && (
+                      <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
+                        style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>de WhatsApp</span>
+                    )}
+                    {/* Multilínea: por cuál número va este chat. Solo cuando hay más de una línea; la
+                        principal no lleva chip (sería ruido en cada renglón), la otra sí. */}
+                    {lineaOtra && (
+                      <span title={`Va por la línea ${lineaOtra.numero || c.phone_number_id}`} style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g700, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>{lineaOtra.numero ? numeroCorto(lineaOtra.numero) : 'otra línea'}</span>
+                    )}
+                    {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>Pendiente</span>}
+                    {/* E8.1 · Nota interna del equipo: se sabe antes de abrir. */}
+                    {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo" style={{ flexShrink: 0 }}>nota</span>}
+                    {resuelta && <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px', textTransform: 'uppercase', flexShrink: 0 }}>Resuelta</span>}
+                    {asignadoOtro && (
+                      <span title={`Asignada a ${asignadoOtro.nombre}`} style={{ fontSize: 9, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>→ {asignadoOtro.nombre.split(' ')[0]}</span>
+                    )}
                   </span>
                 )}
+                {/* Flotan sobre la hora: ver `.wa-fila-acciones`. El fondo va
+                    inline porque tiene que tapar exactamente el de ESTA fila,
+                    que cambia si está activa o resuelta. */}
+                <span className="wa-fila-acciones" style={{ background: activa ? '#EFEDFE' : resuelta ? '#FAFBFC' : '#fff' }}>
+                    {/* ☎ LLAMAR DESDE LA FILA · un clic y marca, sin abrir el
+                        chat. La validación va aquí y no en el clic: si el
+                        teléfono de la conversación no se puede normalizar a
+                        E.164 el ícono NO se pinta, porque un botón que solo
+                        sirve para enseñar un error es peor que no tenerlo. */}
+                    {(() => {
+                      const e164 = telefonoWhatsApp(c.telefono);
+                      if (!e164) return null;
+                      const nombre = c.contacto?.nombre || null;
+                      return (
+                        <span role="button" className="wa-fila-accion wa-fila-llamar"
+                          title={`Llamar a ${telefonoLegible(e164)}`} aria-label={`Llamar a ${nombre || telefonoLegible(e164)}`}
+                          onClick={e => {
+                            e.stopPropagation(); e.preventDefault();
+                            // En el celular manda el marcador del sistema: ya trae
+                            // micrófono, red y altavoz resueltos.
+                            if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) { window.location.href = `tel:${e164}`; return; }
+                            document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: e164, nombre } }));
+                          }}
+                          style={{ width: 20, height: 20, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" /></svg>
+                        </span>
+                      );
+                    })()}
+                    {c.wa_id && onAsignar && (
+                      <span role="button" className="wa-fila-accion" title="Asignar" aria-label="Asignar"
+                        onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuFila({ id: c.id, x: r.left, y: r.bottom + 4 }); }}
+                        style={{ width: 18, height: 18, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0, fontSize: 13, lineHeight: 1 }}>⋯</span>
+                    )}
+                </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                   <span style={{
                     /* El preview es para saber si vale la pena abrir: en 12px y

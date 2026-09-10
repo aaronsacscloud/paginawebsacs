@@ -163,6 +163,15 @@ export const CSS_INBOX = `
    no existían. En táctil se muestran siempre, apagaditas. */
 @media (hover:none){.wa-fila-accion{opacity:.55}}
 .wa-fila-llamar:hover{background:#D1FAE5;color:#047857}
+/* Las acciones de la fila FLOTAN sobre la hora en vez de ocupar su propio
+   hueco. Estando en el flujo se comían ~50 px de cada renglón para dibujar
+   dos botones invisibles, y ese ancho salía del nombre: quedaba en 119 px.
+   Flotando, el nombre se queda con todo y solo aparecen al pasar el mouse.
+   En táctil no hay hover, así que ahí vuelven al flujo y se ven siempre. */
+.wa-fila-acciones{position:absolute;right:10px;top:14px;display:flex;align-items:center;gap:3px;
+  opacity:0;transition:opacity .15s;padding-left:8px;border-radius:8px}
+.wa-fila-hover:hover .wa-fila-acciones{opacity:1}
+@media (hover:none){.wa-fila-acciones{position:static;opacity:.55;padding-left:0;background:none!important}}
 .wa-msg:hover .wa-citar{opacity:1}
 
   @keyframes girar { to { transform: rotate(360deg); } }

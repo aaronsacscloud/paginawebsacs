@@ -122,3 +122,18 @@ ser del nombre; lo secundario baja al renglón 2.
 2. Configuración → Llamadas: reglas automáticas editables.
 3. Regla: buzón o no contestó → WhatsApp de utilidad, UNA sola vez por contacto
    (no se repite en el 2º y 3er intento).
+
+## 2026-09-10 · Llamar desde el móvil, dentro del CRM (no con el marcador del sistema)
+> «que esto igual funcione en mobile, es decir en la parte de arriba de la
+> conversación al tener la conversación abierta debe haber un acceso rápido con
+> el icono de llamada donde yo pueda dar click y hablar en ese preciso momento
+> al usuario y que haga todo el proceso desde el teléfono, que desde ahí lo
+> pueda transcribir y absolutamente todo ese proceso, que funcione con una
+> interfaz limpia, optimizada y fluida para hablar con el contacto al momento.»
+
+⚠️ Cambia una decisión que hoy está tomada a propósito: en móvil NO se
+intercepta el `tel:` y manda el marcador del sistema. Eso significa que HOY una
+llamada desde el celular no se graba ni genera minuta — justo lo que se pide.
+Hay que llamar por WebRTC también en el teléfono (se puede: getUserMedia sobre
+HTTPS), con su propia interfaz a pantalla completa, y cuidar audio/altavoz,
+bloqueo de pantalla y que la llamada sobreviva el cambio de pestaña.
