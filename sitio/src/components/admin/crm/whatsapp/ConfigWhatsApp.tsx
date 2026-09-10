@@ -371,6 +371,7 @@ function Telefonia() {
         </div>
       )}
       <ReglasLlamadas />
+      <EnvioMinuta />
       <div style={{ ...S.card }}>
         <b style={{ fontSize: 13 }}>Cómo darse de alta (Twilio)</b>
         {paso(1, 'Crear la cuenta', <>En <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noreferrer">twilio.com/try-twilio</a> con tu correo; verifica tu celular.</>)}
@@ -387,6 +388,128 @@ function Telefonia() {
 const inp: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #e6e4f0', borderRadius: 8, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.66rem', fontWeight: 700, color: '#999', marginBottom: 3 };
 const btnMini: React.CSSProperties = { border: '1px solid #ececf4', background: '#fff', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#666', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 };
+
+// ═════════════ Envío automático de la minuta en PDF ═════════════
+/**
+ * «Al terminar la llamada, mándale el PDF de la minuta al cliente.»
+ *
+ * La complicación no es el envío, es CUÁNDO deja Meta mandar un archivo: solo
+ * en las 24 h siguientes al último mensaje del cliente. Una llamada no abre esa
+ * ventana, así que el caso más común —le llamaste a alguien que nunca te ha
+ * escrito— cae del lado en que Meta no deja. Esta pantalla existe para que eso
+ * quede claro ANTES de prenderlo, y no como una sorpresa después.
+ */
+function EnvioMinuta() {
+  const [d, setD] = useState<any>(null);
+  const [f, setF] = useState<any>({});
+  const [guardando, setGuardando] = useState(false);
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/reglas-llamadas').then(r => r.json()).then(j => { setD(j); setF(j.regla || {}); }).catch(() => setD({ regla: {}, plantillas: [], plantillasDoc: [] }));
+  }, []);
+  const set = (k: string, v: any) => { setF((x: any) => ({ ...x, [k]: v })); setOk(false); };
+  const guardar = async () => {
+    setGuardando(true);
+    const cuerpo: any = {};
+    for (const k of ['minuta_envio_activa', 'minuta_envio_plantilla_doc', 'minuta_envio_plantilla_aviso', 'minuta_envio_caduca_dias', 'minuta_envio_texto']) if (k in f) cuerpo[k] = f[k];
+    const r = await fetch('/api/crm/whatsapp/reglas-llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) }).then(x => x.json()).catch(() => ({ error: 'sin red' }));
+    setGuardando(false); setOk(!r?.error);
+  };
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Cargando…" /></div>;
+
+  const activa = !!f.minuta_envio_activa;
+  const docs = d.plantillasDoc || [];
+  const eti: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: '#555', display: 'block', marginBottom: 5 };
+
+  return (
+    <div style={{ ...S.card, marginBottom: 14, borderLeft: `3px solid ${activa ? '#4FBF95' : '#E5E7EB'}` }}>
+      <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer' }}>
+        <input type="checkbox" checked={activa} onChange={e => set('minuta_envio_activa', e.target.checked)}
+          style={{ marginTop: 3, width: 16, height: 16, accentColor: '#5B4BD6', flexShrink: 0 }} />
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 13.5, display: 'block' }}>Mandarle al cliente la minuta en PDF</b>
+          <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55 }}>
+            Al colgar, la llamada se transcribe, se redacta la minuta y se arma un PDF con la marca de Sacs.
+            Ese documento queda siempre en la conversación y en la ficha del cliente — eso no se apaga.
+            Este interruptor es solo para <b>mandárselo también a él</b> por WhatsApp.
+          </span>
+        </span>
+      </label>
+
+      {activa && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f2f0fa' }}>
+          <span style={eti}>El mensaje que acompaña al PDF</span>
+          <textarea value={f.minuta_envio_texto || ''} onChange={e => set('minuta_envio_texto', e.target.value)} rows={3}
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #E5E7EB', borderRadius: 10, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', lineHeight: 1.6, resize: 'vertical' }} />
+          <span style={{ fontSize: 10.5, color: '#999', display: 'block', marginTop: 5 }}>Puedes usar <b>{'{{nombre}}'}</b>.</span>
+
+          <div style={{ marginTop: 14, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '11px 13px' }}>
+            <b style={{ fontSize: 12, color: '#B45309', display: 'block', marginBottom: 5 }}>Cuando la conversación está cerrada</b>
+            <span style={{ fontSize: 11.5, color: '#8a6410', lineHeight: 1.6, display: 'block' }}>
+              Meta solo deja mandar archivos durante las 24 h siguientes al último mensaje del cliente, y una
+              llamada no abre esa ventana. Hay dos salidas, y el sistema las intenta en orden:
+            </span>
+
+            <div style={{ marginTop: 11 }}>
+              <span style={{ ...eti, color: '#8a6410' }}>1. Plantilla que lleva el PDF adentro</span>
+              {docs.length === 0 ? (
+                <span style={{ display: 'block', fontSize: 11, color: '#8a6410', lineHeight: 1.6, background: 'rgba(255,255,255,.6)', borderRadius: 8, padding: '8px 10px' }}>
+                  <b>Hoy no tienes ninguna.</b> De tus plantillas aprobadas, ninguna admite documentos —hace falta
+                  una creada con encabezado de tipo DOCUMENTO y aprobada por Meta—. Mientras no exista, se usa
+                  siempre la salida 2.
+                </span>
+              ) : (
+                <select value={f.minuta_envio_plantilla_doc || ''} onChange={e => set('minuta_envio_plantilla_doc', e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #FDE68A', borderRadius: 9, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', background: '#fff' }}>
+                  <option value="">— No usar —</option>
+                  {docs.map((p: any) => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
+                </select>
+              )}
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <span style={{ ...eti, color: '#8a6410' }}>2. Avisarle y esperar su respuesta</span>
+              <span style={{ display: 'block', fontSize: 11, color: '#8a6410', lineHeight: 1.6, marginBottom: 7 }}>
+                Se le manda una plantilla diciéndole que tenemos el resumen de la llamada. En cuanto conteste
+                —lo que sea— se abre la ventana y <b>el PDF le sale solo</b>, sin que nadie lo mande a mano.
+              </span>
+              <select value={f.minuta_envio_plantilla_aviso || ''} onChange={e => set('minuta_envio_plantilla_aviso', e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #FDE68A', borderRadius: 9, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', background: '#fff' }}>
+                <option value="">— Sin plantilla (entonces no se le manda nada) —</option>
+                {(d.plantillas || []).map((p: any) => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
+              </select>
+              {f.minuta_envio_plantilla_aviso && (() => {
+                const p = (d.plantillas || []).find((x: any) => x.nombre === f.minuta_envio_plantilla_aviso);
+                return p ? <span style={{ fontSize: 11, color: '#8a6410', display: 'block', marginTop: 7, lineHeight: 1.55, fontStyle: 'italic' }}>«{String(p.cuerpo || '').slice(0, 200)}»</span> : null;
+              })()}
+            </div>
+
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11.5, color: '#8a6410' }}>Si no responde en</span>
+              <input type="number" min={1} max={60} value={f.minuta_envio_caduca_dias ?? 7}
+                onChange={e => set('minuta_envio_caduca_dias', e.target.value)}
+                style={{ width: 58, border: '1px solid #FDE68A', borderRadius: 8, padding: '5px 8px', fontSize: 12, fontFamily: 'inherit', textAlign: 'center' }} />
+              <span style={{ fontSize: 11.5, color: '#8a6410' }}>días, la minuta ya no se le manda.</span>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12, fontSize: 11, color: '#888', lineHeight: 1.6, background: '#F9FAFB', borderRadius: 9, padding: '9px 11px' }}>
+            El PDF <b>no lleva la transcripción palabra por palabra</b> ni las notas internas del equipo: lleva el
+            resumen, los temas, los acuerdos y los pendientes. La transcripción completa se queda en el CRM.
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+        <button onClick={guardar} disabled={guardando}
+          style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 9, padding: '9px 18px', fontSize: 12.5, fontWeight: 700, cursor: guardando ? 'default' : 'pointer', fontFamily: 'inherit', opacity: guardando ? .6 : 1 }}>
+          {guardando ? 'Guardando…' : 'Guardar'}
+        </button>
+        {ok && <span style={{ fontSize: 12, color: '#1E8A63', fontWeight: 700 }}>Guardado ✓</span>}
+      </div>
+    </div>
+  );
+}
 
 // ═════════════ Reglas automáticas de llamadas ═════════════
 /**

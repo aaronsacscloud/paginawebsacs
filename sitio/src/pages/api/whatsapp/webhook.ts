@@ -98,6 +98,19 @@ export const POST: APIRoute = async ({ request, url }) => {
           status: entrante ? 'received' : (kapso.status || 'sent'),
           nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name || msj?.profile_name || kapso?.contact_name || kapso?.profile_name || null,
         });
+        /* ── MINUTAS QUE ESPERABAN ESTA RESPUESTA ─────────────────────────
+           Un mensaje del cliente ABRE la ventana de 24 h, y esa es la única
+           rendija por la que Meta deja mandarle un archivo. Si quedó una minuta
+           en PDF esperando —porque cuando terminó la llamada la ventana estaba
+           cerrada— este es el momento exacto de entregarla. No bloquea el
+           webhook: si falla, el próximo mensaje lo reintenta. */
+        if (entrante && r.conversationId) {
+          try {
+            const { entregarMinutasPendientes } = await import('../../../lib/minuta/entrega');
+            await entregarMinutasPendientes(r.conversationId);
+          } catch (e: any) { console.warn('[webhook] minutas pendientes:', e?.message || e); }
+        }
+
         // DIAGNÓSTICO (7-sep): en 298 conversaciones el nombre de perfil llegó vacío. Si en un entrante no viene, se
         // anota qué llaves trae el payload (una vez por hora) para ajustar la ruta sin adivinar.
         if (entrante && !(payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name)) {

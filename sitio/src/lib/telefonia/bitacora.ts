@@ -34,6 +34,7 @@ const seg = (s: number) => {
 type Fila = {
   call_id: string; canal: string | null; direccion: string; telefono: string;
   estado: string; motivo: string | null; conversation_id: string | null;
+  minuta_pdf_url: string | null; minuta_envio_estado: string | null; minuta_envio_motivo: string | null;
   started_at: string | null; answered_at: string | null; ended_at: string | null; duracion_seg: number | null;
   payload: any; atendida_por: string | null;
 };
@@ -111,7 +112,7 @@ function narrar(ll: Fila): { titulo: string; cuerpo: string; icono: string } {
 export async function registrarBitacoraLlamada(callId: string): Promise<void> {
   try {
     const { data } = await supabase.from('wa_llamadas')
-      .select('call_id, canal, direccion, telefono, estado, motivo, conversation_id, started_at, answered_at, ended_at, duracion_seg, payload, atendida_por')
+      .select('call_id, canal, direccion, telefono, estado, motivo, conversation_id, started_at, answered_at, ended_at, duracion_seg, payload, atendida_por, minuta_pdf_url, minuta_envio_estado, minuta_envio_motivo')
       .eq('call_id', callId).maybeSingle();
     if (!data) return;
     const ll = data as Fila;
@@ -129,7 +130,19 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
       : REGLA_MUDA.test(regla.motivo) ? ''
       : `\n\n💬 No se le mandó el WhatsApp automático: ${regla.motivo}.`;
 
-    const texto = `${icono} **${titulo}**\n\n${cuerpo}${linea}`;
+    /* El PDF de la minuta llega DESPUÉS que esta nota (hay que transcribir y
+       redactar antes), así que cuando ya existe se reescribe la nota para
+       colgarle el documento. Aquí es donde alguien lo va a buscar: en la
+       conversación, junto a lo que pasó en la llamada. */
+    const pdf = ll.minuta_pdf_url ? `\n\n📄 **Minuta en PDF:** ${ll.minuta_pdf_url}` : '';
+    const entrega = !ll.minuta_pdf_url ? ''
+      : ll.minuta_envio_estado === 'enviada' ? '\n\n✅ Ya se le mandó el PDF al cliente por WhatsApp.'
+      : ll.minuta_envio_estado === 'pendiente_ventana' ? '\n\n⏳ Se le avisó que tenemos la minuta. **En cuanto responda, el PDF le sale solo** (fuera de la ventana de 24 h Meta no deja mandar archivos).'
+      : ll.minuta_envio_estado === 'caducada' ? '\n\n🗑️ No respondió a tiempo y la minuta ya no se le mandará.'
+      : ll.minuta_envio_estado && ll.minuta_envio_motivo ? `\n\nEl PDF no se le mandó: ${ll.minuta_envio_motivo}.`
+      : '';
+
+    const texto = `${icono} **${titulo}**\n\n${cuerpo}${linea}${pdf}${entrega}`;
 
     // ── Nota en el hilo del inbox ─────────────────────────────────────────
     if (ll.conversation_id) {

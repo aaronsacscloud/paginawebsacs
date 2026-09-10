@@ -95,5 +95,17 @@ Responde SOLO un JSON válido con esta forma exacta:
       try { const { extraerYAplicar } = await import('../crm/ti/datos-lead'); await extraerYAplicar(conv.contact_id, transcript, 'llamada', ll.conversation_id); } catch { /* la minuta ya quedó; los datos no la bloquean */ }
     }
   }
-  return { ok: true, minuta, siguiente_paso: siguiente, transcript_len: transcript.length };
+  /* El PDF y su entrega van DESPUÉS de guardar la minuta, y aparte: si el
+     documento o el envío fallan, la minuta ya quedó escrita en el CRM y no se
+     pierde. Solo aplica a llamadas telefónicas — las de WhatsApp ya viven en
+     el chat del cliente. */
+  let pdf: string | null = null;
+  if ((ll as any).canal === 'telefono') {
+    try {
+      const { generarYEntregarMinuta } = await import('../minuta/entrega');
+      pdf = (await generarYEntregarMinuta(callId)).pdf;
+    } catch (e: any) { console.warn('[minuta] el PDF no salió:', e?.message || e); }
+  }
+
+  return { ok: true, minuta, siguiente_paso: siguiente, transcript_len: transcript.length, pdf };
 }

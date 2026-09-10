@@ -181,7 +181,7 @@ export const GET: APIRoute = async ({ url }) => {
   let llamadas: any[] = [];
   if (conv?.id) {
     const { data: lls } = await supabase.from('wa_llamadas')
-      .select('call_id, canal, direccion, estado, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre')
+      .select('call_id, canal, direccion, estado, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre, minuta_pdf_url, minuta_envio_estado')
       .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(8);
     llamadas = lls || [];
   }
