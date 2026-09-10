@@ -118,7 +118,13 @@ export async function registrarMensaje(o: {
     kapsoConversationId: o.kapsoConversationId, telefono: o.telefono,
   });
   if (!conv) return { inserted: false };
-  if (o.phoneNumberId) await supabase.from('wa_conversaciones').update({ phone_number_id: o.phoneNumberId }).eq('id', conv.id).is('phone_number_id', null);
+  // DOS LÍNEAS (10-sep): la conversación vive en UNA línea (phone_number_id) y desde ahí se contesta.
+  // Si el cliente ESCRIBE por otra línea, la conversación se muda a esa: contestarle por la línea a la que
+  // no escribió abre otro chat en su teléfono. Un saliente solo la fija si aún no tenía.
+  if (o.phoneNumberId) {
+    const q = supabase.from('wa_conversaciones').update({ phone_number_id: o.phoneNumberId }).eq('id', conv.id);
+    await (o.direccion === 'entrante' && !o.silencioso ? q.neq('phone_number_id', o.phoneNumberId) : q.is('phone_number_id', null));
+  }
   // LEAD NUEVO POR WHATSAPP (4-sep): si escribe un número desconocido, se crea el contacto ahí mismo. Antes la
   // conversación quedaba huérfana y el agente —que trabaja sobre contactos— ni la veía: se perdieron leads que
   // venían de la web pidiendo prueba o demo. Ver lead-entrante.ts.

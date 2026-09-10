@@ -47,14 +47,21 @@ async function resolverDestino(b: { conversation_id?: string; telefono?: string;
     const { data } = await supabase.from('wa_conversaciones')
       .select('id, telefono, phone_number_id, contact_id').eq('id', b.conversation_id).maybeSingle();
     if (!data) return null;
-    usarNumero(data.phone_number_id || null);   // multi-número: se responde desde el número por el que escribió
+    // multi-número: se responde desde la línea de la conversación; si el agente eligió otra, se muda.
+    if (b.phone_number_id && b.phone_number_id !== data.phone_number_id) await supabase.from('wa_conversaciones').update({ phone_number_id: b.phone_number_id }).eq('id', data.id);
+    usarNumero(b.phone_number_id || data.phone_number_id || null);
     return { convId: data.id as string, telefono: data.telefono as string, contactId: (data as any).contact_id as string | null };
   }
-  usarNumero(b.phone_number_id || null);
   const tel = telefonoWhatsApp(b.telefono);
   if (!tel) return null;
   const conv = await upsertConversacion({ telefono: tel });
-  return conv ? { convId: conv.id, telefono: tel, contactId: (conv as any).contact_id || null } : null;
+  if (!conv) return null;
+  // Chat por teléfono: la línea es la que ya tenía la conversación (o la elegida); si es nueva, se fija.
+  const { data: c } = await supabase.from('wa_conversaciones').select('phone_number_id').eq('id', conv.id).maybeSingle();
+  const linea = b.phone_number_id || c?.phone_number_id || null;
+  if (linea && linea !== c?.phone_number_id) await supabase.from('wa_conversaciones').update({ phone_number_id: linea }).eq('id', conv.id);
+  usarNumero(linea);
+  return { convId: conv.id, telefono: tel, contactId: (conv as any).contact_id || null };
 }
 
 // El error que ve el agente: título + qué pasó + qué hacer, nunca el JSON de Meta.

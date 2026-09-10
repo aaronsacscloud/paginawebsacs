@@ -106,6 +106,20 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   alerta?: string | null;
 }) {
   const [preselTema, setPreselTema] = useState<string | null>(null);
+  // DOS LÍNEAS (10-sep): si hay más de un número activo en Kapso, el agente elige por cuál sale este chat.
+  // La elección se guarda en la conversación (POST linea) y TODOS los envíos —texto, archivo, plantilla,
+  // interactivo— la respetan en el servidor, así no hay que pasar el número en cada llamada.
+  const [lineas, setLineas] = useState<{ id: string; numero: string; nombre: string; es_default: boolean }[]>([]);
+  const [linea, setLinea] = useState<string>(canales?.linea || '');
+  const [lineaMsg, setLineaMsg] = useState('');
+  useEffect(() => { fetch('/api/crm/whatsapp/linea').then(r => r.json()).then(j => { setLineas(j.lineas || []); if (!canales?.linea) setLinea(j.default || j.lineas?.[0]?.id || ''); }).catch(() => {}); }, []);
+  useEffect(() => { if (canales?.linea) setLinea(canales.linea); }, [canales?.linea]);
+  const cambiarLinea = async (id: string) => {
+    const antes = linea; setLinea(id); setLineaMsg('');
+    const r = await fetch('/api/crm/whatsapp/linea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, phone_number_id: id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    if (r?.error) { setLinea(antes); setLineaMsg(r.error); return; }
+    const l = lineas.find(x => x.id === id); setLineaMsg(`Este chat ahora sale por ${l?.numero || id}.`); api.refrescar?.();
+  };
   const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
@@ -337,7 +351,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {/* En el teléfono, el badge verde repetía lo que el selector de al lado ya
           dice con letras; era el único verde decorativo que quedaba. */}
       {movil ? (modo === 'correo' ? <BadgeCorreo size={16} /> : null) : (modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />)}
-      {!movil && <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>}
+      {!movil && (modo === 'wa' && lineas.length > 1
+        ? <select value={linea} onChange={e => cambiarLinea(e.target.value)} title="Línea por la que sale este chat"
+            style={{ border: 'none', background: 'transparent', fontSize: 12, fontWeight: 600, color: C.g700, fontFamily: 'inherit', cursor: 'pointer', padding: 0, maxWidth: 190 }}>
+            {lineas.map(l => <option key={l.id} value={l.id}>WhatsApp {l.numero}{l.es_default ? '' : ' (anterior)'}</option>)}
+          </select>
+        : <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>)}
+      {movil && modo === 'wa' && lineas.length > 1 && (
+        <select value={linea} onChange={e => cambiarLinea(e.target.value)} aria-label="Línea"
+          style={{ border: `1px solid ${C.g200}`, borderRadius: 10, minHeight: 44, fontSize: 13, padding: '0 10px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer', maxWidth: 170 }}>
+          {lineas.map(l => <option key={l.id} value={l.id}>{l.numero}{l.es_default ? '' : ' (anterior)'}</option>)}
+        </select>
+      )}
+      {lineaMsg && <span style={{ fontSize: 11, color: /ahora sale/.test(lineaMsg) ? C.emerald700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
       {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}

@@ -715,7 +715,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         alerta={conv.alerta || null}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
         borradorInicial={leerBorrador(conv.id || conv.email_only_id)} onBorrador={t => guardarBorrador(conv.id || conv.email_only_id, t)}
-        canales={{ ...hilo.canales, wa_id: conv.id }}
+        canales={{ ...hilo.canales, wa_id: conv.id, linea: conv.phone_number_id || null }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label, telefono: telefonoLegible(conv.telefono), mrr: conv.companies?.mrr, fecha_renovacion: conv.companies?.fecha_renovacion, sucursales: conv.companies?.sucursales,
           /* Para crear la prueba gratis desde el composer. El `contact_id` es
              lo que decide si el botón aparece: una conversación sin contacto
