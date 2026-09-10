@@ -136,6 +136,25 @@ export async function generarYEntregarMinuta(callId: string): Promise<ResultadoE
   }
 }
 
+/**
+ * ¿Esta plantilla está APROBADA por Meta ahora mismo?
+ *
+ * Se pregunta antes de usarla, y no es paranoia: una plantilla recién creada
+ * pasa horas en PENDING, y Meta también las PAUSA o las deshabilita después si
+ * la gente las reporta. Sin esta comprobación, dejar el nombre configurado «para
+ * cuando la aprueben» significaría que cada minuta falla hasta entonces —y peor,
+ * que el día que Meta pause una, el envío se cae en silencio en vez de caer al
+ * siguiente camino. Con ella, el nombre se puede dejar puesto desde el primer
+ * día: el flujo se enciende solo en cuanto el estado cambia (lo sincroniza el
+ * cron `wa-snooze`).
+ */
+async function aprobada(nombre?: string | null): Promise<boolean> {
+  if (!nombre) return false;
+  const { data } = await supabase.from('wa_plantillas')
+    .select('status').eq('nombre', nombre).order('status').limit(1).maybeSingle();
+  return String((data as any)?.status || '').toUpperCase() === 'APPROVED';
+}
+
 /** La decisión de envío, aislada para poder reusarla al abrirse la ventana. */
 async function entregar(callId: string, url: string, ll: any, conv: any, contacto: string | null): Promise<{ estado: ResultadoEntrega['estado']; motivo: string }> {
   const { data: cfg } = await supabase.from('wa_config')
@@ -163,7 +182,7 @@ async function entregar(callId: string, url: string, ll: any, conv: any, contact
   }
 
   // ── B · Cerrada, pero hay plantilla que admite documento ────────────────
-  if (cfg.minuta_envio_plantilla_doc) {
+  if (await aprobada(cfg.minuta_envio_plantilla_doc)) {
     try {
       await enviarPlantilla(tel, String(cfg.minuta_envio_plantilla_doc), 'es_MX', [nombre], {
         headerMedia: { tipo: 'document', link: url, filename: archivo },
@@ -177,8 +196,13 @@ async function entregar(callId: string, url: string, ll: any, conv: any, contact
   }
 
   // ── C · Cerrada y sin plantilla de documento: se avisa y se espera ──────
-  if (!cfg.minuta_envio_plantilla_aviso) {
-    return { estado: 'no_aplica', motivo: 'fuera de la ventana de 24 h y sin plantilla configurada para avisarle' };
+  if (!(await aprobada(cfg.minuta_envio_plantilla_aviso))) {
+    return {
+      estado: 'no_aplica',
+      motivo: cfg.minuta_envio_plantilla_aviso
+        ? `fuera de la ventana de 24 h y la plantilla «${cfg.minuta_envio_plantilla_aviso}» todavía no está aprobada por Meta`
+        : 'fuera de la ventana de 24 h y sin plantilla configurada para avisarle',
+    };
   }
   await enviarPlantilla(tel, String(cfg.minuta_envio_plantilla_aviso), 'es_MX', [nombre]);
   return { estado: 'pendiente_ventana', motivo: 'se le avisó; el PDF sale en cuanto responda' };
