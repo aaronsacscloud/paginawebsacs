@@ -8,6 +8,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { firmaValida, xml, NUMERO, telefoniaConfigurada } from '../../../lib/telefonia/twilio';
+import { registrarBitacoraLlamada } from '../../../lib/telefonia/bitacora';
 
 export const prerender = false;
 const BASE = 'https://www.sacscloud.com';
@@ -84,12 +85,14 @@ export const POST: APIRoute = async ({ request }) => {
   // ── Saliente. Validaciones ANTES de gastar una llamada ──────────────────
   if (!/^\+\d{8,15}$/.test(destino)) {
     await supabase.from('wa_llamadas').update({ estado: 'fallida', motivo: `Número inválido: ${destino || '(vacío)'}`, ended_at: new Date().toISOString() }).eq('call_id', p.CallSid);
+    await registrarBitacoraLlamada(p.CallSid);
     return decir('El número marcado no es válido. Revisa el teléfono del contacto en el CRM.');
   }
   // Marcarnos a nosotros mismos crea un bucle: la llamada entraría por el
   // webhook de entrantes y volvería a timbrar en este mismo navegador.
   if (destino === NUMERO) {
     await supabase.from('wa_llamadas').update({ estado: 'fallida', motivo: 'Marcaste el número del propio negocio', ended_at: new Date().toISOString() }).eq('call_id', p.CallSid);
+    await registrarBitacoraLlamada(p.CallSid);
     return decir('Ese es el número del negocio. No puedes llamarte a ti mismo.');
   }
 
@@ -99,5 +102,25 @@ export const POST: APIRoute = async ({ request }) => {
      y no había forma de mostrar «timbrando». Con el puente, la pata del
      navegador no se contesta hasta que el cliente descuelga de verdad: el SDK
      recibe `ringing` primero y `accept` en el momento exacto de la respuesta. */
-  return xml(`<Dial callerId="${NUMERO}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number>${destino}</Number></Dial>`);
+  /* `machineDetection` — cómo sabemos que cayó en el BUZÓN.
+     Para Twilio el buzón CONTESTA: una llamada a la grabadora se registra
+     igual que una atendida (completada, con duración). Sin esto, tres
+     intentos que caen en el buzón se ven en el CRM como tres conversaciones.
+     Twilio escucha los primeros segundos y avisa aparte, en `/amd`, si del
+     otro lado hay una persona o una máquina.
+
+     `Enable` y no `DetectMessageEnd` porque NO vamos a dejar mensaje: solo
+     queremos el veredicto, y `Enable` lo suelta en cuanto lo tiene en vez de
+     esperar el bip.
+
+     El CallSid que manda AMD es el de la pata hija, no el de esta llamada, y
+     su documentación no promete `ParentCallSid`. Por eso el padre viaja en la
+     URL: es la única forma determinista de amarrarlos. */
+  const avisos = `${BASE}/api/telefonia/amd?padre=${p.CallSid}`;
+  const amd = `machineDetection="Enable" machineDetectionTimeout="20" amdStatusCallback="${avisos}"`
+    // `answered` marca el INSTANTE en que descolgaron. Sin él, «cuánto timbró»
+    // había que inferirlo restando lo hablado del total, y cuando los avisos
+    // llegaban juntos salía «timbró 0 s». Con la marca real no se inventa nada.
+    + ` statusCallback="${avisos}" statusCallbackEvent="answered"`;
+  return xml(`<Dial callerId="${NUMERO}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number ${amd}>${destino}</Number></Dial>`);
 };

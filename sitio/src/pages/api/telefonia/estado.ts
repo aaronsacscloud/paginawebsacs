@@ -3,6 +3,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { firmaValida, xml } from '../../../lib/telefonia/twilio';
+import { registrarBitacoraLlamada } from '../../../lib/telefonia/bitacora';
 
 export const prerender = false;
 const BASE = 'https://www.sacscloud.com';
@@ -17,5 +18,12 @@ export const POST: APIRoute = async ({ request }) => {
     estado: MAPA[p.DialCallStatus || p.CallStatus] || 'terminada',
     duracion_seg: dur, ended_at: new Date().toISOString(),
   }).eq('call_id', p.CallSid);
+
+  /* Aquí es donde la llamada deja rastro. Antes solo lo dejaban las que
+     alcanzaban a tener minuta (20 s y con voz): «no contestó», «comunicaba»,
+     «número muerto» y las que caen en el buzón se perdían sin que nadie se
+     enterara de que se había intentado. Ahora cada una escribe su nota en el
+     inbox y su renglón en la ficha. */
+  await registrarBitacoraLlamada(p.CallSid);
   return xml('');
 };

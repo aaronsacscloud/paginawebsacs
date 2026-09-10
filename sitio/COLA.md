@@ -91,3 +91,34 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 > pago deben de estar en la informaicon del cliente solo revisa que no dupliquen
 > campos no pierdas la logica pero muevelo de actividad por que ahi no va respeta
 > el diseno limpio"
+
+## 2026-09-10 · Nota automática de llamada en el inbox (buzón incluido)
+> «cuando se mande a Busón, que en automático aparezca el comentario ahí en el
+> inbox: una nota interna de que se generó una llamada, se mandó a Busón, se
+> esperó tanto tiempo y sonó directamente. Se mandó a Busón el resultado que
+> haya tenido. Debe aparecer en la actividad y también debe aparecer dentro del
+> inbox como una nota para saber qué sucedió.»
+
+## 2026-09-10 · El nombre siempre visible en la lista del inbox
+> «llega un momento que con tanto dato se deja ver el nombre el nombre siempre
+> se debe ver optimiza esto por favor»
+
+Con RESUELTA + asignado + fecha + punto de alerta, el nombre se corta a «Ce…»,
+«Xi…», «G…». El chip de asignado ya sale como «→ …» (inútil). Renglón 1 debe
+ser del nombre; lo secundario baja al renglón 2.
+
+## 2026-09-10 · Contador de llamadas + reglas automáticas configurables
+> «quiero asegurarme de que exista un campo que mida la cantidad de llamadas,
+> que considere el total de llamadas que le he generado a ella y también cuáles
+> han sido contestadas y cuáles han sido no contestadas… que se pueda configurar
+> en alguna sección de configuración, en llamadas, un proceso automático: cuando
+> se le llame a Busón, se envíe un WhatsApp de utilidad que diga "Hola, ¿qué tal
+> te intenté contactar por llamada desde el número tal? Si deseas hablar acerca
+> de Sacscloud, lo puedes hacer en este WhatsApp"… y si yo le vuelvo a marcar,
+> ya se envió ese mismo, que no envíe un mensaje de vuelta. Que todas esas
+> reglas también se puedan configurar desde el sistema.»
+
+1. Contador por contacto: total / contestadas / no contestadas / buzón.
+2. Configuración → Llamadas: reglas automáticas editables.
+3. Regla: buzón o no contestó → WhatsApp de utilidad, UNA sola vez por contacto
+   (no se repite en el 2º y 3er intento).

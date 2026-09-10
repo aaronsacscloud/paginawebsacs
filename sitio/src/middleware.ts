@@ -213,6 +213,7 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/telefonia/voz',
   '/api/telefonia/estado',
   '/api/telefonia/grabacion',
+  '/api/telefonia/amd',
   '/api/leads/captura',            // webhook genérico de formularios; valida su propio token
 ]);
 
