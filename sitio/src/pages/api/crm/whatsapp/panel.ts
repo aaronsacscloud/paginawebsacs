@@ -186,8 +186,22 @@ export const GET: APIRoute = async ({ url }) => {
     llamadas = lls || [];
   }
 
+  /* Los CONTADORES de telefonía. Vienen de la vista `v_llamadas_contacto`, que
+     los calcula sobre la marcha: el desenlace de una llamada se corrige después
+     de terminar (el veredicto de la contestadora llega por otro camino), así
+     que un contador denormalizado se desincronizaría el primer día.
+     Sirven para lo que se pidió: saber cuántas veces se le ha marcado a alguien
+     y cuántas de esas de verdad se habló con una persona. */
+  let tel_contadores: any = null;
+  if (contactId) {
+    const { data } = await supabase.from('v_llamadas_contacto')
+      .select('total, salientes, entrantes, contestadas, buzon, sin_contestar, intentos_fallidos, segundos_hablados, ultima_llamada_at, ultima_contestada_at')
+      .eq('contact_id', contactId).maybeSingle();
+    tel_contadores = data || null;
+  }
+
   return json({
-    llamadas, web,
+    llamadas, tel_contadores, web,
     salud, desde_ultimo, otros_contactos, sugerencias, cotizaciones, sacs,
     propiedades: { empresa: empresa?.propiedades || null, contacto: contacto?.propiedades || null },
     contacto: contacto ? { owner_id: contacto.owner_id, email: (contacto as any).email, created_at: (contacto as any).created_at, resumen_ia: (contacto as any).resumen_ia, resumen_ia_at: (contacto as any).resumen_ia_at, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,

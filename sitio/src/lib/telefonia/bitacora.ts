@@ -13,6 +13,13 @@
 // dos veces con el mismo CallSid y la nota se corrige en lugar de duplicarse.
 import { supabase } from '../supabase';
 import { telefonoLegible } from '../telefono';
+import { aplicarReglasLlamada } from './reglas';
+
+/* Motivos por los que NO mandar es lo NORMAL y no hay nada que reportar: si
+   la regla está apagada o hubo conversación, decirlo en cada nota sería ruido
+   en todas. Lo que sí se reporta es lo que el dueño querría saber: que se topó
+   con la ventana de 24 h, con el horario, o con un tope. */
+const REGLA_MUDA = /apagada|sí hubo contacto|no es saliente|solo aplica|en curso|no existe/i;
 
 /** Los `AnsweredBy` de Twilio que significan «contestó una máquina». */
 const ES_MAQUINA = /^machine_/;
@@ -110,7 +117,19 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
     const ll = data as Fila;
 
     const { titulo, cuerpo, icono } = narrar(ll);
-    const texto = `${icono} **${titulo}**\n\n${cuerpo}`;
+
+    /* Las reglas automáticas corren AQUÍ y su resultado entra en la MISMA
+       nota. Un WhatsApp que sale solo tiene que verse donde se ve todo lo
+       demás de esa llamada; si va a un renglón aparte, nadie lo relaciona.
+       Y si NO salió, el motivo también se escribe: «no se mandó» sin decir
+       por qué es peor que no decir nada. */
+    const regla = await aplicarReglasLlamada(callId);
+    const linea = regla.mandado
+      ? `\n\n💬 Se le mandó el WhatsApp automático de la regla${regla.via === 'plantilla' ? ' (con plantilla, porque ya cerró la ventana de 24 h)' : ''}.`
+      : REGLA_MUDA.test(regla.motivo) ? ''
+      : `\n\n💬 No se le mandó el WhatsApp automático: ${regla.motivo}.`;
+
+    const texto = `${icono} **${titulo}**\n\n${cuerpo}${linea}`;
 
     // ── Nota en el hilo del inbox ─────────────────────────────────────────
     if (ll.conversation_id) {

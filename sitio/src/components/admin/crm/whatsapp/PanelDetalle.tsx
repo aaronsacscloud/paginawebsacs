@@ -428,6 +428,20 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             ['Interacción', hilo?.mensajes?.length
               ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}${conv?.ultimo_mensaje_at ? ` · ${haceCuanto(conv.ultimo_mensaje_at)}` : ''}`
               : (timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : null)],
+            /* Cuántas veces se le ha marcado y cuántas de esas se habló DE
+               VERDAD con una persona. La distinción no es cosmética: para
+               Twilio el buzón contesta, así que sin separarlo tres buzones se
+               leían como tres conversaciones y nadie sabía que el contacto
+               llevaba una semana ilocalizable. */
+            ['Llamadas', (() => {
+              const t = ctx?.tel_contadores;
+              if (!t || !Number(t.total)) return null;
+              const partes = [`${t.total} en total`];
+              if (Number(t.contestadas)) partes.push(`${t.contestadas} contestada${t.contestadas === 1 ? '' : 's'}`);
+              const perdidas = Number(t.intentos_fallidos || 0);
+              if (perdidas) partes.push(`${perdidas} sin contacto${Number(t.buzon) ? ` (${t.buzon} al buzón)` : ''}`);
+              return partes.join(' · ');
+            })()],
             ['Visitas web', ctx?.web?.en_vivo
               ? `● AHORA en ${ctx.web.en_vivo}`
               : ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],

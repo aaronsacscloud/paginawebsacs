@@ -370,6 +370,7 @@ function Telefonia() {
           <p style={{ fontSize: 11.5, color: '#777', margin: '4px 0 0' }}>Variables pendientes en Vercel: {(st.faltantes || []).join(' · ') || '—'}</p>
         </div>
       )}
+      <ReglasLlamadas />
       <div style={{ ...S.card }}>
         <b style={{ fontSize: 13 }}>Cómo darse de alta (Twilio)</b>
         {paso(1, 'Crear la cuenta', <>En <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noreferrer">twilio.com/try-twilio</a> con tu correo; verifica tu celular.</>)}
@@ -386,6 +387,122 @@ function Telefonia() {
 const inp: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #e6e4f0', borderRadius: 8, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.66rem', fontWeight: 700, color: '#999', marginBottom: 3 };
 const btnMini: React.CSSProperties = { border: '1px solid #ececf4', background: '#fff', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#666', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 };
+
+// ═════════════ Reglas automáticas de llamadas ═════════════
+/**
+ * «Cuando caiga en el buzón, que le llegue un WhatsApp de utilidad; y si le
+ * vuelvo a marcar, que no se lo mande otra vez.»
+ *
+ * Los dos avisos que esta pantalla TIENE que dar, porque si no se prende la
+ * regla y no se entiende por qué a veces no sale nada:
+ *  1. Fuera de la ventana de 24 h Meta no acepta texto libre. Hace falta una
+ *     plantilla UTILITY aprobada, y sin ella esos casos no se mandan.
+ *  2. Sin conversación en el inbox no hay a dónde escribir.
+ */
+function ReglasLlamadas() {
+  const [d, setD] = useState<any>(null);
+  const [f, setF] = useState<any>({});
+  const [guardando, setGuardando] = useState(false);
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/reglas-llamadas').then(r => r.json()).then(j => { setD(j); setF(j.regla || {}); }).catch(() => setD({ regla: {}, plantillas: [] }));
+  }, []);
+  const set = (k: string, v: any) => { setF((x: any) => ({ ...x, [k]: v })); setOk(false); };
+  const guardar = async () => {
+    setGuardando(true);
+    const r = await fetch('/api/crm/whatsapp/reglas-llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) }).then(x => x.json()).catch(() => ({ error: 'sin red' }));
+    setGuardando(false); setOk(!r?.error);
+  };
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Cargando las reglas…" /></div>;
+
+  const activa = !!f.llamadas_regla_activa;
+  const eti: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: '#555', display: 'block', marginBottom: 5 };
+  const check = (k: string, texto: string, detalle: string) => (
+    <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 10 }}>
+      <input type="checkbox" checked={!!f[k]} onChange={e => set(k, e.target.checked)} style={{ marginTop: 2, width: 15, height: 15, accentColor: '#5B4BD6', flexShrink: 0 }} />
+      <span style={{ minWidth: 0 }}>
+        <b style={{ fontSize: 12.5, display: 'block' }}>{texto}</b>
+        <span style={{ fontSize: 11, color: '#888', lineHeight: 1.5 }}>{detalle}</span>
+      </span>
+    </label>
+  );
+
+  return (
+    <div style={{ ...S.card, marginBottom: 14, borderLeft: `3px solid ${activa ? '#4FBF95' : '#E5E7EB'}` }}>
+      <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer' }}>
+        <input type="checkbox" checked={activa} onChange={e => set('llamadas_regla_activa', e.target.checked)}
+          style={{ marginTop: 3, width: 16, height: 16, accentColor: '#5B4BD6', flexShrink: 0 }} />
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 13.5, display: 'block' }}>Mandar un WhatsApp cuando la llamada no logre contacto</b>
+          <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55 }}>
+            Marcaste y no hablaste con nadie: entró el buzón o nadie contestó. En vez de que la persona se quede
+            con una llamada perdida de un número que no conoce, le llega un mensaje diciéndole quién la buscó y
+            por dónde seguir. Queda en la conversación, como cualquier otro mensaje.
+          </span>
+        </span>
+      </label>
+
+      {activa && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f2f0fa' }}>
+          <span style={eti}>¿Cuándo se manda?</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[['ambos', 'Buzón y sin contestar'], ['buzon', 'Solo si cae en el buzón'], ['sin_contestar', 'Solo si nadie contesta']].map(([v, l]) => (
+              <button key={v} onClick={() => set('llamadas_regla_cuando', v)}
+                style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999, padding: '7px 13px', fontSize: 12, fontWeight: 700,
+                  background: (f.llamadas_regla_cuando || 'ambos') === v ? '#EEECFE' : '#F3F4F6',
+                  color: (f.llamadas_regla_cuando || 'ambos') === v ? '#5B4BD6' : '#6B7280' }}>{l}</button>
+            ))}
+          </div>
+
+          <span style={eti}>El mensaje</span>
+          <textarea value={f.llamadas_regla_texto || ''} onChange={e => set('llamadas_regla_texto', e.target.value)} rows={4}
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #E5E7EB', borderRadius: 10, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', lineHeight: 1.6, resize: 'vertical' }} />
+          <span style={{ fontSize: 10.5, color: '#999', display: 'block', marginTop: 5, lineHeight: 1.55 }}>
+            Puedes usar <b>{'{{nombre}}'}</b> (el nombre de pila del contacto) y <b>{'{{numero}}'}</b> (el número desde el que llamaste
+            {d.numero ? `, hoy ${d.numero}` : ''}).
+          </span>
+
+          <div style={{ marginTop: 14, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 12px' }}>
+            <b style={{ fontSize: 12, color: '#B45309', display: 'block', marginBottom: 4 }}>Si ya pasaron 24 h desde su último mensaje</b>
+            <span style={{ fontSize: 11.5, color: '#8a6410', lineHeight: 1.6, display: 'block' }}>
+              Meta no deja mandar texto libre fuera de esa ventana — y es justo el caso más común aquí, porque a quien
+              le marcas muchas veces todavía no te ha escrito. Para esos casos hace falta una plantilla ya aprobada.
+              Si la dejas vacía, en esos casos no se manda nada y la nota de la llamada lo dice.
+            </span>
+            <select value={f.llamadas_regla_plantilla || ''} onChange={e => set('llamadas_regla_plantilla', e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', marginTop: 9, border: '1px solid #FDE68A', borderRadius: 9, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', background: '#fff' }}>
+              <option value="">— Sin plantilla (no se manda fuera de la ventana) —</option>
+              {(d.plantillas || []).map((p: any) => (
+                <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
+              ))}
+            </select>
+            {f.llamadas_regla_plantilla && (() => {
+              const p = (d.plantillas || []).find((x: any) => x.nombre === f.llamadas_regla_plantilla);
+              return p ? <span style={{ fontSize: 11, color: '#8a6410', display: 'block', marginTop: 7, lineHeight: 1.55, fontStyle: 'italic' }}>«{String(p.cuerpo || '').slice(0, 220)}»</span> : null;
+            })()}
+          </div>
+
+          {check('llamadas_regla_una_vez', 'Solo una vez por contacto', 'Aunque le marques diez veces, el mensaje sale una sola vez. Si lo apagas, sale uno por cada llamada sin contacto.')}
+          {check('llamadas_regla_horario', 'Respetar el horario de atención', 'Fuera del horario configurado en Automatización no se manda. Nadie quiere un WhatsApp del negocio a las 11 de la noche.')}
+
+          <div style={{ marginTop: 14, fontSize: 11, color: '#888', lineHeight: 1.6, background: '#F9FAFB', borderRadius: 9, padding: '9px 11px' }}>
+            Además, esta regla respeta los frenos que ya protegen a todo lo demás: no escribe si hoy ya salió otro
+            WhatsApp para esa persona, ni si alguien del equipo tomó la conversación, ni si el teléfono no tiene
+            conversación en el inbox.
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+        <button onClick={guardar} disabled={guardando}
+          style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 9, padding: '9px 18px', fontSize: 12.5, fontWeight: 700, cursor: guardando ? 'default' : 'pointer', fontFamily: 'inherit', opacity: guardando ? .6 : 1 }}>
+          {guardando ? 'Guardando…' : 'Guardar'}
+        </button>
+        {ok && <span style={{ fontSize: 12, color: '#1E8A63', fontWeight: 700 }}>Guardado ✓</span>}
+      </div>
+    </div>
+  );
+}
 
 function Cabecera({ titulo, texto, accion }: { titulo: string; texto: string; accion?: any }) {
   return (
