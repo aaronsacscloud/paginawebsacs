@@ -269,7 +269,7 @@ const useCases = [
 
 
 <!-- ═══ BLOQUE 1b: el recorrido de la clienta — del post a su WhatsApp, con scroll ═══ -->
-<section class="flujo" id="flujo" aria-label="Del post a la venta">
+<section class="recorrido flujo" id="recorrido" aria-label="Del post a la venta">
   <div class="flujo-sticky">
     <div class="flujo-inner container">
       <div class="flujo-text">
@@ -18136,7 +18136,7 @@ const useCases = [
 
   // ─── El recorrido de la clienta: el scroll avanza los pasos; cada paso reproduce su clip a velocidad fija ───
   (() => {
-    const sec = document.querySelector<HTMLElement>('#flujo');
+    const sec = document.querySelector<HTMLElement>('#recorrido');
     const wrap = sec?.querySelector<HTMLElement>('.flujo-video');
     const still = wrap?.querySelector<HTMLImageElement>('.flujo-still');
     const clip = wrap?.querySelector<HTMLVideoElement>('.flujo-clip');
