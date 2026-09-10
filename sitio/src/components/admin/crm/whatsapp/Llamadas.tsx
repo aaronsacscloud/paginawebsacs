@@ -70,6 +70,14 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
   }, []);
   useEffect(() => { if (!activa) { setSeg(0); return; } const t = setInterval(() => setSeg(Math.round((Date.now() - activa.desde) / 1000)), 1000); return () => clearInterval(t); }, [activa?.call_id]);
 
+  /* Bandera global: esta pantalla y Telefonia.tsx (Twilio) comparten el
+     micrófono y los oídos del agente. Sin esto se podía arrancar una llamada
+     telefónica encima de una de WhatsApp y ninguna de las dos se oía. */
+  useEffect(() => {
+    const d = document.documentElement.dataset;
+    if (activa) d.waLlamada = '1'; else delete d.waLlamada;
+  }, [!!activa]);
+
   const prepararPC = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     const pc = new RTCPeerConnection({ iceServers: ICE });
@@ -145,6 +153,8 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
     const h = async (ev: any) => {
       const { conversation_id, telefono, nombre } = ev.detail || {};
       setError('');
+      if (activaRef.current) { setError('Ya estás en una llamada de WhatsApp. Cuelga antes de marcar otra.'); return; }
+      if (document.documentElement.dataset.telLlamada) { setError('Hay una llamada telefónica en curso. Cuelga esa antes de llamar por WhatsApp.'); return; }
       try {
         const { pc, stream, rec, chunks, actx } = await prepararPC();
         const offer = await pc.createOffer({ offerToReceiveAudio: true }); await pc.setLocalDescription(offer); await esperarIce(pc);

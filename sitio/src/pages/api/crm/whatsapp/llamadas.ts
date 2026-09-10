@@ -22,8 +22,18 @@ export const GET: APIRoute = async ({ url }) => {
   const p = url.searchParams;
   if (p.get('activas')) {
     const hace2min = new Date(Date.now() - 120e3).toISOString();
+    /* ⚠️ SOLO WHATSAPP. `wa_llamadas` es la tabla compartida: la telefonía de
+       Twilio escribe aquí también, con `canal='telefono'`. Sin este filtro el
+       banner de «Llamada de WhatsApp» se prendía con las llamadas del teléfono
+       —hasta con las salientes, mostrando `client:crm-…` como si fuera el
+       cliente— y salían dos barras encimadas en pantalla. Las telefónicas las
+       maneja Telefonia.tsx por el SDK, no por este sondeo.
+       `.or(...)` y no `.neq()`: en Postgres un `!=` descarta también los NULL,
+       y las filas viejas de WhatsApp no traen canal. */
     const { data } = await supabase.from('wa_llamadas').select('*, wa_conversaciones(id, contacts(nombre, apellido), companies(nombre, nombre_comercial))')
-      .eq('estado', 'timbrando').gte('started_at', hace2min).order('started_at', { ascending: false }).limit(5);
+      .eq('estado', 'timbrando').gte('started_at', hace2min)
+      .or('canal.is.null,canal.eq.whatsapp')
+      .order('started_at', { ascending: false }).limit(5);
     return json({ llamadas: data || [] });
   }
   if (p.get('conversation_id')) {

@@ -158,6 +158,11 @@ export const CSS_INBOX = `
 .wa-fila-accion{opacity:0;transition:opacity .15s}
 .wa-fila-hover:hover .wa-fila-accion{opacity:1}
 .wa-fila-accion:hover{background:#EEECFE;color:#5B4BD6}
+/* Sin mouse no hay hover: en pantalla táctil las acciones de la fila se
+   quedaban invisibles PARA SIEMPRE — no es que costara encontrarlas, es que
+   no existían. En táctil se muestran siempre, apagaditas. */
+@media (hover:none){.wa-fila-accion{opacity:.55}}
+.wa-fila-llamar:hover{background:#D1FAE5;color:#047857}
 .wa-msg:hover .wa-citar{opacity:1}
 
   @keyframes girar { to { transform: rotate(360deg); } }

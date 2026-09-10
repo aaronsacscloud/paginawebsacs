@@ -9,6 +9,7 @@ import { IcoBuscar, IcoChevronAbajo, IcoUsuarioMas, IcoPuntos, IcoMegafono } fro
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import EstadoEntrega from './EstadoEntrega';
 import { lifecycleDe } from '../../../../lib/crm/lifecycle';
+import { telefonoLegible, telefonoWhatsApp } from '../../../../lib/telefono';
 import { BuilderCondiciones } from './VistaModales';
 import type { CampoFiltro, Condicion } from '../../../../lib/whatsapp/filtros';
 import type { Filtros } from './InboxPro';
@@ -327,6 +328,30 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                   {!c.alerta && c.ventana_expira_at && c.ultima_direccion === 'entrante' && (() => { const r = new Date(c.ventana_expira_at).getTime() - Date.now(); return r > 0 && r < 4 * 3600e3; })() && (
                     <span title={`La ventana de 24 h cierra en ${Math.max(1, Math.round((new Date(c.ventana_expira_at).getTime() - Date.now()) / 60000))} min`} style={{ width: 8, height: 8, borderRadius: 999, background: C.ambar400, flexShrink: 0, display: 'inline-block' }} />
                   )}
+                  {/* ☎ LLAMAR DESDE LA FILA · un clic y marca, sin abrir el
+                      chat. La validación va aquí y no en el clic: si el
+                      teléfono de la conversación no se puede normalizar a
+                      E.164 el ícono NO se pinta, porque un botón que solo
+                      sirve para enseñar un error es peor que no tenerlo. */}
+                  {(() => {
+                    const e164 = telefonoWhatsApp(c.telefono);
+                    if (!e164) return null;
+                    const nombre = c.contacto?.nombre || null;
+                    return (
+                      <span role="button" className="wa-fila-accion wa-fila-llamar"
+                        title={`Llamar a ${telefonoLegible(e164)}`} aria-label={`Llamar a ${nombre || telefonoLegible(e164)}`}
+                        onClick={e => {
+                          e.stopPropagation(); e.preventDefault();
+                          // En el celular manda el marcador del sistema: ya trae
+                          // micrófono, red y altavoz resueltos.
+                          if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) { window.location.href = `tel:${e164}`; return; }
+                          document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: e164, nombre } }));
+                        }}
+                        style={{ width: 20, height: 20, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0 }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" /></svg>
+                      </span>
+                    );
+                  })()}
                   {c.wa_id && onAsignar && (
                     <span role="button" className="wa-fila-accion" title="Asignar" aria-label="Asignar"
                       onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuFila({ id: c.id, x: r.left, y: r.bottom + 4 }); }}
