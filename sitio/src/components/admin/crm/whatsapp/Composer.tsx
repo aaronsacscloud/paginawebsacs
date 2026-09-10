@@ -118,7 +118,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     const antes = linea; setLinea(id); setLineaMsg('');
     const r = await fetch('/api/crm/whatsapp/linea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, phone_number_id: id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setLinea(antes); setLineaMsg(r.error); return; }
-    const l = lineas.find(x => x.id === id); setLineaMsg(`Este chat ahora sale por ${l?.numero || id}.`); api.refrescar?.();
+    setLineaMsg('Guardado'); setTimeout(() => setLineaMsg(''), 3000); api.refrescar?.();
   };
   const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
@@ -363,7 +363,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           {lineas.map(l => <option key={l.id} value={l.id}>{l.numero}{l.es_default ? '' : ' (anterior)'}</option>)}
         </select>
       )}
-      {lineaMsg && <span style={{ fontSize: 11, color: /ahora sale/.test(lineaMsg) ? C.emerald700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
+      {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : C.rojo700, whiteSpace: 'nowrap', flexShrink: 0 }}>{lineaMsg}</span>}
       {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
