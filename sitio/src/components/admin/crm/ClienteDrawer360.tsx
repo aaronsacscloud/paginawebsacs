@@ -443,11 +443,17 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   propósito: se decide mirando si el cliente está usando el
                   sistema, no mirando el saldo. La MISMA tarjeta que la ficha del
                   lead y que el inbox — tres copias serían tres verdades. */}
-              {/* El alta obligatoria: activar la prueba, crear o ligar la
-                  cuenta. Solo se pinta cuando hay trámite pendiente. */}
-              {tab === 'resumen' && <CuentaCliente companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'resumen' && <CuentaSacs companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {/* ── La cuenta de Sacs, aquí y no en Actividad ──
+                  Qué cuenta opera este cliente y con qué datos se le factura es
+                  información DEL CLIENTE. Vivía en Actividad —que es de donde
+                  salen los datos de USO, no la identidad de la cuenta— y ahí
+                  hacía dos daños: nadie los capturaba porque nadie los buscaba
+                  en esa pestaña, y la razón social y el RFC acabaron
+                  duplicados, tecleables también en Info general por un camino
+                  que NO valida el RFC. Ahora se capturan en un solo lugar. */}
+              {tab === 'info' && <CuentaCliente companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {/* Las señales ya no son un bloque aparte: entran DENTRO de
@@ -1107,7 +1113,12 @@ const descripcionSerie = (r: any): string => {
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
 function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
-  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
+  /* Sin `rfc` ni `razon_social`: lo fiscal se captura en UN solo lugar, la
+     tarjeta «Cuenta de Sacs» de abajo. Aquí eran dos cajas que escribían las
+     mismas columnas por otro camino —el que NO valida el RFC—, así que un RFC
+     imposible entraba sin revisar y el alta lo daba por bueno. Se siguen
+     leyendo, se capturan allá. */
+  const [f, setF] = useState<any>({ nombre: co.nombre || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   /* La ficha se LEE por defecto y se edita cuando lo pides. Antes se abría con
      ocho cajas de texto aunque solo vinieras a ver quién es el cliente, y eso
@@ -1323,12 +1334,10 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
 
         {/* Lo fiscal y lo secundario, plegado: está a un clic, no estorbando. */}
         <details open={editando} style={separador}>
-          <summary style={resumenLink}>{editando ? 'Datos de la empresa' : 'Ver datos fiscales y de contacto'}</summary>
+          <summary style={resumenLink}>{editando ? 'Datos de la empresa' : 'Ver datos de contacto y perfil del negocio'}</summary>
 
           {!editando ? (
             <div style={{ marginTop: 13, ...rejilla }}>
-              {leido('Razón social', f.razon_social)}
-              {leido('RFC', f.rfc)}
               {leido('Sitio web', f.sitio_web)}
               {leido('Ciudad', f.ciudad)}
               {leido('Estado', f.estado_geo)}
@@ -1343,16 +1352,14 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             <div style={{ marginTop: 13 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
                 {campo('Nombre *', 'nombre')}
-                {campo('Razón social', 'razon_social')}
-                {campo('RFC', 'rfc')}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
                 {campo('Sitio web', 'sitio_web', 'https://…')}
                 <div>
                   <label style={D.lbl}>Ciudad</label>
                   <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.inputM} placeholder="empieza a escribir…" />
                   <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
                 </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
                 <div>
                   <label style={D.lbl}>Estado</label>
                   <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.inputM}>

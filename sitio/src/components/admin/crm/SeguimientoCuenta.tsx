@@ -148,7 +148,15 @@ function Bloque({ titulo, nota, children }: { titulo: string; nota?: string; chi
   );
 }
 
-export default function SeguimientoCuenta({ companyId, nombre }: { companyId: string; nombre: string }) {
+export default function SeguimientoCuenta({ companyId, nombre, compacto = false }: {
+  companyId: string; nombre: string;
+  /* `compacto` deja arriba una TIRA de cuatro lecturas y manda las cuatro
+     tarjetas densas a un plegado. Es lo que pide Renovación: el expediente
+     abierto ocupaba media pantalla antes de que hubieras decidido nada, y
+     partirlo en dos componentes habría significado pedir el mismo endpoint
+     dos veces. */
+  compacto?: boolean;
+}) {
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [ticket, setTicket] = useState<any>(null);
@@ -171,7 +179,7 @@ export default function SeguimientoCuenta({ companyId, nombre }: { companyId: st
   const delta = ev.delta;
   const tonoDelta = delta == null ? P.suave : delta > 0 ? P.verdeTinta : delta < 0 ? P.rojoTinta : P.suave;
 
-  return (
+  const bloques = (
     <div style={{ display: 'grid', gap: 11, gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))' }}>
 
       {/* ── 1 · USO ── */}
@@ -330,6 +338,81 @@ export default function SeguimientoCuenta({ companyId, nombre }: { companyId: st
       </Bloque>
 
       {ticket && <TicketDrawer t={ticket} onCerrar={() => setTicket(null)} />}
+    </div>
+  );
+
+  if (!compacto) return bloques;
+
+  /* Las cuatro lecturas, en el orden en que se pregunta:
+     ¿usa más Sacs? → ¿nos hemos visto? → ¿contestan? → ¿está sufriendo? */
+  const lecturas = [
+    {
+      k: 'Uso de Sacs',
+      v: uso.medido_el == null ? 'Sin lecturas' : `${uso.modulos_activos} módulos`,
+      n: uso.medido_el == null ? 'no hay dato para afirmar nada'
+        : ev.comparable ? `${delta > 0 ? '+' : ''}${delta} contra su línea base de ${ev.base}`
+        : 'sin línea base todavía',
+      c: uso.medido_el == null ? '#d7d4e0' : delta == null ? P.violeta : delta < 0 ? P.ambar : delta > 0 ? P.verde : P.violeta,
+    },
+    {
+      k: 'Reuniones',
+      v: R.total === 0 ? 'Ninguna' : (R.asistidas === 1 ? '1 asistida' : `${R.asistidas} asistidas`),
+      n: R.total === 0 ? 'nunca nos hemos sentado con ellos'
+        : `${R.no_asistidas === 0 ? 'ninguna' : R.no_asistidas} sin asistir · ${R.proximas === 1 ? '1 próxima' : `${R.proximas} próximas`}`,
+      c: R.total === 0 ? '#d7d4e0' : R.no_asistidas > 0 ? P.rojo : P.verde,
+    },
+    {
+      k: 'Conversación',
+      v: C.ultimo ? (C.recibidos === 1 ? '1 respuesta' : `${C.recibidos} respuestas`) : 'Sin registro',
+      n: C.ultimo ? `${C.enviados} enviados · ${C.recibidos_90d} en 90 días`
+        : 'no hay WhatsApp con esta cuenta',
+      c: !C.ultimo ? '#d7d4e0' : C.recibidos_90d > 0 ? P.verde : P.ambar,
+    },
+    {
+      k: 'Soporte',
+      v: S.total === 0 ? 'Sin tickets' : (S.abiertos === 1 ? '1 abierto' : `${S.abiertos} abiertos`),
+      n: S.total === 0 ? 'buena señal, o que no lo están usando'
+        : `${S.total} tickets en total${S.negativos ? ` · ${S.negativos} con molestia` : ''}`,
+      c: S.total === 0 ? '#d7d4e0' : S.abiertos > 0 ? P.ambar : P.verde,
+    },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 2 }}>
+        {lecturas.map((l, i) => (
+          <div key={l.k} style={{ padding: '2px 14px 10px 0', borderRight: i < lecturas.length - 1 ? `1px solid ${P.lineaSuave}` : 'none' }}>
+            <div style={E.lbl}>{l.k}</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, color: P.tinta }}>
+              <span style={{ width: 7, height: 7, borderRadius: 99, flexShrink: 0, background: l.c }} />
+              {l.v}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 1 }}>{l.n}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lo que nunca ha tocado ES la lista de lo que se le puede vender. */}
+      {uso.nunca_usados?.length > 0 && (
+        <div style={{ borderTop: `1px solid ${P.lineaSuave}`, marginTop: 12, paddingTop: 11, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.79rem', color: '#3c3748' }}>
+            <b>{uso.nunca_usados.length} módulos que nunca ha tocado.</b> Ahí está lo vendible.
+          </span>
+          {uso.nunca_usados.slice(0, 5).map((m: string) => (
+            <span key={m} style={{ ...E.chip, background: '#f6f6f6', color: '#777', textTransform: 'none' }}>{m}</span>
+          ))}
+          {uso.nunca_usados.length > 5 && (
+            <span style={{ fontSize: '0.72rem', color: '#8a8590' }}>+{uso.nunca_usados.length - 5}</span>
+          )}
+        </div>
+      )}
+
+      <details style={{ borderTop: `1px solid ${P.lineaSuave}`, marginTop: 12, paddingTop: 11 }}>
+        <summary style={{ cursor: 'pointer', listStyle: 'none', fontSize: '0.76rem', fontWeight: 700, color: P.violetaTinta }}>
+          Ver el expediente completo — uso mes a mes, minutas y tickets
+        </summary>
+        <div style={{ marginTop: 12 }}>{bloques}</div>
+      </details>
     </div>
   );
 }

@@ -21,13 +21,16 @@ const inp = {
 
 export default function DatosFiscales({
   companyId, fisc, modo = 'guardar', textoBoton = 'Guardar datos fiscales', ocupadoFuera = false,
-  onGuardado, onCancelar,
+  sinIntro = false, onGuardado, onCancelar,
 }: {
   companyId?: string | null;
   fisc?: Fiscales | null;
   modo?: 'guardar' | 'entregar';
   textoBoton?: string;
   ocupadoFuera?: boolean;
+  /* Quien llama ya dijo qué falta, con su propio aviso. Repetirlo aquí deja
+     la misma frase dos veces, una encima de la otra. */
+  sinIntro?: boolean;
   onGuardado: (datos: Fiscales & { constancia_url?: string; constancia_nombre?: string }) => void | Promise<void>;
   onCancelar?: () => void;
 }) {
@@ -68,10 +71,12 @@ export default function DatosFiscales({
 
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <div style={{ fontSize: '0.8rem', color: '#4a4a52' }}>
-        {falta ? <><b>{falta}</b>. Sin esto no se le puede facturar cuando lo pida.</>
-               : <>Confirma sus <b>datos fiscales</b> antes de cerrar el cobro.</>}
-      </div>
+      {!sinIntro && (
+        <div style={{ fontSize: '0.8rem', color: '#4a4a52' }}>
+          {falta ? <><b>{falta}</b>. Sin esto no se le puede facturar cuando lo pida.</>
+                 : <>Confirma sus <b>datos fiscales</b> antes de cerrar el cobro.</>}
+        </div>
+      )}
 
       <input value={val('razon_social')} onChange={e => setForm({ ...form, razon_social: e.target.value })}
         placeholder="Razón social (como en su constancia)" style={inp} autoFocus />

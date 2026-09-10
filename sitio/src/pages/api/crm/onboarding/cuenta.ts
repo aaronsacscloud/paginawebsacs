@@ -83,9 +83,17 @@ export const GET: APIRoute = async ({ request, url }) => {
     .eq('id', companyId).maybeSingle();
   const { data: caso } = await supabase.from('onboarding_casos')
     .select('id, etapa, inicio').eq('company_id', companyId).is('cerrado_at', null).maybeSingle();
+  /* Desde cuándo está ligada. La ficha lo enseña junto al identificador: sin
+     fecha, «artik» es un dato suelto que no dice si el alta se hizo ayer o
+     hace un año. */
+  const { data: liga } = cuenta
+    ? await supabase.from('company_sacs_accounts').select('created_at')
+        .eq('company_id', companyId).ilike('cuenta', cuenta).limit(1)
+    : { data: null };
 
   return json({
     cuenta,
+    ligada_at: (liga as any)?.[0]?.created_at || null,
     fiscales: fis || {},
     pruebas: pruebas || [],
     caso: caso || null,

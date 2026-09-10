@@ -74,7 +74,12 @@ export default function CuentaSacs({ contactId, companyId, compacto, alCambiar }
   return (
     <div style={marco}>
       <div style={{ fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.9px', marginBottom: 9, display: 'flex', alignItems: 'center', gap: 8 }}>
-        Cuenta de SACS
+        {/* «Acceso a Sacs», no «Cuenta de Sacs»: la ficha de la cuenta —cuál
+            es, desde cuándo, con qué se factura— vive en Info general desde el
+            10-sep-2026. Aquí se decide otra cosa: si puede entrar o no. Dos
+            tarjetas con el mismo título en dos pestañas se leen como la misma
+            cosa contada dos veces. */}
+        Acceso a Sacs
         <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: 0, textTransform: 'none', borderRadius: 20, padding: '3px 10px', background: sinDato ? '#F1F0F4' : bloqueada ? '#FBECEA' : '#EAF8F2', color: sinDato ? '#6b6b74' : bloqueada ? '#C0554E' : '#1E8A63' }}>
           {sinDato ? 'no se pudo consultar' : bloqueada ? `revocada · ${ETIQUETA[est.motivo] || est.motivo || 'sin motivo'}` : 'activa'}
         </span>

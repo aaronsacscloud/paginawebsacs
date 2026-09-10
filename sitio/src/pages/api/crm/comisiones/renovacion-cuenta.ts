@@ -62,6 +62,20 @@ export const GET: APIRoute = async ({ url }) => {
       .select('id, fecha, monto, quote_id, subscription_id, estado, quotes(numero, items)')
       .eq('company_id', company_id).is('subscription_id', null).not('quote_id', 'is', null)
       .gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`);
+
+    /* ── De dónde salió cada partida ──
+       Un renglón que dice «Pers. Productos combos · Plugin de gastos · Plugin
+       de bancos · Plugin de notas de crédito — $119,764» no sirve para decidir
+       una comisión: no se sabe cuánto valió cada cosa, de qué junta salió, ni
+       si ya se entregó. Las mejoras guardan las tres respuestas —`quote_id` +
+       `quote_item` apuntan a la partida exacta que las cobró— así que el
+       cobro se abre partida por partida y cada una se cruza con la suya. */
+    const { data: mejoras } = await supabase.from('mejoras')
+      .select('id, titulo, estado, cortesia, valor, quote_id, quote_item, fecha_entrega, fecha_compromiso, origen, created_at')
+      .eq('company_id', company_id).is('archived_at', null);
+    const mejoraDe = (quoteId: string, nombre: string) => (mejoras || []).find((m: any) =>
+      m.quote_id === quoteId && String(m.quote_item || '').trim() === String(nombre || '').trim()) || null;
+
     const ANULADOS = ['anulado', 'cancelado', 'duplicado', 'reembolsado'];
     for (const p of (pagosCot || [])) {
       if (yaContados.has(p.id)) continue;
@@ -69,18 +83,57 @@ export const GET: APIRoute = async ({ url }) => {
       const items = (p as any).quotes?.items;
       // Una cotización que vende licencia NO es expansión: renovar no es crecer.
       if (!cotizacionEsUnico(items)) continue;
-      const nombres = (Array.isArray(items) ? items : [])
-        .filter((i: any) => Number(i?.monto) > 0).map((i: any) => i.nombre);
-      expansion.push({
-        fecha: p.fecha,
-        concepto: nombres.join(' · ') || (p as any).quotes?.numero || 'Cobro por cotización',
-        categoria: nombres.length ? categoriaDePartida(nombres[0]) : 'plugin',
-        monto_bruto: Number(p.monto || 0), monto: Number(p.monto || 0),
-        es_renovacion: false, dias_atraso: null, fuera_de_tiempo: false, tasa_reducida: false,
-        origen_cotizacion: (p as any).quotes?.numero || null,
+      const numero = (p as any).quotes?.numero || null;
+      const partidas = (Array.isArray(items) ? items : []).filter((i: any) => Number(i?.monto) > 0);
+      const pagado = Number(p.monto || 0);
+      const lista = partidas.reduce((a: number, i: any) => a + Number(i.monto || 0), 0);
+
+      /* El neto se reparte a PRORRATA de lo que se pagó, no aplicando el
+         descuento de la cotización: así la suma de las partidas es siempre el
+         pago, con descuento en porcentaje, en monto fijo, o con un abono
+         parcial. La última absorbe el redondeo. */
+      if (!partidas.length || lista <= 0) {
+        expansion.push({
+          fecha: p.fecha, concepto: numero || 'Cobro por cotización', categoria: 'plugin',
+          monto_bruto: pagado, monto: pagado,
+          es_renovacion: false, dias_atraso: null, fuera_de_tiempo: false, tasa_reducida: false,
+          origen_cotizacion: numero, entrega: null,
+        });
+        continue;
+      }
+      let repartido = 0;
+      partidas.forEach((it: any, idx: number) => {
+        const neto = idx === partidas.length - 1
+          ? pagado - repartido
+          : Math.round((Number(it.monto || 0) / lista) * pagado);
+        repartido += neto;
+        const m: any = p.quote_id ? mejoraDe(p.quote_id as string, it.nombre) : null;
+        expansion.push({
+          fecha: p.fecha,
+          concepto: it.nombre || numero || 'Partida sin nombre',
+          categoria: categoriaDePartida(it.nombre || ''),
+          monto_bruto: neto, monto: neto, precio_lista: Number(it.monto || 0),
+          es_renovacion: false, dias_atraso: null, fuera_de_tiempo: false, tasa_reducida: false,
+          origen_cotizacion: numero,
+          entrega: m ? {
+            titulo: m.titulo, estado: m.estado, origen: m.origen,
+            fecha: m.fecha_entrega || m.fecha_compromiso || null,
+          } : null,
+        });
       });
     }
     expansion.sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+
+    /* Lo que se trabajó para esta cuenta este año. La cortesía importa tanto
+       como lo cobrado: es la mitad del argumento para marcar la condición A. */
+    const delAnio = (m: any) => String(m.fecha_entrega || m.fecha_compromiso || m.created_at || '').slice(0, 4) === String(anio);
+    const mejAnio = (mejoras || []).filter(delAnio);
+    const resumenMejoras = {
+      entregadas: mejAnio.filter((m: any) => m.estado === 'entregada').length,
+      cortesias: mejAnio.filter((m: any) => m.estado === 'entregada' && m.cortesia).length,
+      en_proceso: mejAnio.filter((m: any) => m.estado === 'en_proceso').length,
+      ideas: mejAnio.filter((m: any) => m.estado === 'idea').length,
+    };
 
     // La próxima anualidad: la fecha que decide la condición C. Sin ella no se
     // puede avisar a tiempo, que es para lo que sirve esta pantalla.
@@ -106,6 +159,7 @@ export const GET: APIRoute = async ({ url }) => {
         vendido: expansion.reduce((a: number, l: any) => a + Number(l.monto_bruto || 0), 0),
         lineas: expansion,
       },
+      mejoras: resumenMejoras,
       cobros: (lineas || []).filter((l: any) => l.es_renovacion),
     });
   } catch (e: any) {
