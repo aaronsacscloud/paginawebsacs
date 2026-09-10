@@ -197,7 +197,7 @@ export default function ModalInteractivo({ onCerrar, onEnviar, equipo, yo, conta
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div><label style={lab}>Nombre</label><input style={inp} value={vcard.nombre} onChange={e => setVcard({ ...vcard, nombre: e.target.value })} /></div>
                 <div><label style={lab}>Puesto</label><input style={inp} value={vcard.puesto} onChange={e => setVcard({ ...vcard, puesto: e.target.value })} placeholder="Ejecutivo de cuenta" /></div>
-                <div><label style={lab}>Teléfono (con lada)</label><input style={inp} value={vcard.telefono} onChange={e => setVcard({ ...vcard, telefono: e.target.value })} placeholder="+52 55 3663 4392" /></div>
+                <div><label style={lab}>Teléfono (con lada)</label><input style={inp} value={vcard.telefono} onChange={e => setVcard({ ...vcard, telefono: e.target.value })} placeholder="+52 415 283 8733" /></div>
                 <div><label style={lab}>Email</label><input style={inp} value={vcard.email} onChange={e => setVcard({ ...vcard, email: e.target.value })} /></div>
               </div>
               <label style={lab}>Empresa</label><input style={inp} value={vcard.empresa} onChange={e => setVcard({ ...vcard, empresa: e.target.value })} />

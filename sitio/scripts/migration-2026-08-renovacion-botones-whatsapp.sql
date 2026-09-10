@@ -18,35 +18,35 @@ begin;
 
 update email_templates set bloques = (
   select jsonb_agg(case when b.value->>'id' = 'b1'
-    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/12058920417?text=Hola%2C%20quiero%20platicar%20con%20un%20consultor%20antes%20de%20mi%20renovacion", "sub": "Te contestamos por WhatsApp · dudas, upgrades o lo que necesites"}'::jsonb
+    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/524152838733?text=Hola%2C%20quiero%20platicar%20con%20un%20consultor%20antes%20de%20mi%20renovacion", "sub": "Te contestamos por WhatsApp · dudas, upgrades o lo que necesites"}'::jsonb
     else b.value end order by b.ord)
   from jsonb_array_elements(bloques) with ordinality b(value, ord))
 where nombre = 'Renovación 2 · Media hora para lo que te cuesta trabajo';
 
 update email_templates set bloques = (
   select jsonb_agg(case when b.value->>'id' = 'b1'
-    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/12058920417?text=Hola%2C%20hay%20cosas%20de%20Sacs%20que%20no%20estoy%20usando%20y%20quiero%20entender%20cuales%20me%20sirven", "sub": "Cuéntanos qué te falta y te decimos si Sacs ya lo hace"}'::jsonb
+    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/524152838733?text=Hola%2C%20hay%20cosas%20de%20Sacs%20que%20no%20estoy%20usando%20y%20quiero%20entender%20cuales%20me%20sirven", "sub": "Cuéntanos qué te falta y te decimos si Sacs ya lo hace"}'::jsonb
     else b.value end order by b.ord)
   from jsonb_array_elements(bloques) with ordinality b(value, ord))
 where nombre = 'Renovación 3 · Lo que no se ve desde afuera';
 
 update email_templates set bloques = (
   select jsonb_agg(case when b.value->>'id' = 'b1'
-    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/12058920417?text=Hola%2C%20antes%20de%20decidir%20mi%20renovacion%20quiero%20platicar%20con%20un%20consultor", "sub": "Dudas, upgrades o ajustes a tu plan · por WhatsApp"}'::jsonb
+    then b.value || '{"texto": "💬 Escribir a un consultor", "href": "https://wa.me/524152838733?text=Hola%2C%20antes%20de%20decidir%20mi%20renovacion%20quiero%20platicar%20con%20un%20consultor", "sub": "Dudas, upgrades o ajustes a tu plan · por WhatsApp"}'::jsonb
     else b.value end order by b.ord)
   from jsonb_array_elements(bloques) with ordinality b(value, ord))
 where nombre = 'Renovación 4 · La última antes de tu renovación';
 
 update email_templates set bloques = (
   select jsonb_agg(case when b.value->>'id' = 'b1'
-    then b.value || '{"texto": "💬 Renovar o ajustar mi plan", "href": "https://wa.me/12058920417?text=Hola%2C%20quiero%20renovar%20aprovechando%20el%20descuento%20por%20anticipacion", "sub": "Te ayudamos a renovar, cambiar de plan o agregar sucursales"}'::jsonb
+    then b.value || '{"texto": "💬 Renovar o ajustar mi plan", "href": "https://wa.me/524152838733?text=Hola%2C%20quiero%20renovar%20aprovechando%20el%20descuento%20por%20anticipacion", "sub": "Te ayudamos a renovar, cambiar de plan o agregar sucursales"}'::jsonb
     else b.value end order by b.ord)
   from jsonb_array_elements(bloques) with ordinality b(value, ord))
 where nombre = 'Renovación 5 · Renueva antes y te ahorras {{ahorro_10|un 10%}}';
 
 update email_templates set bloques = (
   select jsonb_agg(case when b.value->>'id' = 'b1'
-    then b.value || '{"texto": "💬 Renovar antes de que suba", "href": "https://wa.me/12058920417?text=Hola%2C%20quiero%20renovar%20con%20el%205%25%20antes%20de%20que%20se%20acabe", "sub": "Un mensaje y lo dejamos listo"}'::jsonb
+    then b.value || '{"texto": "💬 Renovar antes de que suba", "href": "https://wa.me/524152838733?text=Hola%2C%20quiero%20renovar%20con%20el%205%25%20antes%20de%20que%20se%20acabe", "sub": "Un mensaje y lo dejamos listo"}'::jsonb
     else b.value end order by b.ord)
   from jsonb_array_elements(bloques) with ordinality b(value, ord))
 where nombre = 'Renovación 6 · Últimos días del 5%';
