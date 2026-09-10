@@ -267,21 +267,36 @@ const useCases = [
   </div>
 </section>
 
-<!-- ═══ BLOQUE 1b: la escena — la tienda se enciende y la cámara llega al mostrador ═══ -->
-<section class="escena-vende" id="escena-vende" aria-label="Vende más">
-  <div class="escena-inner container">
-    <div class="escena-text">
-      <span class="escena-eyebrow">Vende</span>
-      <h2 class="escena-h2">Vende más.</h2>
-      <p class="escena-p">Esta es una tienda que corre con Sacs. Se enciende, la cámara llega al mostrador y ahí empieza todo: cada venta actualiza inventario, tienda en línea, puntos y factura. Sin capturar nada dos veces.</p>
-      <a href="#tablet-section" class="escena-cta">Ver cómo funciona
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-      </a>
-    </div>
-    <div class="escena-video">
-      <video class="escena-clip" data-src-desk="/tienda/video/vende-intro-1280.mp4" data-src-mov="/tienda/video/vende-intro-854.mp4" poster="/tienda/50-corte-dark.webp" muted playsinline preload="metadata" aria-label="La tienda se enciende y la cámara llega al mostrador"></video>
-      <div class="escena-cap"><i></i><span>Polanco · 12:40</span></div>
-      <button class="escena-replay" type="button" aria-label="Ver de nuevo">↻ Ver de nuevo</button>
+
+<!-- ═══ BLOQUE 1b: el recorrido de la clienta — del post a su WhatsApp, con scroll ═══ -->
+<section class="flujo" id="flujo" aria-label="Del post a la venta">
+  <div class="flujo-sticky">
+    <div class="flujo-inner container">
+      <div class="flujo-text">
+        <div class="flujo-pasos" aria-live="polite">
+          <div class="flujo-paso" data-paso="0"><span class="flujo-n">01</span><b>Vio el vestido en Instagram.</b><small>La publicación sale del mismo catálogo que el piso.</small></div>
+          <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Entró a la tienda.</b></div>
+          <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Preguntó por él.</b><small>Sacs, en la tablet: hay en su talla, aquí y en dos sucursales más.</small></div>
+          <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>Se lo probó.</b><small>Sugerencia de Sacs: botín negro 25, el que más se lleva con ese vestido.</small></div>
+          <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Pago procesado.</b><small>Inventario, puntos y factura, actualizados en el mismo instante.</small></div>
+          <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>El ticket le llegó a su WhatsApp.</b></div>
+        </div>
+        <div class="flujo-final">
+          <span class="flujo-eyebrow">Vende</span>
+          <h2 class="flujo-h2">Vende más.</h2>
+          <p class="flujo-p">Del post a la venta sin capturar nada dos veces. Así se ve una tienda que corre con Sacs.</p>
+          <a href="#tablet-section" class="flujo-cta">Ver cómo funciona
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="flujo-video" id="flujoVideo">
+        <img class="flujo-still" src="/tienda/60-post.webp" alt="" decoding="async" />
+        <video class="flujo-clip" muted playsinline preload="none"></video>
+        <div class="flujo-tag" data-tag="4"><span class="flujo-tag-check">✓</span>Pago procesado</div>
+        <div class="flujo-tag flujo-tag--sug" data-tag="3">Sugerencia · Botín negro 25</div>
+        <div class="flujo-tag flujo-tag--wa" data-tag="5">Ticket enviado por WhatsApp</div>
+      </div>
     </div>
   </div>
 </section>
@@ -4776,24 +4791,42 @@ const useCases = [
     transition: opacity 0.24s ease;
   }
 
-  /* ─── Escena "Vende más": video protagonista al centro, texto al costado ─── */
-  .escena-vende { background: #0E0D0C; color: #fff; padding: clamp(56px, 8vh, 110px) 0; overflow: hidden; }
-  .escena-inner { display: grid; grid-template-columns: 0.72fr 1.6fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
-  .escena-eyebrow { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #E8A838; margin-bottom: 16px; }
-  .escena-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 5.6vw, 88px); line-height: 0.95; letter-spacing: -0.04em; margin: 0; color: #fff; }
-  .escena-p { font-size: clamp(15px, 1.25vw, 19px); line-height: 1.55; color: rgba(255, 255, 255, 0.72); margin: 22px 0 0; max-width: 38ch; }
-  .escena-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 26px; font-weight: 600; font-size: 0.9375rem; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.45); padding-bottom: 3px; text-decoration: none; }
-  .escena-cta:hover { border-color: #fff; text-decoration: none; color: #fff; }
-  .escena-video { position: relative; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); aspect-ratio: 3 / 2; }
-  .escena-clip { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .escena-cap { position: absolute; left: 18px; bottom: 16px; display: flex; align-items: center; gap: 10px; background: rgba(14, 13, 12, 0.72); backdrop-filter: blur(8px); border-radius: 999px; padding: 8px 14px; font-family: var(--font-display); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0; transition: opacity 0.4s; }
-  .escena-cap i { width: 7px; height: 7px; border-radius: 50%; background: #E8A838; animation: escenaPulso 1.4s infinite; }
-  .escena-video.is-playing .escena-cap { opacity: 1; }
-  @keyframes escenaPulso { 50% { opacity: 0.3; } }
-  .escena-replay { position: absolute; right: 14px; top: 14px; background: rgba(255, 255, 255, 0.92); color: #1a1a1a; border: 0; border-radius: 999px; padding: 8px 14px; font-family: var(--font-display); font-weight: 600; font-size: 12px; cursor: pointer; opacity: 0; transition: opacity 0.4s; }
-  .escena-video.is-done .escena-replay { opacity: 1; }
-  @media (max-width: 1023px) { .escena-inner { grid-template-columns: 1fr; gap: 22px; } .escena-video { order: -1; border-radius: 14px; } .escena-p { max-width: none; } }
-  @media (prefers-reduced-motion: reduce) { .escena-clip { display: none; } .escena-video { background: url('/tienda/50-corte.webp') center/cover; } }
+  /* ─── El recorrido de la clienta (bajo el hero): el video entra por la derecha y crece con el scroll ─── */
+  .flujo { position: relative; height: 620vh; background: #0E0D0C; color: #fff; }
+  .flujo-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; }
+  .flujo-inner { display: grid; grid-template-columns: 0.75fr 1.55fr; gap: clamp(24px, 4vw, 64px); align-items: center; width: 100%; }
+  .flujo-text { position: relative; min-height: 240px; }
+  .flujo-pasos { position: relative; }
+  .flujo-paso { position: absolute; left: 0; top: 0; opacity: 0; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.45s ease; pointer-events: none; max-width: 30ch; }
+  .flujo-paso.is-on { opacity: 1; transform: none; }
+  .flujo-n { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; color: #E8A838; margin-bottom: 14px; }
+  .flujo-paso b { display: block; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 2.9vw, 46px); line-height: 1; letter-spacing: -0.035em; color: #fff; }
+  .flujo-paso small { display: block; font-size: clamp(14px, 1.1vw, 17px); line-height: 1.5; color: rgba(255, 255, 255, 0.7); margin-top: 14px; }
+  .flujo-final { position: absolute; left: 0; top: 0; opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; pointer-events: none; }
+  .flujo-final.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .flujo-eyebrow { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #E8A838; margin-bottom: 14px; }
+  .flujo-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 5.4vw, 84px); line-height: 0.95; letter-spacing: -0.04em; margin: 0; color: #fff; }
+  .flujo-p { font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; color: rgba(255, 255, 255, 0.72); margin: 20px 0 0; max-width: 34ch; }
+  .flujo-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; font-weight: 600; font-size: 0.9375rem; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.45); padding-bottom: 3px; text-decoration: none; }
+  .flujo-cta:hover { border-color: #fff; color: #fff; text-decoration: none; }
+  .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); transform-origin: right center; will-change: transform; }
+  .flujo-still, .flujo-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .flujo-clip { opacity: 0; transition: opacity 0.4s ease; }
+  .flujo-clip.is-on { opacity: 1; }
+  .flujo-tag { position: absolute; left: 18px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; background: rgba(250, 250, 248, 0.96); color: #1a1a1a; border-radius: 999px; padding: 9px 14px; font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 0.02em; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.4s ease; }
+  .flujo-tag.is-on { opacity: 1; transform: none; }
+  .flujo-tag-check { width: 20px; height: 20px; border-radius: 50%; background: #1F8F5F; color: #fff; display: inline-grid; place-items: center; font-size: 12px; }
+  .flujo-tag--sug { background: rgba(14, 13, 12, 0.85); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); }
+  .flujo-tag--wa { background: #DCF3E4; color: #0B3D2A; }
+  @media (max-width: 1023px) {
+    .flujo { height: 520vh; }
+    .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
+    .flujo-video { order: -1; border-radius: 14px; transform-origin: center top; }
+    .flujo-text { min-height: 150px; }
+    .flujo-paso b { font-size: 26px; } .flujo-paso small { font-size: 14px; margin-top: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .flujo { height: auto; padding: 60px 0; } .flujo-sticky { position: static; height: auto; } .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } }
+
 
 
   /* Mobile: hide the legacy mobile-cards (mc-tabs + mc-step×4),
@@ -18101,28 +18134,74 @@ const useCases = [
   }
 
 
-  // ─── Escena "Vende más": el video arranca solo al entrar en pantalla y se queda en el último cuadro ───
+  // ─── El recorrido de la clienta: el scroll avanza los pasos; cada paso reproduce su clip a velocidad fija ───
   (() => {
-    const wrap = document.querySelector<HTMLElement>('.escena-video');
-    const clip = wrap?.querySelector<HTMLVideoElement>('.escena-clip');
-    if (!wrap || !clip || prefersReducedMotion) return;
+    const sec = document.querySelector<HTMLElement>('#flujo');
+    const wrap = sec?.querySelector<HTMLElement>('.flujo-video');
+    const still = wrap?.querySelector<HTMLImageElement>('.flujo-still');
+    const clip = wrap?.querySelector<HTMLVideoElement>('.flujo-clip');
+    if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
-    let cargado = false;
-    const carga = () => { if (cargado) return; cargado = true; clip.src = (movil ? clip.dataset.srcMov : clip.dataset.srcDesk) || ''; clip.load(); };
-    const reproduce = () => { carga(); wrap.classList.remove('is-done'); clip.currentTime = 0; clip.play().then(() => wrap.classList.add('is-playing')).catch(() => {}); };
-    clip.addEventListener('ended', () => { wrap.classList.remove('is-playing'); wrap.classList.add('is-done'); });
-    wrap.querySelector<HTMLButtonElement>('.escena-replay')?.addEventListener('click', reproduce);
-    if ('IntersectionObserver' in window) {
-      let visto = false;
-      const io = new IntersectionObserver((es) => {
-        es.forEach((e) => {
-          if (e.isIntersecting && !visto) { visto = true; reproduce(); }
-          else if (!e.isIntersecting && !clip.paused) { clip.pause(); }
-          else if (e.isIntersecting && visto && clip.paused && !wrap.classList.contains('is-done')) { clip.play().catch(() => {}); }
-        });
-      }, { threshold: 0.45 });
-      io.observe(wrap);
-    } else reproduce();
+    const V = movil ? '/tienda/video/m/' : '/tienda/video/';
+    // paso → [clip que LLEVA a ese paso, foto del paso]
+    const PASOS: [string | null, string][] = [
+      [null, '/tienda/60-post.webp'],
+      ['f30-post-entra', '/tienda/61-entra.webp'],
+      ['f31-entra-atiende', '/tienda/62-atiende.webp'],
+      ['f32-atiende-probador', '/tienda/63-probador.webp'],
+      ['f33-probador-pago', '/tienda/64-pago.webp'],
+      ['f34-pago-whatsapp', '/tienda/65-whatsapp.webp'],
+    ];
+    const N = PASOS.length;
+    const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
+    const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
+    const final = sec.querySelector<HTMLElement>('.flujo-final');
+    const precargadas = new Set<string>();
+    const precarga = (i: number) => { for (let k = i; k < Math.min(i + 2, N); k++) { const im = new Image(); im.src = PASOS[k][1]; } };
+    let cur = -1, token = 0;
+    function muestra(i: number) {
+      pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
+      tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
+      still.src = PASOS[i][1];
+    }
+    function irA(i: number, adelante: boolean) {
+      if (i === cur) return;
+      const ant = cur; cur = i; const t = ++token;
+      final?.classList.remove('is-on');
+      precarga(i + 1);
+      const c = PASOS[i][0];
+      if (adelante && c && ant === i - 1) {
+        clip.src = V + c + '.mp4';
+        clip.classList.add('is-on');
+        const fin = () => { if (t !== token) return; muestra(i); setTimeout(() => { if (t === token) clip.classList.remove('is-on'); }, 400); };
+        clip.onended = fin;
+        clip.play().catch(fin);
+        setTimeout(() => { if (t === token && clip.readyState < 3 && clip.currentTime < 0.2) { clip.pause(); fin(); } }, 1800);
+      } else {
+        clip.pause(); clip.classList.remove('is-on'); muestra(i);
+      }
+    }
+    let ultimo = 0;
+    const tick = () => {
+      const r = sec.getBoundingClientRect();
+      const total = sec.offsetHeight - window.innerHeight;
+      const y = Math.min(Math.max(-r.top, 0), total);
+      const p = total > 0 ? y / total : 1;
+      // el marco crece de 0.56 (a la derecha) a 1 (protagonista) durante los primeros pasos
+      const g = Math.min(1, p / 0.55);
+      const esc = 0.56 + (1 - 0.56) * g;
+      wrap.style.transform = movil ? `scale(${0.86 + 0.14 * g})` : `scale(${esc}) translateX(${(1 - g) * 6}%)`;
+      // 6 pasos en el 82 % del recorrido; el resto es "Vende más."
+      const i = Math.min(N - 1, Math.floor(p / 0.82 * N));
+      if (p >= 0.82) { if (cur !== N) { cur = N; token++; clip.pause(); clip.classList.remove('is-on'); pasos.forEach((x) => x.classList.remove('is-on')); tags.forEach((x) => x.classList.remove('is-on')); still.src = PASOS[N - 1][1]; final?.classList.add('is-on'); } }
+      else if (i !== cur) irA(i, y >= ultimo);
+      ultimo = y;
+    };
+    let raf = 0;
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    tick();
   })();
 
   pillarSections.forEach((section) => {
