@@ -3,7 +3,7 @@
 // hace el SERVIDOR (Twilio graba → webhook → Whisper → Claude): aquí solo se
 // marca, se contesta y se cuelga. Convive con Llamadas.tsx (WhatsApp).
 import { useEffect, useRef, useState } from 'react';
-import { telefonoLegible } from '../../../../lib/telefono';
+import { telefonoLegible, telefonoWhatsApp } from '../../../../lib/telefono';
 import { C } from './estilo';
 
 let DeviceCtor: any = null;   // import perezoso: el SDK pesa y casi nadie lo usa en cada carga
@@ -66,6 +66,46 @@ export default function Telefonia() {
     call.on('cancel', () => { setActiva(null); setMute(false); });
     setActiva({ call, telefono, nombre, direccion, desde: Date.now() });
   };
+
+  /**
+   * Llamar desde CUALQUIER parte del CRM.
+   *
+   * Todo el CRM ya pinta el teléfono como `<a href="tel:…">` — en la ficha del
+   * contacto, en el drawer 360, en leads, en cobranza, en cotizaciones. En vez
+   * de meterle un botón nuevo a veinte componentes (y pelearme con cada uno),
+   * se intercepta el clic en cualquiera de esos enlaces y se marca desde el
+   * navegador con el número del negocio como identificador.
+   *
+   * Dos salidas a propósito:
+   *  - En un TELÉFONO no se intercepta: ahí el marcador del sistema es mejor
+   *    que una llamada por WebRTC, y además ya trae el micrófono resuelto.
+   *  - Sin telefonía configurada tampoco: el enlace sigue funcionando como
+   *    siempre y nadie se queda sin poder llamar.
+   */
+  useEffect(() => {
+    const alClic = (ev: MouseEvent) => {
+      if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.button !== 0) return;
+      const a = (ev.target as HTMLElement | null)?.closest?.('a[href^="tel:"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      if (!numero) return;                                   // sin config, enlace normal
+      if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;  // en el celular, el marcador del sistema
+
+      const e164 = telefonoWhatsApp(decodeURIComponent(a.getAttribute('href')!.slice(4)));
+      if (!e164) return;                                     // si no se puede normalizar, que abra el marcador
+
+      ev.preventDefault();
+      // El nombre, para que la barra de llamada no diga solo un número: se
+      // busca en el propio enlace o en la fila que lo contiene.
+      const cerca = a.closest('[data-nombre]') as HTMLElement | null;
+      const nombre = cerca?.dataset?.nombre
+        || a.getAttribute('data-nombre')
+        || a.getAttribute('title')
+        || null;
+      document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: e164, nombre } }));
+    };
+    document.addEventListener('click', alClic, true);
+    return () => document.removeEventListener('click', alClic, true);
+  }, [numero]);
 
   // Saliente: lo dispara el botón del hilo con un CustomEvent.
   useEffect(() => {

@@ -24,7 +24,6 @@ import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscrib
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
 const ListaConversaciones = lazySeguro(() => import('./ListaConversaciones'));
-const Telefonia = lazySeguro(() => import('./Telefonia'));
 const Llamadas = lazySeguro(() => import('./Llamadas'));
 const Hilo = lazySeguro(() => import('./Hilo'));
 const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
@@ -1290,7 +1289,6 @@ export default function InboxPro() {
       }}>
         <Suspense fallback={null}>
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
-        <Telefonia />
         </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />

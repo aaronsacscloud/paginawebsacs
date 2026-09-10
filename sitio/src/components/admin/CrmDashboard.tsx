@@ -58,6 +58,11 @@ const TrabajoPanel = lazySeguro(() => import('./TrabajoPanel'));
 /* Equipo no es una pestaña: es el widget flotante que vive encima de todo el
    CRM (ver EquipoFlotante). Se abre a pantalla completa sin cambiar de tab. */
 const EquipoFlotante = lazySeguro(() => import('./crm/equipo/EquipoFlotante'));
+/* Telefonía: capa GLOBAL, no del inbox. Vivía dentro de InboxPro, así que solo
+   se podía llamar (y solo timbraban las entrantes) con la pestaña de WhatsApp
+   abierta. Aquí acompaña al CRM entero: intercepta cualquier `tel:` de
+   cualquier pantalla y recibe las llamadas estés donde estés. */
+const Telefonia = lazySeguro(() => import('./crm/whatsapp/Telefonia'));
 const PartnersTab = lazySeguro(() => import('./crm/PartnersTab'));
 const CommissionsTab = lazySeguro(() => import('./crm/CommissionsTab'));
 const ComisionesTab = lazySeguro(() => import('./crm/ComisionesTab'));
@@ -1249,6 +1254,7 @@ export default function CrmDashboard() {
           pantallas. Cerrada enseña lo que llegó; abierta es el chat completo
           encima del CRM, sin salir de la pestaña en la que uno estaba. */}
       <ErrorBoundary silencioso><Suspense fallback={null}><EquipoFlotante tabActual={tab} /></Suspense></ErrorBoundary>
+      <ErrorBoundary silencioso><Suspense fallback={null}><Telefonia /></Suspense></ErrorBoundary>
 
       {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}
       {/* El volado del grupo. Fijo y anclado al botón: la lista del menú tiene
