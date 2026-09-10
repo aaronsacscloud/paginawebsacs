@@ -2,33 +2,49 @@
 /**
  * Deja la telefonía del CRM lista de una sola corrida.
  *
- *   node scripts/twilio-provision.mjs <ACCOUNT_SID> <AUTH_TOKEN> <NUMERO_E164>
+ *   node scripts/twilio-provision.mjs <ACCOUNT_SID> <CREDENCIAL> <NUMERO_E164>
  *
- * Con esos tres datos —los únicos que hay que sacar a mano de la consola de
- * Twilio— hace todo lo demás:
+ * `CREDENCIAL` puede ser una de dos cosas:
  *
- *   1. Crea una API Key (el token de voz del navegador se firma con ella, NO
- *      con el auth token: así el secreto de la cuenta nunca sale del servidor).
+ *   · El **Auth Token** de la cuenta (32 hex). Con él se crea una API Key nueva
+ *     para firmar el token de voz, y se llenan las SEIS variables.
+ *   · Una **API Key ya creada**, como `SKxxxx:elsecreto`. Se reutiliza tal cual
+ *     —no se crea otra— pero entonces **falta `TWILIO_AUTH_TOKEN`**, y sin esa
+ *     variable los tres webhooks rechazan todo: Twilio firma sus llamadas con
+ *     el Auth Token de la CUENTA, no con una API Key, y `firmaValida()` no
+ *     tiene con qué comprobarlas. El script lo escribe todo menos esa y avisa.
+ *
+ * Lo que hace en cualquiera de los dos casos:
+ *
+ *   1. La API Key (crea o reutiliza): el token de voz del navegador se firma
+ *      con ella, NO con el auth token, para que el secreto de la cuenta nunca
+ *      salga del servidor.
  *   2. Crea la TwiML App y le apunta el webhook de voz a nuestro endpoint.
  *   3. Le pone a NUESTRO número ese mismo webhook para las entrantes.
- *   4. Escribe las seis variables en Vercel (production, preview y development).
+ *   4. Escribe las variables en Vercel (production, preview y development).
  *
- * Es idempotente: si ya existe la API Key o la TwiML App con el mismo nombre,
- * las reutiliza en vez de llenar la cuenta de duplicados. Lo único que no puede
- * reutilizar es el SECRETO de una API Key vieja —Twilio solo lo muestra al
- * crearla—, así que en ese caso crea una nueva y lo dice.
+ * Es idempotente: si ya existe la TwiML App con el mismo nombre, la reutiliza
+ * en vez de llenar la cuenta de duplicados.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const [SID, TOKEN, NUMERO_CRUDO] = process.argv.slice(2);
+const [SID, CRED, NUMERO_CRUDO] = process.argv.slice(2);
 const SOLO_MOSTRAR = process.argv.includes('--dry-run');
 
-if (!SID || !TOKEN || !NUMERO_CRUDO) {
-  console.error('Uso: node scripts/twilio-provision.mjs <ACCOUNT_SID> <AUTH_TOKEN> <NUMERO_E164> [--dry-run]');
+if (!SID || !CRED || !NUMERO_CRUDO) {
+  console.error('Uso: node scripts/twilio-provision.mjs <ACCOUNT_SID> <AUTH_TOKEN|SKxxx:secreto> <NUMERO_E164> [--dry-run]');
   process.exit(1);
 }
+
+// ¿Nos dieron el Auth Token o una API Key ya hecha?
+const mKey = /^(SK[0-9a-f]{32}):(.+)$/i.exec(CRED.trim());
+const TOKEN = mKey ? '' : CRED.trim();
+let keySid = mKey ? mKey[1] : '';
+let keySecret = mKey ? mKey[2] : '';
+const USUARIO_REST = mKey ? keySid : SID;
+const CLAVE_REST = mKey ? keySecret : TOKEN;
 if (!/^AC[0-9a-f]{32}$/i.test(SID)) {
   console.error(`El Account SID no tiene forma de SID (debe empezar con AC y traer 34 caracteres). Llegó: ${SID.slice(0, 6)}…`);
   process.exit(1);
@@ -44,7 +60,8 @@ const NOMBRE_APP = 'CRM Sacs · Voz';
 const NOMBRE_KEY = 'CRM Sacs · voice-sdk';
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-const auth = 'Basic ' + Buffer.from(`${SID}:${TOKEN}`).toString('base64');
+// El REST acepta lo mismo una API Key que el par cuenta/auth-token.
+const auth = 'Basic ' + Buffer.from(`${USUARIO_REST}:${CLAVE_REST}`).toString('base64');
 async function tw(ruta, form, metodo) {
   const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${SID}${ruta}`, {
     method: metodo || (form ? 'POST' : 'GET'),
@@ -80,8 +97,9 @@ if (!mio.capabilities?.voice) {
 }
 
 // ── 2. API Key ───────────────────────────────────────────────────────
-let keySid = '', keySecret = '';
-if (SOLO_MOSTRAR) {
+if (mKey) {
+  console.log(`API Key: ${keySid} (la que ya existía, se reutiliza)`);
+} else if (SOLO_MOSTRAR) {
   console.log('[dry-run] crearía la API Key');
 } else {
   const key = await tw('/Keys.json', { FriendlyName: NOMBRE_KEY });
@@ -165,8 +183,17 @@ for (const [key, value] of Object.entries(VARS)) {
   }
 }
 
+if (!TOKEN) {
+  console.log(`
+⚠ FALTA TWILIO_AUTH_TOKEN y sin ella NO entra ni sale ninguna llamada.
+Twilio firma cada webhook con el Auth Token de la CUENTA; los tres endpoints
+(voz, estado, grabación) comprueban esa firma y fallan CERRADO. Una API Key no
+sirve para eso — no es con lo que Twilio firma.
+Está en console.twilio.com → Account Info → Auth Token → «Show».`);
+}
+
 console.log(`
-Listo. Falta UN paso que no hago yo: un despliegue nuevo, porque Vercel solo
+Falta UN paso que no hago yo: un despliegue nuevo, porque Vercel solo
 inyecta las variables al construir. Con un push cualquiera basta, o desde el
 panel: Deployments → el último → Redeploy.
 
