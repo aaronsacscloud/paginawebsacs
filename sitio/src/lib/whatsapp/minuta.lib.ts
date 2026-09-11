@@ -111,18 +111,55 @@ export async function redactarMinuta(o: {
   transcript: string; quien: string; dur: string; canal?: string | null; direccion?: string | null;
 }): Promise<{ minuta: string; minuta_cliente: string; siguiente_paso: string }> {
   const canal = o.canal === 'telefono' ? 'una llamada telefónica' : 'una llamada de WhatsApp';
-  const prompt = `Eres el asistente del CRM de Sacscloud (software de punto de venta para comercios en México). Esta es la transcripción de ${canal} ${o.direccion === 'saliente' ? 'que el equipo le hizo a' : 'que recibió el equipo de'} ${o.quien}. Duración: ${o.dur}. La transcripción mezcla ambas voces sin etiquetar quién habla; dedúcelo por contexto y no inventes nada que no esté dicho.
+  /* ── CÓMO SE ESCRIBE UNA MINUTA QUE SIRVE DENTRO DE TRES MESES ───────────
+     La primera versión tiraba todo en un solo «## Temas tratados»: una lista
+     larga de viñetas sueltas donde el ejemplo de la tienda de moda, el problema
+     de las etiquetas y la estrategia de las 15 sucursales quedaban al mismo
+     nivel y sin decir POR QUÉ salió cada cosa. Se leía y no se recordaba.
+     Ahora las secciones las decide el CONTENIDO: una por tema real, con título
+     que dice el asunto y un arranque que da el contexto. Lo demás son reglas
+     de oficio —decisiones separadas de propuestas, pendientes con dueño, lo que
+     quedó abierto, sin relleno— que es lo que separa una minuta de un resumen. */
+  const REGLAS = `CÓMO ESCRIBIRLA (aplica a las DOS versiones):
+
+1. SECCIONES POR TEMA, no una lista gigante. Cada asunto real de la llamada lleva su propio "## ". Entre más temas distintos se tocaron, más secciones. Si se habló de cinco cosas, son cinco secciones — no una con veinte viñetas.
+2. EL TÍTULO DICE EL ASUNTO. "## El problema de las etiquetas borrosas", no "## Tema 2". Quien busca algo meses después escanea títulos.
+3. CADA SECCIÓN ABRE CON SU CONTEXTO: una o dos frases que digan por qué salió el tema y cuál era la situación, ANTES del detalle. Sin eso el punto no se entiende ni se recuerda.
+4. LOS EJEMPLOS Y CASOS DE USO VAN EN SU PROPIA SECCIÓN, contados completos. Si se puso el ejemplo de otro negocio para explicar algo, esa sección lleva el ejemplo entero: qué negocio, qué hacía antes, qué cambió, con las cifras que se dijeron. Un ejemplo a medias no convence a nadie que lo lea después.
+5. CIFRAS Y NOMBRES LITERALES, nunca "algunos" ni "varios": los montos, los plazos, los nombres de módulos, cuántas tiendas, cuántos días.
+6. DECIDIDO ≠ PROPUESTO. Lo que quedó acordado va en "## Acuerdos"; lo que solo se mencionó como posibilidad se queda en su tema y se dice que está por definir. Confundirlos es como se generan malentendidos.
+7. CADA PENDIENTE CON DUEÑO Y FECHA. Quién lo hace y para cuándo. Si no se dijo fecha, escribe "sin fecha definida" — en blanco parece que se olvidó.
+8. LO QUE QUEDÓ ABIERTO tiene su propia sección si lo hubo. Las dudas sin resolver son lo que muerde después, y son justo lo que las minutas esconden.
+9. TRADUCE LA JERGA la primera vez que aparezca, entre paréntesis y en corto (una herramienta, un módulo, una sigla). Quien reenvíe el documento puede no conocerla.
+10. ORDEN POR IMPORTANCIA, no por el minuto en que se dijo. La minuta se consulta, no se revive.
+11. SIN RELLENO. Nada de "se trataron diversos temas". Si de algo no se habló, esa sección no existe.
+12. CIERRA CON EL SIGUIENTE HITO: cuándo vuelve a haber contacto y para qué.`;
+
+  const prompt = `Eres quien levanta la minuta en el CRM de Sacscloud (software de punto de venta para comercios en México). Esta es la transcripción de ${canal} ${o.direccion === 'saliente' ? 'que el equipo le hizo a' : 'que recibió el equipo de'} ${o.quien}. Duración: ${o.dur}. La transcripción mezcla ambas voces sin etiquetar quién habla; dedúcelo por contexto y NO inventes nada que no esté dicho.
+
+${REGLAS}
+
+LAS DOS VERSIONES
+
+· "minuta" (INTERNA, la lee el equipo): todo lo anterior más la lectura nuestra —cómo viene la cuenta, qué frenó la venta, quién no está convencido, qué conviene hacer—. Es la que sirve para vender; aquí se dice todo.
+
+· "minuta_cliente" (LA LEE EL CLIENTE): MISMA estructura y MISMO nivel de detalle, con las mismas secciones por tema y sus contextos. Dirígete a él de usted. Agrega una sección "## Lo que ya está en marcha de nuestro lado" con las tareas internas que disparó la llamada, para que vea que el trabajo arrancó.
+  LA ÚNICA PRUEBA para dejar algo fuera: ¿podría él REENVIAR este documento a sus socios, a su dueño o a su jefe sin que le incomode? Si no, fuera. En concreto: lo que opinó de su dueño o de sus socios, los desacuerdos entre ellos, quién se desanimó o no está convencido, juicios sobre su gente, y nuestras lecturas de venta.
+  Matiz: una objeción o preocupación que ÉL MISMO planteó de frente SÍ va —ya la sabe, es parte de lo que se habló—; lo que no va es atribuírsela a un tercero ni contar la discusión que tuvieron entre ellos.
+  Todo lo demás se queda, con el mismo detalle.
 
 TRANSCRIPCIÓN:
 ${String(o.transcript).slice(0, 24000)}
 
-Responde SOLO un JSON válido con esta forma exacta:
-{"minuta": "la minuta detallada en markdown: ## Resumen (2-3 frases), ## Temas tratados (viñetas con lo que se habló, con cifras y nombres literales), ## Acuerdos (viñetas; si no hubo, dilo), ## Pendientes (viñetas de quién debe qué)", "minuta_cliente": "la MISMA reunión, TAN DETALLADA como la minuta interna, pero escrita para que la lea el cliente. Markdown con ## Resumen, ## Temas tratados (viñetas con TODO lo técnico y operativo que se habló: cifras, nombres de módulos, plazos, montos, configuraciones, problemas concretos y cómo se van a resolver), ## Acuerdos, ## Lo que ya está en marcha de nuestro lado (las tareas internas que se dispararon con esta llamada, para que vea que el trabajo ya arrancó) y ## Pendientes (separando lo de cada lado). Dirígete a él de usted. LA ÚNICA PRUEBA para dejar algo fuera es esta: ¿podría él REENVIAR este documento a sus socios, a su dueño o a su jefe sin que le incomode? Si la respuesta es no, eso NO va. Concretamente fuera: lo que opinó de su dueño o de sus socios, los desacuerdos entre ellos, quién se desanimó o no está convencido, juicios sobre su gente, y nuestras propias lecturas de venta (probabilidad de cierre, qué tan caliente está, notas para el vendedor). Ojo: una objeción de precio o una preocupación que ÉL MISMO planteó de frente SÍ va —es parte de lo que se habló y él ya lo sabe—; lo que no va es atribuírsela a un tercero o contar la discusión interna que tuvieron entre ellos. Todo lo demás se queda, con el mismo nivel de detalle. Nada de jerga nuestra ni de etapas del CRM.", "siguiente_paso": "UNA frase imperativa con el siguiente paso más importante para el equipo (o cadena vacía si no hay)"}`;
-  /* 6000 y no 2200: ahora se piden DOS minutas completas en el mismo JSON y
-     con el tope viejo la respuesta se cortaba a la mitad —el JSON quedaba sin
-     cerrar, `minuta_cliente` salía vacía y el envío se cancelaba solo—. Pasó
-     tal cual en la primera prueba del criterio nuevo. */
-  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 6000, messages: [{ role: 'user', content: prompt }] });
+Responde SOLO un JSON válido, sin texto alrededor, con esta forma exacta:
+{"minuta": "markdown", "minuta_cliente": "markdown", "siguiente_paso": "UNA frase imperativa con el siguiente paso más importante para el equipo (o cadena vacía si no hay)"}`;
+  /* El tope ha subido dos veces por la misma razón, así que queda anotada: se
+     piden DOS minutas completas en un solo JSON, y ahora además seccionadas por
+     tema. Corto, la respuesta se parte a la mitad, el JSON queda sin cerrar y
+     `minuta_cliente` sale vacía — con lo que el envío se cancela solo. Pasó con
+     2200 y volvió a pasar con 6000. 12000 deja margen para una llamada larga
+     con muchos temas; una corta no gasta más por tenerlo alto. */
+  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 12000, messages: [{ role: 'user', content: prompt }] });
   const texto = (r.content[0] as any)?.text || '';
   const m = texto.match(/\{[\s\S]*\}/);
   const parsed = m ? JSON.parse(m[0]) : null;
