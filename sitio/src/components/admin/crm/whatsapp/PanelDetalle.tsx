@@ -693,7 +693,6 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           {(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
         </Seccion>
       )}
-      {contactoBase && <SeguimientoAgente contactId={contactoBase.id} />}
       {contactoBase && (
         <TemasReunion contactId={contactoBase.id} temas={contacto?.propiedades?.temas_reunion} onCambio={(t: any[]) => setDCon((prev: any) => prev ? { ...prev, contact: prev.contact ? { ...prev.contact, propiedades: { ...(prev.contact.propiedades || {}), temas_reunion: t } } : prev.contact, propiedades: { ...(prev.propiedades || {}), temas_reunion: t } } : prev)} />
       )}
@@ -712,6 +711,14 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           <Clasificacion entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} />
         </Seccion>
       )}
+
+      {/* ── EL AGENTE, AL FINAL ─────────────────────────────────────────────
+          Estaba a media lista, entre «Llamadas y minutas» y «Para la reunión»,
+          partiendo en dos la columna de cajones. Cuando el contacto está fuera
+          de su alcance es además un bloque de texto plano en medio de cajones
+          cerrados: estorba justo donde el ojo va de un título al siguiente.
+          Al final no interrumpe nada y se sigue leyendo cuando se busca. */}
+      {contactoBase && <SeguimientoAgente contactId={contactoBase.id} />}
     </div>
   );
 
