@@ -9,7 +9,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
-import { configVoz, guardarConfigVoz, gastoHoyVoz, saludCentral, vozConfigurada, VOCES, type ConfigVoz } from '../../../../lib/telefonia/voz';
+import { configVoz, guardarConfigVoz, gastoHoyVoz, saludCentral, vozConfigurada, VOCES, VOCES_OPENAI, type ConfigVoz } from '../../../../lib/telefonia/voz';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ request }) => {
     configVoz(true), vozConfigurada() ? saludCentral() : Promise.resolve({ ok: false, error: 'sin VOZ_SECRET' }), gastoHoyVoz(),
     supabase.from('tel_voz_pruebas').select('id, item, call_sid, resumen, created_at').order('created_at', { ascending: false }).limit(5),
   ]);
-  return json({ configurada: vozConfigurada(), config, central, gasto_hoy_usd: gasto, voces: VOCES, pruebas: pruebas.data || [], puede_editar: user.role === 'founder' });
+  return json({ configurada: vozConfigurada(), config, central, gasto_hoy_usd: gasto, voces: VOCES, voces_openai: VOCES_OPENAI, pruebas: pruebas.data || [], puede_editar: user.role === 'founder' });
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -37,6 +37,8 @@ export const POST: APIRoute = async ({ request }) => {
   if (typeof c.encendida === 'boolean') cambios.encendida = c.encendida;
   if (typeof c.revelar_ia === 'boolean') cambios.revelar_ia = c.revelar_ia;
   if (typeof c.voz === 'string' && /^[A-Za-z0-9]{10,40}$/.test(c.voz)) cambios.voz = c.voz;
+  if (c.motor === 'openai' || c.motor === 'relay') cambios.motor = c.motor;
+  if (typeof c.voz_openai === 'string' && VOCES_OPENAI.some(v => v.id === c.voz_openai)) cambios.voz_openai = c.voz_openai;
   if (typeof c.anexo === 'string') cambios.anexo = c.anexo.slice(0, 4000);
   if (c.discovery_min !== undefined) { const n = Number(c.discovery_min); if (![15, 30, 45, 60].includes(n)) return json({ error: 'El discovery dura 15, 30, 45 o 60 minutos' }, 400); cambios.discovery_min = n; }
   if (c.tope_dia_usd !== undefined) { const n = Number(c.tope_dia_usd); if (!Number.isFinite(n) || n < 1 || n > 2000) return json({ error: 'El tope diario va de 1 a 2000 dólares' }, 400); cambios.tope_dia_usd = n; }

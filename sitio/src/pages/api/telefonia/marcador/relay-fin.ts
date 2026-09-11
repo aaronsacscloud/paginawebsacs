@@ -1,4 +1,4 @@
-// Twilio llama aquí cuando termina el <Connect><ConversationRelay> de Fernanda.
+// Twilio llama aquí cuando termina el <Connect> de Fernanda (ConversationRelay o Stream).
 // Si Fernanda pidió pasar la llamada a un humano (HandoffData) y el vendedor
 // sigue en la sala, la pata del contacto entra a la conferencia; si no, cuelga.
 import type { APIRoute } from 'astro';
@@ -21,6 +21,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   let handoff: any = null;
   try { handoff = r.p.HandoffData ? JSON.parse(r.p.HandoffData) : null; } catch { handoff = null; }
   const ahora = new Date().toISOString();
+  // Con <Stream> (motor OpenAI) no llega HandoffData: la herramienta pasar_a_humano dejó la marca en el item hace segundos.
+  const hf = (it.voz as any)?.handoff;
+  if (!handoff && hf?.at && !hf.entro_sala_at && Date.now() - new Date(hf.at).getTime() < 120e3) handoff = { motivo: 'pasa_a_humano', ...hf };
   const voz = { ...((it.voz as any) || {}), relay_fin: { motivo: handoff?.motivo || null, status: r.p.SessionStatus || null, at: ahora } };
   if (handoff?.motivo === 'pasa_a_humano' && s.estado === 'activa' && s.agente_en_sala) {
     voz.handoff = { ...(voz.handoff || {}), entro_sala_at: ahora };

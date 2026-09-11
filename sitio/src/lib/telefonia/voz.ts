@@ -25,6 +25,7 @@ const ENV: any = (import.meta as any).env || process.env;
 export const VOZ_SECRET = String(ENV.VOZ_SECRET || '').trim();
 export const VOZ_CENTRAL_URL = String(ENV.VOZ_CENTRAL_URL || 'https://code.sacscloud.com/voz').replace(/\/$/, '');
 export const VOZ_WS_URL = String(ENV.VOZ_WS_URL || 'wss://code.sacscloud.com/voz/ws');
+export const VOZ_MEDIA_URL = String(ENV.VOZ_MEDIA_URL || 'wss://code.sacscloud.com/voz/media');
 export const vozConfigurada = () => !!VOZ_SECRET;
 const ahora = () => new Date().toISOString();
 const ms = (iso?: string | null) => (iso ? Date.now() - new Date(iso).getTime() : 0);
@@ -44,7 +45,9 @@ export const secretoValido = (auth: string | null) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export type ConfigVoz = {
   encendida: boolean;
-  voz: string;               // ElevenLabs voiceId (vía Twilio)
+  motor: 'openai' | 'relay'; // openai = voz-a-voz (Media Streams → OpenAI); relay = Deepgram + Claude + ElevenLabs
+  voz_openai: string;        // marin · coral · sage · shimmer · alloy · ballad
+  voz: string;               // ElevenLabs voiceId (vía Twilio) — solo con motor relay
   modelo_tts: string;        // flash_v2_5 · turbo_v2_5 …
   stt: string;               // nova-3-general · nova-2-general
   anexo: string;             // instrucciones extra del dueño para la voz
@@ -60,8 +63,18 @@ export const VOCES: { id: string; nombre: string; nota: string }[] = [
   { id: 'ewn5JTa3lNPY8QVuZJi6', nombre: 'Ana Sofía', nota: 'Grave y pausada; suena a consultora.' },
 ];
 
+/** Voces de OpenAI (voz-a-voz). El acento se dirige con el prompt; el dueño elige con el oído. */
+export const VOCES_OPENAI: { id: string; nombre: string; nota: string }[] = [
+  { id: 'marin', nombre: 'Marin', nota: 'La más natural de OpenAI; media, cálida. La que viene por omisión.' },
+  { id: 'coral', nombre: 'Coral', nota: 'Más expresiva y alegre.' },
+  { id: 'sage', nombre: 'Sage', nota: 'Tranquila y pausada.' },
+  { id: 'shimmer', nombre: 'Shimmer', nota: 'Clara y ágil.' },
+  { id: 'alloy', nombre: 'Alloy', nota: 'Neutra.' },
+  { id: 'ballad', nombre: 'Ballad', nota: 'Grave y suave.' },
+];
+
 export const CONFIG_VOZ_BASE: ConfigVoz = {
-  encendida: true, voz: 'm7yTemJqdIqrcNleANfX', modelo_tts: 'flash_v2_5', stt: 'nova-3-general', anexo: '',
+  encendida: true, motor: 'openai', voz_openai: 'marin', voz: 'm7yTemJqdIqrcNleANfX', modelo_tts: 'flash_v2_5', stt: 'nova-3-general', anexo: '',
   revelar_ia: true, discovery_min: 15, tope_dia_usd: 60, max_min_llamada: 12,
 };
 let cacheCfg: { at: number; v: ConfigVoz } | null = null;
@@ -82,12 +95,29 @@ export async function guardarConfigVoz(cambios: Partial<ConfigVoz>) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 2 · EL TWIML: la pata del contacto se conecta a la central en vez de a la sala
 // ─────────────────────────────────────────────────────────────────────────────
+/** Lo primero que dice al contestar: solo pregunta por la persona y ESPERA. Quién es y a qué llama va después, cuando ya sabe con quién habla. */
+export function saludoApertura(it: any) {
+  const zona = zonaDeLada(it?.lada || ladaDe(it?.telefono));
+  const primer = String(it?.nombre || '').trim().split(/\s+/)[0] || '';
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: zona, hour: 'numeric', hour12: false }).format(new Date()));
+  const momento = h < 12 ? 'buenos días' : h < 19 ? 'buenas tardes' : 'buenas noches';
+  if (primer) return `Hola, ${momento}. ¿Hablo con ${primer}?`;
+  if (it?.empresa) return `Hola, ${momento}. ¿Hablo con la persona encargada de ${it.empresa}?`;
+  return `Hola, ${momento}. ¿Con quién tengo el gusto?`;
+}
+
 export async function twimlRelay(it: any, s: any) {
   const cfg = await configVoz();
-  const saludo = String(it.apertura || `Hola, ${s.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamo de Sacscloud'}.`);
-  const voz = `${cfg.voz}-${cfg.modelo_tts}-1.0_0.5_0.8`;
+  const saludo = String(it.apertura || saludoApertura(it));
   const action = `${BASE}/api/telefonia/marcador/relay-fin?item=${it.id}`;
   const params = { item: it.id, token: tokenVoz(it.id), sesion: s.id, modo: s.modo || 'ia', saludo };
+  if (cfg.motor !== 'relay') {
+    // Voz-a-voz: Twilio manda el audio crudo a la central y OpenAI oye y habla. Al cerrarse el stream, Twilio pide `action`.
+    return `<Connect action="${escapar(action)}" method="POST"><Stream url="${escapar(VOZ_MEDIA_URL)}">` +
+      Object.entries({ ...params, voz: cfg.voz_openai || 'marin' }).map(([k, v]) => `<Parameter name="${k}" value="${escapar(String(v))}"/>`).join('') +
+      `</Stream></Connect>`;
+  }
+  const voz = `${cfg.voz}-${cfg.modelo_tts}-1.0_0.5_0.8`;
   return `<Connect action="${escapar(action)}" method="POST"><ConversationRelay url="${escapar(VOZ_WS_URL)}" welcomeGreeting="${escapar(saludo)}" welcomeGreetingInterruptible="true" ` +
     `language="es-MX" ttsProvider="ElevenLabs" voice="${escapar(voz)}" transcriptionProvider="Deepgram" speechModel="${escapar(cfg.stt)}" ` +
     `interruptible="any" interruptSensitivity="medium" hints="Sacs, Sacscloud, apartado, consignación, tallas, punto de venta, Fernanda" elevenlabsTextNormalization="on">` +
@@ -108,15 +138,20 @@ CÓMO HABLAS (es una llamada, no un chat)
 - Tono: cálido, tranquilo, segura de lo que sabes, con acento y palabras de México. Como una asesora que de verdad conoce tiendas, no una vendedora con prisa. Sin urgencia, sin «aprovecha», sin insistir.
 - PROHIBIDO: «te late», «nomás», «órale», «chido», «va», «sale», «ahorita», «checar», «lana», «qué onda», «neta», diminutivos («ratito», «tantito»). Di «¿le parece bien?», «solo», «de acuerdo», «perfecto», «en este momento», «revisar».
 - Los números se dicen con palabras («quince minutos», «cuatro de la tarde», «dos mil pesos»). Las horas siempre con «de la mañana» o «de la tarde».
-- Si te interrumpen, te callas y escuchas. Si no entendiste, pides que lo repita con naturalidad («perdón, no le escuché bien, ¿me lo repite?»). Si te preguntan algo que no sabes, lo dices y ofreces que el consultor lo vea con él.
-- Te presentaste UNA vez en el saludo (ya lo dijiste); no lo repitas. No digas «como te comentaba».
+- Si te interrumpen, te callas y escuchas. Si te preguntan algo que no sabes, lo dices y ofreces que el consultor lo vea con él.
+- NUNCA repitas una pregunta ni pidas que te repitan. Si la respuesta fue corta, a medias o no contestó del todo, toma lo que dijo y pasa a la SIGUIENTE pregunta. Solo pides repetir un dato exacto que necesitas escribir bien (correo, hora), y una sola vez.
+- Te presentas UNA sola vez, justo después de saber con quién hablas; después no lo repitas. No digas «como te comentaba».
 - Reconoce lo que te dijo en una frase antes de contestar. Agradece cuando te da un dato.
 
 QUÉ VAS A LOGRAR EN ESTA LLAMADA (en orden, sin correr)
-1. Confirmar que hablas con la persona correcta (o con quien decide sobre el sistema de la tienda). Si contesta otra persona: pregunta si está o cuándo se le puede llamar; si no está, agradece y cuelga.
-2. Decir en una frase por qué llamas (el motivo viene en el expediente). Preguntar si tiene un momento. Si no, pregunta cuándo le marcas y cuelga.
-3. Entender su negocio con preguntas de una en una: qué vende, si maneja varias marcas o marca propia, cuántas sucursales, cómo lleva hoy su inventario y sus ventas. Con lo que te cuente, di cómo Sacs le resuelve ESO, con un ejemplo con su producto.
-4. Cuando muestre interés (o cuando ya le ayudaste con algo): ofrecer la reunión con un consultor para verlo con sus productos. Primero pregunta si le interesa; si dice que sí, consulta los horarios con la herramienta y ofrece DOS opciones. Si acepta una, agéndala con la herramienta y confirma en voz alta el día y la hora. Pide el correo solo si no lo tenemos, letra por letra si hace falta.
+1. Al contestar SOLO preguntaste por la persona («¿hablo con X?»). ESPERA a que conteste; no digas nada más hasta saber con quién hablas. Si no hay nombre en el expediente, pregunta «¿con quién tengo el gusto?».
+   - Si contesta otra persona: pregunta si está o cuándo se le puede llamar; si no está, agradece y cuelga.
+2. Ya con la persona: AHORA te presentas y dices el objetivo, concreto, en dos frases y con su nombre: «[Nombre], le habla Fernanda, de Sacs. Le marco porque [motivo del expediente]: la idea es agendarle una demostración en línea del sistema, o darle una prueba gratis, según lo que necesite su tienda, y de paso conocer un poco su negocio. ¿Tiene dos minutos?». Si no tiene tiempo, pregunta cuándo le marcas y cuelga.
+3. Conocer su negocio con tres o cuatro preguntas, de UNA en una: qué vende, si maneja varias marcas o marca propia, cuántas sucursales, cómo lleva hoy su inventario y sus ventas. Con lo que te cuente, di en una frase cómo Sacs le resuelve ESO con un ejemplo con su producto. Si una respuesta queda a medias, sigues con la siguiente pregunta: no insistes.
+4. La oferta, concreta y como pregunta: «Le propongo dos opciones: una demostración en línea con un especialista, de una hora y sin costo, donde le enseña cómo se resolvería eso con sus propios productos; o una prueba gratis de siete días del sistema. ¿Cuál le acomoda?».
+   - Demostración: consulta los horarios con la herramienta (tipo demo) y ofrece DOS opciones. Si acepta una, agéndala con la herramienta y confirma en voz alta el día y la hora. Pide el correo solo si no lo tenemos, letra por letra si hace falta.
+   - Prueba gratis: dile que hoy mismo le llega el acceso por WhatsApp a este número y confirma su correo. No hay herramienta para la prueba: el equipo la crea con lo que quede en la llamada.
+   - Si prefiere algo más corto, ofrece la llamada discovery de quince minutos (tipo discovery).
 5. Cierra: repite lo acordado en una frase, agradece y despídete. Luego llama a la herramienta colgar.
 
 HERRAMIENTAS (úsalas sin anunciarlas; mientras corren, no digas «déjame revisar» más de una vez)
@@ -168,7 +203,7 @@ function hoyTexto(zona: string) {
 /** Las herramientas, en el formato de la API de Anthropic. */
 export function herramientasVoz(): any[] {
   return [
-    { name: 'consultar_horarios', description: 'Horarios disponibles del consultor para una reunión. Úsala SIEMPRE antes de proponer una hora.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'], description: 'discovery = llamada corta de quince minutos (la opción por defecto); demo = demostración de una hora' } }, required: ['tipo'] } },
+    { name: 'consultar_horarios', description: 'Horarios disponibles del consultor para una reunión. Úsala SIEMPRE antes de proponer una hora.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'], description: 'demo = demostración en línea de una hora (la opción por defecto); discovery = llamada corta de quince minutos si prefiere algo breve' } }, required: ['tipo'] } },
     { name: 'agendar', description: 'Agenda la reunión en una fecha y hora que salió de consultar_horarios y que la persona aceptó.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'] }, fecha: { type: 'string', description: 'YYYY-MM-DD' }, hora: { type: 'string', description: 'HH:MM en la hora del contacto' }, email: { type: 'string', description: 'correo si lo dio' }, nombre: { type: 'string' }, motivo: { type: 'string', description: 'en una frase, qué quiere ver' } }, required: ['tipo', 'fecha', 'hora'] } },
     { name: 'pasar_a_humano', description: 'Pasa la llamada a un vendedor humano si hay uno disponible. Si no hay, devuelve que no y tú ofreces agendar.', input_schema: { type: 'object', properties: { motivo: { type: 'string' } }, required: ['motivo'] } },
     { name: 'no_llamar', description: 'La persona pidió que no se le llame más. Se respeta para siempre.', input_schema: { type: 'object', properties: { evidencia: { type: 'string', description: 'sus palabras' } }, required: [] } },
@@ -215,16 +250,16 @@ export async function contextoVoz(itemId: string, o: { prueba?: boolean; callSid
   const giro = ct?.giro || emp?.giro || null;
   const zona = zonaDeLada(it?.lada || ladaDe(it?.telefono));
   const conocimiento = contextoParaLead({ giroCrm: giro, conversacion: String(it?.resumen || ''), ultimoMensaje: '' });
-  const motivo = s?.presentacion_motivo || (prueba ? 'para conocer su tienda y ver si Sacs le puede ayudar con el inventario y las ventas' : 'para conocer su negocio y ver si Sacs le sirve');
+  const motivo = s?.presentacion_motivo || (prueba ? 'vimos su tienda y creemos que Sacs le puede ayudar con el inventario y las ventas' : 'nos dejó sus datos y queremos ver si Sacs le sirve');
   const expediente = [
     `HOY: ${hoyTexto(zona)}.`,
     `CON QUIÉN HABLAS: ${nombre || 'no sabemos el nombre'}${emp?.nombre_comercial || it?.empresa ? ` · ${emp?.nombre_comercial || it?.empresa}` : ''}${giro ? ` · giro: ${giro}` : ''}${emp?.ciudad ? ` · ${emp.ciudad}` : ''}${ct?.email ? ` · correo: ${ct.email}` : ' · sin correo en el CRM'}${ct?.lifecycle_stage ? ` · etapa: ${ct.lifecycle_stage}` : ''}.`,
     `POR QUÉ LLAMAS: ${motivo}.`,
     'TRATO: de USTED mientras la persona no te tutee: «¿tiene un momento?», «su tienda», «le ayuda», «¿cómo lleva…?». Está mal decir «tienes», «tu tienda», «te ayuda», «¿cómo llevas…?». Si la persona te tutea («oye, tú…»), a partir de ahí hablas de tú.',
-    `LO QUE YA DIJISTE AL CONTESTAR: «${it?.apertura || o.saludo || ''}» (no lo repitas).`,
+    `LO QUE YA DIJISTE AL CONTESTAR: «${it?.apertura || o.saludo || saludoApertura({ ...(it || {}), nombre })}» (no lo repitas; todavía no te has presentado).`,
     it?.resumen ? `HISTORIAL EN EL CRM:\n${it.resumen}` : (prueba ? 'HISTORIAL: es una LLAMADA DE PRUEBA con el dueño de Sacscloud; actúa como si fuera un prospecto real dueño de una boutique.' : 'HISTORIAL: sin historial en el CRM.'),
     ct?.proximo_paso ? `PENDIENTE: ${ct.proximo_paso}` : '',
-    `LA REUNIÓN QUE OFRECES: por defecto una llamada discovery de ${cfg.discovery_min} minutos con un consultor (en línea). La demo es de una hora y se ofrece si la pide.`,
+    `LO QUE OFRECES: una demostración en línea de una hora con un especialista (tipo demo) o una prueba gratis de siete días. Si prefiere algo breve, la llamada discovery de ${cfg.discovery_min} minutos (tipo discovery).`,
     s?.modo === 'asistido' ? 'HAY UN VENDEDOR ESCUCHANDO: si la persona quiere hablar con alguien, usa pasar_a_humano.' : 'NO HAY VENDEDOR EN LÍNEA: si piden hablar con una persona, ofrece agendar.',
   ].filter(Boolean).join('\n');
 
@@ -234,7 +269,7 @@ export async function contextoVoz(itemId: string, o: { prueba?: boolean; callSid
     { type: 'text', text: `EXPEDIENTE DE ESTA LLAMADA\n${expediente}` },
   ];
   const mensajeBuzon = s?.buzon_dejar_mensaje ? `Hola${primer ? ` ${primer}` : ''}, ${s.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamo de Sacscloud'}${s.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}. Le vuelvo a marcar más tarde. Gracias.` : null;
-  return { system, herramientas: herramientasVoz(), saludo: it?.apertura || o.saludo || null, nombre: primer || null, zona, mensajeBuzon, modo: s?.modo || 'ia', prueba };
+  return { system, herramientas: herramientasVoz(), saludo: it?.apertura || o.saludo || saludoApertura({ ...(it || {}), nombre }), nombre: primer || null, zona, mensajeBuzon, modo: s?.modo || 'ia', prueba };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
