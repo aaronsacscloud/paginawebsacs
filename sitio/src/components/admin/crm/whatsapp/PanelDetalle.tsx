@@ -59,28 +59,54 @@ function Seccion({ id, titulo, n, abiertaDefault, children }: { id: string; titu
      viendo abierto para siempre. Subir la versión descarta lo guardado UNA vez
      y deja que manden los nuevos valores; de ahí en adelante su preferencia se
      vuelve a respetar. */
-  const KEY = 'wa_panel_secciones_v2';
+  const KEY = 'wa_panel_secciones_v3';
   const leer = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
   const [abierta, setAbierta] = useState<boolean>(() => { const m = leer(); return id in m ? m[id] : !!abiertaDefault; });
   const toggle = () => { const v = !abierta; setAbierta(v); try { localStorage.setItem(KEY, JSON.stringify({ ...leer(), [id]: v })); } catch { /* privado */ } };
+  const [hover, setHover] = useState(false);
+  /* ── QUE SE VEA QUE SE PUEDE ABRIR ────────────────────────────────────────
+     El encabezado era texto suelto con un chevron al final: sin marco, sin
+     fondo y sin nada que cambiara al pasar el mouse. Con todo cerrado, el
+     panel parecía una lista de títulos muertos y no una de cajones.
+     Ahora cada uno es una barra con su propio contorno y fondo tenue —la forma
+     de «cosa que se toca»—, el chevron va en un recuadro propio, y al pasar el
+     mouse se marca. Abierta, el contorno se acentúa para que se vea a cuál
+     pertenece lo que está desplegado debajo. */
   return (
-    <div>
+    <div style={{ margin: '0 16px 6px' }}>
       <button onClick={toggle} aria-expanded={abierta}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 16px' }}>
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+          padding: '11px 12px', borderRadius: 10,
+          border: `1px solid ${abierta ? C.g200 : (hover ? C.g200 : C.g100)}`,
+          background: abierta ? '#fff' : (hover ? C.g50 : 'rgba(250,250,252,.7)'),
+          transition: 'background .12s, border-color .12s' }}>
         {/* El título pesaba lo mismo que una etiqueta de campo: gris claro,
             11 px, en versalitas. Cerrado, el panel era una lista de rótulos
             tenues imposibles de barrer con la vista. Ahora es texto de verdad
             —13 px, negritas, tinta oscura—, que es lo que uno lee cuando todo
             lo demás está guardado. */}
-        <span style={{ fontSize: 13, fontWeight: 700, color: C.g900, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo}</span>
+        {/* El título se lleva TODO el ancho sobrante (`flex: 1`). Sin eso, el
+            contador se pegaba al final de cada palabra y quedaba en una
+            posición distinta por renglón —«Cuenta SACS ⑥» muy a la derecha,
+            «Fiscal» sin nada, «Más datos ④» a media altura—: una columna de
+            números en zigzag. Ahora todos caen en la misma vertical, junto al
+            chevron. */}
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: C.g900, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo}</span>
         {/* Cerrada, la cuenta es lo ÚNICO que dice si vale la pena abrirla.
             Sin nada dentro se marca en gris claro para no invitar al clic. */}
-        {n != null && (n > 0
-          ? <span style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, minWidth: 22, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{n}</span>
-          : <span style={{ fontSize: 10.5, color: C.g300, flexShrink: 0 }}>vacío</span>)}
-        <span style={{ marginLeft: 'auto', color: C.g400, display: 'inline-flex' }}>{abierta ? <IcoChevronArriba size={13} /> : <IcoChevronAbajo size={13} />}</span>
+        {/* Ancho fijo para que la columna de contadores quede a plomo aunque
+            una sección no tenga número que enseñar. */}
+        <span style={{ width: 34, flexShrink: 0, display: 'inline-flex', justifyContent: 'flex-end' }}>
+          {n != null && (n > 0
+            ? <span style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, minWidth: 22, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
+            : <span style={{ fontSize: 10.5, color: C.g300 }}>vacío</span>)}
+        </span>
+        <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, background: abierta ? C.moradoAgua : C.g100, color: abierta ? C.moradoTinta : C.g500, flexShrink: 0 }}>
+          {abierta ? <IcoChevronArriba size={12} /> : <IcoChevronAbajo size={12} />}
+        </span>
       </button>
-      {abierta && <div style={{ padding: '0 16px 12px' }}>{children}</div>}
+      {abierta && <div style={{ padding: '10px 2px 8px' }}>{children}</div>}
     </div>
   );
 }
@@ -562,12 +588,12 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         </div>
       )}
 
-      {/* Grupos de campos. «Contacto» es la ÚNICA que nace abierta: los datos
-          del cliente son lo que se mira de un vistazo. De lo demás basta con
-          saber si tiene algo dentro —para eso está la cuenta al lado del
-          título— y abrirlo solo si hace falta. */}
+      {/* TODAS nacen cerradas. Lo que se mira de un vistazo ya está arriba, en
+          la tarjeta gris; de aquí para abajo es material de consulta. Abierto
+          por omisión, el panel obligaba a hacer scroll por campos vacíos para
+          llegar a la siguiente sección. */}
       {contactoBase && (
-        <Seccion id="g-contacto" titulo="Contacto" abiertaDefault>
+        <Seccion id="g-contacto" titulo="Contacto">
           <div style={caja}>
             <Campo etiqueta="Nombre" valor={contactoBase.nombre} onGuardar={guardar('nombre')} />
             <div style={divisor} /><Campo etiqueta="Apellido" valor={contactoBase.apellido} onGuardar={guardar('apellido')} />

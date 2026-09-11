@@ -898,18 +898,27 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           más útil del hilo —lo que el equipo se dice sobre este cliente, y solo
           lo ve el equipo— y se leía como un pie de página.
 
-          Ahora vive DENTRO de la caja, con su marco morado, el mismo color con
-          el que se pinta la nota cuando queda escrita. Así se entiende antes de
-          tocarlo que lo que escribas ahí NO le llega al cliente. */}
+          Después pasó a ser una pastilla morada rellena, y ahí se fue al otro
+          extremo: un botón con forma de etiqueta, relleno de color y en
+          negritas, para una acción secundaria que vive debajo del composer.
+          Pesaba más que «Enviar».
+
+          Queda como acción de texto: el ícono y el nombre en el morado de la
+          casa —que es lo que anticipa que la nota NO le llega al cliente— sin
+          relleno ni marco. El subrayado aparece al pasar el mouse, que es como
+          se comporta una acción secundaria en una herramienta de trabajo. */}
       {!movil && waDisponible && !comentario && (
         <div style={{ display: 'flex', alignItems: 'center', marginTop: 8, gap: 8 }}>
           <button onClick={() => { setComentario(true); setTexto(''); }}
             title="Una nota que solo ve el equipo — el cliente no la recibe"
-            style={{ border: `1px solid ${C.moradoAgua}`, background: C.moradoSuave, cursor: 'pointer', fontFamily: 'inherit',
-              fontSize: 12.5, fontWeight: 700, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '8px 14px', borderRadius: 999, minHeight: 36 }}>
-            <IcoBurbuja size={15} /> Añadir comentario
-            <span style={{ fontSize: 10.5, fontWeight: 600, color: '#8b84bb' }}>solo lo ve el equipo</span>
+            onMouseEnter={e => { (e.currentTarget.querySelector('[data-txt]') as HTMLElement).style.textDecoration = 'underline'; }}
+            onMouseLeave={e => { (e.currentTarget.querySelector('[data-txt]') as HTMLElement).style.textDecoration = 'none'; }}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12, fontWeight: 600, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 2px', borderRadius: 6 }}>
+            <IcoBurbuja size={14} />
+            <span data-txt>Añadir comentario</span>
+            <span style={{ fontSize: 11, fontWeight: 400, color: C.g400 }}>· solo lo ve el equipo</span>
           </button>
           <span style={{ flex: 1 }} />
         </div>
