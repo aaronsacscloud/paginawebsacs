@@ -38,7 +38,7 @@ export function costoOpenAI(uso, modelo = MODELO_OPENAI) {
 const vad = () => {
   const [tipo, nivel] = String(process.env.VAD_OPENAI || 'server').split(':');
   if (tipo === 'semantic') return { type: 'semantic_vad', eagerness: nivel || 'high', create_response: true, interrupt_response: true };
-  return { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: Number(process.env.VAD_SILENCIO_MS || 600), create_response: true, interrupt_response: true };
+  return { type: 'server_vad', threshold: Number(process.env.VAD_UMBRAL || 0.4), prefix_padding_ms: 300, silence_duration_ms: Number(process.env.VAD_SILENCIO_MS || 600), create_response: true, interrupt_response: true };
 };
 
 /** Las herramientas vienen en el formato de Anthropic; OpenAI quiere `parameters`. */
@@ -48,8 +48,14 @@ const aFuncion = (h) => ({ type: 'function', name: h.name, description: h.descri
 const aTexto = (system) => (Array.isArray(system) ? system.map((b) => b.text || '').join('\n\n') : String(system || ''));
 
 const VOZ_EXTRA = [
-  'CÓMO SUENAS: eres una mujer mexicana, hablas español de México con acento de la Ciudad de México, natural y cálido, como una persona real al teléfono.',
+  '# CÓMO SUENAS',
+  'Eres Fernanda: una mujer mexicana de unos 30 años, de la Ciudad de México, que trabaja en ventas y le gusta su trabajo. Hablas español de México con acento chilango natural: nada neutro, nada de locutora, nada de leer.',
+  'Tono: cálido, con energía y con una sonrisa que se oye. Suenas como alguien real que llama por teléfono, no como un asistente. Vas con soltura, con ritmo conversacional: pausas cortas donde una persona respira, subes la entonación en las preguntas, bajas al cerrar una idea.',
+  'Usa muletillas y expresiones naturales de México con moderación: «mira», «oye», «fíjate», «¡ah, qué bien!», «claro», «va», «sale». Reacciona a lo que te dicen antes de seguir (un «ah, ok» o «qué padre» breve).',
+  'Nunca suenes monótona ni plana: varía la entonación entre frases. Nunca sobreactúes tampoco: es una llamada de trabajo amable, no un comercial.',
+  '# CÓMO HABLAS',
   'Frases cortas: máximo dos oraciones por turno, y termina con UNA pregunta. Nunca expliques todo de golpe ni leas listas: al teléfono la gente se desespera. Si te interrumpen, te callas y escuchas.',
+  'Si lo que dijo la persona quedó a medias o no se entendió (una palabra suelta, «sí, vendo…»), no lo interpretes ni rellenes: un «ajá» o «¿mande?» corto y déjala terminar.',
   'Nunca digas que eres un modelo de OpenAI ni menciones tecnología: si preguntan si eres un robot, responde como te indica el guion.',
 ].join('\n');
 
@@ -85,6 +91,7 @@ export class SesionOpenAI {
       case 'start': return this.alStart(msg);
       case 'media':
         this.tsTwilio = Number(msg.media?.timestamp || this.tsTwilio);
+        if (process.env.DEBUG_OPENAI) this.medirEntrada(msg.media?.payload);
         if (this.listaAi && !this.silenciada && !this.sorda && msg.media?.payload) this.aAi({ type: 'input_audio_buffer.append', audio: msg.media.payload });
         return;
       case 'mark': return this.alMarca(msg.mark?.name);
@@ -92,6 +99,16 @@ export class SesionOpenAI {
       case 'stop': return this.cerrar();
       default: return;
     }
+  }
+
+  // Con DEBUG_OPENAI: cada 5 s, cuántos paquetes llegaron de Twilio y qué tan fuerte suena la persona.
+  medirEntrada(b64) {
+    if (!b64) return;
+    const b = Buffer.from(b64, 'base64'); let suma = 0;
+    for (let i = 0; i < b.length; i += 4) { const u = ~b[i] & 0xff; const mag = (((u & 0x0f) << 3) + 0x84) << ((u & 0x70) >> 4); suma += mag - 0x84; }
+    const m = (this.entrada ||= { paquetes: 0, energia: 0, pico: 0, t: Date.now() });
+    m.paquetes++; const e = suma / (b.length / 4); m.energia += e; if (e > m.pico) m.pico = e;
+    if (Date.now() - m.t >= 5000) { log(`[${this.item}] entrada: ${m.paquetes} paquetes/5s, nivel medio ${Math.round(m.energia / m.paquetes)}, pico ${Math.round(m.pico)} (silencio ≈ 0-50, voz ≈ 500+)`); this.entrada = null; }
   }
 
   async alStart(msg) {
@@ -136,7 +153,7 @@ export class SesionOpenAI {
               transcription: { model: process.env.MODELO_TRANSCRIBE || 'gpt-4o-mini-transcribe', language: 'es' },
               turn_detection: vad(),
             },
-            output: { format: { type: 'audio/pcmu' }, voice: this.voz, speed: 1.05 },
+            output: { format: { type: 'audio/pcmu' }, voice: this.voz, speed: Number(process.env.VELOCIDAD_OPENAI || 1.0) },
           },
           tools: (this.ctx.herramientas || []).map(aFuncion),
           tool_choice: 'auto',
@@ -160,7 +177,7 @@ export class SesionOpenAI {
         log(`[${this.item}] OpenAI lista: voz ${e.session?.audio?.output?.voice}, vad ${e.session?.audio?.input?.turn_detection?.type}`);
         // El saludo lo dice ella (Twilio ya no tiene welcomeGreeting): se le pide como primera respuesta.
         if (this.saludo && !this.silenciada) {
-          this.aAi({ type: 'response.create', response: { instructions: `Di exactamente esto, con naturalidad, y luego espera la respuesta: «${this.saludo}»` } });
+          this.aAi({ type: 'response.create', response: { instructions: `Abre la llamada diciendo esto, como lo diría una persona real que marca (cálida, con una sonrisa, sin prisa), y luego espera la respuesta: «${this.saludo}»` } });
           this.anotar('fernanda', this.saludo);
           this.mensajeSaludo = true;
         }
