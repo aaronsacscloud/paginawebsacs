@@ -141,9 +141,6 @@ export const CSS_INBOX = `
   /* Atajos de plantilla: en el teléfono se tocan con el dedo */
   /* En el teléfono los nombres van completos: si no caben en un renglón,
      bajan al siguiente. Cortados a media palabra no dicen cuál es cuál. */
-  .wa-hilo-m .wa-recientes { flex-wrap: wrap !important; overflow: visible; padding-right: 0; }
-  .wa-hilo-m .wa-recientes button { flex: 1 1 auto !important; max-width: 100% !important; }
-  .wa-hilo-m .wa-recientes button { min-height: 44px !important; font-size: 12.5px !important; padding: 0 14px !important; flex: none; }
   /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
   .wa-hilo-m textarea[disabled] { display: none !important; }
   /* URLs largas dentro de burbuja: una línea con ellipsis (el href queda completo) */
@@ -208,12 +205,8 @@ html[data-crm-dark="1"] .wa-bajar{background:#232329;border-color:#3a3550;color:
 
 /* Atajos de «últimas plantillas usadas»: una sola línea que se desliza, en
    móvil y en escritorio. Apilados hacían crecer la barra ámbar el doble. */
-.wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-right:16px}
-.wa-recientes::-webkit-scrollbar{display:none}
-.wa-recientes button{flex:none}
 /* Aire al final del carrusel: sin esto el último atajo queda rebanado por el
    marco, que se lee como un corte y no como «hay más». */
-.wa-recientes::after{content:'';flex:none;width:8px}
 
 /* ── Aviso de mensaje entrante (E2.2) ── */
 .wa-aviso{position:fixed;z-index:60;right:20px;bottom:20px;max-width:340px;display:flex;align-items:stretch;gap:0;

@@ -340,7 +340,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             contador de la ventana. */}
         <span style={{ minWidth: 100, flex: '1 1 240px', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
           <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 200, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
-          {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
+          {/* La etapa iba en píldora rellena, y entre ella, el agente, el
+              estado y la ventana el encabezado tenía cuatro colores fuertes
+              compitiendo con el nombre del cliente. El color de la etapa se
+              queda en el punto; la palabra, en gris. */}
+          {etapa && !mobile && (
+            <span title={`Etapa: ${etapa.label}`} style={{ fontSize: 10, color: C.g500, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, flexShrink: 0 }} />{etapa.label}
+            </span>
+          )}
           {hilo?.web_en_vivo && !mobile && (
             <span title={`Está viendo ${hilo.web_en_vivo} en este momento: es EL mejor momento para escribirle`}
               style={{ fontSize: 9, fontWeight: 800, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '2px 8px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -359,6 +367,49 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               {(p.nombre || '').split(' ')[0]}{p.escribiendo ? ' escribe…' : ''}
             </span>
           ))}
+        {/* ── LAS ACCIONES VIAJAN JUNTAS ────────────────────────────────
+            Sueltas en la fila que envuelve, los tres iconos se repartían por
+            donde cayeran: en el encabezado real quedó el «⋯» SOLO en un tercer
+            renglón, con la fila de arriba medio vacía. Metidos en un carril
+            que no se parte, o caben todos arriba o bajan todos juntos.
+
+            Y van en el renglón DEL NOMBRE, no con los selectores: ahí sobra
+            ancho (el nombre cede si hace falta) mientras que el renglón de
+            abajo ya está lleno con asignado, agente y estado. Con eso el
+            encabezado cabe en dos renglones en vez de tres, que era la queja:
+            «Resuelta» arriba y el «⋯» solo, abajo del todo. */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0, marginLeft: 'auto' }}>
+          {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
+          {/* ☎ EN EL TELÉFONO, UN SOLO TOQUE. En escritorio el botón abre un
+              menú (WhatsApp o telefónica); aquí no: con el pulgar, arriba de la
+              conversación abierta, lo que se quiere es marcar YA. La llamada va
+              por el CRM —se graba y genera minuta—, no por el marcador del
+              sistema. */}
+          {conv.id && mobile && telefonoWhatsApp(conv.telefono) && (
+            <button onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: telefonoWhatsApp(conv.telefono), nombre } }))}
+              title="Llamar por teléfono" aria-label="Llamar por teléfono"
+              style={{ border: 'none', background: 'none', borderRadius: 10, cursor: 'pointer', padding: 9, color: C.g700, flexShrink: 0, display: 'inline-flex' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+            </button>
+          )}
+          {/* Buscar dentro del hilo también en el teléfono: encontrar un monto o
+              una dirección subiendo a mano por cien mensajes es justo lo que no
+              se puede hacer con el pulgar. */}
+          {!mobile && <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
+            style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
+            <IcoBuscar size={mobile ? 19 : 15} />
+          </button>}
+          {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
+            onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)}
+            notas={(hilo?.notas || []).length}
+            onVerNotas={() => {
+              const ult = [...timeline].reverse().find((t: any) => t._clase === 'nota');
+              if (!ult) return;
+              const clave = `nota-${ult.id}`;
+              irAItem(clave);
+              setResaltada(clave); setTimeout(() => setResaltada(null), 2500);
+            }} />}
+        </span>
         </span>
         {/* ══ LA VENTANA DE 24 H, FUERA DEL BLOQUE QUE SE ENCOGE ══
             Vivía junto al nombre, dentro del `flex:1` que absorbe el sobrante.
@@ -367,19 +418,22 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             escribir libremente o necesitas plantilla — el que menos puede
             quedar a medias. Aquí es hermano de los selects, con su lugar
             propio, y lo que se acorta es el nombre. */}
-          {conv.id && !hilo.ventana?.expira_at && (
-          <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>
-        )}
+          {/* Cuando la ventana está CERRADA esta píldora no se pinta: el
+              composer, en la misma pantalla y tres centímetros más abajo, ya
+              lo dice con todas sus letras y con el botón para resolverlo.
+              Decirlo dos veces es parte de lo que saturaba el encabezado. Lo
+              que SÍ vale es la cuenta regresiva cuando está abierta, porque
+              eso no aparece en ningún otro lado. */}
         {conv.id && hilo.ventana?.expira_at && (() => {
           const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
-          if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>;
+          if (ms <= 0) return null;   // ya cerrada: lo dice el composer
           const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
           const urgente = ms < 4 * 3600e3;
           return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
             /* Con horas de sobra, la píldora era lo más brillante del header y
                pesaba más que el nombre del contacto. Queda de contorno; se
                rellena en ámbar solo cuando la ventana está por cerrarse. */
-            style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : 'transparent', border: urgente ? '1px solid transparent' : `1px solid ${C.emerald300}`, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 10px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            style={{ fontSize: 9.5, fontWeight: 700, background: urgente ? C.ambar100 : 'transparent', border: urgente ? '1px solid transparent' : `1px solid ${C.g200}`, color: urgente ? C.ambar700 : C.g500, borderRadius: 999, padding: '3px 8px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
             {mobile
               ? (h > 0 ? `${h} h` : `${m} min`)
@@ -402,44 +456,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
             fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, minWidth: 96, maxWidth: mobile ? 84 : undefined,
-            borderColor: conv.estado_crm === 'resuelta' ? '#A7F3D0' : conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
-            background: conv.estado_crm === 'resuelta' ? C.emerald50 : conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
-            color: conv.estado_crm === 'resuelta' ? C.emerald700 : conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
+            /* Solo «Pendiente» lleva color: es el único estado que pide algo.
+               «Resuelta» en verde era celebrar en el encabezado algo que ya no
+               necesita tu atención, y competía con el nombre del cliente. */
+            borderColor: conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
+            background: conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
+            color: conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
           }}>
           <option value="abierta">Abierta</option>
           <option value="pendiente">Pendiente</option>
           <option value="resuelta">Resuelta</option>
         </select>}
-        {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
-        {/* ☎ EN EL TELÉFONO, UN SOLO TOQUE. En escritorio el botón abre un
-            menú (WhatsApp o telefónica); aquí no: con el pulgar, arriba de la
-            conversación abierta, lo que se quiere es marcar YA. La llamada va
-            por el CRM —se graba y genera minuta—, no por el marcador del
-            sistema. */}
-        {conv.id && mobile && telefonoWhatsApp(conv.telefono) && (
-          <button onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: telefonoWhatsApp(conv.telefono), nombre } }))}
-            title="Llamar por teléfono" aria-label="Llamar por teléfono"
-            style={{ border: 'none', background: 'none', borderRadius: 10, cursor: 'pointer', padding: 9, color: C.g700, flexShrink: 0, display: 'inline-flex' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
-          </button>
-        )}
-        {/* Buscar dentro del hilo también en el teléfono: encontrar un monto o
-            una dirección subiendo a mano por cien mensajes es justo lo que no
-            se puede hacer con el pulgar. */}
-        {!mobile && <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
-          style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
-          <IcoBuscar size={mobile ? 19 : 15} />
-        </button>}
-        {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
-          onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)}
-          notas={(hilo?.notas || []).length}
-          onVerNotas={() => {
-            const ult = [...timeline].reverse().find((t: any) => t._clase === 'nota');
-            if (!ult) return;
-            const clave = `nota-${ult.id}`;
-            irAItem(clave);
-            setResaltada(clave); setTimeout(() => setResaltada(null), 2500);
-          }} />}
+
         {/* Acciones (cotizar, agendar) a un toque: en el teléfono estaban
             enterradas dentro de la ficha, y son lo que se hace DURANTE la
             conversación. */}

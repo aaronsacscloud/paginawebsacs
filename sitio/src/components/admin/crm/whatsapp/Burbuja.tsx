@@ -6,6 +6,7 @@
 // "responder" (cita) en hover.
 import { useRef, useState } from 'react';
 import { C, burbuja } from './estilo';
+import { useLineas, numeroCorto } from './useLineas';
 import { tic } from '../../../../lib/ui/tacto';
 import { extensionDe } from './VisorMedia';
 import EstadoEntrega, { errorLegible } from './EstadoEntrega';
@@ -185,6 +186,9 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     onTouchCancel: cancelarPres,
   } : {};
   const saliente = item.direccion === 'saliente';
+  const { lineas } = useLineas();
+  const lineaMsj = lineas.length > 1 && item.phone_number_id
+    ? (lineas.find(l => l.id === item.phone_number_id)?.numero || null) : null;
   const claro = saliente;
   const src = srcMedia(item);
   let tipo = item.tipo || 'text';
@@ -338,7 +342,17 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
       ...(onMantener ? { WebkitTouchCallout: 'none' as any, WebkitUserSelect: 'none' as any, userSelect: 'none' as const } : {}) }}>
       {/* El nombre solo cuando CAMBIA de autor: con tres mensajes seguidos
           tuyos se repetía tres veces y partía el bloque en tres. */}
-      {saliente && !mismoAutorQueElAnterior && <span style={{ fontSize: 10, color: C.g400, padding: '0 4px' }}>{item.autor || 'Equipo SACS'}</span>}
+      {/* Debajo del nombre, POR CUÁL NÚMERO salió. Con dos líneas activas,
+          «lo mandó Andrea» no basta: importa si salió por el número de México
+          o por el de Estados Unidos, porque el cliente lo ve como dos chats
+          distintos. Solo cuando hay más de una línea — con una sola sería
+          repetir lo mismo en cada burbuja. */}
+      {saliente && !mismoAutorQueElAnterior && (
+        <span style={{ fontSize: 10, color: C.g400, padding: '0 4px', display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+          {item.autor || 'Equipo SACS'}
+          {lineaMsj && <span title={`Salió por la línea ${lineaMsj}`} style={{ color: C.g300 }}>· {numeroCorto(lineaMsj)}</span>}
+        </span>
+      )}
       <span style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: saliente ? 'row-reverse' : 'row', maxWidth: '100%' }}>
         <span style={{
           ...(saliente ? burbuja.salienteWa : burbuja.entrante),
