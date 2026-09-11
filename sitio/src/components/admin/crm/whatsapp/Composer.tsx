@@ -126,34 +126,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   };
   // Ventana por línea (la manda /hilo en canales.ventanas); si no hay mapa, se asume la global.
   const ventanaDe = (id: string): boolean | null => { const v = canales?.ventanas?.[id]; return v ? !!v.abierta : null; };
-  /** Píldoras de línea: las dos a la vista, la elegida en morado. El punto dice si la ventana de 24 h está abierta en esa línea. */
-  /* Abierto = se están viendo TODAS las líneas para elegir. Cerrado —lo
-     normal— solo se ve por cuál sale, que es dato, no decisión. */
+  /* Abierto = el desplegable de canal está desplegado. Cerrado —lo normal— se
+     ve solo por dónde sale, que es dato, no decisión. */
   const [abrirLineas, setAbrirLineas] = useState(false);
-  const pildorasLinea = (compacto: boolean) => (
-    /* ⚠️ ESTE GRUPO SE PUEDE ENCOGER. Con `flexShrink: 0` y dos números
-       largos, la fila crecía más que el composer y se desbordaba POR LA
-       DERECHA, encima del panel del cliente. Ahora cede y, si aun así no cabe,
-       rueda por dentro — las píldoras de adentro sí siguen enteras. */
-    <div role="radiogroup" aria-label="Línea por la que sale este chat" className="crm-scroll-x"
-      style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: C.g100, flexShrink: 0, maxWidth: '100%', overflowX: 'auto' }}>
-      {lineas.map(l => {
-        const activa = l.id === linea; const v = ventanaDe(l.id);
-        return (
-          <button key={l.id} type="button" role="radio" aria-checked={activa} onClick={() => { cambiarLinea(l.id); setAbrirLineas(false); }}
-            title={`${l.numero}${l.nombre ? ` · ${l.nombre}` : ''}${v === null ? '' : v ? ' · ventana abierta' : ' · sin ventana: sale como plantilla'}`}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: activa ? `1px solid ${C.morado}` : '1px solid transparent', borderRadius: 999, padding: compacto ? '7px 10px' : '3px 9px', minHeight: compacto ? 36 : undefined,
-              background: activa ? C.moradoAgua : 'transparent', color: activa ? C.moradoTinta : C.g500, fontSize: compacto ? 12 : 11.5, fontWeight: activa ? 700 : 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', lineHeight: 1.2, flexShrink: 0 }}>
-            {v !== null && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
-            {/* Corto también en escritorio: dos números en E.164 son ~230 px
-                de puro texto, y son justo los que reventaban la fila. El
-                completo sigue a un paso, en el title. */}
-            {numeroCorto(l.numero)}
-          </button>
-        );
-      })}
-    </div>
-  );
   const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
@@ -379,48 +354,76 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
        selector de canal + Resumir. Recortando se perdía «Resumir»; saltando de
        renglón no se pierde nada. */
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: movil ? '6px 12px' : '8px 12px', borderBottom: `1px solid ${C.g100}`, minWidth: 0 }}>
-      {/* En el teléfono, el badge verde repetía lo que el selector de al lado ya
-          dice con letras; era el único verde decorativo que quedaba. */}
-      {movil ? (modo === 'correo' ? <BadgeCorreo size={16} /> : null) : (modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />)}
-      {/* Con dos líneas esta etiqueta sobra —las píldoras de al lado ya dicen
-          el canal y el número— y se llevaba 124 px sin ceder, aplastando las
-          píldoras a seis. Lo que informa gana al rótulo. */}
-      {!movil && !(modo === 'wa' && lineas.length > 1) && (
-        <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>
-      )}
-      {/* ── UNA LÍNEA A LA VISTA, NO DOS ─────────────────────────────────
-          Con las dos píldoras siempre puestas, el composer arrancaba pidiendo
-          una decisión que en el 95% de los casos ya está tomada: se responde
-          por la línea de la conversación. Ahora se enseña ESA, en texto; el
-          resto aparece solo al tocarla. */}
-      {modo === 'wa' && lineas.length > 1 && (abrirLineas
-        ? pildorasLinea(!!movil)
-        : (() => {
-          const l = lineas.find(x => x.id === linea) || lineas[0];
-          const v = ventanaDe(l?.id);
-          return (
-            <button type="button" onClick={() => setAbrirLineas(true)}
-              title={`Sale por ${l?.numero || '—'}. Toca para cambiar de línea.`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: 'none', background: 'none', padding: movil ? '6px 2px' : '2px', minHeight: movil ? 40 : undefined, color: C.g700, fontSize: movil ? 12.5 : 11.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
-              {v !== null && <span style={{ width: 6, height: 6, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
-              {numeroCorto(l?.numero || '')}
-              <span style={{ color: C.g300, fontSize: 10 }}>▾</span>
-            </button>
-          );
-        })())}
+      {/* ── UN SOLO CONTROL DE CANAL ──────────────────────────────────────
+          Aquí había tres cosas repartidas que contaban la misma historia: una
+          insignia del canal, un botón con la línea abreviada, y un `select` de
+          WhatsApp/Correo. Tres controles para una sola pregunta —«¿por dónde
+          sale esto?»— y ninguno decía el número completo.
+
+          Ahora es UNO: icono, número entero, y una flecha. Detrás de la flecha
+          están las dos decisiones juntas, con el texto completo a la vista:
+          cambiar de línea de WhatsApp, o mandarlo por correo. */}
+      <span style={{ position: 'relative', flexShrink: 0 }}>
+        <button type="button" onClick={() => setAbrirLineas(v => !v)}
+          title="Por dónde sale este mensaje"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: `1px solid ${abrirLineas ? C.g300 : C.g200}`, background: '#fff',
+            borderRadius: 999, padding: movil ? '0 12px' : '5px 11px', minHeight: movil ? 40 : undefined,
+            color: C.g900, fontSize: movil ? 13 : 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          {modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />}
+          {modo === 'correo'
+            ? (canales?.correo?.email || 'Correo')
+            : (() => {
+              const l = lineas.find(x => x.id === linea) || lineas[0];
+              const v = ventanaDe(l?.id);
+              return (<>
+                {v !== null && <span title={v ? 'Ventana de 24 h abierta' : 'Sin ventana: sale como plantilla'} style={{ width: 6, height: 6, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
+                {/* El número ENTERO, siempre: es el dato que dice desde qué
+                    identidad le va a llegar al cliente. Abreviado obligaba a
+                    abrir el menú para saberlo. */}
+                {l?.numero || 'WhatsApp'}
+              </>);
+            })()}
+          <span style={{ color: C.g400, fontSize: 10, marginLeft: 1 }}>▾</span>
+        </button>
+
+        {abrirLineas && <span onClick={() => setAbrirLineas(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />}
+        {abrirLineas && (
+          <span style={{ position: 'absolute', bottom: '116%', left: 0, zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 34px rgba(17,24,39,.16)', minWidth: 248, display: 'block', padding: 6 }}>
+            <span style={{ display: 'block', fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', padding: '5px 8px 4px' }}>Mandar por WhatsApp</span>
+            {lineas.map(l => {
+              const v = ventanaDe(l.id); const activa = modo === 'wa' && l.id === linea;
+              return (
+                <button key={l.id} type="button"
+                  onClick={() => { setModo('wa'); cambiarLinea(l.id); setAbrirLineas(false); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', border: 'none', borderRadius: 8,
+                    background: activa ? C.moradoAgua : 'transparent', color: activa ? C.moradoTinta : C.g900,
+                    padding: '9px 8px', fontSize: 12.5, fontWeight: activa ? 700 : 500, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <BadgeWhatsApp size={14} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    {l.numero}
+                    {l.nombre && <span style={{ display: 'block', fontSize: 10.5, color: C.g400, fontWeight: 500 }}>{l.nombre}</span>}
+                  </span>
+                  {v !== null && <span title={v ? 'Ventana abierta' : 'Sin ventana: sale como plantilla'} style={{ width: 7, height: 7, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+            {correoOk && (<>
+              <span style={{ display: 'block', height: 1, background: C.g100, margin: '5px 4px' }} />
+              <button type="button" onClick={() => { setModo('correo'); setAbrirLineas(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', border: 'none', borderRadius: 8,
+                  background: modo === 'correo' ? C.azulAgua : 'transparent', color: modo === 'correo' ? C.azulTinta : C.g900,
+                  padding: '9px 8px', fontSize: 12.5, fontWeight: modo === 'correo' ? 700 : 500, fontFamily: 'inherit', cursor: 'pointer' }}>
+                <BadgeCorreo size={14} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  Mandar por correo
+                  <span style={{ display: 'block', fontSize: 10.5, color: C.g400, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{canales?.correo?.email || 'sin correo'}</span>
+                </span>
+              </button>
+            </>)}
+          </span>
+        )}
+      </span>
       {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : lineaMsg.startsWith('En esta línea') ? C.ambar700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
-      {/* El teléfono del cliente NO va aquí: está en el encabezado del hilo,
-          en la ficha de la derecha y en la lista. Repetirlo solo quitaba ancho
-          a lo único que esta fila tiene que dejar claro — por cuál línea sale
-          el mensaje. En CORREO sí se queda: ahí el destinatario puede ser otro
-          y no está a la vista. */}
-      {!movil && modo === 'correo' && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {canales?.correo?.email || '—'}</span>}
-      {(waDisponible && correoOk) && (
-        <select value={modo} onChange={e => setModo(e.target.value as Modo)}
-          style={{ border: `1px solid ${C.g200}`, borderRadius: movil ? 10 : 6, minHeight: movil ? 44 : undefined, fontSize: movil ? 13 : 11, padding: movil ? '0 10px' : '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
-          <option value="wa">WhatsApp</option><option value="correo">Correo</option>
-        </select>
-      )}
       <span style={{ flex: '1 1 0', minWidth: 0 }} />
       {/* «Resumir» es ayuda, no la acción de la pantalla: en el teléfono
           competía con Enviar (borde morado, negritas y chispa, del mismo peso).

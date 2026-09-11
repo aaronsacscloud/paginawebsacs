@@ -1581,22 +1581,29 @@ const CRM_MOBILE_CSS = `
     .m-eti { margin-left: 6px; font-size: 0.6rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
       border-radius: 5px; padding: 2px 5px; background: var(--m-acc-suave); color: var(--m-acc); vertical-align: middle; }
     .m-eti.mal { background: #fdeceb; color: #C0554E; }
-    .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    /* Aire al final del carril: el último chip quedaba rebanado por el marco. */
-    .m-chips::after { content: ''; flex: none; width: 16px; }
+    /* ── PESTAÑAS, NO PASTILLAS (11-sep-2026) ───────────────────────────────
+       Eran tres pastillas rellenas, la activa en morado sólido, pegadas al
+       primer renglón de la lista. Tres cápsulas de color encima de una lista
+       de nombres: pesaban más que el contenido y no había dónde descansara la
+       vista entre el filtro y los mensajes.
+       Ahora son pestañas de texto con subrayado —el MISMO patrón que ya usa el
+       panel del cliente (Info · Actividad · Acciones)—, así que el inbox deja
+       de tener un lenguaje propio. Ocupan 38 px en vez de 48, y la línea de
+       abajo separa el filtro del contenido en lugar de dejarlos pegados. */
+    .m-chips { display: flex; gap: 18px; padding: 2px 24px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-bottom: 1px solid #ebeaef; }
+    /* Aire al final del carril: la última pestaña quedaba rebanada por el marco. */
+    .m-chips::after { content: ''; flex: none; width: 8px; }
     .m-chips::-webkit-scrollbar { display: none; }
-    /* Los chips son la navegación primaria del inbox y se tocan con el pulgar
-       en movimiento: 44 de alto, no 31. */
-    /* Pestañas más chicas: con 44 px de alto y 15 de aire, tres pestañas más el
-       «Más» no cabían en 390 px y había que deslizar para descubrir que existían.
-       A 36 px y 12 de aire entran las tres de trabajo y se ve asomar la
-       siguiente, que es la señal de que hay más. 36 sigue siendo el mínimo
-       táctil que el propio sistema fijó (M5), así que no se pierde nada. */
-    .m-chip { flex: none; min-height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; font-size: 0.76rem; font-weight: 700; padding: 0 12px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
-    .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
+    .m-chip { flex: none; min-height: 38px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.8rem; font-weight: 600; padding: 0 1px; border: none; background: none; color: #8a8794;
+      border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .m-chip.on { color: var(--m-acc); font-weight: 800; border-bottom-color: var(--m-acc); }
+    /* El conteo NO compite con el nombre de la pestaña: va en su propio tono. */
+    .m-chip .m-chip-n { font-weight: 700; font-size: 0.72rem; color: #a9a7b2; }
+    .m-chip.on .m-chip-n { color: var(--m-acc); }
     /* La cola de trabajo se ve sin tocarla: si hay gente esperando respuesta,
-       su pastilla lo dice con el tono de atención aunque no esté activa. */
-    .m-chip.urge { border-color: #E8B04B; color: #a06600; }
+       su número lo dice con el tono de atención aunque no esté activa. */
+    .m-chip.urge .m-chip-n { color: #a06600; }
     /* Punto de «te toca contestar»: va junto a la hora, donde el ojo ya está. */
     .m-pend { display: block; width: 9px; height: 9px; border-radius: 99px; background: var(--m-acc); margin: 5px 0 0 auto; }
     /* ══ DARK móvil (mockup Dark): tokens re-mapeados + overrides de los
@@ -1649,7 +1656,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-row:active { background: #1d1d24; }
       [data-crm-dark="1"] .m-row .m-n1, [data-crm-dark="1"] .m-row .m-m1 { color: var(--m-ink); }
       [data-crm-dark="1"] .m-row .m-ini { color: #b3b1bd; }
-      [data-crm-dark="1"] .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
+      [data-crm-dark="1"] .m-chips { border-bottom-color: #26262e; }
+      [data-crm-dark="1"] .m-chip { background: none; border-color: transparent; color: #918fa0; }
+      [data-crm-dark="1"] .m-chip .m-chip-n { color: #6f6d7a; }
       /* Finanzas en oscuro. La casilla sin marcar necesita un borde que se vea
          sobre negro: el gris claro del tema claro desaparecía. */
       /* ══ LA PALETA COMPARTIDA, en oscuro (7-sep-2026) ═══════════════════
@@ -1795,7 +1804,8 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-plegable { border-color: #26262e; }
       [data-crm-dark="1"] .m-eti.mal { background: #3a201e; color: #F0857A; }
       [data-crm-dark="1"] .m-cifra-l, [data-crm-dark="1"] .m-cifra-s { color: #918fa0; }
-      [data-crm-dark="1"] .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
+      [data-crm-dark="1"] .m-chip.on { background: none; color: #B7A8F7; border-bottom-color: #B7A8F7; }
+      [data-crm-dark="1"] .m-chip.on .m-chip-n { color: #B7A8F7; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
       /* inline fijos de las pantallas v5 */

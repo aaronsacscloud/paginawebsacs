@@ -1162,7 +1162,7 @@ export default function InboxPro() {
                     return (
                       <button key={v} className={'m-chip' + (on ? ' on' : '') + (v === 'nocontestadas' && nPendientes > 0 && !on ? ' urge' : '')} onClick={() => setChipWa(v)}>
                         {nuevosM[v] && <span className="wa-pulso" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', marginRight: 5, verticalAlign: 'middle' }} />}
-                        {l}{n ? ' ' + n : ''}
+                        {l}{n ? <span className="m-chip-n">{n}</span> : null}
                       </button>
                     );
                   })}
