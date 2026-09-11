@@ -286,18 +286,17 @@ const useCases = [
           <span class="flujo-eyebrow">Vende</span>
           <h2 class="flujo-h2">Vende más.</h2>
           <p class="flujo-p">Del live a la venta sin capturar nada dos veces. Así se ve una tienda que corre con Sacs.</p>
-          <a href="#tablet-section" class="flujo-cta">Ver cómo funciona
+          <a href="#tablet-section" class="flujo-cta" data-evento="recorrido_cta">Ver cómo funciona
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           </a>
         </div>
       </div>
       <div class="flujo-video" id="flujoVideo">
         <img class="flujo-still" src="/tienda/59-live.webp" alt="" decoding="async" />
-        <video class="flujo-clip" muted playsinline preload="none"></video>
+        <video class="flujo-clip" muted playsinline preload="none" poster="/tienda/59-live.webp" crossorigin="anonymous"><track kind="captions" src="/tienda/recorrido.vtt" srclang="es" label="Español" /></video>
         <div class="flujo-tag flujo-tag--live" data-tag="0"><i></i>En vivo · TikTok Shop · Instagram · Facebook</div>
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
-        <div class="flujo-tag flujo-tag--wa" data-tag="6">Ticket enviado por WhatsApp</div>
         <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
       </div>
     </div>
@@ -305,7 +304,7 @@ const useCases = [
       <ol class="flujo-dots">
         <li data-i="0"><i><b></b></i><span>Live</span></li><li data-i="1"><i><b></b></i><span>Lo vio</span></li><li data-i="2"><i><b></b></i><span>Entra</span></li><li data-i="3"><i><b></b></i><span>Pregunta</span></li><li data-i="4"><i><b></b></i><span>Probador</span></li><li data-i="5"><i><b></b></i><span>Pago</span></li><li data-i="6"><i><b></b></i><span>WhatsApp</span></li>
       </ol>
-      <a class="flujo-saltar" href="#tablet-section">Ver la funcionalidad
+      <a class="flujo-saltar" href="#tablet-section" data-evento="recorrido_saltar">Saltar
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
       </a>
     </div>
@@ -4846,6 +4845,10 @@ const useCases = [
   .flujo-dots li.is-on { color: #fff; }
   .flujo-saltar { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.02em; color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px; padding: 10px 18px; text-decoration: none; background: rgba(14, 13, 12, 0.4); backdrop-filter: blur(6px); transition: background 0.3s, color 0.3s; }
   .flujo-saltar:hover { background: #fff; color: #1a1a1a; text-decoration: none; }
+  .flujo-video.is-done ~ .flujo-nav .flujo-saltar, .flujo.is-final .flujo-saltar { opacity: 0; pointer-events: none; }
+  .flujo-saltar { transition: opacity 0.4s, background 0.3s, color 0.3s; }
+  /* la barra flotante de WhatsApp no se encima al recorrido */
+  body.recorrido-activo .wa-bar { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   @media (max-width: 1023px) { .flujo { height: 190vh; } .flujo-sticky { padding: 70px 0 120px; } .flujo-text { min-height: 190px; } .flujo-dots { gap: 8px; } .flujo-dots li span { display: none; } .flujo-dots li i { width: 28px; } .flujo-nav { bottom: 18px; gap: 12px; } }
   @media (max-width: 1023px) {
     .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
@@ -4853,7 +4856,7 @@ const useCases = [
     .flujo-text { min-height: 150px; }
     .flujo-paso b { font-size: 26px; } .flujo-paso small { font-size: 14px; margin-top: 8px; }
   }
-  @media (prefers-reduced-motion: reduce) { .flujo { height: auto; } .flujo-sticky { position: relative; height: auto; min-height: 100vh; } .flujo-video { transform: none !important; } .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; visibility: visible; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } .flujo-nav { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flujo { height: auto; } .flujo-sticky { position: relative; height: auto; min-height: 100vh; } .flujo-video { transform: none !important; } .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; visibility: visible; transform: none; margin-top: 20px; } .flujo-pasos { position: static; display: grid; gap: 10px; } .flujo-paso { position: static; opacity: 1; visibility: visible; transform: none; } .flujo-paso b { font-size: 20px; } .flujo-paso small { margin-top: 4px; } .flujo-n { display: inline; margin-right: 8px; } .flujo-nav { display: none; } }
 
 
 
@@ -18173,10 +18176,15 @@ const useCases = [
     const clip = wrap?.querySelector<HTMLVideoElement>('.flujo-clip');
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
-    clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + 'recorrido.mp4';
+    const av1 = !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
+    clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (av1 ? 'recorrido.av1.mp4' : 'recorrido.mp4');
+    const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, { ...props, movil, av1 }); } catch {} };
+    let hitos = new Set<string>();
+    const hito = (k: string, props?: Record<string, unknown>) => { if (hitos.has(k)) return; hitos.add(k); ph('recorrido_' + k, props); };
+    sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { paso: cur })));
     // segundo en que la cámara LLEGA a cada paso (live 1 s quieto · 1.5x · 2x · 1.5x · 1.5x · 1.5x · 2x)
-    const CUES = [0, 4.33, 6.83, 10.17, 13.5, 16.83, 19.33];
-    const FIN = 20.8, ADELANTO = 0.5; // el texto cambia medio segundo antes de llegar
+    const CUES = [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87];
+    const FIN = 23.4, ADELANTO = 0.3; // el texto cambia medio segundo antes de llegar
     const N = CUES.length;
     const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
     const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
@@ -18194,10 +18202,12 @@ const useCases = [
       dots.forEach((d) => { const k = +d.dataset.i!; d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i || i >= N); });
     }
     function sigue() {
-      const t = clip.currentTime;
+      const t = clip.currentTime; const d = clip.duration || FIN;
+      if (t / d >= 0.25) hito('25'); if (t / d >= 0.5) hito('50'); if (t / d >= 0.75) hito('75');
       let i = 0; for (let k = 0; k < N; k++) if (t + ADELANTO >= CUES[k]) i = k;
       const dur = clip.duration || FIN;
-      if (clip.ended || t >= dur - 0.05) { muestra(N); barra(N, 0); return; }
+      if (clip.ended || t >= dur - 0.05) { muestra(N); barra(N, 0); sec.classList.add('is-final'); return; }
+      sec.classList.remove('is-final');
       muestra(i);
       const a = CUES[i], b = i + 1 < N ? CUES[i + 1] : dur;
       barra(i, Math.min(1, Math.max(0, (t - a) / (b - a))));
@@ -18209,7 +18219,7 @@ const useCases = [
       try { clip.currentTime = desde; } catch {}
       clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => { muestra(N); });
     }
-    clip.addEventListener('ended', () => { cancelAnimationFrame(raf); muestra(N); barra(N, 0); });
+    clip.addEventListener('ended', () => { cancelAnimationFrame(raf); muestra(N); barra(N, 0); hito('100'); });
     // crecimiento con el scroll + snap al final de la pista
     let snapT: ReturnType<typeof setTimeout> | null = null, snapping = false, sraf = 0;
     const escenario = sec.querySelector<HTMLElement>('.flujo-sticky')!;
@@ -18217,7 +18227,7 @@ const useCases = [
     const pinta = () => {
       const { y, total, top } = pista(); const p = total > 0 ? y / total : 1;
       wrap.style.transform = movil ? `scale(${0.82 + 0.18 * p})` : `scale(${0.56 + 0.44 * p}) translateX(${(1 - p) * 6}%)`;
-      if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; if (visible && !arrancado) arranca(0); }
+      if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; hito('crecio'); if (visible && !arrancado) arranca(0); }
       if (snapT) clearTimeout(snapT);
       if (!snapping && p > 0.08 && p < 0.92) snapT = setTimeout(() => { snapping = true; window.scrollTo({ top: top + total, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 800); }, 220);
     };
@@ -18241,12 +18251,13 @@ const useCases = [
     // se pausa al salir de la vista y continúa al volver
     const io = new IntersectionObserver((es) => {
       const e = es[0]; visible = e.isIntersecting && e.intersectionRatio >= 0.4;
-      if (visible) { if (crecido && !arrancado) arranca(0); else if (arrancado && clip.paused && !clip.ended) { clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => {}); } }
+      document.body.classList.toggle('recorrido-activo', visible);
+      if (visible) { hito('visto'); if (crecido && !arrancado) arranca(0); else if (arrancado && clip.paused && !clip.ended) { clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => {}); } }
       else if (arrancado && !clip.paused) { clip.pause(); cancelAnimationFrame(raf); }
     }, { threshold: [0, 0.4, 1] });
     io.observe(escenario);
-    dots.forEach((d) => d.addEventListener('click', () => { crecido = true; arranca(CUES[+d.dataset.i!]); }));
-    replay?.addEventListener('click', () => arranca(0));
+    dots.forEach((d) => d.addEventListener('click', () => { crecido = true; ph('recorrido_timeline', { a: +d.dataset.i! }); arranca(CUES[+d.dataset.i!]); }));
+    replay?.addEventListener('click', () => { ph('recorrido_repetir'); arranca(0); });
     pinta(); muestra(0); barra(0, 0);
   })();
 
