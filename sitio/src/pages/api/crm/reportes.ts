@@ -1,7 +1,11 @@
 // Reportes de trabajo de una cuenta.
 //
 // GET  ?company_id=            → los reportes ya generados, con sus aperturas
-// POST { company_id, desde, hasta, narrativa? }  → genera y GUARDA uno
+// POST { company_id, desde, hasta, tipo?, narrativa? }  → genera y GUARDA uno
+//
+// Dos tipos de documento, una sola maquinaria:
+//   · trabajo  (RT-) — el periodo completo: entregas, soporte, uso, oportunidades
+//   · entregas (RE-) — solo lo entregado, con el VIDEO de cada mejora
 //
 // El POST guarda una FOTO de los hechos. Es la diferencia con el reporte que se
 // ve en el CRM, que se calcula cada vez: la liga que el cliente recibe tiene que
@@ -10,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { reunirHechos } from '../../../lib/crm/reporte-hechos';
+import { reunirHechos, reunirEntregas } from '../../../lib/crm/reporte-hechos';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -23,7 +27,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
   const { data, error } = await supabase.from('reportes_trabajo')
-    .select('id, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por')
+    .select('id, tipo, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por')
     .eq('company_id', companyId).order('created_at', { ascending: false }).limit(30);
   if (error) return json({ error: error.message }, 500);
 
@@ -57,17 +61,29 @@ export const POST: APIRoute = async ({ request }) => {
   if (!UUID.test(companyId) || !desde || !hasta) return json({ error: 'Falta el cliente o el periodo.' }, 400);
   if (desde > hasta) return json({ error: 'El periodo está al revés.' }, 400);
 
-  const hechos = await reunirHechos(companyId, desde, hasta);
+  const tipo = String(b?.tipo || 'trabajo') === 'entregas' ? 'entregas' : 'trabajo';
+
+  const hechos = tipo === 'entregas'
+    ? await reunirEntregas(companyId, desde, hasta)
+    : await reunirHechos(companyId, desde, hasta);
   if (!hechos) return json({ error: 'Ese cliente ya no existe.' }, 404);
 
+  /* Un reporte de entregas VACÍO no se publica. La liga existiría, el cliente
+     la abriría y encontraría un documento que dice «se te entregaron 0 cosas»
+     — que es peor que no mandarlo. El de trabajo sí puede ir vacío de entregas:
+     trae soporte, uso y oportunidades. */
+  if (tipo === 'entregas' && !(hechos as any).total) {
+    return json({ error: 'En ese periodo no hay ninguna entrega visible para el cliente. Cambia las fechas o revisa que estén marcadas como «se le puede mostrar al cliente».' }, 400);
+  }
+
   const { data, error } = await supabase.from('reportes_trabajo').insert({
-    company_id: companyId, desde, hasta,
+    company_id: companyId, desde, hasta, tipo,
     hechos, narrativa: b?.narrativa || null,
     creado_por: (user as any)?.email || (user as any)?.nombre || null,
-  }).select('id, folio').single();
+  }).select('id, tipo, folio').single();
   if (error) return json({ error: error.message }, 500);
 
-  return json({ ok: true, id: data.id, folio: data.folio, hechos });
+  return json({ ok: true, id: data.id, tipo: data.tipo, folio: data.folio, hechos });
 };
 
 export const DELETE: APIRoute = async ({ request, url }) => {

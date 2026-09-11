@@ -4,8 +4,10 @@ export default `
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const lento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* pestañas */
-$('#tabs').addEventListener('click', e => {
+/* pestañas — solo el reporte de TRABAJO las tiene. El de entregas es un
+   documento de corrido, y aquí reventaba con «addEventListener of null»,
+   matando de paso el rastreo de apertura que va más abajo. */
+$('#tabs')?.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
   $$('.panel').forEach(p => p.classList.toggle('on', p.dataset.p === b.dataset.t));
@@ -35,14 +37,14 @@ function animar(tab) {
   if (tab === 'soporte') $$('#temas i').forEach((i, k) => setTimeout(() => i.style.width = i.dataset.w + '%', 60 * k));
   if (tab === 'oportunidades') {
     $$('.barra i').forEach(i => i.style.width = i.dataset.w + '%');
-    subir($('#usa'), 15, 800);
+    if ($('#usa')) subir($('#usa'), 15, 800);
   }
 }
 
 /* reacción: se guarda de verdad */
 $$('.rb').forEach(b => b.addEventListener('click', async () => {
   $$('.rb').forEach(x => x.classList.toggle('on', x === b));
-  $('#gr').style.display = 'block';
+  if ($('#gr')) $('#gr').style.display = 'block';
   try {
     await fetch('/api/reportes/reaccion', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reporte_id: REP, reaccion: b.dataset.r }) });
@@ -73,5 +75,9 @@ addEventListener('pagehide', cerrar);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cerrar(); });
 
 /* Al imprimir se abre todo: un PDF con acordeones cerrados pierde el detalle. */
-addEventListener('beforeprint', () => { $$('.fila').forEach(f => f.classList.add('ab')); $$('.barra i,#temas i').forEach(i => i.style.width = i.dataset.w + '%'); });
+addEventListener('beforeprint', () => {
+  $$('.fila').forEach(f => f.classList.add('ab'));
+  $$('.ent details').forEach(d => d.open = true);
+  $$('.barra i,#temas i').forEach(i => i.style.width = i.dataset.w + '%');
+});
 `;

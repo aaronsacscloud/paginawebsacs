@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!UUID.test(id)) return json({ error: 'Falta el reporte.' }, 400);
 
   const { data: rep } = await supabase.from('reportes_trabajo')
-    .select('id, folio, desde, hasta, hechos, company_id').eq('id', id).maybeSingle();
+    .select('id, tipo, folio, desde, hasta, hechos, company_id').eq('id', id).maybeSingle();
   if (!rep) return json({ error: 'Ese reporte ya no existe.' }, 404);
 
   // A quién. Si no lo mandan, al contacto principal de la cuenta.
@@ -49,9 +49,22 @@ export const POST: APIRoute = async ({ request }) => {
   const liga = base + '/reporte/' + rep.id;
   const cliente = h.cliente || 'tu cuenta';
   const periodo = fLarga(rep.desde) + ' al ' + fLarga(rep.hasta);
-  const entregadas = (h.entregadas || []).filter((m: any) => m.visible_cliente !== false);
-  const cortesias = entregadas.filter((m: any) => m.cortesia).length;
+  /* Dos documentos, dos correos. Las tres cifras del de trabajo —entregas,
+     cortesías, folios de soporte— no aplican al de entregas, que no sabe nada
+     de soporte; ahí la tercera cifra es cuántas traen VIDEO, que es la razón
+     por la que el cliente va a abrir la liga. */
+  const esEntregas = rep.tipo === 'entregas';
+  const entregadas = esEntregas
+    ? (h.entregas || [])
+    : (h.entregadas || []).filter((m: any) => m.visible_cliente !== false);
+  const cortesias = esEntregas ? Number(h.cortesias || 0) : entregadas.filter((m: any) => m.cortesia).length;
   const folios = h.soporte?.folios || 0;
+  const conVideo = Number(h.con_video || 0);
+
+  const kicker = esEntregas ? 'Reporte de entregas' : 'Reporte de trabajo';
+  const encabezado = esEntregas
+    ? 'Esto es lo que se entrego en ' + cliente
+    : 'Esto es lo que se trabajo en ' + cliente;
 
   // Tres cifras y un boton. El detalle esta en la liga; meterlo aqui solo hace
   // que el correo se rompa y que nadie entre a verlo.
@@ -65,28 +78,30 @@ export const POST: APIRoute = async ({ request }) => {
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:16px;overflow:hidden">'
     + '<tr><td style="height:4px;background:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,#F4A8CD)"></td></tr>'
     + '<tr><td style="padding:26px 28px 8px">'
-    + '<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#928da4">Reporte de trabajo · ' + rep.folio + '</div>'
-    + '<h1 style="margin:12px 0 0;font-size:22px;line-height:1.25;color:#231d40">Esto es lo que se trabajo en ' + cliente + '</h1>'
+    + '<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#928da4">' + kicker + ' · ' + rep.folio + '</div>'
+    + '<h1 style="margin:12px 0 0;font-size:22px;line-height:1.25;color:#231d40">' + encabezado + '</h1>'
     + '<p style="margin:8px 0 0;font-size:15px;color:#514c63">Del ' + periodo + '.</p></td></tr>'
     + '<tr><td style="padding:18px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
-    + cifra(entregadas.length, 'mejoras entregadas', '#5B4BD6') + '<td style="width:8px"></td>'
+    + cifra(entregadas.length, esEntregas ? 'entregas' : 'mejoras entregadas', '#5B4BD6') + '<td style="width:8px"></td>'
     + cifra(cortesias, 'sin costo adicional', '#1E8A63') + '<td style="width:8px"></td>'
-    + cifra(folios, 'folios de soporte', '#5B4BD6')
+    + cifra(esEntregas ? conVideo : folios, esEntregas ? 'con video' : 'folios de soporte', '#5B4BD6')
     + '</tr></table></td></tr>'
     + '<tr><td align="center" style="padding:22px 28px 26px">'
-    + '<a href="' + liga + '" style="display:inline-block;background:#9B8CFA;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:10px">Ver el reporte completo</a>'
+    + '<a href="' + liga + '" style="display:inline-block;background:#9B8CFA;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:10px">'
+    + (esEntregas ? 'Ver las entregas' : 'Ver el reporte completo') + '</a>'
     + '<p style="margin:14px 0 0;font-size:12px;color:#928da4">O copia esta liga:<br>' + liga + '</p></td></tr>'
     + '<tr><td style="padding:14px 28px;background:#faf9fe;border-top:1px solid #ecebf3;font-size:12px;color:#928da4">'
-    + '<b style="color:#514c63">Sacscloud</b> · Reporte de trabajo · ' + rep.folio + '</td></tr>'
+    + '<b style="color:#514c63">Sacscloud</b> · ' + kicker + ' · ' + rep.folio + '</td></tr>'
     + '</table></td></tr></table></body></html>';
 
-  const texto = 'Esto es lo que se trabajo en ' + cliente + '\n' + periodo + '\n\n'
-    + entregadas.length + ' mejoras entregadas · ' + cortesias + ' sin costo adicional · ' + folios + ' folios de soporte\n\n'
-    + 'Ver el reporte completo: ' + liga + '\n\nSacscloud · ' + rep.folio;
+  const texto = encabezado + '\n' + periodo + '\n\n'
+    + entregadas.length + (esEntregas ? ' entregas · ' : ' mejoras entregadas · ') + cortesias + ' sin costo adicional · '
+    + (esEntregas ? conVideo + ' con video' : folios + ' folios de soporte') + '\n\n'
+    + (esEntregas ? 'Ver las entregas: ' : 'Ver el reporte completo: ') + liga + '\n\nSacscloud · ' + rep.folio;
 
   const r = await sendEmail({
     to: para,
-    subject: 'Tu reporte de trabajo · ' + periodo,
+    subject: (esEntregas ? 'Tus entregas · ' : 'Tu reporte de trabajo · ') + periodo,
     html, text: texto,
     categoria: 'reporte',
     transaccional: true,
@@ -100,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   await supabase.from('activities').insert({
     company_id: rep.company_id, tipo: 'reporte_enviado',
-    titulo: 'Se le mando el reporte ' + rep.folio, automatico: true,
+    titulo: 'Se le mando el ' + (esEntregas ? 'reporte de entregas ' : 'reporte ') + rep.folio, automatico: true,
   }).then(() => {}, () => {});
 
   return json({ ok: true, para, liga, estado: r.status });

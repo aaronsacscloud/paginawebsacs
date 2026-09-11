@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
+import ReporteEntregas from './ReporteEntregas';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 import { computarSenales } from '../../../lib/crm/senales';
 import { confirmar } from '../../../lib/ui/confirmar';
@@ -79,6 +80,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     .then(r => r.json()).then(j => setReportes(j.reportes || [])).catch(() => {});
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
+  const [entregas, setEntregas] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
   // Las sugerencias se muestran de a una: son contexto para leer, no una
   // lista para recorrer, y con tres abiertas empujaban las ideas fuera.
@@ -305,19 +307,36 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         ))}
       </div>
 
-      {/* El reporte sube junto a las cifras: es lo que se le enseña al cliente
-          y estaba hasta el fondo, después de tres listas. Una tira, no una
-          tarjeta que compita con los hitos. */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-        background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))',
-        border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 15px', marginBottom: 18,
-      }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6' }}>Reporte ejecutivo</div>
-        <div style={{ fontSize: '0.73rem', color: '#6b7280', flex: 1, minWidth: 200, lineHeight: 1.45 }}>
-          Junta entregas, capacitaciones y pendientes con lo que SACS sabe de la cuenta.
+      {/* Los reportes suben junto a las cifras: son lo que se le enseña al
+          cliente y estaban hasta el fondo, después de tres listas.
+
+          Son DOS documentos y no uno con más secciones, porque se mandan en
+          momentos distintos: el ejecutivo cuando toca revisar la cuenta, el de
+          entregas cuando el cliente pregunta «¿qué me han hecho?». Meterlos en
+          el mismo documento obliga a mandar todo o nada. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 11, marginBottom: 18 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))',
+          border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 15px',
+        }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6' }}>Reporte ejecutivo</div>
+          <button style={{ ...S.btn, flexShrink: 0, marginLeft: 'auto' }} onClick={() => setReporte(true)}>Generar</button>
+          <div style={{ fontSize: '0.73rem', color: '#6b7280', flexBasis: '100%', lineHeight: 1.45 }}>
+            Entregas, capacitaciones, soporte y pendientes con lo que SACS sabe de la cuenta.
+          </div>
         </div>
-        <button style={{ ...S.btn, flexShrink: 0 }} onClick={() => setReporte(true)}>Generar reporte</button>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          background: 'linear-gradient(135deg,#EAF8F2,rgba(125,166,245,.14))',
+          border: '1px solid #cfe9d9', borderRadius: 10, padding: '11px 15px',
+        }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1E8A63' }}>Reporte de entregas</div>
+          <button style={{ ...S.btn, flexShrink: 0, marginLeft: 'auto', background: '#1E8A63' }} onClick={() => setEntregas(true)}>Generar</button>
+          <div style={{ fontSize: '0.73rem', color: '#6b7280', flexBasis: '100%', lineHeight: 1.45 }}>
+            Solo lo entregado, con el <b>video</b> de cada mejora. Para justificar el trabajo.
+          </div>
+        </div>
       </div>
 
       <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
@@ -410,6 +429,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       {editando && <EditorMejora m={editando} reuniones={reuniones} cots={cots} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
       {reporte && <ReporteMejoras companyId={companyId} cliente={cliente}
         onCerrar={() => { setReporte(false); cargarReportes(); }} />}
+      {entregas && <ReporteEntregas companyId={companyId} cliente={cliente}
+        onCerrar={() => { setEntregas(false); cargarReportes(); }} />}
     </div>
   );
 }
@@ -492,7 +513,13 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
             </span>
 
             <span style={{ flex: 1, minWidth: 170, fontSize: '0.79rem' }}>
-              <b style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: '#5B4BD6' }}>{r.folio}</b>
+              <b style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: r.tipo === 'entregas' ? '#1E8A63' : '#5B4BD6' }}>{r.folio}</b>
+              {/* Qué documento es. Con los dos tipos en la misma lista, un
+                  folio suelto no dice si lo que se le mandó fue el reporte de
+                  la cuenta o el de sus entregas — y se reenvía el equivocado. */}
+              {r.tipo === 'entregas' && (
+                <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '2px 7px', marginLeft: 5, background: '#EAF8F2', color: '#1E8A63' }}>entregas</span>
+              )}
               <span style={{ color: '#8f8d98' }}> · {fmtDate(r.desde)} al {fmtDate(r.hasta)}</span>
               {/* Los tres estados NO son excluyentes: una liga se puede abrir
                   sin haberla mandado por correo —se pega en WhatsApp— y
@@ -611,6 +638,38 @@ function EditorMejora({ m, reuniones, cots = [], onCerrar, onGuardar }: any) {
               <input type="date" value={(esEntregada ? f.fecha_entrega : f.fecha_compromiso) || ''}
                 onChange={e => set(esEntregada ? 'fecha_entrega' : 'fecha_compromiso', e.target.value)} style={S.input} /></div>
           </div>
+
+          {/* ── El video de la entrega ──
+              Es lo que el cliente abre desde el REPORTE DE ENTREGAS para ver
+              funcionando lo que pidió, y es lo que convierte ese documento en
+              algo que se puede defender: sin video es una lista de frases.
+
+              La columna `url` existía desde las capacitaciones, pero el campo
+              solo se pintaba si el tipo era «capacitación» Y el modo era
+              «video» — dos condiciones que casi nunca se daban juntas, y por
+              eso de las 56 mejoras entregadas del CRM ninguna tenía liga.
+              Ahora se pide en cualquier entrega, y en cualquier momento: al
+              capturarla o después, volviendo a Editar. Sin liga, la entrega
+              sale igual en el reporte, solo que sin video.
+
+              En capacitaciones NO se repite: ahí arriba ya hay un campo de
+              liga que además decide el estado («enviada» vs «pendiente de
+              enviar»), y dos cajas para la misma columna es como acaban
+              pisándose. */}
+          {!esCap && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={S.lbl}>Video de la entrega (opcional)</div>
+              <input value={f.url || ''} onChange={e => set('url', e.target.value)}
+                placeholder="https://…  Loom, Drive, YouTube o el que uses" style={S.input} />
+              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, lineHeight: 1.45 }}>
+                {/^https?:\/\//i.test(String(f.url || '').trim())
+                  ? 'Listo: el cliente lo va a poder abrir desde el reporte de entregas.'
+                  : String(f.url || '').trim()
+                    ? 'Tiene que empezar con https:// o el reporte no lo va a enseñar.'
+                    : 'Se le enseña al cliente en el reporte de entregas. Puedes pegarlo después.'}
+              </div>
+            </div>
+          )}
 
           {/* ── De dónde salió ──
               Antes solo se podía decir "de esta junta" o nada. Lo que el cliente

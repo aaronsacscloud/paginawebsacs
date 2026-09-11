@@ -153,4 +153,54 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
   .lista,.aprov,.cta,.lila,.mini{break-inside:avoid}
   @page{margin:12mm}
 }
+
+/* ══ Reporte de ENTREGAS ══════════════════════════════════════════════════
+   Comparte portada, cifras ancla y bloque lila con el reporte de trabajo. Lo
+   suyo es la lista: sin acordeón en el renglón —lo que se entregó se lee de
+   corrido, no se abre uno por uno— y con el botón del video, que es la razón
+   de existir del documento. */
+.cuerpo{padding:26px 34px 30px}
+.ent{border:1px solid var(--borde);border-radius:13px;margin-top:11px;overflow:hidden}
+.ent .it{border-top:1px solid #f5f4fa;padding:14px 17px}
+.ent .it:first-child{border-top:none}
+.ent .enc{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+.ent .tt{font-size:.9rem;font-weight:700;flex:1;min-width:210px;letter-spacing:-.01em}
+.tipo{font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;letter-spacing:.02em;white-space:nowrap}
+.t-per{background:var(--agua);color:var(--tinta)}
+.t-aju{background:#F1F1F4;color:#5b6270}
+.t-cap{background:#FEF6E7;color:var(--ambar-t)}
+.t-cor{background:var(--azul-a);color:var(--azul-t)}
+.t-plu{background:var(--azul-a);color:var(--azul-t)}
+.t-mod{background:var(--verde-a);color:var(--verde-t)}
+.ent .fe{font-size:.71rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ent .sc{font-size:.65rem;font-weight:800;color:var(--verde-t);background:var(--verde-a);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.ent .mod{font-size:.65rem;color:var(--ink-3);margin-top:2px}
+.ent .dd{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;max-width:76ch}
+.ent details{margin-top:5px}
+.ent details>summary{cursor:pointer;list-style:none;font-size:.75rem;font-weight:700;color:var(--tinta)}
+.ent details>summary::-webkit-details-marker{display:none}
+.ent details>summary:before{content:'▸ '}
+.ent details[open]>summary:before{content:'▾ '}
+.ent .mas{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;white-space:pre-line;max-width:76ch}
+.vid{display:inline-flex;align-items:center;gap:7px;margin-top:9px;text-decoration:none;border:1.5px solid var(--violeta);
+  border-radius:9px;padding:6px 13px;font-size:.77rem;font-weight:700;color:var(--tinta);background:#fff}
+.vid:hover{background:var(--violeta);color:#fff}
+.vid .pl{width:16px;height:16px;border-radius:50%;background:var(--violeta);color:#fff;display:inline-grid;place-items:center;font-size:.5rem}
+.vid:hover .pl{background:#fff;color:var(--tinta)}
+.sinvid{display:inline-block;margin-top:9px;font-size:.72rem;color:var(--ink-3)}
+.pieE{padding:22px 34px 30px;border-top:1px solid var(--borde);background:var(--tono)}
+.pieE .fw{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pieE p{font-size:.79rem;color:var(--ink-2);margin:6px 0 0;max-width:62ch}
+@media(max-width:720px){.cuerpo{padding:22px 20px 26px}.pieE{padding:20px}}
+@media print{
+  /* En papel la liga no se puede clicar: se imprime al lado, o el video
+     desaparece justo del documento que existe para enseñarlo. */
+  .vid{border-color:#cfc6f2}
+  .vid:after{content:' — ' attr(href);font-weight:400;font-size:.66rem;color:#928da4;word-break:break-all}
+  .vid .pl{display:none}
+  .ent details{display:block}
+  .ent details>summary{display:none}
+  .ent .mas{display:block!important}
+  .ent .it{break-inside:avoid}
+}
 `;

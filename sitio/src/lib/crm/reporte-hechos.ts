@@ -219,3 +219,62 @@ export async function reunirHechos(companyId: string, desde: string, hasta: stri
     sin_datos_de_uso: !(primera && ultima),
   };
 }
+
+/**
+ * Los hechos del REPORTE DE ENTREGAS.
+ *
+ * El reporte de trabajo cuenta el periodo entero; este contesta una sola
+ * pregunta —«¿qué me han hecho?»— y por eso trae lo que el otro no: el VIDEO de
+ * cada mejora. Se lee aparte y no reusando `reunirHechos` porque aquel hace
+ * ocho consultas —fotos de uso, tickets, pagos, suscripciones— que aquí no se
+ * miran; pedirlas para tirarlas es pagar el costo sin usar el dato.
+ *
+ * Misma regla de la casa: aquí no se interpreta nada. Se cuenta lo entregado y
+ * se dice cuál trae video y cuál no.
+ */
+export async function reunirEntregas(companyId: string, desde: string, hasta: string) {
+  const { data: co } = await supabase.from('companies')
+    .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();
+  if (!co) return null;
+
+  const { data: mejoras } = await supabase.from('mejoras')
+    .select('titulo, descripcion, categoria, cortesia, valor, fecha_entrega, modulo, url, visible_cliente, origen')
+    .eq('company_id', companyId).is('archived_at', null).eq('estado', 'entregada')
+    .gte('fecha_entrega', desde).lte('fecha_entrega', hasta)
+    .order('fecha_entrega', { ascending: true });
+
+  /* Lo INTERNO no se guarda siquiera en la foto. En el reporte de trabajo se
+     filtra al pintar; aquí se filtra al generar, porque este documento no tiene
+     otra cosa adentro: una foto con lo interno sería una fuga esperando a que
+     alguien lea el jsonb. */
+  const visibles = (mejoras || []).filter((m: any) => m.visible_cliente !== false);
+
+  const entregas = visibles.map((m: any) => ({
+    titulo: m.titulo,
+    descripcion: m.descripcion || null,
+    categoria: m.categoria || 'otro',
+    modulo: m.modulo || null,
+    fecha: m.fecha_entrega,
+    cortesia: !!m.cortesia,
+    /* Solo http(s). Una liga guardada a mano puede traer «javascript:» o
+       «www.loom…» sin esquema: la primera es un agujero en un documento
+       público y la segunda no abre. Se guarda limpia o no se guarda. */
+    video: /^https?:\/\//i.test(String(m.url || '').trim()) ? String(m.url).trim() : null,
+  }));
+
+  const modulos = Array.from(new Set(entregas.map(e => e.modulo).filter(Boolean)));
+
+  return {
+    cliente: co.nombre_comercial || co.nombre,
+    cuenta_sacs: co.sacs_account || null,
+    periodo: { desde, hasta, dias: Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000) },
+    entregas,
+    total: entregas.length,
+    con_video: entregas.filter(e => e.video).length,
+    cortesias: entregas.filter(e => e.cortesia).length,
+    modulos,
+    // Cuántas se ocultaron por internas: el consultor tiene que poder explicar
+    // por qué el documento trae ocho y en su pantalla se ven diez.
+    internas: (mejoras || []).length - visibles.length,
+  };
+}

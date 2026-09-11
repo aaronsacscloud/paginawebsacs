@@ -11,6 +11,7 @@
 import { supabase } from '../../lib/supabase';
 import CSS from './_estilos';
 import JS from './_guion';
+import Entregas from './_Entregas.astro';
 
 export const prerender = false;
 
@@ -20,10 +21,16 @@ const UUID = /^[0-9a-f-]{36}$/i;
 let rep: any = null;
 if (id && UUID.test(id)) {
   const { data } = await supabase.from('reportes_trabajo')
-    .select('id, folio, desde, hasta, hechos, narrativa, reaccion').eq('id', id).maybeSingle();
+    .select('id, tipo, folio, desde, hasta, hechos, narrativa, reaccion').eq('id', id).maybeSingle();
   rep = data || null;
 }
 if (!rep) return new Response('Reporte no encontrado', { status: 404 });
+
+/* Dos documentos por la misma puerta. Comparten la liga, el folio, el conteo
+   de aperturas y el correo; lo único distinto es qué se pinta. Separarlos en
+   dos rutas habría significado dos veces esa maquinaria —y dos lugares donde
+   arreglar el rastreo el día que cambie—. */
+const esEntregas = rep.tipo === 'entregas';
 
 const h = rep.hechos || {};
 const n = rep.narrativa || null;
@@ -54,7 +61,7 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{`Reporte ${rep.folio} · ${h.cliente || ''}`}</title>
+  <title>{`${esEntregas ? 'Entregas' : 'Reporte'} ${rep.folio} · ${h.cliente || ''}`}</title>
   <meta name="robots" content="noindex" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -68,6 +75,8 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
 
   <div class="doc">
     <div class="cinta"></div>
+
+    {esEntregas ? <Entregas rep={rep} /> : (<>
 
     <div class="hero">
       <div class="top">
@@ -249,6 +258,8 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
     </div>
 
     <div class="pie"><b>Sacscloud</b> · Reporte de trabajo · {h.cliente} · {dCorta(rep.desde)} al {dCorta(rep.hasta)} <span>{rep.folio}</span></div>
+
+    </>)}
   </div>
 </div>
 <script define:vars={{ REP: rep.id }} set:html={JS}></script>
