@@ -47,6 +47,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   resumenIa?: string | null; resumenIaAt?: string | null;
 }) {
   const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar'>(accionInicial || 'menu');
+  const [cuentaAbierta, setCuentaAbierta] = useState(false);
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
   const telefono = conv?.telefono || contacto?.whatsapp || null;
   const nombre = [contacto?.nombre, contacto?.apellido].filter(Boolean).join(' ') || contacto?.nombre || '';
@@ -82,7 +83,22 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
           ficha del lead, para que las dos digan exactamente lo mismo. */}
       {contacto?.id && (
         <div style={{ marginTop: 14 }}>
-          <CuentaSacs contactId={contacto.id} companyId={empresa?.id} compacto alCambiar={refrescar} />
+          {/* ── UN CUADRO MÁS DE LA CUADRÍCULA ───────────────────────────
+              La tarjeta de la cuenta era un bloque ancho, con texto alineado a
+              la izquierda, colgando debajo de una cuadrícula de cuadros
+              centrados: rompía la retícula justo al final. Ahora es un cuadro
+              como los demás y lo pesado —revocar, con sus motivos y su monto—
+              se despliega solo si lo tocas. Es lo que MENOS veces se hace de
+              esta pantalla; no tiene por qué ocupar sitio todo el tiempo. */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <BotonAccion e="🔐" t="Acceso a SACS" d={cuentaAbierta ? 'Ocultar' : 'Ver y revocar'} ok
+              onClick={() => setCuentaAbierta(v => !v)} />
+          </div>
+          {cuentaAbierta && (
+            <div style={{ marginTop: 10 }}>
+              <CuentaSacs contactId={contacto.id} companyId={empresa?.id} compacto alCambiar={refrescar} />
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -409,7 +409,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           );
         })())}
       {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : lineaMsg.startsWith('En esta línea') ? C.ambar700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
-      {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
+      {/* El teléfono del cliente NO va aquí: está en el encabezado del hilo,
+          en la ficha de la derecha y en la lista. Repetirlo solo quitaba ancho
+          a lo único que esta fila tiene que dejar claro — por cuál línea sale
+          el mensaje. En CORREO sí se queda: ahí el destinatario puede ser otro
+          y no está a la vista. */}
+      {!movil && modo === 'correo' && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {canales?.correo?.email || '—'}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
           style={{ border: `1px solid ${C.g200}`, borderRadius: movil ? 10 : 6, minHeight: movil ? 44 : undefined, fontSize: movil ? 13 : 11, padding: movil ? '0 10px' : '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
@@ -533,14 +538,17 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 pantalla: ahí basta con nombrar el problema. */}
             <span style={{ flex: 1, minWidth: movil ? 0 : 160 }}>
               {movil ? <>Ventana de 24 h cerrada — usa una <b>plantilla</b>.</>
-                : <>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación{correoOk ? ' o cambia a correo' : ''}.</>}
+                : <>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación.</>}
               {/* Sin recorte: cortado a dos líneas nadie se enteraba de cuál era
                   el límite ni hasta cuándo. Con el botón abajo hay ancho de
                   sobra para leerlo. */}
               {movil && alerta && <span style={{ display: 'block', marginTop: 3, color: C.g700 }}>{alerta}</span>}
             </span>
             <button className="wa-cta-plantilla" onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: movil ? 10 : 8, minHeight: movil ? 44 : undefined, width: movil ? '100%' : undefined, padding: movil ? '0 16px' : '5px 12px', background: movil ? C.morado : C.ambar200, color: movil ? '#fff' : C.ambar700, fontSize: movil ? 13.5 : 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
-            {correoOk && <button onClick={() => setModo('correo')} style={{ border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '5px 12px', background: '#fff', color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cambiar a correo</button>}
+            {/* «Cambiar a correo» se fue: el selector de canal está dos dedos
+                arriba, en esta misma tarjeta, y este botón lo repetía dentro
+                del aviso. Un recuadro de advertencia con dos botones obliga a
+                elegir entre dos caminos cuando solo hacía falta señalar uno. */}
           </div>
         )}
         {bloqueadoCorreo && <div style={{ padding: '8px 12px', fontSize: 12, color: C.ambar700, background: C.ambar50, borderBottom: `1px solid ${C.ambar200}` }}>{canales?.correo?.motivo || 'El canal de correo no está disponible.'}</div>}
