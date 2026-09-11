@@ -4803,8 +4803,8 @@ const useCases = [
   }
 
   /* ─── El recorrido de la clienta (bajo el hero): el video entra por la derecha y crece con el scroll ─── */
-  .flujo { position: relative; background: #0E0D0C; color: #fff; }
-  .flujo-sticky { position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; padding: 72px 0 110px; }
+  .flujo { position: relative; height: 230vh; background: #0E0D0C; color: #fff; }
+  .flujo-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; padding: 72px 0 110px; }
   .flujo-inner { display: grid; grid-template-columns: 0.75fr 1.55fr; gap: clamp(24px, 4vw, 64px); align-items: center; width: 100%; }
   .flujo-text { position: relative; min-height: 240px; }
   .flujo-pasos { position: relative; }
@@ -4820,7 +4820,7 @@ const useCases = [
   .flujo-p { font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; color: rgba(255, 255, 255, 0.72); margin: 20px 0 0; max-width: 34ch; }
   .flujo-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; font-weight: 600; font-size: 0.9375rem; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.45); padding-bottom: 3px; text-decoration: none; }
   .flujo-cta:hover { border-color: #fff; color: #fff; text-decoration: none; }
-  .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); transform-origin: right center; will-change: transform; }
   .flujo-replay { position: absolute; right: 14px; top: 14px; background: rgba(255, 255, 255, 0.92); color: #1a1a1a; border: 0; border-radius: 999px; padding: 8px 14px; font-family: var(--font-display); font-weight: 600; font-size: 12px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
   .flujo-video.is-done .flujo-replay { opacity: 1; pointer-events: auto; }
   .flujo-still, .flujo-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -4845,14 +4845,14 @@ const useCases = [
   .flujo-dots li.is-on { color: #fff; }
   .flujo-saltar { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.02em; color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px; padding: 10px 18px; text-decoration: none; background: rgba(14, 13, 12, 0.4); backdrop-filter: blur(6px); transition: background 0.3s, color 0.3s; }
   .flujo-saltar:hover { background: #fff; color: #1a1a1a; text-decoration: none; }
-  @media (max-width: 1023px) { .flujo-sticky { padding: 70px 0 120px; } .flujo-text { min-height: 190px; } .flujo-dots { gap: 8px; } .flujo-dots li span { display: none; } .flujo-dots li i { width: 28px; } .flujo-nav { bottom: 18px; gap: 12px; } }
+  @media (max-width: 1023px) { .flujo { height: 190vh; } .flujo-sticky { padding: 70px 0 120px; } .flujo-text { min-height: 190px; } .flujo-dots { gap: 8px; } .flujo-dots li span { display: none; } .flujo-dots li i { width: 28px; } .flujo-nav { bottom: 18px; gap: 12px; } }
   @media (max-width: 1023px) {
     .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
     .flujo-video { order: -1; border-radius: 14px; }
     .flujo-text { min-height: 150px; }
     .flujo-paso b { font-size: 26px; } .flujo-paso small { font-size: 14px; margin-top: 8px; }
   }
-  @media (prefers-reduced-motion: reduce) { .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; visibility: visible; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } .flujo-nav { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flujo { height: auto; } .flujo-sticky { position: relative; height: auto; min-height: 100vh; } .flujo-video { transform: none !important; } .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; visibility: visible; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } .flujo-nav { display: none; } }
 
 
 
@@ -18173,16 +18173,17 @@ const useCases = [
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
     const V = movil ? '/tienda/video/m/' : '/tienda/video/';
-    const PASOS: [string | null, string][] = [
-      [null, '/tienda/59-live.webp'],
-      ['f29-live-post', '/tienda/60-post.webp'],
-      ['f30-post-entra', '/tienda/61-entra.webp'],
-      ['f31-entra-atiende', '/tienda/62-atiende.webp'],
-      ['f32-atiende-probador', '/tienda/63-probador.webp'],
-      ['f33-probador-pago', '/tienda/64-pago.webp'],
-      ['f34-pago-whatsapp', '/tienda/65-whatsapp.webp'],
+    // [clip que LLEVA al paso, foto del paso, velocidad del clip]
+    const PASOS: [string | null, string, number][] = [
+      [null, '/tienda/59-live.webp', 1],
+      ['f29-live-post', '/tienda/60-post.webp', 1.5],
+      ['f30-post-entra', '/tienda/61-entra.webp', 2],
+      ['f31-entra-atiende', '/tienda/62-atiende.webp', 1.5],
+      ['f32-atiende-probador', '/tienda/63-probador.webp', 1.5],
+      ['f33-probador-pago', '/tienda/64-pago.webp', 1.5],
+      ['f34-pago-whatsapp', '/tienda/65-whatsapp.webp', 2],
     ];
-    const N = PASOS.length, LECTURA = 2600;
+    const N = PASOS.length, LECTURA = 1300;
     const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
     const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
     const final = sec.querySelector<HTMLElement>('.flujo-final');
@@ -18211,22 +18212,37 @@ const useCases = [
         const c = PASOS[i + 1][0];
         if (!c) { paso(i + 1); return; }
         barra(i, 0.2);
-        clip.src = V + c + '.mp4'; clip.classList.add('is-on');
+        clip.src = V + c + '.mp4'; clip.classList.add('is-on'); clip.playbackRate = PASOS[i + 1][2];
         const tick = () => { if (t !== token) return; if (clip.duration) barra(i, 0.2 + 0.8 * clip.currentTime / clip.duration); raf = requestAnimationFrame(tick); }; tick();
         clip.onended = () => { if (t === token) paso(i + 1); };
         clip.play().catch(() => { if (t === token) paso(i + 1); });
         setTimeout(() => { if (t === token && clip.readyState < 3 && clip.currentTime < 0.2) { clip.pause(); paso(i + 1); } }, 4000);
-      }, i === 0 ? LECTURA + 600 : LECTURA);
+      }, i === 0 ? LECTURA + 400 : LECTURA);
     }
-    // pausa al salir de la vista y continúa al volver
-    let pausadoEn: number | null = null;
+    // 1) el marco entra chico por la derecha y crece con el scroll (pista corta);
+    //    al terminar de crecer, 2) la historia arranca y corre sola.
+    let crecido = false, pausadoEn: number | null = null, snapT: ReturnType<typeof setTimeout> | null = null, snapping = false, sraf = 0;
+    const escenario = sec.querySelector<HTMLElement>('.flujo-sticky')!;
+    const pista = () => { const r = sec.getBoundingClientRect(); const total = sec.offsetHeight - window.innerHeight; return { y: Math.min(Math.max(-r.top, 0), total), total, top: r.top + window.scrollY }; };
+    const pinta = () => {
+      const { y, total, top } = pista(); const p = total > 0 ? y / total : 1;
+      wrap.style.transform = movil ? `scale(${0.82 + 0.18 * p})` : `scale(${0.56 + 0.44 * p}) translateX(${(1 - p) * 6}%)`;
+      if (p >= 0.92 && !crecido) { crecido = true; if (visible) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } } }
+      // si el usuario se queda a medias en la pista, la página se acomoda al final para que la historia corra
+      if (snapT) clearTimeout(snapT);
+      if (!snapping && p > 0.08 && p < 0.92) snapT = setTimeout(() => { snapping = true; window.scrollTo({ top: top + total, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 800); }, 220);
+    };
+    window.addEventListener('scroll', () => { cancelAnimationFrame(sraf); sraf = requestAnimationFrame(pinta); }, { passive: true });
+    window.addEventListener('resize', pinta);
+    pinta();
+    // pausa al salir de la vista y continúa al volver (solo una vez que ya creció)
     const io = new IntersectionObserver((es) => {
       const e = es[0]; visible = e.isIntersecting && e.intersectionRatio >= 0.4;
-      if (visible) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } }
-      else if (cur >= 0 && cur < N) { pausadoEn = cur; limpia(); }
+      if (visible && crecido) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } }
+      else if (!visible && cur >= 0 && cur < N) { pausadoEn = cur; limpia(); }
     }, { threshold: [0, 0.4, 1] });
-    io.observe(sec);
-    dots.forEach((d) => d.addEventListener('click', () => { pausadoEn = null; paso(+d.dataset.i!); }));
+    io.observe(escenario);
+    dots.forEach((d) => d.addEventListener('click', () => { pausadoEn = null; crecido = true; paso(+d.dataset.i!); }));
     replay?.addEventListener('click', () => { pausadoEn = null; paso(0); });
     muestra(0); barra(0, 0);
   })();
