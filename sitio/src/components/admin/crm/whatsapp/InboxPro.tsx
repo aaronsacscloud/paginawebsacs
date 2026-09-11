@@ -487,6 +487,27 @@ export default function InboxPro() {
   }, []);
 
   const [menuVistas, setMenuVistas] = useState(false);
+  /* ── ETIQUETAR LO QUE SE RESOLVIÓ DESLIZANDO ──────────────────────────────
+     El gesto resuelve rápido y con «Deshacer», y eso está bien. Lo que faltaba
+     es lo que pasa DESPUÉS: se cerraban conversaciones sin decir por qué —220
+     de 220 sin motivo— así que el catálogo de cierre existía y nadie lo
+     alimentaba, y de paso nadie se enteraba de que había resuelto algo si el
+     dedo se le fue al deslizar.
+     Esta hoja abre cuando la acción YA se mandó (pasada la ventana de
+     deshacer): dice qué se cerró, deja ponerle motivo de un toque, y ofrece
+     reabrirla si fue sin querer. Elegir motivo es opcional: cerrarla la deja
+     como antes, sin fricción añadida al gesto. */
+  const [cerrada, setCerrada] = useState<{ waId: string; nombre: string } | null>(null);
+  const [motivos, setMotivos] = useState<{ id: number; nombre: string }[]>([]);
+  useEffect(() => {
+    if (!cerrada || motivos.length) return;
+    fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json())
+      .then(j => setMotivos((j.categorias || j || []).filter((c: any) => c.activo !== false))).catch(() => {});
+  }, [cerrada]); // eslint-disable-line react-hooks/exhaustive-deps
+  const marcarCierre = async (waId: string, cambios: any) => {
+    await fetch('/api/crm/whatsapp/hilo', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: waId, ...cambios }) }).catch(() => {});
+    setCerrada(null); cargarLista(filtrosRef.current);
+  };
   const [vistasGuardadas, setVistasGuardadas] = useState<any[] | null>(null);
   const [contVistas, setContVistas] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -1001,6 +1022,9 @@ export default function InboxPro() {
                         body: JSON.stringify({ id: c.wa_id, estado_crm: 'resuelta' }),
                       }).catch(() => {});
                       cargarLista(filtrosRef.current);
+                      // Ya quedó resuelta. Ahora se ofrece ponerle motivo —o
+                      // reabrirla, si el deslizamiento fue un accidente.
+                      setCerrada({ waId: c.wa_id, nombre: c.contacto?.nombre || c.telefono || 'la conversación' });
                     },
                   } : undefined}>
                 <div className="m-row m-conv" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
@@ -1170,6 +1194,22 @@ export default function InboxPro() {
                       hace el botón de las tres rayas, dos dedos más a la
                       derecha y detrás de un scroll horizontal. Dos puertas a la
                       misma habitación solo obligan a decidir cuál usar. */}
+                  {/* Qué se cerró, y qué puedes hacer con eso. Se abre sola
+                      cuando el gesto ya mandó la acción. */}
+                  <ActionSheet
+                    open={!!cerrada} onClose={() => setCerrada(null)}
+                    title={`Resuelta: ${cerrada?.nombre || ''} · ¿por qué se cierra?`}
+                    items={[
+                      ...motivos.map(m => ({
+                        label: m.nombre,
+                        onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'resuelta', cierre_categoria: m.nombre }),
+                      })),
+                      {
+                        label: 'Fue sin querer — reabrirla',
+                        onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'abierta' }),
+                      },
+                    ]}
+                  />
                   <ActionSheet
                     open={menuVistas} onClose={() => setMenuVistas(false)} title="Ir a"
                     items={[
