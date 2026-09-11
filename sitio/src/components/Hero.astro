@@ -290,6 +290,14 @@ const useCases = [
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           </a>
         </div>
+        <div class="flujo-nav" aria-label="Avance de la historia">
+          <ol class="flujo-dots">
+        <li data-i="0"><i></i><span>Live</span></li><li data-i="1"><i></i><span>Lo vio</span></li><li data-i="2"><i></i><span>Entra</span></li><li data-i="3"><i></i><span>Pregunta</span></li><li data-i="4"><i></i><span>Probador</span></li><li data-i="5"><i></i><span>Pago</span></li><li data-i="6"><i></i><span>WhatsApp</span></li>
+          </ol>
+          <div class="flujo-nav-row"><button class="flujo-seguir" type="button"><span class="flujo-seguir-bar"></span><span class="flujo-seguir-txt">Seguir</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          </button>
+          <a class="flujo-saltar" href="#tablet-section">Saltar la historia</a></div>
       </div>
       <div class="flujo-video" id="flujoVideo">
         <img class="flujo-still" src="/tienda/59-live.webp" alt="" decoding="async" />
@@ -299,6 +307,7 @@ const useCases = [
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
         <div class="flujo-tag flujo-tag--wa" data-tag="6">Ticket enviado por WhatsApp</div>
       </div>
+    </div>
     </div>
   </div>
 </section>
@@ -4797,15 +4806,15 @@ const useCases = [
   .flujo { position: relative; height: 900vh; background: #0E0D0C; color: #fff; }
   .flujo-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; }
   .flujo-inner { display: grid; grid-template-columns: 0.75fr 1.55fr; gap: clamp(24px, 4vw, 64px); align-items: center; width: 100%; }
-  .flujo-text { position: relative; min-height: 240px; }
+  .flujo-text { position: relative; min-height: 430px; }
   .flujo-pasos { position: relative; }
-  .flujo-paso { position: absolute; left: 0; top: 0; opacity: 0; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.45s ease; pointer-events: none; max-width: 30ch; }
-  .flujo-paso.is-on { opacity: 1; transform: none; }
+  .flujo-paso { position: absolute; left: 0; top: 0; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s linear 0.45s; pointer-events: none; max-width: 30ch; }
+  .flujo-paso.is-on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
   .flujo-n { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; color: #E8A838; margin-bottom: 14px; }
   .flujo-paso b { display: block; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 2.9vw, 46px); line-height: 1; letter-spacing: -0.035em; color: #fff; }
   .flujo-paso small { display: block; font-size: clamp(14px, 1.1vw, 17px); line-height: 1.5; color: rgba(255, 255, 255, 0.7); margin-top: 14px; }
-  .flujo-final { position: absolute; left: 0; top: 0; opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; pointer-events: none; }
-  .flujo-final.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .flujo-final { position: absolute; left: 0; top: 0; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s; pointer-events: none; }
+  .flujo-final.is-on { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
   .flujo-eyebrow { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #E8A838; margin-bottom: 14px; }
   .flujo-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 5.4vw, 84px); line-height: 0.95; letter-spacing: -0.04em; margin: 0; color: #fff; }
   .flujo-p { font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; color: rgba(255, 255, 255, 0.72); margin: 20px 0 0; max-width: 34ch; }
@@ -4823,6 +4832,27 @@ const useCases = [
   .flujo-tag--live { background: rgba(14, 13, 12, 0.85); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); }
   .flujo-tag--live i { width: 8px; height: 8px; border-radius: 50%; background: #E54B4B; box-shadow: 0 0 0 4px rgba(229, 75, 75, 0.25); animation: flujoLive 1.2s infinite; }
   @keyframes flujoLive { 50% { opacity: 0.35; } }
+  /* barra de avance: puntos + Seguir. El usuario no tiene que medir el scroll. */
+  .flujo-nav { position: absolute; left: 0; bottom: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; z-index: 5; }
+  .flujo-nav .flujo-seguir { margin-right: 14px; }
+  .flujo-nav-row { display: flex; align-items: center; gap: 4px; }
+  .flujo-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 18px; }
+  .flujo-dots li { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-family: var(--font-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); transition: color 0.3s; }
+  .flujo-dots li i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.28); transition: background 0.3s, transform 0.3s; }
+  .flujo-dots li.is-done i { background: rgba(255, 255, 255, 0.7); }
+  .flujo-dots li.is-on { color: #fff; }
+  .flujo-dots li.is-on i { background: #E8A838; transform: scale(1.35); box-shadow: 0 0 0 5px rgba(232, 168, 56, 0.22); }
+  .flujo-seguir { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1a1a1a; border: 0; border-radius: 999px; padding: 14px 24px; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.02em; cursor: pointer; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); transition: transform 0.2s, background 0.3s, color 0.3s; }
+  .flujo-seguir:hover { transform: translateY(-1px); }
+  .flujo-seguir .flujo-seguir-bar { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 0%); background: rgba(232, 168, 56, 0.35); transition: width 0.2s linear; }
+  .flujo-seguir .flujo-seguir-txt, .flujo-seguir svg { position: relative; }
+  .flujo-seguir.is-busy { background: rgba(255, 255, 255, 0.18); color: #fff; cursor: default; }
+  .flujo-seguir.is-busy svg { display: none; }
+  .flujo-seguir.is-ready { animation: flujoSeguir 1.6s ease-in-out infinite; }
+  @keyframes flujoSeguir { 50% { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(255, 255, 255, 0.12); } }
+  .flujo-saltar { font-size: 12px; color: rgba(255, 255, 255, 0.45); text-decoration: none; }
+  .flujo-saltar:hover { color: #fff; }
+  @media (max-width: 1023px) { .flujo-text { min-height: 250px; } .flujo-dots { gap: 12px; } .flujo-dots li span { display: none; } .flujo-nav { gap: 10px; } .flujo-seguir { padding: 12px 20px; font-size: 13px; } }
   @media (max-width: 1023px) {
     .flujo { height: 900vh; }
     .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
@@ -18166,6 +18196,9 @@ const useCases = [
     const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
     const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
     const final = sec.querySelector<HTMLElement>('.flujo-final');
+    const dots = sec.querySelectorAll<HTMLElement>('.flujo-dots li');
+    const seguir = sec.querySelector<HTMLButtonElement>('.flujo-seguir')!;
+    const seguirTxt = seguir.querySelector<HTMLElement>('.flujo-seguir-txt')!;
     const precarga = (i: number) => { for (let k = i; k < Math.min(i + 2, N); k++) { const im = new Image(); im.src = PASOS[k][1]; } };
     let cur = 0, ocupado = false, deseado = 0;
     function muestra(i: number) {
@@ -18173,6 +18206,9 @@ const useCases = [
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
       if (i < N) still.src = PASOS[i][1];
+      dots.forEach((d) => { const k = +d.dataset.i!; d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i); });
+      seguir.classList.remove('is-busy'); seguir.classList.add('is-ready'); seguir.style.setProperty('--p', '0%');
+      seguirTxt.textContent = i >= N ? 'Ver cómo funciona' : 'Seguir';
     }
     muestra(0); precarga(1);
     function avanza() { // un paso hacia adelante, con su clip; al terminar vuelve a evaluar
@@ -18181,6 +18217,8 @@ const useCases = [
       if (i === N) { cur = N; muestra(N); return; }
       const c = PASOS[i][0];
       cur = i; ocupado = true; precarga(i + 1);
+      seguir.classList.add('is-busy'); seguir.classList.remove('is-ready'); seguirTxt.textContent = 'Reproduciendo…';
+      let barRaf = 0; const bar = () => { if (!ocupado || cur !== i) return; if (clip.duration) seguir.style.setProperty('--p', (clip.currentTime / clip.duration * 100) + '%'); barRaf = requestAnimationFrame(bar); }; bar();
       // al terminar el clip, la foto y el texto del paso se quedan al menos 2 s antes de seguir
       const fin = () => { if (!ocupado) return; muestra(i); setTimeout(() => clip.classList.remove('is-on'), 400); setTimeout(() => { if (cur === i) { ocupado = false; evalua(); } }, 2000); };
       if (!c) { fin(); return; }
@@ -18194,6 +18232,21 @@ const useCases = [
       if (deseado > cur) avanza();
       else if (deseado < cur) retrocede(deseado);
     }
+    // Seguir: avanza exactamente un paso (o va a la funcionalidad al final)
+    const topSec = () => sec.getBoundingClientRect().top + window.scrollY;
+    const vaAlPaso = (k: number) => { const vh = window.innerHeight; window.scrollTo({ top: topSec() + Math.min(k, N) * vh + 2, behavior: 'smooth' }); };
+    seguir.addEventListener('click', () => {
+      if (ocupado) return;
+      if (cur >= N) { document.querySelector('#tablet-section')?.scrollIntoView({ behavior: 'smooth' }); return; }
+      vaAlPaso(cur + 1);
+    });
+    dots.forEach((d) => d.addEventListener('click', () => { if (!ocupado) vaAlPaso(+d.dataset.i!); }));
+    // Mientras corre un clip, el scroll dentro de la sección se detiene: la historia lleva al usuario
+    const dentro = () => { const r = sec.getBoundingClientRect(); return r.top <= 0 && r.bottom > window.innerHeight; };
+    const bloquea = (e: Event) => { if (ocupado && dentro()) e.preventDefault(); };
+    window.addEventListener('wheel', bloquea, { passive: false });
+    window.addEventListener('touchmove', bloquea, { passive: false });
+    window.addEventListener('keydown', (e) => { if (ocupado && dentro() && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) e.preventDefault(); });
     let raf = 0, snapT: ReturnType<typeof setTimeout> | null = null, snapping = false;
     const tick = () => {
       const vh = window.innerHeight;
@@ -18209,7 +18262,7 @@ const useCases = [
       if (snapT) clearTimeout(snapT);
       if (!snapping && r.top <= 0 && y < total) {
         snapT = setTimeout(() => {
-          const top = sec.offsetTop, k = Math.round(y / vh), destino = top + Math.min(k * vh, total);
+          const top = topSec(), k = Math.round(y / vh), destino = top + Math.min(k * vh, total);
           if (Math.abs(window.scrollY - destino) > 6) { snapping = true; window.scrollTo({ top: destino, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 700); }
         }, 180);
       }
