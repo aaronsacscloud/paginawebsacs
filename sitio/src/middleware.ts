@@ -214,6 +214,14 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/telefonia/estado',
   '/api/telefonia/grabacion',
   '/api/telefonia/amd',
+  // Los del marcador (Llamadas inteligentes): sala, estado, amd, transcripción,
+  // twiml y anuncio. Mismo esquema: firma de Twilio, fallo cerrado.
+  '/api/telefonia/marcador/sala',
+  '/api/telefonia/marcador/estado',
+  '/api/telefonia/marcador/amd',
+  '/api/telefonia/marcador/transcripcion',
+  '/api/telefonia/marcador/twiml',
+  '/api/telefonia/marcador/anuncio',
   '/api/leads/captura',            // webhook genérico de formularios; valida su propio token
 ]);
 
