@@ -137,3 +137,11 @@ llamada desde el celular no se graba ni genera minuta — justo lo que se pide.
 Hay que llamar por WebRTC también en el teléfono (se puede: getUserMedia sobre
 HTTPS), con su propia interfaz a pantalla completa, y cuidar audio/altavoz,
 bloqueo de pantalla y que la llamada sobreviva el cambio de pestaña.
+
+---
+## Hecho el 2026-09-10/11
+- ✅ Bitácora de llamadas + buzón detectado
+- ✅ El nombre siempre visible en la lista
+- ✅ Contadores por contacto + regla de WhatsApp tras el buzón
+- ✅ Minuta en PDF con marca, en inbox/ficha, y envío al cliente
+- ✅ Llamar desde el celular dentro del CRM + 5 mejoras
