@@ -8,7 +8,9 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { firmaValida, xml, NUMERO, telefoniaConfigurada } from '../../../lib/telefonia/twilio';
+import { callerIdSaliente } from '../../../lib/telefonia/caller-id';
 import { registrarBitacoraLlamada } from '../../../lib/telefonia/bitacora';
+import { agenteEntra } from '../../../lib/telefonia/marcador';
 
 export const prerender = false;
 const BASE = 'https://www.sacscloud.com';
@@ -46,6 +48,20 @@ export const POST: APIRoute = async ({ request }) => {
   const identidad = /^client:(.+)$/i.exec(String(p.From || '').trim())?.[1] || null;
   const esEntrante = !identidad;
   const destino = String(p.To || '').trim();
+
+  /* ── LA SALA DEL MARCADOR (Llamadas inteligentes) ───────────────────────
+     `To=sala:<sesión>` no es una llamada a nadie: es el navegador del
+     vendedor entrando a la sala de conferencia donde el servidor irá metiendo,
+     uno por uno, a los contactos de la lista. No se espeja en `wa_llamadas`
+     (no hay contacto del otro lado) y solo entra quien es dueño de la sesión.
+     `endConferenceOnExit`: si el vendedor se sale, la sala se cierra y el
+     contacto que estuviera dentro no se queda hablando solo. */
+  const sala = /^sala:([0-9a-f-]{36})$/i.exec(destino)?.[1];
+  if (sala) {
+    if (!identidad || !(await agenteEntra(sala, p.CallSid, identidad))) return decir('Esta sesión de llamadas no está activa.');
+    return xml(`<Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true" beep="false" waitUrl="" ` +
+      `statusCallback="${BASE}/api/telefonia/marcador/sala?sesion=${sala}" statusCallbackMethod="POST" statusCallbackEvent="start end join leave">sesion-${sala}</Conference></Dial>`);
+  }
 
   // Espejo de la llamada (misma tabla que WhatsApp, canal 'telefono'): el
   // conversation_id se liga por teléfono para que la minuta caiga en el hilo.
@@ -122,5 +138,5 @@ export const POST: APIRoute = async ({ request }) => {
     // había que inferirlo restando lo hablado del total, y cuando los avisos
     // llegaban juntos salía «timbró 0 s». Con la marca real no se inventa nada.
     + ` statusCallback="${avisos}" statusCallbackEvent="answered"`;
-  return xml(`<Dial callerId="${NUMERO}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number ${amd}>${destino}</Number></Dial>`);
+  return xml(`<Dial callerId="${await callerIdSaliente()}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number ${amd}>${destino}</Number></Dial>`);
 };

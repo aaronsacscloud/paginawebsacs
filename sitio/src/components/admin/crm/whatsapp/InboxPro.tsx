@@ -3,7 +3,7 @@
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
-import { IcoBurbuja, IcoReloj, IcoInbox, IcoUsuario, IcoCheck, IcoEmbudo } from './Iconos';
+import { IcoBurbuja, IcoReloj, IcoInbox, IcoUsuario, IcoCheck, IcoEmbudo, IcoTelefono } from './Iconos';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
@@ -28,6 +28,7 @@ const Llamadas = lazySeguro(() => import('./Llamadas'));
 const Hilo = lazySeguro(() => import('./Hilo'));
 const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
 const NuevoChat = lazySeguro(() => import('./NuevoChat'));
+const Cabina = lazySeguro(() => import('./Cabina'));
 import type { Condicion } from '../../../../lib/whatsapp/filtros';
 import { leerSnap, guardarSnap } from '../../../../lib/crm/snapshot';
 import { cerrarAviso, tagAviso } from '../../../../lib/ui/cerrar-aviso';
@@ -45,6 +46,8 @@ export default function InboxPro() {
   const [filtrosAdHoc, setFiltrosAdHoc] = useState<{ logica: 'AND' | 'OR'; condiciones: Condicion[] } | null>(null);
   const [orden, setOrden] = useState('recientes');
   const [mostrar, setMostrar] = useState('conversaciones');
+  // Llamadas inteligentes: la cabina ocupa el lugar de la lista + el hilo.
+  const [cabina, setCabina] = useState(false);
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   /* Lo que llegó MIENTRAS mirabas, en el teléfono. Es donde más falta hace:
      en escritorio la lista entera está a la vista, aquí caben cuatro filas.
@@ -918,11 +921,30 @@ export default function InboxPro() {
   };
 
   // ── Móvil: lista → hilo apilado; sidebar y detalle en Sheets ──
+
+  // ── Llamadas inteligentes ───────────────────────────────────────────────
+  const BANDEJA_LABEL: Record<string, string> = { accion: 'Requiere mi acción', todas: 'Todas', mias: 'Míos', sin_asignar: 'Sin asignar', no_leidas: 'No contestadas', sin_respuesta: 'Sin respuesta de ellos', programados: 'Cola del agente', pospuestas: 'Pospuestas', internas: 'Fuera del inbox' };
+  const descripcionLista = [
+    vistaActiva?.nombre ? `Vista ${vistaActiva.nombre}` : (BANDEJA_LABEL[filtros.filtro] || filtros.filtro),
+    filtros.etapa ? `etapa ${filtros.etapa}` : null,
+    filtros.search ? `«${filtros.search}»` : null,
+    filtrosAdHoc?.condiciones?.length ? `${filtrosAdHoc.condiciones.length} filtros` : null,
+  ].filter(Boolean).join(' · ');
+  const cabinaEl = cabina ? (
+    <Suspense fallback={<Cargando texto="Abriendo la cabina…" alto={200} />}>
+      <Cabina qs={armarQS(filtros)} descripcion={descripcionLista} total={totalLista} yo={yo} movil={isMobile}
+        onCerrar={() => setCabina(false)}
+        onAbrirConversacion={id => { setCabina(false); setActiva({ id, wa: id, email: null }); }} />
+    </Suspense>
+  ) : null;
+
   if (isMobile) {
     return (
       <div className="m-lienzo" style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))', position: 'relative' }}>
         <style>{CSS_INBOX}</style>
-        {!activa ? (
+        {cabina && !activa ? (
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>{cabinaEl}</div>
+        ) : !activa ? (
           (() => {
             const todas = (lista || []).filter((c: any) => !c.virtual);
             // Espera respuesta: el último mensaje es del cliente y no está
@@ -1169,6 +1191,10 @@ export default function InboxPro() {
                           active: chipWa === v2,
                           onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
                         })),
+                      // Llamadas inteligentes: la cabina marca la lista que
+                      // esté filtrada ahora (bandeja + ciclo + vista).
+                      { icon: <IcoTelefono size={17} />, label: 'Llamadas inteligentes', active: cabina,
+                        onClick: () => { setCabina(true); setActiva(null); setMenuVistas(false); } },
                       /* EL CICLO DE VIDA. El filtro `etapa` y el conteo
                          `counts.por_etapa` ya existían en el API desde siempre;
                          lo único que faltaba era esta puerta. Sin ella, para ver
@@ -1273,6 +1299,7 @@ export default function InboxPro() {
         )}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
           <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
+            cabina={cabina} onCabina={v => { setCabina(v); setActiva(null); setFiltrosMobile(false); }}
             vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         </Sheet>
       </div>
@@ -1291,7 +1318,9 @@ export default function InboxPro() {
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
         </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
+          cabina={cabina} onCabina={setCabina}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
+        {cabina ? cabinaEl : (<>
         <div data-lista-wa style={{ display: 'contents' }}><Suspense fallback={<EsqueletoLista filas={9} alInstante />}><ListaConversaciones {...propsLista} /></Suspense></div>
         {activa ? (
           <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
@@ -1305,6 +1334,7 @@ export default function InboxPro() {
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
         )}
+        </>)}
       </div>
       {isCompact && (
         <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>

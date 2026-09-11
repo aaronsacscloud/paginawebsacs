@@ -51,14 +51,17 @@ export function firmaValida(url: string, params: Record<string, string>, firma: 
 }
 
 /** REST de Twilio (form-encoded, Basic Auth). */
-export async function twilioRest(ruta: string, form?: Record<string, string>, metodo?: string) {
+export async function twilioRest(ruta: string, form?: Record<string, string | string[]>, metodo?: string) {
+  // Un arreglo se manda como llave repetida: así pide Twilio `StatusCallbackEvent`.
+  const cuerpo = new URLSearchParams();
+  for (const [k, v] of Object.entries(form || {})) (Array.isArray(v) ? v : [v]).forEach(x => cuerpo.append(k, x));
   const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}${ruta}`, {
     method: metodo || (form ? 'POST' : 'GET'),
     headers: {
       Authorization: 'Basic ' + Buffer.from(`${ACCOUNT_SID}:${AUTH_TOKEN}`).toString('base64'),
       ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
     },
-    body: form ? new URLSearchParams(form).toString() : undefined,
+    body: form ? cuerpo.toString() : undefined,
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`Twilio ${r.status}: ${j?.message || JSON.stringify(j).slice(0, 200)}`);

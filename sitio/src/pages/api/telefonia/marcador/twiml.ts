@@ -1,0 +1,28 @@
+// LLAMADAS INTELIGENTES · TwiML de la pata del CONTACTO: al contestar, Twilio
+// pide aquí qué hacer. Se prende la transcripción en vivo de lo que él dice y
+// se le mete a la sala donde ya espera el vendedor (con el micrófono apagado).
+import type { APIRoute } from 'astro';
+import { xml } from '../../../../lib/telefonia/twilio';
+import { BASE, getSesion } from '../../../../lib/telefonia/marcador';
+import { supabase } from '../../../../lib/supabase';
+import { leer } from './_comun';
+
+export const prerender = false;
+
+export const POST: APIRoute = async ({ request, url }) => {
+  const r = await leer(request, url, 'twiml');
+  if (r instanceof Response) return r;
+  if (!r.item) return xml('<Hangup/>');
+  const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id, estado').eq('id', r.item).maybeSingle();
+  const s = it ? await getSesion(it.sesion_id) : null;
+  // Si la sesión se pausó o el vendedor se fue mientras timbraba, no se le
+  // deja al contacto una llamada muda: se cuelga sin decir nada.
+  if (!it || !s || s.estado !== 'activa' || !s.agente_en_sala) return xml('<Hangup/>');
+
+  const cb = `${BASE}/api/telefonia/marcador/transcripcion?item=${it.id}`;
+  return xml(
+    `<Start><Transcription statusCallbackUrl="${cb}" statusCallbackMethod="POST" languageCode="es-MX" track="inbound_track" partialResults="true" enableAutomaticPunctuation="true"/></Start>` +
+    `<Dial><Conference startConferenceOnEnter="false" endConferenceOnExit="false" beep="false" waitUrl="" ` +
+    `statusCallback="${BASE}/api/telefonia/marcador/sala?sesion=${s.id}" statusCallbackMethod="POST" statusCallbackEvent="start end join leave">sesion-${s.id}</Conference></Dial>`,
+  );
+};

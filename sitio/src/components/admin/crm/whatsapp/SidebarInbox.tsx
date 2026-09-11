@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, L, label } from './estilo';
 import { useLineas } from './useLineas';
-import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
+import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario, IcoTelefono } from './Iconos';
 import EtapasModal from './EtapasModal';
 import { useLifecycle, cargarLifecycle } from '../../../../lib/crm/lifecycle';
 import { catalogoCampos, type CampoFiltro } from '../../../../lib/whatsapp/filtros';
@@ -100,10 +100,12 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   }), [cat, equipo, giros, cierres, lineas]);
 }
 
-export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo, yo, tick = 0, onGuardarVistaExterna }: {
+export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo, yo, tick = 0, onGuardarVistaExterna, cabina, onCabina }: {
   counts: any; filtros: Filtros; setFiltros: (f: Filtros) => void;
   vistaActiva: any; onVista: (v: any | null) => void; equipo: any[]; yo?: any; tick?: number;
   onGuardarVistaExterna?: (abrir: (cfg: any) => void) => void;
+  /** Llamadas inteligentes: si la cabina está abierta y cómo abrirla/cerrarla. */
+  cabina?: boolean; onCabina?: (abrir: boolean) => void;
 }) {
   const [subio, setSubio] = useState<Record<string, boolean>>({});
   /* Lo que llegó MIENTRAS mirabas. Los contadores de las bandejas ya estaban,
@@ -232,6 +234,12 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
             <b.Ico size={18} />
           </button>
         ))}
+        {onCabina && (
+          <button title="Llamadas inteligentes" onClick={() => onCabina(!cabina)}
+            style={{ border: 'none', cursor: 'pointer', padding: 10, borderRadius: 10, background: cabina ? C.moradoSuave : 'none', color: cabina ? C.moradoTinta : C.g400 }}>
+            <IcoTelefono size={18} />
+          </button>
+        )}
       </div>
     );
   }
@@ -358,6 +366,18 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         })}
         </div>
       </div>
+
+      {/* LLAMADAS INTELIGENTES · la cabina se arma con la lista que está
+          filtrada ahora mismo (bandeja + etapa + vista), por eso vive aquí,
+          junto a los filtros, y no en un menú aparte. */}
+      {onCabina && (
+        <div style={{ borderTop: `1px solid ${C.g100}`, padding: '6px 0' }}>
+          <button style={fila(!!cabina)} onClick={() => onCabina(!cabina)}>
+            <IcoTelefono size={16} style={{ color: 'currentColor' }} />
+            Llamadas inteligentes
+          </button>
+        </div>
+      )}
 
       <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <button onClick={() => setModalSeccion('nueva')}

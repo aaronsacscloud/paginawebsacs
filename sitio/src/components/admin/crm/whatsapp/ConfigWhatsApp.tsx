@@ -370,6 +370,7 @@ function Telefonia() {
           <p style={{ fontSize: 11.5, color: '#777', margin: '4px 0 0' }}>Variables pendientes en Vercel: {(st.faltantes || []).join(' · ') || '—'}</p>
         </div>
       )}
+      {st?.configurada && <CallerId />}
       <ReglasLlamadas />
       <EnvioMinuta />
       <div style={{ ...S.card }}>
@@ -379,6 +380,87 @@ function Telefonia() {
         {paso(3, 'Regulatory Bundle de México', 'Phone Numbers → Regulatory Compliance → New Bundle (Mexico · Local). Piden dirección en México con comprobante de domicilio menor a 1 año (CFE/Telmex) e identificación (INE/pasaporte). Aprobación: 1 a 3 días hábiles.')}
         {paso(4, 'Comprar el número', 'Phone Numbers → Buy a Number → México → Local (ej. lada 55). Cuesta $6.25 USD/mes.')}
         {paso(5, 'Conectarlo al CRM', 'Comparte el Account SID y Auth Token con el equipo técnico: con eso se crea la API Key, la TwiML App y se configuran los webhooks. Cinco minutos después ya marcas desde cualquier chat.')}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════ Caller ID: el número que ve el cliente ═════════════
+/**
+ * Twilio marca desde SU número, pero el cliente conoce el de ventas (el del
+ * WhatsApp). Si le llamamos desde otro, no lo reconoce y no contesta, y si
+ * devuelve la llamada le contesta una grabación. Twilio deja usar el de ventas
+ * como remitente una vez que lo VERIFICA: le llama y hay que teclear un código.
+ * Esta tarjeta hace ese trámite y guarda con cuál salen las llamadas.
+ */
+function CallerId() {
+  const [d, setD] = useState<any>(null);
+  const [tel, setTel] = useState('');
+  const [codigo, setCodigo] = useState<{ codigo: string; telefono: string } | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState('');
+  const [ok, setOk] = useState('');
+  const cargar = () => fetch('/api/crm/telefonia/caller-id').then(r => r.json()).then(setD).catch(() => setD({ error: 'sin red' }));
+  useEffect(() => { cargar(); }, []);
+  const post = async (cuerpo: any) => {
+    setOcupado(true); setError(''); setOk('');
+    const r = await fetch('/api/crm/telefonia/caller-id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) }).then(x => x.json()).catch(() => ({ error: 'sin red' }));
+    setOcupado(false);
+    if (r?.error) { setError(r.error); return null; }
+    return r;
+  };
+  const verificar = async () => {
+    const r = await post({ accion: 'verificar', telefono: tel, nombre: 'Sacscloud ventas' });
+    if (r) setCodigo({ codigo: r.codigo, telefono: r.telefono });
+  };
+  const usar = async (telefono: string | null) => {
+    const r = await post({ accion: 'usar', telefono });
+    if (r) { setOk(`Desde ahora las llamadas salen con ${r.actual}.`); setCodigo(null); cargar(); }
+  };
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Consultando los números…" /></div>;
+  const verificados: { telefono: string; nombre: string | null }[] = d.verificados || [];
+  const actual: string | null = d.actual || d.twilio;
+  const fmt = (t: string) => t.replace(/^\+52(\d{3})(\d{3})(\d{4})$/, '+52 $1 $2 $3').replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '+1 $1 $2 $3');
+  const opciones = [{ telefono: d.twilio, nombre: 'Número de Twilio' }, ...verificados.filter(v => v.telefono !== d.twilio)];
+  return (
+    <div style={{ ...S.card, marginBottom: 14, borderLeft: '3px solid #9B8CFA' }}>
+      <b style={{ fontSize: 13.5, display: 'block' }}>El número que ve el cliente</b>
+      <p style={{ fontSize: 11.5, color: '#888', margin: '3px 0 12px', lineHeight: 1.55 }}>
+        Las llamadas salen hoy con <b style={{ color: '#5B4BD6' }}>{fmt(actual || '')}</b>. Lo ideal es que salgan con el mismo número del WhatsApp de ventas: el cliente lo reconoce, contesta más, y si devuelve la llamada le cae al WhatsApp. Para eso Twilio primero lo verifica: llama a ese número y hay que teclear un código.
+      </p>
+      <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+        {opciones.map(o => {
+          const activo = o.telefono === actual;
+          return (
+            <div key={o.telefono} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', border: `1px solid ${activo ? '#9B8CFA' : '#ececf4'}`, background: activo ? '#EEECFE' : '#fff', borderRadius: 9 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, background: activo ? '#5B4BD6' : '#d9d6ea', flexShrink: 0 }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}><b>{fmt(o.telefono)}</b> <span style={{ color: '#888' }}>· {o.nombre || 'verificado'}</span></span>
+              {activo ? <span style={{ fontSize: 11, fontWeight: 800, color: '#5B4BD6' }}>En uso</span>
+                : <button type="button" style={btnMini} disabled={ocupado} onClick={() => usar(o.telefono === d.twilio ? null : o.telefono)}>Usar este</button>}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
+        <label style={lbl}>Verificar otro número (el de ventas)</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input style={{ ...inp, maxWidth: 240 }} placeholder="+52 415 283 8733" value={tel} onChange={e => setTel(e.target.value)} disabled={ocupado} />
+          <button type="button" style={{ ...S.btnP, opacity: ocupado || !tel.trim() ? 0.6 : 1 }} disabled={ocupado || !tel.trim()} onClick={verificar}>
+            {ocupado ? <Corazones size={9} color="#fff" /> : 'Que Twilio me llame'}
+          </button>
+        </div>
+        {codigo && (
+          <div style={{ marginTop: 12, padding: '12px 14px', background: '#EEECFE', borderRadius: 10 }}>
+            <div style={{ fontSize: 12, color: '#4536BE', lineHeight: 1.55 }}>
+              Twilio está llamando a <b>{fmt(codigo.telefono)}</b>. Contesta y teclea este código:
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: '#5B4BD6', letterSpacing: 6, margin: '6px 0', fontVariantNumeric: 'tabular-nums' }}>{codigo.codigo}</div>
+            <div style={{ fontSize: 11.5, color: '#666', marginBottom: 8 }}>Cuando lo hayas tecleado, el número queda verificado y lo puedes poner en uso.</div>
+            <button type="button" style={S.btnP} disabled={ocupado} onClick={() => usar(codigo.telefono)}>Ya tecleé el código · usar este número</button>
+          </div>
+        )}
+        {error && <div style={{ marginTop: 10 }}><Aviso tono="malo">{error}</Aviso></div>}
+        {ok && <div style={{ marginTop: 10 }}><Aviso tono="ok">{ok}</Aviso></div>}
       </div>
     </div>
   );
