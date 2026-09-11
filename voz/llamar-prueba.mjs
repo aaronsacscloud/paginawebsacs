@@ -9,7 +9,6 @@
 // Twilio necesita alcanzar wss://code.sacscloud.com/voz/ws → nginx → 127.0.0.1:8470.
 import { tokenDe } from './crm.mjs';
 
-const momento = () => { const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(new Date())); return h < 12 ? 'buenos días' : h < 19 ? 'buenas tardes' : 'buenas noches'; };
 const args = Object.fromEntries(process.argv.slice(3).map((a) => { const m = a.match(/^--([^=]+)=(.*)$/); return m ? [m[1], m[2]] : [a, true]; }));
 const modo = process.argv[2] || 'eco';
 const A = args.a || process.env.PRUEBA_CELULAR || '';
@@ -24,7 +23,7 @@ const stt = args.stt || 'nova-3-general';
 const item = `prueba-${Date.now().toString(36)}`;
 const saludo = args.saludo || (modo === 'eco'
   ? 'Hola, soy la prueba de eco. Diga algo y se lo repito. Diga adiós para terminar.'
-  : `Hola, ${momento()}. ¿Hablo con Aarón?`);
+  : 'Hola, ¿qué tal? ¿Hablo con Aarón?');
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const params = `<Parameter name="item" value="${esc(item)}"/><Parameter name="token" value="${tokenDe(item)}"/><Parameter name="prueba" value="1"/><Parameter name="modo" value="${esc(modo)}"/><Parameter name="saludo" value="${esc(saludo)}"/>`;

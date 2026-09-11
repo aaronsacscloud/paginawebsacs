@@ -66,6 +66,56 @@ export async function horariosParaDemo(opts: { slug?: string; dias?: number; mej
   return elegidos;
 }
 
+/**
+ * Los horarios que Fernanda ofrece AL TELÉFONO (regla del dueño, 11-sep-2026):
+ *   - sin preferencia → los PRIMEROS TRES del día siguiente hábil (si mañana trae menos de tres, se completan con el día que sigue);
+ *   - con `hora` (y opcionalmente `fecha`) → los parecidos a esa hora (±90 min) ese día y, si no alcanza, los días siguientes.
+ * `zona` es la del contacto: «a las 10» en Tijuana son las 12 del centro; los slots vienen en CDMX y se convierten para hablarle en su hora.
+ */
+export async function horariosParaVoz(o: { slug?: string; fecha?: string; hora?: string; zona?: string; max?: number } = {}): Promise<Horario[]> {
+  const slug = o.slug || 'demo', max = o.max || 3;
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const from = o.fecha && o.fecha > hoy ? o.fecha : new Date(Date.now() - 6 * 3600e3 + 86400e3).toISOString().slice(0, 10);   // mañana
+  const to = new Date(new Date(from + 'T12:00:00Z').getTime() + 7 * 86400e3).toISOString().slice(0, 10);
+  let dates: Record<string, string[]> = {};
+  try {
+    const r = await fetch(`${BASE}/api/scheduling/available-slots?slug=${slug}&from=${from}&to=${to}&tz=America/Mexico_City`, { signal: AbortSignal.timeout(12000) });
+    dates = ((await r.json()) as any)?.dates || {};
+  } catch { return []; }
+  // Diferencia en horas entre la zona del contacto y CDMX (para ofrecerle en SU hora).
+  const zona = o.zona || 'America/Mexico_City';
+  const desfase = (() => {
+    if (zona === 'America/Mexico_City') return 0;
+    const d = new Date();
+    const h = (z: string) => Number(new Intl.DateTimeFormat('en-US', { timeZone: z, hour: 'numeric', hour12: false }).format(d).replace('24', '0'));
+    return h(zona) - h('America/Mexico_City');
+  })();
+  const todos: (Horario & { min: number })[] = [];
+  for (const [fecha, horas] of Object.entries(dates).sort()) {
+    const dow = new Date(fecha + 'T12:00:00').getDay();
+    if (dow === 0 || dow === 6) continue;   // citas solo de lunes a viernes
+    for (const hora of horas || []) {
+      const [h, m] = hora.split(':').map(Number);
+      if (h < 9 || h >= 18) continue;
+      const hl = h + desfase;                 // en la hora del contacto
+      const horaLocal = `${String(hl).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      todos.push({ fecha, hora: horaLocal, etiqueta: fmt(fecha, horaLocal), puntaje: 0, min: hl * 60 + m });
+    }
+  }
+  if (!todos.length) return [];
+  if (o.hora) {
+    const [ph, pm] = o.hora.split(':').map(Number);
+    const objetivo = ph * 60 + (pm || 0);
+    const cerca = todos.filter(t => Math.abs(t.min - objetivo) <= 90);
+    // Primero el día que pidió (o el más cercano), luego lo más parecido en hora.
+    cerca.sort((a, b) => (a.fecha === b.fecha ? Math.abs(a.min - objetivo) - Math.abs(b.min - objetivo) : a.fecha < b.fecha ? -1 : 1));
+    return cerca.slice(0, max).map(({ min: _m, ...h }) => h);
+  }
+  // Sin preferencia: los primeros del primer día con huecos, completando con el siguiente si hacen falta.
+  todos.sort((a, b) => (a.fecha === b.fecha ? a.min - b.min : a.fecha < b.fecha ? -1 : 1));
+  return todos.slice(0, max).map(({ min: _m, ...h }) => h);
+}
+
 export const horariosTexto = (hs: Horario[]) => hs.length
   ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí, los más cercanos primero): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Dilos como se hablan («el jueves a las 11 o el viernes a las 4»), nunca con fecha numérica, lista ni viñetas, y en una sola pregunta al final del mensaje, SIN IMPONER: ofrécelos como opciones y deja abierta la puerta a otro momento («¿te queda el jueves a las 11 o el viernes a las 4? y si te acomoda otro día, tú me dices»). Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
   : 'No hay horarios de demo en los próximos días: si quiere agendar, dile en una línea que el consultor le confirma un horario hoy mismo (una sola disculpa, sin explicar por qué) y escala.';

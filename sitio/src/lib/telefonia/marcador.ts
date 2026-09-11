@@ -56,6 +56,8 @@ export const ESPERA = {
   cierre: 8000,      // wrap-up por defecto tras hablar con una persona
   caida: 30000,      // el vendedor se cayó en línea y no volvió → se cuelga con disculpa (la TwiML de espera lo hace a los ~20 s; esto es la red)
   caida_remarcar: 10, // minutos para volver a marcar al que se le cortó
+  prometida_reintento: 15, // minutos entre reintentos de una llamada que el contacto pidió («márcame en diez minutos») y no contestó
+  prometida_max: 2,        // cuántos reintentos antes de darse por vencido (queda para el vendedor en Mi día)
 };
 
 /** ¿Es hora de llamar… en la zona del contacto? (la lada decide el huso) */
@@ -413,6 +415,15 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     estado = 'hecho';
     const s = await getSesion(it.sesion_id);
     if (s && !s.agente_en_sala) await pausarSesion(it.sesion_id, `Se cortó tu conexión. ${it.nombre || 'El contacto'} quedó para volver a llamar en ${ESPERA.caida_remarcar} min.`, 'caida');
+  }
+  /* La llamada PROMETIDA («márcame en diez minutos») que no contesta no se pierde:
+     se vuelve a intentar dos veces, cada quince minutos. Es el «flujo de reintentos»
+     que pidió el dueño para Fernanda: el contacto pidió la llamada, así que insistir
+     un par de veces es cumplirle, no molestarlo. Al tercer fallo se queda como
+     cualquier otro item hecho (el cierre lo manda a Mi día del vendedor). */
+  if (estado === 'hecho' && /^Volver a llamar/.test(String(it.nota || '')) && ['no_contesto', 'ocupado', 'buzon'].includes(String(resultado))) {
+    const { count } = await supabase.from('tel_sesion_items').select('id', { count: 'exact', head: true }).eq('sesion_id', it.sesion_id).eq('telefono', it.telefono).like('nota', 'Volver a llamar%').neq('estado', 'pendiente');
+    if ((count || 0) <= ESPERA.prometida_max) await reprogramar(it, ESPERA.prometida_reintento, `no contestó la llamada que pidió (intento ${count || 1} de ${ESPERA.prometida_max + 1})`);
   }
   /* Disyuntor: una racha de llamadas que ni timbran es un problema de la
      cuenta (caller ID, permisos, saldo), no de los contactos. Se para antes

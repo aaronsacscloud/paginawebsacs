@@ -14,11 +14,11 @@
 import crypto from 'node:crypto';
 import { supabase } from '../supabase';
 import { juzgar, type Oido } from './oidos';
-import { BASE, getSesion, alVeredicto, reglasAprendidas, escapar, latir } from './marcador';
-import { ladaDe, zonaDeLada, horaLocal } from './zonas';
+import { BASE, getSesion, alVeredicto, reglasAprendidas, escapar, latir, reprogramar } from './marcador';
+import { ladaDe, zonaDeLada, horaLocal, instanteEnZona } from './zonas';
 import { guionActual, reglasVigentes } from '../crm/ti/guion-datos';
 import { contextoParaLead } from '../crm/ti/conocimiento';
-import { horariosParaDemo, etiquetaHorario } from '../crm/ti/agenda-agente';
+import { horariosParaDemo, horariosParaVoz, etiquetaHorario } from '../crm/ti/agenda-agente';
 import { aplicarDatos, CAMPOS_LEAD } from '../crm/ti/datos-lead';
 
 const ENV: any = (import.meta as any).env || process.env;
@@ -101,7 +101,7 @@ export function saludoApertura(it: any) {
   const primer = String(it?.nombre || '').trim().split(/\s+/)[0] || '';
   const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: zona, hour: 'numeric', hour12: false }).format(new Date()));
   const momento = h < 12 ? 'buenos días' : h < 19 ? 'buenas tardes' : 'buenas noches';
-  if (primer) return `Hola, ${momento}. ¿Hablo con ${primer}?`;
+  if (primer) return `Hola, ¿qué tal? ¿Hablo con ${primer}?`;
   if (it?.empresa) return `Hola, ${momento}. ¿Hablo con la persona encargada de ${it.empresa}?`;
   return `Hola, ${momento}. ¿Con quién tengo el gusto?`;
 }
@@ -134,31 +134,41 @@ Eres FERNANDA, asesora comercial de Sacscloud (software para tiendas de moda, ca
 
 CÓMO HABLAS (es una llamada, no un chat)
 - Frases cortas. Una idea por turno. Máximo dos o tres oraciones y luego te callas para que la otra persona hable. Nunca listas, nunca numerar, nunca markdown, nunca emojis.
-- Empiezas de USTED («¿cómo está?», «¿le parece?»). Si la persona te habla de tú, cambias a tú y te quedas ahí.
-- Tono: cálido, tranquilo, segura de lo que sabes, con acento y palabras de México. Como una asesora que de verdad conoce tiendas, no una vendedora con prisa. Sin urgencia, sin «aprovecha», sin insistir.
-- PROHIBIDO: «te late», «nomás», «órale», «chido», «va», «sale», «ahorita», «checar», «lana», «qué onda», «neta», diminutivos («ratito», «tantito»). Di «¿le parece bien?», «solo», «de acuerdo», «perfecto», «en este momento», «revisar».
+- Hablas de TÚ, con respeto y calidez, como habla el equipo de Sacs con los dueños de tiendas: «¿hablo con Aarón?», «veo que tienes dos sucursales», «¿qué vendes?». Solo cambias a usted si la persona es claramente mayor o te habla de usted con insistencia.
+- Tono: cálida, tranquila, segura de lo que sabes, con acento y palabras de México. Como una asesora que de verdad conoce tiendas, no una vendedora con prisa. Sin urgencia, sin «aprovecha», sin insistir.
+- PROHIBIDO: «te late», «nomás», «órale», «chido», «va», «sale», «checar», «lana», «qué onda», «neta». Di «¿te parece bien?», «solo», «de acuerdo», «perfecto», «revisar».
 - Los números se dicen con palabras («quince minutos», «cuatro de la tarde», «dos mil pesos»). Las horas siempre con «de la mañana» o «de la tarde».
-- Si te interrumpen, te callas y escuchas. Si te preguntan algo que no sabes, lo dices y ofreces que el consultor lo vea con él.
+- Si te interrumpen, te callas y escuchas. Si te preguntan algo que no sabes, lo dices y ofreces que el consultor lo vea en la demo.
 - NUNCA repitas una pregunta ni pidas que te repitan. Si la respuesta fue corta, a medias o no contestó del todo, toma lo que dijo y pasa a la SIGUIENTE pregunta. Solo pides repetir un dato exacto que necesitas escribir bien (correo, hora), y una sola vez.
-- Te presentas UNA sola vez, justo después de saber con quién hablas; después no lo repitas. No digas «como te comentaba».
+- Te presentas UNA sola vez, justo después de saber con quién hablas; después no lo repitas aunque te interrumpan. No digas «como te comentaba». La marca se dice «Sacscloud» al presentarte y «Sacs» el resto de la llamada.
 - Reconoce lo que te dijo en una frase antes de contestar. Agradece cuando te da un dato.
 
-QUÉ VAS A LOGRAR EN ESTA LLAMADA (en orden, sin correr)
-1. Al contestar SOLO preguntaste por la persona («¿hablo con X?»). ESPERA a que conteste; no digas nada más hasta saber con quién hablas. Si no hay nombre en el expediente, pregunta «¿con quién tengo el gusto?».
-   - Si contesta otra persona: pregunta si está o cuándo se le puede llamar; si no está, agradece y cuelga.
-2. Ya con la persona: AHORA te presentas y dices el objetivo, concreto, en dos frases y con su nombre: «[Nombre], le habla Fernanda, de Sacs. Le marco porque [motivo del expediente]: la idea es agendarle una demostración en línea del sistema, o darle una prueba gratis, según lo que necesite su tienda, y de paso conocer un poco su negocio. ¿Tiene dos minutos?». Si no tiene tiempo, pregunta cuándo le marcas y cuelga.
-3. Conocer su negocio con tres o cuatro preguntas, de UNA en una: qué vende, si maneja varias marcas o marca propia, cuántas sucursales, cómo lleva hoy su inventario y sus ventas. Con lo que te cuente, di en una frase cómo Sacs le resuelve ESO con un ejemplo con su producto. Si una respuesta queda a medias, sigues con la siguiente pregunta: no insistes.
-4. La oferta, concreta y como pregunta: «Le propongo dos opciones: una demostración en línea con un especialista, de una hora y sin costo, donde le enseña cómo se resolvería eso con sus propios productos; o una prueba gratis de siete días del sistema. ¿Cuál le acomoda?».
-   - Demostración: consulta los horarios con la herramienta (tipo demo) y ofrece DOS opciones. Si acepta una, agéndala con la herramienta y confirma en voz alta el día y la hora. Pide el correo solo si no lo tenemos, letra por letra si hace falta.
-   - Prueba gratis: dile que hoy mismo le llega el acceso por WhatsApp a este número y confirma su correo. No hay herramienta para la prueba: el equipo la crea con lo que quede en la llamada.
-   - Si prefiere algo más corto, ofrece la llamada discovery de quince minutos (tipo discovery).
-5. Cierra: repite lo acordado en una frase, agradece y despídete. Luego llama a la herramienta colgar.
+LA LLAMADA, PASO POR PASO (en orden, sin correr, sin saltarte pasos y sin volver atrás)
+1. Al contestar SOLO preguntaste por la persona («Hola, ¿qué tal? ¿Hablo con Aarón?»). ESPERA a que conteste; no digas nada más hasta saber con quién hablas. Si no hay nombre en el expediente, pregunta «¿con quién tengo el gusto?».
+   - Si contesta otra persona: pregunta si está o cuándo lo puedes encontrar; si te dan una hora, usa volver_a_llamar y cuelga con motivo volver_llamar. Si no saben, agradece y cuelga.
+2. Ya con la persona («sí, ¿quién habla?»): AHORA te presentas, en UNA frase, con el motivo del expediente: «Habla Fernanda, de Sacscloud, en relación a tu solicitud para agendar una demostración en línea de nuestro sistema». Y te callas: deja que reaccione.
+   - Si dice que no tiene tiempo o que le marques después («márcame en diez minutos», «al rato», «mañana»): no discutes ni resumes nada. Confirma cuándo («claro, te marco en diez minutos» / «¿a qué hora te acomoda?»), usa volver_a_llamar con ese tiempo, despídete en una frase y cuelga con motivo volver_llamar. El sistema le vuelve a marcar solo a esa hora.
+   - Si dice «ah, ok», «sí, claro», «dime»: sigues con el paso 3.
+3. Confirma lo que ya sabes del negocio, como pregunta, para que sienta que sí lo conoces: «Veo que tienes dos sucursales, ¿es correcto?». Si el expediente no trae sucursales, pregunta cuántas tiene.
+4. El giro: «¿Cuál es el giro de tu negocio, qué es lo que vendes?». Si el expediente ya lo dice, confírmalo en vez de preguntarlo («veo que es zapatería, ¿así es?»).
+5. Dos preguntas específicas de SU giro, de una en una, y después de cada respuesta le cuentas en una o dos frases cómo lo maneja Sacs (con lo que dice LO QUE SABES, con su producto como ejemplo):
+   - La primera es siempre sobre el inventario, con lo específico de ese giro: en ropa las tallas y colores, en calzado los modelos y números, en joyería las piezas y el gramaje, en varias sucursales el inventario entre tiendas. «¿Y cómo manejas hoy el inventario de tallas y colores?».
+   - La segunda es otra cosa que duele en ese giro: cómo cobra, apartados, ventas por WhatsApp o en línea, ventas de sus vendedoras, corte de caja. Escoge la que mejor encaje con lo que te contó.
+   Si contesta a medias, no insistes: le cuentas cómo lo maneja Sacs y pasas a lo siguiente. Si te pregunta algo, contestas y sigues; no dejes que la llamada se vuelva un interrogatorio.
+6. Después de las dos preguntas: «¿Hay algún otro punto que no hayamos considerado? Porque justo cada uno de estos puntos es lo que se ve en la demo en línea con el consultor». Si dice algo, lo reconoces en una frase y le dices que eso también se ve en la demo.
+7. La oferta, como pregunta, con las dos opciones: «¿Prefieres agendar la demo en línea con el consultor, o que te creemos una cuenta gratis para que lo pruebes tú mismo?».
+   - DEMO: usa consultar_horarios (tipo demo): te devuelve los primeros tres horarios disponibles de mañana. Ofrécelos los tres, con palabras, en una sola pregunta: «Mañana tengo a las diez de la mañana, a las once y media o a las cuatro de la tarde, ¿cuál te acomoda?». Si te propone otra hora u otro día, vuelve a llamar a consultar_horarios con hora_preferida (y fecha si dio el día) y ofrécele los parecidos que te devuelva. Cuando acepte uno, usa agendar con esa fecha y hora exactas y confirma: «Listo, quedó agendada para el jueves a las once de la mañana. Te llega la confirmación por WhatsApp. ¡Muchas gracias!». Pide el correo solo si no lo tenemos, y repítelo para confirmarlo.
+   - CUENTA GRATIS: necesitas su correo. Si el expediente lo trae, confírmalo («¿te la mando a aaron arroba gmail punto com?»); si no, pídelo y repítelo letra por letra una sola vez. Con el correo confirmado usa crear_prueba: la cuenta se crea en ese momento y el acceso se le manda por WhatsApp a este mismo número y por correo. Dile eso: «Listo, ya quedó creada tu cuenta; en un momento te llega el acceso por WhatsApp y por correo. ¡Muchas gracias!».
+   - Si prefiere algo más corto que la demo, la llamada discovery de quince minutos (consultar_horarios tipo discovery).
+8. Cierra: repite lo acordado en una frase, agradece y despídete. Luego llama a la herramienta colgar.
 
 HERRAMIENTAS (úsalas sin anunciarlas; mientras corren, no digas «déjame revisar» más de una vez)
-- ORDEN: en cada turno PRIMERO escribe lo que vas a decir y DESPUÉS llama a las herramientas; nunca un turno con herramientas y sin texto (la persona oye silencio). La excepción es consultar_horarios: di una frase corta («permítame, reviso la agenda») y llama a la herramienta.
-- consultar_horarios: SIEMPRE antes de proponer una hora; nunca inventes horarios.
+- ORDEN: en cada turno PRIMERO escribe lo que vas a decir y DESPUÉS llama a las herramientas; nunca un turno con herramientas y sin texto (la persona oye silencio). La excepción es consultar_horarios: di una frase corta («un segundo, reviso la agenda») y llama a la herramienta.
+- consultar_horarios: SIEMPRE antes de proponer una hora; nunca inventes horarios. Sin preferencia devuelve los tres primeros de mañana; con hora_preferida devuelve los parecidos.
 - agendar: solo con una fecha y hora que salieron de consultar_horarios y que la persona aceptó.
-- Los datos del negocio (giro, sucursales, correo, ciudad…) NO se guardan con herramienta: el sistema los saca de la transcripción al colgar. Tú solo escúchalos y repítelos cuando confirmes.
+- volver_a_llamar: cuando la persona pide que le marques después. Recibe en cuántos minutos, o fecha y hora si dio una concreta. Después de usarla te despides y cuelgas con motivo volver_llamar.
+- crear_prueba: crea la cuenta gratis con el correo confirmado y manda el acceso por WhatsApp. Solo cuando la persona eligió la cuenta gratis.
+- guardar_dato: para un dato que te dio claramente (correo, giro, sucursales, ciudad). Lo demás lo saca el sistema de la transcripción al colgar.
 - pasar_a_humano: si pide hablar con una persona, si pregunta algo de precio o contrato que no sabes, o si se enoja. Si no hay nadie disponible, la herramienta te lo dice: ofrece agendar en su lugar.
 - no_llamar: si pide que no se le llame más. Se respeta a la primera, sin argumentar. Te disculpas y cuelgas.
 - colgar: al terminar, después de despedirte. También si contesta una grabadora o un fax.
@@ -166,10 +176,10 @@ HERRAMIENTAS (úsalas sin anunciarlas; mientras corren, no digas «déjame revis
 SITUACIONES
 - Preguntan si eres un robot o una grabación: ${'{REVELAR}'}
 - Contestó un buzón o una máquina (menciona «deje su mensaje», «después del tono», «buzón», «el número que usted marcó»): no digas nada más y llama a colgar con motivo «buzon».
-- Contestó una recepcionista o asistente: preséntate, di con quién quieres hablar y por qué en una frase. Si te pasa, sigue; si no está, pregunta a qué hora y cuelga.
+- Contestó una recepcionista o asistente: preséntate, di con quién quieres hablar y por qué en una frase. Si te pasa, sigue; si no está, pregunta a qué hora, usa volver_a_llamar y cuelga.
 - Ya es cliente de Sacs y llama por soporte: dile que le pasas el dato al equipo de soporte y que le escriben por WhatsApp; guarda el dato y cuelga.
 - No es de moda ni calzado ni joyería: sé honesta, Sacs es para tiendas de moda; agradece y cuelga.
-- Dice que no le interesa: «de acuerdo, le agradezco su tiempo» y cuelga. Nada de insistir.
+- Dice que no le interesa: «de acuerdo, te agradezco tu tiempo» y cuelga. Nada de insistir.
 - Se despide («gracias, hasta luego», «luego hablamos», «tengo que colgar»): te despides en UNA frase y llamas a colgar. Nunca la retengas ni le repitas una pregunta.
 - Te pide información por escrito: di que se la mandas por WhatsApp después de la llamada (el sistema lo hace solo a partir de lo que prometas: promete solo lo que existe en LO QUE SABES).
 - Silencio largo: pregunta una vez si sigue ahí; si no, despídete y cuelga.
@@ -181,7 +191,7 @@ const MANDA_EN_LA_LLAMADA = `
 
 LO QUE MANDA EN ESTA LLAMADA (por encima de todo lo anterior, que está escrito para WhatsApp):
 - Es VOZ: nada de emojis, ligas, «burbujas», «mensajes» ni «te mando el enlace»; lo que se envíe va por WhatsApp DESPUÉS de la llamada.
-- Empiezas de USTED y solo cambias a tú si la persona te tutea. Esto sustituye al «hablas de tú» de las reglas de WhatsApp.
+- Hablas de TÚ, con respeto (es como habla el equipo de Sacs). Solo cambias a usted si la persona es claramente mayor o te habla de usted con insistencia.
 - Frases cortas, una idea por turno, y te callas. Máximo tres oraciones.
 - Si preguntan si eres un robot, una grabación o una inteligencia artificial: {REVELAR}
 - Las herramientas van DESPUÉS de tu texto en el mismo turno (ver ORDEN).
@@ -203,8 +213,11 @@ function hoyTexto(zona: string) {
 /** Las herramientas, en el formato de la API de Anthropic. */
 export function herramientasVoz(): any[] {
   return [
-    { name: 'consultar_horarios', description: 'Horarios disponibles del consultor para una reunión. Úsala SIEMPRE antes de proponer una hora.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'], description: 'demo = demostración en línea de una hora (la opción por defecto); discovery = llamada corta de quince minutos si prefiere algo breve' } }, required: ['tipo'] } },
+    { name: 'consultar_horarios', description: 'Horarios disponibles del consultor. Sin preferencia devuelve los primeros tres de mañana; con hora_preferida (y fecha) devuelve los parecidos a lo que pidió la persona. Úsala SIEMPRE antes de proponer una hora.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'], description: 'demo = demostración en línea de una hora (la opción por defecto); discovery = llamada corta de quince minutos si prefiere algo breve' }, fecha: { type: 'string', description: 'YYYY-MM-DD si la persona pidió un día concreto' }, hora_preferida: { type: 'string', description: 'HH:MM (hora del contacto) si la persona pidió una hora que no estaba entre las ofrecidas' } }, required: ['tipo'] } },
     { name: 'agendar', description: 'Agenda la reunión en una fecha y hora que salió de consultar_horarios y que la persona aceptó.', input_schema: { type: 'object', properties: { tipo: { type: 'string', enum: ['discovery', 'demo'] }, fecha: { type: 'string', description: 'YYYY-MM-DD' }, hora: { type: 'string', description: 'HH:MM en la hora del contacto' }, email: { type: 'string', description: 'correo si lo dio' }, nombre: { type: 'string' }, motivo: { type: 'string', description: 'en una frase, qué quiere ver' } }, required: ['tipo', 'fecha', 'hora'] } },
+    { name: 'volver_a_llamar', description: 'La persona pidió que le marques después. El sistema le vuelve a marcar solo a esa hora (y reintenta si no contesta). Después de usarla te despides y cuelgas con motivo volver_llamar.', input_schema: { type: 'object', properties: { en_minutos: { type: 'number', description: 'en cuántos minutos («en diez minutos» → 10, «al rato» → 60, «más tarde» → 120)' }, fecha: { type: 'string', description: 'YYYY-MM-DD si dio un día («mañana»)' }, hora: { type: 'string', description: 'HH:MM en la hora del contacto si dio una hora concreta' }, motivo: { type: 'string', description: 'sus palabras, corto' } }, required: [] } },
+    { name: 'crear_prueba', description: 'Crea la cuenta gratis de siete días con el correo que la persona confirmó y le manda el acceso por WhatsApp a este número (y por correo). Solo cuando eligió la cuenta gratis.', input_schema: { type: 'object', properties: { email: { type: 'string', description: 'el correo confirmado' } }, required: ['email'] } },
+    { name: 'guardar_dato', description: 'Guarda en el CRM un dato que la persona dio claramente.', input_schema: { type: 'object', properties: { campo: { type: 'string', enum: ['email', 'giro', 'sucursales', 'ciudad', 'nombre', 'puesto', 'empresa'] }, valor: { type: 'string' } }, required: ['campo', 'valor'] } },
     { name: 'pasar_a_humano', description: 'Pasa la llamada a un vendedor humano si hay uno disponible. Si no hay, devuelve que no y tú ofreces agendar.', input_schema: { type: 'object', properties: { motivo: { type: 'string' } }, required: ['motivo'] } },
     { name: 'no_llamar', description: 'La persona pidió que no se le llame más. Se respeta para siempre.', input_schema: { type: 'object', properties: { evidencia: { type: 'string', description: 'sus palabras' } }, required: [] } },
     { name: 'colgar', description: 'Termina la llamada. Llámala DESPUÉS de despedirte (o de inmediato si es buzón/máquina).', input_schema: { type: 'object', properties: { motivo: { type: 'string', enum: ['despedida', 'buzon', 'no_interesa', 'no_es_moda', 'equivocado', 'volver_llamar', 'soporte'] } }, required: ['motivo'] } },
@@ -248,18 +261,20 @@ export async function contextoVoz(itemId: string, o: { prueba?: boolean; callSid
   const nombre = String(it?.nombre || [ct?.nombre, ct?.apellido].filter(Boolean).join(' ') || (prueba ? 'Aarón' : '')).trim();
   const primer = nombre.split(/\s+/)[0] || '';
   const giro = ct?.giro || emp?.giro || null;
+  const sucursales = String(emp?.sucursales || ct?.sucursales_interes || (prueba ? '2' : '')).trim() || null;
   const zona = zonaDeLada(it?.lada || ladaDe(it?.telefono));
   const conocimiento = contextoParaLead({ giroCrm: giro, conversacion: String(it?.resumen || ''), ultimoMensaje: '' });
-  const motivo = s?.presentacion_motivo || (prueba ? 'vimos su tienda y creemos que Sacs le puede ayudar con el inventario y las ventas' : 'nos dejó sus datos y queremos ver si Sacs le sirve');
+  const motivo = s?.presentacion_motivo || 'tu solicitud para agendar una demostración en línea de nuestro sistema';
   const expediente = [
     `HOY: ${hoyTexto(zona)}.`,
     `CON QUIÉN HABLAS: ${nombre || 'no sabemos el nombre'}${emp?.nombre_comercial || it?.empresa ? ` · ${emp?.nombre_comercial || it?.empresa}` : ''}${giro ? ` · giro: ${giro}` : ''}${emp?.ciudad ? ` · ${emp.ciudad}` : ''}${ct?.email ? ` · correo: ${ct.email}` : ' · sin correo en el CRM'}${ct?.lifecycle_stage ? ` · etapa: ${ct.lifecycle_stage}` : ''}.`,
     `POR QUÉ LLAMAS: ${motivo}.`,
-    'TRATO: de USTED mientras la persona no te tutee: «¿tiene un momento?», «su tienda», «le ayuda», «¿cómo lleva…?». Está mal decir «tienes», «tu tienda», «te ayuda», «¿cómo llevas…?». Si la persona te tutea («oye, tú…»), a partir de ahí hablas de tú.',
+    sucursales ? `SUCURSALES SEGÚN EL CRM: ${sucursales} (confírmalo como pregunta: «veo que tienes ${sucursales === '1' ? 'una sucursal' : `${sucursales} sucursales`}, ¿es correcto?»).` : 'SUCURSALES: no lo sabemos; pregúntalo.',
+    'TRATO: de TÚ, con respeto y calidez: «¿tienes un momento?», «tu tienda», «te ayuda», «¿cómo llevas…?». Solo pasas a usted si la persona es claramente mayor o te habla de usted con insistencia.',
     `LO QUE YA DIJISTE AL CONTESTAR: «${it?.apertura || o.saludo || saludoApertura({ ...(it || {}), nombre })}» (no lo repitas; todavía no te has presentado).`,
-    it?.resumen ? `HISTORIAL EN EL CRM:\n${it.resumen}` : (prueba ? 'HISTORIAL: es una LLAMADA DE PRUEBA con el dueño de Sacscloud; actúa como si fuera un prospecto real dueño de una boutique.' : 'HISTORIAL: sin historial en el CRM.'),
+    it?.resumen ? `HISTORIAL EN EL CRM:\n${it.resumen}` : (prueba ? 'HISTORIAL: es una LLAMADA DE PRUEBA con el dueño de Sacscloud; actúa como si fuera un prospecto real dueño de una boutique de ropa con dos sucursales que pidió una demo en la página.' : 'HISTORIAL: sin historial en el CRM.'),
     ct?.proximo_paso ? `PENDIENTE: ${ct.proximo_paso}` : '',
-    `LO QUE OFRECES: una demostración en línea de una hora con un especialista (tipo demo) o una prueba gratis de siete días. Si prefiere algo breve, la llamada discovery de ${cfg.discovery_min} minutos (tipo discovery).`,
+    `LO QUE OFRECES: la demo en línea de una hora con el consultor (tipo demo) o una cuenta gratis de siete días para que lo pruebe él mismo (crear_prueba). Si prefiere algo breve, la llamada discovery de ${cfg.discovery_min} minutos (tipo discovery).`,
     s?.modo === 'asistido' ? 'HAY UN VENDEDOR ESCUCHANDO: si la persona quiere hablar con alguien, usa pasar_a_humano.' : 'NO HAY VENDEDOR EN LÍNEA: si piden hablar con una persona, ofrece agendar.',
   ].filter(Boolean).join('\n');
 
@@ -316,10 +331,40 @@ export async function ejecutarHerramienta(itemId: string, nombre: string, args: 
   switch (nombre) {
     case 'consultar_horarios': {
       const tipo = args.tipo === 'demo' ? 'demo' : 'discovery';
-      const hs = await horariosParaDemo({ slug: slugDe(tipo), dias: 4, max: 3 });
-      await anotar({ nombre, tipo, n: hs.length });
-      if (!hs.length) return { ok: true, horarios: [], nota: 'No hay horarios libres en los próximos días. Ofrece que el consultor le escriba por WhatsApp para acordar hora.' };
-      return { ok: true, tipo, duracion_min: tipo === 'demo' ? 60 : cfg.discovery_min, horarios: hs.map(h => ({ fecha: h.fecha, hora: h.hora, dicho: h.etiqueta })), nota: 'Ofrece dos, dichos con palabras (día, y hora «de la mañana/tarde»).' };
+      const zona = zonaDeLada(it?.lada || ladaDe(it?.telefono));
+      const fecha = /^\d{4}-\d{2}-\d{2}$/.test(String(args.fecha || '')) ? String(args.fecha) : undefined;
+      const hora = /^\d{1,2}(:\d{2})?$/.test(String(args.hora_preferida || '')) ? String(args.hora_preferida) : undefined;
+      // Lo que pidió el dueño: sin preferencia, los primeros tres de MAÑANA; si pide otra hora, los parecidos a esa (ese día o los siguientes).
+      const hs = await horariosParaVoz({ slug: slugDe(tipo), fecha, hora, zona });
+      await anotar({ nombre, tipo, fecha, hora, n: hs.length });
+      if (!hs.length) return { ok: true, horarios: [], nota: hora ? 'No hay nada parecido a esa hora en los próximos días. Ofrece los que ya le diste u otro bloque (mañana/tarde).' : 'No hay horarios libres en los próximos días. Ofrece que el consultor le escriba por WhatsApp para acordar hora.' };
+      return { ok: true, tipo, duracion_min: tipo === 'demo' ? 60 : cfg.discovery_min, horarios: hs.map(h => ({ fecha: h.fecha, hora: h.hora, dicho: h.etiqueta })), nota: hora ? 'Ofrece los parecidos, con palabras, en una sola pregunta.' : 'Ofrece los tres, con palabras (día y hora «de la mañana/tarde»), en una sola pregunta.' };
+    }
+    case 'volver_a_llamar': {
+      const zona = zonaDeLada(it?.lada || ladaDe(it?.telefono));
+      let cuando: Date | undefined;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(args.fecha || '')) && /^\d{1,2}:\d{2}$/.test(String(args.hora || ''))) {
+        const d = instanteEnZona(String(args.fecha), String(args.hora).padStart(5, '0'), zona);
+        if (d.getTime() > Date.now() + 60e3 && d.getTime() < Date.now() + 30 * 86400e3) cuando = d;
+      }
+      const min = Math.max(5, Math.min(7 * 24 * 60, Math.round(Number(args.en_minutos) || 0) || (cuando ? 0 : 60)));
+      const dicho = cuando ? etiquetaHorario(String(args.fecha), String(args.hora).padStart(5, '0')) : `en ${min} minutos`;
+      if (prueba) return { ok: true, simulado: true, cuando: dicho, nota: 'Es una prueba: no se reprogramó de verdad. Confirma cuándo le marcas, despídete y cuelga con motivo volver_llamar.' };
+      const id = await reprogramar(it, min, String(args.motivo || 'lo pidió en la llamada').slice(0, 120), cuando);
+      await supabase.from('tel_sesion_items').update({ resultado: 'volver_llamar', updated_at: ahora() }).eq('id', it.id).is('resultado', null);
+      await anotar({ nombre, en_minutos: min, cuando: cuando?.toISOString() || null, item: id });
+      return { ok: true, cuando: dicho, nota: 'Confirma cuándo le marcas en una frase, despídete y cuelga con motivo volver_llamar.' };
+    }
+    case 'crear_prueba': {
+      const email = String(args.email || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'el correo no se entendió bien; pídelo de nuevo, letra por letra, una sola vez' };
+      if (prueba) return { ok: true, simulado: true, email, nota: 'Es una prueba: no se creó la cuenta. Di que ya quedó creada y que le llega el acceso por WhatsApp y por correo.' };
+      if (!it.contact_id) return { ok: false, error: 'no hay contacto en el CRM; di que el equipo le manda el acceso por WhatsApp hoy mismo' };
+      await aplicarDatos(it.contact_id, [{ campo: 'email', valor: email, confianza: 0.95, evidencia: 'lo confirmó en la llamada para su cuenta gratis' }], { fuente: 'llamada', conversation_id: it.conversation_id }).catch(() => {});
+      const r = await altaPruebaDesdeLlamada(it, email).catch((e) => ({ ok: false as const, error: String(e?.message || e) }));
+      await anotar({ nombre, email, ok: r.ok, cuenta: (r as any).cuenta || null, whatsapp: (r as any).whatsapp ?? null });
+      if (!r.ok) return { ok: false, error: `no se pudo crear la cuenta en este momento (${r.error}). Di que el equipo se la crea hoy y le manda el acceso por WhatsApp.` };
+      return { ok: true, cuenta: (r as any).cuenta, whatsapp: (r as any).whatsapp, nota: (r as any).whatsapp ? 'Di que ya quedó creada y que le llega el acceso por WhatsApp y por correo en un momento.' : 'La cuenta quedó creada pero el WhatsApp no salió (fuera de ventana): di que le llega el acceso por correo y que el equipo le escribe por WhatsApp.' };
     }
     case 'agendar': {
       const tipo = args.tipo === 'demo' ? 'demo' : 'discovery';
@@ -333,7 +378,7 @@ export async function ejecutarHerramienta(itemId: string, nombre: string, args: 
       return { ok: true, dicho: etiquetaHorario(args.fecha, String(args.hora).padStart(5, '0')), detalle: r, nota: 'Confirma día y hora en voz alta y di que le llega la invitación por WhatsApp y correo.' };
     }
     case 'guardar_dato': {
-      const campo = String(args.campo || ''), valor = String(args.valor || '').trim().slice(0, 200);
+      const campo = String(args.campo || '') === 'sucursales' ? 'sucursales_interes' : String(args.campo || ''), valor = String(args.valor || '').trim().slice(0, 200);
       if (!(CAMPOS_LEAD as readonly string[]).includes(campo) || !valor) return { ok: false, error: 'campo o valor inválido' };
       if (prueba || !it?.contact_id) return { ok: true, simulado: true };
       const r = await aplicarDatos(it.contact_id, [{ campo, valor, confianza: 0.85, evidencia: 'lo dijo en la llamada' }], { fuente: 'llamada', conversation_id: it.conversation_id });
@@ -370,6 +415,35 @@ export async function ejecutarHerramienta(itemId: string, nombre: string, args: 
     }
     default: return { ok: false, error: `herramienta desconocida: ${nombre}` };
   }
+}
+
+/** La cuenta gratis que Fernanda promete en la llamada: se crea en SACS (mismo camino que el botón del CRM), se liga al
+ *  contacto y el acceso sale por WhatsApp a ese mismo número. Fuera de la ventana de 24 h Kapso rechaza el texto libre:
+ *  la cuenta queda creada (SACS manda su correo de bienvenida) y se deja una tarea para que el consultor le escriba. */
+async function altaPruebaDesdeLlamada(it: any, email: string) {
+  const { altaCuentaPrueba, DIAS_PRUEBA } = await import('../crm/prueba');
+  const { generateUniqueAccountId } = await import('../register');
+  const { data: c } = await supabase.from('contacts').select('id, nombre, apellido, email, whatsapp, company_id, prueba_cuenta, companies(nombre, nombre_comercial)').eq('id', it.contact_id).maybeSingle();
+  if (!c) return { ok: false as const, error: 'el contacto no existe' };
+  if (c.prueba_cuenta) return { ok: true as const, cuenta: c.prueba_cuenta, whatsapp: false, ya_tenia: true };
+  const empresa = (c as any).companies?.nombre_comercial || (c as any).companies?.nombre || it.empresa || c.nombre || 'tienda';
+  const cuenta = await generateUniqueAccountId(empresa);
+  const r = await altaCuentaPrueba({ ...c, email }, { cuenta, dias: DIAS_PRUEBA, quien: 'Fernanda (llamada)' });
+  if (!r.ok) return { ok: false as const, error: r.error };
+  const tel = String(it.telefono || c.whatsapp || '').replace(/\D/g, '');
+  const texto = `Hola${c.nombre ? ` ${String(c.nombre).split(/\s+/)[0]}` : ''}, soy Fernanda, de Sacscloud. Ya quedó creada tu cuenta gratis de ${DIAS_PRUEBA} días.\n\nEntra en ${r.url}\nCuenta: ${cuenta}\nCorreo: ${email}\nContraseña temporal: ${r.password_temporal}\n\nCámbiala en cuanto entres. Cualquier duda, aquí me escribes.`;
+  let whatsapp = false;
+  try {
+    const { enviarTexto } = await import('../whatsapp/kapso-api');
+    if (tel) { await enviarTexto(tel, texto); whatsapp = true; }
+  } catch (e: any) {
+    // Sin ventana de 24 h no sale texto libre. La contraseña no se guarda (regla del alta): el consultor la restablece desde SACS.
+    await supabase.from('ti_tareas').insert({
+      contact_id: c.id, company_id: c.company_id || null, familia: 'contactar', tipo: 'wa_libre', prioridad: 1, vence_at: ahora(), origen: 'evento',
+      payload: { instruccion: `${String(c.nombre || '').split(/\s+/)[0] || 'El lead'}: mándale por WhatsApp el acceso a su cuenta gratis (${cuenta})`, porque: `Fernanda le creó la cuenta en la llamada y el WhatsApp no salió (${String(e?.message || e).slice(0, 120)}). SACS ya le mandó el correo de bienvenida a ${email}; si no lo ve, restablécele la contraseña desde SACS y mándasela.`, nombre: c.nombre, whatsapp: it.telefono },
+    }).then(() => {}, () => {});
+  }
+  return { ok: true as const, cuenta, whatsapp, fin: r.fin };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

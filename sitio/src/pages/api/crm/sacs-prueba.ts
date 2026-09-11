@@ -21,35 +21,19 @@
 // Lo que NO hace: inventar el slug. El identificador de la cuenta es visible
 // para el cliente (vive en su URL) y no puede salir de una heurística: se pide
 // explícito y se valida contra el mismo pre-check que usa el registro público.
+//
+// El alta en sí (SACS /register + liga + iniciarPrueba) vive en `altaCuentaPrueba`
+// (lib/crm/prueba.ts), que también usa Fernanda cuando el lead elige la cuenta
+// gratis en la llamada: un solo camino para «crear una prueba».
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { iniciarPrueba, DIAS_PRUEBA } from '../../../lib/crm/prueba';
+import { altaCuentaPrueba, DIAS_PRUEBA, SLUG_OK } from '../../../lib/crm/prueba';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
-const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-/* Los DOS nombres a propósito.
- *
- * En Vercel la variable se llama `REGISTER_API_SECRET` —así se llama también
- * del lado de la API de SACS, que es quien la valida— y este código buscaba
- * `SACS_REGISTER_SECRET`, que no existe en ningún entorno. Resultado: el alta
- * de pruebas devolvía 500 «Falta SACS_REGISTER_SECRET» en producción desde el
- * día uno, y por eso no hay ni una cuenta creada desde el CRM.
- *
- * No se renombra la de Vercel: la tiene puesta desde hace meses y renombrar
- * una variable de entorno para arreglar un typo es cambiar la infraestructura
- * para no tocar el código. Se leen las dos, con la específica primero. */
-const REGISTER_SECRET = (import.meta.env.SACS_REGISTER_SECRET || import.meta.env.REGISTER_API_SECRET || '').trim();
-
-/** Slug válido de SACS: minúsculas, números y guiones. Es parte de una URL. */
-const SLUG_OK = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/;
-
 export const POST: APIRoute = async ({ request }) => {
-  if (!REGISTER_SECRET) {
-    return json({ error: 'Falta SACS_REGISTER_SECRET en el entorno: sin ese secreto SACS rechaza el alta.' }, 500);
-  }
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'No autenticado' }, 403);
 
@@ -70,61 +54,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (e1 || !c) return json({ error: 'No encontré ese contacto' }, 404);
   if (!c.email) return json({ error: 'El contacto no tiene correo, y SACS lo pide para crear el acceso.' }, 400);
 
-  const empresa = (c as any).companies?.nombre_comercial || (c as any).companies?.nombre || c.nombre || cuenta;
+  const r = await altaCuentaPrueba(c, { cuenta, dias, quien: (user as any).email || (user as any).id || null });
+  if (!r.ok) return json({ error: r.error, detalle: (r as any).detalle }, /^Falta/.test(r.error) ? 500 : (r as any).detalle ? 502 : 400);
 
-  /* Contraseña temporal: la genera el servidor y se devuelve UNA vez, para
-     dictarla. No se guarda en el CRM — una contraseña almacenada «por
-     comodidad» es una fuga esperando su turno, y el cliente puede cambiarla
-     desde el primer acceso. */
-  const temporal = 'sacs' + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
-
-  const r = await fetch(SACS_API + '/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-register-secret': REGISTER_SECRET },
-    body: JSON.stringify({
-      account_id: cuenta,
-      account_name: empresa,
-      nombre: c.nombre || empresa,
-      email: c.email,
-      password: temporal,
-      telefono: c.whatsapp || undefined,
-      prueba_gratis: true,
-      prueba_dias: dias,
-      prueba_origen: 'crm',
-    }),
-  }).then(x => x.json()).catch(e => ({ success: false, msg: String(e) }));
-
-  if (!r?.success) return json({ error: r?.msg || 'SACS rechazó el alta', detalle: r }, 502);
-
-  /* La liga en la tabla, no en `companies.sacs_account`: es la que aguanta
-     varias cuentas por empresa y la que lee el cron de uso. */
-  if (c.company_id) {
-    await supabase.from('company_sacs_accounts')
-      .insert({ company_id: c.company_id, cuenta, es_principal: true })
-      .then(() => {}, () => {});
-  }
-
-  /* Fechas, etapa, estado y actividad — todo en `iniciarPrueba`, que es la
-     única definición de qué significa arrancar una prueba. La fecha de fin se
-     toma de la que SACS grabó en la cuenta cuando la manda: recalcularla aquí
-     produciría dos fechas para la misma prueba, con horas de diferencia. */
-  const finSacs = Number(r?.data?.prueba?.termina) || null;
-  const { fin } = await iniciarPrueba(c, {
-    cuenta, dias,
-    fin: finSacs ? new Date(finSacs).toISOString() : null,
-    quien: (user as any).email || (user as any).id || null,
-  });
-
-  return json({
-    ok: true, cuenta, dias, fin,
-    /* SIEMPRE app.sacscloud.com. NO hay subdominio por cuenta: el slug es el
-       identificador del tenant, no un host. Yo devolvía `{cuenta}.sacscloud.com`
-       —inventado— y eso es peor que no devolver nada: un link que no resuelve,
-       dictado a un cliente, quema el primer minuto de su prueba. Es la misma
-       dirección que ya manda el correo de bienvenida de SACS. */
-    url: 'https://app.sacscloud.com',
-    email: c.email,
-    /* Se devuelve una sola vez y no se guarda en ningún lado. */
-    password_temporal: temporal,
-  });
+  /* url SIEMPRE app.sacscloud.com (el slug es el tenant, no un host); la contraseña
+     temporal se devuelve una sola vez y no se guarda en ningún lado. */
+  return json({ ok: true, cuenta, dias, fin: r.fin, url: r.url, email: r.email, password_temporal: r.password_temporal });
 };

@@ -127,6 +127,43 @@ export async function avisoEnCuenta(cuenta: string, accion: 'bloquear' | 'desblo
 export const CAMPOS_PRUEBA =
   'id, nombre, apellido, email, whatsapp, company_id, lifecycle_stage, prueba_inicio, prueba_fin, prueba_dias, prueba_estado, prueba_cuenta, prueba_bloqueada_at';
 
+/** Slug válido de SACS: minúsculas, números y guiones. Es parte de una URL. */
+export const SLUG_OK = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/;
+
+/**
+ * Da de alta la cuenta de prueba en SACS y la deja atada en el CRM (cuenta ligada a la
+ * empresa + `iniciarPrueba`). Es UN solo camino para el botón del CRM y para Fernanda al
+ * teléfono: si se hiciera dos veces, tendríamos dos definiciones de «crear una prueba».
+ *
+ * Devuelve la contraseña temporal UNA vez, para dictarla o mandarla; no se guarda en el
+ * CRM (una contraseña almacenada «por comodidad» es una fuga esperando su turno).
+ */
+export async function altaCuentaPrueba(c: any, o: { cuenta: string; dias: number; quien?: string | null }) {
+  if (!SECRETO) return { ok: false as const, error: 'Falta SACS_REGISTER_SECRET en el entorno: sin ese secreto SACS rechaza el alta.' };
+  const cuenta = String(o.cuenta || '').trim().toLowerCase();
+  if (!SLUG_OK.test(cuenta)) return { ok: false as const, error: 'El identificador de la cuenta solo admite minúsculas, números y guiones (3 a 40).' };
+  if (!c?.email) return { ok: false as const, error: 'El contacto no tiene correo, y SACS lo pide para crear el acceso.' };
+  const empresa = c.companies?.nombre_comercial || c.companies?.nombre || c.nombre || cuenta;
+  const temporal = 'sacs' + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+  const r = await fetch(SACS_API + '/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-register-secret': SECRETO },
+    body: JSON.stringify({
+      account_id: cuenta, account_name: empresa, nombre: c.nombre || empresa, email: c.email, password: temporal,
+      telefono: c.whatsapp || undefined, prueba_gratis: true, prueba_dias: o.dias, prueba_origen: 'crm',
+    }),
+    signal: AbortSignal.timeout(25000),
+  }).then(x => x.json()).catch(e => ({ success: false, msg: String(e) }));
+  if (!r?.success) return { ok: false as const, error: String(r?.msg || 'SACS rechazó el alta'), detalle: r };
+  /* La liga en la tabla, no en `companies.sacs_account`: aguanta varias cuentas por empresa y la lee el cron de uso. */
+  if (c.company_id) await supabase.from('company_sacs_accounts').insert({ company_id: c.company_id, cuenta, es_principal: true }).then(() => {}, () => {});
+  /* La fecha de fin es la que SACS grabó: recalcularla aquí daría dos fechas para la misma prueba. */
+  const finSacs = Number(r?.data?.prueba?.termina) || null;
+  const { fin } = await iniciarPrueba(c, { cuenta, dias: o.dias, fin: finSacs ? new Date(finSacs).toISOString() : null, quien: o.quien || undefined });
+  /* SIEMPRE app.sacscloud.com: el slug es el identificador del tenant, no un host. */
+  return { ok: true as const, cuenta, dias: o.dias, fin, url: 'https://app.sacscloud.com', email: String(c.email), password_temporal: temporal };
+}
+
 /**
  * Arranca la prueba en el CRM: fechas, etapa y estado.
  *
