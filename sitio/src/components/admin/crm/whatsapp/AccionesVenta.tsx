@@ -12,6 +12,7 @@
 // los envíos van por los MISMOS endpoints del inbox — cero caminos paralelos.
 import { useEffect, useMemo, useState } from 'react';
 import { C } from './estilo';
+import { Corazones } from '../ui/Cargando';
 import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
 import CuentaSacs from '../CuentaSacs';
 
@@ -37,9 +38,13 @@ function horaHumana(h: string) {
   return `${h12}:${String(mm).padStart(2, '0')} ${ampm}`;
 }
 
-export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta, abrirFicha, accionInicial, refrescar }: {
+export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta, abrirFicha, accionInicial, refrescar, resumenIa, resumenIaAt }: {
   contacto: any; empresa: any; conv: any; ventanaAbierta: boolean;
   abrirFicha?: () => void; accionInicial?: 'cotizar' | 'agendar' | null; refrescar?: () => void;
+  /** El resumen de la relación se pinta AQUÍ: generarlo es una acción, no una
+   *  actividad que ya ocurrió. Vivía en la pestaña «Actividad», entre cosas
+   *  pasadas, y era la única tarjeta de ahí con un botón que hace algo. */
+  resumenIa?: string | null; resumenIaAt?: string | null;
 }) {
   const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar'>(accionInicial || 'menu');
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
@@ -60,6 +65,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   return (
     <div className="accv" style={{ padding: 14 }}>
       <EstiloAccv />
+      {contacto?.id && <ResumenRelacion contactId={contacto.id} inicial={resumenIa} inicialAt={resumenIaAt} />}
       <div style={{ fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Ventas · se ejecutan aquí mismo</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BotonAccion e="📄" t="Cotización" d="Crear y enviar aquí" ok={!!contacto} onClick={() => setVista('cotizar')} destacado />
@@ -535,6 +541,52 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           style={{ ...btnG, marginTop: 10, width: '100%', color: C.g500 }}>Volver</button>
       </>}
       {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
+    </div>
+  );
+}
+
+/** Resumen de la relación: es una ACCIÓN —se genera a petición y cuesta—,
+ *  no algo que ya pasó. Vivía en la pestaña «Actividad», entre hechos del
+ *  pasado, siendo la única tarjeta de ahí con un botón que hace trabajo. */
+const fechaRes = (d?: string | null) => d ? new Date(d).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+function ResumenRelacion({ contactId, inicial, inicialAt }: { contactId: string; inicial?: string | null; inicialAt?: string | null }) {
+  const [resumen, setResumen] = useState<string | null>(inicial || null);
+  const [at, setAt] = useState<string | null>(inicialAt || null);
+  const [abierto, setAbierto] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setResumen(inicial || null); setAt(inicialAt || null); setAbierto(false); }, [contactId]);
+  const generar = async () => {
+    setCargando(true); setMsg('');
+    const r = await fetch('/api/crm/contacts/resumen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setCargando(false);
+    if (r?.error) { setMsg(r.error); return; }
+    setResumen(r.resumen); setAt(r.at); setAbierto(true);
+  };
+  return (
+    <div style={{ margin: '10px 16px 0', borderRadius: 12, border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.morado}`, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 12 }}>Resumen de la relación</b>
+          <span style={{ display: 'block', fontSize: 10, color: C.g400 }}>
+            {cargando ? 'Leyendo todo el historial…' : at ? `Generado ${fechaRes(at)}` : 'Dos años de historia en 30 segundos'}
+          </span>
+        </span>
+        {resumen && !cargando && (
+          <button onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>{abierto ? 'Ocultar' : 'Leer'}</button>
+        )}
+        <button onClick={generar} disabled={cargando}
+          style={{ border: 'none', borderRadius: 7, padding: '5px 11px', background: cargando ? C.g100 : C.morado, color: cargando ? C.g400 : '#fff', fontSize: 11, fontWeight: 700, cursor: cargando ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+          {cargando ? <Corazones size={8} color={C.g400} /> : resumen ? 'Actualizar' : 'Generar'}
+        </button>
+      </div>
+      {msg && <div style={{ padding: '0 12px 8px', fontSize: 11, color: C.rojo700 }}>{msg}</div>}
+      {abierto && resumen && (
+        <div style={{ borderTop: `1px solid ${C.g100}`, padding: '10px 13px', fontSize: 12, color: C.g700, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 340, overflowY: 'auto' }}>
+          {resumen.replace(/^## /gm, '').replace(/\*\*/g, '')}
+        </div>
+      )}
     </div>
   );
 }

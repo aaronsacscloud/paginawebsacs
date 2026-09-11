@@ -53,7 +53,13 @@ function TarjetaKpi({ color, tinta, etiqueta, cifra, sub, onClick }: { color: st
 
 // ── CollapsibleSection (portado) ──
 function Seccion({ id, titulo, n, abiertaDefault, children }: { id: string; titulo: string; n?: number | null; abiertaDefault?: boolean; children: React.ReactNode }) {
-  const KEY = 'wa_panel_secciones';
+  /* ⚠️ LA LLAVE LLEVA VERSIÓN. Lo que el usuario abre o cierra se recuerda en
+     el navegador, así que cambiar los valores por omisión NO alcanza: quien ya
+     usó el panel tenía guardado «Llamadas y minutas: abierta» y lo seguiría
+     viendo abierto para siempre. Subir la versión descarta lo guardado UNA vez
+     y deja que manden los nuevos valores; de ahí en adelante su preferencia se
+     vuelve a respetar. */
+  const KEY = 'wa_panel_secciones_v2';
   const leer = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
   const [abierta, setAbierta] = useState<boolean>(() => { const m = leer(); return id in m ? m[id] : !!abiertaDefault; });
   const toggle = () => { const v = !abierta; setAbierta(v); try { localStorage.setItem(KEY, JSON.stringify({ ...leer(), [id]: v })); } catch { /* privado */ } };
@@ -61,8 +67,17 @@ function Seccion({ id, titulo, n, abiertaDefault, children }: { id: string; titu
     <div>
       <button onClick={toggle} aria-expanded={abierta}
         style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 16px' }}>
-        <span style={label(11)}>{titulo}</span>
-        {n != null && n > 0 && <span style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, minWidth: 22, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>}
+        {/* El título pesaba lo mismo que una etiqueta de campo: gris claro,
+            11 px, en versalitas. Cerrado, el panel era una lista de rótulos
+            tenues imposibles de barrer con la vista. Ahora es texto de verdad
+            —13 px, negritas, tinta oscura—, que es lo que uno lee cuando todo
+            lo demás está guardado. */}
+        <span style={{ fontSize: 13, fontWeight: 700, color: C.g900, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo}</span>
+        {/* Cerrada, la cuenta es lo ÚNICO que dice si vale la pena abrirla.
+            Sin nada dentro se marca en gris claro para no invitar al clic. */}
+        {n != null && (n > 0
+          ? <span style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, minWidth: 22, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{n}</span>
+          : <span style={{ fontSize: 10.5, color: C.g300, flexShrink: 0 }}>vacío</span>)}
         <span style={{ marginLeft: 'auto', color: C.g400, display: 'inline-flex' }}>{abierta ? <IcoChevronArriba size={13} /> : <IcoChevronAbajo size={13} />}</span>
       </button>
       {abierta && <div style={{ padding: '0 16px 12px' }}>{children}</div>}
@@ -214,7 +229,7 @@ function TemasReunion({ contactId, temas, onCambio }: { contactId: string; temas
     finally { setOcupado(false); }
   };
   return (
-    <Seccion id="g-temas" titulo="Para la reunión" n={lista.filter(t => !t.hecho).length || null} abiertaDefault>
+    <Seccion id="g-temas" titulo="Para la reunión" n={lista.filter(t => !t.hecho).length || null}>
       <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px' }}>
         {lista.length === 0 && <div style={{ fontSize: 12, color: C.g400, lineHeight: 1.5 }}>Aquí se van juntando los temas que el lead pide ver en la demo. El agente los anota solo; tú puedes agregar más.</div>}
         {lista.map((t: any, i: number) => (
@@ -404,10 +419,25 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
     <div>
       {/* Encabezado: quién es (lead vs cliente) */}
       <div style={{ margin: '12px 16px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: esCliente ? C.emerald700 : C.moradoTinta, background: esCliente ? C.emerald50 : C.moradoAgua, borderRadius: 999, padding: '3px 10px' }}>
-          {empresa || contactoBase ? (esCliente ? 'Cliente' : 'Lead') : 'Desconocido'}
-        </span>
-        {etapa && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: C.g700 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: etapa.fg, opacity: .65 }} />{etapa.label}</span>}
+        {/* ── QUIÉN ES, UNA SOLA VEZ ────────────────────────────────────
+            Aquí salían DOS cosas que casi siempre dicen lo mismo: una píldora
+            rellena «CLIENTE» y, al lado, «● Cliente» (la etapa del ciclo de
+            vida). En la pantalla se leía «CLIENTE · Cliente». Ahora es una
+            sola etiqueta con jerarquía —punto de color + nombre en negritas—,
+            y el otro dato solo aparece cuando de verdad AÑADE algo: un lead en
+            etapa «Calificado» sí dice «Lead · Calificado». */}
+        {(() => {
+          const quien = empresa || contactoBase ? (esCliente ? 'Cliente' : 'Lead') : 'Desconocido';
+          const etiq = etapa?.label || '';
+          const repetido = etiq.toLowerCase() === quien.toLowerCase();
+          return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, background: etapa?.fg || (esCliente ? C.emerald500 : C.morado), flexShrink: 0 }} />
+              <b style={{ fontSize: 13, color: C.g900, whiteSpace: 'nowrap' }}>{repetido || !etiq ? quien : etiq}</b>
+              {!repetido && etiq && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap' }}>· {quien}</span>}
+            </span>
+          );
+        })()}
         {!esCliente && estatusPill && <span title="Estatus operativo: se deriva de los hechos (mensajes, llamadas, reuniones, cotizaciones)" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.02em', borderRadius: 999, padding: '3px 10px', background: estatusPill.fondo, color: estatusPill.tinta }}>{estatusPill.label}</span>}
         {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
       </div>
@@ -445,45 +475,38 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             ['Visitas web', ctx?.web?.en_vivo
               ? `● AHORA en ${ctx.web.en_vivo}`
               : ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],
-          ].map(([et, v]: any, i: number) => (
-            <div key={et} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '3px 0', borderTop: i ? `1px solid ${C.g50}` : 'none' }}>
+            /* ── LO QUE ERAN PASTILLAS DE COLORES ────────────────────────
+               Debajo de esta tarjeta había una tira de botones redondos —ARR
+               en verde, Salud en ámbar, «5 d sin vender» en morado— que
+               llevaban al mismo detalle al que se llega tocando aquí. Tres
+               colores más peleando en un panel que ya tiene de todo. Ahora
+               son renglones como los demás: mismo destino, misma letra, y el
+               color se queda para lo que de verdad avisa (la salud en rojo).
+               El tercer valor de la tupla es a dónde lleva el clic. */
+            ...(esCliente ? [
+              ...(!ocultarDinero ? [['ARR', arr ? money(arr) : null, 'suscripciones']] : []),
+              ['Salud', ctx?.salud?.dias_renovacion != null
+                ? (ctx.salud.dias_renovacion < 0 ? 'Renovación vencida' : `Renueva en ${ctx.salud.dias_renovacion} d`)
+                : (ctx?.salud?.nivel ? `Nivel ${ctx.salud.nivel}` : null), 'salud', ctx?.salud?.nivel === 'rojo' ? C.rojo700 : null],
+              ...(ctx?.sacs ? [['En Sacs', ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : ctx.sacs.dias_sin_venta != null ? `${ctx.sacs.dias_sin_venta} días sin vender` : 'Con uso', 'sacs', ctx.sacs.dias_sin_venta > 7 ? C.ambar700 : null]] : []),
+              ...((d360?.quotes || []).length ? [['Cotizaciones', `${d360.quotes.length}`, 'cotizaciones']] : []),
+            ] : [
+              ...(!ocultarDinero ? [['Pipeline', dealsAbiertos.length ? money(pipelineTotal) : null, 'oportunidad']] : []),
+              ['Origen', contacto?.fuente || null, 'origen'],
+            ]),
+          ].map(([et, v, destino, tinta]: any, i: number) => (
+            <div key={et} onClick={destino ? () => setDetalle(destino) : undefined}
+              style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '3px 0', borderTop: i ? `1px solid ${C.g50}` : 'none', cursor: destino ? 'pointer' : undefined }}>
               <span style={{ fontSize: 10, color: C.g400, width: 78, flexShrink: 0 }}>{et}</span>
-              <span style={{ fontSize: 12, color: v ? C.g900 : C.g300, fontWeight: v ? 600 : 400, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 12, color: tinta || (v ? C.g900 : C.g300), fontWeight: v ? 600 : 400, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {v || (et === 'Visitas web' ? 'aún no se rastrean' : 'sin dato')}
               </span>
+              {destino && <span style={{ fontSize: 11, color: C.g300, flexShrink: 0 }}>›</span>}
             </div>
           ))}
         </div>
       )}
 
-      {/* Atajos al detalle: mismos destinos de antes, en pastillas discretas. */}
-      {(empresa || contactoBase) && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, margin: '0 16px 10px' }}>
-          {(esCliente
-            ? [
-                !ocultarDinero && ['suscripciones', `ARR ${money(arr)}`, C.emerald50, C.emerald700],
-                ['salud', ctx?.salud?.dias_renovacion != null ? (ctx.salud.dias_renovacion < 0 ? `Renovación vencida` : `Renueva en ${ctx.salud.dias_renovacion} d`) : 'Salud', ctx?.salud?.nivel === 'rojo' ? C.rojo50 : ctx?.salud?.nivel === 'ambar' ? C.ambar100 : C.emerald50, ctx?.salud?.nivel === 'rojo' ? C.rojo700 : ctx?.salud?.nivel === 'ambar' ? C.ambar700 : C.emerald700],
-                ctx?.sacs && ['sacs', ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : ctx.sacs.dias_sin_venta != null ? `${ctx.sacs.dias_sin_venta} d sin vender` : 'Uso de SACS', C.moradoAgua, C.moradoTinta],
-                (d360?.quotes || []).length && ['cotizaciones', `${d360.quotes.length} cotización${d360.quotes.length === 1 ? '' : 'es'}`, C.azulAgua, C.azulTinta],
-              ]
-            : [
-                ['conversion', etapa?.label || 'Conversión', C.moradoAgua, C.moradoTinta],
-                !ocultarDinero && ['oportunidad', dealsAbiertos.length ? `Pipeline ${money(pipelineTotal)}` : 'Sin oportunidades', C.emerald50, C.emerald700],
-                ['origen', contacto?.fuente ? `Origen: ${contacto.fuente}` : 'Sin origen', C.azulAgua, C.azulTinta],
-                ['interacciones', 'Interacciones', C.ambar100, C.ambar700],
-              ]
-          ).filter(Boolean).map((x: any) => {
-            const [id, txt, bg, fg] = x;
-            return (
-              <button key={id} onClick={() => setDetalle(id)} style={{
-                border: 'none', borderRadius: 999, padding: '4px 11px', background: bg, color: fg,
-                fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', maxWidth: '100%',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{txt} ›</button>
-            );
-          })}
-        </div>
-      )}
 
       {hilo?.marketing?.stopped && <div style={{ margin: '4px 16px 0' }}><span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span></div>}
 
@@ -539,7 +562,10 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         </div>
       )}
 
-      {/* Grupos de campos (solo el 1º abierto) */}
+      {/* Grupos de campos. «Contacto» es la ÚNICA que nace abierta: los datos
+          del cliente son lo que se mira de un vistazo. De lo demás basta con
+          saber si tiene algo dentro —para eso está la cuenta al lado del
+          título— y abrirlo solo si hace falta. */}
       {contactoBase && (
         <Seccion id="g-contacto" titulo="Contacto" abiertaDefault>
           <div style={caja}>
@@ -624,7 +650,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           quedan donde se usan —abajo, mientras escribes— y esta columna se
           libera para lo que sí es de aquí: los datos del cliente. */}
       {(ctx?.llamadas || []).some((l: any) => l.minuta || l.minuta_pdf_url) && (
-        <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).length} abiertaDefault>
+        <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).length}>
           {(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
         </Seccion>
       )}
@@ -633,7 +659,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         <TemasReunion contactId={contactoBase.id} temas={contacto?.propiedades?.temas_reunion} onCambio={(t: any[]) => setDCon((prev: any) => prev ? { ...prev, contact: prev.contact ? { ...prev.contact, propiedades: { ...(prev.contact.propiedades || {}), temas_reunion: t } } : prev.contact, propiedades: { ...(prev.propiedades || {}), temas_reunion: t } } : prev)} />
       )}
       {contactoBase && (
-        <Seccion id="g-seguimiento" titulo="Seguimiento" abiertaDefault>
+        <Seccion id="g-seguimiento" titulo="Seguimiento">
           <div style={caja}>
             <Campo etiqueta="Próximo paso" valor={contacto?.proximo_paso} onGuardar={guardar('proximo_paso')} placeholder="¿Qué sigue?" />
             <div style={divisor} /><Campo etiqueta="Siguiente seguimiento" valor={contacto?.next_followup ? String(contacto.next_followup).slice(0, 10) : null} type="date" onGuardar={guardar('next_followup')} formato={fecha} placeholder="Agendar" />
@@ -787,9 +813,8 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
 
   const TabActividad = () => (
     <div style={{ paddingTop: 8 }}>
-      {contactoBase && <ResumenIA contactId={contactoBase.id} inicial={contacto?.resumen_ia} inicialAt={contacto?.resumen_ia_at} />}
       {/* 1 · Qué ha visto de nosotros */}
-      <Seccion id="a-web" titulo="Visitas a la web y material de venta" n={(ctx?.web?.total || 0) + (ctx?.desde_ultimo?.correos_abiertos || 0) + quotesTodas.length} abiertaDefault>
+      <Seccion id="a-web" titulo="Visitas a la web y material de venta" n={(ctx?.web?.total || 0) + (ctx?.desde_ultimo?.correos_abiertos || 0) + quotesTodas.length}>
         {ctx?.web?.paginas?.length ? ctx.web.paginas.map((p: any, i: number) => (
           <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
             <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g700 }}>{p.ruta}</span>
@@ -809,7 +834,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       </Seccion>
 
       {/* 2 · Reuniones */}
-      <Seccion id="a-reuniones" titulo="Reuniones agendadas" n={bookings.length} abiertaDefault>
+      <Seccion id="a-reuniones" titulo="Reuniones agendadas" n={bookings.length}>
         {proxima && (
           <div style={{ background: C.moradoAgua, borderRadius: 9, padding: '8px 11px', fontSize: 12, marginBottom: 7 }}>
             <b style={{ color: C.moradoTinta }}>Próxima:</b> {fecha(proxima.fecha)} {proxima.hora_inicio ? `· ${String(proxima.hora_inicio).slice(0, 5)}` : ''}
@@ -851,7 +876,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       </Seccion>
 
       {/* 5 · La línea de tiempo completa */}
-      <Seccion id="a-timeline" titulo="Actividad" n={timelineFull.length} abiertaDefault>
+      <Seccion id="a-timeline" titulo="Actividad" n={timelineFull.length}>
         {contacto?.created_at && (
           <div style={{ fontSize: 11, color: C.g400, marginBottom: 6 }}>En el CRM desde {fecha(contacto.created_at)}</div>
         )}
@@ -1020,12 +1045,12 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
                 elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
                 en cada polling (Clasificación parpadeaba). */}
-            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} />)}
+            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} resumenIa={contacto?.resumen_ia} resumenIaAt={contacto?.resumen_ia_at} />)}
             {/* `accionInicial` también aquí: el evento `wa-acciones` cae en ESTA
                 rama (pone tab='acciones'), y al pasarle null el «agendar» se
                 perdía — abrías el menú de acciones y tenías que elegir otra vez
                 lo que ya habías pedido. */}
-            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} />}
+            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} resumenIa={contacto?.resumen_ia} resumenIaAt={contacto?.resumen_ia_at} />}
             {tab === 'adjuntos' && TabAdjuntos()}
             {tab === 'notas' && TabNotas()}
           </div>
@@ -1156,45 +1181,3 @@ function MinutaPanel({ l }: { l: any }) {
   );
 }
 
-
-/** Resumen de la relación, generado SOLO cuando el usuario lo pide. */
-function ResumenIA({ contactId, inicial, inicialAt }: { contactId: string; inicial?: string | null; inicialAt?: string | null }) {
-  const [resumen, setResumen] = useState<string | null>(inicial || null);
-  const [at, setAt] = useState<string | null>(inicialAt || null);
-  const [abierto, setAbierto] = useState(false);
-  const [cargando, setCargando] = useState(false);
-  const [msg, setMsg] = useState('');
-  useEffect(() => { setResumen(inicial || null); setAt(inicialAt || null); setAbierto(false); }, [contactId]);
-  const generar = async () => {
-    setCargando(true); setMsg('');
-    const r = await fetch('/api/crm/contacts/resumen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
-    setCargando(false);
-    if (r?.error) { setMsg(r.error); return; }
-    setResumen(r.resumen); setAt(r.at); setAbierto(true);
-  };
-  return (
-    <div style={{ margin: '10px 16px 0', borderRadius: 12, border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.morado}`, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
-        <span style={{ minWidth: 0, flex: 1 }}>
-          <b style={{ fontSize: 12 }}>Resumen de la relación</b>
-          <span style={{ display: 'block', fontSize: 10, color: C.g400 }}>
-            {cargando ? 'Leyendo todo el historial…' : at ? `Generado ${fecha(at)}` : 'Dos años de historia en 30 segundos'}
-          </span>
-        </span>
-        {resumen && !cargando && (
-          <button onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>{abierto ? 'Ocultar' : 'Leer'}</button>
-        )}
-        <button onClick={generar} disabled={cargando}
-          style={{ border: 'none', borderRadius: 7, padding: '5px 11px', background: cargando ? C.g100 : C.morado, color: cargando ? C.g400 : '#fff', fontSize: 11, fontWeight: 700, cursor: cargando ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-          {cargando ? <Corazones size={8} color={C.g400} /> : resumen ? 'Actualizar' : 'Generar'}
-        </button>
-      </div>
-      {msg && <div style={{ padding: '0 12px 8px', fontSize: 11, color: C.rojo700 }}>{msg}</div>}
-      {abierto && resumen && (
-        <div style={{ borderTop: `1px solid ${C.g100}`, padding: '10px 13px', fontSize: 12, color: C.g700, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 340, overflowY: 'auto' }}>
-          {resumen.replace(/^## /gm, '').replace(/\*\*/g, '')}
-        </div>
-      )}
-    </div>
-  );
-}
