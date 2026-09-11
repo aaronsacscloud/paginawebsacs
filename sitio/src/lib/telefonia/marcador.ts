@@ -34,9 +34,12 @@ export type Config = { horario?: { desde: string; hasta: string; dias?: number[]
 
 const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true };
 
-/* Tiempos de espera del motor, en ms. Se afinan con lo medido en producción. */
+/* Tiempos de espera del motor, en ms. Medido en producción (E0, 11-sep):
+   timbre→contesta 3.3 s cuando cae al buzón, veredicto de reglas a 2.9 s,
+   transcripción final del saludo de Telcel a 11.9 s. */
 export const ESPERA = {
   juicio: 9000,      // contestaron y nadie dijo nada claro → duda (se le pasa al vendedor)
+  buzon: 30000,      // buzón sin el tono del AMD → se deja el mensaje de todos modos (Telcel: saludo de ~12 s)
   portero: 40000,    // portero que no pasa la llamada → se cuelga
   timbre: 55000,     // marcando/timbrando sin noticias de Twilio → se pregunta y se cierra
   cierre: 8000,      // wrap-up por defecto tras hablar con una persona
@@ -256,7 +259,7 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
         Url: `${BASE}/api/telefonia/marcador/twiml?${q}`, Method: 'POST',
         StatusCallback: `${BASE}/api/telefonia/marcador/estado?${q}`, StatusCallbackMethod: 'POST',
         StatusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-        MachineDetection: 'Enable', AsyncAmd: 'true', MachineDetectionTimeout: '20',
+        MachineDetection: 'DetectMessageEnd', AsyncAmd: 'true', MachineDetectionTimeout: '30',
         AsyncAmdStatusCallback: `${BASE}/api/telefonia/marcador/amd?${q}`, AsyncAmdStatusCallbackMethod: 'POST',
         Timeout: '30',
       });
@@ -342,6 +345,12 @@ export async function procesarAmd(itemId: string, p: Record<string, string>) {
   if (!it) return;
   const ab = String(p.AnsweredBy || '');
   await supabase.from('tel_sesion_items').update({ answered_by: ab, updated_at: ahora() }).eq('id', itemId);
+  it.answered_by = ab;
+  if (buzonEsperandoTono(it) && /^machine_end/.test(ab)) {
+    const s = await getSesion(it.sesion_id);
+    if (s?.buzon_dejar_mensaje) await decirEnBuzon(it, s);
+    return;
+  }
   if (!['escuchando'].includes(it.estado) || it.veredicto) return;
   const oido: Oido[] = Array.isArray(it.oido) ? it.oido : [];
   const reglas = juzgar(oido, ms(it.contestado_at), ab);
@@ -403,9 +412,12 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
   }
   if (veredicto === 'buzon') {
     if (s?.buzon_dejar_mensaje && (s.presentacion_nombre || s.presentacion_motivo)) {
-      const msg = `Hola, ${s.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamamos de Sacscloud'}${s.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}. Le vuelvo a marcar más tarde. Gracias.`;
-      const twiml = `<Response><Pause length="1"/><Say language="es-MX" voice="${s.presentacion_voz || 'Polly.Mia-Neural'}">${escapar(msg)}</Say><Hangup/></Response>`;
-      twilioRest(`/Calls/${it.call_sid}.json`, { Twiml: twiml }).catch(() => colgarItem(it));
+      /* El mensaje se dice DESPUÉS del tono. Las reglas saben que es buzón a
+         los 3 s (E0: 2.9 s), cuando el saludo apenas empieza; hablar ahí es
+         hablar encima del saludo y el mensaje no se graba. Se espera el
+         «machine_end_*» del AMD (el tono) y, si no llega, `latir` lo dice a
+         los ESPERA.buzon segundos de todos modos. */
+      if (/^machine_end/.test(String(it.answered_by || ''))) await decirEnBuzon(it, s);
     } else {
       await colgarItem(it);
     }
@@ -421,6 +433,17 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
   }
   return true;
 }
+
+/** Deja nombre y motivo en el buzón y cuelga. Solo gana el primero (resultado). */
+async function decirEnBuzon(it: any, s: any) {
+  const { data: gane } = await supabase.from('tel_sesion_items').update({ resultado: 'buzon', updated_at: ahora() })
+    .eq('id', it.id).is('resultado', null).select('id');
+  if (!gane?.length || !it.call_sid) return;
+  const msg = `Hola, ${s.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamamos de Sacscloud'}${s.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}. Le vuelvo a marcar más tarde. Gracias.`;
+  const twiml = `<Response><Pause length="1"/><Say language="es-MX" voice="${s.presentacion_voz || 'Polly.Mia-Neural'}">${escapar(msg)}</Say><Hangup/></Response>`;
+  try { await twilioRest(`/Calls/${it.call_sid}.json`, { Twiml: twiml }); } catch { await colgarItem(it); }
+}
+const buzonEsperandoTono = (it: any) => it.estado === 'escuchando' && it.veredicto === 'buzon' && !it.resultado;
 
 export const escapar = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -459,6 +482,9 @@ export async function latir(sesionId: string) {
       const maquina = /^machine_/.test(String(it.answered_by || ''));
       await alVeredicto(it, maquina ? 'buzon' : 'duda', 'tiempo', maquina ? 'nadie dijo nada claro y el detector dice máquina' : 'contestaron y no se entendió quién');
       it = await getItem(it.id);
+    } else if (buzonEsperandoTono(it) && ms(it.contestado_at) > ESPERA.buzon) {
+      // El tono nunca llegó (AMD sin machine_end): se deja el mensaje igual.
+      if (s.buzon_dejar_mensaje) await decirEnBuzon(it, s); else await colgarItem(it);
     } else if (it.estado === 'portero' && ms(it.contestado_at) > ESPERA.portero) {
       await colgarItem(it, 'portero');
     } else if (['marcando', 'timbrando'].includes(it.estado) && ms(it.marcado_at) > ESPERA.timbre) {
