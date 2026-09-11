@@ -4826,6 +4826,7 @@ const useCases = [
   .flujo-still, .flujo-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .flujo-clip { opacity: 0; transition: opacity 0.4s ease; }
   .flujo-clip.is-on { opacity: 1; }
+  .flujo-still.is-off { opacity: 0; transition: opacity 0.4s ease 0.3s; }
   .flujo-tag { position: absolute; left: 18px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; background: rgba(250, 250, 248, 0.96); color: #1a1a1a; border-radius: 999px; padding: 9px 14px; font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 0.02em; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.4s ease; }
   .flujo-tag.is-on { opacity: 1; transform: none; }
   .flujo-tag-check { width: 20px; height: 20px; border-radius: 50%; background: #1F8F5F; color: #fff; display: inline-grid; place-items: center; font-size: 12px; }
@@ -18161,10 +18162,10 @@ const useCases = [
   }
 
 
-  // ─── El recorrido de la clienta: corre solo cuando la sección está a la vista.
-  // Foto del paso + texto (lectura) → clip hacia el siguiente paso → … → "Vende más".
-  // La barra de abajo enseña lo que ya pasó, lo que se muestra (con progreso) y lo que
-  // falta; tocar un paso lleva ahí, y "Ver la funcionalidad" es la salida.
+  // ─── El recorrido de la clienta ───
+  // 1) el marco entra chico por la derecha y crece con el scroll (pista corta);
+  // 2) al crecer, UN solo video corre de principio a fin sin detenerse: los textos
+  //    cambian en sus tiempos (cuando la cámara llega a cada escena). Timeline abajo.
   (() => {
     const sec = document.querySelector<HTMLElement>('#recorrido');
     const wrap = sec?.querySelector<HTMLElement>('.flujo-video');
@@ -18172,79 +18173,69 @@ const useCases = [
     const clip = wrap?.querySelector<HTMLVideoElement>('.flujo-clip');
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
-    const V = movil ? '/tienda/video/m/' : '/tienda/video/';
-    // [clip que LLEVA al paso, foto del paso, velocidad del clip]
-    const PASOS: [string | null, string, number][] = [
-      [null, '/tienda/59-live.webp', 1],
-      ['f29-live-post', '/tienda/60-post.webp', 1.5],
-      ['f30-post-entra', '/tienda/61-entra.webp', 2],
-      ['f31-entra-atiende', '/tienda/62-atiende.webp', 1.5],
-      ['f32-atiende-probador', '/tienda/63-probador.webp', 1.5],
-      ['f33-probador-pago', '/tienda/64-pago.webp', 1.5],
-      ['f34-pago-whatsapp', '/tienda/65-whatsapp.webp', 2],
-    ];
-    const N = PASOS.length, LECTURA = 1300;
+    clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + 'recorrido.mp4';
+    // segundo en que la cámara LLEGA a cada paso (live 1 s quieto · 1.5x · 2x · 1.5x · 1.5x · 1.5x · 2x)
+    const CUES = [0, 4.33, 6.83, 10.17, 13.5, 16.83, 19.33];
+    const FIN = 20.8, ADELANTO = 0.5; // el texto cambia medio segundo antes de llegar
+    const N = CUES.length;
     const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
     const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
     const final = sec.querySelector<HTMLElement>('.flujo-final');
     const dots = sec.querySelectorAll<HTMLElement>('.flujo-dots li');
     const replay = wrap.querySelector<HTMLButtonElement>('.flujo-replay');
-    const precarga = (i: number) => { for (let k = i; k < Math.min(i + 2, N); k++) { const im = new Image(); im.src = PASOS[k][1]; } };
-    let cur = -1, token = 0, visible = false, timer: ReturnType<typeof setTimeout> | null = null, raf = 0;
+    let cur = -1, raf = 0, visible = false, crecido = false, arrancado = false;
     const barra = (i: number, f: number) => { dots.forEach((d) => { const k = +d.dataset.i!; const b = d.querySelector<HTMLElement>('b')!; b.style.width = k < i ? '100%' : k === i ? (f * 100) + '%' : '0%'; }); };
     function muestra(i: number) {
+      if (i === cur) return; cur = i;
       pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
       wrap.classList.toggle('is-done', i >= N);
       dots.forEach((d) => { const k = +d.dataset.i!; d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i || i >= N); });
-      if (i < N) still.src = PASOS[i][1];
     }
-    function limpia() { if (timer) clearTimeout(timer); timer = null; cancelAnimationFrame(raf); clip.onended = null; clip.pause(); clip.classList.remove('is-on'); }
-    // muestra el paso i (foto + texto), espera la lectura y lanza el clip hacia i+1
-    function paso(i: number) {
-      limpia(); const t = ++token; cur = i; muestra(i); precarga(i + 1);
-      if (i >= N) { barra(N, 0); return; }
-      barra(i, 0);
-      timer = setTimeout(() => {
-        if (t !== token || !visible) return;
-        if (i + 1 >= N) { paso(N); return; }
-        const c = PASOS[i + 1][0];
-        if (!c) { paso(i + 1); return; }
-        barra(i, 0.2);
-        clip.src = V + c + '.mp4'; clip.classList.add('is-on'); clip.playbackRate = PASOS[i + 1][2];
-        const tick = () => { if (t !== token) return; if (clip.duration) barra(i, 0.2 + 0.8 * clip.currentTime / clip.duration); raf = requestAnimationFrame(tick); }; tick();
-        clip.onended = () => { if (t === token) paso(i + 1); };
-        clip.play().catch(() => { if (t === token) paso(i + 1); });
-        setTimeout(() => { if (t === token && clip.readyState < 3 && clip.currentTime < 0.2) { clip.pause(); paso(i + 1); } }, 4000);
-      }, i === 0 ? LECTURA + 400 : LECTURA);
+    function sigue() {
+      const t = clip.currentTime;
+      let i = 0; for (let k = 0; k < N; k++) if (t + ADELANTO >= CUES[k]) i = k;
+      const dur = clip.duration || FIN;
+      if (clip.ended || t >= dur - 0.05) { muestra(N); barra(N, 0); return; }
+      muestra(i);
+      const a = CUES[i], b = i + 1 < N ? CUES[i + 1] : dur;
+      barra(i, Math.min(1, Math.max(0, (t - a) / (b - a))));
+      raf = requestAnimationFrame(sigue);
     }
-    // 1) el marco entra chico por la derecha y crece con el scroll (pista corta);
-    //    al terminar de crecer, 2) la historia arranca y corre sola.
-    let crecido = false, pausadoEn: number | null = null, snapT: ReturnType<typeof setTimeout> | null = null, snapping = false, sraf = 0;
+    function arranca(desde = 0) {
+      arrancado = true; cancelAnimationFrame(raf);
+      still.classList.add('is-off'); clip.classList.add('is-on');
+      try { clip.currentTime = desde; } catch {}
+      clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => { muestra(N); });
+    }
+    clip.addEventListener('ended', () => { cancelAnimationFrame(raf); muestra(N); barra(N, 0); });
+    // crecimiento con el scroll + snap al final de la pista
+    let snapT: ReturnType<typeof setTimeout> | null = null, snapping = false, sraf = 0;
     const escenario = sec.querySelector<HTMLElement>('.flujo-sticky')!;
     const pista = () => { const r = sec.getBoundingClientRect(); const total = sec.offsetHeight - window.innerHeight; return { y: Math.min(Math.max(-r.top, 0), total), total, top: r.top + window.scrollY }; };
     const pinta = () => {
       const { y, total, top } = pista(); const p = total > 0 ? y / total : 1;
       wrap.style.transform = movil ? `scale(${0.82 + 0.18 * p})` : `scale(${0.56 + 0.44 * p}) translateX(${(1 - p) * 6}%)`;
-      if (p >= 0.92 && !crecido) { crecido = true; if (visible) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } } }
-      // si el usuario se queda a medias en la pista, la página se acomoda al final para que la historia corra
+      if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; if (visible && !arrancado) arranca(0); }
       if (snapT) clearTimeout(snapT);
       if (!snapping && p > 0.08 && p < 0.92) snapT = setTimeout(() => { snapping = true; window.scrollTo({ top: top + total, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 800); }, 220);
     };
     window.addEventListener('scroll', () => { cancelAnimationFrame(sraf); sraf = requestAnimationFrame(pinta); }, { passive: true });
     window.addEventListener('resize', pinta);
-    pinta();
-    // pausa al salir de la vista y continúa al volver (solo una vez que ya creció)
+    // precarga discreta al acercarse
+    const ioPre = new IntersectionObserver((es) => { if (es[0].isIntersecting) { clip.preload = 'auto'; clip.load(); ioPre.disconnect(); } }, { rootMargin: '600px 0px' });
+    ioPre.observe(sec);
+    // se pausa al salir de la vista y continúa al volver
     const io = new IntersectionObserver((es) => {
       const e = es[0]; visible = e.isIntersecting && e.intersectionRatio >= 0.4;
-      if (visible && crecido) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } }
-      else if (!visible && cur >= 0 && cur < N) { pausadoEn = cur; limpia(); }
+      if (visible) { if (crecido && !arrancado) arranca(0); else if (arrancado && clip.paused && !clip.ended) { clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => {}); } }
+      else if (arrancado && !clip.paused) { clip.pause(); cancelAnimationFrame(raf); }
     }, { threshold: [0, 0.4, 1] });
     io.observe(escenario);
-    dots.forEach((d) => d.addEventListener('click', () => { pausadoEn = null; crecido = true; paso(+d.dataset.i!); }));
-    replay?.addEventListener('click', () => { pausadoEn = null; paso(0); });
-    muestra(0); barra(0, 0);
+    dots.forEach((d) => d.addEventListener('click', () => { crecido = true; arranca(CUES[+d.dataset.i!]); }));
+    replay?.addEventListener('click', () => arranca(0));
+    pinta(); muestra(0); barra(0, 0);
   })();
 
   pillarSections.forEach((section) => {
