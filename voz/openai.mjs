@@ -363,8 +363,11 @@ export class SesionOpenAI {
     this.aAi({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id: item.call_id, output: JSON.stringify(res ?? {}) } });
     // Tras colgar/pasar no hay nada más que decir; con las demás, que siga con el resultado.
     if (!res?.colgar && !res?.pasar) {
-      // Si mientras corría la herramienta el VAD abrió otra respuesta, esa NO vio el resultado: se cancela.
-      if (this.respuesta && !this.respuesta.terminada) this.aAi({ type: 'response.cancel', response_id: this.respuesta.id });
+      /* Si mientras corría la herramienta el VAD abrió otra respuesta, esa NO vio el resultado: se cancela…
+         pero SOLO si todavía no ha dicho nada. Si ya está hablando, cortarla la parte a media palabra
+         («Tu tienda no vende solo blusas, vende…», medido en simulación): mejor que termine y OpenAI encola
+         la del resultado detrás. */
+      if (this.respuesta && !this.respuesta.terminada && !this.respuesta.bytes) this.aAi({ type: 'response.cancel', response_id: this.respuesta.id });
       this.aAi({ type: 'response.create' });
     } else if (!this.sonando()) { const f = this.despuesDeHablar; this.despuesDeHablar = null; f?.(); }
   }
