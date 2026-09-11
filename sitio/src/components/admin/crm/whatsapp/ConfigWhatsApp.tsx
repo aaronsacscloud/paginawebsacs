@@ -427,22 +427,36 @@ function Fernanda() {
       ) : (
         <div style={{ display: 'grid', gap: 5, marginBottom: 12 }}>
           {fila('La central', viva ? `viva · ${central.vivas || 0} llamadas ahora · ${central.atendidas || 0} atendidas desde que arrancó` : `no responde${central.error ? ` (${central.error})` : ''}`)}
-          {viva && fila('Cerebro', `${central.modelo || '?'}${central.cerebro ? '' : ' · sin llave de Anthropic'}`)}
+          {viva && fila('Motor voz-a-voz', central.openai ? `OpenAI ${central.openai}` : 'sin llave de OpenAI en la central')}
+          {viva && fila('Cerebro (motor por partes)', `${central.modelo || '?'}${central.cerebro ? '' : ' · sin llave de Anthropic'}`)}
           {fila('Gasto de hoy', `US$ ${Number(d.gasto_hoy_usd || 0).toFixed(2)} de ${Number(c?.tope_dia_usd || 0)} (al llegar al tope las sesiones se pausan solas)`)}
         </div>
       )}
       {c && (
         <div style={{ display: 'grid', gap: 12 }}>
           <div>
+            <label style={etiqueta}>Cómo habla</label>
+            <select value={c.motor === 'relay' ? 'relay' : 'openai'} disabled={!d.puede_editar} onChange={e => setC({ ...c, motor: e.target.value })} style={campo}>
+              <option value="openai">Voz a voz (OpenAI): oye y contesta en la misma red, más natural y rápida</option>
+              <option value="relay">Por partes (Deepgram + Claude + ElevenLabs): voces mexicanas grabadas, más lenta</option>
+            </select>
+          </div>
+          <div>
             <label style={etiqueta}>Su voz</label>
             <div style={{ display: 'grid', gap: 6 }}>
-              {(d.voces || []).map((v: any) => (
+              {c.motor !== 'relay' && (d.voces_openai || []).map((v: any) => (
+                <label key={v.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: '#444', cursor: d.puede_editar ? 'pointer' : 'default' }}>
+                  <input type="radio" name="voz_openai" checked={(c.voz_openai || 'marin') === v.id} disabled={!d.puede_editar} onChange={() => setC({ ...c, voz_openai: v.id })} style={{ marginTop: 3 }} />
+                  <span><b>{v.nombre}</b> <span style={{ color: '#888' }}>· {v.nota}</span></span>
+                </label>
+              ))}
+              {c.motor === 'relay' && (d.voces || []).map((v: any) => (
                 <label key={v.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: '#444', cursor: d.puede_editar ? 'pointer' : 'default' }}>
                   <input type="radio" name="voz" checked={c.voz === v.id} disabled={!d.puede_editar} onChange={() => setC({ ...c, voz: v.id })} style={{ marginTop: 3 }} />
                   <span><b>{v.nombre}</b> <span style={{ color: '#888' }}>· {v.nota}</span></span>
                 </label>
               ))}
-              {c.voz && !(d.voces || []).some((v: any) => v.id === c.voz) && <span style={{ fontSize: 11.5, color: '#888' }}>Voz personalizada: {c.voz}</span>}
+              {c.motor === 'relay' && c.voz && !(d.voces || []).some((v: any) => v.id === c.voz) && <span style={{ fontSize: 11.5, color: '#888' }}>Voz personalizada: {c.voz}</span>}
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
