@@ -9,7 +9,7 @@ const BUCKET = 'wa-media';
 const GROQ_KEY = ((import.meta as any).env?.GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 
 export type ResultadoMinuta =
-  | { ok: true; minuta: string; siguiente_paso: string; transcript_len: number }
+  | { ok: true; minuta: string; siguiente_paso: string; transcript_len: number; pdf?: string | null }
   | { ok: false; error: string; status: number; transcript?: string };
 
 export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, mime: string): Promise<ResultadoMinuta> {
@@ -51,26 +51,11 @@ export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, 
   }
   const dur = ll.duracion_seg ? `${Math.floor(ll.duracion_seg / 60)} min ${ll.duracion_seg % 60} s` : 'desconocida';
 
-  // 4) Claude redacta la minuta.
-  const canal = (ll as any).canal === 'telefono' ? 'una llamada telefónica' : 'una llamada de WhatsApp';
-  const prompt = `Eres el asistente del CRM de Sacscloud (software de punto de venta para comercios en México). Esta es la transcripción de ${canal} ${ll.direccion === 'saliente' ? 'que el equipo le hizo a' : 'que recibió el equipo de'} ${quien}. Duración: ${dur}. La transcripción mezcla ambas voces sin etiquetar quién habla; dedúcelo por contexto y no inventes nada que no esté dicho.
-
-TRANSCRIPCIÓN:
-${transcript.slice(0, 24000)}
-
-Responde SOLO un JSON válido con esta forma exacta:
-{"minuta": "la minuta detallada en markdown: ## Resumen (2-3 frases), ## Temas tratados (viñetas con lo que se habló, con cifras y nombres literales), ## Acuerdos (viñetas; si no hubo, dilo), ## Pendientes (viñetas de quién debe qué)", "siguiente_paso": "UNA frase imperativa con el siguiente paso más importante para el equipo (o cadena vacía si no hay)"}`;
-  let minuta = '', siguiente = '';
+  // 4) Claude redacta la minuta — las DOS versiones, en una sola pasada.
+  let minuta = '', minutaCliente = '', siguiente = '';
   try {
-    const r = await anthropic.messages.create({
-      model: MODELS.sonnet, max_tokens: 1600,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    const texto = (r.content[0] as any)?.text || '';
-    const m = texto.match(/\{[\s\S]*\}/);
-    const parsed = m ? JSON.parse(m[0]) : null;
-    minuta = String(parsed?.minuta || '').trim();
-    siguiente = String(parsed?.siguiente_paso || '').trim();
+    const r = await redactarMinuta({ transcript, quien, dur, canal: (ll as any).canal, direccion: ll.direccion });
+    minuta = r.minuta; minutaCliente = r.minuta_cliente; siguiente = r.siguiente_paso;
   } catch (e: any) {
     await supabase.from('wa_llamadas').update({ grabacion_path: path, transcript }).eq('call_id', callId);
     return { ok: false, error: `La transcripción quedó guardada pero la minuta falló: ${String(e?.message || e)}`, status: 502 };
@@ -78,7 +63,8 @@ Responde SOLO un JSON válido con esta forma exacta:
   if (!minuta) minuta = `## Resumen\n${transcript.slice(0, 600)}…`;
 
   await supabase.from('wa_llamadas').update({
-    grabacion_path: path, transcript, minuta, siguiente_paso: siguiente || null, minuta_at: new Date().toISOString(),
+    grabacion_path: path, transcript, minuta, minuta_cliente: minutaCliente || null,
+    siguiente_paso: siguiente || null, minuta_at: new Date().toISOString(),
   }).eq('call_id', callId);
 
   // 5) Actividad del contacto (ficha 360) + siguiente paso sugerido en el CRM.
@@ -108,4 +94,37 @@ Responde SOLO un JSON válido con esta forma exacta:
   }
 
   return { ok: true, minuta, siguiente_paso: siguiente, transcript_len: transcript.length, pdf };
+}
+
+/**
+ * El paso de REDACCIÓN, aparte del de transcripción.
+ *
+ * Vive suelto porque re-redactar una minuta a partir del texto que ya está
+ * guardado es una operación legítima —cambió el prompt, salió mal, hace falta
+ * la versión del cliente de una llamada vieja— y no tiene por qué obligar a
+ * volver a bajar y transcribir el audio.
+ *
+ * Devuelve DOS textos: el interno, que es una lectura nuestra y por eso sirve,
+ * y el del cliente, escrito sabiendo que él lo va a abrir.
+ */
+export async function redactarMinuta(o: {
+  transcript: string; quien: string; dur: string; canal?: string | null; direccion?: string | null;
+}): Promise<{ minuta: string; minuta_cliente: string; siguiente_paso: string }> {
+  const canal = o.canal === 'telefono' ? 'una llamada telefónica' : 'una llamada de WhatsApp';
+  const prompt = `Eres el asistente del CRM de Sacscloud (software de punto de venta para comercios en México). Esta es la transcripción de ${canal} ${o.direccion === 'saliente' ? 'que el equipo le hizo a' : 'que recibió el equipo de'} ${o.quien}. Duración: ${o.dur}. La transcripción mezcla ambas voces sin etiquetar quién habla; dedúcelo por contexto y no inventes nada que no esté dicho.
+
+TRANSCRIPCIÓN:
+${String(o.transcript).slice(0, 24000)}
+
+Responde SOLO un JSON válido con esta forma exacta:
+{"minuta": "la minuta detallada en markdown: ## Resumen (2-3 frases), ## Temas tratados (viñetas con lo que se habló, con cifras y nombres literales), ## Acuerdos (viñetas; si no hubo, dilo), ## Pendientes (viñetas de quién debe qué)", "minuta_cliente": "la MISMA reunión contada PARA QUE LA LEA EL CLIENTE, en markdown con ## Resumen, ## Acuerdos y ## Pendientes. La escribes sabiendo que él la va a abrir: dirígete a él de usted, deja fuera todo lo que sea lectura interna nuestra —desacuerdos entre sus socios, quién se desanimó, objeciones de precio, juicios sobre su equipo, probabilidades de venta, notas para el vendedor— y quédate con lo que ambos acordamos y lo que sigue de cada lado. Si no hubo acuerdos, dilo con naturalidad. Nada de jerga interna ni de etapas del CRM.", "siguiente_paso": "UNA frase imperativa con el siguiente paso más importante para el equipo (o cadena vacía si no hay)"}`;
+  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 2200, messages: [{ role: 'user', content: prompt }] });
+  const texto = (r.content[0] as any)?.text || '';
+  const m = texto.match(/\{[\s\S]*\}/);
+  const parsed = m ? JSON.parse(m[0]) : null;
+  return {
+    minuta: String(parsed?.minuta || '').trim(),
+    minuta_cliente: String(parsed?.minuta_cliente || '').trim(),
+    siguiente_paso: String(parsed?.siguiente_paso || '').trim(),
+  };
 }

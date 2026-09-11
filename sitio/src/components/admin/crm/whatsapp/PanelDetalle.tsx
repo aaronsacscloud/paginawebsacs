@@ -688,7 +688,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           mismo sitio no dan más opciones: dan la duda de si hacen lo mismo. Se
           quedan donde se usan —abajo, mientras escribes— y esta columna se
           libera para lo que sí es de aquí: los datos del cliente. */}
-      {(ctx?.llamadas || []).some((l: any) => l.minuta || l.minuta_pdf_url) && (
+      {(ctx?.llamadas || []).some((l: any) => l.minuta || l.minuta_pdf_url || l.minuta_pdf_cliente_url) && (
         <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).length}>
           {(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
         </Seccion>
@@ -1213,13 +1213,20 @@ function MinutaPanel({ l }: { l: any }) {
       {abierta && <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 10px', fontSize: 11.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', maxHeight: 260, overflowY: 'auto' }}>{String(l.minuta).replace(/^## /gm, '').replace(/^- /gm, '• ')}</div>}
       {/* El documento formal, aquí y no solo en la conversación: la ficha es
           donde alguien busca «qué se habló con este cliente» meses después. */}
+      {l.minuta_pdf_cliente_url && (
+        <a href={l.minuta_pdf_cliente_url} target="_blank" rel="noreferrer"
+          style={{ display: 'flex', alignItems: 'center', gap: 7, borderTop: `1px solid ${C.g100}`, padding: '7px 10px', fontSize: 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none', background: '#F7FCFA' }}>
+          <span style={{ fontSize: 12 }}>📤</span>
+          <span style={{ flex: 1, minWidth: 0 }}>Versión para el cliente</span>
+          {l.minuta_envio_estado === 'enviada' && <span title="Ya se le mandó" style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px' }}>enviada</span>}
+          {l.minuta_envio_estado === 'pendiente_ventana' && <span title="Sale en cuanto responda" style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px' }}>por enviar</span>}
+        </a>
+      )}
       {l.minuta_pdf_url && (
         <a href={l.minuta_pdf_url} target="_blank" rel="noreferrer"
           style={{ display: 'flex', alignItems: 'center', gap: 7, borderTop: `1px solid ${C.g100}`, padding: '7px 10px', fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none', background: '#FBFAFF' }}>
           <span style={{ fontSize: 12 }}>📄</span>
-          <span style={{ flex: 1, minWidth: 0 }}>Minuta en PDF</span>
-          {l.minuta_envio_estado === 'enviada' && <span title="Ya se le mandó al cliente" style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px' }}>enviada</span>}
-          {l.minuta_envio_estado === 'pendiente_ventana' && <span title="Se le avisó; sale en cuanto responda" style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px' }}>por enviar</span>}
+          <span style={{ flex: 1, minWidth: 0 }}>Minuta interna <span style={{ fontWeight: 500, color: C.g400 }}>· con todo</span></span>
         </a>
       )}
       {l.siguiente_paso && <div style={{ borderTop: `1px solid ${C.g100}`, background: C.moradoAgua, padding: '5px 10px', fontSize: 10.5, color: C.moradoTinta }}><b>Siguiente:</b> {l.siguiente_paso}</div>}

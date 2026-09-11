@@ -41,12 +41,12 @@ export type ResultadoEntrega = {
 const primerNombre = (n?: string | null) => String(n || '').trim().split(/\s+/)[0] || '';
 
 /** Sube el PDF y devuelve su URL pública. */
-async function guardar(callId: string, buf: Buffer): Promise<string> {
+async function guardar(callId: string, buf: Buffer, sufijo = ''): Promise<string> {
   /* El bucket es público porque Meta descarga el archivo desde sus servidores,
      sin cookies ni cabeceras nuestras. El candado es el NOMBRE: lleva un tramo
      aleatorio, así que la URL no se puede adivinar a partir del CallSid. */
   const azar = Math.random().toString(36).slice(2, 12);
-  const ruta = `minutas/${callId}-${azar}.pdf`;
+  const ruta = `minutas/${callId}${sufijo}-${azar}.pdf`;
   const { error } = await supabase.storage.from(BUCKET)
     .upload(ruta, buf, { contentType: 'application/pdf', upsert: true, cacheControl: '31536000' });
   if (error) throw new Error(`no se pudo guardar el PDF: ${error.message}`);
@@ -60,7 +60,7 @@ async function guardar(callId: string, buf: Buffer): Promise<string> {
 export async function generarYEntregarMinuta(callId: string): Promise<ResultadoEntrega> {
   try {
     const { data: ll } = await supabase.from('wa_llamadas')
-      .select('call_id, canal, direccion, telefono, duracion_seg, minuta, minuta_pdf_url, minuta_envio_estado, conversation_id, started_at, atendida_por_nombre')
+      .select('call_id, canal, direccion, telefono, duracion_seg, minuta, minuta_cliente, minuta_pdf_url, minuta_pdf_cliente_url, minuta_envio_estado, conversation_id, started_at, atendida_por_nombre')
       .eq('call_id', callId).maybeSingle();
     if (!ll) return { pdf: null, estado: null, motivo: 'la llamada no existe' };
     if (!String(ll.minuta || '').trim()) return { pdf: null, estado: null, motivo: 'todavía no hay minuta' };
@@ -97,11 +97,37 @@ export async function generarYEntregarMinuta(callId: string): Promise<ResultadoE
         .eq('call_id', callId);
     }
 
+    /* ── 1b · LA VERSIÓN PARA EL CLIENTE ───────────────────────────────────
+       Son DOS documentos, no uno. La minuta que escribe Claude es de
+       observación interna y vale justamente por eso: la primera real decía de
+       un cliente «dos socios con visiones diferentes», «consideraron que se
+       dispara el precio», «el socio tecnológico se desanimó». Mandarle eso le
+       devuelve sus propios desacuerdos citados.
+       El PDF que se le manda sale de `minuta_cliente`, que el mismo modelo
+       escribe sabiendo que él la va a leer. Si por lo que sea no viene, NO se
+       cae al texto interno: mejor no mandar nada que mandar eso. */
+    let urlCliente = ll.minuta_pdf_cliente_url as string | null;
+    if (!urlCliente && String(ll.minuta_cliente || '').trim()) {
+      try {
+        const bufC = await minutaPDF({
+          callId, contacto, empresa, telefono: ll.telefono,
+          direccion: (ll.direccion === 'entrante' ? 'entrante' : 'saliente'),
+          fecha: ll.started_at ? new Date(ll.started_at) : new Date(),
+          duracionSeg: Number(ll.duracion_seg || 0),
+          atendio: ll.atendida_por_nombre, minuta: String(ll.minuta_cliente),
+        });
+        if (bufC?.length) {
+          urlCliente = await guardar(callId, bufC, '-cliente');
+          await supabase.from('wa_llamadas').update({ minuta_pdf_cliente_url: urlCliente }).eq('call_id', callId);
+        }
+      } catch (e: any) { console.warn(`[minuta/entrega] la versión del cliente falló: ${String(e?.message || e)}`); }
+    }
+
     // ── 2 · ¿Se le manda? ─────────────────────────────────────────────────
     /* El envío se atrapa APARTE del PDF. Si se juntan en un solo try, un error
        de WhatsApp devolvía `pdf: null` aunque el documento ya estuviera hecho y
        guardado: quien llamaba creía que no había PDF y lo volvía a generar. */
-    const r = await entregar(callId, url, ll, conv, contacto)
+    const r = await entregar(callId, urlCliente, ll, conv, contacto)
       .catch((e: any) => {
         const motivo = String(e?.message || e);
         /* Si la ventana estaba ABIERTA y el envío falló por algo pasajero, se
@@ -156,11 +182,14 @@ async function aprobada(nombre?: string | null): Promise<boolean> {
 }
 
 /** La decisión de envío, aislada para poder reusarla al abrirse la ventana. */
-async function entregar(callId: string, url: string, ll: any, conv: any, contacto: string | null): Promise<{ estado: ResultadoEntrega['estado']; motivo: string }> {
+async function entregar(callId: string, url: string | null, ll: any, conv: any, contacto: string | null): Promise<{ estado: ResultadoEntrega['estado']; motivo: string }> {
   const { data: cfg } = await supabase.from('wa_config')
     .select('minuta_envio_activa, minuta_envio_plantilla_doc, minuta_envio_plantilla_aviso, minuta_envio_texto')
     .eq('id', 1).maybeSingle();
   if (!cfg?.minuta_envio_activa) return { estado: 'no_aplica', motivo: 'el envío automático de la minuta está apagado' };
+  /* Sin versión para el cliente NO se manda nada. Caer al PDF interno sería
+     exactamente el accidente que estas dos versiones existen para evitar. */
+  if (!url) return { estado: 'no_aplica', motivo: 'no se pudo redactar la versión para el cliente; el PDF interno sí quedó' };
   if (!conv) return { estado: 'no_aplica', motivo: 'este teléfono no tiene conversación en el inbox' };
 
   const tel = telefonoWhatsApp(conv.telefono || ll.telefono);
@@ -220,7 +249,7 @@ export async function entregarMinutasPendientes(conversationId: string): Promise
     if (!cfg?.minuta_envio_activa) return 0;
 
     const { data: pendientes } = await supabase.from('wa_llamadas')
-      .select('call_id, telefono, minuta_pdf_url, minuta_pdf_at, conversation_id')
+      .select('call_id, telefono, minuta_pdf_cliente_url, minuta_pdf_at, conversation_id')
       .eq('conversation_id', conversationId).eq('minuta_envio_estado', 'pendiente_ventana')
       .order('minuta_pdf_at', { ascending: false }).limit(3);
     if (!pendientes?.length) return 0;
@@ -241,11 +270,13 @@ export async function entregarMinutasPendientes(conversationId: string): Promise
         await supabase.from('wa_llamadas').update({ minuta_envio_estado: 'caducada', minuta_envio_motivo: `pasaron más de ${cfg.minuta_envio_caduca_dias} días esperando respuesta` }).eq('call_id', p.call_id);
         continue;
       }
-      if (!p.minuta_pdf_url) continue;
+      /* La versión del CLIENTE, nunca la interna. Esta rama corre días después
+         del cierre y es justo donde un descuido pasaría inadvertido. */
+      if (!p.minuta_pdf_cliente_url) continue;
       try {
         enContexto('minuta', 'telefonia');
         const pie = String(cfg.minuta_envio_texto || '').replace(/\{\{\s*nombre\s*\}\}/gi, nombre);
-        await enviarMediaLink(tel, 'document', p.minuta_pdf_url, `Minuta ${folioDe(p.call_id)}.pdf`, pie || undefined);
+        await enviarMediaLink(tel, 'document', p.minuta_pdf_cliente_url, `Minuta ${folioDe(p.call_id)}.pdf`, pie || undefined);
         await supabase.from('wa_llamadas').update({
           minuta_envio_estado: 'enviada', minuta_envio_at: new Date().toISOString(),
           minuta_envio_motivo: 'se mandó al responder el cliente y abrirse la ventana',
