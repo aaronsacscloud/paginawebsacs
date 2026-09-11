@@ -51,12 +51,14 @@ export class Device extends Emisor {
   async connect({ params }){ const c = new Llamada(); c.destino = params.To; window.__llamada = c; return c; }
 }
 export const Call = Llamada;
+window.__nivel = v => window.__llamada && window.__llamada.emit('volume', v);
 export default { Device, Call: Llamada };
 window.__LlamadaFalsa = Llamada;
 `;
 
 const nav = await chromium.launch({ args: ['--no-sandbox', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
-const ctx = await nav.newContext({ viewport: { width: 1360, height: 950 }, permissions: ['microphone'] });
+const MOVIL = process.argv.includes('--movil');
+const ctx = await nav.newContext({ viewport: MOVIL ? { width: 390, height: 844 } : { width: 1360, height: 950 }, permissions: ['microphone'], ...(MOVIL ? { isMobile: true, hasTouch: true, deviceScaleFactor: 3 } : {}) });
 const p = await ctx.newPage();
 const errores = [];
 p.on('pageerror', e => errores.push(e.message));
@@ -75,7 +77,7 @@ const panel = () => p.evaluate(() => {
   const d = document.querySelector('[data-tel-panel]');
   return d ? d.innerText.trim().replace(/\n+/g, ' · ') : '';
 });
-const foto = async n => { await p.waitForTimeout(350); await p.screenshot({ path: `/tmp/qa-tel-e${n}.png` }); };
+const foto = async n => { await p.waitForTimeout(350); await p.screenshot({ path: `/tmp/qa-tel-${MOVIL ? 'm' : 'e'}${n}.png` }); };
 
 try {
   await p.goto(`${base}/admin/login`, { waitUntil: 'networkidle' });
@@ -103,18 +105,20 @@ try {
   await p.evaluate(() => window.__llamada.emit('accept', window.__llamada));
   await p.waitForTimeout(2600);
   t = await panel();
-  paso('En línea con cronómetro', /En línea/.test(t) && /0:0[23]/.test(t), t.slice(0, 60));
+  // En el teléfono la pantalla enseña el cronómetro en lugar de la etiqueta:
+  // el número ES el estado, y ocupa el lugar bueno.
+  paso('En línea con cronómetro', (MOVIL || /En línea/.test(t)) && /0:0[23]/.test(t), t.slice(0, 60));
   await foto('3-en-linea');
 
   // ── Teclado DTMF ────────────────────────────────────────────────────────
-  await p.getByRole('button', { name: 'Teclas' }).click();
+  await p.getByRole('button', { name: MOVIL ? 'Teclado' : 'Teclas' }).click();
   for (const d of ['2', '0', '#']) await p.getByRole('button', { name: d, exact: true }).first().click();
   const tonos = await p.evaluate(() => window.__tonos);
   paso('Teclado manda tonos al menú', tonos === '20#', `mandó «${tonos}»`);
   await foto('4-teclado');
 
   // ── Silenciar ───────────────────────────────────────────────────────────
-  await p.getByRole('button', { name: 'Silenciar' }).click();
+  await p.getByRole('button', { name: MOVIL ? 'Silenciar' : 'Silenciar' }).click();
   const mudo = await p.evaluate(() => window.__llamada._mudo);
   paso('Silenciar apaga el micrófono', mudo === true, `mute=${mudo}`);
 
@@ -129,11 +133,25 @@ try {
   paso('Segunda llamada entrante se anuncia', /Otra llamada entrando/.test(t), '');
   await foto('5-espera');
 
+  // ── MEJORA 2 · el medidor de voz responde ───────────────────────────────
+  await p.evaluate(() => window.__nivel(0.85));
+  await p.waitForTimeout(250);
+  const barras = await p.evaluate(() => [...document.querySelectorAll('[title="Nivel de tu micrófono"] span')].filter(x => !/rgba\(255, 255, 255, 0.22\)|229, 231, 235/.test(getComputedStyle(x).backgroundColor)).length);
+  paso('El medidor se mueve con la voz', barras >= 4, `${barras}/5 barras encendidas`);
+
+  // ── MEJORA 3 · el apunte se escribe y se guarda al colgar ───────────────
+  let guardada = null;
+  await p.route('**/api/crm/telefonia/nota', async r => { guardada = JSON.parse(r.request().postData() || '{}'); await r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }); });
+  await p.getByRole('button', { name: /Apuntar algo/ }).click();
+  await p.locator('textarea').first().fill('Tiene 3 sucursales y quiere traspasos entre tiendas.');
+  await foto('8-apunte');
+
   // ── Colgar → resumen, minuta en curso ───────────────────────────────────
   await p.getByRole('button', { name: 'Colgar' }).click();
   await p.waitForTimeout(3200);
   t = await panel();
   paso('Resumen con la minuta en curso', /Transcribiendo y redactando/.test(t), t.slice(0, 70));
+  paso('El apunte se guardó solo al colgar', /3 sucursales/.test(guardada?.texto || ''), guardada ? 'se mandó al hilo' : 'NO se mandó');
   await foto('6-resumen-minuta');
 
   // ── La minuta queda lista ───────────────────────────────────────────────

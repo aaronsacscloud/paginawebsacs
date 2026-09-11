@@ -13,6 +13,7 @@
 // dos se veían igual (la barra simplemente desaparecía).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { telefonoLegible, telefonoWhatsApp } from '../../../../lib/telefono';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { C } from './estilo';
 
 let DeviceCtor: any = null;   // import perezoso: el SDK pesa y casi nadie lo usa en cada carga
@@ -92,6 +93,15 @@ export default function Telefonia() {
   const [numero, setNumero] = useState('');
   const [teclado, setTeclado] = useState(false);
   const [tonos, setTonos] = useState('');
+  const [nivel, setNivel] = useState(0);            // mejora 2 · cuánto te está oyendo el micrófono
+  const [nota, setNota] = useState('');             // mejora 3 · apunte durante la llamada
+  const [notaAbierta, setNotaAbierta] = useState(false);
+  const [ctx, setCtx] = useState<any>(null);        // mejora 4 · con quién estás hablando
+  const esMovil = useIsMobile();
+  const wakeRef = useRef<any>(null);
+  // El apunte se lee desde el cierre de `terminar`, que se creó antes de la
+  // última tecla: sin la ref se guardaría el texto de hace varios caracteres.
+  const notaRef = useRef(''); notaRef.current = nota;
   const deviceRef = useRef<any>(null);
   const vivaRef = useRef<Viva | null>(null); vivaRef.current = viva;
   useTono(!!entrante);
@@ -145,6 +155,37 @@ export default function Telefonia() {
     return () => { vivo = false; clearInterval(t); deviceRef.current?.destroy?.(); };
   }, []);
 
+  /* MEJORA 5 · QUE NO SE PIERDA UNA ENTRANTE.
+     El tono solo suena si la pestaña tiene permiso de audio, y en el teléfono
+     casi nunca la tienes al frente. Se agrega lo que sí atraviesa: una
+     notificación del sistema (con permiso) y vibración. La vibración es la que
+     de verdad funciona en el celular con la pantalla apagada. */
+  useEffect(() => {
+    if (!entrante) return;
+    const de = telefonoLegible(entrante.parameters?.From || '');
+    let aviso: any = null;
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        aviso = new Notification('Llamada entrante', { body: de, tag: 'tel-entrante', requireInteraction: true });
+        aviso.onclick = () => { window.focus(); aviso.close(); };
+      }
+    } catch { /* el navegador no las da */ }
+    let vibrando: any = null;
+    try {
+      if (navigator.vibrate) { navigator.vibrate([400, 300, 400]); vibrando = setInterval(() => navigator.vibrate([400, 300, 400]), 3000); }
+    } catch { /* sin motor de vibración */ }
+    return () => { clearInterval(vibrando); try { navigator.vibrate?.(0); aviso?.close?.(); } catch { /* ya cerrada */ } };
+  }, [entrante]);
+
+  /* El permiso de notificación se pide UNA vez, cuando ya hay telefonía —no al
+     entrar al CRM—: pedirlo de golpe al cargar es lo que hace que la gente le
+     dé «Bloquear» para siempre. */
+  useEffect(() => {
+    if (!numero || !('Notification' in window) || Notification.permission !== 'default') return;
+    const t = setTimeout(() => { Notification.requestPermission().catch(() => {}); }, 8000);
+    return () => clearTimeout(t);
+  }, [numero]);
+
   // Cronómetro: solo corre cuando ya hay conversación de verdad.
   useEffect(() => {
     if (!viva?.desde) { setSeg(0); return; }
@@ -161,6 +202,30 @@ export default function Telefonia() {
     return () => window.removeEventListener('beforeunload', h);
   }, [!!viva]);
 
+  /* MEJORA 1 · LA PANTALLA NO SE APAGA MIENTRAS HABLAS.
+     En el teléfono esto no es comodidad: cuando la pantalla se bloquea, el
+     navegador suspende la pestaña y la llamada por WebRTC se corta o se queda
+     sin audio a los pocos segundos. `wakeLock` se lo impide mientras dure. Se
+     vuelve a pedir al regresar a la pestaña porque el sistema lo suelta solo
+     cuando la app pasa a segundo plano. */
+  useEffect(() => {
+    if (!viva) return;
+    let vivo = true;
+    const pedir = async () => {
+      try { if (vivo && (navigator as any).wakeLock) wakeRef.current = await (navigator as any).wakeLock.request('screen'); }
+      catch { /* el navegador no lo da; la llamada sigue */ }
+    };
+    pedir();
+    const alVolver = () => { if (!document.hidden) pedir(); };
+    document.addEventListener('visibilitychange', alVolver);
+    return () => {
+      vivo = false;
+      document.removeEventListener('visibilitychange', alVolver);
+      try { wakeRef.current?.release?.(); } catch { /* ya se soltó */ }
+      wakeRef.current = null;
+    };
+  }, [!!viva]);
+
   /* Bandera global: Llamadas.tsx (WhatsApp) y esta comparten micrófono y
      oídos. Sin esto se podía arrancar una llamada de WhatsApp encima de una
      telefónica y ninguna de las dos se oía. */
@@ -168,6 +233,19 @@ export default function Telefonia() {
     const d = document.documentElement.dataset;
     if (viva) d.telLlamada = '1'; else delete d.telLlamada;
   }, [!!viva]);
+
+  /* MEJORA 4 · CON QUIÉN ESTÁS HABLANDO, ANTES DE QUE CONTESTEN.
+     En el escritorio la ficha está al lado; en el teléfono la llamada ocupa
+     toda la pantalla y no hay dónde mirar. Se pide en cuanto se sabe el número
+     —mientras timbra— para que llegue antes que el «bueno». */
+  useEffect(() => {
+    const tel = viva?.telefono || entrante?.parameters?.From;
+    if (!tel) { setCtx(null); return; }
+    let vivo = true;
+    fetch(`/api/crm/telefonia/contexto?telefono=${encodeURIComponent(tel)}`)
+      .then(r => r.json()).then(j => { if (vivo && j?.hay) setCtx(j); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [viva?.telefono, entrante]);
 
   /** Al terminar: preguntar al servidor QUÉ pasó y seguir la minuta. */
   const cerrarCon = useCallback((v: Viva, segFinales: number) => {
@@ -202,6 +280,17 @@ export default function Telefonia() {
     setTimeout(sondear, 2500);
   }, []);
 
+  /** Manda el apunte al hilo. Silencioso: nunca estorba al colgar. */
+  const guardarNota = useCallback((sid: string | null) => {
+    const texto = notaRef.current.trim();
+    if (!texto || !sid) return;
+    fetch('/api/crm/telefonia/nota', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ call_id: sid, texto }),
+    }).then(() => { document.dispatchEvent(new CustomEvent('wa-refrescar-hilo')); }).catch(() => {});
+    setNota(''); setNotaAbierta(false);
+  }, []);
+
   /** Engancha los eventos del `call` de Twilio a la máquina de estados. */
   const enganchar = (call: any, telefono: string, nombre: string | null, direccion: 'entrante' | 'saliente') => {
     const arranque: Viva = {
@@ -227,11 +316,24 @@ export default function Telefonia() {
     });
     call.on('warning-cleared', () => setAviso(''));
 
+    /* MEJORA 2 · EL MEDIDOR DE VOZ.
+       En el teléfono la causa número uno de una llamada muerta es que el
+       micrófono no está entrando —permiso a medias, otra app que lo tomó, el
+       botón físico de silencio— y desde la pantalla no hay forma de saberlo:
+       tú escuchas al cliente perfectamente y él no te oye a ti. Esta barrita
+       se mueve con TU voz: si no se mueve, el problema es tuyo. */
+    call.on('volume', (entrada: number) => setNivel(Math.min(1, Math.max(0, entrada))));
+
     const terminar = (motivo?: string) => {
       const v = vivaRef.current;
       if (!v || v.call !== call) return;
       const segFinales = v.desde ? Math.round((Date.now() - v.desde) / 1000) : 0;
-      setViva(null); setMute(false); setAviso(''); setTeclado(false); setTonos('');
+      /* MEJORA 3 · EL APUNTE NO SE PIERDE AL COLGAR.
+         Lo que se escribe mientras se habla es lo más valioso de la llamada y
+         es justo lo que se evapora: al colgar hay que buscar la conversación y
+         escribirlo de memoria. Se guarda solo, sin botón, en cuanto cuelgas. */
+      guardarNota(v.sid || call?.parameters?.CallSid || null);
+      setViva(null); setMute(false); setAviso(''); setTeclado(false); setTonos(''); setNivel(0);
       cerrarCon(v, segFinales);
       if (motivo) setResumen(r => (r ? { ...r, desenlace: motivo } : r));
     };
@@ -250,11 +352,18 @@ export default function Telefonia() {
    * se intercepta el clic en cualquiera de esos enlaces y se marca desde el
    * navegador con el número del negocio como identificador.
    *
-   * Dos salidas a propósito:
-   *  - En un TELÉFONO no se intercepta: ahí el marcador del sistema es mejor
-   *    que una llamada por WebRTC, y además ya trae el micrófono resuelto.
-   *  - Sin telefonía configurada tampoco: el enlace sigue funcionando como
-   *    siempre y nadie se queda sin poder llamar.
+   * ── POR QUÉ EN EL CELULAR TAMBIÉN SE LLAMA POR AQUÍ (10-sep-2026) ───────
+   * Antes el teléfono se salía al marcador del sistema, con el argumento de
+   * que ahí el micrófono ya está resuelto. El argumento era cierto y la
+   * decisión estaba mal: una llamada desde el marcador del sistema **no se
+   * graba, no se transcribe y no genera minuta**, sale con el número personal
+   * de quien marca en vez del número del negocio, y no deja rastro en el CRM.
+   * O sea, justo desde donde más se trabaja —el celular— se perdía todo lo
+   * que hace que esto sirva. Ahora el celular llama por WebRTC igual que el
+   * escritorio, con su pantalla propia.
+   *
+   * La única salida que queda: sin telefonía configurada el enlace `tel:`
+   * sigue funcionando como siempre y nadie se queda sin poder llamar.
    */
   useEffect(() => {
     const alClic = (ev: MouseEvent) => {
@@ -262,7 +371,6 @@ export default function Telefonia() {
       const a = (ev.target as HTMLElement | null)?.closest?.('a[href^="tel:"]') as HTMLAnchorElement | null;
       if (!a) return;
       if (!numero) return;                                   // sin config, enlace normal
-      if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;  // en el celular, el marcador del sistema
 
       const e164 = telefonoWhatsApp(decodeURIComponent(a.getAttribute('href')!.slice(4)));
       if (!e164) return;                                     // si no se puede normalizar, que abra el marcador
@@ -358,7 +466,134 @@ export default function Telefonia() {
     <button onClick={onClick} style={{ border: 'none', background: bg, color: '#fff', borderRadius: 999, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, ...extra }}>{t}</button>
   );
 
+  /* Lo que el contexto aporta en una línea: cuántas veces le has marcado y
+     cómo acabó la anterior. Es lo que cambia la primera frase. */
+  const resumenCtx = (() => {
+    if (!ctx) return null;
+    const partes: string[] = [];
+    if (ctx.empresa) partes.push(ctx.empresa);
+    const n = Number(ctx.llamadas?.total || 0);
+    if (n) partes.push(`${n}ª llamada`);
+    if (ctx.ultima?.buzon) partes.push('la anterior cayó al buzón');
+    else if (ctx.ultima?.estado === 'perdida') partes.push('la anterior no contestó');
+    return partes.length ? partes.join(' · ') : null;
+  })();
+
+  /** La barrita de voz: se mueve con TU micrófono. */
+  const Medidor = ({ oscuro = true }: { oscuro?: boolean }) => (
+    <span title="Nivel de tu micrófono" style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 2, height: 14 }}>
+      {[0, 1, 2, 3, 4].map(i => (
+        <span key={i} style={{
+          width: 3, borderRadius: 2, height: 4 + i * 2.4,
+          background: nivel * 5 > i ? (mute ? C.rojo400 : C.emerald300) : (oscuro ? 'rgba(255,255,255,.22)' : C.g200),
+          transition: 'background .1s',
+        }} />
+      ))}
+    </span>
+  );
+
+  const campoNota = (oscuro: boolean) => (
+    <textarea value={nota} onChange={e => setNota(e.target.value)} rows={oscuro ? 3 : 2}
+      placeholder="Apunta aquí lo que no quieres olvidar… se guarda en la conversación al colgar"
+      style={{
+        width: '100%', boxSizing: 'border-box', marginTop: 8, resize: 'none',
+        border: `1px solid ${oscuro ? 'rgba(255,255,255,.18)' : C.g200}`, borderRadius: 10,
+        background: oscuro ? 'rgba(255,255,255,.08)' : '#fff', color: oscuro ? '#fff' : C.g900,
+        padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.5,
+      }} />
+  );
+
   if (!entrante && !viva && !resumen && !error) return null;
+
+  /* ── PANTALLA COMPLETA EN EL TELÉFONO ────────────────────────────────────
+     La tarjeta de 320 px es de escritorio. En el celular una llamada es LA
+     tarea: ocupa todo, los botones son de pulgar (64 px) y no hay nada más
+     que tocar por error. Es también donde caben las cinco mejoras sin apretar
+     nada: el medidor de voz, el contexto de con quién hablas y el apunte. */
+  if (esMovil && (viva || entrante)) {
+    return (
+      <div data-tel-panel role="dialog" aria-label="Llamada telefónica" style={{
+        position: 'fixed', inset: 0, zIndex: 1000, background: 'linear-gradient(170deg, #241f3d 0%, #111827 62%)',
+        color: '#fff', display: 'flex', flexDirection: 'column', padding: '28px 22px calc(26px + env(safe-area-inset-bottom))',
+      }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 10 }}>
+          <span className={viva?.fase === 'en-linea' ? undefined : 'wa-pulso'} style={{
+            width: 96, height: 96, borderRadius: 999, marginBottom: 6,
+            background: viva?.fase === 'en-linea' ? C.emerald500 : '#9B8CFA',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 34,
+          }}>☎</span>
+
+          <b style={{ fontSize: 25, lineHeight: 1.2, maxWidth: '92%' }}>
+            {viva ? (viva.nombre || telefonoLegible(viva.telefono)) : (ctx?.nombre || telefonoLegible(entrante?.parameters?.From || ''))}
+          </b>
+          <span style={{ fontSize: 14, color: '#c9c5d8' }}>
+            {telefonoLegible(viva?.telefono || entrante?.parameters?.From || '')}
+          </span>
+
+          {/* MEJORA 4 en pantalla: con quién hablas, sin salir de la llamada. */}
+          {resumenCtx && <span style={{ fontSize: 12.5, color: '#9B8CFA', fontWeight: 600 }}>{resumenCtx}</span>}
+          {ctx?.proximoPaso && viva?.fase !== 'en-linea' && (
+            <span style={{ fontSize: 12, color: '#c9c5d8', background: 'rgba(255,255,255,.07)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.5 }}>
+              Quedó pendiente: {ctx.proximoPaso}
+            </span>
+          )}
+
+          <span style={{ fontSize: 15, marginTop: 8, color: viva?.fase === 'en-linea' ? C.emerald300 : '#d1d5db', display: 'inline-flex', alignItems: 'center', gap: 9, fontVariantNumeric: 'tabular-nums' }}>
+            {viva ? (viva.fase === 'en-linea' ? fmt(seg) : ETIQUETA[viva.fase]) : 'Te está llamando'}
+            {viva?.fase === 'en-linea' && <Medidor />}
+          </span>
+
+          {aviso && <span style={{ fontSize: 12, color: C.ambar300, background: 'rgba(251,191,36,.13)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.45 }}>{aviso}</span>}
+          {espera && <span style={{ fontSize: 12, color: C.ambar300 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>}
+        </div>
+
+        {/* MEJORA 3 en pantalla: el apunte, a un toque y sin salir. */}
+        {viva?.fase === 'en-linea' && (
+          <div style={{ marginBottom: 14 }}>
+            <button onClick={() => setNotaAbierta(v => !v)}
+              style={{ border: 'none', background: 'rgba(255,255,255,.1)', color: '#fff', borderRadius: 999, padding: '9px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
+              {notaAbierta ? 'Ocultar el apunte' : (nota.trim() ? '📝 Apunte guardado al colgar' : '📝 Apuntar algo')}
+            </button>
+            {notaAbierta && campoNota(true)}
+            {notaAbierta && teclado === false && (
+              <button onClick={() => setTeclado(true)}
+                style={{ marginTop: 8, border: 'none', background: 'rgba(255,255,255,.07)', color: '#c9c5d8', borderRadius: 10, padding: '8px 12px', fontSize: 12, fontFamily: 'inherit', width: '100%' }}>Abrir teclado de tonos</button>
+            )}
+          </div>
+        )}
+
+        {teclado && viva?.fase === 'en-linea' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(d => (
+              <button key={d} onClick={() => marcarTono(d)} style={{ border: 'none', background: 'rgba(255,255,255,.12)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 19, fontWeight: 700, fontFamily: 'inherit' }}>{d}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Botonera de pulgar: 64 px, separada del borde. */}
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center' }}>
+          {entrante ? (<>
+            <button onClick={rechazar} aria-label="Rechazar" style={{ width: 68, height: 68, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', fontSize: 24, fontFamily: 'inherit' }}>✕</button>
+            <button onClick={contestar} aria-label="Contestar" style={{ width: 68, height: 68, borderRadius: 999, border: 'none', background: C.emerald500, color: '#fff', fontSize: 24, fontFamily: 'inherit' }}>☎</button>
+          </>) : (<>
+            <button onClick={toggleMute} aria-label={mute ? 'Activar micrófono' : 'Silenciar'}
+              style={{ width: 64, height: 64, borderRadius: 999, border: 'none', background: mute ? C.ambar400 : 'rgba(255,255,255,.14)', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}>
+              {mute ? 'Mic off' : 'Mic'}
+            </button>
+            <button onClick={colgar} aria-label="Colgar"
+              style={{ width: 76, height: 76, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', fontSize: 26, fontFamily: 'inherit' }}>☎</button>
+            <button onClick={() => setTeclado(t => !t)} aria-label="Teclado" disabled={viva?.fase !== 'en-linea'}
+              style={{ width: 64, height: 64, borderRadius: 999, border: 'none', background: teclado ? '#9B8CFA' : 'rgba(255,255,255,.14)', color: '#fff', fontSize: 20, fontFamily: 'inherit', opacity: viva?.fase === 'en-linea' ? 1 : .4 }}>⌨</button>
+          </>)}
+        </div>
+
+        <div style={{ marginTop: 16, fontSize: 11.5, color: '#8f8aa3', textAlign: 'center', lineHeight: 1.5 }}>
+          Se está grabando · al colgar se escribe la minuta sola
+        </div>
+      </div>
+    );
+  }
+
 
   const tarjeta: React.CSSProperties = {
     background: C.g900, color: '#fff', borderRadius: 16, padding: 14,
@@ -412,10 +647,13 @@ export default function Telefonia() {
             </span>
             <span style={{ minWidth: 0, flex: 1 }}>
               <b style={{ display: 'block', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{quien(viva)}</b>
-              <span style={{ fontSize: 11.5, color: viva.fase === 'en-linea' ? C.emerald300 : '#d1d5db' }}>
-                {ETIQUETA[viva.fase]}
-                {viva.nombre ? ` · ${telefonoLegible(viva.telefono)}` : ''}
+              <span style={{ fontSize: 11.5, color: viva.fase === 'en-linea' ? C.emerald300 : '#d1d5db', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ETIQUETA[viva.fase]}{viva.nombre ? ` · ${telefonoLegible(viva.telefono)}` : ''}
+                </span>
+                {viva.fase === 'en-linea' && <Medidor />}
               </span>
+              {resumenCtx && <span style={{ display: 'block', fontSize: 11, color: '#9B8CFA', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resumenCtx}</span>}
             </span>
           </div>
 
@@ -428,6 +666,16 @@ export default function Telefonia() {
               <span className="wa-pulso" style={{ width: 7, height: 7, borderRadius: 999, background: C.ambar400, flexShrink: 0 }} />
               <span style={{ flex: 1, minWidth: 0 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>
               <button onClick={rechazarEspera} style={{ border: 'none', background: 'none', color: C.rojo300, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Rechazar</button>
+            </div>
+          )}
+
+          {viva.fase === 'en-linea' && (
+            <div style={{ marginTop: 10 }}>
+              <button onClick={() => setNotaAbierta(v => !v)}
+                style={{ border: 'none', background: 'rgba(255,255,255,.1)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}>
+                {notaAbierta ? '📝 Ocultar el apunte' : (nota.trim() ? '📝 Apunte listo — se guarda al colgar' : '📝 Apuntar algo de esta llamada')}
+              </button>
+              {notaAbierta && campoNota(true)}
             </div>
           )}
 
@@ -465,6 +713,9 @@ export default function Telefonia() {
                 {!resumen.verificado && ' · confirmando…'}
               </span>
             </span>
+            <button onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: resumen.telefono, nombre: resumen.nombre } }))}
+              title="Volver a llamar" aria-label="Volver a llamar"
+              style={{ border: `1px solid ${C.g200}`, background: '#fff', cursor: 'pointer', color: C.g700, fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '4px 9px', fontFamily: 'inherit', flexShrink: 0 }}>Llamar otra vez</button>
             <button onClick={() => setResumen(null)} aria-label="Cerrar" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 15, lineHeight: 1, padding: 2, flexShrink: 0 }}>✕</button>
           </div>
 

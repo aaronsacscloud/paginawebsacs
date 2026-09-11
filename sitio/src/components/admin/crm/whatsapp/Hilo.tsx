@@ -16,6 +16,7 @@ import Composer, { SelectorPlantilla } from './Composer';
 import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
+import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
 import DrawerSecuencia from './DrawerSecuencia';
@@ -410,6 +411,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="resuelta">Resuelta</option>
         </select>}
         {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
+        {/* ☎ EN EL TELÉFONO, UN SOLO TOQUE. En escritorio el botón abre un
+            menú (WhatsApp o telefónica); aquí no: con el pulgar, arriba de la
+            conversación abierta, lo que se quiere es marcar YA. La llamada va
+            por el CRM —se graba y genera minuta—, no por el marcador del
+            sistema. */}
+        {conv.id && mobile && telefonoWhatsApp(conv.telefono) && (
+          <button onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: telefonoWhatsApp(conv.telefono), nombre } }))}
+            title="Llamar por teléfono" aria-label="Llamar por teléfono"
+            style={{ border: 'none', background: 'none', borderRadius: 10, cursor: 'pointer', padding: 9, color: C.g700, flexShrink: 0, display: 'inline-flex' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+          </button>
+        )}
         {/* Buscar dentro del hilo también en el teléfono: encontrar un monto o
             una dirección subiendo a mano por cien mensajes es justo lo que no
             se puede hacer con el pulgar. */}
