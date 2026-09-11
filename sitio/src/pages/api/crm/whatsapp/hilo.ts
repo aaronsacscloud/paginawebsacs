@@ -94,7 +94,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const before = url.searchParams.get('before');
   const PAGINA = 150;
   const qMsj = supabase.from('wa_mensajes')
-    .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, media_id, mime, filename, autor, status, error, enviado_at, created_at, metadata, borrado_at, phone_number_id')
+    .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, media_id, mime, filename, autor, status, error, enviado_at, created_at, metadata, borrado_at')
     .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(PAGINA + 1);
   const [{ data: msjDesc }, { data: notasDesc }, { data: eventosDesc }] = conv.id ? await Promise.all([
     before ? qMsj.lt('created_at', before) : qMsj,

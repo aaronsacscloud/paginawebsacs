@@ -697,6 +697,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 </span>
               ) : (
                 <BurbujaMensaje item={item} q={q} conRing={conRing} chips={chips} porWamid={porWamid}
+                  lineaConv={conv.phone_number_id}
                   mismoAutorQueElAnterior={mismoAutor}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}

@@ -140,10 +140,12 @@ function tragarSiguienteClick() {
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, onEvaluar, mismoAutorQueElAnterior }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, onEvaluar, mismoAutorQueElAnterior, lineaConv }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
+  /** La línea (phone_number_id) por la que va ESTA conversación. */
+  lineaConv?: string | null;
   onLightbox: (m: any) => void;
   /** Saltar al mensaje citado Y resaltarlo. Lo resuelve el hilo, que es quien
    *  sabe desplazar y encender el anillo. */
@@ -186,9 +188,15 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     onTouchCancel: cancelarPres,
   } : {};
   const saliente = item.direccion === 'saliente';
+  /* ⚠️ LA LÍNEA ES DE LA CONVERSACIÓN, NO DEL MENSAJE. `wa_mensajes` NO tiene
+     `phone_number_id`: el número por el que va un chat vive en
+     `wa_conversaciones`, y `registrarMensaje` lo usa para ACTUALIZAR esa fila,
+     no para guardarlo en cada mensaje.
+     Haberlo pedido en el select del hilo tumbó la consulta entera y el inbox
+     devolvió CERO mensajes — parecía que se habían borrado. */
   const { lineas } = useLineas();
-  const lineaMsj = lineas.length > 1 && item.phone_number_id
-    ? (lineas.find(l => l.id === item.phone_number_id)?.numero || null) : null;
+  const lineaMsj = lineas.length > 1 && lineaConv
+    ? (lineas.find(l => l.id === lineaConv)?.numero || null) : null;
   const claro = saliente;
   const src = srcMedia(item);
   let tipo = item.tipo || 'text';
