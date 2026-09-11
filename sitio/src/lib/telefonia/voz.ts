@@ -439,6 +439,13 @@ export async function ejecutarHerramienta(itemId: string, nombre: string, args: 
       const tipo = args.tipo === 'demo' ? 'demo' : 'discovery';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(args.fecha || '')) || !/^\d{1,2}:\d{2}$/.test(String(args.hora || ''))) return { ok: false, error: 'fecha u hora mal formadas; usa las de consultar_horarios' };
       if (prueba) return { ok: true, simulado: true, dicho: etiquetaHorario(args.fecha, args.hora), nota: 'Es una prueba: no se agendó de verdad. Confirma en voz alta como si sí.' };
+      /* Que el hueco siga libre: entre consultar_horarios y agendar pueden pasar dos minutos, y el modelo
+         también podría inventarse una hora que nunca se ofreció. Sin esto se le empalma una cita al consultor. */
+      const libres = await horariosParaVoz({ slug: slugDe(tipo), fecha: args.fecha, hora: String(args.hora).padStart(5, '0'), zona: zonaDeLada(it.lada || ladaDe(it.telefono)), max: 8 });
+      if (libres.length && !libres.some(h => h.fecha === args.fecha && h.hora === String(args.hora).padStart(5, '0'))) {
+        await anotar({ nombre, tipo, fecha: args.fecha, hora: args.hora, ok: false, motivo: 'el hueco ya no está libre' });
+        return { ok: false, error: `ese horario ya no está disponible. Ofrécele estos: ${libres.slice(0, 3).map(h => h.etiqueta).join(' · ')}` };
+      }
       if (args.email && it.contact_id && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(args.email))) await aplicarDatos(it.contact_id, [{ campo: 'email', valor: String(args.email).trim().toLowerCase(), confianza: 0.9, evidencia: 'lo dictó en la llamada' }], { fuente: 'llamada', conversation_id: it.conversation_id }).catch(() => {});
       const { crearCompromiso } = await import('./cierre');
       const r = await crearCompromiso(it, { tipo: 'reunion', fecha: args.fecha, hora: String(args.hora).padStart(5, '0'), duracion_min: tipo === 'demo' ? 60 : cfg.discovery_min, motivo: String(args.motivo || '').slice(0, 200) || undefined, reunion_tipo: slugDe(tipo), confianza: 1 }, null);

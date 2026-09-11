@@ -225,7 +225,14 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
     }
 
     // ── Compromisos → reunión + Google Calendar + la lista ────────────────
+    /* Si Fernanda ya usó `volver_a_llamar` o `agendar` en la llamada, eso ya quedó hecho con la hora exacta
+       que el cliente aceptó. El cierre con IA lee la misma transcripción y volvería a proponerlo: crearía un
+       booking (con invitación al cliente por Google Calendar) y pisaría el `volver_at` del item con su propia
+       interpretación de la hora. Un «márcame en diez minutos» terminaba como una reunión en la agenda. */
+    const yaLoHizoFernanda = new Set(((it.voz as any)?.herramientas || []).map((h: any) => String(h?.nombre)));
     for (const cp of p.compromisos || []) {
+      if (cp.tipo === 'llamada' && yaLoHizoFernanda.has('volver_a_llamar')) { hecho.push('la llamada de vuelta ya la programó Fernanda en la llamada'); continue; }
+      if (cp.tipo === 'reunion' && yaLoHizoFernanda.has('agendar')) { hecho.push('la reunión ya la agendó Fernanda en la llamada'); continue; }
       const r = await crearCompromiso(it, cp, o.userId || null);
       if (r) hecho.push(r);
     }
