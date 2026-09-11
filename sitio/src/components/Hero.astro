@@ -269,7 +269,7 @@ const useCases = [
 
 
 <!-- ═══ BLOQUE 1b: el recorrido de la clienta — del post a su WhatsApp, con scroll ═══ -->
-<section class="recorrido flujo" id="recorrido" aria-label="Del post a la venta">
+<section class="recorrido flujo" id="recorrido" aria-label="Del live a la venta">
   <div class="flujo-sticky">
     <div class="flujo-inner container">
       <div class="flujo-text">
@@ -285,19 +285,10 @@ const useCases = [
         <div class="flujo-final">
           <span class="flujo-eyebrow">Vende</span>
           <h2 class="flujo-h2">Vende más.</h2>
-          <p class="flujo-p">Del post a la venta sin capturar nada dos veces. Así se ve una tienda que corre con Sacs.</p>
+          <p class="flujo-p">Del live a la venta sin capturar nada dos veces. Así se ve una tienda que corre con Sacs.</p>
           <a href="#tablet-section" class="flujo-cta">Ver cómo funciona
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           </a>
-        </div>
-        <div class="flujo-nav" aria-label="Avance de la historia">
-          <ol class="flujo-dots">
-        <li data-i="0"><i></i><span>Live</span></li><li data-i="1"><i></i><span>Lo vio</span></li><li data-i="2"><i></i><span>Entra</span></li><li data-i="3"><i></i><span>Pregunta</span></li><li data-i="4"><i></i><span>Probador</span></li><li data-i="5"><i></i><span>Pago</span></li><li data-i="6"><i></i><span>WhatsApp</span></li>
-          </ol>
-          <div class="flujo-nav-row"><button class="flujo-seguir" type="button"><span class="flujo-seguir-bar"></span><span class="flujo-seguir-txt">Seguir</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </button>
-          <a class="flujo-saltar" href="#tablet-section">Saltar la historia</a></div>
         </div>
       </div>
       <div class="flujo-video" id="flujoVideo">
@@ -307,8 +298,16 @@ const useCases = [
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
         <div class="flujo-tag flujo-tag--wa" data-tag="6">Ticket enviado por WhatsApp</div>
+        <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
       </div>
     </div>
+    <div class="flujo-nav" aria-label="Avance de la historia">
+      <ol class="flujo-dots">
+        <li data-i="0"><i><b></b></i><span>Live</span></li><li data-i="1"><i><b></b></i><span>Lo vio</span></li><li data-i="2"><i><b></b></i><span>Entra</span></li><li data-i="3"><i><b></b></i><span>Pregunta</span></li><li data-i="4"><i><b></b></i><span>Probador</span></li><li data-i="5"><i><b></b></i><span>Pago</span></li><li data-i="6"><i><b></b></i><span>WhatsApp</span></li>
+      </ol>
+      <a class="flujo-saltar" href="#tablet-section">Ver la funcionalidad
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </a>
     </div>
   </div>
 </section>
@@ -4804,10 +4803,10 @@ const useCases = [
   }
 
   /* ─── El recorrido de la clienta (bajo el hero): el video entra por la derecha y crece con el scroll ─── */
-  .flujo { position: relative; height: 900vh; background: #0E0D0C; color: #fff; }
-  .flujo-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; }
+  .flujo { position: relative; background: #0E0D0C; color: #fff; }
+  .flujo-sticky { position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; padding: 72px 0 110px; }
   .flujo-inner { display: grid; grid-template-columns: 0.75fr 1.55fr; gap: clamp(24px, 4vw, 64px); align-items: center; width: 100%; }
-  .flujo-text { position: relative; min-height: 430px; }
+  .flujo-text { position: relative; min-height: 240px; }
   .flujo-pasos { position: relative; }
   .flujo-paso { position: absolute; left: 0; top: 0; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s linear 0.45s; pointer-events: none; max-width: 30ch; }
   .flujo-paso.is-on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
@@ -4821,7 +4820,9 @@ const useCases = [
   .flujo-p { font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; color: rgba(255, 255, 255, 0.72); margin: 20px 0 0; max-width: 34ch; }
   .flujo-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; font-weight: 600; font-size: 0.9375rem; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.45); padding-bottom: 3px; text-decoration: none; }
   .flujo-cta:hover { border-color: #fff; color: #fff; text-decoration: none; }
-  .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); transform-origin: right center; will-change: transform; }
+  .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .flujo-replay { position: absolute; right: 14px; top: 14px; background: rgba(255, 255, 255, 0.92); color: #1a1a1a; border: 0; border-radius: 999px; padding: 8px 14px; font-family: var(--font-display); font-weight: 600; font-size: 12px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .flujo-video.is-done .flujo-replay { opacity: 1; pointer-events: auto; }
   .flujo-still, .flujo-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .flujo-clip { opacity: 0; transition: opacity 0.4s ease; }
   .flujo-clip.is-on { opacity: 1; }
@@ -4833,35 +4834,25 @@ const useCases = [
   .flujo-tag--live { background: rgba(14, 13, 12, 0.85); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); }
   .flujo-tag--live i { width: 8px; height: 8px; border-radius: 50%; background: #E54B4B; box-shadow: 0 0 0 4px rgba(229, 75, 75, 0.25); animation: flujoLive 1.2s infinite; }
   @keyframes flujoLive { 50% { opacity: 0.35; } }
-  /* barra de avance: puntos + Seguir. El usuario no tiene que medir el scroll. */
-  .flujo-nav { position: absolute; left: 0; bottom: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; z-index: 5; }
-  .flujo-nav .flujo-seguir { margin-right: 14px; }
-  .flujo-nav-row { display: flex; align-items: center; gap: 4px; }
-  .flujo-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 18px; }
-  .flujo-dots li { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-family: var(--font-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); transition: color 0.3s; }
-  .flujo-dots li i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.28); transition: background 0.3s, transform 0.3s; }
-  .flujo-dots li.is-done i { background: rgba(255, 255, 255, 0.7); }
+  /* barra de avance abajo: lo que ya pasó, lo que se muestra (con progreso) y lo que falta; y la salida */
+  .flujo-nav { position: absolute; left: 0; right: 0; bottom: 26px; display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 5; }
+  .flujo-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 22px; }
+  .flujo-dots li { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.4); transition: color 0.3s; }
+  .flujo-dots li i { position: relative; display: block; width: 44px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.2); overflow: hidden; transition: background 0.3s; }
+  .flujo-dots li i b { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #E8A838; }
+  .flujo-dots li.is-done i { background: rgba(255, 255, 255, 0.75); }
+  .flujo-dots li.is-done { color: rgba(255, 255, 255, 0.7); }
   .flujo-dots li.is-on { color: #fff; }
-  .flujo-dots li.is-on i { background: #E8A838; transform: scale(1.35); box-shadow: 0 0 0 5px rgba(232, 168, 56, 0.22); }
-  .flujo-seguir { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1a1a1a; border: 0; border-radius: 999px; padding: 14px 24px; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.02em; cursor: pointer; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); transition: transform 0.2s, background 0.3s, color 0.3s; }
-  .flujo-seguir:hover { transform: translateY(-1px); }
-  .flujo-seguir .flujo-seguir-bar { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 0%); background: rgba(232, 168, 56, 0.35); transition: width 0.2s linear; }
-  .flujo-seguir .flujo-seguir-txt, .flujo-seguir svg { position: relative; }
-  .flujo-seguir.is-busy { background: rgba(255, 255, 255, 0.18); color: #fff; cursor: default; }
-  .flujo-seguir.is-busy svg { display: none; }
-  .flujo-seguir.is-ready { animation: flujoSeguir 1.6s ease-in-out infinite; }
-  @keyframes flujoSeguir { 50% { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(255, 255, 255, 0.12); } }
-  .flujo-saltar { font-size: 12px; color: rgba(255, 255, 255, 0.45); text-decoration: none; }
-  .flujo-saltar:hover { color: #fff; }
-  @media (max-width: 1023px) { .flujo-text { min-height: 250px; } .flujo-dots { gap: 12px; } .flujo-dots li span { display: none; } .flujo-nav { gap: 10px; } .flujo-seguir { padding: 12px 20px; font-size: 13px; } }
+  .flujo-saltar { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.02em; color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px; padding: 10px 18px; text-decoration: none; background: rgba(14, 13, 12, 0.4); backdrop-filter: blur(6px); transition: background 0.3s, color 0.3s; }
+  .flujo-saltar:hover { background: #fff; color: #1a1a1a; text-decoration: none; }
+  @media (max-width: 1023px) { .flujo-sticky { padding: 70px 0 120px; } .flujo-text { min-height: 190px; } .flujo-dots { gap: 8px; } .flujo-dots li span { display: none; } .flujo-dots li i { width: 28px; } .flujo-nav { bottom: 18px; gap: 12px; } }
   @media (max-width: 1023px) {
-    .flujo { height: 900vh; }
     .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
-    .flujo-video { order: -1; border-radius: 14px; transform-origin: center top; }
+    .flujo-video { order: -1; border-radius: 14px; }
     .flujo-text { min-height: 150px; }
     .flujo-paso b { font-size: 26px; } .flujo-paso small { font-size: 14px; margin-top: 8px; }
   }
-  @media (prefers-reduced-motion: reduce) { .flujo { height: auto; padding: 60px 0; } .flujo-sticky { position: static; height: auto; } .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flujo-clip { display: none; } .flujo-final { position: static; opacity: 1; visibility: visible; transform: none; margin-top: 20px; } .flujo-pasos { display: none; } .flujo-nav { display: none; } }
 
 
 
@@ -18170,11 +18161,10 @@ const useCases = [
   }
 
 
-  // ─── El recorrido de la clienta ───
-  // Reglas: cada paso ocupa 100vh de scroll; los pasos avanzan DE UNO EN UNO y un clip
-  // nunca se interrumpe (si el usuario se adelanta, la historia lo alcanza paso a paso);
-  // al soltar el scroll la página se acomoda al paso más cercano. Hacia atrás no hay
-  // clips: se muestra la foto del paso.
+  // ─── El recorrido de la clienta: corre solo cuando la sección está a la vista.
+  // Foto del paso + texto (lectura) → clip hacia el siguiente paso → … → "Vende más".
+  // La barra de abajo enseña lo que ya pasó, lo que se muestra (con progreso) y lo que
+  // falta; tocar un paso lleva ahí, y "Ver la funcionalidad" es la salida.
   (() => {
     const sec = document.querySelector<HTMLElement>('#recorrido');
     const wrap = sec?.querySelector<HTMLElement>('.flujo-video');
@@ -18183,7 +18173,6 @@ const useCases = [
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
     const V = movil ? '/tienda/video/m/' : '/tienda/video/';
-    // paso → [clip que LLEVA a ese paso, foto del paso]
     const PASOS: [string | null, string][] = [
       [null, '/tienda/59-live.webp'],
       ['f29-live-post', '/tienda/60-post.webp'],
@@ -18193,85 +18182,53 @@ const useCases = [
       ['f33-probador-pago', '/tienda/64-pago.webp'],
       ['f34-pago-whatsapp', '/tienda/65-whatsapp.webp'],
     ];
-    const N = PASOS.length;
+    const N = PASOS.length, LECTURA = 2600;
     const pasos = sec.querySelectorAll<HTMLElement>('.flujo-paso');
     const tags = wrap.querySelectorAll<HTMLElement>('.flujo-tag');
     const final = sec.querySelector<HTMLElement>('.flujo-final');
     const dots = sec.querySelectorAll<HTMLElement>('.flujo-dots li');
-    const seguir = sec.querySelector<HTMLButtonElement>('.flujo-seguir')!;
-    const seguirTxt = seguir.querySelector<HTMLElement>('.flujo-seguir-txt')!;
+    const replay = wrap.querySelector<HTMLButtonElement>('.flujo-replay');
     const precarga = (i: number) => { for (let k = i; k < Math.min(i + 2, N); k++) { const im = new Image(); im.src = PASOS[k][1]; } };
-    let cur = 0, ocupado = false, deseado = 0;
+    let cur = -1, token = 0, visible = false, timer: ReturnType<typeof setTimeout> | null = null, raf = 0;
+    const barra = (i: number, f: number) => { dots.forEach((d) => { const k = +d.dataset.i!; const b = d.querySelector<HTMLElement>('b')!; b.style.width = k < i ? '100%' : k === i ? (f * 100) + '%' : '0%'; }); };
     function muestra(i: number) {
       pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
+      wrap.classList.toggle('is-done', i >= N);
+      dots.forEach((d) => { const k = +d.dataset.i!; d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i || i >= N); });
       if (i < N) still.src = PASOS[i][1];
-      dots.forEach((d) => { const k = +d.dataset.i!; d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i); });
-      seguir.classList.remove('is-busy'); seguir.classList.add('is-ready'); seguir.style.setProperty('--p', '0%');
-      seguirTxt.textContent = i >= N ? 'Ver cómo funciona' : 'Seguir';
     }
-    muestra(0); precarga(1);
-    function avanza() { // un paso hacia adelante, con su clip; al terminar vuelve a evaluar
-      const i = cur + 1;
-      if (i > N) return;
-      if (i === N) { cur = N; muestra(N); return; }
-      const c = PASOS[i][0];
-      cur = i; ocupado = true; precarga(i + 1);
-      seguir.classList.add('is-busy'); seguir.classList.remove('is-ready'); seguirTxt.textContent = 'Reproduciendo…';
-      let barRaf = 0; const bar = () => { if (!ocupado || cur !== i) return; if (clip.duration) seguir.style.setProperty('--p', (clip.currentTime / clip.duration * 100) + '%'); barRaf = requestAnimationFrame(bar); }; bar();
-      // al terminar el clip, la foto y el texto del paso se quedan al menos 2 s antes de seguir
-      const fin = () => { if (!ocupado) return; muestra(i); setTimeout(() => clip.classList.remove('is-on'), 400); setTimeout(() => { if (cur === i) { ocupado = false; evalua(); } }, 2000); };
-      if (!c) { fin(); return; }
-      clip.src = V + c + '.mp4'; clip.classList.add('is-on'); clip.onended = fin;
-      clip.play().catch(fin);
-      setTimeout(() => { if (ocupado && cur === i && clip.readyState < 3 && clip.currentTime < 0.2) { clip.pause(); fin(); } }, 2500);
+    function limpia() { if (timer) clearTimeout(timer); timer = null; cancelAnimationFrame(raf); clip.onended = null; clip.pause(); clip.classList.remove('is-on'); }
+    // muestra el paso i (foto + texto), espera la lectura y lanza el clip hacia i+1
+    function paso(i: number) {
+      limpia(); const t = ++token; cur = i; muestra(i); precarga(i + 1);
+      if (i >= N) { barra(N, 0); return; }
+      barra(i, 0);
+      timer = setTimeout(() => {
+        if (t !== token || !visible) return;
+        if (i + 1 >= N) { paso(N); return; }
+        const c = PASOS[i + 1][0];
+        if (!c) { paso(i + 1); return; }
+        barra(i, 0.2);
+        clip.src = V + c + '.mp4'; clip.classList.add('is-on');
+        const tick = () => { if (t !== token) return; if (clip.duration) barra(i, 0.2 + 0.8 * clip.currentTime / clip.duration); raf = requestAnimationFrame(tick); }; tick();
+        clip.onended = () => { if (t === token) paso(i + 1); };
+        clip.play().catch(() => { if (t === token) paso(i + 1); });
+        setTimeout(() => { if (t === token && clip.readyState < 3 && clip.currentTime < 0.2) { clip.pause(); paso(i + 1); } }, 4000);
+      }, i === 0 ? LECTURA + 600 : LECTURA);
     }
-    function retrocede(i: number) { if (ocupado) return; clip.pause(); clip.onended = null; clip.classList.remove('is-on'); cur = i; muestra(i); }
-    function evalua() {
-      if (ocupado) return;
-      if (deseado > cur) avanza();
-      else if (deseado < cur) retrocede(deseado);
-    }
-    // Seguir: avanza exactamente un paso (o va a la funcionalidad al final)
-    const topSec = () => sec.getBoundingClientRect().top + window.scrollY;
-    const vaAlPaso = (k: number) => { const vh = window.innerHeight; window.scrollTo({ top: topSec() + Math.min(k, N) * vh + 2, behavior: 'smooth' }); };
-    seguir.addEventListener('click', () => {
-      if (ocupado) return;
-      if (cur >= N) { document.querySelector('#tablet-section')?.scrollIntoView({ behavior: 'smooth' }); return; }
-      vaAlPaso(cur + 1);
-    });
-    dots.forEach((d) => d.addEventListener('click', () => { if (!ocupado) vaAlPaso(+d.dataset.i!); }));
-    // Mientras corre un clip, el scroll dentro de la sección se detiene: la historia lleva al usuario
-    const dentro = () => { const r = sec.getBoundingClientRect(); return r.top <= 0 && r.bottom > window.innerHeight; };
-    const bloquea = (e: Event) => { if (ocupado && dentro()) e.preventDefault(); };
-    window.addEventListener('wheel', bloquea, { passive: false });
-    window.addEventListener('touchmove', bloquea, { passive: false });
-    window.addEventListener('keydown', (e) => { if (ocupado && dentro() && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) e.preventDefault(); });
-    let raf = 0, snapT: ReturnType<typeof setTimeout> | null = null, snapping = false;
-    const tick = () => {
-      const vh = window.innerHeight;
-      const r = sec.getBoundingClientRect();
-      const total = sec.offsetHeight - vh;
-      const y = Math.min(Math.max(-r.top, 0), total);
-      // el marco crece durante los primeros 3 pasos
-      const g = Math.min(1, y / (3 * vh));
-      wrap.style.transform = movil ? `scale(${0.86 + 0.14 * g})` : `scale(${0.56 + 0.44 * g}) translateX(${(1 - g) * 6}%)`;
-      deseado = Math.min(N, Math.floor((y + vh * 0.25) / vh));
-      evalua();
-      // snap al paso más cercano cuando el usuario suelta el scroll (solo dentro de la sección)
-      if (snapT) clearTimeout(snapT);
-      if (!snapping && r.top <= 0 && y < total) {
-        snapT = setTimeout(() => {
-          const top = topSec(), k = Math.round(y / vh), destino = top + Math.min(k * vh, total);
-          if (Math.abs(window.scrollY - destino) > 6) { snapping = true; window.scrollTo({ top: destino, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 700); }
-        }, 180);
-      }
-    };
-    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    tick();
+    // pausa al salir de la vista y continúa al volver
+    let pausadoEn: number | null = null;
+    const io = new IntersectionObserver((es) => {
+      const e = es[0]; visible = e.isIntersecting && e.intersectionRatio >= 0.4;
+      if (visible) { if (cur < 0) paso(0); else if (pausadoEn !== null) { const k = pausadoEn; pausadoEn = null; paso(k); } }
+      else if (cur >= 0 && cur < N) { pausadoEn = cur; limpia(); }
+    }, { threshold: [0, 0.4, 1] });
+    io.observe(sec);
+    dots.forEach((d) => d.addEventListener('click', () => { pausadoEn = null; paso(+d.dataset.i!); }));
+    replay?.addEventListener('click', () => { pausadoEn = null; paso(0); });
+    muestra(0); barra(0, 0);
   })();
 
   pillarSections.forEach((section) => {
