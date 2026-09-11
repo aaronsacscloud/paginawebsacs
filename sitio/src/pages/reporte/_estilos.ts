@@ -176,12 +176,25 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .ent .sc{font-size:.65rem;font-weight:800;color:var(--verde-t);background:var(--verde-a);border-radius:20px;padding:2px 9px;white-space:nowrap}
 .ent .mod{font-size:.65rem;color:var(--ink-3);margin-top:2px}
 .ent .dd{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;max-width:76ch}
-.ent details{margin-top:5px}
+/* El video y el detalle en el MISMO renglón: son las dos acciones de la
+   entrega y apiladas hacían que cada renglón midiera el doble. Al abrir el
+   detalle se pasa solo, que es cuando necesita el ancho. */
+.pieit{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .ent details>summary{cursor:pointer;list-style:none;font-size:.75rem;font-weight:700;color:var(--tinta)}
 .ent details>summary::-webkit-details-marker{display:none}
 .ent details>summary:before{content:'▸ '}
+.ent details[open]{flex-basis:100%}
 .ent details[open]>summary:before{content:'▾ '}
 .ent .mas{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;white-space:pre-line;max-width:76ch}
+
+/* ── Grupos por módulo ──
+   La única estructura real del documento: en qué parte del sistema se trabajó.
+   El encabezado es discreto a propósito; el peso lo lleva la entrega. */
+.grupo+.grupo{margin-top:22px}
+.gh{display:flex;align-items:center;gap:10px;margin:0 0 2px}
+.gh .gn{font-size:.82rem;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+.gh .gc{font-size:.66rem;font-weight:700;color:var(--tinta);background:var(--agua);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.gh .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--borde),transparent)}
 .vid{display:inline-flex;align-items:center;gap:7px;margin-top:9px;text-decoration:none;border:1.5px solid var(--violeta);
   border-radius:9px;padding:6px 13px;font-size:.77rem;font-weight:700;color:var(--tinta);background:#fff}
 .vid:hover{background:var(--violeta);color:#fff}

@@ -37,16 +37,84 @@ const TIPO: Record<string, { l: string; c: string }> = {
 const tipoDe = (k: string) => TIPO[k] || TIPO.otro;
 
 const entregas = h.entregas || [];
-/* Una descripción larga —los bugs llegan con ocho párrafos— no se puede pintar
-   entera en la lista: el documento se vuelve un muro y nadie lo lee. Se enseña
-   el primer párrafo y el resto va en un plegado, que al imprimir se abre. */
+
+/* ── El título, sin la nomenclatura de adentro ──
+   Los títulos se capturan como bitácora del consultor: «Bug l Modulo de
+   Reparaciones l Alertas desconfiguradas», «Mejorar l …». Al cliente eso le
+   dice tres veces lo mismo —el chip ya dice si fue ajuste o personalización, y
+   el módulo va en el encabezado del grupo— y además la «l» es una ele haciendo
+   de separador, que se lee como un error de dedo.
+   Se limpia solo para el documento; adentro del CRM el título no se toca. */
+const PREFIJO = /^\s*(bugs?|mejoras?|mejorar|ajustes?|correcci[oó]n|personalizaci[oó]n|pendiente)\s*[|lí·:–—-]\s*/i;
+/** Sin acentos, sin «módulo de», sin signos: para comparar nombres de módulo. */
+const clave = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/m[oó]dulos?\s+(de\s+)?/g, '').replace(/[^a-z0-9]/g, '');
+
+const limpiar = (t: string | null | undefined, modulo?: string | null) => {
+  let x = String(t || '').trim();
+  // El prefijo puede venir dos veces: «Bug l Modulo de Reparaciones l …».
+  for (let i = 0; i < 2; i++) x = x.replace(PREFIJO, '').trim();
+  // La «l» y el «|» que quedan en medio son separadores, no palabras.
+  x = x.replace(/\s+[l|]\s+/g, ' · ').replace(/\s{2,}/g, ' ').trim();
+  /* Y si el primer tramo repite el módulo —«Modulo de reparaciones · Joyero
+     Imagenes» dentro del grupo «Reparaciones / taller»—, sobra: el encabezado
+     del grupo ya lo dijo. Solo se quita cuando de verdad empata, nunca por
+     parecerse. */
+  if (modulo) {
+    const i = x.indexOf(' · ');
+    if (i > 0) {
+      const k = clave(x.slice(0, i));
+      if (k.length >= 5 && clave(modulo).includes(k)) x = x.slice(i + 3).trim();
+    }
+  }
+  return x ? x[0].toUpperCase() + x.slice(1) : String(t || '');
+};
+
+/* ── La descripción ──
+   Cortarla en el primer salto de línea dejaba frases colgando: «Al intentar
+   agregar imágenes durante la recepción:» y nada más, o un «Problema actual»
+   suelto —los encabezados internos del reporte del consultor—. Ahora el
+   resumen son los primeros ~300 caracteres del texto de corrido, que siempre
+   es una frase completa, y el detalle completo va en el plegado con sus
+   saltos. Al imprimir se abre. */
+/** ¿Es un encabezado interno suelto? «Problema actual», «Resultado esperado».
+ *  Aplanados dentro del resumen quedan pegados a la frase anterior y se leen
+ *  como un error: «…de las columnas del listado. Problema actual Este
+ *  indicador no tiene cabida…». En el detalle completo sí se conservan. */
+const esEncabezado = (l: string) => l.length <= 34 && l.split(/\s+/).length <= 5 && !/[.!?:;]$/.test(l);
+
 const parte = (t?: string | null) => {
   const txt = String(t || '').trim();
   if (!txt) return { corto: '', resto: '' };
-  const i = txt.indexOf('\n');
-  if (i === -1 || i > 320) return { corto: txt.slice(0, 320) + (txt.length > 320 ? '…' : ''), resto: txt.length > 320 ? txt : '' };
-  return { corto: txt.slice(0, i).trim(), resto: txt.slice(i).trim() };
+  const lineas = txt.split('\n').map(l => l.trim()).filter(Boolean);
+  /* Se quitan TAMBIÉN cuando abren el texto: hay descripciones que empiezan
+     con «Problema actual» y el resumen arrancaba con esas dos palabras. Si al
+     quitarlos no queda nada, es que el título completo era un encabezado y se
+     usa tal cual. */
+  const utiles = lineas.filter(l => !esEncabezado(l));
+  const corrido = (utiles.length ? utiles : lineas).join(' ').replace(/\s{2,}/g, ' ').trim();
+  if (corrido.length <= 300) return { corto: corrido, resto: txt.includes('\n') ? txt : '' };
+  const recorte = corrido.slice(0, 300);
+  const corte = Math.max(recorte.lastIndexOf('. '), recorte.lastIndexOf('? '), recorte.lastIndexOf(' '));
+  return { corto: recorte.slice(0, corte > 180 ? corte + 1 : 300).trim() + '…', resto: txt };
 };
+
+/* ── Agrupadas por módulo ──
+   Nueve de las doce entregas de una cuenta salen del mismo módulo, y repetir
+   «Reparaciones / taller» doce veces en letra chica es ruido que además esconde
+   la única estructura real que tiene el documento: en qué parte del sistema se
+   trabajó. El módulo sube a encabezado de grupo y desaparece del renglón.
+   Con un solo grupo no se pinta encabezado: nombrar un grupo cuando no hay
+   contra qué compararlo no informa nada. */
+const grupos: { modulo: string; lista: any[] }[] = [];
+for (const e of entregas) {
+  const k = e.modulo || 'Otras entregas';
+  const g = grupos.find(x => x.modulo === k);
+  g ? g.lista.push(e) : grupos.push({ modulo: k, lista: [e] });
+}
+// Lo que no tiene módulo va al final: es lo menos clasificado, no lo primero.
+grupos.sort((a, b) => (a.modulo === 'Otras entregas' ? 1 : 0) - (b.modulo === 'Otras entregas' ? 1 : 0));
+const agrupar = grupos.length > 1;
 ---
 <div class="hero">
   <div class="top">
@@ -91,33 +159,46 @@ const parte = (t?: string | null) => {
     <span class="x">{h.total === 1 ? 'La entrega' : `Las ${h.total} entregas`}</span><span class="ln"></span>
   </div>
 
-  <div class="ent">
-    {entregas.map((e: any) => {
-      const t = tipoDe(e.categoria);
-      const d = parte(e.descripcion);
-      return (
-        <div class="it">
-          <div class="enc">
-            <span class="tt">{e.titulo}</span>
-            <span class={`tipo t-${t.c}`}>{t.l}</span>
-            <span class="fe">{dCorta(e.fecha)}</span>
-            {e.cortesia && <span class="sc">sin costo</span>}
-          </div>
-          {e.modulo && <div class="mod">{e.modulo}</div>}
-          {d.corto && <div class="dd">{d.corto}</div>}
-          {d.resto && (
-            <details>
-              <summary>Ver el detalle completo</summary>
-              <div class="mas">{d.resto}</div>
-            </details>
-          )}
-          {e.video
-            ? <a class="vid" href={e.video} target="_blank" rel="noopener noreferrer"><span class="pl">▶</span> Ver el video</a>
-            : <span class="sinvid">Sin video de esta entrega</span>}
+  {grupos.map(g => (
+    <div class="grupo">
+      {agrupar && (
+        <div class="gh">
+          <span class="gn">{g.modulo}</span>
+          <span class="gc">{g.lista.length === 1 ? '1 entrega' : `${g.lista.length} entregas`}</span>
+          <span class="ln"></span>
         </div>
-      );
-    })}
-  </div>
+      )}
+      <div class="ent">
+        {g.lista.map((e: any) => {
+          const t = tipoDe(e.categoria);
+          const d = parte(e.descripcion);
+          return (
+            <div class="it">
+              <div class="enc">
+                <span class="tt">{limpiar(e.titulo, agrupar ? g.modulo : null)}</span>
+                <span class={`tipo t-${t.c}`}>{t.l}</span>
+                {e.cortesia && <span class="sc">sin costo</span>}
+                <span class="fe">{dCorta(e.fecha)}</span>
+              </div>
+              {!agrupar && e.modulo && <div class="mod">{e.modulo}</div>}
+              {d.corto && <div class="dd">{d.corto}</div>}
+              <div class="pieit">
+                {e.video
+                  ? <a class="vid" href={e.video} target="_blank" rel="noopener noreferrer"><span class="pl">▶</span> Ver el video</a>
+                  : <span class="sinvid">Sin video de esta entrega</span>}
+                {d.resto && (
+                  <details>
+                    <summary>Ver el detalle completo</summary>
+                    <div class="mas">{d.resto}</div>
+                  </details>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ))}
 
   {h.internas > 0 && (
     <p class="p" style="margin-top:14px;font-size:.75rem;color:#928da4">

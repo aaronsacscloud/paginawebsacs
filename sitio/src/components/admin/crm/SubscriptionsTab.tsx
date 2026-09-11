@@ -943,8 +943,15 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
     return () => { vivo = false; };
   }, [companyId]);
 
-  // Cliente nuevo: la cuenta no existe todavía, así que sus fiscales siempre
-  // se piden (y se guardan después, cuando el pago ya creó la empresa).
+  /* ── Lo fiscal se OFRECE, no se exige ──
+     Antes el pago no se podía registrar sin los cuatro datos: el botón mandaba
+     al paso 2 y ahí `DatosFiscales` no deja seguir hasta que estén completos y
+     el RFC valide. Pero hay clientes que no piden factura, y en esos el dinero
+     entraba a la cuenta sin poder capturarse — o se capturaba con un RFC
+     inventado, que es peor: queda guardado y el día que sí pidan factura sale
+     mal.
+     El paso sigue existiendo porque es el momento en que se tienen a la mano,
+     pero es un desvío, no una puerta. */
   const faltanDatos = modo === 'nuevo' ? !fiscPendiente : (fisc !== null && faltanFiscales(fisc));
 
   async function subirComprobante(file: File) {
@@ -979,7 +986,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
     const problema = revisarPaso1();
     if (problema) { setErr(problema); return; }
     setErr(null);
-    if (faltanDatos) { setPaso(2); return; }
+    // Registra. Capturar lo fiscal es el desvío de al lado, no el camino.
     guardar();
   }
 
@@ -1074,7 +1081,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontWeight: 800 }}>
             Registrar pago
-            {faltanDatos && <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 700, color: '#6b5fa8' }}>· paso {paso} de 2</span>}
+            {paso === 2 && <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 700, color: '#6b5fa8' }}>· datos fiscales</span>}
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
@@ -1151,17 +1158,36 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
               onCancelar={() => { setErr(null); setPaso(1); }}
               onGuardado={async (datos) => { setFiscPendiente(datos); await guardar(datos); }}
             />
+            {/* La puerta de salida. Sin esto, quien entra al paso 2 y descubre
+                que el cliente no trae su constancia se queda encerrado: el
+                formulario no deja seguir sin los cuatro campos. */}
+            <button onClick={() => { setErr(null); guardar(); }} disabled={saving}
+              style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', padding: '6px 0', font: 'inherit', fontSize: '0.78rem', fontWeight: 700, color: '#6b6b74', cursor: saving ? 'default' : 'pointer' }}>
+              Registrar el pago sin datos fiscales
+            </button>
           </div>
         )}
 
         {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        {paso === 1 && (
+        {paso === 1 && (<>
           <button onClick={siguiente} disabled={saving || subiendoComp} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: (saving || subiendoComp) ? 0.6 : 1 }}>
-            {saving ? 'Registrando…'
-              : faltanDatos ? 'Continuar · faltan sus datos fiscales'
-              : 'Registrar pago y activar ARR'}
+            {saving ? 'Registrando…' : 'Registrar pago y activar ARR'}
           </button>
-        )}
+          {/* El desvío, con su porqué. No dice «faltan»: no faltan si el
+              cliente no pide factura. */}
+          {faltanDatos && !saving && (
+            <div style={{ marginTop: 10, background: '#faf9fd', border: '1px solid #ece7f8', borderRadius: 10, padding: '10px 12px', fontSize: '0.77rem', color: '#5a5566', lineHeight: 1.55 }}>
+              No tenemos sus datos fiscales. Si va a pedir factura, este es el mejor momento para pedírselos.{' '}
+              <button onClick={() => { const p = revisarPaso1(); if (p) { setErr(p); return; } setErr(null); setPaso(2); }}
+                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', fontWeight: 800, color: '#5B4BD6', cursor: 'pointer' }}>
+                Capturarlos ahora ›
+              </button>
+              <div style={{ fontSize: '0.72rem', color: '#a5a2af', marginTop: 3 }}>
+                Si no pide factura, registra el pago y ya: se pueden capturar después desde su ficha.
+              </div>
+            </div>
+          )}
+        </>)}
       </div>
     </div>
   );
