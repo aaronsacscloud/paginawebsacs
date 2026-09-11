@@ -8,7 +8,7 @@
  * compuerta encima del compositor: quien abra la conversación decide ahí mismo.
  */
 import { useEffect, useState } from 'react';
-import DecisionSugerencia from './crm/ti/DecisionSugerencia';
+import DecisionSugerencia, { antiguedadDe } from './crm/ti/DecisionSugerencia';
 import ContextoLead, { MiniHilo } from './crm/ti/ContextoLead';
 import ReglasAgente from './ReglasAgente';
 import { useIsMobile } from '../../lib/ui/mobile';
@@ -164,7 +164,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
                   {!isMobile && actual.seguimiento.falta && <div className="sg-p"><span>Falta:</span> {actual.seguimiento.falta}</div>}
                 </div>
               )}
-              {actual.ultimo_mensaje && <div className="sg-p sg-dijo"><span>Escribió:</span> «{actual.ultimo_mensaje}»</div>}
+              {actual.ultimo_mensaje && <div className="sg-p sg-dijo"><span>Escribió{antiguedadDe(actual.ultimo_mensaje_at)}:</span> «{actual.ultimo_mensaje}»</div>}
               {!isMobile && actual.objetivo && <div className="sg-p"><span>El agente busca:</span> {actual.objetivo}</div>}
               {!isMobile && actual.contact_id && <MiniHilo contactId={actual.contact_id} n={10} onAbrir={() => setCtx(actual.contact_id)} />}
             </div>

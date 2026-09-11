@@ -194,6 +194,8 @@ export async function observar(): Promise<any> {
       const fuera = (vivos || []).filter((e: any) => !ETAPAS_SDR.includes(String(e.contacts?.lifecycle_stage || ''))).map((e: any) => e.id);
       if (fuera.length) { await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'el lead ya es del consultor (etapa fuera del alcance del agente)', updated_at: ahora.toISOString() }).in('id', fuera); res.fuera_de_alcance = fuera.length; }
     } catch (e: any) { res.alcance_error = String(e?.message || e); }
+    // Frase falsa (11-sep, caso César): lo que ya está en la fila y habla como si el lead hubiera escrito, estando callado, se retira solo.
+    try { const { retirarFalsas } = await import('./agente'); res.falsas = await retirarFalsas(); } catch (e: any) { res.falsas_error = String(e?.message || e); }
     // Lo que escribió un humano por su cuenta (7-sep) se vuelve ejemplo: aprobado si es del dueño/admin/teléfono, dudoso si es de un partner.
     try { const { aprenderDeHumanos } = await import('./aprendizaje-humano'); res.humanos = await aprenderDeHumanos({ horas: 3, max: 20 }); } catch (e: any) { res.humanos_error = String(e?.message || e); }
     // Sugerencias marcadas por una lección nueva (7-sep): se reescriben hasta 12 por tick con el guion y las reglas de ahora.

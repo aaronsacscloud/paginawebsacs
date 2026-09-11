@@ -13,7 +13,18 @@ export const MOTIVOS_RECHAZO = ['El tono no es el nuestro', 'Información incorr
 const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta a su mensaje', seguimiento: 'Seguimiento de 1 a 4 días', silencio: 'Toque por silencio', cotizacion: 'Seguimiento de cotización', preparacion: 'Preparación de la demo', cita: 'Seguimiento de la cita', reenganche: 'Reenganche', reactivacion: 'Reactivación' };
 const partes = (t: string) => String(t || '').split(/\n[ \t]*-{3,}[ \t]*\n/).map(x => x.trim()).filter(Boolean);
 
-export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ventana_abierta?: boolean; plantilla?: any; plantillas?: any; nombre_lead?: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
+/** «(hace 14 meses)» junto al último mensaje del lead: sin la fecha, un «Hola, claro que sí» de 2025 parecía de ayer. */
+export function antiguedadDe(at?: string | null): string {
+  if (!at) return '';
+  const d = Math.floor((Date.now() - Date.parse(at)) / 86400e3);
+  if (!(d >= 0)) return '';
+  if (d < 2) return '';
+  if (d < 60) return ` (hace ${d} días)`;
+  if (d < 365) return ` (hace ${Math.round(d / 30)} meses)`;
+  return ` (hace ${Math.round(d / 365 * 10) / 10} años)`;
+}
+
+export type Sugerencia = { id: string; contact_id?: string | null; mensaje: string; ultimo_mensaje_at?: string | null; ventana_abierta?: boolean; plantilla?: any; plantillas?: any; nombre_lead?: string; adjuntos?: any[]; imagen_url?: string | null; origen?: string | null; ultimo_mensaje?: string | null; objetivo?: string | null; estado_guion?: string | null; created_at?: string };
 
 export default function DecisionSugerencia({ sug, galeria, compacto, atajos, movil, onDecidido }: { sug: Sugerencia; galeria?: Recurso[]; compacto?: boolean; atajos?: boolean; movil?: boolean; onDecidido: (r: any) => void }) {
   const [modo, setModo] = useState<'ver' | 'modificar' | 'rechazar'>('ver');
@@ -65,7 +76,7 @@ export default function DecisionSugerencia({ sug, galeria, compacto, atajos, mov
         {sug.estado_guion && <span className="ds-suave">· etapa {sug.estado_guion}</span>}
         {sug.objetivo && !movil && <span className="ds-suave" title={sug.objetivo}>· {sug.objetivo}</span>}
       </div>
-      {sug.ultimo_mensaje && modo === 'ver' && compacto && <div className="ds-lead"><span>El lead:</span> «{sug.ultimo_mensaje}»</div>}
+      {sug.ultimo_mensaje && modo === 'ver' && compacto && <div className="ds-lead"><span>El lead{antiguedadDe(sug.ultimo_mensaje_at)}:</span> «{sug.ultimo_mensaje}»</div>}
       {modo !== 'modificar' && (
         <div className="ds-burbujas">
           {partes(sug.mensaje).map((p, i) => <div key={i} className="ds-burbuja">{p}</div>)}

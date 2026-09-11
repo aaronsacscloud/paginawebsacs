@@ -734,3 +734,16 @@ que el presupuesto del día las frenó. (Esto también explica parte del «se ac
 **Regla.** Config: solo `parcharConfig()` (RPC `ti_config_parche`, `valor || parche`; concatenar no puede borrar llaves) y
 `ti_config_hist` guarda el valor anterior de cada cambio. JSONB: para «¿tiene marca?» usar `->>` (texto), nunca `->`; y
 para quitar una marca se QUITA la llave, no se pone en null. Regeneración: máximo 2 por sugerencia y tope de gasto por tick.
+
+## 11-sep-2026 · «Qué gusto que me escribas de nuevo» a un lead que nunca escribió (César)
+
+**Qué pasó.** El planificador programó para César un paso 6 y el modelo redactó como si él acabara de escribir. César
+nunca escribió por WhatsApp: su «Hola, claro que sí» era de julio de 2025 y estaba en el hilo sin fecha visible; lo demás
+eran cinco blasts nuestros de 2025 y dos envíos fallidos (131026, número no alcanzable) que contaban como «toques».
+
+**Reglas.** (1) Cuando el lead calla o nunca escribió, el prompt lleva HECHOS DEL HILO con fecha y días; y una compuerta
+regex (`RX_FALSO_RECONTACTO`) reintenta una vez y si insiste no manda nada. (2) La tarjeta muestra la antigüedad del
+último mensaje del lead. (3) Un número con alerta de Meta no entra ni al planificador ni al reloj de silencio. (4) Solo
+cuentan como toques los mensajes entregados de los últimos 60 días. (5) El observador retira solo lo que ya estaba en la
+fila con frase falsa. Y el dato que faltaba para «en vivo»: el interruptor real es `wa_automatizaciones.agente_sdr`
+(apagado desde el 2-sep); con él apagado TODO nace sugerencia aunque el modo diga «vivo».

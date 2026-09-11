@@ -212,7 +212,7 @@ export async function aplicarOptOut(contactId: string, motivo: string) {
 const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
-export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
+export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string; _reintentoFalso?: boolean } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   if (!(globalThis as any).__ia_proposito) (globalThis as any).__ia_proposito = `agente:${opts.tarea || 'respuesta'}`;   // atribución del gasto en ia_uso
   const [{ msjs, conversationId, telefono, phoneNumberId }, { data: c }, { data: perfil }] = await Promise.all([
@@ -242,6 +242,11 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // se leen juntos y se contestan todos (regla del dueño, 2026-09-02).
   const idxUltSal = msjs.map(m => m.direccion).lastIndexOf('saliente');
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
+  // HECHOS DEL HILO (11-sep, caso César): si el lead calla —o NUNCA ha escrito— el modelo tiene que saberlo con fecha. Sin
+  // esto veía su último mensaje de hace un año y redactaba «qué gusto que me escribas de nuevo» a alguien que no escribió.
+  const leadCallado = !rafaga.length && !opts.simularEntrante;
+  const diasCallado = ultimo ? Math.floor((Date.now() - Date.parse(ultimo.created_at)) / 86400e3) : null;
+  const hechosTxt = leadCallado ? `\n\nHECHOS DEL HILO (no los contradigas): ${ultimo ? `el lead NO ha escrito desde el ${String(ultimo.created_at).slice(0, 10)} (hace ${diasCallado} día${diasCallado === 1 ? '' : 's'}); su último mensaje fue «${textoDe(ultimo).slice(0, 160)}» y respondía a otra cosa de entonces` : 'el lead NUNCA ha escrito por WhatsApp; todo lo que hay en el hilo es nuestro'}. Este mensaje lo inicias TÚ: no digas ni insinúes que te escribió, que volvió, que retomó o «qué gusto que me escribas»; no agradezcas un mensaje que no existe; no contestes preguntas que no hizo hoy.` : '';
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta todo en UNA respuesta, en su orden, una oración por pregunta (aquí sí puedes pasar de 4 líneas; si son 3 o más, parte en dos burbujas con ---). Sin numerar, sin viñetas, sin repetir su pregunta antes de contestarla. Una sola pregunta tuya al final, o ninguna si él ya dijo qué sigue:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   // FOTOS (decisión del dueño, 5-sep · catálogo de casos, duda 2): si en la ráfaga viene una foto, el agente la comenta
   // con contexto y a partir de eso pregunta más de su tienda. Buscamos conectar, no describir ni vender.
@@ -340,7 +345,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
       { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined, ejemplosOut)) || ' ' },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}${await bloqueLinea(phoneNumberId)}` },
     ] as any,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${bloqueNom}${nota ? `\n\n${nota}` : ''}${rafagaTxt}${fotoTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${bloqueNom}${nota ? `\n\n${nota}` : ''}${hechosTxt}${rafagaTxt}${fotoTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(modelo, r.usage as any).cost_usd;
@@ -350,6 +355,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     salida.ultimo_mensaje = (rafaga.length ? rafaga.map(textoDe).join(' ⏎ ') : String(ultimo?.cuerpo || ultimo?.transcript || '')).slice(0, 600);
     salida.cita_snapshot = cita ? { id: cita.id, fecha: cita.fecha, hora: String(cita.hora_inicio).slice(0, 5), estado: cita.estado } : null;
     salida.ultimos_mensajes = rafaga.map(m => textoDe(m).slice(0, 300));
+    salida.ultimo_mensaje_at = ultimo?.created_at || null;
     salida.ejemplos_usados = ejemplosOut.ids;
     // Los horarios que el modelo dice haber mencionado, solo si existen de verdad (lista actual o ya ofrecidos): el
     // siguiente turno los lee para el «sí, el que sea».
@@ -382,8 +388,39 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
     salida.mensaje = pul.texto;
     if (modE.quitados || pul.cambios.length) await log({ accion: 'registro_pulido', contact_id: contactId, razon: `${modE.quitados ? `${modE.quitados} emoji(s) de más` : ''}${pul.cambios.length ? ` · ${pul.cambios.join(', ')}` : ''}`.trim(), detalle: { modelo } }).catch(() => {});
   }
-return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+  // COMPUERTA (11-sep): si el lead está callado y el borrador habla como si hubiera escrito, se reintenta UNA vez con la
+  // corrección explícita; si insiste, no se manda nada (mejor callar que mentir).
+  if (salida?.mensaje && salida.responder !== false && leadCallado && RX_FALSO_RECONTACTO.test(salida.mensaje)) {
+    const frase = String(salida.mensaje.match(RX_FALSO_RECONTACTO)?.[0] || '').slice(0, 80);
+    await log({ accion: 'mensaje_falso', contact_id: contactId, razon: `habla como si el lead hubiera escrito y está callado («${frase}»)${opts._reintentoFalso ? ' · segundo intento' : ''}`, detalle: { mensaje: salida.mensaje.slice(0, 500), tarea: opts.tarea || 'respuesta' } });
+    if (!opts._reintentoFalso) {
+      const r2 = await decidirTurno(contactId, `${nota || ''}\n\nCORRECCIÓN OBLIGATORIA: tu borrador anterior decía «${salida.mensaje.slice(0, 220)}» y es FALSO: el lead no ha escrito. Redáctalo de nuevo sin dar por hecho ningún mensaje suyo, como quien toma la iniciativa.`, { ...opts, _reintentoFalso: true });
+      return { ...r2, costo: (Number(r2.costo) || 0) + (Number(costo) || 0) };
+    }
+    return { salida: { ...salida, responder: false, mensaje: '' }, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: 'mensaje_falso: habla como si el lead hubiera escrito' };
+  }
+  return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
 }
+
+/** Observador: retira de la fila las sugerencias/pendientes que dan por hecho un mensaje del lead cuando lleva callado. */
+export async function retirarFalsas(max = 300): Promise<{ revisadas: number; retiradas: number }> {
+  const res = { revisadas: 0, retiradas: 0 };
+  const { data: envs } = await supabase.from('ti_envios').select('id, contact_id, mensaje').in('estado', ['sugerencia', 'pendiente']).not('contact_id', 'is', null).order('created_at', { ascending: false }).limit(max);
+  const sospechosos = (envs || []).filter(e => RX_FALSO_RECONTACTO.test(String(e.mensaje || '')));
+  res.revisadas = (envs || []).length;
+  if (!sospechosos.length) return res;
+  const { data: convs } = await supabase.from('wa_conversaciones').select('contact_id, ultima_direccion').in('contact_id', sospechosos.map(e => e.contact_id));
+  const callados = new Set((convs || []).filter((v: any) => v.ultima_direccion === 'saliente').map((v: any) => v.contact_id));
+  for (const e of sospechosos) {
+    if (!callados.has(e.contact_id)) continue;
+    const { data: upd } = await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'habla como si el lead hubiera escrito y está callado', updated_at: new Date().toISOString() }).eq('id', e.id).in('estado', ['sugerencia', 'pendiente']).select('id');
+    if ((upd || []).length) { res.retiradas++; await log({ accion: 'sugerencia_falsa_retirada', contact_id: e.contact_id, razon: String(e.mensaje || '').slice(0, 160), detalle: { envio_id: e.id } }); }
+  }
+  return res;
+}
+
+/** Frases que dan por hecho que el lead escribió (caso César, 11-sep: «Qué gusto que me escribas de nuevo» a un lead que nunca escribió). */
+export const RX_FALSO_RECONTACTO = /(qu[eé] (gusto|bueno|alegr\w+) (que (me )?(escribas|escribieras|contactes|busques|hayas escrito|retomes)|saber de ti|leerte|verte por aqu[ií])|gracias por (tu mensaje|escribir(me|nos)?|responder|contestar|retomar)|me escrib(es|as|iste) de nuevo|retomar (la )?conversaci[oó]n que (t[uú] )?(iniciaste|empezaste)|(vi|le[ií]) (tu|su) mensaje|como me (dices|comentas|preguntas|platicas)|respondiendo a tu (pregunta|mensaje))/i;
 
 /** El id de giro (ropa, zapateria, joyeria…) a partir del giro del CRM o del hilo. */
 function ctxGiroId(giroCrm: string | null, conversacion: string): string | null {
@@ -1363,11 +1400,15 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
   // algo esperando decisión para ese lead, aquí no se escribe nada.
   const { data: enFila } = await supabase.from('ti_envios').select('contact_id').in('contact_id', ids).in('estado', ['pendiente', 'enviando', 'sugerencia']);
   const ocupados = new Set((enFila || []).map((x: any) => x.contact_id));
+  // Número no alcanzable (11-sep, caso César): Meta ya dijo que ese número no recibe; insistirle por WhatsApp es tirar toques y dinero.
+  const { data: conAlerta } = await supabase.from('wa_conversaciones').select('contact_id').in('contact_id', ids).not('alerta', 'is', null);
+  const noAlcanzables = new Set((conAlerta || []).map((x: any) => x.contact_id));
 
   for (const cid of ids) { try {
     const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || !ETAPAS_SDR.includes(c.lifecycle_stage) || p.silenciar_ia) continue;
     if (ocupados.has(cid)) { res.ya_en_fila = (res.ya_en_fila || 0) + 1; continue; }
+    if (noAlcanzables.has(cid)) { res.no_alcanzables = (res.no_alcanzables || 0) + 1; continue; }
     if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
     // Una cita atorada por error nuestro la lleva reintentarAgendas; un lead CON cita vigente lo llevan los recordatorios. Aquí no se le insiste.
     if (st.agenda_pendiente?.motivo === 'error') continue;

@@ -104,7 +104,7 @@ export async function planificarNocturno(opts: { max?: number; soloContactId?: s
   if (lk === false && !opts.soloContactId) return { planificador: 'otro corredor activo' };
 
   // Universo: leads en alcance cuya última pieza del hilo es NUESTRA y con más de 20 h de silencio.
-  const { data: convs } = await supabase.from('wa_conversaciones').select('id, contact_id, telefono, ultimo_mensaje_at, ultima_direccion, contacts!inner(id, nombre, lifecycle_stage, giro, modelo_negocio, sucursales_interes, archived_at, propiedades)')
+  const { data: convs } = await supabase.from('wa_conversaciones').select('id, contact_id, telefono, ultimo_mensaje_at, ultima_direccion, alerta, contacts!inner(id, nombre, lifecycle_stage, giro, modelo_negocio, sucursales_interes, archived_at, propiedades)')
     .not('contact_id', 'is', null).eq('ultima_direccion', 'saliente').lt('ultimo_mensaje_at', new Date(ahora.getTime() - 20 * 3600e3).toISOString()).gt('ultimo_mensaje_at', new Date(ahora.getTime() - 45 * 86400e3).toISOString()).limit(400);
   const ab: any = cfg.ab_paso5 || {};
   let escasez: number | null = null;
@@ -117,6 +117,8 @@ export async function planificarNocturno(opts: { max?: number; soloContactId?: s
     if (res.programados + res.bajas >= (opts.max ?? 60)) break;
     const c: any = (cv as any).contacts;
     if (!c || c.archived_at || c.propiedades?.demo_ti || !ETAPAS_SDR.includes(String(c.lifecycle_stage || ''))) { res.saltados++; continue; }
+    // Número no alcanzable (caso César, 11-sep): Meta ya rechazó ese número; no se le programa nada por WhatsApp.
+    if ((cv as any).alerta) { res.no_alcanzables = (res.no_alcanzables || 0) + 1; continue; }
     const { data: pf } = await supabase.from('ti_perfil').select('agente_estado, silenciar_ia').eq('contact_id', c.id).maybeSingle();
     const st: any = (pf?.agente_estado as any) || {};
     if (pf?.silenciar_ia || st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) { res.saltados++; continue; }
@@ -124,8 +126,12 @@ export async function planificarNocturno(opts: { max?: number; soloContactId?: s
     const { data: vivo } = await supabase.from('ti_envios').select('id').eq('contact_id', c.id).in('estado', ['sugerencia', 'pendiente']).limit(1);
     if ((vivo || []).length) { res.saltados++; continue; }
     res.revisados++;
-    const { data: msjs } = await supabase.from('wa_mensajes').select('direccion, cuerpo, created_at').eq('conversation_id', cv.id).is('borrado_at', null).order('created_at', { ascending: false }).limit(30);
-    const hilo = (msjs || []).reverse();
+    const { data: msjs } = await supabase.from('wa_mensajes').select('direccion, cuerpo, created_at, status').eq('conversation_id', cv.id).is('borrado_at', null).order('created_at', { ascending: false }).limit(30);
+    // Solo cuentan como toques los mensajes que SÍ llegaron y los de los últimos 60 días: un envío fallido o un blast de
+    // hace un año no es «un toque sin respuesta» (César tenía cinco blasts de 2025 y dos fallidos → salía en paso 6).
+    const hace60 = ahora.getTime() - 60 * 86400e3;
+    const hilo = (msjs || []).filter((m: any) => m.status !== 'failed' && Date.parse(m.created_at) > hace60).reverse();
+    if (!hilo.length) { res.saltados++; continue; }
     const datosCompletos = !!(c.modelo_negocio && c.giro && Number(c.sucursales_interes));
     const dx = diagnosticar(hilo as any, datosCompletos);
     res.por_paso[dx.paso] = (res.por_paso[dx.paso] || 0) + 1;
