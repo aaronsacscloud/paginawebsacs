@@ -7,11 +7,34 @@ import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
 import { agenteTeamMemberId } from '../../../../lib/crm/ti/agente-asignacion';
 import { planSeguimiento } from '../../../../lib/crm/ti/reenganche';
+import { enAlcanceSDR } from '../../../../lib/crm/ti/agente';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
 async function estadoDe(contactId: string) {
+  /* ⚠️ EL CANDADO DE CLIENTE, TAMBIÉN EN LA PANTALLA.
+     El motor ya lo tiene (`ETAPAS_SDR`): el agente SDR NO atiende clientes —si
+     uno escribe, se abre una tarea de soporte y el agente no contesta—. Pero
+     esta pantalla no lo miraba, así que en la ficha de un CLIENTE salía «IA
+     activa» y un plan de seguimiento con intentos y horarios que jamás se iba a
+     ejecutar. Se veía como si el agente estuviera a punto de escribirle a un
+     cliente que paga.
+     La regla no se copia: se importa la MISMA función del motor, para que las
+     dos no se separen el día que cambien las etapas. */
+  const { data: cont } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contactId).maybeSingle();
+  const etapa = (cont as any)?.lifecycle_stage || null;
+  if (!enAlcanceSDR(etapa)) {
+    const { data: cv } = await supabase.from('wa_conversaciones').select('id').eq('contact_id', contactId).order('ultimo_mensaje_at', { ascending: false }).limit(1);
+    return {
+      estado: 'apagado' as const, asignado: null, modo_sugerencia: false, sombra: false, entrenando: false,
+      conversation_id: cv?.[0]?.id || null, sugerencias: [], plan: null,
+      en_alcance: false, etapa,
+      fuera_motivo: etapa === 'cliente'
+        ? 'Es cliente: el agente de ventas no le escribe. Lo atienden soporte y su consultor.'
+        : `El agente de ventas no atiende la etapa «${etapa || 'sin etapa'}».`,
+    };
+  }
   const [cfg, agId, { data: pf }, { data: convs }, { data: sug }] = await Promise.all([
     leerConfig() as Promise<any>, agenteTeamMemberId(),
     supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
@@ -34,7 +57,7 @@ async function estadoDe(contactId: string) {
   const plan = await planSeguimiento(contactId).catch(() => null);
   const dig10 = (t: string) => String(t || '').replace(/\D/g, '').slice(-10);
   const entrenando = (cfg.agente_modo || 'sombra') === 'sombra' && !(cfg.agente_prueba_telefonos || []).some((t: string) => dig10(t) === dig10(conv?.telefono));
-  return { estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', entrenando, conversation_id: conv?.id || null, sugerencias: (sug || []).map((s: any) => ({ ...s, ultimo_mensaje: s.salida?.ultimo_mensaje || null, objetivo: s.salida?.objetivo || null, estado_guion: s.salida?.estado || null, salida: undefined })), plan };
+  return { en_alcance: true, etapa, estado, asignado, modo_sugerencia: modoSugerencia, sombra: (cfg.agente_modo || 'sombra') === 'sombra', entrenando, conversation_id: conv?.id || null, sugerencias: (sug || []).map((s: any) => ({ ...s, ultimo_mensaje: s.salida?.ultimo_mensaje || null, objetivo: s.salida?.objetivo || null, estado_guion: s.salida?.estado || null, salida: undefined })), plan };
 }
 
 export const GET: APIRoute = async ({ request, url }) => {

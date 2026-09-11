@@ -217,7 +217,20 @@ function SeguimientoAgente({ contactId }: { contactId: string }) {
   const [ocupado, setOcupado] = useState(false);
   const cargar = () => fetch(`/api/crm/ti/agente-hilo?contact_id=${contactId}`).then(r => r.json()).then(setD).catch(() => {});
   useEffect(() => { setD(null); cargar(); const t = setInterval(cargar, 30000); return () => clearInterval(t); }, [contactId]); // eslint-disable-line react-hooks/exhaustive-deps
-  const p = d?.plan; if (!d || !p) return null;
+  if (!d) return null;
+  /* Fuera del alcance del agente (un CLIENTE, típicamente) no se calla: se
+     dice. Callarlo dejaba la duda de si el agente iba a escribirle o no —y la
+     píldora «IA activa» de arriba empujaba a pensar que sí—. Una línea gris
+     basta para cerrar la pregunta. */
+  if (d.en_alcance === false) {
+    return (
+      <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px', fontSize: 11.5, color: C.g500, lineHeight: 1.5 }}>
+        <b style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: C.g400, marginBottom: 3 }}>Agente de ventas</b>
+        {d.fuera_motivo || 'El agente de ventas no atiende esta etapa.'}
+      </div>
+    );
+  }
+  const p = d?.plan; if (!p) return null;
   if (!p.activo && !p.proximo && !p.ultimo) return null;
   const hora = (iso?: string | null) => iso ? new Date(iso).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
   const post = async (body: any) => { setOcupado(true); const r = await fetch('/api/crm/ti/envios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ error: 'sin red' })); setOcupado(false); if (r?.error) alert('No se pudo: ' + r.error); cargar(); };

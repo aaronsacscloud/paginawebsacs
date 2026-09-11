@@ -1125,6 +1125,18 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   const cargar = () => fetch(`/api/crm/ti/agente-hilo?contact_id=${contactId}`).then(r => r.json()).then(x => { setE(x); onEstado(x); }).catch(() => {});
   useEffect(() => { setE(null); cargar(); const t = setInterval(cargar, 30000); return () => clearInterval(t); }, [contactId]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!e) return null;
+  /* FUERA DE ALCANCE (un CLIENTE, típicamente): la píldora no dice «apagada»
+     —que suena a que alguien lo apagó y se puede volver a prender— sino que el
+     agente no atiende esta etapa. Y no ofrece los botones de encender: el
+     candado vive en el motor, así que prenderlo aquí no haría nada y solo
+     confundiría. */
+  if (e.en_alcance === false) {
+    return (
+      <span title={e.fuera_motivo || 'El agente de ventas no atiende esta etapa'} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${C.g200}`, background: C.g50, color: C.g500, borderRadius: 999, padding: mobile ? '3px 8px' : '5px 12px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <span style={{ width: 7, height: 7, borderRadius: 99, background: C.g300, flexShrink: 0 }} />Sin agente
+      </span>
+    );
+  }
   const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' } : e.estado === 'observando' ? { bg: '#f3f4f6', fg: '#4a4658', bd: '#e5e7eb' } : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
   const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : e.entrenando ? 'Agente IA en entrenamiento' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
