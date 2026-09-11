@@ -129,16 +129,24 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const ventanaDe = (id: string): boolean | null => { const v = canales?.ventanas?.[id]; return v ? !!v.abierta : null; };
   /** Píldoras de línea: las dos a la vista, la elegida en morado. El punto dice si la ventana de 24 h está abierta en esa línea. */
   const pildorasLinea = (compacto: boolean) => (
-    <div role="radiogroup" aria-label="Línea por la que sale este chat" style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: C.g100, flexShrink: 0 }}>
+    /* ⚠️ ESTE GRUPO SE PUEDE ENCOGER. Con `flexShrink: 0` y dos números
+       largos, la fila crecía más que el composer y se desbordaba POR LA
+       DERECHA, encima del panel del cliente. Ahora cede y, si aun así no cabe,
+       rueda por dentro — las píldoras de adentro sí siguen enteras. */
+    <div role="radiogroup" aria-label="Línea por la que sale este chat" className="crm-scroll-x"
+      style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: C.g100, flexShrink: 0, maxWidth: '100%', overflowX: 'auto' }}>
       {lineas.map(l => {
         const activa = l.id === linea; const v = ventanaDe(l.id);
         return (
           <button key={l.id} type="button" role="radio" aria-checked={activa} onClick={() => cambiarLinea(l.id)}
             title={`${l.numero}${l.nombre ? ` · ${l.nombre}` : ''}${v === null ? '' : v ? ' · ventana abierta' : ' · sin ventana: sale como plantilla'}`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: activa ? `1px solid ${C.morado}` : '1px solid transparent', borderRadius: 999, padding: compacto ? '7px 10px' : '3px 9px', minHeight: compacto ? 36 : undefined,
-              background: activa ? C.moradoAgua : 'transparent', color: activa ? C.moradoTinta : C.g500, fontSize: compacto ? 12 : 11.5, fontWeight: activa ? 700 : 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+              background: activa ? C.moradoAgua : 'transparent', color: activa ? C.moradoTinta : C.g500, fontSize: compacto ? 12 : 11.5, fontWeight: activa ? 700 : 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', lineHeight: 1.2, flexShrink: 0 }}>
             {v !== null && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: v ? C.emerald500 : C.g300, flexShrink: 0 }} />}
-            {compacto ? numeroCorto(l.numero) : l.numero}
+            {/* Corto también en escritorio: dos números en E.164 son ~230 px
+                de puro texto, y son justo los que reventaban la fila. El
+                completo sigue a un paso, en el title. */}
+            {numeroCorto(l.numero)}
           </button>
         );
       })}
@@ -371,11 +379,20 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   // el icono del canal (que sí informa por dónde sale el mensaje), el selector
   // cuando hay dos canales, y la acción.
   const FilaCanal = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: movil ? '6px 12px' : '8px 12px', borderBottom: `1px solid ${C.g100}` }}>
+    /* `flexWrap` en vez de recortar: la columna del hilo puede quedar en 337 px
+       con el panel del cliente abierto, y ahí NO caben insignia + dos líneas +
+       selector de canal + Resumir. Recortando se perdía «Resumir»; saltando de
+       renglón no se pierde nada. */
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: movil ? '6px 12px' : '8px 12px', borderBottom: `1px solid ${C.g100}`, minWidth: 0 }}>
       {/* En el teléfono, el badge verde repetía lo que el selector de al lado ya
           dice con letras; era el único verde decorativo que quedaba. */}
       {movil ? (modo === 'correo' ? <BadgeCorreo size={16} /> : null) : (modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />)}
-      {!movil && <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>}
+      {/* Con dos líneas esta etiqueta sobra —las píldoras de al lado ya dicen
+          el canal y el número— y se llevaba 124 px sin ceder, aplastando las
+          píldoras a seis. Lo que informa gana al rótulo. */}
+      {!movil && !(modo === 'wa' && lineas.length > 1) && (
+        <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>
+      )}
       {modo === 'wa' && lineas.length > 1 && pildorasLinea(!!movil)}
       {lineaMsg && <span style={{ fontSize: 11, color: lineaMsg === 'Guardado' ? C.emerald700 : lineaMsg.startsWith('En esta línea') ? C.ambar700 : C.rojo700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{lineaMsg}</span>}
       {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
@@ -385,7 +402,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           <option value="wa">WhatsApp</option><option value="correo">Correo</option>
         </select>
       )}
-      <span style={{ flex: 1 }} />
+      <span style={{ flex: '1 1 0', minWidth: 0 }} />
       {/* «Resumir» es ayuda, no la acción de la pantalla: en el teléfono
           competía con Enviar (borde morado, negritas y chispa, del mismo peso).
           Queda como texto morado a secas. */}
