@@ -293,11 +293,12 @@ const useCases = [
       </div>
       <div class="flujo-video" id="flujoVideo">
         <img class="flujo-still" src="/tienda/59-live.webp" alt="" decoding="async" />
-        <video class="flujo-clip" muted playsinline preload="none" poster="/tienda/59-live.webp" crossorigin="anonymous"><track kind="captions" src="/tienda/recorrido.vtt" srclang="es" label="Español" /></video>
+        <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/59-live.webp"><track kind="captions" src="/tienda/recorrido.vtt" srclang="es" label="Español" /></video>
         <div class="flujo-tag flujo-tag--live" data-tag="0"><i></i>En vivo · TikTok Shop · Instagram · Facebook</div>
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
         <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
+        <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
       </div>
     </div>
     <div class="flujo-nav" aria-label="Avance de la historia">
@@ -4822,6 +4823,9 @@ const useCases = [
   .flujo-video { position: relative; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); transform-origin: right center; will-change: transform; }
   .flujo-replay { position: absolute; right: 14px; top: 14px; background: rgba(255, 255, 255, 0.92); color: #1a1a1a; border: 0; border-radius: 999px; padding: 8px 14px; font-family: var(--font-display); font-weight: 600; font-size: 12px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
   .flujo-video.is-done .flujo-replay { opacity: 1; pointer-events: auto; }
+  .flujo-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.95); color: #1a1a1a; border: 0; border-radius: 999px; padding: 14px 22px; font-family: var(--font-display); font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); }
+  .flujo-play span { width: 28px; height: 28px; border-radius: 50%; background: #E8A838; display: inline-grid; place-items: center; font-size: 12px; }
+  .flujo-video.needs-tap .flujo-play { display: inline-flex; }
   .flujo-still, .flujo-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .flujo-clip { opacity: 0; transition: opacity 0.4s ease; }
   .flujo-clip.is-on { opacity: 1; }
@@ -18176,7 +18180,8 @@ const useCases = [
     const clip = wrap?.querySelector<HTMLVideoElement>('.flujo-clip');
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
-    const av1 = !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
+    const ua = navigator.userAgent; const safari = /safari/i.test(ua) && !/chrome|crios|android|edg/i.test(ua); const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const av1 = !safari && !ios && !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
     clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (av1 ? 'recorrido.av1.mp4' : 'recorrido.mp4');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, { ...props, movil, av1 }); } catch {} };
     let hitos = new Set<string>();
@@ -18191,7 +18196,10 @@ const useCases = [
     const final = sec.querySelector<HTMLElement>('.flujo-final');
     const dots = sec.querySelectorAll<HTMLElement>('.flujo-dots li');
     const replay = wrap.querySelector<HTMLButtonElement>('.flujo-replay');
-    let cur = -1, raf = 0, visible = false, crecido = false, arrancado = false;
+    let cur = -1, raf = 0, visible = false, crecido = false, arrancado = false, liberado = false;
+    const libera = () => { liberado = true; };
+    const play = wrap.querySelector<HTMLButtonElement>('.flujo-play');
+    const pideTap = () => { libera(); wrap.classList.add('needs-tap'); };
     const barra = (i: number, f: number) => { dots.forEach((d) => { const k = +d.dataset.i!; const b = d.querySelector<HTMLElement>('b')!; b.style.width = k < i ? '100%' : k === i ? (f * 100) + '%' : '0%'; }); };
     function muestra(i: number) {
       if (i === cur) return; cur = i;
@@ -18214,11 +18222,16 @@ const useCases = [
       raf = requestAnimationFrame(sigue);
     }
     function arranca(desde = 0) {
-      arrancado = true; cancelAnimationFrame(raf);
+      arrancado = true; cancelAnimationFrame(raf); wrap.classList.remove('needs-tap');
       still.classList.add('is-off'); clip.classList.add('is-on');
       try { clip.currentTime = desde; } catch {}
-      clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => { muestra(N); });
+      const t0 = clip.currentTime;
+      clip.play().then(() => { cancelAnimationFrame(raf); sigue(); }).catch(() => { still.classList.remove('is-off'); pideTap(); });
+      // si en 3.5 s no avanzó (Safari en ahorro de energía, red lenta), se suelta el scroll y se ofrece el botón
+      setTimeout(() => { if (arrancado && clip.currentTime - t0 < 0.3 && !clip.ended) { pideTap(); } }, 3500);
     }
+    play?.addEventListener('click', () => { wrap.classList.remove('needs-tap'); clip.play().then(() => { still.classList.add('is-off'); clip.classList.add('is-on'); cancelAnimationFrame(raf); sigue(); }).catch(() => {}); });
+    clip.addEventListener('stalled', () => setTimeout(() => { if (clip.paused || clip.readyState < 3) libera(); }, 2500));
     clip.addEventListener('ended', () => { cancelAnimationFrame(raf); muestra(N); barra(N, 0); hito('100'); });
     // crecimiento con el scroll + snap al final de la pista
     let snapT: ReturnType<typeof setTimeout> | null = null, snapping = false, sraf = 0;
@@ -18227,13 +18240,13 @@ const useCases = [
     const pinta = () => {
       const { y, total, top } = pista(); const p = total > 0 ? y / total : 1;
       wrap.style.transform = movil ? `scale(${0.82 + 0.18 * p})` : `scale(${0.56 + 0.44 * p}) translateX(${(1 - p) * 6}%)`;
-      if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; hito('crecio'); if (visible && !arrancado) arranca(0); }
+      if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; hito('crecio'); if (visible && !arrancado) arranca(0); setTimeout(libera, 4500); }
       if (snapT) clearTimeout(snapT);
       if (!snapping && p > 0.08 && p < 0.92) snapT = setTimeout(() => { snapping = true; window.scrollTo({ top: top + total, behavior: 'smooth' }); setTimeout(() => { snapping = false; }, 800); }, 220);
     };
     // No se puede bajar más allá de la sección hasta que el video ya arrancó (así el usuario
     // ve que hay algo en marcha y se queda). Se libera 1.2 s después de arrancar.
-    const puedeBajar = () => arrancado && clip.currentTime > 1.2;
+    const puedeBajar = () => liberado || (arrancado && clip.currentTime > 1.2);
     const finPista = () => { const { total, top } = pista(); return top + total; };
     window.addEventListener('scroll', () => {
       cancelAnimationFrame(sraf); sraf = requestAnimationFrame(pinta);
