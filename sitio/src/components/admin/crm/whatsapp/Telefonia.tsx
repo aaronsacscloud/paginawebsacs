@@ -26,6 +26,12 @@ type Viva = {
   desde: number | null;
   sid: string | null;
 };
+/** MODO SALA · el vendedor está metido en la sala de una sesión de Llamadas
+    inteligentes: el servidor marca, el navegador solo escucha (mudo) hasta que
+    contesta una persona. Se lleva aparte de `Viva` porque no es UNA llamada:
+    es una línea abierta que dura toda la sesión y no genera resumen ni minuta
+    propia (eso lo hace cada item de la sesión en el servidor). */
+type Sala = { id: string; call: any; enSala: boolean; mute: boolean };
 type Resumen = {
   sid: string | null; telefono: string; nombre: string | null;
   seg: number; direccion: 'entrante' | 'saliente';
@@ -104,11 +110,50 @@ export default function Telefonia() {
   const notaRef = useRef(''); notaRef.current = nota;
   const deviceRef = useRef<any>(null);
   const vivaRef = useRef<Viva | null>(null); vivaRef.current = viva;
+  const entranteRef = useRef<any>(null); entranteRef.current = entrante;
+  const armandoRef = useRef<Promise<any> | null>(null);   // evita dos Devices a la vez
+  const [sala, setSala] = useState<Sala | null>(null);
+  const salaRef = useRef<Sala | null>(null); salaRef.current = sala;
   useTono(!!entrante);
+
+  /** Un token fresco del servidor. */
+  const tokenNuevo = async () => fetch('/api/crm/telefonia/token').then(x => x.json()).catch(() => null);
+
+  /* ── QUÉ ERRORES SE LE ENSEÑAN A LA GENTE (11-sep-2026) ──────────────────
+     El `Device` vive registrado TODO el tiempo que el CRM esté abierto, para
+     poder recibir llamadas. Eso significa un WebSocket permanente, y en un
+     celular ese WebSocket se cae constantemente: cambia de wifi a datos, la
+     pantalla se apaga, el sistema congela la pestaña. El SDK se reconecta solo
+     en segundos.
+     Yo estaba pintando CADA uno de esos hipos como un cuadro rojo encima del
+     tablero, a alguien que ni siquiera estaba llamando. Se vio en producción:
+     «AccessTokenInvalid» al abrir la app y «Se perdió la conexión» diez
+     segundos después, sin ninguna llamada de por medio.
+     Regla nueva: un error del Device solo se enseña si hay una llamada en
+     curso o timbrando. Si no, se trata en silencio — que es lo que el usuario
+     esperaría que hiciera un teléfono. */
+  const errorDeDevice = (e: any) => {
+    const cod = Number(e?.code || 0);
+    // 20101 = el token caducó o no se validó. Se renueva y se sigue: pasa
+    // siempre que el celular deja la app congelada más de una hora.
+    if (cod === 20101 || cod === 31205 || cod === 20104) {
+      tokenNuevo().then(t => {
+        if (!t?.token || !deviceRef.current) return;
+        try { deviceRef.current.updateToken(t.token); deviceRef.current.register?.(); } catch { /* se reintenta al siguiente latido */ }
+      });
+      if (!vivaRef.current && !entranteRef.current) return;
+    }
+    if (!vivaRef.current && !entranteRef.current) { console.warn('[telefonia] hipo del Device:', cod, e?.message || e); return; }
+    setError(explicar(e));
+  };
 
   const asegurarDevice = async (): Promise<any> => {
     if (deviceRef.current) return deviceRef.current;
-    const r = await fetch('/api/crm/telefonia/token').then(x => x.json()).catch(() => null);
+    /* Dos llamadas a la vez creaban DOS Devices con la misma identidad, y el
+       segundo registro tumba al primero: ese es otro camino al 20101. */
+    if (armandoRef.current) return armandoRef.current;
+    armandoRef.current = (async () => {
+    const r = await tokenNuevo();
     if (!r?.token) {
       throw new Error(r?.faltantes?.length
         ? `La telefonía no está configurada (faltan ${r.faltantes.length} datos). Ve a Configuración → WhatsApp → Telefonía.`
@@ -117,16 +162,16 @@ export default function Telefonia() {
     setNumero(r.numero);
     if (!DeviceCtor) DeviceCtor = (await import('@twilio/voice-sdk')).Device;
     const device = new DeviceCtor(r.token, { codecPreferences: ['opus', 'pcmu'] });
-    device.on('error', (e: any) => setError(explicar(e)));
+    device.on('error', errorDeDevice);
     device.on('tokenWillExpire', async () => {
-      const t = await fetch('/api/crm/telefonia/token').then(x => x.json()).catch(() => null);
+      const t = await tokenNuevo();
       if (t?.token) device.updateToken(t.token);
     });
     device.on('incoming', (call: any) => {
       /* Llamada en espera: si ya estoy hablando, la segunda NO se traga en
          silencio. Antes se hacía `return` y quien llamaba escuchaba el tono
          hasta que Twilio se rendía, sin que nadie en el CRM se enterara. */
-      if (vivaRef.current) {
+      if (vivaRef.current || salaRef.current) {
         setEspera(call);
         const limpiar = () => setEspera((c: any) => (c === call ? null : c));
         call.on('cancel', limpiar); call.on('disconnect', limpiar); call.on('reject', limpiar);
@@ -139,6 +184,8 @@ export default function Telefonia() {
     await device.register();
     deviceRef.current = device;
     return device;
+    })().finally(() => { armandoRef.current = null; });
+    return armandoRef.current;
   };
 
   // Latido: mientras el CRM esté abierto, renovamos identidad cada 4 min para
@@ -148,11 +195,20 @@ export default function Telefonia() {
     const latido = () => fetch('/api/crm/telefonia/token').then(r => r.json()).then(j => {
       if (!vivo || !j?.token) return;
       setNumero(j.numero || '');
-      asegurarDevice().catch(() => {});   // registrar el Device para RECIBIR
+      // Si ya hay Device, se le pone el token fresco; si no, se arma.
+      if (deviceRef.current) { try { deviceRef.current.updateToken(j.token); } catch { /* lo reintenta el siguiente */ } }
+      else asegurarDevice().catch(() => {});   // registrar el Device para RECIBIR
     }).catch(() => {});
     latido();
     const t = setInterval(() => { if (!document.hidden) latido(); }, 4 * 60e3);
-    return () => { vivo = false; clearInterval(t); deviceRef.current?.destroy?.(); };
+    /* Volver a la app es el momento crítico. En un PWA la pestaña se CONGELA:
+       los temporizadores no corren, así que `tokenWillExpire` nunca dispara y
+       el token caduca sin que nadie lo renueve. Al reaparecer, el SDK intenta
+       usarlo y suelta el 20101 que se vio en pantalla. Renovarlo aquí, antes
+       de que lo use, es lo que evita el error en vez de curarlo. */
+    const alVolver = () => { if (!document.hidden) latido(); };
+    document.addEventListener('visibilitychange', alVolver);
+    return () => { vivo = false; clearInterval(t); document.removeEventListener('visibilitychange', alVolver); deviceRef.current?.destroy?.(); };
   }, []);
 
   /* MEJORA 5 · QUE NO SE PIERDA UNA ENTRANTE.
@@ -185,6 +241,15 @@ export default function Telefonia() {
     const t = setTimeout(() => { Notification.requestPermission().catch(() => {}); }, 8000);
     return () => clearTimeout(t);
   }, [numero]);
+
+  /* Un aviso que nadie cierra se queda tapando el tablero para siempre. A los
+     12 segundos se va solo — salvo el de «sin configurar», que es una tarea
+     pendiente de verdad y tiene que quedarse hasta que alguien la vea. */
+  useEffect(() => {
+    if (!error || /configurada|Configuración/i.test(error)) return;
+    const t = setTimeout(() => setError(''), 12000);
+    return () => clearTimeout(t);
+  }, [error]);
 
   // Cronómetro: solo corre cuando ya hay conversación de verdad.
   useEffect(() => {
@@ -397,6 +462,7 @@ export default function Telefonia() {
 
       // ── Validaciones ANTES de gastar una llamada ────────────────────────
       if (vivaRef.current) { setError('Ya estás en una llamada. Cuelga antes de marcar otra.'); return; }
+      if (salaRef.current) { setError('Estás en una sesión de llamadas. Sal de la sala antes de marcar por tu cuenta.'); return; }
       if (document.documentElement.dataset.waLlamada) { setError('Hay una llamada de WhatsApp en curso. Cuelga esa antes de marcar por teléfono.'); return; }
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { setError('Este navegador no puede hacer llamadas (hace falta una conexión segura y soporte de micrófono).'); return; }
       const e164 = telefonoWhatsApp(telefono);
@@ -426,8 +492,79 @@ export default function Telefonia() {
     return () => document.removeEventListener('tel-llamar', h);
   }, [numero]);
 
+  /* ── MODO SALA (Llamadas inteligentes) ──────────────────────────────────
+     La cabina (Cabina.tsx) manda `tel-sala {sesion_id}`; aquí se abre la
+     línea contra `sala:<id>` y se entra MUDO. El servidor va marcando uno por
+     uno dentro de la misma conferencia; cuando confirma que contestó una
+     persona, la cabina manda `tel-mute {mute:false}` y el vendedor habla. Todo
+     lo que pase en la sala se le cuenta a la cabina con `tel-sala-estado`. */
+  useEffect(() => {
+    const avisar = (detalle: any) => document.dispatchEvent(new CustomEvent('tel-sala-estado', { detail: detalle }));
+    const entrar = async (ev: any) => {
+      const id = String(ev.detail?.sesion_id || '');
+      if (!id) return;
+      setError(''); setAviso('');
+      if (vivaRef.current) { avisar({ sesion_id: id, en_sala: false, error: 'Ya estás en una llamada. Cuelga antes de empezar la sesión.' }); return; }
+      if (salaRef.current) { avisar({ sesion_id: id, en_sala: salaRef.current.enSala, error: salaRef.current.id === id ? undefined : 'Ya estás en otra sala.' }); return; }
+      if (document.documentElement.dataset.waLlamada) { avisar({ sesion_id: id, en_sala: false, error: 'Hay una llamada de WhatsApp en curso.' }); return; }
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { avisar({ sesion_id: id, en_sala: false, error: 'Este navegador no puede hacer llamadas (hace falta una conexión segura y micrófono).' }); return; }
+      try {
+        const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        st.getTracks().forEach(t => t.stop());
+        const device = await asegurarDevice();
+        const call = await device.connect({ params: { To: `sala:${id}` } });
+        const s: Sala = { id, call, enSala: false, mute: true };
+        setSala(s);
+        // Mudo desde el primer instante: en la sala se ESCUCHA hasta que haya una persona.
+        try { call.mute(true); } catch { /* aún sin pista */ }
+        call.on('accept', () => {
+          try { call.mute(true); } catch { /* sin pista */ }
+          setSala(x => (x && x.call === call ? { ...x, enSala: true, mute: true } : x));
+          avisar({ sesion_id: id, en_sala: true });
+        });
+        call.on('volume', (entrada: number) => setNivel(Math.min(1, Math.max(0, entrada))));
+        const salir = (motivo?: string) => {
+          if (salaRef.current?.call !== call) return;
+          setSala(null); setNivel(0); setAviso('');
+          avisar({ sesion_id: id, en_sala: false, error: motivo });
+        };
+        call.on('disconnect', () => salir());
+        call.on('cancel', () => salir('La central cerró la sala.'));
+        call.on('reject', () => salir('La central rechazó la sala.'));
+        call.on('error', (e: any) => salir(explicar(e)));
+      } catch (e: any) {
+        // El error se enseña en la cabina (que es la pantalla), no aquí también.
+        setSala(null);
+        avisar({ sesion_id: id, en_sala: false, error: explicar(e) });
+      }
+    };
+    const mudo = (ev: any) => {
+      const s = salaRef.current; if (!s?.call) return;
+      const m = !!ev.detail?.mute;
+      try { s.call.mute(m); } catch { /* sin pista */ }
+      setSala(x => (x ? { ...x, mute: m } : x));
+    };
+    const colgarSala = () => {
+      const s = salaRef.current; if (!s) return;
+      try { s.call?.disconnect(); } catch { /* ya estaba muerta */ }
+      setTimeout(() => { if (salaRef.current?.call === s.call) { setSala(null); avisar({ sesion_id: s.id, en_sala: false }); } }, 1500);
+    };
+    const consulta = () => { const s = salaRef.current; avisar({ sesion_id: s?.id || null, en_sala: !!s?.enSala, mute: s?.mute ?? true }); };
+    document.addEventListener('tel-sala', entrar);
+    document.addEventListener('tel-mute', mudo);
+    document.addEventListener('tel-colgar-sala', colgarSala);
+    document.addEventListener('tel-sala-consulta', consulta);
+    return () => {
+      document.removeEventListener('tel-sala', entrar);
+      document.removeEventListener('tel-mute', mudo);
+      document.removeEventListener('tel-colgar-sala', colgarSala);
+      document.removeEventListener('tel-sala-consulta', consulta);
+    };
+  }, []);
+
   const contestar = () => {
     const c = entrante; if (!c) return;
+    if (salaRef.current) { setError('Estás en una sesión de llamadas. Sal de la sala para contestar.'); return; }
     setEntrante(null); setResumen(null);
     try { c.accept(); enganchar(c, c.parameters?.From || 'desconocido', null, 'entrante'); }
     catch (e: any) { setError(explicar(e)); }
@@ -503,13 +640,111 @@ export default function Telefonia() {
       }} />
   );
 
-  if (!entrante && !viva && !resumen && !error) return null;
+  if (!entrante && !viva && !resumen && !error && !sala) return null;
+
+  /* ── LA TARJETA DE LA SALA ──────────────────────────────────────────────
+     Chiquita a propósito: la pantalla grande es la cabina. Aquí solo se ve
+     que la línea está abierta, si el micrófono está mudo, y la salida. */
+  if (sala && !entrante && !viva) {
+    return (
+      <div data-tel-panel style={{ position: 'fixed', right: esMovil ? 12 : 18, bottom: esMovil ? 'calc(12px + env(safe-area-inset-bottom))' : 90, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+        {error && (
+          <div role="alert" style={{ background: '#fff', border: '1px solid #f0c4bd', color: '#C0554E', borderRadius: 10, padding: '8px 12px', fontSize: 12, maxWidth: 300, boxShadow: '0 8px 24px rgba(0,0,0,.10)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ flex: 1 }}>{error}</span>
+            <button onClick={() => setError('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#C0554E', fontFamily: 'inherit', fontWeight: 700 }}>x</button>
+          </div>
+        )}
+        <div style={{ background: '#1f1b33', color: '#fff', borderRadius: 12, padding: '9px 12px', boxShadow: '0 10px 30px rgba(0,0,0,.25)', display: 'flex', alignItems: 'center', gap: 10, minWidth: 250 }}>
+          <span className={sala.enSala ? undefined : 'wa-pulso'} style={{ width: 9, height: 9, borderRadius: 999, background: sala.enSala ? (sala.mute ? '#9B8CFA' : '#4FBF95') : '#E8A838', flexShrink: 0 }} />
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <b style={{ display: 'block', fontSize: 12.5 }}>{sala.enSala ? (sala.mute ? 'En la sala · micrófono mudo' : 'En la sala · te oyen') : 'Entrando a la sala…'}</b>
+            <span style={{ fontSize: 11, color: '#c7c3e6' }}>{sala.enSala && !sala.mute ? 'Estás hablando con el cliente' : 'La central marca por ti; escuchas sin que te oigan'}</span>
+          </span>
+          {sala.enSala && !sala.mute && (
+            <span aria-hidden style={{ width: 4, height: 22, borderRadius: 2, background: 'rgba(255,255,255,.18)', position: 'relative', overflow: 'hidden' }}>
+              <span style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${Math.round(nivel * 100)}%`, background: '#4FBF95', transition: 'height .08s' }} />
+            </span>
+          )}
+          <button onClick={() => document.dispatchEvent(new CustomEvent('tel-colgar-sala'))} title="Salir de la sala"
+            style={{ border: 'none', borderRadius: 8, background: 'rgba(239,122,114,.22)', color: '#fca5a1', padding: '6px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Salir</button>
+        </div>
+      </div>
+    );
+  }
 
   /* ── PANTALLA COMPLETA EN EL TELÉFONO ────────────────────────────────────
      La tarjeta de 320 px es de escritorio. En el celular una llamada es LA
      tarea: ocupa todo, los botones son de pulgar (64 px) y no hay nada más
      que tocar por error. Es también donde caben las cinco mejoras sin apretar
      nada: el medidor de voz, el contexto de con quién hablas y el apunte. */
+  /* ── EL CIERRE, TAMBIÉN A PANTALLA COMPLETA ──────────────────────────────
+     Al colgar en el teléfono aparecía la tarjeta de 320 px del escritorio,
+     encajada al fondo, encima del composer y medio transparente: el desenlace
+     se leía a la mitad, «Llamar otra vez» era un contorno gris que no parecía
+     botón y la ✕ un punto. Se vio en producción.
+     Colgar es un momento propio: la pantalla se queda, te dice qué pasó y te
+     ofrece lo único que puedes querer hacer ahora —volver a marcar, ir a la
+     conversación, o cerrar— con botones de pulgar. Al inbox se vuelve cuando
+     TÚ lo decides, no de golpe. */
+  if (esMovil && resumen && !viva && !entrante) {
+    const listo = resumen.minuta === 'lista';
+    return (
+      <div data-tel-panel role="dialog" aria-label="Llamada terminada" style={{
+        position: 'fixed', inset: 0, zIndex: 1000, background: 'linear-gradient(170deg, #241f3d 0%, #111827 62%)',
+        color: '#fff', display: 'flex', flexDirection: 'column', padding: '28px 22px calc(26px + env(safe-area-inset-bottom))',
+      }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 9 }}>
+          <span style={{
+            width: 84, height: 84, borderRadius: 999, marginBottom: 8,
+            background: resumen.seg > 0 ? 'rgba(16,185,129,.16)' : 'rgba(255,255,255,.08)',
+            color: resumen.seg > 0 ? C.emerald300 : '#c9c5d8',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
+          }}>{resumen.seg > 0 ? '✓' : '☎'}</span>
+
+          <b style={{ fontSize: 23, lineHeight: 1.2, maxWidth: '92%' }}>{resumen.nombre || telefonoLegible(resumen.telefono)}</b>
+          <span style={{ fontSize: 15, color: '#c9c5d8' }}>
+            {resumen.desenlace}{resumen.seg > 0 ? ` · ${fmt(resumen.seg)}` : ''}
+          </span>
+          {!resumen.verificado && <span style={{ fontSize: 12, color: '#8f8aa3' }}>confirmando con la central…</span>}
+
+          {/* La minuta, con su propio espacio: es lo que la gente espera. */}
+          <div style={{ marginTop: 16, width: '100%', maxWidth: 340, background: 'rgba(255,255,255,.07)', borderRadius: 14, padding: '14px 16px', fontSize: 13.5, lineHeight: 1.55 }}>
+            {resumen.minuta === 'esperando' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', color: '#d6d3e4' }}>
+                <span className="wa-pulso" style={{ width: 9, height: 9, borderRadius: 999, background: '#9B8CFA', flexShrink: 0 }} />
+                Escribiendo la minuta…
+              </span>
+            )}
+            {listo && <span style={{ color: C.emerald300, fontWeight: 700 }}>Minuta lista · quedó en la conversación</span>}
+            {resumen.minuta === 'no-aplica' && (
+              <span style={{ color: '#b6b2c6' }}>
+                {resumen.seg >= 20 ? 'Sin minuta: no hubo conversación grabada.' : 'Muy corta para minuta — se transcriben de 20 segundos en adelante.'}
+              </span>
+            )}
+            {resumen.minuta === 'falló' && <span style={{ color: C.ambar300 }}>La minuta no llegó. La grabación sí quedó guardada.</span>}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {resumen.conversationId && (
+            <button onClick={() => { window.location.href = `/admin/crm?tab=whatsapp&wa_conv=${resumen.conversationId}`; }}
+              style={{ border: 'none', background: listo ? C.emerald500 : 'rgba(255,255,255,.14)', color: '#fff', borderRadius: 14, padding: '17px 0', fontSize: 15.5, fontWeight: 800, fontFamily: 'inherit', width: '100%' }}>
+              Ver la conversación
+            </button>
+          )}
+          <button onClick={() => { setResumen(null); document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: resumen.telefono, nombre: resumen.nombre } })); }}
+            style={{ border: '1px solid rgba(255,255,255,.22)', background: 'transparent', color: '#fff', borderRadius: 14, padding: '16px 0', fontSize: 15, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
+            Llamar otra vez
+          </button>
+          <button onClick={() => setResumen(null)}
+            style={{ border: 'none', background: 'none', color: '#8f8aa3', borderRadius: 12, padding: '14px 0', fontSize: 14.5, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
+            Listo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (esMovil && (viva || entrante)) {
     return (
       <div data-tel-panel role="dialog" aria-label="Llamada telefónica" style={{
@@ -544,6 +779,14 @@ export default function Telefonia() {
           </span>
 
           {aviso && <span style={{ fontSize: 12, color: C.ambar300, background: 'rgba(251,191,36,.13)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.45 }}>{aviso}</span>}
+          {/* Un error DURANTE la llamada tiene que verse aquí: esta pantalla
+              tapa todo, así que el aviso de abajo nunca se vería. */}
+          {error && (
+            <span role="alert" onClick={() => setError('')} style={{ fontSize: 12.5, color: '#fff', background: 'rgba(239,68,68,.9)', borderRadius: 12, padding: '11px 14px', maxWidth: 330, lineHeight: 1.5, cursor: 'pointer' }}>
+              {error}
+              <b style={{ display: 'block', marginTop: 5, fontSize: 11, opacity: .85 }}>Toca para cerrar</b>
+            </span>
+          )}
           {espera && <span style={{ fontSize: 12, color: C.ambar300 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>}
         </div>
 
@@ -759,13 +1002,25 @@ export default function Telefonia() {
       )}
 
       {/* ── ERROR ────────────────────────────────────────────────────────── */}
+      {/* ── EL AVISO DE ERROR, QUE SE PUEDA CERRAR DE VERDAD ────────────────
+          La ✕ era un carácter suelto sin tamaño: un blanco de diez píxeles
+          flotando a la derecha del texto. Con el ratón se acierta; con el
+          pulgar no, y en producción se vio — el aviso se quedaba pegado en el
+          tablero sin forma de quitarlo. Ahora el botón mide 44 px (el mínimo
+          para un dedo), y además TODO el recuadro cierra al tocarlo: cuando
+          algo estorba, lo natural es picarle encima. */}
       {error && (
-        <div role="alert" style={{ background: C.rojo50, color: C.rojo700, border: `1px solid ${C.rojo200}`, borderRadius: 12, padding: '10px 12px', fontSize: 11.5, lineHeight: 1.5, width: 'min(320px, calc(100vw - 32px))', boxShadow: '0 10px 30px rgba(0,0,0,.12)' }}>
-          {error}
-          {/configurada|Configuración/i.test(error) && (
-            <a href="/admin/crm?tab=whatsapp&wa_config=telefonia" style={{ display: 'block', marginTop: 6, color: C.rojo700, fontWeight: 800 }}>Abrir Configuración → Telefonía ↗</a>
-          )}
-          <button onClick={() => setError('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.rojo700, fontWeight: 800, marginLeft: 6, float: 'right' }}>✕</button>
+        <div role="alert" onClick={() => setError('')}
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', background: C.rojo50, color: C.rojo700, border: `1px solid ${C.rojo200}`, borderRadius: 12, padding: '10px 6px 10px 12px', fontSize: 12, lineHeight: 1.5, width: 'min(340px, calc(100vw - 24px))', boxShadow: '0 10px 30px rgba(0,0,0,.16)' }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            {error}
+            {/configurada|Configuración/i.test(error) && (
+              <a href="/admin/crm?tab=whatsapp&wa_config=telefonia" onClick={e => e.stopPropagation()}
+                style={{ display: 'block', marginTop: 6, color: C.rojo700, fontWeight: 800 }}>Abrir Configuración → Telefonía ↗</a>
+            )}
+          </span>
+          <button onClick={e => { e.stopPropagation(); setError(''); }} aria-label="Cerrar el aviso"
+            style={{ width: 44, height: 44, marginTop: -10, marginRight: -2, border: 'none', background: 'none', cursor: 'pointer', color: C.rojo700, fontWeight: 800, fontSize: 16, fontFamily: 'inherit', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
       )}
     </div>
