@@ -13,6 +13,7 @@ import { twilioRest, telefoniaConfigurada, telefoniaFaltantes } from '../../../.
 import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, relanzar, recontar, getSesion,
 } from '../../../../lib/telefonia/marcador';
+import { aplicarCierre, responderEnvio, omitirEnvio, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -139,6 +140,50 @@ export const POST: APIRoute = async ({ request }) => {
       case 'relanzar': {
         const r = await relanzar(s.id, user.id, Array.isArray(b.cuales) ? b.cuales : undefined);
         return json({ ok: true, ...r });
+      }
+      /* ── Cierre con IA ─────────────────────────────────────────────── */
+      case 'cierre': {
+        // «Confirmar»: aplica lo propuesto (con los ajustes del vendedor) sin esperar al wrap-up.
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it) return json({ error: 'No es un item de tu sesión' }, 404);
+        const ajustes: any = {};
+        if (b.resultado !== undefined && RESULTADOS_CIERRE.includes(String(b.resultado))) ajustes.resultado = String(b.resultado);   // texto libre rompería relanzar y los contadores
+        if (b.nota !== undefined) ajustes.nota = String(b.nota || '').slice(0, 2000) || undefined;
+        // Lo que escribió el vendedor se guarda en el item ANTES: si la IA no propuso nada (`sin_datos`), no se pierde.
+        const previo: any = {};
+        if (ajustes.resultado) previo.resultado = ajustes.resultado;
+        if (ajustes.nota) previo.nota = ajustes.nota;
+        if (Object.keys(previo).length) await supabase.from('tel_sesion_items').update({ ...previo, updated_at: new Date().toISOString() }).eq('id', itemId);
+        const r = await aplicarCierre(itemId, { userId: user.id, autor: (user as any)?.nombre || null, ajustes });
+        await recontar(s.id);
+        return json(r);
+      }
+      case 'cierre_escribiendo': {
+        // El vendedor está contestando una pregunta del cierre: el auto-continuar espera (tope de 5 min desde la propuesta).
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, cierre_ia').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it) return json({ error: 'No es un item de tu sesión' }, 404);
+        await supabase.from('tel_sesion_items').update({ cierre_ia: { ...(it.cierre_ia || {}), escribiendo_at: new Date().toISOString() }, updated_at: new Date().toISOString() }).eq('id', itemId);
+        return json({ ok: true });
+      }
+      case 'cierre_respuesta': {
+        // El vendedor dijo qué mandar: se guarda para la próxima y se manda ya.
+        const envioId = String(b.envio || '');
+        if (!UUID.test(envioId)) return json({ error: 'Falta el envío' }, 400);
+        const { data: e } = await supabase.from('tel_envios').select('id, item_id, tel_sesion_items(sesion_id)').eq('id', envioId).maybeSingle();
+        if (!e || (e as any)?.tel_sesion_items?.sesion_id !== s.id) return json({ error: 'No es un envío de tu sesión' }, 404);
+        return json(await responderEnvio(envioId, String(b.texto || ''), { userId: user.id, autor: (user as any)?.nombre || null }));
+      }
+      case 'cierre_omitir': {
+        const envioId = String(b.envio || '');
+        if (!UUID.test(envioId)) return json({ error: 'Falta el envío' }, 400);
+        const { data: e } = await supabase.from('tel_envios').select('id, tel_sesion_items(sesion_id)').eq('id', envioId).maybeSingle();
+        if (!e || (e as any)?.tel_sesion_items?.sesion_id !== s.id) return json({ error: 'No es un envío de tu sesión' }, 404);
+        await omitirEnvio(envioId);
+        return json({ ok: true });
       }
       case 'estado': return json(await estadoSesion(s.id));
       default: return json({ error: 'Acción desconocida' }, 400);

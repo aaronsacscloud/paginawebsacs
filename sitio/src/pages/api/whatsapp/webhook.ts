@@ -109,6 +109,11 @@ export const POST: APIRoute = async ({ request, url }) => {
             const { entregarMinutasPendientes } = await import('../../../lib/minuta/entrega');
             await entregarMinutasPendientes(r.conversationId);
           } catch (e: any) { console.warn('[webhook] minutas pendientes:', e?.message || e); }
+          // Lo mismo con lo que se prometió mandar en una llamada (PDF del cierre con IA).
+          try {
+            const { entregarEnviosPendientes } = await import('../../../lib/telefonia/cierre');
+            await entregarEnviosPendientes(r.conversationId);
+          } catch (e: any) { console.warn('[webhook] envíos pendientes:', e?.message || e); }
         }
 
         // DIAGNÓSTICO (7-sep): en 298 conversaciones el nombre de perfil llegó vacío. Si en un entrante no viene, se

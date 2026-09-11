@@ -222,6 +222,7 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/telefonia/marcador/transcripcion',
   '/api/telefonia/marcador/twiml',
   '/api/telefonia/marcador/anuncio',
+  '/api/telefonia/marcador/espera',
   '/api/leads/captura',            // webhook genérico de formularios; valida su propio token
 ]);
 

@@ -503,11 +503,20 @@ export default function Telefonia() {
     const entrar = async (ev: any) => {
       const id = String(ev.detail?.sesion_id || '');
       if (!id) return;
+      // `silencioso`: es un reintento automático de la cabina; los errores no se enseñan (ya hay un aviso de «volviendo a entrar»).
+      const silencioso = !!ev.detail?.silencioso;
+      const fallo = (error: string) => avisar({ sesion_id: id, en_sala: false, error: silencioso ? undefined : error });
       setError(''); setAviso('');
-      if (vivaRef.current) { avisar({ sesion_id: id, en_sala: false, error: 'Ya estás en una llamada. Cuelga antes de empezar la sesión.' }); return; }
-      if (salaRef.current) { avisar({ sesion_id: id, en_sala: salaRef.current.enSala, error: salaRef.current.id === id ? undefined : 'Ya estás en otra sala.' }); return; }
-      if (document.documentElement.dataset.waLlamada) { avisar({ sesion_id: id, en_sala: false, error: 'Hay una llamada de WhatsApp en curso.' }); return; }
-      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { avisar({ sesion_id: id, en_sala: false, error: 'Este navegador no puede hacer llamadas (hace falta una conexión segura y micrófono).' }); return; }
+      if (vivaRef.current) { fallo('Ya estás en una llamada. Cuelga antes de empezar la sesión.'); return; }
+      if (salaRef.current) {
+        if (salaRef.current.id !== id) { fallo('Ya estás en otra sala.'); return; }
+        if (salaRef.current.enSala) { avisar({ sesion_id: id, en_sala: true }); return; }
+        // Misma sala, pero la conexión quedó a medias (conectando o muerta): se suelta y se vuelve a entrar.
+        try { salaRef.current.call?.disconnect(); } catch { /* ya estaba muerta */ }
+        setSala(null);
+      }
+      if (document.documentElement.dataset.waLlamada) { fallo('Hay una llamada de WhatsApp en curso.'); return; }
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { fallo('Este navegador no puede hacer llamadas (hace falta una conexión segura y micrófono).'); return; }
       try {
         const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
         st.getTracks().forEach(t => t.stop());
@@ -535,7 +544,7 @@ export default function Telefonia() {
       } catch (e: any) {
         // El error se enseña en la cabina (que es la pantalla), no aquí también.
         setSala(null);
-        avisar({ sesion_id: id, en_sala: false, error: explicar(e) });
+        fallo(explicar(e));
       }
     };
     const mudo = (ev: any) => {

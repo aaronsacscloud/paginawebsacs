@@ -19,9 +19,14 @@ export const POST: APIRoute = async ({ request, url }) => {
   // deja al contacto una llamada muda: se cuelga sin decir nada.
   if (!it || !s || s.estado !== 'activa' || !s.agente_en_sala) return xml('<Hangup/>');
 
+  // Reenganche: el vendedor se cayó y volvió; el contacto regresa de la
+  // espera a la sala. La transcripción de esta llamada ya está corriendo.
+  const reenganche = url.searchParams.get('reenganche') === '1';
   const cb = `${BASE}/api/telefonia/marcador/transcripcion?item=${it.id}`;
+  // Las dos pistas: la del contacto (inbound) decide si es persona o máquina;
+  // la del vendedor (outbound) solo alimenta el cierre con IA.
   return xml(
-    `<Start><Transcription statusCallbackUrl="${cb}" statusCallbackMethod="POST" languageCode="es-MX" track="inbound_track" partialResults="true" enableAutomaticPunctuation="true"/></Start>` +
+    (reenganche ? '' : `<Start><Transcription statusCallbackUrl="${cb}" statusCallbackMethod="POST" languageCode="es-MX" track="both_tracks" partialResults="true" enableAutomaticPunctuation="true"/></Start>`) +
     `<Dial><Conference startConferenceOnEnter="false" endConferenceOnExit="false" beep="false" waitUrl="" ` +
     `statusCallback="${BASE}/api/telefonia/marcador/sala?sesion=${s.id}" statusCallbackMethod="POST" statusCallbackEvent="start end join leave">sesion-${s.id}</Conference></Dial>`,
   );

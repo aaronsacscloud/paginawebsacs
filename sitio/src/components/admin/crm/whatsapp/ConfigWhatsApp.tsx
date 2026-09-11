@@ -371,6 +371,7 @@ function Telefonia() {
         </div>
       )}
       {st?.configurada && <CallerId />}
+      {st?.configurada && <Aprendido />}
       <ReglasLlamadas />
       <EnvioMinuta />
       <div style={{ ...S.card }}>
@@ -380,6 +381,105 @@ function Telefonia() {
         {paso(3, 'Regulatory Bundle de México', 'Phone Numbers → Regulatory Compliance → New Bundle (Mexico · Local). Piden dirección en México con comprobante de domicilio menor a 1 año (CFE/Telmex) e identificación (INE/pasaporte). Aprobación: 1 a 3 días hábiles.')}
         {paso(4, 'Comprar el número', 'Phone Numbers → Buy a Number → México → Local (ej. lada 55). Cuesta $6.25 USD/mes.')}
         {paso(5, 'Conectarlo al CRM', 'Comparte el Account SID y Auth Token con el equipo técnico: con eso se crea la API Key, la TwiML App y se configuran los webhooks. Cinco minutos después ya marcas desde cualquier chat.')}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════ Lo que el marcador aprende ═════════════
+/**
+ * Dos memorias del marcador de «Llamadas inteligentes»: las frases que
+ * engañaron al detector de buzón/persona (el vendedor corrigió y la frase
+ * queda propuesta hasta que el dueño la apruebe) y lo que ya se contestó
+ * sobre qué mandarle al cliente (el cierre con IA lo reutiliza y arma el PDF).
+ */
+function Aprendido() {
+  const [d, setD] = useState<any>(null);
+  const [edit, setEdit] = useState<{ id: string; texto: string } | null>(null);
+  const [ocupado, setOcupado] = useState('');
+  const cargar = () => fetch('/api/crm/telefonia/reglas', { cache: 'no-store' }).then(r => r.json()).then(j => setD(j?.error ? { error: j.error, reglas: [], conocimiento: [] } : j)).catch(() => setD({ error: 'No se pudo cargar lo aprendido. Revisa tu conexión.', reglas: [], conocimiento: [] }));
+  useEffect(() => { cargar(); }, []);
+  const post = async (cuerpo: any) => {
+    setOcupado(cuerpo.id);
+    const r = await fetch('/api/crm/telefonia/reglas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) }).then(x => x.json()).catch(() => ({ error: 'sin red' }));
+    setOcupado('');
+    if (r?.error) setD((x: any) => ({ ...(x || {}), error: r.error })); else { setD((x: any) => ({ ...(x || {}), error: '' })); setEdit(null); cargar(); }
+  };
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Cargando lo aprendido…" /></div>;
+  const reglas: any[] = d.reglas || [], conocimiento: any[] = d.conocimiento || [];
+  const puedeEditar = !!d.puede_editar;   // solo el dueño aprueba o quita (el servidor lo exige; aquí no se enseñan botones que van a fallar)
+  const propuestas = reglas.filter(r => r.estado === 'propuesta');
+  const activas = reglas.filter(r => r.estado === 'activa');
+  const pill = (texto: string, bg: string, color: string) => <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: bg, color, letterSpacing: .3, textTransform: 'uppercase' }}>{texto}</span>;
+  const btn = (texto: string, onClick: () => void, primario = false, peligro = false): React.ReactNode => (
+    <button onClick={onClick} disabled={!!ocupado} style={{ cursor: 'pointer', fontFamily: 'inherit', borderRadius: 8, padding: '5px 10px', fontSize: 11.5, fontWeight: 700,
+      background: primario ? '#9B8CFA' : '#fff', color: primario ? '#fff' : peligro ? '#C0554E' : '#5B4BD6', border: `1.5px solid ${primario ? '#9B8CFA' : peligro ? '#f0c4bd' : '#9B8CFA'}`, opacity: ocupado ? .6 : 1 }}>{texto}</button>
+  );
+  const fila = (r: any) => (
+    <div key={r.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f2f0fa' }}>
+      <span style={{ minWidth: 0, flex: 1 }}>
+        <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {pill(r.tipo === 'buzon' ? 'suena a máquina' : 'suena a persona', r.tipo === 'buzon' ? '#FFF4E5' : '#EAF8F2', r.tipo === 'buzon' ? '#9a6a10' : '#1E8A63')}
+          <b style={{ fontSize: 12.5 }}>«{r.patron}»</b>
+          {r.veces > 1 && <span style={{ fontSize: 10.5, color: '#888' }}>{r.veces} veces</span>}
+        </span>
+        {r.ejemplo && <span style={{ fontSize: 11, color: '#888', display: 'block', marginTop: 3, lineHeight: 1.5 }}>Se oyó: «{r.ejemplo}»</span>}
+      </span>
+      <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        {puedeEditar && r.estado === 'propuesta' && btn('Aprobar', () => post({ accion: 'aprobar', id: r.id }), true)}
+        {puedeEditar && btn(r.estado === 'propuesta' ? 'Descartar' : 'Quitar', async () => { if (await confirmar(r.estado === 'propuesta' ? `¿Descartar la frase «${r.patron}»? El detector no la va a aprender.` : `¿Quitar la frase «${r.patron}»? El detector deja de usarla en las siguientes llamadas.`)) post({ accion: 'descartar', id: r.id }); }, false, true)}
+      </span>
+    </div>
+  );
+  return (
+    <div style={{ ...S.card, marginBottom: 14, borderLeft: `3px solid ${propuestas.length ? '#E8A838' : '#9B8CFA'}` }}>
+      <b style={{ fontSize: 13.5, display: 'block' }}>Lo que el marcador aprende</b>
+      {d.error && <div style={{ marginTop: 8 }}><Aviso tono="malo">{d.error}</Aviso></div>}
+      {!puedeEditar && <span style={{ fontSize: 11, color: '#999', display: 'block', marginTop: 3 }}>Solo el dueño aprueba o quita lo aprendido.</span>}
+      <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
+        Cuando el vendedor toma una llamada que el detector creía buzón —o salta una que creía persona— la frase
+        que lo engañó queda aquí propuesta. Al aprobarla, el detector la usa en las siguientes llamadas.
+      </span>
+      <div style={{ marginTop: 12 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#555', letterSpacing: .3, textTransform: 'uppercase' }}>Frases que engañaron al detector</span>
+        {propuestas.length > 0 && <span style={{ marginLeft: 8 }}>{pill(`${propuestas.length} por revisar`, '#FFF4E5', '#9a6a10')}</span>}
+        {!reglas.length && <p style={{ fontSize: 11.5, color: '#999', margin: '6px 0 0' }}>Todavía no hay correcciones: se llenan solas conforme el vendedor use el marcador.</p>}
+        {propuestas.map(fila)}
+        {activas.length > 0 && <div style={{ fontSize: 10.5, color: '#999', marginTop: 8 }}>Activas ({activas.length})</div>}
+        {activas.map(fila)}
+      </div>
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#555', letterSpacing: .3, textTransform: 'uppercase' }}>Lo que ya sabemos mandar</span>
+        <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
+          Cada vez que en una llamada se promete mandar algo y el vendedor contesta qué, la respuesta se guarda aquí.
+          La próxima vez el cierre arma el PDF solo y lo manda por WhatsApp.
+        </span>
+        {!conocimiento.length && <p style={{ fontSize: 11.5, color: '#999', margin: '6px 0 0' }}>Nada todavía. El primer «¿qué le mandamos sobre…?» de la cabina lo estrena.</p>}
+        {conocimiento.map(k => (
+          <div key={k.id} style={{ padding: '8px 0', borderBottom: '1px solid #f2f0fa' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <b style={{ fontSize: 12.5 }}>{k.tema}</b>
+                <span style={{ fontSize: 10.5, color: '#888', marginLeft: 6 }}>{k.veces_usado ? `se mandó ${k.veces_usado} ${k.veces_usado === 1 ? 'vez' : 'veces'}` : 'sin usar aún'}{k.origen ? ` · ${k.origen}` : ''}</span>
+                {edit?.id !== k.id && <span style={{ fontSize: 11.5, color: '#666', display: 'block', marginTop: 3, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{String(k.texto || '').slice(0, 280)}{String(k.texto || '').length > 280 ? '…' : ''}</span>}
+              </span>
+              <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                {puedeEditar && edit?.id !== k.id && btn('Editar', () => setEdit({ id: k.id, texto: k.texto || '' }))}
+                {puedeEditar && btn('Quitar', async () => { if (await confirmar(`¿Quitar «${k.tema}»? La próxima vez que lo pidan, la cabina va a volver a preguntar qué mandar.`)) post({ accion: 'conocimiento_quitar', id: k.id }); }, false, true)}
+              </span>
+            </div>
+            {edit && edit.id === k.id && (
+              <div style={{ marginTop: 8 }}>
+                <textarea value={edit.texto} onChange={e => setEdit({ id: k.id, texto: e.target.value })} rows={6}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #E5E7EB', borderRadius: 10, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', lineHeight: 1.6, resize: 'vertical' }} />
+                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                  {btn('Guardar', () => post({ accion: 'conocimiento_editar', id: k.id, texto: edit?.texto || '' }), true)}
+                  {btn('Cancelar', () => setEdit(null))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

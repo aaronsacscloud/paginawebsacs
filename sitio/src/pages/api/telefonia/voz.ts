@@ -54,12 +54,16 @@ export const POST: APIRoute = async ({ request }) => {
      vendedor entrando a la sala de conferencia donde el servidor irá metiendo,
      uno por uno, a los contactos de la lista. No se espeja en `wa_llamadas`
      (no hay contacto del otro lado) y solo entra quien es dueño de la sesión.
-     `endConferenceOnExit`: si el vendedor se sale, la sala se cierra y el
-     contacto que estuviera dentro no se queda hablando solo. */
+     Si el vendedor se sale, `procesarSala` decide: si no había nadie en
+     línea, pausa y cuelga lo que timbraba; si SÍ había, manda al contacto a
+     una espera corta por si el vendedor vuelve (se le cayó el navegador). */
   const sala = /^sala:([0-9a-f-]{36})$/i.exec(destino)?.[1];
   if (sala) {
     if (!identidad || !(await agenteEntra(sala, p.CallSid, identidad))) return decir('Esta sesión de llamadas no está activa.');
-    return xml(`<Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true" beep="false" waitUrl="" ` +
+    /* `endConferenceOnExit="false"`: si el navegador del vendedor se cae en
+       plena conversación, la sala NO se cierra: al contacto se le manda a una
+       espera de 20 s y, si el vendedor reentra, se retoma (marcador.procesarSala). */
+    return xml(`<Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="false" beep="false" waitUrl="" ` +
       `statusCallback="${BASE}/api/telefonia/marcador/sala?sesion=${sala}" statusCallbackMethod="POST" statusCallbackEvent="start end join leave">sesion-${sala}</Conference></Dial>`);
   }
 

@@ -18,9 +18,12 @@
 import { supabase } from '../supabase';
 import { twilioRest, NUMERO } from './twilio';
 import { callerIdSaliente } from './caller-id';
-import { juzgar, textoOido, type Oido } from './oidos';
+import { juzgar, textoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
+import { ladaDe, zonaDeLada, horaLocal } from './zonas';
+// `./cierre` arrastra googleapis, pdfkit y el SDK de IA: se carga solo cuando hace falta (los webhooks TwiML importan este módulo y deben arrancar rápido).
+const cierre = () => import('./cierre');
 
 export const BASE = 'https://www.sacscloud.com';
 const ahora = () => new Date().toISOString();
@@ -30,9 +33,11 @@ export type ItemEntrada = {
   contact_id?: string | null; company_id?: string | null; conversation_id?: string | null;
   nombre?: string | null; empresa?: string | null; telefono: string;
 };
-export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean };
+export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean; disyuntor_fallidas?: number };
 
-const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true };
+const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true, disyuntor_fallidas: 8 };
+/** Los resultados que significan que SÍ se habló con alguien. */
+export const CONVERSACION = ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos'];
 
 /* Tiempos de espera del motor, en ms. Medido en producción (E0, 11-sep):
    timbre→contesta 3.3 s cuando cae al buzón, veredicto de reglas a 2.9 s,
@@ -43,17 +48,46 @@ export const ESPERA = {
   portero: 40000,    // portero que no pasa la llamada → se cuelga
   timbre: 55000,     // marcando/timbrando sin noticias de Twilio → se pregunta y se cierra
   cierre: 8000,      // wrap-up por defecto tras hablar con una persona
+  caida: 30000,      // el vendedor se cayó en línea y no volvió → se cuelga con disculpa (la TwiML de espera lo hace a los ~20 s; esto es la red)
+  caida_remarcar: 10, // minutos para volver a marcar al que se le cortó
 };
 
-const enHorario = (h: Config['horario']) => {
+/** ¿Es hora de llamar… en la zona del contacto? (la lada decide el huso) */
+const enHorario = (h: Config['horario'], zona = 'America/Mexico_City') => {
   if (!h?.desde || !h?.hasta) return true;
-  const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  const n = new Date(new Date().toLocaleString('en-US', { timeZone: zona }));
   const dias = Array.isArray(h.dias) && h.dias.length ? h.dias : [1, 2, 3, 4, 5];
   if (!dias.includes(n.getDay())) return false;
   const min = n.getHours() * 60 + n.getMinutes();
   const [hd, md] = String(h.desde).split(':').map(Number), [hh, mh] = String(h.hasta).split(':').map(Number);
   return min >= hd * 60 + (md || 0) && min < hh * 60 + (mh || 0);
 };
+
+/** ¿Ese instante cae antes de que cierre el horario de HOY (hora del centro)? Si no, la sesión no tiene por qué seguir viva esperándolo. */
+const dentroDeHoy = (iso: string, h: Config['horario']) => {
+  const fin = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  const cuando = new Date(new Date(iso).toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  if (cuando.toDateString() !== fin.toDateString()) return false;
+  if (!h?.hasta) return true;
+  const [hh, mh] = String(h.hasta).split(':').map(Number);
+  return cuando.getHours() * 60 + cuando.getMinutes() < hh * 60 + (mh || 0);
+};
+
+/** La lista se agotó: se cierra sola (solo si sigue activa; una pausada la cierra el vendedor). */
+async function agotarSesion(sesionId: string) {
+  await supabase.from('tel_sesiones').update({ estado: 'terminada', terminada_at: ahora(), item_actual: null, updated_at: ahora() }).eq('id', sesionId).eq('estado', 'activa');
+  await recontar(sesionId);
+}
+
+/* Las reglas aprendidas (`tel_reglas` activas) se leen una vez por minuto. */
+let reglasCache: { en: number; r: ReglasExtra } | null = null;
+export async function reglasAprendidas(): Promise<ReglasExtra | null> {
+  if (reglasCache && Date.now() - reglasCache.en < 60000) return reglasCache.r;
+  const { data } = await supabase.from('tel_reglas').select('tipo, patron').eq('estado', 'activa').limit(500);
+  reglasCache = { en: Date.now(), r: compilarReglas(data || []) };
+  return reglasCache.r;
+}
+export const olvidarReglas = () => { reglasCache = null; };
 
 export const getSesion = async (id: string) => (await supabase.from('tel_sesiones').select('*').eq('id', id).maybeSingle()).data as any;
 const getItem = async (id: string) => (await supabase.from('tel_sesion_items').select('*').eq('id', id).maybeSingle()).data as any;
@@ -78,12 +112,23 @@ export async function crearSesion(ownerId: string | null, o: {
     (data || []).forEach(c => noLlamar.add(c.id));
   }
   const tels = Array.from(new Set(o.items.map(i => telefonoWhatsApp(i.telefono)).filter(Boolean))) as string[];
+  /* El tope cuenta solo los INTENTOS sin conversación (buzón, no contestó,
+     portero). Si en la semana ya se habló con él y pidió que se le vuelva a
+     llamar, el tope se reinicia; si dijo que no le interesa, se respeta esa
+     semana. Antes contaba todo y escondía justo a los que pidieron la llamada. */
   const intentosSemana = new Map<string, number>();
+  const pidioLlamada = new Set<string>();
+  const dijoNo = new Map<string, string>();
   const desde = new Date(Date.now() - 7 * 864e5).toISOString();
   for (let i = 0; i < tels.length; i += 150) {
-    const { data } = await supabase.from('wa_llamadas').select('telefono')
-      .eq('canal', 'telefono').eq('direccion', 'saliente').gte('started_at', desde).in('telefono', tels.slice(i, i + 150)).limit(2000);
-    (data || []).forEach(l => intentosSemana.set(l.telefono, (intentosSemana.get(l.telefono) || 0) + 1));
+    const { data } = await supabase.from('wa_llamadas').select('telefono, resultado, duracion_seg, started_at')
+      .eq('canal', 'telefono').eq('direccion', 'saliente').gte('started_at', desde).in('telefono', tels.slice(i, i + 150)).order('started_at').limit(2000);
+    for (const l of data || []) {
+      const hablo = CONVERSACION.includes(String(l.resultado || '')) || Number(l.duracion_seg || 0) >= 20;
+      if (l.resultado === 'volver_llamar') { pidioLlamada.add(l.telefono); intentosSemana.set(l.telefono, 0); continue; }
+      if (l.resultado === 'no_interesa') { dijoNo.set(l.telefono, String(l.started_at).slice(0, 10)); pidioLlamada.delete(l.telefono); continue; }
+      if (!hablo) intentosSemana.set(l.telefono, (intentosSemana.get(l.telefono) || 0) + 1);
+    }
   }
 
   for (const it of o.items) {
@@ -95,10 +140,11 @@ export async function crearSesion(ownerId: string | null, o: {
     else if (e164 === NUMERO) motivo = 'es el número del negocio';
     else if (vistos.has(e164)) motivo = 'repetido en la lista';
     else if (it.contact_id && noLlamar.has(it.contact_id)) motivo = 'pidió que no se le llame';
-    else if ((intentosSemana.get(e164) || 0) >= config.tope_intentos) motivo = `ya se le marcó ${intentosSemana.get(e164)} veces en 7 días`;
+    else if (dijoNo.has(e164) && !pidioLlamada.has(e164)) motivo = `dijo que no le interesa el ${dijoNo.get(e164)}`;
+    else if ((intentosSemana.get(e164) || 0) >= config.tope_intentos) motivo = `ya se le marcó ${intentosSemana.get(e164)} veces sin contestar en 7 días`;
     if (e164) vistos.add(e164);
     if (motivo) { excluidos.push({ nombre: nombre || telefonoLegible(e164 || it.telefono), telefono: e164 || it.telefono, motivo }); }
-    filas.push({ ...base, telefono: e164 || String(it.telefono || '').slice(0, 30), orden: filas.length, estado: motivo ? 'excluido' : 'pendiente', motivo_exclusion: motivo });
+    filas.push({ ...base, telefono: e164 || String(it.telefono || '').slice(0, 30), lada: ladaDe(e164), orden: filas.length, estado: motivo ? 'excluido' : 'pendiente', motivo_exclusion: motivo, prioridad: e164 && pidioLlamada.has(e164) ? 1 : 0 });
   }
   const pendientes = filas.filter(f => f.estado === 'pendiente').length;
 
@@ -169,7 +215,7 @@ export async function iniciarSesion(id: string, identity: string) {
   if (!s || !['lista', 'pausada'].includes(s.estado)) return false;
   /* Si cambió de navegador, la sala vieja ya no cuenta: `agente_en_sala` se
      vuelve a poner cuando el nuevo entre. Si es el mismo, se conserva. */
-  const cambio: any = { estado: 'activa', identity, iniciada_at: s.iniciada_at || ahora(), updated_at: ahora(), config: { ...(s.config || {}), aviso: null } };
+  const cambio: any = { estado: 'activa', identity, pausa_motivo: null, fallidas_seguidas: 0, iniciada_at: s.iniciada_at || ahora(), updated_at: ahora(), config: { ...(s.config || {}), aviso: null } };
   if (s.identity !== identity) { cambio.agente_en_sala = false; cambio.agente_call_sid = null; }
   const { data } = await supabase.from('tel_sesiones').update(cambio).eq('id', id).in('estado', ['lista', 'pausada']).select('id');
   return !!data?.length;
@@ -183,10 +229,10 @@ export async function agenteEntra(id: string, callSid: string, identity: string)
   return true;
 }
 
-export async function pausarSesion(id: string, motivo?: string) {
+export async function pausarSesion(id: string, motivo?: string, tipo: 'manual' | 'sala' | 'horario' | 'caida' | 'disyuntor' = 'manual') {
   const s = await getSesion(id);
   if (!s || s.estado !== 'activa') return;
-  await supabase.from('tel_sesiones').update({ estado: 'pausada', updated_at: ahora(), config: { ...(s.config || {}), aviso: motivo || null } }).eq('id', id);
+  await supabase.from('tel_sesiones').update({ estado: 'pausada', pausa_motivo: tipo, updated_at: ahora(), config: { ...(s.config || {}), aviso: motivo || null } }).eq('id', id);
   // Lo que esté timbrando se cancela; lo que esté en línea se respeta.
   if (s.item_actual) {
     const it = await getItem(s.item_actual);
@@ -210,10 +256,11 @@ async function colgarItem(it: any, resultado?: string) {
 
 /** Recalcula los contadores de la sesión a partir de sus items. */
 export async function recontar(id: string) {
-  const { data } = await supabase.from('tel_sesion_items').select('estado, resultado, duracion_seg').eq('sesion_id', id).limit(2000);
+  const { data } = await supabase.from('tel_sesion_items').select('estado, resultado, duracion_seg, costo_usd').eq('sesion_id', id).limit(2000);
   const its = data || [];
   const n = (f: (i: any) => boolean) => its.filter(f).length;
   await supabase.from('tel_sesiones').update({
+    costo_usd: Math.round(its.reduce((a, i) => a + Number(i.costo_usd || 0), 0) * 10000) / 10000,
     total: n(i => i.estado !== 'excluido'),
     contestadas: n(i => ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos'].includes(i.resultado)),
     buzon: n(i => i.resultado === 'buzon'),
@@ -235,18 +282,35 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     if (s.estado !== 'activa') return { ok: false, motivo: `la sesión está ${s.estado}` };
     if (!s.agente_en_sala) return { ok: false, motivo: 'el vendedor no está en la sala' };
     if (s.item_actual) return { ok: false, motivo: 'ya hay una llamada en curso' };
-    if (!enHorario(s.config?.horario)) { await pausarSesion(sesionId, 'Fuera del horario de llamadas'); return { ok: false, motivo: 'fuera de horario' }; }
 
-    const { data: it } = await supabase.from('tel_sesion_items').select('*').eq('sesion_id', sesionId).eq('estado', 'pendiente')
-      .lt('intentos', Number(s.config?.tope_intentos || 3)).order('orden').limit(1).maybeSingle();
+    /* A quién le toca: primero los compromisos cuya hora ya llegó (`volver_at`),
+       luego los prioritarios, luego el orden de la lista. Los compromisos
+       futuros esperan su hora y nadie se marca fuera de SU horario (la lada
+       dice en qué huso vive). */
+    const tope = Number(s.config?.tope_intentos || 3);
+    const { data: cand } = await supabase.from('tel_sesion_items').select('*').eq('sesion_id', sesionId).eq('estado', 'pendiente')
+      .lt('intentos', tope).or(`volver_at.is.null,volver_at.lte.${ahora()}`)
+      .order('volver_at', { ascending: true, nullsFirst: false }).order('prioridad', { ascending: false }).order('orden').limit(60);
+    const it = (cand || []).find(c => enHorario(s.config?.horario, zonaDeLada(c.lada || ladaDe(c.telefono))));
     if (!it) {
-      await supabase.from('tel_sesiones').update({ estado: 'terminada', terminada_at: ahora(), updated_at: ahora() }).eq('id', sesionId).eq('estado', 'activa');
-      await recontar(sesionId);
-      return { ok: false, motivo: 'se acabó la lista' };
+      // Nadie marcable ahora. ¿Queda alguien? Se mira TODO lo pendiente (no la muestra de 60): sus zonas y sus horas.
+      const { data: pend } = await supabase.from('tel_sesion_items').select('lada, telefono, volver_at').eq('sesion_id', sesionId).eq('estado', 'pendiente').lt('intentos', tope).limit(2000);
+      const listos = (pend || []).filter(c => !c.volver_at || c.volver_at <= ahora());
+      const futuros = (pend || []).filter(c => c.volver_at && c.volver_at > ahora());
+      if (!listos.length && !futuros.length) {
+        await agotarSesion(sesionId);
+        return { ok: false, motivo: 'se acabó la lista' };
+      }
+      if (listos.length) { await pausarSesion(sesionId, 'Fuera del horario de llamadas en la zona de los que faltan. Se reanuda sola cuando sea hora.', 'horario'); return { ok: false, motivo: 'fuera de horario' }; }
+      // Solo compromisos con hora. Si el más próximo cae después del horario de hoy, la sesión termina:
+      // el compromiso ya vive en la agenda y en Mi día; una sesión nueva lo retoma ese día.
+      const proximo = futuros.map(c => String(c.volver_at)).sort()[0];
+      if (!dentroDeHoy(proximo, s.config?.horario)) { await agotarSesion(sesionId); return { ok: false, motivo: 'la lista terminó; el compromiso queda en la agenda' }; }
+      return { ok: false, motivo: 'esperando un compromiso con hora' };
     }
 
     // Reclamar el item y el turno de la sesión: si alguien más ganó, no pasa nada.
-    const { data: gane } = await supabase.from('tel_sesion_items').update({ estado: 'marcando', marcado_at: ahora(), intentos: it.intentos + 1, call_sid: null, veredicto: null, veredicto_fuente: null, oido: [], updated_at: ahora() })
+    const { data: gane } = await supabase.from('tel_sesion_items').update({ estado: 'marcando', marcado_at: ahora(), intentos: it.intentos + 1, call_sid: null, veredicto: null, veredicto_fuente: null, oido: [], agente_salio_at: null, volver_at: null, updated_at: ahora() })
       .eq('id', it.id).eq('estado', 'pendiente').select('id');
     if (!gane?.length) continue;
     const { data: turno } = await supabase.from('tel_sesiones').update({ item_actual: it.id, updated_at: ahora() }).eq('id', sesionId).is('item_actual', null).select('id');
@@ -277,6 +341,7 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
       // Twilio no quiso (número mal formado, país bloqueado…): se anota y se sigue.
       await supabase.from('tel_sesion_items').update({ estado: 'hecho', resultado: 'invalido', nota: `Twilio: ${String(e?.message || e).slice(0, 160)}`, terminado_at: ahora(), updated_at: ahora() }).eq('id', it.id);
       await supabase.from('tel_sesiones').update({ item_actual: null, updated_at: ahora() }).eq('id', sesionId).eq('item_actual', it.id);
+      if (await disyuntor(sesionId, true)) return { ok: false, motivo: 'disyuntor' };
     }
   }
   return { ok: false, motivo: 'demasiados intentos fallidos seguidos' };
@@ -308,6 +373,10 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
   const previo = String(it.estado);
   let resultado = it.resultado as string | null;
   let estado = 'hecho';
+  /* Se cayó el vendedor y no volvió: la TwiML de espera ya se disculpó y
+     colgó. No es «contestó»: es «volver a llamar» en 10 minutos, con prioridad. */
+  const caida = previo === 'en_linea' && !!it.agente_salio_at;
+  if (caida) { resultado = 'volver_llamar'; }
   if (previo === 'en_linea') { estado = 'cierre'; resultado = resultado || 'contesto'; }
   else if (['escuchando', 'portero'].includes(previo)) {
     resultado = resultado || (it.veredicto === 'buzon' ? 'buzon' : it.veredicto === 'portero' || previo === 'portero' ? 'portero' : 'no_contesto');
@@ -331,6 +400,18 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     registrarBitacoraLlamada(sid).catch(() => {});
   }
 
+  if (caida) {
+    await reprogramar(it, ESPERA.caida_remarcar, 'se cortó la conexión del vendedor');
+    await supabase.from('tel_sesion_items').update({ estado: 'hecho', nota: [it.nota, `Se cortó la conexión del vendedor a los ${dur} s; se vuelve a marcar en ${ESPERA.caida_remarcar} min.`].filter(Boolean).join('\n'), updated_at: ahora() }).eq('id', itemId).eq('estado', 'cierre');
+    estado = 'hecho';
+    const s = await getSesion(it.sesion_id);
+    if (s && !s.agente_en_sala) await pausarSesion(it.sesion_id, `Se cortó tu conexión. ${it.nombre || 'El contacto'} quedó para volver a llamar en ${ESPERA.caida_remarcar} min.`, 'caida');
+  }
+  /* Disyuntor: una racha de llamadas que ni timbran es un problema de la
+     cuenta (caller ID, permisos, saldo), no de los contactos. Se para antes
+     de quemar la lista. Una llamada que sí timbró reinicia la racha. */
+  if (estado === 'hecho') await disyuntor(it.sesion_id, resultado === 'invalido');
+
   if (estado === 'hecho') {
     await supabase.from('tel_sesiones').update({ item_actual: null, updated_at: fin }).eq('id', it.sesion_id).eq('item_actual', itemId);
     await recontar(it.sesion_id);
@@ -353,7 +434,7 @@ export async function procesarAmd(itemId: string, p: Record<string, string>) {
   }
   if (!['escuchando'].includes(it.estado) || it.veredicto) return;
   const oido: Oido[] = Array.isArray(it.oido) ? it.oido : [];
-  const reglas = juzgar(oido, ms(it.contestado_at), ab);
+  const reglas = juzgar(oido, ms(it.contestado_at), ab, await reglasAprendidas());
   if (reglas) return alVeredicto(it, reglas.veredicto, 'reglas', reglas.motivo);
   /* Sin reglas que digan nada: el AMD decide solo en los dos extremos claros.
      «machine_end_*» = ya terminó el saludo de la grabadora y viene el tono.
@@ -370,15 +451,20 @@ export async function procesarTranscripcion(itemId: string, p: Record<string, st
   const it = await getItem(itemId);
   if (!it) return;
   const final = String(p.Final) === 'true';
+  // Se transcriben las dos pistas: la del contacto decide el veredicto; la del
+  // vendedor solo sirve para el cierre con IA (qué se prometió, qué se acordó).
+  const quien: Oido['quien'] = /outbound/.test(String(p.Track || '')) ? 'vendedor' : 'contacto';
   const oido: Oido[] = Array.isArray(it.oido) ? it.oido.slice() : [];
-  // Un parcial reemplaza al parcial anterior; un final se queda.
-  if (oido.length && !oido[oido.length - 1].final) oido.pop();
-  oido.push({ t: ms(it.contestado_at), texto: texto.trim().slice(0, 300), final });
-  while (oido.length > 40) oido.shift();
+  // Un parcial reemplaza al parcial anterior de la MISMA pista; un final se queda.
+  const ultimo = oido.length ? oido[oido.length - 1] : null;
+  if (ultimo && !ultimo.final && (ultimo.quien || 'contacto') === quien) oido.pop();
+  oido.push({ t: ms(it.contestado_at), texto: texto.trim().slice(0, 300), final, quien });
+  // Tope: se tiran primero los parciales (los finales son lo que lee el cierre con IA).
+  if (oido.length > 300) { const fin = oido.filter(o => o.final), par = oido.filter(o => !o.final); oido.splice(0, oido.length, ...[...fin.slice(-260), ...par.slice(-40)].sort((a, b) => a.t - b.t)); }
   await supabase.from('tel_sesion_items').update({ oido, updated_at: ahora() }).eq('id', itemId);
 
-  if (!['escuchando', 'portero'].includes(it.estado)) return;
-  const reglas = juzgar(oido, ms(it.contestado_at), it.answered_by);
+  if (!['escuchando', 'portero'].includes(it.estado) || quien === 'vendedor') return;
+  const reglas = juzgar(oido, ms(it.contestado_at), it.answered_by, await reglasAprendidas());
   if (!reglas) return;
   if (it.estado === 'portero' && reglas.veredicto !== 'persona') return;   // ya sabemos que es portero; esperamos a la persona
   if (it.estado === 'escuchando' && it.veredicto) return;
@@ -453,18 +539,88 @@ export async function procesarSala(sesionId: string, p: Record<string, string>) 
   if (!s) return;
   const ev = String(p.StatusCallbackEvent || '');
   const t = ahora();
-  if (p.ConferenceSid && s.sala_sid !== p.ConferenceSid) await supabase.from('tel_sesiones').update({ sala_sid: p.ConferenceSid, updated_at: t }).eq('id', sesionId);
+  /* Cada reentrada del vendedor abre una sala nueva; los eventos rezagados de la
+     anterior (su `conference-end` llega después) no deben pausar la sesión que
+     acaba de reengancharse. El SID se aprende al empezar la sala, no en cualquier evento. */
+  if (p.ConferenceSid && s.sala_sid && p.ConferenceSid !== s.sala_sid && !['conference-start', 'participant-join'].includes(ev)) return;
+  if (p.ConferenceSid && s.sala_sid !== p.ConferenceSid && ['conference-start', 'participant-join'].includes(ev)) await supabase.from('tel_sesiones').update({ sala_sid: p.ConferenceSid, updated_at: t }).eq('id', sesionId);
 
   const esAgente = !!p.CallSid && p.CallSid === s.agente_call_sid;
+  const it = s.item_actual ? await getItem(s.item_actual) : null;
+  const caido = it && it.estado === 'en_linea' && !!it.agente_salio_at;
+
   if (ev === 'participant-join' && esAgente) {
     await supabase.from('tel_sesiones').update({ agente_en_sala: true, updated_at: t }).eq('id', sesionId);
+    if (caido && it.call_sid) {
+      // Volvió a tiempo: el contacto regresa a la sala y se sigue hablando.
+      // Primero el redirect; la caída se limpia solo si Twilio lo aceptó (si ya colgó, el `completed` debe verla como caída y reprogramar).
+      try {
+        await twilioRest(`/Calls/${it.call_sid}.json`, { Url: `${BASE}/api/telefonia/marcador/twiml?item=${it.id}&reenganche=1`, Method: 'POST' });
+        await supabase.from('tel_sesion_items').update({ agente_salio_at: null, updated_at: t }).eq('id', it.id);
+      } catch { /* ya colgó: el completed lo cierra */ }
+      return;
+    }
     if (s.estado === 'activa' && !s.item_actual) await marcarSiguiente(sesionId);
   }
   if ((ev === 'participant-leave' && esAgente) || ev === 'conference-end') {
-    // El vendedor se fue de la sala: la sesión se pausa y lo que timbraba se corta.
     await supabase.from('tel_sesiones').update({ agente_en_sala: false, agente_call_sid: null, updated_at: t }).eq('id', sesionId);
-    if (s.estado === 'activa') await pausarSesion(sesionId, 'Saliste de la sala');
+    if (ev === 'participant-leave' && it && it.estado === 'en_linea' && it.call_sid && !it.agente_salio_at) {
+      /* El vendedor se cayó EN LÍNEA: al contacto no se le cuelga. Se le
+         saca a una espera («un segundo, no cuelgue») que aguanta ~20 s; si
+         el vendedor reentra, regresa a la sala; si no, la espera se disculpa
+         y cuelga, y el item se reprograma. La sesión NO se pausa aquí para
+         que la vuelta sea limpia. */
+      await supabase.from('tel_sesion_items').update({ agente_salio_at: t, updated_at: t }).eq('id', it.id);
+      try { await twilioRest(`/Calls/${it.call_sid}.json`, { Url: `${BASE}/api/telefonia/marcador/espera?item=${it.id}`, Method: 'POST' }); }
+      catch { await colgarItem(it); }
+      return;
+    }
+    if (caido) return;   // la sala se vació porque el contacto está en espera: la caída ya se está manejando
+    if (s.estado === 'activa') await pausarSesion(sesionId, 'Saliste de la sala', 'sala');
   }
+}
+
+/** El mismo contacto, otra vez en la lista, para una hora concreta. */
+export async function reprogramar(it: any, minutos: number, motivo: string, cuando?: Date) {
+  const volver = (cuando || new Date(Date.now() + minutos * 60000)).toISOString();
+  const { data: ya } = await supabase.from('tel_sesion_items').select('id').eq('sesion_id', it.sesion_id).eq('telefono', it.telefono).eq('estado', 'pendiente').limit(1).maybeSingle();
+  if (ya) { await supabase.from('tel_sesion_items').update({ volver_at: volver, prioridad: 1, updated_at: ahora() }).eq('id', ya.id); return ya.id; }
+  const { data } = await supabase.from('tel_sesion_items').insert({
+    sesion_id: it.sesion_id, contact_id: it.contact_id, company_id: it.company_id, conversation_id: it.conversation_id,
+    nombre: it.nombre, empresa: it.empresa, telefono: it.telefono, lada: it.lada || ladaDe(it.telefono), orden: it.orden,
+    estado: 'pendiente', intentos: 0, volver_at: volver, prioridad: 1, resumen: it.resumen, apertura: it.apertura,
+    nota: `Volver a llamar: ${motivo}`,
+  }).select('id').single();
+  return data?.id || null;
+}
+
+/** La racha de fallidas de la sesión. Devuelve true si se disparó y pausó. */
+async function disyuntor(sesionId: string, fallo: boolean) {
+  const s = await getSesion(sesionId);
+  if (!s) return false;
+  const racha = fallo ? Number(s.fallidas_seguidas || 0) + 1 : 0;
+  if (racha === Number(s.fallidas_seguidas || 0)) return false;
+  await supabase.from('tel_sesiones').update({ fallidas_seguidas: racha, updated_at: ahora() }).eq('id', sesionId);
+  const tope = Number(s.config?.disyuntor_fallidas || CONFIG_BASE.disyuntor_fallidas);
+  if (racha >= tope && s.estado === 'activa') {
+    await pausarSesion(sesionId, `${racha} llamadas fallidas seguidas: revisa el caller ID, el saldo o los permisos de Twilio antes de seguir.`, 'disyuntor');
+    return true;
+  }
+  return false;
+}
+
+/** El vendedor corrigió al detector: se apunta y se propone una regla nueva. */
+export async function corregir(it: any, correccion: 'era_persona' | 'era_maquina') {
+  if (!it || it.correccion === correccion) return;
+  await supabase.from('tel_sesion_items').update({ correccion, updated_at: ahora() }).eq('id', it.id);
+  const oido: Oido[] = Array.isArray(it.oido) ? it.oido : [];
+  const dicho = textoOido(oido) || oido.filter(o => o.quien !== 'vendedor').map(o => o.texto).join(' ');
+  const patron = fraseClave(dicho);
+  if (!patron || patron.split(' ').length < 2) return;
+  const tipo = correccion === 'era_persona' ? 'persona' : 'buzon';
+  const { data: ya } = await supabase.from('tel_reglas').select('id, veces').eq('tipo', tipo).eq('patron', patron).limit(1).maybeSingle();
+  if (ya) { await supabase.from('tel_reglas').update({ veces: Number(ya.veces || 0) + 1, updated_at: ahora() }).eq('id', ya.id); return; }
+  await supabase.from('tel_reglas').insert({ tipo, patron, origen: 'correccion', estado: 'propuesta', ejemplo: dicho.slice(0, 300), item_id: it.id, veces: 1 });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -472,13 +628,27 @@ export async function procesarSala(sesionId: string, p: Record<string, string>) 
 //     huecos en los que Twilio no avisa (silencios, porteros que no pasan).
 // ─────────────────────────────────────────────────────────────────────────────
 export async function latir(sesionId: string) {
-  const s = await getSesion(sesionId);
+  let s = await getSesion(sesionId);
   if (!s) return null;
   let it = s.item_actual ? await getItem(s.item_actual) : null;
 
+  /* Se pausó por horario: en cuanto sea hora en la zona de alguno de los que
+     faltan, se reanuda sola (y si el vendedor sigue en la sala, marca). */
+  if (s.estado === 'pausada' && s.pausa_motivo === 'horario') {
+    const tope = Number(s.config?.tope_intentos || 3);
+    const { data: pend } = await supabase.from('tel_sesion_items').select('lada, telefono').eq('sesion_id', sesionId).eq('estado', 'pendiente').lt('intentos', tope).or(`volver_at.is.null,volver_at.lte.${ahora()}`).limit(2000);
+    const zonas = new Set((pend || []).map(c => zonaDeLada(c.lada || ladaDe(c.telefono))));
+    if (Array.from(zonas).some(z => enHorario(s.config?.horario, z))) {
+      await supabase.from('tel_sesiones').update({ estado: 'activa', pausa_motivo: null, updated_at: ahora(), config: { ...(s.config || {}), aviso: s.agente_en_sala ? null : 'Ya es hora de llamar: entra a la sala para seguir.' } }).eq('id', sesionId).eq('estado', 'pausada');
+      s = await getSesion(sesionId);
+    }
+  }
+
   if (it && s.estado === 'activa') {
     const cfg = { ...CONFIG_BASE, ...(s.config || {}) };
-    if (it.estado === 'escuchando' && !it.veredicto && ms(it.contestado_at) > ESPERA.juicio) {
+    if (it.estado === 'en_linea' && it.agente_salio_at && !s.agente_en_sala && ms(it.agente_salio_at) > ESPERA.caida) {
+      await colgarItem(it);   // la TwiML de espera debió colgar sola; esto es la red por si Twilio no la corrió
+    } else if (it.estado === 'escuchando' && !it.veredicto && ms(it.contestado_at) > ESPERA.juicio) {
       const maquina = /^machine_/.test(String(it.answered_by || ''));
       await alVeredicto(it, maquina ? 'buzon' : 'duda', 'tiempo', maquina ? 'nadie dijo nada claro y el detector dice máquina' : 'contestaron y no se entendió quién');
       it = await getItem(it.id);
@@ -489,13 +659,41 @@ export async function latir(sesionId: string) {
       await colgarItem(it, 'portero');
     } else if (['marcando', 'timbrando'].includes(it.estado) && ms(it.marcado_at) > ESPERA.timbre) {
       await cerrarPorTiempo(it);
-    } else if (it.estado === 'cierre' && cfg.auto_continuar && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000) {
+    } else if (it.estado === 'cierre' && !it.cierre_estado) {
+      // Colgó con una persona: la IA propone el cierre (candado dentro; solo un latido lo hace; la IA tiene tope de 18 s).
+      await (await cierre()).proponerCierre(it.id);
+    } else if (it.estado === 'cierre' && cfg.auto_continuar && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000 && (await cierre()).cierreListo(it)) {
       await siguiente(sesionId);
     }
   } else if (!it && s.estado === 'activa' && s.agente_en_sala) {
     await marcarSiguiente(sesionId);
   }
+  cobrarLlamadas(sesionId).catch(() => {});
+  cierre().then(c => c.rescatarCierres()).catch(() => {});   // cierres que se quedaron a medias (acotado y con freno de 30 s)
   return estadoSesion(sesionId);
+}
+
+/* Lo que costó cada llamada, según Twilio. El precio aparece un rato después
+   del `completed`, así que se pregunta desde el latido, de a pocas. Es el
+   precio de la LLAMADA: transcripción y AMD se cobran aparte. */
+let cobrando = new Set<string>();
+async function cobrarLlamadas(sesionId: string) {
+  if (cobrando.has(sesionId)) return;
+  cobrando.add(sesionId);
+  try {
+    const { data } = await supabase.from('tel_sesion_items').select('id, call_sid, terminado_at').eq('sesion_id', sesionId)
+      .in('estado', ['hecho', 'saltado']).is('costo_usd', null).not('call_sid', 'is', null).lt('terminado_at', new Date(Date.now() - 45000).toISOString()).order('terminado_at').limit(3);
+    for (const it of data || []) {
+      let costo: number | null = null;
+      try {
+        const c = await twilioRest(`/Calls/${it.call_sid}.json`);
+        if (c?.price != null) costo = Math.abs(Number(c.price));
+        else if (['completed', 'busy', 'no-answer', 'canceled', 'failed'].includes(String(c?.status)) && ms(it.terminado_at) > 15 * 60000) costo = 0;
+      } catch { /* se intenta en el siguiente latido */ }
+      if (costo !== null) await supabase.from('tel_sesion_items').update({ costo_usd: costo }).eq('id', it.id);
+    }
+    if (data?.length) await recontar(sesionId);
+  } finally { cobrando.delete(sesionId); }
 }
 
 /** Twilio nunca avisó: se le pregunta y se cierra el item con lo que diga. */
@@ -513,17 +711,37 @@ export async function siguiente(sesionId: string) {
   if (s.item_actual) {
     const it = await getItem(s.item_actual);
     if (it && !['cierre', 'hecho', 'saltado'].includes(it.estado)) return { ok: false, motivo: 'todavía hay una llamada en curso' };
-    if (it?.estado === 'cierre') await supabase.from('tel_sesion_items').update({ estado: 'hecho', updated_at: ahora() }).eq('id', it.id).eq('estado', 'cierre');
+    if (it?.estado === 'cierre') {
+      await cerrarConIA(it);
+      await supabase.from('tel_sesion_items').update({ estado: 'hecho', updated_at: ahora() }).eq('id', it.id).eq('estado', 'cierre');
+    }
     await supabase.from('tel_sesiones').update({ item_actual: null, updated_at: ahora() }).eq('id', sesionId).eq('item_actual', s.item_actual);
   }
   return marcarSiguiente(sesionId);
+}
+
+/* Antes de soltar un item en cierre, la IA aplica lo propuesto. Si el vendedor
+   fue más rápido que la IA, se espera a la propuesta (tope ~15 s) para no
+   perder los compromisos y los datos; lo que quedó sin responder se vuelve tarea. */
+async function cerrarConIA(it: any) {
+  const { proponerCierre, aplicarCierre } = await cierre();
+  if (!it.cierre_estado) await proponerCierre(it.id);
+  let est = (await getItem(it.id))?.cierre_estado;
+  // Si lleva más de 25 s «proponiendo», la IA ya no va a contestar en este request: no se espera (el rescate del latido lo retoma).
+  const colgado = () => ms(it.terminado_at) > 25000;
+  for (let i = 0; i < 8 && est === 'proponiendo' && !colgado(); i++) { await new Promise(r => setTimeout(r, 1000)); est = (await getItem(it.id))?.cierre_estado; }
+  if (est === 'propuesto') await aplicarCierre(it.id, { userId: null });
 }
 
 export async function saltar(sesionId: string) {
   const s = await getSesion(sesionId);
   if (!s?.item_actual) return marcarSiguiente(sesionId);
   const it = await getItem(s.item_actual);
-  if (it && ['marcando', 'timbrando', 'escuchando', 'portero', 'en_linea'].includes(it.estado)) { await colgarItem(it, it.estado === 'en_linea' ? undefined : 'saltado'); return { ok: true, motivo: 'colgando' }; }
+  if (it && ['marcando', 'timbrando', 'escuchando', 'portero', 'en_linea'].includes(it.estado)) {
+    // Saltar a los pocos segundos de «en línea» sin que el vendedor hablara es «era máquina»: se aprende.
+    if (it.estado === 'en_linea' && ['reglas', 'amd', 'tiempo'].includes(String(it.veredicto_fuente)) && ms(it.en_linea_at) < 20000) await corregir(it, 'era_maquina');
+    await colgarItem(it, it.estado === 'en_linea' ? undefined : 'saltado'); return { ok: true, motivo: 'colgando' };
+  }
   return siguiente(sesionId);
 }
 
@@ -533,7 +751,10 @@ export async function tomar(sesionId: string) {
   if (!s?.item_actual) return false;
   const it = await getItem(s.item_actual);
   if (!it || !['escuchando', 'portero'].includes(it.estado)) return false;
-  return alVeredicto(it, 'persona', 'agente', 'el vendedor tomó la llamada');
+  const ok = await alVeredicto(it, 'persona', 'agente', 'el vendedor tomó la llamada');
+  // Si ya había texto y las reglas no lo vieron como persona, es una frase que hay que aprender.
+  if (ok && textoOido(Array.isArray(it.oido) ? it.oido : [])) corregir({ ...it, veredicto: 'persona' }, 'era_persona').catch(() => {});
+  return ok;
 }
 
 export async function estadoSesion(sesionId: string) {
@@ -541,17 +762,20 @@ export async function estadoSesion(sesionId: string) {
   if (!s) return null;
   const it = s.item_actual ? await getItem(s.item_actual) : null;
   const { count: pendientes } = await supabase.from('tel_sesion_items').select('id', { count: 'exact', head: true }).eq('sesion_id', sesionId).eq('estado', 'pendiente');
+  const { data: prox } = await supabase.from('tel_sesion_items').select('nombre, telefono, volver_at').eq('sesion_id', sesionId).eq('estado', 'pendiente').gt('volver_at', ahora()).order('volver_at').limit(1).maybeSingle();
+  const zona = it ? zonaDeLada(it.lada || ladaDe(it.telefono)) : null;
   return {
     sesion: s,
-    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0 } : null,
+    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
     pendientes: pendientes || 0,
+    proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),
   };
 }
 
 export async function listarItems(sesionId: string) {
   const { data } = await supabase.from('tel_sesion_items')
-    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid')
+    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid, volver_at, prioridad, costo_usd, cierre_estado, correccion')
     .eq('sesion_id', sesionId).order('orden').limit(2000);
   return data || [];
 }

@@ -77,6 +77,8 @@ function avisar() {
 
 const guardarLocal = (k: string, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* privado */ } };
 const leerLocal = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const guardarSesion = (k: string, v: string) => { try { v ? sessionStorage.setItem(k, v) : sessionStorage.removeItem(k); } catch { /* privado */ } };
+const leerSesion = (k: string, d: string): string => { try { return sessionStorage.getItem(k) ?? d; } catch { return d; } };
 
 export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion, onCerrar, movil }: Props) {
   const [sesionId, setSesionId] = useState<string | null>(() => leerLocal('cabina.sesion', null));
@@ -115,28 +117,35 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
   }, []);
   useEffect(() => { cargarPrevias(); }, [cargarPrevias]);
 
+  // Cada respuesta lleva su número: una respuesta vieja que llega tarde no pisa a una más nueva (el pulso va a 400 ms).
+  const seqEst = useRef(0), seqItems = useRef(0);
   const latir = useCallback(async () => {
     if (!sesionId) return;
+    const n = ++seqEst.current;
     const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
-    if (!j) return;
+    if (!j || n !== seqEst.current) return;
     if (j.error) { setSesionId(null); setEst(null); return; }
     setEst(j);
   }, [sesionId]);
   const cargarItems = useCallback(async () => {
     if (!sesionId) return;
+    const n = ++seqItems.current;
     const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}&items=1`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
-    if (j?.items) setItems(j.items);
+    if (j?.items && n === seqItems.current) setItems(j.items);
   }, [sesionId]);
 
-  // El pulso: cada segundo mientras la sesión vive, cada 6 s si está parada.
+  // El pulso: cada 400 ms mientras la central decide quién contestó (ahí cada
+  // décima cuenta para el «Hola»), cada segundo el resto de la sesión viva,
+  // cada 6 s si está parada.
+  const decidiendo = ['marcando', 'timbrando', 'escuchando', 'portero'].includes(String(est?.actual?.estado || ''));
   useEffect(() => {
     if (!sesionId) return;
     let vivo = true;
     latir(); cargarItems();
-    const t = setInterval(() => { if (vivo && document.visibilityState === 'visible') latir(); }, fase === 'viva' ? 1000 : 6000);
+    const t = setInterval(() => { if (vivo && document.visibilityState === 'visible') latir(); }, fase === 'viva' ? (decidiendo ? 400 : 1000) : 6000);
     const t2 = setInterval(() => { if (vivo && document.visibilityState === 'visible') cargarItems(); }, fase === 'viva' ? 5000 : 15000);
     return () => { vivo = false; clearInterval(t); clearInterval(t2); };
-  }, [sesionId, fase, latir, cargarItems]);
+  }, [sesionId, fase, decidiendo, latir, cargarItems]);
 
   // Lo que dice el teléfono (Telefonia.tsx): si estoy en la sala y con el mic abierto.
   useEffect(() => {
@@ -169,6 +178,51 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
       setMicAbierto(false);
     }
   }, [actual?.id, actual?.estado]);
+
+  // BARRA ESPACIADORA = «Hablar yo». Mientras la central decide, el vendedor
+  // ya oye la llamada: si reconoce una persona antes que el detector, un
+  // toque abre su micrófono en ese instante (sin esperar al servidor) y le
+  // avisa a la central. Fuera de cualquier campo de texto, para no robar espacios.
+  const actualRef = useRef<any>(null);
+  useEffect(() => { actualRef.current = actual; }, [actual]);
+  useEffect(() => {
+    if (fase !== 'viva') return;
+    const h = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' && e.key !== ' ') return;
+      if (e.repeat) return;                                    // tecla sostenida: un solo «tomar»
+      const el = e.target as HTMLElement | null;
+      if (el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || el.closest('button, a, [role="button"]'))) return;   // en un botón el espacio es «clic»
+      const it = actualRef.current;
+      if (!it || !['escuchando', 'portero', 'timbrando'].includes(it.estado)) return;
+      e.preventDefault();
+      if (it.estado === 'timbrando') return;   // todavía no contestan: nada que tomar
+      document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: false } }));
+      setMicAbierto(true);
+      post({ accion: 'tomar', id: sesionId }).then(r => {
+        if (r?.ok) { abiertoPara.current = it.id; }           // ya está abierto para este item: el efecto de en_linea no lo vuelve a abrir
+        else { document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: true } })); setMicAbierto(false); }
+        latir();
+      });
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [fase, sesionId, latir]);
+
+  // SALA QUE NO SE CAE: si la sesión está activa y el teléfono se salió de la
+  // sala (se cayó la red, se durmió la pestaña), se vuelve a entrar solo, con
+  // pausas crecientes. Si tras varios intentos no entra, queda el botón.
+  const [reintentos, setReintentos] = useState(0);
+  useEffect(() => { if (enSala) setReintentos(0); }, [enSala]);
+  useEffect(() => {
+    if (fase !== 'viva' || enSala || sesion?.estado !== 'activa' || !sesionId) return;
+    if (reintentos >= 4) return;
+    const espera = [3000, 5000, 9000, 15000][reintentos] || 15000;   // 3 s: si saliste tú, el servidor alcanza a pausar antes
+    const t = setTimeout(() => {
+      setReintentos(n => n + 1);   // en estado, no en ref: así el siguiente intento se programa aunque nada más cambie
+      document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId, silencioso: true } }));
+    }, espera);
+    return () => clearTimeout(t);
+  }, [fase, enSala, sesion?.estado, sesionId, reintentos]);
 
   // El apunte sigue al item: cambia de item, se guarda lo escrito y se limpia.
   useEffect(() => {
@@ -233,7 +287,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
     const r = await accion(sesion?.estado === 'pausada' ? 'reanudar' : 'iniciar');
     if (r) document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } }));
   };
-  const entrarSala = () => { setError(''); document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } })); };
+  const entrarSala = () => { setError(''); setReintentos(0); document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } })); };
   const terminar = async () => {
     await accion('terminar');
     document.dispatchEvent(new CustomEvent('tel-colgar-sala'));
@@ -243,8 +297,10 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
     await accion('resultado', { item: actual.id, resultado, no_llamar: resultado === 'no_interesa' && noLlamar });
   };
   const guardarNota = async () => {
+    // Sin `ocupado`: se dispara al salir del textarea y no debe desactivar el botón que el vendedor va a picar.
     if (!actual || !nota.trim()) return;
-    await accion('nota', { item: actual.id, nota: nota.trim() });
+    const r = await post({ accion: 'nota', id: sesionId, item: actual.id, nota: nota.trim() });
+    if (r?.error) setError(r.error);
   };
   const relanzar = async (id: string) => {
     setError(''); setOcupado('relanzar');
@@ -262,6 +318,41 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
   const excluidos = useMemo(() => items.filter(i => i.estado === 'excluido'), [items]);
   const segCierre = actual?.estado === 'cierre' && actual.terminado_at && est?.ahora
     ? Math.max(0, Number(sesion?.config?.wrapup_seg ?? 8) - Math.round((new Date(est.ahora).getTime() - new Date(actual.terminado_at).getTime()) / 1000)) : null;
+  const propuesta = actual?.estado === 'cierre' ? actual?.cierre_ia?.propuesta : null;
+  const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
+  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  const responderEnvio = async (envioId: string) => {
+    const texto = (respuestas[envioId] || '').trim();
+    if (texto.length < 10) { setError('Escribe al menos una línea de lo que se le manda.'); return; }
+    const r = await accion('cierre_respuesta', { envio: envioId, texto });
+    if (r && !r.ok) setError(r.motivo || 'No se pudo mandar');
+  };
+  const confirmarYSeguir = async () => {
+    if (!actual) return;
+    // Primero el cierre con lo que el vendedor ajustó (chip y apunte), luego el siguiente. Si el cierre falla, no se avanza a ciegas.
+    if (propuesta) { const r = await accion('cierre', { item: actual.id, nota: nota.trim() || undefined }); if (!r) return; }
+    await accion('siguiente');
+  };
+  // Lo que se está escribiendo para un envío sobrevive al recargar (por id de envío) y le avisa a la central que espere.
+  useEffect(() => {
+    if (!enviosAbiertos.length) return;
+    setRespuestas(r => {
+      const n = { ...r };
+      for (const e of enviosAbiertos) if (!n[e.id]) { const v = leerSesion(`cabina.envio.${e.id}`, ''); if (v) n[e.id] = v; }
+      return n;
+    });
+  }, [enviosAbiertos.map((e: any) => e.id).join(',')]);
+  useEffect(() => { for (const [id, v] of Object.entries(respuestas)) guardarSesion(`cabina.envio.${id}`, v); }, [respuestas]);
+  const escribiendo = enviosAbiertos.some((e: any) => (respuestas[e.id] || '').trim().length > 0);
+  useEffect(() => {
+    if (!escribiendo || !actual?.id || actual.estado !== 'cierre') return;
+    const tick = () => post({ accion: 'cierre_escribiendo', id: sesionId, item: actual.id });
+    tick();
+    const t = setInterval(tick, 20000);
+    return () => clearInterval(t);
+  }, [escribiendo, actual?.id, actual?.estado, sesionId]);
+  const conversaciones = Number(sesion?.contestadas || 0);
+  const costoSesion = Number(sesion?.costo_usd || 0);
 
   const cab = (
     <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', borderBottom: `1px solid ${C.g200}`, flexShrink: 0, background: '#fff' }}>
@@ -376,7 +467,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
       </div>
       {i.estado === 'hecho' || i.estado === 'saltado'
         ? <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...tono(i.resultado), background: tono(i.resultado).bg, color: tono(i.resultado).fg }}>{ETIQUETA_RESULTADO[i.resultado] || ETIQUETA_ITEM[i.estado]}</span>
-        : <span style={{ fontSize: 11, color: C.g500 }}>{i.estado === 'pendiente' && fase === 'fin' ? 'Sin marcar' : (ETIQUETA_ITEM[i.estado] || i.estado)}</span>}
+        : <span style={{ fontSize: 11, color: i.volver_at ? C.moradoTinta : C.g500, fontWeight: i.volver_at ? 700 : 400 }}>{i.estado === 'pendiente' && fase === 'fin' ? 'Sin marcar' : i.estado === 'pendiente' && i.volver_at ? `A las ${new Date(i.volver_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}` : (ETIQUETA_ITEM[i.estado] || i.estado)}</span>}
       {!compacto && i.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(i.conversation_id)} title="Ver la conversación" style={{ ...btnT, padding: '3px 8px', fontSize: 11 }}>Chat</button>}
       {conAcciones && i.estado === 'pendiente' && <button onClick={() => accion('excluir', { item: i.id })} title="Quitar de la lista" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 2 }}><IcoX size={14} /></button>}
       {conAcciones && !compacto && i.estado === 'excluido' && <button onClick={() => accion('incluir', { item: i.id })} style={{ ...btnT, padding: '3px 8px', fontSize: 11 }}>Volver a meter</button>}
@@ -436,6 +527,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
               {kpi('#7DA6F5', 'Contestadora', s.porteros, '#2C5FC4')}
               {kpi('#EF7A72', 'Inválidos', s.invalidos, '#C0554E')}
               {kpi('#D1D5DB', 'Sin marcar', items.filter(i => i.estado === 'pendiente').length, '#4B5563')}
+              {kpi('#9B8CFA', 'Costo', `US$ ${Number(s.costo_usd || 0).toFixed(2)}`, C.moradoTinta, s.contestadas ? `US$ ${(Number(s.costo_usd || 0) / s.contestadas).toFixed(2)} por conversación` : 'solo llamadas')}
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => relanzar(s.id)} disabled={!relanzables || ocupado === 'relanzar'} style={{ ...S.btnP, opacity: relanzables ? 1 : 0.6 }}>Volver a llamar a los {relanzables} que faltan</button>
@@ -472,14 +564,30 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
             {errorBox}
             {!enSala && (
               <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ flex: 1 }}>{aviso || 'No estás en la sala: la central no marca hasta que entres.'}</span>
+                <span style={{ flex: 1 }}>
+                  {pausada && sesion.pausa_motivo === 'caida' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se cortó tu conexión</b>}
+                  {pausada && sesion.pausa_motivo === 'disyuntor' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se detuvo sola</b>}
+                  {pausada && sesion.pausa_motivo === 'horario' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Fuera de horario</b>}
+                  {aviso || (reintentos > 0 && reintentos < 4 && sesion.estado === 'activa' ? 'Se cortó la sala: volviendo a entrar…' : 'No estás en la sala: la central no marca hasta que entres.')}
+                </span>
                 <button onClick={pausada ? empezar : entrarSala} disabled={!!ocupado} style={S.btnP}>{pausada ? 'Reanudar y entrar a la sala' : 'Entrar a la sala'}</button>
               </div>
             )}
             {enSala && pausada && (
-              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ flex: 1 }}>{aviso || 'Sesión en pausa.'}</span>
-                <button onClick={() => accion('reanudar')} disabled={!!ocupado} style={S.btnP}>Reanudar</button>
+              <div style={{ background: sesion.pausa_motivo === 'disyuntor' ? '#FEF0EF' : '#FFF4E5', border: `1px solid ${sesion.pausa_motivo === 'disyuntor' ? '#f0c4bd' : '#f3d9a4'}`, color: sesion.pausa_motivo === 'disyuntor' ? '#C0554E' : '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ flex: 1 }}>
+                  {sesion.pausa_motivo === 'horario' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Fuera de horario</b>}
+                  {sesion.pausa_motivo === 'disyuntor' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se detuvo sola</b>}
+                  {sesion.pausa_motivo === 'caida' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se cortó tu conexión</b>}
+                  {aviso || 'Sesión en pausa.'}
+                </span>
+                {sesion.pausa_motivo !== 'horario' && <button onClick={() => accion('reanudar')} disabled={!!ocupado} style={S.btnP}>{sesion.pausa_motivo === 'disyuntor' ? 'Ya lo revisé, seguir' : 'Reanudar'}</button>}
+              </div>
+            )}
+            {est?.proximo && !actual && (
+              <div style={{ background: C.moradoAgua, color: C.moradoTinta, borderRadius: 9, padding: '9px 12px', fontSize: 12.5, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <IcoReloj size={13} />
+                <span>Compromiso: <b>{est.proximo.nombre || telefonoLegible(est.proximo.telefono)}</b> a las {new Date(est.proximo.volver_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}{new Date(est.proximo.volver_at).toDateString() !== new Date().toDateString() ? ` del ${new Date(est.proximo.volver_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' })}` : ''}. Se marca sola a esa hora.</span>
               </div>
             )}
 
@@ -490,7 +598,8 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                   <b style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', color: estadoActual === 'en_linea' ? '#1E8A63' : '#4B5563' }}>
                     {ETIQUETA_ITEM[estadoActual] || estadoActual}
                     {estadoActual === 'en_linea' && actual.segundos_en_linea > 0 ? ` · ${fmt(actual.segundos_en_linea)}` : ''}
-                    {estadoActual === 'cierre' && segCierre !== null && sesion.config?.auto_continuar !== false ? ` · siguiente en ${segCierre} s` : ''}
+                    {estadoActual === 'cierre' && sesion.config?.auto_continuar !== false && segCierre !== null
+                      ? (enviosAbiertos.length ? ' · esperando tu respuesta' : !actual.cierre_estado || actual.cierre_estado === 'proponiendo' ? ' · la IA está cerrando' : ` · siguiente en ${segCierre} s`) : ''}
                   </b>
                   <span style={{ flex: 1 }} />
                   <span style={{ fontSize: 11, color: C.g400 }}>{actual.orden + 1} de {sesion.total}{est?.pendientes ? ` · ${est.pendientes} por marcar` : ''}</span>
@@ -499,7 +608,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                   <span style={{ width: 44, height: 44, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoUsuario size={22} /></span>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em', color: C.g900 }}>{actual.nombre || 'Sin nombre'}</div>
-                    <div style={{ fontSize: 12.5, color: C.g500 }}>{[actual.empresa, telefonoLegible(actual.telefono)].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 12.5, color: C.g500 }}>{[actual.empresa, telefonoLegible(actual.telefono), actual.hora_local ? `allá son las ${actual.hora_local}` : null].filter(Boolean).join(' · ')}</div>
                   </div>
                   {actual.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={btnT}>Ver chat</button>}
                 </div>
@@ -524,7 +633,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
                   {['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) && (
                     <>
-                      <button onClick={() => accion('tomar')} disabled={!!ocupado} style={btnS}><IcoMic size={13} />Hablar yo</button>
+                      <button onClick={() => accion('tomar')} disabled={!!ocupado} style={btnS}><IcoMic size={13} />Hablar yo{!movil && <kbd style={{ fontSize: 10, fontWeight: 600, color: C.g500, border: `1px solid ${C.g200}`, borderRadius: 4, padding: '0 5px', marginLeft: 4 }}>espacio</kbd>}</button>
                       <button onClick={() => accion('saltar')} disabled={!!ocupado} style={btnT}>Saltar</button>
                     </>
                   )}
@@ -535,7 +644,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                     </>
                   )}
                   {estadoActual === 'cierre' && (
-                    <button onClick={() => accion('siguiente')} disabled={!!ocupado} style={btnS}>Siguiente ahora</button>
+                    <button onClick={confirmarYSeguir} disabled={!!ocupado} style={propuesta ? S.btnP : btnS}>{propuesta ? 'Confirmar y seguir' : 'Siguiente ahora'}</button>
                   )}
                 </div>
 
@@ -557,6 +666,52 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                     <textarea value={nota} onChange={e => setNota(e.target.value)} onBlur={guardarNota} placeholder="Apunte de la llamada (se guarda en la conversación)" rows={3} style={{ ...campo, resize: 'vertical' }} />
                   </div>
                 )}
+
+                {/* EL CIERRE CON IA: lo que la IA entendió de la llamada y va a dejar hecho al seguir. */}
+                {estadoActual === 'cierre' && actual.cierre_estado === 'proponiendo' && (
+                  <div style={{ marginTop: 14 }}><Cargando texto="Leyendo la llamada…" alto={56} /></div>
+                )}
+                {estadoActual === 'cierre' && actual.cierre_estado === 'sin_datos' && (
+                  <div style={{ marginTop: 12, fontSize: 11.5, color: C.g400 }}>La IA no alcanzó a leer la llamada{actual.cierre_ia?.motivo ? ` (${actual.cierre_ia.motivo})` : ''}: pica cómo quedó y escribe el apunte.</div>
+                )}
+                {estadoActual === 'cierre' && propuesta && (
+                  <div style={{ marginTop: 14, background: C.moradoAgua, borderRadius: 10, padding: '12px 14px', display: 'grid', gap: 9 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={etiqueta}>La IA entendió</span>
+                      <span style={{ flex: 1 }} />
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: tono(propuesta.resultado).bg, color: tono(propuesta.resultado).fg }}>{ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}</span>
+                    </div>
+                    {propuesta.nota && <div style={{ fontSize: 12.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{propuesta.nota}</div>}
+                    {propuesta.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700 }}>Siguiente paso: {propuesta.siguiente_paso}</div>}
+                    {(propuesta.compromisos?.length > 0 || propuesta.datos?.length > 0 || propuesta.envios?.length > 0 || propuesta.etapa) && (
+                      <div style={{ display: 'grid', gap: 4, fontSize: 12, color: C.g700 }}>
+                        <span style={{ ...etiqueta, marginBottom: 0 }}>Al seguir se deja hecho</span>
+                        {(propuesta.compromisos || []).map((cp: any, i: number) => (
+                          <div key={`c${i}`}>· {cp.tipo === 'reunion' ? `Reunión (${cp.reunion_tipo})` : 'Llamada'} el {cp.fecha} a las {cp.hora}{cp.motivo ? `: ${cp.motivo}` : ''} → agenda, calendario{cp.tipo === 'llamada' ? ' y esta lista' : ''}</div>
+                        ))}
+                        {(propuesta.datos || []).map((d: any, i: number) => (
+                          <div key={`d${i}`}>· {d.corrige ? 'Corregir' : 'Llenar'} <b>{d.campo}</b>: {String(d.valor)}</div>
+                        ))}
+                        {propuesta.etapa === 'lead_calificado' && <div>· Pasa a lead calificado</div>}
+                        {(propuesta.envios || []).filter((e: any) => e.estado !== 'falta').map((e: any) => (
+                          <div key={e.id}>· Mandarle <b>{e.tema}</b> en PDF por WhatsApp{e.estado === 'enviado' ? ' — ya salió' : e.estado === 'pendiente_ventana' ? ' — sale cuando conteste' : e.estado === 'omitido' ? ' — no' : e.estado === 'sin_via' || e.estado === 'fallo' ? ' — quedó como tarea' : ''}</div>
+                        ))}
+                      </div>
+                    )}
+                    {enviosAbiertos.map((e: any) => (
+                      <div key={e.id} style={{ background: '#fff', border: '1px solid #f3d9a4', borderRadius: 9, padding: '10px 12px', display: 'grid', gap: 6 }}>
+                        <b style={{ fontSize: 12.5, color: '#9a6a10' }}>Quedaste de mandarle {e.tema}. ¿Qué le mandamos?</b>
+                        {e.detalle && <span style={{ fontSize: 11.5, color: C.g500 }}>Pidió: {e.detalle}</span>}
+                        <textarea value={respuestas[e.id] || ''} onChange={ev => setRespuestas(r => ({ ...r, [e.id]: ev.target.value }))} rows={4} placeholder="Escribe el contenido: se arma en PDF con la marca, se le manda por WhatsApp y queda guardado para la próxima vez que alguien pida lo mismo." style={{ ...campo, resize: 'vertical' }} />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={() => responderEnvio(e.id)} disabled={!!ocupado} style={S.btnP}>Mandar en PDF</button>
+                          <button onClick={() => accion('cierre_omitir', { envio: e.id })} disabled={!!ocupado} style={btnT}>No mandar</button>
+                        </div>
+                      </div>
+                    ))}
+                    <span style={{ fontSize: 10.5, color: C.g400 }}>Lo que piques o escribas arriba manda sobre lo que entendió la IA.</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ ...tarjeta('#9B8CFA'), textAlign: 'center', padding: '28px 18px' }}>
@@ -566,6 +721,15 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
               </div>
             )}
 
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['#4FBF95', 'Conversaciones', conversaciones, '#1E8A63', `${fmt(sesion.segundos_hablados || 0)} hablados`],
+                ['#9B8CFA', 'Costo', `US$ ${costoSesion.toFixed(2)}`, C.moradoTinta, conversaciones ? `US$ ${(costoSesion / conversaciones).toFixed(2)} por conversación` : 'llamadas, sin transcripción'],
+                ['#E8A838', 'Sin contacto', Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0), '#9a6a10', `${sesion.buzon || 0} buzón · ${sesion.sin_contestar || 0} sin contestar · ${sesion.porteros || 0} contestadora`],
+              ].map(([franja, et, v, color, sub]: any) => (
+                <div key={et} style={{ ...tarjeta(franja), flex: 1, minWidth: 140, padding: '9px 12px' }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 17, fontWeight: 800, color }}>{v}</div><div style={{ fontSize: 10.5, color: C.g500 }}>{sub}</div></div>
+              ))}
+            </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {!pausada
                 ? <button onClick={() => accion('pausar')} disabled={!!ocupado} style={btnT}><IcoReloj size={13} />Pausar</button>

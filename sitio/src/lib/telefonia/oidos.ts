@@ -12,9 +12,28 @@
 // segundos.
 
 export type Veredicto = 'persona' | 'buzon' | 'portero';
-export type Oido = { t: number; texto: string; final: boolean };
+export type Oido = { t: number; texto: string; final: boolean; quien?: 'contacto' | 'vendedor' };
+/* Reglas que viven en la base (`tel_reglas`): las que el vendedor corrigió y
+   el fundador aprobó. Se suman a las de aquí; nunca las sustituyen. */
+export type ReglasExtra = { persona: RegExp[]; buzon: RegExp[]; portero: RegExp[] };
 
-const sinAcentos = (s: string) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+export const sinAcentos = (s: string) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Una frase de la base → expresión: sin acentos, en minúsculas, espacios flexibles. */
+export const compilarReglas = (filas: { tipo: string; patron: string }[]): ReglasExtra => {
+  const r: ReglasExtra = { persona: [], buzon: [], portero: [] };
+  for (const f of filas) {
+    const t = f.tipo as keyof ReglasExtra;
+    const patron = sinAcentos(f.patron).trim();
+    if (!patron || !r[t]) continue;
+    try { r[t].push(new RegExp(escapeRe(patron).replace(/\s+/g, '\\s+'))); } catch { /* patrón inválido: se ignora */ }
+  }
+  return r;
+};
+/** La frase clave de lo oído, para proponer una regla: las primeras 6 palabras. */
+export const fraseClave = (texto: string) => sinAcentos(texto).replace(/[^a-z0-9ñ\s]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 6).join(' ');
+/** Solo lo que dijo el contacto: lo del vendedor no cuenta para el veredicto. */
+export const delContacto = (oido: Oido[]) => oido.filter(o => o.quien !== 'vendedor');
 
 /* El BUZÓN de voz: el saludo grabado de Telcel/AT&T/Movistar y de los
    celulares. Cualquiera de estas frases es inconfundible. */
@@ -54,7 +73,8 @@ const palabras = (s: string) => s.split(/\s+/).filter(Boolean).length;
  * @param ms     milisegundos desde que contestaron
  * @param amd    lo que dijo el AMD de Twilio (human / machine_* / unknown / fax), si ya llegó
  */
-export function juzgar(oido: Oido[], ms: number, amd?: string | null): { veredicto: Veredicto; motivo: string } | null {
+export function juzgar(oidoTodo: Oido[], ms: number, amd?: string | null, extra?: ReglasExtra | null): { veredicto: Veredicto; motivo: string } | null {
+  const oido = delContacto(oidoTodo);
   const finales = oido.filter(o => o.final).map(o => sinAcentos(o.texto)).join(' ').trim();
   const ultimoParcial = sinAcentos([...oido].reverse().find(o => !o.final)?.texto || '');
   const todo = `${finales} ${ultimoParcial}`.trim();
@@ -62,7 +82,10 @@ export function juzgar(oido: Oido[], ms: number, amd?: string | null): { veredic
 
   if (todo) {
     for (const re of PORTERO) if (re.test(todo)) return { veredicto: 'portero', motivo: `dijo «${todo.match(re)?.[0]}»` };
+    for (const re of extra?.portero || []) if (re.test(todo)) return { veredicto: 'portero', motivo: `dijo «${todo.match(re)?.[0]}» (regla aprendida)` };
     for (const re of BUZON) if (re.test(todo)) return { veredicto: 'buzon', motivo: `dijo «${todo.match(re)?.[0]}»` };
+    for (const re of extra?.buzon || []) if (re.test(todo)) return { veredicto: 'buzon', motivo: `dijo «${todo.match(re)?.[0]}» (regla aprendida)` };
+    for (const re of extra?.persona || []) if (re.test(todo)) return { veredicto: 'persona', motivo: `dijo «${todo.match(re)?.[0]}» (regla aprendida)` };
   }
 
   /* Persona: un arranque humano. Se pide que sea FINAL o que ya lleve un
@@ -74,7 +97,10 @@ export function juzgar(oido: Oido[], ms: number, amd?: string | null): { veredic
        que contesta con el nombre del negocio. Las grabadoras no paran de hablar. */
     if (palabras(finales) <= 8 && ms >= 1500 && !amdMaquina) return { veredicto: 'persona', motivo: 'contestó con una frase corta' };
   }
-  if (!finales && ultimoParcial && PERSONA_INICIO.test(ultimoParcial) && ms >= 2500) return { veredicto: 'persona', motivo: `se oye «${ultimoParcial.slice(0, 30)}»` };
+  /* Un parcial que arranca como persona ya vale desde 1.5 s: esperar el final
+     (1–2 s más) es lo que producía el «hola» tardío. Un «¿bueno?» a medias
+     sigue siendo un «¿bueno?». */
+  if (!finales && ultimoParcial && PERSONA_INICIO.test(ultimoParcial) && ms >= 1500 && !amdMaquina) return { veredicto: 'persona', motivo: `se oye «${ultimoParcial.slice(0, 30)}»` };
 
   /* Un monólogo largo sin nada humano dentro es una grabación. Se exige el
      AMD de acuerdo O un párrafo de verdad, para no confundir a una
@@ -86,4 +112,6 @@ export function juzgar(oido: Oido[], ms: number, amd?: string | null): { veredic
 }
 
 /** Texto plano de lo oído, para la ficha y para la IA. */
-export const textoOido = (oido: Oido[]) => oido.filter(o => o.final).map(o => o.texto).join(' ').trim();
+export const textoOido = (oido: Oido[]) => delContacto(oido).filter(o => o.final).map(o => o.texto).join(' ').trim();
+/** La conversación entera, con quién dijo qué, para el cierre con IA. */
+export const dialogoOido = (oido: Oido[]) => oido.filter(o => o.final).map(o => `${o.quien === 'vendedor' ? 'Vendedor' : 'Cliente'}: ${o.texto}`).join('\n').trim();
