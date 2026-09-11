@@ -285,7 +285,7 @@ async function caducarEnvio(e: any) {
 }
 
 /** Una reunión del CRM (con Google Calendar si el host lo tiene conectado) y, si es llamada, la vuelta a la lista con hora. */
-async function crearCompromiso(it: any, cp: Compromiso, userId: string | null): Promise<string | null> {
+export async function crearCompromiso(it: any, cp: Compromiso, userId: string | null): Promise<string | null> {
   const { data: s } = await supabase.from('tel_sesiones').select('owner_id').eq('id', it.sesion_id).maybeSingle();
   const hostId = s?.owner_id || userId;
   if (!hostId) return null;

@@ -1,0 +1,22 @@
+# La central de voz de Fernanda. Instalar:
+#   sudo cp voz.service /etc/systemd/system/sacs-voz.service && sudo systemctl daemon-reload && sudo systemctl enable --now sacs-voz
+# Logs: sudo journalctl -u sacs-voz -f
+[Unit]
+Description=Sacs · central de voz (Twilio ConversationRelay)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aaron
+WorkingDirectory=/opt/sacs/paginawebsacs/voz
+EnvironmentFile=/opt/sacs/paginawebsacs/voz/.env
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=8
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

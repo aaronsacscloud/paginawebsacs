@@ -371,6 +371,7 @@ function Telefonia() {
         </div>
       )}
       {st?.configurada && <CallerId />}
+      {st?.configurada && <Fernanda />}
       {st?.configurada && <Aprendido />}
       <ReglasLlamadas />
       <EnvioMinuta />
@@ -382,6 +383,120 @@ function Telefonia() {
         {paso(4, 'Comprar el número', 'Phone Numbers → Buy a Number → México → Local (ej. lada 55). Cuesta $6.25 USD/mes.')}
         {paso(5, 'Conectarlo al CRM', 'Comparte el Account SID y Auth Token con el equipo técnico: con eso se crea la API Key, la TwiML App y se configuran los webhooks. Cinco minutos después ya marcas desde cualquier chat.')}
       </div>
+    </div>
+  );
+}
+
+// ═════════════ Fernanda al teléfono (la voz de la IA) ═════════════
+/**
+ * La voz que hace las llamadas sola (modo «Fernanda» en Llamadas inteligentes).
+ * Aquí se elige la voz, si dice que es IA cuando le preguntan, cuánto dura el
+ * discovery que agenda, el tope de gasto por día y el anexo del dueño al guion.
+ * El estado de la central (el proceso que conversa) se consulta en vivo.
+ */
+function Fernanda() {
+  const [d, setD] = useState<any>(null);
+  const [c, setC] = useState<any>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState('');
+  const [ok, setOk] = useState('');
+  const cargar = () => fetch('/api/crm/telefonia/fernanda', { cache: 'no-store' }).then(r => r.json()).then(j => { setD(j); setC(j.config || null); }).catch(() => setD({ error: 'sin red' }));
+  useEffect(() => { cargar(); }, []);
+  const guardar = async () => {
+    if (!c) return;
+    setOcupado(true); setError(''); setOk('');
+    const r = await fetch('/api/crm/telefonia/fernanda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: c }) }).then(x => x.json()).catch(() => ({ error: 'sin red' }));
+    setOcupado(false);
+    if (r?.error) { setError(r.error); return; }
+    setOk('Guardado. Aplica en la siguiente llamada.'); setC(r.config);
+  };
+  if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Consultando a Fernanda…" /></div>;
+  const central = d.central || {};
+  const viva = !!central.ok;
+  const campo: React.CSSProperties = { width: '100%', border: '1px solid #e2e2e2', borderRadius: 8, padding: '7px 9px', fontSize: 12.5, fontFamily: 'inherit', boxSizing: 'border-box' };
+  const etiqueta: React.CSSProperties = { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.05em', color: '#999', fontWeight: 700, display: 'block', marginBottom: 4 };
+  const fila = (t: string, v: any) => <div style={{ display: 'flex', gap: 8, fontSize: 12, color: '#555' }}><span style={{ color: '#999', minWidth: 120 }}>{t}</span><b>{v}</b></div>;
+  return (
+    <div style={{ ...S.card, marginBottom: 14, borderLeft: `3px solid ${viva ? '#4FBF95' : '#E8A838'}` }}>
+      <b style={{ fontSize: 13.5, display: 'block' }}>Fernanda al teléfono</b>
+      <p style={{ fontSize: 11.5, color: '#888', margin: '3px 0 12px', lineHeight: 1.55 }}>
+        La voz de la IA que hace llamadas sola: se presenta, entiende el negocio, agenda el discovery o la demo y sigue con el siguiente. Se elige en Llamadas inteligentes con «Quién habla». Lo que aprendió el agente de WhatsApp (guion, wiki, reglas) lo usa también aquí, hablando de usted.
+      </p>
+      {!d.configurada ? (
+        <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '8px 12px', fontSize: 12 }}>Falta el secreto de la central (VOZ_SECRET) en las variables de Vercel. Sin él, «Quién habla» solo ofrece «Yo».</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 5, marginBottom: 12 }}>
+          {fila('La central', viva ? `viva · ${central.vivas || 0} llamadas ahora · ${central.atendidas || 0} atendidas desde que arrancó` : `no responde${central.error ? ` (${central.error})` : ''}`)}
+          {viva && fila('Cerebro', `${central.modelo || '?'}${central.cerebro ? '' : ' · sin llave de Anthropic'}`)}
+          {fila('Gasto de hoy', `US$ ${Number(d.gasto_hoy_usd || 0).toFixed(2)} de ${Number(c?.tope_dia_usd || 0)} (al llegar al tope las sesiones se pausan solas)`)}
+        </div>
+      )}
+      {c && (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div>
+            <label style={etiqueta}>Su voz</label>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {(d.voces || []).map((v: any) => (
+                <label key={v.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: '#444', cursor: d.puede_editar ? 'pointer' : 'default' }}>
+                  <input type="radio" name="voz" checked={c.voz === v.id} disabled={!d.puede_editar} onChange={() => setC({ ...c, voz: v.id })} style={{ marginTop: 3 }} />
+                  <span><b>{v.nombre}</b> <span style={{ color: '#888' }}>· {v.nota}</span></span>
+                </label>
+              ))}
+              {c.voz && !(d.voces || []).some((v: any) => v.id === c.voz) && <span style={{ fontSize: 11.5, color: '#888' }}>Voz personalizada: {c.voz}</span>}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+            <div>
+              <label style={etiqueta}>Si le preguntan si es un robot</label>
+              <select value={c.revelar_ia ? 'si' : 'no'} disabled={!d.puede_editar} onChange={e => setC({ ...c, revelar_ia: e.target.value === 'si' })} style={campo}>
+                <option value="si">Dice que es la asistente virtual del equipo</option>
+                <option value="no">Cambia de tema con naturalidad</option>
+              </select>
+            </div>
+            <div>
+              <label style={etiqueta}>Discovery que agenda</label>
+              <select value={String(c.discovery_min)} disabled={!d.puede_editar} onChange={e => setC({ ...c, discovery_min: Number(e.target.value) })} style={campo}>
+                {[15, 30, 45, 60].map(n => <option key={n} value={n}>{n} minutos</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={etiqueta}>Tope de gasto por día (USD)</label>
+              <input type="number" min={1} max={2000} value={c.tope_dia_usd} disabled={!d.puede_editar} onChange={e => setC({ ...c, tope_dia_usd: e.target.value })} style={campo} />
+            </div>
+            <div>
+              <label style={etiqueta}>Máximo por llamada (minutos)</label>
+              <input type="number" min={3} max={30} value={c.max_min_llamada} disabled={!d.puede_editar} onChange={e => setC({ ...c, max_min_llamada: e.target.value })} style={campo} />
+            </div>
+          </div>
+          <div>
+            <label style={etiqueta}>Instrucciones tuyas para las llamadas (mandan sobre el guion)</label>
+            <textarea value={c.anexo || ''} disabled={!d.puede_editar} onChange={e => setC({ ...c, anexo: e.target.value })} rows={3} placeholder="Ej.: esta semana ofrece primero la demo de joyería; no menciones precios por teléfono." style={{ ...campo, resize: 'vertical' }} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#444', cursor: d.puede_editar ? 'pointer' : 'default' }}>
+            <input type="checkbox" checked={!!c.encendida} disabled={!d.puede_editar} onChange={e => setC({ ...c, encendida: e.target.checked })} /> Fernanda puede hacer llamadas
+          </label>
+          {error && <div style={{ fontSize: 12, color: '#C0554E' }}>{error}</div>}
+          {ok && <div style={{ fontSize: 12, color: '#1E8A63' }}>{ok}</div>}
+          {d.puede_editar && (
+            <div>
+              <button onClick={guardar} disabled={ocupado} style={{ ...S.btnP, opacity: ocupado ? 0.6 : 1 }}>{ocupado ? 'Guardando…' : 'Guardar'}</button>
+            </div>
+          )}
+          {(d.pruebas || []).length > 0 && (
+            <div>
+              <span style={etiqueta}>Últimas llamadas de prueba</span>
+              <div style={{ display: 'grid', gap: 4 }}>
+                {d.pruebas.map((p: any) => (
+                  <div key={p.id} style={{ fontSize: 12, color: '#555' }}>
+                    <span style={{ color: '#999' }}>{new Date(p.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    {' · '}{p.resumen?.motivo || '—'}{p.resumen?.duracionS ? ` · ${p.resumen.duracionS} s` : ''}{p.resumen?.turnos != null ? ` · ${p.resumen.turnos} turnos` : ''}{p.resumen?.latencia?.mediana ? ` · responde en ${(p.resumen.latencia.mediana / 1000).toFixed(1)} s (p95 ${(p.resumen.latencia.p95 / 1000).toFixed(1)} s)` : ''}{p.resumen?.costoUsd != null ? ` · US$ ${Number(p.resumen.costoUsd).toFixed(3)}` : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

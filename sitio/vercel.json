@@ -204,6 +204,10 @@
     {
       "path": "/api/cron/ti-planificador",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/tel-latir",
+      "schedule": "*/2 * * * *"
     }
   ],
   "headers": [

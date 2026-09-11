@@ -18,10 +18,16 @@
 import { supabase } from '../supabase';
 import { twilioRest, NUMERO } from './twilio';
 import { callerIdSaliente } from './caller-id';
-import { juzgar, textoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
+import { juzgar, textoOido, dialogoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
 import { ladaDe, zonaDeLada, horaLocal } from './zonas';
+// Fernanda al teléfono: el aviso a la central de voz se carga aparte (solo lo usan las sesiones con IA).
+const voz = () => import('./voz');
+/** ¿Habla Fernanda en esta sesión? («ia» sola, «asistido» con el vendedor escuchando). */
+export const conFernanda = (s: any) => !!s?.modo && s.modo !== 'manual';
+/** En modo «ia» no hace falta el vendedor en la sala para marcar ni para seguir. */
+const sinSala = (s: any) => s?.modo === 'ia';
 // `./cierre` arrastra googleapis, pdfkit y el SDK de IA: se carga solo cuando hace falta (los webhooks TwiML importan este módulo y deben arrancar rápido).
 const cierre = () => import('./cierre');
 
@@ -97,7 +103,7 @@ const getItem = async (id: string) => (await supabase.from('tel_sesion_items').s
 // ─────────────────────────────────────────────────────────────────────────────
 export async function crearSesion(ownerId: string | null, o: {
   nombre?: string; origen?: any; items: ItemEntrada[];
-  presentacion_nombre?: string; presentacion_motivo?: string; buzon_dejar_mensaje?: boolean; config?: Config;
+  presentacion_nombre?: string; presentacion_motivo?: string; buzon_dejar_mensaje?: boolean; config?: Config; modo?: 'manual' | 'ia' | 'asistido';
 }) {
   const config = { ...CONFIG_BASE, ...(o.config || {}) };
   const vistos = new Set<string>();
@@ -152,6 +158,7 @@ export async function crearSesion(ownerId: string | null, o: {
     owner_id: ownerId, nombre: o.nombre || `Sesión ${new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short' })}`,
     origen: o.origen || {}, presentacion_nombre: o.presentacion_nombre || null, presentacion_motivo: o.presentacion_motivo || null,
     buzon_dejar_mensaje: !!o.buzon_dejar_mensaje, config, estado: 'lista', total: pendientes, invalidos: excluidos.length,
+    modo: ['ia', 'asistido'].includes(String(o.modo)) ? o.modo : 'manual',
   }).select('id').single();
   if (error || !s) throw new Error(error?.message || 'No se pudo crear la sesión');
   for (let i = 0; i < filas.length; i += 200) {
@@ -280,7 +287,7 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     const s = await getSesion(sesionId);
     if (!s) return { ok: false, motivo: 'no existe' };
     if (s.estado !== 'activa') return { ok: false, motivo: `la sesión está ${s.estado}` };
-    if (!s.agente_en_sala) return { ok: false, motivo: 'el vendedor no está en la sala' };
+    if (!s.agente_en_sala && !sinSala(s)) return { ok: false, motivo: 'el vendedor no está en la sala' };
     if (s.item_actual) return { ok: false, motivo: 'ya hay una llamada en curso' };
 
     /* A quién le toca: primero los compromisos cuya hora ya llegó (`volver_at`),
@@ -427,6 +434,11 @@ export async function procesarAmd(itemId: string, p: Record<string, string>) {
   const ab = String(p.AnsweredBy || '');
   await supabase.from('tel_sesion_items').update({ answered_by: ab, updated_at: ahora() }).eq('id', itemId);
   it.answered_by = ab;
+  // Fernanda al teléfono: si el detector oye máquina, que se calle (no hablarle encima al saludo del buzón); si oye persona, que siga.
+  if (/^machine_start|^human/.test(ab)) {
+    const sv = await getSesion(it.sesion_id);
+    if (conFernanda(sv)) (await voz()).avisarCentral(it.id, ab === 'human' ? 'persona' : 'maquina', { answered_by: ab }).catch(() => {});
+  }
   if (buzonEsperandoTono(it) && /^machine_end/.test(ab)) {
     const s = await getSesion(it.sesion_id);
     if (s?.buzon_dejar_mensaje) await decirEnBuzon(it, s);
@@ -512,7 +524,7 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
   if (veredicto === 'portero') {
     // La presentación se le dice SOLO a esa pata, sin sacarla de la sala ni
     // apagar la transcripción: así se oye si después pasa la llamada.
-    if (s?.sala_sid && it.call_sid) {
+    if (s?.sala_sid && it.call_sid && !conFernanda(s)) {
       twilioRest(`/Conferences/${s.sala_sid}/Participants/${it.call_sid}.json`, { AnnounceUrl: `${BASE}/api/telefonia/marcador/anuncio?item=${it.id}&tipo=intro`, AnnounceMethod: 'POST' }).catch(() => {});
     }
     return true;
@@ -526,6 +538,8 @@ async function decirEnBuzon(it: any, s: any) {
     .eq('id', it.id).is('resultado', null).select('id');
   if (!gane?.length || !it.call_sid) return;
   const msg = `Hola, ${s.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamamos de Sacscloud'}${s.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}. Le vuelvo a marcar más tarde. Gracias.`;
+  // Si habla Fernanda, lo dice ella con su voz y cuelga; si la central no contesta, lo dice Polly.
+  if (conFernanda(s) && await (await voz()).avisarCentral(it.id, 'buzon', { mensaje: msg }).catch(() => false)) return;
   const twiml = `<Response><Pause length="1"/><Say language="es-MX" voice="${s.presentacion_voz || 'Polly.Mia-Neural'}">${escapar(msg)}</Say><Hangup/></Response>`;
   try { await twilioRest(`/Calls/${it.call_sid}.json`, { Twiml: twiml }); } catch { await colgarItem(it); }
 }
@@ -576,6 +590,7 @@ export async function procesarSala(sesionId: string, p: Record<string, string>) 
       return;
     }
     if (caido) return;   // la sala se vació porque el contacto está en espera: la caída ya se está manejando
+    if (sinSala(s)) return;   // Fernanda sigue sola; el vendedor solo estaba de oyente
     if (s.estado === 'activa') await pausarSesion(sesionId, 'Saliste de la sala', 'sala');
   }
 }
@@ -639,7 +654,7 @@ export async function latir(sesionId: string) {
     const { data: pend } = await supabase.from('tel_sesion_items').select('lada, telefono').eq('sesion_id', sesionId).eq('estado', 'pendiente').lt('intentos', tope).or(`volver_at.is.null,volver_at.lte.${ahora()}`).limit(2000);
     const zonas = new Set((pend || []).map(c => zonaDeLada(c.lada || ladaDe(c.telefono))));
     if (Array.from(zonas).some(z => enHorario(s.config?.horario, z))) {
-      await supabase.from('tel_sesiones').update({ estado: 'activa', pausa_motivo: null, updated_at: ahora(), config: { ...(s.config || {}), aviso: s.agente_en_sala ? null : 'Ya es hora de llamar: entra a la sala para seguir.' } }).eq('id', sesionId).eq('estado', 'pausada');
+      await supabase.from('tel_sesiones').update({ estado: 'activa', pausa_motivo: null, updated_at: ahora(), config: { ...(s.config || {}), aviso: s.agente_en_sala || sinSala(s) ? null : 'Ya es hora de llamar: entra a la sala para seguir.' } }).eq('id', sesionId).eq('estado', 'pausada');
       s = await getSesion(sesionId);
     }
   }
@@ -662,10 +677,10 @@ export async function latir(sesionId: string) {
     } else if (it.estado === 'cierre' && !it.cierre_estado) {
       // Colgó con una persona: la IA propone el cierre (candado dentro; solo un latido lo hace; la IA tiene tope de 18 s).
       await (await cierre()).proponerCierre(it.id);
-    } else if (it.estado === 'cierre' && cfg.auto_continuar && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000 && (await cierre()).cierreListo(it)) {
+    } else if (it.estado === 'cierre' && (cfg.auto_continuar || sinSala(s)) && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000 && (await cierre()).cierreListo(it)) {
       await siguiente(sesionId);
     }
-  } else if (!it && s.estado === 'activa' && s.agente_en_sala) {
+  } else if (!it && s.estado === 'activa' && (s.agente_en_sala || sinSala(s))) {
     await marcarSiguiente(sesionId);
   }
   cobrarLlamadas(sesionId).catch(() => {});
@@ -750,6 +765,12 @@ export async function tomar(sesionId: string) {
   const s = await getSesion(sesionId);
   if (!s?.item_actual) return false;
   const it = await getItem(s.item_actual);
+  if (conFernanda(s)) {
+    // Fernanda se despide («le paso con mi compañero») y Twilio mete al contacto a la sala (relay-fin).
+    if (!it || !s.agente_en_sala || !['escuchando', 'portero', 'en_linea'].includes(it.estado)) return false;
+    if (it.estado !== 'en_linea') await alVeredicto(it, 'persona', 'agente', 'el vendedor tomó la llamada');
+    return (await voz()).avisarCentral(it.id, 'tomar', {});
+  }
   if (!it || !['escuchando', 'portero'].includes(it.estado)) return false;
   const ok = await alVeredicto(it, 'persona', 'agente', 'el vendedor tomó la llamada');
   // Si ya había texto y las reglas no lo vieron como persona, es una frase que hay que aprender.
@@ -766,7 +787,7 @@ export async function estadoSesion(sesionId: string) {
   const zona = it ? zonaDeLada(it.lada || ladaDe(it.telefono)) : null;
   return {
     sesion: s,
-    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
+    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), dialogo: conFernanda(s) ? dialogoOido(Array.isArray(it.oido) ? it.oido : []) : '', segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),

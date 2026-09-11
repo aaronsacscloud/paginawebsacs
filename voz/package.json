@@ -1,0 +1,16 @@
+{
+  "name": "sacs-central-voz",
+  "private": true,
+  "version": "0.1.0",
+  "description": "La central de voz de Fernanda: el WebSocket entre Twilio ConversationRelay y Claude. Vive fuera de Vercel porque la llamada dura minutos.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.mjs",
+    "prueba": "node llamar-prueba.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "ws": "^8.18.0"
+  }
+}

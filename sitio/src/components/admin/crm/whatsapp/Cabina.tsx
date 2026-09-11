@@ -85,7 +85,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
   const [est, setEst] = useState<any>(null);           // { sesion, actual, pendientes, ahora }
   const [items, setItems] = useState<any[]>([]);
   const [previas, setPrevias] = useState<any[]>([]);
-  const [telefonia, setTelefonia] = useState<{ ok: boolean; faltantes: string[] } | null>(null);
+  const [telefonia, setTelefonia] = useState<{ ok: boolean; faltantes: string[]; fernanda: boolean } | null>(null);
   const [enSala, setEnSala] = useState(false);
   const [micAbierto, setMicAbierto] = useState(false);
   const [error, setError] = useState('');
@@ -93,7 +93,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
   const [armando, setArmando] = useState<{ leidas: number; total: number } | null>(null);
   // La presentación se recuerda entre sesiones: es la misma casi siempre.
   const [pres, setPres] = useState(() => leerLocal('cabina.presentacion', {
-    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8,
+    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8, modo: 'manual',
   }));
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
@@ -102,6 +102,10 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
 
   const sesion = est?.sesion;
   const actual = est?.actual;
+  // Quién habla en esta sesión: 'manual' (yo), 'ia' (Fernanda sola) o 'asistido' (Fernanda abre, yo puedo tomar la llamada).
+  const modo: 'manual' | 'ia' | 'asistido' = sesion?.modo && sesion.modo !== 'manual' ? sesion.modo : 'manual';
+  const fernanda = modo !== 'manual';
+  const sola = modo === 'ia';
   const fase: 'armar' | 'lista' | 'viva' | 'fin' = !sesionId || !sesion ? 'armar'
     : ['borrador', 'lista'].includes(sesion.estado) ? 'lista'
     : ['activa', 'pausada'].includes(sesion.estado) ? 'viva' : 'fin';
@@ -112,7 +116,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
   const cargarPrevias = useCallback(() => {
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' }).then(r => r.json()).then(j => {
       setPrevias(j.sesiones || []);
-      setTelefonia({ ok: !!j.telefonia, faltantes: j.faltantes || [] });
+      setTelefonia({ ok: !!j.telefonia, faltantes: j.faltantes || [], fernanda: !!j.fernanda });
     }).catch(() => {});
   }, []);
   useEffect(() => { cargarPrevias(); }, [cargarPrevias]);
@@ -261,7 +265,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
         accion: 'crear', items, nombre: descripcion.slice(0, 120),
         origen: { qs, descripcion, filas: filas.length, total: tot },
         presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon,
-        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 },
+        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 }, modo: pres.modo,
       });
       if (r?.error) { setError(r.error); return; }
       setSesionId(r.id); setTab('lista');
@@ -282,10 +286,11 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
 
   const empezar = async () => {
     // Guardar la presentación por si la editó, luego arrancar y entrar a la sala.
-    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 } });
+    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 }, modo: pres.modo });
     if (!ok1) return;
     const r = await accion(sesion?.estado === 'pausada' ? 'reanudar' : 'iniciar');
-    if (r) document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } }));
+    // Con Fernanda sola no hay sala que abrir: la central marca y ella habla.
+    if (r && pres.modo !== 'ia') document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } }));
   };
   const entrarSala = () => { setError(''); setReintentos(0); document.dispatchEvent(new CustomEvent('tel-sala', { detail: { sesion_id: sesionId } })); };
   const terminar = async () => {
@@ -360,7 +365,12 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
       <b style={{ fontSize: 14, letterSpacing: '-0.01em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         Llamadas inteligentes{sesion?.nombre ? <span style={{ fontWeight: 500, color: C.g500 }}> · {sesion.nombre}</span> : null}
       </b>
-      {fase === 'viva' && (
+      {fase === 'viva' && fernanda && (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: C.moradoTinta, background: C.moradoAgua, borderRadius: 999, padding: '3px 9px' }}>
+          {sola ? 'Habla Fernanda' : 'Fernanda y tú'}
+        </span>
+      )}
+      {fase === 'viva' && !sola && (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: enSala ? (micAbierto ? '#1E8A63' : C.moradoTinta) : '#9a6a10', background: enSala ? (micAbierto ? '#EAF8F2' : C.moradoAgua) : '#FFF4E5', borderRadius: 999, padding: '3px 9px' }}>
           <IcoMic size={12} />{enSala ? (micAbierto ? 'Te oyen' : 'En la sala, mudo') : 'Fuera de la sala'}
         </span>
@@ -388,6 +398,22 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
         <input value={pres.motivo} onChange={e => setPres((p: any) => ({ ...p, motivo: e.target.value }))} placeholder="le llamo para dar seguimiento a su solicitud" style={campo} />
         <span style={{ fontSize: 11, color: C.g400, display: 'block', marginTop: 4 }}>Se dice así: «Soy {pres.nombre || '…'}, {pres.motivo || '…'}. Busco a {'{nombre}'}. Gracias.»</span>
       </div>
+      {telefonia?.fernanda && (
+        <div>
+          <label style={etiqueta}>Quién habla</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {([['manual', 'Yo', 'Marco y hablo yo; la IA solo escucha y cierra.'], ['ia', 'Fernanda', 'La voz de la IA hace toda la llamada y agenda sola. No hace falta que estés en la sala.'], ['asistido', 'Fernanda y yo', 'Fernanda abre y conversa; yo escucho y puedo tomar la llamada cuando quiera.']] as const).map(([v, t, d]) => (
+              <button key={v} type="button" onClick={() => setPres((p: any) => ({ ...p, modo: v }))} title={d} disabled={!!sesionId && !['borrador', 'lista', 'pausada'].includes(sesion?.estado)} style={{
+                border: `1.5px solid ${pres.modo === v ? '#9B8CFA' : C.g200}`, background: pres.modo === v ? '#9B8CFA' : '#fff', color: pres.modo === v ? '#fff' : C.g700,
+                borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>{t}</button>
+            ))}
+          </div>
+          <span style={{ fontSize: 11, color: C.g400, display: 'block', marginTop: 4 }}>
+            {pres.modo === 'ia' ? 'Fernanda se presenta, entiende el negocio, agenda la reunión y sigue con el siguiente. Tú ves la transcripción en vivo.' : pres.modo === 'asistido' ? 'Fernanda habla primero; tú estás en la sala mudo y puedes tomar la llamada con «Hablar yo».' : 'Tú hablas. La IA escucha, detecta buzones y contestadoras, y hace el cierre.'}
+          </span>
+        </div>
+      )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', fontSize: 12.5, color: C.g700 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={!!pres.buzon} onChange={e => setPres((p: any) => ({ ...p, buzon: e.target.checked }))} /> Dejar recado en el buzón de voz</label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={!!pres.auto} onChange={e => setPres((p: any) => ({ ...p, auto: e.target.checked }))} /> Seguir solo con el siguiente</label>
@@ -492,9 +518,9 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button onClick={empezar} disabled={!!ocupado || pendientes.length === 0 || (telefonia ? !telefonia.ok : false)} style={{ ...S.btnP, opacity: !!ocupado || pendientes.length === 0 ? 0.6 : 1 }}>
-                {ocupado ? 'Abriendo la sala…' : 'Empezar a marcar'}
+                {ocupado ? (pres.modo === 'ia' ? 'Arrancando…' : 'Abriendo la sala…') : pres.modo === 'ia' ? 'Que Fernanda empiece a marcar' : 'Empezar a marcar'}
               </button>
-              <span style={{ fontSize: 11.5, color: C.g400 }}>Ponte los audífonos: entras mudo y solo hablas cuando conteste una persona.</span>
+              <span style={{ fontSize: 11.5, color: C.g400 }}>{pres.modo === 'ia' ? 'Fernanda marca y habla sola; puedes cerrar esta ventana y volver cuando quieras.' : pres.modo === 'asistido' ? 'Ponte los audífonos: entras mudo, Fernanda habla y tú tomas la llamada cuando quieras.' : 'Ponte los audífonos: entras mudo y solo hablas cuando conteste una persona.'}</span>
               <span style={{ flex: 1 }} />
               <button onClick={() => accion('terminar')} style={btnD}>Descartar lista</button>
             </div>
@@ -562,7 +588,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
         <div className="wa-scroll" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: movil ? '14px 14px 110px' : 22 }}>
           <div style={{ maxWidth: 640, margin: '0 auto', display: 'grid', gap: 12 }}>
             {errorBox}
-            {!enSala && (
+            {!enSala && !sola && (
               <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ flex: 1 }}>
                   {pausada && sesion.pausa_motivo === 'caida' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se cortó tu conexión</b>}
@@ -573,7 +599,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                 <button onClick={pausada ? empezar : entrarSala} disabled={!!ocupado} style={S.btnP}>{pausada ? 'Reanudar y entrar a la sala' : 'Entrar a la sala'}</button>
               </div>
             )}
-            {enSala && pausada && (
+            {(enSala || sola) && pausada && (
               <div style={{ background: sesion.pausa_motivo === 'disyuntor' ? '#FEF0EF' : '#FFF4E5', border: `1px solid ${sesion.pausa_motivo === 'disyuntor' ? '#f0c4bd' : '#f3d9a4'}`, color: sesion.pausa_motivo === 'disyuntor' ? '#C0554E' : '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ flex: 1 }}>
                   {sesion.pausa_motivo === 'horario' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Fuera de horario</b>}
@@ -622,8 +648,21 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                     <div style={{ fontSize: 12.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{actual.resumen}</div>
                   </div>
                 )}
-                {actual.oido_texto && !['en_linea', 'cierre'].includes(estadoActual) && (
+                {actual.oido_texto && !fernanda && !['en_linea', 'cierre'].includes(estadoActual) && (
                   <div style={{ marginTop: 10, fontSize: 12, color: C.g500, fontStyle: 'italic' }}>Se oye: «{String(actual.oido_texto).slice(-160)}»</div>
+                )}
+                {fernanda && ['escuchando', 'portero', 'en_linea', 'cierre'].includes(estadoActual) && (
+                  <div style={{ marginTop: 12 }}>
+                    <span style={etiqueta}>La llamada, en vivo</span>
+                    <div className="wa-scroll" style={{ maxHeight: 260, overflowY: 'auto', display: 'grid', gap: 5, fontSize: 12.5, lineHeight: 1.5 }}>
+                      {actual.dialogo
+                        ? String(actual.dialogo).split('\n').map((l: string, i: number) => {
+                            const mia = l.startsWith('Vendedor:');
+                            return <div key={i} style={{ justifySelf: mia ? 'end' : 'start', maxWidth: '88%', background: mia ? C.moradoAgua : '#fff', border: mia ? 'none' : `1px solid ${C.g200}`, color: mia ? C.moradoTinta : C.g700, borderRadius: 10, padding: '6px 10px' }}>{l.replace(/^(Vendedor|Cliente):\s*/, '')}</div>;
+                          })
+                        : <div style={{ fontSize: 12, color: C.g400, fontStyle: 'italic' }}>{estadoActual === 'en_linea' || estadoActual === 'cierre' ? 'Sin transcripción todavía.' : 'Fernanda está escuchando quién contesta…'}</div>}
+                    </div>
+                  </div>
                 )}
                 {actual.veredicto && ['en_linea', 'cierre'].includes(estadoActual) && (
                   <div style={{ marginTop: 6, fontSize: 11, color: C.g400 }}>Contestó {actual.veredicto === 'persona' ? 'una persona' : actual.veredicto} · lo dijo {actual.veredicto_fuente === 'reglas' ? 'la voz' : actual.veredicto_fuente}{actual.veredicto_ms ? ` a los ${(actual.veredicto_ms / 1000).toFixed(1)} s` : ''}</div>
@@ -631,7 +670,7 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
 
                 {/* Acciones del item según su momento */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
-                  {['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) && (
+                  {['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) && !sola && (
                     <>
                       <button onClick={() => accion('tomar')} disabled={!!ocupado} style={btnS}><IcoMic size={13} />Hablar yo{!movil && <kbd style={{ fontSize: 10, fontWeight: 600, color: C.g500, border: `1px solid ${C.g200}`, borderRadius: 4, padding: '0 5px', marginLeft: 4 }}>espacio</kbd>}</button>
                       <button onClick={() => accion('saltar')} disabled={!!ocupado} style={btnT}>Saltar</button>
@@ -639,8 +678,9 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                   )}
                   {estadoActual === 'en_linea' && (
                     <>
+                      {fernanda && !sola && enSala && !actual.voz?.handoff && <button onClick={() => accion('tomar')} disabled={!!ocupado} style={S.btnP}><IcoMic size={13} />Tomar la llamada</button>}
                       <button onClick={() => accion('colgar')} disabled={!!ocupado} style={{ ...btnD, background: '#C0554E', color: '#fff', border: 'none' }}>Colgar</button>
-                      <button onClick={() => document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: micAbierto } }))} style={btnT}>{micAbierto ? 'Silenciarme' : 'Abrir micrófono'}</button>
+                      {(!fernanda || actual.voz?.handoff) && <button onClick={() => document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: micAbierto } }))} style={btnT}>{micAbierto ? 'Silenciarme' : 'Abrir micrófono'}</button>}
                     </>
                   )}
                   {estadoActual === 'cierre' && (

@@ -6,6 +6,7 @@ import { xml } from '../../../../lib/telefonia/twilio';
 import { BASE, getSesion } from '../../../../lib/telefonia/marcador';
 import { supabase } from '../../../../lib/supabase';
 import { leer } from './_comun';
+import { twimlRelay, vozConfigurada, configVoz } from '../../../../lib/telefonia/voz';
 
 export const prerender = false;
 
@@ -13,11 +14,16 @@ export const POST: APIRoute = async ({ request, url }) => {
   const r = await leer(request, url, 'twiml');
   if (r instanceof Response) return r;
   if (!r.item) return xml('<Hangup/>');
-  const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id, estado').eq('id', r.item).maybeSingle();
+  const { data: it } = await supabase.from('tel_sesion_items').select('*').eq('id', r.item).maybeSingle();
   const s = it ? await getSesion(it.sesion_id) : null;
   // Si la sesión se pausó o el vendedor se fue mientras timbraba, no se le
   // deja al contacto una llamada muda: se cuelga sin decir nada.
-  if (!it || !s || s.estado !== 'activa' || !s.agente_en_sala) return xml('<Hangup/>');
+  if (!it || !s || s.estado !== 'activa') return xml('<Hangup/>');
+  // Fernanda al teléfono: en modo «ia» o «asistido» la pata del contacto se
+  // conecta a la central de voz (no a la sala). El vendedor, si está, escucha
+  // la transcripción en la cabina y puede tomar la llamada (handoff → relay-fin).
+  if (s.modo && s.modo !== 'manual' && vozConfigurada() && (await configVoz()).encendida && url.searchParams.get('reenganche') !== '1') return xml(await twimlRelay(it, s));
+  if (!s.agente_en_sala) return xml('<Hangup/>');
 
   // Reenganche: el vendedor se cayó y volvió; el contacto regresa de la
   // espera a la sala. La transcripción de esta llamada ya está corriendo.

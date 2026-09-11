@@ -14,12 +14,14 @@ import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, relanzar, recontar, getSesion,
 } from '../../../../lib/telefonia/marcador';
 import { aplicarCierre, responderEnvio, omitirEnvio, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
+import { vozConfigurada, configVoz, MODOS, type Modo } from '../../../../lib/telefonia/voz';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 const UUID = /^[0-9a-f-]{36}$/i;
+const modoDe = (m: any): Modo => ((MODOS as readonly string[]).includes(String(m)) ? m : 'manual');
 const identidadDe = (userId: string) => `crm-${String(userId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)}`;
 
 /** La sesión es de quien la creó (o de un fundador). */
@@ -37,9 +39,9 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   if (url.searchParams.get('lista')) {
     const { data } = await supabase.from('tel_sesiones')
-      .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, iniciada_at, terminada_at, created_at, origen, presentacion_nombre, presentacion_motivo')
+      .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, iniciada_at, terminada_at, created_at, origen, presentacion_nombre, presentacion_motivo, modo')
       .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(30);
-    return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id) });
+    return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id), fernanda: vozConfigurada() });
   }
 
   const id = String(url.searchParams.get('id') || '');
@@ -64,6 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
         nombre: String(b.nombre || '').slice(0, 120) || undefined, origen: b.origen || {}, items: b.items,
         presentacion_nombre: String(b.presentacion_nombre || '').slice(0, 80), presentacion_motivo: String(b.presentacion_motivo || '').slice(0, 240),
         buzon_dejar_mensaje: !!b.buzon_dejar_mensaje, config: b.config || {},
+        modo: modoDe(b.modo),
       });
       return json({ ok: true, ...r });
     }
@@ -79,14 +82,29 @@ export const POST: APIRoute = async ({ request }) => {
           buzon_dejar_mensaje: b.buzon_dejar_mensaje ?? s.buzon_dejar_mensaje,
           nombre: String(b.nombre ?? s.nombre).slice(0, 120),
           config: { ...(s.config || {}), ...(b.config || {}) }, updated_at: new Date().toISOString(),
+          // Quién habla viaja con la presentación; solo cambia con la sesión parada.
+          ...(b.modo !== undefined && ['borrador', 'lista', 'pausada'].includes(s.estado) ? { modo: modoDe(b.modo) } : {}),
         }).eq('id', s.id);
+        if (b.modo !== undefined && modoDe(b.modo) !== 'manual' && !vozConfigurada()) return json({ error: 'Fernanda no está configurada (VOZ_SECRET)' }, 503);
         return json({ ok: true });
       }
       case 'iniciar':
       case 'reanudar': {
         if (!telefoniaConfigurada()) return json({ error: 'Telefonía sin configurar', faltantes: telefoniaFaltantes() }, 503);
+        if (s.modo && s.modo !== 'manual' && !vozConfigurada()) return json({ error: 'Fernanda no está configurada (VOZ_SECRET)' }, 503);
+        if (s.modo && s.modo !== 'manual' && !(await configVoz()).encendida) return json({ error: 'Fernanda está apagada (Configuración → Telefonía). Cambia «Quién habla» a «Yo» o enciéndela.' }, 409);
         const ok = await iniciarSesion(s.id, identidadDe(user.id));
+        // Con Fernanda sola no hay que esperar a que el vendedor entre a la sala: el primer latido ya marca.
+        if (ok && s.modo === 'ia') latir(s.id).catch(() => {});
         return ok ? json({ ok: true, identity: identidadDe(user.id) }) : json({ error: `La sesión está ${s.estado}` }, 409);
+      }
+      case 'modo': {
+        // Quién habla: se cambia entre llamadas (con la sesión lista o pausada).
+        if (!['lista', 'pausada'].includes(s.estado)) return json({ error: 'Pausa la sesión para cambiar quién habla' }, 409);
+        const modo = modoDe(b.modo);
+        if (modo !== 'manual' && !vozConfigurada()) return json({ error: 'Fernanda no está configurada (VOZ_SECRET)' }, 503);
+        await supabase.from('tel_sesiones').update({ modo, updated_at: new Date().toISOString() }).eq('id', s.id);
+        return json({ ok: true, modo });
       }
       case 'pausar': await pausarSesion(s.id, 'Pausada por ti'); return json({ ok: true });
       case 'terminar': await terminarSesion(s.id); return json({ ok: true });
