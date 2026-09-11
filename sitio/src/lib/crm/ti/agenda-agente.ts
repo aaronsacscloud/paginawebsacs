@@ -8,6 +8,7 @@
 // confirmación por WhatsApp y correo, recordatorios. Nada paralelo.
 import { supabase } from '../../supabase';
 import { puntajesHistoricos, puntuar } from '../../scheduling/mejores-horarios';
+import { instanteEnZona, fechaHoraEn } from '../../telefonia/zonas';
 
 const BASE = 'https://www.sacscloud.com';
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -82,24 +83,23 @@ export async function horariosParaVoz(o: { slug?: string; fecha?: string; hora?:
     const r = await fetch(`${BASE}/api/scheduling/available-slots?slug=${slug}&from=${from}&to=${to}&tz=America/Mexico_City`, { signal: AbortSignal.timeout(12000) });
     dates = ((await r.json()) as any)?.dates || {};
   } catch { return []; }
-  // Diferencia en horas entre la zona del contacto y CDMX (para ofrecerle en SU hora).
   const zona = o.zona || 'America/Mexico_City';
-  const desfase = (() => {
-    if (zona === 'America/Mexico_City') return 0;
-    const d = new Date();
-    const h = (z: string) => Number(new Intl.DateTimeFormat('en-US', { timeZone: z, hour: 'numeric', hour12: false }).format(d).replace('24', '0'));
-    return h(zona) - h('America/Mexico_City');
-  })();
   const todos: (Horario & { min: number })[] = [];
-  for (const [fecha, horas] of Object.entries(dates).sort()) {
-    const dow = new Date(fecha + 'T12:00:00').getDay();
-    if (dow === 0 || dow === 6) continue;   // citas solo de lunes a viernes
+  for (const [fechaCdmx, horas] of Object.entries(dates).sort()) {
     for (const hora of horas || []) {
       const [h, m] = hora.split(':').map(Number);
-      if (h < 9 || h >= 18) continue;
-      const hl = h + desfase;                 // en la hora del contacto
-      const horaLocal = `${String(hl).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      todos.push({ fecha, hora: horaLocal, etiqueta: fmt(fecha, horaLocal), puntaje: 0, min: hl * 60 + m });
+      if (h < 9 || h >= 18) continue;                      // horario del consultor, que trabaja en CDMX
+      /* El INSTANTE del hueco, y cómo se ve en la zona del contacto. Sumar horas con el desfase de HOY
+         agenda una hora distinta a la dicha cuando el hueco cae del otro lado de un cambio de horario
+         (Tijuana en noviembre), y no sabe de zonas de media hora ni del cruce de medianoche. Así,
+         `agendar` reconstruye con `instanteEnZona` exactamente este mismo instante. */
+      const inst = instanteEnZona(fechaCdmx, `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, 'America/Mexico_City');
+      const { fecha, hora: horaLocal } = fechaHoraEn(zona, inst);
+      const dow = new Date(fecha + 'T12:00:00').getDay();
+      if (dow === 0 || dow === 6) continue;                // citas solo de lunes a viernes
+      const [hl, ml] = horaLocal.split(':').map(Number);
+      if (hl < 8 || hl >= 19) continue;                    // y que en SU hora no sea de madrugada
+      todos.push({ fecha, hora: horaLocal, etiqueta: fmt(fecha, horaLocal), puntaje: 0, min: hl * 60 + ml });
     }
   }
   if (!todos.length) return [];

@@ -152,7 +152,7 @@ export async function altaCuentaPrueba(c: any, o: { cuenta: string; dias: number
       account_id: cuenta, account_name: empresa, nombre: c.nombre || empresa, email: c.email, password: temporal,
       telefono: c.whatsapp || undefined, prueba_gratis: true, prueba_dias: o.dias, prueba_origen: 'crm',
     }),
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(12000),   // la central corta la herramienta a los 20 s: más allá, el resultado ya no llega a la llamada
   }).then(x => x.json()).catch(e => ({ success: false, msg: String(e) }));
   if (!r?.success) return { ok: false as const, error: String(r?.msg || 'SACS rechazó el alta'), detalle: r };
   /* La liga en la tabla, no en `companies.sacs_account`: aguanta varias cuentas por empresa y la lee el cron de uso. */

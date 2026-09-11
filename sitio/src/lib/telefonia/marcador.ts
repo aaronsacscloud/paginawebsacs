@@ -422,8 +422,11 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
      un par de veces es cumplirle, no molestarlo. Al tercer fallo se queda como
      cualquier otro item hecho (el cierre lo manda a Mi día del vendedor). */
   if (estado === 'hecho' && /^Volver a llamar/.test(String(it.nota || '')) && ['no_contesto', 'ocupado', 'buzon'].includes(String(resultado))) {
-    const { count } = await supabase.from('tel_sesion_items').select('id', { count: 'exact', head: true }).eq('sesion_id', it.sesion_id).eq('telefono', it.telefono).like('nota', 'Volver a llamar%').neq('estado', 'pendiente');
-    if ((count || 0) <= ESPERA.prometida_max) await reprogramar(it, ESPERA.prometida_reintento, `no contestó la llamada que pidió (intento ${count || 1} de ${ESPERA.prometida_max + 1})`);
+    /* El contador va en la nota, no en una consulta: contar los items del teléfono mezclaba las caídas del
+       vendedor (misma nota) y las promesas de días anteriores, así que una promesa nueva podía nacer sin
+       reintentos o gastarse los de otra. */
+    const n = Number(/intento (\d+) de/.exec(String(it.nota || ''))?.[1] || 0);
+    if (n < ESPERA.prometida_max) await reprogramar(it, ESPERA.prometida_reintento, `no contestó la llamada que pidió (intento ${n + 1} de ${ESPERA.prometida_max})`);
   }
   /* Disyuntor: una racha de llamadas que ni timbran es un problema de la
      cuenta (caller ID, permisos, saldo), no de los contactos. Se para antes
