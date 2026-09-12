@@ -1320,9 +1320,8 @@ const useCases = [
             <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Otro clic: se ejecuta.</b><small>Orden de compra, traspasos y surtidos generados. Nadie captura nada.</small></div>
             <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>El CEDIS surte; las tiendas se traspasan entre sí.</b><small>Al proveedor, solo lo que la red no tiene.</small></div>
             <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientas piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
-            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>38 tiendas, al mismo tiempo.</b><small>Del 0 al 100 % de surtido ideal, cada una con su propia curva.</small></div>
-            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y lo que pidieron se vende.</b><small>Seis clientas, seis tiendas, la talla que fueron a buscar.</small></div>
-            <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Un inventario bien llevado también vende.</b><small>Lo que pidieron, en su tienda, a tiempo.</small></div>
+            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Y lo que pidieron se vende.</b><small>La talla que fueron a buscar, en su tienda.</small></div>
+            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Un inventario bien llevado también vende.</b><small>Lo que pidieron, en su tienda, a tiempo.</small></div>
           </div>
           <div class="flujo-final">
             <span class="flujo-eyebrow">Controla</span>
@@ -1342,7 +1341,7 @@ const useCases = [
       </div>
       <div class="flujo-nav" aria-label="Avance de la historia">
         <ol class="flujo-dots">
-          <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>38 tiendas</span></li><li data-i="6"><i><b></b></i><span>Ventas</span></li><li data-i="7"><i><b></b></i><span>Cierre</span></li>
+          <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>Ventas</span></li><li data-i="6"><i><b></b></i><span>Cierre</span></li>
         </ol>
         <a class="flujo-saltar" href="#pilar-stock" data-evento="inventario_saltar">Saltar
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -18389,7 +18388,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02, 32.99, 42.49], fin: 48.63 });
+  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02, 36.52], fin: 42.67 });
 
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
