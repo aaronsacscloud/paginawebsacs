@@ -1310,20 +1310,19 @@ const useCases = [
 
   <!-- ── Pillar 2: Controla ── -->
   <!-- ═══ El inventario que decide: del CEDIS a la tienda, a los canales y a la clienta ═══ -->
-  <section class="recorrido flujo flujo--inv" id="inventario" aria-label="Del análisis a la entrega">
+  <section class="recorrido flujo flujo--inv" id="inventario" aria-label="Del análisis a la venta">
     <div class="flujo-sticky">
       <div class="flujo-inner container">
         <div class="flujo-text">
           <div class="flujo-pasos" aria-live="polite">
-            <div class="flujo-paso" data-paso="0"><span class="flujo-n">01</span><b>El CEDIS abre a las 7:00.</b><small>Sacs ya analizó la noche: ventas por talla, sell-through por colección y dónde va la temporada.</small></div>
-            <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Primero, las ventas.</b><small>Qué rota, dónde y en qué talla. La curva de cada tienda, con su semáforo.</small></div>
-            <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Y lo que tus clientas ya pidieron.</b><small>Apartados, pedidos especiales y los «avísame» de la tienda en línea entran al mismo cálculo.</small></div>
-            <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>Tres caminos, uno recomendado.</b><small>Mover lo que ya tienes antes de comprar: traspaso entre tiendas, surtido del CEDIS o compra al proveedor.</small></div>
-            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Un toque y son órdenes.</b><small>Picking por tienda, guía y salida del andén. Nadie captura nada.</small></div>
-            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>La misma existencia surte todo.</b><small>El piso, la tienda en línea, WhatsApp, Instagram y TikTok Shop vuelven a tener esa talla en el mismo instante.</small></div>
-            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y las tiendas entregan.</b><small>Lo que pidieron, en su tienda, a tiempo. Cada pedido especial se vuelve una venta cobrada.</small></div>
-            <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Lo que piden y no encuentran también cuenta.</b><small>Diez clientas pidieron la S y está agotada en la red: la compra se sugiere sola.</small></div>
-            <div class="flujo-paso" data-paso="8"><span class="flujo-n">09</span><b>La curva completa, en cada tienda.</b><small>Un inventario bien llevado no solo ahorra: vende.</small></div>
+            <div class="flujo-paso" data-paso="0"><span class="flujo-n">01</span><b>El análisis ya está hecho.</b><small>Esto es lo que hay que mover hoy: qué sale del CEDIS, qué se traspasa entre tiendas y qué se compra.</small></div>
+            <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Un clic: el porqué.</b><small>Ventas de 7 días, sell-through, apartados que esperan esa talla y lo que está parado en otra tienda.</small></div>
+            <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Otro clic: se ejecuta.</b><small>Orden de compra, traspasos y surtidos generados. Nadie captura nada.</small></div>
+            <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>El CEDIS surte; las tiendas se traspasan entre sí.</b><small>Al proveedor, solo lo que la red no tiene.</small></div>
+            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientas piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
+            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>38 tiendas, al mismo tiempo.</b><small>Del 0 al 100 % de surtido ideal, cada una con su propia curva.</small></div>
+            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y lo que pidieron se vende.</b><small>Seis clientas, seis tiendas, la talla que fueron a buscar.</small></div>
+            <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Un inventario bien llevado también vende.</b><small>Lo que pidieron, en su tienda, a tiempo.</small></div>
           </div>
           <div class="flujo-final">
             <span class="flujo-eyebrow">Controla</span>
@@ -1335,106 +1334,15 @@ const useCases = [
           </div>
         </div>
         <div class="flujo-video" id="inventarioVideo">
-          <img class="flujo-still" src="/tienda/70-oficina.webp" alt="" decoding="async" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/70-oficina.webp"><track kind="captions" src="/tienda/inventario.vtt" srclang="es" label="Español" /></video>
-
-          <div class="inv-scr" data-tag="0">
-            <div class="inv-scr-h"><i></i>Análisis de la noche · 04:12</div>
-            <div class="inv-scr-b">
-              <div class="inv-kpi"><b>38</b><small>tiendas</small></div>
-              <div class="inv-kpi"><b>4</b><small>canales</small></div>
-              <div class="inv-kpi"><b>12,480</b><small>prendas por talla</small></div>
-              <div class="inv-line">Ventas por talla · sell-through por colección · temporada OI</div>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="1">
-            <div class="inv-scr-h"><i></i>Vestido rosa · curva por tienda</div>
-            <div class="inv-scr-b">
-              <div class="inv-mx">
-                <span class="inv-mx-t"></span><span class="inv-mx-t">XS</span><span class="inv-mx-t">S</span><span class="inv-mx-t">M</span><span class="inv-mx-t">L</span><span class="inv-mx-t">XL</span>
-                <span class="inv-mx-n">Polanco</span><i class="ok"></i><i class="ok"></i><i class="al"></i><i class="ok"></i><i class="ok"></i>
-                <span class="inv-mx-n">Satélite</span><i class="ok"></i><i class="ok"></i><i class="ex"></i><i class="ok"></i><i class="ok"></i>
-                <span class="inv-mx-n">Querétaro</span><i class="no"></i><i class="no"></i><i class="no"></i><i class="ok"></i><i class="no"></i>
-                <span class="inv-mx-n">CEDIS</span><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i>
-              </div>
-              <div class="inv-tags"><span class="al">Polanco · M se acaba el sábado · 92 % sell-through</span><span class="ex">Satélite · M sin venta 34 días</span><span class="no">Querétaro · curva rota</span></div>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="2">
-            <div class="inv-scr-h"><i></i>Lo que tus clientas ya pidieron</div>
-            <div class="inv-scr-b">
-              <div class="inv-row"><span class="inv-av">F</span><span class="inv-who"><b>Fernanda R.</b>Polanco · apartado con anticipo</span><span class="inv-it">Vestido rosa · M</span><span class="inv-wh">viernes</span></div>
-              <div class="inv-row"><span class="inv-av">S</span><span class="inv-who"><b>Sofía M.</b>Querétaro · pedido especial</span><span class="inv-it">Botín negro · 25</span><span class="inv-wh">8 oct</span></div>
-              <div class="inv-row"><span class="inv-av">A</span><span class="inv-who"><b>Andrea L.</b>Satélite · para evento</span><span class="inv-it">Blazer camel · S</span><span class="inv-wh">14 oct</span></div>
-              <div class="inv-line">+7 clientas pidieron el vestido rosa talla S — agotado en la red</div>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="3">
-            <div class="inv-scr-h"><i></i>Cómo surtir · tres caminos</div>
-            <div class="inv-scr-b inv-3">
-              <div class="inv-op is-best"><span class="inv-op-t">Traspaso entre tiendas</span><b>Satélite → Polanco · 3 M</b><small>Llega mañana · costo $0 · cubre el apartado de Fernanda</small><span class="inv-op-b">Recomendado</span></div>
-              <div class="inv-op"><span class="inv-op-t">Surtido del CEDIS</span><b>→ Querétaro · curva 2·3·4·2·1</b><small>Sale hoy · cubre el pedido de Sofía</small></div>
-              <div class="inv-op"><span class="inv-op-t">Compra al proveedor</span><b>24 piezas · talla S</b><small>3 semanas · solo lo que la red no tiene</small></div>
-            </div>
-          </div>
-
-          <div class="inv-scr" data-tag="4">
-            <div class="inv-scr-h"><i></i>Órdenes generadas</div>
-            <div class="inv-scr-b">
-              <div class="inv-ok">Traspaso Satélite → Polanco · guía creada</div>
-              <div class="inv-ok">Picking Querétaro · 12 pzas</div>
-              <div class="inv-ok">Orden de compra · 24 pzas talla S</div>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="5">
-            <div class="inv-scr-h"><i></i>Vestido rosa · M disponible de nuevo</div>
-            <div class="inv-scr-b inv-ch">
-              <span>Piso · Polanco</span><span>Tienda en línea</span><span>WhatsApp</span><span>Instagram</span><span>TikTok Shop</span>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="6">
-            <div class="inv-scr-h"><i></i>Entregado hoy</div>
-            <div class="inv-scr-b">
-              <div class="inv-row inv-row--ok"><span class="inv-av">F</span><span class="inv-who"><b>Fernanda R.</b>Polanco · apartado liquidado</span><span class="inv-it">Vestido rosa · M</span><span class="inv-wh">$2,490</span></div>
-              <div class="inv-row inv-row--ok"><span class="inv-av">S</span><span class="inv-who"><b>Sofía M.</b>Querétaro · pedido especial</span><span class="inv-it">Botín negro · 25</span><span class="inv-wh">$3,190</span></div>
-              <div class="inv-row inv-row--ok"><span class="inv-av">A</span><span class="inv-who"><b>Andrea L.</b>Satélite · a tiempo para su evento</span><span class="inv-it">Blazer camel · S</span><span class="inv-wh">$2,320</span></div>
-            </div>
-          </div>
-
-          <div class="inv-scr" data-tag="7">
-            <div class="inv-scr-h inv-scr-h--al"><i></i>Demanda sin cubrir</div>
-            <div class="inv-scr-b">
-              <div class="inv-big">10 clientas pidieron el vestido rosa · talla S</div>
-              <div class="inv-line">6 desde «avísame» en línea · 4 en piso · agotado en las 38 tiendas</div>
-              <div class="inv-cta">Comprar 24</div>
-            </div>
-          </div>
-
-          <div class="inv-scr inv-scr--wide" data-tag="8">
-            <div class="inv-scr-h"><i></i>Curva completa</div>
-            <div class="inv-scr-b">
-              <div class="inv-mx">
-                <span class="inv-mx-t"></span><span class="inv-mx-t">XS</span><span class="inv-mx-t">S</span><span class="inv-mx-t">M</span><span class="inv-mx-t">L</span><span class="inv-mx-t">XL</span>
-                <span class="inv-mx-n">Polanco</span><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i>
-                <span class="inv-mx-n">Satélite</span><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i>
-                <span class="inv-mx-n">Querétaro</span><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i>
-              </div>
-              <div class="inv-line inv-line--ok">3 pedidos entregados · $8,000 cobrados hoy gracias al inventario correcto</div>
-            </div>
-          </div>
-
+          <img class="flujo-still" src="/tienda/80b-pizarra.webp" alt="" decoding="async" />
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/80b-pizarra.webp"><track kind="captions" src="/tienda/inventario.vtt" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
       </div>
       <div class="flujo-nav" aria-label="Avance de la historia">
         <ol class="flujo-dots">
-          <li data-i="0"><i><b></b></i><span>Análisis</span></li><li data-i="1"><i><b></b></i><span>Ventas</span></li><li data-i="2"><i><b></b></i><span>Pedidos</span></li><li data-i="3"><i><b></b></i><span>3 caminos</span></li><li data-i="4"><i><b></b></i><span>Órdenes</span></li><li data-i="5"><i><b></b></i><span>Canales</span></li><li data-i="6"><i><b></b></i><span>Entrega</span></li><li data-i="7"><i><b></b></i><span>Demanda</span></li><li data-i="8"><i><b></b></i><span>Curva</span></li>
+          <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>38 tiendas</span></li><li data-i="6"><i><b></b></i><span>Ventas</span></li><li data-i="7"><i><b></b></i><span>Cierre</span></li>
         </ol>
         <a class="flujo-saltar" href="#pilar-stock" data-evento="inventario_saltar">Saltar
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -18480,7 +18388,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.33, 6.33, 10.33, 13.67, 19.5, 22.83, 29.83, 33.83], fin: 36.5 });
+  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.77, 6.27, 8.77, 13.27, 24.77, 26.67, 41.67], fin: 45.6 });
 
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
