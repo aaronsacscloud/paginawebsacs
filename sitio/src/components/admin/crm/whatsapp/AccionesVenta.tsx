@@ -48,6 +48,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
 }) {
   const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar'>(accionInicial || 'menu');
   const [cuentaAbierta, setCuentaAbierta] = useState(false);
+  const [resumenAbierto, setResumenAbierto] = useState(false);
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
   const telefono = conv?.telefono || contacto?.whatsapp || null;
   const nombre = [contacto?.nombre, contacto?.apellido].filter(Boolean).join(' ') || contacto?.nombre || '';
@@ -66,7 +67,17 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   return (
     <div className="accv" style={{ padding: 14 }}>
       <EstiloAccv />
-      {contacto?.id && <ResumenRelacion contactId={contacto.id} inicial={resumenIa} inicialAt={resumenIaAt} />}
+      {/* ── UNA SOLA CUADRÍCULA ──────────────────────────────────────────────
+          Aquí había tres formas conviviendo: una barra ancha arriba («Resumen
+          de la relación», con su botón morado a la derecha), la cuadrícula de
+          cuadros en medio, y otra barra ancha al final (la cuenta de SACS).
+          Tres lenguajes para lo mismo —cosas que se pueden hacer con este
+          contacto— y dos de ellas rompiendo la retícula por arriba y por abajo.
+
+          Ahora es una cuadrícula y ya: todo lo que se puede hacer es un cuadro
+          del mismo tamaño. Lo que necesita más espacio —el resumen generado, la
+          cuenta con sus motivos de revocación— se despliega DEBAJO al tocar su
+          cuadro, no antes. */}
       <div style={{ fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Ventas · se ejecutan aquí mismo</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BotonAccion e="📄" t="Cotización" d="Crear y enviar aquí" ok={!!contacto} onClick={() => setVista('cotizar')} destacado />
@@ -75,30 +86,26 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
           <BotonAccion key={a.t} e={a.e} t={a.t} d={a.ok ? a.d : 'Sin contacto'} ok={a.ok}
             onClick={() => a.onClick ? a.onClick() : (a.href && (window.location.href = a.href))} />
         ))}
+        {contacto?.id && (
+          <BotonAccion e="🧠" t="Resumen" d={resumenAbierto ? 'Ocultar' : 'La relación en 30 s'} ok
+            onClick={() => setResumenAbierto(v => !v)} />
+        )}
+        {/* La cuenta va de últimas: revocarla es lo que MENOS veces se hace de
+            esta pantalla. Solo si hay cuenta ligada. */}
+        {contacto?.id && (
+          <BotonAccion e="🔐" t="Acceso a SACS" d={cuentaAbierta ? 'Ocultar' : 'Ver y revocar'} ok
+            onClick={() => setCuentaAbierta(v => !v)} />
+        )}
       </div>
 
-      {/* La cuenta, al final y no arriba: revocarla es lo último que se hace y
-          lo que menos veces se hace. Arriba estorbaría a lo que sí se usa cada
-          día. Se pinta sola solo si hay cuenta ligada — misma tarjeta que la
-          ficha del lead, para que las dos digan exactamente lo mismo. */}
-      {contacto?.id && (
-        <div style={{ marginTop: 14 }}>
-          {/* ── UN CUADRO MÁS DE LA CUADRÍCULA ───────────────────────────
-              La tarjeta de la cuenta era un bloque ancho, con texto alineado a
-              la izquierda, colgando debajo de una cuadrícula de cuadros
-              centrados: rompía la retícula justo al final. Ahora es un cuadro
-              como los demás y lo pesado —revocar, con sus motivos y su monto—
-              se despliega solo si lo tocas. Es lo que MENOS veces se hace de
-              esta pantalla; no tiene por qué ocupar sitio todo el tiempo. */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <BotonAccion e="🔐" t="Acceso a SACS" d={cuentaAbierta ? 'Ocultar' : 'Ver y revocar'} ok
-              onClick={() => setCuentaAbierta(v => !v)} />
-          </div>
-          {cuentaAbierta && (
-            <div style={{ marginTop: 10 }}>
-              <CuentaSacs contactId={contacto.id} companyId={empresa?.id} compacto alCambiar={refrescar} />
-            </div>
-          )}
+      {resumenAbierto && contacto?.id && (
+        <div style={{ marginTop: 10 }}>
+          <ResumenRelacion contactId={contacto.id} inicial={resumenIa} inicialAt={resumenIaAt} />
+        </div>
+      )}
+      {cuentaAbierta && contacto?.id && (
+        <div style={{ marginTop: 10 }}>
+          <CuentaSacs contactId={contacto.id} companyId={empresa?.id} compacto alCambiar={refrescar} />
         </div>
       )}
     </div>
