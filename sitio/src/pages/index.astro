@@ -7,7 +7,7 @@ import CtaDudas from '../components/CtaDudas.astro';
 import Operador from '../components/home/Operador.astro';
 import PatternIA from '../components/home/PatternIA.astro';
 import FlujoIA from '../components/home/FlujoIA.astro';
-import { modaSectors, modelosNegocio } from '../data/navigation';
+import { modaSectors } from '../data/navigation';
 
 const websiteSchema = {
   '@context': 'https://schema.org',
@@ -19,29 +19,6 @@ const websiteSchema = {
 
 // Los tres casos de moda que se enseñan en el home. Los datos completos viven
 // en /casos-de-exito; aquí solo la tarjeta.
-const casosHome = [
-  {
-    slug: 'liveshow',
-    brand: 'Liveshow Merchandising',
-    tagline: 'Shakira, Metallica, Karol G y Lady Gaga confían en SACS.',
-    dato: '100+ puntos de venta simultáneos',
-    image: '/images/case-shakira-merch.webp',
-  },
-  {
-    slug: 'la-bella-pandita',
-    brand: 'La Bella Pandita',
-    tagline: 'De 1 tienda en Querétaro a 42 sucursales en todo México.',
-    dato: '42 sucursales sincronizadas',
-    image: '/images/case-bella-pandita.webp',
-  },
-  {
-    slug: 'sandmade',
-    brand: 'Sandmade Swimwear',
-    tagline: 'Swimwear premium conectado de Tulum a Los Cabos.',
-    dato: '8 boutiques turísticas',
-    image: '/images/case-sandmade.webp',
-  },
-];
 ---
 
 <BaseLayout
@@ -62,26 +39,6 @@ const casosHome = [
     </Fragment>
     <Operador slot="operador" />
   </Hero>
-
-  <!-- ═══ ¿Cómo opera tu negocio? — el selector de camino ═══ -->
-  <section class="modelos-section">
-    <div class="modelos-container">
-      <div class="modelos-header">
-        <span class="modelos-eyebrow">Para tu operación</span>
-        <h2 class="modelos-title">¿Cómo opera tu negocio?</h2>
-        <p class="modelos-sub">El mismo sistema, contado para tu tamaño de operación.</p>
-      </div>
-      <div class="modelos-grid">
-        {modelosNegocio.map((m) => (
-          <a href={m.href} class="modelo-card">
-            <h3 class="modelo-card-title">{m.label}</h3>
-            <p class="modelo-card-desc">{m.description}</p>
-            <span class="modelo-card-link">Ver cómo funciona <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
 
   <!-- ═══ Giros de moda ═══ -->
   <section class="girosmoda-section">
@@ -104,29 +61,6 @@ const casosHome = [
         ))}
       </div>
       <p class="girosmoda-otros">¿Vendes otra cosa? <a href="/giros">Sacs también opera otros comercios →</a></p>
-    </div>
-  </section>
-
-  <!-- ═══ Casos de éxito de moda ═══ -->
-  <section class="casoshome-section">
-    <div class="modelos-container">
-      <div class="modelos-header">
-        <span class="modelos-eyebrow">Casos de éxito</span>
-        <h2 class="modelos-title">Marcas de moda que ya operan con Sacs</h2>
-      </div>
-      <div class="casoshome-grid">
-        {casosHome.map((c) => (
-          <a href={`/casos-de-exito/${c.slug}`} class="casohome-card">
-            <div class="casohome-media"><img src={c.image} alt={`${c.brand} — caso de éxito`} width="600" height="500" loading="lazy" /></div>
-            <div class="casohome-body">
-              <h3 class="casohome-brand">{c.brand}</h3>
-              <p class="casohome-tagline">{c.tagline}</p>
-              <span class="casohome-dato">{c.dato}</span>
-            </div>
-          </a>
-        ))}
-      </div>
-      <p class="girosmoda-otros"><a href="/casos-de-exito">Ver todos los casos →</a></p>
     </div>
   </section>
 
