@@ -199,6 +199,12 @@ const NAV_SECTIONS = [
          uno perdía la pantalla en la que estaba. Es el widget flotante de
          abajo a la derecha (?tab=equipo lo abre encima de lo que haya). */
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
+      /* El Inbox sube a primer nivel (12-sep-2026). Es la pantalla que se abre
+         a diario —WhatsApp y correo del cliente— y vivía en el renglón cuatro
+         de una sección de diez: nada de lo que se usa todos los días debería
+         estar detrás de abrir una cabecera. Y es transversal: se usa con un
+         lead y con un cliente, así que no era de Ventas ni de Cuentas. */
+      { id: 'whatsapp' as Tab, label: 'Inbox', icon: 'whatsapp' },
     ],
   },
   {
@@ -207,108 +213,94 @@ const NAV_SECTIONS = [
     label: 'Trabajo inteligente', sec: 'trabajo', icon: 'trabajo',
     items: [
       { id: 'ti-seguimiento' as Tab, label: 'Seguimiento', icon: 'trabajo' },
-    { id: 'ti-descalificar' as Tab, label: 'Por descalificar', icon: 'trabajo' },
-    { id: 'ti-compromisos' as Tab, label: 'Programados', icon: 'trabajo' },
-    { id: 'ti-reactivacion' as Tab, label: 'Reactivación', icon: 'trabajo' },
+      { id: 'ti-descalificar' as Tab, label: 'Por descalificar', icon: 'trabajo' },
+      { id: 'ti-compromisos' as Tab, label: 'Programados', icon: 'trabajo' },
+      { id: 'ti-reactivacion' as Tab, label: 'Reactivación', icon: 'trabajo' },
       { id: 'trabajo' as Tab, label: 'Torre', icon: 'trabajo' },
       { id: 'ti-informes' as Tab, label: 'Informes', icon: 'dashboard' },
     ],
   },
+  /* ══ Reacomodo del 12-sep-2026 ══════════════════════════════════════════
+     El menú tenía 35 renglones en 6 cabeceras y una —Ventas— cargaba DIEZ:
+     cotizar, cobrar, las suscripciones, el inbox, los masivos, el email, las
+     secuencias, el outbound, las cuentas objetivo y las ferias. Seis de esas
+     diez no son vender: o son marketing (salir a buscar, antes de que exista
+     una venta) o son finanzas (el dinero ya comprometido).
+
+     Ahora cada zona contesta UNA pregunta, y esa pregunta es también su
+     permiso —las llaves de `permisos.ts` son exactamente estas—:
+
+       Cuentas        ¿quién es y en qué momento va?
+       Ventas         ¿cómo lo conseguimos y qué le propusimos?
+       Acompañamiento ¿qué le estamos haciendo?
+       Marketing      ¿cómo los traemos?
+       Finanzas       ¿cuánto entra y cuánto sale?
+
+     Ninguna pantalla se eliminó ni se fusionó: las 35 siguen ahí, y su
+     dirección (?tab=…) no cambió, así que las ligas guardadas siguen sirviendo. */
   {
-    /* Abre la zona de los GRUPOS: de aquí para abajo todo tiene submenú. */
+    /* Cuentas: el cliente y su momento. Leads y Reuniones NO están aquí —se
+       fueron a Ventas— porque un lead todavía no es una cuenta y la reunión es
+       parte de cerrarlo. Lo que queda es el ciclo de quien ya compró. */
     label: 'Cuentas', sec: 'cuentas', icon: 'clientes', separar: true,
-    /* EN EL ORDEN DEL PROCESO, no por tamaño ni por antigüedad (decisión del
-       dueño, 3-sep-2026): así se lee de arriba abajo como se trabaja de verdad.
-
-         Reuniones  → de dónde salen los prospectos
-         Campañas   → lo que se invierte para traerlos
-         Leads      → los que llegaron
-         Clientes   → los que compraron
-         Onboarding → sus primeros días
-         Churn      → los que se fueron
-
-       «Embudo» pasa a llamarse CAMPAÑAS: el embudo es el dibujo; lo que se
-       mira ahí es qué campaña trajo qué. Y vuelve al menú —había pasado a ser
-       pestaña del Dashboard— porque su sitio es este proceso; la pestaña se
-       retira para no dejar dos puertas al mismo sitio. */
     items: [
-      { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
-      { id: 'embudo' as Tab, label: 'Campañas', icon: 'dashboard' },
-      { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
       { id: 'onboarding' as Tab, label: 'Onboarding', icon: 'mejoras' },
       { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
     ],
   },
   {
-    /* VENTAS, no «Facturación» (decisión del dueño, 3-sep-2026). Facturación
-       nombraba el papeleo del final; lo que vive aquí es el trabajo completo de
-       vender: cotizar, cobrar, la suscripción que queda, y por dónde se le
-       habla al cliente para llegar hasta ahí.
-
-       Aquí se juntaron tres grupos que eran tres renglones del menú —Ventas,
-       WhatsApp y Automatización— porque son el mismo oficio visto en momentos
-       distintos, y separados obligaban a recordar en cuál de los tres estaba
-       cada pantalla. Comisiones NO se vino: es dinero que sale, y eso es
-       Finanzas. */
-    label: 'Ventas', sec: 'facturacion', icon: 'cotizaciones',
+    /* Ventas: el proceso de cerrar, de principio a fin. Llega el lead, lo ves
+       en una reunión, le cotizas. Antes estaba partido entre dos secciones y
+       había que dar dos permisos para un solo trabajo. */
+    label: 'Ventas', sec: 'ventas', icon: 'cotizaciones',
     items: [
+      { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
+      { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
-      // Pagos se comió a Cobranza: eran el mismo trabajo —el dinero— visto en
-      // dos momentos, y "Por cobrar" salía duplicado en las dos pantallas.
-      // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
-      { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
-      /* «Suscripciones», sin el «· ARR»: la sigla es cómo se llama la MÉTRICA
-         de adentro, no la pantalla, y colgada del nombre obliga a saber qué
-         significa antes de saber a dónde lleva. */
-      { id: 'suscripciones' as Tab, label: 'Suscripciones', icon: 'suscripciones' },
-      /* «Inbox», no «WhatsApp»: la pantalla ya no es de un solo canal —dentro
-         viven también los correos del hilo— y el nombre del canal prometía
-         menos de lo que hay. */
-      { id: 'whatsapp' as Tab, label: 'Inbox', icon: 'whatsapp' },
-      { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
+    ],
+  },
+  {
+    /* Acompañamiento: el trabajo que se le entrega al cliente y se le cobra.
+       Va pegado a Cuentas porque es el día del consultor. */
+    label: 'Acompañamiento', sec: 'acompanamiento', icon: 'mejoras',
+    items: [
+      { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
+      { id: 'taller' as Tab, label: 'Taller', icon: 'mejoras' },
+      { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
+      { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
+    ],
+  },
+  {
+    /* Marketing: salir a buscar. «Campañas» se vino de Cuentas —mide qué
+       campaña trajo qué, que es análisis, no una cuenta— y lo demás de Ventas.
+       Las ferias son prospección también, nada más que con stand y gafete. */
+    label: 'Marketing', sec: 'marketing', icon: 'automations',
+    items: [
+      { id: 'embudo' as Tab, label: 'Campañas', icon: 'dashboard' },
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
+      { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
       { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
-      /* Prospección en frío de moda: 810 negocios investigados con su
-         procedencia. Vive junto a Outbound porque es el mismo trabajo —
-         salir a buscar— pero con cuentas que todavía no son de nadie. */
       { id: 'abm' as Tab, label: 'Cuentas objetivo', icon: 'abm' },
-      /* Las ferias donde ese mismo mercado se junta en persona: Intermoda,
-         SAPICA… Es prospección también, nada más que con stand y gafete. */
       { id: 'eventos' as Tab, label: 'Ferias y eventos', icon: 'eventos' },
     ],
   },
   {
-    // Finanzas del negocio (decisión 2026-09-03): cuatro páginas, cada una con un solo trabajo.
+    /* Finanzas: el dinero, todo junto. Suscripciones y Pagos se vinieron de
+       Ventas: la licencia viva y su ARR son administración, no una venta, y
+       cobrar tampoco es vender. Comisiones ya estaba aquí. */
     label: 'Finanzas', sec: 'finanzas', icon: 'pagos',
     items: [
-      { id: 'fin-gastos' as Tab, label: 'Gastos', icon: 'pagos' },
+      { id: 'suscripciones' as Tab, label: 'Suscripciones', icon: 'suscripciones' },
+      { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'fin-ingresos' as Tab, label: 'Ingresos y flujo', icon: 'suscripciones' },
-      /* Comisiones se vino de Automatización: es dinero que SALE y tiene fecha
-         límite —el corte se arma solo cada lunes a las 5 am y hay que revisarlo
-         y pagarlo ese día—, así que su sitio es junto a los gastos, no junto a
-         lo que corre solo. */
+      { id: 'fin-gastos' as Tab, label: 'Gastos', icon: 'pagos' },
       { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'fin-cierre' as Tab, label: 'Cierre mensual y anual', icon: 'dashboard' },
     ],
   },
   {
-    label: 'Acompañamiento', sec: 'acompanamiento', icon: 'mejoras',
-    items: [
-      { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
-      { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
-      { id: 'taller' as Tab, label: 'Taller', icon: 'mejoras' },
-      { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
-    ],
-  },
-  /* Los grupos «WhatsApp» y «Automatización» se disolvieron: sus pantallas
-     viven ahora dentro de Ventas, que es el trabajo del que forman parte. Eran
-     dos cabeceras más que abrir para llegar a algo que se usa a diario.
-     Comisiones, lo único que no era de venta, se fue a Finanzas. */
-  {
-    // "Colaboradores" no decía qué había adentro. Son los partners y lo que se
-    // les paga; "Mi desempeño" se viene con ellos porque es el mismo tablero.
     /* Su propia zona: no es el negocio de uno, son terceros y lo que se les
        paga. Mezclado con Finanzas o Acompañamiento se buscaba en el sitio
        equivocado. */

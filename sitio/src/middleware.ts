@@ -96,63 +96,120 @@ function needsAdmin(path: string): boolean {
 // sección más restringida, así que una ruta nueva sin clasificar se lee como
 // administración y solo la ve quien administra.
 const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
-  // Cuentas
+  /* ── Las rutas que se leen ANTES que su prefijo general ──────────────────
+     Gana el PRIMER prefijo que coincide, así que las excepciones van arriba.
+     Cada una está aquí porque sin ella la ruta caía en la sección equivocada
+     y alguien recibía un 403 en una pantalla que sí le toca. */
+  // El historial de WhatsApp de un cliente lo pide la ficha 360: es de la
+  // cuenta, no de la campaña que lo mandó.
+  { pre: '/api/crm/whatsapp/por-cliente', sec: 'cuentas' },
+  // Las señales de un contacto (intención + timeline) son de CUENTAS. Sin
+  // esta línea caían en el fallback 'config', que el consultor tiene en 'no',
+  // y la pestaña quedaba invisible justo para quien hace las llamadas.
+  { pre: '/api/crm/contacto-senales', sec: 'cuentas' },
+  // El radar («Radar de ventas») es lo que se le puede vender a un cliente que
+  // ya se acompaña: vive en Acompañamiento, no en el pipeline de leads.
+  { pre: '/api/crm/oportunidades', sec: 'acompanamiento' },
+
+  // ── Cuentas: quién es el cliente y en qué momento va ──
   { pre: '/api/crm/contactos', sec: 'cuentas' },
+  { pre: '/api/crm/contacts', sec: 'cuentas' },
   { pre: '/api/crm/empresas', sec: 'cuentas' },
+  { pre: '/api/crm/companies', sec: 'cuentas' },
   { pre: '/api/crm/clientes', sec: 'cuentas' },
-  /* Churn cuelga del grupo Cuentas en el menú. Sin esta línea seccionDe() lo
-     mandaba a `config` por omisión y el vendedor con cuentas:edit veía el
-     renglón y recibía 403 — el mismo bug que ya documentó contacto-senales. */
   { pre: '/api/crm/churn', sec: 'cuentas' },
   { pre: '/api/crm/onboarding', sec: 'cuentas' },
-  { pre: '/api/crm/leads', sec: 'cuentas' },
-  { pre: '/api/crm/deals', sec: 'cuentas' },
-  { pre: '/api/crm/oportunidades', sec: 'cuentas' },
-  { pre: '/api/crm/reuniones', sec: 'cuentas' },
   { pre: '/api/crm/actividad', sec: 'cuentas' },
-  // Las señales de un contacto (intención + timeline) son de CUENTAS, no de
-  // configuración: sin esta línea caían en el fallback 'config', que el rol
-  // Consultor tiene en 'no' — la pestaña quedaba invisible justo para quien
-  // hace las llamadas, que es a quien más le sirve.
-  { pre: '/api/crm/contacto-senales', sec: 'cuentas' },
+  { pre: '/api/crm/activities', sec: 'cuentas' },
   { pre: '/api/crm/search', sec: 'cuentas' },
+  { pre: '/api/crm/buscar-cliente', sec: 'cuentas' },
   { pre: '/api/crm/etiquetas', sec: 'cuentas' },
-  { pre: '/api/get-leads', sec: 'cuentas' },
-  { pre: '/api/update-lead', sec: 'cuentas' },
-  { pre: '/api/add-note', sec: 'cuentas' },
-  // Facturación
-  { pre: '/api/revenue/', sec: 'facturacion' },
-  { pre: '/api/crm/arr', sec: 'facturacion' },
-  { pre: '/api/crm/cobranza', sec: 'facturacion' },
-  { pre: '/api/crm/pagos', sec: 'facturacion' },
-  { pre: '/api/crm/suscripciones', sec: 'facturacion' },
-  { pre: '/api/crm/unificar', sec: 'facturacion' },
-  // Acompañamiento
+  { pre: '/api/crm/lifecycle-etapas', sec: 'cuentas' },
+  { pre: '/api/crm/cuenta', sec: 'cuentas' },
+  { pre: '/api/crm/sacs-', sec: 'cuentas' },
+  { pre: '/api/crm/notas', sec: 'cuentas' },
+
+  /* ── Ventas: conseguir el sí ──
+     Desde el reacomodo del 12-sep-2026 Leads y Reuniones viven aquí, con
+     Cotizaciones: es el proceso de cerrar —llega, lo ves, le cotizas— y
+     separarlo obligaba a dar dos permisos para un solo trabajo. */
+  { pre: '/api/crm/leads', sec: 'ventas' },
+  { pre: '/api/leads', sec: 'ventas' },
+  { pre: '/api/get-leads', sec: 'ventas' },
+  { pre: '/api/update-lead', sec: 'ventas' },
+  { pre: '/api/save-lead', sec: 'ventas' },
+  { pre: '/api/add-note', sec: 'ventas' },
+  { pre: '/api/crm/deals', sec: 'ventas' },
+  { pre: '/api/crm/reuniones', sec: 'ventas' },
+  { pre: '/api/scheduling/', sec: 'ventas' },
+  { pre: '/api/quotes', sec: 'ventas' },
+  { pre: '/api/crm/telefonia', sec: 'ventas' },
+  { pre: '/api/telefonia/', sec: 'ventas' },
+  { pre: '/api/calls', sec: 'ventas' },
+
+  // ── Acompañamiento: el trabajo que se le entrega ──
   { pre: '/api/crm/mejoras', sec: 'acompanamiento' },
   { pre: '/api/crm/consultoria', sec: 'acompanamiento' },
   { pre: '/api/crm/expansion', sec: 'acompanamiento' },
   { pre: '/api/crm/salud', sec: 'acompanamiento' },
-  // Aprobar las etapas del brief de un proyecto es entrega/acompañamiento,
-  // no configuración: sin esta línea caía en el fallback 'config' y quien
-  // lleva la implementación no podría cerrar una etapa.
+  { pre: '/api/crm/taller', sec: 'acompanamiento' },
+  { pre: '/api/crm/soporte', sec: 'acompanamiento' },
+  { pre: '/api/crm/reportes', sec: 'acompanamiento' },
+  // Aprobar las etapas del brief de un proyecto es entrega, no configuración:
+  // sin esta línea quien lleva la implementación no podría cerrar una etapa.
   { pre: '/api/proyecto/', sec: 'acompanamiento' },
-  // Automatización
-  { pre: '/api/automations/', sec: 'automatizacion' },
-  { pre: '/api/agents/', sec: 'automatizacion' },
-  { pre: '/api/crm/email', sec: 'automatizacion' },
-  { pre: '/api/crm/outbound', sec: 'automatizacion' },
-  // El historial de WhatsApp de un cliente es de CUENTAS (la ficha 360 lo
-  // pide), no de automatización: el orden importa porque gana el primer
-  // prefijo que coincide — igual que contacto-senales.
-  { pre: '/api/crm/whatsapp/por-cliente', sec: 'cuentas' },
-  { pre: '/api/crm/whatsapp', sec: 'automatizacion' },
-  // Colaboradores
+
+  /* ── Marketing: salir a buscar, antes de que exista una venta ──
+     Era `automatizacion`, una llave que ya no abría ninguna zona del menú.
+     Aquí viven las campañas y su atribución, el correo, los masivos, las
+     secuencias, el outbound, las cuentas objetivo y las ferias. */
+  { pre: '/api/automations/', sec: 'marketing' },
+  { pre: '/api/agents/', sec: 'marketing' },
+  { pre: '/api/crm/email', sec: 'marketing' },
+  { pre: '/api/email-templates', sec: 'marketing' },
+  { pre: '/api/crm/outbound', sec: 'marketing' },
+  { pre: '/api/crm/secuencias', sec: 'marketing' },
+  { pre: '/api/crm/abm', sec: 'marketing' },
+  { pre: '/api/crm/eventos', sec: 'marketing' },
+  { pre: '/api/eventos', sec: 'marketing' },
+  { pre: '/api/crm/embudo', sec: 'marketing' },
+  { pre: '/api/crm/whatsapp', sec: 'marketing' },
+  { pre: '/api/whatsapp', sec: 'marketing' },
+  { pre: '/api/kapso', sec: 'marketing' },
+  { pre: '/api/tracking', sec: 'marketing' },
+
+  /* ── Finanzas: el dinero, todo en un lugar ──
+     Era `facturacion`, que mezclaba cotizar con cobrar. Las suscripciones
+     —la licencia viva y su ARR— son administración del dinero, no una venta. */
+  { pre: '/api/revenue/', sec: 'finanzas' },
+  { pre: '/api/crm/arr', sec: 'finanzas' },
+  { pre: '/api/crm/cobranza', sec: 'finanzas' },
+  { pre: '/api/crm/pagos', sec: 'finanzas' },
+  { pre: '/api/crm/suscripciones', sec: 'finanzas' },
+  { pre: '/api/crm/unificar', sec: 'finanzas' },
+  { pre: '/api/crm/finanzas', sec: 'finanzas' },
+  { pre: '/api/crm/reports', sec: 'finanzas' },
+  { pre: '/api/pagar', sec: 'finanzas' },
+  { pre: '/api/track-payment', sec: 'finanzas' },
+  // Las comisiones del equipo son dinero que SALE: Finanzas, no Partners.
+  { pre: '/api/crm/comisiones', sec: 'finanzas' },
+  { pre: '/api/comisiones', sec: 'finanzas' },
+
+  // ── Trabajo inteligente: el agente y sus bandejas ──
+  // Antes no tenía llave: el guardia preguntaba por una sección inexistente y
+  // la dejaba pasar, así que se le veía a cualquiera.
+  { pre: '/api/crm/ti', sec: 'trabajo' },
+  { pre: '/api/crm/trabajo', sec: 'trabajo' },
+
+  // ── Partners: terceros y lo que se les paga ──
   { pre: '/api/partners/', sec: 'colaboradores' },
-  { pre: '/api/crm/comisiones', sec: 'colaboradores' },
-  // Configuración (lo demás cae aquí por omisión)
+  { pre: '/api/partner-portal/', sec: 'colaboradores' },
+
+  // ── Configuración (lo demás cae aquí por omisión) ──
   { pre: '/api/crm/usuarios', sec: 'config' },
   { pre: '/api/crm/propiedades', sec: 'config' },
   { pre: '/api/crm/pipelines', sec: 'config' },
+  { pre: '/api/crm/campos-config', sec: 'config' },
 ];
 
 // El propio perfil se edita siempre: es de uno mismo, no una sección del

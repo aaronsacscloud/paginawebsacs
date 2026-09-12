@@ -1,23 +1,26 @@
 // Usuarios del CRM y qué ve cada quien.
 //
-// El permiso se da por SECCIÓN del sistema —las mismas seis del menú— y no es
-// una casilla sino un nivel: edita / solo ve / no entra. "Ver sin editar" es lo
-// que hace falta para quien consulta cuentas pero no mueve precios; con sí/no
-// ese caso no existe.
+// Son las personas de ADENTRO: quien entra a trabajar al CRM con su correo y
+// su contraseña. No son partners —ellos no entran aquí, tienen su portal— ni
+// contactos de un cliente. Se dan de alta desde esta pantalla y desde aquí
+// mismo se les bloquea lo que no les toca ver.
+//
+// El permiso se da por SECCIÓN del sistema —las mismas OCHO zonas del menú— y
+// no es una casilla sino un nivel: edita / solo ve / no entra. "Ver sin
+// editar" es lo que hace falta para quien consulta cuentas pero no mueve
+// precios; con sí/no ese caso no existe.
 //
 // Al alta se muestra UNA vez la contraseña temporal. No se guarda en claro: si
 // se pierde, se genera otra desde aquí.
 import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
-import { SECCIONES, type Nivel } from '../../../lib/crm/permisos';
+import { SECCIONES, PRESETS, type Nivel } from '../../../lib/crm/permisos';
 import { confirmar } from '../../../lib/ui/confirmar';
 
-const ROLES = [
-  { id: 'founder', label: 'Founder', desc: 'Todo, incluida esta pantalla' },
-  { id: 'cs', label: 'Consultor', desc: 'Opera cuentas y acompañamiento; ve facturación' },
-  { id: 'lectura', label: 'Solo lectura', desc: 'Consulta, no modifica' },
-  { id: 'partner', label: 'Partner', desc: 'No entra al CRM: usa su portal' },
-];
+/* Los roles salen de PRESETS, no de una copia: eran dos listas que había que
+   acordarse de mover juntas, y el día que no se movieron el menú ofrecía un
+   rol que el servidor no conocía —y esa persona entraba sin permisos—. */
+const ROLES = Object.entries(PRESETS).map(([id, r]) => ({ id, label: r.label, desc: r.desc }));
 
 const NIVELES: { v: Nivel; label: string; color: string; fondo: string }[] = [
   { v: 'edit', label: 'Edita', color: '#fff', fondo: '#9B8CFA' },
@@ -28,8 +31,9 @@ const NIVELES: { v: Nivel; label: string; color: string; fondo: string }[] = [
 /** El encabezado corto de cada sección: con el nombre completo, seis columnas
  *  empujan la tabla fuera del panel y las acciones quedan tras el scroll. */
 const CORTO: Record<string, string> = {
-  cuentas: 'Cuentas', facturacion: 'Factura', acompanamiento: 'Acompaña',
-  automatizacion: 'Automat.', colaboradores: 'Colabora', config: 'Config.',
+  cuentas: 'Cuentas', ventas: 'Ventas', acompanamiento: 'Acompaña',
+  marketing: 'Marketing', finanzas: 'Finanzas', trabajo: 'Trabajo IA',
+  colaboradores: 'Partners', config: 'Config.',
 };
 
 const iniciales = (n?: string | null) => {
@@ -88,8 +92,14 @@ export default function UsuariosPermisos() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <button onClick={() => setAlta(!alta)} style={btnPri}>{alta ? 'Cancelar' : '+ Agregar usuario'}</button>
+        {/* Quién entra por aquí y quién no. Sin decirlo, el alta de un partner
+            se intenta en esta pantalla y el acceso queda donde no sirve. */}
+        <span style={{ fontSize: '0.73rem', color: '#6b7280', lineHeight: 1.5 }}>
+          Gente de <b>adentro</b>: entra al CRM con su correo y ve solo las zonas que le dejes.
+          Los <b>partners</b> no se dan de alta aquí — tienen su propio portal.
+        </span>
       </div>
 
       {alta && (
@@ -120,11 +130,11 @@ export default function UsuariosPermisos() {
         </div>
       )}
 
-      {/* Con seis secciones y las acciones, la tabla no cabe en pantallas
+      {/* Con OCHO zonas y las acciones, la tabla no cabe en pantallas
           medianas: se desplaza dentro de su propio marco en vez de estirar la
           pantalla. */}
       <div className="crm-scroll-x" style={{ overflowX: 'auto', border: '1px solid #efedf6', borderRadius: 14 }}>
-        <table style={{ width: '100%', minWidth: 940, borderCollapse: 'collapse', background: '#fff' }}>
+        <table style={{ width: '100%', minWidth: 1120, borderCollapse: 'collapse', background: '#fff' }}>
           <thead>
             <tr>
               <th style={th}>Usuario</th>
@@ -153,9 +163,16 @@ export default function UsuariosPermisos() {
                     </div>
                   </td>
                   <td style={td}>
+                    {/* Si la persona trae un rol que ya no está en la lista
+                        —el «Agente IA» es 'soporte', de antes de los presets—,
+                        el selector no lo encontraba y pintaba la PRIMERA
+                        opción: la fila decía «Founder» sobre un usuario que no
+                        entra a nada, y un clic distraído se lo daba de verdad.
+                        Se agrega su rol real, marcado como lo que es. */}
                     <select value={u.rol} disabled={guardando === u.id}
                       onChange={e => cambiar(u, { rol: e.target.value, permisos: null })}
                       style={{ ...input, width: 'auto', minWidth: 104, fontSize: '0.72rem', padding: '6px 6px' }}>
+                      {!ROLES.some(r => r.id === u.rol) && <option value={u.rol}>{u.rol} (rol antiguo)</option>}
                       {ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                     </select>
                   </td>
@@ -200,7 +217,9 @@ export default function UsuariosPermisos() {
         rechaza; «Solo ve» deja leer pero devuelve error al intentar guardar. Sin eso, esconder un renglón sería decorativo:
         bastaría escribir la URL.<br /><br />
         <b>El founder no se puede limitar</b> —tendría todo igual— y nadie puede quitarse a sí mismo el rol ni desactivarse:
-        es la forma más rápida de quedarse sin quien pueda arreglarlo.
+        es la forma más rápida de quedarse sin quien pueda arreglarlo.<br /><br />
+        <b>El rol es el punto de partida, no una jaula.</b> Elegirlo llena las ocho zonas de golpe con lo típico de ese
+        puesto; después cada una se sube o se baja en su columna y lo que quede ahí manda sobre el rol.
       </div>
     </div>
   );

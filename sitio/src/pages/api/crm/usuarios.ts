@@ -62,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
   const nombre = String(b.nombre || '').trim();
   const email = String(b.email || '').trim().toLowerCase();
-  const rol = ['founder', 'cs', 'lectura', 'partner'].includes(b.rol) ? b.rol : 'cs';
+  const rol = Object.prototype.hasOwnProperty.call(PRESETS, String(b.rol)) ? b.rol : 'cs';
 
   if (nombre.length < 2) return json({ error: 'Falta el nombre.' }, 400);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'Ese correo no tiene forma de correo.' }, 400);
@@ -95,7 +95,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
   const patch: Record<string, any> = {};
   if (typeof b.nombre === 'string' && b.nombre.trim().length >= 2) patch.nombre = b.nombre.trim();
-  if (['founder', 'cs', 'lectura', 'partner'].includes(b.rol)) patch.rol = b.rol;
+  if (Object.prototype.hasOwnProperty.call(PRESETS, String(b.rol))) patch.rol = b.rol;
   if (b.permisos !== undefined) patch.permisos = saneaPermisos(b.permisos);
   if (typeof b.activo === 'boolean') patch.activo = b.activo;
 
