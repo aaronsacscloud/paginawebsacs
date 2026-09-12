@@ -5,6 +5,7 @@ import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // por inactividad (3-15, +15 días) con ARR en riesgo, y vencidos.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { planDeCotizacion } from '../../../../lib/quotes/plan';
 
 export const prerender = false;
 
@@ -18,12 +19,23 @@ const _GET: APIRoute = async () => {
   const hoy = new Date();
   const hoyStr = hoy.toISOString().slice(0, 10);
 
-  const [subsRes, goalsRes, compRes] = await Promise.all([
+  const [subsRes, goalsRes, compRes, cotsRes, abonosRes] = await Promise.all([
     // whatsapp/nombre_comercial: la lista de "por cobrar" manda el estado de
     // cuenta desde ahí, y para eso necesita a quién y con qué nombre.
     supabase.from('subscriptions').select('*, contacts(nombre, whatsapp, telefono), companies(id, nombre, nombre_comercial, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre, whatsapp, telefono))').limit(2000),
     supabase.from('crm_goals').select('*'),
     supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, soporte_abiertos, soporte_estancado, soporte_sentimiento, contacts(nombre)').not('sacs_account', 'is', null),
+    /* ── Las parcialidades de una COTIZACIÓN también son cobros ──
+       «Por cobrar» y el calendario de doce meses solo miraban suscripciones.
+       Una cotización aceptada que se paga en cinco partes —$150,000 de Ruben's,
+       $30,000 cada 15— no aparecía por ningún lado: el dinero estaba pactado,
+       con fecha, y la pantalla que existe para decir qué falta por entrar no
+       lo sabía. Recuperación sí las veía, porque lee `planDeCotizacion`; aquí
+       se lee la misma función para que las dos digan lo mismo. */
+    supabase.from('quotes')
+      .select('id, numero, notas, company_id, companies(id, nombre, nombre_comercial, sacs_account, contacts(nombre, whatsapp, telefono))')
+      .in('estado', ['accepted', 'sent', 'paid', 'expired']).limit(500),
+    supabase.from('payments').select('quote_id, monto').not('quote_id', 'is', null).neq('estado', 'reembolsado'),
   ]);
   if (subsRes.error) return new Response(JSON.stringify({ error: subsRes.error.message }), { status: 500 });
 
@@ -147,6 +159,49 @@ const _GET: APIRoute = async () => {
   }
   meses.forEach(m => { m.contratado = r2(m.contratado); m.pendiente = r2(m.pendiente); m.enRiesgo = r2(m.enRiesgo); m.cobros.sort((a, b) => (a.fecha < b.fecha ? -1 : 1)); });
 
+  /* ── Las exhibiciones de las cotizaciones, al calendario y a lo vencido ──
+     Entran a `cobros` y a `vencidas`, que es de donde sale «Por cobrar». NO
+     entran a `contratado` / `pendiente` / `enRiesgo`: eso es la proyección de
+     lo RECURRENTE, y una parcialidad de un trabajo único no vuelve el año que
+     viene. Meterla ahí inflaría el ARR proyectado con dinero que no se repite
+     —el mismo error que ya se había corregido con las vitalicias—. */
+  const abonadoCot: Record<string, number> = {};
+  for (const p of (abonosRes.data || [])) abonadoCot[(p as any).quote_id] = (abonadoCot[(p as any).quote_id] || 0) + Number((p as any).monto || 0);
+
+  const vencidasCot: any[] = [];
+  for (const q of ((cotsRes.data || []) as any[])) {
+    const plan = planDeCotizacion(q, abonadoCot[q.id] || 0, hoyStr);
+    if (!plan.length) continue;
+    /* El MISMO criterio de compromiso que usa Recuperación, para que las dos
+       pantallas digan lo mismo: una propuesta que nadie contestó es pipeline,
+       no cobranza. Con abonos o aceptada, ya es un acuerdo. */
+    if (!((abonadoCot[q.id] || 0) > 0 || q.estado === 'accepted' || q.estado === 'paid')) continue;
+    const co = q.companies || {};
+    const ct = co.contacts?.[0] || {};
+    const baseCot = {
+      subscription_id: null, quote_id: q.id, tipo: 'parcialidad',
+      ciclo: 'parcialidad', estado: 'pendiente_pago',
+      empresa: co.nombre_comercial || co.nombre || '—',
+      cuenta: co.sacs_account || co.nombre || null, sacs_account: co.sacs_account || null,
+      company_id: co.id || null, nombre_comercial: co.nombre_comercial || null,
+      whatsapp: ct.whatsapp || null, telefono: ct.telefono || null, contacto: ct.nombre || null,
+    };
+    for (const x of plan) {
+      if (x.estado !== 'pendiente') continue;
+      const plan_txt = `${q.numero || 'Cotización'} · ${x.concepto} (${x.numero} de ${x.total})`;
+      if (x.vencida) {
+        vencidasCot.push({
+          ...baseCot, plan: plan_txt, vencida_desde: x.fecha,
+          dias_vencida: Math.floor((hoy.getTime() - new Date(x.fecha + 'T12:00:00').getTime()) / 86400000),
+          monto: r2(x.monto),
+        });
+      }
+      const idx = mesIdx(x.fecha);
+      if (idx >= 0) meses[idx].cobros.push({ ...baseCot, plan: plan_txt, fecha: x.fecha, monto: r2(x.monto) });
+    }
+  }
+  meses.forEach(m => m.cobros.sort((a: any, b: any) => (a.fecha < b.fecha ? -1 : 1)));
+
   // ── Vencidos: próxima factura en el pasado y no cancelada ──
   const vencidas = subs
     .filter(s => (s.estado === 'activa' || s.estado === 'pendiente_pago') && s.proxima_factura && s.proxima_factura < hoyStr)
@@ -162,7 +217,8 @@ const _GET: APIRoute = async () => {
       dias_vencida: Math.floor((hoy.getTime() - new Date(s.proxima_factura).getTime()) / 86400000),
       monto: r2(Number(s.monto_proximo ?? s.precio) || 0),
     }))
-    .sort((a, b) => b.dias_vencida - a.dias_vencida);
+    .concat(vencidasCot)
+    .sort((a: any, b: any) => b.dias_vencida - a.dias_vencida);
 
   const sync = (compRes.data || []).map(c => c.actividad_sync_at).filter(Boolean).sort().pop() || null;
 

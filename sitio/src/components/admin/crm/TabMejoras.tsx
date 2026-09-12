@@ -231,6 +231,11 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const entrado = cotsConMejora.reduce((a: number, c: any) => a + Number(c.pagado || 0), 0);
   const porEntrar = Math.max(0, cotizado - entrado);
   const ultimoPago = cotsConMejora.map((c: any) => c.ultimo_pago).filter(Boolean).sort().pop() || null;
+  /* El acuerdo de pago: lo que el cliente firmó que iba a pagar y cuándo.
+     Estaba dentro de la cotización y no salía de ahí — ni en Consultoría, ni
+     en Pagos—, así que al abrir la ficha no había forma de saber que ese
+     trabajo se está cobrando en cinco partes ni cuándo toca la siguiente. */
+  const conPlan = cotsConMejora.filter((c: any) => (c.plan || []).length > 1);
   const anio = new Date().getFullYear();
   const delAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio)));
   const esteAnio = delAnio.length;
@@ -363,6 +368,36 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
           </div>
         ))}
       </div>
+
+      {/* ── El acuerdo de pago ──
+          Una cotización que se paga en parcialidades tiene fechas pactadas.
+          Vivían solo dentro del documento: aquí se leen sin abrirlo, y son las
+          MISMAS que ve Cobranza —una sola función las calcula—. */}
+      {conPlan.map((c: any) => {
+        const pagadas = c.plan.filter((x: any) => x.estado === 'pagada').length;
+        const prox = c.plan.find((x: any) => x.estado === 'pendiente');
+        const vencida = prox?.vencida;
+        return (
+          <div key={c.id} style={{
+            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12,
+            background: vencida ? '#FFF9EF' : '#fbfaff',
+            border: `1px solid ${vencida ? '#f3dfae' : '#e6ddfa'}`, borderRadius: 10, padding: '11px 15px',
+          }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: vencida ? '#9a6a10' : '#6b5fa8' }}>
+              Acuerdo de pago
+            </div>
+            <div style={{ fontSize: '0.79rem', color: '#3f3b4d', flex: 1, minWidth: 220, lineHeight: 1.5 }}>
+              <b>{c.numero}</b> · {c.plan.length} parcialidades · {pagadas} pagada{pagadas === 1 ? '' : 's'}
+              {prox
+                ? <> · {vencida ? <b style={{ color: '#C0554E' }}>vencida</b> : 'la próxima'} <b>{money(prox.monto)}</b> el {fmtDate(prox.fecha)}</>
+                : <> · <b style={{ color: '#1E8A63' }}>liquidada</b></>}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#8a8590' }}>
+              {money(c.pagado)} de {money(c.total)}
+            </div>
+          </div>
+        );
+      })}
 
       {/* Los reportes suben junto a las cifras: son lo que se le enseña al
           cliente y estaban hasta el fondo, después de tres listas.
