@@ -258,8 +258,24 @@ export const PUT: APIRoute = async ({ request }) => {
   upd.mrr = Math.round(mrrEf * 100) / 100;
   upd.arr = Math.round(mrrEf * 12 * 100) / 100;
   if (body.nombre_plan === undefined) upd.nombre_plan = prev.nombre_plan;
+  /* ── `monto_proximo` cuando cambia el PRECIO ──
+     `monto_proximo` es «cuánto se cobra la próxima vez» = precio + add-ons −
+     descuentos, y es el número que usa Cobranza. Conservar el anterior es
+     correcto MIENTRAS el precio no se mueva: ahí guarda los add-ons y los
+     descuentos, que no viven en `precio`.
+     Pero si el precio cambia, guardarlo es exactamente el bug: se corrige el
+     precio de una licencia de $3,900 a $910 y Cobranza sigue cobrando $3,900,
+     porque `monto_proximo` quedó en el valor viejo. Medido el 12-sep-2026:
+     SIETE cuentas cobrándose de más así, ninguna con add-ons ni descuentos
+     —Marketplace ($910 que cobraba $3,900), kuubpets, amalove, boomfitness,
+     elbombazo, cafevaboutique y Jose hernandez—.
+     Cuando el precio cambia, el monto se vuelve a derivar de sus partes con
+     `recalcMontoProximo`, abajo, ya con el precio nuevo escrito. */
+  const precioCambio = body.precio !== undefined && Number(body.precio) !== Number(prev.precio || 0);
   if (body.monto_proximo === undefined) {
-    upd.monto_proximo = cicloEf === 'vitalicia' ? null : (prev.monto_proximo ?? precioEf ?? null);
+    upd.monto_proximo = cicloEf === 'vitalicia' ? null
+      : precioCambio ? precioEf
+      : (prev.monto_proximo ?? precioEf ?? null);
   }
 
   // ── Cancelación: hoy vs al vencer ──
@@ -312,6 +328,25 @@ export const PUT: APIRoute = async ({ request }) => {
 
   const { data, error } = await updateSubTolerante(body.id, upd);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  /* Con el precio nuevo ya escrito, se vuelven a sumar sus add-ons y a restar
+     sus descuentos. Sin add-ons ni descuentos queda igual al precio, que es el
+     caso de las siete cuentas que se estaban cobrando de más.
+     Ojo con una consecuencia deliberada: si la suscripción traía un «puente»
+     de unificación metido en `monto_proximo`, cambiar el precio lo borra. Es
+     lo correcto — ese puente se calculó sobre el precio viejo—, pero hay que
+     volver a unificar si se quiere. */
+  /* «Al renovar» no toca el precio vigente —lo guarda en `precio_siguiente`—,
+     así que ahí el precio NO cambió y no hay nada que recalcular; hacerlo
+     pisaría el monto que esa rama acaba de congelar a propósito. */
+  const aplazado = cambioCiclo && body.aplicar_ciclo === 'al_renovar';
+  if (precioCambio && !aplazado && cicloEf !== 'vitalicia' && body.monto_proximo === undefined) {
+    try {
+      const { recalcMontoProximo } = await import('../../../../lib/crm/effective-price');
+      const mp = await recalcMontoProximo(body.id);
+      if (mp != null) (data as any).monto_proximo = mp;
+    } catch { /* el precio ya quedó bien; el monto se recalcula al tocar un add-on */ }
+  }
 
   // ── Stripe: cancelar de verdad si se pidió y hay sub ligada ──
   let stripeAviso: string | null = null;
