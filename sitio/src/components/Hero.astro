@@ -18294,7 +18294,8 @@ const useCases = [
     if (!sec || !wrap || !still || !clip || prefersReducedMotion) return;
     const movil = window.matchMedia('(max-width: 1023px)').matches;
     const ua = navigator.userAgent; const safari = /safari/i.test(ua) && !/chrome|crios|android|edg/i.test(ua); const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const av1 = !safari && !ios && !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
+    // AV1 solo donde ya está probado (recorrido); el resto va en H.264 para que no tartamudee en máquinas sin decodificador por hardware
+    const av1 = cfg.video === 'recorrido' && !safari && !ios && !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
     clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + cfg.video + (av1 ? '.av1.mp4' : '.mp4');
     const nombre = cfg.sel.replace('#', '');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev.replace('recorrido', nombre), { ...props, movil, av1 }); } catch {} };
@@ -18388,7 +18389,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.77, 6.27, 8.77, 13.27, 24.77, 26.67, 41.67], fin: 45.6 });
+  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 4.53, 7.53, 10.53, 15.03, 26.52, 30.12, 45.12], fin: 49.63 });
 
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
