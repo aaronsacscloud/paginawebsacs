@@ -9,14 +9,14 @@
 // viernes, y si se cuenta por captura, una semana sin juntas sale llena y una
 // semana de seis juntas sale vacía.
 //
-// El dinero se cuenta en DOS cajas que no se mezclan:
-//   · DIRECTO   — la cotización cuelga de una idea del taller/consultoría
-//                 (`mejoras.quote_id`). No hay duda de dónde salió.
-//   · ATRIBUIDO — la cotización es de una cuenta con la que hubo junta, y nació
-//                 dentro de los 30 días siguientes. Es una ventana, no una
-//                 prueba: se enseña aparte y se dice que es atribución.
-// Sumarlas en un solo número sería inflar el resultado con algo que no se puede
-// defender frente a nadie.
+// El dinero de consultoría es SOLO el que cuelga de una idea (`mejoras.quote_id`):
+// cotizado y pagado. No se atribuye por ventana de tiempo — que una cuenta
+// compre algo dentro del mes siguiente a su junta no lo vuelve resultado de la
+// consultoría, y el dueño lo dijo claro: las ventas no se adjudican aquí.
+//
+// Lo que sí se hace con las cotizaciones sueltas de esas cuentas es ofrecerlas
+// para LIGARLAS: si salió de la junta, se liga y entonces sí cuenta. Es la única
+// forma honesta de que el número crezca.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
@@ -24,8 +24,8 @@ import { getCurrentUser } from '../../../../lib/auth/scope';
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 const dia = (d: Date) => d.toISOString().slice(0, 10);
-/** Ventana de atribución: lo que se cotiza en el mes siguiente a una junta. */
-const VENTANA_DIAS = 30;
+/** Cuánto se mira hacia atrás para ofrecer cotizaciones sueltas que ligar. */
+const VENTANA_LIGAR = 45;
 
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
@@ -83,36 +83,46 @@ export const GET: APIRoute = async ({ request, url }) => {
     .eq('estado', 'entregada').is('archived_at', null);
   const E = entregado || [];
 
-  // ── El dinero ──
-  // Directo: la cotización cuelga de una idea.
-  const { data: qDirectas } = await supabase.from('quotes')
-    .select('id, numero, total, estado, created_at, pagado_fecha, company_id, companies(nombre, nombre_comercial)')
-    .gte('created_at', desde).lte('created_at', hasta + 'T23:59:59')
-    .not('estado', 'in', '("deleted")');
+  // ── El dinero: solo lo que cuelga de una idea ──
   const { data: ligas } = await supabase.from('mejoras')
-    .select('quote_id, titulo').not('quote_id', 'is', null);
-  const porQuote = new Map((ligas || []).map((l: any) => [l.quote_id, l.titulo]));
+    .select('id, quote_id, titulo, company_id').not('quote_id', 'is', null);
+  const porQuote = new Map((ligas || []).map((l: any) => [l.quote_id, l]));
+  const idsLigados = [...porQuote.keys()];
 
-  const hastaVentana = dia(new Date(Date.parse(hasta + 'T12:00:00') + VENTANA_DIAS * 86400000));
-  // Atribuido: cotización de una cuenta con la que hubo junta, dentro de la
-  // ventana. Se pide por separado porque puede nacer DESPUÉS del corte.
-  const { data: qCuentas } = cuentas.length
+  // Cotizado en el periodo: la cotización nació aquí y cuelga de una idea.
+  const { data: qLigadas } = idsLigados.length
     ? await supabase.from('quotes')
         .select('id, numero, total, estado, created_at, pagado_fecha, company_id, companies(nombre, nombre_comercial)')
-        .in('company_id', cuentas)
-        .gte('created_at', desde).lte('created_at', hastaVentana + 'T23:59:59')
+        .in('id', idsLigados)
         .not('estado', 'in', '("deleted")')
     : { data: [] as any[] };
 
   const mapQ = (q: any) => ({
     id: q.id, numero: q.numero, total: Number(q.total || 0), estado: q.estado,
-    fecha: String(q.created_at).slice(0, 10), pagada: q.estado === 'paid',
+    fecha: String(q.created_at).slice(0, 10),
+    pagado_fecha: q.pagado_fecha ? String(q.pagado_fecha).slice(0, 10) : null,
     cuenta: q.companies?.nombre_comercial || q.companies?.nombre || 'Sin cuenta',
-    idea: porQuote.get(q.id) || null,
+    idea: porQuote.get(q.id)?.titulo || null,
   });
-  const directo = (qDirectas || []).filter((q: any) => porQuote.has(q.id)).map(mapQ);
-  const idsDirecto = new Set(directo.map(q => q.id));
-  const atribuido = (qCuentas || []).filter((q: any) => !idsDirecto.has(q.id)).map(mapQ);
+  const enRango = (f?: string | null) => !!f && f >= desde && f <= hasta;
+  const todasLig = (qLigadas || []).map(mapQ);
+  const cotizado = todasLig.filter(q => enRango(q.fecha));
+  // Pagado se cuenta por la FECHA DE PAGO, no por la de la cotización: el dinero
+  // entra el día que entra, aunque se haya cotizado el mes pasado.
+  const pagado = todasLig.filter(q => enRango(q.pagado_fecha));
+
+  /* Cotizaciones de estas cuentas que NO cuelgan de ninguna idea. No se cuentan
+     como resultado: se ofrecen para ligar. Si salió de la junta, se liga y
+     entonces sí cuenta; si no, se deja en paz. */
+  const desdeLigar = dia(new Date(Date.parse(desde + 'T12:00:00') - VENTANA_LIGAR * 86400000));
+  const { data: qSueltas } = cuentas.length
+    ? await supabase.from('quotes')
+        .select('id, numero, total, estado, created_at, pagado_fecha, company_id, companies(nombre, nombre_comercial)')
+        .in('company_id', cuentas)
+        .gte('created_at', desdeLigar).lte('created_at', hasta + 'T23:59:59')
+        .not('estado', 'in', '("deleted")')
+    : { data: [] as any[] };
+  const sinLigar = (qSueltas || []).filter((q: any) => !porQuote.has(q.id)).map(mapQ);
 
   const suma = (xs: any[]) => Math.round(xs.reduce((a, q) => a + q.total, 0));
   const cortesias = E.filter((m: any) => m.cobro === 'cortesia');
@@ -125,6 +135,25 @@ export const GET: APIRoute = async ({ request, url }) => {
     .in('estado', ['idea', 'cotizada', 'en_proceso', 'entregada']);
   const ideasHist = (todasIdeas || []);
   const cotizadas = ideasHist.filter((m: any) => m.quote_id).length;
+
+  /* ── Lo que queda por venderle a cada cuenta ──
+     No es el radar de actividad (eso vive en su módulo y depende de la salud,
+     que aquí no pinta nada): son las ideas que TÚ capturaste en las juntas y
+     que todavía no tienen cotización. Es el pendiente comercial de consultoría,
+     y por cuenta se lee de un vistazo dónde está la venta más fácil. */
+  const { data: ideasVivas } = await supabase.from('mejoras')
+    .select('id, titulo, valor, company_id, created_at, companies(nombre, nombre_comercial)')
+    .eq('estado', 'idea').is('quote_id', null).is('archived_at', null);
+  const porCuentaIdeas: Record<string, any> = {};
+  for (const m of ideasVivas || []) {
+    const k = (m as any).company_id || 'sin';
+    const nom = (m as any).companies?.nombre_comercial || (m as any).companies?.nombre || 'Sin cuenta';
+    porCuentaIdeas[k] = porCuentaIdeas[k] || { company_id: k, cuenta: nom, n: 0, valor: 0, ejemplos: [] as string[] };
+    porCuentaIdeas[k].n++;
+    porCuentaIdeas[k].valor += Number((m as any).valor || 0);
+    if (porCuentaIdeas[k].ejemplos.length < 3) porCuentaIdeas[k].ejemplos.push((m as any).titulo);
+  }
+  const ideasPorVender = Object.values(porCuentaIdeas).sort((a: any, b: any) => b.n - a.n).slice(0, 8);
 
   // ── Cuentas que no he tocado ──
   // Una cuenta activa sin junta en dos meses es la que se pierde sin avisar.
@@ -167,10 +196,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       entregadas: E.length,
     },
     dinero: {
-      directo, atribuido,
-      total_directo: suma(directo),
-      total_atribuido: suma(atribuido),
-      cobrado: suma([...directo, ...atribuido].filter(q => q.pagada)),
+      cotizado, pagado, sinLigar,
+      total_cotizado: suma(cotizado),
+      total_pagado: suma(pagado),
+      total_sin_ligar: suma(sinLigar),
       cortesias: cortesias.length,
       cortesia_valor: Math.round(cortesias.reduce((a: number, m: any) => a + Number(m.valor_lista || 0), 0)),
     },
@@ -182,6 +211,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       id: m.id, titulo: m.titulo, tipo: m.tipo, cobro: m.cobro, cuenta: cuenta(m),
       fecha: m.fecha_entrega, valor: Number(m.valor || 0), valor_lista: Number(m.valor_lista || 0), video: !!m.url,
     })),
+    ideasPorVender,
     sinTocar,
   });
 };
