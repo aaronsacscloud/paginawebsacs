@@ -23,7 +23,10 @@ export const srcMedia = (m: any, dl = false): string | null =>
 export const resumenMensaje = (m: any): string => {
   if (!m) return '';
   if (m.borrado_at) return 'Mensaje eliminado';
-  if (m.transcript) return `Nota de voz: ${m.transcript}`;
+  /* El resumen que sale en la lista y en las citas: se decidía por
+     `transcript`, así que un comprobante de pago se anunciaba como «Nota de
+     voz: COMPROBANTE DE PAGO…». El tipo manda, igual que en la burbuja. */
+  if (m.transcript && m.tipo === 'audio') return `Nota de voz: ${m.transcript}`;
   if (m.cuerpo) return m.cuerpo;
   const n: Record<string, string> = { image: 'Imagen', video: 'Video', audio: 'Audio', document: 'Documento', sticker: 'Sticker', location: 'Ubicación', contacts: 'Contacto', template: 'Plantilla' };
   return n[m.tipo] || m.tipo || 'Mensaje';
@@ -62,6 +65,44 @@ export function Resaltado({ texto, q, claro }: { texto: string; q: string; claro
       ? <mark key={i} className="wa-mark">{p}</mark>
       : <Linkify key={i} texto={p} claro={claro} />)}
   </>);
+}
+
+
+/**
+ * La transcripción (o lo que la IA leyó de una imagen o un PDF), DETRÁS DE UN
+ * TOQUE.
+ *
+ * Va plegada a propósito. Una nota de voz de dos minutos son quince renglones
+ * de texto: puesta siempre abierta empujaba el reproductor y el resto de la
+ * conversación fuera de la pantalla, y en el teléfono era media pantalla por
+ * mensaje. Lo primero es poder ESCUCHAR; el texto es para cuando no puedes o
+ * cuando buscas algo.
+ *
+ * La primera línea sí se ve, aunque esté plegada: sin ella habría que abrir
+ * cada nota para saber cuál era.
+ */
+function Transcripcion({ texto, q, claro, etiqueta = 'Transcripción' }: { texto: string; q: string; claro?: boolean; etiqueta?: string }) {
+  const [abierta, setAbierta] = useState(false);
+  const t = String(texto || '').trim();
+  if (!t) return null;
+  /* Si se está BUSCANDO y la coincidencia está aquí dentro, se abre sola: el
+     resultado que no se ve no sirve de nada. */
+  const coincide = !!q && t.toLowerCase().includes(q.toLowerCase());
+  const ver = abierta || coincide;
+  const primera = t.split('\n').find(x => x.trim()) || '';
+  return (
+    <span style={{ display: 'block', marginTop: 7 }}>
+      <button onClick={() => setAbierta(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0,
+          color: claro ? 'rgba(255,255,255,.85)' : C.g500, fontSize: 10.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+          textTransform: 'uppercase', letterSpacing: '.04em' }}>
+        <span style={{ fontSize: 9, opacity: .8 }}>{ver ? '▾' : '▸'}</span>{etiqueta}
+      </button>
+      {ver
+        ? <span style={{ whiteSpace: 'pre-wrap', display: 'block', marginTop: 4, fontSize: 13.5, lineHeight: 1.5 }}><Resaltado texto={t} q={q} claro={claro} /></span>
+        : <span onClick={() => setAbierta(true)} style={{ display: 'block', marginTop: 2, fontSize: 12.5, opacity: .72, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{primera}</span>}
+    </span>
+  );
 }
 
 /** Player de audio propio (portado de MessageBubble:81-171). */
@@ -218,20 +259,28 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   let contenido: any;
   if (item.borrado_at) {
     contenido = <span style={{ fontStyle: 'italic', opacity: .7, display: 'flex', alignItems: 'center', gap: 5 }}>Mensaje eliminado por el cliente</span>;
-  } else if (item.transcript) {
-    contenido = (<>
-      <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .8, marginBottom: 3 }}>NOTA DE VOZ · transcripción</span>
-      {src && <PlayerAudio src={src} claro={claro} />}
-      <span style={{ whiteSpace: 'pre-wrap', display: 'block', marginTop: src ? 6 : 0 }}><Resaltado texto={item.transcript} q={q} claro={claro} /></span>
-    </>);
   } else if (tipo === 'audio') {
-    contenido = src ? <PlayerAudio src={src} claro={claro} /> : <span style={{ opacity: .7 }}>{item.metadata?.voz ? 'Nota de voz' : 'Audio'} (sin archivo)</span>;
+    /* ⚠️ EL AUDIO MANDA, LA TRANSCRIPCIÓN ACOMPAÑA.
+       Antes se decidía por `item.transcript` ANTES de mirar el tipo, y eso
+       traía dos problemas. Con una nota de voz, el texto se comía la burbuja y
+       el reproductor quedaba escondido arriba; y sobre todo, CUALQUIER mensaje
+       con transcripción caía aquí. Medido en producción: seis imágenes
+       —comprobantes de pago que la IA lee y guarda en el mismo campo— salían
+       rotuladas «NOTA DE VOZ · transcripción» y con «Audio no disponible»,
+       teniendo el JPEG guardado y descargable.
+       Ahora el tipo decide: el audio se oye, y su transcripción está a un
+       toque. */
+    contenido = (<>
+      {src ? <PlayerAudio src={src} claro={claro} /> : <span style={{ opacity: .7 }}>{item.metadata?.voz ? 'Nota de voz' : 'Audio'} (sin archivo)</span>}
+      {item.transcript && <Transcripcion texto={item.transcript} q={q} claro={claro} />}
+    </>);
   } else if (tipo === 'image' || tipo === 'sticker') {
     contenido = (<>
       {src && !mediaRota ? <img src={src} alt={item.cuerpo || ''} onClick={() => onLightbox({ ...item, media_url: src })} loading="lazy" onError={() => setMediaRota(true)}
         style={{ borderRadius: 10, maxHeight: tipo === 'sticker' ? 140 : 256, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: item.cuerpo ? 6 : 0, background: tipo === 'sticker' ? 'transparent' : C.g100 }} />
         : <span style={{ opacity: .7, fontStyle: 'italic' }}>{tipo === 'sticker' ? 'Sticker' : 'Imagen'} no disponible (Meta la conserva 30 días)</span>}
       {item.cuerpo && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
+      {item.transcript && <Transcripcion texto={item.transcript} q={q} claro={claro} etiqueta="Lo que dice la imagen" />}
     </>);
   } else if (tipo === 'video') {
     contenido = (<>
@@ -253,6 +302,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
         </span>
       </button>
       {item.cuerpo && item.cuerpo !== nombre && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
+      {item.transcript && <Transcripcion texto={item.transcript} q={q} claro={claro} etiqueta="Lo que dice el archivo" />}
     </>);
   } else if (tipo === 'location') {
     const { lat, lng, nombre, direccion } = item.metadata || {};

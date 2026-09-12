@@ -127,6 +127,11 @@ export const CSS_INBOX = `
   .wa-hilo-m [style*="rgb(167, 243, 208)"], .wa-hilo-m [style*="#A7F3D0"] { color: #6B7280 !important; border-left-color: #c9c2f2 !important; }
   .wa-hilo-m [style*="border-radius: 16px 16px 6px"] [style*="rgb(248, 113, 113)"] { color: #DC2626 !important; }
   .wa-hilo-m .wa-citar { display: none !important; }
+  /* El botón de play medía 36 px: por debajo del mínimo para el pulgar, y es
+     LO que se toca de una nota de voz. En el teléfono pasa a 44 y la barra de
+     avance se ensancha, que es lo que se arrastra para buscar un punto. */
+  .wa-hilo-m .wa-audio button { width: 44px !important; height: 44px !important; }
+  .wa-hilo-m .wa-audio { min-width: 0 !important; max-width: 100% !important; width: 100%; }
   /* Sobre burbuja clara, los links y botones "claros" de plantilla se re-tintan */
   .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a { color: #5B4BD6 !important; }
   .wa-hilo-m [style*="border-radius: 16px 16px 6px"] [style*="rgba(255, 255, 255, 0.18)"] { background: rgba(91, 75, 214, 0.10) !important; color: #5B4BD6 !important; }
