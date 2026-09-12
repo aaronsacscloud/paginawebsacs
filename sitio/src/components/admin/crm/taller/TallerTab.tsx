@@ -12,6 +12,7 @@
 // su fecha y su video.
 import { useEffect, useState, useCallback } from 'react';
 import Cargando from '../ui/Cargando';
+import KpiCard from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
 
@@ -103,12 +104,12 @@ export default function TallerTab() {
   const revisionTarde = esperanOK.filter(o => o.revision_vence && o.revision_vence < hoyISO());
 
   return (
-    <div style={{ paddingTop: 22 }}>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, width: '100%', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-.02em' }}>Taller</h2>
         <span style={{ fontSize: '0.78rem', color: '#8d8a97' }}>
           {vivas.length} {vivas.length === 1 ? 'orden viva' : 'órdenes vivas'}
-          {esperanOK.length ? ` · ${esperanOK.length} esperan tu OK` : ''}
+          {esperanOK.length ? ` · ${esperanOK.length} ${esperanOK.length === 1 ? 'espera' : 'esperan'} tu OK` : ''}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {sinOrden.length > 0 && (
@@ -146,10 +147,11 @@ function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, f
   const conFecha = entregadas.filter((o: any) => o.fecha_prometida_1 && o.entregada_at);
   const aTiempo = conFecha.filter((o: any) => String(o.entregada_at).slice(0, 10) <= o.fecha_prometida_1);
   const revisiones = entregadas.filter((o: any) => o.dias_revision != null);
-  const edad = vivas.length
-    ? Math.round(vivas.map((o: any) => dias(o.created_at) || 0).sort((a: number, b: number) => a - b)[Math.floor(vivas.length / 2)])
-    : 0;
   const masVieja = vivas.length ? Math.max(...vivas.map((o: any) => dias(o.created_at) || 0)) : 0;
+  const pctFecha = conFecha.length ? Math.round(aTiempo.length / conFecha.length * 100) : 0;
+  // Revisar a tiempo es haber contestado dentro de la ventana que pidió desarrollo.
+  const aTiempoRev = revisiones.filter((o: any) => (o.dias_revision ?? 3) >= 0).length;
+  const pctRevision = revisiones.length ? Math.round(aTiempoRev / revisiones.length * 100) : 0;
 
   const porCuenta: Record<string, any> = {};
   vivas.forEach((o: any) => {
@@ -161,18 +163,24 @@ function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, f
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 13 }}>
-        {[
-          [String(vivas.length), 'órdenes abiertas', '#1a1a1a', P.violeta],
-          [String(bloquean), 'bloquean la operación', bloquean ? P.rojoTinta : '#1a1a1a', P.rojo],
-          [String(esperanOK.length), 'esperan tu OK' + (revisionTarde.length ? ` · ${revisionTarde.length} se te pasó` : ''), P.violetaTinta, P.violeta],
-          [String(roto.length), 'rompieron el trato', roto.length ? P.rojoTinta : '#1a1a1a', P.rojo],
-        ].map(([v, l, col, franja]: any) => (
-          <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-.03em', color: col, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
-            <div style={{ fontSize: '0.67rem', color: '#8a8a8a', marginTop: 2, lineHeight: 1.35 }}>{l}</div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 14 }}>
+        <KpiCard franja={P.violeta} label="Órdenes abiertas" valor={vivas.length}
+          sub={masVieja ? `la más vieja lleva ${masVieja} d` : 'el taller está al día'} />
+        <KpiCard franja={P.rojo} label="Bloquean la operación" valor={bloquean}
+          color={bloquean ? P.rojoTinta : undefined}
+          sub={bloquean ? 'fallas que frenan la caja' : 'nada frena la operación'} />
+        <KpiCard franja={P.violeta} label="Esperan tu OK" valor={esperanOK.length}
+          color={esperanOK.length ? P.violetaTinta : undefined}
+          sub={revisionTarde.length
+            ? `${revisionTarde.length} se te pasó de la ventana`
+            : revisiones.length >= 3 ? `revisaste a tiempo el ${pctRevision}%`
+            : esperanOK.length ? 'dentro de tu ventana de revisión'
+            : 'nada por revisar'} />
+        <KpiCard franja={P.rojo} label="Rompieron el trato" valor={roto.length}
+          color={roto.length ? P.rojoTinta : undefined}
+          sub={conFecha.length >= 3 ? `entregaron en su fecha el ${pctFecha}% de las veces`
+            : roto.length ? `${roto.length === 1 ? 'una se salió' : 'se salieron'} de lo pactado · hay que empujar`
+            : 'todo dentro de lo pactado'} />
       </div>
 
       {/* 1 · Lo único con acción */}
@@ -263,40 +271,24 @@ function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, f
         ))}
       </div>
 
-      {/* 3 · Las tres métricas. Dos salen en blanco a propósito hasta que haya
-          historia: un número inventado el primer día es peor que un guion. */}
-      <div style={S.secT}>Cómo va el taller · el reloj corre para los dos</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 10 }}>
-        {[
-          [vivas.length ? `${edad} d` : '—', `edad de la cola${masVieja ? ` · la más vieja, ${masVieja} d` : ''}`, P.rojoTinta],
-          [conFecha.length >= 3 ? `${Math.round(aTiempo.length / conFecha.length * 100)}%` : '—',
-            conFecha.length >= 3 ? `Ellos: entregaron en su fecha (${aTiempo.length} de ${conFecha.length})` : 'Ellos: entregaron en su fecha · faltan entregas para medir', P.verdeTinta],
-          [revisiones.length >= 3 ? `${Math.round(revisiones.filter((o: any) => (o.dias_revision || 3) >= 0).length / revisiones.length * 100)}%` : '—',
-            revisiones.length >= 3 ? 'Tú: revisaste dentro de la ventana' : 'Tú: revisaste dentro de la ventana · faltan revisiones para medir', P.violetaTinta],
-        ].map(([v, l, col]: any) => (
-          <div key={l} style={S.caja}>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-.03em', color: v === '—' ? '#b9b6c2' : col, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
-            <div style={{ fontSize: '0.68rem', color: '#8a8a8a', marginTop: 3, lineHeight: 1.4 }}>{l}</div>
-          </div>
-        ))}
-      </div>
-
       <div style={S.secT}>Por cuenta</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 9 }}>
-        {Object.keys(porCuenta).length === 0 && <div style={{ fontSize: '0.82rem', color: '#999' }}>Todavía no hay órdenes en el taller.</div>}
-        {Object.entries(porCuenta).map(([k, v]: any) => {
+      <div style={{ border: '1px solid #ececec', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+        {Object.keys(porCuenta).length === 0 && (
+          <div style={{ padding: '14px 15px', fontSize: '0.82rem', color: '#999' }}>Todavía no hay órdenes en el taller.</div>
+        )}
+        {Object.entries(porCuenta).map(([k, v]: any, i: number) => {
           const tot = v.f + v.m;
           return (
-            <div key={k} style={S.caja}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{k}</div>
-              <div style={{ fontSize: '0.68rem', color: '#8a8a8a', marginTop: 2 }}>
-                {tot} {tot === 1 ? 'abierta' : 'abiertas'} · {v.f} {v.f === 1 ? 'falla' : 'fallas'} · {v.m} {v.m === 1 ? 'mejora' : 'mejoras'}
-                {v.mal > 0 && <b style={{ color: P.rojoTinta }}> · {v.mal} fuera de tiempo</b>}
-              </div>
-              <div style={{ display: 'flex', height: 5, borderRadius: 99, overflow: 'hidden', marginTop: 7, background: '#f2f0f7' }}>
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 15px', borderTop: i ? '1px solid #f3f1f7' : 'none', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, minWidth: 150 }}>{k}</span>
+              <span style={{ display: 'flex', height: 5, borderRadius: 99, overflow: 'hidden', background: '#f2f0f7', flex: 1, minWidth: 120, maxWidth: 260 }}>
                 <span style={{ width: `${v.f / tot * 100}%`, background: P.rojo }} />
                 <span style={{ width: `${v.m / tot * 100}%`, background: P.violeta }} />
-              </div>
+              </span>
+              <span style={{ fontSize: '0.73rem', color: '#8a8a8a', marginLeft: 'auto' }}>
+                {v.f} {v.f === 1 ? 'falla' : 'fallas'} · {v.m} {v.m === 1 ? 'mejora' : 'mejoras'}
+                {v.mal > 0 && <b style={{ color: P.rojoTinta }}> · {v.mal} fuera de tiempo</b>}
+              </span>
             </div>
           );
         })}
@@ -354,18 +346,27 @@ function ModalCambios({ orden, onCerrar, api, flash }: any) {
    Agrupada por lo que toca hacer, no por etapa alfabética. El orden de los
    grupos ES la prioridad. */
 function Lista({ ordenes, yo, equipo, tab, setTab, abrir, filtro, setFiltro }: any) {
+  const [foco, setFoco] = useState('');
   const q = filtro.trim().toLowerCase();
-  const base = q
+  const texto = q
     ? ordenes.filter((o: any) => (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q))
     : ordenes;
+  const POR_FOCO: Record<string, (o: any) => boolean> = {
+    sin_dueno: (o: any) => !o.asignado_id,
+    sin_fecha: (o: any) => o.tipo === 'falla' && o.prioridad === 'alta' && !o.fecha_prometida,
+    tarde: vencida,
+    devueltas: (o: any) => o.etapa === 'devuelta',
+    espera: (o: any) => o.etapa === 'espera',
+  };
+  const base = foco ? texto.filter(POR_FOCO[foco]) : texto;
   const mias = base.filter((o: any) => o.asignado_id === yo?.id);
   const trabadas = base.filter((o: any) => o.etapa === 'trabada');
 
-  const sinDueno = base.filter((o: any) => !o.asignado_id).length;
-  const sinFecha = base.filter((o: any) => o.tipo === 'falla' && o.prioridad === 'alta' && !o.fecha_prometida).length;
-  const tarde = base.filter(vencida).length;
-  const devueltas = base.filter((o: any) => o.etapa === 'devuelta').length;
-  const esperando = base.filter((o: any) => o.etapa === 'espera').length;
+  const sinDueno = texto.filter((o: any) => !o.asignado_id).length;
+  const sinFecha = texto.filter((o: any) => o.tipo === 'falla' && o.prioridad === 'alta' && !o.fecha_prometida).length;
+  const tarde = texto.filter(vencida).length;
+  const devueltas = texto.filter((o: any) => o.etapa === 'devuelta').length;
+  const esperando = texto.filter((o: any) => o.etapa === 'espera').length;
 
   const lista = tab === 'mias' ? mias : tab === 'trabadas' ? trabadas : base;
   const grupos = tab === 'todo'
@@ -384,13 +385,18 @@ function Lista({ ordenes, yo, equipo, tab, setTab, abrir, filtro, setFiltro }: a
 
   return (
     <div>
-      <div style={{ display: 'flex', border: '1px solid #ececec', background: '#fff', borderRadius: 10, overflow: 'hidden', marginBottom: 12, flexWrap: 'wrap' }}>
-        {[[sinDueno, 'sin dueño', P.rojoTinta], [sinFecha, 'falla sin fecha', P.ambarTinta], [tarde, 'pasaron su fecha', P.rojoTinta],
-          [devueltas, 'devueltas', '#1a1a1a'], [esperando, 'esperando al cliente', '#8d8a97']].map(([v, l, c]: any) => (
-          <div key={l} style={{ flex: 1, minWidth: 115, padding: '9px 12px', borderRight: '1px solid #f2f0f6' }}>
-            <div style={{ fontSize: '1rem', fontWeight: 800, color: v ? c : '#c9c7d0', fontVariantNumeric: 'tabular-nums' }}>{v}</div>
-            <div style={{ fontSize: '0.65rem', color: '#8a8a8a' }}>{l}</div>
-          </div>
+      {/* La zona de KPI de esta pantalla, y cada tarjeta filtra: un número que
+          no se puede abrir es un reporte, no una herramienta. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 14 }}>
+        {([
+          ['sin_dueno', 'Sin dueño', sinDueno, P.rojo, P.rojoTinta, 'nadie las ha tomado'],
+          ['sin_fecha', 'Falla sin fecha', sinFecha, '#E8A838', P.ambarTinta, 'el SLA ya corre'],
+          ['tarde', 'Pasaron su fecha', tarde, P.rojo, P.rojoTinta, 'contra su primera fecha'],
+          ['devueltas', 'Devueltas', devueltas, P.violeta, P.violetaTinta, 'pediste cambios'],
+          ['espera', 'Esperando al cliente', esperando, P.azul, P.azulTinta, 'el reloj está detenido'],
+        ] as any[]).map(([k, l, v, franja, tinta, sub]) => (
+          <KpiCard key={k} franja={franja} label={l} valor={v} color={v ? tinta : undefined} sub={sub}
+            activo={foco === k} onClick={() => setFoco(foco === k ? '' : k)} />
         ))}
       </div>
 
