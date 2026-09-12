@@ -31,7 +31,12 @@ export const POST: APIRoute = async ({ request }) => {
   const form = await request.formData();
   const file = form.get('file') as File | null;
   if (!file) return json({ error: 'Falta file' }, 400);
-  if (file.size > 4 * 1024 * 1024) return json({ error: 'Máximo 4 MB' }, 400);
+  /* 25 MB y no 4: este endpoint dejó de ser solo la biblioteca de imágenes
+     para reusar. Ahora también recibe lo que WhatsApp NO transporta —un XML de
+     factura, un ZIP, un PSD— para mandarlo al cliente como liga de descarga, y
+     ahí 4 MB se queda corto al primer diseño. El archivo va a nuestro storage,
+     no a Meta, así que su límite no aplica. */
+  if (file.size > 25 * 1024 * 1024) return json({ error: 'Máximo 25 MB' }, 400);
   const mime = (file.type || 'application/octet-stream').split(';')[0];
   const nombreLimpio = file.name.replace(/[^\w.\-]+/g, '_').slice(-80);
   const path = `${Date.now()}_${nombreLimpio}`;

@@ -39,6 +39,30 @@ const IA_ACCIONES = [
 const esTactil = () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
 
 const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, document: 100 };  // MB
+
+/* ⚠️ WHATSAPP NO ACEPTA CUALQUIER ARCHIVO COMO DOCUMENTO.
+   Meta tiene una lista CERRADA de ocho tipos (Cloud API · Supported media
+   types): txt, xls, xlsx, doc, docx, ppt, pptx y pdf. Un XML de factura, un
+   ZIP o un PSD NO entran — y es justo lo que se intenta mandar todos los días
+   en México, porque un CFDI son dos archivos: el PDF y el XML.
+   Se comprueba ANTES de enviar. Descubrirlo después es perder el intento y
+   dejar al cliente esperando un archivo que nunca llegó. */
+const DOCS_META = new Set([
+  'text/plain', 'application/pdf', 'application/msword',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
+/* El navegador no siempre acierta el MIME (un .xml suele llegar como
+   text/xml, application/xml o incluso vacío), así que la extensión decide
+   cuando el MIME no dice nada útil. */
+const EXT_META = new Set(['txt', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']);
+const extDe = (nombre: string) => String(nombre || '').split('.').pop()?.toLowerCase() || '';
+const waLoAcepta = (f: File): boolean => {
+  const cls = claseDe(f.type);
+  if (cls !== 'document') return true;              // imagen, video y audio van por su propio carril
+  return DOCS_META.has(f.type) || EXT_META.has(extDe(f.name));
+};
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
@@ -129,6 +153,15 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   /* Abierto = el desplegable de canal está desplegado. Cerrado —lo normal— se
      ve solo por dónde sale, que es dato, no decisión. */
   const [abrirLineas, setAbrirLineas] = useState(false);
+  /* ── ARRASTRAR ARCHIVOS AL COMPOSER ──────────────────────────────────────
+     Antes había que abrir el menú de adjuntos y navegar el explorador. Con un
+     CFDI —PDF + XML recién descargados— son ocho clics para dos archivos que
+     ya estabas viendo en la carpeta de descargas.
+     El contador y no un booleano: `dragenter`/`dragleave` disparan también al
+     pasar por los hijos, así que con una bandera el resalte parpadea cada vez
+     que el puntero cruza el textarea o un botón. Sumando y restando, solo se
+     apaga cuando el archivo sale de verdad. */
+  const [arrastre, setArrastre] = useState(0);
   const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
@@ -251,6 +284,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     const lim = LIMITES[cls]; const mb = f.size / 1048576;
     const errs: string[] = [];
     if (mb > lim) errs.push(`Archivo excede ${lim} MB (límite para ${cls})`);
+    /* No es un error nuestro ni del archivo: es que WhatsApp no lo transporta.
+       Se dice qué hacer en su lugar, porque el archivo igual hay que mandarlo. */
+    if (!waLoAcepta(f)) errs.push(`WhatsApp no acepta .${extDe(f.name) || 'este tipo'} — mándalo como enlace con el botón de abajo`);
     return errs;
   };
   const agregarArchivos = async (files: FileList | null) => {
@@ -435,6 +471,53 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     </div>
   );
 
+  /**
+   * Sube los archivos a la biblioteca del inbox y manda sus ligas en un
+   * mensaje de texto. Es la vía para lo que Meta no acepta como documento.
+   */
+  const mandarComoEnlace = async () => {
+    setOcupado(true); setError('');
+    const ligas: string[] = [];
+    try {
+      // Se avisa ANTES de empezar a subir: enterarse a la mitad de una tanda
+      // deja unos archivos arriba y otros no.
+      const grande = staged.find(st => st.file.size > 25 * 1048576);
+      if (grande) throw new Error(`«${grande.file.name}» pasa de 25 MB: mándalo por otro medio.`);
+      for (const st of staged) {
+        const fd = new FormData();
+        fd.append('file', st.file);
+        fd.append('nombre', st.file.name);
+        const r = await fetch('/api/crm/whatsapp/media', { method: 'POST', body: fd }).then(x => x.json());
+        if (r?.error || !r?.archivo?.url) throw new Error(r?.error || `No se pudo subir ${st.file.name}`);
+        ligas.push(`${st.file.name}: ${r.archivo.url}`);
+      }
+      const cuerpo = [texto.trim(), ...ligas].filter(Boolean).join('\n');
+      const r = await api.enviarTexto(cuerpo, cita?.kapso_message_id || null);
+      if (r?.error) { setError(r.error, r.error_detalle || null); return; }
+      setStaged([]); setTexto(''); onQuitarCita?.();
+    } catch (e: any) {
+      setError(String(e?.message || e));
+    } finally { setOcupado(false); }
+  };
+
+  /** Lo que trae el arrastre: archivos del escritorio, o una imagen copiada. */
+  const soltar = (e: React.DragEvent) => {
+    setArrastre(0);
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    const files = dt.files && dt.files.length ? Array.from(dt.files) : [];
+    if (!files.length) return;   // arrastrar TEXTO no se intercepta: eso lo pega el textarea
+    e.preventDefault();
+    agregarArchivos(dt.files);
+  };
+  /* `dragover` tiene que cancelarse SIEMPRE que haya archivos, o el navegador
+     los abre en una pestaña nueva y te saca del CRM. */
+  const sobre = (e: React.DragEvent) => {
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
   // ── Modo comentario: reemplaza la card entera ──
   if (comentario) {
     return (
@@ -477,7 +560,23 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   }
 
   return (
-    <div style={{ padding: '10px 16px 8px', background: '#fff', borderTop: `1px solid ${C.g100}` }}>
+    <div
+      onDragEnter={e => { if (Array.from(e.dataTransfer?.types || []).includes('Files')) { e.preventDefault(); setArrastre(n => n + 1); } }}
+      onDragOver={sobre}
+      onDragLeave={() => setArrastre(n => Math.max(0, n - 1))}
+      onDrop={soltar}
+      style={{ position: 'relative', padding: '10px 16px 8px', background: '#fff', borderTop: `1px solid ${C.g100}` }}>
+
+      {/* La zona de suelta: ocupa el composer completo mientras el archivo va
+          en el aire, para que el blanco sea grande y no haya que apuntar. */}
+      {arrastre > 0 && (
+        <div style={{ position: 'absolute', inset: 4, zIndex: 6, borderRadius: 12, border: `2px dashed ${C.morado}`, background: 'rgba(238,236,254,.92)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, pointerEvents: 'none' }}>
+          <b style={{ fontSize: 13.5, color: C.moradoTinta }}>Suéltalos aquí</b>
+          <span style={{ fontSize: 11.5, color: '#7C6BF0' }}>Cualquier archivo · varios a la vez</span>
+        </div>
+      )}
+
       {resumen && (
         <div style={{ background: C.azulAgua, border: `1px solid ${C.azulBorde}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8, fontSize: 12, position: 'relative' }}>
           <b style={{ fontSize: 11, color: C.azulTinta, display: 'block', marginBottom: 4 }}>Resumen de conversación · sentimiento {resumen.sentimiento}</b>
@@ -588,6 +687,24 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 disabled={bloqueadoWa || bloqueadoCorreo}
                 style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? 44 : undefined, maxHeight: movil ? (escribiendoMovil ? 168 : 44) : 120, borderRadius: 0 }} />
             )}
+            {/* ── LO QUE WHATSAPP NO TRANSPORTA, VA COMO ENLACE ────────────────
+                Un CFDI son dos archivos y uno es XML, que Meta no acepta. La
+                salida es subirlo a nuestro storage y mandar la liga: el cliente
+                la toca y lo descarga. Funciona con cualquier extensión —zip,
+                psd, xml— y no depende de la lista de Meta.
+                El botón solo aparece si de verdad hay archivos así; si no,
+                sería una opción de más. */}
+            {staged.some(s => !waLoAcepta(s.file)) && !grabando && (
+              <div style={{ margin: '4px 12px 0', background: C.ambar50, border: `1px solid ${C.ambar200}`, borderRadius: 10, padding: '9px 11px', fontSize: 11.5, color: C.ambar700, lineHeight: 1.5 }}>
+                <b style={{ display: 'block', marginBottom: 3 }}>WhatsApp no transporta {staged.filter(s => !waLoAcepta(s.file)).map(s => '.' + extDe(s.file.name)).filter((x, i, a) => a.indexOf(x) === i).join(' ni ')}</b>
+                Meta solo acepta PDF, Word, Excel, PowerPoint y texto. Puedo subirlos y mandar la liga de descarga en el mensaje.
+                <button onClick={mandarComoEnlace} disabled={ocupado}
+                  style={{ display: 'block', marginTop: 8, border: 'none', borderRadius: 9, minHeight: movil ? 44 : 32, padding: '0 14px', background: C.ambar700, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: ocupado ? 'default' : 'pointer', fontFamily: 'inherit', opacity: ocupado ? .6 : 1 }}>
+                  {ocupado ? 'Subiendo…' : 'Mandar como enlace de descarga'}
+                </button>
+              </div>
+            )}
+
             {/* Staged files */}
             {staged.length > 0 && !grabando && (
               <div style={{ display: 'flex', gap: 8, padding: '4px 12px 8px', flexWrap: 'wrap' }}>
@@ -927,7 +1044,11 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         </div>
       )}
 
-      <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
+      {/* Sin `accept`: el explorador ya no esconde los archivos que no están en
+          una lista corta. Lo que WhatsApp no transporte se avisa en el chip, con
+          su alternativa — es mejor ver el archivo y saber por qué no va, que no
+          poder ni elegirlo. */}
+      <input ref={fileRef} type="file" multiple hidden onChange={e => { agregarArchivos(e.target.files); e.currentTarget.value = ''; }} />
       {/* E5 · La cámara es su propio input: `capture` abre la cámara trasera
           directamente, sin pasar por el explorador de archivos. */}
       <input ref={camaraRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { agregarArchivos(e.target.files); e.currentTarget.value = ''; }} />
