@@ -104,6 +104,33 @@ export const POST: APIRoute = async ({ request, url }) => {
            en PDF esperando —porque cuando terminó la llamada la ventana estaba
            cerrada— este es el momento exacto de entregarla. No bloquea el
            webhook: si falla, el próximo mensaje lo reintenta. */
+        /* ── LÍNEA QUE SE RETIRA: se contesta el número nuevo ──────────────
+           Al mudarnos al número oficial (12-sep-2026) la línea vieja quedó con
+           `redirigir_a` puesto… y eso no hacía nada: el campo solo le sugería al
+           agente de IA que mencionara el cambio «si venía al caso». Quien le
+           escribiera al número retirado se quedaba sin respuesta, que es
+           exactamente el cliente que hay que rescatar. Ahora se le contesta UNA
+           vez por conversación (su mensaje abre la ventana de 24 h, así que el
+           texto libre sí sale) y se marca como atendido para que la bienvenida
+           automática no le conteste encima. */
+        if (entrante && r.conversationId && conv.phone_number_id) {
+          try {
+            const { infoLinea } = await import('../../../lib/whatsapp/linea');
+            const linea = await infoLinea(String(conv.phone_number_id));
+            if (linea?.redirigir_texto && linea?.redirigir_a) {
+              const aviso = String(linea.redirigir_texto).slice(0, 900);
+              // Una sola vez por conversación: se busca el propio aviso entre lo que ya salió por aquí.
+              const { data: ya } = await supabase.from('wa_mensajes')
+                .select('id').eq('conversation_id', r.conversationId).eq('direccion', 'saliente')
+                .eq('cuerpo', aviso).limit(1);
+              if (!(ya || []).length) {
+                const { enviarTexto, usarNumero } = await import('../../../lib/whatsapp/kapso-api');
+                usarNumero(String(conv.phone_number_id));   // se contesta POR LA LÍNEA VIEJA, no por la nueva
+                await enviarTexto(telefono, aviso);
+              }
+            }
+          } catch (e: any) { console.warn('[webhook] redirección de línea:', e?.message || e); }
+        }
         if (entrante && r.conversationId) {
           try {
             const { entregarMinutasPendientes } = await import('../../../lib/minuta/entrega');
