@@ -28,8 +28,16 @@ export const GET: APIRoute = async ({ request }) => {
     const calidad = info?.quality_rating || null;
     const tier = info?.messaging_limit_tier || salud?.checks?.phone_number_access?.details?.throughput_tier || null;
     const envio = salud?.checks?.messaging_health?.overall_status || null;
-    const mal = calidad === 'RED' || envio === 'BLOCKED' || envio === 'LIMITED';
-    const bien = calidad === 'GREEN' && (!envio || envio === 'AVAILABLE' || envio === 'OK');
+    /* LIMITED no es una línea enferma: es una línea NUEVA. Meta lo dice con todas sus letras
+       («your display name has not been approved yet; your message limit will increase after»), y
+       mientras tanto el número manda perfectamente, solo con tope más bajo —tope que ya respeta
+       `cupoLinea`—. Pausar por eso dejó la línea oficial recién estrenada sin poder mandar ni un
+       masivo el día que se estrenó. Se pausa por lo que sí es un problema: calidad RED o envío
+       BLOQUEADO. */
+    const mal = calidad === 'RED' || envio === 'BLOCKED';
+    const bien = calidad === 'GREEN' && envio !== 'BLOCKED';
+    const porQue = (salud?.checks?.messaging_health?.details?.entities || [])
+      .flatMap((e: any) => e?.additional_info || []).filter(Boolean).slice(0, 2).join(' · ') || null;
     const { data: fila } = await supabase.from('wa_numeros').select('pausada, pausada_motivo').eq('phone_number_id', l.id).maybeSingle();
     const cambios: any = { calidad, tier, salud: { ...resumen, info, checks: salud?.checks || null }, salud_at: new Date().toISOString() };
     let cambio: string | null = null;
@@ -39,12 +47,12 @@ export const GET: APIRoute = async ({ request }) => {
     if (cambio) {
       await notificar({
         clave: `wa_linea_salud:${l.id}:${cambio}:${new Date().toISOString().slice(0, 10)}`, tipo: 'wa_linea_salud', nivel: cambio === 'pausada' ? 'urgente' : 'info',
-        titulo: cambio === 'pausada' ? `Línea ${l.numero} en pausa: calidad ${calidad || envio}` : `Línea ${l.numero} reanudada: calidad verde`,
+        titulo: cambio === 'pausada' ? `Línea ${l.numero} en pausa: calidad ${calidad || envio}${porQue ? ` (${porQue.slice(0, 60)})` : ''}` : `Línea ${l.numero} reanudada: calidad verde`,
         detalle: cambio === 'pausada' ? 'Meta bajó la calidad del número. Los masivos y las cadencias no salen por esta línea hasta que se recupere; el inbox sigue.' : 'La calidad volvió a verde: masivos y cadencias vuelven a salir por esta línea.',
         destino: 'wa-ajustes',
       }).catch(() => {});
     }
-    salida.push({ id: l.id, numero: l.numero, calidad, tier, envio, pausada: cambios.pausada ?? fila?.pausada ?? false, cambio });
+    salida.push({ id: l.id, numero: l.numero, calidad, tier, envio, porQue, pausada: cambios.pausada ?? fila?.pausada ?? false, cambio });
   }
   olvidarCacheLineas();
   return json({ ok: true, lineas: salida });
