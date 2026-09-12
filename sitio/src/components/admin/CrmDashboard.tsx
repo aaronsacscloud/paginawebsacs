@@ -33,6 +33,7 @@ const PRECARGA_TAB: Record<string, () => Promise<any>> = {
   oportunidades: () => import('./crm/OportunidadesTab'),
   reuniones: () => import('./crm/ReunionesTab'),
   mejoras: () => import('./crm/MejorasTab'),
+  taller: () => import('./crm/taller/TallerTab'),
 };
 try {
   const t0 = new URLSearchParams(window.location.search).get('tab') || '';
@@ -71,6 +72,7 @@ const RevenueHub = lazySeguro(() => import('./RevenueHub'));
 const ClientesTab = lazySeguro(() => import('./crm/ClientesTab'));
 const LeadsTab = lazySeguro(() => import('./crm/LeadsTab'));
 const MejorasTab = lazySeguro(() => import('./crm/MejorasTab'));
+const TallerTab = lazySeguro(() => import('./crm/taller/TallerTab'));
 const MarcaTab = lazySeguro(() => import('./crm/MarcaTab'));
 const CobranzaTab = lazySeguro(() => import('./crm/CobranzaTab'));
 const ReunionesTab = lazySeguro(() => import('./crm/ReunionesTab'));
@@ -99,7 +101,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'wiki' | 'equipo';
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -296,6 +298,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
+      { id: 'taller' as Tab, label: 'Taller', icon: 'mejoras' },
       { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
     ],
   },
@@ -1190,6 +1193,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><CobranzaTab /></ErrorBoundary>
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
+        ) : tab === 'taller' ? (
+          <ErrorBoundary><TallerTab /></ErrorBoundary>
         ) : tab === 'wiki' ? (
           <>
             {/* LA SALIDA. Sin menú al lado, la Wiki sería un callejón: se entra

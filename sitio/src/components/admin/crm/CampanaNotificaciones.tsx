@@ -37,6 +37,9 @@ export const FAMILIAS = [
   /* Churn tiene familia propia: no es venta ni soporte. Mezclarlo con ventas
      escondería el aviso más caro del CRM entre los leads del día. */
   { id: 'churn', l: 'Churn', casa: (t: string) => /^churn_/.test(t), color: '#C0554E' },
+  /* El taller tiene familia propia: lo que espera TU OK no es soporte ni venta,
+     es una decisión pendiente tuya, y mezclarla la esconde. */
+  { id: 'taller', l: 'Taller', casa: (t: string) => /^taller_/.test(t), color: '#5B4BD6' },
 ];
 /* SISTEMA es otra cosa: no es un hecho del negocio (un lead, un cobro) sino algo que
    la automatización NO pudo resolver sola —o resolvió y avisa— y que pide una acción

@@ -46,6 +46,11 @@ const ORIGENES_L: Record<string, string> = {
   junta: 'De una junta', whatsapp: 'De WhatsApp', soporte: 'De soporte',
   llamada: 'De una llamada', manual: 'Capturado a mano',
 };
+/* Cómo se lee la etapa del taller desde la ficha del cliente. */
+const ETAPAS_TALLER: Record<string, string> = {
+  recibida: 'recibida', analisis: 'en análisis', desarrollo: 'en desarrollo', pruebas: 'en pruebas',
+  lista: 'lista, esperando tu OK', entregada: 'entregada', devuelta: 'devuelta', espera: 'esperando al cliente', trabada: 'trabada',
+};
 const CATS: Record<string, string> = Object.fromEntries(Object.entries(CATS_COLOR).map(([k, v]) => [k, v.label]));
 
 const S = {
@@ -76,6 +81,11 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
      no dentro del modal a propósito: "se lo mandé el martes y no lo ha abierto"
      es algo que hay que ver AL ENTRAR, no algo que se busca. */
   const [reportes, setReportes] = useState<any[]>([]);
+  /* Qué renglones ya están en el taller y cómo van. La ficha del cliente NO se
+     llena de campos de ingeniería: solo dice dónde está y para cuándo. */
+  const [ligas, setLigas] = useState<Record<string, any>>({});
+  const cargarLigas = () => fetch('/api/crm/taller')
+    .then(r => r.json()).then(j => setLigas(j.ligas || {})).catch(() => {});
   const cargarReportes = () => fetch('/api/crm/reportes?company_id=' + companyId)
     .then(r => r.json()).then(j => setReportes(j.reportes || [])).catch(() => {});
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
@@ -98,6 +108,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       .then(j => { if (alive) setCots(j.cotizaciones || []); }).catch(() => {});
     fetch('/api/crm/reportes?company_id=' + companyId).then(r => r.json())
       .then(j => { if (alive) setReportes(j.reportes || []); }).catch(() => {});
+    fetch('/api/crm/taller').then(r => r.json())
+      .then(j => { if (alive) setLigas(j.ligas || {}); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -119,6 +131,20 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     if (!r || r.error) { flash(r?.error || 'No se pudo actualizar'); return; }
     cargar(); flash(ESTADOS[estado]?.label || 'Actualizada');
   }
+  /* Mandar al taller: la orden nace con el título, la cuenta, el módulo y el
+     cobro del renglón. No se recaptura nada, y de ahí en adelante el renglón
+     vive en los dos lados: aquí es lo que el cliente ve, allá es cómo se
+     trabaja. */
+  async function alTaller(m: any) {
+    const r = await fetch('/api/crm/taller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'crear', mejora_id: m.id }),
+    }).then(x => x.json()).catch(() => null);
+    if (!r || r.error) { flash(r?.error || 'No se pudo mandar al taller'); return; }
+    await cargarLigas();
+    flash('En el taller: ' + (r.ordenes?.[0]?.folio || 'orden creada'));
+  }
+
   async function archivar(m: any) {
     if (!await confirmar(`¿Quitar "${m.titulo}" de la lista?`, { accion: 'Quitar', detalle: 'Se archiva: deja de verse aquí pero no se borra del historial.' })) return;
     await fetch('/api/crm/mejoras', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: m.id }) }).catch(() => {});
@@ -217,8 +243,19 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
             {m.quotes?.numero && <> · cobrada en <b style={{ color: '#5B4BD6' }}>{m.quotes.numero}</b></>}
             {!m.quotes?.numero && m.cortesia && <> · sin costo</>}
           </div>
+          {/* Dónde va en el taller. Es lo único del taller que se asoma aquí:
+              ni rebotes, ni SLA, ni quién tardó — eso es interno. */}
+          {ligas[m.id] && (
+            <div style={{ fontSize: '0.68rem', color: '#5B4BD6', marginTop: 5, fontWeight: 700 }}>
+              En el taller · {ligas[m.id].folio} · {ETAPAS_TALLER[ligas[m.id].etapa] || ligas[m.id].etapa}
+              {ligas[m.id].fecha_prometida ? ` · para el ${fmtDate(ligas[m.id].fecha_prometida)}` : ' · sin fecha todavía'}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
             {m.estado === 'idea' && <button style={S.btnAzul} onClick={() => cotizar(m)}>Cotizar esta idea</button>}
+            {!ligas[m.id] && m.estado !== 'entregada' && m.categoria !== 'capacitacion' && (
+              <button style={S.btnAzul} onClick={() => alTaller(m)}>Mandar al taller</button>
+            )}
             {m.estado !== 'entregada' && (
               <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>
                 {m.categoria === 'capacitacion' ? (modoDe(m) === 'video' ? 'Marcar enviado' : 'Marcar impartida') : m.categoria === 'pendiente' ? 'Marcar hecho' : 'Marcar entregada'}
