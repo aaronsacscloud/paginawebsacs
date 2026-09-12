@@ -6,7 +6,7 @@
 //
 // Lo vencido va primero y en rojo. Una promesa que no llegó hace más daño que
 // una que nunca se hizo, y es lo único de esta pantalla que se atiende hoy.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import ClienteDrawer360 from './ClienteDrawer360';
@@ -186,7 +186,13 @@ function Desplegable({ etiqueta, valor, opciones, onCambio }: {
  * a buscarla a otra pantalla. Solo aparece cuando hay algo: un aviso que está
  * siempre deja de leerse en una semana.
  */
+/* El resumen del consultor vive aparte y se carga solo cuando se abre: es la
+   pantalla de RESULTADOS (qué produjeron mis juntas), mientras que lo de abajo
+   es la lista de TRABAJO. Dos preguntas distintas, dos pantallas. */
+const ResumenConsultoria = lazy(() => import('./consultoria/ResumenConsultoria'));
+
 export default function MejorasTab() {
+  const [modo, setModo] = useState<'semana' | 'trabajo'>('semana');
   const esMovilCons = useIsMobile();
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
@@ -732,12 +738,33 @@ export default function MejorasTab() {
                       flex-wrap: wrap !important; margin-top: 4px !important; gap: 10px !important; }
         }
       `}</style>
-      <div style={{ marginBottom: 16 }}>
-        <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
-        <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
-          Todo el trabajo con clientes: mejoras, capacitaciones, videos y pendientes.
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
+          <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
+            {modo === 'semana'
+              ? 'Lo que produjeron tus juntas: qué salió, cuánto dinero movieron y qué te queda por vender.'
+              : 'Todo el trabajo con clientes: mejoras, capacitaciones, videos y pendientes.'}
+          </div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
+          {([['semana', 'Mi semana'], ['trabajo', 'Todo el trabajo']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setModo(k)}
+              style={{
+                padding: '6px 12px', borderRadius: 9, fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                border: modo === k ? 'none' : '1px solid #ddd',
+                background: modo === k ? '#9B8CFA' : '#fff', color: modo === k ? '#fff' : '#4a4a52',
+              }}>{l}</button>
+          ))}
         </div>
       </div>
+
+      {modo === 'semana' && (
+        <Suspense fallback={<Cargando texto="Armando tu semana…" />}>
+          <ResumenConsultoria />
+        </Suspense>
+      )}
+      {modo === 'trabajo' && <>
 
       {/* ── Tres alertas, y cada una es un filtro ──
           Antes había cinco cajas de KPI, un bloque rojo con la lista de
@@ -908,6 +935,7 @@ export default function MejorasTab() {
       </div>
 
       </>)}
+      </>}
 
       {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
       {aviso && (

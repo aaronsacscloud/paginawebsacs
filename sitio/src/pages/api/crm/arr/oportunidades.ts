@@ -13,7 +13,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export const GET: APIRoute = async () => {
   const { data: companies, error } = await supabase
     .from('companies')
-    .select('id, nombre, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, uso_sacs, subscriptions(estado, proxima_factura, arr, mrr, nombre_plan, ciclo)')
+    .select('id, nombre, nombre_comercial, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, uso_sacs, subscriptions(estado, proxima_factura, arr, mrr, nombre_plan, ciclo)')
     .is('archived_at', null).range(0, 9999);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
@@ -32,7 +32,7 @@ export const GET: APIRoute = async () => {
       if (!senales.length) return null;
       const top = senales[0];
       return {
-        company_id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
+        company_id: c.id, nombre: c.nombre, nombre_comercial: c.nombre_comercial, sacs_account: c.sacs_account,
         plan: c.plan, health_score: c.health_score, dias_sin_venta: c.dias_sin_venta,
         mrr: r2(activas.reduce((a: number, s: any) => a + Number(s.mrr || 0), 0) || Number(c.mrr || 0)),
         arr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0) || Number(c.arr || 0)),
