@@ -673,7 +673,7 @@ function CallerId() {
       <div style={{ paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
         <label style={lbl}>Verificar otro número (el de ventas)</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input style={{ ...inp, maxWidth: 240 }} placeholder="+52 415 283 8733" value={tel} onChange={e => setTel(e.target.value)} disabled={ocupado} />
+          <input style={{ ...inp, maxWidth: 240 }} placeholder="+52 55 9302 7234" value={tel} onChange={e => setTel(e.target.value)} disabled={ocupado} />
           <button type="button" style={{ ...S.btnP, opacity: ocupado || !tel.trim() ? 0.6 : 1 }} disabled={ocupado || !tel.trim()} onClick={verificar}>
             {ocupado ? <Corazones size={9} color="#fff" /> : 'Que Twilio me llame'}
           </button>

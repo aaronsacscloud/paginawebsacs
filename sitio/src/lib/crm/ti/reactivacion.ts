@@ -280,7 +280,7 @@ export async function panelReactivacion() {
 /* ── CORREO DE REACTIVACIÓN (decisión del dueño 2026-09-04) ──
    Texto, no foto: quiénes somos en una línea, lo que sabemos de su negocio y la invitación, con dos botones:
    WhatsApp de ventas y agendar demo. Sale junto con el WhatsApp cuando el dueño aprueba con «ambos». */
-const WA_VENTAS = '524152838733';
+import { WHATSAPP_NUMBER as WA_VENTAS } from '../../whatsapp';
 export function htmlCorreoReactivacion(o: { nombre: string; empresa?: string | null; cuerpo: string; contactId: string }) {
   const parrafos = String(o.cuerpo || '').split(/\n{2,}/).map(p => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#221c3d">${p.replace(/\n/g, '<br>')}</p>`).join('');
   const wa = `https://wa.me/${WA_VENTAS}?text=${encodeURIComponent(`Hola, soy ${o.nombre}${o.empresa ? ` de ${o.empresa}` : ''}. Vi tu correo y quiero retomar lo de mi tienda.`)}`;
@@ -293,7 +293,7 @@ export function htmlCorreoReactivacion(o: { nombre: string; empresa?: string | n
 <tr><td style="padding:6px 30px 26px">
 <a href="${wa}" style="display:inline-block;background:#5b4bd6;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;margin:0 8px 8px 0">Escríbeme por WhatsApp</a>
 <a href="${agenda}" style="display:inline-block;background:#eeecfe;color:#3d2fb0;text-decoration:none;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;margin:0 0 8px 0">Agendar 15 minutos</a>
-<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#6b6580">Andrea Gutiérrez · Sacs<br><a href="https://www.sacscloud.com" style="color:#5b4bd6;text-decoration:none">sacscloud.com</a> · WhatsApp +52 1 415 283 8733</p>
+<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#6b6580">Andrea Gutiérrez · Sacs<br><a href="https://www.sacscloud.com" style="color:#5b4bd6;text-decoration:none">sacscloud.com</a> · WhatsApp +52 55 9302 7234</p>
 </td></tr></table>
 <p style="max-width:560px;margin:14px auto 0;font-size:11px;color:#9a95b0;text-align:center">Te escribimos porque en su momento pediste información de Sacs. Si prefieres no recibir correos, responde con «baja» y listo.</p>
 </td></tr></table></body></html>`;

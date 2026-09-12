@@ -4,7 +4,13 @@
 // es lo que define la conversación: si dice "prueba gratis", el asesor recibe
 // a alguien pidiendo trial; si dice "demo", recibe a alguien pidiendo demo.
 
-export const WHATSAPP_NUMBER = '524152838733';
+/* EL NÚMERO OFICIAL DE LA EMPRESA (12-sep-2026): +52 55 9302 7234. Es el mismo de Twilio,
+   así que el WhatsApp y el teléfono son UNO: si el cliente ve una llamada perdida, le escribe
+   al mismo número, y si escribe, le podemos llamar desde ahí. Antes era el +52 55 9302 7234.
+   Se escribe una sola vez AQUÍ: el resto del sitio y del CRM lo importa. */
+export const WHATSAPP_NUMBER = '525593027234';
+/** Como se lee en pantalla («escríbenos al …»). */
+export const WHATSAPP_LEGIBLE = '+52 55 9302 7234';
 
 /** Link a wa.me con el mensaje precargado. */
 export function waLink(message: string, number: string = WHATSAPP_NUMBER): string {

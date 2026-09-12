@@ -344,7 +344,7 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
             <div style={{ display: 'flex', gap: 6, minWidth: 0 }}>
               {b.tipo !== 'COPY_CODE' && <input style={{ ...inp, flex: 1 }} maxLength={LIM.boton} value={b.texto || ''} onChange={e => setBoton(i, e.target.value)} placeholder={b.tipo === 'URL' ? 'Ver cotización' : b.tipo === 'PHONE_NUMBER' ? 'Llámanos' : `Botón ${i + 1}`} />}
               {b.tipo === 'URL' && <input style={{ ...inp, flex: 1.5 }} value={b.url || ''} onChange={e => setBotonCampo(i, 'url', e.target.value)} placeholder="https://www.sacscloud.com/… (usa {{1}} para parte dinámica)" />}
-              {b.tipo === 'PHONE_NUMBER' && <input style={{ ...inp, flex: 1 }} value={b.telefono || ''} onChange={e => setBotonCampo(i, 'telefono', e.target.value)} placeholder="+52 415 283 8733" />}
+              {b.tipo === 'PHONE_NUMBER' && <input style={{ ...inp, flex: 1 }} value={b.telefono || ''} onChange={e => setBotonCampo(i, 'telefono', e.target.value)} placeholder="+52 55 9302 7234" />}
               {b.tipo === 'COPY_CODE' && <input style={{ ...inp, flex: 1 }} value={b.ejemplo || ''} onChange={e => setBotonCampo(i, 'ejemplo', e.target.value)} placeholder="Código de ejemplo (ej. SACS20)" />}
               {b.tipo === 'URL' && /\{\{1\}\}/.test(b.url || '') && <input style={{ ...inp, flex: .8 }} value={b.ejemplo || ''} onChange={e => setBotonCampo(i, 'ejemplo', e.target.value)} placeholder="Ejemplo de {{1}}" />}
             </div>

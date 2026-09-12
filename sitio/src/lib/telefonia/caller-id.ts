@@ -2,7 +2,7 @@
 //
 // Twilio solo deja poner como remitente (a) un número comprado en Twilio o
 // (b) un número VERIFICADO como Outgoing Caller ID (Twilio le llama y hay que
-// teclear un código). El de ventas (+52 415 283 8733) es el (b): el dueño lo
+// teclear un código). El de ventas (+52 55 9302 7234) es el (b): el dueño lo
 // verifica una vez desde Configuración → Telefonía y desde entonces todas las
 // salientes lo enseñan; así el cliente ve el mismo número del WhatsApp y le
 // puede devolver la llamada o escribir ahí.

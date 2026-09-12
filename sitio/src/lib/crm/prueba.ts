@@ -49,7 +49,8 @@ const SECRETO_PUENTE = (import.meta.env.CRM_SYNC_SECRET || '').trim();
  *  cuando la cuenta ya está bloqueada. */
 export const DIAS_PRUEBA = 7;   // decisión del dueño, 8-sep-2026: la prueba gratis es de 7 días
 
-export const WHATSAPP_VENTAS = '524152838733';
+/** El número oficial vive en lib/whatsapp.ts: aquí se reexporta para no tener dos verdades. */
+export { WHATSAPP_NUMBER as WHATSAPP_VENTAS } from '../whatsapp';
 
 /** Días que faltan (negativo = ya venció). Null si no hay fecha de fin. */
 export function diasRestantes(fin?: string | null): number | null {

@@ -318,7 +318,7 @@ function TarjetaLinea({ l, esDefault, recargar }: { l: any; esDefault: boolean; 
           <label style={label()}>Firma de esta línea</label>
           <input style={inp} value={f.firma} placeholder="Va al final de lo que mandan los asesores y el agente por este número" onChange={e => setF({ ...f, firma: e.target.value })} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
-            <div><label style={label()}>Redirigir a (número nuevo)</label><input style={inp} value={f.redirigir_a} placeholder="5214152838733" onChange={e => setF({ ...f, redirigir_a: e.target.value })} /></div>
+            <div><label style={label()}>Redirigir a (número nuevo)</label><input style={inp} value={f.redirigir_a} placeholder="5215593027234" onChange={e => setF({ ...f, redirigir_a: e.target.value })} /></div>
             <div><label style={label()}>Texto de la redirección</label><input style={inp} value={f.redirigir_texto} placeholder="Vacío = el aviso estándar. Usa {numero} para el número nuevo." onChange={e => setF({ ...f, redirigir_texto: e.target.value })} /></div>
           </div>
           <p style={{ fontSize: 11, color: C.g400, margin: '4px 0 8px', lineHeight: 1.45 }}>Si pones un número, a quien escriba a esta línea se le contesta una vez (cada 7 días) con un botón para abrir el chat en el nuevo. Se usa cuando este número se está retirando.</p>
