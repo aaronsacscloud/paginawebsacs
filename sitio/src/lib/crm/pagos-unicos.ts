@@ -48,10 +48,36 @@ export function categoriaDePartida(nombre: string): string {
   return 'plugin';
 }
 
-/** El descuento global de la cotización aplicado a una partida de lista. */
-export function netoDePartida(monto: number, descuento: number, tipo?: string | null): number {
+/**
+ * El descuento global de la cotización aplicado a una partida de lista.
+ *
+ * El descuento en PORCENTAJE es trivial: cada partida baja lo mismo. El de
+ * MONTO FIJO no: hay que repartirlo a prorrata, y para eso hace falta saber
+ * sobre qué se repartió. Sin ese dato esta función devolvía el precio de
+ * LISTA, o sea que una cotización con descuento fijo dejaba a sus partidas
+ * valiendo más de lo que el cliente pagó.
+ *
+ * Medido: COT-78905 de Ruben's, $200,699 de lista con $50,699 de descuento
+ * fijo → $150,000. La mejora del e-commerce quedó registrada en $146,000
+ * cuando su parte real del cobro son $109,144. Son $36,856 de más en la
+ * consultoría, en la expansión de la renovación y en el reporte del cliente.
+ *
+ * `baseLista` es la suma de las partidas sobre las que se calculó el
+ * descuento. Si no se manda, el descuento fijo no se puede repartir y se
+ * devuelve el de lista — el comportamiento viejo, para no inventar un número.
+ */
+export function netoDePartida(monto: number, descuento: number, tipo?: string | null, baseLista?: number): number {
   const d = Number(descuento || 0);
-  if (!d) return Math.round(Number(monto) || 0);
-  if (String(tipo || 'pct') === 'pct') return Math.round((Number(monto) || 0) * (1 - d / 100));
-  return Math.round(Number(monto) || 0); // descuento de monto fijo: se reparte fuera
+  const m = Number(monto) || 0;
+  if (!d) return Math.round(m);
+  if (String(tipo || 'pct') === 'pct') return Math.round(m * (1 - d / 100));
+  const base = Number(baseLista || 0);
+  if (base > 0) return Math.round(m * Math.max(0, 1 - d / base));
+  return Math.round(m);
+}
+
+/** La suma de las partidas con monto: la base sobre la que pega el descuento. */
+export function baseDeCotizacion(items: PartidaCot[] | null | undefined): number {
+  return (Array.isArray(items) ? items : [])
+    .reduce((a, i) => a + (Number(i?.monto) > 0 ? Number(i.monto) : 0), 0);
 }

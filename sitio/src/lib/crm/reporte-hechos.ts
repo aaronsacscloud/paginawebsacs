@@ -9,7 +9,7 @@
 // un dato inventado cuesta la cuenta.
 import { supabase } from '../supabase';
 import { normalizaEstado } from './reuniones';
-import { cotizacionEsUnico, netoDePartida } from './pagos-unicos';
+import { cotizacionEsUnico, netoDePartida, baseDeCotizacion } from './pagos-unicos';
 
 const ANULADOS = ['anulado', 'cancelado', 'duplicado', 'reembolsado'];
 
@@ -154,7 +154,7 @@ export async function reunirHechos(companyId: string, desde: string, hasta: stri
       ? q.items.filter((i: any) => Number(i?.monto) > 0).map((i: any) => ({
           nombre: i.nombre, descripcion: i.descripcion || null,
           lista: Math.round(Number(i.monto) || 0),
-          neto: netoDePartida(Number(i.monto) || 0, q.descuento_global, q.descuento_tipo),
+          neto: netoDePartida(Number(i.monto) || 0, q.descuento_global, q.descuento_tipo, baseDeCotizacion(q.items)),
         }))
       : [];
     cobros.push({

@@ -218,6 +218,19 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const potencial = ideas.reduce((a, m) => a + Number(m.valor || 0), 0);
   const ideasSinMonto = ideas.filter(m => !(Number(m.valor) > 0)).length;
   const cobrado = entregadas.reduce((a, m) => a + (m.cortesia ? 0 : Number(m.valor || 0)), 0);
+  /* ── El dinero de verdad, no el de lo entregado ──
+     «Cobrado» sumaba el valor de las mejoras ENTREGADAS. En una cotización que
+     se paga en cinco partes mientras el trabajo está en proceso, eso da CERO:
+     Ruben's tiene $150,000 cotizados y $30,000 ya en la cuenta, y esta tarjeta
+     decía $0. Lo entregado y lo cobrado son dos cosas y hacía falta la
+     segunda, que es la que se responde cuando preguntan «¿ya pagó?».
+     Se cuentan solo las cotizaciones que cobran alguna mejora de esta cuenta:
+     una licencia no es consultoría y aquí no pinta nada. */
+  const cotsConMejora = cots.filter((c: any) => (c.partidas || []).some((p: any) => (p.tomada || []).length));
+  const cotizado = cotsConMejora.reduce((a: number, c: any) => a + Number(c.total || 0), 0);
+  const entrado = cotsConMejora.reduce((a: number, c: any) => a + Number(c.pagado || 0), 0);
+  const porEntrar = Math.max(0, cotizado - entrado);
+  const ultimoPago = cotsConMejora.map((c: any) => c.ultimo_pago).filter(Boolean).sort().pop() || null;
   const anio = new Date().getFullYear();
   const delAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio)));
   const esteAnio = delAnio.length;
@@ -334,7 +347,14 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
               : ideas.length ? `${ideasSinMonto} idea${ideasSinMonto === 1 ? '' : 's'} sin monto · no se puede estimar` : 'sin ideas todavía',
             '#2C5FC4', '#7DA6F5', potencial === 0 && ideas.length > 0],
           ['Entregado este año', String(esteAnio), delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'sin entregas', '#1a1a1a', '#4FBF95', false],
-          ['Cobrado', money(cobrado), `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`, '#1E8A63', '#4FBF95', false],
+          ['Cobrado', money(entrado),
+            cotizado > 0
+              ? (porEntrar > 0
+                  ? `de ${money(cotizado)} cotizados · faltan ${money(porEntrar)}`
+                  : `${money(cotizado)} cotizados y liquidados`)
+                + (ultimoPago ? ` · último el ${fmtDate(ultimoPago)}` : '')
+              : `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`,
+            '#1E8A63', '#4FBF95', cotizado > 0 && entrado === 0],
         ].map(([l, v, sub, col, franja, ojo]: any) => (
           <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px' }}>
             <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>{l}</div>
