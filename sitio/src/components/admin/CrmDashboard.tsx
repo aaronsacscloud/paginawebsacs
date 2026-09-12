@@ -112,34 +112,45 @@ type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactiv
 // De paso se corrigieron tres que decían otra cosa: Clientes era una casa (se
 // lee "inicio", no una cuenta), Leads era un grupo de personas idéntico al de
 // Colaboradores, y Oportunidades era un rayo, que ahí no significa nada.
+/* ══ Los iconos: familia EDITORIAL ══════════════════════════════════════════
+   Dibujados para este CRM. La regla de la familia es una sola: el icono dice el
+   GESTO, no la cosa —lo que entra, lo que vuelve, lo que se une, lo que se
+   corta—, con círculos, arcos y barras. A 18 px eso se lee y un dibujo literal
+   no.
+
+   Cada uno va en dos capas, que es de donde sale el carácter:
+     · la MASA con `url(#crmFirma)`, el degradado rosa→morado de la marca;
+     · la LÍNEA en `currentColor`, que el menú tiñe con el escalón de color de
+       su sección (ver ESCALERA).
+   El degradado se define una sola vez, en el <svg> oculto del armazón. */
 const ICONS: Record<string, string> = {
-  // Equipo: dos globos de conversación, el de atrás en la tinta al 18 %.
-  equipo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h11a2 2 0 012 2v7a2 2 0 01-2 2h-1v3l-4-3H12" fill="currentColor" opacity=".18" stroke="none"/><path d="M3 9a2 2 0 012-2h9a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2z"/></svg>',
-  trabajo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.2" fill="currentColor" opacity=".22"/></svg>',
-  churn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21H5a2 2 0 01-2-2V5a2 2 0 012-2h9"/><path d="M17 8l4 4-4 4"/><path d="M21 12h-9"/></svg>',
-  hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>',
-  pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8z" fill="currentColor" opacity=".18"/><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  marca: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9.5" r="5.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="9.5" r="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 14.5 8 22l4-2.2L16 22l-1-7.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  clientes: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="currentColor" opacity=".18"/><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h1.5M13.5 8H15M9 12h1.5M13.5 12H15M10 21v-4h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  agenda: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" opacity=".18"/><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  cotizaciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6z" fill="currentColor" opacity=".18"/><path d="M6 3h9l4 4v14H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  pagos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".18"/><rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.8"/><path d="M6 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  suscripciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M19 12a7 7 0 11-2.1-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 4.5V8h-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  mejoras: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" fill="currentColor" opacity=".18"/><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  oportunidades: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg>',
-  whatsapp: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.4-1.15A8.5 8.5 0 1 0 12 3.5z" fill="currentColor" opacity=".18"/><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.4-1.15A8.5 8.5 0 1 0 12 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.8 12h.01M12 12h.01M15.2 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
-  'wa-metricas': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="12" width="4" height="8" rx="1" fill="currentColor" opacity=".18"/><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" opacity=".18"/><rect x="4" y="12" width="4" height="8" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="7" width="4" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="16" y="3" width="4" height="17" rx="1" stroke="currentColor" stroke-width="1.8"/></svg>',
-  'wa-masivos': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 10v4l10 4V6L4 10z" fill="currentColor" opacity=".18"/><path d="M4 10v4l10 4V6L4 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5M6.5 14.5V18a1.5 1.5 0 0 0 3 0v-2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  'wa-numero': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" opacity=".18"/><rect x="7" y="2" width="10" height="20" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M11 18h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  'wa-plantillas': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2.5" fill="currentColor" opacity=".18"/><rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" opacity=".18"/><rect x="4" y="7" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="4" fill="currentColor" opacity=".18"/><circle cx="9" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 10.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  eventos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 9h16v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19V9z" fill="currentColor" opacity=".18"/><rect x="4" y="5" width="16" height="15.5" rx="1.8" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M8 3.5v3.5M16 3.5v3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 14.5l2.3 2.2 4.7-4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  abm: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>',
-  outbound: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10v4l11 5V5L3 10z" fill="currentColor" opacity=".18"/><path d="M3 10v4l11 5V5L3 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9a4 4 0 010 6M7 14.5V18a2 2 0 002 2h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  sacs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="2" y="3" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="2" y="13" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M6 7h.01M6 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.4" fill="url(#crmFirma)"/><circle cx="8" cy="8" r="4.4"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="14" width="16.8" height="6.4" rx="3.2" fill="url(#crmFirma)"/><rect x="3.6" y="14" width="16.8" height="6.4" rx="3.2"/></svg>',
+  trabajo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.6" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.6"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6"/><path d="M5.8 5.8l1.9 1.9M16.3 16.3l1.9 1.9" opacity=".5"/></svg>',
+  hoy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 1.9"/></svg>',
+  clientes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.4" cy="9.2" r="4.2" fill="url(#crmFirma)"/><circle cx="9.4" cy="9.2" r="4.2"/><path d="M15.4 6.2a4.2 4.2 0 010 8"/><path d="M3.4 20.4c0-3.3 2.7-5.6 6-5.6s6 2.3 6 5.6"/><path d="M17 15.2c2.1.6 3.6 2.6 3.6 5.2" opacity=".55"/></svg>',
+  agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.8" cy="12" r="5.4" fill="url(#crmFirma)"/><circle cx="8.8" cy="12" r="5.4"/><circle cx="15.2" cy="12" r="5.4"/></svg>',
+  cotizaciones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 4.6a1.8 1.8 0 011.8-1.8h5.6l4.9 4.9v11.7a1.8 1.8 0 01-1.8 1.8H7.6a1.8 1.8 0 01-1.8-1.8z" fill="url(#crmFirma)"/><path d="M5.8 4.6a1.8 1.8 0 011.8-1.8h5.6l4.9 4.9v11.7a1.8 1.8 0 01-1.8 1.8H7.6a1.8 1.8 0 01-1.8-1.8z"/><path d="M13.2 2.9v4.9h4.9M9.4 14.6h5.2"/></svg>',
+  pagos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6.4" width="18.4" height="11.2" rx="3.4" fill="url(#crmFirma)"/><rect x="2.8" y="6.4" width="18.4" height="11.2" rx="3.4"/><circle cx="12" cy="12" r="2.8"/><path d="M6.2 12h.9M16.9 12h.9"/></svg>',
+  suscripciones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4" fill="url(#crmFirma)"/><path d="M20 12a8 8 0 11-2.6-5.9"/><path d="M20.2 4v4.2H16"/></svg>',
+  mejoras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l2.1 6.1 6.1 2.1-6.1 2.1L12 19.2 9.9 13.1 3.8 11l6.1-2.1z" fill="url(#crmFirma)"/><path d="M12 2.8l2.1 6.1 6.1 2.1-6.1 2.1L12 19.2 9.9 13.1 3.8 11l6.1-2.1z"/></svg>',
+  taller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4.8L10.4 12 4.6 19.2z" fill="url(#crmFirma)"/><path d="M4.6 4.8L10.4 12 4.6 19.2z"/><path d="M19.4 4.8L13.6 12l5.8 7.2z"/><path d="M12 3.4v17.2" stroke-width="1.1" stroke-dasharray="2.2 2.4" opacity=".65"/></svg>',
+  automations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z" fill="url(#crmFirma)"/><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z"/><path d="M8.6 11.4h.1M12 11.4h.1M15.4 11.4h.1" stroke-width="2.2"/></svg>',
+  whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.6" width="18" height="14.8" rx="3.4" fill="url(#crmFirma)"/><rect x="3" y="4.6" width="18" height="14.8" rx="3.4"/><path d="M3.4 13h4.2l1.4 2.4h6l1.4-2.4h4.2"/></svg>',
+  oportunidades: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  abm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.4"/><path d="M12 1.6v3.6M12 18.8v3.6M1.6 12h3.6M18.8 12h3.6" stroke-width="1.2"/></svg>',
+  churn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 3.2H6a2.4 2.4 0 00-2.4 2.4v12.8A2.4 2.4 0 006 20.8h7.4" fill="url(#crmFirma)"/><path d="M13.4 3.2H6a2.4 2.4 0 00-2.4 2.4v12.8A2.4 2.4 0 006 20.8h7.4"/><path d="M16.6 8.2L20.4 12l-3.8 3.8M20.4 12h-8.6"/></svg>',
+  pipeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 5.2h17.2l-6.5 7.6v6.2l-4.2 2v-8.2z" fill="url(#crmFirma)"/><path d="M3.4 5.2h17.2l-6.5 7.6v6.2l-4.2 2v-8.2z"/></svg>',
+  partners: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.2" cy="9.2" r="4.8" fill="url(#crmFirma)"/><circle cx="9.2" cy="9.2" r="4.8"/><circle cx="14.8" cy="14.8" r="4.8"/><path d="M11.4 11.4l1.2 1.2" stroke-width="2.2"/></svg>',
+  eventos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 10.4a8.4 8.4 0 0116.8 0v9a1.4 1.4 0 01-1.4 1.4H5a1.4 1.4 0 01-1.4-1.4z" fill="url(#crmFirma)"/><path d="M3.6 10.4a8.4 8.4 0 0116.8 0v9a1.4 1.4 0 01-1.4 1.4H5a1.4 1.4 0 01-1.4-1.4z"/><path d="M3.8 10.6h16.4M12 2v8.6"/></svg>',
+  outbound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.6" cy="12" r="6.8" fill="url(#crmFirma)"/><circle cx="9.6" cy="12" r="6.8"/><path d="M14.6 7.4L21 3.6M21 3.6l-.6 4M21 3.6l-4 .5"/></svg>',
+  'wa-masivos': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.6" cy="12" r="3.4" fill="url(#crmFirma)"/><circle cx="7.6" cy="12" r="3.4"/><path d="M13.4 8.4a5.2 5.2 0 010 7.2M16.8 5.6a9.2 9.2 0 010 12.8" opacity=".7"/></svg>',
+  'wa-metricas': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="12.4" width="4.4" height="8" rx="1.6" fill="url(#crmFirma)"/><rect x="3.6" y="12.4" width="4.4" height="8" rx="1.6"/><rect x="9.8" y="7.6" width="4.4" height="12.8" rx="1.6"/><rect x="16" y="3.6" width="4.4" height="16.8" rx="1.6" fill="url(#crmFirma)"/><rect x="16" y="3.6" width="4.4" height="16.8" rx="1.6"/></svg>',
+  'wa-numero': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6.6" y="2.6" width="10.8" height="18.8" rx="3" fill="url(#crmFirma)"/><rect x="6.6" y="2.6" width="10.8" height="18.8" rx="3"/><path d="M10.6 18.2h2.8"/></svg>',
+  'wa-plantillas': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="3.4" width="14.8" height="17.2" rx="3" fill="url(#crmFirma)"/><rect x="4.6" y="3.4" width="14.8" height="17.2" rx="3"/><path d="M8.4 8.4h7.2M8.4 12h7.2M8.4 15.6h4"/></svg>',
+  config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="8.4" stroke-dasharray="3.4 2.6"/><circle cx="12" cy="12" r="3"/></svg>',
+  marca: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l3 6.2 6.2 3-6.2 3-3 6.2-3-6.2-6.2-3 6.2-3z" fill="url(#crmFirma)"/><path d="M12 2.8l3 6.2 6.2 3-6.2 3-3 6.2-3-6.2-6.2-3 6.2-3z"/><circle cx="12" cy="12" r="1.6" stroke-width="1.2"/></svg>',
+  equipo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.4" r="3.2" fill="url(#crmFirma)"/><circle cx="12" cy="6.4" r="3.2"/><circle cx="6.4" cy="16.4" r="3.2"/><circle cx="17.6" cy="16.4" r="3.2"/><path d="M9.6 8.6l-1.6 4.8M14.4 8.6l1.6 4.8M9.6 16.4h4.8" stroke-width="1.2" opacity=".7"/></svg>',
+  sacs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="3.4" width="18.4" height="7.2" rx="2.4" fill="url(#crmFirma)"/><rect x="2.8" y="3.4" width="18.4" height="7.2" rx="2.4"/><rect x="2.8" y="13.4" width="18.4" height="7.2" rx="2.4"/><path d="M6.4 7h.1M6.4 17h.1" stroke-width="2.2"/></svg>',
 };
 
 // El pie son SALIDAS, no destinos: mismos iconos de línea que el menú pero más
@@ -176,6 +187,25 @@ const pieFila = {
   fontSize: '0.75rem', fontWeight: 650, textAlign: 'left' as const,
 } as const;
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
+
+/* ══ La escalera de color del menú ═══════════════════════════════════════════
+   Seis pasos entre los dos colores que ya son la marca: el morado del sistema
+   (#5B4BD6) y el rosa de la firma (#D9538E). No hay colores nuevos —son los dos
+   extremos y lo que hay en medio—, así que el verde, el ámbar y el azul se
+   quedan libres para lo que significan en los DATOS: dinero que entró, algo que
+   urge, una cifra neutra. El menú, leído de arriba abajo, es el degradado de la
+   marca: arriba lo del sistema, abajo lo que toca al cliente. */
+const ESCALERA: Record<string, string> = {
+  '':               '#5B4BD6',   // lo de todos los días
+  trabajo:          '#5B4BD6',
+  cuentas:          '#704CCA',
+  ventas:           '#854DBE',
+  acompanamiento:   '#9A4FB2',
+  marketing:        '#AF50A6',
+  finanzas:         '#C4519A',
+  colaboradores:    '#D9538E',
+};
+const colorSec = (sec?: string) => ESCALERA[sec || ''] || ESCALERA[''];
 
 const NAV_SECTIONS = [
   // Agrupado por el SUJETO de cada pantalla, no por "lo importante primero":
@@ -266,7 +296,7 @@ const NAV_SECTIONS = [
     label: 'Acompañamiento', sec: 'acompanamiento', icon: 'mejoras',
     items: [
       { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
-      { id: 'taller' as Tab, label: 'Taller', icon: 'mejoras' },
+      { id: 'taller' as Tab, label: 'Taller', icon: 'taller' },
       { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
@@ -317,6 +347,14 @@ const NAV_SECTIONS = [
      junto a notificaciones y configuración, y al entrar ocupa la PANTALLA
      COMPLETA — leer un manual y navegar el CRM no se hacen a la vez. */
 ];
+
+/* El color de cada pantalla, derivado de su sección. Se arma una vez. */
+const COLOR_TAB: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const s of NAV_SECTIONS) for (const it of s.items) m[it.id] = colorSec((s as any).sec);
+  return m;
+})();
+
 
 function getInitialTab(): Tab {
   if (typeof window === 'undefined') return 'dashboard';
@@ -615,6 +653,20 @@ export default function CrmDashboard() {
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", minHeight: '100vh', background: '#f5f6f8', display: 'flex' }}>
       <style dangerouslySetInnerHTML={{ __html: CRM_MOBILE_CSS }} />
+      {/* ══ El degradado de la marca, una sola vez ══
+          Los iconos rellenan su masa con `url(#crmFirma)`. La definición vive
+          aquí, en el armazón: si no está en el documento, los rellenos salen
+          transparentes y los iconos se ven huecos. Va oculto y sin tamaño para
+          que no ocupe ni una fila del layout. */}
+      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute' }}>
+        <defs>
+          <linearGradient id="crmFirma" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#D9538E" stopOpacity=".5" />
+            <stop offset="55%" stopColor="#A750AB" stopOpacity=".42" />
+            <stop offset="100%" stopColor="#7C6BF0" stopOpacity=".48" />
+          </linearGradient>
+        </defs>
+      </svg>
       {/* Backdrop mobile cuando sidebar overlay abierto */}
       {mobileExpanded && (
         <div onClick={() => setSidebarCollapsed(true)} style={{
@@ -792,8 +844,9 @@ export default function CrmDashboard() {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', width: 20, flexShrink: 0, justifyContent: 'center', color: tieneActivo && !abierto ? '#7C6BF0' : '#a49dbd' }}
-                      dangerouslySetInnerHTML={{ __html: ICONS[section.items[0]?.icon] || '' }} />
+                    <span className="crm-ico" style={{ display: 'flex', width: 20, flexShrink: 0, justifyContent: 'center',
+                      color: colorSec((section as any).sec), opacity: tieneActivo && !abierto ? 1 : .6 }}
+                      dangerouslySetInnerHTML={{ __html: ICONS[(section as any).icon] || ICONS[section.items[0]?.icon] || '' }} />
                     <span style={{ flex: 1, minWidth: 0 }}>{section.label}</span>
                     {tieneActivo && !abierto && (
                       <span style={{ width: 6, height: 6, borderRadius: 99, background: '#9B8CFA', flexShrink: 0 }} />
@@ -826,7 +879,7 @@ export default function CrmDashboard() {
                     }}
                     onMouseEnter={e => { if (!contieneActiva && !abierto) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
                     onMouseLeave={e => { if (!contieneActiva && !abierto) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                    <span style={{ display: 'flex', width: 20, color: contieneActiva ? '#7C6BF0' : '#a49dbd' }}
+                    <span className="crm-ico" style={{ display: 'flex', width: 20, color: colorSec((section as any).sec), opacity: contieneActiva ? 1 : .62 }}
                       dangerouslySetInnerHTML={{ __html: ICONS[(section as any).icon] || ICONS[section.items[0].icon] || '' }} />
                     {/* Sin el punto, un pendiente vencido queda invisible en
                         cuanto se pliega el menú: el contador vive en el renglón
@@ -881,7 +934,10 @@ export default function CrmDashboard() {
                       borderRadius: sidebarCollapsed ? 11 : 9,
                       background: isActive ? '#fff' : 'transparent',
                       boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
-                      color: isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
+                      /* El activo se escribe con la tinta de su sección: es lo
+                         que hace que el escalón de color signifique algo y no
+                         sea un adorno del icono. */
+                      color: isActive ? colorSec((section as any).sec) : enGrupo ? '#665f7d' : '#3f3856',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       /* Nivel 2: más chico y más claro que su cabecera. Fuera
                        del grupo (Dashboard, que no cuelga de nada) conserva el
@@ -908,7 +964,12 @@ export default function CrmDashboard() {
                          "vas por esta rama" sin agregar un elemento más. El
                          inactivo no pinta nada; el riel ya lo agrupa. */
                       ? (isActive ? <span aria-hidden="true" style={{ position: 'absolute', left: 17, top: 5, bottom: 5, width: 4, borderRadius: 2, background: 'linear-gradient(180deg,#9B8CFA,#7C6BF0)', flexShrink: 0 }} /> : null)
-                      : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1, color: isActive ? '#7C6BF0' : '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />}
+                      : <span className="crm-ico" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1,
+                          /* El trazo toma el escalón de color de SU sección; la
+                             masa ya va con el degradado de la marca. Apagado
+                             baja de opacidad en vez de volverse gris: así la
+                             escalera se sigue leyendo de arriba abajo. */
+                          color: colorSec((section as any).sec), opacity: isActive ? 1 : .58 }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />}
                     {!sidebarCollapsed && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
                         compromiso con fecha que ya pasó. Poner números en todos
@@ -1281,11 +1342,12 @@ export default function CrmDashboard() {
                       display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
                       border: 'none', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: '0.81rem', fontWeight: act ? 800 : 600,
-                      background: act ? '#EEECFE' : 'transparent', color: act ? '#4C3BD0' : '#4b4560',
+                      background: act ? (COLOR_TAB[item.id] || colorSec()) + '1f' : 'transparent',
+                      color: act ? (COLOR_TAB[item.id] || colorSec()) : '#4b4560',
                     }}
                     onMouseEnter={e => { if (!act) (e.currentTarget as HTMLElement).style.background = '#f6f4ff'; }}
                     onMouseLeave={e => { if (!act) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                    <span style={{ display: 'flex', width: 17, flexShrink: 0, color: act ? '#7C6BF0' : '#a49dbd' }}
+                    <span className="crm-ico" style={{ display: 'flex', width: 17, flexShrink: 0, color: COLOR_TAB[item.id] || colorSec(), opacity: act ? 1 : .6 }}
                       dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
                     <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
                     {item.id === 'mejoras' && vencidasMenu > 0 && (
@@ -1805,6 +1867,10 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-chip.on .m-chip-n { color: #B7A8F7; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
       [data-crm-dark="1"] nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
+      /* Los escalones de la escalera son tonos medios: sobre el fondo oscuro se
+         apagan. Se levantan sin cambiar de familia, que es lo que mantiene el
+         menú del mismo color de día y de noche. */
+      [data-crm-dark="1"] .crm-ico { filter: brightness(1.45) saturate(1.15); }
       /* inline fijos de las pantallas v5 */
       [data-crm-dark="1"] .m-hdr [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
       [data-crm-dark="1"] .m-hdr [style*="color: rgb(91, 75, 214)"], [data-crm-dark="1"] .m-cta { color: #B7A8F7 !important; }
