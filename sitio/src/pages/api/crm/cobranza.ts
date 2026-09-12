@@ -34,7 +34,7 @@ const _GET: APIRoute = async () => {
   const mesFin = new Date(Date.UTC(aa, mm, 1)).toISOString().slice(0, 10);
   const [subsQ, compQ, cobrosQ, pagosQ, cotsQ, abonosQ] = await Promise.all([
     supabase.from('subscriptions')
-      .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
+      .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor, grupo_cobro, pp_monto, pp_pct, pp_expira_at')
       .in('estado', ['activa', 'pendiente_pago']),
     supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, ultima_venta_at, contacts(nombre, whatsapp, telefono)').is('archived_at', null),
     supabase.from('cobros_programados').select('*').neq('estado', 'cancelada').order('numero'),
@@ -102,7 +102,11 @@ const _GET: APIRoute = async () => {
 
       const d = vence ? dias(vence) : 0;
       return {
-        id: s.id, company_id: s.company_id,
+        id: s.id, company_id: s.company_id, grupo: s.grupo_cobro || null,
+        favor: Math.round(num(s.saldo_favor)),
+        // La oferta de pronto pago viva, para poder verla sin abrir la ficha.
+        pp: s.pp_expira_at && new Date(s.pp_expira_at).getTime() > Date.now()
+          ? { monto: Math.round(num(s.pp_monto)), pct: num(s.pp_pct), expira: s.pp_expira_at } : null,
         cliente: co.nombre_comercial || co.nombre || 'Cuenta', cuenta: co.sacs_account || null,
         contacto: (co as any).contacts?.[0]?.nombre || null,
         telefono: (co as any).contacts?.[0]?.whatsapp || (co as any).contacts?.[0]?.telefono || null,
@@ -119,8 +123,56 @@ const _GET: APIRoute = async () => {
       };
     });
 
-  const vencidas = filas.filter((f: any) => f.dias > 0 && f.deuda > 0);
-  const porVencer = filas.filter((f: any) => f.dias <= 0 && f.dias >= -30 && f.deuda > 0);
+  /* ── Un grupo unificado es UN cobro ───────────────────────────────────
+     Al unificar fechas, las licencias dejan de cobrarse por separado: se
+     juntan en un solo cargo con una sola fecha. El campo `grupo_cobro` que
+     escribe la unificación no lo leía NADIE, así que esta pantalla las seguía
+     listando una por una — y el cron de cobranza le mandaba al cliente un
+     correo de vencimiento POR LICENCIA. Boom Fitness recibió dos el mismo día,
+     uno por $21,420 y otro por $7,140, por una sola deuda.
+
+     Se juntan por grupo Y por fecha: si a un miembro se le movió el día, ya no
+     están unificadas de hecho, y taparlo escondería justo el problema. Las que
+     tienen plan de parcialidades tampoco se juntan — ahí la deuda es la
+     exhibición, no el periodo. */
+  const agrupables = filas.filter((f: any) => f.grupo && !f.plan_pagos.length);
+  const sueltas = filas.filter((f: any) => !f.grupo || f.plan_pagos.length);
+  const porGrupo: Record<string, any[]> = {};
+  for (const f of agrupables) (porGrupo[`${f.grupo}|${f.vence}`] = porGrupo[`${f.grupo}|${f.vence}`] || []).push(f);
+
+  const unidas = Object.values(porGrupo).map((g: any[]) => {
+    if (g.length === 1) return g[0];
+    // El renglón se queda con la identidad de la licencia MAYOR —es la que se
+    // nombra en la conversación— y suma el resto.
+    const base = [...g].sort((a, b) => b.precio - a.precio)[0];
+    const favor = g.reduce((a, f) => a + f.favor, 0);
+    const precio = g.reduce((a, f) => a + f.precio, 0);
+    return {
+      ...base,
+      grupo_ids: g.map(f => f.id),
+      grupo_planes: g.map(f => ({ id: f.id, plan: f.plan, precio: f.precio })),
+      plan: `${g.length} licencias unificadas`,
+      precio,
+      // La deuda del grupo se calcula del total, no sumando deudas sueltas: el
+      // saldo a favor puede estar parado en una licencia y descontar de otra.
+      deuda: Math.max(0, precio - favor),
+      favor,
+      pagado: g.reduce((a, f) => a + f.pagado, 0),
+      pagos: g.reduce((a, f) => a + f.pagos, 0),
+      // El pronto pago de un grupo solo cuenta si lo tienen TODAS: media
+      // oferta no es una oferta, y enseñar un total con descuento a medias
+      // sería prometer un precio que al cobrar no sale.
+      pp: g.every(f => f.pp)
+        ? { monto: g.reduce((a, f) => a + f.pp.monto, 0), pct: base.pp.pct, expira: base.pp.expira }
+        : null,
+      detalle: `${g.map(f => f.plan).join(' + ')}`
+        + (favor > 0 ? ` · menos ${favor.toLocaleString('es-MX')} a favor` : ''),
+    };
+  });
+  const filasCobro = [...sueltas, ...unidas];
+
+  const vencidas = filasCobro.filter((f: any) => f.dias > 0 && f.deuda > 0);
+  const porVencer = filasCobro.filter((f: any) => f.dias <= 0 && f.dias >= -30 && f.deuda > 0);
   // Los tramos miran todo lo vencido —suscripciones y parcialidades—, que es
   // justo lo que el filtro de la pantalla necesita.
   let tramoBase: any[] = [];
@@ -128,7 +180,7 @@ const _GET: APIRoute = async () => {
   const suma = (a: any[]) => Math.round(a.reduce((x: number, f: any) => x + f.deuda, 0));
 
   const recuperado = (pagosQ.data || []).reduce((a: number, p: any) => a + num(p.monto), 0);
-  const conPlanSubs = filas.filter((f: any) => f.plan_pagos.length);
+  const conPlanSubs = filasCobro.filter((f: any) => f.plan_pagos.length);
 
   // ── Cotizaciones por cobrar ───────────────────────────────────────────────
   // Solo las que ya son un compromiso: aceptada sin pagar, o pagada a medias.
@@ -217,7 +269,7 @@ const _GET: APIRoute = async () => {
   // ── Lo que cae en lo que resta del mes ──
   // Todavía no vence: es la lista de a quién cobrarle ANTES de que se atrase,
   // que es lo más barato que hay en cobranza.
-  const venceMesSubs = filas.filter((f: any) => f.dias <= 0 && f.vence && String(f.vence) < mesFin && f.deuda > 0);
+  const venceMesSubs = filasCobro.filter((f: any) => f.dias <= 0 && f.vence && String(f.vence) < mesFin && f.deuda > 0);
   const venceMesCots = cotizaciones.filter((c: any) => c.dias <= 0 && c.vence && String(c.vence) < mesFin);
   const venceMes = [...venceMesSubs, ...venceMesCots].sort((a: any, b: any) => String(a.vence).localeCompare(String(b.vence)));
 

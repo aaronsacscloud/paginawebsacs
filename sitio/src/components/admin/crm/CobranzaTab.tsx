@@ -96,6 +96,7 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
   // El menú de la fila se ancla con position FIXED: dentro de la tabla lo
   // recortaba el contenedor con desplazamiento y solo se veía la primera opción.
   const [menuFila, setMenuFila] = useState<any>(null);
+  const [pronto, setPronto] = useState<any>(null);
   useEffect(() => {
     if (!menuFila) return;
     const cerrar = () => setMenuFila(null);
@@ -110,6 +111,16 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
   }, [menuFila]);
   const [cliente, setCliente] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  /* ── Aquí arriba, con los demás ──
+     `useIsMobile` estaba declarado MÁS ABAJO, después de los dos `return` de
+     «cargando» y «no se pudo cargar». En el primer render la pantalla salía por
+     el `return` y el hook no llegaba a llamarse; cuando los datos entraban, el
+     render ya corría un hook de más y React tumbaba la pestaña entera con
+     «Rendered more hooks than during the previous render».
+     Es decir: Cobranza reventaba SIEMPRE, y lo único que se veía era el cartel
+     de «Error en el componente» del ErrorBoundary. Los hooks van todos antes
+     del primer `return`, sin excepción. */
+  const movilCob = useIsMobile();
 
   const cargar = () => fetch('/api/crm/cobranza').then(r => r.json()).then(setD).catch(() => setD({ error: true }));
   useEffect(() => { cargar(); }, []);
@@ -147,7 +158,6 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
   });
   const filas = filtra(activa.filas);
 
-  const movilCob = useIsMobile();
 
   const Fila = ({ f }: any) => {
     const g = GESTION[f.gestion] || GESTION.sin_contactar;
@@ -464,6 +474,15 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
               try { await navigator.clipboard.writeText(location.origin + ecUrl(f)); flash('Liga copiada'); }
               catch { window.open(ecUrl(f), '_blank'); }
             })}
+            {/* Pronto pago: el descuento por pagar ANTES de la fecha. Ya
+                existía la maquinaria —se muestra con su cuenta regresiva en el
+                estado de cuenta del cliente— pero no había desde dónde
+                encenderla, así que en un año no se usó ni una vez y los
+                descuentos se acordaban por WhatsApp y no quedaban en ningún
+                lado. En un grupo unificado se aplica a TODAS sus licencias,
+                que es como se ofrece: 10% sobre el total. */}
+            {!esCot && f.dias <= 0 && item(f.pp ? `Cambiar el pronto pago (${f.pp.pct}%)` : 'Ofrecer 10% por pronto pago',
+              () => setPronto(f), '#5B4BD6')}
             {f.link && item('Abrir link de cobro', () => window.open(f.link, '_blank'), '#1E8A63')}
             {f.company_id && item('Abrir ficha del cliente', () => setCliente(f.company_id))}
             {!esCot && item('Dar de baja', () => setCancelar(f), '#C0554E')}
@@ -474,6 +493,7 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
       {cancelar && <DarDeBaja f={cancelar} onCerrar={() => setCancelar(null)} onListo={(t: string) => { setCancelar(null); flash(t); cargar(); }} />}
+      {pronto && <ProntoPago f={pronto} onCerrar={() => setPronto(null)} onListo={(t: string) => { setPronto(null); flash(t); cargar(); }} />}
       {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={cargar} />}
     </div>
   );
@@ -822,6 +842,103 @@ function DarDeBaja({ f, onCerrar, onListo }: any) {
         <button style={{ ...S.btnP, background: '#C0554E', opacity: busy ? .6 : 1 }} disabled={busy} onClick={guardar}>
           {busy ? 'Guardando…' : cuando === 'ya' ? 'Dar de baja' : 'Marcar para no renovar'}
         </button>
+        <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>
+      </div>
+    </Modal>
+  );
+}
+
+
+/* ─── Pronto pago: el descuento por pagar ANTES de la fecha ───
+ * Lo que ya se hacía por WhatsApp y no quedaba registrado: «si pagas antes del
+ * 26 te queda en $24,119 en vez de $26,799». Boom Fitness pagó así y el CRM no
+ * lo supo, de modo que siguió cobrando la diferencia como si fuera un adeudo.
+ *
+ * La maquinaria existía completa —el monto y su cuenta regresiva se pintan en
+ * el estado de cuenta del cliente— pero no había desde dónde encenderla, así
+ * que llevaba un año sin usarse una sola vez.
+ *
+ * En una cuenta con licencias unificadas se aplica a TODAS: el cliente no
+ * negocia el descuento de una licencia, negocia el de su pago. */
+function ProntoPago({ f, onCerrar, onListo }: any) {
+  const ids: string[] = f.grupo_ids?.length ? f.grupo_ids : [f.id];
+  const [pct, setPct] = useState(f.pp?.pct || 10);
+  /* Por defecto vence CINCO DÍAS antes de su fecha de pago: un pronto pago que
+     vence el mismo día no es pronto pago, y uno que vence mañana no le da al
+     cliente tiempo de mover una transferencia. Si la fecha ya está encima, lo
+     que quede. */
+  const limite = () => {
+    const cobro = new Date(String(f.vence).slice(0, 10) + 'T12:00:00').getTime();
+    const cinco = cobro - 5 * 86400000;
+    const manana = Date.now() + 86400000;
+    return new Date(Math.max(manana, Math.min(cinco, cobro - 86400000))).toISOString().slice(0, 10);
+  };
+  const [hasta, setHasta] = useState(f.pp?.expira ? String(f.pp.expira).slice(0, 10) : limite());
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+
+  const base = Number(f.precio) || 0;
+  const conDesc = Math.round(base * (1 - Number(pct) / 100));
+  const ahorro = base - conDesc;
+  const horas = Math.max(1, Math.round((new Date(hasta + 'T23:59:00').getTime() - Date.now()) / 3600000));
+
+  async function aplicar(quitar = false) {
+    setBusy(quitar ? 'quitando' : 'guardando'); setError('');
+    for (const id of ids) {
+      const r = await fetch('/api/crm/arr/estado-cuenta-oferta', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quitar ? { subscription_id: id, action: 'clear' }
+          : { subscription_id: id, pct: Number(pct), vigencia_horas: horas }),
+      }).then(x => x.json()).catch(() => null);
+      if (!r || r.error) { setBusy(''); setError(r?.error || 'No se pudo guardar la oferta.'); return; }
+    }
+    setBusy('');
+    onListo(quitar ? 'Pronto pago retirado'
+      : `Pronto pago del ${pct}% activo hasta el ${fmtCorta(hasta)}`);
+  }
+
+  return (
+    <Modal titulo="Pronto pago" nota={f.cliente} onCerrar={onCerrar} ancho={430}>
+      <div style={{ fontSize: '0.78rem', color: '#6b6b74', marginBottom: 12, lineHeight: 1.55 }}>
+        <b>{f.plan}</b>{ids.length > 1 ? ` · el descuento aplica a las ${ids.length}` : ''}<br />
+        Se cobra el {fmtCorta(f.vence)} · {money(base)}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 9 }}>
+        <div><div style={S.fl}>Descuento</div>
+          <select style={S.fi} value={pct} onChange={e => setPct(Number(e.target.value))}>
+            {[5, 10, 15, 20].map(x => <option key={x} value={x}>{x}%</option>)}
+          </select></div>
+        <div><div style={S.fl}>Si paga antes del</div>
+          <input type="date" style={S.fi} value={hasta} onChange={e => setHasta(e.target.value)} /></div>
+      </div>
+
+      <div style={{ background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22))', borderRadius: 11, padding: '13px 15px', marginTop: 12 }}>
+        <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#5B4BD6' }}>Le queda en</div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-.03em', color: '#241d43', marginTop: 2 }}>
+          {money(conDesc)} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#8a8590', textDecoration: 'line-through' }}>{money(base)}</span>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#514c63', marginTop: 3 }}>
+          Se ahorra {money(ahorro)} si paga antes del {fmtCorta(hasta)}.
+        </div>
+      </div>
+
+      <div style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.5, marginTop: 10 }}>
+        El cliente lo ve en su estado de cuenta con la cuenta regresiva. El descuento
+        vive en la suscripción, no en la liga: no se puede cambiar desde el navegador.
+      </div>
+
+      {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 10 }}>{error}</div>}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 13, flexWrap: 'wrap' }}>
+        <button style={{ ...S.btnP, opacity: busy ? .6 : 1 }} disabled={!!busy} onClick={() => aplicar(false)}>
+          {busy === 'guardando' ? 'Guardando…' : f.pp ? 'Actualizar la oferta' : 'Activar el descuento'}
+        </button>
+        {f.pp && (
+          <button style={{ ...S.mini, padding: '8px 14px', color: '#C0554E' }} disabled={!!busy} onClick={() => aplicar(true)}>
+            {busy === 'quitando' ? 'Quitando…' : 'Quitar'}
+          </button>
+        )}
         <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>
       </div>
     </Modal>
