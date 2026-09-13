@@ -17,6 +17,7 @@ import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
 import Cargando, { Corazones } from './ui/Cargando';
 import KpiCard from './ui/KpiCard';
 import { confirmar } from '../../../lib/ui/confirmar';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -738,9 +739,13 @@ export default function MejorasTab() {
                       flex-wrap: wrap !important; margin-top: 4px !important; gap: 10px !important; }
         }
       `}</style>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+      <style>{CSS_CHISPAS + CSS_SELLO}</style>
+      <div className="chispas-cab" style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <Chispas />
         <div>
-          <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
+          <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+            Consultoría <Sello>Sembramos relaciones, cosechamos constelaciones</Sello>
+          </h2>
           <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
             {modo === 'semana'
               ? 'Lo que produjeron tus juntas: qué salió, cuánto dinero movieron y qué te queda por vender.'

@@ -21,12 +21,13 @@ export const CHISPA =
    a coro. Son decoración: sin texto y ocultos al lector de pantalla.
    [ancho, x, y, opacidad, retraso, color]
 
-   Van en DOS capas y esa es toda la gracia. La primera son los diez grandes
+   Van en TRES capas y esa es toda la gracia. La primera son los diez grandes
    —hasta 20 px y hasta media opacidad—: son los que se ven. La segunda son
    ocho chiquitos, ninguno pasa de 9 px ni de 0.26 de opacidad, metidos en los
    huecos que dejó la primera y a alturas distintas. Más destellos del mismo
    tamaño saturan; unos más chicos y más tenues detrás se leen como fondo, que
-   es justo lo que tienen que ser. */
+   es justo lo que tienen que ser. La tercera capa es más de lo mismo, todavía
+   más chica y más tenue: así se puede subir la cantidad sin subir el ruido. */
 const DESTELLOS: [number, string, number, number, number, string][] = [
   // Capa 1 · los que se ven
   [12, '2%', 2, 0.5, 0, '#D9538E'], [8, '10%', 44, 0.38, 1.1, '#9B8CFA'],
@@ -39,6 +40,18 @@ const DESTELLOS: [number, string, number, number, number, string][] = [
   [7, '25%', 32, 0.18, 0.8, '#9B8CFA'], [6, '34%', 54, 0.24, 3.1, '#EFA6CA'],
   [5, '43%', 20, 0.2, 2.0, '#D9538E'], [8, '52%', 30, 0.16, 1.2, '#9B8CFA'],
   [6, '61%', 34, 0.22, 3.8, '#EFA6CA'], [5, '78%', 26, 0.2, 2.6, '#D9538E'],
+  // Capa 3 · el relleno (13-sep-2026, a pedido del dueño: «más destellos»).
+  // Ninguno pasa de 7 px ni de 0.2 de opacidad y todos caen en los huecos que
+  // dejaron las dos capas anteriores. La regla al agregar es siempre la misma:
+  // MÁS chicos y MÁS tenues que los que ya están, o la banda deja de ser fondo
+  // y se vuelve confeti encima del título.
+  [7, '0%', 22, 0.18, 2.3, '#9B8CFA'], [5, '13%', 52, 0.2, 0.4, '#EFA6CA'],
+  [6, '19%', 36, 0.16, 3.6, '#D9538E'], [4, '31%', 10, 0.22, 1.5, '#9B8CFA'],
+  [7, '41%', 46, 0.15, 2.9, '#EFA6CA'], [5, '49%', 6, 0.2, 0.7, '#D9538E'],
+  [6, '58%', 52, 0.17, 3.3, '#9B8CFA'], [4, '67%', 18, 0.24, 1.1, '#EFA6CA'],
+  [7, '70%', 40, 0.14, 2.7, '#D9538E'], [5, '81%', 10, 0.21, 0.2, '#9B8CFA'],
+  [6, '88%', 34, 0.18, 3.9, '#EFA6CA'], [4, '92%', 12, 0.22, 1.8, '#D9538E'],
+  [7, '95%', 48, 0.15, 2.5, '#9B8CFA'], [5, '97%', 24, 0.19, 0.9, '#EFA6CA'],
 ];
 
 /** El CSS del efecto. Se inyecta una vez con el componente para que una

@@ -15,6 +15,7 @@ import Cargando from '../ui/Cargando';
 import KpiCard from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 
 const ETAPAS: Record<string, string> = {
   recibida: 'Recibida', analisis: 'En análisis', desarrollo: 'En desarrollo',
@@ -105,8 +106,12 @@ export default function TallerTab() {
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, width: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-.02em' }}>Taller</h2>
+      <style>{CSS_CHISPAS + CSS_SELLO}</style>
+      <div className="chispas-cab" style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+        <Chispas />
+        <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-.02em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+          Taller <Sello>Aquí se pule cada estrella</Sello>
+        </h2>
         <span style={{ fontSize: '0.78rem', color: '#8d8a97' }}>
           {vivas.length} {vivas.length === 1 ? 'orden viva' : 'órdenes vivas'}
           {esperanOK.length ? ` · ${esperanOK.length} ${esperanOK.length === 1 ? 'espera' : 'esperan'} tu OK` : ''}

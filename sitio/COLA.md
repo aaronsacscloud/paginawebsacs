@@ -6,7 +6,7 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
-- [ ] **2026-09-13 · La firma de pantalla en los demás módulos (Soporte, Taller, Consultoría, Leads).**
+- [x] **2026-09-13 · La firma de pantalla en los demás módulos (Soporte, Taller, Consultoría, Leads).** → HECHO el mismo día: las cuatro montadas con las frases que eligió el dueño, y el Tablero pasó a usar el componente compartido.
       «me gustaria que en estas pantallas puedas poner los efectos del mensaje y las estrellas de acuerdo a su
       gestion de cada uno que el diseno de la frase que correspinderia y los destellos que hemos puesto en
       cotizaciones y clientes ese es la nueva gestion de branding guardalo solo antes de ponerlo en los demas

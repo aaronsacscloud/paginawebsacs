@@ -26,6 +26,7 @@ const LeadsDashboard = lazySeguro(() => import('./LeadsDashboard'));
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, ParaRescatarLista, EmpresasActivas, EfectividadSeguimiento, RangoDias, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -212,21 +213,6 @@ export default function DashboardTab() {
         @media (max-width: 900px)  { .tb-2, .tb-3 { grid-template-columns:1fr; } }
         @media (max-width: 620px)  { .tb-4, .tb-cuad { grid-template-columns:1fr; } }
 
-        /* ── El encabezado: el sello de la marca y sus destellos ──
-           Los destellos son la misma chispa del logo y de la entrada, regados
-           SOLO por la banda del título: es la única franja sin cifras, y una
-           chispa detrás de un número estorba. */
-        .tb-cab { position:relative; }
-        .tb-cab > * { position:relative; z-index:1; }
-        .tb-chispas { position:absolute; inset:-12px -8px -6px -8px; z-index:0; pointer-events:none; }
-        .tb-chispas svg { position:absolute; animation:tbLatir 4.2s ease-in-out infinite; }
-        @keyframes tbLatir { 0%,100% { opacity:var(--o,.5); transform:scale(1) rotate(0deg); } 50% { opacity:calc(var(--o,.5) * .4); transform:scale(.84) rotate(8deg); } }
-        @media (prefers-reduced-motion: reduce) { .tb-chispas svg { animation:none; } }
-        .tb-sello { display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid rgba(217,83,142,.3);
-          border-radius:999px; padding:5px 13px; font-size:.58rem; font-weight:800; letter-spacing:.11em;
-          text-transform:uppercase; color:#9c3d70; white-space:nowrap; }
-        @media (max-width: 760px) { .tb-sello { display:none; } }
-
         /* ── El riel ── */
         .tb-riel { display:flex; background:#fff; border:1px solid #ececf1; border-radius:14px; overflow:hidden; margin-bottom:16px; }
         .tb-paso { flex:1; display:flex; align-items:center; gap:10px; padding:12px 15px; border:none; background:none;
@@ -257,17 +243,15 @@ export default function DashboardTab() {
         @media (max-width: 1180px) { .tb-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } }
         @media (max-width: 680px)  { .tb-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
       `}</style>
+      <style>{CSS_CHISPAS + CSS_SELLO}</style>
 
       <div className="tb">
-        <div className="tb-cab" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div className="chispas-cab" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
           <Chispas />
           <div>
             <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-.02em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
               Tablero
-              <span className="tb-sello">
-                <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d={CHISPA} fill="#D9538E" /></svg>
-                Conectando estrellas, creando constelaciones
-              </span>
+              <Sello>Conectando estrellas, creando constelaciones</Sello>
             </h2>
             <div style={{ fontSize: '0.75rem', color: '#8a8590', marginTop: 3 }}>
               {p.es_mes_actual
@@ -1189,7 +1173,10 @@ function vistaDe(d: any, cual: string): any {
    La silueta EXACTA del logo, la misma que gira en el cargador y la que se
    dibuja en el cielo de la entrada. Repetirla es lo que hace que una marca se
    reconozca; una estrella aproximada a mano sale romboide y no es nada. */
-const CHISPA = 'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z';
+/* Los destellos y el sello se IMPORTAN del componente compartido. El Tablero
+   tenía su propia copia —fue donde nació el efecto— y eso ya era un riesgo:
+   dos juegos de destellos con distinto latido se leen como dos casas. Desde
+   que la firma es la regla de branding del CRM, vive en un solo lado. */
 
 /* Cinco pasos, CINCO pantallas. Antes los pasos 3, 4 y 5 abrían la misma
    sección y el dueño lo cachó: «me estás dando la misma información tres
@@ -1198,30 +1185,6 @@ const CHISPA = 'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.
      Recurrencia  · el dinero que vuelve solo, y el que dejó de volver
      Expansión    · dónde está lo que todavía no vendes */
 type Sec = 'consultoria' | 'leads' | 'clientes' | 'recurrencia' | 'expansion';
-
-/* Diez destellos, de distinto tamaño y con el latido desfasado para que no
-   parpadeen a coro. Son decoración: no llevan texto y van ocultos al lector de
-   pantalla. */
-const DESTELLOS: [number, string, number, number, number, string][] = [
-  [13, '1%', 4, 0.55, 0, '#D9538E'], [8, '7%', 46, 0.4, 1.1, '#9B8CFA'],
-  [10, '13%', 14, 0.34, 2.6, '#EFA6CA'], [17, '20%', -6, 0.3, 2.2, '#EFA6CA'],
-  [9, '26%', 52, 0.45, 0.6, '#D9538E'], [7, '31%', 22, 0.3, 3.2, '#9B8CFA'],
-  [22, '36%', 6, 0.24, 1.7, '#9B8CFA'], [8, '42%', 42, 0.48, 2.8, '#EFA6CA'],
-  [11, '48%', -2, 0.3, 0.3, '#D9538E'], [6, '54%', 30, 0.36, 1.9, '#EFA6CA'],
-  [9, '60%', 50, 0.42, 1.4, '#9B8CFA'], [15, '66%', 8, 0.22, 2.4, '#EFA6CA'],
-  [7, '72%', 36, 0.34, 0.8, '#D9538E'], [12, '78%', 0, 0.26, 3.4, '#9B8CFA'],
-  [9, '85%', 44, 0.36, 0.9, '#D9538E'], [10, '93%', 16, 0.28, 2.1, '#EFA6CA'],
-];
-function Chispas() {
-  return (
-    <div className="tb-chispas" aria-hidden="true">
-      {DESTELLOS.map(([w, x, y, o, dl, c], i) => (
-        <svg key={i} width={w} height={w} viewBox="0 0 24 24"
-          style={{ left: x, top: y, ['--o' as any]: o, animationDelay: `${dl}s` }}><path d={CHISPA} fill={c} /></svg>
-      ))}
-    </div>
-  );
-}
 
 /* ════════════════ EL RIEL ════════════════
    Consultoría → Leads → Clientes → Recurrencia → Expansión. Los cinco pasos son

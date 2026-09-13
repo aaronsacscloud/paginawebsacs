@@ -16,6 +16,7 @@ const ClienteDrawer360 = lazySeguro(() => import('../ClienteDrawer360'));
 import Hallazgos from './Hallazgos';
 import Capacitacion from './Capacitacion';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 
 // ─── Gama (la de Cotizaciones) ───
 // Morado y azul cielo son los protagonistas y visten todo lo estructural. El
@@ -123,10 +124,16 @@ function BarraVistas({ vista, setVista, pendientes }: { vista: Vista; setVista: 
 
 function Encabezado({ periodo, children }: { periodo?: any; children?: any }) {
   return (
-    <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-      <style>{CSS}</style>
+    <div className="chispas-cab" style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+      <style>{CSS + CSS_CHISPAS + CSS_SELLO}</style>
+      {/* La firma de la casa: destellos en la banda del título y el sello con
+          la frase de esta pantalla. Ver «La firma de pantalla» en la skill del
+          sistema visual — se importa, no se copia. */}
+      <Chispas />
       <div style={{ flex: 1, minWidth: 200 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Soporte</h2>
+        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+          Soporte <Sello>Si algo se apaga, aquí se enciende</Sello>
+        </h2>
         <div style={{ fontSize: '0.74rem', color: '#9c99a6', marginTop: 3 }}>
           {periodo
             ? <>Del {fechaCorta(periodo.desde)} al {fechaCorta(periodo.hasta)} · comparado contra los {periodo.dias} días anteriores</>

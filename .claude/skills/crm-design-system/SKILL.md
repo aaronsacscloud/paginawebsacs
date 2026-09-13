@@ -125,10 +125,14 @@ import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 | Entrada (login) y Tablero | Conectando estrellas, creando constelaciones |
 | Cotizaciones | Cada sí enciende una estrella |
 | Clientes | Ninguna estrella brilla sola |
-| Soporte | Que nadie se quede a oscuras |
+| Soporte | Si algo se apaga, aquí se enciende |
 | Taller | Aquí se pule cada estrella |
-| Consultoría | De cada junta sale una estrella |
-| Leads | Toda constelación empieza por una |
+| Consultoría | Sembramos relaciones, cosechamos constelaciones |
+| Leads | Cada nombre es una estrella por encender |
+
+Las eligió el dueño el 13-sep-2026 de entre cuatro opciones por pantalla; la de
+Consultoría se rehizo pidiendo que hablara de **relación y abundancia**, que es
+como él describe ese trabajo.
 
 Una pantalla nueva **no inventa su frase sola**: se propone al dueño y se anota
 aquí, porque el catálogo es lo que impide que en un año haya once voces.

@@ -92,6 +92,7 @@ import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type 
 import { camposLeads, cumpleCondsLead, CATS_DESCARTE, type CondLead } from '../../../lib/crm/leads-filtros';
 import FilaDeslizable from './ui/FilaDeslizable';
 import EstadoVacio from './ui/EstadoVacio';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 // Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
 // mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
@@ -977,14 +978,20 @@ export default function LeadsTab() {
           título ya cuadra: ahí lo que sigue son tarjetas de KPI que empiezan
           en el borde, no contenido metido dentro de una.) */}
       {!esMovil && (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12, padding: '0 19px' }}>
+      <div className="chispas-cab" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12, padding: '0 19px' }}>
+        <style>{CSS_CHISPAS + CSS_SELLO}</style>
+        {/* La firma de la casa: destellos en la banda del título y el sello con
+            la frase de la pantalla. Se importa de ui/Chispas, no se copia. */}
+        <Chispas />
         <div>
           {/* La MISMA cabecera que Clientes: 1.5rem, -0.02em y el subtítulo en
               0.75rem sobre #9c99a6. Leads iba un escalón por debajo (1.375rem
               con el subtítulo más grande y más oscuro), así que dos secciones
               hermanas abrían con dos jerarquías distintas y la más importante
               se veía más chica. */}
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Leads</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+            Leads <Sello>Cada nombre es una estrella por encender</Sello>
+          </h1>
           <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 2 }}>
             {vista === 'midia' ? 'Lo accionable de HOY, en orden de ataque — cada lista se vacía sola'
               : vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
