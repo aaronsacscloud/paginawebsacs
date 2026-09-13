@@ -23,7 +23,10 @@ const { variant, empresa, contacto, nota, isAnnual, quoteUrl, implementacionUrl 
 const isCondensed = variant === 'condensed';
 const isFull = variant === 'full';
 const greetingName = empresa || contacto || '';
-const waNumber = '5215512345678';
+// +52 1 55 9302 7234: el WhatsApp de ventas (activo y por omisión en
+// `wa_numeros`). Aquí estaba '5215512345678', un número de relleno, en el
+// botón que dice "me interesa contratar el plan anual".
+const waNumber = '525593027234';
 const waText = encodeURIComponent('Hola SACS, me interesa contratar el plan anual para incluir toda la implementación.');
 const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 ---

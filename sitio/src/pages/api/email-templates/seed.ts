@@ -73,7 +73,7 @@ const TEMPLATES = [
       },
       {
         type: 'text',
-        content: '\u00bfTienes dudas? Responde a este correo o escr\u00edbenos por <a href="https://wa.me/528183331741" style="color:#2AB5A0;text-decoration:underline;">WhatsApp</a>. Estamos para ayudarte.',
+        content: '\u00bfTienes dudas? Responde a este correo o escr\u00edbenos por <a href="https://wa.me/525593027234" style="color:#2AB5A0;text-decoration:underline;">WhatsApp</a>. Estamos para ayudarte.',
         font_size: '14px',
         align: 'center',
         color: '#999999',
