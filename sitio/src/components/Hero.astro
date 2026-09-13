@@ -4950,7 +4950,7 @@ const useCases = [
   @media (max-width: 767px) {
     .flujo { height: auto; }
     .flujo-sticky { position: relative; height: auto; padding: 48px 0 36px; }
-    .flujo-inner { display: flex; flex-direction: column-reverse; gap: 18px; padding: 0 16px; }
+    .flujo-inner { grid-template-columns: 1fr; gap: 16px; padding: 0 16px; align-items: stretch; }
     .flujo-video { width: 100%; max-width: none; transform: none !important; }
     .flujo-text { min-height: 132px; }
     .flujo-paso b { font-size: 24px; } .flujo-paso small { font-size: 14px; }
@@ -12416,7 +12416,7 @@ const useCases = [
     .sq-features--sc .sq-features-media { position: relative !important; top: auto !important; }
     .sq-features--sc .sq-features-img-wrap { height: 300px; }
     .sq-features--sc .sq-features-img { object-fit: contain; }
-    .sq-features--sc .sq-feature-block, .sq-features--sc .sq-feature-block:first-child, .sq-features--sc .sq-feature-block:last-child { min-height: 0; opacity: 1; padding: 18px 0; }
+    .sq-features--sc .sq-feature-block, .sq-features--sc .sq-feature-block:first-child, .sq-features--sc .sq-feature-block:last-child { min-height: 0; opacity: 1; padding: 18px 0 18px 40px; }
     .sq-features--sc .sq-feature-block .sq-feature-desc { max-height: none; opacity: 1; }
     .sq-features--sc .sq-feature-title { font-size: 20px; }
   }
@@ -18361,6 +18361,7 @@ const useCases = [
     const escenario = sec.querySelector<HTMLElement>('.flujo-sticky')!;
     const pista = () => { const r = sec.getBoundingClientRect(); const total = sec.offsetHeight - window.innerHeight; return { y: Math.min(Math.max(-r.top, 0), total), total, top: r.top + window.scrollY }; };
     const pinta = () => {
+      if (simple) return; // teléfono: sin crecimiento ni snap
       const { y, total, top } = pista(); const p = total > 0 ? y / total : 1;
       wrap.style.transform = movil ? `scale(${0.82 + 0.18 * p})` : `scale(${0.56 + 0.44 * p}) translateX(${(1 - p) * 6}%)`;
       if (p >= 0.92 && !crecido) { crecido = true; clip.preload = 'auto'; hito('crecio'); if (visible && !arrancado) arranca(0); setTimeout(libera, 4500); }
