@@ -5,7 +5,7 @@
  * El efecto es el flujo mismo: cinco nodos que se encienden en cadena cuando
  * la sección entra en pantalla, la línea se dibuja entre ellos y al final cae
  * el sello "27 min". Sin Three.js: CSS + un IntersectionObserver de 6 líneas.
- * Azul #1B3A82 para leerse como un solo capítulo con la historia que sigue.
+ * Mismo negro #0E0D0C que las historias: un solo color de fondo, ámbar para el flujo.
  */
 const NODOS = [
   { t: 'Foto', s: 'con tu celular' },
@@ -41,15 +41,15 @@ const NODOS = [
 </section>
 
 <style>
-  .fx { position: relative; background: #1B3A82; color: #fff; padding: clamp(72px, 12vh, 140px) 24px clamp(56px, 9vh, 110px); overflow: hidden; }
+  .fx { position: relative; background: #0E0D0C; color: #fff; padding: clamp(72px, 12vh, 140px) 24px clamp(56px, 9vh, 110px); overflow: hidden; }
   .fx-caja { max-width: 1120px; margin: 0 auto; text-align: center; }
-  .fx-kicker { display: inline-block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #C9D6F5; border: 1px solid rgba(255,255,255,0.28); border-radius: 999px; padding: 10px 18px; margin-bottom: 30px; }
+  .fx-kicker { display: inline-block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #E8A838; border: 1px solid rgba(232,168,56,0.45); border-radius: 999px; padding: 10px 18px; margin-bottom: 30px; }
   .fx-claim { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 7.4vw, 112px); line-height: 0.98; letter-spacing: -0.04em; margin: 0; }
   .fx-l { display: block; clip-path: inset(0 0 100% 0); transform: translateY(0.35em); transition: clip-path 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1); }
-  .fx-l1 { color: rgba(255,255,255,0.55); }
+  .fx-l1 { color: rgba(255,255,255,0.45); }
   .fx-l2 { transition-delay: 0.18s; }
   .fx.is-in .fx-l { clip-path: inset(0 0 -10% 0); transform: none; }
-  .fx-lead { max-width: 760px; margin: 28px auto 0; font-size: clamp(17px, 1.35vw, 21px); line-height: 1.45; color: #DCE4F7; opacity: 0; transform: translateY(10px); transition: opacity 0.7s 0.6s, transform 0.7s 0.6s; }
+  .fx-lead { max-width: 760px; margin: 28px auto 0; font-size: clamp(17px, 1.35vw, 21px); line-height: 1.45; color: #B9B8B2; opacity: 0; transform: translateY(10px); transition: opacity 0.7s 0.6s, transform 0.7s 0.6s; }
   .fx.is-in .fx-lead { opacity: 1; transform: none; }
 
   /* ── el flujo ── */
@@ -57,7 +57,7 @@ const NODOS = [
   .fx-flujo { list-style: none; margin: 0 auto; padding: 0; display: flex; align-items: flex-start; justify-content: center; gap: 0; position: relative; }
   .fx-nodo { position: relative; flex: 1 1 0; max-width: 200px; padding-top: 34px; opacity: 0.35; transition: opacity 0.4s; transition-delay: calc(0.9s + var(--i) * 0.5s); }
   .fx-nodo b { display: block; font-family: var(--font-display); font-size: clamp(18px, 2vw, 28px); letter-spacing: -0.02em; line-height: 1.1; }
-  .fx-nodo small { display: block; margin-top: 6px; font-size: clamp(12px, 1vw, 15px); color: #C9D6F5; }
+  .fx-nodo small { display: block; margin-top: 6px; font-size: clamp(12px, 1vw, 15px); color: #9A9A94; }
   .fx-punto { position: absolute; top: 0; left: 50%; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: rgba(255,255,255,0.35); box-shadow: 0 0 0 0 rgba(232,168,56,0); transition: background 0.35s, box-shadow 0.9s; transition-delay: calc(0.9s + var(--i) * 0.5s); }
   /* el tramo de línea nace en el punto y crece hacia el siguiente nodo */
   .fx-nodo::after { content: ''; position: absolute; top: 7px; left: calc(50% + 8px); width: calc(100% - 16px); height: 2px; background: #E8A838; transform: scaleX(0); transform-origin: left center; transition: transform 0.5s linear; transition-delay: calc(1.05s + var(--i) * 0.5s); }
@@ -70,10 +70,10 @@ const NODOS = [
   .fx-sello small { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
   .fx.is-in .fx-sello { transform: scale(1) rotate(-8deg); }
 
-  .fx-otros { margin: clamp(36px, 6vh, 56px) auto 0; font-size: 15px; color: #C9D6F5; opacity: 0; transition: opacity 0.6s 3.8s; }
+  .fx-otros { margin: clamp(36px, 6vh, 56px) auto 0; font-size: 15px; color: #9A9A94; opacity: 0; transition: opacity 0.6s 3.8s; }
   .fx-otros a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
   .fx.is-in .fx-otros { opacity: 1; }
-  .fx-abajo { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #C9D6F5; }
+  .fx-abajo { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #9A9A94; }
   .fx-abajo::after { content: ''; display: block; width: 1px; height: 36px; margin: 12px auto 0; background: rgba(255,255,255,0.45); }
 
   @media (max-width: 720px) {
