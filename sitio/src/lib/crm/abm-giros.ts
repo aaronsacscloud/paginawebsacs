@@ -12,4 +12,9 @@ export const GIROS: Record<string, string> = {
   jeans: 'Jeans y mezclilla', trajesbano: 'Trajes de baño y playa',
   fabricantes: 'Fabricantes y maquila', distribuidores: 'Distribuidores de ropa',
   operadores: 'Operadores y concept stores', aliados: 'Consultoras y escuelas', canal: 'Canal mayorista',
+  // Quien SURTE a las tiendas, no quien vende al público. Va aparte de `canal`
+  // —que son las plazas (Moroleón, Zapotlanejo), no proveedores sueltos— y de
+  // `distribuidores`, que revende marca ajena. Un mayorista de corredor
+  // (Villa Hidalgo, León) fabrica lo suyo y vende por mayoreo y multimarca.
+  mayoristas: 'Proveedores mayoristas y multimarca',
 };

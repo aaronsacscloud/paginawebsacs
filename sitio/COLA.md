@@ -145,3 +145,27 @@ bloqueo de pantalla y que la llamada sobreviva el cambio de pestaña.
 - ✅ Contadores por contacto + regla de WhatsApp tras el buzón
 - ✅ Minuta en PDF con marca, en inbox/ficha, y envío al cliente
 - ✅ Llamar desde el celular dentro del CRM + 5 mejoras
+
+- 2026-09-11 · (detectado por mí) `agente_calla: solo contestó el bot del lead` se registra cada 4 min por el mismo lead (861 en 3 días). Registrar una vez por lead y día.
+- 2026-09-11 · (detectado por mí) César siguió el hilo (plantilla de reactivación) en vez de la nota del paso 6 del planificador: medir cuántas veces el modelo ignora la nota PLANIFICADOR y reforzarla si pasa seguido.
+
+## 2026-09-11 · Voz realista con IA que llama sola (GOAL) — llegó a media tarea (bug review del marcador)
+
+Texto del dueño tal cual:
+
+> Ok, ahora lo quiero llevar a otro nivel, en donde quiero que, este, tengamos, primero, una voz realista. Va a ser una voz de mujer, este, con tono mexicano, que va a ser una ella, este, que va a poder hacer este proceso directamente. O sea, vamos a tener el proceso manual por ía, este, automático por ía o manual, para que lo haga un humano. Ahora, para el tema de la ía, tenemos que configurar y dejarlo listo para que de forma automática, al igual que está programado la IA para que obtenga los datos del usuario, le pregunte las cosas importantes, se haga entender del negocio, y de ahí agende la reunión de Discovery o la reunión de demo, tiene que ser lo mismo con el usuario, con el cliente. Entonces, este, ¿por qué esto es importante? Lo importante aquí es que la voz esté en tiempo real, que la voz se so ese es el /goal Entonces, basado en este objetivo, quiero que planees todo lo que necesitamos usar. No importa si tenemos que gastar en APIs, piensa primero en el stack que se tiene que hacer, piensa en en lo que tú tienes que saber de mí o cómo tienes que generar el prompt. Este, piensa en el proceso, en cómo se va a habilitar dentro del front para que sea automático después de generar la lista. Asegúrate de que la llamada sea totalmente fluida. Eso es lo más importante de todo. Entonces, tenemos que asegurarnos que el prompt y todo lo que está atrás sea muy bueno para que este objetivo se cumpla de verdad, piense en la automatización al finalizar la llamada para el tema de la agenda y para el tema del discovery, el seguimiento del proceso. ¿Qué pasa si el prospecto no contesta? ¿Cómo pasa la siguiente llamada y cómo lo reintenta? todos estos temas. Verificarlos, analizarlos y optimizarlos al máximo hasta lograr el gol. Entonces, primero hace el plan, y el plan debe contener las etapas claras por las que se va a desarrollar, los diferentes casos de uso que se van a implementar, los diagramas de flujo, de cómo se va a integrar, qué tipo de IA vamos a utilizar, qué tipo de APIs vamos a utilizar, todo el stack tecnológico que se va a manejar, las validaciones y los casos de uso más relevantes, etcétera.
+
+Estado: en cola. Se toma al terminar el bug review + commit + push del marcador (M1/M2/M7/M9/M10). Entrega: PLAN primero (etapas, casos de uso, diagramas, IA/APIs/stack, validaciones), no código.
+
+## 2026-09-13 · Proveedores de SAPICA (calzado, León)
+Llegó a media tarea mientras se cargaba Villa Hidalgo. Texto del dueño:
+
+> Y AGREGA ESTOS COMO SAPICA | Y que son calzado o zapateria ya que son de ese
+> giro igual por favor […ARCHIVO: ~600 proveedores con correo y teléfono…]
+> agregalas y tambien cruzalas con información web informacion de google
+> informacion relevante que sirva si no encuentras la marca no te preocupes y
+> sigue con la otra y asi hasta terminar
+
+Pendiente: cargar como giro de calzado/zapatería marcados SAPICA, cruzar contra
+las cuentas que YA existen (hay un `2026-09-05-abm-sapica.sql` previo) y
+enriquecer con lo que se encuentre en web.
