@@ -27,6 +27,11 @@
 // Y el cuerpo de la plantilla tiene tope de 1024 caracteres contando los
 // huecos. Los tres de aquí están holgados.
 //
+// OTRA QUE SE APRENDE A GOLPES: una variable NO puede quedar al PRINCIPIO ni al
+// FINAL del cuerpo. Meta rechazó la apertura porque cerraba con "{{5}}?" — el
+// signo de interrogación no cuenta como texto suficiente. Siempre tiene que
+// haber palabras después del último hueco.
+//
 // POR QUÉ UNA PLANTILLA POR PASO Y NO UNA POR GIRO
 // 22 giros × 3 pasos serían 66 aprobaciones de Meta, cada una con su revisión y
 // su riesgo de rechazo. Con los huecos cargando lo del giro son 3, y agregar un
@@ -122,7 +127,7 @@ Estamos armando el mapa de {{1}} de México y {{2}} salió en la lista. Los enco
 
 Le escribo porque lo nuestro no es un punto de venta genérico: tenemos una versión hecha para {{3}}. {{4}}
 
-Este mes estamos dando demos gratis por videollamada, 20 minutos y sin compromiso. ¿Le muestro cómo se vería con {{5}}?`,
+Este mes estamos dando demos gratis por videollamada, 20 minutos y sin compromiso. ¿Le muestro cómo se vería con {{5}} y su forma de trabajar?`,
     botones: [
       { tipo: 'QUICK_REPLY', texto: 'Sí, muéstrenme' },
       { tipo: 'QUICK_REPLY', texto: 'Ahora no' },
