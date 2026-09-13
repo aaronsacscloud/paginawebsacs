@@ -28,7 +28,14 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
   if (c.contexto) l.push(`Contexto: ${c.contexto}`);
   if (c.nota) l.push(`Nota de la investigación: ${c.nota}`);
   const p = personas[0];
-  if (p) l.push(`Persona que decide: ${p.nombre}${p.cargo ? `, ${p.cargo}` : ''}`);
+  /* SOLO EL NOMBRE DE PILA, y a propósito. Si aquí entra el nombre completo,
+     la IA lo escribe: con "Juan Carlos Medina Fernández" en el expediente salió
+     un correo que abría "Hola Juan Carlos". Saludar con nombre y apellido suena
+     a base de datos, que es justo lo que no queremos parecer. El apellido no le
+     sirve a la IA para redactar, así que ni se lo pasamos — una regla que el
+     modelo puede desobedecer es peor que un dato que no tiene. */
+  const pila = String(p?.nombre || '').trim().split(/\s+/)[0] || '';
+  if (p && pila) l.push(`Persona que decide (nombre de pila, es el ÚNICO que puedes escribir): ${pila}${p.cargo ? `, ${p.cargo}` : ''}`);
   const cs = canales.map(x => x.tipo).join(', ');
   l.push(`Canales disponibles: ${cs || 'ninguno verificado'}`);
   // Las quejas de sus clientes van aparte y marcadas: son lo mejor que
@@ -52,6 +59,9 @@ export const REGLAS = `Reglas de escritura, sin excepción:
 - Del correo 2 en adelante: máximo 90 palabras y SIN enlaces.
 - Cada correo AVANZA: no repetir el anterior con otras palabras.
 - Una sola pregunta al final, concreta.
+- Al saludar usa SOLO el nombre de pila: "Hola Cielo", nunca "Hola Cielo Inzunza".
+  Nombre y apellido suena a base de datos. Si no hay nombre, no saludes por
+  nombre: "Buen día." y a lo que sigue.
 - Asunto de 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji.
 - NO INVENTES NADA. Solo puedes usar hechos del expediente. Si un dato no está, no escribas esa frase.
 - Prohibido inventar cifras de resultados. El único caso que puedes citar: en un cliente nuestro,
@@ -67,7 +77,7 @@ export const REGLAS = `Reglas de escritura, sin excepción:
 export const CORREO_OK = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
 
 export type Generado =
-  | { ok: true; correos: number; con_ia: boolean; ia_error: string | null; toque_ids: string[]; destino: string }
+  | { ok: true; correos: number; whatsapps: number; con_ia: boolean; ia_error: string | null; toque_ids: string[]; destino: string }
   | { ok: false; error: string; status: number };
 
 export type OpcionesGenerar = {
@@ -109,9 +119,13 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
   const ruta = c.ruta || 'demo';
   const { data: base } = await supabase.from('abm_cadencias')
     .select('id, nombre').eq('giro', c.giro).eq('ruta', ruta).eq('activa', true).maybeSingle();
-  const { data: pasos } = base
+  const { data: pasosTodos } = base
     ? await supabase.from('abm_pasos').select('dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
     : { data: [] as any[] };
+  // Los días de los correos se leen por posición: si entran los pasos de
+  // WhatsApp a la misma lista, el correo 2 hereda el día del WhatsApp 1.
+  const pasos = (pasosTodos || []).filter((x: any) => x.canal === 'email');
+  const pasosWa = (pasosTodos || []).filter((x: any) => x.canal === 'whatsapp');
   const { data: plantillas } = await supabase.from('abm_plantillas')
     .select('orden, asunto, cuerpo, objetivo, imagen, boton_texto, boton_url').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true).order('orden');
 
@@ -218,6 +232,38 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
   }));
   const { data: ins, error } = await supabase.from('abm_toques').insert(filas).select('id');
   if (error) return { ok: false, error: error.message, status: 500 };
-  await apuntar(c.id, 'sistema', 'nota', { texto: `${op.autor} generó una cadencia de ${filas.length} correos${conIa ? '' : ' (sin IA: se armó con la plantilla del giro)'}, pendiente de aprobar` });
-  return { ok: true, correos: filas.length, con_ia: conIa, ia_error: iaError, toque_ids: (ins || []).map((r: any) => r.id), destino: correo.valor };
+  const toqueIds = (ins || []).map((r: any) => r.id);
+
+  // WhatsApp: SOLO al número que el negocio publicó él mismo (declarado o ya
+  // entregado); el trigger de la base rechaza cualquier otro. El texto sale de
+  // la plantilla del giro tal cual —es una plantilla de Meta, no la toca la IA—.
+  let whatsapps = 0;
+  const wa = (canales || []).find(x => x.tipo === 'whatsapp_dueno' && ['declarado', 'valido'].includes(x.estado))
+          || (canales || []).find(x => x.tipo.startsWith('whatsapp') && ['declarado', 'valido'].includes(x.estado));
+  if (wa && pasosWa.length) {
+    const ids = pasosWa.map((x: any) => x.plantilla_id).filter(Boolean);
+    const { data: pls } = ids.length
+      ? await supabase.from('abm_plantillas').select('id, cuerpo, meta_nombre').in('id', ids).eq('activa', true)
+      : { data: [] as any[] };
+    const filasWa = pasosWa.map((x: any) => {
+      const pl = (pls || []).find((p: any) => p.id === x.plantilla_id);
+      if (!pl?.meta_nombre) return null;
+      return {
+        cuenta_id: c.id, cadencia_id: base?.id || null, persona_id: persona0?.id || null,
+        goteo_id: op.goteo_id || null,
+        canal: 'whatsapp', destino: wa.valor, asunto: null,
+        cuerpo: limpiar(rellenar(pl.cuerpo, vars), 1024),
+        estado: 'borrador',
+        programado_at: new Date(hoy + ((Number(x.dia) || 2) - desplaza) * 864e5).toISOString(),
+      };
+    }).filter(Boolean);
+    if (filasWa.length) {
+      const { data: insWa, error: eWa } = await supabase.from('abm_toques').insert(filasWa).select('id');
+      if (eWa) console.warn('[abm] no se pudieron crear los WhatsApp de la cadencia:', eWa.message);
+      else { whatsapps = filasWa.length; toqueIds.push(...(insWa || []).map((r: any) => r.id)); }
+    }
+  }
+
+  await apuntar(c.id, 'sistema', 'nota', { texto: `${op.autor} generó una cadencia de ${filas.length} correos${whatsapps ? ` y ${whatsapps} WhatsApp` : ''}${conIa ? '' : ' (sin IA: se armó con la plantilla del giro)'}, pendiente de aprobar` });
+  return { ok: true, correos: filas.length, whatsapps, con_ia: conIa, ia_error: iaError, toque_ids: toqueIds, destino: correo.valor };
 }
