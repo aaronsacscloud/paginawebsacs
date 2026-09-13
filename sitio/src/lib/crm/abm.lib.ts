@@ -159,7 +159,15 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     ciudad: c.ciudad || '',
     // No se presume un número de tiendas que no verificamos: equivocarse con
     // "sus 14 tiendas" cuando son 3 tumba la credibilidad del correo entero.
-    sucursales: c.sucursales && c.sucursales_confianza !== 'baja' ? String(c.sucursales) : '',
+    //
+    // Y se exige MÁS DE UNA. Las 14 plantillas que usan esta variable la meten
+    // en una frase en plural —"y que traen {{sucursales}} sucursales"—, así que
+    // con una sola tienda salía "y que traen 1 sucursales": un correo en frío
+    // que abre con una falta de ortografía y presumiendo de saber algo que
+    // cualquiera ve. Son 17,782 cuentas con una sola tienda, o sea la mayoría
+    // de la base. Vacía aquí, el bloque [[si sucursales]] borra la frase sola y
+    // las 14 plantillas quedan bien sin tocar ninguna.
+    sucursales: Number(c.sucursales) > 1 && c.sucursales_confianza !== 'baja' ? String(c.sucursales) : '',
     rating: c.google_rating ? Number(c.google_rating).toFixed(1) : '',
     resenas: c.google_resenas ? String(c.google_resenas) : '',
     plataforma: plataformaLimpia(c.plataforma_web),
