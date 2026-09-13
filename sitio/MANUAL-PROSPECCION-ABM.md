@@ -771,6 +771,30 @@ convierte un mensaje en un reporte.
 específico de su giro, lo que damos, una pregunta fácil— y en categoría
 MARKETING.
 
+#### Escribir una plantilla que Meta acepte
+
+Los límites que tumban una plantilla, todos aprendidos a golpes:
+
+- **El valor de una variable NO puede llevar salto de línea**, tabulador ni más
+  de cuatro espacios seguidos. El envío falla con **132012**. Por eso una lista
+  de funciones va como frase de corrido dentro del hueco y **nunca** como
+  viñetas: las viñetas necesitan saltos. Los saltos viven en el texto FIJO.
+- **Una variable no puede quedar al principio ni al final del cuerpo.** Meta
+  rechazó nuestra apertura por cerrar con `{{5}}?` — el signo de interrogación
+  no cuenta como texto suficiente. Tiene que haber palabras después.
+- **Cuerpo máximo 1024 caracteres**, contando los huecos.
+- **Meta exige un ejemplo por hueco** al dar de alta.
+- **Las plantillas no se editan.** Se crea una versión nueva (`_v2`).
+
+**Una plantilla por PASO, no por giro.** Con los huecos cargando lo del giro son
+3 aprobaciones; una por giro serían 22 × 3 = 66, cada una con su revisión y su
+riesgo de rechazo. Agregar un giro nuevo no necesita permiso de nadie.
+
+**Los botones no son adorno: son el mecanismo.** Un toque en una respuesta
+rápida **abre la ventana de 24 horas**, y ahí dentro ya no hacen falta
+plantillas — texto libre, la IA conversando de verdad y sin costo por mensaje.
+La plantilla no tiene que vender: **solo tiene que lograr un toque.**
+
 #### Antes de mandar el primer WhatsApp de una cadencia nueva
 
 1. ¿El número está **declarado**? (§6 bis — sin esto no sale nada)
