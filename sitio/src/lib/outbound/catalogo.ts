@@ -59,7 +59,7 @@ export const DESTINOS_MODULO = [
 
 // Acciones de botón — la lista blanca completa. `destino` según el tipo:
 //   modulo → id de DESTINOS_MODULO · url_sacs → URL https de *.sacscloud.com
-//   chat → texto precargado (opcional) · whatsapp_ventas y cerrar → sin destino
+//   chat → texto precargado (opcional) · whatsapp_ventas → texto precargado (opcional) · cerrar → sin destino
 export const ACCIONES_BOTON = [
   { id: 'modulo', etiqueta: 'Ir a módulo' },
   { id: 'url_sacs', etiqueta: 'Abrir URL de sacscloud.com' },

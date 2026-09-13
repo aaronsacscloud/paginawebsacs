@@ -193,6 +193,14 @@ export function validarCampana(c: any): string[] {
     if (b.accion === 'url_sacs' && !urlSacsValida(b.destino)) {
       errores.push('Las URLs de botón solo pueden ser https de sacscloud.com.');
     }
+    /* El botón de WhatsApp puede llevar el mensaje ya escrito. Sin él, el cliente abre un chat
+       vacío y tiene que explicar de cero de qué aviso viene — y de este lado llega un «hola»
+       que no dice nada. Viaja dentro de la URL, así que va corto y de una sola línea. */
+    if (b.accion === 'whatsapp_ventas' && b.destino) {
+      const t = String(b.destino);
+      if (t.length > 180) errores.push('El mensaje precargado de WhatsApp no puede pasar de 180 caracteres.');
+      if (/[\n\r]/.test(t)) errores.push('El mensaje precargado de WhatsApp va en una sola línea.');
+    }
   }
   if (ct.imagen && !urlSacsValida(ct.imagen)) errores.push('La imagen debe estar hospedada en sacscloud.com.');
   if (ct.video && !urlSacsValida(ct.video)) errores.push('El video debe ser una URL https de sacscloud.com (sube el mp4 a code.sacscloud.com; YouTube directo no está permitido).');
