@@ -383,7 +383,6 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 <!-- ═══ Modal de verticales: pantalla completa, una sola línea horizontal, editorial ═══ -->
 <div class="vert" id="vert-modal" role="dialog" aria-modal="true" aria-labelledby="vert-title" hidden>
   <div class="vert-top">
-    <span class="vert-kicker">Sacs · un sistema por tipo de comercio</span>
     <h2 class="vert-title" id="vert-title">Elige el tuyo.</h2>
     <button type="button" class="vert-x" data-vert-cerrar aria-label="Cerrar">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -1609,12 +1608,12 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .vert-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.05) 100%); }
   .vert-num { position: absolute; left: 22px; top: 20px; z-index: 2; font-family: 'Clash Display', var(--font-display); font-size: 14px; letter-spacing: 0.2em; color: rgba(255,255,255,0.75); }
   .vert-card-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 22px 24px; }
-  .vert-aqui { display: inline-block; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: #E8A838; color: #14161A; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+  .vert-aqui { display: inline-block; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: var(--color-primary, #4B7BE5); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
   .vert-card-body b { display: block; font-family: 'Clash Display', var(--font-display); font-size: clamp(24px, 2.1vw, 34px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.02; }
   .vert-card-body small { display: block; margin-top: 8px; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,0.78); max-width: 34ch; }
-  .vert-card-body i { display: inline-block; margin-top: 14px; font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #E8A838; opacity: 0.85; transition: opacity 0.2s, transform 0.3s; }
+  .vert-card-body i { display: inline-block; margin-top: 14px; font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #fff; opacity: 0.85; transition: opacity 0.2s, transform 0.3s; }
   .vert-card:hover .vert-card-body i { opacity: 1; transform: translateX(4px); }
-  .vert-card.is-aqui { outline: 1px solid rgba(232,168,56,0.5); outline-offset: -1px; }
+  .vert-card.is-aqui { outline: 1px solid rgba(75,123,229,0.6); outline-offset: -1px; }
   .vert-hint { display: flex; align-items: center; gap: 10px; justify-content: flex-end; padding: 0 clamp(20px, 4vw, 56px) clamp(16px, 3vh, 28px); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
   @media (max-width: 720px) { .vert-card { flex-basis: 76vw; min-height: 0; } .vert-top { align-items: center; } .vert-title { font-size: 26px; } .vert-x { width: 44px; height: 44px; } }
 </style>
