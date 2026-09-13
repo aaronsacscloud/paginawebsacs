@@ -1312,7 +1312,7 @@ const useCases = [
 
   <!-- ═══ De tu foto a tu reel: historia en video. Vive AQUÍ (no en un componente aparte) porque
        el CSS .flujo-* de este archivo es scoped por Astro y no alcanza a otros componentes. ═══ -->
-  <section class="recorrido flujo flujo--ia" id="creativo" aria-label="De tu foto a tu reel">
+  <section class="recorrido flujo flujo--ia flujo--loop" id="creativo" aria-label="De tu foto a tu reel">
     <div class="flujo-sticky">
       <div class="flujo-inner container">
         <div class="flujo-text">
@@ -1331,9 +1331,6 @@ const useCases = [
             <span class="flujo-eyebrow">Lo hace AXO · nuestra IA de moda</span>
             <h2 class="flujo-h2">27 minutos.</h2>
             <p class="flujo-p">Una foto con tu celular: 10 colores, tu modelo, tu reel, tres redes, 312 WhatsApps personales, dos campañas, una tienda y una venta entregada. Una sesión tradicional tarda 5 a 7 días y cuesta unos $45,000 por prenda. Con Sacs va incluido en tu plan: hasta 98 % menos, con la misma calidad.</p>
-            <a href="/prueba-gratis" class="flujo-cta" data-evento="creativo_cta">Quiero hacerlo con mi prenda
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
           </div>
         </div>
         <div class="flujo-video" id="creativoVideo">
@@ -4941,6 +4938,7 @@ const useCases = [
   .flujo--inv .flujo-video { background: #0B0B0C; }
   /* Aaron (13-sep): la historia creativa va en el MISMO negro que Vende; el azul saturaba. */
   .flujo--ia { background: #0E0D0C; }
+  .flujo--loop .flujo-replay { display: none; }
   .flujo--ia .flujo-video { background: #0B0B0C; }
   .inv-scr {
     position: absolute; right: 3.5%; top: 50%; transform: translateY(-50%) translateX(14px);
@@ -18335,7 +18333,7 @@ const useCases = [
   // 1) el marco entra chico por la derecha y crece con el scroll (pista corta);
   // 2) al crecer, UN solo video corre de principio a fin sin detenerse: los textos
   //    cambian en sus tiempos (cuando la cámara llega a cada escena). Timeline abajo.
-  function montaHistoria(cfg: { sel: string; video: string; cues: number[]; fin: number }) {
+  function montaHistoria(cfg: { sel: string; video: string; cues: number[]; fin: number; v?: number; loop?: number }) {
     const sec = document.querySelector<HTMLElement>(cfg.sel);
     const wrap = sec?.querySelector<HTMLElement>('.flujo-video');
     const still = wrap?.querySelector<HTMLImageElement>('.flujo-still');
@@ -18362,6 +18360,7 @@ const useCases = [
     const dots = sec.querySelectorAll<HTMLElement>('.flujo-dots li');
     const replay = wrap.querySelector<HTMLButtonElement>('.flujo-replay');
     let cur = -1, raf = 0, visible = false, crecido = false, arrancado = false, liberado = false;
+    let reinicio = 0;
     const libera = () => { liberado = true; };
     const play = wrap.querySelector<HTMLButtonElement>('.flujo-play');
     const pideTap = () => { libera(); wrap.classList.add('needs-tap'); };
@@ -18379,7 +18378,12 @@ const useCases = [
       if (t / d >= 0.25) hito('25'); if (t / d >= 0.5) hito('50'); if (t / d >= 0.75) hito('75');
       let i = 0; for (let k = 0; k < N; k++) if (t + ADELANTO >= CUES[k]) i = k;
       const dur = clip.duration || FIN;
-      if (clip.ended || t >= dur - 0.05) { muestra(N); barra(N, 0); sec.classList.add('is-final'); return; }
+      if (clip.ended || t >= dur - 0.05) {
+        muestra(N); barra(N, 0); sec.classList.add('is-final');
+        // loop: se queda un momento en el cierre y vuelve a empezar (sin volver a bloquear el scroll)
+        if (cfg.loop && !reinicio) reinicio = window.setTimeout(() => { reinicio = 0; if (visible) arranca(0); }, cfg.loop);
+        return;
+      }
       sec.classList.remove('is-final');
       muestra(i);
       const a = CUES[i], b = i + 1 < N ? CUES[i + 1] : dur;
@@ -18439,7 +18443,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', v: 2, cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#creativo', video: 'reel', v: 3, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 28.2, 31.2], fin: 37.9 });
+  montaHistoria({ sel: '#creativo', video: 'reel', v: 3, loop: 2600, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 28.2, 31.2], fin: 37.9 });
   montaHistoria({ sel: '#inventario', video: 'inventario', v: 5, cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02], fin: 37.63 });
 
   pillarSections.forEach((section) => {
