@@ -52,6 +52,9 @@ const CSS = `
 .eqf-orbe:hover .eqf-axo .ojo{transform:scale(1.06)}
 .eqf-orbe.atento .eqf-axo .ojo{transform:scale(1.14)}
 .eqf-orbe.parpadea .eqf-axo .ojo{transform:scaleY(.06)}
+.eqf-axo .gafas{transform-box:fill-box;transform-origin:50% 50%;transition:transform .2s cubic-bezier(.2,.8,.2,1.2)}
+.eqf-orbe:hover .eqf-axo .gafas{transform:rotate(-3deg) translateY(-.5px)}
+.eqf-orbe.atento .eqf-axo .gafas{transform:rotate(2deg) translateY(-1px)}
 .eqf-axo .branquia{transform-box:fill-box;transform-origin:0 50%;transition:transform .22s cubic-bezier(.2,.8,.2,1.2)}
 .eqf-orbe:hover .eqf-axo .branquia{transform:scale(1.08)}
 .eqf-orbe.atento .eqf-axo .branquia{transform:scale(1.16)}
@@ -172,6 +175,7 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
       <defs>
       <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".55" stopColor="#2B1F4E"/><stop offset=".74" stopColor="#4E3A86"/><stop offset=".90" stopColor="#8B73C4"/><stop offset="1" stopColor="#4A3878"/></radialGradient>
       <radialGradient id="eqf-pup" cx="42%" cy="40%" r="60%"><stop offset="0" stopColor="#1B1434"/><stop offset="1" stopColor="#090715"/></radialGradient>
+      <linearGradient id="eqf-gafa" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9B8CFA"/><stop offset=".55" stopColor="#C062A0"/><stop offset="1" stopColor="#D9538E"/></linearGradient>
       <linearGradient id="eqf-bra" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#F6C6C0"/><stop offset="1" stopColor="#F0A39E"/></linearGradient>
       <mask id="eqf-fuera"><rect x="-24" y="-24" width="112" height="112" fill="#fff"/><circle cx="32" cy="32" r="27.4" fill="#000"/></mask>
       <filter id="eqf-suave" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".9"/></filter>
@@ -201,6 +205,27 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
       <circle cx="46.2" cy="32.4" r="1.15" fill="#fff" opacity=".92"/>
       </g>
       <circle cx="43" cy="29" r="9.3" fill="none" stroke="#1E1538" strokeWidth=".8" opacity=".6"/>
+      </g>
+      {/* ══ LAS GAFAS DE ESTRELLA ══
+          Dos estrellas de cinco puntas, una por ojo, en el degradado
+          morado→rosa de la marca. Van translúcidas a propósito: los ojos son
+          lo que hace a Axo, y unos cristales opacos lo dejarían sin cara.
+          Se dibujan DESPUÉS de los ojos porque van encima, y no llevan la
+          clase `ojo`, así que no parpadean con él. */}
+      <g className="gafas">
+        <path d="M30.6 27.2 h2.8 v2.2 h-2.8 Z" fill="url(#eqf-gafa)" opacity=".9"/>
+        <path d="M10.1 25.6 C7 25 5.4 25.5 4.4 26.6" fill="none" stroke="url(#eqf-gafa)" strokeWidth="1.3" strokeLinecap="round" opacity=".8"/>
+        <path d="M53.9 25.6 C57 25 58.6 25.5 59.6 26.6" fill="none" stroke="url(#eqf-gafa)" strokeWidth="1.3" strokeLinecap="round" opacity=".8"/>
+        <g>
+          <path d="M21.0 17.0 L23.88 24.64 L32.03 25.02 L25.66 30.11 L27.82 37.98 L21.0 33.5 L14.18 37.98 L16.34 30.11 L9.97 25.02 L18.12 24.64 Z"
+            fill="url(#eqf-gafa)" fillOpacity=".42" stroke="url(#eqf-gafa)" strokeWidth="1.3" strokeLinejoin="round"/>
+          <path d="M16.8 23.2 L22.6 27.4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" opacity=".6"/>
+        </g>
+        <g>
+          <path d="M43.0 17.0 L45.88 24.64 L54.03 25.02 L47.66 30.11 L49.82 37.98 L43.0 33.5 L36.18 37.98 L38.34 30.11 L31.97 25.02 L40.12 24.64 Z"
+            fill="url(#eqf-gafa)" fillOpacity=".42" stroke="url(#eqf-gafa)" strokeWidth="1.3" strokeLinejoin="round"/>
+          <path d="M38.8 23.2 L44.6 27.4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" opacity=".6"/>
+        </g>
       </g>
     </svg>
   );
