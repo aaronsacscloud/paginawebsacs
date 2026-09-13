@@ -13,13 +13,15 @@ const verticales = [
   { id: 'consignacion', label: 'Consignación de lujo', desc: 'Bolsas, relojes y piezas de diseñador a consignación.', img: '/images/verticales/consignacion' },
   { id: 'parques', label: 'Parques de diversiones', desc: 'Taquilla, brazaletes, tiendas y alimentos en un solo sistema.', img: '/images/verticales/parques' },
 ].map((v: any) => ({ ...v, wa: v.aqui ? '/' : waLink(`Hola, me interesa Sacs para ${v.label}. ¿Me cuentan más?`) }));
-import { t, getLocalizedUrl } from '../i18n/utils';
+import { t, getLocalizedUrl, getHreflangLinks } from '../i18n/utils';
 import { locales, languageNames, defaultLocale } from '../i18n/config';
 import type { Locale } from '../i18n/config';
 
 interface Props { locale?: Locale; }
 const { locale = 'es' } = Astro.props;
 const currentPath = Astro.url.pathname;
+const banderas: Record<string, string> = { es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', it: '🇮🇹', pt: '🇧🇷' };
+const idiomas = getHreflangLinks(currentPath).filter((l) => (locales as readonly string[]).includes(l.lang));
 
 const sectorIcons = giroIcons;
 
@@ -37,6 +39,20 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 ---
 
 <header class="nav" id="nav">
+  <!-- Barra superior: idiomas + iniciar sesión (jerarquía aparte para descargar el nav) -->
+  <div class="nt">
+    <div class="nt-inner container">
+      <div class="nt-lang">
+        <button type="button" class="nt-lang-btn" aria-haspopup="true" aria-expanded="false" id="nt-lang-btn"><span class="nt-flag">{banderas[locale] ?? '🌐'}</span>{languageNames[locale as Locale]}<svg width="8" height="5" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="nt-lang-menu" id="nt-lang-menu" role="menu">
+          {idiomas.map((l) => (
+            <a href={l.href} class:list={['nt-lang-opt', { 'is-on': l.lang === locale }]} role="menuitem" hreflang={l.lang} lang={l.lang}><span class="nt-flag">{banderas[l.lang]}</span>{languageNames[l.lang as Locale]}</a>
+          ))}
+        </div>
+      </div>
+      <a href="https://app.sacscloud.com/" class="nt-login">Iniciar sesión</a>
+    </div>
+  </div>
   <div class="nav-inner container">
     <div class="nav-marca">
     <a href={getLocalizedUrl('/', locale)} class="nav-logo" aria-label="SACS — Inicio">
@@ -246,7 +262,6 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     </nav>
 
     <div class="nav-actions">
-      <a href="https://app.sacscloud.com/" class="btn-nav-login">Iniciar sesión</a>
       <a href="/contacto" class="btn-nav-secondary">Agenda una demo</a>
       <a href="/prueba-gratis" class="btn-nav-cta">Prueba 7 días gratis</a>
     </div>
@@ -1544,9 +1559,25 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     .moda-split { grid-template-columns: 1fr; gap: 26px; }
     .moda-extra-lista { grid-template-columns: 1fr 1fr; display: grid; }
   }
+  /* ─── Barra superior (idiomas + sesión) ─── */
+  .nt { background: #0E0D0C; color: #fff; }
+  .nt-inner { display: flex; align-items: center; justify-content: flex-end; gap: 26px; height: 30px; font-size: 12px; letter-spacing: 0.02em; }
+  @media (min-width: 1024px) { .nt-inner { max-width: none; padding-inline: var(--space-8); } }
+  @media (min-width: 1440px) { .nt-inner { padding-inline: var(--space-10); } }
+  .nt-lang { position: relative; }
+  .nt-lang-btn { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0; border: 0; background: none; color: rgba(255,255,255,0.85); font: inherit; cursor: pointer; }
+  .nt-lang-btn:hover, .nt-login:hover { color: #fff; }
+  .nt-flag { font-size: 14px; line-height: 1; }
+  .nt-lang-menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 170px; padding: 6px; background: #fff; color: #1D1D1F; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 0.18s, transform 0.18s, visibility 0.18s; z-index: 5; }
+  .nt-lang.is-open .nt-lang-menu, .nt-lang:hover .nt-lang-menu { opacity: 1; visibility: visible; transform: none; }
+  .nt-lang-opt { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: inherit; text-decoration: none; }
+  .nt-lang-opt:hover { background: rgba(0,0,0,0.05); } .nt-lang-opt.is-on { font-weight: 600; }
+  .nt-login { color: rgba(255,255,255,0.85); text-decoration: none; font-weight: 600; }
+  @media (max-width: 767px) { .nt-inner { height: 28px; gap: 18px; font-size: 11px; } }
+
   /* ─── Lockup de marca: Sacs · Fashion Commerce ─── */
   .nav-marca { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); }
-  .nav-vertical { display: inline-flex; align-items: center; gap: 7px; margin: 5px 0 0 12px; padding: 0 0 0 12px; border: 0; border-left: 1px solid rgba(0,0,0,0.22); background: none; color: var(--color-text-primary); font-family: 'Clash Display', var(--font-display); font-size: 13px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 0.85; transition: opacity 0.2s; }
+  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 7px 0 0 7px; padding: 0; border: 0; background: none; color: var(--color-text-primary); font-family: 'Clash Display', var(--font-display); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 0.7; transition: opacity 0.2s; }
   .nav-vertical:hover { opacity: 1; }
   .nav-vertical svg { opacity: 0.6; transition: transform 0.2s; }
   .nav-vertical:hover svg { transform: translateY(1px); }
@@ -1818,6 +1849,9 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     const abre = () => { modal.hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; (modal.querySelector('.vert-x') as HTMLElement)?.focus(); (window as any).sacsPH?.('vertical_modal_abrir'); };
     const cierra = () => { modal.hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; btn.focus(); };
     btn.addEventListener('click', abre);
+    const lb = document.getElementById('nt-lang-btn'); const lw = lb?.parentElement;
+    lb?.addEventListener('click', () => { const o = lw!.classList.toggle('is-open'); lb.setAttribute('aria-expanded', String(o)); });
+    document.addEventListener('click', (e) => { if (lw && !lw.contains(e.target as Node)) lw.classList.remove('is-open'); });
     const strip = document.getElementById('vert-strip');
     strip?.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { strip.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
     modal.querySelectorAll('[data-vert-cerrar]').forEach((el) => el.addEventListener('click', cierra));
