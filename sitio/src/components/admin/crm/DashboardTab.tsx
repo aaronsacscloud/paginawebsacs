@@ -355,6 +355,7 @@ export default function DashboardTab() {
 
         {sub === 'expansion' && (<>
           <KpisExpansion d={d} x={x} />
+          <PagosUnicos x={x} abrir={setAbierto} />
           <Recurrencia x={x} abrir={setAbierto} parte="crecer" />
           <Ampliaciones d={d} abrir={setAbierto} />
         </>)}
@@ -1457,7 +1458,8 @@ function KpisRecurrencia({ d, x }: any) {
 
 /* ════════════════ 5 · EXPANSIÓN: LO QUE TODAVÍA NO VENDES ════════════════ */
 function KpisExpansion({ d, x }: any) {
-  const ex = x?.clientes?.expansion_total, op = x?.dinero?.oportunidades, r = d.recurrente, k = d.contadores;
+  const ex = x?.clientes?.expansion_total, op = x?.dinero?.oportunidades, k = d.contadores;
+  const pu = x?.clientes?.pagos_unicos;
   return (
     <div className="tb-kpis">
       <Kpi color={ROSA} tinta={ROSA_T} et="Cuentas por crecer" ci={ex ? ex.cuentas : '—'}
@@ -1470,8 +1472,8 @@ function KpisExpansion({ d, x }: any) {
         pie="abiertas y todavía sin cotización" />
       <Kpi color={LILA} tinta={MORADO} et="Ampliaciones del periodo" ci={k.ampliaciones}
         pie="clientes que compraron más" />
-      <Kpi color={LILA} tinta={MORADO} et="Creció el recurrente" ci={r.ampliaciones ? '+' + money(r.ampliaciones) : money(0)}
-        pie="lo que sumaron esas ampliaciones al año" />
+      <Kpi color={ROSA} tinta={ROSA_T} et="Pagos únicos del año" ci={pu ? money(pu.anio.monto) : '—'}
+        pie={pu ? `${pu.anio.n} ${pu.anio.n === 1 ? 'cobro' : 'cobros'} fuera de la licencia` : '—'} />
     </div>
   );
 }
@@ -1585,9 +1587,12 @@ function Recurrencia({ x, abrir, parte }: any) {
   /* «Listos para crecer» es la única lista que habla de vender, así que vive en
      Expansión; las otras dos hablan de sostener y viven en Recurrencia. Antes
      las tres estaban juntas y las tres secciones enseñaban lo mismo. */
+  /* A ancho completo: quedó sola en su renglón cuando las oportunidades sin
+     precio se fueron con los pagos únicos, y media rejilla vacía es justo el
+     hueco que el dueño no quiere ver. */
   if (parte === 'crecer') return (
-    <div className="tb-2" style={{ marginBottom: 16 }}>
-      <div style={S.card}>
+    <div style={{ ...S.card, marginBottom: 16 }}>
+      <div>
         <div style={S.titulo}>Listos para crecer<span style={S.der}>te lo pidieron en una junta</span></div>
         <div style={S.lead}>Cuentas con ideas de sus juntas que <b>nadie ha cotizado</b>. No es una corazonada del sistema: te lo pidieron.</div>
         {!cl.expansion.length
@@ -1607,7 +1612,6 @@ function Recurrencia({ x, abrir, parte }: any) {
           </div>}
         <div style={S.nota}>Cotizar una idea que ya te pidieron cierra más rápido que cualquier prospecto nuevo.</div>
       </div>
-      <Sueltos x={x} ver={abrir} parte="oportunidades" />
     </div>
   );
 
@@ -1918,6 +1922,69 @@ function NoEntrara({ x, abrir }: any) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ════════════════ LO QUE COMPRAN FUERA DE LA LICENCIA ════════════════
+   Plugins, personalizaciones, implementaciones. No entran al ARR porque no se
+   repiten solos —el año que viene hay que volver a venderlos— y por eso son la
+   señal de expansión más honesta que existe: la cuenta ya demostró que paga
+   por algo más que el sistema.
+
+   La regla de qué cuenta como pago único vive en lib/crm/pagos-unicos.ts y no
+   se reescribe aquí: un cobro es único si NINGUNA partida de su cotización es
+   una licencia. Sin esa regla, renovar se leería como crecer. */
+function PagosUnicos({ x, abrir }: any) {
+  const pu = x?.clientes?.pagos_unicos;
+  if (!pu) return null;
+  const tope = Math.max(1, ...pu.cuentas.map((c: any) => c.historico));
+  const anio = new Date().getFullYear();
+  return (
+    <div className="tb-2">
+      <div style={S.card}>
+        <div style={S.titulo}>Lo que compran fuera de la licencia
+          <span style={S.der}>pagos únicos de {anio}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', margin: '2px 0 12px' }}>
+          <div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: ROSA_T, letterSpacing: '-.03em', lineHeight: 1 }}>{money(pu.anio.monto)}</div>
+            <div style={{ ...S.pie, marginTop: 5 }}>{pu.anio.n} {pu.anio.n === 1 ? 'cobro' : 'cobros'} este año, en {pu.cuentas.length} {pu.cuentas.length === 1 ? 'cuenta' : 'cuentas'}</div>
+          </div>
+          {pu.periodo.monto > 0 && (
+            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: MORADO }}>{money(pu.periodo.monto)}</div>
+              <div style={S.pie}>en el periodo que estás viendo</div>
+            </div>
+          )}
+        </div>
+        <div style={S.reparte}>
+          {!pu.cuentas.length
+            ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna cuenta ha comprado fuera de su licencia.</div>
+            : pu.cuentas.map((c: any) => (
+              <div key={c.company_id} className="tb-clic" style={{ padding: '7px 0', cursor: 'pointer' }} onClick={() => abrir(c.company_id)}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span style={{ fontSize: '0.79rem', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre}</span>
+                  <b style={{ fontSize: '0.82rem', color: ROSA_T, whiteSpace: 'nowrap' }}>{money(c.historico)}</b>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                  <span style={{ flex: 1, height: 7, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(c.historico / tope) * 100}%`, background: 'linear-gradient(90deg,#9B8CFA,#D9538E)' }} />
+                  </span>
+                  <span style={{ ...S.fn, width: 200, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={c.concepto}>{c.concepto} · {fmtDate(c.ultimo)}</span>
+                </div>
+              </div>
+            ))}
+        </div>
+        <div style={S.nota}>
+          Un pago único no vuelve solo: el año que viene hay que venderlo otra vez. Pero estas cuentas ya dijeron que sí
+          a algo que no era el sistema, y esa es la lista más corta que existe para vender la siguiente personalización.
+          {pu.sin_cuenta.n > 0 && <> Ojo: <b style={{ color: '#9a6a10' }}>{money(pu.sin_cuenta.monto)} de pagos únicos no tienen cuenta asignada</b> y no aparecen aquí.</>}
+        </div>
+      </div>
+
+      <Sueltos x={x} ver={abrir} parte="oportunidades" />
     </div>
   );
 }

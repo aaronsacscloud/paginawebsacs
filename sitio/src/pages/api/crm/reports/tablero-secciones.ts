@@ -27,6 +27,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { conMicroCache } from '../../../../lib/crm/micro-cache';
+/* La regla de qué es un pago único NO se reescribe aquí: vive en un solo lado
+   desde que se destapó el caso ARTIK —$119,764 cobrados y la ficha decía $0—.
+   Un cobro es único si NINGUNA partida de su cotización es una licencia; con
+   que una lo sea, es recurrente, porque renovar no es crecer. */
+import { cotizacionEsUnico } from '../../../../lib/crm/pagos-unicos';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -51,7 +56,7 @@ const _GET: APIRoute = async ({ url }) => {
       .select('id, nombre, nombre_comercial, estado_cuenta, arr, dias_sin_venta, ultima_venta_at, months_active')
       .is('archived_at', null),
     supabase.from('bookings').select('id, fecha, company_id, estado').gte('fecha', desde).lte('fecha', hasta),
-    supabase.from('quotes').select('id, numero, empresa, total, estado, created_at, pagado_fecha, company_id, plan'),
+    supabase.from('quotes').select('id, numero, empresa, total, estado, created_at, pagado_fecha, company_id, plan, items'),
     supabase.from('payments').select('id, monto, fecha, company_id, quote_id, subscription_id')
       .gte('fecha', desde).lte('fecha', hasta)
       .not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
@@ -284,6 +289,33 @@ const _GET: APIRoute = async ({ url }) => {
   const abiertas = deals.filter((d: any) => !String(d.stage || '').startsWith('cerrada'));
   const sinCotizar = abiertas.filter((d: any) => !quoteDeDeal.has(d.id) && !d.quote_id);
 
+  /* ══ PAGOS ÚNICOS: lo que la cuenta compra FUERA de su licencia ══
+     Plugins, personalizaciones, implementaciones. No entran al ARR porque no
+     se repiten solos —el año que viene hay que volver a venderlos—, y por eso
+     son la señal de expansión más honesta que hay: la cuenta ya demostró que
+     paga por algo más que el sistema. */
+  const esUnico: Record<string, boolean> = {};
+  quotes.forEach((q: any) => { esUnico[q.id] = cotizacionEsUnico(q.items); });
+  const conceptoDe: Record<string, string> = {};
+  quotes.forEach((q: any) => {
+    const arr = Array.isArray(q.items) ? q.items : [];
+    const n = arr.map((i: any) => String(i?.nombre || '').trim()).filter(Boolean);
+    conceptoDe[q.id] = n.length ? (n[0] + (n.length > 1 ? ` +${n.length - 1}` : '')) : (q.plan || 'Cobro');
+  });
+  const iniAnio = hoy.slice(0, 4) + '-01-01';
+  const unicos = todosPagos.filter((p: any) => p.quote_id && esUnico[p.quote_id]);
+  const porCuentaUnico: Record<string, { anio: number; hist: number; ultimo: string; concepto: string }> = {};
+  unicos.forEach((p: any) => {
+    if (!p.company_id) return;
+    const v = porCuentaUnico[p.company_id] || { anio: 0, hist: 0, ultimo: '', concepto: '' };
+    const f = dia(p.fecha);
+    v.hist += num(p.monto);
+    if (f >= iniAnio) v.anio += num(p.monto);
+    if (f > v.ultimo) { v.ultimo = f; v.concepto = conceptoDe[p.quote_id] || 'Cobro'; }
+    porCuentaUnico[p.company_id] = v;
+  });
+  const sumaUnicos = (arr: any[]) => Math.round(arr.reduce((a: number, p: any) => a + num(p.monto), 0));
+
   /* LO QUE ENTRA EN LOS PRÓXIMOS 90 DÍAS por parcialidades pactadas: dinero
      futuro con fecha, que hasta hoy no lo sumaba nadie. */
   const en90 = iso(new Date(Date.now() + 90 * 86400000));
@@ -347,6 +379,19 @@ const _GET: APIRoute = async ({ url }) => {
       recompras: { n: recompras.length, monto: Math.round(recompras.reduce((a, [, m]) => a + m, 0)) },
       frecuencia_meses: medianaDias != null ? Math.round((medianaDias / 30.4) * 10) / 10 : null,
       renovaciones, sin_movimiento: sinMovimiento, expansion,
+      pagos_unicos: {
+        periodo: { monto: sumaUnicos(unicos.filter((p: any) => dia(p.fecha) >= desde && dia(p.fecha) <= hasta)),
+                   n: unicos.filter((p: any) => dia(p.fecha) >= desde && dia(p.fecha) <= hasta).length },
+        anio: { monto: sumaUnicos(unicos.filter((p: any) => dia(p.fecha) >= iniAnio)),
+                n: unicos.filter((p: any) => dia(p.fecha) >= iniAnio).length },
+        historico: { monto: sumaUnicos(unicos), n: unicos.length },
+        sin_cuenta: { monto: sumaUnicos(unicos.filter((p: any) => !p.company_id)), n: unicos.filter((p: any) => !p.company_id).length },
+        cuentas: Object.entries(porCuentaUnico)
+          .filter(([id]) => nombreDe[id])
+          .map(([id, v]) => ({ company_id: id, nombre: nombreDe[id], anio: Math.round(v.anio),
+            historico: Math.round(v.hist), ultimo: v.ultimo, concepto: v.concepto }))
+          .sort((a, b) => b.historico - a.historico).slice(0, 8),
+      },
       /* El total NO es el largo de la lista: la lista se corta en 8 para que
          la pantalla no se vuelva un directorio, pero el KPI tiene que contar
          todas las cuentas y todas las ideas. */
