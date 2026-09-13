@@ -17,4 +17,9 @@ export const GIROS: Record<string, string> = {
   // `distribuidores`, que revende marca ajena. Un mayorista de corredor
   // (Villa Hidalgo, León) fabrica lo suyo y vende por mayoreo y multimarca.
   mayoristas: 'Proveedores mayoristas y multimarca',
+  // Quien FABRICA el calzado, no quien lo vende al público —esos son
+  // `zapaterias`—. El corredor de León y San Francisco del Rincón: marcas,
+  // maquila y los proveedores de la propia industria (suelas, hormas, pieles),
+  // que entran marcados porque a esos un ERP de tienda no les sirve.
+  calzado: 'Calzado · fabricantes y marcas',
 };
