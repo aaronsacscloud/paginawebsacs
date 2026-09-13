@@ -637,6 +637,9 @@ mensaje, punto — se trabaja por llamada.
 Aun dentro de los declarados, se va por tandas y midiendo la calificación de
 calidad de la línea entre una y otra.
 
+**Y todo primer contacto es MARKETING**, no hay respaldo utility que abarate el
+frío: ver §8.5.
+
 **Desde el 13-sep-2026 el WhatsApp va dentro de la cadencia y lo manda el cron**
 (`lib/crm/abm-whatsapp.ts`), no a mano. Lo que hizo falta para que eso fuera
 seguro, y que no se quita:
@@ -694,6 +697,89 @@ aprobación de todos los correos y WhatsApp que genere (`aprobado_por = creado_p
 decisión humana, tomada una sola vez y con nombre. Encender el goteo NO
 enciende el cartero: `pausado = si` sigue mandando sobre todo, y el goteo
 tampoco enrola mientras el motor esté pausado.
+
+---
+
+### 8.5 Cómo sale un WhatsApp: plantilla, categoría y ventana
+
+En WhatsApp no se manda lo que uno quiere cuando quiere. Hay tres caminos y hay
+que saber en cuál se está.
+
+#### Los tres caminos
+
+| Camino | Cuándo | Necesita plantilla | Costo |
+|---|---|---|---|
+| **A mano, desde el teléfono** | siempre | **No** | cero |
+| **Plantilla aprobada (HSM)** | para ABRIR conversación | **Sí**, aprobada por Meta | por mensaje |
+| **Ventana de 24 h** | después de que ELLOS contestan | No, texto libre | incluido |
+
+**Hoy el ABM va por el primero.** `/api/crm/abm/whatsapp` arma el mensaje con
+los datos de la cuenta y una persona lo manda desde el teléfono de la tienda.
+No necesita permiso de Meta ni plantilla, y hay una razón de fondo para que sea
+así: **el número que contestamos es el de la tienda**, donde una vendedora está
+atendiendo clientas. Un pitch automático ahí es la forma más rápida de perder
+el número.
+
+#### Marketing y utility no se eligen: se deducen
+
+- **MARKETING** — promociones, ofertas, invitaciones, **y todo primer contacto
+  en frío**. Se cobra por mensaje.
+- **UTILITY** — da seguimiento a algo que el cliente **ya inició**: confirmar
+  una cita que agendó, recordarle la demo que aceptó, avisarle de su pedido.
+- **AUTHENTICATION** — códigos. No aplica aquí.
+
+> 🚫 **No existe un "respaldo utility" para el contacto en frío.** La categoría
+> la revisa Meta según el CONTENIDO, no según lo que uno declare: una plantilla
+> de prospección enviada como utility se **recategoriza sola** a marketing, y
+> repetirlo castiga la calidad de la cuenta. Si alguien nunca pidió nada,
+> escribirle es marketing. Punto.
+>
+> **Utility aparece DESPUÉS del sí**, no antes: cuando el prospecto agenda la
+> demo, el recordatorio de esa demo sí es utility legítimo, porque la reunión
+> la pidió él.
+
+#### Cómo queda la cadencia de novias
+
+```
+mensaje 1  (frío, abre)        MARKETING   plantilla, o a mano
+mensaje 2  (frío, insiste)     MARKETING   plantilla, o a mano
+mensaje 3  (frío, cierra)      MARKETING   plantilla, o a mano
+   ↓ si contesta
+cualquier cosa, 24 h           sin categoría, texto libre, sin costo extra
+   ↓ si agenda demo
+recordatorio de la demo        UTILITY     ti_preparacion_utility_v1
+recordatorio "ya empieza"      UTILITY     reunion_recordatorio_ya
+```
+
+Los tres primeros son marketing **los tres**. No hay forma de abaratarlos
+cambiándoles la etiqueta, y el intento se paga con calidad de la cuenta.
+
+#### ⚠️ Las plantillas de contacto en frío que ya existen NO sirven para el ABM
+
+De las 20 aprobadas, las dos que parecían servir para abrir en frío dicen:
+
+> *"Te escribo por **el registro que dejaste**"* — `primer_contacto_moda`,
+> `apertura_pregunta_moda`
+
+Eso es exactamente la mentira que prohíbe §7.2. Están escritas para leads
+**entrantes**, gente que sí se registró. Usarlas con una cuenta que salió de un
+barrido de Google Maps es afirmar algo falso en el primer renglón, que es lo que
+convierte un mensaje en un reporte.
+
+**Para el ABM en frío hay que dar de alta plantillas nuevas**, con el texto de
+§7.6 —quiénes somos, de dónde salió su contacto, algo real de ellos, lo
+específico de su giro, lo que damos, una pregunta fácil— y en categoría
+MARKETING.
+
+#### Antes de mandar el primer WhatsApp de una cadencia nueva
+
+1. ¿El número está **declarado**? (§6 bis — sin esto no sale nada)
+2. ¿Va a mano o por plantilla? Si es plantilla, ¿está APROBADA y en MARKETING?
+3. ¿El texto de la plantilla afirma algo que no pasó (un registro, una
+   solicitud)? Si sí, no se usa.
+4. ¿Se está mandando en horario de oficina del huso del prospecto?
+5. ¿La tanda es chica y se va a medir la calidad de la línea antes de la
+   siguiente?
 
 ---
 
