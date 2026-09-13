@@ -93,14 +93,18 @@ const ACC = [
   .sn.is-fin .sn-fig { opacity: 0.08; filter: blur(3px); transition: opacity 0.8s, filter 0.8s; }
   .sn.is-fin .sn-accs { opacity: 0.18; transition: opacity 0.8s; }
 
-  @media (max-width: 720px) {
-    .sn { height: 170vh; }
-    .sn-acc:nth-child(n+4) { display: none; }
-    .sn.is-fin .sn-fig, .sn.is-fin .sn-accs { opacity: 0; }
-    .sn-fig { width: min(56vh, 92vw); }
-    .sn-acc { transform: translateY(calc(var(--p) * var(--v) * 0.6px)) rotate(var(--r)) scale(0.62); transform-origin: 0 0; }
-    .sn-txt { top: 14vh; }
+  @media (max-width: 767px) {
+    /* Teléfono: sin riel de scroll. Titular con palabra que rota sola, personaje pequeño y el manifiesto debajo. */
+    .sn { height: auto; }
+    .sn-pegado { position: relative; height: auto; overflow: visible; padding: 64px 0 56px; }
+    .sn-txt { position: static; transform: none; }
+    .sn-l2 { font-size: clamp(54px, 17vw, 76px); }
+    .sn-fig { position: relative; left: auto; bottom: auto; width: 200px; margin: 18px auto 0; transform: none !important; }
+    .sn-accs { display: none; }
+    .sn-fin { position: static; transform: none; opacity: 1; visibility: visible; margin-top: 44px; }
+    .sn-ln, .sn-firma { opacity: 1; transform: none; }
     .sn-h2 { font-size: clamp(20px, 5.6vw, 26px); }
+    .sn.is-fin .sn-txt, .sn.is-fin .sn-fig { opacity: 1; filter: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .sn { height: auto; } .sn-pegado { position: relative; height: auto; min-height: 100vh; padding: 80px 0 60px; }
@@ -114,7 +118,7 @@ const ACC = [
     const sn = document.getElementById('suenos'); if (!sn) return;
     const ws = Array.from(sn.querySelectorAll<HTMLElement>('.sn-w'));
     const vids = Array.from(sn.querySelectorAll<HTMLVideoElement>('.sn-v'));
-    const movil = matchMedia('(max-width: 720px)').matches;
+    const movil = matchMedia('(max-width: 767px)').matches;
     const ph = (ev: string) => { try { (window as any).sacsPH?.(ev); } catch {} };
     let src = false, act = -1, fin = false, raf = 0, hitos = new Set<string>();
     // ── canvas: recorta el blanco del video para que las letras se vean detrás del personaje ──
@@ -146,8 +150,12 @@ const ACC = [
       raf = 0;
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+    // Teléfono: la palabra cambia sola cada 1.4 s y el personaje alterna en cada vuelta
+    let rot = 0, vuelta = 0;
+    const rota = () => { rot = (rot + 1) % ws.length; if (rot === 0) vuelta++; pAct = vuelta % 2 ? 0.9 : 0.1; ws.forEach((w, k) => { w.classList.toggle('is-on', k === rot); w.classList.toggle('is-off', k < rot); }); };
+    let rotT = 0;
     const io = new IntersectionObserver((es) => {
-      es.forEach((e) => { if (e.isIntersecting) { enVista = true; carga(); vids.forEach((v) => v.play().catch(() => {})); addEventListener('scroll', onScroll, { passive: true }); mide(); if (!dib) dib = requestAnimationFrame(dibuja); if (!hitos.has('ver')) { hitos.add('ver'); ph('suenos_ver'); } } else { enVista = false; vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); } });
+      es.forEach((e) => { if (e.isIntersecting) { enVista = true; carga(); vids.forEach((v) => v.play().catch(() => {})); if (movil) { if (!rotT) rotT = window.setInterval(rota, 1400); } else { addEventListener('scroll', onScroll, { passive: true }); mide(); } if (!dib) dib = requestAnimationFrame(dibuja); if (!hitos.has('ver')) { hitos.add('ver'); ph('suenos_ver'); } } else { enVista = false; vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); if (rotT) { clearInterval(rotT); rotT = 0; } } });
     }, { rootMargin: '200px 0px' });
     io.observe(sn);
   })();

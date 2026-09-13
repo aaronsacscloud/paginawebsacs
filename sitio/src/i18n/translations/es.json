@@ -177,7 +177,7 @@
   },
   "faq": {
     "title": "Preguntas frecuentes",
-    "subtitle": "Tienes otra pregunta?",
+    "subtitle": "¿Tienes otra pregunta?",
     "subtitleLink": "Escríbenos",
     "q1": "¿Cuánto cuesta Sacs?",
     "a1": "No hay plan gratuito permanente, pero puedes probar Sacs gratis 7 días sin tarjeta. Los planes de pago comienzan en $810 MXN/mes (Vende) e incluyen punto de venta, tienda en línea, venta multicanal y soporte.",
@@ -190,11 +190,11 @@
     "q5": "¿Mis datos están seguros?",
     "a5": "Absolutamente. Usamos encriptacion de grado bancario (AES-256), servidores en la nube con redundancia y respaldos automaticos cada hora.",
     "q6": "¿Puedo migrar desde otro sistema?",
-    "a6": "Si. Nuestro equipo de onboarding te ayuda a migrar tu catalogo, clientes e historial de ventas sin costo adicional. El proceso tipico toma de 1 a 3 dias habiles."
+    "a6": "Sí. Nuestro equipo de onboarding te ayuda a migrar tu catálogo, clientes e historial de ventas sin costo adicional. El proceso tipico toma de 1 a 3 dias habiles."
   },
   "finalCta": {
-    "title": "Prueba Sacs gratis 7 dias.",
-    "desc": "Todas las funciones. Sin tarjeta de credito. Sin contratos. Cancela cuando quieras.",
+    "title": "Prueba Sacs gratis 7 días.",
+    "desc": "Todas las funciones. Sin tarjeta de crédito. Sin contratos. Cancela cuando quieras.",
     "btn": "Empieza tu prueba gratis"
   },
   "common": {
@@ -202,7 +202,7 @@
     "readMore": "Ver caso completo",
     "noCommitment": "Sin compromiso, sin tarjeta",
     "yourBusiness": "Tu negocio puede ser el siguiente.",
-    "configure15": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
+    "configure15": "Configura tu negocio en 15 minutos. Sin tarjeta de crédito, sin contratos.",
     "freeAccount": "Prueba 7 días gratis",
     "skipToContent": "Saltar al contenido"
   }
