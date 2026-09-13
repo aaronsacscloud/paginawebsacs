@@ -449,5 +449,5 @@ h4 {
 
 /* Móvil: sin tracking negativo en texto de cuerpo (se pegaban las palabras) */
 @media (max-width: 767px) {
-  p, small, li, td, dd, label, .footer-list a, .hero-badge-label { letter-spacing: 0 !important; word-spacing: normal !important; }
+  p, small, li, td, dd, label, .footer-list a, .hero-badge-label, .inv-intel-card-title, .inv-intel-card-desc, .sq-feature-title, .sq-feature-desc, .mc-card-title, .mc-card-desc, .reels-sub, .reels-stat-label, .reel-card *, .blog-card *, .fx-sello-de, .fx-otros { letter-spacing: 0 !important; word-spacing: normal !important; }
 }

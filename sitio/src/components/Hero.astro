@@ -18357,7 +18357,7 @@ const useCases = [
     function muestra(i: number) {
       if (i === cur) return; cur = i;
       pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
-      if (simple) { const mideTxt = () => { const act = pasos.find((p) => +p.dataset.paso! === i); const txt = sec.querySelector<HTMLElement>('.flujo-text'); if (act && txt) txt.style.minHeight = Math.max(112, act.scrollHeight) + 'px'; }; mideTxt(); (document as any).fonts?.ready?.then(mideTxt); }
+      if (simple) { const mideTxt = () => { const act = Array.from(pasos).find((p) => +p.dataset.paso! === i); const txt = sec.querySelector<HTMLElement>('.flujo-text'); if (act && txt) txt.style.minHeight = Math.max(112, act.scrollHeight) + 'px'; }; mideTxt(); (document as any).fonts?.ready?.then(mideTxt); }
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
       wrap.classList.toggle('is-done', i >= N);
