@@ -687,9 +687,19 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // y su precio de lista.
     const [catPlugins, setCatPlugins] = useState<any[]>([]);
     const [pickerPlugin, setPickerPlugin] = useState(false);
+    /* Los servicios —consultoría, implementación, capacitación, migración— ya
+       estaban en el catálogo y no había forma de meterlos a una cotización: se
+       escribían a mano y quedaban como texto libre, así que la comisión del
+       consultor salía en cero por no saber qué se había vendido. */
+    const [catServicios, setCatServicios] = useState<any[]>([]);
+    const [pickerServicio, setPickerServicio] = useState(false);
     useEffect(() => {
       fetch('/api/crm/arr/plans').then(r => r.json())
-        .then(j => setCatPlugins((j.data || []).filter((p: any) => p.categoria === 'plugin')))
+        .then(j => {
+          const cat = j.data || [];
+          setCatPlugins(cat.filter((p: any) => p.categoria === 'plugin'));
+          setCatServicios(cat.filter((p: any) => p.categoria === 'servicio'));
+        })
         .catch(() => {});
     }, []);
 
@@ -785,6 +795,31 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       }] });
       setPickerPlugin(false);
     };
+    const addServicioItem = () => {
+      // Sin catálogo no se bloquea la venta, igual que con los plugins.
+      if (!catServicios.length) {
+        setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'personalizacion', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+        return;
+      }
+      setPickerServicio(true);
+    };
+
+    /** Un servicio del catálogo. Va SIN precio: no hay lista —cada consultoría
+     *  se cotiza por su alcance— y poner un cero de adorno invita a mandarla
+     *  así. Lo que importa que viaje es `plan_slug`: es la clave con la que el
+     *  motor de comisiones sabe que esto es consultoría y no un extra más.
+     *  El título y la descripción se editan después: el cliente lee "Implementación
+     *  1 a 1", el sistema lee `servicio_consultoria`. */
+    const elegirServicio = (p: any) => {
+      setQf({ ...qf, items: [...items, {
+        tipo: 'extra', categoria_comision: 'personalizacion',
+        nombre: p.nombre, descripcion: p.descripcion || '', plan_slug: p.slug,
+        monto: 0, subtotal: 0, precio_es_total: true,
+        periodo_extra: 'unico', recurrente: false,
+      }] });
+      setPickerServicio(false);
+    };
+
     const addPersonalizacionItem = () => {
       setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'personalizacion', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
     };
@@ -2823,6 +2858,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
                 <button onClick={addPlanItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plan SACS</button>
                 <button onClick={addPluginItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plugin</button>
+                <button onClick={addServicioItem} style={{ ...S.btnSmall, flex: 1 }}>+ Servicio</button>
                 <button onClick={addPersonalizacionItem} style={{ ...S.btnSmall, flex: 1 }}>+ Personalización</button>
                 <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Extra</button>
               </div>
@@ -2865,6 +2901,40 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       {!catPlugins.length && (
                         <div style={{ padding: '18px', textAlign: 'center', color: '#a5a2af', fontSize: '0.8rem' }}>
                           No hay plugins en el catálogo. Se dan de alta en Configuración → Planes y plugins.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Catálogo de servicios. A diferencia de los plugins no se elige
+                  modalidad: un servicio se entrega una vez y se cobra una vez.
+                  Tampoco trae precio —cada alcance vale distinto—, así que el
+                  monto se captura en el concepto ya agregado. */}
+              {pickerServicio && (
+                <div onClick={() => setPickerServicio(false)}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                  <div onClick={e => e.stopPropagation()}
+                    style={{ background: '#fff', borderRadius: 14, width: 'min(520px,100%)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 60px -20px rgba(20,18,32,.5)' }}>
+                    <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0eef8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#241d43' }}>Elegir servicio</div>
+                        <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 1 }}>El título y el monto los pones tú. Lo que se guarda por debajo es qué tipo de trabajo es.</div>
+                      </div>
+                      <button onClick={() => setPickerServicio(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a5a2af', fontSize: '1.05rem' }}>✕</button>
+                    </div>
+                    <div style={{ overflowY: 'auto', padding: '6px 0' }}>
+                      {catServicios.map((p: any) => (
+                        <button key={p.slug} onClick={() => elegirServicio(p)}
+                          style={{ display: 'block', width: '100%', textAlign: 'left' as const, background: 'none', border: 'none', borderBottom: '1px solid #f7f6fb', padding: '12px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#241d43' }}>{p.nombre}</div>
+                          {p.descripcion && <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{p.descripcion}</div>}
+                        </button>
+                      ))}
+                      {!catServicios.length && (
+                        <div style={{ padding: '18px', textAlign: 'center', color: '#a5a2af', fontSize: '0.8rem' }}>
+                          No hay servicios en el catálogo. Se dan de alta en Configuración → Planes y plugins.
                         </div>
                       )}
                     </div>

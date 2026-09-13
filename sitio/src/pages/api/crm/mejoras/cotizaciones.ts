@@ -18,7 +18,7 @@
 // GET ?company_id=
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { netoDePartida, baseDeCotizacion, categoriaDePartida } from '../../../../lib/crm/pagos-unicos';
+import { netoDePartida, baseDeCotizacion, categoriaDePartida, partidaEsLicencia } from '../../../../lib/crm/pagos-unicos';
 import { planDeCotizacion } from '../../../../lib/quotes/plan';
 
 export const prerender = false;
@@ -31,7 +31,7 @@ export const GET: APIRoute = async ({ url }) => {
   const companyId = String(url.searchParams.get('company_id') || '');
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
-  const [{ data: cots }, { data: usadas }, { data: pagos }] = await Promise.all([
+  const [{ data: cots }, { data: usadas }, { data: pagos }, { data: convs }] = await Promise.all([
     supabase.from('quotes')
       .select('id, numero, estado, total, created_at, pagado_fecha, items, descuento_global, descuento_tipo, notas')
       .eq('company_id', companyId).not('estado', 'in', `(${NO_SON.join(',')})`)
@@ -45,7 +45,17 @@ export const GET: APIRoute = async ({ url }) => {
        dinero que ya entró no puede depender de si la entrega terminó. */
     supabase.from('payments').select('quote_id, monto, fecha')
       .eq('company_id', companyId).not('quote_id', 'is', null).neq('estado', 'reembolsado'),
+    /* De qué conversación salió el cobro. Una cuenta que se movió por WhatsApp
+       y terminó pagando se veía, desde Consultoría, exactamente igual que una
+       muerta: el trabajo estaba, el dinero estaba, y el hilo que los unió no
+       aparecía por ningún lado. */
+    supabase.from('conversaciones_capturadas')
+      .select('id, titulo, desde, hasta, quote_id')
+      .eq('company_id', companyId).not('quote_id', 'is', null),
   ]);
+
+  const convPorCot = new Map<string, any>();
+  for (const c of (convs || [])) if (!convPorCot.has(c.quote_id)) convPorCot.set(c.quote_id, c);
 
   const pagadoPorCot: Record<string, { monto: number; n: number; ultimo: string | null }> = {};
   for (const p of (pagos || [])) {
@@ -64,6 +74,20 @@ export const GET: APIRoute = async ({ url }) => {
     tomadas.get(k)!.push({ id: m.id, titulo: m.titulo, valor: Number(m.valor || 0) });
   }
 
+  /* Cuánto de la cotización es TRABAJO y cuánto es licencia.
+     Consultoría cobra lo primero y no lo segundo —renovar no es consultoría—,
+     así que de una cotización mezclada solo entra su parte. Se mide sobre los
+     montos de LISTA y se aplica al total: el total ya trae el descuento global
+     y el IVA, así que una sola proporción reparte las tres cosas y el número
+     cuadra con el que enseñan Cobranza y el documento. */
+  const parteDeTrabajo = (items: any): number => {
+    const arr = (Array.isArray(items) ? items : []).filter((i: any) => Number(i?.monto) > 0);
+    const base = arr.reduce((a: number, i: any) => a + Number(i.monto), 0);
+    if (!(base > 0)) return 0;
+    const trabajo = arr.reduce((a: number, i: any) => a + (partidaEsLicencia(i) ? 0 : Number(i.monto)), 0);
+    return trabajo / base;
+  };
+
   // Las pagadas primero: son las que se están capturando.
   const orden = (q: any) => (q.estado === 'paid' ? 0 : q.estado === 'accepted' ? 1 : 2);
   const lista = (cots || []).map((q: any) => ({
@@ -80,6 +104,14 @@ export const GET: APIRoute = async ({ url }) => {
        tres pantallas leyendo tres cosas distintas del mismo acuerdo es como se
        llega a que una diga que no debe nada y otra que debe todo. */
     plan: planDeCotizacion(q, pagadoPorCot[q.id]?.monto || 0, hoy),
+    /* La proporción de trabajo y lo que de ella ya entró. Consultoría suma
+       esto y no el total: sin la proporción, una cotización que renueva una
+       licencia y de paso cobra una capacitación inflaría la consultoría con
+       dinero de suscripción. */
+    parte_trabajo: Math.round(parteDeTrabajo(q.items) * 10000) / 10000,
+    trabajo: Math.round(Number(q.total || 0) * parteDeTrabajo(q.items)),
+    trabajo_pagado: Math.round((pagadoPorCot[q.id]?.monto || 0) * parteDeTrabajo(q.items)),
+    conversacion: convPorCot.get(q.id) || null,
     descuento: Number(q.descuento_global || 0), descuento_tipo: q.descuento_tipo || 'pct',
     partidas: (Array.isArray(q.items) ? q.items : [])
       .filter((i: any) => Number(i?.monto) > 0)

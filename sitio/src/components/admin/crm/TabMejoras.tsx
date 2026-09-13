@@ -41,6 +41,17 @@ const CATS_COLOR: Record<string, { label: string; bg: string; fg: string }> = {
   otro:            { label: 'otro',            bg: '#F4F4F6', fg: '#6B7280' },
 };
 const cat = (k: string) => CATS_COLOR[k] || CATS_COLOR.otro;
+
+/* La categoría de una partida de cotización traducida a las de una entrega.
+   Son dos vocabularios distintos —el de lo que se cobra y el de lo que se
+   hace— y sin traducirlos el formulario abriría en «personalización» un
+   plugin, que es justo el error que la captura a mano ya cometía. */
+const catDePartida = (it: any): string => {
+  if (/capacitaci/i.test(String(it?.nombre || ''))) return 'capacitacion';
+  if (it?.categoria === 'plugin') return 'plugin';
+  if (it?.categoria === 'partner') return 'otro';
+  return 'personalizacion';
+};
 // De dónde nació el compromiso. Mismo vocabulario que la vista global.
 const ORIGENES_L: Record<string, string> = {
   junta: 'De una junta', whatsapp: 'De WhatsApp', soporte: 'De soporte',
@@ -224,18 +235,42 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
      Ruben's tiene $150,000 cotizados y $30,000 ya en la cuenta, y esta tarjeta
      decía $0. Lo entregado y lo cobrado son dos cosas y hacía falta la
      segunda, que es la que se responde cuando preguntan «¿ya pagó?».
-     Se cuentan solo las cotizaciones que cobran alguna mejora de esta cuenta:
-     una licencia no es consultoría y aquí no pinta nada. */
-  const cotsConMejora = cots.filter((c: any) => (c.partidas || []).some((p: any) => (p.tomada || []).length));
-  const cotizado = cotsConMejora.reduce((a: number, c: any) => a + Number(c.total || 0), 0);
-  const entrado = cotsConMejora.reduce((a: number, c: any) => a + Number(c.pagado || 0), 0);
+
+     Qué cotizaciones entran: TODAS las de la cuenta que cobren trabajo, se
+     haya ligado una entrega a mano o no. Antes se exigía esa liga y por eso
+     Vende Tu Closet —que pagó $49,450 de una implementación el 7 de
+     septiembre— reportaba $0: nadie había capturado la entrega todavía. Medido
+     en producción, ese requisito escondía $118,632 ya cobrados en 3 cuentas.
+
+     Y entra solo la PARTE DE TRABAJO de cada una (`trabajo` / `trabajo_pagado`,
+     calculadas en el endpoint): una licencia no es consultoría y aquí no pinta
+     nada, así que una cotización mezclada aporta su porción y nada más. */
+  const cotsTrabajo = cots.filter((c: any) =>
+    Number(c.trabajo || 0) > 0 &&
+    // Una rechazada o vencida SIN dinero encima ya no está sobre la mesa; con
+    // abonos sí cuenta, porque ese dinero entró pase lo que pase.
+    (Number(c.trabajo_pagado || 0) > 0 || !['rejected', 'expired'].includes(c.estado)));
+  const cotizado = cotsTrabajo.reduce((a: number, c: any) => a + Number(c.trabajo || 0), 0);
+  const entrado = cotsTrabajo.reduce((a: number, c: any) => a + Number(c.trabajo_pagado || 0), 0);
   const porEntrar = Math.max(0, cotizado - entrado);
-  const ultimoPago = cotsConMejora.map((c: any) => c.ultimo_pago).filter(Boolean).sort().pop() || null;
+  const ultimoPago = cotsTrabajo.filter((c: any) => Number(c.trabajo_pagado || 0) > 0)
+    .map((c: any) => c.ultimo_pago).filter(Boolean).sort().pop() || null;
+
+  /* Trabajo que el cliente YA está pagando y que no tiene su renglón en «Ya
+     entregado». No es un descuido menor: el reporte de entregas —el documento
+     con el que se le justifica el trabajo al cliente— se arma de esos
+     renglones, así que sin ellos sale vacío aunque lleve medio proyecto
+     pagado. Se ofrece capturarla con la partida y el monto ya puestos. */
+  const sinRegistrar = cotsTrabajo
+    .filter((c: any) => Number(c.pagado || 0) > 0)
+    .flatMap((c: any) => (c.partidas || [])
+      .filter((it: any) => it.categoria !== 'plan' && !(it.tomada || []).length)
+      .map((it: any) => ({ cot: c, it })));
   /* El acuerdo de pago: lo que el cliente firmó que iba a pagar y cuándo.
      Estaba dentro de la cotización y no salía de ahí — ni en Consultoría, ni
      en Pagos—, así que al abrir la ficha no había forma de saber que ese
      trabajo se está cobrando en cinco partes ni cuándo toca la siguiente. */
-  const conPlan = cotsConMejora.filter((c: any) => (c.plan || []).length > 1);
+  const conPlan = cotsTrabajo.filter((c: any) => (c.plan || []).length > 1);
   const anio = new Date().getFullYear();
   const delAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio)));
   const esteAnio = delAnio.length;
@@ -395,9 +430,53 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
             <div style={{ fontSize: '0.72rem', color: '#8a8590' }}>
               {money(c.pagado)} de {money(c.total)}
             </div>
+            {/* De dónde salió el cobro. Una cuenta que se movió por WhatsApp y
+                terminó pagando se veía igual que una muerta: el trabajo estaba,
+                el dinero estaba, y el hilo que los unió no aparecía. */}
+            {c.conversacion && (
+              <div style={{
+                flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap',
+                fontSize: '0.72rem', color: '#6b6878', lineHeight: 1.5,
+                paddingTop: 9, borderTop: `1px dashed ${vencida ? '#f0e2c4' : '#e6ddfa'}`,
+              }}>
+                Salió de la conversación <b style={{ color: '#3f3b4d' }}>«{c.conversacion.titulo}»</b>
+                <span style={{ background: '#EAF8F2', color: '#1E8A63', border: '1px solid #cfe9d9', borderRadius: 999, padding: '2px 9px', fontSize: '0.65rem', fontWeight: 700 }}>
+                  {fmtDate(c.conversacion.desde)}{c.conversacion.hasta !== c.conversacion.desde ? ` – ${fmtDate(c.conversacion.hasta)}` : ''}
+                </span>
+              </div>
+            )}
           </div>
         );
       })}
+
+      {/* ── Cobrado y sin entrega registrada ──
+          Va después del acuerdo de pago y antes de los reportes, porque es
+          justo lo que hace que el reporte de entregas salga vacío. */}
+      {sinRegistrar.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: '3px solid #4FBF95', borderRadius: 10, padding: '13px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#1E8A63', textTransform: 'uppercase', letterSpacing: '.07em' }}>
+            Se cobró, falta registrar la entrega
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 3, lineHeight: 1.45 }}>
+            Trabajo que el cliente ya está pagando y todavía no tiene su renglón en «Ya entregado». Sin él, el reporte de entregas sale vacío.
+          </div>
+          {sinRegistrar.map(({ cot, it }: any) => (
+            <div key={`${cot.id}|${it.clave}`} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', paddingTop: 10, marginTop: 9, borderTop: '1px solid #f4f3f7' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#2f2b3d' }}>{it.nombre}</div>
+                <div style={{ fontSize: '0.7rem', color: '#8a8590', marginTop: 2 }}>{cot.numero} · {money(cot.pagado)} de {money(cot.total)} cobrados</div>
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</div>
+              <button style={{ ...S.btn, background: '#1E8A63', flexShrink: 0 }}
+                onClick={() => setEditando({
+                  estado: 'entregada', categoria: catDePartida(it),
+                  titulo: it.nombre, valor: it.neto, quote_id: cot.id, quote_item: it.clave,
+                  visible_cliente: true, cortesia: false,
+                })}>Registrar la entrega</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Los reportes suben junto a las cifras: son lo que se le enseña al
           cliente y estaban hasta el fondo, después de tres listas.

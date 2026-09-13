@@ -150,6 +150,15 @@ export type EntradaCalculo = {
   cumple_condiciones?: boolean;
   /** Días entre el vencimiento y el cobro. Negativo = pagó antes. null = sin dato. */
   dias_atraso?: number | null;
+  /** El pago viene de una COTIZACIÓN con varias partidas, cada una con su
+   *  tasa. Llega ya repartido a prorrata (ver `comisiones.cotizacion.ts`) y
+   *  sustituye a la elección de regla: aquí no hay UN concepto que buscar. */
+  mezcla?: {
+    pct: number;
+    regla_id: string | null;
+    sin_regla: boolean;
+    partidas: { nombre: string; slug: string | null; categoria: string | null; parte: number; pct: number; renovacion?: boolean }[];
+  } | null;
 };
 
 export type LineaCalculada = {
@@ -181,8 +190,12 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
   const descuento_pct = descuentoDe(e.modelo, cuenta);
   const base = r2(bruto * (1 - descuento_pct / 100));
 
-  const regla = elegirRegla(e.reglas, { plan_id: e.plan_id, categoria: e.categoria, origen: e.origen });
-  let pct = regla ? Number(regla.pct) : 0;
+  /* Con mezcla NO se busca regla: el reparto entre partidas ya la aplicó una
+     por una. Buscar además una regla "del pago" volvería a cobrar la tasa del
+     concepto que más pesa sobre el documento entero. */
+  const mezcla = e.mezcla || null;
+  const regla = mezcla ? null : elegirRegla(e.reglas, { plan_id: e.plan_id, categoria: e.categoria, origen: e.origen });
+  let pct = mezcla ? Number(mezcla.pct) : regla ? Number(regla.pct) : 0;
 
   // La anualidad no se paga como primera venta. Las tasas altas —35% del lead
   // de Sacs, 55% del referido, 70% de la recuperada— son premio de ADQUISICIÓN
@@ -205,7 +218,8 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
   const fuera_de_tiempo =
     e.es_renovacion === true && gracia != null && dias_atraso != null && dias_atraso > Number(gracia);
 
-  const tasa_reducida = (incumple || fuera_de_tiempo) && e.modelo.tasa_incumplimiento_pct != null && !!regla;
+  const hay_regla = mezcla ? !mezcla.sin_regla : !!regla;
+  const tasa_reducida = (incumple || fuera_de_tiempo) && e.modelo.tasa_incumplimiento_pct != null && hay_regla;
   if (tasa_reducida) pct = Number(e.modelo.tasa_incumplimiento_pct);
 
   const descuento_venta_pct = r2(Number(e.descuento_venta_pct || 0));
@@ -221,7 +235,7 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
     payment_id: e.pago.id,
     owner_id: e.owner_id,
     modelo_id: e.modelo.id,
-    regla_id: regla?.id ?? null,
+    regla_id: mezcla ? mezcla.regla_id : regla?.id ?? null,
     tipo: 'venta',
     company_id: e.pago.company_id ?? null,
     subscription_id: e.pago.subscription_id ?? null,
@@ -245,9 +259,13 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
     descuento_venta_pct,
     descuento_exceso,
     origen_owner_id: null,
-    sin_regla: !regla,
+    sin_regla: !hay_regla,
     detalle: {
       regla_nota: regla?.nota ?? null,
+      // El desglose con el que se explica el porcentaje ponderado: qué partida,
+      // cuánto pesó y a qué tasa. Sin esto la línea dice "74.3%" y nadie puede
+      // reconstruir de dónde salió.
+      partidas: mezcla?.partidas,
       especificidad: regla ? especificidad(regla) : undefined,
       comision_antes_de_exceso: descuento_exceso > 0 ? bruta : undefined,
       motivo_tasa_reducida: tasa_reducida ? (fuera_de_tiempo ? 'cobro fuera de tiempo' : 'no cumplió seguimiento o crecimiento') : undefined,

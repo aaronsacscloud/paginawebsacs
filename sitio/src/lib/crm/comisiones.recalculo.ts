@@ -16,6 +16,7 @@
 //    pantalla los muestra como "sin atribuir", que es el trabajo pendiente.
 import { supabase } from '../supabase';
 import { cotizacionEsUnico } from './pagos-unicos';
+import { mezclaDeCotizacion } from './comisiones.cotizacion';
 import {
   calcularLinea, calcularOverride, aplicarPctManual, aplicarCuenta, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
   type Modelo, type Regla, type Origen, type LineaCalculada,
@@ -80,7 +81,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
     supabase.from('comision_modelos').select('*'),
     supabase.from('comision_reglas').select('*'),
     supabase.from('team_members').select('id, nombre, activo, comision_modelo_id, reclutado_por_id'),
-    supabase.from('plans').select('id, nombre, categoria'),
+    supabase.from('plans').select('id, slug, nombre, categoria'),
   ]);
 
   const modeloPorId = new Map<string, Modelo>((modelos || []).map((m: any) => [m.id, m as Modelo]));
@@ -110,7 +111,10 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
       .select(
         'id, fecha, monto, estado, reembolsado, comision_cuenta, company_id, subscription_id, vencia_el, dias_atraso, ' +
         'companies(id, nombre, comision_owner_id, comision_origen), ' +
-        'subscriptions(id, nombre_plan, plan_id, precio, precio_lista, fecha_inicio, comision_owner_id, comision_origen)'
+        'subscriptions(id, nombre_plan, plan_id, precio, precio_lista, fecha_inicio, comision_owner_id, comision_origen), ' +
+        // Un pago único cuelga de la COTIZACIÓN y no de una suscripción: sus
+        // partidas son lo único que dice qué se vendió.
+        'quote_id, quotes(numero, items)'
       )
       .gte('fecha', desde).lte('fecha', hasta)
       .order('fecha'));
@@ -220,11 +224,20 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
     }
     if (es_renovacion && dias_atraso == null) res.sin_vencimiento++;
 
+    /* Pago de cotización sin suscripción: la tarifa sale de repartir el cobro
+       entre las partidas del documento. La suscripción manda cuando existe —un
+       pago con las dos cosas es una anualidad ligada a su cotización, y ahí lo
+       que se cobra es la licencia—. */
+    const mezcla = !sub && p.quote_id
+      ? mezclaDeCotizacion((p as any).quotes?.items, planes || [], reglasPorModelo.get(modelo.id) || [], origen)
+      : null;
+
     const linea = calcularLinea({
       pago: p,
-      concepto: plan?.nombre || sub?.nombre_plan || null,
-      plan_id: plan?.id ?? null,
-      categoria: plan?.categoria ?? null,
+      concepto: mezcla?.concepto || plan?.nombre || sub?.nombre_plan || null,
+      plan_id: mezcla ? mezcla.plan_id : plan?.id ?? null,
+      categoria: mezcla ? mezcla.categoria : plan?.categoria ?? null,
+      mezcla,
       origen,
       owner_id,
       modelo,
