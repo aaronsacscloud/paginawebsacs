@@ -208,6 +208,10 @@
     {
       "path": "/api/cron/tel-latir",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "schedule": "0 16-23 * * 1-5",
+      "path": "/api/cron/abm-wa?cuantas=10"
     }
   ],
   "headers": [

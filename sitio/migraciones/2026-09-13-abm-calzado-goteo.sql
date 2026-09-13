@@ -16,3 +16,13 @@ values ('d0a1f5e2-7b3d-4a9e-8c21-5e6d7f8a9b11', 'c0a1f5e2-7b3d-4a9e-8c21-5e6d7f8
         '60be8bd8-995a-45ca-926f-1bcb159d3c1e',
         'Fábricas y marcas de calzado de SAPICA. Puro correo, por instrucción del dueño. Diez negocios nuevos cada día hábil, los mejor puntuados primero; los proveedores de la industria, sombreros y marroquinería quedaron en pausa y SIZES AND COLORS (competidor) en no contactar.')
 on conflict (id) do nothing;
+
+-- ── Mismo día, después: «que el goteo sea de 40 en 40 en este caso» (dueño) ──
+-- Lo que de verdad sale por día lo decide el cartero (rampa 15 → tope_diario),
+-- no este número: si se atoran más de 40 correos de días anteriores, el goteo
+-- deja de enrolar hasta que el cartero se ponga al día. El 40 es cuántas
+-- cuentas NUEVAS escribe al día cuando hay cupo.
+update abm_goteo set cuentas_dia = 40, nombre = 'SAPICA · cuarenta al día',
+       nota = coalesce(nota,'') || ' · 13-sep-2026: el dueño pidió que este goteo vaya de 40 en 40.',
+       updated_at = now()
+ where id = 'd0a1f5e2-7b3d-4a9e-8c21-5e6d7f8a9b11';
