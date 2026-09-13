@@ -56,7 +56,7 @@ const currentYear = new Date().getFullYear();
   <div class="container">
     <div class="footer-divider"></div>
     <div class="footer-bottom">
-      <p class="footer-copyright">&copy; {currentYear} SACS. {t('footer.copyright', locale)}</p>
+      <p class="footer-copyright">&copy; {currentYear} Sacs. {t('footer.copyright', locale)}</p>
       <p class="footer-impact">{t('footer.impact', locale)}</p>
     </div>
   </div>
@@ -86,7 +86,7 @@ const currentYear = new Date().getFullYear();
     .footer-col[open] .footer-heading::after { content: '–'; }
     .footer-list { padding-bottom: 12px; }
   }
-  @media (max-width: 767px) { .footer-list a { font-size: 0.875rem; } .footer { padding-block: var(--space-16, 64px); } }
+  @media (max-width: 767px) { .footer-list a { font-size: 0.875rem; } .footer { padding-block: 40px 28px; } .footer-heading { padding: 14px 0; } .footer-list { padding-bottom: 10px; } }
 
   @media (min-width: 768px) {
     .footer-grid {

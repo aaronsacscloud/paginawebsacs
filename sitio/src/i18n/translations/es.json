@@ -8,7 +8,7 @@
     "pricing": "Planes",
     "caseStudies": "Casos de exito",
     "login": "Iniciar sesion",
-    "startFree": "Prueba 7 dias gratis",
+    "startFree": "Prueba 7 días gratis",
     "bookDemo": "Agenda una demo",
     "openMenu": "Abrir menu",
     "closeMenu": "Cerrar menu",
@@ -53,17 +53,17 @@
   "hero": {
     "eyebrow": "Software para retail",
     "title": "Visibilidad total de toda tu operacion retail.",
-    "subtitle": "De la bodega al mostrador a la tienda en linea. Ventas, stock, clientes y lealtad en un solo lugar."
+    "subtitle": "De la bodega al mostrador a la tienda en línea. Ventas, stock, clientes y lealtad en un solo lugar."
   },
   "cta": {
-    "startFree": "Prueba 7 dias gratis",
+    "startFree": "Prueba 7 días gratis",
     "bookDemo": "Agenda una demo",
-    "tryFree": "Prueba 7 dias gratis",
+    "tryFree": "Prueba 7 días gratis",
     "viewAll": "Ver todos",
     "learnMore": "Conocer mas",
     "readArticle": "Leer articulo",
     "contactUs": "Contactanos",
-    "writeWhatsApp": "Escribenos por WhatsApp"
+    "writeWhatsApp": "Escríbenos por WhatsApp"
   },
   "doubts": {
     "title": "Aun tienes dudas?"
@@ -73,8 +73,8 @@
     "demoDesc": "Te mostramos Sacs con datos de tu negocio. 30 min, sin compromiso.",
     "demoCta": "Reservar horario",
     "startTitle": "Inicia\nahora",
-    "startDesc": "Prueba todas las funciones 7 dias. Sin tarjeta de credito.",
-    "startCta": "Prueba 7 dias gratis"
+    "startDesc": "Prueba todas las funciones 7 días. Sin tarjeta de crédito.",
+    "startCta": "Prueba 7 días gratis"
   },
   "blog": {
     "eyebrow": "Blog",
@@ -118,19 +118,19 @@
     "migrateDesc": "Nuestro equipo migra tu catalogo, clientes e historial de ventas. Tu solo validas. Sin perder un dia de ventas.",
     "migrate1Title": "Nos envias tu catalogo",
     "migrate1Desc": "Excel, CSV o desde tu sistema actual. Nosotros lo formateamos.",
-    "migrate2Title": "Importamos todo en 1-3 dias",
+    "migrate2Title": "Importamos todo en 1-3 días",
     "migrate2Desc": "Productos, variantes, precios, clientes y proveedores.",
     "migrate3Title": "Vendes desde el dia 1",
     "migrate3Desc": "Capacitacion incluida. Tu ejecutivo te acompana en cada paso.",
     "noRiskTitle": "Sin riesgo",
-    "noRiskDesc": "Prueba 7 dias gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retencion, sin letra chiquita.",
+    "noRiskDesc": "Prueba 7 días gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retención, sin letra chiquita.",
     "noRiskExtras": "Migracion incluida · Soporte por chat y WhatsApp · Cancela cuando quieras",
     "consultingTitle": "Consultoria de implementacion gratis",
     "consultingDesc": "Normalmente tiene un costo de",
     "consultingPrice": "$8,000 MXN",
     "consultingDetail": ". Con tu plan anual, la consultoria personalizada de implementacion es completamente gratis.",
     "consultingBadge": "Incluido con plan anual",
-    "waText": "Prefieres chatear? Escribenos directo por WhatsApp."
+    "waText": "¿Prefieres chatear? Escríbenos directo por WhatsApp."
   },
   "proof": {
     "brands": "3,000+",
@@ -178,18 +178,18 @@
   "faq": {
     "title": "Preguntas frecuentes",
     "subtitle": "Tienes otra pregunta?",
-    "subtitleLink": "Escribenos",
-    "q1": "Cuanto cuesta Sacs?",
-    "a1": "No hay plan gratuito permanente, pero puedes probar SACS gratis 7 dias sin tarjeta. Los planes de pago comienzan en $810 MXN/mes (Vende) e incluyen punto de venta, tienda en linea, venta multicanal y soporte.",
-    "q2": "Cuanto tiempo toma configurar Sacs?",
+    "subtitleLink": "Escríbenos",
+    "q1": "¿Cuánto cuesta Sacs?",
+    "a1": "No hay plan gratuito permanente, pero puedes probar Sacs gratis 7 días sin tarjeta. Los planes de pago comienzan en $810 MXN/mes (Vende) e incluyen punto de venta, tienda en línea, venta multicanal y soporte.",
+    "q2": "¿Cuánto tiempo toma configurar Sacs?",
     "a2": "El setup inicial toma entre 10 y 15 minutos. Incluye crear tu cuenta, configurar tu catalogo y conectar tu primer metodo de pago. Nuestro equipo te acompana en cada paso.",
-    "q3": "Que tipo de soporte ofrecen?",
-    "a3": "Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolucion de tickets en 30-90 min; Fideliza y Multiplica, en 15-30 min; y Automatiza incluye soporte 24/7.",
-    "q4": "Se integra con otras herramientas?",
-    "a4": "Si. Sacs se integra con los principales procesadores de pago, plataformas de e-commerce, sistemas contables y herramientas de marketing. Tambien ofrecemos una API abierta.",
-    "q5": "Mis datos estan seguros?",
+    "q3": "¿Qué tipo de soporte ofrecen?",
+    "a3": "Todos los planes incluyen soporte por chat de Sacs y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolucion de tickets en 30-90 min; Fideliza y Multiplica, en 15-30 min; y Automatiza incluye soporte 24/7.",
+    "q4": "¿Se integra con otras herramientas?",
+    "a4": "Sí. Sacs se integra con los principales procesadores de pago, plataformas de e-commerce, sistemas contables y herramientas de marketing. También ofrecemos una API abierta.",
+    "q5": "¿Mis datos están seguros?",
     "a5": "Absolutamente. Usamos encriptacion de grado bancario (AES-256), servidores en la nube con redundancia y respaldos automaticos cada hora.",
-    "q6": "Puedo migrar desde otro sistema?",
+    "q6": "¿Puedo migrar desde otro sistema?",
     "a6": "Si. Nuestro equipo de onboarding te ayuda a migrar tu catalogo, clientes e historial de ventas sin costo adicional. El proceso tipico toma de 1 a 3 dias habiles."
   },
   "finalCta": {
@@ -203,7 +203,7 @@
     "noCommitment": "Sin compromiso, sin tarjeta",
     "yourBusiness": "Tu negocio puede ser el siguiente.",
     "configure15": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
-    "freeAccount": "Prueba 7 dias gratis",
+    "freeAccount": "Prueba 7 días gratis",
     "skipToContent": "Saltar al contenido"
   }
 }

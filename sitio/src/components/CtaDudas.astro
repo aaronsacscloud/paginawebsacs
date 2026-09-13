@@ -18,7 +18,7 @@ interface Props {
 }
 const {
   titulo = '¿Aún tienes dudas?',
-  demoDesc = 'Te mostramos SACS con datos de tu negocio. 30 min, sin compromiso.',
+  demoDesc = 'Te mostramos Sacs con datos de tu negocio. 30 min, sin compromiso.',
   inicioDesc = 'Crea tu cuenta gratis y configura tu tienda en 15 minutos. Sin tarjeta.',
 } = Astro.props;
 ---
@@ -326,6 +326,8 @@ const {
       .cta-doubts-section { height: auto !important; }
       .cta-doubts-sticky { position: relative; height: auto; padding: 72px 0 56px; overflow: visible; }
       .cta-doubts-text { transform: none !important; font-size: clamp(2rem, 9vw, 2.75rem); }
+      .cta-doubts-content { transform: none !important; }
+      .cta-doubts-section { overflow: hidden; }
       .cta-doubts-content { gap: 28px; }
       .xpand-row { opacity: 1 !important; transform: none !important; height: auto; flex-direction: column; }
       .xpand-card:nth-child(2) { display: none; }
