@@ -1062,16 +1062,19 @@ export default function CrmDashboard() {
                 Para tocar uno creyendo que es el otro hay que cruzar el
                 divisor y cambiar de tipo de elemento.
 
-                Sin confirmación a propósito: cerrar sesión no destruye nada,
-                se vuelve a entrar. El rojo aparece al pasar encima, cuando ya
-                es una intención. */}
+                El rojo es PERMANENTE, no solo al pasar encima: ahora que salir
+                tiene su propio renglón —abajo, aislado, después de la línea— ya
+                no compite con la navegación, y el color es el tercer eje que lo
+                separa de plegar. Con el fondo transparente en reposo el bloque
+                no pesa: al pasar encima entra el rosa. Sin confirmación a
+                propósito: cerrar sesión no destruye nada, se vuelve a entrar. */}
             <button
               onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
               title="Cerrar sesión"
-              style={{ ...pieFila, marginBottom: 5, background: 'none', color: '#8078a0', transition: 'color .14s ease, background .14s ease' }}
-              onMouseEnter={e => { const t = e.currentTarget as HTMLElement; t.style.color = '#B24C57'; t.style.background = '#FEF0EF'; }}
-              onMouseLeave={e => { const t = e.currentTarget as HTMLElement; t.style.color = '#8078a0'; t.style.background = 'none'; }}>
-              <span style={{ ...pieIcono, opacity: .75 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+              style={{ ...pieFila, marginBottom: 5, background: 'none', color: '#B24C57', transition: 'background .14s ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEF0EF'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+              <span style={{ ...pieIcono, opacity: .9 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
             </button>
 
             <div style={{ display: 'flex', borderTop: '1px solid #d9d0f0' }}>
