@@ -183,7 +183,12 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
     if (b.con_ia !== false) {
       try {
         const r: any = await (anthropic as any).messages.create({
-          model: MODELS.sonnet, max_tokens: 4000,
+          // 8 correos de ~150 palabras no caben en 4000 tokens: la respuesta
+          // llegaba cortada, JSON.parse tronaba y la cadencia caía en la
+          // plantilla sin avisar de la causa. Pasó con 19 de 31 cuentas de
+          // novias —justo las de expediente más largo— al agregar el correo de
+          // presentación. El tope va holgado: lo que sobra no se cobra.
+          model: MODELS.sonnet, max_tokens: 12000,
           messages: [{ role: 'user', content: prompt }],
         });
         const txt = (r?.content || []).map((x: any) => x?.text || '').join('').trim();
@@ -202,7 +207,11 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
           conIa = true;
         }
       } catch (e: any) {
-        console.warn('[abm] la IA no pudo pulir la cadencia, va la versión de plantilla:', String(e?.message || e).slice(0, 160));
+        // Se distingue el corte por longitud de cualquier otro fallo: son dos
+        // problemas distintos y antes los dos se veían igual en el log.
+        const msg = String(e?.message || e);
+        const cortado = /Unexpected end of JSON|Unterminated string|JSON/i.test(msg);
+        console.warn(`[abm] la IA no pudo pulir la cadencia (${cortado ? 'respuesta CORTADA: sube max_tokens' : 'fallo'}), va la versión de plantilla:`, msg.slice(0, 200));
       }
     }
     if (!correos.length) return json({ error: 'no se pudo armar la cadencia' }, 500);
