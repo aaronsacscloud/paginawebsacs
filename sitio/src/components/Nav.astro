@@ -1559,7 +1559,10 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     .moda-extra-lista { grid-template-columns: 1fr 1fr; display: grid; }
   }
   /* ─── Barra superior (idiomas + sesión) ─── */
-  .nt { background: #0E0D0C; color: #fff; }
+  .nt { background: #0E0D0C; color: #fff; max-height: 30px; overflow: hidden; transition: max-height 0.25s ease; }
+  .nav.scrolled .nt { max-height: 0; }
+  .nav.scrolled .mega-dropdown, .nav.scrolled .mega-backdrop, .nav.scrolled .mobile-menu { top: 71px; }
+  .nav.scrolled .mobile-menu { max-height: calc(100vh - 71px); }
   .nt-inner { display: flex; align-items: center; justify-content: flex-end; gap: 26px; height: 30px; font-size: 12px; letter-spacing: 0.02em; }
   @media (min-width: 1024px) { .nt-inner { max-width: none; padding-inline: var(--space-8); } }
   @media (min-width: 1440px) { .nt-inner { padding-inline: var(--space-10); } }

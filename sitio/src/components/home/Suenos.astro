@@ -28,8 +28,10 @@ const ACC = [
     </div>
 
     <div class="sn-fig" aria-hidden="true">
-      <video class="sn-v sn-v--ella" muted playsinline webkit-playsinline loop preload="none" poster="/images/suenos/mujer.webp"></video>
-      <video class="sn-v sn-v--el" muted playsinline webkit-playsinline loop preload="none" poster="/images/suenos/hombre.webp"></video>
+      <!-- el video trae fondo blanco; el canvas lo vuelve transparente cuadro a cuadro (Safari no mezcla videos) -->
+      <canvas class="sn-cv" width="480" height="854"></canvas>
+      <video class="sn-v sn-v--ella" muted playsinline webkit-playsinline loop preload="none"></video>
+      <video class="sn-v sn-v--el" muted playsinline webkit-playsinline loop preload="none"></video>
     </div>
 
     <div class="sn-accs" aria-hidden="true">
@@ -66,10 +68,8 @@ const ACC = [
 
   /* ── personaje ── */
   .sn-fig { position: absolute; left: 50%; bottom: 0; width: min(46vh, 86vw); aspect-ratio: 9 / 16; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.56 + var(--p) * 0.62)); transform-origin: 50% 100%; z-index: 2; will-change: transform; }
-  .sn-v { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #fff; mix-blend-mode: multiply; transition: opacity 0.15s; }
-  .sn-fig { isolation: auto; }
-  .sn-v--ella { opacity: calc(1 - clamp(0, (var(--p) - 0.44) * 60, 1)); }
-  .sn-v--el { opacity: clamp(0, (var(--p) - 0.44) * 60, 1); }
+  .sn-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .sn-v { position: absolute; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; }
 
   /* ── accesorios con paralaje (sobrio) ── */
   .sn-accs { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
@@ -115,11 +115,26 @@ const ACC = [
     const movil = matchMedia('(max-width: 720px)').matches;
     const ph = (ev: string) => { try { (window as any).sacsPH?.(ev); } catch {} };
     let src = false, act = -1, fin = false, raf = 0, hitos = new Set<string>();
+    // ── canvas: recorta el blanco del video para que las letras se vean detrás del personaje ──
+    const cv = sn.querySelector<HTMLCanvasElement>('.sn-cv')!; const W = movil ? 320 : 480, H = movil ? 569 : 854; cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d', { willReadFrequently: true })!;
+    let pAct = 0, dib = 0, enVista = false;
+    const dibuja = () => {
+      dib = 0; if (!enVista) return;
+      const v = pAct > 0.44 ? vids[1] : vids[0];
+      if (v && v.readyState >= 2) {
+        ctx.drawImage(v, 0, 0, W, H);
+        const im = ctx.getImageData(0, 0, W, H); const d = im.data;
+        for (let i = 0; i < d.length; i += 4) { const m = Math.min(d[i], d[i + 1], d[i + 2]); if (m > 238) d[i + 3] = 0; else if (m > 200) d[i + 3] = ((238 - m) / 38 * 255) | 0; }
+        ctx.putImageData(im, 0, 0);
+      }
+      dib = requestAnimationFrame(dibuja);
+    };
     const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('sn-v--ella') ? 'suenos-ella' : 'suenos-el') + '.mp4?v=2'; v.play().catch(() => {}); }); };
     const mide = () => {
       const r = sn.getBoundingClientRect(); const vh = innerHeight;
       const p = Math.min(1, Math.max(0, -r.top / (r.height - vh)));
-      sn.style.setProperty('--p', p.toFixed(4));
+      sn.style.setProperty('--p', p.toFixed(4)); pAct = p;
       const i = Math.min(ws.length - 1, Math.max(0, Math.floor((p - 0.02) / 0.105)));
       if (i !== act) { ws.forEach((w, k) => { w.classList.toggle('is-on', k === i); w.classList.toggle('is-off', k < i); }); act = i; }
       const f = p > 0.74; if (f !== fin) { sn.classList.toggle('is-fin', f); fin = f; if (f && !hitos.has('fin')) { hitos.add('fin'); ph('suenos_final'); } }
@@ -128,7 +143,7 @@ const ACC = [
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
     const io = new IntersectionObserver((es) => {
-      es.forEach((e) => { if (e.isIntersecting) { carga(); vids.forEach((v) => v.play().catch(() => {})); addEventListener('scroll', onScroll, { passive: true }); mide(); if (!hitos.has('ver')) { hitos.add('ver'); ph('suenos_ver'); } } else { vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); } });
+      es.forEach((e) => { if (e.isIntersecting) { enVista = true; carga(); vids.forEach((v) => v.play().catch(() => {})); addEventListener('scroll', onScroll, { passive: true }); mide(); if (!dib) dib = requestAnimationFrame(dibuja); if (!hitos.has('ver')) { hitos.add('ver'); ph('suenos_ver'); } } else { enVista = false; vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); } });
     }, { rootMargin: '200px 0px' });
     io.observe(sn);
   })();
