@@ -68,10 +68,15 @@ export const GET: APIRoute = async ({ url }) => {
         .select('id, asunto, vista_previa, estado, prioridad, tema, sentimiento, abierto_at, resuelto_at, mensajes_count, csat_score, intercom_url')
         .eq('company_id', company_id).order('abierto_at', { ascending: false }).limit(60),
       supabase.from('activities')
-        .select('tipo, created_at')
+        .select('tipo, created_at, metadata')
         .eq('company_id', company_id).in('tipo', ['whatsapp_enviado', 'whatsapp_recibido'])
         .order('created_at', { ascending: false }).limit(500),
     ]);
+
+    /** Suma mensajes: los capturados traen su conteo, los del hilo valen 1. */
+    const cuenta = (lista: any[], tipo: string | null) => lista
+      .filter((a: any) => !tipo || a.tipo === tipo)
+      .reduce((n: number, a: any) => n + (Number(a?.metadata?.mensajes) > 0 ? Number(a.metadata.mensajes) : 1), 0);
 
     const filas = snaps.data || [];
     const hoy = ultimoValido(filas);
@@ -146,12 +151,21 @@ export const GET: APIRoute = async ({ url }) => {
         lista: R,
       },
       conversacion: {
-        // Rotulado como WhatsApp y no como "llamadas": no hay dato de llamadas,
-        // y llamarle así a otra cosa haría que la pantalla mienta.
-        enviados: W.filter((a: any) => a.tipo === 'whatsapp_enviado').length,
-        recibidos: W.filter((a: any) => a.tipo === 'whatsapp_recibido').length,
+        /* Rotulado como WhatsApp y no como "llamadas": el hilo conectado es de
+           WhatsApp, y llamarle de otro modo haría que la pantalla mienta.
+
+           Una actividad CAPTURADA —una conversación que pasó en un grupo o en
+           un celular y que alguien registró en la ficha— guarda cuántos
+           mensajes fueron en `metadata.mensajes`: se escribe una por día y por
+           lado, no una por mensaje, porque 134 renglones en el timeline por
+           una sola conversación lo vuelven ilegible. Sumar 1 por fila diría
+           «3 respuestas» donde hubo setenta y una. */
+        enviados: cuenta(W, 'whatsapp_enviado'),
+        recibidos: cuenta(W, 'whatsapp_recibido'),
         // Que CONTESTEN es la señal, no que se les escriba.
-        recibidos_90d: W.filter((a: any) => a.tipo === 'whatsapp_recibido' && enRango(a.created_at)).length,
+        recibidos_90d: cuenta(W.filter((a: any) => enRango(a.created_at)), 'whatsapp_recibido'),
+        // Cuántas vienen de una captura, para poder decirlo sin esconderlo.
+        capturados: cuenta(W.filter((a: any) => a?.metadata?.origen === 'capturado'), null),
         ultimo: W[0]?.created_at ?? null,
       },
       soporte: {

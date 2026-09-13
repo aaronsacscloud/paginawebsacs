@@ -128,6 +128,9 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
   { pre: '/api/crm/cuenta', sec: 'cuentas' },
   { pre: '/api/crm/sacs-', sec: 'cuentas' },
   { pre: '/api/crm/notas', sec: 'cuentas' },
+  // Las conversaciones capturadas viven en la ficha del cliente: son de la
+  // cuenta, no de la campaña que las originó.
+  { pre: '/api/crm/conversaciones', sec: 'cuentas' },
 
   /* ── Ventas: conseguir el sí ──
      Desde el reacomodo del 12-sep-2026 Leads y Reuniones viven aquí, con

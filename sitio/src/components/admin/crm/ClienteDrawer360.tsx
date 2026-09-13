@@ -12,6 +12,7 @@ import TabMejoras from './TabMejoras';
 import TabOutbound from './outbound/TabOutbound';
 import TabSoporte from './soporte/TabSoporte';
 import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
+import Conversaciones from './whatsapp/Conversaciones';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
@@ -402,7 +403,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
-                <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>WhatsApp</button>
+                {/* «Conversaciones», no «WhatsApp»: adentro vive también lo que
+                    pasó por un grupo, por un celular o por teléfono, y el
+                    nombre del canal prometía menos de lo que hay. */}
+                <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>Conversaciones</button>
                 <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
                   Soporte
                   {ticketsAbiertos > 0 && <span title="Tickets abiertos" style={{ display: 'inline-block', minWidth: 16, textAlign: 'center', fontSize: '0.6rem', fontWeight: 800, background: '#E9B949', color: '#fff', borderRadius: 99, padding: '1px 5px', marginLeft: 5, verticalAlign: 'middle' }}>{ticketsAbiertos}</span>}
@@ -462,6 +466,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   abajo la idea que la atiende—. */}
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} co={co} subs={subs} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
+              {/* Las dos fuentes, en este orden: primero lo que hay que
+                  capturar —porque es lo que falta— y abajo el hilo conectado,
+                  que se llena solo. */}
+              {tab === 'whatsapp' && <Conversaciones companyId={companyId} contactId={principal?.id || null} />}
               {tab === 'whatsapp' && <TabWhatsApp360 companyId={companyId} />}
               {tab === 'outbound' && <TabOutbound companyId={companyId} />}
               {tab === 'soporte' && <TabSoporte companyId={companyId} />}
