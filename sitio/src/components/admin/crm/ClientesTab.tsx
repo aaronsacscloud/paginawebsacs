@@ -19,6 +19,7 @@ import { swrGet } from '../../../lib/crm/swr';
 import VistaRapida, { HojaEsqueleto } from './ui/VistaRapida';
 import FilaDeslizable from './ui/FilaDeslizable';
 import EstadoVacio from './ui/EstadoVacio';
+import Chispas, { Sello, CHISPA, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -79,19 +80,35 @@ const T = {
 // color — allá no existe y aquí solo agregaba peso.
 /** Con `onClick` la tarjeta es una puerta —cambia lo que se está viendo— y lo
  *  dice al pasar el mouse. Sin él es solo un número. */
-function KpiCard({ franja, label, value, valueColor, sub, style, onClick, activo }: { franja: string; label: string; value: any; valueColor?: string; sub: any; style?: any; onClick?: () => void; activo?: boolean }) {
+/* `faro` es la tarjeta que manda en la fila. Una fila de cuatro iguales no
+   tiene jerarquía: las cuatro piden lo mismo y el ojo empieza por la de la
+   izquierda, no por la que importa. Solo UNA por pantalla —dos faros no
+   alumbran el doble, se anulan—. */
+function KpiCard({ franja, label, value, valueColor, sub, style, onClick, activo, faro }: { franja: string; label: string; value: any; valueColor?: string; sub: any; style?: any; onClick?: () => void; activo?: boolean; faro?: boolean }) {
   return (
     <div onClick={onClick}
       onMouseEnter={e => { if (onClick && !activo) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.10)'; }}
       onMouseLeave={e => { if (!activo) (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
       style={{
-        background: '#fff', border: '1px solid #ececf0', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px',
+        background: faro ? 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))' : '#fff',
+        border: `1px solid ${faro ? '#ddd6fb' : '#ececf0'}`,
+        ...(faro ? {} : { borderLeft: `3px solid ${franja}` }),
+        borderRadius: faro ? 12 : 10, padding: '13px 15px',
+        position: faro ? 'relative' as const : undefined, overflow: faro ? 'hidden' as const : undefined,
         cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s',
         ...(activo ? { boxShadow: `0 0 0 2px ${franja}66` } : {}), ...style,
       }}>
-      <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.08em', color: '#9c99a6' }}>{label}</div>
-      <div style={{ fontSize: '1.32rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', color: valueColor || '#1a1a1a' }}>{value}</div>
-      <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>
+      {/* Una chispa grande al vuelo, cortada por la esquina. Es decoración de
+          la marca, no un icono: no significa nada y por eso no lleva título. */}
+      {faro && (
+        <svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true"
+          style={{ position: 'absolute', right: -6, top: -8, opacity: .5, pointerEvents: 'none' }}>
+          <path d={CHISPA} fill="rgba(217,83,142,.18)" />
+        </svg>
+      )}
+      <div style={{ position: 'relative', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.08em', color: faro ? '#8a6a9c' : '#9c99a6' }}>{label}</div>
+      <div style={{ position: 'relative', fontSize: faro ? '1.5rem' : '1.32rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.025em', color: valueColor || '#1a1a1a' }}>{value}</div>
+      <div style={{ position: 'relative', fontSize: '0.66rem', color: faro ? '#6b6878' : '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>
         {sub}{onClick ? <span style={{ color: '#5B4BD6', fontWeight: 700 }}> · {activo ? 'volver a clientes' : 'ver'}</span> : null}
       </div>
     </div>
@@ -857,9 +874,19 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           vivían dentro de la barra de la tabla, junto al buscador, así que
           "Nuevo cliente" competía con un campo de texto en vez de encabezar la
           pantalla. */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+      {/* Los destellos de la marca y el sello, el mismo tratamiento del Tablero.
+          Van SOLO en esta franja: abajo empiezan las cifras y un destello
+          detrás de un número estorba al leerlo. */}
+      <style>{CSS_CHISPAS + CSS_SELLO}</style>
+      <div className="chispas-cab" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+        <Chispas />
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Clientes</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+            {verExclientes ? 'Exclientes' : 'Clientes'}
+            {/* En exclientes no va: la frase celebra a los que están, y sobre
+                una lista de cuentas que se fueron suena a burla. */}
+            {!verExclientes && <Sello>Ninguna estrella brilla sola</Sello>}
+          </h1>
           <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 2 }}>
             {verExclientes
               ? <>{tot?.exclientes ?? 0} exclientes · {money(tot?.arr_perdido)} de ARR perdido</>
@@ -878,7 +905,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         <KpiCard style={kStyle} franja={CL.violeta} label="Clientes" value={tot?.clientes ?? '—'}
           sub={<>{tot?.activos ?? 0} con ARR activo · {Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0))} sin ARR</>}
           onClick={verExclientes ? () => setVerExclientes(false) : undefined} />
-        <KpiCard style={kStyle} franja={CL.verde} label="ARR" value={money(tot?.arr)} valueColor={CL.verdeTinta}
+        <KpiCard style={kStyle} franja={CL.verde} label="ARR" value={money(tot?.arr)} valueColor={CL.verdeTinta} faro
           sub={kpis.arrPend > 0 ? <>{money(kpis.arrPend)} pendiente de activar</> : 'todo activo'} />
         <KpiCard style={kStyle} franja={CL.rojo} label="Requieren atención" value={kpis.riesgo + kpis.vencidas} valueColor={CL.rojoTinta}
           sub={<>{kpis.riesgo} sin vender 3+ días · {kpis.vencidas} con renovación vencida</>} />
