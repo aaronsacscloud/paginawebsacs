@@ -176,6 +176,9 @@ export const POST: APIRoute = async ({ request }) => {
         wa_plantilla: p.canal === 'wa' ? (String(p.wa_plantilla || '').trim() || null) : null,
       /* La de respaldo: si Meta frena la de marketing, sale esta. */
       wa_plantilla_utility: p.canal === 'wa' ? (String(p.wa_plantilla_utility || '').trim() || null) : null,
+      /* La general: si al contacto le falta el dato que pide la específica, sale esta. */
+      wa_plantilla_generica: p.canal === 'wa' ? (String(p.wa_plantilla_generica || '').trim() || null) : null,
+      wa_plantilla_generica_utility: p.canal === 'wa' ? (String(p.wa_plantilla_generica_utility || '').trim() || null) : null,
         inapp_campana_id: p.canal === 'inapp' ? (p.inapp_campana_id || null) : null,
         dia_semana: p.dia_semana ? Math.max(1, Math.min(7, Number(p.dia_semana))) : null,
         vigente_hasta: p.vigente_hasta || null,

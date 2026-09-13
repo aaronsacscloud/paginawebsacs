@@ -729,24 +729,30 @@ export const GET: APIRoute = async ({ url }) => {
             /* Los valores de la plantilla salen de su `variables_map`: así una plantilla puede
                hablar de SU negocio («tu zapatería de dos tiendas») y no solo saludar por el
                nombre. Si le falta un dato, no se manda a medias: se salta y queda anotado. */
-            const { data: plWa } = await supabase.from('wa_plantillas')
-              .select('variables, variables_map').eq('nombre', p.wa_plantilla).maybeSingle();
-            const vals = valoresPlantilla(c, plWa?.variables_map, Number(plWa?.variables) || 1);
-            if (!vals.ok) { res.saltados.push({ lead: c.id, motivo: `sin dato para la plantilla: ${vals.falta}`, plantilla: p.wa_plantilla }); continue; }
+            const datosDe = async (nombre: string | null) => {
+              if (!nombre) return null;
+              const { data } = await supabase.from('wa_plantillas').select('variables, variables_map').eq('nombre', nombre).maybeSingle();
+              const v = valoresPlantilla(c, data?.variables_map, Number(data?.variables) || 1);
+              return v.ok ? { nombre, valores: v.valores } : null;
+            };
+            /* Si al contacto le falta el dato que pide la plantilla específica («tu zapatería de
+               dos tiendas»), no se le deja sin mensaje: sale la versión GENERAL, que justamente
+               pregunta a qué se dedica. De 76 rezagados, solo 2 tenían giro y sucursales. */
+            const elegida = (await datosDe(p.wa_plantilla)) || (await datosDe(p.wa_plantilla_generica));
+            if (!elegida) { res.saltados.push({ lead: c.id, motivo: 'sin datos ni para la versión general', plantilla: p.wa_plantilla }); continue; }
+            const respaldo = elegida.nombre === p.wa_plantilla ? p.wa_plantilla_utility : p.wa_plantilla_generica_utility;
+            const vals = { ok: true as const, valores: elegida.valores };
             enContexto('lead', (c as any).fuente || null);
             /* Marketing primero; si Meta la frena —tope del día, calidad, o el contacto sin
                marketing habilitado— sale la UTILITY de respaldo, que es la misma idea dicha
                como aviso. Sin esto, el paso simplemente no salía y nadie se enteraba. */
             try {
-              await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', vals.valores);
+              await enviarPlantilla(c.whatsapp, elegida.nombre, 'es_MX', vals.valores);
             } catch (e: any) {
-              if (!p.wa_plantilla_utility) throw e;
-              const { data: plU } = await supabase.from('wa_plantillas')
-                .select('variables, variables_map').eq('nombre', p.wa_plantilla_utility).maybeSingle();
-              const valsU = valoresPlantilla(c, plU?.variables_map, Number(plU?.variables) || 1);
-              if (!valsU.ok) throw e;
-              await enviarPlantilla(c.whatsapp, p.wa_plantilla_utility, 'es_MX', valsU.valores);
-              res.saltados.push({ lead: c.id, motivo: `marketing falló (${String(e?.message || e).slice(0, 60)}), salió la utility`, plantilla: p.wa_plantilla_utility });
+              const alt = respaldo ? await datosDe(respaldo) : null;
+              if (!alt) throw e;
+              await enviarPlantilla(c.whatsapp, alt.nombre, 'es_MX', alt.valores);
+              res.saltados.push({ lead: c.id, motivo: `marketing falló (${String(e?.message || e).slice(0, 60)}), salió la utility`, plantilla: alt.nombre });
             }
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {
