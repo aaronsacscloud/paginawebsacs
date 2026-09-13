@@ -14,9 +14,9 @@
 -- que les servimos → el software genérico cobra y descuenta, y con un vestido
 -- de novia eso no alcanza → esto es lo que sí hacemos → las dos ligas.
 --
--- ⚠️ La liga de WhatsApp es la NUEVA: wa.me/524152838733 (+52 1 415 283 8733).
--- El número cambió el 2026-09-10 y los dos anteriores (12058920417 y
--- 5215536634392) ya no contestan — ver la migración de ese día.
+-- ⚠️ La liga de WhatsApp es la NUEVA: wa.me/525593027234 (+52 1 415 283 8733).
+-- última migración que lo haya tocado: wa.me/525593027234 (+52 1 55 9302 7234).
+-- Una migración dice qué pasó ese día, no qué es cierto hoy.
 
 update abm_plantillas set cuerpo = '[[si persona]]Hola {{persona}}.
 [[/si]]Le escribo de Sacs. Antes que nada, por qué le llega esto: estuvimos levantando el mapa de las tiendas de novia de México y {{nombre}}[[si ciudad]], en {{ciudad}},[[/si]] salió ahí. Nadie nos pasó su correo ni usted se registró en ningún lado — la buscamos nosotros.
@@ -35,7 +35,7 @@ Nosotros hacemos inventario y punto de venta para tiendas de moda, y la parte de
 Si quiere verlo por dentro son veinte minutos y se agenda aquí:
 https://www.sacscloud.com/agendar/demo
 Y si prefiere preguntarme por WhatsApp antes de agendar nada:
-https://wa.me/524152838733
+https://wa.me/525593027234
 ¿Se lo enseño, o le mando primero cómo se ve por dentro la ficha de una novia?',
   objetivo = 'citar lo investigado, explicar por que el generico no alcanza y dar las dos ligas'
 where giro='novias' and canal='email' and orden=0 and ruta='demo';
@@ -53,7 +53,7 @@ No es una demo disfrazada: son sus números y se los entregamos aunque no nos co
 Si quiere que lo hagamos, aquí se agenda:
 https://www.sacscloud.com/agendar/demo
 Y si prefiere preguntarme por WhatsApp antes de agendar nada:
-https://wa.me/524152838733
+https://wa.me/525593027234
 ¿Le sacamos el diagnóstico con sus números?',
   objetivo = 'citar lo investigado y ofrecer el diagnostico gratis, con las dos ligas'
 where giro='novias' and canal='email' and orden=0 and ruta='diagnostico';
