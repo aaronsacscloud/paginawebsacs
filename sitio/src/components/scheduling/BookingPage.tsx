@@ -571,6 +571,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           utm_source: toque?.s || null,
           utm_medium: toque?.m || null,
           utm_campaign: toque?.c || null,
+          utm_content: toque?.co || null,
         }),
       });
 

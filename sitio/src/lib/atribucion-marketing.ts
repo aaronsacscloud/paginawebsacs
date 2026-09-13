@@ -186,6 +186,10 @@ export function columnasUtm(a?: Atribucion | null) {
     utm_source: canalDeToque(t),
     utm_medium: t?.m || null,
     utm_campaign: t?.c || null,
+    /* `utm_content` es el que dice QUÉ pieza trajo la cita: cuál de los ocho correos de la
+       cadencia, cuál creatividad del anuncio. El capturador ya lo guardaba (`co`) y se
+       perdía aquí, así que la pregunta «¿cuál correo agenda?» no tenía respuesta. */
+    utm_content: t?.co || null,
   };
 }
 

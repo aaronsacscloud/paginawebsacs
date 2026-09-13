@@ -192,6 +192,7 @@ export const POST: APIRoute = async ({ request }) => {
     utm_source,
     utm_medium,
     utm_campaign,
+    utm_content,
     recurrence,
     ref_partner_id,
   } = body;
@@ -348,7 +349,7 @@ export const POST: APIRoute = async ({ request }) => {
   let company_id: string | null = null;
   let isNewContact = false;
 
-  const COLS_EXISTENTE = 'id, email, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, propiedades, lead_score, visitor_id, fuente_detalle';
+  const COLS_EXISTENTE = 'id, email, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, utm_content, propiedades, lead_score, visitor_id, fuente_detalle';
   let { data: existingContact } = email ? await supabase
     .from('contacts')
     .select(COLS_EXISTENTE)
@@ -404,6 +405,7 @@ export const POST: APIRoute = async ({ request }) => {
       updates.utm_source = utm.utm_source;
       updates.utm_medium = utm.utm_medium;
       updates.utm_campaign = utm.utm_campaign;
+      updates.utm_content = utm.utm_content;
     }
     if (!existingContact.visitor_id && atribucion?.vid) updates.visitor_id = atribucion.vid;
     // Recuperar lo que navegó ANTES de agendar: esas visitas anónimas son el
@@ -440,6 +442,7 @@ export const POST: APIRoute = async ({ request }) => {
         utm_source: utm.utm_source,
         utm_medium: utm.utm_medium,
         utm_campaign: utm.utm_campaign,
+      utm_content: utm.utm_content,
         giro: giro || null,
         sucursales_interes: parseInt(String(sucursales)) || null,
         referrer_partner_id: referrerPartnerId,
@@ -587,6 +590,7 @@ export const POST: APIRoute = async ({ request }) => {
       utm_source: utm.utm_source,
       utm_medium: utm.utm_medium,
       utm_campaign: utm.utm_campaign,
+      utm_content: utm.utm_content,
       // Sin esto la reunión no se ligaba a la empresa aunque el contacto sí:
       // el tab Reuniones y la ficha del cliente perdían las demos públicas.
       company_id,
@@ -1118,6 +1122,7 @@ export const POST: APIRoute = async ({ request }) => {
           utm_source: utm.utm_source,
           utm_medium: utm.utm_medium,
           utm_campaign: utm.utm_campaign,
+      utm_content: utm.utm_content,
           company_id,
           atribucion: bloqueAttr,
           referrer_partner_id: referrerPartnerId,
