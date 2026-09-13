@@ -4891,6 +4891,10 @@ const useCases = [
   .flujo-saltar:hover { background: #fff; color: #1a1a1a; text-decoration: none; }
   /* ─── Pantallas del sistema sobre el video (historia de inventario) ─── */
   .flujo--inv .flujo-video { background: #0B0B0C; }
+  /* La historia creativa va entre Vende y Controla (ambas casi negras): azul para que no se fundan. */
+  .flujo--ia { background: #1B3A82; }
+  .flujo--ia .flujo-video { background: #0B0B0C; }
+  .flujo--ia .flujo-eyebrow { color: #FFD27A; }
   .inv-scr {
     position: absolute; right: 3.5%; top: 50%; transform: translateY(-50%) translateX(14px);
     width: 46%; max-width: 430px; background: rgba(252, 252, 250, 0.97); color: #14161A;
@@ -18388,6 +18392,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', v: 2, cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
+  montaHistoria({ sel: '#creativo', video: 'reel', v: 1, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 26.6], fin: 31.7 });
   montaHistoria({ sel: '#inventario', video: 'inventario', v: 5, cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02], fin: 37.63 });
 
   pillarSections.forEach((section) => {
