@@ -40,7 +40,7 @@
 // GET /api/cron/abm-validar-whatsapp?cuantas=200&giro=novias
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { apuntar } from '../../../lib/crm/abm.lib';
+import { apuntar, quien } from '../../../lib/crm/abm.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -66,9 +66,17 @@ const PUEDE: Record<string, 'probable' | 'descartado' | 'sin_probar'> = {
 };
 
 export const GET: APIRoute = async ({ request, url }) => {
+  // Dos puertas: el cron con su secreto, o una persona del CRM con su sesión.
+  // Validar un segmento es una ACCIÓN DE OPERADOR —"voy a trabajar novias, dime
+  // a cuáles sí les puedo escribir"— y no solo una tarea nocturna. Dejarlo solo
+  // como cron obligaría a esperar al horario para poder empezar.
   const auth = request.headers.get('authorization') || '';
   const secret = env('CRON_SECRET');
-  if (secret && auth !== `Bearer ${secret}`) return json({ error: 'no autorizado' }, 401);
+  const esCron = secret && auth === `Bearer ${secret}`;
+  if (!esCron) {
+    const yo = await quien(request);
+    if (!yo) return json({ error: 'no autorizado' }, 401);
+  }
 
   const sid = env('TWILIO_ACCOUNT_SID');
   // Se usa la API Key, no el Auth Token: una API Key se revoca sola sin tirar

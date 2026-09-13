@@ -18,7 +18,6 @@ import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import UsuariosPermisos from './crm/UsuariosPermisos';
 import MiPerfil from './crm/MiPerfil';
 import { GoogleCalendarPanel } from '../scheduling/GoogleCalendarPanel';
-import CotizacionesDashboard from './crm/CotizacionesDashboard';
 import RegistrarPagoModal, { resumenCierre } from './crm/RegistrarPagoModal';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
@@ -384,13 +383,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
   useEffect(() => { load(); }, []);
 
-  /* Sin botón, la única puerta es la URL. Es a propósito: la entrada visible
-     se fue, pero once análisis que ya funcionan no se tiran por un rediseño de
-     encabezado. */
-  const [dashCot, setDashCot] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return new URLSearchParams(window.location.search).get('dash') === '1';
-  });
 
   // Sync tab when controlled by CrmDashboard
   useEffect(() => {
@@ -1731,11 +1723,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            {/* El botón de Dashboard se retiró: el tablero de la cuenta es UNO
-                y una segunda puerta con el mismo nombre hacía dudar cuál abrir.
-                La pantalla de análisis NO se borró —son once bloques que no
-                existen en ningún otro lado— y sigue llegable con `?dash=1`
-                mientras el Tablero principal la absorbe. */}
+            {/* No hay botón de Dashboard: el tablero de la casa es UNO, y una
+                segunda puerta con el mismo nombre hacía dudar cuál abrir. La
+                fila termina en la acción, no en un destino. */}
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
               style={{ ...S.btn, background: M.violeta, color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
           </div>
@@ -4036,12 +4026,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       {/* Content */}
       <div style={WRAP}>
         {tab === 'dashboard' && <DashboardView />}
-        {/* El dashboard ocupa el lugar de la lista, no se encima: como panel
-            flotante quedaba por debajo del menú lateral y se cortaba al
-            abrirlo. Así el ancho lo decide el contenedor de siempre. */}
-        {tab === 'cotizaciones' && (dashCot
-          ? <CotizacionesDashboard onCerrar={() => setDashCot(false)} />
-          : <QuotesView />)}
+        {tab === 'cotizaciones' && <QuotesView />}
         {tab === 'config' && (() => {
           /* Cuándo entraste. `last_login_at` se sella en el login y no se
              mostraba en ningún lado; aquí es lo que hace que el renglón de
