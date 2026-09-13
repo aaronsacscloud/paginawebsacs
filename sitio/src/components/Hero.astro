@@ -1392,8 +1392,8 @@ const useCases = [
                     <span class="cat-topbar-count">65 productos</span>
                   </div>
                   <div class="cat-topbar-actions">
-                    <button class="cat-btn cat-btn--outline">📥 Importar</button>
-                    <button class="cat-btn cat-btn--outline">📤 Exportar</button>
+                    <button class="cat-btn cat-btn--outline">Importar</button>
+                    <button class="cat-btn cat-btn--outline">Exportar</button>
                     <button class="cat-btn cat-btn--primary">+ Nuevo</button>
                   </div>
                 </div>
@@ -3031,7 +3031,7 @@ const useCases = [
     <div class="loyalty-pro-inner">
       <div class="loyalty-pro-header">
         <span class="loyalty-pro-eyebrow">CRM y marketing relacional</span>
-        <h2 class="loyalty-pro-title" id="loyalty-pro-title">Y todo lo que convierte una visita<br />en una relación de años.</h2>
+        <h2 class="loyalty-pro-title" id="loyalty-pro-title">Y todo lo que convierte una visita <br />en una relación de años.</h2>
         <p class="loyalty-pro-desc">Una ficha viva por clienta con su talla y su historial, segmentos que se arman solos y campañas de WhatsApp y correo integradas al punto de venta. Cada mensaje sale de una compra real.</p>
       </div>
       <div class="inv-intel-grid loyalty-pro-grid">
@@ -4952,15 +4952,24 @@ const useCases = [
   /* Teléfono: la historia es una pantalla normal. Sin riel pegajoso, sin bloqueo, video a lo ancho y el texto cambia con el video. */
   @media (max-width: 767px) {
     .flujo { height: auto !important; }
-    .flujo-sticky { position: relative; display: block; height: auto !important; min-height: 0 !important; padding: 40px 0 32px !important; }
+    .flujo-sticky { position: relative; display: block; height: auto !important; min-height: 0 !important; padding: 40px 0 24px !important; }
     .flujo-inner { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 0 16px; width: 100% !important; max-width: 100% !important; }
     .flujo-video { display: block; order: -1; width: 100% !important; max-width: none !important; transform: none !important; margin: 0; }
-    .flujo-text { width: 100%; min-height: 128px; }
+    .flujo-text { width: 100%; min-height: 0; transition: min-height 0.3s; }
+    .flujo-nav { margin-top: 6px; }
     .flujo-tag { font-size: 11px; padding: 6px 10px; white-space: nowrap; max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; }
     .flujo-nav { display: flex; justify-content: center; width: 100%; }
     .flujo-dots { max-width: 100%; gap: 6px; } .flujo-dots li { padding: 12px 2px; } .flujo-dots li i { width: 22px; height: 3px; }
     .inv-intel-card { padding: 18px 16px !important; margin-bottom: 12px !important; }
-    .tablet-screen, .tablet-screen * { word-spacing: normal !important; letter-spacing: normal !important; }
+    .tablet-screen, .tablet-screen * { word-spacing: 0.25em !important; letter-spacing: 0 !important; }
+    .cat-filters, .cat-btn--outline { display: none !important; }
+    .cat-table { max-height: 400px; overflow: hidden; position: relative; }
+    .cat-table::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); pointer-events: none; }
+    .sc-eyebrow, .loyalty-pro-eyebrow, .reels-eyebrow { display: block !important; text-align: left; color: #8a8a8a !important; opacity: 1; margin-bottom: 12px; }
+    .sc-eyebrow::before, .loyalty-pro-eyebrow::before, .reels-eyebrow::before { content: ''; display: inline-block; width: 24px; height: 1px; background: currentColor; margin-right: 10px; vertical-align: middle; }
+    .sq-features-header, .loyalty-pro-header, .reels-header { text-align: left !important; }
+    .sq-features--sc { padding-bottom: 40px !important; }
+    .hero-btn { text-transform: none !important; letter-spacing: 0 !important; }
     .cat-mini-btn, .cat-col-actions { display: none !important; }
     .sc-eyebrow, .loyalty-pro-eyebrow, .reels-eyebrow { font-size: 11px !important; letter-spacing: 0.14em !important; text-transform: uppercase; font-weight: 600 !important; background: none !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; color: inherit !important; opacity: 0.6; }
     .loyalty-pro-title br { display: none; } .loyalty-pro-title { text-wrap: balance; }
@@ -18340,6 +18349,7 @@ const useCases = [
     function muestra(i: number) {
       if (i === cur) return; cur = i;
       pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
+      if (simple) { const act = pasos.find((p) => +p.dataset.paso! === i); const txt = sec.querySelector<HTMLElement>('.flujo-text'); if (act && txt) txt.style.minHeight = act.scrollHeight + 'px'; }
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
       wrap.classList.toggle('is-done', i >= N);

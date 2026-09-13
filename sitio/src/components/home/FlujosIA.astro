@@ -30,6 +30,7 @@ const NODOS = [
       ))}
     </ol>
     <span class="fx-sello" aria-label="27 minutos en total"><b>27</b><small>min</small></span>
+    <span class="fx-sello-de">de la foto a la venta</span>
     </div>
 
     <p class="fx-otros">Lo mismo pasa con el piso y con el inventario:
@@ -69,6 +70,7 @@ const NODOS = [
   .fx-sello small { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
   .fx.is-in .fx-sello { transform: scale(1) rotate(-8deg); }
 
+  .fx-sello-de { display: none; }
   .fx-otros { margin: clamp(36px, 6vh, 56px) auto 0; font-size: 15px; color: #9A9A94; opacity: 0; transition: opacity 0.6s 3.8s; }
   .fx-otros a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
   .fx.is-in .fx-otros { opacity: 1; }
@@ -76,14 +78,15 @@ const NODOS = [
   .fx-abajo::after { content: ''; display: block; width: 1px; height: 36px; margin: 12px auto 0; background: rgba(255,255,255,0.45); }
 
   @media (max-width: 767px) {
-    .fx { padding: 56px 20px 40px; }
+    .fx { padding: 56px 20px 24px; }
     .fx-l { clip-path: none; transform: none; } .fx-lead { opacity: 1; transform: none; margin-top: 18px; font-size: 16px; }
-    .fx-flujo { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 26px; }
-    .fx-nodo { flex: 0 0 auto; max-width: none; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; opacity: 1; transition: none; }
-    .fx-nodo b { font-size: 14px; } .fx-nodo small, .fx-punto, .fx-nodo::after { display: none; }
+    .fx-flujo { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 26px; }
+    .fx-nodo { flex: 0 0 auto; max-width: none; padding: 7px 10px; border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; opacity: 1; transition: none; }
+    .fx-nodo b { font-size: 13px; } .fx-nodo small, .fx-punto, .fx-nodo::after { display: none; }
     .fx-sello { position: static; display: flex; margin: 18px auto 0; width: 72px; height: 72px; transform: scale(1) rotate(-8deg); }
     .fx-sello b { font-size: 26px; }
-    .fx-otros { margin-top: 22px; opacity: 1; } .fx-abajo { margin-top: 22px; }
+    .fx-sello-de { display: block; text-align: center; font-size: 13px; color: #B4B4AE; margin-top: 8px; }
+    .fx-otros { margin-top: 22px; opacity: 1; } .fx-abajo { margin-top: 18px; } .fx-abajo::after { height: 22px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .fx-l, .fx-lead, .fx-nodo, .fx-punto, .fx-nodo::after, .fx-sello, .fx-otros { transition: none !important; }
