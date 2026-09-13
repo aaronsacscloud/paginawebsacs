@@ -30,17 +30,20 @@ export type LecturaChat = {
 /* El corchete de apertura es opcional, la coma entre fecha y hora también, y
    el separador antes del autor puede ser «]» o « - ». El a. m./p. m. viene con
    puntos y espacios finos según el teléfono, así que se acepta laxo. */
-const RENGLON = new RegExp(
-  '^\\s*\\[?\\s*' +
-  '(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{2,4})' +      // 1 día  2 mes  3 año
-  '[,\\s]+' +
-  '(\\d{1,2}):(\\d{2})(?::\\d{2})?' +                    // 4 hora 5 min
-  '(?:\\s*([ap])\\.?\\s*m\\.?)?' +                       // 6 am/pm (opcional)
-  '\\s*(?:\\]\\s*|\\s+-\\s+)' +
-  '([^:]{1,80}?)\\s*:\\s*' +                             // 7 autor
-  '([\\s\\S]*)$',                                        // 8 texto
-  'i',
-);
+const FECHA = '(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{2,4})';
+const HORA = '(\\d{1,2}):(\\d{2})(?::\\d{2})?(?:\\s*([ap])\\.?\\s*m\\.?)?';
+const CIERRE = '\\s*(?:\\]\\s*|\\s+-\\s+)';
+const AUTOR_TEXTO = '([^:]{1,80}?)\\s*:\\s*([\\s\\S]*)$';
+
+/** FECHA, hora — iOS en inglés y Android. Grupos: 1 d · 2 m · 3 a · 4 h · 5 min · 6 am/pm · 7 autor · 8 texto */
+const RENGLON = new RegExp('^\\s*\\[?\\s*' + FECHA + '[,\\s]+' + HORA + CIERRE + AUTOR_TEXTO, 'i');
+
+/* HORA, fecha — el orden de iOS en español de México: «[3:36 p.m., 7/9/2026]».
+   Es el que exporta el teléfono del dueño, y sin esta alternativa el chat
+   entero se leía como «no trae fechas»: la pantalla pedía la fecha a mano de
+   una conversación que las traía todas. Grupos: 1 h · 2 min · 3 am/pm ·
+   4 d · 5 m · 6 a · 7 autor · 8 texto */
+const RENGLON_HORA_1 = new RegExp('^\\s*\\[?\\s*' + HORA + '[,\\s]+' + FECHA + CIERRE + AUTOR_TEXTO, 'i');
 
 const dos = (n: number) => String(n).padStart(2, '0');
 
@@ -65,7 +68,14 @@ export function leerChat(texto: string): LecturaChat {
   for (const raw of String(texto || '').split(/\r?\n/)) {
     // El espacio fino invisible que iOS mete antes del corchete rompe el match.
     const linea = raw.replace(/[‎‏‪-‮ ]/g, ' ');
-    const m = linea.match(RENGLON);
+    const m1 = linea.match(RENGLON);
+    const m2 = m1 ? null : linea.match(RENGLON_HORA_1);
+    // Se normalizan los dos órdenes a un solo juego de piezas.
+    const m = m1
+      ? { d: m1[1], mes: m1[2], a: m1[3], h: m1[4], min: m1[5], ampm: m1[6], autor: m1[7], texto: m1[8] }
+      : m2
+        ? { d: m2[4], mes: m2[5], a: m2[6], h: m2[1], min: m2[2], ampm: m2[3], autor: m2[7], texto: m2[8] }
+        : null;
     if (!m) {
       // Continuación del mensaje anterior: un mensaje con saltos de línea sigue
       // siendo UN mensaje, y contarlo como varios inflaría la evidencia.
@@ -73,16 +83,16 @@ export function leerChat(texto: string): LecturaChat {
       else if (linea.trim()) ignorados++;
       continue;
     }
-    const fecha = aISO(m[1], m[2], m[3]);
+    const fecha = aISO(m.d, m.mes, m.a);
     if (!fecha) { ignorados++; continue; }
-    let h = Number(m[4]);
-    const ampm = (m[6] || '').toLowerCase();
+    let h = Number(m.h);
+    const ampm = (m.ampm || '').toLowerCase();
     if (ampm === 'p' && h < 12) h += 12;
     if (ampm === 'a' && h === 12) h = 0;
     mensajes.push({
-      fecha, hora: `${dos(h)}:${m[5]}`,
-      autor: m[7].trim(),
-      texto: (m[8] || '').trim(),
+      fecha, hora: `${dos(h)}:${m.min}`,
+      autor: m.autor.trim(),
+      texto: (m.texto || '').trim(),
     });
   }
 

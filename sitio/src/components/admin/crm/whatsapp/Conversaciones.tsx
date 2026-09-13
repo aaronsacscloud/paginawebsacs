@@ -182,6 +182,10 @@ function Registrar({ companyId, contactId, onCerrar, onListo }: any) {
      no somos nosotros— y se corrige con un clic: en un grupo hay gente de los
      dos lados y de eso depende el «contestaron», que es la señal. */
   const [suyos, setSuyos] = useState<string[]>([]);
+  /* La junta se agenda solo si la persona lo confirma. Que se hayan dicho una
+     fecha en el chat no es lo mismo que tenerla en el calendario, y una junta
+     inventada le aparece a alguien en su agenda. */
+  const [agendar, setAgendar] = useState(true);
 
   async function analizar() {
     setBusy('analizando'); setError(''); setIaError('');
@@ -220,11 +224,17 @@ function Registrar({ companyId, contactId, onCerrar, onListo }: any) {
         dias: Object.values(porDia),
         participantes: medido?.participantes || [],
         minutos: canal === 'llamada' ? Number(minutos) || null : null,
+        reunion: agendar && bor.reunion ? bor.reunion : null,
       }),
     }).then(x => x.json()).catch(() => null);
     setBusy('');
     if (!r || r.error) { setError(r?.error || 'No se pudo guardar.'); return; }
-    onListo('Conversación registrada · ' + r.actividades + ' movimientos en el historial');
+    /* Si la junta no se pudo agendar se dice, aunque el resumen sí se haya
+       guardado: callarlo dejaría a alguien creyendo que tiene una cita en el
+       calendario que no existe. */
+    onListo('Conversación registrada · ' + r.actividades + ' movimientos en el historial'
+      + (r.reunion ? ' · y la reunión del ' + fecha(r.reunion.fecha) : '')
+      + (r.reunion_error ? ' · OJO: la reunión NO se agendó (' + r.reunion_error + ')' : ''));
   }
 
   const set = (k: string, v: any) => setBor((b: any) => ({ ...b, [k]: v }));
@@ -334,6 +344,32 @@ function Registrar({ companyId, contactId, onCerrar, onListo }: any) {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {bor.reunion && (
+              <div style={{ marginBottom: 10, border: '1.5px solid #cfe0fa', background: '#F6F9FF', borderRadius: 11, padding: '11px 13px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                  <span style={{ ...chip('#E3EDFD', '#2C5FC4') }}>quedaron de verse</span>
+                  <span style={{ fontSize: '0.83rem', fontWeight: 700, color: '#241d43' }}>
+                    {fecha(bor.reunion.fecha)} · {bor.reunion.hora}
+                  </span>
+                  <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.77rem', color: '#2C5FC4', fontWeight: 700, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={agendar} onChange={e => setAgendar(e.target.checked)} />
+                    Agendarla
+                  </label>
+                </div>
+                <input value={bor.reunion.asunto || ''} onChange={e => set('reunion', { ...bor.reunion, asunto: e.target.value })}
+                  placeholder="De qué va la junta" style={{ ...S.inp, marginTop: 8 }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 7, flexWrap: 'wrap' }}>
+                  <input type="date" value={bor.reunion.fecha} onChange={e => set('reunion', { ...bor.reunion, fecha: e.target.value })}
+                    style={{ ...S.inp, width: 'auto', fontSize: '0.75rem', padding: '5px 8px' }} />
+                  <input type="time" value={bor.reunion.hora} onChange={e => set('reunion', { ...bor.reunion, hora: e.target.value })}
+                    style={{ ...S.inp, width: 'auto', fontSize: '0.75rem', padding: '5px 8px' }} />
+                  <span style={{ fontSize: '0.71rem', color: '#8a8590', alignSelf: 'center' }}>
+                    Queda en Reuniones{bor.reunion.fecha < new Date().toISOString().slice(0, 10) ? ', como ya realizada' : ', agendada'}.
+                  </span>
+                </div>
               </div>
             )}
 

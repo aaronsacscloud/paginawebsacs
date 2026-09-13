@@ -60,8 +60,22 @@ Devuelve exactamente:
                  "quien": "sacs" | "cliente",
                  "fecha": "YYYY-MM-DD o vacío si no se dijo" }],
   "pidio": [{ "titulo": "lo que pidió, corto", "descripcion": "en una línea que el cliente entienda" }],
+  "reunion": { "fecha": "YYYY-MM-DD", "hora": "HH:MM", "asunto": "de qué va la junta" } | null,
   "tono": "bien" | "neutral" | "molesto" | "en espera"
 }`;
+
+/* La junta que se acordó en la conversación.
+   Misma regla que las fechas de los acuerdos y por la misma razón: una junta
+   con día inventado se le manda al calendario de alguien. Solo sale si en el
+   texto hay día Y hora; «nos vemos la próxima semana» no es una cita.
+   El día se resuelve contra la fecha del mensaje donde se dijo —«el jueves 18»
+   dicho un 8 de septiembre es el 18 de septiembre— y de eso se encarga el
+   modelo, que tiene las fechas de cada renglón enfrente. */
+const REUNION = `
+Si en la conversación quedaron de VERSE (una junta, una llamada agendada, una sesión),
+llena "reunion" con su fecha y su hora. Si solo dijeron "la próxima semana" o "luego lo
+vemos", sin día y hora, deja "reunion": null. Cada renglón trae su fecha: úsala para
+resolver "el jueves 18" o "mañana".`;
 
 export const POST: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
@@ -88,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
     let ia: any = null; let iaError: string | null = null;
     try {
       ia = await pedirJSON({
-        system: SISTEMA,
+        system: SISTEMA + REUNION,
         user: esChat
           ? `Conversación de WhatsApp del ${lectura.desde} al ${lectura.hasta}:\n\n${paraElModelo(lectura)}`
           : `Notas de una conversación del ${fechaManual}:\n\n${texto.slice(0, 12000)}`,
@@ -128,6 +142,11 @@ export const POST: APIRoute = async ({ request }) => {
         resumen: ia?.resumen || '',
         acuerdos: Array.isArray(ia?.acuerdos) ? ia.acuerdos : [],
         pidio: Array.isArray(ia?.pidio) ? ia.pidio : [],
+        /* Solo pasa si trae día Y hora de verdad: un «reunion» a medias sería
+           un botón de agendar que no puede agendar nada. */
+        reunion: (ia?.reunion && /^\d{4}-\d{2}-\d{2}$/.test(String(ia.reunion.fecha || '')) && /^\d{1,2}:\d{2}$/.test(String(ia.reunion.hora || '')))
+          ? { fecha: String(ia.reunion.fecha), hora: String(ia.reunion.hora).padStart(5, '0'), asunto: String(ia.reunion.asunto || '').slice(0, 160) }
+          : null,
         tono: ia?.tono || 'neutral',
       },
       ia_error: iaError,
@@ -195,7 +214,60 @@ export const POST: APIRoute = async ({ request }) => {
     } as any);
     await supabase.from('activities').insert(filas);
 
-    return json({ ok: true, conversacion: conv, actividades: filas.length });
+    /* ── La junta que se acordó, agendada de verdad ──
+       Si en la conversación quedaron de verse, la reunión nace aquí con su
+       fecha y su hora. Se captura como PASADA o FUTURA según el calendario —no
+       se asume—: una junta del jueves que viene está «agendada» y una de la
+       semana pasada ya «asistió», y marcarlas al revés ensucia la tasa de
+       asistencia, que es de donde sale la alerta de inasistencias. */
+    let reunion: any = null;
+    let reunionError: string | null = null;
+    const rq = b?.reunion;
+    if (rq && /^\d{4}-\d{2}-\d{2}$/.test(String(rq.fecha || '')) && /^\d{1,2}:\d{2}$/.test(String(rq.hora || ''))) {
+      /* `bookings.invitee_nombre` es NOT NULL: la tabla nació para las citas que
+         reserva el propio invitado desde la página pública, donde siempre hay
+         un nombre. Aquí la junta se acordó por WhatsApp, así que se toma del
+         contacto principal de la cuenta —y si no hay, del nombre de la
+         empresa—. Sin esto el insert fallaba y la junta no se agendaba. */
+      const { data: co } = await supabase.from('companies')
+        .select('nombre, nombre_comercial, contacts(nombre, email, es_principal)')
+        .eq('id', companyId).maybeSingle();
+      const cts: any[] = ((co as any)?.contacts || []);
+      const ct = cts.find((c: any) => c.es_principal) || cts[0] || null;
+      const nombreInv = ct?.nombre || (co as any)?.nombre_comercial || (co as any)?.nombre || 'Cliente';
+
+      const { data: tipo } = await supabase.from('event_types')
+        .select('id, duracion_minutos').eq('id', String(rq.event_type_id || '')).maybeSingle();
+      const tid = tipo?.id || (await supabase.from('event_types').select('id, duracion_minutos').eq('slug', 'seguimiento').maybeSingle()).data?.id;
+      if (tid) {
+        const dur = Number(tipo?.duracion_minutos || 60);
+        const [hh, mm] = String(rq.hora).split(':').map(Number);
+        const fin = new Date(2000, 0, 1, hh || 0, mm || 0);
+        fin.setMinutes(fin.getMinutes() + dur);
+        const dd = (n: number) => String(n).padStart(2, '0');
+        const pasada = String(rq.fecha) < hoy();
+        const { data: bk, error: eB } = await supabase.from('bookings').insert({
+          event_type_id: tid, host_id: (user as any).id, consultor_id: (user as any).id,
+          fecha: String(rq.fecha), hora_inicio: String(rq.hora).padStart(5, '0'),
+          hora_fin: `${dd(fin.getHours())}:${dd(fin.getMinutes())}`,
+          timezone_host: 'America/Mexico_City', timezone_invitado: 'America/Mexico_City',
+          company_id: companyId, contact_id: UUID.test(String(b?.contact_id || '')) ? b.contact_id : null,
+          invitee_nombre: nombreInv,
+          invitee_email: ct?.email || null,
+          invitee_empresa: (co as any)?.nombre_comercial || (co as any)?.nombre || null,
+          asunto: String(rq.asunto || conv.titulo || 'Reunión acordada por WhatsApp').slice(0, 200),
+          estado: pasada ? 'asistio' : 'agendada', origen: 'crm',
+          estado_hist: [{ estado: pasada ? 'asistio' : 'agendada', at: new Date().toISOString(), por: quien }],
+        }).select('id, fecha, hora_inicio, asunto').maybeSingle();
+        /* Si la junta no se pudo agendar hay que DECIRLO: el resumen ya quedó
+           guardado, así que tragarse el error dejaría a alguien creyendo que
+           tiene una cita en el calendario que no existe. */
+        reunion = bk || null;
+        if (eB) reunionError = eB.message;
+      }
+    }
+
+    return json({ ok: true, conversacion: conv, actividades: filas.length, reunion, reunion_error: reunionError });
   }
 
   // ── GESTIÓN: un acuerdo se vuelve trabajo, con su propio resumen ─────────
