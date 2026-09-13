@@ -188,11 +188,12 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
     if (b.con_ia !== false) {
       try {
         const r: any = await (anthropic as any).messages.create({
-          // 8 correos de ~150 palabras no caben en 4000 tokens: la respuesta
-          // llegaba cortada, JSON.parse tronaba y la cadencia caía en la
-          // plantilla sin avisar de la causa. Pasó con 19 de 31 cuentas de
-          // novias —justo las de expediente más largo— al agregar el correo de
-          // presentación. El tope va holgado: lo que sobra no se cobra.
+          // 8 correos de ~150 palabras no caben holgados en 4000 tokens. Ojo:
+          // esto NO fue la causa de las 19 cadencias de novias que salieron
+          // sin IA —eso era saldo agotado de la cuenta de Anthropic, y se vio
+          // recién cuando el error viajó en la respuesta—. El tope se sube
+          // igual porque el margen sí estaba corto; lo que no se usa no se
+          // cobra.
           model: MODELS.sonnet, max_tokens: 12000,
           messages: [{ role: 'user', content: prompt }],
         });
