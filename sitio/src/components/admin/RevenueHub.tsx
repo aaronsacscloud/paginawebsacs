@@ -128,6 +128,9 @@ const CFG_ICONOS: Record<string, string> = {
   llave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v4M15.5 12v3" stroke-linecap="round"/></svg>',
   marca: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="9.5" r="5.5"/><path d="M9 14.5 8 22l4-2.2L16 22l-1-7.5" stroke-linejoin="round"/></svg>',
   gente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21M17 8h5M19.5 5.5v5" stroke-linecap="round"/></svg>',
+  salir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 3H6a2 2 0 00-2 2v14a2 2 0 002 2h5"/></svg>',
+  libro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.4a2 2 0 012-2h5.2v17.2H6a2 2 0 01-2-2zM20 5.4a2 2 0 00-2-2h-5.2v17.2H18a2 2 0 002-2z"/></svg>',
+  acuerdo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.4" cy="12" r="4.6"/><circle cx="15.6" cy="12" r="4.6"/></svg>',
   campos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 13h8M8 16.5h5" stroke-linecap="round"/></svg>',
   pipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke-linejoin="round"/></svg>',
   folio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke-linecap="round"/></svg>',
@@ -3914,6 +3917,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           ? <CotizacionesDashboard onCerrar={() => setDashCot(false)} />
           : <QuotesView />)}
         {tab === 'config' && (() => {
+          /* Cuándo entraste. `last_login_at` se sella en el login y no se
+             mostraba en ningún lado; aquí es lo que hace que el renglón de
+             sesión diga algo y no sea un botón suelto. */
+          const ultimoIngreso = yo?.last_login_at
+            ? 'Entraste el ' + new Date(yo.last_login_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
+              + ' a las ' + new Date(yo.last_login_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+            : '';
           /* El catálogo de ajustes: los MISMOS grupos y módulos del menú del
              CRM. Cada renglón dice qué configura, cómo está hoy —el valor a la
              derecha, para no tener que abrir— y trae adentro el editor que ya
@@ -3927,6 +3937,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   editor: <MiPerfil onGuardado={() => { try { window.dispatchEvent(new Event('sacs-perfil')); } catch { /* noop */ } }} /> },
                 { id: 'pass', ico: 'llave', t: 'Contraseña', d: 'Cambia con qué entras al CRM.',
                   editor: <a href="/admin/cambiar-password" style={{ ...S.btn, background: M.violeta, color: '#fff', textDecoration: 'none', display: 'inline-block' }}>Cambiar contraseña</a> },
+                /* La sesión vive aquí y no en un volado del menú: es lo tuyo, y
+                   junto a tu nombre y tu contraseña es donde se busca. De paso
+                   enseña el último ingreso, que `team_members.last_login_at` ya
+                   guardaba y no se veía en ningún lado. */
+                { id: 'sesion', ico: 'salir', t: 'Sesión', v: ultimoIngreso || undefined,
+                  d: 'Con qué cuenta estás dentro del CRM. Cerrar sesión no borra nada: se vuelve a entrar con tu correo.',
+                  editor: (
+                    <button onClick={async () => {
+                      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ }
+                      window.location.href = '/admin/login';
+                    }} style={{ ...S.btn, background: '#fff', border: '1.5px solid #f0c4bd', color: '#B24C57' }}>
+                      Cerrar sesión
+                    </button>
+                  ) },
               ]},
               { id: 'marca', nom: 'Mi marca', sub: 'Cómo te ve un cliente en los documentos que le mandas.', items: [
                 { id: 'marca', ico: 'marca', t: 'Marca de los documentos', mudado: true,
@@ -3937,6 +3961,21 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'usuarios', ico: 'gente', t: 'Personas con acceso', 
                   d: 'Alta de personas, rol de arranque y permiso por sección: edita, solo ve o no entra. Se revisa también en el servidor.',
                   editor: <UsuariosPermisos /> },
+              ]},
+              /* El manual va pegado a «Usuarios y permisos» porque contestan la
+                 misma pregunta desde dos lados: una dice QUIÉN entra y qué ve,
+                 la otra CÓMO debe trabajar y cuánto cobra. No es documentación
+                 del producto —es el manual de la casa—, y por eso no vivía bien
+                 como un renglón suelto del menú.
+                 Cada uno abre a pantalla completa: un lector de treinta páginas
+                 dentro de una tarjeta no se lee. */
+              { id: 'manual', nom: 'Manual del equipo', sub: 'Cómo se trabaja aquí. Lo que alguien nuevo tiene que leer antes de vender o de acompañar a un cliente.', items: [
+                { id: 'wiki-ventas', ico: 'libro', t: 'Procesos de venta', v: 'Abrir el manual',
+                  d: 'Cómo se trabaja un lead, desde que entra hasta que firma. Las etapas, los relevos y cómo hablarle al cliente.',
+                  editor: <a href="/admin/crm?tab=wiki&pagina=modelo" style={{ ...S.btn, background: M.violeta, color: '#fff', textDecoration: 'none', display: 'inline-block' }}>Abrir el manual</a> },
+                { id: 'wiki-consultores', ico: 'acuerdo', t: 'Acuerdo de consultores', v: 'Abrir el acuerdo',
+                  d: 'Qué se cobra, qué se debe y cómo se mide. Es el documento que rige cuánto gana cada quien.',
+                  editor: <a href="/admin/crm?tab=wiki&pagina=c-tasas" style={{ ...S.btn, background: M.violeta, color: '#fff', textDecoration: 'none', display: 'inline-block' }}>Abrir el acuerdo</a> },
               ]},
             ]},
             { g: 'Cuentas', mods: [

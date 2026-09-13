@@ -460,23 +460,6 @@ export default function CrmDashboard() {
      desplegar el menú, o sea sin devolver el ancho que da tenerlo plegado. */
   const [flyGrupo, setFlyGrupo] = useState<{ label: string; y: number } | null>(null);
   useEffect(() => { if (!sidebarCollapsed) setFlyGrupo(null); }, [sidebarCollapsed]);
-  /* El menú de la CUENTA. Lo que es «mío» —ajustes, documentación, salir— vive
-     junto y cuelga de mi nombre, que es donde se busca. Antes eran tres bloques
-     sueltos que se llevaban un tercio del alto del menú para cosas que se tocan
-     una vez al día. */
-  const [menuYo, setMenuYo] = useState(false);
-  useEffect(() => {
-    if (!menuYo) return;
-    const fuera = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement)?.closest?.('[data-menu-yo]')) setMenuYo(false);
-    };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuYo(false); };
-    window.addEventListener('mousedown', fuera);
-    window.addEventListener('keydown', esc);
-    return () => { window.removeEventListener('mousedown', fuera); window.removeEventListener('keydown', esc); };
-  }, [menuYo]);
-  // Al plegar el menú el volado se queda flotando sobre el riel angosto.
-  useEffect(() => { if (sidebarCollapsed) setMenuYo(false); }, [sidebarCollapsed]);
   // Compromisos con fecha vencida en TODAS las cuentas. Se pide una vez al
   // entrar: es la única cifra del menú y solo aparece cuando hay algo tarde.
   const [vencidasMenu, setVencidasMenu] = useState(0);
@@ -1018,80 +1001,46 @@ export default function CrmDashboard() {
             se veía sucio sin que se supiera por qué. */}
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #ece6f8', background: 'rgba(255,255,255,.45)' }}>
-            {/* ── LA CUENTA, arriba y en tarjeta ──
-                Es la cabecera del pie y de ella cuelga todo lo que es «mío»:
-                ajustes, documentación y salir. Antes esas tres cosas eran
-                renglones sueltos —cinco zonas apiladas— y se llevaban un tercio
-                del alto del menú para cosas que se tocan una vez al día.
-
-                Y arregla algo que estaba al revés: «Salir» era lo más visible
-                del bloque —en rojo, en su propia franja— siendo lo que menos se
-                usa. Aquí sigue a un clic y en su rojo, sin competir. */}
-            <div data-menu-yo style={{ position: 'relative' }}>
-              <button
-                onClick={() => setMenuYo(v => !v)}
-                aria-haspopup="menu" aria-expanded={menuYo}
-                title="Mi cuenta"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 16px)',
-                  textAlign: 'left', padding: '7px 9px', margin: '6px 8px', borderRadius: 11,
-                  background: menuYo ? '#fff' : 'rgba(255,255,255,.72)',
-                  boxShadow: menuYo ? '0 2px 12px rgba(60,30,140,.12)' : '0 1px 6px rgba(60,30,140,.06)',
-                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
-                <span style={{
-                  width: 28, height: 28, borderRadius: 9, flexShrink: 0,
-                  background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
-                  color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {!yo?.foto_url && iniciales(yo?.nombre || yo?.email)}
+            {/* ── LA CUENTA: un renglón que LLEVA, no que abre ──
+                Hubo un volado que se desplegaba encima con ajustes, manual y
+                salir. Funcionaba, pero tapaba las dos últimas secciones del
+                menú mientras estaba abierto: una capa encima para algo que ya
+                tiene casa. El clic va directo a Configuración → Mi perfil
+                (`cfgMod` arranca en 'perfil'), y ahí, en la misma pantalla,
+                están los datos, la contraseña y el cerrar sesión. */}
+            <button
+              onClick={() => switchTab('config' as Tab)}
+              title="Mi perfil y ajustes"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 16px)',
+                textAlign: 'left', padding: '7px 9px', margin: '6px 8px', borderRadius: 11,
+                background: tab === 'config' ? '#fff' : 'rgba(255,255,255,.72)',
+                boxShadow: tab === 'config' ? '0 2px 12px rgba(60,30,140,.12)' : '0 1px 6px rgba(60,30,140,.06)',
+                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+              {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
+              <span style={{
+                width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+                background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
+                color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {!yo?.foto_url && iniciales(yo?.nombre || yo?.email)}
+              </span>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {yo?.nombre || yo?.email || '—'}
                 </span>
-                <span style={{ minWidth: 0, flex: 1 }}>
-                  <span style={{ display: 'block', fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {yo?.nombre || yo?.email || '—'}
+                {yo?.rol && (
+                  /* El rol describe, no es un botón: por eso va en el rosa de
+                     la firma y en pastilla chica. */
+                  <span style={{ display: 'inline-block', fontSize: '0.53rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', marginTop: 3, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
+                    {yo.rol}
                   </span>
-                  {yo?.rol && (
-                    /* El rol describe, no es un botón: por eso va en el rosa de
-                       la firma y en pastilla chica. */
-                    <span style={{ display: 'inline-block', fontSize: '0.53rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', marginTop: 3, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
-                      {yo.rol}
-                    </span>
-                  )}
-                </span>
-                <span style={{ display: 'flex', width: 14, flexShrink: 0, color: '#b3aecb', transform: menuYo ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform .18s ease' }}
-                  dangerouslySetInnerHTML={{ __html: ICONO_FLECHA }} />
-              </button>
-
-              {/* El volado sube, no baja: el pie ya está pegado al borde de
-                  abajo de la pantalla y hacia abajo no hay sitio. */}
-              {menuYo && (
-                <div role="menu" style={{
-                  position: 'absolute', bottom: 'calc(100% - 2px)', left: 8, right: 8, zIndex: 40,
-                  background: '#fff', borderRadius: 12, border: '1px solid #e7e0f7',
-                  boxShadow: '0 14px 34px rgba(36,29,67,.2)', padding: 6,
-                }}>
-                  <button role="menuitem" onClick={() => { setMenuYo(false); switchTab('config' as Tab); }}
-                    style={{ ...pieFila, width: '100%', margin: 0, background: tab === 'config' ? '#EEECFE' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
-                    <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
-                  </button>
-                  {/* La Wiki vive aquí: es consulta, no navegación de trabajo. */}
-                  <button role="menuitem" onClick={() => { setMenuYo(false); switchTab('wiki' as Tab); }}
-                    style={{ ...pieFila, width: '100%', margin: 0, background: tab === 'wiki' ? '#EEECFE' : 'none', color: tab === 'wiki' ? '#4C3BD0' : '#4b4560' }}>
-                    <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.automations }} />Documentación
-                  </button>
-                  <div style={{ height: 1, background: '#f1ecfa', margin: '5px 6px' }} />
-                  {/* Sin confirmación a propósito —cerrar sesión no destruye
-                      nada, se vuelve a entrar— pero sí `title`, para que un clic
-                      de más no te saque sin haberlo querido leer. */}
-                  <button role="menuitem" title="Cerrar sesión"
-                    onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
-                    style={{ ...pieFila, width: '100%', margin: 0, color: '#B24C57' }}>
-                    <span style={{ ...pieIcono, opacity: .85 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </span>
+              <span style={{ display: 'flex', width: 14, flexShrink: 0, color: '#b3aecb' }}
+                dangerouslySetInnerHTML={{ __html: ICONO_FLECHA }} />
+            </button>
 
             {/* La campana se queda A LA VISTA: es lo único del pie que cambia
                 solo y que tiene que llamarte. Todo lo demás se va a buscar. */}
@@ -1099,12 +1048,28 @@ export default function CrmDashboard() {
               {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
             </div>
 
+            {/* ── Plegar y salir, abajo del todo ──
+                Salir vive aquí porque es donde se busca la salida, pero EN EL
+                MISMO GRIS que plegar: en rojo permanente era lo más llamativo
+                de todo el menú siendo lo que menos se usa. El rojo aparece al
+                pasar encima —cuando ya es una intención, no un adorno—.
+                Sin confirmación a propósito: cerrar sesión no destruye nada, se
+                vuelve a entrar. El `title` evita que un clic de más te saque. */}
             <div style={{ display: 'flex', borderTop: '1px solid #d9d0f0' }}>
               <button
                 onClick={() => setSidebarCollapsed(true)}
                 aria-label="Plegar menú"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
-                <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar el menú
+                <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar
+              </button>
+              <span style={{ width: 1, background: '#ece6f8', margin: '7px 0' }} />
+              <button
+                onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
+                title="Cerrar sesión"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit', transition: 'color .14s ease' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B24C57'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8078a0'; }}>
+                <span style={{ display: 'flex', opacity: .75 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
               </button>
             </div>
           </div>
