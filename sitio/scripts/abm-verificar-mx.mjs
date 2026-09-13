@@ -20,7 +20,15 @@ if (!giro) { console.error('uso: node scripts/abm-verificar-mx.mjs <giro> [--ver
 
 const { data: cuentas } = await sb.from('abm_cuentas').select('id').eq('giro', giro).limit(5000);
 const ids = (cuentas || []).map(c => c.id);
-const { data: canales } = await sb.from('abm_canales').select('id, cuenta_id, valor').in('cuenta_id', ids).like('tipo', 'email%').eq('estado', 'sin_probar');
+// Por tandas: con 634 cuentas (calzado) el `in(...)` completo pasa el largo de
+// URL que acepta PostgREST y regresa vacío sin error, y el script decía
+// «0 sin probar» con 636 correos sin verificar.
+const canales = [];
+for (let i = 0; i < ids.length; i += 150) {
+  const { data, error } = await sb.from('abm_canales').select('id, cuenta_id, valor').in('cuenta_id', ids.slice(i, i + 150)).like('tipo', 'email%').eq('estado', 'sin_probar');
+  if (error) { console.error('abm_canales:', error.message); process.exit(1); }
+  canales.push(...(data || []));
+}
 const cache = new Map();
 async function tieneMx(dom) {
   if (cache.has(dom)) return cache.get(dom);

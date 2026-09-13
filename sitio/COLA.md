@@ -177,3 +177,11 @@ Llegó a media tarea mientras se cargaba Villa Hidalgo. Texto del dueño:
 Pendiente: cargar como giro de calzado/zapatería marcados SAPICA, cruzar contra
 las cuentas que YA existen (hay un `2026-09-05-abm-sapica.sql` previo) y
 enriquecer con lo que se encuentre en web.
+
+## 2026-09-13 · Cadencia SAPICA (puro correo)
+**Dueño:** «Ok ahora vamos hacer una cadencia pero esta si de puro correo para los de la base de datos de SAPICA que está más segmentado a calzado, matrices corridas etc ármate todo pero esta si es puro correo».
+- [x] HECHO el mismo día: 2 cadencias (demo/diagnóstico) × 8 correos solo email, pieza, 8 fotos, MX (606/636 válidos), 56 cuentas fuera (proveedores, sombreros, marroquinería, competidor), goteo «SAPICA · diez al día» activo con la firma del dueño → arranca lunes 14-sep 10:00 CDMX.
+
+## 2026-09-13 · Cadencia Intermoda (puro correo)
+**Dueño:** «Y de ahí la de intermoda igual considerando todo el contexto» (llegó mientras se armaba la de SAPICA; se hace después de SAPICA con el mismo esquema: solo correo, goteo, MX).
+- [ ] Pendiente

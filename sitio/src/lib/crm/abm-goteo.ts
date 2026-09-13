@@ -68,16 +68,25 @@ export async function elegibles(g: any, limite = 500): Promise<{ cuentas: any[];
 
   // Fresca = sin un solo toque, del estado que sea. Una cadencia cancelada o
   // enviada a medias no se vuelve a empezar desde aquí: eso lo decide alguien.
-  const { data: tocadas } = await supabase.from('abm_toques').select('cuenta_id').in('cuenta_id', ids).limit(5000);
-  const conToques = new Set((tocadas || []).map((t: any) => t.cuenta_id));
-
-  const { data: canales } = await supabase.from('abm_canales')
-    .select('cuenta_id, valor, estado').in('cuenta_id', ids).like('tipo', 'email%')
-    .not('estado', 'in', '("invalido","rebote","opt_out")');
+  // Por tandas de 150 ids, como resumen.ts y cuentas.ts. Un `in(...)` de 500
+  // ids es una URL de ~19 KB: en Vercel pasó, pero con el Node del servidor
+  // de desarrollo murió con «fetch failed» desde 400 ids (medido el 13-sep-2026
+  // con la base de calzado), y `data` vacío aquí se lee como «quedan 0».
+  const tocadas: any[] = [], canales: any[] = [];
+  for (let i = 0; i < ids.length; i += 150) {
+    const tanda = ids.slice(i, i + 150);
+    const [t, k] = await Promise.all([
+      supabase.from('abm_toques').select('cuenta_id').in('cuenta_id', tanda).limit(5000),
+      supabase.from('abm_canales').select('cuenta_id, valor, estado').in('cuenta_id', tanda).like('tipo', 'email%')
+        .not('estado', 'in', '("invalido","rebote","opt_out")'),
+    ]);
+    tocadas.push(...(t.data || [])); canales.push(...(k.data || []));
+  }
+  const conToques = new Set(tocadas.map((t: any) => t.cuenta_id));
   const { data: no } = await supabase.from('abm_no_contactar').select('valor');
   const bloqueadas = new Set((no || []).map((r: any) => String(r.valor).toLowerCase()));
   const correoDe = new Map<string, string>();
-  for (const k of canales || []) {
+  for (const k of canales) {
     const v = String(k.valor || '').toLowerCase();
     if (!CORREO_OK.test(v) || bloqueadas.has(v) || correoDe.has(k.cuenta_id)) continue;
     correoDe.set(k.cuenta_id, v);
