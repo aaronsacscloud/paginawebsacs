@@ -17,15 +17,28 @@
 export const CHISPA =
   'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z';
 
-/* Diez destellos, de distinto tamaño y con el latido desfasado para que no
-   parpadeen a coro. Son decoración: sin texto y ocultos al lector de pantalla.
-   [ancho, x, y, opacidad, retraso, color] */
+/* Destellos de distinto tamaño y con el latido desfasado para que no parpadeen
+   a coro. Son decoración: sin texto y ocultos al lector de pantalla.
+   [ancho, x, y, opacidad, retraso, color]
+
+   Van en DOS capas y esa es toda la gracia. La primera son los diez grandes
+   —hasta 20 px y hasta media opacidad—: son los que se ven. La segunda son
+   ocho chiquitos, ninguno pasa de 9 px ni de 0.26 de opacidad, metidos en los
+   huecos que dejó la primera y a alturas distintas. Más destellos del mismo
+   tamaño saturan; unos más chicos y más tenues detrás se leen como fondo, que
+   es justo lo que tienen que ser. */
 const DESTELLOS: [number, string, number, number, number, string][] = [
+  // Capa 1 · los que se ven
   [12, '2%', 2, 0.5, 0, '#D9538E'], [8, '10%', 44, 0.38, 1.1, '#9B8CFA'],
   [16, '21%', -4, 0.26, 2.2, '#EFA6CA'], [9, '29%', 50, 0.42, 0.6, '#D9538E'],
   [20, '38%', 8, 0.22, 1.7, '#9B8CFA'], [8, '47%', 40, 0.46, 2.8, '#EFA6CA'],
   [11, '56%', 0, 0.28, 0.3, '#D9538E'], [7, '64%', 48, 0.4, 1.4, '#9B8CFA'],
   [14, '73%', 4, 0.2, 2.4, '#EFA6CA'], [9, '85%', 42, 0.32, 0.9, '#D9538E'],
+  // Capa 2 · el polvo de estrellas
+  [6, '6%', 28, 0.22, 3.4, '#EFA6CA'], [5, '16%', 14, 0.26, 1.9, '#D9538E'],
+  [7, '25%', 32, 0.18, 0.8, '#9B8CFA'], [6, '34%', 54, 0.24, 3.1, '#EFA6CA'],
+  [5, '43%', 20, 0.2, 2.0, '#D9538E'], [8, '52%', 30, 0.16, 1.2, '#9B8CFA'],
+  [6, '61%', 34, 0.22, 3.8, '#EFA6CA'], [5, '78%', 26, 0.2, 2.6, '#D9538E'],
 ];
 
 /** El CSS del efecto. Se inyecta una vez con el componente para que una
