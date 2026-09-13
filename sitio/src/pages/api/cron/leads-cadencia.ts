@@ -731,9 +731,16 @@ export const GET: APIRoute = async ({ url }) => {
                nombre. Si le falta un dato, no se manda a medias: se salta y queda anotado. */
             const datosDe = async (nombre: string | null) => {
               if (!nombre) return null;
-              const { data } = await supabase.from('wa_plantillas').select('variables, variables_map').eq('nombre', nombre).maybeSingle();
+              const { data } = await supabase.from('wa_plantillas').select('variables, variables_map, header_tipo, header_media_url').eq('nombre', nombre).maybeSingle();
               const v = valoresPlantilla(c, data?.variables_map, Number(data?.variables) || 1);
-              return v.ok ? { nombre, valores: v.valores } : null;
+              if (!v.ok) return null;
+              /* Una plantilla con foto o documento en el encabezado exige mandar el archivo en
+                 cada envío (Meta no lo guarda): sale el mismo que se registró al crearla. */
+              const ht = String(data?.header_tipo || 'TEXT').toUpperCase();
+              const headerMedia = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && data?.header_media_url
+                ? { tipo: ht.toLowerCase() as 'image' | 'video' | 'document', link: String(data.header_media_url) } : null;
+              if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && !headerMedia) return null;
+              return { nombre, valores: v.valores, headerMedia };
             };
             /* Si al contacto le falta el dato que pide la plantilla específica («tu zapatería de
                dos tiendas»), no se le deja sin mensaje: sale la versión GENERAL, que justamente
@@ -747,11 +754,11 @@ export const GET: APIRoute = async ({ url }) => {
                marketing habilitado— sale la UTILITY de respaldo, que es la misma idea dicha
                como aviso. Sin esto, el paso simplemente no salía y nadie se enteraba. */
             try {
-              await enviarPlantilla(c.whatsapp, elegida.nombre, 'es_MX', vals.valores);
+              await enviarPlantilla(c.whatsapp, elegida.nombre, 'es_MX', vals.valores, { headerMedia: elegida.headerMedia });
             } catch (e: any) {
               const alt = respaldo ? await datosDe(respaldo) : null;
               if (!alt) throw e;
-              await enviarPlantilla(c.whatsapp, alt.nombre, 'es_MX', alt.valores);
+              await enviarPlantilla(c.whatsapp, alt.nombre, 'es_MX', alt.valores, { headerMedia: alt.headerMedia });
               res.saltados.push({ lead: c.id, motivo: `marketing falló (${String(e?.message || e).slice(0, 60)}), salió la utility`, plantilla: alt.nombre });
             }
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
