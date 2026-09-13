@@ -86,22 +86,31 @@ export default function DashboardTab() {
      propia subsección, y no es una cuenta — es la misma pregunta que responde
      este tablero, «cómo voy», vista por etapas. Junto a Leads, que es de donde
      salen sus números. */
-  const [sub, setSub] = useState<'negocio' | 'leads'>(() => {
-    if (typeof window === 'undefined') return 'negocio';
+  /* Las tres secciones son el CAMINO DEL DINERO, no tres cajones: consultoría
+     → leads → clientes (y dentro de clientes, recurrencia y expansión). El
+     riel de arriba es a la vez la navegación y la explicación del orden. Un
+     «?sub=negocio» viejo cae en Consultoría, que es donde empieza todo. */
+  const [sub, setSub] = useState<Sec>(() => {
+    if (typeof window === 'undefined') return 'consultoria';
     const v = new URLSearchParams(window.location.search).get('sub');
-    return v === 'leads' ? 'leads' : 'negocio';
+    return v === 'leads' ? 'leads' : v === 'clientes' ? 'clientes' : 'consultoria';
   });
-  const irA = (v: 'negocio' | 'leads') => {
+  const irA = (v: Sec) => {
     setSub(v);
     try {
       const u = new URL(window.location.href);
-      if (v === 'negocio') u.searchParams.delete('sub'); else u.searchParams.set('sub', v);
+      if (v === 'consultoria') u.searchParams.delete('sub'); else u.searchParams.set('sub', v);
       window.history.replaceState({}, '', u.toString());
     } catch { /* sin URL utilizable, la vista igual cambia */ }
   };
   const [desde, setDesde] = useState(inicioDeMes());
   const [hasta, setHasta] = useState(iso(new Date()));
   const [d, setD] = useState<any>(null);
+  /* Lo que este tablero necesita y no vivía en ningún lado: la cartera de
+     consultoría, los canales y la recurrencia. Va aparte a propósito — el
+     resto se sigue leyendo de `reports/tablero`, para que dos pantallas no
+     terminen diciendo números distintos del mismo mes. */
+  const [x, setX] = useState<any>(null);
   const [err, setErr] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
   // Qué detalle está abierto. Una cifra que no se puede abrir obliga a irse a
@@ -113,45 +122,18 @@ export default function DashboardTab() {
     fetch(`/api/crm/reports/tablero?desde=${desde}&hasta=${hasta}`)
       .then(r => r.json()).then(j => { if (j.error) setErr(j.error); else setD(j); })
       .catch(() => setErr('No se pudo cargar el tablero.'));
+    /* Si esta falla, el tablero NO se cae: las secciones que dependen de ella
+       enseñan su hueco y el resto sigue en pie. */
+    setX(null);
+    fetch(`/api/crm/reports/tablero-secciones?desde=${desde}&hasta=${hasta}`)
+      .then(r => r.json()).then(j => setX(j && !j.error ? j : null)).catch(() => setX(null));
   };
   useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [desde, hasta]);
 
   const alMes = () => { setAMano(false); setDesde(inicioDeMes()); setHasta(iso(new Date())); };
 
-  /* La tira va ANTES de los cortes por carga y por error: si el tablero de
-     negocio truena o tarda, la pestaña de Leads tiene que seguir alcanzable.
-     Con la tira dentro del render de abajo, un error dejaba encerrado al
-     usuario en una pantalla roja sin salida. */
-  const tira = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 16 }}>
-      {([['negocio', 'Negocio'], ['leads', 'Leads']] as const).map(([v, l]) => {
-        const on = sub === v;
-        return (
-          <button key={v} onClick={() => irA(v)} style={{
-            border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            padding: '9px 14px 10px', fontSize: '0.88rem', fontWeight: on ? 800 : 650,
-            color: on ? '#5B4BD6' : '#6d6a7a',
-            borderBottom: on ? '2px solid #5B4BD6' : '2px solid transparent',
-          }}>{l}</button>
-        );
-      })}
-    </div>
-  );
-
-  if (sub === 'leads') return (
-    <div style={S.wrap}>
-      {tira}
-      <Suspense fallback={<Cargando texto="Cargando el tablero de leads…" alto={280} />}><LeadsDashboard /></Suspense>
-    </div>
-  );
-
-  /* La pestaña del Embudo se retiró: volvió al menú como «Campañas», dentro
-     del proceso de Cuentas. Dos puertas al mismo sitio no dan más opciones,
-     dan la duda de si hacen lo mismo. Un ?sub=embudo viejo cae en «Negocio»,
-     que es la vista de esta pantalla. */
-
-  if (err) return <div style={S.wrap}>{tira}<div style={{ color: ROJO, fontSize: '0.85rem' }}>{err}</div></div>;
-  if (!d) return <div style={S.wrap}>{tira}<Cargando texto="Cargando tablero…" /></div>;
+  if (err) return <div style={S.wrap}><div style={{ color: ROJO, fontSize: '0.85rem' }}>{err}</div></div>;
+  if (!d) return <div style={S.wrap}><Cargando texto="Cargando tablero…" /></div>;
 
   const p = d.periodo;
   const nomMes = new Date(desde + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' });
@@ -182,13 +164,54 @@ export default function DashboardTab() {
         @media (max-width: 1000px) { .tb-4 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         @media (max-width: 900px)  { .tb-2, .tb-3 { grid-template-columns:1fr; } }
         @media (max-width: 620px)  { .tb-4, .tb-cuad { grid-template-columns:1fr; } }
+
+        /* ── El encabezado: el sello de la marca y sus destellos ──
+           Los destellos son la misma chispa del logo y de la entrada, regados
+           SOLO por la banda del título: es la única franja sin cifras, y una
+           chispa detrás de un número estorba. */
+        .tb-cab { position:relative; }
+        .tb-cab > * { position:relative; z-index:1; }
+        .tb-chispas { position:absolute; inset:-12px -8px -6px -8px; z-index:0; pointer-events:none; }
+        .tb-chispas svg { position:absolute; animation:tbLatir 4.2s ease-in-out infinite; }
+        @keyframes tbLatir { 0%,100% { opacity:var(--o,.5); transform:scale(1) rotate(0deg); } 50% { opacity:calc(var(--o,.5) * .4); transform:scale(.84) rotate(8deg); } }
+        @media (prefers-reduced-motion: reduce) { .tb-chispas svg { animation:none; } }
+        .tb-sello { display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid rgba(217,83,142,.3);
+          border-radius:999px; padding:5px 13px; font-size:.58rem; font-weight:800; letter-spacing:.11em;
+          text-transform:uppercase; color:#9c3d70; white-space:nowrap; }
+        @media (max-width: 760px) { .tb-sello { display:none; } }
+
+        /* ── El riel ── */
+        .tb-riel { display:flex; background:#fff; border:1px solid #ececf1; border-radius:14px; overflow:hidden; margin-bottom:16px; }
+        .tb-paso { flex:1; display:flex; align-items:center; gap:10px; padding:12px 15px; border:none; background:none;
+          font-family:inherit; text-align:left; cursor:pointer; position:relative; color:#241d43; transition:background .14s; }
+        .tb-paso:hover { background:rgba(217,83,142,.05); }
+        .tb-paso + .tb-paso { border-left:1px solid #f1eff8; }
+        .tb-paso .n { width:25px; height:25px; border-radius:8px; display:grid; place-items:center; flex:none; font-size:.64rem; font-weight:800; color:#fff; }
+        .tb-paso .et { display:block; font-size:.79rem; font-weight:800; letter-spacing:-.01em; line-height:1.1; }
+        .tb-paso .ci { display:block; font-size:.65rem; color:#8a8590; margin-top:2px; }
+        .tb-paso::after { content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:transparent; }
+        .tb-paso[aria-selected="true"] { background:linear-gradient(180deg,rgba(217,83,142,.07),rgba(155,140,250,.05)); }
+        .tb-paso[aria-selected="true"]::after { background:linear-gradient(90deg,#9B8CFA,#D9538E); }
+        .tb-paso[aria-selected="true"] .et { color:#9c3d70; }
+        @media (max-width: 980px) { .tb-riel { flex-wrap:wrap; } .tb-paso { flex:1 0 45%; } }
+
+        /* ── La tira de KPIs de cada sección ── */
+        .tb-kpis { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        @media (max-width: 1180px) { .tb-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (max-width: 680px)  { .tb-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
       `}</style>
 
-      {tira}
       <div className="tb">
-        <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+        <div className="tb-cab" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          <Chispas />
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-.02em' }}>Tablero</h2>
+            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-.02em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+              Tablero
+              <span className="tb-sello">
+                <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d={CHISPA} fill="#D9538E" /></svg>
+                Conectando estrellas, creando constelaciones
+              </span>
+            </h2>
             <div style={{ fontSize: '0.75rem', color: '#8a8590', marginTop: 3 }}>
               {p.es_mes_actual
                 ? `${mesTit} ${new Date().getFullYear()} · del 1 al ${new Date(hasta + 'T12:00:00').getDate()} · quedan ${d.meta_mes.dias_restantes} días`
@@ -209,43 +232,58 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        <Dinero d={d} ver={setDetalle} />
-        <Motor d={d} ver={setDetalle} />
-        <CohorteYTiempo d={d} />
-        {/* MISMO dato que el Inicio del teléfono, mismo componente y mismo
-            endpoint: si el criterio de qué cuenta como actividad viviera dos
-            veces terminarían siendo dos números distintos en dos pantallas. Lo
-            único que cambia es el envase: aquí tarjeta, allá hoja. */}
-        {!!activos?.total && (
-          <div style={S.card}>
-            <div style={{ ...S.titulo, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span>Leads que se movieron</span>
-              <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={S.der}>{activos.total} · {activos.con_senal} por su cuenta</span>
-                <RangoDias valor={diasAct} onCambiar={setDiasAct} />
-              </span>
+        <Riel sec={sub} irA={irA} d={d} x={x} />
+
+        {sub === 'consultoria' && (<>
+          <KpisConsultoria d={d} x={x} ver={setDetalle} />
+          <Dinero d={d} ver={setDetalle} />
+          <CarteraYCanales x={x} abrir={setAbierto} />
+          <Compromisos d={d} abrir={setAbierto} />
+        </>)}
+
+        {sub === 'leads' && (<>
+          <Suspense fallback={<Cargando texto="Cargando el tablero de leads…" alto={280} />}><LeadsDashboard /></Suspense>
+          <CohorteYTiempo d={d} />
+          {/* MISMO dato que el Inicio del teléfono, mismo componente y mismo
+              endpoint: si el criterio de qué cuenta como actividad viviera dos
+              veces terminarían siendo dos números distintos en dos pantallas. Lo
+              único que cambia es el envase: aquí tarjeta, allá hoja. */}
+          {!!activos?.total && (
+            <div style={S.card}>
+              <div style={{ ...S.titulo, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span>Leads que se movieron</span>
+                <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={S.der}>{activos.total} · {activos.con_senal} por su cuenta</span>
+                  <RangoDias valor={diasAct} onCambiar={setDiasAct} />
+                </span>
+              </div>
+              <div style={S.lead}>
+                Quién dio señales esta semana, de lo más reciente a lo más viejo. El punto morado es lo que hizo el lead
+                —te escribió, entró al sitio, abrió la cotización—; el gris, lo que hicimos nosotros. Los cambios de etapa
+                y las bienvenidas automáticas no cuentan: si contaran, cualquiera tocado por un cron saldría como activo.
+              </div>
+              <FiltrosActivos datos={activos} valor={filtroAct} onCambiar={setFiltroAct} />
+              <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10 }}>
+                <ListaLeadsActivos leads={aplicarFiltro(activos.leads, filtroAct)} onAbrir={setLeadAbierto} />
+              </div>
+              <EfectividadSeguimiento datos={activos} />
+              <EmpresasActivas datos={activos} />
+              <ParaRescatarLista datos={activos}
+                onAbrirConv={(r) => { location.href = r.wa_conversation_id
+                  ? `/admin/crm?tab=whatsapp&wa_conv=${encodeURIComponent(r.wa_conversation_id)}`
+                  : `/admin/crm?tab=pipeline&contacto=${r.id}`; }} />
             </div>
-            <div style={S.lead}>
-              Quién dio señales esta semana, de lo más reciente a lo más viejo. El punto morado es lo que hizo el lead
-              —te escribió, entró al sitio, abrió la cotización—; el gris, lo que hicimos nosotros. Los cambios de etapa
-              y las bienvenidas automáticas no cuentan: si contaran, cualquiera tocado por un cron saldría como activo.
-            </div>
-            <FiltrosActivos datos={activos} valor={filtroAct} onCambiar={setFiltroAct} />
-            <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10 }}>
-              <ListaLeadsActivos leads={aplicarFiltro(activos.leads, filtroAct)} onAbrir={setLeadAbierto} />
-            </div>
-            <EfectividadSeguimiento datos={activos} />
-            <EmpresasActivas datos={activos} />
-            <ParaRescatarLista datos={activos}
-              onAbrirConv={(r) => { location.href = r.wa_conversation_id
-                ? `/admin/crm?tab=whatsapp&wa_conv=${encodeURIComponent(r.wa_conversation_id)}`
-                : `/admin/crm?tab=pipeline&contacto=${r.id}`; }} />
-          </div>
-        )}
-        <DrawerLead lead={leadAbierto} onCerrar={() => setLeadAbierto(null)}
-          onWhatsApp={(l) => { const [t, qs] = rutaConversacion(l).split('?'); location.href = `/admin/crm?tab=${t}&${qs || ''}`; }} />
-        <Compromisos d={d} abrir={setAbierto} />
-        <Salud d={d} />
+          )}
+          <DrawerLead lead={leadAbierto} onCerrar={() => setLeadAbierto(null)}
+            onWhatsApp={(l) => { const [t, qs] = rutaConversacion(l).split('?'); location.href = `/admin/crm?tab=${t}&${qs || ''}`; }} />
+        </>)}
+
+        {sub === 'clientes' && (<>
+          <KpisClientes d={d} x={x} />
+          <Motor d={d} ver={setDetalle} />
+          <Recurrencia x={x} abrir={setAbierto} />
+          <Salud d={d} />
+        </>)}
       </div>
 
       {detalle && <Detalle d={d} cual={detalle} cerrar={() => setDetalle(null)} abrir={(id: string) => { setDetalle(null); setAbierto(id); }} />}
@@ -964,4 +1002,305 @@ function vistaDe(d: any, cual: string): any {
     };
   }
   return null;
+}
+
+/* ════════════════ LA IDENTIDAD: EL SELLO Y SUS DESTELLOS ════════════════
+   La silueta EXACTA del logo, la misma que gira en el cargador y la que se
+   dibuja en el cielo de la entrada. Repetirla es lo que hace que una marca se
+   reconozca; una estrella aproximada a mano sale romboide y no es nada. */
+const CHISPA = 'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z';
+
+type Sec = 'consultoria' | 'leads' | 'clientes';
+
+/* Diez destellos, de distinto tamaño y con el latido desfasado para que no
+   parpadeen a coro. Son decoración: no llevan texto y van ocultos al lector de
+   pantalla. */
+const DESTELLOS: [number, string, number, number, number, string][] = [
+  [12, '2%', 2, 0.5, 0, '#D9538E'], [8, '10%', 44, 0.38, 1.1, '#9B8CFA'],
+  [16, '20%', -4, 0.26, 2.2, '#EFA6CA'], [9, '27%', 50, 0.42, 0.6, '#D9538E'],
+  [20, '35%', 8, 0.22, 1.7, '#9B8CFA'], [8, '44%', 40, 0.46, 2.8, '#EFA6CA'],
+  [11, '52%', 0, 0.28, 0.3, '#D9538E'], [7, '61%', 48, 0.4, 1.4, '#9B8CFA'],
+  [14, '71%', 4, 0.2, 2.4, '#EFA6CA'], [9, '83%', 42, 0.32, 0.9, '#D9538E'],
+];
+function Chispas() {
+  return (
+    <div className="tb-chispas" aria-hidden="true">
+      {DESTELLOS.map(([w, x, y, o, dl, c], i) => (
+        <svg key={i} width={w} height={w} viewBox="0 0 24 24"
+          style={{ left: x, top: y, ['--o' as any]: o, animationDelay: `${dl}s` }}><path d={CHISPA} fill={c} /></svg>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════ EL RIEL ════════════════
+   Consultoría → Leads → Clientes → Recurrencia → Expansión. Los cinco pasos son
+   el camino del dinero; los tres primeros son secciones y los dos últimos viven
+   dentro de Clientes, que es donde se miden. Cada paso trae su cifra puesta
+   para que el orden se lea sin entrar. */
+function Riel({ sec, irA, d, x }: { sec: Sec; irA: (v: Sec) => void; d: any; x: any }) {
+  /* Recurrencia y Expansión viven DENTRO de Clientes. Si se marcaran las tres
+     por ser la misma sección, el riel dejaría de decir dónde estás parado: se
+     recuerda el paso que se tocó. */
+  const [paso, setPaso] = useState(1);
+  const co = x?.consultoria, cl = x?.clientes;
+  const pasos: { n: number; et: string; ci: string; color: string; va: Sec }[] = [
+    { n: 1, et: 'Consultoría', color: '#D9538E', va: 'consultoria',
+      ci: co ? `${co.juntas} juntas · ${corto(co.cotizaciones.monto)} cotizados` : `${d.reuniones.total} juntas` },
+    { n: 2, et: 'Leads', color: '#9B8CFA', va: 'leads',
+      ci: `${d.contadores.leads} nuevos · ${d.contadores.clientes_nuevos} se hicieron clientes` },
+    { n: 3, et: 'Clientes', color: '#7DA6F5', va: 'clientes',
+      ci: `${d.salud.clientes} activos · ARR ${corto(d.salud.arr)}` },
+    { n: 4, et: 'Recurrencia', color: '#4FBF95', va: 'clientes',
+      ci: cl ? `${cl.recompras.n} recompras · ${cl.renovaciones.length} renovaciones` : 'recompras y renovaciones' },
+    { n: 5, et: 'Expansión', color: '#E8A838', va: 'clientes',
+      ci: cl?.expansion?.length ? `${cl.expansion.length} cuentas con idea sin cotizar` : 'quién puede crecer' },
+  ];
+  return (
+    <div className="tb-riel" role="tablist">
+      {pasos.map(ps => (
+        <button key={ps.n} className="tb-paso" role="tab"
+          aria-selected={sec === ps.va && (paso === ps.n || !pasos.some(q => q.n === paso && q.va === sec))}
+          onClick={() => { setPaso(ps.n); irA(ps.va); }}>
+          <span className="n" style={{ background: ps.color }}>{ps.n}</span>
+          <span><span className="et">{ps.et}</span><span className="ci">{ps.ci}</span></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════ LA TARJETA DE CIFRA ════════════════
+   Franja de color a la izquierda —dice de qué habla el número antes de
+   leerlo—, etiqueta en versalitas, cifra en su tinta y una línea que explica.
+   Si trae `ver`, se puede abrir: el cursor y la sombra lo dicen. */
+function Kpi({ color, tinta, et, ci, pie, ver }: any) {
+  return (
+    <div className={'tb' + (ver ? ' tb-clic' : '')} onClick={ver}
+      style={{ background: '#fff', border: '1px solid #ececf1', borderRadius: 11, padding: '14px 16px 14px 18px', position: 'relative', overflow: 'hidden' }}>
+      <span style={{ position: 'absolute', left: 0, top: 13, bottom: 13, width: 4, borderRadius: '0 4px 4px 0', background: color }} />
+      <div style={S.eyebrow}>{et}</div>
+      <div style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.05, color: tinta }}>{ci}</div>
+      <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 4, lineHeight: 1.4 }}>{pie}</div>
+    </div>
+  );
+}
+/* El hueco declarado: la cifra que el negocio pide y el sistema todavía no
+   sabe calcular. Se enseña en punteado y diciendo qué falta — un número
+   inventado es peor que un hueco. */
+function KpiFalta({ et, que }: any) {
+  return (
+    <div className="tb" style={{ border: '1px dashed #cdc4fb', borderRadius: 11, padding: '14px 16px' }}>
+      <div style={S.eyebrow}>{et}</div>
+      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#bdb7cc', marginTop: 5 }}>falta conectar</div>
+      <div style={{ fontSize: '0.6875rem', color: MORADO, marginTop: 5, lineHeight: 1.45, fontWeight: 600 }}>{que}</div>
+    </div>
+  );
+}
+
+/* ════════════════ 1 · CONSULTORÍA: LAS SEIS CIFRAS ════════════════ */
+function KpisConsultoria({ d, x, ver }: any) {
+  const co = x?.consultoria;
+  const c = d.cobrado, cb = d.cobrar;
+  return (
+    <div className="tb-kpis">
+      <Kpi color="#D9538E" tinta="#9c3d70" et="Juntas que diste" ci={co ? co.juntas : d.reuniones.total}
+        pie={co ? `${co.clientes} cuentas distintas` : `${d.reuniones.fueron} asistieron`} />
+      <Kpi color="#EFA6CA" tinta="#9c3d70" et="Clientes con consultoría" ci={co ? co.clientes : '—'}
+        pie={co ? `de ${co.clientes_activos} activos · ${Math.round((co.clientes / Math.max(1, co.clientes_activos)) * 100)}%` : 'sin datos del periodo'} />
+      <Kpi color={LILA} tinta={MORADO} et="Cotizaciones generadas" ci={co ? co.cotizaciones.n : '—'}
+        pie={co ? `${money(co.cotizaciones.monto)} en la mesa` : '—'} />
+      <Kpi color={MENTA} tinta={VERDE} et="Monto cobrado" ci={money(c.monto)} ver={() => ver('cobrado')}
+        pie={`${c.n} ${c.n === 1 ? 'pago' : 'pagos'} · clic para verlos`} />
+      <Kpi color={ORO} tinta={AMBAR} et="Monto por cobrar" ci={money(cb.total.monto + cb.vencido.monto)} ver={() => ver('cobrar')}
+        pie={`${cb.total.n + cb.vencido.n} renovaciones · ${cb.vencido.n} vencidas`} />
+      <Kpi color="#D9538E" tinta="#9c3d70" et="Ingreso por cliente" ci={co ? money(co.ticket) : '—'}
+        pie="promedio de quien SÍ pagó" />
+    </div>
+  );
+}
+
+/* ════════════════ LA CARTERA Y POR DÓNDE PASÓ ════════════════
+   Una línea por cuenta que tuvo junta: lo que pagó, lo que debe y qué sigue.
+   Las cuentas con junta y sin cobro se quedan en la lista a propósito — ese
+   hueco es justo lo que hay que ver. */
+const CHIP_CARTERA: Record<string, { t: string; fondo: string; letra: string }> = {
+  al_dia: { t: 'Al día', fondo: '#EAF8F2', letra: VERDE },
+  por_cobrar: { t: 'Por cobrar', fondo: '#FFF4E5', letra: '#9a6a10' },
+  vencida: { t: 'Vencida', fondo: '#FEF0EF', letra: ROJO },
+  idea: { t: 'Idea abierta', fondo: '#EEECFE', letra: MORADO },
+};
+function CarteraYCanales({ x, abrir }: any) {
+  const [todo, setTodo] = useState(false);
+  if (!x) return null;
+  const co = x.consultoria;
+  const lista = todo ? co.cartera : co.cartera.slice(0, 8);
+  const topeCanal = Math.max(co.canales.reuniones, co.canales.whatsapp, co.canales.llamadas, 1);
+  const topeServ = Math.max(...co.servicios.map((v: any) => v.monto), 1);
+  return (
+    <div className="tb-2">
+      <div style={S.card}>
+        <div style={S.titulo}>Clientes de consultoría<span style={S.der}>cobrado, pendiente y qué sigue</span></div>
+        <div style={S.lead}>
+          Las {co.cartera.length} cuentas con junta en el periodo. Las que aparecen sin cobro no son un error:
+          diste la junta y todavía no salió dinero de ahí.
+        </div>
+        {!co.cartera.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna junta con cuenta en este periodo.</div>
+          : (<>
+            <table className="tb-tabla">
+              <thead><tr>
+                <th>Cliente</th><th style={{ textAlign: 'right' }}>Cobrado</th>
+                <th style={{ textAlign: 'right' }}>Pendiente</th><th>Estado</th><th>Próxima acción</th>
+              </tr></thead>
+              <tbody>
+                {lista.map((r: any) => {
+                  const ch = CHIP_CARTERA[r.estado];
+                  return (
+                    <tr key={r.company_id} className="cliqueable" onClick={() => abrir(r.company_id)}>
+                      <td style={{ fontWeight: 700 }}>{r.nombre}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: r.cobrado ? VERDE : '#c9c5d2' }}>{r.cobrado ? money(r.cobrado) : '—'}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: r.pendiente ? (r.estado === 'vencida' ? ROJO : '#9a6a10') : '#c9c5d2' }}>{r.pendiente ? money(r.pendiente) : '—'}</td>
+                      <td><span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: ch.fondo, color: ch.letra }}>{ch.t}</span></td>
+                      <td style={{ color: MORADO, fontWeight: 700, fontSize: '0.74rem' }}>{r.accion}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {co.cartera.length > 8 && (
+              <button onClick={() => setTodo(!todo)} style={{ ...S.btnA, marginTop: 12 }}>
+                {todo ? 'Ver solo las 8 primeras' : `Ver las ${co.cartera.length} cuentas`}
+              </button>
+            )}
+          </>)}
+      </div>
+
+      <div className="tb-apil">
+        <div style={S.card}>
+          <div style={S.titulo}>Por dónde pasó<span style={S.der}>el periodo</span></div>
+          {([['Reuniones', co.canales.reuniones, '#D9538E', '#EFA6CA'],
+             ['WhatsApp', co.canales.whatsapp, LILA, '#C6BCFB'],
+             ['Llamadas', co.canales.llamadas, CIELO, '#B7CEF9']] as const).map(([n, v, a, b]) => (
+            <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, width: 100, flex: 'none' }}>{n}</span>
+              <span style={{ flex: 1, height: 9, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(v / topeCanal) * 100}%`, background: `linear-gradient(90deg,${a},${b})` }} />
+              </span>
+              <b style={{ fontSize: '0.76rem', width: 46, textAlign: 'right' }}>{v}</b>
+            </div>
+          ))}
+          <div style={S.nota}>
+            Reuniones son las juntas que sí pasaron; WhatsApp, las conversaciones con movimiento; llamadas, las del
+            marcador del inbox. No se suman: una misma cuenta puede estar en los tres.
+          </div>
+        </div>
+
+        <div style={S.card}>
+          <div style={S.titulo}>De dónde vino el dinero<span style={S.der}>lo cobrado del periodo</span></div>
+          {!co.servicios.length
+            ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Sin cobros en el periodo.</div>
+            : co.servicios.map((sv: any) => (
+              <div key={sv.nombre} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, width: 128, flex: 'none' }}>{sv.nombre}</span>
+                <span style={{ flex: 1, height: 9, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+                  <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(sv.monto / topeServ) * 100}%`, background: 'linear-gradient(90deg,#D9538E,#EFA6CA)' }} />
+                </span>
+                <b style={{ fontSize: '0.76rem', width: 62, textAlign: 'right' }}>{corto(sv.monto)}</b>
+              </div>
+            ))}
+          <div style={S.nota}>
+            Sale del plan de la cotización que cubrió cada pago. Lo que cae en <b>«Venta cotizada»</b> son cobros cuya
+            cotización no trae plan marcado: para partirlo por servicio hay que capturarlo al cotizar.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════ 3 · CLIENTES: LAS SEIS CIFRAS ════════════════ */
+function KpisClientes({ d, x }: any) {
+  const cl = x?.clientes, s = d.salud;
+  return (
+    <div className="tb-kpis">
+      <Kpi color={CIELO} tinta={AZUL} et="Clientes activos" ci={s.clientes} pie={`ARR ${money(s.arr)}`} />
+      <Kpi color={MENTA} tinta={VERDE} et="Clientes recurrentes" ci={cl ? `${cl.recurrentes}` : '—'}
+        pie={cl ? `${cl.recurrentes_pct}% · pagaron más de una vez` : '—'} />
+      <Kpi color="#D9538E" tinta="#9c3d70" et="Recompras del periodo" ci={cl ? cl.recompras.n : '—'}
+        pie={cl ? money(cl.recompras.monto) : '—'} />
+      <Kpi color={LILA} tinta={MORADO} et="Renovaciones que vienen" ci={cl ? cl.renovaciones.length : '—'}
+        pie="en los próximos 60 días" />
+      <Kpi color={MENTA} tinta={VERDE} et="Ingreso por cliente" ci={money(s.arpa)} pie="ARR ÷ clientes activos" />
+      <Kpi color="#EF7A72" tinta={ROJO} et="Sin movimiento" ci={cl ? cl.sin_movimiento.length : '—'}
+        pie="más de 60 días sin vender" />
+    </div>
+  );
+}
+
+/* ════════════════ RECURRENCIA Y EXPANSIÓN ════════════════ */
+function Recurrencia({ x, abrir }: any) {
+  if (!x) return null;
+  const cl = x.clientes;
+  const hoy = new Date().toISOString().slice(0, 10);
+  return (
+    <div className="tb-3" style={{ marginBottom: 16 }}>
+      <div style={S.card}>
+        <div style={S.titulo}>Renovaciones que vienen<span style={S.der}>próximos 60 días</span></div>
+        {!cl.renovaciones.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna renovación en la ventana.</div>
+          : cl.renovaciones.slice(0, 6).map((r: any, i: number) => {
+            const dias = Math.round((Date.parse(r.fecha) - Date.parse(hoy)) / 86400000);
+            return (
+              <div key={i} style={{ ...S.fila, borderTop: i ? '1px solid #f4f3f7' : 'none' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={S.fl}>{r.nombre}</div>
+                  <div style={S.fn}>{fmtDate(r.fecha)} · {r.plan || 'licencia'}</div>
+                </div>
+                <b style={{ fontSize: '0.78rem', color: dias <= 7 ? '#9a6a10' : '#241d43' }}>{money(r.monto)}</b>
+              </div>
+            );
+          })}
+        <div style={S.nota}>Es la próxima factura de cada licencia activa. Lo que no se cobre aquí sale del ARR el mes siguiente.</div>
+      </div>
+
+      <div style={S.card}>
+        <div style={S.titulo}>Listos para crecer<span style={S.der}>expansión</span></div>
+        <div style={S.lead}>Cuentas con ideas de sus juntas que <b>nadie ha cotizado</b>. No es una corazonada del sistema: te lo pidieron.</div>
+        {!cl.expansion.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna idea abierta sin cotizar.</div>
+          : cl.expansion.slice(0, 6).map((e: any) => (
+            <div key={e.company_id} className="tb-clic" style={{ ...S.fila, cursor: 'pointer' }} onClick={() => abrir(e.company_id)}>
+              <div style={{ flex: 1 }}>
+                <div style={S.fl}>{e.nombre}</div>
+                <div style={S.fn}>{e.titulo || 'idea de la junta'}</div>
+              </div>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: '#EEECFE', color: MORADO }}>
+                {e.ideas} {e.ideas === 1 ? 'idea' : 'ideas'}
+              </span>
+            </div>
+          ))}
+      </div>
+
+      <div style={S.card}>
+        <div style={S.titulo}>Se están yendo callados<span style={S.der}>sin vender hace rato</span></div>
+        {!cl.sin_movimiento.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna cuenta activa lleva 60 días sin vender.</div>
+          : cl.sin_movimiento.slice(0, 6).map((r: any) => (
+            <div key={r.company_id} className="tb-clic" style={{ ...S.fila, cursor: 'pointer' }} onClick={() => abrir(r.company_id)}>
+              <div style={{ flex: 1 }}>
+                <div style={S.fl}>{r.nombre}</div>
+                <div style={S.fn}>{r.dias} días sin una venta · ARR {money(r.arr)}</div>
+              </div>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: '#FEF0EF', color: ROJO }}>Rescatar</span>
+            </div>
+          ))}
+        <div style={S.nota}>
+          Sale del puente con SACS: días desde su última venta capturada. Solo aparecen las cuentas activas — una cuenta
+          cancelada ya no es un rescate, es una baja.
+          {cl.frecuencia_meses != null && <> Tus clientes vuelven a pagar cada <b>{cl.frecuencia_meses === 1 ? 'mes' : `${cl.frecuencia_meses} meses`}</b> en la mediana.</>}
+        </div>
+      </div>
+    </div>
+  );
 }
