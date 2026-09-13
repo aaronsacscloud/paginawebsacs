@@ -5,7 +5,6 @@ import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
 import FlujosIA from '../components/home/FlujosIA.astro';
-import { modaSectors } from '../data/navigation';
 
 const websiteSchema = {
   '@context': 'https://schema.org',
@@ -35,30 +34,6 @@ const websiteSchema = {
       <FlujosIA />
     </Fragment>
   </Hero>
-
-  <!-- ═══ Giros de moda ═══ -->
-  <section class="girosmoda-section">
-    <div class="modelos-container">
-      <div class="modelos-header">
-        <span class="modelos-eyebrow">Hecho a la medida de tu giro</span>
-        <h2 class="modelos-title">Tu giro ya viene configurado</h2>
-        <p class="modelos-sub">Ropa, calzado y joyería con sus propias personalizaciones desde el primer día.</p>
-      </div>
-      <div class="girosmoda-grid">
-        {modaSectors.map((g) => (
-          <a href={g.href} class="giromoda-card" style={`--gm-color:${g.color};`}>
-            {g.image && <div class="giromoda-media"><img src={g.image} alt={g.label} width="600" height="400" loading="lazy" /></div>}
-            <div class="giromoda-body">
-              <h3 class="giromoda-title">{g.label}</h3>
-              <p class="giromoda-desc">{g.description}</p>
-              <span class="modelo-card-link">Ver personalizaciones <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-            </div>
-          </a>
-        ))}
-      </div>
-      <p class="girosmoda-otros">¿Vendes otra cosa? <a href="/giros">Sacs también opera otros comercios →</a></p>
-    </div>
-  </section>
 
   <!-- ═══ CTA: ¿Aún tienes dudas? — ahora vive en su componente, porque las
        páginas de giro cierran con el mismo gesto ═══ -->

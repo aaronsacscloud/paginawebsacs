@@ -409,8 +409,10 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 20px rgba(0, 0, 0, 0.04);
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.35s ease;
   }
+  .nav.nav-oculto { transform: translateY(-100%); }
+  .nav.nav-oculto.mega-open { transform: none; }
 
   .nav.scrolled {
     background: rgba(255, 255, 255, 0.85);
@@ -1712,6 +1714,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   // ─── Scroll: toggle transparent ↔ white ───
   let ticking = false;
+  let ultimoY = window.scrollY;
 
   function updateNav() {
     const isMobileOpen = hamburger?.getAttribute('aria-expanded') === 'true';
@@ -1723,6 +1726,11 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     } else {
       nav?.classList.remove('scrolled');
     }
+    // se esconde al bajar y vuelve al subir (Aaron: el sticky estorba)
+    const y = window.scrollY;
+    if (y > 120 && y > ultimoY + 4) nav?.classList.add('nav-oculto');
+    else if (y < ultimoY - 4 || y <= 120) nav?.classList.remove('nav-oculto');
+    ultimoY = y;
   }
 
   window.addEventListener('scroll', () => {
