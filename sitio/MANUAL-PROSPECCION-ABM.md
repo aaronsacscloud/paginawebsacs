@@ -225,14 +225,127 @@ metodo     directorio              censo oficial
 
 **Caso concreto:** en este ramo el mostrador contesta por WhatsApp, no por
 correo — medido: de 33 casas de novia con sitio, **una** publica correo y el
-resto pone `wa.me`. Así que el teléfono de cada cuenta se da de alta también
-como WhatsApp… pero con confianza **baja** y método `inferido_del_telefono`,
-para poder distinguirlos de los que sí vimos publicados. Si después resulta
-que un pedazo no tiene WhatsApp, se separan sin adivinar.
+resto pone `wa.me`.
 
-**No se puede comprobar antes de mandar.** La Cloud API de Meta (v24) ya no
-expone el "¿este número tiene WhatsApp?" del API viejo. Se sabe al primer
-envío, y por eso entran `sin_probar`.
+---
+
+## 6 bis. WhatsApp: SOLO a quien lo publicó él mismo
+
+> **Esta es la regla más estricta del manual y está puesta con candado en la
+> base de datos.** Vale para todos los países.
+
+### La regla
+
+**Solo se le manda WhatsApp a un número que el propio negocio publicó como
+WhatsApp** — un enlace `wa.me` en su ficha de Google Maps, en su sitio, en su
+Instagram. Ese enlace es el negocio diciendo *"escríbeme por WhatsApp aquí"*, y
+es el único permiso que aceptamos.
+
+**Todo lo demás se queda como teléfono y se trabaja por llamada.**
+
+### Por qué, con lo medido
+
+Es tentador dar de alta el teléfono de cada cuenta como WhatsApp: en México el
+número que publica una tienda muchas veces es el mismo. Se probó y **no
+alcanza**:
+
+- De los números **inferidos del teléfono**, la mitad resultó **línea fija**
+  (15 de 30 en el segundo lote de novias). Una línea fija no tiene WhatsApp.
+- Y aun los que salen móviles **pueden no tenerlo**. No hay forma de
+  preguntarlo: Meta quitó a propósito el endpoint `contacts` del API viejo
+  —que sí respondía si un número estaba registrado— porque se usaba justo para
+  validar listas. **Hoy responde siempre "válido"**, tenga o no tenga. La Cloud
+  API nunca lo tuvo.
+- Cualquier servicio que ofrezca esa validación está corriendo un cliente **no
+  oficial** de WhatsApp. Viola sus términos y el baneo cae en la cuenta que lo
+  usa. **No se usa.**
+
+Y el costo de equivocarse no es simétrico: cada mensaje a un número sin
+WhatsApp cuenta contra la calificación de calidad de la línea, y escribirle a
+un negocio que nunca publicó ese canal es exactamente lo que provoca que
+reporten el número. Se pierde la línea de ventas entera por unos cuantos
+contactos de más.
+
+> 💡 **Sobre "llamar para ver si timbra":** que un teléfono timbre prueba que la
+> **línea existe**, no que tenga WhatsApp — un fijo timbra y no lo tiene. Son
+> dos cosas distintas. Twilio Lookup da esa misma información y más (móvil,
+> fijo, VoIP, 800) sin marcarle a nadie y sin que el dueño se entere.
+
+### Los estados del canal de WhatsApp
+
+```
+declarado      el negocio publicó ese wa.me    → SE LE ESCRIBE
+valido         ya se le entregó un mensaje     → SE LE ESCRIBE
+no_declarado   nadie lo declaró (inferido,
+               o solo "parece celular")        → NO. Se trabaja por llamada
+invalido       rebotó, o el número no existe   → NO
+opt_out        pidió que no le escribamos      → NO, nunca más
+```
+
+### Cómo se hace cumplir
+
+Tres capas, porque una convención no basta:
+
+1. **Al cargar** — un canal de WhatsApp nace `declarado` solo si su fuente es
+   un enlace `wa.me`. Cualquier otro origen nace `no_declarado`.
+2. **La vista `v_whatsapp_contactable`** es la única puerta para armar listas
+   de trabajo. Filtra a `declarado` y `valido`.
+3. **Un trigger en `abm_toques`** rechaza la inserción de cualquier toque de
+   WhatsApp cuyo destino no sea un número declarado de esa cuenta:
+
+   ```
+   ERROR: WhatsApp bloqueado: 525500000000 no es un numero declarado
+          por la cuenta. Solo se escribe a quien publico su wa.me.
+   ```
+
+   La vista es una convención —basta que alguien escriba otra consulta para
+   saltársela—; el trigger es el candado.
+
+### Auditoría, para correr después de cada carga
+
+```sql
+-- los tres tienen que dar CERO
+select
+ (select count(*) from abm_toques t where t.canal='whatsapp'
+    and not exists (select 1 from abm_canales x where x.cuenta_id=t.cuenta_id
+      and x.tipo like 'whatsapp%' and x.estado in ('declarado','valido')
+      and regexp_replace(x.valor,'\D','','g')=regexp_replace(t.destino,'\D','','g')))
+   as toques_prohibidos,
+ (select count(*) from abm_cuentas c where c.tiene_wa
+    and not exists (select 1 from abm_canales x where x.cuenta_id=c.id
+      and x.tipo like 'whatsapp%' and x.estado in ('declarado','valido')))
+   as bandera_mentirosa,
+ (select count(*) from v_whatsapp_contactable v
+    where not exists (select 1 from abm_fuentes f where f.cuenta_id=v.cuenta_id
+      and f.campo in ('whatsapp','whatsapp_enlace')
+      and f.metodo in ('google_maps','sitio_propio')))
+   as sin_respaldo;
+```
+
+### El valor se guarda en dígitos, nunca como URL
+
+El canal llegó a guardar `https://wa.me/525525301345` junto a `525593027234`.
+Eso rompía tres cosas en silencio: el dedupe (el mismo número en dos formas son
+dos canales), el cruce con `abm_fuentes` —que guarda `+52 55 2530 1345` con
+espacios— y cualquier envío por API. **Se normaliza a dígitos al cargar**, y el
+enlace original se guarda en `abm_fuentes` como `whatsapp_enlace`, que además
+es la prueba de que fue declarado.
+
+> ⚠️ Al normalizar, **borra primero las filas que van a colisionar** y normaliza
+> después. Hay una restricción única `(cuenta_id, tipo, lower(valor))` y
+> hacerlo al revés tira la migración entera.
+
+### Twilio Lookup: dónde sigue sirviendo
+
+Ya no decide a quién se le escribe —eso lo decide el `wa.me`—, pero sirve para
+**la lista de llamadas**: separa móviles de fijos, detecta números que no
+existen, y dice el operador. Un número que Lookup marca inexistente se va a
+`invalido` y deja de aparecer en cualquier lista.
+
+Endpoint: `/api/cron/abm-validar-whatsapp?cuantas=&giro=`. Se dispara por cron
+o por un operador con su sesión del CRM.
+
+---
 
 ### El recuento tiene que mirar el estado
 
@@ -341,15 +454,12 @@ exactamente la señal que buscan los filtros.
 
 ### 8.2 WhatsApp
 
-Cada envío a un número **sin** WhatsApp cuenta contra la calificación de
-calidad de la línea.
+**Solo a los `declarado`.** Ver la sección 6 bis: es la regla más estricta del
+manual y está con candado en la base. Un número que nadie declaró no recibe
+mensaje, punto — se trabaja por llamada.
 
-**Orden obligatorio:**
-1. Primero los **observados** (los que vimos publicados como WhatsApp).
-2. Después los **inferidos del teléfono**, por tandas, midiendo la línea entre
-   una y otra.
-
-Nunca los 554 de golpe.
+Aun dentro de los declarados, se va por tandas y midiendo la calificación de
+calidad de la línea entre una y otra.
 
 ### 8.3 Nada sale sin que una persona apruebe
 
@@ -421,11 +531,17 @@ Para comparar cuando se replique.
 |---|---|---|
 | Cuentas | 629 | 629 |
 | Con correo | 34 | 93 |
-| Con WhatsApp | 62 | 617 |
+| Con WhatsApp **declarado** | 62 | 57 |
+| Con teléfono (para llamada) | 627 | 627 |
 | Cadencias listas | 0 | 30 |
 
 Sin importar un solo negocio nuevo. De los 59 correos ganados: **3** del sitio
 propio, **56** del censo.
+
+El WhatsApp **bajó** de 62 a 57 a propósito: llegué a inferir 554 números del
+teléfono y se descartaron todos al cerrar la regla de solo-declarados. En todo
+el motor quedaron **1,495 declarados** y **737 no declarados**, y estos últimos
+se trabajan por llamada con su canal `telefono`, que nunca se perdió.
 
 **Rendimiento del raspado de sitios** (1,089 cuentas, todos los giros):
 WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
@@ -448,6 +564,11 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | `tiene_email` true con el correo invalidado | El recuento mira el estado |
 | "con sus 1 sucursales" en 14 plantillas | Renderizar contra cuentas reales antes de generar |
 | 83 "menciones de WhatsApp" que eran nombres de foto | Contar enlaces, no coincidencias de texto |
+| 554 números inferidos listos para salir a ciegas | WhatsApp solo a quien publicó su `wa.me` (sec. 6 bis) |
+| El canal guardaba `https://wa.me/…` y no el número | Normalizar a dígitos al cargar |
+| 1,703 canales "sin procedencia" que sí la tenían | Cruzar por valor NORMALIZADO, no exacto |
+| Un `unknown` de Lookup atoraba el lote en bucle | Filtrar por `verificado_at`, no solo por estado |
+| `tiene_wa` true sin canal declarado (710 cuentas) | La bandera cuenta lo CONTACTABLE, no lo que existe |
 
 ---
 

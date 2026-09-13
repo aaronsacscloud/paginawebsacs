@@ -254,3 +254,22 @@ hay que pedir uno nuevo y reescribir ese archivo, no buscarlo en el historial.
 📋 **Regla al usarlo:** enseña el SQL antes de correrlo, ejecútalo, y verifica
 el resultado. Todo cambio de esquema se guarda además como archivo en
 `sitio/scripts/migration-*.sql` para que quede rastro en el repo.
+
+## 🎯 Prospección en frío (motor ABM) — lee el manual antes de tocarlo
+
+`sitio/MANUAL-PROSPECCION-ABM.md` tiene el proceso completo: cómo se arma el
+universo, la cascada de enriquecimiento, las reglas de verificación, cómo se
+personalizan las cadencias y cómo se envía. Está escrito para **replicarse en
+Latinoamérica y Europa**, y cada regla dice de qué error salió.
+
+Las dos que más caro se pagan si se ignoran:
+
+- **WhatsApp SOLO a quien publicó su `wa.me`** (sección 6 bis). Hay un trigger
+  en `abm_toques` que lo impide; no lo quites. Un número que nadie declaró se
+  trabaja por llamada.
+- **Todo correo pasa por verificación de MX y nunca se corrige a mano.** Un
+  dominio mal escrito se descarta, no se arregla adivinando.
+
+Antes de dar por bueno un país nuevo, corre la lista de la sección 9.4 — e
+incluye resolver la legalidad del correo frío en ese país, que en la UE no es
+la misma que en México.
