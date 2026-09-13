@@ -83,6 +83,56 @@ Activa con fondo `#EEECFE`, radio `9px 9px 0 0`, borde inferior de 2 px en
 `#9B8CFA`, texto `#5B4BD6` peso 800. Inactiva en `#666` peso 500. Contador en
 pastilla pegado al texto.
 
+## 4 bis. La firma de pantalla: el sello y los destellos
+
+**Decisión del dueño (13-sep-2026): es la gestión de branding del CRM.** Toda
+pantalla de módulo lleva, en la franja del título y en ningún otro lado:
+
+- **Los destellos**, `<Chispas />` de `components/admin/crm/ui/Chispas.tsx`. Son
+  la chispa del logo en dos capas —diez grandes que se ven y ocho chiquitos de
+  polvo— con el latido desfasado. No se copian a otra pantalla: se importan. Un
+  segundo juego con otros tamaños se lee como otra casa.
+- **El sello**, `<Sello>…</Sello>`: la frase de esa pantalla en versalitas,
+  dentro de una píldora blanca con borde rosa, pegada al título.
+
+```tsx
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
+<style>{CSS_CHISPAS + CSS_SELLO}</style>
+<div className="chispas-cab" style={{ display:'flex', alignItems:'center', gap:12 }}>
+  <Chispas />
+  <h1>Soporte <Sello>Que nadie se quede a oscuras</Sello></h1>
+</div>
+```
+
+### Las cuatro reglas que no se negocian
+
+1. **Solo en la banda del título.** Es la única franja sin cifras; un destello
+   detrás de un número estorba al leerlo. Nunca sobre tablas ni KPIs.
+2. **El sello pesa igual en todas.** Mismo tamaño, mismo color, misma píldora.
+   Es la firma de la casa, no el subtítulo de la sección: si cada módulo le
+   cambia el tono, deja de ser una firma.
+3. **Una frase por pantalla, y dice lo que esa pantalla hace.** Todas hablan el
+   mismo idioma —estrellas y constelaciones, el de la entrada— pero cada una
+   nombra su trabajo.
+4. **La frase se calla cuando no cabe en la escena.** En Clientes desaparece al
+   ver exclientes: «Ninguna estrella brilla sola» sobre una lista de cuentas que
+   se fueron suena a burla. En pantalla angosta se esconde por CSS.
+
+### El catálogo de frases
+
+| Pantalla | Frase |
+|---|---|
+| Entrada (login) y Tablero | Conectando estrellas, creando constelaciones |
+| Cotizaciones | Cada sí enciende una estrella |
+| Clientes | Ninguna estrella brilla sola |
+| Soporte | Que nadie se quede a oscuras |
+| Taller | Aquí se pule cada estrella |
+| Consultoría | De cada junta sale una estrella |
+| Leads | Toda constelación empieza por una |
+
+Una pantalla nueva **no inventa su frase sola**: se propone al dueño y se anota
+aquí, porque el catálogo es lo que impide que en un año haya once voces.
+
 ## 5. Espaciado
 
 - El contenido del CRM **nunca toca el borde de la ventana**: el contenedor

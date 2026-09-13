@@ -6,6 +6,14 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-13 · La firma de pantalla en los demás módulos (Soporte, Taller, Consultoría, Leads).**
+      «me gustaria que en estas pantallas puedas poner los efectos del mensaje y las estrellas de acuerdo a su
+      gestion de cada uno que el diseno de la frase que correspinderia y los destellos que hemos puesto en
+      cotizaciones y clientes ese es la nueva gestion de branding guardalo solo antes de ponerlo en los demas
+      dame las frases y el prototipo que deberia de tener esto metelo en la cola»
+      → Primero: guardar la regla en el sistema visual (hecho), entregar las FRASES y el PROTOTIPO. Montarlo en las
+      cuatro pantallas se hace después, con el visto bueno del dueño.
+
 - [x] **2026-09-07 · Eventos: los 10 puntos de la propuesta.** «ok dale a los 10 puntos haz commit y push al terminar y
       de ahí regresamos con todo el tema outboubd» → HECHO 2026-09-07 (commit + push). (1 bandeja después de la feria,
       2 agendar demo en el stand, 3 citas en el stand antes, 4 comparador, 5 presupuesto anual con ROI, 6 captura por
