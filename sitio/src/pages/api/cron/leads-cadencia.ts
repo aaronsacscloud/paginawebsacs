@@ -25,6 +25,7 @@ import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/
 import { entregarInapp, retirarInapp, cuentaDelLead, campanasDeSecuencia } from '../../../lib/crm/secuencia-inapp';
 import { ctxRenovacion } from '../../../lib/crm/renovacion';
 import { enviarPlantilla, enContexto } from '../../../lib/whatsapp/kapso-api';
+import { valoresPlantilla } from '../../../lib/whatsapp/variables-plantilla';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
@@ -725,8 +726,15 @@ export const GET: APIRoute = async ({ url }) => {
             if (!presion.ok) { res.saltados.push({ lead: c.id, motivo: 'presion_wa', libre_en: presion.libreEn?.toISOString() }); continue; }
             if (await cadenciaPausadaPorPersona(c.whatsapp)) { res.saltados.push({ lead: c.id, motivo: 'la tomo una persona' }); continue; }
             if (!(await permitido('cadencia_leads'))) { res.saltados.push({ lead: c.id, motivo: 'cadencia pausada' }); continue; }
+            /* Los valores de la plantilla salen de su `variables_map`: así una plantilla puede
+               hablar de SU negocio («tu zapatería de dos tiendas») y no solo saludar por el
+               nombre. Si le falta un dato, no se manda a medias: se salta y queda anotado. */
+            const { data: plWa } = await supabase.from('wa_plantillas')
+              .select('variables, variables_map').eq('nombre', p.wa_plantilla).maybeSingle();
+            const vals = valoresPlantilla(c, plWa?.variables_map, Number(plWa?.variables) || 1);
+            if (!vals.ok) { res.saltados.push({ lead: c.id, motivo: `sin dato para la plantilla: ${vals.falta}`, plantilla: p.wa_plantilla }); continue; }
             enContexto('lead', (c as any).fuente || null);
-            await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', [primerNombre || '👋']);
+            await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', vals.valores);
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {
             /* Se mete su cuenta en la audiencia de la campaña y se republica.
