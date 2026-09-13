@@ -461,6 +461,21 @@ Los tres mensajes tienen papeles distintos: **presentar** (los siete de
 arriba), **aportar** algo nuevo del giro y repetir la oferta, y **cerrar** sin
 culpa, dejando la puerta abierta y una vía de autoservicio.
 
+**Con cuánto se saluda.** Solo el nombre de pila, nunca el apellido: *"Buen
+día, Cielo"*, jamás *"Buen día, Cielo Inzunza"* — eso delata una base comprada.
+Pero cortar siempre en la primera palabra destroza los compuestos, y a Juan
+Carlos nadie le dice Juan. La señal que sirve: en un compuesto **la segunda
+palabra también es un nombre de pila** ("Carlos" lo es, "Medina" no), así que
+la lista es de segundos elementos, no de apellidos — los apellidos son
+infinitos. Ante la duda, una sola palabra: equivocarse acortando es una
+familiaridad de más; equivocarse alargando es saludar a un extraño por su
+apellido. Va en `src/lib/crm/nombre.ts`, con su prueba.
+
+**Y no basta con la variable.** `{{persona}}` ya cortaba bien, pero el
+EXPEDIENTE le entregaba a la IA el nombre completo — y la IA escribe lo que ve.
+Salió un correo que abría *"Hola Juan Carlos"*. Al modelo se le pasa ya cortado:
+**una regla que puede desobedecer es peor que un dato que no tiene.**
+
 > ⚠️ **El motor de plantillas no tiene negación.** No existe `[[si no var]]`.
 > Escribir `[[si persona]]…le[[/si]][[si nombre]]Le[[/si]]` imprime **los dos**
 > cuando hay persona — salió *"Cielo Inzunza, leLe escribo"*. Cada condicional
@@ -627,6 +642,8 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | 83 "menciones de WhatsApp" que eran nombres de foto | Contar enlaces, no coincidencias de texto |
 | WhatsApp que pedía un dato sin presentarse | Los 7 elementos del primer mensaje (sec. 7.6) |
 | `[[si persona]]le[[/si]][[si nombre]]Le[[/si]]` → "leLe" | No hay negación: el condicional es frase completa |
+| El expediente daba el nombre completo a la IA | Pasarle el dato ya cortado, no una instrucción |
+| Prueba escrita en vitest, que el repo no usa | Seguir el runner del proyecto, o nadie la corre |
 | 554 números inferidos listos para salir a ciegas | WhatsApp solo a quien publicó su `wa.me` (sec. 6 bis) |
 | El canal guardaba `https://wa.me/…` y no el número | Normalizar a dígitos al cargar |
 | 1,703 canales "sin procedencia" que sí la tenían | Cruzar por valor NORMALIZADO, no exacto |
