@@ -485,6 +485,128 @@ Salió un correo que abría *"Hola Juan Carlos"*. Al modelo se le pasa ya cortad
 
 ---
 
+### 7.7 Las prácticas del contacto en frío
+
+Qué hace que contesten y qué hace que reporten. Aplica a correo y a WhatsApp,
+en cualquier giro y cualquier país. Lo marcado **[medido]** salió de este
+motor; lo demás es oficio y se corrige cuando los números digan otra cosa.
+
+#### El principio: la respuesta se gana, no se pide
+
+Nadie le debe una respuesta a un desconocido. Cada mensaje tiene que dejar algo
+—una idea útil del giro, un dato de su propio negocio, una oferta concreta—
+aunque nunca contesten. Un mensaje que solo pide (*"¿con quién veo este tema?"*,
+*"¿me pasa el correo del dueño?"*) es una carga, y a la carga se le reporta.
+
+Regla práctica: **si al borrar la pregunta final el mensaje ya no dice nada,
+está mal escrito.**
+
+#### Lo que sí va
+
+1. **Quiénes somos**, en una línea y en concreto.
+2. **De dónde salimos.** La verdad, siempre: los buscamos nosotros. Es lo
+   primero que piensa quien recibe, y no responderlo se siente como base
+   comprada. **[medido]** El correo 1 de novias existe solo para esto.
+3. **Algo real de ellos** que se vea investigado: sus reseñas, sus sucursales,
+   en qué plataforma tienen la tienda. Es la prueba de que no es un envío
+   masivo.
+4. **Por qué ellos:** buscábamos a los mejores del ramo y salieron. Se siente
+   distinto que ser uno más de una lista.
+5. **Lo específico de su giro**, con dos o tres cosas concretas. "Sistema de
+   inventario" no le mueve a nadie; "apartados con la fecha de la boda y el
+   muestrario marcado aparte" sí.
+6. **Algo que damos**: la demo por videollamada, el diagnóstico con sus
+   números. Gratis y sin compromiso, dicho así.
+7. **Una pregunta fácil**, de sí o no, contestable desde el celular.
+
+#### Lo que nunca va
+
+- **Inventar un registro que no pasó.** Ni "se registró", ni "pidió
+  información", ni "dejó sus datos". Además de mentira, es lo que convierte un
+  correo frío en una queja.
+- **Saludar con apellido.** *"Buen día, Cielo Inzunza"* delata la base de
+  datos. Solo el nombre de pila, respetando los compuestos (§7.6).
+- **Cifras de resultados inventadas.** Un solo caso real, citado igual siempre.
+- **Restregar una reseña mala.** Se alude al problema del giro, nunca se cita
+  ni se dice que leímos sus reseñas.
+- **Vocabulario de folleto:** "solución integral", "potenciar", "revolucionar",
+  "líder en el mercado", "no dude en contactarnos".
+- **Pedirle que reenvíe a alguien más** en el primer mensaje.
+- **Emoji y signos de admiración** en el asunto.
+
+#### Largo y ritmo
+
+| | Correo 1 | Correo 2+ | WhatsApp 1 | WhatsApp 2-3 |
+|---|---|---|---|---|
+| Tope | 200 palabras | 90 palabras | ~750 caracteres | ~600 |
+| Enlaces | los dos del guion | ninguno | uno, al final | uno |
+| Trabajo | explicar por qué llega | avanzar un tema | presentarse y ofrecer | aportar y cerrar |
+
+**Cada mensaje avanza.** Si el 4 se puede leer sin el 3, alguno de los dos
+sobra. Repetir lo mismo con otras palabras es lo que cansa y hace que reporten.
+
+**El último no reclama.** Cierra agradeciendo, deja la puerta abierta y una vía
+de autoservicio (la liga para agendar solos). Nada de *"último intento"* ni
+*"veo que no le interesó"*: eso deja mal sabor en el único mensaje que se lee
+completo.
+
+#### Personalización de verdad vs. teatro
+
+Meter `{{nombre}}` no es personalizar: es un combinado de correspondencia con
+otro nombre. Personalizar es que **el mensaje no sirva para otro negocio**. Si
+cambiando el nombre le queda igual de bien a cualquier tienda del giro, no está
+personalizado.
+
+Lo que sí personaliza: la calificación y sus reseñas, el número de sucursales,
+la plataforma de su tienda en línea, algo que publicaron, la ciudad y cómo se
+trabaja ahí.
+
+**Y el dato se le entrega al modelo ya listo, no como instrucción.** Si el
+expediente trae el nombre completo, la IA lo va a escribir por más que la regla
+diga lo contrario. **[medido]** Pasó con *"Hola Juan Carlos"*. Una regla que el
+modelo puede desobedecer es peor que un dato que no tiene.
+
+#### Cuándo se para
+
+- **Pidió que no le escribamos** → `opt_out`, y no se le vuelve a tocar por
+  ningún canal. Sin excepciones y sin "un último correo".
+- **Contestó** → la cadencia se detiene. Sigue una persona.
+- **Rebotó duro** → canal `invalido`, no se reintenta (§5.1).
+- **Se acabó la cadencia sin respuesta** → se deja descansar. Si se retoma, es
+  en otra temporada y con otro motivo, no con el mismo guion.
+
+#### Cuándo se manda
+
+Días hábiles y horario de oficina del **huso del prospecto**, no del nuestro.
+Nada de lunes a primera hora ni viernes por la tarde. En WhatsApp esto pesa más
+que en correo: un mensaje de trabajo a las 9 de la noche molesta de verdad.
+
+#### Qué se mira, y en qué orden
+
+1. **Quejas de spam.** Es lo único que apaga el motor, y con una basta
+   **[medido]**. Si aparece una, no se sube el volumen: se revisa el guion.
+2. **Rebotes.** Arriba del 5% hay un problema de datos, no de copy.
+3. **Respuestas**, separando las buenas de las molestas. Una molesta vale por
+   varias neutras como señal.
+4. **Aperturas**, al final y con desconfianza: los primeros tres correos van
+   sin rastreo a propósito (§8.1), así que el dato está incompleto por diseño.
+
+**No se toca el guion y el volumen a la vez.** Si se mueven los dos, no se sabe
+cuál movió el resultado.
+
+#### Antes de encender una cadencia nueva
+
+1. ¿Se renderizó contra **cuentas reales**, no contra una de ejemplo? Ahí
+   salieron *"con sus 1 sucursales"*, *"leLe escribo"* y *"Buen día, Cielo
+   Inzunza"* — ninguno se veía en la plantilla.
+2. ¿El botón pide lo mismo que el cuerpo? (§7.1)
+3. ¿El mensaje 1 tiene los siete elementos? (§7.6)
+4. ¿Algún mensaje se puede leer sin el anterior?
+5. ¿El último cierra sin reclamar?
+6. ¿Hay algún dato inventado que no esté en el expediente?
+
+---
+
 ## 8. Fase 4 — Enviar
 
 ### 8.1 Correo
@@ -515,6 +637,31 @@ mensaje, punto — se trabaja por llamada.
 Aun dentro de los declarados, se va por tandas y midiendo la calificación de
 calidad de la línea entre una y otra.
 
+**Desde el 13-sep-2026 el WhatsApp va dentro de la cadencia y lo manda el cron**
+(`lib/crm/abm-whatsapp.ts`), no a mano. Lo que hizo falta para que eso fuera
+seguro, y que no se quita:
+
+- **Plantilla aprobada por Meta.** Fuera de la ventana de 24 h solo se puede
+  abrir conversación con plantilla. Cada plantilla de WhatsApp del ABM tiene su
+  nombre en Meta (`abm_plantillas.meta_nombre`, p. ej. `abm_mayoristas_abre`);
+  se registra desde la pestaña Envíos progresivos («Registrar plantillas en
+  Meta») y **hasta que Meta la apruebe el toque se queda en la fila**, sin
+  fallar. El texto que sale es el que Meta aprobó: por eso en la ficha se
+  aprueba o se quita, pero no se edita.
+- **La línea manda.** Sale por la línea que el CRM tenga para «prospección»
+  (`wa_reglas_linea`; si no hay regla, la default). Si `wa-salud` pausó la
+  línea por calidad, no sale nada. Además: tope propio al día
+  (`abm_config.wa_tope_dia`, 10), la presión de 24 h entre WhatsApps al mismo
+  número (la misma de todo el CRM) y **un solo toque por negocio al día** —si
+  hoy ya le salió un correo, el WhatsApp se recorre a mañana.
+- **Los días no chocan con los correos.** Abre al día 2 (un día después del
+  primer correo), sigue al 16 y cierra al 36, después del último correo.
+- **Contestar por WhatsApp frena TODA la cadencia**, igual que contestar el
+  correo: el cron cruza el espejo `wa_mensajes` y cancela lo que quede con
+  motivo «contestó por WhatsApp».
+- **Los toques de WhatsApp no cuentan** en el cupo de correo ni en el «siete
+  correos sin apertura» del ritmo: cada canal lleva su propia cuenta.
+
 ### 8.3 Nada sale sin que una persona apruebe
 
 Los toques nacen `borrador`. El motor arranca `pausado = si`. Aprobar y
@@ -536,8 +683,14 @@ hoy y los demás con sus días. Verifica el MX de cada correo al enrolar y marca
 correos aprobados de ese goteo sin salir, ese día no enrola (no se apila
 atraso). Cuando ya no hay elegibles, se marca `terminado`.
 
+Si la cadencia lleva pasos de WhatsApp, el goteo también los escribe (solo si
+la cuenta tiene un `wa.me` declarado; si no, entra solo con correo) y los deja
+aprobados con la misma firma. A las cuentas que entraron antes de que la
+cadencia llevara WhatsApp se les completa desde la pantalla («Completar sus
+WhatsApp»).
+
 **Cómo casa con §8.3:** la persona que enciende el goteo firma de una vez la
-aprobación de todos los correos que genere (`aprobado_por = creado_por`). Es
+aprobación de todos los correos y WhatsApp que genere (`aprobado_por = creado_por`). Es
 decisión humana, tomada una sola vez y con nombre. Encender el goteo NO
 enciende el cartero: `pausado = si` sigue mandando sobre todo, y el goteo
 tampoco enrola mientras el motor esté pausado.
@@ -660,9 +813,10 @@ src/lib/crm/abm-correo.ts               el HTML del correo (diseño fuera del cu
 src/lib/crm/abm-giros.ts                catálogo de giros
 src/lib/crm/abm-generar.ts              expediente + REGLAS + la IA que redacta la cadencia
 src/lib/crm/abm-goteo.ts                envíos progresivos: elegibles, lote diario, MX
+src/lib/crm/abm-whatsapp.ts             el WhatsApp de la cadencia: plantillas en Meta, envío por línea, respuestas
 src/pages/api/crm/abm/cadencias.ts      generar / aprobar / cancelar
-src/pages/api/crm/abm/goteo.ts          crear/pausar/enrolar un goteo, encender el cartero
-src/pages/api/cron/abm-cadencias.ts     el envío: rampa, disyuntor, goteo, cupo
+src/pages/api/crm/abm/goteo.ts          crear/pausar/enrolar un goteo, encender el cartero, registrar plantillas en Meta
+src/pages/api/cron/abm-cadencias.ts     el envío: rampa, disyuntor, goteo, cupo, WhatsApp
 scripts/abm-verificar-mx.mjs            marca valido/invalido por MX los correos sin_probar de un giro
 src/pages/api/cron/abm-enriquecer.ts    Places y DENUE (necesita llaves)
 sitio/migraciones/                      cada carga de datos, con su porqué
