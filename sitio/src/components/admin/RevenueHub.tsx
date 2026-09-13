@@ -1260,6 +1260,22 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       return q.estado;
     };
 
+    /* ── Una cotización que ya recibió dinero NO está vencida ──
+       La vigencia caduca el PRECIO de una propuesta que nadie contestó. Si el
+       cliente ya abonó —aunque sea el anticipo de un plan de parcialidades— la
+       venta está cerrada y lo que queda es cobrar el resto, no volver a
+       ofrecer. La página pública ya lo respetaba (no autovence con abonos),
+       pero esta lista no: COT-80129 de Vende Tu Closet, con $49,450 pagados de
+       $114,724, se pintaba VENCIDA en rojo al día siguiente de su vigencia.
+       Lo que sigue vivo es la parcialidad, y esa sí vence — con su propia
+       fecha, en Cobranza. */
+    const vencida = (q: any): boolean => {
+      if (Number(q.abonado || 0) > 0) return false;
+      if (q.estado === 'accepted' || q.estado === 'paid') return false;
+      if (q.estado === 'expired') return true;
+      return q.estado === 'sent' && !!q.vigencia && daysUntil(q.vigencia) < 0;
+    };
+
     // ── La próxima parcialidad pactada ──
     // Las fechas del plan se capturan al cotizar y viven en el meta de la
     // cotización. Aquí se leen para poder decir CUÁNDO toca el siguiente pago
@@ -1530,7 +1546,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           const vDe = (q: any) => Number(parseMeta(q.notas).meta.views || 0);
           const abiertas = quotes.filter((q: any) => q.estado === 'draft' || q.estado === 'sent');
           const aceptadas = quotes.filter((q: any) => q.estado === 'accepted' || estadoVisual(q, vDe(q)) === 'parcial');
-          const vencidas = quotes.filter((q: any) => q.estado === 'expired' || (q.estado === 'sent' && q.vigencia && daysUntil(q.vigencia) < 0));
+          const vencidas = quotes.filter(vencida);
           const listaQ = [...(chipQ === 'abiertas' ? abiertas : chipQ === 'aceptadas' ? aceptadas : vencidas)]
             .sort((a: any, b: any) => Number(b.total || 0) - Number(a.total || 0));
           const contexto = (q: any) => {
@@ -1603,10 +1619,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   <VistaRapida abierta onCerrar={() => setRapidaQ(null)} onVerTodo={() => { const id = q.id; setRapidaQ(null); setVerActividad(id); }}
                     nombre={String(q.empresa || q.contacto || q.numero || '').replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)))}
                     estado={q.numero}
-                    contexto={[`enviada ${dEnv <= 0 ? 'hoy' : dEnv === 1 ? 'ayer' : 'hace ' + dEnv + ' días'}`, venceEn != null ? (venceEn < 0 ? 'vencida' : 'vence en ' + venceEn + ' d') : null].filter(Boolean).join(' · ')}
+                    contexto={[`enviada ${dEnv <= 0 ? 'hoy' : dEnv === 1 ? 'ayer' : 'hace ' + dEnv + ' días'}`,
+                      abonado > 0 ? `${fmt(abonado)} abonado` : venceEn != null ? (venceEn < 0 ? 'vencida' : 'vence en ' + venceEn + ' d') : null].filter(Boolean).join(' · ')}
                     heroLabel={saldo > 0 && abonado > 0 ? 'Saldo por cobrar' : saldo > 0 ? 'Total' : 'Cobrada'}
                     heroValor={fmt(saldo > 0 ? saldo : Number(q.total || 0))}
-                    heroTono={saldo > 0 && (venceEn != null && venceEn < 0) ? 'rojo' : undefined}
+                    heroTono={saldo > 0 && vencida(q) ? 'rojo' : undefined}
                     heroLectura={v > 0 ? <><b style={{ color: '#1E8A63' }}>la abrió {v === 1 ? '1 vez' : v + ' veces'}</b></> : <span style={{ color: '#a06600' }}>aún no la abre</span>}
                     acciones={[
                       { label: 'Cobrar', primaria: true, onClick: () => { setRapidaQ(null); setCobrando(q); } },
@@ -2012,9 +2029,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             </td>
                           );
                         }
+                        /* En rojo solo si de verdad está vencida: con abonos la
+                           vigencia ya no aplica —el precio se cerró cuando entró
+                           el primer pago— y pintarla de rojo manda a perseguir
+                           una venta que ya se hizo. */
                         return (
-                          <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? M.rojoTinta : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
-                            {q.vigencia ? (days === 0 ? 'Hoy' : `${Math.abs(days as number)} ${Math.abs(days as number) === 1 ? 'día' : 'días'}`) : '—'}
+                          <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: vencida(q) ? M.rojoTinta : '#8a8a8a', fontWeight: vencida(q) ? 700 : 400 }}>
+                            {Number(q.abonado || 0) > 0 ? 'en pagos'
+                              : q.vigencia ? (days === 0 ? 'Hoy' : `${Math.abs(days as number)} ${Math.abs(days as number) === 1 ? 'día' : 'días'}`) : '—'}
                           </td>
                         );
                       })()}

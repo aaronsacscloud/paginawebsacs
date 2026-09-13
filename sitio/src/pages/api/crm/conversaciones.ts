@@ -29,12 +29,33 @@ export const GET: APIRoute = async ({ request, url }) => {
   const companyId = String(url.searchParams.get('company_id') || '');
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
-  const { data, error } = await supabase.from('conversaciones_capturadas')
-    .select('*').eq('company_id', companyId)
-    .order('hasta', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false }).limit(60);
+  const [{ data, error }, { data: cots }, { data: abonos }] = await Promise.all([
+    supabase.from('conversaciones_capturadas')
+      .select('*, quotes(id, numero, estado, total, vigencia)').eq('company_id', companyId)
+      .order('hasta', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false }).limit(60),
+    /* Las cotizaciones de la cuenta, para poder ligar la que salió de la
+       conversación. Se excluyen las borradas y las plantillas: no son
+       documentos que el cliente haya visto. */
+    supabase.from('quotes').select('id, numero, estado, total, created_at, vigencia')
+      .eq('company_id', companyId).not('estado', 'in', '(deleted,plantilla)')
+      .order('created_at', { ascending: false }).limit(40),
+    supabase.from('payments').select('quote_id, monto').eq('company_id', companyId)
+      .not('quote_id', 'is', null).neq('estado', 'reembolsado'),
+  ]);
   if (error) return json({ error: error.message }, 500);
-  return json({ conversaciones: data || [] });
+
+  const pagado: Record<string, number> = {};
+  for (const p of (abonos || [])) pagado[(p as any).quote_id] = (pagado[(p as any).quote_id] || 0) + Number((p as any).monto || 0);
+
+  return json({
+    conversaciones: data || [],
+    cotizaciones: (cots || []).map((q: any) => ({
+      id: q.id, numero: q.numero, estado: q.estado, total: Number(q.total || 0),
+      fecha: q.created_at, pagado: Math.round(pagado[q.id] || 0),
+      saldo: Math.max(0, Math.round(Number(q.total || 0) - (pagado[q.id] || 0))),
+    })),
+  });
 };
 
 const SISTEMA = `Eres el asistente de una consultora de software para retail (Sacs).
@@ -177,6 +198,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: conv, error } = await supabase.from('conversaciones_capturadas').insert({
       company_id: companyId, contact_id: UUID.test(String(b?.contact_id || '')) ? b.contact_id : null,
       canal, titulo: String(b?.titulo || '').slice(0, 160) || null, resumen,
+      quote_id: UUID.test(String(b?.quote_id || '')) ? b.quote_id : null,
       acuerdos: Array.isArray(b?.acuerdos) ? b.acuerdos : [],
       pidio: Array.isArray(b?.pidio) ? b.pidio : [],
       tono: String(b?.tono || '').slice(0, 20) || null,
@@ -305,7 +327,21 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, mejora: mej, acuerdos: lista });
   }
 
-  return json({ error: 'Acción desconocida: analizar | guardar | gestion' }, 400);
+  // ── LIGAR: la cotización que salió de esa conversación ───────────────────
+  if (accion === 'ligar') {
+    const convId = String(b?.conversacion_id || '');
+    if (!UUID.test(convId)) return json({ error: 'Falta la conversación.' }, 400);
+    /* `null` desliga a propósito: una cotización mal ligada tiene que poder
+       soltarse sin borrar el registro de la conversación, que sí pasó. */
+    const qid = UUID.test(String(b?.quote_id || '')) ? String(b.quote_id) : null;
+    const { data, error } = await supabase.from('conversaciones_capturadas')
+      .update({ quote_id: qid, updated_at: new Date().toISOString() })
+      .eq('id', convId).select('*, quotes(id, numero, estado, total, vigencia)').single();
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, conversacion: data });
+  }
+
+  return json({ error: 'Acción desconocida: analizar | guardar | gestion | ligar' }, 400);
 };
 
 export const DELETE: APIRoute = async ({ request, url }) => {

@@ -35,6 +35,7 @@ const TONO: Record<string, { t: string; bg: string; fg: string }> = {
   'en espera': { t: 'esperando algo', bg: '#FFF4E5', fg: '#9a6a10' },
 };
 
+const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fecha = (d?: string | null) => d
   ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
   : '';
@@ -44,11 +45,13 @@ const corta = (d?: string | null) => d
 
 export default function Conversaciones({ companyId, contactId }: { companyId: string; contactId?: string | null }) {
   const [lista, setLista] = useState<any[] | null>(null);
+  const [cots, setCots] = useState<any[]>([]);
   const [abrir, setAbrir] = useState(false);
   const [msg, setMsg] = useState('');
 
   const cargar = () => fetch('/api/crm/conversaciones?company_id=' + companyId)
-    .then(r => r.json()).then(j => setLista(j.conversaciones || [])).catch(() => setLista([]));
+    .then(r => r.json()).then(j => { setLista(j.conversaciones || []); setCots(j.cotizaciones || []); })
+    .catch(() => setLista([]));
   useEffect(() => { setLista(null); cargar(); /* eslint-disable-next-line */ }, [companyId]);
 
   const flash = (t: string) => { setMsg(t); setTimeout(() => setMsg(''), 2800); };
@@ -57,6 +60,15 @@ export default function Conversaciones({ companyId, contactId }: { companyId: st
     if (!await confirmar(`Se borra el registro de «${c.titulo || 'esta conversación'}» y las actividades que generó.\n\nLa cuenta va a volver a verse con menos seguimiento del que tuvo.`)) return;
     await fetch('/api/crm/conversaciones?id=' + c.id, { method: 'DELETE' }).catch(() => {});
     cargar(); flash('Registro borrado');
+  }
+
+  async function ligar(c: any, quoteId: string | null) {
+    const r = await fetch('/api/crm/conversaciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'ligar', conversacion_id: c.id, quote_id: quoteId }),
+    }).then(x => x.json()).catch(() => null);
+    if (!r || r.error) { flash(r?.error || 'No se pudo ligar'); return; }
+    cargar(); flash(quoteId ? 'Cotización ligada' : 'Cotización desligada');
   }
 
   async function aGestion(c: any, i: number) {
@@ -153,8 +165,35 @@ export default function Conversaciones({ companyId, contactId }: { companyId: st
               </div>
             )}
 
-            <div style={{ marginTop: 10 }}>
-              <button style={{ ...S.btnG, color: '#a5a2af', padding: '5px 10px', fontSize: '0.72rem' }} onClick={() => borrar(c)}>Quitar</button>
+            {/* ── La cotización que salió de aquí ──
+                Pedido del dueño: poder ver que de esa conversación nació una
+                cotización. Se enseña con lo que lleva pagado, porque una en
+                parcialidades no está «pendiente»: está en curso. */}
+            <div style={{ borderTop: '1px solid #f4f3f7', marginTop: 11, paddingTop: 10, display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ ...S.lbl, marginBottom: 0 }}>Cotización</span>
+              <select value={c.quote_id || ''} onChange={e => ligar(c, e.target.value || null)}
+                style={{ ...S.inp, width: 'auto', minWidth: 230, fontSize: '0.76rem', padding: '6px 9px' }}>
+                <option value="">— de aquí no salió ninguna —</option>
+                {cots.map((q: any) => (
+                  <option key={q.id} value={q.id}>
+                    {q.numero} · {money(q.total)}{q.pagado > 0 ? ` · ${money(q.pagado)} abonado` : ''}
+                  </option>
+                ))}
+              </select>
+              {c.quotes && (<>
+                <a href={`/cotizacion/${c.quotes.id}?admin=1`} target="_blank" rel="noreferrer"
+                  style={{ ...S.btnG, textDecoration: 'none', display: 'inline-block' }}>Ver la cotización</a>
+                {(() => {
+                  const q = cots.find((x: any) => x.id === c.quote_id);
+                  if (!q) return null;
+                  return q.pagado > 0 && q.saldo > 0
+                    ? <span style={chip('#FFF4E5', '#9a6a10')}>en pagos · faltan {money(q.saldo)}</span>
+                    : q.saldo <= 0
+                      ? <span style={chip('#EAF8F2', '#1E8A63')}>liquidada</span>
+                      : <span style={chip('#f4f3f7', '#6b7280')}>sin abonos</span>;
+                })()}
+              </>)}
+              <button style={{ ...S.btnG, marginLeft: 'auto', color: '#a5a2af', padding: '5px 10px', fontSize: '0.72rem' }} onClick={() => borrar(c)}>Quitar</button>
             </div>
           </div>
         );

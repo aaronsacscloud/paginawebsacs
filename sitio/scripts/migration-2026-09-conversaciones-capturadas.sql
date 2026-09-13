@@ -50,3 +50,10 @@ create index if not exists ix_conv_cap_company on conversaciones_capturadas(comp
 -- por mensaje: 134 renglones en el timeline por una sola conversación lo
 -- vuelven ilegible, y una sola fila perdería las fechas —que son justo lo que
 -- hace falta para decir «contestó el 11 de septiembre»—.
+
+-- ── La cotización que salió de esa conversación (13-sep-2026) ──
+-- Pedido del dueño: poder saber que de ese chat nació una cotización. La
+-- relación es opcional y de una sola dirección; si la cotización se borra, la
+-- conversación se queda (pasó de verdad) y solo pierde la liga.
+alter table conversaciones_capturadas
+  add column if not exists quote_id uuid references quotes(id) on delete set null;
