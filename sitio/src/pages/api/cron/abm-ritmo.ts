@@ -65,7 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
   let aLlamada = 0, dormidas = 0;
   for (const c of activas || []) {
     const [{ count: enviados }, { count: aperturas }, { count: clics }, { count: respuestas }] = await Promise.all([
-      supabase.from('abm_actividad').select('id', { count: 'exact', head: true }).eq('cuenta_id', c.id).eq('tipo', 'envio'),
+      supabase.from('abm_actividad').select('id', { count: 'exact', head: true }).eq('cuenta_id', c.id).eq('tipo', 'envio').eq('canal', 'email'),
       supabase.from('abm_actividad').select('id', { count: 'exact', head: true }).eq('cuenta_id', c.id).eq('tipo', 'apertura'),
       supabase.from('abm_actividad').select('id', { count: 'exact', head: true }).eq('cuenta_id', c.id).eq('tipo', 'clic'),
       supabase.from('abm_actividad').select('id', { count: 'exact', head: true }).eq('cuenta_id', c.id).in('tipo', ['respuesta', 'reunion']),

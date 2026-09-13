@@ -8,6 +8,8 @@
 //   pausar        { id }  ·  reanudar { id }
 //   enrolar_ahora { id }  → corre el lote de hoy sin esperar al cartero (sigue sin MANDAR: eso es del cron)
 //   motor         { pausado: 'si' | 'no' } → el interruptor global de abm_config
+//   wa_registrar  { giro }  → registra en Meta las plantillas de WhatsApp del giro que falten (quedan PENDING hasta que Meta apruebe)
+//   wa_completar  { id }    → a las cuentas que el goteo enroló sin WhatsApp les escribe los suyos (ya aprobados, con la firma del goteo)
 //
 // El motor lo enciende una persona. Encender un goteo también lo hace una
 // persona y queda con su firma: esa es la aprobación de los correos que el
@@ -16,6 +18,8 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { json, quien, esUuid, limpiar } from '../../../../lib/crm/abm.lib';
 import { elegibles, correrGoteos } from '../../../../lib/crm/abm-goteo';
+import { estadoPlantillas, registrarPlantillas, completarWhatsApps } from '../../../../lib/crm/abm-whatsapp';
+import { lineaPara, infoLinea } from '../../../../lib/whatsapp/linea';
 
 export const prerender = false;
 
@@ -32,7 +36,20 @@ async function motor() {
   if (!slug) faltas.push('No hay remitente para el correo en frío (abm_config.tenant_slug): el cartero no manda nada por el remitente de los clientes.');
   else if (!remitente) faltas.push(`El remitente «${slug}» no existe en email_tenants.`);
   if (!(import.meta.env.EMAIL_REPLY_DOMAIN || '').trim()) faltas.push('Falta EMAIL_REPLY_DOMAIN en el entorno: sin él una respuesta no frena la cadencia.');
+
+  // El WhatsApp: por qué línea sale y si sus plantillas ya pasaron por Meta.
+  const pn = await lineaPara({ contexto: 'prospeccion' }).catch(() => null);
+  const linea = pn ? await infoLinea(pn) : null;
+  const { data: giros } = await supabase.from('abm_goteo').select('cadencia:abm_cadencias(giro)').neq('estado', 'terminado');
+  const girosWa = Array.from(new Set((giros || []).map((g: any) => g.cadencia?.giro).filter(Boolean))) as string[];
+  const plantillas: any[] = [];
+  for (const giro of girosWa) for (const p of await estadoPlantillas(giro)) plantillas.push({ giro, ...p });
+  const wa = {
+    linea: linea?.numero || null, pausada: !!linea?.pausada, pausada_motivo: linea?.pausada_motivo || null, calidad: linea?.calidad || null,
+    tope: Number(cfg.wa_tope_dia?.valor ?? 10), plantillas,
+  };
   return {
+    wa,
     pausado: String(cfg.pausado?.valor || 'si'), pausado_nota: (cfg.pausado?.nota && !/\|/.test(cfg.pausado.nota)) ? cfg.pausado.nota : null, pausado_hasta: cfg.pausado?.hasta || null,
     remitente, faltas,
     cupo_inicial: Number(cfg.cupo_inicial?.valor || 15), tope_diario: Number(cfg.tope_diario?.valor || 120),
@@ -53,14 +70,21 @@ export const GET: APIRoute = async ({ request }) => {
   for (const g of goteos || []) {
     const [{ data: lotes }, { data: toques }, el] = await Promise.all([
       supabase.from('abm_goteo_lotes').select('fecha, cuentas, sin_ia, motivo, detalle').eq('goteo_id', g.id).order('fecha', { ascending: false }).limit(10),
-      supabase.from('abm_toques').select('estado').eq('goteo_id', g.id).limit(5000),
+      supabase.from('abm_toques').select('estado, canal, cuenta_id').eq('goteo_id', g.id).limit(20000),
       g.estado === 'terminado' ? Promise.resolve({ cuentas: [], total_base: 0 }) : elegibles(g, 500),
     ]);
-    const porEstado: Record<string, number> = {};
-    for (const t of toques || []) porEstado[t.estado] = (porEstado[t.estado] || 0) + 1;
+    const porEstado: Record<string, number> = {}, porEstadoWa: Record<string, number> = {};
+    for (const t of toques || []) {
+      const cubo = t.canal === 'whatsapp' ? porEstadoWa : porEstado;
+      cubo[t.estado] = (cubo[t.estado] || 0) + 1;
+    }
+    // Cuentas del goteo que se enrolaron antes de que la cadencia tuviera WhatsApp.
+    const conWa = new Set((toques || []).filter((t: any) => t.canal === 'whatsapp').map((t: any) => t.cuenta_id));
+    const sinWa = new Set((toques || []).filter((t: any) => t.canal === 'email' && !conWa.has(t.cuenta_id)).map((t: any) => t.cuenta_id)).size;
     salida.push({
       ...g, autor: (g as any).autor?.nombre || null,
-      lotes: lotes || [], toques: porEstado, quedan: el.cuentas.length, base: el.total_base,
+      lotes: lotes || [], toques: porEstado, toques_wa: porEstadoWa, sin_wa: sinWa,
+      quedan: el.cuentas.length, base: el.total_base,
       siguientes: el.cuentas.slice(0, Number(g.cuentas_dia) || 10).map((c: any) => ({ id: c.id, nombre: c.nombre, ciudad: c.ciudad, correo: c.correo, puntaje: c.puntaje })),
     });
   }
@@ -96,7 +120,27 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, id: data.id });
   }
 
+  if (accion === 'motor') {
+    const v = b.pausado === 'no' ? 'no' : 'si';
+    const { error } = await supabase.from('abm_config')
+      .update({ valor: v, hasta: null, nota: `${v === 'no' ? 'encendido' : 'pausado'} por ${yo.nombre} el ${new Date().toISOString().slice(0, 10)}` })
+      .eq('clave', 'pausado');
+    return error ? json({ error: error.message }, 500) : json({ ok: true, pausado: v });
+  }
+
+  if (accion === 'wa_registrar') {
+    const giro = limpiar(b.giro, 40);
+    if (!giro) return json({ error: 'falta el giro' }, 400);
+    const r = await registrarPlantillas(giro);
+    return json({ ok: true, plantillas: r });
+  }
+
   if (!esUuid(b.id)) return json({ error: 'goteo inválido' }, 400);
+
+  if (accion === 'wa_completar') {
+    try { return json({ ok: true, ...(await completarWhatsApps(b.id)) }); }
+    catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
+  }
 
   if (accion === 'editar') {
     const patch: any = { updated_at: new Date().toISOString() };
@@ -124,14 +168,6 @@ export const POST: APIRoute = async ({ request }) => {
     if (g.estado !== 'activo') return json({ error: 'el goteo está en pausa o terminado: reanúdalo primero' }, 409);
     const r = await correrGoteos({ solo_id: b.id, forzar: true, quien: yo.nombre });
     return json({ ok: true, lotes: r });
-  }
-
-  if (accion === 'motor') {
-    const v = b.pausado === 'no' ? 'no' : 'si';
-    const { error } = await supabase.from('abm_config')
-      .update({ valor: v, hasta: null, nota: `${v === 'no' ? 'encendido' : 'pausado'} por ${yo.nombre} el ${new Date().toISOString().slice(0, 10)}` })
-      .eq('clave', 'pausado');
-    return error ? json({ error: error.message }, 500) : json({ ok: true, pausado: v });
   }
 
   return json({ error: 'acción desconocida' }, 400);

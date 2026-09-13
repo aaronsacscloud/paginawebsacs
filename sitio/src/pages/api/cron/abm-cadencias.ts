@@ -23,6 +23,7 @@ import { supabase } from '../../../lib/supabase';
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { apuntar, repuntuar } from '../../../lib/crm/abm.lib';
 import { correrGoteos } from '../../../lib/crm/abm-goteo';
+import { enviarWhatsApps, respuestasWhatsApp } from '../../../lib/crm/abm-whatsapp';
 import { armarCorreo } from '../../../lib/crm/abm-correo';
 
 export const prerender = false;
@@ -103,10 +104,11 @@ export const GET: APIRoute = async ({ request }) => {
   }
   const cupo = cupoDelDia(dias, Number(cfg.cupo_inicial || 15), tope);
 
+  // El cupo y la rampa son del CORREO: el WhatsApp lleva su propio tope
+  // (abm_config.wa_tope_dia) y su propio disyuntor (la calidad de la línea).
   const { count: yaHoy } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
-    .eq('estado', 'enviado').gte('enviado_at', hoy + 'T00:00:00Z');
+    .eq('estado', 'enviado').eq('canal', 'email').gte('enviado_at', hoy + 'T00:00:00Z');
   const restante = Math.max(0, cupo - (yaHoy || 0));
-  if (!restante) return json({ enviados: 0, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, motivo: 'cupo del día agotado', espejo });
 
   // El disyuntor cuenta REBOTES DE VERDAD (los que reporta SendGrid tras
   // entregar), no los fallos por una dirección mal escrita: seis direcciones
@@ -133,6 +135,15 @@ export const GET: APIRoute = async ({ request }) => {
   // el motor pausado o el disyuntor abierto no enrola: nada entra a una fila
   // parada.
   const goteo = await correrGoteos({ hoy, quien: 'El goteo' }).catch((e: any) => [{ error: String(e?.message || e) }] as any);
+
+  // El WhatsApp de la cadencia (lib/crm/abm-whatsapp.ts): primero se recogen
+  // las respuestas —quien contestó por WhatsApp sale de la fila entera— y
+  // luego salen los del día, por plantilla aprobada de Meta y con su tope.
+  const waRespuestas = await respuestasWhatsApp().catch((e: any) => ({ respondieron: 0, error: String(e?.message || e) }));
+  const whatsapp = await enviarWhatsApps({ hoy, tope: Number(cfg.wa_tope_dia ?? 10) })
+    .catch((e: any) => ({ enviados: 0, saltados: 0, fallidos: 0, linea: null, tope: 0, motivo: String(e?.message || e), errores: [] }));
+
+  if (!restante) return json({ enviados: 0, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, motivo: 'cupo del día agotado', espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
 
   const { data: pendientes } = await supabase.from('abm_toques')
     .select('id, cuenta_id, destino, asunto, cuerpo, programado_at, imagen, boton_texto, boton_url')
@@ -270,7 +281,7 @@ export const GET: APIRoute = async ({ request }) => {
     } else fallos.push(`${r.motivo}: ${String(r.detalle || '').slice(0, 90)}`);
   }
 
-  return json({ enviados, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo });
+  return json({ enviados, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
 };
 
 /** Trae a la bitácora lo que SendGrid ya contó en email_sends. */

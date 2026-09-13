@@ -50,6 +50,10 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
 
   const toques = (d?.toques || []).filter((t: any) => t.canal === 'email');
   const porRevisar = toques.filter((t: any) => t.estado === 'borrador').length;
+  // Los WhatsApp de la cadencia (plantilla de Meta, solo al wa.me publicado):
+  // se aprueban con el resto y se pueden quitar, pero no se editan aquí,
+  // porque el texto que sale es el que Meta aprobó.
+  const whatsapps = (d?.toques || []).filter((t: any) => t.canal === 'whatsapp');
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -59,7 +63,7 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
             {d?.cadencia ? d.cadencia.nombre : 'Sin cadencia todavía'}
           </div>
           <div style={{ fontSize: '.75rem', color: '#888' }}>
-            {toques.length ? `${toques.length} correos · ${porRevisar} por revisar` : 'Se escriben con los datos de esta cuenta, y no sale ninguno sin que lo apruebes.'}
+            {toques.length ? `${toques.length} correos${whatsapps.length ? ` + ${whatsapps.length} WhatsApp` : ''} · ${porRevisar} por revisar` : 'Se escriben con los datos de esta cuenta, y no sale ninguno sin que lo apruebes.'}
           </div>
         </div>
         {!toques.length ? (
@@ -117,6 +121,35 @@ export default function Cadencia({ cuentaId, onCambio }: { cuentaId: string; onC
           </div>
         );
       })}
+
+      {whatsapps.length > 0 && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ fontSize: '.6875rem', letterSpacing: '.06em', textTransform: 'uppercase', color: '#999', fontWeight: 700, marginTop: 4 }}>
+            WhatsApp de la cadencia · plantilla de Meta, solo al wa.me que publicó el negocio
+          </div>
+          {whatsapps.map((t: any, i: number) => {
+            const est = ESTADO[t.estado] || ESTADO.borrador;
+            return (
+              <div key={t.id} style={{ border: `1px solid ${P.linea}`, borderRadius: 10, padding: '11px 15px', background: '#fff' }}>
+                <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', marginBottom: 5 }}>
+                  <span style={{ fontSize: '.6875rem', fontWeight: 800, color: '#aaa' }}>WA {i + 1}</span>
+                  <Pastilla tono={est}>{est.l}</Pastilla>
+                  <span style={{ fontSize: '.75rem', color: '#888' }}>{t.estado === 'enviado' ? `salió el ${fecha(t.enviado_at)}` : `sale el ${fecha(t.programado_at)}`}</span>
+                  {t.resultado && <span style={{ fontSize: '.75rem', color: P.rojoTinta }}>{t.resultado}</span>}
+                  <span style={{ fontSize: '.75rem', color: '#aaa', marginLeft: 'auto' }}>{t.destino}</span>
+                </div>
+                <div style={{ fontSize: '.8125rem', color: '#444', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{t.cuerpo}</div>
+                {['borrador', 'aprobado', 'programado'].includes(t.estado) && (
+                  <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
+                    {t.estado === 'borrador' && <button disabled={trabajando} onClick={() => pedir({ accion: 'aprobar', toque_id: t.id })} style={btn(false)}>Aprobar</button>}
+                    <button disabled={trabajando} onClick={() => pedir({ accion: 'cancelar', toque_id: t.id })} style={btnMal()}>Quitar</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -41,6 +41,10 @@ export default function Goteo() {
       else if (body.accion === 'enrolar_ahora') {
         const l = (j.lotes || [])[0];
         setAviso(l ? { t: l.cuentas ? `Entraron ${l.cuentas} cuentas${l.sin_ia ? ` (${l.sin_ia} sin IA)` : ''}. Salen en la próxima corrida del cartero.` : (l.motivo || 'No entró ninguna'), mal: !l.cuentas } : { t: 'Hoy ya había corrido' });
+      } else if (body.accion === 'wa_registrar') {
+        setAviso({ t: (j.plantillas || []).map((p: any) => `${p.nombre}: ${p.resultado}`).join(' · ') || 'Nada que registrar' });
+      } else if (body.accion === 'wa_completar') {
+        setAviso({ t: j.whatsapps ? `Se escribieron ${j.whatsapps} WhatsApp para ${j.cuentas} cuentas${j.sin_wa ? ` (${j.sin_wa} sin wa.me publicado, se quedan solo con correo)` : ''}.` : (j.sin_wa ? `Ninguna de las ${j.sin_wa} cuentas publicó su wa.me.` : 'No faltaba ninguna'), mal: !j.whatsapps });
       } else if (ok) setAviso({ t: ok });
       traer();
     } finally { setTrabajando(null); }
@@ -49,6 +53,8 @@ export default function Goteo() {
   if (cargando && !d) return <Cargando texto="Cargando los envíos progresivos…" />;
   const m = d?.motor || {};
   const motorListo = m.pausado === 'no' && !(m.faltas || []).length;
+  const wa = m.wa;
+  const girosSinRegistrar: string[] = Array.from(new Set(((wa?.plantillas || []) as any[]).filter(p => !['APPROVED', 'PENDING', 'IN_APPEAL'].includes(p.status)).map(p => p.giro)));
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -66,6 +72,24 @@ export default function Goteo() {
           {(m.faltas || []).map((f: string) => (
             <div key={f} style={{ fontSize: '.75rem', color: P.ambarTinta, marginTop: 5 }}>{f}</div>
           ))}
+          {/* El WhatsApp de la cadencia: por qué línea sale y si Meta ya aprobó las plantillas. */}
+          {wa && (
+            <div style={{ fontSize: '.75rem', color: '#888', marginTop: 7, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span>
+                WhatsApp: {wa.linea ? `por la línea ${wa.linea}` : 'sin línea disponible'}{wa.pausada ? ` (pausada${wa.pausada_motivo ? `: ${wa.pausada_motivo}` : ''})` : ''} · hasta {wa.tope} al día · solo a quien publicó su wa.me
+              </span>
+              {(wa.plantillas || []).map((p: any) => {
+                const tono = p.status === 'APPROVED' ? { bg: P.verdeAgua, fg: P.verdeTinta } : p.status === 'PENDING' ? { bg: P.ambarAgua, fg: P.ambarTinta } : { bg: P.rojoAgua, fg: P.rojoTinta };
+                const l = p.status === 'APPROVED' ? 'aprobada' : p.status === 'PENDING' ? 'en revisión de Meta' : p.status === 'REJECTED' ? `rechazada${p.rechazo ? `: ${p.rechazo}` : ''}` : p.status === 'SIN_REGISTRAR' ? 'sin registrar en Meta' : p.status.toLowerCase();
+                return <Pastilla key={p.id} tono={tono}>{p.nombre}: {l}</Pastilla>;
+              })}
+              {girosSinRegistrar.map((giro: string) => (
+                <button key={giro} disabled={!!trabajando} onClick={() => pedir({ accion: 'wa_registrar', giro }, 'wa_registrar')} style={{ ...btn(false), padding: '4px 10px' }}>
+                  {trabajando === 'wa_registrar' ? 'Registrando…' : `Registrar plantillas en Meta (${GIROS[giro] || giro})`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <button disabled={!!trabajando} onClick={() => {
           const enciende = m.pausado !== 'no';
@@ -81,7 +105,7 @@ export default function Goteo() {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: '.9375rem', fontWeight: 800 }}>Envíos progresivos</div>
-          <div style={{ fontSize: '.75rem', color: '#888' }}>Una base entra a su cadencia de a poco: cada día hábil, las N cuentas mejor puntuadas que todavía no tienen correo. Quien lo enciende firma la aprobación de todos sus correos.</div>
+          <div style={{ fontSize: '.75rem', color: '#888' }}>Una base entra a su cadencia de a poco: cada día hábil, las N cuentas mejor puntuadas que todavía no tienen correo. Quien lo enciende firma la aprobación de todos sus correos y WhatsApp.</div>
         </div>
         {!nuevo && <button onClick={() => setNuevo(true)} style={btn(false)}>Nuevo goteo</button>}
       </div>
@@ -124,6 +148,8 @@ export default function Goteo() {
         const est = ESTADO[g.estado] || ESTADO.activo;
         const t = g.toques || {};
         const enviados = t.enviado || 0, enFila = (t.aprobado || 0) + (t.programado || 0) + (t.enviando || 0);
+        const tw = g.toques_wa || {};
+        const waEnviados = tw.enviado || 0, waFila = (tw.aprobado || 0) + (tw.programado || 0) + (tw.enviando || 0);
         const ver = abierto === g.id;
         return (
           <div key={g.id} style={{ border: `1px solid ${P.linea}`, borderRadius: 10, background: '#fff', overflow: 'hidden' }}>
@@ -152,7 +178,16 @@ export default function Goteo() {
                 {kpi('Ya entraron', fmt(g.enroladas || 0), g.ultimo_lote ? `último lote el ${fecha(g.ultimo_lote)}` : 'todavía ninguna', P.verde, P.verdeTinta)}
                 {kpi('Quedan', fmt(g.quedan || 0), `de ${fmt(g.base || 0)} en la base · ${Math.ceil((g.quedan || 0) / Math.max(1, g.cuentas_dia))} días hábiles`, P.azul, P.azulTinta)}
                 {kpi('Correos', `${fmt(enviados)} / ${fmt(enFila)}`, 'enviados / en la fila', P.ambar, P.ambarTinta)}
+                {kpi('WhatsApp', `${fmt(waEnviados)} / ${fmt(waFila)}`, 'enviados / en la fila · solo wa.me publicado', P.verde, P.verdeTinta)}
               </div>
+              {g.sin_wa > 0 && g.estado !== 'terminado' && (
+                <div style={{ fontSize: '.8125rem', color: P.ambarTinta, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span>{g.sin_wa} cuentas entraron antes de que la cadencia llevara WhatsApp y solo tienen correos.</span>
+                  <button disabled={!!trabajando} onClick={() => pedir({ accion: 'wa_completar', id: g.id }, 'wa_completar')} style={{ ...btn(false), padding: '4px 10px' }}>
+                    {trabajando === 'wa_completar' ? 'Escribiendo…' : 'Completar sus WhatsApp'}
+                  </button>
+                </div>
+              )}
 
               {g.nota && <div style={{ fontSize: '.8125rem', color: '#666', lineHeight: 1.5 }}>{g.nota}</div>}
             </div>
