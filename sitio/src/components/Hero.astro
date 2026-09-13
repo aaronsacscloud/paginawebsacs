@@ -293,7 +293,7 @@ const useCases = [
       </div>
       <div class="flujo-video" id="flujoVideo">
         <img class="flujo-still" src="/tienda/59-live.webp" alt="" decoding="async" />
-        <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/59-live.webp"><track kind="captions" src="/tienda/recorrido.vtt" srclang="es" label="Español" /></video>
+        <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/59-live.webp"><track kind="captions" src="/tienda/recorrido.vtt?v=2" srclang="es" label="Español" /></video>
         <div class="flujo-tag flujo-tag--live" data-tag="0"><i></i>En vivo · TikTok Shop · Instagram · Facebook</div>
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
@@ -1333,7 +1333,7 @@ const useCases = [
         </div>
         <div class="flujo-video" id="inventarioVideo">
           <img class="flujo-still" src="/tienda/91-escritorio.webp" alt="" decoding="async" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/91-escritorio.webp"><track kind="captions" src="/tienda/inventario.vtt" srclang="es" label="Español" /></video>
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/91-escritorio.webp"><track kind="captions" src="/tienda/inventario.vtt?v=5" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
@@ -18294,7 +18294,8 @@ const useCases = [
     const ua = navigator.userAgent; const safari = /safari/i.test(ua) && !/chrome|crios|android|edg/i.test(ua); const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     // AV1 solo donde ya está probado (recorrido); el resto va en H.264 para que no tartamudee en máquinas sin decodificador por hardware
     const av1 = cfg.video === 'recorrido' && !safari && !ios && !!clip.canPlayType && clip.canPlayType('video/mp4; codecs="av01.0.08M.08"') === 'probably';
-    clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + cfg.video + (av1 ? '.av1.mp4' : '.mp4');
+    // ?v= rompe la caché de un día de /tienda/* cuando se reedita el video
+    clip.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + cfg.video + (av1 ? '.av1.mp4' : '.mp4') + '?v=' + (cfg.v || 1);
     const nombre = cfg.sel.replace('#', '');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev.replace('recorrido', nombre), { ...props, movil, av1 }); } catch {} };
     let hitos = new Set<string>();
@@ -18386,8 +18387,8 @@ const useCases = [
     replay?.addEventListener('click', () => { ph('recorrido_repetir'); arranca(0); });
     pinta(); muestra(0); barra(0, 0);
   }
-  montaHistoria({ sel: '#recorrido', video: 'recorrido', cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#inventario', video: 'inventario', cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02], fin: 35.63 });
+  montaHistoria({ sel: '#recorrido', video: 'recorrido', v: 2, cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
+  montaHistoria({ sel: '#inventario', video: 'inventario', v: 5, cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02], fin: 37.63 });
 
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
