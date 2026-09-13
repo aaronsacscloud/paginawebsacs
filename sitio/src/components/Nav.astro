@@ -1577,7 +1577,9 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   /* ─── Lockup de marca: Sacs · Fashion Commerce ─── */
   .nav-marca { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); }
-  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 7px 0 0 7px; padding: 0; border: 0; background: none; color: var(--color-text-primary); font-family: 'Clash Display', var(--font-display); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 0.7; transition: opacity 0.2s; }
+  /* 'Sacs | Fashion Commerce': una sola marca, separada por una barra fina */
+  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 7px 0 0 10px; padding: 0 0 0 10px; border: 0; border-left: 1.5px solid #1D1D1F; background: none; color: #1D1D1F; font-family: 'Clash Display', var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.05; cursor: pointer; white-space: nowrap; opacity: 1; transition: opacity 0.2s; }
+  .nav-vertical:hover { opacity: 0.7; }
   .nav-vertical:hover { opacity: 1; }
   .nav-vertical svg { opacity: 0.6; transition: transform 0.2s; }
   .nav-vertical:hover svg { transform: translateY(1px); }
@@ -1585,6 +1587,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     .nav-marca { flex-direction: column; align-items: flex-start; gap: 0; margin-right: auto; }
     .nav-marca .nav-logo svg { height: 30px; width: auto; }
     .nav-vertical { margin: -6px 0 0 1px; padding: 0; border-left: 0; font-size: 9px; letter-spacing: 0.2em; }
+    .nav-vertical::before { content: ''; display: inline-block; width: 8px; height: 1.5px; background: #1D1D1F; margin-right: 6px; }
     .nav-vertical svg { width: 7px; height: 5px; }
   }
 
