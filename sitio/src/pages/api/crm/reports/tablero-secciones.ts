@@ -170,6 +170,15 @@ const _GET: APIRoute = async ({ url }) => {
   huecos.sort((a, b) => a - b);
   const medianaDias = huecos.length ? huecos[Math.floor(huecos.length / 2)] : null;
 
+  /* Cómo se reparte la cartera por tipo de licencia: una vitalicia, una anual
+     y una mensual valen distinto y se cuidan distinto. */
+  const porCiclo: Record<string, { n: number; arr: number }> = {};
+  (subsQ.data || []).filter((s2: any) => s2.estado === 'activa').forEach((s2: any) => {
+    const k = s2.ciclo || 'sin ciclo';
+    porCiclo[k] = porCiclo[k] || { n: 0, arr: 0 };
+    porCiclo[k].n++; porCiclo[k].arr += num(s2.arr);
+  });
+
   const renovaciones = (subsQ.data || [])
     .filter((s: any) => s.estado === 'activa' && s.proxima_factura && dia(s.proxima_factura) >= hoy && dia(s.proxima_factura) <= masDias(60))
     .map((s: any) => ({
@@ -338,6 +347,16 @@ const _GET: APIRoute = async ({ url }) => {
       recompras: { n: recompras.length, monto: Math.round(recompras.reduce((a, [, m]) => a + m, 0)) },
       frecuencia_meses: medianaDias != null ? Math.round((medianaDias / 30.4) * 10) / 10 : null,
       renovaciones, sin_movimiento: sinMovimiento, expansion,
+      /* El total NO es el largo de la lista: la lista se corta en 8 para que
+         la pantalla no se vuelva un directorio, pero el KPI tiene que contar
+         todas las cuentas y todas las ideas. */
+      expansion_total: {
+        cuentas: Object.keys(ideasPorCuenta).filter(id => nombreDe[id]).length,
+        ideas: Object.entries(ideasPorCuenta).filter(([id]) => nombreDe[id]).reduce((a, [, n]) => a + (n as number), 0),
+      },
+      renovaciones_monto: Math.round(renovaciones.reduce((a: number, r: any) => a + num(r.monto), 0)),
+      por_ciclo: Object.entries(porCiclo).map(([ciclo, v]) => ({ ciclo, n: v.n, arr: Math.round(v.arr) }))
+        .sort((a, b) => b.n - a.n),
     },
   });
 };

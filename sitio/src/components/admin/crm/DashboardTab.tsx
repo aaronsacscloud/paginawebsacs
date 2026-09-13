@@ -114,7 +114,7 @@ export default function DashboardTab() {
   const [sub, setSub] = useState<Sec>(() => {
     if (typeof window === 'undefined') return 'consultoria';
     const v = new URLSearchParams(window.location.search).get('sub');
-    return v === 'leads' ? 'leads' : v === 'clientes' ? 'clientes' : 'consultoria';
+    return v === 'leads' || v === 'clientes' || v === 'recurrencia' || v === 'expansion' ? v : 'consultoria';
   });
   const irA = (v: Sec) => {
     setSub(v);
@@ -299,7 +299,7 @@ export default function DashboardTab() {
           <Parcialidades x={x} abrir={setAbierto} />
           <CarteraYCanales x={x} abrir={setAbierto} tercera={<Compromisos d={d} parte="consultoria" />} />
           <Compromisos d={d} abrir={setAbierto} parte="cobrar" />
-          <Sueltos x={x} ver={setAbierto} />
+          <Sueltos x={x} ver={setAbierto} parte="pagos" />
           <Lecturas d={d} x={x} />
         </>)}
 
@@ -342,10 +342,21 @@ export default function DashboardTab() {
 
         {sub === 'clientes' && (<>
           <KpisClientes d={d} x={x} />
-          <Motor d={d} ver={setDetalle} abrir={setAbierto} />
-          <Recurrencia x={x} abrir={setAbierto} />
-          <NoEntrara x={x} abrir={setAbierto} />
+          <Cartera d={d} x={x} ver={setDetalle} />
           <Salud d={d} />
+        </>)}
+
+        {sub === 'recurrencia' && (<>
+          <KpisRecurrencia d={d} x={x} />
+          <Motor d={d} abrir={setAbierto} />
+          <Recurrencia x={x} abrir={setAbierto} parte="vuelve" />
+          <NoEntrara x={x} abrir={setAbierto} />
+        </>)}
+
+        {sub === 'expansion' && (<>
+          <KpisExpansion d={d} x={x} />
+          <Recurrencia x={x} abrir={setAbierto} parte="crecer" />
+          <Ampliaciones d={d} abrir={setAbierto} />
         </>)}
       </div>
 
@@ -567,7 +578,7 @@ function textoHistorial(meses: any[]) {
    cuánto te pagan al año, cuánto cambió este mes, y —lo importante— QUIÉNES lo
    movieron y qué hacer con cada uno. Los nombres y los pesos ya estaban en el
    dato; solo estaban escondidos detrás de la palabra «ampliaciones». */
-function Motor({ d, ver, abrir }: any) {
+function Motor({ d, abrir }: any) {
   const r = d.recurrente, k = d.contadores;
   const cortoLedger = d.periodo.desde < r.ledger_desde;
   const mov = r.movimientos || {};
@@ -601,8 +612,8 @@ function Motor({ d, ver, abrir }: any) {
   ];
 
   return (
-    <div className="tb-2">
-      <div style={S.card}>
+    <div style={{ ...S.card, marginBottom: 16 }}>
+      <div>
         <div style={S.titulo}>El dinero que se repite cada año<span style={S.der}>lo que ya tienes contratado</span></div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, margin: '4px 0 14px', flexWrap: 'wrap' }}>
@@ -673,22 +684,6 @@ function Motor({ d, ver, abrir }: any) {
         </div>
       </div>
 
-      <div style={{ ...S.card, display: 'flex', flexDirection: 'column' }}>
-        <div style={S.titulo}>Quién entró y quién se fue</div>
-        <div style={S.lead}>Cada tarjeta abre la lista con nombre y monto.</div>
-        <div className="tb-cuad" style={{ flex: 1 }}>
-          <Contador color={LILA} valorColor={MORADO} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" ver={() => ver('clientes')} />
-          <Contador color={CIELO} label="Leads nuevos" valorColor={AZUL} valor={k.leads} nota="entraron y aún no compran" ver={() => ver('leads')} />
-          <Contador color={ROSA} valorColor={ROSA_T} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)} de ARR` : 'nadie se fue'} ver={k.bajas ? () => ver('bajas') : undefined} />
-          <Contador color={ROSA_S} label="Ampliaciones" valorColor={ROSA_T} valor={k.ampliaciones} nota="clientes que compraron más" ver={k.ampliaciones ? () => ver('ampliaciones') : undefined} />
-        </div>
-        <div style={S.nota}>
-          Entraron {k.empresas_nuevas} empresas y {k.clientes_nuevos} {k.clientes_nuevos === 1 ? 'firmó' : 'firmaron'}, mientras {k.bajas} se {k.bajas === 1 ? 'fue' : 'fueron'}.
-          {' '}En neto la cartera {k.clientes_nuevos - k.bajas > 0 ? <>creció <b style={{ color: '#3f3b4d' }}>{k.clientes_nuevos - k.bajas} {k.clientes_nuevos - k.bajas === 1 ? 'cuenta' : 'cuentas'}</b></>
-            : k.clientes_nuevos - k.bajas < 0 ? <>perdió <b style={{ color: ROJO }}>{k.bajas - k.clientes_nuevos} {k.bajas - k.clientes_nuevos === 1 ? 'cuenta' : 'cuentas'}</b></>
-              : <>quedó igual</>}.
-        </div>
-      </div>
     </div>
   );
 }
@@ -1195,7 +1190,13 @@ function vistaDe(d: any, cual: string): any {
    reconozca; una estrella aproximada a mano sale romboide y no es nada. */
 const CHISPA = 'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z';
 
-type Sec = 'consultoria' | 'leads' | 'clientes';
+/* Cinco pasos, CINCO pantallas. Antes los pasos 3, 4 y 5 abrían la misma
+   sección y el dueño lo cachó: «me estás dando la misma información tres
+   veces». Cada paso tiene ahora su propia pregunta:
+     Clientes     · quiénes son y cómo está la cartera
+     Recurrencia  · el dinero que vuelve solo, y el que dejó de volver
+     Expansión    · dónde está lo que todavía no vendes */
+type Sec = 'consultoria' | 'leads' | 'clientes' | 'recurrencia' | 'expansion';
 
 /* Diez destellos, de distinto tamaño y con el latido desfasado para que no
    parpadeen a coro. Son decoración: no llevan texto y van ocultos al lector de
@@ -1227,10 +1228,6 @@ function Chispas() {
    dentro de Clientes, que es donde se miden. Cada paso trae su cifra puesta
    para que el orden se lea sin entrar. */
 function Riel({ sec, irA, d, x }: { sec: Sec; irA: (v: Sec) => void; d: any; x: any }) {
-  /* Recurrencia y Expansión viven DENTRO de Clientes. Si se marcaran las tres
-     por ser la misma sección, el riel dejaría de decir dónde estás parado: se
-     recuerda el paso que se tocó. */
-  const [paso, setPaso] = useState(1);
   const co = x?.consultoria, cl = x?.clientes;
   const pasos: { n: number; et: string; ci: string; color: string; va: Sec }[] = [
     { n: 1, et: 'Consultoría', color: '#D9538E', va: 'consultoria',
@@ -1239,17 +1236,16 @@ function Riel({ sec, irA, d, x }: { sec: Sec; irA: (v: Sec) => void; d: any; x: 
       ci: `${d.contadores.leads} nuevos · ${d.contadores.clientes_nuevos} se hicieron clientes` },
     { n: 3, et: 'Clientes', color: '#8E7DEF', va: 'clientes',
       ci: `${d.salud.clientes} activos · ARR ${corto(d.salud.arr)}` },
-    { n: 4, et: 'Recurrencia', color: '#C062A0', va: 'clientes',
+    { n: 4, et: 'Recurrencia', color: '#C062A0', va: 'recurrencia',
       ci: cl ? `${cl.recompras.n} recompras · ${cl.renovaciones.length} renovaciones` : 'recompras y renovaciones' },
-    { n: 5, et: 'Expansión', color: '#E8A838', va: 'clientes',
+    { n: 5, et: 'Expansión', color: '#E8A838', va: 'expansion',
       ci: cl?.expansion?.length ? `${cl.expansion.length} cuentas con idea sin cotizar` : 'quién puede crecer' },
   ];
   return (
     <div className="tb-riel" role="tablist">
       {pasos.map(ps => (
         <button key={ps.n} className="tb-paso" role="tab"
-          aria-selected={sec === ps.va && (paso === ps.n || !pasos.some(q => q.n === paso && q.va === sec))}
-          onClick={() => { setPaso(ps.n); irA(ps.va); }}>
+          aria-selected={sec === ps.va} onClick={() => irA(ps.va)}>
           <span className="n" style={{ background: ps.color }}>{ps.n}</span>
           <span><span className="et">{ps.et}</span><span className="ci">{ps.ci}</span></span>
         </button>
@@ -1422,32 +1418,201 @@ function CarteraYCanales({ x, abrir, tercera }: any) {
   );
 }
 
-/* ════════════════ 3 · CLIENTES: LAS SEIS CIFRAS ════════════════ */
+/* ════════════════ 3 · CLIENTES: QUIÉNES SON ════════════════ */
 function KpisClientes({ d, x }: any) {
-  const cl = x?.clientes, s = d.salud;
+  const s = d.salud, k = d.contadores;
   return (
     <div className="tb-kpis">
-      <Kpi color={LILA} tinta={MORADO} et="Clientes activos" ci={s.clientes} pie={`ARR ${money(s.arr)}`} />
-      <Kpi color={ROSA_S} tinta={ROSA_T} et="Clientes recurrentes" ci={cl ? `${cl.recurrentes}` : '—'}
-        pie={cl ? `${cl.recurrentes_pct}% · pagaron más de una vez` : '—'} />
+      <Kpi color={LILA} tinta={MORADO} et="Clientes activos" ci={s.clientes} pie="con licencia viva hoy" />
+      <Kpi color={LILA} tinta={MORADO} et="Lo que pagan al año" ci={corto(s.arr)} pie={money(s.arr)} />
+      <Kpi color={LILA} tinta={MORADO} et="Ingreso por cliente" ci={money(s.arpa)} pie="lo que te deja cada cuenta al año" />
+      <Kpi color={ROSA_S} tinta={ROSA_T} et="Clientes nuevos" ci={k.clientes_nuevos} pie="licencias que arrancaron en el periodo" />
+      <Kpi color={ROSA} tinta={ROSA_T} et="Se dieron de baja" ci={k.bajas} pie={k.bajas ? `se llevaron ${money(k.bajas_arr)}` : 'ninguno en el periodo'} />
+      <Kpi color={LILA} tinta={MORADO} et="Llevan contigo" ci={s.antiguedad_meses != null ? `${s.antiguedad_meses} meses` : '—'}
+        pie="en promedio, desde su primera licencia" />
+    </div>
+  );
+}
+
+/* ════════════════ 4 · RECURRENCIA: EL DINERO QUE VUELVE SOLO ════════════════ */
+function KpisRecurrencia({ d, x }: any) {
+  const cl = x?.clientes, ne = x?.dinero?.no_entrara;
+  return (
+    <div className="tb-kpis">
+      <Kpi color={ROSA_S} tinta={ROSA_T} et="Clientes que repiten" ci={cl ? cl.recurrentes : '—'}
+        pie={cl ? `${cl.recurrentes_pct}% de los activos pagó más de una vez` : '—'} />
       <Kpi color={ROSA} tinta={ROSA_T} et="Recompras del periodo" ci={cl ? cl.recompras.n : '—'}
         pie={cl ? money(cl.recompras.monto) : '—'} />
+      <Kpi color={LILA} tinta={MORADO} et="Cada cuánto vuelven" ci={cl?.frecuencia_meses != null ? (cl.frecuencia_meses === 1 ? 'cada mes' : `${cl.frecuencia_meses} meses`) : '—'}
+        pie="la mediana entre un pago y el siguiente" />
       <Kpi color={LILA} tinta={MORADO} et="Renovaciones que vienen" ci={cl ? cl.renovaciones.length : '—'}
         pie="en los próximos 60 días" />
-      <Kpi color={LILA} tinta={MORADO} et="Ingreso por cliente" ci={money(s.arpa)} pie="ARR ÷ clientes activos" />
-      <Kpi color={ROSA} tinta={ROSA_T} et="Sin movimiento" ci={cl ? cl.sin_movimiento.length : '—'}
-        pie="más de 60 días sin vender" />
+      <Kpi color={ORO} tinta={AMBAR} et="Por renovar" ci={cl ? money(cl.renovaciones_monto) : '—'}
+        pie="ya contratado, toca cobrarlo" />
+      <Kpi color={ROSA} tinta={ROSA_T} et="Dejó de entrar" ci={ne ? money(ne.anio.arr) : '—'}
+        pie={ne ? `${ne.anio.n} cuentas en 12 meses` : '—'} />
+    </div>
+  );
+}
+
+/* ════════════════ 5 · EXPANSIÓN: LO QUE TODAVÍA NO VENDES ════════════════ */
+function KpisExpansion({ d, x }: any) {
+  const ex = x?.clientes?.expansion_total, op = x?.dinero?.oportunidades, r = d.recurrente, k = d.contadores;
+  return (
+    <div className="tb-kpis">
+      <Kpi color={ROSA} tinta={ROSA_T} et="Cuentas por crecer" ci={ex ? ex.cuentas : '—'}
+        pie="te pidieron algo y sigue sin cotizar" />
+      <Kpi color={ROSA_S} tinta={ROSA_T} et="Ideas sin cotizar" ci={ex ? ex.ideas : '—'}
+        pie="salieron de las juntas" />
+      <Kpi color={LILA} tinta={MORADO} et="Oportunidades abiertas" ci={op ? op.abiertas.n : '—'}
+        pie={op && op.abiertas.monto ? money(op.abiertas.monto) : 'en plática'} />
+      <Kpi color={ORO} tinta={AMBAR} et="Sin precio" ci={op ? op.sin_cotizar.n : '—'}
+        pie="abiertas y todavía sin cotización" />
+      <Kpi color={LILA} tinta={MORADO} et="Ampliaciones del periodo" ci={k.ampliaciones}
+        pie="clientes que compraron más" />
+      <Kpi color={LILA} tinta={MORADO} et="Creció el recurrente" ci={r.ampliaciones ? '+' + money(r.ampliaciones) : money(0)}
+        pie="lo que sumaron esas ampliaciones al año" />
+    </div>
+  );
+}
+
+/* ════════════════ CÓMO SE REPARTE LA CARTERA ════════════════ */
+const NOM_CICLO: Record<string, string> = { anual: 'Anuales', mensual: 'Mensuales', vitalicia: 'Vitalicias', 'sin ciclo': 'Sin ciclo' };
+function Cartera({ d, x, ver }: any) {
+  const cic = x?.clientes?.por_ciclo || [];
+  const k = d.contadores, s = d.salud;
+  const tope = Math.max(1, ...cic.map((c: any) => c.n));
+  return (
+    <div className="tb-2">
+      <div style={S.card}>
+        <div style={S.titulo}>Cómo se reparte la cartera<span style={S.der}>{s.clientes} cuentas activas</span></div>
+        <div style={S.lead}>Una licencia vitalicia, una anual y una mensual ni valen lo mismo ni se cuidan igual.</div>
+        <div style={S.reparte}>
+          {cic.map((c: any, i: number) => (
+            <div key={c.ciclo} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, width: 96, flex: 'none' }}>{NOM_CICLO[c.ciclo] || c.ciclo}</span>
+              <span style={{ flex: 1, height: 9, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(c.n / tope) * 100}%`,
+                  background: i === 0 ? 'linear-gradient(90deg,#7C6BF0,#C6BCFB)' : 'linear-gradient(90deg,#D9538E,#EFA6CA)' }} />
+              </span>
+              <b style={{ fontSize: '0.76rem', width: 34, textAlign: 'right' }}>{c.n}</b>
+              <span style={{ ...S.fn, width: 62, textAlign: 'right' }}>{c.arr ? corto(c.arr) : '—'}</span>
+            </div>
+          ))}
+        </div>
+        <div style={S.nota}>
+          Las vitalicias aparecen con cartera en cero porque ya pagaron todo: no suman al ingreso del año que viene,
+          pero siguen siendo clientes que usan el sistema y pueden comprarte más.
+          {s.concentracion != null && <> Tus 5 cuentas más grandes son el <b>{s.concentracion}%</b> de lo que te pagan.</>}
+        </div>
+      </div>
+
+      <div style={{ ...S.card, display: 'flex', flexDirection: 'column' }}>
+        <div style={S.titulo}>Quién entró y quién se fue<span style={S.der}>en el periodo</span></div>
+        <div style={S.lead}>Cada tarjeta abre la lista con nombre y monto.</div>
+        <div className="tb-cuad" style={{ flex: 1 }}>
+          <Contador color={LILA} valorColor={MORADO} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" ver={() => ver('clientes')} />
+          <Contador color={CIELO} label="Leads nuevos" valorColor={AZUL} valor={k.leads} nota="entraron y aún no compran" ver={() => ver('leads')} />
+          <Contador color={ROSA} valorColor={ROSA_T} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)}` : 'nadie se fue'} ver={k.bajas ? () => ver('bajas') : undefined} />
+          <Contador color={ROSA_S} valorColor={ROSA_T} label="Ampliaciones" valor={k.ampliaciones} nota="clientes que compraron más" ver={k.ampliaciones ? () => ver('ampliaciones') : undefined} />
+        </div>
+        <div style={S.nota}>
+          Entraron {k.empresas_nuevas} empresas y {k.clientes_nuevos} {k.clientes_nuevos === 1 ? 'firmó' : 'firmaron'}, mientras {k.bajas} se {k.bajas === 1 ? 'fue' : 'fueron'}.
+          {' '}En neto la cartera {k.clientes_nuevos - k.bajas > 0 ? <>creció <b style={{ color: '#3f3b4d' }}>{k.clientes_nuevos - k.bajas} {k.clientes_nuevos - k.bajas === 1 ? 'cuenta' : 'cuentas'}</b></>
+            : k.clientes_nuevos - k.bajas < 0 ? <>perdió <b style={{ color: ROSA_T }}>{k.bajas - k.clientes_nuevos} {k.bajas - k.clientes_nuevos === 1 ? 'cuenta' : 'cuentas'}</b></>
+              : <>quedó igual</>}.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════ QUIÉN AMPLIÓ ════════════════
+   El detalle de las ampliaciones del periodo, que es la prueba de que una
+   cuenta se puede hacer más grande sin buscar clientes nuevos. */
+function Ampliaciones({ d, abrir }: any) {
+  const lista = (d.recurrente?.movimientos?.ampliaciones || []);
+  const nuevos = (d.recurrente?.movimientos?.altas || []);
+  return (
+    <div className="tb-2">
+      <div style={S.card}>
+        <div style={S.titulo}>Quién compró más<span style={S.der}>ampliaciones del periodo</span></div>
+        {!lista.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Nadie amplió en este periodo. La expansión de arriba es la que está esperando cotización.</div>
+          : <div style={S.reparte}>
+            {lista.slice(0, 6).map((m: any, i: number) => (
+              <div key={i} className="tb-clic" style={{ ...S.fila, borderTop: i ? S.fila.borderTop : 'none', cursor: 'pointer' }}
+                onClick={m.company_id ? () => abrir(m.company_id) : undefined}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.fl}>{m.cliente}</div>
+                  <div style={S.fn}>{fmtDate(m.fecha)}</div>
+                </div>
+                <b style={{ fontSize: '0.82rem', color: MORADO }}>{conSigno(m.arr)}</b>
+              </div>
+            ))}
+          </div>}
+        <div style={S.nota}>Una ampliación vale más que un cliente nuevo: no costó adquisición y ya sabes que paga.</div>
+      </div>
+
+      <div style={S.card}>
+        <div style={S.titulo}>Los que acaban de entrar<span style={S.der}>primeras licencias</span></div>
+        {!nuevos.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna licencia nueva arrancó en el periodo.</div>
+          : <div style={S.reparte}>
+            {nuevos.slice(0, 6).map((m: any, i: number) => (
+              <div key={i} className="tb-clic" style={{ ...S.fila, borderTop: i ? S.fila.borderTop : 'none', cursor: 'pointer' }}
+                onClick={m.company_id ? () => abrir(m.company_id) : undefined}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.fl}>{m.cliente}</div>
+                  <div style={S.fn}>{fmtDate(m.fecha)}</div>
+                </div>
+                <b style={{ fontSize: '0.82rem', color: MORADO }}>{conSigno(m.arr)}</b>
+              </div>
+            ))}
+          </div>}
+        <div style={S.nota}>Los primeros 90 días deciden si se quedan: agenda la junta de arranque mientras están calientes.</div>
+      </div>
     </div>
   );
 }
 
 /* ════════════════ RECURRENCIA Y EXPANSIÓN ════════════════ */
-function Recurrencia({ x, abrir }: any) {
+function Recurrencia({ x, abrir, parte }: any) {
   if (!x) return null;
   const cl = x.clientes;
   const hoy = new Date().toISOString().slice(0, 10);
+
+  /* «Listos para crecer» es la única lista que habla de vender, así que vive en
+     Expansión; las otras dos hablan de sostener y viven en Recurrencia. Antes
+     las tres estaban juntas y las tres secciones enseñaban lo mismo. */
+  if (parte === 'crecer') return (
+    <div className="tb-2" style={{ marginBottom: 16 }}>
+      <div style={S.card}>
+        <div style={S.titulo}>Listos para crecer<span style={S.der}>te lo pidieron en una junta</span></div>
+        <div style={S.lead}>Cuentas con ideas de sus juntas que <b>nadie ha cotizado</b>. No es una corazonada del sistema: te lo pidieron.</div>
+        {!cl.expansion.length
+          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna idea abierta sin cotizar.</div>
+          : <div style={S.reparte}>
+            {cl.expansion.slice(0, 8).map((e: any) => (
+              <div key={e.company_id} className="tb-clic" style={{ ...S.fila, cursor: 'pointer' }} onClick={() => abrir(e.company_id)}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.fl}>{e.nombre}</div>
+                  <div style={{ ...S.fn, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titulo || 'idea de la junta'}</div>
+                </div>
+                <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: '#EEECFE', color: MORADO, whiteSpace: 'nowrap' }}>
+                  {e.ideas} {e.ideas === 1 ? 'idea' : 'ideas'}
+                </span>
+              </div>
+            ))}
+          </div>}
+        <div style={S.nota}>Cotizar una idea que ya te pidieron cierra más rápido que cualquier prospecto nuevo.</div>
+      </div>
+      <Sueltos x={x} ver={abrir} parte="oportunidades" />
+    </div>
+  );
+
   return (
-    <div className="tb-3" style={{ marginBottom: 16 }}>
+    <div className="tb-2" style={{ marginBottom: 16 }}>
       <div style={S.card}>
         <div style={S.titulo}>Renovaciones que vienen<span style={S.der}>próximos 60 días</span></div>
         {!cl.renovaciones.length
@@ -1465,24 +1630,6 @@ function Recurrencia({ x, abrir }: any) {
             );
           })}
         <div style={S.nota}>Es la próxima factura de cada licencia activa. Lo que no se cobre aquí sale del ARR el mes siguiente.</div>
-      </div>
-
-      <div style={S.card}>
-        <div style={S.titulo}>Listos para crecer<span style={S.der}>expansión</span></div>
-        <div style={S.lead}>Cuentas con ideas de sus juntas que <b>nadie ha cotizado</b>. No es una corazonada del sistema: te lo pidieron.</div>
-        {!cl.expansion.length
-          ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Ninguna idea abierta sin cotizar.</div>
-          : cl.expansion.slice(0, 6).map((e: any) => (
-            <div key={e.company_id} className="tb-clic" style={{ ...S.fila, cursor: 'pointer' }} onClick={() => abrir(e.company_id)}>
-              <div style={{ flex: 1 }}>
-                <div style={S.fl}>{e.nombre}</div>
-                <div style={S.fn}>{e.titulo || 'idea de la junta'}</div>
-              </div>
-              <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: '#EEECFE', color: MORADO }}>
-                {e.ideas} {e.ideas === 1 ? 'idea' : 'ideas'}
-              </span>
-            </div>
-          ))}
       </div>
 
       <div style={S.card}>
@@ -1658,11 +1805,49 @@ function Parcialidades({ x, abrir }: any) {
 }
 
 /* ════════════════ EL DINERO QUE NO ESTÁ ATADO A NADIE ════════════════ */
-function Sueltos({ x, ver }: any) {
+function Sueltos({ x, ver, parte }: any) {
   const dn = x?.dinero;
   if (!dn) return null;
   const sd = dn.sin_dueno, op = dn.oportunidades;
-  if (!sd.n && !op.sin_cotizar.n) return null;
+
+  /* Dos cosas distintas que antes compartían renglón: el dinero cobrado que no
+     tiene dueño es un problema de Consultoría —ahí se cobra—, y la oportunidad
+     sin precio es de Expansión, que es donde se decide qué vender. */
+  if (parte === 'oportunidades') {
+    if (!op.sin_cotizar.n) return (
+      <div style={S.card}>
+        <div style={S.titulo}>Oportunidades sin precio</div>
+        <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Todas las oportunidades abiertas ya tienen su cotización.</div>
+      </div>
+    );
+    return (
+      <div style={S.card}>
+        <div style={S.titulo}>Oportunidades sin precio<span style={S.der}>{op.abiertas.n} abiertas en total</span></div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: MORADO, letterSpacing: '-.03em', margin: '2px 0 4px' }}>{op.sin_cotizar.n}</div>
+        <div style={S.lead}>
+          Tratos abiertos que todavía no tienen una cotización. Mientras no tengan precio no se pueden cerrar ni sumar
+          a lo que viene: son intención, no pipeline.
+        </div>
+        <div style={S.reparte}>
+          {op.sin_cotizar.items.map((o: any) => (
+            <div key={o.id} className={o.company_id ? 'tb-clic' : undefined}
+              style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0', cursor: o.company_id ? 'pointer' : 'default' }}
+              onClick={o.company_id ? () => ver(o.company_id) : undefined}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.nombre || o.titulo}</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: o.monto ? MORADO : '#bdb7cc' }}>{o.monto ? money(o.monto) : 'sin valor'}</span>
+            </div>
+          ))}
+        </div>
+        <div style={S.nota}>
+          {op.sin_cotizar.monto === 0
+            ? <>Ninguna trae valor capturado, así que <b>ni siquiera se sabe cuánto valen</b>. Ponles precio al cotizar.</>
+            : <>Suman {money(op.sin_cotizar.monto)} de intención sin precio en la mano.</>}
+        </div>
+      </div>
+    );
+  }
+
+  if (!sd.n) return null;
   return (
     <div className="tb-2">
       {sd.n > 0 && (
@@ -1686,31 +1871,6 @@ function Sueltos({ x, ver }: any) {
         </div>
       )}
 
-      {op.sin_cotizar.n > 0 && (
-        <div style={S.card}>
-          <div style={S.titulo}>Oportunidades sin precio<span style={S.der}>{op.abiertas.n} abiertas en total</span></div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: MORADO, letterSpacing: '-.03em', margin: '2px 0 4px' }}>{op.sin_cotizar.n}</div>
-          <div style={S.lead}>
-            Tratos abiertos que todavía no tienen una cotización. Mientras no tengan precio no se pueden cerrar
-            ni sumar a lo que viene: son intención, no pipeline.
-          </div>
-          <div style={S.reparte}>
-            {op.sin_cotizar.items.map((o: any) => (
-              <div key={o.id} className={o.company_id ? 'tb-clic' : undefined}
-                style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0', cursor: o.company_id ? 'pointer' : 'default' }}
-                onClick={o.company_id ? () => ver(o.company_id) : undefined}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.nombre || o.titulo}</span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: o.monto ? MORADO : '#bdb7cc' }}>{o.monto ? money(o.monto) : 'sin valor'}</span>
-              </div>
-            ))}
-          </div>
-          <div style={S.nota}>
-            {op.sin_cotizar.monto === 0
-              ? <>Ninguna trae valor capturado, así que <b>ni siquiera se sabe cuánto valen</b>. Ponles precio al cotizar.</>
-              : <>Suman {money(op.sin_cotizar.monto)} de intención sin precio en la mano.</>}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
