@@ -1,9 +1,10 @@
 ---
-title: "Bienvenidos a SACS: comercio consciente desde el día uno"
-description: "Lanzamos SACS con una misión clara: que cada retailer en México tenga acceso a tecnología de clase mundial, sin perder su esencia."
+title: "Bienvenidos a Sacs: comercio consciente desde el día uno"
+description: "Lanzamos Sacs con una misión clara: que cada retailer en México tenga acceso a tecnología de clase mundial, sin perder su esencia."
 pubDate: 2026-03-14
 author: "Equipo SACS"
-tags: ["Anuncios", "SACS"]
+tags: ["Anuncios", "Sacs"]
+image: "/images/blog-bienvenida-hero.webp"
 ---
 
 ## El retail en México merece algo mejor

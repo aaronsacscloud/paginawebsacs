@@ -76,14 +76,16 @@ const websiteSchema = {
           </div>
         </a>
         <a href="/blog/bienvenida" class="blog-home-card">
-          <div class="blog-home-card-body blog-home-card-body--no-img">
+          <div class="blog-home-card-img-wrap">
+            <img src="/images/blog-bienvenida-hero.webp" alt="Sacs — comercio consciente" width="720" height="400" loading="lazy" class="blog-home-card-img" />
+          </div>
+          <div class="blog-home-card-body">
             <div class="blog-home-card-tags">
               <span class="blog-home-tag">Anuncios</span>
-              <span class="blog-home-tag">SACS</span>
+              <span class="blog-home-tag">Sacs</span>
             </div>
-            <h3 class="blog-home-card-title">Bienvenidos a SACS: comercio consciente desde el día uno</h3>
-            <p class="blog-home-card-desc">Lanzamos SACS con una misión clara: que cada retailer en México tenga acceso a tecnología de clase mundial.</p>
-            <span class="blog-home-card-link">Leer artículo <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <h3 class="blog-home-card-title">Bienvenidos a Sacs: comercio consciente desde el día uno</h3>
+            <p class="blog-home-card-desc">Lanzamos Sacs con una misión clara: que cada retailer en México tenga acceso a tecnología de clase mundial.</p>
           </div>
         </a>
       </div>
@@ -362,6 +364,18 @@ const websiteSchema = {
     .casohome-dato { font-size: 0.8125rem; font-weight: 700; color: var(--color-primary); }
     @media (max-width: 900px) {
       .modelos-grid, .girosmoda-grid, .casoshome-grid { grid-template-columns: 1fr; }
+    }
+    /* Móvil: una destacada y las otras dos como filas compactas */
+    @media (max-width: 767px) {
+      .blog-home-section { padding-bottom: 40px; }
+      .blog-home-grid { gap: 12px; }
+      .blog-home-card:not(.blog-home-card--featured) { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: stretch; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-img-wrap { height: 100%; min-height: 104px; aspect-ratio: auto; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-img { height: 100%; object-fit: cover; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-body { padding: 12px 12px 12px 0; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-desc { display: none; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-title { font-size: 15px; line-height: 1.25; }
+      .blog-home-card:not(.blog-home-card--featured) .blog-home-card-tags { margin-bottom: 6px; }
     }
 </style>
 
