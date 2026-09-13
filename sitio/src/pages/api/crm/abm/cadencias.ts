@@ -134,7 +134,7 @@ export const POST: APIRoute = async ({ request }) => {
       ? await supabase.from('abm_pasos').select('dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
       : { data: [] as any[] };
     const { data: plantillas } = await supabase.from('abm_plantillas')
-      .select('orden, asunto, cuerpo, objetivo').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true).order('orden');
+      .select('orden, asunto, cuerpo, objetivo, imagen, boton_texto, boton_url').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true).order('orden');
 
     const guion = (plantillas || []).map((p: any, i: number) =>
       `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
@@ -174,6 +174,8 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
       dia: dias[i] ?? [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
       asunto: rellenar(p.asunto, vars),
       cuerpo: rellenar(p.cuerpo, vars),
+      // La imagen y el botón NO los toca la IA: son del correo, no del texto.
+      imagen: p.imagen || null, boton_texto: p.boton_texto || null, boton_url: p.boton_url || null,
     }));
 
     let correos = base0;
@@ -193,6 +195,9 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
             dia: Number(m.dia) || base0[i]?.dia || (i * 4 + 1),
             asunto: rellenar(String(m.asunto || base0[i]?.asunto || ''), vars),
             cuerpo: rellenar(String(m.cuerpo || base0[i]?.cuerpo || ''), vars),
+            // Se conservan los del paso: la IA adapta el texto, no el diseño.
+            imagen: base0[i]?.imagen || null,
+            boton_texto: base0[i]?.boton_texto || null, boton_url: base0[i]?.boton_url || null,
           }));
           conIa = true;
         }
@@ -207,6 +212,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
       cuenta_id: c.id, cadencia_id: base?.id || null, persona_id: persona0?.id || null,
       canal: 'email', destino: correo.valor,
       asunto: limpiar(m.asunto, 200), cuerpo: limpiar(m.cuerpo, 6000),
+      imagen: m.imagen || null, boton_texto: m.boton_texto || null, boton_url: m.boton_url || null,
       estado: 'borrador',                                   // NADA sale sin que una persona lo apruebe
       programado_at: new Date(hoy + (Number(m.dia) || (i * 4 + 1)) * 864e5).toISOString(),
     }));

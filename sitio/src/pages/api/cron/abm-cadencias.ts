@@ -22,6 +22,7 @@ import { supabase } from '../../../lib/supabase';
 // darse de baja solo deja un botón a la mano: "Reportar como spam".
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { apuntar, repuntuar } from '../../../lib/crm/abm.lib';
+import { armarCorreo } from '../../../lib/crm/abm-correo';
 
 export const prerender = false;
 
@@ -38,12 +39,10 @@ export function cupoDelDia(diasConEnvios: number, cupoInicial: number, tope: num
   return Math.min(tope, Math.round(cupoInicial * Math.pow(1.3, saltos)));
 }
 
-/** El cuerpo es texto de una persona: en HTML son párrafos, nada más. */
-function aHtml(texto: string): string {
-  const esc = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return texto.split('\n').filter((l: string) => l.trim())
-    .map((l: string) => `<p style="margin:0 0 12px">${esc(l)}</p>`).join('');
-}
+// El HTML del correo lo arma `lib/crm/abm-correo.ts`: cinta de marca, imagen
+// del correo, cuerpo, botón y pie. El cuerpo sigue siendo TEXTO —lo que la IA
+// escribe y lo que una persona edita en la pantalla— y el diseño vive en un
+// solo lugar, así que cambiarlo no obliga a regenerar ningún correo.
 
 async function config(): Promise<Record<string, string>> {
   const { data } = await supabase.from('abm_config').select('clave, valor');
@@ -127,7 +126,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const { data: pendientes } = await supabase.from('abm_toques')
-    .select('id, cuenta_id, destino, asunto, cuerpo, programado_at')
+    .select('id, cuenta_id, destino, asunto, cuerpo, programado_at, imagen, boton_texto, boton_url')
     .eq('estado', 'aprobado').eq('canal', 'email')
     .lte('programado_at', new Date().toISOString())
     .order('programado_at').limit(3000);   // la cola completa cabe: el programa son 2,639 toques
@@ -235,8 +234,15 @@ export const GET: APIRoute = async ({ request }) => {
       // y además entrega peor. El HTML es el mismo texto con saltos de línea.
       // La versión de texto menciona la pieza: un HTML con una tabla que el
       // texto plano ignora es una discrepancia que los filtros puntúan.
-      texto: (t.cuerpo || '') + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : ''),
-      html: aHtml(t.cuerpo || '') + pieza,
+      // La liga del botón se AGREGA a la versión de texto: en HTML es un botón,
+      // pero quien lea el correo sin formato no vería ninguna forma de agendar.
+      texto: (t.cuerpo || '')
+        + ((t as any).boton_url ? `\n\n${(t as any).boton_texto || 'Agendar'}: ${(t as any).boton_url}` : '')
+        + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : ''),
+      html: armarCorreo({
+        cuerpo: t.cuerpo || '', imagen: (t as any).imagen, imagenAlt: asunto,
+        botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza,
+      }),
       categoria: 'abm', tenantId: inquilino.id,
       // Los tres primeros van limpios: sin pixel y sin enlaces envueltos.
       sinRastreo: (orden || 0) < 3,
