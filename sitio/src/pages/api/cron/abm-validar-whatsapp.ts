@@ -90,9 +90,14 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // Solo los que no sabemos. Los `declarado` no se tocan: el negocio ya nos dijo
   // que ese es su WhatsApp y gastar una consulta en eso es tirar dinero.
+  // `verificado_at is null` es la condición que impide el bucle: un número que
+  // Lookup no supo clasificar se queda en `sin_probar` —es la verdad, no
+  // sabemos— pero YA quedó revisado. Sin este filtro la consulta lo volvía a
+  // tomar en cada corrida y el lote entero se atoraba en el mismo registro.
   let q = supabase.from('abm_canales')
     .select('id, cuenta_id, valor, abm_cuentas!inner(giro, nombre)')
-    .like('tipo', 'whatsapp%').eq('estado', 'sin_probar').limit(cuantas);
+    .like('tipo', 'whatsapp%').eq('estado', 'sin_probar')
+    .is('verificado_at', null).limit(cuantas);
   if (giro) q = q.eq('abm_cuentas.giro', giro);
   const { data: canales, error } = await q;
   if (error) return json({ error: error.message }, 500);
