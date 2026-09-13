@@ -1321,13 +1321,14 @@ const useCases = [
             <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>Elige tu modelo.</b><small>Edad, cuerpo, estilo y escenario. La misma toda la temporada.</small></div>
             <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Que se mueva.</b><small>Un clic y camina. Otro clic y la tela cae más suave.</small></div>
             <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Un clic: en todas tus redes.</b><small>Reels en Instagram, Facebook y TikTok al mismo tiempo.</small></div>
-            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Otro clic: anuncios y tienda.</b><small>Meta Ads, TikTok Ads y TikTok Shop, con tallas y precio.</small></div>
-            <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Lo ve, lo paga, lo recibe.</b><small>En otra ciudad, esa misma tarde. La venta cae a Sacs y baja del inventario.</small></div>
+            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y por WhatsApp, a cada clienta por su nombre.</b><small>Un envío masivo, pero personal: su nombre, su talla y su tienda. A las 312 que lo buscaban.</small></div>
+            <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Otro clic: anuncios y tienda.</b><small>Meta Ads, TikTok Ads y TikTok Shop, con tallas y precio.</small></div>
+            <div class="flujo-paso" data-paso="8"><span class="flujo-n">09</span><b>Lo ve, lo paga, lo recibe.</b><small>En otra ciudad, esa misma tarde. La venta cae a Sacs y baja del inventario.</small></div>
           </div>
           <div class="flujo-final">
             <span class="flujo-eyebrow">Lo hace AXO · nuestra IA de moda</span>
             <h2 class="flujo-h2">27 minutos.</h2>
-            <p class="flujo-p">Una foto con tu celular: 10 colores, tu modelo, tu reel, tres redes, dos campañas, una tienda y una venta entregada. Una sesión tradicional tarda 5 a 7 días y cuesta unos $45,000 por prenda. Con Sacs va incluido en tu plan: hasta 98 % menos, con la misma calidad.</p>
+            <p class="flujo-p">Una foto con tu celular: 10 colores, tu modelo, tu reel, tres redes, 312 WhatsApps personales, dos campañas, una tienda y una venta entregada. Una sesión tradicional tarda 5 a 7 días y cuesta unos $45,000 por prenda. Con Sacs va incluido en tu plan: hasta 98 % menos, con la misma calidad.</p>
             <a href="/prueba-gratis" class="flujo-cta" data-evento="creativo_cta">Quiero hacerlo con mi prenda
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </a>
@@ -1335,14 +1336,14 @@ const useCases = [
         </div>
         <div class="flujo-video" id="creativoVideo">
           <img class="flujo-still" src="/tienda/101-foto-celular.webp" alt="" decoding="async" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/101-foto-celular.webp"><track kind="captions" src="/tienda/reel.vtt?v=2" srclang="es" label="Español" /></video>
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/101-foto-celular.webp"><track kind="captions" src="/tienda/reel.vtt?v=3" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
       </div>
       <div class="flujo-nav" aria-label="Avance de la historia">
         <ol class="flujo-dots">
-          <li data-i="0"><i><b></b></i><span>Foto</span></li><li data-i="1"><i><b></b></i><span>Edición</span></li><li data-i="2"><i><b></b></i><span>Colores</span></li><li data-i="3"><i><b></b></i><span>Modelo</span></li><li data-i="4"><i><b></b></i><span>Video</span></li><li data-i="5"><i><b></b></i><span>Redes</span></li><li data-i="6"><i><b></b></i><span>Anuncios</span></li><li data-i="7"><i><b></b></i><span>Venta</span></li>
+          <li data-i="0"><i><b></b></i><span>Foto</span></li><li data-i="1"><i><b></b></i><span>Edición</span></li><li data-i="2"><i><b></b></i><span>Colores</span></li><li data-i="3"><i><b></b></i><span>Modelo</span></li><li data-i="4"><i><b></b></i><span>Video</span></li><li data-i="5"><i><b></b></i><span>Redes</span></li><li data-i="6"><i><b></b></i><span>WhatsApp</span></li><li data-i="7"><i><b></b></i><span>Anuncios</span></li><li data-i="8"><i><b></b></i><span>Venta</span></li>
         </ol>
         <a class="flujo-saltar" href="#inventario" data-evento="creativo_saltar">Saltar
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -18433,7 +18434,7 @@ const useCases = [
     pinta(); muestra(0); barra(0, 0);
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', v: 2, cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
-  montaHistoria({ sel: '#creativo', video: 'reel', v: 2, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 26.6], fin: 33.3 });
+  montaHistoria({ sel: '#creativo', video: 'reel', v: 3, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 28.2, 31.2], fin: 37.9 });
   montaHistoria({ sel: '#inventario', video: 'inventario', v: 5, cues: [0, 3.78, 6.83, 11.03, 15.53, 27.02], fin: 37.63 });
 
   pillarSections.forEach((section) => {

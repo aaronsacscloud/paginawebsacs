@@ -2,7 +2,16 @@
 import { navLinks, modelosNegocio, type BusinessSector } from '../data/navigation';
 import { giroIcons } from '../data/giro-icons';
 import { giroVinetas } from '../data/giro-vinetas';
-import { waDemoGiro } from '../lib/whatsapp';
+import { waDemoGiro, waLink } from '../lib/whatsapp';
+
+// Verticales de Sacs: hoy el sitio es Fashion Commerce; las demás abren WhatsApp mientras
+// no tengan su propia página (Aaron, 13-sep-2026).
+const verticales = [
+  { id: 'retail', label: 'Retail', desc: 'Tiendas de todo tipo: piso, inventario, caja y clientes.', img: '/images/verticales/retail' },
+  { id: 'joyeria', label: 'Joyería', desc: 'Piezas únicas, quilates, apartados y garantía.', img: '/images/verticales/joyeria' },
+  { id: 'consignacion', label: 'Consignación de lujo', desc: 'Bolsas, relojes y piezas de diseñador a consignación.', img: '/images/verticales/consignacion' },
+  { id: 'parques', label: 'Parques de diversiones', desc: 'Taquilla, brazaletes, tiendas y alimentos en un solo sistema.', img: '/images/verticales/parques' },
+].map((v) => ({ ...v, wa: waLink(`Hola, me interesa Sacs para ${v.label}. ¿Me cuentan más?`) }));
 import { t, getLocalizedUrl } from '../i18n/utils';
 import { locales, languageNames, defaultLocale } from '../i18n/config';
 import type { Locale } from '../i18n/config';
@@ -33,6 +42,10 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
         <text x="0" y="29" font-family="'Clash Display', sans-serif" font-size="28" font-weight="700" fill="currentColor">Sacs</text>
       </svg>
     </a>
+    <button type="button" class="nav-vertical" id="nav-vertical" aria-haspopup="dialog" aria-controls="vert-modal" aria-expanded="false">
+      <span class="nav-vertical-txt">Fashion Commerce</span>
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
 
     <nav class="nav-links" aria-label="Navegación principal">
       {navLinks.map((link) => (
@@ -348,6 +361,31 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     </nav>
   </div>
 </header>
+
+<!-- ═══ Modal de verticales: Sacs es Fashion Commerce hoy; los demás nichos llevan a WhatsApp ═══ -->
+<div class="vert" id="vert-modal" role="dialog" aria-modal="true" aria-labelledby="vert-title" hidden>
+  <div class="vert-fondo" data-vert-cerrar></div>
+  <div class="vert-caja">
+    <button type="button" class="vert-x" data-vert-cerrar aria-label="Cerrar">×</button>
+    <span class="vert-kicker">Sacs · un sistema por tipo de comercio</span>
+    <h2 class="vert-title" id="vert-title">Hoy estás en <em>Sacs Fashion Commerce</em>. Sacs también opera:</h2>
+    <div class="vert-grid">
+      {verticales.map((v) => (
+        <a class="vert-card" href={v.wa} target="_blank" rel="noopener noreferrer" data-vertical={v.id}>
+          <picture>
+            <source media="(max-width: 720px)" srcset={`${v.img}-m.webp`} />
+            <img src={`${v.img}.webp`} alt={v.label} width="1400" height="933" loading="lazy" decoding="async" />
+          </picture>
+          <span class="vert-card-body">
+            <b>{v.label}</b>
+            <small>{v.desc}</small>
+            <i>Escríbenos por WhatsApp →</i>
+          </span>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
 
 <style>
   /* ─── Nav base: transparent over hero ─── */
@@ -1495,6 +1533,29 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     .moda-split { grid-template-columns: 1fr; gap: 26px; }
     .moda-extra-lista { grid-template-columns: 1fr 1fr; display: grid; }
   }
+  /* ─── Vertical actual + modal de verticales ─── */
+  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; margin-right: var(--space-3); padding: 6px 11px; border: 1px solid rgba(0,0,0,0.14); border-radius: 999px; background: transparent; color: var(--color-text-primary); font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background 0.2s, border-color 0.2s; }
+  .nav-vertical:hover { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.3); }
+  @media (max-width: 480px) { .nav-vertical { padding: 6px 9px; font-size: 10px; letter-spacing: 0.08em; } .nav-vertical-txt { max-width: 92px; overflow: hidden; text-overflow: ellipsis; } }
+  .vert { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .vert[hidden] { display: none; }
+  .vert-fondo { position: absolute; inset: 0; background: rgba(8,8,10,0.82); backdrop-filter: blur(10px); }
+  .vert-caja { position: relative; width: min(1180px, 100%); max-height: calc(100vh - 40px); overflow: auto; background: #0E0D0C; color: #fff; border-radius: 24px; padding: clamp(24px, 4vw, 48px); box-shadow: 0 40px 120px rgba(0,0,0,0.6); animation: vert-in 0.35s cubic-bezier(0.2,0.7,0.2,1); }
+  @keyframes vert-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .vert-x { position: absolute; right: 18px; top: 14px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255,255,255,0.08); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; }
+  .vert-x:hover { background: rgba(255,255,255,0.16); }
+  .vert-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #E8A838; margin-bottom: 12px; }
+  .vert-title { font-family: var(--font-display); font-size: clamp(24px, 3vw, 40px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 60px 26px 0; color: #fff; }
+  .vert-title em { font-style: normal; color: #E8A838; }
+  .vert-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .vert-card { position: relative; display: block; border-radius: 18px; overflow: hidden; aspect-ratio: 3 / 2; background: #1a1918; color: #fff; text-decoration: none; isolation: isolate; }
+  .vert-card img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.2,0.7,0.2,1); }
+  .vert-card:hover img { transform: scale(1.05); }
+  .vert-card-body { position: absolute; inset: auto 0 0 0; padding: 60px 22px 20px; background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0)); }
+  .vert-card-body b { display: block; font-family: var(--font-display); font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -0.02em; line-height: 1.05; }
+  .vert-card-body small { display: block; margin-top: 6px; font-size: 14px; color: rgba(255,255,255,0.8); }
+  .vert-card-body i { display: inline-block; margin-top: 10px; font-style: normal; font-size: 13px; font-weight: 700; color: #E8A838; }
+  @media (max-width: 720px) { .vert-grid { grid-template-columns: 1fr; } .vert-card { aspect-ratio: 16 / 10; } .vert-caja { border-radius: 18px; } .vert-title { margin-right: 44px; } }
 </style>
 
 <script>
@@ -1714,4 +1775,18 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
       if (idx) activateSector(idx);
     });
   });
+</script>
+
+<script>
+  // Modal de verticales (botón "Fashion Commerce" junto al logo)
+  (() => {
+    const btn = document.getElementById('nav-vertical'); const modal = document.getElementById('vert-modal');
+    if (!btn || !modal) return;
+    const abre = () => { modal.hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; (modal.querySelector('.vert-x') as HTMLElement)?.focus(); (window as any).sacsPH?.('vertical_modal_abrir'); };
+    const cierra = () => { modal.hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; btn.focus(); };
+    btn.addEventListener('click', abre);
+    modal.querySelectorAll('[data-vert-cerrar]').forEach((el) => el.addEventListener('click', cierra));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) cierra(); });
+    modal.querySelectorAll('.vert-card').forEach((a) => a.addEventListener('click', () => (window as any).sacsPH?.('vertical_click', { vertical: (a as HTMLElement).dataset.vertical })));
+  })();
 </script>
