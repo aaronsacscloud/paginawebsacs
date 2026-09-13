@@ -47,14 +47,19 @@ const AMBAR = '#C98A12', ORO = '#F0B84E', AZUL = '#2C5FC4', CIELO = '#7DA6F5', R
 
 const S = {
   wrap: WRAP,
-  card: { background: '#fff', border: '1px solid #ececf1', borderRadius: 14, padding: '19px 21px' } as const,
+  /* La tarjeta FLOTA sobre el papel rosa: borde lila casi transparente,
+     esquina de 16 y una sombra larga y suave. El borde gris y la esquina de 14
+     eran del tablero viejo, cuando el fondo era blanco y la tarjeta tenía que
+     dibujarse sola. */
+  card: { background: '#fff', border: '1px solid rgba(155,140,250,.14)', borderRadius: 16, padding: '19px 21px',
+          boxShadow: '0 1px 2px rgba(60,30,140,.04), 0 10px 30px rgba(155,140,250,.10)' } as const,
   titulo: { fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.09em', display: 'flex', alignItems: 'center', gap: 9 } as const,
   der: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   lead: { fontSize: '0.73rem', color: '#8a8590', margin: '5px 0 15px', lineHeight: 1.55 } as const,
   nota: { fontSize: '0.68rem', color: '#8f8c99', marginTop: 11, paddingTop: 11, borderTop: '1px solid #f3f2f6', lineHeight: 1.6 } as const,
   eyebrow: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.09em' } as const,
   pie: { fontSize: '0.73rem', color: '#6f6b78', marginTop: 8, lineHeight: 1.55 } as const,
-  mini: { border: '1px solid #ececf1', borderRadius: 11, padding: '13px 15px' } as const,
+  mini: { border: '1px solid rgba(155,140,250,.16)', borderRadius: 12, padding: '13px 15px', background: '#fff' } as const,
   mv: { fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-.025em', lineHeight: 1, marginTop: 7 } as const,
   ms: { fontSize: '0.68rem', color: '#8a8590', marginTop: 6, lineHeight: 1.45 } as const,
   fila: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: '1px solid #f4f3f7' } as const,
@@ -131,6 +136,19 @@ export default function DashboardTab() {
   useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [desde, hasta]);
 
   const alMes = () => { setAMano(false); setDesde(inicioDeMes()); setHasta(iso(new Date())); };
+  /* Los cuatro periodos que de verdad se preguntan. El mes sigue mandando —el
+     negocio se cierra por mes— pero «hoy» y «7 días» contestan la pregunta de
+     la mañana, y el trimestre es con lo que se mira una tendencia. */
+  const haceDias = (n: number) => { const f = new Date(); f.setDate(f.getDate() - n); return iso(f); };
+  const iniTrimestre = () => { const f = new Date(); return iso(new Date(f.getFullYear(), f.getMonth() - 2, 1)); };
+  const RANGOS: [string, () => [string, string]][] = [
+    ['Hoy', () => [iso(new Date()), iso(new Date())]],
+    ['7 días', () => [haceDias(6), iso(new Date())]],
+    ['Mes', () => [inicioDeMes(), iso(new Date())]],
+    ['Trimestre', () => [iniTrimestre(), iso(new Date())]],
+  ];
+  const ponerRango = (f: () => [string, string]) => { setAMano(false); const [a, b] = f(); setDesde(a); setHasta(b); };
+  const rangoActivo = (f: () => [string, string]) => { const [a, b] = f(); return !aMano && desde === a && hasta === b; };
 
   if (err) return <div style={S.wrap}><div style={{ color: ROJO, fontSize: '0.85rem' }}>{err}</div></div>;
   if (!d) return <div style={S.wrap}><Cargando texto="Cargando tablero…" /></div>;
@@ -144,11 +162,24 @@ export default function DashboardTab() {
       {/* Las rejillas van por clase y no con auto-fit: con minmax el navegador
           decidía 3 columnas y dejaba un hueco del ancho de una tarjeta. */}
       <style>{`
-        .tb { font-variant-numeric: tabular-nums; }
-        .tb-clic { cursor:pointer; transition:box-shadow .15s, border-color .15s; }
-        .tb-clic:hover { box-shadow:0 3px 14px rgba(91,75,214,.10); border-color:#ddd8f7; }
-        .tb-velo { position:fixed; inset:0; background:rgba(23,21,31,.42); display:flex; align-items:center; justify-content:center; padding:28px; z-index:60; }
-        .tb-modal { background:#fff; border-radius:16px; width:min(960px,100%); max-height:88vh; overflow:auto; box-shadow:0 24px 70px rgba(23,21,31,.24); }
+        /* ── EL PAPEL ──
+           El tablero se pinta sobre papel lila-rosa y las tarjetas flotan
+           encima. Sale un poco por los lados del contenido para que se lea
+           como una hoja y no como una caja más. */
+        .tb { font-variant-numeric: tabular-nums; background:linear-gradient(150deg,#FDF6FB 0%,#F7F2FE 38%,#FCEEF6 100%);
+              border-radius:20px; padding:18px 16px 22px; margin:0 -12px; }
+        @media (max-width: 700px) { .tb { margin:0 -8px; padding:14px 10px 18px; } }
+        .tb-clic { cursor:pointer; transition:transform .13s, box-shadow .13s, border-color .13s; }
+        .tb-clic:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(217,83,142,.16); border-color:rgba(217,83,142,.32); }
+
+        /* ── EL CAJÓN ──
+           El detalle entra por la derecha en vez de tapar la pantalla: así
+           sigues viendo el tablero detrás y entiendes de qué cifra salió. */
+        .tb-velo { position:fixed; inset:0; background:rgba(36,29,67,.34); backdrop-filter:blur(2px); z-index:60; }
+        .tb-modal { position:fixed; top:0; right:0; bottom:0; background:#fff; width:min(560px,94vw); overflow:auto;
+          box-shadow:-20px 0 60px rgba(36,29,67,.20); animation:tbCajon .26s cubic-bezier(.2,.8,.2,1); }
+        @keyframes tbCajon { from { transform:translateX(100%); } }
+        @media (prefers-reduced-motion: reduce) { .tb-modal { animation:none; } }
         .tb-tabla { width:100%; border-collapse:collapse; }
         .tb-tabla th { font-size:.6rem; font-weight:800; color:#a5a2af; text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:9px 8px; border-bottom:1px solid #f1f0f5; }
         .tb-tabla td { padding:10px 8px; border-bottom:1px solid #f7f6fa; font-size:.79rem; }
@@ -197,6 +228,16 @@ export default function DashboardTab() {
 
         /* ── La tira de KPIs de cada sección ── */
         .tb-kpis { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        .tb-kpi { background:#fff; border:1px solid rgba(155,140,250,.14); border-radius:14px; padding:14px 16px 14px 18px;
+          position:relative; overflow:hidden; box-shadow:0 1px 2px rgba(60,30,140,.04), 0 8px 24px rgba(155,140,250,.09); }
+
+        /* ── El globo de la gráfica ── */
+        .tb-globo { position:absolute; pointer-events:none; background:#fff; border:1px solid #F3E3EC; border-radius:10px;
+          padding:7px 11px; box-shadow:0 8px 22px rgba(217,83,142,.18); z-index:5; white-space:nowrap; transform:translate(-50%,-100%); }
+
+        /* ── Las lecturas del pie ── */
+        .tb-lec { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        @media (max-width: 900px) { .tb-lec { grid-template-columns:1fr; } }
         @media (max-width: 1180px) { .tb-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } }
         @media (max-width: 680px)  { .tb-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
       `}</style>
@@ -220,8 +261,10 @@ export default function DashboardTab() {
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ display: 'inline-flex', border: '1px solid #eae5ef', borderRadius: 20, overflow: 'hidden', background: '#fff' }}>
-              <button onClick={alMes} style={seg(!aMano)}>Este mes</button>
-              <button onClick={() => setAMano(true)} style={seg(aMano)}>Personalizado</button>
+              {RANGOS.map(([et, f]) => (
+                <button key={et} onClick={() => ponerRango(f)} style={seg(rangoActivo(f))}>{et}</button>
+              ))}
+              <button onClick={() => setAMano(true)} style={seg(aMano)}>A mano</button>
             </span>
             {/* Los campos de fecha solo aparecen cuando se piden: ocupaban un
                 tercio de la barra para algo que se usa una vez al mes. */}
@@ -239,6 +282,7 @@ export default function DashboardTab() {
           <Dinero d={d} ver={setDetalle} />
           <CarteraYCanales x={x} abrir={setAbierto} />
           <Compromisos d={d} abrir={setAbierto} />
+          <Lecturas d={d} x={x} />
         </>)}
 
         {sub === 'leads' && (<>
@@ -400,8 +444,13 @@ function GraficaCobranza({ c, eje }: any) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }} aria-hidden="true">
       <defs>
+        {/* El relleno baja del rosa de la marca al morado y se apaga: es el
+            mismo degradado de la cinta de las cotizaciones. */}
         <linearGradient id="tb-cash" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={LILA} stopOpacity=".34" /><stop offset="100%" stopColor={LILA} stopOpacity="0" />
+          <stop offset="0%" stopColor="#D9538E" stopOpacity=".30" /><stop offset="100%" stopColor="#9B8CFA" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="tb-linea" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#9B8CFA" /><stop offset="100%" stopColor="#D9538E" />
         </linearGradient>
       </defs>
       {marcas.map(v => <g key={v}>
@@ -410,12 +459,12 @@ function GraficaCobranza({ c, eje }: any) {
       </g>)}
       {c.meta && <polyline points={`${X(0)},${Y(0)} ${X(total)},${Y(c.meta)}`} fill="none" stroke="#cfcbe0" strokeWidth="1.5" strokeDasharray="5 4" />}
       <polygon points={area} fill="url(#tb-cash)" />
-      <polyline points={linea} fill="none" stroke={MORADO} strokeWidth="2.4" strokeLinejoin="round" />
+      <polyline points={linea} fill="none" stroke="url(#tb-linea)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
       {c.proyeccion != null && <>
         <polyline points={`${X(ultimo.i)},${Y(ultimo.acum)} ${X(total)},${Y(c.proyeccion)}`} fill="none" stroke={MENTA} strokeWidth="2.2" strokeDasharray="4 4" />
         <circle cx={X(total)} cy={Y(c.proyeccion)} r="3.5" fill={MENTA} />
       </>}
-      <circle cx={X(ultimo.i)} cy={Y(ultimo.acum)} r="4.5" fill="#fff" stroke={MORADO} strokeWidth="2.4" />
+      <circle cx={X(ultimo.i)} cy={Y(ultimo.acum)} r="5" fill="#fff" stroke="#D9538E" strokeWidth="2.6" />
       {[0, Math.round(total / 4), Math.round(total / 2), Math.round(total * 3 / 4), total].map((i, k) => (
         <text key={k} x={X(i)} y={H - 6} fontSize="8.5" fill="#b3b0bd" fontWeight="600" textAnchor="middle">{i + 1}</text>
       ))}
@@ -423,16 +472,31 @@ function GraficaCobranza({ c, eje }: any) {
   );
 }
 
+/* Los seis meses. La barra CONTESTA: al pasar el mouse sale el globo con el
+   mes y cuánto entró — la pregunta que uno se hace mirando una barra es
+   siempre «¿cuánto fue ese?», y hasta ahora había que adivinarlo por altura. */
 function Historial({ meses }: any) {
   const tope = Math.max(1, ...meses.map((m: any) => m.monto));
+  const [sobre, setSobre] = useState<number | null>(null);
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
-      {meses.map((m: any) => (
-        <div key={m.mes} style={{ flex: 1, textAlign: 'center' }} title={`${m.etiqueta}: ${money(m.monto)}`}>
+    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', position: 'relative' }}
+      onMouseLeave={() => setSobre(null)}>
+      {sobre != null && (
+        <div className="tb-globo" style={{ left: `${((sobre + 0.5) / meses.length) * 100}%`, top: -6 }}>
+          <div style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: '#a09aae' }}>{meses[sobre].etiqueta}</div>
+          <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#9c3d70' }}>{money(meses[sobre].monto)}</div>
+        </div>
+      )}
+      {meses.map((m: any, i: number) => (
+        <div key={m.mes} style={{ flex: 1, textAlign: 'center', cursor: 'default' }} onMouseEnter={() => setSobre(i)}>
           <div style={{ height: 44, display: 'flex', alignItems: 'flex-end' }}>
-            <span style={{ width: '100%', height: Math.max(4, (m.monto / tope) * 44), borderRadius: 3, background: m.actual ? MORADO : '#e2dffa' }} />
+            <span style={{
+              width: '100%', height: Math.max(4, (m.monto / tope) * 44), borderRadius: 4,
+              background: m.actual ? 'linear-gradient(180deg,#D9538E,#EFA6CA)' : sobre === i ? 'linear-gradient(180deg,#9B8CFA,#C6BCFB)' : '#e6e1fb',
+              transition: 'background .15s',
+            }} />
           </div>
-          <div style={{ fontSize: '0.58rem', fontWeight: 700, marginTop: 5, color: m.actual ? MORADO : '#a5a2af' }}>{m.etiqueta}</div>
+          <div style={{ fontSize: '0.58rem', fontWeight: 700, marginTop: 5, color: m.actual ? '#9c3d70' : sobre === i ? MORADO : '#a5a2af' }}>{m.etiqueta}</div>
         </div>
       ))}
     </div>
@@ -1076,8 +1140,7 @@ function Riel({ sec, irA, d, x }: { sec: Sec; irA: (v: Sec) => void; d: any; x: 
    Si trae `ver`, se puede abrir: el cursor y la sombra lo dicen. */
 function Kpi({ color, tinta, et, ci, pie, ver }: any) {
   return (
-    <div className={'tb' + (ver ? ' tb-clic' : '')} onClick={ver}
-      style={{ background: '#fff', border: '1px solid #ececf1', borderRadius: 11, padding: '14px 16px 14px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div className={'tb-kpi' + (ver ? ' tb-clic' : '')} onClick={ver} style={ver ? { cursor: 'pointer' } : undefined}>
       <span style={{ position: 'absolute', left: 0, top: 13, bottom: 13, width: 4, borderRadius: '0 4px 4px 0', background: color }} />
       <div style={S.eyebrow}>{et}</div>
       <div style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.05, color: tinta }}>{ci}</div>
@@ -1113,7 +1176,7 @@ function KpisConsultoria({ d, x, ver }: any) {
       <Kpi color={MENTA} tinta={VERDE} et="Monto cobrado" ci={money(c.monto)} ver={() => ver('cobrado')}
         pie={`${c.n} ${c.n === 1 ? 'pago' : 'pagos'} · clic para verlos`} />
       <Kpi color={ORO} tinta={AMBAR} et="Monto por cobrar" ci={money(cb.total.monto + cb.vencido.monto)} ver={() => ver('cobrar')}
-        pie={`${cb.total.n + cb.vencido.n} renovaciones · ${cb.vencido.n} vencidas`} />
+        pie={`${cb.total.n + cb.vencido.n} renovaciones${cb.vencido.n ? ` · ${cb.vencido.n} ${cb.vencido.n === 1 ? 'vencida' : 'vencidas'}` : ''}`} />
       <Kpi color="#D9538E" tinta="#9c3d70" et="Ingreso por cliente" ci={co ? money(co.ticket) : '—'}
         pie="promedio de quien SÍ pagó" />
     </div>
@@ -1138,7 +1201,7 @@ function CarteraYCanales({ x, abrir }: any) {
   const topeCanal = Math.max(co.canales.reuniones, co.canales.whatsapp, co.canales.llamadas, 1);
   const topeServ = Math.max(...co.servicios.map((v: any) => v.monto), 1);
   return (
-    <div className="tb-2">
+    <div className="tb-2" style={{ alignItems: 'start' }}>
       <div style={S.card}>
         <div style={S.titulo}>Clientes de consultoría<span style={S.der}>cobrado, pendiente y qué sigue</span></div>
         <div style={S.lead}>
@@ -1304,3 +1367,63 @@ function Recurrencia({ x, abrir }: any) {
     </div>
   );
 }
+
+/* ════════════════ LAS TRES LECTURAS ════════════════
+   Lo que uno diría en voz alta al ver la pantalla, ya dicho y con el número
+   adentro. No son frases de adorno: se calculan del periodo que estás viendo y
+   si el dato no da para decir algo, la tarjeta no aparece. */
+function Lecturas({ d, x }: any) {
+  const co = x?.consultoria;
+  const cb = d.cobrar;
+  const porCobrar = cb.total.monto + cb.vencido.monto;
+  const tarjetas: { tinte: string; color: string; icono: any; titulo: string; texto: any }[] = [];
+
+  if (co && co.juntas > 0) {
+    const sin = Math.max(0, co.juntas - co.cotizaciones.n);
+    tarjetas.push({
+      tinte: '#FCEFF5', color: '#D9538E', icono: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18" />,
+      titulo: 'De la junta al dinero',
+      texto: sin > 0
+        ? <>De las <b>{co.juntas} juntas</b> salieron {co.cotizaciones.n} cotizaciones. Las <b>{sin} juntas sin cotizar</b> son el pozo más grande que tienes.</>
+        : <>Las <b>{co.juntas} juntas</b> del periodo produjeron {co.cotizaciones.n} cotizaciones. Ninguna se quedó sin precio.</>,
+    });
+  }
+  if (cb.vencido.n > 0) {
+    tarjetas.push({
+      tinte: '#FFF4E5', color: '#E8A838', icono: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2" /></>,
+      titulo: 'Lo que se está enfriando',
+      texto: <><b>{money(cb.vencido.monto)}</b> ya pasaron su fecha en {cb.vencido.n} {cb.vencido.n === 1 ? 'renovación' : 'renovaciones'}.
+        {' '}{(() => { const q = (cb.vencido.monto / Math.max(1, porCobrar)) * 100;
+          return q < 1 ? <>Es <b>menos del 1%</b> de todo lo que tienes por cobrar.</>
+                       : <>Es el <b>{Math.round(q)}%</b> de todo lo que tienes por cobrar.</>; })()}</>,
+    });
+  }
+  if (co && co.cartera.length && co.cobrado.monto > 0) {
+    const top = co.cartera[0];
+    const pctTop = Math.round((top.cobrado / co.cobrado.monto) * 100);
+    if (top.cobrado > 0) tarjetas.push({
+      tinte: '#EEECFE', color: '#9B8CFA', icono: <path d="M4 18V9M10 18V5M16 18v-6M22 18V3" />,
+      titulo: 'Quién sostiene el periodo',
+      texto: <><b>{top.nombre}</b> puso {money(top.cobrado)}: el <b>{pctTop}%</b> de todo lo cobrado.
+        {pctTop >= 40 ? ' Un mes que depende de una cuenta es un mes prestado.' : ' El resto está bien repartido.'}</>,
+    });
+  }
+  if (!tarjetas.length) return null;
+
+  return (
+    <div className="tb-lec">
+      {tarjetas.map(t => (
+        <div key={t.titulo} style={{ background: t.tinte, border: '1px solid rgba(155,140,250,.14)', borderRadius: 16, padding: '15px 17px', display: 'flex', gap: 12 }}>
+          <span style={{ width: 32, height: 32, borderRadius: 10, background: '#fff', display: 'grid', placeItems: 'center', flex: 'none' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2" strokeLinecap="round" aria-hidden="true">{t.icono}</svg>
+          </span>
+          <div>
+            <h4 style={{ margin: '0 0 4px', fontSize: '0.82rem', fontWeight: 800, letterSpacing: '-.01em' }}>{t.titulo}</h4>
+            <p style={{ margin: 0, fontSize: '0.73rem', lineHeight: 1.5, color: '#6b6b7a' }}>{t.texto}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
