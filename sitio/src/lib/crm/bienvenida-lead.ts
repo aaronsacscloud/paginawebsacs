@@ -107,7 +107,7 @@ export async function enviarCorreoBienvenidaTikTok(contactId: string, email: str
   if (pl?.bloques) {
     asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
     html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout);
-    texto = compilarTexto(pl.bloques, ctx);
+    texto = compilarTexto(pl.bloques, ctx, t);
   } else {
     const pon = (x: string) => x
       .replace(/\{\{nombre\}\}/g, ctx.nombre || 'hola')
@@ -167,7 +167,7 @@ export async function probarCorreoBienvenida(para: string, plantillaId?: string 
   if (pl?.bloques) {
     asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
     html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout);
-    texto = compilarTexto(pl.bloques, ctx);
+    texto = compilarTexto(pl.bloques, ctx, t);
   } else {
     const pon = (x: string) => x.replace(/\{\{nombre\}\}/g, 'María').replace(/\{\{campana\}\}/g, 'Campaña nuevos leads');
     asunto = pon(cfg?.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);

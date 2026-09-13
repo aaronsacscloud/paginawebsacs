@@ -267,13 +267,18 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
     }
     case 'firma': {
       // La firma sale del INQUILINO: un partner firma con su nombre, no el nuestro.
-      const foto = b.foto_url || t.logo_url;
-      const nombre = b.nombre || t.from_nombre;
+      // La foto va en circulito y es la MISMA en todas las cadencias (la del
+      // inquilino), aunque el nombre cambie según quién firma esa plantilla.
+      const foto = b.foto_url || t.firma_foto_url || t.logo_url;
+      const nombre = b.nombre || t.firma_nombre || t.from_nombre;
+      const puesto = b.puesto || t.firma_puesto || '';
+      const sitio = t.sitio_url ? `<div style="font-size:12px;margin-top:3px;"><a href="${escapar(t.sitio_url)}" style="color:#5B4BD6;text-decoration:none;font-weight:700;">${escapar(t.sitio_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div>` : '';
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;"><tr>
-        ${foto ? `<td width="52" valign="top"><img src="${escapar(foto)}" width="44" height="44" alt="" style="border-radius:50%;display:block;border:0;"></td>` : ''}
+        ${foto ? `<td width="62" valign="middle"><img src="${escapar(foto)}" width="50" height="50" alt="" style="border-radius:50%;display:block;border:2px solid #EEECFE;"></td>` : ''}
         <td valign="middle" style="${FA}">
-          <div class="em-tinta" style="font-size:14px;font-weight:700;color:#1a1633;">${escapar(nombre)}</div>
-          ${b.puesto ? `<div class="em-suave" style="font-size:13px;color:#8a8a92;">${escapar(b.puesto)}</div>` : ''}
+          <div class="em-tinta" style="font-size:14px;font-weight:800;color:#1a1633;">${escapar(nombre)}</div>
+          ${puesto ? `<div class="em-suave" style="font-size:13px;color:#8a8a92;">${escapar(puesto)}</div>` : ''}
+          ${sitio}
         </td></tr></table>`);
     }
     default:
@@ -338,8 +343,18 @@ const ESTILOS = `
  * El HTML completo del correo. El pie legal lo pone el pipeline en `MARCA_PIE`:
  * así queda DENTRO del fondo de la página y no colgando después del </html>.
  */
+/**
+ * Todo correo va firmado. Si la plantilla no trae bloque `firma`, se agrega
+ * la del inquilino al final: quien recibe siempre ve quién le escribe y su
+ * foto, sin que cada plantilla tenga que acordarse.
+ */
+export function conFirma(bloques: Bloque[]): Bloque[] {
+  const lista = bloques || [];
+  return lista.some(b => b?.tipo === 'firma') ? lista : [...lista, { id: 'firma-auto', tipo: 'firma' }];
+}
+
 export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null, layout?: Layout | string | null): string {
-  const cuerpo = (bloques || []).map(b => bloqueHtml(b, ctx, t)).join('\n');
+  const cuerpo = conFirma(bloques).map(b => bloqueHtml(b, ctx, t)).join('\n');
   const lienzo = layoutDe(layout) === 'lienzo';
   const cabeza = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
@@ -393,9 +408,9 @@ ${preheader(preview)}
 }
 
 /** Versión text/plain — obligatoria: sin ella el correo pesa más como spam. */
-export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
+export function compilarTexto(bloques: Bloque[], ctx: Contexto, t?: Tenant | null): string {
   const p: string[] = [];
-  for (const b of bloques || []) {
+  for (const b of conFirma(bloques)) {
     /* Los ** de las negritas se quitan: en texto plano son ruido.
        El segundo replace barre los pares que quedaron VACÍOS —`**{{x}}**` con la
        variable sin dato deja `****`, que el primero no puede casar— igual que en
@@ -422,7 +437,7 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
         }
         break;
       }
-      case 'firma': p.push('', i(b.nombre || ''), i(b.puesto || '')); break;
+      case 'firma': p.push('', i(b.nombre || t?.firma_nombre || t?.from_nombre || ''), i(b.puesto || t?.firma_puesto || '')); break;
       case 'separador': p.push('—'); break;
     }
   }

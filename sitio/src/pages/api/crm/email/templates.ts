@@ -64,7 +64,7 @@ export const GET: APIRoute = async ({ url }) => {
 function preparar(bloques: Bloque[], t: any, ctxDemo = true, preview?: string | null, layout?: string | null) {
   const ctx = ctxDemo ? { nombre: 'Ana', apellido: 'Pérez', empresa: 'Boutique Ejemplo', plan: 'Plan Controla' } : {};
   const html = compilar(bloques, ctx, t, preview, layout);
-  const texto = compilarTexto(bloques, ctx);
+  const texto = compilarTexto(bloques, ctx, t);
   const peso = pesoKb(html);
   const sinRespaldo = variablesSinRespaldo(bloques);
   const avisos: string[] = [];

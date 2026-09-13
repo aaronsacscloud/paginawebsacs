@@ -100,7 +100,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const r = await enviarCorreo({
       tenantId: t.id, para: destino, categoria: 'prueba',
       asunto: `[PRUEBA] ${c.asunto || c.nombre}`,
-      html: compilar(bloques, ctx, t, null, tpl?.layout), texto: compilarTexto(bloques, ctx), templateId: c.template_id,
+      html: compilar(bloques, ctx, t, null, tpl?.layout), texto: compilarTexto(bloques, ctx, t), templateId: c.template_id,
     });
     return json(r, r.enviado ? 200 : 400);
   }

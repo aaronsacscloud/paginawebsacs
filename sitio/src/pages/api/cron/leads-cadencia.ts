@@ -710,7 +710,7 @@ export const GET: APIRoute = async ({ url }) => {
             const asunto = interpolar(pl.asunto || '', ctx);
             const r = await enviarCorreo({ tenantId: t.id, para: c.email, asunto,
               html: compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout),
-              texto: compilarTexto(pl.bloques, ctx), categoria: 'relacion', contactId: c.id,
+              texto: compilarTexto(pl.bloques, ctx, t), categoria: 'relacion', contactId: c.id,
               templateId: tid, variante } as any);
             if (!(r as any)?.enviado) continue;
             correoHecho = true; corridaCorreos++; (envioHoy[c.id] = envioHoy[c.id] || {}).correo = true;

@@ -454,7 +454,7 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
       const asunto = cfg.asunto || tpl?.asunto || auto.nombre;
       const r = await enviarCorreo({
         tenantId: t.id, para: ctx.email, asunto,
-        html: compilar(bloques, ctx, t, null, tpl?.layout), texto: compilarTexto(bloques, ctx),
+        html: compilar(bloques, ctx, t, null, tpl?.layout), texto: compilarTexto(bloques, ctx, t),
         categoria: (auto.categoria === 'relacion' ? 'relacion' : 'marketing'),
         contactId: e.contact_id, companyId: ctx.company_id,
         automationId: auto.id, enrollmentId: e.id, stepId: paso.id,

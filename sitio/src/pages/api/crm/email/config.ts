@@ -22,6 +22,8 @@ const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, h
 const EDITABLES = [
   'nombre', 'from_nombre', 'from_email', 'reply_to', 'logo_url', 'color_acento', 'firma_html',
   'direccion_fisica', 'aviso_privacidad_url', 'motivo_recepcion', 'footer_extra',
+  'sitio_url', 'tiktok_url', 'confidencialidad', 'nota_papel',
+  'firma_nombre', 'firma_puesto', 'firma_foto_url',
   'presion_max_semana', 'presion_por_empresa', 'limite_diario',
   'ventana_inicio', 'ventana_fin', 'timezone', 'enviar_fines_semana', 'activo',
   // Reputación: umbrales del freno, rampa de calentamiento y semillas.

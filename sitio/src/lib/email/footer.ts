@@ -19,38 +19,73 @@ export function urlPreferencias(base: string, token: string): string {
   return `${base.replace(/\/$/, '')}/email/preferencias/${token}`;
 }
 
-/** Pie en HTML. Tablas y CSS inline: es lo único que Outlook respeta. */
+/** `https://www.tiktok.com/@sacsoficial` → `@sacsoficial`; un sitio → su dominio sin `https://`. */
+export function etiquetaDeUrl(u: string): string {
+  const s = String(u || '').trim();
+  const arroba = s.match(/@[\w.-]+/);
+  if (arroba) return arroba[0];
+  return s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+/**
+ * Pie en HTML. Tablas y CSS inline: es lo único que Outlook respeta.
+ *
+ * Es el pie CORPORATIVO, no solo el legal: el dueño pidió que todo correo se
+ * vea formal y diga quién lo manda, dónde está la oficina, el sitio y el
+ * TikTok, el aviso de confidencialidad y la nota del papel. Todo sale del
+ * inquilino; lo que no tenga, no se pinta.
+ */
 export function footerHtml(t: Tenant, base: string, token: string): string {
   const FA = "font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;";
   const nombre = escapar(t.nombre || t.from_nombre);
   const dir = escapar(t.direccion_fisica || '');
   const motivo = escapar(t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
-  const extra = t.footer_extra ? `<div style="font-size:11.5px;color:#94A3B8;margin-top:6px;">${escapar(t.footer_extra)}</div>` : '';
+  const extra = t.footer_extra ? `<div style="font-size:11.5px;color:#8A8598;margin-top:4px;">${escapar(t.footer_extra)}</div>` : '';
   const aviso = t.aviso_privacidad_url
-    ? ` · <a href="${escapar(t.aviso_privacidad_url)}" style="color:#64748B;text-decoration:underline;">Aviso de privacidad</a>`
+    ? ` · <a href="${escapar(t.aviso_privacidad_url)}" style="color:#6B6580;text-decoration:underline;">Aviso de privacidad</a>`
     : '';
+  const liga = (u: string) => `<a href="${escapar(u)}" style="${FA}font-size:13.5px;font-weight:800;color:#5B4BD6;text-decoration:none;">${escapar(etiquetaDeUrl(u))}</a>`;
+  const rotulo = (s: string) => `<div style="${FA}font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#8A8598;margin-bottom:3px;">${s}</div>`;
+  const visitas = (t.sitio_url || t.tiktok_url) ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;"><tr>
+      ${t.sitio_url ? `<td align="center" style="padding:0 18px 0 0;">${rotulo('Visita nuestro sitio web')}${liga(t.sitio_url)}</td>` : ''}
+      ${t.tiktok_url ? `<td align="center" style="padding:0 0 0 18px;${t.sitio_url ? 'border-left:1px solid #D9D4F0;' : ''}">${rotulo('Visita nuestro TikTok')}${liga(t.tiktok_url)}</td>` : ''}
+    </tr></table>` : '';
+  const confid = t.confidencialidad
+    ? `<div style="margin-top:16px;font-size:10.5px;color:#8A8598;line-height:1.55;"><strong style="color:#6B6580;">Aviso de confidencialidad.</strong> ${escapar(t.confidencialidad)}</div>` : '';
+  const papel = t.nota_papel
+    ? `<div style="margin-top:8px;font-size:10.5px;color:#8A8598;line-height:1.55;">${escapar(t.nota_papel)}</div>` : '';
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #E5E7EB;">
-  <tr><td style="padding-top:16px;text-align:center;${FA}">
-    <div style="font-size:12px;color:#94A3B8;line-height:1.6;">${motivo}</div>
-    <div style="font-size:11.5px;color:#94A3B8;line-height:1.6;margin-top:4px;"><strong style="color:#64748B;">${nombre}</strong>${dir ? ' · ' + dir : ''}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:26px;">
+  <tr><td style="padding:0;text-align:center;${FA}">
+    ${visitas}
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #D9D4F0;font-size:12.5px;font-weight:800;color:#4A4560;">${nombre}</div>
+    ${dir ? `<div style="font-size:11.5px;color:#8A8598;line-height:1.6;margin-top:2px;">${dir}</div>` : ''}
     ${extra}
-    <div style="margin-top:12px;font-size:12px;">
-      <a href="${urlBaja(base, token)}" style="color:#2563EB;text-decoration:underline;">Cancelar suscripción</a>
-      · <a href="${urlPreferencias(base, token)}" style="color:#64748B;text-decoration:underline;">Preferencias</a>${aviso}
+    <div style="font-size:11.5px;color:#8A8598;line-height:1.6;margin-top:10px;">${motivo}</div>
+    <div style="margin-top:8px;font-size:12px;">
+      <a href="${urlBaja(base, token)}" style="color:#5B4BD6;text-decoration:underline;">Cancelar suscripción</a>
+      · <a href="${urlPreferencias(base, token)}" style="color:#6B6580;text-decoration:underline;">Preferencias</a>${aviso}
     </div>
+    ${confid}
+    ${papel}
   </td></tr>
 </table>`;
 }
 
 /** Pie en texto plano — la versión text/plain también tiene que cumplir. */
 export function footerTexto(t: Tenant, base: string, token: string): string {
-  const p = ['', '—', t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`];
-  p.push(`${t.nombre}${t.direccion_fisica ? ' · ' + t.direccion_fisica : ''}`);
+  const p = ['', '—'];
+  if (t.sitio_url) p.push('Visita nuestro sitio web: ' + t.sitio_url);
+  if (t.tiktok_url) p.push('Visita nuestro TikTok: ' + t.tiktok_url);
+  p.push('', `${t.nombre}${t.direccion_fisica ? ' · ' + t.direccion_fisica : ''}`);
   if (t.footer_extra) p.push(t.footer_extra);
+  p.push(t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
   if (t.aviso_privacidad_url) p.push('Aviso de privacidad: ' + t.aviso_privacidad_url);
   p.push('Cancelar suscripción: ' + urlBaja(base, token));
   p.push('Preferencias de correo: ' + urlPreferencias(base, token));
+  if (t.confidencialidad) p.push('', 'Aviso de confidencialidad. ' + t.confidencialidad);
+  if (t.nota_papel) p.push(t.nota_papel);
   return p.join('\n');
 }
 

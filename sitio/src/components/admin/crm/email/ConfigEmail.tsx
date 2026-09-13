@@ -121,6 +121,21 @@ export default function ConfigEmail({ onCambio }: { onCambio?: () => void }) {
               </div>
             </div>
             {campo('footer_extra', 'Texto extra del pie', 'Opcional: RFC, razón social, lo que necesites.')}
+            {campo('sitio_url', 'Sitio web', '«Visita nuestro sitio web» en el pie y en la firma de todos los correos.')}
+            {campo('tiktok_url', 'TikTok', '«Visita nuestro TikTok» en el pie de todos los correos.')}
+            <div style={{ marginBottom: 13 }}>
+              <span style={S.lbl}>Aviso de confidencialidad</span>
+              <textarea value={t.confidencialidad ?? ''} onChange={e => set('confidencialidad', e.target.value)}
+                style={{ ...S.inp, minHeight: 64, resize: 'vertical' }} />
+            </div>
+            {campo('nota_papel', 'Nota del papel', 'La frase de «queremos eliminar el papel». Vacía, no sale.')}
+            <div style={{ ...S.kl, marginTop: 6 }}>Firma por defecto</div>
+            <div style={{ fontSize: '0.72rem', color: '#8a8a8a', margin: '2px 0 10px', lineHeight: 1.5 }}>
+              Se agrega sola al final de cualquier correo que no traiga su bloque de firma. La foto es la misma en todas las cadencias.
+            </div>
+            {campo('firma_nombre', 'Quién firma', 'Nombre de la persona que firma los correos.')}
+            {campo('firma_puesto', 'Puesto', 'Debajo del nombre, p. ej. «Tu consultora en Sacs».')}
+            {campo('firma_foto_url', 'Foto de la firma', 'Cuadrada; sale en circulito pequeño junto al nombre.')}
           </>)}
 
           {seccion === 'cadencia' && (<>
@@ -246,15 +261,34 @@ export default function ConfigEmail({ onCambio }: { onCambio?: () => void }) {
 
           <div style={S.card}>
             <div style={S.kl}>Así se verá el pie de tus correos</div>
-            <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 12, paddingTop: 14, textAlign: 'center', fontSize: '0.68rem', color: '#94A3B8', lineHeight: 1.7 }}>
-              <div>{t.motivo_recepcion || 'Recibiste este correo de ' + (t.nombre || 'tu negocio') + '.'}</div>
-              <div style={{ marginTop: 3 }}><b style={{ color: '#64748B' }}>{t.nombre || '—'}</b>{t.direccion_fisica ? ' · ' + t.direccion_fisica : ''}</div>
+            {(t.firma_nombre || t.from_nombre) && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 12 }}>
+                {t.firma_foto_url && <img src={t.firma_foto_url} alt="" width={40} height={40} style={{ borderRadius: '50%', border: '2px solid #EEECFE', objectFit: 'cover' }} />}
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1a1633' }}>{t.firma_nombre || t.from_nombre}</div>
+                  {t.firma_puesto && <div style={{ fontSize: '0.72rem', color: '#8a8a92' }}>{t.firma_puesto}</div>}
+                  {t.sitio_url && <div style={{ fontSize: '0.7rem', color: '#5B4BD6', fontWeight: 700 }}>{t.sitio_url.replace(/^https?:\/\//, '')}</div>}
+                </div>
+              </div>
+            )}
+            <div style={{ marginTop: 14, textAlign: 'center', fontSize: '0.68rem', color: '#8A8598', lineHeight: 1.7 }}>
+              {(t.sitio_url || t.tiktok_url) && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginBottom: 10 }}>
+                  {t.sitio_url && <div><div style={{ fontSize: '0.58rem', letterSpacing: '.09em', textTransform: 'uppercase', fontWeight: 700 }}>Visita nuestro sitio web</div><b style={{ color: '#5B4BD6', fontSize: '0.76rem' }}>{t.sitio_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</b></div>}
+                  {t.tiktok_url && <div style={{ borderLeft: '1px solid #D9D4F0', paddingLeft: 18 }}><div style={{ fontSize: '0.58rem', letterSpacing: '.09em', textTransform: 'uppercase', fontWeight: 700 }}>Visita nuestro TikTok</div><b style={{ color: '#5B4BD6', fontSize: '0.76rem' }}>{(t.tiktok_url.match(/@[\w.-]+/) || [t.tiktok_url])[0]}</b></div>}
+                </div>
+              )}
+              <div style={{ borderTop: '1px solid #D9D4F0', paddingTop: 10 }}><b style={{ color: '#4A4560' }}>{t.nombre || '—'}</b></div>
+              {t.direccion_fisica && <div>{t.direccion_fisica}</div>}
               {t.footer_extra && <div style={{ marginTop: 3 }}>{t.footer_extra}</div>}
-              <div style={{ marginTop: 9 }}>
-                <span style={{ color: '#2563EB', textDecoration: 'underline' }}>Cancelar suscripción</span>
+              <div style={{ marginTop: 6 }}>{t.motivo_recepcion || 'Recibiste este correo de ' + (t.nombre || 'tu negocio') + '.'}</div>
+              <div style={{ marginTop: 4 }}>
+                <span style={{ color: '#5B4BD6', textDecoration: 'underline' }}>Cancelar suscripción</span>
                 <span> · Preferencias</span>
                 {t.aviso_privacidad_url && <span> · Aviso de privacidad</span>}
               </div>
+              {t.confidencialidad && <div style={{ marginTop: 10, fontSize: '0.62rem', lineHeight: 1.5 }}><b style={{ color: '#6B6580' }}>Aviso de confidencialidad.</b> {t.confidencialidad}</div>}
+              {t.nota_papel && <div style={{ marginTop: 5, fontSize: '0.62rem', lineHeight: 1.5 }}>{t.nota_papel}</div>}
             </div>
           </div>
         </div>

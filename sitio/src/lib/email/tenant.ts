@@ -26,6 +26,15 @@ export interface Tenant {
   aviso_privacidad_url: string | null;
   motivo_recepcion: string | null;
   footer_extra: string | null;
+  // El pie corporativo y la firma por defecto: sitio, TikTok, confidencialidad,
+  // la nota del papel y quién firma cuando la plantilla no trae bloque `firma`.
+  sitio_url: string | null;
+  tiktok_url: string | null;
+  confidencialidad: string | null;
+  nota_papel: string | null;
+  firma_nombre: string | null;
+  firma_puesto: string | null;
+  firma_foto_url: string | null;
   sendgrid_domain_id: string | null;
   sendgrid_asm_group_id: number | null;
   presion_max_semana: number;
