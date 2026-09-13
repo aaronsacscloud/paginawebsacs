@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { S, Tag, Vacio, Cargando, Aviso, chip, Elegir, PedirTexto, BotonCopiar } from './ui';
 
 const TIPOS: Array<{ id: string; label: string; base: any }> = [
-  { id: 'portada', label: 'Portada con foto', base: { imagen: 'https://www.sacscloud.com/email/portadas/moda-wow-planta.jpg', alt: '', etiqueta: 'Serie de lunes', titulo: 'Un titular que importe', subtitulo: '' } },
+  { id: 'portada', label: 'Portada con foto', base: { imagen: 'https://www.sacscloud.com/email/portadas/wow-planta.jpg', alt: '', etiqueta: 'Serie de lunes', titulo: 'Un titular que importe', subtitulo: '' } },
   { id: 'hero', label: 'Portada de color', base: { titulo: 'Un titular que importe', subtitulo: '' } },
   { id: 'encabezado', label: 'Título', base: { texto: 'Título de sección', nivel: 2 } },
   { id: 'texto', label: 'Párrafo', base: { texto: 'Escribe aquí.' } },
