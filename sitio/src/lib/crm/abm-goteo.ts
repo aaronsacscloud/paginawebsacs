@@ -44,7 +44,14 @@ export async function tieneMx(correo: string): Promise<boolean> {
 }
 
 const MS_PRESUPUESTO = 170_000;   // el cartero comparte los 300 s de la función con el reparto
-const EN_PARALELO = 5;            // cadencias con IA a la vez: medido, ~60 s cada una (8 correos); 10 cuentas = 2 tandas
+// Cadencias con IA a la vez. Medido: ~60 s cada una (8 correos), y el tiempo
+// es de la IA, no del servidor, así que diez en paralelo tardan lo mismo que
+// cinco. Con 170 s caben dos tandas: 20 cuentas por corrida, 40 al día con las
+// dos corridas del cartero (10:00 y 13:00). Ese es el pedido del dueño para
+// SAPICA (13-sep-2026: «de 40 en 40»); con 5 en paralelo se quedaban en ~15.
+const EN_PARALELO = 10;
+
+const SIN_TIEMPO = 'sin tiempo en esta corrida; entra en la siguiente';
 
 export type ResultadoLote = { goteo_id: string; nombre: string; fecha: string; cuentas: number; sin_ia: number; motivo: string | null; detalle: any[] };
 
@@ -111,8 +118,7 @@ export async function elegibles(g: any, limite = 500): Promise<{ cuentas: any[];
 }
 
 /** Enrola el lote de hoy de UN goteo: escribe, aprueba y deja constancia. */
-export async function enrolarLote(g: any, hoy: string, quien = 'el goteo'): Promise<ResultadoLote> {
-  const t0 = Date.now();
+export async function enrolarLote(g: any, hoy: string, quien = 'el goteo', tope = Number(g.cuentas_dia) || 10, limite = Date.now() + MS_PRESUPUESTO): Promise<ResultadoLote> {
   const res: ResultadoLote = { goteo_id: g.id, nombre: g.nombre, fecha: hoy, cuentas: 0, sin_ia: 0, motivo: null, detalle: [] };
   const cerrar = async (patch: Record<string, any> = {}) => {
     await supabase.from('abm_goteo_lotes').insert({ goteo_id: g.id, fecha: hoy, cuentas: res.cuentas, sin_ia: res.sin_ia, detalle: res.detalle, motivo: res.motivo });
@@ -138,7 +144,7 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo'): Prom
   // marca invalida y no cuenta, la siguiente de la fila ocupa su lugar.
   const lote: any[] = [];
   for (const c of cuentas) {
-    if (lote.length >= (Number(g.cuentas_dia) || 10)) break;
+    if (lote.length >= tope) break;
     if (await tieneMx(c.correo)) { lote.push(c); continue; }
     await supabase.from('abm_canales').update({ estado: 'invalido', verificado_at: new Date().toISOString() })
       .eq('cuenta_id', c.id).ilike('valor', c.correo).like('tipo', 'email%');
@@ -149,7 +155,7 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo'): Prom
   const autor = `${quien} («${g.nombre}»)`;
 
   const una = async (c: any) => {
-    if (Date.now() - t0 > MS_PRESUPUESTO) { res.detalle.push({ cuenta_id: c.id, nombre: c.nombre, error: 'sin tiempo en esta corrida; entra mañana' }); return; }
+    if (Date.now() > limite) { res.detalle.push({ cuenta_id: c.id, nombre: c.nombre, error: SIN_TIEMPO }); return; }
     const r = await generarCadencia(c.id, { autor, con_ia: g.con_ia !== false, goteo_id: g.id, arranca_hoy: true });
     if (!r.ok) { res.detalle.push({ cuenta_id: c.id, nombre: c.nombre, error: r.error }); return; }
     await supabase.from('abm_toques')
@@ -169,18 +175,35 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo'): Prom
 /** Corre los goteos que toquen hoy. `forzar` repite aunque ya haya corrido (botón «enrolar ahora»). */
 export async function correrGoteos(op: { hoy?: string; solo_id?: string; forzar?: boolean; quien?: string } = {}): Promise<ResultadoLote[]> {
   const hoy = op.hoy || new Date().toISOString().slice(0, 10);
-  let q = supabase.from('abm_goteo').select('*').eq('estado', 'activo');
+  let q = supabase.from('abm_goteo').select('*').eq('estado', 'activo').order('created_at');
   if (op.solo_id) q = q.eq('id', op.solo_id);
   const { data: goteos } = await q;
   const salida: ResultadoLote[] = [];
-  for (const g of goteos || []) {
+  // El presupuesto de tiempo es de la CORRIDA, no de cada goteo: tres goteos
+  // con 170 s cada uno se pasaban de los 300 s de la función y el cartero ya
+  // no alcanzaba a mandar. Y el que todavía no tiene lote hoy va primero, para
+  // que uno grande completando el suyo no deje sin turno a los demás.
+  const limite = Date.now() + MS_PRESUPUESTO;
+  const orden = [...(goteos || [])].sort((a: any, b: any) => Number(a.ultimo_lote === hoy) - Number(b.ultimo_lote === hoy));
+  for (const g of orden) {
     if (String(g.inicio) > hoy) continue;
     if (g.hasta && String(g.hasta) < hoy) {
       await supabase.from('abm_goteo').update({ estado: 'terminado', updated_at: new Date().toISOString() }).eq('id', g.id);
       continue;
     }
-    if (g.ultimo_lote === hoy && !op.forzar) continue;
-    salida.push(await enrolarLote(g, hoy, op.quien));
+    // Un lote por día… salvo que la corrida de la mañana se haya quedado sin
+    // tiempo a medio lote: entonces la de la tarde lo completa, con lo que
+    // falte. Sin esto, «40 al día» eran 20: la segunda corrida veía el lote
+    // de hoy hecho y pasaba de largo.
+    let tope = Number(g.cuentas_dia) || 10;
+    if (g.ultimo_lote === hoy && !op.forzar) {
+      const { data: lotes } = await supabase.from('abm_goteo_lotes').select('cuentas, detalle').eq('goteo_id', g.id).eq('fecha', hoy);
+      const hechas = (lotes || []).reduce((n: number, l: any) => n + Number(l.cuentas || 0), 0);
+      const sinTiempo = (lotes || []).some((l: any) => (Array.isArray(l.detalle) ? l.detalle : []).some((d: any) => d?.error === SIN_TIEMPO));
+      if (!sinTiempo || hechas >= tope) continue;
+      tope -= hechas;
+    }
+    salida.push(await enrolarLote(g, hoy, op.quien, tope, limite));
   }
   return salida;
 }
