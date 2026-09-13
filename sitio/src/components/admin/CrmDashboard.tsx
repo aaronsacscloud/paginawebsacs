@@ -1048,28 +1048,38 @@ export default function CrmDashboard() {
               {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
             </div>
 
-            {/* ── Plegar y salir, abajo del todo ──
-                Salir vive aquí porque es donde se busca la salida, pero EN EL
-                MISMO GRIS que plegar: en rojo permanente era lo más llamativo
-                de todo el menú siendo lo que menos se usa. El rojo aparece al
-                pasar encima —cuando ya es una intención, no un adorno—.
-                Sin confirmación a propósito: cerrar sesión no destruye nada, se
-                vuelve a entrar. El `title` evita que un clic de más te saque. */}
+            {/* ── Salir es un RENGLÓN, plegar es la franja ──
+                Estuvieron juntos en la misma franja, mitad y mitad, y el dueño
+                se salió del CRM por error: dos botones del mismo tamaño, del
+                mismo gris y pegados, donde uno te saca y el otro no hace nada
+                grave. Dos targets gemelos a 1 px de distancia es una trampa,
+                no un descuido de quien hace clic.
+
+                La separación no es de color —eso ya se probó y no alcanza—,
+                es de FORMA y de ZONA: salir es un renglón del pie, con su
+                icono a la izquierda como los demás; plegar es la franja del
+                borde, centrada y a todo el ancho. Entre los dos, la línea.
+                Para tocar uno creyendo que es el otro hay que cruzar el
+                divisor y cambiar de tipo de elemento.
+
+                Sin confirmación a propósito: cerrar sesión no destruye nada,
+                se vuelve a entrar. El rojo aparece al pasar encima, cuando ya
+                es una intención. */}
+            <button
+              onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
+              title="Cerrar sesión"
+              style={{ ...pieFila, marginBottom: 5, background: 'none', color: '#8078a0', transition: 'color .14s ease, background .14s ease' }}
+              onMouseEnter={e => { const t = e.currentTarget as HTMLElement; t.style.color = '#B24C57'; t.style.background = '#FEF0EF'; }}
+              onMouseLeave={e => { const t = e.currentTarget as HTMLElement; t.style.color = '#8078a0'; t.style.background = 'none'; }}>
+              <span style={{ ...pieIcono, opacity: .75 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+            </button>
+
             <div style={{ display: 'flex', borderTop: '1px solid #d9d0f0' }}>
               <button
                 onClick={() => setSidebarCollapsed(true)}
                 aria-label="Plegar menú"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
-                <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar
-              </button>
-              <span style={{ width: 1, background: '#ece6f8', margin: '7px 0' }} />
-              <button
-                onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
-                title="Cerrar sesión"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit', transition: 'color .14s ease' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B24C57'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8078a0'; }}>
-                <span style={{ display: 'flex', opacity: .75 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '9px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
+                <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar el menú
               </button>
             </div>
           </div>
