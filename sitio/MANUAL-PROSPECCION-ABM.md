@@ -466,6 +466,28 @@ calidad de la línea entre una y otra.
 Los toques nacen `borrador`. El motor arranca `pausado = si`. Aprobar y
 despausar es decisión de una persona, siempre.
 
+### 8.4 Envíos progresivos (el goteo)
+
+Cuando la base es una **comunidad** (Villa Hidalgo, un tianguis, un pasillo del
+mismo mercado) no se le manda a todos el mismo día: se preguntan de dónde salió
+la lista, se lo comentan y se cierra la puerta. Para eso existe el goteo
+(`abm_goteo`), que vive en la pestaña **Envíos progresivos** de Cuentas objetivo.
+
+Un goteo es *una cadencia + N cuentas por día + un filtro opcional (ciudad,
+subgiro)*. Cada día hábil el cron (`abm-cadencias`, después del disyuntor y
+antes de enviar) toma las N cuentas **mejor puntuadas** que todavía no tienen
+ningún correo, les genera su cadencia con IA, y deja el correo 0 programado para
+hoy y los demás con sus días. Verifica el MX de cada correo al enrolar y marca
+`invalido` el que no tenga (nunca se corrige a mano, §5.1). Si quedan más de N
+correos aprobados de ese goteo sin salir, ese día no enrola (no se apila
+atraso). Cuando ya no hay elegibles, se marca `terminado`.
+
+**Cómo casa con §8.3:** la persona que enciende el goteo firma de una vez la
+aprobación de todos los correos que genere (`aprobado_por = creado_por`). Es
+decisión humana, tomada una sola vez y con nombre. Encender el goteo NO
+enciende el cartero: `pausado = si` sigue mandando sobre todo, y el goteo
+tampoco enrola mientras el motor esté pausado.
+
 ---
 
 ## 9. Replicar en otro país
@@ -578,8 +600,12 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 src/lib/crm/abm.lib.ts                  puntaje, variables, rellenar(), apuntar()
 src/lib/crm/abm-correo.ts               el HTML del correo (diseño fuera del cuerpo)
 src/lib/crm/abm-giros.ts                catálogo de giros
-src/pages/api/crm/abm/cadencias.ts      generar / aprobar / cancelar, y la IA
-src/pages/api/cron/abm-cadencias.ts     el envío: rampa, disyuntor, cupo
+src/lib/crm/abm-generar.ts              expediente + REGLAS + la IA que redacta la cadencia
+src/lib/crm/abm-goteo.ts                envíos progresivos: elegibles, lote diario, MX
+src/pages/api/crm/abm/cadencias.ts      generar / aprobar / cancelar
+src/pages/api/crm/abm/goteo.ts          crear/pausar/enrolar un goteo, encender el cartero
+src/pages/api/cron/abm-cadencias.ts     el envío: rampa, disyuntor, goteo, cupo
+scripts/abm-verificar-mx.mjs            marca valido/invalido por MX los correos sin_probar de un giro
 src/pages/api/cron/abm-enriquecer.ts    Places y DENUE (necesita llaves)
 sitio/migraciones/                      cada carga de datos, con su porqué
 ```

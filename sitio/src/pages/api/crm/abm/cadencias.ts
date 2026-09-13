@@ -12,64 +12,13 @@
 //   aprobar_todo { cuenta_id }
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { anthropic, MODELS } from '../../../../lib/ai/client';
-import { json, quien, esUuid, limpiar, apuntar, GIROS, variablesDe, rellenar } from '../../../../lib/crm/abm.lib';
+import { json, quien, esUuid, limpiar, apuntar } from '../../../../lib/crm/abm.lib';
+import { generarCadencia } from '../../../../lib/crm/abm-generar';
 
 export const prerender = false;
 
-/** Lo que sabemos de la cuenta, resumido para que la IA no invente nada. */
-function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
-  const l: string[] = [];
-  l.push(`Negocio: ${c.nombre}`);
-  l.push(`Giro: ${GIROS[c.giro] || c.giro}${c.subgiro ? ` (${c.subgiro})` : ''}`);
-  l.push(`Ciudad: ${c.ciudad || 'México'} · País: ${c.pais} · Moneda: ${c.moneda}`);
-  if (c.sucursales) l.push(`Sucursales: ${c.sucursales} (${c.sucursales_confianza})`);
-  else l.push('Sucursales: no verificadas');
-  if (c.google_rating) l.push(`Google: ${c.google_rating}${c.google_resenas ? ` con ${c.google_resenas} reseñas` : ''}`);
-  if (c.plataforma_web) l.push(`Su tienda en línea corre en ${c.plataforma_web}`);
-  if (c.sitio_http === 0 || Number(c.sitio_http) >= 400) l.push('Su sitio NO responde ahora mismo');
-  if (c.sitio_carrito === false) l.push('No vende en línea (su sitio no tiene carrito)');
-  if (c.ig_seguidores) l.push(`Instagram: ${c.ig_seguidores} seguidores`);
-  if (c.senal_expansion) l.push(`Señal de que crece: ${c.senal_expansion}`);
-  if (c.ultima_publicacion) l.push(`Última publicación: ${c.ultima_publicacion}`);
-  if (c.contexto) l.push(`Contexto: ${c.contexto}`);
-  if (c.nota) l.push(`Nota de la investigación: ${c.nota}`);
-  const p = personas[0];
-  if (p) l.push(`Persona que decide: ${p.nombre}${p.cargo ? `, ${p.cargo}` : ''}`);
-  const cs = canales.map(x => x.tipo).join(', ');
-  l.push(`Canales disponibles: ${cs || 'ninguno verificado'}`);
-  // Las quejas de sus clientes van aparte y marcadas: son lo mejor que
-  // tenemos para abrir, porque el problema lo dice su comprador, no nosotros.
-  const quejas = senales.filter((s: any) => s.tipo === 'resena_mala');
-  for (const s of quejas.slice(0, 3)) l.push(`QUEJA DE UN CLIENTE SUYO en Google: "${s.detalle}"`);
-  for (const s of senales.filter((s: any) => s.tipo !== 'resena_mala').slice(0, 3)) l.push(`Señal (${s.fecha || 'del estudio'}): ${s.detalle}`);
-  return l.join('\n');
-}
-
-const REGLAS = `Reglas de escritura, sin excepción:
-- Español de México, tono de persona. Nada de "solución integral", "potenciar", "revolucionar", "líder".
-- TODOS los correos van en TEXTO PLANO, sin imágenes. Nunca HTML.
-- El correo 1 es el de PRESENTACIÓN y es el único largo (hasta 200 palabras).
-  Su trabajo es que el prospecto entienda POR QUÉ le llega: no se registró en
-  ningún lado, lo encontramos nosotros investigando su giro. Respeta esa
-  explicación tal como viene en el texto base — no la suavices ni la quites, y
-  JAMÁS escribas que se registró, pidió información o dejó sus datos: no pasó.
-  Este correo SÍ lleva las dos ligas del texto base (agendar y WhatsApp);
-  déjalas completas y no inventes otras.
-- Del correo 2 en adelante: máximo 90 palabras y SIN enlaces.
-- Cada correo AVANZA: no repetir el anterior con otras palabras.
-- Una sola pregunta al final, concreta.
-- Asunto de 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji.
-- NO INVENTES NADA. Solo puedes usar hechos del expediente. Si un dato no está, no escribas esa frase.
-- Prohibido inventar cifras de resultados. El único caso que puedes citar: en un cliente nuestro,
-  cadena de moda, encontramos 1.2 millones de pesos mal repartidos entre su centro de distribución
-  y sus tiendas, con apenas 50 claves de producto.
-- No prometas llamadas ni juntas largas: se ofrece un diagnóstico de 15 minutos con sus datos.
-- Si el expediente trae una QUEJA DE UN CLIENTE SUYO, úsala en el primer correo, pero
-  CON CUIDADO: se alude a lo que pasó, no se restriega ni se cita entre comillas. "Vi que a
-  alguien le pasó que…" suena a reproche; "cuando hay varias tiendas, lo típico es que se
-  venda algo que ya no está" reconoce el problema sin humillar a nadie. Nunca digas que
-  leíste sus reseñas malas.`;
+// El expediente, las REGLAS y la redacción viven en lib/crm/abm-generar.ts:
+// los usa también el goteo (envíos progresivos) desde el cron, sin sesión.
 
 export const GET: APIRoute = async ({ request, url }) => {
   const yo = await quien(request);
@@ -105,138 +54,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (accion === 'generar') {
     if (!esUuid(b.cuenta_id)) return json({ error: 'cuenta inválida' }, 400);
-    const { data: c } = await supabase.from('abm_cuentas').select('*').eq('id', b.cuenta_id).maybeSingle();
-    if (!c) return json({ error: 'no existe' }, 404);
-    if (c.etapa === 'no_contactar') return json({ error: 'esta cuenta pidió no ser contactada' }, 409);
-    // A un cliente que ya nos paga no se le manda correo en frío.
-    if (c.ya_es_cliente) return json({ error: `ya es cliente nuestro (${c.ya_es_cliente}): no entra a prospección en frío` }, 409);
-
-    const [{ data: canales }, { data: personas }, { data: senales }] = await Promise.all([
-      supabase.from('abm_canales').select('*').eq('cuenta_id', c.id).neq('estado', 'opt_out'),
-      supabase.from('abm_personas').select('*').eq('cuenta_id', c.id).order('confirmado', { ascending: false }),
-      supabase.from('abm_senales').select('*').eq('cuenta_id', c.id).order('fecha', { ascending: false }).limit(5),
-    ]);
-    // Solo una dirección con forma de dirección: seis truncadas sin dominio
-    // bastaban para disparar el disyuntor de rebotes el primer día.
-    const CORREO_OK = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
-    const correo = (canales || []).find(x => x.tipo.startsWith('email') && x.estado !== 'invalido' && x.estado !== 'rebote' && CORREO_OK.test(String(x.valor || '')));
-    if (!correo) return json({ error: 'esta cuenta no tiene correo verificado: su cadencia empieza por otro canal' }, 409);
-
-    // Nadie recibe dos veces: si ya hay toques vivos, no se genera otra cadencia.
-    const { count: vivos } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
-      .eq('cuenta_id', c.id).in('estado', ['borrador', 'aprobado', 'programado']);
-    if (vivos) return json({ error: `ya tiene ${vivos} correos en la fila; cancélalos antes de generar otra cadencia` }, 409);
-
-    const ruta = c.ruta || 'demo';
-    const { data: base } = await supabase.from('abm_cadencias')
-      .select('id, nombre').eq('giro', c.giro).eq('ruta', ruta).eq('activa', true).maybeSingle();
-    const { data: pasos } = base
-      ? await supabase.from('abm_pasos').select('dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
-      : { data: [] as any[] };
-    const { data: plantillas } = await supabase.from('abm_plantillas')
-      .select('orden, asunto, cuerpo, objetivo, imagen, boton_texto, boton_url').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true).order('orden');
-
-    const guion = (plantillas || []).map((p: any, i: number) =>
-      `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
-    ).join('\n\n---\n\n');
-    if (!guion) return json({ error: `todavía no hay plantillas escritas para el giro ${c.giro}` }, 409);
-
-    const prompt = `Eres el redactor de correo frío de Sacscloud (sistema mexicano de inventario y punto de venta para negocios de moda).
-Te doy el EXPEDIENTE de un prospecto real y el GUION de la cadencia de su giro. Tu trabajo es adaptar cada correo
-del guion a ESTE negocio, usando solo lo que dice el expediente.
-
-EXPEDIENTE
-${expediente(c, canales || [], personas || [], senales || [])}
-
-GUION DE LA CADENCIA (${GIROS[c.giro] || c.giro}, ruta ${ruta})
-${guion}
-
-${REGLAS}
-
-Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
-{"correos":[{"dia":1,"asunto":"…","cuerpo":"…"}, …]}`;
-
-    // La cadencia se arma SOLA con los datos de la cuenta. La IA es una mejora
-    // encima, no un requisito: si no hay crédito o falla, los correos salen
-    // igual —rellenados con lo que sabemos— y se marca que no pasó por IA.
-    const persona0 = (personas || [])[0];
-    const vars = variablesDe(c, persona0);
-    /* Los días salen de los PASOS de la cadencia, no de un arreglo escrito
-       aquí. El arreglo fijo [1,3,7,11,16,22,30] se quedó corto en cuanto una
-       cadencia creció a 8 correos: el octavo caía en i*4+1 = 29 y quedaba
-       ANTES que el séptimo, que va en 30. Y desde que novias lleva el correo
-       de presentación, sus días reales son 1,4,6,10,14,19,25,33 — con el
-       arreglo viejo los toques se programaban en fechas que no existen en la
-       cadencia. El guion que recibe la IA ya leía los pasos; esto es lo que
-       de verdad agenda, y leía otra cosa. */
-    const dias = (pasos || []).map((x: any) => Number(x.dia)).filter(Boolean);
-    const base0 = (plantillas || []).map((p: any, i: number) => ({
-      dia: dias[i] ?? [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
-      asunto: rellenar(p.asunto, vars),
-      cuerpo: rellenar(p.cuerpo, vars),
-      // La imagen y el botón NO los toca la IA: son del correo, no del texto.
-      imagen: p.imagen || null, boton_texto: p.boton_texto || null, boton_url: p.boton_url || null,
-    }));
-
-    let correos = base0;
-    let conIa = false;
-    /* Por qué falló la IA viaja en la RESPUESTA, no solo al log. Un fallo de
-       IA no rompe la cadencia —sale con la plantilla— así que es invisible:
-       19 cuentas de novias salieron sin adaptar y solo se notó al contarlas.
-       Quien genera tiene que poder leer la causa sin pedir logs de Vercel. */
-    let iaError: string | null = null;
-    if (b.con_ia !== false) {
-      try {
-        const r: any = await (anthropic as any).messages.create({
-          // 8 correos de ~150 palabras no caben holgados en 4000 tokens. Ojo:
-          // esto NO fue la causa de las 19 cadencias de novias que salieron
-          // sin IA —eso era saldo agotado de la cuenta de Anthropic, y se vio
-          // recién cuando el error viajó en la respuesta—. El tope se sube
-          // igual porque el margen sí estaba corto; lo que no se usa no se
-          // cobra.
-          model: MODELS.sonnet, max_tokens: 12000,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        const txt = (r?.content || []).map((x: any) => x?.text || '').join('').trim();
-        const limpio = txt.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-        const salida = JSON.parse(limpio);
-        const lista = Array.isArray(salida?.correos) ? salida.correos.slice(0, 8) : [];
-        if (!lista.length) iaError = `la IA respondió sin correos utilizables (${txt.length} caracteres, empieza: ${txt.slice(0, 80)})`;
-        if (lista.length) {
-          correos = lista.map((m: any, i: number) => ({
-            dia: Number(m.dia) || base0[i]?.dia || (i * 4 + 1),
-            asunto: rellenar(String(m.asunto || base0[i]?.asunto || ''), vars),
-            cuerpo: rellenar(String(m.cuerpo || base0[i]?.cuerpo || ''), vars),
-            // Se conservan los del paso: la IA adapta el texto, no el diseño.
-            imagen: base0[i]?.imagen || null,
-            boton_texto: base0[i]?.boton_texto || null, boton_url: base0[i]?.boton_url || null,
-          }));
-          conIa = true;
-        }
-      } catch (e: any) {
-        // Se distingue el corte por longitud de cualquier otro fallo: son dos
-        // problemas distintos y antes los dos se veían igual en el log.
-        const msg = String(e?.message || e);
-        const cortado = /Unexpected end of JSON|Unterminated string|JSON/i.test(msg);
-        iaError = `${cortado ? 'respuesta CORTADA (sube max_tokens)' : e?.status ? `HTTP ${e.status}` : 'fallo'}: ${msg.slice(0, 240)}`;
-        console.warn('[abm] la IA no pudo pulir la cadencia, va la versión de plantilla:', iaError);
-      }
-    }
-    if (!correos.length) return json({ error: 'no se pudo armar la cadencia' }, 500);
-
-    const hoy = Date.now();
-    const filas = correos.map((m: any, i: number) => ({
-      cuenta_id: c.id, cadencia_id: base?.id || null, persona_id: persona0?.id || null,
-      canal: 'email', destino: correo.valor,
-      asunto: limpiar(m.asunto, 200), cuerpo: limpiar(m.cuerpo, 6000),
-      imagen: m.imagen || null, boton_texto: m.boton_texto || null, boton_url: m.boton_url || null,
-      estado: 'borrador',                                   // NADA sale sin que una persona lo apruebe
-      programado_at: new Date(hoy + (Number(m.dia) || (i * 4 + 1)) * 864e5).toISOString(),
-    }));
-    const { error } = await supabase.from('abm_toques').insert(filas);
-    if (error) return json({ error: error.message }, 500);
-    await apuntar(c.id, 'sistema', 'nota', { texto: `${yo.nombre} generó una cadencia de ${filas.length} correos${conIa ? '' : ' (sin IA: se armó con la plantilla del giro)'}, pendiente de aprobar` });
-    return json({ ok: true, correos: filas.length, con_ia: conIa, ia_error: iaError });
+    const r = await generarCadencia(b.cuenta_id, { autor: yo.nombre, con_ia: b.con_ia !== false });
+    if (!r.ok) return json({ error: r.error }, r.status);
+    return json({ ok: true, correos: r.correos, con_ia: r.con_ia, ia_error: r.ia_error });
   }
 
   if (accion === 'aprobar' || accion === 'cancelar' || accion === 'editar') {

@@ -22,6 +22,7 @@ import { supabase } from '../../../lib/supabase';
 // darse de baja solo deja un botón a la mano: "Reportar como spam".
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { apuntar, repuntuar } from '../../../lib/crm/abm.lib';
+import { correrGoteos } from '../../../lib/crm/abm-goteo';
 import { armarCorreo } from '../../../lib/crm/abm-correo';
 
 export const prerender = false;
@@ -124,6 +125,14 @@ export const GET: APIRoute = async ({ request }) => {
     await supabase.from('abm_config').update({ valor: 'auto', hasta: hoy, nota: `pausado el ${hoy} por ${motivo}` }).eq('clave', 'pausado');
     return json({ enviados: 0, pausado_por: motivo, espejo });
   }
+
+  // El goteo (envíos progresivos, lib/crm/abm-goteo.ts) va ANTES del reparto
+  // y DESPUÉS de las pausas y del disyuntor: enrola a las N cuentas nuevas
+  // del día —les escribe su cadencia y la deja aprobada— y el reparto de
+  // abajo las manda con el mismo cupo y la misma rampa que todo lo demás. Con
+  // el motor pausado o el disyuntor abierto no enrola: nada entra a una fila
+  // parada.
+  const goteo = await correrGoteos({ hoy, quien: 'El goteo' }).catch((e: any) => [{ error: String(e?.message || e) }] as any);
 
   const { data: pendientes } = await supabase.from('abm_toques')
     .select('id, cuenta_id, destino, asunto, cuerpo, programado_at, imagen, boton_texto, boton_url')
@@ -261,7 +270,7 @@ export const GET: APIRoute = async ({ request }) => {
     } else fallos.push(`${r.motivo}: ${String(r.detalle || '').slice(0, 90)}`);
   }
 
-  return json({ enviados, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo });
+  return json({ enviados, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo });
 };
 
 /** Trae a la bitácora lo que SendGrid ya contó en email_sends. */
