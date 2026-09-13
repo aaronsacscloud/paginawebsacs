@@ -1,0 +1,19 @@
+-- 13-sep-2026 · El primer correo de rezagados presenta a Sacs completo.
+--
+-- La cadencia arrancaba con «Tu curva de tallas no es una. Son cuatro.»: un
+-- insight bueno, pero para alguien que nos vio hace meses y no se acuerda de
+-- quiénes somos, empieza a media conversación. Decisión del dueño: que el primero
+-- diga qué hace Sacs HOY —incluidas las funciones nuevas, como de la foto a la
+-- venta con IA y el probador virtual— en una lista fácil de leer, y de ahí ofrezca
+-- la sesión consultiva.
+--
+-- Va como paso 1000, antes de los 30 que ya existen: el goteo elige por `orden`,
+-- así que este queda primero sin mover a nadie de los que ya están dentro.
+insert into email_templates (nombre, asunto, preview_text, bloques, tipo, categoria, activo)
+values ('Rezagados 0 · Qué hace Sacs hoy', '{{nombre|Hola}}, esto es lo que hace Sacs hoy', 'Matriz de tallas y colores, de la foto a la venta con IA, y tu inventario igual en piso y en línea.', '[{"id": "t1", "tipo": "texto", "texto": "Hola {{nombre|Hola}}, te escribe Andrea, de Sacs.\n\nHace un tiempo miraste nuestro sistema y no llegamos a sentarnos. Antes de mandarte nada más, déjame decirte en dos minutos qué hacemos hoy — porque el sistema de hace un año no se parece al de ahora."}, {"id": "t2", "tipo": "texto", "texto": "Sacs es el sistema con el que operan marcas de ropa, calzado y accesorios en México. No es un punto de venta con un módulo de moda encima: está hecho para un negocio donde una prenda no es «una prenda», son tallas, colores y temporadas."}, {"id": "h1", "tipo": "encabezado", "nivel": 2, "texto": "Lo que resuelve, en corto"}, {"id": "l1", "tipo": "lista", "items": ["Tu inventario por talla y color, en matriz — ves de un golpe qué talla y qué color te queda en cada tienda, sin abrir tres archivos", "Qué hay en la otra sucursal, al momento — y el traspaso que completa la corrida rota, sin llamar por teléfono", "Qué resurtir y qué ya no comprar — rotación por modelo, talla y tienda, y aviso de la prenda que lleva semanas colgada", "De la foto a la venta, con IA — subes la foto de la prenda y sale puesta en un modelo, con su ficha y su video para redes, sin sesión de fotos", "Probador virtual — tu clienta ve cómo se le vería a ella, con lo que sí hay en su talla", "Punto de venta que no se cae sin internet, con apartados, abonos y cambios de talla", "Tu tienda en línea, Instagram, WhatsApp, Mercado Libre y TikTok Shop con el MISMO inventario del piso", "Tus clientas: qué se llevaron, puntos y monedero, y el aviso de colección nueva a quien ya te compró"]}, {"id": "a1", "tipo": "aviso", "texto": "La migración la hacemos nosotros: tus productos, tus clientas y tu historial. Tú no vacías nada a mano."}, {"id": "h2", "tipo": "encabezado", "nivel": 2, "texto": "Y si quieres verlo con lo tuyo"}, {"id": "t3", "tipo": "texto", "texto": "No es una demo de pantallas. Es una sesión consultiva de veinte minutos donde cargamos algunas de TUS prendas con sus tallas y colores, y sales viendo tu propia operación corriendo. Si al final te digo que todavía no te conviene, te lo digo igual."}, {"id": "bt", "tipo": "boton", "align": "center", "texto": "Agendar mi sesión consultiva →", "sub": "20 minutos · sin costo · con tus propios productos", "href": "https://www.sacscloud.com/agendar/demo?utm_source=cadencia_rezagados&utm_medium=email&utm_campaign=rezagados&utm_content=presentacion"}, {"id": "pd", "tipo": "texto", "texto": "P.D. Si hoy llevas el inventario en Excel o en una libreta, no llegas tarde: es justo donde el cambio se nota en la primera semana."}]'::jsonb, 'automatizado', 'cadencia', true)
+on conflict do nothing;
+
+insert into crm_secuencia_pasos (secuencia_id, orden, dia, dia_semana, canal, email_template_id, activo)
+select s.id, 1000, 1, 1, 'correo', t.id, true
+from crm_secuencias s, email_templates t
+where s.nombre like 'Rezagados%' and t.nombre = 'Rezagados 0 · Qué hace Sacs hoy';
