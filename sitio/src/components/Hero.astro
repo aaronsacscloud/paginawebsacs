@@ -1351,47 +1351,6 @@ const useCases = [
     </div>
   </section>
 
-  <!-- ── Pillar 2: Controla ── -->
-  <!-- ═══ El inventario que decide: del CEDIS a la tienda, a los canales y a la clienta ═══ -->
-  <section class="recorrido flujo flujo--inv" id="inventario" aria-label="Del análisis a la venta">
-    <div class="flujo-sticky">
-      <div class="flujo-inner container">
-        <div class="flujo-text">
-          <div class="flujo-pasos" aria-live="polite">
-            <div class="flujo-paso" data-paso="0"><span class="flujo-n">01</span><b>El análisis ya está hecho.</b><small>Esto es lo que hay que mover hoy: qué sale del CEDIS, qué se traspasa entre tiendas y qué se compra.</small></div>
-            <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Un clic: el porqué.</b><small>Ventas de 7 días, sell-through, apartados que esperan esa talla y lo que está parado en otra tienda.</small></div>
-            <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Otro clic: se ejecuta.</b><small>Orden de compra, traspasos y surtidos generados. Nadie captura nada.</small></div>
-            <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>El CEDIS surte; las tiendas se traspasan entre sí.</b><small>Al proveedor, solo lo que la red no tiene.</small></div>
-            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientas piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
-            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Y lo que pidieron se vende.</b><small>La talla que fueron a buscar, en su tienda. Un inventario bien llevado también vende.</small></div>
-          </div>
-          <div class="flujo-final">
-            <span class="flujo-eyebrow">Controla</span>
-            <h2 class="flujo-h2">Controla.</h2>
-            <p class="flujo-p">Del análisis de la noche a la clienta que recoge su pedido. Sin hojas de cálculo y sin adivinar.</p>
-            <a href="#pilar-stock" class="flujo-cta" data-evento="inventario_cta">Ver cómo funciona
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-            </a>
-          </div>
-        </div>
-        <div class="flujo-video" id="inventarioVideo">
-          <img class="flujo-still" src="/tienda/91-escritorio.webp" alt="" decoding="async" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/91-escritorio.webp"><track kind="captions" src="/tienda/inventario.vtt?v=5" srclang="es" label="Español" /></video>
-          <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
-          <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
-        </div>
-      </div>
-      <div class="flujo-nav" aria-label="Avance de la historia">
-        <ol class="flujo-dots">
-          <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>Ventas</span></li>
-        </ol>
-        <a class="flujo-saltar" href="#pilar-stock" data-evento="inventario_saltar">Saltar
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
   <div class="pillar-section pillar-section--stock pillar-section--left" id="pilar-stock" data-pillar="stock">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">
@@ -2084,10 +2043,50 @@ const useCases = [
 
   <!-- El tablero operativo entra aquí, antes de Fideliza: primero se ve que el
      sistema decide por ti, y de ahí se pasa a la relación con el cliente. -->
-<slot name="operador" />
+  <!-- ── Pillar 2: Controla ── -->
+  <!-- ═══ El inventario que decide: del CEDIS a la tienda, a los canales y a la clienta ═══ -->
+  <section class="recorrido flujo flujo--inv" id="inventario" aria-label="Del análisis a la venta">
+    <div class="flujo-sticky">
+      <div class="flujo-inner container">
+        <div class="flujo-text">
+          <div class="flujo-pasos" aria-live="polite">
+            <div class="flujo-paso" data-paso="0"><span class="flujo-n">01</span><b>El análisis ya está hecho.</b><small>Esto es lo que hay que mover hoy: qué sale del CEDIS, qué se traspasa entre tiendas y qué se compra.</small></div>
+            <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Un clic: el porqué.</b><small>Ventas de 7 días, sell-through, apartados que esperan esa talla y lo que está parado en otra tienda.</small></div>
+            <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Otro clic: se ejecuta.</b><small>Orden de compra, traspasos y surtidos generados. Nadie captura nada.</small></div>
+            <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>El CEDIS surte; las tiendas se traspasan entre sí.</b><small>Al proveedor, solo lo que la red no tiene.</small></div>
+            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientas piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
+            <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Y lo que pidieron se vende.</b><small>La talla que fueron a buscar, en su tienda. Un inventario bien llevado también vende.</small></div>
+          </div>
+          <div class="flujo-final">
+            <span class="flujo-eyebrow">Controla</span>
+            <h2 class="flujo-h2">Controla.</h2>
+            <p class="flujo-p">Del análisis de la noche a la clienta que recoge su pedido. Sin hojas de cálculo y sin adivinar.</p>
+            <a href="#pilar-stock" class="flujo-cta" data-evento="inventario_cta">Ver cómo funciona
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="flujo-video" id="inventarioVideo">
+          <img class="flujo-still" src="/tienda/91-escritorio.webp" alt="" decoding="async" />
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/91-escritorio.webp"><track kind="captions" src="/tienda/inventario.vtt?v=5" srclang="es" label="Español" /></video>
+          <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
+          <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
+        </div>
+      </div>
+      <div class="flujo-nav" aria-label="Avance de la historia">
+        <ol class="flujo-dots">
+          <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>Ventas</span></li>
+        </ol>
+        <a class="flujo-saltar" href="#pilar-crm" data-evento="inventario_saltar">Saltar
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
 
 <!-- ── Pillar 3: Fideliza ── -->
-  <div class="pillar-section pillar-section--crm pillar-section--right" data-pillar="crm">
+  <div class="pillar-section pillar-section--crm pillar-section--right" id="pilar-crm" data-pillar="crm">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">
       <div class="pillar-text">
