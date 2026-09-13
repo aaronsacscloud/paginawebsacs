@@ -48,7 +48,15 @@ function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
 
 const REGLAS = `Reglas de escritura, sin excepción:
 - Español de México, tono de persona. Nada de "solución integral", "potenciar", "revolucionar", "líder".
-- El correo 1 va en TEXTO PLANO, máximo 90 palabras, sin enlaces ni imágenes.
+- TODOS los correos van en TEXTO PLANO, sin imágenes. Nunca HTML.
+- El correo 1 es el de PRESENTACIÓN y es el único largo (hasta 200 palabras).
+  Su trabajo es que el prospecto entienda POR QUÉ le llega: no se registró en
+  ningún lado, lo encontramos nosotros investigando su giro. Respeta esa
+  explicación tal como viene en el texto base — no la suavices ni la quites, y
+  JAMÁS escribas que se registró, pidió información o dejó sus datos: no pasó.
+  Este correo SÍ lleva las dos ligas del texto base (agendar y WhatsApp);
+  déjalas completas y no inventes otras.
+- Del correo 2 en adelante: máximo 90 palabras y SIN enlaces.
 - Cada correo AVANZA: no repetir el anterior con otras palabras.
 - Una sola pregunta al final, concreta.
 - Asunto de 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji.
@@ -153,8 +161,17 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
     // igual —rellenados con lo que sabemos— y se marca que no pasó por IA.
     const persona0 = (personas || [])[0];
     const vars = variablesDe(c, persona0);
+    /* Los días salen de los PASOS de la cadencia, no de un arreglo escrito
+       aquí. El arreglo fijo [1,3,7,11,16,22,30] se quedó corto en cuanto una
+       cadencia creció a 8 correos: el octavo caía en i*4+1 = 29 y quedaba
+       ANTES que el séptimo, que va en 30. Y desde que novias lleva el correo
+       de presentación, sus días reales son 1,4,6,10,14,19,25,33 — con el
+       arreglo viejo los toques se programaban en fechas que no existen en la
+       cadencia. El guion que recibe la IA ya leía los pasos; esto es lo que
+       de verdad agenda, y leía otra cosa. */
+    const dias = (pasos || []).map((x: any) => Number(x.dia)).filter(Boolean);
     const base0 = (plantillas || []).map((p: any, i: number) => ({
-      dia: [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
+      dia: dias[i] ?? [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
       asunto: rellenar(p.asunto, vars),
       cuerpo: rellenar(p.cuerpo, vars),
     }));
