@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import type React from 'react';
 import Cargando from './ui/Cargando';
+import ReporteSecuencia from './ReporteSecuencia';
 import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 
 const inp: React.CSSProperties = { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 11px', fontSize: '0.8rem', fontFamily: 'inherit', background: '#fdfcff', outline: 'none', boxSizing: 'border-box' };
@@ -28,6 +29,9 @@ const MOTIVO_L: Record<string, [string, string]> = {
 };
 
 export default function SecuenciasTab() {
+  /* El reporte correo por correo vive en su propia vista: la lista mide la cadencia
+     completa, el reporte mide cada pieza. */
+  const [reporte, setReporte] = useState<{ id: string; nombre: string } | null>(null);
   const esMovilSec = useIsMobile();
   const [lista, setLista] = useState<any[] | null>(null);
   const [edit, setEdit] = useState<any>(null);
@@ -65,6 +69,7 @@ export default function SecuenciasTab() {
     setEdit(null); cargar();
   };
 
+  if (reporte) return <ReporteSecuencia id={reporte.id} nombre={reporte.nombre} alCerrar={() => setReporte(null)} />;
   if (lista === null) return <Cargando texto="Cargando secuencias…" />;
 
   if (edit) {
@@ -422,6 +427,12 @@ export default function SecuenciasTab() {
                 <div style={{ fontSize: '0.75rem', color: '#8f8d98', textAlign: 'right', marginTop: -2 }}>
                   {m.correos_abiertos ?? 0} abiertos · {m.correos_clic ?? 0} con clic
                 </div>
+                {/* El total esconde la pieza floja: aquí se entra al detalle correo por correo. */}
+                <button onClick={() => setReporte({ id: s.id, nombre: s.nombre })}
+                  style={{ marginTop: 6, width: '100%', border: '1.5px solid ' + P.violeta, color: P.violetaTinta, background: '#fff',
+                    borderRadius: 9, padding: '7px 10px', fontSize: '0.74rem', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  Ver correo por correo
+                </button>
                 {/* El objetivo se queda: es la métrica que mide si la secuencia
                     sirvió, no un adorno. */}
                 {(() => {
