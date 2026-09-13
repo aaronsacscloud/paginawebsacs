@@ -429,6 +429,45 @@ nada de flex, grid, degradados CSS ni webp. Todo tabla con `bgcolor`, estilos
 en línea, JPEG, 600 px, y VML para los botones. Un degradado de marca se hace
 con tres celdas sólidas.
 
+
+### 7.6 El primer mensaje de WhatsApp en frío
+
+Vale para **todos los giros y todos los países**. Un correo frío lo ignoran; un
+WhatsApp frío mal escrito lo **reportan**, y eso cuesta la línea.
+
+El guion de novias tuvo que reescribirse entero porque abría con
+*"Le escribo a {{nombre}} de parte de Sacs… ¿con quién puedo ver ese tema?"*:
+pedía un dato sin haber dicho quiénes somos, de dónde salió su número ni qué
+ofrecemos. **Pide antes de dar, y a un desconocido que llega pidiendo se le
+reporta.**
+
+Los siete elementos, en este orden:
+
+1. **Quiénes somos**, en una línea y concreto.
+2. **De dónde salió su contacto.** La verdad: los encontramos en Google Maps,
+   nadie nos pasó nada. Es lo primero que piensa quien recibe el mensaje, y no
+   responderlo se siente como base comprada.
+3. **Su nombre y algo real de ellos** — ciudad, reseñas. Es la prueba de que no
+   es un envío masivo.
+4. **Por qué ellos:** estamos buscando a los mejores del ramo y salieron ahí.
+   Se siente distinto que ser uno más de una lista.
+5. **Qué tenemos que es específico de SU giro**, con dos o tres cosas
+   concretas. "Un sistema de inventario" no le mueve a nadie; "apartados con la
+   fecha de la boda y el muestrario marcado aparte" sí.
+6. **Algo que damos:** la demo gratis por videollamada, sin compromiso.
+7. **Una pregunta fácil de contestar.** Nunca *"pásame el correo de tu jefe"*.
+
+Los tres mensajes tienen papeles distintos: **presentar** (los siete de
+arriba), **aportar** algo nuevo del giro y repetir la oferta, y **cerrar** sin
+culpa, dejando la puerta abierta y una vía de autoservicio.
+
+> ⚠️ **El motor de plantillas no tiene negación.** No existe `[[si no var]]`.
+> Escribir `[[si persona]]…le[[/si]][[si nombre]]Le[[/si]]` imprime **los dos**
+> cuando hay persona — salió *"Cielo Inzunza, leLe escribo"*. Cada condicional
+> tiene que ser una frase completa que se pueda borrar entera sin romper la de
+> afuera. Se cachó renderizando contra cuentas reales, que es exactamente para
+> lo que se hace.
+
 ---
 
 ## 8. Fase 4 — Enviar
@@ -586,6 +625,8 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | `tiene_email` true con el correo invalidado | El recuento mira el estado |
 | "con sus 1 sucursales" en 14 plantillas | Renderizar contra cuentas reales antes de generar |
 | 83 "menciones de WhatsApp" que eran nombres de foto | Contar enlaces, no coincidencias de texto |
+| WhatsApp que pedía un dato sin presentarse | Los 7 elementos del primer mensaje (sec. 7.6) |
+| `[[si persona]]le[[/si]][[si nombre]]Le[[/si]]` → "leLe" | No hay negación: el condicional es frase completa |
 | 554 números inferidos listos para salir a ciegas | WhatsApp solo a quien publicó su `wa.me` (sec. 6 bis) |
 | El canal guardaba `https://wa.me/…` y no el número | Normalizar a dígitos al cargar |
 | 1,703 canales "sin procedencia" que sí la tenían | Cruzar por valor NORMALIZADO, no exacto |
