@@ -705,11 +705,11 @@ export const GET: APIRoute = async ({ url }) => {
               variante = par ? 'B' : 'A';
               if (par) tid = p.email_template_id_b;
             }
-            const { data: pl } = await supabase.from('email_templates').select('nombre, asunto, preview_text, bloques').eq('id', tid).maybeSingle();
+            const { data: pl } = await supabase.from('email_templates').select('nombre, asunto, preview_text, bloques, layout').eq('id', tid).maybeSingle();
             if (!pl?.bloques || !t) continue;
             const asunto = interpolar(pl.asunto || '', ctx);
             const r = await enviarCorreo({ tenantId: t.id, para: c.email, asunto,
-              html: compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null),
+              html: compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout),
               texto: compilarTexto(pl.bloques, ctx), categoria: 'relacion', contactId: c.id,
               templateId: tid, variante } as any);
             if (!(r as any)?.enviado) continue;

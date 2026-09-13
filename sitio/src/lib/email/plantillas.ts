@@ -20,7 +20,30 @@ import type { Tenant } from './tenant';
 export type TipoBloque =
   | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
   | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes'
-  | 'cuenta' | 'aviso' | 'metricas';
+  | 'cuenta' | 'aviso' | 'metricas' | 'portada';
+
+/**
+ * El DISEÑO de página, que es distinto del contenido.
+ *
+ *   simple  — lo de siempre: tarjeta blanca sobre gris claro.
+ *   lienzo  — la tarjeta flota sobre un cielo en degradado morado→rosa con el
+ *             wordmark blanco de Sacs arriba y el pie legal integrado abajo.
+ *             Es la misma cinta y la misma firma en degradado que llevan la
+ *             cotización y la minuta: el correo se reconoce como de la casa
+ *             antes de leer una palabra.
+ *
+ * Vive en `email_templates.layout` (la columna existía y nadie la leía). Se
+ * elige por plantilla, no por bloque: el fondo es de la página entera.
+ */
+export type Layout = 'simple' | 'lienzo';
+export const LAYOUTS: Array<{ id: Layout; etiqueta: string; descripcion: string }> = [
+  { id: 'simple', etiqueta: 'Clásico', descripcion: 'Tarjeta blanca sobre fondo gris claro.' },
+  { id: 'lienzo', etiqueta: 'Lienzo', descripcion: 'Cielo morado en degradado con la marca arriba; la tarjeta flota encima.' },
+];
+export const layoutDe = (v: unknown): Layout => (v === 'lienzo' ? 'lienzo' : 'simple');
+
+/** Donde el pipeline mete el pie legal. Si falta (HTML viejo), lo agrega al final como siempre. */
+export const MARCA_PIE = '<!--PIE-->';
 
 export interface Bloque { id: string; tipo: TipoBloque; [k: string]: any }
 
@@ -101,6 +124,10 @@ const url = (s: unknown, ctx: Contexto) => {
   return /^(https?:|mailto:|tel:)/i.test(u) ? escapar(u) : '#';
 };
 const fila = (contenido: string) => `<tr><td class="em-pad" style="padding:0 32px;">${contenido}</td></tr>`;
+/* La cinta de marca de los documentos del CRM (cotización, minuta), a 5 px.
+ * `background` sólido primero: Outlook no pinta degradados y se queda con el
+ * morado; todo lo demás pinta el degradado encima. */
+const CINTA = 'background:#9B8CFA;background-image:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,#F4A8CD);';
 
 function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
   const acento = escapar(b.color || t.color_acento || '#5B4BD6');
@@ -114,6 +141,25 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
         <div style="${FA}color:#fff;font-size:26px;line-height:1.25;font-weight:800;">${txt(b.titulo, ctx)}</div>
         ${b.subtitulo ? `<div style="${FA}color:#ffffffb8;font-size:15px;line-height:1.5;margin-top:8px;">${txt(b.subtitulo, ctx)}</div>` : ''}
       </td></tr>`;
+    }
+    case 'portada': {
+      // Foto a todo lo ancho, cinta de marca, etiqueta chica y el título grande.
+      // La foto va SIN alto fijo: se pre-recorta a 1200×540 (2.22:1) y así se
+      // escala proporcional en el celular; un alto fijo con object-fit lo
+      // respeta Apple Mail y lo estira Outlook.
+      const foto = b.imagen
+        ? `<tr><td style="padding:0;line-height:0;font-size:0;"><img src="${url(b.imagen, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${ANCHO}" style="display:block;width:100%;max-width:${ANCHO}px;height:auto;border:0;"></td></tr>`
+        : '';
+      const etiqueta = b.etiqueta
+        ? `<div style="${FA}font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${acento};padding-top:22px;">${txt(b.etiqueta, ctx)}</div>`
+        : '';
+      const titulo = b.titulo
+        ? `<div class="em-tinta em-h1" style="${FA}font-size:27px;line-height:1.2;font-weight:800;color:#1a1633;padding-top:${b.etiqueta ? 8 : 24}px;">${txt(b.titulo, ctx)}</div>`
+        : '';
+      const sub = b.subtitulo
+        ? `<div class="em-suave" style="${FA}font-size:15.5px;line-height:1.55;color:#6a6577;padding-top:8px;">${rico(b.subtitulo, ctx)}</div>`
+        : '';
+      return `${foto}<tr><td style="height:5px;line-height:5px;font-size:1px;${CINTA}">&nbsp;</td></tr>${(etiqueta || titulo || sub) ? fila(etiqueta + titulo + sub) : ''}`;
     }
     case 'encabezado': {
       const n = Math.min(3, Math.max(1, Number(b.nivel) || 2));
@@ -277,6 +323,8 @@ const ESTILOS = `
     .em-suave   { color:#A9A4B8 !important; }
     .em-linea   { border-color:#332F40 !important; }
     .em-cita    { background:#231F30 !important; }
+    .em-cielo   { background-color:#1B1738 !important; background-image:linear-gradient(170deg,#2A2260 0%,#1E1A3D 45%,#14131A 100%) !important; }
+    .em-pie     { color:#7A7590 !important; }
   }
   @media only screen and (max-width:620px) {
     .em-pad  { padding-left:20px !important; padding-right:20px !important; }
@@ -286,10 +334,14 @@ const ESTILOS = `
   }
 `;
 
-/** El HTML completo del correo (sin el pie legal: ese lo pone el pipeline). */
-export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null): string {
+/**
+ * El HTML completo del correo. El pie legal lo pone el pipeline en `MARCA_PIE`:
+ * así queda DENTRO del fondo de la página y no colgando después del </html>.
+ */
+export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null, layout?: Layout | string | null): string {
   const cuerpo = (bloques || []).map(b => bloqueHtml(b, ctx, t)).join('\n');
-  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  const lienzo = layoutDe(layout) === 'lienzo';
+  const cabeza = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -297,15 +349,45 @@ export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: 
 <meta name="supported-color-schemes" content="light dark" />
 <title>${escapar(t.nombre)}</title>
 <style type="text/css">${ESTILOS}</style>
-</head>
+</head>`;
+  const tarjeta = `<table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" class="em-tarjeta" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
+    ${cuerpo}
+    <tr><td style="height:28px;line-height:1px;font-size:1px;">&nbsp;</td></tr>
+  </table>`;
+  const pie = `<table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" style="width:100%;max-width:${ANCHO}px;"><tr><td class="em-pie" style="padding:0 8px;">${MARCA_PIE}</td></tr></table>`;
+
+  if (!lienzo) {
+    return `${cabeza}
 <body class="em-fondo" style="margin:0;padding:0;background:#F4F3F7;">
 ${preheader(preview)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-fondo" style="background:#F4F3F7;">
 <tr><td align="center" style="padding:24px 12px;">
-  <table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" class="em-tarjeta" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
-    ${cuerpo}
-    <tr><td style="height:28px;line-height:1px;font-size:1px;">&nbsp;</td></tr>
-  </table>
+  ${tarjeta}
+  ${pie}
+</td></tr></table>
+</body></html>`;
+  }
+
+  // LIENZO. El cielo es un degradado morado→rosa→lila que se apaga hacia
+  // abajo: el color vive arriba, donde está la marca y la portada, y el
+  // resto del correo se lee sobre lila claro. Las paradas van en px y no en
+  // %, para que un correo largo no estire el morado hasta la firma. `background-color` sólido
+  // primero para Outlook (que no pinta degradados) y el wordmark en blanco
+  // porque el morado de arriba es hondo.
+  const marca = t.logo_url
+    ? `<img src="https://www.sacscloud.com/images/sacs-wordmark-blanco.png" alt="${escapar(t.nombre)}" width="74" style="display:block;border:0;width:74px;height:auto;">`
+    : `<div style="${FA}font-size:22px;font-weight:900;color:#fff;letter-spacing:-.02em;">${escapar(t.nombre)}</div>`;
+  return `${cabeza}
+<body class="em-fondo" style="margin:0;padding:0;background:#EEECFE;">
+${preheader(preview)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-cielo" style="background-color:#5B4BD6;background-image:linear-gradient(172deg,#4536BE 0px,#6A59E6 240px,#A98BF0 560px,#E9C6E3 820px,#EEECFE 1080px);">
+<tr><td align="center" style="padding:26px 12px 28px;">
+  <table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" style="width:100%;max-width:${ANCHO}px;"><tr>
+    <td valign="middle" style="padding:0 6px 16px;">${marca}</td>
+    <td valign="middle" align="right" style="${FA}padding:0 6px 16px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffffffcc;">www.sacscloud.com</td>
+  </tr></table>
+  ${tarjeta}
+  ${pie}
 </td></tr></table>
 </body></html>`;
 }
@@ -324,6 +406,7 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
       .replace(/\*\*+/g, '');
     switch (b.tipo) {
       case 'hero': p.push(i(b.titulo).toUpperCase(), b.subtitulo ? i(b.subtitulo) : ''); break;
+      case 'portada': p.push(b.etiqueta ? i(b.etiqueta).toUpperCase() : '', i(b.titulo || '').toUpperCase(), b.subtitulo ? i(b.subtitulo) : ''); break;
       case 'encabezado': p.push('', i(b.texto).toUpperCase()); break;
       case 'texto': p.push(i(b.texto)); break;
       case 'boton': p.push(`${i(b.texto || 'Ver más')}: ${i(b.href)}`); break;

@@ -102,11 +102,11 @@ export async function enviarCorreoBienvenidaTikTok(contactId: string, email: str
   // editable en Email ▸ Plantillas). El texto plano del módulo queda solo
   // como respaldo si la plantilla se borra.
   const { data: pl } = cfg.email_bienvenida_template_id
-    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', cfg.email_bienvenida_template_id).eq('activo', true).maybeSingle()
+    ? await supabase.from('email_templates').select('asunto, preview_text, bloques, layout').eq('id', cfg.email_bienvenida_template_id).eq('activo', true).maybeSingle()
     : { data: null as any };
   if (pl?.bloques) {
     asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
-    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null);
+    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout);
     texto = compilarTexto(pl.bloques, ctx);
   } else {
     const pon = (x: string) => x
@@ -161,12 +161,12 @@ export async function probarCorreoBienvenida(para: string, plantillaId?: string 
   const { data: cfg } = await supabase.from('wa_config').select('email_bienvenida_template_id, email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
   const idPl = plantillaId || cfg?.email_bienvenida_template_id;
   const { data: pl } = idPl
-    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', idPl).maybeSingle()
+    ? await supabase.from('email_templates').select('asunto, preview_text, bloques, layout').eq('id', idPl).maybeSingle()
     : { data: null as any };
   let asunto: string, html: string, texto: string;
   if (pl?.bloques) {
     asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
-    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null);
+    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null, pl.layout);
     texto = compilarTexto(pl.bloques, ctx);
   } else {
     const pon = (x: string) => x.replace(/\{\{nombre\}\}/g, 'María').replace(/\{\{campana\}\}/g, 'Campaña nuevos leads');

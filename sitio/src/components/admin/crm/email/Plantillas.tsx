@@ -10,7 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 import { S, Tag, Vacio, Cargando, Aviso, chip, Elegir, PedirTexto, BotonCopiar } from './ui';
 
 const TIPOS: Array<{ id: string; label: string; base: any }> = [
-  { id: 'hero', label: 'Portada', base: { titulo: 'Un titular que importe', subtitulo: '' } },
+  { id: 'portada', label: 'Portada con foto', base: { imagen: 'https://www.sacscloud.com/email/portadas/moda-wow-planta.jpg', alt: '', etiqueta: 'Serie de lunes', titulo: 'Un titular que importe', subtitulo: '' } },
+  { id: 'hero', label: 'Portada de color', base: { titulo: 'Un titular que importe', subtitulo: '' } },
   { id: 'encabezado', label: 'Título', base: { texto: 'Título de sección', nivel: 2 } },
   { id: 'texto', label: 'Párrafo', base: { texto: 'Escribe aquí.' } },
   { id: 'lista', label: 'Lista', base: { items: ['Primer punto', 'Segundo punto'] } },
@@ -126,11 +127,11 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
     const t = setTimeout(() => {
       fetch('/api/crm/email/templates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: true, bloques, preview_text: p?.preview_text }),
+        body: JSON.stringify({ preview: true, bloques, preview_text: p?.preview_text, layout: p?.layout }),
       }).then(r => r.json()).then(j => { setHtml(j.html || ''); setAvisos(j.avisos || []); }).catch(() => {});
     }, 350);
     return () => clearTimeout(t);
-  }, [bloques]);
+  }, [bloques, p?.layout]);
 
   // Autosave: perder el correo por cerrar la pestaña es el bug que hace que
   // alguien vuelva a Mailchimp.
@@ -187,6 +188,12 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
           title="La segunda línea que se ve en la bandeja, debajo del asunto"
           onBlur={e => { setP((x: any) => ({ ...x, preview_text: e.target.value })); fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, preview_text: e.target.value }) }); }}
           style={{ ...S.inp, maxWidth: 280 }} />
+        <select value={p.layout === 'lienzo' ? 'lienzo' : 'simple'} title="Diseño de página: el fondo sobre el que flota el correo"
+          onChange={e => { const layout = e.target.value; setP((x: any) => ({ ...x, layout })); fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, layout }) }); }}
+          style={{ ...S.inp, maxWidth: 150, cursor: 'pointer' }}>
+          <option value="simple">Fondo clásico</option>
+          <option value="lienzo">Fondo lienzo</option>
+        </select>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: '#8a8a8a' }}>{estado}</span>
           <button style={S.btnG} onClick={deshacer} title="Ctrl+Z">Deshacer</button>
@@ -261,7 +268,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               </div>
             </div>
 
-            {['titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'alt', 'pie', 'sub', 'ancho', 'puesto', 'nombre'].map(k => (
+            {['etiqueta', 'titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'imagen', 'alt', 'pie', 'sub', 'ancho', 'puesto', 'nombre'].map(k => (
               k in b ? (
                 <div key={k} style={{ marginBottom: 10 }}>
                   <span style={S.lbl}>{ETIQ_CAMPO[k] || k}</span>
@@ -332,5 +339,6 @@ const ETIQ_CAMPO: Record<string, string> = {
   titulo: 'Título', subtitulo: 'Subtítulo', texto: 'Texto', autor: 'Autor',
   href: 'Liga (URL)', src: 'URL de la imagen', alt: 'Texto alternativo',
   puesto: 'Puesto', nombre: 'Nombre',
+  etiqueta: 'Etiqueta (arriba del título)', imagen: 'URL de la foto (1200×540)',
   pie: 'Pie de la imagen', sub: 'Línea bajo el botón', ancho: 'Ancho en px (vacío = completo)',
 };

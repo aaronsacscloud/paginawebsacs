@@ -69,7 +69,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const exacto = false;
   if (en.template_id) {
     const { data: t } = await supabase.from('email_templates')
-      .select('id, nombre, asunto, preview_text, categoria, bloques, html_compilado').eq('id', en.template_id).maybeSingle();
+      .select('id, nombre, asunto, preview_text, categoria, bloques, html_compilado, layout').eq('id', en.template_id).maybeSingle();
     if (t) {
       plantilla = { id: t.id, nombre: t.nombre, categoria: t.categoria, preview_text: t.preview_text || null };
 
@@ -94,7 +94,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         const { resolverTenant } = await import('../../../../lib/email/tenant');
         const tenant = await resolverTenant().catch(() => null);
         if (Array.isArray((t as any).bloques) && (t as any).bloques.length && tenant) {
-          html = compilar((t as any).bloques, ctx as any, tenant as any, t.preview_text || null);
+          html = compilar((t as any).bloques, ctx as any, tenant as any, t.preview_text || null, (t as any).layout);
         }
       } catch { /* abajo está el respaldo */ }
       if (!html) html = rellenar(String((t as any).html_compilado || ''), ctx) || null;

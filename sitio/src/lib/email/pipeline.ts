@@ -34,6 +34,7 @@ import { enviar as enviarProveedor, proveedorListo, llaveDe } from './proveedor'
 import { firmar } from './token';
 import { footerHtml, footerTexto, headersBaja, htmlATexto } from './footer';
 import { envolverLinks, agregarPixel } from './tracking';
+import { MARCA_PIE } from './plantillas';
 
 import { frenado } from './freno';
 import { escalonCalentamiento, direccionRespuesta } from './puro';
@@ -313,7 +314,11 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   // El orden importa: primero se arma el cuerpo con su pie, DESPUÉS se envuelve
   // para medir. Así el link de baja del footer queda excluido del redirector
   // (envolverLinks lo respeta) y el pixel va al final de todo.
-  let html = `${s.html}\n${footerHtml(t, base, token)}`;
+  // El pie va en la ranura que deja el compilador (dentro del fondo de la
+  // página); un HTML sin ranura —compilado antes de que existiera— lo lleva
+  // al final, como siempre.
+  const pieHtml = footerHtml(t, base, token);
+  let html = s.html.includes(MARCA_PIE) ? s.html.replace(MARCA_PIE, pieHtml) : `${s.html}\n${pieHtml}`;
   if (!s.sinRastreo) html = agregarPixel(envolverLinks(html, base, send.id), base, send.id);
   const texto = `${s.texto?.trim() || htmlATexto(s.html)}\n${footerTexto(t, base, token)}`;
 

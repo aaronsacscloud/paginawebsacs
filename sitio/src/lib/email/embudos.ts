@@ -448,13 +448,13 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
     const ctx = await contexto(e.contact_id);
     if (ctx.email) {
       const { data: tpl } = cfg.template_id
-        ? await supabase.from('email_templates').select('bloques, asunto').eq('id', cfg.template_id).maybeSingle()
+        ? await supabase.from('email_templates').select('bloques, asunto, layout').eq('id', cfg.template_id).maybeSingle()
         : { data: null as any };
       const bloques = (tpl?.bloques || cfg.bloques || []) as Bloque[];
       const asunto = cfg.asunto || tpl?.asunto || auto.nombre;
       const r = await enviarCorreo({
         tenantId: t.id, para: ctx.email, asunto,
-        html: compilar(bloques, ctx, t), texto: compilarTexto(bloques, ctx),
+        html: compilar(bloques, ctx, t, null, tpl?.layout), texto: compilarTexto(bloques, ctx),
         categoria: (auto.categoria === 'relacion' ? 'relacion' : 'marketing'),
         contactId: e.contact_id, companyId: ctx.company_id,
         automationId: auto.id, enrollmentId: e.id, stepId: paso.id,

@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { resolverTenant } from '../../../../lib/email/tenant';
-import { compilar, compilarTexto, variablesSinRespaldo, pesoKb, LIMITE_GMAIL_KB, VARIABLES, type Bloque } from '../../../../lib/email/plantillas';
+import { compilar, compilarTexto, variablesSinRespaldo, pesoKb, LIMITE_GMAIL_KB, VARIABLES, LAYOUTS, layoutDe, type Bloque } from '../../../../lib/email/plantillas';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -45,7 +45,7 @@ export const GET: APIRoute = async ({ url }) => {
   if (!t) return json({ error: 'Sin inquilino.' }, 404);
 
   if (url.searchParams.get('prediseñadas') === '1' || url.searchParams.get('predisenadas') === '1') {
-    return json({ prediseñadas: prediseñadas(), variables: VARIABLES });
+    return json({ prediseñadas: prediseñadas(), variables: VARIABLES, layouts: LAYOUTS });
   }
 
   const id = url.searchParams.get('id');
@@ -61,9 +61,9 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 /** Compila y valida: una sola función para crear, actualizar y previsualizar. */
-function preparar(bloques: Bloque[], t: any, ctxDemo = true, preview?: string | null) {
+function preparar(bloques: Bloque[], t: any, ctxDemo = true, preview?: string | null, layout?: string | null) {
   const ctx = ctxDemo ? { nombre: 'Ana', apellido: 'Pérez', empresa: 'Boutique Ejemplo', plan: 'Plan Controla' } : {};
-  const html = compilar(bloques, ctx, t, preview);
+  const html = compilar(bloques, ctx, t, preview, layout);
   const texto = compilarTexto(bloques, ctx);
   const peso = pesoKb(html);
   const sinRespaldo = variablesSinRespaldo(bloques);
@@ -81,13 +81,13 @@ export const POST: APIRoute = async ({ request, url }) => {
   const bloques = (body.bloques || []) as Bloque[];
 
   // Vista previa: compila sin guardar.
-  if (body.preview) return json(preparar(bloques, t, true, body.preview_text));
+  if (body.preview) return json(preparar(bloques, t, true, body.preview_text, body.layout));
 
   if (!body?.nombre?.trim()) return json({ error: 'Ponle nombre a la plantilla.' }, 400);
-  const p = preparar(bloques, t, true, body.preview_text);
+  const p = preparar(bloques, t, true, body.preview_text, body.layout);
   const { data, error } = await supabase.from('email_templates').insert({
     tenant_id: t.id, nombre: body.nombre.trim(), asunto: body.asunto || null,
-    preview_text: body.preview_text || null, bloques,
+    preview_text: body.preview_text || null, bloques, layout: layoutDe(body.layout),
     html_compilado: p.html, texto_plano: p.texto, categoria: body.categoria || null,
   }).select().single();
   if (error) {
@@ -105,10 +105,16 @@ export const PUT: APIRoute = async ({ request, url }) => {
 
   const updates: Record<string, any> = { updated_at: new Date().toISOString() };
   for (const k of ['nombre', 'asunto', 'preview_text', 'categoria']) if (k in body) updates[k] = body[k];
+  if ('layout' in body) updates.layout = layoutDe(body.layout);
   let avisos: string[] = [];
-  if (body.bloques) {
-    const p = preparar(body.bloques as Bloque[], t, true, body.preview_text ?? undefined);
-    updates.bloques = body.bloques; updates.html_compilado = p.html; updates.texto_plano = p.texto;
+  // Cambiar el diseño de página también recompila: el HTML guardado es el que sale.
+  if (body.bloques || 'layout' in body) {
+    // Lo que no venga en el body se toma de la plantilla guardada: si solo
+    // llegan bloques, el diseño sigue siendo el suyo (no vuelve a «simple»).
+    const { data: actual } = await supabase.from('email_templates').select('bloques, preview_text, layout').eq('id', body.id).eq('tenant_id', t.id).maybeSingle();
+    const bloques = (body.bloques || actual?.bloques || []) as Bloque[];
+    const p = preparar(bloques, t, true, body.preview_text ?? actual?.preview_text ?? undefined, 'layout' in body ? body.layout : actual?.layout);
+    updates.bloques = bloques; updates.html_compilado = p.html; updates.texto_plano = p.texto;
     avisos = p.avisos;
   }
   const { data, error } = await supabase.from('email_templates')

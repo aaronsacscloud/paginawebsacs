@@ -194,7 +194,7 @@ export function dentroDeVentana(t: Tenant, ahora = new Date()): boolean {
 /** Cuerpo del correo para un destinatario concreto. */
 async function armarCorreo(t: Tenant, c: Campana, m: { email: string; contact_id: string | null }) {
   const { data: tpl } = c.template_id
-    ? await supabase.from('email_templates').select('bloques, asunto').eq('id', c.template_id).maybeSingle()
+    ? await supabase.from('email_templates').select('bloques, asunto, layout').eq('id', c.template_id).maybeSingle()
     : { data: null as any };
 
   let ctx: Contexto = {};
@@ -209,7 +209,7 @@ async function armarCorreo(t: Tenant, c: Campana, m: { email: string; contact_id
     };
   }
   const bloques = (tpl?.bloques || []) as Bloque[];
-  return { html: compilar(bloques, ctx, t, c.preview_text), texto: compilarTexto(bloques, ctx), ctx };
+  return { html: compilar(bloques, ctx, t, c.preview_text, tpl?.layout), texto: compilarTexto(bloques, ctx), ctx };
 }
 
 export interface Avance { procesados: number; enviados: number; rechazados: number; errores: number; quedan: number; terminada: boolean; motivo?: string }
