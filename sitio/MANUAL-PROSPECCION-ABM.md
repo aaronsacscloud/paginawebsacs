@@ -928,7 +928,7 @@ src/pages/api/crm/abm/cadencias.ts      generar / aprobar / cancelar
 src/pages/api/crm/abm/goteo.ts          crear/pausar/enrolar un goteo, encender el cartero, registrar plantillas en Meta
 src/pages/api/cron/abm-cadencias.ts     el envío: rampa, disyuntor, goteo, cupo, WhatsApp
 scripts/abm-verificar-mx.mjs            marca valido/invalido por MX los correos sin_probar de un giro
-scripts/generate-mail-<giro>.mjs        las 8 fotos de los correos de un giro (gpt-image-2, 600×300); hay novias, mayoristas, calzado
+scripts/generate-mail-<giro>.mjs        las 8 fotos de los correos de un giro (gpt-image-2, 600×300); hay novias, mayoristas, calzado, marcas
 src/pages/api/cron/abm-enriquecer.ts    Places y DENUE (necesita llaves)
 sitio/migraciones/                      cada carga de datos, con su porqué
 ```
@@ -940,14 +940,21 @@ porqué de cada correo y la lista de lo que se afirma verificado en el sistema):
 novias        2026-09-04-abm-plantillas.sql + 2026-09-13-abm-novias-correo0*.sql   demo + diagnóstico, correo + WhatsApp manual
 mayoristas    2026-09-13-abm-mayoristas-cadencia.sql   Villa Hidalgo: listas de precio, foto a venta, tallas sueltas, crédito · + WhatsApp automático
 calzado       2026-09-13-abm-calzado-cadencia.sql      SAPICA: matriz por número, corrida rota, pedidos por matriz, precio por cliente, crédito · SOLO correo
+marcas        2026-09-13-abm-intermoda-cadencia.sql    Intermoda: pedido de feria, curva por talla y color, reposición entre ferias, precio por cliente, crédito · SOLO correo
 ```
 
 Una cadencia nueva de un giro que vende a tiendas (no al público) sale de la
 de mayoristas cambiando el vocabulario del ramo —lo que compra, cómo se cuenta,
 cómo pide su cliente— y quitando de la base a quien el guion no le habla (en
 calzado: proveedores de la industria, sombreros y marroquinería quedaron en
-pausa; un competidor de software en no_contactar). Antes de encender, se
-renderiza contra una cuenta real con IA y se borra el borrador (§7.7).
+pausa; un competidor de software en no_contactar; en marcas, 81 proveedores
+de telas, avíos y maquinaria en pausa y 14 ajenos o competidores fuera). Antes
+de encender, se renderiza contra una cuenta real con IA y se borra el borrador
+(§7.7). Si la base mezcla productos con talla y sin talla (Intermoda: ropa con
+joyería y bolsas), la decisión de «tallas» o «modelo y color» se toma en el
+expediente por el subgiro (abm-generar.ts, `sinTalla`), no en el objetivo de
+cada correo: puesta ahí como «si vende joyería…», la IA se la aplicó también a
+una marca de ropa.
 
 Las migraciones se escriben explicando **por qué** se hizo el cambio, no qué
 hace el SQL. Una migración dice lo que pasó ese día — no lo que es cierto hoy.

@@ -22,4 +22,10 @@ export const GIROS: Record<string, string> = {
   // maquila y los proveedores de la propia industria (suelas, hormas, pieles),
   // que entran marcados porque a esos un ERP de tienda no les sirve.
   calzado: 'Calzado · fabricantes y marcas',
+  // La MARCA que expone en feria (Intermoda) para que tiendas y boutiques le
+  // levanten pedido: ropa sobre todo, y también joyería, bolsas, sombreros y
+  // accesorios. Va aparte de `fabricantes`/`distribuidores` —donde también
+  // cayeron 1,600 negocios del barrido de Maps— porque su guion es otro: el
+  // pedido de feria, la curva por talla y color, la reposición entre ferias.
+  marcas: 'Marcas de moda · expositores de feria',
 };

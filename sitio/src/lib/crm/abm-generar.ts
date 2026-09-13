@@ -10,6 +10,10 @@ import { supabase } from '../supabase';
 import { anthropic, MODELS } from '../ai/client';
 import { limpiar, apuntar, GIROS, variablesDe, rellenar, nombrePila } from './abm.lib';
 
+/** Producto sin talla: joyería, bolsas, sombreros, lentes, accesorios. */
+const sinTalla = (subgiro?: string | null) =>
+  /JOYER|BISUTER|BOLSA|CARTERA|MOCHILA|PIEL\b|MARROQUIN|SOMBRER|GORRA|ACCESOR|CINTUR|LENTES|RELOJ|MASCADA|PA[ÑN]UEL|BUFAND|FLORES/i.test(String(subgiro || ''));
+
 /** Lo que sabemos de la cuenta, resumido para que la IA no invente nada. */
 export function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
   const l: string[] = [];
@@ -26,6 +30,15 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
   if (c.senal_expansion) l.push(`Señal de que crece: ${c.senal_expansion}`);
   if (c.ultima_publicacion) l.push(`Última publicación: ${c.ultima_publicacion}`);
   if (c.contexto) l.push(`Contexto: ${c.contexto}`);
+  // Las marcas de feria mezclan ropa con joyería, bolsas y sombreros. El guion
+  // base habla de tallas; a quien vende producto sin talla hay que decirle
+  // «modelo y color». Se decide AQUÍ, con el subgiro, y se le dice a la IA de
+  // forma tajante en los dos sentidos: cuando la pista iba en el objetivo de
+  // cada correo como «si vende joyería…», la IA la aplicó también a una
+  // marca de ropa y le quitó las tallas a todo el guion.
+  if (c.giro === 'marcas') l.push(sinTalla(c.subgiro)
+    ? 'Producto: SIN TALLA (joyería, bolsas, sombreros o accesorios). Habla de modelo y color; nunca escribas «talla», «curva de tallas» ni «mediana».'
+    : 'Producto: ROPA O CALZADO, con tallas. Conserva las tallas y colores tal como vienen en el texto base.');
   if (c.nota) l.push(`Nota de la investigación: ${c.nota}`);
   const p = personas[0];
   /* SOLO EL NOMBRE DE PILA, y a propósito. Si aquí entra el nombre completo,

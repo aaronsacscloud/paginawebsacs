@@ -36,6 +36,7 @@ function guion(c: any): string {
     : c.giro === 'relojerias' ? 'cómo llevan las piezas en reparación junto con lo que venden'
     : c.giro === 'outlets' ? 'cómo saben qué lote de saldo ya no se está moviendo'
     : c.giro === 'fabricantes' || c.giro === 'distribuidores' ? 'cómo llevan lo que le deben entregar a cada cliente'
+    : c.giro === 'marcas' ? 'cómo llevan los pedidos que les levantan las tiendas contra lo que hay en bodega'
     : 'cómo llevan el inventario entre sus tiendas';
   return `Buenas tardes, le hablo de Sacscloud, hacemos sistemas para negocios de moda. `
     + `No le llamo para venderle nada por teléfono: quería preguntarle ${quePasa}. `

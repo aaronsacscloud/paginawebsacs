@@ -184,4 +184,4 @@ enriquecer con lo que se encuentre en web.
 
 ## 2026-09-13 · Cadencia Intermoda (puro correo)
 **Dueño:** «Y de ahí la de intermoda igual considerando todo el contexto» (llegó mientras se armaba la de SAPICA; se hace después de SAPICA con el mismo esquema: solo correo, goteo, MX).
-- [ ] Pendiente
+- [x] HECHO el mismo día: giro nuevo `marcas` (los 558 de Intermoda salen de fabricantes/distribuidores), 2 cadencias × 8 correos solo email, pieza «Un modelo con su curva», 8 fotos, MX (558/564 válidos), 95 fuera (81 proveedores en pausa, 14 ajenos/competidores), goteo «Intermoda · cuarenta al día» activo con la firma del dueño → arranca lunes 14-sep 10:00 CDMX después del de SAPICA. Arreglo en abm-generar: tallas vs. modelo-y-color se decide por subgiro.
