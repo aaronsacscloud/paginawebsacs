@@ -174,6 +174,8 @@ export const POST: APIRoute = async ({ request }) => {
         email_template_id: p.canal === 'correo' ? (p.email_template_id || null) : null,
         email_template_id_b: p.canal === 'correo' ? (p.email_template_id_b || null) : null,
         wa_plantilla: p.canal === 'wa' ? (String(p.wa_plantilla || '').trim() || null) : null,
+      /* La de respaldo: si Meta frena la de marketing, sale esta. */
+      wa_plantilla_utility: p.canal === 'wa' ? (String(p.wa_plantilla_utility || '').trim() || null) : null,
         inapp_campana_id: p.canal === 'inapp' ? (p.inapp_campana_id || null) : null,
         dia_semana: p.dia_semana ? Math.max(1, Math.min(7, Number(p.dia_semana))) : null,
         vigente_hasta: p.vigente_hasta || null,

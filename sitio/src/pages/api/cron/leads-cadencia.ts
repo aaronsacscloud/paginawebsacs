@@ -734,7 +734,20 @@ export const GET: APIRoute = async ({ url }) => {
             const vals = valoresPlantilla(c, plWa?.variables_map, Number(plWa?.variables) || 1);
             if (!vals.ok) { res.saltados.push({ lead: c.id, motivo: `sin dato para la plantilla: ${vals.falta}`, plantilla: p.wa_plantilla }); continue; }
             enContexto('lead', (c as any).fuente || null);
-            await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', vals.valores);
+            /* Marketing primero; si Meta la frena —tope del día, calidad, o el contacto sin
+               marketing habilitado— sale la UTILITY de respaldo, que es la misma idea dicha
+               como aviso. Sin esto, el paso simplemente no salía y nadie se enteraba. */
+            try {
+              await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', vals.valores);
+            } catch (e: any) {
+              if (!p.wa_plantilla_utility) throw e;
+              const { data: plU } = await supabase.from('wa_plantillas')
+                .select('variables, variables_map').eq('nombre', p.wa_plantilla_utility).maybeSingle();
+              const valsU = valoresPlantilla(c, plU?.variables_map, Number(plU?.variables) || 1);
+              if (!valsU.ok) throw e;
+              await enviarPlantilla(c.whatsapp, p.wa_plantilla_utility, 'es_MX', valsU.valores);
+              res.saltados.push({ lead: c.id, motivo: `marketing falló (${String(e?.message || e).slice(0, 60)}), salió la utility`, plantilla: p.wa_plantilla_utility });
+            }
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {
             /* Se mete su cuenta en la audiencia de la campaña y se republica.
