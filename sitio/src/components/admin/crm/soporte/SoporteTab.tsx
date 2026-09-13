@@ -16,7 +16,7 @@ const ClienteDrawer360 = lazySeguro(() => import('../ClienteDrawer360'));
 import Hallazgos from './Hallazgos';
 import Capacitacion from './Capacitacion';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
-import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
+import Chispas, { Sello, CHISPA, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 
 // ─── Gama (la de Cotizaciones) ───
 // Morado y azul cielo son los protagonistas y visten todo lo estructural. El
@@ -55,12 +55,25 @@ const SENT: Record<string, { bg: string; fg: string }> = {
 };
 
 // ─── Piezas del lenguaje de Cotizaciones ───
-function Kpi({ t, v, barra, hijo }: { t: string; v: any; barra?: string; hijo?: any }) {
+function Kpi({ t, v, barra, hijo, faro }: { t: string; v: any; barra?: string; hijo?: any; faro?: boolean }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: `3px solid ${barra || MORADO}`, borderRadius: 12, padding: '16px 18px', minWidth: 0 }}>
-      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.08em' }}>{t}</div>
-      <div style={{ fontSize: '1.65rem', fontWeight: 800, marginTop: 8, letterSpacing: '-.025em' }}>{v}</div>
-      <div style={{ fontSize: '0.7rem', marginTop: 5, color: '#9c99a6', lineHeight: 1.5 }}>{hijo}</div>
+    <div style={{
+      background: faro ? 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))' : '#fff',
+      border: `1px solid ${faro ? '#ddd6fb' : '#eeecf3'}`,
+      ...(faro ? { position: 'relative' as const, overflow: 'hidden' as const } : { borderLeft: `3px solid ${barra || MORADO}` }),
+      borderRadius: 12, padding: '16px 18px', minWidth: 0,
+    }}>
+      {/* La chispa al vuelo de la tarjeta faro: la misma de Clientes y
+          Cotizaciones. Decoración de marca, no un icono. */}
+      {faro && (
+        <svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true"
+          style={{ position: 'absolute', right: -6, top: -8, opacity: .5, pointerEvents: 'none' }}>
+          <path d={CHISPA} fill="rgba(217,83,142,.18)" />
+        </svg>
+      )}
+      <div style={{ position: 'relative', fontSize: '0.62rem', fontWeight: 700, color: faro ? '#8a6a9c' : '#9c99a6', textTransform: 'uppercase', letterSpacing: '.08em' }}>{t}</div>
+      <div style={{ position: 'relative', fontSize: '1.65rem', fontWeight: 800, marginTop: 8, letterSpacing: '-.025em' }}>{v}</div>
+      <div style={{ position: 'relative', fontSize: '0.7rem', marginTop: 5, color: faro ? '#6b6878' : '#9c99a6', lineHeight: 1.5 }}>{hijo}</div>
     </div>
   );
 }
@@ -805,7 +818,8 @@ export default function SoporteTab() {
         hijo={<><Delta v={K.entraron?.valor} a={K.entraron?.anterior} neutro /> · antes {K.entraron?.anterior ?? 0}</>} />
       <Kpi barra={VERDE} t="Resueltos" v={<span style={{ color: VERDE_TINTA }}>{K.resueltos?.valor ?? 0}</span>}
         hijo={<><Delta v={K.resueltos?.valor} a={K.resueltos?.anterior} /> · antes {K.resueltos?.anterior ?? 0}</>} />
-      <Kpi barra={hayAlarma ? ROJO : MORADO} t="Sin resolver" v={sinResolver.valor ?? 0}
+      {/* El FARO de Soporte: de las cinco, la única que pide acción hoy. */}
+      <Kpi faro barra={hayAlarma ? ROJO : MORADO} t="Sin resolver" v={sinResolver.valor ?? 0}
         hijo={<>
           {hayAlarma
             ? <span style={{ color: ROJO, fontWeight: 800 }}>{sinResolver.estancados} estancado{sinResolver.estancados === 1 ? '' : 's'} +48 h</span>

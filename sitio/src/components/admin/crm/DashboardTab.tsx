@@ -1815,10 +1815,12 @@ function Sueltos({ x, ver, parte }: any) {
   }
 
   if (!sd.n) return null;
+  /* A ancho completo: se quedó sola en su renglón cuando las oportunidades sin
+     precio se mudaron a Expansión, y media rejilla vacía es exactamente lo que
+     el dueño no quiere ver. REGLA: una rejilla de N columnas con UN hijo no
+     existe — o se llena, o el bloque va a ancho completo. */
   return (
-    <div className="tb-2">
-      {sd.n > 0 && (
-        <div style={S.card}>
+      <div style={{ ...S.card, marginBottom: 16 }}>
           <div style={S.titulo}>Pagos que no son de nadie<span style={S.der}>{sd.n} {sd.n === 1 ? 'pago' : 'pagos'}</span></div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: AMBAR, letterSpacing: '-.03em', margin: '2px 0 4px' }}>{money(sd.monto)}</div>
           <div style={S.lead}>
@@ -1835,10 +1837,7 @@ function Sueltos({ x, ver, parte }: any) {
             ))}
           </div>
           <div style={S.nota}>Asígnalos a su cuenta desde Pagos y el historial de esos clientes queda completo.</div>
-        </div>
-      )}
-
-    </div>
+      </div>
   );
 }
 

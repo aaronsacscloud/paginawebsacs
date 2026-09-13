@@ -174,7 +174,9 @@ function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, f
         <KpiCard franja={P.rojo} label="Bloquean la operación" valor={bloquean}
           color={bloquean ? P.rojoTinta : undefined}
           sub={bloquean ? 'fallas que frenan la caja' : 'nada frena la operación'} />
-        <KpiCard franja={P.violeta} label="Esperan tu OK" valor={esperanOK.length}
+        {/* El FARO de esta pantalla: de las cuatro cifras, es la única que
+            depende del dueño. Ver «la tarjeta faro» en ui/KpiCard. */}
+        <KpiCard faro franja={P.violeta} label="Esperan tu OK" valor={esperanOK.length}
           color={esperanOK.length ? P.violetaTinta : undefined}
           sub={revisionTarde.length
             ? `${revisionTarde.length} se te pasó de la ventana`

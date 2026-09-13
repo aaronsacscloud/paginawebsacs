@@ -779,7 +779,9 @@ export default function MejorasTab() {
           lista de abajo se queda solo con eso. */}
       <div className="cons-alertas" style={{ marginBottom: 16 }}>
         {ALERTAS.map(a => (
-          <KpiCard key={a.id} label={a.k} valor={a.n} franja={a.franja}
+          /* El FARO: «Prometido y vencido» es la primera de la fila y la que
+             más cuesta si se ignora. Solo una por pantalla. */
+          <KpiCard key={a.id} faro={a.id === 'vencidas'} label={a.k} valor={a.n} franja={a.franja}
             color={a.n ? a.color : '#1a1a1a'} sub={a.s}
             activo={alerta === a.id}
             onClick={a.n ? () => setAlerta(alerta === a.id ? '' : a.id) : undefined} />

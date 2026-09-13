@@ -118,6 +118,37 @@ import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
    ver exclientes: «Ninguna estrella brilla sola» sobre una lista de cuentas que
    se fueron suena a burla. En pantalla angosta se esconde por CSS.
 
+
+### La tercera pieza: LA TARJETA FARO
+
+Nació en Clientes y el dueño la volvió branding el 13-sep-2026 («el color y las
+estrellas que pusimos en clientes y cotizaciones»). **Una** tarjeta de KPI por
+pantalla se pinta distinto:
+
+- fondo `linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))`, borde `#ddd6fb`,
+- **sin** franja de color a la izquierda,
+- y una chispa de 52 px cortada por la esquina superior derecha, en
+  `rgba(217,83,142,.18)` al 50% de opacidad,
+- la cifra sube a 1.5rem y el rótulo pasa a `#8a6a9c`.
+
+Se pide con `faro` en `ui/KpiCard`; las pantallas con su propia tarjeta copian
+esas cuatro líneas y nada más.
+
+**No es decoración repartida: es jerarquía.** Una fila de cuatro tarjetas
+iguales no tiene dueño y el ojo empieza por la de la izquierda en vez de por la
+que importa. Por eso es **una sola por pantalla** — dos faros no alumbran el
+doble, se anulan. La que se elige es la que pide acción hoy:
+
+| Pantalla | Faro |
+|---|---|
+| Clientes | la cuenta que manda la fila |
+| Soporte | Sin resolver |
+| Taller | Esperan tu OK |
+| Consultoría | Ideas por vender |
+
+Si la pantalla no tiene fila de KPIs —Leads abre en lista—, no se inventa una
+para colgarle el faro.
+
 ### El catálogo de frases
 
 | Pantalla | Frase |
@@ -143,6 +174,42 @@ aquí, porque el catálogo es lo que impide que en un año haya once voces.
   pone 22 px arriba en escritorio.
 - Rejilla de tarjetas: `gap: 10–13px`.
 - Una tarjeta respira con `padding: 15px 17px`.
+
+## 5 bis. NINGUNA SECCIÓN DESCUADRADA (regla dura del dueño)
+
+**El dueño lo pidió dos veces y la segunda con una captura: «por ningún motivo
+esto se debe de ver así, no pueden existir secciones descuadradas».** Es una
+regla de aceptación, no una preferencia: una pantalla con un escalón de fondo
+colgando no se sube.
+
+Qué cuenta como descuadrado, en orden de frecuencia:
+
+1. **Una rejilla de N columnas con UN solo hijo.** Pasa siempre igual: el
+   bloque vecino se mueve a otra sección y nadie cambió la rejilla, así que
+   queda media fila de fondo. O se llena con otro bloque, **o el que queda se
+   va a ancho completo**. No hay tercera opción.
+2. **Dos tarjetas del mismo renglón que terminan a distinta altura.** Se
+   arregla en la tarjeta, no en la pantalla: `display:flex; flexDirection:
+   column; height:100%` y la nota explicativa al pie con `marginTop:auto`.
+   Así el aire sobrante queda DENTRO y las dos cierran en la misma línea.
+3. **El aire amontonado en un hueco.** Cuando una tarjeta estira, su contenido
+   no se queda arriba: lo que puede crecer reparte el sobrante entre sus
+   renglones (`flex:1; justifyContent:space-evenly`).
+4. **Contenido que no cabe en su columna.** Una tabla de cinco columnas metida
+   en media pantalla se lee peor que a ancho completo. Si el bloque tiene más
+   contenido que sus vecinos, no comparte renglón: se lleva la fila entera.
+
+### Cómo se verifica antes de dar por buena una pantalla
+
+No a ojo. Con el navegador abierto y sesión real, la diferencia de altura entre
+las tarjetas de un mismo renglón tiene que ser **CERO**:
+
+```js
+[...document.querySelectorAll('.rejilla')].map(f => {
+  const h = [...f.children].map(c => Math.round(c.getBoundingClientRect().height));
+  return h.length > 1 ? Math.max(...h) - Math.min(...h) : 0;   // todos en 0
+});
+```
 
 ## 6. Los documentos que recibe el cliente
 
@@ -193,6 +260,8 @@ excepción es ⚠️ para un riesgo real.
 3. ¿El verde significa que entró dinero y el rojo que se fue?
 4. ¿Hay algún `Cargando…` que no sea el componente (la chispa en órbita)?
 5. ¿La pantalla respira arriba?
+5b. ¿Hay alguna rejilla con un solo hijo, o dos tarjetas del mismo renglón que
+    terminen a distinta altura? **Se mide, no se mira** (ver 5 bis).
 6. Si es un documento del cliente: ¿cinta, firma en degradado, y **Sacscloud**?
 
 ---

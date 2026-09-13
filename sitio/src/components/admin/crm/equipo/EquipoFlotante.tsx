@@ -31,10 +31,16 @@ const CSS = `
 .eqf *{box-sizing:border-box}
 .eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 56px)}
 .eqf-fila{display:flex;align-items:flex-end;gap:10px}
-.eqf-orbe{position:relative;width:64px;height:64px;border-radius:50%;border:0;cursor:pointer;padding:0;overflow:visible;
-  background:none;display:inline-flex;align-items:center;justify-content:center;
-  transition:transform .18s cubic-bezier(.2,.8,.2,1.2),filter .18s}
-.eqf-orbe:hover{transform:translateY(-2px) scale(1.06)}
+/* HALO, no burbuja (lo eligió el dueño el 13-sep-2026). El disco blanco era el
+   cuerpo del ajolote; con la chispa ya no hace falta una caja, hace falta que
+   se note que es pulsable. El resplandor rosa detrás hace ese trabajo sin
+   encerrarla, y crece al pasar el mouse. */
+.eqf-orbe{position:relative;width:66px;height:66px;border-radius:50%;border:0;cursor:pointer;padding:0;overflow:visible;
+  background:radial-gradient(circle,rgba(217,83,142,.22),rgba(217,83,142,0) 66%);
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1.2),background .18s}
+.eqf-orbe:hover{transform:translateY(-2px) scale(1.06);
+  background:radial-gradient(circle,rgba(217,83,142,.34),rgba(217,83,142,0) 70%)}
 .eqf-orbe:active{transform:scale(.96)}
 .eqf-orbe:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
 /* La cara de Axo con lo mínimo para que sea él (pidió el dueño: los ojos y "los otros
@@ -45,8 +51,8 @@ const CSS = `
    La pupila sigue al puntero (--ox/--oy); parpadeo y "atento" son transforms sobre cada
    ojo; las branquias se abren un poco con hover/atento (transform en el grupo interno,
    porque el externo trae rotate en el atributo y CSS lo pisaría). */
-.eqf-axo{width:64px;height:64px;display:block;pointer-events:none;overflow:visible;
-  filter:drop-shadow(0 4px 10px rgba(226,120,160,.42))}
+.eqf-axo{width:54px;height:54px;display:block;pointer-events:none;overflow:visible;
+  filter:drop-shadow(0 4px 12px rgba(217,83,142,.5))}
 .eqf-orbe:hover .eqf-axo{filter:drop-shadow(0 6px 14px rgba(217,83,142,.55))}
 .eqf-axo .pupila{transform:translate(calc(var(--ox,0px)*.45),calc(var(--oy,0px)*.45));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
 .eqf-axo .ojo{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease}

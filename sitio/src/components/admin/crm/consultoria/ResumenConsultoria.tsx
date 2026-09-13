@@ -132,7 +132,9 @@ export default function ResumenConsultoria() {
         <KpiCard franja={P.verde} label="Pagado" valor={money(din.total_pagado)}
           color={din.total_pagado ? P.verdeTinta : undefined}
           sub={din.pagado.length ? `${din.pagado.length} ${din.pagado.length === 1 ? 'cobrada' : 'cobradas'} en el periodo` : 'nada cobrado todavía'} />
-        <KpiCard franja={P.rosa} label="Ideas por vender" valor={ideasAbiertas}
+        {/* El FARO de Consultoría: de las cuatro, la única que apunta a lo que
+            FALTA por hacer. Ver «la tarjeta faro» en ui/KpiCard. */}
+        <KpiCard faro franja={P.rosa} label="Ideas por vender" valor={ideasAbiertas}
           sub={valorIdeas ? `~${money(valorIdeas)} estimado · en ${d.ideasPorVender.length} cuentas` : `en ${d.ideasPorVender.length} cuentas · sin monto capturado`} />
       </div>
 
