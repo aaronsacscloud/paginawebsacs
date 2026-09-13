@@ -446,3 +446,8 @@ h4 {
   background: rgba(75, 123, 229, 0.2);
   color: var(--color-text-primary);
 }
+
+/* Móvil: sin tracking negativo en texto de cuerpo (se pegaban las palabras) */
+@media (max-width: 767px) {
+  p, small, li, td, dd, label, .footer-list a, .hero-badge-label { letter-spacing: 0 !important; word-spacing: normal !important; }
+}

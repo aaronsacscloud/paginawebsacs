@@ -4962,6 +4962,13 @@ const useCases = [
     .flujo-dots { max-width: 100%; gap: 6px; } .flujo-dots li { padding: 12px 2px; } .flujo-dots li i { width: 22px; height: 3px; }
     .inv-intel-card { padding: 18px 16px !important; margin-bottom: 12px !important; }
     .inv-intel-card, .loyalty-pro-eyebrow, .loyalty-pro-title, .loyalty-pro-desc, .ops-admin-eyebrow, .ops-admin-title, .ops-admin-desc { opacity: 1 !important; transform: none !important; }
+    .sq-media-reveal, .sq-header-reveal, .sq-features-img, .reel-card, .reels-header, .reels-stat, .htv2-card, .pillar-visual, .pillar-text, .tablet-slide, .mc-card { opacity: 1 !important; transform: none !important; visibility: visible !important; }
+    .flujo-text { min-height: 112px; }
+    .flujo-dots { width: 240px; margin: 0 auto; justify-content: center; }
+    .hero-btn { border-radius: 12px !important; }
+    .pillar-section--ai .pillar-eyebrow { color: rgba(255,255,255,0.6); }
+    .reels-stats { align-items: flex-start !important; }
+    .fx-otros a { display: inline-block; }
     .tablet-screen, .tablet-screen * { word-spacing: 0.25em !important; letter-spacing: 0 !important; }
     .cat-filters, .cat-btn--outline { display: none !important; }
     .cat-table { max-height: 400px; overflow: hidden; position: relative; }
@@ -18350,7 +18357,7 @@ const useCases = [
     function muestra(i: number) {
       if (i === cur) return; cur = i;
       pasos.forEach((p) => p.classList.toggle('is-on', +p.dataset.paso! === i));
-      if (simple) { const act = pasos.find((p) => +p.dataset.paso! === i); const txt = sec.querySelector<HTMLElement>('.flujo-text'); if (act && txt) txt.style.minHeight = act.scrollHeight + 'px'; }
+      if (simple) { const mideTxt = () => { const act = pasos.find((p) => +p.dataset.paso! === i); const txt = sec.querySelector<HTMLElement>('.flujo-text'); if (act && txt) txt.style.minHeight = Math.max(112, act.scrollHeight) + 'px'; }; mideTxt(); (document as any).fonts?.ready?.then(mideTxt); }
       tags.forEach((t) => t.classList.toggle('is-on', +t.dataset.tag! === i));
       final?.classList.toggle('is-on', i >= N);
       wrap.classList.toggle('is-done', i >= N);
