@@ -228,11 +228,15 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
           estorbarle al trabajo que anuncia. */}
       {!controlado && (
         <button onClick={alternar} aria-label="Notificaciones"
+          /* La MISMA retícula que el resto del pie: 32 de alto, hueco de 10,
+             letra 0.75 y sangría de 10. Traía medidas propias (38/11/0.79) y
+             por eso el texto arrancaba corrido contra los renglones de al lado
+             y el bloque se veía desordenado sin que se supiera por qué. */
           style={{
-            display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38, textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 16px)', minHeight: 32, textAlign: 'left',
             background: abierto ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            margin: '1px 8px', padding: '7px 10px', borderRadius: 9,
-            fontSize: '0.79rem', fontWeight: 700, color: '#5a5a63',
+            margin: '0 8px', padding: '5px 10px', borderRadius: 8,
+            fontSize: '0.75rem', fontWeight: 650, color: '#4b4560',
           }}>
           {/* Lo urgente lo dice un PUNTO en la campana, no el color de toda la
               pastilla. La regla original era buena —rojo solo si hay algo
@@ -240,7 +244,7 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
               el rojo estaba puesto de forma permanente: un bloque rojo fijo en
               la esquina del menú, que ya no avisa de nada y ensucia todo el
               pie. Un punto dice lo mismo y cabe en 6 píxeles. */}
-          <span style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0, color: '#9B8CFA' }}>
+          <span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 17, flexShrink: 0, color: '#9B8CFA' }}>
             {icono}
             {hayUrgente && noLeidas > 0 && (
               <span title="Hay algo urgente sin leer"

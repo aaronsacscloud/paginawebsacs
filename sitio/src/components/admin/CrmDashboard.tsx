@@ -186,7 +186,11 @@ const pieFila = {
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
   fontSize: '0.75rem', fontWeight: 650, textAlign: 'left' as const,
 } as const;
-const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
+/* El ancho va AQUÍ y no en el SVG: los iconos de la familia Editorial se
+   dibujan solo con `viewBox` —para que cada sitio los escale a su medida— así
+   que un contenedor sin ancho los colapsa a cero y el renglón se queda mudo.
+   Pasó al cambiar la familia: los iconos viejos traían width/height propios. */
+const pieIcono = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 17, flexShrink: 0 } as const;
 
 /* ══ La escalera de color del menú ═══════════════════════════════════════════
    Seis pasos entre los dos colores que ya son la marca: el morado del sistema
@@ -456,6 +460,23 @@ export default function CrmDashboard() {
      desplegar el menú, o sea sin devolver el ancho que da tenerlo plegado. */
   const [flyGrupo, setFlyGrupo] = useState<{ label: string; y: number } | null>(null);
   useEffect(() => { if (!sidebarCollapsed) setFlyGrupo(null); }, [sidebarCollapsed]);
+  /* El menú de la CUENTA. Lo que es «mío» —ajustes, documentación, salir— vive
+     junto y cuelga de mi nombre, que es donde se busca. Antes eran tres bloques
+     sueltos que se llevaban un tercio del alto del menú para cosas que se tocan
+     una vez al día. */
+  const [menuYo, setMenuYo] = useState(false);
+  useEffect(() => {
+    if (!menuYo) return;
+    const fuera = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement)?.closest?.('[data-menu-yo]')) setMenuYo(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuYo(false); };
+    window.addEventListener('mousedown', fuera);
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('mousedown', fuera); window.removeEventListener('keydown', esc); };
+  }, [menuYo]);
+  // Al plegar el menú el volado se queda flotando sobre el riel angosto.
+  useEffect(() => { if (sidebarCollapsed) setMenuYo(false); }, [sidebarCollapsed]);
   // Compromisos con fecha vencida en TODAS las cuentas. Se pide una vez al
   // entrar: es la única cifra del menú y solo aparece cuando hay algo tarde.
   const [vencidasMenu, setVencidasMenu] = useState(0);
@@ -997,84 +1018,94 @@ export default function CrmDashboard() {
             se veía sucio sin que se supiera por qué. */}
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #ece6f8', background: 'rgba(255,255,255,.45)' }}>
-            <div style={{ padding: '5px 0 1px' }}>
-              {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
+            {/* ── LA CUENTA, arriba y en tarjeta ──
+                Es la cabecera del pie y de ella cuelga todo lo que es «mío»:
+                ajustes, documentación y salir. Antes esas tres cosas eran
+                renglones sueltos —cinco zonas apiladas— y se llevaban un tercio
+                del alto del menú para cosas que se tocan una vez al día.
 
-              <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
-                <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+                Y arregla algo que estaba al revés: «Salir» era lo más visible
+                del bloque —en rojo, en su propia franja— siendo lo que menos se
+                usa. Aquí sigue a un clic y en su rojo, sin competir. */}
+            <div data-menu-yo style={{ position: 'relative' }}>
+              <button
+                onClick={() => setMenuYo(v => !v)}
+                aria-haspopup="menu" aria-expanded={menuYo}
+                title="Mi cuenta"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 16px)',
+                  textAlign: 'left', padding: '7px 9px', margin: '6px 8px', borderRadius: 11,
+                  background: menuYo ? '#fff' : 'rgba(255,255,255,.72)',
+                  boxShadow: menuYo ? '0 2px 12px rgba(60,30,140,.12)' : '0 1px 6px rgba(60,30,140,.06)',
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                }}>
+                {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
+                <span style={{
+                  width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+                  background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
+                  color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {!yo?.foto_url && iniciales(yo?.nombre || yo?.email)}
+                </span>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ display: 'block', fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {yo?.nombre || yo?.email || '—'}
+                  </span>
+                  {yo?.rol && (
+                    /* El rol describe, no es un botón: por eso va en el rosa de
+                       la firma y en pastilla chica. */
+                    <span style={{ display: 'inline-block', fontSize: '0.53rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', marginTop: 3, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
+                      {yo.rol}
+                    </span>
+                  )}
+                </span>
+                <span style={{ display: 'flex', width: 14, flexShrink: 0, color: '#b3aecb', transform: menuYo ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform .18s ease' }}
+                  dangerouslySetInnerHTML={{ __html: ICONO_FLECHA }} />
               </button>
 
-              {/* La Wiki baja aquí: es consulta, no navegación de trabajo, y
-                  arriba se comía una cabecera de sección entera para un solo
-                  renglón. Al entrar ocupa la pantalla completa. */}
-              <button onClick={() => switchTab('wiki' as Tab)} style={{ ...pieFila, background: tab === 'wiki' ? '#fff' : 'none', boxShadow: tab === 'wiki' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'wiki' ? '#4C3BD0' : '#4b4560' }}>
-                <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.automations }} />Documentación
-              </button>
-
-            {/* Salir bajó a la barra de abajo, junto a plegar: es una acción
-                de una vez al día y ocupaba un renglón entero del pie. */}
+              {/* El volado sube, no baja: el pie ya está pegado al borde de
+                  abajo de la pantalla y hacia abajo no hay sitio. */}
+              {menuYo && (
+                <div role="menu" style={{
+                  position: 'absolute', bottom: 'calc(100% - 2px)', left: 8, right: 8, zIndex: 40,
+                  background: '#fff', borderRadius: 12, border: '1px solid #e7e0f7',
+                  boxShadow: '0 14px 34px rgba(36,29,67,.2)', padding: 6,
+                }}>
+                  <button role="menuitem" onClick={() => { setMenuYo(false); switchTab('config' as Tab); }}
+                    style={{ ...pieFila, width: '100%', margin: 0, background: tab === 'config' ? '#EEECFE' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
+                    <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+                  </button>
+                  {/* La Wiki vive aquí: es consulta, no navegación de trabajo. */}
+                  <button role="menuitem" onClick={() => { setMenuYo(false); switchTab('wiki' as Tab); }}
+                    style={{ ...pieFila, width: '100%', margin: 0, background: tab === 'wiki' ? '#EEECFE' : 'none', color: tab === 'wiki' ? '#4C3BD0' : '#4b4560' }}>
+                    <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.automations }} />Documentación
+                  </button>
+                  <div style={{ height: 1, background: '#f1ecfa', margin: '5px 6px' }} />
+                  {/* Sin confirmación a propósito —cerrar sesión no destruye
+                      nada, se vuelve a entrar— pero sí `title`, para que un clic
+                      de más no te saque sin haberlo querido leer. */}
+                  <button role="menuitem" title="Cerrar sesión"
+                    onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
+                    style={{ ...pieFila, width: '100%', margin: 0, color: '#B24C57' }}>
+                    <span style={{ ...pieIcono, opacity: .85 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Quién entró. El día que haya más de una persona en el CRM, saber
-                con qué cuenta estás parado deja de ser un adorno. Se le da clic
-                para ir a tu perfil: el bloque estaba ahí sin hacer nada. */}
-            <button
-              onClick={() => switchTab('config' as Tab)}
-              title="Ver mi perfil"
-              /* Sin tarjeta blanca ni sombra: era el elemento más levantado
-                 de todo el menú —más que la pantalla activa— para decir quién
-                 eres, que no es una acción. Ahora es un renglón como los de
-                 arriba, del mismo color. */
-              style={{ display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 16px)', textAlign: 'left', padding: '6px 10px', margin: '2px 8px 4px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
-              <span style={{
-                width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
-                color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {!yo?.foto_url && iniciales(yo?.nombre || yo?.email)}
-              </span>
-              <span style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {yo?.nombre || yo?.email || '—'}
-                </div>
-                {yo?.rol && (
-                  /* El rol es una etiqueta que describe, no un botón: por eso va
-                     en el rosa de la firma y en pastilla chica. */
-                  <span style={{ display: 'inline-block', fontSize: '0.53rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', marginTop: 3, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
-                    {yo.rol}
-                  </span>
-                )}
-              </span>
-            </button>
+            {/* La campana se queda A LA VISTA: es lo único del pie que cambia
+                solo y que tiene que llamarte. Todo lo demás se va a buscar. */}
+            <div style={{ padding: '1px 0 3px' }}>
+              {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
+            </div>
 
-            {/* LA ÚLTIMA FRANJA: plegar y salir, partidas.
-                Salir estaba arriba como renglón completo del pie. Aquí ocupa la
-                mitad de una franja que ya existía, y el pie gana un renglón.
-
-                Estuvieron juntas antes y se confundían; ahora no, porque no se
-                parecen: las separa una línea, salir va en su rojo y con su
-                icono. Y no lleva confirmación a propósito —cerrar sesión no
-                destruye nada, se vuelve a entrar— pero sí `title`, para que un
-                clic de más no te saque sin haberlo querido leer. */}
-            {/* Línea más marcada: es la que separa la navegación de las dos
-                acciones de salida, y a #ece6f8 se perdía contra el fondo lila
-                del menú — parecía que «Plegar» y «Salir» colgaban del bloque de
-                arriba. */}
             <div style={{ display: 'flex', borderTop: '1px solid #d9d0f0' }}>
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              aria-label="Plegar menú"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
-              <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar
-            </button>
-            <span style={{ width: 1, background: '#ece6f8', margin: '7px 0' }} />
-            <button
-              onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; }}
-              title="Cerrar sesión"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#B24C57', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
-              <span style={{ display: 'flex', opacity: .8 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Salir
-            </button>
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                aria-label="Plegar menú"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 1, minWidth: 0, padding: '8px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#8078a0', fontSize: '0.68rem', fontWeight: 650, fontFamily: 'inherit' }}>
+                <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar el menú
+              </button>
             </div>
           </div>
         ) : !isMobile && (
