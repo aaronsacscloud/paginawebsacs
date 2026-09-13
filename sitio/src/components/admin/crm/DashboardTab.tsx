@@ -43,7 +43,13 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const inicioDeMes = () => { const d = new Date(); return iso(new Date(d.getFullYear(), d.getMonth(), 1)); };
 
 const MORADO = '#5B4BD6', LILA = '#9B8CFA', VERDE = '#1E8A63', MENTA = '#4FBF95';
-const AMBAR = '#C98A12', ORO = '#F0B84E', AZUL = '#2C5FC4', CIELO = '#7DA6F5', ROJO = '#C0554E';
+/* El tablero vive entre ROSAS Y MORADOS. El azul era un color de dato
+   heredado y aquí no significaba nada, así que se va: donde había cielo ahora
+   hay lila y donde había azul tinta hay morado. Verde y rojo se quedan SOLO
+   donde el significado no se negocia —dinero que entró, dinero que se perdió—
+   y por eso aparecen en muy pocos lugares. */
+const AMBAR = '#C98A12', ORO = '#F0B84E', AZUL = '#6B4FD6', CIELO = '#B7A6FB', ROJO = '#C0554E';
+const ROSA = '#D9538E', ROSA_S = '#EFA6CA', ROSA_T = '#9c3d70';
 
 const S = {
   wrap: WRAP,
@@ -575,13 +581,15 @@ function Motor({ d, ver, abrir }: any) {
   const gente = (arr: any[]) => (arr || []).slice(0, 3);
   const tarjetas = [
     {
-      k: 'crecio', color: MENTA, tinta: VERDE, fondo: '#EAF8F2', et: 'Crecieron',
+      /* Morado = el recurrente, que es lo que este bloque mide. */
+      k: 'crecio', color: LILA, tinta: MORADO, fondo: '#EEECFE', et: 'Crecieron',
       lista: gente([...(mov.ampliaciones || []), ...(mov.altas || []), ...(mov.reactivaciones || [])]),
       total: entro, vacio: 'Nadie amplió este mes.',
       accion: 'Búscales la siguiente venta: ya te dijeron que sí una vez.',
     },
     {
-      k: 'fue', color: '#EF7A72', tinta: ROJO, fondo: '#FEF0EF', et: 'Se fueron',
+      /* Rosa = lo que se va. Es la regla de la paleta y además la marca. */
+      k: 'fue', color: ROSA, tinta: ROSA_T, fondo: '#FCEFF5', et: 'Se fueron',
       lista: gente(mov.bajas), total: Math.abs(r.bajas || 0), vacio: 'Nadie se fue. Eso es lo que sostiene el ingreso.',
       accion: 'Llamada de rescate esta semana, mientras la cuenta sigue caliente.',
     },
@@ -603,7 +611,7 @@ function Motor({ d, ver, abrir }: any) {
             <div style={{ ...S.pie, marginTop: 5 }}>es lo que te pagan al año sin vender nada nuevo</div>
           </div>
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: r.neto >= 0 ? VERDE : ROJO, lineHeight: 1 }}>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: r.neto >= 0 ? MORADO : ROSA_T, lineHeight: 1 }}>
               {r.neto >= 0 ? '+' : '−'}{money(Math.abs(r.neto))}
             </div>
             <div style={{ ...S.pie, marginTop: 5 }}>{r.neto >= 0 ? 'más' : 'menos'} que al empezar el periodo</div>
@@ -613,18 +621,18 @@ function Motor({ d, ver, abrir }: any) {
         {/* Una sola barra: lo que entró contra lo que se fue, en pesos. Sin
             porcentajes — el ojo compara los dos largos y ya está. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 6px' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: VERDE, width: 62, flex: 'none' }}>Entró</span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: MORADO, width: 62, flex: 'none' }}>Entró</span>
           <span style={{ flex: 1, height: 13, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
-            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(entro / tope) * 100}%`, background: 'linear-gradient(90deg,#4FBF95,#A7E0CB)' }} />
+            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(entro / tope) * 100}%`, background: 'linear-gradient(90deg,#9B8CFA,#C6BCFB)' }} />
           </span>
-          <b style={{ fontSize: '0.82rem', color: VERDE, width: 92, textAlign: 'right' }}>{money(entro)}</b>
+          <b style={{ fontSize: '0.82rem', color: MORADO, width: 92, textAlign: 'right' }}>{money(entro)}</b>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: ROJO, width: 62, flex: 'none' }}>Se fue</span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: ROSA_T, width: 62, flex: 'none' }}>Se fue</span>
           <span style={{ flex: 1, height: 13, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
-            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(salio / tope) * 100}%`, background: 'linear-gradient(90deg,#EF7A72,#F7B9B4)' }} />
+            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(salio / tope) * 100}%`, background: 'linear-gradient(90deg,#D9538E,#EFA6CA)' }} />
           </span>
-          <b style={{ fontSize: '0.82rem', color: ROJO, width: 92, textAlign: 'right' }}>{salio ? '−' + money(salio) : money(0)}</b>
+          <b style={{ fontSize: '0.82rem', color: ROSA_T, width: 92, textAlign: 'right' }}>{salio ? '−' + money(salio) : money(0)}</b>
         </div>
 
         <div className="tb-3" style={{ gap: 10 }}>
@@ -659,7 +667,7 @@ function Motor({ d, ver, abrir }: any) {
             ? <>El historial de recurrencia arranca el {fmtDate(r.ledger_desde)}: lo anterior no está medido y el neto sale corto.</>
             : entro || salio
               ? <>Clic en un nombre y se abre su cuenta. {salio > entro
-                ? <>Este periodo <b style={{ color: ROJO }}>se fue más de lo que entró</b>: el hueco se tapa vendiendo, no esperando.</>
+                ? <>Este periodo <b style={{ color: ROSA_T }}>se fue más de lo que entró</b>: el hueco se tapa vendiendo, no esperando.</>
                 : <>Lo que entró alcanzó para cubrir lo que se fue.</>}</>
               : <>Sin movimientos de recurrencia en el periodo.</>}
         </div>
@@ -669,10 +677,10 @@ function Motor({ d, ver, abrir }: any) {
         <div style={S.titulo}>Quién entró y quién se fue</div>
         <div style={S.lead}>Cada tarjeta abre la lista con nombre y monto.</div>
         <div className="tb-cuad" style={{ flex: 1 }}>
-          <Contador color={VERDE} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" ver={() => ver('clientes')} />
+          <Contador color={LILA} valorColor={MORADO} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" ver={() => ver('clientes')} />
           <Contador color={CIELO} label="Leads nuevos" valorColor={AZUL} valor={k.leads} nota="entraron y aún no compran" ver={() => ver('leads')} />
-          <Contador color={ROJO} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)} de ARR` : 'nadie se fue'} ver={k.bajas ? () => ver('bajas') : undefined} />
-          <Contador color={LILA} label="Ampliaciones" valorColor={MORADO} valor={k.ampliaciones} nota="clientes que compraron más" ver={k.ampliaciones ? () => ver('ampliaciones') : undefined} />
+          <Contador color={ROSA} valorColor={ROSA_T} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)} de ARR` : 'nadie se fue'} ver={k.bajas ? () => ver('bajas') : undefined} />
+          <Contador color={ROSA_S} label="Ampliaciones" valorColor={ROSA_T} valor={k.ampliaciones} nota="clientes que compraron más" ver={k.ampliaciones ? () => ver('ampliaciones') : undefined} />
         </div>
         <div style={S.nota}>
           Entraron {k.empresas_nuevas} empresas y {k.clientes_nuevos} {k.clientes_nuevos === 1 ? 'firmó' : 'firmaron'}, mientras {k.bajas} se {k.bajas === 1 ? 'fue' : 'fueron'}.
@@ -797,8 +805,10 @@ function CohorteYTiempo({ d }: any) {
     </div>
   );
 }
-const COLORES = [LILA, CIELO, MENTA, ORO, ROJO, '#C9C7D0'];
-const COHORTE_COL = [CIELO, LILA, ORO, MENTA, VERDE];
+/* La gama del tablero: del morado al rosa, con el ámbar solo al final para lo
+   que urge. Antes entraban azul y verde y la pantalla parecía de otro producto. */
+const COLORES = [LILA, '#7C6BF0', '#C062A0', ROSA, ROSA_S, '#C9C7D0'];
+const COHORTE_COL = ['#C6BCFB', LILA, '#A374D8', '#C062A0', ROSA];
 const mesDe = (f: string) => new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' });
 const titulo = (t: string) => { const x = t.replace(/^Reunión de /, ''); return x.charAt(0).toUpperCase() + x.slice(1); };
 
@@ -955,7 +965,7 @@ function Salud({ d }: any) {
       <div style={S.titulo}>Salud del negocio<span style={S.der}>ARR {money(s.arr)} · {s.clientes} clientes activos</span></div>
       <div style={S.lead}>Lo que preguntan un inversionista y tu equipo. Cada número dice qué significa; lo que no se puede calcular todavía, lo dice.</div>
       <div className="tb-3" style={{ marginBottom: 14 }}>
-        <Metrica rosa titulo="Retención neta (NRR)" valor={s.nrr != null ? `${s.nrr}%` : '—'} color={s.nrr != null && s.nrr >= 100 ? VERDE : AMBAR}
+        <Metrica rosa titulo="Retención neta (NRR)" valor={s.nrr != null ? `${s.nrr}%` : '—'} color={s.nrr != null && s.nrr >= 100 ? MORADO : AMBAR}
           explica={s.nrr != null
             ? <>De cada $100 que te pagaban al empezar el periodo, hoy te pagan <b>${s.nrr}</b> los MISMOS clientes. Arriba de 100 creces sin vender a nadie nuevo.</>
             : <>Hace falta más historia de altas y bajas para calcularla.</>} />
@@ -1062,7 +1072,7 @@ function Detalle({ d, cual, cerrar, abrir }: any) {
 const CHIP = (txt: string, col: string) => (
   <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: col + '1f', color: col, whiteSpace: 'nowrap' }}>{txt}</span>
 );
-const COL_METODO: Record<string, string> = { transferencia: LILA, tarjeta: MENTA, mercadopago: CIELO, efectivo: ORO };
+const COL_METODO: Record<string, string> = { transferencia: LILA, tarjeta: '#C062A0', mercadopago: ROSA_S, efectivo: ORO };
 const ETIQ_ESTADO: Record<string, [string, string]> = {
   accepted: ['aceptada sin pagar', ORO], sent: ['esperando respuesta', CIELO],
   parcial: ['pagada a medias', AMBAR], paid: ['pagada', VERDE],
@@ -1227,9 +1237,9 @@ function Riel({ sec, irA, d, x }: { sec: Sec; irA: (v: Sec) => void; d: any; x: 
       ci: co ? `${co.juntas} juntas · ${corto(co.cotizaciones.monto)} cotizados` : `${d.reuniones.total} juntas` },
     { n: 2, et: 'Leads', color: '#9B8CFA', va: 'leads',
       ci: `${d.contadores.leads} nuevos · ${d.contadores.clientes_nuevos} se hicieron clientes` },
-    { n: 3, et: 'Clientes', color: '#7DA6F5', va: 'clientes',
+    { n: 3, et: 'Clientes', color: '#8E7DEF', va: 'clientes',
       ci: `${d.salud.clientes} activos · ARR ${corto(d.salud.arr)}` },
-    { n: 4, et: 'Recurrencia', color: '#4FBF95', va: 'clientes',
+    { n: 4, et: 'Recurrencia', color: '#C062A0', va: 'clientes',
       ci: cl ? `${cl.recompras.n} recompras · ${cl.renovaciones.length} renovaciones` : 'recompras y renovaciones' },
     { n: 5, et: 'Expansión', color: '#E8A838', va: 'clientes',
       ci: cl?.expansion?.length ? `${cl.expansion.length} cuentas con idea sin cotizar` : 'quién puede crecer' },
@@ -1369,7 +1379,7 @@ function CarteraYCanales({ x, abrir, tercera }: any) {
           <div style={S.reparte}>
           {([['Reuniones', co.canales.reuniones, '#D9538E', '#EFA6CA'],
              ['WhatsApp', co.canales.whatsapp, LILA, '#C6BCFB'],
-             ['Llamadas', co.canales.llamadas, CIELO, '#B7CEF9']] as const).map(([n, v, a, b]) => (
+             ['Llamadas', co.canales.llamadas, '#C9A6E8', '#E4D2F5']] as const).map(([n, v, a, b]) => (
             <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
               <span style={{ fontSize: '0.78rem', fontWeight: 600, width: 100, flex: 'none' }}>{n}</span>
               <span style={{ flex: 1, height: 9, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
@@ -1417,15 +1427,15 @@ function KpisClientes({ d, x }: any) {
   const cl = x?.clientes, s = d.salud;
   return (
     <div className="tb-kpis">
-      <Kpi color={CIELO} tinta={AZUL} et="Clientes activos" ci={s.clientes} pie={`ARR ${money(s.arr)}`} />
-      <Kpi color={MENTA} tinta={VERDE} et="Clientes recurrentes" ci={cl ? `${cl.recurrentes}` : '—'}
+      <Kpi color={LILA} tinta={MORADO} et="Clientes activos" ci={s.clientes} pie={`ARR ${money(s.arr)}`} />
+      <Kpi color={ROSA_S} tinta={ROSA_T} et="Clientes recurrentes" ci={cl ? `${cl.recurrentes}` : '—'}
         pie={cl ? `${cl.recurrentes_pct}% · pagaron más de una vez` : '—'} />
-      <Kpi color="#D9538E" tinta="#9c3d70" et="Recompras del periodo" ci={cl ? cl.recompras.n : '—'}
+      <Kpi color={ROSA} tinta={ROSA_T} et="Recompras del periodo" ci={cl ? cl.recompras.n : '—'}
         pie={cl ? money(cl.recompras.monto) : '—'} />
       <Kpi color={LILA} tinta={MORADO} et="Renovaciones que vienen" ci={cl ? cl.renovaciones.length : '—'}
         pie="en los próximos 60 días" />
-      <Kpi color={MENTA} tinta={VERDE} et="Ingreso por cliente" ci={money(s.arpa)} pie="ARR ÷ clientes activos" />
-      <Kpi color="#EF7A72" tinta={ROJO} et="Sin movimiento" ci={cl ? cl.sin_movimiento.length : '—'}
+      <Kpi color={LILA} tinta={MORADO} et="Ingreso por cliente" ci={money(s.arpa)} pie="ARR ÷ clientes activos" />
+      <Kpi color={ROSA} tinta={ROSA_T} et="Sin movimiento" ci={cl ? cl.sin_movimiento.length : '—'}
         pie="más de 60 días sin vender" />
     </div>
   );
@@ -1597,21 +1607,21 @@ function Parcialidades({ x, abrir }: any) {
                   <div style={{ ...S.fn, marginTop: 4 }}>le faltan por pagar</div>
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: VERDE }}>{money(p.pagado)}</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: MORADO }}>{money(p.pagado)}</div>
                   <div style={S.fn}>ya entraron</div>
                 </div>
               </div>
 
               {/* La barra dice de un vistazo cuánto del trato ya está cobrado. */}
               <div style={{ height: 10, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${avance}%`, borderRadius: 99, background: 'linear-gradient(90deg,#4FBF95,#A7E0CB)' }} />
+                <div style={{ height: '100%', width: `${avance}%`, borderRadius: 99, background: 'linear-gradient(90deg,#9B8CFA,#D9538E)' }} />
               </div>
               <div style={{ ...S.fn, marginTop: 6 }}>{avance}% del total de {money(p.total)}</div>
 
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f3f2f6', flex: 1 }}>
                 {p.proximo
                   ? <div style={{ fontSize: '0.74rem' }}>
-                      <b style={{ color: p.proximo.fecha < new Date().toISOString().slice(0, 10) ? ROJO : MORADO }}>
+                      <b style={{ color: p.proximo.fecha < new Date().toISOString().slice(0, 10) ? ROSA_T : MORADO }}>
                         Sigue {money(p.proximo.monto)} el {fmtDate(p.proximo.fecha)}
                       </b>
                       {p.vencidas > 0 && <div style={{ ...S.fn, color: ROJO, marginTop: 3 }}>{p.vencidas} {p.vencidas === 1 ? 'parcialidad vencida' : 'parcialidades vencidas'}</div>}
@@ -1719,7 +1729,7 @@ function NoEntrara({ x, abrir }: any) {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: ROJO, letterSpacing: '-.03em', lineHeight: 1 }}>{money(ne.anio.arr)}</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: ROSA_T, letterSpacing: '-.03em', lineHeight: 1 }}>{money(ne.anio.arr)}</div>
               <div style={{ ...S.pie, marginTop: 5 }}>dejaron de pagarte en los últimos 12 meses<br />· {ne.anio.n} {ne.anio.n === 1 ? 'cuenta' : 'cuentas'}</div>
             </div>
             <div>
@@ -1743,7 +1753,7 @@ function NoEntrara({ x, abrir }: any) {
                   {fmtDate(b.fecha)}{b.razon ? ` · ${String(b.razon).replace(/\s+/g, ' ').slice(0, 70)}${String(b.razon).length > 70 ? '…' : ''}` : b.plan ? ` · ${b.plan}` : ''}
                 </div>
               </div>
-              <b style={{ fontSize: '0.82rem', color: ROJO, whiteSpace: 'nowrap' }}>−{money(b.arr)}</b>
+              <b style={{ fontSize: '0.82rem', color: ROSA_T, whiteSpace: 'nowrap' }}>−{money(b.arr)}</b>
             </div>
           ))}
         </div>
