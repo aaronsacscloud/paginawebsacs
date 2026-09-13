@@ -18,7 +18,7 @@
 // Una respuesta frena TODA la cadencia (correo y WhatsApp), igual que una
 // contestación por correo: se detecta leyendo el espejo `wa_mensajes`.
 import { supabase } from '../supabase';
-import { apuntar, variablesDe } from './abm.lib';
+import { apuntar, variablesDe, rellenar, limpiar } from './abm.lib';
 import { telefonoWhatsApp } from '../telefono';
 import { enviarPlantilla, conLinea, crearPlantillaMeta, sanearParam, KapsoError } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
@@ -228,4 +228,60 @@ export async function respuestasWhatsApp(): Promise<{ respondieron: number }> {
     respondieron++;
   }
   return { respondieron };
+}
+
+/**
+ * Las cuentas que un goteo enroló ANTES de que existiera el WhatsApp en la
+ * cadencia se quedaron solo con correos. Esto les escribe sus WhatsApp con la
+ * misma fecha de arranque que su primer correo, ya aprobados con la firma de
+ * quien encendió el goteo (es la misma aprobación, regla 8.3 del manual).
+ */
+export async function completarWhatsApps(goteo_id: string): Promise<{ cuentas: number; whatsapps: number; sin_wa: number }> {
+  const { data: g } = await supabase.from('abm_goteo').select('id, cadencia_id, creado_por').eq('id', goteo_id).maybeSingle();
+  if (!g) return { cuentas: 0, whatsapps: 0, sin_wa: 0 };
+  const { data: pasosWa } = await supabase.from('abm_pasos').select('id, dia, plantilla_id').eq('cadencia_id', g.cadencia_id).eq('canal', 'whatsapp').order('dia');
+  if (!pasosWa?.length) return { cuentas: 0, whatsapps: 0, sin_wa: 0 };
+  const { data: pls } = await supabase.from('abm_plantillas').select('id, cuerpo, meta_nombre').in('id', pasosWa.map((p: any) => p.plantilla_id)).eq('activa', true);
+
+  const { data: toques } = await supabase.from('abm_toques').select('cuenta_id, canal, persona_id, programado_at')
+    .eq('goteo_id', goteo_id).order('programado_at').limit(20000);
+  const conWa = new Set((toques || []).filter((t: any) => t.canal === 'whatsapp').map((t: any) => t.cuenta_id));
+  const primero = new Map<string, { programado_at: string; persona_id: string | null }>();
+  for (const t of (toques || []) as any[]) if (t.canal === 'email' && !primero.has(t.cuenta_id)) primero.set(t.cuenta_id, { programado_at: t.programado_at, persona_id: t.persona_id });
+  const faltan = Array.from(primero.keys()).filter(id => !conWa.has(id));
+  if (!faltan.length) return { cuentas: 0, whatsapps: 0, sin_wa: 0 };
+
+  const [{ data: cuentas }, { data: canales }] = await Promise.all([
+    supabase.from('abm_cuentas').select('*').in('id', faltan).in('etapa', ['sin_tocar', 'en_cadencia']),
+    supabase.from('abm_canales').select('cuenta_id, tipo, valor, estado').in('cuenta_id', faltan).like('tipo', 'whatsapp%').in('estado', ['declarado', 'valido']),
+  ]);
+  let whatsapps = 0, sin_wa = 0, n = 0;
+  const filas: any[] = [];
+  for (const c of cuentas || []) {
+    const wa = (canales || []).find((x: any) => x.cuenta_id === c.id && x.tipo === 'whatsapp_dueno') || (canales || []).find((x: any) => x.cuenta_id === c.id);
+    if (!wa) { sin_wa++; continue; }
+    const p0 = primero.get(c.id)!;
+    const arranque = new Date(p0.programado_at).getTime();
+    const vars = variablesDe(c);
+    for (const paso of pasosWa as any[]) {
+      const pl = (pls || []).find((x: any) => x.id === paso.plantilla_id);
+      if (!pl?.meta_nombre) continue;
+      filas.push({
+        cuenta_id: c.id, cadencia_id: g.cadencia_id, paso_id: paso.id, persona_id: p0.persona_id, goteo_id,
+        canal: 'whatsapp', destino: wa.valor, asunto: null, cuerpo: limpiar(rellenar(pl.cuerpo, vars), 1024),
+        estado: 'aprobado', aprobado_por: g.creado_por, aprobado_at: new Date().toISOString(),
+        programado_at: new Date(arranque + ((Number(paso.dia) || 2) - 1) * 864e5).toISOString(),
+      });
+    }
+    n++;
+  }
+  if (filas.length) {
+    const { error } = await supabase.from('abm_toques').insert(filas);
+    if (error) throw new Error(error.message);
+    whatsapps = filas.length;
+    for (const id of new Set(filas.map(f => f.cuenta_id))) {
+      await apuntar(id, 'sistema', 'nota', { texto: `El goteo completó la cadencia con ${filas.filter(f => f.cuenta_id === id).length} WhatsApp (plantilla de Meta, solo al wa.me publicado)` });
+    }
+  }
+  return { cuentas: n, whatsapps, sin_wa };
 }
