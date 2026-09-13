@@ -71,9 +71,11 @@ const currentYear = new Date().getFullYear();
 
   .footer-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-10);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8) var(--space-6);
   }
+  .footer-brand { grid-column: 1 / -1; }
+  @media (max-width: 767px) { .footer-list a { font-size: 0.875rem; } .footer { padding-block: var(--space-16, 64px); } }
 
   @media (min-width: 768px) {
     .footer-grid {

@@ -321,6 +321,14 @@ const {
         font-size: clamp(1.5rem, 3.5vw, 2.5rem);
       }
     }
+      /* Móvil: sin el zoom del titular (desbordaba) y sin riel pegajoso de 3 pantallas */
+    @media (max-width: 767px) {
+      .cta-doubts-section { height: auto !important; }
+      .cta-doubts-sticky { position: relative; height: auto; padding: 72px 0 56px; overflow: visible; }
+      .cta-doubts-text { transform: none !important; font-size: clamp(2rem, 9vw, 2.75rem); }
+      .cta-doubts-content { gap: 28px; }
+      .xpand-row { opacity: 1 !important; transform: none !important; height: auto; flex-direction: column; }
+    }
   </style>
 
   <script>

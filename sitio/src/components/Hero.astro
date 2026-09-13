@@ -3103,8 +3103,8 @@ const useCases = [
               <div class="axo-split">
                 {/* Left: Video */}
                 <div class="axo-video-wrap">
-                  <video class="axo-video" autoplay muted loop playsinline>
-                    <source src="/images/ai-empresarial.mp4" type="video/mp4" />
+                  <video class="axo-video" muted loop playsinline preload="none" data-lazy-video>
+                    <source data-src="/images/ai-empresarial.mp4" type="video/mp4" />
                   </video>
                 </div>
                 {/* Right: Phone with AXO chat */}
@@ -3325,7 +3325,7 @@ const useCases = [
       <div class="mc-carousel">
         <div class="mc-card">
           <div class="mc-card-visual mc-card-visual--dark">
-            <video autoplay muted loop playsinline><source src="/images/ai-empresarial.mp4" type="video/mp4"></video>
+            <video muted loop playsinline preload="none" data-lazy-video><source data-src="/images/ai-empresarial.mp4" type="video/mp4"></video>
           </div>
           <div class="mc-card-body">
             <div class="mc-card-title">Sacs IA para Moda</div>
@@ -4936,6 +4936,7 @@ const useCases = [
   .flujo-saltar { transition: opacity 0.4s, background 0.3s, color 0.3s; }
   /* la barra flotante de WhatsApp no se encima al recorrido */
   body.recorrido-activo .wa-bar { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  @media (max-width: 767px) { .flujo { height: 150vh; } }
   @media (max-width: 1023px) { .flujo { height: 190vh; } .flujo-sticky { padding: 70px 0 120px; } .flujo-text { min-height: 190px; } .flujo-dots { gap: 8px; } .flujo-dots li span { display: none; } .flujo-dots li i { width: 28px; } .flujo-nav { bottom: 18px; gap: 12px; } }
   @media (max-width: 1023px) {
     .flujo-inner { grid-template-columns: 1fr; gap: 18px; align-content: center; }
@@ -18364,6 +18365,12 @@ const useCases = [
     dots.forEach((d) => d.addEventListener('click', () => { crecido = true; ph('recorrido_timeline', { a: +d.dataset.i! }); arranca(CUES[+d.dataset.i!]); }));
     replay?.addEventListener('click', () => { ph('recorrido_repetir'); arranca(0); });
     pinta(); muestra(0); barra(0, 0);
+  }
+  // Videos decorativos: se cargan solo al acercarse (el del ajolote pesaba 1.5 MB x2 en la carga inicial)
+  {
+    const lazies = Array.from(document.querySelectorAll<HTMLVideoElement>('video[data-lazy-video]'));
+    const ioV = new IntersectionObserver((es) => { es.forEach((e) => { if (!e.isIntersecting) return; const v = e.target as HTMLVideoElement; v.querySelectorAll('source').forEach((src) => { if (src.dataset.src) { src.src = src.dataset.src; delete src.dataset.src; } }); v.load(); v.play().catch(() => {}); ioV.unobserve(v); }); }, { rootMargin: '500px 0px' });
+    lazies.forEach((v) => ioV.observe(v));
   }
   montaHistoria({ sel: '#recorrido', video: 'recorrido', v: 2, cues: [0, 2.4, 5.6, 9.5, 12.8, 15.97, 20.87], fin: 23.4 });
   montaHistoria({ sel: '#creativo', video: 'reel', v: 3, loop: 2600, cues: [0, 2.6, 6.6, 10.6, 14.6, 20.1, 23.7, 28.2, 31.2], fin: 37.9 });
