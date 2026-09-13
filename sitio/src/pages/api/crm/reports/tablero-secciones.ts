@@ -46,7 +46,7 @@ const _GET: APIRoute = async ({ url }) => {
   const hasta = (url.searchParams.get('hasta') || hoy).slice(0, 10);
   const desde = (url.searchParams.get('desde') || mesIni).slice(0, 10);
 
-  const [compQ, bookQ, quotesQ, payQ, payTodosQ, subsQ, ideasQ, waQ, llQ] = await Promise.all([
+  const [compQ, bookQ, quotesQ, payQ, payTodosQ, subsQ, ideasQ, waQ, llQ, planQ, bajasQ, dealsQ] = await Promise.all([
     supabase.from('companies')
       .select('id, nombre, nombre_comercial, estado_cuenta, arr, dias_sin_venta, ultima_venta_at, months_active')
       .is('archived_at', null),
@@ -55,9 +55,10 @@ const _GET: APIRoute = async ({ url }) => {
     supabase.from('payments').select('id, monto, fecha, company_id, quote_id, subscription_id')
       .gte('fecha', desde).lte('fecha', hasta)
       .not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
-    // El historial completo de pagos, solo con lo justo para contar recompras y
-    // medir cada cuánto vuelve una cuenta.
-    supabase.from('payments').select('company_id, fecha')
+    // El historial completo de pagos: sirve para contar recompras, medir cada
+    // cuánto vuelve una cuenta y —lo nuevo— saber cuánto se ha cubierto de
+    // cada cotización, que es como se detecta una parcialidad.
+    supabase.from('payments').select('id, company_id, fecha, monto, quote_id')
       .not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
     supabase.from('subscriptions').select('id, company_id, nombre_plan, estado, arr, monto_proximo, proxima_factura, ciclo'),
     // Las ideas que salieron de las juntas y nadie ha cotizado: es la expansión
@@ -68,6 +69,16 @@ const _GET: APIRoute = async ({ url }) => {
       .gte('ultimo_mensaje_at', desde).lte('ultimo_mensaje_at', hasta + 'T23:59:59'),
     supabase.from('wa_llamadas').select('id', { count: 'exact', head: true })
       .gte('created_at', desde).lte('created_at', hasta + 'T23:59:59'),
+    // El plan de pagos pactado, cuando existe: es dinero futuro con fecha.
+    supabase.from('quote_parcialidades').select('quote_id, numero, fecha, monto, pagada_at').order('numero'),
+    // Lo que YA NO va a entrar. Vive en la suscripción y no en la empresa:
+    // al cancelar una cuenta su `arr` se pone en cero, así que desde
+    // `companies` el ARR perdido se lee como $0 y desaparece del negocio.
+    supabase.from('subscriptions').select('company_id, arr, cancelada_at, razon_cancelacion, nombre_plan')
+      .in('estado', ['cancelada', 'cancelado']),
+    // Oportunidades abiertas, para separar las que ya tienen precio de las que no.
+    supabase.from('deals').select('id, valor_total, stage, company_id, created_at, nombre, quote_id')
+      .is('archived_at', null),
   ]);
 
   const empresas = compQ.data || [];
@@ -183,6 +194,94 @@ const _GET: APIRoute = async ({ url }) => {
     }))
     .sort((a, b) => b.ideas - a.ideas).slice(0, 8);
 
+
+  /* ══ EL DINERO, FLUJO POR FLUJO ═══════════════════════════════════════
+     Cinco preguntas que antes no tenían dónde contestarse:
+     qué entró a medias, qué falta de eso, qué ya no va a entrar, qué dinero
+     cobrado no es de nadie y qué oportunidad sigue sin precio. */
+
+  const todosPagos = (payTodosQ.data || []) as any[];
+  const plan = (planQ.data || []) as any[];
+
+  // Cuánto se ha cubierto de CADA cotización, sumando sus pagos.
+  const cubierto: Record<string, { monto: number; ultimo: string; n: number }> = {};
+  todosPagos.forEach((p: any) => {
+    if (!p.quote_id) return;
+    const v = cubierto[p.quote_id] || { monto: 0, ultimo: '', n: 0 };
+    v.monto += num(p.monto); v.n++;
+    const f = dia(p.fecha); if (f > v.ultimo) v.ultimo = f;
+    cubierto[p.quote_id] = v;
+  });
+
+  const planDe: Record<string, any[]> = {};
+  plan.forEach((l: any) => { (planDe[l.quote_id] = planDe[l.quote_id] || []).push(l); });
+
+  /* PARCIALIDADES: la cotización que ya recibió dinero pero no está saldada.
+     El estado `parcial` existe en el catálogo y NADIE lo usa —cero filas—, así
+     que la parcialidad no se lee de un campo: se deduce de los pagos. */
+  const TOLERANCIA = 1;   // pesos: un redondeo no convierte una cotización en parcial
+  const parcialidades = quotes
+    .filter((q: any) => cubierto[q.id] && cubierto[q.id].monto > 0 && cubierto[q.id].monto < num(q.total) - TOLERANCIA)
+    .map((q: any) => {
+      const c = cubierto[q.id];
+      const lineas = (planDe[q.id] || []).map((l: any) => ({
+        numero: l.numero, fecha: dia(l.fecha), monto: Math.round(num(l.monto)), pagada: !!l.pagada_at,
+      }));
+      const pendientes = lineas.filter(l => !l.pagada).sort((a, b) => a.fecha.localeCompare(b.fecha));
+      return {
+        quote_id: q.id, numero: q.numero, empresa: nombreDe[q.company_id] || q.empresa || 'Cuenta',
+        company_id: q.company_id || null, estado: q.estado,
+        total: Math.round(num(q.total)), pagado: Math.round(c.monto), saldo: Math.round(num(q.total) - c.monto),
+        pagos: c.n, ultimo_pago: c.ultimo,
+        dias_sin_pagar: c.ultimo ? Math.round((Date.parse(hoy) - Date.parse(c.ultimo)) / 86400000) : null,
+        plan: lineas,
+        // El próximo pago pactado. Sin plan capturado no se inventa una fecha:
+        // se devuelve nulo y la pantalla pide capturarlo.
+        proximo: pendientes[0] || null,
+        vencidas: pendientes.filter(l => l.fecha < hoy).length,
+      };
+    })
+    .sort((a, b) => b.saldo - a.saldo);
+
+  const anticipos = parcialidades.reduce((a, p) => a + p.pagado, 0);
+
+  /* POR COBRAR de cotizaciones, en bruto y en NETO. El bruto es lo que decía
+     el tablero hasta hoy y está inflado: cuenta completo lo que ya recibió
+     anticipo, así que ese dinero aparecía a la vez en «cobrado» y en «por
+     cobrar». El neto descuenta lo que ya entró. */
+  const brutoPorCobrar = Math.round(pendientes.reduce((a: number, q: any) => a + num(q.total), 0));
+  const netoPorCobrar = Math.round(pendientes.reduce((a: number, q: any) =>
+    a + Math.max(0, num(q.total) - (cubierto[q.id]?.monto || 0)), 0));
+
+  /* LO QUE YA NO VA A ENTRAR. Se mide de las suscripciones canceladas porque
+     al cancelar una cuenta su `arr` se pone en cero: desde `companies`, 36
+     cancelaciones suman $0 y el dinero perdido se vuelve invisible. */
+  const bajas = (bajasQ.data || []) as any[];
+  const haceUnAnio = iso(new Date(Date.now() - 365 * 86400000));
+  const bajas12 = bajas.filter((b: any) => b.cancelada_at && dia(b.cancelada_at) >= haceUnAnio);
+  const sumaArr = (a: any[]) => Math.round(a.reduce((x: number, b: any) => x + num(b.arr), 0));
+
+  /* PAGOS SIN DUEÑO: dinero que entró y no está atado a ninguna cuenta. Suma
+     en el total cobrado pero no aparece en la cartera de nadie, así que nadie
+     lo reclama ni lo agradece. */
+  const sinDueno = todosPagos.filter((p: any) => !p.company_id);
+
+  /* OPORTUNIDADES: las que ya tienen precio en la mano y las que no. */
+  const deals = (dealsQ.data || []) as any[];
+  /* «Sin cotizar» se mira por los DOS lados: la cotización que apunta al trato
+     y el trato que apunta a la cotización. Con uno solo, los tratos cotizados
+     desde la ficha del cliente salían como si no tuvieran precio. */
+  const quoteDeDeal = new Set(quotes.map((q: any) => q.deal_id).filter(Boolean));
+  const abiertas = deals.filter((d: any) => !String(d.stage || '').startsWith('cerrada'));
+  const sinCotizar = abiertas.filter((d: any) => !quoteDeDeal.has(d.id) && !d.quote_id);
+
+  /* LO QUE ENTRA EN LOS PRÓXIMOS 90 DÍAS por parcialidades pactadas: dinero
+     futuro con fecha, que hasta hoy no lo sumaba nadie. */
+  const en90 = iso(new Date(Date.now() + 90 * 86400000));
+  const proximasLineas = parcialidades.flatMap(p => p.plan
+    .filter((l: any) => !l.pagada && l.fecha >= hoy && l.fecha <= en90)
+    .map((l: any) => ({ ...l, empresa: p.empresa, numero_cotiza: p.numero, quote_id: p.quote_id })));
+
   return json({
     periodo: { desde, hasta },
     consultoria: {
@@ -197,6 +296,40 @@ const _GET: APIRoute = async ({ url }) => {
       ticket: Object.keys(cobradoPorCuenta).length ? Math.round(cobrado / Object.keys(cobradoPorCuenta).length) : 0,
       canales: { reuniones: juntas.length, whatsapp: waQ.count || 0, llamadas: llQ.count || 0 },
       cartera, servicios,
+    },
+    dinero: {
+      parcialidades,
+      anticipos,
+      por_cobrar: { bruto: brutoPorCobrar, neto: netoPorCobrar, n: pendientes.length, con_anticipo: parcialidades.length },
+      proximas_parcialidades: {
+        n: proximasLineas.length,
+        monto: Math.round(proximasLineas.reduce((a, l: any) => a + num(l.monto), 0)),
+        items: proximasLineas.sort((a: any, b: any) => a.fecha.localeCompare(b.fecha)).slice(0, 12),
+      },
+      no_entrara: {
+        historico: { n: bajas.length, arr: sumaArr(bajas) },
+        anio: { n: bajas12.length, arr: sumaArr(bajas12) },
+        sin_fecha: { n: bajas.filter((b: any) => !b.cancelada_at).length, arr: sumaArr(bajas.filter((b: any) => !b.cancelada_at)) },
+        items: bajas.filter((b: any) => b.cancelada_at).sort((a: any, b: any) => dia(b.cancelada_at).localeCompare(dia(a.cancelada_at)))
+          .slice(0, 8).map((b: any) => ({
+            nombre: nombreDe[b.company_id] || 'Cuenta', arr: Math.round(num(b.arr)),
+            fecha: dia(b.cancelada_at), razon: b.razon_cancelacion || null, plan: b.nombre_plan || null,
+          })),
+      },
+      sin_dueno: {
+        n: sinDueno.length, monto: Math.round(sinDueno.reduce((a: number, p: any) => a + num(p.monto), 0)),
+        items: sinDueno.sort((a: any, b: any) => dia(b.fecha).localeCompare(dia(a.fecha))).slice(0, 8)
+          .map((p: any) => ({ id: p.id, fecha: dia(p.fecha), monto: Math.round(num(p.monto)) })),
+      },
+      oportunidades: {
+        abiertas: { n: abiertas.length, monto: Math.round(abiertas.reduce((a: number, d: any) => a + num(d.valor_total), 0)) },
+        sin_cotizar: {
+          n: sinCotizar.length, monto: Math.round(sinCotizar.reduce((a: number, d: any) => a + num(d.valor_total), 0)),
+          items: sinCotizar.sort((a: any, b: any) => num(b.valor_total) - num(a.valor_total)).slice(0, 6)
+            .map((d: any) => ({ id: d.id, titulo: d.nombre || 'Oportunidad', monto: Math.round(num(d.valor_total)),
+              nombre: nombreDe[d.company_id] || null, company_id: d.company_id || null })),
+        },
+      },
     },
     clientes: {
       activos: activas.length,

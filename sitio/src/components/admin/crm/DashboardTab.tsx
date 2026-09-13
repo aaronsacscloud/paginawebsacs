@@ -289,9 +289,11 @@ export default function DashboardTab() {
 
         {sub === 'consultoria' && (<>
           <KpisConsultoria d={d} x={x} ver={setDetalle} />
-          <Dinero d={d} ver={setDetalle} />
+          <Dinero d={d} x={x} ver={setDetalle} />
+          <Parcialidades x={x} abrir={setAbierto} />
           <CarteraYCanales x={x} abrir={setAbierto} tercera={<Compromisos d={d} parte="consultoria" />} />
           <Compromisos d={d} abrir={setAbierto} parte="cobrar" />
+          <Sueltos x={x} ver={setAbierto} />
           <Lecturas d={d} x={x} />
         </>)}
 
@@ -334,8 +336,9 @@ export default function DashboardTab() {
 
         {sub === 'clientes' && (<>
           <KpisClientes d={d} x={x} />
-          <Motor d={d} ver={setDetalle} />
+          <Motor d={d} ver={setDetalle} abrir={setAbierto} />
           <Recurrencia x={x} abrir={setAbierto} />
+          <NoEntrara x={x} abrir={setAbierto} />
           <Salud d={d} />
         </>)}
       </div>
@@ -349,8 +352,12 @@ export default function DashboardTab() {
 const FECHA = { border: '1px solid #e4dffb', background: '#fdfcff', borderRadius: 9, padding: '6px 9px', fontSize: '0.72rem', fontFamily: 'inherit' } as const;
 
 /* ════════════════ 1 · EL DINERO ════════════════ */
-function Dinero({ d, ver }: any) {
+function Dinero({ d, x, ver }: any) {
   const c = d.cobrado, sm = d.sobre_la_mesa, g = d.generado;
+  /* El anticipo de una cotización a plazos ya entró: la mesa enseña el saldo.
+     Sin esto, la misma tarjeta decía $469,881 y el KPI de arriba $390,431. */
+  const anticipos = x?.dinero?.anticipos || 0;
+  const neto = x?.dinero?.por_cobrar?.neto ?? sm.total;
   const pctMeta = c.meta ? Math.round((c.monto / c.meta) * 100) : null;
   const llega = c.proyeccion != null && c.meta && c.proyeccion >= c.meta;
   const totalMesa = Math.max(1, sm.total);
@@ -398,8 +405,14 @@ function Dinero({ d, ver }: any) {
       <div className="tb-apil">
         <div style={{ ...S.card, borderLeft: `3px solid ${AMBAR}` }} className="tb-clic" onClick={() => ver('mesa')}>
           <div style={S.titulo}>Sobre la mesa hoy</div>
-          <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: AMBAR, marginTop: 11 }}>{money(sm.total)}</div>
-          <div style={S.pie}>{sm.aceptadas.n + sm.enviadas.n} cotizaciones vivas en manos del cliente</div>
+          {/* La cifra grande es lo que FALTA por cobrar, no lo cotizado: si
+              dos cotizaciones ya recibieron anticipo, ese dinero está en
+              «cobrado» y volver a contarlo aquí lo cuenta dos veces. */}
+          <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: AMBAR, marginTop: 11 }}>{money(neto)}</div>
+          <div style={S.pie}>
+            {sm.aceptadas.n + sm.enviadas.n} cotizaciones vivas en manos del cliente
+            {anticipos > 0 && <> · de {money(sm.total)} cotizados, <b style={{ color: VERDE }}>{money(anticipos)} ya entraron</b></>}
+          </div>
           {sm.total > 0 && (
             <div style={{ display: 'flex', height: 11, borderRadius: 9, overflow: 'hidden', background: '#f2f1f6', marginTop: 13 }}>
               <span style={{ width: `${(sm.aceptadas.monto / totalMesa) * 100}%`, background: ORO }} />
@@ -538,38 +551,116 @@ function textoHistorial(meses: any[]) {
    No cuánto vendiste: cuánto subió el ingreso que se repite. Y en PORCENTAJE,
    porque $47K sobre un ARR de dos millones es 2.4%, y ese es el número que se
    puede comparar contra el mes pasado. */
-function Motor({ d, ver }: any) {
+/* ════════════════ EL DINERO QUE SE REPITE ════════════════
+   Antes esto era una tabla de porcentajes —altas, ampliaciones, reducciones,
+   bajas, neto, cada una con su %— y el dueño dijo dos cosas: no la entiendo y
+   no se ve qué hacer. Las dos son ciertas. Un porcentaje sobre el ARR base no
+   se puede actuar: nadie llama a «−0.58%».
+
+   Ahora el bloque contesta tres preguntas en el orden en que se piensan:
+   cuánto te pagan al año, cuánto cambió este mes, y —lo importante— QUIÉNES lo
+   movieron y qué hacer con cada uno. Los nombres y los pesos ya estaban en el
+   dato; solo estaban escondidos detrás de la palabra «ampliaciones». */
+function Motor({ d, ver, abrir }: any) {
   const r = d.recurrente, k = d.contadores;
   const cortoLedger = d.periodo.desde < r.ledger_desde;
-  const sube = (r.pct?.neto ?? 0) >= 0;
+  const mov = r.movimientos || {};
+  const entro = (r.altas || 0) + (r.ampliaciones || 0) + (r.reactivaciones || 0);
+  const salio = Math.abs((r.bajas || 0) + (r.reducciones || 0));
+  const tope = Math.max(entro, salio, 1);
+
+  /* Las tres tarjetas: quién creció, quién se fue, quién se encogió. Cada una
+     termina en la acción que le toca — es la diferencia entre un tablero que
+     informa y uno que se usa. */
+  const gente = (arr: any[]) => (arr || []).slice(0, 3);
+  const tarjetas = [
+    {
+      k: 'crecio', color: MENTA, tinta: VERDE, fondo: '#EAF8F2', et: 'Crecieron',
+      lista: gente([...(mov.ampliaciones || []), ...(mov.altas || []), ...(mov.reactivaciones || [])]),
+      total: entro, vacio: 'Nadie amplió este mes.',
+      accion: 'Búscales la siguiente venta: ya te dijeron que sí una vez.',
+    },
+    {
+      k: 'fue', color: '#EF7A72', tinta: ROJO, fondo: '#FEF0EF', et: 'Se fueron',
+      lista: gente(mov.bajas), total: Math.abs(r.bajas || 0), vacio: 'Nadie se fue. Eso es lo que sostiene el ingreso.',
+      accion: 'Llamada de rescate esta semana, mientras la cuenta sigue caliente.',
+    },
+    {
+      k: 'encogio', color: ORO, tinta: AMBAR, fondo: '#FFF4E5', et: 'Se encogieron',
+      lista: gente(mov.reducciones), total: Math.abs(r.reducciones || 0), vacio: 'Nadie bajó de plan.',
+      accion: 'Pregunta qué dejaron de usar: una reducción avisa una baja.',
+    },
+  ];
+
   return (
     <div className="tb-2">
       <div style={S.card}>
-        <div style={S.titulo}>Cuánto creció el recurrente<span style={S.der}>movimiento de ARR</span></div>
-        <div style={S.lead}>No cuánto vendiste: cuánto subió el ingreso que se repite todos los años, y qué proporción del ARR representa cada movimiento.</div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, margin: '2px 0 16px', flexWrap: 'wrap' }}>
+        <div style={S.titulo}>El dinero que se repite cada año<span style={S.der}>lo que ya tienes contratado</span></div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, margin: '4px 0 14px', flexWrap: 'wrap' }}>
           <div>
-            <div style={S.eyebrow}>ARR hoy</div>
-            <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, marginTop: 6 }}>{money(r.arr_hoy)}</div>
+            <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1 }}>{money(r.arr_hoy)}</div>
+            <div style={{ ...S.pie, marginTop: 5 }}>es lo que te pagan al año sin vender nada nuevo</div>
           </div>
-          <div style={{ paddingBottom: 4 }}>
-            {r.pct?.neto != null && (
-              <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: sube ? '#EEECFE' : '#FEF0EF', color: sube ? MORADO : ROJO }}>
-                {sube ? '+' : ''}{r.pct.neto}% en el periodo
-              </span>
-            )}
-            <div style={{ ...S.pie, marginTop: 6 }}>Empezaste en {money(r.arr_base)}</div>
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: r.neto >= 0 ? VERDE : ROJO, lineHeight: 1 }}>
+              {r.neto >= 0 ? '+' : '−'}{money(Math.abs(r.neto))}
+            </div>
+            <div style={{ ...S.pie, marginTop: 5 }}>{r.neto >= 0 ? 'más' : 'menos'} que al empezar el periodo</div>
           </div>
         </div>
-        <BarrasArr r={r} />
+
+        {/* Una sola barra: lo que entró contra lo que se fue, en pesos. Sin
+            porcentajes — el ojo compara los dos largos y ya está. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 6px' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: VERDE, width: 62, flex: 'none' }}>Entró</span>
+          <span style={{ flex: 1, height: 13, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(entro / tope) * 100}%`, background: 'linear-gradient(90deg,#4FBF95,#A7E0CB)' }} />
+          </span>
+          <b style={{ fontSize: '0.82rem', color: VERDE, width: 92, textAlign: 'right' }}>{money(entro)}</b>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: ROJO, width: 62, flex: 'none' }}>Se fue</span>
+          <span style={{ flex: 1, height: 13, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+            <span style={{ display: 'block', height: '100%', borderRadius: 99, width: `${(salio / tope) * 100}%`, background: 'linear-gradient(90deg,#EF7A72,#F7B9B4)' }} />
+          </span>
+          <b style={{ fontSize: '0.82rem', color: ROJO, width: 92, textAlign: 'right' }}>{salio ? '−' + money(salio) : money(0)}</b>
+        </div>
+
+        <div className="tb-3" style={{ gap: 10 }}>
+          {tarjetas.map(t => (
+            <div key={t.k} style={{ background: t.fondo, borderRadius: 13, padding: '12px 13px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ ...S.eyebrow, color: t.tinta }}>{t.et}</div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: t.tinta, marginTop: 4, lineHeight: 1 }}>
+                {t.total ? (t.k === 'crecio' ? '+' : '−') + money(t.total) : '—'}
+              </div>
+              <div style={{ marginTop: 9, flex: 1 }}>
+                {!t.lista.length
+                  ? <div style={{ fontSize: '0.7rem', color: '#8a8590', lineHeight: 1.45 }}>{t.vacio}</div>
+                  : t.lista.map((m: any, i: number) => (
+                    <div key={i} onClick={m.company_id ? () => abrir(m.company_id) : undefined}
+                      style={{ display: 'flex', gap: 6, alignItems: 'baseline', padding: '3px 0', cursor: m.company_id ? 'pointer' : 'default' }}>
+                      <span style={{ fontSize: '0.73rem', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.cliente}</span>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: t.tinta, whiteSpace: 'nowrap' }}>{conSigno(m.arr)}</span>
+                    </div>
+                  ))}
+              </div>
+              {!!t.lista.length && (
+                <div style={{ fontSize: '0.68rem', color: '#6b6b7a', lineHeight: 1.45, marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(0,0,0,.06)' }}>
+                  {t.accion}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div style={S.nota}>
           {cortoLedger
             ? <>El historial de recurrencia arranca el {fmtDate(r.ledger_desde)}: lo anterior no está medido y el neto sale corto.</>
-            : r.pct?.entro != null
-              ? <>Lo que entró sumó <b style={{ color: VERDE }}>+{r.pct.entro}%</b> y lo que se fue restó <b style={{ color: ROJO }}>{r.pct.salio}%</b>.
-                {' '}{Math.abs(r.bajas + r.reducciones) > (r.altas + r.ampliaciones) * 0.5 && (r.altas + r.ampliaciones) > 0
-                  ? <>De cada $10 que entraron, <b style={{ color: '#3f3b4d' }}>${(Math.abs(r.bajas + r.reducciones) / (r.altas + r.ampliaciones) * 10).toFixed(0)} se fueron por la puerta de atrás</b>.</>
-                  : <>El saldo quedó a favor sin depender de retener.</>}</>
+            : entro || salio
+              ? <>Clic en un nombre y se abre su cuenta. {salio > entro
+                ? <>Este periodo <b style={{ color: ROJO }}>se fue más de lo que entró</b>: el hueco se tapa vendiendo, no esperando.</>
+                : <>Lo que entró alcanzó para cubrir lo que se fue.</>}</>
               : <>Sin movimientos de recurrencia en el periodo.</>}
         </div>
       </div>
@@ -1187,7 +1278,8 @@ function KpiFalta({ et, que }: any) {
 /* ════════════════ 1 · CONSULTORÍA: LAS SEIS CIFRAS ════════════════ */
 function KpisConsultoria({ d, x, ver }: any) {
   const co = x?.consultoria;
-  const c = d.cobrado, cb = d.cobrar;
+  const c = d.cobrado, cb = d.cobrar, sm = d.sobre_la_mesa;
+  const pc = x?.dinero?.por_cobrar;
   return (
     <div className="tb-kpis">
       <Kpi color="#D9538E" tinta="#9c3d70" et="Juntas que diste" ci={co ? co.juntas : d.reuniones.total}
@@ -1198,8 +1290,14 @@ function KpisConsultoria({ d, x, ver }: any) {
         pie={co ? `${money(co.cotizaciones.monto)} en la mesa` : '—'} />
       <Kpi color={MENTA} tinta={VERDE} et="Monto cobrado" ci={money(c.monto)} ver={() => ver('cobrado')}
         pie={`${c.n} ${c.n === 1 ? 'pago' : 'pagos'} · clic para verlos`} />
-      <Kpi color={ORO} tinta={AMBAR} et="Monto por cobrar" ci={money(cb.total.monto + cb.vencido.monto)} ver={() => ver('cobrar')}
-        pie={`${cb.total.n + cb.vencido.n} renovaciones${cb.vencido.n ? ` · ${cb.vencido.n} ${cb.vencido.n === 1 ? 'vencida' : 'vencidas'}` : ''}`} />
+      {/* Esta cifra estaba MAL hasta hoy por dos razones: contaba renovaciones
+          de licencia —que no son consultoría— y contaba completas las
+          cotizaciones que ya recibieron anticipo, así que el mismo dinero
+          aparecía en «cobrado» y en «por cobrar» al mismo tiempo. */}
+      <Kpi color={ORO} tinta={AMBAR} et="Monto por cobrar" ci={money(pc ? pc.neto : sm.total)} ver={() => ver('mesa')}
+        pie={pc && pc.con_anticipo
+          ? `${pc.n} cotizaciones · ${money(x.dinero.anticipos)} ya entraron de anticipo`
+          : `${pc ? pc.n : sm.aceptadas.n + sm.enviadas.n} cotizaciones vivas`} />
       <Kpi color="#D9538E" tinta="#9c3d70" et="Ingreso por cliente" ci={co ? money(co.ticket) : '—'}
         pie="promedio de quien SÍ pagó" />
     </div>
@@ -1455,6 +1553,201 @@ function Lecturas({ d, x }: any) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ════════════════ LO QUE SE ESTÁ PAGANDO A PLAZOS ════════════════
+   Una cotización a la que ya le entró dinero pero no está saldada. El sistema
+   tiene el estado «parcial» en el catálogo y NADIE lo usa —cero filas—, así
+   que la parcialidad no se lee de un campo: se deduce sumando los pagos.
+
+   Importa por dos razones. La primera es que estaba mal contado: esos
+   anticipos aparecían a la vez en «cobrado» y completos en «por cobrar», el
+   mismo dinero dos veces. La segunda es que es lo más fácil de cobrar que
+   tienes — el cliente ya dijo que sí y ya pagó una parte. */
+function Parcialidades({ x, abrir }: any) {
+  if (!x?.dinero?.parcialidades?.length) return null;
+  const ps = x.dinero.parcialidades;
+  const pr = x.dinero.proximas_parcialidades;
+  return (
+    <div style={{ ...S.card, marginBottom: 16 }}>
+      <div style={S.titulo}>Se está pagando a plazos
+        <span style={S.der}>{ps.length} {ps.length === 1 ? 'cotización' : 'cotizaciones'} · faltan {money(ps.reduce((a: number, p: any) => a + p.saldo, 0))}</span>
+      </div>
+      <div style={S.lead}>
+        Ya te dieron un anticipo y falta el resto. Es el dinero más fácil de cobrar que tienes: el cliente ya dijo que sí.
+      </div>
+      <div className="tb-3" style={{ gap: 12 }}>
+        {ps.map((p: any) => {
+          const avance = Math.min(100, Math.round((p.pagado / Math.max(1, p.total)) * 100));
+          const frio = (p.dias_sin_pagar ?? 0) > 30;
+          return (
+            <div key={p.quote_id} className="tb-clic"
+              style={{ border: '1px solid rgba(155,140,250,.18)', borderRadius: 14, padding: '14px 15px', cursor: p.company_id ? 'pointer' : 'default', display: 'flex', flexDirection: 'column' }}
+              onClick={p.company_id ? () => abrir(p.company_id) : undefined}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.empresa}</div>
+                <span style={{ ...S.fn, whiteSpace: 'nowrap' }}>{p.numero}</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, margin: '10px 0 8px' }}>
+                <div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: AMBAR, letterSpacing: '-.03em', lineHeight: 1 }}>{money(p.saldo)}</div>
+                  <div style={{ ...S.fn, marginTop: 4 }}>le faltan por pagar</div>
+                </div>
+                <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: VERDE }}>{money(p.pagado)}</div>
+                  <div style={S.fn}>ya entraron</div>
+                </div>
+              </div>
+
+              {/* La barra dice de un vistazo cuánto del trato ya está cobrado. */}
+              <div style={{ height: 10, borderRadius: 99, background: '#F4F1FB', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${avance}%`, borderRadius: 99, background: 'linear-gradient(90deg,#4FBF95,#A7E0CB)' }} />
+              </div>
+              <div style={{ ...S.fn, marginTop: 6 }}>{avance}% del total de {money(p.total)}</div>
+
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f3f2f6', flex: 1 }}>
+                {p.proximo
+                  ? <div style={{ fontSize: '0.74rem' }}>
+                      <b style={{ color: p.proximo.fecha < new Date().toISOString().slice(0, 10) ? ROJO : MORADO }}>
+                        Sigue {money(p.proximo.monto)} el {fmtDate(p.proximo.fecha)}
+                      </b>
+                      {p.vencidas > 0 && <div style={{ ...S.fn, color: ROJO, marginTop: 3 }}>{p.vencidas} {p.vencidas === 1 ? 'parcialidad vencida' : 'parcialidades vencidas'}</div>}
+                    </div>
+                  : <div style={{ fontSize: '0.72rem', color: '#8a8590', lineHeight: 1.45 }}>
+                      Sin plan de pagos capturado. <b style={{ color: MORADO }}>Captúralo</b> y el tablero sabrá cuándo entra cada parte.
+                    </div>}
+                <div style={{ fontSize: '0.7rem', color: frio ? ROJO : '#6b6b7a', marginTop: 7, lineHeight: 1.45 }}>
+                  {p.ultimo_pago
+                    ? frio
+                      ? <>Último pago hace <b>{p.dias_sin_pagar} días</b>. Ya se enfrió: háblale.</>
+                      : <>Último pago hace {p.dias_sin_pagar} {p.dias_sin_pagar === 1 ? 'día' : 'días'}.</>
+                    : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {pr && pr.n > 0 && (
+        <div style={S.nota}>
+          De esos planes entran <b style={{ color: VERDE }}>{money(pr.monto)}</b> en los próximos 90 días,
+          repartidos en {pr.n} {pr.n === 1 ? 'pago' : 'pagos'} con fecha.
+        </div>
+      )}
+      {(!pr || !pr.n) && (
+        <div style={S.nota}>
+          Ninguna de estas cotizaciones tiene su calendario de pagos capturado, así que <b>el tablero no puede
+          decir cuándo entra el resto</b>. Con el plan cargado, esos pesos se suman a lo que viene.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════ EL DINERO QUE NO ESTÁ ATADO A NADIE ════════════════ */
+function Sueltos({ x, ver }: any) {
+  const dn = x?.dinero;
+  if (!dn) return null;
+  const sd = dn.sin_dueno, op = dn.oportunidades;
+  if (!sd.n && !op.sin_cotizar.n) return null;
+  return (
+    <div className="tb-2">
+      {sd.n > 0 && (
+        <div style={S.card}>
+          <div style={S.titulo}>Pagos que no son de nadie<span style={S.der}>{sd.n} {sd.n === 1 ? 'pago' : 'pagos'}</span></div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: AMBAR, letterSpacing: '-.03em', margin: '2px 0 4px' }}>{money(sd.monto)}</div>
+          <div style={S.lead}>
+            Entraron a la cuenta y suman en lo cobrado, pero no están atados a ningún cliente: no aparecen en la
+            cartera de nadie, nadie los agradece y no cuentan para la recompra de esa cuenta.
+          </div>
+          <div style={S.reparte}>
+            {sd.items.slice(0, 5).map((p: any) => (
+              <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0' }}>
+                <span style={{ ...S.fn, width: 62, flex: 'none' }}>{fmtDate(p.fecha)}</span>
+                <span style={{ flex: 1 }} />
+                <b style={{ fontSize: '0.78rem' }}>{money(p.monto)}</b>
+              </div>
+            ))}
+          </div>
+          <div style={S.nota}>Asígnalos a su cuenta desde Pagos y el historial de esos clientes queda completo.</div>
+        </div>
+      )}
+
+      {op.sin_cotizar.n > 0 && (
+        <div style={S.card}>
+          <div style={S.titulo}>Oportunidades sin precio<span style={S.der}>{op.abiertas.n} abiertas en total</span></div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: MORADO, letterSpacing: '-.03em', margin: '2px 0 4px' }}>{op.sin_cotizar.n}</div>
+          <div style={S.lead}>
+            Tratos abiertos que todavía no tienen una cotización. Mientras no tengan precio no se pueden cerrar
+            ni sumar a lo que viene: son intención, no pipeline.
+          </div>
+          <div style={S.reparte}>
+            {op.sin_cotizar.items.map((o: any) => (
+              <div key={o.id} className={o.company_id ? 'tb-clic' : undefined}
+                style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0', cursor: o.company_id ? 'pointer' : 'default' }}
+                onClick={o.company_id ? () => ver(o.company_id) : undefined}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.nombre || o.titulo}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: o.monto ? MORADO : '#bdb7cc' }}>{o.monto ? money(o.monto) : 'sin valor'}</span>
+              </div>
+            ))}
+          </div>
+          <div style={S.nota}>
+            {op.sin_cotizar.monto === 0
+              ? <>Ninguna trae valor capturado, así que <b>ni siquiera se sabe cuánto valen</b>. Ponles precio al cotizar.</>
+              : <>Suman {money(op.sin_cotizar.monto)} de intención sin precio en la mano.</>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════ LO QUE YA NO VA A ENTRAR ════════════════
+   El ARR perdido no se puede leer de la empresa: al cancelar una cuenta su
+   `arr` se pone en CERO, así que las 36 canceladas suman $0 y el dinero
+   perdido se vuelve invisible. La verdad sobrevive en la suscripción. */
+function NoEntrara({ x, abrir }: any) {
+  const ne = x?.dinero?.no_entrara;
+  if (!ne || !ne.historico.n) return null;
+  return (
+    <div style={{ ...S.card, marginBottom: 16 }}>
+      <div style={S.titulo}>Lo que ya no va a entrar<span style={S.der}>cuentas que se fueron</span></div>
+      <div className="tb-2" style={{ marginBottom: 0, gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: ROJO, letterSpacing: '-.03em', lineHeight: 1 }}>{money(ne.anio.arr)}</div>
+              <div style={{ ...S.pie, marginTop: 5 }}>dejaron de pagarte en los últimos 12 meses<br />· {ne.anio.n} {ne.anio.n === 1 ? 'cuenta' : 'cuentas'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#8a8590', letterSpacing: '-.03em', lineHeight: 1 }}>{money(ne.historico.arr)}</div>
+              <div style={{ ...S.pie, marginTop: 5 }}>en toda la historia<br />· {ne.historico.n} cuentas</div>
+            </div>
+          </div>
+          <div style={S.nota}>
+            {ne.sin_fecha.n > 0
+              ? <><b style={{ color: '#9a6a10' }}>{ne.sin_fecha.n} de esas cancelaciones ({money(ne.sin_fecha.arr)}) no tienen fecha capturada</b>, así que no se puede decir cuándo se perdieron ni comparar un año contra otro. Capturarla es lo que vuelve confiable este número.</>
+              : <>Cada baja tiene fecha, así que el histórico se puede comparar año contra año.</>}
+          </div>
+        </div>
+        <div style={S.reparte}>
+          {ne.items.map((b: any, i: number) => (
+            <div key={i} className="tb-clic" style={{ ...S.fila, borderTop: i ? S.fila.borderTop : 'none', cursor: 'pointer' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={S.fl}>{b.nombre}</div>
+                <div style={{ ...S.fn, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  title={b.razon || b.plan || ''}>
+                  {fmtDate(b.fecha)}{b.razon ? ` · ${String(b.razon).replace(/\s+/g, ' ').slice(0, 70)}${String(b.razon).length > 70 ? '…' : ''}` : b.plan ? ` · ${b.plan}` : ''}
+                </div>
+              </div>
+              <b style={{ fontSize: '0.82rem', color: ROJO, whiteSpace: 'nowrap' }}>−{money(b.arr)}</b>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
