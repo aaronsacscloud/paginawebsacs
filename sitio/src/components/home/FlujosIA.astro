@@ -75,14 +75,15 @@ const NODOS = [
   .fx-abajo { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #9A9A94; }
   .fx-abajo::after { content: ''; display: block; width: 1px; height: 36px; margin: 12px auto 0; background: rgba(255,255,255,0.45); }
 
-  @media (max-width: 720px) {
-    .fx-flujo { flex-direction: column; align-items: stretch; gap: 0; max-width: 300px; }
-    .fx-nodo { max-width: none; padding: 0 0 26px 36px; text-align: left; }
-    .fx-punto { left: 0; top: 4px; margin-left: 0; }
-    .fx-nodo::after { top: 20px; left: 7px; width: 2px; height: calc(100% - 16px); transform: scaleY(0); transform-origin: top center; }
-    .fx.is-in .fx-nodo::after { transform: scaleY(1); }
-    .fx-nodo:last-child { padding-bottom: 0; }
-    .fx-sello { position: static; display: flex; margin: 22px auto 0; }
+  @media (max-width: 767px) {
+    .fx { padding: 56px 20px 40px; }
+    .fx-l { clip-path: none; transform: none; } .fx-lead { opacity: 1; transform: none; margin-top: 18px; font-size: 16px; }
+    .fx-flujo { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 26px; }
+    .fx-nodo { flex: 0 0 auto; max-width: none; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; opacity: 1; transition: none; }
+    .fx-nodo b { font-size: 14px; } .fx-nodo small, .fx-punto, .fx-nodo::after { display: none; }
+    .fx-sello { position: static; display: flex; margin: 18px auto 0; width: 72px; height: 72px; transform: scale(1) rotate(-8deg); }
+    .fx-sello b { font-size: 26px; }
+    .fx-otros { margin-top: 22px; opacity: 1; } .fx-abajo { margin-top: 22px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .fx-l, .fx-lead, .fx-nodo, .fx-punto, .fx-nodo::after, .fx-sello, .fx-otros { transition: none !important; }
@@ -95,7 +96,7 @@ const NODOS = [
   if (fx) {
     if (!('IntersectionObserver' in window)) fx.classList.add('is-in');
     else {
-      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { fx.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.35 });
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { fx.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.12 });
       io.observe(fx);
     }
   }

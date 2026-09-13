@@ -5,6 +5,7 @@ interface Props {
   eyebrow?: string;
   title: string;
   subtitle: string;
+  subtitleMobile?: string;
   primaryCTA?: { label: string; href: string };
   secondaryCTA?: { label: string; href: string };
 }
@@ -13,6 +14,7 @@ const {
   eyebrow = 'Comercio Consciente',
   title,
   subtitle,
+  subtitleMobile = subtitle,
   primaryCTA = { label: 'Prueba 7 días gratis', href: '/prueba-gratis' },
   secondaryCTA = { label: 'Ver demo', href: '/producto' },
 } = Astro.props;
@@ -106,7 +108,7 @@ const useCases = [
   <div class="hero-banner-content">
     <div class="hero-text">
       <h1 class="hero-title">{title}</h1>
-      <p class="hero-subtitle">{subtitle}</p>
+      <p class="hero-subtitle"><span class="hero-subtitle-full">{subtitle}</span><span class="hero-subtitle-short">{subtitleMobile}</span></p>
       <div class="hero-ctas">
         <a href={primaryCTA.href} class="hero-btn hero-btn-filled">
           {primaryCTA.label}
@@ -1458,7 +1460,7 @@ const useCases = [
                     <span class="cat-col-loc"><span class="cat-loc-badge">CEDIS</span><span class="cat-loc-badge">Instagram</span></span>
                   </div>
                   <div class="cat-table-row">
-                    <span class="cat-col-name"><img src="/images/prod-blouse.webp" alt="" class="cat-prod-thumb-img" width="36" height="36" loading="lazy" />Blusa Lino Resort <span class="cat-variant-badge">3 variantes</span></span>
+                    <span class="cat-col-name"><img src="/images/prod-vestido-negro.webp" alt="" class="cat-prod-thumb-img" width="36" height="36" loading="lazy" />Vestido satén negro <span class="cat-variant-badge">3 variantes</span></span>
                     <span class="cat-col-actions"><button class="cat-mini-btn">🖨️</button><button class="cat-mini-btn">👁️</button></span>
                     <span class="cat-col-stock"><span class="cat-stock-pill cat-stock-pill--ok">45</span></span>
                     <span class="cat-col-avail">42</span>
@@ -3401,7 +3403,7 @@ const useCases = [
       <div class="reels-stat-sep" aria-hidden="true"></div>
       <div class="reels-stat" role="listitem">
         <span class="reels-stat-num">+7</span>
-        <span class="reels-stat-label">países atendidos en LatAm</span>
+        <span class="reels-stat-label">países atendidos en Latam</span>
       </div>
     </div>
   </div>
@@ -3686,7 +3688,8 @@ const useCases = [
     .hero-subtitle { font-size: 16px; }
     .hero-ctas { gap: 8px; }
     .hero-btn-outline { background: transparent; border: 0; text-decoration: underline; text-underline-offset: 4px; padding: 8px 0; }
-    .hero-bottom-bar { flex-direction: row !important; flex-wrap: nowrap; gap: 14px; justify-content: space-between; }
+    .hero-subtitle-short { display: none; }
+  .hero-bottom-bar { flex-direction: row !important; flex-wrap: nowrap; gap: 14px; justify-content: space-between; }
     .hero-bottom-bar > * { flex: 1 1 0; font-size: 11px; }
   }
   .hero-bottom-bar {
@@ -4948,15 +4951,23 @@ const useCases = [
   body.recorrido-activo .wa-bar { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   /* Teléfono: la historia es una pantalla normal. Sin riel pegajoso, sin bloqueo, video a lo ancho y el texto cambia con el video. */
   @media (max-width: 767px) {
-    .flujo { height: auto; }
-    .flujo-sticky { position: relative; display: block; height: auto; padding: 48px 0 36px; }
+    .flujo { height: auto !important; }
+    .flujo-sticky { position: relative; display: block; height: auto !important; min-height: 0 !important; padding: 40px 0 32px !important; }
     .flujo-inner { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 0 16px; width: 100% !important; max-width: 100% !important; }
     .flujo-video { display: block; order: -1; width: 100% !important; max-width: none !important; transform: none !important; margin: 0; }
     .flujo-text { width: 100%; min-height: 128px; }
     .flujo-tag { font-size: 11px; padding: 6px 10px; white-space: nowrap; max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; }
     .flujo-nav { display: flex; justify-content: center; width: 100%; }
-    .flujo-dots { max-width: 100%; gap: 6px; } .flujo-dots li i { width: 20px; height: 2px; }
+    .flujo-dots { max-width: 100%; gap: 6px; } .flujo-dots li { padding: 12px 2px; } .flujo-dots li i { width: 22px; height: 3px; }
     .inv-intel-card { padding: 18px 16px !important; margin-bottom: 12px !important; }
+    .cat-table, .cat-table * { word-spacing: normal !important; letter-spacing: normal !important; }
+    .cat-mini-btn, .cat-col-actions { display: none !important; }
+    .sc-eyebrow, .loyalty-pro-eyebrow, .reels-eyebrow { font-size: 11px !important; letter-spacing: 0.14em !important; text-transform: uppercase; font-weight: 600 !important; background: none !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; color: inherit !important; opacity: 0.6; }
+    .loyalty-pro-title br { display: none; } .loyalty-pro-title { text-wrap: balance; }
+    .hero-badges { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .hero-badge { flex-direction: column !important; align-items: center !important; text-align: center; gap: 2px !important; }
+    .hero-badge-icon { display: none !important; } .hero-badge-label { font-size: 10px !important; line-height: 1.2; }
+    .hero-subtitle-full { display: none; } .hero-subtitle-short { display: inline; }
     .inv-intel-card-icon { margin-bottom: 10px !important; }
     .flujo-text { min-height: 132px; }
     .flujo-paso b { font-size: 24px; } .flujo-paso small { font-size: 14px; }
