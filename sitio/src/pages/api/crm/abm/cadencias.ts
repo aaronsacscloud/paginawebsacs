@@ -180,6 +180,11 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
 
     let correos = base0;
     let conIa = false;
+    /* Por qué falló la IA viaja en la RESPUESTA, no solo al log. Un fallo de
+       IA no rompe la cadencia —sale con la plantilla— así que es invisible:
+       19 cuentas de novias salieron sin adaptar y solo se notó al contarlas.
+       Quien genera tiene que poder leer la causa sin pedir logs de Vercel. */
+    let iaError: string | null = null;
     if (b.con_ia !== false) {
       try {
         const r: any = await (anthropic as any).messages.create({
@@ -195,6 +200,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
         const limpio = txt.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
         const salida = JSON.parse(limpio);
         const lista = Array.isArray(salida?.correos) ? salida.correos.slice(0, 8) : [];
+        if (!lista.length) iaError = `la IA respondió sin correos utilizables (${txt.length} caracteres, empieza: ${txt.slice(0, 80)})`;
         if (lista.length) {
           correos = lista.map((m: any, i: number) => ({
             dia: Number(m.dia) || base0[i]?.dia || (i * 4 + 1),
@@ -211,7 +217,8 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
         // problemas distintos y antes los dos se veían igual en el log.
         const msg = String(e?.message || e);
         const cortado = /Unexpected end of JSON|Unterminated string|JSON/i.test(msg);
-        console.warn(`[abm] la IA no pudo pulir la cadencia (${cortado ? 'respuesta CORTADA: sube max_tokens' : 'fallo'}), va la versión de plantilla:`, msg.slice(0, 200));
+        iaError = `${cortado ? 'respuesta CORTADA (sube max_tokens)' : e?.status ? `HTTP ${e.status}` : 'fallo'}: ${msg.slice(0, 240)}`;
+        console.warn('[abm] la IA no pudo pulir la cadencia, va la versión de plantilla:', iaError);
       }
     }
     if (!correos.length) return json({ error: 'no se pudo armar la cadencia' }, 500);
@@ -228,7 +235,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
     const { error } = await supabase.from('abm_toques').insert(filas);
     if (error) return json({ error: error.message }, 500);
     await apuntar(c.id, 'sistema', 'nota', { texto: `${yo.nombre} generó una cadencia de ${filas.length} correos${conIa ? '' : ' (sin IA: se armó con la plantilla del giro)'}, pendiente de aprobar` });
-    return json({ ok: true, correos: filas.length, con_ia: conIa });
+    return json({ ok: true, correos: filas.length, con_ia: conIa, ia_error: iaError });
   }
 
   if (accion === 'aprobar' || accion === 'cancelar' || accion === 'editar') {
