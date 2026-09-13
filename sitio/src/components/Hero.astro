@@ -4949,8 +4949,8 @@ const useCases = [
   /* Teléfono: la historia es una pantalla normal. Sin riel pegajoso, sin bloqueo, video a lo ancho y el texto cambia con el video. */
   @media (max-width: 767px) {
     .flujo { height: auto; }
-    .flujo-sticky { position: relative; height: auto; padding: 48px 0 36px; }
-    .flujo-inner { display: block; padding: 0 16px; width: 100%; max-width: 100%; }
+    .flujo-sticky { position: relative; display: block; height: auto; padding: 48px 0 36px; }
+    .flujo-inner { display: block; padding: 0 16px; width: 100% !important; max-width: 100% !important; }
     .flujo-video { display: block; width: 100% !important; max-width: none !important; transform: none !important; margin: 0 0 16px; }
     .flujo-text { width: 100%; }
     .flujo-tag { font-size: 11px; padding: 6px 10px; white-space: nowrap; max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; }
