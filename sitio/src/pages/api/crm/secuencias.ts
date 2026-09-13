@@ -45,6 +45,12 @@ export const POST: APIRoute = async ({ request }) => {
     hora_inicio: Math.max(0, Math.min(23, Number(b.hora_inicio) ?? 10)),
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
+  /* Programada: se deja lista y el motor la ignora hasta esa hora (ni enrola ni manda).
+     Se manda como ISO; vacío o null la arranca en cuanto se activa. */
+  if ('arranca_at' in b) {
+    const t = b.arranca_at ? Date.parse(String(b.arranca_at)) : NaN;
+    fila.arranca_at = Number.isFinite(t) ? new Date(t).toISOString() : null;
+  }
   if (['respondio', 'agendo', 'demo_hecha', 'convertido'].includes(b.objetivo)) fila.objetivo = b.objetivo;
   if (['arco', 'permanente'].includes(b.modo)) fila.modo = b.modo;
   if (b.acciones && typeof b.acciones === 'object') fila.acciones = b.acciones;

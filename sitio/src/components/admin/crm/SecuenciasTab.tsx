@@ -187,6 +187,19 @@ export default function SecuenciasTab() {
                 <input type="number" min={1} max={24} style={{ ...inp, width: 64 }} value={edit.hora_fin ?? 18} onChange={e => setEdit({ ...edit, hora_fin: Number(e.target.value) })} />
               </span></div>
           </div>
+          <div style={{ marginTop: 10 }}>
+            <span style={lbl}>Empieza a mandar</span>
+            {/* Programar el arranque: la cadencia se deja lista hoy y el motor la ignora
+                —ni enrola ni manda— hasta esa fecha y hora. Vacío = en cuanto se prende. */}
+            <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="datetime-local" style={{ ...inp, width: 210 }}
+                value={edit.arranca_at ? new Date(edit.arranca_at).toISOString().slice(0, 16) : ''}
+                onChange={e => setEdit({ ...edit, arranca_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              {edit.arranca_at && new Date(edit.arranca_at).getTime() > Date.now()
+                ? <span style={{ fontSize: '0.72rem', color: P.violetaTinta, fontWeight: 700 }}>programada · no manda nada hasta entonces</span>
+                : <span style={{ fontSize: '0.72rem', color: '#888' }}>vacío = empieza en cuanto la prendas</span>}
+            </span>
+          </div>
           <span style={lbl}>Días en que envía</span>
           <div style={{ display: 'flex', gap: 6 }}>
             {[['L', 1], ['M', 2], ['M', 3], ['J', 4], ['V', 5], ['S', 6], ['D', 7]].map(([l, d], i) => {

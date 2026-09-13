@@ -114,6 +114,15 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   for (const sec of lista) {
+    /* ── Programada para después ──
+       `arranca_at` en el futuro = la secuencia está lista pero todavía no empieza:
+       ni enrola ni manda. Es lo que permite dejar una cadencia armada el sábado
+       para que salga el lunes a las once, sin que nadie tenga que encenderla a esa
+       hora. Null = arranca en cuanto se activa (el comportamiento de siempre). */
+    if (sec.arranca_at && new Date(sec.arranca_at).getTime() > Date.now()) {
+      res.saltados.push({ sec: sec.nombre, motivo: 'programada', arranca: sec.arranca_at });
+      continue;
+    }
     // ── Blackout ──
     // Una marca de moda en pleno Buen Fin está vendiendo, no evaluando
     // software. La secuencia se congela sola: no manda ni gradúa, y al terminar
