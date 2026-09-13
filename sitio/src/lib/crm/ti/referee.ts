@@ -11,6 +11,8 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { decidirTurno } from './agente';
+import { notaPara } from './planificador';
+import { ETAPAS_SDR } from './agente';
 
 export type Caso = {
   id: string; titulo: string; porQueLlega: string; momento: string;
@@ -46,10 +48,10 @@ const unLeadConEnvio = async (origen: string, pista = '') => {
 
 /* ── Reglas que valen para TODOS los mensajes (del guion) ── */
 export const SIEMPRE_DEBE = [
-  'Una sola pregunta, al final del mensaje',
+  'Una sola pregunta, al final del mensaje (excepto el paso 0, donde los datos que faltan se piden juntos en una frase)',
   'Máximo cuatro líneas por burbuja; se lee de un vistazo en el celular',
   'Habla de tú, en registro formal y cálido, con voz femenina (es Fernanda, asesora comercial): profesional, nunca informal',
-  'Si ya se sabe el giro, usa lenguaje y problemas específicos de ese giro, no genéricos',
+  'Si ya se sabe el giro, usa lenguaje y problemas específicos de ese giro, no genéricos (no aplica a los mensajes de cadencia: saludo del paso 5, paso 6 y despedida, que son cortos por diseño)',
 ];
 export const SIEMPRE_NUNCA = [
   'Más de un emoji, o emoji en primer contacto o en temas de dinero',
@@ -63,6 +65,7 @@ export const SIEMPRE_NUNCA = [
 ];
 
 export const CASOS: Caso[] = [
+  ...([] as Caso[]),
   { id: 'web_prueba', titulo: 'Llega de la web pidiendo prueba gratis', porQueLlega: 'Botón de prueba gratis en sacscloud.com', momento: 'Primer mensaje',
     buscar: () => unLeadCon(q => q.eq('fuente', 'whatsapp_web').filter('propiedades->>intencion_inicial', 'eq', 'prueba_gratis'), 'prueba gratis'),
     // Se prueba como en producción: su PRIMER mensaje simulado + la nota de intención de la web (antes se medía un seguimiento días después).
@@ -144,6 +147,69 @@ export const CASOS: Caso[] = [
     debe: ['Aceptarlo sin insistir', 'Dejar la puerta abierta en una línea, sin condiciones', 'Cerrar sin pedir nada'],
     nunca: ['Intentar rebatir la objeción', 'Ofrecer demo, prueba o descuento', 'Preguntar por qué no'] },
 ];
+
+/** Un lead en alcance cuya última pieza del hilo es NUESTRA (callado): el estado en que trabaja el planificador. */
+const unLeadCallado = async (filtro: (c: any) => boolean, pista = '') => {
+  const { data } = await supabase.from('wa_conversaciones').select('contact_id, alerta, ultimo_mensaje_at, contacts!inner(id, nombre, lifecycle_stage, giro, modelo_negocio, sucursales_interes, fuente, archived_at)')
+    .not('contact_id', 'is', null).eq('ultima_direccion', 'saliente').is('alerta', null).order('ultimo_mensaje_at', { ascending: false }).limit(120);
+  for (const v of data || []) {
+    const c: any = (v as any).contacts; if (!c || c.archived_at || !ETAPAS_SDR.includes(String(c.lifecycle_stage || ''))) continue;
+    if (filtro(c)) return { contactId: c.id as string, pista: `${c.nombre || 's/n'} · ${pista}` };
+  }
+  return null;
+};
+const conDatos = (c: any) => !!(c.modelo_negocio && c.giro && Number(c.sucursales_interes));
+const ESC = { hayEstaSemana: true, nombre: null as string | null };
+
+/* ── LA ESCALERA (11-sep): un caso por paso del flujo v2, con la MISMA nota que usa el planificador ── */
+const CASOS_ESCALERA: Caso[] = [
+  { id: 'esc_p0', titulo: 'Paso 0: le pedimos sus datos y no contestó', porQueLlega: 'Cualquiera', momento: 'Planificador, faltan modelo de negocio/giro/sucursales',
+    buscar: () => unLeadCallado(c => !conDatos(c), 'sin datos'), nota: notaPara('paso0', { n: 1, ...ESC }), tarea: 'silencio',
+    debe: ['Pide SOLO lo que falta (modelo de negocio, giro o sucursales), distinto a como se pidió antes', 'Ofrece el audio', 'Interés genuino, sin prisa'],
+    nunca: ['Hablar de Sacs, funciones o demo', 'Dar por hecho que el lead escribió o volvió', 'Reclamar el silencio'] },
+  { id: 'esc_nunca_escribio', titulo: 'Nunca ha escrito por WhatsApp (llegó por formulario)', porQueLlega: 'Formulario web/TikTok', momento: 'Planificador, primer toque sin respuesta',
+    buscar: async () => { const { data } = await supabase.from('wa_conversaciones').select('contact_id, contacts!inner(id, nombre, lifecycle_stage, archived_at)').is('ultimo_entrante_at', null).is('alerta', null).eq('ultima_direccion', 'saliente').order('ultimo_mensaje_at', { ascending: false }).limit(60);
+      for (const v of data || []) { const c: any = (v as any).contacts; if (c && !c.archived_at && ETAPAS_SDR.includes(String(c.lifecycle_stage || ''))) return { contactId: c.id, pista: `${c.nombre || 's/n'} · nunca escribió` }; } return null; },
+    nota: notaPara('paso0', { n: 1, ...ESC }), tarea: 'silencio',
+    debe: ['Toma la iniciativa como quien escribe por primera vez de nuevo', 'Pide los datos que faltan y ofrece el audio'],
+    nunca: ['«Qué gusto que me escribas», «gracias por tu mensaje» o cualquier frase que dé por hecho que él escribió', 'Contestar preguntas que no hizo'] },
+  { id: 'esc_p1', titulo: 'Paso 1: ya dio los tres datos, tocan la novedad y los puntos', porQueLlega: 'Cualquiera', momento: 'Acaba de contestar modelo, giro y tiendas',
+    buscar: () => unLeadCallado(c => /ropa|calzado|zapat|uniform|boutique|moda/i.test(String(c.giro || '')), 'con giro'),
+    simular: 'Sí, es tienda de ropa, manejamos varias marcas y tenemos dos sucursales', tarea: 'respuesta',
+    debe: ['PRIMERO la novedad del catálogo automático con IA', 'Lista numerada 1. 2. 3. (máximo 5) con puntos de SU combinación (multimarca, dos tiendas)', 'Cierra con UNA pregunta abierta: qué quiere resolver hoy'],
+    nunca: ['Ofrecer demo, reunión u horarios (salvo que el lead ya hubiera pedido la demo antes; entonces sí van los horarios)', 'Puntos genéricos que valdrían para cualquier negocio', 'Más de una pregunta'] },
+  { id: 'esc_p2', titulo: 'Paso 2: dijo qué le cuesta trabajo', porQueLlega: 'Cualquiera', momento: 'Acaba de contar su problema',
+    buscar: () => unLeadCallado(c => conDatos(c) || !!c.giro, 'con datos'),
+    simular: 'Somos tienda multimarca de ropa con dos sucursales. Lo que más me cuesta es saber qué me falta en cada tienda, siempre me quedo sin las tallas que sí se venden y me sobran las que no', tarea: 'respuesta',
+    debe: ['Explica cómo Sacs resuelve EXACTAMENTE eso, con un ejemplo de su producto (tallas, tiendas)', 'Pregunta si hay otro tema que quiera resolver («entre más detalle, más específica la reunión»)'],
+    nunca: ['Ofrecer horarios', 'Cambiar de tema a otra función que no pidió', 'Más de dos burbujas'] },
+  { id: 'esc_oferta_escasez', titulo: 'Paso 5, día 1: variante escasez', porQueLlega: 'Cualquiera', momento: 'Ayer se le hizo la oferta (demo o prueba) y calló',
+    buscar: () => unLeadCallado(c => conDatos(c) || !!c.giro, 'tras la oferta'), nota: notaPara('oferta', { n: 0, variante: 'escasez', escasez: 2, ...ESC }), tarea: 'silencio',
+    debe: ['Pregunta si aún le interesa', 'Dice que espera su confirmación para agendar y que el consultor tiene 2 horarios esta semana', 'Corto'],
+    nunca: ['Listar horarios concretos', 'Repetir la oferta completa', 'Presionar con tono de urgencia falsa'] },
+  { id: 'esc_oferta_novedad', titulo: 'Paso 5, día 1: variante novedad del giro', porQueLlega: 'Cualquiera', momento: 'Ayer se le hizo la oferta y calló',
+    buscar: () => unLeadCallado(c => /ropa|calzado|zapat|uniform/i.test(String(c.giro || '')), 'tras la oferta'), nota: notaPara('oferta', { n: 0, variante: 'novedad', escasez: 2, giroTxt: 'ropa', ...ESC }), tarea: 'silencio',
+    debe: ['Algo NUEVO del sistema para su giro (p. ej. el catálogo automático con IA)', 'Cierra preguntando si aún le interesa verlo o prefiere en otra ocasión'],
+    nunca: ['Horarios', 'Repetir puntos ya dichos', 'Más de cuatro líneas'] },
+  { id: 'esc_oferta_saludo', titulo: 'Paso 5, día 1: variante solo saludo', porQueLlega: 'Cualquiera', momento: 'Ayer se le hizo la oferta y calló',
+    buscar: () => unLeadCallado(c => true, 'tras la oferta'), nota: notaPara('oferta', { n: 0, variante: 'saludo', escasez: 2, ...ESC }), tarea: 'silencio',
+    debe: ['SOLO un saludo cálido y corto con su nombre'],
+    nunca: ['Cualquier pregunta de negocio', 'Mencionar reunión, demo, prueba o Sacs', 'Más de una línea'] },
+  { id: 'esc_oferta_dia2', titulo: 'Paso 5, día 2: presión suave con horarios reales', porQueLlega: 'Cualquiera', momento: 'Dos días callado tras la oferta',
+    buscar: () => unLeadCallado(c => conDatos(c) || !!c.giro, 'día 2'), nota: notaPara('oferta', { n: 1, escasez: 2, ...ESC }), tarea: 'silencio',
+    debe: ['Dice que el consultor aún tiene 2 horarios disponibles esta semana', 'Pregunta si quiere que le aparte uno', 'Cordial, sin reproche'],
+    nunca: ['Inventar horarios concretos que no vienen en la agenda', 'Tono de reclamo', 'Repetir la oferta completa'] },
+  { id: 'esc_p6', titulo: 'Paso 6: dos toques sin respuesta', porQueLlega: 'Cualquiera', momento: 'Planificador, sigue sin responder',
+    buscar: () => unLeadCallado(c => true, 'dos toques'), nota: notaPara('paso6', { n: 2, ...ESC }), tarea: 'silencio',
+    debe: ['«espero que vaya todo bien» y preguntar si aún es de su interés o prefiere retomarlo más adelante', 'Nada más: máximo dos líneas'],
+    nunca: ['Hablar de funciones o novedades', 'Horarios', 'Dar por hecho que escribió'] },
+  { id: 'esc_despedida', titulo: 'Paso 7: despedida cordial', porQueLlega: 'Cualquiera', momento: 'Último mensaje antes de descalificar',
+    buscar: () => unLeadCallado(c => true, 'despedida'), nota: notaPara('despedida', { n: 3, ...ESC }), tarea: 'silencio',
+    debe: ['Será un gusto atenderle cuando esté lista y por aquí queda a la orden', 'Sin pregunta', 'Máximo dos líneas'],
+    nunca: ['Reproche o presión', 'Oferta, horarios o descuentos', 'Pregunta final'] },
+];
+
+CASOS.push(...CASOS_ESCALERA);
 
 async function juez(caso: Caso, mensaje: string, contexto: string) {
   const debe = [...caso.debe, ...SIEMPRE_DEBE].map((x, i) => `${i + 1}. ${x}`).join('\n');

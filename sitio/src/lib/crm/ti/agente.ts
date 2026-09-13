@@ -246,7 +246,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // esto veía su último mensaje de hace un año y redactaba «qué gusto que me escribas de nuevo» a alguien que no escribió.
   const leadCallado = !rafaga.length && !opts.simularEntrante;
   const diasCallado = ultimo ? Math.floor((Date.now() - Date.parse(ultimo.created_at)) / 86400e3) : null;
-  const hechosTxt = leadCallado ? `\n\nHECHOS DEL HILO (no los contradigas): ${ultimo ? `el lead NO ha escrito desde el ${String(ultimo.created_at).slice(0, 10)} (hace ${diasCallado} día${diasCallado === 1 ? '' : 's'}); su último mensaje fue «${textoDe(ultimo).slice(0, 160)}» y respondía a otra cosa de entonces` : 'el lead NUNCA ha escrito por WhatsApp; todo lo que hay en el hilo es nuestro'}. Este mensaje lo inicias TÚ: no digas ni insinúes que te escribió, que volvió, que retomó o «qué gusto que me escribas»; no agradezcas un mensaje que no existe; no contestes preguntas que no hizo hoy.` : '';
+  const hechosTxt = leadCallado ? `\n\nHECHOS DEL HILO (no los contradigas): ${ultimo ? `el lead NO ha escrito desde el ${String(ultimo.created_at).slice(0, 10)} (hace ${diasCallado} día${diasCallado === 1 ? '' : 's'}); su último mensaje fue «${textoDe(ultimo).slice(0, 160)}» y respondía a otra cosa de entonces` : 'el lead NUNCA ha escrito por WhatsApp; todo lo que hay en el hilo es nuestro. Si en el hilo no te has presentado, preséntate en una frase («Soy Fernanda, asesora comercial de Sacscloud»)'}. Este mensaje lo inicias TÚ: no digas ni insinúes que te escribió, que volvió, que retomó o «qué gusto que me escribas»; no agradezcas un mensaje que no existe; no contestes preguntas que no hizo hoy.` : '';
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta todo en UNA respuesta, en su orden, una oración por pregunta (aquí sí puedes pasar de 4 líneas; si son 3 o más, parte en dos burbujas con ---). Sin numerar, sin viñetas, sin repetir su pregunta antes de contestarla. Una sola pregunta tuya al final, o ninguna si él ya dijo qué sigue:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   // FOTOS (decisión del dueño, 5-sep · catálogo de casos, duda 2): si en la ráfaga viene una foto, el agente la comenta
   // con contexto y a partir de eso pregunta más de su tienda. Buscamos conectar, no describir ni vender.
@@ -267,15 +267,28 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // intuición del modelo: paso 0 mientras falte modelo de negocio, giro o sucursales; paso 1 cuando ya están y aún no se
   // dijeron los puntos; de ahí en adelante manda el hilo (resolver, ofrecer, agendar) con las compuertas de aceptoDemo.
   const coG: any = (c as any).companies || {};
-  const modeloNeg = String((c as any).modelo_negocio || '').trim() || null;
-  const giroTxt = c.giro || coG.giro || null;
-  const sucN = Number(c.sucursales_interes ?? coG.sucursales) || null;
+  // Lo que el lead ACABA de decir cuenta desde este turno (11-sep, árbitro): si en su mensaje vienen el modelo, el giro o las
+  // tiendas, el paso se decide con eso y no con lo que el CRM tenía antes de que contestara (los «datos» se guardan después).
+  const txtAhora = rafaga.map(textoDe).join(' ').toLowerCase();
+  const modeloDicho = !txtAhora ? null : /varias marcas|multimarca|otras marcas|distintas marcas|diferentes marcas/.test(txtAhora) ? 'multimarca' : /marca propia|mi marca|nuestra marca|propia marca|monomarca/.test(txtAhora) ? 'monomarca' : /fabric|maquil|producimos|confeccion|nuestro taller/.test(txtAhora) ? 'fabricante' : /mayoreo|mayorista/.test(txtAhora) ? 'mayorista' : null;
+  const NUM_SUC: Record<string, number> = { una: 1, un: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
+  const mSuc = txtAhora.match(/\b(una|un|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d{1,3})\s+(sucursal|tienda|punto|local|boutique)/);
+  const sucDicho = mSuc ? (NUM_SUC[mSuc[1]] || Number(mSuc[1]) || null) : null;
+  const giroDicho = (() => { try { const g: any = txtAhora ? detectarGiro(txtAhora) : null; return g ? (g.nombre || g.id || null) : null; } catch { return null; } })();
+  const modeloNeg = String((c as any).modelo_negocio || '').trim() || modeloDicho;
+  const giroTxt = c.giro || coG.giro || giroDicho || null;
+  const sucN = Number(c.sucursales_interes ?? coG.sucursales) || sucDicho;
   const esNovias = /novia|xv|quince|fiesta|traje|graduaci|renta de vestidos/i.test(`${giroTxt || ''} ${texto.slice(-1500)}`);
   const faltan = [!modeloNeg ? (esNovias ? 'si VENDE el producto, lo RENTA o ambas' : 'su modelo de negocio (¿maneja varias marcas, su propia marca, fabrica o vende al mayoreo?)') : null, !giroTxt ? 'qué vende exactamente (su giro)' : null, !sucN ? 'cuántas sucursales o puntos de venta tiene' : null].filter(Boolean) as string[];
   const puntosYaDichos = msjs.some(m => m.direccion === 'saliente' && /(^|\n)\s*1\.\s.+\n\s*2\.\s/.test(String(m.cuerpo || '')));
   let bloqueFlujo = '';
-  if (faltan.length) {
-    bloqueFlujo = `\n\nPASO 0 DEL FLUJO — TODAVÍA NO TENEMOS ${faltan.length === 3 ? 'LOS TRES DATOS' : 'TODO'}: falta ${faltan.join(', ')}. En este mensaje NO hables de funciones de Sacs ni ofrezcas nada: contesta lo que preguntó en una línea si preguntó algo, y pide SOLO lo que falta, con interés genuino en su negocio y en una sola pregunta (si faltan dos datos, júntalos en la misma frase). Si es su primer mensaje, preséntate («Soy Fernanda, asesora comercial de Sacscloud»). Ofrece siempre el audio: «si te es más cómodo, mándame un audio y me platicas de tu negocio y de lo que buscas». Reporta en "datos" lo que diga (modelo_negocio, giro, sucursales).`;
+  // CADENCIA (11-sep, hallazgo del árbitro): el paso 6, la despedida y las variantes del paso 5 los dicta la nota del planificador.
+  // Antes la compuerta del paso 0 les ganaba y el «espero que vaya todo bien» salía pidiendo otra vez el modelo de negocio.
+  const notaCadencia = /^PLANIFICADOR \((paso 6|despedida|día [12] tras la oferta)/.test(String(nota || ''));
+  if (notaCadencia) {
+    bloqueFlujo = `\n\nFLUJO — este mensaje es de CADENCIA y lo dicta la nota PLANIFICADOR de abajo: síguela al pie de la letra. No pidas datos, no expliques funciones, no menciones fotos ni productos suyos, no ofrezcas horarios.`;
+  } else if (faltan.length) {
+    bloqueFlujo = `\n\nPASO 0 DEL FLUJO — TODAVÍA NO TENEMOS ${faltan.length === 3 ? 'LOS TRES DATOS' : 'TODO'}: falta ${faltan.join(', ')}. En este mensaje NO hables de funciones de Sacs ni ofrezcas nada: contesta lo que preguntó en una línea si preguntó algo, y pide SOLO lo que falta, con interés genuino en su negocio y en una sola pregunta (si faltan dos datos, júntalos en la misma frase). No menciones demo, consultor, reunión ni «prepararte» nada: el motivo de preguntar es entender su negocio, y punto. Si es su primer mensaje, preséntate («Soy Fernanda, asesora comercial de Sacscloud»). Ofrece siempre el audio: «si te es más cómodo, mándame un audio y me platicas de tu negocio y de lo que buscas». Reporta en "datos" lo que diga (modelo_negocio, giro, sucursales).`;
   } else if (!puntosYaDichos) {
     const gid = (ctxGiroId(giroTxt, texto) || null) as any;
     const pts = puntosPara({ giroId: gid, modelo: modeloNeg as any, sucursales: sucN, subgiro: detectarSubgiro(`${giroTxt || ''} ${texto.slice(-2000)}`), texto: texto.slice(-2000) });
@@ -318,7 +331,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // antes suena desesperado. Si ya se le ofrecieron y no eligió, no se repiten.
   const acepto = aceptoDemo(msjs, c);
   const yaOfrecioSinRespuesta = ofrecidos.length > 0 && !acepto.si;
-  const agendaHorarios = acepto.si && !yaOfrecioSinRespuesta
+  const agendaHorarios = acepto.si && !yaOfrecioSinRespuesta && !faltan.length   // sin los tres datos no hay horarios: primero se completa lo que falta (regla 5)
     ? `${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}${ofrecidosTxt}`
     : yaOfrecioSinRespuesta
       ? `HORARIOS: ya se le ofrecieron (${ofrecidos.map(h => etiquetaHorario(h.fecha, h.hora)).join(' y ')}) y NO eligió ni dijo que sí. NO los repitas ni propongas otros: contesta lo que preguntó con calma y deja la puerta abierta en una frase («cuando gustes lo vemos, me avisas»), sin pregunta de horario. Si en este mensaje él dice que sí o pide la demo, devuelve accion.tipo="agendar" con el primero de esos horarios que siga vigente y confírmaselo.`

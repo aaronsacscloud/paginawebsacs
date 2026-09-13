@@ -1,0 +1,231 @@
+// El WhatsApp de la cadencia (Cuentas objetivo), mandado por el cron.
+//
+// Hasta el 13-sep-2026 el WhatsApp del ABM se mandaba a mano (abrir wa.me con
+// el texto cargado, api/crm/abm/whatsapp.ts). El dueño pidió que el goteo lo
+// mande solo, y para eso hacen falta tres cosas que este archivo cuida:
+//
+//  1. Solo a quien publicó su wa.me. El trigger `abm_whatsapp_solo_declarado`
+//     ya rechaza cualquier toque a un número no declarado; aquí no se salta.
+//  2. Plantilla APROBADA por Meta. Iniciar una conversación fuera de la ventana
+//     de 24 h solo se puede con plantilla; se registra desde la pantalla
+//     (`registrarPlantillas`) y hasta que Meta la apruebe no sale nada.
+//  3. La línea manda. Se va por la línea que el CRM tenga para «prospección»
+//     (reglas de wa_reglas_linea, si no la default), con el disyuntor de
+//     calidad (`wa-salud` la pausa) por encima de todo, un tope propio al día
+//     (abm_config.wa_tope_dia) y la presión de 24 h entre WhatsApps al mismo
+//     número que ya respetan las demás automatizaciones.
+//
+// Una respuesta frena TODA la cadencia (correo y WhatsApp), igual que una
+// contestación por correo: se detecta leyendo el espejo `wa_mensajes`.
+import { supabase } from '../supabase';
+import { apuntar, variablesDe } from './abm.lib';
+import { telefonoWhatsApp } from '../telefono';
+import { enviarPlantilla, conLinea, crearPlantillaMeta, sanearParam, KapsoError } from '../whatsapp/kapso-api';
+import { registrarMensaje } from '../whatsapp/espejo';
+import { lineaPara, infoLinea } from '../whatsapp/linea';
+import { puedeMandarWa } from '../whatsapp/presion';
+
+export type ResultadoWa = {
+  enviados: number; saltados: number; fallidos: number;
+  linea: string | null; tope: number; motivo: string | null; errores: string[];
+};
+
+/** `{{nombre}}` → `{{1}}`, en orden de aparición. Es el cuerpo que se registra en Meta. */
+export function cuerpoMeta(cuerpo: string): { texto: string; variables: string[] } {
+  const variables: string[] = [];
+  const texto = String(cuerpo || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_m, v) => {
+    const k = String(v).toLowerCase();
+    if (!variables.includes(k)) variables.push(k);
+    return `{{${variables.indexOf(k) + 1}}}`;
+  });
+  return { texto, variables };
+}
+
+/** Estado en Meta de las plantillas de WhatsApp de un giro (para la pantalla y para el cron). */
+export async function estadoPlantillas(giro: string) {
+  const { data: pls } = await supabase.from('abm_plantillas')
+    .select('id, nombre, cuerpo, meta_nombre, meta_idioma, orden')
+    .eq('giro', giro).eq('canal', 'whatsapp').eq('activa', true).order('orden');
+  const nombres = (pls || []).map((p: any) => p.meta_nombre).filter(Boolean);
+  const { data: enMeta } = nombres.length
+    ? await supabase.from('wa_plantillas').select('nombre, idioma, status, rechazo_motivo, calidad').in('nombre', nombres)
+    : { data: [] as any[] };
+  return (pls || []).map((p: any) => {
+    const m = (enMeta || []).find((x: any) => x.nombre === p.meta_nombre && x.idioma === (p.meta_idioma || 'es_MX'));
+    return { id: p.id, nombre: p.nombre, meta_nombre: p.meta_nombre, idioma: p.meta_idioma || 'es_MX',
+      status: m?.status || (p.meta_nombre ? 'SIN_REGISTRAR' : 'SIN_NOMBRE'), rechazo: m?.rechazo_motivo || null, calidad: m?.calidad || null };
+  });
+}
+
+/** Registra en Meta las plantillas del giro que aún no existen (o que Meta rechazó). Devuelve qué pasó con cada una. */
+export async function registrarPlantillas(giro: string): Promise<{ nombre: string; resultado: string }[]> {
+  const estado = await estadoPlantillas(giro);
+  const { data: pls } = await supabase.from('abm_plantillas').select('id, cuerpo').in('id', estado.map(e => e.id));
+  const out: { nombre: string; resultado: string }[] = [];
+  for (const e of estado) {
+    if (!e.meta_nombre) { out.push({ nombre: e.nombre, resultado: 'sin meta_nombre en abm_plantillas' }); continue; }
+    if (['APPROVED', 'PENDING', 'IN_APPEAL'].includes(e.status)) { out.push({ nombre: e.nombre, resultado: `ya está: ${e.status}` }); continue; }
+    const cuerpo = (pls || []).find((p: any) => p.id === e.id)?.cuerpo || '';
+    const { texto, variables } = cuerpoMeta(cuerpo);
+    try {
+      await crearPlantillaMeta({
+        nombre: e.meta_nombre, idioma: e.idioma, categoria: 'MARKETING', cuerpo: texto,
+        ejemplos: variables.map(v => v === 'nombre' ? 'Creaciones Lupita' : v === 'ciudad' ? 'Villa Hidalgo' : 'ejemplo'),
+      });
+      out.push({ nombre: e.nombre, resultado: 'enviada a revisión de Meta' });
+    } catch (err: any) {
+      out.push({ nombre: e.nombre, resultado: `error: ${err instanceof KapsoError ? err.message : String(err?.message || err)}`.slice(0, 300) });
+    }
+  }
+  // El espejo wa_plantillas lo actualiza sincronizarPlantillas (api/crm/whatsapp/plantillas.ts).
+  try { const { sincronizarPlantillas } = await import('../../pages/api/crm/whatsapp/plantillas'); await sincronizarPlantillas(); } catch (e) { console.warn('[abm-wa] sync plantillas:', e); }
+  return out;
+}
+
+/**
+ * Manda los WhatsApp aprobados cuya fecha ya llegó. Lo llama el cron de
+ * cadencias después del goteo. Nunca lanza: devuelve el motivo de lo que no salió.
+ */
+export async function enviarWhatsApps(o: { hoy: string; tope: number }): Promise<ResultadoWa> {
+  const res: ResultadoWa = { enviados: 0, saltados: 0, fallidos: 0, linea: null, tope: o.tope, motivo: null, errores: [] };
+  if (!(o.tope > 0)) { res.motivo = 'wa_tope_dia = 0'; return res; }
+
+  const pn = await lineaPara({ contexto: 'prospeccion' }).catch(() => null);
+  if (!pn) { res.motivo = 'no hay línea de WhatsApp disponible para prospección (¿pausada por calidad?)'; return res; }
+  const linea = await infoLinea(pn);
+  if (linea?.pausada) { res.motivo = `la línea ${linea.numero} está pausada${linea.pausada_motivo ? `: ${linea.pausada_motivo}` : ''}`; return res; }
+  res.linea = linea?.numero || pn;
+
+  const { count: yaHoy } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
+    .eq('estado', 'enviado').eq('canal', 'whatsapp').gte('enviado_at', o.hoy + 'T00:00:00Z');
+  const restante = Math.max(0, o.tope - (yaHoy || 0));
+  if (!restante) { res.motivo = 'tope de WhatsApp del día agotado'; return res; }
+
+  const { data: pendientes } = await supabase.from('abm_toques')
+    .select('id, cuenta_id, destino, cuerpo, programado_at, paso_id')
+    .eq('estado', 'aprobado').eq('canal', 'whatsapp')
+    .lte('programado_at', new Date().toISOString())
+    .order('programado_at').limit(500);
+  if (!pendientes?.length) return res;
+
+  // Qué plantilla de Meta lleva cada toque: el toque nace con su paso
+  // (paso_id) → plantilla del ABM → nombre en Meta → estado en el espejo wa_plantillas.
+  const pasoIds = Array.from(new Set(pendientes.map((t: any) => t.paso_id).filter(Boolean)));
+  const { data: pasos } = pasoIds.length
+    ? await supabase.from('abm_pasos').select('id, plantilla_id').in('id', pasoIds)
+    : { data: [] as any[] };
+  const plIds = Array.from(new Set((pasos || []).map((p: any) => p.plantilla_id).filter(Boolean)));
+  const { data: pls } = plIds.length
+    ? await supabase.from('abm_plantillas').select('id, cuerpo, meta_nombre, meta_idioma').in('id', plIds)
+    : { data: [] as any[] };
+  const nombresMeta = Array.from(new Set((pls || []).map((p: any) => p.meta_nombre).filter(Boolean)));
+  const { data: aprobadas } = nombresMeta.length
+    ? await supabase.from('wa_plantillas').select('nombre, idioma, status').in('nombre', nombresMeta)
+    : { data: [] as any[] };
+
+  const { data: cuentasHoy } = await supabase.from('abm_toques').select('cuenta_id')
+    .eq('estado', 'enviado').gte('enviado_at', o.hoy + 'T00:00:00Z').limit(5000);
+  const tocadasHoy = new Set((cuentasHoy || []).map((r: any) => r.cuenta_id));
+
+  const ids = Array.from(new Set(pendientes.map((t: any) => t.cuenta_id)));
+  const { data: cuentas } = await supabase.from('abm_cuentas').select('id, nombre, ciudad, etapa, ya_es_cliente, giro').in('id', ids);
+
+  for (const t of pendientes as any[]) {
+    if (res.enviados >= restante) break;
+    const c = (cuentas || []).find((x: any) => x.id === t.cuenta_id);
+    if (!c || c.ya_es_cliente || ['no_contactar', 'respondio', 'reunion', 'ganada', 'perdida'].includes(c.etapa)) {
+      await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
+      continue;
+    }
+    // Un solo toque por negocio al día, sea correo o WhatsApp: si hoy ya le
+    // salió algo, el WhatsApp se recorre a mañana.
+    if (tocadasHoy.has(t.cuenta_id)) {
+      await supabase.from('abm_toques').update({ programado_at: new Date(Date.now() + 864e5).toISOString() }).eq('id', t.id);
+      res.saltados++; continue;
+    }
+    const tel = telefonoWhatsApp(t.destino);
+    if (!tel) { await supabase.from('abm_toques').update({ estado: 'fallido', resultado: 'el número no tiene forma de WhatsApp' }).eq('id', t.id); res.fallidos++; continue; }
+
+    const paso = (pasos || []).find((p: any) => p.id === t.paso_id);
+    const pl = paso ? (pls || []).find((p: any) => p.id === paso.plantilla_id) : null;
+    if (!pl?.meta_nombre) { res.saltados++; res.motivo = res.motivo || 'el toque no tiene paso con plantilla registrada en Meta'; continue; }
+    const idioma = pl.meta_idioma || 'es_MX';
+    const ap = (aprobadas || []).find((x: any) => x.nombre === pl.meta_nombre && x.idioma === idioma);
+    if (ap?.status !== 'APPROVED') {
+      res.saltados++; res.motivo = res.motivo || `la plantilla «${pl.meta_nombre}» ${ap?.status ? `está ${ap.status} en Meta` : 'no está registrada en Meta'}: se queda en la fila`;
+      continue;
+    }
+
+    const presion = await puedeMandarWa(tel).catch(() => ({ ok: true } as any));
+    if (!presion.ok) { res.saltados++; continue; }
+
+    const { data: reclamado } = await supabase.from('abm_toques')
+      .update({ estado: 'enviando', enviado_at: new Date().toISOString() })
+      .eq('id', t.id).eq('estado', 'aprobado').select('id').maybeSingle();
+    if (!reclamado) continue;
+
+    const vars = variablesDe(c);
+    const params = cuerpoMeta(pl.cuerpo).variables.map(v => sanearParam(vars[v] || '') || '—');
+    try {
+      const r: any = await conLinea({ pn, contexto: 'prospeccion' }, () => enviarPlantilla(tel, pl.meta_nombre, idioma, params));
+      const wamid = r?.messages?.[0]?.id ? String(r.messages[0].id) : null;
+      if (wamid) {
+        await registrarMensaje({
+          kapsoMessageId: wamid, telefono: tel, direccion: 'saliente', tipo: 'template',
+          cuerpo: t.cuerpo || `[plantilla ${pl.meta_nombre}]`, status: 'sent', autor: 'Sistema',
+          metadata: { plantilla: pl.meta_nombre, abm_cuenta_id: c.id, abm_toque_id: t.id, contexto: 'prospeccion' },
+        } as any).catch(() => {});
+      }
+      await supabase.from('abm_toques').update({ estado: 'enviado', enviado_at: new Date().toISOString(), mensaje_id: wamid, resultado: null }).eq('id', t.id);
+      await supabase.from('abm_cuentas').update({ etapa: 'en_cadencia', ultimo_toque_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', c.id).in('etapa', ['sin_tocar', 'en_cadencia']);
+      await apuntar(c.id, 'whatsapp', 'envio', { toque_id: t.id, texto: `WhatsApp «${pl.meta_nombre.replace(/^abm_[a-z]+_/, '')}» a ${tel} por ${res.linea}`, detalle: { plantilla: pl.meta_nombre, wamid } });
+      tocadasHoy.add(c.id);
+      res.enviados++;
+    } catch (e: any) {
+      const msg = e instanceof KapsoError ? e.message : String(e?.message || e);
+      await supabase.from('abm_toques').update({ estado: 'fallido', resultado: msg.slice(0, 300) }).eq('id', t.id);
+      res.fallidos++; res.errores.push(`${c.nombre}: ${msg.slice(0, 160)}`);
+      if (res.errores.length >= 5) { res.motivo = 'cinco fallos seguidos: algo está mal con la plantilla o la línea, no se sigue'; break; }
+    }
+  }
+  return res;
+}
+
+/**
+ * Quien contesta por WhatsApp deja de recibir la cadencia entera. El webhook
+ * de Kapso espeja cada entrante en wa_mensajes; aquí se cruza con las cuentas
+ * que tienen un WhatsApp enviado y todavía algo en la fila.
+ */
+export async function respuestasWhatsApp(): Promise<{ respondieron: number }> {
+  const desde = new Date(Date.now() - 45 * 864e5).toISOString();
+  const { data: enviados } = await supabase.from('abm_toques')
+    .select('cuenta_id, destino, enviado_at').eq('canal', 'whatsapp').eq('estado', 'enviado').gte('enviado_at', desde)
+    .order('enviado_at').limit(2000);
+  if (!enviados?.length) return { respondieron: 0 };
+  const primero = new Map<string, { destino: string; desde: string }>();
+  for (const t of enviados as any[]) if (!primero.has(t.cuenta_id)) primero.set(t.cuenta_id, { destino: t.destino, desde: t.enviado_at });
+
+  const ids = Array.from(primero.keys());
+  const { data: cuentas } = await supabase.from('abm_cuentas').select('id, nombre, etapa').in('id', ids).in('etapa', ['sin_tocar', 'en_cadencia', 'en_pausa']);
+  let respondieron = 0;
+  for (const c of cuentas || []) {
+    const p = primero.get(c.id)!;
+    const tel = telefonoWhatsApp(p.destino);
+    if (!tel) continue;
+    const { data: conv } = await supabase.from('wa_conversaciones').select('id').eq('telefono', tel).maybeSingle();
+    if (!conv) continue;
+    const { data: m } = await supabase.from('wa_mensajes').select('id, cuerpo, created_at')
+      .eq('conversation_id', conv.id).eq('direccion', 'entrante').gt('created_at', p.desde)
+      .order('created_at').limit(1).maybeSingle();
+    if (!m) continue;
+    const { count: ya } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
+      .eq('cuenta_id', c.id).eq('canal', 'whatsapp').eq('tipo', 'respuesta');
+    if (!ya) await apuntar(c.id, 'whatsapp', 'respuesta', { texto: String(m.cuerpo || '').slice(0, 2000) });
+    await supabase.from('abm_cuentas').update({ etapa: 'respondio', updated_at: new Date().toISOString() }).eq('id', c.id).in('etapa', ['sin_tocar', 'en_cadencia', 'en_pausa']);
+    await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'contestó por WhatsApp' })
+      .eq('cuenta_id', c.id).in('estado', ['borrador', 'aprobado', 'programado']);
+    respondieron++;
+  }
+  return { respondieron };
+}

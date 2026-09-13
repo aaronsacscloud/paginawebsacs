@@ -8,7 +8,7 @@
 // quién firma la nota de la bitácora y si el primer correo sale hoy.
 import { supabase } from '../supabase';
 import { anthropic, MODELS } from '../ai/client';
-import { limpiar, apuntar, GIROS, variablesDe, rellenar } from './abm.lib';
+import { limpiar, apuntar, GIROS, variablesDe, rellenar, nombrePila } from './abm.lib';
 
 /** Lo que sabemos de la cuenta, resumido para que la IA no invente nada. */
 export function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
@@ -33,8 +33,12 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
      un correo que abría "Hola Juan Carlos". Saludar con nombre y apellido suena
      a base de datos, que es justo lo que no queremos parecer. El apellido no le
      sirve a la IA para redactar, así que ni se lo pasamos — una regla que el
-     modelo puede desobedecer es peor que un dato que no tiene. */
-  const pila = String(p?.nombre || '').trim().split(/\s+/)[0] || '';
+     modelo puede desobedecer es peor que un dato que no tiene.
+
+     nombrePila() respeta los compuestos: "Juan Carlos Medina" se queda en
+     "Juan Carlos" —a Juan Carlos nadie le dice Juan— pero "Cielo Inzunza" se
+     corta a "Cielo". */
+  const pila = nombrePila(p?.nombre);
   if (p && pila) l.push(`Persona que decide (nombre de pila, es el ÚNICO que puedes escribir): ${pila}${p.cargo ? `, ${p.cargo}` : ''}`);
   const cs = canales.map(x => x.tipo).join(', ');
   l.push(`Canales disponibles: ${cs || 'ninguno verificado'}`);
@@ -120,7 +124,7 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
   const { data: base } = await supabase.from('abm_cadencias')
     .select('id, nombre').eq('giro', c.giro).eq('ruta', ruta).eq('activa', true).maybeSingle();
   const { data: pasosTodos } = base
-    ? await supabase.from('abm_pasos').select('dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
+    ? await supabase.from('abm_pasos').select('id, dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
     : { data: [] as any[] };
   // Los días de los correos se leen por posición: si entran los pasos de
   // WhatsApp a la misma lista, el correo 2 hereda el día del WhatsApp 1.
@@ -249,7 +253,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
       const pl = (pls || []).find((p: any) => p.id === x.plantilla_id);
       if (!pl?.meta_nombre) return null;
       return {
-        cuenta_id: c.id, cadencia_id: base?.id || null, persona_id: persona0?.id || null,
+        cuenta_id: c.id, cadencia_id: base?.id || null, paso_id: x.id, persona_id: persona0?.id || null,
         goteo_id: op.goteo_id || null,
         canal: 'whatsapp', destino: wa.valor, asunto: null,
         cuerpo: limpiar(rellenar(pl.cuerpo, vars), 1024),

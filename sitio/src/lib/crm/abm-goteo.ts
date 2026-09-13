@@ -147,9 +147,9 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo'): Prom
       .update({ estado: 'aprobado', aprobado_por: g.creado_por || null, aprobado_at: new Date().toISOString() })
       .in('id', r.toque_ids).eq('estado', 'borrador');
     await supabase.from('abm_cuentas').update({ etapa: 'en_cadencia', updated_at: new Date().toISOString() }).eq('id', c.id).eq('etapa', 'sin_tocar');
-    await apuntar(c.id, 'sistema', 'nota', { texto: `Entró al goteo «${g.nombre}»: ${r.correos} correos aprobados con la firma de quien encendió la opción` });
+    await apuntar(c.id, 'sistema', 'nota', { texto: `Entró al goteo «${g.nombre}»: ${r.correos} correos${r.whatsapps ? ` y ${r.whatsapps} WhatsApp` : ''} aprobados con la firma de quien encendió la opción` });
     res.cuentas++; if (!r.con_ia) res.sin_ia++;
-    res.detalle.push({ cuenta_id: c.id, nombre: c.nombre, correos: r.correos, con_ia: r.con_ia, destino: r.destino });
+    res.detalle.push({ cuenta_id: c.id, nombre: c.nombre, correos: r.correos, whatsapps: r.whatsapps, con_ia: r.con_ia, destino: r.destino });
   };
   for (let i = 0; i < lote.length; i += EN_PARALELO) await Promise.all(lote.slice(i, i + EN_PARALELO).map(una));
 

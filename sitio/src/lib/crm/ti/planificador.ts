@@ -76,16 +76,16 @@ async function escasezReal(): Promise<number> {
   return Math.max(1, Math.min(3, hs.length));
 }
 
-function notaPara(paso: Paso, o: { n: number; variante?: Variante; escasez?: number; giroTxt?: string | null; hayEstaSemana: boolean; nombre: string | null }): string {
+export function notaPara(paso: Paso, o: { n: number; variante?: Variante; escasez?: number; giroTxt?: string | null; hayEstaSemana: boolean; nombre: string | null }): string {
   const nombre = o.nombre || '';
   switch (paso) {
     case 'paso0': return `PLANIFICADOR (toque ${o.n + 1}): ayer le pedimos sus datos (modelo de negocio, giro, sucursales) y no contestó. Vuelve a pedir SOLO lo que falta, distinto a como lo pediste, con interés genuino y sin prisa; ofrece el audio. Sin hablar de Sacs.`;
     case 'paso2': return `PLANIFICADOR (toque ${o.n + 1}): ya le resolvimos algo y se quedó callado. Reactiva sobre SU problema, no sobre nosotros: pregúntale cómo lo resuelve hoy («¿hoy cómo resuelves X?») o si quedó alguna duda de lo que te contó. Una sola pregunta, cálida, sin ofrecer reunión.`;
     case 'oferta':
       if (o.n === 0) {
-        if (o.variante === 'escasez') return `PLANIFICADOR (día 1 tras la oferta · variante ESCASEZ): pregunta si aún le interesa y di que estás esperando su confirmación para agendar con el consultor, que todavía tiene ${o.escasez} horario${o.escasez === 1 ? '' : 's'} disponible${o.escasez === 1 ? '' : 's'} esta semana (es un dato REAL, no lo cambies). Corto, amable, una pregunta.`;
+        if (o.variante === 'escasez') return `PLANIFICADOR (día 1 tras la oferta · variante ESCASEZ): pregunta si aún le interesa y di que estás esperando su confirmación para agendar con el consultor, que todavía tiene ${o.escasez} horario${o.escasez === 1 ? '' : 's'} disponible${o.escasez === 1 ? '' : 's'} esta semana (es un dato REAL, no lo cambies). Corto, amable, UNA sola pregunta y sin plazos («antes de…», «hoy mismo»).`;
         if (o.variante === 'novedad') return `PLANIFICADOR (día 1 tras la oferta · variante NOVEDAD): comparte algo nuevo del sistema para su giro${o.giroTxt ? ` (${o.giroTxt})` : ''} —por ejemplo «${NOVEDAD_IA.titulo}» si es ropa, calzado o uniformes, o la función del glosario de su giro que no se haya mencionado— en una línea, como quien avisa de una novedad, y cierra: «¿aún te interesa verlo, o prefieres en otra ocasión?».`;
-        return `PLANIFICADOR (día 1 tras la oferta · variante SALUDO): SOLO un saludo cálido y corto, nada más: «Hola ${nombre || ''}, ¿cómo estás?». Sin pregunta de negocio, sin reunión.`;
+        return `PLANIFICADOR (día 1 tras la oferta · variante SALUDO): SOLO un saludo cálido y corto, nada más: «Hola${nombre ? ' ' + nombre : ', soy Fernanda'}, ¿cómo estás?». Sin pregunta de negocio, sin reunión.`;
       }
       return `PLANIFICADOR (día 2 tras la oferta · presión suave con horarios reales): dile que el consultor aún tiene ${o.escasez} horario${o.escasez === 1 ? '' : 's'} disponible${o.escasez === 1 ? '' : 's'} ${o.hayEstaSemana ? 'esta semana' : 'próximamente'} (dato REAL) y pregúntale si quiere que le aparte uno o si prefiere verlo en otra ocasión. Una pregunta, sin insistir.`;
     case 'paso6': return `PLANIFICADOR (paso 6): dos toques sin respuesta. Con cordialidad: «${nombre ? nombre + ', ' : ''}espero que vaya todo bien. Me gustaría saber si aún es de tu interés o si prefieres que lo retomemos más adelante.» Nada más.`;

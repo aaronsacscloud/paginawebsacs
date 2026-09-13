@@ -33,6 +33,7 @@ export async function quien(request: Request): Promise<Quien | null> {
 }
 
 import { GIROS } from './abm-giros';
+import { nombrePila } from './nombre';
 export { GIROS };
 
 export const ETAPAS = ['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida', 'en_pausa', 'no_contactar'] as const;
@@ -153,6 +154,9 @@ export async function apuntar(cuenta_id: string, canal: string, tipo: string, ex
 //
 // Lo segundo es lo que evita el ridículo de "con  sucursales" o "Hola ,". Una
 // frase que depende de un dato que no tenemos no se escribe: se borra.
+
+export { nombrePila };
+
 export function variablesDe(c: any, persona?: any): Record<string, string> {
   return {
     nombre: c.nombre || '',
@@ -171,7 +175,7 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     rating: c.google_rating ? Number(c.google_rating).toFixed(1) : '',
     resenas: c.google_resenas ? String(c.google_resenas) : '',
     plataforma: plataformaLimpia(c.plataforma_web),
-    persona: (persona?.nombre || '').split(' ')[0] || '',
+    persona: nombrePila(persona?.nombre),
     giro_nombre: GIROS[c.giro] || c.giro || '',
     ultima_publicacion: recorte(c.ultima_publicacion, 90),
     senal: recorte(c.senal_expansion, 90),
