@@ -2176,14 +2176,48 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const sueltasVivas = (sueltas || []).filter((q: any) => COT_VIVA.includes(String(q.estado || '')));
   const sueltasRech = (sueltas || []).filter((q: any) => String(q.estado || '') === 'rejected');
 
-  const cotizado = dealsAbiertas.reduce((a: number, d: any) => a + Number(d.valor_total || 0), 0)
-    + sueltasVivas.reduce((a: number, q: any) => a + Number(q.total || 0), 0);
-  const nCotizado = dealsAbiertas.length + sueltasVivas.length;
+  const abonoPorCot = new Map<string, { monto: number; ultimo: string | null }>();
+  for (const a of (unicos?.por_anio || [])) {
+    for (const pg of (a.pagos || [])) {
+      if (!pg.quote_id) continue;
+      const r = abonoPorCot.get(pg.quote_id) || { monto: 0, ultimo: null };
+      r.monto += Number(pg.monto || 0);
+      if (!r.ultimo || String(pg.fecha) > r.ultimo) r.ultimo = String(pg.fecha).slice(0, 10);
+      abonoPorCot.set(pg.quote_id, r);
+    }
+  }
+  /* Una oportunidad con anticipo pagado YA NO está sobre la mesa: está vendida
+     y lo que queda es cobrarla —con sus fechas, en «Por cobrar»—. Contarla en
+     las dos tarjetas ponía el mismo dinero dos veces, que es justo lo que se
+     venía a quitar. Sigue en la lista de abajo, porque es donde se abre el
+     documento, pero marcada como lo que es. */
+  const enCobro = (qid: string) => Number(abonoPorCot.get(qid)?.monto || 0) > 0;
+  const dealsMesa = dealsAbiertas.filter((d: any) => !(d.quote_id && enCobro(d.quote_id)));
+  const sueltasMesa = sueltasVivas.filter((q: any) => !enCobro(q.id));
+  const cotizado = dealsMesa.reduce((a: number, d: any) => a + Number(d.valor_total || 0), 0)
+    + sueltasMesa.reduce((a: number, q: any) => a + Number(q.total || 0), 0);
+  const nCotizado = dealsMesa.length + sueltasMesa.length;
+  const nEnCobro = (dealsAbiertas.length + sueltasVivas.length) - nCotizado;
   const rechazado = dealsPerdidas.reduce((a: number, d: any) => a + Number(d.valor_total || 0), 0)
     + sueltasRech.reduce((a: number, q: any) => a + Number(q.total || 0), 0);
   const nRechazado = dealsPerdidas.length + sueltasRech.length;
   const nResueltas = listaDeals.filter((d: any) => esGanada(d.stage) || esPerdida(d.stage)).length
     + (sueltas || []).filter((q: any) => !COT_VIVA.includes(String(q.estado || ''))).length;
+
+  /* ── El puente entre el pago y la oportunidad ──
+     El cliente abona la cotización de una oportunidad abierta y la ficha lo
+     contaba DOS VECES en dos lugares: «$114,724 sobre la mesa» arriba y
+     «$49,450 de pagos únicos» abajo, como si fueran dos ventas. Son una: lo
+     abonado ya no está sobre la mesa. Los dos mapas se arman de lo que ya se
+     pidió —`unicos` trae el `quote_id` de cada cobro y `porCobrar` la próxima
+     parcialidad— así que esto no cuesta una llamada más. */
+  const proxPorCot = new Map<string, any>();
+  for (const l of (porCobrar.lineas || [])) if (l.quote_id && !proxPorCot.has(l.quote_id)) proxPorCot.set(l.quote_id, l);
+  /* El camino de vuelta: qué oportunidad cobró cada pago. Se arma con TODAS las
+     oportunidades —también las ganadas—, porque un cobro viejo sigue teniendo
+     su venta detrás y esa es justo la que se quiere poder nombrar. */
+  const nombrePorCot = new Map<string, string>();
+  for (const d of listaDeals) if (d.quote_id && d.nombre) nombrePorCot.set(d.quote_id, d.nombre);
 
   /* Las tarjetas y la lista leen del MISMO arreglo, ya normalizado: una
      oportunidad y una cotización suelta se pintan igual porque para quien mira
@@ -2195,6 +2229,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       meta: fmtDate(d.created_at),
       etiqueta: d.quote_id ? 'con cotización' : 'sin documento',
       monto: Number(d.valor_total || 0),
+      abono: d.quote_id ? abonoPorCot.get(d.quote_id) || null : null,
+      prox: d.quote_id ? proxPorCot.get(d.quote_id) || null : null,
     })),
     ...sueltasVivas.map((q: any) => ({
       key: 'q' + q.id, id: q.id, tipo: 'suelta', quote_id: q.id,
@@ -2202,6 +2238,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       meta: [fmtDate(q.created_at), q.contacto].filter(Boolean).join(' · '),
       etiqueta: ESTADO_COT[q.estado] || q.estado,
       monto: Number(q.total || 0),
+      abono: abonoPorCot.get(q.id) || null,
+      prox: proxPorCot.get(q.id) || null,
     })),
   ].sort((a, b) => b.monto - a.monto);
   const sinCobro = vitalicias.filter((x: any) => !(Number(x.total_pagado) > 0) && Number(x.precio) > 0);
@@ -2264,7 +2302,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           <div style={D.kl}>Cotizado</div>
           <div style={{ ...D.kv, color: cotizado > 0 ? '#2C5FC4' : '#1a1a1a' }}>{cotizado > 0 ? money(cotizado) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
-            {deals === null ? 'cargando…' : nCotizado ? `${nCotizado} sobre la mesa` : 'nada pendiente'}
+            {deals === null ? 'cargando…'
+              : [nCotizado ? `${nCotizado} sobre la mesa` : '', nEnCobro ? `${nEnCobro} ya en cobro` : '']
+                  .filter(Boolean).join(' · ') || 'nada pendiente'}
           </div>
         </div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72', flex: '1 1 150px' }}>
@@ -2690,7 +2730,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       </div>
 
       {/* Lo cotizado, debajo de las licencias: es el ANTES de cada una. */}
-      <PagosUnicos datos={unicos} />
+      <PagosUnicos datos={unicos} oportunidadDeCot={nombrePorCot} />
 
       <SeccionCotizaciones abiertos={abiertos} resueltos={nResueltas} companyId={companyId}
         flash={flash} cargar={cargarCotizado} reload={reload} />
@@ -3959,7 +3999,7 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
    con su variación: la pregunta no es cuánto pagó, sino si la cuenta CRECE por
    esta vía año con año. Cada cobro trae su fecha y sus partidas — sin eso, la
    cifra no se puede defender frente al cliente. */
-function PagosUnicos({ datos }: any) {
+function PagosUnicos({ datos, oportunidadDeCot }: any) {
   const [abierto, setAbierto] = useState<number | null>(null);
   if (!datos || !Number(datos.total)) return null;
   const anios = (datos.por_anio || []).filter((a: any) => a.total > 0 || a.pagos?.length);
@@ -3998,6 +4038,14 @@ function PagosUnicos({ datos }: any) {
                 <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', fontSize: '0.8rem' }}>
                   <span style={{ color: '#8f8d98', minWidth: 82, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(p.fecha)}</span>
                   <span style={{ flex: 1, minWidth: 0 }}>{p.numero || p.partidas?.[0]?.nombre || 'Cobro'}{p.metodo ? <span style={{ color: '#a7abb3' }}> · {p.metodo}</span> : null}</span>
+                  {/* De qué oportunidad salió. Un cobro suelto en esta lista y
+                      una oportunidad intacta arriba se leen como dos ventas
+                      distintas; con la etiqueta es evidente que son la misma. */}
+                  {oportunidadDeCot?.get?.(p.quote_id) && (
+                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#5B4BD6', background: '#EEECFE', borderRadius: 999, padding: '2px 9px' }}>
+                      de «{oportunidadDeCot.get(p.quote_id)}»
+                    </span>
+                  )}
                   <span style={{ fontWeight: 800, color: '#5B4BD6', fontVariantNumeric: 'tabular-nums' }}>{money(p.monto)}</span>
                 </div>
                 {(p.partidas || []).length > 0 && (
@@ -4127,22 +4175,55 @@ function SeccionCotizaciones({ abiertos, resueltos, companyId, flash, cargar, re
           style={{
             display: 'flex', alignItems: 'center', gap: 14, padding: '13px 15px', cursor: 'pointer',
             border: '1px solid #ececec', borderLeft: `3px solid ${it.quote_id ? '#9B8CFA' : '#E8A838'}`,
-            borderRadius: 11, marginBottom: 9, background: '#fff',
+            borderRadius: 11, marginBottom: 9, background: '#fff', flexWrap: 'wrap' as const,
             opacity: busyId === it.key ? 0.55 : 1,
           }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '0.89rem', fontWeight: 700, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.titulo}</div>
             <div style={{ fontSize: '0.73rem', color: '#a5a2af', marginTop: 3, display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
               <span>{it.meta}</span>
-              <span style={{ ...D.badge, background: it.quote_id ? '#E3EDFD' : '#FFF4E5', color: it.quote_id ? '#2C5FC4' : '#9a6a10', fontSize: '0.66rem' }}>{it.etiqueta}</span>
+              {/* Con abonos la etiqueta cambia: «con cotización» describe el
+                  papeleo, «en cobro» describe en qué va la venta, que es lo
+                  que se quiere saber de un vistazo. */}
+              <span style={{
+                ...D.badge, fontSize: '0.66rem',
+                background: it.abono?.monto > 0 ? '#EAF8F2' : it.quote_id ? '#E3EDFD' : '#FFF4E5',
+                color: it.abono?.monto > 0 ? '#1E8A63' : it.quote_id ? '#2C5FC4' : '#9a6a10',
+              }}>{it.abono?.monto > 0 ? 'en cobro' : it.etiqueta}</span>
             </div>
           </div>
           <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
-            <div style={{ fontSize: '1.12rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' as const }}>{money(it.monto)}</div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' }}>sobre la mesa</div>
+            {/* Con abonos, el número grande es lo que FALTA: decir el total de
+                algo que ya se está pagando promete dinero que no va a volver a
+                entrar. El total completo se lee abajo, en su contexto. */}
+            <div style={{ fontSize: '1.12rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' as const }}>
+              {money(it.abono?.monto > 0 ? Math.max(0, it.monto - it.abono.monto) : it.monto)}
+            </div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' }}>
+              {it.abono?.monto > 0 ? 'por cobrar' : 'sobre la mesa'}
+            </div>
           </div>
           <button onClick={e => abrirMenu(e, it.key)} title="Más acciones"
             style={{ ...D.btnG, padding: '6px 10px', flexShrink: 0 }}>⋮</button>
+          {/* Lo que el cliente ya puso contra ESTA oportunidad, y qué sigue.
+              Sin este renglón el abono aparecía suelto en «Pagos únicos» y la
+              oportunidad parecía intacta. */}
+          {it.abono?.monto > 0 && (
+            <div style={{
+              flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px 9px', flexWrap: 'wrap' as const,
+              fontSize: '0.75rem', color: '#4a4658', paddingTop: 10, marginTop: 2, borderTop: '1px dashed #e6ddfa',
+            }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF8F2', border: '1px solid #cfe9d9', color: '#1E8A63', borderRadius: 999, padding: '2px 10px', fontSize: '0.68rem', fontWeight: 700 }}>
+                {money(it.abono.monto)} abonados
+              </span>
+              <span>de {money(it.monto)}{it.abono.ultimo ? <> · último el <b style={{ color: '#2f2b3d' }}>{fmtDate(it.abono.ultimo)}</b></> : null}</span>
+              {it.prox && (
+                <span>· siguiente {it.prox.vencida
+                  ? <b style={{ color: '#C0554E' }}>{money(it.prox.monto)} vencida</b>
+                  : <b style={{ color: '#2f2b3d' }}>{money(it.prox.monto)}</b>} el {fmtDate(it.prox.fecha)}</span>
+              )}
+            </div>
+          )}
         </div>
       ))}
 

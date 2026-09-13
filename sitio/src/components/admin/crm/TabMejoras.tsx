@@ -345,7 +345,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         position: 'absolute', left: -24, top: 4, width: 14, height: 14, borderRadius: 99,
         background: '#fff', border: `3px solid ${color}`, boxSizing: 'border-box',
       }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.09em', color: '#1a1a1a' }}>
           {n} · {titulo}
         </span>
@@ -374,140 +374,80 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         </div>
       )}
 
-      {/* Las cifras siguen el mismo orden que los hitos. "Sobre la mesa" en $0
-          se leía como "no hay nada que vender" cuando lo que falta es capturar
-          el monto: si ninguna idea lo tiene, se dice eso en vez de un cero. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 11 }}>
-        {[
-          ['Por hacer', String(porHacer), estaSemana ? `${estaSemana} vencen esta semana` : 'nada urgente', porHacer ? '#9a6a10' : '#1a1a1a', '#E8A838', false],
-          ['Sobre la mesa',
-            potencial > 0 ? '~' + money(potencial) : '—',
-            potencial > 0
-              ? `${ideas.length} idea${ideas.length === 1 ? '' : 's'} sin cerrar`
-              : ideas.length ? `${ideasSinMonto} idea${ideasSinMonto === 1 ? '' : 's'} sin monto · no se puede estimar` : 'sin ideas todavía',
-            '#2C5FC4', '#7DA6F5', potencial === 0 && ideas.length > 0],
-          ['Entregado este año', String(esteAnio), delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'sin entregas', '#1a1a1a', '#4FBF95', false],
-          ['Cobrado', money(entrado),
-            cotizado > 0
-              ? (porEntrar > 0
-                  ? `de ${money(cotizado)} cotizados · faltan ${money(porEntrar)}`
-                  : `${money(cotizado)} cotizados y liquidados`)
-                + (ultimoPago ? ` · último el ${fmtDate(ultimoPago)}` : '')
-              : `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`,
-            '#1E8A63', '#4FBF95', cotizado > 0 && entrado === 0],
-        ].map(([l, v, sub, col, franja, ojo]: any) => (
-          <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px' }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>{l}</div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 3, letterSpacing: '-.03em', color: col }}>{v}</div>
-            <div style={{ fontSize: '0.66rem', marginTop: 2, lineHeight: 1.35, color: ojo ? '#9a6a10' : '#8a8a8a', fontWeight: ojo ? 600 : 400 }}>{sub}</div>
+      {/* ── El dinero, en UNA tarjeta ──
+          Eran tres bloques apilados —la tarjeta «Cobrado», el acuerdo de pago
+          en amarillo y de dónde salió el cobro— hablando todos del MISMO
+          dinero, con tres colores distintos. Aquí es una sola cosa: cuánto
+          entró, cuánto falta, qué parcialidad sigue y de qué conversación
+          salió. Solo aparece si hay algo cotizado: una cuenta sin trabajo
+          vendido no necesita una tarjeta que diga cero. */}
+      {cotizado > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.13))',
+          border: '1px solid #ddd6fb', borderRadius: 12, padding: '15px 18px', marginBottom: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1E8A63', letterSpacing: '-.035em' }}>{money(entrado)}</span>
+            <span style={{ fontSize: '0.8rem', color: '#6b6878' }}>
+              {porEntrar > 0
+                ? <>cobrados de <b style={{ color: '#3f3b4d' }}>{money(cotizado)}</b> · faltan <b style={{ color: '#3f3b4d' }}>{money(porEntrar)}</b></>
+                : <>cobrados · <b style={{ color: '#1E8A63' }}>liquidado</b></>}
+              {ultimoPago && <> · último el {fmtDate(ultimoPago)}</>}
+            </span>
           </div>
-        ))}
-      </div>
-
-      {/* ── El acuerdo de pago ──
-          Una cotización que se paga en parcialidades tiene fechas pactadas.
-          Vivían solo dentro del documento: aquí se leen sin abrirlo, y son las
-          MISMAS que ve Cobranza —una sola función las calcula—. */}
-      {conPlan.map((c: any) => {
-        const pagadas = c.plan.filter((x: any) => x.estado === 'pagada').length;
-        const prox = c.plan.find((x: any) => x.estado === 'pendiente');
-        const vencida = prox?.vencida;
-        return (
-          <div key={c.id} style={{
-            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12,
-            background: vencida ? '#FFF9EF' : '#fbfaff',
-            border: `1px solid ${vencida ? '#f3dfae' : '#e6ddfa'}`, borderRadius: 10, padding: '11px 15px',
-          }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: vencida ? '#9a6a10' : '#6b5fa8' }}>
-              Acuerdo de pago
-            </div>
-            <div style={{ fontSize: '0.79rem', color: '#3f3b4d', flex: 1, minWidth: 220, lineHeight: 1.5 }}>
-              <b>{c.numero}</b> · {c.plan.length} parcialidades · {pagadas} pagada{pagadas === 1 ? '' : 's'}
-              {prox
-                ? <> · {vencida ? <b style={{ color: '#C0554E' }}>vencida</b> : 'la próxima'} <b>{money(prox.monto)}</b> el {fmtDate(prox.fecha)}</>
-                : <> · <b style={{ color: '#1E8A63' }}>liquidada</b></>}
-            </div>
-            <div style={{ fontSize: '0.72rem', color: '#8a8590' }}>
-              {money(c.pagado)} de {money(c.total)}
-            </div>
-            {/* De dónde salió el cobro. Una cuenta que se movió por WhatsApp y
-                terminó pagando se veía igual que una muerta: el trabajo estaba,
-                el dinero estaba, y el hilo que los unió no aparecía. */}
-            {c.conversacion && (
-              <div style={{
-                flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap',
-                fontSize: '0.72rem', color: '#6b6878', lineHeight: 1.5,
-                paddingTop: 9, borderTop: `1px dashed ${vencida ? '#f0e2c4' : '#e6ddfa'}`,
-              }}>
-                Salió de la conversación <b style={{ color: '#3f3b4d' }}>«{c.conversacion.titulo}»</b>
-                <span style={{ background: '#EAF8F2', color: '#1E8A63', border: '1px solid #cfe9d9', borderRadius: 999, padding: '2px 9px', fontSize: '0.65rem', fontWeight: 700 }}>
-                  {fmtDate(c.conversacion.desde)}{c.conversacion.hasta !== c.conversacion.desde ? ` – ${fmtDate(c.conversacion.hasta)}` : ''}
+          {/* La barra dice de un vistazo si esto va empezando o va terminando,
+              que es la pregunta real cuando el cobro es en parcialidades. */}
+          <div style={{ height: 5, borderRadius: 5, background: 'rgba(91,75,214,.14)', margin: '11px 0 10px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 5,
+              width: `${Math.min(100, Math.round((entrado / Math.max(1, cotizado)) * 100))}%`,
+              background: 'linear-gradient(90deg,#9B8CFA,#4FBF95)',
+            }} />
+          </div>
+          {conPlan.map((c: any) => {
+            const pagadas = c.plan.filter((x: any) => x.estado === 'pagada').length;
+            const prox = c.plan.find((x: any) => x.estado === 'pendiente');
+            return (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '7px 14px', flexWrap: 'wrap', fontSize: '0.755rem', color: '#4a4658', lineHeight: 1.5, marginBottom: 4 }}>
+                <span>
+                  <b style={{ color: '#2f2b3d' }}>{c.numero}</b> · {c.plan.length} parcialidades · {pagadas} pagada{pagadas === 1 ? '' : 's'}
+                  {prox
+                    ? <> · {prox.vencida
+                        ? <b style={{ color: '#C0554E' }}>vencida {money(prox.monto)}</b>
+                        : <>la próxima <b style={{ color: '#2f2b3d' }}>{money(prox.monto)}</b></>} el {fmtDate(prox.fecha)}</>
+                    : <> · <b style={{ color: '#1E8A63' }}>liquidada</b></>}
                 </span>
+                {c.conversacion && (
+                  <span title={`${fmtDate(c.conversacion.desde)} – ${fmtDate(c.conversacion.hasta)}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', border: '1px solid #e3dffa', borderRadius: 999, padding: '2px 10px', fontSize: '0.68rem', fontWeight: 700, color: '#5B4BD6' }}>
+                    Salió de «{c.conversacion.titulo}»
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* ── Cobrado y sin entrega registrada ──
-          Va después del acuerdo de pago y antes de los reportes, porque es
-          justo lo que hace que el reporte de entregas salga vacío. */}
-      {sinRegistrar.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: '3px solid #4FBF95', borderRadius: 10, padding: '13px 16px', marginBottom: 12 }}>
-          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#1E8A63', textTransform: 'uppercase', letterSpacing: '.07em' }}>
-            Se cobró, falta registrar la entrega
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 3, lineHeight: 1.45 }}>
-            Trabajo que el cliente ya está pagando y todavía no tiene su renglón en «Ya entregado». Sin él, el reporte de entregas sale vacío.
-          </div>
-          {sinRegistrar.map(({ cot, it }: any) => (
-            <div key={`${cot.id}|${it.clave}`} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', paddingTop: 10, marginTop: 9, borderTop: '1px solid #f4f3f7' }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#2f2b3d' }}>{it.nombre}</div>
-                <div style={{ fontSize: '0.7rem', color: '#8a8590', marginTop: 2 }}>{cot.numero} · {money(cot.pagado)} de {money(cot.total)} cobrados</div>
-              </div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</div>
-              <button style={{ ...S.btn, background: '#1E8A63', flexShrink: 0 }}
-                onClick={() => setEditando({
-                  estado: 'entregada', categoria: catDePartida(it),
-                  titulo: it.nombre, valor: it.neto, quote_id: cot.id, quote_item: it.clave,
-                  visible_cliente: true, cortesia: false,
-                })}>Registrar la entrega</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Los reportes suben junto a las cifras: son lo que se le enseña al
-          cliente y estaban hasta el fondo, después de tres listas.
-
-          Son DOS documentos y no uno con más secciones, porque se mandan en
-          momentos distintos: el ejecutivo cuando toca revisar la cuenta, el de
-          entregas cuando el cliente pregunta «¿qué me han hecho?». Meterlos en
-          el mismo documento obliga a mandar todo o nada. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 11, marginBottom: 18 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-          background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))',
-          border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 15px',
-        }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6' }}>Reporte ejecutivo</div>
-          <button style={{ ...S.btn, flexShrink: 0, marginLeft: 'auto' }} onClick={() => setReporte(true)}>Generar</button>
-          <div style={{ fontSize: '0.73rem', color: '#6b7280', flexBasis: '100%', lineHeight: 1.45 }}>
-            Entregas, capacitaciones, soporte y pendientes con lo que SACS sabe de la cuenta.
+      {/* ── Las tres cuentas, en una tira ──
+          Eran tres tarjetas del mismo tamaño que la del dinero y en la mayoría
+          de las cuentas las tres dicen cero: gritaban lo que no tenía nada que
+          decir. Como tira se leen igual cuando traen número y desaparecen del
+          ruido cuando no. El color solo entra si el dato pide atención. */}
+      <div style={{ display: 'flex', gap: '10px 26px', flexWrap: 'wrap', padding: '0 3px', marginBottom: 14 }}>
+        {[
+          { l: porHacer && estaSemana ? `${estaSemana} vencen esta semana` : 'Por hacer', v: String(porHacer), col: porHacer ? '#9a6a10' : null },
+          { l: potencial > 0 ? `${ideas.length} idea${ideas.length === 1 ? '' : 's'} sin cerrar`
+              : ideas.length ? `${ideasSinMonto} sin monto · no se puede estimar` : 'Sobre la mesa',
+            v: potencial > 0 ? '~' + money(potencial) : '—', col: potencial > 0 ? '#2C5FC4' : null },
+          { l: delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'Entregado este año',
+            v: String(esteAnio), col: esteAnio ? '#1E8A63' : null },
+        ].map(x => (
+          <div key={x.l} style={{ fontSize: '0.72rem', color: '#9a97a4' }}>
+            <div style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-.02em', marginBottom: 1, color: x.col || '#c2bfcc' }}>{x.v}</div>
+            {x.l}
           </div>
-        </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-          background: 'linear-gradient(135deg,#EAF8F2,rgba(125,166,245,.14))',
-          border: '1px solid #cfe9d9', borderRadius: 10, padding: '11px 15px',
-        }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1E8A63' }}>Reporte de entregas</div>
-          <button style={{ ...S.btn, flexShrink: 0, marginLeft: 'auto', background: '#1E8A63' }} onClick={() => setEntregas(true)}>Generar</button>
-          <div style={{ fontSize: '0.73rem', color: '#6b7280', flexBasis: '100%', lineHeight: 1.45 }}>
-            Solo lo entregado, con el <b>video</b> de cada mejora. Para justificar el trabajo.
-          </div>
-        </div>
+        ))}
       </div>
 
       <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
@@ -585,8 +525,42 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         {/* 3 · Lo que ya quedó atrás. Solo la última: es historia, se consulta.
             La lista completa empujaba fuera de pantalla lo que sí hay que hacer. */}
         <Hito n={3} titulo="Ya entregado" color="#4FBF95"
-          resumen={entregadas.length ? `${entregadas.length} en total` : 'sin entregas'}>
-          {entregadas.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Todavía no se le ha entregado nada a este cliente.</div>}
+          resumen={entregadas.length ? `${entregadas.length} en total` : 'sin entregas'}
+          /* Los reportes viven aquí y no en dos tarjetones arriba: son lo que
+             sale de ESTA lista. El ejecutivo se manda cuando toca revisar la
+             cuenta y el de entregas cuando el cliente pregunta «¿qué me han
+             hecho?», así que siguen siendo dos documentos y no uno. */
+          accion={<>
+            <button style={{ ...S.btnG, borderColor: '#cfe9d9', color: '#1E8A63' }} onClick={() => setEntregas(true)}>Reporte de entregas</button>
+            <button style={S.btnG} onClick={() => setReporte(true)}>Reporte ejecutivo</button>
+          </>}>
+          {/* Lo que se cobró y no tiene entrega. Era un bloque suelto allá
+              arriba; su lugar es aquí, porque es exactamente lo que le falta a
+              esta lista —y sin ese renglón el reporte de entregas sale vacío
+              aunque el cliente lleve medio proyecto pagado—. */}
+          {sinRegistrar.map(({ cot, it }: any) => (
+            <div key={`${cot.id}|${it.clave}`} style={{
+              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 9,
+              background: '#F6FBF8', borderLeft: '3px solid #4FBF95', borderRadius: '0 9px 9px 0', padding: '10px 13px',
+            }}>
+              <div style={{ flex: 1, minWidth: 190 }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#2f2b3d' }}>
+                  Se cobró y falta registrar: {it.nombre}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#8a8590', marginTop: 2 }}>
+                  {cot.numero} · sin este renglón el reporte de entregas sale vacío
+                </div>
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</div>
+              <button style={{ ...S.btn, background: '#1E8A63', flexShrink: 0 }}
+                onClick={() => setEditando({
+                  estado: 'entregada', categoria: catDePartida(it),
+                  titulo: it.nombre, valor: it.neto, quote_id: cot.id, quote_item: it.clave,
+                  visible_cliente: true, cortesia: false,
+                })}>Registrar la entrega</button>
+            </div>
+          ))}
+          {entregadas.length === 0 && sinRegistrar.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Todavía no se le ha entregado nada a este cliente.</div>}
           {(verTodo ? entregadas : entregadas.slice(0, 1)).map(m => <Renglon key={m.id} m={m} />)}
           {entregadas.length > 1 && (
             <button onClick={() => setVerTodo(v => !v)}

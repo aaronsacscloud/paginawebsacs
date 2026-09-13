@@ -28,7 +28,12 @@ export const GET: APIRoute = async ({ url }) => {
   // vigencia pasó, y dejarla fuera la borra justo cuando hay algo que cobrar.
   const { data: cots, error } = await supabase.from('quotes')
     .select('id, numero, total, estado, notas, aceptado_fecha, created_at')
-    .eq('company_id', companyId).in('estado', ['accepted', 'expired'])
+    // 'sent' también, pero solo las que YA recibieron un abono: si el cliente
+    // pagó el anticipo, la venta está cerrada aunque nadie haya tocado el botón
+    // de aceptar, y su parcialidad vencida se debe igual. Sin esto la ficha de
+    // Vende Tu Closet decía «al corriente» con $7,912 vencidos desde el 10 de
+    // septiembre. Una `sent` sin abonos sigue siendo una propuesta y no entra.
+    .eq('company_id', companyId).in('estado', ['accepted', 'expired', 'sent'])
     .order('created_at', { ascending: false }).limit(50);
   if (error) return json({ error: error.message }, 500);
   if (!cots?.length) return json({ total: 0, vencido: 0, lineas: [] });
@@ -43,6 +48,7 @@ export const GET: APIRoute = async ({ url }) => {
   const lineas: any[] = [];
   for (const q of cots) {
     const ab = abonado.get(q.id) || 0;
+    if (q.estado === 'sent' && ab <= 0) continue;
     const plan = planDeCotizacion(q, ab, hoy);
     if (plan.length) {
       // Con plan, lo que se debe son las exhibiciones pendientes, cada una con
