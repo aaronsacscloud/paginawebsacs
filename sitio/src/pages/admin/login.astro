@@ -45,16 +45,14 @@ if (user) {
         <p class="auth-cita">“Nadie crece solo: cada persona a la que ayudas a avanzar termina abriéndote el camino.”</p>
       </div>
 
-      <!-- El cierre va junto para que el panel siga repartiéndose en tres
-           bloques (marca arriba, mensaje al centro, cierre abajo). -->
-      <div class="auth-cierre">
-        <p class="auth-susurro" id="susurro">
-          <span class="auth-susurro-lz"></span>
-          <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#FBD3E5"/></svg>
-          <span>Conectando estrellas, creando constelaciones.</span>
-        </p>
-        <p class="auth-pie">Panel interno · Solo el equipo de SACS</p>
-      </div>
+      <!-- El cierre del panel: la frase del cielo, sola. Antes aquí decía
+           «Panel interno · Solo el equipo de SACS», que no le dice nada a
+           quien ya está entrando y le quitaba el lugar a la frase. -->
+      <p class="auth-susurro" id="susurro">
+        <span class="auth-susurro-lz"></span>
+        <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#FBD3E5"/></svg>
+        <span>Conectando estrellas, creando constelaciones.</span>
+      </p>
     </aside>
 
     <!-- Formulario -->
@@ -147,10 +145,9 @@ if (user) {
        mientras las estrellas se están uniendo y se recuesta cuando la
        constelación ya quedó—, que es lo que hace que se sienta dicha por el
        cielo y no pegada encima. */
-    .auth-cierre { display: flex; flex-direction: column; gap: 12px; }
     .auth-susurro {
       display: flex; align-items: center; gap: 9px; margin: 0;
-      font-size: .76rem; font-style: italic; line-height: 1.4; color: rgba(255,255,255,.55);
+      font-size: .82rem; font-style: italic; line-height: 1.4; color: rgba(255,255,255,.6);
       opacity: 0; transform: translateY(6px);
       transition: opacity 1.2s ease, transform 1.2s ease, color 1.6s ease;
     }
@@ -161,7 +158,6 @@ if (user) {
     .auth-susurro.viva svg { opacity: 1; }
     @media (prefers-reduced-motion: reduce) { .auth-susurro { opacity: 1; transform: none; color: rgba(255,255,255,.8); } }
 
-    .auth-pie { font-size: .68rem; color: rgba(255,255,255,.66); margin: 0; letter-spacing: .02em; }
 
     /* ── Formulario ── */
     /* El lado derecho ya no es una hoja blanca aparte: el color de la izquierda
@@ -224,8 +220,7 @@ if (user) {
       .auth-marca { padding: 26px 24px 30px; gap: 20px; min-height: 62vh; }
       .auth-frase { font-size: 1.5rem; max-width: none; }
       .auth-cita { font-size: .82rem; }
-      .auth-susurro { font-size: .7rem; }
-      .auth-pie { display: none; }
+      .auth-susurro { font-size: .74rem; }
       .auth-lado { padding: 26px 20px 44px; align-items: flex-start; }
       .auth-card { box-shadow: 0 1px 3px rgba(40,20,90,.06), 0 10px 26px rgba(40,20,90,.10); }
     }
