@@ -55,11 +55,11 @@ const ACC = [
 
 <style>
   .sn { --p: 0; position: relative; height: 380vh; background: #fff; color: #1D1D1F; }
-  .sn-pegado { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .sn-pegado { position: sticky; top: 0; height: 100vh; overflow: hidden; isolation: isolate; }
   .sn-glow { display: none; }
 
   /* ── texto grande ── */
-  .sn-txt { position: absolute; left: 0; right: 0; top: 12vh; text-align: center; z-index: 1; padding: 0 16px; }
+  .sn-txt { position: absolute; left: 0; right: 0; top: 12vh; text-align: center; z-index: 1; padding: 0 16px; pointer-events: none; }
   .sn-l1 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(22px, 3.2vw, 46px); letter-spacing: -0.02em; line-height: 1; color: #8A8A86; }
   .sn-l2 { display: grid; height: 1.05em; margin-top: 0.12em; font-family: var(--font-display); font-weight: 600; font-size: clamp(54px, 13vw, 200px); letter-spacing: -0.05em; line-height: 1; color: #1D1D1F; overflow: hidden; }
   .sn-w { grid-area: 1 / 1; display: block; opacity: 0; transform: translateY(0.5em); transition: opacity 0.5s cubic-bezier(0.2,0.7,0.2,1), transform 0.6s cubic-bezier(0.2,0.7,0.2,1); will-change: transform, opacity; }
@@ -67,12 +67,12 @@ const ACC = [
   .sn-w.is-off { opacity: 0; transform: translateY(-0.5em); }
 
   /* ── personaje ── */
-  .sn-fig { position: absolute; left: 50%; bottom: 0; width: min(46vh, 86vw); aspect-ratio: 9 / 16; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.56 + var(--p) * 0.62)); transform-origin: 50% 100%; z-index: 2; will-change: transform; }
+  .sn-fig { position: absolute; left: 50%; bottom: 0; width: min(46vh, 86vw); aspect-ratio: 9 / 16; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.56 + var(--p) * 0.62)); transform-origin: 50% 100%; z-index: 6; will-change: transform; }
   .sn-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .sn-v { position: absolute; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; }
 
   /* ── accesorios con paralaje (sobrio) ── */
-  .sn-accs { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .sn-accs { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
   .sn-acc { position: absolute; height: auto; transform: translateY(calc(var(--p) * var(--v) * 1px)) rotate(var(--r)); filter: drop-shadow(0 22px 28px rgba(0,0,0,0.12)); animation: sn-flota 7s ease-in-out infinite; will-change: transform; }
   .sn-acc:nth-child(2n) { animation-duration: 8.5s; animation-delay: -3s; } .sn-acc:nth-child(3n) { animation-delay: -1.5s; }
   @keyframes sn-flota { 50% { margin-top: -10px; } }
@@ -125,7 +125,7 @@ const ACC = [
       if (v && v.readyState >= 2) {
         ctx.drawImage(v, 0, 0, W, H);
         const im = ctx.getImageData(0, 0, W, H); const d = im.data;
-        for (let i = 0; i < d.length; i += 4) { const m = Math.min(d[i], d[i + 1], d[i + 2]); if (m > 238) d[i + 3] = 0; else if (m > 200) d[i + 3] = ((238 - m) / 38 * 255) | 0; }
+        for (let i = 0; i < d.length; i += 4) { const m = Math.min(d[i], d[i + 1], d[i + 2]); if (m > 244) d[i + 3] = 0; else if (m > 226) d[i + 3] = ((244 - m) / 18 * 255) | 0; }
         ctx.putImageData(im, 0, 0);
       }
       dib = requestAnimationFrame(dibuja);
