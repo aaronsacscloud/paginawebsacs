@@ -9,6 +9,7 @@ import PlanesConfig from './crm/PlanesConfig';
 import { ComisionesModelo, ComisionesAtribucion, ComisionesCiclo } from './crm/ComisionesConfig';
 import { swrGet } from '../../lib/crm/swr';
 import VistaRapida from './crm/ui/VistaRapida';
+import Chispas, { Sello, CHISPA, CSS_CHISPAS, CSS_SELLO } from './crm/ui/Chispas';
 // El hub de agenda ya viene lazy: no engorda el bundle de Cotizaciones.
 import SchedulingTab from './crm/SchedulingTab';
 import MotivosLead from './crm/MotivosLead';
@@ -383,7 +384,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
   useEffect(() => { load(); }, []);
 
-  const [dashCot, setDashCot] = useState(false);
+  /* Sin botón, la única puerta es la URL. Es a propósito: la entrada visible
+     se fue, pero once análisis que ya funcionan no se tiran por un rediseño de
+     encabezado. */
+  const [dashCot, setDashCot] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('dash') === '1';
+  });
 
   // Sync tab when controlled by CrmDashboard
   useEffect(() => {
@@ -1694,9 +1701,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         })()}
         {!esMovilQ && (<>
         {/* ─── Top header: title + actions ─── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+        {/* Las chispas de la marca, el mismo componente que usan el Tablero y
+            Clientes. Viven SOLO en esta franja: abajo empiezan las cifras y un
+            destello detrás de un número estorba al leerlo. */}
+        <style>{CSS_CHISPAS + CSS_SELLO}</style>
+        <div className="chispas-cab" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+          <Chispas />
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Cotizaciones</h2>
+            <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+              Cotizaciones
+              {/* Las tres frases cuentan una historia en orden: aquí NACE la
+                  estrella —se firma—, en Clientes «ninguna brilla sola» y en el
+                  Tablero se conectan en constelaciones. */}
+              <Sello>Cada sí enciende una estrella</Sello>
+            </h2>
             <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>{quotes.length} totales · {filteredQuotes.length} en vista</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1713,13 +1731,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            {/* Dashboard antes de crear y sin ícono: la fila termina en la
-                acción, no en el destino. Con los dos al mismo peso visual el ojo
-                dudaba cuál apretar; ahora "Nueva cotización" cierra y manda. */}
-            <button onClick={() => setDashCot(true)}
-              style={{ ...S.btn, background: '#fff', color: M.azulTinta, border: `1.5px solid ${M.azul}`, borderRadius: 12, padding: '9px 20px', fontWeight: 700 }}>
-              Dashboard
-            </button>
+            {/* El botón de Dashboard se retiró: el tablero de la cuenta es UNO
+                y una segunda puerta con el mismo nombre hacía dudar cuál abrir.
+                La pantalla de análisis NO se borró —son once bloques que no
+                existen en ningún otro lado— y sigue llegable con `?dash=1`
+                mientras el Tablero principal la absorbe. */}
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
               style={{ ...S.btn, background: M.violeta, color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
           </div>
@@ -1732,11 +1748,29 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>
           {(() => {
             const k = kpis;
-            const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void, franja: string = M.violeta) => (
-              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${franja}`, padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
-                <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
-                <div style={{ fontSize: '1.375rem', fontWeight: 700, color, marginTop: 4 }}>{valor}</div>
-                <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{sec}</div>
+            /* `faro` es la tarjeta que manda en la fila. Cinco iguales no tienen
+               jerarquía y el ojo empieza por la de la izquierda, no por la que
+               importa. Aquí la que manda es COBRADO: de las cinco es la única
+               que dice que el dinero ya entró —las otras cuatro son promesa—.
+               Solo una por pantalla: dos faros no alumbran el doble, se anulan. */
+            const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void, franja: string = M.violeta, faro = false) => (
+              <div onClick={onClick} style={{
+                background: faro ? 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))' : '#fff',
+                border: `1px solid ${faro ? '#ddd6fb' : '#ececec'}`,
+                ...(faro ? {} : { borderLeft: `3px solid ${franja}` }),
+                padding: '14px 16px', borderRadius: faro ? 12 : 10,
+                position: faro ? 'relative' as const : undefined, overflow: faro ? 'hidden' as const : undefined,
+                cursor: onClick ? 'pointer' : 'default',
+              }}>
+                {faro && (
+                  <svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true"
+                    style={{ position: 'absolute', right: -6, top: -8, opacity: .5, pointerEvents: 'none' }}>
+                    <path d={CHISPA} fill="rgba(217,83,142,.18)" />
+                  </svg>
+                )}
+                <div style={{ position: 'relative', fontSize: '0.625rem', fontWeight: 700, color: faro ? '#8a6a9c' : '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
+                <div style={{ position: 'relative', fontSize: faro ? '1.55rem' : '1.375rem', fontWeight: faro ? 800 : 700, letterSpacing: faro ? '-.025em' : undefined, color, marginTop: 4 }}>{valor}</div>
+                <div style={{ position: 'relative', fontSize: '0.6875rem', color: faro ? '#6b6878' : '#888', marginTop: 2 }}>{sec}</div>
               </div>
             );
             // La variación se pinta sola: verde arriba, rojo abajo. Y cuando no
@@ -1766,7 +1800,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   M.violetaTinta, () => setPanelKpi('cerrado'), M.violeta)}
                 {card('Cobrado este mes', fmt(k.cobrado.monto),
                   <>{k.cobrado.cotizaciones} cotizaci{k.cobrado.cotizaciones === 1 ? 'ón' : 'ones'}{k.cobrado.anticipos > 0 ? ` · ${fmt(k.cobrado.anticipos)} son anticipos` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
-                  M.verdeTinta, () => setPanelKpi('cobrado'), M.verde)}
+                  M.verdeTinta, () => setPanelKpi('cobrado'), M.verde, true)}
                 {/* Solo lo exigible DENTRO del mes: lo que toca en noviembre no
                     se cobra hoy y no tiene por qué inflar el número de hoy. */}
                 {card('Por cobrar este mes', fmt(k.por_cobrar.monto),
