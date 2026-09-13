@@ -3372,89 +3372,12 @@ const useCases = [
         <ol class="flujo-dots">
           <li data-i="0"><i><b></b></i><span>Decisión</span></li><li data-i="1"><i><b></b></i><span>Porqué</span></li><li data-i="2"><i><b></b></i><span>Ejecutar</span></li><li data-i="3"><i><b></b></i><span>CEDIS</span></li><li data-i="4"><i><b></b></i><span>Resurtido</span></li><li data-i="5"><i><b></b></i><span>Ventas</span></li>
         </ol>
-        <a class="flujo-saltar" href="#inv-intel" data-evento="inventario_saltar">Saltar
+        <a class="flujo-saltar" href="#suenos" data-evento="inventario_saltar">Saltar
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
         </a>
       </div>
     </div>
   </section>
-
-<!-- ═══ Inventario Inteligente Multisucursal ═══ -->
-<section class="inv-intel-section" id="inv-intel">
-  <div class="inv-intel-inner">
-    {/* Top: text left + visual right */}
-    <div class="inv-intel-hero">
-      <div class="inv-intel-text">
-        <span class="inv-intel-eyebrow">Inventario Inteligente</span>
-        <h2 class="inv-intel-title">La talla correcta, en la tienda correcta, siempre.</h2>
-        <p class="inv-intel-desc">Sacs nivela tu inventario por talla y color entre tiendas: te dice qué talla resurtir, cuál traspasar de la sucursal donde sobra a la que se está quedando sin ella, qué rematar y cuánto comprar de cada curva o corrida. Sin hojas de cálculo, con lo que de verdad se vendió.</p>
-      </div>
-      <div class="inv-intel-visual">
-        <img
-          src="/images/inv-nivelacion-tablet.webp"
-          alt="SACS — Nivelación de inventario automática multisucursal en tablet"
-          class="inv-intel-tablet-img"
-          width="1536"
-          height="1024"
-          loading="lazy"
-        />
-      </div>
-    </div>
-
-    {/* Bottom: 6 feature cards — Square style */}
-    <div class="inv-intel-grid">
-      <div class="inv-intel-card" style="--i:0">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="8" width="10" height="16" rx="2" stroke="#4B7BE5" stroke-width="1.5"/><rect x="20" y="8" width="10" height="16" rx="2" stroke="#4B7BE5" stroke-width="1.5"/><path d="M12 14h8M12 18h8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round"/><path d="M15 12l2 2-2 2" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 20l-2-2 2-2" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="12" r="1" fill="#4B7BE5"/><circle cx="25" cy="12" r="1" fill="#4B7BE5"/></svg></span>
-        <h3 class="inv-intel-card-title">Nivelación automática</h3>
-        <p class="inv-intel-card-desc">Detecta desbalances entre sucursales y sugiere transferencias para que cada tienda tenga el stock que necesita.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:1">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M4 26h24" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="14" width="16" height="12" rx="1" stroke="#4B7BE5" stroke-width="1.5"/><path d="M8 14l4-6h8l4 6" stroke="#4B7BE5" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 20h6M16 17v6" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round"/><path d="M3 26V18l3-2M29 26V18l-3-2" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <h3 class="inv-intel-card-title">Resurtido desde CEDIS</h3>
-        <p class="inv-intel-card-desc">Órdenes de resurtido automáticas basadas en velocidad de venta y stock mínimo por sucursal.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:2">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="5" y="4" width="18" height="24" rx="2" stroke="#4B7BE5" stroke-width="1.5"/><path d="M10 10h8M10 14h6M10 18h8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><circle cx="24" cy="22" r="6" fill="#E8F5E9" stroke="#2AB5A0" stroke-width="1.5"/><path d="M21.5 22l1.5 1.5 3-3" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <h3 class="inv-intel-card-title">Órdenes de compra inteligentes</h3>
-        <p class="inv-intel-card-desc">Sabe qué producto comprar más a proveedores antes de que se agote, basado en tendencias reales.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:3">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4l2 4h6l-4.5 3.5L21 18l-5-3.5L11 18l1.5-6.5L8 8h6l2-4z" stroke="#E8A838" stroke-width="1.5" stroke-linejoin="round"/><rect x="6" y="20" width="20" height="8" rx="2" stroke="#4B7BE5" stroke-width="1.5"/><text x="16" y="26" text-anchor="middle" font-family="var(--font-display)" font-size="7" font-weight="800" fill="#4B7BE5">-30%</text></svg></span>
-        <h3 class="inv-intel-card-title">Promociones estratégicas</h3>
-        <p class="inv-intel-card-desc">Identifica productos con exceso de inventario y sugiere descuentos para mover mercancía estancada.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:4">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#4B7BE5" stroke-width="1.5" opacity="0.15"/><circle cx="16" cy="16" r="12" stroke="#2AB5A0" stroke-width="1.5" stroke-dasharray="75.4" stroke-dashoffset="18.85" stroke-linecap="round"/><path d="M16 10v6l4 2" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 6l3-2M10 6L7 4" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-        <h3 class="inv-intel-card-title">Liquidación inteligente</h3>
-        <p class="inv-intel-card-desc">Detecta productos de baja rotación y recomienda liquidarlos antes de que pierdan valor.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:5">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="6" width="24" height="20" rx="2" stroke="#4B7BE5" stroke-width="1.5" opacity="0.2"/><path d="M8 22l5-5 3 3 4-6 4 4" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="4" fill="#FDF5E6" stroke="#E8A838" stroke-width="1.5"/><path d="M24 8.5v3M22.5 10h3" stroke="#E8A838" stroke-width="1.2" stroke-linecap="round"/></svg></span>
-        <h3 class="inv-intel-card-title">Ajuste de precios</h3>
-        <p class="inv-intel-card-desc">Sugiere subir precio en productos con alta demanda y bajo stock. Maximiza margen automáticamente.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:6">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="2" stroke="#4B7BE5" stroke-width="1.5" opacity="0.2"/><path d="M10 10h4v12h-4z" stroke="#4B7BE5" stroke-width="1.5"/><path d="M18 16h4v6h-4z" stroke="#2AB5A0" stroke-width="1.5"/><path d="M26 8h-4v4h4z" stroke="#E8A838" stroke-width="1.5" opacity="0.6"/><text x="12" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#4B7BE5">A</text><text x="20" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#2AB5A0">B</text><text x="28" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#E8A838">C</text></svg></span>
-        <h3 class="inv-intel-card-title">Reportes ABC</h3>
-        <p class="inv-intel-card-desc">Clasifica tus productos en A, B y C según su contribución a ventas y margen. Enfoca recursos donde más impactan.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:7">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 26l4-8 4 4 4-10 4 6 4-12" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 26h20" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/><circle cx="10" cy="18" r="2" fill="#E8F5E9" stroke="#2AB5A0" stroke-width="1"/><circle cx="18" cy="12" r="2" fill="#E8F5E9" stroke="#2AB5A0" stroke-width="1"/><circle cx="26" cy="6" r="2" fill="#FDF5E6" stroke="#E8A838" stroke-width="1"/></svg></span>
-        <h3 class="inv-intel-card-title">Sell Through</h3>
-        <p class="inv-intel-card-desc">Mide qué porcentaje del inventario recibido se vendió en un periodo. Identifica productos estancados vs. los que vuelan.</p>
-      </div>
-      <div class="inv-intel-card" style="--i:8">
-        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 24l6-4 4 2 4-6 6-8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 24l6-4 4 2 4-6 6-8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3" opacity="0.3" transform="translate(0,-4)"/><circle cx="26" cy="8" r="3" fill="#FDF5E6" stroke="#E8A838" stroke-width="1.5"/><path d="M25 8h2M26 7v2" stroke="#E8A838" stroke-width="1" stroke-linecap="round"/><path d="M4 28h24" stroke="#4B7BE5" stroke-width="1" opacity="0.15"/></svg></span>
-        <h3 class="inv-intel-card-title">Forecast personalizado</h3>
-        <p class="inv-intel-card-desc">Proyecta demanda futura con reglas que tú defines: temporadas, eventos, tendencias locales. Compra lo justo.</p>
-      </div>
-    </div>
-    <div class="section-ctas">
-      <a href="/prueba-gratis" class="section-cta section-cta--filled">Prueba 7 dias gratis</a>
-      <a href="/contacto" class="section-cta section-cta--outline">Agenda una demo</a>
-    </div>
-  </div>
-</section>
 
 <!-- ═══ "Tú naciste para crear": manifiesto 3D después del inventario inteligente ═══ -->
 <Suenos />
@@ -4581,7 +4504,15 @@ const useCases = [
   .pillar-section--pos    { background: #FBFBFD; }
   .pillar-section--stock  { background: #1D1D1F; color: #fff; }
   .pillar-section--crm    { background: #ffffff; }
-  .pillar-section--ai     { background: #F5F5F7; }
+  /* Aaron (14-sep): Automatiza va en NEGRO para leerse junto con la historia Controla que sigue */
+  .pillar-section--ai     { background: #0E0D0C; color: #fff; }
+  .pillar-section--ai .pillar-h2, .pillar-section--ai .pillar-acc-label, .pillar-section--ai .pillar-acc-btn, .pillar-section--ai .pillar-acc-icon { color: #fff; }
+  .pillar-section--ai .pillar-subtitle, .pillar-section--ai .pillar-acc-desc { color: rgba(255,255,255,0.72); }
+  .pillar-section--ai .pillar-eyebrow { color: #8FB0FF; }
+  .pillar-section--ai .pillar-eyebrow::before { background: currentColor; }
+  .pillar-section--ai .pillar-accordion, .pillar-section--ai .pillar-accordion * { border-color: rgba(255,255,255,0.16); }
+  .pillar-section--ai .pillar-acc-cta { color: #fff; border-color: rgba(255,255,255,0.6); }
+  .pillar-section--ai .pillar-bg-pattern { opacity: 0.07; }
 
   /* Hard cuts between sections — no gradient seams (Apple style) */
 
