@@ -1,0 +1,132 @@
+---
+/**
+ * Suenos — "Tú naciste para crear": la pieza inspiracional antes del pilar Automatiza.
+ * Riel de 380vh con escena pegada: un personaje 3D (ella, luego él) camina hacia la
+ * pantalla y crece con el scroll; la palabra grande cambia (crear → construir → diseñar →
+ * crecer → imaginar → aportar); accesorios 3D flotan con paralaje; al final entra el
+ * mensaje de por qué construimos la IA. Todo con CSS + una variable --p que pone el scroll.
+ */
+const PALABRAS = ['crear', 'construir', 'diseñar', 'crecer', 'imaginar', 'aportar'];
+const ACC = [
+  { f: 'bolsa',    x: '9%',  y: '18%', w: 150, v: -520, r: -12 },
+  { f: 'tacon',    x: '78%', y: '12%', w: 130, v: -700, r: 14 },
+  { f: 'lentes',   x: '16%', y: '60%', w: 140, v: -420, r: 8 },
+  { f: 'sombrero', x: '70%', y: '52%', w: 170, v: -600, r: -8 },
+  { f: 'reloj',    x: '84%', y: '74%', w: 110, v: -820, r: 10 },
+  { f: 'tenis',    x: '4%',  y: '82%', w: 150, v: -360, r: -16 },
+  { f: 'gancho',   x: '88%', y: '34%', w: 130, v: -480, r: 6 },
+  { f: 'laptop',   x: '22%', y: '36%', w: 150, v: -640, r: -6 },
+  { f: 'etiqueta', x: '62%', y: '84%', w: 100, v: -560, r: 18 },
+];
+---
+<section class="sn" id="suenos" aria-label="Tú naciste para crear">
+  <div class="sn-pegado">
+    <div class="sn-glow" aria-hidden="true"></div>
+
+    <div class="sn-txt" aria-hidden="false">
+      <span class="sn-l1">Tú naciste para</span>
+      <span class="sn-l2">
+        {PALABRAS.map((w, i) => <b class:list={['sn-w', { 'is-on': i === 0 }]} data-i={i}>{w}.</b>)}
+      </span>
+    </div>
+
+    <div class="sn-fig" aria-hidden="true">
+      <video class="sn-v sn-v--ella" muted playsinline webkit-playsinline loop preload="none" poster="/images/suenos/mujer.webp"></video>
+      <video class="sn-v sn-v--el" muted playsinline webkit-playsinline loop preload="none" poster="/images/suenos/hombre.webp"></video>
+    </div>
+
+    <div class="sn-accs" aria-hidden="true">
+      {ACC.map((a) => (
+        <img class="sn-acc" src={`/images/suenos/acc-${a.f}.png`} alt="" width={a.w} height={a.w} loading="lazy" decoding="async"
+          style={`left:${a.x};top:${a.y};width:${a.w}px;--v:${a.v};--r:${a.r}deg;`} />
+      ))}
+    </div>
+
+    <div class="sn-fin">
+      <span class="sn-kicker">Por eso existe AXO</span>
+      <h2 class="sn-h2"><span class="sn-h2a">No construimos la IA para reemplazarte.</span><span class="sn-h2b">La construimos para que logres tu objetivo y crezcas con <em>el sueño de tu vida</em>.</span></h2>
+      <a href="/prueba-gratis" class="sn-cta" data-evento="suenos_cta">Empieza hoy, gratis
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sn { --p: 0; --cream: #FAECE0; position: relative; height: 380vh; background: var(--cream); color: #1D1D1F; }
+  .sn-pegado { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .sn-glow { position: absolute; left: 50%; top: 58%; width: 120vmin; height: 120vmin; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(232,168,56,0.28) 0%, rgba(232,168,56,0.08) 38%, rgba(244,241,234,0) 70%); filter: blur(10px); pointer-events: none; }
+
+  /* ── texto grande ── */
+  .sn-txt { position: absolute; left: 0; right: 0; top: 11vh; text-align: center; z-index: 1; padding: 0 16px; }
+  .sn-l1 { display: block; font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 4.6vw, 70px); letter-spacing: -0.03em; line-height: 1; color: rgba(29,29,31,0.55); }
+  .sn-l2 { display: grid; height: 1.05em; font-family: var(--font-display); font-weight: 700; font-size: clamp(54px, 15vw, 230px); letter-spacing: -0.05em; line-height: 1; color: #1D1D1F; overflow: hidden; }
+  .sn-w { grid-area: 1 / 1; display: block; opacity: 0; transform: translateY(0.55em) rotate(2deg); transition: opacity 0.45s cubic-bezier(0.2,0.7,0.2,1), transform 0.55s cubic-bezier(0.2,0.7,0.2,1); will-change: transform, opacity; }
+  .sn-w.is-on { opacity: 1; transform: none; color: #E8A838; }
+  .sn-w.is-off { opacity: 0; transform: translateY(-0.55em) rotate(-2deg); }
+
+  /* ── personaje ── */
+  .sn-fig { position: absolute; left: 50%; bottom: 0; width: min(46vh, 86vw); aspect-ratio: 9 / 16; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.6 + var(--p) * 0.8)); transform-origin: 50% 100%; z-index: 2; will-change: transform; }
+  .sn-v { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-mask-image: radial-gradient(ellipse 62% 70% at 50% 62%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 62% 70% at 50% 62%, #000 55%, transparent 100%); background: var(--cream); transition: opacity 0.6s; }
+  .sn-v--ella { opacity: calc(1 - clamp(0, (var(--p) - 0.40) * 10, 1)); }
+  .sn-v--el { opacity: clamp(0, (var(--p) - 0.40) * 10, 1); }
+
+  /* ── accesorios con paralaje ── */
+  .sn-accs { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .sn-acc { position: absolute; height: auto; transform: translateY(calc(var(--p) * var(--v) * 1px)) rotate(var(--r)); filter: drop-shadow(0 18px 24px rgba(0,0,0,0.18)); animation: sn-flota 5s ease-in-out infinite; will-change: transform; }
+  .sn-acc:nth-child(2n) { animation-duration: 6.5s; animation-delay: -2s; } .sn-acc:nth-child(3n) { animation-delay: -1s; }
+  @keyframes sn-flota { 50% { margin-top: -14px; } }
+
+  /* ── cierre ── */
+  .sn-fin { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 4; text-align: center; padding: 0 20px; opacity: 0; visibility: hidden; transition: opacity 0.6s, visibility 0.6s; }
+  .sn-kicker { display: block; font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #E8A838; margin-bottom: 18px; }
+  .sn-h2 { max-width: 1000px; margin: 0 auto; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.035em; line-height: 1.02; }
+  .sn-h2a { display: block; font-size: clamp(22px, 2.8vw, 42px); color: rgba(29,29,31,0.5); margin-bottom: 14px; }
+  .sn-h2b { display: block; font-size: clamp(34px, 5.2vw, 80px); color: #1D1D1F; }
+  .sn-h2b em { font-style: normal; color: #E8A838; }
+  .sn-cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; padding: 16px 28px; border-radius: 999px; background: #1D1D1F; color: #fff; font-weight: 700; font-size: 17px; text-decoration: none; }
+  .sn.is-fin .sn-fin { opacity: 1; visibility: visible; }
+  .sn.is-fin .sn-txt { opacity: 0; transition: opacity 0.4s; }
+  .sn.is-fin .sn-fig { opacity: 0.16; filter: blur(2px); transition: opacity 0.7s, filter 0.7s; }
+  .sn.is-fin .sn-accs { opacity: 0.35; transition: opacity 0.7s; }
+
+  @media (max-width: 720px) {
+    .sn { height: 320vh; }
+    .sn-fig { width: min(52vh, 92vw); }
+    .sn-acc { transform: translateY(calc(var(--p) * var(--v) * 0.6px)) rotate(var(--r)) scale(0.62); transform-origin: 0 0; }
+    .sn-txt { top: 14vh; }
+    .sn-h2b { font-size: clamp(30px, 9vw, 44px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sn { height: auto; } .sn-pegado { position: relative; height: auto; min-height: 100vh; padding: 80px 0 60px; }
+    .sn-fig { transform: translateX(-50%); position: relative; left: 50%; margin: 30px 0; } .sn-acc { animation: none; transform: rotate(var(--r)); }
+    .sn-txt { position: relative; top: auto; transform: none; } .sn-fin { position: relative; top: auto; transform: none; opacity: 1; visibility: visible; margin-top: 30px; }
+  }
+</style>
+
+<script>
+  (() => {
+    const sn = document.getElementById('suenos'); if (!sn) return;
+    const ws = Array.from(sn.querySelectorAll<HTMLElement>('.sn-w'));
+    const vids = Array.from(sn.querySelectorAll<HTMLVideoElement>('.sn-v'));
+    const movil = matchMedia('(max-width: 720px)').matches;
+    const ph = (ev: string) => { try { (window as any).sacsPH?.(ev); } catch {} };
+    let src = false, act = -1, fin = false, raf = 0, hitos = new Set<string>();
+    const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('sn-v--ella') ? 'suenos-ella' : 'suenos-el') + '.mp4?v=1'; v.play().catch(() => {}); }); };
+    const mide = () => {
+      const r = sn.getBoundingClientRect(); const vh = innerHeight;
+      const p = Math.min(1, Math.max(0, -r.top / (r.height - vh)));
+      sn.style.setProperty('--p', p.toFixed(4));
+      const i = Math.min(ws.length - 1, Math.max(0, Math.floor((p - 0.02) / 0.105)));
+      if (i !== act) { ws.forEach((w, k) => { w.classList.toggle('is-on', k === i); w.classList.toggle('is-off', k < i); }); act = i; }
+      const f = p > 0.74; if (f !== fin) { sn.classList.toggle('is-fin', f); fin = f; if (f && !hitos.has('fin')) { hitos.add('fin'); ph('suenos_final'); } }
+      if (p > 0.5 && !hitos.has('50')) { hitos.add('50'); ph('suenos_50'); }
+      raf = 0;
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { carga(); vids.forEach((v) => v.play().catch(() => {})); addEventListener('scroll', onScroll, { passive: true }); mide(); if (!hitos.has('ver')) { hitos.add('ver'); ph('suenos_ver'); } } else { vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); } });
+    }, { rootMargin: '200px 0px' });
+    io.observe(sn);
+  })();
+</script>
