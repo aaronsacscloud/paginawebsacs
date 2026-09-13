@@ -54,9 +54,9 @@ const NODOS = [
   /* ── el flujo ── */
   .fx-riel { position: relative; max-width: 1120px; margin: clamp(44px, 7vh, 72px) auto 0; }
   .fx-flujo { list-style: none; margin: 0 auto; padding: 0; display: flex; align-items: flex-start; justify-content: center; gap: 0; position: relative; }
-  .fx-nodo { position: relative; flex: 1 1 0; max-width: 200px; padding-top: 34px; opacity: 0.35; transition: opacity 0.4s; transition-delay: calc(0.9s + var(--i) * 0.5s); }
+  .fx-nodo { position: relative; flex: 1 1 0; max-width: 200px; padding-top: 34px; opacity: 0.6; transition: opacity 0.4s; transition-delay: calc(0.9s + var(--i) * 0.5s); }
   .fx-nodo b { display: block; font-family: var(--font-display); font-size: clamp(18px, 2vw, 28px); letter-spacing: -0.02em; line-height: 1.1; }
-  .fx-nodo small { display: block; margin-top: 6px; font-size: clamp(12px, 1vw, 15px); color: #9A9A94; }
+  .fx-nodo small { display: block; margin-top: 6px; font-size: clamp(12px, 1vw, 15px); color: #B4B4AE; }
   .fx-punto { position: absolute; top: 0; left: 50%; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: rgba(255,255,255,0.35); box-shadow: 0 0 0 0 rgba(59,91,219,0); transition: background 0.35s, box-shadow 0.9s; transition-delay: calc(0.9s + var(--i) * 0.5s); }
   /* el tramo de línea nace en el punto y crece hacia el siguiente nodo */
   .fx-nodo::after { content: ''; position: absolute; top: 7px; left: calc(50% + 8px); width: calc(100% - 16px); height: 2px; background: var(--color-primary, #3B5BDB); transform: scaleX(0); transform-origin: left center; transition: transform 0.5s linear; transition-delay: calc(1.05s + var(--i) * 0.5s); }
