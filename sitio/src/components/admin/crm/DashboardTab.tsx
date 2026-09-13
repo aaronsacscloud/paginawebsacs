@@ -51,14 +51,24 @@ const S = {
      esquina de 16 y una sombra larga y suave. El borde gris y la esquina de 14
      eran del tablero viejo, cuando el fondo era blanco y la tarjeta tenía que
      dibujarse sola. */
+  /* La tarjeta es una COLUMNA y llena el alto de su renglón. Así dos tarjetas
+     lado a lado terminan a la misma altura en vez de dejar un escalón de fondo
+     rosa entre una y otra; el aire sobrante se reparte adentro, donde se lee
+     como respiro y no como un hueco. */
   card: { background: '#fff', border: '1px solid rgba(155,140,250,.14)', borderRadius: 16, padding: '19px 21px',
-          boxShadow: '0 1px 2px rgba(60,30,140,.04), 0 10px 30px rgba(155,140,250,.10)' } as const,
+          boxShadow: '0 1px 2px rgba(60,30,140,.04), 0 10px 30px rgba(155,140,250,.10)',
+          display: 'flex', flexDirection: 'column' as const, height: '100%' } as const,
   titulo: { fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.09em', display: 'flex', alignItems: 'center', gap: 9 } as const,
   der: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   lead: { fontSize: '0.73rem', color: '#8a8590', margin: '5px 0 15px', lineHeight: 1.55 } as const,
-  nota: { fontSize: '0.68rem', color: '#8f8c99', marginTop: 11, paddingTop: 11, borderTop: '1px solid #f3f2f6', lineHeight: 1.6 } as const,
+  /* La nota explicativa SIEMPRE al pie de su tarjeta: es lo que cierra el
+     bloque, y con `auto` el sobrante de altura queda arriba de ella. */
+  nota: { fontSize: '0.68rem', color: '#8f8c99', marginTop: 'auto', paddingTop: 13, borderTop: '1px solid #f3f2f6', lineHeight: 1.6 } as const,
   eyebrow: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.09em' } as const,
   pie: { fontSize: '0.73rem', color: '#6f6b78', marginTop: 8, lineHeight: 1.55 } as const,
+  /* El contenido que puede crecer: reparte el aire entre sus renglones en vez
+     de amontonarlo en un hueco antes de la nota. */
+  reparte: { flex: 1, display: 'flex', flexDirection: 'column' as const, justifyContent: 'space-evenly' } as const,
   mini: { border: '1px solid rgba(155,140,250,.16)', borderRadius: 12, padding: '13px 15px', background: '#fff' } as const,
   mv: { fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-.025em', lineHeight: 1, marginTop: 7 } as const,
   ms: { fontSize: '0.68rem', color: '#8a8590', marginTop: 6, lineHeight: 1.45 } as const,
@@ -280,8 +290,8 @@ export default function DashboardTab() {
         {sub === 'consultoria' && (<>
           <KpisConsultoria d={d} x={x} ver={setDetalle} />
           <Dinero d={d} ver={setDetalle} />
-          <CarteraYCanales x={x} abrir={setAbierto} />
-          <Compromisos d={d} abrir={setAbierto} />
+          <CarteraYCanales x={x} abrir={setAbierto} tercera={<Compromisos d={d} parte="consultoria" />} />
+          <Compromisos d={d} abrir={setAbierto} parte="cobrar" />
           <Lecturas d={d} x={x} />
         </>)}
 
@@ -368,8 +378,13 @@ function Dinero({ d, ver }: any) {
           </div>
         </div>
 
-        <GraficaCobranza c={c} eje={d.periodo.eje_total} />
-        <VerDetalle texto={`Ver los ${c.n} pagos, uno por uno`} />
+        {/* La gráfica y su liga reparten el aire de la tarjeta: cuando el
+            bloque de al lado es más alto, el sobrante se abre arriba y abajo
+            de la curva en vez de quedarse como un hueco antes del historial. */}
+        <div style={S.reparte}>
+          <GraficaCobranza c={c} eje={d.periodo.eje_total} />
+          <VerDetalle texto={`Ver los ${c.n} pagos, uno por uno`} />
+        </div>
 
         <div style={{ ...S.nota, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: '0 0 250px' }}>
@@ -742,14 +757,18 @@ function Dona({ tipos, total }: any) {
 }
 
 /* ════════════════ 4 · COMPROMISOS Y COBRANZA ════════════════ */
-function Compromisos({ d, abrir }: any) {
+/* Los dos bloques se piden por separado: el de consultoría mide como las dos
+   listas de barras y va con ellas; el de ARR por cobrar es una lista larga y
+   ocupa el ancho completo. Juntos en dos columnas, uno terminaba mucho antes
+   que el otro y dejaba el escalón de fondo que el dueño señaló. */
+function Compromisos({ d, abrir, parte }: any) {
   const co = d.consultoria, cb = d.cobrar;
   // La lista del mes vive plegada: es el detalle que se consulta una vez por
   // semana, no algo que haya que tener a la vista todo el tiempo.
   const [verMes, setVerMes] = useState(false);
   const totalCob = Math.max(1, cb.d30.monto + cb.d60.monto + cb.d90.monto);
-  return (
-    <div className="tb-2" style={{ alignItems: 'start' }}>
+
+  if (parte === 'consultoria') return (
       <div style={S.card}>
         <div style={S.titulo}>Consultoría<span style={S.der}>lo que prometiste en las juntas</span></div>
         <div style={S.lead}>Un compromiso vencido cuesta más que una junta perdida.</div>
@@ -765,8 +784,10 @@ function Compromisos({ d, abrir }: any) {
             : <>Vas al corriente: entregaste {co.entregadas} y pactaste {co.nuevas} nuevos.</>}
         </div>
       </div>
+  );
 
-      <div style={S.card}>
+  return (
+      <div style={{ ...S.card, marginBottom: 16 }}>
         <div style={S.titulo}>ARR por cobrar<span style={S.der}>{cb.total.n} renovaciones · {money(cb.total.monto)}</span></div>
         <div style={S.lead}>Ya está contratado y toca renovar en los próximos 90 días. No es proyección: son fechas con nombre y monto, y no depende del mes que estés viendo.</div>
         {/* Los anchos ya descuentan las separaciones: sin eso los tres tramos
@@ -819,7 +840,6 @@ function Compromisos({ d, abrir }: any) {
           )}
         </div>
       </div>
-    </div>
   );
 }
 
@@ -1080,11 +1100,14 @@ type Sec = 'consultoria' | 'leads' | 'clientes';
    parpadeen a coro. Son decoración: no llevan texto y van ocultos al lector de
    pantalla. */
 const DESTELLOS: [number, string, number, number, number, string][] = [
-  [12, '2%', 2, 0.5, 0, '#D9538E'], [8, '10%', 44, 0.38, 1.1, '#9B8CFA'],
-  [16, '20%', -4, 0.26, 2.2, '#EFA6CA'], [9, '27%', 50, 0.42, 0.6, '#D9538E'],
-  [20, '35%', 8, 0.22, 1.7, '#9B8CFA'], [8, '44%', 40, 0.46, 2.8, '#EFA6CA'],
-  [11, '52%', 0, 0.28, 0.3, '#D9538E'], [7, '61%', 48, 0.4, 1.4, '#9B8CFA'],
-  [14, '71%', 4, 0.2, 2.4, '#EFA6CA'], [9, '83%', 42, 0.32, 0.9, '#D9538E'],
+  [13, '1%', 4, 0.55, 0, '#D9538E'], [8, '7%', 46, 0.4, 1.1, '#9B8CFA'],
+  [10, '13%', 14, 0.34, 2.6, '#EFA6CA'], [17, '20%', -6, 0.3, 2.2, '#EFA6CA'],
+  [9, '26%', 52, 0.45, 0.6, '#D9538E'], [7, '31%', 22, 0.3, 3.2, '#9B8CFA'],
+  [22, '36%', 6, 0.24, 1.7, '#9B8CFA'], [8, '42%', 42, 0.48, 2.8, '#EFA6CA'],
+  [11, '48%', -2, 0.3, 0.3, '#D9538E'], [6, '54%', 30, 0.36, 1.9, '#EFA6CA'],
+  [9, '60%', 50, 0.42, 1.4, '#9B8CFA'], [15, '66%', 8, 0.22, 2.4, '#EFA6CA'],
+  [7, '72%', 36, 0.34, 0.8, '#D9538E'], [12, '78%', 0, 0.26, 3.4, '#9B8CFA'],
+  [9, '85%', 44, 0.36, 0.9, '#D9538E'], [10, '93%', 16, 0.28, 2.1, '#EFA6CA'],
 ];
 function Chispas() {
   return (
@@ -1193,7 +1216,7 @@ const CHIP_CARTERA: Record<string, { t: string; fondo: string; letra: string }> 
   vencida: { t: 'Vencida', fondo: '#FEF0EF', letra: ROJO },
   idea: { t: 'Idea abierta', fondo: '#EEECFE', letra: MORADO },
 };
-function CarteraYCanales({ x, abrir }: any) {
+function CarteraYCanales({ x, abrir, tercera }: any) {
   const [todo, setTodo] = useState(false);
   if (!x) return null;
   const co = x.consultoria;
@@ -1201,8 +1224,11 @@ function CarteraYCanales({ x, abrir }: any) {
   const topeCanal = Math.max(co.canales.reuniones, co.canales.whatsapp, co.canales.llamadas, 1);
   const topeServ = Math.max(...co.servicios.map((v: any) => v.monto), 1);
   return (
-    <div className="tb-2" style={{ alignItems: 'start' }}>
-      <div style={S.card}>
+    <>
+      {/* La tabla va a todo el ancho: es el bloque con más contenido y al
+          meterlo en media pantalla dejaba media columna de fondo vacío
+          debajo. Las dos listas de barras, que miden parecido, van juntas. */}
+      <div style={{ ...S.card, marginBottom: 14 }}>
         <div style={S.titulo}>Clientes de consultoría<span style={S.der}>cobrado, pendiente y qué sigue</span></div>
         <div style={S.lead}>
           Las {co.cartera.length} cuentas con junta en el periodo. Las que aparecen sin cobro no son un error:
@@ -1239,9 +1265,10 @@ function CarteraYCanales({ x, abrir }: any) {
           </>)}
       </div>
 
-      <div className="tb-apil">
+      <div className="tb-3" style={{ marginBottom: 16 }}>
         <div style={S.card}>
           <div style={S.titulo}>Por dónde pasó<span style={S.der}>el periodo</span></div>
+          <div style={S.reparte}>
           {([['Reuniones', co.canales.reuniones, '#D9538E', '#EFA6CA'],
              ['WhatsApp', co.canales.whatsapp, LILA, '#C6BCFB'],
              ['Llamadas', co.canales.llamadas, CIELO, '#B7CEF9']] as const).map(([n, v, a, b]) => (
@@ -1253,6 +1280,7 @@ function CarteraYCanales({ x, abrir }: any) {
               <b style={{ fontSize: '0.76rem', width: 46, textAlign: 'right' }}>{v}</b>
             </div>
           ))}
+          </div>
           <div style={S.nota}>
             Reuniones son las juntas que sí pasaron; WhatsApp, las conversaciones con movimiento; llamadas, las del
             marcador del inbox. No se suman: una misma cuenta puede estar en los tres.
@@ -1261,6 +1289,7 @@ function CarteraYCanales({ x, abrir }: any) {
 
         <div style={S.card}>
           <div style={S.titulo}>De dónde vino el dinero<span style={S.der}>lo cobrado del periodo</span></div>
+          <div style={S.reparte}>
           {!co.servicios.length
             ? <div style={{ fontSize: '0.78rem', color: '#8a8590' }}>Sin cobros en el periodo.</div>
             : co.servicios.map((sv: any) => (
@@ -1272,13 +1301,16 @@ function CarteraYCanales({ x, abrir }: any) {
                 <b style={{ fontSize: '0.76rem', width: 62, textAlign: 'right' }}>{corto(sv.monto)}</b>
               </div>
             ))}
+          </div>
           <div style={S.nota}>
             Sale del plan de la cotización que cubrió cada pago. Lo que cae en <b>«Venta cotizada»</b> son cobros cuya
             cotización no trae plan marcado: para partirlo por servicio hay que capturarlo al cotizar.
           </div>
         </div>
+
+        {tercera}
       </div>
-    </div>
+    </>
   );
 }
 
