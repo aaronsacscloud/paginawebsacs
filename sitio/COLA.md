@@ -199,3 +199,17 @@ enriquecer con lo que se encuentre en web.
 ## 2026-09-13 · Cadencia Intermoda (puro correo)
 **Dueño:** «Y de ahí la de intermoda igual considerando todo el contexto» (llegó mientras se armaba la de SAPICA; se hace después de SAPICA con el mismo esquema: solo correo, goteo, MX).
 - [x] HECHO el mismo día: giro nuevo `marcas` (los 558 de Intermoda salen de fabricantes/distribuidores), 2 cadencias × 8 correos solo email, pieza «Un modelo con su curva», 8 fotos, MX (558/564 válidos), 95 fuera (81 proveedores en pausa, 14 ajenos/competidores), goteo «Intermoda · cuarenta al día» activo con la firma del dueño → arranca lunes 14-sep 10:00 CDMX después del de SAPICA. Arreglo en abm-generar: tallas vs. modelo-y-color se decide por subgiro.
+
+## 2026-09-14 · Verificar con ZeroBounce las tres bases (Villa Hidalgo, SAPICA, Intermoda)
+
+Texto del dueño: «de esto si lo quiero hacer peor mañana o pasado ahorita no
+tngo presupuesto».
+
+Contexto: el 14-sep el disyuntor pausó el cartero con 3 rebotes de 15 envíos
+(correos personales de Villa Hidalgo que no existen; el MX no los detecta).
+Ninguna de las tres bases pasó por ZeroBounce: ~1,170 direcciones válidas por
+MX, ~1 centavo USD cada una (~$12 USD). El cron `abm-verificar-correos` ya
+existe (`?cuantas=100&giro=…`). Se corre cuando el dueño diga que ya hay
+presupuesto; mientras, el disyuntor y la rampa cuidan el dominio.
+
+- [ ] Esperando el OK del dueño (mañana o pasado, 15/16-sep-2026)
