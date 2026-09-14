@@ -6,6 +6,10 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · El que llegó por el correo de winback desde un WhatsApp desconocido.** «dale, tú liga a Matin, haz
+      tú el proceso, y deja la funcionalidad para otro caso similar» → HECHO: Matin ligado a su ficha de sujuma, y la
+      regla del clic en el `wa.me` del correo corriendo en la puerta de entrada.
+
 - [x] **2026-09-14 · Al enviar, que no me suba la lista hasta arriba.** «el contacto lo pasa arriba, el cual está bien,
       pero a mí me manda también arriba… que siga seleccionado pero que yo siga donde estoy en la lista, si ya hice
       scroll y estoy abajo que no me suba, que pueda seleccionar al siguiente contacto» → HECHO: la vista se ancla a la

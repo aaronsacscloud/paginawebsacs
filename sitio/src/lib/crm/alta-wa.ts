@@ -30,6 +30,34 @@ export async function altaDesdeWhatsApp(convId: string, telefono: string, o: { d
   if (o.direccion === 'entrante' && modoEntrante === 'nunca') return;
   if (o.direccion === 'saliente' && cfgAlta && cfgAlta.alta_wa_saliente === false) return;
 
+  /* ¿VIENE DE UN CORREO NUESTRO? Antes de dar por desconocido a nadie.
+     Los correos de campaña llevan un botón de WhatsApp con el texto ya escrito
+     en el propio enlace. Si alguien hizo clic hace un rato y lo que acaba de
+     llegar es ESE texto, no es un número desconocido: es la persona a la que le
+     escribimos, contestando desde un teléfono que no teníamos.
+
+     Caso medido (14-sep): Matin Vera Vera, cuenta cancelada, hizo clic a las
+     20:48:46 y su mensaje entró a las 20:49:51. Se le abrió un lead nuevo sin
+     nombre y entró a la cadencia de rezagados, cuando lo que estaba haciendo
+     era volver. */
+  if (o.direccion === 'entrante' && String(o.texto || '').trim()) {
+    try {
+      const { identificarPorClic } = await import('../whatsapp/identificar-por-clic');
+      const q = await identificarPorClic(o.texto!);
+      if (q?.certeza === 'exacta') {
+        await supabase.from('wa_conversaciones').update({ contact_id: q.contactId, ...(q.companyId ? { company_id: q.companyId } : {}) }).eq('id', convId);
+        // El teléfono nuevo se guarda: la próxima vez ya se reconoce solo.
+        await supabase.from('contacts').update({ whatsapp: telefono, updated_at: new Date().toISOString() })
+          .eq('id', q.contactId).is('whatsapp', null);
+        await marcarRespondio(q.contactId);
+        await supabase.from('activities').insert({ contact_id: q.contactId, tipo: 'nota', automatico: true,
+          titulo: `Escribió por WhatsApp desde ${telefonoLegible(telefono)} — ${q.motivo}`,
+          metadata: { identificado_por: 'clic_wa_correo', campana: q.campana, clic_at: q.clicAt, telefono } });
+        return;
+      }
+    } catch { /* si esto falla, sigue el camino de siempre */ }
+  }
+
   // ¿El teléfono ya es de alguien? (el lead llenó un formulario antes de
   // escribir): se liga y su estatus avanza — no se duplica la ficha.
   const ya = await ligarContacto(telefono);

@@ -91,14 +91,32 @@ export const GET: APIRoute = async ({ url }) => {
     }));
   }
 
-  // ── 16) sugerencias para número desconocido ──
+  /* ── 16) sugerencias para número desconocido ──
+     También cuando la ficha EXISTE pero nació sin nombre («WhatsApp 7300»):
+     el webhook abre una en cuanto alguien escribe, así que exigir que no
+     hubiera contacto dejaba estas pistas fuera justo en el caso que las
+     necesita. Si la ficha ya tiene nombre de persona, no hay nada que adivinar. */
+  const nombreFicha = `${(contacto as any)?.nombre || ''} ${(contacto as any)?.apellido || ''}`.trim();
+  const fichaSinNombre = !nombreFicha || /^(WhatsApp|Contacto)\s+\d{3,}$/i.test(nombreFicha);
   let sugerencias: any[] = [];
-  if (conv && !conv.contact_id) {
+  if (conv && (!conv.contact_id || fichaSinNombre)) {
     const { data: msjs } = await supabase.from('wa_mensajes').select('cuerpo, transcript').eq('conversation_id', conv.id).eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(30);
     const texto = (msjs || []).map((m: any) => `${m.cuerpo || ''} ${m.transcript || ''}`).join('\n');
     const emails = [...new Set((texto.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) || []).map(e => e.toLowerCase()))].slice(0, 5);
     const vistos = new Set<string>();
     const agregar = (c: any, motivo: string) => { if (c && !vistos.has(c.id)) { vistos.add(c.id); sugerencias.push({ id: c.id, nombre: `${c.nombre || ''} ${c.apellido || ''}`.trim(), email: c.email, empresa: c.companies?.nombre_comercial || c.companies?.nombre || null, company_id: c.company_id, motivo }); } };
+    /* La pista más fuerte, y la única que no es una corazonada: hizo clic en el
+       botón de WhatsApp de un correo nuestro. Ese enlace lleva el texto ya
+       escrito, así que si el mensaje es ese texto, es esa persona. */
+    try {
+      const { identificarPorClic } = await import('../../../../lib/whatsapp/identificar-por-clic');
+      const primero = (msjs || []).slice(-1)[0] || (msjs || [])[0];
+      const q = await identificarPorClic(String(primero?.cuerpo || primero?.transcript || texto).slice(0, 400), 240);
+      if (q) {
+        const { data: c } = await supabase.from('contacts').select('id, nombre, apellido, email, company_id, companies(nombre, nombre_comercial)').eq('id', q.contactId).maybeSingle();
+        if (c && c.id !== conv.contact_id) agregar(c, q.motivo);
+      }
+    } catch { /* la pista es cortesía, no rompe el panel */ }
     if (emails.length) {
       const { data } = await supabase.from('contacts').select('id, nombre, apellido, email, company_id, companies(nombre, nombre_comercial)').in('email', emails).limit(5);
       for (const c of data || []) agregar(c, `Mencionó el correo ${c.email}`);

@@ -563,8 +563,13 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         </div>
       )}
 
-      {/* 16) Número desconocido: pistas para ligarlo */}
-      {!contactoBase && ctx?.sugerencias?.length > 0 && (
+      {/* 16) Número desconocido: pistas para ligarlo.
+          El candado `!contactoBase` se quitó: el webhook abre una ficha en
+          cuanto alguien escribe, así que para cuando llegas a mirar YA hay
+          contacto —«WhatsApp 7300», sin nombre— y las pistas no se enseñaban
+          justo en el caso que las necesita. Quién las merece lo decide el
+          servidor: solo manda pistas si la ficha no tiene nombre de persona. */}
+      {ctx?.sugerencias?.length > 0 && (
         <div style={{ margin: '8px 16px 0', borderRadius: 12, border: `1px solid ${C.ambar200}`, background: C.ambar50, padding: '9px 12px' }}>
           <div style={{ ...label(10), color: C.ambar700, marginBottom: 6 }}>¿Quién es? Pistas del CRM</div>
           {ctx.sugerencias.map((sg: any) => (
