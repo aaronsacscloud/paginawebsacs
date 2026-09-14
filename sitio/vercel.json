@@ -212,6 +212,10 @@
     {
       "schedule": "0 16-23 * * 1-5",
       "path": "/api/cron/abm-wa?cuantas=10"
+    },
+    {
+      "schedule": "0 13 * * *",
+      "path": "/api/cron/abm-verificar-correos?cuantas=400"
     }
   ],
   "headers": [
