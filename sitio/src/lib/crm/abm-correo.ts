@@ -22,6 +22,9 @@
 // Paleta del CRM (src/lib/crm/paleta.ts) escrita a mano a propósito: este
 // archivo lo consume el cron de envío, que corre en el servidor y no debe
 // arrastrar dependencias del navegador para pintar un correo.
+import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE, waLink } from '../whatsapp';
+import { operacionDe } from './abm-giros';
+
 const MORADO = '#9B8CFA';
 const MORADO_TINTA = '#5B4BD6';
 const AZUL = '#7DA6F5';
@@ -31,6 +34,11 @@ const TINTA = '#3a3a44';
 const GRIS = '#8a8a92';
 const LINEA = '#ececec';
 const FUENTE = "-apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+// El verde OSCURO de WhatsApp, no el claro (#25D366): con letra blanca encima el
+// claro no da contraste y en Outlook se ve lavado.
+const VERDE_WA = '#128C7E';
+const SITIO = 'https://www.sacscloud.com';
+export const AGENDAR_DEMO = SITIO + '/agendar/demo';
 
 const esc = (x: string) => String(x || '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -67,10 +75,10 @@ function cuerpoAHtml(texto: string): string {
 
 /** El botón. Lleva su respaldo de VML porque Outlook ignora el padding de un
  *  <a> y el botón se vería como un enlace suelto pegado al texto. */
-function boton(txt: string, url: string): string {
+function boton(txt: string, url: string, color: string = MORADO, ancho = 260): string {
   const u = esc(url);
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:6px 0 4px;"><tr><td align="center" bgcolor="${MORADO}" style="background-color:${MORADO};border-radius:8px;">
-<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${u}" style="height:44px;v-text-anchor:middle;width:260px;" arcsize="18%" stroke="f" fillcolor="${MORADO}"><w:anchorlock/><center style="color:#ffffff;font-family:${FUENTE};font-size:15px;font-weight:bold;"><![endif]-->
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:6px 0 4px;"><tr><td align="center" bgcolor="${color}" style="background-color:${color};border-radius:8px;">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${u}" style="height:44px;v-text-anchor:middle;width:${ancho}px;" arcsize="18%" stroke="f" fillcolor="${color}"><w:anchorlock/><center style="color:#ffffff;font-family:${FUENTE};font-size:15px;font-weight:bold;"><![endif]-->
 <a href="${u}" style="display:inline-block;padding:13px 26px;color:#ffffff;font-family:${FUENTE};font-size:15px;font-weight:bold;text-decoration:none;border-radius:8px;">${esc(txt)}</a>
 <!--[if mso]></center></v:roundrect><![endif]-->
 </td></tr></table>`;
@@ -84,7 +92,55 @@ export type PartesCorreo = {
   botonUrl?: string | null;
   pieza?: string | null;        // la tabla visual del giro, del 4º correo en adelante
   sitio?: string;
+  /** El cierre con la llamada a la acción. Va en TODOS los correos del motor;
+   *  se omite solo en una vista previa suelta que no sepa de qué cuenta es. */
+  cierre?: Cierre | null;
 };
+
+export type Cierre = { giro?: string | null; nombre?: string | null };
+
+// ── El cierre: la llamada a la acción que lleva todo correo ──────────────────
+//
+// Regla del dueño (14-sep-2026): cada correo termina con la misma invitación
+// —«demos en línea de 30 minutos, paso a paso, para su operación de …»— y DOS
+// botones claros: agendar la demo (al calendario) o escribir por WhatsApp con
+// dudas. El WhatsApp es el número real de la empresa, importado de
+// lib/whatsapp.ts: se lee de UNA fuente, nunca se escribe aquí a mano.
+//
+// El mensaje precargado del wa.me lleva el nombre del negocio para que quien
+// atiende sepa de entrada quién escribe y de qué correo viene.
+
+/** La frase, tal cual la dijo el dueño, con el giro puesto. */
+export function fraseCierre(giro?: string | null): string {
+  return `Actualmente estamos teniendo demos en línea durante 30 minutos y le mostramos paso a paso cómo optimizar su operación de ${operacionDe(giro)}.`;
+}
+
+/** El wa.me del cierre, con el mensaje ya escrito. */
+export function whatsappCierre(nombre?: string | null): string {
+  const quien = String(nombre || '').trim();
+  return waLink(quien ? `Hola, soy de ${quien}. Vi su correo sobre Sacs y tengo unas dudas.` : 'Hola, vi su correo sobre Sacs y tengo unas dudas.');
+}
+
+/** El mismo cierre para la versión de texto plano: tiene que decir lo mismo
+ *  que el HTML, con sus dos ligas, o los filtros puntúan la diferencia. */
+export function cierreTexto(c: Cierre): string {
+  return `\n\n${fraseCierre(c.giro)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`;
+}
+
+function bloqueCierre(c: Cierre): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
+<td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
+<p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
+<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))}</p>
+<!-- Los dos botones van uno debajo del otro, no lado a lado: en el teléfono
+     —donde se lee la mayoría del correo en frío— dos botones en una fila se
+     parten y el texto queda en dos renglones. -->
+${boton('Agendar la demo', AGENDAR_DEMO, MORADO, 250)}
+${boton('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA, 250)}
+<p style="margin:6px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)}.</p>
+</td></tr></table>`;
+}
+
 
 /** El correo completo, listo para mandar. */
 export function armarCorreo(p: PartesCorreo): string {
@@ -92,9 +148,13 @@ export function armarCorreo(p: PartesCorreo): string {
   const img = p.imagen
     ? `<tr><td style="padding:0;"><img src="${base}/images/mail/${esc(p.imagen)}" width="600" alt="${esc(p.imagenAlt || '')}" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;" /></td></tr>`
     : '';
-  const cta = p.botonTexto && p.botonUrl
+  // El botón propio del correo se pinta solo si lleva a otro lado que el cierre:
+  // dos botones morados seguidos a la misma liga de agendar se ven a robot.
+  const botonRepetido = !!p.cierre && String(p.botonUrl || '').replace(/\/$/, '') === AGENDAR_DEMO;
+  const cta = p.botonTexto && p.botonUrl && !botonRepetido
     ? `<tr><td style="padding:4px 28px 26px;">${boton(p.botonTexto, p.botonUrl)}</td></tr>` : '';
   const pieza = p.pieza ? `<tr><td style="padding:0 28px 26px;">${p.pieza}</td></tr>` : '';
+  const cierre = p.cierre ? `<tr><td style="padding:10px 28px 26px;">${bloqueCierre(p.cierre)}</td></tr>` : '';
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background-color:#f6f6f9;margin:0;padding:0;">
 <tr><td align="center" style="padding:22px 10px;">
@@ -113,13 +173,16 @@ ${img}
 <tr><td style="padding:26px 28px 4px;">${cuerpoAHtml(p.cuerpo)}</td></tr>
 ${cta}
 ${pieza}
+${cierre}
 
-<!-- Pie: solo la marca. El aviso legal y la liga de baja los pone el pipeline
-     de envío, y duplicarlos daría dos ligas de baja en el mismo correo. -->
+<!-- Pie: la marca, el sitio y el WhatsApp. El aviso legal y la liga de baja los
+     pone el pipeline de envío, y duplicarlos daría dos ligas de baja en el
+     mismo correo. -->
 <tr><td style="padding:0 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td height="1" bgcolor="${LINEA}" style="background-color:${LINEA};height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td></tr>
-<tr><td style="padding:16px 28px 24px;">
+<tr><td style="padding:18px 28px 24px;">
 <p style="margin:0;color:${MORADO_TINTA};font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:18px;">Sacscloud</p>
 <p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Inventario y punto de venta para negocios de moda, hecho en México.</p>
+<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${base}" style="color:${MORADO_TINTA};text-decoration:none;">www.sacscloud.com</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes</p>
 </td></tr>
 
 </table>

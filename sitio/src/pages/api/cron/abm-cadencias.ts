@@ -24,7 +24,7 @@ import { enviarCorreo } from '../../../lib/email/pipeline';
 import { apuntar, repuntuar } from '../../../lib/crm/abm.lib';
 import { correrGoteos } from '../../../lib/crm/abm-goteo';
 import { enviarWhatsApps, respuestasWhatsApp } from '../../../lib/crm/abm-whatsapp';
-import { armarCorreo } from '../../../lib/crm/abm-correo';
+import { armarCorreo, cierreTexto, AGENDAR_DEMO } from '../../../lib/crm/abm-correo';
 
 export const prerender = false;
 
@@ -205,7 +205,7 @@ export const GET: APIRoute = async ({ request }) => {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: CORREO_OK.test(destino) ? 'está en la lista de no contactar' : 'la dirección no tiene forma de dirección' }).eq('id', t.id);
       continue;
     }
-    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente').eq('id', t.cuenta_id).maybeSingle();
+    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro').eq('id', t.cuenta_id).maybeSingle();
     if (!cuenta || cuenta.ya_es_cliente || ['no_contactar', 'respondio', 'reunion', 'ganada'].includes(cuenta.etapa)) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
       continue;
@@ -230,11 +230,10 @@ export const GET: APIRoute = async ({ request }) => {
       const { count: interes } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
         .eq('cuenta_id', t.cuenta_id).in('tipo', ['apertura', 'clic']);
       if (interes) {
-        const { data: cta } = await supabase.from('abm_cuentas').select('giro').eq('id', t.cuenta_id).maybeSingle();
         // .limit(1) y no maybeSingle(): con dos filas, maybeSingle devuelve
         // null y la pieza se apagaría en silencio.
         const { data: pzs } = await supabase.from('abm_plantillas')
-          .select('cuerpo, asunto').eq('canal', 'pieza').eq('giro', cta?.giro || '').limit(1);
+          .select('cuerpo, asunto').eq('canal', 'pieza').eq('giro', cuenta.giro || '').limit(1);
         const pz = (pzs || [])[0];
         if (pz?.cuerpo) { pieza = pz.cuerpo; piezaTitulo = pz.asunto || ''; }
       }
@@ -243,6 +242,7 @@ export const GET: APIRoute = async ({ request }) => {
     // Se reclama el toque antes de mandarlo. Si el proceso muriera entre el
     // POST a SendGrid y el update, el toque seguiría 'aprobado' y la corrida
     // de las 13:00 lo mandaría OTRA VEZ al mismo negocio.
+    const cierre = { giro: cuenta.giro, nombre: cuenta.nombre };
     const { data: reclamado } = await supabase.from('abm_toques')
       .update({ estado: 'enviando', enviado_at: new Date().toISOString() })
       .eq('id', t.id).eq('estado', 'aprobado').select('id').maybeSingle();
@@ -256,12 +256,15 @@ export const GET: APIRoute = async ({ request }) => {
       // texto plano ignora es una discrepancia que los filtros puntúan.
       // La liga del botón se AGREGA a la versión de texto: en HTML es un botón,
       // pero quien lea el correo sin formato no vería ninguna forma de agendar.
+      // Y el cierre (demo de 30 minutos + agendar + WhatsApp) va en los dos
+      // formatos, con las mismas ligas, porque todo correo lo lleva.
       texto: (t.cuerpo || '')
-        + ((t as any).boton_url ? `\n\n${(t as any).boton_texto || 'Agendar'}: ${(t as any).boton_url}` : '')
-        + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : ''),
+        + ((t as any).boton_url && (t as any).boton_url !== AGENDAR_DEMO ? `\n\n${(t as any).boton_texto || 'Agendar'}: ${(t as any).boton_url}` : '')
+        + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : '')
+        + cierreTexto(cierre),
       html: armarCorreo({
         cuerpo: t.cuerpo || '', imagen: (t as any).imagen, imagenAlt: asunto,
-        botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza,
+        botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza, cierre,
       }),
       categoria: 'abm', tenantId: inquilino.id,
       // Los tres primeros van limpios: sin pixel y sin enlaces envueltos.
