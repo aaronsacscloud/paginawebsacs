@@ -1126,7 +1126,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
      mismas columnas por otro camino —el que NO valida el RFC—, así que un RFC
      imposible entraba sin revisar y el alta lo daba por bueno. Se siguen
      leyendo, se capturan allá. */
-  const [f, setF] = useState<any>({ nombre: co.nombre || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
+  const [f, setF] = useState<any>({ nombre: co.nombre || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, sucursales_negocio: co.sucursales_negocio ?? '', estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   /* La ficha se LEE por defecto y se edita cuando lo pides. Antes se abría con
      ocho cajas de texto aunque solo vinieras a ver quién es el cliente, y eso
@@ -1162,7 +1162,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
     setSaving(true);
     // Los datos de la empresa y sus campos de perfil viven en dos tablas y en
     // dos endpoints, pero para quien captura son UNA pantalla: un solo botón.
-    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
+    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1, sucursales_negocio: f.sucursales_negocio === '' ? null : parseInt(f.sucursales_negocio) || null }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.error) { setSaving(false); alert(j.error || 'No se pudo guardar.'); return; }
     const huboProps = propsSucio && !!propsF;
@@ -1349,7 +1349,25 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
               {leido('Sitio web', f.sitio_web)}
               {leido('Ciudad', f.ciudad)}
               {leido('Estado', f.estado_geo)}
-              {leido('Sucursales', f.sucursales)}
+              {/* ══ SUCURSALES: las activas contra las del negocio ══
+                  `sucursales` son las que el cliente PAGA; `sucursales_negocio`
+                  las que tiene en la calle. La resta es expansión disponible y
+                  hasta hoy no se veía en ningún lado: había que saberse de
+                  memoria que el cliente tenía cuatro tiendas. */}
+              <div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Sucursales</div>
+                <div style={{ fontSize: '0.84rem', marginTop: 3, fontWeight: 600 }}>
+                  {f.sucursales} {Number(f.sucursales) === 1 ? 'activa' : 'activas'}
+                  {f.sucursales_negocio ? <span style={{ color: '#9c99a6', fontWeight: 500 }}> de {f.sucursales_negocio} que tiene</span> : null}
+                </div>
+                {f.sucursales_negocio
+                  ? (Number(f.sucursales_negocio) > Number(f.sucursales)
+                    ? <div style={{ fontSize: '0.7rem', color: '#9c3d70', fontWeight: 700, marginTop: 3 }}>
+                        {Number(f.sucursales_negocio) - Number(f.sucursales)} sin contratar · expansión
+                      </div>
+                    : <div style={{ fontSize: '0.7rem', color: '#1E8A63', marginTop: 3 }}>todas en el sistema</div>)
+                  : <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 3 }}>no sabemos cuántas tiene · pregúntalo en la junta</div>}
+              </div>
               {leido('Estado de la cuenta', f.estado_cuenta)}
               {/* El perfil del negocio describe a la EMPRESA —giro, subgiro,
                   colaboradores—, así que su sitio es este y no un cajón aparte
@@ -1384,6 +1402,20 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                     <option value={MAS_DE_50}>Más de 50</option>
                   </select>
                   {Number(f.sucursales) > 50 && <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>guardado: {f.sucursales}</div>}
+                  <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 3 }}>las que paga hoy</div>
+                </div>
+                <div>
+                  <label style={D.lbl}>Sucursales del negocio</label>
+                  <input type="number" min={0} value={f.sucursales_negocio}
+                    onChange={e => setF({ ...f, sucursales_negocio: e.target.value })}
+                    placeholder="las que tiene en la calle" style={D.inputM} />
+                  {/* La resta se dice aquí mismo, mientras se captura: es el
+                      momento en que el dato se vuelve una venta. */}
+                  {Number(f.sucursales_negocio) > Number(f.sucursales) && (
+                    <div style={{ fontSize: '0.68rem', color: '#9c3d70', fontWeight: 700, marginTop: 3 }}>
+                      {Number(f.sucursales_negocio) - Number(f.sucursales)} sin contratar
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={D.lbl}>Estado de la cuenta</label>

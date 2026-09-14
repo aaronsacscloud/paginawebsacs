@@ -187,18 +187,29 @@ export default function CuentaCliente({ companyId, alCambiar }: { companyId: str
           {/* Sin sello aquí: el encabezado de la tarjeta ya dice «Alta sin
               cerrar», y dos avisos del mismo pendiente a diez píxeles uno del
               otro se leen como dos pendientes. */}
-          {!faltan && !editFisc && (
-            <button onClick={() => setEditFisc(true)} style={{ ...btn(), marginLeft: 'auto', padding: '5px 11px', fontSize: '0.74rem' }}>Editar</button>
+          {!editFisc && (
+            <button onClick={() => setEditFisc(true)} style={{ ...btn(faltan), marginLeft: 'auto', padding: '5px 11px', fontSize: '0.74rem' }}>
+              {faltan ? 'Capturar' : 'Editar'}
+            </button>
+          )}
+          {/* Lo que falta se dice en una línea, no en un cartel: el encabezado
+              de la tarjeta ya lleva el aviso de «Alta sin cerrar». */}
+          {faltan && !editFisc && (
+            <span style={{ fontSize: '0.7rem', color: '#9a6a10', flexBasis: '100%', order: 9 }}>
+              {textoFaltantes(fisc)} · sin esto no se le puede facturar cuando lo pida.
+            </span>
           )}
         </div>
 
-        {(faltan || editFisc) ? (
+        {/* ══ EL FORMULARIO SOLO AL EDITAR ══
+            Antes, si faltaban datos, la tarjeta abría con el formulario
+            desplegado: campos en caja, aviso amarillo y un botón verde ancho en
+            medio de una sección donde todo lo demás son datos escritos. Eso es
+            lo que rompía la lógica de Info general. Ahora lo fiscal se LEE
+            igual que la ciudad o el giro —con «sin capturar» cuando falta— y el
+            formulario aparece al tocar «Capturar». */}
+        {editFisc ? (
           <div style={{ maxWidth: 430 }}>
-            {faltan && (
-              <div style={{ background: '#FFF9EF', border: '1px solid #f3dfae', borderRadius: 10, padding: '10px 13px', fontSize: '0.79rem', color: '#7a5a10', marginBottom: 10, lineHeight: 1.5 }}>
-                <b>{textoFaltantes(fisc)}.</b> Sin esto no se le puede facturar cuando lo pida.
-              </div>
-            )}
             <DatosFiscales companyId={companyId} fisc={fisc} sinIntro
               onCancelar={editFisc && !faltan ? () => setEditFisc(false) : undefined}
               onGuardado={d => {

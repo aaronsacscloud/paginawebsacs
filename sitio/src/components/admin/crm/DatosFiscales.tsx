@@ -117,7 +117,11 @@ export default function DatosFiscales({
         {onCancelar && <button onClick={onCancelar} disabled={trabajando}
           style={{ border: '1px solid #e4dffb', background: '#fff', borderRadius: 9, padding: '9px 14px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Atrás</button>}
         <button onClick={continuar} disabled={trabajando}
-          style={{ flex: 1, border: 'none', background: '#1E8A63', color: '#fff', borderRadius: 9, padding: '10px 14px', fontSize: '0.82rem', fontWeight: 700, cursor: trabajando ? 'default' : 'pointer', opacity: trabajando ? 0.6 : 1, fontFamily: 'inherit' }}>
+          /* Morado, no verde. En el sistema visual del CRM el botón primario
+             es #9B8CFA sólido y el verde significa «dinero que entró»: un botón
+             verde aquí decía otra cosa y además rompía la sección, donde todo
+             lo demás es morado. */
+          style={{ flex: 1, border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 9, padding: '10px 14px', fontSize: '0.82rem', fontWeight: 700, cursor: trabajando ? 'default' : 'pointer', opacity: trabajando ? 0.6 : 1, fontFamily: 'inherit' }}>
           {ocupado ? 'Guardando…' : textoBoton}
         </button>
       </div>

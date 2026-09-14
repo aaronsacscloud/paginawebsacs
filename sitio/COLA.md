@@ -6,6 +6,20 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
+      «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que
+      hagan que se descuadre el diseno de la informacion general del cliente. Adicional, quiero que me agregues un
+      campo de sucursal: las que tienen activas dentro del sistema y las que tiene el negocio […] si Oculani en
+      realidad tiene cuatro sucursales pero contrató una, ahí ya sé que existe una oportunidad de expansión […] y
+      que al final esto se pueda agregar como una oportunidad»
+      → Ya lo había pedido antes (bloque fiscal suelto). Dos piezas: (1) los datos fiscales viven DENTRO de Info
+      general sin romper la rejilla; (2) `sucursales_negocio` en companies + la brecha contra las activas + botón
+      para volverla oportunidad.
+
+- [ ] **2026-09-14 · El flujo de ideas → oportunidad → cotización en la ficha del cliente.**
+      Propuesta y prototipo entregados (code.sacscloud.com/shots/flujo-ideas.html). Falta el visto bueno del dueño
+      para montarlo: cuatro listas, una acción principal por renglón y la idea que sale de la lista al cotizarse.
+
 - [x] **2026-09-13 · La firma de pantalla en los demás módulos (Soporte, Taller, Consultoría, Leads).** → HECHO el mismo día: las cuatro montadas con las frases que eligió el dueño, y el Tablero pasó a usar el componente compartido.
       «me gustaria que en estas pantallas puedas poner los efectos del mensaje y las estrellas de acuerdo a su
       gestion de cada uno que el diseno de la frase que correspinderia y los destellos que hemos puesto en

@@ -99,7 +99,11 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     .then(r => r.json()).then(j => setLigas(j.ligas || {})).catch(() => {});
   const cargarReportes = () => fetch('/api/crm/reportes?company_id=' + companyId)
     .then(r => r.json()).then(j => setReportes(j.reportes || [])).catch(() => {});
-  const [editando, setEditando] = useState<any>(null);   // {} = nueva
+  const [editando, setEditando] = useState<any>(null);
+  /* Qué renglón tiene abierto su menú de acciones secundarias, y cuál se está
+     convirtiendo en oportunidad (con su monto a medio escribir). */
+  const [menu, setMenu] = useState<string | null>(null);
+  const [aOportunidad, setAOportunidad] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
   const [entregas, setEntregas] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
@@ -156,6 +160,46 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     flash('En el taller: ' + (r.ordenes?.[0]?.folio || 'orden creada'));
   }
 
+  /* ══ DE IDEA A OPORTUNIDAD ══
+     La diferencia no es de palabra: una IDEA es «se puede vender algún día» y
+     no entra al pronóstico; una OPORTUNIDAD es «lo quiere y cuesta tanto», con
+     monto y fecha, y sí entra. Por eso convertir EXIGE monto: sin él, el
+     pipeline mentiría. La fila no se duplica — nace un trato y la mejora se
+     queda ligada a él. */
+  async function volverOportunidad() {
+    const o = aOportunidad; if (!o) return;
+    const monto = Math.round(Number(o.valor) || 0);
+    if (!monto) { flash('Ponle el monto estimado: sin monto es una idea, no una oportunidad'); return; }
+    const d = await fetch('/api/crm/deals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: o.titulo, company_id: companyId, valor_total: monto, valor_unico: monto,
+        stage: 'calificacion', origen: 'consultoria',
+        fecha_cierre_esperada: o.fecha || null,
+        descripcion: 'Salió de una idea de consultoría',
+      }),
+    }).then(x => x.json()).catch(() => null);
+    if (!d || d.error || !d.deal?.id && !d.id) { flash(d?.error || 'No se pudo crear la oportunidad'); return; }
+    const dealId = d.deal?.id || d.id;
+    await fetch('/api/crm/mejoras', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: o.id, deal_id: dealId, valor: monto }),
+    }).catch(() => {});
+    setAOportunidad(null); setMenu(null); cargar();
+    flash('Ahora es una oportunidad de ' + money(monto));
+  }
+
+  /* Descartar NO es borrar: la fila se queda con su motivo, y el motivo es lo
+     que evita volver a proponer lo mismo dentro de tres meses. */
+  async function descartar(m: any) {
+    if (!await confirmar(`¿Descartar "${m.titulo}"?`, { accion: 'Descartar', detalle: 'Sale de la lista pero se conserva con su historia, para no volver a proponerla.' })) return;
+    await fetch('/api/crm/mejoras', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id, estado: 'descartada' }),
+    }).catch(() => {});
+    setMenu(null); cargar(); flash('Descartada');
+  }
+
   async function archivar(m: any) {
     if (!await confirmar(`¿Quitar "${m.titulo}" de la lista?`, { accion: 'Quitar', detalle: 'Se archiva: deja de verse aquí pero no se borra del historial.' })) return;
     await fetch('/api/crm/mejoras', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: m.id }) }).catch(() => {});
@@ -170,7 +214,14 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const abierto = (m: any) => m.estado === 'cotizada' || m.estado === 'en_proceso';
   const porFecha = (a: any, b: any) => String(a.fecha_compromiso || '9999').localeCompare(String(b.fecha_compromiso || '9999'));
 
-  const ideas = rows.filter(m => m.estado === 'idea');
+  /* Las dos listas que el dueño pidió separar. Una IDEA es lo que se puede
+     vender; una OPORTUNIDAD ya tiene monto y trato, y es la única que entra al
+     pronóstico. Y la que YA se cotizó sale de las dos: cambia de carril y
+     abajo queda su rastro — una lista de ideas llena de cosas ya vendidas deja
+     de servir para trabajar. */
+  const ideas = rows.filter(m => m.estado === 'idea' && !m.deal_id && !m.quote_id);
+  const oportunidades = rows.filter(m => m.estado === 'idea' && m.deal_id && !m.quote_id);
+  const yaCotizadas = rows.filter(m => m.quote_id && m.estado !== 'entregada');
   const entregadas = rows.filter(m => m.estado === 'entregada');
   const grupos = [
     { k: 'obra', l: 'Mejoras y personalizaciones', filas: rows.filter(m => abierto(m) && ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria)).sort(porFecha) },
@@ -304,20 +355,40 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
               {ligas[m.id].fecha_prometida ? ` · para el ${fmtDate(ligas[m.id].fecha_prometida)}` : ' · sin fecha todavía'}
             </div>
           )}
-          <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
-            {m.estado === 'idea' && <button style={S.btnAzul} onClick={() => cotizar(m)}>Cotizar esta idea</button>}
-            {!ligas[m.id] && m.estado !== 'entregada' && m.categoria !== 'capacitacion' && (
-              <button style={S.btnAzul} onClick={() => alTaller(m)}>Mandar al taller</button>
-            )}
-            {m.estado !== 'entregada' && (
-              <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>
-                {m.categoria === 'capacitacion' ? (modoDe(m) === 'video' ? 'Marcar enviado' : 'Marcar impartida') : m.categoria === 'pendiente' ? 'Marcar hecho' : 'Marcar entregada'}
-              </button>
-            )}
-            {m.estado === 'idea' && <button style={S.btnG} onClick={() => cambiarEstado(m, 'en_proceso')}>En proceso</button>}
-            <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
-            <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
+          {/* ══ UNA SOLA ACCIÓN PRINCIPAL ══
+              Había SEIS botones del mismo peso en cada renglón y ninguno
+              mandaba: cotizar, mandar al taller, marcar entregada, en proceso,
+              editar y quitar, todos igual de grandes. Ahora manda la que
+              corresponde al carril donde está la fila —en una idea, cotizar— y
+              las demás viven detrás del «···». */}
+          <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+            {m.estado === 'idea'
+              ? <button style={S.btnAzul} onClick={() => cotizar(m)}>Cotizar</button>
+              : m.estado !== 'entregada'
+                ? <button style={S.btnAzul} onClick={() => cambiarEstado(m, 'entregada')}>
+                    {m.categoria === 'capacitacion' ? (modoDe(m) === 'video' ? 'Marcar enviado' : 'Marcar impartida') : m.categoria === 'pendiente' ? 'Marcar hecho' : 'Marcar entregada'}
+                  </button>
+                : null}
+            <button style={{ ...S.btnG, color: '#8b8698', padding: '5px 10px' }}
+              onClick={() => setMenu(menu === m.id ? null : m.id)} title="Más acciones">···</button>
           </div>
+          {menu === m.id && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap', padding: '9px 10px', background: '#FBFAFE', border: '1px solid #f0edf8', borderRadius: 10 }}>
+              {m.estado === 'idea' && !m.deal_id && (
+                <button style={S.btnG} onClick={() => setAOportunidad({ id: m.id, titulo: m.titulo, valor: m.valor || '' })}>Volverla oportunidad</button>
+              )}
+              {!ligas[m.id] && m.estado !== 'entregada' && m.categoria !== 'capacitacion' && (
+                <button style={S.btnG} onClick={() => alTaller(m)}>Mandar al taller</button>
+              )}
+              {m.estado === 'idea' && <button style={S.btnG} onClick={() => cambiarEstado(m, 'en_proceso')}>En proceso</button>}
+              {m.estado !== 'entregada' && m.estado !== 'idea' && (
+                <button style={S.btnG} onClick={() => cotizar(m)}>Cotizar</button>
+              )}
+              <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
+              <button style={{ ...S.btnG, color: '#C0554E' }} onClick={() => descartar(m)}>Descartar</button>
+              <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
+            </div>
+          )}
         </div>
         <div style={{ fontSize: '0.78rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
           {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
@@ -479,7 +550,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         {/* 2 · Lo que le puedes vender: las sugerencias del sistema y tus ideas
             en la MISMA lista. Eran dos bloques que decían lo mismo. */}
         <Hito n={2} titulo="Por vender" color="#7DA6F5"
-          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
+          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${oportunidades.length ? ` · ${oportunidades.length} oportunidad${oportunidades.length === 1 ? '' : 'es'}` : ''}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
           accion={<button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>}>
 
           {(sugerencias.length > 0 || sugYaEnLista > 0) && (
@@ -519,7 +590,58 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
               Lo que se te ocurra en una junta y le pueda interesar al cliente va aquí. De ahí sale la siguiente venta.
             </div>
           )}
-          {ideas.map(m => <Renglon key={m.id} m={m} />)}
+          {/* ── IDEAS: lo que se puede vender, sin monto y fuera del pronóstico ── */}
+          {ideas.length > 0 && (
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 2px' }}>
+              Ideas · {ideas.length}
+            </div>
+          )}
+          {ideas.map(m => (
+            <div key={m.id}>
+              <Renglon m={m} />
+              {/* La conversión pide monto ahí mismo: sin monto no hay
+                  oportunidad, y mandar al usuario a otra pantalla para escribir
+                  un número es como se pierden las conversiones. */}
+              {aOportunidad?.id === m.id && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '2px 0 10px', padding: '11px 13px', background: '#FCEFF5', border: '1px solid #f6d9e7', borderRadius: 10 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9c3d70' }}>¿En cuánto la estimas?</span>
+                  <input type="number" autoFocus value={aOportunidad.valor}
+                    onChange={e => setAOportunidad({ ...aOportunidad, valor: e.target.value })}
+                    placeholder="Monto" style={{ width: 120, border: '1px solid #f0c9dd', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit' }} />
+                  <input type="date" value={aOportunidad.fecha || ''}
+                    onChange={e => setAOportunidad({ ...aOportunidad, fecha: e.target.value })}
+                    title="Cierre esperado" style={{ border: '1px solid #f0c9dd', borderRadius: 8, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit' }} />
+                  <button style={{ ...S.btnAzul, background: '#D9538E' }} onClick={volverOportunidad}>Crear oportunidad</button>
+                  <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => setAOportunidad(null)}>Cancelar</button>
+                  <span style={{ fontSize: '0.68rem', color: '#9c3d70', flexBasis: '100%' }}>
+                    Con monto entra al pronóstico de ventas; sin monto se queda como idea.
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* ── OPORTUNIDADES: ya tienen monto y trato. Entran al pipeline ── */}
+          {oportunidades.length > 0 && (<>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', textTransform: 'uppercase', letterSpacing: '.07em', margin: '16px 0 2px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              Oportunidades · {oportunidades.length}
+              <span style={{ fontWeight: 700, color: '#a5a2af', textTransform: 'none', letterSpacing: 0 }}>
+                {money(oportunidades.reduce((a: number, m: any) => a + Number(m.valor || 0), 0))} · sí cuentan en el pronóstico
+              </span>
+            </div>
+            {oportunidades.map(m => <Renglon key={m.id} m={m} />)}
+          </>)}
+
+          {/* ── EL RASTRO: lo que ya se cotizó dejó de ser idea ── */}
+          {yaCotizadas.length > 0 && (
+            <div style={{ fontSize: '0.71rem', color: '#6b6b7a', lineHeight: 1.6, marginTop: 14, paddingTop: 12, borderTop: '1px solid #f1eff8' }}>
+              <b style={{ color: '#9c3d70' }}>{yaCotizadas.length} {yaCotizadas.length === 1 ? 'idea ya se cotizó' : 'ideas ya se cotizaron'}</b> y por eso no están en esta lista:
+              {' '}{yaCotizadas.slice(0, 3).map((m: any, i: number) => (
+                <span key={m.id}>{i ? ', ' : ''}{m.titulo}{m.quotes?.numero ? ` (${m.quotes.numero})` : ''}</span>
+              ))}
+              {yaCotizadas.length > 3 && <> y {yaCotizadas.length - 3} más</>}. Viven arriba, en «Por hacer», y en Cotizaciones.
+            </div>
+          )}
         </Hito>
 
         {/* 3 · Lo que ya quedó atrás. Solo la última: es historia, se consulta.
