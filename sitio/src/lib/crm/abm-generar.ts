@@ -10,9 +10,20 @@ import { supabase } from '../supabase';
 import { anthropic, MODELS } from '../ai/client';
 import { limpiar, apuntar, GIROS, variablesDe, rellenar, nombrePila } from './abm.lib';
 
-/** Producto sin talla: joyería, bolsas, sombreros, lentes, accesorios. */
-const sinTalla = (subgiro?: string | null) =>
-  /JOYER|BISUTER|BOLSA|CARTERA|MOCHILA|PIEL\b|MARROQUIN|SOMBRER|GORRA|ACCESOR|CINTUR|LENTES|RELOJ|MASCADA|PA[ÑN]UEL|BUFAND|FLORES/i.test(String(subgiro || ''));
+/**
+ * Producto sin talla: joyería, bolsas, sombreros, lentes, accesorios.
+ * Si el subgiro también nombra ropa o calzado («trajes y accesorios de
+ * caballero», «vestidos de fiesta y accesorios»), manda la ropa: el pedido
+ * de esa marca se levanta por talla aunque venda accesorios al lado. Salió
+ * del primer lote de Intermoda (14-sep-2026), donde la sola palabra
+ * «accesorios» iba a dejar sin tallas a una marca de trajes.
+ */
+const SIN_TALLA = /JOYER|BISUTER|BOLSA|CARTERA|MOCHILA|PIEL\b|MARROQUIN|SOMBRER|GORRA|ACCESOR|CINTUR|CINTOS|LENTES|RELOJ|MASCADA|PA[ÑN]UEL|BUFAND|FLORES|BILLETER|MONEDER|VELOS?\b/i;
+const CON_TALLA = /ROPA|VESTID|TRAJE|JEANS|PANTAL|CAMIS|BLUS|CHAMARR|SUDADER|PLAYER|CALZADO|ZAPAT|TENIS|BOTAS?\b|UNIFORM|LENCER|BIKINI|LEGGING|FALDA|SACOS?\b|ROPON|ABRIGO|SU[ÉE]TER|TEJIDO DE PUNTO|PRENDA|MODA INFANTIL|CEREMONIAS/i;
+export const sinTalla = (subgiro?: string | null) => {
+  const s = String(subgiro || '');
+  return SIN_TALLA.test(s) && !CON_TALLA.test(s);
+};
 
 /** Lo que sabemos de la cuenta, resumido para que la IA no invente nada. */
 export function expediente(c: any, canales: any[], personas: any[], senales: any[]) {

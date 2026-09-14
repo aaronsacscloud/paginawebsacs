@@ -954,7 +954,18 @@ de encender, se renderiza contra una cuenta real con IA y se borra el borrador
 joyería y bolsas), la decisión de «tallas» o «modelo y color» se toma en el
 expediente por el subgiro (abm-generar.ts, `sinTalla`), no en el objetivo de
 cada correo: puesta ahí como «si vende joyería…», la IA se la aplicó también a
-una marca de ropa.
+una marca de ropa. Y si el subgiro nombra las dos cosas («trajes y accesorios
+de caballero»), manda la ropa: el pedido se levanta por talla.
+
+Y una regla de calendario que costó un lote: **un arreglo del guion que no
+está desplegado antes de las 10:00 CDMX no existe para el goteo de ese día.**
+El 14-sep-2026 el goteo de Intermoda escribió 40 cadencias con el código
+viejo (se desplegó a las 13:45) y diez marcas de joyería, bolsas y velos
+recibieron un guion de tallas. Se arregló borrando sus toques y devolviéndolas
+a sin_tocar para que el goteo las tomara al día siguiente con el código bueno
+(migración 2026-09-14-abm-intermoda-relanzar-sin-talla.sql); no se les escribe
+la cadencia a mano. Si un goteo nuevo depende de código nuevo, o se pide el
+push antes de la hora o se enciende el goteo al día siguiente.
 
 Las migraciones se escriben explicando **por qué** se hizo el cambio, no qué
 hace el SQL. Una migración dice lo que pasó ese día — no lo que es cierto hoy.
