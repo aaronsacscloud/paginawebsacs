@@ -41,6 +41,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { promises as dns } from 'node:dns';
+import { quien } from '../../../lib/crm/abm.lib';
 
 /** Los que sabemos de memoria que reciben correo: consultarlos es tirar
  *  milisegundos y arriesgarse a que un DNS lento los marque mal. */
@@ -78,9 +79,17 @@ const menor = (a: string | null, b?: string) => {
 };
 
 export const GET: APIRoute = async ({ request, url }) => {
+  /* Dos puertas: el cron con su secreto, o una persona del CRM con su sesión.
+     Esto no es solo una tarea nocturna: es lo que se corre A MANO justo después
+     de cargar una base nueva, que es el momento en que entran las direcciones
+     sin comprobar. Obligar a esperar al horario sería garantizar que alguien
+     mande primero y verifique después. */
   const auth = request.headers.get('authorization') || '';
   const secret = (import.meta.env.CRON_SECRET || process.env.CRON_SECRET || '').trim();
-  if (secret && auth !== `Bearer ${secret}`) return json({ error: 'no autorizado' }, 401);
+  if (!(secret && auth === `Bearer ${secret}`)) {
+    const yo = await quien(request);
+    if (!yo) return json({ error: 'no autorizado' }, 401);
+  }
 
   const key = String(import.meta.env.ZEROBOUNCE_API_KEY || process.env.ZEROBOUNCE_API_KEY || '').trim();
   const soloDns = url.searchParams.get('solo_dns') === '1' || !key;
