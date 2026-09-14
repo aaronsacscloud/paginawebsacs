@@ -84,6 +84,17 @@ function boton(txt: string, url: string, color: string = MORADO, ancho = 260): s
 </td></tr></table>`;
 }
 
+/** El mismo botón, pero ocupando todo el ancho de la celda donde va: para
+ *  ponerlos en fila y que midan lo mismo aunque el texto no. */
+function botonAncho(txt: string, url: string, color: string): string {
+  const u = esc(url);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td align="center" bgcolor="${color}" style="background-color:${color};border-radius:8px;">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${u}" style="height:46px;v-text-anchor:middle;width:230px;" arcsize="18%" stroke="f" fillcolor="${color}"><w:anchorlock/><center style="color:#ffffff;font-family:${FUENTE};font-size:15px;font-weight:bold;"><![endif]-->
+<a href="${u}" style="display:block;padding:14px 6px;color:#ffffff;font-family:${FUENTE};font-size:14px;font-weight:bold;text-decoration:none;text-align:center;border-radius:8px;white-space:nowrap;">${esc(txt)}</a>
+<!--[if mso]></center></v:roundrect><![endif]-->
+</td></tr></table>`;
+}
+
 export type PartesCorreo = {
   cuerpo: string;
   imagen?: string | null;       // nombre del archivo en /images/mail/
@@ -132,12 +143,14 @@ function bloqueCierre(c: Cierre): string {
 <td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
 <p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
 <p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))}</p>
-<!-- Los dos botones van uno debajo del otro, no lado a lado: en el teléfono
-     —donde se lee la mayoría del correo en frío— dos botones en una fila se
-     parten y el texto queda en dos renglones. -->
-${boton('Agendar la demo', AGENDAR_DEMO, MORADO, 250)}
-${boton('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA, 250)}
-<p style="margin:6px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)}.</p>
+<!-- Los dos botones en UNA fila, a mitades iguales, cada botón a lo ancho de
+     su celda: así se ven parejos en escritorio y no se encaraman en el
+     teléfono. Uno debajo del otro se veía apilado, y el dueño lo rechazó. -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
+<td width="50%" valign="top" style="padding:0 6px 0 0;">${botonAncho('Agendar la demo', AGENDAR_DEMO, MORADO)}</td>
+<td width="50%" valign="top" style="padding:0 0 0 6px;">${botonAncho('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA)}</td>
+</tr></table>
+<p style="margin:14px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)}.</p>
 </td></tr></table>`;
 }
 
