@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
+const env = Object.fromEntries(readFileSync('/opt/sacs/paginawebsacs/.crm-login','utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')).trim(), l.slice(l.indexOf('=')+1).trim()]));
+const nav = await chromium.launch({ args:['--no-sandbox'] });
+const p = await nav.newPage({ viewport:{width:390,height:844}, isMobile:true, hasTouch:true });
+p.on('pageerror', e => console.log('JS ERROR:', e.message.slice(0,200)));
+await p.goto('http://localhost:4330/admin/login',{waitUntil:'domcontentloaded'});
+await p.fill('input[type=email]', env.CRM_EMAIL); await p.fill('input[type=password]', env.CRM_PASSWORD);
+await p.click('button[type=submit]'); await p.waitForURL('**/admin/crm**',{timeout:40000}).catch(()=>{});
+await p.goto('http://localhost:4330/admin/crm?tab=pipeline',{waitUntil:'domcontentloaded'});
+await p.waitForTimeout(25000);
+console.log('URL:', p.url());
+console.log('m-chips:', await p.locator('.m-chips').count(), '| m-bleed:', await p.locator('.m-bleed').count(), '| m-hdr:', await p.locator('.m-hdr').count());
+console.log('TEXTO:', (await p.locator('body').innerText()).slice(0,260).replace(/\n+/g,' | '));
+await nav.close();
