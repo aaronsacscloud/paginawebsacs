@@ -8,19 +8,13 @@ import { girosCasos } from '../../data/giros-casos';
 // Los giros salen del MISMO arreglo que alimenta el mega-menú, así que agregar
 // un giro allá lo publica aquí sin tocar esta página. Desde el giro moda-first
 // (2026-08), los giros de moda encabezan la página y el resto se agrupa abajo.
-const giros = businessSectors;
+const giros = businessSectors.filter((g) => g.moda); // Solo moda (Aaron, 14-sep-2026): el sitio es Fashion Commerce
 const grupos = [
   {
     id: 'moda',
-    titulo: 'Moda y calzado',
-    sub: 'El nicho de la casa: ropa, calzado y joyería con sus personalizaciones a fondo.',
+    titulo: 'Ropa, calzado y joyería',
+    sub: 'Cada giro con sus propias personalizaciones: tallas, curvas, apartados, consignación y temporadas.',
     lista: businessSectors.filter((g) => g.moda),
-  },
-  {
-    id: 'otros',
-    titulo: 'Otros comercios que operan con Sacs',
-    sub: 'El mismo sistema, configurado para cada uno de estos giros.',
-    lista: businessSectors.filter((g) => !g.moda),
   },
 ];
 
@@ -63,7 +57,7 @@ const structuredData = {
         </a>
         <a href="/prueba-gratis" class="gh-btn gh-btn-outline">Prueba 7 días gratis</a>
       </div>
-      <p class="giros-count">{giros.length} giros con configuración propia</p>
+      <p class="giros-count">{giros.length} giros de moda con configuración propia</p>
     </div>
   </section>
 
