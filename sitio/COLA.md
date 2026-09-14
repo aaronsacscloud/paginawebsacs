@@ -6,6 +6,10 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · Las tres rayas del inbox móvil no abren nada.** «Le doy click a los 3 renglones de arriba y no hace
+      nada, solo pone un blur pero no muestra nada de los filtros o vistas que debería mostrarme» → HECHO: la hoja se
+      escribía dentro del carril de pestañas (scroll horizontal) y iOS recorta ahí lo `position:fixed`.
+
 - [x] **2026-09-14 · Si el consultor tomó la conversación, no más sugerencias.** «aquí yo ya tomé la conversación… la
       respuesta que me está dando la IA está bien, pero como yo ya me estoy comunicando con el prospecto, ahí ya no hay
       más sugerencias. ¿Cuándo cambia esto? Si el prospecto vuelve a dejar de escribir y se cierra otra vez la

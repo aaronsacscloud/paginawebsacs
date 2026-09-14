@@ -968,6 +968,15 @@ export default function InboxPro() {
     </Suspense>
   ) : null;
 
+  /* Los dos números de las bandejas de trabajo. Viven aquí y no dentro de la
+     lista porque los usan dos sitios que ya no están juntos: las pestañas y la
+     hoja de «Ir a». Es un filtro sobre lo que ya está en memoria. */
+  const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta';
+  const sinRespuestaDeEllos = (c: any) => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta';
+  const sinVirtuales = (lista || []).filter((c: any) => !c.virtual);
+  const nPendientes = sinVirtuales.filter(esperaRespuesta).length;
+  const nSinResp = sinVirtuales.filter(sinRespuestaDeEllos).length;
+
   if (isMobile) {
     return (
       <div className="m-lienzo" style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))', position: 'relative' }}>
@@ -976,17 +985,14 @@ export default function InboxPro() {
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>{cabinaEl}</div>
         ) : !activa ? (
           (() => {
-            const todas = (lista || []).filter((c: any) => !c.virtual);
             // Espera respuesta: el último mensaje es del cliente y no está
             // resuelta. Es el indicador que pidió el usuario para saber de un
-            // vistazo a quién le debe contestación.
-            const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta';
-            const sinRespuestaDeEllos = (c: any) => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta';
+            // vistazo a quién le debe contestación. (Los contadores se calculan
+            // arriba, en la pantalla: los comparten las pestañas y la hoja.)
+            const todas = sinVirtuales;
             const convs = chipWa === 'nocontestadas' ? todas.filter(esperaRespuesta)
               : chipWa === 'sinrespuesta' ? todas.filter(sinRespuestaDeEllos)
               : todas;
-            const nPendientes = todas.filter(esperaRespuesta).length;
-            const nSinResp = todas.filter(sinRespuestaDeEllos).length;
             const horaV5 = (iso: string | null) => {
               if (!iso) return '';
               const d = new Date(iso); const hoy = new Date();
@@ -1203,105 +1209,6 @@ export default function InboxPro() {
                       hace el botón de las tres rayas, dos dedos más a la
                       derecha y detrás de un scroll horizontal. Dos puertas a la
                       misma habitación solo obligan a decidir cuál usar. */}
-                  {/* Qué se cerró, y qué puedes hacer con eso. Se abre sola
-                      cuando el gesto ya mandó la acción. */}
-                  <ActionSheet
-                    open={!!cerrada} onClose={() => setCerrada(null)}
-                    title={`Resuelta: ${cerrada?.nombre || ''} · ¿por qué se cierra?`}
-                    items={[
-                      ...motivos.map(m => ({
-                        label: m.nombre,
-                        onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'resuelta', cierre_categoria: m.nombre }),
-                      })),
-                      {
-                        label: 'Fue sin querer — reabrirla',
-                        onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'abierta' }),
-                      },
-                    ]}
-                  />
-                  <ActionSheet
-                    open={menuVistas} onClose={() => setMenuVistas(false)} title="Ir a"
-                    items={[
-                      // Primero las bandejas de trabajo, con su número: son las
-                      // que se usan todos los días.
-                      /* Cada bandeja con su icono. No es adorno: en una lista
-                         de trece renglones el icono es lo que deja saltar al
-                         que buscas sin leer los otros doce. */
-                      ...([['nocontestadas', 'No contestadas', nPendientes, <IcoBurbuja size={17} />],
-                           ['sinrespuesta', 'Sin respuesta', nSinResp, <IcoReloj size={17} />],
-                           ['abiertas', 'Abiertas', null, <IcoInbox size={17} />],
-                           ['mias', 'Mías', null, <IcoUsuario size={17} />],
-                           ['resueltas', 'Resueltas', null, <IcoCheck size={17} />]] as const)
-                        .map(([v2, l, n2, ico]) => ({
-                          icon: ico,
-                          label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                            <span>{l}</span>{n2 ? <span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{n2}</span> : null}
-                          </span>,
-                          active: chipWa === v2,
-                          onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
-                        })),
-                      // Llamadas inteligentes: la cabina marca la lista que
-                      // esté filtrada ahora (bandeja + ciclo + vista).
-                      { icon: <IcoTelefono size={17} />, label: 'Llamadas inteligentes', active: cabina,
-                        onClick: () => { setCabina(true); setActiva(null); setMenuVistas(false); } },
-                      /* EL CICLO DE VIDA. El filtro `etapa` y el conteo
-                         `counts.por_etapa` ya existían en el API desde siempre;
-                         lo único que faltaba era esta puerta. Sin ella, para ver
-                         solo las conversaciones de oportunidades había que
-                         salirse del inbox.
-                         Solo se listan las etapas que TIENEN conversaciones: un
-                         menú con seis renglones en cero enseña a no leerlo. */
-                      ...(() => {
-                        const porEtapa = (counts?.por_etapa || {}) as Record<string, number>;
-                        const ETAPAS: [string, string][] = [
-                          ['lead', 'Leads'], ['lead_calificado', 'Calificados'], ['oportunidad', 'Oportunidades'],
-                          ['cliente', 'Clientes'], ['rezagado', 'Rezagados'], ['churned', 'Bajas'],
-                          /* Descalificados: la ÚNICA puerta para verlos. En el
-                             resto de las vistas ya no salen —ni siquiera en
-                             «todas»—, porque alguien ya decidió que no y
-                             tenerlos en medio obliga a volver a decidirlo cada
-                             vez que se abre el inbox. */
-                          ['descalificado', 'Descalificados'],
-                        ];
-                        const vivas = ETAPAS.filter(([k]) => (porEtapa[k] || 0) > 0);
-                        if (!vivas.length) return [];
-                        return [
-                          { label: <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af' }}>Por ciclo de vida</span>,
-                            disabled: true, onClick: () => {} },
-                          ...(filtros.etapa ? [{
-                            label: 'Quitar el filtro de ciclo',
-                            onClick: () => { setFiltros(f => ({ ...f, etapa: '' })); setMenuVistas(false); },
-                          }] : []),
-                          ...vivas.map(([k, l]) => ({
-                            icon: <IcoEmbudo size={17} />,
-                            label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                              <span>{l}</span><span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{porEtapa[k]}</span>
-                            </span>,
-                            active: filtros.etapa === k,
-                            /* Se abre la bandeja ANCHA al elegir un ciclo. Si
-                               no, el ciclo se aplica ENCIMA de la bandeja
-                               actual: estando en «No contestadas» (2 filas),
-                               pedir Oportunidades daba 0 aunque el menú
-                               anunciara 6. Quien elige «Oportunidades» quiere
-                               las oportunidades, no la intersección. */
-                            onClick: () => { setChipWa('abiertas'); setFiltros(f => ({ ...f, etapa: k })); setMenuVistas(false); },
-                          })),
-                        ];
-                      })(),
-                      // Y las vistas guardadas, con el conteo que trajo el viaje
-                      // único. Si todavía no llegan, se dice; una lista que
-                      // aparece a medias se lee como que no hay más.
-                      ...(vistasGuardadas === null ? [{ label: 'Cargando vistas…', disabled: true, onClick: () => {} }]
-                        : vistasGuardadas.map((x: any) => ({
-                          label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                            <span>{x.emoji ? x.emoji + '  ' : ''}{x.nombre}</span>
-                            {contVistas[x.id] != null ? <span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{contVistas[x.id]}</span> : null}
-                          </span>,
-                          active: vistaActiva?.id === x.id,
-                          onClick: () => { setVistaActiva?.(x); setMenuVistas(false); },
-                        }))),
-                    ]}
-                  />
                 </div>
                 {lista === null && <EsqueletoLista filas={7} mobile alInstante />}
                 {lista !== null && convs.length === 0 && (
@@ -1341,6 +1248,114 @@ export default function InboxPro() {
             </Sheet>
           </Suspense>
         )}
+        {/* ══ LAS HOJAS VIVEN EN LA RAÍZ, NO DENTRO DE LAS PESTAÑAS ══
+            Estaban escritas dentro de `.m-chips`, el carril de pestañas, que
+            hace scroll horizontal (`overflow-x:auto` + `-webkit-overflow-
+            scrolling:touch`). En iOS eso recorta a sus hijos `position:fixed`:
+            la hoja y su velo salían, sí, pero encogidos a la franja de las
+            pestañas — se veía un borrón de 40 px encima de los chips y nada
+            más. Desde fuera parecía que el botón de las tres rayas no hacía
+            nada. Aquí, colgando de la raíz de la pantalla, nada las recorta. */}
+        {/* Qué se cerró, y qué puedes hacer con eso. Se abre sola
+            cuando el gesto ya mandó la acción. */}
+        <ActionSheet
+          open={!!cerrada} onClose={() => setCerrada(null)}
+          title={`Resuelta: ${cerrada?.nombre || ''} · ¿por qué se cierra?`}
+          items={[
+            ...motivos.map(m => ({
+              label: m.nombre,
+              onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'resuelta', cierre_categoria: m.nombre }),
+            })),
+            {
+              label: 'Fue sin querer — reabrirla',
+              onClick: () => cerrada && marcarCierre(cerrada.waId, { estado_crm: 'abierta' }),
+            },
+          ]}
+        />
+        <ActionSheet
+          open={menuVistas} onClose={() => setMenuVistas(false)} title="Ir a"
+          items={[
+            // Primero las bandejas de trabajo, con su número: son las
+            // que se usan todos los días.
+            /* Cada bandeja con su icono. No es adorno: en una lista
+               de trece renglones el icono es lo que deja saltar al
+               que buscas sin leer los otros doce. */
+            ...([['nocontestadas', 'No contestadas', nPendientes, <IcoBurbuja size={17} />],
+                 ['sinrespuesta', 'Sin respuesta', nSinResp, <IcoReloj size={17} />],
+                 ['abiertas', 'Abiertas', null, <IcoInbox size={17} />],
+                 ['mias', 'Mías', null, <IcoUsuario size={17} />],
+                 ['resueltas', 'Resueltas', null, <IcoCheck size={17} />]] as const)
+              .map(([v2, l, n2, ico]) => ({
+                icon: ico,
+                label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                  <span>{l}</span>{n2 ? <span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{n2}</span> : null}
+                </span>,
+                active: chipWa === v2,
+                onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
+              })),
+            // Llamadas inteligentes: la cabina marca la lista que
+            // esté filtrada ahora (bandeja + ciclo + vista).
+            { icon: <IcoTelefono size={17} />, label: 'Llamadas inteligentes', active: cabina,
+              onClick: () => { setCabina(true); setActiva(null); setMenuVistas(false); } },
+            /* EL CICLO DE VIDA. El filtro `etapa` y el conteo
+               `counts.por_etapa` ya existían en el API desde siempre;
+               lo único que faltaba era esta puerta. Sin ella, para ver
+               solo las conversaciones de oportunidades había que
+               salirse del inbox.
+               Solo se listan las etapas que TIENEN conversaciones: un
+               menú con seis renglones en cero enseña a no leerlo. */
+            ...(() => {
+              const porEtapa = (counts?.por_etapa || {}) as Record<string, number>;
+              const ETAPAS: [string, string][] = [
+                ['lead', 'Leads'], ['lead_calificado', 'Calificados'], ['oportunidad', 'Oportunidades'],
+                ['cliente', 'Clientes'], ['rezagado', 'Rezagados'], ['churned', 'Bajas'],
+                /* Descalificados: la ÚNICA puerta para verlos. En el
+                   resto de las vistas ya no salen —ni siquiera en
+                   «todas»—, porque alguien ya decidió que no y
+                   tenerlos en medio obliga a volver a decidirlo cada
+                   vez que se abre el inbox. */
+                ['descalificado', 'Descalificados'],
+              ];
+              const vivas = ETAPAS.filter(([k]) => (porEtapa[k] || 0) > 0);
+              if (!vivas.length) return [];
+              return [
+                { label: <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af' }}>Por ciclo de vida</span>,
+                  disabled: true, onClick: () => {} },
+                ...(filtros.etapa ? [{
+                  label: 'Quitar el filtro de ciclo',
+                  onClick: () => { setFiltros(f => ({ ...f, etapa: '' })); setMenuVistas(false); },
+                }] : []),
+                ...vivas.map(([k, l]) => ({
+                  icon: <IcoEmbudo size={17} />,
+                  label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                    <span>{l}</span><span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{porEtapa[k]}</span>
+                  </span>,
+                  active: filtros.etapa === k,
+                  /* Se abre la bandeja ANCHA al elegir un ciclo. Si
+                     no, el ciclo se aplica ENCIMA de la bandeja
+                     actual: estando en «No contestadas» (2 filas),
+                     pedir Oportunidades daba 0 aunque el menú
+                     anunciara 6. Quien elige «Oportunidades» quiere
+                     las oportunidades, no la intersección. */
+                  onClick: () => { setChipWa('abiertas'); setFiltros(f => ({ ...f, etapa: k })); setMenuVistas(false); },
+                })),
+              ];
+            })(),
+            // Y las vistas guardadas, con el conteo que trajo el viaje
+            // único. Si todavía no llegan, se dice; una lista que
+            // aparece a medias se lee como que no hay más.
+            ...(vistasGuardadas === null ? [{ label: 'Cargando vistas…', disabled: true, onClick: () => {} }]
+              : vistasGuardadas.map((x: any) => ({
+                label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                  <span>{x.emoji ? x.emoji + '  ' : ''}{x.nombre}</span>
+                  {contVistas[x.id] != null ? <span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{contVistas[x.id]}</span> : null}
+                </span>,
+                active: vistaActiva?.id === x.id,
+                onClick: () => { setVistaActiva?.(x); setMenuVistas(false); },
+              }))),
+          ]}
+        />
+
         {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} telefono={typeof nuevoChat === 'string' ? nuevoChat : undefined} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
         {aviso && (
           <AvisoNuevo conv={aviso.conv} mas={aviso.mas} movil={true}
