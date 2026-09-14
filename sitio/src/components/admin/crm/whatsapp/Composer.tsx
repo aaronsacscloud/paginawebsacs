@@ -346,7 +346,33 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         if (r?.error) break;
       }
       if (!r?.error) { setRemotos([]); api.refrescar?.(); }
-    } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
+    } else {
+      /* ══ TEXTO: SE MANDA Y SE SUELTA ═══════════════════════════════════════
+         Pedido del dueño (14-sep-2026): «que se vea al instante en el inbox,
+         aunque tarde un poco más en enviarse de verdad».
+
+         Antes esto esperaba a que el servidor contestara —uno o dos segundos—
+         con el botón girando y el texto todavía en la caja. Y no hacía falta:
+         el mensaje ya entra en la cola local y la burbuja se pinta sola. Así
+         que la caja se limpia ya, el foco vuelve, y el viaje va por detrás.
+
+         Si algo sale mal, el texto se devuelve a la caja —solo si no escribiste
+         otra cosa mientras tanto, que si no se pisa tu trabajo— y se explica. */
+      const enviado = t, citaId = cita?.kapso_message_id || null;
+      setTexto(''); setOcupado(false); setEnvio(null); onQuitarCita?.(); ticListo();
+      areaRef.current?.focus();
+      api.enviarTexto(enviado, citaId).then((res: any) => {
+        if (res?.ventana_cerrada) { ticError(); setModalPlantilla(true); return; }
+        if (res?.error) {
+          ticError();
+          setError(res.error, res.error_detalle || null);
+          setTexto(prev => (prev.trim() ? prev : enviado));
+          return;
+        }
+        if (res?.encolado) { setAvisoTono('espera'); setAviso('Sin conexión: el mensaje se manda solo cuando vuelva la señal.'); }
+      }).catch(() => { /* la cola se encarga */ });
+      return;
+    }
     setOcupado(false); setEnvio(null);   // aquí y no dentro de una rama: si falla
                                          // a media subida, la barra se congelaba.
 

@@ -741,6 +741,19 @@ export default function InboxPro() {
       setColaTick(x => x + 1);
       return { ok: true, encolado: true };
     }
+    /* SALIÓ BIEN: la burbuja se queda hasta que el hilo traiga el mensaje de
+       verdad. Quitarla aquí la hacía desaparecer y reaparecer medio segundo
+       después —el parpadeo que se ve al mandar—. Con su wamid guardado, el
+       hilo sabe cuál es la misma y cambia una por otra sin que se note. */
+    if (r?.ok && r?.message_id) {
+      // El endpoint lo llama `message_id`; es el wamid con el que el espejo lo
+      // guardó, y por eso sirve para reconocerlo cuando el hilo lo traiga.
+      // Sin wamid no hay forma de reconocerlo: entonces sí se quita ya (abajo),
+      // que es como funcionaba antes — un parpadeo es mejor que dos burbujas.
+      actualizarEnCola(it.id, { wamid: r.message_id, enviado_at: Date.now(), error: null });
+      setColaTick(x => x + 1);
+      return r;
+    }
     // Error del servidor (ventana cerrada, plantilla, número): reintentarlo a
     // ciegas no lo arregla — se saca de la cola y el composer lo explica.
     quitarDeCola(it.id); setColaTick(x => x + 1);
@@ -785,6 +798,8 @@ export default function InboxPro() {
       // ahí: se ve pendiente en el hilo y se reintenta solo.
       const conv = waId();
       if (!conv) return { error: 'Esta conversación no tiene WhatsApp' };
+      /* La burbuja se pinta AQUÍ, antes de tocar la red: en cuanto se encola,
+         el hilo ya la enseña. Lo que tarde el viaje deja de verse. */
       const it = agregarACola({ id: marcaUnica(), conv, texto, cita: cita || null, autor: yo?.nombre || null });
       setColaTick(x => x + 1);
       const r = await mandarDeLaCola(it);
@@ -965,9 +980,23 @@ export default function InboxPro() {
   const hiloConCola = useMemo(() => {
     const pend = colaDe(activa?.wa || null);
     if (!hilo || !pend.length) return hilo;
-    const burbujas = pend.map(it => ({
+    /* El relevo. Un eco desaparece cuando su mensaje ya está en el hilo —se
+       reconocen por el wamid— o, como red de seguridad, a los 45 segundos de
+       haber salido: si el hilo nunca lo trajo, mejor un hueco que un fantasma
+       pegado para siempre. */
+    const yaEnElHilo = new Set((hilo.mensajes || []).map((m: any) => m.kapso_message_id).filter(Boolean));
+    const vivos = pend.filter(it => {
+      if (it.wamid && yaEnElHilo.has(it.wamid)) { quitarDeCola(it.id); return false; }
+      if (it.enviado_at && Date.now() - it.enviado_at > 45000) { quitarDeCola(it.id); return false; }
+      return true;
+    });
+    if (!vivos.length) return hilo;
+    const burbujas = vivos.map(it => ({
       id: `cola-${it.id}`, kapso_message_id: null, direccion: 'saliente', tipo: 'text',
-      cuerpo: it.texto, status: it.intentos >= 5 ? 'failed' : 'pending',
+      cuerpo: it.texto,
+      // Ya salió → una palomita, como cualquier mensaje enviado. Todavía en la
+      // cola → reloj. A los cinco intentos → rojo con «Reintentar».
+      status: it.intentos >= 5 ? 'failed' : it.wamid ? 'sent' : 'pending',
       error: it.intentos >= 5 ? (it.error || 'No se pudo enviar') : null,
       created_at: it.creado_at, enviado_at: it.creado_at, autor: it.autor || null,
       metadata: it.cita ? { cita: { wamid: it.cita } } : null, _eco: true, _cola: it.id,

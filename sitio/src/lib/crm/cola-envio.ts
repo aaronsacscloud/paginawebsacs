@@ -20,6 +20,15 @@ export type EnCola = {
   creado_at: string;
   intentos: number;
   error?: string | null;    // último fallo, para decirlo en la burbuja
+  /* SALIÓ, PERO TODAVÍA NO ESTÁ EN EL HILO.
+     El servidor ya lo aceptó y devolvió su wamid; el hilo del servidor tarda
+     otro viaje en traerlo. Si la burbuja se quitara aquí, desaparecería y
+     volvería a aparecer medio segundo después: un parpadeo justo en la acción
+     que más se repite del día. Se queda en la cola, ya con su palomita, hasta
+     que el hilo trae el mensaje de verdad — y ahí se cambia una por la otra sin
+     que se note. */
+  wamid?: string | null;
+  enviado_at?: number | null;   // ms; red de seguridad por si el hilo nunca lo trae
 };
 
 const LLAVE = 'crm:cola-envio';

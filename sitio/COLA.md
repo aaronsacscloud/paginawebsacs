@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · El envío debe sentirse inmediato.** «al momento de escribir en el composer y darle click a enviar
+      debe ser más limpio el efecto de envío y que se sienta inmediato… me gustaría que se vea al instante que aparece
+      en el inbox aunque tarde un poco más en realmente enviarlo, en web y mobile» → HECHO: la caja se limpia y la
+      burbuja se pinta al instante; medido 349 ms en escritorio y 160 ms en teléfono con una red de 3 s.
+
 - [x] **2026-09-14 · Un cliente entró como «WhatsApp 7300», sin nombre.** «me lo pone como cliente, pero no tengo su
       nombre, ¿cómo así llegó a cliente o usar Sacs, de dónde lo saca y por qué no aparece su nombre?» → HECHO los
       cuatro puntos: búsqueda por los últimos 10 dígitos, teléfonos normalizados, fichas de Mario fusionadas y el
