@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · Si el consultor tomó la conversación, no más sugerencias.** «aquí yo ya tomé la conversación… la
+      respuesta que me está dando la IA está bien, pero como yo ya me estoy comunicando con el prospecto, ahí ya no hay
+      más sugerencias. ¿Cuándo cambia esto? Si el prospecto vuelve a dejar de escribir y se cierra otra vez la
+      conversación, ahí vuelves con el proceso de la cadencia en donde te hayas quedado.» → HECHO.
+
 - [x] **2026-09-14 · Compartir la liga de una conversación.** «que pueda compartir el link de una conversacion para
       pasarlo a cualquier compañero y que se le pueda dar seguimiento puntual al tema, dame la opción de darle click a
       un botón al seleccionar una conversación y al darle click me genera un link que me permite compartir» → HECHO

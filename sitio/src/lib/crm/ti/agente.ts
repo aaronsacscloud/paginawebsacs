@@ -674,6 +674,14 @@ export async function proponerRespuestas(): Promise<any> {
   const porC: Record<string, any> = {}; for (const c of cs || []) porC[c.id] = c;
   const porP: Record<string, any> = {}; for (const p of perf || []) porP[p.contact_id] = p;
 
+  /* ¿Ya contestó alguien después del último mensaje del lead? Se resuelve AQUÍ,
+     de una vez y contra `wa_mensajes`, y lo usan los dos candados de abajo. */
+  const { data: convsIn } = await supabase.from('wa_conversaciones').select('id, contact_id, ultimo_entrante_at')
+    .in('contact_id', ids).order('ultimo_mensaje_at', { ascending: false });
+  const convDe: Record<string, string> = {};
+  for (const v of convsIn || []) if (v.contact_id && !convDe[v.contact_id]) convDe[v.contact_id] = v.id;
+  const yaContestaron = await salientesDespues(convDe, ultimoPor).catch(() => ({} as any));
+
   for (const cid of ids) {
     const c = porC[cid]; const p = porP[cid];
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti) { res.saltados++; continue; }
@@ -715,6 +723,31 @@ export async function proponerRespuestas(): Promise<any> {
     // la regla de 4 h (un consultor escribió hace poco → el hilo es suyo).
     const hilo = await duenoDelHilo(cid);
     const { data: humanoReciente } = hilo.quien === 'agente' ? { data: [] as any[] } : await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_saliente').eq('actor', 'humano').gt('ocurrio_at', new Date(ahora.getTime() - 4 * 3600e3).toISOString()).limit(1);
+    /* ══ EL CONSULTOR YA ESTÁ CONTESTANDO ══════════════════════════════════════
+       Regla del dueño (14-sep-2026): «yo ya tomé la conversación, ahí ya no hay
+       más sugerencias». Mientras él escribe, el agente no propone nada —ni
+       siquiera como borrador—: una tarjeta que dice «el agente propone esta
+       respuesta» debajo de una conversación que ya va en vivo no ayuda, estorba.
+
+       Vuelve solo, y no hace falta nada nuevo para eso: cuando el lead deja de
+       contestar, la última palabra del hilo es nuestra, y ahí es exactamente
+       donde el planificador nocturno lo recoge y sigue la escalera con lo que ya
+       se dijo (`diagnosticar` cuenta TODOS nuestros mensajes sin respuesta,
+       también los que escribió la persona). */
+    const contesto = (yaContestaron as any)[cid];
+    if (contesto?.humano) {
+      res.saltados++;
+      await log({ accion: 'agente_calla', contact_id: cid, razon: `el consultor ya contestó (${contesto.autor}) — el hilo es suyo hasta que el lead vuelva a escribir` });
+      // Lo que el lead DIJO sí se guarda: el dato no depende de quién conteste.
+      try {
+        const { texto, conversation_id } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 6 * 3600e3).toISOString());
+        if (texto) await extraerYAplicar(cid, texto, 'humano_respondio', conversation_id);
+      } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `datos (el consultor contestó): ${err?.message || err}` }); }
+      // Y si algo estaba esperando decisión, deja de tener sentido: ya se contestó.
+      await supabase.from('ti_envios').update({ estado: 'humano_respondio', humano_at: contesto.at, updated_at: ahora.toISOString() })
+        .eq('contact_id', cid).in('estado', ['sugerencia', 'pendiente']).then(() => {}, () => {});
+      continue;
+    }
     if (hilo.quien === 'humano' || (humanoReciente || []).length) {
       // MODO SUGERENCIA (decisión 2026-09-03): el consultor lleva el hilo, pero pidió borradores. El agente decide y deja la
       // propuesta como «sugerencia» (nunca se despacha): el consultor la usa, la edita o la descarta desde el inbox.
@@ -746,10 +779,10 @@ export async function proponerRespuestas(): Promise<any> {
       try { const { texto } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 3600e3).toISOString(), 3); await tareaParaConsultor(cid, alcance, texto); await log({ accion: 'agente_calla', contact_id: cid, razon: `fuera de alcance: ${alcance}` }); } catch { /* nada */ }
       continue;
     }
-    // ¿Un humano ya contestó después del último mensaje del lead? Entonces el agente calla.
-    const { data: sal } = await supabase.from('ti_eventos').select('ocurrio_at, actor').eq('contact_id', cid)
-      .in('tipo', ['wa_saliente']).gt('ocurrio_at', ultimoPor[cid]).limit(1);
-    if ((sal || []).length) {
+    /* ¿Salió algo nuestro después del último mensaje del lead? Entonces el agente
+       calla. Se mira `wa_mensajes` y no `ti_eventos` por lo mismo de arriba: la
+       copia llega tarde y el candado no servía justo cuando hacía falta. */
+    if (contesto) {
       // El consultor ya contestó: el agente calla, pero lo que el lead DIJO (giro, tiendas, correo, marca…) se guarda igual.
       res.saltados++;
       try {
@@ -890,6 +923,41 @@ async function contarMensajeAgendar(cid: string, c: any, p: any, s: SalidaAgente
 async function guardarMarca(ahora: Date) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
   await parcharConfig({ agente_marca: ahora.toISOString() });
+}
+
+/* Los autores que NO son una persona. Un mensaje firmado por cualquier otro
+   nombre lo escribió alguien del equipo — y eso cambia de quién es el hilo. */
+const AUTOR_SISTEMA = new Set(['Agente Sacs', 'Agenda', 'Sistema', 'Secuencias']);
+
+/**
+ * Lo que salió de nuestro lado DESPUÉS de cierta hora, por lead, en una sola
+ * consulta. Se lee de `wa_mensajes`, que es la verdad.
+ *
+ * Antes esto se preguntaba a `ti_eventos`, que es una copia que llena el
+ * observador con marca de agua: en el mismo tick en que el consultor acababa
+ * de contestar, la copia todavía no lo tenía y el agente creía que el hilo
+ * estaba libre. Caso medido (14-sep, Dolores · Its4me): el consultor contestó
+ * 20:14, 20:14 y 20:15; el agente dejó su sugerencia a las 20:16.
+ */
+async function salientesDespues(convDe: Record<string, string>, desdePor: Record<string, string>)
+  : Promise<Record<string, { at: string; autor: string | null; humano: boolean }>> {
+  const convIds = Object.values(convDe);
+  if (!convIds.length) return {};
+  const corte = new Date(Math.min(...Object.values(desdePor).map(x => Date.parse(x)).filter(Boolean))).toISOString();
+  const { data } = await supabase.from('wa_mensajes')
+    .select('conversation_id, created_at, autor, metadata')
+    .in('conversation_id', convIds).eq('direccion', 'saliente')
+    .gt('created_at', corte).is('borrado_at', null)
+    .order('created_at', { ascending: false }).limit(500);
+  const porConv: Record<string, any[]> = {};
+  for (const m of data || []) (porConv[String(m.conversation_id)] = porConv[String(m.conversation_id)] || []).push(m);
+  const out: Record<string, { at: string; autor: string | null; humano: boolean }> = {};
+  for (const [cid, conv] of Object.entries(convDe)) {
+    const desde = Date.parse(desdePor[cid] || '') || 0;
+    const m = (porConv[conv] || []).find(x => Date.parse(x.created_at) > desde && (x.metadata as any)?.origen !== 'agente');
+    if (m) out[cid] = { at: m.created_at, autor: m.autor || null, humano: !!m.autor && !AUTOR_SISTEMA.has(String(m.autor)) };
+  }
+  return out;
 }
 
 /** ¿Un HUMANO (no el agente) le escribió al lead después de que nació esta propuesta?
@@ -1416,6 +1484,22 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
   // Número no alcanzable (11-sep, caso César): Meta ya dijo que ese número no recibe; insistirle por WhatsApp es tirar toques y dinero.
   const { data: conAlerta } = await supabase.from('wa_conversaciones').select('contact_id').in('contact_id', ids).not('alerta', 'is', null);
   const noAlcanzables = new Set((conAlerta || []).map((x: any) => x.contact_id));
+  /* EL SILENCIO SE CUENTA DESDE NUESTRA ÚLTIMA PALABRA, no desde el último envío
+     DEL AGENTE (14-sep). Si el consultor tomó la conversación y contestó él, el
+     reloj seguía corriendo desde el mensaje viejo del agente: a las pocas horas
+     el agente tocaba a un lead con el que se acababa de hablar. Ahora la base es
+     la más nueva de las dos. */
+  const { data: convsSil } = await supabase.from('wa_conversaciones').select('id, contact_id').in('contact_id', ids);
+  const convSil: Record<string, string> = {};
+  for (const v of convsSil || []) if (v.contact_id && !convSil[v.contact_id]) convSil[v.contact_id] = v.id;
+  const desdeSil = new Date(Math.min(...ids.map(i => Date.parse(ultimo[i].enviado_at) || Date.now()))).toISOString();
+  const { data: salSil } = Object.keys(convSil).length
+    ? await supabase.from('wa_mensajes').select('conversation_id, created_at').in('conversation_id', Object.values(convSil))
+      .eq('direccion', 'saliente').is('borrado_at', null).gt('created_at', desdeSil)
+      .order('created_at', { ascending: false }).limit(600)
+    : { data: [] as any[] };
+  const ultimaNuestra: Record<string, string> = {};
+  for (const m of salSil || []) if (!ultimaNuestra[String(m.conversation_id)]) ultimaNuestra[String(m.conversation_id)] = m.created_at;
 
   for (const cid of ids) { try {
     const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
@@ -1434,7 +1518,10 @@ export async function tocarSilencios(opts: { soloReenganche?: boolean; forzarHor
     if (!laboral && !prueba && !opts.forzarHorario) continue;                // fuera de horario solo se mueven las pruebas
     const acel = prueba ? factorPrueba(cfg) : 1;      // reloj acelerado: horas → minutos
     res.revisados++;
-    const base = Date.parse(st.base_at || ultimo[cid].enviado_at);
+    const base = Math.max(
+      Date.parse(st.base_at || ultimo[cid].enviado_at),
+      Date.parse(ultimaNuestra[convSil[cid]] || '') || 0,
+    );
     // ¿Respondió después del último envío? Entonces no hay silencio (proponerRespuestas ya lo atiende).
     const { data: resp } = await supabase.from('ti_eventos').select('id').eq('contact_id', cid).eq('tipo', 'wa_entrante').gt('ocurrio_at', new Date(base).toISOString()).limit(1);
     if ((resp || []).length) continue;
