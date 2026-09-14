@@ -262,7 +262,13 @@ universo, la cascada de enriquecimiento, las reglas de verificación, cómo se
 personalizan las cadencias y cómo se envía. Está escrito para **replicarse en
 Latinoamérica y Europa**, y cada regla dice de qué error salió.
 
-Las dos que más caro se pagan si se ignoran:
+**La regla que manda sobre todas** (sección 0): queremos el **top 50-100 de
+cada giro con ≥3.7 estrellas en Google Maps**, no cientos de miles de cuentas.
+Y la cascada tiene un orden: Google Maps valida → su sitio da el correo → el
+censo (DENUE) SOLO rellena huecos → todo se verifica antes de salir. El avance
+se mide en cuentas **contactables**, no en cuentas cargadas.
+
+Las otras dos que más caro se pagan si se ignoran:
 
 - **WhatsApp SOLO a quien publicó su `wa.me`** (sección 6 bis). Hay un trigger
   en `abm_toques` que lo impide; no lo quites. Un número que nadie declaró se

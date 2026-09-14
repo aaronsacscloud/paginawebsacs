@@ -12,6 +12,110 @@ de país cambian los datos pero casi nunca la razón.
 
 ---
 
+## 0. La premisa: los mejores, no todos
+
+**Esta sección manda sobre el resto del manual.** Si algo de lo que sigue
+contradice esto, esto gana.
+
+### La regla
+
+No queremos cientos de miles de cuentas. Queremos **el top 50–100 de cada
+giro**, y de esos queremos saberlo todo: correo, sitio, WhatsApp, Instagram,
+Facebook.
+
+Una base de 20,000 negocios de los que no se puede contactar a nadie vale menos
+que una de 2,000 con los datos completos. Y una dirección que nadie verificó no
+es un contacto: es un rebote esperando su turno.
+
+### El filtro de calidad, en orden
+
+1. **Está en Google Maps con calificación.** Un negocio sin ficha o sin reseñas
+   no se puede validar, y probablemente tampoco esté vivo.
+2. **Calificación de 3.7 estrellas para arriba.** Debajo de eso el problema del
+   negocio no es el software.
+3. **Con reseñas suficientes** para que la calificación signifique algo. Un 5.0
+   con dos reseñas es ruido; se ordena por número de reseñas, no por estrellas.
+4. **Top 100 de su giro.** Si un giro no tiene 100 que cumplan, son los que
+   haya. No se rellena con cuentas malas para llegar al número.
+
+### La cascada de enriquecimiento, en ESTE orden
+
+**Google Maps es la fuente principal, no el censo.** Maps valida que el negocio
+existe, que opera y que la gente lo califica. El censo no dice nada de eso.
+
+```
+1. GOOGLE MAPS       calificación · reseñas · TELÉFONO · SITIO WEB
+                     ↑ la ficha es la que decide si la cuenta entra
+2. SU SITIO WEB      correo · WhatsApp (wa.me) · Instagram · Facebook
+3. SUS REDES         correo de contacto, cuando el sitio no lo trae
+4. CENSO (DENUE)     SOLO para rellenar huecos de esas cuentas
+5. VERIFICACIÓN      MX de cada correo, tipo de línea de cada teléfono
+```
+
+> ⚠️ **El censo va al final y a propósito.** Trae miles de direcciones que nadie
+> validó: no sabe si el negocio sigue abierto, si alguien lee ese buzón ni si
+> el negocio es bueno. Sirve para **completar** una cuenta que Google ya validó.
+> Nunca para elegir a quién contactar.
+
+### Lo que Google Maps sí da y lo que no
+
+| Dato | ¿Lo da la API de Places? |
+|---|---|
+| Calificación y número de reseñas | Sí |
+| Texto de las peores reseñas | Sí — y es señal de dolor |
+| Teléfono (`nationalPhoneNumber`) | Sí |
+| **Sitio web (`websiteUri`)** | **Sí, y venía saliendo gratis** |
+| `place_id` | Sí |
+| Correo electrónico | **No.** Ver abajo |
+| Instagram / Facebook | No directamente |
+
+> 🚫 **El correo NO es un campo de Google My Business.** Ni Places ni la API de
+> Business Profile lo devuelven: no es un campo público de la ficha. Cuando se
+> ve un correo en una ficha, viene escrito dentro de la descripción o de una
+> publicación, y eso sí se puede rascar del texto — pero como texto, no como
+> dato. **El correo se saca del SITIO WEB**, que es el paso 2.
+
+> 💡 **Pedir el sitio y el teléfono no cuesta un peso más.** `websiteUri` y
+> `nationalPhoneNumber` son tier Enterprise; `reviews`, que ya pedimos, es
+> Enterprise + Atmosphere, más caro. Google cobra al tier más alto del request.
+> Estuvimos pagando el caro y tirando los otros dos.
+
+> ⚠️ **Guarda SIEMPRE el `place_id`.** El barrido nacional levantó 44,186 datos
+> de Maps y **no guardó ni uno**. Sin él, volver a preguntar por una cuenta es
+> una búsqueda por nombre y ciudad: más cara, y a veces trae el negocio de
+> junto. Es una columna, y no tenerla obliga a pagar dos veces.
+
+### La medida de si vamos bien
+
+No es cuántas cuentas hay. Es **qué porcentaje del top 100 de cada giro se
+puede contactar**.
+
+```
+Línea base 14-sep-2026, con el filtro de calidad aplicado:
+
+  2,123  cuentas objetivo (top 100 × 24 giros, ≥3.7 estrellas)
+    570  alcanzables por correo o WhatsApp     27%
+  1,553  sin ninguna vía                       73%
+
+  de esas 1,553:
+    1,516  tienen teléfono de Maps (falta saber si es WhatsApp)
+      140  tienen sitio sin raspar
+       65  solo redes sociales
+    1,348  solo el nombre  ← estas necesitan volver a Google
+```
+
+**La meta es ese 27% arriba del 80%**, sobre las mismas 2,123. No sobre más.
+
+### Qué NO hacer, por más tentador que se vea
+
+- **Cargar un censo completo** porque trae muchos correos. Ya pasó: el DENUE
+  daba 1,181 correos de casas de novia, sin saber cuáles siguen abiertas.
+- **Rellenar el top 100 con cuentas de 3.2 estrellas** para llegar al número.
+- **Mandar a una dirección sin verificar** porque "seguro sí llega".
+- **Medir el avance en cuentas cargadas.** Se mide en cuentas *contactables*.
+
+---
+
 ## 1. El modelo: cuenta, canal, cadencia, toque
 
 | Tabla | Qué guarda |
@@ -36,6 +140,7 @@ que desconfiar de todo por igual.
 ## 2. El orden correcto, y por qué importa
 
 ```
+0. FILTRAR       los mejores de cada giro → ≥3.7 estrellas, top 100 (§0)
 1. UNIVERSO      quiénes existen          → nombre, ciudad, reseñas
 2. ENRIQUECER    cómo se les llega        → correo, WhatsApp, sitio
 3. GUION         qué se les dice          → plantillas por giro
@@ -78,7 +183,12 @@ giros. Si el nombre dice "novia" y está en `renta`, es una casa de novias.
 
 De más barato y más confiable a menos. Se para en cuanto un dato entra.
 
-### 4.1 El censo oficial del país ← **empieza SIEMPRE aquí**
+### 4.1 El censo oficial del país ← **el CUARTO paso, no el primero**
+
+> Antes esta sección decía «empieza SIEMPRE aquí». **Estaba mal y la premisa
+> (§0) manda.** El censo no sabe si un negocio sigue abierto ni si es bueno:
+> sirve para COMPLETAR una cuenta que Google Maps ya validó, nunca para elegir
+> a quién contactar.
 
 En México es el **DENUE del INEGI**: 5 millones de establecimientos con
 `telefono`, `correoelec` y `www`, por clase de actividad. Oficial, gratis y
@@ -940,6 +1050,16 @@ scripts/abm-verificar-mx.mjs            marca valido/invalido por MX los correos
 scripts/generate-mail-<giro>.mjs        las 8 fotos de los correos de un giro (gpt-image-2, 600×300); hay novias, mayoristas, calzado, marcas
 src/pages/api/cron/abm-enriquecer.ts    Places y DENUE (necesita llaves)
 sitio/migraciones/                      cada carga de datos, con su porqué
+
+── Por país (§13) ──
+src/lib/crm/abm-paises.ts               PAISES (iso, región, gl, LADA, moneda, tz, «XV», landing, legal), paisDe(), alcanceDe()
+src/pages/giros/novias-y-fiesta/[pais].astro   la landing de novias por país: moneda, vestido de ejemplo, «15 años», soporte «en español»
+src/components/giros/NoviaFecha.astro   el simulador de abonos acepta moneda/locale/rango (sin props = pesos mexicanos)
+src/components/suite/SuitePlanes.astro  prop `moneda`: los planes en la moneda de data/plans.ts que se le pida
+docs/prospeccion/barrido/pais/          el barrido fuera de México (§13.7): paises.py (LADA, largos, e164),
+                                        cola-pais.py, maps-pais.js + barrido-pais.sh (feed hl=en), lugar-pais.js +
+                                        fichas-pais.sh (ficha gl=US: teléfono E.164, reseñas, categoría en inglés),
+                                        carga-pais.py (filtro, cadenas, carga SQL), sitios-pais.py (correo, wa.me, IG)
 ```
 
 Las cadencias escritas hasta hoy, por giro (cada una en su migración, con el
@@ -978,3 +1098,183 @@ push antes de la hora o se enciende el goteo al día siguiente.
 
 Las migraciones se escriben explicando **por qué** se hizo el cambio, no qué
 hace el SQL. Una migración dice lo que pasó ese día — no lo que es cierto hoy.
+
+---
+
+## 13. Segmentar por país: el aprendizaje de México y cómo se replica
+
+Escrito el 14-sep-2026, cuando el dueño pidió «con esta misma estrategia,
+documéntala bien y vamos a empezar a segmentar por país»: México deja claro
+que es México; luego los 10 países más aptos de Latinoamérica; después Europa.
+Esta sección es el guion completo para que una base nueva de cualquier país
+siga **exactamente el mismo proceso** que novias en México.
+
+### 13.1 Lo que se hizo con novias en México, de punta a punta
+
+El orden importa; cada paso salió de un error del anterior (§11).
+
+1. **Universo.** Censo oficial primero (DENUE, clase SCIAN verificada contra
+   `nombre_act`), después el barrido de Google Maps por ciudad y consulta
+   (`docs/prospeccion/barrido/`: `cola.py` → `barrido.sh` con 4 workers →
+   `maps.js` en Playwright con `hl=es&gl=MX`). El barrido de Maps trae
+   **nombre, categoría, calificación, número de reseñas, teléfono y sitio**;
+   la calificación y las reseñas son el primer filtro de calidad (la base se
+   ordena por ellas) y el sitio es la puerta al correo.
+2. **Limpieza y carga** (`giro-carga.py prep|hijos`): sin teléfono se
+   elimina, las cadenas se agrupan por nombre normalizado, el CIU se
+   canoniza, y se carga con `on conflict do nothing` sobre
+   `(lower(nombre), coalesce(ciudad,''))`. Cada cuenta deja su procedencia
+   en `abm_fuentes`.
+3. **Enriquecimiento del sitio propio** (`giro-sitios.py`): home + contacto +
+   aviso, mínimo 6 MB por página; correos (`mailto:` y texto), `wa.me`
+   **declarado** (el único WhatsApp que se manda), Instagram/Facebook,
+   plataforma web y carrito. Nada se infiere del teléfono.
+4. **Verificación**: todo correo por MX (`scripts/abm-verificar-mx.mjs
+   <giro>`), nunca corregido a mano; ZeroBounce solo con OK del dueño.
+5. **Puntaje** (`calcularPuntaje`): encaje por giro + tamaño (reseñas ≥300 o
+   seguidores ≥30k suman) + dolor (e-commerce, sitio caído, sin carrito).
+6. **Guion**: dos rutas —`demo` y `diagnostico`—, 8 correos (días 1, 4, 6,
+   10, 14, 19, 25, 33) + 3 WhatsApp a quien lo declaró, una pieza
+   descargable, fotos propias (600×300, gpt-image-2). La IA personaliza con
+   el expediente (`abm-generar.ts`); lo que el correo AFIRMA del sistema está
+   listado en la migración y verificado.
+7. **Landing propia del giro**: el correo manda a `/giros/novias-y-fiesta`,
+   nunca al home (regla del dueño, `PAGINA_GIRO`).
+8. **Goteo**: 10 cuentas/día (novias), con IA, pausado hasta que el dueño
+   enciende; el cartero tiene rampa, disyuntor y tope diario (320).
+9. **Render real antes de generar**: una cadencia contra una cuenta real,
+   se lee, se borra el borrador.
+
+### 13.2 Lo que enseñó abrir la puerta a España (commit `fa97c654`)
+
+El primer país fuera de México no fue una base nueva: fue una novia de
+Madrid que quiso agendar. Todo lo que se rompió es lo que hay que revisar
+**antes** de mandar un correo a cualquier otro país:
+
+- **La agenda vive en hora CDMX y el invitado la ve en la suya**
+  (`src/lib/scheduling/zona.ts`): selector de zona completo, horarios en 24 h
+  con la zona escrita, y la FECHA del invitado (las 17:00 CDMX son la 1:00 del
+  día siguiente en Madrid). El `.ics`/Google Calendar lleva zona; los correos
+  de confirmación (invitado y vendedor) muestran las dos horas.
+- **El cierre del correo no puede sonar a «solo somos de México»**:
+  `ALCANCE` en `abm-correo.ts` dice «Atendemos negocios de moda en México,
+  Latinoamérica y España por videollamada, en su horario». Con países
+  segmentados esa frase se vuelve la del país (§13.5).
+- **Los horarios de atención son los de México.** Un correo a Madrid que
+  promete «le llamamos hoy» a las 16:00 CDMX está prometiendo medianoche. La
+  cadencia se envía a la hora local del país (§13.6) y los WhatsApp respetan
+  la ventana local.
+
+### 13.3 El modelo: país → región → guion
+
+Tres capas, para no escribir 10 guiones distintos ni uno solo que no le
+hable a nadie:
+
+| Capa | Qué decide | Dónde vive |
+|---|---|---|
+| **País** (`abm_cuentas.pais`) | moneda, LADA, largo del móvil, zona horaria, palabra para XV, landing, nota legal, `gl` de Maps, ciudades | `src/lib/crm/abm-paises.ts` (sin dependencias de servidor; lo importan API y navegador) |
+| **Región** (`mexico` / `latam` / `espana`) | la cadencia y las plantillas que se usan (`abm_cadencias.pais`, `abm_plantillas.pais`), el registro del español (`REGLAS` del generador) | `regionDe(pais)` en `abm-paises.ts`; el generador elige cadencia por giro + ruta + región con caída a México |
+| **Cuenta** | nombre, ciudad, subgiro, reseñas, dolor: lo que ya personalizaba la IA | expediente en `abm-generar.ts` |
+
+Regla: **un guion por región, variables por país.** El guion de Latam es uno
+(español neutro, `usted`, sin mexicanismos: nada de «checar», «platicar»,
+«apartado», «quinceañera» sin más) y las variables `{{pais}}`, `{{xv}}`,
+`{{landing}}`, `{{moneda}}` lo aterrizan. México conserva su guion tal cual
+y **dice México**: «en todo México», landing de México, precios en MXN.
+
+### 13.4 Los 10 países de Latinoamérica y por qué esos
+
+Criterio del dueño: «los más aptos tecnológicamente y demás como México».
+Se midió con cuatro cosas: uso de WhatsApp en negocios, pagos en línea y
+e-commerce de moda, penetración de internet, y que el español sea la lengua
+del ramo (Brasil queda para una segunda ola en portugués, con guion propio).
+
+| # | País | `gl` | LADA | Móvil (dígitos locales) | Moneda en `plans.ts` | XV | Nota legal del correo frío |
+|---|---|---|---|---|---|---|---|
+| 1 | Colombia | co | +57 | 10 (empieza en 3) | cop | «15 años» | Ley 1581 (habeas data): identificarse, decir de dónde salió el dato, baja inmediata |
+| 2 | Chile | cl | +56 | 9 (empieza en 9) | clp | «15 años» / «fiesta de 15» | Ley 19.496 art. 28 B: asunto sin engaño, remitente identificado, opt-out obligatorio |
+| 3 | Argentina | ar | +54 | 10 sin el 0 ni el «15» → se guarda +549… | ars | «15 años» / «quince» | Ley 25.326: opt-out en cada envío, origen del dato |
+| 4 | Perú | pe | +51 | 9 (empieza en 9) | pen | «quinceañero» / «15 años» | **Ley 28493: el asunto debe llevar la palabra «PUBLICIDAD»** y datos completos del remitente |
+| 5 | Ecuador | ec | +593 | 9 sin el 0 | usd | «15 años» | LOPDP 2021: base legal e información al titular |
+| 6 | Costa Rica | cr | +506 | 8 | usd (CRC no existe en plans) | «15 años» | Ley 8968: identificación y baja |
+| 7 | Panamá | pa | +507 | 8 | usd | «15 años» | Ley 81/2019 |
+| 8 | Uruguay | uy | +598 | 8 sin el 0 (09x) | usd (UYU no existe) | «15 años» | Ley 18.331 + regulación de spam de URSEC: opt-out |
+| 9 | República Dominicana | do | +1 | 10 (809/829/849) | usd | «15 años» / «quinceañera» | Ley 172-13 |
+| 10 | Guatemala | gt | +502 | 8 | usd | «15 años» | Sin ley específica de datos; aplican las reglas de la casa |
+
+Fuera y por qué: **Brasil** (portugués: segunda ola), **Venezuela**
+(pagos y bancarización), **Bolivia y Paraguay** (tamaño del mercado de
+moda), **Puerto Rico** (CAN-SPAM de EE. UU., otra jurisdicción), el resto de
+Centroamérica (tamaño). Cuando el dueño diga, entran con la misma máquina.
+
+Regla de teléfonos que **no** es la de México: `telefono.ts` y `ui.tsx`
+convierten 10 dígitos sueltos en +52. **Un número de Latam se guarda siempre
+con su código de país** (`+57…`, `+56 9…`) desde la carga; un número de 10
+dígitos sin código en una cuenta de Colombia es un error de carga, no un
+número mexicano.
+
+### 13.5 Lo que cambia en el sistema para un país nuevo
+
+- `abm_cadencias.pais` y `abm_plantillas.pais` (default `México`): el
+  generador toma la cadencia de la región de la cuenta y, si esa región no
+  tiene, la de México (para que nada quede sin guion).
+- `abm-goteo.ts` filtra también por `f.pais`: un goteo por país, con su tope.
+- Cierre del correo (`abm-correo.ts`, `Cierre.pais`): México → «en todo
+  México» + landing MX; Latam → «Atendemos negocios de moda en {País} por
+  videollamada, en su horario» + landing del país.
+- `paginaDe(giro, sitio, pais)`: `/giros/novias-y-fiesta` para México,
+  `/giros/novias-y-fiesta/<pais>` para los demás (precio en su moneda desde
+  `plans.ts`, «15 años» en vez de «XV», sin cifras que solo son ciertas en
+  México).
+- Variables nuevas en `variablesDe`: `{{pais}}`, `{{xv}}`, `{{landing}}`.
+- Hora de envío: el cartero corre a las 10 y 13 CDMX; para un país se
+  respeta su hora local (§13.6).
+- El expediente le dice a la IA el país y el registro: «Español neutro de
+  Latinoamérica, trato de usted, nada de mexicanismos», y para México lo de
+  siempre.
+
+### 13.6 Hora local y ventanas
+
+Los crons corren en UTC (`vercel.json`: 16 y 19 UTC = 10 y 13 CDMX). Para
+que un correo llegue en horario laboral del país se elige el paso del día
+según la diferencia: Colombia/Perú/Ecuador/Panamá (UTC−5) son la misma hora
+que CDMX ± 0–1 h, así que el cron actual sirve; Chile/Argentina/Uruguay
+(UTC−3) reciben a las 13 y 16 locales —bien—; Costa Rica/Guatemala (UTC−6)
+igual que CDMX; República Dominicana (UTC−4). **España (UTC+2 en verano) no
+cabe**: las 10 CDMX son las 18 de Madrid; ese país necesita su propia hora de
+cron antes de encenderse (o el goteo lo enrola y el cartero solo suelta lo
+suyo en la corrida de las 13 UTC que habrá que añadir). Nada de esto se
+enciende sin que el dueño lo vea.
+
+### 13.7 El proceso para una base nueva, paso a paso
+
+1. Configurar el país en `abm-paises.ts` (todo lo de la tabla de §13.4) y las
+   ciudades en `docs/prospeccion/barrido/pais/paises.py`.
+2. Barrer Maps con `gl` del país (`barrido-pais.sh <iso> <giro>`): feed +
+   ficha de cada lugar (`lugar.js`: web, teléfono, dirección, categoría,
+   calificación y reseñas). Guardar cada resultado crudo en el pool.
+3. `carga-pais.py prep <iso> <giro>`: filtro por categoría y nombre, sin
+   teléfono se elimina, teléfono a E.164 con la LADA del país, cadenas
+   agrupadas, revisión a ojo con `revisar.py`, carga con `pais`, `moneda`,
+   `google_rating`, `google_resenas`, `sitio`, y `abm_fuentes`.
+4. Raspar sitios (`sitios-pais.py`): correo, `wa.me` declarado (con código
+   de país), redes, plataforma. MX a todo correo. Recalcular puntaje.
+5. Escribir la cadencia de la región si no existe (migración con el porqué
+   y la lista de lo afirmado); crear pasos, cadencias y **goteos en pausa**
+   por país.
+6. Renderizar una cadencia con IA contra una cuenta real de cada país,
+   leerla, borrar el borrador.
+7. Resolver la legalidad (tabla de §13.4): Perú lleva «PUBLICIDAD» en el
+   asunto; todos llevan identificación, origen honesto del dato y baja.
+8. Mandarle al dueño el reporte: cuántas cuentas por país, con correo, con
+   WhatsApp, qué guion, a qué hora, qué landing, qué precio, qué nota legal.
+   **Nada sale hasta que él lo apruebe.**
+
+### 13.8 Lo que NO se replica
+
+- La landing de México con cifras de México («personas de soporte en
+  México», «vestido de $28,000») no se muestra en otro país sin adaptar.
+- Las plantillas de WhatsApp aprobadas en Meta son por nombre e idioma
+  (`es_MX`); una versión neutra se registra aparte y se espera su APPROVED.
+- El goteo `abm_frio` no se enciende nunca; los goteos por país se crean en
+  pausa y los enciende el dueño.

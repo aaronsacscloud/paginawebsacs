@@ -282,3 +282,26 @@ agenda y todo el rollo que funcione de forma integral si agenda alguien de espa�
       la hora CDMX sin zona: 8 h de error), correos de confirmación con la hora del invitado y la de CDMX,
       WhatsApp con +34 automático, demo a 30 min (migración `2026-09-14-demo-treinta-minutos-event-type.sql`).
       Booking de prueba borrado. Pendiente por el dueño: sus horarios 9–18 CDMX caen 17:00–02:00 Madrid.
+
+## 2026-09-14 · Los destellos en TODAS las vistas de clientes — y las tarjetas en blanco
+
+Llegó mientras se reestructuraba la ficha de la orden del taller. Palabras del dueño:
+«Adicional, para que lo agregues en la cola, en todas las vistas que tienen clientes, quiero que se
+vea el fondo de las estrellitas como aquí. Solamente no quiero que pongas esos colores morados en
+las cards. Déjalas en blanco como estaban y solamente haz el efecto de las estrellitas que tiene
+atrás ese símbolo, por favor.»
+
+Qué significa, para no equivocarse al aplicarlo:
+- Lo que SÍ se replica es la **banda de destellos detrás del título** (`<Chispas />` + `<Sello>`), la
+  misma de Cotizaciones, Clientes, Taller, Soporte, Consultoría y Leads.
+- Lo que NO se replica es el **degradado lila→rosa de la tarjeta faro**. Las tarjetas se quedan
+  BLANCAS, con su franja de color de 3 px como el resto del CRM.
+
+- [x] Quitar el degradado morado de la tarjeta grande del Taller de la cuenta (14-sep-2026).
+- [ ] Poner la banda de destellos + sello en las pestañas de la ficha del cliente que todavía no la
+      tienen: Info general, Suscripciones, Actividad, Reuniones, Conversaciones, Soporte, Outbound,
+      Renovación.
+- [ ] Revisar las demás vistas con clientes (Onboarding, Churn, Cobranza, Renovaciones) y ponerles la
+      suya con su frase.
+- [ ] Decidir qué pasa con la tarjeta faro que YA existe en Clientes: el dueño la aprobó como branding
+      en su momento; preguntarle si también la quiere en blanco o si esa se queda como la excepción.
