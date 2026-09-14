@@ -58,11 +58,14 @@ export default function KpiCard({ label, valor, color, sub, onClick, franja, act
       onMouseLeave={e => { if (!activo) (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
       {/* La chispa al vuelo, cortada por la esquina. Es decoración de la marca,
           no un icono: no significa nada y por eso no lleva título ni color
-          propio — va en el rosa de la casa a media opacidad. */}
+          propio. Va en BLANCO y no en el rosa de la casa: sobre el degradado
+          lila→rosa, una chispa rosa se lee como una calcomanía pegada encima y
+          compite con la cifra; en blanco es un destello de luz sobre el mismo
+          fondo, que es lo que tiene que ser. */}
       {faro && (
         <svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true"
-          style={{ position: 'absolute', right: -6, top: -8, opacity: .5, pointerEvents: 'none' }}>
-          <path d={CHISPA} fill="rgba(217,83,142,.18)" />
+          style={{ position: 'absolute', right: -6, top: -8, pointerEvents: 'none' }}>
+          <path d={CHISPA} fill="rgba(255,255,255,.9)" />
         </svg>
       )}
       <div style={{ ...KPI_S.kl, position: 'relative', color: faro ? '#8a6a9c' : KPI_S.kl.color }}>{label}</div>

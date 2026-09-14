@@ -469,7 +469,6 @@ function Renglon({ o, abrir }: any) {
 /* ═══════════════════ La orden por dentro ═══════════════════ */
 function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
   const [d, setD] = useState<any>(null);
-  const [texto, setTexto] = useState('');
   const [edit, setEdit] = useState<any>({});
   const [guardando, setGuardando] = useState(false);
 
@@ -540,65 +539,33 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                   <textarea value={v(k)} onChange={e => set(k, e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }} placeholder="—" />
                 </div>
               ))}
-            </div>
-
-            {/* Lo técnico no se pide en la junta: se completa después, y mientras
-                falte algo el reloj no corre. */}
-            <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Datos para desarrollo · se completan después</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[['entorno', 'Entorno y versión'], ['sucursal', 'Sucursal'], ['usuario_caso', 'Usuario y rol'], ['dato_caso', 'Folio o pieza del caso']].map(([k, l]) => (
-                  <div key={k}><span style={S.lbl}>{l}</span>
-                    <input value={v(k)} onChange={e => set(k, e.target.value)} style={S.input} placeholder="—" /></div>
-                ))}
+              {/* El video de QUIEN LEVANTA la orden. Va aquí y no del lado de la
+                  entrega porque son dos videos distintos y confundirlos es caro:
+                  este muestra el problema, el otro muestra que quedó. */}
+              <div style={{ marginTop: 11 }}>
+                <span style={S.lbl}>Video o evidencia que estoy mandando</span>
+                <input value={v('evidencia_url')} onChange={e => set('evidencia_url', e.target.value)} placeholder="https://… la pantalla grabada, la foto del ticket" style={S.input} />
+                <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
+                  Lo que le mandas a desarrollo para que lo entiendan sin preguntarte.
+                </div>
               </div>
-              {o.falta_dato && (
-                <div style={{ background: P.ambarAgua, border: '1px solid #f2ddb8', borderRadius: 9, padding: '9px 11px', fontSize: '0.76rem', color: P.ambarTinta, marginTop: 10 }}>
-                  <b>Desarrollo pidió un dato</b> hace {dias(o.falta_dato_at)} d: {o.falta_dato}
-                  <div style={{ marginTop: 7 }}>
-                    <button style={S.btnG} onClick={() => guarda({ falta_dato: '' }).then(ok => ok && flash('Listo, el reloj vuelve a correr'))}>Ya quedó</button>
-                  </div>
-                </div>
-              )}
-              {!o.falta_dato && (
-                <div style={{ marginTop: 9, display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <button style={S.btnG} onClick={async () => {
-                    const q = window.prompt('¿Qué dato falta para poder trabajarla?');
-                    if (q && q.trim()) { const ok = await guarda({ falta_dato: q.trim() }); if (ok) flash('Pedido. El reloj queda congelado.'); }
-                  }}>Falta un dato</button>
-                  <span style={{ fontSize: '0.7rem', color: '#8d8a97' }}>Pedirlo congela el SLA y avisa a quien la levantó.</span>
-                </div>
-              )}
             </div>
 
+            {/* La bitácora del lado de quien pide: qué se movió y cuándo. Es lo
+                único del historial que sirve aquí — la conversación técnica y
+                los datos de entorno se quitaron a pedido del dueño: nadie los
+                llenaba y empujaban fuera de pantalla lo que sí se llena. */}
             <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Conversación</span>
-              {d.comentarios.length === 0 && <div style={{ fontSize: '0.79rem', color: '#999', padding: '4px 0' }}>Todavía nadie ha escrito aquí.</div>}
-              {d.comentarios.map((c: any) => (
-                <div key={c.id} style={{ display: 'flex', gap: 9, padding: '8px 0', borderTop: '1px solid #f5f4f8' }}>
-                  <span style={{ width: 24, height: 24, flex: 'none', borderRadius: '50%', background: P.violetaAgua, color: P.violetaTinta, fontSize: '0.58rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>
-                    {String(c.autor || '?').split(' ').map((x: string) => x[0]).slice(0, 2).join('')}
+              <span style={S.lbl}>Lo que ha pasado con esta orden</span>
+              {d.bitacora.length === 0 && <div style={{ fontSize: '0.79rem', color: '#999', padding: '4px 0' }}>Todavía no se ha movido.</div>}
+              {d.bitacora.map((b: any) => (
+                <div key={b.id} style={{ display: 'flex', gap: 8, fontSize: '0.72rem', color: '#6b6b74', padding: '5px 0', borderTop: '1px solid #f5f4f8' }}>
+                  <span style={{ color: '#a5a2af', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    {new Date(b.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  <div style={{ fontSize: '0.79rem' }}>
-                    <b>{c.autor}</b> <span style={{ color: '#a5a2af', fontSize: '0.68rem' }}>{new Date(c.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                    <div style={{ color: '#3f3c4a', lineHeight: 1.5 }}>{c.texto}</div>
-                  </div>
+                  <span>{b.nota || (b.a ? `${b.actor} la pasó a ${ETAPAS[b.a]?.toLowerCase() || b.a}` : b.actor)}</span>
                 </div>
               ))}
-              <div style={{ display: 'flex', gap: 7, marginTop: 9 }}>
-                <input value={texto} onChange={e => setTexto(e.target.value)} placeholder="Escribe aquí, no en WhatsApp…" style={S.input}
-                  onKeyDown={async e => {
-                    if (e.key === 'Enter' && texto.trim()) {
-                      const j = await api({ accion: 'comentar', id: o.id, texto }, 'POST');
-                      if (j) { setTexto(''); traer(); }
-                    }
-                  }} />
-                <button style={S.btn} onClick={async () => {
-                  if (!texto.trim()) return;
-                  const j = await api({ accion: 'comentar', id: o.id, texto }, 'POST');
-                  if (j) { setTexto(''); traer(); }
-                }}>Enviar</button>
-              </div>
             </div>
           </div>
 
@@ -606,7 +573,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             {/* El acuerdo de tiempos: la fecha la pone quien hace el trabajo, la
                 ventana de revisión la pide quien entrega, y se miden las dos. */}
             <div style={{ ...S.caja, borderColor: P.violetaBorde }}>
-              <span style={S.lbl}>El acuerdo de tiempos</span>
+              <span style={S.lbl}>Las fechas y quién la trabaja</span>
               <div style={{ marginBottom: 9 }}>
                 <span style={S.lbl}>Fecha de entrega · la pone desarrollo</span>
                 <input type="date" value={String(v('fecha_prometida') || '').slice(0, 10)} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} />
@@ -643,8 +610,8 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             </div>
 
             <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>La entrega</span>
-              <span style={S.lbl}>Video de entrega</span>
+              <span style={S.lbl}>Lo que me tienen que entregar</span>
+              <span style={S.lbl}>Video de la entrega</span>
               <input value={v('video_url')} onChange={e => set('video_url', e.target.value)} placeholder="https://…" style={S.input} />
               <div style={{ marginTop: 9 }}>
                 <span style={S.lbl}>…o cómo verificarlo (si no lleva video)</span>
@@ -664,6 +631,26 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                 {o.etapa === 'lista' && <span style={{ fontSize: '0.74rem', color: '#8d8a97' }}>Está en manos del dueño: se aprueba desde la bandeja.</span>}
                 {o.etapa === 'entregada' && <span style={{ fontSize: '0.74rem', color: P.verdeTinta, fontWeight: 700 }}>Entregada y cerrada en la ficha del cliente.</span>}
               </div>
+              {/* Pedir un dato congela el reloj. Es lo único que se rescató del
+                  bloque técnico que se quitó: sin esto, ni se les reclama un SLA
+                  que empezó sin poder trabajar, ni se quedan colgados de algo
+                  que nunca llegó. */}
+              {o.falta_dato ? (
+                <div style={{ background: P.ambarAgua, border: '1px solid #f2ddb8', borderRadius: 9, padding: '9px 11px', fontSize: '0.76rem', color: P.ambarTinta, marginTop: 10 }}>
+                  <b>Desarrollo pidió un dato</b> hace {dias(o.falta_dato_at)} d: {o.falta_dato}
+                  <div style={{ marginTop: 7 }}>
+                    <button style={S.btnG} onClick={() => guarda({ falta_dato: '' }).then(ok => ok && flash('Listo, el reloj vuelve a correr'))}>Ya quedó</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 10 }}>
+                  <button style={S.btnG} onClick={async () => {
+                    const q = window.prompt('¿Qué dato falta para poder trabajarla?');
+                    if (q && q.trim()) { const ok = await guarda({ falta_dato: q.trim() }); if (ok) flash('Pedido. El reloj queda congelado.'); }
+                  }}>Falta un dato</button>
+                  <span style={{ fontSize: '0.7rem', color: '#8d8a97', marginLeft: 8 }}>congela el tiempo y avisa a quien la levantó</span>
+                </div>
+              )}
               {o.etapa === 'espera' && (
                 <div style={{ marginTop: 9 }}>
                   <span style={S.lbl}>¿Qué se le pidió al cliente?</span>
@@ -671,18 +658,6 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                   <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5 }}>Lleva {dias(o.espera_desde)} d detenida. Ese tiempo no cuenta contra la fecha.</div>
                 </div>
               )}
-            </div>
-
-            <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Bitácora</span>
-              {d.bitacora.map((b: any) => (
-                <div key={b.id} style={{ display: 'flex', gap: 8, fontSize: '0.72rem', color: '#6b6b74', padding: '5px 0', borderTop: '1px solid #f5f4f8' }}>
-                  <span style={{ color: '#a5a2af', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                    {new Date(b.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  <span>{b.nota || (b.a ? `${b.actor} la pasó a ${ETAPAS[b.a]?.toLowerCase() || b.a}` : b.actor)}</span>
-                </div>
-              ))}
             </div>
 
             {d.mejoras.length > 0 && (

@@ -23,7 +23,7 @@
  */
 import { useEffect, useState } from 'react';
 import Cargando from '../ui/Cargando';
-import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO, CHISPA } from '../ui/Chispas';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 import OrdenDelTaller, { ETAPAS_TALLER } from './OrdenDelTaller';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
@@ -154,24 +154,23 @@ export default function TallerCuenta({ companyId, flash }: any) {
         </div>
       </div>
 
-      {/* La fila de tarjetas. El FARO es una sola por pantalla: su jerarquía la
-          da el degradado de la marca, no una franja más. Cuando algo va tarde no
-          cambia de piel — cambia la TINTA de la cifra. Pastel en la forma, tinta
-          en la cifra. */}
+      {/* La fila de tarjetas. BLANCAS, con su franja de color de 3 px como el
+          resto del CRM: el degradado lila→rosa se quitó a pedido del dueño
+          (14-sep-2026) —«no quiero que pongas esos colores morados en las cards,
+          déjalas en blanco como estaban»—. El adorno de la marca vive en la
+          banda de destellos del título, no encima de las cifras. La jerarquía de
+          la primera la da su tamaño y su tinta, no un fondo de color. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginBottom: 14 }}>
-        <div style={{ ...S.kpi, gridColumn: 'span 2', background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))', border: '1px solid #ddd6fb', position: 'relative', overflow: 'hidden' }}>
-          <svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', right: -6, top: -8, opacity: .5, pointerEvents: 'none' }}>
-            <path d={CHISPA} fill="rgba(217,83,142,.18)" />
-          </svg>
-          <div style={{ ...S.kl, position: 'relative', color: peor ? '#C0554E' : '#8a6a9c' }}>
+        <div style={{ ...S.kpi, gridColumn: 'span 2', borderLeft: `3px solid ${peor ? '#EF7A72' : sinFecha ? '#E8A838' : '#9B8CFA'}` }}>
+          <div style={{ ...S.kl, color: peor ? '#C0554E' : '#999' }}>
             {peor ? 'Se pasó la fecha' : vivas.length ? 'Lo que le debes' : 'Nada pendiente'}
           </div>
-          <div style={{ ...S.kv, position: 'relative', color: peor ? '#C0554E' : '#1a1a1a' }}>
+          <div style={{ ...S.kv, color: peor ? '#C0554E' : vivas.length ? '#5B4BD6' : '#1a1a1a' }}>
             {peor ? `${peor} ${peor === 1 ? 'día' : 'días'} tarde` : vivas.length ? `${vivas.length} en curso` : 'Al día'}
           </div>
-          <div style={{ ...S.ks, position: 'relative', color: '#6b6878' }}>
+          <div style={S.ks}>
             {peor
-              ? <>La más atrasada de <b style={{ color: '#1a1a1a' }}>{tarde.length}</b> que se pasaron de fecha{sinFecha ? <> · {sinFecha} sin fecha nueva</> : null}</>
+              ? <>La más atrasada de <b style={{ color: '#C0554E' }}>{tarde.length}</b> que se pasaron de fecha{sinFecha ? <> · {sinFecha} sin fecha nueva</> : null}</>
               : vivas.length
                 ? <>{sinFecha ? <><b style={{ color: '#9a6a10' }}>{sinFecha} sin fecha</b> · nadie las puede arrancar</> : 'todas con fecha comprometida'}</>
                 : 'Lo que salga de la próxima junta aparece aquí'}
