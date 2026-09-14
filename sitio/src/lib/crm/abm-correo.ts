@@ -23,7 +23,7 @@
 // archivo lo consume el cron de envío, que corre en el servidor y no debe
 // arrastrar dependencias del navegador para pintar un correo.
 import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE, waLink } from '../whatsapp';
-import { operacionDe } from './abm-giros';
+import { operacionDe, paginaDe } from './abm-giros';
 
 const MORADO = '#9B8CFA';
 const MORADO_TINTA = '#5B4BD6';
@@ -135,10 +135,18 @@ export function whatsappCierre(nombre?: string | null): string {
 /** El mismo cierre para la versión de texto plano: tiene que decir lo mismo
  *  que el HTML, con sus dos ligas, o los filtros puntúan la diferencia. */
 export function cierreTexto(c: Cierre): string {
-  return `\n\n${fraseCierre(c.giro)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`;
+  const pg = paginaDe(c.giro);
+  return `\n\n${fraseCierre(c.giro)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
+    + (pg ? `\n\n${invitacionPagina(pg.nombre)}: ${pg.url}` : '');
+}
+
+/** «Vea más detalles»: la invitación a la página del giro, siempre que exista. */
+function invitacionPagina(nombre: string): string {
+  return `Y para ver más detalles de lo que hacemos para ${nombre}, la página completa`;
 }
 
 function bloqueCierre(c: Cierre): string {
+  const pg = paginaDe(c.giro);
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
 <td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
 <p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
@@ -150,6 +158,7 @@ function bloqueCierre(c: Cierre): string {
 <td width="50%" valign="top" style="padding:0 6px 0 0;">${botonAncho('Agendar la demo', AGENDAR_DEMO, MORADO)}</td>
 <td width="50%" valign="top" style="padding:0 0 0 6px;">${botonAncho('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA)}</td>
 </tr></table>
+${pg ? `<p style="margin:16px 0 0;color:${TINTA};font-family:${FUENTE};font-size:14px;line-height:21px;">${esc(invitacionPagina(pg.nombre))} está en <a href="${esc(pg.url)}" style="color:${MORADO_TINTA};font-weight:bold;text-decoration:underline;">${esc(pg.url.replace(/^https?:\/\/(www\.)?/, ''))}</a>.</p>` : ''}
 <p style="margin:14px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)}.</p>
 </td></tr></table>`;
 }
@@ -168,6 +177,11 @@ export function armarCorreo(p: PartesCorreo): string {
     ? `<tr><td style="padding:4px 28px 26px;">${boton(p.botonTexto, p.botonUrl)}</td></tr>` : '';
   const pieza = p.pieza ? `<tr><td style="padding:0 28px 26px;">${p.pieza}</td></tr>` : '';
   const cierre = p.cierre ? `<tr><td style="padding:10px 28px 26px;">${bloqueCierre(p.cierre)}</td></tr>` : '';
+  // En el pie, la liga del sitio lleva a la página del giro si la hay: al home
+  // genérico no se manda a nadie que ya sabemos de qué giro es.
+  const pg = p.cierre ? paginaDe(p.cierre.giro, base) : null;
+  const ligaSitio = pg ? pg.url : base;
+  const textoSitio = pg ? pg.url.replace(/^https?:\/\/(www\.)?/, '') : 'www.sacscloud.com';
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background-color:#f6f6f9;margin:0;padding:0;">
 <tr><td align="center" style="padding:22px 10px;">
@@ -195,7 +209,7 @@ ${cierre}
 <tr><td style="padding:18px 28px 24px;">
 <p style="margin:0;color:${MORADO_TINTA};font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:18px;">Sacscloud</p>
 <p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Inventario y punto de venta para negocios de moda, hecho en México.</p>
-<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${base}" style="color:${MORADO_TINTA};text-decoration:none;">www.sacscloud.com</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes</p>
+<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes</p>
 </td></tr>
 
 </table>

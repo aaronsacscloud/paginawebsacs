@@ -52,3 +52,27 @@ export const OPERACION: Record<string, string> = {
 export function operacionDe(giro?: string | null): string {
   return OPERACION[String(giro || '')] || 'moda';
 }
+
+// ── La página del giro en sacscloud.com ─────────────────────────────────────
+//
+// Regla del dueño (14-sep-2026, novias): «no los mandes al home de Sacscloud,
+// mándalos directo al link de novias y siempre invítalas a ver la página para
+// que vean más detalles». Solo giros con página PROPIA y terminada (las de
+// src/pages/giros/ que no son el _coming-soon); un giro sin página no manda a
+// ningún lado: mejor nada que el home genérico.
+export const PAGINA_GIRO: Record<string, { ruta: string; nombre: string }> = {
+  novias: { ruta: '/giros/novias-y-fiesta', nombre: 'novias y fiesta' },
+  renta: { ruta: '/giros/novias-y-fiesta', nombre: 'novias y fiesta' },
+  joyeria: { ruta: '/giros/joyeria', nombre: 'joyerías' },
+  zapaterias: { ruta: '/giros/zapateria', nombre: 'zapaterías' },
+  boutiques: { ruta: '/giros/boutique-multimarca', nombre: 'boutiques multimarca' },
+  marcas: { ruta: '/giros/marcas-de-ropa', nombre: 'marcas de ropa' },
+  fabricantes: { ruta: '/giros/marcas-de-ropa', nombre: 'marcas de ropa' },
+  deportiva: { ruta: '/giros/activewear', nombre: 'ropa deportiva' },
+};
+
+/** La página del giro con su URL completa, o null si el giro no tiene. */
+export function paginaDe(giro?: string | null, sitio = 'https://www.sacscloud.com'): { url: string; nombre: string } | null {
+  const p = PAGINA_GIRO[String(giro || '')];
+  return p ? { url: sitio.replace(/\/$/, '') + p.ruta, nombre: p.nombre } : null;
+}
