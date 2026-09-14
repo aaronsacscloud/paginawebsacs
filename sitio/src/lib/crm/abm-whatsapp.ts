@@ -20,7 +20,7 @@
 import { supabase } from '../supabase';
 import { apuntar, variablesDe, rellenar, limpiar } from './abm.lib';
 import { telefonoWhatsApp } from '../telefono';
-import { enviarPlantilla, conLinea, crearPlantillaMeta, sanearParam, KapsoError } from '../whatsapp/kapso-api';
+import { enviarPlantilla, conLinea, crearPlantillaMeta, sanearParam, KapsoError, type BotonPlantilla } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { lineaPara, infoLinea } from '../whatsapp/linea';
 import { puedeMandarWa } from '../whatsapp/presion';
@@ -39,6 +39,22 @@ export function cuerpoMeta(cuerpo: string): { texto: string; variables: string[]
     return `{{${variables.indexOf(k) + 1}}}`;
   });
   return { texto, variables };
+}
+
+/**
+ * Los botones de la plantilla, desde las mismas columnas que usa el correo.
+ * No son adorno: un toque en una respuesta rápida abre la ventana de 24 h, y
+ * ahí ya se conversa sin plantilla (manual §8.5). Con `boton_url` es un botón
+ * de enlace; sin ella, `boton_texto` son respuestas rápidas separadas por « | »
+ * («Sí, muéstrenme | Ahora no»). Un «no» también es respuesta: frena la
+ * cadencia antes de que alguien la reporte.
+ */
+export function botonesDe(pl: { boton_texto?: string | null; boton_url?: string | null } | null | undefined): BotonPlantilla[] {
+  const texto = String(pl?.boton_texto || '').trim();
+  if (!texto) return [];
+  const url = String(pl?.boton_url || '').trim();
+  if (url) return [{ tipo: 'URL', texto: texto.slice(0, 20), url }];
+  return texto.split('|').map(t => t.trim()).filter(Boolean).slice(0, 3).map(t => ({ tipo: 'QUICK_REPLY' as const, texto: t.slice(0, 20) }));
 }
 
 /** Estado en Meta de las plantillas de WhatsApp de un giro (para la pantalla y para el cron). */
@@ -60,17 +76,24 @@ export async function estadoPlantillas(giro: string) {
 /** Registra en Meta las plantillas del giro que aún no existen (o que Meta rechazó). Devuelve qué pasó con cada una. */
 export async function registrarPlantillas(giro: string): Promise<{ nombre: string; resultado: string }[]> {
   const estado = await estadoPlantillas(giro);
-  const { data: pls } = await supabase.from('abm_plantillas').select('id, cuerpo').in('id', estado.map(e => e.id));
+  const { data: pls } = await supabase.from('abm_plantillas').select('id, cuerpo, boton_texto, boton_url').in('id', estado.map(e => e.id));
+  // La muestra que Meta exige por hueco sale de una cuenta real del giro: a
+  // una plantilla de novias no se le manda de ejemplo un mayorista de Villa
+  // Hidalgo, que es lo que el revisor ve para decidir si el texto tiene sentido.
+  const { data: muestra } = await supabase.from('abm_cuentas').select('nombre, ciudad').eq('giro', giro)
+    .not('ciudad', 'is', null).order('puntaje', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+  const ejemploDe = (v: string) => v === 'nombre' ? (muestra?.nombre || 'Creaciones Lupita') : v === 'ciudad' ? (muestra?.ciudad || 'Villa Hidalgo') : 'ejemplo';
   const out: { nombre: string; resultado: string }[] = [];
   for (const e of estado) {
     if (!e.meta_nombre) { out.push({ nombre: e.nombre, resultado: 'sin meta_nombre en abm_plantillas' }); continue; }
     if (['APPROVED', 'PENDING', 'IN_APPEAL'].includes(e.status)) { out.push({ nombre: e.nombre, resultado: `ya está: ${e.status}` }); continue; }
-    const cuerpo = (pls || []).find((p: any) => p.id === e.id)?.cuerpo || '';
-    const { texto, variables } = cuerpoMeta(cuerpo);
+    const pl = (pls || []).find((p: any) => p.id === e.id);
+    const { texto, variables } = cuerpoMeta(pl?.cuerpo || '');
     try {
       await crearPlantillaMeta({
         nombre: e.meta_nombre, idioma: e.idioma, categoria: 'MARKETING', cuerpo: texto,
-        ejemplos: variables.map(v => v === 'nombre' ? 'Creaciones Lupita' : v === 'ciudad' ? 'Villa Hidalgo' : 'ejemplo'),
+        ejemplos: variables.map(ejemploDe),
+        botones: botonesDe(pl),
       });
       out.push({ nombre: e.nombre, resultado: 'enviada a revisión de Meta' });
     } catch (err: any) {

@@ -651,6 +651,15 @@ seguro, y que no se quita:
   Meta») y **hasta que Meta la apruebe el toque se queda en la fila**, sin
   fallar. El texto que sale es el que Meta aprobó: por eso en la ficha se
   aprueba o se quita, pero no se edita.
+  **Sin condicionales**: una plantilla de Meta es texto fijo con huecos, así que
+  `[[si …]]` no existe ahí y en el envío automático no viaja persona ni
+  calificación —solo `{{nombre}}` y `{{ciudad}}`, que toda cuenta tiene—. Las
+  tres de novias se reescribieron por eso el 14-sep-2026. **Los botones van en
+  `boton_texto` / `boton_url`** de la misma fila: con URL es un botón de enlace;
+  sin URL son respuestas rápidas separadas por « | » («Sí, muéstrenme | Ahora
+  no»). Un «no» también abre la ventana y frena la cadencia —mejor eso que un
+  reporte—. Y la muestra que Meta exige por hueco sale de una cuenta real del
+  giro, no de un mayorista de Villa Hidalgo.
 - **La línea manda.** Sale por la línea que el CRM tenga para «prospección»
   (`wa_reglas_linea`; si no hay regla, la default). Si `wa-salud` pausó la
   línea por calidad, no sale nada. Además: tope propio al día
