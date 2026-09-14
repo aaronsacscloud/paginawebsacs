@@ -16,6 +16,7 @@ import Composer, { SelectorPlantilla } from './Composer';
 import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
+import Compartir, { ligaDeConversacion, copiarTexto } from './Compartir';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
@@ -31,10 +32,12 @@ import { tic, ticListo } from '../../../../lib/ui/tacto';
 // sobrevivir a que el hilo se desmonte al cambiar de conversación.
 const memoriaScroll = new Map<string, number>();
 
-export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir }: {
+export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir, ancla }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
   onBack?: () => void; onVerDetalle?: () => void;
   nuevosAlAbrir?: number;   // cuántos entrantes traía sin leer al abrirla (E6)
+  /** Mensaje al que llegó la liga compartida (`?wa_msg=`): se salta a él. */
+  ancla?: string | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const conv = hilo?.conversacion;
@@ -67,6 +70,17 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [matchIdx, setMatchIdx] = useState(0);
   const [resaltada, setResaltada] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
+  const [compartir, setCompartir] = useState(false);   // hoja de «pásale esta conversación» (móvil / menú ⋯)
+  const [ligaAviso, setLigaAviso] = useState('');      // «liga copiada», un segundo sobre el hilo
+  /* La liga a UN mensaje. Copiar sin decir nada deja la duda de si pasó algo:
+     el aviso es la única señal de que el portapapeles cambió. */
+  const copiarLigaMensaje = async (item: any) => {
+    if (!conv?.id) return;
+    const ok = await copiarTexto(ligaDeConversacion(conv.id, item.id));
+    ok ? ticListo() : null;
+    setLigaAviso(ok ? 'Liga del mensaje copiada' : 'El navegador no dejó copiar');
+    setTimeout(() => setLigaAviso(''), 2200);
+  };
   const [acciones, setAcciones] = useState(false);   // móvil: hoja de cotizar/agendar
   const [cita, setCita] = useState<any>(null);            // mensaje que se va a citar al responder
   const [cierre, setCierre] = useState(false);            // modal de nota de cierre
@@ -171,6 +185,33 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     const caja = (el?.firstElementChild as HTMLElement) || el;
     caja?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
+
+  /* LLEGÓ POR UNA LIGA COMPARTIDA (`?wa_msg=`). El hilo abre donde lo dejó
+     quien la mandó, no al final: esa es la diferencia entre «te paso la
+     conversación» y «te paso ESTO de la conversación».
+
+     Se reintenta mientras el hilo carga —la pantalla se monta antes que las
+     burbujas— y se rinde a los cuatro segundos. Si el mensaje es más viejo que
+     la ventana cargada, se queda detrás de «Cargar mensajes anteriores»: bajar
+     un hilo de mil mensajes por una liga cuesta más de lo que resuelve. Y se
+     insiste una vez a los 450 ms porque la memoria de lectura (E1.5) devuelve
+     el scroll a donde uno se quedó, y ganaba. */
+  useEffect(() => {
+    if (!ancla) return;
+    const clave = `mensaje-${ancla}`;
+    let intentos = 0;
+    const t = setInterval(() => {
+      intentos++;
+      if (document.getElementById(`wa-item-${clave}`)) {
+        clearInterval(t);
+        irAItem(clave);
+        setTimeout(() => irAItem(clave), 450);
+        setResaltada(clave);
+        setTimeout(() => setResaltada(null), 3000);
+      } else if (intentos > 20) clearInterval(t);
+    }, 200);
+    return () => clearInterval(t);
+  }, [ancla, conv?.id]);
 
   const irAMatch = (idx: number) => {
     const it = matches[idx]; if (!it) return;
@@ -399,7 +440,16 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
             <IcoBuscar size={mobile ? 19 : 15} />
           </button>}
+          {/* PASARLE ESTA CONVERSACIÓN A ALGUIEN. Va en la barra y no dentro del
+              ⋯ porque es de lo que más se hace en voz alta («oye, contesta tú
+              esta») y hasta hoy se hacía copiando la URL a mano —que además no
+              servía: la barra del navegador dice `?tab=whatsapp` y nada más. */}
+          {conv.id && !mobile && (
+            <Compartir convId={conv.id} equipo={equipo} yoId={hilo?.yo?.id || null} asignadoA={conv.asignado_a}
+              onAsignar={(id: string) => api.patchConversacion({ asignado_a: id })} />
+          )}
           {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
+            onCompartir={() => setCompartir(true)}
             onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)}
             notas={(hilo?.notas || []).length}
             onVerNotas={() => {
@@ -563,6 +613,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           )}
         </div>
       )}
+      {/* Confirmación de que el portapapeles cambió. Flota sobre el hilo y se
+          va sola: no hay nada que decidir, solo que se sepa que pasó. */}
+      {ligaAviso && (
+        <span style={{ position: 'absolute', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
+          background: C.g900, color: '#fff', borderRadius: 999, padding: '7px 14px', fontSize: 12, fontWeight: 700,
+          boxShadow: '0 8px 24px rgba(17,24,39,.28)', pointerEvents: 'none', whiteSpace: 'nowrap' }}>{ligaAviso}</span>
+      )}
       {/* ── Mensajes ── */}
       {nuevosAbajo > 0 && (
         <button className="wa-bajar" onClick={() => { const el = scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); setNuevosAbajo(0); }}>
@@ -705,6 +762,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   onMejorar={conv.id ? setMejorar : undefined}
                   onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined}
                   onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined}
+                  onCopiarLiga={conv.id && !mobile && !item._cola ? copiarLigaMensaje : undefined}
                   onIrACita={(id: string) => {
                     const clave = `mensaje-${id}`;
                     irAItem(clave);
@@ -822,6 +880,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               setAccionesMsg(null);
             },
           }] : []),
+          ...(conv.id && !accionesMsg._cola ? [{
+            label: 'Copiar liga a este mensaje',
+            onClick: () => { copiarLigaMensaje(accionesMsg); setAccionesMsg(null); },
+          }] : []),
           ...(conv.id && (accionesMsg.cuerpo || accionesMsg.transcript || accionesMsg.media_url) ? [{
             label: 'Reenviar a otra conversación',
             onClick: () => { tic(); setReenviar(accionesMsg); setAccionesMsg(null); },
@@ -832,6 +894,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           }] : []),
         ] : []}
       />
+      {conv?.id && compartir && (
+        <Compartir sinBoton abierto movil={mobile} onCerrar={() => setCompartir(false)}
+          convId={conv.id} equipo={equipo} yoId={hilo?.yo?.id || null} asignadoA={conv.asignado_a}
+          onAsignar={(id: string) => api.patchConversacion({ asignado_a: id })} />
+      )}
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
         const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
         if (!r?.error) setCierre(false);
@@ -849,7 +916,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }
 
 /** Menú ⋯ del hilo: posponer / exportar. */
-function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, onAcciones, onBuscar, notas, onVerNotas }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void; movil?: boolean; onAcciones?: () => void; onBuscar?: () => void; notas?: number; onVerNotas?: () => void }) {
+function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, onAcciones, onBuscar, notas, onVerNotas, onCompartir }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void; movil?: boolean; onAcciones?: () => void; onBuscar?: () => void; notas?: number; onVerNotas?: () => void; onCompartir?: () => void }) {
   const posponer = async (hasta: Date) => { setAbierto(false); await api.patchConversacion({ snooze_until: hasta.toISOString(), no_leidos: 0 }); };
   const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
   const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
@@ -904,6 +971,17 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             )}
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
+          {/* Compartir vive también aquí, no solo en la barra: en el teléfono la
+              barra no tiene sitio, y en escritorio es donde se busca lo que se
+              hace CON la conversación entera. */}
+          {onCompartir && (
+            <button onClick={() => { setAbierto(false); onCompartir(); }}
+              style={movil
+                ? { display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }
+                : { display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 14px', fontSize: 12, color: C.g700 }}>
+              Compartir con un compañero
+            </button>
+          )}
           {/* «Agendar reunión» salió de aquí: es el mismo botón que ya está en
               la barra del composer, y también estaba en la columna derecha.
               Tres caminos al mismo sitio no dan más opciones, dan la duda de si

@@ -181,7 +181,7 @@ function tragarSiguienteClick() {
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, onEvaluar, mismoAutorQueElAnterior, lineaConv }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, onEvaluar, onCopiarLiga, mismoAutorQueElAnterior, lineaConv }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
@@ -192,6 +192,8 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
    *  sabe desplazar y encender el anillo. */
   onIrACita?: (id: string) => void;
   onCitar?: (item: any) => void;
+  /** Copia la liga que abre el hilo JUSTO en este mensaje. */
+  onCopiarLiga?: (item: any) => void;
   onReintentar?: (item: any) => void;
   /** Evaluar un mensaje que el agente mandó solo (decisión del dueño, 5-sep): nota, qué falló, versión mejor. */
   onEvaluar?: (item: any) => void;
@@ -441,13 +443,13 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
             )}
           </span>
         </span>
-        {!item.borrado_at && item.kapso_message_id && (onCitar || onReenviar) && (
+        {!item.borrado_at && ((item.kapso_message_id && (onCitar || onReenviar)) || onCopiarLiga) && (
           <span className="wa-citar" style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
-            {onCitar && <button onClick={() => onCitar(item)} title="Responder citando este mensaje" aria-label="Responder"
+            {onCitar && item.kapso_message_id && <button onClick={() => onCitar(item)} title="Responder citando este mensaje" aria-label="Responder"
               style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
               <IcoResponder />
             </button>}
-            {onReaccionar && item.direccion === 'entrante' && (
+            {onReaccionar && item.kapso_message_id && item.direccion === 'entrante' && (
               <span style={{ position: 'relative', display: 'inline-flex' }}>
                 <button onClick={() => setPickReac(p => !p)} title="Reaccionar" aria-label="Reaccionar"
                   style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)', fontSize: 13 }}>☺</button>
@@ -459,7 +461,14 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
                 )}
               </span>
             )}
-            {onReenviar && (item.cuerpo || item.transcript || item.media_url) && <button onClick={() => onReenviar(item)} title="Reenviar a otra conversación" aria-label="Reenviar"
+            {onCopiarLiga && <button onClick={() => onCopiarLiga(item)} title="Copiar la liga que abre el hilo en este mensaje" aria-label="Copiar liga a este mensaje"
+              style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.6 5.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M14 11a5 5 0 0 0-7.07 0l-2.12 2.12a5 5 0 0 0 7.07 7.07l1.5-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>}
+            {onReenviar && item.kapso_message_id && (item.cuerpo || item.transcript || item.media_url) && <button onClick={() => onReenviar(item)} title="Reenviar a otra conversación" aria-label="Reenviar"
               style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
               <IcoReenviar />
             </button>}

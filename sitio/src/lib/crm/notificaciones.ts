@@ -27,6 +27,9 @@ export type Notificacion = {
   payment_id?: string | null;
   /** Pestaña del CRM a la que lleva el clic cuando no hay cliente que abrir. */
   destino?: string | null;
+  /** Para UNA persona (id de team_members). Sin esto el aviso es del equipo
+   *  entero: la campana filtra por `para is null or para = yo`. */
+  para?: string | null;
   metadata?: any;
 };
 
@@ -51,11 +54,14 @@ export async function notificar(n: Notificacion): Promise<boolean> {
       subscription_id: n.subscription_id || null,
       payment_id: n.payment_id || null,
       destino: n.destino || null,
+      para: n.para || null,
       metadata: n.metadata || null,
     });
     if (!error) {
       // Espejo en Equipo → Sistema (solo lo nuevo; el dedupe ya pasó aquí).
-      await espejarNotificacion(n).catch(() => {});
+      // Lo dirigido a UNA persona no se espeja: el canal de Sistema lo lee el
+      // equipo entero, y un recado de alguien para alguien no es del equipo.
+      if (!n.para) await espejarNotificacion(n).catch(() => {});
       return true;
     }
     if (/duplicate key|23505/i.test(error.message || '')) return false;  // ya se avisó

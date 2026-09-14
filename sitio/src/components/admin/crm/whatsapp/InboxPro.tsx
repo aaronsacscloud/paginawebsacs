@@ -412,6 +412,10 @@ export default function InboxPro() {
 
   // Deep-links: ?wa_conv=<id> | ?wa_search=<tel> (una sola vez).
   const deepLink = useRef(false);
+  /* La liga compartida puede venir anclada a un mensaje (`?wa_msg=`): el hilo
+     abre ahí y lo resalta. Se guarda en estado porque el parámetro se consume
+     y se va de la URL en cuanto se lee. */
+  const [ancla, setAncla] = useState<string | null>(null);
   /* Se abrió por liga: el guardia de «ya no pertenece a la lista» tiene que
      dejarla en paz la primera vez (ver cargarLista). */
   const porLink = useRef(false);
@@ -422,6 +426,8 @@ export default function InboxPro() {
       const p = new URLSearchParams(window.location.search);
       const conv = p.get('wa_conv');
       const tel = p.get('wa_search');
+      const msg = p.get('wa_msg');
+      if (conv && msg) setAncla(msg);
       if (conv) {
         // Llegar por link (la campana, un push) también tiene que enseñar
         // dónde empieza lo no leído: sin esto la marca solo salía al abrir
@@ -458,7 +464,7 @@ export default function InboxPro() {
          `replaceState` en vez de `pushState`: no es un paso del historial,
          así que el botón Atrás no debe devolverte a la búsqueda. */
       if (conv || tel || p.get('wa_nuevo')) {
-        p.delete('wa_conv'); p.delete('wa_search'); p.delete('wa_nuevo');
+        p.delete('wa_conv'); p.delete('wa_search'); p.delete('wa_nuevo'); p.delete('wa_msg');
         const q = p.toString();
         window.history.replaceState({}, '', `${window.location.pathname}${q ? `?${q}` : ''}`);
       }
@@ -570,6 +576,9 @@ export default function InboxPro() {
   }, []);
 
   const abrir = (c: any) => {
+    // Cambiar de conversación tira el ancla de la liga: ese mensaje era de la
+    // conversación anterior y perseguirlo aquí no tiene sentido.
+    setAncla(null);
     // Si el hilo ya se cargó antes, se pinta AL INSTANTE y el fetch de siempre
     // solo lo refresca detrás. Es lo que hace que moverse entre conversaciones
     // no tenga espera después de la primera.
@@ -1325,7 +1334,7 @@ export default function InboxPro() {
           })()
         ) : (
           <Suspense fallback={<EsqueletoChat mobile />}>
-            <Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api} mobile
+            <Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api} ancla={ancla} mobile
               onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
               {conv && <PanelDetalle hilo={hilo} api={api} />}
@@ -1363,7 +1372,7 @@ export default function InboxPro() {
         {cabina ? cabinaEl : (<>
         <div data-lista-wa style={{ display: 'contents' }}><Suspense fallback={<EsqueletoLista filas={9} alInstante />}><ListaConversaciones {...propsLista} /></Suspense></div>
         {activa ? (
-          <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
+          <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api} ancla={ancla}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
