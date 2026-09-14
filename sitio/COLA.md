@@ -6,6 +6,21 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · Compartir la liga de una conversación.** «que pueda compartir el link de una conversacion para
+      pasarlo a cualquier compañero y que se le pueda dar seguimiento puntual al tema, dame la opción de darle click a
+      un botón al seleccionar una conversación y al darle click me genera un link que me permite compartir» → HECHO
+      (botón en la barra del hilo + liga por mensaje + mandársela a un compañero con recado).
+
+- [x] **2026-09-14 · La secuencia de rezagados parecía mandar todo el día 1.** «aqui me meti a ver la secuencia de los
+      rezagados pero si es real esta info el día 1 se envían demasiados correos y el chiste es que vaya enviando día a
+      día no todo en el día 1 podrías revisar» → REVISADO: el cron manda UNO por vez (medido: 3 envíos hoy, uno por
+      persona). Lo que estaba mal era la pantalla. Arreglada.
+
+- [ ] **2026-09-14 · Respaldo de utility cuando falla el mensaje de marketing.** «este mensaje de marketing tuvo error,
+      pero si hay error siempre debe haber uno de respaldo de utility que se envíe para que el prospecto sí le llegue el
+      mensaje de seguimiento, igual revisa eso por favor» (caso Maribel, +52 66 7795 6276: «Meta limitó los mensajes de
+      marketing a este número»).
+
 - [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
       «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que
       hagan que se descuadre el diseno de la informacion general del cliente. Adicional, quiero que me agregues un

@@ -13,6 +13,9 @@ import { C } from './estilo';
 import Sheet from '../ui/Sheet';
 
 const DIAS = ['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const DIA_CORTO = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const lista = (xs: string[]) => xs.length <= 1 ? (xs[0] || '')
+  : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`;
 
 const fechaCorta = (s?: string | null) => {
   if (!s) return '';
@@ -70,6 +73,24 @@ export default function DrawerSecuencia({ abierto, onCerrar, secuenciaId, nombre
           <div style={{ fontSize: 17, fontWeight: 800, color: '#241f3d', lineHeight: 1.3 }}>{s.nombre}</div>
           {s.descripcion && <p style={{ margin: '6px 0 0', fontSize: 13, color: C.g500, lineHeight: 1.55 }}>{s.descripcion}</p>}
 
+          {/* EL RITMO, ANTES QUE LA LISTA. Con 33 renglones que decían «Día 1»,
+              esta pantalla se leía como «hoy le caen treinta y tres correos»
+              —y con esa lista enfrente, asustarse es lo correcto—. Lo que hace
+              el goteo es mandar UNO y esperar; eso se dice aquí, con sus días. */}
+          {d.ritmo?.permanente && (
+            <div style={{ margin: '12px 0 0', padding: '10px 12px', borderRadius: 10, background: '#F4F9F7', border: '1px solid #DCEDE6' }}>
+              <div style={{ fontSize: 12.5, color: '#1C4C3F', lineHeight: 1.55 }}>
+                <b>Es un goteo, no una tanda.</b> Sale <b>un solo mensaje por vez</b>
+                {d.ritmo.cada_dias > 1 ? <>, con {d.ritmo.cada_dias} días de por medio</> : <>, y nunca dos el mismo día</>}
+                {d.ritmo.carriles?.length
+                  ? <> — {lista(d.ritmo.carriles.map((n: number) => DIAS[n]))}, cada día con su propio tema</>
+                  : null}.
+                {d.ritmo.pendientes ? <> Quedan <b>{d.ritmo.pendientes}</b> por delante: dan para {Math.round(d.ritmo.pendientes / Math.max(1, d.ritmo.carriles?.length || 1))} semanas.</> : null}
+                {d.ritmo.muertos ? <><br /><span style={{ color: '#B45309', fontWeight: 700 }}>Ojo: {d.ritmo.muertos} paso{d.ritmo.muertos === 1 ? '' : 's'} sin día de la semana asignado. Ese{d.ritmo.muertos === 1 ? '' : 'sos'} no sale{d.ritmo.muertos === 1 ? '' : 'n'} nunca.</span></> : null}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0 0' }}>
             {est && <span style={{ fontSize: 11, fontWeight: 700, background: est.f, color: est.c, borderRadius: 999, padding: '3px 10px' }}>{est.t}</span>}
             {!s.activa && <span style={{ fontSize: 11, fontWeight: 700, background: C.ambar50, color: C.ambar700, borderRadius: 999, padding: '3px 10px' }}>Apagada: no está mandando nada</span>}
@@ -81,7 +102,7 @@ export default function DrawerSecuencia({ abierto, onCerrar, secuenciaId, nombre
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: C.moradoTinta }}>Qué sigue</div>
             <div style={{ fontSize: 13.5, color: '#2f2a4a', marginTop: 4, lineHeight: 1.5 }}>
               {d.siguiente
-                ? <>Día {d.siguiente.dia} · <b>{d.siguiente.canal}</b>: {d.siguiente.que}
+                ? <>{d.ritmo?.permanente && d.siguiente.dia_semana ? DIAS[d.siguiente.dia_semana].replace(/^./, (c: string) => c.toUpperCase()) : `Día ${d.siguiente.dia}`} · <b>{d.siguiente.canal}</b>: {d.siguiente.que}
                     {d.siguiente.estimado && <span style={{ color: C.g500 }}> — alrededor del {fechaCorta(d.siguiente.estimado)}</span>}</>
                 : d.estado === 'terminada' ? 'Nada: ya recibió todos los pasos.'
                 : d.estado === 'detenida' ? 'Nada mientras siga detenida.'
@@ -103,13 +124,18 @@ export default function DrawerSecuencia({ abierto, onCerrar, secuenciaId, nombre
             const esSiguiente = d.siguiente && p.id === d.siguiente.id;
             return (
               <div key={p.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.g100}`, opacity: salio ? 0.6 : 1 }}>
-                <span style={{ flexShrink: 0, width: 46, fontSize: 11, fontWeight: 800, color: esSiguiente ? C.moradoTinta : C.g400, paddingTop: 1 }}>Día {p.dia}</span>
+                <span style={{ flexShrink: 0, width: 46, fontSize: 11, fontWeight: 800, color: esSiguiente ? C.moradoTinta : C.g400, paddingTop: 1 }}>
+                  {d.ritmo?.permanente && p.dia_semana ? DIA_CORTO[p.dia_semana] : `Día ${p.dia}`}
+                </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 13, color: '#2f2a4a', lineHeight: 1.45 }}>
                     <b>{p.canal}</b> · {p.que}
                   </span>
-                  <span style={{ display: 'block', fontSize: 11, color: salio ? '#0F766E' : C.g400, marginTop: 2 }}>
-                    {salio ? `Salió el ${fechaCorta(p.enviado_at)}` : esSiguiente ? 'Es el que sigue' : p.estimado ? `Alrededor del ${fechaCorta(p.estimado)}` : 'Pendiente'}
+                  <span style={{ display: 'block', fontSize: 11, color: salio ? '#0F766E' : p.sin_carril ? C.ambar700 : C.g400, marginTop: 2, fontWeight: p.sin_carril ? 700 : 400 }}>
+                    {salio ? `Salió el ${fechaCorta(p.enviado_at)}`
+                      : p.sin_carril ? 'No va a salir: le falta el día de la semana'
+                      : esSiguiente ? 'Es el que sigue'
+                      : p.estimado ? `Alrededor del ${fechaCorta(p.estimado)}` : 'Pendiente'}
                   </span>
                 </span>
               </div>
