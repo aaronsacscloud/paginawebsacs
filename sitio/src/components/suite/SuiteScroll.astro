@@ -105,8 +105,9 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
 </section>
 
 <style>
+  /* La barra sigue al header: 101 px arriba del todo (con la barra negra), 71 px ya con scroll, 0 cuando el header se esconde al bajar. */
   .suite-nav {
-    position: sticky; top: 71px; z-index: 90; background: #fff;
+    position: sticky; top: 101px; z-index: 90; background: #fff; transition: top 0.35s ease;
     transition: opacity .25s ease, transform .25s ease;
     border-top: 1px solid rgba(0,0,0,.06); border-bottom: 1px solid rgba(0,0,0,.06);
     box-shadow: 0 1px 4px rgba(0,0,0,.03);
@@ -156,7 +157,11 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
 
   /* ── panel pegajoso ── */
-  .suite-sticky { position: sticky; top: 148px; }
+  .suite-sticky { position: sticky; top: 178px; transition: top 0.35s ease; }
+  :global(body:has(#nav.scrolled)) .suite-nav { top: 71px; }
+  :global(body:has(#nav.scrolled)) .suite-sticky { top: 148px; }
+  :global(body:has(#nav.nav-oculto)) .suite-nav { top: 0; }
+  :global(body:has(#nav.nav-oculto)) .suite-sticky { top: 77px; }
   /* Escenario: la pantalla estaba suelta sobre blanco y se veia liviana, como
      un recorte. Ahora se apoya en un plano con su propio halo, que le da peso y
      la separa del fondo de la pagina. */
