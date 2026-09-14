@@ -2,7 +2,7 @@
 // controles Mostrar/Ordenar con radios custom, chips de estado con activo
 // NEGRO, lupa desplegable, filtros avanzados con el builder, y la fila con
 // avatar+badge de canal, 3 líneas y border-l de selección.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { C, L, horaRelativa } from './estilo';
 import { useLineas, numeroCorto } from './useLineas';
@@ -145,6 +145,47 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
     return arr;
   }, [lista, orden]);
 
+  /* ══ DONDE ESTABAS, TE QUEDAS ══════════════════════════════════════════════
+     Pedido del dueño (14-sep-2026): «si ya hice scroll y estoy abajo, que no me
+     suba hasta arriba; que pueda seleccionar al siguiente contacto».
+
+     Fijar el ORDEN no alcanzaba: la lista se refresca sola cada seis segundos y,
+     cuando una fila cambia de sitio, aparece o deja de pertenecer a la bandeja
+     —contestar saca la conversación de «No contestadas»—, el contenido se mueve
+     por debajo del carril y lo que estabas mirando se va de la pantalla.
+
+     Esto ancla la vista a una fila: se recuerda cuál es la primera que se ve y a
+     qué altura está, y después de cada cambio se devuelve el scroll a donde esa
+     misma fila vuelve a quedar. Si esa fila desapareció, se prueba con la
+     siguiente que se estaba viendo. Es lo que hacen los lectores de correo, y
+     por eso no se siente: la lista cambia y tu sitio no. */
+  const carrilRef = useRef<HTMLDivElement>(null);
+  const ancla = useRef<{ ids: string[]; top: number } | null>(null);
+
+  const recordarAncla = () => {
+    const el = carrilRef.current; if (!el) return;
+    if (el.scrollTop < 8) { ancla.current = null; return; }   // arriba del todo: no hay nada que anclar
+    const filas = [...el.querySelectorAll<HTMLElement>('[data-conv]')];
+    const visibles = filas.filter(f => f.offsetTop + f.offsetHeight > el.scrollTop).slice(0, 4);
+    if (!visibles.length) { ancla.current = null; return; }
+    ancla.current = {
+      ids: visibles.map(f => f.dataset.conv!).filter(Boolean),
+      top: visibles[0].offsetTop - el.scrollTop,   // a qué altura de la pantalla está
+    };
+  };
+
+  useLayoutEffect(() => {
+    const el = carrilRef.current, a = ancla.current;
+    if (!el || !a) return;
+    for (const id of a.ids) {
+      const f = el.querySelector<HTMLElement>(`[data-conv="${CSS.escape(id)}"]`);
+      if (!f) continue;                    // esa ya no está: se prueba con la siguiente que veías
+      const destino = Math.max(0, f.offsetTop - a.top);
+      if (Math.abs(el.scrollTop - destino) > 2) el.scrollTop = destino;
+      return;
+    }
+  }, [ordenada]);
+
   return (
     <div style={{ width: mobile ? '100%' : L.lista, flexShrink: 0, minHeight: 0, borderRight: mobile ? 'none' : `1px solid ${C.g200}`, background: '#fff', display: 'flex', flexDirection: 'column' }}>
       {/* Cabecera h-44 */}
@@ -272,7 +313,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
       )}
 
       {/* Filas */}
-      <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+      <div ref={carrilRef} onScroll={recordarAncla} className="wa-scroll" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
         {!ordenada.length && (
           <div style={{ textAlign: 'center', padding: '48px 24px' }}>
             <div style={{ width: 48, height: 48, borderRadius: 999, background: C.g100, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💬</div>
@@ -315,7 +356,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
             ? (lineas.find(x => x.id === c.phone_number_id) || { numero: null as string | null })
             : null;
           return (
-            <button key={c.id} onClick={() => onAbrir(c)} className="wa-fila-hover"
+            <button key={c.id} data-conv={c.id} onClick={() => onAbrir(c)} className="wa-fila-hover"
               onContextMenu={e => { if (!c.wa_id || !onAsignar) return; e.preventDefault(); setMenuFila({ id: c.id, x: e.clientX, y: e.clientY }); }}
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',

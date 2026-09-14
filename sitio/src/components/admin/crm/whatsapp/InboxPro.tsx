@@ -2,7 +2,7 @@
 // sidebar de vistas custom | lista PRO | hilo | detalle. Polling deliberado
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
-import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { IcoBurbuja, IcoReloj, IcoInbox, IcoUsuario, IcoCheck, IcoEmbudo, IcoTelefono } from './Iconos';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
@@ -146,6 +146,38 @@ export default function InboxPro() {
     setOrdenFijoN(0);
   };
   const soltarOrden = () => { ordenFijo.current = null; setOrdenFijoN(0); cargarLista(filtrosRef.current); };
+
+  /* ══ EN EL TELÉFONO, LA MISMA ANCLA ═══════════════════════════════════════
+     Aquí no hay carril con scroll propio: la lista es la página. Se guarda cuál
+     es la primera fila que se ve y a qué altura, y después de cada refresco se
+     devuelve la página a donde esa misma fila vuelve a quedar. Chrome trae algo
+     parecido de fábrica (`overflow-anchor`); Safari en iPhone no, que es
+     justo donde se trabaja la bandeja con el pulgar. */
+  const anclaMovil = useRef<{ ids: string[]; top: number } | null>(null);
+  useEffect(() => {
+    if (!isMobile) return;
+    const recordar = () => {
+      const y = window.scrollY || 0;
+      if (y < 8) { anclaMovil.current = null; return; }
+      const filas = [...document.querySelectorAll<HTMLElement>('[data-conv]')];
+      const visibles = filas.filter(f => f.getBoundingClientRect().bottom > 0).slice(0, 4);
+      if (!visibles.length) { anclaMovil.current = null; return; }
+      anclaMovil.current = { ids: visibles.map(f => f.dataset.conv!).filter(Boolean), top: visibles[0].getBoundingClientRect().top };
+    };
+    window.addEventListener('scroll', recordar, { passive: true });
+    return () => window.removeEventListener('scroll', recordar);
+  }, [isMobile]);
+  useLayoutEffect(() => {
+    if (!isMobile) return;
+    const a = anclaMovil.current; if (!a) return;
+    for (const id of a.ids) {
+      const f = document.querySelector<HTMLElement>(`[data-conv="${CSS.escape(id)}"]`);
+      if (!f) continue;
+      const delta = f.getBoundingClientRect().top - a.top;
+      if (Math.abs(delta) > 2) window.scrollBy(0, delta);
+      return;
+    }
+  }, [lista, isMobile]);
 
   const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
     const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
@@ -1105,7 +1137,7 @@ export default function InboxPro() {
                 ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8f8d98" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 : (ws.length >= 2 ? ws[0][0] + ws[1][0] : String(nom).slice(0, 2)).toUpperCase();
               return (
-                <FilaDeslizable key={c.id}
+                <FilaDeslizable key={c.id} marca={c.id}
                   izquierda={c.wa_id && c.estado_crm !== 'resuelta' ? {
                     etiqueta: 'Resuelta', color: '#1E8A63', fondo: '#EAF8F2',
                     onAccion: async () => {

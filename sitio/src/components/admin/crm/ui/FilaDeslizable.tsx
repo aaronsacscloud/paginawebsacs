@@ -51,11 +51,14 @@ export type AccionDeslizar = {
   onAccion: () => void | Promise<void>;
 };
 
-export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
+export default function FilaDeslizable({ children, izquierda, alDeshacer, marca }: {
   children: React.ReactNode;
   /** La acción que aparece al deslizar hacia la IZQUIERDA (el dedo va a la izquierda). */
   izquierda?: AccionDeslizar;
   alDeshacer?: () => void;
+  /** Identidad de la fila en el DOM (`data-conv`): es lo que deja anclar la
+   *  vista cuando la lista se reordena debajo del dedo. */
+  marca?: string;
 }) {
   const [x, setX] = useState(0);
   const [ido, setIdo] = useState(false);
@@ -72,7 +75,7 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
     return () => { if (temporizador.current) clearTimeout(temporizador.current); };
   }, []);
 
-  if (!izquierda) return <>{children}</>;
+  if (!izquierda) return <div data-conv={marca}>{children}</div>;
 
   const armada = x <= -UMBRAL;
   // Un golpecito EN EL MOMENTO en que el gesto se arma: es la señal de que
@@ -113,7 +116,7 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
+    <div data-conv={marca} style={{ position: 'relative', overflow: 'hidden' }}>
       {/* El fondo con la acción, detrás de la fila. Se oscurece al armarse: es
           el aviso de que soltar YA ejecuta. */}
       <div aria-hidden="true" style={{

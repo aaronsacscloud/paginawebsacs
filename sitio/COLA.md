@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · Al enviar, que no me suba la lista hasta arriba.** «el contacto lo pasa arriba, el cual está bien,
+      pero a mí me manda también arriba… que siga seleccionado pero que yo siga donde estoy en la lista, si ya hice
+      scroll y estoy abajo que no me suba, que pueda seleccionar al siguiente contacto» → HECHO: la vista se ancla a la
+      fila que estás mirando (escritorio y teléfono).
+
 - [x] **2026-09-14 · El envío debe sentirse inmediato.** «al momento de escribir en el composer y darle click a enviar
       debe ser más limpio el efecto de envío y que se sienta inmediato… me gustaría que se vea al instante que aparece
       en el inbox aunque tarde un poco más en realmente enviarlo, en web y mobile» → HECHO: la caja se limpia y la
@@ -254,3 +259,17 @@ existe (`?cuantas=100&giro=…`). Se corre cuando el dueño diga que ya hay
 presupuesto; mientras, el disyuntor y la rampa cuidan el dominio.
 
 - [ ] Esperando el OK del dueño (mañana o pasado, 15/16-sep-2026)
+
+## 2026-09-14 · Correos ABM fuera de México: empresa global + agenda que funcione desde España
+
+Llegó mientras se hacía la liga a la página del giro en los correos de novias. Palabras del dueño:
+«y revisa bien el tema igual de la agenda porque si mando esto a españa por ejemplo no quiero que
+haya dudas del usuario que solo somos de méxico que se entienda que somos una empresa global y
+también si alguien de españa nos agenda revisa que el calendario mande bien la información de la
+agenda y todo el rollo que funcione de forma integral si agenda alguien de españa.»
+
+- [ ] Revisar textos del correo (pie «hecho en México», «demos de lunes a viernes», número +52) para que
+      no suene a empresa solo de México.
+- [ ] Probar de punta a punta `/agendar/demo` como alguien de España: zona horaria del huso del que agenda,
+      invitación al calendario con la hora correcta, correos/WA de confirmación y recordatorios, número
+      +34 en el teléfono, y qué le llega al vendedor.

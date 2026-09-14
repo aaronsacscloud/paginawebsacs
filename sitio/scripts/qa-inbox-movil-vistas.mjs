@@ -24,6 +24,8 @@ await p.goto(`${BASE}/admin/crm?tab=whatsapp`, { waitUntil: 'domcontentloaded' }
 await p.waitForTimeout(20000);
 
 const rayas = p.locator('button[aria-label="Todas las vistas"]');
+// Se espera a que la pantalla termine de montar: el botón aparece con la lista.
+await rayas.first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
 paso('El botón de las tres rayas está', (await rayas.count()) === 1);
 await rayas.click();
 await p.waitForTimeout(900);
