@@ -756,7 +756,7 @@ export const navLinks: NavLink[] = [
     ],
   },
   {
-    label: 'Tu negocio',
+    label: 'Giros de negocio',
     href: '/giros',
     sectors: modaSectors,
   },

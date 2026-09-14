@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { businessSectors } from '../../data/navigation';
 import { giroIcons } from '../../data/giro-icons';
 import { waDemoGiro, waLink } from '../../lib/whatsapp';
+import { girosCasos } from '../../data/giros-casos';
 
 // Los giros salen del MISMO arreglo que alimenta el mega-menú, así que agregar
 // un giro allá lo publica aquí sin tocar esta página. Desde el giro moda-first
@@ -75,54 +76,21 @@ const structuredData = {
         <p class="giros-grupo-sub">{grupo.sub}</p>
       </div>
       <div class="giros-grid">
-        {grupo.lista.map((g) => (
-          <article class="giro-card" style={`--accent:${g.color}; --accent-bg:${g.bgColor};`}>
-            {g.image && (
-              <a href={g.href} class="giro-card-media" aria-label={`Ver más sobre ${g.label}`}>
-                <img src={g.image} alt={`SACS para ${g.label}`} loading="lazy" decoding="async" width="480" height="300" />
-              </a>
-            )}
-            <div class="giro-card-body">
-              <div class="giro-card-head">
-                <span class="giro-card-icon" set:html={giroIcons[g.iconId]} />
-                <div class="giro-card-titles">
-                  <h3 class="giro-card-title"><a href={g.href}>{g.label}</a></h3>
-                  <p class="giro-card-desc">{g.description}</p>
-                </div>
-              </div>
-
-              <ul class="giro-card-list">
-                {g.personalizations.slice(0, 3).map((p) => (
-                  <li>
-                    <span class="giro-card-dot" aria-hidden="true"></span>
-                    <span class="giro-card-list-label">{p.label}</span>
-                    <span class="giro-card-list-desc">{p.description}</span>
-                  </li>
-                ))}
-              </ul>
-              <span class="giro-card-more">+{g.personalizations.length - 3} personalizaciones más</span>
-
-              <div class="giro-card-actions">
-                <a
-                  href={waDemoGiro(g.label, g.description)}
-                  class="giro-card-wa"
-                  data-giro-contexto="indice-giros"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-giro={g.label}
-                  aria-label={`Agenda una demo en línea de SACS para ${g.label} por WhatsApp`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Agenda demo
-                </a>
-                <a href={g.href} class="giro-card-link">
-                  Ver más
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-              </div>
+        {grupo.lista.map((g) => { const c = girosCasos[g.href]; return (
+          <a href={g.href} class="giro-card" style={`--accent:${g.color}; --accent-bg:${g.bgColor};`} data-giro={g.label}>
+            <div class="giro-card-media">
+              <img src={c ? `/images/giros/${c.file}.webp` : g.image} alt={`Sacs para ${g.label}`} loading="lazy" decoding="async" width="960" height="640" />
             </div>
-          </article>
-        ))}
+            <div class="giro-card-body">
+              <h3 class="giro-card-title">{g.label}</h3>
+              <p class="giro-card-caso">{c ? c.caso : g.description}</p>
+              {c && <p class="giro-card-que"><span>Con Sacs</span>{c.que}</p>}
+              <span class="giro-card-link">Ver cómo funciona para {g.label.toLowerCase()}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </span>
+            </div>
+          </a>
+        ); })}
       </div>
       </div>
       ))}
@@ -488,4 +456,20 @@ const structuredData = {
   .giros-grupo-head { margin-bottom: 24px; }
   .giros-grupo-titulo { font-family: var(--font-display); font-size: clamp(1.375rem, 2.4vw, 1.75rem); font-weight: 700; color: var(--color-text-primary); }
   .giros-grupo-sub { margin-top: 6px; font-size: 0.9688rem; color: var(--color-text-secondary); }
+
+  /* ── Tarjetas grandes (14-sep-2026): foto, caso de uso y qué hace Sacs ── */
+  .giros-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .giro-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #ECECE9; border-radius: 20px; overflow: hidden; text-decoration: none; color: #1D1D1F; transition: transform 0.35s cubic-bezier(0.2,0.7,0.2,1), box-shadow 0.35s; }
+  .giro-card:hover { transform: translateY(-4px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.25); }
+  .giro-card-media { aspect-ratio: 3 / 2; overflow: hidden; background: #F4F4F2; }
+  .giro-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.9s cubic-bezier(0.2,0.7,0.2,1); }
+  .giro-card:hover .giro-card-media img { transform: scale(1.04); }
+  .giro-card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .giro-card-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .giro-card-caso { font-size: 16px; line-height: 1.45; color: #1D1D1F; margin: 0; }
+  .giro-card-que { font-size: 14px; line-height: 1.45; color: #6B6B68; margin: 0; padding-top: 10px; border-top: 1px solid #ECECE9; }
+  .giro-card-que span { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent, #4B7BE5); margin-right: 8px; }
+  .giro-card-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 14px; font-weight: 600; color: var(--color-primary, #4B7BE5); }
+  @media (max-width: 1023px) { .giros-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+  @media (max-width: 640px) { .giros-grid { grid-template-columns: 1fr; } .giro-card-body { padding: 16px 18px 18px; } .giro-card-title { font-size: 20px; } }
 </style>
