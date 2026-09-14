@@ -15,6 +15,7 @@ import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
 import Conversaciones from './whatsapp/Conversaciones';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
+import { repartoDe } from '../../../lib/crm/reparto';
 import Cargando, { Corazones } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
 import RenovacionCuenta from './RenovacionCuenta';
@@ -3365,7 +3366,7 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
       {cerrando && (
         <MinutaReunion reunion={cerrando} companyId={companyId}
           onCerrar={() => setCerrando(null)}
-          onListo={(n: number) => { setCerrando(null); cargar(); flash(n ? `Minuta guardada · ${n} mejora${n === 1 ? '' : 's'} agregada${n === 1 ? '' : 's'}` : 'Minuta guardada'); }} />
+          onListo={(t: any) => { setCerrando(null); cargar(); flash(typeof t === 'string' && t ? t : 'Minuta guardada'); }} />
       )}
       {verMinuta && <MinutaReunion reunion={verMinuta} companyId={companyId} soloLectura onCerrar={() => setVerMinuta(null)} onListo={() => setVerMinuta(null)} />}
     </div>
@@ -3618,6 +3619,12 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
   const [acomodando, setAcomodando] = useState(false);
   const [propuestas, setPropuestas] = useState<any[]>([]);
   const [marcadas, setMarcadas] = useState<Record<number, boolean>>({});
+  /* A dónde va cada renglón y, si va al taller, lo que el taller necesita.
+     Vive por índice de la propuesta y no dentro de ella para que volver a
+     acomodar la conversación no arrastre fechas de la corrida anterior. */
+  const [destinos, setDestinos] = useState<Record<number, 'taller' | 'consultoria'>>({});
+  const [campos, setCampos] = useState<Record<number, any>>({});
+  const [equipo, setEquipo] = useState<any[]>([]);
   const [yaCreadas, setYaCreadas] = useState<any[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
@@ -3632,6 +3639,16 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
       .catch(() => {});
     return () => { alive = false; };
   }, [companyId, reunion.id]);
+
+  // Quién puede recibir una orden. Se trae al abrir y no al palomear: el
+  // desplegable tiene que estar lleno en el instante en que aparece.
+  useEffect(() => {
+    if (soloLectura) return;
+    let alive = true;
+    fetch('/api/crm/taller').then(r => r.json())
+      .then(j => { if (alive) setEquipo(j.equipo || []); }).catch(() => {});
+    return () => { alive = false; };
+  }, [soloLectura]);
 
   async function acomodar() {
     if (crudo.trim().length < 40) { setError('Pega la conversación completa: con tan poco texto no hay nada que acomodar.'); return; }
@@ -3649,6 +3666,11 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
     // Solo las que el cliente empujó vienen palomeadas. Las demás se ven, pero
     // se palomean a mano: es la diferencia entre una idea y un compromiso.
     setMarcadas(Object.fromEntries(nuevas.map((p: any, i: number) => [i, p.interes === 'alto'])));
+    /* El destino viene PUESTO, no preguntado. Son cinco renglones por junta y
+       preguntar cinco veces es lo que hace que nadie documente una minuta.
+       Cambiarlo es un clic en el segmento. */
+    setDestinos(Object.fromEntries(nuevas.map((p: any, i: number) => [i, p.destino || repartoDe(p).destino])));
+    setCampos({});
     setPegando(false);
   }
 
@@ -3660,26 +3682,69 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
     }).then(x => x.json()).catch(() => null);
     if (!r || r.error) { setGuardando(false); setError(r?.error || 'No se pudo guardar.'); return; }
 
-    // Las mejoras palomeadas nacen como IDEA ligada a esta junta. De ahí se
-    // cotizan o se marcan entregadas desde la pestaña Mejoras.
-    const elegidas = propuestas.filter((_, i) => marcadas[i]);
-    let fallidas = 0;
-    for (const p of elegidas) {
+    /* Cada renglón palomeado cae en UN lado y solo en uno.
+       · Consultoría: nace como IDEA ligada a esta junta. Todavía no es una
+         promesa —no tiene precio ni fecha— y desde la ficha se cotiza o se
+         vuelve oportunidad.
+       · Taller: nace EN PROCESO y de inmediato se le abre la orden con lo que
+         se llenó aquí. Ese es el punto de todo esto: pedir la fecha y el
+         criterio después —entrando al Taller, buscando el folio— es como se
+         llega a órdenes sin fecha, que son las que rebotan. */
+    const elegidas = propuestas.map((p: any, i: number) => ({ p, i })).filter(({ i }) => marcadas[i]);
+    let fallidas = 0, aTaller = 0, aConsultoria = 0;
+    for (const { p, i } of elegidas) {
+      const destino = destinos[i] || 'consultoria';
+      const t = campos[i] || {};
       const res = await fetch('/api/crm/mejoras', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           company_id: companyId, titulo: p.titulo, descripcion: p.descripcion,
-          categoria: p.categoria, valor: p.valor || 0, estado: 'idea', booking_id: reunion.id,
+          categoria: p.categoria, tipo: p.tipo || 'mejora', valor: p.valor || 0,
+          estado: destino === 'taller' ? 'en_proceso' : 'idea',
+          fecha_compromiso: destino === 'taller' ? (t.fecha_prometida || null) : null,
+          booking_id: reunion.id,
         }),
       }).then(x => x.json()).catch(() => null);
-      if (!res || res.error) fallidas++;
+      if (!res || res.error || !res.data?.id) { fallidas++; continue; }
+      if (destino !== 'taller') { aConsultoria++; continue; }
+
+      const orden = await fetch('/api/crm/taller', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'crear', mejora_id: res.data.id }),
+      }).then(x => x.json()).catch(() => null);
+      const o = orden?.ordenes?.[0];
+      if (!o) { fallidas++; continue; }
+      aTaller++;
+      // Lo que se llenó arriba viaja a la orden. Si no se llenó nada, la orden
+      // igual existe: sin fecha, pero visible — un compromiso sin registrar es
+      // peor que uno incompleto.
+      if (t.fecha_prometida || t.criterios || t.asignado_id || t.prioridad) {
+        await fetch('/api/crm/taller', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: o.id,
+            fecha_prometida: t.fecha_prometida || null,
+            asignado_id: t.asignado_id || null,
+            ...(t.criterios ? { criterios: t.criterios } : {}),
+            ...(t.prioridad ? { prioridad: t.prioridad } : {}),
+          }),
+        }).then(x => x.json()).catch(() => null);
+      }
     }
     setGuardando(false);
-    if (fallidas) { setError(`Se guardó la minuta, pero ${fallidas} mejora(s) no se pudieron agregar.`); return; }
-    onListo(elegidas.length);
+    if (fallidas) { setError(`Se guardó la minuta, pero ${fallidas} renglón(es) no se pudieron repartir.`); return; }
+    const partes = [
+      aConsultoria ? `${aConsultoria} a Consultoría` : '',
+      aTaller ? `${aTaller} al Taller` : '',
+    ].filter(Boolean);
+    onListo(partes.length ? 'Minuta guardada · ' + partes.join(' y ') : 'Minuta guardada');
   }
 
   const total = propuestas.filter((_, i) => marcadas[i]).length;
+  const nTaller = propuestas.filter((_, i) => marcadas[i] && destinos[i] === 'taller').length;
+  // Lo palomeado que va al taller y todavía no dice para cuándo. Se avisa, no
+  // se bloquea: una minuta a medio llenar que no se guarda se pierde entera.
+  const sinFecha = propuestas.filter((_, i) => marcadas[i] && destinos[i] === 'taller' && !campos[i]?.fecha_prometida).length;
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
@@ -3738,30 +3803,107 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
             ))}
           </div>
 
-          {/* Checklist de mejoras: se proponen, se palomean, y al guardar
-              nacen como ideas en la pestaña Mejoras ligadas a esta junta. */}
+          {/* ══ EL REPARTO ══
+              De una junta salen dos clases de trabajo y llevaban años en la
+              misma lista: lo que hay que VENDER y lo que hay que CONSTRUIR.
+              Aquí se palomea lo que sí va, el destino ya viene propuesto por la
+              regla de la casa, y lo que se va al taller pide EN ESTE MOMENTO lo
+              que el taller necesita. */}
           {!soloLectura && propuestas.length > 0 && (
-            <div style={{ background: '#f6f9ff', border: '1.5px solid #cfe0fa', borderRadius: 10, padding: '11px 12px', marginTop: 13 }}>
-              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2C5FC4', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
-                Mejoras que se pidieron en la junta
+            <div style={{ background: '#FBFAFE', border: '1.5px solid #e4dffb', borderRadius: 10, padding: '11px 12px', marginTop: 13 }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
+                Lo que salió de la junta
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#7a8598', marginBottom: 8, lineHeight: 1.45 }}>
-                Palomea las que sí van. Se agregan como ideas en Mejoras, ligadas a esta reunión.
+              <div style={{ fontSize: '0.7rem', color: '#8b8698', marginBottom: 8, lineHeight: 1.45 }}>
+                Palomea lo que sí va. <b style={{ color: '#5B4BD6' }}>Consultoría</b> es lo que se le puede vender;
+                <b style={{ color: '#5B4BD6' }}> Taller</b> es lo que hay que construir. El destino ya viene puesto — cambiarlo es un clic.
               </div>
-              {propuestas.map((p, i) => (
-                <label key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '8px 0', borderTop: i ? '1px solid #e8eff9' : 'none', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!marcadas[i]} onChange={e => setMarcadas(v => ({ ...v, [i]: e.target.checked }))} style={{ marginTop: 3 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.79rem', fontWeight: 700 }}>
-                      {p.titulo}
-                      <span style={{ fontSize: '0.55rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 7px', marginLeft: 6 }}>{CATS_MEJORA[p.categoria] || p.categoria}</span>
-                      {p.interes === 'alto' && <span style={{ fontSize: '0.55rem', fontWeight: 800, background: '#EAF8F2', color: '#1E8A63', borderRadius: 20, padding: '2px 7px', marginLeft: 4 }}>lo pidió él</span>}
+              {propuestas.map((p, i) => {
+                const dest = destinos[i] || 'consultoria';
+                const t = campos[i] || {};
+                const pon = (k: string, v: any) => setCampos(c => ({ ...c, [i]: { ...(c[i] || {}), [k]: v } }));
+                return (
+                  <div key={i} style={{ padding: '9px 0', borderTop: i ? '1px solid #ede6fb' : 'none' }}>
+                    <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                      <input type="checkbox" checked={!!marcadas[i]} onChange={e => setMarcadas(v => ({ ...v, [i]: e.target.checked }))} style={{ marginTop: 4, cursor: 'pointer' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.79rem', fontWeight: 700 }}>
+                          {p.titulo}
+                          <span style={{ fontSize: '0.55rem', fontWeight: 800, background: p.tipo === 'falla' ? '#FFF4E5' : '#EEECFE', color: p.tipo === 'falla' ? '#9a6a10' : '#5B4BD6', borderRadius: 20, padding: '2px 7px', marginLeft: 6, whiteSpace: 'nowrap', display: 'inline-block' }}>
+                            {p.tipo === 'falla' ? 'falla' : (CATS_MEJORA[p.categoria] || p.categoria)}
+                          </span>
+                        </div>
+                        {p.descripcion && <div style={{ fontSize: '0.72rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{p.descripcion}</div>}
+                      </div>
+                      {p.valor > 0 && <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#5B4BD6', whiteSpace: 'nowrap', marginTop: 2 }}>${Math.round(p.valor).toLocaleString('es-MX')}</span>}
+                      {/* El segmento: el elegido va sólido y el otro queda
+                          neutro. Si los dos llevan borde morado, ninguno se ve
+                          activo. */}
+                      <div style={{ display: 'inline-flex', border: '1px solid #e9e3ee', borderRadius: 8, overflow: 'hidden', flex: 'none' }}>
+                        {(['taller', 'consultoria'] as const).map(d => (
+                          <button key={d} type="button" onClick={() => setDestinos(v => ({ ...v, [i]: d }))}
+                            style={{
+                              border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '0.68rem',
+                              fontWeight: dest === d ? 800 : 600, fontFamily: 'inherit',
+                              background: dest === d ? '#9B8CFA' : '#fff', color: dest === d ? '#fff' : '#8b8698',
+                            }}>{d === 'taller' ? 'Taller' : 'Consultoría'}</button>
+                        ))}
+                      </div>
                     </div>
-                    {p.descripcion && <div style={{ fontSize: '0.72rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{p.descripcion}</div>}
+                    {marcadas[i] && (
+                      <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginLeft: 23, marginTop: 4 }}>
+                        {p.interes === 'alto' && <b style={{ color: '#9c3d70' }}>Lo pidió él. </b>}
+                        {dest === (p.destino || repartoDe(p).destino)
+                          ? <>Va a {dest === 'taller' ? 'Taller' : 'Consultoría'} porque {p.razon || repartoDe(p).razon}.</>
+                          : <>Lo mandaste a {dest === 'taller' ? 'Taller' : 'Consultoría'} a mano.</>}
+                      </div>
+                    )}
+                    {/* Lo que el taller necesita el día que recibe la orden.
+                        Aparece solo si esa fila va al taller Y está palomeada:
+                        un formulario abierto en cada renglón convierte la
+                        minuta en un trámite. */}
+                    {marcadas[i] && dest === 'taller' && (
+                      <div style={{ background: '#fff', border: '1px solid #e4dffb', borderRadius: 9, padding: '10px 11px', marginTop: 7, marginLeft: 23 }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 7 }}>
+                          Lo que el taller necesita
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <span style={D.lbl}>Fecha prometida</span>
+                            <input type="date" value={t.fecha_prometida || ''} onChange={e => pon('fecha_prometida', e.target.value)} style={D.inputM} />
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <span style={D.lbl}>Responsable</span>
+                            <select value={t.asignado_id || ''} onChange={e => pon('asignado_id', e.target.value)} style={D.inputM}>
+                              <option value="">Sin asignar</option>
+                              {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
+                            </select>
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <span style={D.lbl}>¿Bloquea la operación?</span>
+                            <select value={t.prioridad || 'media'} onChange={e => pon('prioridad', e.target.value)} style={D.inputM}>
+                              <option value="alta">Sí — hoy no puede vender</option>
+                              <option value="media">Le estorba</option>
+                              <option value="baja">Puede esperar</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <span style={D.lbl}>Cómo se sabe que quedó</span>
+                          <input value={t.criterios || ''} onChange={e => pon('criterios', e.target.value)}
+                            placeholder="La prueba concreta: «se imprime un ticket y el escáner lo lee al primer intento»"
+                            style={{ ...D.inputM, marginTop: 3 }} />
+                        </div>
+                        <div style={{ fontSize: '0.66rem', color: t.fecha_prometida ? '#a5a2af' : '#9a6a10', marginTop: 6, lineHeight: 1.45 }}>
+                          {t.fecha_prometida
+                            ? 'Al guardar nace la orden con esto. Se puede editar después desde la ficha, sin entrar al Taller.'
+                            : 'Sin fecha la orden nace pero el taller no la puede arrancar.'}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {p.valor > 0 && <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#2C5FC4', whiteSpace: 'nowrap' }}>${Math.round(p.valor).toLocaleString('es-MX')}</span>}
-                </label>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -3775,7 +3917,7 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
         <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {!soloLectura && (
             <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>
-              {guardando ? 'Guardando…' : total ? `Guardar y agregar ${total} mejora${total === 1 ? '' : 's'}` : 'Guardar minuta'}
+              {guardando ? 'Guardando…' : total ? `Guardar y repartir ${total}` : 'Guardar minuta'}
             </button>
           )}
           {/* El documento se arma de lo GUARDADO, no de lo que está en pantalla:
@@ -3796,6 +3938,13 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
           </>)}
           <button onClick={() => { navigator.clipboard?.writeText(minutaTexto({ ...reunion, minuta: m, grabacion_url: url })); }} style={D.btnG}>Copiar como texto</button>
           <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>{soloLectura ? 'Cerrar' : 'Después'}</button>
+          {!soloLectura && nTaller > 0 && (
+            <span style={{ fontSize: '0.7rem', color: sinFecha ? '#9a6a10' : '#8b8698', lineHeight: 1.4 }}>
+              {sinFecha
+                ? `${sinFecha} de las ${nTaller} del taller van sin fecha`
+                : `${nTaller} ${nTaller === 1 ? 'orden' : 'órdenes'} de taller con fecha`}
+            </span>
+          )}
           {error && <div style={{ fontSize: '0.73rem', color: '#C0554E', width: '100%' }}>{error}</div>}
         </div>
       </div>

@@ -13,6 +13,7 @@ import type { APIRoute } from 'astro';
 import { pedirJSON, modeloEnUso } from '../../../../lib/ia';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { isPartner } from '../../../../lib/scheduling/scope';
+import { repartoDe } from '../../../../lib/crm/reparto';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -35,6 +36,7 @@ Para cada mejora:
 - titulo: 3-8 palabras, concreto (ej. "Certificado digital de pieza con QR").
 - descripcion: una línea que el DUEÑO entienda, no lenguaje técnico.
 - categoria: "personalizacion" | "plugin" | "modulo" | "ajuste" | "capacitacion".
+- tipo: "falla" si algo YA existe y no está funcionando bien (sale mal, no carga, no lo lee el escáner, se duplica). "mejora" si es algo que todavía no existe o que hay que agregar. Ante la duda, "mejora": tratar una petición como falla manda a alguien a buscar un error que nunca hubo.
 - valor: el monto SOLO si se dijo en la conversación. null si no se habló de dinero. Jamás lo estimes.
 - interes: "alto" si el cliente lo pidió o lo empujó, "medio" si lo comentó de pasada, "bajo" si solo se le propuso.
 
@@ -50,7 +52,7 @@ Responde ÚNICAMENTE con este JSON:
     "siguiente": "siguiente paso y fecha"
   },
   "mejoras": [
-    { "titulo": "...", "descripcion": "...", "categoria": "...", "valor": null, "interes": "alto" }
+    { "titulo": "...", "descripcion": "...", "categoria": "...", "tipo": "mejora", "valor": null, "interes": "alto" }
   ]
 }`;
 
@@ -176,9 +178,14 @@ export const POST: APIRoute = async ({ request }) => {
         titulo: String(x.titulo).trim().slice(0, 200),
         descripcion: typeof x.descripcion === 'string' ? x.descripcion.trim() : '',
         categoria: CATS.includes(x.categoria) ? x.categoria : 'personalizacion',
+        tipo: x.tipo === 'falla' ? 'falla' : 'mejora',
         valor: Number(x.valor) > 0 ? Math.round(Number(x.valor)) : 0,
         interes: ['alto', 'medio', 'bajo'].includes(x.interes) ? x.interes : 'medio',
-      }));
+      }))
+      // A dónde va cada una. El destino NO lo decide el modelo: es una regla de
+      // negocio que tiene que ser la misma aquí, en la ficha y en el taller, y
+      // que se tiene que poder auditar cuando algo cayó donde no era.
+      .map((x: any) => ({ ...x, ...repartoDe(x) }));
     return json({ minuta, mejoras, modelo: modeloEnUso() });
   } catch (e: any) {
     return json({ error: 'No se pudo acomodar la conversación: ' + String(e?.message || e) }, 500);

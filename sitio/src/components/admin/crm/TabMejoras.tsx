@@ -95,8 +95,14 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   /* Qué renglones ya están en el taller y cómo van. La ficha del cliente NO se
      llena de campos de ingeniería: solo dice dónde está y para cuándo. */
   const [ligas, setLigas] = useState<Record<string, any>>({});
+  /* Quién puede recibir una orden, para poder asignarla desde aquí. */
+  const [equipoTaller, setEquipoTaller] = useState<any[]>([]);
+  /* La orden que se está editando SIN salir de la ficha. Lo del taller vivía
+     solo en el otro módulo: para mover una fecha había que salir, buscar el
+     folio y volver — y por eso las fechas no se movían, se dejaban vencer. */
+  const [orden, setOrden] = useState<any>(null);
   const cargarLigas = () => fetch('/api/crm/taller')
-    .then(r => r.json()).then(j => setLigas(j.ligas || {})).catch(() => {});
+    .then(r => r.json()).then(j => { setLigas(j.ligas || {}); setEquipoTaller(j.equipo || []); }).catch(() => {});
   const cargarReportes = () => fetch('/api/crm/reportes?company_id=' + companyId)
     .then(r => r.json()).then(j => setReportes(j.reportes || [])).catch(() => {});
   const [editando, setEditando] = useState<any>(null);
@@ -124,7 +130,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     fetch('/api/crm/reportes?company_id=' + companyId).then(r => r.json())
       .then(j => { if (alive) setReportes(j.reportes || []); }).catch(() => {});
     fetch('/api/crm/taller').then(r => r.json())
-      .then(j => { if (alive) setLigas(j.ligas || {}); }).catch(() => {});
+      .then(j => { if (alive) { setLigas(j.ligas || {}); setEquipoTaller(j.equipo || []); } }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -158,6 +164,31 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     if (!r || r.error) { flash(r?.error || 'No se pudo mandar al taller'); return; }
     await cargarLigas();
     flash('En el taller: ' + (r.ordenes?.[0]?.folio || 'orden creada'));
+    // Y se abre de una vez para ponerle fecha y criterio. Dejarlo para después
+    // es exactamente como nacen las órdenes sin fecha, que son las que rebotan.
+    const nueva = r.ordenes?.[0];
+    if (nueva) { setMenu(null); abrirOrden(nueva.id); }
+  }
+
+  /* La orden completa, para editarla desde aquí. La liga que ya se tiene solo
+     trae folio, etapa y fecha: los criterios y el responsable hay que pedirlos. */
+  async function abrirOrden(id: string) {
+    setOrden({ cargando: true });
+    const r = await fetch('/api/crm/taller?id=' + id).then(x => x.json()).catch(() => null);
+    if (!r || r.error || !r.orden) { setOrden(null); flash(r?.error || 'No se pudo abrir la orden'); return; }
+    setOrden(r.orden);
+  }
+
+  async function guardarOrden(cambios: any) {
+    const r = await fetch('/api/crm/taller', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orden.id, ...cambios }),
+    }).then(x => x.json()).catch(() => null);
+    if (!r || r.error) { flash(r?.error || 'No se pudo guardar la orden'); return false; }
+    setOrden(null);
+    await cargarLigas();
+    flash('Orden actualizada · el taller ya lo ve');
+    return true;
   }
 
   /* ══ DE IDEA A OPORTUNIDAD ══
@@ -350,9 +381,23 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
           {/* Dónde va en el taller. Es lo único del taller que se asoma aquí:
               ni rebotes, ni SLA, ni quién tardó — eso es interno. */}
           {ligas[m.id] && (
-            <div style={{ fontSize: '0.68rem', color: '#5B4BD6', marginTop: 5, fontWeight: 700 }}>
-              En el taller · {ligas[m.id].folio} · {ETAPAS_TALLER[ligas[m.id].etapa] || ligas[m.id].etapa}
-              {ligas[m.id].fecha_prometida ? ` · para el ${fmtDate(ligas[m.id].fecha_prometida)}` : ' · sin fecha todavía'}
+            <div style={{ fontSize: '0.68rem', marginTop: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ color: '#5B4BD6', fontWeight: 700 }}>
+                En el taller · {ligas[m.id].folio} · {ETAPAS_TALLER[ligas[m.id].etapa] || ligas[m.id].etapa}
+                {ligas[m.id].fecha_prometida
+                  ? ` · para el ${fmtDate(ligas[m.id].fecha_prometida)}`
+                  : ''}
+              </span>
+              {!ligas[m.id].fecha_prometida && (
+                <span style={{ color: '#9a6a10', fontWeight: 700 }}>sin fecha: el taller no la puede arrancar</span>
+              )}
+              {/* Se edita AQUÍ. Lo interno del taller —rebotes, SLA, quién
+                  tardó— sigue sin asomarse: lo que se toca desde la ficha es lo
+                  que le prometiste al cliente. */}
+              <button onClick={() => abrirOrden(ligas[m.id].id)}
+                style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.68rem', fontWeight: 800, color: '#9c3d70', textDecoration: 'underline' }}>
+                editar la orden
+              </button>
             </div>
           )}
           {/* ══ UNA SOLA ACCIÓN PRINCIPAL ══
@@ -694,6 +739,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       </div>
 
       {editando && <EditorMejora m={editando} reuniones={reuniones} cots={cots} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
+      {orden && <OrdenDelTaller orden={orden} equipo={equipoTaller} onCerrar={() => setOrden(null)} onGuardar={guardarOrden} />}
       {reporte && <ReporteMejoras companyId={companyId} cliente={cliente}
         onCerrar={() => { setReporte(false); cargarReportes(); }} />}
       {entregas && <ReporteEntregas companyId={companyId} cliente={cliente}
@@ -817,6 +863,109 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ══ LO DEL TALLER, DESDE LA FICHA ══
+   Son los cuatro datos con los que una orden se puede arrancar: para cuándo,
+   quién, qué tan urgente y con qué se da por buena. Nada más — el resto del
+   taller (rebotes, SLA, bitácora, la conversación técnica) vive allá y no se
+   asoma aquí: si el consultor ve que la mejora del cliente rebotó dos veces,
+   la conversación con el cliente deja de ser sobre lo que va a recibir.
+
+   Que se editen desde aquí es el punto: mover un día obligaba a salir de la
+   ficha, entrar al Taller, buscar el folio y volver. Con ese costo, las fechas
+   no se movían — se dejaban vencer. */
+function OrdenDelTaller({ orden, equipo, onCerrar, onGuardar }: any) {
+  const [f, setF] = useState<any>({
+    fecha_prometida: orden.fecha_prometida || '',
+    asignado_id: orden.asignado_id || '',
+    prioridad: orden.prioridad || 'media',
+    criterios: orden.criterios || '',
+    motivo: '',
+  });
+  const [guardando, setGuardando] = useState(false);
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  // Mover una fecha ya prometida pide el porqué: es el dato con el que después
+  // se sabe si se recorren por desarrollo o porque el cliente no contestó.
+  const movio = !!orden.fecha_prometida && f.fecha_prometida !== orden.fecha_prometida;
+
+  if (orden.cargando) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Cargando texto="Abriendo la orden…" />
+      </div>
+    );
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 480, maxHeight: '88vh', overflowY: 'auto' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'baseline', gap: 9 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Lo que el taller necesita</h3>
+          <span style={{ fontSize: '0.72rem', color: '#7a6fc9', fontFamily: 'ui-monospace, monospace' }}>{orden.folio}</span>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px' }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: 2 }}>{orden.titulo}</div>
+          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginBottom: 13 }}>
+            {orden.tipo === 'falla' ? 'Falla' : 'Mejora'} · {ETAPAS_TALLER[orden.etapa] || orden.etapa}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div><div style={S.lbl}>Fecha prometida</div>
+              <input type="date" value={f.fecha_prometida} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} /></div>
+            <div><div style={S.lbl}>Responsable</div>
+              <select value={f.asignado_id} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
+                <option value="">Sin asignar</option>
+                {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
+              </select></div>
+          </div>
+
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿Bloquea la operación?</div>
+            <select value={f.prioridad} onChange={e => set('prioridad', e.target.value)} style={S.input}>
+              <option value="alta">Sí — hoy no puede vender</option>
+              <option value="media">Le estorba</option>
+              <option value="baja">Puede esperar</option>
+            </select></div>
+
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>Cómo se sabe que quedó</div>
+            <textarea value={f.criterios} onChange={e => set('criterios', e.target.value)} rows={2}
+              placeholder="La prueba concreta: «se imprime un ticket y el escáner lo lee al primer intento»"
+              style={{ ...S.input, resize: 'vertical' }} />
+            <div style={{ fontSize: '0.67rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>
+              Sin esto la orden no puede pasar a desarrollo: es lo que evita que se entregue algo que no era.
+            </div></div>
+
+          {movio && (
+            <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿Por qué se mueve la fecha?</div>
+              <input value={f.motivo} onChange={e => set('motivo', e.target.value)}
+                placeholder="El cliente no mandó el catálogo" style={S.input} />
+              <div style={{ fontSize: '0.67rem', color: '#a5a2af', marginTop: 3 }}>
+                Queda en la bitácora. La fecha original no se pierde: contra ella se mide el cumplimiento.
+              </div></div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14 }}>
+            <button disabled={guardando} style={{ ...S.btnAzul, opacity: guardando ? .6 : 1 }}
+              onClick={async () => {
+                setGuardando(true);
+                const ok = await onGuardar({
+                  fecha_prometida: f.fecha_prometida || null,
+                  asignado_id: f.asignado_id || null,
+                  prioridad: f.prioridad,
+                  criterios: f.criterios,
+                  motivo: f.motivo || undefined,
+                });
+                if (!ok) setGuardando(false);
+              }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+            <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={onCerrar}>Cancelar</button>
+            <span style={{ fontSize: '0.68rem', color: '#a5a2af', marginLeft: 'auto' }}>El taller lo ve en su tablero</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

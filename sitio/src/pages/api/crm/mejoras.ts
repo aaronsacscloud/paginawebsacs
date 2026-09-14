@@ -51,6 +51,15 @@ function limpia(b: any) {
   if (typeof b?.descripcion === 'string') p.descripcion = b.descripcion.trim() || null;
   if (ESTADOS_MEJORA.includes(b?.estado)) p.estado = b.estado;
   if (CATEGORIAS.includes(b?.categoria)) p.categoria = b.categoria;
+  // Falla o mejora. Lo usa el taller para saber si lo que llega está ROTO —y
+  // entonces la descripción es el problema— o si es algo por construir, donde
+  // la descripción es el criterio. Se captura aquí porque quien documenta la
+  // junta es el único que sabe cuál de las dos era.
+  if (['falla', 'mejora'].includes(b?.tipo)) p.tipo = b.tipo;
+  // Si el trabajo va con costo o de cortesía. Viaja a la orden del taller al
+  // crearla y vuelve al cerrarla: escribirlo dos veces es como se llega a un
+  // renglón «cortesía» facturado.
+  if (['cortesia', 'pagada'].includes(b?.cobro)) p.cobro = b.cobro;
   if (b?.valor !== undefined) p.valor = Math.max(0, Number(b.valor) || 0);
   if (b?.cortesia !== undefined) p.cortesia = !!b.cortesia;
   if (b?.visible_cliente !== undefined) p.visible_cliente = !!b.visible_cliente;
