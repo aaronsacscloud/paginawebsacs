@@ -1,3 +1,4 @@
+import { nombreDeZona, desfaseGmt, fechaHoraLocal, fmtHoraZona, getOffsetMinutes, ladaDeZona, whatsappConLada } from '../../lib/scheduling/zona';
 import { useState, useEffect, useRef } from 'react';
 
 // ─── Types ───
@@ -42,14 +43,35 @@ interface BookingResult {
 }
 
 // ─── Constants ───
+/* La agenda se vende fuera de México: la lista trae las plazas de habla
+   hispana y Estados Unidos, y si el navegador trae otra zona se agrega sola
+   (ver `zonasParaElegir`). Antes eran siete y una visitante de Monterrey o
+   de Lisboa veía «Ciudad de México» seleccionado aunque el estado guardara su
+   zona real: el <select> no tenía su opción y pintaba la primera. */
 const TIMEZONES = [
-  { value: 'America/Mexico_City', label: 'Ciudad de Mexico (CST)' },
-  { value: 'America/Bogota', label: 'Bogota (COT)' },
-  { value: 'America/Lima', label: 'Lima (PET)' },
-  { value: 'America/Santiago', label: 'Santiago (CLT)' },
-  { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (ART)' },
-  { value: 'America/New_York', label: 'Nueva York (EST)' },
-  { value: 'Europe/Madrid', label: 'Madrid (CET)' },
+  { value: 'America/Mexico_City', label: 'Ciudad de México' },
+  { value: 'America/Monterrey', label: 'Monterrey' },
+  { value: 'America/Tijuana', label: 'Tijuana' },
+  { value: 'America/Cancun', label: 'Cancún' },
+  { value: 'America/Guatemala', label: 'Guatemala' },
+  { value: 'America/Costa_Rica', label: 'Costa Rica' },
+  { value: 'America/Panama', label: 'Panamá' },
+  { value: 'America/Bogota', label: 'Bogotá' },
+  { value: 'America/Lima', label: 'Lima' },
+  { value: 'America/Guayaquil', label: 'Quito' },
+  { value: 'America/Caracas', label: 'Caracas' },
+  { value: 'America/Santiago', label: 'Santiago' },
+  { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires' },
+  { value: 'America/Montevideo', label: 'Montevideo' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo' },
+  { value: 'America/Los_Angeles', label: 'Los Ángeles' },
+  { value: 'America/Chicago', label: 'Chicago' },
+  { value: 'America/New_York', label: 'Nueva York / Miami' },
+  { value: 'Europe/Madrid', label: 'Madrid' },
+  { value: 'Europe/Lisbon', label: 'Lisboa' },
+  { value: 'Europe/London', label: 'Londres' },
+  { value: 'Europe/Paris', label: 'París' },
+  { value: 'Europe/Rome', label: 'Roma' },
 ];
 
 const GIROS = [
@@ -239,31 +261,6 @@ function formatDateLong(dateStr: string): string {
   return `${dayName} ${d} de ${monthName}`;
 }
 
-function convertHostTimeToLocal(time24: string, dateStr: string, hostTz: string, localTz: string): string {
-  if (hostTz === localTz) return time24;
-  try {
-    const refDate = new Date(`${dateStr}T12:00:00Z`);
-    const hostOffset = getOffsetMinutes(hostTz, refDate);
-    const localOffset = getOffsetMinutes(localTz, refDate);
-    const [h, m] = time24.split(':').map(Number);
-    const totalMinHost = h * 60 + m;
-    const utcMin = totalMinHost - hostOffset;
-    const localMin = utcMin + localOffset;
-    const adjusted = ((localMin % 1440) + 1440) % 1440;
-    const newH = Math.floor(adjusted / 60);
-    const newM = adjusted % 60;
-    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
-  } catch {
-    return time24;
-  }
-}
-
-function getOffsetMinutes(tz: string, date: Date): number {
-  const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
-  const tzStr = date.toLocaleString('en-US', { timeZone: tz });
-  return (new Date(tzStr).getTime() - new Date(utcStr).getTime()) / 60000;
-}
-
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -280,12 +277,17 @@ function generateGcalLink(
   description: string,
   location: string,
 ): string {
-  const start = `${startDate.replace(/-/g, '')}T${startTime.replace(':', '')}00`;
+  /* En UTC (sufijo Z): `startTime` es hora de CDMX y sin zona Google la leía
+     en la del navegador del invitado. Con la Z el evento cae a la misma hora
+     real en cualquier calendario del mundo. */
+  const [y, mo, d] = startDate.split('-').map(Number);
   const [h, m] = startTime.split(':').map(Number);
-  const endTotal = h * 60 + m + durationMin;
-  const endH = String(Math.floor(endTotal / 60)).padStart(2, '0');
-  const endM = String(endTotal % 60).padStart(2, '0');
-  const end = `${startDate.replace(/-/g, '')}T${endH}${endM}00`;
+  const ref = new Date(Date.UTC(y, mo - 1, d, 12));
+  const inicio = new Date(Date.UTC(y, mo - 1, d, h, m) - getOffsetMinutes('America/Mexico_City', ref) * 60000);
+  const fin = new Date(inicio.getTime() + durationMin * 60000);
+  const z = (x: Date) => x.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const start = z(inicio);
+  const end = z(fin);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
 }
 
@@ -557,7 +559,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           timezone,
           nombre: formData.nombre,
           email: formData.email,
-          whatsapp: formData.whatsapp,
+          whatsapp: whatsappConLada(formData.whatsapp, timezone),
           empresa: formData.empresa || extractAnswer('Empresa') || null,
           giro: formData.giro || extractAnswer('Giro') || null,
           sucursales: formData.sucursales || extractAnswer('Sucursales') || null,
@@ -831,13 +833,13 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             onChange={(e) => setTimezone(e.target.value)}
             style={{ ...styles.select, fontSize: '0.8125rem', padding: '8px 12px' }}
           >
-            {TIMEZONES.map(tz => (
-              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            {(TIMEZONES.some(z => z.value === timezone) ? TIMEZONES : [{ value: timezone, label: nombreDeZona(timezone) }, ...TIMEZONES]).map(tz => (
+              <option key={tz.value} value={tz.value}>{tz.label} ({desfaseGmt(tz.value)})</option>
             ))}
           </select>
           {timezone !== 'America/Mexico_City' && (
             <div style={{ fontSize: '0.625rem', color: '#999', textAlign: 'center', marginTop: 4 }}>
-              Horarios mostrados en tu zona horaria
+              Horarios en tu hora local ({nombreDeZona(timezone)}). Atendemos por videollamada a cualquier país.
             </div>
           )}
         </div>
@@ -1010,9 +1012,14 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           <span style={{ fontSize: '1rem' }}>&larr;</span> Cambiar fecha
         </button>
 
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#1A1A1A', margin: '0 0 16px' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#1A1A1A', margin: timezone !== 'America/Mexico_City' ? '0 0 4px' : '0 0 16px' }}>
           {formatDateLong(selectedDate)}
         </h2>
+        {timezone !== 'America/Mexico_City' && (
+          <div style={{ fontSize: '0.75rem', color: '#777', marginBottom: 14 }}>
+            Horarios en hora de {nombreDeZona(timezone)} ({desfaseGmt(timezone)}). Nuestro equipo atiende desde México, en tu horario.
+          </div>
+        )}
 
         {allSlotsForDay.length === 0 ? (
           <p style={{ color: '#999', fontSize: '0.875rem' }}>No hay horarios disponibles para esta fecha.</p>
@@ -1057,7 +1064,9 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
 
             {displaySlots.map(slot => {
               const hostTz = 'America/Mexico_City';
-              const localSlot = convertHostTimeToLocal(slot, selectedDate!, hostTz, timezone);
+              const local = fechaHoraLocal(slot, selectedDate!, hostTz, timezone);
+              const localSlot = local.hora;
+              const otroDia = local.fecha !== selectedDate;
               const isSelected = slot === selectedTime;
               const localEndTime = addMinutes(localSlot, eventType.duracion_minutos);
               return (
@@ -1092,7 +1101,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   }}
                 >
                   <span>
-                    {to12h(localSlot)}
+                    {fmtHoraZona(localSlot, timezone)}
+                    {otroDia && (
+                      <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: isSelected ? '#fff' : '#6b7280', marginLeft: 8, opacity: 0.9 }}>{formatDateLong(local.fecha)}</span>
+                    )}
                     {popularTimes.has(slot) && (
                       <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#9A3412', background: '#FFF7ED', padding: '1px 5px', borderRadius: 6, marginLeft: 6 }}>Popular</span>
                     )}
@@ -1104,7 +1116,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   </span>
                   {isSelected && (
                     <span style={{ fontSize: '0.8125rem', opacity: 0.85 }}>
-                      {to12h(localSlot)} - {to12h(localEndTime)}
+                      {fmtHoraZona(localSlot, timezone)} - {fmtHoraZona(localEndTime, timezone)}
                     </span>
                   )}
                 </button>
@@ -1188,7 +1200,8 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1A1A1A' }}>
-              {formatDateLong(selectedDate)}, {to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))} - {to12h(addMinutes(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone), eventType.duracion_minutos))}
+              {(() => { const l = fechaHoraLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone); return `${formatDateLong(l.fecha)}, ${fmtHoraZona(l.hora, timezone)} - ${fmtHoraZona(addMinutes(l.hora, eventType.duracion_minutos), timezone)}`; })()}
+              {timezone !== 'America/Mexico_City' && <span style={{ fontWeight: 500, color: '#777' }}> · hora de {nombreDeZona(timezone)}</span>}
             </span>
           </div>
         )}
@@ -1226,7 +1239,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             type="tel"
             value={formData.whatsapp}
             onChange={(e) => updateField('whatsapp', e.target.value)}
-            placeholder="+52 55 1234 5678"
+            placeholder={ladaDeZona(timezone)?.ejemplo || 'Con lada del país, p. ej. +34 612 345 678'}
             style={styles.input}
             onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; if (!formStartedRef.current) { formStartedRef.current = true; trackEvent('form_started'); } }}
             onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
@@ -1367,6 +1380,8 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
     const meetingDesc = `Reunion con ${hostName}.\n${eventType.descripcion || ''}`;
     const meetingLocation = bookingResult.google_meet_link || locationLabel(eventType.ubicacion_tipo);
     const gcalLink = generateGcalLink(meetingTitle, selectedDate, selectedTime, eventType.duracion_minutos, meetingDesc, meetingLocation);
+    const localConf = fechaHoraLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone);
+    const horaConf = `${fmtHoraZona(localConf.hora, timezone)} - ${fmtHoraZona(addMinutes(localConf.hora, eventType.duracion_minutos), timezone)}`;
 
     // Configurable offer (from routing_rules.oferta or defaults)
     const oferta = (eventType as any).routing_rules?.oferta || {
@@ -1408,11 +1423,11 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
               <span style={{ color: '#777' }}>Fecha</span>
-              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{formatDateLong(selectedDate)}</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{formatDateLong(localConf.fecha)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
               <span style={{ color: '#777' }}>Hora</span>
-              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))} - {to12h(addMinutes(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone), eventType.duracion_minutos))}</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{horaConf}{timezone !== 'America/Mexico_City' ? ` (${nombreDeZona(timezone)})` : ''}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
               <span style={{ color: '#777' }}>Consultor</span>
@@ -1435,7 +1450,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Agregar al calendario
           </a>
-          <a href={`https://wa.me/?text=${encodeURIComponent(`Acabo de agendar mi ${eventType.nombre} con SACS para el ${formatDateLong(selectedDate)} a las ${to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))}`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
+          <a href={`https://wa.me/?text=${encodeURIComponent(`Acabo de agendar mi ${eventType.nombre} con Sacs para el ${formatDateLong(localConf.fecha)} a las ${fmtHoraZona(localConf.hora, timezone)}`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
             Confirmar por WhatsApp
           </a>

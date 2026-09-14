@@ -268,8 +268,13 @@ haya dudas del usuario que solo somos de méxico que se entienda que somos una e
 también si alguien de españa nos agenda revisa que el calendario mande bien la información de la
 agenda y todo el rollo que funcione de forma integral si agenda alguien de españa.»
 
-- [ ] Revisar textos del correo (pie «hecho en México», «demos de lunes a viernes», número +52) para que
-      no suene a empresa solo de México.
-- [ ] Probar de punta a punta `/agendar/demo` como alguien de España: zona horaria del huso del que agenda,
-      invitación al calendario con la hora correcta, correos/WA de confirmación y recordatorios, número
-      +34 en el teléfono, y qué le llega al vendedor.
+- [x] Revisar textos del correo (pie «hecho en México», «demos de lunes a viernes», número +52) para que
+      no suene a empresa solo de México. → `ALCANCE` en `abm-correo.ts`: «Atendemos negocios de moda en
+      México, Latinoamérica y España por videollamada, en su horario»; WhatsApp «desde cualquier país»;
+      pie «Equipo en México, clientes en más de 7 países»; demos «en su horario».
+- [x] Probar de punta a punta `/agendar/demo` como alguien de España (14-sep-2026, local con zona Madrid):
+      `zona.ts` nuevo (23 zonas, hora local con cambio de día, 24 h en Europa, lada por zona),
+      BookingPage/ReschedulePage en la hora del visitante, «Agregar al calendario» en UTC (antes mandaba
+      la hora CDMX sin zona: 8 h de error), correos de confirmación con la hora del invitado y la de CDMX,
+      WhatsApp con +34 automático, demo a 30 min (migración `2026-09-14-demo-treinta-minutos-event-type.sql`).
+      Booking de prueba borrado. Pendiente por el dueño: sus horarios 9–18 CDMX caen 17:00–02:00 Madrid.

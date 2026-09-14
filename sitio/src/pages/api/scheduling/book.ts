@@ -14,7 +14,7 @@ import { escapeHtml } from '../../../lib/scheduling/email-utils';
 import { ligarVisitasPrevias } from '../../../lib/email/senales';
 import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../../lib/atribucion-marketing';
 import { notificar } from '../../../lib/crm/notificaciones';
-import { TZ_ETIQUETA } from '../../../lib/scheduling/recordatorios';
+import { TZ_ETIQUETA, horaLocalInvitado } from '../../../lib/scheduling/recordatorios';
 import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 export const prerender = false;
@@ -659,6 +659,13 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('booking_answers').insert(answerRows);
   }
 
+  /* La hora del invitado en SU zona («6:00 p.m. en tu zona (Madrid)», con el
+     día si allá ya es otro) — '' cuando agenda desde CDMX. Va en el evento de
+     Google, en el correo al vendedor y en el del invitado: una demo vendida a
+     España que solo diga «10:00 a.m. hora del centro de México» le deja la
+     resta al cliente, y una resta mal hecha es una reunión perdida. */
+  const horaInvitado = horaLocalInvitado({ fecha, hora_inicio, timezone_invitado: timezone });
+
   // 9. Create Google Calendar event with Meet link
   let google_event_id: string | null = null;
   let google_meet_link: string | null = null;
@@ -672,6 +679,7 @@ export const POST: APIRoute = async ({ request }) => {
     const tz = TZ_HOST;
     const startDT = `${fecha}T${hora_inicio}:00`;
     const endDT = `${fecha}T${hora_fin}:00`;
+    const zonaInvitado = horaInvitado;
 
     // Load host email
     const { data: hostMember } = await supabase
@@ -689,6 +697,7 @@ export const POST: APIRoute = async ({ request }) => {
         empresa ? `Empresa: ${empresa}` : '',
         giro ? `Giro: ${giro}` : '',
         sucursales ? `Sucursales: ${sucursales}` : '',
+        zonaInvitado ? `Zona del invitado: ${zonaInvitado}` : '',
         notas ? `\nNotas: ${notas}` : '',
         `\nCRM: https://www.sacscloud.com/admin/crm?tab=pipeline`,
       ].filter(Boolean).join('\n'),
@@ -793,6 +802,7 @@ export const POST: APIRoute = async ({ request }) => {
             <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Hora</td>
             <td style="padding:4px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${horaDisplay}</td>
           </tr>
+          ${horaInvitado ? `<tr><td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Su hora</td><td style="padding:4px 0;font-size:0.875rem;font-weight:600;color:#C0554E;">${escapeHtml(horaInvitado)} · agenda desde otro país</td></tr>` : ''}
           <tr>
             <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Duracion</td>
             <td style="padding:4px 0;font-size:0.875rem;color:#555;">${eventType.duracion_minutos} minutos</td>
@@ -861,7 +871,7 @@ export const POST: APIRoute = async ({ request }) => {
       <tr><td style="padding:8px 16px;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:100px;">📅 Fecha</td><td style="padding:6px 0;font-size:0.875rem;font-weight:700;color:#1A1A1A;">${fechaDisplay}</td></tr>
-          <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">⏰ Hora</td><td style="padding:6px 0;font-size:0.875rem;font-weight:700;color:#1A1A1A;">${horaDisplay}</td></tr>
+          <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">⏰ Hora</td><td style="padding:6px 0;font-size:0.875rem;font-weight:700;color:#1A1A1A;">${horaInvitado ? `${escapeHtml(horaInvitado)}<div style="font-weight:500;color:#777;font-size:0.8125rem;margin-top:2px;">${horaDisplay}</div>` : horaDisplay}</td></tr>
           <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">⏱ Duración</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${eventType.duracion_minutos} minutos</td></tr>
           ${(emailCfg.show_meet_link !== false) && google_meet_link ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">📹 Link</td><td style="padding:6px 0;"><a href="${google_meet_link}" style="color:#4B7BE5;font-weight:600;text-decoration:none;">${google_meet_link}</a></td></tr>` : ''}
         </table>

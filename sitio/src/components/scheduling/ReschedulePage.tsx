@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { TZ_ANFITRION, nombreDeZona, desfaseGmt, fechaHoraLocal, fmtHoraZona } from '../../lib/scheduling/zona';
 
 // ─── Types ───
 interface BookingData {
@@ -50,13 +51,6 @@ const DAY_NAMES_LONG = [
 ];
 
 // ─── Helpers ───
-function to12h(time24: string): string {
-  const [h, m] = time24.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-
 function addMinutes(time24: string, minutes: number): string {
   const [h, m] = time24.split(':').map(Number);
   const total = h * 60 + m + minutes;
@@ -287,6 +281,15 @@ export default function ReschedulePage({ token }: Props) {
     catch { return 'America/Mexico_City'; }
   });
 
+  /* Todo lo que se muestra va en la hora del visitante: la reunión se guarda
+     en hora de CDMX y quien reagenda desde Madrid leía «10:00 AM» a secas. */
+  const enMiHora = (fecha: string, hora: string) => {
+    const l = fechaHoraLocal(hora, fecha, TZ_ANFITRION, timezone);
+    return `${formatDateLong(l.fecha)} a las ${fmtHoraZona(l.hora, timezone)}`;
+  };
+  const fueraDeCdmx = timezone !== TZ_ANFITRION;
+  const notaZona = fueraDeCdmx ? ` (hora de ${nombreDeZona(timezone)})` : '';
+
   // Fetch booking on mount
   useEffect(() => {
     if (!token) {
@@ -473,7 +476,7 @@ export default function ReschedulePage({ token }: Props) {
                 Anterior
               </p>
               <p style={{ fontSize: '0.875rem', color: '#999', margin: 0, textDecoration: 'line-through' }}>
-                {formatDateLong(booking.fecha)} a las {to12h(booking.hora_inicio)}
+                {enMiHora(booking.fecha, booking.hora_inicio)}
               </p>
             </div>
 
@@ -483,7 +486,7 @@ export default function ReschedulePage({ token }: Props) {
                 Nueva fecha
               </p>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#2e7d32', margin: 0 }}>
-                {formatDateLong(newBooking.fecha)} a las {to12h(newBooking.hora_inicio)}
+                {enMiHora(newBooking.fecha, newBooking.hora_inicio)}{notaZona}
               </p>
               <p style={{ fontSize: '0.8125rem', color: '#555', margin: '4px 0 0' }}>
                 {et?.nombre} — {duration} min
@@ -555,11 +558,11 @@ export default function ReschedulePage({ token }: Props) {
             )}
             <div style={s.detailRow}>
               <CalendarIcon />
-              <span style={{ textDecoration: 'line-through', color: '#999' }}>{formatDateLong(booking.fecha)}</span>
+              <span style={{ textDecoration: 'line-through', color: '#999' }}>{formatDateLong(fechaHoraLocal(booking.hora_inicio, booking.fecha, TZ_ANFITRION, timezone).fecha)}</span>
             </div>
             <div style={{ ...s.detailRow, marginBottom: 0 }}>
               <ClockIcon />
-              <span style={{ textDecoration: 'line-through', color: '#999' }}>{to12h(booking.hora_inicio)} - {to12h(booking.hora_fin)}</span>
+              <span style={{ textDecoration: 'line-through', color: '#999' }}>{fmtHoraZona(fechaHoraLocal(booking.hora_inicio, booking.fecha, TZ_ANFITRION, timezone).hora, timezone)} - {fmtHoraZona(fechaHoraLocal(booking.hora_fin, booking.fecha, TZ_ANFITRION, timezone).hora, timezone)}{notaZona}</span>
             </div>
           </div>
 
@@ -668,6 +671,11 @@ export default function ReschedulePage({ token }: Props) {
               <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1A1A1A', margin: '0 0 12px' }}>
                 Horarios disponibles — {formatDateLong(selectedDate)}
               </p>
+              {fueraDeCdmx && (
+                <p style={{ fontSize: '0.75rem', color: '#777', margin: '-6px 0 12px' }}>
+                  En hora de {nombreDeZona(timezone)} ({desfaseGmt(timezone)}).
+                </p>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {timeSlots.map((time) => (
                   <button
@@ -675,7 +683,7 @@ export default function ReschedulePage({ token }: Props) {
                     onClick={() => setSelectedTime(time)}
                     style={selectedTime === time ? s.timeSlotSelected : s.timeSlot}
                   >
-                    {to12h(time)}
+                    {(() => { const l = fechaHoraLocal(time, selectedDate, TZ_ANFITRION, timezone); return l.fecha !== selectedDate ? `${fmtHoraZona(l.hora, timezone)} (${formatDateLong(l.fecha).split(' ').slice(1).join(' ')})` : fmtHoraZona(l.hora, timezone); })()}
                   </button>
                 ))}
               </div>
@@ -699,7 +707,7 @@ export default function ReschedulePage({ token }: Props) {
               <div style={{ background: '#F7F8FA', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
                 <p style={{ fontSize: '0.8125rem', color: '#777', margin: '0 0 4px' }}>Nueva fecha y hora:</p>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>
-                  {formatDateLong(selectedDate)} a las {to12h(selectedTime)}
+                  {enMiHora(selectedDate, selectedTime)}{notaZona}
                 </p>
               </div>
               <button

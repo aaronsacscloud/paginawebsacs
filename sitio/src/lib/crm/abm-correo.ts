@@ -126,6 +126,13 @@ export function fraseCierre(giro?: string | null): string {
   return `Actualmente estamos teniendo demos en línea durante 30 minutos y le mostramos paso a paso cómo optimizar su operación de ${operacionDe(giro)}.`;
 }
 
+/* Empresa global, dicho sin presumir. El dueño (14-sep-2026): «si mando esto
+   a España no quiero que haya dudas de que solo somos de México; que se
+   entienda que somos una empresa global». La frase va en el cierre y en el
+   pie; el +52 se queda en formato internacional, que es como se marca desde
+   cualquier país, y la demo se agenda en la hora del que agenda. */
+export const ALCANCE = 'Atendemos negocios de moda en México, Latinoamérica y España por videollamada, en su horario.';
+
 /** El wa.me del cierre, con el mensaje ya escrito. */
 export function whatsappCierre(nombre?: string | null): string {
   const quien = String(nombre || '').trim();
@@ -136,7 +143,7 @@ export function whatsappCierre(nombre?: string | null): string {
  *  que el HTML, con sus dos ligas, o los filtros puntúan la diferencia. */
 export function cierreTexto(c: Cierre): string {
   const pg = paginaDe(c.giro);
-  return `\n\n${fraseCierre(c.giro)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
+  return `\n\n${fraseCierre(c.giro)} ${ALCANCE}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
     + (pg ? `\n\n${invitacionPagina(pg.nombre)}: ${pg.url}` : '');
 }
 
@@ -150,7 +157,7 @@ function bloqueCierre(c: Cierre): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
 <td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
 <p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
-<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))}</p>
+<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))} ${esc(ALCANCE)}</p>
 <!-- Los dos botones en UNA fila, a mitades iguales, cada botón a lo ancho de
      su celda: así se ven parejos en escritorio y no se encaraman en el
      teléfono. Uno debajo del otro se veía apilado, y el dueño lo rechazó. -->
@@ -159,7 +166,7 @@ function bloqueCierre(c: Cierre): string {
 <td width="50%" valign="top" style="padding:0 0 0 6px;">${botonAncho('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA)}</td>
 </tr></table>
 ${pg ? `<p style="margin:16px 0 0;color:${TINTA};font-family:${FUENTE};font-size:14px;line-height:21px;">${esc(invitacionPagina(pg.nombre))} está en <a href="${esc(pg.url)}" style="color:${MORADO_TINTA};font-weight:bold;text-decoration:underline;">${esc(pg.url.replace(/^https?:\/\/(www\.)?/, ''))}</a>.</p>` : ''}
-<p style="margin:14px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)}.</p>
+<p style="margin:14px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Responda a este correo si prefiere, o escríbanos al ${esc(WHATSAPP_LEGIBLE)} (WhatsApp, desde cualquier país).</p>
 </td></tr></table>`;
 }
 
@@ -208,8 +215,8 @@ ${cierre}
 <tr><td style="padding:0 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td height="1" bgcolor="${LINEA}" style="background-color:${LINEA};height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td></tr>
 <tr><td style="padding:18px 28px 24px;">
 <p style="margin:0;color:${MORADO_TINTA};font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:18px;">Sacscloud</p>
-<p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Inventario y punto de venta para negocios de moda, hecho en México.</p>
-<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes</p>
+<p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Inventario y punto de venta para negocios de moda. Equipo en México, clientes en más de 7 países.</p>
+<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes, en su horario</p>
 </td></tr>
 
 </table>
