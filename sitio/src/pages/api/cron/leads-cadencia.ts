@@ -25,11 +25,20 @@ import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/
 import { entregarInapp, retirarInapp, cuentaDelLead, campanasDeSecuencia } from '../../../lib/crm/secuencia-inapp';
 import { ctxRenovacion } from '../../../lib/crm/renovacion';
 import { enviarPlantilla, enContexto } from '../../../lib/whatsapp/kapso-api';
+import { mandarPlantilla } from '../../../lib/whatsapp/plantilla-espejo';
 import { valoresPlantilla } from '../../../lib/whatsapp/variables-plantilla';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
 const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
+
+/* El respaldo de utilidad para el paso que no declara el suyo. Se escoge por
+   ser verdad en CUALQUIER secuencia —«quedamos pendientes del tema de X, ¿lo
+   retomamos?»— y porque sus dos variables las llena `valoresPlantilla` con el
+   nombre y el asunto. Un respaldo que solo sirve para una secuencia no es un
+   respaldo: es otra plantilla más que hay que acordarse de configurar. */
+const UTILITY_GENERICA = 'pendiente_retomar';
+const UTILITY_GENERICA_TEMA = 'tu solicitud con Sacs';
 
 // La ESCALERA del lead y el umbral del objetivo: una secuencia gradúa al
 // miembro cuando su avance ALCANZA el objetivo (o lo rebasa). Así "agendó"
@@ -747,20 +756,57 @@ export const GET: APIRoute = async ({ url }) => {
                pregunta a qué se dedica. De 76 rezagados, solo 2 tenían giro y sucursales. */
             const elegida = (await datosDe(p.wa_plantilla)) || (await datosDe(p.wa_plantilla_generica));
             if (!elegida) { res.saltados.push({ lead: c.id, motivo: 'sin datos ni para la versión general', plantilla: p.wa_plantilla }); continue; }
-            const respaldo = elegida.nombre === p.wa_plantilla ? p.wa_plantilla_utility : p.wa_plantilla_generica_utility;
+            const respaldoPaso = elegida.nombre === p.wa_plantilla ? p.wa_plantilla_utility : p.wa_plantilla_generica_utility;
             const vals = { ok: true as const, valores: elegida.valores };
             enContexto('lead', (c as any).fuente || null);
-            /* Marketing primero; si Meta la frena —tope del día, calidad, o el contacto sin
-               marketing habilitado— sale la UTILITY de respaldo, que es la misma idea dicha
-               como aviso. Sin esto, el paso simplemente no salía y nadie se enteraba. */
-            try {
-              await enviarPlantilla(c.whatsapp, elegida.nombre, 'es_MX', vals.valores, { headerMedia: elegida.headerMedia });
-            } catch (e: any) {
-              const alt = respaldo ? await datosDe(respaldo) : null;
-              if (!alt) throw e;
-              await enviarPlantilla(c.whatsapp, alt.nombre, 'es_MX', alt.valores, { headerMedia: alt.headerMedia });
-              res.saltados.push({ lead: c.id, motivo: `marketing falló (${String(e?.message || e).slice(0, 60)}), salió la utility`, plantilla: alt.nombre });
+            /* ══ SIEMPRE HAY RESPALDO DE UTILIDAD ═══════════════════════════════════
+               Regla del dueño (14-sep-2026): «si hay error siempre debe haber uno de
+               respaldo de utility que se envíe para que el prospecto sí le llegue el
+               mensaje de seguimiento».
+
+               El paso puede traer el suyo. Si no lo trae —y hoy la mitad no lo traía—
+               no se deja al lead sin nada: sale el genérico, que dice la única cosa que
+               es cierta en cualquier secuencia («quedamos pendientes, ¿lo retomamos?»)
+               y pasa por donde el marketing no pasa. */
+            /* El genérico se arma a mano, no por `variables_map`: su {{2}} es una
+               frase fija («tu solicitud con Sacs»), no un campo del contacto, y
+               `valoresPlantilla` solo sabe leer campos — con el mapa a medias
+               devolvía «falta» y el respaldo se quedaba en nada, que es
+               exactamente lo que había que arreglar. */
+            const generico = (() => {
+              const v = valoresPlantilla(c, ['primer_nombre'], 1);
+              return { nombre: UTILITY_GENERICA, valores: [v.ok ? v.valores[0] : '👋', UTILITY_GENERICA_TEMA] };
+            })();
+            const respaldo = (respaldoPaso ? await datosDe(respaldoPaso) : null) || generico;
+
+            /* Y va por `mandarPlantilla`, no por `enviarPlantilla` a pelo. Ahí está la
+               regla completa, y es la diferencia entre los dos fallos que existen:
+
+               · el que truena AL ENVIAR (Meta contesta 4xx) — el try/catch de antes ya
+                 lo cubría;
+               · el que Meta ACEPTA y reporta DESPUÉS por webhook («131049 · limitó los
+                 mensajes de marketing a este número»). Ese no lanza nada: la llamada
+                 devuelve wamid y todo parece bien. Es el que dejó sin mensaje a
+                 Giovanna, a Kathryn y a Maribel el 14 de septiembre.
+
+               `mandarPlantilla` guarda el PLAN DE RESPALDO en el espejo del mensaje, y
+               cuando llega el webhook de fallo, `respaldoPorFallo` manda la utility en
+               ese momento. De paso, el mensaje queda espejado en el inbox con su autor:
+               hasta hoy la cadencia no espejaba nada y la burbuja aparecía sola, sin
+               autor, creada por el webhook. */
+            const rp = await mandarPlantilla({
+              telefono: c.whatsapp, plantilla: elegida.nombre, params: vals.valores,
+              autor: 'Secuencias',
+              metadata: { origen: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre, paso: p.orden },
+              respaldo: { plantilla: respaldo.nombre, params: respaldo.valores },
+            });
+            if (!rp.enviado) {
+              /* NO se marca el paso como enviado: no salió nada, ni la principal ni su
+                 respaldo. La próxima corrida lo reintenta y queda dicho por qué. */
+              res.saltados.push({ lead: c.id, motivo: `no salió: ${rp.motivo || 'sin motivo'}`, plantilla: elegida.nombre });
+              continue;
             }
+            if (rp.via === 'respaldo') res.saltados.push({ lead: c.id, motivo: 'la de marketing no pasó; salió la de utilidad', plantilla: respaldo.nombre });
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {
             /* Se mete su cuenta en la audiencia de la campaña y se republica.

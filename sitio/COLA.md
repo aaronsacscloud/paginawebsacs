@@ -16,10 +16,13 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       día no todo en el día 1 podrías revisar» → REVISADO: el cron manda UNO por vez (medido: 3 envíos hoy, uno por
       persona). Lo que estaba mal era la pantalla. Arreglada.
 
-- [ ] **2026-09-14 · Respaldo de utility cuando falla el mensaje de marketing.** «este mensaje de marketing tuvo error,
+- [x] **2026-09-14 · Respaldo de utility cuando falla el mensaje de marketing.** «este mensaje de marketing tuvo error,
       pero si hay error siempre debe haber uno de respaldo de utility que se envíe para que el prospecto sí le llegue el
       mensaje de seguimiento, igual revisa eso por favor» (caso Maribel, +52 66 7795 6276: «Meta limitó los mensajes de
-      marketing a este número»).
+      marketing a este número»). → HECHO: la cadencia manda por `mandarPlantilla` con respaldo SIEMPRE (el del paso o el
+      genérico `pendiente_retomar`), que es lo único que cubre el fallo que Meta reporta DESPUÉS por webhook. 19 de 22
+      pasos de WhatsApp no tenían respaldo configurado. Faltan por decidir: los 10 leads de los últimos 2 días que se
+      quedaron sin nada (`scripts/respaldo-recuperar.mjs --enviar`).
 
 - [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
       «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que
