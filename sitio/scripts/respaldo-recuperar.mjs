@@ -15,6 +15,10 @@ import { readFileSync } from 'node:fs';
 for (const l of readFileSync(new URL('../.env', import.meta.url), 'utf8').split('\n')) {
   const m = l.match(/^([A-Z_]+)=(.*)$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
 }
+// Las credenciales del CRM viven aparte de `.env` (ver CLAUDE.md).
+for (const l of readFileSync(new URL('../../.crm-login', import.meta.url), 'utf8').split('\n')) {
+  const m = l.match(/^([A-Z_0-9]+)=(.*)$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+}
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const dias = Number(arg('dias', 2)) || 2;
@@ -44,19 +48,39 @@ for (const m of fallidos || []) {
     .eq('conversation_id', m.conversation_id).eq('direccion', 'saliente')
     .gt('created_at', m.created_at).neq('status', 'failed');
   if (count) continue;
-  pendientes.push({ id: m.id, tel: c.telefono, nombre: c.contacts?.nombre || null, cuando: m.created_at, err: String(m.error || '').slice(0, 50) });
+  pendientes.push({ id: m.id, conv: m.conversation_id, tel: c.telefono, nombre: c.contacts?.nombre || null, cuando: m.created_at, err: String(m.error || '').slice(0, 50) });
 }
 
 console.log(`${pendientes.length} lead(s) sin mensaje tras un fallo recuperable en los últimos ${dias} día(s):`);
 for (const p of pendientes) console.log(`  · ${p.nombre || 's/n'} ${p.tel} — ${p.cuando.slice(0, 16).replace('T', ' ')} · ${p.err}`);
 if (!enviar) { console.log(`\n(nada enviado; corre con --enviar para mandarles «${PLANTILLA}»)`); process.exit(0); }
 
-const { enviarPlantilla } = await import('../src/lib/whatsapp/kapso-api.ts').catch(() => ({}));
-if (!enviarPlantilla) { console.log('No se pudo cargar el cliente de WhatsApp desde un script: mándalo desde el CRM o con el endpoint.'); process.exit(1); }
+/* Se manda por el MISMO camino que usa una persona desde el inbox
+   (`/api/crm/whatsapp/enviar`), no por un atajo: así el mensaje queda espejado
+   en el hilo con su autor, respeta la línea que le toca a cada conversación y
+   pasa por los mismos candados de presión. */
+const BASE = process.env.BASE || 'https://www.sacscloud.com';
+const login = await fetch(`${BASE}/api/auth/login`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: process.env.CRM_EMAIL, password: process.env.CRM_PASSWORD }),
+});
+const cookie = (login.headers.getSetCookie?.() || []).map(c => c.split(';')[0]).join('; ');
+if (!login.ok || !cookie) { console.log('No se pudo entrar al CRM:', login.status); process.exit(1); }
+
+let ok = 0, mal = 0;
 for (const p of pendientes) {
   const primer = String(p.nombre || '').trim().split(/\s+/)[0] || '👋';
-  try {
-    await enviarPlantilla(p.tel, PLANTILLA, 'es_MX', [primer, TEMA]);
-    console.log(`  ✓ ${p.tel}`);
-  } catch (e) { console.log(`  ✗ ${p.tel}: ${String(e?.message || e).slice(0, 80)}`); }
+  const r = await fetch(`${BASE}/api/crm/whatsapp/enviar`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', cookie },
+    /* `forzar` cuando se pide: el único mensaje que estos leads tienen hoy es
+       el que NO les llegó, y es justo el que la presión estaba contando para
+       frenar al que viene a arreglarlo. (En el código eso ya está corregido —
+       un saliente `failed` dejó de contar— pero hasta que se despliegue, esta
+       es la puerta, y es una decisión de una persona, no del sistema.) */
+    body: JSON.stringify({ conversation_id: p.conv, forzar: process.argv.includes('--forzar'), plantilla: { nombre: PLANTILLA, idioma: 'es_MX', params: [primer, TEMA] } }),
+  }).then(x => x.json()).catch(e => ({ error: String(e) }));
+  if (r?.ok) { ok++; console.log(`  ✓ ${p.nombre || p.tel}`); }
+  else { mal++; console.log(`  ✗ ${p.nombre || p.tel}: ${String(r?.error || 'sin respuesta').slice(0, 90)}`); }
+  await new Promise(x => setTimeout(x, 1500));   // sin ráfagas: son mensajes a personas
 }
+console.log(`\n${ok} enviados · ${mal} sin salir`);

@@ -53,8 +53,8 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       mensaje de seguimiento, igual revisa eso por favor» (caso Maribel, +52 66 7795 6276: «Meta limitó los mensajes de
       marketing a este número»). → HECHO: la cadencia manda por `mandarPlantilla` con respaldo SIEMPRE (el del paso o el
       genérico `pendiente_retomar`), que es lo único que cubre el fallo que Meta reporta DESPUÉS por webhook. 19 de 22
-      pasos de WhatsApp no tenían respaldo configurado. Faltan por decidir: los 10 leads de los últimos 2 días que se
-      quedaron sin nada (`scripts/respaldo-recuperar.mjs --enviar`).
+      pasos de WhatsApp no tenían respaldo configurado. Los 10 leads que se quedaron sin nada RECUPERADOS el 14-sep
+      («si dale»): 10 de 10 entregados, cero fallos.
 
 - [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
       «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que

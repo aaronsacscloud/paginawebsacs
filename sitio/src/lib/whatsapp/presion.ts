@@ -30,12 +30,19 @@ export interface UltimoSaliente {
 export async function ultimoSalienteWa(telefono: string): Promise<UltimoSaliente | null> {
   const tel = telefonoWhatsApp(telefono);
   if (!tel) return null;
+  /* UN MENSAJE QUE NO LLEGÓ NO SATURA A NADIE (14-sep-2026).
+     Antes contaba cualquier saliente, incluidos los que Meta rechazó. El efecto
+     se vio al recuperar a los leads que se quedaron sin mensaje por el 131049:
+     el intento fallido —el que NO leyeron— bloqueaba el mensaje de respaldo que
+     venía a arreglarlo. La presión es para no saturar a una persona; si no le
+     llegó, no hay nada que saturar. */
   const { data } = await supabase
     .from('wa_mensajes')
     .select('created_at, autor, wa_conversaciones!inner(telefono)')
     .eq('direccion', 'saliente')
     .eq('wa_conversaciones.telefono', tel)
     .is('borrado_at', null)
+    .or('status.is.null,status.neq.failed')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
