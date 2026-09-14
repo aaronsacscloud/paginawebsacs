@@ -6,6 +6,10 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · La lista no debe moverse al enviar.** «al enviar un mensaje normal o de una plantilla que la lista
+      me mantenga ahí donde estoy para ir con el siguiente contacto, ahorita me sube hasta arriba y pierdo el hilo de a
+      quién contactar» → HECHO: orden fijo desde el primer envío, con aviso y botón «Reordenar».
+
 - [x] **2026-09-14 · Las tres rayas del inbox móvil no abren nada.** «Le doy click a los 3 renglones de arriba y no hace
       nada, solo pone un blur pero no muestra nada de los filtros o vistas que debería mostrarme» → HECHO: la hoja se
       escribía dentro del carril de pestañas (scroll horizontal) y iOS recorta ahí lo `position:fixed`.

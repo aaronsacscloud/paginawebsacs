@@ -115,6 +115,37 @@ export default function InboxPro() {
   const [hayMasLista, setHayMasLista] = useState(false);
   const paginasRef = useRef(1);   // cuántas páginas de 50 hay cargadas (el polling las conserva)
   const filtroCambio = useRef(false);   // el ÚLTIMO cambio vino de un filtro/vista (no del polling)
+  /* ══ EL ORDEN SE FIJA MIENTRAS TRABAJAS ═══════════════════════════════════
+     Pedido del dueño (14-sep-2026): «al enviar un mensaje normal o de una
+     plantilla, que la lista me mantenga ahí donde estoy para ir con el
+     siguiente contacto; ahorita me sube hasta arriba y pierdo el hilo de a
+     quién contactar».
+
+     La lista va por «más reciente primero», así que en cuanto le contestas a
+     alguien esa fila se va al primer lugar y todo lo de abajo recorre un
+     renglón. Trabajando una bandeja de 130 hacia abajo, eso es perder el sitio
+     en cada envío — y volver a buscar por dónde ibas.
+
+     La regla: al primer envío, el orden de ESA lista se congela. Las filas se
+     quedan donde están aunque cambie su hora. Se suelta solo al cambiar de
+     bandeja, de vista, de filtro o de búsqueda —ahí la lista es otra— o
+     cuando tú lo pides. Lo que entre nuevo mientras tanto se va al final y se
+     dice cuántas son: moverlas arriba sería empujar otra vez lo que estás
+     leyendo. */
+  const ordenFijo = useRef<{ clave: string; pos: Map<string, number> } | null>(null);
+  const [ordenFijoN, setOrdenFijoN] = useState(0);        // nuevas que esperan abajo (y bandera de que está fijo)
+  const claveOrden = (f: Filtros) => armarQS(f);
+  const fijarOrden = () => {
+    const clave = claveOrden(filtrosRef.current);
+    if (ordenFijo.current?.clave === clave) return;
+    const pos = new Map<string, number>();
+    (listaRef.current || []).forEach((c: any, i: number) => pos.set(c.id, i));
+    if (!pos.size) return;
+    ordenFijo.current = { clave, pos };
+    setOrdenFijoN(0);
+  };
+  const soltarOrden = () => { ordenFijo.current = null; setOrdenFijoN(0); cargarLista(filtrosRef.current); };
+
   const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
     const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
@@ -151,7 +182,20 @@ export default function InboxPro() {
     });
     if (nuevas.length) setAviso({ conv: nuevas[0], mas: nuevas.length - 1 });
 
-    setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
+    /* El orden fijo se aplica AQUÍ, no en la pantalla: así lo respetan por
+       igual el escritorio, el teléfono y el refresco automático de 6 s. */
+    let filas = j.conversaciones as any[];
+    const fijo = ordenFijo.current;
+    if (fijo && fijo.clave === claveOrden(f)) {
+      const conocidas = filas.filter(c => fijo.pos.has(c.id)).sort((a, b) => fijo.pos.get(a.id)! - fijo.pos.get(b.id)!);
+      const nuevas = filas.filter(c => !fijo.pos.has(c.id));
+      filas = [...conocidas, ...nuevas];
+      setOrdenFijoN(nuevas.length);
+    } else if (fijo) {
+      // Cambió la bandeja, la vista o la búsqueda: es otra lista, y se suelta.
+      ordenFijo.current = null; setOrdenFijoN(0);
+    }
+    setError(''); setLista(filas); setCounts(j.counts || {});
     setTotalLista(j.total_filtrado || 0); setHayMasLista(!!j.hay_mas);
     /* Cambió la vista/filtro y el chat abierto ya no pertenece a la lista →
        se cierra el hilo. Sin esto quedaba un spinner eterno (peor con filas
@@ -734,6 +778,7 @@ export default function InboxPro() {
       return r;
     },
     enviarTexto: async (texto: string, cita?: string | null) => {
+      fijarOrden();   // no se te mueve la lista debajo del dedo
       // E3 · El mensaje entra a la cola ANTES de salir a la red. Así, si la
       // red falla o el navegador se muere a media petición, el texto sigue
       // ahí: se ve pendiente en el hilo y se reintenta solo.
@@ -774,6 +819,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarInteractivo: async (interactivo: any) => {
+      fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), interactivo }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
     },
@@ -812,6 +858,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarPlantilla: async (plantilla: any, telefono?: string, phoneNumberId?: string) => {
+      fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(telefono ? { telefono, plantilla, ...(phoneNumberId ? { phone_number_id: phoneNumberId } : {}) } : { conversation_id: waId(), plantilla }),
@@ -823,6 +870,7 @@ export default function InboxPro() {
     // `onProgreso` es opcional a propósito: quien no lo pase se comporta
     // exactamente igual que antes, así que ningún otro consumidor cambia.
     enviarArchivo: async (file: File, caption?: string, voz?: boolean, cita?: string | null, onProgreso?: (pct: number | null) => void) => {
+      fijarOrden();   // no se te mueve la lista debajo del dedo
       const esAudio = voz || file.type.startsWith('audio/');
       // Archivos grandes (> 4 MB): directo del navegador a Storage con URL
       // firmada y luego se manda por link — la función serverless no los aguanta.
@@ -860,6 +908,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarCorreo: async (o: { texto: string; asunto?: string }) => {
+      fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar-correo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -944,6 +993,7 @@ export default function InboxPro() {
     onMasivo: () => { window.location.href = '/admin/crm?tab=wa-masivos'; },
     totalLista, hayMasLista, cargarMasLista,
     onGuardarVista: (cfg: any) => guardarVistaRef.current?.(cfg),
+    ordenFijo: !!ordenFijo.current, ordenFijoN, onSoltarOrden: soltarOrden,
     onAsignar: async (c: any, asignadoA: string | null) => {
       await fetch('/api/crm/whatsapp/hilo', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.wa_id, asignado_a: asignadoA }) }).catch(() => null);
       refrescar();
@@ -1210,6 +1260,18 @@ export default function InboxPro() {
                       derecha y detrás de un scroll horizontal. Dos puertas a la
                       misma habitación solo obligan a decidir cuál usar. */}
                 </div>
+                {/* Lo mismo en el teléfono: si el orden está quieto, se dice. */}
+                {!!ordenFijo.current && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 24px 6px', padding: '7px 11px', borderRadius: 10, background: '#F3F1FE' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', lineHeight: 1.35 }}>
+                      Orden fijo mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+                    </span>
+                    <button onClick={soltarOrden}
+                      style={{ flexShrink: 0, minHeight: 32, border: 'none', background: '#fff', color: '#5B4BD6', borderRadius: 999, padding: '0 12px', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Reordenar
+                    </button>
+                  </div>
+                )}
                 {lista === null && <EsqueletoLista filas={7} mobile alInstante />}
                 {lista !== null && convs.length === 0 && (
                   <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>

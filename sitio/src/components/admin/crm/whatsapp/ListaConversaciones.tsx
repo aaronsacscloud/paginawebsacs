@@ -83,10 +83,12 @@ function RadioFila({ activo, label, onClick }: { activo: boolean; label: string;
   );
 }
 
-export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar, onGuardarVista }: {
+export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar, onGuardarVista, ordenFijo, ordenFijoN, onSoltarOrden }: {
   lista: any[]; filtros: Filtros; setFiltros: (f: Filtros) => void;
   activaId: string | null; onAbrir: (c: any) => void; mobile?: boolean; equipo: any[]; yo: any;
   onNuevo?: () => void; onFiltros?: () => void;
+  /** El orden está congelado porque estás contestando: las filas no se mueven. */
+  ordenFijo?: boolean; ordenFijoN?: number; onSoltarOrden?: () => void;
   orden: string; setOrden: (o: string) => void;
   mostrar: string; setMostrar: (m: string) => void;
   campos: CampoFiltro[];
@@ -251,6 +253,22 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
             }}>{c.l}</button>
         ))}
       </div>
+
+      {/* Que el orden esté quieto se DICE. Una lista que deja de reordenarse sin
+          avisar se lee como que no se está actualizando; y al revés, quien no
+          sabe que está fija no entiende por qué lo que acaba de contestar sigue
+          en medio. Una línea, con la salida a la derecha. */}
+      {ordenFijo && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid ${C.g100}`, background: C.moradoSuave }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: C.moradoTinta, fontWeight: 600, lineHeight: 1.4 }}>
+            Orden fijo mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+          </span>
+          <button onClick={onSoltarOrden}
+            style={{ flexShrink: 0, border: `1px solid ${C.moradoAgua}`, background: '#fff', color: C.moradoTinta, borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Reordenar
+          </button>
+        </div>
+      )}
 
       {/* Filas */}
       <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
