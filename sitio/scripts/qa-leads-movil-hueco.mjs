@@ -37,7 +37,10 @@ const medida = await p.evaluate(() => {
   // La primera fila de la lista: el primer elemento con texto debajo de las pestañas.
   const filas = [...document.querySelectorAll('div,button,a')].filter(e => {
     const r = e.getBoundingClientRect();
-    return r.top > abajoDeLasPestanas + 2 && r.height > 40 && r.width > 300 && (e.textContent || '').trim().length > 3;
+    // `>= -2` y no `> +2`: si el arreglo funciona, la primera fila arranca
+    // JUSTO donde terminan las pestañas, y con el margen estricto se colaba la
+    // segunda fila y el hueco medido salía siendo el alto de la primera.
+    return r.top >= abajoDeLasPestanas - 2 && r.height > 40 && r.width > 300 && (e.textContent || '').trim().length > 3;
   }).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   const primera = filas[0];
   return {

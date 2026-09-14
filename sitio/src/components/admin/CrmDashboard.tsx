@@ -1644,6 +1644,12 @@ const CRM_MOBILE_CSS = `
        La barra mide --crm-bottomnav-h; se le suma el alto de la esfera para que
        tampoco se pare encima del último renglón. */
     .m-bleed, .m-lienzo { padding-bottom: calc(var(--crm-bottomnav-h, 64px) + 76px); }
+    /* …PERO SOLO DEBAJO DE LA LISTA. Ese aire es para el ÚLTIMO renglón, y hay
+       pantallas que usan «m-bleed» dos veces: una para la cabecera y otra para
+       la lista. En Leads eso dejaba 140 px de vacío ENTRE las pestañas y el
+       primer lead — un hueco negro en mitad de la pantalla. La cabecera lleva
+       además «m-bleed-cab» y no paga ese aire. */
+    .m-bleed.m-bleed-cab { padding-bottom: 0; }
     /* Etiqueta corta dentro de un renglón: «pago diferido», «vencida». Va junto
        al nombre porque cambia lo que significa el renglón, no al lado del monto. */
     .m-eti { margin-left: 6px; font-size: 0.6rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;

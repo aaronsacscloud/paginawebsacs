@@ -926,7 +926,7 @@ export default function LeadsTab() {
           toolbar de escritorio —segmentado de vistas, ⋮, vistas guardadas,
           orden— no existe en el teléfono: la referencia manda. ══ */}
       {esMovil && (
-        <div className="m-bleed" style={{ position: 'relative' }}>
+        <div className="m-bleed m-bleed-cab" style={{ position: 'relative' }}>
           <JalarIndicador {...jalar} />
           <div className="m-hdr">
             <div className="m-tt">Leads</div>
