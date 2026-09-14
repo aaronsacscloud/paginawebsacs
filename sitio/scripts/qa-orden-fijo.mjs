@@ -36,7 +36,11 @@ await p.click('button[type=submit]'); await p.waitForURL('**/admin/crm**', { tim
 await p.goto(`${BASE}/admin/crm?tab=whatsapp&wa_conv=${CONV}`, { waitUntil: 'domcontentloaded' });
 await p.waitForTimeout(22000);
 
-const orden = () => p.evaluate(() => [...document.querySelectorAll('.wa-fila-hover')].slice(0, 8).map(e => (e.textContent || '').slice(0, 22).trim()));
+/* Solo el NOMBRE de cada fila: el resto del renglón trae la hora relativa
+   («15 min»), que cambia sola entre una foto y la otra y haría fallar la
+   comparación sin que nada se haya movido. */
+const orden = () => p.evaluate(() => [...document.querySelectorAll('.wa-fila-hover')].slice(0, 8)
+  .map(e => (e.querySelector('b')?.textContent || '').trim()));
 const antes = await orden();
 paso('La lista cargó', antes.length >= 4, `${antes.length} filas visibles`);
 

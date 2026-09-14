@@ -11,6 +11,7 @@ import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import EstadoEntrega from './EstadoEntrega';
 import { lifecycleDe } from '../../../../lib/crm/lifecycle';
 import { telefonoLegible, telefonoWhatsApp } from '../../../../lib/telefono';
+import { nombreParaMostrar } from './nombre-conversacion';
 import { BuilderCondiciones } from './VistaModales';
 import type { CampoFiltro, Condicion } from '../../../../lib/whatsapp/filtros';
 import type { Filtros } from './InboxPro';
@@ -345,9 +346,9 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     Solo queda arriba lo que se lee de un vistazo: la hora y
                     las señales que piden acción. */}
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <b title={c.contacto?.nombre || c.telefono}
+                  <b title={nombreParaMostrar(c.contacto, c.empresa, c.telefono)}
                     style={{ flex: '1 1 auto', minWidth: 0, fontSize: 13.5, color: resuelta ? C.g400 : C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.contacto?.nombre || c.telefono}
+                    {nombreParaMostrar(c.contacto, c.empresa, c.telefono)}
                   </b>
                   <span style={{ fontSize: 11, color: c.no_leidos ? C.moradoTinta : C.g400, fontWeight: c.no_leidos ? 700 : 400, flexShrink: 0 }}>
                     {c.virtual ? <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px' }}>CRM</span> : horaRelativa(c.ultimo_mensaje_at)}

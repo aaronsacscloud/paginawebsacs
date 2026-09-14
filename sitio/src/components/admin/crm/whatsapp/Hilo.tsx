@@ -12,6 +12,7 @@ import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
 import { C, L, burbuja, separador, etiquetaDia } from './estilo';
 import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Iconos';
 import { Avatar, IconoCanal } from './ListaConversaciones';
+import { nombreParaMostrar } from './nombre-conversacion';
 import Composer, { SelectorPlantilla } from './Composer';
 import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
@@ -341,7 +342,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   }
 
   const etapa = lifecycleDe(conv?.contacts?.lifecycle_stage);
-  const nombre = conv?.contacts ? `${conv.contacts.nombre || ''} ${conv.contacts.apellido || ''}`.trim() : null;
+  /* El nombre del encabezado: si la ficha nació como «WhatsApp 7300» y ya está
+     ligada a una empresa, se lee el nombre del negocio. Ver `nombreParaMostrar`. */
+  const nombre = conv?.contacts
+    ? nombreParaMostrar({ nombre: `${conv.contacts.nombre || ''} ${conv.contacts.apellido || ''}`.trim() }, conv?.companies, null) || null
+    : null;
   const ventanaViva = !!hilo?.ventana?.expira_at && new Date(hilo.ventana.expira_at) > new Date();
   let diaPrevio = '';
   // E6.1 · La marca «Mensajes nuevos» va justo antes del primero que no

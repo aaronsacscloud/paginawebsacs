@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · Un cliente entró como «WhatsApp 7300», sin nombre.** «me lo pone como cliente, pero no tengo su
+      nombre, ¿cómo así llegó a cliente o usar Sacs, de dónde lo saca y por qué no aparece su nombre?» → HECHO los
+      cuatro puntos: búsqueda por los últimos 10 dígitos, teléfonos normalizados, fichas de Mario fusionadas y el
+      nombre (ruta `username` de Kapso + la empresa cuando la ficha nació sin nombre).
+
 - [x] **2026-09-14 · La lista no debe moverse al enviar.** «al enviar un mensaje normal o de una plantilla que la lista
       me mantenga ahí donde estoy para ir con el siguiente contacto, ahorita me sube hasta arriba y pierdo el hilo de a
       quién contactar» → HECHO: orden fijo desde el primer envío, con aviso y botón «Reordenar».

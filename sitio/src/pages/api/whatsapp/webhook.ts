@@ -25,6 +25,7 @@ import { explicarError } from '../../../lib/whatsapp/errores';
 import { marcarLeido, usarNumero } from '../../../lib/whatsapp/kapso-api';
 import { alRecibirMensaje, redirigirSiToca } from '../../../lib/whatsapp/automatizacion';
 import { telefonoWhatsApp, telefonoLegible } from '../../../lib/telefono';
+import { nombreUsable } from '../../../lib/crm/ti/nombre-y-bots';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
 
@@ -96,7 +97,14 @@ export const POST: APIRoute = async ({ request, url }) => {
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
           metadata: p.metadata,
           status: entrante ? 'received' : (kapso.status || 'sent'),
-          nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name || msj?.profile_name || kapso?.contact_name || kapso?.profile_name || null,
+          /* `msj.username` ES LA RUTA BUENA (14-sep). El diagnóstico de abajo llevaba
+             una semana anotando las llaves del payload en cada entrante sin nombre, y
+             ahí estaba: `contact` siempre llega en null, pero el mensaje trae
+             `username`. Va al final de la cadena y pasa por `nombreUsable`, que
+             descarta lo que no es un nombre de persona —un handle, un número, una
+             razón social— para no acabar saludando a «Whatsapp» o a «5492215627300». */
+          nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name || msj?.profile_name || kapso?.contact_name || kapso?.profile_name
+            || (nombreUsable(msj?.username) ? String(msj.username).trim() : null) || null,
         });
         /* ── MINUTAS QUE ESPERABAN ESTA RESPUESTA ─────────────────────────
            Un mensaje del cliente ABRE la ventana de 24 h, y esa es la única
@@ -145,11 +153,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         // DIAGNÓSTICO (7-sep): en 298 conversaciones el nombre de perfil llegó vacío. Si en un entrante no viene, se
         // anota qué llaves trae el payload (una vez por hora) para ajustar la ruta sin adivinar.
-        if (entrante && !(payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name)) {
+        if (entrante && !(payload?.contact?.name || payload?.contact?.profile_name || payload?.contact?.profile?.name || payload?.contacts?.[0]?.profile?.name || msj?.profile?.name || nombreUsable(msj?.username))) {
           try {
             const desde = new Date(Date.now() - 3600e3).toISOString();
             const { data: ya } = await supabase.from('ia_log').select('id').eq('accion', 'wa_perfil_diag').gte('created_at', desde).limit(1);
-            if (!(ya || []).length) await supabase.from('ia_log').insert({ accion: 'wa_perfil_diag', razon: 'entrante sin nombre de perfil', detalle: { payload_keys: Object.keys(payload || {}), contact: payload?.contact || null, kapso_keys: Object.keys(kapso || {}), msj_keys: Object.keys(msj || {}), msj_from: msj?.from || null } });
+            if (!(ya || []).length) await supabase.from('ia_log').insert({ accion: 'wa_perfil_diag', razon: 'entrante sin nombre de perfil', detalle: { payload_keys: Object.keys(payload || {}), contact: payload?.contact || null, kapso_keys: Object.keys(kapso || {}), msj_keys: Object.keys(msj || {}), msj_from: msj?.from || null, username: msj?.username ?? null, username_sirve: !!nombreUsable(msj?.username) } });
           } catch { /* solo diagnóstico */ }
         }
         // ── El cliente tocó uno de los horarios que le mandamos ──────────

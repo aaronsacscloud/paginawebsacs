@@ -18,12 +18,63 @@ import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { notificar } from '../crm/notificaciones';
 
 /** El contacto (y su empresa) dueño de un teléfono, o nulls. */
+/**
+ * ¿De quién es este teléfono?
+ *
+ * Buscaba por igualdad EXACTA del texto, y ahí estaba el agujero: el mismo
+ * número vive escrito de varias formas según por dónde entró. Los móviles
+ * mexicanos traen un «1» después del 52 —`+5212215627300`— que las
+ * importaciones viejas guardaron tal cual, mientras que lo que llega por
+ * WhatsApp se normaliza sin él (`+522215627300`). Dos textos distintos, la
+ * misma persona.
+ *
+ * Caso medido (13-sep-2026): Mario Barranco, cliente desde julio, escribió por
+ * WhatsApp; esto no lo encontró, se le abrió una segunda ficha —«WhatsApp
+ * 7300», sin nombre— y el inbox lo enseñó como un desconocido. El detector de
+ * historial sí lo cachó ocho horas después, porque ESE compara por los últimos
+ * diez dígitos. Ahora los dos comparan igual.
+ *
+ * Tres pasos, de la llave más fuerte a la más floja, y entre varias fichas gana
+ * la que tiene nombre de persona: si hay una real y un «WhatsApp 7300», el
+ * mensaje va a la real.
+ */
+const PLACEHOLDER = /^(WhatsApp|Contacto)\s+\d{4}$/i;
+
 export async function ligarContacto(telefono: string): Promise<{ contactId: string | null; companyId: string | null }> {
   const e164 = telefonoWhatsApp(telefono);
-  if (!e164) return { contactId: null, companyId: null };
-  const { data } = await supabase.from('contacts')
-    .select('id, company_id').eq('whatsapp', e164).limit(1).maybeSingle();
-  return { contactId: data?.id || null, companyId: data?.company_id || null };
+  const d = String(telefono || '').replace(/\D/g, '');
+  if (!e164 && d.length < 10) return { contactId: null, companyId: null };
+  const diez = d.slice(-10);
+
+  const elegir = (filas: any[] | null | undefined) => {
+    const xs = (filas || []).filter(Boolean);
+    if (!xs.length) return { contactId: null, companyId: null };
+    // Con nombre de persona primero; a igualdad, la más vieja (es la original).
+    xs.sort((a, b) => {
+      const pa = PLACEHOLDER.test(String(a.nombre || '')) || !a.nombre ? 1 : 0;
+      const pb = PLACEHOLDER.test(String(b.nombre || '')) || !b.nombre ? 1 : 0;
+      if (pa !== pb) return pa - pb;
+      return String(a.created_at || '').localeCompare(String(b.created_at || ''));
+    });
+    return { contactId: xs[0].id as string, companyId: (xs[0].company_id as string) || null };
+  };
+
+  const sel = 'id, company_id, nombre, created_at';
+  // 1) El texto tal cual lo escribimos hoy.
+  if (e164) {
+    const { data } = await supabase.from('contacts').select(sel).eq('whatsapp', e164).limit(4);
+    const r = elegir(data); if (r.contactId) return r;
+  }
+  // 2) Las formas en que el MISMO número pudo quedar guardado.
+  if (diez.length === 10) {
+    const variantes = [...new Set([e164 || '', `+52${diez}`, `+521${diez}`, `52${diez}`, `521${diez}`, diez, `+1${diez}`, `1${diez}`].filter(Boolean))];
+    const { data } = await supabase.from('contacts').select(sel).in('whatsapp', variantes).limit(6);
+    const r = elegir(data); if (r.contactId) return r;
+    // 3) Y por si quedó con espacios o guiones: termina en los mismos diez dígitos.
+    const { data: d3 } = await supabase.from('contacts').select(sel).like('whatsapp', `%${diez}`).limit(6);
+    const r3 = elegir(d3); if (r3.contactId) return r3;
+  }
+  return { contactId: null, companyId: null };
 }
 
 /**

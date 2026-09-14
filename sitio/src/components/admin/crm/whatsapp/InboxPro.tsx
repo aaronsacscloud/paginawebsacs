@@ -24,6 +24,7 @@ import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscrib
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
 const ListaConversaciones = lazySeguro(() => import('./ListaConversaciones'));
+import { nombreParaMostrar } from './nombre-conversacion';
 const Llamadas = lazySeguro(() => import('./Llamadas'));
 const Hilo = lazySeguro(() => import('./Hilo'));
 const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
@@ -1063,7 +1064,7 @@ export default function InboxPro() {
               const noLeida = c.no_leidos > 0;
               // Un número sin contacto se lee mejor separado, y es el mismo
               // formato que usa la cabecera del hilo.
-              const nom = c.contacto?.nombre || (c.telefono ? telefonoLegible(String(c.telefono)) : '—');
+              const nom = nombreParaMostrar(c.contacto, c.empresa, c.telefono);
               const emp = c.empresa?.nombre || c.contacto?.empresa_nombre || c.contacto?.companies?.nombre || null;
               const suc = Number(c.empresa?.sucursales) || 0;
               const etq = etapasCiclo[String(c.contacto?.lifecycle_stage || '')] || null;
