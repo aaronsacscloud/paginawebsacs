@@ -110,22 +110,46 @@ export const GET: APIRoute = async ({ request }) => {
     .eq('estado', 'enviado').eq('canal', 'email').gte('enviado_at', hoy + 'T00:00:00Z');
   const restante = Math.max(0, cupo - (yaHoy || 0));
 
-  // El disyuntor cuenta REBOTES DE VERDAD (los que reporta SendGrid tras
-  // entregar), no los fallos por una dirección mal escrita: seis direcciones
-  // truncadas bastaban para apagar el sistema entero el primer día.
-  const [{ count: rebotesHoy }, { count: quejasHoy }] = await Promise.all([
+  /* EL DISYUNTOR MIRA TODO EL DOMINIO, NO SOLO EL ABM.
+     Antes contaba únicamente los rebotes de abm_actividad, o sea los suyos. Y
+     por el mismo dominio salen además las secuencias del CRM —rezagados,
+     winback, crecimiento—, que el 14-sep mandaron 80 correos con 5 rebotes
+     mientras el ABM mandaba 15 con 3. El ABM veía 3 de 15; la realidad eran
+     8 de 95. Dos motores quemando la misma reputación y ninguno viendo lo que
+     hacía el otro.
+     A Gmail no le importa de qué cadencia salió cada correo: le importa el
+     dominio. Así que el conteo sale de email_sends, que es por donde pasan
+     TODOS, y el ABM se apaga aunque los rebotes los haya provocado otro.
+     Se cuentan REBOTES DE VERDAD (los que reporta el proveedor tras entregar),
+     no los fallos por dirección mal escrita: seis direcciones truncadas
+     bastaban para apagar el sistema entero el primer día. */
+  const desdeHoy = hoy + 'T00:00:00Z';
+  const [{ count: rebotesHoy }, { count: quejasHoy }, { count: salidosHoy }] = await Promise.all([
+    supabase.from('email_sends').select('id', { count: 'exact', head: true })
+      .not('bounced_at', 'is', null).gte('sent_at', desdeHoy),
     supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
-      .eq('tipo', 'rebote').eq('canal', 'email').gte('ocurrio_at', hoy + 'T00:00:00Z'),
-    supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
-      .eq('tipo', 'spam').eq('canal', 'email').gte('ocurrio_at', hoy + 'T00:00:00Z'),
+      .eq('tipo', 'spam').eq('canal', 'email').gte('ocurrio_at', desdeHoy),
+    supabase.from('email_sends').select('id', { count: 'exact', head: true })
+      .gte('sent_at', desdeHoy),
   ]);
   // Una queja de spam pesa muchísimo más que un rebote: Gmail corta arriba de
   // 0.3%, que con 120 correos al día es menos de una queja diaria. Por eso el
   // umbral de quejas es UNA, no tres.
-  if ((quejasHoy || 0) >= 1 || (rebotesHoy || 0) >= Math.max(3, Math.round(cupo * 0.05))) {
-    const motivo = (quejasHoy || 0) >= 1 ? `${quejasHoy} queja(s) de spam` : `${rebotesHoy} rebotes`;
+  /* El umbral ahora es sobre lo que SALIÓ HOY del dominio, no sobre el cupo del
+     ABM: si el otro motor mandó 80 y el ABM 15, medir contra el cupo del ABM
+     daría un porcentaje inventado. El piso de 3 se queda, para que un día de
+     pocos envíos no se apague por un rebote suelto.
+     Una queja de spam pesa muchísimo más que un rebote: Gmail corta arriba de
+     0.3%, que con 120 correos al día es menos de una queja diaria. Por eso el
+     umbral de quejas es UNA, no tres. */
+  const base = Math.max(cupo, salidosHoy || 0);
+  const topeRebotes = Math.max(3, Math.round(base * 0.05));
+  if ((quejasHoy || 0) >= 1 || (rebotesHoy || 0) >= topeRebotes) {
+    const motivo = (quejasHoy || 0) >= 1
+      ? `${quejasHoy} queja(s) de spam en el dominio`
+      : `${rebotesHoy} rebotes de ${salidosHoy} correos del dominio (tope ${topeRebotes})`;
     await supabase.from('abm_config').update({ valor: 'auto', hasta: hoy, nota: `pausado el ${hoy} por ${motivo}` }).eq('clave', 'pausado');
-    return json({ enviados: 0, pausado_por: motivo, espejo });
+    return json({ enviados: 0, pausado_por: motivo, rebotes: rebotesHoy, salidos: salidosHoy, espejo });
   }
 
   // El goteo (envíos progresivos, lib/crm/abm-goteo.ts) va ANTES del reparto
