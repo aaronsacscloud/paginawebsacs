@@ -56,9 +56,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   <div class="nav-inner container">
     <div class="nav-marca">
     <a href={getLocalizedUrl('/', locale)} class="nav-logo" aria-label="SACS — Inicio">
-      <svg width="80" height="38" viewBox="0 0 80 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <text x="0" y="29" font-family="'Clash Display', sans-serif" font-size="28" font-weight="700" fill="currentColor">Sacs</text>
-      </svg>
+      <span class="nav-wordmark" aria-hidden="true">Sacs</span>
     </a>
     <button type="button" class="nav-vertical" id="nav-vertical" aria-haspopup="dialog" aria-controls="vert-modal" aria-expanded="false" title="Ver todos los tipos de comercio que opera Sacs">
       <span class="nav-vertical-txt">Fashion Commerce</span>
@@ -1590,15 +1588,16 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   /* ─── Lockup de marca: Sacs · Fashion Commerce ─── */
   .nav-marca { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); }
+  .nav-wordmark { display: block; font-family: 'Clash Display', var(--font-display); font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; color: currentColor; }
   /* 'Sacs | Fashion Commerce': una sola marca, separada por una barra fina */
-  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 3px 0 0 9px; padding: 0 0 0 9px; border: 0; border-left: 1.5px solid #1D1D1F; background: none; color: #1D1D1F; font-family: 'Clash Display', var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 1; transition: opacity 0.2s; }
+  .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 0 9px; padding: 0 0 0 9px; border: 0; border-left: 1.5px solid #1D1D1F; background: none; color: #1D1D1F; font-family: 'Clash Display', var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 1; transition: opacity 0.2s; }
   .nav-vertical:hover { opacity: 0.7; }
   .nav-vertical:hover { opacity: 1; }
   .nav-vertical svg { opacity: 0.6; transition: transform 0.2s; }
   .nav-vertical:hover svg { transform: translateY(1px); }
   @media (max-width: 767px) {
     .nav-marca { flex-direction: column; align-items: flex-start; gap: 0; margin-right: auto; }
-    .nav-marca .nav-logo svg { height: 30px; width: auto; }
+    .nav-wordmark { font-size: 24px; }
     .nav-vertical { margin: -5px 0 0 1px; padding: 0; border-left: 0; font-size: 12px; letter-spacing: -0.005em; }
 
     .nav-vertical svg { width: 7px; height: 5px; }
