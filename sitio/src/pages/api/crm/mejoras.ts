@@ -35,6 +35,11 @@ export function vencidas(rows: any[]): any[] {
     && (m.estado === 'cotizada' || m.estado === 'en_proceso'))
     .map(m => ({
       id: m.id, titulo: m.titulo, company_id: m.company_id,
+      // La categoría viaja para que la ficha sepa cuál de estos vencidos es
+      // suyo y cuál se está construyendo en el taller: el taller tiene su
+      // propia pestaña y su propio aviso, y decirlo dos veces es como se deja
+      // de leer.
+      categoria: m.categoria,
       cliente: m.companies?.nombre_comercial || m.companies?.nombre || null,
       fecha_compromiso: m.fecha_compromiso,
       dias: Math.floor((Date.now() - new Date(m.fecha_compromiso + 'T12:00:00').getTime()) / 86400000),

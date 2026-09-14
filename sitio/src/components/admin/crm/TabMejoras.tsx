@@ -12,6 +12,7 @@ import ReporteEntregas from './ReporteEntregas';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 import { computarSenales } from '../../../lib/crm/senales';
 import { confirmar } from '../../../lib/ui/confirmar';
+import OrdenDelTaller, { ETAPAS_TALLER } from './taller/OrdenDelTaller';
 
 // Cómo se lee el estado de una cotización dentro de la ficha. En inglés crudo
 // ("paid", "sent") el menú obliga a traducir mentalmente cada renglón.
@@ -23,7 +24,7 @@ const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleSt
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
 
 const ESTADOS: Record<string, { label: string; punto: string; tag?: string; tagBg?: string; tagTx?: string }> = {
-  idea:       { label: 'Idea',        punto: '#7DA6F5' },
+  idea:       { label: 'Idea',        punto: '#EFA6CA' },
   cotizada:   { label: 'Cotizada',    punto: '#9B8CFA', tag: 'cotizada', tagBg: '#EEECFE', tagTx: '#5B4BD6' },
   en_proceso: { label: 'En proceso',  punto: '#F0B84E', tag: 'en proceso', tagBg: '#FEF6E7', tagTx: '#9a6a10' },
   entregada:  { label: 'Entregada',   punto: '#4FBF95' },
@@ -35,7 +36,7 @@ const CATS_COLOR: Record<string, { label: string; bg: string; fg: string }> = {
   capacitacion:    { label: 'capacitación',    bg: '#FEF6E7', fg: '#9a6a10' },
   pendiente:       { label: 'pendiente',       bg: '#f4f4f6', fg: '#6B7280' },
   personalizacion: { label: 'personalización', bg: '#EEECFE', fg: '#5B4BD6' },
-  plugin:          { label: 'plugin',          bg: '#E3EDFD', fg: '#2C5FC4' },
+  plugin:          { label: 'plugin',          bg: 'rgba(244,168,205,.22)', fg: '#9c3d70' },
   modulo:          { label: 'módulo',          bg: '#EAF8F2', fg: '#1E8A63' },
   ajuste:          { label: 'ajuste',          bg: '#F4F4F6', fg: '#6B7280' },
   otro:            { label: 'otro',            bg: '#F4F4F6', fg: '#6B7280' },
@@ -57,26 +58,23 @@ const ORIGENES_L: Record<string, string> = {
   junta: 'De una junta', whatsapp: 'De WhatsApp', soporte: 'De soporte',
   llamada: 'De una llamada', manual: 'Capturado a mano',
 };
-/* Cómo se lee la etapa del taller desde la ficha del cliente. */
-const ETAPAS_TALLER: Record<string, string> = {
-  recibida: 'recibida', analisis: 'en análisis', desarrollo: 'en desarrollo', pruebas: 'en pruebas',
-  lista: 'lista, esperando tu OK', entregada: 'entregada', devuelta: 'devuelta', espera: 'esperando al cliente', trabada: 'trabada',
-};
 const CATS: Record<string, string> = Object.fromEntries(Object.entries(CATS_COLOR).map(([k, v]) => [k, v.label]));
 
 const S = {
   card: { background: '#fff', border: '1.5px solid #ddd6fb', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
-  cardA: { background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
+  cardA: { background: '#fff', border: '1.5px solid #f3cadb', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
   h: { fontSize: '0.66rem', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
   nota: { marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   btn: { padding: '7px 13px', border: 'none', borderRadius: 9, fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff', fontFamily: 'inherit' } as const,
-  btnAzul: { padding: '5px 11px', border: '1.5px solid #7DA6F5', borderRadius: 9, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4', fontFamily: 'inherit' } as const,
+  // Secundario del sistema: borde y letra MORADOS. Era azul, y el azul es un
+  // color de dato —no un botón—: metía un tercer acento contra el morado.
+  btnAzul: { padding: '5px 11px', border: '1.5px solid #9B8CFA', borderRadius: 9, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#5B4BD6', fontFamily: 'inherit' } as const,
   btnG: { padding: '5px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#444', fontFamily: 'inherit' } as const,
   input: { padding: '8px 11px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.79rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fdfcff', fontFamily: 'inherit' } as const,
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
 };
 
-export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }: any) {
+export default function TabMejoras({ companyId, cliente, flash, co, subs = [], irATaller }: any) {
   // `cliente` es el nombre que va al abrir la cotización desde una idea.
   // `co` y `subs` son para las SEÑALES: antes vivían en un bloque aparte arriba
   // de la pestaña y decían la misma venta que las ideas de abajo. Ahora entran
@@ -254,8 +252,18 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const oportunidades = rows.filter(m => m.estado === 'idea' && m.deal_id && !m.quote_id);
   const yaCotizadas = rows.filter(m => m.quote_id && m.estado !== 'entregada');
   const entregadas = rows.filter(m => m.estado === 'entregada');
+  /* La OBRA ya no vive aquí: se fue a la pestaña Taller de la cuenta.
+     Medido el día que se partió: 74 ideas abiertas contra 9 compromisos reales
+     en todo el CRM, y una cuenta con 58 ideas y un solo compromiso. Una lista
+     de uno a tres renglones no sobrevive debajo de una de cincuenta y ocho —y
+     así fue como tres cosas prometidas para el 19 de agosto llevaban 26 días
+     vencidas sin que nadie lo notara.
+     Lo que SÍ se queda es lo que hace el consultor: las capacitaciones, los
+     videos y los pendientes sueltos. Mandarlos a desarrollo le mete ruido a un
+     tablero de ingeniería y le quita a Consultoría lo único suyo que era una
+     tarea. */
+  const enObra = rows.filter(m => abierto(m) && ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria));
   const grupos = [
-    { k: 'obra', l: 'Mejoras y personalizaciones', filas: rows.filter(m => abierto(m) && ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria)).sort(porFecha) },
     { k: 'video', l: 'Videos por enviar', filas: rows.filter(m => abierto(m) && m.categoria === 'capacitacion' && modoDe(m) === 'video').sort(porFecha) },
     { k: 'cap', l: 'Capacitaciones programadas', filas: rows.filter(m => abierto(m) && m.categoria === 'capacitacion' && modoDe(m) !== 'video').sort(porFecha) },
     { k: 'pend', l: 'Otros pendientes', filas: rows.filter(m => abierto(m) && ['pendiente', 'otro'].includes(m.categoria)).sort(porFecha) },
@@ -263,6 +271,15 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
   const porHacer = grupos.reduce((a, g) => a + g.filas.length, 0);
 
   const hoyISO = new Date().toISOString().slice(0, 10);
+  /* Cuánto se pasó lo que se está construyendo. La fecha que vale es la que el
+     taller prometió; si todavía no la puso, la que se le dijo al cliente —
+     porque contra ESA se llega tarde. */
+  const diasDe = (d: string) => Math.floor((Date.now() - new Date(d + 'T12:00:00').getTime()) / 86400000);
+  const fechaObra = (m: any) => ligas[m.id]?.fecha_prometida || m.fecha_compromiso || null;
+  const obraTarde = Math.max(0, ...enObra.map(m => { const f = fechaObra(m); return f && f < hoyISO ? diasDe(f) : 0; }));
+  const obraSinFecha = enObra.filter(m => !fechaObra(m)).length;
+  const enObraIds = new Set(enObra.map(m => m.id));
+  const vencidasTuyas = vencidas.filter((v: any) => !enObraIds.has(v.id));
   const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const estaSemana = rows.filter(m => abierto(m) && m.fecha_compromiso && m.fecha_compromiso <= en7).length;
 
@@ -435,7 +452,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
             </div>
           )}
         </div>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
+        <div style={{ fontSize: '0.78rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#5B4BD6' }}>
           {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
         </div>
       </div>
@@ -478,12 +495,16 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     <div>
       {/* Lo prometido que ya venció va ARRIBA de todo, antes de las cifras: una
           promesa que no llegó hace más daño que una que nunca se hizo. */}
-      {vencidas.length > 0 && (
+      {/* El aviso de arriba solo cuenta LO TUYO. Lo que está en el taller ya se
+          avisa en el puente del hito 1 con su propia pastilla, y decirlo dos
+          veces en la misma pantalla —arriba en rojo y abajo otra vez— hace que
+          se deje de leer. */}
+      {vencidasTuyas.length > 0 && (
         <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '11px 13px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
           <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>⚠️</span>
           <div style={{ fontSize: '0.79rem', color: '#C0554E', lineHeight: 1.6 }}>
-            <b style={{ color: '#8c2f28' }}>{vencidas.length} {vencidas.length === 1 ? 'cosa comprometida se pasó de fecha' : 'cosas comprometidas se pasaron de fecha'}.</b>
-            {vencidas.map((v: any) => (
+            <b style={{ color: '#8c2f28' }}>{vencidasTuyas.length} {vencidasTuyas.length === 1 ? 'cosa comprometida se pasó de fecha' : 'cosas comprometidas se pasaron de fecha'}.</b>
+            {vencidasTuyas.map((v: any) => (
               <div key={v.id}>{v.titulo} · se prometió para el {fmtDate(v.fecha_compromiso)}, {v.dias} {v.dias === 1 ? 'día' : 'días'} tarde</div>
             ))}
           </div>
@@ -552,10 +573,12 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
           ruido cuando no. El color solo entra si el dato pide atención. */}
       <div style={{ display: 'flex', gap: '10px 26px', flexWrap: 'wrap', padding: '0 3px', marginBottom: 14 }}>
         {[
-          { l: porHacer && estaSemana ? `${estaSemana} vencen esta semana` : 'Por hacer', v: String(porHacer), col: porHacer ? '#9a6a10' : null },
+          { l: porHacer && estaSemana ? `${estaSemana} vencen esta semana` : 'Tuyo por hacer', v: String(porHacer), col: porHacer ? '#9a6a10' : null },
+          { l: enObra.length ? (obraTarde ? `el más atrasado, ${obraTarde} días` : obraSinFecha ? `${obraSinFecha} sin fecha` : 'en construcción') : 'En el taller',
+            v: String(enObra.length), col: enObra.length ? (obraTarde ? '#C0554E' : '#5B4BD6') : null },
           { l: potencial > 0 ? `${ideas.length} idea${ideas.length === 1 ? '' : 's'} sin cerrar`
               : ideas.length ? `${ideasSinMonto} sin monto · no se puede estimar` : 'Sobre la mesa',
-            v: potencial > 0 ? '~' + money(potencial) : '—', col: potencial > 0 ? '#2C5FC4' : null },
+            v: potencial > 0 ? '~' + money(potencial) : '—', col: potencial > 0 ? '#9c3d70' : null },
           { l: delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'Entregado este año',
             v: String(esteAnio), col: esteAnio ? '#1E8A63' : null },
         ].map(x => (
@@ -574,12 +597,31 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         <span style={{ position: 'absolute', left: 7, top: 6, bottom: 24, width: 2, background: '#ddd6fb', borderRadius: 2 }} />
 
         {/* 1 · Lo que le debes */}
-        <Hito n={1} titulo="Por hacer" color="#9B8CFA"
-          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada comprometido'}
-          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>}>
-          {porHacer === 0 && (
+        <Hito n={1} titulo="Lo tuyo con el cliente" color="#9B8CFA"
+          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada pendiente de tu lado'}
+          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'capacitacion', visible_cliente: true })}>+ Agregar</button>}>
+          {/* El puente al taller: una LÍNEA, no una lista. Lo que se está
+              construyendo tiene su propia pestaña; aquí basta saber que existe
+              y si va tarde — que es lo que antes no se veía. */}
+          {enObra.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: porHacer ? 12 : 0, paddingBottom: porHacer ? 12 : 0, borderBottom: porHacer ? '1px solid #f4f4f4' : 'none' }}>
+              <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', ...(obraTarde ? { background: '#FEF0EF', color: '#C0554E' } : obraSinFecha ? { background: '#FFF4E5', color: '#9a6a10' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
+                {enObra.length} en el taller{obraTarde ? ` · ${obraTarde} ${obraTarde === 1 ? 'día' : 'días'} tarde` : ''}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#888', flex: 1, minWidth: 180 }}>
+                {obraTarde
+                  ? 'Se pasó lo que le prometiste.'
+                  : obraSinFecha
+                    ? `${obraSinFecha} sin fecha: nadie las puede arrancar.`
+                    : 'Lo que se está construyendo para esta cuenta.'}
+              </span>
+              <button style={S.btnAzul} onClick={() => irATaller?.()}>Ver el taller de la cuenta</button>
+            </div>
+          )}
+          {porHacer === 0 && enObra.length === 0 && (
             <div style={{ color: '#999', fontSize: '0.82rem' }}>
-              Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí.
+              Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí — o en el taller, si hay
+              que construirlo.
             </div>
           )}
           {grupos.map(g => (
@@ -594,23 +636,23 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
 
         {/* 2 · Lo que le puedes vender: las sugerencias del sistema y tus ideas
             en la MISMA lista. Eran dos bloques que decían lo mismo. */}
-        <Hito n={2} titulo="Por vender" color="#7DA6F5"
+        <Hito n={2} titulo="Por vender" color="#EFA6CA"
           resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${oportunidades.length ? ` · ${oportunidades.length} oportunidad${oportunidades.length === 1 ? '' : 'es'}` : ''}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
           accion={<button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>}>
 
           {(sugerencias.length > 0 || sugYaEnLista > 0) && (
-            <div style={{ border: '1px dashed #cfe0fa', background: '#E3EDFD', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#2C5FC4', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ border: '1px dashed #f3cadb', background: 'rgba(244,168,205,.16)', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c3d70', display: 'flex', alignItems: 'center', gap: 8 }}>
                 Sugerencias del sistema · {sugerencias.length}
                 {sugerencias.length > 1 && (
                   <button onClick={() => setVerSug(v => !v)}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem', fontWeight: 700, color: '#2C5FC4', textDecoration: 'underline', textTransform: 'none', letterSpacing: 0 }}>
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem', fontWeight: 700, color: '#9c3d70', textDecoration: 'underline', textTransform: 'none', letterSpacing: 0 }}>
                     {verSug ? 'Ver menos' : `Ver ${sugerencias.length - 1} más`}
                   </button>
                 )}
               </div>
               {(verSug ? sugerencias : sugerencias.slice(0, 1)).map((sn: any, i: number) => (
-                <div key={sn.tipo} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingTop: 9, marginTop: i ? 9 : 0, borderTop: i ? '1px solid #cfe0fa' : 'none' }}>
+                <div key={sn.tipo} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingTop: 9, marginTop: i ? 9 : 0, borderTop: i ? '1px solid #f3cadb' : 'none' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.81rem', fontWeight: 700, color: sn.nivel === 'riesgo' ? '#C0554E' : '#241d43' }}>{sn.titulo}</div>
                     <div style={{ fontSize: '0.73rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{sn.detalle}</div>
@@ -623,7 +665,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
                 </div>
               ))}
               {sugYaEnLista > 0 && (
-                <div style={{ fontSize: '0.7rem', color: '#2C5FC4', paddingTop: 9, marginTop: 9, borderTop: '1px solid #cfe0fa' }}>
+                <div style={{ fontSize: '0.7rem', color: '#9c3d70', paddingTop: 9, marginTop: 9, borderTop: '1px solid #f3cadb' }}>
                   {sugYaEnLista} sugerencia{sugYaEnLista === 1 ? '' : 's'} más ya {sugYaEnLista === 1 ? 'está' : 'están'} en la lista · no se repite{sugYaEnLista === 1 ? '' : 'n'}
                 </div>
               )}
@@ -863,109 +905,6 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-/* ══ LO DEL TALLER, DESDE LA FICHA ══
-   Son los cuatro datos con los que una orden se puede arrancar: para cuándo,
-   quién, qué tan urgente y con qué se da por buena. Nada más — el resto del
-   taller (rebotes, SLA, bitácora, la conversación técnica) vive allá y no se
-   asoma aquí: si el consultor ve que la mejora del cliente rebotó dos veces,
-   la conversación con el cliente deja de ser sobre lo que va a recibir.
-
-   Que se editen desde aquí es el punto: mover un día obligaba a salir de la
-   ficha, entrar al Taller, buscar el folio y volver. Con ese costo, las fechas
-   no se movían — se dejaban vencer. */
-function OrdenDelTaller({ orden, equipo, onCerrar, onGuardar }: any) {
-  const [f, setF] = useState<any>({
-    fecha_prometida: orden.fecha_prometida || '',
-    asignado_id: orden.asignado_id || '',
-    prioridad: orden.prioridad || 'media',
-    criterios: orden.criterios || '',
-    motivo: '',
-  });
-  const [guardando, setGuardando] = useState(false);
-  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
-  // Mover una fecha ya prometida pide el porqué: es el dato con el que después
-  // se sabe si se recorren por desarrollo o porque el cliente no contestó.
-  const movio = !!orden.fecha_prometida && f.fecha_prometida !== orden.fecha_prometida;
-
-  if (orden.cargando) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Cargando texto="Abriendo la orden…" />
-      </div>
-    );
-  }
-
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 480, maxHeight: '88vh', overflowY: 'auto' }}>
-        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'baseline', gap: 9 }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Lo que el taller necesita</h3>
-          <span style={{ fontSize: '0.72rem', color: '#7a6fc9', fontFamily: 'ui-monospace, monospace' }}>{orden.folio}</span>
-          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
-        </div>
-        <div style={{ padding: '14px 17px 17px' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: 2 }}>{orden.titulo}</div>
-          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginBottom: 13 }}>
-            {orden.tipo === 'falla' ? 'Falla' : 'Mejora'} · {ETAPAS_TALLER[orden.etapa] || orden.etapa}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <div><div style={S.lbl}>Fecha prometida</div>
-              <input type="date" value={f.fecha_prometida} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} /></div>
-            <div><div style={S.lbl}>Responsable</div>
-              <select value={f.asignado_id} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
-                <option value="">Sin asignar</option>
-                {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
-              </select></div>
-          </div>
-
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿Bloquea la operación?</div>
-            <select value={f.prioridad} onChange={e => set('prioridad', e.target.value)} style={S.input}>
-              <option value="alta">Sí — hoy no puede vender</option>
-              <option value="media">Le estorba</option>
-              <option value="baja">Puede esperar</option>
-            </select></div>
-
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>Cómo se sabe que quedó</div>
-            <textarea value={f.criterios} onChange={e => set('criterios', e.target.value)} rows={2}
-              placeholder="La prueba concreta: «se imprime un ticket y el escáner lo lee al primer intento»"
-              style={{ ...S.input, resize: 'vertical' }} />
-            <div style={{ fontSize: '0.67rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>
-              Sin esto la orden no puede pasar a desarrollo: es lo que evita que se entregue algo que no era.
-            </div></div>
-
-          {movio && (
-            <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿Por qué se mueve la fecha?</div>
-              <input value={f.motivo} onChange={e => set('motivo', e.target.value)}
-                placeholder="El cliente no mandó el catálogo" style={S.input} />
-              <div style={{ fontSize: '0.67rem', color: '#a5a2af', marginTop: 3 }}>
-                Queda en la bitácora. La fecha original no se pierde: contra ella se mide el cumplimiento.
-              </div></div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14 }}>
-            <button disabled={guardando} style={{ ...S.btnAzul, opacity: guardando ? .6 : 1 }}
-              onClick={async () => {
-                setGuardando(true);
-                const ok = await onGuardar({
-                  fecha_prometida: f.fecha_prometida || null,
-                  asignado_id: f.asignado_id || null,
-                  prioridad: f.prioridad,
-                  criterios: f.criterios,
-                  motivo: f.motivo || undefined,
-                });
-                if (!ok) setGuardando(false);
-              }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
-            <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={onCerrar}>Cancelar</button>
-            <span style={{ fontSize: '0.68rem', color: '#a5a2af', marginLeft: 'auto' }}>El taller lo ve en su tablero</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

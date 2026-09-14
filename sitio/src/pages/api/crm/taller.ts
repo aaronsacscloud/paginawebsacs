@@ -75,10 +75,16 @@ export const GET: APIRoute = async ({ request, url }) => {
     });
   }
 
-  const { data, error } = await supabase.from('taller_ordenes').select(SEL)
+  /* Con `company_id` devuelve el taller DE ESA CUENTA. Lo pide la pestaña
+     Taller de la ficha del cliente: traer las 500 órdenes del CRM para pintar
+     tres es tráfico que se paga en cada apertura de ficha. */
+  const empresa = url.searchParams.get('company_id') || '';
+  let q = supabase.from('taller_ordenes').select(SEL)
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .limit(500);
+  if (empresa) q = q.eq('company_id', empresa);
+  const { data, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
   const { data: equipo } = await supabase.from('team_members')
@@ -97,11 +103,18 @@ export const GET: APIRoute = async ({ request, url }) => {
     const o: any = porOrden.get(l.orden_id);
     if (o) ligas[l.mejora_id] = { id: o.id, folio: o.folio, etapa: o.etapa, fecha_prometida: o.fecha_prometida };
   }
-  const { data: abiertas } = await supabase.from('mejoras')
+  /* Lo comprometido con el cliente que todavía no tiene orden. Sin `tipo` —en
+     null— también cuenta: los renglones viejos nacieron antes de que el campo
+     existiera y son justo los que llevan más tiempo prometidos. La capacitación
+     y los videos se quedan fuera a propósito: los da el consultor, no el
+     taller, y en un tablero de ingeniería solo meten ruido. */
+  let qa = supabase.from('mejoras')
     .select('id, titulo, tipo, categoria, estado, modulo, fecha_compromiso, company_id, companies(nombre, nombre_comercial)')
     .is('archived_at', null)
     .in('estado', ['cotizada', 'en_proceso'])
-    .in('tipo', ['falla', 'mejora']);
+    .in('categoria', ['personalizacion', 'plugin', 'modulo', 'ajuste']);
+  if (empresa) qa = qa.eq('company_id', empresa);
+  const { data: abiertas } = await qa;
   const sinOrden = (abiertas || []).filter((m: any) => !yaLigadas.has(m.id));
 
   return json({

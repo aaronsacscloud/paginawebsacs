@@ -9,6 +9,7 @@ import { CamposFicha, useCampos } from './CamposPersonalizados';
 import { fechasDeSerie as previewSerie, describirSerie, MAX_SESIONES } from '../../../lib/scheduling/recurrencia';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
+import TallerCuenta from './taller/TallerCuenta';
 import TabOutbound from './outbound/TabOutbound';
 import TabSoporte from './soporte/TabSoporte';
 import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
@@ -122,7 +123,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   tabInicial?: string }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp' | 'renovacion'>((tabInicial as any) || 'resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'taller' | 'act' | 'outbound' | 'soporte' | 'whatsapp' | 'renovacion'>((tabInicial as any) || 'resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -140,6 +141,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   // sin que nadie vaya a buscarlo.
   const [alertasReu, setAlertasReu] = useState<any[]>([]);
   const [vencidasMej, setVencidasMej] = useState<any[]>([]);
+  const [enTaller, setEnTaller] = useState(0);
+  const [tallerTarde, setTallerTarde] = useState(false);
   const [ticketsAbiertos, setTicketsAbiertos] = useState(0);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nombreEd, setNombreEd] = useState('');
@@ -163,8 +166,29 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
     let alive = true; setAlertasReu([]);
     fetch('/api/scheduling/reuniones?company_id=' + companyId)
       .then(r => r.json()).then(j => { if (alive) setAlertasReu(j.alertas || []); }).catch(() => {});
+    // El punto de Consultoría solo avisa de LO SUYO: lo que se está
+    // construyendo tiene su contador en la pestaña Taller.
+    const OBRA = ['personalizacion', 'plugin', 'modulo', 'ajuste'];
     fetch('/api/crm/mejoras?company_id=' + companyId)
-      .then(r => r.json()).then(j => { if (alive) setVencidasMej(j.vencidas || []); }).catch(() => {});
+      .then(r => r.json()).then(j => { if (alive) setVencidasMej((j.vencidas || []).filter((v: any) => !OBRA.includes(v.categoria))); }).catch(() => {});
+    setEnTaller(0); setTallerTarde(false);
+    Promise.all([
+      fetch('/api/crm/taller?company_id=' + companyId).then(r => r.json()).catch(() => null),
+      fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json()).catch(() => null),
+    ]).then(([t, m]) => {
+      if (!alive) return;
+      const ligas: Record<string, any> = t?.ligas || {};
+      const porId = new Map((m?.data || []).map((x: any) => [x.id, x]));
+      const hoyI = new Date().toISOString().slice(0, 10);
+      const vivas = Object.entries(ligas).filter(([, o]: any) => o.etapa !== 'entregada');
+      setEnTaller(vivas.length);
+      // Tarde contra la fecha del taller y, si no la puso, contra la que se le
+      // prometió al cliente: es esa la que el cliente tiene apuntada.
+      setTallerTarde(vivas.some(([id, o]: any) => {
+        const f = o.fecha_prometida || (porId.get(id) as any)?.fecha_compromiso;
+        return f && f < hoyI;
+      }));
+    });
     setTicketsAbiertos(0);
     fetch('/api/crm/soporte/por-cliente?company_id=' + companyId)
       .then(r => r.json()).then(j => { if (alive) setTicketsAbiertos(j.resumen?.abiertos || 0); }).catch(() => {});
@@ -238,7 +262,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               const planTxt = planTop ? (/^plan/i.test(planTop) ? cased(planTop) : 'Plan ' + cased(planTop)) : null;
               const SEG: [string, string][] = [['resumen', 'Resumen'], ['info', 'Info'], ['subs', 'Licencias'],
                 ...(esCliente ? [['renovacion', 'Renovación'] as [string, string]] : []),
-                ['mejoras', 'Consultoría'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
+                ['mejoras', 'Consultoría'], ['taller', 'Taller'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
               return (
                 <div style={{ background: '#fff' }}>
                   {!embebido && <div onClick={cerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', cursor: 'pointer' }} aria-label="Cerrar">
@@ -400,6 +424,22 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   Consultoría
                   {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
+                {/* El taller de ESTA cuenta. Pegada a Consultoría porque son
+                    las dos caras del mismo renglón: allá lo que vale, aquí lo
+                    que hay que construir. El contador va en pastilla y en rojo
+                    cuando algo se pasó de fecha — es la señal que antes no
+                    existía en ningún lado de la ficha: había que entrar para
+                    enterarse de que tres promesas llevaban 26 días vencidas. */}
+                <button style={D.tab(tab === 'taller')} onClick={() => irA('taller')}>
+                  Taller
+                  {enTaller > 0 && (
+                    <span title={tallerTarde ? 'Se pasó la fecha prometida' : 'En el taller'}
+                      style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, marginLeft: 6, verticalAlign: 'middle',
+                        ...(tallerTarde ? { background: '#FEF0EF', color: '#C0554E' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
+                      {enTaller}
+                    </span>
+                  )}
+                </button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
@@ -465,7 +505,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   Consultoría, en "Por vender", junto a las ideas capturadas. Como
                   bloque propio decían la misma venta dos veces —arriba la señal,
                   abajo la idea que la atiende—. */}
-              {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} co={co} subs={subs} />}
+              {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} co={co} subs={subs} irATaller={() => irA('taller')} />}
+              {tab === 'taller' && <TallerCuenta companyId={companyId} flash={flash} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
               {/* Las dos fuentes, en este orden: primero lo que hay que
                   capturar —porque es lo que falta— y abajo el hilo conectado,
