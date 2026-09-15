@@ -16,6 +16,7 @@ MODO = sys.argv[1]; GIRO = sys.argv[2]; ISOS = sys.argv[3:] or list(PAISES)
 SQL = os.path.join(D, '..', 'sql.sh')
 OUT = os.path.join(D, 'sqlout'); os.makedirs(OUT, exist_ok=True)
 MES = datetime.date.today().strftime('%Y-%m')
+RATING_MIN, RESENAS_MIN, TOPE_PAIS = 3.7, 5, 100
 FUS = os.path.join(D, f'{GIRO}-pais-fusion.json')
 # Las cuentas de fuera de México entran EN PAUSA (pausa_hasta null: el cron de
 # ritmo no las despierta). Un goteo viejo solo toma `sin_tocar`, así que
@@ -73,9 +74,15 @@ def consultas():
         iso, _, qq = l.rstrip('\n').partition('\t')
         if qq: m[(iso, md5_10(qq))] = qq
     return m
-def ciudad_de(qq):
+def ciudad_de(qq, iso):
     for st in sorted(STEMS[GIRO], key=len, reverse=True):
-        if qq.lower().startswith(st.lower()): return qq[len(st):].strip() or None
+        if qq.lower().startswith(st.lower()):
+            c = qq[len(st):].strip() or None
+            # «Palermo Buenos Aires» o «Miraflores Lima» son consultas por barrio para
+            # sacar más lugares; en el correo la ciudad es Buenos Aires o Lima.
+            for otra in PAISES[iso]['ciudades']:
+                if c and c != otra and c.endswith(' ' + otra): return otra
+            return c
     return None
 
 def leer_crudo():
@@ -112,7 +119,7 @@ def leer_crudo():
                 rt = ficha.get('rating') or r.get('rating'); rt = float(str(rt).replace(',', '.')) if rt not in (None, '') else None
                 vistos[key] = dict(iso=iso, name=nombre, tel=tel, movil=es_movil(tel, iso), reviews=rv, rating=rt, cat=cat,
                                    web=(ficha.get('web') or r.get('web') or '').strip() or None, ig=ficha.get('ig'), url=r['url'],
-                                   direccion=ficha.get('address'), ciudad=ciudad_de(qq), qs={qq})
+                                   direccion=ficha.get('address'), ciudad=ciudad_de(qq, iso), qs={qq})
     print('fuera por filtro:', sum(fuera.values()), dict(fuera.most_common(10)))
     return list(vistos.values())
 
@@ -153,6 +160,19 @@ def prep():
                             sucursales_lista=[dict(nombre=v['name'], tel=v['tel'], movil=v['movil'], ciudad=v['ciudad'], url=v['url'], resenas=v['reviews']) for v in vs],
                             qs=sorted(x for x in set().union(*[v['qs'] for v in vs]) if x)))
     print('cuentas agrupadas:', len(cuentas), '· con 2+ sucursales:', sum(1 for c in cuentas if c['sucursales'] > 1))
+    # Manual §0, la regla que manda: los mejores, no todos. Con calificación,
+    # 3.7 estrellas para arriba, reseñas suficientes para que la estrella
+    # signifique algo, y el top 100 de cada país ordenado por reseñas (una
+    # cadena cuenta como una cuenta). Si un país no llega a 100, son los que
+    # haya: no se rellena con cuentas malas.
+    antes = len(cuentas)
+    cuentas = [c for c in cuentas if c['rating'] is not None and c['rating'] >= RATING_MIN and (c['resenas_total'] or 0) >= RESENAS_MIN]
+    top = []
+    for iso in ISOS:
+        cs = sorted([c for c in cuentas if c['iso'] == iso], key=lambda c: (-(c['resenas_total'] or 0), -(c['rating'] or 0)))
+        top.extend(cs[:TOPE_PAIS])
+    print(f'filtro de calidad (≥{RATING_MIN}★, ≥{RESENAS_MIN} reseñas, top {TOPE_PAIS} por país): {antes} → {len(top)}')
+    cuentas = top
     # dedupe contra la base: nombre+ciudad, teléfono E.164, dominio
     base = json.loads(subprocess.check_output([SQL, '-e', "select a.id, lower(a.nombre) n, coalesce(a.ciudad,'') c, a.pais, a.giro, a.sitio, (select string_agg(valor,'|') from abm_canales k where k.cuenta_id=a.id and k.tipo in ('telefono','whatsapp_tienda','whatsapp_dueno')) tels from abm_cuentas a where a.pais <> 'México'"]))
     por_nombre = {(b['n'], b['c']): b for b in base}
@@ -190,7 +210,12 @@ def prep():
             web = (c['web'] or '').strip(); fb = ig = None
             if re.search(r'facebook\.com|fb\.com|fb\.me', web): fb, web = web, None
             elif 'instagram.com' in web: ig, web = web, None
-            if c.get('ig') and not ig: ig = 'https://instagram.com/' + c['ig'].strip('@/')
+            if c.get('ig') and not ig: ig = c['ig']
+            if ig:
+                # La ficha a veces trae la URL completa con utm/igshid; solo se guarda el usuario.
+                m = re.search(r'instagram\.com/([A-Za-z0-9_.]{2,30})', ig) or re.fullmatch(r'\s*@?([A-Za-z0-9_.]{2,30})\s*', ig)
+                ig = 'https://instagram.com/' + m.group(1) if m and m.group(1).lower() not in ('p', 'reel', 'explore', 'stories') else None
+            if fb: fb = fb.split('?')[0]
             c['fb'], c['ig'], c['sitio'] = fb, ig, web or None
             vals.append('(' + ','.join([q(c['nombre']), q(GIRO), q(subgiro(c)), q(c['ciudad']), 'null', q(P['nombre']), q(P['moneda'].upper()), str(suc), q('alta' if suc == 1 else 'media'), q(tam), q(ruta),
                         q(web or None), q(fb), q(ig), q(c['rating']), q(c['resenas']), q(nota), str(enc), str(dol), str(acc), str(enc + dol + acc), "'en_pausa'", q(PAUSA)]) + ')')
