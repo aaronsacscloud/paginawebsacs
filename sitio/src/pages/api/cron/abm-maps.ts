@@ -37,8 +37,35 @@ const env = (n: string) => String((import.meta.env as any)[n] || (process.env as
 const CAMPOS = [
   'places.id', 'places.displayName', 'places.rating', 'places.userRatingCount',
   'places.websiteUri', 'places.internationalPhoneNumber', 'places.businessStatus',
-  'places.formattedAddress', 'places.reviews',
+  'places.formattedAddress', 'places.reviews', 'places.primaryType', 'places.types',
 ].join(',');
+
+/* ── ¿Esto es moda? ───────────────────────────────────────────────────────────
+   Google dice el TIPO de cada negocio y no lo estábamos pidiendo. Por eso
+   sobrevivían en la base cosas que nunca debieron entrar: "El Globo" estaba
+   clasificado como `boutiques` y es una PASTELERÍA (primaryType pastry_shop),
+   y 44 de las 100 "relojerías" son ÓPTICAS —el barrido buscó relojerías y
+   Google agrupa «óptica y relojería» en la misma categoría—.
+   El barrido clasifica por el TÉRMINO QUE SE BUSCÓ, no por lo que el negocio
+   es. Preguntarle el tipo a Google es la única forma de corregirlo, y viene en
+   la misma respuesta que ya pagamos. */
+const TIPOS_MODA = new Set([
+  'clothing_store', 'shoe_store', 'jewelry_store', 'store', 'department_store',
+  'shopping_mall', 'wholesaler', 'tailor', 'boutique', 'bridal_shop',
+  'sporting_goods_store', 'home_goods_store', 'market', 'clothing_wholesaler',
+]);
+/* Estos no son moda por más que el barrido los haya metido. Se marcan para que
+   una persona decida, NO se borran: un falso positivo aquí tira una cuenta
+   buena y nadie se entera. */
+const TIPOS_FUERA = new Set([
+  'pastry_shop', 'bakery', 'cafe', 'coffee_shop', 'restaurant', 'dessert_shop',
+  'bar', 'hotel', 'lodging', 'pharmacy', 'drugstore', 'hospital', 'doctor',
+  'dentist', 'veterinary_care', 'gym', 'beauty_salon', 'hair_salon', 'spa',
+  'bank', 'car_repair', 'car_dealer', 'gas_station', 'supermarket',
+  'grocery_store', 'convenience_store', 'furniture_store', 'hardware_store',
+  'book_store', 'florist', 'liquor_store', 'real_estate_agency', 'travel_agency',
+  'school', 'church', 'optician', 'eye_care',
+]);
 
 /** Lo que una reseña mala dice del negocio, en categorías que sí usamos.
  *  Es el dato más valioso de la ficha: el dolor que vendemos, dicho por su
@@ -82,6 +109,40 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!key) return json({ error: 'falta GOOGLE_PLACES_API_KEY' }, 409);
 
   const dry = url.searchParams.get('dry') === '1';
+
+  /* MODO TIPOS: revisa el giro de cuentas YA consultadas, usando su place_id.
+     Preguntar por place_id pidiendo solo el tipo es un tier barato —nada de
+     reseñas—, así que revalidar dos mil cuentas cuesta una fracción de lo que
+     costó traerlas. Existe porque la validación de giro se agregó DESPUÉS de
+     la primera corrida: sin esto habría que reconsultarlo todo al precio alto. */
+  if (url.searchParams.get('modo') === 'tipos') {
+    const { data: ctas } = await supabase.from('abm_cuentas')
+      .select('id, nombre, place_id, giro')
+      .not('place_id', 'is', null).is('tipo_maps', null)
+      .neq('etapa', 'no_contactar').limit(Math.min(400, cuantas));
+    let rev = 0, fuera = 0;
+    for (const c of (ctas || []) as any[]) {
+      try {
+        const p: any = await fetch(`https://places.googleapis.com/v1/places/${c.place_id}?languageCode=es`, {
+          headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'id,primaryType,types,displayName' },
+        }).then((x) => x.json());
+        const tipos: string[] = [p?.primaryType, ...(p?.types || [])].filter(Boolean);
+        if (!tipos.length) continue;
+        rev++;
+        const mal = tipos.find((t) => TIPOS_FUERA.has(t));
+        const bien = tipos.some((t) => TIPOS_MODA.has(t));
+        await supabase.from('abm_cuentas').update({ tipo_maps: p.primaryType || tipos[0] }).eq('id', c.id);
+        if (mal && !bien) {
+          fuera++;
+          if (!dry) {
+            await supabase.from('abm_cuentas').update({ etapa: 'no_contactar' }).eq('id', c.id);
+            await apuntar(c.id, 'sistema', 'nota', { texto: `Google lo clasifica como «${mal}», no es un negocio de moda. Sale de la cola. Si está mal, quitar la etapa no_contactar.` });
+          }
+        }
+      } catch { /* una ficha que no responde no detiene el lote */ }
+    }
+    return json({ modo: 'tipos', revisadas: rev, fuera_de_moda: fuera, dry });
+  }
   const cuantas = Math.min(300, Number(url.searchParams.get('cuantas') || 60));
   const top = Math.min(300, Number(url.searchParams.get('top') || 100));
   const giro = url.searchParams.get('giro') || '';
@@ -94,7 +155,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (error) return json({ error: error.message, pista: 'falta la función abm_top_sin_maps' }, 500);
   if (!cuentas?.length) return json({ revisadas: 0, nota: 'no quedan cuentas del top sin consultar' });
 
-  const r = { revisadas: 0, con_sitio: 0, con_telefono: 0, cerrados: 0, no_encontradas: 0, otro_negocio: 0, duplicadas: 0, quejas: 0 };
+  const r = { revisadas: 0, con_sitio: 0, con_telefono: 0, cerrados: 0, no_encontradas: 0, otro_negocio: 0, duplicadas: 0, no_es_moda: 0, quejas: 0 };
   const muestra: any[] = [];
 
   for (const c of cuentas as any[]) {
@@ -118,7 +179,11 @@ export const GET: APIRoute = async ({ request, url }) => {
         continue;
       }
 
-      const cambios: any = { maps_at: new Date().toISOString(), place_id: p.id || null, abierto: p.businessStatus || null };
+      const tipos: string[] = [p.primaryType, ...(p.types || [])].filter(Boolean);
+      const fuera = tipos.find((t) => TIPOS_FUERA.has(t));
+      const dentro = tipos.some((t) => TIPOS_MODA.has(t));
+
+      const cambios: any = { maps_at: new Date().toISOString(), place_id: p.id || null, abierto: p.businessStatus || null, tipo_maps: p.primaryType || tipos[0] || null };
       if (p.websiteUri && !c.sitio) { cambios.sitio = p.websiteUri; r.con_sitio++; }
       if (p.rating) cambios.google_rating = p.rating;
       if (p.userRatingCount) cambios.google_resenas = p.userRatingCount;
@@ -148,6 +213,16 @@ export const GET: APIRoute = async ({ request, url }) => {
           texto: `DUPLICADA: es el mismo negocio de Google que «${dup}». Se saca de la cola para no escribirle dos veces al mismo lugar.`,
         });
         r.duplicadas++;
+        continue;
+      }
+      /* No es moda. Se marca `no_contactar` con el motivo a la vista, no se
+         borra: si el tipo de Google se equivocó, una persona lo revierte. */
+      if (fuera && !dentro) {
+        r.no_es_moda++;
+        await supabase.from('abm_cuentas').update({ etapa: 'no_contactar' }).eq('id', c.id);
+        await apuntar(c.id, 'sistema', 'nota', {
+          texto: `Google lo clasifica como «${fuera}», no es un negocio de moda. Sale de la cola. Si está mal, quitar la etapa no_contactar.`,
+        });
         continue;
       }
       if (p.businessStatus === 'CLOSED_PERMANENTLY') {
