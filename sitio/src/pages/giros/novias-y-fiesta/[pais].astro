@@ -1,0 +1,240 @@
+---
+/**
+ * Suite para Casas de Novias y Fiesta — la versión POR PAÍS.
+ *
+ * Segmentación por país (14-sep-2026): los correos de Colombia, Chile, Perú…
+ * mandan aquí y no a la página de México, porque aquella dice cosas que solo
+ * son ciertas allá: precios en pesos mexicanos, «personas de soporte en
+ * México», un vestido de «$28,000» que en pesos colombianos no compra ni el
+ * velo, y «XV años», que fuera de México se dice «15 años».
+ *
+ * Es la MISMA página que ../novias-y-fiesta.astro —mismos bloques, mismo
+ * guion— con lo que cambia por país resuelto en un solo lugar:
+ *   · la moneda de los planes y del simulador de abonos (Intl con su locale),
+ *   · el vestido de ejemplo en un precio que sea creíble en ese mercado,
+ *   · «XV» → como se diga allá (abm-paises.ts), «ya merito» → «ya casi»,
+ *   · la cifra de soporte («en español», no «en México») y lo transaccionado
+ *     en dólares para que no se lea en la moneda local,
+ *   · el cierre: se atiende por videollamada, en su horario.
+ *
+ * Los datos (data/giros/novias-fiesta.ts) NO se duplican: se localizan con
+ * `localiza()` —un reemplazo de texto sobre el JSON— para que cuando alguien
+ * mejore la página de México, la de cada país mejore sola. Las rutas salen
+ * de PAISES.landingNovias, que es lo que el correo pone en {{landing}}.
+ *
+ * España sale también (es la ruta que le tocaría) pero su copy se revisa
+ * cuando arranque Europa: allá el trato y la fiesta de quince son otros.
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import NoviaFecha from '../../../components/giros/NoviaFecha.astro';
+import { cortinaNovias, casosNovias, pasosNovias, planoNovias, seccionesNovias } from '../../../data/giros/novias-fiesta';
+import { PAISES, type Pais } from '../../../lib/crm/abm-paises';
+import type { PlanPrice } from '../../../data/plans';
+
+export function getStaticPaths() {
+  return Object.values(PAISES)
+    .filter((p) => p.region !== 'mexico')
+    .map((p) => ({ params: { pais: p.landingNovias.split('/').pop()! }, props: { iso: p.iso } }));
+}
+
+const { iso } = Astro.props as { iso: string };
+const pais: Pais = PAISES[iso];
+
+// El vestido de ejemplo en cada moneda: lo que cuesta un vestido de novia de
+// boutique allá, redondeado a un número que se lea de un golpe. El simulador
+// mueve el rango completo; el 30% de anticipo y el abonado salen de aquí.
+const PRECIO: Record<string, { locale: string; codigo: string; vestido: number; min: number; max: number; paso: number }> = {
+  mxn: { locale: 'es-MX', codigo: 'MXN', vestido: 28000, min: 6000, max: 90000, paso: 1000 },
+  cop: { locale: 'es-CO', codigo: 'COP', vestido: 4000000, min: 800000, max: 15000000, paso: 100000 },
+  clp: { locale: 'es-CL', codigo: 'CLP', vestido: 900000, min: 200000, max: 4000000, paso: 50000 },
+  ars: { locale: 'es-AR', codigo: 'ARS', vestido: 1500000, min: 300000, max: 6000000, paso: 50000 },
+  pen: { locale: 'es-PE', codigo: 'PEN', vestido: 3500, min: 800, max: 12000, paso: 100 },
+  // Los países que cotizan en dólares: el locale dominicano escribe «US$1,500»,
+  // que se entiende igual en Guatemala, Panamá o Uruguay y no se confunde con
+  // el quetzal o el peso uruguayo, que también usan «$».
+  usd: { locale: 'es-DO', codigo: 'USD', vestido: 1500, min: 300, max: 6000, paso: 50 },
+  eur: { locale: 'es-ES', codigo: 'EUR', vestido: 1800, min: 400, max: 6000, paso: 50 },
+};
+const precio = PRECIO[pais.moneda] || PRECIO.usd;
+const fmt = (n: number) => new Intl.NumberFormat(precio.locale, { style: 'currency', currency: precio.codigo, maximumFractionDigits: 0 }).format(n);
+const redondea = (n: number) => Math.round(n / precio.paso) * precio.paso;
+const vestido = precio.vestido;
+const anticipo = redondea(vestido * 0.3);
+const abonado = redondea(vestido * 0.689);   // en México: $19,290 de $28,000
+const resta = vestido - abonado;
+
+/** Localiza el contenido de México: montos, «XV» y mexicanismos. Se hace
+ *  sobre el JSON para no tocar la estructura ni duplicar los datos. */
+function localiza<T>(obj: T): T {
+  const j = (t: string) => JSON.stringify(t).slice(1, -1);   // escapado para vivir dentro del JSON
+  let s = JSON.stringify(obj);
+  s = s.replace(/\$28,000/g, () => j(fmt(vestido)))
+    .replace(/\$19,290/g, () => j(fmt(abonado)))
+    .replace(/\$8,400/g, () => j(fmt(anticipo)))
+    .replace(/\$8,710/g, () => j(fmt(resta)))
+    .replace(/\$0\b/g, () => j(fmt(0)))
+    .replace(/XV años/g, () => pais.xv)
+    .replace(/el XV de/g, 'los quince de')
+    .replace(/\bXV\b/g, 'quince')
+    .replace(/ya merito/g, 'ya casi');
+  return JSON.parse(s) as T;
+}
+const cortina = localiza(cortinaNovias);
+const casos = localiza(casosNovias);
+const pasos = localiza(pasosNovias);
+const plano = localiza(planoNovias);
+const secciones = localiza(seccionesNovias);
+
+const titulo = `Suite Moda para Casas de Novias y Fiesta en ${pais.nombre}`;
+const desc =
+  `El sistema para novias, ${pais.xv} y fiesta en ${pais.nombre}: apartados con abonos y fecha de evento, muestras que no se venden por error, el taller por etapas y la semana de entregas en una vista.`;
+---
+
+<BaseLayout title={titulo} description={desc}>
+  <GiroBanner
+    eyebrow={`Sacs · Suite Moda · ${pais.nombre}`}
+    titulo="Tu venta no termina en la caja."
+    resalte="Termina en una fecha."
+    sub="El apartado con la fecha del evento adentro, los abonos que cierran dos semanas antes, el pedido que tiene que llegar y el taller con sus pruebas — todo contando hacia atrás desde la boda."
+    foto="/images/hero-novia.webp"
+    fotoAlt="Novia probándose un vestido de muestra frente al espejo mientras la dueña consulta su tablet"
+    selloMarcas="Negocios de moda activos en México y Latinoamérica"
+    avisos={[
+      { modulo: 'Pedido en camino', texto: 'Sirena talla 8 de Valeria: llega 20 ene · boda 14 mar', pos: 1, tono: 'azul', sello: 'A tiempo' },
+      { modulo: 'Pedido justo', texto: 'El de Fernanda llega con 19 días: llamar hoy', pos: 2, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Abono vencido', texto: 'Los quince de Ximena: el abono del 15 no ha llegado', pos: 3, tono: 'rojo', sello: '3 días' },
+    ]}
+  />
+
+  <SuiteManifiesto
+    intro="Sabemos cómo trabaja una casa de novias"
+    frases={[
+      'La boda es el <b>14 de marzo</b> y el vestido "ya casi llega".',
+      '"¿Cuánto debo?" — y a buscar el <b>cuaderno</b> de abonos.',
+      'La <b>muestra</b> talla 6 se vendió — y era la única.',
+      'La 1ª prueba era <b>¿el 25 o el 29?</b> Nadie anotó.',
+      'La costurera tiene <b>ocho vestidos</b> y nadie sabe cuál va primero.',
+      'El papá abonó en efectivo y el recibo quedó en una <b>servilleta</b>.',
+      'Todo converge el <b>viernes a las 8</b>: prueba, abono y entrega.',
+    ]}
+    cierre={`Ningún sistema genérico de punto de venta entiende esto: para él una venta se entrega hoy, no en la semana 20, después de dos pruebas y nueve abonos. Y la casa ya no vive solo del piso: el catálogo viaja por WhatsApp al grupo de la boda, y la familia que compró los ${pais.xv} vuelve por la graduación. Cada pantalla funciona igual en el probador que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo.`}
+  />
+
+  <!-- El problema estructural: la muestra no es el vestido. -->
+  <SuiteVariantes
+    eyebrow="Un solo modelo"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“¿lo tienes en mi talla?”."
+    sub="Cuatro modelos en seis tallas: dieciséis muestras únicas para probarse — lo de ella siempre se pide sobre pedido. Y donde no hay muestra, la casa lo dice de frente y lo pide a tiempo."
+    ejeA={['2', '4', '6', '8', '10', '12']}
+    filas={[
+      { nombre: 'Princesa', img: '/images/novia-princesa.webp', alt: 'Vestido de novia corte princesa' },
+      { nombre: 'Sirena', img: '/images/novia-sirena.webp', alt: 'Vestido de novia corte sirena' },
+      { nombre: pais.xv, img: '/images/novia-xv.webp', alt: `Vestido de ${pais.xv} en tono rosa` },
+      { nombre: 'Fiesta', img: '/images/novia-fiesta.webp', alt: 'Vestido de fiesta largo en color' },
+    ]}
+    matriz={[
+      [1, 1, 1, 0, 1, 0],
+      [0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0],
+      [1, 1, 0, 1, 0, 1],
+    ]}
+    unidad="muestras"
+    genero="f"
+    leyendas={['Muestra en piso', 'Última pieza', 'Se pide a su talla']}
+    ceroNeutro={true}
+    umbralBajo={0}
+    pieLibre="<b>16</b> muestras en piso — cada una única, como debe ser — y donde no hay, <b>se pide a su talla</b>, a tiempo"
+  />
+
+  <SuiteCortina
+    titulo="“¿Cuánto debe Valeria?”"
+    sub="Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, el cuaderno. A la derecha, en tres segundos."
+    fotoAntes={cortina.fotoAntes}
+    fotoDespues={cortina.fotoDespues}
+    altAntes={cortina.altAntes}
+    altDespues={cortina.altDespues}
+    libreta={cortina.libreta}
+    filas={cortina.filas}
+  />
+
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi toda casa de novias que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Apartado con fecha de evento y abonos', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Muestras marcadas, aparte de los pedidos', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+      { que: 'Taller con órdenes de servicio y fechas', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Entregas y pruebas con fecha, no de memoria', generico: 'A medias', medida: 'Rara vez', sacs: 'Incluidas' },
+      { que: 'Un catálogo para piso, WhatsApp y redes', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un sistema por encargo, la tercera conversación es distinta: esta ya sabe qué es una fecha que no se mueve." />
+
+  <SuiteCifras
+    foto="/images/suite-novia-tienda.webp"
+    alt={`Casa de novias amplia y luminosa con vestidos blancos en rieles y un área de ${pais.xv} en color`}
+    frase="De la casa que empieza a la que viste a media ciudad."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 400, pre: '+US$', rotulo: 'MILLONES DE DÓLARES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN ESPAÑOL' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una casa de novias gana o pierde a la familia completa. Toca cada una."
+    casos={casos}
+  />
+
+  <SuiteScroll
+    eyebrow="Especialidad en novias y vestidos"
+    titulo="Toda la casa, del apartado a la entrega"
+    intro={`Baja para ver cada pieza con una clienta tipo: Valeria, boda el 14 de marzo, vestido de ${fmt(vestido)} con 30% de anticipo. Del apartado con fecha al taller por etapas y la lista de la semana.`}
+    secciones={secciones}
+  />
+
+  <!-- El bloque propio: solo aquí la fecha es el producto -->
+  <NoviaFecha moneda={precio.codigo} locale={precio.locale} precio={vestido} min={precio.min} max={precio.max} paso={precio.paso} />
+
+  <SuitePlano
+    titulo="Tu casa, por dentro."
+    sub="Entra la novia con su mamá, se prueba la muestra, aparta con su fecha, el pedido llega al taller y la semana de la entrega todo converge. Toca cada zona."
+    proyecto="Tu casa de novias — planta baja"
+    zonas={plano}
+  />
+
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin soltar ninguna boda."
+    sub={`Tienes apartados vivos con fechas encima y un taller andando. Así se hace — y lo hacemos nosotros, por videollamada y en horario de ${pais.nombre}; no te dejamos un manual y suerte.`}
+    pasos={pasos}
+    remate="<b>Tu histórico no se tira.</b> Se migran los apartados vivos con su saldo y su fecha, las clientas y los modelos — y el cuaderno se guarda de recuerdo, no de herramienta."
+  />
+
+  <SuitePlanes suite="Suite Moda" moneda={pais.moneda as keyof PlanPrice} />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus apartados con su fecha en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc={`Te mostramos Sacs con tus modelos, tus apartados y tus fechas reales, por videollamada y en horario de ${pais.nombre}. 30 min, sin compromiso.`} />
+</BaseLayout>

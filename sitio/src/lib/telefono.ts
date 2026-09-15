@@ -48,6 +48,14 @@ export function telefonoWhatsApp(bruto?: string | null): string | null {
   if (/^(\d)\1+$/.test(d)) return null;
   if (/^1234567890|^0{5}/.test(d)) return null;
 
+  // Con `+` delante y un código de país de Latinoamérica que deja el número
+  // en diez dígitos —Perú fijo (+51 1 …), Panamá (+507 …), Ecuador fijo
+  // (+593 2 …)—, el «+» manda: la persona SÍ escribió el país. Sin esta
+  // regla, «+51 1 2345678» salía como un celular mexicano (14-sep-2026,
+  // segmentación por país). Un número mexicano de diez dígitos nunca empieza
+  // por 51, 507 ni 593 (no son ladas de México).
+  if (mas && d.length === 10 && /^(51|507|593)/.test(d)) return '+' + d;
+
   // México, en todas sus formas.
   if (d.length === 10) return '+52' + d;                       // local
   if (d.length === 12 && d.startsWith('52')) return '+' + d;   // +52 + 10

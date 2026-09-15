@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../../lib/crm/paleta';
 import { GIROS } from '../../../../lib/crm/abm-giros';
+import { PAISES, paisDe } from '../../../../lib/crm/abm-paises';
 import Cargando from '../ui/Cargando';
 import EstadoVacio from '../ui/EstadoVacio';
 import { Pastilla, fecha, fmt } from './ui';
@@ -24,7 +25,7 @@ export default function Goteo() {
   const [trabajando, setTrabajando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ t: string; mal?: boolean } | null>(null);
   const [nuevo, setNuevo] = useState(false);
-  const [form, setForm] = useState({ cadencia_id: '', cuentas_dia: 10, ciudad: '', con_ia: true });
+  const [form, setForm] = useState({ cadencia_id: '', cuentas_dia: 10, ciudad: '', pais: 'mx', con_ia: true });
   const [abierto, setAbierto] = useState<string | null>(null);
 
   const traer = () => {
@@ -122,6 +123,11 @@ export default function Goteo() {
             <label style={lbl}>Cuentas por día
               <input type="number" min={1} max={100} value={form.cuentas_dia} onChange={e => setForm({ ...form, cuentas_dia: Number(e.target.value) })} style={inp} />
             </label>
+            <label style={lbl}>País
+              <select value={form.pais} onChange={e => setForm({ ...form, pais: e.target.value })} style={inp}>
+                {Object.values(PAISES).map(p => <option key={p.iso} value={p.iso}>{p.nombre}</option>)}
+              </select>
+            </label>
             <label style={lbl}>Solo de esta ciudad (opcional)
               <input value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} placeholder="Villa Hidalgo" style={inp} />
             </label>
@@ -132,7 +138,7 @@ export default function Goteo() {
           </label>
           <div style={{ display: 'flex', gap: 7 }}>
             <button disabled={!form.cadencia_id || !!trabajando} onClick={() => {
-              pedir({ accion: 'crear', cadencia_id: form.cadencia_id, cuentas_dia: form.cuentas_dia, filtro: { ciudad: form.ciudad }, con_ia: form.con_ia }, 'crear', 'Goteo creado: enrola su primer lote en la próxima corrida del cartero');
+              pedir({ accion: 'crear', cadencia_id: form.cadencia_id, cuentas_dia: form.cuentas_dia, filtro: { ciudad: form.ciudad, pais: form.pais }, con_ia: form.con_ia }, 'crear', 'Goteo creado: enrola su primer lote en la próxima corrida del cartero');
               setNuevo(false);
             }} style={btn(true)}>Encender el goteo</button>
             <button onClick={() => setNuevo(false)} style={btn(false)}>Cancelar</button>
@@ -158,7 +164,7 @@ export default function Goteo() {
                 <div style={{ fontSize: '.9375rem', fontWeight: 800 }}>{g.nombre}</div>
                 <Pastilla tono={est}>{est.l}</Pastilla>
                 <span style={{ fontSize: '.75rem', color: '#888' }}>
-                  {g.cadencia?.nombre} · {GIROS[g.cadencia?.giro] || g.cadencia?.giro}{g.filtro?.ciudad ? ` · ${g.filtro.ciudad}` : ''}{g.autor ? ` · encendido por ${g.autor}` : ''}
+                  {g.cadencia?.nombre} · {GIROS[g.cadencia?.giro] || g.cadencia?.giro}{g.filtro?.ciudad ? ` · ${g.filtro.ciudad}` : ''}{g.filtro?.pais && paisDe(g.filtro.pais).region !== 'mexico' ? ` · ${paisDe(g.filtro.pais).nombre}` : ''}{g.autor ? ` · encendido por ${g.autor}` : ''}
                 </span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                   {g.estado === 'activo' && (

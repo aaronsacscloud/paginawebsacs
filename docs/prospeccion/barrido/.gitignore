@@ -5,3 +5,13 @@ log-w*.txt
 barrido-fin.txt
 cola.tsv
 __pycache__/
+ficha-*/
+cola-*.tsv
+log-*.txt
+sqlout/
+*-pais-fusion.json
+*-pais-sitios.json
+fichas-*.tsv
+fichas-fin-*.txt
+*.out
+barrido-fin-*.txt

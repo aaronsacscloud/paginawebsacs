@@ -323,7 +323,38 @@ y formato), `pais`/`moneda` en `prep`, y `hl`/`gl` de `maps.js`.
 
 ---
 
-## 11. Bitácora de mejoras
+## 11. Fuera de México: el barrido por país (`barrido/pais/`)
+
+Las mismas reglas de §2–§7, con lo que cambia cuando Google Maps no es el
+de México. El detalle y el porqué de cada país están en
+`sitio/MANUAL-PROSPECCION-ABM.md` §13; aquí, la mecánica:
+
+- **`paises.py`** es la fuente de LADA, largos válidos y regla de móvil por
+  país, y de `e164()`: un teléfono fuera de México se guarda SIEMPRE con
+  su código de país (`+573103043345`), porque `telefono.ts` toma diez
+  dígitos pelones como mexicanos. Ciudades por país para la cola.
+- **`cola-pais.py <giro> [isos]`** arma `cola-<giro>.tsv` (iso, consulta)
+  con los stems del giro × las ciudades del país.
+- **`maps-pais.js` / `barrido-pais.sh <giro> [workers]`**: el feed de Maps
+  con `hl=en` y el `gl` del país. Fuera de México el feed NO trae el número
+  de reseñas en ningún idioma; sí trae nombre, estrellas, categoría (en
+  inglés) y la URL del lugar. Pools en `pool-<iso>-<giro>/`.
+- **`lugar-pais.js` / `fichas-pais.sh <giro> [workers]`**: abre la ficha de
+  cada lugar único con `hl=en&gl=US` —la única combinación que enseña el
+  conteo de reseñas, el teléfono en E.164 y el sitio— a `ficha-<iso>/`.
+  Se puede relanzar: salta las que ya están.
+- **`carga-pais.py prep|hijos`**: filtra por categoría en inglés («Bridal
+  shop», «Dress store», «Boutique»…), exige teléfono válido por `e164()`,
+  agrupa cadenas, y carga con `pais`, `moneda`, `google_rating`,
+  `google_resenas`, `sitio` y su `abm_fuentes`.
+- **`sitios-pais.py`**: correo, `wa.me` declarado (con código de país),
+  Instagram/Facebook y plataforma desde el sitio, igual que §7.
+
+Lo que NO cambia: sin teléfono se elimina, WhatsApp solo al `wa.me`
+publicado, todo correo pasa por MX, y nada se enciende sin el dueño —cada
+país con su nota legal (manual §13.4) resuelta antes del primer correo.
+
+## 12. Bitácora de mejoras
 
 Se anota la fecha, qué se aprendió y qué se cambió. Lo más nuevo arriba.
 
@@ -354,8 +385,9 @@ Se anota la fecha, qué se aprendió y qué se cambió. Lo más nuevo arriba.
 
 - Segunda pasada de Maps por **colonia** en CDMX/GDL/MTY: el panel corta
   en ~120 resultados por consulta y las metrópolis se quedan cortas.
-- Raspar la **ficha** de Maps (no solo el panel) para los que tienen sitio:
-  hoy `web` viene vacío en casi todos los pools y el cruce de sitio no corre.
+- Raspar la **ficha** de Maps (no solo el panel) para los que tienen sitio
+  en MÉXICO: hoy `web` viene vacío en casi todos los pools y el cruce de sitio
+  no corre. (Fuera de México ya se hace: `pais/lugar-pais.js`.)
 - Marcar automáticamente `cadena` cuando el mismo nombre distintivo aparece
   en 8+ ciudades, en vez de listarlas a mano en `nombre_fuera`.
 - Detectar «cerrado permanentemente» desde el texto de la tarjeta.

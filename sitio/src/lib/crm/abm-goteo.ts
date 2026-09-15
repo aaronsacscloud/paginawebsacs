@@ -19,6 +19,7 @@
 // disyuntor. El goteo solo decide QUIÉN entra hoy a la fila.
 import { promises as dns } from 'node:dns';
 import { supabase } from '../supabase';
+import { paisDe } from './abm-paises';
 import { apuntar } from './abm.lib';
 import { generarCadencia, CORREO_OK } from './abm-generar';
 
@@ -69,6 +70,12 @@ export async function elegibles(g: any, limite = 500): Promise<{ cuentas: any[];
   const f = g.filtro || {};
   if (f.ciudad) q = q.ilike('ciudad', `%${String(f.ciudad).trim()}%`);
   if (f.subgiro) q = q.ilike('subgiro', `%${String(f.subgiro).trim()}%`);
+  /* Por país (14-sep-2026): un goteo es de UN país o de México. Sin filtro
+     se queda en México, que es donde viven las 21,107 cuentas de siempre;
+     un goteo viejo no se traga de pronto a Colombia por el solo hecho de que
+     la base creció. Se compara con el nombre tal como se guarda en
+     abm_cuentas.pais («Colombia»), acepte el iso o el nombre. */
+  q = q.eq('pais', paisDe(f.pais).nombre);
   const { data: base } = await q;
   const ids = (base || []).map((c: any) => c.id);
   if (!ids.length) return { cuentas: [], total_base: 0 };

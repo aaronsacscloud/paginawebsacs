@@ -229,7 +229,7 @@ export const GET: APIRoute = async ({ request }) => {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: CORREO_OK.test(destino) ? 'está en la lista de no contactar' : 'la dirección no tiene forma de dirección' }).eq('id', t.id);
       continue;
     }
-    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro').eq('id', t.cuenta_id).maybeSingle();
+    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro, pais').eq('id', t.cuenta_id).maybeSingle();
     if (!cuenta || cuenta.ya_es_cliente || ['no_contactar', 'respondio', 'reunion', 'ganada'].includes(cuenta.etapa)) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
       continue;
@@ -266,7 +266,7 @@ export const GET: APIRoute = async ({ request }) => {
     // Se reclama el toque antes de mandarlo. Si el proceso muriera entre el
     // POST a SendGrid y el update, el toque seguiría 'aprobado' y la corrida
     // de las 13:00 lo mandaría OTRA VEZ al mismo negocio.
-    const cierre = { giro: cuenta.giro, nombre: cuenta.nombre };
+    const cierre = { giro: cuenta.giro, nombre: cuenta.nombre, pais: cuenta.pais };
     const { data: reclamado } = await supabase.from('abm_toques')
       .update({ estado: 'enviando', enviado_at: new Date().toISOString() })
       .eq('id', t.id).eq('estado', 'aprobado').select('id').maybeSingle();

@@ -1253,15 +1253,51 @@ enciende sin que el dueño lo vea.
 2. Barrer Maps con `gl` del país (`barrido-pais.sh <iso> <giro>`): feed +
    ficha de cada lugar (`lugar.js`: web, teléfono, dirección, categoría,
    calificación y reseñas). Guardar cada resultado crudo en el pool.
-3. `carga-pais.py prep <iso> <giro>`: filtro por categoría y nombre, sin
-   teléfono se elimina, teléfono a E.164 con la LADA del país, cadenas
-   agrupadas, revisión a ojo con `revisar.py`, carga con `pais`, `moneda`,
-   `google_rating`, `google_resenas`, `sitio`, y `abm_fuentes`.
-4. Raspar sitios (`sitios-pais.py`): correo, `wa.me` declarado (con código
-   de país), redes, plataforma. MX a todo correo. Recalcular puntaje.
+3. `carga-pais.py prep <giro> [isos]`: fusiona feed + ficha por lugar
+   único, filtra por categoría de Google **en inglés** (la ficha se abre con
+   `hl=en`, que es la única forma de ver reseñas y teléfono fuera de México):
+   «Bridal shop», «Dress store», «Formal wear store», «Wedding store» y
+   similares entran solas; «Boutique», «Clothing store», «Store», «Fashion
+   designer» o sin categoría entran SOLO si el nombre dice novia/nupcial/
+   bridal/quince/fiesta/gala/vestidos/atelier/couture; el resto queda fuera.
+   Fuera también por nombre: tiendas departamentales y cadenas del país
+   (Falabella, Ripley, Éxito, Oechsle, Zara, H&M…), centros comerciales,
+   disfraces, y lo que solo viste al novio (smoking/tuxedo). **Sin teléfono
+   válido para SU país se elimina** (`e164` de `paises.py`). Agrupa cadenas
+   por dominio o marca distintiva dentro del país, deduplica contra la base
+   por nombre+ciudad, teléfono E.164 y dominio, y escribe
+   `sqlout/<giro>-<iso>-cuentas-NN.sql` con `pais` (nombre), `moneda`
+   (mayúsculas), `estado_geo` null, `subgiro` derivado (Novias venta /
+   Novias alquiler / Novias y 15 años / Fiesta y gala / Fiesta alquiler), el
+   mismo puntaje/tamaño/ruta que México, y **`etapa = 'en_pausa'`** con
+   `pausa_motivo` («en revisión del dueño antes de lanzar»). Por qué en
+   pausa: un goteo solo toma `sin_tocar`, así que aunque el código
+   desplegado todavía no filtre por país, ningún goteo de México se traga a
+   Colombia; la migración de lanzamiento las pasa a `sin_tocar`.
+4. Raspar sitios (`sitios-pais.py <giro>`): correo, `wa.me` declarado —el
+   número tal cual lo publicó el negocio, validado con `e164` del país, con
+   o sin código; si no cuadra con el país no se guarda—, redes, plataforma,
+   carrito. Luego `carga-pais.py hijos <giro>`: teléfonos como canal
+   `telefono` en E.164 (`+573103043345`), `whatsapp_tienda` como
+   `https://wa.me/<dígitos>`, correos tipados genérico/dirección con la
+   confianza de siempre, `abm_fuentes` con agente `carga <giro> <iso>
+   <YYYY-MM>`. MX a todo correo (`abm-verificar-mx.mjs <giro>`). Recalcular
+   puntaje.
 5. Escribir la cadencia de la región si no existe (migración con el porqué
    y la lista de lo afirmado); crear pasos, cadencias y **goteos en pausa**
-   por país.
+   por país. La de novias Latam ya existe
+   (`migraciones/2026-09-14-abm-novias-latam-cadencia.sql`): cadencias
+   `a1c0de11-…-0000000a0001` demo y `…a0002` diagnóstico, 16 correos + 3
+   WhatsApp, mismos días que México (1,4,6,10,14,19,25,33 y 2,16,36), mismas
+   imágenes. Lo que cambió respecto a México y por qué está en la cabecera
+   de la migración: sin mexicanismos (reserva, cuaderno, vitrina, cierre de
+   caja, camisetas), {{pais}} y {{xv}} en vez de «México» y «XV años», el
+   caso real en dólares («unos 60 mil dólares»), sin prometer facturación
+   (la de Sacs es CFDI), demo «en su horario». Perú: `asuntoPais` en
+   `abm-paises.ts` antepone «PUBLICIDAD: » al asunto (Ley 28493); lo hace el
+   código, no la plantilla, porque la plantilla es una para diez países. Las
+   plantillas de WhatsApp Latam (`abm_novias_latam_abre/sigue/cierra`, idioma
+   `es`, con {{pais}}) se registran en Meta solo con el OK del dueño.
 6. Renderizar una cadencia con IA contra una cuenta real de cada país,
    leerla, borrar el borrador.
 7. Resolver la legalidad (tabla de §13.4): Perú lleva «PUBLICIDAD» en el

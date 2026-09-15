@@ -1,4 +1,5 @@
 ---
+import { plans, type PlanPrice } from '../../data/plans';
 /**
  * SuitePlanes — cómo se paga la Suite del giro, y qué trae cada plan.
  *
@@ -36,6 +37,10 @@ interface Props {
   notaComplemento?: string;
   /** Por qué se cotiza aparte, en las palabras del giro. */
   porQue?: string;
+  /** La moneda de los precios: la llave de PlanPrice en data/plans.ts
+      (mxn, cop, clp, usd…). Las páginas por país (giros/novias-y-fiesta/<pais>)
+      la mandan; sin ella, los precios en pesos mexicanos de siempre. */
+  moneda?: keyof PlanPrice;
 }
 const {
   suite = 'Suite de Moda',
@@ -43,15 +48,27 @@ const {
   articulo = 'la',
   porQue = 'no es un módulo estándar sino una forma completa de costear',
   notaComplemento,
+  moneda = 'mxn',
 } = Astro.props;
+
+// El precio en la moneda pedida, con el mismo símbolo que /planes. Los
+// planes de esta lista van en el mismo orden que `plans` (Vende, Controla,
+// Fideliza y Multiplica, Automatiza): se leen por posición.
+const ETIQUETA: Record<string, string> = { mxn: 'MXN', usd: 'USD', eur: 'EUR', gbp: 'GBP', brl: 'BRL', cop: 'COP', ars: 'ARS', clp: 'CLP', pen: 'PEN' };
+const precioEn = (i: number, cual: 'monthly' | 'annual') => {
+  const v = plans[i]?.[cual]?.[moneda];
+  if (v == null) return '';
+  const simbolo = moneda === 'eur' ? '€' : moneda === 'gbp' ? '£' : moneda === 'pen' ? 'S/' : moneda === 'brl' ? 'R$' : '$';
+  return `${simbolo}${v.toLocaleString('es-MX')}${moneda === 'mxn' ? '' : ` ${ETIQUETA[moneda] || String(moneda).toUpperCase()}`}`;
+};
 
 const planes = [
   {
     n: '01',
     nombre: 'Vende',
     para: 'Para tu primera tienda',
-    precio: '$810',
-    anual: '$527',
+    precio: precioEn(0, 'monthly') || '$810',
+    anual: precioEn(0, 'annual') || '$527',
     hereda: '',
     areas: [
       { a: 'Venta en tienda', i: 'Punto de venta con y sin internet · Cortes de caja y arqueos · Cambios, devoluciones y cancelaciones · Apartados y pedidos · Cotizaciones · Ventas a crédito · Listas de precios' },
@@ -66,8 +83,8 @@ const planes = [
     n: '02',
     nombre: 'Controla',
     para: 'Para varias sucursales con orden',
-    precio: '$1,215',
-    anual: '$790',
+    precio: precioEn(1, 'monthly') || '$1,215',
+    anual: precioEn(1, 'annual') || '$790',
     hereda: 'Vende',
     areas: [
       { a: 'Inventario multisucursal', i: 'Existencias en tiempo real · Gestión de CEDIS · Traspasos entre tiendas · Reabasto sugerido · Alertas de stock bajo o exceso' },
@@ -83,8 +100,8 @@ const planes = [
     n: '03',
     nombre: 'Fideliza y Multiplica',
     para: 'Para que la clienta regrese',
-    precio: '$1,890',
-    anual: '$1,229',
+    precio: precioEn(2, 'monthly') || '$1,890',
+    anual: precioEn(2, 'annual') || '$1,229',
     hereda: 'Controla',
     areas: [
       { a: 'Clientes y CRM', i: 'Perfil 360° con historial omnicanal · Segmentación por comportamiento de compra · Notas y seguimientos' },
@@ -101,8 +118,8 @@ const planes = [
     n: '04',
     nombre: 'Automatiza',
     para: 'Para que la operación corra sola',
-    precio: '$3,780',
-    anual: '$2,457',
+    precio: precioEn(3, 'monthly') || '$3,780',
+    anual: precioEn(3, 'annual') || '$2,457',
     hereda: 'Fideliza',
     areas: [
       { a: 'Especialista de IA', i: 'Una persona real que diseña tus automatizaciones contigo · Sesión mensual de optimización · Onboarding completo' },

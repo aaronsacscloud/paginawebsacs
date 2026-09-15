@@ -32,7 +32,8 @@ export async function quien(request: Request): Promise<Quien | null> {
   return { id: (u as any).id, nombre: (u as any).name || (u as any).email || 'equipo', role: (u as any).role || 'cs' };
 }
 
-import { GIROS } from './abm-giros';
+import { GIROS, paginaDe } from './abm-giros';
+import { paisDe } from './abm-paises';
 import { nombrePila } from './nombre';
 export { GIROS };
 
@@ -179,6 +180,12 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     giro_nombre: GIROS[c.giro] || c.giro || '',
     ultima_publicacion: recorte(c.ultima_publicacion, 90),
     senal: recorte(c.senal_expansion, 90),
+    // Segmentación por país (14-sep-2026): el guion de Latam es uno y estas
+    // tres lo aterrizan —«en Colombia», «vestidos de 15 años», la página del
+    // giro de su país—. En México dicen México, XV años y la página raíz.
+    pais: paisDe(c.pais).nombre,
+    xv: paisDe(c.pais).xv,
+    landing: paginaDe(c.giro, undefined, c.pais)?.url || '',
   };
 }
 

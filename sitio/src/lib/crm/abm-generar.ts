@@ -9,6 +9,7 @@
 import { supabase } from '../supabase';
 import { anthropic, MODELS } from '../ai/client';
 import { limpiar, apuntar, GIROS, variablesDe, rellenar, nombrePila } from './abm.lib';
+import { paisDe, regionDe, asuntoPais, type Region } from './abm-paises';
 
 /**
  * Producto sin talla: joyería, bolsas, sombreros, lentes, accesorios.
@@ -25,12 +26,27 @@ export const sinTalla = (subgiro?: string | null) => {
   return SIN_TALLA.test(s) && !CON_TALLA.test(s);
 };
 
+/** La cadencia activa del giro y la ruta para una región, con caída a México. */
+export async function cadenciaDe(giro: string, ruta: string, region: Region): Promise<{ data: { id: string; nombre: string; region: string } | null }> {
+  const q = (r: string) => supabase.from('abm_cadencias').select('id, nombre, region')
+    .eq('giro', giro).eq('ruta', ruta).eq('activa', true).eq('region', r).maybeSingle();
+  const { data } = await q(region);
+  if (data || region === 'mexico') return { data: data as any };
+  return (await q('mexico')) as any;
+}
+
 /** Lo que sabemos de la cuenta, resumido para que la IA no invente nada. */
 export function expediente(c: any, canales: any[], personas: any[], senales: any[]) {
   const l: string[] = [];
   l.push(`Negocio: ${c.nombre}`);
   l.push(`Giro: ${GIROS[c.giro] || c.giro}${c.subgiro ? ` (${c.subgiro})` : ''}`);
   l.push(`Ciudad: ${c.ciudad || 'México'} · País: ${c.pais} · Moneda: ${c.moneda}`);
+  // Segmentación por país (14-sep-2026): la IA tiene que saber en qué
+  // español escribe y cómo le dicen a la fiesta de quince en ese país. Se
+  // le da como dato del expediente, tajante, no como pista en el objetivo.
+  const pp = paisDe(c.pais);
+  if (pp.region === 'mexico') l.push('Registro: español de México. El negocio está en México: cuando el texto base diga «en todo México» o «XV años», déjalo.');
+  else l.push(`Registro: español neutro de Latinoamérica, trato de ${pp.trato}, SIN mexicanismos (nada de «checar», «platicar», «ahorita», «apartado», «padrísimo», «XV años»). En ${pp.nombre} a la fiesta de quince se le dice «${pp.xv}» y la moneda es ${pp.moneda.toUpperCase()}: no escribas cifras en pesos mexicanos como si fueran locales.`);
   if (c.sucursales) l.push(`Sucursales: ${c.sucursales} (${c.sucursales_confianza})`);
   else l.push('Sucursales: no verificadas');
   if (c.google_rating) l.push(`Google: ${c.google_rating}${c.google_resenas ? ` con ${c.google_resenas} reseñas` : ''}`);
@@ -75,7 +91,7 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
 }
 
 export const REGLAS = `Reglas de escritura, sin excepción:
-- Español de México, tono de persona. Nada de "solución integral", "potenciar", "revolucionar", "líder".
+- El español que dice el expediente (de México, o neutro de Latinoamérica), tono de persona. Nada de "solución integral", "potenciar", "revolucionar", "líder".
 - TODOS los correos van en TEXTO PLANO, sin imágenes. Nunca HTML.
 - El correo 1 es el de PRESENTACIÓN y es el único largo (hasta 200 palabras).
   Su trabajo es que el prospecto entienda POR QUÉ le llega: no se registró en
@@ -93,7 +109,7 @@ export const REGLAS = `Reglas de escritura, sin excepción:
 - Asunto de 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji.
 - NO INVENTES NADA. Solo puedes usar hechos del expediente. Si un dato no está, no escribas esa frase.
 - Prohibido inventar cifras de resultados. El único caso que puedes citar: en un cliente nuestro,
-  cadena de moda, encontramos 1.2 millones de pesos mal repartidos entre su centro de distribución
+  cadena de moda, encontramos 1.2 millones de pesos mexicanos (unos 60 mil dólares) mal repartidos entre su centro de distribución
   y sus tiendas, con apenas 50 claves de producto.
 - No prometas llamadas ni juntas largas: se ofrece un diagnóstico de 15 minutos con sus datos.
 - Si el expediente trae una QUEJA DE UN CLIENTE SUYO, úsala en el primer correo, pero
@@ -145,8 +161,13 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
   if (vivos) return { ok: false, error: `ya tiene ${vivos} correos en la fila; cancélalos antes de generar otra cadencia`, status: 409 };
 
   const ruta = c.ruta || 'demo';
-  const { data: base } = await supabase.from('abm_cadencias')
-    .select('id, nombre').eq('giro', c.giro).eq('ruta', ruta).eq('activa', true).maybeSingle();
+  /* La cadencia y las plantillas son de la REGIÓN de la cuenta (manual
+     §13.3): México tiene su guion, Latam el suyo en español neutro. Si la
+     región todavía no tiene guion para ese giro, se cae al de México para
+     que ninguna cuenta se quede sin cadencia —y el expediente ya le dijo a
+     la IA en qué español reescribirlo—. */
+  const region = regionDe(c.pais);
+  const { data: base } = await cadenciaDe(c.giro, ruta, region);
   const { data: pasosTodos } = base
     ? await supabase.from('abm_pasos').select('id, dia, orden, canal, nota, plantilla_id').eq('cadencia_id', base.id).order('dia')
     : { data: [] as any[] };
@@ -155,7 +176,8 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
   const pasos = (pasosTodos || []).filter((x: any) => x.canal === 'email');
   const pasosWa = (pasosTodos || []).filter((x: any) => x.canal === 'whatsapp');
   const { data: plantillas } = await supabase.from('abm_plantillas')
-    .select('orden, asunto, cuerpo, objetivo, imagen, boton_texto, boton_url').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true).order('orden');
+    .select('orden, asunto, cuerpo, objetivo, imagen, boton_texto, boton_url').eq('giro', c.giro).eq('ruta', ruta).eq('canal', 'email').eq('activa', true)
+    .eq('region', (base as any)?.region || 'mexico').order('orden');
 
   const guion = (plantillas || []).map((p: any, i: number) =>
     `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
@@ -193,7 +215,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
   const dias = (pasos || []).map((x: any) => Number(x.dia)).filter(Boolean);
   const base0 = (plantillas || []).map((p: any, i: number) => ({
     dia: dias[i] ?? [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
-    asunto: rellenar(p.asunto, vars),
+    asunto: asuntoPais(c.pais, rellenar(p.asunto, vars)),
     cuerpo: rellenar(p.cuerpo, vars),
     // La imagen y el botón NO los toca la IA: son del correo, no del texto.
     imagen: p.imagen || null, boton_texto: p.boton_texto || null, boton_url: p.boton_url || null,
@@ -226,7 +248,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
       if (lista.length) {
         correos = lista.map((m: any, i: number) => ({
           dia: Number(m.dia) || base0[i]?.dia || (i * 4 + 1),
-          asunto: rellenar(String(m.asunto || base0[i]?.asunto || ''), vars),
+          asunto: asuntoPais(c.pais, rellenar(String(m.asunto || base0[i]?.asunto || ''), vars)),
           cuerpo: rellenar(String(m.cuerpo || base0[i]?.cuerpo || ''), vars),
           // Se conservan los del paso: la IA adapta el texto, no el diseño.
           imagen: base0[i]?.imagen || null,

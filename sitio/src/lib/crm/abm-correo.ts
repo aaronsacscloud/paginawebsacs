@@ -24,6 +24,7 @@
 // arrastrar dependencias del navegador para pintar un correo.
 import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE, waLink } from '../whatsapp';
 import { operacionDe, paginaDe } from './abm-giros';
+import { alcanceDe } from './abm-paises';
 
 const MORADO = '#9B8CFA';
 const MORADO_TINTA = '#5B4BD6';
@@ -108,7 +109,7 @@ export type PartesCorreo = {
   cierre?: Cierre | null;
 };
 
-export type Cierre = { giro?: string | null; nombre?: string | null };
+export type Cierre = { giro?: string | null; nombre?: string | null; pais?: string | null };
 
 // ── El cierre: la llamada a la acción que lleva todo correo ──────────────────
 //
@@ -132,6 +133,10 @@ export function fraseCierre(giro?: string | null): string {
    pie; el +52 se queda en formato internacional, que es como se marca desde
    cualquier país, y la demo se agenda en la hora del que agenda. */
 export const ALCANCE = 'Atendemos negocios de moda en México, Latinoamérica y España por videollamada, en su horario.';
+/* Y desde la segmentación por país (14-sep-2026) el cierre dice EL país del
+   prospecto: a México «en todo México», a Colombia «en Colombia, en su
+   horario». La frase general de arriba queda para las vistas previas que no
+   saben de qué cuenta son. */
 
 /** El wa.me del cierre, con el mensaje ya escrito. */
 export function whatsappCierre(nombre?: string | null): string {
@@ -142,8 +147,8 @@ export function whatsappCierre(nombre?: string | null): string {
 /** El mismo cierre para la versión de texto plano: tiene que decir lo mismo
  *  que el HTML, con sus dos ligas, o los filtros puntúan la diferencia. */
 export function cierreTexto(c: Cierre): string {
-  const pg = paginaDe(c.giro);
-  return `\n\n${fraseCierre(c.giro)} ${ALCANCE}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
+  const pg = paginaDe(c.giro, undefined, c.pais);
+  return `\n\n${fraseCierre(c.giro)} ${alcanceDe(c.pais)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
     + (pg ? `\n\n${invitacionPagina(pg.nombre)}: ${pg.url}` : '');
 }
 
@@ -153,11 +158,11 @@ function invitacionPagina(nombre: string): string {
 }
 
 function bloqueCierre(c: Cierre): string {
-  const pg = paginaDe(c.giro);
+  const pg = paginaDe(c.giro, undefined, c.pais);
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
 <td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
 <p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
-<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))} ${esc(ALCANCE)}</p>
+<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))} ${esc(alcanceDe(c.pais))}</p>
 <!-- Los dos botones en UNA fila, a mitades iguales, cada botón a lo ancho de
      su celda: así se ven parejos en escritorio y no se encaraman en el
      teléfono. Uno debajo del otro se veía apilado, y el dueño lo rechazó. -->

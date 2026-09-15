@@ -1,4 +1,5 @@
 // ══ Los giros del motor Account-Based, con su nombre en la pantalla ══════════
+import { paisDe } from './abm-paises';
 //
 // Un solo archivo, sin dependencias de servidor, para que lo importen igual
 // las rutas de la API y los componentes del navegador. Antes estaba copiado en
@@ -71,8 +72,20 @@ export const PAGINA_GIRO: Record<string, { ruta: string; nombre: string }> = {
   deportiva: { ruta: '/giros/activewear', nombre: 'ropa deportiva' },
 };
 
-/** La página del giro con su URL completa, o null si el giro no tiene. */
-export function paginaDe(giro?: string | null, sitio = 'https://www.sacscloud.com'): { url: string; nombre: string } | null {
+/** La página del giro con su URL completa, o null si el giro no tiene.
+ *
+ *  Con país (14-sep-2026, segmentación por país): una cuenta de fuera de
+ *  México va a la página de SU país cuando existe —hoy solo novias y fiesta
+ *  tiene versión por país, con su moneda y sin cifras que solo son ciertas
+ *  en México—. Los demás giros no tienen página que le hable a Colombia o a
+ *  Chile, y mandar a la de México («personas de soporte en México», precios
+ *  en pesos) contradice el correo: mejor nada que la página equivocada. */
+export function paginaDe(giro?: string | null, sitio = 'https://www.sacscloud.com', pais?: string | null): { url: string; nombre: string } | null {
   const p = PAGINA_GIRO[String(giro || '')];
-  return p ? { url: sitio.replace(/\/$/, '') + p.ruta, nombre: p.nombre } : null;
+  if (!p) return null;
+  const base = sitio.replace(/\/$/, '');
+  const pp = paisDe(pais);
+  if (pp.region === 'mexico') return { url: base + p.ruta, nombre: p.nombre };
+  if (p.ruta === '/giros/novias-y-fiesta') return { url: base + pp.landingNovias, nombre: `${p.nombre} en ${pp.nombre}` };
+  return null;
 }

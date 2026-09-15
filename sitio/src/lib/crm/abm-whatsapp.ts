@@ -82,7 +82,7 @@ export async function registrarPlantillas(giro: string): Promise<{ nombre: strin
   // Hidalgo, que es lo que el revisor ve para decidir si el texto tiene sentido.
   const { data: muestra } = await supabase.from('abm_cuentas').select('nombre, ciudad').eq('giro', giro)
     .not('ciudad', 'is', null).order('puntaje', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
-  const ejemploDe = (v: string) => v === 'nombre' ? (muestra?.nombre || 'Creaciones Lupita') : v === 'ciudad' ? (muestra?.ciudad || 'Villa Hidalgo') : 'ejemplo';
+  const ejemploDe = (v: string) => v === 'nombre' ? (muestra?.nombre || 'Creaciones Lupita') : v === 'ciudad' ? (muestra?.ciudad || 'Villa Hidalgo') : v === 'pais' ? 'Colombia' : 'ejemplo';
   const out: { nombre: string; resultado: string }[] = [];
   for (const e of estado) {
     if (!e.meta_nombre) { out.push({ nombre: e.nombre, resultado: 'sin meta_nombre en abm_plantillas' }); continue; }
@@ -151,7 +151,9 @@ export async function enviarWhatsApps(o: { hoy: string; tope: number }): Promise
   const tocadasHoy = new Set((cuentasHoy || []).map((r: any) => r.cuenta_id));
 
   const ids = Array.from(new Set(pendientes.map((t: any) => t.cuenta_id)));
-  const { data: cuentas } = await supabase.from('abm_cuentas').select('id, nombre, ciudad, etapa, ya_es_cliente, giro').in('id', ids);
+  // `pais` viaja para que {{pais}} de una plantilla de Latam diga «Colombia» y
+    // no «México» (variablesDe cae a México cuando la cuenta no trae país).
+    const { data: cuentas } = await supabase.from('abm_cuentas').select('id, nombre, ciudad, pais, etapa, ya_es_cliente, giro').in('id', ids);
 
   for (const t of pendientes as any[]) {
     if (res.enviados >= restante) break;

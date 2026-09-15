@@ -21,7 +21,23 @@
  */
 import BloqueProducto from '../BloqueProducto.astro';
 
-const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
+/** Por país (14-sep-2026): la página de Colombia no puede enseñar un vestido
+ *  de «$28,000» —en pesos colombianos eso no compra ni el velo—. La página
+ *  manda la moneda (código ISO) y el rango de precios en ESA moneda; el
+ *  formato lo pone Intl con el locale del país, así el pesos colombiano sale
+ *  «$ 4.000.000» y el sol «S/ 3,500» como los escriben allá. Sin props es la
+ *  de siempre: pesos mexicanos. */
+interface Props {
+  moneda?: string;   // ISO 4217: MXN, COP, CLP, ARS, PEN, USD, EUR
+  locale?: string;   // es-MX, es-CO…
+  precio?: number;   // el vestido de ejemplo
+  min?: number;
+  max?: number;
+  paso?: number;
+}
+const { moneda = 'MXN', locale = 'es-MX', precio = 28000, min = 6000, max = 90000, paso = 1000 } = Astro.props;
+const defaults = { precio, semanas: 20, anticipo: 30, moneda, locale };
+const fmtServidor = (n: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: moneda, maximumFractionDigits: 0 }).format(n);
 ---
 
 <BloqueProducto
@@ -38,8 +54,8 @@ const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
     <div class="nf-controles">
       <label>
         <span>Precio del vestido</span>
-        <input type="range" id="nfPrecio" class="nf-rango" min="6000" max="90000" step="1000" value={defaults.precio} />
-        <b id="nfPrecioV">$28,000</b>
+        <input type="range" id="nfPrecio" class="nf-rango" min={min} max={max} step={paso} value={defaults.precio} />
+        <b id="nfPrecioV">{fmtServidor(defaults.precio)}</b>
       </label>
       <label>
         <span>Semanas al evento</span>
@@ -56,11 +72,11 @@ const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
     <div class="nf-datos">
       <div class="nf-dato">
         <span class="nf-rot">Anticipo hoy</span>
-        <b class="nf-n" id="nfHoy">$0</b>
+        <b class="nf-n" id="nfHoy">{fmtServidor(0)}</b>
       </div>
       <div class="nf-dato nf-dato-abono">
         <span class="nf-rot">Abono quincenal</span>
-        <b class="nf-n" id="nfAbono">$0</b>
+        <b class="nf-n" id="nfAbono">{fmtServidor(0)}</b>
         <span class="nf-sub" id="nfAbonoSub"></span>
       </div>
       <div class="nf-dato">
@@ -71,7 +87,7 @@ const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
     </div>
 
     <p class="nf-fea" id="nfFea" aria-live="polite"></p>
-    <a class="nf-cta" href="/contacto?estimado=28000&de=novias#demo" id="nfCta">Ver mi casa con sus apartados reales</a>
+    <a class="nf-cta" href={`/contacto?estimado=${defaults.precio}&de=novias#demo`} id="nfCta">Ver mi casa con sus apartados reales</a>
   </div>
 </BloqueProducto>
 
@@ -120,7 +136,11 @@ const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
 <script>
   const raiz = document.getElementById('nf');
   if (raiz) {
-    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    // La moneda y el locale vienen del servidor (por país); el mismo formato
+    // que ya pintó el HTML, para que no brinque al cargar.
+    const def = JSON.parse(raiz.dataset.def || '{}') as { moneda?: string; locale?: string };
+    const nf = new Intl.NumberFormat(def.locale || 'es-MX', { style: 'currency', currency: def.moneda || 'MXN', maximumFractionDigits: 0 });
+    const fmt = (n: number) => nf.format(Math.round(n));
     const el = (id: string) => document.getElementById(id)!;
     function pintar() {
       const precio = Number((el('nfPrecio') as HTMLInputElement).value);

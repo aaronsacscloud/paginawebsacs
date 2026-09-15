@@ -16,6 +16,7 @@
 // goteo va a dejar aprobados cada día (manual, regla 8.3).
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { PAISES } from '../../../../lib/crm/abm-paises';
 import { json, quien, esUuid, limpiar } from '../../../../lib/crm/abm.lib';
 import { elegibles, correrGoteos } from '../../../../lib/crm/abm-goteo';
 import { estadoPlantillas, registrarPlantillas, completarWhatsApps } from '../../../../lib/crm/abm-whatsapp';
@@ -101,6 +102,8 @@ export const POST: APIRoute = async ({ request }) => {
     const out: Record<string, string> = {};
     if (f?.ciudad) out.ciudad = limpiar(f.ciudad, 80);
     if (f?.subgiro) out.subgiro = limpiar(f.subgiro, 80);
+    // El país se guarda por iso («co»); sin él, el goteo es de México.
+    if (f?.pais && PAISES[String(f.pais).toLowerCase()]) out.pais = String(f.pais).toLowerCase();
     return out;
   };
   const porDia = (v: any) => Math.min(100, Math.max(1, Math.round(Number(v) || 10)));
@@ -110,7 +113,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: cad } = await supabase.from('abm_cadencias').select('id, nombre').eq('id', b.cadencia_id).maybeSingle();
     if (!cad) return json({ error: 'esa cadencia no existe' }, 404);
     const filtro = filtroDe(b.filtro);
-    const nombre = limpiar(b.nombre, 120) || `${cad.nombre} · ${porDia(b.cuentas_dia)} al día${filtro.ciudad ? ` · ${filtro.ciudad}` : ''}`;
+    const nombre = limpiar(b.nombre, 120) || `${cad.nombre} · ${porDia(b.cuentas_dia)} al día${filtro.ciudad ? ` · ${filtro.ciudad}` : ''}${filtro.pais && filtro.pais !== 'mx' ? ` · ${PAISES[filtro.pais].nombre}` : ''}`;
     const { data, error } = await supabase.from('abm_goteo').insert({
       cadencia_id: cad.id, nombre, cuentas_dia: porDia(b.cuentas_dia), filtro,
       con_ia: b.con_ia !== false, estado: 'activo', creado_por: yo.id, nota: limpiar(b.nota, 400) || null,

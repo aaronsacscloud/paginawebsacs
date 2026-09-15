@@ -22,6 +22,17 @@ es(telefonoWhatsApp('+52 443 214 2826'), '+524432142826', 'lada de 3 dígitos');
 es(telefonoWhatsApp('52 933 129 6047'), '+529331296047', 'sin + , lada de 3');
 es(telefonoWhatsApp('+1 951-973-4901'), '+19519734901', 'un número de Estados Unidos con guiones');
 
+// ── Latinoamérica con su código (segmentación por país, 14-sep-2026) ─────
+// Diez dígitos con «+» y un código que no es de México: el + manda.
+es(telefonoWhatsApp('+51 1 2345678'), '+5112345678', 'Perú fijo: +51 y ocho dígitos son diez');
+es(telefonoWhatsApp('+507 6123-4567'), '+50761234567', 'Panamá: +507 y ocho dígitos');
+es(telefonoWhatsApp('+593 2 234 5678'), '+59322345678', 'Ecuador fijo: +593 y ocho');
+es(telefonoWhatsApp('+573103043345'), '+573103043345', 'Colombia celular, tal cual viene de Maps');
+es(telefonoWhatsApp('+56 9 1234 5678'), '+56912345678', 'Chile celular');
+es(telefonoWhatsApp('+5491145678901'), '+5491145678901', 'Argentina celular con el 9');
+es(telefonoWhatsApp('+598 91 234 567'), '+59891234567', 'Uruguay celular');
+es(telefonoWhatsApp('+1 809 555 1234'), '+18095551234', 'República Dominicana va por el +1');
+
 // ── Los que estaban MAL en la base ───────────────────────────────────────
 es(telefonoWhatsApp('5551234567'), '+525551234567', '10 dígitos pelones: se asume México');
 es(telefonoWhatsApp('6643171231'), '+526643171231', 'otro de 10');
