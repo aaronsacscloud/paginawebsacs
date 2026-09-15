@@ -18,13 +18,28 @@ FIRMAS = [('Shopify', r'cdn\.shopify\.com|shopify-features|Shopify\.theme|myshop
  ('Webflow', r'webflow\.(com|io)'), ('PrestaShop', r'prestashop'), ('Next.js', r'/_next/static'), ('GoDaddy/Wsb', r'websitebuilder|godaddy'), ('Jimdo', r'jimdo'), ('Google Sites', r'sites\.google\.com')]
 CARRITO = r'(agregar al carrito|añadir al carrito|add to cart|/cart\b|carrito de compras|comprar ahora)'
 EMAIL = re.compile(r'[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,8}', re.I)
-EMAIL_BASURA = re.compile(r'sentry|shopify|\.png|\.jpg|\.gif|\.svg|\.webp|wixpress|@[0-9]|example|dominio|ejemplo|@2x|godaddy|w3\.org|schema\.org|@sentry|noreply|no-reply|yourdomain|email@|correo@|nombre@|usuario@|@email\.|@mail\.com$|\.js$|\.css$|doe\.com|xxxx|test@|prueba@|@test\.', re.I)
+EMAIL_BASURA = re.compile(r'sentry|shopify|\.png|\.jpg|\.gif|\.svg|\.webp|wixpress|@[0-9]|example|dominio|ejemplo|@2x|godaddy|w3\.org|schema\.org|@sentry|noreply|no-reply|yourdomain|email@|correo@|nombre@|usuario@|@email\.|@mail\.com$|\.js$|\.css$|doe\.com|xxxx|test@|prueba@|@test\.|your@|gdprlocal|linktr\.ee|donweb|rfuenzalida|impallari|pixelspread|nobleui|online-tools|ndiscovered|@pronovias\.com|@morilee|@wix\.com|@squarespace|@webflow|@google\.com|@facebook\.com|@instagram\.com|@apple\.com|^account-name|my-domain|agency@|tedbodin', re.I)
+# Proveedores que se cuelan como si fueran el negocio (aprendido con la carga
+# Latam de novias): el DPO de linktr.ee/gdprlocal en un link-in-bio, el
+# diseñador de la tipografía (impallari, rfuenzalida), el tema de la web
+# (nobleui, pixelspread), el corporativo de la marca que distribuyen
+# (Pronovias, Morilee). Además, un correo que aparece en 2+ cuentas SIN
+# relación se descarta entero (regla del scraper de México).
 WA = re.compile(r'(?:wa\.me|api\.whatsapp\.com/send\?phone=|whatsapp\.com/send\?phone=|wa\.link)/?\+?(\d{7,15})', re.I)
 IG = re.compile(r'instagram\.com/([A-Za-z0-9_.]{2,30})/?', re.I)
 FB = re.compile(r'facebook\.com/([A-Za-z0-9_.\-]{3,60})/?', re.I)
 IG_BASURA = {'p', 'explore', 'reel', 'reels', 'accounts', 'share', 'stories', 'tv', 'oauth'}
 FB_BASURA = {'sharer', 'sharer.php', 'plugins', 'tr', 'dialog', 'share', 'login', 'profile.php', 'pages', 'groups', 'hashtag', 'privacy', 'policies', 'help', '2008', 'photo', 'photo.php', 'watch', 'events'}
 SUBPAGINAS = ['/contacto', '/contact', '/pages/contacto', '/pages/contact', '/aviso-de-privacidad', '/politica-de-privacidad', '/politica-de-datos', '/policies/privacy-policy', '/policies/legal-notice', '/pages/aviso-de-privacidad', '/sucursales', '/pages/sucursales', '/tiendas', '/nosotros']
+
+def navegador(u):
+    """(html, código, url final) con Chromium; ("", 0, u) si tampoco entra."""
+    try:
+        p = subprocess.run(['node', os.path.join(D, 'html-nav.js'), u], capture_output=True, text=True, timeout=90)
+        r = json.loads(p.stdout or '[]')
+        if r and r[0].get('html') and r[0].get('status', 0) < 400 and len(r[0]['html']) > 200: return r[0]['html'], 200, r[0]['final']
+    except Exception: pass
+    return '', 0, u
 
 def curl(u, t=20):
     p = subprocess.run(['curl', '-sSL', '--max-time', str(t), '--compressed', '-A', UA, '-w', '\n@@%{http_code}|%{size_download}|%{time_total}|%{url_effective}', u], capture_output=True, text=True, errors='ignore')
@@ -39,6 +54,12 @@ def mira(c):
     out = dict(iso=c['iso'], nombre=c['nombre'], ciudad=c['ciudad'], id_existente=c.get('id_existente'), web=u)
     try:
         html, cod, seg, final = curl(u)
+        # Plan B: muro anti-bots (403/429/409), un 202 de «espere» o un 301
+        # que curl no resolvió. Un Chromium de verdad suele entrar; el 0/404/5xx
+        # se queda como está porque ahí el sitio sí está muerto (es un dato).
+        if cod in (403, 429, 409, 202, 301, 302) or (cod == 200 and len(html) < 200):
+            html2, cod2, final2 = navegador(u)
+            if cod2 == 200 and len(html2) > len(html): html, cod, final = html2, cod2, final2; out['via'] = 'navegador'
         out.update(http=cod, seg=seg, final=final, https=final.startswith('https'))
         h = html.lower()
         if cod != 200 or len(h) < 200:
@@ -63,6 +84,9 @@ def mira(c):
         emails = []
         for m in re.finditer(r'mailto:([^"\'?&\s>]+)', todo, re.I): emails.append(m.group(1).lower())
         for m in EMAIL.finditer(todo): emails.append(m.group(0).lower())
+        # Basura pegada al inicio por el HTML: «%20info@», «http://info@»,
+        # «+50762702795info@» (el teléfono y el correo sin espacio).
+        emails = [re.sub(r'^(?:%20|https?://|\+?\d{7,15})+', '', e) for e in emails]
         emails = [e for e in dict.fromkeys(emails) if not EMAIL_BASURA.search(e) and len(e) < 60]
         out['emails'] = emails[:5]
         # wa.me: el número tal cual lo publicó el negocio, validado para SU país
@@ -83,6 +107,14 @@ def mira(c):
 
 print(len(cuentas), 'sitios a revisar', file=sys.stderr)
 with cf.ThreadPoolExecutor(10) as ex: res = list(ex.map(mira, cuentas))
+# Un correo que publican 2+ negocios distintos no es de ninguno: es de su
+# proveedor (tipografía, tema, DPO). Salvo que el dominio del correo sea el
+# del sitio de cada uno (una cadena con sucursales cargadas por país).
+from collections import Counter
+veces = Counter(e for r in res for e in r.get('emails') or [])
+for r in res:
+    dom = re.sub(r'^https?://(www\.)?', '', r.get('web') or '').split('/')[0].lower()
+    r['emails'] = [e for e in r.get('emails') or [] if veces[e] == 1 or (dom and e.endswith('@' + dom))]
 json.dump(res, open(os.path.join(D, GIRO + '-pais-sitios.json'), 'w'), ensure_ascii=False, indent=1)
 ok = [r for r in res if r.get('http') == 200]
 from collections import Counter

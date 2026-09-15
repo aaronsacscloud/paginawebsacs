@@ -36,7 +36,7 @@ NOMBRE_OK = re.compile(r'novia|nupcial|bridal|bride|quince|15 a[ñn]os|\bxv\b|fi
 # Fuera por nombre: cadenas y tiendas departamentales del país, centros
 # comerciales, disfraces, y lo que solo viste al novio (el guion habla de la
 # novia y su fecha; un smoking se renta la semana anterior).
-NOMBRE_FUERA = re.compile(r'falabella|ripley|oechsle|liverpool|\bexito\b|éxito|olímpica|olimpica|jumbo|walmart|tottus|la polar|hites|corona\b|\bparis\b(?!.*novia)|zara\b|h&m|bershka|stradivarius|pull ?& ?bear|\bmango\b|forever 21|\bgap\b|\bmall\b|centro comercial|^plaza |shopping|^cc |c\.c\.|unicentro|santaf[eé]\b|dafiti|mercado ?libre|linio|amazon|disfra|costume|tuxedo|smoking|esmoquin|\btrajes? (de|para) (novio|caballero|hombre)\b(?!.*novia)|renta de (mesas|sillas|carpas)|salón de eventos|salon de eventos|banquete|florister|fotograf|catering|\bhotel\b|\bspa\b', re.I)
+NOMBRE_FUERA = re.compile(r'falabella|ripley|\betam\b|\btucci\b|ropa [ií]ntima|lencer|lingerie|oechsle|liverpool|\bexito\b|éxito|olímpica|olimpica|jumbo|walmart|tottus|la polar|hites|corona\b|\bparis\b(?!.*novia)|zara\b|h&m|bershka|stradivarius|pull ?& ?bear|\bmango\b|forever 21|\bgap\b|\bmall\b|centro comercial|^plaza |shopping|^cc |c\.c\.|unicentro|santaf[eé]\b|dafiti|mercado ?libre|linio|amazon|disfra|costume|tuxedo|smoking|esmoquin|\btrajes? (de|para) (novio|caballero|hombre)\b(?!.*novia)|renta de (mesas|sillas|carpas)|salón de eventos|salon de eventos|banquete|florister|fotograf|catering|\bhotel\b|\bspa\b', re.I)
 
 GENERICOS = set(('novia novias novio novios vestidos vestido de del la el los las y e en para con por tienda boutique atelier alquiler arriendo renta ventas venta '
                  'fiesta fiestas gala noche quince quinceanera quinceaneras 15 anos xv sposa bridal bride wedding dress dresses shop store moda modas fashion '
@@ -288,7 +288,9 @@ def hijos():
             d = w.lstrip('+')
             if d in ya_tel[cid]: continue
             ya_tel[cid].add(d); n_wa += 1
-            can.append(f"({q(cid)},'whatsapp_tienda',{q('https://wa.me/' + d)},'alta','sin_probar',true)")
+            # 'declarado': el negocio publicó su wa.me en su sitio; es lo único que
+            # cuenta como WhatsApp (trigger abm_canales_recontar y regla del manual).
+            can.append(f"({q(cid)},'whatsapp_tienda',{q('https://wa.me/' + d)},'alta','declarado',true)")
             fue.append(f"({q(cid)},'whatsapp_tienda',{q('https://wa.me/' + d)},{q(s_['web'])},'sitio_oficial','alta','carga {GIRO} {c['iso']} {MES}')")
         sets = [f"plataforma_web={q(s_.get('plataforma') or 'A la medida / otro')}", f"sitio_http={s_['http']}", f"sitio_seg={s_.get('seg') or 'null'}", f"sitio_carrito={'true' if s_.get('carrito') else 'false'}"]
         if s_.get('ig') and not c.get('ig'): sets.append(f"instagram={q('https://instagram.com/' + s_['ig'])}")

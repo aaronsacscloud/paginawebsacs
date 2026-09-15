@@ -57,6 +57,10 @@ def e164(bruto, iso):
         # (+54 9 11 …). Se guarda 9 + área + número, que es como marca WhatsApp.
         m = re.match(r'^(\d{2,4})15(\d{6,8})$', d)
         if m: d = '9' + m.group(1) + m.group(2)
+        # Con el 9 delante tienen que quedar 11 dígitos (9 + área + número):
+        # «549916052376» es un wa.me publicado con un dígito de menos, no un
+        # número. Ningún código de área argentino empieza con 9.
+        if d.startswith('9') and len(d) != 11: return None
     if len(d) not in p['largos']: return None
     return '+' + p['lada'] + d
 
