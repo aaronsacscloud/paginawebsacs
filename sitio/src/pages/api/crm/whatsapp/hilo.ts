@@ -300,6 +300,24 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 export const PUT: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
+
+  /* ══ UN HILO DE CORREO TAMBIÉN SE CIERRA ═══════════════════════════════════
+     Pedido del dueño (15-sep-2026): «que los correos me permitan igual
+     cerrarlos para no verlos en esta sección».
+
+     Hasta hoy esto solo sabía de conversaciones de WhatsApp: una fila que vive
+     únicamente en el correo no tenía id de WhatsApp que mandar, así que no
+     había forma de resolverla y se quedaba en «No contestadas» para siempre.
+     `email_conversations` tiene su propio estado —abierta / cerrada— y es el
+     que manda para esas filas. */
+  if (!b.id && b.email_id) {
+    const estado = b.estado_crm === 'resuelta' ? 'cerrada' : 'abierta';
+    const { error } = await supabase.from('email_conversations')
+      .update({ estado, ...(estado === 'cerrada' ? { leida: true } : {}) }).eq('id', b.email_id);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, estado_crm: estado === 'cerrada' ? 'resuelta' : 'abierta' });
+  }
+
   if (!b.id) return json({ error: 'Falta id' }, 400);
   const user = await getCurrentUser(request);
   const autor = user?.nombre || user?.email || 'equipo';

@@ -506,7 +506,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
         {conv.id && conv.contact_id && <PildoraAgente contactId={conv.contact_id} conversationId={conv.id} mobile={!!mobile} onEstado={setAgenteEstado} />}
-        {conv.id && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
+        {/* También para los hilos que viven SOLO en el correo (`email_only_id`):
+            sin este selector no había forma de cerrarlos y se quedaban en «No
+            contestadas» para siempre. */}
+        {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,

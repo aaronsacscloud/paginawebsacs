@@ -512,7 +512,12 @@ export default function InboxPro() {
         const fila = (lista || []).find((c: any) => c.wa_id === conv || c.id === conv);
         setNuevosAlAbrir(Number(fila?.no_leidos || 0));
         porLink.current = true;
-        setActiva({ id: fila?.id || conv, wa: conv, email: null });
+        /* Una fila que vive SOLO en el correo no tiene id de WhatsApp: abrirla
+           como si lo tuviera dejaba el hilo cargando para siempre y sin ninguno
+           de sus controles. Se abre por el canal que de verdad tiene. */
+        setActiva(fila && !fila.wa_id && fila.email_id
+          ? { id: fila.id, wa: null, email: fila.email_id }
+          : { id: fila?.id || conv, wa: conv, email: null });
       }
       else if (tel) {
         const limpio = tel.replace(/\D/g, '');
@@ -974,9 +979,13 @@ export default function InboxPro() {
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
     },
     patchConversacion: async (cambios: any) => {
+      /* Si la fila vive SOLO en el correo no hay id de WhatsApp que mandar: va
+         el del hilo de correo, que tiene su propio estado. Sin esto, cerrar un
+         correo mandaba `id: null` y el servidor contestaba «Falta id». */
+      const wa = waId();
       const r = await fetch('/api/crm/whatsapp/hilo', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: waId(), ...cambios }),
+        body: JSON.stringify(wa ? { id: wa, ...cambios } : { email_id: hiloRef.current?.conversacion?.email_only_id || activaRef.current?.email || null, ...cambios }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       if (Array.isArray(r?.avisos) && r.avisos.length) setError(r.avisos.join(' · '));
       refrescar(); return r;
