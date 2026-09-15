@@ -12,7 +12,7 @@ import { leerConfig } from '../../../../lib/demanda/config';
 import { encolarVarias } from '../../../../lib/demanda/cola';
 import { correrWorker } from '../../../../lib/demanda/worker';
 import { diaCdmx } from '../../../../lib/demanda/fechas';
-import '../../../../lib/demanda/handlers';
+import '../../../../lib/demanda/registro';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });

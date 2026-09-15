@@ -22,6 +22,14 @@ const PATTERNS: Array<{ name: string; regex: RegExp; replace: string }> = [
   // Mexican phone: +52 followed by 10 digits, OR 10 digits with optional separators
   { name: 'phone_mx', regex: /\+52\s?\d{2,3}[\s-]?\d{3,4}[\s-]?\d{4}/g, replace: '[PHONE]' },
   { name: 'phone_10d', regex: /\b\d{2,3}[\s-]\d{3,4}[\s-]\d{4}\b/g, replace: '[PHONE]' },
+  /* HUECO REAL, encontrado el 15-sep-2026 al auditar las señales del motor de
+     demanda: los patrones de arriba exigen un separador, así que un número
+     escrito de corrido —«5547780632», que es como lo manda la gente por
+     WhatsApp— pasaba intacto a los prompts. Salieron 16 de 2,328 textos.
+     Un número mexicano son exactamente 10 dígitos seguidos; el `\b` a los
+     lados evita morder los tramos de una CLABE o de una tarjeta, que además se
+     tapan antes por su propio patrón. Redactar de más aquí es el error barato. */
+  { name: 'phone_10d_plano', regex: /\b\d{10}\b/g, replace: '[PHONE]' },
   { name: 'phone_e164', regex: /\+\d{10,15}/g, replace: '[PHONE]' },
 
   // CLABE (Mexican bank): exactly 18 digits (order matters — must match before CC)

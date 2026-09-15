@@ -91,3 +91,75 @@ El nombre exacto de cada variable y cómo se arregla cada hueco están en `src/l
 2. En **Sistema → Ajustes**, encender las fuentes que ya digan disponible.
 3. **Correr un ciclo** desde el botón, y mirar la Cola.
 4. Subir la autonomía de 2 a 3 cuando la primera tanda de contenido pase sus auditorías.
+
+---
+
+## Etapa 1 · Inteligencia — parte A hecha (15-sep-2026)
+
+**Dónde vamos realmente:** el motor ya VE demanda. No la de Google todavía (eso
+está bloqueado esperando los accesos), sino la que llevaba años dentro del CRM
+sin que nadie la leyera: 2,427 señales de WhatsApp, soporte, mejoras pedidas,
+motivos de pérdida y churn, agrupadas en 411 problemas canónicos.
+
+### Qué quedó construido
+- **Esquema E1** (`2026-09-15-demand-engine-E1.sql` + `-rpc` + `-refundir` + `-niveles`):
+  señales, consultas, problemas, páginas, métricas por página, datos crudos de
+  buscadores y analítica, oportunidades, predicciones, competidores (24 semilla),
+  problemas técnicos, enlaces, series de métricas y usos de herramientas.
+- **`fuentes/crm.ts`** — la demanda de primera mano, con cursor por sub-fuente.
+- **`senales.ts`** — registro por lotes con anonimización obligatoria.
+- **`embeddings.ts`** — proveedor FIJO por instalación (OpenAI o Gemini), con su
+  umbral de unión medido.
+- **`normalizar.ts`** — texto suelto → pregunta canónica → consulta → problema.
+- **`paginas.ts`** — inventario del sitio desde el sitemap + grafo de enlaces.
+- **Banco de pruebas local** `scripts/de-probar.mjs` + `de-hooks.mjs`: corre el
+  motor de verdad desde la terminal, sin levantar Astro.
+- **`privacidad.test.ts`** dentro de `npm test`.
+
+### Lo que la prueba real encontró (y que no se hubiera visto de otra forma)
+1. **La semántica del nivel de autonomía estaba invertida.** Con el motor en
+   nivel 2, hasta la prueba de vida de la cola pedía permiso del dueño. El nivel
+   es el MÍNIMO de autonomía global que una acción necesita, no «qué tan
+   autónoma es». Corregido en `-niveles.sql`.
+2. **El anonimizador compartido no tapaba teléfonos escritos de corrido.**
+   `redact.ts` exigía separadores, así que `5547780632` pasaba entero a los
+   prompts. Afectaba también al agente SDR. Arreglado y con prueba.
+3. **Se pagaba un paso que no podía terminar.** Sin `OPENAI_API_KEY` el modelo
+   leía las señales (y cobraba) y el agrupado se saltaba en silencio, así que
+   las mismas señales volvían a pagarse en cada vuelta. Ahora las dependencias
+   se comprueban ANTES de la primera llamada cara.
+4. **El umbral de parecido es propiedad del MODELO, no una constante.** Con 0.85
+   —correcto para OpenAI— y vectores de Gemini truncados a 1536, el vecino más
+   parecido de 326 problemas llegaba a 0.849: no se fusionaba nada nunca y 9 de
+   cada 10 señales abrían un problema nuevo. Medido: mediana 0.762, p90 0.827.
+   Revisados los pares a mano, **0.82** es donde siguen siendo la misma
+   pregunta. Con eso, la tasa de problemas nuevos cayó del 90% al 4%.
+5. **Los enlaces se perdían en silencio.** Una página enlaza varias veces al
+   mismo destino (menú + pie + cuerpo) y dos filas con la misma llave en el
+   mismo lote hacen que Postgres rechace el lote entero. Como el error no se
+   miraba, los 6,700 enlaces desaparecían y la corrida reportaba éxito.
+6. **Las 120 páginas salían huérfanas** porque el sitemap publica `/blog/` y el
+   HTML enlaza `/blog`. Una sola función de normalización para los dos lados;
+   ahora las huérfanas son 6, y las seis son de verdad (portal de partner,
+   reset de contraseña, baja de correo, embed de pago, cancelar/reagendar cita).
+7. **Supabase rechaza un UPDATE sin WHERE**, así que la función de recuento de
+   enlaces fallaba callada.
+
+### Lo que el motor ya sabe (medido)
+- 2,427 señales · 411 problemas canónicos · 550 consultas · 120 páginas ·
+  7,618 enlaces internos · 6 huérfanas reales · 9 páginas `noindex` ·
+  7 sin meta descripción · 8 sin H1 · 7 con menos de 300 palabras.
+- Lo que más pide el ramo hoy (por volumen de señales): reimprimir tickets de
+  venta, productos que no se ven en el punto de venta, cajeros sin caja
+  asignada, facturar pedidos, precio de la solución, cuánto vendí en el mes.
+- Costo de procesar el corpus: **$0.02 por cada 60 señales** (Haiku + embeddings).
+
+### Bloqueado, esperando al dueño
+`ingerir.gsc` y `ingerir.ga4` están construidos como conector pero **sin
+credencial**: en *Sistema → Lo que me falta* aparece qué hacer en cada uno.
+Igual Reddit, YouTube, PageSpeed, DataForSEO, Perplexity y xAI.
+
+### Lo que sigue (parte B de la etapa 1)
+E1.9 score de oportunidades · E1.10 competidores (lectura pública, no necesita
+llaves) · E1.11 pantallas Explorador/SEO/Competidores/Oportunidades ·
+E1.12 Resumen con datos reales.

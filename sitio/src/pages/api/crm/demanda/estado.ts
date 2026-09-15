@@ -8,9 +8,9 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { leerConfig, presupuesto } from '../../../../lib/demanda/config';
 import { resumenCola } from '../../../../lib/demanda/cola';
-import { tiposRegistrados } from '../../../../lib/demanda/handlers';
+import { tiposRegistrados } from '../../../../lib/demanda/registro';
 import { refrescarDisponibilidad } from '../../../../lib/demanda/conectores';
-import '../../../../lib/demanda/handlers';
+import '../../../../lib/demanda/registro';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });

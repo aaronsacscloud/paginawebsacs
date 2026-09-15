@@ -5,7 +5,7 @@
 import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { correrWorker } from '../../../lib/demanda/worker';
-import '../../../lib/demanda/handlers';
+import '../../../lib/demanda/registro';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b, null, 2), { status: s, headers: { 'Content-Type': 'application/json' } });

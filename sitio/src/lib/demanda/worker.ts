@@ -26,6 +26,10 @@ export async function correrWorker(limiteMs = 230_000, lote = 4): Promise<Corrid
   const cfg = await leerConfig(true);
 
   if (cfg.kill_switch) { r.frenado = 'kill switch'; r.ms = Date.now() - t0; return r; }
+  // Con menos de 20 s por delante el bucle ni entra. Decirlo evita el rato que
+  // ya se perdió una vez mirando un worker que "no tomaba nada" y en realidad
+  // nunca arrancó.
+  if (limiteMs <= 20_000) { r.frenado = `limite de ${Math.round(limiteMs / 1000)} s: se necesitan más de 20`; r.ms = Date.now() - t0; return r; }
 
   const pres = await presupuesto(cfg);
   const queda = () => limiteMs - (Date.now() - t0);

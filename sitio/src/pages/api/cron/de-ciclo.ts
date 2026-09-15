@@ -9,7 +9,7 @@ import { abrirCiclo, armarCadena } from '../../../lib/demanda/ciclo';
 import { leerConfig } from '../../../lib/demanda/config';
 import { encolar } from '../../../lib/demanda/cola';
 import { diaCdmx } from '../../../lib/demanda/fechas';
-import '../../../lib/demanda/handlers';
+import '../../../lib/demanda/registro';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b, null, 2), { status: s, headers: { 'Content-Type': 'application/json' } });
