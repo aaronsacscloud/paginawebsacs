@@ -1056,6 +1056,25 @@ export default function InboxPro() {
     totalLista, hayMasLista, cargarMasLista,
     onGuardarVista: (cfg: any) => guardarVistaRef.current?.(cfg),
     ordenFijo: !!ordenFijo.current, ordenFijoN, onSoltarOrden: soltarOrden,
+    /* CERRAR VARIAS. Se van de una en una al servidor —no hay endpoint en lote y
+       tampoco hace falta: son unas decenas— pero con `forzar`, porque la
+       selección la hizo una persona a mano y eso ES la confirmación que pide el
+       candado de «último mensaje sin leer». */
+    onResolverVarias: async (ids: string[], categoria: string, nota: string) => {
+      const filas = (listaRef.current || []).filter((c: any) => ids.includes(c.id) && c.wa_id);
+      let ok = 0, ultimoError = '';
+      for (const c of filas) {
+        const r = await fetch('/api/crm/whatsapp/hilo', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: c.wa_id, estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota, forzar: true }),
+        }).then(x => x.json()).catch(e => ({ error: String(e) }));
+        if (r?.error) ultimoError = r.error; else ok++;
+      }
+      refrescar();
+      /* Si alguna no se pudo, se dice cuántas sí y cuántas no: un «listo» con
+         tres a medias es peor que el error. */
+      return ok === filas.length ? { ok } : { ok, error: `Se cerraron ${ok} de ${filas.length}. La última falló: ${ultimoError}` };
+    },
     onAsignar: async (c: any, asignadoA: string | null) => {
       await fetch('/api/crm/whatsapp/hilo', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.wa_id, asignado_a: asignadoA }) }).catch(() => null);
       refrescar();

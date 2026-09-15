@@ -6,6 +6,10 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-15 · Selección múltiple con Cmd y acciones masivas.** «aquí con cmd en Mac que pueda seleccionar varias
+      y me permita hacer acciones masivas, como poder cerrar y dejar como resueltas varias al mismo tiempo» → HECHO:
+      Cmd/Ctrl suma, Shift toma el rango, y la barra permite resolverlas todas con su categoría.
+
 - [x] **2026-09-15 · Ver rápido si abrió el correo, y por qué parecían dos.** «quiero ver rápido si no la ha leído o si
       sí… en los correos también debo tener esa data» + «creo que se envió 2 veces un correo o por qué un aviso me dice
       que sí lo abrió y otro dice que no» → HECHO: eran DOS correos (la campaña y nuestra respuesta, con el mismo

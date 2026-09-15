@@ -84,12 +84,14 @@ function RadioFila({ activo, label, onClick }: { activo: boolean; label: string;
   );
 }
 
-export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar, onGuardarVista, ordenFijo, ordenFijoN, onSoltarOrden }: {
+export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar, onGuardarVista, ordenFijo, ordenFijoN, onSoltarOrden, onResolverVarias }: {
   lista: any[]; filtros: Filtros; setFiltros: (f: Filtros) => void;
   activaId: string | null; onAbrir: (c: any) => void; mobile?: boolean; equipo: any[]; yo: any;
   onNuevo?: () => void; onFiltros?: () => void;
   /** El orden está congelado porque estás contestando: las filas no se mueven. */
   ordenFijo?: boolean; ordenFijoN?: number; onSoltarOrden?: () => void;
+  /** Cerrar varias de un golpe. Devuelve cuántas se pudieron. */
+  onResolverVarias?: (ids: string[], categoria: string, nota: string) => Promise<{ ok: number; error?: string }>;
   orden: string; setOrden: (o: string) => void;
   mostrar: string; setMostrar: (m: string) => void;
   campos: CampoFiltro[];
@@ -159,6 +161,18 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
      misma fila vuelve a quedar. Si esa fila desapareció, se prueba con la
      siguiente que se estaba viendo. Es lo que hacen los lectores de correo, y
      por eso no se siente: la lista cambia y tu sitio no. */
+  /* ══ SELECCIÓN MÚLTIPLE ══════════════════════════════════════════════════
+     Pedido del dueño (15-sep-2026): «con cmd en Mac que pueda seleccionar
+     varias y hacer acciones masivas, como cerrar y dejar como resueltas varias
+     al mismo tiempo».
+
+     Cmd (o Ctrl en Windows) agrega y quita de una en una; Shift toma el rango
+     desde la última que tocaste — las dos teclas que ya trae aprendidas
+     cualquiera que haya usado un explorador de archivos. Un clic normal sigue
+     abriendo la conversación y limpia la selección: lo de siempre no cambia. */
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const ancla2 = useRef<string | null>(null);
+  const [cierreVarias, setCierreVarias] = useState(false);
   const carrilRef = useRef<HTMLDivElement>(null);
   const ancla = useRef<{ ids: string[]; top: number } | null>(null);
 
@@ -312,6 +326,36 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
         </div>
       )}
 
+      {/* La barra de lo seleccionado. Sale solo cuando hay algo elegido y dice
+          cuántas son: sin el número, «resolver» sobre una selección invisible
+          da miedo tocarlo. */}
+      {sel.size > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderBottom: `1px solid ${C.g100}`, background: '#EEF1FE' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700, color: C.azulTinta }}>
+            {sel.size} seleccionada{sel.size === 1 ? '' : 's'}
+          </span>
+          {onResolverVarias && (
+            <button onClick={() => setCierreVarias(true)}
+              style={{ flexShrink: 0, border: 'none', background: C.emerald600, color: '#fff', borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Marcar resueltas
+            </button>
+          )}
+          <button onClick={() => setSel(new Set())}
+            style={{ flexShrink: 0, border: `1px solid ${C.azulBorde}`, background: '#fff', color: C.azulTinta, borderRadius: 999, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Quitar
+          </button>
+        </div>
+      )}
+
+      {cierreVarias && onResolverVarias && (
+        <CierreVarias n={sel.size} onCerrar={() => setCierreVarias(false)}
+          onResolver={async (categoria, nota) => {
+            const r = await onResolverVarias([...sel], categoria, nota);
+            if (!r.error) { setCierreVarias(false); setSel(new Set()); }
+            return r;
+          }} />
+      )}
+
       {/* Filas */}
       <div ref={carrilRef} onScroll={recordarAncla} className="wa-scroll" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
         {!ordenada.length && (
@@ -356,7 +400,26 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
             ? (lineas.find(x => x.id === c.phone_number_id) || { numero: null as string | null })
             : null;
           return (
-            <button key={c.id} data-conv={c.id} onClick={() => onAbrir(c)} className="wa-fila-hover"
+            <button key={c.id} data-conv={c.id} className="wa-fila-hover"
+              onClick={e => {
+                if (e.metaKey || e.ctrlKey) {
+                  e.preventDefault();
+                  setSel(prev => { const n = new Set(prev); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; });
+                  ancla2.current = c.id;
+                  return;
+                }
+                if (e.shiftKey && ancla2.current) {
+                  e.preventDefault();
+                  const ids = ordenada.map((x: any) => x.id);
+                  const a = ids.indexOf(ancla2.current), b = ids.indexOf(c.id);
+                  if (a >= 0 && b >= 0) {
+                    const rango = ids.slice(Math.min(a, b), Math.max(a, b) + 1);
+                    setSel(prev => new Set([...prev, ...rango]));
+                  }
+                  return;
+                }
+                setSel(new Set()); ancla2.current = c.id; onAbrir(c);
+              }}
               onContextMenu={e => { if (!c.wa_id || !onAsignar) return; e.preventDefault(); setMenuFila({ id: c.id, x: e.clientX, y: e.clientY }); }}
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',
@@ -366,8 +429,8 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                    caben la mitad, cada una se distingue y el resto sigue a un
                    scroll. Decisión del dueño (2-sep-2026). */
                 padding: '17px 14px', alignItems: 'flex-start', position: 'relative',
-                background: activa ? 'rgba(238,236,254,.6)' : resuelta ? 'rgba(249,250,251,.4)' : '#fff',
-                borderLeft: activa ? `3px solid ${C.morado}` : '3px solid transparent',
+                background: sel.has(c.id) ? '#EEF1FE' : activa ? 'rgba(238,236,254,.6)' : resuelta ? 'rgba(249,250,251,.4)' : '#fff',
+                borderLeft: sel.has(c.id) ? `3px solid ${C.azulTinta}` : activa ? `3px solid ${C.morado}` : '3px solid transparent',
               }}>
               <Avatar nombre={c.contacto?.nombre} telefono={String(c.telefono || '?')} canal={canal as any} />
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -577,6 +640,66 @@ function FiltrosAdHocEditor({ campos, inicial, onListo, onLimpiar, onCancelar, o
         <span style={{ flex: 1 }} />
         <button onClick={onCancelar} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 16px', background: '#fff', fontSize: 13, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
         <button onClick={() => onListo({ logica, condiciones })} style={{ border: 'none', borderRadius: 8, padding: '8px 16px', background: C.morado, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Aplicar</button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cerrar VARIAS conversaciones de una vez.
+ *
+ * Es el mismo trámite que el de una sola —categoría y nota, que es lo que
+ * alimenta las métricas de por qué se cierra— pero dicho en plural y con el
+ * número delante: cerrar dieciocho de golpe no puede parecerse a cerrar una.
+ *
+ * Aquí no hay candado de «último mensaje sin leer»: en una selección hecha a
+ * mano, una por una, la decisión ya está tomada — que es justo lo que ese
+ * candado pedía cuando frenaba el cierre de una.
+ */
+function CierreVarias({ n, onCerrar, onResolver }: {
+  n: number; onCerrar: () => void;
+  onResolver: (categoria: string, nota: string) => Promise<{ ok: number; error?: string }>;
+}) {
+  const [cats, setCats] = useState<{ id: number; nombre: string }[]>([]);
+  const [cat, setCat] = useState('');
+  const [nota, setNota] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCats(j.categorias || [])).catch(() => {});
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); };
+    window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
+  }, []);
+  return (
+    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 'min(440px, 100%)', padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
+        {/* «conversación» + «es» daba «conversaciónes»: el plural pierde el
+            acento. Se escribe la palabra entera. */}
+        <b style={{ fontSize: 14, display: 'block' }}>Resolver {n} {n === 1 ? 'conversación' : 'conversaciones'}</b>
+        <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 14px' }}>
+          La misma categoría y la misma nota para todas. Salen de todas las bandejas.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          {cats.map(c => (
+            <button key={c.id} onClick={() => setCat(c.nombre)}
+              style={{ border: `1px solid ${cat === c.nombre ? C.emerald500 : C.g200}`, background: cat === c.nombre ? C.emerald50 : '#fff', color: cat === c.nombre ? C.emerald700 : C.g700, borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{c.nombre}</button>
+          ))}
+        </div>
+        <textarea value={nota} onChange={e => setNota(e.target.value)} rows={2} placeholder="Nota de cierre (opcional), la misma para todas"
+          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
+        {error && <p style={{ color: C.rojo500, fontSize: 11, margin: '6px 0 0' }}>{error}</p>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+          <button onClick={onCerrar} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+          <button disabled={!cat || ocupado} onClick={async () => {
+            setOcupado(true); setError('');
+            const r = await onResolver(cat, nota.trim());
+            setOcupado(false);
+            if (r.error) setError(r.error);
+          }}
+            style={{ border: 'none', background: !cat ? C.g200 : C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: !cat ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+            {ocupado ? `Cerrando ${n}…` : `Marcar ${n} resuelta${n === 1 ? '' : 's'}`}
+          </button>
+        </div>
       </div>
     </div>
   );
