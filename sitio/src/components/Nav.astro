@@ -1845,16 +1845,12 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
       }, 120);
     });
     row.addEventListener('mouseleave', () => window.clearTimeout(gwTimer));
-    row.addEventListener('click', (e) => {
+    // El clic NAVEGA a la landing del giro (Aaron, 15-sep-2026): el renglón es un
+    // <a> con su href y no se intercepta. La ficha de la derecha se cambia con el
+    // hover y con el foco de teclado; en táctil (sin hover) el toque va directo.
+    row.addEventListener('click', () => {
       const idx = row.dataset.sectorIdx;
-      if (!idx) return;
-      // El renglón es un <a> al giro: se conserva el href para que funcione sin
-      // JS y para el SEO, pero con JS el clic SELECCIONA en vez de navegar.
-      // Para ir a la página está el "Ver más sobre …" dentro de la ficha.
-      // Se respetan los atajos del navegador (ctrl/cmd/medio = abrir en pestaña).
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
-      e.preventDefault();
-      activateSector(idx);
+      if (idx) activateSector(idx);
     });
     // Teclado: al tabular por la lista la ficha sigue al foco.
     row.addEventListener('focus', () => {
