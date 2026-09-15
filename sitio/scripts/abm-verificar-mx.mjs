@@ -18,8 +18,14 @@ const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_K
 const giro = process.argv[2]; const soloVer = process.argv.includes('--ver');
 if (!giro) { console.error('uso: node scripts/abm-verificar-mx.mjs <giro> [--ver]'); process.exit(1); }
 
-const { data: cuentas } = await sb.from('abm_cuentas').select('id').eq('giro', giro).limit(5000);
-const ids = (cuentas || []).map(c => c.id);
+// Por páginas: PostgREST corta en 1,000 filas aunque se pida limit(5000); con
+// 3,900 cuentas de novias el script veía solo las primeras mil y decía «70 sin probar».
+const ids = [];
+for (let desde = 0; ; desde += 1000) {
+  const { data: cuentas } = await sb.from('abm_cuentas').select('id').eq('giro', giro).order('id').range(desde, desde + 999);
+  ids.push(...(cuentas || []).map(c => c.id));
+  if (!cuentas || cuentas.length < 1000) break;
+}
 // Por tandas: con 634 cuentas (calzado) el `in(...)` completo pasa el largo de
 // URL que acepta PostgREST y regresa vacío sin error, y el script decía
 // «0 sin probar» con 636 correos sin verificar.
