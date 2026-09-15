@@ -403,6 +403,19 @@ export const PUT: APIRoute = async ({ request }) => {
     await apunta(id, quien(user), o.etapa, etapa, b?.nota || null);
   }
 
+  /* El nombre viaja al renglón del cliente. La orden y la mejora son la MISMA
+     cosa vista desde dos lados —así está construido— y si solo se renombra de
+     este lado, el cliente sigue viendo el nombre viejo en su ficha y en el
+     reporte de entregas: dos nombres para lo mismo son dos verdades. */
+  if (p.titulo && p.titulo !== o.titulo) {
+    const { data: lig } = await supabase.from('taller_orden_mejoras').select('mejora_id').eq('orden_id', id);
+    for (const l of lig || []) {
+      await supabase.from('mejoras').update({ titulo: p.titulo, updated_at: new Date().toISOString() })
+        .eq('id', l.mejora_id).then(() => {}, () => {});
+    }
+    await apunta(id, quien(user), null, null, `Le cambió el nombre: «${o.titulo}» → «${p.titulo}»`);
+  }
+
   p.updated_at = new Date().toISOString();
   const { data, error } = await supabase.from('taller_ordenes').update(p).eq('id', id).select(SEL).single();
   if (error) return json({ error: error.message }, 500);

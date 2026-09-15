@@ -591,8 +591,16 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             {o.modulo && <span style={{ background: '#f6f5f9', color: '#6b6b74', fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.modulo}</span>}
             {d.mejoras.length > 1 && <span style={{ background: P.violetaAgua, color: P.violetaTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{d.mejoras.length} cuentas</span>}
           </div>
-          <input value={v('titulo')} onChange={e => set('titulo', e.target.value)}
-            style={{ ...S.input, fontSize: '1rem', fontWeight: 700, border: '1.5px solid transparent', background: 'transparent', padding: '2px 0', marginBottom: 14 }} />
+          {/* El nombre SÍ se cambia, y se tiene que ver que se puede. Antes era
+              un input sin borde ni fondo: parecía un título y nadie lo tocaba.
+              Al guardar, el nombre viaja también al renglón del cliente —son la
+              misma cosa vista de dos lados, y dos nombres son dos verdades—. */}
+          <div style={{ marginBottom: 14 }}>
+            <span style={S.lbl}>Nombre de la mejora · así lo ve el cliente</span>
+            <input value={v('titulo')} onChange={e => set('titulo', e.target.value)}
+              placeholder="Escribe con qué nombre quieres que aparezca"
+              style={{ ...S.input, fontSize: '0.95rem', fontWeight: 700 }} />
+          </div>
 
           {/* El riel de los tres pasos. Sin colores de alarma: el que va se
               marca con el morado del sistema y los hechos con la palomita. */}
