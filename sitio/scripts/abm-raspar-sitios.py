@@ -154,11 +154,20 @@ def buscar(c):
 
 
 def main():
+    """La salida se escribe SOBRE LA MARCHA, no al final.
+
+    Escribirla solo al terminar significa que una corrida larga no deja nada si
+    se corta. Pasó con 6,000 sitios: los ultimos mil agotaban el tiempo de
+    espera uno tras otro y las 5,000 respuestas ya buenas estaban en memoria,
+    sin forma de recuperarlas sin esperar horas o perderlo todo.
+    """
     cuentas = json.load(open(sys.argv[1]))
     res = []
     with cf.ThreadPoolExecutor(max_workers=12) as ex:
         for r in ex.map(buscar, cuentas):
             res.append(r)
+            if len(res) % 100 == 0:
+                json.dump(res, open(sys.argv[2], 'w'), ensure_ascii=False, indent=1)
             marca = ('✓' if r['correo'] else 'w' if r['whatsapp'] else
                      't' if r['telefono'] else 'X' if not r['sitio_vivo'] else '·')
             print(f"  {marca} {str(r['correo'] or r['whatsapp'] or r['telefono'] or '—')[:34]:<34}"
