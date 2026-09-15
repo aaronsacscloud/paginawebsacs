@@ -282,30 +282,47 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     <p class="addons-subtitle">Módulos opcionales que agregas a tu plan. Los que piden un plan base lo dicen en su tarjeta.</p>
 
     <div class="addons-grid">
-      <div class="addon-card">
+      <div class="addon-card addon-card--ia">
         <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Listas Escolares</h3>
-          <p class="addon-plan">Desde el plan Fideliza</p>
-          <p class="addon-desc">Para papelerías: la lista del colegio deja de capturarse en Excel y el kit se arma, se desglosa y se cobra desde el mostrador.</p>
-          <ul class="addon-points">
-            <li>Captura por colegio y grado, heredando el ciclo anterior</li>
-            <li>El papá quita lo que ya tiene y el precio se recalcula</li>
-            <li>La orden de compra sale de las listas, no del histórico</li>
+          <span class="addon-ia-kicker">Conector de datos de Sacs</span>
+          <h3 class="addon-plugin-name">Opera todo Sacs desde ChatGPT, Claude, Grok o Muse</h3>
+          <p class="addon-desc">Conectas tu cuenta de Sacs a la plataforma de IA que ya usas y le preguntas y le pides en lenguaje natural: qué talla se está acabando en Polanco, cuánto vendió la colección esta semana, que arme el traspaso o la orden de compra. Tus datos, en tu asistente, con permisos por usuario.</p>
+          <div class="addon-ia-plataformas" aria-label="Plataformas compatibles">
+            <span>ChatGPT</span><span>Claude</span><span>Grok</span><span>Muse</span>
+          </div>
+          <ul class="addon-points addon-points--2col">
+            <li>Consulta ventas, inventario y clientes en tiempo real</li>
+            <li>Crea traspasos, órdenes de compra y apartados desde el chat</li>
+            <li>Reportes y análisis sobre tus datos, sin exportar nada</li>
+            <li>Permisos por usuario y bitácora de todo lo que la IA hace</li>
           </ul>
-          <a class="addon-btn" href="/giros/papeleria-y-arte">Ver más</a>
+          <a class="addon-btn" href="/producto/api-e-integraciones">Ver más</a>
         </div>
       </div>
       <div class="addon-card">
         <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Suite Joyería</h3>
-          <p class="addon-plan">Desde el plan Fideliza</p>
-          <p class="addon-desc">Para joyerías: el producto no tiene precio fijo, vale lo que pesa por lo que vale el gramo — y el gramo lo pones tú.</p>
+          <h3 class="addon-plugin-name">Administración</h3>
+          <p class="addon-plan">Desde el plan Controla</p>
+          <p class="addon-desc">Las finanzas de la marca en el mismo sistema donde vendes: bancos, cuentas por pagar y flujo de caja sin hojas de cálculo.</p>
           <ul class="addon-points">
-            <li>Tu colchón del fino y el factor por quilataje</li>
-            <li>Costo histórico que no se mueve con el mercado</li>
-            <li>Repreciado masivo con simulación antes de aplicar</li>
+            <li>Bancos conectados y conciliación automática</li>
+            <li>Cuentas por pagar, proveedores y calendario de pagos</li>
+            <li>Flujo de caja, gastos y estado de resultados por tienda</li>
           </ul>
-          <a class="addon-btn" href="/giros/joyeria">Ver más</a>
+          <a class="addon-btn" href="/producto/cuentas-por-pagar">Ver más</a>
+        </div>
+      </div>
+      <div class="addon-card">
+        <div class="addon-card-content">
+          <h3 class="addon-plugin-name">Nómina</h3>
+          <p class="addon-plan">Desde el plan Controla</p>
+          <p class="addon-desc">Tu equipo de tienda, taller y oficina con su nómina completa, ligada a la asistencia y a las comisiones por venta.</p>
+          <ul class="addon-points">
+            <li>Cálculo de nómina, IMSS e ISR y timbrado de recibos (CFDI)</li>
+            <li>Asistencia, turnos, vacaciones e incidencias por sucursal</li>
+            <li>Comisiones por venta y por talla directo del punto de venta</li>
+          </ul>
+          <a class="addon-btn" href="/contacto">Ver más</a>
         </div>
       </div>
       <div class="addon-card">
@@ -2309,6 +2326,16 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   text-align: center;
   margin: 0 0 var(--space-10);
 }
+
+/* Conector de IA: tarjeta destacada a lo ancho */
+.addon-card--ia { grid-column: 1 / -1; background: linear-gradient(135deg, #0E0D0C 0%, #15203a 100%); min-height: 0; }
+.addon-ia-kicker { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 12px; }
+.addon-card--ia .addon-plugin-name { font-size: clamp(28px, 3.2vw, 44px); max-width: 22ch; }
+.addon-card--ia .addon-desc { max-width: 70ch; }
+.addon-ia-plataformas { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; }
+.addon-ia-plataformas span { padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.addon-points--2col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+@media (max-width: 767px) { .addon-points--2col { grid-template-columns: 1fr; } .addon-ia-plataformas span { font-size: 14px; padding: 8px 14px; } }
 
 .addons-grid {
   display: grid;
