@@ -98,6 +98,10 @@ const TERMINO_ALIADO: Record<string, string> = {
   insumos_tienda: 'ganchos y etiquetas para ropa',
   fotografia: 'fotografía de producto para ecommerce',
   escuela_moda: 'escuela de diseño de modas',
+  /* Del corredor: al locatario de Villa Hidalgo o Moroleón le bordan el logo y
+     le estampan la playera ahí mismo. Es de los pocos proveedores que ve la
+     temporada entera de sus clientes. */
+  bordado: 'bordados y serigrafía para ropa',
 };
 
 /* LOS QUE NO ESTÁN, Y POR QUÉ — medido el 15-sep-2026, para que nadie los
@@ -152,10 +156,27 @@ export const GET: APIRoute = async ({ request, url }) => {
      contadores de Guadalajara marcados como hechos sin haberlos buscado. */
   const llaveBarrido = aliado ? `aliados:${aliado}` : giro;
 
-  // Las ciudades pendientes para ESTA búsqueda, las más grandes primero.
-  const { data: ciudades, error: e1 } = await supabase.rpc('abm_ciudades_pendientes', {
-    p_giro: llaveBarrido, p_limite: nCiudades,
-  });
+  /* `?ciudad=` BARRE UNA CIUDAD A MANO, y hacía falta: las ciudades salen
+     ordenadas por cuántas cuentas ya tenemos ahí, así que el barrido siempre
+     va a Guadalajara y a Monterrey y NUNCA le toca Villa Hidalgo (237
+     cuentas), Zapotlanejo (16) ni Moroleón (25). Y justo ahí están los
+     aliados que pidió el dueño: la persona local que ya le vende a los
+     locatarios del corredor. El estado se toma de las cuentas que ya viven en
+     esa ciudad —no se adivina— y si no hay ninguna se puede pasar con
+     `?estado=`. */
+  const ciudadAMano = (url.searchParams.get('ciudad') || '').trim().slice(0, 80);
+  let ciudades: any[] | null = null;
+  let e1: any = null;
+  if (ciudadAMano) {
+    const { data: ya } = await supabase.from('abm_cuentas').select('estado_geo')
+      .ilike('ciudad', ciudadAMano).not('estado_geo', 'is', null).limit(1);
+    const estado = (url.searchParams.get('estado') || '').trim() || (ya || [])[0]?.estado_geo || null;
+    ciudades = [{ ciudad: ciudadAMano, estado_geo: estado }];
+  } else {
+    // Las ciudades pendientes para ESTA búsqueda, las más grandes primero.
+    const r0 = await supabase.rpc('abm_ciudades_pendientes', { p_giro: llaveBarrido, p_limite: nCiudades });
+    ciudades = r0.data as any[]; e1 = r0.error;
+  }
   if (e1) return json({ error: e1.message, pista: 'falta la función abm_ciudades_pendientes' }, 500);
   if (!ciudades?.length) return json({ giro: giroDestino, aliado: aliado || undefined, nuevas: 0, nota: 'no quedan ciudades pendientes para esta búsqueda' });
 
