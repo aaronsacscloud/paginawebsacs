@@ -48,7 +48,7 @@ const cifras = [
 </section>
 
 <style>
-  .gl { background: #0E0D0C; color: #fff; padding: clamp(80px, 10vw, 140px) 0 0; overflow: hidden; }
+  .gl { background: #0E0D0C; color: #fff; padding: clamp(80px, 10vw, 140px) 0 0; }
   .gl-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
   .gl-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 16px; }
   .gl-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 16px; color: #fff; }
@@ -59,12 +59,12 @@ const cifras = [
   .gl-campo input { flex: 1; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 16px; color: #0E0D0C; min-width: 0; }
   .gl-campo input::placeholder { color: #8A8A86; }
   .gl-sug { position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 5; list-style: none; margin: 0; padding: 8px; background: #fff; color: #0E0D0C; border-radius: 16px; box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.06); }
-  .gl-sug :global(li) { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 14px; padding: 12px 14px; border-radius: 11px; cursor: pointer; }
+  .gl-sug :global(li) { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 14px; padding: 10px 14px; border-radius: 11px; cursor: pointer; }
   .gl-sug :global(li:hover), .gl-sug :global(li.is-act) { background: #F2F2F0; }
-  .gl-sug :global(li b) { font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+  .gl-sug :global(li b) { grid-column: 1; grid-row: 1; font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
   .gl-sug :global(li b em) { font-style: normal; color: var(--color-primary, #4B7BE5); }
-  .gl-sug :global(li small) { font-size: 13px; color: #8A8A86; grid-column: 1; }
-  .gl-sug :global(li .gl-est) { grid-row: 1 / 3; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #6B6B68; white-space: nowrap; }
+  .gl-sug :global(li small) { grid-column: 1; grid-row: 2; font-size: 13px; color: #8A8A86; }
+  .gl-sug :global(li .gl-est) { grid-column: 2; grid-row: 1 / 3; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #6B6B68; white-space: nowrap; }
   .gl-sug :global(li .gl-est i) { width: 8px; height: 8px; border-radius: 50%; background: #BDBDB9; }
   .gl-sug :global(li .gl-est--p i) { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.2); }
   .gl-sug :global(li .gl-est--a i) { background: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
@@ -149,7 +149,7 @@ const cifras = [
     const elige = (c: C) => { sel = c; q.value = c[0]; lista = []; pinta(); muestra(c); enfoca?.(c); };
     q.addEventListener('input', () => {
       const t = norm(q.value); act = -1;
-      lista = t.length < 2 ? [] : CIUDADES.filter((c) => norm(c[0]).includes(t) || norm(c[1]).startsWith(t)).sort((a, b) => Number(norm(b[0]).startsWith(t)) - Number(norm(a[0]).startsWith(t))).slice(0, 6); pinta();
+      lista = t.length < 2 ? [] : CIUDADES.filter((c) => norm(c[0]).includes(t) || norm(c[1]).startsWith(t)).sort((a, b) => Number(norm(b[0]).startsWith(t)) - Number(norm(a[0]).startsWith(t))).slice(0, 5); pinta();
     });
     q.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowDown') { act = Math.min(lista.length - 1, act + 1); pinta(); e.preventDefault(); }
