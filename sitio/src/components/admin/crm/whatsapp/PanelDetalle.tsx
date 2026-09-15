@@ -494,9 +494,23 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             ['Oferta dicha', (() => { const l = contacto?.propiedades?.ofertas; const o = Array.isArray(l) && l.length ? l[l.length - 1] : null; return o ? `${o.nombre} · vence ${o.vence}` : null; })()],
             ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : contacto?.sucursales_interes != null ? String(contacto.sucursales_interes) : null],
             ['Registro', contacto?.created_at ? fecha(contacto.created_at) : null],
-            ['Interacción', hilo?.mensajes?.length
-              ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}${conv?.ultimo_mensaje_at ? ` · ${haceCuanto(conv.ultimo_mensaje_at)}` : ''}`
-              : (timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : null)],
+            /* Toda la conversación, no solo el WhatsApp. Caso medido (15-sep-2026,
+               Lily Contreras): decía «67 mensajes · hace 124 d» con un correo
+               de ese mismo día abierto en el hilo. Los 124 días eran ciertos
+               para el WhatsApp —callado desde el 13 de mayo— y falsos para la
+               relación, que siguió por correo. Se cuentan los dos canales y la
+               fecha es la del mensaje MÁS RECIENTE, sea del carril que sea. */
+            ['Interacción', (() => {
+              // `correos` viene agrupado por conversación: se aplana para contar
+              // correos, no hilos de correo.
+              const msjsEmail = (hilo?.correos || []).flatMap((c: any) => c?.mensajes || []);
+              const n = (hilo?.mensajes?.length || 0) + msjsEmail.length;
+              if (!n) return timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : null;
+              const fechas = [conv?.ultimo_mensaje_at || null, ...msjsEmail.map((m: any) => m?.created_at || null)]
+                .filter(Boolean).sort((a: any, b: any) => Date.parse(a) - Date.parse(b));
+              const ultima = fechas[fechas.length - 1];
+              return `${n} mensaje${n === 1 ? '' : 's'}${ultima ? ` · ${haceCuanto(ultima)}` : ''}`;
+            })()],
             /* Cuántas veces se le ha marcado y cuántas de esas se habló DE
                VERDAD con una persona. La distinción no es cosmética: para
                Twilio el buzón contesta, así que sin separarlo tres buzones se

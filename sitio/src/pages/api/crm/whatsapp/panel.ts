@@ -57,13 +57,31 @@ export const GET: APIRoute = async ({ url }) => {
 
   // ── 14) desde nuestro último mensaje ──
   let desde_ultimo: any = null;
-  const desde = conv?.ultimo_saliente_at || null;
+  // NUESTRO último mensaje, no el último de WhatsApp. Caso medido (15-sep-2026,
+  // Lily Contreras): el panel decía «hace 124 d» con el hilo enseñando un correo
+  // de ESE MISMO DÍA. El WhatsApp sí llevaba 124 días callado —13-may—, pero la
+  // conversación siguió por correo, y este bloque leía solo la fila de WhatsApp.
+  // Con la fecha vieja de base, además, los renglones de abajo listaban como
+  // «nuevo» un pago de hace meses. Se toma la más RECIENTE de los dos canales.
+  const { data: ultimoCorreoSal } = contactId
+    ? await supabase.from('email_messages')
+        .select('created_at, email_conversations!inner(contact_id)')
+        .eq('email_conversations.contact_id', contactId).eq('direccion', 'saliente')
+        .order('created_at', { ascending: false }).limit(1)
+    : { data: [] as any[] };
+  const desde = [conv?.ultimo_saliente_at || null, (ultimoCorreoSal || [])[0]?.created_at || null]
+    .filter(Boolean).sort((a: any, b: any) => Date.parse(a) - Date.parse(b)).pop() || null;
   if (desde && (contactId || companyId)) {
     const [{ data: pagos }, { data: aperturas }, { data: reuniones }, { data: msjsEm }] = await Promise.all([
       companyId ? supabase.from('payments').select('monto, fecha, estado').eq('company_id', companyId).gte('created_at', desde).limit(20) : Promise.resolve({ data: [] as any[] }),
       contactId ? supabase.from('email_sends').select('opened_at, clicked_at, open_count').eq('contact_id', contactId).gte('first_opened_at', desde).limit(50) : Promise.resolve({ data: [] as any[] }),
       contactId ? supabase.from('bookings').select('fecha, estado').eq('contact_id', contactId).gte('created_at', desde).limit(10) : Promise.resolve({ data: [] as any[] }),
-      contactId ? supabase.from('email_conversations').select('id').eq('contact_id', contactId).gte('ultimo_mensaje_at', desde).limit(10) : Promise.resolve({ data: [] as any[] }),
+      /* «Te escribió por correo» tiene que ser eso: un correo SUYO y posterior
+         al nuestro. Mirando la conversación —que se toca también cuando el que
+         escribe eres tú— salía el renglón justo después de escribirle. */
+      contactId ? supabase.from('email_messages').select('id, email_conversations!inner(contact_id)')
+        .eq('email_conversations.contact_id', contactId).eq('direccion', 'entrante')
+        .gt('created_at', desde).limit(10) : Promise.resolve({ data: [] as any[] }),
     ]);
     const modulos: any[] = empresa?.uso_sacs?.modulos || [];
     const usoReciente = modulos.filter(m => m.usa && m.ultimo && m.ultimo >= desde.slice(0, 10)).map(m => m.modulo).slice(0, 4);
