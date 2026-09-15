@@ -182,7 +182,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
       const tipos: string[] = [p.primaryType, ...(p.types || [])].filter(Boolean);
       const fuera = tipos.find((t) => TIPOS_FUERA.has(t));
-      const dentro = tipos.some((t) => TIPOS_MODA.has(t));
+      const dentro = tipos.some((t) => TIPOS_MODA.has(t));   // ver el comentario de abajo: esto solo anota
 
       const cambios: any = { maps_at: new Date().toISOString(), place_id: p.id || null, abierto: p.businessStatus || null, tipo_maps: p.primaryType || tipos[0] || null };
       if (p.websiteUri && !c.sitio) { cambios.sitio = p.websiteUri; r.con_sitio++; }
@@ -216,15 +216,21 @@ export const GET: APIRoute = async ({ request, url }) => {
         r.duplicadas++;
         continue;
       }
-      /* No es moda. Se marca `no_contactar` con el motivo a la vista, no se
-         borra: si el tipo de Google se equivocó, una persona lo revierte. */
+      /* EL TIPO DE GOOGLE SIRVE PARA SOSPECHAR, NO PARA DECIDIR.
+         Probé a sacar de la cola todo lo que Google no clasificara como moda y
+         habría sido un desastre: clasifica genérico y los nombres lo prueban —
+           home_goods_store  → EUROTEXTIL, Telas Junco        (telas, buenas)
+           service           → Sivuplé, Trajes Nancy          (renta, buenas)
+           child_care_agency → La Bodega del Bebé             (tallas, buenas)
+           corporate_office  → Intermoda, Marel de México     (canal, buenas)
+         Cortar por tipo habría tirado decenas de cuentas buenas sin que nadie
+         se enterara. Así que solo se ANOTA la sospecha, y una persona decide.
+         El corte de verdad se hace con nombre y apellido, en migración. */
       if (fuera && !dentro) {
         r.no_es_moda++;
-        await supabase.from('abm_cuentas').update({ etapa: 'no_contactar' }).eq('id', c.id);
         await apuntar(c.id, 'sistema', 'nota', {
-          texto: `Google lo clasifica como «${fuera}», no es un negocio de moda. Sale de la cola. Si está mal, quitar la etapa no_contactar.`,
+          texto: `⚠️ Google lo clasifica como «${fuera}»: revisar si de verdad es un negocio de moda.`,
         });
-        continue;
       }
       if (p.businessStatus === 'CLOSED_PERMANENTLY') {
         r.cerrados++;
