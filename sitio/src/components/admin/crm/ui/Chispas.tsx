@@ -52,6 +52,15 @@ const DESTELLOS: [number, string, number, number, number, string][] = [
   [7, '70%', 40, 0.14, 2.7, '#D9538E'], [5, '81%', 10, 0.21, 0.2, '#9B8CFA'],
   [6, '88%', 34, 0.18, 3.9, '#EFA6CA'], [4, '92%', 12, 0.22, 1.8, '#D9538E'],
   [7, '95%', 48, 0.15, 2.5, '#9B8CFA'], [5, '97%', 24, 0.19, 0.9, '#EFA6CA'],
+  // Capa 4 · el polvo de atrás (15-sep-2026, a pedido del dueño: «que se puedan
+  // ver más de las que actualmente se ven»). Misma regla de siempre: más chicos
+  // y más tenues que los de la capa anterior. Ninguno pasa de 6 px ni de 0.17.
+  [6, '4%', 12, 0.16, 1.3, '#EFA6CA'], [4, '9%', 58, 0.17, 3.2, '#9B8CFA'],
+  [5, '23%', 62, 0.14, 0.5, '#D9538E'], [6, '27%', 24, 0.15, 2.1, '#9B8CFA'],
+  [4, '36%', 34, 0.17, 3.7, '#EFA6CA'], [5, '45%', 60, 0.13, 1.0, '#D9538E'],
+  [6, '54%', 16, 0.16, 2.8, '#EFA6CA'], [4, '63%', 58, 0.15, 0.6, '#9B8CFA'],
+  [5, '72%', 28, 0.17, 3.5, '#D9538E'], [6, '76%', 60, 0.13, 1.7, '#EFA6CA'],
+  [4, '84%', 20, 0.16, 2.2, '#9B8CFA'], [5, '90%', 56, 0.14, 0.3, '#D9538E'],
 ];
 
 /** El CSS del efecto. Se inyecta una vez con el componente para que una

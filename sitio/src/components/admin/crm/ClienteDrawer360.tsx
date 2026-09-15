@@ -134,7 +134,10 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 function FirmaFicha() {
   return (
     <div className="chispas-cab" aria-hidden="true"
-      style={{ position: 'relative', height: 30, margin: '-4px -6px 4px' }}>
+      /* 58 px y no 30: los destellos de las capas de atrás caen hasta los 62 px
+         y con la franja baja se veían cortados. Esta altura los muestra todos
+         sin empujar las tarjetas fuera de la primera pantalla. */
+      style={{ position: 'relative', height: 58, margin: '-8px -6px -2px' }}>
       <Chispas />
     </div>
   );
