@@ -216,6 +216,10 @@
     {
       "schedule": "0 13 * * *",
       "path": "/api/cron/abm-verificar-correos?cuantas=400"
+    },
+    {
+      "schedule": "0 12 * * *",
+      "path": "/api/cron/abm-maps?cuantas=200"
     }
   ],
   "headers": [
