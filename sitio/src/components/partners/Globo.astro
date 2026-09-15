@@ -58,10 +58,16 @@ const cifras = [
   .gl-campo svg { flex: none; opacity: 0.55; }
   .gl-campo input { flex: 1; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 16px; color: #0E0D0C; min-width: 0; }
   .gl-campo input::placeholder { color: #8A8A86; }
-  .gl-sug { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; list-style: none; margin: 0; padding: 6px; background: #fff; color: #0E0D0C; border-radius: 14px; box-shadow: 0 24px 60px -20px rgba(0,0,0,0.6); }
-  .gl-sug li { padding: 11px 14px; border-radius: 9px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
-  .gl-sug li:hover, .gl-sug li.is-act { background: #F0F0EE; }
-  .gl-sug li small { color: #8A8A86; }
+  .gl-sug { position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 5; list-style: none; margin: 0; padding: 8px; background: #fff; color: #0E0D0C; border-radius: 16px; box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.06); }
+  .gl-sug :global(li) { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 14px; padding: 12px 14px; border-radius: 11px; cursor: pointer; }
+  .gl-sug :global(li:hover), .gl-sug :global(li.is-act) { background: #F2F2F0; }
+  .gl-sug :global(li b) { font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+  .gl-sug :global(li b em) { font-style: normal; color: var(--color-primary, #4B7BE5); }
+  .gl-sug :global(li small) { font-size: 13px; color: #8A8A86; grid-column: 1; }
+  .gl-sug :global(li .gl-est) { grid-row: 1 / 3; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #6B6B68; white-space: nowrap; }
+  .gl-sug :global(li .gl-est i) { width: 8px; height: 8px; border-radius: 50%; background: #BDBDB9; }
+  .gl-sug :global(li .gl-est--p i) { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.2); }
+  .gl-sug :global(li .gl-est--a i) { background: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
   .gl-res { margin-top: 14px; padding: 20px 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); display: grid; gap: 6px; animation: gl-in 0.5s cubic-bezier(0.2,0.7,0.2,1); }
   @keyframes gl-in { from { opacity: 0; transform: translateY(8px); } }
   .gl-res-k { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8FB0FF; }
@@ -127,7 +133,9 @@ const cifras = [
     let enfoca: ((c: C) => void) | null = null;
     const pinta = () => {
       if (!lista.length) { sug.hidden = true; return; }
-      sug.innerHTML = lista.map((c, i) => `<li class="${i === act ? 'is-act' : ''}" data-i="${i}">${c[0]}<small>${c[1]}</small></li>`).join(''); sug.hidden = false;
+      const t = norm(q.value); const marca = (n: string) => { const k = norm(n).indexOf(t); return k < 0 ? n : `${n.slice(0, k)}<em>${n.slice(k, k + t.length)}</em>${n.slice(k + t.length)}`; };
+      const est = (e: string) => e === 'p' ? '<span class="gl-est gl-est--p"><i></i>Con partner · cupo limitado</span>' : e === 'm' ? '<span class="gl-est gl-est--m"><i></i>Marcas operando · abierto</span>' : '<span class="gl-est gl-est--a"><i></i>Territorio abierto</span>';
+      sug.innerHTML = lista.map((c, i) => `<li class="${i === act ? 'is-act' : ''}" data-i="${i}"><b>${marca(c[0])}</b>${est(c[4])}<small>${c[1]}</small></li>`).join(''); sug.hidden = false;
     };
     const muestra = (c: C | null, texto?: string) => {
       res.hidden = false; res.classList.toggle('is-partner', !!c && c[4] === 'p');
@@ -141,7 +149,7 @@ const cifras = [
     const elige = (c: C) => { sel = c; q.value = c[0]; lista = []; pinta(); muestra(c); enfoca?.(c); };
     q.addEventListener('input', () => {
       const t = norm(q.value); act = -1;
-      lista = t.length < 2 ? [] : CIUDADES.filter((c) => norm(c[0]).includes(t) || norm(c[1]).startsWith(t)).slice(0, 6); pinta();
+      lista = t.length < 2 ? [] : CIUDADES.filter((c) => norm(c[0]).includes(t) || norm(c[1]).startsWith(t)).sort((a, b) => Number(norm(b[0]).startsWith(t)) - Number(norm(a[0]).startsWith(t))).slice(0, 6); pinta();
     });
     q.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowDown') { act = Math.min(lista.length - 1, act + 1); pinta(); e.preventDefault(); }
