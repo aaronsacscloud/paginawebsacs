@@ -377,7 +377,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 </section>
 
 <!-- ═══ SECTION 4: Comparison Table ═══ -->
-<section class="comparison-section has-open">
+<section class="comparison-section">
   <div class="container">
     <h2 class="comparison-title">Compara planes en detalle</h2>
     <p class="comparison-subtitle">Haz clic en cada categoría para ver las funciones.</p>
@@ -3109,8 +3109,11 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     const isOpen = category.classList.contains('open');
     category.classList.toggle('open');
     header.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-    header.closest('.comparison-section')?.classList.toggle('has-open', !!document.querySelector('.comparison-category-header[aria-expanded="true"]'));
+    header.closest('.comparison-section')?.classList.toggle('has-open', !!document.querySelector('.comparison-category.open'));
   });
+
+  // El encabezado de la tabla solo se pega si hay una categoría abierta (estado inicial incluido)
+  compAccordion?.closest('.comparison-section')?.classList.toggle('has-open', !!compAccordion.querySelector('.comparison-category.open'));
 
   // ─── Pricing FAQ accordion ───
   const pricingFaqAccordion = document.getElementById('pricing-faq-accordion');
