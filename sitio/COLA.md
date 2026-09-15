@@ -366,3 +366,14 @@ Las reglas que salen de aquí, para no volver a romperlas:
       3 px, y que no quede ningún bloque de color a todo lo ancho.
 - [ ] Revisar que Reuniones no repita cuatro botones de estado por renglón (Agendada/Confirmada/
       Asistió/No llegó): es un segmento, no cuatro acciones del mismo peso.
+
+## 15-sep-2026 · Aliados de los corredores (Villa Hidalgo, Zapotlanejo…)
+> «iugal quiero por ejemplo partners espeicifcos de los corredores como
+> villahidalgo personas locales que ya les vendan a ellos igual conz
+> apotlanejo y así con los diferentes corredores d emexico una ve que temrine
+> sbusca ahi»
+
+Buscar aliados POR CORREDOR, no solo por tipo: la persona local que ya le
+vende a los locatarios de Villa Hidalgo, de Zapotlanejo, de Moroleón, del
+corredor de León. Entra después de terminar la carga de los tipos que están
+corriendo ahora.
