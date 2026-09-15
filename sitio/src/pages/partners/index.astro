@@ -197,6 +197,10 @@ const pasos = [
 
 <style>
   .pt-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  /* Los títulos globales traen color oscuro: en los bloques negros se fuerzan a blanco */
+  .pt-orq .pt-h2, .pt-orq .pt-frase, .pt-futuro h3, .pt-cierre h3, .pt-card--orq h3, .pt-card--orq .pt-card-frase, .pt-modal-head h3 { color: inherit; }
+  .pt-orq, .pt-futuro, .pt-cierre, .pt-card--orq { color: #fff; }
+  .pt-h2, .pt-frase, .pt-card h3, .pt-pasos h3, .pt-futuro h3, .pt-cierre h3 { color: inherit; }
   .pt-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #8A8A86; margin-bottom: 14px; }
   .pt-eyebrow--azul { color: var(--color-primary, #4B7BE5); }
   .pt-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 4vw, 56px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 16px; }
