@@ -118,26 +118,21 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 
 // `embebido`: la ficha vive DENTRO de la hoja (VistaRapida). La hoja ya pone
 // superficie, asa, identidad y acciones; aquí se apagan para no duplicarlas.
-/* Los destellos de la marca, detrás de TODAS las pestañas de la ficha.
+/* Los destellos de la marca, de FONDO en todas las pestañas de la ficha.
  *
- * Es solo la piel: una franja de estrellas entre las pestañas y el contenido.
- * NO lleva título ni frase —el nombre de la sección ya está en la pestaña, y
- * repetirlo abajo es decir dos veces lo mismo y empujar las tarjetas hacia
- * abajo—. Lo primero que se ve sigue siendo lo que había: las tarjetas.
+ * No es una franja que empuje: es una capa absoluta detrás del contenido. Antes
+ * ocupaba 58 px de alto y la primera tarjeta arrancaba ahí abajo; el dueño lo
+ * pidió más arriba y con más estrellas, y las dos cosas se resuelven igual —si
+ * las estrellas no ocupan lugar, la tarjeta puede empezar pegada a la pestaña y
+ * las estrellas caben en toda el área, no en una tira—.
  *
- * Vive aquí y no dentro de cada pestaña porque son diez pantallas, y diez
- * juegos de destellos con distintos tamaños se ven como diez casas.
- *
- * La regla de la casa: los destellos van SOLO en esta franja, la única sin
- * cifras. Un destello detrás de un número estorba al leerlo.
+ * Nunca quedan encima de una cifra: las tarjetas son blancas y opacas y van en
+ * z-index 1, así que las tapan justo donde estorbarían. Se ven en el aire de
+ * arriba, entre tarjeta y tarjeta, y a los lados.
  */
 function FirmaFicha() {
   return (
-    <div className="chispas-cab" aria-hidden="true"
-      /* 58 px y no 30: los destellos de las capas de atrás caen hasta los 62 px
-         y con la franja baja se veían cortados. Esta altura los muestra todos
-         sin empujar las tarjetas fuera de la primera pantalla. */
-      style={{ position: 'relative', height: 58, margin: '-8px -6px -2px' }}>
+    <div className="chispas-fondo" aria-hidden="true">
       <Chispas />
     </div>
   );
@@ -521,15 +516,26 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               {/* El aire de arriba, IGUAL en las diez pestañas.
                   Cada pestaña nació con su propio margen superior —una traía 14,
                   otra 22, otra ninguno— y al cambiar de una a otra la primera
-                  tarjeta saltaba de lugar. Aquí se anula el margen del primer
-                  hijo de cada pestaña y el aire lo pone un solo lugar: la franja
-                  de destellos. Una regla, no diez. */}
+                  tarjeta saltaba de lugar. Aquí se anula ese margen y el aire lo
+                  pone un solo lugar. Una regla, no diez. */}
               <style>{CSS_CHISPAS + `
-                .ficha-tab > :first-child { margin-top: 0 !important; }
-                .ficha-tab > :first-child > :first-child { margin-top: 0 !important; }
+                /* 16 px de respiro arriba: sin ellos la primera tarjeta empieza
+                   en el pixel cero y tapa TODA la capa de estrellas —quedaba más
+                   arriba, sí, pero sin estrellas—. Con esta franja delgada se ven
+                   arriba, entre tarjeta y tarjeta y a los lados. Antes eran 58. */
+                .ficha-tab { position: relative; padding-top: 16px; }
+                .ficha-tab > .chispas-fondo {
+                  position: absolute; left: 0; right: 0; top: -6px; height: 250px;
+                  z-index: 0; pointer-events: none;
+                }
+                .ficha-tab > .chispas-fondo .chispas { inset: 0; }
+                /* Todo lo demás va ENCIMA de las estrellas y opaco. */
+                .ficha-tab > :not(.chispas-fondo) { position: relative; z-index: 1; }
+                .ficha-tab > .chispas-fondo + * { margin-top: 0 !important; }
+                .ficha-tab > .chispas-fondo + * > :first-child { margin-top: 0 !important; }
               `}</style>
-              <FirmaFicha />
               <div className="ficha-tab">
+                <FirmaFicha />
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {/* ── La cuenta de Sacs, aquí y no en Actividad ──
                   Qué cuenta opera este cliente y con qué datos se le factura es

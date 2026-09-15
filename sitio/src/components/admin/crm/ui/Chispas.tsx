@@ -61,6 +61,25 @@ const DESTELLOS: [number, string, number, number, number, string][] = [
   [6, '54%', 16, 0.16, 2.8, '#EFA6CA'], [4, '63%', 58, 0.15, 0.6, '#9B8CFA'],
   [5, '72%', 28, 0.17, 3.5, '#D9538E'], [6, '76%', 60, 0.13, 1.7, '#EFA6CA'],
   [4, '84%', 20, 0.16, 2.2, '#9B8CFA'], [5, '90%', 56, 0.14, 0.3, '#D9538E'],
+  /* Capa 5 · el polvo de estrellas (15-sep-2026: el dueño eligió la versión de
+     72 sobre la de 44). Veintiocho más, repartidas parejo a lo ancho y a ocho
+     alturas distintas para que no se alineen en renglones. Ninguna pasa de 7 px
+     ni de 0.2: la regla de siempre —más chicas y más tenues que la capa
+     anterior— es lo único que deja subir la cantidad sin subir el ruido. */
+  [5, '1.5%', 22, 0.15, 0.2, '#EFA6CA'], [4, '4.9%', 46, 0.17, 3.6, '#D9538E'],
+  [4, '8.3%', 14, 0.15, 0.3, '#D9538E'], [6, '11.7%', 54, 0.12, 2.3, '#D9538E'],
+  [7, '15.1%', 6, 0.17, 1.6, '#D9538E'], [4, '18.5%', 22, 0.14, 0.6, '#D9538E'],
+  [6, '21.9%', 38, 0.16, 2.7, '#D9538E'], [6, '25.3%', 30, 0.15, 2.2, '#D9538E'],
+  [6, '28.7%', 6, 0.17, 2.0, '#EFA6CA'], [6, '32.1%', 46, 0.16, 3.7, '#9B8CFA'],
+  [5, '35.5%', 30, 0.18, 2.8, '#D9538E'], [4, '38.9%', 38, 0.16, 3.5, '#EFA6CA'],
+  [6, '42.3%', 38, 0.17, 0.3, '#EFA6CA'], [6, '45.7%', 22, 0.18, 0.6, '#9B8CFA'],
+  [6, '49.1%', 6, 0.2, 0.3, '#EFA6CA'], [6, '52.5%', 46, 0.15, 1.4, '#9B8CFA'],
+  [6, '55.9%', 60, 0.13, 0.4, '#9B8CFA'], [6, '59.3%', 14, 0.12, 2.8, '#EFA6CA'],
+  [6, '62.7%', 60, 0.14, 1.5, '#EFA6CA'], [5, '66.1%', 6, 0.2, 1.4, '#EFA6CA'],
+  [4, '69.5%', 60, 0.12, 3.1, '#D9538E'], [7, '72.9%', 30, 0.15, 3.7, '#9B8CFA'],
+  [4, '76.3%', 22, 0.16, 2.2, '#D9538E'], [6, '79.7%', 38, 0.18, 3.9, '#EFA6CA'],
+  [6, '83.1%', 30, 0.13, 0.7, '#D9538E'], [7, '86.5%', 30, 0.12, 3.3, '#D9538E'],
+  [5, '89.9%', 38, 0.12, 1.7, '#9B8CFA'], [6, '93.3%', 46, 0.2, 2.8, '#EFA6CA'],
 ];
 
 /** El CSS del efecto. Se inyecta una vez con el componente para que una
