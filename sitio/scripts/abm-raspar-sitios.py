@@ -22,6 +22,12 @@ LO QUE SE APRENDIÓ A GOLPES Y VA CODIFICADO AQUÍ
     ENTERO, no solo la repetición. Si dos negocios sin relación publican el
     mismo correo, no es de ninguno de los dos: es de su proveedor. Conservar
     la primera aparición era quedarse justo con la mala.
+    PERO CON UNA EXCEPCIÓN: si el correo es del MISMO dominio que el sitio de
+    la cuenta, es suyo aunque se repita — una cadena publica el mismo contacto
+    en todas sus sucursales. `contacto@elglobo.com.mx` en cinco tiendas El
+    Globo es correcto; `impallari@gmail.com` en una óptica y una zapatería no.
+    Lo que delata al proveedor es el correo de OTRO dominio en negocios
+    distintos.
   · EL DOMINIO PROPIO MANDA. Un correo del dominio del negocio vale más que un
     gmail, y un correo de OTRO dominio se descarta salvo que no haya nada más.
   · EL NÚMERO MÁS REPETIDO. El de la tienda sale en todas las páginas; el del
