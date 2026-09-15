@@ -68,6 +68,7 @@ const cifras = [
   .gl-sug :global(li .gl-est i) { width: 8px; height: 8px; border-radius: 50%; background: #BDBDB9; }
   .gl-sug :global(li .gl-est--p i) { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.2); }
   .gl-sug :global(li .gl-est--a i) { background: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
+  .gl-res[hidden] { display: none; }
   .gl-res { margin-top: 14px; padding: 20px 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); display: grid; gap: 6px; animation: gl-in 0.5s cubic-bezier(0.2,0.7,0.2,1); }
   @keyframes gl-in { from { opacity: 0; transform: translateY(8px); } }
   .gl-res-k { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8FB0FF; }
@@ -93,14 +94,25 @@ const cifras = [
   .gl-cinta span::after { content: ''; position: absolute; right: -2px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: #4B7BE5; transform: translateY(-50%); }
   @keyframes gl-cinta { to { transform: translateX(-50%); } }
   @media (max-width: 1023px) {
-    .gl-inner { grid-template-columns: 1fr; }
-    .gl-vis { max-width: 560px; margin: 0 auto; width: 100%; }
+    /* Una columna: titular → globo → buscador → resultado → cifras */
+    .gl-inner { grid-template-columns: 1fr; gap: 0; }
+    .gl-txt { display: contents; }
+    .gl-eyebrow, .gl-h2, .gl-p { order: 1; }
+    .gl-vis { order: 2; max-width: 520px; margin: 8px auto 40px; width: 100%; }
+    .gl-busca { order: 3; } .gl-res { order: 4; } .gl-cifras { order: 5; }
     .gl-cifras { grid-template-columns: 1fr 1fr; gap: 10px 0; }
   }
   @media (max-width: 767px) {
     .gl { padding-top: 64px; }
-    .gl-vis { max-width: 340px; }
-    .gl-leyenda { gap: 12px; font-size: 11.5px; flex-wrap: wrap; }
+    .gl-h2 { font-size: clamp(28px, 8vw, 34px); }
+    .gl-p { font-size: 15.5px; margin-bottom: 18px; }
+    .gl-vis { max-width: 320px; margin-bottom: 44px; }
+    .gl-leyenda { gap: 10px 14px; font-size: 11.5px; flex-wrap: wrap; bottom: -30px; }
+    .gl-campo { height: 54px; padding: 0 14px; } .gl-campo input { font-size: 15px; }
+    .gl-sug :global(li) { grid-template-columns: 1fr; padding: 10px 12px; } .gl-sug :global(li .gl-est) { grid-column: 1; grid-row: 3; margin-top: 2px; }
+    .gl-res { padding: 16px 18px; } .gl-res b { font-size: 19px; } .gl-res p { font-size: 14px; }
+    .gl-res-btn { width: 100%; text-align: center; justify-self: stretch; }
+    .gl-cifras { margin-top: 28px; } .gl-cifras b { font-size: 26px; } .gl-cifras span { font-size: 12px; }
     .gl-cinta span { padding: 12px 18px; font-size: 13px; }
   }
   @media (prefers-reduced-motion: reduce) { .gl-cinta { animation: none; } }

@@ -344,7 +344,8 @@ const pasos = [
   }
   @media (max-width: 767px) {
     .pt-linea, .pt-opciones, .pt-datos { grid-template-columns: 1fr; }
-    .pt-mosaico { grid-template-columns: 1fr; } .pt-mos, .pt-mos--g { grid-column: span 1; aspect-ratio: 4 / 5; }
+    .pt-mosaico { grid-template-columns: 1fr; gap: 12px; } .pt-mos, .pt-mos--g { grid-column: span 1; aspect-ratio: 3 / 4; }
+    .pt-mos .pt-datos div:last-child { display: none; } .pt-mos .pt-mos-frase { font-size: 14px; } .pt-mos h3 { font-size: 24px; }
     .pt-mos .pt-mos-mas { grid-template-rows: 1fr; } .pt-mos .pt-datos { grid-template-columns: 1fr; gap: 8px; } .pt-mos-velo { background: linear-gradient(180deg, rgba(14,13,12,0.1) 0%, rgba(14,13,12,0.75) 45%, rgba(14,13,12,0.96) 100%) !important; }
     .pt-mani-lineas p { font-size: 20px; }
     .pt-fila { padding: 40px 0; gap: 22px; }
