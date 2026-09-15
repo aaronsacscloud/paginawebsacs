@@ -12,6 +12,10 @@ export const CATS_DESCARTE = [
   { v: 'ya_usa_otro', l: 'Ya usa otro sistema' },
   { v: 'precio', l: 'Precio' },
   { v: 'no_perfil', l: 'No es el perfil' },
+  // Lo dijo él, con esas palabras: «ya no estoy interesado». Es distinto de «no
+  // es el perfil» (eso lo decidimos nosotros) y de «nunca respondió» (ese ni
+  // contestó): aquí hubo conversación y una respuesta clara.
+  { v: 'no_interesado', l: 'Dijo que ya no le interesa' },
   { v: 'datos_falsos', l: 'Datos falsos / ilocalizable' },
   { v: 'sin_respuesta', l: 'Nunca respondió' },
   { v: 'otro', l: 'Otro' },

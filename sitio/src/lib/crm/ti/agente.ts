@@ -207,7 +207,55 @@ export async function aplicarOptOut(contactId: string, motivo: string) {
   await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'opt_out' }).eq('contact_id', contactId).is('detenida_at', null).then(() => {}, () => {});
   await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'opt_out', updated_at: ahora }).eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
   await supabase.from('activities').insert({ contact_id: contactId, tipo: 'opt_out', titulo: 'Pidió que no le escribamos más por WhatsApp', descripcion: motivo, automatico: true }).then(() => {}, () => {});
-  await log({ accion: 'opt_out', contact_id: contactId, razon: motivo });
+
+  /* ══ Y LA BAJA, QUE ES LO QUE DE VERDAD PASÓ ══════════════════════════════
+     Regla del dueño (14-sep-2026): «esto genera una descalificación automática
+     al prospecto; si previamente ya era rezagado, pues solo se descalifica y se
+     termina el flujo».
+
+     Hasta hoy el opt-out apagaba al agente y ahí quedaba: el lead seguía
+     figurando como Rezagado —en la lista, en los conteos, en el universo de
+     cualquier cadencia futura— aunque hubiera dicho «ya no estoy interesado»
+     con todas sus letras. Decir que no es una respuesta, y la más clara de
+     todas: cierra el ciclo.
+
+     Solo en las etapas donde trabaja el agente. Un CLIENTE que pide que no le
+     escribamos está pidiendo justo eso —no darse de baja como cliente— y una
+     OPORTUNIDAD con dinero de por medio la cierra una persona, no un regex. En
+     esos dos casos se apaga el automático y se deja dicho en el hilo, que es
+     distinto de decidir por su cuenta. */
+  const { data: ct } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contactId).maybeSingle();
+  const etapa = String((ct as any)?.lifecycle_stage || '');
+  const daDeBaja = ETAPAS_SDR.includes(etapa);
+  if (daDeBaja) {
+    await supabase.from('contacts').update({
+      lifecycle_stage: 'descalificado', descarte_categoria: 'no_interesado',
+      estatus_lead: 'descartado', estatus_lead_at: ahora, updated_at: ahora,
+    }).eq('id', contactId);
+    await supabase.from('activities').insert({
+      contact_id: contactId, tipo: 'stage_change', automatico: true,
+      titulo: `Lifecycle: ${etapa} → descalificado · dijo que ya no le interesa`,
+      metadata: { de: etapa, a: 'descalificado', motivo: 'opt_out', categoria: 'no_interesado' },
+    }).then(() => {}, () => {});
+  }
+
+  /* Y SE DICE EN EL HILO. Quien abra esta conversación mañana tiene que ver por
+     qué el lead cambió de etapa sin que nadie lo tocara; si no, parece que el
+     CRM se movió solo. Va como línea de sistema —igual que las de secuencias—,
+     no como recado del equipo: no lo escribió una persona. */
+  const { data: cv } = await supabase.from('wa_conversaciones')
+    .select('telefono').eq('contact_id', contactId).not('telefono', 'is', null)
+    .order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+  if (cv?.telefono) {
+    const { notaSistema } = await import('../../whatsapp/espejo');
+    await notaSistema(String(cv.telefono), daDeBaja
+      ? `Pidió que no le escribamos más. Su etapa pasó de ${etapa} a DESCALIFICADO (motivo: dijo que ya no le interesa) y se cerró el seguimiento: no le vuelve a salir nada automático.`
+      : `Pidió que no le escribamos más. Se apagaron los mensajes automáticos; la etapa (${etapa || 'sin etapa'}) NO se tocó — esa decisión es de una persona.`,
+      { opt_out: true, etapa_anterior: etapa, descalificado: daDeBaja },
+    ).catch(() => {});
+  }
+
+  await log({ accion: 'opt_out', contact_id: contactId, razon: motivo, detalle: { etapa_anterior: etapa, descalificado: daDeBaja } });
 }
 const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 

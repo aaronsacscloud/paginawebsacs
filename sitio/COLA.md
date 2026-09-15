@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-14 · «Ya no estoy interesado» debe descalificar de verdad.** «esto genera una descalificación automática
+      al prospecto y si previamente ya era rezagado pues solo se descalifica y se termina el flujo, y debe mencionar en
+      el inbox de forma interna una nota que se cambió su etapa de ciclo de vida a descalificado y realmente lo debe
+      hacer» → HECHO: la baja se aplica en `aplicarOptOut`, con su nota de sistema en el hilo. Jovanna, al día.
+
 - [x] **2026-09-14 · El hueco de arriba en Leads (teléfono).** «Aquí aparece un espacio raro arriba, que no aparezca
       eso por favor» → HECHO: eran los 140 px de aire de la barra de abajo, cobrados también a la cabecera.
 
