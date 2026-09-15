@@ -56,6 +56,27 @@ export function regionDe(pais?: string | null): Region {
   return paisDe(pais).region;
 }
 
+/** La hora local (0-23) en la capital del país de la cuenta. */
+export function horaLocalDe(pais?: string | null, ahora = new Date()): number {
+  const p = paisDe(pais);
+  try {
+    const h = new Intl.DateTimeFormat('en-US', { timeZone: p.tz, hour: 'numeric', hour12: false }).format(ahora);
+    return Number(h) % 24;
+  } catch { return ahora.getUTCHours(); }
+}
+
+/** ¿Es hora de escribirle a este país? De 9:00 a 17:59 en SU reloj.
+ *
+ *  El cron corre a las 9, 16 y 19 UTC (15-sep-2026, al entrar España): la de
+ *  las 9 UTC es la mañana de Madrid (11:00) pero la madrugada de México (3:00)
+ *  y de Bogotá (4:00); la de las 19 UTC es la tarde de América y las 21:00 de
+ *  Madrid. Sin esta guardia, un país recibe correos de noche. El toque que
+ *  cae fuera de horario NO se cancela: espera a la siguiente corrida. */
+export function enHorarioDe(pais?: string | null, ahora = new Date()): boolean {
+  const h = horaLocalDe(pais, ahora);
+  return h >= 9 && h < 18;
+}
+
 /** Los países de una región, para armar goteos y filtros. */
 export function paisesDe(region: Region): Pais[] {
   return Object.values(PAISES).filter(p => p.region === region);

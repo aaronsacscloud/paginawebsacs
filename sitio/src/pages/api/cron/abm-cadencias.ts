@@ -14,6 +14,7 @@
 //   4. Corte automático si el día viene con demasiados rebotes.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { enHorarioDe } from '../../../lib/crm/abm-paises';
 // Se manda por el MISMO pipeline que las campañas, no por el atajo de
 // sendEmail: el pipeline es el que pone el pie con la liga de baja, las
 // cabeceras List-Unsubscribe (el botón nativo de "Cancelar suscripción" de
@@ -209,7 +210,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const CORREO_OK = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
-  let enviados = 0; const fallos: string[] = [];
+  let enviados = 0, fueraDeHorario = 0; const fallos: string[] = [];
 
   for (const t of toques || []) {
     if (enviados >= restante) break;
@@ -308,7 +309,7 @@ export const GET: APIRoute = async ({ request }) => {
     } else fallos.push(`${r.motivo}: ${String(r.detalle || '').slice(0, 90)}`);
   }
 
-  return json({ enviados, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
+  return json({ enviados, fuera_de_horario: fueraDeHorario, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
 };
 
 /** Trae a la bitácora lo que SendGrid ya contó en email_sends. */

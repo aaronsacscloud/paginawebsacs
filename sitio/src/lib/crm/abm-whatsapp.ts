@@ -24,6 +24,7 @@ import { enviarPlantilla, conLinea, crearPlantillaMeta, sanearParam, KapsoError,
 import { registrarMensaje } from '../whatsapp/espejo';
 import { lineaPara, infoLinea } from '../whatsapp/linea';
 import { puedeMandarWa } from '../whatsapp/presion';
+import { enHorarioDe } from './abm-paises';
 
 export type ResultadoWa = {
   enviados: number; saltados: number; fallidos: number;
@@ -162,6 +163,9 @@ export async function enviarWhatsApps(o: { hoy: string; tope: number }): Promise
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
       continue;
     }
+    // Fuera de la ventana local (9:00–17:59) el WhatsApp espera a la
+    // siguiente corrida: a nadie le llega un WhatsApp comercial de noche.
+    if (!enHorarioDe(c.pais)) { res.saltados++; res.motivo = res.motivo || 'fuera de horario en su país'; continue; }
     // Un solo toque por negocio al día, sea correo o WhatsApp: si hoy ya le
     // salió algo, el WhatsApp se recorre a mañana.
     if (tocadasHoy.has(t.cuenta_id)) {

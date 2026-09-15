@@ -12,7 +12,7 @@ const scrolls = parseInt(process.argv[4]||'4');
   try {
     await p.goto('https://www.google.com/maps/search/'+encodeURIComponent(q)+'?hl=en&gl='+gl, {waitUntil:'domcontentloaded', timeout:60000});
     await p.waitForTimeout(4500);
-    try { const btn = await p.$('button[aria-label*="Aceptar"]'); if(btn) { await btn.click(); await p.waitForTimeout(3000);} } catch(e){}
+    try { const btn = await p.$('button[aria-label*="Aceptar"], button[aria-label*="Accept all"]'); if(btn) { await btn.click(); await p.waitForTimeout(3000);} } catch(e){}
     await p.waitForSelector('div[role="feed"]', {timeout:25000}).catch(()=>{});
     for (let i=0;i<scrolls;i++){
       await p.evaluate(()=>{const f=document.querySelector('div[role="feed"]'); if(f) f.scrollTop=f.scrollHeight;});

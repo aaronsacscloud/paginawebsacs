@@ -10,7 +10,7 @@ const u = process.argv[2]; const gl = process.argv[3] || 'CO';
   try {
     await p.goto(u + '?hl=en&gl=' + gl, {waitUntil:'domcontentloaded', timeout:60000});
     await p.waitForTimeout(3500);
-    try { const btn = await p.$('button[aria-label*="Aceptar"]'); if(btn) { await btn.click(); await p.waitForTimeout(2500);} } catch(e){}
+    try { const btn = await p.$('button[aria-label*="Aceptar"], button[aria-label*="Accept all"]'); if(btn) { await btn.click(); await p.waitForTimeout(2500);} } catch(e){}
     await p.waitForSelector('h1', {timeout:20000}).catch(()=>{});
     const out = await p.evaluate(()=>{
       const web = (()=>{const e=document.querySelector('a[data-item-id="authority"]'); return e? e.getAttribute('href') : null;})();

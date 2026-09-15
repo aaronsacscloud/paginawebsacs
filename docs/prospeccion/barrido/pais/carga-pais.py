@@ -10,13 +10,15 @@ hl=en (es la única forma de ver reseñas y teléfono fuera de México, manual �
 """
 import json, glob, re, sys, os, subprocess, unicodedata, hashlib, datetime
 from collections import defaultdict, Counter
-from paises import PAISES, STEMS, e164, es_movil
+from paises import PAISES, STEMS, stems, ciudad_limpia, e164, es_movil
 D = os.path.dirname(os.path.abspath(__file__))
 MODO = sys.argv[1]; GIRO = sys.argv[2]; ISOS = sys.argv[3:] or list(PAISES)
 SQL = os.path.join(D, '..', 'sql.sh')
 OUT = os.path.join(D, 'sqlout'); os.makedirs(OUT, exist_ok=True)
 MES = datetime.date.today().strftime('%Y-%m')
-RATING_MIN, RESENAS_MIN, TOPE_PAIS = 3.7, 5, 100
+# Sin tope por país (15-sep-2026): el dueño quiere el barrido por provincias
+# como en México, no el top 100 de la capital. El filtro de calidad se queda.
+RATING_MIN, RESENAS_MIN, TOPE_PAIS = 3.7, 5, None
 FUS = os.path.join(D, f'{GIRO}-pais-fusion.json')
 # Las cuentas de fuera de México entran EN PAUSA (pausa_hasta null: el cron de
 # ritmo no las despierta). Un goteo viejo solo toma `sin_tocar`, así que
@@ -75,21 +77,41 @@ def consultas():
         if qq: m[(iso, md5_10(qq))] = qq
     return m
 def ciudad_de(qq, iso):
-    for st in sorted(STEMS[GIRO], key=len, reverse=True):
+    for st in sorted(stems(GIRO, iso), key=len, reverse=True):
         if qq.lower().startswith(st.lower()):
             c = qq[len(st):].strip() or None
             # «Palermo Buenos Aires» o «Miraflores Lima» son consultas por barrio para
             # sacar más lugares; en el correo la ciudad es Buenos Aires o Lima.
             for otra in PAISES[iso]['ciudades']:
-                if c and c != otra and c.endswith(' ' + otra): return otra
-            return c
+                if c and c != otra and c.endswith(' ' + otra): return ciudad_limpia(otra, iso)
+            return ciudad_limpia(c, iso)
     return None
 
+def fichas_api(iso):
+    """Las fichas que dejó maps-api-pais.py (traen `estado`), por nombre normalizado.
+    Sirven para ponerle teléfono y web a un lugar del feed de Chromium sin abrir
+    su ficha: el mismo negocio con el mismo nombre en el mismo país."""
+    idx = defaultdict(list)
+    for f in glob.glob(os.path.join(D, f'ficha-{iso}', '*.json')):
+        try: d = json.load(open(f))
+        except Exception: continue
+        if isinstance(d, dict) and 'estado' in d and d.get('phone'): idx[norm(d.get('name') or '')].append(d)
+    return idx
+
 def leer_crudo():
-    """Feed + ficha por lugar único (url). Devuelve filas ya filtradas por giro."""
-    md5q = consultas(); fuera = Counter(); vistos = {}
+    """Feed + ficha por lugar único (url). Devuelve filas ya filtradas por giro.
+
+    Dos fuentes que se complementan (15-sep-2026): el feed de Chromium trae la
+    categoría FINA de Maps («Bridal shop», «Dress store»; un tercio de los
+    lugares del giro entra solo por ella), y la Places API trae teléfono, web y
+    reseñas en una llamada pero con categoría gruesa («Clothing store»). Un lugar
+    del feed sin ficha propia toma la de la API por nombre; el mismo negocio
+    visto por las dos (mismo teléfono y nombre) es UNO, con la categoría fina."""
+    md5q = consultas(); fuera = Counter(); vistos = {}; por_tel = {}
     for iso in ISOS:
-        for f in sorted(glob.glob(os.path.join(D, f'pool-{iso}-{GIRO}', '*.json'))):
+        api = fichas_api(iso)
+        pools = sorted(glob.glob(os.path.join(D, f'pool-{iso}-{GIRO}', '*.json')), key=lambda f: f.endswith('.api.json'))  # el feed primero: su categoría manda
+        for f in pools:
             if os.path.getsize(f) == 0: continue
             try: data = json.load(open(f))
             except Exception: fuera['pool ilegible'] += 1; continue
@@ -104,6 +126,10 @@ def leer_crudo():
                 if os.path.exists(fp) and os.path.getsize(fp) > 0:
                     try: ficha = json.load(open(fp)) or {}
                     except Exception: ficha = {}
+                if not ficha.get('phone') and not r.get('api'):
+                    cand = api.get(norm(r['name'])) or []
+                    if cand:                     # la ficha de la API del mismo nombre; la categoría fina sigue siendo la del feed
+                        a = cand[0]; ficha = dict(a, cat=ficha.get('cat') or r.get('cat') or a.get('cat')); fuera['ficha tomada de la API'] += 1
                 cat = (ficha.get('cat') or r.get('cat') or '').strip() or None
                 catl = (cat or '').lower()
                 nombre = (ficha.get('name') or r['name']).strip()
@@ -114,13 +140,17 @@ def leer_crudo():
                 else: fuera['categoría: ' + cat] += 1; continue
                 tel = e164(ficha.get('phone') or '', iso)
                 if not tel: fuera['sin teléfono válido'] += 1; continue
+                dup = por_tel.get((iso, tel, norm(nombre)))
+                if dup:                          # el mismo lugar visto por el feed y por la API
+                    dup['qs'].add(qq); fuera['mismo lugar por las dos fuentes'] += 1; continue
                 rv = ficha.get('reviews') if ficha.get('reviews') not in (None, '') else r.get('reviews')
                 rv = int(re.sub(r'\D', '', str(rv))) if rv not in (None, '') else None
                 rt = ficha.get('rating') or r.get('rating'); rt = float(str(rt).replace(',', '.')) if rt not in (None, '') else None
                 vistos[key] = dict(iso=iso, name=nombre, tel=tel, movil=es_movil(tel, iso), reviews=rv, rating=rt, cat=cat,
                                    web=(ficha.get('web') or r.get('web') or '').strip() or None, ig=ficha.get('ig'), url=r['url'],
                                    direccion=ficha.get('address'), ciudad=ciudad_de(qq, iso), qs={qq})
-    print('fuera por filtro:', sum(fuera.values()), dict(fuera.most_common(10)))
+                por_tel[(iso, tel, norm(nombre))] = vistos[key]
+    print('fuera por filtro:', sum(fuera.values()), dict(fuera.most_common(12)))
     return list(vistos.values())
 
 def subgiro(c):
@@ -170,8 +200,8 @@ def prep():
     top = []
     for iso in ISOS:
         cs = sorted([c for c in cuentas if c['iso'] == iso], key=lambda c: (-(c['resenas_total'] or 0), -(c['rating'] or 0)))
-        top.extend(cs[:TOPE_PAIS])
-    print(f'filtro de calidad (≥{RATING_MIN}★, ≥{RESENAS_MIN} reseñas, top {TOPE_PAIS} por país): {antes} → {len(top)}')
+        top.extend(cs[:TOPE_PAIS] if TOPE_PAIS else cs)
+    print(f'filtro de calidad (≥{RATING_MIN}★, ≥{RESENAS_MIN} reseñas, {('top ' + str(TOPE_PAIS)) if TOPE_PAIS else 'sin tope'} por país): {antes} → {len(top)}')
     cuentas = top
     # dedupe contra la base: nombre+ciudad, teléfono E.164, dominio
     base = json.loads(subprocess.check_output([SQL, '-e', "select a.id, lower(a.nombre) n, coalesce(a.ciudad,'') c, a.pais, a.giro, a.sitio, (select string_agg(valor,'|') from abm_canales k where k.cuenta_id=a.id and k.tipo in ('telefono','whatsapp_tienda','whatsapp_dueno')) tels from abm_cuentas a where a.pais <> 'México'"]))
@@ -238,10 +268,11 @@ def hijos():
     ids = {(b['n'], b['c']): b['id'] for b in base}
     ex_can = json.loads(subprocess.check_output([SQL, '-e', f"select k.cuenta_id, k.tipo, lower(k.valor) v from abm_canales k join abm_cuentas a on a.id=k.cuenta_id where a.giro='{GIRO}' and a.pais <> 'México'"]))
     ya = {(k['cuenta_id'], k['tipo'], k['v']) for k in ex_can}
-    ya_tel = defaultdict(set)
+    ya_tel = defaultdict(set); ya_wa = defaultdict(set)
     for k in ex_can:
         d = re.sub(r'\D', '', k['v'])
         if d and k['tipo'] in ('telefono', 'whatsapp_tienda', 'whatsapp_dueno'): ya_tel[k['cuenta_id']].add(d)
+        if d and k['tipo'] in ('whatsapp_tienda', 'whatsapp_dueno'): ya_wa[k['cuenta_id']].add(d)
     can = []; fue = []; sin_id = 0
     todas = [c for c in fus['nuevas'] + fus['existentes'] if c['iso'] in ISOS]
     for c in todas:
@@ -286,8 +317,12 @@ def hijos():
             fue.append(f"({q(cid)},{q(tipo)},{q(e)},{q(s_['web'])},'sitio_oficial',{q(conf)},'carga {GIRO} {c['iso']} {MES}')")
         for w in s_.get('wa') or []:            # ya vienen en E.164 (sitios-pais.py los validó con e164 del país)
             d = w.lstrip('+')
-            if d in ya_tel[cid]: continue
-            ya_tel[cid].add(d); n_wa += 1
+            # Se compara contra los WhatsApp, NO contra los teléfonos: casi siempre
+            # el wa.me del sitio es el MISMO número que Maps, y esa coincidencia es
+            # justo la declaración que lo vuelve WhatsApp (antes se saltaba y por
+            # eso 144 sitios con wa.me dejaban solo 22 canales; 15-sep-2026).
+            if d in ya_wa[cid]: continue
+            ya_wa[cid].add(d); ya_tel[cid].add(d); n_wa += 1
             # 'declarado': el negocio publicó su wa.me en su sitio; es lo único que
             # cuenta como WhatsApp (trigger abm_canales_recontar y regla del manual).
             can.append(f"({q(cid)},'whatsapp_tienda',{q('https://wa.me/' + d)},'alta','declarado',true)")

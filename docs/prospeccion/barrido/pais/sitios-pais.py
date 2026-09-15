@@ -4,9 +4,9 @@ correos, wa.me DECLARADO (validado con e164 del país), Instagram/Facebook.
 Lee <giro>-pais-fusion.json (de carga-pais.py prep), escribe <giro>-pais-sitios.json.
 Solo páginas públicas: home + contacto + aviso/política de privacidad.
   python3 sitios-pais.py novias [isos…]"""
-import json, re, subprocess, sys, os, concurrent.futures as cf
+import json, re, subprocess, sys, os, threading, concurrent.futures as cf
 from urllib.parse import urljoin
-from paises import PAISES, e164
+from paises import PAISES, e164, es_movil
 D = os.path.dirname(os.path.abspath(__file__))
 GIRO = sys.argv[1]; ISOS = sys.argv[2:] or list(PAISES)
 fus = json.load(open(os.path.join(D, GIRO + '-pais-fusion.json')))
@@ -25,19 +25,46 @@ EMAIL_BASURA = re.compile(r'sentry|shopify|\.png|\.jpg|\.gif|\.svg|\.webp|wixpre
 # (nobleui, pixelspread), el corporativo de la marca que distribuyen
 # (Pronovias, Morilee). Además, un correo que aparece en 2+ cuentas SIN
 # relación se descarta entero (regla del scraper de México).
-WA = re.compile(r'(?:wa\.me|api\.whatsapp\.com/send\?phone=|whatsapp\.com/send\?phone=|wa\.link)/?\+?(\d{7,15})', re.I)
+WA = re.compile(r'(?:wa\.me|api\.whatsapp\.com/send/?\?phone=|whatsapp\.com/send/?\?phone=|wa\.link)/?\+?(\d{7,15})', re.I)
 IG = re.compile(r'instagram\.com/([A-Za-z0-9_.]{2,30})/?', re.I)
 FB = re.compile(r'facebook\.com/([A-Za-z0-9_.\-]{3,60})/?', re.I)
-IG_BASURA = {'p', 'explore', 'reel', 'reels', 'accounts', 'share', 'stories', 'tv', 'oauth'}
+IG_BASURA = {'p', 'explore', 'reel', 'reels', 'accounts', 'share', 'stories', 'tv', 'oauth', 'rsrc.php', 'static', 'legal', 'about', 'developer', 'directory'}
+# Un «sitio» que es Instagram/Facebook no se puede leer sin sesión (muro de
+# login): se anota la red y no se pierde tiempo; el contacto saldrá de otro lado.
+RED_SOCIAL = re.compile(r'^https?://(www\.)?(instagram\.com|facebook\.com|fb\.com|m\.facebook\.com|tiktok\.com)/', re.I)
+# Widgets de WhatsApp: el número vive en la configuración del plugin, no en un
+# wa.me (joinchat/creame «"phone":"57…"», Elfsight, GetButton, Chaty, Tochat) o en
+# texto plano «WhatsApp: +57 300 123 4567». Es un WhatsApp DECLARADO por el
+# negocio igual que un wa.me: se toma solo si es móvil válido de SU país.
+WA_WIDGET = re.compile(r'(?:whatsapp|joinchat|wa[_-]?(?:number|phone|chat)|chaty|getbutton|tochat)[^0-9]{0,120}?\+?(\d[\d\s().-]{7,20}\d)', re.I)
+WA_LINK = re.compile(r'https?://(?:www\.)?wa\.link/[A-Za-z0-9_-]{3,20}', re.I)
+# Correos ofuscados: Cloudflare data-cfemail, «info [at] dominio [dot] com»,
+# «info(arroba)dominio.com», entidades &#64;.
+CF_EMAIL = re.compile(r'data-cfemail=["\']([0-9a-f]{10,})["\']', re.I)
+OFUSCADO = re.compile(r'([a-z0-9._%+-]+)\s*(?:\[at\]|\(at\)|\[arroba\]|\(arroba\)|\s+arroba\s+|&#64;|&#x40;|\{at\})\s*([a-z0-9-]+(?:\s*(?:\[dot\]|\(dot\)|\[punto\]|\(punto\)|\.)\s*[a-z0-9-]+)+)', re.I)
+def cf_decode(h):
+    try:
+        k = int(h[:2], 16); return ''.join(chr(int(h[i:i+2], 16) ^ k) for i in range(2, len(h), 2))
+    except Exception: return ''
+def resolver_walink(u):
+    """wa.link/abc → el teléfono al que redirige (api.whatsapp.com/send?phone=…)."""
+    try:
+        p = subprocess.run(['curl', '-sSI', '--max-time', '12', '-A', UA, '-o', '/dev/null', '-w', '%{redirect_url}', u], capture_output=True, text=True)
+        m = re.search(r'phone=\+?(\d{7,15})', p.stdout or '')
+        return m.group(1) if m else None
+    except Exception: return None
+
 FB_BASURA = {'sharer', 'sharer.php', 'plugins', 'tr', 'dialog', 'share', 'login', 'profile.php', 'pages', 'groups', 'hashtag', 'privacy', 'policies', 'help', '2008', 'photo', 'photo.php', 'watch', 'events'}
 SUBPAGINAS = ['/contacto', '/contact', '/pages/contacto', '/pages/contact', '/aviso-de-privacidad', '/politica-de-privacidad', '/politica-de-datos', '/policies/privacy-policy', '/policies/legal-notice', '/pages/aviso-de-privacidad', '/sucursales', '/pages/sucursales', '/tiendas', '/nosotros']
 
+NAV = threading.Semaphore(3)   # Chromium pesa: máximo tres a la vez
 def navegador(u):
     """(html, código, url final) con Chromium; ("", 0, u) si tampoco entra."""
     try:
+      with NAV:
         p = subprocess.run(['node', os.path.join(D, 'html-nav.js'), u], capture_output=True, text=True, timeout=90)
-        r = json.loads(p.stdout or '[]')
-        if r and r[0].get('html') and r[0].get('status', 0) < 400 and len(r[0]['html']) > 200: return r[0]['html'], 200, r[0]['final']
+      r = json.loads(p.stdout or '[]')
+      if r and r[0].get('html') and r[0].get('status', 0) < 400 and len(r[0]['html']) > 200: return r[0]['html'], 200, r[0]['final']
     except Exception: pass
     return '', 0, u
 
@@ -52,6 +79,17 @@ def mira(c):
     u = c['web'].strip()
     if not u.startswith('http'): u = 'http://' + u
     out = dict(iso=c['iso'], nombre=c['nombre'], ciudad=c['ciudad'], id_existente=c.get('id_existente'), web=u)
+    # El «sitio» de Maps a veces ES un wa.me/api.whatsapp: ese número lo declaró
+    # el negocio como su WhatsApp, no hay nada que leer.
+    was_url = []
+    for m in WA.finditer(u):
+        d = m.group(1)
+        e = e164('+' + d, c['iso']) if d.startswith(PAISES[c['iso']]['lada']) else e164(d, c['iso'])
+        if e and es_movil(e, c['iso']): was_url.append(e)
+    if was_url or re.search(r'wa\.me|whatsapp\.com', u, re.I):
+        out.update(http=200, plataforma='WhatsApp', emails=[], wa=was_url[:3], ig=None, fb=None, red='whatsapp'); return out
+    if RED_SOCIAL.search(u):
+        out.update(http=0, plataforma=None, emails=[], wa=[], ig=(IG.search(u).group(1) if IG.search(u) else None), fb=(FB.search(u).group(1) if FB.search(u) else None), red='instagram' if 'instagram' in u else 'facebook'); return out
     try:
         html, cod, seg, final = curl(u)
         # Plan B: muro anti-bots (403/429/409), un 202 de «espere» o un 301
@@ -81,9 +119,21 @@ def mira(c):
                 if cd == 200 and len(t) > 200: textos.append(t)
             except Exception: pass
         todo = '\n'.join(textos)
+        # Si con curl no aparece ni correo ni WhatsApp, se abre la home con
+        # Chromium: los pies de página y widgets de WhatsApp de Wix, Next.js,
+        # Squarespace o Webflow (y muchos temas de WordPress) se pintan con JS.
+        if not (re.search(r'mailto:|wa\.me|api\.whatsapp|data-cfemail', todo, re.I) or EMAIL.search(todo)):
+            html2, cod2, _ = navegador(final or u)
+            if cod2 == 200 and len(html2) > 200: todo += '\n' + html2; out['via'] = (out.get('via') or '') + '+nav'
         emails = []
         for m in re.finditer(r'mailto:([^"\'?&\s>]+)', todo, re.I): emails.append(m.group(1).lower())
         for m in EMAIL.finditer(todo): emails.append(m.group(0).lower())
+        for m in CF_EMAIL.finditer(todo):
+            e = cf_decode(m.group(1)).lower()
+            if EMAIL.fullmatch(e): emails.append(e)
+        for m in OFUSCADO.finditer(todo):
+            e = (m.group(1) + '@' + re.sub(r'\s*(?:\[dot\]|\(dot\)|\[punto\]|\(punto\))\s*', '.', m.group(2))).lower().replace(' ', '')
+            if EMAIL.fullmatch(e): emails.append(e)
         # Basura pegada al inicio por el HTML: «%20info@», «http://info@»,
         # «+50762702795info@» (el teléfono y el correo sin espacio).
         emails = [re.sub(r'^(?:%20|https?://|\+?\d{7,15})+', '', e) for e in emails]
@@ -95,6 +145,15 @@ def mira(c):
         for m in WA.finditer(todo):
             d = m.group(1)
             e = e164('+' + d, c['iso']) if d.startswith(PAISES[c['iso']]['lada']) else e164(d, c['iso'])
+            if e and e not in was: was.append(e)
+        for m in WA_WIDGET.finditer(todo):
+            d = re.sub(r'\D', '', m.group(1))
+            if len(d) < 7: continue
+            e = e164('+' + d, c['iso']) if d.startswith(PAISES[c['iso']]['lada']) else e164(d, c['iso'])
+            if e and es_movil(e, c['iso']) and e not in was: was.append(e)
+        for l in dict.fromkeys(WA_LINK.findall(todo)):
+            d = resolver_walink(l)
+            e = e164('+' + d, c['iso']) if d else None
             if e and e not in was: was.append(e)
         out['wa'] = was[:3]
         igs = [m.group(1) for m in IG.finditer(todo) if m.group(1).lower() not in IG_BASURA]
