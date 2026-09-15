@@ -1,7 +1,7 @@
 ---
 /**
  * /partners — el programa de alianzas de Sacs, enfocado 100 % en fashion retail (15-sep-2026).
- * Cuatro tipos de partner: Orquestador (el más importante, va primero), Consultores y
+ * Cuatro tipos de partner: Orquestador (va primero: la jerarquía la da el orden, no una etiqueta), Consultores y
  * especialistas, Referidos (40 % de por vida) y Proveedores de tecnología (API y MCP).
  * Cierra con manifiesto, "es global", cómo empezar, y dos vías: WhatsApp o cita "Alianzas
  * comerciales" (evento del agendador, slug `alianzas`) en un modal.
@@ -15,7 +15,7 @@ const waGeneral = waLink('Hola, quiero ser partner de Sacs. ¿Me cuentan cómo e
 
 const tipos = [
   {
-    id: 'orquestador', destacado: true, eyebrow: 'El partner más importante', perfil: 'Partner orquestador', titulo: 'Un negocio propio sobre Sacs, para emprendedores',
+    id: 'orquestador', destacado: true, eyebrow: 'Tipo de alianza', perfil: 'Partner orquestador', titulo: 'Un negocio propio sobre Sacs, para emprendedores',
     desc: 'No necesitas venir de la tecnología. Si eres emprendedor, agencia o consultor senior y quieres un negocio propio, nosotros te certificamos: te enseñamos a vender, implementar y operar Sacs con IA, te acompañamos en tus primeras tiendas y creces con ingresos recurrentes por cada fashion retailer que opera contigo.',
     gana: 'Ingreso recurrente por cada retailer que operas, de por vida',
     cert: 'La da Sacs: capacitación en producto e IA, examen y tus primeras implementaciones acompañadas.',
@@ -80,15 +80,6 @@ const pasos = [
       </div>
       <div class="pt-orq-vis" aria-hidden="true">
         <img class="pt-orq-foto" src={tipos[0].img} alt="" width="1536" height="1024" loading="lazy" />
-        <div class="pt-orb">
-          <div class="pt-orb-centro"><b>Tú</b><span>Certificado por Sacs</span></div>
-          {['Punto de venta', 'Inventario por talla', 'Tienda en línea', 'WhatsApp y redes', 'CRM y lealtad', 'Finanzas', 'IA · AXO', 'Nómina'].map((n, i) => (
-            <div class="pt-nodo" style={`--i:${i}`}><i></i><span>{n}</span></div>
-          ))}
-          <svg class="pt-orb-lineas" viewBox="0 0 600 600">
-            {Array.from({ length: 8 }).map((_, i) => { const a = (i / 8) * Math.PI * 2 - Math.PI / 2; const x = 300 + Math.cos(a) * 230, y = 300 + Math.sin(a) * 230; return <line x1="300" y1="300" x2={x} y2={y} style={`--i:${i}`} />; })}
-          </svg>
-        </div>
       </div>
     </div>
   </section>
@@ -235,19 +226,6 @@ const pasos = [
   .pt-orq .pt-datos { border-color: rgba(255,255,255,0.18); }
   .pt-orq-vis { position: relative; }
   .pt-orq-foto { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 22px; }
-  .pt-orb { position: absolute; right: -6%; bottom: -8%; width: 58%; aspect-ratio: 1; }
-  .pt-orb::before { content: ''; position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle, rgba(14,13,12,0.85) 0%, rgba(14,13,12,0.55) 45%, transparent 72%); }
-  .pt-orb-centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; border-radius: 50%; background: #fff; color: #0E0D0C; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 3; box-shadow: 0 0 0 12px rgba(255,255,255,0.06); animation: pt-latido 3.2s ease-in-out infinite; }
-  .pt-orb-centro b { font-family: var(--font-display); font-size: 28px; line-height: 1; }
-  .pt-orb-centro span { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; margin-top: 6px; }
-  @keyframes pt-latido { 50% { box-shadow: 0 0 0 22px rgba(255,255,255,0.03); } }
-  .pt-orb-lineas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-  .pt-orb-lineas line { stroke: rgba(255,255,255,0.22); stroke-width: 1.5; stroke-dasharray: 5 11; animation: pt-flujo 2.6s linear infinite; animation-delay: calc(var(--i) * -0.3s); }
-  @keyframes pt-flujo { to { stroke-dashoffset: -32; } }
-  .pt-nodo { position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%) rotate(calc(var(--i) * 45deg)) translate(0, -38.3%) rotate(calc(var(--i) * -45deg)); display: flex; align-items: center; gap: 8px; padding: 7px 11px; font-size: 12px; background: rgba(14,13,12,0.72); border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); backdrop-filter: blur(6px); font-size: 13px; font-weight: 600; white-space: nowrap; animation: pt-nodo-in 0.6s cubic-bezier(0.2,0.7,0.2,1) both; animation-delay: calc(var(--i) * 0.12s); }
-  .pt-nodo i { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
-  @keyframes pt-nodo-in { from { opacity: 0; } to { opacity: 1; } }
-
   /* ── Filas de alianza (formato pilar del home) ── */
   .pt-tipos { background: #fff; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0 0; }
   .pt-tipos-head { max-width: 760px; margin-bottom: clamp(40px, 6vw, 72px); }
@@ -314,7 +292,6 @@ const pasos = [
   @media (max-width: 767px) {
     .pt-linea, .pt-opciones, .pt-datos { grid-template-columns: 1fr; }
     .pt-cifras { grid-template-columns: 1fr 1fr; }
-    .pt-orb { display: none; }
     .pt-mani-lineas p { font-size: 20px; }
     .pt-fila { padding: 40px 0; gap: 22px; }
   }
