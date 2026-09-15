@@ -12,7 +12,6 @@
 // inventario haría creer que sí.
 import { supabase } from '../supabase';
 import { registrar } from './handlers';
-import { marcarOk, marcarFallo } from './conectores';
 import type { ResultadoHandler } from './tipos';
 
 const SITIO = 'https://www.sacscloud.com';
@@ -155,17 +154,14 @@ export async function inventariar(limite = 60): Promise<{ vistas: number; nuevas
   return out;
 }
 
-registrar('detectar.tecnico', async (a, ctx): Promise<ResultadoHandler> => {
-  try {
-    const r = await inventariar(Number(a.payload?.limite) || 80);
-    await marcarOk('competidores', r.vistas);
-    return {
-      ok: true,
-      resumen: `${r.vistas} páginas revisadas · ${r.nuevas} nuevas · ${r.enlaces} enlaces${r.errores ? ` · ${r.errores} con error` : ''}`,
-      datos: r,
-    };
-  } catch (e: any) {
-    await marcarFallo('competidores', e?.message || String(e));
-    throw e;
-  }
+/* El rastreo es `ingerir.sitio`; las REGLAS sobre lo rastreado viven en
+   tecnico.ts como `detectar.tecnico`. Separarlos permite reprocesar una regla
+   nueva sin volver a pedirle 120 páginas al servidor. */
+registrar('ingerir.sitio', async (a): Promise<ResultadoHandler> => {
+  const r = await inventariar(Number(a.payload?.limite) || 80);
+  return {
+    ok: true,
+    resumen: `${r.vistas} páginas rastreadas · ${r.nuevas} nuevas · ${r.enlaces} enlaces${r.errores ? ` · ${r.errores} con error` : ''}`,
+    datos: r,
+  };
 });

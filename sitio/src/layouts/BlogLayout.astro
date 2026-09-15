@@ -1,4 +1,5 @@
 ---
+import { SITIO } from '../data/entidad';
 import BaseLayout from './BaseLayout.astro';
 import StructuredData from '../components/StructuredData.astro';
 
@@ -26,9 +27,9 @@ const articleSchema = {
   publisher: {
     '@type': 'Organization',
     name: 'SACS',
-    url: 'https://sacs.com.mx',
+    url: SITIO,
   },
-  ...(image && { image: `https://sacs.com.mx${image}` }),
+  ...(image && { image: `${SITIO}${image}` }),
   keywords: tags.join(', '),
 };
 
@@ -40,7 +41,7 @@ const breadcrumbSchema = {
       '@type': 'ListItem',
       position: 1,
       name: 'Blog',
-      item: 'https://sacs.com.mx/blog',
+      item: `${SITIO}/blog`,
     },
     {
       '@type': 'ListItem',

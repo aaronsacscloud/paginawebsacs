@@ -5,14 +5,11 @@ import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
 import FlujosIA from '../components/home/FlujosIA.astro';
+import { sitioWeb } from '../data/entidad';
 
-const websiteSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'SACS',
-  url: 'https://sacs.com.mx',
-  description: 'El sistema para marcas y tiendas de moda en México.',
-};
+// La ficha del sitio sale del archivo de identidad: un solo lugar donde
+// cambiarla y cero riesgo de que la portada diga una cosa y el resto otra.
+const websiteSchema = sitioWeb();
 
 // Los tres casos de moda que se enseñan en el home. Los datos completos viven
 // en /casos-de-exito; aquí solo la tarjeta.

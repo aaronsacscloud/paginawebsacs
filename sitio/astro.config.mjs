@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
+import { enSitemap } from './src/data/no-indexables.ts';
 import react from '@astrojs/react';
 
 // https://astro.build/config
@@ -29,7 +30,13 @@ export default defineConfig({
   // Sin esto rige el default de 60 s y el motor de campañas —que se presupuesta
   // 240 s— muere a media corrida dejando destinatarios sin enviar.
   adapter: vercel({ maxDuration: 300 }),
-  integrations: [sitemap({ filter: (page) => !page.includes('/admin/') }), react()],
+  /* El sitemap solo lista lo que de verdad queremos que se indexe. Antes
+     excluía únicamente /admin/, así que publicaba nueve páginas marcadas
+     `noindex` y dos transaccionales que responden 400 sin token: el sitemap
+     decía «mírame» y la etiqueta «ignórame». La lista vive en un solo sitio
+     (src/data/no-indexables.ts) y el rastreo del motor de demanda avisa si
+     alguna se queda fuera de ella. */
+  integrations: [sitemap({ filter: enSitemap }), react()],
   image: {
     domains: [],
   },
