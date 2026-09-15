@@ -1235,24 +1235,46 @@ número mexicano.
 
 ### 13.6 Hora local y ventanas
 
-Los crons corren en UTC (`vercel.json`: 16 y 19 UTC = 10 y 13 CDMX). Para
-que un correo llegue en horario laboral del país se elige el paso del día
-según la diferencia: Colombia/Perú/Ecuador/Panamá (UTC−5) son la misma hora
-que CDMX ± 0–1 h, así que el cron actual sirve; Chile/Argentina/Uruguay
-(UTC−3) reciben a las 13 y 16 locales —bien—; Costa Rica/Guatemala (UTC−6)
-igual que CDMX; República Dominicana (UTC−4). **España (UTC+2 en verano) no
-cabe**: las 10 CDMX son las 18 de Madrid; ese país necesita su propia hora de
-cron antes de encenderse (o el goteo lo enrola y el cartero solo suelta lo
-suyo en la corrida de las 13 UTC que habrá que añadir). Nada de esto se
-enciende sin que el dueño lo vea.
+Los crons corren en UTC. Desde el 15-sep-2026 `abm-cadencias` corre a las
+**9, 16 y 19 UTC de lunes a viernes** (`vercel.json`) y cada corrida solo
+suelta los toques de las cuentas cuyo país está entre las **9:00 y las
+17:59 de SU hora local** (`enHorarioDe` en `abm-paises.ts`, con la `tz` de
+cada país; lo aplican igual el correo y `abm-whatsapp.ts`). Un toque fuera
+de horario no se cancela: espera a la siguiente corrida. Con esas tres horas
+cada país cae al menos dos veces en su ventana: España recibe a las 11 de Madrid (9 UTC; las corridas de 16 y 19 UTC son
+las 18 y 21 allá y se quedan esperando); Colombia/Perú/Ecuador/Panamá (UTC−5) a
+las 11 y 14; Chile/Argentina/Uruguay (UTC−3) a las 13 y 16; Costa Rica/
+Guatemala/México a las 10 y 13; República Dominicana (UTC−4) a las 12 y 15.
+Si un país necesita otra hora se añade a la lista del cron, no se toca la
+regla.
 
 ### 13.7 El proceso para una base nueva, paso a paso
 
 1. Configurar el país en `abm-paises.ts` (todo lo de la tabla de §13.4) y las
-   ciudades en `docs/prospeccion/barrido/pais/paises.py`.
-2. Barrer Maps con `gl` del país (`barrido-pais.sh <iso> <giro>`): feed +
-   ficha de cada lugar (`lugar.js`: web, teléfono, dirección, categoría,
-   calificación y reseñas). Guardar cada resultado crudo en el pool.
+   ciudades en `docs/prospeccion/barrido/pais/paises.py`. **Provincias, no
+   solo la capital** (regla del dueño, 15-sep-2026: «es como México: no
+   importa solo CDMX, importa León, importa Villa Hidalgo»): cada país lleva
+   de 18 a 60 ciudades —capital, capitales de provincia/departamento y las
+   plazas del ramo— y España 131 (todas las capitales de provincia y las
+   ciudades grandes). `cola-pais.py` arma la cola (`cola-<giro>.tsv`, 1,868
+   consultas para novias) con los stems del giro por país (`stems(giro,
+   iso)`: en España no hay «quince años»). `ciudad_limpia` normaliza los
+   nombres con alias (Bogotá D.C. → Bogotá, Elx → Elche).
+2. Barrer Maps. Hoy son dos fuentes que se complementan y se fusionan por
+   URL de lugar (`https://maps.google.com/?cid=…`):
+   · **`feed-curl-pais.py <giro> [isos]`** (§13.9): el feed de Maps por
+     curl, sin Chromium. Trae nombre, **las categorías finas en inglés**
+     («Bridal shop», «Dress store»…), teléfono, web, calificación, reseñas y
+     localidad, hasta 120 lugares por consulta, en 0.7 s por página. Es la
+     fuente principal.
+   · **`maps-api-pais.py <giro> [isos]`**: Places API (New) `searchText` con
+     la llave del dueño (`.google-maps-key`, fuera de git). Cuesta (≈ 35 USD
+     por 1,000 llamadas; el barrido de novias de 11 países costó ≈ 95 USD)
+     y su categoría es gruesa («Clothing store»), así que sola deja fuera a
+     un tercio del giro; sirve de respaldo de teléfono/web/estado del
+     negocio (cierra los `CLOSED_PERMANENTLY`).
+   · El feed con Chromium (`barrido-pais.sh` + `fichas-pais.sh`) queda como
+     tercera vía por si Google bloquea el XHR; era 30× más lento.
 3. `carga-pais.py prep <giro> [isos]`: fusiona feed + ficha por lugar
    único, filtra por categoría de Google **en inglés** (la ficha se abre con
    `hl=en`, que es la única forma de ver reseñas y teléfono fuera de México):
@@ -1298,6 +1320,15 @@ enciende sin que el dueño lo vea.
    código, no la plantilla, porque la plantilla es una para diez países. Las
    plantillas de WhatsApp Latam (`abm_novias_latam_abre/sigue/cierra`, idioma
    `es`, con {{pais}}) se registran en Meta solo con el OK del dueño.
+   **España** tiene la suya (`migraciones/2026-09-15-abm-novias-espana-cadencia.sql`,
+   cadencias `a1c0de11-…-0000000e5001` demo y `…e5002` diagnóstico): la
+   de Latam pasada al español de España —TPV, tiendas, señal y pagos a
+   cuenta, escaparate, traspasos, dependienta, tienda online, «le viene
+   bien», «Buenos días», «unos 55.000 euros»—, sin quince años, y el primer
+   correo dice de dónde salió el dato y remite a la baja del pie (LSSI art.
+   21 / RGPD, interés legítimo B2B; la revisión con abogado es del dueño).
+   WhatsApp `abm_novias_es_*` idioma `es_ES`, NO registradas en Meta. Goteos
+   «Novias · España» y «Novias · diagnóstico · España» en pausa.
 6. Renderizar una cadencia con IA contra una cuenta real de cada país,
    leerla, borrar el borrador.
 7. Resolver la legalidad (tabla de §13.4): Perú lleva «PUBLICIDAD» en el
@@ -1314,3 +1345,38 @@ enciende sin que el dueño lo vea.
   (`es_MX`); una versión neutra se registra aparte y se espera su APPROVED.
 - El goteo `abm_frio` no se enciende nunca; los goteos por país se crean en
   pausa y los enciende el dueño.
+
+### 13.9 El feed de Maps por curl (`feed-curl-pais.py`)
+
+Hallazgo del 15-sep-2026. La página de Google Maps pide sus resultados a un
+XHR —`https://www.google.com/search?tbm=map&authuser=0&hl=en&gl=<país>&q=<consulta>&pb=<plantilla>`—
+que contesta con `)]}'` seguido de un JSON. Con un User-Agent de Chrome,
+`Accept-Language: en` y la cookie `CONSENT=YES+; SOCS=CAI` responde a curl
+sin Chromium ni sesión. La plantilla `pb` es la de una búsqueda real
+(`pb-feed.txt`) sin la parte de sesión; solo se le cambia la consulta
+(`!1s<consulta>`) y la página (`!7i20!8i<offset>`, offsets 20…100).
+
+Dónde está cada dato en cada entrada `e = d[64][i][1]`:
+
+| dato | ruta |
+|---|---|
+| nombre | `e[11]` |
+| categorías finas (inglés) | `e[13]` (lista; la primera es la principal) |
+| web | `e[7][0]` |
+| calificación / reseñas | `e[4][7]` / `e[37][1]` |
+| teléfono E.164 | `e[178][0][1][1][0]` |
+| feature id → **cid** | `e[10]` = `0x…:0x<hex>`; el cid es la segunda mitad en decimal (¡`e[227][0][5]` parece un cid y NO lo es!) |
+| dirección / localidad | `e[39]` / `e[183][1][3]` |
+
+La URL `https://maps.google.com/?cid=<cid>` es la misma que da la Places API
+(`googleMapsUri`, quitándole el `&g_mp=…` del final): por eso el mismo lugar
+tiene UNA ficha venga de donde venga. Escribe `pool-<iso>-<giro>/<md5>.feed.json`
+y `ficha-<iso>/<md5(url)>.json`; a una ficha que ya dejó la API solo le pone
+la categoría fina y lo que le falte. `carga-pais.py` acepta un lugar si
+**cualquiera** de sus categorías es del giro (una boutique con «Bridal shop»
+de segunda categoría entra) y toma como ciudad la localidad de la ficha
+cuando es una ciudad de nuestra lista (las páginas hondas de «Bogotá» traen
+lugares de Medellín). Ritmo: 3 hilos, 0.6 s entre páginas; si Google
+contesta HTML/captcha espera 30, 60, 90 s y sigue; el contador de
+«respuestas raras» sale al final.
+

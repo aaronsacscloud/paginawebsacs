@@ -87,6 +87,16 @@ def ciudad_de(qq, iso):
             return ciudad_limpia(c, iso)
     return None
 
+def ciudad_ficha(ficha, iso):
+    """La localidad que Maps le pone al lugar, si es una ciudad de nuestra lista.
+    Las páginas hondas de una consulta («… Bogotá», offset 100) traen lugares de
+    otras ciudades; la localidad de la ficha dice dónde está de verdad. Si no es
+    una ciudad que conocemos, manda la de la consulta."""
+    loc = (ficha.get('localidad') or '').strip()
+    if not loc: return None
+    conocidas = {norm(c): c for c in PAISES[iso]['ciudades']}
+    return conocidas.get(norm(ciudad_limpia(loc, iso) or ''))
+
 def fichas_api(iso):
     """Las fichas que dejó maps-api-pais.py (traen `estado`), por nombre normalizado.
     Sirven para ponerle teléfono y web a un lugar del feed de Chromium sin abrir
@@ -132,9 +142,13 @@ def leer_crudo():
                         a = cand[0]; ficha = dict(a, cat=ficha.get('cat') or r.get('cat') or a.get('cat')); fuera['ficha tomada de la API'] += 1
                 cat = (ficha.get('cat') or r.get('cat') or '').strip() or None
                 catl = (cat or '').lower()
+                # El feed por curl trae TODAS las categorías del lugar; una boutique
+                # con «Bridal shop» de segunda categoría es del giro aunque su
+                # principal sea «Clothing store».
+                cats = [str(c).lower() for c in (ficha.get('cats') or [])]
                 nombre = (ficha.get('name') or r['name']).strip()
                 if NOMBRE_FUERA.search(nombre): fuera['nombre fuera'] += 1; continue
-                if catl in CAT_FUERTE: pass
+                if catl in CAT_FUERTE or any(c in CAT_FUERTE for c in cats): pass
                 elif catl in CAT_CON_NOMBRE or cat is None:
                     if not NOMBRE_OK.search(nombre): fuera['cat genérica sin nombre del giro: ' + (cat or '?')] += 1; continue
                 else: fuera['categoría: ' + cat] += 1; continue
@@ -148,7 +162,7 @@ def leer_crudo():
                 rt = ficha.get('rating') or r.get('rating'); rt = float(str(rt).replace(',', '.')) if rt not in (None, '') else None
                 vistos[key] = dict(iso=iso, name=nombre, tel=tel, movil=es_movil(tel, iso), reviews=rv, rating=rt, cat=cat,
                                    web=(ficha.get('web') or r.get('web') or '').strip() or None, ig=ficha.get('ig'), url=r['url'],
-                                   direccion=ficha.get('address'), ciudad=ciudad_de(qq, iso), qs={qq})
+                                   direccion=ficha.get('address'), ciudad=ciudad_ficha(ficha, iso) or ciudad_de(qq, iso), qs={qq})
                 por_tel[(iso, tel, norm(nombre))] = vistos[key]
     print('fuera por filtro:', sum(fuera.values()), dict(fuera.most_common(12)))
     return list(vistos.values())

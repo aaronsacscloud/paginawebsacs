@@ -60,12 +60,17 @@ def buscar(q, gl):
     llamadas += n
     return out, n
 
+def url_de(p):
+    """La URL del lugar sin el `&g_mp=…` que la API pega al final: así el mismo
+    lugar tiene la MISMA ficha venga de la API o del feed (feed-curl-pais.py)."""
+    return (p.get('googleMapsUri') or '').split('&g_mp=')[0] or None
+
 def a_feed(p):
     n = (p.get('displayName') or {}).get('text') or ''
     return dict(name=n, rating=str(p['rating']) if p.get('rating') is not None else None,
                 reviews=str(p['userRatingCount']) if p.get('userRatingCount') is not None else None,
                 cat=p.get('primaryTypeDisplayName', {}).get('text') or (p.get('primaryType') or '').replace('_', ' ').capitalize() or None,
-                url=p.get('googleMapsUri'), web=p.get('websiteUri'), txt='', api=True)
+                url=url_de(p), web=p.get('websiteUri'), txt='', api=True)
 
 def a_ficha(p):
     f = a_feed(p)
@@ -78,9 +83,9 @@ def una(iso, q):
     fp = os.path.join(pool, md5_10(q) + '.api.json')
     if os.path.exists(fp): return None
     lugares, n = buscar(q, PAISES[iso]['gl'])
-    vivos = [p for p in lugares if p.get('businessStatus') != 'CLOSED_PERMANENTLY' and p.get('googleMapsUri')]
+    vivos = [p for p in lugares if p.get('businessStatus') != 'CLOSED_PERMANENTLY' and url_de(p)]
     for p in vivos:
-        ff = os.path.join(fdir, md5_12(p['googleMapsUri']) + '.json')
+        ff = os.path.join(fdir, md5_12(url_de(p)) + '.json')
         if not (os.path.exists(ff) and os.path.getsize(ff) > 0):
             json.dump(a_ficha(p), open(ff, 'w'), ensure_ascii=False)
     json.dump([a_feed(p) for p in vivos], open(fp, 'w'), ensure_ascii=False)
