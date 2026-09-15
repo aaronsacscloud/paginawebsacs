@@ -85,16 +85,31 @@ const TERMINO: Record<string, string> = {
  * El término es cómo lo buscaría una persona, no el nombre interno.
  */
 const TERMINO_ALIADO: Record<string, string> = {
-  taller: 'taller de costura y confección',
-  patronista: 'patronaje y trazo de ropa',
+  /* Los términos están MEDIDOS contra Maps en seco, no supuestos. Lo que se
+     probó y por qué quedó así:
+       · «taller de costura y confección» → cursos de costura y modistas. El
+         que surte a las marcas se busca por la fábrica, no por el oficio.
+       · «fotografía de producto» a secas → estudios de bodas y retrato.
+         Agregar «para ecommerce» los separa.
+       · «despacho contable» sale limpio de una: 19 de 40 nuevos, todos
+         despachos. No hace falta afinarlo. */
+  taller: 'fábrica de ropa maquila textil',
   contador: 'despacho contable',
   insumos_tienda: 'ganchos y etiquetas para ropa',
-  fotografia: 'estudio de fotografía de producto',
-  hardware: 'equipo de punto de venta para comercio',
+  fotografia: 'fotografía de producto para ecommerce',
   escuela_moda: 'escuela de diseño de modas',
-  consultora_moda: 'consultoría de moda y retail',
-  consultora_retail: 'consultoría de retail',
 };
+
+/* LOS QUE NO ESTÁN, Y POR QUÉ — medido el 15-sep-2026, para que nadie los
+   vuelva a intentar por aquí:
+     · consultora_retail / consultora_moda — 13 resultados en dos ciudades, y
+       de esos una agencia de marketing, una comercializadora de calzado y un
+       despacho fiscal. Una consultora no se anuncia como local con reseñas.
+     · patronista — devuelve academias de corte y confección; es el mismo
+       resultado que `escuela_moda` con otro nombre.
+     · hardware — devuelve tiendas de computadoras de barrio. Quien vende
+       lectores y etiquetadoras al retail es un distribuidor nacional.
+   Esos tres van por búsqueda en la web y por lista curada, no por Maps. */
 
 /** La premisa, aplicada al entrar: 3.7 estrellas y reseñas suficientes para que
  *  la calificación signifique algo. Un 5.0 con dos reseñas es ruido. */
