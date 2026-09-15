@@ -377,7 +377,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 </section>
 
 <!-- ═══ SECTION 4: Comparison Table ═══ -->
-<section class="comparison-section">
+<section class="comparison-section has-open">
   <div class="container">
     <h2 class="comparison-title">Compara planes en detalle</h2>
     <p class="comparison-subtitle">Haz clic en cada categoría para ver las funciones.</p>
@@ -2100,10 +2100,15 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     padding: var(--space-4) var(--space-5);
     background: var(--color-bg-secondary);
     border-radius: var(--radius-md) var(--radius-md) 0 0;
-    position: sticky;
-    top: 71px;
+    /* Pegajoso SOLO mientras hay una categoría abierta (si todo está plegado, flotaba entre filas)
+       y sigue al header: 101 px arriba del todo, 71 con scroll, 0 cuando el header se esconde. */
+    position: static;
     z-index: 10;
+    transition: top 0.35s ease;
   }
+  .comparison-section.has-open .comparison-header { position: sticky; top: 101px; }
+  :global(body:has(#nav.scrolled)) .comparison-section.has-open .comparison-header { top: 71px; }
+  :global(body:has(#nav.nav-oculto)) .comparison-section.has-open .comparison-header { top: 0; }
 }
 
 .comparison-header-feature {
@@ -3104,6 +3109,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     const isOpen = category.classList.contains('open');
     category.classList.toggle('open');
     header.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    header.closest('.comparison-section')?.classList.toggle('has-open', !!document.querySelector('.comparison-category-header[aria-expanded="true"]'));
   });
 
   // ─── Pricing FAQ accordion ───
