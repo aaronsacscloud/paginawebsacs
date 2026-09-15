@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/components/admin/crm/whatsapp/Cabina.tsx",
+    "src/components/admin/crm/whatsapp/ConfigWhatsApp.tsx",
+    "src/components/admin/crm/whatsapp/Telefonia.tsx",
+    "src/env.d.ts",
+    "src/lib/telefonia/cierre.ts",
+    "src/lib/telefonia/envio-pdf.ts",
+    "src/lib/telefonia/marcador.ts",
+    "src/lib/telefonia/oidos.ts",
+    "src/lib/telefonia/zonas.ts",
+    "src/pages/api/crm/telefonia/marcador.ts",
+    "src/pages/api/crm/telefonia/reglas.ts",
+    "src/pages/api/telefonia/marcador/espera.ts",
+    "src/pages/api/telefonia/marcador/twiml.ts",
+    "src/pages/api/whatsapp/webhook.ts",
+    "src/lib/telefonia/voz.ts",
+    "src/pages/api/telefonia/voz/central.ts",
+    "src/pages/api/telefonia/marcador/relay-fin.ts",
+    "src/pages/api/cron/tel-latir.ts",
+    "src/pages/api/crm/telefonia/fernanda.ts"
+  ]
+}

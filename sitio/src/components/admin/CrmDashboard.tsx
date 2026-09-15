@@ -46,6 +46,8 @@ const EmailTab = lazySeguro(() => import('./crm/email/EmailTab'));
 const SecuenciasTab = lazySeguro(() => import('./crm/SecuenciasTab'));
 const OutboundTab = lazySeguro(() => import('./crm/outbound/OutboundTab'));
 const AbmTab = lazySeguro(() => import('./crm/abm/AbmTab'));
+const DemandaSistema = lazySeguro(() => import('./crm/demanda/DemandaSistema'));
+const DemandaResumen = lazySeguro(() => import('./crm/demanda/DemandaResumen'));
 const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
 const WaMasivos = lazySeguro(() => import('./crm/whatsapp/Masivos'));
@@ -101,7 +103,8 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo';
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo'
+  | 'de-resumen' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -134,6 +137,10 @@ const ICONS: Record<string, string> = {
   suscripciones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4" fill="url(#crmFirma)"/><path d="M20 12a8 8 0 11-2.6-5.9"/><path d="M20.2 4v4.2H16"/></svg>',
   mejoras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l2.1 6.1 6.1 2.1-6.1 2.1L12 19.2 9.9 13.1 3.8 11l6.1-2.1z" fill="url(#crmFirma)"/><path d="M12 2.8l2.1 6.1 6.1 2.1-6.1 2.1L12 19.2 9.9 13.1 3.8 11l6.1-2.1z"/></svg>',
   taller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4.8L10.4 12 4.6 19.2z" fill="url(#crmFirma)"/><path d="M4.6 4.8L10.4 12 4.6 19.2z"/><path d="M19.4 4.8L13.6 12l5.8 7.2z"/><path d="M12 3.4v17.2" stroke-width="1.1" stroke-dasharray="2.2 2.4" opacity=".65"/></svg>',
+  /* Motor de demanda: lo que viene de FUERA hacia un centro. Tres arcos que
+     entran y un núcleo que los recoge — el gesto de captar, no el dibujo de un
+     imán ni de una lupa (esos dicen «buscar», que es lo que hace media app). */
+  demanda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.6" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.6a9.4 9.4 0 00-6.6 2.7"/><path d="M21.4 12a9.4 9.4 0 00-2.7-6.6" opacity=".7"/><path d="M12 21.4a9.4 9.4 0 006.6-2.7" opacity=".5"/><path d="M8.7 7.6L6.2 6.1M16.4 8.7l1.5-2.5M15.3 16.4l2.5 1.5" stroke-width="1.3" opacity=".8"/></svg>',
   automations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z" fill="url(#crmFirma)"/><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z"/><path d="M8.6 11.4h.1M12 11.4h.1M15.4 11.4h.1" stroke-width="2.2"/></svg>',
   whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.6" width="18" height="14.8" rx="3.4" fill="url(#crmFirma)"/><rect x="3" y="4.6" width="18" height="14.8" rx="3.4"/><path d="M3.4 13h4.2l1.4 2.4h6l1.4-2.4h4.2"/></svg>',
   oportunidades: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
@@ -206,6 +213,12 @@ const ESCALERA: Record<string, string> = {
   ventas:           '#854DBE',
   acompanamiento:   '#9A4FB2',
   marketing:        '#AF50A6',
+  /* El motor de demanda entra ENTRE marketing y finanzas, y su color es el
+     punto medio exacto de esos dos escalones (#AF50A6 ↔ #C4519A). Se eligió
+     así para no recalcular la escalera entera: los siete colores que el dueño
+     ya aprobó siguen siendo los mismos, y el nuevo se mete en el hueco que
+     quedaba libre en vez de correr a todos de lugar. */
+  demanda:          '#BA51A0',
   finanzas:         '#C4519A',
   colaboradores:    '#D9538E',
 };
@@ -318,6 +331,18 @@ const NAV_SECTIONS = [
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
       { id: 'abm' as Tab, label: 'Cuentas objetivo', icon: 'abm' },
       { id: 'eventos' as Tab, label: 'Ferias y eventos', icon: 'eventos' },
+    ],
+  },
+  {
+    /* El motor de demanda. Va DESPUÉS de marketing y ANTES del dinero porque
+       ese es su lugar en la cadena: encuentra la demanda, la convierte en
+       páginas, herramientas y menciones, y entrega el lead que luego se cobra.
+       No es una pestaña de marketing: marketing ejecuta campañas que alguien
+       decide; esto decide. */
+    label: 'Motor de demanda', sec: 'demanda', icon: 'demanda',
+    items: [
+      { id: 'de-resumen' as Tab, label: 'Resumen', icon: 'dashboard' },
+      { id: 'de-sistema' as Tab, label: 'Sistema', icon: 'demanda' },
     ],
   },
   {
@@ -1194,6 +1219,10 @@ export default function CrmDashboard() {
           <ErrorBoundary><MetricasWA /></ErrorBoundary>
         ) : tab === 'wa-numero' ? (
           <ErrorBoundary><ConfigWhatsApp inicial="numero" /></ErrorBoundary>
+        ) : tab === 'de-sistema' ? (
+          <DemandaSistema />
+        ) : tab === 'de-resumen' ? (
+          <DemandaResumen />
         ) : tab === 'abm' ? (
           <AbmTab />
         ) : tab === 'eventos' ? (

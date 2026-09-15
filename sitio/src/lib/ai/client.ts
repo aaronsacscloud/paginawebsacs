@@ -70,6 +70,12 @@ export const MODELS = {
   sonnet: 'claude-sonnet-4-5' as const,
   haiku: 'claude-haiku-4-5' as const,
   sonnet_fallback: 'claude-sonnet-4-5' as const,
+  /* Sonnet 5 entra como llave APARTE y no reemplazando a `sonnet`: el agente
+     de Trabajo Inteligente lleva meses calibrado contra 4.5 —con sus ejemplos
+     aprobados y sus correcciones—, y cambiarle el modelo por debajo sería
+     mover el piso de algo que ya funciona. Lo nuevo (motor de demanda) nace
+     en 5; lo viejo migra el día que alguien lo mida. */
+  sonnet5: 'claude-sonnet-5' as const,
 } as const;
 
 // Pricing per 1M tokens (input/output) in USD — for cost tracking
@@ -77,6 +83,7 @@ export const PRICING: Record<string, { input: number; output: number; cache_read
   'claude-opus-5': { input: 5.00, output: 25.00, cache_read: 0.50, cache_write: 6.25 },
   'claude-sonnet-4-5': { input: 3.00, output: 15.00, cache_read: 0.30, cache_write: 3.75 },
   'claude-haiku-4-5': { input: 1.00, output: 5.00, cache_read: 0.10, cache_write: 1.25 },
+  'claude-sonnet-5': { input: 2.00, output: 10.00, cache_read: 0.20, cache_write: 2.50 },
 };
 
 export interface AgentRunUsage {
@@ -94,7 +101,10 @@ export function calculateCost(model: string, usage: {
   cache_creation_input_tokens?: number;
   cache_read_input_tokens?: number;
 }): AgentRunUsage {
-  const p = PRICING[model] || PRICING['claude-sonnet-4-7'];
+  // OJO: el respaldo apuntaba a 'claude-sonnet-4-7', que NO está en PRICING.
+  // Un modelo desconocido daba `undefined` y el costo salía NaN — y ese NaN se
+  // escribe en ia_uso, así que el gasto del mes quedaba inservible.
+  const p = PRICING[model] || PRICING['claude-sonnet-4-5'];
   const input = usage.input_tokens || 0;
   const output = usage.output_tokens || 0;
   const cw = usage.cache_creation_input_tokens || 0;

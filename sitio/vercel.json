@@ -220,6 +220,22 @@
     {
       "schedule": "0 12 * * *",
       "path": "/api/cron/abm-maps?cuantas=200"
+    },
+    {
+      "path": "/api/cron/de-worker",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/de-ciclo?tipo=diario",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/de-ciclo?tipo=semanal",
+      "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/de-ciclo?tipo=mensual",
+      "schedule": "0 8 1 * *"
     }
   ],
   "headers": [

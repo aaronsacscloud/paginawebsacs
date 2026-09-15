@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/env.d.ts",
+    "src/lib/demanda/**/*.ts",
+    "src/lib/ai/client.ts",
+    "src/lib/crm/permisos.ts",
+    "src/components/admin/crm/demanda/**/*.tsx",
+    "src/pages/api/crm/demanda/*.ts",
+    "src/pages/api/cron/de-worker.ts",
+    "src/pages/api/cron/de-ciclo.ts"
+  ]
+}

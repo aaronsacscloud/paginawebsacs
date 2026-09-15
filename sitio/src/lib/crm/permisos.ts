@@ -26,13 +26,14 @@
 export type Nivel = 'edit' | 'ver' | 'no';
 export type Seccion =
   | 'cuentas' | 'acompanamiento' | 'ventas' | 'marketing'
-  | 'finanzas' | 'trabajo' | 'colaboradores' | 'config';
+  | 'demanda' | 'finanzas' | 'trabajo' | 'colaboradores' | 'config';
 
 export const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'cuentas', label: 'Cuentas', desc: 'Clientes, Onboarding y Churn' },
   { id: 'ventas', label: 'Ventas', desc: 'Leads, Reuniones y Cotizaciones' },
   { id: 'acompanamiento', label: 'Acompañamiento', desc: 'Consultoría, Taller, Soporte y Radar de ventas' },
   { id: 'marketing', label: 'Marketing', desc: 'Campañas, Email, Masivos, Secuencias, Outbound, Cuentas objetivo y Ferias' },
+  { id: 'demanda', label: 'Motor de demanda', desc: 'El motor que busca demanda, la puntúa, publica y mide (SEO, IA y herramientas)' },
   { id: 'finanzas', label: 'Finanzas', desc: 'Suscripciones, Pagos y cobranza, Ingresos, Gastos, Comisiones y Cierre' },
   { id: 'trabajo', label: 'Trabajo inteligente', desc: 'El agente y sus bandejas' },
   { id: 'colaboradores', label: 'Partners', desc: 'Partners, sus comisiones y revisión de contenido' },
@@ -42,7 +43,7 @@ export const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
 export type Permisos = Record<Seccion, Nivel>;
 
 const lleno = (n: Nivel): Permisos => ({
-  cuentas: n, ventas: n, acompanamiento: n, marketing: n,
+  cuentas: n, ventas: n, acompanamiento: n, marketing: n, demanda: n,
   finanzas: n, trabajo: n, colaboradores: n, config: n,
 });
 const TODO = lleno('edit');
@@ -78,7 +79,7 @@ export const PRESETS: Record<string, { label: string; desc: string; permisos: Pe
   ventas: {
     label: 'Ventas',
     desc: 'Leads, cotizaciones y marketing; ve cuentas y dinero',
-    permisos: { ...NADA, ventas: 'edit', marketing: 'edit', trabajo: 'edit', cuentas: 'ver', acompanamiento: 'ver', finanzas: 'ver' },
+    permisos: { ...NADA, ventas: 'edit', marketing: 'edit', trabajo: 'edit', cuentas: 'ver', acompanamiento: 'ver', finanzas: 'ver', demanda: 'ver' },
   },
   /* Administración: cobra, paga y cierra. No toca cuentas ni promesas. */
   finanzas: {
