@@ -1,0 +1,113 @@
+---
+/**
+ * PartnersIntro — la apertura de /partners con el mismo motor de "Tú naciste para crear":
+ * riel de scroll, palabra grande que cambia, personaje real (él primero, luego ella) dibujado
+ * por canvas con su silueta, y al final la frase de los partners. Reutiliza los videos
+ * /tienda/video/suenos-*.mp4 (color + máscara lado a lado).
+ */
+const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transformar'];
+---
+<section class="pi" id="partners-intro" aria-label="Partners de Sacs">
+  <div class="pi-pegado">
+    <div class="pi-txt">
+      <span class="pi-l1">Desde cualquier país, tú puedes</span>
+      <span class="pi-l2">
+        {PALABRAS.map((w, i) => <b class:list={['pi-w', { 'is-on': i === 0 }]} data-i={i}>{w}</b>)}
+      </span>
+      <span class="pi-l3">el retail de moda completo.</span>
+    </div>
+    <div class="pi-fig" aria-hidden="true">
+      <canvas class="pi-cv" width="480" height="720"></canvas>
+      <video class="pi-v pi-v--el" muted playsinline webkit-playsinline loop preload="none"></video>
+      <video class="pi-v pi-v--ella" muted playsinline webkit-playsinline loop preload="none"></video>
+    </div>
+    <div class="pi-fin">
+      <span class="pi-kicker">Partners de Sacs</span>
+      <h1 class="pi-h1">Partners de todo el mundo que implementan y automatizan toda la operación de cualquier fashion retailer.</h1>
+      <p class="pi-p">Punto de venta, inventario por talla, tienda en línea, WhatsApp, finanzas e IA. Un solo sistema, un solo partner, un negocio recurrente.</p>
+      <div class="pi-ctas">
+        <a href="#orquestador" class="pi-cta">Conoce las alianzas</a>
+        <a href="#agenda" class="pi-cta pi-cta--sec">Agenda una cita</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pi { --p: 0; position: relative; height: 360vh; background: #0E0D0C; color: #fff; }
+  .pi-pegado { position: sticky; top: 0; height: 100vh; overflow: hidden; isolation: isolate; }
+  .pi-txt { position: absolute; left: 0; right: 0; top: 13vh; text-align: center; z-index: 1; padding: 0 16px; pointer-events: none; }
+  .pi-l1, .pi-l3 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.6vw, 38px); letter-spacing: -0.02em; line-height: 1.1; color: rgba(255,255,255,0.55); }
+  .pi-l2 { display: grid; height: 1.05em; margin: 0.08em 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(56px, 11.5vw, 176px); letter-spacing: -0.05em; line-height: 1; color: #fff; overflow: hidden; }
+  .pi-w { grid-area: 1 / 1; display: block; opacity: 0; transform: translateY(0.5em); transition: opacity 0.5s cubic-bezier(0.2,0.7,0.2,1), transform 0.6s cubic-bezier(0.2,0.7,0.2,1); }
+  .pi-w.is-on { opacity: 1; transform: none; }
+  .pi-w.is-off { opacity: 0; transform: translateY(-0.5em); }
+  .pi-fig { position: absolute; left: 50%; bottom: 0; width: min(52vh, 86vw); aspect-ratio: 2 / 3; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.56 + var(--p) * 0.62)); transform-origin: 50% 100%; z-index: 6; will-change: transform; }
+  .pi-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pi-v { position: absolute; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; }
+  .pi-fin { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 8; text-align: center; padding: 0 24px; opacity: 0; visibility: hidden; transition: opacity 0.7s, visibility 0.7s; }
+  .pi-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 22px; }
+  .pi-h1 { max-width: 980px; margin: 0 auto; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 62px); letter-spacing: -0.035em; line-height: 1.05; color: #fff; }
+  .pi-p { max-width: 720px; margin: 22px auto 0; font-size: clamp(16px, 1.3vw, 20px); line-height: 1.5; color: rgba(255,255,255,0.7); }
+  .pi-ctas { display: flex; gap: 12px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+  .pi-cta { display: inline-flex; align-items: center; padding: 15px 26px; border-radius: 12px; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; text-decoration: none; }
+  .pi-cta--sec { background: transparent; border: 1px solid rgba(255,255,255,0.35); }
+  .pi.is-fin .pi-fin { opacity: 1; visibility: visible; }
+  .pi.is-fin .pi-txt { opacity: 0; transition: opacity 0.4s; }
+  .pi.is-fin .pi-fig { opacity: 0.12; filter: blur(3px); transition: opacity 0.8s, filter 0.8s; }
+  @media (max-width: 767px) {
+    .pi { height: auto; }
+    .pi-pegado { position: relative; height: auto; overflow: visible; padding: 96px 0 56px; }
+    .pi-txt { position: static; transform: none; }
+    .pi-l2 { font-size: clamp(44px, 14vw, 64px); }
+    .pi-fig { position: relative; left: auto; bottom: auto; width: 160px; margin: 14px auto 0; transform: none !important; }
+    .pi-fin { position: static; transform: none; opacity: 1; visibility: visible; margin-top: 40px; }
+    .pi.is-fin .pi-txt, .pi.is-fin .pi-fig { opacity: 1; filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pi { height: auto; } .pi-pegado { position: relative; height: auto; padding: 96px 0 56px; }
+    .pi-txt { position: static; } .pi-fig { position: relative; left: auto; transform: translateX(0); margin: 20px auto; width: 220px; }
+    .pi-fin { position: static; transform: none; opacity: 1; visibility: visible; margin-top: 30px; }
+  }
+</style>
+
+<script>
+  (() => {
+    const pi = document.getElementById('partners-intro'); if (!pi) return;
+    const ws = Array.from(pi.querySelectorAll<HTMLElement>('.pi-w'));
+    const vids = Array.from(pi.querySelectorAll<HTMLVideoElement>('.pi-v'));
+    const movil = matchMedia('(max-width: 767px)').matches;
+    const cv = pi.querySelector<HTMLCanvasElement>('.pi-cv')!; const W = movil ? 320 : 480, H = movil ? 480 : 720; cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d')!; const off = document.createElement('canvas'); off.width = W * 2; off.height = H; const octx = off.getContext('2d', { willReadFrequently: true })!;
+    const out = ctx.createImageData(W, H);
+    let src = false, act = -1, fin = false, raf = 0, dib = 0, enVista = false, pAct = 0, rot = 0, vuelta = 0, rotT = 0;
+    const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('pi-v--el') ? 'suenos-el' : 'suenos-ella') + '.mp4?v=6'; v.play().catch(() => {}); }); };
+    const dibuja = () => {
+      dib = 0; if (!enVista) return;
+      const v = pAct > 0.44 ? vids[1] : vids[0];
+      if (v && v.readyState >= 2) {
+        octx.drawImage(v, 0, 0, W * 2, H);
+        const s = octx.getImageData(0, 0, W * 2, H).data; const d = out.data; const fila = W * 2 * 4;
+        for (let y = 0; y < H; y++) { const b = y * fila, m = b + W * 4, o = y * W * 4; for (let x = 0; x < W; x++) { const i = b + x * 4, j = o + x * 4; d[j] = s[i]; d[j + 1] = s[i + 1]; d[j + 2] = s[i + 2]; d[j + 3] = s[m + x * 4]; } }
+        ctx.putImageData(out, 0, 0);
+      }
+      dib = requestAnimationFrame(dibuja);
+    };
+    const pinta = (i: number) => ws.forEach((w, k) => { w.classList.toggle('is-on', k === i); w.classList.toggle('is-off', k < i); });
+    const mide = () => {
+      const r = pi.getBoundingClientRect(); const vh = innerHeight;
+      const p = Math.min(1, Math.max(0, -r.top / (r.height - vh)));
+      pi.style.setProperty('--p', p.toFixed(4)); pAct = p;
+      const i = Math.min(ws.length - 1, Math.max(0, Math.floor((p - 0.02) / 0.13)));
+      if (i !== act) { pinta(i); act = i; }
+      const f = p > 0.74; if (f !== fin) { pi.classList.toggle('is-fin', f); fin = f; }
+      raf = 0;
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+    const rota = () => { rot = (rot + 1) % ws.length; if (rot === 0) vuelta++; pAct = vuelta % 2 ? 0.9 : 0.1; pinta(rot); };
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { enVista = true; carga(); vids.forEach((v) => v.play().catch(() => {})); if (movil) { if (!rotT) rotT = window.setInterval(rota, 1400); } else { addEventListener('scroll', onScroll, { passive: true }); mide(); } if (!dib) dib = requestAnimationFrame(dibuja); } else { enVista = false; vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); if (rotT) { clearInterval(rotT); rotT = 0; } } });
+    }, { rootMargin: '200px 0px' });
+    io.observe(pi);
+  })();
+</script>

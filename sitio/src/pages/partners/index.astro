@@ -1,76 +1,336 @@
 ---
+/**
+ * /partners — el programa de alianzas de Sacs, enfocado 100 % en fashion retail (15-sep-2026).
+ * Cuatro tipos de partner: Orquestador (el más importante, va primero), Consultores y
+ * especialistas, Referidos (40 % de por vida) y Proveedores de tecnología (API y MCP).
+ * Cierra con manifiesto, "es global", cómo empezar, y dos vías: WhatsApp o cita "Alianzas
+ * comerciales" (evento del agendador, slug `alianzas`) en un modal.
+ */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PartnersIntro from '../../components/partners/PartnersIntro.astro';
+import { waLink } from '../../lib/whatsapp';
 
-export const prerender = true;
+const wa = (tipo: string) => waLink(`Hola, quiero ser partner de Sacs como ${tipo}. ¿Me cuentan cómo empezamos?`);
+const waGeneral = waLink('Hola, quiero ser partner de Sacs. ¿Me cuentan cómo empezamos?');
 
-const title = 'Partners SACS · Próximamente';
-const description = 'El programa de partners SACS estará disponible pronto.';
+const tipos = [
+  {
+    id: 'orquestador', destacado: true, eyebrow: 'El partner más importante', titulo: 'Partner Orquestador',
+    frase: 'Implementas y automatizas toda la operación de un fashion retailer, de forma autónoma, como socio de Sacs.',
+    desc: 'Te certificamos para vender, implementar y operar Sacs con IA negocio a negocio: tú llevas la gestión completa de tus clientes y creces con ingresos recurrentes por cada tienda que opera contigo.',
+    gana: 'Ingreso recurrente por cada retailer que operas, de por vida',
+    para: 'Agencias, integradores, consultores senior y emprendedores de tecnología que quieren un negocio propio sobre Sacs.',
+    puntos: ['Certificación oficial de implementación e IA', 'Herramientas para implementar una tienda en días, no meses', 'Gestión completa: onboarding, operación y crecimiento', 'Territorio abierto: tu ciudad, tu país o varios', 'Soporte y producto de Sacs detrás de ti'],
+    img: '/tienda/96-oficina-moda.webp', cta: 'Quiero certificarme', waTipo: 'partner orquestador',
+  },
+  {
+    id: 'consultores', eyebrow: 'Consultores y especialistas', titulo: 'Integra Sacs en tu oferta',
+    frase: 'Firmas de consultoría de retail y fashion retail, diseñadores de experiencias en tienda y expertos en operación.',
+    desc: 'Sumas Sacs a tus servicios y entregas un proceso integral: tu estrategia más el sistema que la ejecuta. Ganas por la licencia y expandes tu servicio con implementación, capacitación y seguimiento.',
+    gana: 'Comisión por licencia más tus propios servicios',
+    para: 'Consultoras de retail, diseñadores de experiencia, visual merchandisers, expertos en inventario y compras.',
+    puntos: ['Más resultados: tu método con datos reales del sistema', 'Nuevas líneas de ingreso: implementación y acompañamiento', 'Material, capacitación y acceso a producto'],
+    img: '/tienda/91-escritorio.webp', cta: 'Quiero integrar Sacs', waTipo: 'consultor o especialista',
+  },
+  {
+    id: 'referidos', eyebrow: 'Referidos', titulo: 'Tú refieres, nosotros vendemos',
+    frase: 'El 40 % de esa cuenta, de por vida.',
+    desc: 'Nos presentas a una marca o tienda de moda. Nosotros hacemos la presentación de venta, la visitamos en físico o hacemos la reunión digital, y cerramos. Cuando la venta se genera, tú ganas el 40 % de ese negocio mientras sea cliente.',
+    gana: '40 % de por vida de cada negocio referido',
+    para: 'Influencers y creadores de contenido de moda, contadores, agencias, proveedores de la industria y cualquiera con red en el sector.',
+    puntos: ['Sin vender ni implementar: solo presentas', 'Seguimiento transparente de cada referido', 'Pago mensual mientras el cliente opere con Sacs'],
+    img: '/tienda/103-clienta-celular.webp', cta: 'Quiero referir', waTipo: 'referidor',
+  },
+  {
+    id: 'tecnologia', eyebrow: 'Proveedores de tecnología', titulo: 'Conecta tu tecnología con Sacs',
+    frase: 'API y MCP abiertos para cualquier herramienta que mejore la operación de una marca de moda.',
+    desc: 'Pasarelas, logística, e-commerce, IA, hardware de tienda, analítica: si tu tecnología ayuda al fashion retail, es bienvenida. Integras con nuestra API y nuestro MCP y llegas a todas las marcas que operan con Sacs.',
+    gana: 'Distribución en la base de clientes de Sacs',
+    para: 'Empresas de software, pagos, logística, hardware y modelos de IA.',
+    puntos: ['API documentada y MCP para agentes de IA', 'Listado en el catálogo de integraciones', 'Equipo técnico de Sacs para la integración'],
+    img: '/tienda/95-control.webp', cta: 'Quiero integrar mi tecnología', waTipo: 'proveedor de tecnología',
+  },
+];
+
+const pasos = [
+  { t: 'Cuéntanos quién eres', d: 'Por WhatsApp o en una cita de 45 minutos: tu perfil, tu red y el tipo de alianza que te interesa.' },
+  { t: 'Definimos el modelo', d: 'Orquestador, consultor, referidos o tecnología. Firmamos el acuerdo y activamos tus accesos.' },
+  { t: 'Certificación y arranque', d: 'Capacitación en producto e IA, material comercial y tu primer retailer acompañado por Sacs.' },
+  { t: 'Creces con recurrencia', d: 'Cada tienda que opera contigo paga cada mes. Tú creces con ella, en tu ciudad o en varios países.' },
+];
 ---
 
-<BaseLayout title={title} description={description}>
-  <main class="soon">
-    <section class="soon-inner">
-      <span class="soon-eyebrow">Programa de Partners SACS</span>
-      <h1 class="soon-title">Próximamente.</h1>
-      <p class="soon-lead">
-        Estamos preparando todos los detalles del programa de partners.
-        Vuelve pronto para conocer cómo puedes ser parte de la red SACS.
-      </p>
-      <a href="/" class="soon-link">← Volver a sacscloud.com</a>
-    </section>
-  </main>
+<BaseLayout title="Partners — Sacs Fashion Commerce" description="Programa de alianzas de Sacs para fashion retail: orquestadores certificados, consultores y especialistas, referidos con 40 % de por vida y proveedores de tecnología con API y MCP.">
+  <PartnersIntro />
+
+  <!-- ═══ Orquestador ═══ -->
+  <section class="pt-orq" id="orquestador">
+    <div class="pt-inner">
+      <div class="pt-orq-txt">
+        <span class="pt-eyebrow pt-eyebrow--azul">{tipos[0].eyebrow}</span>
+        <h2 class="pt-h2">{tipos[0].titulo}</h2>
+        <p class="pt-frase">{tipos[0].frase}</p>
+        <p class="pt-p">{tipos[0].desc}</p>
+        <ul class="pt-lista">{tipos[0].puntos.map((x) => <li>{x}</li>)}</ul>
+        <div class="pt-gana"><span>Cómo ganas</span><b>{tipos[0].gana}</b></div>
+        <div class="pt-ctas">
+          <a href="#agenda" class="pt-btn" data-tipo="Partner orquestador">{tipos[0].cta}</a>
+          <a href={wa(tipos[0].waTipo)} class="pt-btn pt-btn--wa" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        </div>
+      </div>
+      <div class="pt-orq-vis" aria-hidden="true">
+        <div class="pt-orb">
+          <div class="pt-orb-centro"><b>Tú</b><span>Partner orquestador</span></div>
+          {['Punto de venta', 'Inventario por talla', 'Tienda en línea', 'WhatsApp y redes', 'CRM y lealtad', 'Finanzas', 'IA · AXO', 'Nómina'].map((n, i) => (
+            <div class="pt-nodo" style={`--i:${i}`}><i></i><span>{n}</span></div>
+          ))}
+          <svg class="pt-orb-lineas" viewBox="0 0 600 600">
+            {Array.from({ length: 8 }).map((_, i) => { const a = (i / 8) * Math.PI * 2 - Math.PI / 2; const x = 300 + Math.cos(a) * 230, y = 300 + Math.sin(a) * 230; return <line x1="300" y1="300" x2={x} y2={y} style={`--i:${i}`} />; })}
+          </svg>
+        </div>
+        <img class="pt-orq-foto" src={tipos[0].img} alt="" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Tipos de alianza ═══ -->
+  <section class="pt-tipos" id="alianzas">
+    <div class="pt-inner">
+      <span class="pt-eyebrow">Toda alianza tiene lugar</span>
+      <h2 class="pt-h2">Cuatro formas de crecer con Sacs</h2>
+      <p class="pt-p pt-p--centro">Elige la que va con lo que ya haces. Todas trabajan sobre el mismo sistema y el mismo segmento: el retail de moda.</p>
+      <div class="pt-grid">
+        {tipos.map((t) => (
+          <article class:list={['pt-card', { 'pt-card--orq': t.destacado }]} id={`tipo-${t.id}`}>
+            <div class="pt-card-media"><img src={t.img} alt="" loading="lazy" /><span class="pt-card-tag">{t.eyebrow}</span></div>
+            <div class="pt-card-body">
+              <h3>{t.titulo}</h3>
+              <p class="pt-card-frase">{t.frase}</p>
+              <p class="pt-card-desc">{t.desc}</p>
+              <p class="pt-card-para"><span>Para quién</span>{t.para}</p>
+              <ul class="pt-lista pt-lista--chica">{t.puntos.map((x) => <li>{x}</li>)}</ul>
+              <div class="pt-gana pt-gana--chico"><span>Cómo ganas</span><b>{t.gana}</b></div>
+              <div class="pt-ctas">
+                <a href="#agenda" class="pt-btn pt-btn--chico" data-tipo={t.titulo}>{t.cta}</a>
+                <a href={wa(t.waTipo)} class="pt-link" target="_blank" rel="noopener noreferrer">WhatsApp →</a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Es global · el negocio del futuro ═══ -->
+  <section class="pt-global">
+    <div class="pt-inner pt-global-grid">
+      <div>
+        <span class="pt-eyebrow pt-eyebrow--azul">Es global</span>
+        <h2 class="pt-h2">Un sistema, cualquier país, cualquier idioma</h2>
+        <p class="pt-p">Sacs opera en la nube, en cinco idiomas y con la moneda de cada mercado. Un partner en Madrid, Bogotá o Miami implementa la misma operación que uno en la Ciudad de México: tallas, curvas, sucursales, canales y la IA que decide el surtido.</p>
+        <div class="pt-cifras">
+          <div><b>+7</b><span>países con marcas operando</span></div>
+          <div><b>21</b><span>giros de moda listos para implementar</span></div>
+          <div><b>5</b><span>idiomas del sistema y del sitio</span></div>
+          <div><b>100 %</b><span>remoto: implementas desde donde estés</span></div>
+        </div>
+      </div>
+      <div class="pt-futuro">
+        <span class="pt-eyebrow">El negocio del futuro</span>
+        <h3>Implementar el retail de moda completo, con IA, y cobrar cada mes</h3>
+        <p>Antes un integrador vendía un software y se iba. Hoy un partner de Sacs implementa punto de venta, inventario por talla, tienda en línea, WhatsApp, finanzas y la IA que mueve el inventario, y sigue cobrando mientras la marca crece. Es integral, es recurrente y no depende de una sola ciudad.</p>
+        <ul class="pt-lista">
+          <li>Un solo sistema para toda la operación: no armas nada con piezas</li>
+          <li>La IA hace el trabajo pesado: implementas en días</li>
+          <li>Recurrencia: cada tienda paga cada mes, contigo</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Manifiesto ═══ -->
+  <section class="pt-manifiesto">
+    <div class="pt-inner">
+      <span class="pt-eyebrow">Lo que creemos</span>
+      <div class="pt-mani-lineas">
+        <p>El retail de moda no necesita más software. Necesita que alguien lo implemente completo y lo opere bien.</p>
+        <p>Creemos en partners que se quedan: que abren la tienda, la ven crecer y cobran con ella.</p>
+        <p>Creemos que la IA no reemplaza al partner: lo hace diez veces más grande.</p>
+        <p>Creemos que una marca de Guadalajara y una de Barcelona merecen el mismo sistema, y que un partner puede llevárselo a las dos.</p>
+        <p>Y creemos que la mejor alianza es la que gana cada mes, no una sola vez.</p>
+      </div>
+      <span class="pt-firma">Sacs · Fashion Commerce</span>
+    </div>
+  </section>
+
+  <!-- ═══ Cómo empezar + cita ═══ -->
+  <section class="pt-inicio" id="agenda">
+    <div class="pt-inner">
+      <span class="pt-eyebrow pt-eyebrow--azul">Cómo empezar</span>
+      <h2 class="pt-h2">De la primera plática a tu primer retailer</h2>
+      <ol class="pt-pasos">
+        {pasos.map((p, i) => (<li><span class="pt-paso-n">{i + 1}</span><h3>{p.t}</h3><p>{p.d}</p></li>))}
+      </ol>
+      <div class="pt-cierre">
+        <div class="pt-cierre-txt">
+          <h3>Hablemos de tu alianza</h3>
+          <p>Elige cómo prefieres: una cita de 45 minutos de alianzas comerciales con nuestra directora comercial, o directo por WhatsApp.</p>
+        </div>
+        <div class="pt-cierre-ctas">
+          <button type="button" class="pt-btn pt-btn--grande" id="pt-abrir-agenda">Agenda una cita de alianzas</button>
+          <a href={waGeneral} class="pt-btn pt-btn--grande pt-btn--wa" target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal de agenda (evento "Alianzas comerciales") -->
+  <div class="pt-modal" id="pt-modal" role="dialog" aria-modal="true" aria-label="Agenda una cita de alianzas" hidden>
+    <div class="pt-modal-fondo" data-cerrar></div>
+    <div class="pt-modal-caja">
+      <button type="button" class="pt-modal-x" data-cerrar aria-label="Cerrar">×</button>
+      <div class="pt-modal-head"><span class="pt-eyebrow pt-eyebrow--azul">Alianzas comerciales · 45 min</span><h3>Elige día y hora</h3></div>
+      <iframe id="pt-modal-iframe" title="Agendar cita de alianzas" loading="lazy"></iframe>
+    </div>
+  </div>
 </BaseLayout>
 
 <style>
-  .soon {
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 24px;
-    background: #fafaf8;
+  .pt-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .pt-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #8A8A86; margin-bottom: 14px; }
+  .pt-eyebrow--azul { color: var(--color-primary, #4B7BE5); }
+  .pt-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 4vw, 56px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 16px; }
+  .pt-frase { font-family: var(--font-display); font-size: clamp(18px, 1.6vw, 24px); font-weight: 500; line-height: 1.3; margin: 0 0 14px; }
+  .pt-p { font-size: clamp(16px, 1.2vw, 18px); line-height: 1.55; color: inherit; opacity: 0.8; margin: 0; }
+  .pt-p--centro { text-align: center; max-width: 760px; margin: 0 auto 36px; }
+  .pt-lista { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 10px; }
+  .pt-lista li { position: relative; padding-left: 28px; font-size: 16px; line-height: 1.45; }
+  .pt-lista li::before { content: ''; position: absolute; left: 0; top: 5px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-primary, #4B7BE5); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l4 4 10-10'/%3E%3C/svg%3E"); background-size: 10px; background-repeat: no-repeat; background-position: center; }
+  .pt-lista--chica li { font-size: 14.5px; }
+  .pt-gana { display: flex; flex-direction: column; gap: 4px; margin-top: 24px; padding: 16px 18px; border-radius: 14px; background: rgba(75,123,229,0.10); border: 1px solid rgba(75,123,229,0.3); }
+  .pt-gana span { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); }
+  .pt-gana b { font-family: var(--font-display); font-size: 18px; }
+  .pt-gana--chico { margin-top: 16px; padding: 12px 14px; } .pt-gana--chico b { font-size: 15px; }
+  .pt-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 24px; }
+  .pt-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 24px; border-radius: 12px; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; border: 0; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .pt-btn:hover { transform: translateY(-1px); background: #3B6BD5; }
+  .pt-btn--wa { background: #25D366; } .pt-btn--wa:hover { background: #1fb457; }
+  .pt-btn--chico { padding: 11px 18px; font-size: 14px; }
+  .pt-btn--grande { padding: 18px 30px; font-size: 17px; }
+  .pt-link { font-weight: 700; color: var(--color-primary, #4B7BE5); text-decoration: none; }
+
+  /* ── Orquestador ── */
+  .pt-orq { background: #0E0D0C; color: #fff; padding: clamp(72px, 10vw, 140px) 0; overflow: hidden; }
+  .pt-orq .pt-inner { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .pt-orq .pt-p { color: rgba(255,255,255,0.75); opacity: 1; }
+  .pt-orq-vis { position: relative; aspect-ratio: 1; }
+  .pt-orq-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; opacity: 0.22; filter: saturate(0.8); }
+  .pt-orb { position: absolute; inset: 0; }
+  .pt-orb-centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 50%; background: var(--color-primary, #4B7BE5); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 0 0 14px rgba(75,123,229,0.18), 0 0 80px rgba(75,123,229,0.45); z-index: 3; animation: pt-latido 3s ease-in-out infinite; }
+  .pt-orb-centro b { font-family: var(--font-display); font-size: 34px; line-height: 1; }
+  .pt-orb-centro span { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; margin-top: 4px; }
+  @keyframes pt-latido { 50% { box-shadow: 0 0 0 22px rgba(75,123,229,0.12), 0 0 110px rgba(75,123,229,0.55); } }
+  .pt-orb-lineas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .pt-orb-lineas line { stroke: rgba(255,255,255,0.18); stroke-width: 1.5; stroke-dasharray: 6 10; animation: pt-flujo 2.4s linear infinite; animation-delay: calc(var(--i) * -0.3s); }
+  @keyframes pt-flujo { to { stroke-dashoffset: -32; } }
+  .pt-nodo { position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%) rotate(calc(var(--i) * 45deg)) translate(0, -38.3%) rotate(calc(var(--i) * -45deg)); display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 999px; background: #1a1918; border: 1px solid rgba(255,255,255,0.14); font-size: 13px; font-weight: 600; white-space: nowrap; animation: pt-nodo-in 0.6s cubic-bezier(0.2,0.7,0.2,1) both; animation-delay: calc(var(--i) * 0.12s); }
+  .pt-nodo i { width: 8px; height: 8px; border-radius: 50%; background: #6EE7A0; box-shadow: 0 0 10px #6EE7A0; }
+  @keyframes pt-nodo-in { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ── Tipos ── */
+  .pt-tipos { background: #F7F7F5; padding: clamp(72px, 9vw, 120px) 0; }
+  .pt-tipos .pt-eyebrow, .pt-tipos .pt-h2 { text-align: center; }
+  .pt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pt-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #ECECE9; border-radius: 22px; overflow: hidden; transition: transform 0.35s cubic-bezier(0.2,0.7,0.2,1), box-shadow 0.35s; }
+  .pt-card:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(0,0,0,0.28); }
+  .pt-card--orq { grid-column: 1 / -1; flex-direction: row; background: #0E0D0C; color: #fff; border-color: #0E0D0C; }
+  .pt-card--orq .pt-card-media { flex: 0 0 46%; }
+  .pt-card--orq .pt-card-media img { height: 100%; }
+  .pt-card-media { position: relative; }
+  .pt-card-media img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+  .pt-card-tag { position: absolute; left: 16px; top: 16px; padding: 7px 12px; border-radius: 999px; background: rgba(14,13,12,0.82); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; backdrop-filter: blur(6px); }
+  .pt-card-body { padding: 22px 24px 26px; display: flex; flex-direction: column; }
+  .pt-card h3 { font-family: var(--font-display); font-size: 24px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .pt-card--orq h3 { font-size: clamp(28px, 2.6vw, 40px); }
+  .pt-card-frase { font-family: var(--font-display); font-weight: 500; font-size: 17px; line-height: 1.3; margin: 0 0 10px; }
+  .pt-card-desc { font-size: 15px; line-height: 1.5; opacity: 0.8; margin: 0; }
+  .pt-card-para { margin: 14px 0 0; font-size: 14px; line-height: 1.45; opacity: 0.8; }
+  .pt-card-para span { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 2px; }
+  .pt-card .pt-lista { margin-top: 14px; }
+  .pt-card .pt-ctas { margin-top: auto; padding-top: 20px; }
+
+  /* ── Global ── */
+  .pt-global { padding: clamp(72px, 9vw, 120px) 0; background: #fff; }
+  .pt-global-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: start; }
+  .pt-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
+  .pt-cifras div { padding: 18px; border: 1px solid #ECECE9; border-radius: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .pt-cifras b { font-family: var(--font-display); font-size: 38px; line-height: 1; color: var(--color-primary, #4B7BE5); }
+  .pt-cifras span { font-size: 14px; color: #6B6B68; }
+  .pt-futuro { background: #0E0D0C; color: #fff; border-radius: 24px; padding: clamp(26px, 3vw, 40px); }
+  .pt-futuro .pt-eyebrow { color: #8FB0FF; }
+  .pt-futuro h3 { font-family: var(--font-display); font-size: clamp(24px, 2.4vw, 34px); letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 14px; }
+  .pt-futuro p { font-size: 16px; line-height: 1.55; color: rgba(255,255,255,0.75); margin: 0; }
+
+  /* ── Manifiesto ── */
+  .pt-manifiesto { background: #F7F7F5; padding: clamp(72px, 9vw, 120px) 0; text-align: center; }
+  .pt-mani-lineas { max-width: 860px; margin: 0 auto; display: grid; gap: 22px; }
+  .pt-mani-lineas p { font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.2vw, 30px); letter-spacing: -0.02em; line-height: 1.25; margin: 0; opacity: 0; transform: translateY(12px); transition: opacity 0.7s, transform 0.7s; }
+  .pt-manifiesto.is-in .pt-mani-lineas p { opacity: 1; transform: none; }
+  .pt-mani-lineas p:nth-child(2) { transition-delay: 0.15s; } .pt-mani-lineas p:nth-child(3) { transition-delay: 0.3s; } .pt-mani-lineas p:nth-child(4) { transition-delay: 0.45s; } .pt-mani-lineas p:nth-child(5) { transition-delay: 0.6s; }
+  .pt-firma { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #8A8A86; }
+
+  /* ── Cómo empezar ── */
+  .pt-inicio { padding: clamp(72px, 9vw, 120px) 0; background: #fff; }
+  .pt-pasos { list-style: none; margin: 34px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .pt-pasos li { padding: 22px; border: 1px solid #ECECE9; border-radius: 18px; }
+  .pt-paso-n { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; margin-bottom: 14px; }
+  .pt-pasos h3 { font-family: var(--font-display); font-size: 18px; margin: 0 0 6px; }
+  .pt-pasos p { font-size: 14.5px; line-height: 1.5; color: #6B6B68; margin: 0; }
+  .pt-cierre { margin-top: clamp(40px, 6vw, 64px); padding: clamp(26px, 3.5vw, 44px); border-radius: 24px; background: #0E0D0C; color: #fff; display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: center; }
+  .pt-cierre h3 { font-family: var(--font-display); font-size: clamp(26px, 3vw, 40px); letter-spacing: -0.03em; margin: 0 0 10px; }
+  .pt-cierre p { color: rgba(255,255,255,0.75); line-height: 1.5; margin: 0; }
+  .pt-cierre-ctas { display: grid; gap: 12px; }
+
+  /* ── Modal ── */
+  .pt-modal { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .pt-modal[hidden] { display: none; }
+  .pt-modal-fondo { position: absolute; inset: 0; background: rgba(8,8,10,0.7); backdrop-filter: blur(8px); }
+  .pt-modal-caja { position: relative; width: min(1040px, 100%); height: min(860px, calc(100vh - 32px)); background: #fff; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 40px 120px rgba(0,0,0,0.5); }
+  .pt-modal-head { padding: 22px 28px 10px; }
+  .pt-modal-head h3 { font-family: var(--font-display); font-size: 24px; margin: 0; }
+  .pt-modal-x { position: absolute; right: 14px; top: 12px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: #F0F0EE; font-size: 24px; cursor: pointer; }
+  #pt-modal-iframe { flex: 1; width: 100%; border: 0; }
+
+  @media (max-width: 1023px) {
+    .pt-orq .pt-inner, .pt-global-grid, .pt-cierre { grid-template-columns: 1fr; }
+    .pt-grid { grid-template-columns: 1fr 1fr; }
+    .pt-pasos { grid-template-columns: 1fr 1fr; }
+    .pt-orq-vis { max-width: 520px; margin: 0 auto; }
   }
-  .soon-inner {
-    max-width: 560px;
-    text-align: center;
-  }
-  .soon-eyebrow {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: #4b7be5;
-    margin-bottom: 28px;
-  }
-  .soon-title {
-    font-family: var(--font-display, 'Inter', system-ui, sans-serif);
-    font-size: clamp(2.5rem, 8vw, 4.5rem);
-    font-weight: 500;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    color: #1a1a1a;
-    margin: 0 0 24px;
-  }
-  .soon-lead {
-    font-size: 1.0625rem;
-    line-height: 1.6;
-    color: #555;
-    margin: 0 0 40px;
-  }
-  .soon-link {
-    display: inline-block;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: #4b7be5;
-    text-decoration: none;
-    padding: 12px 4px;
-    transition: color 0.15s;
-  }
-  .soon-link:hover { color: #2f5fcc; }
-  @media (max-width: 640px) {
-    .soon { padding: 60px 20px; min-height: 72vh; }
-    .soon-eyebrow { margin-bottom: 20px; font-size: 0.6875rem; }
-    .soon-lead { font-size: 0.9375rem; margin-bottom: 32px; }
+  @media (max-width: 767px) {
+    .pt-grid { grid-template-columns: 1fr; }
+    .pt-card--orq { flex-direction: column; }
+    .pt-pasos { grid-template-columns: 1fr; }
+    .pt-cifras { grid-template-columns: 1fr 1fr; }
+    .pt-nodo { font-size: 11px; padding: 7px 10px; }
+    .pt-orb-centro { width: 110px; height: 110px; } .pt-orb-centro b { font-size: 26px; }
+    .pt-mani-lineas p { font-size: 20px; }
   }
 </style>
+
+<script>
+  (() => {
+    // Manifiesto: entra al verse
+    const m = document.querySelector('.pt-manifiesto');
+    if (m) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { m.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.25 }); io.observe(m); }
+    // Modal de agenda (evento "alianzas"); los botones con data-tipo pasan el tipo de alianza a la cita
+    const modal = document.getElementById('pt-modal'); const iframe = document.getElementById('pt-modal-iframe') as HTMLIFrameElement | null;
+    const abre = (tipo?: string) => { if (!modal || !iframe) return; const u = new URL('/agendar/alianzas', location.origin); if (tipo) u.searchParams.set('tipo', tipo); if (iframe.src !== u.href) iframe.src = u.href; modal.hidden = false; document.body.style.overflow = 'hidden'; (window as any).sacsPH?.('partners_agenda_abrir', { tipo }); };
+    const cierra = () => { if (!modal) return; modal.hidden = true; document.body.style.overflow = ''; };
+    document.getElementById('pt-abrir-agenda')?.addEventListener('click', () => abre());
+    document.querySelectorAll<HTMLAnchorElement>('a[href="#agenda"][data-tipo]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); abre(a.dataset.tipo); }));
+    modal?.querySelectorAll('[data-cerrar]').forEach((el) => el.addEventListener('click', cierra));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal && !modal.hidden) cierra(); });
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="https://wa.me"]').forEach((a) => a.addEventListener('click', () => (window as any).sacsPH?.('partners_whatsapp')));
+  })();
+</script>
