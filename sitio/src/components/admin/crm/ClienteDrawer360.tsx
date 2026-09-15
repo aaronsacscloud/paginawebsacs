@@ -1222,6 +1222,8 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
      ocho cajas de texto aunque solo vinieras a ver quién es el cliente, y eso
      es lo que la hacía pesada de mirar. */
   const [editando, setEditando] = useState(false);
+  // El cuadro que convierte «3 sin contratar» en una oportunidad con monto.
+  const [expansion, setExpansion] = useState(false);
   /* Los campos dinámicos (perfil del negocio) traían su PROPIO botón
      "Guardar información", así que editando la ficha salían dos botones de
      guardar y había que adivinar cuál guardaba qué. Ahora el padre lleva sus
@@ -1452,9 +1454,19 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                 </div>
                 {f.sucursales_negocio
                   ? (Number(f.sucursales_negocio) > Number(f.sucursales)
-                    ? <div style={{ fontSize: '0.7rem', color: '#9c3d70', fontWeight: 700, marginTop: 3 }}>
-                        {Number(f.sucursales_negocio) - Number(f.sucursales)} sin contratar · expansión
-                      </div>
+                    ? (<>
+                        <div style={{ fontSize: '0.7rem', color: '#9c3d70', fontWeight: 700, marginTop: 3 }}>
+                          {Number(f.sucursales_negocio) - Number(f.sucursales)} sin contratar · expansión
+                        </div>
+                        {/* Ver el hueco no sirve si no se puede hacer nada con él.
+                            De aquí sale la oportunidad, con el monto ya calculado
+                            —lo que paga hoy por sucursal, por las que faltan— para
+                            que nadie tenga que sacar la cuenta a mano. */}
+                        <button onClick={() => setExpansion(true)}
+                          style={{ ...D.btnAzul, marginTop: 6, padding: '5px 11px', fontSize: '0.71rem' }}>
+                          Crear la oportunidad
+                        </button>
+                      </>)
                     : <div style={{ fontSize: '0.7rem', color: '#1E8A63', marginTop: 3 }}>todas en el sistema</div>)
                   : <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 3 }}>no sabemos cuántas tiene · pregúntalo en la junta</div>}
               </div>
@@ -1463,6 +1475,10 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                   colaboradores—, así que su sitio es este y no un cajón aparte
                   llamado "Gestión interna", que no decía qué guardaba. */}
               <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Perfil del negocio']} soloLectura />
+              {expansion && (
+                <ExpansionSucursales co={co} f={f} subs={subs} flash={flash}
+                  onCerrar={() => setExpansion(false)} onListo={() => { setExpansion(false); reload(); }} />
+              )}
             </div>
           ) : (
             <div style={{ marginTop: 13 }}>
@@ -3273,6 +3289,8 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
   const [cerrando, setCerrando] = useState<any>(null);   // reunión que se está documentando
   const [verMinuta, setVerMinuta] = useState<any>(null);
   const [links, setLinks] = useState(false);
+  // Qué reunión ya resuelta tiene el segmento abierto para corregir su estado.
+  const [cambiando, setCambiando] = useState<Record<string, boolean>>({});
 
   const cargar = () => fetch('/api/scheduling/reuniones?company_id=' + companyId)
     .then(r => r.json()).then(j => { setRows(j.data || []); setAlertas(j.alertas || []); })
@@ -3400,30 +3418,44 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                   {(e === 'asistio' || e === 'no_asistio') && (r.grabacion_url || minutaLlena(r.minuta)) && <button style={{ ...D.btnG, padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setCerrando(r)}>Editar</button>}
                 </div>
               </div>
-              {/* El estado se elige AQUÍ, sobre la reunión que ya existe: en el
-                  alta no hay nada que confirmar todavía. Los cuatro se ven
-                  siempre —también los que no aplican— para que se lea de un
-                  golpe en cuál está y a cuál se puede mover. */}
-              <div style={{ flex: '0 1 330px', minWidth: 250, marginLeft: 'auto' }}>
-                <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 11, overflow: 'hidden', background: '#fff' }}>
+              {/* El estado se elige AQUÍ, sobre la reunión que ya existe.
+                  Los cuatro dejaron de verse SIEMPRE: con once reuniones eran
+                  cuarenta y cuatro botones en pantalla, todos del mismo peso, y
+                  el renglón se leía como una botonera en vez de como una junta.
+                  Una reunión ya resuelta —se presentó, no llegó, se canceló—
+                  enseña su estado y nada más; cambiarlo es raro y se pide. Las
+                  que siguen pendientes sí abren el segmento, porque ahí es donde
+                  hay algo que hacer. */}
+              <div style={{ flex: '0 1 300px', minWidth: 220, marginLeft: 'auto' }}>
+                {(['asistio', 'no_asistio', 'cancelada', 'reagendada'].includes(e) && !cambiando[r.id]) ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, justifyContent: 'flex-end' }}>
+                    <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>
+                    <button onClick={() => setCambiando(c => ({ ...c, [r.id]: true }))}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 700, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>cambiar</button>
+                  </div>
+                ) : (
+                <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
                   {(['agendada', 'confirmada', 'asistio', 'no_asistio'] as const).map((sig, i) => {
                     const on = e === sig;
                     const tinte = sig === 'asistio' ? '#4FBF95' : sig === 'no_asistio' ? '#EF7A72' : '#9B8CFA';
                     return (
-                      <button key={sig} title={ESTADOS[sig].label} onClick={() => { if (!on) marcar(r, sig); }}
-                        style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #f1f0f5' : 'none', background: on ? tinte : '#fff', color: on ? '#fff' : '#8a8a92', padding: '9px 14px', fontSize: '0.71rem', fontWeight: on ? 800 : 600, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25, whiteSpace: 'nowrap' }}>
+                      <button key={sig} title={ESTADOS[sig].label}
+                        onClick={() => { if (!on) marcar(r, sig); setCambiando(c => ({ ...c, [r.id]: false })); }}
+                        style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #f1f0f5' : 'none', background: on ? tinte : '#fff', color: on ? '#fff' : '#8a8a92', padding: '6px 9px', fontSize: '0.67rem', fontWeight: on ? 800 : 600, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25, whiteSpace: 'nowrap' }}>
                         {sig === 'asistio' ? 'Asistió' : sig === 'no_asistio' ? 'No llegó' : sig === 'agendada' ? 'Agendada' : 'Confirmada'}
                       </button>
                     );
                   })}
                 </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 7 }}>
-                  {(e === 'cancelada' || e === 'reagendada') && <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>}
-                  {e !== 'cancelada' && (
+                )}
+                {/* Cancelar solo se ofrece donde todavía se puede: una reunión
+                    que ya pasó no se cancela, y el renglón se ahorra un botón. */}
+                {['agendada', 'confirmada'].includes(e) && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 7 }}>
                     <button onClick={() => marcar(r, 'cancelada')}
                       style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Cancelar reunión</button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -4701,3 +4733,74 @@ const MOTIVO_CHURN: Record<string, string> = {
   precio: 'precio', competencia: 'la competencia', implementacion: 'no completó la implementación',
   cerro_negocio: 'cerró el negocio', otro: 'otro',
 };
+
+/* ═══ De «3 sucursales sin contratar» a una oportunidad ═══
+ *
+ * El dato ya se veía —cuántas paga contra cuántas tiene— pero no se podía hacer
+ * nada con él: había que salir a Oportunidades, teclear el nombre otra vez y
+ * sacar la cuenta a mano. Aquí el monto viene calculado de lo que YA paga por
+ * sucursal, que es el único precio que no hay que inventar, y se puede corregir
+ * antes de crearla.
+ *
+ * Nace con `origen: 'expansion'` para poder medir después cuánto de lo vendido
+ * salió de este hueco y no de una idea de junta.
+ */
+function ExpansionSucursales({ co, f, subs = [], flash, onCerrar, onListo }: any) {
+  const faltan = Math.max(0, Number(f.sucursales_negocio || 0) - Number(f.sucursales || 0));
+  /* Lo que paga hoy por sucursal: el ARR activo entre las sucursales que tiene
+     contratadas. Si no hay ARR —vitalicias, cuentas sin suscripción— se queda en
+     cero y el monto lo pone una persona: inventar un precio es peor que pedirlo. */
+  const arr = (subs || []).filter((x: any) => x.estado === 'activa' || x.estado === 'programada')
+    .reduce((a: number, x: any) => a + Number(x.arr || 0), 0);
+  const porSuc = Number(f.sucursales) > 0 ? Math.round(arr / Number(f.sucursales)) : 0;
+  const [monto, setMonto] = useState(String(porSuc * faltan || ''));
+  const [fecha, setFecha] = useState('');
+  const [creando, setCreando] = useState(false);
+
+  async function crear() {
+    const v = Math.round(Number(monto) || 0);
+    if (!v) { flash('Ponle el monto: sin monto no entra al pronóstico'); return; }
+    setCreando(true);
+    const nombre = `${faltan} ${faltan === 1 ? 'sucursal' : 'sucursales'} más · ${co.nombre_comercial || co.nombre}`;
+    const j = await fetch('/api/crm/deals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre, company_id: co.id, valor_total: v, valor_unico: 0,
+        stage: 'calificacion', origen: 'expansion',
+        fecha_cierre_esperada: fecha || null,
+        descripcion: `Opera ${f.sucursales_negocio} sucursales y paga ${f.sucursales}. Faltan ${faltan} por contratar.`,
+      }),
+    }).then(r => r.json()).catch(() => null);
+    setCreando(false);
+    if (!j || j.error) { flash(j?.error || 'No se pudo crear la oportunidad'); return; }
+    flash('Oportunidad creada por $' + v.toLocaleString('es-MX'));
+    onListo();
+  }
+
+  return (
+    <div style={{ gridColumn: '1 / -1', marginTop: 10, background: '#fff', border: '1px solid #eeeef1', borderLeft: '3px solid #D9538E', borderRadius: 11, padding: '13px 15px' }}>
+      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c3d70', marginBottom: 6 }}>
+        Oportunidad de expansión
+      </div>
+      <div style={{ fontSize: '0.78rem', color: '#4a4a52', lineHeight: 1.55, marginBottom: 10 }}>
+        Opera <b>{f.sucursales_negocio}</b> y paga <b>{f.sucursales}</b>. Faltan <b>{faltan}</b> por contratar.
+        {porSuc > 0
+          ? <> Hoy paga <b>${porSuc.toLocaleString('es-MX')}</b> al año por sucursal.</>
+          : <> No hay ARR activo para calcular el precio por sucursal — ponlo a mano.</>}
+      </div>
+      <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div><span style={D.lblMini}>Monto al año</span>
+          <input type="number" value={monto} onChange={e => setMonto(e.target.value)} style={{ ...D.inputM, width: 150 }} /></div>
+        <div><span style={D.lblMini}>Cierre esperado</span>
+          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={{ ...D.inputM, width: 165 }} /></div>
+        <button style={{ ...D.btn, alignSelf: 'flex-end' }} disabled={creando} onClick={crear}>
+          {creando ? 'Creando…' : 'Crear oportunidad'}
+        </button>
+        <button style={{ ...D.btnG, alignSelf: 'flex-end', color: '#a5a2af' }} onClick={onCerrar}>Cancelar</button>
+      </div>
+      <div style={{ fontSize: '0.69rem', color: '#a5a2af', marginTop: 7 }}>
+        Entra al pronóstico de ventas y queda marcada como expansión, para poder medir cuánto sale de aquí.
+      </div>
+    </div>
+  );
+}

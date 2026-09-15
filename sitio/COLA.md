@@ -361,11 +361,11 @@ Las reglas que salen de aquí, para no volver a romperlas:
 - [x] Consultoría: tarjeta del dinero en blanco con franja verde, sugerencias en blanco, el puente al
       taller sin ámbar, y UN botón «+ Agregar» para toda la sección (15-sep-2026).
 - [x] Los destellos de fondo en las diez pestañas de la ficha, sin título ni frase (15-sep-2026).
-- [ ] Repasar pestaña por pestaña —Info general, Suscripciones, Renovación, Actividad, Reuniones,
-      Conversaciones, Soporte, Outbound— que las tarjetas sean lo primero, blancas, con su franja de
-      3 px, y que no quede ningún bloque de color a todo lo ancho.
-- [ ] Revisar que Reuniones no repita cuatro botones de estado por renglón (Agendada/Confirmada/
-      Asistió/No llegó): es un segmento, no cuatro acciones del mismo peso.
+- [x] Repasar pestaña por pestaña —Info general, Suscripciones, Renovación, Actividad, Reuniones,
+      Conversaciones, Soporte, Outbound— (15-sep-2026). Medido en el navegador: **ningún** bloque de
+      color a todo lo ancho quedó en ninguna, y las ocho arrancan en el mismo punto.
+- [x] Reuniones: los cuatro botones de estado por renglón se volvieron un estado + «cambiar»
+      (15-sep-2026). Con once reuniones eran 44 botones en pantalla.
 
 ## 15-sep-2026 · Aliados de los corredores (Villa Hidalgo, Zapotlanejo…)
 > «iugal quiero por ejemplo partners espeicifcos de los corredores como
@@ -377,3 +377,14 @@ Buscar aliados POR CORREDOR, no solo por tipo: la persona local que ya le
 vende a los locatarios de Villa Hidalgo, de Zapotlanejo, de Moroleón, del
 corredor de León. Entra después de terminar la carga de los tipos que están
 corriendo ahora.
+
+## 2026-09-15 · La oportunidad de expansión, desde las sucursales — HECHO
+
+Venía de: «si Oculani, en realidad, tiene cuatro sucursales pero contrató una, ahí ya sé que existe
+una oportunidad de expansión […] y que, al final, esto se pueda agregar como una oportunidad.»
+
+- [x] En Info general, debajo de «3 sin contratar · expansión», un botón **Crear la oportunidad**
+      que abre el cuadro con el monto YA calculado —el ARR activo entre las sucursales que paga, por
+      las que faltan— y la fecha de cierre. Nace con `origen: 'expansion'` para poder medir después
+      cuánto de lo vendido salió de este hueco. Si la cuenta no tiene ARR (vitalicias), lo dice y
+      pide el monto a mano en vez de inventar un precio.
