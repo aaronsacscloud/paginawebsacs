@@ -180,7 +180,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (e1) return json({ error: e1.message, pista: 'falta la función abm_ciudades_pendientes' }, 500);
   if (!ciudades?.length) return json({ giro: giroDestino, aliado: aliado || undefined, nuevas: 0, nota: 'no quedan ciudades pendientes para esta búsqueda' });
 
-  const r = { giro: giroDestino, aliado: aliado || undefined, termino, ciudades: 0, vistos: 0, nuevas: 0, ya_estaban: 0, bajo_umbral: 0, cerrados: 0, paginas: 0 };
+  const r = { giro: giroDestino, aliado: aliado || undefined, termino, ciudades: 0, vistos: 0, nuevas: 0, ya_estaban: 0, bajo_umbral: 0, cerrados: 0, otra_ciudad: 0, paginas: 0 };
   const muestra: any[] = [];
 
   for (const ci of ciudades as any[]) {
@@ -200,6 +200,24 @@ export const GET: APIRoute = async ({ request, url }) => {
       for (const p of res?.places || []) {
         r.vistos++;
         if (p.businessStatus === 'CLOSED_PERMANENTLY') { r.cerrados++; continue; }
+        /* FUERA LO QUE NO ESTÁ EN MÉXICO.
+           La búsqueda es «término en ciudad, estado», y cuando Google no
+           encuentra suficiente en esa ciudad devuelve el negocio que mejor
+           empata AUNQUE ESTÉ EN OTRO PAÍS. Así entraron 1,447 cuentas de
+           Bogotá, Medellín, Barranquilla, Santiago y Temuco.
+           No es un detalle: todo el guion dice «el mapa de las mejores X de
+           México». Escribirle a una casa de novias de Bogotá con ese texto es
+           quedar mal, y además no le sirve a nadie.
+           Se compara contra la ciudad que se pidió: si la dirección que
+           devuelve Google no la menciona ni menciona el estado, no es de ahí. */
+        const dir = String(p.shortFormattedAddress || '').toLowerCase();
+        const pedida = String(ci.ciudad || '').toLowerCase();
+        const edo = String(ci.estado_geo || '').toLowerCase();
+        const pelar = (x: string) => x.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+        if (dir && pedida && !pelar(dir).includes(pelar(pedida)) && (!edo || !pelar(dir).includes(pelar(edo)))) {
+          r.otra_ciudad++;
+          continue;
+        }
         if (!(Number(p.rating) >= ESTRELLAS_MIN) || !(Number(p.userRatingCount) >= RESENAS_MIN)) { r.bajo_umbral++; continue; }
 
         const { data: ya } = await supabase.from('abm_cuentas').select('id').eq('place_id', p.id).maybeSingle();
