@@ -66,15 +66,30 @@ export function coincideTexto(entrante: string, delEnlace: string): boolean {
 /**
  * Busca de quién es un mensaje que llegó de un número desconocido.
  *
- * @param texto    lo que escribió (su primer mensaje)
- * @param minutos  cuánto atrás se miran los clics (por defecto hora y media)
+ * @param texto      lo que escribió (su primer mensaje)
+ * @param opts.cuando  CUÁNDO llegó ese mensaje. Es lo que ancla la ventana; sin
+ *   esto se miraban los clics de las últimas horas contra un mensaje de hace
+ *   días, y salían parejas imposibles. Caso medido (15-sep): un lead que entró
+ *   por la web el 12 se proponía como Lily, que hizo clic en su correo el 14
+ *   —dos días DESPUÉS—. Un clic posterior no puede explicar un mensaje anterior.
+ * @param opts.minutos  cuánto antes del mensaje se miran los clics (90 por defecto).
  */
-export async function identificarPorClic(texto: string, minutos = 90): Promise<Identificado | null> {
+export async function identificarPorClic(
+  texto: string,
+  opts: { cuando?: string | Date; minutos?: number } | number = {},
+): Promise<Identificado | null> {
   const { supabase } = await import('../supabase');
-  const desde = new Date(Date.now() - minutos * 60000).toISOString();
+  // Se acepta el número suelto por compatibilidad con las llamadas viejas.
+  const o = typeof opts === 'number' ? { minutos: opts } : opts;
+  const minutos = o.minutos ?? 90;
+  const t = o.cuando ? new Date(o.cuando).getTime() : Date.now();
+  const desde = new Date(t - minutos * 60000).toISOString();
+  /* Y un techo: el clic tiene que ser ANTES del mensaje (con cinco minutos de
+     gracia por los relojes y por el rato que tarda Meta en entregarlo). */
+  const hasta = new Date(t + 5 * 60000).toISOString();
   const { data } = await supabase.from('email_sends')
     .select('contact_id, clicked_at, clicked_links, asunto, contacts(id, nombre, apellido, company_id, whatsapp)')
-    .gt('clicked_at', desde).not('clicked_links', 'is', null)
+    .gt('clicked_at', desde).lt('clicked_at', hasta).not('clicked_links', 'is', null)
     .order('clicked_at', { ascending: false }).limit(60);
 
   const entrante = norm(texto);
@@ -105,7 +120,13 @@ export async function identificarPorClic(texto: string, minutos = 90): Promise<I
      tiempo, pero como PROPUESTA, para que lo confirme quien atiende. */
   if (exactos.length > 1) return { ...exactos[0], certeza: 'clic', motivo: `${exactos[0].motivo} (y alguien más hizo clic en el mismo minuto: confírmalo)` };
 
-  const porClic = [...new Map(candidatos.map(c => [c.contactId, c])).values()];
+  /* SIN COINCIDENCIA DE TEXTO, LA VARA SUBE.
+     Que alguien haya hecho clic hace una hora y media no explica un mensaje que
+     dice otra cosa —ese lead pudo llegar por la web, por un anuncio o por una
+     tarjeta—. Solo se propone si el clic pega casi con el mensaje: media hora
+     antes, como mucho. Y sigue siendo propuesta, nunca una liga automática. */
+  const porClic = [...new Map(candidatos.map(c => [c.contactId, c])).values()]
+    .filter(c => t - Date.parse(c.clicAt) <= 30 * 60000);
   if (porClic.length === 1) return porClic[0];
   return null;
 }

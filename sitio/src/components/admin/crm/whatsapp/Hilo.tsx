@@ -904,8 +904,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           convId={conv.id} equipo={equipo} yoId={hilo?.yo?.id || null} asignadoA={conv.asignado_a}
           onAsignar={(id: string) => api.patchConversacion({ asignado_a: id })} />
       )}
-      {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
-        const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
+      {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string, forzar?: boolean) => {
+        const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota, ...(forzar ? { forzar: true } : {}) });
         if (!r?.error) setCierre(false);
         return r;
       }} />}
@@ -1048,12 +1048,21 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
 }
 
 /** Modal de cierre: categoría obligatoria + nota opcional (alimenta métricas). */
-function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolver: (categoria: string, nota: string) => Promise<any> }) {
+function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolver: (categoria: string, nota: string, forzar?: boolean) => Promise<any> }) {
   const [cats, setCats] = useState<{ id: number; nombre: string }[]>([]);
   const [cat, setCat] = useState('');
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
+  /* EL CANDADO AVISA, NO ENCIERRA (15-sep-2026).
+     Cerrar con la última palabra del cliente sin leer la saca de todos los
+     filtros, y por eso el servidor lo frena: pasó con Rafael, que contestó «Sí»
+     y a los cuarenta minutos ya no estaba en ninguna bandeja. Pero frenarlo SIN
+     salida convertía el aviso en un muro — el dueño quería cerrar
+     conversaciones donde ya venció la ventana y no queda nada que contestar, y
+     no podía. Ahora el aviso se lee y, si aun así quiere, el mismo botón la
+     cierra: a propósito, que es justo lo que el candado pedía. */
+  const [confirmar, setConfirmar] = useState(false);
   useEffect(() => {
     fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCats(j.categorias || [])).catch(() => {});
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); };
@@ -1072,12 +1081,21 @@ function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolve
         </div>
         <textarea value={nota} onChange={e => setNota(e.target.value)} rows={3} placeholder="Nota de cierre (opcional): qué se acordó, qué sigue…"
           style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
-        {error && <p style={{ color: C.rojo500, fontSize: 11, margin: '6px 0 0' }}>{error}</p>}
+        {error && (
+          <p style={{ color: confirmar ? C.ambar700 : C.rojo500, fontSize: 11, margin: '6px 0 0', lineHeight: 1.5 }}>
+            {error}{confirmar ? ' — si ya no hay nada que contestar, vuelve a tocar el botón y se cierra.' : ''}
+          </p>
+        )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
           <button onClick={onCerrar} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
-          <button disabled={!cat || ocupado} onClick={async () => { setOcupado(true); setError(''); const r = await onResolver(cat, nota.trim()); setOcupado(false); if (r?.error) setError(r.error); }}
-            style={{ border: 'none', background: !cat ? C.g200 : C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: !cat ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-            {ocupado ? 'Resolviendo…' : 'Marcar resuelta'}
+          <button disabled={!cat || ocupado} onClick={async () => {
+            setOcupado(true); setError('');
+            const r = await onResolver(cat, nota.trim(), confirmar);
+            setOcupado(false);
+            if (r?.error) { setError(r.error); setConfirmar(!!r.se_puede_forzar); }
+          }}
+            style={{ border: 'none', background: !cat ? C.g200 : confirmar ? C.ambar700 : C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: !cat ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+            {ocupado ? 'Resolviendo…' : confirmar ? 'Cerrarla de todos modos' : 'Marcar resuelta'}
           </button>
         </div>
       </div>

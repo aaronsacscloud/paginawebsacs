@@ -100,7 +100,7 @@ export const GET: APIRoute = async ({ url }) => {
   const fichaSinNombre = !nombreFicha || /^(WhatsApp|Contacto)\s+\d{3,}$/i.test(nombreFicha);
   let sugerencias: any[] = [];
   if (conv && (!conv.contact_id || fichaSinNombre)) {
-    const { data: msjs } = await supabase.from('wa_mensajes').select('cuerpo, transcript').eq('conversation_id', conv.id).eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(30);
+    const { data: msjs } = await supabase.from('wa_mensajes').select('cuerpo, transcript, created_at').eq('conversation_id', conv.id).eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(30);
     const texto = (msjs || []).map((m: any) => `${m.cuerpo || ''} ${m.transcript || ''}`).join('\n');
     const emails = [...new Set((texto.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) || []).map(e => e.toLowerCase()))].slice(0, 5);
     const vistos = new Set<string>();
@@ -110,8 +110,14 @@ export const GET: APIRoute = async ({ url }) => {
        escrito, así que si el mensaje es ese texto, es esa persona. */
     try {
       const { identificarPorClic } = await import('../../../../lib/whatsapp/identificar-por-clic');
+      /* El PRIMER mensaje del hilo y CUÁNDO llegó: la pista tiene que explicar
+         ese momento, no el de ahora. Sin la fecha, un hilo del martes se
+         emparejaba con un clic del jueves y el panel proponía a alguien que no
+         tenía nada que ver (caso Lily, 15-sep). */
       const primero = (msjs || []).slice(-1)[0] || (msjs || [])[0];
-      const q = await identificarPorClic(String(primero?.cuerpo || primero?.transcript || texto).slice(0, 400), 240);
+      const q = await identificarPorClic(
+        String(primero?.cuerpo || primero?.transcript || texto).slice(0, 400),
+        { cuando: primero?.created_at || conv.created_at, minutos: 240 });
       if (q) {
         const { data: c } = await supabase.from('contacts').select('id, nombre, apellido, email, company_id, companies(nombre, nombre_comercial)').eq('id', q.contactId).maybeSingle();
         if (c && c.id !== conv.contact_id) agregar(c, q.motivo);

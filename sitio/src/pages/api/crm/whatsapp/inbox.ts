@@ -226,7 +226,15 @@ const _GET: APIRoute = async ({ request, url }) => {
            alguien cerró hace cuatro meses no puede tapar lo que llegó hoy.
            Se decide aquí, al unir los canales: en la base cada hilo conserva su
            estado. */
-        if (fila.ultima_direccion === 'entrante' && fila.estado_crm === 'resuelta') fila.estado_crm = 'abierta';
+        /* Y el ESTADO de la fila pasa a ser el del correo, porque el correo es
+           lo último que pasó. Caso real (Lily, 14-sep): contestó por correo a
+           la campaña, le respondimos por correo, y su fila no aparecía ni en
+           «No contestadas» ni en «Sin respuesta de ellos» porque su hilo de
+           WhatsApp estaba marcado como resuelto… desde MAYO. Una conversación
+           que alguien cerró hace cuatro meses no puede decidir si lo de hoy
+           está atendido. En la base cada hilo conserva su estado; esto se
+           decide al unir los canales, que es donde la fila existe. */
+        if (fila.estado_crm === 'resuelta' && ce.estado !== 'cerrada') fila.estado_crm = 'abierta';
       }
     } else {
       porClave.set(clave, {

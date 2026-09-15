@@ -25,13 +25,14 @@ export type PlantillaViva = {
   nombre: string; status?: string | null; variables?: number | null;
   header_tipo?: string | null; header_media_url?: string | null;
   cuerpo?: string | null; footer?: string | null; botones?: any;
+  categoria?: string | null; respaldo_utility?: string | null; respaldo_params?: any;
 };
 
 /** La plantilla, si Meta la tiene aprobada. `null` si no se puede usar. */
 export async function plantillaAprobada(nombre: string, idioma = 'es_MX'): Promise<PlantillaViva | null> {
   if (!nombre) return null;
   const { data } = await supabase.from('wa_plantillas')
-    .select('nombre, status, variables, header_tipo, header_media_url, cuerpo, footer, botones')
+    .select('nombre, status, variables, header_tipo, header_media_url, cuerpo, footer, botones, categoria, respaldo_utility, respaldo_params')
     .eq('nombre', nombre).eq('idioma', idioma).maybeSingle();
   return data?.status === 'APPROVED' ? (data as PlantillaViva) : null;
 }
@@ -95,18 +96,46 @@ export async function mandarPlantilla(o: {
   /* El respaldo se intenta por las DOS razones por las que la principal puede
      no salir: que no esté aprobada, y que Meta la rechace al enviarla. La
      segunda es la que dejó a Michelle sin mensaje. */
-  const conRespaldo = async (motivo: string) => {
-    if (!o.respaldo?.plantilla) return { enviado: false, wamid: null, texto: '', motivo };
-    const rp = await plantillaAprobada(o.respaldo.plantilla, idioma);
-    if (!rp) return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; y «${o.respaldo.plantilla}» tampoco está aprobada` };
+  const conRespaldo = async (motivo: string, pl?: PlantillaViva | null) => {
+    /* ══ EL RESPALDO TIENE QUE HABLAR DEL MISMO TEMA ═══════════════════════
+       Regla del dueño (15-sep-2026), y salió de un caso suyo: a Jakob se le
+       mandó el aviso del número nuevo, Meta lo frenó, y en su lugar salió «que
+       quedamos pendientes del tema de tu solicitud con Sacs». No tiene nada que
+       ver con lo que le íbamos a decir. Siete personas recibieron eso.
+
+       Así que el respaldo ya no se elige por conveniencia: lo declara la propia
+       plantilla (`respaldo_utility`), que es donde sabe alguien qué dice la
+       gemela. Si el llamador no pasa ninguno, se toma el de la plantilla; y si
+       la plantilla no tiene gemela, NO SE MANDA NADA. Mejor silencio que
+       confundir a un cliente. */
+    const nombreRespaldo = o.respaldo?.plantilla || pl?.respaldo_utility || null;
+    if (!nombreRespaldo) return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; «${o.plantilla}» no tiene plantilla de utilidad que diga lo mismo, así que no se manda nada` };
+    const rp = await plantillaAprobada(nombreRespaldo, idioma);
+    if (!rp) return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; y «${nombreRespaldo}» tampoco está aprobada` };
+    /* Y tiene que ser UTILITY DE VERDAD. El nombre no vale: Meta reclasifica, y
+       hay cinco plantillas nuestras que se llaman «…_utility_v1» y en Meta son
+       MARKETING. Mandar una de esas como respaldo es tropezar con la misma
+       piedra: el mismo carril, el mismo freno, el mismo lead sin mensaje. */
+    if (String(rp.categoria || '').toUpperCase() !== 'UTILITY') {
+      return { enviado: false, wamid: null, texto: '', motivo: `${motivo}; «${nombreRespaldo}» sería el respaldo pero en Meta es ${rp.categoria || 'de categoría desconocida'}, no UTILITY: chocaría con el mismo freno` };
+    }
     try {
+      /* LOS PARÁMETROS DEL RESPALDO.
+         La gemela casi nunca tiene las mismas variables que la principal: la de
+         seguimiento pide nombre Y tema, y la del aviso solo el nombre. Por eso
+         la plantilla puede declarar `respaldo_params`: `null` en una posición
+         significa «reusa el del mensaje original» y un texto es un literal.
+         Sin eso, el {{2}} salía vacío y el mensaje decía «quedamos pendientes
+         del tema de .» — el mismo error de forma distinta. */
+      const declarados: any[] | null = Array.isArray(pl?.respaldo_params) ? pl!.respaldo_params : null;
+      const nVars = Math.max(0, Number(rp.variables) || 0);
+      const paramsRespaldo = o.respaldo?.params
+        ?? (declarados ? Array.from({ length: nVars }, (_, i) => String(declarados[i] ?? o.params[i] ?? '')) 
+                       : o.params.slice(0, nVars));
       const r = await mandarPlantilla({
         telefono: o.telefono, plantilla: rp.nombre, idioma, pl: rp,
-        /* Sin params propios se reusan los de la principal, recortados a las
-           variables que declara el respaldo: mandarle de más a Meta es un 400 y
-           el mensaje no sale. */
-        params: o.respaldo.params ?? o.params.slice(0, Math.max(0, Number(rp.variables) || 0)),
-        autor: o.autor, textoRespaldo: o.respaldo.textoRespaldo,
+        params: paramsRespaldo,
+        autor: o.autor, textoRespaldo: o.respaldo?.textoRespaldo,
         /* Queda anotado de quién es respaldo: en el inbox se tiene que poder
            ver que salió la segunda, no la que se pidió. */
         metadata: { ...(o.metadata || {}), respaldo_de: o.plantilla, respaldo_motivo: motivo },
@@ -118,7 +147,7 @@ export async function mandarPlantilla(o: {
   };
 
   const pl = o.pl !== undefined ? o.pl : await plantillaAprobada(o.plantilla, idioma);
-  if (!pl) return conRespaldo(`«${o.plantilla}» no está aprobada`);
+  if (!pl) return conRespaldo(`«${o.plantilla}» no está aprobada`, null);
 
   const ht = String(pl.header_tipo || 'TEXT').toUpperCase();
   const media = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && pl.header_media_url
@@ -132,7 +161,7 @@ export async function mandarPlantilla(o: {
     /* Meta la rechazó AL ENVIAR. Es el caso de «Meta limitó los mensajes de
        marketing a este número»: cae al respaldo en el acto, no en diez
        minutos, porque aquí ya sabemos que no salió. */
-    return conRespaldo(String(e?.message || e).slice(0, 160));
+    return conRespaldo(String(e?.message || e).slice(0, 160), pl);
   }
   const wamid = r?.messages?.[0]?.id || null;
   const texto = resolverCuerpo(pl, o.params, o.textoRespaldo || '');
@@ -151,10 +180,16 @@ export async function mandarPlantilla(o: {
            el webhook puede dispararlo en cuanto llega el «failed», sin esperar
            al reloj de los diez minutos y sin que cada flujo tenga que
            acordarse de su propia red. */
-        ...(o.respaldo?.plantilla ? { respaldo_plan: {
-          plantilla: o.respaldo.plantilla,
-          params: o.respaldo.params ?? o.params.slice(0, 6),
-          texto: o.respaldo.textoRespaldo || null,
+        /* El plan viaja con el mensaje para cuando Meta reporte el fallo DESPUÉS
+           (por webhook). Sale de lo que pidió el llamador o, si no pidió nada,
+           de la gemela que declara la plantilla — la misma regla de arriba. */
+        ...((o.respaldo?.plantilla || pl.respaldo_utility) ? { respaldo_plan: {
+          plantilla: o.respaldo?.plantilla || pl.respaldo_utility,
+          params: o.respaldo?.params
+            ?? (Array.isArray(pl.respaldo_params)
+                  ? (pl.respaldo_params as any[]).map((v, i) => String(v ?? o.params[i] ?? ''))
+                  : o.params.slice(0, 6)),
+          texto: o.respaldo?.textoRespaldo || null,
         } } : {}),
       },
     }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
