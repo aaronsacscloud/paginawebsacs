@@ -1,17 +1,24 @@
 ---
-import { footerLinks } from '../data/navigation';
+// Footer enfocado en moda (Aaron, 15-sep-2026): "Plataforma" repite los cuatro pilares del
+// menú (Vende · Controla · Fideliza · Automatiza) con sus páginas, y "Giros" lista los 21 giros
+// de moda con su link. Todo sale de navigation.ts: agregar un giro o un módulo allá lo publica aquí.
+import { footerLinks, navLinks, modaSectors } from '../data/navigation';
 import { t, getLocalizedUrl } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
 
 interface Props { locale?: Locale; }
 const { locale = 'es' } = Astro.props;
 const currentYear = new Date().getFullYear();
+const pilares = navLinks.find((l) => l.pillars)?.pillars ?? [];
+const giros = modaSectors;
+const mitad = Math.ceil(giros.length / 2);
+const girosCols = [giros.slice(0, mitad), giros.slice(mitad)];
 ---
 
 <footer class="footer">
-  <div class="container footer-grid">
+  <div class="container">
     <div class="footer-brand">
-      <a href={getLocalizedUrl('/', locale)} class="footer-logo" aria-label="SACS">
+      <a href={getLocalizedUrl('/', locale)} class="footer-logo" aria-label="Sacs">
         <svg width="72" height="30" viewBox="0 0 72 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <text x="0" y="23" font-family="'Clash Display', sans-serif" font-size="24" font-weight="700" fill="#fff">Sacs</text>
         </svg>
@@ -19,38 +26,56 @@ const currentYear = new Date().getFullYear();
       <p class="footer-tagline">{t('footer.tagline', locale)}</p>
     </div>
 
-    <details class="footer-col" open>
+    <details class="footer-col footer-col--plataforma" open>
       <summary class="footer-heading">{t('footer.platform', locale)}</summary>
-      <ul class="footer-list">
-        {footerLinks.vende.map((link) => (
-          <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
+      <div class="footer-pilares">
+        {pilares.map((p) => (
+          <div class="footer-pilar">
+            <a href={getLocalizedUrl(p.href, locale)} class="footer-subheading">{p.verb}</a>
+            <ul class="footer-list">
+              {p.items.map((link) => (
+                <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
+              ))}
+            </ul>
+          </div>
         ))}
-        {footerLinks.controla.map((link) => (
-          <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
-        ))}
-      </ul>
+      </div>
     </details>
 
-    <details class="footer-col" open>
-      <summary class="footer-heading">{t('footer.company', locale)}</summary>
-      <ul class="footer-list">
-        {footerLinks.empresa.map((link) => (
-          <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
-        ))}
-      </ul>
-    </details>
+    <div class="footer-grid">
+      <details class="footer-col footer-col--giros" open>
+        <summary class="footer-heading">Giros de moda</summary>
+        <div class="footer-giros">
+          {girosCols.map((col) => (
+            <ul class="footer-list">
+              {col.map((g) => (
+                <li><a href={getLocalizedUrl(g.href, locale)}>{g.label}</a></li>
+              ))}
+            </ul>
+          ))}
+        </div>
+        <a href={getLocalizedUrl('/giros', locale)} class="footer-mas">Ver todos los giros →</a>
+      </details>
 
-    <details class="footer-col" open>
-      <summary class="footer-heading">{t('footer.resources', locale)}</summary>
-      <ul class="footer-list">
-        {footerLinks.recursos.map((link) => (
-          <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
-        ))}
-      </ul>
-    </details>
-  </div>
+      <details class="footer-col" open>
+        <summary class="footer-heading">{t('footer.company', locale)}</summary>
+        <ul class="footer-list">
+          {footerLinks.empresa.map((link) => (
+            <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
+          ))}
+        </ul>
+      </details>
 
-  <div class="container">
+      <details class="footer-col" open>
+        <summary class="footer-heading">{t('footer.resources', locale)}</summary>
+        <ul class="footer-list">
+          {footerLinks.recursos.map((link) => (
+            <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
+          ))}
+        </ul>
+      </details>
+    </div>
+
     <div class="footer-divider"></div>
     <div class="footer-bottom">
       <p class="footer-copyright">&copy; {currentYear} Sacs. {t('footer.copyright', locale)}</p>
@@ -63,46 +88,12 @@ const currentYear = new Date().getFullYear();
   .footer {
     background: var(--color-bg-dark);
     color: var(--color-text-on-dark-muted);
-    padding-block: var(--space-24);
+    padding-block: var(--space-20, 80px) var(--space-10, 40px);
   }
 
-  .footer-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-8) var(--space-6);
-  }
-  .footer-brand { grid-column: 1 / -1; }
-  .footer-heading { list-style: none; cursor: default; }
-  .footer-heading::-webkit-details-marker { display: none; }
-  @media (max-width: 767px) {
-    .footer-grid { grid-template-columns: 1fr; gap: 0; }
-    .footer-brand { margin-bottom: 20px; }
-    .footer-col { border-top: 1px solid rgba(255,255,255,0.12); }
-    .footer-heading { cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 16px 0; margin: 0; }
-    .footer-heading::after { content: '+'; font-size: 18px; opacity: 0.7; }
-    .footer-col[open] .footer-heading::after { content: '–'; }
-    .footer-list { padding-bottom: 12px; }
-  }
-  @media (max-width: 767px) { .footer-list a { font-size: 0.875rem; } .footer { padding-block: 28px 24px; } .footer-heading { padding: 14px 0 !important; margin: 0 !important; line-height: 1.2; } .footer-col { margin: 0 !important; } .footer-list { padding-bottom: 10px; margin: 0; } }
-
-  @media (min-width: 768px) {
-    .footer-grid {
-      grid-template-columns: 1.5fr 1fr 1fr 1fr;
-    }
-  }
-
-  .footer-logo {
-    display: inline-block;
-    margin-bottom: var(--space-4);
-    text-decoration: none;
-  }
-
-  .footer-tagline {
-    font-size: 0.875rem;
-    line-height: 1.6;
-    color: var(--color-text-on-dark-subtle);
-    max-width: 280px;
-  }
+  .footer-brand { margin-bottom: var(--space-10, 40px); }
+  .footer-logo { display: inline-block; margin-bottom: var(--space-4); text-decoration: none; }
+  .footer-tagline { font-size: 0.875rem; line-height: 1.6; color: var(--color-text-on-dark-subtle); max-width: 280px; }
 
   .footer-heading {
     font-family: var(--font-body);
@@ -111,54 +102,55 @@ const currentYear = new Date().getFullYear();
     color: var(--color-text-on-dark);
     margin-bottom: var(--space-5);
     letter-spacing: 0;
-  }
-
-  .footer-list {
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
+    cursor: default;
+  }
+  .footer-heading::-webkit-details-marker { display: none; }
+
+  /* Plataforma: los cuatro pilares como en el menú */
+  .footer-col--plataforma { margin-bottom: var(--space-12, 48px); }
+  .footer-pilares { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-8); }
+  .footer-subheading { display: block; font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-text-on-dark); text-decoration: none; margin-bottom: var(--space-3); }
+  .footer-subheading:hover { color: var(--color-primary, #4B7BE5); }
+
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-8); }
+  .footer-giros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3) var(--space-6); }
+  .footer-mas { display: inline-block; margin-top: var(--space-4); font-size: 0.875rem; font-weight: 600; color: var(--color-primary, #4B7BE5); text-decoration: none; }
+  .footer-mas:hover { text-decoration: underline; }
+
+  .footer-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: 0; }
+  .footer-list a { font-size: 0.875rem; font-weight: 400; color: var(--color-text-on-dark-subtle); text-decoration: none; transition: color var(--duration-fast) ease; }
+  .footer-list a:hover { color: var(--color-text-on-dark); text-decoration: none; }
+
+  .footer-divider { height: 1px; background: var(--color-border-on-dark); margin-top: var(--space-16); margin-bottom: var(--space-6); }
+  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-4); }
+  .footer-copyright { font-size: 0.75rem; color: var(--color-text-on-dark-faint); }
+  .footer-impact { font-size: 0.75rem; font-weight: 500; color: var(--color-primary, #4B7BE5); }
+
+  @media (max-width: 1023px) {
+    .footer-pilares { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-col--giros { grid-column: 1 / -1; }
   }
 
-  .footer-list a {
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: var(--color-text-on-dark-subtle);
-    text-decoration: none;
-    transition: color var(--duration-fast) ease;
+  /* Teléfono: acordeones cerrados, un grupo por fila */
+  @media (max-width: 767px) {
+    .footer { padding-block: 28px 24px; }
+    .footer-brand { margin-bottom: 20px; }
+    .footer-grid { display: block; }
+    .footer-col { border-top: 1px solid rgba(255,255,255,0.12); margin: 0 !important; }
+    .footer-col--plataforma { margin-bottom: 0; }
+    .footer-heading { cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 14px 0 !important; margin: 0 !important; line-height: 1.2; }
+    .footer-heading::after { content: '+'; font-size: 18px; opacity: 0.7; }
+    .footer-col[open] .footer-heading::after { content: '–'; }
+    .footer-pilares { grid-template-columns: 1fr; gap: 18px; padding-bottom: 14px; }
+    .footer-subheading { font-size: 0.9375rem; }
+    .footer-giros { grid-template-columns: 1fr; padding-bottom: 6px; }
+    .footer-list { padding-bottom: 10px; }
+    .footer-list a { font-size: 0.875rem; }
+    .footer-mas { margin: 4px 0 14px; }
+    .footer-divider { margin-top: 24px; }
   }
-
-  .footer-list a:hover {
-    color: var(--color-text-on-dark);
-    text-decoration: none;
-  }
-
-  .footer-divider {
-    height: 1px;
-    background: var(--color-border-on-dark);
-    margin-top: var(--space-16);
-    margin-bottom: var(--space-6);
-  }
-
-  .footer-bottom {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-4);
-  }
-
-  .footer-copyright {
-    font-size: 0.75rem;
-    color: var(--color-text-on-dark-faint);
-  }
-
-  .footer-impact {
-    font-size: 0.75rem;
-    color: var(--color-secondary);
-    font-weight: 500;
-  }
-  .footer-impact { color: var(--color-primary, #4B7BE5) !important; }
 </style>
 <script>
   // En teléfono los grupos del footer empiezan cerrados
