@@ -234,7 +234,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
   if (conv.contact_id) {
     const { data: envs } = await supabase.from('email_sends')
-      .select('id, estado, sent_at, opened_at, first_opened_at, open_count, clicked_at, click_count, clicked_links, created_at, asunto, extracto, email_templates(nombre, asunto)')
+      .select('id, estado, sent_at, delivered_at, opened_at, first_opened_at, open_count, clicked_at, click_count, clicked_links, created_at, asunto, extracto, email_templates(nombre, asunto)')
       .eq('contact_id', conv.contact_id).order('created_at', { ascending: false }).limit(15);
     for (const en of envs || []) {
       if (['queued', 'failed'].includes(String(en.estado))) continue;
@@ -245,9 +245,19 @@ export const GET: APIRoute = async ({ request, url }) => {
          habla, justo lo que hace falta para retomar la conversación. */
       const asunto = (en as any).asunto || t?.asunto || t?.nombre || null;
       const nAb = Number((en as any).open_count || 0);
-      const que = en.clicked_at ? 'lo abrió y dio clic'
-        : en.opened_at ? (nAb > 1 ? `lo abrió ${nAb} veces` : 'lo abrió')
-        : en.estado === 'bounced' ? 'rebotó' : 'enviado, sin abrir';
+      /* LA HORA, SIEMPRE. Dos correos del mismo hilo llevan el MISMO asunto —el
+         nuestro empieza con «Re:»— y sin hora las dos líneas se leían como el
+         mismo correo contándose dos veces: «lo abrió y dio clic» arriba y
+         «enviado, sin abrir» abajo. El dueño preguntó, con razón, si se había
+         mandado dos veces. Eran dos correos distintos: la campaña de las 19:00
+         y nuestra respuesta de la 1:05. */
+      const hora = (x: any) => x ? new Date(x).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' }) : '';
+      const abierto = (en as any).first_opened_at || en.opened_at || null;
+      const que = en.estado === 'bounced' ? 'rebotó'
+        : en.clicked_at ? `lo abrió a las ${hora(abierto || en.clicked_at)} y dio clic`
+        : abierto ? (nAb > 1 ? `lo abrió ${nAb} veces, la primera a las ${hora(abierto)}` : `lo abrió a las ${hora(abierto)}`)
+        : (en as any).delivered_at ? `entregado a las ${hora((en as any).delivered_at)}, todavía sin abrir`
+        : `enviado a las ${hora(en.sent_at || en.created_at)}, todavía sin abrir`;
       eventos.push({
         id: `em-${en.id}`, tipo: 'campana', created_at: en.sent_at || en.created_at, autor: null,
         detalle: asunto ? `Correo «${asunto}»: ${que}` : `Correo: ${que}`,

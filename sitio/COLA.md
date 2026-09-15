@@ -6,6 +6,11 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-15 · Ver rápido si abrió el correo, y por qué parecían dos.** «quiero ver rápido si no la ha leído o si
+      sí… en los correos también debo tener esa data» + «creo que se envió 2 veces un correo o por qué un aviso me dice
+      que sí lo abrió y otro dice que no» → HECHO: eran DOS correos (la campaña y nuestra respuesta, con el mismo
+      asunto). Cada renglón lleva su hora y su estado completo.
+
 - [ ] **2026-09-15 · El respaldo de utility debe hablar del MISMO tema.** «a Jakob se le envió lo del nuevo número, pero
       al no salir el de marketing salió este de utility que no tiene nada que ver con el mensaje anterior; aquí debemos
       manejar otro tipo de formas en caso de que el de marketing no pase, pero que no sea algo que saque de onda al
