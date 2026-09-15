@@ -119,7 +119,11 @@ export async function normalizarPendientes(limite = 60, cfg?: Config): Promise<N
     contexto: { senales: senales.length },
   });
   r.costo_usd += resp.costo_usd;
-  if (!resp.ok || !resp.datos?.resultados) throw new Error(resp.error || 'el modelo no devolvió resultados');
+  if (!resp.ok || !resp.datos?.resultados) {
+    const e: any = new Error(resp.error || 'el modelo no devolvió resultados');
+    e.definitivo = resp.definitivo;
+    throw e;
+  }
 
   const porIndice = new Map<number, any>();
   for (const x of resp.datos.resultados) porIndice.set(Number(x.i), x);
@@ -224,7 +228,13 @@ registrar('normalizar', async (a, ctx): Promise<ResultadoHandler> => {
   // Varias vueltas mientras quede tiempo del cron: la cola de señales del
   // primer día trae miles y de a 60 no se vacía nunca.
   while (Date.now() < ctx.limite - 20_000) {
-    const r = await normalizarPendientes(60, ctx.cfg);
+    let r: Normalizadas;
+    try {
+      r = await normalizarPendientes(60, ctx.cfg);
+    } catch (e: any) {
+      if (e?.definitivo) return { ok: false, resumen: e.message, definitivo: true, datos: total, costo_usd: total.costo_usd };
+      throw e;
+    }
     total = {
       leidas: total.leidas + r.leidas, demanda: total.demanda + r.demanda,
       descartadas: total.descartadas + r.descartadas, queries: total.queries + r.queries,
@@ -254,8 +264,15 @@ registrar('normalizar', async (a, ctx): Promise<ResultadoHandler> => {
 registrar('agrupar', async (): Promise<ResultadoHandler> => {
   if (!hayEmbeddings()) return { ok: false, resumen: 'sin proveedor de embeddings', definitivo: true };
   const p = await proveedorVigente();
-  const { data } = await supabase.rpc('de_refundir_clusters', { umbral: umbralUnion(p), max_pasadas: 300 });
-  const r = (data || [])[0] || { fusionados: 0, restantes: 0 };
+  // El error del RPC SÍ se mira. La primera versión de esta función se quedaba
+  // sin tiempo a partir de cierto tamaño y devolvía vacío, y la corrida de
+  // producción reportó «nada que fundir · 0 problemas» como si todo estuviera
+  // bien. Un fallo silencioso aquí es un catálogo que se llena de duplicados
+  // durante semanas sin que nadie lo note.
+  const { data, error } = await supabase.rpc('de_refundir_clusters', { umbral: umbralUnion(p), max_pasadas: 5 });
+  if (error) throw new Error(`no se pudieron refundir los problemas: ${error.message}`);
+  const r = (data || [])[0];
+  if (!r) throw new Error('la refundición no devolvió resultado');
   await supabase.rpc('de_recontar_clusters');
   return {
     ok: true,

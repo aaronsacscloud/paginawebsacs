@@ -63,6 +63,15 @@ if (que === 'ingerir') {
   const cfg = await leerConfig(true);
   const { id, nuevo } = await abrirCiclo('manual', 'prueba local');
   console.log({ id, nuevo }, await armarCadena(id, 'manual', cfg));
+} else if (que === 'evaluar') {
+  const { evaluarClusters } = await import("../src/lib/demanda/evaluar.ts");
+  const vueltas = Number(process.argv[3]) || 1;
+  for (let i = 0; i < vueltas; i++) { const r = await evaluarClusters(20); console.log(`vuelta ${i+1}:`, r); if (!r.evaluados) break; }
+} else if (que === 'puntuar') {
+  const { puntuarClusters } = await import('../src/lib/demanda/score.ts');
+  const { crearOportunidades } = await import('../src/lib/demanda/oportunidades.ts');
+  console.log(await puntuarClusters());
+  console.log(await crearOportunidades(200));
 } else if (que === 'inventario') {
   const { inventariar } = await import('../src/lib/demanda/paginas.ts');
   console.log(await inventariar(Number(process.argv[3]) || 60));

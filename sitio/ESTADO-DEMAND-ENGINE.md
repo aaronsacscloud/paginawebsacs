@@ -163,3 +163,70 @@ Igual Reddit, YouTube, PageSpeed, DataForSEO, Perplexity y xAI.
 E1.9 score de oportunidades · E1.10 competidores (lectura pública, no necesita
 llaves) · E1.11 pantallas Explorador/SEO/Competidores/Oportunidades ·
 E1.12 Resumen con datos reales.
+
+---
+
+## Etapa 1 · parte B hecha (15-sep-2026) + UN AVISO URGENTE
+
+### ⚠️ La cuenta de Anthropic se quedó SIN SALDO y el agente SDR no puede responder
+Medido en `ia_uso`: 5,159 llamadas fallidas el 7-sep, 5,910 el 8-sep, 1,775 el
+14-sep y otra vez hoy. Casi todas son `agente:respuesta` — el agente de
+WhatsApp intentando contestarle a un lead y no pudiendo. **Esto es producción
+rota y no depende del motor de demanda**: hay que reponer saldo en la cuenta de
+Anthropic. Se le avisó al dueño.
+
+De paso se arregló lo que lo empeoraba: un fallo de saldo o de llave se
+reintentaba como cualquier otro error. Ahora se reconoce como DEFINITIVO y la
+acción se detiene con el motivo en vez de insistir mil veces contra algo que
+ningún reintento arregla.
+
+### Qué quedó construido
+- **`evaluar.ts`** — el modelo juzga cualidades (relevancia, conversión,
+  potencial de herramienta, de contenido, de red, valor del dato, distribución
+  por IA, dificultad) y deja escrito por qué. El código calcula el número.
+- **`score.ts`** — score determinista 0-100 con los pesos vigentes y desglose
+  por factor guardado en cada oportunidad.
+- **`oportunidades.ts`** — de problema a oportunidad, una por problema y tipo.
+- **Pantallas** Explorador (con la evidencia de cada problema) y Oportunidades
+  (con el puntaje abierto en sus ocho factores). Resumen reescrito con datos
+  reales, y lo que aún no se puede medir dicho como tal.
+- **`/api/crm/demanda/demanda`** con las vistas problemas, oportunidades,
+  señales, páginas y resumen.
+- **Presupuesto del motor leído de `ia_uso`**, no de un contador: un contador
+  aparte solo cuenta lo que alguien se acordó de sumarle. Y separado del resto
+  de la IA del CRM, que gasta ~$126/mes por su cuenta.
+
+### Cuatro errores más que solo aparecieron con datos reales
+8. **Refundir era O(n²) y dejó de funcionar al crecer.** Buscaba el mejor par
+   de toda la tabla en cada pasada: a 326 problemas eran segundos, a 990 se
+   quedó sin tiempo y devolvió vacío — y como el handler no miraba el error del
+   RPC, producción reportó «nada que fundir · 0 problemas» tan tranquila. Ahora
+   cada problema pregunta por su vecino con el índice HNSW: 262 fusiones en 8 s.
+9. **La llave foránea pisaba el traslado.** Mudar y borrar iban en el MISMO
+   statement con CTEs; como `cluster_id` está declarada `on delete set null`, el
+   borrado anulaba justo las filas que el update acababa de mudar. Regla nueva:
+   mudar y borrar son dos statements, siempre.
+10. **El contador de frecuencia contaba fuentes, no señales.** Agregaba por
+    (problema, fuente) y luego hacía `count(*)`, que cuenta las fuentes. Todo el
+    catálogo decía «visto 3 veces» como máximo. El daño no era el número sino la
+    PRIORIDAD: el score usa la frecuencia, así que el backlog quedaba ordenado
+    por casi nada. El más pedido resultó tener 188, no 3.
+11. **El tipo de oportunidad se decidía sin mirar de QUIÉN venía.** El primer
+    backlog propuso escribir una página para «agendar una llamada» (28 veces) y
+    meter «conocer más sobre el software» al roadmap. Ahora cada problema se
+    clasifica en demanda de **mercado** (capturable), de **cliente actual**
+    (producto) o **en proceso** (ventas), y el origen viaja en el prompt porque
+    el mismo texto significa cosas distintas según quién lo dijo.
+
+### Lo que el motor sabe ahora
+2,518 señales · 1,457 con problema asignado · ~850 problemas · 2,234 consultas ·
+120 páginas · 7,618 enlaces. Lo más pedido, con su origen:
+«cómo conectarme a soporte» 188 (WhatsApp 138 + soporte 48), «si se puede
+contratar por mes» 151 (todo WhatsApp), «no puedo facturar pedidos» 31.
+
+### Para retomar
+1. **Reponer saldo de Anthropic.** Sin eso no corre ni el motor ni el agente SDR.
+2. `node scripts/de-probar.mjs evaluar 30` → evalúa el resto de los problemas.
+3. `node scripts/de-probar.mjs puntuar` → score + backlog de oportunidades.
+4. Revisar el backlog en el CRM y afinar las reglas de `decidirTipo`.
+5. Etapa 2 cuando lleguen los accesos de Google.

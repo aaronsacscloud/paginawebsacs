@@ -33,7 +33,16 @@ export type Peticion = {
   contexto?: Record<string, any>;
 };
 
-export type Respuesta<T = any> = { ok: boolean; datos: T | null; texto: string; costo_usd: number; run_id: string | null; error?: string };
+export type Respuesta<T = any> = {
+  ok: boolean; datos: T | null; texto: string; costo_usd: number; run_id: string | null; error?: string;
+  /** No tiene caso reintentar: reintentar no repone el saldo ni arregla la llave. */
+  definitivo?: boolean;
+};
+
+/* Fallos que NO se arreglan insistiendo. Distinguirlos importa de verdad: el
+   14-sep la cuenta se quedó sin saldo y el agente de WhatsApp reintentó 1,775
+   veces contra un error que ninguna cantidad de reintentos podía resolver. */
+const ES_DEFINITIVO = /credit balance|insufficient|invalid.?api.?key|authentication|permission|not have access|quota/i;
 
 export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
   const modelo = p.modelo || PARA.volumen;
@@ -55,6 +64,13 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
     });
   } catch { /* la bitácora no puede impedir el trabajo */ }
 
+  /* El registro de costo de `lib/ai/client.ts` deduce el propósito del stack, y
+     con los tipos despojados de TypeScript ese stack no siempre resuelve: parte
+     del gasto aparecía como «desconocido». Declararlo a mano deja la cuenta
+     exacta y, de paso, da el costo POR AGENTE sin trabajo extra: quién gasta y
+     en qué es media pregunta del control de presupuesto. */
+  (globalThis as any).__ia_proposito = `demanda:${p.agente}`;
+
   try {
     const cuerpo: any = {
       model: modelo,
@@ -73,17 +89,33 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
     let datos: T | null = null;
     try { datos = texto ? JSON.parse(texto) : null; } catch { datos = null; }
 
+    /* Un «no vino como JSON» a secas manda a buscar el error en el esquema, que
+       casi nunca es donde está. Las dos causas reales son que la respuesta se
+       cortó por `max_tokens` —lo más común, y se arregla partiendo el lote— o
+       que el modelo declinó. Decirlo aquí ahorra la media hora de depurar el
+       lugar equivocado. */
+    if (p.esquema && datos === null) {
+      const por_que = r.stop_reason === 'max_tokens'
+        ? `la respuesta se cortó en ${p.max_tokens || 4000} tokens: manda menos elementos por lote`
+        : r.stop_reason === 'refusal'
+          ? `el modelo declinó (${r.stop_details?.category || 'sin categoría'})`
+          : `la respuesta no es JSON válido (stop_reason: ${r.stop_reason})`;
+      if (run_id) await finishAgentRun({ run_id, status: 'failed', error: { por_que, stop_reason: r.stop_reason }, usage: calculateCost(modelo, r.usage || {}), latency_ms: Date.now() - t0 });
+      return { ok: false, datos: null, texto, costo_usd: costo, run_id, error: por_que };
+    }
+
     if (run_id) await finishAgentRun({
       run_id, status: 'completed', output: { datos, texto: datos ? undefined : texto.slice(0, 2000) },
       usage: calculateCost(modelo, r.usage || {}), latency_ms: Date.now() - t0,
     });
 
-    if (p.esquema && datos === null)
-      return { ok: false, datos: null, texto, costo_usd: costo, run_id, error: 'la respuesta no vino como JSON válido' };
-
     return { ok: true, datos, texto, costo_usd: costo, run_id };
   } catch (e: any) {
-    if (run_id) await finishAgentRun({ run_id, status: 'failed', error: { mensaje: String(e?.message || e) }, latency_ms: Date.now() - t0 });
-    return { ok: false, datos: null, texto: '', costo_usd: 0, run_id, error: String(e?.message || e) };
+    const mensaje = String(e?.message || e);
+    const definitivo = ES_DEFINITIVO.test(mensaje);
+    if (run_id) await finishAgentRun({ run_id, status: 'failed', error: { mensaje, definitivo }, latency_ms: Date.now() - t0 });
+    return { ok: false, datos: null, texto: '', costo_usd: 0, run_id, error: mensaje, definitivo };
+  } finally {
+    delete (globalThis as any).__ia_proposito;
   }
 }

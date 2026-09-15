@@ -11,5 +11,8 @@ import './handlers';
 import './fuentes/crm';
 import './normalizar';
 import './paginas';
+import './evaluar';
+import './score';
+import './oportunidades';
 
 export { hayHandler, handlerDe, tiposRegistrados } from './handlers';
