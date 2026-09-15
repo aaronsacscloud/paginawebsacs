@@ -61,8 +61,13 @@ export default function TallerTab() {
   const [equipo, setEquipo] = useState<any[]>([]);
   const [sinOrden, setSinOrden] = useState<any[]>([]);
   const [yo, setYo] = useState<any>(null);
-  const [vista, setVista] = useState<'bandeja' | 'lista'>('bandeja');
-  const [tab, setTab] = useState<'mias' | 'todo' | 'trabadas'>('mias');
+  /* Se abre en LA LISTA. «Mi bandeja» abría con cero órdenes asignadas —las 18
+     estaban sin dueño— y lo primero que veía quien entraba era «no tienes
+     órdenes»: parecía que no había trabajo cuando había dieciocho sin arrancar.
+     Sigue existiendo, pero ya no es la puerta. */
+  const [vista, setVista] = useState<'bandeja' | 'lista'>('lista');
+  const [nueva, setNueva] = useState(false);
+  const [clientes, setClientes] = useState<any[]>([]);
   const [abierta, setAbierta] = useState<string>('');
   const [aviso, setAviso] = useState('');
   const [filtro, setFiltro] = useState('');
@@ -73,6 +78,15 @@ export default function TallerTab() {
     setCargando(false);
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
+  // Las cuentas, para poder levantar una orden desde aquí y ligarla a su ficha.
+  useEffect(() => {
+    fetch('/api/crm/arr/clientes').then(r => r.json())
+      .then(j => setClientes((j.data || [])
+        .map((c: any) => ({ id: c.id, n: c.nombre_comercial || c.nombre }))
+        .filter((c: any) => c.n)
+        .sort((a: any, b: any) => a.n.localeCompare(b.n, 'es'))))
+      .catch(() => {});
+  }, []);
 
   const flash = (t: string) => { setAviso(t); setTimeout(() => setAviso(''), 3200); };
 
@@ -120,8 +134,8 @@ export default function TallerTab() {
           {sinOrden.length > 0 && (
             <button style={S.btnSec} onClick={importar}>Traer del CRM · {sinOrden.length}</button>
           )}
-          <button style={vista === 'bandeja' ? S.btn : S.btnG} onClick={() => setVista('bandeja')}>Mi bandeja</button>
           <button style={vista === 'lista' ? S.btn : S.btnG} onClick={() => setVista('lista')}>Lista del taller</button>
+          <button style={vista === 'bandeja' ? S.btn : S.btnG} onClick={() => setVista('bandeja')}>Mi bandeja</button>
         </div>
       </div>
 
@@ -132,10 +146,13 @@ export default function TallerTab() {
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
             abrir={setAbierta} api={api} flash={flash} />
-        : <Lista ordenes={vivas} yo={yo} equipo={equipo} tab={tab} setTab={setTab} abrir={setAbierta}
-            filtro={filtro} setFiltro={setFiltro} />}
+        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta}
+            filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
+      {nueva && <NuevaOrden clientes={clientes} equipo={equipo} onCerrar={() => setNueva(false)}
+        onCreada={async (id: string) => { setNueva(false); await cargar(); setAbierta(id); flash('Creada y ligada a la ficha del cliente'); }}
+        flash={flash} />}
     </div>
   );
 }
@@ -349,83 +366,154 @@ function ModalCambios({ orden, onCerrar, api, flash }: any) {
   );
 }
 
-/* ═══════════════════ La lista de desarrollo ═══════════════════
-   Agrupada por lo que toca hacer, no por etapa alfabética. El orden de los
-   grupos ES la prioridad. */
-function Lista({ ordenes, yo, equipo, tab, setTab, abrir, filtro, setFiltro }: any) {
+/* ═══════════════════ La bandeja del taller ═══════════════════
+   Se abre en LA LISTA y se parte en los tres pasos que ya tiene la orden. Cada
+   paso trae las cuentas COLAPSADAS: un renglón por cliente con su número y lo
+   que le falta. Se abre solo la que se va a trabajar.
+
+   Antes eran dieciocho folios desplegados, agrupados por cuenta pero todos del
+   mismo peso, y cinco tarjetas arriba que repetían en número lo que la lista ya
+   traía. Para llegar a la última cuenta había que pasar por las diez de la
+   primera, y ningún renglón decía qué hacer con él.
+
+   El orden de los pasos ES la prioridad: lo que no ha arrancado primero, porque
+   una orden sin dueño ni fecha no avanza sola. */
+const PASOS_L = [
+  { k: 1 as const, l: 'Por arrancar', de: 'asignar y poner fecha', etapas: ['recibida'] },
+  { k: 2 as const, l: 'En desarrollo', de: 'se está trabajando', etapas: ['analisis', 'desarrollo', 'pruebas', 'devuelta', 'espera', 'trabada'] },
+  { k: 3 as const, l: 'Esperan tu OK', de: 'hay que revisarlas', etapas: ['lista'] },
+];
+
+function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar }: any) {
+  const [paso, setPaso] = useState<1 | 2 | 3>(1);
+  const [soloMias, setSoloMias] = useState(false);
   const [foco, setFoco] = useState('');
+  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({});
+
   const q = filtro.trim().toLowerCase();
   const texto = q
     ? ordenes.filter((o: any) => (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q))
     : ordenes;
+
+  /* Las tarjetas que quedan son las que piden ACCIÓN, y cada una filtra: un
+     número que no se puede abrir es un reporte, no una herramienta. Se fueron
+     las que decían cero en todas las cuentas. */
   const POR_FOCO: Record<string, (o: any) => boolean> = {
     sin_dueno: (o: any) => !o.asignado_id,
-    sin_fecha: (o: any) => o.tipo === 'falla' && o.prioridad === 'alta' && !o.fecha_prometida,
+    sin_fecha: (o: any) => !o.fecha_prometida,
     tarde: vencida,
-    devueltas: (o: any) => o.etapa === 'devuelta',
-    espera: (o: any) => o.etapa === 'espera',
+    revisar: (o: any) => o.etapa === 'lista',
   };
-  const base = foco ? texto.filter(POR_FOCO[foco]) : texto;
-  const mias = base.filter((o: any) => o.asignado_id === yo?.id);
-  const trabadas = base.filter((o: any) => o.etapa === 'trabada');
-
-  const sinDueno = texto.filter((o: any) => !o.asignado_id).length;
-  const sinFecha = texto.filter((o: any) => o.tipo === 'falla' && o.prioridad === 'alta' && !o.fecha_prometida).length;
+  const sinDueno = texto.filter(POR_FOCO.sin_dueno).length;
+  const sinFecha = texto.filter(POR_FOCO.sin_fecha).length;
   const tarde = texto.filter(vencida).length;
-  const devueltas = texto.filter((o: any) => o.etapa === 'devuelta').length;
-  const esperando = texto.filter((o: any) => o.etapa === 'espera').length;
+  const revisar = texto.filter(POR_FOCO.revisar).length;
 
-  const lista = tab === 'mias' ? mias : tab === 'trabadas' ? trabadas : base;
-  const grupos = tab === 'todo'
-    ? Object.entries(lista.reduce((a: any, o: any) => { const k = cuentaDe(o); (a[k] = a[k] || []).push(o); return a; }, {}))
-        .map(([l, filas]: any) => ({ l, filas }))
-    : [
-        { l: 'Devueltas · antes que nada', filas: lista.filter((o: any) => o.etapa === 'devuelta') },
-        { l: 'Atrasadas y de hoy', filas: lista.filter((o: any) => o.etapa !== 'devuelta' && (vencida(o) || diasHasta(o.fecha_prometida) === 0)) },
-        { l: 'En desarrollo', filas: lista.filter((o: any) => o.etapa === 'desarrollo' && !vencida(o) && diasHasta(o.fecha_prometida) !== 0) },
-        { l: 'En pruebas', filas: lista.filter((o: any) => o.etapa === 'pruebas') },
-        { l: 'Entregadas, esperando el OK', filas: lista.filter((o: any) => o.etapa === 'lista') },
-        { l: 'Sin fecha · ponles fecha', filas: lista.filter((o: any) => ['recibida', 'analisis'].includes(o.etapa)) },
-        { l: 'Esperando al cliente · el reloj está detenido', filas: lista.filter((o: any) => o.etapa === 'espera') },
-        { l: 'Trabadas', filas: lista.filter((o: any) => o.etapa === 'trabada') },
-      ].filter(g => g.filas.length);
+  let base = foco ? texto.filter(POR_FOCO[foco]) : texto;
+  if (soloMias) base = base.filter((o: any) => o.asignado_id === yo?.id);
+  const mias = texto.filter((o: any) => o.asignado_id === yo?.id).length;
+
+  const dePaso = (n: number) => base.filter((o: any) => (PASOS_L.find(p => p.k === n)?.etapas || []).includes(o.etapa));
+  const lista = dePaso(paso);
+
+  /* Por cuenta, y la cuenta que peor va arriba: primero lo vencido, luego lo
+     que tiene más sin fecha, y al final por cantidad. Alfabético no es una
+     prioridad. */
+  const porCuenta = Object.entries(lista.reduce((a: any, o: any) => {
+    const k = cuentaDe(o); (a[k] = a[k] || []).push(o); return a;
+  }, {})).map(([l, filas]: any) => {
+    const atraso = Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; }));
+    return {
+      l, filas,
+      atraso,
+      sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
+      sinDueno: filas.filter((o: any) => !o.asignado_id).length,
+      prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
+    };
+  }).sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
+
+  const TOPE_G = 3;
 
   return (
     <div>
-      {/* La zona de KPI de esta pantalla, y cada tarjeta filtra: un número que
-          no se puede abrir es un reporte, no una herramienta. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 14 }}>
         {([
-          ['sin_dueno', 'Sin dueño', sinDueno, P.rojo, P.rojoTinta, 'nadie las ha tomado'],
-          ['sin_fecha', 'Falla sin fecha', sinFecha, '#E8A838', P.ambarTinta, 'el SLA ya corre'],
-          ['tarde', 'Pasaron su fecha', tarde, P.rojo, P.rojoTinta, 'contra su primera fecha'],
-          ['devueltas', 'Devueltas', devueltas, P.violeta, P.violetaTinta, 'pediste cambios'],
-          ['espera', 'Esperando al cliente', esperando, P.azul, P.azulTinta, 'el reloj está detenido'],
+          ['sin_dueno', 'Nadie las ha tomado', sinDueno, P.rojo, P.rojoTinta, 'sin dueño no avanzan'],
+          ['sin_fecha', 'Sin fecha', sinFecha, '#E8A838', P.ambarTinta, 'no se pueden prometer'],
+          ['tarde', 'Se pasaron de fecha', tarde, P.rojo, P.rojoTinta, 'contra su primera fecha'],
+          ['revisar', 'Esperan tu OK', revisar, P.verde, P.verdeTinta, 'hay que revisarlas'],
         ] as any[]).map(([k, l, v, franja, tinta, sub]) => (
           <KpiCard key={k} franja={franja} label={l} valor={v} color={v ? tinta : undefined} sub={sub}
             activo={foco === k} onClick={() => setFoco(foco === k ? '' : k)} />
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 4, alignItems: 'center' }}>
-        {[['mias', `Mis órdenes · ${mias.length}`], ['todo', `Todo el taller · ${base.length}`], ['trabadas', `Trabadas · ${trabadas.length}`]].map(([k, l]: any) => (
-          <button key={k} style={tab === k ? S.btn : S.btnG} onClick={() => setTab(k)}>{l}</button>
-        ))}
+      {/* Los tres pasos. El elegido va morado sólido y los demás neutros. */}
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+        {PASOS_L.map(x => {
+          const n = (foco ? texto.filter(POR_FOCO[foco]) : texto)
+            .filter((o: any) => (soloMias ? o.asignado_id === yo?.id : true))
+            .filter((o: any) => x.etapas.includes(o.etapa)).length;
+          const on = paso === x.k;
+          return (
+            <button key={x.k} onClick={() => setPaso(x.k)}
+              style={{
+                border: on ? '1px solid #9B8CFA' : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
+                color: on ? '#fff' : '#666', borderRadius: 9, padding: '7px 13px', fontSize: '0.76rem',
+                fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+              }}>
+              {x.k} · {x.l} <span style={{ opacity: .75, fontWeight: 700 }}>{n}</span>
+            </button>
+          );
+        })}
+        {/* «Mi bandeja» era una pantalla que solo cambiaba un filtro. Aquí es el
+            filtro que siempre fue. */}
+        <button onClick={() => setSoloMias(v => !v)}
+          style={{ ...(soloMias ? { ...S.btn, padding: '7px 13px', fontSize: '0.76rem' } : { ...S.btnG, padding: '7px 13px', fontSize: '0.76rem' }) }}>
+          Solo las mías {mias > 0 && <span style={{ opacity: .75 }}>{mias}</span>}
+        </button>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por cuenta, folio o texto…"
-          style={{ ...S.input, width: 260, marginLeft: 'auto', padding: '6px 11px' }} />
+          style={{ ...S.input, width: 240, marginLeft: 'auto', padding: '6px 11px' }} />
+        <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem' }} onClick={onNueva}>+ Nueva orden</button>
       </div>
 
-      {grupos.length === 0 && (
-        <div style={{ ...S.caja, marginTop: 12, color: '#999', fontSize: '0.85rem' }}>
-          {tab === 'mias' ? 'No tienes órdenes asignadas.' : tab === 'trabadas' ? 'Nada trabado. Aquí caen las que van por su tercer rebote.' : 'El taller está vacío. Usa «Traer del CRM» para bajar lo que ya está comprometido.'}
+      {porCuenta.length === 0 && (
+        <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
+          {soloMias ? 'No tienes órdenes asignadas en este paso.'
+            : foco ? 'Nada con ese filtro en este paso.'
+            : paso === 1 ? 'Nada por arrancar. Lo que llegue de una minuta aterriza aquí.'
+            : paso === 2 ? 'Nada en desarrollo todavía.'
+            : 'Nada esperando tu OK.'}
         </div>
       )}
-      {grupos.map((g: any) => (
-        <div key={g.l}>
-          <div style={S.secT}>{g.l} <span style={{ background: '#f1eff6', borderRadius: 99, padding: '1px 7px', color: '#77738a' }}>{g.filas.length}</span></div>
-          {g.filas.map((o: any) => <Renglon key={o.id} o={o} abrir={abrir} />)}
-        </div>
-      ))}
+
+      {porCuenta.map((g: any) => {
+        const ab = !!abiertas[g.l];
+        return (
+          <div key={g.l} style={{ background: '#fff', border: `1px solid ${ab ? P.violetaBorde : '#eeeef1'}`, borderRadius: 11, marginBottom: 8, overflow: 'hidden' }}>
+            <div onClick={() => setAbiertas(a => ({ ...a, [g.l]: !ab }))}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', cursor: 'pointer', flexWrap: 'wrap' }}>
+              <span style={{ color: '#b5b2bd', fontSize: '0.8rem' }}>{ab ? '▾' : '▸'}</span>
+              <b style={{ fontSize: '0.86rem', fontWeight: 800 }}>{g.l}</b>
+              <span style={{ background: P.violetaAgua, color: P.violetaTinta, borderRadius: 99, padding: '1px 9px', fontSize: '0.7rem', fontWeight: 700 }}>{g.filas.length}</span>
+              <span style={{ marginLeft: 'auto', fontSize: '0.71rem', color: g.atraso ? P.rojoTinta : '#999', fontWeight: g.atraso ? 700 : 400 }}>
+                {g.atraso ? `${g.atraso} ${g.atraso === 1 ? 'día' : 'días'} tarde`
+                  : g.sinFecha ? `${g.sinFecha} sin fecha${g.sinDueno ? ` · ${g.sinDueno} sin dueño` : ''}`
+                  : g.prox ? `la próxima, el ${fmt(g.prox)}` : 'al día'}
+              </span>
+            </div>
+            {ab && (<>
+              {g.filas.slice(0, abiertas[g.l + '·todo'] ? 999 : TOPE_G).map((o: any) => <Renglon key={o.id} o={o} abrir={abrir} />)}
+              {g.filas.length > TOPE_G && (
+                <button onClick={() => setAbiertas(a => ({ ...a, [g.l + '·todo']: !a[g.l + '·todo'] }))}
+                  style={{ width: '100%', border: 'none', borderTop: '1px solid #f4f3f7', background: '#fff', padding: 10, fontSize: '0.74rem', fontWeight: 700, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {abiertas[g.l + '·todo'] ? 'Ver solo las primeras' : `Ver las ${g.filas.length - TOPE_G} restantes de esta cuenta`}
+                </button>
+              )}
+            </>)}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -977,6 +1065,128 @@ function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════ Levantar una orden desde el taller ═══════════════════
+ * Antes una orden solo podía nacer de un renglón que YA existía en la ficha del
+ * cliente. Lo que se detecta trabajando —una falla que salió probando, algo que
+ * hay que arreglar y nadie levantó— se quedaba sin registrar, o se capturaba
+ * dos veces: una aquí y otra allá.
+ *
+ * Por eso lo primero que pide es el CLIENTE, y no es opcional: sin él, el
+ * trabajo existiría para desarrollo y no para el cliente —no saldría en su
+ * ficha, ni en el reporte de entregas, ni se cerraría al aprobarlo—. El
+ * endpoint crea las dos cosas y las liga en una sola operación; si algo falla,
+ * no queda ninguna a medias.
+ *
+ * Lo demás es el paso 1 tal cual: lo que se pide aquí es lo mismo que se pide
+ * cuando la orden llega de una minuta. Dos formularios distintos para la misma
+ * orden son dos maneras de llenarla a medias.
+ */
+function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
+  const [f, setF] = useState<any>({
+    company_id: '', titulo: '', tipo: 'mejora', categoria: 'personalizacion',
+    problema: '', esperado: '', pasos: '', criterios: '', video_pide: '',
+    fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '',
+  });
+  const [guardando, setGuardando] = useState(false);
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  const falta = [!f.company_id && 'el cliente', !f.titulo.trim() && 'el nombre'].filter(Boolean) as string[];
+
+  async function crear() {
+    setGuardando(true);
+    const j = await fetch('/api/crm/taller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'nueva', ...f }),
+    }).then(r => r.json()).catch(() => null);
+    setGuardando(false);
+    if (!j || j.error) { flash(j?.error || 'No se pudo crear'); return; }
+    onCreada(j.orden.id);
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ background: '#fbfafd', width: 620, maxWidth: '100%', height: '100%', overflowY: 'auto', boxShadow: '-16px 0 44px rgba(16,24,40,.18)' }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 2, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: '13px 18px', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <b style={{ fontSize: '0.95rem', flex: 1 }}>Nueva orden</b>
+          <button style={S.btnG} onClick={onCerrar}>Cerrar</button>
+        </div>
+        <div style={{ padding: '16px 18px' }}>
+          <div style={{ ...S.caja, borderColor: P.violetaBorde }}>
+            <div><span style={S.lbl}>Cliente</span>
+              <select value={f.company_id} onChange={e => set('company_id', e.target.value)} style={S.input}>
+                <option value="">— elige la cuenta —</option>
+                {clientes.map((c: any) => <option key={c.id} value={c.id}>{c.n}</option>)}
+              </select>
+              <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
+                Queda ligada a su ficha: aparece en su Taller y, al aprobarla, en «Ya entregado» de Consultoría y en
+                el reporte de entregas.
+              </div>
+            </div>
+            <div style={{ marginTop: 11 }}><span style={S.lbl}>Nombre de la mejora · así lo ve el cliente</span>
+              <input value={f.titulo} onChange={e => set('titulo', e.target.value)}
+                placeholder="Impresión de segundo ticket para identificar el apartado" style={{ ...S.input, fontWeight: 700 }} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 11 }}>
+              <div><span style={S.lbl}>Qué es</span>
+                <select value={f.tipo} onChange={e => set('tipo', e.target.value)} style={S.input}>
+                  <option value="mejora">Una mejora · no existe todavía</option>
+                  <option value="falla">Una falla · ya existe y no funciona</option>
+                </select></div>
+              <div><span style={S.lbl}>Categoría</span>
+                <select value={f.categoria} onChange={e => set('categoria', e.target.value)} style={S.input}>
+                  <option value="personalizacion">Personalización</option><option value="ajuste">Ajuste</option>
+                  <option value="modulo">Módulo</option><option value="plugin">Plugin</option>
+                </select></div>
+            </div>
+          </div>
+
+          {/* El paso 1, igual que cuando llega de una minuta. */}
+          <div style={{ ...S.caja, marginTop: 12 }}>
+            <span style={{ ...S.lbl, color: P.violetaTinta }}>1 · Lo que se necesita</span>
+            {[['problema', 'Qué pasa hoy'], ['esperado', 'Qué debería pasar'], ['pasos', 'Cómo reproducirlo'], ['criterios', 'Con qué se da por buena']].map(([k, l]) => (
+              <div key={k} style={{ marginTop: 10 }}>
+                <span style={S.lbl}>{l}</span>
+                <textarea value={f[k]} onChange={e => set(k, e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} />
+              </div>
+            ))}
+            <div style={{ marginTop: 10 }}>
+              <span style={S.lbl}>Qué tiene que mostrar el video de entrega</span>
+              <textarea value={f.video_pide} onChange={e => set('video_pide', e.target.value)} rows={2}
+                placeholder="Uno por renglón, en el orden en que quieres verlo" style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} />
+            </div>
+          </div>
+
+          <div style={{ ...S.caja, marginTop: 12 }}>
+            <span style={S.lbl}>Si ya lo sabes, ponlo desde ahora</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginTop: 8 }}>
+              <div><span style={S.lbl}>Fecha de entrega</span>
+                <input type="date" value={f.fecha_prometida} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} /></div>
+              <div><span style={S.lbl}>Responsable</span>
+                <select value={f.asignado_id} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
+                  <option value="">— sin asignar —</option>
+                  {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
+                </select></div>
+              <div><span style={S.lbl}>Cobro</span>
+                <select value={f.cobro} onChange={e => set('cobro', e.target.value)} style={S.input}>
+                  <option value="">— sin definir —</option><option value="cortesia">Cortesía</option><option value="pagada">Pagada</option>
+                </select></div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+            <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem', opacity: falta.length || guardando ? .5 : 1, cursor: falta.length ? 'not-allowed' : 'pointer' }}
+              disabled={!!falta.length || guardando} onClick={crear}>
+              {guardando ? 'Creando…' : 'Crear y ligar al cliente'}
+            </button>
+            <span style={{ fontSize: '0.71rem', color: falta.length ? P.ambarTinta : '#8d8a97' }}>
+              {falta.length ? `Falta ${falta.join(' y ')}.` : 'Se abre enseguida para que la termines de llenar.'}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

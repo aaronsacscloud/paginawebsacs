@@ -286,6 +286,45 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, etapa, rebotes });
   }
 
+  /* ── Nace en el taller, pero el cliente la ve ──
+     Antes una orden solo podía venir de un renglón que ya existía en la ficha
+     del cliente. Lo que se detectaba trabajando —una falla que salió probando,
+     algo que hay que arreglar y nadie levantó— se quedaba sin registrar o se
+     capturaba dos veces: una aquí y otra allá.
+     Esto crea LAS DOS a la vez y las liga. Sin la mejora, el trabajo existe
+     para desarrollo y no existe para el cliente: no sale en su ficha, ni en el
+     reporte de entregas, ni se cierra cuando se aprueba. */
+  if (accion === 'nueva') {
+    const company_id = String(b?.company_id || '');
+    const titulo = String(b?.titulo || '').trim().slice(0, 200);
+    if (!company_id || !titulo) return json({ error: 'Falta el cliente o el nombre.' }, 400);
+    const tipo = b?.tipo === 'falla' ? 'falla' : 'mejora';
+    const CATS = ['personalizacion', 'plugin', 'modulo', 'ajuste'];
+    const categoria = CATS.includes(b?.categoria) ? b.categoria : 'personalizacion';
+    const p = limpia(b);
+
+    const { data: mej, error: eM } = await supabase.from('mejoras').insert({
+      company_id, titulo, descripcion: p.problema || p.esperado || null,
+      categoria, tipo, estado: 'en_proceso', visible_cliente: true, origen: 'manual',
+      cobro: p.cobro || null, cortesia: p.cobro === 'cortesia',
+      fecha_compromiso: p.fecha_prometida || null,
+      creado_por: quien(user),
+    }).select('id').single();
+    if (eM || !mej) return json({ error: eM?.message || 'No se pudo registrar en la ficha del cliente.' }, 500);
+
+    const { data: orden, error: eO } = await supabase.from('taller_ordenes').insert({
+      ...p, company_id, tipo, titulo, etapa: 'recibida', solicitante_id: user.id,
+    }).select(SEL).single();
+    if (eO || !orden) {
+      // Sin orden, la mejora sola sería un compromiso que nadie va a trabajar.
+      await supabase.from('mejoras').delete().eq('id', mej.id).then(() => {}, () => {});
+      return json({ error: eO?.message || 'No se pudo crear la orden.' }, 500);
+    }
+    await supabase.from('taller_orden_mejoras').insert({ orden_id: orden.id, mejora_id: mej.id });
+    await apunta(orden.id, quien(user), null, 'recibida', 'Nació en el taller y quedó ligada a la ficha del cliente');
+    return json({ ok: true, orden, mejora_id: mej.id }, 201);
+  }
+
   /* ── El resumen para desarrollo ──
      Lo que se escribe en el paso 1 se escribe para que quede constancia de lo
      acordado con el cliente, y sale largo: en OT-0013 son 1,900 caracteres.
