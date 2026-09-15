@@ -1017,7 +1017,7 @@ export const navLinks: NavLink[] = [
       },
       {
         verb: 'Automatiza',
-        description: 'La IA que mueve tu inventario por ti',
+        description: 'La IA que decide el surtido y mueve tu inventario por ti',
         href: '/producto/especialista-ia',
         items: [
           { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
