@@ -121,7 +121,15 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   /* Qué se busca y dónde se guarda. Un aliado entra al giro `aliados` con su
      tipo en `subgiro`; el giro normal entra como siempre. */
-  const termino = aliado ? TERMINO_ALIADO[aliado] : TERMINO[giro];
+  /* `?termino=` PRUEBA UN TÉRMINO SIN DESPLEGAR. El primer intento con
+     «taller de costura y confección» trajo cursos de costura y modistas, no la
+     maquila que surte a las marcas —la trampa del giro del manual, §3—. Afinar
+     eso a ciegas cuesta un despliegue por intento; con esto se prueba en seco,
+     se mira la muestra y solo entonces se escribe el término bueno en la tabla
+     de arriba. Pide sesión de una persona (el cron no manda términos sueltos)
+     y se anota en la fuente para que quede el rastro de con qué se levantó. */
+  const aMano = (url.searchParams.get('termino') || '').trim().slice(0, 120);
+  const termino = aMano || (aliado ? TERMINO_ALIADO[aliado] : TERMINO[giro]);
   const giroDestino = aliado ? 'aliados' : giro;
   const subgiro = aliado || null;
   /* La marca de «esta ciudad ya se barrió» es por BÚSQUEDA, no por giro: si
@@ -175,7 +183,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
         await supabase.from('abm_fuentes').insert({
           cuenta_id: nueva.id, campo: 'alta', valor: `${p.displayName?.text} · ${p.rating}★ (${p.userRatingCount})`,
-          metodo: 'google_maps', confianza: 'alta', agente: 'barrido-v2',
+          metodo: 'google_maps', confianza: 'alta', agente: aliado ? `barrido-aliados:${aliado}` : 'barrido-v2',
         });
         // El teléfono solo si Google confirma que es mexicano: diez dígitos no
         // implican lada de México.
@@ -195,7 +203,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       // Places pide un momento antes de aceptar el token de la página siguiente.
       await new Promise((s) => setTimeout(s, 1200));
     }
-    if (!dry) {
+    if (!dry && !aMano) {
       await supabase.from('abm_barrido').upsert(
         { giro: llaveBarrido, ciudad: ci.ciudad, barrido_at: new Date().toISOString() },
         { onConflict: 'giro,ciudad' },
