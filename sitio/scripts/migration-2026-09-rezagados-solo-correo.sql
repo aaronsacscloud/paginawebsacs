@@ -1,3 +1,9 @@
+-- ⚠️ REVERTIDA EL MISMO DÍA — NO LA VUELVAS A CORRER.
+-- Me equivoqué de cadencia: el dueño dijo que los DESCALIFICADOS ya no reciben
+-- WhatsApp, no los rezagados. Rezagados siempre mandó WhatsApp y así se queda.
+-- Lo que deshace esto: migration-2026-09-rezagados-devolver-whatsapp.sql.
+-- Se deja el archivo para que quede el rastro de qué se borró y cómo se repuso.
+--
 -- REZAGADOS: PURO CORREO, SIN WHATSAPP (15-sep-2026)
 --
 -- Decisión del dueño: la cadencia de rezagados deja de mandar WhatsApp y se
