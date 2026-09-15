@@ -97,11 +97,19 @@ const _GET: APIRoute = async ({ request, url }) => {
   const offset = Number(url.searchParams.get('offset') || 0);
 
   const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta, prueba_estado, prueba_cuenta, prueba_fin), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
-  const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }, { data: notasRaw }] = await Promise.all([
+  const [{ data: convsWa, error }, { data: convsEm }, { data: msjsEm }, { data: lecturas }, { data: mencionesRaw }, { data: notasRaw }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
     supabase.from('email_conversations').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
+    /* DE QUÉ LADO FUE LA ÚLTIMA PIEZA DEL CORREO.
+       `email_conversations` no lo guarda, así que las filas de correo nacían con
+       `ultima_direccion` en null — y «No contestadas» pregunta exactamente por
+       eso. Resultado: un cliente respondía por correo y su hilo NUNCA entraba a
+       la bandeja de lo que falta contestar. Se lee de `email_messages`, que sí
+       lo sabe, y se queda la más nueva de cada conversación. */
+    supabase.from('email_messages').select('conversation_id, direccion, created_at')
+      .order('created_at', { ascending: false }).limit(3000),
     // 28) lecturas de ESTE usuario: el no-leído es personal
     user ? supabase.from('wa_lecturas').select('conversation_id, leido_at').eq('user_id', user.id) : Promise.resolve({ data: [] as any[] }),
     // 24) menciones @ a este usuario en notas (para "Requiere mi acción")
@@ -193,6 +201,8 @@ const _GET: APIRoute = async ({ request, url }) => {
   }
 
   // ── Sumar el canal de correo ──
+  const dirEmail = new Map<string, string>();
+  for (const m of msjsEm || []) if (m.conversation_id && !dirEmail.has(m.conversation_id)) dirEmail.set(m.conversation_id, String(m.direccion || ''));
   for (const ce of convsEm || []) {
     const clave = ce.contact_id ? `ct:${ce.contact_id}` : `em:${ce.id}`;
     const fila = porClave.get(clave);
@@ -205,13 +215,25 @@ const _GET: APIRoute = async ({ request, url }) => {
         fila.ultimo_mensaje_at = ce.ultimo_mensaje_at;
         fila.ultimo_mensaje_texto = ce.asunto || 'Correo';
         fila.ultimo_canal = 'email';
+        // Lo último que pasó fue el correo: la dirección de la fila es la suya,
+        // o un cliente que responde por correo se pierde detrás de un WhatsApp
+        // viejo nuestro.
+        fila.ultima_direccion = dirEmail.get(ce.id) || fila.ultima_direccion;
+        /* Y si ese correo es SUYO, la fila no está resuelta por mucho que lo
+           esté el WhatsApp. Caso real (Lily, 14-sep): contestó por correo a la
+           campaña y su fila no aparecía en «No contestadas» porque su hilo de
+           WhatsApp se había marcado resuelto en MAYO. Una conversación que
+           alguien cerró hace cuatro meses no puede tapar lo que llegó hoy.
+           Se decide aquí, al unir los canales: en la base cada hilo conserva su
+           estado. */
+        if (fila.ultima_direccion === 'entrante' && fila.estado_crm === 'resuelta') fila.estado_crm = 'abierta';
       }
     } else {
       porClave.set(clave, {
         id: ce.id, wa_id: null, email_id: ce.id, canales: ['email'],
         telefono: ce.email, estado: 'active',
         ultimo_mensaje_at: ce.ultimo_mensaje_at, ultimo_mensaje_texto: ce.asunto || 'Correo',
-        ultima_direccion: null, ultimo_canal: 'email',
+        ultima_direccion: dirEmail.get(ce.id) || null, ultimo_canal: 'email',
         no_leidos: noLeidoEm,
         estado_crm: ce.estado === 'cerrada' ? 'resuelta' : 'abierta', snooze_until: null,
         asignado_a: ce.asignado_a || null, contact_id: ce.contact_id, company_id: ce.company_id,

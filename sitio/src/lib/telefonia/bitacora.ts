@@ -148,6 +148,53 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
 
     const texto = `${icono} **${titulo}**\n\n${cuerpo}${linea}${pdf}${entrega}`;
 
+    /* ══ UNA LLAMADA TAMBIÉN ABRE HILO ════════════════════════════════════════
+       Pedido del dueño (15-sep-2026): «las llamadas que lleguen por aquí que
+       aparezcan ahí» —en No contestadas—.
+
+       Hasta hoy, si el número que llamaba no tenía conversación, la bitácora no
+       tenía dónde escribir y la llamada desaparecía: ni nota, ni fila, ni
+       rastro. Medido: de cuatro llamadas entrantes, tres sin conversación y
+       ninguna contestada. Alguien nos buscó tres veces y en el inbox no había
+       señal.
+
+       Ahora la conversación se busca (o se abre) por el teléfono, igual que
+       hace el espejo de WhatsApp: a partir de ahí la llamada vive donde vive
+       todo lo demás de esa persona. */
+    if (!ll.conversation_id && /^\+?\d{10,15}$/.test(String(ll.telefono || '').replace(/[\s()-]/g, ''))) {
+      try {
+        const { upsertConversacion } = await import('../whatsapp/espejo');
+        const cv = await upsertConversacion({ telefono: ll.telefono });
+        if (cv?.id) {
+          ll.conversation_id = cv.id;
+          await supabase.from('wa_llamadas').update({ conversation_id: cv.id }).eq('call_id', callId);
+        }
+      } catch { /* si no se puede abrir el hilo, la actividad de abajo igual queda */ }
+    }
+
+    /* Y SI NADIE LA CONTESTÓ, ES TRABAJO PENDIENTE.
+       Una llamada entrante perdida es exactamente «te buscaron y no les
+       contestaste», que es lo que significa esa bandeja. Se marca como lo que
+       fue —la última pieza es de ellos— para que aparezca ahí, en la cabina y
+       en «Requiere mi acción», sin inventar un estado nuevo.
+
+       `ultimo_entrante_at` NO se toca: esa marca es la ventana de 24 h de Meta,
+       y una llamada no abre la ventana de WhatsApp. Decir que sí nos dejaría
+       mandando texto libre que Meta rechaza. */
+    if (ll.conversation_id && ll.direccion === 'entrante' && !ll.answered_at) {
+      const cuando = ll.ended_at || ll.started_at || new Date().toISOString();
+      const { data: cv } = await supabase.from('wa_conversaciones')
+        .select('ultimo_mensaje_at').eq('id', ll.conversation_id).maybeSingle();
+      if (!cv?.ultimo_mensaje_at || String(cuando) > String(cv.ultimo_mensaje_at)) {
+        await supabase.from('wa_conversaciones').update({
+          ultima_direccion: 'entrante',
+          ultimo_mensaje_at: cuando,
+          ultimo_mensaje_texto: `📞 Llamada perdida de ${telefonoLegible(ll.telefono)}`,
+          estado_crm: 'abierta',
+        }).eq('id', ll.conversation_id).then(() => {}, () => {});
+      }
+    }
+
     // ── Nota en el hilo del inbox ─────────────────────────────────────────
     if (ll.conversation_id) {
       const { data: conv } = await supabase.from('wa_conversaciones')

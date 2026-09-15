@@ -6,6 +6,14 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [ ] **2026-09-15 · El respaldo de utility debe hablar del MISMO tema.** «a Jakob se le envió lo del nuevo número, pero
+      al no salir el de marketing salió este de utility que no tiene nada que ver con el mensaje anterior; aquí debemos
+      manejar otro tipo de formas en caso de que el de marketing no pase, pero que no sea algo que saque de onda al
+      cliente o al prospecto porque no tiene nada que ver.» → EN CURSO.
+
+- [x] **2026-09-15 · «No contestadas» también con correos y llamadas.** «que igual aparezca cuando envía correo el
+      cliente y pues no le hemos contestado… y las llamadas que lleguen por aquí que aparezcan ahí» → HECHO.
+
 - [x] **2026-09-14 · «Ya no estoy interesado» debe descalificar de verdad.** «esto genera una descalificación automática
       al prospecto y si previamente ya era rezagado pues solo se descalifica y se termina el flujo, y debe mencionar en
       el inbox de forma interna una nota que se cambió su etapa de ciclo de vida a descalificado y realmente lo debe
