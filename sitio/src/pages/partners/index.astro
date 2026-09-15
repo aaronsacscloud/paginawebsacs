@@ -8,6 +8,7 @@
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PartnersIntro from '../../components/partners/PartnersIntro.astro';
+import Globo from '../../components/partners/Globo.astro';
 import { waLink } from '../../lib/whatsapp';
 
 const wa = (tipo: string) => waLink(`Hola, quiero ser partner de Sacs como ${tipo}. ¿Me cuentan cómo empezamos?`);
@@ -49,9 +50,18 @@ const tipos = [
   },
 ];
 
+// Cinco alianzas más, para todo el ecosistema de la moda (Aaron, 15-sep-2026)
+const mas = [
+  { id: 'mayoristas', perfil: 'Mayoristas y fabricantes', frase: 'Tus clientes venden más con Sacs, y tu catálogo entra directo a su sistema.', gana: 'Comisión por cada boutique cliente que activa Sacs, más pedidos que llegan sin captura', para: 'Fabricantes y mayoristas de Villa Hidalgo, SAPICA, Intermoda, Zapotlanejo, Moroleón y del resto del país', img: '/images/partners/mayoristas.webp', waTipo: 'mayorista o fabricante', grande: true },
+  { id: 'escuelas', perfil: 'Escuelas de moda y diseño', frase: 'Certifica a tus alumnos en Sacs: salen listos para operar una marca o para implementarla.', gana: 'Programa académico sin costo, certificación oficial para tus alumnos y licencias para las marcas que nacen en tu escuela', para: 'Universidades, escuelas de diseño de moda, incubadoras y programas de emprendimiento', img: '/images/partners/escuelas.webp', waTipo: 'escuela de moda o diseño', grande: true },
+  { id: 'camaras', perfil: 'Cámaras, ferias y asociaciones', frase: 'Precio de afiliado para tus miembros y certificación de partners en tu evento.', gana: 'Beneficio real para tus agremiados y un ingreso por cada afiliado que activa Sacs', para: 'Cámaras del vestido y del calzado, ferias, clústeres y asociaciones de comerciantes', img: '/images/partners/camaras.webp', waTipo: 'cámara, feria o asociación' },
+  { id: 'hardware', perfil: 'Distribuidores de hardware', frase: 'Ya estás en la tienda el día que abre. Súmale el sistema y cobra la licencia.', gana: 'Comisión por licencia en cada terminal, impresora o cajón que instalas con Sacs', para: 'Distribuidores e instaladores de terminales, impresoras, cajones, lectores y pantallas', img: '/images/partners/hardware.webp', waTipo: 'distribuidor de hardware' },
+  { id: 'financiamiento', perfil: 'Financiamiento', frase: 'Crédito a boutiques con las ventas reales de Sacs como respaldo.', gana: 'Acceso a marcas con historial de ventas verificable y originación directa desde el sistema', para: 'Fintech, bancos, sofomes y fondos que prestan a comercios', img: '/images/partners/financiamiento.webp', waTipo: 'financiamiento' },
+];
+
 const pasos = [
   { t: 'Cuéntanos quién eres', d: 'Por WhatsApp o en una cita de 45 minutos: tu perfil, tu red y el tipo de alianza que te interesa.' },
-  { t: 'Definimos el modelo', d: 'Orquestador, consultor, referidos o tecnología. Firmamos el acuerdo y activamos tus accesos.' },
+  { t: 'Definimos el modelo', d: 'Uno de los nueve tipos de alianza, o una combinación. Firmamos el acuerdo y activamos tus accesos.' },
   { t: 'Certificación y arranque', d: 'Capacitación en producto e IA, material comercial y tu primer retailer acompañado por Sacs.' },
   { t: 'Creces con recurrencia', d: 'Cada tienda que opera contigo paga cada mes. Tú creces con ella, en tu ciudad o en varios países.' },
 ];
@@ -89,7 +99,7 @@ const pasos = [
     <div class="pt-inner">
       <div class="pt-tipos-head">
         <span class="pt-eyebrow">Toda alianza tiene lugar</span>
-        <h2 class="pt-h2">Tres perfiles más que crecen con Sacs</h2>
+        <h2 class="pt-h2">Tres perfiles que crecen con Sacs</h2>
         <p class="pt-p">Encuentra tu perfil. Todas trabajan sobre el mismo sistema y el mismo segmento: el retail de moda.</p>
       </div>
       {tipos.slice(1).map((t, i) => (
@@ -115,24 +125,52 @@ const pasos = [
     </div>
   </section>
 
-  <!-- ═══ Es global · el negocio del futuro ═══ -->
-  <section class="pt-global">
-    <div class="pt-inner pt-global-grid">
-      <div>
-        <span class="pt-eyebrow">Es global</span>
-        <h2 class="pt-h2">Un sistema, cualquier país, cualquier idioma</h2>
-        <p class="pt-p">Sacs opera en la nube, en cinco idiomas y con la moneda de cada mercado. Un partner en Madrid, Bogotá o Miami implementa la misma operación que uno en la Ciudad de México: tallas, curvas, sucursales, canales y la IA que decide el surtido.</p>
-        <div class="pt-cifras">
-          <div><b>+7</b><span>países con marcas operando</span></div>
-          <div><b>21</b><span>giros de moda listos para implementar</span></div>
-          <div><b>5</b><span>idiomas del sistema y del sitio</span></div>
-          <div><b>100 %</b><span>remoto: implementas desde donde estés</span></div>
-        </div>
+  <!-- ═══ Más alianzas: cinco perfiles del ecosistema, en mosaico ═══ -->
+  <section class="pt-mas" id="ecosistema">
+    <div class="pt-inner">
+      <div class="pt-tipos-head">
+        <span class="pt-eyebrow">Todo el ecosistema de la moda</span>
+        <h2 class="pt-h2">Cinco alianzas más, para quien ya está cerca de la tienda</h2>
+        <p class="pt-p">Mayoristas, escuelas, cámaras, hardware y financiamiento: cada uno ya toca a la boutique. Con Sacs, ese contacto se vuelve un ingreso.</p>
       </div>
-      <div class="pt-futuro">
+      <div class="pt-mosaico">
+        {mas.map((m, i) => (
+          <article class:list={['pt-mos', { 'pt-mos--g': m.grande }]} id={`tipo-${m.id}`}>
+            <img src={m.img} alt="" loading="lazy" width="1400" height="933" />
+            <div class="pt-mos-velo"></div>
+            <div class="pt-mos-txt">
+              <span class="pt-mos-n">0{i + 5}</span>
+              <h3>{m.perfil}</h3>
+              <p class="pt-mos-frase">{m.frase}</p>
+              <div class="pt-mos-mas"><div>
+                <dl class="pt-datos pt-datos--claro">
+                  <div><dt>Cómo ganas</dt><dd>{m.gana}</dd></div>
+                  <div><dt>Para quién</dt><dd>{m.para}</dd></div>
+                </dl>
+                <div class="pt-ctas">
+                  <a href="#agenda" class="pt-btn pt-btn--blanco" data-tipo={m.perfil}>Agendar una cita</a>
+                  <a href={wa(m.waTipo)} class="pt-link pt-link--claro" target="_blank" rel="noopener noreferrer">WhatsApp →</a>
+                </div>
+              </div></div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Es global: el globo ═══ -->
+  <Globo />
+
+  <!-- ═══ El negocio del futuro ═══ -->
+  <section class="pt-futuro-sec">
+    <div class="pt-inner pt-futuro-grid">
+      <div>
         <span class="pt-eyebrow">El negocio del futuro</span>
-        <h3>Implementar el retail de moda completo, con IA, y cobrar cada mes</h3>
-        <p>Antes un integrador vendía un software y se iba. Hoy un partner de Sacs implementa punto de venta, inventario por talla, tienda en línea, WhatsApp, finanzas y la IA que mueve el inventario, y sigue cobrando mientras la marca crece. Es integral, es recurrente y no depende de una sola ciudad.</p>
+        <h2 class="pt-h2">Implementar el retail de moda completo, con IA, y cobrar cada mes</h2>
+      </div>
+      <div>
+        <p class="pt-p">Antes un integrador vendía un software y se iba. Hoy un partner de Sacs implementa punto de venta, inventario por talla, tienda en línea, WhatsApp, finanzas y la IA que mueve el inventario, y sigue cobrando mientras la marca crece. Es integral, es recurrente y no depende de una sola ciudad.</p>
         <ul class="pt-lista">
           <li>Un solo sistema para toda la operación: no armas nada con piezas</li>
           <li>La IA hace el trabajo pesado: implementas en días</li>
@@ -235,17 +273,31 @@ const pasos = [
   .pt-fila h3 { font-family: var(--font-display); font-size: clamp(28px, 3vw, 44px); letter-spacing: -0.03em; line-height: 1.05; margin: 0 0 12px; color: inherit; }
   .pt-fila .pt-datos { border-color: #ECECE9; }
 
-  /* ── Global ── */
-  .pt-global { padding: clamp(72px, 9vw, 120px) 0; background: #F7F7F5; color: #0E0D0C; }
-  .pt-global-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: start; }
-  .pt-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
-  .pt-cifras div { padding: 20px; border: 1px solid #E6E6E2; border-radius: 16px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
-  .pt-cifras b { font-family: var(--font-display); font-size: 40px; line-height: 1; }
-  .pt-cifras span { font-size: 14px; color: #6B6B68; }
-  .pt-futuro { background: #0E0D0C; color: #fff; border-radius: 24px; padding: clamp(28px, 3.5vw, 44px); }
-  .pt-futuro .pt-eyebrow { color: #8FB0FF; }
-  .pt-futuro h3 { font-family: var(--font-display); font-size: clamp(24px, 2.4vw, 34px); letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 14px; color: inherit; }
-  .pt-futuro p { font-size: 16px; line-height: 1.55; color: rgba(255,255,255,0.75); margin: 0; }
+  /* ── Mosaico de las cinco alianzas del ecosistema ── */
+  .pt-mas { background: #fff; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .pt-mosaico { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .pt-mos { position: relative; grid-column: span 2; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: #0E0D0C; color: #fff; isolation: isolate; }
+  .pt-mos--g { grid-column: span 3; aspect-ratio: 3 / 2; }
+  .pt-mos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(0.2,0.7,0.2,1); }
+  .pt-mos:hover img { transform: scale(1.05); }
+  .pt-mos-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,13,12,0) 30%, rgba(14,13,12,0.55) 62%, rgba(14,13,12,0.92) 100%); transition: background 0.5s; }
+  .pt-mos:hover .pt-mos-velo, .pt-mos:focus-within .pt-mos-velo { background: linear-gradient(180deg, rgba(14,13,12,0.15) 0%, rgba(14,13,12,0.7) 45%, rgba(14,13,12,0.95) 100%); }
+  .pt-mos-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(20px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 8px; }
+  .pt-mos-n { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #8FB0FF; }
+  .pt-mos h3 { font-family: var(--font-display); font-size: clamp(22px, 2.2vw, 32px); letter-spacing: -0.03em; line-height: 1.05; margin: 0; color: #fff; }
+  .pt-mos-frase { margin: 0; font-size: 15px; line-height: 1.45; color: rgba(255,255,255,0.85); }
+  .pt-mos-mas { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 0.55s cubic-bezier(0.2,0.7,0.2,1); }
+  .pt-mos-mas > * { min-height: 0; }
+  .pt-mos:hover .pt-mos-mas, .pt-mos:focus-within .pt-mos-mas { grid-template-rows: 1fr; }
+  .pt-mos .pt-datos { margin-top: 12px; padding-top: 14px; border-color: rgba(255,255,255,0.22); gap: 14px; }
+  .pt-mos:not(.pt-mos--g) .pt-datos { grid-template-columns: 1fr; gap: 8px; }
+  .pt-mos:not(.pt-mos--g) .pt-datos div:last-child { display: none; }
+  .pt-mos .pt-datos dd { font-size: 13.5px; } .pt-mos .pt-datos div:first-child dd { font-size: 14.5px; }
+  .pt-mos .pt-ctas { margin-top: 16px; gap: 14px; } .pt-mos .pt-btn { padding: 11px 18px; font-size: 14px; }
+
+  /* ── El negocio del futuro ── */
+  .pt-futuro-sec { background: #F7F7F5; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .pt-futuro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 72px); align-items: start; }
 
   /* ── Manifiesto ── */
   .pt-manifiesto { background: #fff; color: #0E0D0C; padding: clamp(80px, 10vw, 130px) 0; text-align: center; }
@@ -284,14 +336,16 @@ const pasos = [
   #pt-modal-iframe { flex: 1; width: 100%; border: 0; }
 
   @media (max-width: 1023px) {
-    .pt-orq-grid, .pt-global-grid, .pt-cierre, .pt-fila { grid-template-columns: 1fr; }
+    .pt-orq-grid, .pt-futuro-grid, .pt-cierre, .pt-fila { grid-template-columns: 1fr; }
+    .pt-mosaico { grid-template-columns: 1fr 1fr; } .pt-mos, .pt-mos--g { grid-column: span 1; aspect-ratio: 4 / 5; } .pt-mos--g { aspect-ratio: 3 / 2; grid-column: span 2; }
     .pt-fila--inv .pt-fila-media { order: 0; }
     .pt-linea { grid-template-columns: 1fr 1fr; gap: 26px 18px; } .pt-linea::before { display: none; }
     .pt-orq-vis { max-width: 640px; margin: 0 auto; }
   }
   @media (max-width: 767px) {
     .pt-linea, .pt-opciones, .pt-datos { grid-template-columns: 1fr; }
-    .pt-cifras { grid-template-columns: 1fr 1fr; }
+    .pt-mosaico { grid-template-columns: 1fr; } .pt-mos, .pt-mos--g { grid-column: span 1; aspect-ratio: 4 / 5; }
+    .pt-mos .pt-mos-mas { grid-template-rows: 1fr; } .pt-mos .pt-datos { grid-template-columns: 1fr; gap: 8px; } .pt-mos-velo { background: linear-gradient(180deg, rgba(14,13,12,0.1) 0%, rgba(14,13,12,0.75) 45%, rgba(14,13,12,0.96) 100%) !important; }
     .pt-mani-lineas p { font-size: 20px; }
     .pt-fila { padding: 40px 0; gap: 22px; }
   }
@@ -308,6 +362,7 @@ const pasos = [
     const abre = (tipo?: string) => { if (!modal || !iframe) return; const u = new URL('/agendar/alianzas', location.origin); if (tipo) u.searchParams.set('tipo', tipo); if (iframe.src !== u.href) iframe.src = u.href; modal.hidden = false; document.body.style.overflow = 'hidden'; (window as any).sacsPH?.('partners_agenda_abrir', { tipo }); };
     const cierra = () => { if (!modal) return; modal.hidden = true; document.body.style.overflow = ''; };
     document.getElementById('pt-abrir-agenda')?.addEventListener('click', () => abre());
+    document.addEventListener('pt:agenda', (e) => abre((e as CustomEvent).detail?.tipo));
     document.querySelectorAll<HTMLAnchorElement>('a[href="#agenda"][data-tipo]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); abre(a.dataset.tipo); }));
     modal?.querySelectorAll('[data-cerrar]').forEach((el) => el.addEventListener('click', cierra));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal && !modal.hidden) cierra(); });

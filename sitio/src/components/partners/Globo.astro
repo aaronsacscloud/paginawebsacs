@@ -1,0 +1,225 @@
+---
+/**
+ * Globo — "Es global" que se toca (15-sep-2026). Globo 3D con three.js (cargado solo al
+ * acercarse): la tierra en puntos, marcadores que laten donde hay marcas y partners, arcos
+ * desde México y un buscador de ciudad que dice si el territorio está abierto y gira el globo
+ * hasta ahí. Los datos de ciudades viven en el script; los países en PAISES.
+ */
+const PAISES = ['México', 'Estados Unidos', 'Canadá', 'Guatemala', 'El Salvador', 'Honduras', 'Nicaragua', 'Costa Rica', 'Panamá', 'Colombia', 'Venezuela', 'Ecuador', 'Perú', 'Bolivia', 'Chile', 'Argentina', 'Uruguay', 'Paraguay', 'Brasil', 'República Dominicana', 'Puerto Rico', 'España', 'Portugal', 'Italia', 'Francia', 'Reino Unido', 'Alemania'];
+const cifras = [
+  { n: String(PAISES.length), t: 'países con Sacs disponible' },
+  { n: '21', t: 'giros de moda listos para implementar' },
+  { n: '5', t: 'idiomas del sistema' },
+  { n: '100 %', t: 'remoto: implementas desde donde estés' },
+];
+---
+<section class="gl" id="mundo">
+  <div class="gl-inner">
+    <div class="gl-txt">
+      <span class="gl-eyebrow">Es global</span>
+      <h2 class="gl-h2">Un sistema, cualquier país. ¿Tu territorio está abierto?</h2>
+      <p class="gl-p">Sacs opera en la nube, en cinco idiomas y con la moneda de cada mercado. Un partner en Madrid, Bogotá o Miami implementa la misma operación que uno en la Ciudad de México. Escribe tu ciudad y mira si ya hay partner o si serías el primero.</p>
+      <form class="gl-busca" autocomplete="off" role="search">
+        <label class="gl-campo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="gl-q" placeholder="Escribe tu ciudad: Guadalajara, Bogotá, Madrid…" aria-label="Tu ciudad" />
+        </label>
+        <ul class="gl-sug" id="gl-sug" hidden></ul>
+      </form>
+      <div class="gl-res" id="gl-res" hidden>
+        <span class="gl-res-k" id="gl-res-k"></span>
+        <b id="gl-res-t"></b>
+        <p id="gl-res-p"></p>
+        <button type="button" class="gl-res-btn" id="gl-res-btn">Quiero este territorio</button>
+      </div>
+      <div class="gl-cifras">
+        {cifras.map((c) => <div><b>{c.n}</b><span>{c.t}</span></div>)}
+      </div>
+    </div>
+    <div class="gl-vis">
+      <div class="gl-halo"></div>
+      <canvas class="gl-cv" aria-label="Globo con las marcas y partners de Sacs en el mundo"></canvas>
+      <div class="gl-leyenda"><span><i class="gl-i gl-i--m"></i>Marcas operando</span><span><i class="gl-i gl-i--p"></i>Partner certificado</span><span><i class="gl-i gl-i--t"></i>Tu ciudad</span></div>
+    </div>
+  </div>
+  <div class="gl-marquee" aria-hidden="true">
+    <div class="gl-cinta">{[...PAISES, ...PAISES].map((p) => <span>{p}</span>)}</div>
+  </div>
+</section>
+
+<style>
+  .gl { background: #0E0D0C; color: #fff; padding: clamp(80px, 10vw, 140px) 0 0; overflow: hidden; }
+  .gl-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
+  .gl-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 16px; }
+  .gl-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 16px; color: #fff; }
+  .gl-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0 0 26px; color: rgba(255,255,255,0.72); }
+  .gl-busca { position: relative; }
+  .gl-campo { display: flex; align-items: center; gap: 12px; padding: 0 18px; height: 58px; border-radius: 14px; background: #fff; color: #0E0D0C; }
+  .gl-campo svg { flex: none; opacity: 0.55; }
+  .gl-campo input { flex: 1; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 16px; color: #0E0D0C; min-width: 0; }
+  .gl-campo input::placeholder { color: #8A8A86; }
+  .gl-sug { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; list-style: none; margin: 0; padding: 6px; background: #fff; color: #0E0D0C; border-radius: 14px; box-shadow: 0 24px 60px -20px rgba(0,0,0,0.6); }
+  .gl-sug li { padding: 11px 14px; border-radius: 9px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+  .gl-sug li:hover, .gl-sug li.is-act { background: #F0F0EE; }
+  .gl-sug li small { color: #8A8A86; }
+  .gl-res { margin-top: 14px; padding: 20px 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); display: grid; gap: 6px; animation: gl-in 0.5s cubic-bezier(0.2,0.7,0.2,1); }
+  @keyframes gl-in { from { opacity: 0; transform: translateY(8px); } }
+  .gl-res-k { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8FB0FF; }
+  .gl-res.is-partner .gl-res-k { color: #FFD48A; }
+  .gl-res b { font-family: var(--font-display); font-size: 22px; letter-spacing: -0.02em; line-height: 1.15; }
+  .gl-res p { margin: 0; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,0.72); }
+  .gl-res-btn { justify-self: start; margin-top: 8px; padding: 12px 20px; border: 0; border-radius: 10px; background: #fff; color: #0E0D0C; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .gl-cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 34px; border-top: 1px solid rgba(255,255,255,0.14); }
+  .gl-cifras div { padding: 18px 14px 0 0; display: flex; flex-direction: column; gap: 4px; }
+  .gl-cifras b { font-family: var(--font-display); font-size: clamp(26px, 2.4vw, 34px); line-height: 1; }
+  .gl-cifras span { font-size: 12.5px; line-height: 1.35; color: rgba(255,255,255,0.6); }
+  .gl-vis { position: relative; aspect-ratio: 1; }
+  .gl-halo { position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle, rgba(75,123,229,0.22) 0%, rgba(75,123,229,0.05) 48%, transparent 70%); pointer-events: none; }
+  .gl-cv { position: relative; display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+  .gl-cv.is-drag { cursor: grabbing; }
+  .gl-leyenda { position: absolute; left: 0; right: 0; bottom: -6px; display: flex; justify-content: center; gap: 18px; font-size: 12.5px; color: rgba(255,255,255,0.65); }
+  .gl-leyenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .gl-i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .gl-i--m { background: #BDBDB9; } .gl-i--p { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.25); } .gl-i--t { background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+  .gl-marquee { margin-top: clamp(48px, 6vw, 80px); border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .gl-cinta { display: flex; gap: 0; width: max-content; animation: gl-cinta 60s linear infinite; }
+  .gl-cinta span { padding: 16px 28px; font-family: var(--font-display); font-size: 15px; font-weight: 500; letter-spacing: 0.02em; color: rgba(255,255,255,0.6); white-space: nowrap; position: relative; }
+  .gl-cinta span::after { content: ''; position: absolute; right: -2px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: #4B7BE5; transform: translateY(-50%); }
+  @keyframes gl-cinta { to { transform: translateX(-50%); } }
+  @media (max-width: 1023px) {
+    .gl-inner { grid-template-columns: 1fr; }
+    .gl-vis { max-width: 560px; margin: 0 auto; width: 100%; }
+    .gl-cifras { grid-template-columns: 1fr 1fr; gap: 10px 0; }
+  }
+  @media (max-width: 767px) {
+    .gl { padding-top: 64px; }
+    .gl-vis { max-width: 340px; }
+    .gl-leyenda { gap: 12px; font-size: 11.5px; flex-wrap: wrap; }
+    .gl-cinta span { padding: 12px 18px; font-size: 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gl-cinta { animation: none; } }
+</style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('mundo'); if (!sec) return;
+    const cv = sec.querySelector<HTMLCanvasElement>('.gl-cv')!;
+    const q = document.getElementById('gl-q') as HTMLInputElement; const sug = document.getElementById('gl-sug')!;
+    const res = document.getElementById('gl-res')!, resK = document.getElementById('gl-res-k')!, resT = document.getElementById('gl-res-t')!, resP = document.getElementById('gl-res-p')!, resB = document.getElementById('gl-res-btn')!;
+    // [ciudad, país, lat, lon, estado]  estado: 'p' partner certificado (cupo limitado) · 'm' marcas operando · '' abierto
+    type C = [string, string, number, number, string];
+    const CIUDADES: C[] = [
+      ['Ciudad de México','México',19.43,-99.13,'p'],['Guadalajara','México',20.67,-103.35,'p'],['Monterrey','México',25.67,-100.31,'p'],['León','México',21.12,-101.68,'p'],['Puebla','México',19.04,-98.2,'p'],['Querétaro','México',20.59,-100.39,'p'],
+      ['Mérida','México',20.97,-89.62,'m'],['Tijuana','México',32.51,-117.04,'m'],['Cancún','México',21.16,-86.85,'m'],['Chihuahua','México',28.63,-106.08,'m'],['Aguascalientes','México',21.88,-102.29,'m'],['San Luis Potosí','México',22.15,-100.98,'m'],['Hermosillo','México',29.07,-110.95,'m'],['Culiacán','México',24.8,-107.39,'m'],['Toluca','México',19.29,-99.66,'m'],['Morelia','México',19.7,-101.19,'m'],['Veracruz','México',19.17,-96.13,'m'],['Oaxaca','México',17.07,-96.72,'m'],['Torreón','México',25.54,-103.41,'m'],['Saltillo','México',25.42,-101.0,'m'],['Villa Hidalgo','México',21.68,-102.59,'m'],['Zapopan','México',20.72,-103.39,'m'],['Tuxtla Gutiérrez','México',16.75,-93.12,'m'],['Mazatlán','México',23.25,-106.41,'m'],['Durango','México',24.02,-104.65,'m'],['Pachuca','México',20.12,-98.73,'m'],['Cuernavaca','México',18.92,-99.23,'m'],['Tampico','México',22.25,-97.87,'m'],['Mexicali','México',32.62,-115.45,'m'],['Los Cabos','México',22.89,-109.92,'m'],['Playa del Carmen','México',20.63,-87.07,'m'],['Celaya','México',20.52,-100.82,'m'],['Irapuato','México',20.67,-101.35,'m'],['Xalapa','México',19.54,-96.91,'m'],['Villahermosa','México',17.99,-92.93,'m'],
+      ['Miami','Estados Unidos',25.76,-80.19,'p'],['Los Ángeles','Estados Unidos',34.05,-118.24,'m'],['Houston','Estados Unidos',29.76,-95.37,'m'],['Nueva York','Estados Unidos',40.71,-74.01,'m'],['Dallas','Estados Unidos',32.78,-96.8,'m'],['Chicago','Estados Unidos',41.88,-87.63,'m'],['San Antonio','Estados Unidos',29.42,-98.49,'m'],['Phoenix','Estados Unidos',33.45,-112.07,''],['San Diego','Estados Unidos',32.72,-117.16,'m'],['Atlanta','Estados Unidos',33.75,-84.39,''],['Orlando','Estados Unidos',28.54,-81.38,''],['Las Vegas','Estados Unidos',36.17,-115.14,''],
+      ['Toronto','Canadá',43.65,-79.38,'m'],['Vancouver','Canadá',49.28,-123.12,''],['Montreal','Canadá',45.5,-73.57,''],
+      ['Ciudad de Guatemala','Guatemala',14.63,-90.51,'m'],['San Salvador','El Salvador',13.69,-89.19,'m'],['Tegucigalpa','Honduras',14.07,-87.19,''],['San Pedro Sula','Honduras',15.5,-88.03,''],['Managua','Nicaragua',12.11,-86.24,''],['San José','Costa Rica',9.93,-84.08,'m'],['Ciudad de Panamá','Panamá',8.98,-79.52,'m'],
+      ['Bogotá','Colombia',4.71,-74.07,'p'],['Medellín','Colombia',6.25,-75.56,'m'],['Cali','Colombia',3.45,-76.53,'m'],['Barranquilla','Colombia',10.97,-74.8,''],['Cartagena','Colombia',10.39,-75.51,''],['Bucaramanga','Colombia',7.12,-73.12,''],
+      ['Caracas','Venezuela',10.48,-66.9,''],['Quito','Ecuador',-0.18,-78.47,'m'],['Guayaquil','Ecuador',-2.19,-79.89,'m'],['Cuenca','Ecuador',-2.9,-79.0,''],['Lima','Perú',-12.05,-77.04,'m'],['Arequipa','Perú',-16.41,-71.54,''],['Trujillo','Perú',-8.11,-79.03,''],['La Paz','Bolivia',-16.5,-68.15,''],['Santa Cruz','Bolivia',-17.78,-63.18,'m'],['Cochabamba','Bolivia',-17.39,-66.16,''],
+      ['Santiago','Chile',-33.45,-70.67,'m'],['Valparaíso','Chile',-33.05,-71.62,''],['Concepción','Chile',-36.83,-73.05,''],['Buenos Aires','Argentina',-34.6,-58.38,'m'],['Córdoba','Argentina',-31.42,-64.18,''],['Rosario','Argentina',-32.94,-60.64,''],['Mendoza','Argentina',-32.89,-68.84,''],['Montevideo','Uruguay',-34.9,-56.16,'m'],['Asunción','Paraguay',-25.26,-57.58,'m'],['São Paulo','Brasil',-23.55,-46.63,'m'],['Río de Janeiro','Brasil',-22.91,-43.17,''],['Curitiba','Brasil',-25.43,-49.27,''],['Belo Horizonte','Brasil',-19.92,-43.94,''],
+      ['Santo Domingo','República Dominicana',18.49,-69.93,'m'],['Punta Cana','República Dominicana',18.58,-68.37,''],['San Juan','Puerto Rico',18.47,-66.11,'m'],
+      ['Madrid','España',40.42,-3.7,'p'],['Barcelona','España',41.39,2.17,'m'],['Valencia','España',39.47,-0.38,'m'],['Sevilla','España',37.39,-5.99,''],['Málaga','España',36.72,-4.42,''],['Bilbao','España',43.26,-2.93,''],['Zaragoza','España',41.65,-0.89,''],['Palma','España',39.57,2.65,''],['Lisboa','Portugal',38.72,-9.14,'m'],['Oporto','Portugal',41.15,-8.61,''],['Milán','Italia',45.46,9.19,'m'],['Roma','Italia',41.9,12.5,''],['Florencia','Italia',43.77,11.25,''],['París','Francia',48.86,2.35,'m'],['Lyon','Francia',45.76,4.84,''],['Londres','Reino Unido',51.51,-0.13,'m'],['Mánchester','Reino Unido',53.48,-2.24,''],['Berlín','Alemania',52.52,13.41,''],['Múnich','Alemania',48.14,11.58,''],['Hamburgo','Alemania',53.55,9.99,''],
+    ];
+    const HUB = CIUDADES[0];
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    // ── Buscador (funciona aunque no haya WebGL) ──
+    let sel: C | null = null, act = -1, lista: C[] = [];
+    let enfoca: ((c: C) => void) | null = null;
+    const pinta = () => {
+      if (!lista.length) { sug.hidden = true; return; }
+      sug.innerHTML = lista.map((c, i) => `<li class="${i === act ? 'is-act' : ''}" data-i="${i}">${c[0]}<small>${c[1]}</small></li>`).join(''); sug.hidden = false;
+    };
+    const muestra = (c: C | null, texto?: string) => {
+      res.hidden = false; res.classList.toggle('is-partner', !!c && c[4] === 'p');
+      const nombre = c ? `${c[0]}, ${c[1]}` : texto || '';
+      if (c && c[4] === 'p') { resK.textContent = 'Territorio con partner · cupo limitado'; resT.textContent = nombre; resP.textContent = 'Aquí ya hay partners certificados operando marcas. Aún aceptamos un orquestador más para cubrir la demanda; si te interesa, conviene moverse pronto.'; }
+      else if (c && c[4] === 'm') { resK.textContent = 'Territorio abierto · con marcas operando'; resT.textContent = nombre; resP.textContent = 'Ya hay marcas de moda usando Sacs en esta ciudad y todavía no tienen un partner local. Serías el primer orquestador certificado de la zona, con clientes desde el día uno.'; }
+      else { resK.textContent = 'Territorio abierto'; resT.textContent = nombre; resP.textContent = 'Todavía no hay partner de Sacs aquí. Serías el primero: te certificamos, te acompañamos en tus primeras tiendas y el territorio queda contigo.'; }
+      resB.dataset.tipo = `Partner orquestador · ${nombre}`;
+      (window as any).sacsPH?.('partners_territorio', { ciudad: nombre, estado: c ? c[4] || 'abierto' : 'desconocida' });
+    };
+    const elige = (c: C) => { sel = c; q.value = c[0]; lista = []; pinta(); muestra(c); enfoca?.(c); };
+    q.addEventListener('input', () => {
+      const t = norm(q.value); act = -1;
+      lista = t.length < 2 ? [] : CIUDADES.filter((c) => norm(c[0]).includes(t) || norm(c[1]).startsWith(t)).slice(0, 6); pinta();
+    });
+    q.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { act = Math.min(lista.length - 1, act + 1); pinta(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { act = Math.max(0, act - 1); pinta(); e.preventDefault(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (lista[act >= 0 ? act : 0]) elige(lista[act >= 0 ? act : 0]); else if (q.value.trim()) { lista = []; pinta(); sel = null; muestra(null, q.value.trim()); } }
+      else if (e.key === 'Escape') { lista = []; pinta(); }
+    });
+    sug.addEventListener('click', (e) => { const li = (e.target as HTMLElement).closest('li'); if (li) elige(lista[Number(li.dataset.i)]); });
+    document.addEventListener('click', (e) => { if (!sug.contains(e.target as Node) && e.target !== q) { lista = []; pinta(); } });
+    resB.addEventListener('click', () => document.dispatchEvent(new CustomEvent('pt:agenda', { detail: { tipo: resB.dataset.tipo } })));
+
+    // ── Globo (three.js, solo al acercarse) ──
+    const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); inicia().catch((err) => { console.warn('globo', err); sec.classList.add('sin-webgl'); }); } }, { rootMargin: '400px 0px' });
+    io.observe(sec);
+
+    async function inicia() {
+      const THREE = await import('three');
+      const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, powerPreference: 'low-power' });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+      const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 10); cam.position.z = 3.35;
+      const globo = new THREE.Group(); scene.add(globo);
+      const D = Math.PI / 180;
+      const v3 = (lat: number, lon: number, r = 1) => { const phi = (90 - lat) * D, th = (lon + 180) * D; return new THREE.Vector3(-r * Math.sin(phi) * Math.cos(th), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(th)); };
+      // Esfera oscura que oculta la cara trasera
+      globo.add(new THREE.Mesh(new THREE.SphereGeometry(0.992, 64, 64), new THREE.MeshBasicMaterial({ color: 0x111111 })));
+      // Tierra en puntos: se muestrea la máscara
+      const mask = await new Promise<HTMLImageElement>((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = '/images/partners/tierra.png'; });
+      const mc = document.createElement('canvas'); mc.width = mask.width; mc.height = mask.height; const mx = mc.getContext('2d', { willReadFrequently: true })!; mx.drawImage(mask, 0, 0); const md = mx.getImageData(0, 0, mc.width, mc.height).data;
+      const tierra: number[] = []; const paso = 1.3;
+      for (let lat = -84; lat <= 84; lat += paso) { const dl = paso / Math.max(0.2, Math.cos(lat * D)); for (let lon = -180; lon < 180; lon += dl) {
+        const px = Math.floor(((lon + 180) / 360) * mc.width), py = Math.floor(((90 - lat) / 180) * mc.height);
+        if (md[(py * mc.width + px) * 4] > 128) { const p = v3(lat, lon, 1.0); tierra.push(p.x, p.y, p.z); } } }
+      const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(tierra, 3));
+      globo.add(new THREE.Points(tg, new THREE.PointsMaterial({ color: 0xa8a8a4, size: 0.017, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false })));
+      // Marcadores que laten
+      const mp: number[] = [], mf: number[] = [], mt: number[] = [];
+      const conMarca = CIUDADES.filter((c) => c[4]);
+      conMarca.forEach((c, i) => { const p = v3(c[2], c[3], 1.008); mp.push(p.x, p.y, p.z); mf.push((i * 0.37) % 1); mt.push(c[4] === 'p' ? 1 : 0); });
+      mp.push(0, 0, 0); mf.push(0); mt.push(2); // el último = "tu ciudad", se mueve al buscar
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(mp, 3)); mg.setAttribute('fase', new THREE.Float32BufferAttribute(mf, 1)); mg.setAttribute('tipo', new THREE.Float32BufferAttribute(mt, 1));
+      const uni = { t: { value: 0 }, pr: { value: renderer.getPixelRatio() } };
+      const mm = new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false,
+        vertexShader: `attribute float fase; attribute float tipo; varying float vT; varying float vF; uniform float t; uniform float pr;
+          void main(){ vT=tipo; vF=fase; vec4 mv=modelViewMatrix*vec4(position,1.0); float base = tipo>1.5 ? 44.0 : tipo>0.5 ? 30.0 : 18.0; if(tipo>1.5 && length(position)<0.5) base=0.0; gl_PointSize = base*pr*(3.2/-mv.z); gl_Position=projectionMatrix*mv; }`,
+        fragmentShader: `varying float vT; varying float vF; uniform float t;
+          void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c)*2.0; float core=1.0-smoothstep(0.16,0.24,d); float p=fract(t*0.5+vF); float ring=(1.0-smoothstep(0.0,0.09,abs(d-p)))*(1.0-p)*0.9; vec3 col = vT>1.5 ? vec3(1.0) : vT>0.5 ? vec3(0.29,0.48,0.9) : vec3(0.78,0.78,0.76); float a = core + (vT>0.5 ? ring : ring*0.35); if(a<0.02) discard; gl_FragColor=vec4(col,a); }` });
+      const marc = new THREE.Points(mg, mm); globo.add(marc);
+      // Arcos desde México hacia ciudades con partner o marcas fuera de México
+      const am = new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false,
+        vertexShader: `attribute float u; attribute float fase; varying float vU; varying float vF; void main(){ vU=u; vF=fase; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+        fragmentShader: `varying float vU; varying float vF; uniform float t; void main(){ float p=fract(t*0.28+vF); float d=vU-p; if(d>0.0) d-=1.0; float a=0.10+smoothstep(-0.30,0.0,d)*0.85*(1.0-smoothstep(0.0,0.02,d)); gl_FragColor=vec4(0.29,0.48,0.9,a); }` });
+      const destinos = conMarca.filter((c) => c[1] !== 'México' && (c[4] === 'p' || Math.random() < 0.55)).slice(0, 26);
+      const a0 = v3(HUB[2], HUB[3], 1.0);
+      destinos.forEach((c, k) => { const b = v3(c[2], c[3], 1.0); const mid = a0.clone().add(b).multiplyScalar(0.5); const dist = a0.distanceTo(b); mid.normalize().multiplyScalar(1 + dist * 0.42);
+        const curva = new THREE.QuadraticBezierCurve3(a0, mid, b); const pts = curva.getPoints(64); const g = new THREE.BufferGeometry().setFromPoints(pts);
+        g.setAttribute('u', new THREE.Float32BufferAttribute(pts.map((_, i) => i / 64), 1)); g.setAttribute('fase', new THREE.Float32BufferAttribute(pts.map(() => (k * 0.23) % 1), 1)); globo.add(new THREE.Line(g, am)); });
+      // Rotación: inicial mirando a México, arrastre con inercia, y enfoque al buscar
+      let ry = 0, rx = 0, vy = 0.0022, arrastra = false, px = 0, py = 0, objY: number | null = null, objX = 0, ancho = 0;
+      const mira = (lat: number, lon: number) => { const p = v3(lat, lon); objY = Math.atan2(-p.x, p.z); objX = Math.atan2(p.y, Math.hypot(p.x, p.z)) * 0.9; };
+      const p0 = v3(HUB[2], HUB[3]); ry = Math.atan2(-p0.x, p0.z); rx = Math.atan2(p0.y, Math.hypot(p0.x, p0.z)) * 0.6;
+      const puntoTu = mg.getAttribute('position') as any;
+      enfoca = (c) => { mira(c[2], c[3]); const p = v3(c[2], c[3], 1.012); puntoTu.setXYZ(conMarca.length, p.x, p.y, p.z); puntoTu.needsUpdate = true; };
+      cv.addEventListener('pointerdown', (e) => { arrastra = true; px = e.clientX; py = e.clientY; objY = null; cv.classList.add('is-drag'); cv.setPointerCapture(e.pointerId); });
+      cv.addEventListener('pointermove', (e) => { if (!arrastra) return; const dx = e.clientX - px, dy = e.clientY - py; px = e.clientX; py = e.clientY; vy = dx * 0.004; ry += vy; rx = Math.max(-1.1, Math.min(1.1, rx + dy * 0.004)); });
+      const suelta = () => { arrastra = false; cv.classList.remove('is-drag'); };
+      cv.addEventListener('pointerup', suelta); cv.addEventListener('pointercancel', suelta);
+      const ajusta = () => { const w = cv.clientWidth || 300; if (w !== ancho) { ancho = w; renderer.setSize(w, w, false); } };
+      let visible = true; new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting); if (visible) requestAnimationFrame(cuadro); }).observe(sec);
+      let ultimo = performance.now();
+      function cuadro(now: number) {
+        if (!visible) return; const dt = Math.min(0.05, (now - ultimo) / 1000); ultimo = now; ajusta();
+        if (!arrastra) { if (objY !== null) { let d = objY - ry; d = Math.atan2(Math.sin(d), Math.cos(d)); ry += d * 0.08; rx += (objX - rx) * 0.08; if (Math.abs(d) < 0.002) { objY = null; vy = 0.0022; } }
+          else { ry += vy; vy += (0.0022 - vy) * 0.03; rx += (0.25 - rx) * 0.01; } }
+        globo.rotation.set(rx, ry, 0); if (!reducido) uni.t.value += dt; renderer.render(scene, cam); requestAnimationFrame(cuadro);
+      }
+      requestAnimationFrame(cuadro);
+    }
+  })();
+</script>
