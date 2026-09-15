@@ -69,6 +69,33 @@ const TERMINO: Record<string, string> = {
   canal: 'plaza de ropa mayoreo',
 };
 
+/** ── LOS ALIADOS (15-sep-2026) ───────────────────────────────────────────────
+ *
+ * Un aliado no se busca por giro: se busca por lo que HACE. El taller de
+ * confección y el despacho contable no son «moda», pero los dos viven de
+ * nuestros clientes, y a los dos los encuentra Maps como a cualquier negocio
+ * con domicilio.
+ *
+ * Aquí SOLO están los tipos que Maps de verdad encuentra. Un creador de TikTok
+ * o una pasarela de pagos no tienen ficha de local, y meterlos con un término
+ * inventado llenaría la base de ruido: esos van por otra vía y por eso no
+ * aparecen en esta tabla. La lista completa de tipos vive en
+ * `lib/crm/abm-aliados.ts`; esta es la parte que este barrido puede cubrir.
+ *
+ * El término es cómo lo buscaría una persona, no el nombre interno.
+ */
+const TERMINO_ALIADO: Record<string, string> = {
+  taller: 'taller de costura y confección',
+  patronista: 'patronaje y trazo de ropa',
+  contador: 'despacho contable',
+  insumos_tienda: 'ganchos y etiquetas para ropa',
+  fotografia: 'estudio de fotografía de producto',
+  hardware: 'equipo de punto de venta para comercio',
+  escuela_moda: 'escuela de diseño de modas',
+  consultora_moda: 'consultoría de moda y retail',
+  consultora_retail: 'consultoría de retail',
+};
+
 /** La premisa, aplicada al entrar: 3.7 estrellas y reseñas suficientes para que
  *  la calificación signifique algo. Un 5.0 con dos reseñas es ruido. */
 const ESTRELLAS_MIN = 3.7;
@@ -86,18 +113,30 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const dry = url.searchParams.get('dry') === '1';
   const giro = url.searchParams.get('giro') || '';
+  const aliado = url.searchParams.get('aliado') || '';
   const nCiudades = Math.min(40, Number(url.searchParams.get('ciudades') || 8));
   const maxPag = Math.min(3, Number(url.searchParams.get('paginas') || 3));
-  if (!giro || !TERMINO[giro]) return json({ error: 'falta giro válido', giros: Object.keys(TERMINO) }, 400);
+  if (aliado && !TERMINO_ALIADO[aliado]) return json({ error: 'ese tipo de aliado no se busca en Maps', aliados: Object.keys(TERMINO_ALIADO) }, 400);
+  if (!aliado && (!giro || !TERMINO[giro])) return json({ error: 'falta giro o aliado válido', giros: Object.keys(TERMINO), aliados: Object.keys(TERMINO_ALIADO) }, 400);
 
-  // Las ciudades pendientes para ESTE giro, las más grandes primero.
+  /* Qué se busca y dónde se guarda. Un aliado entra al giro `aliados` con su
+     tipo en `subgiro`; el giro normal entra como siempre. */
+  const termino = aliado ? TERMINO_ALIADO[aliado] : TERMINO[giro];
+  const giroDestino = aliado ? 'aliados' : giro;
+  const subgiro = aliado || null;
+  /* La marca de «esta ciudad ya se barrió» es por BÚSQUEDA, no por giro: si
+     `aliados` fuera la llave, barrer talleres en Guadalajara dejaría a los
+     contadores de Guadalajara marcados como hechos sin haberlos buscado. */
+  const llaveBarrido = aliado ? `aliados:${aliado}` : giro;
+
+  // Las ciudades pendientes para ESTA búsqueda, las más grandes primero.
   const { data: ciudades, error: e1 } = await supabase.rpc('abm_ciudades_pendientes', {
-    p_giro: giro, p_limite: nCiudades,
+    p_giro: llaveBarrido, p_limite: nCiudades,
   });
   if (e1) return json({ error: e1.message, pista: 'falta la función abm_ciudades_pendientes' }, 500);
-  if (!ciudades?.length) return json({ giro, nuevas: 0, nota: 'no quedan ciudades pendientes para este giro' });
+  if (!ciudades?.length) return json({ giro: giroDestino, aliado: aliado || undefined, nuevas: 0, nota: 'no quedan ciudades pendientes para esta búsqueda' });
 
-  const r = { giro, ciudades: 0, vistos: 0, nuevas: 0, ya_estaban: 0, bajo_umbral: 0, cerrados: 0, paginas: 0 };
+  const r = { giro: giroDestino, aliado: aliado || undefined, termino, ciudades: 0, vistos: 0, nuevas: 0, ya_estaban: 0, bajo_umbral: 0, cerrados: 0, paginas: 0 };
   const muestra: any[] = [];
 
   for (const ci of ciudades as any[]) {
@@ -106,7 +145,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     for (let pag = 0; pag < maxPag; pag++) {
       const cuerpo: any = token
         ? { pageToken: token }
-        : { textQuery: `${TERMINO[giro]} en ${ci.ciudad}, ${ci.estado_geo || 'México'}`, languageCode: 'es', regionCode: 'MX', maxResultCount: 20 };
+        : { textQuery: `${termino} en ${ci.ciudad}, ${ci.estado_geo || 'México'}`, languageCode: 'es', regionCode: 'MX', maxResultCount: 20 };
       const res: any = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': CAMPOS },
@@ -127,7 +166,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
         const { data: nueva } = await supabase.from('abm_cuentas').insert({
           nombre: limpiar(p.displayName?.text || '', 160),
-          giro, ciudad: ci.ciudad, estado_geo: ci.estado_geo, pais: 'MX',
+          giro: giroDestino, subgiro, ciudad: ci.ciudad, estado_geo: ci.estado_geo, pais: 'MX',
           place_id: p.id, abierto: p.businessStatus || null, tipo_maps: p.primaryType || null,
           google_rating: p.rating || null, google_resenas: p.userRatingCount || null,
           sitio: p.websiteUri || null, maps_at: new Date().toISOString(),
@@ -158,7 +197,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
     if (!dry) {
       await supabase.from('abm_barrido').upsert(
-        { giro, ciudad: ci.ciudad, barrido_at: new Date().toISOString() },
+        { giro: llaveBarrido, ciudad: ci.ciudad, barrido_at: new Date().toISOString() },
         { onConflict: 'giro,ciudad' },
       );
     }
