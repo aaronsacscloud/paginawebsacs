@@ -44,6 +44,7 @@
 // solo tiene que lograr UN TOQUE. Ahí deja de sonar a robot y empieza la
 // conversación real.
 import { GIROS } from './abm-giros';
+import { COPY } from './abm-giro-copy';
 
 export type PlantillaFria = {
   nombre: string;                  // el que se da de alta en Meta
@@ -68,44 +69,38 @@ export type GiroFrio = {
   plural: string; singular: string; funciones: string; dolor: string; solucion: string; pesa: string; suyo: string;
 };
 
-export const GIRO_FRIO: Record<string, GiroFrio> = {
-  novias: {
-    plural: 'las mejores casas de novia',
-    singular: 'casas de novia',
-    funciones: 'Apartados con la fecha de la boda y sus abonos al día, el muestrario marcado aparte de lo que sí se vende, y las pruebas, el taller y el pedido al proveedor con fecha.',
-    dolor: 'todo cuelga de una fecha: el vestido que se pide al proveedor, las pruebas, el anticipo y la liquidación. Si una se recorre, se recorren todas.',
-    solucion: 'cada novia con su fecha, sus abonos y sus pruebas en un solo lugar, y el sistema avisando antes, no cuando ya se pasó.',
-    pesa: 'llevar los apartados, las pruebas y los abonos en libreta',
-    suyo: 'sus modelos',
-  },
-  zapaterias: {
-    plural: 'las mejores zapaterías',
-    singular: 'zapaterías',
-    funciones: 'Inventario por número y no solo por modelo, traspasos entre sucursales, y saber qué corridas se venden completas y cuáles se quedan en los extremos.',
-    dolor: 'el modelo que la clienta quiere está, pero no en su número — y esa venta se va a la tienda de enfrente.',
-    solucion: 'ver el número exacto que hay en cada sucursal desde el mostrador, y traspasarlo sin llamar a nadie.',
-    pesa: 'perder ventas por una talla que sí estaba, pero en otra sucursal',
-    suyo: 'sus corridas',
-  },
-  joyeria: {
-    plural: 'las mejores joyerías',
-    singular: 'joyerías',
-    funciones: 'Inventario por pieza con su costo real, apartados con abonos, control de lo que sale a consignación y lo que entra a taller.',
-    dolor: 'cada pieza vale distinto y el inventario por montón no dice cuánto dinero hay parado ni dónde.',
-    solucion: 'saber de cada pieza cuánto costó, cuánto lleva ahí y quién la tiene, sin abrir la vitrina.',
-    pesa: 'no saber qué piezas llevan meses sin moverse',
-    suyo: 'sus piezas',
-  },
-  renta: {
-    plural: 'las mejores casas de renta de vestidos y trajes',
-    singular: 'renta de vestidos y trajes',
-    funciones: 'Calendario por prenda con fecha de salida y regreso, depósitos y abonos, y el estado de cada pieza cuando vuelve.',
-    dolor: 'una prenda rentada dos veces el mismo fin de semana se descubre el día del evento, cuando ya no hay cómo arreglarlo.',
-    solucion: 'el calendario de cada prenda a la vista, para que no se aparte dos veces el mismo fin de semana.',
-    pesa: 'llevar el calendario de las prendas en una libreta',
-    suyo: 'sus prendas',
-  },
-};
+/* ── GIRO_FRIO sale del catálogo único ────────────────────────────────────────
+   Antes esta tabla tenía cuatro giros escritos a mano aquí, y el correo 0 tenía
+   los suyos en abm_plantillas. Dos copias del mismo texto: arreglar una frase
+   obligaba a buscarla en dos lugares y casi siempre se arreglaba en uno solo.
+   Ahora los 24 giros salen de abm-giro-copy.ts, que es la fuente. */
+export const GIRO_FRIO: Record<string, GiroFrio> = Object.fromEntries(
+  Object.entries(COPY).map(([g, c]) => [g, {
+    /* El artículo se conserva del catálogo para que el género concuerde: sale
+       «los mejores talleres», no «las mejores talleres». Poner «las mejores» a
+       ciegas rompía todos los giros masculinos. */
+    plural: c.plural.replace(/^(las|los)\s+/, (a) => `${a.trim()} mejores `),
+    singular: c.singular,
+    /* Tres funciones, en UNA frase de corrido: un valor de variable de Meta no
+       puede llevar saltos de línea (error 132012), así que las viñetas del
+       correo no sirven aquí.
+       Se toma solo la primera oración de cada función —la del correo trae una
+       segunda con el ejemplo, que aquí sobra— y se enlazan con comas y una «y».
+       Sin minúscula inicial quedaba «…ya se fueron; La corrida completa», que
+       se lee como tres frases cortadas y no como una lista. */
+    funciones: (() => {
+      const cortas = c.funciones.slice(0, 3)
+        .map((f) => f.split('. ')[0].replace(/\.$/, '').trim());
+      const [a, ...resto] = cortas;
+      const bajas = resto.map((x) => x.charAt(0).toLowerCase() + x.slice(1));
+      return `${a}, ${bajas.slice(0, -1).concat(`y ${bajas[bajas.length - 1]}`).join(', ')}.`;
+    })(),
+    dolor: c.dolorWa,
+    solucion: c.solucion,
+    pesa: c.pesa,
+    suyo: c.suyo,
+  }]),
+);
 
 const AGENDAR = 'https://www.sacscloud.com/agendar/demo';
 
