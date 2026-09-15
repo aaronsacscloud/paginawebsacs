@@ -384,8 +384,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             caja pintándose ENCIMA de lo que va a la derecha. Con esto, lo que
             no cabe se recorta dentro de su propio carril en vez de invadir el
             contador de la ventana. */}
-        <span style={{ minWidth: 100, flex: '1 1 240px', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
-          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 200, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
+        <span style={{ minWidth: 160, flex: '1 1 240px', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
+          {/* El nombre es lo ÚLTIMO que cede. Las pastillas de al lado llevan
+              `flex-shrink:0`, así que cuando el carril se apretaba el único que
+              encogía era él: se veía «C…» en vez de «Carmina». Con un mínimo
+              legible, lo que se recorta es la pastilla —que se puede deducir—,
+              no el nombre de la persona. */}
+          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: mobile ? 0 : 90, maxWidth: mobile ? undefined : 260, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {/* La etapa iba en píldora rellena, y entre ella, el agente, el
               estado y la ventana el encabezado tenía cuatro colores fuertes
               compitiendo con el nombre del cliente. El color de la etapa se
@@ -402,9 +407,12 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               en el sitio: {String(hilo.web_en_vivo).slice(0, 24)}
             </span>
           )}
-          {/* El teléfono solo se repite si arriba va un NOMBRE; si el título ya
-              es el número, mostrarlo dos veces solo quitaba aire al header. */}
-          {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
+          {/* EL TELÉFONO YA NO VA AQUÍ (15-sep-2026, a petición del dueño).
+              Con el nombre, la etapa y las pastillas, el número era lo único
+              que no se usa para nada en este renglón —el botón de llamar ya lo
+              lleva dentro y la ficha de la derecha lo enseña completo— y era
+              justo lo que empujaba al nombre hasta dejarlo en «C…». El nombre
+              sí importa: es lo que te dice a quién le estás escribiendo. */}
           {hilo.marketing?.stopped && <span title="El cliente pidió no recibir mensajes de marketing (Meta lo registra). Solo plantillas de utilidad o responder cuando él escriba." style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Sin marketing</span>}
           {(hilo.presencia || []).map((p: any) => (
             <span key={p.user_id} title={p.escribiendo ? `${p.nombre} está escribiendo…` : `${p.nombre} también tiene abierto este chat`}
