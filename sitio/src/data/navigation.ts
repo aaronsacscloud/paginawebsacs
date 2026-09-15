@@ -219,9 +219,9 @@ export const businessSectors: BusinessSector[] = [
     },
   },
   {
-    label: 'Boutique Multimarca',
+    label: 'Concept Store',
     moda: true,
-    description: 'Varias marcas de varios proveedores, en un mismo espacio',
+    description: 'Boutique multimarca: varias marcas de varios proveedores en un mismo espacio',
     href: '/giros/boutique-multimarca',
     iconId: 'multibrand',
     color: '#C2185B',
@@ -907,6 +907,9 @@ export const businessSectors: BusinessSector[] = [
  *  arma de aquí. Un giro nuevo de moda entra marcándolo con `moda: true`
  *  cuando su página pasa referees, no antes. */
 export const modaSectors: BusinessSector[] = businessSectors.filter((s) => s.moda);
+// Los 5 giros que se muestran en el mega-menú (Aaron, 15-sep-2026); el resto se ve en /giros con "Ver más".
+const TOP_MENU = ['/giros/marcas-de-ropa', '/giros/boutique-multimarca', '/giros/zapateria', '/giros/novias-y-fiesta', '/giros/trajes-de-bano'];
+export const menuSectors: BusinessSector[] = TOP_MENU.map((h) => businessSectors.find((s) => s.href === h)!).filter(Boolean);
 
 export const modelosNegocio: ModeloNegocio[] = [
   {
@@ -992,7 +995,7 @@ export const navLinks: NavLink[] = [
   {
     label: 'Giros de negocio',
     href: '/giros',
-    sectors: modaSectors,
+    sectors: menuSectors,
   },
   // 'Temporada e IA' (ciclo + módulos extraordinarios) sale del menú hasta que esté listo
   // (2026-09-08). La página /extraordinarios sigue viva por URL; para reponerla, volver a

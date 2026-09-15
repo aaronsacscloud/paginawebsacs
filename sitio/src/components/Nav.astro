@@ -211,6 +211,10 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                         </li>
                       ))}
                     </ul>
+                    <a href={getLocalizedUrl('/giros', locale)} class="gw-more">
+                      Ver más giros de moda
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
                   </div>
 
                   <div class="gw-stage">
@@ -1238,6 +1242,9 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     text-transform: uppercase; color: #9A9690; margin-bottom: 14px;
   }
   .gw-rows { list-style: none; margin: 0; padding: 0; }
+  .gw-more { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; padding: 13px 16px; border-radius: 12px; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; transition: background 0.2s, transform 0.2s; }
+  .gw-more:hover { background: #3B6BD5; transform: translateY(-1px); }
+  .gw-more svg { transition: transform 0.2s; } .gw-more:hover svg { transform: translateX(3px); }
   .gw-row {
     display: flex; align-items: center; gap: 16px; padding: 12px 8px 12px 0;
     border-top: 1px solid rgba(0, 0, 0, 0.08); text-decoration: none; color: #1a1a1a;
