@@ -73,7 +73,7 @@ export const CSS_CHISPAS = `
   .chispas svg { position: absolute; animation: chispaLatir 4.2s ease-in-out infinite; }
   @keyframes chispaLatir {
     0%, 100% { opacity: var(--o, .5); transform: scale(1) rotate(0deg); }
-    50%      { opacity: calc(var(--o, .5) * .4); transform: scale(.84) rotate(8deg); }
+    50%      { opacity: calc(var(--o, .5) * .62); transform: scale(.86) rotate(8deg); }
   }
   @media (prefers-reduced-motion: reduce) { .chispas svg { animation: none; } }
 `;
@@ -83,7 +83,12 @@ export default function Chispas() {
     <div className="chispas" aria-hidden="true">
       {DESTELLOS.map(([w, x, y, o, dl, c], i) => (
         <svg key={i} width={w} height={w} viewBox="0 0 24 24"
-          style={{ left: x, top: y, ['--o' as any]: o, animationDelay: `${dl}s` }}>
+          /* La opacidad de la tabla se escala aquí y no renglón por renglón:
+             son 44 y lo que hay que poder ajustar es el CONJUNTO. A 1.0 la
+             banda casi no se veía —el dueño: «casi no se ven»—; a 1.9 se lee
+             como polvo de estrellas sin taparle nada al título. El tope de .9
+             evita que las tres o cuatro más opacas se vuelvan confeti. */
+          style={{ left: x, top: y, ['--o' as any]: Math.min(0.9, o * 1.9), animationDelay: `${dl}s` }}>
           <path d={CHISPA} fill={c} />
         </svg>
       ))}

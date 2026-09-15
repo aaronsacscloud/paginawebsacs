@@ -518,8 +518,18 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               {/* La firma: una banda de destellos con la frase de la pantalla,
                   arriba de lo que traiga cada pestaña. No cambia nada de lo que
                   hay debajo — es la piel de la casa, no un bloque más. */}
-              <style>{CSS_CHISPAS}</style>
+              {/* El aire de arriba, IGUAL en las diez pestañas.
+                  Cada pestaña nació con su propio margen superior —una traía 14,
+                  otra 22, otra ninguno— y al cambiar de una a otra la primera
+                  tarjeta saltaba de lugar. Aquí se anula el margen del primer
+                  hijo de cada pestaña y el aire lo pone un solo lugar: la franja
+                  de destellos. Una regla, no diez. */}
+              <style>{CSS_CHISPAS + `
+                .ficha-tab > :first-child { margin-top: 0 !important; }
+                .ficha-tab > :first-child > :first-child { margin-top: 0 !important; }
+              `}</style>
               <FirmaFicha />
+              <div className="ficha-tab">
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {/* ── La cuenta de Sacs, aquí y no en Actividad ──
                   Qué cuenta opera este cliente y con qué datos se le factura es
@@ -546,6 +556,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               {tab === 'whatsapp' && <TabWhatsApp360 companyId={companyId} />}
               {tab === 'outbound' && <TabOutbound companyId={companyId} />}
               {tab === 'soporte' && <TabSoporte companyId={companyId} />}
+              </div>
             </div>
           </>
         )}

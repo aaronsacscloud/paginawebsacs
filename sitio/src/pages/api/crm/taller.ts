@@ -40,7 +40,7 @@ REGLAS QUE NO SE ROMPEN:
 - Nada de adornos ni de lenguaje corporativo. Español de México, directo.
 - Cada punto empieza con una etiqueta en negritas seguida de dos puntos, así: "Qué falta hoy: ...".
 - Entre 4 y 7 puntos. Uno por idea; si dos dicen lo mismo, van juntos.
-- Incluye SIEMPRE, si están en el texto: qué falta o qué falla hoy, qué debe hacer el sistema, dónde se toca (el módulo o la ruta), y con qué se da por buena.
+- Incluye SIEMPRE, si están en el texto: qué falta o qué falla hoy, qué debe hacer el sistema, dónde se toca (el módulo o la ruta), con qué se da por buena, y —si viene— qué tiene que mostrar el video de entrega, en un punto que empiece con "El video debe mostrar:".
 - Si el texto enumera campos o datos concretos, ponlos en UN punto separados por " · " en vez de en varios renglones.
 - Nada de emoji.
 
@@ -60,6 +60,9 @@ function limpia(b: any) {
   // El resumen del paso 1 que lee desarrollo. Se edita a mano cuando el
   // generado no dice lo importante; nunca sustituye a `problema`/`esperado`.
   txt('resumen', 3000);
+  // Qué tiene que MOSTRAR el video de entrega. Lo pide quien levanta la orden,
+  // junto al criterio: es la misma pregunta vista desde la cámara.
+  txt('video_pide', 1500);
   if (['falla', 'mejora'].includes(b?.tipo)) p.tipo = b.tipo;
   /* baja · alta · urgente. «media» se retiró: no significaba nada —nadie
      programa por lo que «estorba»— y las 18 órdenes que la tenían pasaron a
@@ -294,7 +297,7 @@ export const POST: APIRoute = async ({ request }) => {
     const id = String(b?.id || '');
     if (!id) return json({ error: 'Falta la orden.' }, 400);
     const { data: o } = await supabase.from('taller_ordenes')
-      .select('titulo, tipo, problema, esperado, pasos, criterios').eq('id', id).maybeSingle();
+      .select('titulo, tipo, problema, esperado, pasos, criterios, video_pide').eq('id', id).maybeSingle();
     if (!o) return json({ error: 'Esa orden ya no existe.' }, 404);
 
     const fuente = [
@@ -303,6 +306,7 @@ export const POST: APIRoute = async ({ request }) => {
       o.esperado ? `QUÉ DEBERÍA PASAR: ${o.esperado}` : '',
       o.pasos ? `CÓMO REPRODUCIRLO: ${o.pasos}` : '',
       o.criterios ? `CON QUÉ SE DA POR BUENA: ${o.criterios}` : '',
+      o.video_pide ? `QUÉ TIENE QUE MOSTRAR EL VIDEO: ${o.video_pide}` : '',
     ].filter(Boolean).join('\n\n');
     if (fuente.length < 60) return json({ error: 'Todavía no hay suficiente escrito en el paso 1 para resumir.' }, 400);
 

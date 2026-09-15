@@ -632,6 +632,20 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                   <textarea value={v(k)} onChange={e => set(k, e.target.value)} rows={3} style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} placeholder="—" />
                 </div>
               ))}
+              {/* Lo que el video de entrega TIENE que enseñar. Va aquí, junto al
+                  criterio, porque es la misma pregunta vista desde la cámara: el
+                  criterio dice cuándo está bien, esto dice qué grabar para
+                  probarlo. Sin este campo, desarrollo grababa lo que le parecía y
+                  la orden rebotaba por «falta video» aunque el video existiera. */}
+              <div style={{ marginTop: 10 }}>
+                <span style={S.lbl}>Qué tiene que mostrar el video de entrega</span>
+                <textarea value={v('video_pide')} onChange={e => set('video_pide', e.target.value)} rows={3}
+                  placeholder={'Uno por renglón, en el orden en que quieres verlo:\ncobrar un anticipo en POS y que salgan los dos tickets\nescanear el ticket chico y que abra el apartado\nla pantalla de configuración con la opción prendida'}
+                  style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} />
+                <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
+                  Es lo que vas a revisar en el paso 3. Si no lo pides aquí, el video llega con lo que a ellos les pareció.
+                </div>
+              </div>
               <div style={{ marginTop: 10 }}>
                 <span style={S.lbl}>Video o evidencia que estás mandando</span>
                 <input value={v('evidencia_url')} onChange={e => set('evidencia_url', e.target.value)}
@@ -643,8 +657,12 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                   onClick={async () => { const ok = await guarda({ etapa: 'analisis' }); if (ok) flash('Va para desarrollo'); }}>
                   Mandarla a desarrollo
                 </button>
-                <span style={{ fontSize: '0.71rem', color: falta1.length ? P.ambarTinta : '#8d8a97', lineHeight: 1.45 }}>
-                  {falta1.length ? `Falta ${falta1.join(', ')}.` : 'Desarrollo la recibe con un resumen de esto.'}
+                {/* Lo del video se avisa, no se bloquea: una orden a medio
+                    escribir que no se puede mandar se queda sin mandar. */}
+                <span style={{ fontSize: '0.71rem', color: falta1.length || !v('video_pide') ? P.ambarTinta : '#8d8a97', lineHeight: 1.45 }}>
+                  {falta1.length ? `Falta ${falta1.join(', ')}.`
+                    : !v('video_pide') ? 'No dijiste qué mostrar en el video: va a llegar con lo que a ellos les parezca.'
+                    : 'Desarrollo la recibe con un resumen de esto y con lo que tiene que grabar.'}
                 </span>
               </div>
             </div>
@@ -654,6 +672,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
               <Lectura k="esperado" l="Qué debería pasar" />
               <Lectura k="pasos" l="Cómo reproducirlo" />
               <Lectura k="criterios" l="Con qué se da por buena" />
+              <Lectura k="video_pide" l="Qué tiene que mostrar el video de entrega" />
               <div style={{ marginTop: 9 }}>
                 <span style={S.lbl}>Video o evidencia de quien la levantó</span>
                 {v('evidencia_url')
@@ -707,6 +726,14 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
               </div>
 
               <div style={{ marginTop: 11 }}>
+                {/* Lo que pidieron ver, a la vista al momento de grabar. No es
+                    editable de este lado: es el encargo, no una nota. */}
+                {o.video_pide && (
+                  <div style={{ background: '#FAFAFB', border: '1px solid #f0eff4', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
+                    <span style={{ ...S.lbl, margin: '0 0 5px' }}>El video tiene que mostrar</span>
+                    <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{o.video_pide}</div>
+                  </div>
+                )}
                 <span style={S.lbl}>Video de lo que entregan</span>
                 <input value={v('video_url')} onChange={e => set('video_url', e.target.value)} placeholder="https://… la pantalla grabada mostrando que ya quedó" style={S.input} />
                 <div style={{ marginTop: 8 }}>
@@ -899,6 +926,10 @@ function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
         <div>
           <span style={S.lbl}>Con qué se da por buena</span>
           <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{o.criterios || '—'}</div>
+          {o.video_pide && (<>
+            <span style={{ ...S.lbl, marginTop: 10 }}>Lo que pediste ver en el video</span>
+            <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{o.video_pide}</div>
+          </>)}
         </div>
         <div>
           <span style={S.lbl}>Lo que entregaron</span>
