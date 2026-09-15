@@ -146,6 +146,12 @@ export const ALIADOS: Record<string, TipoAliado> = {
     fuentes: ['maps', 'cliente'],
     gancho: 'Le vende a decenas de boutiques y las conoce por dentro. Es la puerta más barata a una lista que ya confía en él.',
   },
+  bordado: {
+    familia: 'trabaja_con', perfil: 'referidor',
+    nombre: 'Bordado y serigrafía',
+    fuentes: ['maps', 'cliente'],
+    gancho: 'Le borda el logo y le estampa la playera al locatario del corredor. Es de los pocos proveedores que ve la temporada entera de sus clientes.',
+  },
   fotografia: {
     familia: 'trabaja_con', perfil: 'referidor',
     nombre: 'Fotografía de producto y estudio de e-commerce',
