@@ -72,7 +72,24 @@ const S = {
   btnG: { padding: '5px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#444', fontFamily: 'inherit' } as const,
   input: { padding: '8px 11px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.79rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fdfcff', fontFamily: 'inherit' } as const,
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
+  /* El mismo juego que usa el Taller de la cuenta. Lo que NO puede pasar es que
+     los valores difieran: son dos pantallas hermanas y una anatomía. */
+  kpi: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '14px 16px' } as const,
+  kl: { fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '.08em' } as const,
+  kv: { fontSize: '1.375rem', fontWeight: 800, marginTop: 4, letterSpacing: '-.01em', lineHeight: 1.15 } as const,
+  ks: { fontSize: '0.6875rem', color: '#888', marginTop: 2, lineHeight: 1.45 } as const,
+  fila: { display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid #f1f0f4', flexWrap: 'wrap' as const } as const,
+  franja: { flex: '0 0 3px', alignSelf: 'stretch' as const, minHeight: 26, borderRadius: 99 } as const,
+  grupo: { fontSize: '0.62rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#999', margin: '16px 0 2px', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' as const } as const,
+  grupoC: { color: '#c2bfcc', fontWeight: 600, letterSpacing: 0, textTransform: 'none' as const, fontSize: '0.7rem' } as const,
+  badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const, fontVariantNumeric: 'tabular-nums' as const } as const,
+  mas: { width: '100%', marginTop: 10, border: '1px dashed #e6e4ec', background: '#fff', borderRadius: 10, padding: 9, fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' } as const,
+  vacio: { color: '#999', fontSize: '0.82rem', padding: '14px 0', lineHeight: 1.55 } as const,
 };
+
+/* Ninguna lista pasa de tres renglones sin pedirlo. Es lo que hace que una
+   cuenta con 58 ideas —Rubens— se lea igual que una con tres. */
+const TOPE = 3;
 
 export default function TabMejoras({ companyId, cliente, flash, co, subs = [], irATaller }: any) {
   // `cliente` es el nombre que va al abrir la cotización desde una idea.
@@ -114,6 +131,11 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
   // Las sugerencias se muestran de a una: son contexto para leer, no una
   // lista para recorrer, y con tres abiertas empujaban las ideas fuera.
   const [verSug, setVerSug] = useState(false);
+  /* Qué carril se está viendo. Arranca en «por vender» porque es el único que
+     crece solo; lo demás se atiende cuando su número lo pide, y ese número ya
+     está en su tarjeta. */
+  const [carril, setCarril] = useState<'vender' | 'tuyo' | 'taller' | 'entregado'>('vender');
+  const [verTodoIdeas, setVerTodoIdeas] = useState(false);
 
   const cargar = () => fetch('/api/crm/mejoras?company_id=' + companyId)
     .then(r => r.json()).then(j => { setRows(j.data || []); setVencidas(j.vencidas || []); }).catch(() => setRows([]));
@@ -278,6 +300,12 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
   const fechaObra = (m: any) => ligas[m.id]?.fecha_prometida || m.fecha_compromiso || null;
   const obraTarde = Math.max(0, ...enObra.map(m => { const f = fechaObra(m); return f && f < hoyISO ? diasDe(f) : 0; }));
   const obraSinFecha = enObra.filter(m => !fechaObra(m)).length;
+  const CARRILES = [
+    { k: 'vender' as const,    l: 'Por vender',   n: ideas.length + oportunidades.length },
+    { k: 'tuyo' as const,      l: 'Lo tuyo',      n: porHacer },
+    { k: 'taller' as const,    l: 'En el taller', n: enObra.length },
+    { k: 'entregado' as const, l: 'Ya entregado', n: entregadas.length },
+  ];
   const enObraIds = new Set(enObra.map(m => m.id));
   const vencidasTuyas = vencidas.filter((v: any) => !enObraIds.has(v.id));
   const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -466,31 +494,6 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
     window.open('/admin/revenue?' + q.toString(), '_blank', 'noopener');
   }
 
-  /* ── El riel ──
-     Tres hitos en el orden en que se trabaja la cuenta: lo que le debes, lo
-     que le puedes vender y lo que ya quedó atrás. La línea vertical no es
-     adorno: dice que es un recorrido, no tres listas sueltas que compiten.
-     Antes eran cuatro bloques del mismo peso —incluido uno de señales que
-     repetía lo de abajo— y no había forma de saber por dónde empezar. */
-  const Hito = ({ n, titulo, color, resumen, accion, children }: any) => (
-    <div style={{ position: 'relative', marginBottom: 18 }}>
-      <span style={{
-        position: 'absolute', left: -24, top: 4, width: 14, height: 14, borderRadius: 99,
-        background: '#fff', border: `3px solid ${color}`, boxSizing: 'border-box',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.09em', color: '#1a1a1a' }}>
-          {n} · {titulo}
-        </span>
-        <span style={{ fontSize: '0.7rem', color: '#a5a2af', marginLeft: 'auto' }}>{resumen}</span>
-        {accion}
-      </div>
-      <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
-        {children}
-      </div>
-    </div>
-  );
-
   return (
     <div>
       {/* Lo prometido que ya venció va ARRIBA de todo, antes de las cifras: una
@@ -510,278 +513,214 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
           </div>
         </div>
       )}
+      {/* ══════ EL MISMO ESQUELETO QUE EL TALLER ══════
+          Esta pestaña había acumulado cinco formas distintas de encerrar
+          información: la tarjeta del dinero, una tira de cifras sueltas SIN
+          tarjeta, un bloque gris de reportes, un riel con una tarjeta por hito
+          y, dentro del segundo hito, otra tarjeta para las sugerencias. Tres
+          niveles de anidamiento y ninguno es el del resto del CRM.
 
-      {/* ── El dinero, en UNA tarjeta ──
-          Eran tres bloques apilados —la tarjeta «Cobrado», el acuerdo de pago
-          en amarillo y de dónde salió el cobro— hablando todos del MISMO
-          dinero, con tres colores distintos. Aquí es una sola cosa: cuánto
-          entró, cuánto falta, qué parcialidad sigue y de qué conversación
-          salió. Solo aparece si hay algo cotizado: una cuenta sin trabajo
-          vendido no necesita una tarjeta que diga cero. */}
-      {cotizado > 0 && (
-        /* Blanca con su franja verde de 3 px, como toda tarjeta del CRM. El
-           degradado lila→rosa se quitó: ocupando el ancho completo se leía como
-           un aviso, no como el dato de dinero que es. */
-        <div style={{
-          background: '#fff', border: '1px solid #eeeef1', borderLeft: '3px solid #4FBF95',
-          borderRadius: 12, padding: '15px 18px', marginBottom: 12,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1E8A63', letterSpacing: '-.035em' }}>{money(entrado)}</span>
-            <span style={{ fontSize: '0.8rem', color: '#6b6878' }}>
-              {porEntrar > 0
-                ? <>cobrados de <b style={{ color: '#3f3b4d' }}>{money(cotizado)}</b> · faltan <b style={{ color: '#3f3b4d' }}>{money(porEntrar)}</b></>
-                : <>cobrados · <b style={{ color: '#1E8A63' }}>liquidado</b></>}
-              {ultimoPago && <> · último el {fmtDate(ultimoPago)}</>}
-            </span>
+          Ahora es lo mismo que el Taller: fila de tarjetas arriba, un segmento
+          que filtra, y renglones planos. Una tarjeta = una cosa.
+
+          Y el carril se elige: con 58 ideas abiertas en una sola cuenta —el
+          caso real de Rubens— cualquier diseño que las muestre todas junto a
+          lo demás se ahoga. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 14 }}>
+        <div style={{ ...S.kpi, borderLeft: '3px solid #4FBF95' }}>
+          <div style={S.kl}>Cobrado de trabajo</div>
+          <div style={{ ...S.kv, color: entrado ? '#1E8A63' : '#c2bfcc' }}>{money(entrado)}</div>
+          <div style={S.ks}>
+            {cotizado > 0
+              ? (porEntrar > 0 ? <>faltan {money(porEntrar)} de {money(cotizado)}</> : <>liquidado</>)
+              : 'nada cotizado todavía'}
+            {ultimoPago && <> · el último el {fmtDate(ultimoPago)}</>}
           </div>
-          {/* La barra dice de un vistazo si esto va empezando o va terminando,
-              que es la pregunta real cuando el cobro es en parcialidades. */}
-          <div style={{ height: 5, borderRadius: 5, background: 'rgba(91,75,214,.14)', margin: '11px 0 10px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 5,
-              width: `${Math.min(100, Math.round((entrado / Math.max(1, cotizado)) * 100))}%`,
-              background: 'linear-gradient(90deg,#9B8CFA,#4FBF95)',
-            }} />
-          </div>
-          {conPlan.map((c: any) => {
-            const pagadas = c.plan.filter((x: any) => x.estado === 'pagada').length;
-            const prox = c.plan.find((x: any) => x.estado === 'pendiente');
-            return (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '7px 14px', flexWrap: 'wrap', fontSize: '0.755rem', color: '#4a4658', lineHeight: 1.5, marginBottom: 4 }}>
-                <span>
-                  <b style={{ color: '#2f2b3d' }}>{c.numero}</b> · {c.plan.length} parcialidades · {pagadas} pagada{pagadas === 1 ? '' : 's'}
-                  {prox
-                    ? <> · {prox.vencida
-                        ? <b style={{ color: '#C0554E' }}>vencida {money(prox.monto)}</b>
-                        : <>la próxima <b style={{ color: '#2f2b3d' }}>{money(prox.monto)}</b></>} el {fmtDate(prox.fecha)}</>
-                    : <> · <b style={{ color: '#1E8A63' }}>liquidada</b></>}
-                </span>
-                {c.conversacion && (
-                  <span title={`${fmtDate(c.conversacion.desde)} – ${fmtDate(c.conversacion.hasta)}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', border: '1px solid #e3dffa', borderRadius: 999, padding: '2px 10px', fontSize: '0.68rem', fontWeight: 700, color: '#5B4BD6' }}>
-                    Salió de «{c.conversacion.titulo}»
-                  </span>
-                )}
-              </div>
-            );
-          })}
         </div>
-      )}
-
-      {/* ── Las tres cuentas, en una tira ──
-          Eran tres tarjetas del mismo tamaño que la del dinero y en la mayoría
-          de las cuentas las tres dicen cero: gritaban lo que no tenía nada que
-          decir. Como tira se leen igual cuando traen número y desaparecen del
-          ruido cuando no. El color solo entra si el dato pide atención. */}
-      <div style={{ display: 'flex', gap: '10px 26px', flexWrap: 'wrap', padding: '0 3px', marginBottom: 14 }}>
-        {[
-          { l: porHacer && estaSemana ? `${estaSemana} vencen esta semana` : 'Tuyo por hacer', v: String(porHacer), col: porHacer ? '#9a6a10' : null },
-          { l: enObra.length ? (obraTarde ? `el más atrasado, ${obraTarde} días` : obraSinFecha ? `${obraSinFecha} sin fecha` : 'en construcción') : 'En el taller',
-            v: String(enObra.length), col: enObra.length ? (obraTarde ? '#C0554E' : '#5B4BD6') : null },
-          { l: potencial > 0 ? `${ideas.length} idea${ideas.length === 1 ? '' : 's'} sin cerrar`
-              : ideas.length ? `${ideasSinMonto} sin monto · no se puede estimar` : 'Sobre la mesa',
-            v: potencial > 0 ? '~' + money(potencial) : '—', col: potencial > 0 ? '#9c3d70' : null },
-          { l: delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'Entregado este año',
-            v: String(esteAnio), col: esteAnio ? '#1E8A63' : null },
-        ].map(x => (
-          <div key={x.l} style={{ fontSize: '0.72rem', color: '#9a97a4' }}>
-            <div style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-.02em', marginBottom: 1, color: x.col || '#c2bfcc' }}>{x.v}</div>
-            {x.l}
+        <div style={{ ...S.kpi, borderLeft: '3px solid #EFA6CA' }}>
+          <div style={S.kl}>Por vender</div>
+          <div style={{ ...S.kv, color: ideas.length || oportunidades.length ? '#9c3d70' : '#c2bfcc' }}>
+            {potencial > 0 ? '~' + money(potencial) : String(ideas.length + oportunidades.length)}
           </div>
-        ))}
+          <div style={S.ks}>
+            {potencial > 0
+              ? <>{oportunidades.length} con monto · {ideas.length} idea{ideas.length === 1 ? '' : 's'} sin estimar</>
+              : ideas.length ? <>ideas · ninguna con monto</> : 'nada sobre la mesa'}
+          </div>
+        </div>
+        <div style={{ ...S.kpi, borderLeft: `3px solid ${obraTarde ? '#EF7A72' : '#9B8CFA'}` }}>
+          <div style={S.kl}>En el taller</div>
+          <div style={{ ...S.kv, color: enObra.length ? (obraTarde ? '#C0554E' : '#5B4BD6') : '#c2bfcc' }}>{enObra.length}</div>
+          <div style={S.ks}>
+            {obraTarde ? <>el más atrasado, {obraTarde} días</>
+              : obraSinFecha ? <>{obraSinFecha} sin fecha</>
+              : enObra.length ? 'en construcción' : 'nada en construcción'}
+          </div>
+        </div>
+        <div style={{ ...S.kpi, borderLeft: '3px solid #4FBF95' }}>
+          <div style={S.kl}>Entregado este año</div>
+          <div style={{ ...S.kv, color: esteAnio ? '#1E8A63' : '#c2bfcc' }}>{esteAnio}</div>
+          <div style={S.ks}>{delAnio[0]?.fecha_entrega ? <>el último el {fmtDate(delAnio[0].fecha_entrega)}</> : 'sin entregas este año'}</div>
+        </div>
       </div>
 
-      <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
-
-      {/* UN botón para toda la sección. Eran dos —«+ Agregar» en el hito 1 y
-          «+ Agregar idea» en el 2— y obligaban a decidir el carril ANTES de
-          escribir, que es al revés: primero se escribe qué es y de ahí se sabe
-          dónde cae. El formulario ya pregunta la categoría y el estado. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.7rem', color: '#a5a2af' }}>
-          Lo que le debes, lo que le puedes vender y lo que ya recibió.
-        </span>
+      {/* El segmento. El elegido va morado sólido y los demás neutros: si todos
+          llevan borde morado, ninguno se ve activo. */}
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+        {CARRILES.map(c => {
+          const on = carril === c.k;
+          return (
+            <button key={c.k} onClick={() => setCarril(c.k)}
+              style={{
+                border: on ? '1px solid #9B8CFA' : '1px solid #e9e3ee', background: on ? '#9B8CFA' : '#fff',
+                color: on ? '#fff' : '#666', borderRadius: 9, padding: '7px 13px', fontSize: '0.76rem',
+                fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+              }}>
+              {c.l} <span style={{ opacity: .75, fontWeight: 700 }}>{c.n}</span>
+            </button>
+          );
+        })}
         <button style={{ ...S.btn, marginLeft: 'auto' }}
           onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion', visible_cliente: true })}>
           + Agregar
         </button>
       </div>
 
-      <div style={{ position: 'relative', paddingLeft: 26 }}>
-        {/* El hilo en el lila del sistema y no en gris: sobre el fondo de la
-            ficha un #ececec desaparece y los tres puntos quedan sueltos. */}
-        <span style={{ position: 'absolute', left: 7, top: 6, bottom: 24, width: 2, background: '#ddd6fb', borderRadius: 2 }} />
-
-        {/* 1 · Lo que le debes */}
-        <Hito n={1} titulo="Lo tuyo con el cliente" color="#9B8CFA"
-          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada pendiente de tu lado'}
->
-          {/* El puente al taller: una LÍNEA, no una lista. Lo que se está
-              construyendo tiene su propia pestaña; aquí basta saber que existe
-              y si va tarde — que es lo que antes no se veía. */}
-          {enObra.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: porHacer ? 12 : 0, paddingBottom: porHacer ? 12 : 0, borderBottom: porHacer ? '1px solid #f4f4f4' : 'none' }}>
-              {/* Sin agua de alerta cuando no hay alerta: «sin fecha» todavía no
-                  es un problema, y pintarlo de ámbar hacía que la pantalla se
-                  viera encendida de arriba abajo. Solo lo vencido lleva rojo. */}
-              <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', ...(obraTarde ? { background: '#FEF0EF', color: '#C0554E' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
-                {enObra.length} en el taller{obraTarde ? ` · ${obraTarde} ${obraTarde === 1 ? 'día' : 'días'} tarde` : ''}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: '#888', flex: 1, minWidth: 180 }}>
-                {obraTarde
-                  ? 'Se pasó lo que le prometiste.'
-                  : obraSinFecha
-                    ? `${obraSinFecha} sin fecha: nadie las puede arrancar.`
-                    : 'Lo que se está construyendo para esta cuenta.'}
-              </span>
-              <button style={S.btnAzul} onClick={() => irATaller?.()}>Ver el taller de la cuenta</button>
-            </div>
-          )}
-          {porHacer === 0 && enObra.length === 0 && (
-            <div style={{ color: '#999', fontSize: '0.82rem' }}>
-              Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí — o en el taller, si hay
-              que construirlo.
-            </div>
-          )}
-          {grupos.map(g => (
-            <div key={g.k}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 4px' }}>
-                {g.l} · {g.filas.length}
+      {/* ── POR VENDER ── */}
+      {carril === 'vender' && (<>
+        {(sugerencias.length > 0 || sugYaEnLista > 0) && (<>
+          <div style={S.grupo}>Sugerencias del sistema <span style={S.grupoC}>{sugerencias.length}</span>
+            {sugerencias.length > 1 && (
+              <button onClick={() => setVerSug(v => !v)}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.7rem', fontWeight: 700, color: '#5B4BD6', textTransform: 'none', letterSpacing: 0 }}>
+                {verSug ? 'ver menos' : `ver ${sugerencias.length - 1} más`}
+              </button>
+            )}
+          </div>
+          {(verSug ? sugerencias : sugerencias.slice(0, 1)).map((sn: any) => (
+            <div key={sn.tipo} style={S.fila}>
+              <span style={{ ...S.franja, background: sn.nivel === 'riesgo' ? '#EF7A72' : '#EFA6CA' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.83rem', fontWeight: 700, color: sn.nivel === 'riesgo' ? '#C0554E' : '#1a1a1a' }}>{sn.titulo}</div>
+                <div style={{ fontSize: '0.71rem', color: '#888', marginTop: 2, lineHeight: 1.45 }}>
+                  {sn.detalle} <b style={{ color: '#4a4a52' }}>{sn.nivel === 'riesgo' ? 'Hacer:' : 'Ofrecerle:'}</b> {sn.accion}
+                </div>
               </div>
-              {g.filas.map((m: any) => <Renglon key={m.id} m={m} />)}
+              <button style={S.btnAzul} onClick={() => adoptarSenal(sn)}>Agregar a la lista</button>
+              <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => descartarSenal(sn)} title="Ya la tienes, o no aplica">No sugerirla</button>
             </div>
           ))}
-        </Hito>
-
-        {/* 2 · Lo que le puedes vender: las sugerencias del sistema y tus ideas
-            en la MISMA lista. Eran dos bloques que decían lo mismo. */}
-        <Hito n={2} titulo="Por vender" color="#EFA6CA"
-          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${oportunidades.length ? ` · ${oportunidades.length} oportunidad${oportunidades.length === 1 ? '' : 'es'}` : ''}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
->
-
-          {(sugerencias.length > 0 || sugYaEnLista > 0) && (
-            <div style={{ border: '1px solid #eeeef1', borderLeft: '3px solid #EFA6CA', background: '#fff', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c3d70', display: 'flex', alignItems: 'center', gap: 8 }}>
-                Sugerencias del sistema · {sugerencias.length}
-                {sugerencias.length > 1 && (
-                  <button onClick={() => setVerSug(v => !v)}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem', fontWeight: 700, color: '#9c3d70', textDecoration: 'underline', textTransform: 'none', letterSpacing: 0 }}>
-                    {verSug ? 'Ver menos' : `Ver ${sugerencias.length - 1} más`}
-                  </button>
-                )}
-              </div>
-              {(verSug ? sugerencias : sugerencias.slice(0, 1)).map((sn: any, i: number) => (
-                <div key={sn.tipo} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingTop: 9, marginTop: i ? 9 : 0, borderTop: i ? '1px solid #f3cadb' : 'none' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.81rem', fontWeight: 700, color: sn.nivel === 'riesgo' ? '#C0554E' : '#241d43' }}>{sn.titulo}</div>
-                    <div style={{ fontSize: '0.73rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{sn.detalle}</div>
-                    <div style={{ fontSize: '0.73rem', color: '#241d43', marginTop: 3 }}><b>{sn.nivel === 'riesgo' ? 'Hacer:' : 'Ofrecerle:'}</b> {sn.accion}</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
-                    <button style={S.btnAzul} onClick={() => adoptarSenal(sn)}>Agregar a la lista</button>
-                    <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => descartarSenal(sn)} title="Ya la tienes en la lista, o no aplica para este cliente">No sugerirla</button>
-                  </div>
-                </div>
-              ))}
-              {sugYaEnLista > 0 && (
-                <div style={{ fontSize: '0.7rem', color: '#9c3d70', paddingTop: 9, marginTop: 9, borderTop: '1px solid #f3cadb' }}>
-                  {sugYaEnLista} sugerencia{sugYaEnLista === 1 ? '' : 's'} más ya {sugYaEnLista === 1 ? 'está' : 'están'} en la lista · no se repite{sugYaEnLista === 1 ? '' : 'n'}
-                </div>
-              )}
+          {sugYaEnLista > 0 && (
+            <div style={{ fontSize: '0.7rem', color: '#a5a2af', padding: '9px 0 0' }}>
+              {sugYaEnLista} más ya {sugYaEnLista === 1 ? 'está' : 'están'} en la lista · no se repite{sugYaEnLista === 1 ? '' : 'n'}
             </div>
           )}
+        </>)}
 
-          {ideas.length === 0 && sugerencias.length === 0 && (
-            <div style={{ color: '#999', fontSize: '0.82rem' }}>
-              Lo que se te ocurra en una junta y le pueda interesar al cliente va aquí. De ahí sale la siguiente venta.
-            </div>
-          )}
-          {/* ── IDEAS: lo que se puede vender, sin monto y fuera del pronóstico ── */}
-          {ideas.length > 0 && (
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 2px' }}>
-              Ideas · {ideas.length}
-            </div>
-          )}
-          {ideas.map(m => (
+        {oportunidades.length > 0 && (<>
+          <div style={S.grupo}>Oportunidades <span style={S.grupoC}>
+            {money(oportunidades.reduce((a: number, m: any) => a + Number(m.valor || 0), 0))} · sí cuentan en el pronóstico</span></div>
+          {oportunidades.map(m => <Renglon key={m.id} m={m} />)}
+        </>)}
+
+        {ideas.length > 0 && (<>
+          <div style={S.grupo}>Ideas <span style={S.grupoC}>{ideas.length} · ninguna entra al pronóstico sin monto</span></div>
+          {(verTodoIdeas ? ideas : ideas.slice(0, TOPE)).map(m => (
             <div key={m.id}>
               <Renglon m={m} />
-              {/* La conversión pide monto ahí mismo: sin monto no hay
-                  oportunidad, y mandar al usuario a otra pantalla para escribir
-                  un número es como se pierden las conversiones. */}
+              {/* La conversión pide monto ahí mismo: mandar al usuario a otra
+                  pantalla para escribir un número es como se pierden. */}
               {aOportunidad?.id === m.id && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '2px 0 10px', padding: '11px 13px', background: '#FCEFF5', border: '1px solid #f6d9e7', borderRadius: 10 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9c3d70' }}>¿En cuánto la estimas?</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '2px 0 10px', padding: '11px 13px', background: '#fff', border: '1px solid #f3cadb', borderLeft: '3px solid #D9538E', borderRadius: 10 }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#9c3d70' }}>¿En cuánto la estimas?</span>
                   <input type="number" autoFocus value={aOportunidad.valor}
                     onChange={e => setAOportunidad({ ...aOportunidad, valor: e.target.value })}
-                    placeholder="Monto" style={{ width: 120, border: '1px solid #f0c9dd', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit' }} />
+                    placeholder="Monto" style={{ ...S.input, width: 120 }} />
                   <input type="date" value={aOportunidad.fecha || ''}
                     onChange={e => setAOportunidad({ ...aOportunidad, fecha: e.target.value })}
-                    title="Cierre esperado" style={{ border: '1px solid #f0c9dd', borderRadius: 8, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit' }} />
-                  <button style={{ ...S.btnAzul, background: '#D9538E' }} onClick={volverOportunidad}>Crear oportunidad</button>
+                    title="Cierre esperado" style={{ ...S.input, width: 150 }} />
+                  <button style={{ ...S.btnAzul, borderColor: '#D9538E', color: '#9c3d70' }} onClick={volverOportunidad}>Crear oportunidad</button>
                   <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => setAOportunidad(null)}>Cancelar</button>
-                  <span style={{ fontSize: '0.68rem', color: '#9c3d70', flexBasis: '100%' }}>
+                  <span style={{ fontSize: '0.68rem', color: '#a5a2af', flexBasis: '100%' }}>
                     Con monto entra al pronóstico de ventas; sin monto se queda como idea.
                   </span>
                 </div>
               )}
             </div>
           ))}
-
-          {/* ── OPORTUNIDADES: ya tienen monto y trato. Entran al pipeline ── */}
-          {oportunidades.length > 0 && (<>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', textTransform: 'uppercase', letterSpacing: '.07em', margin: '16px 0 2px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              Oportunidades · {oportunidades.length}
-              <span style={{ fontWeight: 700, color: '#a5a2af', textTransform: 'none', letterSpacing: 0 }}>
-                {money(oportunidades.reduce((a: number, m: any) => a + Number(m.valor || 0), 0))} · sí cuentan en el pronóstico
-              </span>
-            </div>
-            {oportunidades.map(m => <Renglon key={m.id} m={m} />)}
-          </>)}
-
-          {/* ── EL RASTRO: lo que ya se cotizó dejó de ser idea ── */}
-          {yaCotizadas.length > 0 && (
-            <div style={{ fontSize: '0.71rem', color: '#6b6b7a', lineHeight: 1.6, marginTop: 14, paddingTop: 12, borderTop: '1px solid #f1eff8' }}>
-              <b style={{ color: '#9c3d70' }}>{yaCotizadas.length} {yaCotizadas.length === 1 ? 'idea ya se cotizó' : 'ideas ya se cotizaron'}</b> y por eso no están en esta lista:
-              {' '}{yaCotizadas.slice(0, 3).map((m: any, i: number) => (
-                <span key={m.id}>{i ? ', ' : ''}{m.titulo}{m.quotes?.numero ? ` (${m.quotes.numero})` : ''}</span>
-              ))}
-              {yaCotizadas.length > 3 && <> y {yaCotizadas.length - 3} más</>}. Viven arriba, en «Por hacer», y en Cotizaciones.
-            </div>
+          {ideas.length > TOPE && (
+            <button onClick={() => setVerTodoIdeas(v => !v)} style={S.mas}>
+              {verTodoIdeas ? 'Ver solo las primeras' : `Ver las ${ideas.length - TOPE} ideas restantes`}
+            </button>
           )}
-        </Hito>
+        </>)}
 
-        {/* 3 · Lo que ya quedó atrás. Solo la última: es historia, se consulta.
-            La lista completa empujaba fuera de pantalla lo que sí hay que hacer. */}
-        <Hito n={3} titulo="Ya entregado" color="#4FBF95"
-          resumen={entregadas.length ? `${entregadas.length} en total` : 'sin entregas'}
-          /* Los reportes viven aquí y no en dos tarjetones arriba: son lo que
-             sale de ESTA lista. El ejecutivo se manda cuando toca revisar la
-             cuenta y el de entregas cuando el cliente pregunta «¿qué me han
-             hecho?», así que siguen siendo dos documentos y no uno. */
-          accion={<>
-            <button style={{ ...S.btnG, borderColor: '#cfe9d9', color: '#1E8A63' }} onClick={() => setEntregas(true)}>Reporte de entregas</button>
-            <button style={S.btnG} onClick={() => setReporte(true)}>Reporte ejecutivo</button>
-          </>}>
-          {/* Lo que se cobró y no tiene entrega. Era un bloque suelto allá
-              arriba; su lugar es aquí, porque es exactamente lo que le falta a
-              esta lista —y sin ese renglón el reporte de entregas sale vacío
-              aunque el cliente lleve medio proyecto pagado—. */}
+        {ideas.length === 0 && oportunidades.length === 0 && sugerencias.length === 0 && (
+          <div style={S.vacio}>Lo que se te ocurra en una junta y le pueda interesar al cliente va aquí. De ahí sale la siguiente venta.</div>
+        )}
+
+        {yaCotizadas.length > 0 && (
+          <div style={{ fontSize: '0.71rem', color: '#888', lineHeight: 1.6, marginTop: 14, paddingTop: 12, borderTop: '1px solid #f1f0f4' }}>
+            <b style={{ color: '#5B4BD6' }}>{yaCotizadas.length} {yaCotizadas.length === 1 ? 'idea ya se cotizó' : 'ideas ya se cotizaron'}</b> y por eso no están en esta lista:
+            {' '}{yaCotizadas.slice(0, 3).map((m: any, i: number) => (
+              <span key={m.id}>{i ? ', ' : ''}{m.titulo}{m.quotes?.numero ? ` (${m.quotes.numero})` : ''}</span>
+            ))}
+            {yaCotizadas.length > 3 && <> y {yaCotizadas.length - 3} más</>}.
+          </div>
+        )}
+      </>)}
+
+      {/* ── LO TUYO: capacitaciones, videos y pendientes. La obra vive en la
+             pestaña Taller y aquí solo se asoma como una línea. ── */}
+      {carril === 'tuyo' && (<>
+        {porHacer === 0 && <div style={S.vacio}>Nada pendiente de tu lado. Lo que salga de la próxima junta aparece aquí — o en el taller, si hay que construirlo.</div>}
+        {grupos.map(g => (
+          <div key={g.k}>
+            <div style={S.grupo}>{g.l} <span style={S.grupoC}>{g.filas.length}</span></div>
+            {g.filas.map((m: any) => <Renglon key={m.id} m={m} />)}
+          </div>
+        ))}
+      </>)}
+
+      {/* ── EN EL TALLER: una línea, no una lista. El detalle tiene su pestaña. ── */}
+      {carril === 'taller' && (
+        <div style={S.fila}>
+          <span style={{ ...S.franja, background: obraTarde ? '#EF7A72' : enObra.length ? '#9B8CFA' : '#e9e7ef' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
+              {enObra.length ? <>{enObra.length} {enObra.length === 1 ? 'cosa se está construyendo' : 'cosas se están construyendo'}</> : 'Nada en el taller'}
+            </div>
+            <div style={{ fontSize: '0.71rem', color: '#888', marginTop: 2 }}>
+              {obraTarde ? `Se pasó lo que le prometiste: el más atrasado lleva ${obraTarde} días.`
+                : obraSinFecha ? `${obraSinFecha} sin fecha: nadie las puede arrancar.`
+                : enObra.length ? 'Todas con fecha comprometida.'
+                : 'Lo que haya que construir para esta cuenta aparece aquí.'}
+            </div>
+          </div>
+          {enObra.length > 0 && (
+            <>
+              <span style={{ ...S.badge, ...(obraTarde ? { background: '#FEF0EF', color: '#C0554E' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
+                {obraTarde ? `${obraTarde} días tarde` : `${enObra.length} en curso`}
+              </span>
+              <button style={S.btnAzul} onClick={() => irATaller?.()}>Ver el taller de la cuenta</button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── YA ENTREGADO ── */}
+      {carril === 'entregado' && (<>
+        {sinRegistrar.length > 0 && (<>
+          <div style={S.grupo}>Se cobró y falta registrarlo <span style={S.grupoC}>{sinRegistrar.length} · sin esto el reporte de entregas sale vacío</span></div>
           {sinRegistrar.map(({ cot, it }: any) => (
-            <div key={`${cot.id}|${it.clave}`} style={{
-              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 9,
-              background: '#F6FBF8', borderLeft: '3px solid #4FBF95', borderRadius: '0 9px 9px 0', padding: '10px 13px',
-            }}>
-              <div style={{ flex: 1, minWidth: 190 }}>
-                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#2f2b3d' }}>
-                  Se cobró y falta registrar: {it.nombre}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: '#8a8590', marginTop: 2 }}>
-                  {cot.numero} · sin este renglón el reporte de entregas sale vacío
-                </div>
+            <div key={`${cot.id}|${it.clave}`} style={S.fila}>
+              <span style={{ ...S.franja, background: '#4FBF95' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>{it.nombre}</div>
+                <div style={{ fontSize: '0.71rem', color: '#888', marginTop: 2 }}>cobrado en {cot.numero}</div>
               </div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</div>
-              <button style={{ ...S.btn, background: '#1E8A63', flexShrink: 0 }}
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1E8A63', fontVariantNumeric: 'tabular-nums' }}>{money(it.neto)}</span>
+              <button style={S.btnAzul}
                 onClick={() => setEditando({
                   estado: 'entregada', categoria: catDePartida(it),
                   titulo: it.nombre, valor: it.neto, quote_id: cot.id, quote_item: it.clave,
@@ -789,15 +728,36 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
                 })}>Registrar la entrega</button>
             </div>
           ))}
-          {entregadas.length === 0 && sinRegistrar.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Todavía no se le ha entregado nada a este cliente.</div>}
-          {(verTodo ? entregadas : entregadas.slice(0, 1)).map(m => <Renglon key={m.id} m={m} />)}
-          {entregadas.length > 1 && (
-            <button onClick={() => setVerTodo(v => !v)}
-              style={{ width: '100%', marginTop: 10, border: '1px dashed #ececec', background: '#f5f4f8', borderRadius: 10, padding: 9, fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {verTodo ? 'Ver solo la última' : `Ver las ${entregadas.length - 1} entregas anteriores`}
+        </>)}
+        {entregadas.length === 0 && sinRegistrar.length === 0 && (
+          <div style={S.vacio}>Todavía no se le ha entregado nada a este cliente.</div>
+        )}
+        {entregadas.length > 0 && (<>
+          <div style={S.grupo}>Entregado <span style={S.grupoC}>{entregadas.length} en total</span></div>
+          {(verTodo ? entregadas : entregadas.slice(0, TOPE)).map(m => <Renglon key={m.id} m={m} />)}
+          {entregadas.length > TOPE && (
+            <button onClick={() => setVerTodo(v => !v)} style={S.mas}>
+              {verTodo ? 'Ver solo las últimas' : `Ver las ${entregadas.length - TOPE} entregas anteriores`}
             </button>
           )}
-        </Hito>
+        </>)}
+      </>)}
+
+      {/* ══════ LOS REPORTES AL CLIENTE ══════
+          Van SIEMPRE visibles y al pie, no dentro de un carril: son el
+          documento con el que se le justifica el trabajo al cliente y esconderlos
+          detrás de un filtro es perderlos. El de ENTREGAS se arma solo con las
+          mejoras entregadas en el periodo que elijas —con su video—; el
+          EJECUTIVO cuenta el periodo completo. Siguen siendo dos documentos
+          distintos y ninguno cambió. */}
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid #f1f0f4' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 10 }}>
+          <span style={S.kl}>Reportes al cliente</span>
+          <span style={{ fontSize: '0.71rem', color: '#a5a2af' }}>se generan del periodo que elijas</span>
+          <button style={{ ...S.btnAzul, marginLeft: 'auto' }} onClick={() => setEntregas(true)}>Reporte de entregas</button>
+          <button style={S.btnG} onClick={() => setReporte(true)}>Reporte ejecutivo</button>
+        </div>
+        <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
       </div>
 
       {editando && <EditorMejora m={editando} reuniones={reuniones} cots={cots} onCerrar={() => setEditando(null)} onGuardar={guardar} />}
