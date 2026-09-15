@@ -15,7 +15,7 @@
 // escrito dentro de la descripción, no es un dato. El correo sale del sitio.
 //
 // LO QUE VENÍA SALIENDO GRATIS Y SE TIRABA
-// `websiteUri` y `nationalPhoneNumber` son tier Enterprise. `reviews`, que el
+// `websiteUri` y el teléfono son tier Enterprise. `reviews`, que el
 // enriquecedor viejo ya pedía, es Enterprise + Atmosphere — más caro. Google
 // cobra al tier MÁS ALTO del request, así que pedir sitio y teléfono no suma un
 // peso. Se estuvo pagando el caro y desechando los otros dos.
@@ -36,7 +36,7 @@ const env = (n: string) => String((import.meta.env as any)[n] || (process.env as
 
 const CAMPOS = [
   'places.id', 'places.displayName', 'places.rating', 'places.userRatingCount',
-  'places.websiteUri', 'places.nationalPhoneNumber', 'places.businessStatus',
+  'places.websiteUri', 'places.internationalPhoneNumber', 'places.businessStatus',
   'places.formattedAddress', 'places.reviews',
 ].join(',');
 
@@ -123,7 +123,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (p.rating) cambios.google_rating = p.rating;
       if (p.userRatingCount) cambios.google_resenas = p.userRatingCount;
 
-      if (dry) { muestra.push({ cuenta: c.nombre, google: p.displayName?.text, sitio: p.websiteUri, tel: p.nationalPhoneNumber, abierto: p.businessStatus }); continue; }
+      if (dry) { muestra.push({ cuenta: c.nombre, google: p.displayName?.text, sitio: p.websiteUri, tel: p.internationalPhoneNumber, abierto: p.businessStatus }); continue; }
 
       await supabase.from('abm_cuentas').update(cambios).eq('id', c.id);
       if (p.businessStatus === 'CLOSED_PERMANENTLY') {
@@ -135,12 +135,19 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (cambios.sitio) {
         await supabase.from('abm_fuentes').insert({ cuenta_id: c.id, campo: 'sitio', valor: cambios.sitio, metodo: 'google_maps', confianza: 'alta', agente: 'places-api' });
       }
-      // El teléfono entra como canal, NO como WhatsApp: que tenga teléfono no
-      // dice nada de si tiene WhatsApp (§6 bis).
-      if (p.nationalPhoneNumber) {
-        const tel = String(p.nationalPhoneNumber).replace(/\D/g, '');
-        const e164 = tel.length === 10 ? `52${tel}` : tel;
-        if (e164.length === 12) {
+      /* El teléfono entra como canal, NO como WhatsApp: que tenga teléfono no
+         dice nada de si tiene WhatsApp (§6 bis).
+
+         Se pide `internationalPhoneNumber`, que viene con lada de país, y NO
+         el nacional. Con el nacional, "Gran Plaza Outlets" devolvía
+         "(760) 768-9002" —California— y el código le pegaba un 52 al frente,
+         convirtiendo un número estadounidense en un celular mexicano
+         inventado. Diez dígitos no implican que sean mexicanos. */
+      if (p.internationalPhoneNumber) {
+        const crudo = String(p.internationalPhoneNumber).trim();
+        const tel = crudo.replace(/\D/g, '');
+        const e164 = crudo.startsWith('+52') ? tel : '';
+        if (e164.length === 12 && e164.startsWith('52')) {
           const { error: e } = await supabase.from('abm_canales').insert({
             cuenta_id: c.id, tipo: 'telefono', valor: e164, confianza: 'alta',
             es_de_la_tienda: true, estado: 'sin_probar',
