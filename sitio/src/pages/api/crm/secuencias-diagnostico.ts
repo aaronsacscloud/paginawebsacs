@@ -58,7 +58,15 @@ export const GET: APIRoute = async ({ request, url }) => {
     motivos.push({ regla: 'etapa', explicacion: `Su etapa es «${c.lifecycle_stage}» y la entrada pide ${lifecycleIn.join(', ')}.` });
   }
   if (c.archived_at) motivos.push({ regla: 'archivado', explicacion: 'Está archivado.' });
-  if (c.wa_optout) motivos.push({ regla: 'optout de WhatsApp', explicacion: 'Pidió no recibir WhatsApp, y la consulta de candidatos exige wa_optout = false.' });
+  /* La baja de WhatsApp solo cierra WhatsApp: si la secuencia manda puro
+     correo, no lo deja fuera. Esta pantalla tiene que decir lo MISMO que el
+     motor, o deja de servir para lo único que sirve — explicar por qué alguien
+     no entró. */
+  const { data: pasosWa } = await supabase.from('crm_secuencia_pasos')
+    .select('id').eq('secuencia_id', sec.id).eq('canal', 'wa').eq('activo', true).limit(1);
+  if (c.wa_optout && (pasosWa || []).length) {
+    motivos.push({ regla: 'optout de WhatsApp', explicacion: 'Pidió no recibir WhatsApp y esta secuencia manda WhatsApp, así que no entra.' });
+  }
 
   // ── El ancla y el corte: el que más cuesta ver ──
   const ancla = String(entrada.ancla || 'estatus_lead_at');

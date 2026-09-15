@@ -157,11 +157,23 @@ export const GET: APIRoute = async ({ url }) => {
     // el tope de 60 se corría el riesgo de que un lote entero se fuera vacío
     // y la secuencia pareciera muerta.
     const tope = filtrosIn.length ? 400 : 60;
-    const { data: crudos } = await supabase.from('contacts')
+    /* LA BAJA DE WHATSAPP SOLO CIERRA WHATSAPP.
+       Esta consulta exigía `wa_optout = false` a TODA cadencia, también a las
+       que mandan puro correo: quien un día pidió que no le escribiéramos por
+       WhatsApp quedaba fuera de todo, aunque el correo tenga su propia baja —un
+       enlace en cada envío— y sea otro canal y otra decisión.
+       Se descubrió armando la cadencia de descalificados, que es solo de
+       correo: uno de los quince se quedaba fuera por una baja de WhatsApp.
+       Si la secuencia SÍ manda WhatsApp, el filtro sigue igual de duro. */
+    const { data: canalesSec } = await supabase.from('crm_secuencia_pasos')
+      .select('canal').eq('secuencia_id', sec.id).eq('activo', true).eq('canal', 'wa').limit(1);
+    const mandaWa = (canalesSec || []).length > 0;
+    let q = supabase.from('contacts')
       .select('id, estatus_lead_at, prueba_inicio, ultima_actividad_venta_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, company_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
-      .is('archived_at', null).eq('wa_optout', false)
-      .limit(tope);
+      .is('archived_at', null);
+    if (mandaWa) q = q.eq('wa_optout', false);
+    const { data: crudos } = await q.limit(tope);
     // Las condiciones de sitio web (visitas_n, visito_ruta) necesitan datos que
     // no viven en contacts. Se traen SOLO si algun filtro los pide: son 4,000+
     // filas y no hay por que leerlas en cada corrida.

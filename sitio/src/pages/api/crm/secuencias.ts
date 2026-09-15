@@ -41,7 +41,14 @@ export const POST: APIRoute = async ({ request }) => {
     nombre: String(b.nombre).trim().slice(0, 120),
     descripcion: String(b.descripcion || '').slice(0, 500) || null,
     activa: !!b.activa,
-    corte_dias: Math.max(1, Math.min(60, Number(b.corte_dias) || 14)),
+    /* EL CORTE, hasta diez años. El tope de 60 días tenía sentido para un arco
+       —una cadencia de dos semanas no debe poder durar un año por un dedazo—
+       pero mata a las PERMANENTES: «Rezagados» vive con 3650 porque un goteo de
+       top of mind no tiene final, y el primer «Guardar» desde la pantalla se lo
+       habría recortado a 60, expulsando en la siguiente corrida a todo el que
+       llevara más de dos meses. Se guardaba en la base y la pantalla no lo
+       sabía: el peor tipo de tope. */
+    corte_dias: Math.max(1, Math.min(3650, Number(b.corte_dias) || 14)),
     hora_inicio: Math.max(0, Math.min(23, Number(b.hora_inicio) ?? 10)),
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
@@ -102,8 +109,13 @@ export const POST: APIRoute = async ({ request }) => {
       cierre: { bloquear_con_no_leidos: e.cierre?.bloquear_con_no_leidos !== false },
     };
   } else if (b.entrada && typeof b.entrada === 'object') {
-    const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado'];
-    const LIFECYCLE_OK = ['lead', 'lead_calificado', 'oportunidad', 'cliente', 'rezagado'];
+    /* `descartado` y las etapas de abajo faltaban en la lista blanca, y eso
+       tenía un efecto invisible: Winback vive de `churned` + `descartado`, pero
+       se configuró a mano en la base — el día que alguien abriera esa secuencia
+       en la pantalla y le diera Guardar, su entrada se habría reescrito sola a
+       «lead». Ahora lo que existe en la base se puede elegir desde el editor. */
+    const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado', 'descartado'];
+    const LIFECYCLE_OK = ['lead', 'lead_calificado', 'oportunidad', 'cliente', 'rezagado', 'churned', 'descalificado'];
     const est = Array.isArray(b.entrada.estatus) ? b.entrada.estatus.filter((x: string) => ESTATUS_OK.includes(x)) : [];
     const estFinal = est.length ? est : ['contactado', 'sin_respuesta'];
     // Quien agendó ya es Oportunidad: la entrada debe alcanzarlo en esa etapa.
@@ -127,7 +139,31 @@ export const POST: APIRoute = async ({ request }) => {
     // estatus y el corte lo descartaría con una fecha de hace meses.
     const ANCLAS = ['estatus_lead_at', 'prueba_inicio', 'created_at'];
     const ancla = ANCLAS.includes(b.entrada.ancla) ? b.entrada.ancla : 'estatus_lead_at';
-    fila.entrada = { estatus: estFinal, lifecycle, filtros, logica, ancla };
+    /* EL RITMO DEL GOTEO. En una permanente es lo que separa un mensaje del
+       siguiente, y vivía solo en la base: dos cadencias con los mismos correos
+       y distinto ritmo —que es como se compara cuál funciona mejor— no se
+       podían armar desde la pantalla. Tope de 90 días para que nadie escriba
+       «0» y convierta el goteo en una manguera. */
+    const cadaDias = Math.max(1, Math.min(90, Number(b.entrada.cada_dias) || 0)) || undefined;
+    /* LAS DOS LLAVES QUE HACEN POSIBLE UNA CADENCIA DE DESCARTADOS.
+       `ignorar_salidas` dice qué motivos de salida NO aplican aquí, y sin él una
+       cadencia para descalificados o para bajas enrola y expulsa en la misma
+       corrida —«graduados: 24», que se lee como trabajo hecho—. `para_clientes`
+       es su equivalente para las de post-venta.
+
+       Las dos vivían SOLO en la base: no estaban en este mapeo, así que el
+       primer «Guardar» de Winback desde la pantalla las habría borrado y la
+       cadencia habría dejado de mandar sin decir nada. */
+    const SALIDAS_OMITIBLES = ['descartado', 'convertido', 'corte'];
+    const ignorar = Array.isArray(b.entrada.ignorar_salidas)
+      ? b.entrada.ignorar_salidas.filter((x: string) => SALIDAS_OMITIBLES.includes(x))
+      : [];
+    fila.entrada = {
+      estatus: estFinal, lifecycle, filtros, logica, ancla,
+      ...(cadaDias ? { cada_dias: cadaDias } : {}),
+      ...(ignorar.length ? { ignorar_salidas: ignorar } : {}),
+      ...(b.entrada.para_clientes ? { para_clientes: true } : {}),
+    };
   }
   // ── No se prende una cadencia vacía ──
   // Hoy "Rezagados" se podía activar con cero pasos y no hacer absolutamente
@@ -208,6 +244,50 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
   return json({ ok: true, id });
+};
+
+/**
+ * DUPLICAR una secuencia con todos sus pasos.
+ *
+ * Nace APAGADA y sin miembros: una copia que se prendiera sola mandaría la
+ * cadencia entera a gente que nadie revisó.
+ *
+ * Existe porque copiar treinta y tres pasos a mano no es una tarea, es una
+ * trampa: el pedido real —«los mismos correos con otra cadencia, para ver cuál
+ * funciona mejor»— es exactamente esto, y sin botón hay que hacerlo por SQL.
+ */
+export const PUT: APIRoute = async ({ request }) => {
+  const b = await request.json().catch(() => ({}));
+  const de = String(b.duplicar_de || '').trim();
+  if (!de) return json({ error: 'Falta la secuencia que se va a duplicar' }, 400);
+
+  const { data: orig } = await supabase.from('crm_secuencias').select('*').eq('id', de).maybeSingle();
+  if (!orig) return json({ error: 'Esa secuencia ya no existe' }, 404);
+  const { data: pasos } = await supabase.from('crm_secuencia_pasos').select('*').eq('secuencia_id', de).order('orden');
+
+  const { id: _viejo, created_at: _c, updated_at: _u, ...resto } = orig as any;
+  const copia = {
+    ...resto,
+    nombre: String(b.nombre || `${orig.nombre} (copia)`).trim().slice(0, 120),
+    activa: false,
+    /* La entrada se puede cambiar EN LA MISMA operación: es lo que se quiere el
+       99 % de las veces —los mismos correos para otra etapa, o con otro ritmo—
+       y obligar a guardar dos veces invita a prenderla antes de ajustarla. */
+    entrada: { ...(orig.entrada as any || {}), ...(b.entrada && typeof b.entrada === 'object' ? b.entrada : {}) },
+  };
+  const { data: nueva, error } = await supabase.from('crm_secuencias').insert(copia).select('id').single();
+  if (error) return json({ error: error.message }, 500);
+
+  if ((pasos || []).length) {
+    const filas = (pasos || []).map(({ id: _i, secuencia_id: _s, created_at: _cc, ...p }: any) => ({ ...p, secuencia_id: nueva.id }));
+    const { error: e2 } = await supabase.from('crm_secuencia_pasos').insert(filas);
+    if (e2) {
+      // Media copia es peor que ninguna: se deshace.
+      await supabase.from('crm_secuencias').delete().eq('id', nueva.id);
+      return json({ error: `No se pudieron copiar los pasos: ${e2.message}` }, 500);
+    }
+  }
+  return json({ ok: true, id: nueva.id, pasos: (pasos || []).length });
 };
 
 export const DELETE: APIRoute = async ({ url }) => {

@@ -229,7 +229,44 @@ export default function SecuenciasTab() {
               );
             })}
           </div>
-          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Solo entran leads (nunca clientes ni oportunidades) que llegaron dentro del corte — los viejos no reciben ráfagas.</p>
+          {/* LA ETAPA. Vivía solo en la base: se podía elegir el estatus del lead
+              pero no en qué etapa del ciclo está, así que las cadencias de
+              clientes, de bajas o de descalificados había que armarlas por SQL. */}
+          <span style={lbl}>Quién entra (etapa del ciclo de vida)</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[['Leads', 'lead'], ['Calificados', 'lead_calificado'], ['Oportunidades', 'oportunidad'], ['Clientes', 'cliente'], ['Rezagados', 'rezagado'], ['Bajas', 'churned'], ['Descalificados', 'descalificado']].map(([l, v]) => {
+              const ly: string[] = edit.entrada?.lifecycle?.length ? edit.entrada.lifecycle : ['lead', 'lead_calificado'];
+              const on = ly.includes(v as string);
+              return (
+                <button key={v as string} onClick={() => setEdit({ ...edit, entrada: { ...(edit.entrada || {}), lifecycle: on ? ly.filter(x => x !== v) : [...ly, v as string] } })}
+                  style={{ borderRadius: 999, border: '1.5px solid', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, padding: '5px 12px',
+                    borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? P.violetaAgua : '#fff', color: on ? P.violetaTinta : '#a5a2af' }}>{l}</button>
+              );
+            })}
+          </div>
+          {String(edit.modo || '') === 'permanente' && (<>
+            <span style={lbl}>Cada cuántos días sale un mensaje</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="number" min={1} max={90} value={edit.entrada?.cada_dias ?? 14}
+                onChange={e => setEnt({ cada_dias: Math.max(1, Math.min(90, Number(e.target.value) || 1)) })}
+                style={{ ...inp, width: 76 }} />
+              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>
+                días entre un mensaje y el siguiente. Es el ritmo del goteo: dos cadencias con los mismos correos y distinto ritmo es la forma de ver cuál funciona mejor.
+              </span>
+            </div>
+          </>)}
+          {/* La llave que hace posible una cadencia de descartados. Sin ella, el
+              motor los enrola y los expulsa en la misma corrida: cero envíos y
+              «graduados: 24» en el reporte, que se lee como trabajo hecho. */}
+          {(edit.entrada?.lifecycle || []).some((x: string) => ['descalificado', 'churned'].includes(x)) && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 10, fontSize: '0.74rem', color: '#4a4a52', cursor: 'pointer', lineHeight: 1.5 }}>
+              <input type="checkbox" style={{ marginTop: 2 }}
+                checked={(edit.entrada?.ignorar_salidas || []).includes('descartado')}
+                onChange={e => setEnt({ ignorar_salidas: e.target.checked ? ['descartado'] : [] })} />
+              <span><b>No sacarlos por estar descartados.</b> Hace falta aquí: un descalificado ya está marcado como descartado, y sin esto la secuencia lo enrola y lo expulsa en la misma corrida — sin mandar nada.</span>
+            </label>
+          )}
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Entran solo quienes llegaron dentro del corte — los viejos no reciben ráfagas.</p>
           {(edit.entrada?.ancla || 'estatus_lead_at') !== 'estatus_lead_at' && (
             <p style={{ fontSize: '0.68rem', color: P.violetaTinta, background: P.violetaAgua, borderRadius: 8, padding: '8px 11px', margin: '8px 0 0', lineHeight: 1.5 }}>
               Con este ancla, el <b>día 1 es el día 1 de esa fecha</b>, no el día que entró a la secuencia. Quien no tenga esa fecha no entra: mandarle el correo de bienvenida en su día 9 es peor que no mandarlo.
@@ -403,6 +440,21 @@ export default function SecuenciasTab() {
                 : `${(s.pasos || []).length} pasos · corte ${s.corte_dias} d · ${s.hora_inicio}-${s.hora_fin} h · ${(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}`}</span>
               {!esMovilSec && <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexBasis: esMovilSec ? '100%' : undefined, marginTop: esMovilSec ? 4 : 0 }}>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}) }} onClick={() => setEdit({ ...s })}>Editar</button>
+                {/* DUPLICAR. Copiar treinta y tres pasos a mano no es una tarea,
+                    es una trampa: «los mismos correos con otra cadencia, a ver
+                    cuál funciona mejor» es esto, y sin botón hay que ir por SQL.
+                    La copia nace apagada, para poder ajustarla antes de prender. */}
+                <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}) }}
+                  title="Copiar esta secuencia con todos sus pasos. Nace apagada."
+                  onClick={async () => {
+                    const nombre = prompt('Nombre de la copia', `${s.nombre} (copia)`);
+                    if (!nombre) return;
+                    const r = await fetch('/api/crm/secuencias', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ duplicar_de: s.id, nombre }) })
+                      .then(x => x.json()).catch(e => ({ error: String(e) }));
+                    if (r?.error) { setMsg(r.error); return; }
+                    setMsg(`Copiada con sus ${r.pasos} pasos, apagada. Ajusta quién entra y su ritmo antes de prenderla.`);
+                    cargar();
+                  }}>Duplicar</button>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}), color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
                   onClick={async () => { await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, activa: !s.activa }) }); cargar(); }}>
                   {s.activa ? 'Apagar' : 'Prender'}

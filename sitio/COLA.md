@@ -6,6 +6,12 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
 
 ## Pendiente
 
+- [x] **2026-09-15 · Cadencia de descalificados con los mismos correos y otro ritmo.** «los correos de los que están en
+      rezagados son los mismos que deben recibir en descalificados con el fin de estar top of mind, pero maneja las
+      cadencias diferentes para ver cuál tiene mayor resultado; recuerda crear todas las funciones en el sistema para
+      que un humano realmente lo pueda hacer» → HECHO: creada y APAGADA (31 correos, martes, 1 por semana), y en la
+      pantalla de Secuencias ya se puede duplicar, elegir etapa y ritmo.
+
 - [x] **2026-09-15 · Selección múltiple con Cmd y acciones masivas.** «aquí con cmd en Mac que pueda seleccionar varias
       y me permita hacer acciones masivas, como poder cerrar y dejar como resueltas varias al mismo tiempo» → HECHO:
       Cmd/Ctrl suma, Shift toma el rango, y la barra permite resolverlas todas con su categoría.
