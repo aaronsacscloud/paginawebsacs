@@ -94,7 +94,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (error) return json({ error: error.message, pista: 'falta la función abm_top_sin_maps' }, 500);
   if (!cuentas?.length) return json({ revisadas: 0, nota: 'no quedan cuentas del top sin consultar' });
 
-  const r = { revisadas: 0, con_sitio: 0, con_telefono: 0, cerrados: 0, no_encontradas: 0, otro_negocio: 0, quejas: 0 };
+  const r = { revisadas: 0, con_sitio: 0, con_telefono: 0, cerrados: 0, no_encontradas: 0, otro_negocio: 0, duplicadas: 0, quejas: 0 };
   const muestra: any[] = [];
 
   for (const c of cuentas as any[]) {
@@ -125,7 +125,31 @@ export const GET: APIRoute = async ({ request, url }) => {
 
       if (dry) { muestra.push({ cuenta: c.nombre, google: p.displayName?.text, sitio: p.websiteUri, tel: p.internationalPhoneNumber, abierto: p.businessStatus }); continue; }
 
+      /* Si otra cuenta nuestra ya tiene ese place_id, las DOS son el mismo
+         negocio: "Fantasías Miguel" y "Fantasias Miguel" en Monterrey, con y
+         sin acento. El índice único rechazaba la actualización ENTERA —no solo
+         el place_id— así que maps_at nunca se sellaba y la cuenta volvía a
+         consultarse en cada corrida: 31 cuentas atoradas en bucle, pagando la
+         consulta cada vez.
+         Ahora se guarda todo lo demás, se deja el place_id en la dueña y el
+         duplicado se marca para revisarlo. Un duplicado no es un error del
+         enriquecimiento: es un hallazgo, y además significa que ese negocio
+         recibiría el mismo correo dos veces. */
+      let dup: string | null = null;
+      if (cambios.place_id) {
+        const { data: otra } = await supabase.from('abm_cuentas')
+          .select('id, nombre').eq('place_id', cambios.place_id).neq('id', c.id).maybeSingle();
+        if (otra) { dup = otra.nombre; delete cambios.place_id; }
+      }
       await supabase.from('abm_cuentas').update(cambios).eq('id', c.id);
+      if (dup) {
+        await supabase.from('abm_cuentas').update({ etapa: 'no_contactar' }).eq('id', c.id);
+        await apuntar(c.id, 'sistema', 'nota', {
+          texto: `DUPLICADA: es el mismo negocio de Google que «${dup}». Se saca de la cola para no escribirle dos veces al mismo lugar.`,
+        });
+        r.duplicadas++;
+        continue;
+      }
       if (p.businessStatus === 'CLOSED_PERMANENTLY') {
         r.cerrados++;
         await supabase.from('abm_cuentas').update({ etapa: 'no_contactar' }).eq('id', c.id);
