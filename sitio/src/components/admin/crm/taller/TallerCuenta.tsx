@@ -23,7 +23,6 @@
  */
 import { useEffect, useState } from 'react';
 import Cargando from '../ui/Cargando';
-import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 import OrdenDelTaller, { ETAPAS_TALLER } from './OrdenDelTaller';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
@@ -142,18 +141,9 @@ export default function TallerCuenta({ companyId, flash }: any) {
 
   return (
     <div>
-      <style>{CSS_CHISPAS + CSS_SELLO}</style>
-
-      {/* La firma de la pantalla: destellos SOLO en la banda del título, con el
-          sello del taller. Un destello detrás de un número estorba al leerlo. */}
-      <div className="chispas-cab" style={{ margin: '-2px -6px 14px', padding: '6px 6px 8px' }}>
-        <Chispas />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.02em' }}>Taller</h3>
-          <Sello>Aquí se pule cada estrella</Sello>
-        </div>
-      </div>
-
+      {/* La banda de destellos con «Aquí se pule cada estrella» la pinta la
+          ficha del cliente para TODAS sus pestañas (FirmaFicha): dos juegos de
+          destellos con distintos tamaños se ven como dos casas. */}
       {/* La fila de tarjetas. BLANCAS, con su franja de color de 3 px como el
           resto del CRM: el degradado lila→rosa se quitó a pedido del dueño
           (14-sep-2026) —«no quiero que pongas esos colores morados en las cards,

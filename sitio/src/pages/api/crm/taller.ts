@@ -17,6 +17,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { notificar } from '../../../lib/crm/notificaciones';
+import { pedirJSON } from '../../../lib/ia';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -26,6 +27,25 @@ const hoy = () => new Date().toISOString().slice(0, 10);
    del avance a propósito: no son progreso, son cosas detenidas. */
 export const ETAPAS = ['recibida', 'analisis', 'desarrollo', 'pruebas', 'lista', 'entregada', 'devuelta', 'espera', 'trabada'] as const;
 const MOTIVOS = ['no_resuelve', 'rompe_otra', 'falta_video', 'incompleta', 'mal_entendida'];
+
+/* El resumen es para PROGRAMAR, no para archivar. Por eso el prompt prohíbe
+   adornar y obliga a decir dónde se toca y con qué se da por buena: son los dos
+   datos por los que desarrollo vuelve a preguntar. */
+const SYSTEM_RESUMEN = `Resumes una orden de trabajo de SACS (plataforma de punto de venta y gestión para retail en México) para que el equipo de desarrollo la entienda en veinte segundos.
+
+Recibes lo que escribió quien la levantó: puede venir largo y repetido porque se escribió para dejar constancia de lo acordado con el cliente.
+
+REGLAS QUE NO SE ROMPEN:
+- NO inventes nada. Si algo no está en el texto, no existe. No supongas pantallas, campos ni tiempos.
+- Nada de adornos ni de lenguaje corporativo. Español de México, directo.
+- Cada punto empieza con una etiqueta en negritas seguida de dos puntos, así: "Qué falta hoy: ...".
+- Entre 4 y 7 puntos. Uno por idea; si dos dicen lo mismo, van juntos.
+- Incluye SIEMPRE, si están en el texto: qué falta o qué falla hoy, qué debe hacer el sistema, dónde se toca (el módulo o la ruta), y con qué se da por buena.
+- Si el texto enumera campos o datos concretos, ponlos en UN punto separados por " · " en vez de en varios renglones.
+- Nada de emoji.
+
+Responde ÚNICAMENTE con este JSON:
+{ "puntos": ["Qué falta hoy: ...", "Qué debe hacer: ...", "Dónde: ...", "Queda bien cuando: ..."] }`;
 const SEL = '*, companies(id, nombre, nombre_comercial), team_members!taller_ordenes_asignado_id_fkey(id, nombre)';
 
 /** Campos que la pantalla puede mandar. Lista blanca: un update con `folio` o
@@ -37,8 +57,15 @@ function limpia(b: any) {
   txt('modulo', 120); txt('evidencia_url', 600); txt('video_url', 600); txt('verificacion');
   txt('entorno', 160); txt('sucursal', 160); txt('usuario_caso', 160); txt('dato_caso', 200);
   txt('espera_cliente', 300);
+  // El resumen del paso 1 que lee desarrollo. Se edita a mano cuando el
+  // generado no dice lo importante; nunca sustituye a `problema`/`esperado`.
+  txt('resumen', 3000);
   if (['falla', 'mejora'].includes(b?.tipo)) p.tipo = b.tipo;
-  if (['alta', 'media', 'baja'].includes(b?.prioridad)) p.prioridad = b.prioridad;
+  /* baja · alta · urgente. «media» se retiró: no significaba nada —nadie
+     programa por lo que «estorba»— y las 18 órdenes que la tenían pasaron a
+     baja. Se sigue aceptando por si llega de una pantalla vieja, y cae en baja. */
+  if (['alta', 'urgente', 'baja'].includes(b?.prioridad)) p.prioridad = b.prioridad;
+  else if (b?.prioridad === 'media') p.prioridad = 'baja';
   if (['cortesia', 'pagada'].includes(b?.cobro)) p.cobro = b.cobro;
   if ('asignado_id' in b) p.asignado_id = b.asignado_id || null;
   if ('fecha_prometida' in b) p.fecha_prometida = b.fecha_prometida || null;
@@ -254,6 +281,40 @@ export const POST: APIRoute = async ({ request }) => {
       detalle: o.titulo,
     });
     return json({ ok: true, etapa, rebotes });
+  }
+
+  /* ── El resumen para desarrollo ──
+     Lo que se escribe en el paso 1 se escribe para que quede constancia de lo
+     acordado con el cliente, y sale largo: en OT-0013 son 1,900 caracteres.
+     Nadie lee eso antes de programar, así que se lee el resumen y se programa
+     mal. Esto lo condensa a viñetas —qué falta, qué debe hacer, dónde, con qué
+     se da por buena— SIN tocar el original: el acuerdo se queda en las palabras
+     de quien lo acordó. */
+  if (accion === 'resumir') {
+    const id = String(b?.id || '');
+    if (!id) return json({ error: 'Falta la orden.' }, 400);
+    const { data: o } = await supabase.from('taller_ordenes')
+      .select('titulo, tipo, problema, esperado, pasos, criterios').eq('id', id).maybeSingle();
+    if (!o) return json({ error: 'Esa orden ya no existe.' }, 404);
+
+    const fuente = [
+      `TÍTULO: ${o.titulo || ''}`,
+      o.problema ? `QUÉ PASA HOY: ${o.problema}` : '',
+      o.esperado ? `QUÉ DEBERÍA PASAR: ${o.esperado}` : '',
+      o.pasos ? `CÓMO REPRODUCIRLO: ${o.pasos}` : '',
+      o.criterios ? `CON QUÉ SE DA POR BUENA: ${o.criterios}` : '',
+    ].filter(Boolean).join('\n\n');
+    if (fuente.length < 60) return json({ error: 'Todavía no hay suficiente escrito en el paso 1 para resumir.' }, 400);
+
+    const out = await pedirJSON({ system: SYSTEM_RESUMEN, user: fuente }).catch(() => null);
+    const puntos: string[] = Array.isArray((out as any)?.puntos)
+      ? (out as any).puntos.filter((x: any) => typeof x === 'string' && x.trim()).slice(0, 8).map((x: string) => x.trim())
+      : [];
+    if (!puntos.length) return json({ error: 'No se pudo armar el resumen. Escríbelo a mano o vuelve a intentar.' }, 500);
+
+    const resumen = puntos.map(x => '· ' + x).join('\n');
+    await supabase.from('taller_ordenes').update({ resumen, updated_at: new Date().toISOString() }).eq('id', id);
+    return json({ ok: true, resumen });
   }
 
   return json({ error: 'Acción desconocida.' }, 400);

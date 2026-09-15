@@ -308,3 +308,33 @@ Qué significa, para no equivocarse al aplicarlo:
       suya con su frase.
 - [ ] Decidir qué pasa con la tarjeta faro que YA existe en Clientes: el dueño la aprobó como branding
       en su momento; preguntarle si también la quiere en blanco o si esa se queda como la excepción.
+
+## 2026-09-15 · El diseño de TODAS las vistas del cliente: tarjetas primero, limpias, y solo las estrellas de fondo
+
+Llegó mientras se implementaba el stepper de la orden del taller. Palabras del dueño:
+«quiero que verifiques el tema del diseño porque no me lo estás respetando. Todas las vistas deben
+de verse primero con sus cards, y esos cards se deben de ver de forma simplificada y minimalista,
+como hemos venido manejando el diseño. Lo único que vas a hacer diferente es que vas a poner las
+estrellas en el fondo, como está en el taller, pero sin que me agregues "taller". En los
+subsecuentes, eso no debe de pasar en ninguna adicional. Consultoría ya me lo cambiaste y se ve
+como un color de alerta muy feo. Me estás dando dos botones de agregar cuando debería de ser uno y
+"emglobar" como esa sección. Entonces quiero que esta sección se vea limpia, que el diseño sea igual
+para todas las secciones.»
+
+Las reglas que salen de aquí, para no volver a romperlas:
+- **Las tarjetas van PRIMERO** en cada pestaña. Nada de un título o una banda con frase empujándolas
+  hacia abajo: el nombre de la sección ya está en la pestaña.
+- **Solo las estrellas de fondo.** La franja de destellos sí, en todas. El título y el sello con la
+  frase NO — eso es para las pantallas de módulo, no para las pestañas de la ficha.
+- **Nada de agua de alerta donde no hay alerta.** Ámbar y rojo solo para lo vencido o lo que frena.
+  Un degradado de color a todo lo ancho se lee como un aviso aunque sea un dato.
+- **Un solo botón de agregar por sección**, arriba, que engloba lo de abajo.
+
+- [x] Consultoría: tarjeta del dinero en blanco con franja verde, sugerencias en blanco, el puente al
+      taller sin ámbar, y UN botón «+ Agregar» para toda la sección (15-sep-2026).
+- [x] Los destellos de fondo en las diez pestañas de la ficha, sin título ni frase (15-sep-2026).
+- [ ] Repasar pestaña por pestaña —Info general, Suscripciones, Renovación, Actividad, Reuniones,
+      Conversaciones, Soporte, Outbound— que las tarjetas sean lo primero, blancas, con su franja de
+      3 px, y que no quede ningún bloque de color a todo lo ancho.
+- [ ] Revisar que Reuniones no repita cuatro botones de estado por renglón (Agendada/Confirmada/
+      Asistió/No llegó): es un segmento, no cuatro acciones del mismo peso.

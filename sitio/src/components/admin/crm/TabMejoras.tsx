@@ -519,9 +519,12 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
           salió. Solo aparece si hay algo cotizado: una cuenta sin trabajo
           vendido no necesita una tarjeta que diga cero. */}
       {cotizado > 0 && (
+        /* Blanca con su franja verde de 3 px, como toda tarjeta del CRM. El
+           degradado lila→rosa se quitó: ocupando el ancho completo se leía como
+           un aviso, no como el dato de dinero que es. */
         <div style={{
-          background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.13))',
-          border: '1px solid #ddd6fb', borderRadius: 12, padding: '15px 18px', marginBottom: 12,
+          background: '#fff', border: '1px solid #eeeef1', borderLeft: '3px solid #4FBF95',
+          borderRadius: 12, padding: '15px 18px', marginBottom: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1E8A63', letterSpacing: '-.035em' }}>{money(entrado)}</span>
@@ -591,6 +594,20 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
 
       <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
 
+      {/* UN botón para toda la sección. Eran dos —«+ Agregar» en el hito 1 y
+          «+ Agregar idea» en el 2— y obligaban a decidir el carril ANTES de
+          escribir, que es al revés: primero se escribe qué es y de ahí se sabe
+          dónde cae. El formulario ya pregunta la categoría y el estado. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.7rem', color: '#a5a2af' }}>
+          Lo que le debes, lo que le puedes vender y lo que ya recibió.
+        </span>
+        <button style={{ ...S.btn, marginLeft: 'auto' }}
+          onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion', visible_cliente: true })}>
+          + Agregar
+        </button>
+      </div>
+
       <div style={{ position: 'relative', paddingLeft: 26 }}>
         {/* El hilo en el lila del sistema y no en gris: sobre el fondo de la
             ficha un #ececec desaparece y los tres puntos quedan sueltos. */}
@@ -599,13 +616,16 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
         {/* 1 · Lo que le debes */}
         <Hito n={1} titulo="Lo tuyo con el cliente" color="#9B8CFA"
           resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada pendiente de tu lado'}
-          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'capacitacion', visible_cliente: true })}>+ Agregar</button>}>
+>
           {/* El puente al taller: una LÍNEA, no una lista. Lo que se está
               construyendo tiene su propia pestaña; aquí basta saber que existe
               y si va tarde — que es lo que antes no se veía. */}
           {enObra.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: porHacer ? 12 : 0, paddingBottom: porHacer ? 12 : 0, borderBottom: porHacer ? '1px solid #f4f4f4' : 'none' }}>
-              <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', ...(obraTarde ? { background: '#FEF0EF', color: '#C0554E' } : obraSinFecha ? { background: '#FFF4E5', color: '#9a6a10' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
+              {/* Sin agua de alerta cuando no hay alerta: «sin fecha» todavía no
+                  es un problema, y pintarlo de ámbar hacía que la pantalla se
+                  viera encendida de arriba abajo. Solo lo vencido lleva rojo. */}
+              <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', ...(obraTarde ? { background: '#FEF0EF', color: '#C0554E' } : { background: '#EEECFE', color: '#5B4BD6' }) }}>
                 {enObra.length} en el taller{obraTarde ? ` · ${obraTarde} ${obraTarde === 1 ? 'día' : 'días'} tarde` : ''}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#888', flex: 1, minWidth: 180 }}>
@@ -638,10 +658,10 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
             en la MISMA lista. Eran dos bloques que decían lo mismo. */}
         <Hito n={2} titulo="Por vender" color="#EFA6CA"
           resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${oportunidades.length ? ` · ${oportunidades.length} oportunidad${oportunidades.length === 1 ? '' : 'es'}` : ''}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
-          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>}>
+>
 
           {(sugerencias.length > 0 || sugYaEnLista > 0) && (
-            <div style={{ border: '1px dashed #f3cadb', background: 'rgba(244,168,205,.16)', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
+            <div style={{ border: '1px solid #eeeef1', borderLeft: '3px solid #EFA6CA', background: '#fff', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c3d70', display: 'flex', alignItems: 'center', gap: 8 }}>
                 Sugerencias del sistema · {sugerencias.length}
                 {sugerencias.length > 1 && (

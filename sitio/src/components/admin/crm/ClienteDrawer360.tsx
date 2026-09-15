@@ -10,6 +10,7 @@ import { fechasDeSerie as previewSerie, describirSerie, MAX_SESIONES } from '../
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import TallerCuenta from './taller/TallerCuenta';
+import Chispas, { CSS_CHISPAS } from './ui/Chispas';
 import TabOutbound from './outbound/TabOutbound';
 import TabSoporte from './soporte/TabSoporte';
 import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
@@ -117,6 +118,28 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 
 // `embebido`: la ficha vive DENTRO de la hoja (VistaRapida). La hoja ya pone
 // superficie, asa, identidad y acciones; aquí se apagan para no duplicarlas.
+/* Los destellos de la marca, detrás de TODAS las pestañas de la ficha.
+ *
+ * Es solo la piel: una franja de estrellas entre las pestañas y el contenido.
+ * NO lleva título ni frase —el nombre de la sección ya está en la pestaña, y
+ * repetirlo abajo es decir dos veces lo mismo y empujar las tarjetas hacia
+ * abajo—. Lo primero que se ve sigue siendo lo que había: las tarjetas.
+ *
+ * Vive aquí y no dentro de cada pestaña porque son diez pantallas, y diez
+ * juegos de destellos con distintos tamaños se ven como diez casas.
+ *
+ * La regla de la casa: los destellos van SOLO en esta franja, la única sin
+ * cifras. Un destello detrás de un número estorba al leerlo.
+ */
+function FirmaFicha() {
+  return (
+    <div className="chispas-cab" aria-hidden="true"
+      style={{ position: 'relative', height: 30, margin: '-4px -6px 4px' }}>
+      <Chispas />
+    </div>
+  );
+}
+
 export default function ClienteDrawer360({ companyId, onClose, onChanged, embebido, tabInicial }: { companyId: string; onClose: () => void; onChanged: () => void; embebido?: boolean;
   /** Con qué pestaña abre. La usa el caso de churn, que entra buscando la
    *  actividad y no el resumen. */
@@ -489,6 +512,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   sistema, no mirando el saldo. La MISMA tarjeta que la ficha del
                   lead y que el inbox — tres copias serían tres verdades. */}
               {tab === 'resumen' && <CuentaSacs companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
+              {/* La firma: una banda de destellos con la frase de la pantalla,
+                  arriba de lo que traiga cada pestaña. No cambia nada de lo que
+                  hay debajo — es la piel de la casa, no un bloque más. */}
+              <style>{CSS_CHISPAS}</style>
+              <FirmaFicha />
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {/* ── La cuenta de Sacs, aquí y no en Actividad ──
                   Qué cuenta opera este cliente y con qué datos se le factura es

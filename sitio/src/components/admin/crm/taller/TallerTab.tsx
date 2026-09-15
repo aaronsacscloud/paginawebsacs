@@ -503,11 +503,71 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
   }
 
   const quedan = diasHasta(o.revision_vence);
-  const SIGUIENTE: Record<string, string[]> = {
-    recibida: ['analisis', 'espera'], analisis: ['desarrollo', 'espera'], desarrollo: ['pruebas', 'lista', 'espera'],
-    pruebas: ['lista', 'desarrollo'], lista: [], devuelta: ['desarrollo'], espera: ['analisis', 'desarrollo'],
-    trabada: ['desarrollo'], entregada: [],
+  /* ══════════ LA ORDEN, EN TRES PASOS ══════════
+     La ficha enseñaba todo a todos y nadie sabía qué le tocaba. Cada paso tiene
+     UN dueño, y solo se abre el de quien está trabajando; los otros dos se
+     doblan a un renglón que se puede abrir. El botón dice a quién se la pasa.
+
+       1 · Lo que se necesita   → lo escribe quien la levanta
+       2 · El compromiso y la entrega → lo llena desarrollo
+       3 · Tu revisión          → lo cierra el dueño de la cuenta
+
+     El paso sale de la ETAPA, no de un campo nuevo: un segundo lugar donde
+     vive «en qué va» es un segundo lugar donde se puede desincronizar. */
+  const PASO_DE: Record<string, 1 | 2 | 3> = {
+    recibida: 1,
+    analisis: 2, desarrollo: 2, pruebas: 2, devuelta: 2, espera: 2, trabada: 2,
+    lista: 3, entregada: 3,
   };
+  const paso = PASO_DE[o.etapa] || 1;
+  const cerrada = o.etapa === 'entregada';
+
+  // Las llaves de cada paso, dichas ANTES de intentarlo y no como un error
+  // después. Son los mismos candados que el API ya exige.
+  const falta1 = [
+    !v('problema') && 'qué pasa hoy',
+    !v('esperado') && 'qué debería pasar',
+    !v('criterios') && 'con qué se da por buena',
+  ].filter(Boolean) as string[];
+  const falta2 = [
+    !v('fecha_prometida') && 'la fecha de entrega',
+    !v('asignado_id') && 'el responsable',
+    !v('video_url') && !v('verificacion') && 'el video de la entrega',
+  ].filter(Boolean) as string[];
+
+  const PASOS = [
+    { n: 1, t: 'Lo que se necesita', de: 'lo escribes tú' },
+    { n: 2, t: 'El compromiso y la entrega', de: 'lo llena desarrollo' },
+    { n: 3, t: 'Tu revisión', de: 'lo cierras tú' },
+  ];
+
+  /* Un renglón doblado: el paso que no toca, resumido en una línea que se puede
+     abrir. Es lo que evita que «un paso a la vez» signifique «a ciegas». */
+  const Doblado = ({ n, titulo, de, children }: any) => {
+    const [abierto, setAbierto] = useState(false);
+    return (
+      <div style={{ ...S.caja, background: '#FAFAFB', borderColor: '#f0eff4', marginBottom: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ ...S.lbl, margin: 0, color: n < paso ? P.verdeTinta : '#a5a2af' }}>
+            {n} · {titulo}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{de}</span>
+          <button onClick={() => setAbierto(a => !a)}
+            style={{ marginLeft: 'auto', border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: P.violetaTinta }}>
+            {abierto ? 'ocultar' : 'ver'}
+          </button>
+        </div>
+        {abierto && <div style={{ marginTop: 10 }}>{children}</div>}
+      </div>
+    );
+  };
+
+  const Lectura = ({ k, l }: any) => (
+    <div style={{ marginTop: 9 }}>
+      <span style={S.lbl}>{l}</span>
+      <div style={{ fontSize: '0.79rem', color: v(k) ? '#3f3c4a' : '#b5b2bd', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{v(k) || '—'}</div>
+    </div>
+  );
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
@@ -515,163 +575,369 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
       <div style={{ background: '#fbfafd', width: 760, maxWidth: '100%', height: '100%', overflowY: 'auto', boxShadow: '-16px 0 44px rgba(16,24,40,.18)' }}>
         <div style={{ position: 'sticky', top: 0, zIndex: 2, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: '13px 18px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <b style={{ fontSize: '0.95rem' }}>{o.folio}</b>
-          <span style={{ fontSize: '0.76rem', color: '#8d8a97' }}>{cuentaDe(o)} · {ETAPAS[o.etapa]}</span>
+          <span style={{ fontSize: '0.76rem', color: '#8d8a97' }}>
+            {cuentaDe(o)} · {cerrada ? 'entregada' : `paso ${paso} de 3`}
+          </span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
             {sucio && <button style={{ ...S.btn, opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => guarda().then(ok => ok && flash('Guardado'))}>Guardar cambios</button>}
             <button style={S.btnG} onClick={onCerrar}>Cerrar</button>
           </div>
         </div>
 
-        <div style={{ padding: '16px 18px', display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 13 }}>
-          <div>
-            <div style={S.caja}>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 9 }}>
-                <span style={{ ...CHIP_T[o.tipo], fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.tipo.toUpperCase()}</span>
-                {o.prioridad === 'alta' && <span style={{ background: P.rojoAgua, color: P.rojoTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>bloquea la operación</span>}
-                {o.modulo && <span style={{ background: '#f6f5f9', color: '#6b6b74', fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.modulo}</span>}
-                {o.cobro && <span style={{ background: o.cobro === 'cortesia' ? P.verdeAgua : P.azulAgua, color: o.cobro === 'cortesia' ? P.verdeTinta : P.azulTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.cobro}</span>}
-                {d.mejoras.length > 1 && <span style={{ background: P.violetaAgua, color: P.violetaTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{d.mejoras.length} cuentas afectadas</span>}
-              </div>
-              <input value={v('titulo')} onChange={e => set('titulo', e.target.value)} style={{ ...S.input, fontSize: '0.95rem', fontWeight: 700, border: '1.5px solid transparent', background: 'transparent', padding: '2px 0' }} />
-              {[['problema', 'Qué pasa hoy'], ['esperado', 'Qué debería pasar'], ['pasos', 'Cómo reproducirlo'], ['criterios', 'Con qué se da por buena']].map(([k, l]) => (
-                <div key={k} style={{ marginTop: 11 }}>
-                  <span style={S.lbl}>{l}</span>
-                  <textarea value={v(k)} onChange={e => set(k, e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }} placeholder="—" />
-                </div>
-              ))}
-              {/* El video de QUIEN LEVANTA la orden. Va aquí y no del lado de la
-                  entrega porque son dos videos distintos y confundirlos es caro:
-                  este muestra el problema, el otro muestra que quedó. */}
-              <div style={{ marginTop: 11 }}>
-                <span style={S.lbl}>Video o evidencia que estoy mandando</span>
-                <input value={v('evidencia_url')} onChange={e => set('evidencia_url', e.target.value)} placeholder="https://… la pantalla grabada, la foto del ticket" style={S.input} />
-                <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
-                  Lo que le mandas a desarrollo para que lo entiendan sin preguntarte.
-                </div>
-              </div>
-            </div>
+        <div style={{ padding: '16px 18px' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 7 }}>
+            <span style={{ ...CHIP_T[o.tipo], fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.tipo.toUpperCase()}</span>
+            {o.prioridad === 'urgente' && <span style={{ background: P.rojoAgua, color: P.rojoTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>urgente</span>}
+            {o.modulo && <span style={{ background: '#f6f5f9', color: '#6b6b74', fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{o.modulo}</span>}
+            {d.mejoras.length > 1 && <span style={{ background: P.violetaAgua, color: P.violetaTinta, fontSize: '0.58rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px' }}>{d.mejoras.length} cuentas</span>}
+          </div>
+          <input value={v('titulo')} onChange={e => set('titulo', e.target.value)}
+            style={{ ...S.input, fontSize: '1rem', fontWeight: 700, border: '1.5px solid transparent', background: 'transparent', padding: '2px 0', marginBottom: 14 }} />
 
-            {/* La bitácora del lado de quien pide: qué se movió y cuándo. Es lo
-                único del historial que sirve aquí — la conversación técnica y
-                los datos de entorno se quitaron a pedido del dueño: nadie los
-                llenaba y empujaban fuera de pantalla lo que sí se llena. */}
-            <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Lo que ha pasado con esta orden</span>
-              {d.bitacora.length === 0 && <div style={{ fontSize: '0.79rem', color: '#999', padding: '4px 0' }}>Todavía no se ha movido.</div>}
-              {d.bitacora.map((b: any) => (
-                <div key={b.id} style={{ display: 'flex', gap: 8, fontSize: '0.72rem', color: '#6b6b74', padding: '5px 0', borderTop: '1px solid #f5f4f8' }}>
-                  <span style={{ color: '#a5a2af', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                    {new Date(b.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          {/* El riel de los tres pasos. Sin colores de alarma: el que va se
+              marca con el morado del sistema y los hechos con la palomita. */}
+          <div style={{ display: 'flex', border: '1px solid #eeeef1', borderRadius: 11, overflow: 'hidden', background: '#fff', marginBottom: 14 }}>
+            {PASOS.map((x, i) => {
+              const hecho = x.n < paso || cerrada;
+              const activo = x.n === paso && !cerrada;
+              return (
+                <div key={x.n} style={{
+                  flex: 1, minWidth: 0, padding: '11px 13px', display: 'flex', gap: 10, alignItems: 'center',
+                  borderRight: i < 2 ? '1px solid #f2f1f6' : 'none',
+                  background: activo ? '#F7F5FE' : '#fff',
+                }}>
+                  <span style={{
+                    width: 24, height: 24, flex: 'none', borderRadius: 99, display: 'grid', placeItems: 'center',
+                    fontSize: '0.72rem', fontWeight: 800,
+                    ...(hecho ? { background: P.verdeAgua, color: P.verdeTinta }
+                      : activo ? { background: P.violeta, color: '#fff' }
+                      : { background: '#f2f1f6', color: '#b5b2bd' }),
+                  }}>{hecho ? '✓' : x.n}</span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, lineHeight: 1.25, color: hecho || activo ? '#1a1a1a' : '#b5b2bd' }}>{x.t}</span>
+                    <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: 600, color: '#a5a2af' }}>{x.de}</span>
                   </span>
-                  <span>{b.nota || (b.a ? `${b.actor} la pasó a ${ETAPAS[b.a]?.toLowerCase() || b.a}` : b.actor)}</span>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          <div>
-            {/* El acuerdo de tiempos: la fecha la pone quien hace el trabajo, la
-                ventana de revisión la pide quien entrega, y se miden las dos. */}
-            <div style={{ ...S.caja, borderColor: P.violetaBorde }}>
-              <span style={S.lbl}>Las fechas y quién la trabaja</span>
-              <div style={{ marginBottom: 9 }}>
-                <span style={S.lbl}>Fecha de entrega · la pone desarrollo</span>
-                <input type="date" value={String(v('fecha_prometida') || '').slice(0, 10)} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} />
-                {o.fecha_prometida_1 && o.fecha_prometida !== o.fecha_prometida_1 && (
-                  <div style={{ fontSize: '0.68rem', color: P.ambarTinta, marginTop: 4 }}>Se movió: la primera fue el {fmt(o.fecha_prometida_1)} y es contra esa que se mide.</div>
-                )}
+          {/* ── PASO 1 ── */}
+          {paso === 1 && !cerrada ? (
+            <div style={{ ...S.caja, borderColor: P.violetaBorde, boxShadow: '0 2px 12px rgba(155,140,250,.09)', marginBottom: 11 }}>
+              <span style={{ ...S.lbl, color: P.violetaTinta }}>1 · Lo que se necesita</span>
+              {[['problema', 'Qué pasa hoy'], ['esperado', 'Qué debería pasar'], ['pasos', 'Cómo reproducirlo'], ['criterios', 'Con qué se da por buena']].map(([k, l]) => (
+                <div key={k} style={{ marginTop: 10 }}>
+                  <span style={S.lbl}>{l}</span>
+                  <textarea value={v(k)} onChange={e => set(k, e.target.value)} rows={3} style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} placeholder="—" />
+                </div>
+              ))}
+              <div style={{ marginTop: 10 }}>
+                <span style={S.lbl}>Video o evidencia que estás mandando</span>
+                <input value={v('evidencia_url')} onChange={e => set('evidencia_url', e.target.value)}
+                  placeholder="https://… la pantalla grabada, la foto del ticket" style={S.input} />
               </div>
-              <div style={{ marginBottom: 9 }}>
-                <span style={S.lbl}>Días para que el dueño revise</span>
-                <input type="number" min={1} max={30} value={v('dias_revision') || 3} onChange={e => set('dias_revision', e.target.value)} style={S.input} />
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 13, flexWrap: 'wrap' }}>
+                <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem', opacity: falta1.length || guardando ? .5 : 1, cursor: falta1.length ? 'not-allowed' : 'pointer' }}
+                  disabled={!!falta1.length || guardando}
+                  onClick={async () => { const ok = await guarda({ etapa: 'analisis' }); if (ok) flash('Va para desarrollo'); }}>
+                  Mandarla a desarrollo
+                </button>
+                <span style={{ fontSize: '0.71rem', color: falta1.length ? P.ambarTinta : '#8d8a97', lineHeight: 1.45 }}>
+                  {falta1.length ? `Falta ${falta1.join(', ')}.` : 'Desarrollo la recibe con un resumen de esto.'}
+                </span>
               </div>
-              {o.etapa === 'lista' && quedan != null && (
-                <div style={{ fontSize: '0.74rem', color: quedan < 0 ? P.rojoTinta : quedan <= 1 ? P.ambarTinta : P.verdeTinta, fontWeight: 700 }}>
-                  {quedan >= 0 ? `La revisión vence el ${fmt(o.revision_vence)} · quedan ${quedan} d` : `La revisión se pasó ${Math.abs(quedan)} d`}
+            </div>
+          ) : (
+            <Doblado n={1} titulo="Lo que se necesita" de="lo escribiste tú">
+              <Lectura k="problema" l="Qué pasa hoy" />
+              <Lectura k="esperado" l="Qué debería pasar" />
+              <Lectura k="pasos" l="Cómo reproducirlo" />
+              <Lectura k="criterios" l="Con qué se da por buena" />
+              <div style={{ marginTop: 9 }}>
+                <span style={S.lbl}>Video o evidencia de quien la levantó</span>
+                {v('evidencia_url')
+                  ? <a href={v('evidencia_url')} target="_blank" rel="noreferrer" style={{ fontSize: '0.79rem', color: P.violetaTinta }}>{v('evidencia_url')}</a>
+                  : <div style={{ fontSize: '0.79rem', color: '#b5b2bd' }}>—</div>}
+              </div>
+            </Doblado>
+          )}
+
+          {/* ── PASO 2 ── */}
+          {paso === 2 && !cerrada ? (
+            <div style={{ ...S.caja, borderColor: P.violetaBorde, boxShadow: '0 2px 12px rgba(155,140,250,.09)', marginBottom: 11 }}>
+              <span style={{ ...S.lbl, color: P.violetaTinta }}>2 · El compromiso y la entrega</span>
+              <Resumen o={o} api={api} traer={traer} flash={flash} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginTop: 12 }}>
+                <div><span style={S.lbl}>Fecha de entrega</span>
+                  <input type="date" value={String(v('fecha_prometida') || '').slice(0, 10)} onChange={e => set('fecha_prometida', e.target.value)} style={S.input} /></div>
+                <div><span style={S.lbl}>Días para que revises</span>
+                  <input type="number" min={1} max={30} value={v('dias_revision') || 3} onChange={e => set('dias_revision', e.target.value)} style={S.input} /></div>
+                <div><span style={S.lbl}>Responsable</span>
+                  <select value={v('asignado_id') || ''} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
+                    <option value="">— sin asignar —</option>
+                    {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
+                  </select></div>
+              </div>
+              {o.fecha_prometida_1 && o.fecha_prometida !== o.fecha_prometida_1 && (
+                <div style={{ fontSize: '0.7rem', color: '#8d8a97', marginTop: 5 }}>
+                  La primera fecha fue el {fmt(o.fecha_prometida_1)} y es contra esa que se mide.
                 </div>
               )}
-              <div style={{ marginTop: 9 }}>
-                <span style={S.lbl}>Responsable</span>
-                <select value={v('asignado_id') || ''} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
-                  <option value="">— sin asignar —</option>
-                  {equipo.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+
+              <div style={{ marginTop: 11 }}>
+                <span style={S.lbl}>Prioridad</span>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {[['baja', 'Baja'], ['alta', 'Alta'], ['urgente', 'Urgente']].map(([k, l]) => {
+                    const on = (v('prioridad') || 'baja') === k;
+                    return (
+                      <button key={k} onClick={() => set('prioridad', k)}
+                        style={on ? { ...S.btnG, borderColor: P.violeta, background: P.violetaAgua, color: P.violetaTinta, fontWeight: 800 } : S.btnG}>{l}</button>
+                    );
+                  })}
+                  <span style={{ fontSize: '0.7rem', color: '#a5a2af', alignSelf: 'center' }}>urgente = hoy no puede vender</span>
+                </div>
+              </div>
+              <div style={{ marginTop: 11 }}>
+                <span style={S.lbl}>Cobro</span>
+                <select value={v('cobro') || ''} onChange={e => set('cobro', e.target.value)} style={{ ...S.input, maxWidth: 220 }}>
+                  <option value="">— sin definir —</option><option value="cortesia">Cortesía</option><option value="pagada">Pagada</option>
                 </select>
               </div>
-              <div style={{ marginTop: 9, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div><span style={S.lbl}>Prioridad</span>
-                  <select value={v('prioridad') || 'media'} onChange={e => set('prioridad', e.target.value)} style={S.input}>
-                    <option value="alta">Bloquea la operación</option><option value="media">Estorba</option><option value="baja">Cosmético</option>
-                  </select></div>
-                <div><span style={S.lbl}>Cobro</span>
-                  <select value={v('cobro') || ''} onChange={e => set('cobro', e.target.value)} style={S.input}>
-                    <option value="">— sin definir —</option><option value="cortesia">Cortesía</option><option value="pagada">Pagada</option>
-                  </select></div>
-              </div>
-            </div>
 
-            <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Lo que me tienen que entregar</span>
-              <span style={S.lbl}>Video de la entrega</span>
-              <input value={v('video_url')} onChange={e => set('video_url', e.target.value)} placeholder="https://…" style={S.input} />
-              <div style={{ marginTop: 9 }}>
-                <span style={S.lbl}>…o cómo verificarlo (si no lleva video)</span>
-                <textarea value={v('verificacion')} onChange={e => set('verificacion', e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }} placeholder="Entra a Catálogo → Plantillas y guarda un certificado: las etiquetas siguen ahí." />
+              <div style={{ marginTop: 11 }}>
+                <span style={S.lbl}>Video de lo que entregan</span>
+                <input value={v('video_url')} onChange={e => set('video_url', e.target.value)} placeholder="https://… la pantalla grabada mostrando que ya quedó" style={S.input} />
+                <div style={{ marginTop: 8 }}>
+                  <span style={S.lbl}>…o cómo verificarlo, si no lleva video</span>
+                  <textarea value={v('verificacion')} onChange={e => set('verificacion', e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }} placeholder="Entra a Catálogo → Plantillas y guarda un certificado: las etiquetas siguen ahí." />
+                </div>
               </div>
-              <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 6, lineHeight: 1.45 }}>
-                Sin uno de los dos no se puede marcar lista. El video es el que ve el cliente en su reporte.
-              </div>
-            </div>
 
-            <div style={{ ...S.caja, marginTop: 12 }}>
-              <span style={S.lbl}>Mover de etapa</span>
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                {(SIGUIENTE[o.etapa] || []).map(e => (
-                  <button key={e} style={e === 'lista' ? S.btnSec : S.btnG} onClick={() => mover(e)}>{ETAPAS[e]}</button>
-                ))}
-                {o.etapa === 'lista' && <span style={{ fontSize: '0.74rem', color: '#8d8a97' }}>Está en manos del dueño: se aprueba desde la bandeja.</span>}
-                {o.etapa === 'entregada' && <span style={{ fontSize: '0.74rem', color: P.verdeTinta, fontWeight: 700 }}>Entregada y cerrada en la ficha del cliente.</span>}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 13, flexWrap: 'wrap' }}>
+                <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem', opacity: falta2.length || guardando ? .5 : 1, cursor: falta2.length ? 'not-allowed' : 'pointer' }}
+                  disabled={!!falta2.length || guardando}
+                  onClick={async () => { const ok = await guarda({ etapa: 'lista' }); if (ok) flash('Lista para tu revisión'); }}>
+                  Mandarla a revisión
+                </button>
+                <span style={{ fontSize: '0.71rem', color: falta2.length ? P.ambarTinta : '#8d8a97', lineHeight: 1.45 }}>
+                  {falta2.length ? `Falta ${falta2.join(', ')}.` : `Tendrás ${v('dias_revision') || 3} días para revisarla.`}
+                </span>
               </div>
-              {/* Pedir un dato congela el reloj. Es lo único que se rescató del
-                  bloque técnico que se quitó: sin esto, ni se les reclama un SLA
-                  que empezó sin poder trabajar, ni se quedan colgados de algo
-                  que nunca llegó. */}
-              {o.falta_dato ? (
-                <div style={{ background: P.ambarAgua, border: '1px solid #f2ddb8', borderRadius: 9, padding: '9px 11px', fontSize: '0.76rem', color: P.ambarTinta, marginTop: 10 }}>
-                  <b>Desarrollo pidió un dato</b> hace {dias(o.falta_dato_at)} d: {o.falta_dato}
-                  <div style={{ marginTop: 7 }}>
+
+              {/* Lo que detiene el reloj, y lo que se le pidió al cliente. */}
+              <div style={{ marginTop: 13, paddingTop: 11, borderTop: '1px solid #f2f1f6', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {o.falta_dato ? (
+                  <>
+                    <span style={{ fontSize: '0.74rem', color: '#4a4a52' }}>
+                      Pediste un dato hace {dias(o.falta_dato_at)} d: <b>{o.falta_dato}</b>
+                    </span>
                     <button style={S.btnG} onClick={() => guarda({ falta_dato: '' }).then(ok => ok && flash('Listo, el reloj vuelve a correr'))}>Ya quedó</button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ marginTop: 10 }}>
-                  <button style={S.btnG} onClick={async () => {
-                    const q = window.prompt('¿Qué dato falta para poder trabajarla?');
-                    if (q && q.trim()) { const ok = await guarda({ falta_dato: q.trim() }); if (ok) flash('Pedido. El reloj queda congelado.'); }
-                  }}>Falta un dato</button>
-                  <span style={{ fontSize: '0.7rem', color: '#8d8a97', marginLeft: 8 }}>congela el tiempo y avisa a quien la levantó</span>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <>
+                    <button style={S.btnG} onClick={async () => {
+                      const q = window.prompt('¿Qué dato falta para poder trabajarla?');
+                      if (q && q.trim()) { const ok = await guarda({ falta_dato: q.trim() }); if (ok) flash('Pedido. El reloj queda congelado.'); }
+                    }}>Falta un dato</button>
+                    <button style={S.btnG} onClick={() => mover('espera')}>Esperando al cliente</button>
+                    <span style={{ fontSize: '0.7rem', color: '#a5a2af' }}>las dos congelan el tiempo</span>
+                  </>
+                )}
+              </div>
               {o.etapa === 'espera' && (
                 <div style={{ marginTop: 9 }}>
                   <span style={S.lbl}>¿Qué se le pidió al cliente?</span>
                   <input value={v('espera_cliente')} onChange={e => set('espera_cliente', e.target.value)} style={S.input} />
-                  <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5 }}>Lleva {dias(o.espera_desde)} d detenida. Ese tiempo no cuenta contra la fecha.</div>
+                  <div style={{ fontSize: '0.7rem', color: '#8d8a97', marginTop: 5 }}>Lleva {dias(o.espera_desde)} d detenida. Ese tiempo no cuenta contra la fecha.</div>
                 </div>
               )}
             </div>
-
-            {d.mejoras.length > 0 && (
-              <div style={{ ...S.caja, marginTop: 12 }}>
-                <span style={S.lbl}>Lo que ve el cliente</span>
-                <div style={{ fontSize: '0.76rem', color: '#55505f', lineHeight: 1.5 }}>
-                  Al aprobar se cierra{d.mejoras.length > 1 ? 'n' : ''} {d.mejoras.length} renglón{d.mejoras.length > 1 ? 'es' : ''} en su ficha con la fecha y el video.
-                  <b> Nada de lo interno —fechas prometidas, rebotes, tiempos— sale en su reporte.</b>
+          ) : (
+            <Doblado n={2} titulo="El compromiso y la entrega" de={paso < 2 ? 'cuando la mandes a desarrollo' : 'lo llenó desarrollo'}>
+              <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6 }}>
+                {o.fecha_prometida ? <>Prometida para el <b>{fmt(o.fecha_prometida)}</b></> : 'Sin fecha todavía'}
+                {o.team_members?.nombre && <> · {o.team_members.nombre}</>}
+                {o.prioridad && <> · prioridad {o.prioridad}</>}
+              </div>
+              {o.resumen && <div style={{ fontSize: '0.78rem', color: '#4a4a52', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginTop: 8 }}>{o.resumen}</div>}
+              {(o.video_url || o.verificacion) && (
+                <div style={{ marginTop: 9 }}>
+                  <span style={S.lbl}>Lo que entregaron</span>
+                  {o.video_url
+                    ? <a href={o.video_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.79rem', color: P.violetaTinta }}>{o.video_url}</a>
+                    : <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.55 }}>{o.verificacion}</div>}
                 </div>
+              )}
+            </Doblado>
+          )}
+
+          {/* ── PASO 3 ── */}
+          {paso === 3 ? (
+            <div style={{ ...S.caja, borderColor: cerrada ? '#ececec' : P.violetaBorde, boxShadow: cerrada ? 'none' : '0 2px 12px rgba(155,140,250,.09)' }}>
+              <span style={{ ...S.lbl, color: cerrada ? P.verdeTinta : P.violetaTinta }}>3 · Tu revisión</span>
+              {cerrada ? (
+                <div style={{ fontSize: '0.8rem', color: '#3f3c4a', lineHeight: 1.6, marginTop: 6 }}>
+                  Entregada el <b>{fmt(o.entregada_at)}</b>. Ya aparece en Consultoría del cliente, en «Ya entregado»,
+                  con su fecha y su video.
+                </div>
+              ) : (
+                <RevisionPaso o={o} d={d} api={api} traer={traer} flash={flash} quedan={quedan} />
+              )}
+            </div>
+          ) : (
+            <Doblado n={3} titulo="Tu revisión" de="cuando desarrollo entregue">
+              <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6 }}>
+                Verás el video al lado de tu criterio y decides: aprobar —y se marca entregado en la ficha del
+                cliente— o pedir cambios con su motivo.
+              </div>
+            </Doblado>
+          )}
+
+          <div style={{ ...S.caja, background: '#FAFAFB', borderColor: '#f0eff4', marginTop: 11 }}>
+            <span style={S.lbl}>Lo que ha pasado con esta orden</span>
+            {d.bitacora.length === 0 && <div style={{ fontSize: '0.78rem', color: '#b5b2bd' }}>Todavía no se ha movido.</div>}
+            {d.bitacora.map((b: any) => (
+              <div key={b.id} style={{ display: 'flex', gap: 8, fontSize: '0.72rem', color: '#6b6b74', padding: '5px 0', borderTop: '1px solid #f2f1f6' }}>
+                <span style={{ color: '#a5a2af', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                  {new Date(b.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <span>{b.nota || (b.a ? `${b.actor} la pasó a ${ETAPAS[b.a]?.toLowerCase() || b.a}` : b.actor)}</span>
+              </div>
+            ))}
+            {d.mejoras.length > 0 && (
+              <div style={{ fontSize: '0.73rem', color: '#8d8a97', lineHeight: 1.5, marginTop: 9, paddingTop: 9, borderTop: '1px solid #f2f1f6' }}>
+                Al aprobar se cierra{d.mejoras.length > 1 ? 'n' : ''} {d.mejoras.length} renglón{d.mejoras.length > 1 ? 'es' : ''} en la
+                ficha del cliente con la fecha y el video. Nada de lo interno —rebotes, tiempos— sale en su reporte.
               </div>
             )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* El resumen del paso 1, para que desarrollo no tenga que leer 1,900
+   caracteres antes de programar. Se genera, se edita y NO reemplaza el
+   original: lo que se acordó con el cliente se queda en sus palabras. */
+function Resumen({ o, api, traer, flash }: any) {
+  const [txt, setTxt] = useState<string>(o.resumen || '');
+  const [editando, setEditando] = useState(false);
+  const [armando, setArmando] = useState(false);
+
+  async function armar() {
+    setArmando(true);
+    const j = await fetch('/api/crm/taller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'resumir', id: o.id }),
+    }).then(r => r.json()).catch(() => null);
+    setArmando(false);
+    if (!j || j.error) { flash(j?.error || 'No se pudo armar el resumen'); return; }
+    setTxt(j.resumen); setEditando(false); traer();
+  }
+
+  return (
+    <div style={{ background: '#FAFAFB', border: '1px solid #f0eff4', borderRadius: 10, padding: '12px 14px', marginTop: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
+        <span style={{ ...S.lbl, margin: 0 }}>En corto, del paso 1</span>
+        <button onClick={armar} disabled={armando}
+          style={{ marginLeft: 'auto', border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: P.violetaTinta, opacity: armando ? .5 : 1 }}>
+          {armando ? 'armando…' : txt ? 'rehacer' : 'armar el resumen'}
+        </button>
+        {txt && !armando && (
+          <button onClick={() => setEditando(e => !e)}
+            style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: '#8d8a97' }}>
+            {editando ? 'listo' : 'editar'}
+          </button>
+        )}
+      </div>
+      {!txt && !armando && (
+        <div style={{ fontSize: '0.76rem', color: '#8d8a97', lineHeight: 1.5 }}>
+          Lo de arriba viene largo porque se escribió para dejar constancia. Arma el resumen y programa con eso.
+        </div>
+      )}
+      {txt && !editando && (
+        <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{txt}</div>
+      )}
+      {txt && editando && (
+        <textarea value={txt} onChange={e => setTxt(e.target.value)} rows={7}
+          onBlur={() => api({ id: o.id, resumen: txt }).then(() => traer())}
+          style={{ ...S.input, resize: 'vertical', lineHeight: 1.6 }} />
+      )}
+    </div>
+  );
+}
+
+/* La revisión: el video al lado del criterio, y dos salidas. Pedir cambios
+   exige motivo de lista cerrada —en texto libre no se puede contar cuál se
+   repite, que es justo lo que dice si el problema es cómo se pide o cómo se
+   entrega—. */
+function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
+  const [motivo, setMotivo] = useState('');
+  const [nota, setNota] = useState('');
+  const [pidiendo, setPidiendo] = useState(false);
+
+  async function revisar(veredicto: string) {
+    const j = await fetch('/api/crm/taller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'revisar', id: o.id, veredicto, motivo: motivo || undefined, nota: nota || undefined }),
+    }).then(r => r.json()).catch(() => null);
+    if (!j || j.error) { flash(j?.error || 'No se pudo registrar la revisión'); return; }
+    flash(veredicto === 'aprobada' ? 'Entregada y cerrada en la ficha del cliente' : 'Devuelta a desarrollo');
+    traer();
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6 }}>
+        Compara lo que entregaron contra lo que pediste. Si está, apruébala: se marca <b>entregado</b> en Consultoría
+        del cliente con su fecha y su video.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginTop: 11 }}>
+        <div>
+          <span style={S.lbl}>Con qué se da por buena</span>
+          <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{o.criterios || '—'}</div>
+        </div>
+        <div>
+          <span style={S.lbl}>Lo que entregaron</span>
+          {o.video_url
+            ? <a href={o.video_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: P.violetaTinta, wordBreak: 'break-all' }}>{o.video_url}</a>
+            : <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55 }}>{o.verificacion || '—'}</div>}
+        </div>
+      </div>
+      {quedan != null && (
+        <div style={{ fontSize: '0.73rem', color: '#8d8a97', marginTop: 9 }}>
+          {quedan >= 0 ? `Quedan ${quedan} día${quedan === 1 ? '' : 's'} para revisarla.` : `La revisión se pasó ${Math.abs(quedan)} días.`}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, marginTop: 13, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem' }} onClick={() => revisar('aprobada')}>Aprobar y entregar</button>
+        <button style={S.btnG} onClick={() => setPidiendo(p => !p)}>Pedir cambios</button>
+      </div>
+      {pidiendo && (
+        <div style={{ marginTop: 11, paddingTop: 11, borderTop: '1px solid #f2f1f6' }}>
+          <span style={S.lbl}>¿Por qué la devuelves?</span>
+          <select value={motivo} onChange={e => setMotivo(e.target.value)} style={{ ...S.input, maxWidth: 280 }}>
+            <option value="">— elige el motivo —</option>
+            <option value="no_resuelve">No resuelve lo que se pidió</option>
+            <option value="rompe_otra">Rompió otra cosa</option>
+            <option value="falta_video">Falta el video o no se ve</option>
+            <option value="incompleta">Quedó incompleta</option>
+            <option value="mal_entendida">Se entendió otra cosa</option>
+          </select>
+          <div style={{ marginTop: 8 }}>
+            <span style={S.lbl}>Qué le falta (opcional)</span>
+            <input value={nota} onChange={e => setNota(e.target.value)} style={S.input} />
+          </div>
+          <button style={{ ...S.btnG, marginTop: 9, opacity: motivo ? 1 : .5 }} disabled={!motivo}
+            onClick={() => revisar('cambios')}>Devolverla a desarrollo</button>
+          <div style={{ fontSize: '0.7rem', color: '#8d8a97', marginTop: 6 }}>
+            {(o.rebotes || 0) >= 2 ? 'Va por su tercer rebote: al devolverla se traba hasta que el criterio quede escrito.' : 'Queda contado: es como se sabe si el problema es cómo se pide o cómo se entrega.'}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
