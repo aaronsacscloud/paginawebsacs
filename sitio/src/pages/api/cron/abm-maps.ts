@@ -110,6 +110,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const dry = url.searchParams.get('dry') === '1';
 
+  const cuantas = Math.min(300, Number(url.searchParams.get('cuantas') || 60));
+  const top = Math.min(300, Number(url.searchParams.get('top') || 100));
+  const giro = url.searchParams.get('giro') || '';
+
   /* MODO TIPOS: revisa el giro de cuentas YA consultadas, usando su place_id.
      Preguntar por place_id pidiendo solo el tipo es un tier barato —nada de
      reseñas—, así que revalidar dos mil cuentas cuesta una fracción de lo que
@@ -143,9 +147,6 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
     return json({ modo: 'tipos', revisadas: rev, fuera_de_moda: fuera, dry });
   }
-  const cuantas = Math.min(300, Number(url.searchParams.get('cuantas') || 60));
-  const top = Math.min(300, Number(url.searchParams.get('top') || 100));
-  const giro = url.searchParams.get('giro') || '';
 
   // El top de cada giro que todavía no hemos consultado. Primero las que no
   // tienen ninguna vía: son las que no se pueden trabajar de ninguna forma.
