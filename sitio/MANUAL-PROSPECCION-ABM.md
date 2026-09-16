@@ -1380,3 +1380,38 @@ lugares de Medellín). Ritmo: 3 hilos, 0.6 s entre páginas; si Google
 contesta HTML/captcha espera 30, 60, 90 s y sigue; el contador de
 «respuestas raras» sale al final.
 
+### 13.10 La pantalla «Países» (lanzar y frenar sin SQL)
+
+Desde el 16-sep-2026, Cuentas objetivo tiene una pestaña **Países**
+(`Paises.tsx` + `/api/crm/abm/paises`, vistas `v_abm_paises` y
+`v_abm_pais_toques`). Una tarjeta por país con: la base y cuántas cuentas
+**esperan permiso** (`en_pausa` con el `pausa_motivo` del cargador), cuántas
+hay en la fila, por dónde se les puede escribir, su cadencia (la de su
+región), sus goteos, lo enviado por canal, **qué hora es allá** y si estamos
+dentro de su ventana (9–18 local).
+
+Tres acciones, todas con firma de quien las hace:
+
+- **Lanzar este país** — las cuentas que esperaban permiso pasan a
+  `sin_tocar` y los goteos del país se encienden. Es la aprobación de esos
+  correos: `abm_goteo.creado_por` queda con quien apretó el botón. Solo
+  suelta las que trae el cargador por país; una cuenta en pausa por «no
+  ahora, búscame en marzo» no se despierta de rebote.
+- **Pausar el país** — apaga sus goteos. Lo ya programado no se cancela:
+  frenar a alguien a media cadencia se decide cuenta por cuenta.
+- **Ritmo (5/10/20/40)** — cuántas cuentas nuevas entran por día en ese país.
+  Regla de dedo: cada cuenta genera 8 correos repartidos en 33 días, así que
+  el envío diario en régimen ≈ (cuentas/día) × 8. Con `tope_diario` en 320,
+  más de ~40 cuentas nuevas al día entre todos los países hace que la fila
+  espere (no se pierde nada, pero un correo del día 4 puede llegar el 6).
+
+Lo que NO hace la pantalla: registrar plantillas de WhatsApp en Meta
+(eso sigue en «Envíos progresivos», y es un trámite hacia afuera que pide OK
+del dueño) ni encender el cartero.
+
+**Cuidado con las limpiezas por ciudad.** El 15-sep una migración de México
+marcó `no_contactar` todo lo que viviera en Bogotá, Madrid o Buenos Aires
+—correcto para una base mexicana— y se llevó 1,017 cuentas de la base por
+país. Se devolvieron con `2026-09-16-abm-rescate-ciudades-extranjeras.sql`.
+Regla: **una lista de ciudades nunca decide sola; siempre con `pais = 'México'`.**
+
