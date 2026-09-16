@@ -10,7 +10,7 @@ import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
 import ReporteEntregas from './ReporteEntregas';
 import ReporteCurso from './ReporteCurso';
-import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
+import { MENU_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 import { computarSenales } from '../../../lib/crm/senales';
 import { confirmar } from '../../../lib/ui/confirmar';
 import OrdenDelTaller, { ETAPAS_TALLER } from './taller/OrdenDelTaller';
@@ -952,7 +952,7 @@ function EditorMejora({ m, reuniones, cots = [], onCerrar, onGuardar }: any) {
           <div style={{ marginBottom: 10 }}><div style={S.lbl}>Dónde se trabaja {esCap ? '' : '(opcional)'}</div>
             <select value={f.modulo || ''} onChange={e => set('modulo', e.target.value)} style={S.input}>
               <option value="">— sin definir —</option>
-              {MODULOS_SACS.map(g => (
+              {MENU_SACS.map(g => (
                 <optgroup key={g.familia} label={g.familia}>
                   {g.modulos.map(mo => <option key={mo} value={mo}>{mo}</option>)}
                 </optgroup>

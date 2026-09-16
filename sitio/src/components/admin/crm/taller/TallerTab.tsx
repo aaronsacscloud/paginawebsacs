@@ -712,7 +712,7 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any
       display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
       minHeight: 44, background: '#fff', cursor: 'pointer', paddingRight: 10,
       opacity: o.etapa === 'espera' ? .62 : 1,
-      ...(marcada ? { background: '#fbfaff' } : null),
+      ...(marcada ? { background: '#fdf7fa' } : null),   // el mismo rosa, en agua
     }}>
       <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: o.etapa === 'espera' ? '#d8d5e0' : COLOR_T[o.tipo] }} />
       {onMarcar && <Casilla marcada={marcada} onMarcar={onMarcar} />}
@@ -802,14 +802,19 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
   };
 
   const Boton = ({ k, children }: any) => (
-    <button style={{ ...bt, ...(abierto === k ? { background: '#fff', color: P.violetaTinta, borderColor: '#fff' } : null) }}
+    <button style={{ ...bt, ...(abierto === k ? { background: '#fff', color: P.rosaTinta, borderColor: '#fff' } : null) }}
       onClick={() => setAbierto(abierto === k ? '' : k)}>{children}</button>
   );
 
   return (
     <div ref={caja} style={{
       display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', position: 'relative',
-      background: P.violetaTinta, color: '#fff', padding: '10px 14px', borderRadius: '10px 10px 0 0',
+      /* En ROSA y no en morado. El morado es el color del sistema —las
+         pestañas, los botones, las tarjetas— y una barra morada encima de una
+         pestaña morada se lee como parte del mismo bloque. El rosa es la firma
+         de la casa y aquí hace de subrayador: dice «esto que marcaste» sin
+         competir con nada de lo que ya hay en la pantalla. */
+      background: P.rosaTinta, color: '#fff', padding: '10px 14px', borderRadius: '10px 10px 0 0',
     }}>
       <b style={{ fontSize: '0.82rem', marginRight: 3 }}>{n} {n === 1 ? 'seleccionada' : 'seleccionadas'}</b>
 
@@ -823,7 +828,7 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
               <div style={{ fontSize: '0.69rem', color: '#8d8a97', margin: '6px 0 9px' }}>
                 Se aplica a las {n} y queda en la bitácora de cada una.
               </div>
-              <button disabled={guardando} style={{ ...S.btn, width: '100%', opacity: guardando ? .6 : 1 }}
+              <button disabled={guardando} style={{ ...S.btn, width: '100%', background: P.rosa, opacity: guardando ? .6 : 1 }}
                 onClick={() => aplicar('fecha_prometida', fecha || null, fecha ? 'para el ' + fmt(fecha) : 'sin fecha')}>
                 {guardando ? 'Aplicando…' : `Aplicar a las ${n}`}
               </button>
@@ -843,7 +848,7 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
                 onClick={() => aplicar('booking_id', j.id, fmt(j.fecha))}>
-                <b style={{ color: P.violetaTinta }}>{fmt(j.fecha)}</b> · {j.asunto || j.event_types?.nombre || 'Reunión'}
+                <b style={{ color: P.rosaTinta }}>{fmt(j.fecha)}</b> · {j.asunto || j.event_types?.nombre || 'Reunión'}
               </button>
             ))}
             <button style={{ ...op, color: '#8d8a97' }} onClick={() => aplicar('booking_id', null, 'sin reunión')}>
@@ -893,12 +898,12 @@ function Casilla({ marcada, onMarcar }: any) {
       onMouseEnter={() => setEncima(true)} onMouseLeave={() => setEncima(false)}
       style={{
         flex: 'none', width: 17, height: 17, borderRadius: 5, marginLeft: 9, background: '#fff',
-        border: `1.5px solid ${marcada || encima ? P.violeta : '#d8d3e6'}`,
+        border: `1.5px solid ${marcada || encima ? P.rosa : '#d8d3e6'}`,
         position: 'relative', cursor: 'pointer',
       }}>
       {marcada && <span style={{
         position: 'absolute', left: 4, top: 4, width: 8, height: 4,
-        borderLeft: `2px solid ${P.violetaTinta}`, borderBottom: `2px solid ${P.violetaTinta}`,
+        borderLeft: `2px solid ${P.rosaTinta}`, borderBottom: `2px solid ${P.rosaTinta}`,
         transform: 'rotate(-45deg)',
       }} />}
     </span>

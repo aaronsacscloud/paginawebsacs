@@ -18,7 +18,7 @@ import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { pedirJSON } from '../../../lib/ia';
-import { MODULOS_PLANOS } from '../../../lib/crm/modulos-sacs';
+import { esModuloValido } from '../../../lib/crm/modulos-sacs';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -405,7 +405,7 @@ export const POST: APIRoute = async ({ request }) => {
     const fecha = b?.fecha_prometida || null;
     const modulo = typeof b?.modulo === 'string' && b.modulo.trim() ? b.modulo.trim().slice(0, 120) : null;
     const booking = b?.booking_id || null;
-    if (modulo && !MODULOS_PLANOS.includes(modulo)) return json({ error: 'Ese módulo no está en el catálogo.' }, 400);
+    if (modulo && !esModuloValido(modulo)) return json({ error: 'Ese módulo no está en el menú de SACS.' }, 400);
 
     const { data: antes } = await supabase.from('taller_ordenes')
       .select('id, folio, fecha_prometida, fecha_prometida_1, modulo, company_id').in('id', ids);
