@@ -17,9 +17,17 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   '/admin/',            // el CRM entero
   '/partner/',          // portal de partners: login, recuperación, tablero
   '/partners/brand-kit',
-  '/prueba-gratis',     // captación por campaña, no por buscador
-  '/campana/',          // landings de campaña pagada
-  '/recursos/tiktok-fashion',
+  // Página de formulario, 34 palabras: no rankearía por nada y sí parecería
+  // contenido flaco. Se capta por campaña, no por buscador.
+  '/prueba-gratis',
+  // Landing de campaña que repite lo de /producto y /planes con menos: si se
+  // indexa, compite contra ellas por la misma búsqueda.
+  '/campana/punto-de-venta',
+  // VACÍAS desde el andamiaje original: el archivo solo tiene el comentario
+  // «el contenido irá aquí». Fuera del índice hasta que tengan texto propio;
+  // una página en blanco indexada resta, no suma.
+  '/nosotros',
+  '/manifiesto',
   // Transaccionales: se llega por el enlace del correo y sin token dan 400.
   // Que un buscador intente indexar un 400 no ayuda a nadie.
   '/agendar/cancelar',

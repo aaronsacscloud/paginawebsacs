@@ -20,7 +20,15 @@ const {
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://www.sacscloud.com';
 const pageUrl = canonical || new URL(Astro.url.pathname, siteUrl).toString();
 const imageUrl = new URL(image, siteUrl).toString();
-const fullTitle = title === 'SACS' ? title : `${title} | SACS`;
+/* La marca se escribe «Sacs», no «SACS»: así es como se ve en el sitio y como
+   la dice el cliente. En mayúsculas parecía un acrónimo de otra cosa —y de
+   hecho SACS lo es de varias—, que es justo lo que no conviene cuando lo que se
+   busca es que un buscador y un modelo reconozcan UNA entidad. El nombre único
+   y sin ambigüedad (Sacscloud) va en los datos estructurados, donde sirve para
+   identificar; el título lleva el nombre corto, que es el que la gente lee. */
+// Y si el título YA dice la marca, no se repite: «Todo lo que hace Sacs | Sacs»
+// gasta en la coletilla los caracteres que el buscador sí recorta.
+const fullTitle = /\bsacs(cloud)?\b/i.test(title) ? title : `${title} | Sacs`;
 ---
 
 <!-- Primary Meta Tags -->

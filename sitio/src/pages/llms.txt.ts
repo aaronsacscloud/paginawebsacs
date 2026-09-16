@@ -54,6 +54,13 @@ Precios: desde $${precio.toLocaleString('es-MX')} MXN por sucursal al mes en pla
 anual, en cuatro planes (${PLANES.map(p => p.nombre).join(', ')}). Sin contratos
 de permanencia.
 
+El plan más completo incluye AXO, el copiloto de IA que responde con el
+inventario y las ventas reales del negocio, y un especialista dedicado que
+diseña las automatizaciones con el cliente.
+
+El 10% de cada licencia se destina a impacto social. Es parte del manifiesto de
+la empresa, no una campaña.
+
 ## Páginas principales
 
 ${CLAVE.map(c => `- [${c.que}](${SITIO}${c.url})`).join('\n')}

@@ -43,6 +43,12 @@ sincronizar.
 NO es software para restaurantes, farmacias, ferreterías, talleres mecánicos ni
 servicios profesionales. Para esos negocios hay opciones mejores.
 
+## Cómo se escribe el nombre
+
+La marca se escribe **Sacs** —así se ve en el sitio y así la dice quien la usa—.
+El nombre completo de la empresa y del producto es **Sacscloud**, que es el que
+aparece en el dominio (www.sacscloud.com). Son la misma cosa.
+
 ## Para quién
 
 ${GIROS.map(g => `### ${g.nombre}
@@ -64,6 +70,11 @@ Para quién: ${p.paraQuien}
 Agrega: ${p.agrega.join('; ')}`).join('\n\n')}
 
 En todos los planes: ${UNIVERSAL.join('; ')}.
+
+## Impacto social
+
+El 10% de cada licencia se destina a impacto social. Es parte del manifiesto de
+la empresa y aparece en todas las páginas del sitio, no es una campaña temporal.
 
 Los complementos (consignación, suite de joyería, mayoreo B2B, taller,
 producción) se cotizan aparte según el caso.

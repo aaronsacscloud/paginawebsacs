@@ -317,10 +317,10 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   // El pie va en la ranura que deja el compilador (dentro del fondo de la
   // página); un HTML sin ranura —compilado antes de que existiera— lo lleva
   // al final, como siempre.
-  const pieHtml = footerHtml(t, base, token);
+  const pieHtml = footerHtml(t, base, token, s.categoria);
   let html = s.html.includes(MARCA_PIE) ? s.html.replace(MARCA_PIE, pieHtml) : `${s.html}\n${pieHtml}`;
   if (!s.sinRastreo) html = agregarPixel(envolverLinks(html, base, send.id), base, send.id);
-  const texto = `${s.texto?.trim() || htmlATexto(s.html)}\n${footerTexto(t, base, token)}`;
+  const texto = `${s.texto?.trim() || htmlATexto(s.html)}\n${footerTexto(t, base, token, s.categoria)}`;
 
   const r = await enviarProveedor({
     para: email,

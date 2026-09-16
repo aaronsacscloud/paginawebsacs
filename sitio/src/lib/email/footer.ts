@@ -35,11 +35,24 @@ export function etiquetaDeUrl(u: string): string {
  * TikTok, el aviso de confidencialidad y la nota del papel. Todo sale del
  * inquilino; lo que no tenga, no se pinta.
  */
-export function footerHtml(t: Tenant, base: string, token: string): string {
+/** Por qué recibes ESTE correo, cuando el correo es en frío.
+ *
+ *  El motivo del inquilino («eres cliente o dejaste tus datos en nuestro
+ *  sitio») es verdad para los clientes y MENTIRA para un prospecto que nunca
+ *  nos dio nada — y además se contradice con el primer correo de la cadencia,
+ *  que dice «nadie nos pasó su correo ni usted se registró en ningún lado».
+ *  Fuera de México eso es justo la línea que mira la ley (LSSI/RGPD en España,
+ *  habeas data en Colombia): el origen del dato tiene que ser cierto. */
+export const MOTIVO_FRIO = 'Recibes este correo porque tu negocio aparece en directorios públicos de internet —Google Maps y tu propio sitio— y creemos que Sacs te puede servir. Nadie nos dio tus datos y no estás suscrito a nada: si prefieres que no te escribamos, cancela aquí abajo y no volvemos a hacerlo.';
+
+const motivoDe = (t: Tenant, categoria?: string) =>
+  categoria === 'abm' ? MOTIVO_FRIO : (t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
+
+export function footerHtml(t: Tenant, base: string, token: string, categoria?: string): string {
   const FA = "font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;";
   const nombre = escapar(t.nombre || t.from_nombre);
   const dir = escapar(t.direccion_fisica || '');
-  const motivo = escapar(t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
+  const motivo = escapar(motivoDe(t, categoria));
   const extra = t.footer_extra ? `<div style="font-size:11.5px;color:#8A8598;margin-top:4px;">${escapar(t.footer_extra)}</div>` : '';
   const aviso = t.aviso_privacidad_url
     ? ` · <a href="${escapar(t.aviso_privacidad_url)}" style="color:#6B6580;text-decoration:underline;">Aviso de privacidad</a>`
@@ -74,13 +87,13 @@ export function footerHtml(t: Tenant, base: string, token: string): string {
 }
 
 /** Pie en texto plano — la versión text/plain también tiene que cumplir. */
-export function footerTexto(t: Tenant, base: string, token: string): string {
+export function footerTexto(t: Tenant, base: string, token: string, categoria?: string): string {
   const p = ['', '—'];
   if (t.sitio_url) p.push('Visita nuestro sitio web: ' + t.sitio_url);
   if (t.tiktok_url) p.push('Visita nuestro TikTok: ' + t.tiktok_url);
   p.push('', `${t.nombre}${t.direccion_fisica ? ' · ' + t.direccion_fisica : ''}`);
   if (t.footer_extra) p.push(t.footer_extra);
-  p.push(t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
+  p.push(motivoDe(t, categoria));
   if (t.aviso_privacidad_url) p.push('Aviso de privacidad: ' + t.aviso_privacidad_url);
   p.push('Cancelar suscripción: ' + urlBaja(base, token));
   p.push('Preferencias de correo: ' + urlPreferencias(base, token));

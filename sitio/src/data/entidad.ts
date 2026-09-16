@@ -38,7 +38,11 @@ export function organizacion() {
     '@type': 'Organization',
     '@id': ENTIDAD_ID,
     name: NOMBRE,
-    alternateName: 'Sacs Cloud',
+    /* «Sacs» es como se habla y como se ve; «Sacscloud» es el nombre que no se
+       confunde con nada —y es el que la gente teclea cuando ya nos conoce—.
+       Declarar los dos es lo que permite que un modelo entienda que son la
+       misma entidad en vez de tratarlos como dos cosas distintas. */
+    alternateName: ['Sacscloud', 'Sacs Cloud', 'SACS'],
     url: SITIO,
     logo: `${SITIO}/og-default.png`,
     description: DESCRIPCION,

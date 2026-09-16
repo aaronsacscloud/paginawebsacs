@@ -13,6 +13,7 @@
 //    cuando contestó GANA siempre sobre lo que encontramos nosotros, y se
 //    guarda aparte con quién lo confirmó.
 import { supabase } from '../supabase';
+import { ALIADOS } from './abm-aliados';
 import { getCurrentUser } from '../auth/scope';
 
 export const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -198,7 +199,26 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     pais: paisDe(c.pais).nombre,
     xv: paisDe(c.pais).xv,
     landing: paginaDe(c.giro, undefined, c.pais)?.url || '',
+    /* ── LA APERTURA DEL ALIADO, RESUELTA EN CÓDIGO ─────────────────────────
+       Estas tres son las que diferencian al aliado por TIPO: el que surte
+       ganchos no abre igual que la escuela. Y se resuelven AQUÍ, no en la IA,
+       por un susto real (16-sep-2026): la API de Anthropic se quedó sin
+       crédito, la redacción cayó al texto base y el borrador quedó con el
+       marcador `[[apertura del expediente…]]` dentro, listo para que alguien
+       lo aprobara. Una variable se rellena siempre; una instrucción a la IA
+       solo cuando la IA contesta. La IA sigue puliendo el correo, pero si no
+       está, lo que sale ya es correcto y ya está diferenciado. */
+    ...aperturaAliado(c),
   };
+}
+
+/** Lo que el catálogo de aliados sabe del tipo de esta cuenta, como variables.
+ *  Vacías si no es aliado: los bloques [[si …]] se borran solos. */
+function aperturaAliado(c: any): Record<string, string> {
+  if (c.giro !== 'aliados') return { apertura: '', su_gente: '', dolor_cliente: '' };
+  const t = ALIADOS[String(c.subgiro || '')];
+  if (!t) return { apertura: '', su_gente: '', dolor_cliente: '' };
+  return { apertura: t.gancho, su_gente: t.suGente, dolor_cliente: t.dolor };
 }
 
 /** Solo plataformas de verdad. "Facebook (sin sitio propio)" o "no verificable

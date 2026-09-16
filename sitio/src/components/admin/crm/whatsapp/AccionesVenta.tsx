@@ -10,11 +10,12 @@
 //    elija él con el link público, y todo se confirma solo.
 // Los precios salen del MISMO catálogo que la cotización grande (PLAN_PRICES);
 // los envíos van por los MISMOS endpoints del inbox — cero caminos paralelos.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { C } from './estilo';
 import { Corazones } from '../ui/Cargando';
 import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
 import CuentaSacs from '../CuentaSacs';
+import { IcoChispas } from './Iconos';
 
 const BASE = 'https://www.sacscloud.com';
 const PLANES_VENDIBLES = PLANS.filter(p => PLAN_PRICES[p] > 0);
@@ -299,6 +300,11 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [ocupado, setOcupado] = useState(false);
   const [hecho, setHecho] = useState<'agendada' | 'enviado_wa' | 'enviado_correo' | 'oferta' | ''>('');
   const [msg, setMsg] = useState('');
+  /* La nota de contexto que lee el consultor en su invitación. Vive aquí y no
+     en el backend del agendado porque el humano la corrige ANTES de confirmar. */
+  const [nota, setNota] = useState('');
+  const [notaCargando, setNotaCargando] = useState(false);
+  const [notaMsg, setNotaMsg] = useState('');
   /* DOS CAMINOS, y se eligen ANTES de ver nada más.
      Antes esta pantalla era un formulario de reserva con el «mándale los
      horarios» escondido debajo: para la mitad de los casos —el cliente todavía
@@ -334,13 +340,37 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   }, [dias, slots]);
 
   const emailValido = /.+@.+\..+/.test(email.trim());
+
+  /* La nota se genera UNA vez al abrir la ruta de reservar, no al confirmar:
+     si se generara al final, el humano no alcanzaría a corregirla — que es
+     justo lo que evita que una nota inventada llegue al calendario. Y no se
+     repite si ya hay texto: regenerar encima de lo que alguien acaba de
+     escribir borraría su trabajo sin avisar. */
+  const generarNota = async () => {
+    if (!conv?.id) return;
+    setNotaCargando(true); setNotaMsg('');
+    const r = await fetch('/api/crm/whatsapp/ia', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'contexto', wa_id: conv.id }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setNotaCargando(false);
+    if (r?.error) { setNotaMsg(r.error); return; }
+    if (r?.nota) setNota(String(r.nota));
+  };
+  const yaPedida = useRef(false);
+  useEffect(() => {
+    if (ruta !== 'reservar' || !conv?.id || yaPedida.current || nota.trim()) return;
+    yaPedida.current = true;
+    generarNota();
+  }, [ruta, conv?.id]);
+
   const agendar = async () => {
     setMsg('');
     if (!emailValido) { setMsg('Escribe un correo válido: ahí llega su confirmación e invitación de calendario.'); return; }
     setOcupado(true);
     const r = await fetch('/api/scheduling/book', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type_slug: 'demo', fecha, hora_inicio: hora, nombre: nombre || primerNombre, email: email.trim(), whatsapp: telefono || undefined, empresa: empresa?.nombre_comercial || empresa?.nombre || undefined, notas: 'Agendada desde el inbox por el equipo', timezone: 'America/Mexico_City', utm_source: 'inbox' }),
+      body: JSON.stringify({ event_type_slug: 'demo', fecha, hora_inicio: hora, nombre: nombre || primerNombre, email: email.trim(), whatsapp: telefono || undefined, empresa: empresa?.nombre_comercial || empresa?.nombre || undefined, notas: nota.trim() || 'Agendada desde el inbox por el equipo', wa_conv_id: conv?.id || undefined, timezone: 'America/Mexico_City', utm_source: 'inbox' }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setOcupado(false);
     if (r?.error) { setMsg(r.error); return; }
@@ -568,8 +598,9 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
             <button onClick={generarNota} disabled={notaCargando}
               style={{ border: `1px solid #c9bcf7`, borderRadius: 8, padding: '3px 10px', background: '#fff',
                 color: C.moradoTinta, fontSize: 11, fontWeight: 700, cursor: notaCargando ? 'default' : 'pointer',
-                fontFamily: 'inherit', opacity: notaCargando ? .6 : 1 }}>
-              {notaCargando ? 'Leyendo el hilo…' : nota ? 'Regenerar' : 'Generar con IA'}
+                fontFamily: 'inherit', opacity: notaCargando ? .6 : 1,
+                display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <IcoChispas size={11} /> {notaCargando ? 'Leyendo el hilo…' : nota ? 'Regenerar' : 'Generar con IA'}
             </button>
           )}
         </div>

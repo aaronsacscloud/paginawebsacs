@@ -230,11 +230,36 @@ export const GET: APIRoute = async ({ request }) => {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: CORREO_OK.test(destino) ? 'está en la lista de no contactar' : 'la dirección no tiene forma de dirección' }).eq('id', t.id);
       continue;
     }
+    /* Nada sale con las costuras de la plantilla a la vista. Un `{{nombre}}`
+       o un `[[si ciudad]]` en el cuerpo significa que el armado falló, y el
+       prospecto ve el andamio del sistema en su bandeja.
+       No es hipotético: hay ocho plantillas de aliados que llevan la
+       instrucción para la IA DENTRO del cuerpo —«[[apertura del expediente:
+       el gancho de su tipo…]]»—, y el respaldo de generarCadencia, cuando la
+       IA falla, manda la plantilla tal cual. La IA sí falla: 19 cadencias de
+       novias salieron sin adaptar el 13-sep porque se acabó el saldo.
+       Se cancela, no se limpia: un correo al que le quitas un pedazo deja de
+       decir lo que se quería decir, y el borrador queda para arreglarlo. */
+    const crudo = String(t.cuerpo || '') + ' ' + String(t.asunto || '');
+    if (/\{\{|\[\[/.test(crudo)) {
+      await supabase.from('abm_toques').update({
+        estado: 'cancelado',
+        resultado: 'el cuerpo salió sin armar: quedó una variable o un bloque de plantilla sin resolver',
+      }).eq('id', t.id);
+      await apuntar(t.cuenta_id, 'email', 'nota', { texto: `Correo cancelado: el cuerpo conserva marcas de plantilla (${(crudo.match(/\{\{[a-z_]+\}\}|\[\[[^\]]{0,40}/i) || ['?'])[0]}…)` });
+      continue;
+    }
     const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro, pais').eq('id', t.cuenta_id).maybeSingle();
     if (!cuenta || cuenta.ya_es_cliente || ['no_contactar', 'respondio', 'reunion', 'ganada'].includes(cuenta.etapa)) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
       continue;
     }
+    /* La hora es la DE ELLOS (15-sep-2026). El cron corre a las 9, 16 y 19 UTC
+       y la misma corrida sirve a Madrid, Bogotá y Santiago: a las 16 UTC en
+       España son las 6 de la tarde y en Chile la 1. Un correo de trabajo que
+       cae de noche se lee mal o no se lee. No se cancela: espera a la corrida
+       que sí caiga entre las 9 y las 6 de su país. */
+    if (!enHorarioDe(cuenta.pais)) { fueraDeHorario++; continue; }
 
     // Nota: el seguimiento DENTRO del mismo hilo (Re: + In-Reply-To +
     // References) queda pendiente a propósito. Un "Re:" sin las cabeceras de

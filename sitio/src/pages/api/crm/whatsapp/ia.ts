@@ -190,7 +190,11 @@ export const POST: APIRoute = async ({ request }) => {
        cuenta, el consultor leería una cosa en el CRM y otra en su calendario.
        Sale en texto plano con guiones: Google Calendar no pinta markdown. */
     if (accion === 'contexto') {
-      const lista = (x: any) => (Array.isArray(x) ? x : []).map((s: any) => String(s).trim()).filter(Boolean).slice(0, 5);
+      /* El `!= null` va ANTES del String(): sin él, un null dentro del arreglo
+         se vuelve la cadena "null", pasa el filtro de vacíos y el consultor
+         lee «- null» en su invitación. Medido con una respuesta de prueba. */
+      const lista = (x: any) => (Array.isArray(x) ? x : [])
+        .filter((s: any) => s != null).map((s: any) => String(s).trim()).filter(Boolean).slice(0, 5);
       const quien = String(parsed.quien || '').trim();
       const busca = String(parsed.busca || '').trim();
       const hablado = lista(parsed.hablado), quiereVer = lista(parsed.quiere_ver), ojo = lista(parsed.ojo);

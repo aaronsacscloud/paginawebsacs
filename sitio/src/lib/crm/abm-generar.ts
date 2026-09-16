@@ -206,6 +206,14 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
     `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
   ).join('\n\n---\n\n');
   if (!guion) return { ok: false, error: `todavía no hay plantillas escritas para el giro ${c.giro}`, status: 409 };
+  /* NINGÚN CORREO CON UN HUECO SIN RELLENAR. Pasó de verdad (16-sep-2026): la
+     API de la IA se quedó sin crédito, la redacción cayó al texto base y el
+     borrador quedó con un marcador visible dentro, esperando que alguien lo
+     aprobara. Una variable que no se resolvió es un correo roto, y es mejor
+     que la generación falle a que salga así. */
+  const hueco = (plantillas || []).find((p: any) => /\{\{\s*[a-z_]+\s*\}\}/i.test(
+    rellenar(String(p.cuerpo || ''), variablesDe(c, (personas || [])[0]))));
+  if (hueco) return { ok: false, error: `la plantilla «${hueco.asunto}» dejó una variable sin resolver para esta cuenta: se arregla la plantilla o se completa el dato, no se manda así`, status: 409 };
   /* Tantos pasos como plantillas, o no sale. Los días se leen POR POSICIÓN
      más abajo, así que una plantilla sin su paso no se queda sin fecha: se
      lleva la del arreglo de respaldo. Con 8 plantillas y 7 pasos, el correo
