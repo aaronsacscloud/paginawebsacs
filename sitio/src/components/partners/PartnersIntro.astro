@@ -2,9 +2,9 @@
 /**
  * PartnersIntro — la apertura de /partners con el mismo motor de "Tú naciste para crear":
  * riel de scroll, palabra grande que cambia, personaje real (él primero, luego ella) dibujado
- * sobre fondo BLANCO (16-sep-2026: en negro cualquier resto del recorte se nota; en blanco no)
- * por canvas con su silueta, y al final la frase de los partners. Reutiliza los videos
- * /tienda/video/suenos-*.mp4 (color + máscara lado a lado).
+ * como imagen fija con canal alfa (16-sep-2026: el video compuesto en canvas dejaba bordes y costuras
+ * según el navegador; el recorte fijo con transparencia real se ve igual en todos)
+ * y al final la frase de los partners.
  */
 const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transformar'];
 ---
@@ -18,9 +18,8 @@ const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transforma
       <span class="pi-l3">el retail de moda completo.</span>
     </div>
     <div class="pi-fig" aria-hidden="true">
-      <canvas class="pi-cv" width="720" height="1080"></canvas>
-      <video class="pi-v pi-v--el" muted playsinline webkit-playsinline loop preload="none"></video>
-      <video class="pi-v pi-v--ella" muted playsinline webkit-playsinline loop preload="none"></video>
+      <img class="pi-img pi-img--el is-on" src="/images/partners/el.webp" alt="" width="343" height="990" loading="lazy" decoding="async" />
+      <img class="pi-img pi-img--ella" src="/images/partners/ella.webp" alt="" width="364" height="986" loading="lazy" decoding="async" />
     </div>
     <div class="pi-fin">
       <span class="pi-kicker">Partners de Sacs</span>
@@ -35,24 +34,24 @@ const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transforma
 </section>
 
 <style>
-  .pi { --p: 0; position: relative; height: 360vh; background: #fff; color: #0E0D0C; }
+  .pi { --p: 0; position: relative; height: 360vh; background: #0E0D0C; color: #fff; }
   .pi-pegado { position: sticky; top: 0; height: 100vh; overflow: hidden; isolation: isolate; }
   .pi-txt { position: absolute; left: 0; right: 0; top: clamp(160px, 21vh, 230px); text-align: center; z-index: 1; padding: 0 16px; pointer-events: none; }
-  .pi-l1, .pi-l3 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.2vw, 32px); letter-spacing: -0.02em; line-height: 1.1; color: rgba(14,13,12,0.5); }
-  .pi-l2 { display: grid; height: 1.05em; margin: 0.08em 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(56px, 9.5vw, 150px); letter-spacing: -0.05em; line-height: 1; color: #0E0D0C; overflow: hidden; }
+  .pi-l1, .pi-l3 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.2vw, 32px); letter-spacing: -0.02em; line-height: 1.1; color: rgba(255,255,255,0.55); }
+  .pi-l2 { display: grid; height: 1.05em; margin: 0.08em 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(56px, 9.5vw, 150px); letter-spacing: -0.05em; line-height: 1; color: #fff; overflow: hidden; }
   .pi-w { grid-area: 1 / 1; display: block; opacity: 0; transform: translateY(0.5em); transition: opacity 0.5s cubic-bezier(0.2,0.7,0.2,1), transform 0.6s cubic-bezier(0.2,0.7,0.2,1); }
   .pi-w.is-on { opacity: 1; transform: none; }
   .pi-w.is-off { opacity: 0; transform: translateY(-0.5em); }
   .pi-fig { position: absolute; left: 50%; bottom: 0; width: min(52vh, 86vw); aspect-ratio: 2 / 3; transform: translateX(-50%) translateY(calc(12vh - var(--p) * 16vh)) scale(calc(0.56 + var(--p) * 0.62)); transform-origin: 50% 100%; z-index: 6; will-change: transform; }
-  .pi-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .pi-v { position: absolute; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; }
+  .pi-img { position: absolute; left: 50%; bottom: 0; height: 100%; width: auto; transform: translateX(-50%); opacity: 0; transition: opacity 0.6s; }
+  .pi-img.is-on { opacity: 1; }
   .pi-fin { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 8; text-align: center; padding: 0 24px; opacity: 0; visibility: hidden; transition: opacity 0.7s, visibility 0.7s; }
-  .pi-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #4B7BE5; margin-bottom: 22px; }
-  .pi-h1 { max-width: 980px; margin: 0 auto; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 62px); letter-spacing: -0.035em; line-height: 1.05; color: #0E0D0C; }
-  .pi-p { max-width: 720px; margin: 22px auto 0; font-size: clamp(16px, 1.3vw, 20px); line-height: 1.5; color: rgba(14,13,12,0.7); }
+  .pi-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 22px; }
+  .pi-h1 { max-width: 980px; margin: 0 auto; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 62px); letter-spacing: -0.035em; line-height: 1.05; color: #fff; }
+  .pi-p { max-width: 720px; margin: 22px auto 0; font-size: clamp(16px, 1.3vw, 20px); line-height: 1.5; color: rgba(255,255,255,0.7); }
   .pi-ctas { display: flex; gap: 12px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
   .pi-cta { display: inline-flex; align-items: center; padding: 15px 26px; border-radius: 12px; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; text-decoration: none; }
-  .pi-cta--sec { background: transparent; border: 1px solid rgba(14,13,12,0.3); color: #0E0D0C; }
+  .pi-cta--sec { background: transparent; border: 1px solid rgba(255,255,255,0.35); }
   .pi.is-fin .pi-fin { opacity: 1; visibility: visible; }
   .pi.is-fin .pi-txt { opacity: 0; transition: opacity 0.4s; }
   .pi.is-fin .pi-fig { opacity: 0.1; filter: blur(3px); transition: opacity 0.8s, filter 0.8s; }
@@ -76,40 +75,24 @@ const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transforma
   (() => {
     const pi = document.getElementById('partners-intro'); if (!pi) return;
     const ws = Array.from(pi.querySelectorAll<HTMLElement>('.pi-w'));
-    const vids = Array.from(pi.querySelectorAll<HTMLVideoElement>('.pi-v'));
+    const imgs = Array.from(pi.querySelectorAll<HTMLImageElement>('.pi-img'));
     const movil = matchMedia('(max-width: 767px)').matches;
-    const cv = pi.querySelector<HTMLCanvasElement>('.pi-cv')!; const W = movil ? 320 : 720, H = movil ? 480 : 1080; // v8: 720×1080 en escritorio para que el borde sea nítido en Retina cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d')!; const off = document.createElement('canvas'); off.width = W * 2; off.height = H; const octx = off.getContext('2d', { willReadFrequently: true })!;
-    const out = ctx.createImageData(W, H);
-    // La máscara (v7) ya viene recortada y suavizada desde el origen (erosión + antialias, sin fondo crema),
-    // así que aquí solo se copia: color de la mitad izquierda, alfa de la derecha.
-    let src = false, act = -1, fin = false, raf = 0, dib = 0, enVista = false, pAct = 0, rot = 0, vuelta = 0, rotT = 0;
-    const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('pi-v--el') ? 'suenos-el' : 'suenos-ella') + '.mp4?v=8'; v.play().catch(() => {}); }); };
-    const dibuja = () => {
-      dib = 0; if (!enVista) return;
-      const v = pAct > 0.44 ? vids[1] : vids[0];
-      if (v && v.readyState >= 2) {
-        octx.drawImage(v, 0, 0, W * 2, H);
-        const s = octx.getImageData(0, 0, W * 2, H).data; const d = out.data; const fila = W * 2 * 4;
-        for (let y = 0; y < H; y++) { const b = y * fila, m = b + W * 4, o = y * W * 4; const borde = y < 3 || y > H - 4; for (let x = 0; x < W; x++) { const i = b + x * 4, j = o + x * 4; let a = s[m + x * 4]; if (borde || x < 3 || x > W - 4 || a < 40) a = 0; d[j] = s[i]; d[j + 1] = s[i + 1]; d[j + 2] = s[i + 2]; d[j + 3] = a; } }
-        ctx.putImageData(out, 0, 0);
-      }
-      dib = requestAnimationFrame(dibuja);
-    };
+    let act = -1, fin = false, raf = 0, pAct = 0, rot = 0, vuelta = 0, rotT = 0, quien = 0;
+    const persona = (k: number) => { if (k === quien) return; quien = k; imgs.forEach((im, i) => im.classList.toggle('is-on', i === k)); };
     const pinta = (i: number) => ws.forEach((w, k) => { w.classList.toggle('is-on', k === i); w.classList.toggle('is-off', k < i); });
     const mide = () => {
       const r = pi.getBoundingClientRect(); const vh = innerHeight;
       const p = Math.min(1, Math.max(0, -r.top / (r.height - vh)));
-      pi.style.setProperty('--p', p.toFixed(4)); pAct = p;
+      pi.style.setProperty('--p', p.toFixed(4)); pAct = p; persona(p > 0.44 ? 1 : 0);
       const i = Math.min(ws.length - 1, Math.max(0, Math.floor((p - 0.02) / 0.13)));
       if (i !== act) { pinta(i); act = i; }
       const f = p > 0.74; if (f !== fin) { pi.classList.toggle('is-fin', f); fin = f; }
       raf = 0;
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
-    const rota = () => { rot = (rot + 1) % ws.length; if (rot === 0) vuelta++; pAct = vuelta % 2 ? 0.9 : 0.1; pinta(rot); };
+    const rota = () => { rot = (rot + 1) % ws.length; if (rot === 0) vuelta++; pAct = vuelta % 2 ? 0.9 : 0.1; persona(vuelta % 2); pinta(rot); };
     const io = new IntersectionObserver((es) => {
-      es.forEach((e) => { if (e.isIntersecting) { enVista = true; carga(); vids.forEach((v) => v.play().catch(() => {})); if (movil) { if (!rotT) rotT = window.setInterval(rota, 1400); } else { addEventListener('scroll', onScroll, { passive: true }); mide(); } if (!dib) dib = requestAnimationFrame(dibuja); } else { enVista = false; vids.forEach((v) => v.pause()); removeEventListener('scroll', onScroll); if (rotT) { clearInterval(rotT); rotT = 0; } } });
+      es.forEach((e) => { if (e.isIntersecting) { if (movil) { if (!rotT) rotT = window.setInterval(rota, 1400); } else { addEventListener('scroll', onScroll, { passive: true }); mide(); } } else { removeEventListener('scroll', onScroll); if (rotT) { clearInterval(rotT); rotT = 0; } } });
     }, { rootMargin: '200px 0px' });
     io.observe(pi);
   })();
