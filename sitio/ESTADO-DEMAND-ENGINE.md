@@ -230,3 +230,54 @@ contratar por mes» 151 (todo WhatsApp), «no puedo facturar pedidos» 31.
 3. `node scripts/de-probar.mjs puntuar` → score + backlog de oportunidades.
 4. Revisar el backlog en el CRM y afinar las reglas de `decidirTipo`.
 5. Etapa 2 cuando lleguen los accesos de Google.
+
+---
+
+## Etapa 2 · parte A hecha (16-sep-2026) — el motor ya puede publicar solo
+
+**Dónde vamos:** el motor publica sin build. Primera página viva:
+https://www.sacscloud.com/recursos/curva-de-tallas/
+
+### Qué quedó construido
+- **Esquema** `de_contenido` + `de_contenido_versiones` + sincronización
+  automática al inventario de páginas.
+- **`bloques.ts`** — el cuerpo son bloques TIPADOS, no markdown. Se escapa todo
+  y el renderizador pone las etiquetas (nada de lo que produce un modelo se
+  interpreta como marcado), y unas preguntas frecuentes se vuelven `FAQPage` y
+  unos pasos `HowTo` sin adivinar nada.
+- **`publicar.ts`** — publicar, versionar, revertir y retirar.
+- **Rutas dinámicas** `/recursos/[slug]`, `/comparar/[slug]`,
+  `/software-para/[slug]` con caché de CDN; `ContenidoMotor.astro` con los
+  tokens del sitio, índice con anclas y fecha de actualización visible.
+- **`/sitemap-demanda.xml`** y **`/llms.txt`** + **`/llms-full.txt`** generados
+  al vuelo, los tres declarados en robots.txt.
+- **Pantalla de SEO técnico** y **motor de enlazado interno**.
+- **`scripts/de-shot.mjs`** para capturas de QA.
+
+### Dos cosas rotas que encontró al mirar afuera
+12. **El `/llms.txt` llevaba seis semanas mintiendo.** Es el archivo que leen
+    ChatGPT, Claude y Perplexity para saber qué es el sitio, y decía «Sistema
+    Operativo para Retailers Conscientes» —el posicionamiento purgado—, no
+    mencionaba la moda, y sus doce enlaces apuntaban a `sacs.com.mx`, que no
+    responde. Igual `llms-full.txt`. Ahora se generan desde la ficha de producto
+    del agente comercial: no hay segunda copia que se pueda desfasar.
+13. **El schema `Organization` de TODAS las páginas** declaraba `url` y `logo`
+    en ese mismo dominio muerto (arreglado en el commit anterior).
+
+### Preguntas para el dueño
+- El `llms.txt` viejo afirmaba «el 10% de cada licencia se destina a impacto
+  social» y mencionaba el asistente **AXO**. No se incluyeron en el nuevo porque
+  no se pudieron verificar contra la ficha de producto vigente. Si siguen siendo
+  ciertos, hay que agregarlos; si no, ya salieron.
+- Nueve páginas están en `noindex` a propósito, entre ellas
+  `/recursos/tiktok-fashion` y `/prueba-gratis`. ¿Es lo que se quiere? Ahora ya
+  no están en el sitemap, pero siguen sin poder rankear.
+- El título de las páginas termina en «| SACS» en mayúsculas, y la marca visible
+  es «Sacs».
+
+### Lo que sigue
+1. **Reponer saldo de Anthropic** — sigue bloqueando normalizar, evaluar y todo
+   el contenido generado.
+2. Más piezas del corpus canónico (se pueden escribir a mano mientras tanto).
+3. Competidores: diff de sitemaps, no necesita llaves.
+4. Pipeline de contenido con las 9 auditorías (necesita saldo).
