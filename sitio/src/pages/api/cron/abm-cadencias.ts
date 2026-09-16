@@ -332,8 +332,15 @@ export const GET: APIRoute = async ({ request }) => {
     // propósito: el correo en frío que parece boletín entrega peor. Cuando ya
     // hubo apertura o clic, la conversación cambia y una pieza que explique el
     // dolor de un vistazo sí ayuda.
+    /* CUÁNTOS CORREOS LLEVA, no cuántos toques. Faltaba `.eq('canal','email')`
+       y los WhatsApp de la cadencia contaban: en novias y mayoristas el paso
+       de WhatsApp cae en el día 2, entre el correo 1 y el correo 2, así que al
+       llegar el TERCER correo el contador ya valía 3. Consecuencia: el correo
+       3 salía con píxel de apertura y enlaces envueltos —cuando la regla es
+       que los tres primeros van limpios, justo para no parecer boletín— y la
+       pieza HTML del giro se activaba un correo antes de lo previsto. */
     const { count: orden } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
-      .eq('cuenta_id', t.cuenta_id).eq('estado', 'enviado');
+      .eq('cuenta_id', t.cuenta_id).eq('canal', 'email').eq('estado', 'enviado');
     let pieza = ''; let piezaTitulo = '';
     if ((orden || 0) >= 3) {
       const { count: interes } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })

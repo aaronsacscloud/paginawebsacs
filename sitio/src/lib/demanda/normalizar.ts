@@ -15,7 +15,7 @@
 // Sin el paso 3, cuatro formas de preguntar lo mismo serían cuatro
 // oportunidades, cuatro artículos y cuatro páginas compitiendo entre ellas.
 import { supabase } from '../supabase';
-import { preguntar, PARA } from './ia';
+import { preguntar } from './ia';
 import { embeber, aVector, hayEmbeddings, umbralUnion, proveedorVigente } from './embeddings';
 import { umbral } from './config';
 import { registrar } from './handlers';
@@ -108,7 +108,7 @@ export async function normalizarPendientes(limite = 60, cfg?: Config): Promise<N
   const entrada = senales.map((s, i) => `[${i}] ${(s.query_cruda || s.texto || '').slice(0, 600)}`).join('\n');
   const resp = await preguntar<{ resultados: any[] }>({
     agente: 'demanda_investigador',
-    modelo: PARA.volumen,
+    trabajo: 'volumen',
     sistema: sistema(CATS, ICPS),
     usuario: entrada,
     esquema: ESQUEMA,

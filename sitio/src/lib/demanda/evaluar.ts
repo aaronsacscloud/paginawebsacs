@@ -11,7 +11,7 @@
 // Si el modelo devolviera el score de una vez, nadie podría saber de dónde sale
 // un 78, ni cambiar la fórmula sin volver a pagar por todo el corpus.
 import { supabase } from '../supabase';
-import { preguntar, PARA } from './ia';
+import { preguntar } from './ia';
 import { MODULOS } from '../crm/ti/conocimiento/producto';
 import { registrar } from './handlers';
 import type { ResultadoHandler } from './tipos';
@@ -99,8 +99,8 @@ export async function evaluarClusters(limite = 20): Promise<Evaluadas> {
   const r = await preguntar<{ evaluaciones: any[] }>({
     agente: 'demanda_evaluador',
     // Juzgar el valor de negocio pide más criterio que clasificar un texto:
-    // aquí sí vale el modelo bueno, y son 40 problemas por llamada.
-    modelo: PARA.trabajo,
+    // aquí sí vale el modelo bueno, y son 20 problemas por llamada.
+    trabajo: 'trabajo',
     sistema: SISTEMA, usuario: entrada, esquema: ESQUEMA, max_tokens: 16000,
     contexto: { clusters: clusters.length },
   });
