@@ -147,11 +147,35 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data: abiertas } = await qa;
   const sinOrden = (abiertas || []).filter((m: any) => !yaLigadas.has(m.id));
 
+  /* EL VALOR DE LA CUENTA. Una cuenta es un proyecto, y al abrirlo hay que
+     saber de quién se trata: cuánto paga al año, cuánto trabajo ya se le cobró
+     y cuánto se le ha entregado. Sin eso, «14 órdenes» es el mismo renglón para
+     el cliente de $200 mil y para el de cortesía.
+     Va en el MISMO viaje que la lista —tres consultas agregadas— y no en una
+     por cuenta al abrirla: con veinte cuentas serían veinte viajes. */
+  const ids = Array.from(new Set((data || []).map((o: any) => o.company_id).filter(Boolean)));
+  const cuentas: Record<string, any> = {};
+  if (ids.length) {
+    const [subs, entregadas, cos] = await Promise.all([
+      supabase.from('subscriptions').select('company_id, arr, estado').in('company_id', ids),
+      supabase.from('mejoras').select('company_id, valor, cortesia').in('company_id', ids)
+        .is('archived_at', null).eq('estado', 'entregada'),
+      supabase.from('companies').select('id, sacs_account, giro').in('id', ids),
+    ]);
+    for (const id of ids) cuentas[id as string] = { arr: 0, entregadas: 0, sacs: null, giro: null };
+    for (const x of subs.data || []) {
+      if (x.estado === 'activa' && cuentas[x.company_id]) cuentas[x.company_id].arr += Number(x.arr || 0);
+    }
+    for (const m of entregadas.data || []) if (cuentas[m.company_id]) cuentas[m.company_id].entregadas++;
+    for (const c of cos.data || []) if (cuentas[c.id]) { cuentas[c.id].sacs = c.sacs_account; cuentas[c.id].giro = c.giro; }
+  }
+
   return json({
     ordenes: data || [],
     equipo: equipo || [],
     ligas,
     sinOrden,
+    cuentas,
     yo: { id: user.id, nombre: quien(user), rol: user.role },
   });
 };
@@ -305,7 +329,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { data: mej, error: eM } = await supabase.from('mejoras').insert({
       company_id, titulo, descripcion: p.problema || p.esperado || null,
-      categoria, tipo, estado: 'en_proceso', visible_cliente: true, origen: 'manual',
+      categoria, tipo, estado: 'en_proceso', visible_cliente: true,
+      /* De dónde salió. Si se ligó a una junta, el origen se deduce —es junta—
+         y el renglón queda colgado de esa minuta en la ficha del cliente: así
+         se puede volver a leer qué se dijo el día que se pidió. */
+      booking_id: b?.booking_id || null,
+      origen: b?.booking_id ? 'junta' : 'manual',
       cobro: p.cobro || null, cortesia: p.cobro === 'cortesia',
       fecha_compromiso: p.fecha_prometida || null,
       creado_por: quien(user),
@@ -470,5 +499,22 @@ export const DELETE: APIRoute = async ({ request }) => {
   if (!id) return json({ error: 'Falta la orden.' }, 400);
   const { error } = await supabase.from('taller_ordenes').update({ archived_at: new Date().toISOString() }).eq('id', id);
   if (error) return json({ error: error.message }, 500);
+
+  /* Si se levantó por error, el renglón del cliente TAMBIÉN se va. Archivar
+     solo la orden dejaba al cliente con un compromiso en su ficha que nadie iba
+     a trabajar —y que salía en su reporte—: peor que no haberlo capturado.
+     Se archiva, no se borra: una cosa que se le prometió a un cliente, aunque
+     haya sido por error, es historia de esa cuenta.
+     Solo pasa cuando se pide explícitamente (`con_mejora`): la orden también se
+     archiva cuando el trabajo se abandona por otras razones y ahí el renglón
+     del cliente sí se queda. */
+  if (b?.con_mejora) {
+    const { data: lig } = await supabase.from('taller_orden_mejoras').select('mejora_id').eq('orden_id', id);
+    for (const l of lig || []) {
+      await supabase.from('mejoras')
+        .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', l.mejora_id).then(() => {}, () => {});
+    }
+  }
   return json({ ok: true });
 };

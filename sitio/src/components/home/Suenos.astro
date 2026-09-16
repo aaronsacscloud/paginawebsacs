@@ -29,7 +29,7 @@ const ACC = [
 
     <div class="sn-fig" aria-hidden="true">
       <!-- el video trae el color a la izquierda y la máscara (silueta) a la derecha; el canvas los combina cuadro a cuadro -->
-      <canvas class="sn-cv" width="480" height="720"></canvas>
+      <canvas class="sn-cv" width="720" height="1080"></canvas>
       <video class="sn-v sn-v--ella" muted playsinline webkit-playsinline loop preload="none"></video>
       <video class="sn-v sn-v--el" muted playsinline webkit-playsinline loop preload="none"></video>
     </div>
@@ -122,7 +122,7 @@ const ACC = [
     const ph = (ev: string) => { try { (window as any).sacsPH?.(ev); } catch {} };
     let src = false, act = -1, fin = false, raf = 0, hitos = new Set<string>();
     // ── canvas: recorta el blanco del video para que las letras se vean detrás del personaje ──
-    const cv = sn.querySelector<HTMLCanvasElement>('.sn-cv')!; const W = movil ? 320 : 480, H = movil ? 480 : 720; cv.width = W; cv.height = H;
+    const cv = sn.querySelector<HTMLCanvasElement>('.sn-cv')!; const W = movil ? 320 : 720, H = movil ? 480 : 1080; // v8: 720×1080 en escritorio para que el borde sea nítido en Retina cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d')!;
     const off = document.createElement('canvas'); off.width = W * 2; off.height = H; const octx = off.getContext('2d', { willReadFrequently: true })!;
     const out = ctx.createImageData(W, H);
@@ -138,7 +138,7 @@ const ACC = [
       }
       dib = requestAnimationFrame(dibuja);
     };
-    const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('sn-v--ella') ? 'suenos-ella' : 'suenos-el') + '.mp4?v=7'; v.play().catch(() => {}); }); };
+    const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('sn-v--ella') ? 'suenos-ella' : 'suenos-el') + '.mp4?v=8'; v.play().catch(() => {}); }); };
     const mide = () => {
       const r = sn.getBoundingClientRect(); const vh = innerHeight;
       const p = Math.min(1, Math.max(0, -r.top / (r.height - vh)));

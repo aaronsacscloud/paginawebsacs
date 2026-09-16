@@ -23,18 +23,28 @@ export const REQUISITOS: Record<string, Requisito> = {
   competidores: { comoSeArregla: 'Nada: se leen sus sitios públicos.' },
   terceros: { comoSeArregla: 'Nada: se leen los directorios públicos.' },
 
+  /* La credencial YA EXISTE y autentica bien: es la cuenta de servicio
+     `google-sheets@sacs3-da4a6.iam.gserviceaccount.com`, la misma que escribe
+     en la hoja de leads de TikTok. Faltan dos cosas distintas, y conviene no
+     confundirlas porque se arreglan en pantallas distintas:
+       (a) ENCENDER la API en el proyecto de Google Cloud `sacs3-da4a6` —
+           probado: responde 403 «API has not been used in project 819604817289»;
+       (b) DAR DE ALTA esa cuenta como usuario de la propiedad en Search Console.
+     Sin (a) no se puede ni preguntar; sin (b) se pregunta y no hay propiedades. */
   gsc: {
     llaves: ['GOOGLE_SERVICE_ACCOUNT_B64'],
     gestion: 'GSC_PROPIEDAD',
-    comoSeArregla: 'Dar de alta la cuenta de servicio de Google como usuario Completo en Search Console de sacscloud.com, y guardar aquí la propiedad (sc-domain:sacscloud.com).',
+    comoSeArregla: '1) Encender «Search Console API» en el proyecto sacs3-da4a6 de Google Cloud. 2) En Search Console → Configuración → Usuarios, agregar google-sheets@sacs3-da4a6.iam.gserviceaccount.com con permiso Completo. 3) Guardar aquí la propiedad (sc-domain:sacscloud.com). Todo gratis.',
   },
+  /* NO hay GA4 instalado en el sitio —se mide con PostHog y con nuestra propia
+     tabla `contact_visits`, que ya lleva ~8,900 visitas—. Instalar GA4 solo para
+     esto sería sumar una etiqueta más y datos duplicados. El conector de
+     analítica lee lo nuestro. */
   ga4: {
-    llaves: ['GOOGLE_SERVICE_ACCOUNT_B64'],
-    gestion: 'GA4_PROPIEDAD',
-    comoSeArregla: 'Agregar la cuenta de servicio como Lector en GA4 y guardar aquí el id de la propiedad.',
+    comoSeArregla: 'Nada: el sitio no usa GA4. La analítica sale de contact_visits, que es dato propio.',
   },
-  pagespeed: { llaves: ['GOOGLE_API_KEY_PSI'], comoSeArregla: 'Habilitar PageSpeed Insights API en Google Cloud y poner la llave GOOGLE_API_KEY_PSI en Vercel. Es gratis.' },
-  youtube:   { llaves: ['GOOGLE_API_KEY_YT'],  comoSeArregla: 'Habilitar YouTube Data API v3 y poner GOOGLE_API_KEY_YT en Vercel. Es gratis.' },
+  pagespeed: { llaves: ['GOOGLE_API_KEY_PSI'], comoSeArregla: 'Encender «PageSpeed Insights API» en el proyecto sacs3-da4a6, crear una llave de API y ponerla en Vercel como GOOGLE_API_KEY_PSI. Gratis.' },
+  youtube:   { llaves: ['GOOGLE_API_KEY_YT'],  comoSeArregla: 'Encender «YouTube Data API v3» en el proyecto sacs3-da4a6, crear una llave de API y ponerla en Vercel como GOOGLE_API_KEY_YT. Gratis, 10 mil unidades al día.' },
   reddit:    { llaves: ['REDDIT_CLIENT_ID', 'REDDIT_CLIENT_SECRET'], comoSeArregla: 'Crear una app en reddit.com/prefs/apps y poner REDDIT_CLIENT_ID y REDDIT_CLIENT_SECRET en Vercel. Es gratis.' },
   serp:      { llaves: ['DATAFORSEO_LOGIN', 'DATAFORSEO_PASSWORD'], comoSeArregla: 'Abrir cuenta en DataForSEO (pago por uso) y poner DATAFORSEO_LOGIN y DATAFORSEO_PASSWORD en Vercel.' },
 
