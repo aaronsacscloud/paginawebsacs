@@ -28,7 +28,9 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { apuntar, quien } from '../../../lib/crm/abm.lib';
 import { ABM_FRIO, paramsFrios, GIRO_FRIO } from '../../../lib/crm/abm-wa-plantillas';
-import { enviarPlantilla, sanearParam } from '../../../lib/whatsapp/kapso-api';
+import { enviarPlantilla, sanearParam, conLinea } from '../../../lib/whatsapp/kapso-api';
+import { lineaPara, infoLinea } from '../../../lib/whatsapp/linea';
+import { enHorarioDe } from '../../../lib/crm/abm-paises';
 import { permitido } from '../../../lib/whatsapp/permisos';
 import { puedeMandarWa } from '../../../lib/whatsapp/presion';
 
@@ -39,17 +41,14 @@ const env = (n: string) => String((import.meta.env as any)[n] || (process.env as
 /** Los días de cada toque, contados desde el primero. */
 const DIAS = [0, 4, 11];
 
-/** Horario en que se puede escribir, hora del centro de México. Fuera de esto
- *  no sale nada: ni temprano, ni tarde, ni sábado o domingo. */
-const HORA_ABRE = 10, HORA_CIERRA = 18;
-
-function enHorario(): { ok: boolean; motivo?: string } {
-  const ahora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
-  const dia = ahora.getDay();
-  if (dia === 0 || dia === 6) return { ok: false, motivo: 'fin de semana' };
-  const h = ahora.getHours();
-  if (h < HORA_ABRE || h >= HORA_CIERRA) return { ok: false, motivo: `son las ${h}:00 en CDMX, se escribe de ${HORA_ABRE} a ${HORA_CIERRA}` };
-  return { ok: true };
+/** Sábado y domingo no se escribe, y eso sí es igual en todos lados. La HORA,
+ *  en cambio, es la de CADA CUENTA: se revisa abajo con `enHorarioDe(pais)`.
+ *  Estaba fijo a CDMX, y como el cron corre de 16 a 23 UTC, a un negocio de
+ *  Madrid le habría llegado un WhatsApp comercial entre las 6 de la tarde y la
+ *  1 de la madrugada. `abm-whatsapp.ts` ya lo hacía bien; este no. */
+function esFinDeSemana(): boolean {
+  const d = new Date().getUTCDay();
+  return d === 0 || d === 6;
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -69,15 +68,40 @@ export const GET: APIRoute = async ({ request, url }) => {
   // 1. La pausa global del motor manda sobre todo lo demás.
   const { data: cfg } = await supabase.from('abm_config').select('clave, valor');
   const conf = Object.fromEntries((cfg || []).map((r: any) => [r.clave, r.valor]));
-  if (conf.pausado === 'si') return json({ enviados: 0, motivo: 'el motor está pausado' });
+  /* El disyuntor por rebotes y quejas escribe `pausado = 'auto'`, no `'si'`.
+     Comparar solo contra `'si'` dejaba el WhatsApp saliendo el mismo día en
+     que el sistema decidió que el correo iba mal. Cualquier valor que no sea
+     'no' es una pausa. */
+  if (String(conf.pausado ?? 'si') !== 'no') return json({ enviados: 0, motivo: `el motor está pausado (${conf.pausado})` });
 
   // 2. El apagador de esta automatización en concreto. Si no se puede leer la
   //    tabla, `permitido` devuelve false: en la duda no se le escribe a nadie.
   if (!(await permitido('abm_frio' as any))) return json({ enviados: 0, motivo: 'la automatización abm_frio está apagada' });
 
-  // 3. La hora. Esto no se salta ni con dry.
-  const hora = enHorario();
-  if (!hora.ok) return json({ enviados: 0, motivo: `fuera de horario: ${hora.motivo}` });
+  // 3. El día. La hora se revisa por cuenta, más abajo: cada una en su país.
+  if (esFinDeSemana()) return json({ enviados: 0, motivo: 'fin de semana' });
+
+  /* 3 bis. LA LÍNEA. `wa-salud` pausa la línea cuando Meta le baja la calidad,
+     y el manual promete que entonces no sale nada. No se cumplía: al mandar
+     sin `conLinea({contexto:'prospeccion'})`, la resolución caía al contexto
+     'sistema', que NO está en la lista que bloquea línea pausada. O sea que el
+     WhatsApp en frío era justo el que se saltaba el freno de calidad. */
+  const pn = await lineaPara('prospeccion');
+  if (!pn) return json({ enviados: 0, motivo: 'no hay línea de WhatsApp para prospección (¿pausada por calidad?)' });
+  const linea = await infoLinea(pn);
+  if (linea?.pausada) return json({ enviados: 0, motivo: `la línea ${linea.numero} está pausada${linea.pausada_motivo ? `: ${linea.pausada_motivo}` : ''}` });
+
+  /* 3 ter. EL TOPE DEL DÍA, que es de la casa y no de esta corrida. El cron
+     está agendado OCHO veces al día con `cuantas=10`: sin leer el tope, el día
+     que se encienda salen 80 en vez de los 10 que dice `abm_config`. Y se
+     cuentan los dos caminos de WhatsApp juntos, porque la línea es una sola. */
+  const topeDia = Math.max(0, Number(conf.wa_tope_dia ?? 10));
+  const hoyIso = new Date().toISOString().slice(0, 10);
+  const { count: yaHoy } = await supabase.from('abm_toques')
+    .select('id', { count: 'exact', head: true })
+    .eq('canal', 'whatsapp').eq('estado', 'enviado').gte('enviado_at', hoyIso);
+  const restante = topeDia - (yaHoy || 0);
+  if (restante <= 0) return json({ enviados: 0, motivo: `ya salieron ${yaHoy} WhatsApp hoy, el tope son ${topeDia}` });
 
   /* 3 bis. A QUÉ GIROS. `abm_frio` es un apagador de sí o no, y encenderlo
      soltaba el WhatsApp sobre los 24 giros a la vez, ordenados por puntaje:
@@ -101,8 +125,19 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // ── A quién le toca ───────────────────────────────────────────────────────
   // Solo números DECLARADOS: los que el propio negocio publicó como WhatsApp.
+  /* SOLO MÉXICO, y esto no es una preferencia: las tres plantillas aprobadas
+     por Meta son `es_MX` y dicen, literalmente, «estamos armando el mapa de
+     {{1}} DE MÉXICO». La vista `v_whatsapp_contactable` no filtra país y trae
+     896 cuentas de España, Colombia, Argentina y ocho países más —894 de ellas
+     de novias, que sí tiene guion—. A una casa de novias de Madrid le habría
+     llegado un WhatsApp en español mexicano diciéndole que salió en el mapa de
+     México; y en España, además, el correo comercial en frío está sujeto al
+     RGPD y a la LSSI art. 21, que este manual dice revisar con abogado ANTES
+     del primer envío (§9.2). Cuando haya plantillas por región, esto se abre
+     con una llave de config, no borrando el filtro. */
   let q = supabase.from('v_whatsapp_contactable')
-    .select('cuenta_id, valor, giro, cuenta_nombre, puntaje')
+    .select('cuenta_id, valor, giro, cuenta_nombre, puntaje, pais')
+    .eq('pais', 'México')
     .order('puntaje', { ascending: false, nullsFirst: false })
     .limit(cuantas * 12);          // se piden de más: muchos se van a filtrar
   if (giroFiltro) q = q.eq('giro', giroFiltro);
@@ -115,8 +150,9 @@ export const GET: APIRoute = async ({ request, url }) => {
   const saltados: Record<string, number> = {};
   const salta = (k: string) => { saltados[k] = (saltados[k] || 0) + 1; };
 
+  const cupo = Math.min(cuantas, restante);
   for (const c of candidatos || []) {
-    if (salida.length >= cuantas) break;
+    if (salida.length >= cupo) break;
     if (!GIRO_FRIO[c.giro]) { salta(`sin guion para ${c.giro}`); continue; }
 
     // Si ya contestaron, la cadencia terminó: lo que sigue es una conversación.
@@ -141,6 +177,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (diasDesde < DIAS[hechos]) { salta('todavía no le toca'); continue; }
     }
 
+    // La hora es la DE ELLOS. Hoy todas son de México, pero el día que se
+    // abra a otro país esto ya no manda a nadie a la una de la madrugada.
+    if (!enHorarioDe((c as any).pais)) { salta('fuera de horario en su país'); continue; }
+
     // La presión: no dos mensajes nuestros muy seguidos, venga de donde venga.
     const v = await puedeMandarWa(c.valor);
     if (!v.ok) { salta('escrito hace poco'); continue; }
@@ -155,13 +195,22 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
 
     try {
-      await enviarPlantilla(c.valor, plantilla.nombre, plantilla.idioma, params.map(sanearParam));
+      /* Por la línea de prospección, igual que el otro camino de WhatsApp.
+         Sin `conLinea` la resolución cae al contexto 'sistema', que no bloquea
+         una línea pausada por calidad: el frío se saltaba el freno. */
+      await conLinea({ pn, contexto: 'prospeccion' },
+        () => enviarPlantilla(c.valor, plantilla.nombre, plantilla.idioma, params.map(sanearParam)));
       // Se guarda el toque DESPUÉS de que Meta lo aceptó. Al revés quedaría
       // registrado un envío que no ocurrió, y la cuenta nunca recibiría ese paso.
+      /* Y con `enviado_at`, que faltaba: el tope del día se cuenta con ese
+         campo, así que sin él estos envíos eran invisibles para el contador
+         —el de aquí y el de abm-whatsapp— y los dos repartían el mismo cupo
+         creyendo que iban en cero. */
+      const ahoraIso = new Date().toISOString();
       const { error: eIns } = await supabase.from('abm_toques').insert({
         cuenta_id: c.cuenta_id, canal: 'whatsapp', destino: c.valor,
         asunto: plantilla.nombre, cuerpo: params.join(' · '),
-        estado: 'enviado', programado_at: new Date().toISOString(),
+        estado: 'enviado', programado_at: ahoraIso, enviado_at: ahoraIso,
       });
       if (eIns) console.error('[abm-wa] no se pudo guardar el toque:', eIns.message);
       await apuntar(c.cuenta_id, 'whatsapp', 'salida', {

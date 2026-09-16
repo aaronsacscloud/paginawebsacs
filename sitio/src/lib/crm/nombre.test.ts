@@ -9,7 +9,7 @@
  *
  * Correr:  node --experimental-strip-types src/lib/crm/nombre.test.ts
  */
-import { nombrePila } from './nombre.ts';
+import { nombrePila, nombreBonito } from './nombre.ts';
 
 let ok = 0; const fallas: string[] = [];
 const es = (dado: string, esperado: string, porque: string) => {
@@ -47,9 +47,39 @@ es(nombrePila(null), '', 'nulo');
 es(nombrePila('   '), '', 'puros espacios');
 es(nombrePila('Oscar'), 'Oscar', 'una sola palabra');
 
+// ── nombreBonito: el nombre del negocio como se escribe en el correo ────────
+// Los casos salieron de los 3,205 nombres reales de cuentas contactables, no
+// de la imaginación: 1,180 cambian al pasar por aquí.
+
+// Gritar es lo más común: 589 cuentas vienen en mayúsculas desde Maps.
+es(nombreBonito('ALMACENES SILVON'), 'Almacenes Silvon', 'todo en mayúsculas');
+es(nombreBonito('GRUPO COLOSO'), 'Grupo Coloso', 'dos palabras gritando');
+es(nombreBonito('TANAT CONTADORES Y ABOGADOS'), 'Tanat Contadores y Abogados', 'la «y» va en minúscula');
+
+// La sigla se distingue por NO TENER VOCAL, no por ser corta. Con la regla de
+// «tres letras o menos» salía «Cute AND JOY», peor que el problema original.
+es(nombreBonito('GRUPO JYV'), 'Grupo JYV', 'sin vocal sí es sigla');
+es(nombreBonito('CUTE AND JOY'), 'Cute And Joy', 'AND y JOY tienen vocal');
+es(nombreBonito('JADE YAZ'), 'Jade Yaz', 'YAZ tampoco es sigla');
+
+// La forma legal es de oficio de banco, no de un correo en frío.
+es(nombreBonito('TEXTILES OPERTEL S.A DE C.V'), 'Textiles Opertel', 'sociedad anónima sin puntos');
+es(nombreBonito('VIA CATTINI, S.A. DE C.V.'), 'Via Cattini', 'con coma y con puntos');
+
+// La ficha de Maps a veces lista todas las marcas que maneja el negocio.
+es(nombreBonito('AGORSS / DEEZER / MONACO / ESTUDIO S / DEFAY /'), 'Agorss', 'lista de marcas: la primera');
+es(nombreBonito('Alquiler de Smoking / Trajes Mickey'), 'Alquiler de Smoking / Trajes Mickey',
+   'UNA diagonal NO es una lista: cortar aquí perdería media razón social');
+
+// Y lo que ya está bien no se toca.
+es(nombreBonito('Boutique Marisol'), 'Boutique Marisol', 'bien escrito se queda igual');
+es(nombreBonito('  Doble   espacio  '), 'Doble espacio', 'espacios de más');
+es(nombreBonito(''), '', 'vacío');
+es(nombreBonito(null), '', 'nulo');
+
 if (fallas.length) {
   console.error(`\n✗ ${fallas.length} fallas de ${ok + fallas.length}\n`);
   for (const f of fallas) console.error('  · ' + f);
   process.exit(1);
 }
-console.log(`✓ nombre-pila: ${ok} casos`);
+console.log(`✓ nombre: ${ok} casos (saludo + nombre del negocio)`);

@@ -35,7 +35,7 @@ export async function quien(request: Request): Promise<Quien | null> {
 
 import { GIROS, paginaDe } from './abm-giros';
 import { paisDe } from './abm-paises';
-import { nombrePila } from './nombre';
+import { nombrePila, nombreBonito } from './nombre';
 export { GIROS };
 
 export const ETAPAS = ['sin_tocar', 'en_cadencia', 'respondio', 'reunion', 'diagnostico', 'propuesta', 'ganada', 'perdida', 'en_pausa', 'no_contactar'] as const;
@@ -172,7 +172,12 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
   const plataforma = plataformaLimpia(c.plataforma_web);
   const senal = recorte(c.senal_expansion, 90);
   return {
-    nombre: c.nombre || '',
+    /* El nombre como se ESCRIBE, no como lo capturaron en Google Maps. 1,180
+       de las 3,205 cuentas contactables vienen gritando («ALMACENES SILVON»)
+       o con la ficha listando todas sus marcas («AGORSS / DEEZER / MONACO /
+       ESTUDIO S / DEFAY / WHOO /»). Va en el primer renglón del correo que
+       jura no ser automático. Ver nombreBonito() para las tres reglas. */
+    nombre: nombreBonito(c.nombre),
     ciudad: c.ciudad || '',
     vimos: senal || sucursales || plataforma ? 'sí' : '',
     // No se presume un número de tiendas que no verificamos: equivocarse con
