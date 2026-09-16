@@ -241,10 +241,23 @@ export const GET: APIRoute = async ({ request }) => {
        Se cancela, no se limpia: un correo al que le quitas un pedazo deja de
        decir lo que se quería decir, y el borrador queda para arreglarlo. */
     const crudo = String(t.cuerpo || '') + ' ' + String(t.asunto || '');
-    if (/\{\{|\[\[/.test(crudo)) {
+    /* Dos formas de que el armado falle, y la segunda no se veía.
+       a) La marca se quedó: `{{nombre}}`, `[[si ciudad]]`. Se ve a simple vista.
+       b) La marca se fue y dejó la CICATRIZ: la variable sí se sustituyó, pero
+          por nada, y la frase queda «por algo concreto..» o «Le vende a, y lo
+          que pasa es esto:.». El chequeo de (a) no la caza porque ya no hay
+          nada que buscar. Es la forma MÁS peligrosa: se ve como un correo
+          normal hasta que uno lo lee.
+       Lo que delata a (b) es puntuación que ningún redactor escribe: dos
+       puntos seguidos, dos puntos y punto, espacio antes de coma, coma pegada
+       a una coma. `...` se exceptúa porque sí se usa. */
+    const cicatriz = /(?<!\.)\.\.(?!\.)|:\s*\.|,\s*,|\s+,|\(\s*\)|«\s*»/.test(crudo);
+    if (/\{\{|\[\[/.test(crudo) || cicatriz) {
       await supabase.from('abm_toques').update({
         estado: 'cancelado',
-        resultado: 'el cuerpo salió sin armar: quedó una variable o un bloque de plantilla sin resolver',
+        resultado: cicatriz
+          ? 'el cuerpo salió con una variable vacía: quedó la frase rota («..», «:.», « ,»)'
+          : 'el cuerpo salió sin armar: quedó una variable o un bloque de plantilla sin resolver',
       }).eq('id', t.id);
       await apuntar(t.cuenta_id, 'email', 'nota', { texto: `Correo cancelado: el cuerpo conserva marcas de plantilla (${(crudo.match(/\{\{[a-z_]+\}\}|\[\[[^\]]{0,40}/i) || ['?'])[0]}…)` });
       continue;
