@@ -78,6 +78,13 @@ if (que === 'ingerir') {
       console.log(await ingerirGsc(Number(process.argv[3]) || 3));
     }
   } catch (e) { console.log('error:', e.message); }
+} else if (que === 'seo') {
+  await import('../src/lib/demanda/registro.ts');
+  const { handlerDe } = await import('../src/lib/demanda/handlers.ts');
+  const { leerConfig } = await import('../src/lib/demanda/config.ts');
+  const cfg = await leerConfig(true);
+  const r = await handlerDe('detectar.seo')({ payload: {} }, { limite: Date.now() + 120000, cfg, ciclo_id: null });
+  console.log(r.resumen); console.log(r.datos);
 } else if (que === 'competidores') {
   await import('../src/lib/demanda/registro.ts');
   const { handlerDe } = await import('../src/lib/demanda/handlers.ts');

@@ -13,6 +13,7 @@ import './fuentes/gsc';
 import './normalizar';
 import './paginas';
 import './tecnico';
+import './seo';
 import './enlaces';
 import './competidores';
 import './evaluar';

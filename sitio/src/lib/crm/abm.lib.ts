@@ -180,6 +180,21 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     nombre: nombreBonito(c.nombre),
     ciudad: c.ciudad || '',
     vimos: senal || sucursales || plataforma ? 'sí' : '',
+    /* DE DÓNDE SALIÓ LA CUENTA, y por qué son dos banderas. El correo 0 de
+       calzado y marcas abre diciendo «estuvimos armando la lista de fábricas
+       que exponen en SAPICA y usted salió ahí». Es cierto para las 632 del
+       padrón de la feria; NO lo es para las 304 que trajo Google Maps, y 43 de
+       ellas ya estaban en la fila del goteo, entre ellas una fábrica de
+       pinturas y una reparadora de zapatos. Decirle a alguien que expone en
+       una feria a la que no va es mentira verificable en la primera línea.
+       El motor no tiene «o», así que van dos banderas complementarias —el
+       mismo recurso que `vimos`—: `feria` con el nombre cuando la cuenta viene
+       del padrón, `sin_feria` cuando no, para la versión que sí se sostiene. */
+    ...(() => {
+      const nota = String(c.nota || '');
+      const f = /SAPICA/i.test(nota) ? 'SAPICA' : /Intermoda/i.test(nota) ? 'Intermoda' : '';
+      return { feria: f, sin_feria: f ? '' : 'sí' };
+    })(),
     // No se presume un número de tiendas que no verificamos: equivocarse con
     // "sus 14 tiendas" cuando son 3 tumba la credibilidad del correo entero.
     //
