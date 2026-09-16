@@ -55,7 +55,13 @@ export default function Goteo() {
   const m = d?.motor || {};
   const motorListo = m.pausado === 'no' && !(m.faltas || []).length;
   const wa = m.wa;
-  const girosSinRegistrar: string[] = Array.from(new Set(((wa?.plantillas || []) as any[]).filter(p => !['APPROVED', 'PENDING', 'IN_APPEAL'].includes(p.status)).map(p => p.giro)));
+  // Por giro Y REGIÓN: registrar en Meta es un trámite hacia afuera, y el de
+  // España no se hace de rebote al apretar el de México.
+  const REGION_NOMBRE: Record<string, string> = { mexico: 'México', latam: 'Latinoamérica', espana: 'España' };
+  const sinRegistrar: { giro: string; region: string }[] = Array.from(new Set(((wa?.plantillas || []) as any[])
+    .filter(p => !['APPROVED', 'PENDING', 'IN_APPEAL'].includes(p.status))
+    .map(p => `${p.giro}|${p.region || 'mexico'}`)))
+    .map(k => ({ giro: String(k).split('|')[0], region: String(k).split('|')[1] }));
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -82,11 +88,14 @@ export default function Goteo() {
               {(wa.plantillas || []).map((p: any) => {
                 const tono = p.status === 'APPROVED' ? { bg: P.verdeAgua, fg: P.verdeTinta } : p.status === 'PENDING' ? { bg: P.ambarAgua, fg: P.ambarTinta } : { bg: P.rojoAgua, fg: P.rojoTinta };
                 const l = p.status === 'APPROVED' ? 'aprobada' : p.status === 'PENDING' ? 'en revisión de Meta' : p.status === 'REJECTED' ? `rechazada${p.rechazo ? `: ${p.rechazo}` : ''}` : p.status === 'SIN_REGISTRAR' ? 'sin registrar en Meta' : p.status.toLowerCase();
-                return <Pastilla key={p.id} tono={tono}>{p.nombre}: {l}</Pastilla>;
+                return <Pastilla key={p.id} tono={tono} max={280}>{REGION_NOMBRE[p.region || 'mexico'] || p.region} · {p.nombre}: {l}</Pastilla>;
               })}
-              {girosSinRegistrar.map((giro: string) => (
-                <button key={giro} disabled={!!trabajando} onClick={() => pedir({ accion: 'wa_registrar', giro }, 'wa_registrar')} style={{ ...btn(false), padding: '4px 10px' }}>
-                  {trabajando === 'wa_registrar' ? 'Registrando…' : `Registrar plantillas en Meta (${GIROS[giro] || giro})`}
+              {sinRegistrar.map(({ giro, region }) => (
+                <button key={giro + region} disabled={!!trabajando} onClick={() => {
+                  if (!window.confirm(`Mandar a Meta las plantillas de ${GIROS[giro] || giro} · ${REGION_NOMBRE[region] || region}. Es un trámite hacia afuera y Meta las revisa. ¿Registrarlas?`)) return;
+                  pedir({ accion: 'wa_registrar', giro, region }, 'wa_registrar');
+                }} style={{ ...btn(false), padding: '4px 10px' }}>
+                  {trabajando === 'wa_registrar' ? 'Registrando…' : `Registrar en Meta (${GIROS[giro] || giro} · ${REGION_NOMBRE[region] || region})`}
                 </button>
               ))}
             </div>

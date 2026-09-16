@@ -58,32 +58,41 @@ export function botonesDe(pl: { boton_texto?: string | null; boton_url?: string 
   return texto.split('|').map(t => t.trim()).filter(Boolean).slice(0, 3).map(t => ({ tipo: 'QUICK_REPLY' as const, texto: t.slice(0, 20) }));
 }
 
-/** Estado en Meta de las plantillas de WhatsApp de un giro (para la pantalla y para el cron). */
-export async function estadoPlantillas(giro: string) {
-  const { data: pls } = await supabase.from('abm_plantillas')
-    .select('id, nombre, cuerpo, meta_nombre, meta_idioma, orden')
+/** Estado en Meta de las plantillas de WhatsApp de un giro (para la pantalla y para el cron).
+ *  Con `region` se mira solo la de esa región: las de España y Latinoamérica
+ *  son otro trámite y no se registran junto con las de México. */
+export async function estadoPlantillas(giro: string, region?: string) {
+  let q = supabase.from('abm_plantillas')
+    .select('id, nombre, cuerpo, meta_nombre, meta_idioma, orden, region')
     .eq('giro', giro).eq('canal', 'whatsapp').eq('activa', true).order('orden');
+  if (region) q = q.eq('region', region);
+  const { data: pls } = await q;
   const nombres = (pls || []).map((p: any) => p.meta_nombre).filter(Boolean);
   const { data: enMeta } = nombres.length
     ? await supabase.from('wa_plantillas').select('nombre, idioma, status, rechazo_motivo, calidad').in('nombre', nombres)
     : { data: [] as any[] };
   return (pls || []).map((p: any) => {
     const m = (enMeta || []).find((x: any) => x.nombre === p.meta_nombre && x.idioma === (p.meta_idioma || 'es_MX'));
-    return { id: p.id, nombre: p.nombre, meta_nombre: p.meta_nombre, idioma: p.meta_idioma || 'es_MX',
+    return { id: p.id, nombre: p.nombre, region: p.region || 'mexico', meta_nombre: p.meta_nombre, idioma: p.meta_idioma || 'es_MX',
       status: m?.status || (p.meta_nombre ? 'SIN_REGISTRAR' : 'SIN_NOMBRE'), rechazo: m?.rechazo_motivo || null, calidad: m?.calidad || null };
   });
 }
 
-/** Registra en Meta las plantillas del giro que aún no existen (o que Meta rechazó). Devuelve qué pasó con cada una. */
-export async function registrarPlantillas(giro: string): Promise<{ nombre: string; resultado: string }[]> {
-  const estado = await estadoPlantillas(giro);
+/** Registra en Meta las plantillas del giro que aún no existen (o que Meta rechazó).
+ *  La REGIÓN es obligatoria a propósito (16-sep-2026): el botón registraba de
+ *  un golpe las de todas las regiones, y meter en Meta las de España —que el
+ *  dueño todavía no aprueba— es un trámite hacia afuera que nadie pidió. */
+export async function registrarPlantillas(giro: string, region = 'mexico'): Promise<{ nombre: string; resultado: string }[]> {
+  const estado = await estadoPlantillas(giro, region);
   const { data: pls } = await supabase.from('abm_plantillas').select('id, cuerpo, boton_texto, boton_url').in('id', estado.map(e => e.id));
   // La muestra que Meta exige por hueco sale de una cuenta real del giro: a
   // una plantilla de novias no se le manda de ejemplo un mayorista de Villa
   // Hidalgo, que es lo que el revisor ve para decidir si el texto tiene sentido.
-  const { data: muestra } = await supabase.from('abm_cuentas').select('nombre, ciudad').eq('giro', giro)
-    .not('ciudad', 'is', null).order('puntaje', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
-  const ejemploDe = (v: string) => v === 'nombre' ? (muestra?.nombre || 'Creaciones Lupita') : v === 'ciudad' ? (muestra?.ciudad || 'Villa Hidalgo') : v === 'pais' ? 'Colombia' : 'ejemplo';
+  const REGION_PAIS: Record<string, string> = { mexico: 'México', latam: 'Colombia', espana: 'España' };
+  const { data: muestra } = await supabase.from('abm_cuentas').select('nombre, ciudad, pais').eq('giro', giro)
+    .not('ciudad', 'is', null).eq('pais', REGION_PAIS[region] || 'México')
+    .order('puntaje', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+  const ejemploDe = (v: string) => v === 'nombre' ? (muestra?.nombre || 'Creaciones Lupita') : v === 'ciudad' ? (muestra?.ciudad || 'Villa Hidalgo') : v === 'pais' ? (muestra?.pais || REGION_PAIS[region] || 'México') : 'ejemplo';
   const out: { nombre: string; resultado: string }[] = [];
   for (const e of estado) {
     if (!e.meta_nombre) { out.push({ nombre: e.nombre, resultado: 'sin meta_nombre en abm_plantillas' }); continue; }

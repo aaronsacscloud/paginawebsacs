@@ -21,12 +21,10 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
   const [aviso, setAviso] = useState<{ t: string; mal?: boolean } | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
 
-  const traer = () => {
-    fetch(`/api/crm/abm/paises?giro=${encodeURIComponent(giro)}`).then(r => r.json())
-      .then(r => { setPaises(r.paises || []); setCargando(false); })
-      .catch(() => setCargando(false));
-  };
-  useEffect(traer, [giro]);
+  const traer = () => fetch(`/api/crm/abm/paises?giro=${encodeURIComponent(giro)}`).then(r => r.json())
+    .then(r => { setPaises(r.paises || []); setCargando(false); })
+    .catch(() => setCargando(false));
+  useEffect(() => { traer(); }, [giro]);
 
   const pedir = async (body: any, clave: string, ok: (j: any) => string) => {
     setTrabajando(clave); setAviso(null);
@@ -34,7 +32,7 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
       const r = await fetch('/api/crm/abm/paises', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ giro, ...body }) });
       const j = await r.json();
       setAviso(r.ok ? { t: ok(j) } : { t: j?.error || 'No se pudo', mal: true });
-      traer();
+      await traer();          // el botón no se reactiva antes de tener los datos nuevos
     } finally { setTrabajando(null); }
   };
 
@@ -46,6 +44,7 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
     <div style={{ display: 'grid', gap: 16 }}>
       <div>
         <div style={{ fontSize: '.9375rem', fontWeight: 800 }}>La prospección de {GIROS[giro]?.toLowerCase() || giro}, país por país</div>
+        <div style={{ fontSize: '.6875rem', color: '#999' }}>Giro: {GIROS[giro] || giro} — cámbialo en el filtro de «Las cuentas».</div>
         <div style={{ fontSize: '.75rem', color: '#888', maxWidth: '78ch' }}>
           Cada país tiene su guion —uno por región, con las palabras de allá— y su goteo. Lanzar un país suelta sus cuentas
           a la fila y enciende el goteo con tu firma: desde ese momento el cartero les escribe, de a pocas por día y solo
@@ -67,9 +66,18 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
 
       {(paises || []).map((p: any) => {
         const ver = abierto === p.iso;
-        const tono = p.lanzado ? { bg: P.verdeAgua, fg: P.verdeTinta } : p.esperando_permiso ? { bg: P.ambarAgua, fg: P.ambarTinta } : { bg: '#F4F4F6', fg: P.suave };
-        const etiqueta = p.lanzado ? 'Lanzado' : p.esperando_permiso ? 'Esperando permiso' : 'Sin lanzar';
-        const dias = Math.ceil(Number(p.contactables || 0) / Math.max(1, (p.goteos || []).reduce((s: number, g: any) => Math.max(s, g.cuentas_dia || 0), 0) || 10));
+        // Un país pausado con cuentas ya en cadencia no está «sin lanzar»: esas
+        // siguen recibiendo sus ocho correos durante 33 días.
+        const enCurso = Number(p.en_cadencia || 0);
+        const tono = p.lanzado ? { bg: P.verdeAgua, fg: P.verdeTinta } : enCurso ? { bg: P.azulAgua, fg: P.azulTinta } : p.esperando_permiso ? { bg: P.ambarAgua, fg: P.ambarTinta } : { bg: '#F4F4F6', fg: P.suave };
+        const etiqueta = p.lanzado ? 'Lanzado' : enCurso ? `En pausa · ${fmt(enCurso)} en cadencia` : p.esperando_permiso ? 'Esperando permiso' : 'Sin lanzar';
+        /* Los días se cuentan con lo que el goteo PUEDE enrolar: solo cuentas
+           con correo válido (el WhatsApp acompaña, no abre la cadencia) y solo
+           las que siguen esperando o en la fila. Antes se usaba «contactables»
+           del país entero y el goteo de diagnóstico —quince cuentas— decía los
+           mismos 99 días que el de toda España. */
+        const porEnrolar = Number(p.en_pausa || 0) + Number(p.sin_tocar || 0);
+        const diasDe = (g: any) => Math.ceil(Math.min(Number(p.con_correo || 0), porEnrolar) / Math.max(1, g.cuentas_dia || 10));
         return (
           <div key={p.iso} style={{ border: `1px solid ${P.linea}`, borderRadius: 10, background: '#fff', overflow: 'hidden' }}>
             <div style={{ padding: '14px 17px', display: 'grid', gap: 10 }}>
@@ -84,8 +92,8 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
                 </span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                   {!p.lanzado && (
-                    <button disabled={!!trabajando || !p.contactables} onClick={() => {
-                      if (!window.confirm(`Lanzar ${p.pais}: ${fmt(p.esperando_permiso)} cuentas entran a la fila y su goteo empieza a escribirles, ${(p.goteos || [])[0]?.cuentas_dia || 10} al día. Los correos salen con tu firma. ¿Lanzar?`)) return;
+                    <button disabled={!!trabajando || !p.esperando_permiso || !(p.goteos || []).length} onClick={() => {
+                      if (!window.confirm(`Lanzar ${p.pais}: ${fmt(p.esperando_permiso)} cuentas entran a la fila y su goteo empieza a escribirle a las que tienen correo (${fmt(p.con_correo)}), ${(p.goteos || [])[0]?.cuentas_dia || 10} al día. Los correos salen con tu firma. ¿Lanzar?`)) return;
                       pedir({ accion: 'lanzar', pais: p.iso }, p.iso, j => `${p.pais}: ${fmt(j.soltadas)} cuentas a la fila y ${j.goteos} goteo(s) encendido(s). El primer lote sale en la próxima corrida del cartero.`);
                     }} style={btn(true)}>{trabajando === p.iso ? 'Lanzando…' : 'Lanzar este país'}</button>
                   )}
@@ -120,7 +128,7 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
                     <div key={g.id} style={{ fontSize: '.8125rem', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700 }}>{g.nombre}</span>
                       <Pastilla tono={g.estado === 'activo' ? { bg: P.verdeAgua, fg: P.verdeTinta } : { bg: P.ambarAgua, fg: P.ambarTinta }}>{g.estado === 'activo' ? 'Activo' : 'En pausa'}</Pastilla>
-                      <span style={{ color: '#888' }}>{g.cuentas_dia} cuentas al día · ~{dias} días hábiles para toda la base{g.con_ia ? ' · adaptado con IA' : ''}</span>
+                      <span style={{ color: '#888' }}>{g.cuentas_dia} cuentas al día · hasta ~{diasDe(g)} días hábiles{g.con_ia ? ' · adaptado con IA' : ''}</span>
                       <span style={{ display: 'flex', gap: 5 }}>
                         {[5, 10, 20, 40].map(n => (
                           <button key={n} disabled={!!trabajando || g.cuentas_dia === n}

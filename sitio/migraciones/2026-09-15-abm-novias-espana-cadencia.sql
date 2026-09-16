@@ -58,7 +58,7 @@ E'Le cuento cómo lo resolvemos, para que juzgue si le sirve.\n\nCada venta deja
 'texto','mostrar cómo se resuelve por dentro','novias-4-ficha.jpg','[]',true),
 
 ('novias','email','demo','espana','novias demo · correo 4',4,'el cuaderno no avisa',
-E'Muchas casas de novia llevan todo en un cuaderno de reservas, y funciona un buen tiempo. El problema no es que esté mal hecho.\n\nEs que no avisa. No le dice que el vestido de la boda del 12 lleva tres semanas sin llegar del proveedor. No recuerda que esa novia debe la segundo pago. No sabe que el taller tiene seis prendas juntas la misma semana.\n\nY el día que no está la persona que se sabe todo de memoria, quien atiende no puede prometer una fecha sin ir a preguntar.\n\nNo le digo que su control esté mal. Le digo que ya llegó a su tope.\n\n¿Quién lleva hoy ese cuaderno?',
+E'Muchas casas de novia llevan todo en un cuaderno de reservas, y funciona un buen tiempo. El problema no es que esté mal hecho.\n\nEs que no avisa. No le dice que el vestido de la boda del 12 lleva tres semanas sin llegar del proveedor. No recuerda que esa novia debe el segundo pago. No sabe que el taller tiene seis prendas juntas la misma semana.\n\nY el día que no está la persona que se sabe todo de memoria, quien atiende no puede prometer una fecha sin ir a preguntar.\n\nNo le digo que su control esté mal. Le digo que ya llegó a su tope.\n\n¿Quién lleva hoy ese cuaderno?',
 'texto','romper la objeción del control actual','novias-5-libreta.jpg','[]',true),
 
 ('novias','email','demo','espana','novias demo · correo 5',5,'qué tallas sí venden',

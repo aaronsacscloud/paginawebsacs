@@ -133,10 +133,16 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo', tope 
     return res;
   };
 
-  // Si lo de días anteriores sigue en la fila, no se apila más encima: la
-  // rampa del cartero manda, y enrolar diez más solo alarga la cola.
+  /* Si lo de días anteriores sigue en la fila, no se apila más encima: la
+     rampa del cartero manda, y enrolar diez más solo alarga la cola.
+     SOLO CORREO (16-sep-2026). Un WhatsApp cuya plantilla todavía no aprueba
+     Meta se queda en `aprobado` para siempre a propósito —espera su permiso—,
+     y contándolo aquí el goteo se frenaba solo a los dos o tres días y decía
+     «N correos de días anteriores siguen sin salir», que además es falso. Le
+     habría pasado a España el martes de estrenarla: 472 de sus 1,737 cuentas
+     llevan WhatsApp. */
   const { count: atorados } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
-    .eq('goteo_id', g.id).eq('estado', 'aprobado').lt('programado_at', hoy + 'T00:00:00Z');
+    .eq('goteo_id', g.id).eq('canal', 'email').eq('estado', 'aprobado').lt('programado_at', hoy + 'T00:00:00Z');
   if ((atorados || 0) > Number(g.cuentas_dia)) {
     res.motivo = `${atorados} correos de días anteriores siguen sin salir: no se enrolan más hasta que el cartero se ponga al día`;
     return cerrar();

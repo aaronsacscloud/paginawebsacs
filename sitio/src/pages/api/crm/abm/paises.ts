@@ -19,16 +19,29 @@
 //                                          decide persona por persona)
 //   ritmo   { pais, cuentas_dia }        → cuántas cuentas nuevas por día entran en ese país
 //
-// Lanzar es la aprobación de los correos de ese país: queda la firma de quien
-// lo hizo en `abm_goteo.creado_por` y una nota en cada cuenta soltada… no, en
-// la bitácora del goteo, que es lo que se lee después (una nota por cuenta
-// serían 1,700 filas que nadie va a leer).
+// Lanzar es la aprobación de los correos de ese país: pide permiso de
+// marketing —el menú lo esconde, pero eso es solo el navegador— y deja la
+// firma de quien lo hizo en `abm_goteo.creado_por` y en la nota del goteo
+// («Lanzado por X el día Y: N cuentas»). Una nota por cuenta serían 1,700
+// filas que nadie va a leer; la del goteo es la que se consulta después.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { PAISES, paisDe, horaLocalDe, enHorarioDe } from '../../../../lib/crm/abm-paises';
 import { json, quien, limpiar } from '../../../../lib/crm/abm.lib';
+import { permisosDe, puedeEditar } from '../../../../lib/crm/permisos';
 
 export const prerender = false;
+
+/** De qué país es un goteo. Solo cuenta el país ESCRITO en su filtro: `paisDe`
+ *  cae a México con un filtro vacío, y así un goteo de Latinoamérica sin país
+ *  —existe: «Novias · diagnóstico · Latam»— aparecía en la tarjeta de México y
+ *  lo encendía o lo pausaba quien tocara México. Sin país explícito solo se le
+ *  asigna país si su cadencia es la de México; si no, no es de nadie. */
+function isoDeGoteo(g: any): string | null {
+  const escrito = String(g?.filtro?.pais || '').toLowerCase();
+  if (PAISES[escrito]) return escrito;
+  return g?.cadencia?.region === 'mexico' ? 'mx' : null;
+}
 
 /** El motivo con el que el cargador por país deja las cuentas esperando permiso.
  *  Solo esas se sueltan: una cuenta en pausa por «no ahora, márcame en marzo»
@@ -52,7 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
     const p = paisDe(b.pais);
     const mios = (toques || []).filter((t: any) => t.pais === b.pais);
     const canal = (c: string) => mios.find((t: any) => t.canal === c) || {};
-    const gs = (goteos || []).filter((g: any) => (g.cadencia?.giro === giro) && paisDe(g.filtro?.pais).iso === p.iso);
+    const gs = (goteos || []).filter((g: any) => g.cadencia?.giro === giro && isoDeGoteo(g) === p.iso);
     return {
       ...b,
       iso: p.iso, region: p.region, moneda: p.moneda, landing: p.landingNovias, legal: p.legal,
@@ -73,6 +86,11 @@ export const GET: APIRoute = async ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'sin sesión' }, 401);
+  // Encender el correo en frío de un país no es cosa de cualquiera con sesión:
+  // el menú ya esconde Marketing a quien no le toca, pero eso solo vale en el
+  // navegador. Misma guardia que /api/crm/demanda/ajustes.
+  const { data: miembro } = await supabase.from('team_members').select('rol, permisos').eq('id', yo.id).maybeSingle();
+  if (!puedeEditar(permisosDe(miembro), 'marketing')) return json({ error: 'sin permiso de marketing' }, 403);
   let b: any; try { b = await request.json(); } catch { return json({ error: 'json inválido' }, 400); }
   const accion = String(b?.accion || '');
   const giro = limpiar(b?.giro, 40) || 'novias';
@@ -81,29 +99,35 @@ export const POST: APIRoute = async ({ request }) => {
 
   /** Los goteos de ese país y ese giro. */
   const goteosDe = async () => {
-    const { data } = await supabase.from('abm_goteo').select('id, filtro, estado, cadencia:abm_cadencias(giro)').neq('estado', 'terminado');
-    return (data || []).filter((g: any) => g.cadencia?.giro === giro && paisDe(g.filtro?.pais).iso === p.iso);
+    const { data } = await supabase.from('abm_goteo').select('id, nota, filtro, estado, cadencia:abm_cadencias(giro, region)').neq('estado', 'terminado');
+    return (data || []).filter((g: any) => g.cadencia?.giro === giro && isoDeGoteo(g) === p.iso);
   };
 
   if (accion === 'lanzar') {
-    // 1 · Las cuentas que esperaban permiso entran a la fila. Por tandas: el
-    //     update devuelve como mucho mil filas y España sola tiene 1,733.
-    let soltadas = 0;
-    for (let vuelta = 0; vuelta < 12; vuelta++) {
-      const { data, error } = await supabase.from('abm_cuentas')
-        .update({ etapa: 'sin_tocar', pausa_motivo: null, pausa_hasta: null, updated_at: new Date().toISOString() })
-        .eq('giro', giro).eq('pais', p.nombre).eq('etapa', 'en_pausa').like('pausa_motivo', MOTIVO_CARGA)
-        .select('id');
-      if (error) return json({ error: error.message }, 500);
-      soltadas += (data || []).length;
-      if ((data || []).length < 1000) break;
-    }
+    /* 1 · Las cuentas que esperaban permiso entran a la fila.
+       El UPDATE alcanza a todas; lo que PostgREST recorta a mil es lo que
+       DEVUELVE, así que contar con `.select()` diría «1,000 de 1,733». Se
+       cuenta antes, con head, y el update va sin representación.
+       `ya_es_cliente` fuera: es lo que exigen `elegibles()` y el cartero, y
+       soltar a un cliente a la fila del correo en frío es de lo peor que
+       puede pasar aquí. */
+    const filtro = (q: any) => q.eq('giro', giro).eq('pais', p.nombre).eq('etapa', 'en_pausa')
+      .like('pausa_motivo', MOTIVO_CARGA).is('ya_es_cliente', null);
+    const { count } = await filtro(supabase.from('abm_cuentas').select('id', { count: 'exact', head: true }));
+    const soltadas = Number(count || 0);
+    const { error } = await filtro(supabase.from('abm_cuentas')
+      .update({ etapa: 'sin_tocar', pausa_motivo: null, pausa_hasta: null, updated_at: new Date().toISOString() }));
+    if (error) return json({ error: error.message }, 500);
     // 2 · Y los goteos del país se encienden con la firma de quien lanza: esa
     //     es la aprobación de los correos que van a salir.
     const gs = await goteosDe();
+    const sello = `Lanzado por ${yo.nombre} el ${new Date().toISOString().slice(0, 10)}: ${soltadas} cuentas de ${p.nombre} a la fila.`;
     for (const g of gs) {
       if (g.estado === 'activo') continue;
-      await supabase.from('abm_goteo').update({ estado: 'activo', creado_por: yo.id, updated_at: new Date().toISOString() }).eq('id', g.id);
+      await supabase.from('abm_goteo').update({
+        estado: 'activo', creado_por: yo.id, updated_at: new Date().toISOString(),
+        nota: [String(g.nota || '').trim(), sello].filter(Boolean).join(' · ').slice(0, 1000),
+      }).eq('id', g.id);
     }
     return json({ ok: true, soltadas, goteos: gs.length, pais: p.nombre });
   }

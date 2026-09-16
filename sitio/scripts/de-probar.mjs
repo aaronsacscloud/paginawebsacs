@@ -14,6 +14,7 @@
  *   node scripts/de-probar.mjs ciclo        # arma un ciclo entero
  *   node scripts/de-probar.mjs inventario  # rastrea el sitio y arma el grafo de enlaces
  *   node scripts/de-probar.mjs tecnico     # aplica las reglas técnicas sobre lo rastreado
+ *   node scripts/de-probar.mjs competidores # revisa los sitemaps de los competidores
  *   node scripts/de-probar.mjs agrupar     # funde los problemas que son el mismo
  *   node scripts/de-probar.mjs calibrar    # mide el umbral de parecido del modelo
  *   node scripts/de-probar.mjs resumen      # qué sabe el motor hasta ahora
@@ -64,6 +65,15 @@ if (que === 'ingerir') {
   const cfg = await leerConfig(true);
   const { id, nuevo } = await abrirCiclo('manual', 'prueba local');
   console.log({ id, nuevo }, await armarCadena(id, 'manual', cfg));
+} else if (que === 'competidores') {
+  await import('../src/lib/demanda/registro.ts');
+  const { handlerDe } = await import('../src/lib/demanda/handlers.ts');
+  const { leerConfig } = await import('../src/lib/demanda/config.ts');
+  const cfg = await leerConfig(true);
+  const r = await handlerDe('ingerir.competidor')(
+    { payload: { limite: Number(process.argv[3]) || 4 } },
+    { limite: Date.now() + 170000, cfg, ciclo_id: null });
+  console.log(r.resumen); for (const h of r.datos?.hechos || []) console.log('  ·', h);
 } else if (que === 'tecnico') {
   const { auditar } = await import('../src/lib/demanda/tecnico.ts');
   console.log(await auditar());

@@ -42,7 +42,8 @@ group by 1, 2;
 -- esperan en la fila, cuántos se cancelaron (una respuesta cancela el resto de
 -- la cadencia: por eso `cancelado` es buena señal, no una falla) y cuándo fue
 -- el último envío.
-create or replace view v_abm_pais_toques as
+drop view if exists v_abm_pais_toques;
+create view v_abm_pais_toques as
 select
   a.giro,
   coalesce(nullif(trim(a.pais), ''), 'México') as pais,
@@ -52,7 +53,10 @@ select
   count(*) filter (where t.estado in ('aprobado','programado','enviando')) as en_fila,
   count(*) filter (where t.estado = 'borrador')                       as borradores,
   count(*) filter (where t.estado = 'cancelado')                      as cancelados,
-  count(*) filter (where t.estado = 'rebote')                         as rebotes,
+  -- `fallido`, no `rebote`: ese estado no existe en abm_toques (el rebote de
+  -- correo vive en abm_actividad y deja el toque en `cancelado`). La columna
+  -- decía cero siempre y habría tapado justo lo que hay que mirar a diario.
+  count(*) filter (where t.estado = 'fallido')                        as fallidos,
   count(distinct t.cuenta_id)                                         as cuentas,
   count(distinct t.cuenta_id) filter (where t.estado = 'enviado')     as cuentas_con_envio,
   max(t.enviado_at)                                                   as ultimo_envio

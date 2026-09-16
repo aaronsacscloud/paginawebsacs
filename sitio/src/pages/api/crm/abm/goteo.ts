@@ -44,7 +44,7 @@ async function motor() {
   const { data: giros } = await supabase.from('abm_goteo').select('cadencia:abm_cadencias(giro)').neq('estado', 'terminado');
   const girosWa = Array.from(new Set((giros || []).map((g: any) => g.cadencia?.giro).filter(Boolean))) as string[];
   const plantillas: any[] = [];
-  for (const giro of girosWa) for (const p of await estadoPlantillas(giro)) plantillas.push({ giro, ...p });
+  for (const giro of girosWa) for (const p of await estadoPlantillas(giro)) plantillas.push({ giro, ...p });   // sin región: la pantalla las agrupa
   const wa = {
     linea: linea?.numero || null, pausada: !!linea?.pausada, pausada_motivo: linea?.pausada_motivo || null, calidad: linea?.calidad || null,
     tope: Number(cfg.wa_tope_dia?.valor ?? 10), plantillas,
@@ -134,8 +134,11 @@ export const POST: APIRoute = async ({ request }) => {
   if (accion === 'wa_registrar') {
     const giro = limpiar(b.giro, 40);
     if (!giro) return json({ error: 'falta el giro' }, 400);
-    const r = await registrarPlantillas(giro);
-    return json({ ok: true, plantillas: r });
+    // La región va explícita: registrar es un trámite hacia afuera y las de
+    // España/Latinoamérica solo salen cuando el dueño lo pide.
+    const region = ['mexico', 'latam', 'espana'].includes(String(b.region)) ? String(b.region) : 'mexico';
+    const r = await registrarPlantillas(giro, region);
+    return json({ ok: true, region, plantillas: r });
   }
 
   if (!esUuid(b.id)) return json({ error: 'goteo inválido' }, 400);

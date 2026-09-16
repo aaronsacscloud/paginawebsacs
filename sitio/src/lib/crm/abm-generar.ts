@@ -47,6 +47,12 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
   // le da como dato del expediente, tajante, no como pista en el objetivo.
   const pp = paisDe(c.pais);
   if (pp.region === 'mexico') l.push('Registro: español de México. El negocio está en México: cuando el texto base diga «en todo México» o «XV años», déjalo.');
+  /* España es su propia rama (16-sep-2026). Antes caía en el `else` y la IA
+     recibía la orden de pasar a «español neutro de Latinoamérica» el guion que
+     la migración de España escribió a propósito en peninsular —TPV, tiendas,
+     señal, escaparate, traspasos, dependienta— y encima se le decía cómo le
+     dicen allá a la fiesta de quince, que allá no existe. */
+  else if (pp.region === 'espana') l.push(`Registro: español de ESPAÑA, trato de ${pp.trato}. El texto base ya está en peninsular: respétalo tal cual —TPV (no «punto de venta»), tiendas (no «sucursales»), señal y pagos a cuenta (no «anticipo» ni «abonos»), escaparate (no «vitrina»), traspasos (no «traslados»), dependienta, tienda online—. Nada de mexicanismos ni de neutro latinoamericano. En España NO existe la fiesta de quince años: no la menciones. La moneda es el EURO.`);
   else l.push(`Registro: español neutro de Latinoamérica, trato de ${pp.trato}, SIN mexicanismos (nada de «checar», «platicar», «ahorita», «apartado», «padrísimo», «XV años»). En ${pp.nombre} a la fiesta de quince se le dice «${pp.xv}» y la moneda es ${pp.moneda.toUpperCase()}: no escribas cifras en pesos mexicanos como si fueran locales.`);
   if (c.sucursales) l.push(`Sucursales: ${c.sucursales} (${c.sucursales_confianza})`);
   else l.push('Sucursales: no verificadas');
