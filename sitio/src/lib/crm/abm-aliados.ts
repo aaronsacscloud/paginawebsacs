@@ -67,6 +67,12 @@ export type TipoAliado = {
   fuentes: Fuente[];
   /** Por qué le importa a ÉL, no a nosotros. Es la entrada del primer correo. */
   gancho: string;
+  /** A QUIÉN le vende. Va en el correo 1: es lo que prueba que sabemos quién es.
+   *  Al que vende insumos no le interesan las clases; a la escuela no le
+   *  interesa la reposición. Sin esto los dos reciben el mismo correo. */
+  suGente: string;
+  /** Qué se le rompe A SU CLIENTE, dicho como lo diría él. Va en el correo 2. */
+  dolor: string;
   /** Subgiros que ya existen en `abm_cuentas` y caen aquí (para no duplicar). */
   ya?: string[];
 };
@@ -89,36 +95,48 @@ export const ALIADOS: Record<string, TipoAliado> = {
     nombre: 'Consultora de fashion retail',
     fuentes: ['linkedin', 'instagram', 'maps'],
     gancho: 'Entrega diagnósticos de inventario y surtido que el cliente después no ejecuta. Sacs es donde su plan se vuelve operación.',
+    suGente: 'Dueñas de boutique y marcas que la contratan para ordenar compras y surtido',
+    dolor: 'Entrega el diagnóstico, la clienta lo aprueba y a la tercera temporada está igual que antes',
   },
   consultora_retail: {
     familia: 'asesora', perfil: 'orquestador',
     nombre: 'Consultora de retail (no solo moda)',
     fuentes: ['linkedin', 'directorio'],
     gancho: 'Ya vende proyectos de retail en general; moda es el vertical donde el surtido por talla y color le pide un sistema aparte.',
+    suGente: 'Cadenas y grupos de tiendas de varios ramos, moda entre ellos',
+    dolor: 'En moda su modelo de reposición se cae: un modelo son ocho o diez tallas por color',
   },
   consultor_inventario: {
     familia: 'asesora', perfil: 'consultor', ya: ['Consultora independiente'],
     nombre: 'Consultor independiente de inventario y compras',
     fuentes: ['linkedin', 'instagram'],
     gancho: 'Cobra por hora y su trabajo muere cuando se va. Con Sacs deja instalado lo que recomendó y cobra recurrente.',
+    suGente: 'Tiendas que lo llaman cuando ya no saben qué comprar',
+    dolor: 'Deja un Excel que nadie actualiza en cuanto se va',
   },
   visual_merchandiser: {
     familia: 'asesora', perfil: 'consultor',
     nombre: 'Visual merchandiser y diseño de tienda',
     fuentes: ['instagram', 'linkedin'],
     gancho: 'Acomoda el piso sin saber qué rota. Los datos de Sacs le dicen qué exhibir y dónde.',
+    suGente: 'Boutiques y cadenas que le pagan por acomodar el piso',
+    dolor: 'Monta el escaparate con el modelo que ya está en cero en las tallas que se venden',
   },
   escuela_moda: {
     familia: 'asesora', perfil: 'referidor', ya: ['Escuela'],
     nombre: 'Escuela y universidad de moda',
     fuentes: ['maps', 'instagram', 'directorio'],
     gancho: 'Sus alumnas salen a abrir marca sin saber costear ni surtir. Sacs como herramienta del programa, y beneficio para las egresadas.',
+    suGente: 'Alumnas que salen a abrir su propia marca o boutique',
+    dolor: 'Aprenden a costear y a comprar, pero no tienen con qué medirlo después',
   },
   comunidad: {
     familia: 'asesora', perfil: 'referidor', ya: ['Comunidad'],
     nombre: 'Comunidad de emprendedoras de moda',
     fuentes: ['instagram', 'tiktok'],
     gancho: 'Su comunidad pregunta siempre lo mismo: cómo llevar el inventario. Un beneficio para sus miembros responde por ella.',
+    suGente: 'Cientos de emprendedoras de moda que le preguntan todo',
+    dolor: 'La misma pregunta cada semana: con qué llevo el inventario',
   },
 
   // ── Ya trabajan con nuestros clientes ─────────────────────────────────────
@@ -127,42 +145,56 @@ export const ALIADOS: Record<string, TipoAliado> = {
     nombre: 'Taller de confección y maquila',
     fuentes: ['maps', 'cliente', 'directorio'],
     gancho: 'Le piden reposiciones por WhatsApp y sin curva. Si su cliente lleva Sacs, el pedido le llega por talla y color.',
+    suGente: 'Marcas y boutiques que le mandan a confeccionar',
+    dolor: 'El pedido le llega por WhatsApp, sin curva de tallas y a destiempo',
   },
   patronista: {
     familia: 'trabaja_con', perfil: 'referidor',
     nombre: 'Patronista y diseñador de modas',
     fuentes: ['instagram', 'cliente'],
     gancho: 'Diseña a ciegas: no sabe qué modelo suyo se vendió ni en qué talla se quedó.',
+    suGente: 'Marcas chicas que le encargan el trazo y la ficha técnica',
+    dolor: 'Nunca sabe qué modelo suyo se vendió ni en qué talla se quedó',
   },
   contador: {
     familia: 'trabaja_con', perfil: 'referidor',
     nombre: 'Contador y despacho contable',
     fuentes: ['maps', 'linkedin', 'cliente'],
     gancho: 'Cierra el mes persiguiendo tickets y un inventario que nadie cuadra. Con Sacs recibe los números ya cuadrados.',
+    suGente: 'Tiendas y marcas de moda a las que les lleva la contabilidad',
+    dolor: 'Cierra el mes con un inventario que el cliente no puede comprobar',
   },
   insumos_tienda: {
     familia: 'trabaja_con', perfil: 'referidor', ya: ['Proveedores de boutiques'],
     nombre: 'Proveedor de insumos de tienda (etiquetas, ganchos, empaque, mobiliario)',
     fuentes: ['maps', 'cliente'],
     gancho: 'Le vende a decenas de boutiques y las conoce por dentro. Es la puerta más barata a una lista que ya confía en él.',
+    suGente: 'Decenas de boutiques a las que les surte ganchos, etiquetas, bolsas y mobiliario',
+    dolor: 'Su cliente le pide de urgencia lo que se le acabó y no sabía que se le había acabado',
   },
   bordado: {
     familia: 'trabaja_con', perfil: 'referidor',
     nombre: 'Bordado y serigrafía',
     fuentes: ['maps', 'cliente'],
     gancho: 'Le borda el logo y le estampa la playera al locatario del corredor. Es de los pocos proveedores que ve la temporada entera de sus clientes.',
+    suGente: 'Locatarios y marcas que le mandan a bordar y estampar',
+    dolor: 'Le piden 200 piezas sin decirle en qué tallas, y la mitad se queda sin vender',
   },
   fotografia: {
     familia: 'trabaja_con', perfil: 'referidor',
     nombre: 'Fotografía de producto y estudio de e-commerce',
     fuentes: ['instagram', 'maps', 'cliente'],
     gancho: 'Entrega fotos que después nadie sube porque no hay catálogo. El catálogo con IA de Sacs es su siguiente venta.',
+    suGente: 'Marcas y tiendas que le encargan la foto de producto',
+    dolor: 'Entrega las fotos y se quedan sin subir, porque no hay catálogo donde ponerlas',
   },
   agencia_marketing: {
     familia: 'trabaja_con', perfil: 'consultor',
     nombre: 'Agencia de marketing y community manager de moda',
     fuentes: ['instagram', 'linkedin'],
     gancho: 'Trae tráfico a una tienda que no sabe qué tiene. Le devuelven la campaña como culpa cuando el problema era el surtido.',
+    suGente: 'Boutiques y marcas que le pagan pauta y contenido',
+    dolor: 'Lleva tráfico a una tienda que no sabe qué tiene: le reclaman la campaña por un problema de surtido',
   },
 
   // ── Reúnen a muchos retailers ─────────────────────────────────────────────
@@ -171,36 +203,48 @@ export const ALIADOS: Record<string, TipoAliado> = {
     nombre: 'Cámara y asociación del sector',
     fuentes: ['directorio', 'maps'],
     gancho: 'Necesita darle algo útil a sus agremiados. Un beneficio de sistema para el padrón es contenido y servicio a la vez.',
+    suGente: 'Su padrón de fabricantes y comercios del ramo',
+    dolor: 'Necesita darles algo útil y concreto, no otro curso',
   },
   feria: {
     familia: 'reune', perfil: 'referidor', ya: ['Ferias y expos'],
     nombre: 'Feria y expo',
     fuentes: ['directorio'],
     gancho: 'El expositor levanta pedido en papel y lo captura tres días después. Sacs en el stand es servicio al expositor.',
+    suGente: 'Los expositores que le pagan el stand',
+    dolor: 'El expositor levanta pedido en papel y lo captura tres días después',
   },
   plaza: {
     familia: 'reune', perfil: 'referidor', ya: ['Plazas y mayoristas de ropa'],
     nombre: 'Plaza y corredor mayorista',
     fuentes: ['maps', 'directorio'],
     gancho: 'Cientos de locales que se conocen entre ellos: lo que adopta uno lo prueban diez.',
+    suGente: 'Cientos de locatarios que venden al mayoreo en el corredor',
+    dolor: 'Cada local lleva su inventario en cuaderno y compite con el de al lado',
   },
   showroom: {
     familia: 'reune', perfil: 'referidor', ya: ['Showrooms'],
     nombre: 'Showroom y representante de marca',
     fuentes: ['instagram', 'directorio'],
     gancho: 'Representa varias marcas y les levanta pedido a las mismas tiendas. Ve el problema de surtido antes que nadie.',
+    suGente: 'Las marcas que representa y las tiendas a las que les levanta pedido',
+    dolor: 'Levanta el pedido y la marca no puede surtirlo completo',
   },
   plataforma_b2b: {
     familia: 'reune', perfil: 'tecnologia', ya: ['Plataformas B2B'],
     nombre: 'Plataforma B2B de mayoreo',
     fuentes: ['directorio', 'linkedin'],
     gancho: 'Sus compradores piden por catálogo y luego no saben qué les llegó. Conectar el pedido con el inventario es integración, no venta.',
+    suGente: 'Compradores de tienda que le piden por catálogo',
+    dolor: 'El comprador recibe la caja y no sabe qué le llegó ni en qué talla',
   },
   mayorista: {
     familia: 'reune', perfil: 'referidor', ya: ['Mayoristas de calzado'],
     nombre: 'Mayorista que surte a muchas tiendas',
     fuentes: ['maps', 'directorio'],
     gancho: 'Sus clientes le piden reposición tarde y mal. Lo que vende más rápido su tienda es lo que él vuelve a producir.',
+    suGente: 'Tiendas y boutiques a las que surte por mayoreo',
+    dolor: 'Sus clientes le piden reposición tarde y de lo que ya no se vende',
   },
 
   // ── Tienen la audiencia ───────────────────────────────────────────────────
@@ -209,12 +253,16 @@ export const ALIADOS: Record<string, TipoAliado> = {
     nombre: 'Creador de contenido de retail y moda',
     fuentes: ['tiktok', 'instagram'],
     gancho: 'Su audiencia son dueñas de tienda que le preguntan con qué llevar el inventario. Hoy contesta gratis; puede cobrar 40 % de por vida.',
+    suGente: 'Su audiencia: dueñas de tienda y marcas que lo siguen',
+    dolor: 'Le preguntan con qué llevar el inventario y contesta gratis',
   },
   medio: {
     familia: 'audiencia', perfil: 'referidor',
     nombre: 'Medio y newsletter del sector',
     fuentes: ['directorio', 'linkedin'],
     gancho: 'Vive de contenido para retailers; un caso con cifras reales es material que no tiene.',
+    suGente: 'Retailers y marcas que lo leen',
+    dolor: 'Vive de contenido y no tiene casos con cifras reales del ramo',
   },
 
   // ── Conectan por tecnología ───────────────────────────────────────────────
@@ -223,36 +271,48 @@ export const ALIADOS: Record<string, TipoAliado> = {
     nombre: 'Pasarela de pagos y terminal',
     fuentes: ['linkedin', 'directorio'],
     gancho: 'Ya está en el mostrador de la tienda. Conectado al punto de venta deja de ser una terminal suelta.',
+    suGente: 'Comercios donde ya está su terminal o su pasarela',
+    dolor: 'Cobra la venta y no sabe qué se vendió: su dato muere en el ticket',
   },
   logistica: {
     familia: 'conecta', perfil: 'tecnologia',
     nombre: 'Paquetería, última milla y fulfillment',
     fuentes: ['linkedin', 'directorio'],
     gancho: 'La devolución de moda se la comen ellos. Saber talla y modelo antes del envío baja el reenvío.',
+    suGente: 'Marcas y tiendas que le mandan los envíos',
+    dolor: 'La devolución de moda se la come él, y casi siempre es por talla',
   },
   ecommerce: {
     familia: 'conecta', perfil: 'tecnologia',
     nombre: 'Agencia y desarrollador de e-commerce',
     fuentes: ['linkedin', 'directorio', 'instagram'],
     gancho: 'Monta la tienda en línea y hereda el problema del inventario que no cuadra con el piso.',
+    suGente: 'Marcas a las que les monta y mantiene la tienda en línea',
+    dolor: 'Hereda el problema: el stock de la web nunca cuadra con el del piso',
   },
   marketplace: {
     familia: 'conecta', perfil: 'tecnologia',
     nombre: 'Marketplace y canal de venta',
     fuentes: ['directorio', 'linkedin'],
     gancho: 'Su vendedor sobrevende porque el stock está en otro lado. Sacs ya conecta cuatro canales.',
+    suGente: 'Los vendedores de moda que publican en su canal',
+    dolor: 'Su vendedor sobrevende porque el inventario real está en otro lado',
   },
   hardware: {
     familia: 'conecta', perfil: 'tecnologia',
     nombre: 'Hardware de tienda (punto de venta, etiquetado, conteo)',
     fuentes: ['maps', 'linkedin'],
     gancho: 'Vende fierro que necesita un sistema detrás; sin software su venta se queda en el mostrador.',
+    suGente: 'Comercios a los que les vende punto de venta, etiquetado y conteo',
+    dolor: 'Vende el fierro y la venta se queda ahí: sin sistema detrás no hay segunda compra',
   },
   datos_ia: {
     familia: 'conecta', perfil: 'tecnologia',
     nombre: 'Analítica, IA e integradores',
     fuentes: ['linkedin'],
     gancho: 'Necesita datos limpios de retail para que su modelo sirva. Sacs los tiene por talla, color y tienda.',
+    suGente: 'Empresas de retail que le piden modelos y tableros',
+    dolor: 'Sus modelos salen mal porque los datos de moda llegan sin talla ni color',
   },
 };
 

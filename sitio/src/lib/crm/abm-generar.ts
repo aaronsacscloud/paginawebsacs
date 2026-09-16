@@ -7,6 +7,7 @@
 // Las reglas son las mismas en los dos caminos; el único parámetro nuevo es
 // quién firma la nota de la bitácora y si el primer correo sale hoy.
 import { supabase } from '../supabase';
+import { ALIADOS } from './abm-aliados';
 import { anthropic, MODELS } from '../ai/client';
 import { limpiar, apuntar, GIROS, variablesDe, rellenar, nombrePila } from './abm.lib';
 import { paisDe, regionDe, asuntoPais, type Region } from './abm-paises';
@@ -66,6 +67,28 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
   if (c.giro === 'marcas') l.push(sinTalla(c.subgiro)
     ? 'Producto: SIN TALLA (joyería, bolsas, sombreros o accesorios). Habla de modelo y color; nunca escribas «talla», «curva de tallas» ni «mediana».'
     : 'Producto: ROPA O CALZADO, con tallas. Conserva las tallas y colores tal como vienen en el texto base.');
+  /* ── EL ALIADO ABRE POR SU TIPO, NO POR SU PERFIL ────────────────────────
+     Regla del dueño (16-sep-2026): «los que venden talleres son unos y los que
+     venden insumos no les interesa nada de clases». Los siete correos son del
+     PERFIL —lo que gana con la alianza—, pero la apertura es del TIPO: a quién
+     le vende y qué se le rompe a ese cliente suyo. Sin esto el que surte
+     ganchos recibía el correo de la escuela, hablándole de sus alumnas.
+
+     Va como dato tajante del expediente y no como pista dentro del objetivo de
+     cada correo: cuando una pista así se puso en el objetivo (el caso de las
+     tallas en `marcas`), la IA la aplicó a todo el guion. */
+  if (c.giro === 'aliados') {
+    const t = ALIADOS[String(c.subgiro || '')];
+    if (t) {
+      l.push(`Tipo de aliado: ${t.nombre}`);
+      l.push(`A QUIÉN LE VENDE ÉL: ${t.suGente}`);
+      l.push(`QUÉ SE LE ROMPE A SU CLIENTE: ${t.dolor}`);
+      l.push(`APERTURA OBLIGATORIA del correo 1 — es la razón por la que le escribimos a ÉL y no a otro: ${t.gancho}`);
+      l.push('El correo 1 y el correo 2 hablan de SU gente y de SU problema con esas palabras. NO hables de alumnas, clases ni programas salvo que el tipo de aliado sea una escuela o una comunidad.');
+    } else {
+      l.push('Aliado sin tipo asignado: escribe el correo 1 sin suponer a quién le vende. No inventes su clientela.');
+    }
+  }
   if (c.nota) l.push(`Nota de la investigación: ${c.nota}`);
   const p = personas[0];
   /* SOLO EL NOMBRE DE PILA, y a propósito. Si aquí entra el nombre completo,
