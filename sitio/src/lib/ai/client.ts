@@ -36,6 +36,43 @@ async function registrarUso(o: { modelo: string; usage?: any; ok: boolean; error
   } catch { /* medir no puede romper lo que mide */ }
 }
 
+/* ══ FUSIBLE DE SALDO (16-sep-2026) ═══════════════════════════════════════
+   Medido: del 3 al 16 de septiembre la API respondió 400 «credit balance is
+   too low» **20,223 veces** sobre 82 contactos, y NADIE se enteró en 13 días.
+   El agente reintentaba cada 2 minutos contra un error que jamás se iba a
+   arreglar solo.
+
+   Un error de cobro no es un error transitorio: reintentar no lo resuelve,
+   solo gasta invocaciones y llena la bitácora de ruido que tapa los errores
+   de verdad. Así que a la primera:
+     1. se avisa por la campana del CRM, en `urgente` y una sola vez al día;
+     2. se ABRE el fusible y las llamadas siguientes fallan al instante, sin
+        salir a la red.
+
+   El fusible se cierra solo a los 15 minutos: cuando alguien recargue, el
+   sistema revive sin que nadie tenga que redesplegar. Vive en memoria del
+   proceso a propósito —una lectura a la base por llamada costaría más que el
+   problema—; en Vercel cada instancia abre el suyo, así que el peor caso pasa
+   de 30 intentos por hora a 4. */
+const SIN_SALDO_MS = 15 * 60 * 1000;
+let sinSaldoHasta = 0;
+export const ERROR_SIN_SALDO = 'IA sin saldo: la cuenta de Anthropic no tiene crédito. Se pausaron las llamadas 15 minutos.';
+const esFaltaDeSaldo = (e: any) => /credit balance is too low|billing|payment required|402/i.test(String(e?.message || e || ''));
+
+async function avisarSinSaldo(desde: string, modelo: string) {
+  try {
+    const { notificar } = await import('../crm/notificaciones');
+    await notificar({
+      // Una por día: el objetivo es que se vea, no que sepulte la campana.
+      clave: `ia_sin_saldo:${new Date().toISOString().slice(0, 10)}`,
+      tipo: 'ia_sin_saldo', nivel: 'urgente',
+      titulo: 'La IA se quedó sin saldo — todo lo automático está detenido',
+      detalle: `La API de Anthropic responde «credit balance is too low». Mientras no se recargue: el agente no contesta, no se resumen conversaciones y no se generan notas de contexto. Primera falla vista en ${modelo} desde ${desde}.`,
+      destino: 'trabajo',
+    });
+  } catch { /* avisar no puede tumbar la llamada que falló */ }
+}
+
 export const anthropic = new Proxy(anthropicRaw, {
   get(target, prop, receiver) {
     if (prop !== 'messages') return Reflect.get(target, prop, receiver);
@@ -46,12 +83,19 @@ export const anthropic = new Proxy(anthropicRaw, {
         if (mProp !== 'create' || typeof fn !== 'function') return fn;
         return async (...args: any[]) => {
           const t0 = Date.now(); const desde = (globalThis as any).__ia_proposito || proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
+          // Fusible abierto: se falla aquí, sin gastar la llamada ni la espera.
+          if (Date.now() < sinSaldoHasta) throw new Error(ERROR_SIN_SALDO);
           try {
             const r: any = await (fn as any).apply(mTarget, args);
             registrarUso({ modelo, usage: r?.usage, ok: true, ms: Date.now() - t0, desde });
             return r;
           } catch (e: any) {
             registrarUso({ modelo, ok: false, error: e?.message || String(e), ms: Date.now() - t0, desde });
+            if (esFaltaDeSaldo(e)) {
+              const yaAbierto = Date.now() < sinSaldoHasta;
+              sinSaldoHasta = Date.now() + SIN_SALDO_MS;
+              if (!yaAbierto) await avisarSinSaldo(desde, modelo);   // avisa al ABRIR, no en cada intento
+            }
             throw e;
           }
         };

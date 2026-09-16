@@ -112,6 +112,8 @@ function esquemaGemini(e: any): any {
 
 type Cruda = { texto: string; ent: number; sal: number; stop?: string };
 
+const trabajoDe = (p: Peticion): Trabajo => p.trabajo || 'volumen';
+
 async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: string): Promise<Cruda> {
   const max = p.max_tokens || 4000;
 
@@ -131,6 +133,12 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
       contents: [{ role: 'user', parts: [{ text: usuario }] }],
       generationConfig: { maxOutputTokens: max, temperature: 0 },
     };
+    /* Gemini 2.5 «piensa» antes de responder y esos tokens salen del MISMO
+       presupuesto de salida. Para clasificar —«¿esto es demanda, sí o no?»— el
+       razonamiento no aporta nada y sí se come la respuesta: la primera corrida
+       se cortó a media lista de sesenta elementos. Se apaga en el trabajo de
+       volumen y se deja encendido donde sí hay que razonar. */
+    if (trabajoDe(p) === 'volumen') cuerpo.generationConfig.thinkingConfig = { thinkingBudget: 0 };
     if (p.esquema) {
       cuerpo.generationConfig.responseMimeType = 'application/json';
       cuerpo.generationConfig.responseSchema = esquemaGemini(p.esquema);

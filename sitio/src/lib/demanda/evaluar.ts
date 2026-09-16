@@ -41,10 +41,10 @@ const ESQUEMA = {
           potencial_distribucion_ia: { type: 'number' },
           dificultad: { type: 'number' },
           descubrimiento_tipo: { type: 'string', enum: ['marketing', 'producto', 'integracion', 'dato', 'red', 'marketplace', 'api', 'skill'] },
-          tipo_demanda: { type: 'string', enum: ['mercado', 'cliente_actual', 'en_proceso'] },
+          sobre_que: { type: 'string', enum: ['oficio', 'nuestro_software', 'comercial', 'ruido'] },
           por_que: { type: 'string' },
         },
-        required: ['i', 'relevancia_sacs', 'potencial_conversion', 'potencial_contenido', 'tipo_demanda', 'por_que'],
+        required: ['i', 'relevancia_sacs', 'potencial_conversion', 'potencial_contenido', 'sobre_que', 'por_que'],
         additionalProperties: false,
       },
     },
@@ -63,14 +63,16 @@ Te doy problemas reales que expresaron negocios de moda. Califica cada uno de 0 
 - potencial_contenido: qué tanto se responde bien con una página que enseñe a resolverlo.
 - potencial_red: si resolverlo nos acerca a conectar retailers con mayoristas, fabricantes o marcas.
 - valor_dato: si al resolverlo generamos un dato agregado del ramo que nadie más tiene.
-- potencial_distribucion_ia: qué tan bien funcionaría como algo que una IA pueda ejecutar por el usuario (API, MCP, skill).
+- potencial_distribucion_ia: qué tan bien funcionaría como una TAREA que una IA pueda EJECUTAR por el usuario (API, MCP, skill). La prueba: ¿se puede escribir como una orden con un resultado? «Analiza mi inventario y dime qué comprar» sí; «¿cómo actualizo el sistema?» no, eso es una pregunta de soporte. Si no hay una tarea que ejecutar, es 0 o cerca.
 - dificultad: qué tan difícil es ganar esa demanda contra quien hoy la responde. 100 = dificilísimo.
 - descubrimiento_tipo: qué clase de oportunidad es sobre todo.
-- tipo_demanda: la distinción MÁS importante de todas.
-    · "mercado": alguien con este problema lo buscaría en Google o se lo preguntaría a una IA ANTES de conocernos. Es demanda que se puede capturar. Ej: «cómo saber qué tallas recomprar», «software para zapatería», «cómo controlar inventario por talla y color».
-    · "cliente_actual": solo tiene sentido si ya usas Sacs. Es del PRODUCTO o del soporte, no del mercado. Ej: «no imprime el ticket», «no aparece el rol de administrador», «cómo conectarme a soporte».
-    · "en_proceso": lo dice alguien que YA está hablando con nosotros. Es de ventas, no de demanda. Ej: «agendar una llamada», «cuándo es la capacitación», «me mandas la cotización».
-  Esta etiqueta decide si el problema genera trabajo de marketing o de producto. Equivocarla manda a escribir una página sobre un error del sistema.
+- sobre_que: la distinción MÁS importante, y no es sobre QUIÉN pregunta sino sobre QUÉ.
+    · "oficio": sobre cómo se lleva un negocio de moda. Cualquiera con ese negocio se lo preguntaría, nos conozca o no, y lo buscaría en Google o se lo preguntaría a una IA. Ej: «cómo saber qué tallas recomprar», «cómo detectar inventario parado», «cómo hacer un catálogo de mayoreo», «cada cuánto conviene rematar».
+      OJO: que lo pregunte un cliente actual NO lo saca de aquí. La misma duda la tiene quien todavía no nos conoce.
+    · "nuestro_software": sobre cómo se comporta SACS en concreto. Fuera de nuestros clientes no lo busca nadie, así que no hay demanda que capturar. Ej: «no imprime el ticket», «el cajero tiene permisos que no debería», «no aparece el rol de administrador», «cómo conectarme a soporte».
+    · "comercial": precio, planes, contratar, cotización, capacitación incluida. Ya lo responden las páginas de venta.
+    · "ruido": coordinación, saludos, confirmaciones, datos de contacto.
+  Equivocarla manda a escribir una página sobre un error del sistema, o a meter al roadmap una pregunta de precio.
 
 - por_que: UNA frase de MÁXIMO 20 PALABRAS que justifique la calificación más alta. Sin adjetivos vacíos, sin repetir el problema.
 
@@ -127,7 +129,7 @@ export async function evaluarClusters(limite = 20): Promise<Evaluadas> {
       capturado_por: {
         por_que: String(e.por_que || '').slice(0, 400),
         descubrimiento_tipo: e.descubrimiento_tipo || null,
-        tipo_demanda: e.tipo_demanda || 'mercado',
+        sobre_que: e.sobre_que || 'oficio',
       },
       estado: 'activo',
       updated_at: new Date().toISOString(),

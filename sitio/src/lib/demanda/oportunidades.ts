@@ -27,23 +27,63 @@ function decidirTipo(c: any): { tipo: string; accion: string; esfuerzo: 'S' | 'M
      «conocer más sobre el software» al roadmap. Las dos son de gente que ya
      está hablando con nosotros: no hay demanda que capturar ahí, y el trabajo
      que generan es de ventas o de producto, no de marketing. */
-  const tipoDemanda = c.capturado_por?.tipo_demanda || 'mercado';
+  /* EL EJE CORRECTO ES SOBRE QUÉ, NO SOBRE QUIÉN.
+     Primero se probó clasificar por quién preguntaba —cliente o desconocido—
+     usando el dato del CRM, que es un hecho y no una opinión. Mejoró, pero
+     sobre-corrigió: «cuál es el costo» acabó de función de producto.
 
-  if (tipoDemanda === 'en_proceso') return null;   // es del proceso de venta
+     El error estaba en la pregunta. Que una duda la tenga un cliente actual NO
+     la saca del mercado: «cómo sé qué tallas recomprar» se la hace igual quien
+     ya nos paga y quien no nos conoce, y esa segunda persona la escribe en
+     Google. Lo que de verdad separa es de qué trata: del OFICIO —cómo se lleva
+     un negocio de moda, que cualquiera busca— o de NUESTRO SOFTWARE —cómo se
+     comporta Sacs, que fuera de nuestros clientes no busca nadie—.
 
-  if (tipoDemanda === 'cliente_actual') {
-    // Un problema que solo existe si ya eres cliente es del producto. Escribir
-    // una página sobre un error del sistema no lo arregla.
+     El origen de las señales se conserva como evidencia y como contraste: si el
+     modelo dice «oficio» y el 100% de las señales vinieron de soporte, la
+     etiqueta se corrige sola hacia el software. Un hecho pesa más que un juicio
+     cuando se contradicen. */
+  const fuentes: Record<string, number> = c.fuentes || {};
+  const total = Object.values(fuentes).reduce((a, b) => a + Number(b), 0);
+  const deSoporte = Number(fuentes.soporte || 0) + Number(fuentes.mejoras || 0);
+  const soloSoporte = total >= 2 && deSoporte / total >= 0.8;
+
+  const sobreQue = soloSoporte ? 'nuestro_software' : (c.capturado_por?.sobre_que || 'oficio');
+
+  // Lo que ya responden las páginas de venta no genera trabajo nuevo: si no
+  // rankean, eso es un asunto de SEO sobre una página que ya existe, y lo
+  // levantan las reglas de movimientos.
+  if (sobreQue === 'comercial' || sobreQue === 'ruido') return null;
+
+  if (sobreQue === 'nuestro_software') {
     return n(c.senales_n) >= 3
-      ? { tipo: 'PRODUCT_FEATURE', accion: 'Llevarlo al roadmap: lo viven clientes actuales y no se resuelve con contenido', esfuerzo: 'L' }
+      ? { tipo: 'PRODUCT_FEATURE', accion: 'Al roadmap o a la ayuda: es sobre cómo se comporta Sacs, y fuera de nuestros clientes no lo busca nadie', esfuerzo: 'L' }
       : null;
   }
 
-  if (n(c.potencial_herramienta) >= 75 && n(c.potencial_distribucion_ia) >= 60)
+  /* DOS SEÑALES TIENEN QUE COINCIDIR, nunca una sola.
+     Lo enseñó el cambio de modelo: un evaluador calificaba «distribución por
+     IA» alto para casi todo (60 de media, 33 de 80 por encima de 75) mientras
+     daba «potencial de herramienta» casi en cero. Con un umbral suelto sobre un
+     número, el backlog se llenó de MCP para cosas como «el cajero tiene
+     permisos que no debería tener».
+
+     Y el modelo no se estaba equivocando en las dos: tenía razón en que eso NO
+     es una herramienta. El defecto era de la regla, que dejaba decidir a un
+     solo número sin contraste. Para que una IA pueda EJECUTAR algo, ese algo
+     tiene que poder existir como herramienta: si el potencial de herramienta es
+     bajo, no hay nada que ejecutar por más que suene a IA.
+
+     Esto además hace la regla robusta ante el proveedor: un score mal calibrado
+     ya no alcanza para desviar el backlog entero. */
+  const herramienta = n(c.potencial_herramienta);
+  const distribucion = n(c.potencial_distribucion_ia);
+
+  if (herramienta >= 70 && distribucion >= 70)
     return { tipo: 'FREE_TOOL', accion: 'Construir una herramienta gratis que lo resuelva, y exponerla también por API/MCP', esfuerzo: 'L' };
-  if (n(c.potencial_herramienta) >= 75)
+  if (herramienta >= 70)
     return { tipo: 'CALCULATOR', accion: 'Construir una herramienta gratis que lo resuelva', esfuerzo: 'L' };
-  if (n(c.potencial_distribucion_ia) >= 75)
+  if (distribucion >= 75 && herramienta >= 55)
     return { tipo: 'MCP', accion: 'Exponerlo como herramienta que una IA pueda ejecutar', esfuerzo: 'M' };
   if (n(c.valor_dato) >= 70)
     return { tipo: 'DATASET', accion: 'Publicar el dato agregado del ramo que responde esto', esfuerzo: 'M' };
@@ -89,7 +129,7 @@ export async function crearOportunidades(limite = 120): Promise<{ nuevas: number
         categoria: c.categoria, icp: c.icp,
         naturaleza: c.naturaleza_dominante,
         origen: c.fuentes || {},
-        tipo_demanda: c.capturado_por?.tipo_demanda || 'mercado',
+        sobre_que: c.capturado_por?.sobre_que || null,
       },
       score: combinar(f, pesos),
       desglose: f,

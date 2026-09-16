@@ -40,7 +40,7 @@ if (que === 'ingerir') {
   const cfg = await leerConfig(true);
   const vueltas = Number(process.argv[3]) || 1;
   for (let i = 0; i < vueltas; i++) {
-    const r = await normalizarPendientes(60, cfg);
+    const r = await normalizarPendientes(40, cfg);
     console.log(`vuelta ${i + 1}:`, r);
     if (!r.leidas) break;
   }

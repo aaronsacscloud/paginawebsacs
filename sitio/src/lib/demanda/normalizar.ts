@@ -77,7 +77,7 @@ Nunca inventes lo que no está en el texto. Si no se entiende, es_demanda: false
 
 export type Normalizadas = { leidas: number; demanda: number; descartadas: number; queries: number; clusters_nuevos: number; costo_usd: number };
 
-export async function normalizarPendientes(limite = 60, cfg?: Config): Promise<Normalizadas> {
+export async function normalizarPendientes(limite = 40, cfg?: Config): Promise<Normalizadas> {
   const r: Normalizadas = { leidas: 0, demanda: 0, descartadas: 0, queries: 0, clusters_nuevos: 0, costo_usd: 0 };
 
   /* NO SE GASTA EN UN PASO QUE NO PUEDE TERMINAR.
@@ -112,7 +112,7 @@ export async function normalizarPendientes(limite = 60, cfg?: Config): Promise<N
     sistema: sistema(CATS, ICPS),
     usuario: entrada,
     esquema: ESQUEMA,
-    max_tokens: 8000,
+    max_tokens: 24000,
     // El texto ya se anonimizó al entrar, pero se repite: el costo es cero y
     // el día que alguien agregue una fuente sin limpiar, aquí no pasa.
     anonimizar: true,
@@ -230,7 +230,7 @@ registrar('normalizar', async (a, ctx): Promise<ResultadoHandler> => {
   while (Date.now() < ctx.limite - 20_000) {
     let r: Normalizadas;
     try {
-      r = await normalizarPendientes(60, ctx.cfg);
+      r = await normalizarPendientes(40, ctx.cfg);
     } catch (e: any) {
       if (e?.definitivo) return { ok: false, resumen: e.message, definitivo: true, datos: total, costo_usd: total.costo_usd };
       throw e;
