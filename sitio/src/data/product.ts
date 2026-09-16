@@ -39,8 +39,8 @@ export const pillars: Pillar[] = [
         slug: 'punto-de-venta',
         pillarId: 'vende',
         label: 'Punto de venta',
-        title: 'Punto de Venta — SACS',
-        description: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo. El punto de venta omnicanal de SACS.',
+        title: 'Punto de Venta — Sacs',
+        description: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo. El punto de venta omnicanal de Sacs.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Tu punto de venta, en cualquier dispositivo',
@@ -52,7 +52,7 @@ export const pillars: Pillar[] = [
         slug: 'tienda-en-linea',
         pillarId: 'vende',
         label: 'Tienda en línea',
-        title: 'Tienda en Línea — SACS',
+        title: 'Tienda en Línea — Sacs',
         description: 'Tu ecommerce conectado al mismo inventario y clientes de tu tienda física.',
         hero: {
           eyebrow: 'Vende',
@@ -65,7 +65,7 @@ export const pillars: Pillar[] = [
         slug: 'promociones',
         pillarId: 'vende',
         label: 'Promociones',
-        title: 'Promociones — SACS',
+        title: 'Promociones — Sacs',
         description: 'Crea promociones avanzadas: 3x2, descuentos por volumen, temporada y más.',
         hero: {
           eyebrow: 'Vende',
@@ -78,7 +78,7 @@ export const pillars: Pillar[] = [
         slug: 'apartados-y-pedidos',
         pillarId: 'vende',
         label: 'Apartados y pedidos',
-        title: 'Apartados y Pedidos — SACS',
+        title: 'Apartados y Pedidos — Sacs',
         description: 'Gestiona apartados con anticipo, plazos y recordatorios automáticos.',
         hero: {
           eyebrow: 'Vende',
@@ -91,7 +91,7 @@ export const pillars: Pillar[] = [
         slug: 'social-commerce',
         pillarId: 'vende',
         label: 'Social & WhatsApp Commerce',
-        title: 'Social & WhatsApp Commerce — SACS',
+        title: 'Social & WhatsApp Commerce — Sacs',
         description: 'Vende en TikTok, Instagram, Facebook y WhatsApp con inventario sincronizado.',
         hero: {
           eyebrow: 'Vende',
@@ -104,12 +104,12 @@ export const pillars: Pillar[] = [
         slug: 'agentic-commerce',
         pillarId: 'vende',
         label: 'Agentic Commerce',
-        title: 'Agentic Commerce — SACS',
+        title: 'Agentic Commerce — Sacs',
         description: 'Un agente de IA que atiende, cotiza, cobra y entrega por WhatsApp — con tu catálogo real.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Un agente que vende como si conociera tu tienda',
-          subtitle: 'Porque la conoce. WhatsApp 24/7 con stock real, precios y promos de SACS.',
+          subtitle: 'Porque la conoce. WhatsApp 24/7 con stock real, precios y promos de Sacs.',
         },
         status: 'live',
       },
@@ -117,7 +117,7 @@ export const pillars: Pillar[] = [
         slug: 'facturacion-electronica',
         pillarId: 'vende',
         label: 'Facturación electrónica',
-        title: 'Facturación Electrónica — SACS',
+        title: 'Facturación Electrónica — Sacs',
         description: 'CFDI, factura global, autofacturación y complementos de pago.',
         hero: {
           eyebrow: 'Vende',
@@ -139,7 +139,7 @@ export const pillars: Pillar[] = [
         slug: 'inventario-omnicanal',
         pillarId: 'controla',
         label: 'Inventario omnicanal',
-        title: 'Inventario Omnicanal — SACS',
+        title: 'Inventario Omnicanal — Sacs',
         description: 'Stock por sucursal, CEDIS y canal de venta en tiempo real.',
         hero: {
           eyebrow: 'Controla',
@@ -152,7 +152,7 @@ export const pillars: Pillar[] = [
         slug: 'conteo-fisico',
         pillarId: 'controla',
         label: 'Conteo físico',
-        title: 'Conteo Físico — SACS',
+        title: 'Conteo Físico — Sacs',
         description: 'Escanea con tu celular y actualiza el inventario en segundos.',
         hero: {
           eyebrow: 'Controla',
@@ -165,12 +165,12 @@ export const pillars: Pillar[] = [
         slug: 'nivelacion-de-inventario',
         pillarId: 'controla',
         label: 'Nivelación de inventario',
-        title: 'Nivelación de Inventario — SACS',
+        title: 'Nivelación de Inventario — Sacs',
         description: 'Distribuye stock automáticamente entre sucursales según demanda.',
         hero: {
           eyebrow: 'Controla',
           headline: 'El producto correcto, en la sucursal correcta',
-          subtitle: 'SACS nivela tu inventario automáticamente según la demanda de cada punto de venta.',
+          subtitle: 'Sacs nivela tu inventario automáticamente según la demanda de cada punto de venta.',
         },
         status: 'live',
       },
@@ -178,7 +178,7 @@ export const pillars: Pillar[] = [
         slug: 'ordenes-de-compra',
         pillarId: 'controla',
         label: 'Órdenes de compra',
-        title: 'Órdenes de Compra — SACS',
+        title: 'Órdenes de Compra — Sacs',
         description: 'Genera órdenes de compra, recibe contra orden y controla proveedores.',
         hero: {
           eyebrow: 'Controla',
@@ -191,7 +191,7 @@ export const pillars: Pillar[] = [
         slug: 'gastos',
         pillarId: 'controla',
         label: 'Gastos',
-        title: 'Control de Gastos — SACS',
+        title: 'Control de Gastos — Sacs',
         description: 'Registra y categoriza gastos operativos por sucursal.',
         hero: {
           eyebrow: 'Controla',
@@ -204,7 +204,7 @@ export const pillars: Pillar[] = [
         slug: 'cuentas-por-pagar',
         pillarId: 'controla',
         label: 'Cuentas por pagar',
-        title: 'Cuentas por Pagar — SACS',
+        title: 'Cuentas por Pagar — Sacs',
         description: 'Complementos de pago, notas de crédito y saldos con proveedores.',
         hero: {
           eyebrow: 'Controla',
@@ -217,7 +217,7 @@ export const pillars: Pillar[] = [
         slug: 'reportes-y-analitica',
         pillarId: 'controla',
         label: 'Reportes y analítica',
-        title: 'Reportes y Analítica — SACS',
+        title: 'Reportes y Analítica — Sacs',
         description: '50+ reportes de ventas, inventario y finanzas. KPIs en tiempo real.',
         hero: {
           eyebrow: 'Controla',
@@ -239,7 +239,7 @@ export const pillars: Pillar[] = [
         slug: 'clientes-y-crm',
         pillarId: 'fideliza',
         label: 'Clientes y CRM',
-        title: 'Clientes y CRM — SACS',
+        title: 'Clientes y CRM — Sacs',
         description: 'Perfil 360° de cada cliente con historial omnicanal y segmentación.',
         hero: {
           eyebrow: 'Fideliza',
@@ -252,7 +252,7 @@ export const pillars: Pillar[] = [
         slug: 'programa-de-lealtad',
         pillarId: 'fideliza',
         label: 'Programa de lealtad',
-        title: 'Programa de Lealtad — SACS',
+        title: 'Programa de Lealtad — Sacs',
         description: 'Monedero electrónico, puntos y niveles integrados al punto de venta.',
         hero: {
           eyebrow: 'Fideliza',
@@ -265,7 +265,7 @@ export const pillars: Pillar[] = [
         slug: 'portal-de-clientes',
         pillarId: 'fideliza',
         label: 'Portal de clientes',
-        title: 'Portal de Clientes — SACS',
+        title: 'Portal de Clientes — Sacs',
         description: 'Portal personalizado con tu marca para consulta de puntos y autofacturación.',
         hero: {
           eyebrow: 'Fideliza',
@@ -278,7 +278,7 @@ export const pillars: Pillar[] = [
         slug: 'tarjetas-de-regalo',
         pillarId: 'fideliza',
         label: 'Tarjetas de regalo',
-        title: 'Tarjetas de Regalo — SACS',
+        title: 'Tarjetas de Regalo — Sacs',
         description: 'Tarjetas de regalo físicas y digitales canjeables en cualquier sucursal.',
         hero: {
           eyebrow: 'Fideliza',
@@ -291,7 +291,7 @@ export const pillars: Pillar[] = [
         slug: 'marketing-por-correo',
         pillarId: 'fideliza',
         label: 'Marketing por correo',
-        title: 'Marketing por Correo — SACS',
+        title: 'Marketing por Correo — Sacs',
         description: 'Campañas de email segmentadas con plantillas profesionales.',
         hero: {
           eyebrow: 'Fideliza',
@@ -304,7 +304,7 @@ export const pillars: Pillar[] = [
         slug: 'marketing-por-whatsapp',
         pillarId: 'fideliza',
         label: 'Marketing por WhatsApp',
-        title: 'Marketing por WhatsApp — SACS',
+        title: 'Marketing por WhatsApp — Sacs',
         description: 'Campañas y notificaciones automáticas por WhatsApp.',
         hero: {
           eyebrow: 'Fideliza',
@@ -317,7 +317,7 @@ export const pillars: Pillar[] = [
         slug: 'membresias-y-suscripciones',
         pillarId: 'fideliza',
         label: 'Membresías y suscripciones',
-        title: 'Membresías y Suscripciones — SACS',
+        title: 'Membresías y Suscripciones — Sacs',
         description: 'Planes recurrentes con cobro automático y beneficios exclusivos.',
         hero: {
           eyebrow: 'Fideliza',
@@ -339,7 +339,7 @@ export const pillars: Pillar[] = [
         slug: 'especialista-ia',
         pillarId: 'automatiza',
         label: 'Especialista IA dedicado',
-        title: 'Especialista IA Dedicado — SACS',
+        title: 'Especialista IA Dedicado — Sacs',
         description: 'Una persona real que diseña tus automatizaciones contigo.',
         hero: {
           eyebrow: 'Automatiza',
@@ -352,7 +352,7 @@ export const pillars: Pillar[] = [
         slug: 'axo-copiloto-ia',
         pillarId: 'automatiza',
         label: 'AXO · Copiloto IA',
-        title: 'AXO · Copiloto IA — SACS',
+        title: 'AXO · Copiloto IA — Sacs',
         description: 'Tu asistente de IA que entiende tu negocio y actúa al instante.',
         hero: {
           eyebrow: 'Automatiza',
@@ -365,7 +365,7 @@ export const pillars: Pillar[] = [
         slug: 'workflows',
         pillarId: 'automatiza',
         label: 'Workflows',
-        title: 'Workflows — SACS',
+        title: 'Workflows — Sacs',
         description: 'Automatiza tareas repetitivas con reglas trigger → acción.',
         hero: {
           eyebrow: 'Automatiza',
@@ -378,7 +378,7 @@ export const pillars: Pillar[] = [
         slug: 'alertas-inteligentes',
         pillarId: 'automatiza',
         label: 'Alertas inteligentes',
-        title: 'Alertas Inteligentes — SACS',
+        title: 'Alertas Inteligentes — Sacs',
         description: 'Avisos proactivos de anomalías, riesgos y oportunidades.',
         hero: {
           eyebrow: 'Automatiza',
@@ -391,7 +391,7 @@ export const pillars: Pillar[] = [
         slug: 'reportes-predictivos',
         pillarId: 'automatiza',
         label: 'Reportes predictivos',
-        title: 'Reportes Predictivos — SACS',
+        title: 'Reportes Predictivos — Sacs',
         description: 'Reportes generados por IA con predicción de demanda y tendencias.',
         hero: {
           eyebrow: 'Automatiza',
@@ -404,7 +404,7 @@ export const pillars: Pillar[] = [
         slug: 'orquestador-de-agentes',
         pillarId: 'automatiza',
         label: 'Orquestador de agentes',
-        title: 'Orquestador de Agentes — SACS',
+        title: 'Orquestador de Agentes — Sacs',
         description: 'Conecta Claude, GPT y Gemini para ejecutar tareas complejas en cadena.',
         hero: {
           eyebrow: 'Automatiza',
@@ -417,11 +417,11 @@ export const pillars: Pillar[] = [
         slug: 'api-e-integraciones',
         pillarId: 'automatiza',
         label: 'API e integraciones',
-        title: 'API e Integraciones — SACS',
-        description: 'Conecta SACS con +600 apps: ERP, contabilidad, logística y marketing.',
+        title: 'API e Integraciones — Sacs',
+        description: 'Conecta Sacs con +600 apps: ERP, contabilidad, logística y marketing.',
         hero: {
           eyebrow: 'Automatiza',
-          headline: 'Conecta SACS con todo tu stack',
+          headline: 'Conecta Sacs con todo tu stack',
           subtitle: '+600 apps: ERP, contabilidad, logística, marketing. API abierta para integraciones a la medida.',
         },
         status: 'live',

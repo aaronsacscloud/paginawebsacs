@@ -281,3 +281,45 @@ https://www.sacscloud.com/recursos/curva-de-tallas/
 2. Más piezas del corpus canónico (se pueden escribir a mano mientras tanto).
 3. Competidores: diff de sitemaps, no necesita llaves.
 4. Pipeline de contenido con las 9 auditorías (necesita saldo).
+
+---
+
+## 16-sep-2026 (tarde) · respuestas del dueño aplicadas + competidores + corpus
+
+### Las tres respuestas
+1. **El 10% de impacto social es real** (confirmado por el dueño, y además está
+   en el pie de todas las páginas) y **AXO existe** (ficha de producto, plan
+   Automatiza). Los dos vuelven a `/llms.txt` y `/llms-full.txt`.
+2. **Los `noindex` se decidieron por las palabras reales de cada página**:
+   `/recursos/tiktok-fashion` (877 palabras) y `/campana/curva-de-tallas`
+   (calculadora) **se indexan**; `/prueba-gratis` (34 palabras) y
+   `/campana/punto-de-venta` (repite lo de /producto con menos) **siguen fuera**.
+3. **La marca es «Sacs» visible y «Sacscloud» como identidad única.** El título
+   de cada página decía «| SACS», que se lee como acrónimo. Corregido, más 605
+   apariciones en las descripciones de las 28 funciones y sus páginas.
+
+### Tres páginas vacías desde el andamiaje original
+La regla de contenido delgado estaba MUERTA: contaba el HTML entero y el armazón
+del sitio son ~1,800 palabras, así que una página vacía contaba 1,872. Contando
+solo lo de dentro de `<main>` aparecieron `/producto/`, `/nosotros/` y
+`/manifiesto/`, las tres publicadas, indexables y en el sitemap, con el
+comentario «el contenido irá aquí» dentro.
+- `/producto/` ya es un hub real con las 28 funciones (455 palabras, `ItemList`).
+- `/nosotros/` y `/manifiesto/` salen del índice. **Necesitan la voz del dueño**:
+  la de nosotros pesa para que una IA reconozca a la empresa como entidad, y la
+  del manifiesto es donde vive el 10%.
+
+### Competidores
+`competidores.ts` lee los sitemaps públicos, guarda la foto y compara. 16 de 24
+accesibles, 20,534 páginas en la línea base. Se reportan CAMBIOS, no
+inventarios, y la primera foto no genera avisos.
+
+### Corpus canónico: 3 definiciones publicadas
+`/recursos/curva-de-tallas` · `/recursos/nivelacion-inventario-entre-tiendas` ·
+`/recursos/sell-through`. Enlazadas entre ellas, y la primera manda a la
+calculadora. **Las tres se publicaron sin desplegar nada** — que es la prueba de
+que la arquitectura de la etapa 2A funciona.
+
+### Sigue bloqueado
+El saldo de Anthropic. Sin él no corren `normalizar`, `clasificar` ni el pipeline
+de contenido generado. Todo lo de arriba se hizo sin tocarlo.

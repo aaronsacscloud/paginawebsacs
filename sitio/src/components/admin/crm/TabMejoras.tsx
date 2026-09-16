@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
 import ReporteEntregas from './ReporteEntregas';
+import ReporteCurso from './ReporteCurso';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 import { computarSenales } from '../../../lib/crm/senales';
 import { confirmar } from '../../../lib/ui/confirmar';
@@ -127,6 +128,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
   const [aOportunidad, setAOportunidad] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
   const [entregas, setEntregas] = useState(false);
+  const [curso, setCurso] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
   // Las sugerencias se muestran de a una: son contexto para leer, no una
   // lista para recorrer, y con tres abiertas empujaban las ideas fuera.
@@ -754,7 +756,12 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 10 }}>
           <span style={S.kl}>Reportes al cliente</span>
           <span style={{ fontSize: '0.71rem', color: '#a5a2af' }}>se generan del periodo que elijas</span>
-          <button style={{ ...S.btnAzul, marginLeft: 'auto' }} onClick={() => setEntregas(true)}>Reporte de entregas</button>
+          {/* Tres documentos, tres preguntas: «¿qué me están haciendo?» (en
+              curso), «¿qué me han hecho?» (entregas) y «cómo va la cuenta»
+              (ejecutivo). El de en curso va primero porque es el que se manda
+              entre entrega y entrega, que es casi siempre. */}
+          <button style={{ ...S.btnAzul, marginLeft: 'auto' }} onClick={() => setCurso(true)}>Trabajo en curso</button>
+          <button style={S.btnAzul} onClick={() => setEntregas(true)}>Reporte de entregas</button>
           <button style={S.btnG} onClick={() => setReporte(true)}>Reporte ejecutivo</button>
         </div>
         <SeguimientoReportes reportes={reportes} flash={flash} recargar={cargarReportes} />
@@ -766,6 +773,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
         onCerrar={() => { setReporte(false); cargarReportes(); }} />}
       {entregas && <ReporteEntregas companyId={companyId} cliente={cliente}
         onCerrar={() => { setEntregas(false); cargarReportes(); }} />}
+      {curso && <ReporteCurso companyId={companyId} cliente={cliente}
+        onCerrar={() => { setCurso(false); cargarReportes(); }} />}
     </div>
   );
 }

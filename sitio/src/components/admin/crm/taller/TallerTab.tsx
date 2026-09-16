@@ -384,136 +384,161 @@ const PASOS_L = [
   { k: 3 as const, l: 'Esperan tu OK', de: 'hay que revisarlas', etapas: ['lista'] },
 ];
 
+/* Las VISTAS GUARDADAS, el mismo patrón que Cotizaciones: una tira de presets
+   arriba y un clic para moverse. Allá son «Activas · En cierre · Pagadas…»;
+   aquí son las etapas y los tres problemas que detienen una orden. Moverse por
+   vista es más rápido que filtrar, y el nombre de la vista ya dice qué vas a
+   encontrar. */
+const VISTAS: { k: string; l: string; f: (o: any) => boolean }[] = [
+  { k: 'todas',     l: 'Todas',          f: () => true },
+  { k: 'arrancar',  l: 'Por arrancar',   f: o => o.etapa === 'recibida' },
+  { k: 'desarrollo',l: 'En desarrollo',  f: o => ['analisis', 'desarrollo', 'pruebas', 'devuelta', 'trabada'].includes(o.etapa) },
+  { k: 'ok',        l: 'Esperan tu OK',  f: o => o.etapa === 'lista' },
+  { k: 'sinfecha',  l: 'Sin fecha',      f: o => !o.fecha_prometida },
+  { k: 'sindueno',  l: 'Sin dueño',      f: o => !o.asignado_id },
+  { k: 'tarde',     l: 'Se pasaron',     f: vencida },
+  { k: 'espera',    l: 'Esperando al cliente', f: o => o.etapa === 'espera' },
+];
+
+/* Cómo se reparte una cuenta en la barra de la tarjeta. Lo que ya arrancó va
+   en morado sólido y lo que no, en lila claro: la barra cuenta de un vistazo
+   si el proyecto está empezando o ya en marcha, sin leer un número. */
+const TRAMOS = [
+  { l: 'por arrancar', c: '#ddd6fb', f: (o: any) => o.etapa === 'recibida' },
+  { l: 'en análisis',  c: '#c3b6fb', f: (o: any) => o.etapa === 'analisis' },
+  { l: 'en desarrollo',c: '#9B8CFA', f: (o: any) => ['desarrollo', 'devuelta', 'trabada'].includes(o.etapa) },
+  { l: 'en pruebas',   c: '#7C6BF0', f: (o: any) => o.etapa === 'pruebas' },
+  { l: 'esperan tu OK',c: '#4FBF95', f: (o: any) => o.etapa === 'lista' },
+  { l: 'detenidas',    c: '#E8A838', f: (o: any) => o.etapa === 'espera' },
+];
+
 function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar }: any) {
-  const [paso, setPaso] = useState<1 | 2 | 3>(1);
+  const [vista, setVista] = useState('todas');
   const [soloMias, setSoloMias] = useState(false);
-  const [foco, setFoco] = useState('');
-  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({});
+  const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
 
   const q = filtro.trim().toLowerCase();
   const texto = q
     ? ordenes.filter((o: any) => (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q))
     : ordenes;
-
-  /* Las tarjetas que quedan son las que piden ACCIÓN, y cada una filtra: un
-     número que no se puede abrir es un reporte, no una herramienta. Se fueron
-     las que decían cero en todas las cuentas. */
-  const POR_FOCO: Record<string, (o: any) => boolean> = {
-    sin_dueno: (o: any) => !o.asignado_id,
-    sin_fecha: (o: any) => !o.fecha_prometida,
-    tarde: vencida,
-    revisar: (o: any) => o.etapa === 'lista',
-  };
-  const sinDueno = texto.filter(POR_FOCO.sin_dueno).length;
-  const sinFecha = texto.filter(POR_FOCO.sin_fecha).length;
-  const tarde = texto.filter(vencida).length;
-  const revisar = texto.filter(POR_FOCO.revisar).length;
-
-  let base = foco ? texto.filter(POR_FOCO[foco]) : texto;
-  if (soloMias) base = base.filter((o: any) => o.asignado_id === yo?.id);
   const mias = texto.filter((o: any) => o.asignado_id === yo?.id).length;
 
-  const dePaso = (n: number) => base.filter((o: any) => (PASOS_L.find(p => p.k === n)?.etapas || []).includes(o.etapa));
-  const lista = dePaso(paso);
+  const conVista = (k: string) => {
+    const v = VISTAS.find(x => x.k === k)!;
+    return texto.filter(v.f).filter((o: any) => (soloMias ? o.asignado_id === yo?.id : true));
+  };
+  const lista = conVista(vista);
 
-  /* Por cuenta, y la cuenta que peor va arriba: primero lo vencido, luego lo
-     que tiene más sin fecha, y al final por cantidad. Alfabético no es una
-     prioridad. */
-  const porCuenta = Object.entries(lista.reduce((a: any, o: any) => {
+  /* Una cuenta es un PROYECTO. Antes eran dieciocho folios sueltos agrupados
+     por nombre; lo que se trabaja no es una orden, es «lo de Rubens». */
+  const proyectos = Object.entries(lista.reduce((a: any, o: any) => {
     const k = cuentaDe(o); (a[k] = a[k] || []).push(o); return a;
   }, {})).map(([l, filas]: any) => {
     const atraso = Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; }));
     return {
-      l, filas,
-      atraso,
+      l, filas, atraso,
       sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
       sinDueno: filas.filter((o: any) => !o.asignado_id).length,
       prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
+      tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
     };
   }).sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
 
-  const TOPE_G = 3;
+  const abierto = proyectos.find(p => p.l === cuenta) || null;
 
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 14 }}>
         {([
-          ['sin_dueno', 'Nadie las ha tomado', sinDueno, P.rojo, P.rojoTinta, 'sin dueño no avanzan'],
-          ['sin_fecha', 'Sin fecha', sinFecha, '#E8A838', P.ambarTinta, 'no se pueden prometer'],
-          ['tarde', 'Se pasaron de fecha', tarde, P.rojo, P.rojoTinta, 'contra su primera fecha'],
-          ['revisar', 'Esperan tu OK', revisar, P.verde, P.verdeTinta, 'hay que revisarlas'],
+          ['sindueno', 'Nadie las ha tomado', texto.filter((o: any) => !o.asignado_id).length, P.rojo, P.rojoTinta, 'sin dueño no avanzan'],
+          ['sinfecha', 'Sin fecha', texto.filter((o: any) => !o.fecha_prometida).length, '#E8A838', P.ambarTinta, 'no se pueden prometer'],
+          ['tarde', 'Se pasaron de fecha', texto.filter(vencida).length, P.rojo, P.rojoTinta, 'contra su primera fecha'],
+          ['ok', 'Esperan tu OK', texto.filter((o: any) => o.etapa === 'lista').length, P.verde, P.verdeTinta, 'hay que revisarlas'],
         ] as any[]).map(([k, l, v, franja, tinta, sub]) => (
           <KpiCard key={k} franja={franja} label={l} valor={v} color={v ? tinta : undefined} sub={sub}
-            activo={foco === k} onClick={() => setFoco(foco === k ? '' : k)} />
+            activo={vista === k} onClick={() => { setVista(vista === k ? 'todas' : k); setCuenta(''); }} />
         ))}
       </div>
 
-      {/* Los tres pasos. El elegido va morado sólido y los demás neutros. */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        {PASOS_L.map(x => {
-          const n = (foco ? texto.filter(POR_FOCO[foco]) : texto)
-            .filter((o: any) => (soloMias ? o.asignado_id === yo?.id : true))
-            .filter((o: any) => x.etapas.includes(o.etapa)).length;
-          const on = paso === x.k;
+      {/* Las vistas guardadas, como en Cotizaciones. */}
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+        {VISTAS.map(v => {
+          const n = conVista(v.k).length;
+          if (!n && !['todas', 'arrancar', 'desarrollo', 'ok'].includes(v.k)) return null;
+          const on = vista === v.k;
           return (
-            <button key={x.k} onClick={() => setPaso(x.k)}
+            <button key={v.k} onClick={() => { setVista(v.k); setCuenta(''); }}
               style={{
-                border: on ? '1px solid #9B8CFA' : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
-                color: on ? '#fff' : '#666', borderRadius: 9, padding: '7px 13px', fontSize: '0.76rem',
+                border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
+                color: on ? '#fff' : '#666', borderRadius: 9, padding: '6px 12px', fontSize: '0.75rem',
                 fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
               }}>
-              {x.k} · {x.l} <span style={{ opacity: .75, fontWeight: 700 }}>{n}</span>
+              {v.l} <span style={{ opacity: .75, fontWeight: 700 }}>{n}</span>
             </button>
           );
         })}
-        {/* «Mi bandeja» era una pantalla que solo cambiaba un filtro. Aquí es el
-            filtro que siempre fue. */}
-        <button onClick={() => setSoloMias(v => !v)}
-          style={{ ...(soloMias ? { ...S.btn, padding: '7px 13px', fontSize: '0.76rem' } : { ...S.btnG, padding: '7px 13px', fontSize: '0.76rem' }) }}>
+        <button onClick={() => { setSoloMias(x => !x); setCuenta(''); }}
+          style={soloMias ? { ...S.btn, padding: '6px 12px', fontSize: '0.75rem' } : { ...S.btnG, padding: '6px 12px', fontSize: '0.75rem' }}>
           Solo las mías {mias > 0 && <span style={{ opacity: .75 }}>{mias}</span>}
         </button>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por cuenta, folio o texto…"
-          style={{ ...S.input, width: 240, marginLeft: 'auto', padding: '6px 11px' }} />
+          style={{ ...S.input, width: 230, marginLeft: 'auto', padding: '6px 11px' }} />
         <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem' }} onClick={onNueva}>+ Nueva orden</button>
       </div>
 
-      {porCuenta.length === 0 && (
+      {proyectos.length === 0 && (
         <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
-          {soloMias ? 'No tienes órdenes asignadas en este paso.'
-            : foco ? 'Nada con ese filtro en este paso.'
-            : paso === 1 ? 'Nada por arrancar. Lo que llegue de una minuta aterriza aquí.'
-            : paso === 2 ? 'Nada en desarrollo todavía.'
-            : 'Nada esperando tu OK.'}
+          {soloMias ? 'No tienes órdenes asignadas en esta vista.' : 'Nada en esta vista.'}
         </div>
       )}
 
-      {porCuenta.map((g: any) => {
-        const ab = !!abiertas[g.l];
-        return (
-          <div key={g.l} style={{ background: '#fff', border: `1px solid ${ab ? P.violetaBorde : '#eeeef1'}`, borderRadius: 11, marginBottom: 8, overflow: 'hidden' }}>
-            <div onClick={() => setAbiertas(a => ({ ...a, [g.l]: !ab }))}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', cursor: 'pointer', flexWrap: 'wrap' }}>
-              <span style={{ color: '#b5b2bd', fontSize: '0.8rem' }}>{ab ? '▾' : '▸'}</span>
-              <b style={{ fontSize: '0.86rem', fontWeight: 800 }}>{g.l}</b>
-              <span style={{ background: P.violetaAgua, color: P.violetaTinta, borderRadius: 99, padding: '1px 9px', fontSize: '0.7rem', fontWeight: 700 }}>{g.filas.length}</span>
-              <span style={{ marginLeft: 'auto', fontSize: '0.71rem', color: g.atraso ? P.rojoTinta : '#999', fontWeight: g.atraso ? 700 : 400 }}>
-                {g.atraso ? `${g.atraso} ${g.atraso === 1 ? 'día' : 'días'} tarde`
-                  : g.sinFecha ? `${g.sinFecha} sin fecha${g.sinDueno ? ` · ${g.sinDueno} sin dueño` : ''}`
-                  : g.prox ? `la próxima, el ${fmt(g.prox)}` : 'al día'}
-              </span>
-            </div>
-            {ab && (<>
-              {g.filas.slice(0, abiertas[g.l + '·todo'] ? 999 : TOPE_G).map((o: any) => <Renglon key={o.id} o={o} abrir={abrir} />)}
-              {g.filas.length > TOPE_G && (
-                <button onClick={() => setAbiertas(a => ({ ...a, [g.l + '·todo']: !a[g.l + '·todo'] }))}
-                  style={{ width: '100%', border: 'none', borderTop: '1px solid #f4f3f7', background: '#fff', padding: 10, fontSize: '0.74rem', fontWeight: 700, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {abiertas[g.l + '·todo'] ? 'Ver solo las primeras' : `Ver las ${g.filas.length - TOPE_G} restantes de esta cuenta`}
-                </button>
-              )}
-            </>)}
+      {/* El proyecto abierto: sus órdenes, y un camino de vuelta. */}
+      {abierto ? (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+            <button style={S.btnG} onClick={() => setCuenta('')}>‹ Todas las cuentas</button>
+            <b style={{ fontSize: '1rem', fontWeight: 800 }}>{abierto.l}</b>
+            <span style={{ fontSize: '0.75rem', color: '#8d8a97' }}>
+              {abierto.filas.length} {abierto.filas.length === 1 ? 'orden' : 'órdenes'} en esta vista
+              {abierto.atraso ? ` · ${abierto.atraso} días tarde` : abierto.prox ? ` · la próxima, el ${fmt(abierto.prox)}` : ''}
+            </span>
           </div>
-        );
-      })}
+          {abierto.filas.map((o: any) => <Renglon key={o.id} o={o} abrir={abrir} />)}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 12 }}>
+          {proyectos.map((p: any) => (
+            <div key={p.l} onClick={() => setCuenta(p.l)}
+              style={{ ...S.caja, cursor: 'pointer', transition: 'box-shadow .12s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 14px rgba(16,24,40,.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <b style={{ fontSize: '0.95rem', fontWeight: 800 }}>{p.l}</b>
+                <span style={{ background: '#f4f3f7', color: '#77738a', borderRadius: 99, padding: '1px 8px', fontSize: '0.7rem', fontWeight: 700 }}>{p.filas.length}</span>
+                <span style={{
+                  marginLeft: 'auto', fontSize: '0.69rem', fontWeight: 700, borderRadius: 99, padding: '2px 9px',
+                  ...(p.atraso ? { background: P.rojoAgua, color: P.rojoTinta }
+                    : p.sinFecha ? { background: P.ambarAgua, color: P.ambarTinta }
+                    : { background: P.verdeAgua, color: P.verdeTinta }),
+                }}>
+                  {p.atraso ? `${p.atraso} ${p.atraso === 1 ? 'día' : 'días'} tarde`
+                    : p.sinFecha ? `${p.sinFecha} sin fecha`
+                    : p.prox ? `para el ${fmt(p.prox)}` : 'al día'}
+                </span>
+              </div>
+              {/* La barra reparte las órdenes por etapa. No es adorno: dice si el
+                  proyecto está arrancando o ya en marcha sin leer un número. */}
+              <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', background: '#f2f1f6', margin: '11px 0 7px', gap: 2 }}>
+                {p.tramos.map((t: any) => <span key={t.l} style={{ flex: t.n, background: t.c }} />)}
+              </div>
+              <div style={{ fontSize: '0.71rem', color: '#8d8a97' }}>
+                {p.tramos.map((t: any) => `${t.n} ${t.l}`).join(' · ')}
+                {p.sinDueno ? ` · ${p.sinDueno} sin dueño` : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

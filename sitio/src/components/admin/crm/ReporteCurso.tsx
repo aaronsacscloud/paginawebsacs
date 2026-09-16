@@ -73,7 +73,7 @@ export default function ReporteCurso({ companyId, cliente, onCerrar }: any) {
     setRep((p: any) => ({ ...p, enviado_a: r.para }));
   }
 
-  const sinVideo = h ? Number(h.total || 0) - Number(h.con_video || 0) : 0;
+  const sinEspec = h ? (h.trabajos || []).filter((t: any) => !t.cambio).length : 0;
 
   return (
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -82,9 +82,9 @@ export default function ReporteCurso({ companyId, cliente, onCerrar }: any) {
         display: 'flex', flexDirection: 'column', boxShadow: '0 22px 54px rgba(20,15,50,.25)',
       }}>
         <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #f1eff7' }}>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.015em' }}>Reporte de entregas</div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.015em' }}>Reporte de trabajo en curso</div>
           <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 2 }}>
-            {cliente} · lo entregado en el periodo, con el video de cada mejora.
+            {cliente} · lo que se le está construyendo, con la especificación de qué va a cambiar.
           </div>
         </div>
 
@@ -107,20 +107,21 @@ export default function ReporteCurso({ companyId, cliente, onCerrar }: any) {
 
           {!rep && !busy && !error && (
             <div style={{ padding: '26px 0', color: '#9c99a6', fontSize: '0.82rem', lineHeight: 1.65 }}>
-              Elige el periodo y dale a Generar. Salen las mejoras <b>entregadas</b> en esas fechas que
-              estén marcadas como «se le puede mostrar al cliente», cada una con su tipo, su fecha y —si
-              le pegaste la liga— su video.
+              Dale a Generar. Sale todo lo que esta cuenta tiene <b>vivo en el taller</b> —lo que está en
+              análisis, en desarrollo, en pruebas o esperando tu OK, más lo que aún no arranca—, agrupado
+              por etapa y con la especificación de qué va a cambiar. Lo ya entregado no entra: eso es el
+              reporte de entregas.
             </div>
           )}
-          {busy === 'generando' && <div style={{ padding: '26px 0', color: '#9c99a6', fontSize: '0.85rem' }}>Juntando las entregas…</div>}
+          {busy === 'generando' && <div style={{ padding: '26px 0', color: '#9c99a6', fontSize: '0.85rem' }}>Juntando lo que está en curso…</div>}
 
           {rep && h && (
             <div style={{ marginTop: 14 }}>
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', paddingBottom: 12, borderBottom: '1px solid #f4f3f7' }}>
-                <div><div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#9c99a6' }}>Entregas</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1E8A63' }}>{h.total}</div></div>
-                <div><div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#9c99a6' }}>Con video</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: h.con_video ? '#5B4BD6' : '#a5a2af' }}>{h.con_video}</div></div>
+                <div><div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#9c99a6' }}>En su cola</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#5B4BD6' }}>{h.total}</div></div>
+                <div><div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#9c99a6' }}>Ya arrancadas</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: h.en_curso ? '#1E8A63' : '#a5a2af' }}>{h.en_curso}</div></div>
                 <div><div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#9c99a6' }}>Sin costo</div>
                   <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1E8A63' }}>{h.cortesias}</div></div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
@@ -128,32 +129,33 @@ export default function ReporteCurso({ companyId, cliente, onCerrar }: any) {
                   <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#5B4BD6', fontFamily: 'ui-monospace, monospace' }}>{rep.folio}</div></div>
               </div>
 
-              {/* El aviso que de verdad cambia lo que haces: si faltan videos,
-                  lo útil no es explicar nada, es decir dónde se pegan. */}
-              {sinVideo > 0 && (
+              {/* El aviso que de verdad cambia lo que haces aquí no es el video
+                  —todavía no hay ninguno—, es la especificación: un renglón sin
+                  «qué va a cambiar» le llega al cliente como un título suelto que
+                  no le dice nada a quien no estuvo en la junta. */}
+              {sinEspec > 0 && (
                 <div style={{ marginTop: 12, background: '#FFF9EF', border: '1px solid #f3dfae', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#7a5a10', lineHeight: 1.55 }}>
-                  <b>{sinVideo === 1 ? 'Una entrega va sin video' : `${sinVideo} entregas van sin video`}.</b> Salen
-                  igual en el documento, con la leyenda «sin video». Si quieres agregárselos, ábrelas en
-                  <b> Editar</b>, pega la liga y vuelve a generar el reporte.
+                  <b>{sinEspec === 1 ? 'Uno va sin especificación' : `${sinEspec} van sin especificación`}.</b> Salen
+                  igual, solo con su título. Si quieres que el cliente entienda qué va a cambiar, ábrelos en el
+                  taller y llena <b>«qué debería pasar»</b> en el paso 1.
                 </div>
               )}
-
-              {h.internas > 0 && (
+              {h.sin_fecha > 0 && (
                 <div style={{ marginTop: 8, fontSize: '0.73rem', color: '#a5a2af' }}>
-                  {h.internas} entrega(s) marcadas como internas no van en el documento.
+                  {h.sin_fecha} de los {h.total} todavía no tienen fecha comprometida. El documento lo dice.
                 </div>
               )}
 
               <div style={{ marginTop: 12 }}>
-                {(h.entregas || []).map((e: any, i: number) => (
+                {(h.trabajos || []).map((e: any, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: 9, padding: '9px 0', borderBottom: '1px solid #f7f6fa', alignItems: 'baseline', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, flex: 1, minWidth: 180, lineHeight: 1.4 }}>{e.titulo}</span>
-                    <span style={{ ...S.chip, background: '#EEECFE', color: '#5B4BD6' }}>{TIPO_L[e.categoria] || 'mejora'}</span>
+                    <span style={{ ...S.chip, background: '#EEECFE', color: '#5B4BD6' }}>{e.etapa}</span>
                     {e.cortesia && <span style={{ ...S.chip, background: '#EAF8F2', color: '#1E8A63' }}>sin costo</span>}
-                    <span style={{ fontSize: '0.7rem', color: '#a5a2af', whiteSpace: 'nowrap' }}>{fmtDate(e.fecha)}</span>
-                    {e.video
-                      ? <a href={e.video} target="_blank" rel="noreferrer" style={{ ...S.chip, background: '#EEECFE', color: '#5B4BD6', textDecoration: 'none' }}>▶ video</a>
-                      : <span style={{ ...S.chip, background: '#FFF4E5', color: '#9a6a10' }}>sin video</span>}
+                    {e.fecha
+                      ? <span style={{ fontSize: '0.7rem', color: '#a5a2af', whiteSpace: 'nowrap' }}>{fmtDate(e.fecha)}</span>
+                      : <span style={{ ...S.chip, background: '#FFF4E5', color: '#9a6a10' }}>sin fecha</span>}
+                    {!e.cambio && <span style={{ ...S.chip, background: '#FFF4E5', color: '#9a6a10' }}>sin especificación</span>}
                   </div>
                 ))}
               </div>

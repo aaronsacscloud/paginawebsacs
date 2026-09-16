@@ -2,11 +2,11 @@
 export const pageContent: Record<string, any> = {
   "punto-de-venta": {
     "hero": {
-      "eyebrow": "SACS Punto de Venta",
+      "eyebrow": "Sacs Punto de Venta",
       "title": "Un punto de venta listo para tu negocio",
       "subtitle": "Convierte cualquier dispositivo en un punto de venta completo. Cobra, cambia de talla y aparta — tarjeta, efectivo, transferencia y más.",
       "image": "/images/screen-pos.webp",
-      "imageAlt": "Punto de Venta SACS en tablet mostrando el proceso de cobro",
+      "imageAlt": "Punto de Venta Sacs en tablet mostrando el proceso de cobro",
       "video": {
         "mp4": "/videos/pos-demo.mp4",
         "webm": "/videos/pos-demo.webm"
@@ -41,7 +41,7 @@ export const pageContent: Record<string, any> = {
         "title": "Atiende al cliente, no a la caja.",
         "description": "El POS se mueve contigo — tableta, teléfono o PC. Consulta stock, muestra fotos, recomienda y cobra desde cualquier punto de la tienda, sin regresar a la caja.",
         "image": "/images/pos-boutique-atencion.webp",
-        "imageAlt": "Vendedora atendiendo a clienta con SACS POS en tablet dentro de boutique",
+        "imageAlt": "Vendedora atendiendo a clienta con Sacs POS en tablet dentro de boutique",
         "link": null,
         "featured": true,
         "variant": "checkout",
@@ -88,9 +88,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Vende lo que tienes en otra sucursal.",
-        "description": "Si un cliente busca algo que no hay en esa tienda, SACS te muestra en qué sucursales sí está y agenda el traspaso o envío al momento. Nunca pierdes la venta por falta de stock local — cada sucursal es tu catálogo completo.",
+        "description": "Si un cliente busca algo que no hay en esa tienda, Sacs te muestra en qué sucursales sí está y agenda el traspaso o envío al momento. Nunca pierdes la venta por falta de stock local — cada sucursal es tu catálogo completo.",
         "image": "/images/pos-endless-aisle.webp",
-        "imageAlt": "Vendedor mostrando disponibilidad de producto en otras sucursales desde tablet SACS",
+        "imageAlt": "Vendedor mostrando disponibilidad de producto en otras sucursales desde tablet Sacs",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
@@ -129,7 +129,7 @@ export const pageContent: Record<string, any> = {
     "stats": [
       {
         "value": "+3,000",
-        "label": "Tiendas usando SACS POS"
+        "label": "Tiendas usando Sacs POS"
       },
       {
         "value": "2 seg",
@@ -145,12 +145,12 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.",
+      "quote": "Desde que cambiamos a Sacs, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.",
       "name": "María García",
       "role": "Fundadora",
       "company": "La Bella Pandita",
       "stat": "42",
-      "statLabel": "sucursales usando SACS POS"
+      "statLabel": "sucursales usando Sacs POS"
     },
     "interrupt": "Tu negocio no para,",
     "interruptStrike": "tu punto de venta tampoco",
@@ -158,9 +158,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Cambios y devoluciones",
         "title": "Los cambios y devoluciones ya se resuelven solos.",
-        "description": "Talla que no quedó, color equivocado, cliente que cambió de opinión. SACS automatiza cada caso con la lógica correcta de retail — proteges el ingreso, el cliente queda tranquilo y tu operación no se detiene.",
+        "description": "Talla que no quedó, color equivocado, cliente que cambió de opinión. Sacs automatiza cada caso con la lógica correcta de retail — proteges el ingreso, el cliente queda tranquilo y tu operación no se detiene.",
         "image": "/images/screen-pos.webp",
-        "imageAlt": "Flujo de cambios y devoluciones en SACS POS",
+        "imageAlt": "Flujo de cambios y devoluciones en Sacs POS",
         "video": {
           "mp4": "/videos/tab-cambios-devoluciones.mp4",
           "webm": "/videos/tab-cambios-devoluciones.webm",
@@ -172,7 +172,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 0115-6.7L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 01-15 6.7L3 16\"/><path d=\"M3 21v-5h5\"/></svg>",
             "title": "Cambio por talla, color o variante",
-            "description": "Escanea el ticket, elige la nueva variante y SACS reasigna stock en automático. Si no hay en esa sucursal, te muestra en cuál sí hay y agenda el traspaso."
+            "description": "Escanea el ticket, elige la nueva variante y Sacs reasigna stock en automático. Si no hay en esa sucursal, te muestra en cuál sí hay y agenda el traspaso."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M3 11h18\"/><path d=\"M7 15h4\"/></svg>",
@@ -204,9 +204,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Arqueos y control de caja",
         "title": "El dinero de tu caja, siempre cuadrado.",
-        "description": "Arqueos guiados, cortes por turno y cada movimiento de efectivo con motivo. SACS te dice al segundo si hay diferencias y te explica de dónde vienen — no al final del día, cuando ya es tarde.",
+        "description": "Arqueos guiados, cortes por turno y cada movimiento de efectivo con motivo. Sacs te dice al segundo si hay diferencias y te explica de dónde vienen — no al final del día, cuando ya es tarde.",
         "image": "/images/pos-arqueo-caja.webp",
-        "imageAlt": "Arqueo y corte de caja en SACS POS",
+        "imageAlt": "Arqueo y corte de caja en Sacs POS",
         "video": {
           "mp4": "/videos/tab-arqueos-caja.mp4",
           "webm": "/videos/tab-arqueos-caja.webm",
@@ -236,7 +236,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"8\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M7 8V5a2 2 0 012-2h6a2 2 0 012 2v3\"/><path d=\"M12 12v4\"/></svg>",
             "title": "Fondo fijo y apertura de caja",
-            "description": "Declara el efectivo de apertura y SACS calcula exactamente cuánto debe haber al cierre. Adiós conteos a ciegas."
+            "description": "Declara el efectivo de apertura y Sacs calcula exactamente cuánto debe haber al cierre. Adiós conteos a ciegas."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\"/></svg>",
@@ -255,7 +255,7 @@ export const pageContent: Record<string, any> = {
         "title": "Todo lo que pasa en tus tiendas, en una sola pantalla.",
         "description": "Ventas, cajeros, descuentos, cambios, devoluciones, retiros y abonos — visualiza en vivo cada movimiento de cada caja en cada sucursal. Sin esperar al cierre del día, sin pedirle reportes a nadie.",
         "image": "/images/pos-seguridad-controles.webp",
-        "imageAlt": "Dashboard de reportes y datos en tiempo real de SACS POS",
+        "imageAlt": "Dashboard de reportes y datos en tiempo real de Sacs POS",
         "video": {
           "mp4": "/videos/tab-datos-tiempo-real.mp4",
           "webm": "/videos/tab-datos-tiempo-real.webm",
@@ -306,7 +306,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/valentina-restrepo.webp",
         "initials": "VR",
         "color": "#c77a4a",
-        "quote": "Antes cada cajera tardaba 40 minutos en cuadrar. Con SACS el corte se hace solo y si hay diferencia, el sistema te dice exactamente de qué ticket viene. Cerramos 7 tiendas en media hora.",
+        "quote": "Antes cada cajera tardaba 40 minutos en cuadrar. Con Sacs el corte se hace solo y si hay diferencia, el sistema te dice exactamente de qué ticket viene. Cerramos 7 tiendas en media hora.",
         "name": "Valentina Restrepo",
         "business": "Almacén Candelaria Joyas",
         "location": "Colombia"
@@ -333,10 +333,10 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "comparison": {
-      "title": "SACS POS frente al resto.",
-      "subtitle": "Lo que separa a SACS de los POS y ERPs que ya conoces.",
+      "title": "Sacs POS frente al resto.",
+      "subtitle": "Lo que separa a Sacs de los POS y ERPs que ya conoces.",
       "competitors": [
-        "SACS",
+        "Sacs",
         "Shopify",
         "Square",
         "Lightspeed",
@@ -360,7 +360,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "En SACS los tres canales viven en una base — sin sincronización, sin \"versión online distinta\"."
+          "note": "En Sacs los tres canales viven en una base — sin sincronización, sin \"versión online distinta\"."
         },
         {
           "label": "Monedero electrónico y lealtad nativos",
@@ -435,7 +435,7 @@ export const pageContent: Record<string, any> = {
             "full",
             "full"
           ],
-          "note": "Pagas un fee mensual fijo. La pasarela cobra su % aparte, no SACS."
+          "note": "Pagas un fee mensual fijo. La pasarela cobra su % aparte, no Sacs."
         },
         {
           "label": "Soporte y producto en español, equipo en LatAm",
@@ -472,11 +472,11 @@ export const pageContent: Record<string, any> = {
     "faqs": [
       {
         "question": "¿Necesito hardware especial para usar el POS?",
-        "answer": "No. SACS funciona en cualquier dispositivo con navegador: tablet, celular o computadora. Si ya tienes una terminal bancaria, la puedes seguir usando. No es obligatorio comprar nada."
+        "answer": "No. Sacs funciona en cualquier dispositivo con navegador: tablet, celular o computadora. Si ya tienes una terminal bancaria, la puedes seguir usando. No es obligatorio comprar nada."
       },
       {
         "question": "¿Funciona sin internet?",
-        "answer": "Sí. SACS tiene modo offline que te permite seguir cobrando. Cuando vuelve la conexión, todas las ventas se sincronizan automáticamente."
+        "answer": "Sí. Sacs tiene modo offline que te permite seguir cobrando. Cuando vuelve la conexión, todas las ventas se sincronizan automáticamente."
       },
       {
         "question": "¿Puedo tener varios cajeros al mismo tiempo?",
@@ -488,7 +488,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Se integra con mi terminal bancaria actual?",
-        "answer": "SACS se integra con las principales terminales bancarias en México. También puedes cobrar con link de pago, transferencia SPEI o en efectivo."
+        "answer": "Sacs se integra con las principales terminales bancarias en México. También puedes cobrar con link de pago, transferencia SPEI o en efectivo."
       },
       {
         "question": "¿Puedo facturar desde el punto de venta?",
@@ -498,9 +498,9 @@ export const pageContent: Record<string, any> = {
   },
   "promociones": {
     "hero": {
-      "eyebrow": "SACS Promociones",
+      "eyebrow": "Sacs Promociones",
       "title": "Tu promo corre sola. En todas tus sucursales. A la hora exacta.",
-      "subtitle": "Del 2×1 al remate de fin de temporada: la defines una vez y SACS la aplica igual en todas tus tiendas, sin códigos en post-its ni cajeros que la olviden.",
+      "subtitle": "Del 2×1 al remate de fin de temporada: la defines una vez y Sacs la aplica igual en todas tus tiendas, sin códigos en post-its ni cajeros que la olviden.",
       "image": "/images/promo-hero.webp",
       "imageAlt": "Dueña de boutique de moda revisando promociones en tablet",
       "video": {
@@ -528,14 +528,14 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z\"/><path d=\"M9 12l2 2 4-4\"/></svg>",
         "title": "Validación de margen",
-        "description": "Si el descuento quema tu margen mínimo, SACS te avisa antes de publicar la promo."
+        "description": "Si el descuento quema tu margen mínimo, Sacs te avisa antes de publicar la promo."
       }
     ],
     "showcaseTitle": "Cada promo, ejecutada como la imaginaste",
     "blocks": [
       {
         "title": "Si cumple las reglas, se aplica. Punto.",
-        "description": "Sin códigos. Sin que el cajero recuerde. Sin discusiones con el cliente en la fila. SACS reconoce producto, horario, sucursal y cliente — y dispara la promo automáticamente al cobrar.",
+        "description": "Sin códigos. Sin que el cajero recuerde. Sin discusiones con el cliente en la fila. Sacs reconoce producto, horario, sucursal y cliente — y dispara la promo automáticamente al cobrar.",
         "image": "/images/promo-auto-aplicacion.webp",
         "imageAlt": "Cajera cobrando con promo aplicada automáticamente en POS de tienda boutique moderna y colorida",
         "link": null,
@@ -544,7 +544,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Cero códigos en caja",
-            "detail": "El cajero no captura nada. SACS detecta la promo en el ticket apenas cumple las reglas — sin post-its ni hojas pegadas en la caja."
+            "detail": "El cajero no captura nada. Sacs detecta la promo en el ticket apenas cumple las reglas — sin post-its ni hojas pegadas en la caja."
           },
           {
             "label": "Reglas declarativas",
@@ -552,7 +552,7 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Auto-aplicación al cobrar",
-            "detail": "Al sumar productos al ticket, SACS evalúa promos activas y aplica la mejor combinación. El cliente ve el descuento desglosado, sin sorpresas."
+            "detail": "Al sumar productos al ticket, Sacs evalúa promos activas y aplica la mejor combinación. El cliente ve el descuento desglosado, sin sorpresas."
           }
         ]
       },
@@ -584,7 +584,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Códigos que se queman al usarse.",
-        "description": "Un cliente, un uso. Ideal para campañas de reactivación, influencers o email marketing. SACS bloquea el código cuando ya se usó — no más cupones circulando sin control.",
+        "description": "Un cliente, un uso. Ideal para campañas de reactivación, influencers o email marketing. Sacs bloquea el código cuando ya se usó — no más cupones circulando sin control.",
         "image": "/images/promo-codigos.webp",
         "imageAlt": "Clienta mostrando código de promoción en celular en tienda",
         "link": null,
@@ -593,7 +593,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Uso único, validado en cobro",
-            "detail": "Apenas se aplica el código en una venta, SACS lo bloquea. El siguiente intento se rechaza con mensaje claro al cajero — sin discusión con el cliente."
+            "detail": "Apenas se aplica el código en una venta, Sacs lo bloquea. El siguiente intento se rechaza con mensaje claro al cajero — sin discusión con el cliente."
           },
           {
             "label": "Por cliente identificado",
@@ -638,7 +638,7 @@ export const pageContent: Record<string, any> = {
       "role": "Gerente de Operaciones",
       "company": "Joyería Montevideo",
       "stat": "24",
-      "statLabel": "sucursales corriendo promos en SACS"
+      "statLabel": "sucursales corriendo promos en Sacs"
     },
     "interrupt": "El problema nunca fue la promo,",
     "interruptStrike": "fue la ejecución.",
@@ -648,7 +648,7 @@ export const pageContent: Record<string, any> = {
         "title": "Lo simple, desplegado a escala.",
         "description": "Porcentaje o monto fijo, por unidad o al total del ticket. Aplícalo donde necesites, cuando necesites, con las reglas que necesites.",
         "image": "/images/promo-hero.webp",
-        "imageAlt": "Configuración de descuento básico en SACS POS",
+        "imageAlt": "Configuración de descuento básico en Sacs POS",
         "video": {
           "mp4": "/videos/promo-basico.mp4",
           "webm": "/videos/promo-basico.webm",
@@ -680,7 +680,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"/></svg>",
             "title": "Validación de margen integrada",
-            "description": "SACS simula la promo contra tu costo y margen mínimo. Si el descuento te quema utilidad, te avisa antes de publicarla."
+            "description": "Sacs simula la promo contra tu costo y margen mínimo. Si el descuento te quema utilidad, te avisa antes de publicarla."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M4 14l4-4 4 4 4-4 4 4\"/></svg>",
@@ -694,7 +694,7 @@ export const pageContent: Record<string, any> = {
         "title": "Compra esto, llévate aquello. Como sea que lo imagines.",
         "description": "Activador por cantidad de items o por monto gastado. El beneficio puede ser items gratis, % de descuento, precio fijo o puntos de lealtad. Toda la gimnasia del retail cubierta.",
         "image": "/images/promo-hero.webp",
-        "imageAlt": "Configuración de promoción avanzada con activador en SACS POS",
+        "imageAlt": "Configuración de promoción avanzada con activador en Sacs POS",
         "video": {
           "mp4": "/videos/promo-avanzado.mp4",
           "webm": "/videos/promo-avanzado.webm",
@@ -706,7 +706,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3l1.5 12h15L21 6H6\"/><circle cx=\"9\" cy=\"20\" r=\"1.5\"/><circle cx=\"18\" cy=\"20\" r=\"1.5\"/></svg>",
             "title": "3x2 en temporada",
-            "description": "Compra 3 blusas, el de menor precio sale gratis. SACS elige el producto correcto automáticamente."
+            "description": "Compra 3 blusas, el de menor precio sale gratis. Sacs elige el producto correcto automáticamente."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>",
@@ -738,9 +738,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Progresivo",
         "title": "Más lleva, más se ahorra. Automático.",
-        "description": "Pieza 2 a -10%, pieza 3 a -20%, pieza 4 a -30%. SACS escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.",
+        "description": "Pieza 2 a -10%, pieza 3 a -20%, pieza 4 a -30%. Sacs escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.",
         "image": "/images/promo-hero.webp",
-        "imageAlt": "Configuración de descuento progresivo escalonado en SACS POS",
+        "imageAlt": "Configuración de descuento progresivo escalonado en Sacs POS",
         "video": {
           "mp4": "/videos/promo-progresivo.mp4",
           "webm": "/videos/promo-progresivo.webm",
@@ -783,10 +783,10 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "comparison": {
-      "title": "SACS Promociones frente al resto.",
-      "subtitle": "Lo que separa a SACS de los POS y ERPs cuando se trata de descuentos: la promo que corre en piso, en línea y en WhatsApp es la misma — con las mismas reglas, la misma validación de margen y el mismo reporte de lift.",
+      "title": "Sacs Promociones frente al resto.",
+      "subtitle": "Lo que separa a Sacs de los POS y ERPs cuando se trata de descuentos: la promo que corre en piso, en línea y en WhatsApp es la misma — con las mismas reglas, la misma validación de margen y el mismo reporte de lift.",
       "competitors": [
-        "SACS",
+        "Sacs",
         "Shopify",
         "Square",
         "Lightspeed",
@@ -799,7 +799,7 @@ export const pageContent: Record<string, any> = {
       "rows": [
         {
           "label": "Promos auto-aplicadas en POS sin que el cajero capture nada",
-          "note": "SACS lee producto, horario, sucursal y tipo de cliente y aplica la promo al cobrar — sin códigos en post-its.",
+          "note": "Sacs lee producto, horario, sucursal y tipo de cliente y aplica la promo al cobrar — sin códigos en post-its.",
           "values": [
             "full",
             "partial",
@@ -814,7 +814,7 @@ export const pageContent: Record<string, any> = {
         },
         {
           "label": "Validación de margen antes de publicar la promo",
-          "note": "Si el descuento quema tu margen mínimo, SACS te avisa antes — no después de mil tickets.",
+          "note": "Si el descuento quema tu margen mínimo, Sacs te avisa antes — no después de mil tickets.",
           "values": [
             "full",
             "none",
@@ -859,7 +859,7 @@ export const pageContent: Record<string, any> = {
         },
         {
           "label": "Códigos de un solo uso ligados al cliente",
-          "note": "Apenas se aplica el código en una venta, SACS lo bloquea — ideal para influencers, email marketing y reactivación.",
+          "note": "Apenas se aplica el código en una venta, Sacs lo bloquea — ideal para influencers, email marketing y reactivación.",
           "values": [
             "full",
             "full",
@@ -874,7 +874,7 @@ export const pageContent: Record<string, any> = {
         },
         {
           "label": "Compra-X-lleva-Y y 3x2 nativos en POS físico",
-          "note": "SACS elige automáticamente el producto correcto del ticket — sin instalar plugin ni hackear el POS.",
+          "note": "Sacs elige automáticamente el producto correcto del ticket — sin instalar plugin ni hackear el POS.",
           "values": [
             "full",
             "partial",
@@ -889,7 +889,7 @@ export const pageContent: Record<string, any> = {
         },
         {
           "label": "Descuentos progresivos escalonados (pieza 2 −10%, pieza 3 −20%)",
-          "note": "SACS escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.",
+          "note": "Sacs escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.",
           "values": [
             "full",
             "none",
@@ -950,7 +950,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/rodrigo-ferreyra.webp",
         "initials": "RF",
         "color": "#5b8a5f",
-        "quote": "Liquidación de temporada en zapatos es caos puro. Con el progresivo de SACS configuro 2do par a -30%, 3ro a -50% y se acaba la calculadora del cajero. Bajamos el inventario 40% más rápido.",
+        "quote": "Liquidación de temporada en zapatos es caos puro. Con el progresivo de Sacs configuro 2do par a -30%, 3ro a -50% y se acaba la calculadora del cajero. Bajamos el inventario 40% más rápido.",
         "name": "Rodrigo Ferreyra",
         "business": "Calzados Almagro",
         "location": "Argentina"
@@ -977,18 +977,18 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo limitar un código a un uso por cliente?",
-        "answer": "Sí. Marcas la opción \"uso único\" y SACS bloquea el código cuando ya se usó. Ideal para campañas de reactivación, influencers o bienvenida."
+        "answer": "Sí. Marcas la opción \"uso único\" y Sacs bloquea el código cuando ya se usó. Ideal para campañas de reactivación, influencers o bienvenida."
       },
       {
         "question": "¿Qué pasa si dos promos aplican al mismo ticket?",
-        "answer": "Tú defines la jerarquía. Cada promo tiene una opción \"no apilable\" que bloquea combinarse con otras activas. Si son apilables, SACS aplica todas y te muestra el desglose."
+        "answer": "Tú defines la jerarquía. Cada promo tiene una opción \"no apilable\" que bloquea combinarse con otras activas. Si son apilables, Sacs aplica todas y te muestra el desglose."
       },
       {
         "question": "¿Puedo programar promociones recurrentes?",
-        "answer": "Sí. SACS soporta recurrencia diaria, semanal (días específicos), mensual (día del mes o patrón tipo \"segundo martes\") y cada N días. La promo se prende y apaga sola."
+        "answer": "Sí. Sacs soporta recurrencia diaria, semanal (días específicos), mensual (día del mes o patrón tipo \"segundo martes\") y cada N días. La promo se prende y apaga sola."
       },
       {
-        "question": "¿SACS me avisa si la promo rompe mi margen?",
+        "question": "¿Sacs me avisa si la promo rompe mi margen?",
         "answer": "Sí. El motor valida el descuento contra tu costo y margen mínimo. Si la promo te deja en pérdida o por debajo del margen objetivo, te avisa antes de publicarla."
       },
       {
@@ -1001,17 +1001,17 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Las promociones funcionan también en la tienda en línea?",
-        "answer": "En punto de venta físico, sí. La integración completa con tienda en línea llega con el módulo de eCommerce de SACS. Los códigos creados en promociones ya quedan disponibles para usarse cuando se conecta el canal online."
+        "answer": "En punto de venta físico, sí. La integración completa con tienda en línea llega con el módulo de eCommerce de Sacs. Los códigos creados en promociones ya quedan disponibles para usarse cuando se conecta el canal online."
       }
     ]
   },
   "apartados-y-pedidos": {
     "hero": {
-      "eyebrow": "SACS Apartados y Pedidos",
+      "eyebrow": "Sacs Apartados y Pedidos",
       "title": "Aparta hoy. Vende cuando el cliente esté listo.",
       "subtitle": "Toma anticipo, bloquea el stock, cobra a plazos y convierte el apartado en venta con un clic — en cualquier sucursal, con o sin el producto en piso.",
       "image": "/images/apartados-hero.webp",
-      "imageAlt": "Pantalla de SACS POS procesando un pedido especial con apartado",
+      "imageAlt": "Pantalla de Sacs POS procesando un pedido especial con apartado",
       "video": {
         "mp4": "/videos/abonos-pos.mp4",
         "webm": "/videos/abonos-pos.webm"
@@ -1046,7 +1046,7 @@ export const pageContent: Record<string, any> = {
         "title": "Anticipo tomado. Stock bloqueado. Venta asegurada.",
         "description": "Cobras el anticipo sin salir del POS, el sistema reserva el inventario al instante y te devuelve un ticket imprimible con el saldo pendiente y la fecha límite. El cliente se va con la tranquilidad, tú con la venta.",
         "image": "/images/apartados-reserva.webp",
-        "imageAlt": "Cliente recibiendo comprobante de apartado con vendedora en tienda SACS",
+        "imageAlt": "Cliente recibiendo comprobante de apartado con vendedora en tienda Sacs",
         "link": null,
         "featured": true,
         "variant": "apartado-reserva",
@@ -1071,7 +1071,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cuotas, abonos y saldo — sin hoja de cálculo.",
         "description": "Cada vez que el cliente vuelve a abonar, el sistema registra el pago, actualiza el saldo y ajusta la fecha límite si lo configuraste así. Cuando termina de pagar, el apartado se convierte en venta con un clic — no reescribes nada.",
         "image": "/images/apartados-abonos.webp",
-        "imageAlt": "Pantalla de historial de abonos parciales en SACS POS",
+        "imageAlt": "Pantalla de historial de abonos parciales en Sacs POS",
         "link": {
           "label": "Ver control financiero",
           "href": "/producto/control-financiero"
@@ -1081,7 +1081,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Abona en cualquier sucursal",
-            "detail": "Apartó en Polanco y abona en Santa Fe — SACS reconoce al cliente, muestra el saldo abierto y aplica el pago donde sea, en cualquier método (tarjeta, efectivo, SPEI o mixto)."
+            "detail": "Apartó en Polanco y abona en Santa Fe — Sacs reconoce al cliente, muestra el saldo abierto y aplica el pago donde sea, en cualquier método (tarjeta, efectivo, SPEI o mixto)."
           },
           {
             "label": "Saldo y plazo recalculados al instante",
@@ -1095,9 +1095,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Tu inventario es uno. Aunque esté en otra sucursal.",
-        "description": "Consulta stock global al apartar. Si la talla que el cliente quiere está en Polanco pero la venta pasa en Santa Fe, SACS genera la orden de traspaso y notifica a los dos equipos. El cliente recibe aviso cuando el producto llega a la tienda de retiro.",
+        "description": "Consulta stock global al apartar. Si la talla que el cliente quiere está en Polanco pero la venta pasa en Santa Fe, Sacs genera la orden de traspaso y notifica a los dos equipos. El cliente recibe aviso cuando el producto llega a la tienda de retiro.",
         "image": "/images/apartados-traspaso.webp",
-        "imageAlt": "Vendedora consultando stock en tablet SACS mostrando inventario de otra sucursal",
+        "imageAlt": "Vendedora consultando stock en tablet Sacs mostrando inventario de otra sucursal",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
@@ -1111,7 +1111,7 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Traspaso 1-click",
-            "detail": "Apartas en Santa Fe la pieza que está en Polanco y SACS genera la orden de traspaso al instante. El equipo de origen recibe la tarea con prioridad y fecha objetivo."
+            "detail": "Apartas en Santa Fe la pieza que está en Polanco y Sacs genera la orden de traspaso al instante. El equipo de origen recibe la tarea con prioridad y fecha objetivo."
           },
           {
             "label": "Aviso automático al cliente",
@@ -1121,9 +1121,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Vende lo que todavía no está en piso.",
-        "description": "El cliente quiere la bota en color cognac y no la tienes. En lugar de perder la venta, tomas el pedido especial con anticipo que cubre tu exposición. SACS conecta el apartado con tu orden de compra al proveedor — cuando el producto entra al inventario de la sucursal, el aviso al cliente queda listo para enviarse.",
+        "description": "El cliente quiere la bota en color cognac y no la tienes. En lugar de perder la venta, tomas el pedido especial con anticipo que cubre tu exposición. Sacs conecta el apartado con tu orden de compra al proveedor — cuando el producto entra al inventario de la sucursal, el aviso al cliente queda listo para enviarse.",
         "image": "/images/apartados-pedido-especial.webp",
-        "imageAlt": "Pantalla de SACS POS gestionando pedido especial / backorder con orden de compra al proveedor",
+        "imageAlt": "Pantalla de Sacs POS gestionando pedido especial / backorder con orden de compra al proveedor",
         "link": {
           "label": "Ver órdenes de compra",
           "href": "/producto/ordenes-de-compra"
@@ -1136,7 +1136,7 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Conexión con la orden de compra",
-            "detail": "SACS vincula el pedido especial con tu OC al proveedor. Cuando la mercancía se recibe en CEDIS o sucursal, el sistema asigna automáticamente la unidad al apartado correcto."
+            "detail": "Sacs vincula el pedido especial con tu OC al proveedor. Cuando la mercancía se recibe en CEDIS o sucursal, el sistema asigna automáticamente la unidad al apartado correcto."
           },
           {
             "label": "Notificación lista para enviarse",
@@ -1162,7 +1162,7 @@ export const pageContent: Record<string, any> = {
         "title": "Aparta, recuerda, cobra y entrega — sin pensarlo.",
         "description": "Configura políticas de anticipo y plazo una vez, y deja que el sistema lleve el control: recordatorios, vencimientos, extensiones y conversión a venta automática al terminar de pagar.",
         "image": "/images/apartados-hero.webp",
-        "imageAlt": "Pantalla de configuración de apartados en SACS POS",
+        "imageAlt": "Pantalla de configuración de apartados en Sacs POS",
         "video": {
           "mp4": "/videos/configuracion-pedidos.mp4",
           "webm": "/videos/configuracion-pedidos.webm",
@@ -1184,7 +1184,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
             "title": "Recordatorios automáticos",
-            "description": "SACS envía email al cliente 3 días antes y el día del vencimiento — y te entrega la lista lista para WhatsApp-ear desde tu celular. Sin llamadas manuales."
+            "description": "Sacs envía email al cliente 3 días antes y el día del vencimiento — y te entrega la lista lista para WhatsApp-ear desde tu celular. Sin llamadas manuales."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6M9 9l6 6\"/></svg>",
@@ -1208,7 +1208,7 @@ export const pageContent: Record<string, any> = {
         "title": "Abonos sin caos. Cada pago, rastreado.",
         "description": "El cliente puede venir a abonar las veces que quiera. Cada movimiento queda registrado con método, sucursal y vendedor, y el saldo se recalcula al segundo.",
         "image": "/images/apartados-hero.webp",
-        "imageAlt": "Pantalla de historial de pagos parciales en SACS",
+        "imageAlt": "Pantalla de historial de pagos parciales en Sacs",
         "video": {
           "mp4": "/videos/abonos-pos.mp4",
           "webm": "/videos/abonos-pos.webm",
@@ -1220,7 +1220,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>",
             "title": "Abono de cualquier monto",
-            "description": "El cliente decide cuánto abonar y cuándo. SACS valida el mínimo que configuraste y bloquea abonos demasiado chicos si quieres."
+            "description": "El cliente decide cuánto abonar y cuándo. Sacs valida el mínimo que configuraste y bloquea abonos demasiado chicos si quieres."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M6 10h2M11 10h7M6 15h12\"/></svg>",
@@ -1230,7 +1230,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
             "title": "Abona en cualquier sucursal",
-            "description": "Apartó en Polanco y abona en Santa Fe. SACS reconoce al cliente, muestra el apartado abierto y aplica el pago donde sea."
+            "description": "Apartó en Polanco y abona en Santa Fe. Sacs reconoce al cliente, muestra el apartado abierto y aplica el pago donde sea."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -1254,7 +1254,7 @@ export const pageContent: Record<string, any> = {
         "title": "Vende lo que todavía no tienes en piso.",
         "description": "Toma el pedido, cobra el anticipo y conecta el apartado con tu orden de compra al proveedor. Cuando el producto entra, el cliente ya fue notificado — y el saldo lo paga al retirar.",
         "image": "/images/apartados-hero.webp",
-        "imageAlt": "Pantalla de pedido especial bajo orden en SACS",
+        "imageAlt": "Pantalla de pedido especial bajo orden en Sacs",
         "video": {
           "mp4": "/videos/backorders-pedidos.mp4",
           "webm": "/videos/backorders-pedidos.webm",
@@ -1271,17 +1271,17 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M9 9l6 6M15 9l-6 6\"/></svg>",
             "title": "Cotización antes de apartar",
-            "description": "Si no conoces el precio final, primero cotizas con el proveedor. SACS guarda la cotización y deja el apartado pendiente de confirmación."
+            "description": "Si no conoces el precio final, primero cotizas con el proveedor. Sacs guarda la cotización y deja el apartado pendiente de confirmación."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/><path d=\"M18 15l3 3-3 3\"/></svg>",
             "title": "Conexión con orden de compra",
-            "description": "Al confirmar el pedido, SACS te sugiere generar la OC al proveedor — o la adjunta a una OC abierta si ya estás reponiendo esa línea."
+            "description": "Al confirmar el pedido, Sacs te sugiere generar la OC al proveedor — o la adjunta a una OC abierta si ya estás reponiendo esa línea."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
             "title": "ETA de llegada visible",
-            "description": "Muestras al cliente la fecha estimada de llegada desde el proveedor. Si el proveedor se atrasa, SACS te avisa y propone reprogramar."
+            "description": "Muestras al cliente la fecha estimada de llegada desde el proveedor. Si el proveedor se atrasa, Sacs te avisa y propone reprogramar."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
@@ -1312,7 +1312,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/nicolas-bustos.webp",
         "initials": "NB",
         "color": "#4a6aa8",
-        "quote": "Manejamos varios pedidos especiales por semana en cada local. Antes los anotaban en cuaderno. Ahora SACS lo conecta con la orden de compra y el cliente queda avisado cuando llega — cero llamadas, cero confusión.",
+        "quote": "Manejamos varios pedidos especiales por semana en cada local. Antes los anotaban en cuaderno. Ahora Sacs lo conecta con la orden de compra y el cliente queda avisado cuando llega — cero llamadas, cero confusión.",
         "name": "Nicolás Bustos",
         "business": "Calzados del Sur",
         "location": "Chile"
@@ -1329,10 +1329,10 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "comparison": {
-      "title": "SACS Apartados y Pedidos frente al resto.",
-      "subtitle": "Lo que separa a SACS de los POS y ERPs cuando se trata de apartar, abonar y entregar — sin perder la venta ni el cliente.",
+      "title": "Sacs Apartados y Pedidos frente al resto.",
+      "subtitle": "Lo que separa a Sacs de los POS y ERPs cuando se trata de apartar, abonar y entregar — sin perder la venta ni el cliente.",
       "competitors": [
-        "SACS",
+        "Sacs",
         "Shopify",
         "Square",
         "Lightspeed",
@@ -1356,7 +1356,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none"
           ],
-          "note": "En SACS el anticipo se cobra y el stock se reserva en la misma operación — sin reportes paralelos."
+          "note": "En Sacs el anticipo se cobra y el stock se reserva en la misma operación — sin reportes paralelos."
         },
         {
           "label": "Abonos parciales en cualquier sucursal del mismo apartado",
@@ -1371,7 +1371,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none"
           ],
-          "note": "Apartó en Polanco y abona en Santa Fe — SACS reconoce al cliente y consolida el saldo al segundo."
+          "note": "Apartó en Polanco y abona en Santa Fe — Sacs reconoce al cliente y consolida el saldo al segundo."
         },
         {
           "label": "Recordatorios automáticos por email antes del vencimiento",
@@ -1386,7 +1386,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none"
           ],
-          "note": "SACS te avisa al cliente 3 días antes y el día del vencimiento — sin llamadas manuales."
+          "note": "Sacs te avisa al cliente 3 días antes y el día del vencimiento — sin llamadas manuales."
         },
         {
           "label": "Comprobante con QR único, saldo y fecha de vencimiento",
@@ -1416,7 +1416,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none"
           ],
-          "note": "Endless aisle real: aparta en Polanco la pieza que está en Santa Fe y SACS programa el traspaso."
+          "note": "Endless aisle real: aparta en Polanco la pieza que está en Santa Fe y Sacs programa el traspaso."
         },
         {
           "label": "Pedido especial conectado a la orden de compra al proveedor",
@@ -1461,7 +1461,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "Retención total, % de penalización o saldo a crédito — SACS aplica la regla automáticamente."
+          "note": "Retención total, % de penalización o saldo a crédito — Sacs aplica la regla automáticamente."
         },
         {
           "label": "Comisión del vendedor con regla de atribución multi-sucursal",
@@ -1476,7 +1476,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "Define quién gana la comisión: el que apartó, el que cobró el saldo, o split — SACS respeta la regla."
+          "note": "Define quién gana la comisión: el que apartó, el que cobró el saldo, o split — Sacs respeta la regla."
         },
         {
           "label": "Reporte separado de apartados abiertos, por vencer y vencidos",
@@ -1491,7 +1491,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none"
           ],
-          "note": "Los apartados son pasivo, no venta. SACS los muestra aparte para que el cierre del mes no los confunda."
+          "note": "Los apartados son pasivo, no venta. Sacs los muestra aparte para que el cierre del mes no los confunda."
         }
       ]
     },
@@ -1506,7 +1506,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿El cliente puede abonar en una sucursal distinta a donde apartó?",
-        "answer": "Sí. SACS reconoce al cliente por ID/teléfono, muestra sus apartados abiertos y permite recibir abonos en cualquier sucursal de la red. El saldo se consolida al instante."
+        "answer": "Sí. Sacs reconoce al cliente por ID/teléfono, muestra sus apartados abiertos y permite recibir abonos en cualquier sucursal de la red. El saldo se consolida al instante."
       },
       {
         "question": "¿Se pueden hacer traspasos de stock entre sucursales para cumplir un apartado?",
@@ -1526,7 +1526,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo se maneja la comisión del vendedor si el cliente liquida en otra sucursal?",
-        "answer": "Tú decides la política: la comisión la gana el vendedor original, se divide entre quien apartó y quien cobró el saldo, o se asigna al que cierra la venta. SACS respeta la regla y muestra la atribución en cada reporte de comisiones."
+        "answer": "Tú decides la política: la comisión la gana el vendedor original, se divide entre quien apartó y quien cobró el saldo, o se asigna al que cierra la venta. Sacs respeta la regla y muestra la atribución en cada reporte de comisiones."
       },
       {
         "question": "¿Puedo limitar cuántos apartados abiertos puede tener un mismo cliente?",
@@ -1542,7 +1542,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Se pueden enviar recordatorios por WhatsApp?",
-        "answer": "Email automático está listo hoy. WhatsApp llegará con la integración de mensajería nativa de SACS; mientras tanto, el sistema te entrega una lista de apartados por vencer para contactar a tus clientes con tu canal preferido."
+        "answer": "Email automático está listo hoy. WhatsApp llegará con la integración de mensajería nativa de Sacs; mientras tanto, el sistema te entrega una lista de apartados por vencer para contactar a tus clientes con tu canal preferido."
       },
       {
         "question": "¿Puedo imprimir o enviar el comprobante del apartado?",
@@ -1552,17 +1552,17 @@ export const pageContent: Record<string, any> = {
   },
   "social-commerce": {
     "hero": {
-      "eyebrow": "SACS Social & WhatsApp Commerce",
+      "eyebrow": "Sacs Social & WhatsApp Commerce",
       "title": "Vende donde están tus clientes.",
       "subtitle": "TikTok, Instagram, Facebook y WhatsApp conectados a tu inventario en tiempo real. Una venta en social baja stock en piso al segundo, y cada producto del POS aparece etiquetado en redes sin que tú republiques nada.",
       "image": "",
-      "imageAlt": "Pantalla de SACS mostrando catálogo conectado a TikTok, Instagram, Facebook y WhatsApp"
+      "imageAlt": "Pantalla de Sacs mostrando catálogo conectado a TikTok, Instagram, Facebook y WhatsApp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z\"/><path d=\"M3.27 6.96L12 12l8.73-5.04M12 22.08V12\"/></svg>",
         "title": "Catálogo unificado",
-        "description": "Lo que está en el POS aparece en TikTok Shop, Instagram Shopping, Facebook Shop y catálogo de WhatsApp. Cambias el precio o el stock en SACS y se refleja en redes sin re-publicar."
+        "description": "Lo que está en el POS aparece en TikTok Shop, Instagram Shopping, Facebook Shop y catálogo de WhatsApp. Cambias el precio o el stock en Sacs y se refleja en redes sin re-publicar."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -1577,16 +1577,16 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"23 7 16 12 23 17 23 7\"/><rect x=\"1\" y=\"5\" width=\"15\" height=\"14\" rx=\"2\" ry=\"2\"/></svg>",
         "title": "Live shopping & DM-to-sale",
-        "description": "Durante un live de TikTok o Instagram, SACS reserva las unidades vendidas en vivo. Y cuando alguien comenta \"lo quiero\", AXO contesta automáticamente con el link de pago."
+        "description": "Durante un live de TikTok o Instagram, Sacs reserva las unidades vendidas en vivo. Y cuando alguien comenta \"lo quiero\", AXO contesta automáticamente con el link de pago."
       }
     ],
     "showcaseTitle": "Social no es un canal extra. Es donde empieza la venta.",
     "blocks": [
       {
         "title": "WhatsApp Commerce nativo, sin chatbot rentado.",
-        "description": "WhatsApp Business + Stripe + tu catálogo de SACS, en una sola conversación. El cliente escribe \"hola\", AXO responde con menú, arma el pedido, cobra con link y devuelve el ticket — con factura si la pide. Sin salir del chat.",
+        "description": "WhatsApp Business + Stripe + tu catálogo de Sacs, en una sola conversación. El cliente escribe \"hola\", AXO responde con menú, arma el pedido, cobra con link y devuelve el ticket — con factura si la pide. Sin salir del chat.",
         "image": "/images/screen-pos.webp",
-        "imageAlt": "Conversación de WhatsApp Business con catálogo SACS y link de pago Stripe",
+        "imageAlt": "Conversación de WhatsApp Business con catálogo Sacs y link de pago Stripe",
         "link": {
           "label": "Ver Marketing por WhatsApp",
           "href": "/producto/marketing-por-whatsapp"
@@ -1600,7 +1600,7 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Pago con Stripe Link",
-            "detail": "Tarjeta o SPEI desde el navegador del cliente. Cobro inmediato, sin redireccionar fuera de WhatsApp más de una pantalla — y la venta queda en SACS al segundo."
+            "detail": "Tarjeta o SPEI desde el navegador del cliente. Cobro inmediato, sin redireccionar fuera de WhatsApp más de una pantalla — y la venta queda en Sacs al segundo."
           },
           {
             "label": "Ticket y factura de regreso",
@@ -1610,9 +1610,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Tu catálogo del POS, etiquetado en TikTok, Instagram y Facebook.",
-        "description": "Conectas tu cuenta una vez y SACS publica tus productos como Shop nativo. Etiquetas un Reel, un Story, un post o un live — y el cliente compra sin salir de la red. La venta cae en el mismo dashboard que tus tiendas físicas.",
+        "description": "Conectas tu cuenta una vez y Sacs publica tus productos como Shop nativo. Etiquetas un Reel, un Story, un post o un live — y el cliente compra sin salir de la red. La venta cae en el mismo dashboard que tus tiendas físicas.",
         "image": "/images/screen-pos.webp",
-        "imageAlt": "Pantalla de Instagram Shop con productos etiquetados desde el catálogo SACS",
+        "imageAlt": "Pantalla de Instagram Shop con productos etiquetados desde el catálogo Sacs",
         "link": {
           "label": "Ver Tienda en Línea",
           "href": "/producto/tienda-en-linea"
@@ -1622,7 +1622,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Sync automático con Meta y TikTok Shop",
-            "detail": "Catálogo, precios, fotos y variantes. Cambias el precio en SACS y se actualiza en redes en menos de un minuto — sin re-subir nada."
+            "detail": "Catálogo, precios, fotos y variantes. Cambias el precio en Sacs y se actualiza en redes en menos de un minuto — sin re-subir nada."
           },
           {
             "label": "Tag de producto en cualquier publicación",
@@ -1630,26 +1630,26 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Una operación, todos los canales",
-            "detail": "Las ventas de TikTok, Instagram y Facebook caen en el mismo dashboard de SACS — con su comisión, su impuesto y su factura ya separados."
+            "detail": "Las ventas de TikTok, Instagram y Facebook caen en el mismo dashboard de Sacs — con su comisión, su impuesto y su factura ya separados."
           }
         ]
       },
       {
         "title": "Live shopping con stock real, no con promesas.",
-        "description": "Durante un live en TikTok o Instagram, cada vez que un usuario aparta una pieza, SACS la reserva en el inventario al instante — sin sobreventa, sin \"ay, ya no me tocó\". Al final del live, las piezas reservadas se cobran o se liberan según la regla que configures.",
+        "description": "Durante un live en TikTok o Instagram, cada vez que un usuario aparta una pieza, Sacs la reserva en el inventario al instante — sin sobreventa, sin \"ay, ya no me tocó\". Al final del live, las piezas reservadas se cobran o se liberan según la regla que configures.",
         "image": "/images/screen-pos.webp",
-        "imageAlt": "Live de TikTok con conteo de stock reservado en tiempo real desde SACS",
+        "imageAlt": "Live de TikTok con conteo de stock reservado en tiempo real desde Sacs",
         "link": null,
         "featured": true,
         "variant": "social-live",
         "bullets": [
           {
             "label": "Reserva por unidad en vivo",
-            "detail": "El primer comentario \"yo\" o \"lo quiero\" reserva la pieza. SACS bloquea el inventario al segundo y avisa al equipo del live qué está disponible y qué no."
+            "detail": "El primer comentario \"yo\" o \"lo quiero\" reserva la pieza. Sacs bloquea el inventario al segundo y avisa al equipo del live qué está disponible y qué no."
           },
           {
             "label": "Cobro post-live automático",
-            "detail": "Al cerrar el live, SACS manda link de pago a cada usuario que reservó. Tienen X minutos (tú decides) para pagar; si no, la pieza vuelve al stock."
+            "detail": "Al cerrar el live, Sacs manda link de pago a cada usuario que reservó. Tienen X minutos (tú decides) para pagar; si no, la pieza vuelve al stock."
           },
           {
             "label": "Reporte de live unificado",
@@ -1659,7 +1659,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "DM y comentarios convertidos en cobro, sin tocar el celular.",
-        "description": "Cliente comenta \"precio\" o manda DM \"¿tienen la talla 6?\". AXO contesta con stock real, sugiere la pieza, arma el carrito y manda el link. Tú no abres el chat — pero al final del día, las ventas ya están en SACS con factura, comisión y stock descontado.",
+        "description": "Cliente comenta \"precio\" o manda DM \"¿tienen la talla 6?\". AXO contesta con stock real, sugiere la pieza, arma el carrito y manda el link. Tú no abres el chat — pero al final del día, las ventas ya están en Sacs con factura, comisión y stock descontado.",
         "image": "/images/screen-pos.webp",
         "imageAlt": "DM de Instagram automatizado por AXO con sugerencia de productos y link de pago",
         "link": {
@@ -1698,7 +1698,7 @@ export const pageContent: Record<string, any> = {
       {
         "label": "WhatsApp Commerce",
         "title": "Del primer \"hola\" al ticket pagado, sin salir del chat.",
-        "description": "WhatsApp Business + Stripe + tu catálogo SACS, en una sola conversación. AXO atiende, arma carrito, cobra y manda factura — todo en el mismo hilo que ya tienes con tu cliente.",
+        "description": "WhatsApp Business + Stripe + tu catálogo Sacs, en una sola conversación. AXO atiende, arma carrito, cobra y manda factura — todo en el mismo hilo que ya tienes con tu cliente.",
         "image": "/images/screen-pos.webp",
         "imageAlt": "Pantalla de WhatsApp Business con bot AXO procesando pedido y cobro",
         "link": {
@@ -1709,7 +1709,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z\"/></svg>",
             "title": "AXO 24/7 en WhatsApp",
-            "description": "Atiende fuera de horario, responde sobre stock real y arma carrito sin que tú toques el celular. La venta queda en SACS como cualquier otra."
+            "description": "Atiende fuera de horario, responde sobre stock real y arma carrito sin que tú toques el celular. La venta queda en Sacs como cualquier otra."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 7l-8-4-8 4 8 4zM4 7v10l8 4 8-4V7\"/><path d=\"M4 7l8 4 8-4\"/></svg>",
@@ -1719,7 +1719,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20\"/></svg>",
             "title": "Link de pago Stripe",
-            "description": "Tarjeta, SPEI u OXXO Pay. El cliente paga sin app, recibe ticket de regreso al chat — y la venta entra a SACS al segundo."
+            "description": "Tarjeta, SPEI u OXXO Pay. El cliente paga sin app, recibe ticket de regreso al chat — y la venta entra a Sacs al segundo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -1741,9 +1741,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Live & Social Shop",
         "title": "Tag de producto, live shopping, comentarios que venden.",
-        "description": "Conecta TikTok, Instagram y Facebook una vez. Tu catálogo aparece etiquetado en posts, Reels, Stories y lives. Cada venta cae en SACS — con comisión, factura y descuento de stock.",
+        "description": "Conecta TikTok, Instagram y Facebook una vez. Tu catálogo aparece etiquetado en posts, Reels, Stories y lives. Cada venta cae en Sacs — con comisión, factura y descuento de stock.",
         "image": "/images/screen-pos.webp",
-        "imageAlt": "Reel de Instagram con tag de producto y panel SACS mostrando ventas por canal",
+        "imageAlt": "Reel de Instagram con tag de producto y panel Sacs mostrando ventas por canal",
         "link": {
           "label": "Ver Tienda en Línea",
           "href": "/producto/tienda-en-linea"
@@ -1752,17 +1752,17 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"5\"/><path d=\"M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z\"/><path d=\"M17.5 6.5h.01\"/></svg>",
             "title": "Sync con Meta Commerce Manager",
-            "description": "Productos, fotos, variantes y stock. SACS empuja los cambios; Meta los publica. Sin pegar el catálogo dos veces."
+            "description": "Productos, fotos, variantes y stock. Sacs empuja los cambios; Meta los publica. Sin pegar el catálogo dos veces."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"23 7 16 12 23 17 23 7\"/><rect x=\"1\" y=\"5\" width=\"15\" height=\"14\" rx=\"2\"/></svg>",
             "title": "TikTok Shop nativo",
-            "description": "Catálogo de SACS conectado a TikTok Shop. El usuario paga sin salir de TikTok y la venta entra al POS como un canal más."
+            "description": "Catálogo de Sacs conectado a TikTok Shop. El usuario paga sin salir de TikTok y la venta entra al POS como un canal más."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>",
             "title": "Live shopping con reserva",
-            "description": "Cada comentario \"yo\" durante el live aparta la pieza en SACS. Sin sobreventa, sin \"ya no me tocó\"."
+            "description": "Cada comentario \"yo\" durante el live aparta la pieza en Sacs. Sin sobreventa, sin \"ya no me tocó\"."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z\"/><path d=\"M7 7h.01\"/></svg>",
@@ -1772,7 +1772,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"23\"/><path d=\"M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>",
             "title": "Comisiones de canal separadas",
-            "description": "Lo que cobra TikTok Shop, lo que cobra Meta, lo que cobra Stripe — todo desglosado en SACS para que el cierre del mes no se enrede."
+            "description": "Lo que cobra TikTok Shop, lo que cobra Meta, lo que cobra Stripe — todo desglosado en Sacs para que el cierre del mes no se enrede."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M18.4 14.5L13 9.5l-3.5 3.5L6 9.5\"/></svg>",
@@ -1820,7 +1820,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
             "title": "Override humano fácil",
-            "description": "El equipo ve la cola en SACS y puede tomar el chat con un clic. AXO le pasa la conversación con todo el contexto."
+            "description": "El equipo ve la cola en Sacs y puede tomar el chat con un clic. AXO le pasa la conversación con todo el contexto."
           }
         ]
       }
@@ -1841,7 +1841,7 @@ export const pageContent: Record<string, any> = {
         "image": "",
         "initials": "MS",
         "color": "#4a6aa8",
-        "quote": "Los lives de TikTok ya no son caos puro. Cada comentario \"yo\" reserva la pieza en SACS, y el link de cobro sale solito al cerrar el live. Antes tardábamos 2 días post-live revisando quién pagó y quién no.",
+        "quote": "Los lives de TikTok ya no son caos puro. Cada comentario \"yo\" reserva la pieza en Sacs, y el link de cobro sale solito al cerrar el live. Antes tardábamos 2 días post-live revisando quién pagó y quién no.",
         "name": "Mateo Salinas",
         "business": "Tendencia Outlet",
         "location": "México"
@@ -1851,17 +1851,17 @@ export const pageContent: Record<string, any> = {
         "image": "",
         "initials": "DA",
         "color": "#5a8a5f",
-        "quote": "WhatsApp era un cajón sin fondo de mensajes sin contestar. Conectamos AXO al catálogo de SACS y ahora el bot maneja stock, precios y hasta facturación. El equipo se enfocó en cerrar ventas grandes — bajamos 60% el tiempo de respuesta.",
+        "quote": "WhatsApp era un cajón sin fondo de mensajes sin contestar. Conectamos AXO al catálogo de Sacs y ahora el bot maneja stock, precios y hasta facturación. El equipo se enfocó en cerrar ventas grandes — bajamos 60% el tiempo de respuesta.",
         "name": "Diego Aristizábal",
         "business": "Joyería Andina",
         "location": "Colombia"
       }
     ],
     "comparison": {
-      "title": "SACS Social & WhatsApp Commerce frente al resto.",
-      "subtitle": "Lo que separa a SACS de los POS, ERPs y plataformas e-commerce cuando se trata de vender en TikTok, Instagram, Facebook y WhatsApp — sin sincronizaciones rotas ni stock desfasado.",
+      "title": "Sacs Social & WhatsApp Commerce frente al resto.",
+      "subtitle": "Lo que separa a Sacs de los POS, ERPs y plataformas e-commerce cuando se trata de vender en TikTok, Instagram, Facebook y WhatsApp — sin sincronizaciones rotas ni stock desfasado.",
       "competitors": [
-        "SACS",
+        "Sacs",
         "Shopify",
         "Square",
         "Lightspeed",
@@ -1885,7 +1885,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "En SACS los cinco canales viven en un solo catálogo — sin sincronización vía CSV ni \"versión de redes\" desactualizada."
+          "note": "En Sacs los cinco canales viven en un solo catálogo — sin sincronización vía CSV ni \"versión de redes\" desactualizada."
         },
         {
           "label": "Stock descontado en tiempo real al vender en social",
@@ -1945,7 +1945,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "Cada \"yo\" en el live reserva la pieza en SACS al segundo — y al cerrar, el cobro sale solo a cada usuario."
+          "note": "Cada \"yo\" en el live reserva la pieza en Sacs al segundo — y al cerrar, el cobro sale solo a cada usuario."
         },
         {
           "label": "CFDI 4.0 generada y enviada desde el chat de WhatsApp",
@@ -1975,7 +1975,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none"
           ],
-          "note": "Lo que cobra cada canal queda desglosado en SACS — para que el cierre del mes no enrede comisión con utilidad."
+          "note": "Lo que cobra cada canal queda desglosado en Sacs — para que el cierre del mes no enrede comisión con utilidad."
         },
         {
           "label": "Recovery automático de carritos abandonados en DM",
@@ -2027,11 +2027,11 @@ export const pageContent: Record<string, any> = {
     "faqs": [
       {
         "question": "¿Necesito cuenta business en cada red para usar Social Commerce?",
-        "answer": "Sí. Conectas tus cuentas de Meta Business (Instagram + Facebook), TikTok Shop y WhatsApp Business API una sola vez desde SACS. El equipo de implementación te acompaña en el setup — usualmente toma menos de un día."
+        "answer": "Sí. Conectas tus cuentas de Meta Business (Instagram + Facebook), TikTok Shop y WhatsApp Business API una sola vez desde Sacs. El equipo de implementación te acompaña en el setup — usualmente toma menos de un día."
       },
       {
         "question": "¿Qué pasa si vendo en TikTok una pieza que el cliente del POS también acaba de comprar?",
-        "answer": "No pasa nada. SACS bloquea el stock al instante en el primer cobro confirmado. Si la venta de TikTok llega un segundo después, el sistema avisa al cliente que la pieza ya no está disponible y libera el cobro o sugiere alternativa."
+        "answer": "No pasa nada. Sacs bloquea el stock al instante en el primer cobro confirmado. Si la venta de TikTok llega un segundo después, el sistema avisa al cliente que la pieza ya no está disponible y libera el cobro o sugiere alternativa."
       },
       {
         "question": "¿Cómo funciona el bot AXO en WhatsApp? ¿Reemplaza a mi equipo?",
@@ -2039,19 +2039,19 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo facturar CFDI desde una venta de Instagram o WhatsApp?",
-        "answer": "Sí. El cliente pide factura en el chat o el flujo de checkout. AXO le pregunta RFC, razón social y uso del CFDI; SACS timbra el CFDI 4.0 y lo manda al chat o al email en menos de 2 minutos. Funciona para todas las ventas de social, tanto en MX como en LatAm con CPE/DIAN según país."
+        "answer": "Sí. El cliente pide factura en el chat o el flujo de checkout. AXO le pregunta RFC, razón social y uso del CFDI; Sacs timbra el CFDI 4.0 y lo manda al chat o al email en menos de 2 minutos. Funciona para todas las ventas de social, tanto en MX como en LatAm con CPE/DIAN según país."
       },
       {
         "question": "¿Funciona con WhatsApp Personal o solo con WhatsApp Business?",
         "answer": "Solo WhatsApp Business API. WhatsApp Personal no permite catálogo, automatización ni link de pago integrado. Si hoy usas la app de WhatsApp Business (no la API), el equipo te ayuda a migrar — el número se mantiene."
       },
       {
-        "question": "¿Qué cobra TikTok Shop y qué cobra Meta? ¿SACS me cobra extra por canal?",
-        "answer": "TikTok Shop y Meta tienen sus propias comisiones por venta (varían por país y categoría). SACS no te cobra extra por canal — el plan que ya tienes incluye la conexión a redes. Las comisiones de cada plataforma quedan desglosadas en el reporte para que sepas tu utilidad real."
+        "question": "¿Qué cobra TikTok Shop y qué cobra Meta? ¿Sacs me cobra extra por canal?",
+        "answer": "TikTok Shop y Meta tienen sus propias comisiones por venta (varían por país y categoría). Sacs no te cobra extra por canal — el plan que ya tienes incluye la conexión a redes. Las comisiones de cada plataforma quedan desglosadas en el reporte para que sepas tu utilidad real."
       },
       {
         "question": "¿Puedo ver qué Reel o live generó qué venta?",
-        "answer": "Sí. SACS guarda el origen de cada venta de social (publicación, live, comentario, DM) y arma reportes de atribución por canal y por SKU. Útil para decidir qué contenido producir más y qué SKUs funcionan en TikTok pero no en Instagram, por ejemplo."
+        "answer": "Sí. Sacs guarda el origen de cada venta de social (publicación, live, comentario, DM) y arma reportes de atribución por canal y por SKU. Útil para decidir qué contenido producir más y qué SKUs funcionan en TikTok pero no en Instagram, por ejemplo."
       },
       {
         "question": "¿AXO contesta en el español de mi país?",
@@ -2059,7 +2059,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo se configura un live con reserva de stock automático?",
-        "answer": "Antes del live, eliges los SKUs que vas a presentar y SACS los marca como \"stock de live\". Durante el live, el moderador (o AXO) detecta los comentarios \"yo\" o \"lo quiero\" y reserva la pieza al primer comentario. Al cerrar, SACS manda link de pago a cada usuario reservado con plazo configurable (ej. 30 min). Si no paga, vuelve al stock."
+        "answer": "Antes del live, eliges los SKUs que vas a presentar y Sacs los marca como \"stock de live\". Durante el live, el moderador (o AXO) detecta los comentarios \"yo\" o \"lo quiero\" y reserva la pieza al primer comentario. Al cerrar, Sacs manda link de pago a cada usuario reservado con plazo configurable (ej. 30 min). Si no paga, vuelve al stock."
       },
       {
         "question": "¿Puedo automatizar el recovery de carritos abandonados en DM?",
@@ -2075,13 +2075,13 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿La integración con Meta y TikTok requiere desarrollo o setup técnico?",
-        "answer": "No. La conexión es por OAuth desde el panel de SACS — autorizas tus cuentas y SACS hace el resto. Si tu catálogo necesita ajustes (fotos, descripciones, variantes) para cumplir reglas de Meta o TikTok Shop, el equipo de implementación te acompaña."
+        "answer": "No. La conexión es por OAuth desde el panel de Sacs — autorizas tus cuentas y Sacs hace el resto. Si tu catálogo necesita ajustes (fotos, descripciones, variantes) para cumplir reglas de Meta o TikTok Shop, el equipo de implementación te acompaña."
       }
     ]
   },
   "tienda-en-linea": {
     "hero": {
-      "eyebrow": "SACS Tienda en Línea",
+      "eyebrow": "Sacs Tienda en Línea",
       "title": "Un solo inventario. Tus tiendas físicas y tu tienda en línea, en tiempo real.",
       "subtitle": "Tu tienda en línea ya no vive aparte. Cada venta online baja la talla exacta en la sucursal correcta y cada cambio en caja se refleja en tu sitio al instante.",
       "image": "/images/tienda-online-hero.webp",
@@ -2115,7 +2115,7 @@ export const pageContent: Record<string, any> = {
         "title": "Tus sucursales son tu red de entrega.",
         "description": "Tu red física se vuelve red de retiro — cero flota, cero paquetería en esos pedidos. El cliente paga online, elige tienda, llega con un QR y se cierra la venta de un escaneo.",
         "image": "/images/tienda-online-retiro.webp",
-        "imageAlt": "Cliente retirando pedido online en sucursal SACS con QR",
+        "imageAlt": "Cliente retirando pedido online en sucursal Sacs con QR",
         "link": null,
         "featured": true,
         "variant": "pickup",
@@ -2138,7 +2138,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada movimiento de piso, reflejado en tu sitio.",
         "description": "Capturas una orden de compra con cantidades por sucursal, la recibes con un folio y el inventario sube al instante en piso y en tu tienda en línea. Mismo catálogo, misma cifra, mismo segundo — sin botón de \"publicar\" ni cron nocturno.",
         "image": "/images/tienda-online-unificacion.webp",
-        "imageAlt": "Vista de SACS mostrando una orden de compra recibida y el stock actualizándose en piso y en mara.shop al mismo tiempo",
+        "imageAlt": "Vista de Sacs mostrando una orden de compra recibida y el stock actualizándose en piso y en mara.shop al mismo tiempo",
         "link": null,
         "featured": true,
         "variant": "online-catalog",
@@ -2149,7 +2149,7 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Recepción con folio que cierra el círculo",
-            "detail": "Marcas la recepción, SACS asigna folio y la OC queda cerrada con trazabilidad. Cada caja escaneada suma al stock real, sin captura manual."
+            "detail": "Marcas la recepción, Sacs asigna folio y la OC queda cerrada con trazabilidad. Cada caja escaneada suma al stock real, sin captura manual."
           },
           {
             "label": "Stock que sube en piso y en línea al mismo segundo",
@@ -2182,9 +2182,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Decisiones por canal, con números — no a corazonadas.",
-        "description": "Mira lo que vendiste en piso, en línea y en ambos canales lado a lado. SACS te dice qué SKU sólo crece online, cuál sólo se mueve en piso y cuál vende parejo en los dos. Decides dónde subir stock, qué pieza convertir en drop digital y dónde no gastar otro peso de pauta.",
+        "description": "Mira lo que vendiste en piso, en línea y en ambos canales lado a lado. Sacs te dice qué SKU sólo crece online, cuál sólo se mueve en piso y cuál vende parejo en los dos. Decides dónde subir stock, qué pieza convertir en drop digital y dónde no gastar otro peso de pauta.",
         "image": "/images/tienda-online-analytics.webp",
-        "imageAlt": "Tablet mostrando el dashboard de SACS con ventas segmentadas por canal — tienda física, tienda en línea y ambos — sostenido por una manager de tienda en una boutique moderna",
+        "imageAlt": "Tablet mostrando el dashboard de Sacs con ventas segmentadas por canal — tienda física, tienda en línea y ambos — sostenido por una manager de tienda en una boutique moderna",
         "link": null,
         "featured": true,
         "variant": "online-analytics",
@@ -2199,13 +2199,13 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Insights que dicen qué hacer mañana",
-            "detail": "SACS marca el SKU que crece 3× más rápido en línea como candidato a drop digital, y el que se mueve 7× más en piso para subir stock en la sucursal correcta antes del fin de semana."
+            "detail": "Sacs marca el SKU que crece 3× más rápido en línea como candidato a drop digital, y el que se mueve 7× más en piso para subir stock en la sucursal correcta antes del fin de semana."
           }
         ]
       }
     ],
     "testimonial": {
-      "quote": "Teníamos Shopify y SACS separados. Cada lunes pasábamos 3 horas cuadrando inventario y al final siempre había alguna venta online de algo que ya no existía en piso. Con SACS todo se maneja desde el mismo lugar — ahorramos 12 horas a la semana y dejamos de hacer devoluciones por \"no había\".",
+      "quote": "Teníamos Shopify y Sacs separados. Cada lunes pasábamos 3 horas cuadrando inventario y al final siempre había alguna venta online de algo que ya no existía en piso. Con Sacs todo se maneja desde el mismo lugar — ahorramos 12 horas a la semana y dejamos de hacer devoluciones por \"no había\".",
       "name": "Mariano Ferrer",
       "role": "Fundador",
       "company": "Tempo Marroquinería",
@@ -2220,7 +2220,7 @@ export const pageContent: Record<string, any> = {
         "title": "El mismo producto, el mismo precio, el mismo stock.",
         "description": "Crea una vez, vende en todos lados. Las variantes, las fotos, los precios y el stock viven en una sola base — no hay \"versión online\" distinta de la \"versión tienda\".",
         "image": "/images/tienda-online-hero.webp",
-        "imageAlt": "Pantalla de administración de catálogo en SACS",
+        "imageAlt": "Pantalla de administración de catálogo en Sacs",
         "link": null,
         "details": [
           {
@@ -2251,7 +2251,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10\"/></svg>",
             "title": "Categorías jerárquicas",
-            "description": "Categoría → subcategoría → colección → temporada. Organiza el catálogo como pienses y SACS arma los menús y filtros del sitio solo."
+            "description": "Categoría → subcategoría → colección → temporada. Organiza el catálogo como pienses y Sacs arma los menús y filtros del sitio solo."
           }
         ]
       },
@@ -2260,7 +2260,7 @@ export const pageContent: Record<string, any> = {
         "title": "El cliente paga fácil. Tú recibes limpio.",
         "description": "Stripe Connect configurado en minutos, Apple Pay y Google Pay activos por default, y una mesa de pagos que tu contador entiende desde el primer reporte.",
         "image": "/images/tienda-online-hero.webp",
-        "imageAlt": "Pantalla de checkout online y configuración Stripe en SACS",
+        "imageAlt": "Pantalla de checkout online y configuración Stripe en Sacs",
         "link": null,
         "details": [
           {
@@ -2276,7 +2276,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M23 21v-2a4 4 0 00-3-3.87\"/><path d=\"M16 3.13a4 4 0 010 7.75\"/></svg>",
             "title": "Una cuenta Stripe por marca",
-            "description": "Si operas varias marcas o razones sociales, cada una con su propia cuenta Stripe. SACS rutea el cobro al Stripe correcto según qué se compró."
+            "description": "Si operas varias marcas o razones sociales, cada una con su propia cuenta Stripe. Sacs rutea el cobro al Stripe correcto según qué se compró."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z\"/></svg>",
@@ -2286,7 +2286,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 12h8\"/></svg>",
             "title": "Reembolsos en 1 clic",
-            "description": "Si el cliente pide reembolso, lo procesas desde SACS y Stripe devuelve el dinero. Queda registrado como nota de crédito en tu contabilidad."
+            "description": "Si el cliente pide reembolso, lo procesas desde Sacs y Stripe devuelve el dinero. Queda registrado como nota de crédito en tu contabilidad."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -2300,7 +2300,7 @@ export const pageContent: Record<string, any> = {
         "title": "Tu red física ya es tu red de entrega.",
         "description": "Click & collect aprovecha tus sucursales actuales — cero flota, cero paquetería. El cliente paga online, elige tienda, retira con QR, y tú ahorras costo de envío en todos esos pedidos.",
         "image": "/images/tienda-online-hero.webp",
-        "imageAlt": "Pantalla de pickup / click-and-collect en SACS",
+        "imageAlt": "Pantalla de pickup / click-and-collect en Sacs",
         "link": null,
         "details": [
           {
@@ -2321,7 +2321,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
             "title": "Vencimiento de retiro",
-            "description": "Configuras ventana de retiro (por ejemplo, 7 días). Si el cliente no pasa, SACS te alerta para liberar el stock y procesar el reembolso desde Stripe en un clic."
+            "description": "Configuras ventana de retiro (por ejemplo, 7 días). Si el cliente no pasa, Sacs te alerta para liberar el stock y procesar el reembolso desde Stripe en un clic."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17l-5-5-5 5\"/></svg>",
@@ -2342,7 +2342,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/mariano-ferrer.webp",
         "initials": "MF",
         "color": "#3a8a5a",
-        "quote": "Shopify y nuestro POS eran dos mundos. Cada lunes 3 horas cuadrando. Con SACS el catálogo, el stock y el cobro viven en el mismo sistema. Dejamos de vender lo que ya no teníamos y recuperamos 12 horas a la semana.",
+        "quote": "Shopify y nuestro POS eran dos mundos. Cada lunes 3 horas cuadrando. Con Sacs el catálogo, el stock y el cobro viven en el mismo sistema. Dejamos de vender lo que ya no teníamos y recuperamos 12 horas a la semana.",
         "name": "Mariano Ferrer",
         "business": "Tempo Marroquinería",
         "location": "Argentina"
@@ -2362,7 +2362,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/julian-ponce.webp",
         "initials": "JP",
         "color": "#4a6ab8",
-        "quote": "Tenemos tres marcas con razones sociales distintas. Stripe Connect en SACS nos permitió rutear cada cobro a la cuenta correcta. El contador ya no arma tablas pivote — descarga el reporte y está listo.",
+        "quote": "Tenemos tres marcas con razones sociales distintas. Stripe Connect en Sacs nos permitió rutear cada cobro a la cuenta correcta. El contador ya no arma tablas pivote — descarga el reporte y está listo.",
         "name": "Julián Ponce",
         "business": "Grupo Castaño",
         "location": "Chile"
@@ -2370,8 +2370,8 @@ export const pageContent: Record<string, any> = {
     ],
     "faqs": [
       {
-        "question": "¿Es lo mismo que tener Shopify conectado a SACS?",
-        "answer": "No. Shopify es un sistema aparte con su propio catálogo, stock y administración. SACS Tienda en Línea usa la misma base de datos que tu POS — no hay sincronización, es el mismo producto, el mismo stock, el mismo cliente."
+        "question": "¿Es lo mismo que tener Shopify conectado a Sacs?",
+        "answer": "No. Shopify es un sistema aparte con su propio catálogo, stock y administración. Sacs Tienda en Línea usa la misma base de datos que tu POS — no hay sincronización, es el mismo producto, el mismo stock, el mismo cliente."
       },
       {
         "question": "¿Qué pasarelas de pago soportan?",
@@ -2379,7 +2379,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo tener varias marcas o razones sociales?",
-        "answer": "Sí. Cada marca con su propia cuenta Stripe Connect, su propio dominio y su propia paleta. SACS rutea el cobro y la facturación a la entidad correcta automáticamente."
+        "answer": "Sí. Cada marca con su propia cuenta Stripe Connect, su propio dominio y su propia paleta. Sacs rutea el cobro y la facturación a la entidad correcta automáticamente."
       },
       {
         "question": "¿El cliente puede retirar su pedido en cualquier sucursal?",
@@ -2387,7 +2387,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa si el cliente no pasa a retirar?",
-        "answer": "Configuras ventana de retiro (ejemplo: 7 días). Si vence, el stock se libera automáticamente y SACS propone reembolso o crédito según tu política."
+        "answer": "Configuras ventana de retiro (ejemplo: 7 días). Si vence, el stock se libera automáticamente y Sacs propone reembolso o crédito según tu política."
       },
       {
         "question": "¿Puedo vender productos que solo existen online?",
@@ -2395,19 +2395,19 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo funciona SEO y dominio propio?",
-        "answer": "Apuntas tu dominio (o subdominio) a SACS y el sitio queda con tu URL. Metadatos, sitemap, Open Graph y schema.org se generan solos por producto."
+        "answer": "Apuntas tu dominio (o subdominio) a Sacs y el sitio queda con tu URL. Metadatos, sitemap, Open Graph y schema.org se generan solos por producto."
       },
       {
         "question": "¿Hay envío a domicilio con paquetería?",
-        "answer": "Retiro en tienda (click-and-collect) es lo que ya opera en SACS. La integración directa con paqueterías (Estafeta, DHL, 99Minutos, Chazki) llega en roadmap; hoy puedes procesar envíos a domicilio creando la guía con tu paquetería actual y adjuntando el tracking al pedido en SACS."
+        "answer": "Retiro en tienda (click-and-collect) es lo que ya opera en Sacs. La integración directa con paqueterías (Estafeta, DHL, 99Minutos, Chazki) llega en roadmap; hoy puedes procesar envíos a domicilio creando la guía con tu paquetería actual y adjuntando el tracking al pedido en Sacs."
       },
       {
         "question": "¿Se integra con Google Shopping o Meta Catalog?",
-        "answer": "El feed para Google Merchant Center y Meta Catalog está en roadmap. Mientras tanto, puedes exportar tu catálogo con stock y precios desde SACS para subirlo manualmente — el archivo queda con el formato que Google y Meta piden."
+        "answer": "El feed para Google Merchant Center y Meta Catalog está en roadmap. Mientras tanto, puedes exportar tu catálogo con stock y precios desde Sacs para subirlo manualmente — el archivo queda con el formato que Google y Meta piden."
       },
       {
         "question": "¿Hay login de clientes e historial de compras?",
-        "answer": "Checkout como invitado es lo que opera hoy. Cuentas de cliente con login, historial, wishlist y seguimiento de pedido llegan con el portal de clientes de SACS — ver /producto/portal-de-clientes."
+        "answer": "Checkout como invitado es lo que opera hoy. Cuentas de cliente con login, historial, wishlist y seguimiento de pedido llegan con el portal de clientes de Sacs — ver /producto/portal-de-clientes."
       },
       {
         "question": "¿Puedo usar mi propio diseño / branding?",
@@ -2417,9 +2417,9 @@ export const pageContent: Record<string, any> = {
   },
   "agentic-commerce": {
     "hero": {
-      "eyebrow": "SACS Agentic Commerce",
+      "eyebrow": "Sacs Agentic Commerce",
       "title": "Que ChatGPT, Gemini y Perplexity encuentren tus productos.",
-      "subtitle": "El cliente ya no busca en Google — le pregunta a una IA. SACS expone tu catálogo a los motores generativos con feeds en vivo, schema.org Product y un servidor MCP. Cuando alguien pregunta \"¿dónde compro X?\", tus productos aparecen — con precio actual y stock real.",
+      "subtitle": "El cliente ya no busca en Google — le pregunta a una IA. Sacs expone tu catálogo a los motores generativos con feeds en vivo, schema.org Product y un servidor MCP. Cuando alguien pregunta \"¿dónde compro X?\", tus productos aparecen — con precio actual y stock real.",
       "image": "/images/agentic-hero.webp",
       "imageAlt": "Cliente buscando producto de la tienda en ChatGPT desde su celular",
       "video": {
@@ -2437,12 +2437,12 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"16 18 22 12 16 6\"/><polyline points=\"8 6 2 12 8 18\"/></svg>",
         "title": "Feeds y schema automáticos",
-        "description": "schema.org/Product en cada PDP, JSON-LD validado, feed XML para Google Merchant, OpenAI Product Feed y MCP server. Generados solos desde tu catálogo SACS."
+        "description": "schema.org/Product en cada PDP, JSON-LD validado, feed XML para Google Merchant, OpenAI Product Feed y MCP server. Generados solos desde tu catálogo Sacs."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"/><path d=\"M3 12h4l3-9 4 18 3-9h4\"/></svg>",
         "title": "Verdad en vivo, no feed nocturno",
-        "description": "Cuando una IA cita tu producto, consulta el endpoint de SACS antes de responder. Precio con promo aplicada, stock por sucursal — la IA no inventa disponibilidad."
+        "description": "Cuando una IA cita tu producto, consulta el endpoint de Sacs antes de responder. Precio con promo aplicada, stock por sucursal — la IA no inventa disponibilidad."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -2453,8 +2453,8 @@ export const pageContent: Record<string, any> = {
     "showcaseTitle": "Tú subes productos. Las IAs los encuentran solas.",
     "blocks": [
       {
-        "title": "Subes el producto a SACS. Aparece en ChatGPT.",
-        "description": "No tienes que dar de alta nada en OpenAI ni mantener un feed aparte. Apenas guardas un producto en SACS, queda expuesto al programa de comercio de ChatGPT — y empieza a aparecer en respuestas cuando alguien pregunta \"¿dónde compro botas de cuero en CDMX?\". Sin código, sin integración manual, sin equipo de marketing.",
+        "title": "Subes el producto a Sacs. Aparece en ChatGPT.",
+        "description": "No tienes que dar de alta nada en OpenAI ni mantener un feed aparte. Apenas guardas un producto en Sacs, queda expuesto al programa de comercio de ChatGPT — y empieza a aparecer en respuestas cuando alguien pregunta \"¿dónde compro botas de cuero en CDMX?\". Sin código, sin integración manual, sin equipo de marketing.",
         "image": "/images/agentic-whatsapp.webp",
         "imageAlt": "Producto de la tienda apareciendo dentro de una respuesta de ChatGPT",
         "link": null,
@@ -2463,7 +2463,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Cero configuración",
-            "detail": "Tu única acción es guardar el producto en SACS. El alta en el programa de OpenAI, los atributos requeridos y la sincronización los hace SACS por debajo."
+            "detail": "Tu única acción es guardar el producto en Sacs. El alta en el programa de OpenAI, los atributos requeridos y la sincronización los hace Sacs por debajo."
           },
           {
             "label": "Foto, precio y link directo",
@@ -2471,15 +2471,15 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Cambio de precio se propaga solo",
-            "detail": "Bajas un precio en SACS y al minuto siguiente ChatGPT ya cita el nuevo. Mismo flujo para stock, promo activa y envíos disponibles."
+            "detail": "Bajas un precio en Sacs y al minuto siguiente ChatGPT ya cita el nuevo. Mismo flujo para stock, promo activa y envíos disponibles."
           }
         ]
       },
       {
-        "title": "Tú no escribes JSON-LD. SACS lo hace por ti.",
-        "description": "Las IAs y los buscadores necesitan metadata estructurada (schema.org/Product, JSON-LD, feed XML). En la mayoría de plataformas tienes que armarlo a mano o con plugins. En SACS, apenas subes el producto, todo se genera y se valida solo — y queda publicado para Google, Meta, TikTok, OpenAI y cualquier motor que lo pida.",
+        "title": "Tú no escribes JSON-LD. Sacs lo hace por ti.",
+        "description": "Las IAs y los buscadores necesitan metadata estructurada (schema.org/Product, JSON-LD, feed XML). En la mayoría de plataformas tienes que armarlo a mano o con plugins. En Sacs, apenas subes el producto, todo se genera y se valida solo — y queda publicado para Google, Meta, TikTok, OpenAI y cualquier motor que lo pida.",
         "image": "/images/agentic-cotizacion.webp",
-        "imageAlt": "Feed JSON-LD generado automáticamente desde catálogo SACS",
+        "imageAlt": "Feed JSON-LD generado automáticamente desde catálogo Sacs",
         "link": null,
         "featured": true,
         "variant": "ai-feed",
@@ -2490,17 +2490,17 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Feeds para todas las plataformas",
-            "detail": "Google Merchant, Meta Catalog, TikTok Shop, OpenAI Product Feed. Una sola fuente — tu catálogo SACS — y cada plataforma recibe el formato que le toca."
+            "detail": "Google Merchant, Meta Catalog, TikTok Shop, OpenAI Product Feed. Una sola fuente — tu catálogo Sacs — y cada plataforma recibe el formato que le toca."
           },
           {
             "label": "Validación continua",
-            "detail": "Si un atributo se rompe (GTIN inválido, imagen caída, precio en cero), SACS te avisa antes de que el motor lo rechace."
+            "detail": "Si un atributo se rompe (GTIN inválido, imagen caída, precio en cero), Sacs te avisa antes de que el motor lo rechace."
           }
         ]
       },
       {
         "title": "La IA cita tu producto con tu precio y stock reales.",
-        "description": "Como el feed de SACS está conectado a tu inventario en vivo, cuando una IA muestra tu producto, está mostrando lo que realmente tienes ahora — no lo del feed nightly de la competencia. Esto importa porque cuando el cliente llega a tu sitio desde la IA, el precio y la disponibilidad coinciden. Cero clientes molestos por \"decía $1,500 en ChatGPT y aquí dice $1,890\".",
+        "description": "Como el feed de Sacs está conectado a tu inventario en vivo, cuando una IA muestra tu producto, está mostrando lo que realmente tienes ahora — no lo del feed nightly de la competencia. Esto importa porque cuando el cliente llega a tu sitio desde la IA, el precio y la disponibilidad coinciden. Cero clientes molestos por \"decía $1,500 en ChatGPT y aquí dice $1,890\".",
         "image": "/images/agentic-cobro.webp",
         "imageAlt": "Endpoint en vivo respondiendo precio y stock al motor de IA",
         "link": null,
@@ -2509,7 +2509,7 @@ export const pageContent: Record<string, any> = {
         "bullets": [
           {
             "label": "Stock por sucursal en vivo",
-            "detail": "La IA puede responder \"hay 2 en Polanco, 0 en Santa Fe\" — y lo dice porque consultó SACS, no porque adivinó."
+            "detail": "La IA puede responder \"hay 2 en Polanco, 0 en Santa Fe\" — y lo dice porque consultó Sacs, no porque adivinó."
           },
           {
             "label": "Precio con la promo del día",
@@ -2517,15 +2517,15 @@ export const pageContent: Record<string, any> = {
           },
           {
             "label": "Sin riesgo de citar lo que ya no tienes",
-            "detail": "Apenas baja el stock en SACS, el endpoint refleja el cambio. Las IAs nunca empujan a un cliente a un producto agotado."
+            "detail": "Apenas baja el stock en Sacs, el endpoint refleja el cambio. Las IAs nunca empujan a un cliente a un producto agotado."
           }
         ]
       },
       {
         "title": "Sabes de qué IA llegó cada cliente — sin tocar Analytics.",
-        "description": "Google Analytics te decía si vino de Google o de Instagram. SACS te dice si vino de ChatGPT, Gemini, Perplexity o Claude — y qué producto los hizo entrar. Esto pasa solo porque el feed que SACS publica incluye tracking por motor. Tú solo subes productos; la atribución se arma sola en tu dashboard.",
+        "description": "Google Analytics te decía si vino de Google o de Instagram. Sacs te dice si vino de ChatGPT, Gemini, Perplexity o Claude — y qué producto los hizo entrar. Esto pasa solo porque el feed que Sacs publica incluye tracking por motor. Tú solo subes productos; la atribución se arma sola en tu dashboard.",
         "image": "/images/agentic-handoff.webp",
-        "imageAlt": "Reporte SACS con atribución por motor de IA",
+        "imageAlt": "Reporte Sacs con atribución por motor de IA",
         "link": null,
         "featured": true,
         "variant": "ai-attribution",
@@ -2559,15 +2559,15 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Motores de IA",
         "title": "Un catálogo, presente en todos los motores generativos.",
-        "description": "ChatGPT, Gemini, Perplexity, Claude y Bing Copilot — cada uno con su protocolo, todos consumiendo el mismo catálogo SACS. No tienes que mantener un feed por plataforma ni aprender los formatos de cada uno.",
+        "description": "ChatGPT, Gemini, Perplexity, Claude y Bing Copilot — cada uno con su protocolo, todos consumiendo el mismo catálogo Sacs. No tienes que mantener un feed por plataforma ni aprender los formatos de cada uno.",
         "image": "/images/agentic-hero.webp",
-        "imageAlt": "Mapa de motores de IA conectados al catálogo SACS",
+        "imageAlt": "Mapa de motores de IA conectados al catálogo Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v8M8 12h8\"/></svg>",
             "title": "ChatGPT Shopping",
-            "description": "Product feed para OpenAI. Tus productos aparecen dentro de respuestas cuando hay intención de compra. Stock y precio consultados en vivo al endpoint de SACS."
+            "description": "Product feed para OpenAI. Tus productos aparecen dentro de respuestas cuando hay intención de compra. Stock y precio consultados en vivo al endpoint de Sacs."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z\"/></svg>",
@@ -2599,9 +2599,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Feeds y estructura",
         "title": "Schema y feeds, generados solos.",
-        "description": "Cada producto del catálogo sale con su metadata estructurada al instante. Cero hojas de cálculo, cero plugins, cero copy-paste entre plataformas. SACS valida cada feed contra los esquemas oficiales antes de publicar.",
+        "description": "Cada producto del catálogo sale con su metadata estructurada al instante. Cero hojas de cálculo, cero plugins, cero copy-paste entre plataformas. Sacs valida cada feed contra los esquemas oficiales antes de publicar.",
         "image": "/images/agentic-hero.webp",
-        "imageAlt": "Vista de feeds y schemas generados desde catálogo SACS",
+        "imageAlt": "Vista de feeds y schemas generados desde catálogo Sacs",
         "link": null,
         "details": [
           {
@@ -2641,7 +2641,7 @@ export const pageContent: Record<string, any> = {
         "title": "De qué IA viene cada cliente — y qué vendió.",
         "description": "AEO Analytics nativo. Cada visita y cada venta queda etiquetada con su origen: motor de IA, query original, producto consultado. Reportes separados por motor para que sepas dónde invertir.",
         "image": "/images/agentic-hero.webp",
-        "imageAlt": "Reporte de atribución por motor de IA en SACS",
+        "imageAlt": "Reporte de atribución por motor de IA en Sacs",
         "link": null,
         "details": [
           {
@@ -2703,7 +2703,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/diego-alcantara.webp",
         "initials": "DA",
         "color": "#b26732",
-        "quote": "Antes mantenía a mano feeds para Google, Meta y TikTok. SACS los hace solos y suma OpenAI y Anthropic encima. Es un trabajo que no quiero ni saber que existe.",
+        "quote": "Antes mantenía a mano feeds para Google, Meta y TikTok. Sacs los hace solos y suma OpenAI y Anthropic encima. Es un trabajo que no quiero ni saber que existe.",
         "name": "Diego Alcántara",
         "business": "Alcántara Deportes",
         "location": "Argentina"
@@ -2716,7 +2716,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Necesito hacer algo manual para aparecer en ChatGPT y Gemini?",
-        "answer": "No. SACS genera los feeds y los schemas automáticamente desde tu catálogo. Lo único que tú haces: aprobar el alta en cada plataforma (Google Merchant, Meta Catalog, OpenAI Product Feed) — el resto se mantiene solo, con cada cambio de precio o stock propagado al instante."
+        "answer": "No. Sacs genera los feeds y los schemas automáticamente desde tu catálogo. Lo único que tú haces: aprobar el alta en cada plataforma (Google Merchant, Meta Catalog, OpenAI Product Feed) — el resto se mantiene solo, con cada cambio de precio o stock propagado al instante."
       },
       {
         "question": "¿Qué motores cubre hoy?",
@@ -2728,15 +2728,15 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿La IA puede cobrar directamente al cliente?",
-        "answer": "Algunos motores ya lo permiten (ChatGPT con Stripe Connect, Perplexity Shop con su propio checkout). Cuando el cobro entra por esos canales se registra como venta en SACS, baja stock y emite factura como cualquier otra venta."
+        "answer": "Algunos motores ya lo permiten (ChatGPT con Stripe Connect, Perplexity Shop con su propio checkout). Cuando el cobro entra por esos canales se registra como venta en Sacs, baja stock y emite factura como cualquier otra venta."
       },
       {
         "question": "¿Qué pasa con mi stock si un motor cita un producto agotado?",
-        "answer": "No pasa porque la IA consulta SACS en vivo. Si el stock cambió en los últimos minutos, el motor ve la nueva disponibilidad — no la del feed nightly. Esa es la diferencia entre un feed estático y un endpoint vivo."
+        "answer": "No pasa porque la IA consulta Sacs en vivo. Si el stock cambió en los últimos minutos, el motor ve la nueva disponibilidad — no la del feed nightly. Esa es la diferencia entre un feed estático y un endpoint vivo."
       },
       {
         "question": "¿Qué es el MCP server y para qué sirve?",
-        "answer": "MCP (Model Context Protocol) es el estándar de Anthropic para que los agentes IA consulten APIs externas. SACS expone tu catálogo, stock, precios y políticas como un servidor MCP — cualquier agente compatible (Claude, GPTs custom, Gemini Agents) puede consultar tu catálogo sin que tú integres uno por uno."
+        "answer": "MCP (Model Context Protocol) es el estándar de Anthropic para que los agentes IA consulten APIs externas. Sacs expone tu catálogo, stock, precios y políticas como un servidor MCP — cualquier agente compatible (Claude, GPTs custom, Gemini Agents) puede consultar tu catálogo sin que tú integres uno por uno."
       },
       {
         "question": "¿Mi competencia puede copiar mis feeds?",
@@ -2748,15 +2748,15 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo veo el ROI?",
-        "answer": "Reporte SACS por motor: visitas, conversión y revenue por cada IA. Lo comparas contra Google y social. Típicamente la primera medida útil llega a las 2–4 semanas, cuando ya hay tráfico estable de los motores."
+        "answer": "Reporte Sacs por motor: visitas, conversión y revenue por cada IA. Lo comparas contra Google y social. Típicamente la primera medida útil llega a las 2–4 semanas, cuando ya hay tráfico estable de los motores."
       },
       {
         "question": "¿Aparezco en buscadores tradicionales también?",
         "answer": "Sí. Schema.org y JSON-LD también alimentan Google clásico, Bing y DuckDuckGo. El módulo no reemplaza SEO tradicional — lo amplía para los nuevos motores generativos sin trabajo extra."
       },
       {
-        "question": "¿Necesito tienda online en SACS para usarlo?",
-        "answer": "Sí. El feed apunta a páginas de producto reales con precio, stock e información estructurada. Si tu tienda online corre en SACS (módulo Tienda en Línea), todo queda conectado de fábrica. Si está en otra plataforma, hay que mapear el catálogo manualmente."
+        "question": "¿Necesito tienda online en Sacs para usarlo?",
+        "answer": "Sí. El feed apunta a páginas de producto reales con precio, stock e información estructurada. Si tu tienda online corre en Sacs (módulo Tienda en Línea), todo queda conectado de fábrica. Si está en otra plataforma, hay que mapear el catálogo manualmente."
       },
       {
         "question": "¿Puedo elegir qué productos exponer y cuáles no?",
@@ -2766,17 +2766,17 @@ export const pageContent: Record<string, any> = {
   },
   "facturacion-electronica": {
     "hero": {
-      "eyebrow": "SACS Facturación Electrónica",
+      "eyebrow": "Sacs Facturación Electrónica",
       "title": "Factura al cobro. Sin hoja aparte.",
       "subtitle": "CFDI 4.0 desde el POS con integración a PACs certificados (Facturama, Quadrum). Notas de crédito, complementos de pago y portal de autofacturación con tu marca. DIAN, SRI y demás países entran por orden de demanda.",
       "image": "/images/factura-hero.webp",
-      "imageAlt": "Vendedora emitiendo factura electrónica desde el POS SACS"
+      "imageAlt": "Vendedora emitiendo factura electrónica desde el POS Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
         "title": "Emite al cobro",
-        "description": "Captura RFC, régimen y uso del CFDI sin salir del flujo de cobro. SACS arma el XML 4.0 y lo envía a tu PAC certificado — el cliente recibe XML + PDF por correo."
+        "description": "Captura RFC, régimen y uso del CFDI sin salir del flujo de cobro. Sacs arma el XML 4.0 y lo envía a tu PAC certificado — el cliente recibe XML + PDF por correo."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
@@ -2798,9 +2798,9 @@ export const pageContent: Record<string, any> = {
     "blocks": [
       {
         "title": "La factura sale con la venta. No al otro día.",
-        "description": "Al cobrar, el cajero ve un botón \"Facturar\". Captura RFC, régimen fiscal y uso del CFDI — si el cliente ya está en tu CRM, sus datos se rellenan solos. SACS valida, arma el CFDI 4.0 y lo envía a tu PAC para timbrado. El XML + PDF llega al correo del cliente sin salir del POS.",
+        "description": "Al cobrar, el cajero ve un botón \"Facturar\". Captura RFC, régimen fiscal y uso del CFDI — si el cliente ya está en tu CRM, sus datos se rellenan solos. Sacs valida, arma el CFDI 4.0 y lo envía a tu PAC para timbrado. El XML + PDF llega al correo del cliente sin salir del POS.",
         "image": "/images/factura-emision.webp",
-        "imageAlt": "Pantalla de emisión CFDI al momento del cobro en SACS POS",
+        "imageAlt": "Pantalla de emisión CFDI al momento del cobro en Sacs POS",
         "link": null,
         "featured": true,
         "variant": "invoice-issue"
@@ -2809,7 +2809,7 @@ export const pageContent: Record<string, any> = {
         "title": "El cliente factura solo. Tu cajero ni se entera.",
         "description": "En cada ticket se imprime un QR. El cliente lo escanea, entra a un portal con tu marca, captura sus datos fiscales y recibe el CFDI al correo. Tu cajero no pierde 4 minutos por cada cliente que pide factura — y el supervisor de tienda deja de ser contador.",
         "image": "/images/factura-autoservicio.webp",
-        "imageAlt": "Cliente escaneando QR de autofacturación desde ticket SACS",
+        "imageAlt": "Cliente escaneando QR de autofacturación desde ticket Sacs",
         "link": null,
         "featured": true,
         "variant": "invoice-portal"
@@ -2818,7 +2818,7 @@ export const pageContent: Record<string, any> = {
         "title": "Notas de crédito y complementos de pago. Ligados, sin hoja suelta.",
         "description": "Si hay devolución, la nota de crédito se genera contra la factura madre — con folio fiscal original, motivo y monto ajustado. Si vendes a crédito, cada pago parcial dispara un complemento de pago timbrado. El SAT lo pide, tú ya lo tienes.",
         "image": "/images/factura-notas.webp",
-        "imageAlt": "Nota de crédito generada desde SACS con complemento de pago",
+        "imageAlt": "Nota de crédito generada desde Sacs con complemento de pago",
         "link": {
           "label": "Ver cuentas por pagar",
           "href": "/producto/cuentas-por-pagar"
@@ -2830,7 +2830,7 @@ export const pageContent: Record<string, any> = {
         "title": "Hoy México. Mañana Colombia, Ecuador, Perú, Argentina.",
         "description": "Arrancamos en México con CFDI 4.0 porque es donde nuestros primeros clientes pidieron factura electrónica. Conforme entran cadenas de otros países, sumamos el estándar fiscal local: DIAN Colombia, SRI Ecuador, SUNAT Perú, AFIP Argentina. Tu sistema no cambia — el ingeniero fiscal sí.",
         "image": "/images/factura-multipais.webp",
-        "imageAlt": "Mapa de LatAm con estándares fiscales cubiertos por SACS",
+        "imageAlt": "Mapa de LatAm con estándares fiscales cubiertos por Sacs",
         "link": null,
         "featured": true,
         "variant": "invoice-country"
@@ -2852,7 +2852,7 @@ export const pageContent: Record<string, any> = {
         "title": "Timbrado en línea. Sin software externo.",
         "description": "Integración directa con Facturama y Quadrum (PACs autorizados por el SAT). Prodigia, FinKok y Edicom entran bajo demanda conforme los piden nuestros clientes.",
         "image": "/images/factura-hero.webp",
-        "imageAlt": "Pantalla de emisión CFDI 4.0 en SACS",
+        "imageAlt": "Pantalla de emisión CFDI 4.0 en Sacs",
         "link": null,
         "details": [
           {
@@ -2873,17 +2873,17 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z\"/><path d=\"M9 12l2 2 4-4\"/></svg>",
             "title": "Tu PAC, tu elección",
-            "description": "Usas el PAC que prefieras: Quadrum, Prodigia, Facturama, Edicom o FinKok. Cambias de proveedor sin migrar facturas — SACS se reconecta."
+            "description": "Usas el PAC que prefieras: Quadrum, Prodigia, Facturama, Edicom o FinKok. Cambias de proveedor sin migrar facturas — Sacs se reconecta."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6M9 9l6 6\"/></svg>",
             "title": "Cancelación con motivo SAT",
-            "description": "Cancelación con motivo válido (01, 02, 03, 04), comprobante que lo sustituye si aplica. SACS guarda la cadena SAT y el acuse de cancelación."
+            "description": "Cancelación con motivo válido (01, 02, 03, 04), comprobante que lo sustituye si aplica. Sacs guarda la cadena SAT y el acuse de cancelación."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/></svg>",
             "title": "Factura global programable",
-            "description": "Concentra las ventas al público general del periodo y las deja listas para timbrarse como factura global. Sin armar concentrados a mano — SACS suma por sucursal y envía al PAC."
+            "description": "Concentra las ventas al público general del periodo y las deja listas para timbrarse como factura global. Sin armar concentrados a mano — Sacs suma por sucursal y envía al PAC."
           }
         ]
       },
@@ -2892,7 +2892,7 @@ export const pageContent: Record<string, any> = {
         "title": "Tu cliente hace el trabajo. Con tu marca.",
         "description": "Portal de autofacturación con tu logo, tus colores y tu dominio. El cliente escanea el QR del ticket, captura datos, recibe el CFDI.",
         "image": "/images/factura-hero.webp",
-        "imageAlt": "Portal de autofacturación con marca del comercio en SACS",
+        "imageAlt": "Portal de autofacturación con marca del comercio en Sacs",
         "link": null,
         "details": [
           {
@@ -2903,12 +2903,12 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
             "title": "Con tu marca",
-            "description": "Logo, paleta y dominio personalizado (factura.tumarca.com). El cliente no ve \"SACS\" — ve tu marca en todo el flujo."
+            "description": "Logo, paleta y dominio personalizado (factura.tumarca.com). El cliente no ve \"Sacs\" — ve tu marca en todo el flujo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
             "title": "CFDI al email automático",
-            "description": "Al completar el formulario, SACS timbrea y envía XML + PDF al email que capturó el cliente. Sin pasos manuales del lado del comercio."
+            "description": "Al completar el formulario, Sacs timbrea y envía XML + PDF al email que capturó el cliente. Sin pasos manuales del lado del comercio."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -2932,7 +2932,7 @@ export const pageContent: Record<string, any> = {
         "title": "Devoluciones y pagos parciales, cubiertos.",
         "description": "Nota de crédito ligada a la factura madre, complemento de pago por cada abono en crédito, y un reporte que tu contador exporta sin armar pivotes.",
         "image": "/images/factura-hero.webp",
-        "imageAlt": "Pantalla de notas de crédito y complementos de pago en SACS",
+        "imageAlt": "Pantalla de notas de crédito y complementos de pago en Sacs",
         "link": null,
         "details": [
           {
@@ -2943,12 +2943,12 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>",
             "title": "Complemento por pago parcial",
-            "description": "Venta a crédito, apartado con abonos, pago en cuotas — cada pago dispara un complemento timbrado. El SAT lo exige, SACS lo hace solo."
+            "description": "Venta a crédito, apartado con abonos, pago en cuotas — cada pago dispara un complemento timbrado. El SAT lo exige, Sacs lo hace solo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 12h8\"/></svg>",
             "title": "Sustitución de CFDI",
-            "description": "Si hay que cancelar y re-emitir, SACS arma la factura sustituta con referencia al folio original. El flujo queda limpio para el SAT."
+            "description": "Si hay que cancelar y re-emitir, Sacs arma la factura sustituta con referencia al folio original. El flujo queda limpio para el SAT."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -2958,7 +2958,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
             "title": "Alertas de vencimiento",
-            "description": "Facturas por cancelar con plazo vencido, complementos pendientes, devoluciones sin nota. SACS te avisa antes de que sea auditoría."
+            "description": "Facturas por cancelar con plazo vencido, complementos pendientes, devoluciones sin nota. Sacs te avisa antes de que sea auditoría."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4\"/></svg>",
@@ -2984,7 +2984,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/graciela-ortiz.webp",
         "initials": "GO",
         "color": "#8a5a4a",
-        "quote": "Teníamos al contador externo pegándonos porque los complementos de pago de nuestras ventas a crédito se nos iban sin timbrar. SACS los genera automático por cada abono. Dejamos de deber complementos al SAT.",
+        "quote": "Teníamos al contador externo pegándonos porque los complementos de pago de nuestras ventas a crédito se nos iban sin timbrar. Sacs los genera automático por cada abono. Dejamos de deber complementos al SAT.",
         "name": "Graciela Ortiz",
         "business": "Soler Papelerías",
         "location": "México"
@@ -2994,7 +2994,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/felipe-ayala.webp",
         "initials": "FA",
         "color": "#4a6ab8",
-        "quote": "Nuestras devoluciones siempre dejaban facturas huérfanas — notas de crédito sin ligar, complementos faltantes. SACS arma la nota y el complemento contra la factura madre en automático. El cierre del mes dejó de ser una cacería.",
+        "quote": "Nuestras devoluciones siempre dejaban facturas huérfanas — notas de crédito sin ligar, complementos faltantes. Sacs arma la nota y el complemento contra la factura madre en automático. El cierre del mes dejó de ser una cacería.",
         "name": "Felipe Ayala",
         "business": "Zapaterías Monteverde",
         "location": "México"
@@ -3002,7 +3002,7 @@ export const pageContent: Record<string, any> = {
     ],
     "faqs": [
       {
-        "question": "¿Qué países soporta hoy la facturación electrónica de SACS?",
+        "question": "¿Qué países soporta hoy la facturación electrónica de Sacs?",
         "answer": "México (CFDI 4.0) está en producción. Colombia (DIAN), Ecuador (SRI), Perú (SUNAT) y Argentina (AFIP) entran conforme nuestros primeros clientes de cada país se suman — la prioridad la marca la demanda, no un roadmap rígido."
       },
       {
@@ -3011,11 +3011,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Dónde se guardan mis certificados CSD (.cer / .key)?",
-        "answer": "Los certificados se cargan cifrados en el backend de tu tenant de SACS y solo el PAC los usa al momento de timbrar. Rotación y renovación las disparas tú cuando el SAT vence los actuales."
+        "answer": "Los certificados se cargan cifrados en el backend de tu tenant de Sacs y solo el PAC los usa al momento de timbrar. Rotación y renovación las disparas tú cuando el SAT vence los actuales."
       },
       {
         "question": "¿Cuántos timbres incluye el plan?",
-        "answer": "Depende del plan SACS que contrates. Los timbres los provee tu PAC — puedes usar la bolsa que ya tengas o contratar una nueva con Facturama/Quadrum a través de nosotros al precio de mayorista."
+        "answer": "Depende del plan Sacs que contrates. Los timbres los provee tu PAC — puedes usar la bolsa que ya tengas o contratar una nueva con Facturama/Quadrum a través de nosotros al precio de mayorista."
       },
       {
         "question": "¿Soportan addendas para clientes B2B (autoservicio y departamentales)?",
@@ -3027,19 +3027,19 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa con los tickets que nadie factura?",
-        "answer": "Los que no se facturan en la ventana (generalmente hasta fin de mes) entran a la factura global del periodo. SACS la arma y la timbrea automáticamente — sin tener que sumar tickets a mano."
+        "answer": "Los que no se facturan en la ventana (generalmente hasta fin de mes) entran a la factura global del periodo. Sacs la arma y la timbrea automáticamente — sin tener que sumar tickets a mano."
       },
       {
         "question": "¿Se puede facturar a varios RFCs en un mismo ticket?",
-        "answer": "No, por regla del SAT cada ticket genera un CFDI para un solo RFC. Si el cliente quiere dividir el gasto con otro RFC, procesas dos ventas separadas — SACS facilita el split en el POS."
+        "answer": "No, por regla del SAT cada ticket genera un CFDI para un solo RFC. Si el cliente quiere dividir el gasto con otro RFC, procesas dos ventas separadas — Sacs facilita el split en el POS."
       },
       {
         "question": "¿Qué pasa con las devoluciones y las notas de crédito?",
-        "answer": "Al procesar la devolución, SACS genera la nota de crédito contra la factura madre automáticamente. Folio fiscal original, motivo SAT, productos devueltos — todo pre-llenado."
+        "answer": "Al procesar la devolución, Sacs genera la nota de crédito contra la factura madre automáticamente. Folio fiscal original, motivo SAT, productos devueltos — todo pre-llenado."
       },
       {
         "question": "¿Manejan complementos de pago para ventas a crédito?",
-        "answer": "Sí. Cada abono parcial de una factura a crédito o apartado dispara un complemento de pago timbrado, con el monto, método y fecha. Obligatorio por el SAT desde 2022 — SACS lo hace sin acción manual."
+        "answer": "Sí. Cada abono parcial de una factura a crédito o apartado dispara un complemento de pago timbrado, con el monto, método y fecha. Obligatorio por el SAT desde 2022 — Sacs lo hace sin acción manual."
       },
       {
         "question": "¿El contador puede exportar los reportes fiscales?",
@@ -3047,17 +3047,17 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa si el PAC o el SAT se caen?",
-        "answer": "SACS guarda la intención de timbrado y reintenta hasta que el PAC responda. Si el corte es largo, avisa al administrador y te permite seguir operando el POS — las facturas pendientes se timbran en cuanto el servicio vuelva."
+        "answer": "Sacs guarda la intención de timbrado y reintenta hasta que el PAC responda. Si el corte es largo, avisa al administrador y te permite seguir operando el POS — las facturas pendientes se timbran en cuanto el servicio vuelva."
       }
     ]
   },
   "inventario-omnicanal": {
     "hero": {
-      "eyebrow": "SACS Inventario Omnicanal",
+      "eyebrow": "Sacs Inventario Omnicanal",
       "title": "Tu inventario de toda la red, leído en 10 análisis listos para decidir.",
       "subtitle": "El Tablero de Inventario consolida existencias, costos y ventas de cada sucursal y almacén en una sola pantalla. Elige el análisis que necesitas — ABC, rotación, puntos de reorden, valorización — filtra por ubicación y expórtalo a Excel cuando tu contador lo pida. En moda, con la lectura por talla y color: qué combinación se vende y cuál se quedó.",
       "image": "/images/inventario-omnicanal-sistema.webp",
-      "imageAlt": "Módulo de inventario omnicanal en SACS"
+      "imageAlt": "Módulo de inventario omnicanal en Sacs"
     },
     "features": [
       {
@@ -3087,7 +3087,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un SKU. Una foto global. Sin hojas de cálculo al cierre.",
         "description": "Consulta cuánto tienes del modelo 417 en Polanco, Santa Fe y CEDIS — en la misma pantalla, al segundo. Cada venta, devolución o ajuste descuenta en la ubicación correcta y deja bitácora de quién, cuándo y por qué.",
         "image": "/images/inventario-omnicanal-global.webp",
-        "imageAlt": "Pantalla de SACS mostrando stock consolidado por sucursal",
+        "imageAlt": "Pantalla de Sacs mostrando stock consolidado por sucursal",
         "link": null,
         "featured": true,
         "variant": "inv-global-matrix",
@@ -3097,7 +3097,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada canal descuenta del mismo pozo.",
         "description": "El POS, la tienda en línea y el agente de WhatsApp leen el mismo inventario. Cuando una sucursal vende la última unidad, el sitio la marca como agotada en segundos — no horas después. Se acaban las ventas cruzadas que no puedes cumplir.",
         "image": "/images/inventario-omnicanal-canales.webp",
-        "imageAlt": "Diagrama de sincronización entre POS, tienda online y WhatsApp en SACS",
+        "imageAlt": "Diagrama de sincronización entre POS, tienda online y WhatsApp en Sacs",
         "link": {
           "label": "Ver tienda en línea",
           "href": "/producto/tienda-en-linea"
@@ -3109,7 +3109,7 @@ export const pageContent: Record<string, any> = {
         "title": "Reservado, en tránsito, vendido — todo rastreado.",
         "description": "Marca el stock apartado para que no se venda dos veces. Sigue el traspaso del CEDIS a la sucursal con estados claros: solicitado, en camino, recibido. Y cuando se vende, se vende — sin ambigüedad entre \"salió de caja\" y \"todavía está en piso\".",
         "image": "/images/inventario-omnicanal-estados.webp",
-        "imageAlt": "Pantalla de estados de inventario en SACS: disponible, reservado, tránsito",
+        "imageAlt": "Pantalla de estados de inventario en Sacs: disponible, reservado, tránsito",
         "link": {
           "label": "Ver apartados y pedidos",
           "href": "/producto/apartados-y-pedidos"
@@ -3119,9 +3119,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Alertas que te avisan antes del quiebre.",
-        "description": "Configura mínimos por sucursal y por SKU. Cuando un artículo clave cae bajo el piso, SACS manda email a quien compra y propone una sugerencia de reposición basada en la venta de las últimas semanas. La nivelación avanzada entre sucursales está en el roadmap.",
+        "description": "Configura mínimos por sucursal y por SKU. Cuando un artículo clave cae bajo el piso, Sacs manda email a quien compra y propone una sugerencia de reposición basada en la venta de las últimas semanas. La nivelación avanzada entre sucursales está en el roadmap.",
         "image": "/images/inventario-omnicanal-alertas.webp",
-        "imageAlt": "Pantalla de alertas de mínimos y caducidad en SACS",
+        "imageAlt": "Pantalla de alertas de mínimos y caducidad en Sacs",
         "link": {
           "label": "Ver órdenes de compra",
           "href": "/producto/ordenes-de-compra"
@@ -3131,7 +3131,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Teníamos 14 tiendas y cada gerente cuidaba su propio Excel. Al cierre de mes nadie cuadraba. Con SACS ahora veo el inventario real de toda la red en una pantalla. Los faltantes se detectan el mismo día, no al siguiente inventario físico.",
+      "quote": "Teníamos 14 tiendas y cada gerente cuidaba su propio Excel. Al cierre de mes nadie cuadraba. Con Sacs ahora veo el inventario real de toda la red en una pantalla. Los faltantes se detectan el mismo día, no al siguiente inventario físico.",
       "name": "Renata Villarreal",
       "role": "Directora de Operaciones",
       "company": "Casa Marea",
@@ -3146,7 +3146,7 @@ export const pageContent: Record<string, any> = {
         "title": "10 reportes, un solo tablero.",
         "description": "Cards visuales para ABC/Pareto, Rotación, Obsoletos, Mermas, Valorización (PPP/FIFO), Puntos de Reorden, Anomalías, Dashboard General, Resumen y Rendimiento. Cambias de análisis sin salir de la pantalla.",
         "image": "/images/inventario-omnicanal-tab-config.webp",
-        "imageAlt": "Configurador de reporte de inventario: tipo de análisis, criterio, clasificación, agrupar por y período en SACS",
+        "imageAlt": "Configurador de reporte de inventario: tipo de análisis, criterio, clasificación, agrupar por y período en Sacs",
         "link": null,
         "details": [
           {
@@ -3157,7 +3157,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"M21 21l-4.35-4.35\"/></svg>",
             "title": "Búsqueda por código o nombre",
-            "description": "Escaneas el código de barras o escribes parte del nombre y SACS te lleva al SKU con su situación en todas las ubicaciones."
+            "description": "Escaneas el código de barras o escribes parte del nombre y Sacs te lleva al SKU con su situación en todas las ubicaciones."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 10h16M10 4v16\"/></svg>",
@@ -3186,13 +3186,13 @@ export const pageContent: Record<string, any> = {
         "title": "Toda la red, o solo una sucursal.",
         "description": "Filtra por sucursal y almacén, alterna entre vista por-sucursal y por-producto consolidado, aplica filtros numéricos y de texto avanzados y ordena por la columna que te importe (stock, costo, valor, rotación).",
         "image": "/images/inventario-omnicanal-tab-filtros.webp",
-        "imageAlt": "Modal de filtros avanzados del dashboard de inventario en SACS",
+        "imageAlt": "Modal de filtros avanzados del dashboard de inventario en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 21V10l9-7 9 7v11\"/><path d=\"M9 21v-8h6v8\"/></svg>",
             "title": "Vista por tienda",
-            "description": "El gerente entra con su usuario y SACS filtra todo a su sucursal. No ve el resto de la red si no se lo autorizaste."
+            "description": "El gerente entra con su usuario y Sacs filtra todo a su sucursal. No ve el resto de la red si no se lo autorizaste."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -3207,7 +3207,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
             "title": "Recepción contra traspaso",
-            "description": "Cuando llega el paquete, el gerente escanea y confirma las piezas recibidas. Si falta alguna, SACS abre la diferencia para investigar."
+            "description": "Cuando llega el paquete, el gerente escanea y confirma las piezas recibidas. Si falta alguna, Sacs abre la diferencia para investigar."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -3226,7 +3226,7 @@ export const pageContent: Record<string, any> = {
         "title": "Repón a tiempo y entrega el reporte.",
         "description": "El reporte de Puntos de Reorden te da stock de seguridad y cantidad sugerida por SKU; la Valorización compara costo PPP vs FIFO. Todo se exporta a Excel y PDF para compras y contabilidad.",
         "image": "/images/inventario-omnicanal-tab-reporte.webp",
-        "imageAlt": "Reporte de análisis ABC de inventario con tabla de productos por sucursal en SACS",
+        "imageAlt": "Reporte de análisis ABC de inventario con tabla de productos por sucursal en Sacs",
         "link": null,
         "details": [
           {
@@ -3268,7 +3268,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/renata-villarreal.webp",
         "initials": "RV",
         "color": "#b47a3a",
-        "quote": "Teníamos 14 tiendas y cada gerente cuidaba su propio Excel. Al cierre de mes nadie cuadraba. Con SACS ahora veo el inventario real de toda la red en una pantalla — los faltantes se detectan el mismo día.",
+        "quote": "Teníamos 14 tiendas y cada gerente cuidaba su propio Excel. Al cierre de mes nadie cuadraba. Con Sacs ahora veo el inventario real de toda la red en una pantalla — los faltantes se detectan el mismo día.",
         "name": "Renata Villarreal",
         "business": "Casa Marea",
         "location": "México"
@@ -3288,7 +3288,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/mariela-quispe.webp",
         "initials": "MQ",
         "color": "#5a8a5f",
-        "quote": "Manejamos productos con caducidad y antes perdíamos mercancía por no verla a tiempo. Ahora SACS nos alerta 60 días antes — alcanzamos a rotar o a promocionar lo que está por vencer.",
+        "quote": "Manejamos productos con caducidad y antes perdíamos mercancía por no verla a tiempo. Ahora Sacs nos alerta 60 días antes — alcanzamos a rotar o a promocionar lo que está por vencer.",
         "name": "Mariela Quispe",
         "business": "Natural Market",
         "location": "Perú"
@@ -3312,12 +3312,12 @@ export const pageContent: Record<string, any> = {
         "answer": "La primera transacción que llega al servidor descuenta el stock. La segunda recibe un error y el cajero ve el aviso para proponer alternativa — apartado con traspaso, sustitución o cancelación del cobro."
       },
       {
-        "question": "¿SACS propone reposición automática entre sucursales?",
+        "question": "¿Sacs propone reposición automática entre sucursales?",
         "answer": "La sugerencia de reposición contra proveedor (OC) ya está en producción usando la venta de las últimas semanas. La nivelación automática entre sucursales según demanda local está en el roadmap — vea la página de Nivelación de Inventario."
       },
       {
         "question": "¿Puedo manejar productos con caducidad o lotes?",
-        "answer": "Sí para caducidad: configuras la fecha por entrada y SACS te alerta cuando un lote se acerca al vencimiento. El manejo de lotes con trazabilidad completa (rastrear cada pieza de un lote específico por toda la red) está en piloto con clientes de alimentos y cosmética."
+        "answer": "Sí para caducidad: configuras la fecha por entrada y Sacs te alerta cuando un lote se acerca al vencimiento. El manejo de lotes con trazabilidad completa (rastrear cada pieza de un lote específico por toda la red) está en piloto con clientes de alimentos y cosmética."
       },
       {
         "question": "¿Cómo hago ajustes de inventario (merma, robo, errores)?",
@@ -3325,7 +3325,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿El inventario se sincroniza con mi tienda en línea?",
-        "answer": "Sí, si usas SACS Tienda en Línea. El catálogo online lee del mismo inventario — cuando la última unidad se vende en caja, el sitio la marca agotada. La integración con tiendas externas (Shopify, WooCommerce) está disponible como proyecto de integración."
+        "answer": "Sí, si usas Sacs Tienda en Línea. El catálogo online lee del mismo inventario — cuando la última unidad se vende en caja, el sitio la marca agotada. La integración con tiendas externas (Shopify, WooCommerce) está disponible como proyecto de integración."
       },
       {
         "question": "¿Cuántas sucursales puedo manejar?",
@@ -3335,11 +3335,11 @@ export const pageContent: Record<string, any> = {
   },
   "conteo-fisico": {
     "hero": {
-      "eyebrow": "SACS Conteo Físico",
+      "eyebrow": "Sacs Conteo Físico",
       "title": "Cuenta tu inventario, cuádralo con la realidad y ajusta en un clic.",
-      "subtitle": "Elige el almacén, busca por código de barras o SKU y captura lo físico. SACS lo compara contra el teórico, te muestra cada diferencia en unidades y en dinero, y al finalizar genera los ajustes en el Kardex automáticamente.",
+      "subtitle": "Elige el almacén, busca por código de barras o SKU y captura lo físico. Sacs lo compara contra el teórico, te muestra cada diferencia en unidades y en dinero, y al finalizar genera los ajustes en el Kardex automáticamente.",
       "image": "/images/conteo-fisico-sistema.webp",
-      "imageAlt": "Módulo de conteo fisico en SACS"
+      "imageAlt": "Módulo de conteo fisico en Sacs"
     },
     "features": [
       {
@@ -3350,26 +3350,26 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
         "title": "Diferencia teórico vs físico, en unidades y en pesos",
-        "description": "Al revisar, SACS compara lo contado contra el sistema y te muestra sobrantes y faltantes por producto, con su impacto en costo (PPP). Filtra entre Por contar, Contado y Todo, y exporta a Excel o PDF."
+        "description": "Al revisar, Sacs compara lo contado contra el sistema y te muestra sobrantes y faltantes por producto, con su impacto en costo (PPP). Filtra entre Por contar, Contado y Todo, y exporta a Excel o PDF."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
         "title": "Reconcilia los cambios ocurridos mientras contabas",
-        "description": "Contar toma tiempo y el inventario se sigue moviendo. SACS detecta las ventas y entradas registradas en el Kardex desde que iniciaste el conteo y te deja aplicarlas al conteo de forma automática o producto por producto, para que la diferencia sea real."
+        "description": "Contar toma tiempo y el inventario se sigue moviendo. Sacs detecta las ventas y entradas registradas en el Kardex desde que iniciaste el conteo y te deja aplicarlas al conteo de forma automática o producto por producto, para que la diferencia sea real."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
         "title": "Ajuste al Kardex con un clic",
-        "description": "Cuando finalizas, SACS genera las entradas y salidas de inventario por la diferencia, etiquetadas como ajuste por conteo físico y referenciadas al folio. La existencia queda corregida y todo queda registrado en el Kardex."
+        "description": "Cuando finalizas, Sacs genera las entradas y salidas de inventario por la diferencia, etiquetadas como ajuste por conteo físico y referenciadas al folio. La existencia queda corregida y todo queda registrado en el Kardex."
       }
     ],
     "showcaseTitle": "El conteo deja de ser un drama de fin de mes.",
     "blocks": [
       {
         "title": "El celular que ya traes en la bolsa es tu lector.",
-        "description": "Abres la app de SACS, entras al conteo asignado y empiezas a escanear. La cámara reconoce código de barras, QR y hasta el código interno que tú imprimes en etiquetas. No invertiste un peso en hardware nuevo.",
+        "description": "Abres la app de Sacs, entras al conteo asignado y empiezas a escanear. La cámara reconoce código de barras, QR y hasta el código interno que tú imprimes en etiquetas. No invertiste un peso en hardware nuevo.",
         "image": "/images/conteo-fisico-escaneo.webp",
-        "imageAlt": "Empleado con celular escaneando etiqueta de código de barras en SACS",
+        "imageAlt": "Empleado con celular escaneando etiqueta de código de barras en Sacs",
         "link": null,
         "featured": true,
         "variant": "count-scan-live",
@@ -3379,7 +3379,7 @@ export const pageContent: Record<string, any> = {
         "title": "Zonas asignadas. Responsables claros.",
         "description": "Antes de empezar divides la tienda en zonas — anaquel A1, bodega trasera, escaparate — y asignas quién cuenta cada una. El sistema muestra el avance en vivo para que sepas cuánto falta y quién va atrasado.",
         "image": "/images/conteo-fisico-zonas.webp",
-        "imageAlt": "Pantalla de asignación de zonas de conteo en SACS",
+        "imageAlt": "Pantalla de asignación de zonas de conteo en Sacs",
         "link": null,
         "featured": true,
         "variant": "count-zones-progress",
@@ -3387,9 +3387,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Diferencia a la vista. Antes de ajustar nada.",
-        "description": "Al cerrar el conteo SACS muestra un reporte: qué sobra, qué falta, dónde y quién contó. Tú decides qué ajustas y qué mandas a segundo conteo. Nada se aplica al inventario hasta que lo autorizas con PIN.",
+        "description": "Al cerrar el conteo Sacs muestra un reporte: qué sobra, qué falta, dónde y quién contó. Tú decides qué ajustas y qué mandas a segundo conteo. Nada se aplica al inventario hasta que lo autorizas con PIN.",
         "image": "/images/conteo-fisico-diferencias.webp",
-        "imageAlt": "Reporte de diferencias de conteo físico en SACS",
+        "imageAlt": "Reporte de diferencias de conteo físico en Sacs",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
@@ -3401,7 +3401,7 @@ export const pageContent: Record<string, any> = {
         "title": "Conteos cíclicos para no parar la tienda.",
         "description": "En lugar de cerrar por inventario general, programas conteos cíclicos por zona o familia. Cada semana cuentas un bloque, y en el año tocaste toda la mercancía sin cerrar un solo día. El conteo programado con rotación automática de zonas está en el roadmap; por ahora lo configuras manual.",
         "image": "/images/conteo-fisico-ciclico.webp",
-        "imageAlt": "Calendario de conteos cíclicos en SACS",
+        "imageAlt": "Calendario de conteos cíclicos en Sacs",
         "link": null,
         "featured": true,
         "variant": "promo-schedule"
@@ -3423,7 +3423,7 @@ export const pageContent: Record<string, any> = {
         "title": "Completo, parcial, manual o sorpresa",
         "description": "Cuenta todo el catálogo o solo lo que te importa: filtra el conteo parcial por categoría, marca, proveedor o etiqueta. El modo manual te deja agregar productos al vuelo y el modo sorpresa lo arrancas sin avisar. Eliges sucursal y almacén antes de empezar.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "App de SACS en celular escaneando producto",
+        "imageAlt": "App de Sacs en celular escaneando producto",
         "link": null,
         "details": [
           {
@@ -3463,7 +3463,7 @@ export const pageContent: Record<string, any> = {
         "title": "Bloquea existencias y controla quién contó",
         "description": "Oculta las existencias de ese almacén en todos los módulos mientras cuentas, para que nadie se base en el teórico. Decide si consideras apartados y revisa en cada producto quién lo contó y cuándo. Para los no contados eliges omitir o contabilizar a cero.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "Panel de supervisión de conteo en SACS",
+        "imageAlt": "Panel de supervisión de conteo en Sacs",
         "link": null,
         "details": [
           {
@@ -3503,7 +3503,7 @@ export const pageContent: Record<string, any> = {
         "title": "Resumen, exportación y ajuste registrado",
         "description": "El resumen muestra la diferencia total en unidades y en costo. Expórtalo a Excel o imprime el PDF configurando qué columnas incluir. Al finalizar, cada ajuste se asienta en el Kardex con motivo y referencia al folio del conteo, listo para auditar.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "Reporte de diferencias y ajustes de conteo físico en SACS",
+        "imageAlt": "Reporte de diferencias y ajustes de conteo físico en Sacs",
         "link": null,
         "details": [
           {
@@ -3590,7 +3590,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Se puede hacer doble conteo o contraconteo?",
-        "answer": "Sí. Asignas dos personas a la misma zona y SACS compara los dos conteos. Las diferencias entre contadores se resaltan antes de ir a ajuste — útil para zonas de alto valor o con historial de diferencias."
+        "answer": "Sí. Asignas dos personas a la misma zona y Sacs compara los dos conteos. Las diferencias entre contadores se resaltan antes de ir a ajuste — útil para zonas de alto valor o con historial de diferencias."
       },
       {
         "question": "¿Cómo se maneja la autorización de ajustes grandes?",
@@ -3612,22 +3612,22 @@ export const pageContent: Record<string, any> = {
   },
   "nivelacion-de-inventario": {
     "hero": {
-      "eyebrow": "SACS Nivelación de Inventario",
+      "eyebrow": "Sacs Nivelación de Inventario",
       "title": "El stock donde se está vendiendo. Calculado, no a corazonada.",
-      "subtitle": "SACS lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. La talla parada en una tienda se va a la que sí la vende: tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
+      "subtitle": "Sacs lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. La talla parada en una tienda se va a la que sí la vende: tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
       "image": "/images/nivelacion-de-inventario-sistema.webp",
-      "imageAlt": "Módulo de nivelacion de inventario en SACS"
+      "imageAlt": "Módulo de nivelacion de inventario en Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/><path d=\"M18 15l3 3-3 3\"/></svg>",
         "title": "Propuesta calculada con modelo de inventario real",
-        "description": "No es un promedio plano. SACS calcula demanda diaria limpia (sin devoluciones, corrigiendo quiebres y outliers), stock de seguridad por nivel de servicio y punto de reorden por cada artículo y sucursal."
+        "description": "No es un promedio plano. Sacs calcula demanda diaria limpia (sin devoluciones, corrigiendo quiebres y outliers), stock de seguridad por nivel de servicio y punto de reorden por cada artículo y sucursal."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
         "title": "Reparto justo cuando el CEDIS no alcanza",
-        "description": "Si el almacén origen no tiene para surtir a todas las sucursales, SACS reparte con fair-share según el déficit de cada una y redondea a empaque o múltiplo de compra. Sin que una tienda se quede sin nada."
+        "description": "Si el almacén origen no tiene para surtir a todas las sucursales, Sacs reparte con fair-share según el déficit de cada una y redondea a empaque o múltiplo de compra. Sin que una tienda se quede sin nada."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 12h8M12 8v8\"/></svg>",
@@ -3637,16 +3637,16 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
         "title": "Ejecuta y genera las transferencias",
-        "description": "Al aprobar, SACS convierte las líneas en transferencias reales de forma segura: idempotente y parcial. Cuenta con bandeja de excepciones priorizada y un data-gate que aísla los datos sucios antes de mover una sola caja."
+        "description": "Al aprobar, Sacs convierte las líneas en transferencias reales de forma segura: idempotente y parcial. Cuenta con bandeja de excepciones priorizada y un data-gate que aísla los datos sucios antes de mover una sola caja."
       }
     ],
     "showcaseTitle": "El stock se mueve donde se vende. No donde lo olvidaste.",
     "blocks": [
       {
-        "title": "SACS ve dónde sobra y dónde falta — antes que tú.",
+        "title": "Sacs ve dónde sobra y dónde falta — antes que tú.",
         "description": "Cada semana el sistema analiza la venta de los últimos 14, 30 o 60 días (tú eliges el horizonte) y detecta desbalances: Polanco agotó la talla 6 pero Santa Fe tiene 8 piezas paradas. Arma la propuesta lista para tu revisión.",
         "image": "/images/nivelacion-de-inventario-propuesta.webp",
-        "imageAlt": "Pantalla de propuesta de nivelación generada por SACS",
+        "imageAlt": "Pantalla de propuesta de nivelación generada por Sacs",
         "link": null,
         "featured": true,
         "variant": "control-central"
@@ -3655,7 +3655,7 @@ export const pageContent: Record<string, any> = {
         "title": "Tú apruebas. Nadie mueve una caja sin tu luz verde.",
         "description": "La propuesta te llega con el detalle: qué SKU, cuántas piezas, de dónde a dónde, y el impacto en stock de cada sucursal después del movimiento. Apruebas parcial o total, ajustas cantidades, o rechazas y regresas al equipo — con tu comentario guardado.",
         "image": "/images/nivelacion-de-inventario-aprobacion.webp",
-        "imageAlt": "Pantalla de aprobación de traspasos propuestos en SACS",
+        "imageAlt": "Pantalla de aprobación de traspasos propuestos en Sacs",
         "link": null,
         "featured": true,
         "variant": "reposicion-approval",
@@ -3663,7 +3663,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Orden de traspaso lista para bodega.",
-        "description": "Al aprobar, SACS emite la orden de traspaso con la lista de armado ordenada por ubicación física en la bodega de origen. El equipo recoge, escanea con el celular, imprime la guía y despacha — con el destino ya enterado.",
+        "description": "Al aprobar, Sacs emite la orden de traspaso con la lista de armado ordenada por ubicación física en la bodega de origen. El equipo recoge, escanea con el celular, imprime la guía y despacha — con el destino ya enterado.",
         "image": "/images/nivelacion-de-inventario-orden.webp",
         "imageAlt": "Orden de traspaso impresa con lista de armado por ubicación",
         "link": {
@@ -3677,7 +3677,7 @@ export const pageContent: Record<string, any> = {
         "title": "Reglas que respetan tu operación.",
         "description": "Configuras topes por sucursal origen, familias excluidas, frecuencia máxima por SKU y sucursales espejo (donde siempre debe haber stock). La nivelación totalmente automatizada con ML por sucursal está en piloto; hoy la propuesta usa reglas de negocio claras que tú controlas.",
         "image": "/images/nivelacion-de-inventario-reglas.webp",
-        "imageAlt": "Configurador de reglas de nivelación en SACS",
+        "imageAlt": "Configurador de reglas de nivelación en Sacs",
         "link": null,
         "featured": true,
         "variant": "promo-schedule"
@@ -3697,9 +3697,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Corrida",
         "title": "Una corrida, una foto de qué mover.",
-        "description": "El wizard te guía: eliges el objetivo (reabastecer desde CEDIS, entre sucursales o generar orden de compra), defines origen y destino, el horizonte de venta a analizar y los días de cobertura. SACS corre el análisis y guarda el resultado como un run que puedes retomar.",
+        "description": "El wizard te guía: eliges el objetivo (reabastecer desde CEDIS, entre sucursales o generar orden de compra), defines origen y destino, el horizonte de venta a analizar y los días de cobertura. Sacs corre el análisis y guarda el resultado como un run que puedes retomar.",
         "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
-        "imageAlt": "Pantalla de propuesta de nivelación semanal en SACS",
+        "imageAlt": "Pantalla de propuesta de nivelación semanal en Sacs",
         "link": null,
         "details": [
           {
@@ -3755,7 +3755,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
             "title": "Tiendas insignia",
-            "description": "Las tiendas flagship siempre deben tener surtido completo. Las marcas como \"receptoras siempre, cedentes nunca\" y SACS respeta la regla."
+            "description": "Las tiendas flagship siempre deben tener surtido completo. Las marcas como \"receptoras siempre, cedentes nunca\" y Sacs respeta la regla."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -3779,7 +3779,7 @@ export const pageContent: Record<string, any> = {
         "title": "De aprobado a en camino.",
         "description": "Las líneas aprobadas se vuelven transferencias reales en un clic, sin duplicar ni mover dos veces lo mismo. También puedes dejar la nivelación corriendo en automático y programada para que la propuesta esté lista sola.",
         "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
-        "imageAlt": "Seguimiento de ejecución de traspaso de nivelación en SACS",
+        "imageAlt": "Seguimiento de ejecución de traspaso de nivelación en Sacs",
         "link": null,
         "details": [
           {
@@ -3850,7 +3850,7 @@ export const pageContent: Record<string, any> = {
     "faqs": [
       {
         "question": "¿La nivelación mueve stock automáticamente sin que yo apruebe?",
-        "answer": "No. SACS siempre genera una propuesta que tú (o el rol autorizado) revisa antes de ejecutar. El movimiento real nunca ocurre sin aprobación humana — la automatización completa sin intervención está en el roadmap pero no es el comportamiento por defecto."
+        "answer": "No. Sacs siempre genera una propuesta que tú (o el rol autorizado) revisa antes de ejecutar. El movimiento real nunca ocurre sin aprobación humana — la automatización completa sin intervención está en el roadmap pero no es el comportamiento por defecto."
       },
       {
         "question": "¿En qué se basa la propuesta?",
@@ -3862,11 +3862,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa si una sucursal no quiere ceder stock?",
-        "answer": "Configura piso mínimo por sucursal origen o marca la tienda como \"cedente no\" para ciertas familias. SACS nunca propondrá movimientos que violen esas reglas."
+        "answer": "Configura piso mínimo por sucursal origen o marca la tienda como \"cedente no\" para ciertas familias. Sacs nunca propondrá movimientos que violen esas reglas."
       },
       {
         "question": "¿Cómo se ejecuta el traspaso una vez aprobado?",
-        "answer": "SACS genera la orden con lista de armado ordenada por ubicación física en la bodega origen. El equipo escanea con el celular mientras arma, imprime guía y despacha. La sucursal destino escanea al recibir."
+        "answer": "Sacs genera la orden con lista de armado ordenada por ubicación física en la bodega origen. El equipo escanea con el celular mientras arma, imprime guía y despacha. La sucursal destino escanea al recibir."
       },
       {
         "question": "¿Qué pasa si llega menos de lo que se envió?",
@@ -3878,32 +3878,32 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo evito que un SKU se mueva en ping-pong entre tiendas?",
-        "answer": "Configuras frecuencia máxima por SKU — por ejemplo, \"este artículo solo se puede mover una vez cada 30 días\". SACS filtra la propuesta respetando esa regla."
+        "answer": "Configuras frecuencia máxima por SKU — por ejemplo, \"este artículo solo se puede mover una vez cada 30 días\". Sacs filtra la propuesta respetando esa regla."
       },
       {
         "question": "¿Mide si la nivelación funcionó?",
-        "answer": "Sí. Después de la ejecución, SACS compara la venta del SKU en la tienda receptora contra el periodo previo. El reporte de efectividad te muestra qué propuestas sí captaron venta y cuáles no — sirve para ajustar las reglas."
+        "answer": "Sí. Después de la ejecución, Sacs compara la venta del SKU en la tienda receptora contra el periodo previo. El reporte de efectividad te muestra qué propuestas sí captaron venta y cuáles no — sirve para ajustar las reglas."
       }
     ]
   },
   "ordenes-de-compra": {
     "hero": {
-      "eyebrow": "SACS Órdenes de Compra",
+      "eyebrow": "Sacs Órdenes de Compra",
       "title": "Pide bien. Recibe contra lo que pediste. Paga solo lo que llegó.",
       "subtitle": "Genera órdenes de compra con los términos de cada proveedor, manda el PDF con tu marca por correo, recibe capturando lo que de verdad llegó y concilia la factura a 3 vías contra la orden y la recepción. Se acaba el \"pedí 100, llegaron 87 y me cobraron 100\".",
       "image": "/images/ordenes-de-compra-sistema.webp",
-      "imageAlt": "Módulo de ordenes de compra en SACS"
+      "imageAlt": "Módulo de ordenes de compra en Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 10h16M10 4v16\"/></svg>",
         "title": "OC con los términos de cada proveedor",
-        "description": "Eliges el proveedor y SACS precarga sus condiciones: contado, crédito o parcialidades, días de crédito y si la cuenta por pagar nace al enviar o al recibir. Ajustas solo para esa orden y listo."
+        "description": "Eliges el proveedor y Sacs precarga sus condiciones: contado, crédito o parcialidades, días de crédito y si la cuenta por pagar nace al enviar o al recibir. Ajustas solo para esa orden y listo."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
         "title": "Envía el PDF con tu marca por correo",
-        "description": "Al enviar la orden, SACS genera el PDF con tu logo y datos y se lo manda por email al proveedor — o lo descargas para tu canal. La cuenta por pagar queda preparada en automático, ligada a Gastos."
+        "description": "Al enviar la orden, Sacs genera el PDF con tu logo y datos y se lo manda por email al proveedor — o lo descargas para tu canal. La cuenta por pagar queda preparada en automático, ligada a Gastos."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M7 15h4\"/></svg>",
@@ -3913,16 +3913,16 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
         "title": "Conciliación 3 vías de la factura",
-        "description": "Arrastras el XML/CFDI (o una foto, con OCR) y SACS lo cruza contra la orden y la recepción: alerta RFC, total, IVA, retenciones y, por línea, precio, cantidad o faltantes. Verificas ante el SAT y pagas conciliado."
+        "description": "Arrastras el XML/CFDI (o una foto, con OCR) y Sacs lo cruza contra la orden y la recepción: alerta RFC, total, IVA, retenciones y, por línea, precio, cantidad o faltantes. Verificas ante el SAT y pagas conciliado."
       }
     ],
     "showcaseTitle": "La compra deja de ser una caja negra.",
     "blocks": [
       {
         "title": "La sugerencia sale de lo que vendiste. No de una corazonada.",
-        "description": "SACS mira la venta de las últimas semanas por SKU, los mínimos que configuraste por sucursal y lo que ya está en tránsito. Te propone la OC con cantidades justificadas — tú ajustas y envías al proveedor, sin partir de una hoja en blanco.",
+        "description": "Sacs mira la venta de las últimas semanas por SKU, los mínimos que configuraste por sucursal y lo que ya está en tránsito. Te propone la OC con cantidades justificadas — tú ajustas y envías al proveedor, sin partir de una hoja en blanco.",
         "image": "/images/ordenes-de-compra-sugerencia.webp",
-        "imageAlt": "Pantalla de sugerencia de orden de compra generada por SACS",
+        "imageAlt": "Pantalla de sugerencia de orden de compra generada por Sacs",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
@@ -3942,7 +3942,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Recibe escaneando. Detecta diferencias antes de firmar.",
-        "description": "Cuando llega la mercancía, escaneas las cajas contra la OC en el celular. Si faltan piezas, sobraron o cambiaron el modelo, SACS lo marca al momento. Das entrada solo a lo correcto y abres una nota de reclamo al proveedor por lo que falta.",
+        "description": "Cuando llega la mercancía, escaneas las cajas contra la OC en el celular. Si faltan piezas, sobraron o cambiaron el modelo, Sacs lo marca al momento. Das entrada solo a lo correcto y abres una nota de reclamo al proveedor por lo que falta.",
         "image": "/images/ordenes-de-compra-recepcion.webp",
         "imageAlt": "Empleado recibiendo mercancía con celular escaneando contra orden de compra",
         "link": null,
@@ -3951,9 +3951,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Concilia factura contra lo que recibiste.",
-        "description": "La factura del proveedor se cruza contra la OC y la recepción. Si el precio cambió sin avisar, si cobraron una pieza que no llegó, si el impuesto está mal — SACS te lo señala. Pagas conciliado, no por confianza. La integración directa con portales de facturación del proveedor está en el roadmap.",
+        "description": "La factura del proveedor se cruza contra la OC y la recepción. Si el precio cambió sin avisar, si cobraron una pieza que no llegó, si el impuesto está mal — Sacs te lo señala. Pagas conciliado, no por confianza. La integración directa con portales de facturación del proveedor está en el roadmap.",
         "image": "/images/ordenes-de-compra-conciliacion.webp",
-        "imageAlt": "Pantalla de conciliación de factura contra orden de compra en SACS",
+        "imageAlt": "Pantalla de conciliación de factura contra orden de compra en Sacs",
         "link": {
           "label": "Ver facturación electrónica",
           "href": "/producto/facturacion-electronica"
@@ -3979,18 +3979,18 @@ export const pageContent: Record<string, any> = {
         "title": "De proveedor a orden enviada, en minutos",
         "description": "Eliges proveedor (con sus términos precargados), agregas líneas buscando por nombre, SKU o código —o las traes desde un CFDI con OCR y alta rápida de productos— confirmas en Revisión y al enviar sale el PDF con tu marca por correo y se prepara la CxP.",
         "image": "/images/ordenes-de-compra-sistema-tab.webp",
-        "imageAlt": "Pantalla de generación de orden de compra en SACS",
+        "imageAlt": "Pantalla de generación de orden de compra en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
             "title": "Sugerencia por SKU",
-            "description": "SACS propone cantidad a pedir por artículo considerando venta reciente, stock actual, tránsito entrante y mínimo por sucursal de destino."
+            "description": "Sacs propone cantidad a pedir por artículo considerando venta reciente, stock actual, tránsito entrante y mínimo por sucursal de destino."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
             "title": "Proveedores por SKU",
-            "description": "Cada SKU con uno o varios proveedores autorizados. SACS agrupa la OC por proveedor y aplica los términos que tienes con cada uno."
+            "description": "Cada SKU con uno o varios proveedores autorizados. Sacs agrupa la OC por proveedor y aplica los términos que tienes con cada uno."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20\"/></svg>",
@@ -4017,9 +4017,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Recibir",
         "title": "Recibe lo que de verdad llegó",
-        "description": "En la pestaña de Recepción capturas lo recibido por línea con lote y caducidad. SACS muestra ordenado, recibido y diferencia, deja la orden como recibida o parcial y da entrada a inventario al último costo. ¿Otra variante? La cambias en el momento.",
+        "description": "En la pestaña de Recepción capturas lo recibido por línea con lote y caducidad. Sacs muestra ordenado, recibido y diferencia, deja la orden como recibida o parcial y da entrada a inventario al último costo. ¿Otra variante? La cambias en el momento.",
         "image": "/images/ordenes-de-compra-sistema-tab.webp",
-        "imageAlt": "Pantalla de recepción de mercancía contra OC en SACS",
+        "imageAlt": "Pantalla de recepción de mercancía contra OC en Sacs",
         "link": null,
         "details": [
           {
@@ -4035,7 +4035,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4l16 16M4 20L20 4\"/></svg>",
             "title": "Diferencias al momento",
-            "description": "Si escaneas algo que no estaba en la OC, o falta una pieza, SACS lo marca en rojo. Decides si aceptas el cambio, lo rechazas o abres reclamo."
+            "description": "Si escaneas algo que no estaba en la OC, o falta una pieza, Sacs lo marca en rojo. Decides si aceptas el cambio, lo rechazas o abres reclamo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><path d=\"M21 15l-5-5L5 21\"/></svg>",
@@ -4045,7 +4045,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
             "title": "Nota al proveedor",
-            "description": "Generas nota de reclamo con el detalle de la diferencia, las fotos y el monto impactado. La envías por email desde SACS con respaldo en bitácora."
+            "description": "Generas nota de reclamo con el detalle de la diferencia, las fotos y el monto impactado. La envías por email desde Sacs con respaldo en bitácora."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
@@ -4057,9 +4057,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Conciliar y pagar",
         "title": "Cruza la factura antes de pagar",
-        "description": "Sueltas el XML/CFDI y SACS concilia a 3 vías contra la orden y la recepción: te marca RFC, total, moneda, IVA, retenciones y diferencias por línea. Verificas ante el SAT, registras el pago de la cuenta por pagar y solo pagas lo que coincide.",
+        "description": "Sueltas el XML/CFDI y Sacs concilia a 3 vías contra la orden y la recepción: te marca RFC, total, moneda, IVA, retenciones y diferencias por línea. Verificas ante el SAT, registras el pago de la cuenta por pagar y solo pagas lo que coincide.",
         "image": "/images/ordenes-de-compra-sistema-tab.webp",
-        "imageAlt": "Ficha de proveedor con indicadores de desempeño en SACS",
+        "imageAlt": "Ficha de proveedor con indicadores de desempeño en Sacs",
         "link": null,
         "details": [
           {
@@ -4070,7 +4070,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
             "title": "Tiempo de entrega real",
-            "description": "SACS mide el lead time de cada OC (de enviada a recibida) y te muestra el promedio por proveedor. Los que tardan más que lo prometido quedan marcados."
+            "description": "Sacs mide el lead time de cada OC (de enviada a recibida) y te muestra el promedio por proveedor. Los que tardan más que lo prometido quedan marcados."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -4080,7 +4080,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>",
             "title": "Diferencias de precio",
-            "description": "Si un proveedor sube precios sin avisar, SACS lo detecta al conciliar factura y te muestra la tendencia. Útil para la siguiente negociación."
+            "description": "Si un proveedor sube precios sin avisar, Sacs lo detecta al conciliar factura y te muestra la tendencia. Útil para la siguiente negociación."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -4134,7 +4134,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo tener varios proveedores para el mismo SKU?",
-        "answer": "Sí. Cada SKU admite uno o varios proveedores autorizados con precios y tiempos distintos. Al generar la OC eliges con cuál comprar — o SACS sugiere el de menor costo disponible."
+        "answer": "Sí. Cada SKU admite uno o varios proveedores autorizados con precios y tiempos distintos. Al generar la OC eliges con cuál comprar — o Sacs sugiere el de menor costo disponible."
       },
       {
         "question": "¿Cómo se maneja la recepción parcial?",
@@ -4142,7 +4142,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa si el proveedor me cobra un precio distinto al acordado?",
-        "answer": "Al conciliar la factura SACS compara el precio unitario contra la OC. Si hay diferencia, lo marca en rojo. Decides si aceptas el cambio, pides nota de crédito o disputas con el proveedor — antes de autorizar el pago."
+        "answer": "Al conciliar la factura Sacs compara el precio unitario contra la OC. Si hay diferencia, lo marca en rojo. Decides si aceptas el cambio, pides nota de crédito o disputas con el proveedor — antes de autorizar el pago."
       },
       {
         "question": "¿Se integra con la factura electrónica del proveedor?",
@@ -4168,11 +4168,11 @@ export const pageContent: Record<string, any> = {
   },
   "gastos": {
     "hero": {
-      "eyebrow": "SACS Gastos",
+      "eyebrow": "Sacs Gastos",
       "title": "Tus gastos, capturados solos. Tu dinero, bajo control.",
-      "subtitle": "Sube el XML o una foto del ticket y SACS llena el gasto por ti. Sin duplicados, con recordatorio de lo que viene (renta, luz, nómina) y el flujo de caja proyectado a 30 días. Tu contador recibe todo ordenado y tu utilidad deja de ser un misterio.",
+      "subtitle": "Sube el XML o una foto del ticket y Sacs llena el gasto por ti. Sin duplicados, con recordatorio de lo que viene (renta, luz, nómina) y el flujo de caja proyectado a 30 días. Tu contador recibe todo ordenado y tu utilidad deja de ser un misterio.",
       "image": "/images/gastos-sistema-lista.webp",
-      "imageAlt": "Módulo de Gastos de SACS: total por pagar, filtros y tabla de gastos por estado",
+      "imageAlt": "Módulo de Gastos de Sacs: total por pagar, filtros y tabla de gastos por estado",
       "video": {
         "mp4": "/videos/gastos-hero.mp4",
         "webm": "/videos/gastos-hero.webm"
@@ -4193,7 +4193,7 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 1015-6.7L21 8\"/><path d=\"M21 3v5h-5\"/></svg>",
         "title": "Los gastos fijos, en automático",
-        "description": "Renta, luz, internet, nómina, suscripciones: configúralos una vez y SACS los crea solos antes de que venzan. Dejas de \"acordarte\" de pagar."
+        "description": "Renta, luz, internet, nómina, suscripciones: configúralos una vez y Sacs los crea solos antes de que venzan. Dejas de \"acordarte\" de pagar."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l3-3 3 3 5-5\"/></svg>",
@@ -4207,7 +4207,7 @@ export const pageContent: Record<string, any> = {
         "title": "Captura en 30 segundos. Desde el celular o la caja.",
         "description": "El gerente saca el celular, toma foto del ticket, elige sucursal, categoría y método de pago. Listo. El gasto queda en bitácora con usuario, fecha, hora y sucursal — sin Excel, sin WhatsApp del dueño, sin \"te lo paso luego\".",
         "image": "/images/gastos-captura.webp",
-        "imageAlt": "Gerente capturando gasto con foto de ticket desde celular en SACS",
+        "imageAlt": "Gerente capturando gasto con foto de ticket desde celular en Sacs",
         "link": null,
         "featured": true,
         "variant": "expense-capture",
@@ -4217,7 +4217,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada gasto en su cajón. Cada cajón en su reporte.",
         "description": "Renta, luz, agua, papel, limpieza, nómina, marketing. Organizas con las categorías que uses o las que tu contador pida. Al cerrar el mes, el reporte de gastos por categoría ya está — no se arma con ticket por ticket en una hoja.",
         "image": "/images/gastos-categorias.webp",
-        "imageAlt": "Pantalla de categorías de gastos en SACS con jerarquía",
+        "imageAlt": "Pantalla de categorías de gastos en Sacs con jerarquía",
         "link": {
           "label": "Ver reportes y analítica",
           "href": "/producto/reportes-y-analitica"
@@ -4229,7 +4229,7 @@ export const pageContent: Record<string, any> = {
         "title": "Por sucursal, por categoría, por periodo.",
         "description": "Filtras gastos por tienda, mes, categoría o centro de costo. Ves al instante cuál sucursal se está comiendo el margen, dónde subió la luz este trimestre y qué rubro creció más rápido que las ventas. Lectura en segundos, no en hojas cruzadas.",
         "image": "/images/gastos-por-sucursal.webp",
-        "imageAlt": "Reporte de gastos por sucursal con filtros en SACS",
+        "imageAlt": "Reporte de gastos por sucursal con filtros en Sacs",
         "link": null,
         "featured": true,
         "variant": "expense-filters-report",
@@ -4239,7 +4239,7 @@ export const pageContent: Record<string, any> = {
         "title": "Autorización antes del pago, no después.",
         "description": "Configuras montos tope por usuario o por categoría. Gastos dentro del límite pasan solos; lo que rebasa pide PIN del dueño o del administrador. Todo queda con firma, motivo y comprobante — auditoría sin drama.",
         "image": "/images/gastos-autorizacion.webp",
-        "imageAlt": "Pantalla de autorización de gasto con PIN en SACS",
+        "imageAlt": "Pantalla de autorización de gasto con PIN en Sacs",
         "link": {
           "label": "Ver cuentas por pagar",
           "href": "/producto/cuentas-por-pagar"
@@ -4264,7 +4264,7 @@ export const pageContent: Record<string, any> = {
         "title": "Gasto capturado al momento, nunca al final del mes.",
         "description": "El equipo de piso tiene la app, sube la foto del comprobante y elige la categoría correcta. Si es recurrente, la plantilla lo deja casi listo con un toque.",
         "image": "/images/gastos-tab-captura.webp",
-        "imageAlt": "Wizard Nuevo Gasto de SACS: registrar Manual, con Recibo (foto + IA) o con Factura (XML)",
+        "imageAlt": "Wizard Nuevo Gasto de Sacs: registrar Manual, con Recibo (foto + IA) o con Factura (XML)",
         "link": null,
         "details": [
           {
@@ -4304,7 +4304,7 @@ export const pageContent: Record<string, any> = {
         "title": "Nada se paga sin la firma correcta.",
         "description": "Topes por usuario, categoría y sucursal. Arriba del tope, la autorización es obligatoria — con PIN, motivo y bitácora inalterable.",
         "image": "/images/gastos-tab-autorizacion.webp",
-        "imageAlt": "Detalle de gasto en SACS: requiere aprobación, alertas de presupuesto y bitácora de actividad",
+        "imageAlt": "Detalle de gasto en Sacs: requiere aprobación, alertas de presupuesto y bitácora de actividad",
         "link": null,
         "details": [
           {
@@ -4344,7 +4344,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cierre de mes sin la noche del contador.",
         "description": "Los gastos están categorizados, con comprobante y autorizados. El reporte se exporta a Excel o a tu sistema contable — sin capturar nada dos veces.",
         "image": "/images/gastos-tab-reportes.webp",
-        "imageAlt": "Listado de gastos en SACS con totales, filtros y estados — base del cierre de mes",
+        "imageAlt": "Listado de gastos en Sacs con totales, filtros y estados — base del cierre de mes",
         "link": null,
         "details": [
           {
@@ -4419,7 +4419,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué formatos de comprobante se pueden adjuntar?",
-        "answer": "JPG, PNG, PDF y HEIC (iPhone). El archivo se guarda en el almacenamiento seguro de SACS, ligado al movimiento. No hay límite de tamaño razonable — cabe una factura completa en PDF."
+        "answer": "JPG, PNG, PDF y HEIC (iPhone). El archivo se guarda en el almacenamiento seguro de Sacs, ligado al movimiento. No hay límite de tamaño razonable — cabe una factura completa en PDF."
       },
       {
         "question": "¿Se pueden registrar gastos recurrentes automáticamente?",
@@ -4453,11 +4453,11 @@ export const pageContent: Record<string, any> = {
   },
   "cuentas-por-pagar": {
     "hero": {
-      "eyebrow": "SACS Cuentas por Pagar",
+      "eyebrow": "Sacs Cuentas por Pagar",
       "title": "Sabes a quién le debes, cuánto y cuándo vence.",
       "subtitle": "Tus pagos a proveedores y gastos programados en una sola pantalla: saldo vivo por beneficiario, vencimientos en calendario y pagos parciales o totales que bajan el saldo al instante. Dejas de enterarte de una factura vencida cuando te marcan.",
       "image": "/images/cuentas-por-pagar-sistema.webp",
-      "imageAlt": "Módulo de cuentas por pagar en SACS"
+      "imageAlt": "Módulo de cuentas por pagar en Sacs"
     },
     "features": [
       {
@@ -4487,7 +4487,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada proveedor, su propio estado de cuenta.",
         "description": "Capturas la factura al recibirla, el sistema la suma al saldo del proveedor. Cuando pagas, aplicas el complemento a una o varias facturas. En cualquier momento abres el estado de cuenta: facturas abiertas, pagos aplicados, saldo actual — sin Excel, sin llamar al proveedor para preguntar.",
         "image": "/images/cuentas-por-pagar-estado.webp",
-        "imageAlt": "Estado de cuenta de proveedor en SACS con facturas y pagos",
+        "imageAlt": "Estado de cuenta de proveedor en Sacs con facturas y pagos",
         "link": null,
         "featured": true,
         "variant": "ap-supplier-statement",
@@ -4495,9 +4495,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Complementos de pago con referencia cruzada.",
-        "description": "Pagas con una transferencia y el monto cubre tres facturas distintas del mismo proveedor. SACS te deja aplicar el pago a las facturas específicas — cada una queda con su complemento, cada complemento con su factura. Tu contador agradece, tu SAT también.",
+        "description": "Pagas con una transferencia y el monto cubre tres facturas distintas del mismo proveedor. Sacs te deja aplicar el pago a las facturas específicas — cada una queda con su complemento, cada complemento con su factura. Tu contador agradece, tu SAT también.",
         "image": "/images/cuentas-por-pagar-complemento.webp",
-        "imageAlt": "Aplicación de complemento de pago a múltiples facturas en SACS",
+        "imageAlt": "Aplicación de complemento de pago a múltiples facturas en Sacs",
         "link": {
           "label": "Ver control financiero",
           "href": "/producto/control-financiero"
@@ -4506,10 +4506,10 @@ export const pageContent: Record<string, any> = {
         "variant": "ap-payment-split"
       },
       {
-        "title": "Devuelves, el proveedor acredita, SACS aplica.",
+        "title": "Devuelves, el proveedor acredita, Sacs aplica.",
         "description": "Llegó mercancía con defecto. Devuelves, el proveedor emite la nota de crédito, tú la capturas contra la factura original. El saldo baja automáticamente. Cuando pagues, pagas el neto — no tienes que pelear meses después \"oye, ¿me acreditaste aquello?\".",
         "image": "/images/cuentas-por-pagar-nota-credito.webp",
-        "imageAlt": "Aplicación de nota de crédito de proveedor en SACS",
+        "imageAlt": "Aplicación de nota de crédito de proveedor en Sacs",
         "link": {
           "label": "Ver órdenes de compra",
           "href": "/producto/ordenes-de-compra"
@@ -4521,7 +4521,7 @@ export const pageContent: Record<string, any> = {
         "title": "Calendario de vencimientos. Sin sorpresas.",
         "description": "Ves qué pagos vencen esta semana, cuáles el próximo mes y cuánto suma cada bloque. Filtras por proveedor, por monto, por sucursal. Planeas el flujo de caja sin que el aviso llegue por WhatsApp del proveedor. Pagas a tiempo, negocias descuentos por pronto pago, duermes mejor.",
         "image": "/images/cuentas-por-pagar-calendario.webp",
-        "imageAlt": "Calendario de vencimientos de cuentas por pagar en SACS",
+        "imageAlt": "Calendario de vencimientos de cuentas por pagar en Sacs",
         "link": null,
         "featured": true,
         "variant": "ap-due-calendar",
@@ -4529,7 +4529,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. SACS me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
+      "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. Sacs me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
       "name": "Esteban Corcuera",
       "role": "Administrador",
       "company": "Ferretería del Bajío",
@@ -4544,7 +4544,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada cuenta, su saldo, su urgencia.",
         "description": "Ves todas tus cuentas por pagar con beneficiario, monto, vencimiento y estado. Filtras por sucursal, beneficiario, tipo o folio, y agrupas por beneficiario para ver cuánto le debes a cada uno. El saldo se recalcula con cada pago.",
         "image": "/images/cuentas-por-pagar-sistema-tab.webp",
-        "imageAlt": "Pantalla de facturas por pagar por proveedor en SACS",
+        "imageAlt": "Pantalla de facturas por pagar por proveedor en Sacs",
         "link": null,
         "details": [
           {
@@ -4555,7 +4555,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3h18v18H3z\"/><path d=\"M7 7h10M7 11h10M7 15h6\"/></svg>",
             "title": "Ligada a orden de compra",
-            "description": "Si el pedido se originó en una OC, la factura se amarra a esa orden. SACS revisa que la factura no exceda lo ordenado — ni en cantidad ni en precio."
+            "description": "Si el pedido se originó en una OC, la factura se amarra a esa orden. Sacs revisa que la factura no exceda lo ordenado — ni en cantidad ni en precio."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -4584,7 +4584,7 @@ export const pageContent: Record<string, any> = {
         "title": "Qué vence esta semana, sin sorpresas.",
         "description": "Cambias a la vista de calendario y ves los vencimientos repartidos por día. Planeas el flujo de caja con anticipación y pagas a tiempo en lugar de enterarte cuando ya estás vencido.",
         "image": "/images/cuentas-por-pagar-sistema-tab.webp",
-        "imageAlt": "Aplicación de pago a facturas de proveedor en SACS",
+        "imageAlt": "Aplicación de pago a facturas de proveedor en Sacs",
         "link": null,
         "details": [
           {
@@ -4624,7 +4624,7 @@ export const pageContent: Record<string, any> = {
         "title": "Abres la cuenta y pagas desde ahí.",
         "description": "El detalle muestra el cronograma de parcialidades, el historial de pagos, los documentos adjuntos y una conversación interna con menciones para coordinar con tu equipo. Registras el pago en el mismo lugar y, si lo necesitas, imprimes el estado de cuenta.",
         "image": "/images/cuentas-por-pagar-sistema-tab.webp",
-        "imageAlt": "Aplicación de nota de crédito contra factura de proveedor en SACS",
+        "imageAlt": "Aplicación de nota de crédito contra factura de proveedor en Sacs",
         "link": null,
         "details": [
           {
@@ -4650,7 +4650,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4M12 16h.01\"/></svg>",
             "title": "Alertas si el neto sale negativo",
-            "description": "Si aplicaste más créditos que deuda, SACS te avisa. Evitas pagarle al proveedor lo que él ya te debe — y puedes convertir el saldo a favor en crédito para próxima compra."
+            "description": "Si aplicaste más créditos que deuda, Sacs te avisa. Evitas pagarle al proveedor lo que él ya te debe — y puedes convertir el saldo a favor en crédito para próxima compra."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
@@ -4666,7 +4666,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/esteban-corcuera.webp",
         "initials": "EC",
         "color": "#b47a3a",
-        "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. SACS me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
+        "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. Sacs me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
         "name": "Esteban Corcuera",
         "business": "Ferretería del Bajío",
         "location": "México"
@@ -4686,7 +4686,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/hernando-bazan.webp",
         "initials": "HB",
         "color": "#5a8a5f",
-        "quote": "Las notas de crédito eran un desastre. El proveedor mandaba devolución, pasaban dos meses y yo seguía pagando el total. En SACS la aplico el mismo día, el saldo queda neto y la próxima transferencia ya sale correcta.",
+        "quote": "Las notas de crédito eran un desastre. El proveedor mandaba devolución, pasaban dos meses y yo seguía pagando el total. En Sacs la aplico el mismo día, el saldo queda neto y la próxima transferencia ya sale correcta.",
         "name": "Hernando Bazán",
         "business": "Ferretería Andes Bazán",
         "location": "Bolivia"
@@ -4699,11 +4699,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo evito pagar una factura dos veces?",
-        "answer": "SACS detecta folio duplicado por proveedor. Si intentas capturar una factura con un folio que ya existe, te avisa antes de guardar. Si aplicas un pago a una factura ya saldada, también te bloquea."
+        "answer": "Sacs detecta folio duplicado por proveedor. Si intentas capturar una factura con un folio que ya existe, te avisa antes de guardar. Si aplicas un pago a una factura ya saldada, también te bloquea."
       },
       {
         "question": "¿Se puede aplicar un mismo pago a varias facturas?",
-        "answer": "Sí. Mandas una transferencia por $150,000 que cubre tres facturas distintas. Al capturar el pago, eliges las facturas y SACS distribuye el monto — el complemento queda ligado a las tres."
+        "answer": "Sí. Mandas una transferencia por $150,000 que cubre tres facturas distintas. Al capturar el pago, eliges las facturas y Sacs distribuye el monto — el complemento queda ligado a las tres."
       },
       {
         "question": "¿Qué pasa si devuelvo mercancía y el proveedor emite nota de crédito?",
@@ -4733,11 +4733,11 @@ export const pageContent: Record<string, any> = {
   },
   "reportes-y-analitica": {
     "hero": {
-      "eyebrow": "SACS Reportes y Analítica",
+      "eyebrow": "Sacs Reportes y Analítica",
       "title": "Todos los reportes de tu negocio, en una sola pantalla.",
       "subtitle": "Un hub con tus reportes agrupados por área —ventas, cobros, clientes, inventario, caja— y un reporte de ventas con filtros por sucursal, vendedor y periodo — hasta la talla más vendida y la que se agotó — que se exporta a Excel con el mismo corte que ves. Sin pedirle el reporte al contador.",
       "image": "/images/reportes-y-analitica-sistema.webp",
-      "imageAlt": "Módulo de reportes y analitica en SACS"
+      "imageAlt": "Módulo de reportes y analitica en Sacs"
     },
     "features": [
       {
@@ -4753,7 +4753,7 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
         "title": "Exporta a Excel tal cual lo ves",
-        "description": "Bajas el reporte a Excel (.xlsx) con los mismos filtros y columnas de la pantalla. SACS cuenta los registros antes y descarga por bloques para que el archivo salga completo."
+        "description": "Bajas el reporte a Excel (.xlsx) con los mismos filtros y columnas de la pantalla. Sacs cuenta los registros antes y descarga por bloques para que el archivo salga completo."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h9\"/><path d=\"M18 14v7M15 17l3-3 3 3\"/></svg>",
@@ -4767,7 +4767,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un tablero con los números que sí importan.",
         "description": "Ventas del día, comparativo con ayer y con el mismo día del mes pasado, ticket promedio, productos más vendidos, sucursal que lidera. Lo abres antes de sentarte en la oficina y ya sabes cómo va el negocio — sin pedirle el corte al gerente por WhatsApp.",
         "image": "/images/reportes-y-analitica-dashboard.webp",
-        "imageAlt": "Dashboard de KPIs en vivo en SACS con ventas por sucursal",
+        "imageAlt": "Dashboard de KPIs en vivo en Sacs con ventas por sucursal",
         "link": null,
         "featured": true,
         "variant": "control-central"
@@ -4776,16 +4776,16 @@ export const pageContent: Record<string, any> = {
         "title": "Filtra, cruza, contesta. En segundos.",
         "description": "Abres el reporte de ventas, filtras por sucursal Polanco, categoría \"Calzado\", vendedor María y mes pasado. La respuesta aparece al instante. Quieres cambiar a trimestre y compararla con Ana: dos clics. No esperas 20 minutos a que una consulta corra.",
         "image": "/images/reportes-y-analitica-filtros.webp",
-        "imageAlt": "Reporte de ventas con filtros cruzados en SACS",
+        "imageAlt": "Reporte de ventas con filtros cruzados en Sacs",
         "link": null,
         "featured": true,
         "variant": "report-filter-cross"
       },
       {
         "title": "Inventario, clientes, gastos — la operación completa.",
-        "description": "No solo ventas. Reportes de stock por sucursal, rotación, productos sin movimiento, clientes más valiosos, gastos por categoría, utilidad bruta por línea. Cada módulo de SACS alimenta sus propios reportes — y todos cruzan contra el mismo catálogo.",
+        "description": "No solo ventas. Reportes de stock por sucursal, rotación, productos sin movimiento, clientes más valiosos, gastos por categoría, utilidad bruta por línea. Cada módulo de Sacs alimenta sus propios reportes — y todos cruzan contra el mismo catálogo.",
         "image": "/images/reportes-y-analitica-modulos.webp",
-        "imageAlt": "Reportes cruzados de inventario y ventas en SACS",
+        "imageAlt": "Reportes cruzados de inventario y ventas en Sacs",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
@@ -4798,7 +4798,7 @@ export const pageContent: Record<string, any> = {
         "title": "Exporta con el mismo corte que ves.",
         "description": "Lo que ves en pantalla, lo bajas a Excel. Con los mismos filtros, los mismos totales y el mismo desglose. No tienes que explicar al contador que \"este número es sin devoluciones\" o \"este es solo de tarjeta\" — el corte se viene con el archivo.",
         "image": "/images/reportes-y-analitica-exportar.webp",
-        "imageAlt": "Exportación de reporte a Excel desde SACS",
+        "imageAlt": "Exportación de reporte a Excel desde Sacs",
         "link": {
           "label": "Ver control financiero",
           "href": "/producto/control-financiero"
@@ -4824,7 +4824,7 @@ export const pageContent: Record<string, any> = {
         "title": "Todos tus reportes, agrupados por área.",
         "description": "Abres 'Reportes' y ves tus reportes ordenados por categoría: Punto de Venta, Ventas, Cobros, Clientes, Inventario, Campañas de Impulso y otros. Buscas por nombre y entras al que necesitas en un clic —sin recordar dónde estaba cada uno.",
         "image": "/images/reportes-y-analitica-sistema-tab.webp",
-        "imageAlt": "Dashboard principal de SACS mostrando KPIs, ventas por hora y tabs de actualizaciones",
+        "imageAlt": "Dashboard principal de Sacs mostrando KPIs, ventas por hora y tabs de actualizaciones",
         "link": null,
         "details": [
           {
@@ -4855,7 +4855,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
             "title": "Alertas que te buscan",
-            "description": "Alertas cuando una sucursal sale del patrón — SACS compara contra la semana pasada y marca caídas o picos inusuales para que tu equipo los investigue el mismo día (alertas por email hoy; push móvil y Slack en roadmap)."
+            "description": "Alertas cuando una sucursal sale del patrón — Sacs compara contra la semana pasada y marca caídas o picos inusuales para que tu equipo los investigue el mismo día (alertas por email hoy; push móvil y Slack en roadmap)."
           }
         ]
       },
@@ -4864,7 +4864,7 @@ export const pageContent: Record<string, any> = {
         "title": "Filtra, ordena y contesta en la misma tabla.",
         "description": "El reporte de ventas trae un panel de filtros por sucursal, vendedor, fecha y periodo. Aplicas, los filtros se quedan visibles como chips, ordenas por cualquier columna y ves el desglose con importe, descuentos, impuestos, costo y ganancia.",
         "image": "/images/reportes-y-analitica-sistema-tab.webp",
-        "imageAlt": "Reporte detallado de ventas en SACS",
+        "imageAlt": "Reporte detallado de ventas en Sacs",
         "link": null,
         "details": [
           {
@@ -4902,9 +4902,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Exportar a Excel",
         "title": "A Excel con el mismo corte que ves.",
-        "description": "Un clic en Exportar abre el modal de descarga a Excel (.xlsx). SACS toma los mismos filtros y columnas de la pantalla, cuenta los registros y descarga por bloques para que tu contador reciba exactamente los números que tú estás viendo.",
+        "description": "Un clic en Exportar abre el modal de descarga a Excel (.xlsx). Sacs toma los mismos filtros y columnas de la pantalla, cuenta los registros y descarga por bloques para que tu contador reciba exactamente los números que tú estás viendo.",
         "image": "/images/reportes-y-analitica-sistema-tab.webp",
-        "imageAlt": "Reporte de inventario y rotación en SACS",
+        "imageAlt": "Reporte de inventario y rotación en Sacs",
         "link": null,
         "details": [
           {
@@ -5003,21 +5003,21 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cuántos reportes trae el sistema hoy?",
-        "answer": "El panel incluye los reportes esenciales para operar: ventas (por sucursal, vendedor, canal, método, producto, hora), inventario (stock, rotación, sin movimiento, ajustes), clientes, gastos, cuentas por pagar y cuentas por cobrar. El catálogo crece release a release según lo que pide la comunidad de retailers SACS."
+        "answer": "El panel incluye los reportes esenciales para operar: ventas (por sucursal, vendedor, canal, método, producto, hora), inventario (stock, rotación, sin movimiento, ajustes), clientes, gastos, cuentas por pagar y cuentas por cobrar. El catálogo crece release a release según lo que pide la comunidad de retailers Sacs."
       },
       {
         "question": "¿Puedo ver reportes de periodos históricos largos?",
-        "answer": "Sí. Los datos viven mientras tu cuenta esté activa — consultas cualquier periodo desde que entraste a SACS. Exportas histórico anual, comparas años completos y ves tendencia de varios ejercicios sin que la consulta se caiga."
+        "answer": "Sí. Los datos viven mientras tu cuenta esté activa — consultas cualquier periodo desde que entraste a Sacs. Exportas histórico anual, comparas años completos y ves tendencia de varios ejercicios sin que la consulta se caiga."
       }
     ]
   },
   "clientes-y-crm": {
     "hero": {
-      "eyebrow": "SACS Clientes y CRM",
+      "eyebrow": "Sacs Clientes y CRM",
       "title": "Cada cliente, con nombre. Cada visita, con su historia.",
       "subtitle": "Un perfil que junta sus compras, apartados, puntos, saldo a favor y crédito de todas tus sucursales. Cuando vuelve a la tienda, tu vendedor ya sabe quién es, cuánto vale y qué le debe la casa.",
       "image": "/images/clientes-crm-hero.webp",
-      "imageAlt": "Vendedora consultando perfil de clienta en tablet SACS antes de atenderla"
+      "imageAlt": "Vendedora consultando perfil de clienta en tablet Sacs antes de atenderla"
     },
     "features": [
       {
@@ -5047,7 +5047,7 @@ export const pageContent: Record<string, any> = {
         "title": "Identifica al cliente al cobrar — sin interrogatorios.",
         "description": "Teléfono, RFC o correo basta para que el cajero lo reconozca al instante. El sistema muestra su historial, su ticket promedio, su última visita y lo que dejó apartado. El vendedor atiende sabiendo con quién está hablando.",
         "image": "/images/clientes-crm-identificacion.webp",
-        "imageAlt": "Cajero identificando a clienta en POS SACS al iniciar venta",
+        "imageAlt": "Cajero identificando a clienta en POS Sacs al iniciar venta",
         "link": null,
         "featured": true,
         "variant": "crm-identify"
@@ -5056,17 +5056,17 @@ export const pageContent: Record<string, any> = {
         "title": "Un perfil que aprende de cada visita.",
         "description": "Cada compra, cada apartado, cada abono y cada devolución se suman al perfil automáticamente. El vendedor puede anotar preferencias a mano — talla, color, estilo, fecha de cumpleaños — y esos datos quedan disponibles en la siguiente sucursal que el cliente visite.",
         "image": "/images/clientes-crm-perfil.webp",
-        "imageAlt": "Pantalla de perfil de cliente con historial de compras y notas en SACS",
+        "imageAlt": "Pantalla de perfil de cliente con historial de compras y notas en Sacs",
         "link": null,
         "featured": true,
         "variant": "crm-profile-360",
         "cardSize": "lg"
       },
       {
-        "title": "Filtra tu base como un CRM — sin salir de SACS.",
+        "title": "Filtra tu base como un CRM — sin salir de Sacs.",
         "description": "Filtros combinables: ticket promedio mayor a $3,000, última compra hace más de 90 días, compradores de la colección verano, clientes con saldo a favor. Los segmentos quedan guardados y se pueden disparar desde promociones o exportar para contactar.",
         "image": "/images/clientes-crm-segmentos.webp",
-        "imageAlt": "Pantalla de segmentación de clientes con filtros en SACS",
+        "imageAlt": "Pantalla de segmentación de clientes con filtros en Sacs",
         "link": {
           "label": "Ver promociones",
           "href": "/producto/promociones"
@@ -5078,7 +5078,7 @@ export const pageContent: Record<string, any> = {
         "title": "El conocimiento del vendedor, al equipo entero.",
         "description": "Las notas que un vendedor anota hoy las lee el compañero mañana. Si el cliente se muda de la sucursal Polanco a Santa Fe, la nueva tienda lo recibe con todo su contexto: preferencias, tallas, última conversación, productos que le pediste y nunca reclamó.",
         "image": "/images/clientes-crm-notas.webp",
-        "imageAlt": "Vendedora escribiendo nota en perfil de cliente en tablet SACS",
+        "imageAlt": "Vendedora escribiendo nota en perfil de cliente en tablet Sacs",
         "link": null,
         "featured": true,
         "variant": "crm-seller-notes"
@@ -5140,7 +5140,7 @@ export const pageContent: Record<string, any> = {
         "title": "Encuentra a tus clientes como en un CRM.",
         "description": "Filtros combinables por tipo de cliente, sucursal y etiquetas, puntos de lealtad, crédito disponible o utilizado, saldo pendiente y rango de última venta. Revisa el resultado y expórtalo para contactar.",
         "image": "/images/clientes-crm-hero.webp",
-        "imageAlt": "Pantalla de creación de segmentos con filtros combinables en SACS",
+        "imageAlt": "Pantalla de creación de segmentos con filtros combinables en Sacs",
         "link": null,
         "details": [
           {
@@ -5180,7 +5180,7 @@ export const pageContent: Record<string, any> = {
         "title": "Crédito, puntos y monedero, por cliente.",
         "description": "Configura límite y línea de crédito, consulta el estado de cuenta de su CXC con cargos y abonos, y administra su tarjeta de lealtad: nivel, multiplicador, puntos acumulados y saldo a favor.",
         "image": "/images/clientes-crm-hero.webp",
-        "imageAlt": "Pantalla de activación de segmento con canales en SACS",
+        "imageAlt": "Pantalla de activación de segmento con canales en Sacs",
         "link": null,
         "details": [
           {
@@ -5191,7 +5191,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
             "title": "WhatsApp próximamente",
-            "description": "La integración nativa con WhatsApp Business está en roadmap. Por hoy, SACS te entrega el segmento con teléfonos listos para pegar en tu línea oficial."
+            "description": "La integración nativa con WhatsApp Business está en roadmap. Por hoy, Sacs te entrega el segmento con teléfonos listos para pegar en tu línea oficial."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z\"/></svg>",
@@ -5206,7 +5206,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6M9 9l6 6\"/></svg>",
             "title": "Opt-out respetado",
-            "description": "Si el cliente pidió no recibir comunicaciones, SACS lo marca y lo excluye de cualquier envío masivo. Cumples con la ley local sin tener que acordarte."
+            "description": "Si el cliente pidió no recibir comunicaciones, Sacs lo marca y lo excluye de cualquier envío masivo. Cumples con la ley local sin tener que acordarte."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M9 9h6v6H9z\"/></svg>",
@@ -5259,7 +5259,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo importar mi base actual de clientes?",
-        "answer": "Sí. Durante el onboarding subimos tu CSV con los datos que tengas. Si traes historial de ventas, también lo cargamos para que el ticket promedio y el gasto acumulado reflejen la historia real, no solo la de SACS."
+        "answer": "Sí. Durante el onboarding subimos tu CSV con los datos que tengas. Si traes historial de ventas, también lo cargamos para que el ticket promedio y el gasto acumulado reflejen la historia real, no solo la de Sacs."
       },
       {
         "question": "¿Cómo funciona la segmentación?",
@@ -5275,7 +5275,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa con los datos del cliente si lo borro por su derecho al olvido?",
-        "answer": "Al solicitar el borrado, SACS anonimiza el perfil (elimina nombre, teléfono, correo, RFC) pero conserva los tickets para cumplir requisitos fiscales. El cliente deja de ser identificable pero la contabilidad queda íntegra."
+        "answer": "Al solicitar el borrado, Sacs anonimiza el perfil (elimina nombre, teléfono, correo, RFC) pero conserva los tickets para cumplir requisitos fiscales. El cliente deja de ser identificable pero la contabilidad queda íntegra."
       },
       {
         "question": "¿Cómo se cargan las notas del vendedor?",
@@ -5289,11 +5289,11 @@ export const pageContent: Record<string, any> = {
   },
   "programa-de-lealtad": {
     "hero": {
-      "eyebrow": "SACS Programa de Lealtad",
+      "eyebrow": "Sacs Programa de Lealtad",
       "title": "Puntos para subir de nivel. Cashback para volver a comprar.",
-      "subtitle": "Dos sistemas en uno: los puntos definen el nivel del cliente y el cashback es dinero real que gasta en su próxima compra. Lo configuras una vez en un asistente paso a paso y SACS lo aplica al cobrar —sin apps de terceros ni kioskos aparte.",
+      "subtitle": "Dos sistemas en uno: los puntos definen el nivel del cliente y el cashback es dinero real que gasta en su próxima compra. Lo configuras una vez en un asistente paso a paso y Sacs lo aplica al cobrar —sin apps de terceros ni kioskos aparte.",
       "image": "/images/programa-de-lealtad-sistema.webp",
-      "imageAlt": "Módulo de programa de lealtad en SACS"
+      "imageAlt": "Módulo de programa de lealtad en Sacs"
     },
     "features": [
       {
@@ -5323,7 +5323,7 @@ export const pageContent: Record<string, any> = {
         "title": "Al cobrar, los puntos se suman. Y se descuentan.",
         "description": "El cajero identifica al cliente, el POS calcula los puntos de la venta en curso y ofrece aplicar el saldo acumulado al total. Un toque: \"¿Usa tus 450 puntos ($450)?\" y listo. Sin abrir otro sistema, sin llamar al supervisor, sin demorar la fila.",
         "image": "/images/lealtad-pos.webp",
-        "imageAlt": "Cajera aplicando puntos del monedero en POS SACS al pagar",
+        "imageAlt": "Cajera aplicando puntos del monedero en POS Sacs al pagar",
         "link": {
           "label": "Ver punto de venta",
           "href": "/producto/punto-de-venta"
@@ -5335,7 +5335,7 @@ export const pageContent: Record<string, any> = {
         "title": "Niveles que suben — y premian con algo real.",
         "description": "Configura los umbrales de gasto para cada nivel y lo que gana al entrar: multiplicador doble de puntos, acceso a preventas, atención personalizada, envío gratis online o lo que defina tu programa. El sistema sube a los clientes al nivel que corresponde y aplica los beneficios sin que el cajero tenga que recordarlo.",
         "image": "/images/lealtad-niveles.webp",
-        "imageAlt": "Pantalla de niveles de lealtad y umbrales en SACS",
+        "imageAlt": "Pantalla de niveles de lealtad y umbrales en Sacs",
         "link": null,
         "featured": true,
         "variant": "loyalty-tiers",
@@ -5345,7 +5345,7 @@ export const pageContent: Record<string, any> = {
         "title": "Monedero en todas tus sucursales.",
         "description": "El cliente acumuló 800 puntos en Polanco y los quiere usar en Santa Fe — funciona. El saldo vive en el perfil, no en una tarjeta física, y se consolida entre todas las sucursales. Al cobrar, cualquier cajero ve el saldo real del cliente sin importar dónde lo ganó.",
         "image": "/images/lealtad-monedero.webp",
-        "imageAlt": "Cliente usando monedero de lealtad en otra sucursal SACS",
+        "imageAlt": "Cliente usando monedero de lealtad en otra sucursal Sacs",
         "link": {
           "label": "Ver clientes y CRM",
           "href": "/producto/clientes-y-crm"
@@ -5355,9 +5355,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Reglas de canje que tú controlas.",
-        "description": "Decides qué proporción canjea cada punto ($1 por punto, $0.50 por punto o la regla que prefieras), si el canje cubre impuestos, si aplica en productos rebajados, si hay tope por ticket. La política se configura una vez y SACS la respeta en cada venta — con bitácora para auditar.",
+        "description": "Decides qué proporción canjea cada punto ($1 por punto, $0.50 por punto o la regla que prefieras), si el canje cubre impuestos, si aplica en productos rebajados, si hay tope por ticket. La política se configura una vez y Sacs la respeta en cada venta — con bitácora para auditar.",
         "image": "/images/lealtad-reglas.webp",
-        "imageAlt": "Pantalla de configuración de reglas de canje de puntos en SACS",
+        "imageAlt": "Pantalla de configuración de reglas de canje de puntos en Sacs",
         "link": null,
         "featured": true,
         "variant": "loyalty-rules",
@@ -5365,7 +5365,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Teníamos un programa de puntos con una app externa que nunca usaba el cajero. La mitad de las ventas pasaban sin puntos. Ahora con SACS los puntos se aplican al identificar al cliente — sin un paso extra. Pasamos de 35% de ventas identificadas a 78% en dos meses.",
+      "quote": "Teníamos un programa de puntos con una app externa que nunca usaba el cajero. La mitad de las ventas pasaban sin puntos. Ahora con Sacs los puntos se aplican al identificar al cliente — sin un paso extra. Pasamos de 35% de ventas identificadas a 78% en dos meses.",
       "name": "Santiago Huerta",
       "role": "Director de Marketing",
       "company": "Pandita Novedades Huerta",
@@ -5380,7 +5380,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un asistente, no una hoja de cálculo.",
         "description": "El wizard te lleva paso a paso: porcentaje de puntos y de cashback con vista previa en vivo, niveles, membresías, recompensas y expiración. Configuras una vez y queda guardado para todas tus sucursales.",
         "image": "/images/programa-de-lealtad-sistema-tab.webp",
-        "imageAlt": "Pantalla de reglas de acumulación de puntos en SACS",
+        "imageAlt": "Pantalla de reglas de acumulación de puntos en Sacs",
         "link": null,
         "details": [
           {
@@ -5401,7 +5401,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
             "title": "Eventos de puntos triples",
-            "description": "Por ejemplo \"fin de semana de puntos triples\" con fecha de inicio y fin. SACS aplica sin que el cajero tenga que acordarse — y desactiva solo cuando termina."
+            "description": "Por ejemplo \"fin de semana de puntos triples\" con fecha de inicio y fin. Sacs aplica sin que el cajero tenga que acordarse — y desactiva solo cuando termina."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
@@ -5420,7 +5420,7 @@ export const pageContent: Record<string, any> = {
         "title": "Premia lo que tú quieres mover.",
         "description": "Multiplicadores de puntos por categoría (joyería 2x, ropa 1x), por método de pago, promociones temporales con fecha de inicio y fin, y beneficios exclusivos asignados a cada nivel.",
         "image": "/images/programa-de-lealtad-sistema-tab.webp",
-        "imageAlt": "Pantalla de canje de puntos en POS SACS",
+        "imageAlt": "Pantalla de canje de puntos en POS Sacs",
         "link": null,
         "details": [
           {
@@ -5460,7 +5460,7 @@ export const pageContent: Record<string, any> = {
         "title": "Mide si el programa de verdad funciona.",
         "description": "El dashboard muestra clientes activos, puntos activos, cashback pendiente y redimido, tasa de participación, recompensas canjeadas y cómo se reparten tus clientes entre los niveles.",
         "image": "/images/programa-de-lealtad-sistema-tab.webp",
-        "imageAlt": "Pantalla de configuración de niveles con beneficios en SACS",
+        "imageAlt": "Pantalla de configuración de niveles con beneficios en Sacs",
         "link": null,
         "details": [
           {
@@ -5471,12 +5471,12 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
             "title": "Umbrales por gasto anual",
-            "description": "Define el piso de cada nivel. Por ejemplo: Oro a partir de $15,000 en 12 meses. SACS recalcula todos los días y promueve solo."
+            "description": "Define el piso de cada nivel. Por ejemplo: Oro a partir de $15,000 en 12 meses. Sacs recalcula todos los días y promueve solo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
             "title": "Beneficios automáticos en POS",
-            "description": "Descuento base, multiplicador de puntos, envío gratis online o acceso a preventas. SACS aplica el beneficio al identificar al cliente en caja."
+            "description": "Descuento base, multiplicador de puntos, envío gratis online o acceso a preventas. Sacs aplica el beneficio al identificar al cliente en caja."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -5559,7 +5559,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo hacer campañas de puntos triples por tiempo limitado?",
-        "answer": "Sí. Configuras evento con fecha de inicio y fin, multiplicador (2x, 3x, 5x) y categorías aplicables. SACS aplica y desactiva automáticamente — el cajero no tiene que acordarse."
+        "answer": "Sí. Configuras evento con fecha de inicio y fin, multiplicador (2x, 3x, 5x) y categorías aplicables. Sacs aplica y desactiva automáticamente — el cajero no tiene que acordarse."
       },
       {
         "question": "¿Cómo se integra con el CRM?",
@@ -5569,16 +5569,16 @@ export const pageContent: Record<string, any> = {
   },
   "portal-de-clientes": {
     "hero": {
-      "eyebrow": "SACS Portal de Clientes · En piloto",
+      "eyebrow": "Sacs Portal de Clientes · En piloto",
       "title": "Tu portal de clientes, con tu marca. Para que se atiendan solos.",
       "subtitle": "Dale a cada cliente su propio portal digital: consulta sus puntos, su cashback, su nivel, su historial de compras y sus facturas, bajo tu logo, tu color y hasta tu propio dominio. Lo configuras en minutos con un asistente de 2 pasos, compartes el link (o el QR) y tus clientes resuelven solos lo que hoy te llena el WhatsApp.",
       "image": "/images/portal-de-clientes-sistema.webp",
-      "imageAlt": "Módulo de portal de clientes en SACS"
+      "imageAlt": "Módulo de portal de clientes en Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
-        "title": "Tu marca, no la de SACS",
+        "title": "Tu marca, no la de Sacs",
         "description": "Editor visual con tu logo, favicon, color principal y mensaje de bienvenida. Conecta tu propio dominio (recompensas.tumarca.com) con CNAME y SSL automático, o usa tu link sacscloudwallet.com listo para compartir."
       },
       {
@@ -5603,7 +5603,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un portal que parece tuyo — porque lo es.",
         "description": "Editor visual con tu logo, tus colores, tu tipografía y tu dominio propio. Cuando el cliente entra al portal, lo que lee se siente parte de la experiencia de tu marca — no un panel genérico de un software. La continuidad visual empieza en la tienda y termina en su celular.",
         "image": "/images/portal-marca.webp",
-        "imageAlt": "Portal de clientes con marca personalizada en móvil y desktop SACS",
+        "imageAlt": "Portal de clientes con marca personalizada en móvil y desktop Sacs",
         "link": null,
         "featured": true,
         "variant": "online-branding"
@@ -5624,7 +5624,7 @@ export const pageContent: Record<string, any> = {
         "title": "Autofacturación sin dolor — para el cliente y para ti.",
         "description": "El cliente ingresa con número de ticket y correo, valida o captura su CFDI y descarga el XML. Ya no te escribe preguntando \"¿me puedes facturar?\" ni manda su constancia fiscal por WhatsApp tres veces al año. La factura se genera sola, con timbre SAT válido.",
         "image": "/images/portal-autofactura.webp",
-        "imageAlt": "Cliente descargando factura XML y PDF desde portal de autofacturación SACS",
+        "imageAlt": "Cliente descargando factura XML y PDF desde portal de autofacturación Sacs",
         "link": {
           "label": "Ver facturación electrónica",
           "href": "/producto/facturacion-electronica"
@@ -5636,7 +5636,7 @@ export const pageContent: Record<string, any> = {
         "title": "Historial y apartados en una app-sin-app.",
         "description": "El cliente ve todas sus compras, abre sus apartados pendientes y abona desde el celular con tarjeta. Si el apartado está por vencer, el portal se lo muestra en rojo con cuántos días quedan. El equipo de tienda deja de ser el call center y vuelve a ser vendedor.",
         "image": "/images/portal-historial.webp",
-        "imageAlt": "Pantalla de historial de compras y apartados abiertos en portal de cliente SACS",
+        "imageAlt": "Pantalla de historial de compras y apartados abiertos en portal de cliente Sacs",
         "link": {
           "label": "Ver apartados y pedidos",
           "href": "/producto/apartados-y-pedidos"
@@ -5662,7 +5662,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un portal que se siente tuyo, porque lo es",
         "description": "Sube tu logo y favicon, elige tu color principal y escribe el mensaje de bienvenida con preview en vivo. Agrega banners promocionales con título, subtítulo, botón y enlace. Conecta tu propio dominio con la tabla DNS (CNAME a sacscloudwallet.com) y guías por proveedor (GoDaddy, Namecheap), o usa tu link sacscloudwallet.com/tucuenta.",
         "image": "/images/portal-de-clientes-sistema-tab.webp",
-        "imageAlt": "Editor de branding del portal de clientes en SACS",
+        "imageAlt": "Editor de branding del portal de clientes en Sacs",
         "link": null,
         "details": [
           {
@@ -5673,7 +5673,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
             "title": "Dominio propio con SSL",
-            "description": "Conecta tu subdominio — puntos.tumarca.com, mi.tumarca.com o el que quieras. SACS emite el certificado SSL automáticamente. Sin URLs genéricas."
+            "description": "Conecta tu subdominio — puntos.tumarca.com, mi.tumarca.com o el que quieras. Sacs emite el certificado SSL automáticamente. Sin URLs genéricas."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 7l10 7 10-7\"/></svg>",
@@ -5733,7 +5733,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
             "title": "Editar datos personales",
-            "description": "Actualiza teléfono, correo, dirección de envío o CFDI desde el portal. Los cambios se reflejan en su perfil de SACS al instante."
+            "description": "Actualiza teléfono, correo, dirección de envío o CFDI desde el portal. Los cambios se reflejan en su perfil de Sacs al instante."
           }
         ]
       },
@@ -5742,7 +5742,7 @@ export const pageContent: Record<string, any> = {
         "title": "Tu link y tu QR, listos para repartir",
         "description": "Al publicar obtienes la URL de tu portal con botón de copiar y un código QR de alta resolución para descargar e imprimir en mostrador, etiquetas o redes. Enciende el dominio personalizado (Pro) cuando quieras y el portal sigue vivo en cualquier dispositivo, sin que tu equipo conteste 'cuántos puntos tengo'.",
         "image": "/images/portal-de-clientes-sistema-tab.webp",
-        "imageAlt": "Pantalla de acceso al portal con código OTP en móvil SACS",
+        "imageAlt": "Pantalla de acceso al portal con código OTP en móvil Sacs",
         "link": null,
         "details": [
           {
@@ -5753,7 +5753,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z\"/></svg>",
             "title": "Código OTP por email",
-            "description": "Alternativa al magic link: código de 6 dígitos por email. SMS OTP llegará con la integración de mensajería nativa de SACS — no está disponible aún."
+            "description": "Alternativa al magic link: código de 6 dígitos por email. SMS OTP llegará con la integración de mensajería nativa de Sacs — no está disponible aún."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6M9 9l6 6\"/></svg>",
@@ -5773,7 +5773,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M9 9h6v6H9z\"/></svg>",
             "title": "Derecho al olvido",
-            "description": "El cliente puede solicitar el borrado de sus datos desde el portal. SACS anonimiza el perfil conservando los tickets para cumplir obligaciones fiscales."
+            "description": "El cliente puede solicitar el borrado de sus datos desde el portal. Sacs anonimiza el perfil conservando los tickets para cumplir obligaciones fiscales."
           }
         ]
       }
@@ -5794,7 +5794,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/federico-narvaez.webp",
         "initials": "FN",
         "color": "#4a6aa8",
-        "quote": "Subimos el logo, los colores y el dominio para el piloto en una mañana. Los clientes ven \"nuestra marca\" en el portal, no \"SACS\" — y eso cambia la relación.",
+        "quote": "Subimos el logo, los colores y el dominio para el piloto en una mañana. Los clientes ven \"nuestra marca\" en el portal, no \"Sacs\" — y eso cambia la relación.",
         "name": "Federico Narváez",
         "business": "Ferretería Narváez",
         "location": "Uruguay"
@@ -5812,8 +5812,8 @@ export const pageContent: Record<string, any> = {
     ],
     "faqs": [
       {
-        "question": "¿El portal lleva el nombre de SACS o mi marca?",
-        "answer": "Tu marca. Logo, colores, tipografía y dominio propio son tuyos. SACS no aparece en ninguna parte visible del portal — es tu producto, no el nuestro."
+        "question": "¿El portal lleva el nombre de Sacs o mi marca?",
+        "answer": "Tu marca. Logo, colores, tipografía y dominio propio son tuyos. Sacs no aparece en ninguna parte visible del portal — es tu producto, no el nuestro."
       },
       {
         "question": "¿Cuánto toma configurar el portal?",
@@ -5837,7 +5837,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa si el cliente pide que borremos sus datos?",
-        "answer": "Desde el portal puede solicitar el borrado. SACS anonimiza el perfil (elimina nombre, teléfono, correo, CFDI) pero conserva los tickets para cumplir requisitos fiscales. Cumples con LFPDPPP sin pelea legal."
+        "answer": "Desde el portal puede solicitar el borrado. Sacs anonimiza el perfil (elimina nombre, teléfono, correo, CFDI) pero conserva los tickets para cumplir requisitos fiscales. Cumples con LFPDPPP sin pelea legal."
       },
       {
         "question": "¿El portal funciona bien en celular?",
@@ -5845,17 +5845,17 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo tener varios portales si manejo varias marcas?",
-        "answer": "Sí. Cada marca puede tener su propio portal con su dominio, su logo y su paleta — corriendo sobre la misma base de SACS. Útil si operas marcas distintas bajo la misma razón social."
+        "answer": "Sí. Cada marca puede tener su propio portal con su dominio, su logo y su paleta — corriendo sobre la misma base de Sacs. Útil si operas marcas distintas bajo la misma razón social."
       }
     ]
   },
   "tarjetas-de-regalo": {
     "hero": {
-      "eyebrow": "SACS Tarjetas de Regalo · Piloto",
+      "eyebrow": "Sacs Tarjetas de Regalo · Piloto",
       "title": "Tarjetas de regalo que viven dentro de tu sistema, no en un proveedor externo.",
-      "subtitle": "Emite tarjetas físicas y digitales con código y PIN, véndelas en el POS y cóbralas con su saldo en cualquier sucursal. SACS crea solo el producto y el método de pago; tú solo emites, vendes y redimes. Sin comisiones por transacción.",
+      "subtitle": "Emite tarjetas físicas y digitales con código y PIN, véndelas en el POS y cóbralas con su saldo en cualquier sucursal. Sacs crea solo el producto y el método de pago; tú solo emites, vendes y redimes. Sin comisiones por transacción.",
       "image": "/images/tarjetas-de-regalo-sistema.webp",
-      "imageAlt": "Módulo de tarjetas de regalo en SACS"
+      "imageAlt": "Módulo de tarjetas de regalo en Sacs"
     },
     "features": [
       {
@@ -5871,7 +5871,7 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
         "title": "Vende en POS y cobra con el saldo",
-        "description": "Al habilitar venta en POS, SACS crea el producto 'Tarjeta de Regalo' (precio abierto, sin descontar inventario) y el método de pago 'Tarjeta de regalo'. El cajero captura el código, valida saldo y redime al cerrar la venta."
+        "description": "Al habilitar venta en POS, Sacs crea el producto 'Tarjeta de Regalo' (precio abierto, sin descontar inventario) y el método de pago 'Tarjeta de regalo'. El cajero captura el código, valida saldo y redime al cerrar la venta."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z\"/><path d=\"M9 12l2 2 4-4\"/></svg>",
@@ -5879,13 +5879,13 @@ export const pageContent: Record<string, any> = {
         "description": "Tu cliente revisa saldo y movimientos en un enlace público y seguro por QR. Tú ves cada tarjeta por estado (activa, agotada, expirada) y el reporte de pasivo: el ingreso se reconoce al redimir, no al vender."
       }
     ],
-    "showcaseTitle": "La tarjeta de regalo, resuelta dentro de SACS.",
+    "showcaseTitle": "La tarjeta de regalo, resuelta dentro de Sacs.",
     "blocks": [
       {
         "title": "Vende una tarjeta como si fuera un producto más.",
         "description": "En el POS, \"Tarjeta de regalo\" aparece como un ítem. Eliges el monto (preset o libre), el cliente paga, y el sistema emite el código — físico si la activas en tarjeta impresa, o digital si se envía por email al destinatario. En 30 segundos, sin salir de la caja.",
         "image": "/images/tarjetas-venta.webp",
-        "imageAlt": "Cajero vendiendo tarjeta de regalo en POS SACS",
+        "imageAlt": "Cajero vendiendo tarjeta de regalo en POS Sacs",
         "link": {
           "label": "Ver punto de venta",
           "href": "/producto/punto-de-venta"
@@ -5898,7 +5898,7 @@ export const pageContent: Record<string, any> = {
         "title": "Canjear es restar del saldo — nada más.",
         "description": "Al cobrar, el cajero captura o escanea el código de la tarjeta. El POS muestra el saldo disponible y el cliente aplica lo que quiera al ticket. Si el ticket excede el saldo, paga la diferencia con otro método; si queda saldo, la tarjeta sigue válida para la próxima visita.",
         "image": "/images/tarjetas-canje.webp",
-        "imageAlt": "Cliente canjeando tarjeta de regalo con saldo parcial en POS SACS",
+        "imageAlt": "Cliente canjeando tarjeta de regalo con saldo parcial en POS Sacs",
         "link": null,
         "featured": true,
         "variant": "gift-redeem"
@@ -5907,7 +5907,7 @@ export const pageContent: Record<string, any> = {
         "title": "Digitales con envío programado.",
         "description": "El cliente compra una tarjeta digital para su pareja y programa el envío para el día del cumpleaños. El destinatario recibe un email con tu marca, diseño de temporada y el código canjeable. Útil en épocas altas — el regalo de último minuto deja de existir.",
         "image": "/images/tarjetas-digital.webp",
-        "imageAlt": "Tarjeta de regalo digital enviada por email con diseño de marca SACS",
+        "imageAlt": "Tarjeta de regalo digital enviada por email con diseño de marca Sacs",
         "link": null,
         "featured": true,
         "variant": "gift-digital-schedule",
@@ -5915,9 +5915,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Contabilidad limpia — sin sorpresas al cierre.",
-        "description": "La venta de una tarjeta es un pasivo, no un ingreso. SACS la registra como \"obligación de entregar producto\" hasta que se canjea — ahí se convierte en venta real. Tu contador lo agradece: los números cuadran con el SAT y no hay que inventar ajustes fin de mes.",
+        "description": "La venta de una tarjeta es un pasivo, no un ingreso. Sacs la registra como \"obligación de entregar producto\" hasta que se canjea — ahí se convierte en venta real. Tu contador lo agradece: los números cuadran con el SAT y no hay que inventar ajustes fin de mes.",
         "image": "/images/tarjetas-contabilidad.webp",
-        "imageAlt": "Reporte de tarjetas emitidas y canjeadas con balance de pasivo en SACS",
+        "imageAlt": "Reporte de tarjetas emitidas y canjeadas con balance de pasivo en Sacs",
         "link": {
           "label": "Ver control financiero",
           "href": "/producto/control-financiero"
@@ -5927,7 +5927,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Usábamos unas tarjetas prepago externas que cobraban 6% por transacción y no sincronizaban saldos entre sucursales. Vendíamos una y media, después venía el escándalo: \"no tengo saldo\" \"sí tiene\" \"no aparece\". Con SACS la tarjeta es del sistema, canjea donde sea y no pago comisiones externas.",
+      "quote": "Usábamos unas tarjetas prepago externas que cobraban 6% por transacción y no sincronizaban saldos entre sucursales. Vendíamos una y media, después venía el escándalo: \"no tengo saldo\" \"sí tiene\" \"no aparece\". Con Sacs la tarjeta es del sistema, canjea donde sea y no pago comisiones externas.",
       "name": "Valeria Chávez",
       "role": "Fundadora",
       "company": "Atelier Chávez",
@@ -5935,14 +5935,14 @@ export const pageContent: Record<string, any> = {
       "statLabel": "de comisión externa eliminada por tarjeta vendida"
     },
     "interrupt": "La tarjeta de regalo no es un producto tercerizado,",
-    "interruptStrike": "es un pasivo que SACS administra por ti.",
+    "interruptStrike": "es un pasivo que Sacs administra por ti.",
     "showcaseTabs": [
       {
         "label": "Tarjetas",
         "title": "Todas tus tarjetas, por estado y código",
         "description": "La lista filtra por estado (Activas, Inactivas, Agotadas, Desactivadas, Expiradas) y por tipo físico o digital, y busca por código. Cada fila muestra saldo, monto inicial, vencimiento y fecha de emisión; al abrirla ves su detalle y movimientos.",
         "image": "/images/tarjetas-de-regalo-tab-lista.webp",
-        "imageAlt": "Lista de tarjetas de regalo por estado y código en SACS",
+        "imageAlt": "Lista de tarjetas de regalo por estado y código en Sacs",
         "link": null,
         "details": [
           {
@@ -5963,7 +5963,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
             "title": "Auditoría de inventario",
-            "description": "SACS te muestra cuántas tarjetas del lote están inactivas, cuántas vendidas, cuántas canjeadas, cuántas vencidas. Controla tu existencia física como cualquier otro inventario."
+            "description": "Sacs te muestra cuántas tarjetas del lote están inactivas, cuántas vendidas, cuántas canjeadas, cuántas vencidas. Controla tu existencia física como cualquier otro inventario."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
@@ -5973,7 +5973,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
             "title": "Sin comisión por transacción",
-            "description": "A diferencia de las prepago externas, SACS no cobra 5% ni 6% por tarjeta emitida o canjeada. El servicio viene en tu plan — el margen completo se queda contigo."
+            "description": "A diferencia de las prepago externas, Sacs no cobra 5% ni 6% por tarjeta emitida o canjeada. El servicio viene en tu plan — el margen completo se queda contigo."
           }
         ]
       },
@@ -5982,7 +5982,7 @@ export const pageContent: Record<string, any> = {
         "title": "Saldo y movimientos de una tarjeta",
         "description": "Abre cualquier tarjeta para ver su saldo disponible, estado y vencimiento, junto con el historial completo de movimientos: emisión, redenciones, recargas y ajustes. Desde aquí puedes ajustar o desactivar la tarjeta.",
         "image": "/images/tarjetas-de-regalo-tab-detalle.webp",
-        "imageAlt": "Detalle de una tarjeta con saldo, movimientos y acciones en SACS",
+        "imageAlt": "Detalle de una tarjeta con saldo, movimientos y acciones en Sacs",
         "link": null,
         "details": [
           {
@@ -6020,9 +6020,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Configuración",
         "title": "Reglas de tus tarjetas en un lugar",
-        "description": "Ajusta montos predefinidos, vencimiento en meses, recarga con tope, PIN y plantillas de diseño. SACS genera automáticamente el enlace público de consulta por QR y deja listos el producto de venta y el método de cobro en el POS.",
+        "description": "Ajusta montos predefinidos, vencimiento en meses, recarga con tope, PIN y plantillas de diseño. Sacs genera automáticamente el enlace público de consulta por QR y deja listos el producto de venta y el método de cobro en el POS.",
         "image": "/images/tarjetas-de-regalo-tab-config.webp",
-        "imageAlt": "Diseño y reglas de la tarjeta de regalo con vista previa y QR en SACS",
+        "imageAlt": "Diseño y reglas de la tarjeta de regalo con vista previa y QR en Sacs",
         "link": null,
         "details": [
           {
@@ -6053,7 +6053,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
             "title": "Detección de canjes sospechosos",
-            "description": "Varios canjes de la misma tarjeta en minutos, montos atípicos, IPs distintas — SACS alerta al gerente (alertas en roadmap)"
+            "description": "Varios canjes de la misma tarjeta en minutos, montos atípicos, IPs distintas — Sacs alerta al gerente (alertas en roadmap)"
           }
         ]
       }
@@ -6064,7 +6064,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/valeria-chavez.webp",
         "initials": "VC",
         "color": "#b47a3a",
-        "quote": "En piloto con SACS arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — la clienta canjea donde quiera, y para nosotros eso es oro.",
+        "quote": "En piloto con Sacs arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — la clienta canjea donde quiera, y para nosotros eso es oro.",
         "name": "Valeria Chávez",
         "business": "Atelier Chávez",
         "location": "México"
@@ -6097,11 +6097,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo vender tarjeta en una sucursal y canjearla en otra?",
-        "answer": "Sí. El saldo vive en SACS, no en la tarjeta. Cualquier sucursal de tu red puede canjearla — el POS consulta el saldo vigente al momento, sin importar dónde se vendió."
+        "answer": "Sí. El saldo vive en Sacs, no en la tarjeta. Cualquier sucursal de tu red puede canjearla — el POS consulta el saldo vigente al momento, sin importar dónde se vendió."
       },
       {
         "question": "¿Se cobra comisión por transacción?",
-        "answer": "No. A diferencia de prepagos externos que cobran 3-6% por emisión o canje, las tarjetas de SACS no tienen comisión por transacción. Forman parte de tu plan base."
+        "answer": "No. A diferencia de prepagos externos que cobran 3-6% por emisión o canje, las tarjetas de Sacs no tienen comisión por transacción. Forman parte de tu plan base."
       },
       {
         "question": "¿Qué pasa si el cliente pierde la tarjeta física?",
@@ -6117,7 +6117,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo se contabiliza la venta de tarjetas?",
-        "answer": "Al vender, la tarjeta es un pasivo (obligación de entregar producto). Al canjear, se convierte en venta real con IVA. SACS lleva el registro y te da reportes claros para cierre de mes y auditoría."
+        "answer": "Al vender, la tarjeta es un pasivo (obligación de entregar producto). Al canjear, se convierte en venta real con IVA. Sacs lleva el registro y te da reportes claros para cierre de mes y auditoría."
       },
       {
         "question": "¿Tienen vencimiento?",
@@ -6131,17 +6131,17 @@ export const pageContent: Record<string, any> = {
   },
   "marketing-por-correo": {
     "hero": {
-      "eyebrow": "SACS Marketing por Correo",
+      "eyebrow": "Sacs Marketing por Correo",
       "title": "Marketing por correo, en construcción. Lo automático ya jala.",
-      "subtitle": "Hoy SACS manda correos automáticos donde más duele: carrito abandonado y avisos de pedido/pago, con tu proveedor de envío conectado. El centro de campañas segmentadas está en piloto con retailers seleccionados — cuéntanos qué quieres mandar y lo activamos contigo.",
+      "subtitle": "Hoy Sacs manda correos automáticos donde más duele: carrito abandonado y avisos de pedido/pago, con tu proveedor de envío conectado. El centro de campañas segmentadas está en piloto con retailers seleccionados — cuéntanos qué quieres mandar y lo activamos contigo.",
       "image": "/images/marketing-correo-hero.webp",
-      "imageAlt": "Dueña de boutique revisando campaña de email en laptop SACS"
+      "imageAlt": "Dueña de boutique revisando campaña de email en laptop Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z\"/><path d=\"M22 6l-10 7L2 6\"/></svg>",
         "title": "Correos de carrito abandonado",
-        "description": "Recupera ventas de tu tienda en línea: el cliente deja el carrito y SACS le manda un correo con descuento. Configuras hasta tres correos, cada uno con su % y su asunto."
+        "description": "Recupera ventas de tu tienda en línea: el cliente deja el carrito y Sacs le manda un correo con descuento. Configuras hasta tres correos, cada uno con su % y su asunto."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18M9 21V9\"/></svg>",
@@ -6165,7 +6165,7 @@ export const pageContent: Record<string, any> = {
         "title": "La plantilla lista. Tu marca, puesta.",
         "description": "Elige un template — bienvenida, nueva temporada, recuperación, cumpleaños — y el sistema ya trae tu logo, tus colores y tu tono. Editas los bloques como si fuera un documento: texto, imagen, botón, producto. Lo que se ve en el preview es lo que llega al inbox.",
         "image": "/images/marketing-correo-plantilla.webp",
-        "imageAlt": "Vista previa de plantilla de email con marca aplicada en editor SACS",
+        "imageAlt": "Vista previa de plantilla de email con marca aplicada en editor Sacs",
         "link": null,
         "featured": true,
         "variant": "email-template-preview",
@@ -6175,7 +6175,7 @@ export const pageContent: Record<string, any> = {
         "title": "Segmenta por lo que hacen, no por lo que imaginas.",
         "description": "Filtra tu lista por ticket promedio, categoría comprada, sucursal favorita, días desde la última visita, total gastado en el año. El segmento se arma en segundos porque los datos ya viven en tu POS. No subes CSVs, no pegas listas: exportas directo desde Clientes y disparas.",
         "image": "/images/marketing-correo-segmento.webp",
-        "imageAlt": "Pantalla de segmentación por comportamiento de cliente en SACS",
+        "imageAlt": "Pantalla de segmentación por comportamiento de cliente en Sacs",
         "link": {
           "label": "Ver clientes y CRM",
           "href": "/producto/clientes-y-crm"
@@ -6185,9 +6185,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Con tu proveedor de correo. Sin atarte a uno.",
-        "description": "SACS arma el correo y la lista segmentada; el envío lo hace tu proveedor (Mailchimp, Brevo, Resend o el que uses). Nosotros no cobramos por volumen de envío y tú mantienes la reputación del dominio que ya tienes trabajada. En piloto — cuéntanos qué proveedor usas y lo integramos.",
+        "description": "Sacs arma el correo y la lista segmentada; el envío lo hace tu proveedor (Mailchimp, Brevo, Resend o el que uses). Nosotros no cobramos por volumen de envío y tú mantienes la reputación del dominio que ya tienes trabajada. En piloto — cuéntanos qué proveedor usas y lo integramos.",
         "image": "/images/marketing-correo-proveedor.webp",
-        "imageAlt": "Integraciones de proveedores de email conectadas en panel SACS",
+        "imageAlt": "Integraciones de proveedores de email conectadas en panel Sacs",
         "link": {
           "label": "Ver integraciones",
           "href": "/producto/integraciones"
@@ -6200,7 +6200,7 @@ export const pageContent: Record<string, any> = {
         "title": "Después del envío, la verdad. ¿Vendió o no?",
         "description": "Cada campaña muestra aperturas, clics y — lo que de verdad importa — ventas atribuidas en tienda y online durante los 14 días siguientes. Si un correo te generó 48 visitas y $62,300 en caja, lo sabes. Si no vendió nada, también. Dejas de adivinar qué funciona. (en integración con ventas en tienda; hoy disponemos de métricas de aperturas y clics)",
         "image": "/images/marketing-correo-atribucion.webp",
-        "imageAlt": "Dashboard de atribución de ventas por campaña en SACS",
+        "imageAlt": "Dashboard de atribución de ventas por campaña en Sacs",
         "link": {
           "label": "Ver analítica",
           "href": "/producto/analitica"
@@ -6210,7 +6210,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Mandábamos el mismo correo a toda la lista y cada vez funcionaba peor. Con SACS armamos tres segmentos — recurrentes, dormidos y VIP — y cada uno recibe algo distinto. El último correo a dormidos recuperó 37 clientas que no pasaban hace 8 meses.",
+      "quote": "Mandábamos el mismo correo a toda la lista y cada vez funcionaba peor. Con Sacs armamos tres segmentos — recurrentes, dormidos y VIP — y cada uno recibe algo distinto. El último correo a dormidos recuperó 37 clientas que no pasaban hace 8 meses.",
       "name": "Regina Meléndez",
       "role": "Directora de Marketing",
       "company": "Casa Ámbar",
@@ -6225,7 +6225,7 @@ export const pageContent: Record<string, any> = {
         "title": "El carrito abandonado, recuperado solo.",
         "description": "Configura los correos que salen cuando un cliente deja productos sin pagar en tu tienda en línea: tres plantillas, cada una con su descuento, su asunto editable con variables y preview en vivo. Se dispara solo, sin que muevas un dedo.",
         "image": "/images/marketing-correo-hero.webp",
-        "imageAlt": "Biblioteca de plantillas de email en SACS",
+        "imageAlt": "Biblioteca de plantillas de email en Sacs",
         "link": null,
         "details": [
           {
@@ -6256,7 +6256,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13l4 4L19 7\"/></svg>",
             "title": "Prueba A/B de asunto",
-            "description": "Elige dos asuntos. SACS manda uno al 10% de la lista, espera 2 horas y envía al resto el que mejor abrió. Tú solo lees el reporte. (depende de las capacidades de tu proveedor email — Mailchimp/Brevo/Resend)"
+            "description": "Elige dos asuntos. Sacs manda uno al 10% de la lista, espera 2 horas y envía al resto el que mejor abrió. Tú solo lees el reporte. (depende de las capacidades de tu proveedor email — Mailchimp/Brevo/Resend)"
           }
         ]
       },
@@ -6265,7 +6265,7 @@ export const pageContent: Record<string, any> = {
         "title": "El cliente se entera, sin que tú escribas.",
         "description": "Define plantillas de correo por evento del negocio —pedido, pago— junto a tus avisos de WhatsApp. Cuando cambia el estatus, el correo sale. Transaccional, puntual, con la voz de tu marca.",
         "image": "/images/marketing-correo-hero.webp",
-        "imageAlt": "Pantalla de segmentos dinámicos de clientes en SACS",
+        "imageAlt": "Pantalla de segmentos dinámicos de clientes en Sacs",
         "link": null,
         "details": [
           {
@@ -6305,7 +6305,7 @@ export const pageContent: Record<string, any> = {
         "title": "Campañas segmentadas: lo estamos construyendo contigo.",
         "description": "El centro de campañas masivas por segmento (quién compró qué, quién no vuelve, tus VIP) está en piloto. No prometemos pantallas que aún no existen: dinos qué proveedor de correo usas y qué quieres mandar, y lo integramos en tu cuenta.",
         "image": "/images/marketing-correo-hero.webp",
-        "imageAlt": "Pantalla de flujos automáticos de email en SACS",
+        "imageAlt": "Pantalla de flujos automáticos de email en Sacs",
         "link": null,
         "details": [
           {
@@ -6316,7 +6316,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
             "title": "Cumpleaños con beneficio",
-            "description": "SACS usa la fecha que capturaste en el CRM y envía un correo con un cupón exclusivo — válido 7 días, canjeable en tienda u online."
+            "description": "Sacs usa la fecha que capturaste en el CRM y envía un correo con un cupón exclusivo — válido 7 días, canjeable en tienda u online."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3h18v18H3z\"/><path d=\"M21 9H3\"/></svg>",
@@ -6326,7 +6326,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/></svg>",
             "title": "De vuelta en stock",
-            "description": "Si el cliente dejó su correo esperando una talla, SACS le avisa en cuanto el producto vuelve al inventario de cualquier sucursal o de tu e-commerce."
+            "description": "Si el cliente dejó su correo esperando una talla, Sacs le avisa en cuanto el producto vuelve al inventario de cualquier sucursal o de tu e-commerce."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 6v6l4 2\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg>",
@@ -6336,7 +6336,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
             "title": "Solo con consentimiento",
-            "description": "SACS respeta la casilla de opt-in. Si el cliente no aceptó recibir marketing, no se le envía nada automático — cumples con LFPDPPP y GDPR sin pensarlo."
+            "description": "Sacs respeta la casilla de opt-in. Si el cliente no aceptó recibir marketing, no se le envía nada automático — cumples con LFPDPPP y GDPR sin pensarlo."
           }
         ]
       }
@@ -6357,7 +6357,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/diego-faundez.webp",
         "initials": "DF",
         "color": "#4a6aa8",
-        "quote": "No quería cambiar de proveedor de correo porque llevaba años construyendo la reputación del dominio. SACS se integró con el que ya usaba — yo solo armo la campaña y segmento, el envío corre por donde siempre.",
+        "quote": "No quería cambiar de proveedor de correo porque llevaba años construyendo la reputación del dominio. Sacs se integró con el que ya usaba — yo solo armo la campaña y segmento, el envío corre por donde siempre.",
         "name": "Diego Faúndez",
         "business": "Tienda Alpaca Andina",
         "location": "Perú"
@@ -6375,8 +6375,8 @@ export const pageContent: Record<string, any> = {
     ],
     "faqs": [
       {
-        "question": "¿SACS envía los correos directamente?",
-        "answer": "Hoy no. SACS arma el correo, segmenta la lista y te conecta con el proveedor de email que ya usas (Mailchimp, Brevo, Resend, entre otros). El envío corre por tu proveedor — así mantienes la reputación del dominio y no pagas dos veces por volumen. Estamos en piloto con retailers seleccionados para validar el flujo antes de abrirlo a todos."
+        "question": "¿Sacs envía los correos directamente?",
+        "answer": "Hoy no. Sacs arma el correo, segmenta la lista y te conecta con el proveedor de email que ya usas (Mailchimp, Brevo, Resend, entre otros). El envío corre por tu proveedor — así mantienes la reputación del dominio y no pagas dos veces por volumen. Estamos en piloto con retailers seleccionados para validar el flujo antes de abrirlo a todos."
       },
       {
         "question": "¿Qué proveedores de correo están soportados?",
@@ -6384,7 +6384,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo sé si mi campaña sí vendió?",
-        "answer": "SACS cruza aperturas y clics con las ventas hechas en tienda y en la tienda online durante los 14 días siguientes. Verás ventas atribuidas y revenue por campaña — no solo aperturas."
+        "answer": "Sacs cruza aperturas y clics con las ventas hechas en tienda y en la tienda online durante los 14 días siguientes. Verás ventas atribuidas y revenue por campaña — no solo aperturas."
       },
       {
         "question": "¿Puedo usar mi propia plantilla de diseño?",
@@ -6396,25 +6396,25 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué pasa con los clientes que se dan de baja?",
-        "answer": "SACS respeta el opt-out. Cuando un cliente se da de baja, queda marcado en el CRM y no recibe más campañas promocionales — ni aunque califique por filtros. Los correos transaccionales (recibo de compra, notificación de apartado) siguen llegando porque no son marketing."
+        "answer": "Sacs respeta el opt-out. Cuando un cliente se da de baja, queda marcado en el CRM y no recibe más campañas promocionales — ni aunque califique por filtros. Los correos transaccionales (recibo de compra, notificación de apartado) siguen llegando porque no son marketing."
       },
       {
         "question": "¿Puedo programar envíos para un día y hora específicos?",
-        "answer": "Sí. Eliges fecha y hora exacta, y SACS coordina el disparo con tu proveedor para que llegue justo cuando tú quieres. También puedes pausar una campaña antes de que salga si cambias de opinión."
+        "answer": "Sí. Eliges fecha y hora exacta, y Sacs coordina el disparo con tu proveedor para que llegue justo cuando tú quieres. También puedes pausar una campaña antes de que salga si cambias de opinión."
       },
       {
         "question": "¿Funciona la prueba A/B de asunto?",
-        "answer": "Sí. Defines dos asuntos, SACS envía el primero al 10% de la lista y el segundo a otro 10%. Pasadas 2 horas, envía al 80% restante el que mejor abrió. Solo funciona si el tamaño de la muestra es suficiente."
+        "answer": "Sí. Defines dos asuntos, Sacs envía el primero al 10% de la lista y el segundo a otro 10%. Pasadas 2 horas, envía al 80% restante el que mejor abrió. Solo funciona si el tamaño de la muestra es suficiente."
       },
       {
         "question": "¿Las automatizaciones consumen mi cuota de envío?",
-        "answer": "Sí, los correos automáticos (bienvenida, cumpleaños, carrito abandonado) se envían a través de tu proveedor de email y cuentan contra tu cuota ahí. SACS no te cobra extra por volumen."
+        "answer": "Sí, los correos automáticos (bienvenida, cumpleaños, carrito abandonado) se envían a través de tu proveedor de email y cuentan contra tu cuota ahí. Sacs no te cobra extra por volumen."
       }
     ]
   },
   "marketing-por-whatsapp": {
     "hero": {
-      "eyebrow": "SACS Marketing por WhatsApp · Piloto",
+      "eyebrow": "Sacs Marketing por WhatsApp · Piloto",
       "title": "Avísale a tu cliente por WhatsApp, sin escribir nada.",
       "subtitle": "Notificaciones automáticas a tus clientes por WhatsApp y Correo, disparadas por los eventos reales de tu negocio: ticket de compra, abono a apartado, pedido listo, recordatorio de pago. Plantillas aprobadas por Meta y enviadas vía Kapso. Activas, pruebas y listo.",
       "image": "/images/marketing-whatsapp-hero.webp",
@@ -6455,9 +6455,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Plantillas aprobadas. Envíos a escala.",
-        "description": "Meta exige plantillas pre-aprobadas para mensajes masivos. SACS trae plantillas base para los casos típicos de retail — recordatorio, promoción, confirmación — y te acompaña a registrar las tuyas propias. Una vez aprobadas, las usas miles de veces sin pedir permiso cada envío.",
+        "description": "Meta exige plantillas pre-aprobadas para mensajes masivos. Sacs trae plantillas base para los casos típicos de retail — recordatorio, promoción, confirmación — y te acompaña a registrar las tuyas propias. Una vez aprobadas, las usas miles de veces sin pedir permiso cada envío.",
         "image": "/images/marketing-whatsapp-plantilla.webp",
-        "imageAlt": "Editor de plantillas de WhatsApp con estado de aprobación en SACS",
+        "imageAlt": "Editor de plantillas de WhatsApp con estado de aprobación en Sacs",
         "link": null,
         "featured": true,
         "variant": "whatsapp-template-approval"
@@ -6489,7 +6489,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Usábamos el WhatsApp de una vendedora para mandar promociones — la cuenta terminó baneada dos veces. Migrar a WhatsApp Business oficial con SACS fue el paso que debíamos haber dado hace dos años. Primera campaña segmentada: 48% de respuestas.",
+      "quote": "Usábamos el WhatsApp de una vendedora para mandar promociones — la cuenta terminó baneada dos veces. Migrar a WhatsApp Business oficial con Sacs fue el paso que debíamos haber dado hace dos años. Primera campaña segmentada: 48% de respuestas.",
       "name": "Mariana Peñaloza",
       "role": "Directora Comercial",
       "company": "Colmena Accesorios",
@@ -6504,13 +6504,13 @@ export const pageContent: Record<string, any> = {
         "title": "Cada momento del negocio, su aviso.",
         "description": "El catálogo cubre los eventos reales: ticket de compra, comprobante de pago, devolución, cambio y cancelación en el POS; pedido confirmado, abono, preparado, en camino y entregado; apartado creado, abono, recordatorio y liquidado; cotizaciones, eGift cards y más. Prendes solo los que te sirven.",
         "image": "/images/marketing-whatsapp-hero.webp",
-        "imageAlt": "Pantalla de conexión con BSP oficial de WhatsApp en SACS",
+        "imageAlt": "Pantalla de conexión con BSP oficial de WhatsApp en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2L2 7l10 5 10-5-10-5z\"/><path d=\"M2 17l10 5 10-5M2 12l10 5 10-5\"/></svg>",
             "title": "BSP certificado",
-            "description": "Integración con proveedores oficiales — 360dialog, Gupshup u otros según tu país. Tu relación comercial es con el BSP; SACS orquesta el flujo."
+            "description": "Integración con proveedores oficiales — 360dialog, Gupshup u otros según tu país. Tu relación comercial es con el BSP; Sacs orquesta el flujo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
@@ -6542,9 +6542,9 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Correo editable",
         "title": "El correo lo escribes tú.",
-        "description": "Edita el asunto y el cuerpo de cada notificación por correo con variables como {{negocio}} y {{cliente}}. La tabla de productos, la promo y el pie se agregan automáticamente. El texto de WhatsApp lo administra SACS para mantener la plantilla aprobada por Meta.",
+        "description": "Edita el asunto y el cuerpo de cada notificación por correo con variables como {{negocio}} y {{cliente}}. La tabla de productos, la promo y el pie se agregan automáticamente. El texto de WhatsApp lo administra Sacs para mantener la plantilla aprobada por Meta.",
         "image": "/images/marketing-whatsapp-hero.webp",
-        "imageAlt": "Editor de plantillas de WhatsApp con variables dinámicas en SACS",
+        "imageAlt": "Editor de plantillas de WhatsApp con variables dinámicas en Sacs",
         "link": null,
         "details": [
           {
@@ -6560,7 +6560,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z\"/><path d=\"M14 2v6h6M16 13H8M16 17H8M10 9H8\"/></svg>",
             "title": "Estado de aprobación visible",
-            "description": "Ves qué plantillas están aprobadas, en revisión o rechazadas. Si Meta la rechaza, SACS te muestra el motivo y sugiere ajustes."
+            "description": "Ves qué plantillas están aprobadas, en revisión o rechazadas. Si Meta la rechaza, Sacs te muestra el motivo y sugiere ajustes."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
@@ -6575,16 +6575,16 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/></svg>",
             "title": "Categoría correcta",
-            "description": "Meta clasifica plantillas en Marketing, Utility o Authentication. SACS te guía para elegir la categoría correcta — cobras menos cuando aplica."
+            "description": "Meta clasifica plantillas en Marketing, Utility o Authentication. Sacs te guía para elegir la categoría correcta — cobras menos cuando aplica."
           }
         ]
       },
       {
         "label": "Tu propio número",
-        "title": "Personaliza el WhatsApp con SACS Inbox.",
-        "description": "De fábrica el WhatsApp sale con la plantilla aprobada de SACS. ¿Quieres editar cada mensaje a tu marca, enviar desde tu propio número y quitar la firma publicitaria? Eso se habilita contratando SACS Inbox.",
+        "title": "Personaliza el WhatsApp con Sacs Inbox.",
+        "description": "De fábrica el WhatsApp sale con la plantilla aprobada de Sacs. ¿Quieres editar cada mensaje a tu marca, enviar desde tu propio número y quitar la firma publicitaria? Eso se habilita contratando Sacs Inbox.",
         "image": "/images/marketing-whatsapp-hero.webp",
-        "imageAlt": "Pantalla de flujos automáticos de WhatsApp disparados por eventos en SACS",
+        "imageAlt": "Pantalla de flujos automáticos de WhatsApp disparados por eventos en Sacs",
         "link": null,
         "details": [
           {
@@ -6595,7 +6595,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
             "title": "Recordatorio de apartado",
-            "description": "3 días antes del vencimiento, SACS dispara un WhatsApp: \"Tu apartado vence el viernes, pasa a liquidar o extiende el plazo\". Recupera ventas en piloto automático."
+            "description": "3 días antes del vencimiento, Sacs dispara un WhatsApp: \"Tu apartado vence el viernes, pasa a liquidar o extiende el plazo\". Recupera ventas en piloto automático."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
@@ -6610,7 +6610,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83\"/></svg>",
             "title": "Solo ventana de 24 horas",
-            "description": "Fuera de la ventana de sesión, Meta exige plantilla pre-aprobada. SACS respeta la regla automáticamente — nunca te expone a bloqueos."
+            "description": "Fuera de la ventana de sesión, Meta exige plantilla pre-aprobada. Sacs respeta la regla automáticamente — nunca te expone a bloqueos."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -6646,7 +6646,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/paola-restrepo.webp",
         "initials": "PR",
         "color": "#5a8a5f",
-        "quote": "Tratamos WhatsApp como lo que es: un canal más que debe tener presupuesto, plantillas aprobadas y métricas. SACS nos obliga a disciplina que antes no teníamos.",
+        "quote": "Tratamos WhatsApp como lo que es: un canal más que debe tener presupuesto, plantillas aprobadas y métricas. Sacs nos obliga a disciplina que antes no teníamos.",
         "name": "Paola Restrepo",
         "business": "Moda Paola",
         "location": "Colombia"
@@ -6654,50 +6654,50 @@ export const pageContent: Record<string, any> = {
     ],
     "faqs": [
       {
-        "question": "¿SACS envía los WhatsApp directamente?",
-        "answer": "No. SACS orquesta el flujo (plantillas, segmentos, disparos, métricas) y se conecta con un BSP oficial certificado por Meta (360dialog, Gupshup u otros según tu país). El envío real lo hace el BSP con tu número verificado. La integración está en piloto — lanzamos con retailers seleccionados en las próximas semanas."
+        "question": "¿Sacs envía los WhatsApp directamente?",
+        "answer": "No. Sacs orquesta el flujo (plantillas, segmentos, disparos, métricas) y se conecta con un BSP oficial certificado por Meta (360dialog, Gupshup u otros según tu país). El envío real lo hace el BSP con tu número verificado. La integración está en piloto — lanzamos con retailers seleccionados en las próximas semanas."
       },
       {
         "question": "¿Puedo usar mi número personal de WhatsApp?",
-        "answer": "No lo recomendamos y Meta tampoco. Para envíos masivos y automáticos necesitas WhatsApp Business API con un número dedicado. SACS te guía en el proceso de migración del número actual o alta de uno nuevo con el BSP."
+        "answer": "No lo recomendamos y Meta tampoco. Para envíos masivos y automáticos necesitas WhatsApp Business API con un número dedicado. Sacs te guía en el proceso de migración del número actual o alta de uno nuevo con el BSP."
       },
       {
         "question": "¿Qué necesito para empezar?",
-        "answer": "Cuenta Meta Business verificada, un número de teléfono disponible (no puede estar ya activo en WhatsApp personal), y elegir un BSP. SACS acompaña el proceso de alta — suele tomar entre 3 y 10 días hábiles dependiendo del país."
+        "answer": "Cuenta Meta Business verificada, un número de teléfono disponible (no puede estar ya activo en WhatsApp personal), y elegir un BSP. Sacs acompaña el proceso de alta — suele tomar entre 3 y 10 días hábiles dependiendo del país."
       },
       {
         "question": "¿Cuánto cuesta mandar un WhatsApp?",
-        "answer": "Meta cobra por conversación iniciada (categorías: marketing, utility, authentication, service). El precio varía por país — típicamente entre 0.04 y 0.15 USD por conversación de marketing. SACS muestra el costo en el panel antes de cada envío y en la bitácora después."
+        "answer": "Meta cobra por conversación iniciada (categorías: marketing, utility, authentication, service). El precio varía por país — típicamente entre 0.04 y 0.15 USD por conversación de marketing. Sacs muestra el costo en el panel antes de cada envío y en la bitácora después."
       },
       {
         "question": "¿Tengo que conseguir opt-in explícito?",
-        "answer": "Sí, es requisito de Meta. SACS solo dispara campañas a clientes que marcaron explícitamente \"acepto recibir comunicaciones por WhatsApp\" en el punto de venta o en el checkout online. Mandar sin opt-in lleva a reportes de spam y baja la calidad de tu número."
+        "answer": "Sí, es requisito de Meta. Sacs solo dispara campañas a clientes que marcaron explícitamente \"acepto recibir comunicaciones por WhatsApp\" en el punto de venta o en el checkout online. Mandar sin opt-in lleva a reportes de spam y baja la calidad de tu número."
       },
       {
         "question": "¿Por qué todo pasa por plantillas pre-aprobadas?",
-        "answer": "Es regla de Meta. Fuera de la ventana de 24 horas desde la última conversación del cliente, solo puedes mandar plantillas aprobadas previamente. Dentro de la ventana puedes escribir libre. SACS respeta la regla automáticamente — jamás envía algo que te meta en problemas."
+        "answer": "Es regla de Meta. Fuera de la ventana de 24 horas desde la última conversación del cliente, solo puedes mandar plantillas aprobadas previamente. Dentro de la ventana puedes escribir libre. Sacs respeta la regla automáticamente — jamás envía algo que te meta en problemas."
       },
       {
         "question": "¿Cuánto tarda Meta en aprobar una plantilla?",
-        "answer": "Normalmente entre minutos y 24 horas. Si la plantilla viola políticas (promesas exageradas, lenguaje agresivo, spam), Meta la rechaza y SACS te muestra el motivo para que ajustes y vuelvas a enviar."
+        "answer": "Normalmente entre minutos y 24 horas. Si la plantilla viola políticas (promesas exageradas, lenguaje agresivo, spam), Meta la rechaza y Sacs te muestra el motivo para que ajustes y vuelvas a enviar."
       },
       {
         "question": "¿Las notificaciones automáticas y las campañas manuales cuentan igual?",
-        "answer": "Cuentan como conversaciones iniciadas, pero Meta las clasifica distinto. Una notificación utility (pedido listo, apartado por vencer) suele costar menos que una de marketing. SACS usa la categoría correcta automáticamente."
+        "answer": "Cuentan como conversaciones iniciadas, pero Meta las clasifica distinto. Una notificación utility (pedido listo, apartado por vencer) suele costar menos que una de marketing. Sacs usa la categoría correcta automáticamente."
       },
       {
         "question": "¿Qué pasa si el cliente responde al WhatsApp automático?",
-        "answer": "Se abre una ventana de sesión de 24 horas. Durante esa ventana puedes contestar con mensajes libres (sin plantilla). SACS ruteará la respuesta al equipo que definas — asesor de la sucursal, soporte central o agente IA si lo tienes activado."
+        "answer": "Se abre una ventana de sesión de 24 horas. Durante esa ventana puedes contestar con mensajes libres (sin plantilla). Sacs ruteará la respuesta al equipo que definas — asesor de la sucursal, soporte central o agente IA si lo tienes activado."
       }
     ]
   },
   "membresias-y-suscripciones": {
     "hero": {
-      "eyebrow": "SACS Membresías y Suscripciones · Piloto",
+      "eyebrow": "Sacs Membresías y Suscripciones · Piloto",
       "title": "Membresías de pago que dan acceso inmediato a tus mejores beneficios",
-      "subtitle": "Dentro del Programa de Lealtad de SACS creas membresías de pago — únicas, mensuales o anuales — que llevan a tu cliente directo a un nivel con descuentos, puntos multiplicados y beneficios, sin esperar a acumular. Tú defines el nivel, el precio y la duración.",
+      "subtitle": "Dentro del Programa de Lealtad de Sacs creas membresías de pago — únicas, mensuales o anuales — que llevan a tu cliente directo a un nivel con descuentos, puntos multiplicados y beneficios, sin esperar a acumular. Tú defines el nivel, el precio y la duración.",
       "image": "/images/membresias-y-suscripciones-sistema.webp",
-      "imageAlt": "Programa de membresías y lealtad en SACS"
+      "imageAlt": "Programa de membresías y lealtad en Sacs"
     },
     "features": [
       {
@@ -6725,9 +6725,9 @@ export const pageContent: Record<string, any> = {
     "blocks": [
       {
         "title": "Planes con cobro automático. Sin ir a pedir el pago.",
-        "description": "Configuras los planes (mensual, trimestral, anual) y SACS orquesta el cobro con tu pasarela — Stripe, MercadoPago u otra. Si la tarjeta falla, reintenta 3 veces con intervalo, avisa al cliente y pausa el plan sin perderlo. Tú cobras sin tener que cobrarle a nadie.",
+        "description": "Configuras los planes (mensual, trimestral, anual) y Sacs orquesta el cobro con tu pasarela — Stripe, MercadoPago u otra. Si la tarjeta falla, reintenta 3 veces con intervalo, avisa al cliente y pausa el plan sin perderlo. Tú cobras sin tener que cobrarle a nadie.",
         "image": "/images/membresias-recurrente.webp",
-        "imageAlt": "Panel de suscripciones con cobro automático y reintentos en SACS",
+        "imageAlt": "Panel de suscripciones con cobro automático y reintentos en Sacs",
         "link": null,
         "featured": true,
         "variant": "membership-recurring"
@@ -6747,7 +6747,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "La credencial vive en su celular.",
-        "description": "Cada miembro recibe su tarjeta digital con QR en Apple Wallet, Google Wallet o como enlace directo. Al comprar, muestra el código, el cajero lo escanea y SACS aplica nivel, beneficio y puntos al instante. Sin buscar por teléfono, sin pedir credencial física, sin fricción. (Apple/Google Wallet passes en roadmap)",
+        "description": "Cada miembro recibe su tarjeta digital con QR en Apple Wallet, Google Wallet o como enlace directo. Al comprar, muestra el código, el cajero lo escanea y Sacs aplica nivel, beneficio y puntos al instante. Sin buscar por teléfono, sin pedir credencial física, sin fricción. (Apple/Google Wallet passes en roadmap)",
         "image": "/images/membresias-credencial.webp",
         "imageAlt": "Credencial digital de membresía en Apple Wallet siendo escaneada en caja",
         "link": null,
@@ -6784,7 +6784,7 @@ export const pageContent: Record<string, any> = {
         "title": "Crea la membresía en el paso 3 del wizard",
         "description": "En el configurador del Programa de Lealtad, el paso de Membresías te deja crear cada plan: nombre, descripción, el nivel al que da acceso y las opciones de pago que quieras habilitar. Todo desde un solo modal.",
         "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
-        "imageAlt": "Configurador de planes de membresía en SACS",
+        "imageAlt": "Configurador de planes de membresía en Sacs",
         "link": null,
         "details": [
           {
@@ -6795,12 +6795,12 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>",
             "title": "Pasarela a elección",
-            "description": "Integración con Stripe, MercadoPago, Conekta y PayPal. Tu relación comercial con la pasarela; SACS orquesta la suscripción sobre ella."
+            "description": "Integración con Stripe, MercadoPago, Conekta y PayPal. Tu relación comercial con la pasarela; Sacs orquesta la suscripción sobre ella."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/></svg>",
             "title": "Reintentos inteligentes",
-            "description": "Si la tarjeta falla, SACS reintenta a día 1, día 3 y día 7. Si sigue fallando, pausa el plan y notifica al cliente para que actualice método de pago."
+            "description": "Si la tarjeta falla, Sacs reintenta a día 1, día 3 y día 7. Si sigue fallando, pausa el plan y notifica al cliente para que actualice método de pago."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
@@ -6810,12 +6810,12 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
             "title": "Prueba gratis o freemium",
-            "description": "Ofrece 7, 14 o 30 días de prueba. SACS guarda la tarjeta, no cobra hasta que termine el trial y cobra al final si el cliente no canceló."
+            "description": "Ofrece 7, 14 o 30 días de prueba. Sacs guarda la tarjeta, no cobra hasta que termine el trial y cobra al final si el cliente no canceló."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
             "title": "Ingreso diferido",
-            "description": "Un plan anual cobrado hoy no es ingreso del mes — es pasivo diferido que se reconoce mes a mes. SACS entrega el reporte listo para tu contabilidad."
+            "description": "Un plan anual cobrado hoy no es ingreso del mes — es pasivo diferido que se reconoce mes a mes. Sacs entrega el reporte listo para tu contabilidad."
           }
         ]
       },
@@ -6824,7 +6824,7 @@ export const pageContent: Record<string, any> = {
         "title": "Único, mensual o anual — tú eliges",
         "description": "Por cada membresía habilitas las opciones de pago que tengan sentido para tu negocio y les pones precio en MXN. Validamos que cada opción activa tenga su precio antes de guardar.",
         "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
-        "imageAlt": "Configurador de niveles y beneficios de membresía en SACS",
+        "imageAlt": "Configurador de niveles y beneficios de membresía en Sacs",
         "link": null,
         "details": [
           {
@@ -6835,7 +6835,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01\"/></svg>",
             "title": "% de descuento fijo",
-            "description": "El nivel Gold lleva 15% en todo; Silver 10%, Bronze 5%. SACS aplica el descuento solo porque el QR identifica al miembro."
+            "description": "El nivel Gold lleva 15% en todo; Silver 10%, Bronze 5%. Sacs aplica el descuento solo porque el QR identifica al miembro."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83\"/></svg>",
@@ -6864,7 +6864,7 @@ export const pageContent: Record<string, any> = {
         "title": "El nivel manda los beneficios",
         "description": "La membresía hereda los beneficios del nivel: multiplicador de puntos, multiplicador de cashback y la lista de beneficios que escribas. Edita el nivel y todas sus membresías quedan al día.",
         "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
-        "imageAlt": "Portal de miembro con historial de beneficios y próxima renovación en SACS",
+        "imageAlt": "Portal de miembro con historial de beneficios y próxima renovación en Sacs",
         "link": null,
         "details": [
           {
@@ -6895,7 +6895,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg>",
             "title": "Cancelación sin fricción",
-            "description": "El miembro cancela con un clic — no lo retienes con obstáculos. SACS te muestra el motivo (si lo compartió) para que aprendas del churn."
+            "description": "El miembro cancela con un clic — no lo retienes con obstáculos. Sacs te muestra el motivo (si lo compartió) para que aprendas del churn."
           }
         ]
       }
@@ -6906,7 +6906,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/sofia-arellano.webp",
         "initials": "SA",
         "color": "#b47a3a",
-        "quote": "Vamos a lanzar piloto de membresía con SACS — $299 al mes con descuento directo en compras y acceso a preventas. Esperamos construir ingreso recurrente que hoy no existe en nuestra operación.",
+        "quote": "Vamos a lanzar piloto de membresía con Sacs — $299 al mes con descuento directo en compras y acceso a preventas. Esperamos construir ingreso recurrente que hoy no existe en nuestra operación.",
         "name": "Sofía Arellano",
         "business": "Club Maderas Vinos Vinos",
         "location": "Paraguay"
@@ -6916,7 +6916,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/rodrigo-valdivia.webp",
         "initials": "RV",
         "color": "#4a6aa8",
-        "quote": "En la Enoteca queremos que el socio se inscriba solo al ver el ahorro en su ticket. El piloto con SACS nos permite probar ese efecto antes de escalarlo al resto de las sucursales.",
+        "quote": "En la Enoteca queremos que el socio se inscriba solo al ver el ahorro en su ticket. El piloto con Sacs nos permite probar ese efecto antes de escalarlo al resto de las sucursales.",
         "name": "Rodrigo Valdivia",
         "business": "Enoteca del Valle",
         "location": "Uruguay"
@@ -6926,7 +6926,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/vanessa-otero.webp",
         "initials": "VO",
         "color": "#5a8a5f",
-        "quote": "Los cobros recurrentes fallan — es parte del juego. Lo que buscamos en el piloto de SACS es que los intentos de cobro y los avisos al cliente no nos consuman al equipo. Estamos construyendo ese flujo ahora.",
+        "quote": "Los cobros recurrentes fallan — es parte del juego. Lo que buscamos en el piloto de Sacs es que los intentos de cobro y los avisos al cliente no nos consuman al equipo. Estamos construyendo ese flujo ahora.",
         "name": "Vanessa Otero",
         "business": "Perfumería Atenea",
         "location": "Ecuador"
@@ -6939,19 +6939,19 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Con qué pasarelas de pago se integra?",
-        "answer": "La integración inicial incluye Stripe, MercadoPago, Conekta y PayPal. Tu relación comercial es con la pasarela — SACS orquesta la lógica de la suscripción (ciclos, reintentos, prorrateo) sobre la pasarela que ya uses."
+        "answer": "La integración inicial incluye Stripe, MercadoPago, Conekta y PayPal. Tu relación comercial es con la pasarela — Sacs orquesta la lógica de la suscripción (ciclos, reintentos, prorrateo) sobre la pasarela que ya uses."
       },
       {
         "question": "¿Qué pasa si la tarjeta del miembro falla?",
-        "answer": "SACS reintenta el cobro en día 1, día 3 y día 7 con notificaciones al cliente. Si al día 10 no hay pago, el plan se pausa automáticamente — el miembro pierde los beneficios pero no se da de baja. Puede reactivar actualizando su método de pago desde el portal."
+        "answer": "Sacs reintenta el cobro en día 1, día 3 y día 7 con notificaciones al cliente. Si al día 10 no hay pago, el plan se pausa automáticamente — el miembro pierde los beneficios pero no se da de baja. Puede reactivar actualizando su método de pago desde el portal."
       },
       {
         "question": "¿Puedo ofrecer prueba gratis?",
-        "answer": "Sí. Configuras 7, 14 o 30 días de trial. SACS guarda la tarjeta al alta, no cobra hasta que termine la prueba y cobra el primer ciclo si el cliente no canceló. El cliente puede cancelar durante el trial sin cargo."
+        "answer": "Sí. Configuras 7, 14 o 30 días de trial. Sacs guarda la tarjeta al alta, no cobra hasta que termine la prueba y cobra el primer ciclo si el cliente no canceló. El cliente puede cancelar durante el trial sin cargo."
       },
       {
         "question": "¿Los beneficios se aplican en caja sin que el cajero haga nada?",
-        "answer": "Sí. Al escanear el QR de la credencial o identificar al cliente por teléfono, SACS reconoce el nivel y aplica el % de descuento, el multiplicador de puntos y cualquier otro beneficio automáticamente. El cajero solo cobra."
+        "answer": "Sí. Al escanear el QR de la credencial o identificar al cliente por teléfono, Sacs reconoce el nivel y aplica el % de descuento, el multiplicador de puntos y cualquier otro beneficio automáticamente. El cajero solo cobra."
       },
       {
         "question": "¿Puedo combinar membresía con programa de puntos?",
@@ -6959,25 +6959,25 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo se calcula el LTV y el churn?",
-        "answer": "LTV = (ticket promedio × ciclos retenidos) − costo de adquisición. Churn = miembros que se dan de baja en el mes / miembros activos al inicio del mes. SACS muestra ambos desglosados por nivel, para que veas qué nivel retiene mejor y cuál necesita ajuste."
+        "answer": "LTV = (ticket promedio × ciclos retenidos) − costo de adquisición. Churn = miembros que se dan de baja en el mes / miembros activos al inicio del mes. Sacs muestra ambos desglosados por nivel, para que veas qué nivel retiene mejor y cuál necesita ajuste."
       },
       {
         "question": "¿Cómo se maneja contablemente un cobro anual?",
-        "answer": "Un plan anual de $3,600 cobrado en enero no es ingreso de enero — son $300 al mes de ingreso reconocido durante 12 meses. El resto es pasivo diferido. SACS entrega el reporte mes a mes listo para tu contador; tú cumples con NIF/IFRS sin pensarlo."
+        "answer": "Un plan anual de $3,600 cobrado en enero no es ingreso de enero — son $300 al mes de ingreso reconocido durante 12 meses. El resto es pasivo diferido. Sacs entrega el reporte mes a mes listo para tu contador; tú cumples con NIF/IFRS sin pensarlo."
       },
       {
         "question": "¿El miembro puede cancelar en cualquier momento?",
-        "answer": "Sí. SACS no te permite poner obstáculos legales a la cancelación — cumplir con leyes de consumidor de cada país es obligatorio. El miembro cancela desde el portal con un clic, pierde beneficios al final del ciclo pagado y queda marcado en el CRM como \"ex-miembro\" para posibles campañas de recuperación."
+        "answer": "Sí. Sacs no te permite poner obstáculos legales a la cancelación — cumplir con leyes de consumidor de cada país es obligatorio. El miembro cancela desde el portal con un clic, pierde beneficios al final del ciclo pagado y queda marcado en el CRM como \"ex-miembro\" para posibles campañas de recuperación."
       }
     ]
   },
   "especialista-ia": {
     "hero": {
-      "eyebrow": "SACS Especialista IA · Programa piloto",
-      "title": "Pregúntale a tu negocio. SACS te responde con tus datos reales.",
+      "eyebrow": "Sacs Especialista IA · Programa piloto",
+      "title": "Pregúntale a tu negocio. Sacs te responde con tus datos reales.",
       "subtitle": "Un asistente de inteligencia artificial dentro de tu ERP que entiende lenguaje natural y consulta tu información real: ventas del día, top de productos y clientes, mejor vendedor, comparativo por sucursal. Escribes una pregunta, recibes la respuesta — sin armar reportes.",
       "image": "/images/especialista-ia-sistema.webp",
-      "imageAlt": "Módulo de especialista ia en SACS"
+      "imageAlt": "Módulo de especialista ia en Sacs"
     },
     "features": [
       {
@@ -7007,7 +7007,7 @@ export const pageContent: Record<string, any> = {
         "title": "Diagnóstico operativo antes del primer flujo.",
         "description": "Tu especialista pasa la primera semana entendiendo cómo opera tu retail: qué se cobra a mano, qué se avisa por WhatsApp, qué se apunta en cuaderno. De ese mapa salen los tres a cinco flujos que más dolor te quitan — no una lista genérica de \"cosas que se pueden automatizar\".",
         "image": "/images/especialista-ia-diagnostico.webp",
-        "imageAlt": "Especialista SACS anotando flujos operativos en pizarra con dueña de retail",
+        "imageAlt": "Especialista Sacs anotando flujos operativos en pizarra con dueña de retail",
         "link": null,
         "featured": true,
         "variant": "ai-diagnostico",
@@ -7027,9 +7027,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Cohorte 1: diez retailers, seis meses.",
-        "description": "El programa piloto arranca con diez marcas seleccionadas. Cada una recibe acompañamiento directo del equipo de producto SACS durante seis meses. A cambio, nos cuentan qué funciona, qué rompe y qué falta. De ahí sale la versión pública.",
+        "description": "El programa piloto arranca con diez marcas seleccionadas. Cada una recibe acompañamiento directo del equipo de producto Sacs durante seis meses. A cambio, nos cuentan qué funciona, qué rompe y qué falta. De ahí sale la versión pública.",
         "image": "/images/especialista-ia-cohorte.webp",
-        "imageAlt": "Sesión de onboarding de Cohorte 1 con equipo SACS y retailers",
+        "imageAlt": "Sesión de onboarding de Cohorte 1 con equipo Sacs y retailers",
         "link": null,
         "featured": true,
         "variant": "ai-cohorte",
@@ -7039,7 +7039,7 @@ export const pageContent: Record<string, any> = {
         "title": "Sesión quincenal con agenda propia.",
         "description": "Cada dos semanas tu especialista llega con una agenda preparada: qué flujos están corriendo, métricas de ejecución, incidencias y la siguiente automatización propuesta. Tú llegas a decidir — no a reportar lo que ya sabe.",
         "image": "/images/especialista-ia-revision.webp",
-        "imageAlt": "Calendario de sesiones quincenales con especialista SACS",
+        "imageAlt": "Calendario de sesiones quincenales con especialista Sacs",
         "link": null,
         "featured": true,
         "variant": "ai-agenda"
@@ -7061,7 +7061,7 @@ export const pageContent: Record<string, any> = {
         "title": "Escribe lo que quieras saber de tu operación",
         "description": "El asistente interpreta tu pregunta en lenguaje natural y consulta tu información real para responderte: cifras de ventas, ranking de productos y clientes, desempeño de vendedores y comparativos por ubicación. La respuesta llega formateada y lista para leer.",
         "image": "/images/especialista-ia-sistema-tab.webp",
-        "imageAlt": "Especialista SACS en visita a tienda observando flujo operativo",
+        "imageAlt": "Especialista Sacs en visita a tienda observando flujo operativo",
         "link": null,
         "details": [
           {
@@ -7122,7 +7122,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
             "title": "Documentación a tu nombre",
-            "description": "Cada flujo queda documentado en tu espacio SACS: qué hace, cuándo se dispara, quién lo aprobó. Si cambia tu equipo, la memoria no se pierde."
+            "description": "Cada flujo queda documentado en tu espacio Sacs: qué hace, cuándo se dispara, quién lo aprobó. Si cambia tu equipo, la memoria no se pierde."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
@@ -7141,7 +7141,7 @@ export const pageContent: Record<string, any> = {
         "title": "Retoma cualquier charla y ajusta el modelo",
         "description": "Todas tus conversaciones quedan guardadas y se pueden buscar por texto. Cambia el modelo de IA cuando lo necesites y, cuando un agente termina una tarea, recibes la notificación en tiempo real dentro del asistente.",
         "image": "/images/especialista-ia-sistema-tab.webp",
-        "imageAlt": "Reunión quincenal con especialista SACS revisando resultados del piloto",
+        "imageAlt": "Reunión quincenal con especialista Sacs revisando resultados del piloto",
         "link": null,
         "details": [
           {
@@ -7224,7 +7224,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Qué tipo de automatizaciones puede construir el especialista?",
-        "answer": "Las que se apoyan en workflows de SACS y en la funcionalidad existente: recordatorios de apartados, alertas de stock, flujos de recompra, notificaciones a clientes VIP, escalamientos a dueño. Lo que aún no está construido en SACS no puede automatizarse — se suma al roadmap."
+        "answer": "Las que se apoyan en workflows de Sacs y en la funcionalidad existente: recordatorios de apartados, alertas de stock, flujos de recompra, notificaciones a clientes VIP, escalamientos a dueño. Lo que aún no está construido en Sacs no puede automatizarse — se suma al roadmap."
       },
       {
         "question": "¿Qué pasa si el flujo manda un mensaje equivocado a un cliente?",
@@ -7236,10 +7236,10 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cuánto cuesta?",
-        "answer": "En Cohorte 1 el acompañamiento está incluido en el plan SACS Enterprise sin costo adicional, a cambio de que nos compartan aprendizajes estructurados. Al salir la versión pública habrá un precio transparente que comunicaremos antes de que termine tu piloto."
+        "answer": "En Cohorte 1 el acompañamiento está incluido en el plan Sacs Enterprise sin costo adicional, a cambio de que nos compartan aprendizajes estructurados. Al salir la versión pública habrá un precio transparente que comunicaremos antes de que termine tu piloto."
       },
       {
-        "question": "¿Puedo pedir un flujo que no existe en SACS todavía?",
+        "question": "¿Puedo pedir un flujo que no existe en Sacs todavía?",
         "answer": "Puedes proponerlo. El especialista lo lleva al equipo de producto y entra al roadmap priorizado con el aprendizaje de Cohorte 1. Si está cerca, a veces entra en el mismo piloto; si no, se comunica plazo estimado. Nunca decimos \"sí\" a algo que no existe."
       },
       {
@@ -7250,11 +7250,11 @@ export const pageContent: Record<string, any> = {
   },
   "axo-copiloto-ia": {
     "hero": {
-      "eyebrow": "SACS AXO · Copiloto IA · Early access",
+      "eyebrow": "Sacs AXO · Copiloto IA · Early access",
       "title": "Pregúntale a tu negocio. Te responde con tus números reales.",
-      "subtitle": "El Asistente IA de SACS vive dentro de tu sistema. Le escribes o le dictas \"¿cuánto vendí hoy?\", \"¿qué se está agotando?\", \"¿quién es mi mejor cliente?\" y consulta tus datos al instante: ventas, inventario y clientes, con tarjetas y gráficas. En early access con retailers seleccionados.",
+      "subtitle": "El Asistente IA de Sacs vive dentro de tu sistema. Le escribes o le dictas \"¿cuánto vendí hoy?\", \"¿qué se está agotando?\", \"¿quién es mi mejor cliente?\" y consulta tus datos al instante: ventas, inventario y clientes, con tarjetas y gráficas. En early access con retailers seleccionados.",
       "image": "/images/axo-copiloto-ia-sistema.webp",
-      "imageAlt": "Módulo de axo copiloto ia en SACS"
+      "imageAlt": "Módulo de axo copiloto ia en Sacs"
     },
     "features": [
       {
@@ -7496,7 +7496,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿AXO inventa datos si no los encuentra?",
-        "answer": "No. Si un dato no está en tu SACS o está fuera del alcance actual, AXO responde \"todavía no tengo acceso a esa información\". Preferimos que diga que no sabe a que imagine una cifra."
+        "answer": "No. Si un dato no está en tu Sacs o está fuera del alcance actual, AXO responde \"todavía no tengo acceso a esa información\". Preferimos que diga que no sabe a que imagine una cifra."
       },
       {
         "question": "¿Los datos que le paso a AXO se usan para entrenar a otras cuentas?",
@@ -7508,11 +7508,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo limitar quién del equipo usa AXO?",
-        "answer": "Sí. Controlas los permisos como cualquier otra funcionalidad SACS: puedes habilitar AXO solo para dirección, solo para gerentes de tienda, o para toda la fuerza de piso con el alcance de preguntas restringido a lo operativo."
+        "answer": "Sí. Controlas los permisos como cualquier otra funcionalidad Sacs: puedes habilitar AXO solo para dirección, solo para gerentes de tienda, o para toda la fuerza de piso con el alcance de preguntas restringido a lo operativo."
       },
       {
         "question": "¿Funciona sin conexión?",
-        "answer": "No. AXO necesita conexión para consultar los datos y generar la respuesta. En piso, si el WiFi de la tienda se cae, AXO no responde hasta que vuelve la conexión — el resto de SACS sí sigue funcionando con datos locales."
+        "answer": "No. AXO necesita conexión para consultar los datos y generar la respuesta. En piso, si el WiFi de la tienda se cae, AXO no responde hasta que vuelve la conexión — el resto de Sacs sí sigue funcionando con datos locales."
       },
       {
         "question": "¿Puedo pedir que agreguen un tipo de pregunta nueva?",
@@ -7526,11 +7526,11 @@ export const pageContent: Record<string, any> = {
   },
   "workflows": {
     "hero": {
-      "eyebrow": "SACS Workflows · Programa piloto",
+      "eyebrow": "Sacs Workflows · Programa piloto",
       "title": "Procesos de servicio a tu medida, etapa por etapa",
       "subtitle": "Dentro de Órdenes de Servicio puedes definir cómo viaja cada reparación por tu taller: configura los tipos de proceso (como 'Servicio Express') y el flujo de estados por el que pasa cada orden, de RECIBIDO a entregado. Nota: hoy esto vive dentro del módulo de Reparaciones; no es un constructor de automatizaciones genérico.",
       "image": "/images/workflows-hero.webp",
-      "imageAlt": "Constructor visual de workflows en SACS con nodos conectados"
+      "imageAlt": "Constructor visual de workflows en Sacs con nodos conectados"
     },
     "features": [
       {
@@ -7560,7 +7560,7 @@ export const pageContent: Record<string, any> = {
         "title": "Constructor visual: arrastra, conecta, activa.",
         "description": "No es un editor de texto donde escribes condicionales. Arrastras un trigger, lo conectas con una condición y una acción, lo guardas. Se ve lo que hace antes de activarlo — nada de lógica escondida en campos.",
         "image": "/images/workflows-constructor.webp",
-        "imageAlt": "Constructor visual de workflows con nodos arrastrables en SACS",
+        "imageAlt": "Constructor visual de workflows con nodos arrastrables en Sacs",
         "link": null,
         "featured": true,
         "variant": "workflow-builder",
@@ -7568,9 +7568,9 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Triggers pensados para tiendas, no para SaaS.",
-        "description": "Otras herramientas ofrecen \"cuando se crea un registro\". SACS te da: \"cuando un apartado está a 3 días de vencer\", \"cuando un cliente VIP no compra en 90 días\", \"cuando stock baja del mínimo en una sucursal\". Los triggers ya hablan tu idioma.",
+        "description": "Otras herramientas ofrecen \"cuando se crea un registro\". Sacs te da: \"cuando un apartado está a 3 días de vencer\", \"cuando un cliente VIP no compra en 90 días\", \"cuando stock baja del mínimo en una sucursal\". Los triggers ya hablan tu idioma.",
         "image": "/images/workflows-triggers.webp",
-        "imageAlt": "Lista de triggers disponibles en SACS con categorías de retail",
+        "imageAlt": "Lista de triggers disponibles en Sacs con categorías de retail",
         "link": {
           "label": "Ver alertas inteligentes",
           "href": "/producto/alertas-inteligentes"
@@ -7582,7 +7582,7 @@ export const pageContent: Record<string, any> = {
         "title": "Condiciones que no te obligan a saber lógica booleana.",
         "description": "Las condiciones se escriben en lenguaje de tienda: \"si el cliente gasta más de\", \"si la categoría es\", \"si el vendedor cerró más de tantas ventas\". Las combinas con Y/O sin tener que pensar en paréntesis ni operadores.",
         "image": "/images/workflows-condiciones.webp",
-        "imageAlt": "Editor de condiciones con campos desplegables en SACS",
+        "imageAlt": "Editor de condiciones con campos desplegables en Sacs",
         "link": null,
         "featured": true,
         "variant": "workflow-conditions"
@@ -7704,7 +7704,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 11l3 3L22 4\"/><path d=\"M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11\"/></svg>",
             "title": "Crear tarea al equipo",
-            "description": "Tarea asignada a una persona o a un rol, con contexto del trigger y deadline. Aparece en su bandeja SACS y en notificación push si lo activas."
+            "description": "Tarea asignada a una persona o a un rol, con contexto del trigger y deadline. Aparece en su bandeja Sacs y en notificación push si lo activas."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -7714,7 +7714,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/><path d=\"M18 15l3 3-3 3\"/></svg>",
             "title": "Generar traspaso o OC",
-            "description": "Un flujo puede disparar un traspaso sugerido entre sucursales o una orden de compra al proveedor. El supervisor confirma, SACS ejecuta."
+            "description": "Un flujo puede disparar un traspaso sugerido entre sucursales o una orden de compra al proveedor. El supervisor confirma, Sacs ejecuta."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
@@ -7772,7 +7772,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Puedo conectar workflows con herramientas externas como Zapier?",
-        "answer": "Por ahora las acciones son nativas de SACS. Integración con Zapier y webhooks de salida está en el roadmap para después del piloto. La decisión consciente fue priorizar que las automatizaciones nativas sean sólidas antes de exponer webhooks."
+        "answer": "Por ahora las acciones son nativas de Sacs. Integración con Zapier y webhooks de salida está en el roadmap para después del piloto. La decisión consciente fue priorizar que las automatizaciones nativas sean sólidas antes de exponer webhooks."
       },
       {
         "question": "¿Qué pasa si un flujo falla en medio de la ejecución?",
@@ -7802,17 +7802,17 @@ export const pageContent: Record<string, any> = {
   },
   "alertas-inteligentes": {
     "hero": {
-      "eyebrow": "SACS Alertas Inteligentes · En desarrollo",
+      "eyebrow": "Sacs Alertas Inteligentes · En desarrollo",
       "title": "El sistema te avisa antes de que el problema crezca.",
       "subtitle": "Stock que se va a agotar, gastos atípicos, clientes VIP que dejan de venir, apartados que nadie cobra. Detección proactiva que llega como aviso accionable, en piloto con retailers seleccionados.",
       "image": "/images/alertas-inteligentes-hero.webp",
-      "imageAlt": "Panel de alertas inteligentes priorizadas en SACS"
+      "imageAlt": "Panel de alertas inteligentes priorizadas en Sacs"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z\"/></svg>",
         "title": "Anomalía, no ruido",
-        "description": "Te avisamos cuando algo se sale del patrón de tu negocio, no cada vez que un dato cambia. Hoy esto ya funciona en Gastos: SACS detecta montos atípicos, posibles duplicados y desvíos de presupuesto al capturar, sin bloquear la operación."
+        "description": "Te avisamos cuando algo se sale del patrón de tu negocio, no cada vez que un dato cambia. Hoy esto ya funciona en Gastos: Sacs detecta montos atípicos, posibles duplicados y desvíos de presupuesto al capturar, sin bloquear la operación."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -7843,7 +7843,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Stock a punto de faltar, con contexto de reposición.",
-        "description": "Te queda poco stock de la bota cognac talla 37. SACS no solo lo ve: cruza tu velocidad de venta con el plazo de tu proveedor y te avisa con tiempo para reponer. Si no reaccionas, aparece la alerta roja con traspaso sugerido desde otra sucursal.",
+        "description": "Te queda poco stock de la bota cognac talla 37. Sacs no solo lo ve: cruza tu velocidad de venta con el plazo de tu proveedor y te avisa con tiempo para reponer. Si no reaccionas, aparece la alerta roja con traspaso sugerido desde otra sucursal.",
         "image": "/images/alertas-inteligentes-stock.webp",
         "imageAlt": "Alerta de stock en riesgo con plazo de reposición y traspaso sugerido",
         "link": {
@@ -7890,7 +7890,7 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Gastos",
         "title": "Anomalías de gasto detectadas al capturar.",
-        "description": "Hoy ya operando: al registrar un gasto, SACS marca montos fuera de lo normal, posibles duplicados y desvíos de presupuesto de los últimos 30 días. El gasto se crea igual; la alerta solo te pone sobre aviso.",
+        "description": "Hoy ya operando: al registrar un gasto, Sacs marca montos fuera de lo normal, posibles duplicados y desvíos de presupuesto de los últimos 30 días. El gasto se crea igual; la alerta solo te pone sobre aviso.",
         "image": "/images/alertas-inteligentes-hero.webp",
         "imageAlt": "Panel de alertas de ventas mostrando anomalía con banda de rango normal aprendido y lista de alertas con estado",
         "link": null,
@@ -8024,7 +8024,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/consuelo-peirano.webp",
         "initials": "CP",
         "color": "#4a6aa8",
-        "quote": "La alerta de stock en riesgo nos salvó la temporada. Faltaban tres días para un evento grande y teníamos solo 4 unidades de nuestra clutch estrella. SACS nos avisó, sugirió traspaso desde otra sucursal, lo confirmamos con un click. Nunca nos pasó con alertas de umbral fijo — siempre llegaban tarde.",
+        "quote": "La alerta de stock en riesgo nos salvó la temporada. Faltaban tres días para un evento grande y teníamos solo 4 unidades de nuestra clutch estrella. Sacs nos avisó, sugirió traspaso desde otra sucursal, lo confirmamos con un click. Nunca nos pasó con alertas de umbral fijo — siempre llegaban tarde.",
         "name": "Consuelo Peirano",
         "business": "Peirano Accesorios",
         "location": "Chile"
@@ -8067,7 +8067,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Las alertas llegan por WhatsApp?",
-        "answer": "Email está disponible hoy. Dashboard en vivo también. WhatsApp llega con la integración nativa de SACS que está en el roadmap — mientras tanto, puedes recibir el resumen diario por email y consultarlo en la app."
+        "answer": "Email está disponible hoy. Dashboard en vivo también. WhatsApp llega con la integración nativa de Sacs que está en el roadmap — mientras tanto, puedes recibir el resumen diario por email y consultarlo en la app."
       },
       {
         "question": "¿Qué pasa si no actúo sobre una alerta?",
@@ -8075,17 +8075,17 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿El sistema se confunde con promociones y temporadas altas?",
-        "answer": "No debería. Los calendarios de campañas, feriados y cierres se cargan en SACS; el modelo los incorpora al patrón esperado. Si lanzas un evento que no registraste, puedes marcar esos días como \"especiales\" en retrospectiva y el modelo se recalibra."
+        "answer": "No debería. Los calendarios de campañas, feriados y cierres se cargan en Sacs; el modelo los incorpora al patrón esperado. Si lanzas un evento que no registraste, puedes marcar esos días como \"especiales\" en retrospectiva y el modelo se recalibra."
       }
     ]
   },
   "reportes-predictivos": {
     "hero": {
-      "eyebrow": "SACS Reportes Predictivos · Early access",
+      "eyebrow": "Sacs Reportes Predictivos · Early access",
       "title": "Antes de que pase, ya lo sabías.",
-      "subtitle": "Forecast de demanda, resumen ejecutivo diario y rentabilidad por SKU, generados por IA con tus datos reales de SACS. Hoy en piloto cerrado con un grupo de marcas seleccionadas.",
+      "subtitle": "Forecast de demanda, resumen ejecutivo diario y rentabilidad por SKU, generados por IA con tus datos reales de Sacs. Hoy en piloto cerrado con un grupo de marcas seleccionadas.",
       "image": "/images/reportes-predictivos-hero.webp",
-      "imageAlt": "Dueña de marca revisando dashboard predictivo de SACS en laptop"
+      "imageAlt": "Dueña de marca revisando dashboard predictivo de Sacs en laptop"
     },
     "features": [
       {
@@ -8115,7 +8115,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un dashboard que predice — no solo reporta.",
         "description": "Los KPIs que ya conoces (ventas, ticket promedio, rotación) ahora vienen con proyección: \"este mes vas a cerrar en X, con Y% de probabilidad\". Tú decides si aceleras o frenas.",
         "image": "/images/reportes-predictivos-dashboard.webp",
-        "imageAlt": "Dashboard SACS con gráficas de forecast y proyección mensual",
+        "imageAlt": "Dashboard Sacs con gráficas de forecast y proyección mensual",
         "link": {
           "label": "Ver control central",
           "href": "/producto/control-central"
@@ -8128,7 +8128,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada mañana, un resumen escrito para ti.",
         "description": "A las 7 am tienes un email con 5 líneas: cómo cerró ayer, qué tiendas necesitan atención, qué SKU está a punto de quebrarse, qué decisión te sugiere la IA. En piloto con marcas beta; iteramos la voz con el feedback real.",
         "image": "/images/reportes-predictivos-resumen.webp",
-        "imageAlt": "Email de resumen ejecutivo diario generado por SACS IA",
+        "imageAlt": "Email de resumen ejecutivo diario generado por Sacs IA",
         "link": null,
         "featured": true,
         "variant": "forecast-digest"
@@ -8149,7 +8149,7 @@ export const pageContent: Record<string, any> = {
         "title": "Alertas antes de la crisis. No después.",
         "description": "Cuando un SKU pasa de \"vende normal\" a \"vende rápido\", el sistema te avisa para reponer antes de que quiebre. Cuando una sucursal pierde ritmo tres días seguidos, te pregunta si quieres ver el detalle. Early access.",
         "image": "/images/reportes-predictivos-alertas.webp",
-        "imageAlt": "Panel de alertas anticipadas de SACS con semáforos por SKU y sucursal",
+        "imageAlt": "Panel de alertas anticipadas de Sacs con semáforos por SKU y sucursal",
         "link": {
           "label": "Ver analytics omnicanal",
           "href": "/producto/analytics-omnicanal"
@@ -8172,7 +8172,7 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Forecast",
         "title": "Proyecta la demanda antes de reordenar",
-        "description": "La IA analiza tu histórico, estacionalidad y promociones pasadas para sugerir cuánto reponer por SKU, sucursal y semana. En piloto: aprende con tus primeros 90 días de datos en SACS.",
+        "description": "La IA analiza tu histórico, estacionalidad y promociones pasadas para sugerir cuánto reponer por SKU, sucursal y semana. En piloto: aprende con tus primeros 90 días de datos en Sacs.",
         "image": "/images/reportes-predictivos-hero.webp",
         "imageAlt": "Dashboard de forecast de demanda con línea histórica y proyección con banda de confianza, KPIs y ranking de SKUs a reordenar",
         "link": null,
@@ -8214,7 +8214,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada mañana, un resumen escrito para ti",
         "description": "Un párrafo a las 7 am: cómo cerró ayer, qué tiendas necesitan atención y qué decisión propone la IA. En piloto con marcas beta; se equivoca a veces y mejora con tu uso.",
         "image": "/images/reportes-predictivos-hero.webp",
-        "imageAlt": "Email matutino con resumen ejecutivo generado por IA en SACS",
+        "imageAlt": "Email matutino con resumen ejecutivo generado por IA en Sacs",
         "link": null,
         "details": [
           {
@@ -8329,15 +8329,15 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cuánto tiempo necesita la IA para generar buenas predicciones?",
-        "answer": "Para forecast de demanda recomendamos al menos 90 días de historial continuo en SACS. Para rentabilidad puedes empezar el primer mes, con la advertencia de que los resultados mejoran cuando el sistema ya conoce tus patrones de promo y devolución."
+        "answer": "Para forecast de demanda recomendamos al menos 90 días de historial continuo en Sacs. Para rentabilidad puedes empezar el primer mes, con la advertencia de que los resultados mejoran cuando el sistema ya conoce tus patrones de promo y devolución."
       },
       {
         "question": "¿El resumen ejecutivo lo escribe una IA o una persona?",
-        "answer": "Lo escribe una IA orquestada por SACS (ver \"Orquestador de Agentes\"). No es una plantilla rellenada — se adapta a lo que pasó ayer en tu negocio. Pero sí: puede equivocarse. Por eso el piloto está diseñado para que nos corrijas cuando la narrativa no encaja."
+        "answer": "Lo escribe una IA orquestada por Sacs (ver \"Orquestador de Agentes\"). No es una plantilla rellenada — se adapta a lo que pasó ayer en tu negocio. Pero sí: puede equivocarse. Por eso el piloto está diseñado para que nos corrijas cuando la narrativa no encaja."
       },
       {
         "question": "¿Dónde llega el resumen? ¿A qué hora?",
-        "answer": "Llega por email a la hora que tú configures (7 am es el default). Próximamente podrá llegar por WhatsApp cuando la integración de mensajería nativa de SACS esté activa."
+        "answer": "Llega por email a la hora que tú configures (7 am es el default). Próximamente podrá llegar por WhatsApp cuando la integración de mensajería nativa de Sacs esté activa."
       },
       {
         "question": "¿Puedo descargar los reportes en Excel o PDF?",
@@ -8352,22 +8352,22 @@ export const pageContent: Record<string, any> = {
         "answer": "Pasa — y lo avisamos abierto. Cada pronóstico viene con nivel de confianza y rango. Si aceptas una recomendación y no sale como se predijo, el sistema aprende. Al cabo de 6 meses la precisión promedio sube de manera notable con early adopters."
       },
       {
-        "question": "¿Está disponible para todos los planes de SACS?",
+        "question": "¿Está disponible para todos los planes de Sacs?",
         "answer": "Hoy está disponible en early access para un número limitado de marcas. Al salir de piloto lo incorporaremos a los planes superiores del catálogo. Si te interesa entrar a la cohorte, pídelo en tu onboarding."
       },
       {
         "question": "¿Qué datos ve la IA? ¿Es seguro?",
-        "answer": "La IA solo accede a los datos de tu cuenta de SACS: ventas, inventario, costos, promociones, devoluciones. No comparte información con otras marcas ni entrena modelos globales con tus datos. Corre bajo los mismos controles de acceso y auditoría que el resto del sistema."
+        "answer": "La IA solo accede a los datos de tu cuenta de Sacs: ventas, inventario, costos, promociones, devoluciones. No comparte información con otras marcas ni entrena modelos globales con tus datos. Corre bajo los mismos controles de acceso y auditoría que el resto del sistema."
       }
     ]
   },
   "orquestador-de-agentes": {
     "hero": {
-      "eyebrow": "SACS Orquestador de Agentes · Early access",
+      "eyebrow": "Sacs Orquestador de Agentes · Early access",
       "title": "Una IA que de verdad conoce tu negocio (y lo que viene después).",
       "subtitle": "Hoy ya tienes un asistente que responde tus preguntas consultando tus datos reales en vivo. La orquestación de varios agentes en cadena —cada modelo haciendo lo que mejor hace— está en piloto cerrado. Te contamos qué funciona ya y qué viene en camino, sin humo.",
       "image": "/images/orquestador-de-agentes-hero.webp",
-      "imageAlt": "Visualización de múltiples agentes de IA colaborando en SACS"
+      "imageAlt": "Visualización de múltiples agentes de IA colaborando en Sacs"
     },
     "features": [
       {
@@ -8378,7 +8378,7 @@ export const pageContent: Record<string, any> = {
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/><path d=\"M18 15l3 3-3 3\"/></svg>",
         "title": "Solo lee, nunca toca",
-        "description": "El modelo trabaja con permisos de solo lectura: una lista blanca de colecciones, sin posibilidad de escribir o borrar nada. La cuenta y la seguridad las controla SACS, no la IA. Tus datos no se mueven, solo se consultan."
+        "description": "El modelo trabaja con permisos de solo lectura: una lista blanca de colecciones, sin posibilidad de escribir o borrar nada. La cuenta y la seguridad las controla Sacs, no la IA. Tus datos no se mueven, solo se consultan."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
@@ -8395,9 +8395,9 @@ export const pageContent: Record<string, any> = {
     "blocks": [
       {
         "title": "Cada pregunta, al cerebro que le toca.",
-        "description": "Cuando un cliente escribe, SACS no manda el mensaje a \"la IA\". Lo rutea: Claude para tono empático, GPT para cálculo y precio, Gemini para consulta de stock en tiempo real, un modelo local para datos sensibles. El orquestador decide — tú ves la respuesta final, limpia. Aspiracional; cohorte beta iterando.",
+        "description": "Cuando un cliente escribe, Sacs no manda el mensaje a \"la IA\". Lo rutea: Claude para tono empático, GPT para cálculo y precio, Gemini para consulta de stock en tiempo real, un modelo local para datos sensibles. El orquestador decide — tú ves la respuesta final, limpia. Aspiracional; cohorte beta iterando.",
         "image": "/images/orquestador-de-agentes-routing.webp",
-        "imageAlt": "Diagrama de ruteo entre Claude, GPT y Gemini en el orquestador SACS",
+        "imageAlt": "Diagrama de ruteo entre Claude, GPT y Gemini en el orquestador Sacs",
         "link": {
           "label": "Ver agente de ventas",
           "href": "/producto/agente-conversacional"
@@ -8410,7 +8410,7 @@ export const pageContent: Record<string, any> = {
         "title": "La cotización que hace GPT, la revisa Claude.",
         "description": "Un agente arma el precio con tu catálogo, descuentos y promos. Otro agente lee la respuesta antes de enviarla y corrige tono, errores de cálculo o cualquier alucinación. Dos modelos, dos especialidades — una sola cotización que llega al cliente ya revisada.",
         "image": "/images/orquestador-de-agentes-cotizacion.webp",
-        "imageAlt": "Cotización generada por un agente y revisada por otro en SACS",
+        "imageAlt": "Cotización generada por un agente y revisada por otro en Sacs",
         "link": {
           "label": "Ver cotizador",
           "href": "/producto/agente-conversacional"
@@ -8454,7 +8454,7 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Asistente IA",
         "title": "Chatea con tu negocio, hoy.",
-        "description": "Escribe una pregunta en lenguaje natural y el asistente la responde consultando tus ventas, inventario y clientes en tiempo real. Sin reportes que armar a mano: preguntas, contesta. Es el módulo de IA que ya está vivo en SACS.",
+        "description": "Escribe una pregunta en lenguaje natural y el asistente la responde consultando tus ventas, inventario y clientes en tiempo real. Sin reportes que armar a mano: preguntas, contesta. Es el módulo de IA que ya está vivo en Sacs.",
         "image": "/images/orquestador-de-agentes-hero.webp",
         "imageAlt": "Pipeline visual del orquestador con cinco nodos conectados: clasificador, GPT-4, Claude, Gemini y envío al cliente, tabla lateral de modelos preferidos",
         "link": null,
@@ -8496,7 +8496,7 @@ export const pageContent: Record<string, any> = {
         "title": "La IA consulta, nunca controla.",
         "description": "Cada pregunta corre contra una lista blanca de colecciones de solo lectura, con bloqueo de cualquier operación de escritura y límites de tiempo. El modelo ve tu información para responder, pero jamás puede modificarla ni salirse de tu cuenta.",
         "image": "/images/orquestador-de-agentes-hero.webp",
-        "imageAlt": "Flujo de handoff entre agentes IA y humano con contexto compartido en SACS",
+        "imageAlt": "Flujo de handoff entre agentes IA y humano con contexto compartido en Sacs",
         "link": null,
         "details": [
           {
@@ -8536,7 +8536,7 @@ export const pageContent: Record<string, any> = {
         "title": "Varios cerebros, una respuesta.",
         "description": "La visión: un orquestador que rutea cada tarea al modelo más apto, encadena agentes (armar y revisar), y entrega a un humano los casos delicados con todo el contexto. Esto está en piloto cerrado y evolucionando — lo presentamos como roadmap, no como algo ya terminado.",
         "image": "/images/orquestador-de-agentes-hero.webp",
-        "imageAlt": "Pantalla de auditoría de cada respuesta de IA en SACS",
+        "imageAlt": "Pantalla de auditoría de cada respuesta de IA en Sacs",
         "link": null,
         "details": [
           {
@@ -8610,7 +8610,7 @@ export const pageContent: Record<string, any> = {
         "answer": "Está en piloto cerrado con un grupo reducido de marcas. Los pipelines base (ventas, cotización, soporte) ya corren en producción, pero estamos iterando reglas de escalada, tabla de modelos preferidos y reportes de calidad con feedback semanal de cada marca."
       },
       {
-        "question": "¿Qué modelos usa hoy SACS?",
+        "question": "¿Qué modelos usa hoy Sacs?",
         "answer": "Tenemos integrados Claude (Anthropic), GPT (OpenAI) y Gemini (Google) en los pipelines base. También hay modelos locales para datos sensibles cuando la marca lo requiere. Agregamos nuevos modelos según calidad y costo — no hay exclusividad con un proveedor."
       },
       {
@@ -8631,7 +8631,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Se integra con mi WhatsApp y mi tienda en línea?",
-        "answer": "Sí — a través de los agentes de SACS (ver \"Agente conversacional\"). El orquestador corre detrás de cada canal: WhatsApp, chat web, tienda en línea. El cliente no ve modelos; ve una conversación coherente."
+        "answer": "Sí — a través de los agentes de Sacs (ver \"Agente conversacional\"). El orquestador corre detrás de cada canal: WhatsApp, chat web, tienda en línea. El cliente no ve modelos; ve una conversación coherente."
       },
       {
         "question": "¿Puedo auditar una conversación específica?",
@@ -8645,17 +8645,17 @@ export const pageContent: Record<string, any> = {
   },
   "api-e-integraciones": {
     "hero": {
-      "eyebrow": "SACS API e Integraciones",
-      "title": "Conecta SACS con las herramientas que ya usas.",
+      "eyebrow": "Sacs API e Integraciones",
+      "title": "Conecta Sacs con las herramientas que ya usas.",
       "subtitle": "Pagos, ecommerce y paqueterías en un solo panel de Integraciones. Conecta Shopify, WooCommerce, Stripe, Mercado Pago, Skydropx y Envia.com con unos clics — y deja que catálogo, inventario, pedidos y pagos se sincronicen solos.",
       "image": "/images/api-e-integraciones-hero.webp",
-      "imageAlt": "Panel de integraciones SACS mostrando conectores activos con distintas plataformas"
+      "imageAlt": "Panel de integraciones Sacs mostrando conectores activos con distintas plataformas"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 18l6-6-6-6M8 6l-6 6 6 6\"/></svg>",
         "title": "Ecommerce sincronizado",
-        "description": "Conecta tu tienda Shopify (vía OAuth) o WooCommerce (API REST oficial) y mantén catálogo, inventario y pedidos al día entre tu tienda en línea y SACS, sin doble captura."
+        "description": "Conecta tu tienda Shopify (vía OAuth) o WooCommerce (API REST oficial) y mantén catálogo, inventario y pedidos al día entre tu tienda en línea y Sacs, sin doble captura."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M9 3v18M3 9h18\"/></svg>",
@@ -8679,7 +8679,7 @@ export const pageContent: Record<string, any> = {
         "title": "Una API pública. Documentada. Viva.",
         "description": "Endpoints REST estándar: GET, POST, PUT, DELETE. JSON limpio, status codes predecibles, paginación consistente. Autenticación por token con scopes granulares. Documentación pública con ejemplos en curl, Node y Python — accesible desde el primer día.",
         "image": "/images/api-e-integraciones-rest.webp",
-        "imageAlt": "Fragmento de documentación de API REST de SACS con ejemplos",
+        "imageAlt": "Fragmento de documentación de API REST de Sacs con ejemplos",
         "link": null,
         "featured": true,
         "variant": "api-endpoint"
@@ -8688,7 +8688,7 @@ export const pageContent: Record<string, any> = {
         "title": "Conectores listos para las herramientas que ya usas.",
         "description": "Ecommerce (Shopify, WooCommerce, Tiendanube), contabilidad (CONTPAQ, Alegra, Xero), shipping (Skydropx, Envíopack), marketing (Mailchimp, Klaviyo), ERP corporativo (SAP Business One, NetSuite vía partners). El catálogo crece cada mes — pregúntanos cuál necesitas y te decimos si está listo, en roadmap o en partners.",
         "image": "/images/api-e-integraciones-catalogo.webp",
-        "imageAlt": "Grid de logos de aplicaciones integradas con SACS",
+        "imageAlt": "Grid de logos de aplicaciones integradas con Sacs",
         "link": {
           "label": "Ver control central",
           "href": "/producto/control-central"
@@ -8701,7 +8701,7 @@ export const pageContent: Record<string, any> = {
         "title": "Eventos que disparan tu automatización.",
         "description": "Una venta cierra → tu sistema de envíos recibe el pedido. Un apartado llega al plazo → tu CRM dispara el recordatorio. Inventario cae debajo del mínimo → tu comprador recibe la orden de compra sugerida. Webhooks firmados, reintentos automáticos, dashboard de entregas.",
         "image": "/images/api-e-integraciones-webhooks.webp",
-        "imageAlt": "Panel de configuración de webhooks y eventos en SACS",
+        "imageAlt": "Panel de configuración de webhooks y eventos en Sacs",
         "link": {
           "label": "Ver automatizaciones",
           "href": "/producto/automatizaciones"
@@ -8713,14 +8713,14 @@ export const pageContent: Record<string, any> = {
         "title": "Controla qué puede hacer cada integración.",
         "description": "Cada token se crea con scopes específicos: solo lectura de inventario, solo creación de ventas, solo consulta de clientes. Restricción por IP, expiración configurable, bitácora de cada llamada. Revocación inmediata si algo se siente raro — sin tumbar el resto de tus conexiones.",
         "image": "/images/api-e-integraciones-seguridad.webp",
-        "imageAlt": "Panel de seguridad y gestión de tokens API en SACS",
+        "imageAlt": "Panel de seguridad y gestión de tokens API en Sacs",
         "link": null,
         "featured": true,
         "variant": "api-tokens"
       }
     ],
     "testimonial": {
-      "quote": "Nuestro contador usa CONTPAQ, nuestros envíos salen por Skydropx, nuestro ecommerce es Tiendanube. Antes era un desastre de mails y Excels entre sistemas. Con la API de SACS y dos conectores oficiales, ya vive todo sincronizado — y los que faltan los armamos nosotros en un día con la documentación pública.",
+      "quote": "Nuestro contador usa CONTPAQ, nuestros envíos salen por Skydropx, nuestro ecommerce es Tiendanube. Antes era un desastre de mails y Excels entre sistemas. Con la API de Sacs y dos conectores oficiales, ya vive todo sincronizado — y los que faltan los armamos nosotros en un día con la documentación pública.",
       "name": "Mariana Escárcega",
       "role": "CTO",
       "company": "Grupo Amaro",
@@ -8735,7 +8735,7 @@ export const pageContent: Record<string, any> = {
         "title": "Un panel para todas tus conexiones",
         "description": "En Configuración → Integraciones ves tus conectores agrupados por categoría — Pagos, Ecommerce y Envíos — cada uno con su estado conectado o no conectado. Activas el que necesitas con un modal de conexión guiado, sin tocar código.",
         "image": "/images/api-e-integraciones-hero.webp",
-        "imageAlt": "Pantalla de documentación interactiva de API REST de SACS",
+        "imageAlt": "Pantalla de documentación interactiva de API REST de Sacs",
         "link": null,
         "details": [
           {
@@ -8773,7 +8773,7 @@ export const pageContent: Record<string, any> = {
       {
         "label": "Ecommerce",
         "title": "Shopify y WooCommerce, en sintonía",
-        "description": "Shopify se conecta por OAuth y habla con la Admin API por GraphQL; WooCommerce con su API REST oficial. SACS escucha sus webhooks firmados para que catálogo, inventario y pedidos se mantengan sincronizados entre tu tienda y tu operación.",
+        "description": "Shopify se conecta por OAuth y habla con la Admin API por GraphQL; WooCommerce con su API REST oficial. Sacs escucha sus webhooks firmados para que catálogo, inventario y pedidos se mantengan sincronizados entre tu tienda y tu operación.",
         "image": "/images/api-e-integraciones-hero.webp",
         "imageAlt": "Directorio de integraciones con filtros por categoría y tarjetas mostrando estado oficial, partner certificado, en roadmap o community",
         "link": null,
@@ -8796,7 +8796,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
             "title": "Marketing y fidelización",
-            "description": "Mailchimp, Klaviyo, Brevo. Cliente nuevo en SACS → lista de marketing. Compra cerrada → flujo post-venta automático."
+            "description": "Mailchimp, Klaviyo, Brevo. Cliente nuevo en Sacs → lista de marketing. Compra cerrada → flujo post-venta automático."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
@@ -8812,10 +8812,10 @@ export const pageContent: Record<string, any> = {
       },
       {
         "label": "Pagos y envíos",
-        "title": "Cobra y envía sin salir de SACS",
+        "title": "Cobra y envía sin salir de Sacs",
         "description": "Stripe y Mercado Pago para procesar pagos (tarjeta, OXXO, MSI) con sus webhooks de confirmación cableados, más Skydropx y Envia.com para cotizar y generar guías. Todo se administra desde el mismo panel de Integraciones.",
         "image": "/images/api-e-integraciones-hero.webp",
-        "imageAlt": "Dashboard de eventos y webhooks con entregas y reintentos en SACS",
+        "imageAlt": "Dashboard de eventos y webhooks con entregas y reintentos en Sacs",
         "link": null,
         "details": [
           {
@@ -8826,7 +8826,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15v2M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z\"/><path d=\"M19 10v2a7 7 0 01-14 0v-2\"/></svg>",
             "title": "Payloads firmadas",
-            "description": "Cada webhook lleva firma HMAC para que tu backend valide que vino de SACS — no de un atacante haciéndose pasar. Secretos rotables desde el panel."
+            "description": "Cada webhook lleva firma HMAC para que tu backend valide que vino de Sacs — no de un atacante haciéndose pasar. Secretos rotables desde el panel."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4v6h6M20 20v-6h-6\"/><path d=\"M4 10l5-5 5 5M20 14l-5 5-5-5\"/></svg>",
@@ -8857,7 +8857,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/mariana-escarcega.webp",
         "initials": "ME",
         "color": "#ad7340",
-        "quote": "Nuestro contador usa CONTPAQ, nuestros envíos salen por Skydropx, nuestro ecommerce es Tiendanube. Antes era un desastre de mails y Excels entre sistemas. Con la API de SACS y dos conectores oficiales, ya vive todo sincronizado — y los que faltan los armamos nosotros en un día con la documentación pública.",
+        "quote": "Nuestro contador usa CONTPAQ, nuestros envíos salen por Skydropx, nuestro ecommerce es Tiendanube. Antes era un desastre de mails y Excels entre sistemas. Con la API de Sacs y dos conectores oficiales, ya vive todo sincronizado — y los que faltan los armamos nosotros en un día con la documentación pública.",
         "name": "Mariana Escárcega",
         "business": "Grupo Amaro",
         "location": "México"
@@ -8867,7 +8867,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/ignacio-rolon.webp",
         "initials": "IR",
         "color": "#4a6aa5",
-        "quote": "Yo soy el dev interno. La documentación de SACS me dejó conectar Mailchimp y un CRM propio en un fin de semana. Webhooks firmados, rate limits claros, versionado semántico — es API de adulto, no de startup.",
+        "quote": "Yo soy el dev interno. La documentación de Sacs me dejó conectar Mailchimp y un CRM propio en un fin de semana. Webhooks firmados, rate limits claros, versionado semántico — es API de adulto, no de startup.",
         "name": "Ignacio Rolón",
         "business": "Papelerías Rolón",
         "location": "Uruguay"
@@ -8877,7 +8877,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/beatriz-cavazos.webp",
         "initials": "BC",
         "color": "#5d8b63",
-        "quote": "Operamos en México y Colombia con SAP Business One corporativo. Nos preocupaba el paso de POS a ERP. SACS lo resolvió vía partner certificado — cada venta cierra y a las pocas horas está consolidada en SAP. Sin duplicar captura, sin broncas fiscales.",
+        "quote": "Operamos en México y Colombia con SAP Business One corporativo. Nos preocupaba el paso de POS a ERP. Sacs lo resolvió vía partner certificado — cada venta cierra y a las pocas horas está consolidada en SAP. Sin duplicar captura, sin broncas fiscales.",
         "name": "Beatriz Cavazos",
         "business": "Corporativo Cavazos Retail",
         "location": "México"
@@ -8894,7 +8894,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cuánto cuesta usar la API?",
-        "answer": "El acceso a la API viene incluido en los planes de SACS (con rate limits según plan). No cobramos por llamada en el rango normal de uso. Si operas a gran escala y necesitas límites superiores, tenemos plan enterprise con SLA dedicado."
+        "answer": "El acceso a la API viene incluido en los planes de Sacs (con rate limits según plan). No cobramos por llamada en el rango normal de uso. Si operas a gran escala y necesitas límites superiores, tenemos plan enterprise con SLA dedicado."
       },
       {
         "question": "¿Qué lenguajes tienen SDK oficial?",
@@ -8906,10 +8906,10 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo manejo datos sensibles como pagos?",
-        "answer": "Los endpoints de pago no exponen números de tarjeta ni CVV — SACS se integra con el procesador (Stripe, Mercado Pago, etc.) y tu aplicación solo ve tokens y estados. Cumplimos con PCI vía tokenización del proveedor; tú no almacenas datos sensibles."
+        "answer": "Los endpoints de pago no exponen números de tarjeta ni CVV — Sacs se integra con el procesador (Stripe, Mercado Pago, etc.) y tu aplicación solo ve tokens y estados. Cumplimos con PCI vía tokenización del proveedor; tú no almacenas datos sensibles."
       },
       {
-        "question": "¿Qué pasa si SACS cambia la API?",
+        "question": "¿Qué pasa si Sacs cambia la API?",
         "answer": "Usamos versionado semántico. Las versiones mayores conviven 12 meses antes de deprecarse. Los cambios no-breaking se publican en changelog y no requieren acción de tu parte. Nunca rompemos una API sin aviso previo por email y en la documentación."
       },
       {
