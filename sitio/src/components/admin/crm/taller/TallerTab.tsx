@@ -10,7 +10,7 @@
 // Lo que vive aquí es INTERNO: fechas prometidas, rebotes, motivos, SLA, quién
 // tardó. Al cliente solo le cruza, desde la ficha, que su mejora se hizo — con
 // su fecha y su video.
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Cargando from '../ui/Cargando';
 import KpiCard, { SIN_FECHA } from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
@@ -490,8 +490,8 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
      cliente: dejarlo allá sería un compromiso que nadie va a trabajar y que
      además sale en su reporte. Se archiva, no se borra. */
   async function quitar(o: any) {
-    if (!await confirmar(`¿Quitar «${o.titulo}» del taller?`, {
-      accion: 'Quitarla', peligro: true,
+    if (!await confirmar(`¿Eliminar «${o.titulo}» del taller?`, {
+      accion: 'Eliminarla', peligro: true,
       detalle: 'Se archiva junto con el renglón del cliente. Deja de verse aquí y en su ficha, pero no se borra del historial.',
     })) return;
     const j = await fetch('/api/crm/taller', {
@@ -558,7 +558,13 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       {abierto ? (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-            <button style={S.btnG} onClick={() => { setCuenta(''); setDentro('todas'); }}>‹ Todas las cuentas</button>
+            {/* Volver es un icono: el nombre de la cuenta va justo al lado y ya
+                dice dónde estás; un botón con texto competía con él. */}
+            <button title="Todas las cuentas" aria-label="Todas las cuentas"
+              onClick={() => { setCuenta(''); setDentro('todas'); }}
+              style={{ border: '1px solid #e9e3ee', background: '#fff', borderRadius: 9, width: 30, height: 30, display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#55505f', flex: 'none' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
             <b style={{ fontSize: '1.05rem', fontWeight: 800 }}>{abierto.l}</b>
             {/* EL VALOR DE LA CUENTA. «14 órdenes» es el mismo renglón para el
                 cliente de $200 mil al año y para el de cortesía; al entrar a un
@@ -619,16 +625,8 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             </div>
           )}
           {enCuenta.map((o: any) => (
-            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ flex: 1, minWidth: 0 }}><Renglon o={o} abrir={abrir} /></div>
-              {/* Quitar del taller. Lo que se levantó por error tiene que poder
-                  irse: si no, la lista se llena de cosas que nadie va a hacer y
-                  deja de decir la verdad. */}
-              <button title="Quitar del taller" onClick={() => quitar(o)}
-                style={{ border: '1px solid #f0c4bd', background: '#fff', color: '#C0554E', borderRadius: 8, padding: '5px 9px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>
-                Quitar
-              </button>
-            </div>
+            <Renglon key={o.id} o={o} abrir={abrir}
+              acciones={<MenuFila onEditar={() => abrir(o.id)} onEliminar={() => quitar(o)} />} />
           ))}
         </div>
       ) : (
@@ -671,7 +669,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
 
 /* El renglón. Color en DOS ejes nada más: el tipo (la barra) y la temperatura
    del tiempo (la fecha). Todo lo demás en gris, o deja de leerse de un vistazo. */
-function Renglon({ o, abrir }: any) {
+function Renglon({ o, abrir, acciones }: any) {
   const q = diasHasta(o.fecha_prometida);
   const fecha = o.etapa === 'espera' ? <span style={{ color: '#8d8a97' }}>en pausa</span>
     : o.falta_dato ? <span style={{ color: P.ambarTinta, fontWeight: 700 }}>falta un dato</span>
@@ -701,6 +699,59 @@ function Renglon({ o, abrir }: any) {
       </span>
       <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', fontVariantNumeric: 'tabular-nums' }}>{fecha}</span>
       <span style={{ flex: 'none', width: 38, textAlign: 'right', fontSize: '0.69rem', color: '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{dias(o.created_at)} d</span>
+      {acciones}
+    </div>
+  );
+}
+
+/* EL MENÚ DE LA FILA. Tres puntitos, y adentro lo que se puede hacer con esa
+   orden: abrirla para editarla, o eliminarla del taller.
+   Antes «Quitar» era un botón rojo permanente pegado a cada renglón: cinco
+   botones destructivos en pantalla al mismo tiempo, cada uno más visible que
+   la acción que de verdad se usa —abrir la orden—. Guardado detrás de los tres
+   puntos, lo destructivo deja de gritar y sigue estando a un clic. */
+function MenuFila({ onEditar, onEliminar }: any) {
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: any) => { if (caja.current && !caja.current.contains(e.target)) setAbierto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAbierto(false); };
+    document.addEventListener('mousedown', fuera);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc); };
+  }, [abierto]);
+
+  const item = {
+    display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'none',
+    padding: '7px 10px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+  };
+
+  return (
+    <div ref={caja} style={{ position: 'relative', flex: 'none', marginLeft: 2 }} onClick={e => e.stopPropagation()}>
+      <button aria-label="Acciones de la orden" title="Acciones" aria-expanded={abierto}
+        onClick={() => setAbierto(x => !x)}
+        style={{ border: 'none', background: abierto ? '#f2f1f6' : 'none', borderRadius: 8, width: 26, height: 26, display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#8d8a97' }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+          <circle cx="7" cy="2.6" r="1.35" /><circle cx="7" cy="7" r="1.35" /><circle cx="7" cy="11.4" r="1.35" />
+        </svg>
+      </button>
+      {abierto && (
+        <div role="menu" style={{
+          position: 'absolute', right: 0, top: 30, zIndex: 30, minWidth: 138, padding: 5,
+          background: '#fff', border: '1px solid #ece9f3', borderRadius: 10, boxShadow: '0 6px 22px rgba(16,24,40,.12)',
+        }}>
+          <button role="menuitem" style={{ ...item, color: '#55505f' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+            onClick={() => { setAbierto(false); onEditar(); }}>Editar</button>
+          <button role="menuitem" style={{ ...item, color: P.rojoTinta }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = P.rojoAgua; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+            onClick={() => { setAbierto(false); onEliminar(); }}>Eliminar</button>
+        </div>
+      )}
     </div>
   );
 }

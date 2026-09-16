@@ -16,7 +16,8 @@
 // Corre después del cartero, todos los días.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { apuntar, repuntuar } from '../../../lib/crm/abm.lib';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
+import { apuntar, repuntuar, quien } from '../../../lib/crm/abm.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -25,9 +26,18 @@ const DIAS_DORMIDA = 90;      // sin una sola apertura: el canal no sirve
 const DIAS_LEYENDO = 45;      // abre y no contesta: se le da aire y se le llama
 
 export const GET: APIRoute = async ({ request }) => {
-  const auth = request.headers.get('authorization') || '';
-  const secret = (import.meta.env.CRON_SECRET || process.env.CRON_SECRET || '').trim();
-  if (secret && auth !== `Bearer ${secret}`) return json({ error: 'no autorizado' }, 401);
+  /* FALLA CERRADO. Antes era `if (secret && auth !== ...)`: sin CRON_SECRET
+     en el entorno, la condición nunca entraba y el endpoint quedaba ABIERTO a
+     internet. Hoy el secreto sí existe, así que estaba tapado — pero el día
+     que alguien lo renombre, migre de proyecto o lo borre, esto pasa de
+     protegido a «cualquiera dispara la ronda» sin un solo error visible.
+     `isAuthorizedCron` acepta el header del scheduler de Vercel o el secreto,
+     y niega en cualquier otro caso; es el mismo helper que usan los otros 47
+     crons. La sesión del CRM sigue valiendo para dispararlo a mano. */
+  if (!isAuthorizedCron(request)) {
+    const yo = await quien(request);
+    if (!yo) return json({ error: 'no autorizado' }, 401);
+  }
 
   const hoy = new Date().toISOString().slice(0, 10);
   const enFecha = (d: number) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
