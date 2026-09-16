@@ -586,11 +586,16 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             </span>
           </div>
 
-          {/* El filtro de la cuenta: la ETAPA en la que está cada gestión. Solo
-              salen las etapas que esta cuenta tiene —un botón en cero es una
-              pregunta que no se puede hacer—, y detrás de la raya va «sin
-              fecha», que es el otro eje. */}
-          <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+          {/* Las vistas de la cuenta, con el mismo formato que las de
+              Cotizaciones: pestañas pegadas a la lista, la activa con fondo
+              lila y su línea morada abajo, y el contador en pastilla pegado al
+              texto —«Todas 15» se lee como una sola palabra—. Van justo debajo
+              del nombre porque son las vistas DE esa cuenta.
+              Solo salen las etapas que esta cuenta tiene: una pestaña en cero
+              es una pregunta que no se puede hacer. Al final, «Sin fecha», que
+              no es una etapa sino el otro eje —lo que todavía no se puede
+              prometer—, y por eso conserva su pastilla en degradado. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 2, overflowX: 'auto' }}>
             {(() => {
               const sinF = abierto.filas.filter((o: any) => !o.fecha_prometida).length;
               const ops: any[] = [['todas', 'Todas', abierto.filas.length]];
@@ -601,18 +606,24 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
               if (sinF) ops.push(['sin', 'Sin fecha', sinF]);
               return ops.map(([k, l, n2]) => {
                 const on = dentro === k;
-                const rosa = k === 'sin';
                 return (
-                  <button key={k} onClick={() => setDentro(k)}
-                    style={{
-                      border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee',
-                      background: on ? P.violeta : '#fff',
-                      color: on ? '#fff' : '#666', borderRadius: 9, padding: '5px 11px',
-                      fontSize: '0.73rem', fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
-                      ...(rosa && !on ? SIN_FECHA : null),
-                      ...(rosa ? { marginLeft: 9, fontWeight: on ? 800 : 700 } : null),
-                    }}>
-                    {l} <span style={{ opacity: .75, fontWeight: 700 }}>{n2}</span>
+                  <button key={k} onClick={() => setDentro(k)} style={{
+                    padding: '10px 16px', border: 'none',
+                    background: on ? P.violetaAgua : 'transparent',
+                    borderRadius: on ? '9px 9px 0 0' : 0,
+                    borderBottom: on ? `2px solid ${P.violeta}` : '2px solid transparent',
+                    color: on ? P.violetaTinta : '#666',
+                    fontWeight: on ? 800 : 500, fontSize: '0.8125rem',
+                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+                  }}>
+                    {l}
+                    <span style={{
+                      marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                      borderRadius: 20, padding: '2px 8px',
+                      ...(on ? { background: '#fff', color: P.violetaTinta }
+                        : k === 'sin' ? SIN_FECHA
+                        : { background: '#f3f3f6', color: '#8a8a92' }),
+                    }}>{n2}</span>
                   </button>
                 );
               });

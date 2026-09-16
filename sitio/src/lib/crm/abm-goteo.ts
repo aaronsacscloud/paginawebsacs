@@ -90,7 +90,14 @@ export async function elegibles(g: any, limite = 500): Promise<{ cuentas: any[];
   for (let i = 0; i < ids.length; i += 150) {
     const tanda = ids.slice(i, i + 150);
     const [t, k] = await Promise.all([
-      supabase.from('abm_toques').select('cuenta_id').in('cuenta_id', tanda).limit(5000),
+      /* Los toques CANCELADOS no cuentan: si la cadencia entera se canceló y
+         la cuenta volvió a `sin_tocar`, está libre para entrar de nuevo. Sin
+         esto, una cuenta cancelada quedaba excluida para siempre — y el camino
+         más fácil de llegar ahí era justamente hacer clic (ver abm-ritmo). Lo
+         que de verdad protege de volver a escribirle a quien no quiere es
+         `etapa = no_contactar` y la lista de no contactar, no este filtro. */
+      supabase.from('abm_toques').select('cuenta_id').in('cuenta_id', tanda)
+        .neq('estado', 'cancelado').limit(5000),
       supabase.from('abm_canales').select('cuenta_id, valor, estado').in('cuenta_id', tanda).like('tipo', 'email%')
         .not('estado', 'in', '("invalido","rebote","opt_out")'),
     ]);

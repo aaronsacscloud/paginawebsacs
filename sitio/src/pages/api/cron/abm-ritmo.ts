@@ -54,8 +54,15 @@ export const GET: APIRoute = async ({ request }) => {
 
   // ── 2. Una señal nueva despierta ANTES de tiempo ──
   // Que abran tienda o cambien de gerente vale más que cualquier plazo.
+  /* Solo señales de AFUERA. Este mismo cron, más abajo, pausa una cuenta y
+     escribe una señal para justificarlo; si esa señal entrara aquí, al día
+     siguiente la corrida DESHARÍA SU PROPIA PAUSA. Y peor: la cuenta volvía a
+     `sin_tocar` con todos sus toques cancelados, y el goteo no vuelve a tomar
+     una cuenta que ya tiene toques — así que la que más interés mostró se
+     perdía en silencio, para siempre (16-sep-2026). */
   const { data: senales } = await supabase.from('abm_senales')
     .select('cuenta_id, tipo, detalle').in('tipo', ['expansion', 'vacante', 'cambio_gerente'])
+    .neq('origen', 'sistema')
     .gte('created_at', new Date(Date.now() - 8 * 864e5).toISOString()).limit(200);
   const porSenal = new Set<string>();
   for (const s of senales || []) {
@@ -85,13 +92,25 @@ export const GET: APIRoute = async ({ request }) => {
     const env = enviados || 0, ab = aperturas || 0;
     await supabase.from('abm_cuentas').update({ fatiga: env }).eq('id', c.id);
 
-    // Abre y no contesta: deja de escribir y llama. Es interés sin urgencia,
-    // y eso no se resuelve con otro correo.
-    if (ab >= 3 || (clics || 0) >= 1) {
+    /* Abre y no contesta: deja de escribir y llama. Es interés sin urgencia,
+       y eso no se resuelve con otro correo.
+       EL CLIC SOLO NO BASTA, y esto es una corrección: la condición era
+       `ab >= 3 || clics >= 1`, o sea que un único clic cancelaba la cadencia
+       entera. `abm-cadencias` decide expresamente lo contrario cuando registra
+       el clic —«Un clic es INTERÉS, no respuesta: sube la prioridad y deja
+       correr la cadencia. Marcarlo como respondió y frenar ahí apagaba el
+       seguimiento justo sobre la señal más caliente que hay»—. Dos crons con
+       dos opiniones sobre el mismo hecho; se resuelve a favor del que lo
+       razonó. El clic sigue sumando: con una apertura más, entra por `ab`. */
+    if (ab >= 3) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'abrió varias veces: pasa a llamada' })
         .eq('cuenta_id', c.id).in('estado', ['borrador', 'aprobado', 'programado']);
+      /* `contexto`, no `vacante`. «Vacante» quiere decir que el negocio
+         publicó una plaza —un hecho de afuera— y está en la lista que
+         DESPIERTA cuentas pausadas. Usarla aquí hacía que la pausa se
+         cancelara sola al día siguiente. */
       await supabase.from('abm_senales').insert({
-        cuenta_id: c.id, tipo: 'vacante', origen: 'sistema', peso: 10, fecha: hoy,
+        cuenta_id: c.id, tipo: 'contexto', origen: 'sistema', peso: 10, fecha: hoy,
         caduca_at: enFecha(30), detalle: `Abrió ${ab} veces sin contestar: hay que llamarle`,
       });
       await supabase.from('abm_cuentas').update({ etapa: 'en_pausa', pausa_hasta: enFecha(DIAS_LEYENDO), pausa_motivo: 'abre y no contesta: toca llamada' }).eq('id', c.id);
