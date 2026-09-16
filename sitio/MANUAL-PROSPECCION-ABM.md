@@ -1170,6 +1170,16 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | Una baja frenaba el correo pero no la cadencia: 7 reintentos | Suprimir es detener, marcar la cuenta y apuntar el buzón |
 | `abm_frio` encendía los 24 giros a la vez | Prender y elegir a quién son dos decisiones, ninguna por omisión |
 | El validador de WhatsApp no estaba en `vercel.json` | Un cron que nadie agenda no corre, aunque exista |
+| Filtré por una columna que la vista no tenía: 500 por corrida | Una guarda que rompe la consulta no protege, APAGA |
+| `nombreBonito` dejaba «D'luna» y «¡playeras con Stilo» | Mayúscula a la primera LETRA, no al primer carácter |
+| `.every` sobre arreglo vacío daba «grita» por bueno | «Grita» es no tener NI UNA minúscula, no «ninguna la tiene» |
+| Arreglé una ruta de cinco y di el problema por cerrado | Contar a cuántos aplica ANTES de decir que quedó |
+| El modo «todas» de repuntuar repetía las mismas mil | Sin filtro que dejar de cumplir, el orden tiene que avanzar |
+| `git add -A` se llevó el Taller y cuatro videos ajenos | En repo compartido se agregan archivos POR NOMBRE |
+| «Quedaron calificadas»: 18,154 con fórmula de otra época | Cero ceros no es lo mismo que cuadrar con la fórmula |
+| Un partner logueado podía disparar el cartero | `/api/cron/` no lo cubre el middleware: el rol se exige ahí |
+| Un autorespondedor de WhatsApp mataba la cadencia | Lo que el correo filtra, WhatsApp también |
+| `+52 33 1337 0590` nunca empató con E.164: 0 de 2,926 | Normalizar los DOS lados antes de comparar |
 
 ---
 
@@ -1226,6 +1236,30 @@ tomada sin querer:
 La regla: **cuando el valor por omisión es también una decisión con
 consecuencias hacia afuera, no hay valor por omisión.** Se pide explícito o no
 se hace.
+
+---
+
+## 11 quinquies. Arreglar no es haber arreglado
+
+Cuatro veces el mismo día se dio por cerrado algo que seguía abierto. Vale la
+pena la lista, porque el patrón es siempre el mismo: **se arregla la fuente y
+no se cuenta a cuántos aplicaba.**
+
+| Se arregló | Seguía roto |
+|---|---|
+| La plantilla del correo 7 | 396 correos YA ARMADOS con el texto viejo |
+| La plantilla de la feria | 108 toques en cola afirmándola |
+| El cierre de la ruta `diagnostico` (215 cuentas) | Las otras cuatro rutas, 460 cuentas |
+| Las 41 despedidas con «lo saco de la lista» | 9 con «¿Lo dejamos así?», mismo mecanismo |
+
+Las dos preguntas que hay que hacerse SIEMPRE después de tocar una plantilla o
+una regla:
+
+1. **¿Y lo que ya está en la cola?** El cuerpo de un toque se congela al
+   generar. Arreglar la plantilla no toca un solo correo ya escrito.
+2. **¿A cuántos aplicaba el problema, y a cuántos llegó el arreglo?** Si el
+   arreglo salió de un caso concreto —una ruta, una frase literal— casi seguro
+   hay hermanos que no se buscaron. Se cuentan antes de cerrar.
 
 ---
 
