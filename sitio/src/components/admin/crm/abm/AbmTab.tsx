@@ -200,9 +200,10 @@ export default function AbmTab() {
         <>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-.02em', margin: '0 0 4px' }}>Cuentas objetivo</h1>
           <p style={{ fontSize: '.875rem', color: '#666', margin: '0 0 18px', maxWidth: '68ch' }}>
-            Negocios de moda mexicanos investigados uno por uno: qué venden, cuántas tiendas tienen, con qué operan hoy
-            y por dónde se les puede entrar. Ordenados por lo único que importa a la hora de escribir — qué tanto encajan,
-            qué tanto les duele y qué tan fácil es alcanzarlos.
+            Negocios de moda investigados uno por uno —México, Latinoamérica y España—: qué venden, cuántas tiendas
+            tienen, con qué operan hoy y por dónde se les puede entrar. Ordenados por lo único que importa a la hora de
+            escribir — qué tanto encajan, qué tanto les duele y qué tan fácil es alcanzarlos. La pestaña «Países» dice
+            cómo va cada uno y desde ahí se lanza o se frena.
           </p>
         </>
       )}

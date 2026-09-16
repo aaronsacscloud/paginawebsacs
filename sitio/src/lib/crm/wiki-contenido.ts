@@ -1397,7 +1397,7 @@ y desde ahí se agrega.</li>
   },
   {
     id: 'c-reuniones', seccion: 'consultores', grupo: 'Medición y reuniones', titulo: 'Las reuniones',
-    bajada: 'Tres ritmos distintos. Cada uno asegura una parte del acuerdo.',
+    bajada: 'Las tres del acuerdo, más la comercial de los lunes.',
     cuerpo: `
 <p>El acuerdo se sostiene en tres reuniones con propósitos que <b>no se mezclan</b>. Confundirlas es la forma más rápida de que ninguna sirva: la semanal se llena de capacitación, la mensual se vuelve un reporte y el corte de cuatro meses no alcanza a decidir nada.</p>
 <table class="w-tab"><thead><tr><th>Reunión</th><th>Cadencia</th><th>Para qué existe</th><th>Qué se revisa</th></tr></thead><tbody>
@@ -1416,6 +1416,24 @@ y desde ahí se agrega.</li>
 </ul>
 <div class="w-caja w-warn"><span class="w-k">La revisión que no es una reunión</span>
 <p>Aparte de las tres, <b>cada 3 meses</b> se revisa cada cuenta asignada contra dos preguntas: ¿creció en uso? ¿creció en ventas? Esa revisión no necesita junta —sale del propio sistema— pero es la que puede costar la cuenta: <b>dos seguidas sin cumplir y se retira</b>.</p></div>
+<h3>La comercial de los lunes</h3>
+<p>Aparte de las tres del acuerdo está la <b>junta comercial de los lunes</b>, a las 10:00. No es una reunión de capacitación ni de campañas: es donde se revisa <b>el dinero</b>, el que ya entró y el que está por entrar. Tiene un <b>guion fijo</b> que corre igual todas las semanas, y cada punto dice de qué pantalla del CRM sale su número — para que nadie llegue con cifras distintas.</p>
+<table class="w-tab"><thead><tr><th>Bloque</th><th>Quién</th><th>Qué se presenta</th></tr></thead><tbody>
+<tr><td><b>Cuentas actuales</b></td><td>Andrea</td><td>Resultados de las cuentas que atiende: expansión y mejora en el uso de SACS.</td></tr>
+<tr><td><b>Renovaciones y churn</b></td><td>Andrea</td><td>Renovaciones que vencen este mes y <b>cuáles ya cobraron</b>; de las que faltan, quién no ha pagado y desde cuándo. Cuentas en riesgo de no renovar con su motivo. <b>Avance de cada cliente recuperado</b> y el ARR recuperado del mes. Cuáles se dan por irrecuperables y por qué.</td></tr>
+<tr><td><b>Demos y cotizaciones</b></td><td>Andrea</td><td>Resultados de las demos, cuáles son cotización real y cuánto dinero va a entrar.</td></tr>
+<tr><td><b>Leads VIP</b></td><td>Andrea</td><td>Cuántos hay vivos y en qué etapa va cada uno; cuáles avanzaron y cuáles llevan <b>más de 15 días sin moverse</b>; cuántos ya agendaron demo o están en cotización.</td></tr>
+<tr><td><b>Consultorías</b></td><td>Andrea</td><td>Qué buscan los clientes, qué mejoras quieren y cuál de ellas generaría dinero.</td></tr>
+<tr><td><b>KPIs</b></td><td>Andrea</td><td>Reuniones programadas, completadas, con interés en cotización y <b>cuántas compraron</b>. Monto vendido a los clientes en consultoría.</td></tr>
+<tr><td><b>Campañas · Marca</b></td><td>Aaron</td><td>Leads fríos y campaña pagada con datos duros; costo por lead; qué trajo la marca personal.</td></tr>
+<tr><td><b>Más citas</b></td><td>Los dos</td><td>Ideas para más citas calificadas y los acuerdos, cada uno con responsable y fecha.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Renovar y recuperar es el mismo trabajo</span>
+<p>Las renovaciones y el churn van <b>en un solo bloque</b> y a propósito: las dos son la cartera que ya tienes. Separarlas hace que recuperar parezca un asunto de otra área, cuando en realidad es lo mismo que renovar, nada más que tarde.</p>
+<p>Y se revisa <b>cuáles ya cobraron</b>, no cuáles se renovaron. Una renovación firmada y no pagada todavía no es dinero.</p></div>
+<div class="w-caja w-warn"><span class="w-k">El guion es lo que no se salta</span>
+<p>Estos bloques no se proponen cada semana: <b>ya están</b>, con sus minutos. Los temas que alguien quiera meter para una junta concreta van en la <b>agenda</b>, que es otra pestaña. Si algo importante viviera solo en la agenda, se omitiría el día que la junta va tarde — que es justo cuando más falta hace verlo.</p>
+<p>El guion vivo se edita en <b>Equipo → la sala del lunes → pestaña Guion</b>.</p></div>
 <div class="w-caja w-ok"><span class="w-k">El documento completo</span>
 <p>Estas páginas son el marco puesto en operación. El documento firmado, con sus 16 cláusulas y su tabla de casos de aplicación, vive en <code>code.sacscloud.com/colaboracion/</code>. Ante cualquier diferencia, <b>manda el documento</b>.</p></div>`,
   },

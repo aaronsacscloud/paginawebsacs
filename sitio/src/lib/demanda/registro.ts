@@ -12,6 +12,7 @@ import './fuentes/crm';
 import './normalizar';
 import './paginas';
 import './tecnico';
+import './enlaces';
 import './evaluar';
 import './score';
 import './oportunidades';

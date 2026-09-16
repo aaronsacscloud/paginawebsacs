@@ -66,6 +66,10 @@ ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? 
 
 - Demostración: ${SITIO}/contacto
 - Precios: ${SITIO}/planes
+
+## Más detalle
+
+- [Información completa para modelos](${SITIO}/llms-full.txt)
 `;
 
   return new Response(texto, {

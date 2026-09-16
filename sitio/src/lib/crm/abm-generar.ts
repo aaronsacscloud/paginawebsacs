@@ -183,6 +183,19 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
     `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
   ).join('\n\n---\n\n');
   if (!guion) return { ok: false, error: `todavía no hay plantillas escritas para el giro ${c.giro}`, status: 409 };
+  /* Tantos pasos como plantillas, o no sale. Los días se leen POR POSICIÓN
+     más abajo, así que una plantilla sin su paso no se queda sin fecha: se
+     lleva la del arreglo de respaldo. Con 8 plantillas y 7 pasos, el correo
+     8 —la despedida— caía en 7*4+1 = 29, antes que el 7 que va en 30: el
+     adiós llegaba primero. Estuvo así en 21 giros y nadie lo vio, porque
+     ninguno tenía goteo encendido (16-sep-2026).
+     Se prefiere no generar a generar desordenado: falta un renglón en
+     abm_pasos y se arregla en un minuto; un prospecto que recibe la
+     despedida y luego la propuesta no se recupera. */
+  if ((pasos || []).length !== (plantillas || []).length) {
+    return { ok: false, status: 409,
+      error: `la cadencia de ${c.giro}/${ruta} tiene ${(plantillas || []).length} correos escritos y ${(pasos || []).length} pasos con día. Falta tender los pasos que faltan en abm_pasos antes de generar.` };
+  }
 
   const prompt = `Eres el redactor de correo frío de Sacscloud (sistema mexicano de inventario y punto de venta para negocios de moda).
 Te doy el EXPEDIENTE de un prospecto real y el GUION de la cadencia de su giro. Tu trabajo es adaptar cada correo

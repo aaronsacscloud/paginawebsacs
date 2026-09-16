@@ -536,7 +536,15 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               `}</style>
               <div className="ficha-tab">
                 <FirmaFicha />
-              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'info' && (
+                <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []}
+                  contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio}
+                  reload={() => { load(); onChanged(); }} flash={flash}
+                  /* La tercera columna: la cuenta de SACS y lo fiscal, tal cual
+                     estaban. Se pasan enteras en vez de reescribirse aquí — su
+                     captura valida el RFC y ese candado no se toca. */
+                  tercera={<CuentaCliente companyId={companyId} alCambiar={() => { load(); onChanged(); }} />} />
+              )}
               {/* ── La cuenta de Sacs, aquí y no en Actividad ──
                   Qué cuenta opera este cliente y con qué datos se le factura es
                   información DEL CLIENTE. Vivía en Actividad —que es de donde
@@ -545,7 +553,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   en esa pestaña, y la razón social y el RFC acabaron
                   duplicados, tecleables también en Info general por un camino
                   que NO valida el RFC. Ahora se capturan en un solo lugar. */}
-              {tab === 'info' && <CuentaCliente companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
+
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {/* Las señales ya no son un bloque aparte: entran DENTRO de
@@ -1210,7 +1218,7 @@ const descripcionSerie = (r: any): string => {
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
-function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
+function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash, tercera }: any) {
   /* Sin `rfc` ni `razon_social`: lo fiscal se captura en UN solo lugar, la
      tarjeta «Cuenta de Sacs» de abajo. Aquí eran dos cajas que escribían las
      mismas columnas por otro camino —el que NO valida el RFC—, así que un RFC
@@ -1373,7 +1381,18 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
           quién es este cliente. Y arriba de todo había ocho cajas de texto
           abiertas aunque solo vinieras a leer. Ahora la ficha se lee escrita y
           los campos salen al pedir Editar. */}
-      <div style={D.cardM}>
+      {/* ══ TRES TARJETAS DEL MISMO ALTO ══
+          La pestaña mezclaba cuatro asuntos en una sola tarjeta —quién es,
+          cuánto paga, quién decide y con qué se le factura—, repetía la mitad de
+          los datos en pastillas y escondía la otra mitad detrás de un «ver más».
+          Y tenía dos caminos para editar lo mismo.
+
+          Ahora son tres columnas iguales, una por asunto y con UNA acción cada
+          una en su esquina: El negocio · Quién decide · Facturación. Al editar,
+          la primera se extiende a todo el ancho: un formulario de tres columnas
+          no cabe en un tercio. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: 12, alignItems: 'stretch' }}>
+      <div style={{ ...D.cardM, marginBottom: 0, ...(editando ? { gridColumn: '1 / -1' } : {}) }}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEECFE', color: '#4536BE', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>{iniciales}</div>
           <div style={{ flex: 1, minWidth: 190 }}>
@@ -1398,9 +1417,11 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             pagos, y ya se ven en las tarjetas de Suscripciones. Esta contesta
             «quién es este cliente», no «cuánto paga». */}
 
-        {/* Lo fiscal y lo secundario, plegado: está a un clic, no estorbando. */}
-        <details open={editando} style={separador}>
-          <summary style={resumenLink}>{editando ? 'Datos de la empresa' : 'Ver datos de contacto y perfil del negocio'}</summary>
+        {/* Sin «ver más»: la identidad del cliente son ocho renglones y no se
+            esconde detrás de un enlace. Al editar, el mismo bloque se vuelve el
+            formulario. */}
+        <div style={separador}>
+
 
           {!editando ? (
             <div style={{ marginTop: 13, ...rejilla }}>
@@ -1436,7 +1457,8 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                     : <div style={{ fontSize: '0.7rem', color: '#1E8A63', marginTop: 3 }}>todas en el sistema</div>)
                   : <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 3 }}>no sabemos cuántas tiene · pregúntalo en la junta</div>}
               </div>
-              {leido('Estado de la cuenta', f.estado_cuenta)}
+              {/* «Estado de la cuenta: activo» se quitó: la pastilla de arriba
+                  ya lo dice, y mejor —«Cuenta activa» en vez del valor crudo. */}
               {/* El perfil del negocio describe a la EMPRESA —giro, subgiro,
                   colaboradores—, así que su sitio es este y no un cajón aparte
                   llamado "Gestión interna", que no decía qué guardaba. */}
@@ -1508,18 +1530,32 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
               )}
             </div>
           )}
-        </details>
+        </div>
       </div>
 
-      {/* ── PERSONAS ─────────────────────────────────────────────────────
+      {/* ── QUIÉN DECIDE ── segunda columna.
           Vive aquí y no en su propia pestaña: para ver el correo de alguien
           había que cambiar de pantalla. */}
-      <div style={D.cardM}>
-        <div style={D.hM}>Personas<span style={D.hNota}>{(contactos || []).length} en esta cuenta</span></div>
+      <div style={{ ...D.cardM, marginBottom: 0 }}>
+        <div style={D.hM}>Quién decide<span style={D.hNota}>{(contactos || []).length} en esta cuenta</span></div>
         <TabContactos companyId={companyId} contactos={contactos} reload={reload} flash={flash} compacto />
       </div>
 
-      <div style={D.cardM}>
+      {/* ── FACTURACIÓN ── tercera columna. La pinta el drawer y se la pasa
+          entera: la cuenta de SACS y los datos fiscales ya viven ahí, con su
+          validación de RFC. Duplicarlos aquí sería el segundo camino para
+          llenar lo mismo que este rediseño vino a quitar. */}
+      {tercera ? (<>
+        {/* La tarjeta que llega de fuera no sabe que vive en una rejilla: esta
+            regla la estira hasta la altura de las otras dos. Sin ella, la
+            tercera columna quedaba más corta y la fila se veía descuadrada. */}
+        <style>{`.col3 { display: flex; flex-direction: column; } .col3 > * { flex: 1; margin-bottom: 0 !important; }`}</style>
+        <div className="col3">{tercera}</div>
+      </>) : null}
+      </div>
+
+      {/* Lo secundario, plegado y al pie: está a un clic, no estorbando. */}
+      <div style={{ ...D.cardM, marginTop: 12 }}>
         <details>
           <summary style={resumenLink}>Cómo se acompaña esta cuenta</summary>
           <div style={{ marginTop: 13 }}>
