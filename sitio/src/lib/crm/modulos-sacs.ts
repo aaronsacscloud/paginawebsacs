@@ -9,10 +9,16 @@
 // SACS —los mismos nombres, para que crucen sin traducción—. Lo demás son
 // lugares donde también se trabaja y que no son módulos: los reportes, la
 // configuración inicial, el catálogo.
-export const MODULOS_SACS: { familia: string; modulos: string[] }[] = [
+export const MODULOS_SACS: { familia: string; modulos: string[]; giro?: string }[] = [
+  /* Joyería. La familia nació del Taller: las órdenes de Ruben's hablan de
+     certificados, del precio del gramo y de membresías, y ninguna de esas
+     palabras estaba en el catálogo —por eso «módulo» venía vacío en 69 de 81
+     renglones—. Un catálogo que no tiene las palabras del cliente no se llena;
+     se salta. */
+  { familia: 'Joyería', giro: 'joyeria', modulos: ['Certificados', 'Órdenes de reparación', 'Metales y precio del gramo', 'Costeo por gramo y por pieza', 'Membresías'] },
   { familia: 'Ventas', modulos: ['Punto de venta', 'Pedidos / eCommerce', 'Apartados', 'Reparaciones / taller', 'Eventos y salones'] },
   { familia: 'Inventario', modulos: ['Transferencias', 'Conteos físicos', 'Órdenes de compra', 'Catálogo de productos', 'Mínimos y máximos'] },
-  { familia: 'Clientes', modulos: ['Catálogo de clientes', 'Programa de lealtad', 'Promociones', 'Tarjetas de regalo'] },
+  { familia: 'Clientes', modulos: ['Catálogo de clientes', 'Portal de clientes', 'Programa de lealtad', 'Promociones', 'Tarjetas de regalo'] },
   { familia: 'Administración', modulos: ['Cortes de caja', 'Gastos', 'Cuentas de efectivo / bancos', 'Proveedores', 'Facturación electrónica'] },
   { familia: 'Reportes', modulos: ['Reporte de ventas', 'Reporte de inventario', 'Reporte ejecutivo', 'Otro reporte'] },
   { familia: 'Otros', modulos: ['Configuración de la cuenta', 'Usuarios y permisos', 'Sucursales', 'App móvil', 'Otro'] },
@@ -20,6 +26,17 @@ export const MODULOS_SACS: { familia: string; modulos: string[] }[] = [
 
 /** Todos los nombres en una lista plana, para validar. */
 export const MODULOS_PLANOS = MODULOS_SACS.flatMap(f => f.modulos);
+
+/** El catálogo con la familia del giro del cliente ARRIBA.
+ *  Con una joyería, «Certificados» es lo primero que se busca; con una
+ *  boutique, «Punto de venta». Ordenar por el giro ahorra el scroll que hace
+ *  que la gente escriba el módulo a mano en vez de elegirlo. */
+export function modulosParaGiro(giro?: string | null) {
+  const g = String(giro || '').toLowerCase();
+  if (!g) return MODULOS_SACS;
+  const mio = MODULOS_SACS.filter(f => f.giro && g.includes(f.giro));
+  return mio.length ? [...mio, ...MODULOS_SACS.filter(f => !mio.includes(f))] : MODULOS_SACS;
+}
 
 /** A qué familia pertenece un módulo (para agrupar en los reportes). */
 export function familiaDe(modulo?: string | null): string | null {

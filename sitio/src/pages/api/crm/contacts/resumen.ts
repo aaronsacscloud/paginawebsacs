@@ -62,7 +62,7 @@ Responde SOLO un JSON válido:
 {"resumen": "markdown con: ## Quién es (1-2 frases: negocio, tamaño, desde cuándo), ## La historia (qué ha pasado, con fechas y cifras literales), ## Qué le importa (dolores y motivaciones QUE ÉL DIJO), ## Riesgos o fricciones (quejas, promesas pendientes, silencios largos), ## Siguiente jugada (1-2 acciones concretas)", "titular": "UNA frase que capture el estado de la relación hoy"}`;
 
   try {
-    const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 1800, messages: [{ role: 'user', content: prompt }] });
+    const r = await anthropic.messages.create({ proposito: 'pages/api/crm/contacts/resumen.ts:65', model: MODELS.sonnet, max_tokens: 1800, messages: [{ role: 'user', content: prompt }] });
     const texto = (r.content[0] as any)?.text || '';
     const m = texto.match(/\{[\s\S]*\}/);
     const parsed = m ? JSON.parse(m[0]) : null;

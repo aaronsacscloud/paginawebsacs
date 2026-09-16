@@ -137,7 +137,10 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
   const max = p.max_tokens || 4000;
 
   if (prov === 'anthropic') {
-    const cuerpo: any = { model: modelo, max_tokens: max, system: p.sistema, messages: [{ role: 'user', content: usuario }] };
+    /* La etiqueta va en el CUERPO y no solo en la global: `pedirA` se llama
+       desde dos caminos y solo uno pone `__ia_proposito`, así que el otro caía
+       en «desconocido». El proxy la lee y la borra antes de salir a la API. */
+    const cuerpo: any = { proposito: `demanda:${p.agente || trabajoDe(p)}`, model: modelo, max_tokens: max, system: p.sistema, messages: [{ role: 'user', content: usuario }] };
     if (p.esquema) cuerpo.output_config = { format: { type: 'json_schema', schema: p.esquema } };
     const r: any = await anthropic.messages.create(cuerpo);
     return {

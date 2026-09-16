@@ -127,7 +127,7 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que NO es una tienda (restaurante, cafetería, comida, servicios, escuela, consultorio) o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
 Responde SOLO con JSON: {"correo": ${c.email ? '{"asunto": "asunto corto y concreto, sin signos de exclamación", "cuerpo": "tres párrafos cortos en texto plano separados por línea en blanco: 1) en una línea quiénes somos (Sacs: sistema para tiendas de moda y retail en México: ventas, inventario por talla y color, tienda en línea y WhatsApp conectados al mismo inventario), por si ya no se acuerda; 2) lo que sabemos de SU negocio y su pregunta original, con la novedad que le sirve; 3) invitación concreta a contestar por WhatsApp o agendar 15 minutos. Máximo 130 palabras, de tú, sin emojis, sin promesas."}' : 'null'}, "nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
-  const r = await anthropic.messages.create({ model: modeloPara('reactivacion', cfg), max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/reactivacion.ts:130', model: modeloPara('reactivacion', cfg), max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || '';
   if (!txt) console.error('[reactivacion] respuesta sin texto:', JSON.stringify(r).slice(0, 400));
   const m = txt.match(/\{[\s\S]*\}/); if (!m) { console.error('[reactivacion] sin JSON:', txt.slice(0, 300)); return null; }
@@ -330,7 +330,7 @@ export async function completarCorreos(limite = 10) {
 Lo que sabemos: ${r.resumen_lead || ''} Preguntó: «${r.pregunta_original || ''}». Palanca: ${r.angulo || ''}. El WhatsApp que le va a llegar dice: «${r.mensaje}».
 Tres párrafos cortos en texto plano separados por línea en blanco: 1) en una línea quiénes somos, por si ya no se acuerda; 2) lo que sabemos de SU negocio y su pregunta, con la novedad que le sirve; 3) invitación concreta a contestar por WhatsApp o agendar 15 minutos. Máximo 130 palabras, de tú, sin emojis, sin promesas, sin saludo inicial (el correo ya dice «Hola nombre»). Responde SOLO JSON: {"asunto": "corto, concreto, sin signos de exclamación", "cuerpo": "..."}`;
     try {
-      const rr = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 600, messages: [{ role: 'user', content: prompt }] });
+      const rr = await anthropic.messages.create({ proposito: 'lib/crm/ti/reactivacion.ts:333', model: MODELS.sonnet, max_tokens: 600, messages: [{ role: 'user', content: prompt }] });
       const txt = (rr.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
       const m = txt.match(/\{[\s\S]*\}/); if (!m) continue; const j = JSON.parse(m[0]);
       if (!j.cuerpo) continue;

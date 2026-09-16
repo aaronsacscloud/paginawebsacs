@@ -11,6 +11,7 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { GUION_AGENTE } from './agente-guion';
+import { modeloPara } from './agente';
 import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 
 type Clave = 'guion' | 'wiki' | 'limites';
@@ -65,7 +66,7 @@ export async function redactarReglaConIA(o: { etapa: string; muestras: { mensaje
 ${casos}
 
 Escribe la regla en 1 o 2 líneas, imperativa, concreta y verificable (qué hacer y cuándo; si aplica, qué NO hacer). Nada de generalidades («sé empático»). Si los casos apuntan a dos reglas distintas, elige la que cubra más casos. Responde SOLO JSON: {"regla": "...", "evidencias": ["3 frases cortas, cada una citando un caso concreto"], "alcance": "global|etapa", "confianza": 0-1}`;
-  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 600, messages: [{ role: 'user', content: prompt }] });
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/guion-datos.ts:68', model: MODELS.opus, max_tokens: 600, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
   const m = txt.match(/\{[\s\S]*\}/); if (!m) return null;
   let j: any; try { j = JSON.parse(m[0]); } catch { return null; }
@@ -94,14 +95,24 @@ async function casosDePrueba(etapa: string | null, n = 12) {   // 12 y no 24: ca
   return casos.slice(0, n);
 }
 async function redactarCaso(system: string, caso: any) {
-  // Genera con el MISMO modelo que el agente (Opus): la prueba tiene que ser fiel, aunque cueste más (~$0.6 por regla).
-  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 350, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: `CASO DE PRUEBA. Etapa del guion: ${caso.estado}. Situación: ${caso.situacion || ''}.\nEl lead escribió: «${caso.mensaje_lead}».\nEscribe SOLO el mensaje de WhatsApp que mandarías (sin JSON, sin explicación).` }] });
+  /* Genera con el MISMO modelo QUE USARÍA EL AGENTE para esa etapa — que es lo
+     que hace fiel a la prueba.
+     Antes decía «el mismo modelo que el agente (Opus)» y forzaba `MODELS.opus`.
+     Eso dejó de ser cierto el 4-sep, cuando el agente pasó a elegir modelo por
+     tarea: hoy solo `respuesta` y `cotizacion` van en Opus y todo lo demás en
+     Sonnet. O sea que la prueba estaba midiendo un modelo que producción casi
+     no usa, y cobrando de más por ello: medido en 30 días, $16.35 entre este
+     sitio y su gemelo de la línea 89.
+     `modeloPara` respeta además los overrides del dueño en cfg.modelos, así que
+     si mañana mueve una tarea de modelo, la prueba lo sigue sin tocar código. */
+  const modelo = modeloPara(String(caso?.estado || 'respuesta'));
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/guion-datos.ts:98', model: modelo, max_tokens: 350, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: `CASO DE PRUEBA. Etapa del guion: ${caso.estado}. Situación: ${caso.situacion || ''}.\nEl lead escribió: «${caso.mensaje_lead}».\nEscribe SOLO el mensaje de WhatsApp que mandarías (sin JSON, sin explicación).` }] });
   const t = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim();
-  return { texto: t, costo: calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd };
+  return { texto: t, costo: calculateCost(modelo, (r.usage || {}) as any).cost_usd };
 }
 async function juzgar(regla: string, caso: any, a: string, b: string) {
   const swap = Math.random() < 0.5; const A = swap ? b : a, B = swap ? a : b;
-  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 200, messages: [{ role: 'user', content: `Eres el juez del agente SDR de Sacs. Lead: «${caso.mensaje_lead}» (etapa ${caso.estado}). La respuesta que una persona aprobó como buena: «${String(caso.pulida).slice(0, 500)}». Regla que se está evaluando: «${regla}».\n\nRespuesta A: «${A.slice(0, 600)}»\nRespuesta B: «${B.slice(0, 600)}»\n\nCalifica cada una de 1 a 10 por qué tanto sigue el criterio de la respuesta aprobada (fondo, tono, brevedad, una sola pregunta, siguiente paso natural). Aparte, di si cada una VIOLA la regla evaluada (true/false), leyéndola literal. Responde SOLO JSON: {"a": n, "b": n, "viola_a": bool, "viola_b": bool}` }] });
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/guion-datos.ts:104', model: MODELS.sonnet, max_tokens: 200, messages: [{ role: 'user', content: `Eres el juez del agente SDR de Sacs. Lead: «${caso.mensaje_lead}» (etapa ${caso.estado}). La respuesta que una persona aprobó como buena: «${String(caso.pulida).slice(0, 500)}». Regla que se está evaluando: «${regla}».\n\nRespuesta A: «${A.slice(0, 600)}»\nRespuesta B: «${B.slice(0, 600)}»\n\nCalifica cada una de 1 a 10 por qué tanto sigue el criterio de la respuesta aprobada (fondo, tono, brevedad, una sola pregunta, siguiente paso natural). Aparte, di si cada una VIOLA la regla evaluada (true/false), leyéndola literal. Responde SOLO JSON: {"a": n, "b": n, "viola_a": bool, "viola_b": bool}` }] });
   const t = (r.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('');
   const m = t.match(/\{[\s\S]*\}/); let j: any = {}; try { j = m ? JSON.parse(m[0]) : {}; } catch { /* vacío */ }
   const sa = Number(j.a) || 0, sb = Number(j.b) || 0; const va = !!j.viola_a, vb = !!j.viola_b;

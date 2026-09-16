@@ -191,7 +191,7 @@ Devuelve SOLO un arreglo JSON: [{"campo":"…","valor":"…","confianza":0.0-1.0
 TEXTO:
 ${t}`;
   try {
-    const r = await anthropic.messages.create({ model: MODELS.haiku, max_tokens: 700, messages: [{ role: 'user', content: prompt }] });
+    const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/datos-lead.ts:194', model: MODELS.haiku, max_tokens: 700, messages: [{ role: 'user', content: prompt }] });
     const out = (r.content[0] as any)?.text || '';
     const m = out.match(/\[[\s\S]*\]/);
     const arr = m ? JSON.parse(m[0]) : [];

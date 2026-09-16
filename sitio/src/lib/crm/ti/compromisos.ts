@@ -69,7 +69,7 @@ Si NO pide nada de eso (solo pregunta, agradece, dice que sí o que no), "hay": 
 Calcula la FECHA concreta en que quiere que actuemos (si dijo «la otra semana» → el martes de la próxima semana; «en 3 días» → hoy+3; «después de quincena» → el 16 o el 1 siguiente; «el jueves» → el jueves más próximo que no sea hoy si ya es tarde). Si dijo una hora («después de las 4», «en la mañana»→10, «en la tarde»→16), ponla.
 Responde SOLO JSON: {"hay":bool,"tipo":"retomar|llamar|agendar|esperar_evento|vago|sin_dinero","fecha":"YYYY-MM-DD o null","hora_pedida":n o null,"necesita_hora":bool,"pidio":"cita textual corta de lo que pidió","interpretacion":"1 línea en español: qué quiere y cuándo","confianza":0.0-1.0}`;
   try {
-    const r: any = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 300, messages: [{ role: 'user', content: prompt }] });
+    const r: any = await anthropic.messages.create({ proposito: 'lib/crm/ti/compromisos.ts:72', model: MODELS.sonnet, max_tokens: 300, messages: [{ role: 'user', content: prompt }] });
     const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
     const m = txt.match(/\{[\s\S]*\}/); if (!m) return null;
     const j = JSON.parse(m[0]);

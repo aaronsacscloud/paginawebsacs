@@ -18,6 +18,7 @@ import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { pedirJSON } from '../../../lib/ia';
+import { MODULOS_PLANOS } from '../../../lib/crm/modulos-sacs';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -123,7 +124,8 @@ export const GET: APIRoute = async ({ request, url }) => {
   /* Lo que está comprometido con el cliente y todavía no tiene orden. Es el
      puente con lo que ya existe: sin esto el taller nace vacío el primer día
      y nadie lo abre dos veces. */
-  const { data: ligadas } = await supabase.from('taller_orden_mejoras').select('mejora_id, orden_id');
+  const { data: ligadas } = await supabase.from('taller_orden_mejoras')
+    .select('mejora_id, orden_id, mejoras(booking_id, modulo)');
   const yaLigadas = new Set((ligadas || []).map((x: any) => x.mejora_id));
   /* Qué renglón del cliente está ya en el taller y cómo va: es lo que deja a la
      ficha del cliente decir "en desarrollo, para el 26" sin copiar nada. */
@@ -170,12 +172,38 @@ export const GET: APIRoute = async ({ request, url }) => {
     for (const c of cos.data || []) if (cuentas[c.id]) { cuentas[c.id].sacs = c.sacs_account; cuentas[c.id].giro = c.giro; }
   }
 
+  /* DE QUÉ REUNIÓN SALIÓ Y EN QUÉ MÓDULO SE TRABAJA.
+     Las dos viven en el renglón del cliente (`mejoras`) y no en la orden: la
+     reunión ya venía guardada ahí desde que la minuta reparte —64 de las 81 de
+     Ruben's la traen— y duplicarla en la orden sería tener dos verdades. El
+     taller las LEE por la liga y las escribe en el mismo sitio.
+     El módulo se lee de la orden si lo tiene y si no, del renglón: las órdenes
+     viejas lo capturaron allá. */
+  const meta: Record<string, any> = {};
+  for (const l of ligadas || []) {
+    const m: any = (l as any).mejoras;
+    if (!m || !porOrden.has(l.orden_id)) continue;
+    const o: any = porOrden.get(l.orden_id);
+    meta[l.orden_id] = { mejora_id: l.mejora_id, booking_id: m.booking_id || null, modulo: o?.modulo || m.modulo || null };
+  }
+  /* Solo el encabezado de las reuniones REFERIDAS: para pintar la pastilla
+     hacen falta fecha y asunto, nada más. La lista completa de una cuenta se
+     pide al abrir el selector, que es cuando de verdad se necesita. */
+  const bIds = Array.from(new Set(Object.values(meta).map((x: any) => x.booking_id).filter(Boolean)));
+  const reuniones: Record<string, any> = {};
+  if (bIds.length) {
+    const { data: bk } = await supabase.from('bookings').select('id, fecha, asunto').in('id', bIds as string[]);
+    for (const b2 of bk || []) reuniones[b2.id] = { fecha: b2.fecha, asunto: b2.asunto || '' };
+  }
+
   return json({
     ordenes: data || [],
     equipo: equipo || [],
     ligas,
     sinOrden,
     cuentas,
+    meta,
+    reuniones,
     yo: { id: user.id, nombre: quien(user), rol: user.role },
   });
 };
@@ -335,6 +363,9 @@ export const POST: APIRoute = async ({ request }) => {
          se puede volver a leer qué se dijo el día que se pidió. */
       booking_id: b?.booking_id || null,
       origen: b?.booking_id ? 'junta' : 'manual',
+      // El módulo se guarda en los dos: aquí lo usan los reportes del cliente
+      // y en la orden lo usa desarrollo. Es el mismo dato, escrito una vez.
+      modulo: p.modulo || null,
       cobro: p.cobro || null, cortesia: p.cobro === 'cortesia',
       fecha_compromiso: p.fecha_prometida || null,
       creado_por: quien(user),
@@ -352,6 +383,70 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('taller_orden_mejoras').insert({ orden_id: orden.id, mejora_id: mej.id });
     await apunta(orden.id, quien(user), null, 'recibida', 'Nació en el taller y quedó ligada a la ficha del cliente');
     return json({ ok: true, orden, mejora_id: mej.id }, 201);
+  }
+
+  /* ── Varias a la vez ──
+     Tres cosas se corrigen SIEMPRE en bloque y nunca de una en una: la fecha
+     que se prometió en una junta, de qué reunión salió todo lo que se pidió
+     ese día, y en qué parte del sistema se trabaja. Entrar a quince órdenes
+     para escribir quince veces «14-sep» es exactamente por lo que el campo
+     acaba vacío —módulo estaba en 12 de 81—.
+     Lo que no viene en el cuerpo NO se toca: mandar solo `modulo` deja la
+     fecha y la reunión como estaban. */
+  if (accion === 'lote') {
+    const ids: string[] = Array.from(new Set((b?.ids || []).map(String).filter(Boolean))).slice(0, 200) as string[];
+    if (!ids.length) return json({ error: 'No hay órdenes seleccionadas.' }, 400);
+
+    const ponFecha = 'fecha_prometida' in (b || {});
+    const ponModulo = 'modulo' in (b || {});
+    const ponJunta = 'booking_id' in (b || {});
+    if (!ponFecha && !ponModulo && !ponJunta) return json({ error: 'No hay nada que cambiar.' }, 400);
+
+    const fecha = b?.fecha_prometida || null;
+    const modulo = typeof b?.modulo === 'string' && b.modulo.trim() ? b.modulo.trim().slice(0, 120) : null;
+    const booking = b?.booking_id || null;
+    if (modulo && !MODULOS_PLANOS.includes(modulo)) return json({ error: 'Ese módulo no está en el catálogo.' }, 400);
+
+    const { data: antes } = await supabase.from('taller_ordenes')
+      .select('id, folio, fecha_prometida, fecha_prometida_1, modulo, company_id').in('id', ids);
+    if (!antes?.length) return json({ error: 'Esas órdenes ya no existen.' }, 404);
+
+    const patch: any = { updated_at: new Date().toISOString() };
+    if (ponFecha) patch.fecha_prometida = fecha;
+    if (ponModulo) patch.modulo = modulo;
+    const { error: eU } = await supabase.from('taller_ordenes').update(patch).in('id', ids);
+    if (eU) return json({ error: eU.message }, 500);
+
+    /* La PRIMERA fecha se guarda una sola vez: es contra la que se mide si se
+       cumplió, y si se reescribe al recorrerla el porcentaje siempre da 100. */
+    if (ponFecha && fecha) {
+      const virgenes = (antes || []).filter((o: any) => !o.fecha_prometida_1).map((o: any) => o.id);
+      if (virgenes.length) await supabase.from('taller_ordenes').update({ fecha_prometida_1: fecha }).in('id', virgenes);
+    }
+
+    // El renglón del cliente: ahí viven la reunión de origen y el módulo que
+    // sale en sus reportes.
+    if (ponJunta || ponModulo) {
+      const { data: lig } = await supabase.from('taller_orden_mejoras').select('mejora_id').in('orden_id', ids);
+      const mIds = (lig || []).map((x: any) => x.mejora_id);
+      if (mIds.length) {
+        const pm: any = { updated_at: new Date().toISOString() };
+        if (ponJunta) { pm.booking_id = booking; pm.origen = booking ? 'junta' : 'manual'; }
+        if (ponModulo) pm.modulo = modulo;
+        await supabase.from('mejoras').update(pm).in('id', mIds);
+      }
+    }
+
+    // La bitácora, orden por orden: dentro de seis semanas la pregunta es
+    // «¿quién le movió la fecha a esta?», no «¿qué pasó ese martes?».
+    const nota = [
+      ponFecha ? (fecha ? 'fecha de entrega → ' + fecha : 'se le quitó la fecha') : '',
+      ponJunta ? (booking ? 'ligada a una reunión' : 'se le quitó la reunión') : '',
+      ponModulo ? (modulo ? 'módulo → ' + modulo : 'se le quitó el módulo') : '',
+    ].filter(Boolean).join(' · ');
+    for (const o of antes || []) await apunta(o.id, quien(user), null, null, 'En bloque: ' + nota);
+
+    return json({ ok: true, n: (antes || []).length });
   }
 
   /* ── El resumen para desarrollo ──

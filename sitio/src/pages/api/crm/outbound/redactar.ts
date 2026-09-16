@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
       `Destinos de módulo permitidos: ${destinos}`,
     ].filter(Boolean).join('\n');
 
-    const msg = await anthropic.messages.create({
+    const msg = await anthropic.messages.create({ proposito: 'pages/api/crm/outbound/redactar.ts:67',
       model: MODELS.sonnet,
       max_tokens: 900,
       system: SYSTEM,

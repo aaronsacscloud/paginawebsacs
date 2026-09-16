@@ -55,7 +55,7 @@ Reglas para no inventar:
 Responde SOLO JSON: {"encontrado":bool,"que_venden":"en pocas palabras, o null","donde":"ciudad o zona, o null","sucursales":número o null,"instagram":"@handle o null","sitio":"url o null","senal":"1 línea, o null","confianza":0.0-1.0,"fuentes":["urls que usaste"]}`;
 
   try {
-    const r: any = await anthropic.messages.create({
+    const r: any = await anthropic.messages.create({ proposito: 'lib/crm/ti/investigacion.ts:58',
       model: MODELS.sonnet, max_tokens: 800,
       tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 } as any],
       messages: [{ role: 'user', content: prompt }],

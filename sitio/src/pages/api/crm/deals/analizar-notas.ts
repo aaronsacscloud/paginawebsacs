@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
   ].filter(Boolean).join('\n');
 
   try {
-    const r = await anthropic.messages.create({
+    const r = await anthropic.messages.create({ proposito: 'pages/api/crm/deals/analizar-notas.ts:59',
       model: MODELS.sonnet,
       max_tokens: 700,
       system: sistema,

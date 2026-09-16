@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    const resp = await anthropic.messages.create({
+    const resp = await anthropic.messages.create({ proposito: 'pages/api/agents/trigger.ts:67',
       model: MODELS.haiku,
       max_tokens: 200,
       system: 'Eres un agente demo del CRM SACS. Responde breve, en español, confirmando que el sistema funciona. Menciona el contacto si existe.',

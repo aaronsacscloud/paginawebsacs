@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
     const run_id = await createAgentRun({ agent_name: 'wa-inbox-transformar', trigger_type: 'user', owner_id: ownerId, input: { instr, largo: texto.length }, model: MODELS.sonnet } as any);
     const t0 = Date.now();
     try {
-      const msg = await anthropic.messages.create({
+      const msg = await anthropic.messages.create({ proposito: 'pages/api/crm/whatsapp/ia.ts:89',
         model: MODELS.sonnet, max_tokens: 900,
         system: `Eres editor de mensajes de un equipo comercial de SacsCloud (México). Te dan un mensaje y UNA instrucción de edición. Devuelve ÚNICAMENTE el mensaje editado, sin comillas, sin explicaciones, sin emojis nuevos. Conserva el sentido y los datos (montos, fechas, nombres). Si la instrucción es traducir, traduce fielmente.`,
         messages: [{ role: 'user', content: `Instrucción: ${instr}\n\nMensaje:\n${texto}` }],
@@ -173,7 +173,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const t0 = Date.now();
   try {
-    const msg = await anthropic.messages.create({
+    const msg = await anthropic.messages.create({ proposito: 'pages/api/crm/whatsapp/ia.ts:176',
       model: MODELS.sonnet,
       max_tokens: 900,
       system: accion === 'resumir' ? SYSTEM_RESUMIR : accion === 'contexto' ? SYSTEM_CONTEXTO : SYSTEM_BORRADOR,

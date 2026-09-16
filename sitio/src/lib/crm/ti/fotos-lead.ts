@@ -39,7 +39,7 @@ export async function describirFoto(url: string, mime?: string | null): Promise<
   const bloque: any = img.pdf
     ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: img.b64 } }
     : { type: 'image', source: { type: 'base64', media_type: img.mime as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: img.b64 } };
-  const r: any = await anthropic.messages.create({
+  const r: any = await anthropic.messages.create({ proposito: 'lib/crm/ti/fotos-lead.ts:42',
     model: MODELS.sonnet, max_tokens: 260,
     messages: [{ role: 'user', content: [bloque, { type: 'text', text: PROMPT }] }],
   });

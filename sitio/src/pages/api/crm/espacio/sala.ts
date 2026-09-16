@@ -280,7 +280,7 @@ async function resumenIA(sala: string, puntos: any[], acuerdos: any[], mensajes:
       `Acuerdos: ${acuerdos.map(a => `${a.texto} (${a.responsable})`).join(' · ') || 'ninguno'}`,
       'Chat de la sesión:', ...mensajes.slice(-120).map(m => `${m.quien}: ${m.texto}`),
     ].join('\n').slice(0, 14000);
-    const r = await anthropic.messages.create({
+    const r = await anthropic.messages.create({ proposito: 'pages/api/crm/espacio/sala.ts:283',
       model: MODELS.haiku, max_tokens: 400, temperature: 0.2,
       system: 'Eres el Agente del CRM de Sacscloud. Resume una reunión interna del equipo (dos personas) en máximo 5 líneas, en español de México, directo y sin adornos: qué se decidió, qué quedó pendiente y qué sigue. Sin encabezados, sin viñetas numeradas; una línea por idea. No inventes nada que no esté en el chat.',
       messages: [{ role: 'user', content: cuerpo }],

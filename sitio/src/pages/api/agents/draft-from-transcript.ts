@@ -136,7 +136,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     let resp;
     try {
-      resp = await anthropic.messages.create({
+      resp = await anthropic.messages.create({ proposito: 'pages/api/agents/draft-from-transcript.ts:139',
         model: MODELS.sonnet,
         max_tokens: 1500,
         system: SYSTEM_PROMPT,

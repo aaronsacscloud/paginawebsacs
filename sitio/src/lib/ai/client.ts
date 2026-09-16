@@ -3,6 +3,15 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
+/* `proposito` es NUESTRO campo, no del SDK: dice de qué parte del CRM salió la
+   llamada para poder atribuir el gasto en `ia_uso`. Se declara aquí sobre el
+   tipo base del SDK —en vez de castear en cada uno de los 36 sitios— para que
+   TypeScript lo acepte sin perder ninguna de las sobrecargas de `create`.
+   El proxy de abajo lo LEE y lo BORRA antes de mandar el cuerpo a la API. */
+declare module '@anthropic-ai/sdk/resources/messages/messages' {
+  interface MessageCreateParamsBase { proposito?: string }
+}
+
 const ANTHROPIC_KEY = (import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim();
 
 const anthropicRaw = new Anthropic({
@@ -82,7 +91,24 @@ export const anthropic = new Proxy(anthropicRaw, {
         const fn = Reflect.get(mTarget, mProp, mReceiver);
         if (mProp !== 'create' || typeof fn !== 'function') return fn;
         return async (...args: any[]) => {
-          const t0 = Date.now(); const desde = (globalThis as any).__ia_proposito || proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
+          /* ATRIBUCIÓN EXPLÍCITA, y por qué hizo falta:
+             `proposito()` deduce el origen leyendo el stack y buscando rutas
+             `/src/…`. Eso funciona en desarrollo y **se rompe en producción**,
+             donde el código va empaquetado en chunks y esas rutas ya no
+             existen. Resultado medido en 30 días: 18,433 llamadas y $44.93
+             —el 37% del gasto— cayeron en «desconocido», así que no se podía
+             saber qué abaratar.
+             Ahora cada sitio puede mandar `proposito` en el mismo objeto de la
+             llamada. Se lee y se QUITA antes de pasarlo al SDK, que rechaza
+             campos que no conoce. Es por llamada y no una global: dos
+             peticiones en paralelo se pisarían la global y se atribuirían mal. */
+          const arg0 = args?.[0];
+          let etiqueta: string | null = null;
+          if (arg0 && typeof arg0 === 'object' && 'proposito' in arg0) {
+            etiqueta = String((arg0 as any).proposito || '') || null;
+            delete (arg0 as any).proposito;
+          }
+          const t0 = Date.now(); const desde = etiqueta || (globalThis as any).__ia_proposito || proposito(); const modelo = String(args?.[0]?.model || 'desconocido');
           // Fusible abierto: se falla aquí, sin gastar la llamada ni la espera.
           if (Date.now() < sinSaldoHasta) throw new Error(ERROR_SIN_SALDO);
           try {

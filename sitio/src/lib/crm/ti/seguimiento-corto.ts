@@ -97,7 +97,7 @@ Responde SOLO JSON:
   let j: any = null; let costo = 0;
   for (const intento of [0, 1]) {
     const p = intento === 0 ? prompt : prompt.replace(h.texto.slice(0, 9000), h.texto.slice(-3500));
-    const r = await anthropic.messages.create({ model: modeloPara('clasificar', cfgC), max_tokens: 700, messages: [{ role: 'user', content: p }] });
+    const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/seguimiento-corto.ts:100', model: modeloPara('clasificar', cfgC), max_tokens: 700, messages: [{ role: 'user', content: p }] });
     costo += calculateCost(MODELS.opus, (r.usage || {}) as any).cost_usd;
     const txt = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
     const m = txt.match(/\{[\s\S]*\}/);

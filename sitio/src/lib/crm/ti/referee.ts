@@ -214,7 +214,7 @@ CASOS.push(...CASOS_ESCALERA);
 async function juez(caso: Caso, mensaje: string, contexto: string) {
   const debe = [...caso.debe, ...SIEMPRE_DEBE].map((x, i) => `${i + 1}. ${x}`).join('\n');
   const nunca = [...caso.nunca, ...SIEMPRE_NUNCA].map((x, i) => `${i + 1}. ${x}`).join('\n');
-  const r: any = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1600, messages: [{ role: 'user', content: `Eres el árbitro de calidad del agente de ventas de Sacs (sistema para tiendas de moda en México, se vende por WhatsApp). Tu trabajo es ser exigente: un 10 significa que NO se le puede mejorar nada.
+  const r: any = await anthropic.messages.create({ proposito: 'lib/crm/ti/referee.ts:217', model: MODELS.opus, max_tokens: 1600, messages: [{ role: 'user', content: `Eres el árbitro de calidad del agente de ventas de Sacs (sistema para tiendas de moda en México, se vende por WhatsApp). Tu trabajo es ser exigente: un 10 significa que NO se le puede mejorar nada.
 
 CASO: ${caso.titulo}. Por dónde llega: ${caso.porQueLlega}. Momento: ${caso.momento}.
 CONTEXTO DEL LEAD (lo que dice el CRM es VERDAD: nombres de persona y de tienda, correo, tiendas, y las promociones con fecha que el agente menciona vienen del CRM; no lo marques como inventado): ${contexto.slice(0, 1400)}

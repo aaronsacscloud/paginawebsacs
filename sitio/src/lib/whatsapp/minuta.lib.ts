@@ -159,7 +159,7 @@ Responde SOLO un JSON válido, sin texto alrededor, con esta forma exacta:
      `minuta_cliente` sale vacía — con lo que el envío se cancela solo. Pasó con
      2200 y volvió a pasar con 6000. 12000 deja margen para una llamada larga
      con muchos temas; una corta no gasta más por tenerlo alto. */
-  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 12000, messages: [{ role: 'user', content: prompt }] });
+  const r = await anthropic.messages.create({ proposito: 'lib/whatsapp/minuta.lib.ts:162', model: MODELS.sonnet, max_tokens: 12000, messages: [{ role: 'user', content: prompt }] });
   const texto = (r.content[0] as any)?.text || '';
   const m = texto.match(/\{[\s\S]*\}/);
   const parsed = m ? JSON.parse(m[0]) : null;

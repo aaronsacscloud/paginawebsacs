@@ -23,14 +23,14 @@ export const prerender = false;
  *   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
  *
  *   // For SMS:
- *   await client.messages.create({
+ *   await client.messages.create({ proposito: 'pages/api/scheduling/sms/send.ts:26',
  *     body: message,
  *     from: process.env.TWILIO_PHONE_NUMBER,
  *     to: normalizedNumber,
  *   });
  *
  *   // For WhatsApp:
- *   await client.messages.create({
+ *   await client.messages.create({ proposito: 'pages/api/scheduling/sms/send.ts:33',
  *     body: message,
  *     from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
  *     to: `whatsapp:${normalizedNumber}`,
@@ -74,14 +74,14 @@ export const POST: APIRoute = async ({ request }) => {
   //   const client = twilio(TWILIO_SID, TWILIO_AUTH);
   //
   //   if (channel === 'whatsapp') {
-  //     const result = await client.messages.create({
+  //     const result = await client.messages.create({ proposito: 'pages/api/scheduling/sms/send.ts:77',
   //       body: message,
   //       from: `whatsapp:${TWILIO_FROM}`,
   //       to: `whatsapp:${normalizedNumber}`,
   //     });
   //     return new Response(JSON.stringify({ id: result.sid, status: 'sent', channel: 'whatsapp' }));
   //   } else {
-  //     const result = await client.messages.create({
+  //     const result = await client.messages.create({ proposito: 'pages/api/scheduling/sms/send.ts:84',
   //       body: message,
   //       from: TWILIO_FROM,
   //       to: normalizedNumber,

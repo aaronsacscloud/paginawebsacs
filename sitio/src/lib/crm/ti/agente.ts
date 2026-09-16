@@ -186,7 +186,7 @@ ${o.enDos ? 'FORMATO: en DOS mensajes de WhatsApp (el primero con la respuesta, 
 ${o.adjuntos?.length ? `ADJUNTOS QUE EL DUEÑO ELIGIÓ PARA ESTE MOMENTO: ${o.adjuntos.map(a => `${a.tipo} «${a.nombre}»`).join(', ')} (el texto debe entenderse sin ellos y puede referirlos con naturalidad).` : ''}
 Devuelve SOLO JSON: {"mensaje": "la respuesta final tal como saldría por WhatsApp", "que_cambie": "en UNA línea, qué cambiaste respecto a la original y por qué (así el dueño ve que entendiste su criterio)"}`;
   let r: any;
-  try { r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1200, system, messages: [{ role: 'user', content: user }] }); }
+  try { r = await anthropic.messages.create({ proposito: 'lib/crm/ti/agente.ts:189', model: MODELS.opus, max_tokens: 1200, system, messages: [{ role: 'user', content: user }] }); }
   catch (e: any) { const m = String(e?.error?.error?.message || e?.message || e); await avisarSiSinCredito(m); throw new Error(m); }
   const t = (r.content.find((b: any) => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
@@ -395,7 +395,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   const cfgMod: any = await leerConfig().catch(() => ({}));
   const ejemplosOut = { ids: [] as string[] };
   const modelo = opts.modelo || modeloPara(opts.tarea || 'respuesta', cfgMod);   // opts.modelo: solo para el A/B de modelos
-  const r = await anthropic.messages.create({
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/agente.ts:398',
     model: modelo, max_tokens: 2400,
     // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
     system: [
@@ -579,7 +579,7 @@ async function historialRegreso(contactId: string, msjs: any[], nombre: string |
     const viejos = largos.filter(m => Date.parse(m.created_at) <= tPrev);
     const texto = viejos.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 10)}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
     try {
-      const r = await anthropic.messages.create({ model: MODELS.haiku, max_tokens: 500, messages: [{ role: 'user', content: `Resume en 6 líneas máximo, en español y en tercera persona, esta conversación previa de ventas de Sacs (software para tiendas) con el lead ${nombre || ''}: qué negocio tiene (giro, tiendas), qué preguntó o quería resolver, qué le ofrecimos (precio, demo, promo), en qué punto se quedó y por qué se enfrió si se nota, y datos ya conocidos (nombre real, ciudad, sistema actual). Sin adornos.\n\n${texto}` }] });
+      const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/agente.ts:582', model: MODELS.haiku, max_tokens: 500, messages: [{ role: 'user', content: `Resume en 6 líneas máximo, en español y en tercera persona, esta conversación previa de ventas de Sacs (software para tiendas) con el lead ${nombre || ''}: qué negocio tiene (giro, tiendas), qué preguntó o quería resolver, qué le ofrecimos (precio, demo, promo), en qué punto se quedó y por qué se enfrió si se nota, y datos ya conocidos (nombre real, ciudad, sistema actual). Sin adornos.\n\n${texto}` }] });
       resumen = (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('').trim();
       if (resumen) await supabase.from('ti_perfil').upsert({ contact_id: contactId, resumen_historial: resumen, resumen_historial_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
     } catch { resumen = ''; }

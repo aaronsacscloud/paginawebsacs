@@ -10,6 +10,19 @@
 //
 // Si el modelo devolviera el score de una vez, nadie podría saber de dónde sale
 // un 78, ni cambiar la fórmula sin volver a pagar por todo el corpus.
+//
+// ⚠️ DÓNDE ESTÁ EL LÍMITE HOY, dicho para que nadie lo descubra a los tres meses:
+// la clasificación acierta en lo claro y duda en la frontera. «Cómo sincronizar
+// el sistema con Shopify» sale como «nuestro software» porque un cliente lo
+// escribió diciendo «el sistema» — pero el trabajo de fondo, conectar Shopify
+// con el inventario físico, SÍ lo busca gente que no nos conoce. Casos así se
+// van a colar en las dos direcciones.
+//
+// La tentación es seguir apretando el prompt contra la propia intuición. Eso es
+// justo lo que el plan prohíbe: los pesos y las reglas se recalibran con
+// RESULTADOS —qué oportunidad produjo tráfico, leads, clientes—, no con
+// opiniones. Hasta que el ciclo de aprendizaje tenga datos de verdad, esta
+// frontera se queda difusa a propósito.
 import { supabase } from '../supabase';
 import { preguntar } from './ia';
 import { MODULOS } from '../crm/ti/conocimiento/producto';
@@ -57,7 +70,12 @@ const SISTEMA = `${QUE_ES_SACS}
 
 Te doy problemas reales que expresaron negocios de moda. Califica cada uno de 0 a 100 en:
 
-- relevancia_sacs: qué tanto es de lo nuestro. 100 = Sacs lo resuelve hoy y es su terreno. 0 = no tiene nada que ver con moda ni con retail.
+- relevancia_sacs: qué tanto es un problema DEL NEGOCIO DE MODA que Sacs resuelve. No preguntes «¿tiene que ver con Sacs?» —todo lo que llega aquí tiene que ver con Sacs—, pregunta «¿es un problema de operar una tienda de moda, y lo resuelve nuestro software?».
+    100 = es exactamente eso. Ej: «cómo saber qué tallas recomprar», «cómo nivelar inventario entre sucursales».
+    50  = roza el tema pero no es el problema. Ej: «con qué impresora funciona».
+    10  = es administración de la relación con nosotros, no un problema del negocio. Ej: «a qué cuenta pago», «el costo incluye IVA», «cómo conectarme a soporte», «agendar una llamada».
+    0   = no tiene nada que ver con moda ni con retail.
+  Esta calificación decide si algo merece trabajo de captación. Una duda de facturación con 100 manda a escribir una página que no va a atraer a nadie.
 - potencial_conversion: si alguien con este problema nos encuentra, qué tan probable es que termine siendo cliente de pago.
 - potencial_herramienta: qué tan bien se resolvería con una herramienta GRATIS y útil por sí sola (calculadora, auditor, generador).
 - potencial_contenido: qué tanto se responde bien con una página que enseñe a resolverlo.

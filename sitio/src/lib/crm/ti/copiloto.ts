@@ -60,7 +60,7 @@ export async function redactarRespuesta(contactId: string, nombre: string): Prom
   if (!hist.length) return { puede: false, mensaje: '', motivo: 'sin_conversacion', costo: 0 };
   const texto = hist.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'}: ${String(m.cuerpo || '(media)').slice(0, 400)}`).join('\n');
 
-  const r = await anthropic.messages.create({
+  const r = await anthropic.messages.create({ proposito: 'lib/crm/ti/copiloto.ts:63',
     model: MODELS.opus, max_tokens: 600,
     system: `Eres parte del equipo comercial de Sacscloud y estás cubriendo a un consultor que no alcanzó a responder. Tu trabajo es contestarle al lead de forma humana, útil y corta.\n\n${WIKI_COMERCIAL}\n\n${LIMITES_COPILOTO}${await jugadas()}`,
     messages: [{

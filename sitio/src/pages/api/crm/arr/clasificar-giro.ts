@@ -106,7 +106,7 @@ ${JSON.stringify(entradas, null, 1)}`;
   let propuestas: any[] = [];
   let uso: any = null;
   try {
-    const r = await anthropic.messages.create({
+    const r = await anthropic.messages.create({ proposito: 'pages/api/crm/arr/clasificar-giro.ts:109',
       model: MODELS.sonnet,
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],

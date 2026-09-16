@@ -9,6 +9,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PartnersIntro from '../../components/partners/PartnersIntro.astro';
 import Globo from '../../components/partners/Globo.astro';
+import PartnersCalc from '../../components/partners/PartnersCalc.astro';
+import PartnersCert from '../../components/partners/PartnersCert.astro';
+import PartnersDias from '../../components/partners/PartnersDias.astro';
+import PartnersPortal from '../../components/partners/PartnersPortal.astro';
+import PartnersNiveles from '../../components/partners/PartnersNiveles.astro';
 import { waLink } from '../../lib/whatsapp';
 
 const wa = (tipo: string) => waLink(`Hola, quiero ser partner de Sacs como ${tipo}. ¿Me cuentan cómo empezamos?`);
@@ -94,6 +99,12 @@ const pasos = [
     </div>
   </section>
 
+  <!-- ═══ La certificación como objeto ═══ -->
+  <PartnersCert />
+
+  <!-- ═══ Calculadora de ingresos ═══ -->
+  <PartnersCalc />
+
   <!-- ═══ Las otras tres alianzas, como los pilares del home ═══ -->
   <section class="pt-tipos" id="alianzas">
     <div class="pt-inner">
@@ -159,8 +170,17 @@ const pasos = [
     </div>
   </section>
 
+  <!-- ═══ Tu primera tienda en cinco días ═══ -->
+  <PartnersDias />
+
+  <!-- ═══ El portal real del partner ═══ -->
+  <PartnersPortal />
+
   <!-- ═══ Es global: el globo ═══ -->
   <Globo />
+
+  <!-- ═══ Niveles y Partner Day ═══ -->
+  <PartnersNiveles />
 
   <!-- ═══ El negocio del futuro ═══ -->
   <section class="pt-futuro-sec">
@@ -296,11 +316,11 @@ const pasos = [
   .pt-mos .pt-ctas { margin-top: 16px; gap: 14px; } .pt-mos .pt-btn { padding: 11px 18px; font-size: 14px; }
 
   /* ── El negocio del futuro ── */
-  .pt-futuro-sec { background: #F7F7F5; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .pt-futuro-sec { background: #fff; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
   .pt-futuro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 72px); align-items: start; }
 
   /* ── Manifiesto ── */
-  .pt-manifiesto { background: #fff; color: #0E0D0C; padding: clamp(80px, 10vw, 130px) 0; text-align: center; }
+  .pt-manifiesto { background: #fff; color: #0E0D0C; padding: clamp(80px, 10vw, 130px) 0; text-align: center; border-top: 1px solid #ECECE9; }
   .pt-manifiesto .pt-eyebrow { color: #8A8A86; }
   .pt-mani-lineas { max-width: 860px; margin: 0 auto; display: grid; gap: 22px; }
   .pt-mani-lineas p { font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.2vw, 30px); letter-spacing: -0.02em; line-height: 1.25; margin: 0; opacity: 0; transform: translateY(12px); transition: opacity 0.7s, transform 0.7s; }

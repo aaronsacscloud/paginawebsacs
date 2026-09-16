@@ -116,7 +116,7 @@ ${(conocimiento || []).map(k => `${k.id} · ${k.tema} · ${(k.claves || []).join
 TRANSCRIPCIÓN:
 ${dialogo.slice(0, 9000)}`;
 
-    const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] }, { timeout: ESPERA_PROPUESTA_MS - 2000, maxRetries: 0 });
+    const r = await anthropic.messages.create({ proposito: 'lib/telefonia/cierre.ts:119', model: MODELS.sonnet, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] }, { timeout: ESPERA_PROPUESTA_MS - 2000, maxRetries: 0 });
     const texto = (r.content[0] as any)?.text || '';
     const m = texto.match(/\{[\s\S]*\}/);
     const p: any = m ? JSON.parse(m[0]) : null;
