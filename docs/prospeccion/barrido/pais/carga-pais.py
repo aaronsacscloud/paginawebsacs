@@ -58,13 +58,28 @@ def distintiva(mk, umbral=8):
     if not t: return False
     if len(t) >= 2: return True
     return len(t[0]) >= umbral and t[0] not in SEMI
+# Directorios y portales de bodas: el sitio que publican decenas de negocios
+# distintos. Agrupar por ahí los volvía «sucursales» de un solo lugar.
+AGREGADORES = ('bodas.net', 'matrimonio.com', 'zankyou', 'aiyellow.com', 'amarillas', 'paginasamarillas',
+               'consultaamarillas', 'ubicalo.com', 'gurugo.', 'guiaba.', 'cylex', 'infoisinfo', 'yelp.com')
+
 def dominio(web):
+    """La llave con la que dos lugares son EL MISMO negocio. None = no agrupar.
+
+    Dos cuidados que costaron caro (16-sep-2026):
+    · En los hosts compartidos (Facebook, wa.me, Linktree) la llave tiene que
+      llevar la consulta: `facebook.com/profile.php?id=A` y `?id=B` son dos
+      negocios y sin el `?id` colapsaban en uno —107 cuentas de México comparten
+      esa pseudo-llave—. Lo mismo con `api.whatsapp.com/send?phone=`.
+    · Un directorio (bodas.net, amarillas…) lo publican decenas de negocios: no
+      es la web de nadie."""
     if not web: return None
-    m = re.match(r'https?://(?:www\.)?([^/?#]+)(/[^?#]*)?', web.strip().lower())
+    m = re.match(r'https?://(?:www\.)?([^/?#]+)([^#]*)?', web.strip().lower())
     if not m: return None
-    host, path = m.group(1), (m.group(2) or '').rstrip('/')
+    host, resto = m.group(1), (m.group(2) or '').rstrip('/')
+    if any(h in host for h in AGREGADORES): return None
     if any(h in host for h in ('facebook.com', 'instagram.com', 'linktr.ee', 'wa.me', 'whatsapp.com', 'sites.google', 'negocio.site', 'business.site', 'tiktok.com', 'wixsite', 'google.com', 'bit.ly')):
-        return host + path if path and path != '/' else None
+        return host + resto if resto and resto != '/' else None
     return host
 def md5_10(q): return hashlib.md5((q + '\n').encode()).hexdigest()[:10]   # como `echo "$q" | md5sum`
 def md5_12(u): return hashlib.md5((u + '\n').encode()).hexdigest()[:12]
@@ -87,6 +102,10 @@ def ciudad_de(qq, iso):
             return ciudad_limpia(c, iso)
     return None
 
+# Rutas del sistema de Instagram/Facebook que el raspador toma por el perfil
+# del negocio: `instagram.com/rsrc.php`, `facebook.com/recover`…
+RED_BASURA = re.compile(r'(rsrc\.php|/recover|/settings|/docs|/pages|/people|/policies|/legal|/help|/privacy|/terms|/brand|/explore|/linktree|/wordpresscom|/whatsapp|/https|/profile\.php$|/[a-z]$)', re.I)
+
 def ciudad_ficha(ficha, iso):
     """La localidad que Maps le pone al lugar, si es una ciudad de nuestra lista.
     Las páginas hondas de una consulta («… Bogotá», offset 100) traen lugares de
@@ -107,6 +126,16 @@ def fichas_api(iso):
         except Exception: continue
         if isinstance(d, dict) and 'estado' in d and d.get('phone'): idx[norm(d.get('name') or '')].append(d)
     return idx
+
+# Categorías principales que NUNCA son del giro aunque Maps les cuelgue
+# «Dress store» de segunda: el negocio es otra cosa y el guion no le habla.
+CAT_PRINCIPAL_FUERA = {
+    'wedding planner', 'event planner', 'party planner', 'event management company', 'wedding service',
+    'make-up artist', 'beauty salon', 'hairdresser', 'florist', 'shopping mall', 'jewelry store',
+    'shoe store', 'invitation printing service', 'party store', 'novelty store', 'gift shop',
+    'fabric store', 'fabric wholesaler', 'needlework shop', 'sewing shop', 'costume store',
+    'costume rental service', 'tuxedo shop', "children's clothing store", 'photographer', 'photography studio',
+}
 
 def leer_crudo():
     """Feed + ficha por lugar único (url). Devuelve filas ya filtradas por giro.
@@ -148,7 +177,13 @@ def leer_crudo():
                 cats = [str(c).lower() for c in (ficha.get('cats') or [])]
                 nombre = (ficha.get('name') or r['name']).strip()
                 if NOMBRE_FUERA.search(nombre): fuera['nombre fuera'] += 1; continue
-                if catl in CAT_FUERTE or any(c in CAT_FUERTE for c in cats): pass
+                # Una categoría SECUNDARIA del giro sola no alcanza (16-sep-2026):
+                # metía maquillistas, salones, floristerías, plazas comerciales y
+                # organizadores de eventos —141 cuentas— porque Maps les pone
+                # «Dress store» de segunda. Si la principal no es del giro, el
+                # nombre tiene que decirlo, y nunca si la principal está vetada.
+                if catl in CAT_FUERTE: pass
+                elif any(c in CAT_FUERTE for c in cats) and catl not in CAT_PRINCIPAL_FUERA and NOMBRE_OK.search(nombre): pass
                 elif catl in CAT_CON_NOMBRE or cat is None:
                     if not NOMBRE_OK.search(nombre): fuera['cat genérica sin nombre del giro: ' + (cat or '?')] += 1; continue
                 else: fuera['categoría: ' + cat] += 1; continue
@@ -168,7 +203,11 @@ def leer_crudo():
     return list(vistos.values())
 
 def subgiro(c):
-    n = norm(c['nombre_maps'] + ' ' + ' '.join(c['qs']))
+    # Sin las consultas (16-sep-2026): `qs` siempre trae «vestidos de novia
+    # <ciudad>», así que TODO salía «Novias venta» —2,115 de 3,565— aunque la
+    # tienda solo venda fiesta. Manda lo que dice el negocio: su nombre y sus
+    # categorías de Maps.
+    n = norm(c['nombre_maps'] + ' ' + ' '.join(c.get('cats') or []))
     cat = (c['cat'] or '').lower()
     renta = bool(re.search(r'alquiler|arriendo|renta|rental', n + ' ' + cat))
     novia = bool(re.search(r'novia|bridal|nupcial|sposa|wedding|boda', n + ' ' + cat))
@@ -218,7 +257,14 @@ def prep():
     print(f'filtro de calidad (≥{RATING_MIN}★, ≥{RESENAS_MIN} reseñas, {('top ' + str(TOPE_PAIS)) if TOPE_PAIS else 'sin tope'} por país): {antes} → {len(top)}')
     cuentas = top
     # dedupe contra la base: nombre+ciudad, teléfono E.164, dominio
-    base = json.loads(subprocess.check_output([SQL, '-e', "select a.id, lower(a.nombre) n, coalesce(a.ciudad,'') c, a.pais, a.giro, a.sitio, (select string_agg(valor,'|') from abm_canales k where k.cuenta_id=a.id and k.tipo in ('telefono','whatsapp_tienda','whatsapp_dueno')) tels from abm_cuentas a where a.pais <> 'México'"]))
+    # Contra las cuentas de ESTE giro y de ESTOS países, nunca contra todas
+    # (16-sep-2026). Deduplicar por dominio sin mirar país fusionó las 32
+    # tiendas españolas de Pronovias con la cuenta mexicana «Pronovias
+    # Monterrey» —viva, en cadencia— y le dejó 33 teléfonos de España y el
+    # buzón legal de la marca. Un negocio de España no es el mismo negocio que
+    # uno de México aunque compartan la web de la marca.
+    paises_sql = ",".join(q(PAISES[i]["nombre"]) for i in ISOS)
+    base = json.loads(subprocess.check_output([SQL, '-e', f"select a.id, lower(a.nombre) n, coalesce(a.ciudad,'') c, a.pais, a.giro, a.sitio, (select string_agg(valor,'|') from abm_canales k where k.cuenta_id=a.id and k.tipo in ('telefono','whatsapp_tienda','whatsapp_dueno')) tels from abm_cuentas a where a.giro = {q(GIRO)} and a.pais in ({paises_sql})"]))
     por_nombre = {(b['n'], b['c']): b for b in base}
     por_tel = {}
     for b in base:
@@ -233,6 +279,9 @@ def prep():
             for t in c['tels']:
                 if t.lstrip('+') in por_tel: hit = por_tel[t.lstrip('+')]; break
         if not hit and dominio(c['web']) in por_dom: hit = por_dom[dominio(c['web'])]
+        # Última reja: el candidato tiene que ser de su país. Si no lo es, el
+        # lugar entra como cuenta nueva, que es lo correcto.
+        if hit and hit.get('pais') and hit['pais'] != PAISES[c['iso']]['nombre']: hit = None
         if hit: c['id_existente'] = hit['id']; c['giro_existente'] = hit['giro']; existentes.append(c)
         else: nuevas.append(c)
     print('ya en la base:', len(existentes), '· nuevas a cargar:', len(nuevas))
@@ -315,6 +364,9 @@ def hijos():
         dom_sitio = dominio(s_.get('final') or s_['web']) or ''
         for tipo, val in (('dm_fb', s_.get('fb') and 'https://www.facebook.com/' + s_['fb']), ('dm_ig', s_.get('ig') and 'https://instagram.com/' + s_['ig']),
                           ('dm_fb', c.get('fb')), ('dm_ig', c.get('ig'))):
+            # La ruta del sistema no es el perfil del negocio: 380 canales
+            # apuntaban a instagram.com/rsrc.php o facebook.com/recover.
+            if val and RED_BASURA.search(val): continue
             if val and (cid, tipo, val.lower()) not in ya and not any(k[0] == cid and k[1] == tipo for k in ya):
                 ya.add((cid, tipo, val.lower())); n_dm += 1
                 can.append(f"({q(cid)},{q(tipo)},{q(val)},'media','sin_probar',true)")
@@ -325,7 +377,7 @@ def hijos():
             usuario, _, dom_mail = e.partition('@')
             tipo = 'email_generico' if GEN.match(usuario) else 'email_direccion'
             gratis = re.search(r'gmail|hotmail|outlook|yahoo|live\.com|icloud', dom_mail)
-            conf = 'media' if gratis else 'alta' if dom_sitio and dom_mail.split('.')[0] in dom_sitio else 'baja'
+            conf = 'media' if gratis else 'alta' if dom_sitio and (dom_mail == dom_sitio or dom_sitio.endswith('.' + dom_mail) or dom_mail.endswith('.' + dom_sitio)) else 'baja'
             ya.add((cid, tipo, e)); n_mail += 1
             can.append(f"({q(cid)},{q(tipo)},{q(e)},{q(conf)},'sin_probar',true)")
             fue.append(f"({q(cid)},{q(tipo)},{q(e)},{q(s_['web'])},'sitio_oficial',{q(conf)},'carga {GIRO} {c['iso']} {MES}')")

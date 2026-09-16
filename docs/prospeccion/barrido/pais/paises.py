@@ -14,7 +14,7 @@ PAISES = {
    ciudades=['Bogotá','Chapinero Bogotá','Usaquén Bogotá','Medellín','El Poblado Medellín','Cali','Barranquilla','Cartagena','Bucaramanga','Pereira','Cúcuta','Manizales','Santa Marta','Ibagué','Villavicencio','Pasto','Neiva','Armenia','Montería','Valledupar','Sincelejo','Popayán','Tunja','Riohacha','Florencia','Yopal','Quibdó','Chía','Soacha','Bello','Envigado','Itagüí','Palmira','Tuluá','Buga','Sogamoso','Duitama','Girardot','Barrancabermeja','Cartago Valle','Rionegro Antioquia','Apartadó','Fusagasugá','Zipaquirá']),
  'cl': dict(nombre='Chile', gl='CL', lada='56', movil=r'^9\d{8}$', largos={9}, moneda='clp',
    ciudades=['Santiago','Providencia','Las Condes','Ñuñoa','Maipú','Puente Alto','La Florida','San Bernardo','Viña del Mar','Valparaíso','Quilpué','Concepción','Talcahuano','La Serena','Coquimbo','Antofagasta','Calama','Iquique','Arica','Copiapó','Rancagua','Talca','Curicó','Chillán','Los Ángeles','Temuco','Valdivia','Osorno','Puerto Montt','Punta Arenas','Ovalle','Linares','Melipilla','Quillota','San Antonio Chile']),
- 'ar': dict(nombre='Argentina', gl='AR', lada='54', movil=r'^9?\d{10}$', largos={10,11}, moneda='ars',
+ 'ar': dict(nombre='Argentina', gl='AR', lada='54', movil=r'^9\d{10}$', largos={10,11}, moneda='ars',
    ciudades=['Buenos Aires','Palermo Buenos Aires','Recoleta Buenos Aires','Belgrano Buenos Aires','Flores Buenos Aires','Once Buenos Aires','Caballito Buenos Aires','Villa Crespo Buenos Aires','Quilmes','Lomas de Zamora','Morón','San Isidro Buenos Aires','Tigre','Pilar Buenos Aires','Lanús','Avellaneda','San Justo La Matanza','Ramos Mejía','Córdoba','Villa Carlos Paz','Río Cuarto','Villa María','Rosario','Santa Fe','Rafaela','Mendoza','San Rafael Mendoza','La Plata','Mar del Plata','Bahía Blanca','Tandil','Tucumán','Salta','Jujuy','Santiago del Estero','Catamarca','La Rioja Argentina','San Juan Argentina','San Luis Argentina','Neuquén','Paraná','Corrientes','Resistencia','Posadas','Formosa','Comodoro Rivadavia','Trelew','Río Gallegos','Ushuaia','Santa Rosa La Pampa','Viedma','Concordia','Gualeguaychú','Pergamino','Junín Buenos Aires','San Nicolás de los Arroyos','Zárate','Luján','Olavarría','Necochea']),
  'pe': dict(nombre='Perú', gl='PE', lada='51', movil=r'^9\d{8}$', largos={8,9}, moneda='pen',
    ciudades=['Lima','Miraflores Lima','San Isidro Lima','Surco Lima','La Molina Lima','San Borja Lima','Jesús María Lima','Los Olivos Lima','San Juan de Lurigancho','San Miguel Lima','Gamarra La Victoria Lima','Callao','Arequipa','Trujillo','Chiclayo','Piura','Cusco','Huancayo','Iquitos','Pucallpa','Tacna','Ica','Cajamarca','Huánuco','Ayacucho','Tarapoto','Puno','Juliaca','Huaraz','Chimbote','Sullana','Tumbes','Moquegua','Abancay','Chincha','Huacho','Cerro de Pasco','Huancavelica','Jaén Perú','Moyobamba']),
@@ -68,6 +68,25 @@ def ciudad_limpia(c, iso):
     return c
 def stems(giro, iso): return STEMS_PAIS.get(iso, {}).get(giro) or STEMS[giro]
 
+# Cómo se ve un número nacional de verdad en cada país. El largo solo no
+# alcanza (16-sep-2026): un móvil chileno de 11 dígitos «+5696437850 8» pasaba
+# como argentino y acabó de WhatsApp en cuatro cuentas de Argentina, y
+# cualquier número de Estados Unidos o Puerto Rico pasaba como dominicano
+# —tres teléfonos de Puerto Rico formaron una «cuenta» de Hato Mayor—.
+NACIONAL = {
+    'co': r'^([13]\d{9}|[2-8]\d{7,9})$',
+    'cl': r'^([2-9]\d{8})$',
+    'ar': r'^(9[1-9]\d{9}|[1-9]\d{9})$',       # el área argentina nunca empieza con 9
+    'pe': r'^(9\d{8}|[1-8]\d{7})$',
+    'ec': r'^(9\d{8}|[2-7]\d{7})$',
+    'cr': r'^[2-8]\d{7}$',
+    'pa': r'^([2-9]\d{6}|6\d{7})$',
+    'uy': r'^(9\d{7}|[2-4]\d{7})$',
+    'gt': r'^[2-7]\d{7}$',
+    'do': r'^(809|829|849)\d{7}$',             # el resto del +1 es Estados Unidos o Puerto Rico
+    'es': r'^[6789]\d{8}$',
+}
+
 def e164(bruto, iso):
     """Un teléfono crudo de Maps → '+<lada><nacional>' o None. Nunca adivina:
     quita el prefijo internacional, el 0 de troncal y el «15» argentino; si lo
@@ -93,6 +112,7 @@ def e164(bruto, iso):
         # número. Ningún código de área argentino empieza con 9.
         if d.startswith('9') and len(d) != 11: return None
     if len(d) not in p['largos']: return None
+    if iso in NACIONAL and not re.match(NACIONAL[iso], d): return None
     return '+' + p['lada'] + d
 
 def es_movil(e, iso):

@@ -27,6 +27,11 @@ D = os.path.dirname(os.path.abspath(__file__))
 GIRO = sys.argv[1]; ISOS = sys.argv[2:] or list(PAISES)
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 PB = open(os.path.join(D, 'pb-feed.txt')).read().strip()
+# La consulta se mete parchando este literal: si alguien regenera pb-feed.txt
+# con otra búsqueda, el replace no haría nada y TODAS las consultas devolverían
+# los resultados de Elche sin dar error.
+CONSULTA_PB = '!1svestidos de novia Elche'
+assert CONSULTA_PB in PB and '!7i20' in PB, 'pb-feed.txt no trae la consulta de plantilla: regenéralo con la búsqueda de Elche'
 PAGINA, PAGINAS, HILOS = 20, 6, 3
 bloqueos = 0
 
@@ -36,7 +41,7 @@ def md5_12(u): return hashlib.md5((u + '\n').encode()).hexdigest()[:12]
 def pagina(q, gl, off):
     """Una página del feed (20 lugares) ya parseada, o None si Google no contestó JSON."""
     global bloqueos
-    pb = PB.replace('!1svestidos de novia Elche', '!1s' + q).replace('!7i20', '!7i20' + (f'!8i{off}' if off else ''))
+    pb = PB.replace(CONSULTA_PB, '!1s' + q).replace('!7i20', '!7i20' + (f'!8i{off}' if off else ''))
     url = 'https://www.google.com/search?' + urllib.parse.urlencode({'tbm': 'map', 'authuser': '0', 'hl': 'en', 'gl': gl.lower(), 'q': q, 'pb': pb})
     for intento in range(4):
         r = subprocess.run(['curl', '-s', '--max-time', '25', '-A', UA, '-H', 'Accept-Language: en',
@@ -75,6 +80,10 @@ def una(iso, q):
     gl = PAISES[iso]['gl']; vistos = {}; paginas = 0
     for off in range(0, PAGINA * PAGINAS, PAGINA):
         d = pagina(q, gl, off)
+        # Si ni la PRIMERA página contestó, no se escribe el pool: un bloqueo de
+        # Google se vería igual que «no hay resultados» y quedaría cacheado para
+        # siempre (la consulta con .feed.json no se repite).
+        if d is None and off == 0: return None
         if d is None: break
         paginas += 1
         res = d[64] if isinstance(d, list) and len(d) > 64 and isinstance(d[64], list) else []

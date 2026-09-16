@@ -126,8 +126,18 @@ def mira(c):
             html2, cod2, _ = navegador(final or u)
             if cod2 == 200 and len(html2) > 200: todo += '\n' + html2; out['via'] = (out.get('via') or '') + '+nav'
         emails = []
-        for m in re.finditer(r'mailto:([^"\'?&\s>]+)', todo, re.I): emails.append(m.group(1).lower())
-        for m in EMAIL.finditer(todo): emails.append(m.group(0).lower())
+        # El `mailto:` se valida como todos (16-sep-2026). Sin esto entraban
+        # «e-mail:», «your@email», «els» (de un mailto armado con JS:
+        # 'mailto:els'+'avadeboda@…') y direcciones con basura pegada al final
+        # —barra invertida, punto y coma, %20—, que además duplicaban el buzón:
+        # 38 cuentas tenían el mismo correo limpio y sucio, o sea dos envíos y
+        # un rebote. La cola se recorta antes de validar.
+        for m in re.finditer(r'mailto:([^"\'?&\s>]+)', todo, re.I):
+            e = m.group(1).lower().strip().strip('\\;,.)(<>\'"').replace('%20', '')
+            if EMAIL.fullmatch(e): emails.append(e)
+        for m in EMAIL.finditer(todo):
+            e = m.group(0).lower().strip('\\;,.)(<>\'"')
+            if EMAIL.fullmatch(e): emails.append(e)
         for m in CF_EMAIL.finditer(todo):
             e = cf_decode(m.group(1)).lower()
             if EMAIL.fullmatch(e): emails.append(e)
