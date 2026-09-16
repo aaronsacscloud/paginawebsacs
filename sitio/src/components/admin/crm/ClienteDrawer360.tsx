@@ -1381,56 +1381,22 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
               {co.nombre_comercial || co.nombre}
             </div>
             {resumen && <div style={{ fontSize: '0.78rem', color: '#8a8590', marginTop: 3 }}>{resumen}</div>}
+            {/* Solo el estado y la etapa. El lugar, las sucursales, los
+                colaboradores y la cuenta de SACS eran pastillas AQUÍ y renglones
+                ABAJO: el mismo dato dos veces. Se quedan abajo, que es donde se
+                pueden leer con su etiqueta y editar. */}
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
               {chip(TXT_ESTADO[f.estado_cuenta] || f.estado_cuenta, colEstadoBg, colEstadoTx)}
-              {/* La etapa era un selector suelto en su propia tarjeta. Aquí, al
-                  lado del estado de la cuenta, es donde uno busca "¿cómo va esta
-                  relación?". Se abre al darle clic. */}
               <EtapaSelector co={co} reload={reload} flash={flash} comoChip />
-              {lugar ? chip(lugar) : null}
-              {chip(sucTxt)}
-              {colaboradores ? chip(colaboradores) : null}
-              {co.sacs_account ? chip(co.sacs_account) : null}
             </div>
           </div>
           {!editando && <button style={D.btnG} onClick={() => setEditando(true)}>Editar</button>}
         </div>
 
-        {/* ── El contrato, sin tarjeta propia ──────────────────────────────
-            Eran seis columnas con el mismo peso que el resto de la ficha para
-            datos que NO se capturan aquí: salen de las suscripciones y los
-            pagos. Y con tres licencias de ciclos distintos, "anual + vitalicia"
-            en una celda no dice nada. Queda lo que sí se lee de un vistazo, y
-            un camino a la pestaña que de verdad las administra. */}
-        {(activas.length > 0 || renov || arr > 0) && (
-          <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 14, paddingTop: 13, borderTop: '1px solid #f4f3f7' }}>
-            {/* "2 anual" no se dice. Con un solo ciclo se pluraliza; con varios
-                el conteo va arriba y los ciclos abajo, que es lo legible. */}
-            <div>
-              <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Licencias</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#241d43' }}>
-                {activas.length
-                  ? (ciclos.length === 1
-                      ? `${activas.length} ${activas.length === 1 ? ciclos[0] : PLURAL_CICLO[ciclos[0] as string] || ciclos[0]}`
-                      : `${activas.length} ${activas.length === 1 ? 'licencia' : 'licencias'}`)
-                  : '—'}
-              </div>
-              {ciclos.length > 1 && <div style={{ fontSize: '0.66rem', color: '#8a8590' }}>{ciclos.join(' + ')}</div>}
-            </div>
-            {dato('Renovación', renov ? fmtDate(renov) : '—')}
-            <div>
-              <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
-            </div>
-            {cobrado > 0 && (
-              <div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Cobrado</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#1E8A63' }}>{money(cobrado)}</div>
-                {unicos > 0 && <div style={{ fontSize: '0.66rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
-              </div>
-            )}
-          </div>
-        )}
+        {/* El dinero salió de aquí. Licencias, renovación, ARR y lo cobrado
+            NO se capturan en esta pestaña: salen de las suscripciones y los
+            pagos, y ya se ven en las tarjetas de Suscripciones. Esta contesta
+            «quién es este cliente», no «cuánto paga». */}
 
         {/* Lo fiscal y lo secundario, plegado: está a un clic, no estorbando. */}
         <details open={editando} style={separador}>

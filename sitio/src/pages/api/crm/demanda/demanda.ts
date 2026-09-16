@@ -46,6 +46,27 @@ export const GET: APIRoute = async ({ url }) => {
       return json({ ok: true, oportunidades: data || [] });
     }
 
+    if (vista === 'issues') {
+      let sel = supabase.from('de_issues')
+        .select('id, tipo, severidad, url, detalle, estado, detectado_at, resuelto_at')
+        .order('detectado_at', { ascending: false }).limit(limite);
+      const estado = url.searchParams.get('estado') || 'abierto';
+      if (estado !== 'todos') sel = sel.in('estado', estado.split(','));
+      const sev = url.searchParams.get('severidad');
+      if (sev) sel = sel.eq('severidad', sev);
+      const { data, error } = await sel;
+      if (error) return json({ ok: false, error: error.message }, 500);
+      return json({ ok: true, issues: data || [] });
+    }
+
+    if (vista === 'contenido') {
+      const { data, error } = await supabase.from('de_contenido')
+        .select('id, seccion, slug, titulo, meta_desc, tipo, estado, version, auditorias, publicado_at, actualizado_at')
+        .order('actualizado_at', { ascending: false }).limit(limite);
+      if (error) return json({ ok: false, error: error.message }, 500);
+      return json({ ok: true, contenido: data || [] });
+    }
+
     if (vista === 'paginas') {
       const { data, error } = await supabase.from('de_paginas')
         .select('url, titulo, h1, meta_desc, estado_http, indexable, palabras, enlaces_in, enlaces_out, huerfana, schema_tipos, rastreada_at')
@@ -81,11 +102,14 @@ export const GET: APIRoute = async ({ url }) => {
         .order('inicio', { ascending: false }).limit(1).maybeSingle(),
     ]);
 
-    const [huerfanas, sinMeta, delgadas, sinEvaluar] = await Promise.all([
+    const [huerfanas, sinMeta, delgadas, sinEvaluar, issuesAbiertos, issuesAltos, publicadas] = await Promise.all([
       supabase.from('de_paginas').select('url', { count: 'exact', head: true }).eq('huerfana', true),
       supabase.from('de_paginas').select('url', { count: 'exact', head: true }).is('meta_desc', null),
       supabase.from('de_paginas').select('url', { count: 'exact', head: true }).lt('palabras', 300),
       supabase.from('de_clusters').select('id', { count: 'exact', head: true }).is('relevancia_sacs', null),
+      supabase.from('de_issues').select('id', { count: 'exact', head: true }).eq('estado', 'abierto'),
+      supabase.from('de_issues').select('id', { count: 'exact', head: true }).eq('estado', 'abierto').in('severidad', ['critica', 'alta']),
+      supabase.from('de_contenido').select('id', { count: 'exact', head: true }).eq('estado', 'publicado'),
     ]);
 
     return json({
@@ -95,6 +119,8 @@ export const GET: APIRoute = async ({ url }) => {
         paginas: paginas.count || 0, oportunidades: oportunidades.count || 0,
         sin_evaluar: sinEvaluar.count || 0,
         huerfanas: huerfanas.count || 0, sin_meta: sinMeta.count || 0, delgadas: delgadas.count || 0,
+        issues: issuesAbiertos.count || 0, issues_serios: issuesAltos.count || 0,
+        publicadas: publicadas.count || 0,
       },
       fuentes: fuentes.data || [],
       categorias: categorias.data || [],
