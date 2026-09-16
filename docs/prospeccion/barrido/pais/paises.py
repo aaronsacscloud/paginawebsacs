@@ -50,13 +50,21 @@ ALIAS_CIUDAD = {'Cartago Valle': 'Cartago', 'Trinidad Flores': 'Trinidad', 'Sant
  'San Antonio Chile': 'San Antonio', 'Gamarra La Victoria Lima': 'Lima', 'Valle de los Chillos': 'Quito',
  'Costa del Este': 'Ciudad de Panamá', 'Guadalupe Goicoechea': 'San José', 'San Pedro Montes de Oca': 'San José',
  'Liberia Guanacaste': 'Liberia', 'San Justo La Matanza': 'San Justo', 'Donostia San Sebastián': 'San Sebastián',
- 'Inca Mallorca': 'Inca', 'Palma de Mallorca': 'Palma', 'San Fernando Cádiz': 'San Fernando'}
+ 'Inca Mallorca': 'Inca', 'Palma de Mallorca': 'Palma', 'San Fernando Cádiz': 'San Fernando',
+ 'Santiago de Chile': 'Santiago', 'Ciudad de México': 'Ciudad de México'}
 def ciudad_limpia(c, iso):
     if not c: return c
     c = ALIAS_CIUDAD.get(c, c)
     if re.match(r'^Zona \d+ Guatemala$', c): return 'Ciudad de Guatemala'
     for suf in (' ' + PAISES[iso]['nombre'], ' ' + PAISES[iso]['nombre'].split()[-1]):
-        if c.endswith(suf) and c != suf.strip(): c = c[:-len(suf)]
+        if c.endswith(suf) and c != suf.strip():
+            queda = c[:-len(suf)].strip()
+            # «Ciudad de Panamá» NO es «Ciudad de»: si lo que queda cuelga de
+            # una preposición o de un artículo, el nombre del país es parte de
+            # la ciudad. Salieron seis cuentas con ciudad «Ciudad de»
+            # (16-sep-2026). Lo que sí se recorta de verdad («Santiago de
+            # Chile») vive arriba, en ALIAS_CIUDAD.
+            if queda and not re.search(r'\b(de|del|la|las|los|el)$', queda, re.I): c = queda
     return c
 def stems(giro, iso): return STEMS_PAIS.get(iso, {}).get(giro) or STEMS[giro]
 
