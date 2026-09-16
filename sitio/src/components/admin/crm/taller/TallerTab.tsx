@@ -732,7 +732,7 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any
           un hueco punteado: invita a llenarlo sin gritar, y de un vistazo se ve
           cuántas órdenes están sin clasificar. La reunión se escribe corta
           —fecha · asunto— porque el asunto completo no cabe en un renglón. */}
-      <Dato titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones)}</Dato>
+      <Dato titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones, cuentaDe(o))}</Dato>
       <Dato titulo={meta?.modulo || ''} falta="+ módulo" tono="modulo">{meta?.modulo || ''}</Dato>
       <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', fontVariantNumeric: 'tabular-nums' }}>{fecha}</span>
       <span style={{ flex: 'none', width: 38, textAlign: 'right', fontSize: '0.69rem', color: '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{dias(o.created_at)} d</span>
@@ -905,12 +905,21 @@ function Casilla({ marcada, onMarcar }: any) {
   );
 }
 
-/** «14-sep · Certificados e Ecommerce», que es lo que cabe en un renglón. */
-function reunionCorta(meta: any, reuniones: any) {
+/** «14-sep · Membresías», que es lo que cabe en un renglón.
+ *  Los asuntos vienen escritos a mano y casi siempre traen relleno: «Reunión
+ *  Membresias l Consultoria Personalizaciones», «Ruben's l Certificados e
+ *  Ecommerce». Cortar a ciegas a los 22 caracteres dejaba «Reunión Membr…»,
+ *  que no dice nada. Se parte por la barra, se tira lo que es la muletilla o
+ *  el nombre de la cuenta, y se queda el primer trozo con contenido. */
+function reunionCorta(meta: any, reuniones: any, cuenta?: string) {
   const b = meta?.booking_id && reuniones?.[meta.booking_id];
   if (!b) return '';
-  const asunto = String(b.asunto || 'Reunión').replace(/\s*l\s*/g, ' · ').trim();
-  return fmt(b.fecha) + ' · ' + (asunto.length > 22 ? asunto.slice(0, 21) + '…' : asunto);
+  const limpio = String(b.asunto || '').replace(/^\s*reuni[oó]n\s+(de\s+)?/i, '').trim();
+  const cta = String(cuenta || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const trozos = limpio.split(/\s*[|l·]\s+/i).map(x => x.trim()).filter(Boolean);
+  const trozo = trozos.find(x => x.toLowerCase().replace(/[^a-z0-9]/g, '') !== cta && !/^(consultor[ií]a|reuni[oó]n)$/i.test(x))
+    || trozos[trozos.length - 1] || 'Reunión';
+  return fmt(b.fecha) + ' · ' + (trozo.length > 24 ? trozo.slice(0, 23) + '…' : trozo);
 }
 function reunionLarga(meta: any, reuniones: any) {
   const b = meta?.booking_id && reuniones?.[meta.booking_id];
