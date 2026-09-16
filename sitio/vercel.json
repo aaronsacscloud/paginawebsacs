@@ -218,6 +218,10 @@
       "path": "/api/cron/abm-verificar-correos?cuantas=400"
     },
     {
+      "path": "/api/cron/abm-validar-whatsapp?cuantas=200",
+      "schedule": "0 10 * * 2"
+    },
+    {
       "schedule": "0 12 * * *",
       "path": "/api/cron/abm-maps?cuantas=200"
     },

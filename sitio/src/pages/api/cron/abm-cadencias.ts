@@ -344,7 +344,29 @@ export const GET: APIRoute = async ({ request }) => {
       enviados++; tocadosHoy.add(destino);
       await supabase.from('abm_cuentas').update({ ultimo_toque_at: new Date().toISOString() }).eq('id', t.cuenta_id);
       await supabase.from('abm_cuentas').update({ etapa: 'en_cadencia', updated_at: new Date().toISOString() }).eq('id', t.cuenta_id).eq('etapa', 'sin_tocar');
-    } else fallos.push(`${r.motivo}: ${String(r.detalle || '').slice(0, 90)}`);
+    } else {
+      fallos.push(`${r.motivo}: ${String(r.detalle || '').slice(0, 90)}`);
+      /* UNA BAJA DETIENE LA CADENCIA ENTERA, no solo este correo.
+         El pipeline ya impide que salga —consulta email_suppressions, incluso
+         de otros remitentes nuestros— así que nadie recibía nada. Pero el
+         toque se marcaba `fallido` y los SIETE siguientes seguían agendados:
+         volvían a intentarlo cada pocos días durante 33 días, y la cuenta se
+         quedaba «en cadencia» para siempre en la ficha.
+         Peor: `abm_no_contactar` no se enteraba, así que otra cuenta con el
+         mismo buzón —una cadena con veinte sucursales— volvía a enrolarlo.
+         Cuando alguien se da de baja, se acabó: aquí y en todas partes. */
+      if (r.motivo === 'suprimido') {
+        await supabase.from('abm_toques')
+          .update({ estado: 'cancelado', resultado: `se dio de baja: ${String(r.detalle || '').slice(0, 150)}` })
+          .eq('cuenta_id', t.cuenta_id).in('estado', ['borrador', 'aprobado', 'programado', 'enviando']);
+        await supabase.from('abm_no_contactar')
+          .upsert({ valor: destino, tipo: 'email', motivo: `baja o queja: ${String(r.detalle || 'suprimido').slice(0, 250)}` }, { onConflict: 'valor' });
+        await supabase.from('abm_cuentas')
+          .update({ etapa: 'no_contactar', updated_at: new Date().toISOString() })
+          .eq('id', t.cuenta_id).not('etapa', 'in', '("ganada","reunion","respondio")');
+        await apuntar(t.cuenta_id, 'email', 'nota', { texto: `Cadencia detenida: ${destino} está suprimido (${r.detalle || 'baja'}). Queda en la lista de no contactar.` });
+      }
+    }
   }
 
   return json({ enviados, fuera_de_horario: fueraDeHorario, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
