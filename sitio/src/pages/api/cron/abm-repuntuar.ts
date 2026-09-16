@@ -41,11 +41,21 @@ export const GET: APIRoute = async ({ request, url }) => {
   const cuantas = Math.min(1000, Math.max(1, Number(url.searchParams.get('cuantas') || 300)));
   const todas = url.searchParams.get('todas') === '1';
 
-  /* Las de más reseñas primero: si la corrida se corta a medias, lo que quedó
-     calificado es lo que antes iba a salir. */
-  let q = supabase.from('abm_cuentas').select('id, puntaje')
-    .order('google_resenas', { ascending: false, nullsFirst: false }).limit(cuantas);
-  if (!todas) q = q.eq('puntaje', 0);
+  /* CÓMO AVANZA CADA MODO, que es lo único delicado de este endpoint:
+     · solo cero → el orden da igual: calificar saca a la cuenta del filtro, así
+       que el siguiente lote ya no la ve. Se toman las de más reseñas primero
+       para que, si la corrida se corta, lo calificado sea lo que antes salía.
+     · todas → no hay filtro que sacar, así que un orden fijo pesca SIEMPRE las
+       mismas mil. Se ordena por `updated_at` ASCENDENTE: repuntuar escribe ese
+       campo, así que cada cuenta calificada se va al final de la fila y la
+       siguiente corrida toma las que llevan más sin revisar. La cola avanza
+       sola, sin cursor y sin estado que se pueda perder.
+       (Lo escribí mal la primera vez y el lote se repetía en bucle — el mismo
+       error que el modo DNS de la verificación de correos.) */
+  let q = supabase.from('abm_cuentas').select('id, puntaje').limit(cuantas);
+  q = todas
+    ? q.order('updated_at', { ascending: true, nullsFirst: true })
+    : q.eq('puntaje', 0).order('google_resenas', { ascending: false, nullsFirst: false });
   const { data: cuentas, error } = await q;
   if (error) return json({ error: error.message }, 500);
   if (!cuentas?.length) return json({ repuntuadas: 0, nota: 'no quedan cuentas sin calificar' });
@@ -59,5 +69,9 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { count: faltan } = await supabase.from('abm_cuentas')
     .select('id', { count: 'exact', head: true }).eq('puntaje', 0);
 
-  return json({ repuntuadas: cambiadas, quedan_en_cero: faltan ?? null, modo: todas ? 'todas' : 'solo las de cero' });
+  return json({
+    repuntuadas: cambiadas, quedan_en_cero: faltan ?? null,
+    modo: todas ? 'todas' : 'solo las de cero',
+    nota: todas ? 'ordena por updated_at: cada corrida toma las que llevan más sin revisar' : undefined,
+  });
 };
