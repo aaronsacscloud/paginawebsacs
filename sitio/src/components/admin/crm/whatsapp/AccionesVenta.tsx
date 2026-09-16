@@ -553,6 +553,34 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         </>}
         <span style={lbl}>Correo del cliente (obligatorio para confirmar)</span>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@correo.com" style={inp} />
+
+        {/* ── CONTEXTO PARA EL CONSULTOR ───────────────────────────────────
+            Quien da la sesión casi nunca es quien la agendó. Antes llegaba a
+            la videollamada con una invitación que solo decía el nombre y el
+            correo, y los primeros diez minutos se iban en «cuéntame otra vez
+            qué necesitas» — con el cliente repitiendo lo que ya había escrito.
+            Esta nota se genera sola leyendo el hilo, se puede corregir, y
+            viaja a la descripción del evento de Google junto con la liga a la
+            conversación. El consultor abre su calendario y ya sabe todo. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 0' }}>
+          <span style={{ ...lbl, margin: 0, flex: 1 }}>Contexto para quien da la sesión</span>
+          {conv?.id && (
+            <button onClick={generarNota} disabled={notaCargando}
+              style={{ border: `1px solid #c9bcf7`, borderRadius: 8, padding: '3px 10px', background: '#fff',
+                color: C.moradoTinta, fontSize: 11, fontWeight: 700, cursor: notaCargando ? 'default' : 'pointer',
+                fontFamily: 'inherit', opacity: notaCargando ? .6 : 1 }}>
+              {notaCargando ? 'Leyendo el hilo…' : nota ? 'Regenerar' : 'Generar con IA'}
+            </button>
+          )}
+        </div>
+        <textarea value={nota} onChange={e => setNota(e.target.value)} rows={nota ? 9 : 3}
+          placeholder={conv?.id ? 'Se genera solo del hilo, o escríbelo tú. Va en la invitación del calendario.' : 'Qué necesita saber el consultor antes de la sesión. Va en la invitación del calendario.'}
+          style={{ ...inp, minHeight: 64, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }} />
+        <p style={{ fontSize: 10.5, color: C.g400, margin: '4px 0 0', lineHeight: 1.45 }}>
+          Esto se ve en el evento de Google Calendar, junto con la liga para abrir la conversación en el CRM.
+          {notaMsg && <span style={{ color: C.rojo700 }}> · {notaMsg}</span>}
+        </p>
+
         <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>
           {ocupado ? 'Agendando…' : !emailValido ? 'Falta un correo válido' : fecha && hora ? `Agendar ${fechaHumana(fecha)} · ${horaHumana(hora)}` : 'Elige día y horario'}
         </button>

@@ -316,6 +316,54 @@ quitando acentos, mayúsculas y las palabras de relleno del ramo (`tienda`,
 Empataron 180 de 629. **Las 449 que no empataron se quedan sin dato**: es
 preferible a meterle a una cuenta el correo del negocio equivocado.
 
+### 5.4 Quién no es prospecto, aunque cumpla el filtro
+
+El filtro de calidad (≥3.7 estrellas, ≥5 reseñas) selecciona negocios **buenos**,
+y por eso deja pasar a los que son demasiado buenos para nosotros. Peor: la
+lista de enrolamiento ordena por reseñas, y una cadena grande tiene miles, así
+que se van derecho a la cabeza de la fila.
+
+Al probar la cadencia de trajes de baño, las primeras cuentas que el goteo
+habría tomado eran dieciséis sucursales de Liverpool, una Sodimac —que vende
+cemento—, una suBodega y una tienda de mascotas.
+
+**Dos clases se sacan, y por razones distintas:**
+
+| Clase | Por qué no | Ejemplos |
+|---|---|---|
+| Departamental o autoservicio | No es el negocio de moda al que le hablamos, y sus sistemas son de otra liga | Liverpool (28,382 reseñas), Sears, Coppel, Sodimac, suBodega |
+| Sucursal de marca internacional | El punto de venta lo decide corporativo, casi siempre en otro país; la encargada no puede comprarlo | Vans Store, Outlet Levi's, Decathlon, Bershka |
+
+Son 436 cuentas en México. Se marcan `etapa = 'no_contactar'` con su motivo en
+`nota`, **no se borran**: si mañana una llama, se le quita la etapa y sigue ahí
+con su historial.
+
+**La trampa del patrón, que ya costó una vez con la palabra «plaza».** Buscar
+la marca como subcadena se lleva por delante negocios buenos:
+
+```
+Bordados Levi's               un taller de bordado; es el apellido del dueño
+Demin 656 - Carlos Levi's     una tienda de jeans; el apellido otra vez
+Boutique Desigual By Sarai    una boutique independiente que vende la marca
+ANZARA NOVIAS · Boutique Azzara · Confecciones Mazara · CosmoSport Zaragoza
+```
+
+Lo que sí distingue: **una sucursal de franquicia EMPIEZA con la marca**
+(«Vans Store Los Cabos», «Outlet Levi's® Culiacán») y un negocio propio la
+lleva adentro o al final. El patrón va anclado al inicio y a palabra completa
+(`^(outlet |tienda )?(marca)\M`), y solo admite `Outlet ` y `Tienda ` como
+prefijo — `Boutique ` no, porque ahí empiezan las independientes.
+
+**Y antes de aplicar cualquier patrón de limpieza, se lista lo que caza y se
+lee.** Es la misma regla de siempre: medir contra datos reales antes de
+escribir. Un patrón de limpieza borra en silencio, que es la peor forma de
+equivocarse.
+
+**Lo de a uno se arregla a mano.** El giro de una cuenta del barrido es el
+término con el que se buscó, no algo que Google confirme: una tienda de
+mascotas cayó en trajes de baño y una de uniformes en jeans. Buscar un patrón
+para dos renglones es cómo se acaba borrando «Bordados Levi's».
+
 ---
 
 ## 6. Confianza: observado vs. inferido
@@ -522,6 +570,83 @@ Dimensiona `max_tokens` para el número de correos: 8 correos no caben en 4000.
 
 Nunca de un arreglo escrito en el código. Un `[1,3,7,11,16,22,30]` fijo puso el
 octavo correo *antes* que el séptimo en cuanto la cadencia creció.
+
+**Y una plantilla nueva no está puesta hasta que tiene su paso.** Los días se
+leen POR POSICIÓN: la plantilla número *i* se lleva el día del paso número *i*.
+Una plantilla sin paso no se queda sin fecha —sería fácil de ver—, se lleva la
+del arreglo de respaldo, que es otra.
+
+Pasó con el correo de presentación: se metió como plantilla en 21 giros y nadie
+le dio su renglón en `abm_pasos`. Ocho plantillas, siete pasos, y la despedida
+agendada el día 29, antes del correo que propone la demo el día 30. No falló
+nada y no salió en ningún log; estuvo guardado esperando a que se encendiera un
+goteo.
+
+Por eso `generarCadencia` **se niega a generar** si las cuentas no cuadran. Es
+deliberado que sea un error y no un aviso: falta un renglón en una tabla y se
+arregla en un minuto, mientras que un prospecto que recibe el adiós y luego la
+propuesta no se recupera.
+
+El ritmo de ocho correos es `1, 4, 6, 10, 14, 19, 25, 33`, y los pasos se
+tienden **desde las plantillas**, no a mano:
+
+```sql
+insert into abm_pasos (cadencia_id, dia, orden, canal, plantilla_id, automatico)
+select k.id, (array[1,4,6,10,14,19,25,33])[t.orden + 1], t.orden + 1, 'email', t.id, true
+from abm_cadencias k join abm_plantillas t
+  on t.giro = k.giro and t.ruta = k.ruta and t.canal = 'email' and t.activa
+ and coalesce(t.region,'mexico') = coalesce(k.region,'mexico')
+where k.giro = '<giro>' and t.orden between 0 and 7;
+```
+
+Renumerar a mano es cómo `plantilla_id` acaba apuntando al correo de al lado.
+
+### 7.4 bis El condicional que no es una frase
+
+La regla de que un `[[si …]]` tiene que ser una frase completa que se pueda
+borrar tiene un caso que no se ve leyendo la plantilla: **el vocativo**.
+
+```
+[[si persona]]{{persona}}, [[/si]]ya no le escribo más, nada más le dejo…
+```
+
+Con nombre sale bien. Sin nombre el correo empieza en minúscula, como si se
+hubiera cortado algo al copiar — y sin nombre es el caso NORMAL: 2,914 de las
+3,210 cuentas contactables de México no tienen persona. O sea que la versión
+rota era la que casi siempre salía, en el último correo de la cadencia, el que
+se lee con más atención porque dice que uno se va. Estuvo así en 88 plantillas.
+
+La forma correcta es la del correo 1:
+
+```
+[[si persona]]{{persona}}.
+[[/si]]Ya no le escribo más, nada más le dejo…
+```
+
+**Y el otro caso: la promesa sin lo prometido.** El correo 0 abre la lista de
+hallazgos con un renglón fijo y los tres de abajo condicionales:
+
+```
+Y no le escribo en automático. Esto es lo que vimos de ustedes:
+[[si senal]]· {{senal}}.[[/si]]
+[[si sucursales]]· {{sucursales}} sucursales.[[/si]]
+[[si plataforma]]· Su tienda en línea está en {{plataforma}}.[[/si]]
+```
+
+Sin ninguno de los tres —2,164 de 3,210 cuentas, dos de cada tres— el prospecto
+recibía los dos puntos y el siguiente párrafo. Es peor que no decir nada,
+porque el correo acaba de asegurar que no se escribió en automático.
+
+El motor **no tiene «o»**, así que la condición se calcula en `variablesDe`:
+una variable `vimos` que está llena si hay algo que citar, y el renglón de
+introducción se envuelve en `[[si vimos]]`. Cuando haga falta un condicional
+compuesto, la salida es siempre esta: calcularlo en el código y exponerlo como
+una variable más, no inventarle sintaxis al motor.
+
+**Cómo se prueba.** Cada plantilla se renderiza DOS veces contra cuentas
+reales: una con los datos vacíos y otra con todos llenos. Los dos extremos, no
+uno. Lo que se busca: minúscula al arrancar, dos puntos sin lista, `{{` o `[[`
+sin resolver, espacio antes de una coma, palabra repetida.
 
 ### 7.5 El diseño vive fuera del cuerpo
 
@@ -1031,6 +1156,13 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | 1,703 canales "sin procedencia" que sí la tenían | Cruzar por valor NORMALIZADO, no exacto |
 | Un `unknown` de Lookup atoraba el lote en bucle | Filtrar por `verificado_at`, no solo por estado |
 | `tiene_wa` true sin canal declarado (710 cuentas) | La bandera cuenta lo CONTACTABLE, no lo que existe |
+| El barrido escribía `pais: 'MX'` y el goteo lee `'México'` | El país va con su nombre; disparador que normaliza el iso |
+| El modo DNS no marcaba al que pasaba: mismos 580 cada lote | Toda revisión ESCRIBE su resultado, o la cola no avanza |
+| Correo 0 metido como plantilla sin su paso, en 21 giros | Tantos pasos como plantillas, o no se genera (sec. 7.4) |
+| `[[si persona]]{{persona}}, [[/si]]ya no…` en minúscula | El condicional no puede ser el vocativo (sec. 7.4 bis) |
+| «Esto es lo que vimos de ustedes:» y nada abajo | El condicional compuesto se calcula en `variablesDe` |
+| 16 sucursales de Liverpool a la cabeza de la fila | Fuera departamentales y sucursales de marca (sec. 5.4) |
+| Buscar `zara` se llevaba «Anzara» y «Confecciones Mazara» | Anclar al inicio y a palabra completa, no subcadena |
 
 ---
 

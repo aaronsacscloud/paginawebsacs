@@ -148,7 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
   try { const u = await getSessionFromRequest(request); ownerId = (u as any)?.id || null; } catch { /* audit sin dueño */ }
 
   const run_id = await createAgentRun({
-    agent_name: accion === 'resumir' ? 'wa-inbox-resumen' : 'wa-inbox-borrador',
+    agent_name: accion === 'resumir' ? 'wa-inbox-resumen' : accion === 'contexto' ? 'wa-inbox-contexto' : 'wa-inbox-borrador',
     trigger_type: 'user',
     owner_id: ownerId,
     contact_id: contacto?.id || null,
@@ -162,7 +162,7 @@ export const POST: APIRoute = async ({ request }) => {
     const msg = await anthropic.messages.create({
       model: MODELS.sonnet,
       max_tokens: 900,
-      system: accion === 'resumir' ? SYSTEM_RESUMIR : SYSTEM_BORRADOR,
+      system: accion === 'resumir' ? SYSTEM_RESUMIR : accion === 'contexto' ? SYSTEM_CONTEXTO : SYSTEM_BORRADOR,
       messages: [{ role: 'user', content: `${contexto}\n\n── Conversación ──\n${lineas.join('\n')}` }],
     });
     const texto = (msg.content || []).map((x: any) => x.type === 'text' ? x.text : '').join('').trim();
@@ -184,6 +184,32 @@ export const POST: APIRoute = async ({ request }) => {
       await finishAgentRun({ run_id, status: 'completed', output: out, usage, latency_ms: Date.now() - t0 } as any);
       return json({ ...out, cost_usd: usage.cost_usd, run_id });
     }
+    /* El texto se arma AQUÍ, no en el front, porque este mismo bloque viaja a
+       dos lados: la caja que el humano edita antes de confirmar, y la
+       descripción del evento de Google. Si cada lado lo formateara por su
+       cuenta, el consultor leería una cosa en el CRM y otra en su calendario.
+       Sale en texto plano con guiones: Google Calendar no pinta markdown. */
+    if (accion === 'contexto') {
+      const lista = (x: any) => (Array.isArray(x) ? x : []).map((s: any) => String(s).trim()).filter(Boolean).slice(0, 5);
+      const quien = String(parsed.quien || '').trim();
+      const busca = String(parsed.busca || '').trim();
+      const hablado = lista(parsed.hablado), quiereVer = lista(parsed.quiere_ver), ojo = lista(parsed.ojo);
+      const bloque = (t: string, cuerpo: string) => (cuerpo ? `${t}\n${cuerpo}` : '');
+      const nota = [
+        bloque('QUIÉN ES', quien),
+        bloque('QUÉ BUSCA', busca),
+        bloque('LO QUE SE HABLÓ', hablado.map(s => `- ${s}`).join('\n')),
+        bloque('QUIERE VER EN LA SESIÓN', quiereVer.map(s => `- ${s}`).join('\n')),
+        bloque('OJO', ojo.map(s => `- ${s}`).join('\n')),
+      ].filter(Boolean).join('\n\n').slice(0, 4000);
+      if (!nota) {
+        await finishAgentRun({ run_id, status: 'failed', error: 'Contexto vacío', latency_ms: Date.now() - t0 } as any);
+        return json({ error: 'La conversación no da para armar el contexto — escríbelo a mano' }, 502);
+      }
+      await finishAgentRun({ run_id, status: 'completed', output: { largo: nota.length }, usage, latency_ms: Date.now() - t0 } as any);
+      return json({ nota, cost_usd: usage.cost_usd, run_id });
+    }
+
     const opciones = (Array.isArray(parsed.opciones) ? parsed.opciones : []).slice(0, 2)
       .map((o: any) => String(o).slice(0, 900)).filter(Boolean);
     if (!opciones.length) {

@@ -195,6 +195,7 @@ export const POST: APIRoute = async ({ request }) => {
     utm_content,
     recurrence,
     ref_partner_id,
+    wa_conv_id,
   } = body;
 
   // El correo se NORMALIZA una vez y todo lo de abajo hereda el normalizado.
@@ -698,8 +699,17 @@ export const POST: APIRoute = async ({ request }) => {
         giro ? `Giro: ${giro}` : '',
         sucursales ? `Sucursales: ${sucursales}` : '',
         zonaInvitado ? `Zona del invitado: ${zonaInvitado}` : '',
-        notas ? `\nNotas: ${notas}` : '',
-        `\nCRM: https://www.sacscloud.com/admin/crm?tab=pipeline`,
+        notas ? `\n${notas}` : '',
+        /* El link al HILO, no al tablero de leads.
+           Antes esto mandaba siempre a ?tab=pipeline: el consultor abría la
+           invitación, caía en la lista de todos los leads y tenía que buscar
+           al cliente por nombre — con la sesión ya empezando. Cuando la
+           reunión nace desde el inbox viene `wa_conv_id` y la liga abre la
+           conversación completa de un clic. Se valida que sea un UUID: es un
+           dato del cliente y va a parar a una liga que otros abren. */
+        typeof wa_conv_id === 'string' && /^[0-9a-f-]{36}$/i.test(wa_conv_id)
+          ? `\nLa conversación en el CRM: https://www.sacscloud.com/admin/crm?tab=whatsapp&wa_conv=${wa_conv_id}`
+          : `\nCRM: https://www.sacscloud.com/admin/crm?tab=pipeline`,
       ].filter(Boolean).join('\n'),
       startDateTime: startDT,
       endDateTime: endDT,
