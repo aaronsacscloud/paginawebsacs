@@ -109,7 +109,28 @@ export type PartesCorreo = {
   cierre?: Cierre | null;
 };
 
-export type Cierre = { giro?: string | null; nombre?: string | null; pais?: string | null };
+export type Cierre = { giro?: string | null; nombre?: string | null; pais?: string | null;
+  /** La ruta de la cuenta. Manda sobre qué se ofrece en el cierre: la cadencia
+   *  de `diagnostico` promete otra cosa que la de `demo`, y hasta hoy el
+   *  bloque decía «demo» en las dos. */
+  ruta?: string | null };
+
+/* LO QUE SE OFRECE, SEGÚN LA RUTA.
+   El correo de la ruta `diagnostico` dice, con todas sus letras, «le ofrezco
+   un diagnóstico gratis de treinta minutos con su información» — y debajo se
+   pintaba «DEMO EN LÍNEA · 30 MINUTOS» con un botón «Agendar la demo». En la
+   misma pantalla. El prospecto lee las dos cosas y la conclusión no es que nos
+   equivocamos: es que le estamos cambiando la oferta a media frase.
+   Son 117 cuentas y 47 correos ya agendados (16-sep-2026). El bloque se arma
+   al ENVIAR, así que esto también arregla los que ya están en la cola. */
+type Oferta = { titulo: string; boton: string; frase: (giro?: string | null) => string };
+const OFERTAS: Record<string, Oferta> = {
+  diagnostico: {
+    titulo: 'Diagnóstico gratis · 30 minutos',
+    boton: 'Agendar el diagnóstico',
+    frase: (giro) => `El diagnóstico es por videollamada y dura treinta minutos: revisamos su ${operacionDe(giro)} con sus propios números y le decimos qué encontramos, trabajemos juntos o no.`,
+  },
+};
 
 // ── El cierre: la llamada a la acción que lleva todo correo ──────────────────
 //
@@ -148,7 +169,10 @@ export function whatsappCierre(nombre?: string | null): string {
  *  que el HTML, con sus dos ligas, o los filtros puntúan la diferencia. */
 export function cierreTexto(c: Cierre): string {
   const pg = paginaDe(c.giro, undefined, c.pais);
-  return `\n\n${fraseCierre(c.giro)} ${alcanceDe(c.pais)}\n\nAgendar la demo: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
+  // La versión de texto dice LO MISMO que la HTML, incluida la oferta: una
+  // discrepancia entre las dos la puntúan los filtros, y aquí además serían
+  // dos ofertas distintas en el mismo correo.
+  return `\n\n${oferta(c).frase(c.giro)} ${alcanceDe(c.pais)}\n\n${oferta(c).boton}: ${AGENDAR_DEMO}\nEscribir por WhatsApp (${WHATSAPP_LEGIBLE}): ${whatsappCierre(c.nombre)}`
     + (pg ? `\n\n${invitacionPagina(pg.nombre)}: ${pg.url}` : '');
 }
 
@@ -157,17 +181,26 @@ function invitacionPagina(nombre: string): string {
   return `Y para ver más detalles de lo que hacemos para ${nombre}, la página completa`;
 }
 
+/** La oferta de esta cuenta. `demo` es el caso normal y usa la frase del dueño. */
+function oferta(c: Cierre): Oferta {
+  return OFERTAS[String(c.ruta || 'demo')] || {
+    titulo: 'Demo en línea · 30 minutos',
+    boton: 'Agendar la demo',
+    frase: fraseCierre,
+  };
+}
+
 function bloqueCierre(c: Cierre): string {
   const pg = paginaDe(c.giro, undefined, c.pais);
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
 <td bgcolor="${LILA}" style="background-color:${LILA};padding:22px 24px 20px;border-radius:10px;">
-<p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;line-height:16px;">Demo en línea · 30 minutos</p>
-<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(fraseCierre(c.giro))} ${esc(alcanceDe(c.pais))}</p>
+<p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.06em;line-height:16px;">${esc(oferta(c).titulo)}</p>
+<p style="margin:0 0 16px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(oferta(c).frase(c.giro))} ${esc(alcanceDe(c.pais))}</p>
 <!-- Los dos botones en UNA fila, a mitades iguales, cada botón a lo ancho de
      su celda: así se ven parejos en escritorio y no se encaraman en el
      teléfono. Uno debajo del otro se veía apilado, y el dueño lo rechazó. -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
-<td width="50%" valign="top" style="padding:0 6px 0 0;">${botonAncho('Agendar la demo', AGENDAR_DEMO, MORADO)}</td>
+<td width="50%" valign="top" style="padding:0 6px 0 0;">${botonAncho(oferta(c).boton, AGENDAR_DEMO, MORADO)}</td>
 <td width="50%" valign="top" style="padding:0 0 0 6px;">${botonAncho('Escribir por WhatsApp', whatsappCierre(c.nombre), VERDE_WA)}</td>
 </tr></table>
 ${pg ? `<p style="margin:16px 0 0;color:${TINTA};font-family:${FUENTE};font-size:14px;line-height:21px;">${esc(invitacionPagina(pg.nombre))} está en <a href="${esc(pg.url)}" style="color:${MORADO_TINTA};font-weight:bold;text-decoration:underline;">${esc(pg.url.replace(/^https?:\/\/(www\.)?/, ''))}</a>.</p>` : ''}

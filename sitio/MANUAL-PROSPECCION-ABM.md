@@ -1163,6 +1163,92 @@ WhatsApp 161 · teléfono 144 · correo 152 · **sitios caídos 208**.
 | «Esto es lo que vimos de ustedes:» y nada abajo | El condicional compuesto se calcula en `variablesDe` |
 | 16 sucursales de Liverpool a la cabeza de la fila | Fuera departamentales y sucursales de marca (sec. 5.4) |
 | Buscar `zara` se llevaba «Anzara» y «Confecciones Mazara» | Anclar al inicio y a palabra completa, no subcadena |
+| 7,105 cuentas con `puntaje` 0 cuando el mínimo es 12 | Cero no es «mala»: es «nadie la calificó». Calificar al insertar |
+| Arreglar la plantilla no arregló 396 correos ya armados | El cuerpo se congela al generar: hay que repasar los toques |
+| «Le vende a, y lo que pasa es esto:.» | La variable vacía deja CICATRIZ, no marca: se busca la puntuación |
+| `tipoDeAliado` ignoraba los subgiros viejos de su campo `ya` | Un alias declarado que nadie usa es un alias que no existe |
+| Una baja frenaba el correo pero no la cadencia: 7 reintentos | Suprimir es detener, marcar la cuenta y apuntar el buzón |
+| `abm_frio` encendía los 24 giros a la vez | Prender y elegir a quién son dos decisiones, ninguna por omisión |
+| El validador de WhatsApp no estaba en `vercel.json` | Un cron que nadie agenda no corre, aunque exista |
+
+---
+
+## 11 bis. Las tres formas de que un correo salga roto
+
+Ordenadas por qué tan difícil es verlas. Las tres salieron el mismo día
+(16-sep-2026) y las tres estaban en producción.
+
+**1. La marca se queda.** `{{nombre}}` o `[[si ciudad]]` llegan literales al
+prospecto. Pasa cuando una plantilla nombra una variable que nadie produce, o
+cuando alguien deja una instrucción para la IA dentro del cuerpo confiando en
+que la IA siempre reescribe. No siempre reescribe: cuando se acaba el saldo
+sale el respaldo tal cual. Se ve a simple vista y el envío la caza.
+
+**2. La marca se va y deja CICATRIZ.** La variable sí se sustituyó, pero por
+nada, y la frase queda coja:
+
+```
+Le escribo a Estudio Marlene por algo concreto..
+Le vende a, y lo que pasa del otro lado es esto:.
+```
+
+Es la más peligrosa: parece un correo normal hasta que uno lo lee, y el
+chequeo de la forma 1 no la encuentra porque ya no hay nada que buscar. Lo que
+la delata es puntuación que ningún redactor escribe: `..`, `:.`, `,,`. El
+arreglo de fondo es otro: **cada variable dentro de una frase que se pueda
+borrar entera**, igual que la regla de §7.4 bis.
+
+**3. El cuerpo ya estaba escrito.** Arreglar la plantilla NO arregla lo ya
+generado: el cuerpo de un toque se escribe al generar la cadencia y ahí se
+congela. Había 396 correos aprobados —agendados hasta un mes adelante— con el
+texto viejo. Después de tocar una plantilla hay que preguntarse siempre: *¿y lo
+que ya está en la cola?*
+
+```sql
+select count(*) from abm_toques
+ where canal='email' and estado in ('aprobado','borrador','programado')
+   and cuerpo ~ '<lo que se acaba de arreglar>';
+```
+
+---
+
+## 11 ter. Lo que nunca se decide por omisión
+
+Tres cosas que parecían un valor por defecto razonable y eran una decisión
+tomada sin querer:
+
+| Parecía | Era |
+|---|---|
+| `puntaje` en 0 | «Nadie la calificó», no «no nos sirve». El mínimo que da la fórmula es 12, así que un cero solo puede venir de la columna, nunca del cálculo. Y todo lo que ordena por puntaje mandaba lo más fresco al final de la fila |
+| `pais` vacío → «México» | Afirmar un país que nadie dio. Un cargador que olvide el campo manda «el mapa de las zapaterías de México» a un negocio de Lima |
+| `wa_frio_giros` vacío → todos | Encender el WhatsApp sobre los 24 giros de golpe. Prender y elegir a quién son dos decisiones distintas |
+
+La regla: **cuando el valor por omisión es también una decisión con
+consecuencias hacia afuera, no hay valor por omisión.** Se pide explícito o no
+se hace.
+
+---
+
+## 11 quater. Una baja se acaba en todas partes
+
+El pipeline de correo ya impide que salga un mensaje a alguien suprimido, y
+además mira las supresiones de los otros remitentes de la casa. Eso protege la
+última milla, y por eso el hueco tardó en verse: **nadie recibía nada**.
+
+Lo que no pasaba: la cadencia no se detenía. El toque quedaba `fallido` y los
+siete siguientes seguían agendados, reintentando cada pocos días durante 33
+días; la cuenta se quedaba «en cadencia» para siempre en la ficha; y
+`abm_no_contactar` no se enteraba, así que otra cuenta con el mismo buzón —una
+cadena comparte correo entre veinte sucursales— volvía a enrolarlo.
+
+Una supresión ahora hace cuatro cosas: cancela los toques pendientes de esa
+cuenta, la pasa a `no_contactar`, escribe el buzón en la lista y lo apunta en
+la bitácora.
+
+**Y el aviso general:** `abm_no_contactar` tenía CERO renglones y su único
+escritor era un botón del CRM. Un mecanismo de seguridad que nunca se ha
+ejercido solo no está probado — está escrito. Antes de multiplicar el volumen,
+conviene darse de baja a uno mismo y comprobar que la cadencia se detiene.
 
 ---
 

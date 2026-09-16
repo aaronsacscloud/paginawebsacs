@@ -387,20 +387,32 @@ const PASOS_L = [
   { k: 3 as const, l: 'Esperan tu OK', de: 'hay que revisarlas', etapas: ['lista'] },
 ];
 
-/* Las VISTAS GUARDADAS, el mismo patrón que Cotizaciones: una tira de presets
-   arriba y un clic para moverse. Allá son «Activas · En cierre · Pagadas…»;
-   aquí son las etapas y los tres problemas que detienen una orden. Moverse por
-   vista es más rápido que filtrar, y el nombre de la vista ya dice qué vas a
-   encontrar. */
-const VISTAS: { k: string; l: string; f: (o: any) => boolean }[] = [
-  { k: 'todas',     l: 'Todas',          f: () => true },
-  { k: 'arrancar',  l: 'Por arrancar',   f: o => o.etapa === 'recibida' },
-  { k: 'desarrollo',l: 'En desarrollo',  f: o => ['analisis', 'desarrollo', 'pruebas', 'devuelta', 'trabada'].includes(o.etapa) },
-  { k: 'ok',        l: 'Esperan tu OK',  f: o => o.etapa === 'lista' },
-  { k: 'sinfecha',  l: 'Sin fecha',      f: o => !o.fecha_prometida },
-  { k: 'sindueno',  l: 'Sin dueño',      f: o => !o.asignado_id },
-  { k: 'tarde',     l: 'Se pasaron',     f: vencida },
-  { k: 'espera',    l: 'Esperando al cliente', f: o => o.etapa === 'espera' },
+/* LAS CUATRO DE ARRIBA. Son las tarjetas Y son el filtro: no hay una tira de
+   pestañas debajo repitiendo lo mismo. Antes filtraban tres capas a la vez
+   —las tarjetas, ocho vistas guardadas y, dentro de la cuenta, otra barra—, y
+   con tres no se sabe cuál está aplicada. Ahora el proceso se cuenta una sola
+   vez, con las palabras del dueño: total, por arrancar, en desarrollo y en
+   espera de tu OK. */
+const VISTAS: { k: string; l: string; sub: string; franja: string; tinta: string; faro?: boolean; f: (o: any) => boolean }[] = [
+  { k: 'todas',      l: 'Total',              sub: 'órdenes vivas',           franja: P.violeta, tinta: P.violetaTinta, f: () => true },
+  { k: 'arrancar',   l: 'Por arrancar',       sub: 'todavía no las empiezan', franja: P.ambar,   tinta: P.ambarTinta,   f: o => o.etapa === 'recibida' },
+  { k: 'desarrollo', l: 'En desarrollo',      sub: 'se están trabajando',     franja: P.azul,    tinta: P.azulTinta,    f: o => ['analisis', 'desarrollo', 'pruebas', 'devuelta', 'trabada'].includes(o.etapa) },
+  { k: 'ok',         l: 'En espera de tu OK', sub: 'hay que revisarlas',      franja: P.verde,   tinta: P.verdeTinta, faro: true, f: o => o.etapa === 'lista' },
+];
+
+/* EL FILTRO DE ADENTRO DE UNA CUENTA. Arriba se elige el momento del proceso
+   para toda la lista; aquí adentro se separa la gestión por la etapa en la que
+   está, que es la pregunta del proyecto abierto: «de las quince de Rubens,
+   ¿cuáles están en análisis y cuáles ni han arrancado?». Al final, después de
+   una raya, va «sin fecha»: no es una etapa, es lo que todavía no se puede
+   prometer —y por donde se cuela lo que se levantó por error. */
+const DENTRO: { k: string; l: string; f: (o: any) => boolean }[] = [
+  { k: 'arrancar',   l: 'Por arrancar',  f: o => o.etapa === 'recibida' },
+  { k: 'analisis',   l: 'En análisis',   f: o => o.etapa === 'analisis' },
+  { k: 'desarrollo', l: 'En desarrollo', f: o => ['desarrollo', 'devuelta', 'trabada'].includes(o.etapa) },
+  { k: 'pruebas',    l: 'En pruebas',    f: o => o.etapa === 'pruebas' },
+  { k: 'ok',         l: 'Esperan tu OK', f: o => o.etapa === 'lista' },
+  { k: 'espera',     l: 'Detenidas',     f: o => o.etapa === 'espera' },
 ];
 
 /* Cómo se reparte una cuenta en la barra de la tarjeta. Lo que ya arrancó va
@@ -417,43 +429,43 @@ const TRAMOS = [
 
 function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, api, flash }: any) {
   const [vista, setVista] = useState('todas');
-  const [soloMias, setSoloMias] = useState(false);
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
-  /* Dentro de un proyecto, lo primero que se pregunta es qué ya tiene fecha y
-     qué no: es la diferencia entre lo que se puede prometer y lo que no. */
-  const [conFecha, setConFecha] = useState<'todas' | 'con' | 'sin'>('todas');
+  /* Dentro de un proyecto: la etapa de cada gestión, o lo que no tiene fecha. */
+  const [dentro, setDentro] = useState<string>('todas');
 
   const q = filtro.trim().toLowerCase();
   const texto = q
     ? ordenes.filter((o: any) => (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q))
     : ordenes;
-  const mias = texto.filter((o: any) => o.asignado_id === yo?.id).length;
-
-  const conVista = (k: string) => {
-    const v = VISTAS.find(x => x.k === k)!;
-    return texto.filter(v.f).filter((o: any) => (soloMias ? o.asignado_id === yo?.id : true));
-  };
+  const conVista = (k: string) => texto.filter(VISTAS.find(x => x.k === k)!.f);
   const lista = conVista(vista);
 
   /* Una cuenta es un PROYECTO. Antes eran dieciocho folios sueltos agrupados
      por nombre; lo que se trabaja no es una orden, es «lo de Rubens». */
+  const resumir = (l: string, filas: any[]) => ({
+    l, filas,
+    atraso: Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; })),
+    sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
+    sinDueno: filas.filter((o: any) => !o.asignado_id).length,
+    prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
+    tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
+    val: cuentas[filas[0]?.company_id] || null,
+  });
+
   const proyectos = Object.entries(lista.reduce((a: any, o: any) => {
     const k = cuentaDe(o); (a[k] = a[k] || []).push(o); return a;
-  }, {})).map(([l, filas]: any) => {
-    const atraso = Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; }));
-    return {
-      l, filas, atraso,
-      sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
-      sinDueno: filas.filter((o: any) => !o.asignado_id).length,
-      prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
-      tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
-      val: cuentas[filas[0]?.company_id] || null,
-    };
-  }).sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
+  }, {})).map(([l, filas]: any) => resumir(l, filas))
+    .sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
 
-  const abierto = proyectos.find(p => p.l === cuenta) || null;
+  /* Al abrir una cuenta se ven TODAS sus gestiones, no solo las del momento
+     que esté elegido arriba: adentro el que separa es el filtro de etapas, y
+     es justo la pregunta de «qué trae Rubens». */
+  const filasCuenta = cuenta ? texto.filter((o: any) => cuentaDe(o) === cuenta) : [];
+  const abierto = filasCuenta.length ? resumir(cuenta, filasCuenta) : null;
   const enCuenta = !abierto ? [] : abierto.filas.filter((o: any) =>
-    conFecha === 'todas' ? true : conFecha === 'con' ? !!o.fecha_prometida : !o.fecha_prometida);
+    dentro === 'todas' ? true
+      : dentro === 'sin' ? !o.fecha_prometida
+      : (DENTRO.find(d => d.k === dentro)?.f(o) ?? true));
 
   /* Quitar una orden levantada por error. Se lleva TAMBIÉN el renglón del
      cliente: dejarlo allá sería un compromiso que nadie va a trabajar y que
@@ -474,47 +486,29 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 14 }}>
-        {([
-          ['sindueno', 'Nadie las ha tomado', texto.filter((o: any) => !o.asignado_id).length, P.rojo, P.rojoTinta, 'sin dueño no avanzan'],
-          ['sinfecha', 'Sin fecha', texto.filter((o: any) => !o.fecha_prometida).length, '#E8A838', P.ambarTinta, 'no se pueden prometer'],
-          ['tarde', 'Se pasaron de fecha', texto.filter(vencida).length, P.rojo, P.rojoTinta, 'contra su primera fecha'],
-          ['ok', 'Esperan tu OK', texto.filter((o: any) => o.etapa === 'lista').length, P.verde, P.verdeTinta, 'hay que revisarlas'],
-        ] as any[]).map(([k, l, v, franja, tinta, sub]) => (
-          <KpiCard key={k} franja={franja} label={l} valor={v} color={v ? tinta : undefined} sub={sub}
-            activo={vista === k} onClick={() => { setVista(vista === k ? 'todas' : k); setCuenta(''); }} />
-        ))}
-      </div>
-
-      {/* Las vistas guardadas, como en Cotizaciones. */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 12 }}>
         {VISTAS.map(v => {
           const n = conVista(v.k).length;
-          if (!n && !['todas', 'arrancar', 'desarrollo', 'ok'].includes(v.k)) return null;
-          const on = vista === v.k;
           return (
-            <button key={v.k} onClick={() => { setVista(v.k); setCuenta(''); }}
-              style={{
-                border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
-                color: on ? '#fff' : '#666', borderRadius: 9, padding: '6px 12px', fontSize: '0.75rem',
-                fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
-              }}>
-              {v.l} <span style={{ opacity: .75, fontWeight: 700 }}>{n}</span>
-            </button>
+            <KpiCard key={v.k} franja={v.franja} label={v.l} valor={n} faro={v.faro}
+              color={n ? v.tinta : undefined} sub={v.sub} activo={vista === v.k}
+              onClick={() => { setVista(vista === v.k ? 'todas' : v.k); setCuenta(''); setDentro('todas'); }} />
           );
         })}
-        <button onClick={() => { setSoloMias(x => !x); setCuenta(''); }}
-          style={soloMias ? { ...S.btn, padding: '6px 12px', fontSize: '0.75rem' } : { ...S.btnG, padding: '6px 12px', fontSize: '0.75rem' }}>
-          Solo las mías {mias > 0 && <span style={{ opacity: .75 }}>{mias}</span>}
-        </button>
+      </div>
+
+      {/* Solo el buscador y la acción. Las cuatro tarjetas de arriba ya dicen en
+          qué momento del proceso estás; una tira de pestañas aquí abajo sería la
+          misma pregunta hecha dos veces. */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por cuenta, folio o texto…"
-          style={{ ...S.input, width: 230, marginLeft: 'auto', padding: '6px 11px' }} />
-        <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem' }} onClick={onNueva}>+ Nueva orden</button>
+          style={{ ...S.input, width: 260, padding: '7px 11px' }} />
+        <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem', marginLeft: 'auto' }} onClick={onNueva}>+ Nueva orden</button>
       </div>
 
       {proyectos.length === 0 && (
         <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
-          {soloMias ? 'No tienes órdenes asignadas en esta vista.' : 'Nada en esta vista.'}
+          {q ? 'Nada coincide con lo que buscas.' : 'Nada en esta vista.'}
         </div>
       )}
 
@@ -522,7 +516,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       {abierto ? (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-            <button style={S.btnG} onClick={() => { setCuenta(''); setConFecha('todas'); }}>‹ Todas las cuentas</button>
+            <button style={S.btnG} onClick={() => { setCuenta(''); setDentro('todas'); }}>‹ Todas las cuentas</button>
             <b style={{ fontSize: '1.05rem', fontWeight: 800 }}>{abierto.l}</b>
             {/* EL VALOR DE LA CUENTA. «14 órdenes» es el mismo renglón para el
                 cliente de $200 mil al año y para el de cortesía; al entrar a un
@@ -544,30 +538,42 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             </span>
           </div>
 
-          {/* Con fecha / sin fecha. El filtro vive AQUÍ y no arriba porque es la
-              pregunta de adentro de un proyecto: arriba se elige en qué etapa
-              mirar, aquí se separa lo que ya se puede prometer de lo que no. */}
+          {/* El filtro de la cuenta: la ETAPA en la que está cada gestión. Solo
+              salen las etapas que esta cuenta tiene —un botón en cero es una
+              pregunta que no se puede hacer—, y detrás de la raya va «sin
+              fecha», que es el otro eje. */}
           <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
-            {([['todas', 'Todas', abierto.filas.length],
-               ['con', 'Con fecha', abierto.filas.filter((o: any) => o.fecha_prometida).length],
-               ['sin', 'Sin fecha', abierto.filas.filter((o: any) => !o.fecha_prometida).length]] as any[]).map(([k, l, n2]) => {
-              const on = conFecha === k;
-              return (
-                <button key={k} onClick={() => setConFecha(k)}
-                  style={{
-                    border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
-                    color: on ? '#fff' : '#666', borderRadius: 9, padding: '5px 11px', fontSize: '0.73rem',
-                    fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
-                  }}>
-                  {l} <span style={{ opacity: .75, fontWeight: 700 }}>{n2}</span>
-                </button>
-              );
-            })}
+            {(() => {
+              const sinF = abierto.filas.filter((o: any) => !o.fecha_prometida).length;
+              const ops: any[] = [['todas', 'Todas', abierto.filas.length]];
+              DENTRO.forEach(d => {
+                const n2 = abierto.filas.filter(d.f).length;
+                if (n2) ops.push([d.k, d.l, n2]);
+              });
+              if (sinF) ops.push(['sin', 'Sin fecha', sinF]);
+              return ops.map(([k, l, n2]) => {
+                const on = dentro === k;
+                const rosa = k === 'sin';
+                return (
+                  <button key={k} onClick={() => setDentro(k)}
+                    style={{
+                      border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee',
+                      background: on ? P.violeta : '#fff',
+                      color: on ? '#fff' : '#666', borderRadius: 9, padding: '5px 11px',
+                      fontSize: '0.73rem', fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+                      ...(rosa && !on ? SIN_FECHA : null),
+                      ...(rosa ? { marginLeft: 9, fontWeight: on ? 800 : 700 } : null),
+                    }}>
+                    {l} <span style={{ opacity: .75, fontWeight: 700 }}>{n2}</span>
+                  </button>
+                );
+              });
+            })()}
           </div>
 
           {enCuenta.length === 0 && (
             <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
-              {conFecha === 'con' ? 'Ninguna de esta cuenta tiene fecha todavía.' : 'Todas las de esta cuenta ya tienen fecha.'}
+              Nada de esta cuenta está ahí en este momento.
             </div>
           )}
           {enCuenta.map((o: any) => (

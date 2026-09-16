@@ -14,7 +14,7 @@
 //   4. Corte automático si el día viene con demasiados rebotes.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { enHorarioDe } from '../../../lib/crm/abm-paises';
+import { enHorarioDe, regionDe } from '../../../lib/crm/abm-paises';
 // Se manda por el MISMO pipeline que las campañas, no por el atajo de
 // sendEmail: el pipeline es el que pone el pie con la liga de baja, las
 // cabeceras List-Unsubscribe (el botón nativo de "Cancelar suscripción" de
@@ -84,10 +84,28 @@ export const GET: APIRoute = async ({ request }) => {
   if (!tenantSlug) {
     return json({ pausado: true, motivo: 'falta abm_config.tenant_slug: el correo en frío no sale por el remitente de los clientes', espejo });
   }
-  const { data: inquilino } = await supabase.from('email_tenants').select('id, slug, from_email').eq('slug', tenantSlug).maybeSingle();
+  /* DOS REMITENTES, DOS REPUTACIONES (16-sep-2026).
+     México sale por su dominio de siempre; España y Latinoamérica por el
+     internacional (`abm_config.tenant_slug_intl`). Por qué: el calentamiento
+     es POR DOMINIO y es lento —30% cada tres días—, así que un solo remitente
+     obliga a los once países a hacer fila detrás de México, que solo ya pide
+     tres veces el cupo del día. Y si una base nueva rebota o le marcan spam,
+     no arrastra al dominio con el que se le escribe a los clientes. Sin
+     `tenant_slug_intl` configurado, todo sale por el de siempre y no cambia
+     nada. */
+  const slugIntl = (cfg.tenant_slug_intl || '').trim();
+  const { data: inquilinos } = await supabase.from('email_tenants').select('id, slug, from_email')
+    .in('slug', [tenantSlug, slugIntl].filter(Boolean));
+  const inquilino = (inquilinos || []).find((x: any) => x.slug === tenantSlug);
+  const inquilinoIntl = slugIntl ? (inquilinos || []).find((x: any) => x.slug === slugIntl) : null;
   if (!inquilino) {
     return json({ pausado: true, motivo: `no existe el inquilino de correo «${tenantSlug}»`, espejo });
   }
+  if (slugIntl && !inquilinoIntl) {
+    return json({ pausado: true, motivo: `no existe el inquilino internacional «${slugIntl}»`, espejo });
+  }
+  /** El remitente que le toca a una cuenta por su país. */
+  const inquilinoDe = (pais?: string | null) => (inquilinoIntl && regionDe(pais) !== 'mexico') ? inquilinoIntl : inquilino;
   if (!(import.meta.env.EMAIL_REPLY_DOMAIN || '').trim()) {
     return json({ pausado: true, motivo: 'falta EMAIL_REPLY_DOMAIN: sin dominio de respuestas, una contestación no frena la cadencia', espejo });
   }
@@ -95,21 +113,36 @@ export const GET: APIRoute = async ({ request }) => {
   if (pausado === 'auto') return json({ pausado: true, motivo: 'pausa automática por rebotes, se levanta mañana', espejo });
 
   const tope = Number(cfg.tope_diario || 120);
-  const { data: diasPrevios } = await supabase.rpc('abm_dias_con_envios').single().then(
-    (r: any) => r, () => ({ data: null as any }));
-  let dias = Number((diasPrevios as any)?.dias ?? NaN);
-  if (!Number.isFinite(dias)) {
-    // Sin la función en la base, se cuenta a mano (barato: son pocas filas).
-    const { data: env } = await supabase.from('abm_toques').select('enviado_at').eq('estado', 'enviado').limit(5000);
-    dias = new Set((env || []).map((e: any) => String(e.enviado_at).slice(0, 10))).size;
-  }
+  /* La rampa se cuenta POR REMITENTE: son días con envíos REALES de ese
+     dominio. Un dominio recién autenticado empieza en quince correos aunque
+     el otro lleve meses; si compartieran el contador, el nuevo arrancaría en
+     trescientos y se quemaría el primer día. */
+  const diasDe = async (tenantId: string) => {
+    const { data: env } = await supabase.from('email_sends').select('sent_at')
+      .eq('tenant_id', tenantId).eq('categoria', 'abm').not('sent_at', 'is', null).limit(5000);
+    return new Set((env || []).map((e: any) => String(e.sent_at).slice(0, 10))).size;
+  };
+  const yaHoyDe = async (tenantId: string) => {
+    const { count } = await supabase.from('email_sends').select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId).eq('categoria', 'abm').gte('sent_at', hoy + 'T00:00:00Z');
+    return Number(count || 0);
+  };
+  const dias = await diasDe(inquilino.id);
   const cupo = cupoDelDia(dias, Number(cfg.cupo_inicial || 15), tope);
+  // Cada remitente lleva su propia cuenta del día; el bucle de abajo mira la
+  // del que le toca a cada cuenta.
+  const sobra: Record<string, number> = { [inquilino.id]: Math.max(0, cupo - await yaHoyDe(inquilino.id)) };
+  let diasIntl = 0, cupoIntl = 0;
+  if (inquilinoIntl) {
+    diasIntl = await diasDe(inquilinoIntl.id);
+    cupoIntl = cupoDelDia(diasIntl, Number(cfg.cupo_inicial || 15), tope);
+    sobra[inquilinoIntl.id] = Math.max(0, cupoIntl - await yaHoyDe(inquilinoIntl.id));
+  }
 
   // El cupo y la rampa son del CORREO: el WhatsApp lleva su propio tope
   // (abm_config.wa_tope_dia) y su propio disyuntor (la calidad de la línea).
-  const { count: yaHoy } = await supabase.from('abm_toques').select('id', { count: 'exact', head: true })
-    .eq('estado', 'enviado').eq('canal', 'email').gte('enviado_at', hoy + 'T00:00:00Z');
-  const restante = Math.max(0, cupo - (yaHoy || 0));
+  const yaHoy = (cupo - (sobra[inquilino.id] ?? 0)) + (inquilinoIntl ? cupoIntl - (sobra[inquilinoIntl.id] ?? 0) : 0);
+  const restante = Object.values(sobra).reduce((a, b) => a + b, 0);
 
   /* EL DISYUNTOR MIRA TODO EL DOMINIO, NO SOLO EL ABM.
      Antes contaba únicamente los rebotes de abm_actividad, o sea los suyos. Y
@@ -213,7 +246,7 @@ export const GET: APIRoute = async ({ request }) => {
   let enviados = 0, fueraDeHorario = 0; const fallos: string[] = [];
 
   for (const t of toques || []) {
-    if (enviados >= restante) break;
+    if (Object.values(sobra).every(n => n <= 0)) break;
     const destino = String(t.destino || '').toLowerCase();
     if (tocadosHoy.has(destino)) continue;
     const dueno = duenoDelBuzon.get(destino);
@@ -262,7 +295,7 @@ export const GET: APIRoute = async ({ request }) => {
       await apuntar(t.cuenta_id, 'email', 'nota', { texto: `Correo cancelado: el cuerpo conserva marcas de plantilla (${(crudo.match(/\{\{[a-z_]+\}\}|\[\[[^\]]{0,40}/i) || ['?'])[0]}…)` });
       continue;
     }
-    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro, pais').eq('id', t.cuenta_id).maybeSingle();
+    const { data: cuenta } = await supabase.from('abm_cuentas').select('etapa, ya_es_cliente, nombre, giro, pais, ruta').eq('id', t.cuenta_id).maybeSingle();
     if (!cuenta || cuenta.ya_es_cliente || ['no_contactar', 'respondio', 'reunion', 'ganada'].includes(cuenta.etapa)) {
       await supabase.from('abm_toques').update({ estado: 'cancelado', resultado: 'la cuenta ya no está en cadencia' }).eq('id', t.id);
       continue;
@@ -273,6 +306,9 @@ export const GET: APIRoute = async ({ request }) => {
        cae de noche se lee mal o no se lee. No se cancela: espera a la corrida
        que sí caiga entre las 9 y las 6 de su país. */
     if (!enHorarioDe(cuenta.pais)) { fueraDeHorario++; continue; }
+    // El remitente —y el cupo del día— son los de SU región.
+    const mio = inquilinoDe(cuenta.pais);
+    if ((sobra[mio.id] ?? 0) <= 0) continue;
 
     // Nota: el seguimiento DENTRO del mismo hilo (Re: + In-Reply-To +
     // References) queda pendiente a propósito. Un "Re:" sin las cabeceras de
@@ -305,7 +341,7 @@ export const GET: APIRoute = async ({ request }) => {
     // Se reclama el toque antes de mandarlo. Si el proceso muriera entre el
     // POST a SendGrid y el update, el toque seguiría 'aprobado' y la corrida
     // de las 13:00 lo mandaría OTRA VEZ al mismo negocio.
-    const cierre = { giro: cuenta.giro, nombre: cuenta.nombre, pais: cuenta.pais };
+    const cierre = { giro: cuenta.giro, nombre: cuenta.nombre, pais: cuenta.pais, ruta: cuenta.ruta };
     const { data: reclamado } = await supabase.from('abm_toques')
       .update({ estado: 'enviando', enviado_at: new Date().toISOString() })
       .eq('id', t.id).eq('estado', 'aprobado').select('id').maybeSingle();
@@ -329,7 +365,7 @@ export const GET: APIRoute = async ({ request }) => {
         cuerpo: t.cuerpo || '', imagen: (t as any).imagen, imagenAlt: asunto,
         botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza, cierre,
       }),
-      categoria: 'abm', tenantId: inquilino.id,
+      categoria: 'abm', tenantId: mio.id,
       // Los tres primeros van limpios: sin pixel y sin enlaces envueltos.
       sinRastreo: (orden || 0) < 3,
     });
@@ -341,7 +377,7 @@ export const GET: APIRoute = async ({ request }) => {
     }).eq('id', t.id);
     await apuntar(t.cuenta_id, 'email', ok ? 'envio' : 'nota', { toque_id: t.id, texto: ok ? `Salió: ${asunto}` : `No salió (${r.motivo}): ${r.detalle || ''}` });
     if (ok) {
-      enviados++; tocadosHoy.add(destino);
+      enviados++; sobra[mio.id] = (sobra[mio.id] ?? 0) - 1; tocadosHoy.add(destino);
       await supabase.from('abm_cuentas').update({ ultimo_toque_at: new Date().toISOString() }).eq('id', t.cuenta_id);
       await supabase.from('abm_cuentas').update({ etapa: 'en_cadencia', updated_at: new Date().toISOString() }).eq('id', t.cuenta_id).eq('etapa', 'sin_tocar');
     } else {
@@ -369,7 +405,8 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
-  return json({ enviados, fuera_de_horario: fueraDeHorario, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
+  return json({ enviados, fuera_de_horario: fueraDeHorario, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0,
+    internacional: inquilinoIntl ? { remitente: inquilinoIntl.slug, cupo: cupoIntl, dias_calentando: diasIntl, sobra: sobra[inquilinoIntl.id] } : null, fallos: fallos.slice(0, 5), espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
 };
 
 /** Trae a la bitácora lo que SendGrid ya contó en email_sends. */
