@@ -235,6 +235,26 @@ export async function enviarWhatsApps(o: { hoy: string; tope: number }): Promise
  * de Kapso espeja cada entrante en wa_mensajes; aquí se cruza con las cuentas
  * que tienen un WhatsApp enviado y todavía algo en la fila.
  */
+/** Mensaje de ausencia o de bienvenida automática, no una persona contestando.
+ *  Las frases salieron de leer los entrantes reales; se prefiere dejar pasar
+ *  un automático a descartar a alguien que sí escribió, así que la lista es
+ *  corta y literal en vez de lista y adivinadora. */
+const AUTO_WA = [
+  /gracias por (tu|su) mensaje/i,
+  /en (este momento|estos momentos) no (podemos|puedo) (responder|atender)/i,
+  /(le|te) (responderemos|contestaremos|atenderemos) (a la brevedad|lo antes posible|en breve)/i,
+  /(horario de atenci[oó]n|nuestro horario es)/i,
+  /mensaje autom[aá]tico/i,
+  /fuera de (horario|la oficina)/i,
+  /[uú]nete a (nuestro|nuestros) grupo/i,
+  /chat\.whatsapp\.com\/[A-Za-z0-9]/,
+];
+export function esAutoWa(cuerpo?: string | null): boolean {
+  const t = String(cuerpo || '').trim();
+  if (!t) return true;
+  return AUTO_WA.some(r => r.test(t));
+}
+
 export async function respuestasWhatsApp(): Promise<{ respondieron: number }> {
   const desde = new Date(Date.now() - 45 * 864e5).toISOString();
   const { data: enviados } = await supabase.from('abm_toques')
@@ -253,9 +273,21 @@ export async function respuestasWhatsApp(): Promise<{ respondieron: number }> {
     if (!tel) continue;
     const { data: conv } = await supabase.from('wa_conversaciones').select('id').eq('telefono', tel).maybeSingle();
     if (!conv) continue;
-    const { data: m } = await supabase.from('wa_mensajes').select('id, cuerpo, created_at')
+    /* Un AUTORESPONDEDOR no es una respuesta. El camino de correo lo filtra
+       desde el día uno (`esAutomatico` en inbound.ts); este no lo hacía, y en
+       WhatsApp Business el mensaje de ausencia es lo normal, no la excepción.
+       Ya pasó: «Fashion queens» contestó dos mensajes en el mismo segundo —una
+       invitación a su grupo y «Gracias por tu mensaje, en este momento no
+       podemos responder»— y eso canceló 15 toques de correo y 4 de WhatsApp,
+       y movió la cuenta a «respondió». Si esto se deja, la tasa de respuesta
+       que se reporte va a ser casi toda mensajes de ausencia, y cada negocio
+       con auto-respuesta matará su propia cadencia en el primer toque.
+       Se piden varios y se toma el primero que parezca escrito por una
+       persona; si todos son automáticos, no hubo respuesta. */
+    const { data: entrantes } = await supabase.from('wa_mensajes').select('id, cuerpo, created_at')
       .eq('conversation_id', conv.id).eq('direccion', 'entrante').gt('created_at', p.desde)
-      .order('created_at').limit(1).maybeSingle();
+      .order('created_at').limit(5);
+    const m = (entrantes || []).find((x: any) => !esAutoWa(x.cuerpo));
     if (!m) continue;
     const { count: ya } = await supabase.from('abm_actividad').select('id', { count: 'exact', head: true })
       .eq('cuenta_id', c.id).eq('canal', 'whatsapp').eq('tipo', 'respuesta');

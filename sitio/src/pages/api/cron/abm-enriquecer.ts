@@ -12,7 +12,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
-import { apuntar, repuntuar, limpiar, quien } from '../../../lib/crm/abm.lib';
+import { apuntar, repuntuar, limpiar, quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -43,7 +43,7 @@ export const GET: APIRoute = async ({ request, url }) => {
      y niega en cualquier otro caso; es el mismo helper que usan los otros 47
      crons. La sesión del CRM sigue valiendo para dispararlo a mano. */
   if (!isAuthorizedCron(request)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 

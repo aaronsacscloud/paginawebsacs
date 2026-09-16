@@ -33,6 +33,25 @@ export async function quien(request: Request): Promise<Quien | null> {
   return { id: (u as any).id, nombre: (u as any).name || (u as any).email || 'equipo', role: (u as any).role || 'cs' };
 }
 
+/** Quién puede DISPARAR A MANO un cron del motor.
+ *
+ *  `quien()` devuelve cualquier sesión válida y le pone rol `cs` por omisión
+ *  si no trae ninguno — y la misma cookie `sacs_session` la usan los partners
+ *  en su portal. Además `/api/cron/` NO está en los prefijos que el middleware
+ *  reserva a founder/cs, a diferencia de `/api/crm/`. O sea que el respaldo de
+ *  sesión de los crons aceptaba a un partner logueado: podía disparar la ronda
+ *  de correo en frío, el barrido de Places (que cuesta dinero) y la
+ *  verificación de ZeroBounce (que también).
+ *
+ *  Aquí se exige el rol de casa. La puerta principal sigue siendo el header
+ *  del scheduler de Vercel o el CRON_SECRET; esto es solo para el disparo
+ *  manual desde el CRM. */
+const ROLES_DE_CASA = new Set(['founder', 'cs', 'admin']);
+export async function quienPuedeCorrerCrons(request: Request): Promise<Quien | null> {
+  const yo = await quien(request);
+  return yo && ROLES_DE_CASA.has(String(yo.role || '').toLowerCase()) ? yo : null;
+}
+
 import { GIROS, paginaDe } from './abm-giros';
 import { paisDe } from './abm-paises';
 import { nombrePila, nombreBonito } from './nombre';

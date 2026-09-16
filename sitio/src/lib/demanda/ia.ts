@@ -62,14 +62,33 @@ const costoDe = (modelo: string, ent: number, sal: number) => {
 export const disponibles = (): Proveedor[] =>
   (Object.keys(LLAVE) as Proveedor[]).filter(p => env(LLAVE[p]).length > 0);
 
-/** El orden en que se intenta. El primero es el configurado; los demás son la
- *  red de seguridad, y por eso van del más barato al más caro. */
-export async function ordenDeProveedores(): Promise<Proveedor[]> {
+/**
+ * El orden de intento DEPENDE DEL TRABAJO, y eso vale dinero y calidad.
+ *
+ * No es una preferencia: está medido en este proyecto. Para clasificar —«¿esto
+ * es demanda, sí o no?»— Gemini Flash hace el mismo trabajo 3 veces más barato,
+ * y son miles de llamadas. Para JUZGAR el valor de una oportunidad se comportó
+ * peor: calificaba «distribución por IA» alto para casi todo (33 de 80 por
+ * encima de 75) y el backlog se llenó de propuestas que no tenían sentido. Ahí
+ * son decenas de llamadas y el criterio importa más que el centavo.
+ *
+ * Poner un solo proveedor para todo obliga a elegir entre pagar de más en lo
+ * masivo o decidir peor en lo importante. Esto evita esa disyuntiva.
+ */
+const PREFERENCIA: Record<Trabajo, Proveedor[]> = {
+  volumen:    ['gemini', 'groq', 'anthropic', 'openai'],
+  trabajo:    ['anthropic', 'gemini', 'openai', 'groq'],
+  estrategia: ['anthropic', 'openai', 'gemini', 'groq'],
+};
+
+export async function ordenDeProveedores(trabajo: Trabajo = 'volumen'): Promise<Proveedor[]> {
   const hay = disponibles();
   const { data } = await supabase.from('de_config').select('umbrales').eq('id', 1).maybeSingle();
-  const preferido = data?.umbrales?.ia_proveedor as Proveedor | undefined;
-  const resto: Proveedor[] = ['gemini', 'groq', 'anthropic', 'openai'];
-  const orden = [preferido, ...resto].filter((p): p is Proveedor => !!p && hay.includes(p));
+  const u = data?.umbrales || {};
+  // Se puede forzar por trabajo (`ia_proveedor_volumen`) o en general
+  // (`ia_proveedor`); lo específico manda sobre lo general.
+  const forzado = (u[`ia_proveedor_${trabajo}`] || u.ia_proveedor) as Proveedor | undefined;
+  const orden = [forzado, ...PREFERENCIA[trabajo]].filter((p): p is Proveedor => !!p && hay.includes(p));
   return [...new Set(orden)];
 }
 
@@ -179,7 +198,7 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
 
 export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
   const trabajo = p.trabajo || 'volumen';
-  const orden = p.proveedor ? [p.proveedor] : await ordenDeProveedores();
+  const orden = p.proveedor ? [p.proveedor] : await ordenDeProveedores(trabajo);
   if (!orden.length) return { ok: false, datos: null, texto: '', costo_usd: 0, run_id: null, error: 'no hay ninguna llave de IA configurada', definitivo: true };
 
   let usuario = p.usuario;

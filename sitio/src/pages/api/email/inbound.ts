@@ -213,7 +213,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         });
         await supabase.from('abm_cuentas')
           .update({ etapa: 'respondio', updated_at: new Date().toISOString() })
-          .eq('id', t.cuenta_id).in('etapa', ['sin_tocar', 'en_cadencia']);
+          .eq('id', t.cuenta_id).in('etapa', ['sin_tocar', 'en_cadencia', 'en_pausa']);
         const { count } = await supabase.from('abm_toques')
           .update({ estado: 'cancelado', resultado: 'contestó el correo' }, { count: 'exact' })
           .eq('cuenta_id', t.cuenta_id).in('estado', ['borrador', 'aprobado', 'programado']);

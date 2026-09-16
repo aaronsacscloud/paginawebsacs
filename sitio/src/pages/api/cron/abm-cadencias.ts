@@ -23,7 +23,7 @@ import { enHorarioDe, regionDe } from '../../../lib/crm/abm-paises';
 // frene la cadencia— y la medición de clics. Un correo en frío sin forma de
 // darse de baja solo deja un botón a la mano: "Reportar como spam".
 import { enviarCorreo } from '../../../lib/email/pipeline';
-import { apuntar, repuntuar, quien } from '../../../lib/crm/abm.lib';
+import { apuntar, repuntuar, quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
 import { correrGoteos } from '../../../lib/crm/abm-goteo';
 import { enviarWhatsApps, respuestasWhatsApp } from '../../../lib/crm/abm-whatsapp';
 import { armarCorreo, cierreTexto, AGENDAR_DEMO } from '../../../lib/crm/abm-correo';
@@ -63,7 +63,7 @@ export const GET: APIRoute = async ({ request }) => {
      y niega en cualquier otro caso; es el mismo helper que usan los otros 47
      crons. La sesión del CRM sigue valiendo para dispararlo a mano. */
   if (!isAuthorizedCron(request)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 
@@ -129,7 +129,12 @@ export const GET: APIRoute = async ({ request }) => {
      trescientos y se quemaría el primer día. */
   const diasDe = async (tenantId: string) => {
     const { data: env } = await supabase.from('email_sends').select('sent_at')
-      .eq('tenant_id', tenantId).eq('categoria', 'abm').not('sent_at', 'is', null).limit(5000);
+      /* Con orden: el contador de días de la rampa sale de aquí, y un
+         `limit` sin `order` devuelve un conjunto arbitrario en cuanto la tabla
+         pasa las 5,000 filas (~16 días a tope). El cupo se congelaría o
+         saltaría sin motivo visible. */
+      .eq('tenant_id', tenantId).eq('categoria', 'abm').not('sent_at', 'is', null)
+      .order('sent_at', { ascending: false }).limit(5000);
     return new Set((env || []).map((e: any) => String(e.sent_at).slice(0, 10))).size;
   };
   const yaHoyDe = async (tenantId: string) => {
@@ -430,7 +435,14 @@ export const GET: APIRoute = async ({ request }) => {
 async function espejarEventos() {
   const { data: toques } = await supabase.from('abm_toques')
     .select('id, cuenta_id, send_id').eq('estado', 'enviado').not('send_id', 'is', null)
-    .gte('enviado_at', new Date(Date.now() - 21 * 864e5).toISOString()).limit(500);
+    /* Con orden y con margen. Era `limit(500)` sin `order`: a 320 correos al
+       día, 21 días son 6,720 toques, así que se espejaba el 7% —y sin ORDEN,
+       un 7% ARBITRARIO—. Por aquí entran las aperturas, los clics, los rebotes
+       y las quejas; o sea que se perdían al azar las señales que deciden si la
+       cadencia se detiene y si el disyuntor salta. Se ordena por lo más
+       reciente, que es lo que todavía puede cambiar una decisión. */
+    .gte('enviado_at', new Date(Date.now() - 21 * 864e5).toISOString())
+    .order('enviado_at', { ascending: false }).limit(5000);
   if (!toques?.length) return { revisados: 0, nuevos: 0 };
 
   const ids = toques.map(t => t.send_id);

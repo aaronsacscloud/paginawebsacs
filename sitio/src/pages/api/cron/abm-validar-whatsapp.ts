@@ -40,7 +40,7 @@
 // GET /api/cron/abm-validar-whatsapp?cuantas=200&giro=novias
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { apuntar, quien } from '../../../lib/crm/abm.lib';
+import { apuntar, quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -74,7 +74,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const secret = env('CRON_SECRET');
   const esCron = secret && auth === `Bearer ${secret}`;
   if (!esCron) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 

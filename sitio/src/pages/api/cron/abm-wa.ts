@@ -26,10 +26,11 @@
 // GET /api/cron/abm-wa?cuantas=&giro=&dry=1
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { apuntar, quien } from '../../../lib/crm/abm.lib';
+import { apuntar, quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
 import { ABM_FRIO, paramsFrios, GIRO_FRIO } from '../../../lib/crm/abm-wa-plantillas';
 import { enviarPlantilla, sanearParam, conLinea } from '../../../lib/whatsapp/kapso-api';
 import { lineaPara, infoLinea } from '../../../lib/whatsapp/linea';
+import { telefonoWhatsApp } from '../../../lib/telefono';
 import { enHorarioDe } from '../../../lib/crm/abm-paises';
 import { permitido } from '../../../lib/whatsapp/permisos';
 import { puedeMandarWa } from '../../../lib/whatsapp/presion';
@@ -55,7 +56,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const auth = request.headers.get('authorization') || '';
   const secret = env('CRON_SECRET');
   if (!(secret && auth === `Bearer ${secret}`)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 
@@ -155,9 +156,19 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (salida.length >= cupo) break;
     if (!GIRO_FRIO[c.giro]) { salta(`sin guion para ${c.giro}`); continue; }
 
-    // Si ya contestaron, la cadencia terminó: lo que sigue es una conversación.
+    /* Si ya contestaron, la cadencia terminó: lo que sigue es una conversación.
+       EL NÚMERO SE NORMALIZA ANTES DE COMPARAR. `abm_canales.valor` se guarda
+       como «+52 33 1337 0590» o «524951334480», y `wa_conversaciones.telefono`
+       siempre en E.164 sin espacios. La comparación exacta no empataba NUNCA:
+       de 2,926 números declarados, 0 empates exactos y 15 al normalizar. O sea
+       que esta puerta jamás se abrió, y entre esos 15 está quien nos escribió
+       «disculpe, ¿quién le pasó mi número?» — le habríamos mandado el toque 2
+       y el 3 encima. El otro camino de WhatsApp ya usaba `telefonoWhatsApp()`;
+       este no. */
+    const tel = telefonoWhatsApp(c.valor);
+    if (!tel) { salta('número que no se puede normalizar'); continue; }
     const { data: conv } = await supabase.from('wa_conversaciones')
-      .select('ultimo_entrante_at').eq('telefono', c.valor).maybeSingle();
+      .select('ultimo_entrante_at').eq('telefono', tel).maybeSingle();
     if (conv?.ultimo_entrante_at) { salta('ya contestó'); continue; }
 
     // Qué toques de WhatsApp lleva esta cuenta.

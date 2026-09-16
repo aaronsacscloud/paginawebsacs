@@ -26,7 +26,7 @@
 // GET /api/cron/abm-barrido?giro=&ciudades=10&paginas=3&dry=1
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { quien, limpiar, calcularPuntaje } from '../../../lib/crm/abm.lib';
+import { quien, quienPuedeCorrerCrons, limpiar, calcularPuntaje } from '../../../lib/crm/abm.lib';
 import { PAISES } from '../../../lib/crm/abm-paises';
 
 export const prerender = false;
@@ -125,7 +125,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const auth = request.headers.get('authorization') || '';
   const secret = env('CRON_SECRET');
   if (!(secret && auth === `Bearer ${secret}`)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
   const key = env('GOOGLE_PLACES_API_KEY');

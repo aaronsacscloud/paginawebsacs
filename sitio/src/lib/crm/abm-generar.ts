@@ -181,7 +181,23 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
   ]);
   // Solo una dirección con forma de dirección: seis truncadas sin dominio
   // bastaban para disparar el disyuntor de rebotes el primer día.
-  const correo = (canales || []).find(x => x.tipo.startsWith('email') && x.estado !== 'invalido' && x.estado !== 'rebote' && CORREO_OK.test(String(x.valor || '')));
+  /* SE PREFIERE EL BUZÓN VERIFICADO. Los tres estados no valen lo mismo:
+       valido   ZeroBounce dice que el buzón existe
+       dns_ok   el dominio recibe correo; del buzón no sabemos nada
+       sin_probar  nadie lo ha mirado
+     Tomar el primero que no fuera `invalido` los trataba a los tres igual, y
+     hay 1,748 direcciones en `dns_ok` contra 3,088 verificadas. Se nota en la
+     factura: de los 51 correos que han salido, 6 rebotaron —11.8%, seis veces
+     la línea roja de Gmail— con «Recipient not found» y «No Such User Here»,
+     que es exactamente lo que el DNS no puede ver.
+     También se descarta `opt_out`: es lo que se escribe cuando alguien marcó
+     spam. El goteo ya lo excluía; aquí no, así que se gastaba una generación
+     con IA en un correo que el pipeline iba a frenar de todos modos. */
+  const usable = (canales || []).filter(x => x.tipo.startsWith('email')
+    && !['invalido', 'rebote', 'opt_out'].includes(String(x.estado))
+    && CORREO_OK.test(String(x.valor || '')));
+  const prioridad = (e: string) => (e === 'valido' ? 0 : e === 'dns_ok' ? 1 : 2);
+  const correo = usable.sort((a, b) => prioridad(String(a.estado)) - prioridad(String(b.estado)))[0];
   if (!correo) return { ok: false, error: 'esta cuenta no tiene correo verificado: su cadencia empieza por otro canal', status: 409 };
 
   // Nadie recibe dos veces: si ya hay toques vivos, no se genera otra cadencia.

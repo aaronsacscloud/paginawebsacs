@@ -52,7 +52,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { promises as dns } from 'node:dns';
-import { quien } from '../../../lib/crm/abm.lib';
+import { quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
 
 /** Los que sabemos de memoria que reciben correo: consultarlos es tirar
  *  milisegundos y arriesgarse a que un DNS lento los marque mal. */
@@ -98,7 +98,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const auth = request.headers.get('authorization') || '';
   const secret = (import.meta.env.CRON_SECRET || process.env.CRON_SECRET || '').trim();
   if (!(secret && auth === `Bearer ${secret}`)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 

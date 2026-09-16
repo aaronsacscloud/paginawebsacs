@@ -29,7 +29,7 @@
 import type { APIRoute } from 'astro';
 import { paisDe } from '../../../lib/crm/abm-paises';
 import { supabase } from '../../../lib/supabase';
-import { apuntar, quien, limpiar } from '../../../lib/crm/abm.lib';
+import { apuntar, quien, quienPuedeCorrerCrons, limpiar } from '../../../lib/crm/abm.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -102,7 +102,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const auth = request.headers.get('authorization') || '';
   const secret = env('CRON_SECRET');
   if (!(secret && auth === `Bearer ${secret}`)) {
-    const yo = await quien(request);
+    const yo = await quienPuedeCorrerCrons(request);
     if (!yo) return json({ error: 'no autorizado' }, 401);
   }
 
