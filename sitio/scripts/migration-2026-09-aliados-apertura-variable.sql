@@ -78,3 +78,25 @@ select ruta, orden, asunto,
        (cuerpo like '%[[apertura%' or cuerpo like '%[[el dolor%') as marcador,
        (cuerpo like '%{{apertura}}%' or cuerpo like '%{{dolor_cliente}}%') as variable
   from abm_plantillas where giro = 'aliados' and orden <= 2 order by ruta, orden;
+-- El punto final de la apertura: la frase del catálogo cierra sin punto
+-- (así se puede usar a media frase) y aquí es una oración entera.
+update abm_plantillas set cuerpo = '[[si persona]]Hola {{persona}}. | [[/si]]Le escribo a {{nombre}} a propósito, no de una lista. {{apertura}}.
+Hacemos software de inventario y punto de venta para moda. A usted no le vengo a vender un sistema: le vengo a proponer que sus clientes lo tengan.
+Funciona así, y es de una sola línea: usted nos presenta a uno de sus clientes, nosotros hacemos la venta completa —la presentación, la visita o la reunión, el cierre— y cuando esa cuenta paga, usted cobra el 40% de ese negocio mientras siga siendo cliente. De por vida, no el primer mes.
+Antes de venderle a nadie le hacemos un diagnóstico gratis: con sus existencias y sus ventas le decimos cuánto dinero trae parado y qué está dejando de vender por faltantes. Si no le sirve, ahí muere y usted queda como quien le dio algo concreto.
+¿Le interesa que le cuente los números de la comisión?' where giro='aliados' and ruta='referidor' and orden=1;
+update abm_plantillas set cuerpo = '[[si persona]]Hola {{persona}}. | [[/si]]Le escribo a {{nombre}} por algo concreto. {{apertura}}.
+Hacemos software de inventario y punto de venta para moda. Lo que le propongo no es que nos recomiende: es que su servicio incluya con qué ejecutarlo.
+Usted ya cobra por lo difícil —el diagnóstico, el criterio, el plan—. Lo que casi siempre se cae después es la ejecución: el cliente aprueba el plan y a la tercera temporada está igual, porque no tiene con qué medirlo.
+Con Sacs adentro, su entrega deja de ser un documento y se vuelve operación. Usted cobra comisión por la licencia y además sus propios servicios de implementación, capacitación y seguimiento.
+¿Le interesa ver cómo queda armado?' where giro='aliados' and ruta='consultor' and orden=1;
+update abm_plantillas set cuerpo = '[[si persona]]Hola {{persona}}. | [[/si]]Le escribo a {{nombre}} por esto. {{apertura}}.
+Hacemos software de inventario y punto de venta para moda, y estamos armando la red de quienes lo operan en México. No busco que nos recomiende: busco que tenga un negocio propio encima.
+Cómo se ve: nosotros lo certificamos —producto, IA, implementación—, lo acompañamos en sus primeras tiendas, y de ahí en adelante usted vende, implementa y opera. Cada retailer que opera con usted le deja ingreso recurrente mientras sea cliente.
+No hace falta venir de la tecnología. Hace falta saber de retail, que es la parte que no enseñamos nosotros.
+¿Le interesa que le cuente qué implica la certificación?' where giro='aliados' and ruta='orquestador' and orden=1;
+update abm_plantillas set cuerpo = '[[si persona]]Hola {{persona}}. | [[/si]]Le escribo a {{nombre}} por una integración, no por una venta. {{apertura}}.
+Hacemos software de inventario y punto de venta para moda. Tenemos API y servidor MCP abiertos, y la base de marcas y tiendas que operan con nosotros.
+Lo que propongo es que lo suyo quede conectado: que el dato que hoy se queda en su lado llegue al inventario del retailer, y al revés. No hay comisión ni reventa de por medio: lo que gana es distribución en toda nuestra base y un caso que sus clientes le van a pedir.
+¿Con quién de su lado se habla de integraciones?' where giro='aliados' and ruta='tecnologia' and orden=1;
+select ruta, (cuerpo like '%{{apertura}}.%') as con_punto from abm_plantillas where giro='aliados' and orden=1 order by ruta;

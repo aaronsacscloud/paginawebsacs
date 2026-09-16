@@ -218,7 +218,11 @@ function aperturaAliado(c: any): Record<string, string> {
   if (c.giro !== 'aliados') return { apertura: '', su_gente: '', dolor_cliente: '' };
   const t = ALIADOS[String(c.subgiro || '')];
   if (!t) return { apertura: '', su_gente: '', dolor_cliente: '' };
-  return { apertura: t.gancho, su_gente: t.suGente, dolor_cliente: t.dolor };
+  /* `apertura` y no `gancho`: el gancho está escrito para nosotros y no se le
+     manda a nadie. Y las dos que van A MEDIA FRASE entran en minúscula —«Le
+     vende a Marcas y boutiques…» con mayúscula delata la plantilla—. */
+  const baja = (t2: string) => t2.charAt(0).toLowerCase() + t2.slice(1);
+  return { apertura: t.apertura, su_gente: baja(t.suGente), dolor_cliente: baja(t.dolor) };
 }
 
 /** Solo plataformas de verdad. "Facebook (sin sitio propio)" o "no verificable
