@@ -296,7 +296,7 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
   let iaError: string | null = null;
   if (op.con_ia !== false) {
     try {
-      const r: any = await (anthropic as any).messages.create({
+      const r: any = await (anthropic as any).messages.create({ proposito: 'lib/crm/abm-generar.ts:299',
         // 8 correos de ~150 palabras no caben holgados en 4000 tokens. Ojo:
         // esto NO fue la causa de las 19 cadencias de novias que salieron
         // sin IA —eso era saldo agotado de la cuenta de Anthropic, y se vio

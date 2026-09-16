@@ -71,6 +71,21 @@ es(nombreBonito('AGORSS / DEEZER / MONACO / ESTUDIO S / DEFAY /'), 'Agorss', 'li
 es(nombreBonito('Alquiler de Smoking / Trajes Mickey'), 'Alquiler de Smoking / Trajes Mickey',
    'UNA diagonal NO es una lista: cortar aquí perdería media razón social');
 
+// Lo que la primera versión rompía, encontrado por la revisión adversarial
+// corriendo la función contra los 32,069 nombres reales de la base.
+es(nombreBonito("D'LUNA"), "D'Luna", 'apóstrofo: salía «D\'luna» por tomar charAt(0) a ciegas');
+es(nombreBonito('H.POLO CLUB'), 'H.Polo Club', 'punto dentro de la palabra');
+es(nombreBonito('¡PLAYERAS CON STILO!'), '¡Playeras con Stilo!', 'empieza con signo, no con letra');
+es(nombreBonito('"SAN JORGE UNIFORMES"'), '"San Jorge Uniformes"', 'entre comillas');
+es(nombreBonito('2MORROW'), '2Morrow', 'empieza con dígito');
+es(nombreBonito('Grupo Ultra (Ultrafemme / Ultrajewels / Luxury Avenue)'),
+   'Grupo Ultra (Ultrafemme / Ultrajewels / Luxury Avenue)',
+   'dos diagonales DENTRO de un paréntesis: cortar dejaba el paréntesis abierto');
+es(nombreBonito("PATRICH'S (venta de trajes, vestidos de novia)"),
+   "PATRICH'S (venta de trajes, vestidos de novia)",
+   'mixto: `.every` sobre arreglo vacío lo daba por grito y lo re-capitalizaba');
+es(nombreBonito('Sombrerería -El Vaquero-'), 'Sombrerería -El Vaquero-', 'el guion de cierre tiene pareja');
+
 // Y lo que ya está bien no se toca.
 es(nombreBonito('Boutique Marisol'), 'Boutique Marisol', 'bien escrito se queda igual');
 es(nombreBonito('  Doble   espacio  '), 'Doble espacio', 'espacios de más');

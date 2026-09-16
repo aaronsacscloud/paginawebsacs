@@ -125,6 +125,31 @@ export type Cierre = { giro?: string | null; nombre?: string | null; pais?: stri
    al ENVIAR, así que esto también arregla los que ya están en la cola. */
 type Oferta = { titulo: string; boton: string; frase: (giro?: string | null) => string };
 const OFERTAS: Record<string, Oferta> = {
+  /* Las rutas de ALIADOS no ofrecen demo ni diagnóstico: ofrecen una alianza.
+     Se me fueron en el primer arreglo —cubrí las 215 cuentas de `diagnostico` y
+     dejé 460 con el mismo choque—. El correo 7 de `referidor` cierra diciendo
+     «el diagnóstico es gratis y la comisión es del 40%» y debajo se pintaba
+     «DEMO EN LÍNEA · 30 MINUTOS». */
+  referidor: {
+    titulo: 'Cómo funciona la comisión · 20 minutos',
+    boton: 'Agendar la llamada',
+    frase: () => 'Se lo explico en una llamada de veinte minutos: cómo se presenta al cliente, qué hacemos nosotros y cómo se le paga la comisión mientras esa cuenta siga con nosotros.',
+  },
+  consultor: {
+    titulo: 'Cómo queda armado · 20 minutos',
+    boton: 'Agendar la llamada',
+    frase: () => 'Se lo enseño en veinte minutos: cómo queda Sacs dentro de su entrega, qué cobra usted por implementarlo y qué comisión deja la licencia.',
+  },
+  orquestador: {
+    titulo: 'La certificación · 30 minutos',
+    boton: 'Agendar la llamada',
+    frase: () => 'Se lo cuento en treinta minutos: qué implica la certificación, cómo lo acompañamos en sus primeras tiendas y qué ingreso deja cada retailer que opera con usted.',
+  },
+  tecnologia: {
+    titulo: 'La integración · 30 minutos',
+    boton: 'Agendar la llamada',
+    frase: () => 'Media hora con quien lleva la API: qué expone cada lado, qué resuelve la integración a nivel de talla y color, y qué distribución gana usted en nuestra base.',
+  },
   diagnostico: {
     titulo: 'Diagnóstico gratis · 30 minutos',
     boton: 'Agendar el diagnóstico',

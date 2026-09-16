@@ -67,38 +67,68 @@ export function nombrePila(completo?: string | null): string {
 // automático.
 //
 // Tres reglas, y las tres con su excepción medida contra los 3,205 nombres:
-//   · MAYÚSCULAS → Mayúscula inicial. La excepción son las siglas, y la señal
-//     que las distingue NO es el largo: es que no tienen vocal. «JYV» y «URB»
-//     se quedan; «YAZ», «VIA» y «JOY» no son siglas y se escriben Yaz, Via,
-//     Joy. Se probó primero con «tres letras o menos», que producía «Cute AND
-//     JOY» y «Contadores Y Abogados» — peor que el problema original.
+//   · GRITANDO = no hay NI UNA minúscula en todo el nombre. Se probó primero
+//     con «ninguna palabra tiene minúscula inicial», y `.every` sobre un
+//     arreglo vacío devuelve `true`: «PATRICH'S (venta de trajes, vestidos de
+//     novia)» se leía como grito y salía «Patrich's (venta de Trajes, Vestidos
+//     de Novia)». Un nombre mixto ya está escrito por su dueño: no se toca.
+//   · Se pasa a mayúscula la primera LETRA, no el primer carácter. «D'LUNA»
+//     empieza con D pero «¡PLAYERAS…» empieza con «¡», y tomar charAt(0) a
+//     ciegas producía «¡playeras con Stilo». Y tras el apóstrofo de «D'Luna»
+//     va mayúscula, que es como se escriben esos nombres en México.
+//   · La sigla se distingue por NO TENER VOCAL, no por ser corta. «JYV» y
+//     «URB» se quedan; «YAZ», «VIA» y «JOY» no son siglas. Se probó con «tres
+//     letras o menos», que producía «Cute AND JOY» — peor que el original.
 //   · La lista de marcas se corta en la primera. Solo si hay DOS o más
 //     diagonales: «Alquiler de Smoking / Trajes Mickey» es un nombre con una
-//     diagonal, no una lista, y cortarlo dejaría «Alquiler de Smoking».
+//     diagonal, no una lista, y cortarlo dejaría «Alquiler de Smoking». Y
+//     nunca si el corte deja un paréntesis abierto: «Grupo Ultra (Ultrafemme /
+//     Ultrajewels / Luxury Avenue)» salía como «Grupo Ultra (Ultrafemme».
 //   · La forma legal se va: «Textiles Opertel S.A. de C.V.» en un correo en
 //     frío es de oficio de banco. En el correo se le llama como se le llama.
 
 const ENLACE = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'en', 'a', 'al', 'con', 'por', 'para']);
 
+const VOCAL = /[AEIOUÁÉÍÓÚÜaeiouáéíóúü]/;
+
+/** Mayúscula en la primera LETRA, respetando lo que venga antes («¡», comillas,
+ *  un dígito) y la letra que sigue a un apóstrofo corto: D'Luna, O'Brien. */
+function conMayuscula(p: string): string {
+  let hecho = false;
+  return p.replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g, (t, i: number) => {
+    if (!hecho) { hecho = true; return t.charAt(0).toUpperCase() + t.slice(1); }
+    /* Y cada trocito que arranca después de un separador dentro de la misma
+       palabra: «D'LUNA» → D'Luna, «H.POLO» → H.Polo. Sin esto salía «D'luna»
+       y «H.polo», que se ve peor que el grito que veníamos a quitar. */
+    if (/['’.\-&]$/.test(p.slice(0, i))) return t.charAt(0).toUpperCase() + t.slice(1);
+    return t;
+  });
+}
+
 export function nombreBonito(bruto?: string | null): string {
-  let t = String(bruto || '').replace(/\s+/g, ' ').trim();
+  const original = String(bruto || '').replace(/\s+/g, ' ').trim();
+  let t = original;
   if (!t) return '';
 
-  if ((t.match(/\//g) || []).length >= 2) t = t.split('/')[0].trim();
+  if ((t.match(/\//g) || []).length >= 2) {
+    const corte = t.split('/')[0].trim();
+    // Solo si el corte no desbalancea un paréntesis ni deja casi nada.
+    const abiertos = (corte.match(/\(/g) || []).length - (corte.match(/\)/g) || []).length;
+    if (abiertos === 0 && corte.length >= 3) t = corte;
+  }
   t = t.replace(/[,\s]+(s\.?\s?a\.?(\s?de\s?c\.?\s?v\.?)?|s\.?\s?de\s?r\.?\s?l\.?(\s?de\s?c\.?\s?v\.?)?|s\.?\s?c\.?|a\.?\s?c\.?)\s*\.?$/i, '');
-  t = t.replace(/[\s|/,.\-–—]+$/, '').trim();
-  if (!t) return String(bruto || '').trim();
+  // Basura de cierre, pero no un guion o comilla que cierra su pareja.
+  t = t.replace(/[\s|/,.]+$/, '').trim();
+  if (!t) return original;
 
-  const palabras = t.split(' ');
-  const gritando = palabras.filter(p => /[A-ZÁÉÍÓÚÑ]/.test(p)).every(p => p === p.toUpperCase());
-  if (!gritando) return t;
+  // GRITA solo si no hay NI UNA minúscula. Un nombre mixto ya lo escribió su dueño.
+  if (/[a-záéíóúüñ]/.test(t)) return t;
 
-  return palabras.map((p, i) => {
+  return t.split(' ').map((p, i) => {
     const baja = p.toLowerCase();
     if (i > 0 && ENLACE.has(baja.replace(/[^a-záéíóúñ]/g, ''))) return baja;
     const letras = p.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
-    // Sigla = sin vocal. JYV y URB se quedan; YAZ, VIA y JOY no son siglas.
-    if (letras.length > 1 && !/[AEIOUÁÉÍÓÚaeiouáéíóú]/.test(letras)) return p;
-    return baja.charAt(0).toUpperCase() + baja.slice(1);
+    if (letras.length > 1 && !VOCAL.test(letras)) return p;   // sigla: JYV, URB
+    return conMayuscula(baja);
   }).join(' ');
 }
