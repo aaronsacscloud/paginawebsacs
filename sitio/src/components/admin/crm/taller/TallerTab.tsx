@@ -490,9 +490,11 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
         {VISTAS.map(v => {
           const n = conVista(v.k).length;
           return (
+            {/* «Total» activo no lleva «quitar»: no hay filtro que quitar. */}
             <KpiCard key={v.k} franja={v.franja} label={v.l} valor={n} faro={v.faro}
               color={n ? v.tinta : undefined} sub={v.sub} activo={vista === v.k}
-              onClick={() => { setVista(vista === v.k ? 'todas' : v.k); setCuenta(''); setDentro('todas'); }} />
+              onClick={v.k === 'todas' && vista === 'todas' ? undefined
+                : () => { setVista(vista === v.k ? 'todas' : v.k); setCuenta(''); setDentro('todas'); }} />
           );
         })}
       </div>
