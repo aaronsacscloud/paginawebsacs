@@ -65,7 +65,7 @@ Responde ÚNICAMENTE un JSON válido, sin markdown:
    `agent_runs`, que es donde se diagnostica. */
 function errorHumano(e: any): string {
   const m = String(e?.message || e || '');
-  if (/credit balance is too low|billing/i.test(m)) return 'La IA no tiene saldo: hay que recargar la cuenta de Anthropic. Mientras, escribe la nota a mano.';
+  if (/credit balance is too low|billing|sin saldo/i.test(m)) return 'La IA no tiene saldo: hay que recargar la cuenta de Anthropic. Mientras, escribe la nota a mano.';
   if (/rate.?limit|429/i.test(m)) return 'La IA está saturada en este momento — vuelve a intentar en un minuto.';
   if (/overloaded|529/i.test(m)) return 'El modelo está sobrecargado — vuelve a intentar en un minuto.';
   if (/timeout|ETIMEDOUT|ECONNRESET/i.test(m)) return 'La IA tardó de más — vuelve a intentar.';
