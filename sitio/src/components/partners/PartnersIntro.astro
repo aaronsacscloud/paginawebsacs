@@ -81,9 +81,9 @@ const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transforma
     const ctx = cv.getContext('2d')!; const off = document.createElement('canvas'); off.width = W * 2; off.height = H; const octx = off.getContext('2d', { willReadFrequently: true })!;
     const out = ctx.createImageData(W, H);
     // Sobre fondo negro el borde del recorte se ve blanco (el personaje se recortó sobre blanco).
-    // Se erosiona la silueta 1 px (mínimo 3×3 separable), se apagan los alfas débiles y se
+    // Se erosiona la silueta 3 px (mínimo separable de radio R), se apagan los alfas débiles y se
     // des-mezcla el blanco de los pixeles del borde. Probado sobre un fotograma real: sin halo.
-    const A = new Uint8Array(W * H), B = new Uint8Array(W * H);
+    const A = new Uint8Array(W * H), B = new Uint8Array(W * H); const R = movil ? 2 : 3; // radio de erosión en px (probado: 3 px limpia el borde en 480 px)
     let src = false, act = -1, fin = false, raf = 0, dib = 0, enVista = false, pAct = 0, rot = 0, vuelta = 0, rotT = 0;
     const carga = () => { if (src) return; src = true; vids.forEach((v) => { v.src = (movil ? '/tienda/video/m/' : '/tienda/video/') + (v.classList.contains('pi-v--el') ? 'suenos-el' : 'suenos-ella') + '.mp4?v=6'; v.play().catch(() => {}); }); };
     const dibuja = () => {
@@ -93,8 +93,8 @@ const PALABRAS = ['implementar', 'automatizar', 'operar', 'escalar', 'transforma
         octx.drawImage(v, 0, 0, W * 2, H);
         const s = octx.getImageData(0, 0, W * 2, H).data; const d = out.data; const fila = W * 2 * 4;
         for (let y = 0; y < H; y++) { const m = y * fila + W * 4, o = y * W; for (let x = 0; x < W; x++) A[o + x] = s[m + x * 4]; }
-        for (let y = 0; y < H; y++) { const o = y * W; for (let x = 0; x < W; x++) { let a = A[o + x]; if (x > 0 && A[o + x - 1] < a) a = A[o + x - 1]; if (x < W - 1 && A[o + x + 1] < a) a = A[o + x + 1]; B[o + x] = a; } }
-        for (let y = 0; y < H; y++) { const o = y * W, b = y * fila; for (let x = 0; x < W; x++) { let a = B[o + x]; if (y > 0 && B[o + x - W] < a) a = B[o + x - W]; if (y < H - 1 && B[o + x + W] < a) a = B[o + x + W]; if (a < 26) a = 0;
+        for (let y = 0; y < H; y++) { const o = y * W; for (let x = 0; x < W; x++) { let a = A[o + x]; for (let k = -R; k <= R; k++) { const xx = x + k; if (xx >= 0 && xx < W && A[o + xx] < a) a = A[o + xx]; } B[o + x] = a; } }
+        for (let y = 0; y < H; y++) { const o = y * W, b = y * fila; for (let x = 0; x < W; x++) { let a = B[o + x]; for (let k = -R; k <= R; k++) { const yy = y + k; if (yy >= 0 && yy < H && B[yy * W + x] < a) a = B[yy * W + x]; } if (a < 26) a = 0;
           const i = b + x * 4, j = (o + x) * 4;
           if (a === 0) { d[j] = d[j + 1] = d[j + 2] = 0; d[j + 3] = 0; continue; }
           if (a === 255) { d[j] = s[i]; d[j + 1] = s[i + 1]; d[j + 2] = s[i + 2]; d[j + 3] = 255; continue; }
