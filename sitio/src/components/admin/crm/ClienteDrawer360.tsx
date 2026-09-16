@@ -1381,6 +1381,10 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
           quién es este cliente. Y arriba de todo había ocho cajas de texto
           abiertas aunque solo vinieras a leer. Ahora la ficha se lee escrita y
           los campos salen al pedir Editar. */}
+      <style>{`
+        .col3 { display: flex; flex-direction: column; }
+        .col3 > * { flex: 1; margin-bottom: 0 !important; }
+      `}</style>
       {/* ══ TRES TARJETAS DEL MISMO ALTO ══
           La pestaña mezclaba cuatro asuntos en una sola tarjeta —quién es,
           cuánto paga, quién decide y con qué se le factura—, repetía la mitad de
@@ -1545,13 +1549,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
           entera: la cuenta de SACS y los datos fiscales ya viven ahí, con su
           validación de RFC. Duplicarlos aquí sería el segundo camino para
           llenar lo mismo que este rediseño vino a quitar. */}
-      {tercera ? (<>
-        {/* La tarjeta que llega de fuera no sabe que vive en una rejilla: esta
-            regla la estira hasta la altura de las otras dos. Sin ella, la
-            tercera columna quedaba más corta y la fila se veía descuadrada. */}
-        <style>{`.col3 { display: flex; flex-direction: column; } .col3 > * { flex: 1; margin-bottom: 0 !important; }`}</style>
-        <div className="col3">{tercera}</div>
-      </>) : null}
+      {tercera ? <div className="col3">{tercera}</div> : null}
       </div>
 
       {/* Lo secundario, plegado y al pie: está a un clic, no estorbando. */}
