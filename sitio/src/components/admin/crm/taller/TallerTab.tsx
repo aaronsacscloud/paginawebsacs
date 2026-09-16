@@ -400,6 +400,19 @@ const VISTAS: { k: string; l: string; sub: string; franja: string; tinta: string
   { k: 'ok',         l: 'En espera de tu OK', sub: 'hay que revisarlas',      franja: P.verde,   tinta: P.verdeTinta, faro: true, f: o => o.etapa === 'lista' },
 ];
 
+/* AFINAR. Las cuatro tarjetas dicen en qué MOMENTO del proceso está el
+   trabajo; esto dice qué le PASA, que es otra pregunta: lo que no tiene fecha,
+   lo que ya se venció, lo que nadie tomó y lo que traigo yo. Va en una cajita
+   al lado del buscador y no en una tira de pestañas —eso fue justo lo que se
+   quitó— porque es un filtro que casi siempre está en «todas»: ocupa un renglón
+   cuando no se usa y se nota cuando sí. */
+const AFINAR: { k: string; l: string; f: (o: any, yo?: any) => boolean }[] = [
+  { k: 'sinfecha', l: 'Sin fecha asignada', f: o => !o.fecha_prometida },
+  { k: 'vencidos', l: 'Vencidos',           f: o => vencida(o) },
+  { k: 'sindueno', l: 'Sin dueño',          f: o => !o.asignado_id },
+  { k: 'mias',     l: 'Solo mías',          f: (o, yo) => !!yo?.id && o.asignado_id === yo.id },
+];
+
 /* EL FILTRO DE ADENTRO DE UNA CUENTA. Arriba se elige el momento del proceso
    para toda la lista; aquí adentro se separa la gestión por la etapa en la que
    está, que es la pregunta del proyecto abierto: «de las quince de Rubens,
@@ -432,12 +445,18 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
   /* Dentro de un proyecto: la etapa de cada gestión, o lo que no tiene fecha. */
   const [dentro, setDentro] = useState<string>('todas');
+  const [afinar, setAfinar] = useState<string>('');   // la cajita de al lado del buscador
 
   const q = filtro.trim().toLowerCase();
   const texto = q
     ? ordenes.filter((o: any) => (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q))
     : ordenes;
-  const conVista = (k: string) => texto.filter(VISTAS.find(x => x.k === k)!.f);
+  /* El afinado entra ANTES que las tarjetas para que los números de arriba y
+     los de abajo digan lo mismo: con «vencidos» puesto, «13 por arrancar» es
+     trece vencidas por arrancar, no trece en total. */
+  const afin = AFINAR.find(a => a.k === afinar);
+  const base = afin ? texto.filter((o: any) => afin.f(o, yo)) : texto;
+  const conVista = (k: string) => base.filter(VISTAS.find(x => x.k === k)!.f);
   const lista = conVista(vista);
 
   /* Una cuenta es un PROYECTO. Antes eran dieciocho folios sueltos agrupados
@@ -489,8 +508,8 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 12 }}>
         {VISTAS.map(v => {
           const n = conVista(v.k).length;
+          // «Total» activo no lleva «quitar»: no hay filtro que quitar.
           return (
-            {/* «Total» activo no lleva «quitar»: no hay filtro que quitar. */}
             <KpiCard key={v.k} franja={v.franja} label={v.l} valor={n} faro={v.faro}
               color={n ? v.tinta : undefined} sub={v.sub} activo={vista === v.k}
               onClick={v.k === 'todas' && vista === 'todas' ? undefined
@@ -505,12 +524,33 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por cuenta, folio o texto…"
           style={{ ...S.input, width: 260, padding: '7px 11px' }} />
+        {/* La cajita de afinar. Puesta se pinta de morado: un filtro aplicado que
+            no se ve es la forma más rápida de creer que faltan órdenes. */}
+        <select value={afinar} onChange={e => { setAfinar(e.target.value); setCuenta(''); setDentro('todas'); }}
+          style={{
+            ...S.input, width: 'auto', minWidth: 170, padding: '7px 11px', cursor: 'pointer',
+            ...(afinar ? { border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, fontWeight: 700, background: P.violetaAgua } : null),
+          }}>
+          <option value="">Todas las órdenes</option>
+          {AFINAR.map(a => {
+            const n = texto.filter((o: any) => a.f(o, yo)).length;
+            return <option key={a.k} value={a.k}>{a.l} · {n}</option>;
+          })}
+        </select>
+        {afinar && (
+          <button onClick={() => { setAfinar(''); setCuenta(''); setDentro('todas'); }}
+            style={{ border: 'none', background: 'none', color: '#8d8a97', fontSize: '0.75rem', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>
+            quitar el filtro
+          </button>
+        )}
         <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem', marginLeft: 'auto' }} onClick={onNueva}>+ Nueva orden</button>
       </div>
 
       {proyectos.length === 0 && (
         <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
-          {q ? 'Nada coincide con lo que buscas.' : 'Nada en esta vista.'}
+          {q ? 'Nada coincide con lo que buscas.'
+             : afin ? `Nada en esta vista con «${afin.l.toLowerCase()}».`
+             : 'Nada en esta vista.'}
         </div>
       )}
 
