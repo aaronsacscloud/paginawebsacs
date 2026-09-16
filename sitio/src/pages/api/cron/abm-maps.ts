@@ -27,6 +27,7 @@
 //
 // GET /api/cron/abm-maps?cuantas=&giro=&top=100&dry=1
 import type { APIRoute } from 'astro';
+import { paisDe } from '../../../lib/crm/abm-paises';
 import { supabase } from '../../../lib/supabase';
 import { apuntar, quien, limpiar } from '../../../lib/crm/abm.lib';
 
@@ -162,11 +163,17 @@ export const GET: APIRoute = async ({ request, url }) => {
   for (const c of cuentas as any[]) {
     r.revisadas++;
     try {
-      const q = [c.nombre, c.ciudad, 'México'].filter(Boolean).join(' ');
+      /* El país es el DE LA CUENTA (16-sep-2026). Esto decía «México» y
+         regionCode MX a secas, de cuando la base era solo mexicana; con las
+         cuentas de once países —que además encabezan el top por reseñas—
+         buscaba «ARTENOVIA Huelva México» y lo que encontrara se le pegaba a
+         la ficha equivocada. */
+      const pp = paisDe(c.pais);
+      const q = [c.nombre, c.ciudad, pp.nombre].filter(Boolean).join(' ');
       const res: any = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': CAMPOS },
-        body: JSON.stringify({ textQuery: q, languageCode: 'es', regionCode: 'MX', maxResultCount: 1 }),
+        body: JSON.stringify({ textQuery: q, languageCode: 'es', regionCode: pp.gl, maxResultCount: 1 }),
       }).then((x) => x.json());
 
       const p = (res?.places || [])[0];
@@ -252,8 +259,9 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (p.internationalPhoneNumber) {
         const crudo = String(p.internationalPhoneNumber).trim();
         const tel = crudo.replace(/\D/g, '');
-        const e164 = crudo.startsWith('+52') ? tel : '';
-        if (e164.length === 12 && e164.startsWith('52')) {
+        // La lada que vale es la del país de la cuenta, no siempre el 52.
+        const e164 = crudo.startsWith('+' + pp.lada) ? tel : '';
+        if (e164.length >= 10 && e164.length <= 15 && e164.startsWith(pp.lada)) {
           const { error: e } = await supabase.from('abm_canales').insert({
             cuenta_id: c.id, tipo: 'telefono', valor: e164, confianza: 'alta',
             es_de_la_tienda: true, estado: 'sin_probar',
