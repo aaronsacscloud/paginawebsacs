@@ -364,6 +364,15 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
     }
   }
 
-  await apuntar(c.id, 'sistema', 'nota', { texto: `${op.autor} generó una cadencia de ${filas.length} correos${whatsapps ? ` y ${whatsapps} WhatsApp` : ''}${conIa ? '' : ' (sin IA: se armó con la plantilla del giro)'}, pendiente de aprobar` });
+  /* «Sin IA» tiene que decir POR QUÉ. Durante tres días todas las cadencias
+     salieron con la plantilla cruda y la nota solo decía «sin IA», así que se
+     leía como una elección. No lo era: la cuenta de Anthropic lleva sin saldo
+     desde el 13-sep y ese día hubo 5,417 llamadas rechazadas. El resultado
+     son 1,357 correos en cola con 31 asuntos distintos entre todos, que es
+     huella de envío masivo de manual.
+     El motivo ya viajaba en la respuesta —se arregló cuando las 19 cadencias
+     de novias— pero el goteo no la lee y la bitácora no lo guardaba, así que
+     seguía siendo invisible para quien mira la ficha. */
+  await apuntar(c.id, 'sistema', 'nota', { texto: `${op.autor} generó una cadencia de ${filas.length} correos${whatsapps ? ` y ${whatsapps} WhatsApp` : ''}${conIa ? '' : ` (SIN IA, se armó con la plantilla del giro — ${iaError || 'sin motivo registrado'})`}, pendiente de aprobar` });
   return { ok: true, correos: filas.length, whatsapps, con_ia: conIa, ia_error: iaError, toque_ids: toqueIds, destino: correo.valor };
 }
