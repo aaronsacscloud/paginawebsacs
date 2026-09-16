@@ -411,3 +411,36 @@ correo del cliente). Ahí falta una **nota de contexto**:
       el consultor abre la invitación y ya tiene el contexto, sin entrar a nada.
 - [x] Incluye un **link directo a la conversación en el CRM** dentro de esa misma
       descripción, para pasar de la invitación al hilo con un clic.
+
+## 2026-09-16 · Cuatro casos del inbox (Montse, orden fijo, ciclo de vida, correo)
+
+> **Caso 1:** «Monse menciono que no le interesa, en este caso debería de haberlo
+> descalificado después de esa respuesta, peudes revisar porque no lo hizo? y
+> tambien sacarlo de la cadencia e ingresarlo a la cadencia de descalificado que
+> esta mal en el flujo que no sucedio esto.»
+>
+> **Caso 2:** «Esta solución no funciono correctamente, en donde pones esto de
+> orden fijo mientras contestas no sirve porque deja de ser dinamico y estar
+> apretando un botón es muy incomodo.»
+>
+> **Caso 3:** «Agregar un selector a un costado de sin asignar y dejar todos esos
+> selector que se vean iguales y agregar uno que se llame "etapa de ciclo de
+> vida" […] que exista la etapa "En conciliación" […] cuando un cliente perdido
+> pasa a esta etapa y esta en una cadencia, en automático se elimina de las
+> cadencias […] una opción rápida que me permita dar un click poner el motivo de
+> seguimiento, ponerle una fecha y tener una sección en el inbox con un filtro
+> […] que diga "Pidio seguimiento" […] analiza bien la logica que podríamos
+> implementar aquí y realicemos el plan para ello.»
+>
+> **Caso 4:** «Aqui no llego el correo de confirmación por Marketing, debemos
+> tener algna alternativa de utility para estos casos tambien.»
+
+- [ ] **1 · Montse dijo que no y siguió viva.** Diagnosticar por qué el botón
+      «Ahora no» no la descalificó, no la sacó de la cadencia ni la metió a la
+      de descalificados. Arreglar el flujo.
+- [ ] **2 · «Orden fijo mientras contestas» no sirve.** Deja la lista estática y
+      obliga a apretar un botón. Rediseñar.
+- [ ] **3 · Selector de etapa + «En conciliación» + «Pidió seguimiento».**
+      PRIMERO el plan, lo pidió explícitamente.
+- [ ] **4 · Confirmación que no llegó.** Plantilla UTILITY de respaldo cuando la
+      de marketing no entra.
