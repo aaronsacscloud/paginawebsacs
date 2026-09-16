@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","include":["src/lib/ai/client.ts","src/lib/demanda/ia.ts","src/lib/crm/ti/guion-datos.ts"],"compilerOptions":{"noEmit":true,"skipLibCheck":true}}

@@ -467,3 +467,9 @@ guardadas y «Solo las mías», la barra de abajo quedó en buscador + Nueva ord
 y dentro de la cuenta el filtro es por ETAPA con «Sin fecha» detrás de la raya.
 Quitar ya existía desde el commit 6fc84fc9 (el dueño grabó con un bundle viejo:
 en el video se ve el aviso «Versión nueva lista · Actualizar»).
+
+## 2026-09-16 · Páginas completas de cada giro (llegó a media tarea de Partners)
+Texto del dueño: «vamos ahora con las paginas completas de cada giro y necesito que me ayudes a
+orquestrar la instrucción ahi te van los puntos clave a seguir.» — el dueño va a mandar los puntos
+clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, certificación,
+5 días, portal, niveles). Estado: PENDIENTE.

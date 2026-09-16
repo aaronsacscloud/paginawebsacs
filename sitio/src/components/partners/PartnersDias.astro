@@ -1,0 +1,154 @@
+---
+/**
+ * PartnersDias — "Tu primera tienda en cinco días" (16-sep-2026). Cinco pasos a la izquierda y una
+ * pantalla fija a la derecha que cambia con el scroll; en móvil cada paso trae su pantalla debajo.
+ * Las pantallas son UI ligera en HTML (estilo claro de Sacs), no imágenes.
+ */
+const dias = [
+  { n: 'Día 1', t: 'Catálogo con IA', d: 'Una foto por modelo. La IA escribe nombre, descripción, tallas y colores; tú solo confirmas precio.' },
+  { n: 'Día 2', t: 'Inventario por talla', d: 'Cargas la curva de cada sucursal. Desde ese momento el sistema sabe qué talla hay y dónde.' },
+  { n: 'Día 3', t: 'Punto de venta', d: 'Caja, ticket, apartados y pagos. La tienda cobra el mismo día, con o sin internet.' },
+  { n: 'Día 4', t: 'WhatsApp y tienda en línea', d: 'Catálogo publicado y WhatsApp conectado. Las clientas compran desde el teléfono.' },
+  { n: 'Día 5', t: 'Vendiendo en todos los canales', d: 'Tienda física, en línea y WhatsApp en un solo inventario. Tú cobras tu recurrente desde el mes uno.' },
+];
+---
+<section class="dd" id="cinco-dias">
+  <div class="dd-inner">
+    <div class="dd-head">
+      <span class="dd-eyebrow">Con Sacs y su IA</span>
+      <h2 class="dd-h2">Tu primera tienda, en cinco días</h2>
+      <p class="dd-p">Implementar dejaba meses de proyecto. Con la IA cargando el catálogo y el sistema ya configurado para moda, un partner deja una tienda vendiendo en una semana.</p>
+    </div>
+    <div class="dd-grid">
+      <ol class="dd-pasos">
+        {dias.map((x, i) => (
+          <li class:list={['dd-paso', { 'is-on': i === 0 }]} data-i={i}>
+            <span class="dd-n">{x.n}</span>
+            <h3>{x.t}</h3>
+            <p>{x.d}</p>
+            <div class="dd-scr-m"><Fragment set:html={`<div data-scr-clone="${i}"></div>`} /></div>
+          </li>
+        ))}
+      </ol>
+      <div class="dd-pantalla">
+        <div class="dd-marco">
+          <div class="dd-barra"><i></i><i></i><i></i><span>Sacs · Tu Marca</span></div>
+          <div class="dd-scrs">
+            <div class="dd-scr is-on" data-scr="0">
+              <div class="dd-scr-h"><b>Nuevo producto</b><span class="dd-ia">Con IA</span></div>
+              <div class="dd-prod"><img src="/images/giros/tiendas-de-ropa.webp" alt="" loading="lazy" /><div><b>Vestido satén rosa</b><span>Satén, corte al bies, tirantes ajustables. Ideal para noche.</span><div class="dd-tallas"><i>XS</i><i>S</i><i>M</i><i>L</i></div><em>$2,490</em></div></div>
+              <div class="dd-ok">Nombre, descripción, tallas y colores: listos por la IA</div>
+            </div>
+            <div class="dd-scr" data-scr="1">
+              <div class="dd-scr-h"><b>Existencias por talla</b><span>3 sucursales</span></div>
+              <table class="dd-tab"><thead><tr><th>Vestido satén rosa</th><th>XS</th><th>S</th><th>M</th><th>L</th></tr></thead><tbody><tr><td>Polanco</td><td>2</td><td>3</td><td>4</td><td>2</td></tr><tr><td>Satélite</td><td>1</td><td>2</td><td class="dd-cero">0</td><td>1</td></tr><tr><td>Querétaro</td><td>2</td><td>4</td><td>3</td><td>1</td></tr></tbody></table>
+              <div class="dd-ok dd-ok--azul">Satélite sin talla M: transferir 2 desde Polanco</div>
+            </div>
+            <div class="dd-scr" data-scr="2">
+              <div class="dd-scr-h"><b>Ticket #4821</b><span>Caja 2 · Fernanda</span></div>
+              <ul class="dd-ticket"><li><span>Vestido satén rosa · M</span><b>$2,490</b></li><li><span>Tacón rojo charol · 25</span><b>$1,890</b></li><li class="dd-tot"><span>Total</span><b>$4,380</b></li></ul>
+              <div class="dd-ok">Cobrado con tarjeta · ticket enviado por WhatsApp</div>
+            </div>
+            <div class="dd-scr" data-scr="3">
+              <div class="dd-scr-h"><b>WhatsApp · Mariana</b><span>Tienda en línea publicada</span></div>
+              <div class="dd-chat"><p>Hola Mariana, llegó el vestido satén rosa en tu talla M. Te lo aparto hoy en Polanco o te lo mando a casa.</p><p class="dd-chat-r">¡Sí! Mándamelo a casa 🙌</p></div>
+              <div class="dd-ok">Pedido creado desde el chat · inventario descontado</div>
+            </div>
+            <div class="dd-scr" data-scr="4">
+              <div class="dd-scr-h"><b>Ventas de hoy</b><span>3 canales</span></div>
+              <div class="dd-graf"><div style="--h:55%"><span>Lun</span></div><div style="--h:70%"><span>Mar</span></div><div style="--h:62%"><span>Mié</span></div><div style="--h:88%"><span>Jue</span></div><div style="--h:100%" class="dd-hoy"><span>Hoy</span></div></div>
+              <ul class="dd-canales"><li>Tienda física <b>$18,420</b></li><li>Tienda en línea <b>$6,980</b></li><li>WhatsApp <b>$4,380</b></li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .dd { background: #F7F7F5; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .dd-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .dd-head { max-width: 760px; margin-bottom: clamp(36px, 5vw, 64px); }
+  .dd-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 16px; }
+  .dd-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 14px; color: inherit; }
+  .dd-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0; color: #55554F; }
+  .dd-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
+  .dd-pasos { list-style: none; margin: 0; padding: 0; }
+  .dd-paso { position: relative; padding: 22px 0 22px 30px; border-left: 2px solid #E3E3DF; opacity: 0.45; transition: opacity 0.4s; }
+  .dd-paso::before { content: ''; position: absolute; left: -7px; top: 30px; width: 12px; height: 12px; border-radius: 50%; background: #E3E3DF; transition: background 0.3s, transform 0.3s; }
+  .dd-paso.is-on { opacity: 1; } .dd-paso.is-on::before { background: #0E0D0C; transform: scale(1.25); }
+  .dd-n { display: block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 6px; }
+  .dd-paso h3 { font-family: var(--font-display); font-size: clamp(22px, 2vw, 28px); letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 8px; color: inherit; }
+  .dd-paso p { margin: 0; font-size: 15.5px; line-height: 1.5; color: #55554F; }
+  .dd-scr-m { display: none; }
+  .dd-pantalla { position: sticky; top: 110px; }
+  .dd-marco { background: #fff; border-radius: 20px; border: 1px solid #E6E6E2; box-shadow: 0 40px 90px -40px rgba(0,0,0,0.25); overflow: hidden; }
+  .dd-barra { display: flex; align-items: center; gap: 6px; padding: 12px 16px; border-bottom: 1px solid #EEEEEA; background: #FAFAF8; }
+  .dd-barra i { width: 9px; height: 9px; border-radius: 50%; background: #E0E0DC; }
+  .dd-barra span { margin-left: 10px; font-size: 12px; color: #8A8A86; }
+  .dd-scrs { position: relative; min-height: 380px; }
+  .dd-scr { position: absolute; inset: 0; padding: 26px; opacity: 0; transform: translateY(8px); transition: opacity 0.45s, transform 0.45s; pointer-events: none; }
+  .dd-scr.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .dd-scr-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .dd-scr-h b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.01em; }
+  .dd-scr-h span { font-size: 12.5px; color: #8A8A86; }
+  .dd-ia { color: var(--color-primary, #4B7BE5) !important; font-weight: 700; border: 1px solid rgba(75,123,229,0.35); padding: 4px 10px; border-radius: 999px; }
+  .dd-prod { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: start; }
+  .dd-prod img { width: 120px; height: 150px; object-fit: cover; border-radius: 12px; }
+  .dd-prod b { display: block; font-family: var(--font-display); font-size: 18px; margin-bottom: 6px; }
+  .dd-prod span { display: block; font-size: 13.5px; color: #55554F; line-height: 1.45; }
+  .dd-tallas { display: flex; gap: 6px; margin: 12px 0; }
+  .dd-tallas i { font-style: normal; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1px solid #E3E3DF; border-radius: 8px; }
+  .dd-prod em { font-style: normal; font-family: var(--font-display); font-size: 20px; }
+  .dd-ok { margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: #EDF7F0; color: #1B6B3A; font-size: 13.5px; font-weight: 600; }
+  .dd-ok--azul { background: #EEF3FF; color: #2E5BC4; }
+  .dd-tab { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .dd-tab th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A86; padding: 8px 6px; border-bottom: 1px solid #EEEEEA; }
+  .dd-tab th:not(:first-child), .dd-tab td:not(:first-child) { text-align: center; }
+  .dd-tab td { padding: 11px 6px; border-bottom: 1px solid #F1F1EE; }
+  .dd-tab td:first-child { font-weight: 600; }
+  .dd-cero { color: #C0392B; font-weight: 700; }
+  .dd-ticket { list-style: none; margin: 0; padding: 0; }
+  .dd-ticket li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #E3E3DF; font-size: 15px; }
+  .dd-tot { border-bottom: 0 !important; font-family: var(--font-display); font-size: 20px !important; padding-top: 16px !important; }
+  .dd-chat { display: flex; flex-direction: column; gap: 10px; }
+  .dd-chat p { margin: 0; max-width: 82%; padding: 12px 14px; border-radius: 14px 14px 14px 4px; background: #F1F1EE; font-size: 14.5px; line-height: 1.45; }
+  .dd-chat-r { align-self: flex-end; border-radius: 14px 14px 4px 14px !important; background: #DCF3E3 !important; }
+  .dd-graf { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; height: 160px; margin-bottom: 18px; }
+  .dd-graf div { position: relative; height: var(--h); background: #E3E3DF; border-radius: 8px 8px 4px 4px; }
+  .dd-graf .dd-hoy { background: #0E0D0C; }
+  .dd-graf span { position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px; text-align: center; font-size: 11px; color: #8A8A86; }
+  .dd-canales { list-style: none; margin: 24px 0 0; padding: 0; }
+  .dd-canales li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F1F1EE; font-size: 14.5px; }
+  .dd-canales b { font-family: var(--font-display); }
+  @media (max-width: 1023px) {
+    .dd-grid { grid-template-columns: 1fr; }
+    .dd-pantalla { display: none; }
+    .dd-paso { opacity: 1; padding-left: 24px; }
+    .dd-scr-m { display: block; margin-top: 16px; }
+    .dd-scr-m .dd-marco { box-shadow: none; }
+    .dd-scr-m .dd-scrs { min-height: 0; }
+    .dd-scr-m .dd-scr { position: static; opacity: 1; transform: none; pointer-events: auto; padding: 20px; }
+  }
+</style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('cinco-dias'); if (!sec) return;
+    const pasos = Array.from(sec.querySelectorAll<HTMLElement>('.dd-paso'));
+    const scrs = Array.from(sec.querySelectorAll<HTMLElement>('.dd-pantalla .dd-scr'));
+    // Móvil: cada paso muestra su pantalla debajo (clon del marco con solo esa pantalla)
+    const marco = sec.querySelector<HTMLElement>('.dd-marco')!;
+    sec.querySelectorAll<HTMLElement>('[data-scr-clone]').forEach((slot) => {
+      const i = Number(slot.dataset.scrClone); const m = marco.cloneNode(true) as HTMLElement;
+      m.querySelectorAll<HTMLElement>('.dd-scr').forEach((s) => { if (Number(s.dataset.scr) !== i) s.remove(); else s.classList.add('is-on'); });
+      slot.replaceWith(m);
+    });
+    if (matchMedia('(max-width: 1023px)').matches) return;
+    let act = 0;
+    const pinta = (i: number) => { if (i === act) return; act = i; pasos.forEach((p, k) => p.classList.toggle('is-on', k === i)); scrs.forEach((s, k) => s.classList.toggle('is-on', k === i)); };
+    const io = new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) pinta(Number((e.target as HTMLElement).dataset.i)); }); }, { rootMargin: '-40% 0px -45% 0px', threshold: 0 });
+    pasos.forEach((p) => io.observe(p));
+  })();
+</script>

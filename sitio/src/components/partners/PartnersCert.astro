@@ -1,0 +1,84 @@
+---
+/**
+ * PartnersCert — la certificación como objeto (16-sep-2026): la insignia "Certificado por Sacs"
+ * y la ruta real de certificaciones del programa (src/data/certifications.ts).
+ */
+import { CERTIFICATIONS } from '../../data/certifications';
+---
+<section class="ce" id="certificacion">
+  <div class="ce-inner">
+    <div class="ce-vis" aria-hidden="true">
+      <div class="ce-sello">
+        <svg viewBox="0 0 320 320" class="ce-anillo">
+          <defs><path id="ce-circ" d="M160,160 m-118,0 a118,118 0 1,1 236,0 a118,118 0 1,1 -236,0" /></defs>
+          <circle cx="160" cy="160" r="150" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" />
+          <circle cx="160" cy="160" r="136" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="2 6" />
+          <text class="ce-txt"><textPath href="#ce-circ" startOffset="0">CERTIFICADO POR SACS · PARTNER ORQUESTADOR · FASHION COMMERCE · CERTIFICADO POR SACS · PARTNER ORQUESTADOR · FASHION COMMERCE · </textPath></text>
+        </svg>
+        <div class="ce-centro">
+          <span class="ce-marca">Sacs</span>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span class="ce-ano">Certificación oficial</span>
+        </div>
+      </div>
+      <ul class="ce-chips">
+        <li>Diploma y badge en tu portal</li>
+        <li>Badge para LinkedIn</li>
+        <li>Primera implementación acompañada</li>
+        <li>Directorio público de partners</li>
+      </ul>
+    </div>
+    <div class="ce-txt-col">
+      <span class="ce-eyebrow">Quién te certifica</span>
+      <h2 class="ce-h2">Te certifica Sacs, y el título se ve</h2>
+      <p class="ce-p">No es un curso: es una ruta con examen, casos reales y tus primeras implementaciones acompañadas por nuestro equipo. Cada certificación desbloquea un servicio que cobras directo al cliente y te quedas con el 100 %.</p>
+      <ol class="ce-ruta">
+        {CERTIFICATIONS.map((c, i) => (
+          <li>
+            <span class="ce-n">{String(i + 1).padStart(2, '0')}</span>
+            <div><b>{c.shortName}</b><span>{c.nivel} · {c.duracion}</span></div>
+            <em>{c.serviceModel === 'monthly' ? 'Servicio recurrente' : c.serviceChargeMostrar.includes('$') ? 'Cobras ' + c.serviceChargeMostrar : 'Habilita tu portal'}</em>
+          </li>
+        ))}
+      </ol>
+      <div class="ce-ctas">
+        <a href="#agenda" class="ce-btn" data-tipo="Partner orquestador · certificación">Quiero certificarme</a>
+        <a href="/partner/portal?demo=1" class="ce-link" target="_blank" rel="noopener noreferrer">Ver las certificaciones en el portal →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ce { background: #0E0D0C; color: #fff; padding: clamp(72px, 9vw, 120px) 0; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.1); }
+  .ce-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+  .ce-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 16px; }
+  .ce-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 14px; color: #fff; }
+  .ce-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0 0 26px; color: rgba(255,255,255,0.72); }
+  .ce-ruta { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(255,255,255,0.14); }
+  .ce-ruta li { display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .ce-n { font-family: var(--font-display); font-size: 12px; font-weight: 700; color: #8FB0FF; letter-spacing: 0.1em; }
+  .ce-ruta b { display: block; font-family: var(--font-display); font-size: 17px; letter-spacing: -0.01em; }
+  .ce-ruta div span { display: block; font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .ce-ruta em { font-style: normal; font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.75); white-space: nowrap; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); }
+  .ce-ctas { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
+  .ce-btn { display: inline-flex; padding: 14px 24px; border-radius: 12px; background: #fff; color: #0E0D0C; font-weight: 700; font-size: 15px; text-decoration: none; }
+  .ce-link { color: #fff; opacity: 0.85; font-weight: 600; text-decoration: none; }
+  .ce-vis { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .ce-sello { position: relative; width: min(360px, 80vw); aspect-ratio: 1; }
+  .ce-anillo { position: absolute; inset: 0; width: 100%; height: 100%; animation: ce-gira 40s linear infinite; }
+  .ce-txt { font-family: var(--font-display); font-size: 13.5px; font-weight: 700; letter-spacing: 0.22em; fill: rgba(255,255,255,0.8); }
+  @keyframes ce-gira { to { transform: rotate(360deg); } }
+  .ce-centro { position: absolute; inset: 22%; border-radius: 50%; background: #fff; color: #0E0D0C; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 0 0 14px rgba(255,255,255,0.05), 0 30px 80px -20px rgba(75,123,229,0.45); }
+  .ce-marca { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.03em; }
+  .ce-ano { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #6B6B68; }
+  .ce-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .ce-chips li { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.85); }
+  @media (max-width: 1023px) { .ce-inner { grid-template-columns: 1fr; } .ce-vis { order: 2; } }
+  @media (max-width: 767px) {
+    .ce-ruta li { grid-template-columns: 28px 1fr; } .ce-ruta em { grid-column: 2; justify-self: start; }
+    .ce-sello { width: 260px; } .ce-txt { font-size: 15px; }
+    .ce-btn { width: 100%; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ce-anillo { animation: none; } }
+</style>

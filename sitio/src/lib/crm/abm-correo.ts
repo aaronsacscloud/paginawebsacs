@@ -24,7 +24,7 @@
 // arrastrar dependencias del navegador para pintar un correo.
 import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE, waLink } from '../whatsapp';
 import { operacionDe, paginaDe } from './abm-giros';
-import { alcanceDe } from './abm-paises';
+import { alcanceDe, paisDe } from './abm-paises';
 
 const MORADO = '#9B8CFA';
 const MORADO_TINTA = '#5B4BD6';
@@ -249,7 +249,9 @@ export function armarCorreo(p: PartesCorreo): string {
   const cierre = p.cierre ? `<tr><td style="padding:10px 28px 26px;">${bloqueCierre(p.cierre)}</td></tr>` : '';
   // En el pie, la liga del sitio lleva a la página del giro si la hay: al home
   // genérico no se manda a nadie que ya sabemos de qué giro es.
-  const pg = p.cierre ? paginaDe(p.cierre.giro, base) : null;
+  // …y con el PAÍS de la cuenta: sin él, el pie de un correo a Madrid mandaba
+  // a la página de México mientras el bloque de arriba mandaba a la de España.
+  const pg = p.cierre ? paginaDe(p.cierre.giro, base, p.cierre.pais) : null;
   const ligaSitio = pg ? pg.url : base;
   const textoSitio = pg ? pg.url.replace(/^https?:\/\/(www\.)?/, '') : 'www.sacscloud.com';
 
@@ -278,12 +280,20 @@ ${cierre}
 <tr><td style="padding:0 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td height="1" bgcolor="${LINEA}" style="background-color:${LINEA};height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td></tr>
 <tr><td style="padding:18px 28px 24px;">
 <p style="margin:0;color:${MORADO_TINTA};font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:18px;">Sacscloud</p>
-<p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">Inventario y punto de venta para negocios de moda. Equipo en México, clientes en más de 7 países.</p>
+<p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">${esc(firmaQueSomos(p.cierre?.pais))}</p>
 <p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes, en su horario</p>
 </td></tr>
 
 </table>
 </td></tr></table>`;
+}
+
+/** Qué somos, en las palabras de quien lee. En España «punto de venta» se dice
+ *  TPV, y el cuerpo del correo ya está escrito así: que el pie diga otra cosa
+ *  se nota. */
+function firmaQueSomos(pais?: string | null): string {
+  const base = paisDe(pais).region === 'espana' ? 'Stock y TPV para negocios de moda.' : 'Inventario y punto de venta para negocios de moda.';
+  return `${base} Equipo en México, clientes en más de 7 países.`;
 }
 
 /** El bloque lila del CRM, para cuando un correo quiera anclar un dato.

@@ -1,0 +1,67 @@
+---
+/**
+ * PartnersPortal — el portal real del partner (16-sep-2026): captura del portal en modo demo
+ * (/partner/portal?demo=1) y lo que se ve ahí. El enlace abre el portal con datos de ejemplo.
+ */
+---
+<section class="pp" id="portal">
+  <div class="pp-inner">
+    <div class="pp-txt">
+      <span class="pp-eyebrow">Tu portal de partner</span>
+      <h2 class="pp-h2">Todo tu negocio con Sacs, en una pantalla</h2>
+      <p class="pp-p">No es una promesa: el portal ya existe y lo puedes abrir hoy con datos de ejemplo. Ahí ves lo que cobras, quién te llegó, en qué nivel vas y qué te falta para subir.</p>
+      <ul class="pp-lista">
+        <li><b>Dinero</b><span>Próximo pago, desglose por cliente e histórico de depósitos.</span></li>
+        <li><b>Leads y cotizaciones</b><span>Tu link único, los prospectos que entran por él y las cotizaciones que mandas.</span></li>
+        <li><b>Nivel y puntos</b><span>Tu nivel actual, los puntos del mes y qué te falta para el siguiente.</span></li>
+        <li><b>Certificaciones y Academy</b><span>La ruta de certificación y los cursos del sistema, dentro del mismo portal.</span></li>
+      </ul>
+      <div class="pp-ctas">
+        <a href="/partner/portal?demo=1" class="pp-btn" target="_blank" rel="noopener noreferrer">Abrir el portal con datos demo</a>
+        <a href="#agenda" class="pp-link" data-tipo="Partner · portal">Quiero el mío →</a>
+      </div>
+    </div>
+    <div class="pp-vis">
+      <div class="pp-marco">
+        <img src="/images/partners/portal.webp" alt="Portal del partner de Sacs con el próximo pago, el nivel, los puntos del mes y el link único" width="1600" height="911" loading="lazy" />
+      </div>
+      <div class="pp-tarjeta pp-tarjeta--a"><span>Próximo pago</span><b>$3,500</b><small>Se deposita el día 1</small></div>
+      <div class="pp-tarjeta pp-tarjeta--b"><span>Puntos del mes</span><b>87 / 100</b><i></i></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pp { background: #fff; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; overflow: hidden; }
+  .pp-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 0.85fr 1.15fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
+  .pp-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 16px; }
+  .pp-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 14px; color: inherit; }
+  .pp-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0 0 24px; color: #55554F; }
+  .pp-lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid #ECECE9; }
+  .pp-lista li { display: grid; grid-template-columns: 170px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid #ECECE9; font-size: 14.5px; line-height: 1.45; }
+  .pp-lista b { font-family: var(--font-display); font-size: 16px; }
+  .pp-lista span { color: #55554F; }
+  .pp-ctas { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
+  .pp-btn { display: inline-flex; padding: 14px 24px; border-radius: 12px; background: #0E0D0C; color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; }
+  .pp-link { font-weight: 600; color: var(--color-primary, #4B7BE5); text-decoration: none; }
+  .pp-vis { position: relative; padding: 24px 0 36px; }
+  .pp-marco { border-radius: 18px; overflow: hidden; border: 1px solid #E6E6E2; box-shadow: 0 50px 100px -40px rgba(0,0,0,0.35); transform: perspective(1400px) rotateY(-6deg) rotateX(2deg); transform-origin: 60% 50%; }
+  .pp-marco img { display: block; width: 100%; height: auto; }
+  .pp-tarjeta { position: absolute; background: #fff; border: 1px solid #E6E6E2; border-radius: 16px; padding: 16px 18px; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.35); display: flex; flex-direction: column; gap: 4px; min-width: 170px; }
+  .pp-tarjeta span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #8A8A86; }
+  .pp-tarjeta b { font-family: var(--font-display); font-size: 28px; letter-spacing: -0.03em; }
+  .pp-tarjeta small { font-size: 12px; color: #8A8A86; }
+  .pp-tarjeta i { display: block; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #4B7BE5 87%, #E6E6E2 87%); margin-top: 6px; }
+  .pp-tarjeta--a { left: -6%; bottom: 0; animation: pp-flota 6s ease-in-out infinite; }
+  .pp-tarjeta--b { right: -4%; top: 0; animation: pp-flota 7s ease-in-out infinite reverse; }
+  @keyframes pp-flota { 50% { transform: translateY(-8px); } }
+  @media (max-width: 1023px) { .pp-inner { grid-template-columns: 1fr; } .pp-vis { order: 2; } .pp-marco { transform: none; } .pp-tarjeta--a { left: 0; } .pp-tarjeta--b { right: 0; } }
+  @media (max-width: 767px) {
+    .pp-lista li { grid-template-columns: 1fr; gap: 3px; }
+    .pp-btn { width: 100%; justify-content: center; }
+    .pp-vis { padding: 16px 0 40px; }
+    .pp-tarjeta { padding: 12px 14px; min-width: 130px; } .pp-tarjeta b { font-size: 22px; }
+    .pp-tarjeta--b { top: -6px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pp-tarjeta { animation: none; } }
+</style>

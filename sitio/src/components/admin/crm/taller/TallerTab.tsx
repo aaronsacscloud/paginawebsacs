@@ -16,6 +16,7 @@ import KpiCard, { SIN_FECHA } from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
+import { modulosParaGiro } from '../../../../lib/crm/modulos-sacs';
 
 const ETAPAS: Record<string, string> = {
   recibida: 'Recibida', analisis: 'En análisis', desarrollo: 'En desarrollo',
@@ -63,6 +64,10 @@ export default function TallerTab() {
   const [sinOrden, setSinOrden] = useState<any[]>([]);
   // El valor de cada cuenta (ARR, entregadas, cuenta de SACS), del mismo viaje.
   const [cuentas, setCuentas] = useState<Record<string, any>>({});
+  /* De qué reunión salió y en qué módulo se trabaja. Vive en el renglón del
+     cliente, no en la orden; el taller lo lee por la liga. */
+  const [meta, setMeta] = useState<Record<string, any>>({});
+  const [reuniones, setReuniones] = useState<Record<string, any>>({});
   const [yo, setYo] = useState<any>(null);
   /* Se abre en LA LISTA. «Mi bandeja» abría con cero órdenes asignadas —las 18
      estaban sin dueño— y lo primero que veía quien entraba era «no tienes
@@ -77,7 +82,8 @@ export default function TallerTab() {
 
   const cargar = useCallback(async () => {
     const j = await fetch('/api/crm/taller').then(r => r.json()).catch(() => null);
-    if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setCuentas(j.cuentas || {}); setYo(j.yo || null); }
+    if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setCuentas(j.cuentas || {}); setYo(j.yo || null);
+      setMeta(j.meta || {}); setReuniones(j.reuniones || {}); }
     setCargando(false);
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -85,7 +91,9 @@ export default function TallerTab() {
   useEffect(() => {
     fetch('/api/crm/arr/clientes').then(r => r.json())
       .then(j => setClientes((j.data || [])
-        .map((c: any) => ({ id: c.id, n: c.nombre_comercial || c.nombre }))
+        // El giro viaja con el cliente: es lo que pone los módulos de su ramo
+        // arriba en el catálogo —con una joyería, «Certificados» primero—.
+        .map((c: any) => ({ id: c.id, n: c.nombre_comercial || c.nombre, giro: c.giro || '' }))
         .filter((c: any) => c.n)
         .sort((a: any, b: any) => a.n.localeCompare(b.n, 'es'))))
       .catch(() => {});
@@ -149,7 +157,7 @@ export default function TallerTab() {
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
             abrir={setAbierta} api={api} flash={flash} />
-        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas}
+        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
             filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} api={api} flash={flash} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
@@ -440,12 +448,18 @@ const TRAMOS = [
   { l: 'detenidas',    c: '#E8A838', f: (o: any) => o.etapa === 'espera' },
 ];
 
-function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, api, flash }: any) {
+function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, meta = {}, reuniones = {}, api, flash }: any) {
   const [vista, setVista] = useState('todas');
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
   /* Dentro de un proyecto: la etapa de cada gestión, o lo que no tiene fecha. */
   const [dentro, setDentro] = useState<string>('todas');
   const [afinar, setAfinar] = useState<string>('');   // la cajita de al lado del buscador
+  /* Lo seleccionado, por id. Se vacía al cambiar de cuenta o de pestaña: una
+     selección invisible es la forma segura de aplicarle una fecha a algo que
+     ya no estás viendo. */
+  const [sel, setSel] = useState<Set<string>>(() => new Set());
+  const limpiaSel = () => setSel(new Set());
+  const marca = (id: string) => setSel(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const q = filtro.trim().toLowerCase();
   const texto = q
@@ -513,7 +527,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             <KpiCard key={v.k} franja={v.franja} label={v.l} valor={n} faro={v.faro}
               color={n ? v.tinta : undefined} sub={v.sub} activo={vista === v.k}
               onClick={v.k === 'todas' && vista === 'todas' ? undefined
-                : () => { setVista(vista === v.k ? 'todas' : v.k); setCuenta(''); setDentro('todas'); }} />
+                : () => { setVista(vista === v.k ? 'todas' : v.k); setCuenta(''); setDentro('todas'); limpiaSel(); }} />
           );
         })}
       </div>
@@ -526,7 +540,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
           style={{ ...S.input, width: 260, padding: '7px 11px' }} />
         {/* La cajita de afinar. Puesta se pinta de morado: un filtro aplicado que
             no se ve es la forma más rápida de creer que faltan órdenes. */}
-        <select value={afinar} onChange={e => { setAfinar(e.target.value); setCuenta(''); setDentro('todas'); }}
+        <select value={afinar} onChange={e => { setAfinar(e.target.value); setCuenta(''); setDentro('todas'); limpiaSel(); }}
           style={{
             ...S.input, width: 'auto', minWidth: 170, padding: '7px 11px', cursor: 'pointer',
             ...(afinar ? { border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, fontWeight: 700, background: P.violetaAgua } : null),
@@ -538,7 +552,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
           })}
         </select>
         {afinar && (
-          <button onClick={() => { setAfinar(''); setCuenta(''); setDentro('todas'); }}
+          <button onClick={() => { setAfinar(''); setCuenta(''); setDentro('todas'); limpiaSel(); }}
             style={{ border: 'none', background: 'none', color: '#8d8a97', fontSize: '0.75rem', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>
             quitar el filtro
           </button>
@@ -561,7 +575,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             {/* Volver es un icono: el nombre de la cuenta va justo al lado y ya
                 dice dónde estás; un botón con texto competía con él. */}
             <button title="Todas las cuentas" aria-label="Todas las cuentas"
-              onClick={() => { setCuenta(''); setDentro('todas'); }}
+              onClick={() => { setCuenta(''); setDentro('todas'); limpiaSel(); }}
               style={{ border: '1px solid #e9e3ee', background: '#fff', borderRadius: 9, width: 30, height: 30, display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#55505f', flex: 'none' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
@@ -586,49 +600,51 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             </span>
           </div>
 
-          {/* Las vistas de la cuenta, con el mismo formato que las de
-              Cotizaciones: pestañas pegadas a la lista, la activa con fondo
-              lila y su línea morada abajo, y el contador en pastilla pegado al
-              texto —«Todas 15» se lee como una sola palabra—. Van justo debajo
-              del nombre porque son las vistas DE esa cuenta.
-              Solo salen las etapas que esta cuenta tiene: una pestaña en cero
-              es una pregunta que no se puede hacer. Al final, «Sin fecha», que
-              no es una etapa sino el otro eje —lo que todavía no se puede
-              prometer—, y por eso conserva su pastilla en degradado. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 2, overflowX: 'auto' }}>
-            {(() => {
-              const sinF = abierto.filas.filter((o: any) => !o.fecha_prometida).length;
-              const ops: any[] = [['todas', 'Todas', abierto.filas.length]];
-              DENTRO.forEach(d => {
-                const n2 = abierto.filas.filter(d.f).length;
-                if (n2) ops.push([d.k, d.l, n2]);
-              });
-              if (sinF) ops.push(['sin', 'Sin fecha', sinF]);
-              return ops.map(([k, l, n2]) => {
-                const on = dentro === k;
-                return (
-                  <button key={k} onClick={() => setDentro(k)} style={{
-                    padding: '10px 16px', border: 'none',
-                    background: on ? P.violetaAgua : 'transparent',
-                    borderRadius: on ? '9px 9px 0 0' : 0,
-                    borderBottom: on ? `2px solid ${P.violeta}` : '2px solid transparent',
-                    color: on ? P.violetaTinta : '#666',
-                    fontWeight: on ? 800 : 500, fontSize: '0.8125rem',
-                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
-                  }}>
-                    {l}
-                    <span style={{
-                      marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
-                      borderRadius: 20, padding: '2px 8px',
-                      ...(on ? { background: '#fff', color: P.violetaTinta }
-                        : k === 'sin' ? SIN_FECHA
-                        : { background: '#f3f3f6', color: '#8a8a92' }),
-                    }}>{n2}</span>
-                  </button>
-                );
-              });
-            })()}
-          </div>
+          {/* O las pestañas, o la barra de lote: nunca las dos. La barra cae
+              exactamente donde estaban las pestañas, así que al marcar la
+              primera casilla la lista no se mueve ni un pixel. Mientras hay
+              selección no se puede cambiar de pestaña, y está bien: lo que se
+              va a aplicar es a lo que estás viendo. */}
+          {sel.size > 0 ? (
+            <BarraLote n={sel.size} ids={[...sel]} companyId={abierto.filas[0]?.company_id}
+              giro={abierto.val?.giro} onListo={() => { limpiaSel(); recargar?.(); }}
+              onCancelar={limpiaSel} flash={flash} />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 2, overflowX: 'auto' }}>
+              {(() => {
+                const sinF = abierto.filas.filter((o: any) => !o.fecha_prometida).length;
+                const ops: any[] = [['todas', 'Todas', abierto.filas.length]];
+                DENTRO.forEach(d => {
+                  const n2 = abierto.filas.filter(d.f).length;
+                  if (n2) ops.push([d.k, d.l, n2]);
+                });
+                if (sinF) ops.push(['sin', 'Sin fecha', sinF]);
+                return ops.map(([k, l, n2]) => {
+                  const on = dentro === k;
+                  return (
+                    <button key={k} onClick={() => { setDentro(k); limpiaSel(); }} style={{
+                      padding: '10px 16px', border: 'none',
+                      background: on ? P.violetaAgua : 'transparent',
+                      borderRadius: on ? '9px 9px 0 0' : 0,
+                      borderBottom: on ? `2px solid ${P.violeta}` : '2px solid transparent',
+                      color: on ? P.violetaTinta : '#666',
+                      fontWeight: on ? 800 : 500, fontSize: '0.8125rem',
+                      cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+                    }}>
+                      {l}
+                      <span style={{
+                        marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                        borderRadius: 20, padding: '2px 8px',
+                        ...(on ? { background: '#fff', color: P.violetaTinta }
+                          : k === 'sin' ? SIN_FECHA
+                          : { background: '#f3f3f6', color: '#8a8a92' }),
+                      }}>{n2}</span>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          )}
 
           {enCuenta.length === 0 && (
             <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
@@ -637,13 +653,15 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
           )}
           {enCuenta.map((o: any) => (
             <Renglon key={o.id} o={o} abrir={abrir}
+              marcada={sel.has(o.id)} onMarcar={() => marca(o.id)}
+              meta={meta[o.id]} reuniones={reuniones}
               acciones={<MenuFila onEditar={() => abrir(o.id)} onEliminar={() => quitar(o)} />} />
           ))}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 12 }}>
           {proyectos.map((p: any) => (
-            <div key={p.l} onClick={() => setCuenta(p.l)}
+            <div key={p.l} onClick={() => { setCuenta(p.l); limpiaSel(); }}
               style={{ ...S.caja, cursor: 'pointer', transition: 'box-shadow .12s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 14px rgba(16,24,40,.08)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
@@ -680,7 +698,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
 
 /* El renglón. Color en DOS ejes nada más: el tipo (la barra) y la temperatura
    del tiempo (la fecha). Todo lo demás en gris, o deja de leerse de un vistazo. */
-function Renglon({ o, abrir, acciones }: any) {
+function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any) {
   const q = diasHasta(o.fecha_prometida);
   const fecha = o.etapa === 'espera' ? <span style={{ color: '#8d8a97' }}>en pausa</span>
     : o.falta_dato ? <span style={{ color: P.ambarTinta, fontWeight: 700 }}>falta un dato</span>
@@ -694,8 +712,10 @@ function Renglon({ o, abrir, acciones }: any) {
       display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
       minHeight: 44, background: '#fff', cursor: 'pointer', paddingRight: 10,
       opacity: o.etapa === 'espera' ? .62 : 1,
+      ...(marcada ? { background: '#fbfaff' } : null),
     }}>
       <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: o.etapa === 'espera' ? '#d8d5e0' : COLOR_T[o.tipo] }} />
+      {onMarcar && <Casilla marcada={marcada} onMarcar={onMarcar} />}
       <span style={{ ...CHIP_T[o.tipo], flex: 'none', width: 58, fontSize: '0.55rem', fontWeight: 800, textAlign: 'center', borderRadius: 5, padding: '2px 0', letterSpacing: '.04em' }}>
         {o.tipo.toUpperCase()}
       </span>
@@ -708,10 +728,207 @@ function Renglon({ o, abrir, acciones }: any) {
         border: o.asignado_id ? 'none' : '1.5px dashed #e0b869' }}>
         {o.team_members?.nombre ? o.team_members.nombre.split(' ').map((x: string) => x[0]).slice(0, 2).join('') : '+'}
       </span>
+      {/* DE QUÉ REUNIÓN SALIÓ Y DÓNDE SE TRABAJA. Lo que falta se dibuja como
+          un hueco punteado: invita a llenarlo sin gritar, y de un vistazo se ve
+          cuántas órdenes están sin clasificar. La reunión se escribe corta
+          —fecha · asunto— porque el asunto completo no cabe en un renglón. */}
+      <Dato titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones)}</Dato>
+      <Dato titulo={meta?.modulo || ''} falta="+ módulo" tono="modulo">{meta?.modulo || ''}</Dato>
       <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', fontVariantNumeric: 'tabular-nums' }}>{fecha}</span>
       <span style={{ flex: 'none', width: 38, textAlign: 'right', fontSize: '0.69rem', color: '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{dias(o.created_at)} d</span>
       {acciones}
     </div>
+  );
+}
+
+/* LA BARRA DE LOTE. Ocupa el sitio de las pestañas mientras hay selección, y
+   guarda tres cosas que SIEMPRE se corrigen en bloque y nunca de una en una:
+   la fecha que se prometió en una junta, de qué reunión salió lo que se pidió
+   ese día, y en qué parte del sistema se trabaja.
+   La prueba de que hacía falta está en los datos: de las 81 mejoras de Ruben's,
+   64 ya traían su reunión —la guarda la minuta— pero solo 12 traían módulo.
+   Nadie entra quince veces a escribir lo mismo. */
+function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any) {
+  const [abierto, setAbierto] = useState('');     // 'fecha' | 'junta' | 'modulo'
+  const [juntas, setJuntas] = useState<any[]>([]);
+  const [fecha, setFecha] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (abierto !== 'junta' || !companyId || juntas.length) return;
+    let vivo = true;
+    fetch('/api/scheduling/reuniones?company_id=' + companyId)
+      .then(r => r.json())
+      // De la más nueva a la más vieja: lo que se está trabajando salió de la
+      // junta de la semana pasada, no de la de junio.
+      .then(j => { if (vivo) setJuntas((j.data || []).filter((x: any) => x.fecha)
+        .sort((a: any, b2: any) => String(b2.fecha).localeCompare(String(a.fecha))).slice(0, 25)); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [abierto, companyId]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: any) => { if (caja.current && !caja.current.contains(e.target)) setAbierto(''); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAbierto(''); };
+    document.addEventListener('mousedown', fuera); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc); };
+  }, [abierto]);
+
+  async function aplicar(campo: string, valor: any, dicho: string) {
+    setGuardando(true);
+    const j = await fetch('/api/crm/taller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'lote', ids, [campo]: valor }),
+    }).then(r => r.json()).catch(() => null);
+    setGuardando(false); setAbierto('');
+    if (!j || j.error) { flash?.(j?.error || 'No se pudo aplicar'); return; }
+    flash?.(`${j.n} ${j.n === 1 ? 'orden actualizada' : 'órdenes actualizadas'}: ${dicho}`);
+    onListo?.();
+  }
+
+  const bt = {
+    border: '1px solid rgba(255,255,255,.34)', background: 'rgba(255,255,255,.12)', color: '#fff',
+    borderRadius: 8, padding: '5px 11px', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+  } as const;
+  const pop = {
+    position: 'absolute' as const, left: 0, top: 34, zIndex: 40, minWidth: 250, maxHeight: 330, overflowY: 'auto' as const,
+    background: '#fff', border: '1px solid #ece9f3', borderRadius: 11, boxShadow: '0 8px 26px rgba(16,24,40,.16)', padding: 6,
+  };
+  const op = {
+    display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'none',
+    padding: '7px 9px', borderRadius: 8, fontSize: '0.77rem', fontFamily: 'inherit', cursor: 'pointer', color: '#55505f',
+  };
+
+  const Boton = ({ k, children }: any) => (
+    <button style={{ ...bt, ...(abierto === k ? { background: '#fff', color: P.violetaTinta, borderColor: '#fff' } : null) }}
+      onClick={() => setAbierto(abierto === k ? '' : k)}>{children}</button>
+  );
+
+  return (
+    <div ref={caja} style={{
+      display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', position: 'relative',
+      background: P.violetaTinta, color: '#fff', padding: '10px 14px', borderRadius: '10px 10px 0 0',
+    }}>
+      <b style={{ fontSize: '0.82rem', marginRight: 3 }}>{n} {n === 1 ? 'seleccionada' : 'seleccionadas'}</b>
+
+      <div style={{ position: 'relative' }}>
+        <Boton k="fecha">Fecha de entrega</Boton>
+        {abierto === 'fecha' && (
+          <div style={pop}>
+            <div style={{ padding: '4px 6px 8px' }}>
+              <span style={{ ...S.lbl, color: '#8d8a97' }}>Se promete para</span>
+              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={S.input} />
+              <div style={{ fontSize: '0.69rem', color: '#8d8a97', margin: '6px 0 9px' }}>
+                Se aplica a las {n} y queda en la bitácora de cada una.
+              </div>
+              <button disabled={guardando} style={{ ...S.btn, width: '100%', opacity: guardando ? .6 : 1 }}
+                onClick={() => aplicar('fecha_prometida', fecha || null, fecha ? 'para el ' + fmt(fecha) : 'sin fecha')}>
+                {guardando ? 'Aplicando…' : `Aplicar a las ${n}`}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <Boton k="junta">Reunión de origen</Boton>
+        {abierto === 'junta' && (
+          <div style={{ ...pop, minWidth: 330 }}>
+            <div style={{ ...S.lbl, color: '#999', margin: '3px 6px 6px' }}>De qué reunión salió</div>
+            {juntas.length === 0 && <div style={{ padding: '8px 9px', fontSize: '0.76rem', color: '#8d8a97' }}>Esta cuenta no tiene reuniones registradas.</div>}
+            {juntas.map((j: any) => (
+              <button key={j.id} style={op}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                onClick={() => aplicar('booking_id', j.id, fmt(j.fecha))}>
+                <b style={{ color: P.violetaTinta }}>{fmt(j.fecha)}</b> · {j.asunto || j.event_types?.nombre || 'Reunión'}
+              </button>
+            ))}
+            <button style={{ ...op, color: '#8d8a97' }} onClick={() => aplicar('booking_id', null, 'sin reunión')}>
+              — No salió de una reunión
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <Boton k="modulo">Módulo</Boton>
+        {abierto === 'modulo' && (
+          <div style={pop}>
+            {modulosParaGiro(giro).map(f => (
+              <div key={f.familia}>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#b6b2c2', textTransform: 'uppercase', letterSpacing: '.07em', margin: '8px 6px 3px' }}>{f.familia}</div>
+                {f.modulos.map(m => (
+                  <button key={m} style={op}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                    onClick={() => aplicar('modulo', m, m)}>{m}</button>
+                ))}
+              </div>
+            ))}
+            <button style={{ ...op, color: '#8d8a97' }} onClick={() => aplicar('modulo', null, 'sin módulo')}>— Quitar el módulo</button>
+          </div>
+        )}
+      </div>
+
+      <button style={{ ...bt, border: 'none', background: 'none', opacity: .8, marginLeft: 'auto' }} onClick={onCancelar}>
+        Quitar selección
+      </button>
+    </div>
+  );
+}
+
+/* LA CASILLA. Blanca con borde morado y la palomita en tinta: en una lista de
+   veinte renglones, cinco cuadros morados sólidos son cinco manchas que pesan
+   más que los títulos. Lo que marca la selección es el fondo lila del renglón
+   y la barra de arriba diciendo cuántas van. */
+function Casilla({ marcada, onMarcar }: any) {
+  const [encima, setEncima] = useState(false);
+  return (
+    <span role="checkbox" aria-checked={!!marcada} tabIndex={0}
+      onClick={e => { e.stopPropagation(); onMarcar(); }}
+      onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onMarcar(); } }}
+      onMouseEnter={() => setEncima(true)} onMouseLeave={() => setEncima(false)}
+      style={{
+        flex: 'none', width: 17, height: 17, borderRadius: 5, marginLeft: 9, background: '#fff',
+        border: `1.5px solid ${marcada || encima ? P.violeta : '#d8d3e6'}`,
+        position: 'relative', cursor: 'pointer',
+      }}>
+      {marcada && <span style={{
+        position: 'absolute', left: 4, top: 4, width: 8, height: 4,
+        borderLeft: `2px solid ${P.violetaTinta}`, borderBottom: `2px solid ${P.violetaTinta}`,
+        transform: 'rotate(-45deg)',
+      }} />}
+    </span>
+  );
+}
+
+/** «14-sep · Certificados e Ecommerce», que es lo que cabe en un renglón. */
+function reunionCorta(meta: any, reuniones: any) {
+  const b = meta?.booking_id && reuniones?.[meta.booking_id];
+  if (!b) return '';
+  const asunto = String(b.asunto || 'Reunión').replace(/\s*l\s*/g, ' · ').trim();
+  return fmt(b.fecha) + ' · ' + (asunto.length > 22 ? asunto.slice(0, 21) + '…' : asunto);
+}
+function reunionLarga(meta: any, reuniones: any) {
+  const b = meta?.booking_id && reuniones?.[meta.booking_id];
+  return b ? fmt(b.fecha) + ' · ' + (b.asunto || 'Reunión') : '';
+}
+
+/** Un dato del renglón, o el hueco que lo pide. */
+function Dato({ children, falta, tono, titulo }: any) {
+  const hay = !!children;
+  return (
+    <span title={titulo || undefined} style={{
+      flex: 'none', borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', whiteSpace: 'nowrap',
+      maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis',
+      ...(hay
+        ? (tono === 'reunion' ? { background: P.azulAgua, color: P.azulTinta, fontWeight: 700 }
+                              : { background: '#f3f1f8', color: '#6f6a80', fontWeight: 700 })
+        : { background: '#fff', color: '#a5a2af', border: '1px dashed #ddd8e8', fontWeight: 600 }),
+    }}>{hay ? children : falta}</span>
   );
 }
 
@@ -1302,7 +1519,7 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
   const [f, setF] = useState<any>({
     company_id: '', titulo: '', tipo: 'mejora', categoria: 'personalizacion',
     problema: '', esperado: '', pasos: '', criterios: '', video_pide: '',
-    fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '', booking_id: '',
+    fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '', booking_id: '', modulo: '',
   });
   const [guardando, setGuardando] = useState(false);
   /* Las juntas de esa cuenta. Casi todo lo que llega al taller salió de una, y
@@ -1315,7 +1532,8 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
     let vivo = true;
     fetch('/api/scheduling/reuniones?company_id=' + f.company_id)
       .then(r => r.json())
-      .then(j => { if (vivo) setJuntas((j.data || []).filter((x: any) => x.fecha).slice(0, 25)); })
+      .then(j => { if (vivo) setJuntas((j.data || []).filter((x: any) => x.fecha)
+        .sort((a: any, b2: any) => String(b2.fecha).localeCompare(String(a.fecha))).slice(0, 25)); })
       .catch(() => {});
     return () => { vivo = false; };
   }, [f.company_id]);
@@ -1368,6 +1586,24 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
               <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
                 Queda colgada de esa minuta en la ficha del cliente: seis semanas después se puede volver a leer qué
                 se dijo el día que se pidió.
+              </div>
+            </div>
+
+            {/* DÓNDE SE TRABAJA. Del catálogo y no a mano: escrito a mano, la
+                misma pantalla acaba capturada como «conteos», «Conteo físico» y
+                «conteos fisicos», y después no hay forma de contar nada. */}
+            <div>
+              <span style={S.lbl}>¿En qué módulo se trabaja?</span>
+              <select value={f.modulo} onChange={e => set('modulo', e.target.value)} style={S.input}>
+                <option value="">— sin definir todavía —</option>
+                {modulosParaGiro(clientes.find((c: any) => c.id === f.company_id)?.giro).map((fa: any) => (
+                  <optgroup key={fa.familia} label={fa.familia}>
+                    {fa.modulos.map((m: string) => <option key={m} value={m}>{m}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
+                La sección exacta del sistema que se toca. Es lo que después deja cruzar qué módulos generan más trabajo.
               </div>
             </div>
             <div style={{ marginTop: 11 }}><span style={S.lbl}>Nombre de la mejora · así lo ve el cliente</span>

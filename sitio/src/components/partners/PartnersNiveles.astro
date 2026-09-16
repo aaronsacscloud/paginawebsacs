@@ -1,0 +1,87 @@
+---
+/**
+ * PartnersNiveles — niveles reales del programa (los mismos del portal: Referidor, Certificado,
+ * Master Partner, Founder Circle) y el Partner Day trimestral (16-sep-2026).
+ */
+import { waLink } from '../../lib/whatsapp';
+const waDay = waLink('Hola, quiero que me avisen del próximo Partner Day de Sacs.');
+const niveles = [
+  { n: 'Nivel 1', t: 'Partner Referidor', r: 'Empiezas aquí: vendes con tu link único', g: '50 % sobre venta directa' },
+  { n: 'Nivel 2', t: 'Partner Certificado', r: 'Completas una certificación oficial', g: 'Cobras implementaciones y servicios, 100 % para ti' },
+  { n: 'Nivel 3', t: 'Master Partner', r: 'Cinco sucursales activas en tu red', g: '+10 % sobre las ventas de tu red y lugar en el directorio' },
+  { n: 'Nivel 4', t: 'Founder Circle', r: 'Sostienes Master Partner doce meses', g: 'Socio estratégico: producto, roadmap y territorio' },
+];
+---
+<section class="nv" id="niveles">
+  <div class="nv-inner">
+    <div class="nv-head">
+      <span class="nv-eyebrow">Niveles y comunidad</span>
+      <h2 class="nv-h2">Subes de nivel solo. Nadie tiene que pedirlo.</h2>
+      <p class="nv-p">El portal reconoce lo que haces y te sube cuando cumples. Cada nivel abre una forma más de ganar.</p>
+    </div>
+    <ol class="nv-esc">
+      {niveles.map((x, i) => (
+        <li class="nv-nivel" style={`--i:${i}`}>
+          <span class="nv-n">{x.n}</span>
+          <h3>{x.t}</h3>
+          <p class="nv-r">{x.r}</p>
+          <p class="nv-g">{x.g}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="nv-day">
+      <div class="nv-day-txt">
+        <span class="nv-eyebrow nv-eyebrow--claro">Partner Day · cada trimestre</span>
+        <h3>Un día con el equipo de Sacs, en persona</h3>
+        <p>Certificación presencial, lo nuevo del producto y la IA, casos de partners y las marcas que buscan implementador. Lo hacemos en las ferias del ramo: Intermoda en Guadalajara y SAPICA en León, y en la Ciudad de México.</p>
+        <ul>
+          <li>Certificación presencial en un día</li>
+          <li>Marcas que llegan buscando partner</li>
+          <li>Lo que viene en producto e IA, antes que nadie</li>
+        </ul>
+        <a href={waDay} class="nv-btn" target="_blank" rel="noopener noreferrer">Avísame del próximo</a>
+      </div>
+      <div class="nv-day-vis" aria-hidden="true">
+        <div class="nv-cal"><span>Próxima fecha</span><b>Se anuncia en el portal</b><small>y por WhatsApp a los partners activos</small></div>
+        <div class="nv-sedes"><span>Guadalajara</span><span>León</span><span>Ciudad de México</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .nv { background: #F7F7F5; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .nv-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .nv-head { max-width: 760px; margin-bottom: clamp(36px, 5vw, 56px); }
+  .nv-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 16px; }
+  .nv-eyebrow--claro { color: #8FB0FF; }
+  .nv-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 14px; color: inherit; }
+  .nv-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0; color: #55554F; }
+  .nv-esc { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: end; }
+  .nv-nivel { background: #fff; border: 1px solid #E6E6E2; border-radius: 20px; padding: 24px 22px calc(24px + var(--i) * 18px); position: relative; transition: transform 0.3s, box-shadow 0.3s; }
+  .nv-nivel:hover { transform: translateY(-4px); box-shadow: 0 30px 60px -36px rgba(0,0,0,0.3); }
+  .nv-nivel:last-child { background: #0E0D0C; color: #fff; border-color: #0E0D0C; }
+  .nv-n { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 10px; }
+  .nv-nivel:last-child .nv-n { color: #8FB0FF; }
+  .nv-nivel h3 { font-family: var(--font-display); font-size: clamp(20px, 1.8vw, 24px); letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 10px; color: inherit; }
+  .nv-r { margin: 0 0 12px; font-size: 14px; line-height: 1.45; color: #55554F; }
+  .nv-nivel:last-child .nv-r { color: rgba(255,255,255,0.65); }
+  .nv-g { margin: 0; padding-top: 12px; border-top: 1px solid #ECECE9; font-size: 14px; font-weight: 600; line-height: 1.4; }
+  .nv-nivel:last-child .nv-g { border-color: rgba(255,255,255,0.18); }
+  .nv-day { margin-top: clamp(40px, 6vw, 72px); background: #0E0D0C; color: #fff; border-radius: 26px; padding: clamp(28px, 4vw, 52px); display: grid; grid-template-columns: 1.2fr 0.8fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+  .nv-day h3 { font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 36px); letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 12px; color: #fff; }
+  .nv-day p { margin: 0 0 16px; font-size: 16px; line-height: 1.55; color: rgba(255,255,255,0.72); }
+  .nv-day ul { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 8px; }
+  .nv-day li { position: relative; padding-left: 22px; font-size: 15px; }
+  .nv-day li::before { content: ''; position: absolute; left: 0; top: 9px; width: 10px; height: 2px; background: #8FB0FF; }
+  .nv-btn { display: inline-flex; padding: 14px 24px; border-radius: 12px; background: #fff; color: #0E0D0C; font-weight: 700; font-size: 15px; text-decoration: none; }
+  .nv-day-vis { display: grid; gap: 12px; }
+  .nv-cal { border: 1px solid rgba(255,255,255,0.18); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.04); }
+  .nv-cal span { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8FB0FF; }
+  .nv-cal b { font-family: var(--font-display); font-size: 24px; letter-spacing: -0.02em; line-height: 1.1; }
+  .nv-cal small { font-size: 13px; color: rgba(255,255,255,0.6); }
+  .nv-sedes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nv-sedes span { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); }
+  @media (max-width: 1023px) { .nv-esc { grid-template-columns: 1fr 1fr; } .nv-nivel { padding-bottom: 24px; } .nv-day { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .nv-esc { grid-template-columns: 1fr; gap: 10px; } .nv-day { padding: 24px; border-radius: 20px; } .nv-btn { width: 100%; justify-content: center; } }
+</style>

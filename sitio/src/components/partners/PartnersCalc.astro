@@ -1,0 +1,144 @@
+---
+/**
+ * PartnersCalc — calculadora de ingresos del partner (16-sep-2026). Los porcentajes y precios son
+ * constantes arriba del script para que el dueño los ajuste sin tocar el diseño: orquestador 50 %
+ * (comisión sobre venta directa del programa) y referido 40 % (copy de la página), sobre el plan
+ * mensual por sucursal en MXN de plans.ts.
+ */
+import { waLink } from '../../lib/whatsapp';
+const wa = waLink('Hola, hice el cálculo de ingresos como partner de Sacs y quiero platicar. ¿Me cuentan cómo empezamos?');
+const planes = [
+  { id: 'vende', n: 'Vende', p: 810 },
+  { id: 'controla', n: 'Controla', p: 1215 },
+  { id: 'fideliza', n: 'Fideliza', p: 1890 },
+  { id: 'automatiza', n: 'Automatiza', p: 3780 },
+];
+---
+<section class="pc" id="calculadora">
+  <div class="pc-inner">
+    <div class="pc-txt">
+      <span class="pc-eyebrow">Calcula tu ingreso</span>
+      <h2 class="pc-h2">¿Cuánto ganas cada mes con Sacs?</h2>
+      <p class="pc-p">Mueve las tiendas y el plan. El ingreso es recurrente: cada tienda paga cada mes y tú cobras con ella mientras siga operando.</p>
+
+      <div class="pc-campo">
+        <span class="pc-l">Tipo de alianza</span>
+        <div class="pc-seg" role="radiogroup" aria-label="Tipo de alianza">
+          <button type="button" class="is-on" data-tipo="orq" data-pct="50" aria-pressed="true">Orquestador <small>50 %</small></button>
+          <button type="button" data-tipo="ref" data-pct="40" aria-pressed="false">Referido <small>40 %</small></button>
+        </div>
+      </div>
+
+      <div class="pc-campo">
+        <div class="pc-l-row"><span class="pc-l">Tiendas activas contigo</span><b id="pc-n-tiendas">10</b></div>
+        <input type="range" id="pc-tiendas" min="1" max="60" value="10" aria-label="Tiendas activas" />
+        <div class="pc-marcas"><span>1</span><span>10</span><span>20</span><span>40</span><span>60</span></div>
+      </div>
+
+      <div class="pc-campo">
+        <span class="pc-l">Plan promedio por sucursal</span>
+        <div class="pc-seg pc-seg--4" role="radiogroup" aria-label="Plan">
+          {planes.map((pl) => <button type="button" class:list={[{ 'is-on': pl.id === 'controla' }]} data-plan={pl.p} aria-pressed={pl.id === 'controla' ? 'true' : 'false'}>{pl.n} <small>${pl.p.toLocaleString('es-MX')}/mes</small></button>)}
+        </div>
+      </div>
+
+      <div class="pc-campo" id="pc-campo-impl">
+        <div class="pc-l-row"><span class="pc-l">Lo que cobras por implementar cada tienda</span><b id="pc-n-impl">$8,000</b></div>
+        <input type="range" id="pc-impl" min="0" max="40000" step="1000" value="8000" aria-label="Cobro por implementación" />
+        <div class="pc-marcas"><span>$0</span><span>$10,000</span><span>$20,000</span><span>$40,000</span></div>
+        <span class="pc-nota">El orquestador cobra la implementación directo al cliente y se queda con el 100 %. Rango típico: $5,000 a $12,000 por sucursal.</span>
+      </div>
+    </div>
+
+    <div class="pc-res" aria-live="polite">
+      <span class="pc-res-k">Tu ingreso recurrente</span>
+      <div class="pc-big"><b id="pc-mes">$6,075</b><span>al mes</span></div>
+      <dl class="pc-datos">
+        <div><dt>Al año</dt><dd id="pc-ano">$72,900</dd></div>
+        <div><dt>En 3 años</dt><dd id="pc-3a">$218,700</dd></div>
+        <div id="pc-fila-impl"><dt>Implementaciones (una vez)</dt><dd id="pc-implt">$80,000</dd></div>
+        <div id="pc-fila-total"><dt>Primer año en total</dt><dd id="pc-total">$152,900</dd></div>
+      </dl>
+      <p class="pc-res-p" id="pc-frase">Con 10 tiendas en Controla, cobras <b>$6,075</b> cada mes sin volver a vender nada. Cada tienda nueva suma <b>$608</b> mensuales de por vida.</p>
+      <div class="pc-ctas">
+        <a href="#agenda" class="pc-btn" data-tipo="Partner orquestador · calculadora">Quiero este ingreso</a>
+        <a href={wa} class="pc-link" target="_blank" rel="noopener noreferrer">Platicar por WhatsApp →</a>
+      </div>
+      <span class="pc-fine">Estimación en pesos mexicanos con el plan mensual por sucursal. El porcentaje exacto lo fija tu acuerdo de partner.</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pc { background: #fff; color: #0E0D0C; padding: clamp(72px, 9vw, 120px) 0; }
+  .pc-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(28px, 5vw, 72px); align-items: start; }
+  .pc-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); margin-bottom: 16px; }
+  .pc-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); letter-spacing: -0.035em; line-height: 1.02; margin: 0 0 14px; color: inherit; }
+  .pc-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0 0 30px; color: #55554F; }
+  .pc-campo { margin-bottom: 26px; }
+  .pc-l { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #6B6B68; margin-bottom: 10px; }
+  .pc-l-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .pc-l-row b { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.02em; }
+  .pc-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pc-seg--4 { grid-template-columns: repeat(4, 1fr); }
+  .pc-seg button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid #E3E3DF; background: #fff; font: inherit; font-weight: 600; font-size: 15px; color: #0E0D0C; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; }
+  .pc-seg button small { font-size: 12px; font-weight: 500; color: #8A8A86; }
+  .pc-seg button.is-on { border-color: #0E0D0C; background: #0E0D0C; color: #fff; }
+  .pc-seg button.is-on small { color: rgba(255,255,255,0.7); }
+  input[type=range] { width: 100%; accent-color: #0E0D0C; margin: 4px 0 6px; }
+  .pc-marcas { display: flex; justify-content: space-between; font-size: 11px; color: #9A9A96; }
+  .pc-nota { display: block; margin-top: 10px; font-size: 13px; line-height: 1.45; color: #6B6B68; }
+  .pc-res { position: sticky; top: 100px; background: #0E0D0C; color: #fff; border-radius: 24px; padding: clamp(26px, 3vw, 40px); }
+  .pc-res-k { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 10px; }
+  .pc-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pc-big b { font-family: var(--font-display); font-size: clamp(44px, 5vw, 68px); letter-spacing: -0.04em; line-height: 1; }
+  .pc-big span { font-size: 16px; color: rgba(255,255,255,0.65); }
+  .pc-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; margin: 26px 0 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.16); }
+  .pc-datos div { display: flex; flex-direction: column; gap: 4px; }
+  .pc-datos dt { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+  .pc-datos dd { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: -0.02em; }
+  .pc-res.is-ref #pc-fila-impl, .pc-res.is-ref #pc-fila-total { display: none; }
+  .pc-res-p { margin: 22px 0 0; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,0.75); }
+  .pc-res-p b { color: #fff; }
+  .pc-ctas { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 24px; }
+  .pc-btn { display: inline-flex; padding: 14px 24px; border-radius: 12px; background: #fff; color: #0E0D0C; font-weight: 700; font-size: 15px; text-decoration: none; }
+  .pc-link { color: #fff; opacity: 0.85; font-weight: 600; text-decoration: none; }
+  .pc-fine { display: block; margin-top: 18px; font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,0.45); }
+  @media (max-width: 1023px) { .pc-inner { grid-template-columns: 1fr; } .pc-res { position: static; } }
+  @media (max-width: 767px) {
+    .pc-seg--4 { grid-template-columns: 1fr 1fr; }
+    .pc-seg button { padding: 10px 12px; font-size: 14px; }
+    .pc-res { padding: 22px; border-radius: 18px; }
+    .pc-datos { gap: 12px 14px; } .pc-datos dd { font-size: 19px; }
+    .pc-btn { width: 100%; justify-content: center; }
+  }
+</style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('calculadora'); if (!sec) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const res = sec.querySelector('.pc-res')!;
+    let pct = 0.5, tipo = 'orq', plan = 1215;
+    const tiendas = $('pc-tiendas') as HTMLInputElement, impl = $('pc-impl') as HTMLInputElement;
+    const planNombre = () => (sec.querySelector('.pc-seg--4 .is-on') as HTMLElement).firstChild!.textContent!.trim();
+    const calcula = () => {
+      const t = Number(tiendas.value), im = Number(impl.value);
+      const mes = t * plan * pct, porTienda = plan * pct;
+      $('pc-n-tiendas').textContent = String(t); $('pc-n-impl').textContent = fmt(im);
+      $('pc-mes').textContent = fmt(mes); $('pc-ano').textContent = fmt(mes * 12); $('pc-3a').textContent = fmt(mes * 36);
+      $('pc-implt').textContent = fmt(t * im); $('pc-total').textContent = fmt(mes * 12 + t * im);
+      res.classList.toggle('is-ref', tipo === 'ref'); $('pc-campo-impl').style.display = tipo === 'ref' ? 'none' : '';
+      $('pc-frase').innerHTML = tipo === 'ref'
+        ? `Con ${t} negocios referidos en ${planNombre()}, cobras <b>${fmt(mes)}</b> cada mes sin vender ni implementar. Cada referido nuevo suma <b>${fmt(porTienda)}</b> mensuales de por vida.`
+        : `Con ${t} tiendas en ${planNombre()}, cobras <b>${fmt(mes)}</b> cada mes sin volver a vender nada. Cada tienda nueva suma <b>${fmt(porTienda)}</b> mensuales de por vida.`;
+    };
+    sec.querySelectorAll<HTMLButtonElement>('.pc-seg button').forEach((b) => b.addEventListener('click', () => {
+      const grupo = b.parentElement!; grupo.querySelectorAll('button').forEach((x) => { x.classList.remove('is-on'); x.setAttribute('aria-pressed', 'false'); }); b.classList.add('is-on'); b.setAttribute('aria-pressed', 'true');
+      if (b.dataset.tipo) { tipo = b.dataset.tipo; pct = Number(b.dataset.pct) / 100; } if (b.dataset.plan) plan = Number(b.dataset.plan);
+      calcula(); (window as any).sacsPH?.('partners_calculadora', { tipo, plan, tiendas: tiendas.value });
+    }));
+    tiendas.addEventListener('input', calcula); impl.addEventListener('input', calcula); calcula();
+  })();
+</script>
