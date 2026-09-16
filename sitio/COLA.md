@@ -444,3 +444,26 @@ correo del cliente). Ahí falta una **nota de contexto**:
       PRIMERO el plan, lo pidió explícitamente.
 - [ ] **4 · Confirmación que no llegó.** Plantilla UTILITY de respaldo cuando la
       de marketing no entra.
+
+## 16-sep-2026 · video del dueño sobre el Taller (HECHO)
+
+> «En esta sección lo que necesito es que donde está todas para arrancar y en
+> desarrollo, realmente aquí en la lista del taller únicamente muéstrame las
+> cuentas y el proceso. […] En vez de que diga nadie la ha tomado, sin fecha,
+> ya pasaron de fecha, lo vamos a manejar como total, por arrancar, en
+> desarrollo y en espera de tu OK. […] Y acá quítame estas para que solamente
+> me muestres el buscador, este botón déjalo como nuevo orden. Y aquí cuando yo
+> le dé clic a Rubén me tiene que aparecer un filtro para que pueda separarlas
+> en las diferentes gestiones que se tienen por la etapa en la que se
+> encuentra, porque aquí por ejemplo se juntan todas estas, estas también están
+> filtrando y esta también filtra, entonces no tiene sentido y se ve mal. Por
+> favor acomódame esto para que realmente tenga una lógica. De aquí por ejemplo
+> hay algunas sin fechas que mandé que tengo que borrar porque realmente no
+> están bien, entonces que me dé la opción de quitarlas.»
+> https://www.veed.io/view/b47306b3-5bf9-4629-9b10-3517dda989a0
+
+Hecho: las 4 tarjetas son el único filtro de arriba, se fue la tira de vistas
+guardadas y «Solo las mías», la barra de abajo quedó en buscador + Nueva orden,
+y dentro de la cuenta el filtro es por ETAPA con «Sin fecha» detrás de la raya.
+Quitar ya existía desde el commit 6fc84fc9 (el dueño grabó con un bundle viejo:
+en el video se ve el aviso «Versión nueva lista · Actualizar»).
