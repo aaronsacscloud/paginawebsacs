@@ -259,6 +259,41 @@ export async function aplicarOptOut(contactId: string, motivo: string) {
 }
 const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 
+/* ══ RECHAZO EXPLÍCITO: el botón «Ahora no» ═══════════════════════════════
+   Caso real (Montse, LUGU, 15-sep-2026): tocó el botón «Ahora no», el agente lo
+   entendió —lo registró como «Rechaza el contacto actual»— y le contestó bonito,
+   pero nadie la descalificó: siguió en `lead`, siguió en la secuencia y le
+   salieron correos de marketing ese día y el siguiente.
+
+   Un botón NO es texto libre. El lead no escribió algo ambiguo que haya que
+   interpretar: se le dieron dos opciones y eligió la negativa. Eso se respeta
+   con una regla, no preguntándole al modelo — que en ese caso lo clasificó como
+   «vago» y decidió «dejar la puerta abierta».
+
+   Es MÁS SUAVE que el opt-out: no pone `wa_optout` ni silencia para siempre.
+   «Ahora no» es un no de HOY; se descalifica y se apagan los automatismos, pero
+   el lead puede revivir si algún día escribe.
+
+   Coincidencia EXACTA del mensaje completo contra las etiquetas de botón que
+   usamos: un «ahora no» dentro de una frase larga puede significar cualquier
+   cosa («ahora no tengo el dato a la mano»), y ahí sí decide el modelo. */
+const RECHAZO_BOTON_RE = /^\s*(ahora no|no,? gracias|no me interesa|no gracias|por ahora no|no por ahora)\s*[.!]?\s*$/i;
+
+export async function aplicarRechazo(contactId: string, motivo: string) {
+  const ahora = new Date().toISOString();
+  await supabase.from('contacts').update({ lifecycle_stage: 'descalificado', updated_at: ahora })
+    .eq('id', contactId).in('lifecycle_stage', ['lead', 'lead_calificado', 'rezagado']).then(() => {}, () => {});
+  await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descalificado', updated_at: ahora })
+    .eq('contact_id', contactId).neq('estado', 'terminada').then(() => {}, () => {});
+  await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'descalificado' })
+    .eq('contact_id', contactId).is('detenida_at', null).then(() => {}, () => {});
+  await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: 'el lead dijo que no', updated_at: ahora })
+    .eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
+  await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'descalificado', updated_at: ahora })
+    .eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
+  await supabase.from('activities').insert({ contact_id: contactId, tipo: 'descalificado', titulo: 'Dijo que no le interesa por ahora', descripcion: motivo, automatico: true }).then(() => {}, () => {});
+}
+
 /** Un turno del agente para un contacto: lee, decide, no envía. */
 export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string; _reintentoFalso?: boolean } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
@@ -858,6 +893,13 @@ export async function proponerRespuestas(): Promise<any> {
         await aplicarOptOut(cid, `escribió: «${String(txtBaja).slice(0, 120)}»`);
         const { data: cv0 } = await supabase.from('wa_conversaciones').select('id, telefono').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
         if (cv0?.telefono) await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: cv0.id, telefono: String(cv0.telefono).replace(/\D/g, ''), origen: 'respuesta', estado: nace(cfg, cv0.telefono), mensaje: 'Entendido, no te vuelvo a escribir. Si un día quieres retomarlo, aquí estoy.', salida: { estado: 'descalificado', objetivo: 'Confirmar la baja', responder: true, accion: { tipo: 'opt_out' }, reconsiderado: true }, sale_at: ahora.toISOString(), modelo: 'regla' }).then(() => {}, () => {});
+        res.saltados++; continue;
+      }
+      /* El «no» explícito va ANTES de las señales de interés y antes de
+         invocar al modelo: si el lead ya dijo que no, no hay nada que decidir. */
+      if (RECHAZO_BOTON_RE.test(String(txtBaja || '').trim())) {
+        await aplicarRechazo(cid, `eligió «${String(txtBaja).trim().slice(0, 60)}»`);
+        await log({ accion: 'agente_descalifica', contact_id: cid, razon: `dijo «${String(txtBaja).trim().slice(0, 60)}»: se descalifica y se apagan cadencia y secuencias` });
         res.saltados++; continue;
       }
       { const senal = senalDeInteres(txtBaja || ''); if (senal) await supabase.from('ti_senales').insert({ contact_id: cid, tipo: 'interes_conversacion', clave: `interes:${cid}:${ultimoPor[cid]}`, ocurrio_at: ultimoPor[cid], detalle: { senal, texto: String(txtBaja || '').slice(0, 200) } }).then(() => {}, () => {}); }

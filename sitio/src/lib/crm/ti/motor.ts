@@ -441,13 +441,40 @@ export async function alCompletar(tarea: any, resultado: string | null, userId: 
 }
 
 async function terminarCadencia(contactId: string, motivo: string) {
+  const ahora = new Date().toISOString();
   await supabase.from('ti_cadencias')
-    .update({ estado: 'terminada', terminada_motivo: motivo, updated_at: new Date().toISOString() })
+    .update({ estado: 'terminada', terminada_motivo: motivo, updated_at: ahora })
     .eq('contact_id', contactId);
-  // El handoff a la secuencia de nutrición es F5; por ahora el lead queda
-  // marcado y fuera del plan humano.
+
+  /* ══ DESCALIFICAR TIENE QUE APAGAR TODO, NO SOLO LA CADENCIA ═════════════
+     Caso real (Montse, LUGU, 15-sep-2026): tocó el botón «Ahora no», el agente
+     lo entendió —lo registró como «Rechaza el contacto actual»— y aun así le
+     salieron correos de marketing el 15 y el 16. Tres razones, las tres aquí:
+
+     1. Solo se tocaba `estatus_lead`, nunca `lifecycle_stage`. El contacto
+        seguía siendo `lead` para todo el CRM, y las secuencias filtran por
+        lifecycle: seguía calificando para entrar a más.
+
+     2. `estatus_lead: 'sin_respuesta'` era PEOR que no hacer nada. La
+        secuencia «Seguimiento a leads sin respuesta» entra justo con
+        `estatus ∈ (contactado, sin_respuesta)`: descalificar a alguien lo
+        volvía a calificar para la secuencia que le sigue escribiendo. Por eso
+        se deja de escribir ese campo.
+
+     3. No se detenían las secuencias del CRM. Son otro sistema —`ti_cadencias`
+        es el plan del agente, `crm_secuencia_miembros` es marketing— y apagar
+        uno no apaga el otro. Se usa el mismo patrón que ya existe para
+        `opt_out` y `cadencia_humana` unas líneas arriba. */
   if (motivo === 'descalificado') {
-    await supabase.from('contacts').update({ estatus_lead: 'sin_respuesta' }).eq('id', contactId).in('estatus_lead', ['nuevo', 'contactado']);
+    await supabase.from('contacts')
+      .update({ lifecycle_stage: 'descalificado' })
+      .eq('id', contactId)
+      // Solo desde etapas de lead: si ya es cliente u oportunidad ganada, que
+      // el agente no le baje la etapa por un «ahora no» de otra conversación.
+      .in('lifecycle_stage', ['lead', 'lead_calificado', 'rezagado']);
+    await supabase.from('crm_secuencia_miembros')
+      .update({ detenida_at: ahora, motivo: 'descalificado' })
+      .eq('contact_id', contactId).is('detenida_at', null);
   }
   return { ok: true, transicion: 'terminada:' + motivo };
 }
