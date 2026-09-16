@@ -389,7 +389,7 @@ una oportunidad de expansión […] y que, al final, esto se pueda agregar como 
       cuánto de lo vendido salió de este hueco. Si la cuenta no tiene ARR (vitalicias), lo dice y
       pide el monto a mano en vez de inventar un precio.
 
-## 2026-09-16 · Nota de contexto al agendar, que viaje a Google Calendar
+## 2026-09-16 · Nota de contexto al agendar, que viaje a Google Calendar — HECHO
 
 > «aqui al agendar una sesión es importante que me aparezca ujna nota que
 > tambien debe aparece en google claendar que me permita agregar directamente
@@ -403,11 +403,11 @@ una oportunidad de expansión […] y que, al final, esto se pueda agregar como 
 Dónde: el panel **Acciones → Agendar reunión** del inbox (día · horario ·
 correo del cliente). Ahí falta una **nota de contexto**:
 
-- [ ] Se **genera sola leyendo la conversación** (ya existe el botón «Resumir»
+- [x] Se **genera sola leyendo la conversación** (ya existe el botón «Resumir»
       del inbox — reusar ese motor, no hacer otro). Debe traer: quién es el
       cliente, qué busca, qué pidió ver en la sesión y lo que se habló.
-- [ ] Se puede **editar antes de confirmar**: la IA propone, el humano corrige.
-- [ ] Viaja a la **descripción del evento de Google Calendar**, no solo al CRM —
+- [x] Se puede **editar antes de confirmar**: la IA propone, el humano corrige.
+- [x] Viaja a la **descripción del evento de Google Calendar**, no solo al CRM —
       el consultor abre la invitación y ya tiene el contexto, sin entrar a nada.
-- [ ] Incluye un **link directo a la conversación en el CRM** dentro de esa misma
+- [x] Incluye un **link directo a la conversación en el CRM** dentro de esa misma
       descripción, para pasar de la invitación al hilo con un clic.
