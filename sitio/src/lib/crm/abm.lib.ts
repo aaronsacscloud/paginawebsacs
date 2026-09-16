@@ -159,9 +159,21 @@ export async function apuntar(cuenta_id: string, canal: string, tipo: string, ex
 export { nombrePila };
 
 export function variablesDe(c: any, persona?: any): Record<string, string> {
+  /* Los tres hallazgos se calculan antes porque `vimos` depende de ellos.
+     El correo 0 abre la lista con «Esto es lo que vimos de ustedes:» y los
+     tres renglones de abajo son condicionales, así que cuando la cuenta no
+     tiene ninguno quedaban los dos puntos seguidos de nada —2,164 de las
+     3,210 cuentas contactables, o sea dos de cada tres (16-sep-2026)—. El
+     motor de plantillas no tiene «o», así que la condición se calcula aquí:
+     `vimos` está lleno si hay algo que citar, y el renglón de introducción
+     se borra solo cuando no lo hay. */
+  const sucursales = Number(c.sucursales) > 1 && c.sucursales_confianza !== 'baja' ? String(c.sucursales) : '';
+  const plataforma = plataformaLimpia(c.plataforma_web);
+  const senal = recorte(c.senal_expansion, 90);
   return {
     nombre: c.nombre || '',
     ciudad: c.ciudad || '',
+    vimos: senal || sucursales || plataforma ? 'sí' : '',
     // No se presume un número de tiendas que no verificamos: equivocarse con
     // "sus 14 tiendas" cuando son 3 tumba la credibilidad del correo entero.
     //
@@ -172,14 +184,14 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
     // cualquiera ve. Son 17,782 cuentas con una sola tienda, o sea la mayoría
     // de la base. Vacía aquí, el bloque [[si sucursales]] borra la frase sola y
     // las 14 plantillas quedan bien sin tocar ninguna.
-    sucursales: Number(c.sucursales) > 1 && c.sucursales_confianza !== 'baja' ? String(c.sucursales) : '',
+    sucursales,
     rating: c.google_rating ? Number(c.google_rating).toFixed(1) : '',
     resenas: c.google_resenas ? String(c.google_resenas) : '',
-    plataforma: plataformaLimpia(c.plataforma_web),
+    plataforma,
     persona: nombrePila(persona?.nombre),
     giro_nombre: GIROS[c.giro] || c.giro || '',
     ultima_publicacion: recorte(c.ultima_publicacion, 90),
-    senal: recorte(c.senal_expansion, 90),
+    senal,
     // Segmentación por país (14-sep-2026): el guion de Latam es uno y estas
     // tres lo aterrizan —«en Colombia», «vestidos de 15 años», la página del
     // giro de su país—. En México dicen México, XV años y la página raíz.

@@ -57,10 +57,24 @@ export function normalizarUrl(u: string): string | null {
 
 const entre = (html: string, re: RegExp) => (html.match(re)?.[1] || '').trim().replace(/\s+/g, ' ') || null;
 
+/**
+ * El contenido REAL de la página, sin el menú ni el pie.
+ *
+ * Contar palabras sobre el HTML entero hacía inútil la regla de contenido
+ * delgado: el armazón del sitio —navegación, pie, avisos— son ~1,800 palabras,
+ * así que una página COMPLETAMENTE VACÍA contaba 1,872 y nunca se marcaba. Se
+ * descubrió con /manifiesto, que lleva publicada con un comentario dentro
+ * («el contenido irá aquí») y salía como una página normal de 1,872 palabras.
+ */
+function soloContenido(html: string): string {
+  const main = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+  return main ? main[1] : html;
+}
+
 /** Lo que se puede saber de una página sin ejecutar su JavaScript. Basta: el
  *  sitio es estático y lo que Google indexa es este HTML. */
 export function leerHtml(html: string) {
-  const texto = html
+  const texto = soloContenido(html)
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ');

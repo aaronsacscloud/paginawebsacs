@@ -27,6 +27,27 @@ Responde ÚNICAMENTE un JSON válido, sin markdown:
 - pendientes: lo que el equipo debe hacer; [] si no hay nada.
 - No inventes nada que no esté en la conversación.`;
 
+/* CONTEXTO: la nota que el consultor lee ANTES de la sesión, dentro de la
+   invitación de su calendario. No es el resumen del inbox: ese está escrito
+   para el vendedor que ya conoce el hilo. Éste lo lee alguien que llega en
+   frío, quince minutos antes, desde el teléfono — y tiene que poder abrir la
+   videollamada sabiendo con quién habla y qué le van a pedir.
+   Por eso el orden es quién / qué busca / qué se habló / qué quiere ver: la
+   pregunta que el consultor se hace primero va primero. */
+const SYSTEM_CONTEXTO = `Eres el asistente del CRM de SacsCloud (ERP para comercios
+en México). Te dan una conversación con un cliente o lead al que se le acaba de
+agendar una sesión consultiva. Escribe el CONTEXTO que el consultor va a leer en
+su invitación de calendario, minutos antes de la reunión, sin haber visto el hilo.
+
+Responde ÚNICAMENTE un JSON válido, sin markdown:
+{"quien":"1-2 líneas: quién es, su negocio, giro y tamaño si se sabe","busca":"1-2 líneas: el problema o la meta que lo trae","hablado":["lo que ya se le dijo o se acordó"],"quiere_ver":["lo que pidió ver o resolver en la sesión"],"ojo":["algo que el consultor debe cuidar: una objeción, una urgencia, un mal rato"]}
+- Español de México, sin emojis, frases cortas. Nada de relleno ni de cortesías.
+- "hablado" y "quiere_ver": 2 a 4 puntos cada uno. "ojo": [] si no hay nada.
+- Si algo NO está en la conversación, omítelo. Jamás lo inventes ni lo supongas:
+  una nota que inventa el giro del cliente hace quedar mal al consultor en vivo.
+- Si la conversación es muy corta y casi no hay señal, dilo en "quien" en vez de
+  rellenar los demás campos.`;
+
 const SYSTEM_BORRADOR = `Eres un vendedor/CS senior de SacsCloud (ERP para comercios en
 México). Te dan la conversación con un cliente o lead y su contexto del CRM.
 Escribe la SIGUIENTE respuesta del equipo, en español de México: cálida, directa,
@@ -66,7 +87,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
-  const accion = b.accion === 'borrador' ? 'borrador' : 'resumir';
+  const accion: 'borrador' | 'contexto' | 'resumir' =
+    b.accion === 'borrador' ? 'borrador' : b.accion === 'contexto' ? 'contexto' : 'resumir';
 
   // ── Juntar el contexto: conversación de ambos canales + panel ──
   let conv: any = null;
