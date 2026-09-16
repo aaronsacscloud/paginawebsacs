@@ -87,7 +87,17 @@ export const GET: APIRoute = async ({ request, url }) => {
      separada por comas («renta,boutiques») manda solo a esos; vacía o sin la
      llave, van todos, que es como se comportaba antes. El `?giro=` de la URL
      sigue mandando por encima, para una prueba a mano. */
-  const permitidos = String(conf.wa_frio_giros || '').split(',').map(g => g.trim()).filter(Boolean);
+  const alcance = String(conf.wa_frio_giros || '').trim();
+  const permitidos = alcance.toLowerCase() === 'todos' ? [] : alcance.split(',').map(g => g.trim()).filter(Boolean);
+  /* SIN ALCANCE NO SALE NADA, y es a propósito. Dejar «vacío = todos» era
+     repetir el problema: encender `abm_frio` sin acordarse de acotar suelta el
+     WhatsApp sobre los 24 giros, y una línea de WhatsApp se quema una sola vez.
+     Quien quiera todos lo escribe: `todos`. Así las dos decisiones —prender y
+     a quién— son explícitas, y ninguna se toma por omisión.
+     El `?giro=` de la URL sigue funcionando para una prueba a mano. */
+  if (!giroFiltro && !permitidos.length && alcance.toLowerCase() !== 'todos') {
+    return json({ enviados: 0, motivo: 'falta abm_config.wa_frio_giros: escribe los giros separados por comas, o «todos» si de verdad son todos' });
+  }
 
   // ── A quién le toca ───────────────────────────────────────────────────────
   // Solo números DECLARADOS: los que el propio negocio publicó como WhatsApp.
