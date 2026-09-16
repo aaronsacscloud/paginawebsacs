@@ -407,7 +407,11 @@ function getInitialTab(): Tab {
     window.history.replaceState({}, '', u);
     return 'pagos';
   }
-  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy', 'pipelines', 'marca', 'cobros', 'cobranza'];
+  // `wiki` y `equipo` NO están en NAV_SECTIONS —se entra a los dos por el pie,
+  // no por el menú—, así que sin nombrarlos aquí `?tab=wiki` caía al tablero en
+  // silencio: la Wiki no se podía enlazar ni compartir. Medido el 16-sep-2026
+  // al intentar abrir ?tab=wiki&pagina=c-reuniones.
+  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy', 'pipelines', 'marca', 'cobros', 'cobranza', 'wiki', 'equipo'];
   if (t && allIds.includes(t)) return t;
   return 'dashboard';
 }
