@@ -1,0 +1,149 @@
+---
+// El lienzo de las páginas que publica el motor de demanda.
+//
+// Usa los mismos tokens del sitio (tipografías, colores, escala) para que una
+// página generada no se distinga de una escrita a mano — y si se distinguiera,
+// el problema no sería estético: una página que parece de segunda no la cita
+// nadie.
+//
+// Dos decisiones que sirven al objetivo de ser citados:
+//   · el índice con anclas, para que una IA pueda enlazar el APARTADO exacto
+//     que responde la pregunta, no la página entera;
+//   · la fecha de actualización visible, porque la frescura verificable es de
+//     las pocas señales que un modelo puede comprobar por su cuenta.
+interface Props { pieza: any }
+const { pieza } = Astro.props;
+
+const fecha = (s: string | null) => s
+  ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Mexico_City' }).format(new Date(s))
+  : null;
+---
+
+<article class="cm">
+  <header class="cm-cab">
+    <a class="cm-volver" href={`/${pieza.seccion}`}>← {pieza.seccion === 'comparar' ? 'Comparativas' : pieza.seccion === 'software-para' ? 'Software para tu negocio' : 'Recursos'}</a>
+    <h1>{pieza.h1}</h1>
+    {pieza.meta_desc && <p class="cm-entrada">{pieza.meta_desc}</p>}
+    <p class="cm-meta">
+      {pieza.publicado_at && <time datetime={pieza.publicado_at}>Publicado el {fecha(pieza.publicado_at)}</time>}
+      {pieza.actualizado_at && pieza.actualizado_at !== pieza.publicado_at &&
+        <> · <time datetime={pieza.actualizado_at}>Actualizado el {fecha(pieza.actualizado_at)}</time></>}
+      {pieza.palabras > 0 && <> · {Math.max(1, Math.round(pieza.palabras / 220))} min de lectura</>}
+    </p>
+  </header>
+
+  {pieza.indice.length > 0 && (
+    <nav class="cm-indice" aria-label="Contenido de la página">
+      <p>En esta página</p>
+      <ol>{pieza.indice.map((i: any) => <li><a href={`#${i.ancla}`}>{i.texto}</a></li>)}</ol>
+    </nav>
+  )}
+
+  <div class="cm-cuerpo" set:html={pieza.html} />
+
+  <footer class="cm-pie">
+    <p>Esto lo escribimos en <strong>Sacs</strong>, el sistema para marcas y tiendas de moda en México.</p>
+    <a class="cm-boton" href="/contacto">Ver cómo funciona con tu catálogo</a>
+  </footer>
+</article>
+
+<style>
+  .cm { max-width: 760px; margin: 0 auto; padding: var(--space-16) var(--space-6) var(--space-24); }
+  @media (max-width: 640px) { .cm { padding: var(--space-10) var(--space-4) var(--space-16); } }
+
+  .cm-volver { font-size: .875rem; color: var(--color-text-secondary); text-decoration: none; }
+  .cm-volver:hover { color: var(--color-primary); }
+
+  .cm-cab h1 {
+    font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1; letter-spacing: -.02em; margin: var(--space-4) 0 var(--space-4);
+    color: var(--color-text-primary); text-wrap: balance;
+  }
+  .cm-entrada { font-size: 1.1875rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
+  .cm-meta { font-size: .8125rem; color: var(--color-text-secondary); opacity: .75; margin: 0; }
+
+  .cm-indice {
+    background: var(--color-bg-secondary); border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); margin: var(--space-10) 0;
+  }
+  .cm-indice p { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; margin: 0 0 var(--space-3); color: var(--color-text-secondary); }
+  .cm-indice ol { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); }
+  .cm-indice a { color: var(--color-text-primary); text-decoration: none; font-size: .9375rem; }
+  .cm-indice a:hover { color: var(--color-primary); text-decoration: underline; }
+
+  /* El cuerpo lo genera lib/demanda/bloques.ts; aquí solo se le da forma. */
+  .cm-cuerpo { font-size: 1.0625rem; line-height: 1.75; color: var(--color-text-primary); }
+  .cm-cuerpo :global(h2) {
+    font-family: var(--font-display); font-size: 1.625rem; line-height: 1.25;
+    margin: var(--space-12) 0 var(--space-4); letter-spacing: -.01em; scroll-margin-top: 90px; text-wrap: balance;
+  }
+  .cm-cuerpo :global(h3) { font-family: var(--font-display); font-size: 1.25rem; margin: var(--space-8) 0 var(--space-3); scroll-margin-top: 90px; }
+  .cm-cuerpo :global(p) { margin: 0 0 var(--space-5); }
+  .cm-cuerpo :global(ul), .cm-cuerpo :global(ol) { margin: 0 0 var(--space-5); padding-left: var(--space-6); display: grid; gap: var(--space-2); }
+  .cm-cuerpo :global(a) { color: var(--color-primary); text-underline-offset: 3px; }
+  .cm-cuerpo :global(code) { background: var(--color-bg-secondary); padding: 1px 6px; border-radius: 5px; font-size: .9em; }
+  .cm-cuerpo :global(strong) { font-weight: 650; }
+
+  /* Tablas: se desbordan a lo ancho en su propia caja, nunca el cuerpo. */
+  .cm-cuerpo :global(.de-tabla) { overflow-x: auto; margin: 0 0 var(--space-6); }
+  .cm-cuerpo :global(table) { width: 100%; border-collapse: collapse; font-size: .9375rem; min-width: 480px; }
+  .cm-cuerpo :global(th) {
+    text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--color-text-secondary); padding: var(--space-2) var(--space-3);
+    border-bottom: 2px solid var(--color-border-light); font-weight: 600;
+  }
+  .cm-cuerpo :global(td) { padding: var(--space-3); border-bottom: 1px solid var(--color-border-light); vertical-align: top; }
+  .cm-cuerpo :global(.de-nota) { font-size: .8125rem; color: var(--color-text-secondary); margin-top: var(--space-2); }
+
+  /* La cita con su fuente: es lo que hace verificable una afirmación. */
+  .cm-cuerpo :global(.de-cita) {
+    margin: var(--space-8) 0; padding: var(--space-5) var(--space-6);
+    border-left: 3px solid var(--color-accent); background: var(--color-bg-secondary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .cm-cuerpo :global(.de-cita blockquote) { margin: 0; font-size: 1.0625rem; }
+  .cm-cuerpo :global(.de-cita figcaption) { margin-top: var(--space-3); font-size: .8125rem; color: var(--color-text-secondary); }
+
+  .cm-cuerpo :global(.de-faq) { display: grid; gap: var(--space-2); margin: var(--space-6) 0; }
+  .cm-cuerpo :global(.de-faq details) { border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: #fff; }
+  .cm-cuerpo :global(.de-faq summary) { padding: var(--space-4) var(--space-5); cursor: pointer; font-weight: 600; }
+  .cm-cuerpo :global(.de-faq details > div) { padding: 0 var(--space-5) var(--space-4); color: var(--color-text-secondary); }
+
+  .cm-cuerpo :global(.de-pasos) { counter-reset: paso; list-style: none; padding: 0; display: grid; gap: var(--space-4); margin: var(--space-6) 0; }
+  .cm-cuerpo :global(.de-pasos li) {
+    counter-increment: paso; display: grid; gap: var(--space-1);
+    padding-left: var(--space-10); position: relative;
+  }
+  .cm-cuerpo :global(.de-pasos li::before) {
+    content: counter(paso); position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--color-primary); color: #fff; font-size: .8125rem; font-weight: 700;
+  }
+  .cm-cuerpo :global(.de-pasos span) { color: var(--color-text-secondary); }
+
+  /* El dato propio: lo más citable de una página, así que se ve como tal. */
+  .cm-cuerpo :global(.de-dato) {
+    display: grid; gap: 2px; margin: var(--space-6) 0; padding: var(--space-5) var(--space-6);
+    background: var(--gradient-cream); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
+  }
+  .cm-cuerpo :global(.de-dato-v) { font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; line-height: 1; }
+  .cm-cuerpo :global(.de-dato-e) { font-size: .9375rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-dato-f) { font-size: .75rem; color: var(--color-text-secondary); opacity: .75; }
+
+  .cm-cuerpo :global(.de-cta) {
+    margin: var(--space-8) 0; padding: var(--space-6); border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary); display: grid; gap: var(--space-4); justify-items: start;
+  }
+  .cm-cuerpo :global(.de-cta p) { margin: 0; }
+  .cm-cuerpo :global(.de-cta-b), .cm-boton {
+    display: inline-block; background: var(--color-primary); color: #fff; text-decoration: none;
+    padding: var(--space-3) var(--space-6); border-radius: var(--radius-full); font-weight: 600; font-size: .9375rem;
+  }
+  .cm-cuerpo :global(.de-cta-b:hover), .cm-boton:hover { background: var(--color-primary-hover); }
+
+  .cm-pie {
+    margin-top: var(--space-16); padding-top: var(--space-8);
+    border-top: 1px solid var(--color-border-light); display: grid; gap: var(--space-4); justify-items: start;
+  }
+  .cm-pie p { margin: 0; color: var(--color-text-secondary); }
+</style>

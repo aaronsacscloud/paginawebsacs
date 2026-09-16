@@ -1,0 +1,31 @@
+---
+// Las páginas que publica el MOTOR DE DEMANDA.
+//
+// `prerender = false`: se sirven al vuelo desde la base, con caché de CDN. Es lo
+// que permite que el motor publique sin disparar un despliegue — y sin un
+// despliegue no hay build que pagar ni ventana en la que los crons se detengan.
+// El caché hace que, en la práctica, cada página se genere una vez por hora.
+//
+// Las páginas escritas a mano ganan sobre esta ruta: /
+// sigue siendo el archivo de siempre.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContenidoMotor from '../../components/ContenidoMotor.astro';
+import { leerPublicado } from '../../lib/demanda/publicar';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const pieza = slug ? await leerPublicado('software-para', slug) : null;
+
+if (!pieza) return new Response(null, { status: 404, statusText: 'No encontrado' });
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title={pieza.titulo}
+  description={pieza.meta_desc || ''}
+  type="article"
+  structuredData={pieza.schema}
+>
+  <ContenidoMotor pieza={pieza} />
+</BaseLayout>

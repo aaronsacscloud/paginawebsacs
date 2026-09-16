@@ -37,6 +37,17 @@
 // lo que falta, en vez de salirse con 409 y dejar todo sin verificar. Una
 // verificación gratis a medias vale más que ninguna.
 //
+// LOS TRES ESTADOS DEL CORREO, Y POR QUÉ SON TRES
+//   sin_probar  nadie lo ha mirado.
+//   dns_ok      el dominio recibe correo. Es lo que se puede saber gratis.
+//   valido      ZeroBounce dice que el buzón existe. Cuesta un crédito.
+// Faltaba el de en medio y por eso el modo gratis NO AVANZABA: al que pasaba
+// el DNS no se le escribía nada, así que el siguiente lote pescaba a los
+// mismos. 1,850 correos llevaban días en cola viéndose como trabajo hecho
+// (16-sep-2026). `verificado_at` sigue queriendo decir «ya pasó por
+// ZeroBounce», así que un `dns_ok` no se pierde: cuando haya créditos vuelve
+// a la fila él solo.
+//
 // GET /api/cron/abm-verificar-correos?cuantas=100&giro=renta&solo_dns=1
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
@@ -104,9 +115,19 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   // Correos sin probar de cuentas contactables, las de más puntaje primero.
+  /* Qué se pesca depende del modo, y esto NO es un detalle:
+       · solo DNS  → solo `sin_probar`, porque el que pasa el DNS queda en
+         `dns_ok` y ya no vuelve a salir. Así la cola AVANZA.
+       · con ZeroBounce → los dos, porque `dns_ok` es «el dominio recibe
+         correo», no «el buzón existe»: eso sigue pendiente de verificar.
+     Antes el modo DNS pescaba siempre `sin_probar` y NO marcaba a los vivos:
+     los mismos 580 correos salían lote tras lote y los 1,850 de la cola no
+     bajaban nunca. Es el mismo bucle que tuvo el cron de Twilio por no
+     escribir el resultado de la revisión. */
   let q = supabase.from('abm_canales')
     .select('id, cuenta_id, valor, confianza, abm_cuentas!inner(giro, puntaje, etapa, ya_es_cliente)')
-    .like('tipo', 'email%').eq('estado', 'sin_probar').is('verificado_at', null)
+    .like('tipo', 'email%').is('verificado_at', null)
+    .in('estado', soloDns ? ['sin_probar'] : ['sin_probar', 'dns_ok'])
     .neq('abm_cuentas.etapa', 'no_contactar').is('abm_cuentas.ya_es_cliente', null)
     .order('puntaje', { referencedTable: 'abm_cuentas', ascending: false })
     .limit(pedidas * 2);
@@ -154,10 +175,24 @@ export const GET: APIRoute = async ({ request, url }) => {
       .in('estado', ['borrador', 'aprobado', 'programado']).in('destino', muertos);
   }
 
+  /* Los que sobreviven se marcan `dns_ok`: el dominio recibe correo. No se
+     les pone `verificado_at` —eso significa «ya pasó por ZeroBounce»— pero sí
+     salen de la cola del DNS. `tiene_email` los sigue contando: la función
+     `abm_recontar_canales` solo descarta `invalido` y `rebote`. */
+  const vivos = [...porCorreo.keys()];
+  let marcados = 0;
+  for (let i = 0; i < vivos.length; i += 40) {
+    const ids = vivos.slice(i, i + 40).flatMap(e => (porCorreo.get(e) || []).map((f: any) => f.id));
+    if (!ids.length) continue;
+    await supabase.from('abm_canales').update({ estado: 'dns_ok' }).in('id', ids).eq('estado', 'sin_probar');
+    marcados += ids.length;
+  }
+
   if (soloDns) {
     return json({
       modo: 'solo DNS', revisados: todos.length, dominios: dominios.length,
-      invalidados_por_dns: muertos.length, quedan_para_zerobounce: porCorreo.size,
+      invalidados_por_dns: muertos.length, marcados_dns_ok: marcados,
+      quedan_para_zerobounce: porCorreo.size,
       nota: key ? 'pedido con solo_dns=1' : 'sin ZEROBOUNCE_API_KEY: se hizo la pasada gratis',
     });
   }

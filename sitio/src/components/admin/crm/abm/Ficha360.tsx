@@ -240,7 +240,11 @@ export default function Ficha360({ id, onCerrar, onCambio }: { id: string; onCer
                 {ch.es_de_la_tienda && ch.tipo.startsWith('whatsapp') && (
                   <span style={{ fontSize: '.6875rem', color: P.ambarTinta }}>es el de la tienda, no el del dueño</span>
                 )}
-                {ch.estado !== 'sin_probar' && <span style={{ fontSize: '.6875rem', color: '#999' }}>{ch.estado}</span>}
+                {ch.estado !== 'sin_probar' && (
+                  <span style={{ fontSize: '.6875rem', color: '#999' }}>
+                    {ch.estado === 'dns_ok' ? 'el dominio recibe correo; falta probar el buzón' : ch.estado}
+                  </span>
+                )}
               </div>
             );
           })}

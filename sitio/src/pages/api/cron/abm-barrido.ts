@@ -27,6 +27,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { quien, limpiar } from '../../../lib/crm/abm.lib';
+import { PAISES } from '../../../lib/crm/abm-paises';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -226,9 +227,13 @@ export const GET: APIRoute = async ({ request, url }) => {
         r.nuevas++;
         if (dry) { if (muestra.length < 12) muestra.push({ nombre: p.displayName?.text, ciudad: ci.ciudad, estrellas: p.rating, resenas: p.userRatingCount, sitio: p.websiteUri, tipo: p.primaryType }); continue; }
 
+        /* El país va con el NOMBRE, no con el iso: el goteo selecciona con
+           `.eq('pais', paisDe(f.pais).nombre)`. Escribir 'MX' dejó 7,394
+           cuentas del barrido invisibles para todas las cadencias de México
+           —con correo y todo— hasta que se midió (16-sep-2026). */
         const { data: nueva } = await supabase.from('abm_cuentas').insert({
           nombre: limpiar(p.displayName?.text || '', 160),
-          giro: giroDestino, subgiro, ciudad: ci.ciudad, estado_geo: ci.estado_geo, pais: 'MX',
+          giro: giroDestino, subgiro, ciudad: ci.ciudad, estado_geo: ci.estado_geo, pais: PAISES.mx.nombre,
           place_id: p.id, abierto: p.businessStatus || null, tipo_maps: p.primaryType || null,
           google_rating: p.rating || null, google_resenas: p.userRatingCount || null,
           sitio: p.websiteUri || null, maps_at: new Date().toISOString(),

@@ -19,6 +19,7 @@ import Ficha360 from './Ficha360';
 import ColaTelefono from './ColaTelefono';
 import PorResolver from './PorResolver';
 import Goteo from './Goteo';
+import Paises from './Paises';
 import { ETAPA_TONO, Pastilla, Puntaje, fmt, enlaceDe } from './ui';
 
 
@@ -36,7 +37,7 @@ export default function AbmTab() {
   const [giro, setGiro] = useState('');
   const [cargando, setCargando] = useState(true);
   const [abierta, setAbierta] = useState<string | null>(null);
-  const [vista, setVista] = useState<'lista' | 'llamadas' | 'resolver' | 'goteo'>('lista');
+  const [vista, setVista] = useState<'lista' | 'llamadas' | 'resolver' | 'goteo' | 'paises'>('lista');
 
   useEffect(() => { fetch('/api/crm/abm/resumen').then(r => r.json()).then(setResumen).catch(() => {}); }, []);
 
@@ -207,7 +208,7 @@ export default function AbmTab() {
       )}
 
       <div style={{ display: 'flex', gap: 2, marginBottom: 16, borderBottom: `1px solid ${P.linea}` }}>
-        {([['lista', 'Las cuentas', resumen?.total], ['llamadas', 'Cola de teléfono', resumen?.para_llamar], ['resolver', 'Por resolver', null], ['goteo', 'Envíos progresivos', null]] as const).map(([v, l, n]) => (
+        {([['lista', 'Las cuentas', resumen?.total], ['llamadas', 'Cola de teléfono', resumen?.para_llamar], ['resolver', 'Por resolver', null], ['goteo', 'Envíos progresivos', null], ['paises', 'Países', null]] as const).map(([v, l, n]) => (
           <button key={v} onClick={() => setVista(v as any)} style={{
             font: 'inherit', fontSize: '.875rem', fontWeight: vista === v ? 800 : 500, padding: '9px 15px',
             border: 'none', borderBottom: vista === v ? `2px solid ${P.violeta}` : '2px solid transparent',
@@ -220,7 +221,9 @@ export default function AbmTab() {
         ))}
       </div>
 
-      {vista === 'goteo' ? (
+      {vista === 'paises' ? (
+        <Paises giro={giro || 'novias'} />
+      ) : vista === 'goteo' ? (
         <Goteo />
       ) : vista === 'resolver' ? (
         <PorResolver onIr={(id) => setAbierta(id)} />
