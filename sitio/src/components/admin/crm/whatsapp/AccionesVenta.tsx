@@ -609,7 +609,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           style={{ ...inp, minHeight: 64, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }} />
         <p style={{ fontSize: 10.5, color: C.g400, margin: '4px 0 0', lineHeight: 1.45 }}>
           Esto se ve en el evento de Google Calendar, junto con la liga para abrir la conversación en el CRM.
-          {notaMsg && <span style={{ color: C.rojo700 }}> · {notaMsg}</span>}
+          {notaMsg && <span style={{ color: C.rojo700 }}> · {notaMsg.slice(0, 160)}</span>}
         </p>
 
         <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>

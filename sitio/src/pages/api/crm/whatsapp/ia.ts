@@ -58,6 +58,20 @@ Si el canal es correo, puede ser un poco más formal y completo.
 Responde ÚNICAMENTE un JSON válido, sin markdown:
 {"opciones":["respuesta directa","respuesta más cálida"]}  (exactamente 2)`;
 
+/* El SDK de Anthropic mete el JSON completo del error en `message`, y eso se
+   estaba pintando TAL CUAL en el inbox: el vendedor veía un volcado con
+   `request_id` incluido en vez de saber qué hacer. Se traduce lo que sí tiene
+   una acción detrás y lo demás se recorta — el detalle completo ya queda en
+   `agent_runs`, que es donde se diagnostica. */
+function errorHumano(e: any): string {
+  const m = String(e?.message || e || '');
+  if (/credit balance is too low|billing/i.test(m)) return 'La IA no tiene saldo: hay que recargar la cuenta de Anthropic. Mientras, escribe la nota a mano.';
+  if (/rate.?limit|429/i.test(m)) return 'La IA está saturada en este momento — vuelve a intentar en un minuto.';
+  if (/overloaded|529/i.test(m)) return 'El modelo está sobrecargado — vuelve a intentar en un minuto.';
+  if (/timeout|ETIMEDOUT|ECONNRESET/i.test(m)) return 'La IA tardó de más — vuelve a intentar.';
+  return 'La IA falló: ' + (m.slice(0, 120) || 'error del modelo');
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (!hasApiKey()) return json({ error: 'Falta ANTHROPIC_API_KEY en el entorno' }, 503);
   let b: any; try { b = await request.json(); } catch { return json({ error: 'Body inválido' }, 400); }
@@ -83,7 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ texto: out, cost_usd: usage.cost_usd });
     } catch (e: any) {
       await finishAgentRun({ run_id, status: 'failed', error: e?.message || String(e), latency_ms: Date.now() - t0 } as any);
-      return json({ error: 'La IA falló: ' + (e?.message || 'error del modelo') }, 502);
+      return json({ error: errorHumano(e) }, 502);
     }
   }
 
@@ -224,6 +238,6 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ opciones, cost_usd: usage.cost_usd, run_id });
   } catch (e: any) {
     await finishAgentRun({ run_id, status: 'failed', error: e?.message || String(e), latency_ms: Date.now() - t0 } as any);
-    return json({ error: 'La IA falló: ' + (e?.message || 'error del modelo') }, 502);
+    return json({ error: errorHumano(e) }, 502);
   }
 };
