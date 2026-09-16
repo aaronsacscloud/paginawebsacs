@@ -12,6 +12,26 @@
 import type { ReactNode } from 'react';
 import { CHISPA } from './Chispas';
 
+/* LA PASTILLA DE «SIN FECHA».
+ * El degradado lila→rosa de la cinta de los documentos y de la tarjeta faro,
+ * en chiquito. Lleva un borde de un pelo porque sobre el blanco de una tarjeta
+ * el degradado solo se disuelve.
+ *
+ * Por qué no es ámbar: el dueño la quiso en los colores de la casa. Vale la
+ * pena recordar el cambio de significado —el ámbar decía «atención, todavía no
+ * es un problema»— y la regla que lo sostiene: el ROJO sigue guardado para lo
+ * vencido, que es la alarma de verdad. «Sin fecha» todavía no lo es.
+ *
+ * Vive aquí y no en cada pantalla porque la usan el Taller, la ficha del
+ * cliente y Consultoría: tres copias serían tres rosas distintos al primer
+ * ajuste.
+ */
+export const SIN_FECHA = {
+  background: 'linear-gradient(100deg,#EEECFE,rgba(244,168,205,.42))',
+  color: '#9c3d70',
+  border: '1px solid rgba(217,83,142,.16)',
+} as const;
+
 export const KPI_S = {
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '14px 16px' } as const,
   kl: { fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '.08em' } as const,

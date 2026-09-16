@@ -24,6 +24,7 @@
 import { useEffect, useState } from 'react';
 import Cargando from '../ui/Cargando';
 import OrdenDelTaller, { ETAPAS_TALLER } from './OrdenDelTaller';
+import { SIN_FECHA } from '../ui/KpiCard';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d?: string | null) => d
@@ -63,13 +64,21 @@ const S = {
   btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff', fontFamily: 'inherit' } as const,
 };
 
-const AGUA = { roja: { background: '#FEF0EF', color: '#C0554E' }, ambar: { background: '#FFF4E5', color: '#9a6a10' }, verde: { background: '#EAF8F2', color: '#1E8A63' }, lila: { background: '#EEECFE', color: '#5B4BD6' } };
+const AGUA = {
+  roja: { background: '#FEF0EF', color: '#C0554E' },
+  // «Sin fecha» va en el degradado de la casa, no en ámbar: es el mismo estilo
+  // que la tarjeta de proyecto del taller, escrito una sola vez en KpiCard.
+  sinFecha: SIN_FECHA,
+  ambar: { background: '#FFF4E5', color: '#9a6a10' },
+  verde: { background: '#EAF8F2', color: '#1E8A63' },
+  lila: { background: '#EEECFE', color: '#5B4BD6' },
+};
 
 /** El aviso de un renglón. Uno solo por fila y siempre el peor: dos avisos
  *  compitiendo es como ninguno. */
 function avisoDe(prometida: string | null, etapa: string) {
   if (etapa === 'entregada') return { t: 'entregada', c: AGUA.verde };
-  if (!prometida) return { t: 'sin fecha', c: AGUA.ambar };
+  if (!prometida) return { t: 'sin fecha', c: AGUA.sinFecha };
   const d = diasDesde(prometida);
   if (d > 0) return { t: `${d} ${d === 1 ? 'día' : 'días'} tarde`, c: AGUA.roja, tarde: d };
   return { t: 'para el ' + fmtDate(prometida), c: AGUA.verde };

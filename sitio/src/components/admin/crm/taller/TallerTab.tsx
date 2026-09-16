@@ -12,7 +12,7 @@
 // su fecha y su video.
 import { useEffect, useState, useCallback } from 'react';
 import Cargando from '../ui/Cargando';
-import KpiCard from '../ui/KpiCard';
+import KpiCard, { SIN_FECHA } from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
@@ -51,6 +51,7 @@ const S = {
   btnAmbar: { padding: '6px 12px', border: '1.5px solid #f0d3a0', borderRadius: 9, fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: P.ambarTinta, fontFamily: 'inherit' } as const,
   input: { padding: '8px 11px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.8rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fdfcff', fontFamily: 'inherit' } as const,
   lbl: { fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#a5a2af', marginBottom: 4, display: 'block' } as const,
+  badgeL: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.71rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
   caja: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '13px 15px' } as const,
   secT: { fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#a5a2af', margin: '16px 0 3px', display: 'flex', alignItems: 'center', gap: 7 } as const,
 };
@@ -60,6 +61,8 @@ export default function TallerTab() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
   const [equipo, setEquipo] = useState<any[]>([]);
   const [sinOrden, setSinOrden] = useState<any[]>([]);
+  // El valor de cada cuenta (ARR, entregadas, cuenta de SACS), del mismo viaje.
+  const [cuentas, setCuentas] = useState<Record<string, any>>({});
   const [yo, setYo] = useState<any>(null);
   /* Se abre en LA LISTA. «Mi bandeja» abría con cero órdenes asignadas —las 18
      estaban sin dueño— y lo primero que veía quien entraba era «no tienes
@@ -74,7 +77,7 @@ export default function TallerTab() {
 
   const cargar = useCallback(async () => {
     const j = await fetch('/api/crm/taller').then(r => r.json()).catch(() => null);
-    if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setYo(j.yo || null); }
+    if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setCuentas(j.cuentas || {}); setYo(j.yo || null); }
     setCargando(false);
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -146,8 +149,8 @@ export default function TallerTab() {
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
             abrir={setAbierta} api={api} flash={flash} />
-        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta}
-            filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} />}
+        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas}
+            filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} api={api} flash={flash} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
       {nueva && <NuevaOrden clientes={clientes} equipo={equipo} onCerrar={() => setNueva(false)}
@@ -412,10 +415,13 @@ const TRAMOS = [
   { l: 'detenidas',    c: '#E8A838', f: (o: any) => o.etapa === 'espera' },
 ];
 
-function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar }: any) {
+function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, api, flash }: any) {
   const [vista, setVista] = useState('todas');
   const [soloMias, setSoloMias] = useState(false);
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
+  /* Dentro de un proyecto, lo primero que se pregunta es qué ya tiene fecha y
+     qué no: es la diferencia entre lo que se puede prometer y lo que no. */
+  const [conFecha, setConFecha] = useState<'todas' | 'con' | 'sin'>('todas');
 
   const q = filtro.trim().toLowerCase();
   const texto = q
@@ -441,10 +447,30 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       sinDueno: filas.filter((o: any) => !o.asignado_id).length,
       prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
       tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
+      val: cuentas[filas[0]?.company_id] || null,
     };
   }).sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
 
   const abierto = proyectos.find(p => p.l === cuenta) || null;
+  const enCuenta = !abierto ? [] : abierto.filas.filter((o: any) =>
+    conFecha === 'todas' ? true : conFecha === 'con' ? !!o.fecha_prometida : !o.fecha_prometida);
+
+  /* Quitar una orden levantada por error. Se lleva TAMBIÉN el renglón del
+     cliente: dejarlo allá sería un compromiso que nadie va a trabajar y que
+     además sale en su reporte. Se archiva, no se borra. */
+  async function quitar(o: any) {
+    if (!await confirmar(`¿Quitar «${o.titulo}» del taller?`, {
+      accion: 'Quitarla', peligro: true,
+      detalle: 'Se archiva junto con el renglón del cliente. Deja de verse aquí y en su ficha, pero no se borra del historial.',
+    })) return;
+    const j = await fetch('/api/crm/taller', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: o.id, con_mejora: true }),
+    }).then(r => r.json()).catch(() => null);
+    if (!j || j.error) { flash?.(j?.error || 'No se pudo quitar'); return; }
+    flash?.('Quitada del taller y de la ficha del cliente');
+    recargar?.();
+  }
 
   return (
     <div>
@@ -496,14 +522,66 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
       {abierto ? (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-            <button style={S.btnG} onClick={() => setCuenta('')}>‹ Todas las cuentas</button>
-            <b style={{ fontSize: '1rem', fontWeight: 800 }}>{abierto.l}</b>
-            <span style={{ fontSize: '0.75rem', color: '#8d8a97' }}>
-              {abierto.filas.length} {abierto.filas.length === 1 ? 'orden' : 'órdenes'} en esta vista
-              {abierto.atraso ? ` · ${abierto.atraso} días tarde` : abierto.prox ? ` · la próxima, el ${fmt(abierto.prox)}` : ''}
+            <button style={S.btnG} onClick={() => { setCuenta(''); setConFecha('todas'); }}>‹ Todas las cuentas</button>
+            <b style={{ fontSize: '1.05rem', fontWeight: 800 }}>{abierto.l}</b>
+            {/* EL VALOR DE LA CUENTA. «14 órdenes» es el mismo renglón para el
+                cliente de $200 mil al año y para el de cortesía; al entrar a un
+                proyecto hay que saber de quién se trata antes de decidir qué se
+                arranca primero. */}
+            {abierto.val && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', fontSize: '0.73rem', color: '#8d8a97' }}>
+                {abierto.val.arr > 0 && (
+                  <span style={{ ...S.badgeL, background: P.verdeAgua, color: P.verdeTinta }}>
+                    {'$' + Math.round(abierto.val.arr).toLocaleString('es-MX')} al año
+                  </span>
+                )}
+                {abierto.val.entregadas > 0 && <span>{abierto.val.entregadas} ya entregadas</span>}
+                {abierto.val.sacs && <span style={{ fontFamily: 'ui-monospace, monospace' }}>{abierto.val.sacs}</span>}
+              </span>
+            )}
+            <span style={{ fontSize: '0.75rem', color: abierto.atraso ? P.rojoTinta : '#8d8a97', fontWeight: abierto.atraso ? 700 : 400 }}>
+              {abierto.atraso ? `${abierto.atraso} días tarde` : abierto.prox ? `la próxima, el ${fmt(abierto.prox)}` : 'sin fecha comprometida'}
             </span>
           </div>
-          {abierto.filas.map((o: any) => <Renglon key={o.id} o={o} abrir={abrir} />)}
+
+          {/* Con fecha / sin fecha. El filtro vive AQUÍ y no arriba porque es la
+              pregunta de adentro de un proyecto: arriba se elige en qué etapa
+              mirar, aquí se separa lo que ya se puede prometer de lo que no. */}
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+            {([['todas', 'Todas', abierto.filas.length],
+               ['con', 'Con fecha', abierto.filas.filter((o: any) => o.fecha_prometida).length],
+               ['sin', 'Sin fecha', abierto.filas.filter((o: any) => !o.fecha_prometida).length]] as any[]).map(([k, l, n2]) => {
+              const on = conFecha === k;
+              return (
+                <button key={k} onClick={() => setConFecha(k)}
+                  style={{
+                    border: on ? `1px solid ${P.violeta}` : '1px solid #e9e3ee', background: on ? P.violeta : '#fff',
+                    color: on ? '#fff' : '#666', borderRadius: 9, padding: '5px 11px', fontSize: '0.73rem',
+                    fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+                  }}>
+                  {l} <span style={{ opacity: .75, fontWeight: 700 }}>{n2}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {enCuenta.length === 0 && (
+            <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
+              {conFecha === 'con' ? 'Ninguna de esta cuenta tiene fecha todavía.' : 'Todas las de esta cuenta ya tienen fecha.'}
+            </div>
+          )}
+          {enCuenta.map((o: any) => (
+            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}><Renglon o={o} abrir={abrir} /></div>
+              {/* Quitar del taller. Lo que se levantó por error tiene que poder
+                  irse: si no, la lista se llena de cosas que nadie va a hacer y
+                  deja de decir la verdad. */}
+              <button title="Quitar del taller" onClick={() => quitar(o)}
+                style={{ border: '1px solid #f0c4bd', background: '#fff', color: '#C0554E', borderRadius: 8, padding: '5px 9px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>
+                Quitar
+              </button>
+            </div>
+          ))}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 12 }}>
@@ -518,7 +596,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
                 <span style={{
                   marginLeft: 'auto', fontSize: '0.69rem', fontWeight: 700, borderRadius: 99, padding: '2px 9px',
                   ...(p.atraso ? { background: P.rojoAgua, color: P.rojoTinta }
-                    : p.sinFecha ? { background: P.ambarAgua, color: P.ambarTinta }
+                    : p.sinFecha ? SIN_FECHA
                     : { background: P.verdeAgua, color: P.verdeTinta }),
                 }}>
                   {p.atraso ? `${p.atraso} ${p.atraso === 1 ? 'día' : 'días'} tarde`
@@ -1114,9 +1192,23 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
   const [f, setF] = useState<any>({
     company_id: '', titulo: '', tipo: 'mejora', categoria: 'personalizacion',
     problema: '', esperado: '', pasos: '', criterios: '', video_pide: '',
-    fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '',
+    fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '', booking_id: '',
   });
   const [guardando, setGuardando] = useState(false);
+  /* Las juntas de esa cuenta. Casi todo lo que llega al taller salió de una, y
+     colgarlo de la minuta es lo que permite volver a leer QUÉ SE DIJO el día
+     que se pidió —seis semanas después, cuando ya nadie se acuerda—. Se cargan
+     al elegir el cliente, no antes: sin cuenta no hay juntas que ofrecer. */
+  const [juntas, setJuntas] = useState<any[]>([]);
+  useEffect(() => {
+    if (!f.company_id) { setJuntas([]); return; }
+    let vivo = true;
+    fetch('/api/scheduling/reuniones?company_id=' + f.company_id)
+      .then(r => r.json())
+      .then(j => { if (vivo) setJuntas((j.data || []).filter((x: any) => x.fecha).slice(0, 25)); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [f.company_id]);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const falta = [!f.company_id && 'el cliente', !f.titulo.trim() && 'el nombre'].filter(Boolean) as string[];
 
@@ -1149,6 +1241,23 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
               <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
                 Queda ligada a su ficha: aparece en su Taller y, al aprobarla, en «Ya entregado» de Consultoría y en
                 el reporte de entregas.
+              </div>
+            </div>
+            {/* De qué junta salió. Va aquí, pegado al cliente, porque es parte
+                de «de dónde viene esto» y no de «qué hay que hacer». */}
+            <div style={{ marginTop: 11 }}><span style={S.lbl}>¿De qué junta salió?</span>
+              <select value={f.booking_id} onChange={e => set('booking_id', e.target.value)} style={S.input}
+                disabled={!f.company_id}>
+                <option value="">{f.company_id ? (juntas.length ? '— no salió de una junta —' : 'esta cuenta no tiene juntas registradas') : 'elige primero el cliente'}</option>
+                {juntas.map((j: any) => (
+                  <option key={j.id} value={j.id}>
+                    {fmt(j.fecha)} · {j.asunto || j.event_types?.nombre || 'Reunión'}
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
+                Queda colgada de esa minuta en la ficha del cliente: seis semanas después se puede volver a leer qué
+                se dijo el día que se pidió.
               </div>
             </div>
             <div style={{ marginTop: 11 }}><span style={S.lbl}>Nombre de la mejora · así lo ve el cliente</span>
