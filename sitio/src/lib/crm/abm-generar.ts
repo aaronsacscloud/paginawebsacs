@@ -89,7 +89,12 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
       l.push(`Tipo de aliado: ${t.nombre}`);
       l.push(`A QUIÉN LE VENDE ÉL: ${t.suGente}`);
       l.push(`QUÉ SE LE ROMPE A SU CLIENTE: ${t.dolor}`);
-      l.push(`APERTURA OBLIGATORIA del correo 1 — es la razón por la que le escribimos a ÉL y no a otro: ${t.gancho}`);
+      /* La apertura ya viene ESCRITA en el texto base —es la variable
+         `{{apertura}}`, resuelta en código—. Aquí solo se le prohíbe cambiarla:
+         cuando esta línea decía «APERTURA OBLIGATORIA: …» con el gancho, la IA
+         obedecía la instrucción y escribía el gancho —el texto interno, el que
+         está redactado para nosotros— encima de la apertura buena. */
+      l.push(`Apertura del correo 1: ya viene escrita en el texto base y es correcta. Cópiala TAL CUAL; no la reescribas ni la sustituyas. Dice: ${t.apertura}`);
       l.push('El correo 1 y el correo 2 hablan de SU gente y de SU problema con esas palabras. NO hables de alumnas, clases ni programas salvo que el tipo de aliado sea una escuela o una comunidad.');
     } else {
       l.push('Aliado sin tipo asignado: escribe el correo 1 sin suponer a quién le vende. No inventes su clientela.');
