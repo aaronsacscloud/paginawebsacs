@@ -15,6 +15,7 @@
  *   node scripts/de-probar.mjs inventario  # rastrea el sitio y arma el grafo de enlaces
  *   node scripts/de-probar.mjs tecnico     # aplica las reglas técnicas sobre lo rastreado
  *   node scripts/de-probar.mjs competidores # revisa los sitemaps de los competidores
+ *   node scripts/de-probar.mjs gsc         # Search Console: acceso y primera ingesta
  *   node scripts/de-probar.mjs agrupar     # funde los problemas que son el mismo
  *   node scripts/de-probar.mjs calibrar    # mide el umbral de parecido del modelo
  *   node scripts/de-probar.mjs resumen      # qué sabe el motor hasta ahora
@@ -65,6 +66,18 @@ if (que === 'ingerir') {
   const cfg = await leerConfig(true);
   const { id, nuevo } = await abrirCiclo('manual', 'prueba local');
   console.log({ id, nuevo }, await armarCadena(id, 'manual', cfg));
+} else if (que === 'gsc') {
+  const { propiedadesGsc, correoDeServicio } = await import('../src/lib/demanda/google.ts');
+  console.log('cuenta de servicio:', correoDeServicio());
+  try {
+    const props = await propiedadesGsc();
+    if (!props.length) { console.log('❌ todavía sin acceso a ninguna propiedad'); }
+    else {
+      console.log('✅ propiedades accesibles:'); for (const p of props) console.log('   ·', p.url, '—', p.permiso);
+      const { ingerirGsc } = await import('../src/lib/demanda/fuentes/gsc.ts');
+      console.log(await ingerirGsc(Number(process.argv[3]) || 3));
+    }
+  } catch (e) { console.log('error:', e.message); }
 } else if (que === 'competidores') {
   await import('../src/lib/demanda/registro.ts');
   const { handlerDe } = await import('../src/lib/demanda/handlers.ts');

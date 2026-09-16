@@ -26,7 +26,7 @@
 // GET /api/cron/abm-barrido?giro=&ciudades=10&paginas=3&dry=1
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
-import { quien, limpiar } from '../../../lib/crm/abm.lib';
+import { quien, limpiar, calcularPuntaje } from '../../../lib/crm/abm.lib';
 import { PAISES } from '../../../lib/crm/abm-paises';
 
 export const prerender = false;
@@ -237,6 +237,24 @@ export const GET: APIRoute = async ({ request, url }) => {
           place_id: p.id, abierto: p.businessStatus || null, tipo_maps: p.primaryType || null,
           google_rating: p.rating || null, google_resenas: p.userRatingCount || null,
           sitio: p.websiteUri || null, maps_at: new Date().toISOString(),
+          /* SE CALIFICA AL ENTRAR. La columna `puntaje` es NOT NULL DEFAULT 0 y
+             el barrido no la escribía, así que las 7,105 cuentas que trajo
+             quedaron en cero — cuando el mínimo posible del cálculo es 12.
+             Cero no quería decir «mala», quería decir «nadie la miró», pero
+             todo lo que ordena por puntaje (el goteo y el WhatsApp en frío)
+             las mandaba al último. Lo más fresco de la base era lo último en
+             la fila (16-sep-2026).
+             Se usa `calcularPuntaje` y no `repuntuar` porque aquí todavía no
+             hay señales ni personas que consultar: son tres viajes a la base
+             por cuenta para leer tablas vacías. El vigilante la vuelve a
+             calificar cuando ya tenga con qué. */
+          ...(() => {
+            const { encaje, dolor, accesibilidad, puntaje } = calcularPuntaje({
+              sucursales: null, google_resenas: p.userRatingCount || null,
+              google_rating: p.rating || null, sitio_carrito: null,
+            });
+            return { encaje, dolor, accesibilidad, puntaje };
+          })(),
         }).select('id').maybeSingle();
         if (!nueva) continue;
 

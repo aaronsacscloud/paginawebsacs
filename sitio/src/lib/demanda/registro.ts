@@ -9,6 +9,7 @@
 // después. Nada de esto puede importar `registro` de vuelta.
 import './handlers';
 import './fuentes/crm';
+import './fuentes/gsc';
 import './normalizar';
 import './paginas';
 import './tecnico';

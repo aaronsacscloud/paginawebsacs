@@ -212,11 +212,39 @@ export function variablesDe(c: any, persona?: any): Record<string, string> {
   };
 }
 
+/** El tipo de aliado de un subgiro, aceptando también los nombres VIEJOS.
+ *
+ *  Cada tipo declara en `ya` los subgiros que ya estaban cargados y le
+ *  corresponden —«Firma» es la consultora de moda, «Escuela» la escuela—, pero
+ *  la búsqueda solo miraba la llave nueva. Resultado: 29 cuentas contactables
+ *  con subgiro viejo se quedaban sin apertura, sin su gente y sin su dolor, y
+ *  el correo salía «Le escribo a Estudio Marlene por algo concreto..» y «Le
+ *  vende a, y lo que pasa del otro lado es esto:.» (16-sep-2026).
+ *
+ *  El campo `ya` existía justo para esto; lo que faltaba era usarlo. Se compara
+ *  sin acentos ni mayúsculas porque los subgiros viejos se escribieron a mano. */
+const pelar = (x: string) => x.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+let ALIAS_ALIADO: Record<string, string> | null = null;
+export function tipoDeAliado(subgiro?: string | null) {
+  const k = String(subgiro || '').trim();
+  if (!k) return null;
+  if (ALIADOS[k]) return ALIADOS[k];
+  if (!ALIAS_ALIADO) {
+    ALIAS_ALIADO = {};
+    for (const [llave, t] of Object.entries(ALIADOS)) {
+      ALIAS_ALIADO[pelar(llave)] = llave;
+      for (const viejo of t.ya || []) ALIAS_ALIADO[pelar(viejo)] = llave;
+    }
+  }
+  const llave = ALIAS_ALIADO[pelar(k)];
+  return llave ? ALIADOS[llave] : null;
+}
+
 /** Lo que el catálogo de aliados sabe del tipo de esta cuenta, como variables.
  *  Vacías si no es aliado: los bloques [[si …]] se borran solos. */
 function aperturaAliado(c: any): Record<string, string> {
   if (c.giro !== 'aliados') return { apertura: '', su_gente: '', dolor_cliente: '' };
-  const t = ALIADOS[String(c.subgiro || '')];
+  const t = tipoDeAliado(c.subgiro);
   if (!t) return { apertura: '', su_gente: '', dolor_cliente: '' };
   /* `apertura` y no `gancho`: el gancho está escrito para nosotros y no se le
      manda a nadie. Y las dos que van A MEDIA FRASE entran en minúscula —«Le

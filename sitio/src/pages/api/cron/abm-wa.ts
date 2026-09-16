@@ -79,6 +79,16 @@ export const GET: APIRoute = async ({ request, url }) => {
   const hora = enHorario();
   if (!hora.ok) return json({ enviados: 0, motivo: `fuera de horario: ${hora.motivo}` });
 
+  /* 3 bis. A QUÉ GIROS. `abm_frio` es un apagador de sí o no, y encenderlo
+     soltaba el WhatsApp sobre los 24 giros a la vez, ordenados por puntaje:
+     no había forma de probar con uno y medir si contestan antes de abrir el
+     resto. Y una línea de WhatsApp se quema una sola vez.
+     `abm_config.wa_frio_giros` acota sin tocar el cron ni el código: una lista
+     separada por comas («renta,boutiques») manda solo a esos; vacía o sin la
+     llave, van todos, que es como se comportaba antes. El `?giro=` de la URL
+     sigue mandando por encima, para una prueba a mano. */
+  const permitidos = String(conf.wa_frio_giros || '').split(',').map(g => g.trim()).filter(Boolean);
+
   // ── A quién le toca ───────────────────────────────────────────────────────
   // Solo números DECLARADOS: los que el propio negocio publicó como WhatsApp.
   let q = supabase.from('v_whatsapp_contactable')
@@ -86,6 +96,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     .order('puntaje', { ascending: false, nullsFirst: false })
     .limit(cuantas * 12);          // se piden de más: muchos se van a filtrar
   if (giroFiltro) q = q.eq('giro', giroFiltro);
+  else if (permitidos.length) q = q.in('giro', permitidos);
   const { data: candidatos, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
@@ -163,5 +174,11 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
   }
 
-  return json({ enviados: dry ? 0 : salida.length, dry, detalle: salida, saltados });
+  /* El alcance viaja en la respuesta. Si no, «salieron 10» no dice si fueron
+     10 de un giro de prueba o 10 de los veinticuatro. */
+  return json({
+    enviados: dry ? 0 : salida.length, dry,
+    giros: giroFiltro ? [giroFiltro] : permitidos.length ? permitidos : 'todos',
+    detalle: salida, saltados,
+  });
 };
