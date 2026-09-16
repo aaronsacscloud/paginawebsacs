@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import CSS from './_estilos';
 import JS from './_guion';
 import Entregas from './_Entregas.astro';
+import Curso from './_Curso.astro';
 
 export const prerender = false;
 
@@ -30,7 +31,12 @@ if (!rep) return new Response('Reporte no encontrado', { status: 404 });
    de aperturas y el correo; lo único distinto es qué se pinta. Separarlos en
    dos rutas habría significado dos veces esa maquinaria —y dos lugares donde
    arreglar el rastreo el día que cambie—. */
+/* TRES documentos por la misma puerta: entregas, trabajo en curso y el
+   ejecutivo. Comparten liga, folio, conteo de aperturas y correo; lo único
+   distinto es qué se pinta. Tres rutas habrían significado tres veces esa
+   maquinaria y tres lugares donde arreglar el rastreo el día que cambie. */
 const esEntregas = rep.tipo === 'entregas';
+const esCurso = rep.tipo === 'curso';
 
 const h = rep.hechos || {};
 const n = rep.narrativa || null;
@@ -61,7 +67,7 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{`${esEntregas ? 'Entregas' : 'Reporte'} ${rep.folio} · ${h.cliente || ''}`}</title>
+  <title>{`${esEntregas ? 'Entregas' : esCurso ? 'Trabajo en curso' : 'Reporte'} ${rep.folio} · ${h.cliente || ''}`}</title>
   <meta name="robots" content="noindex" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -76,7 +82,7 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
   <div class="doc">
     <div class="cinta"></div>
 
-    {esEntregas ? <Entregas rep={rep} /> : (<>
+    {esEntregas ? <Entregas rep={rep} /> : esCurso ? <Curso rep={rep} /> : (<>
 
     <div class="hero">
       <div class="top">

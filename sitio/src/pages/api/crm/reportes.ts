@@ -14,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { reunirHechos, reunirEntregas } from '../../../lib/crm/reporte-hechos';
+import { reunirHechos, reunirEntregas, reunirEnCurso } from '../../../lib/crm/reporte-hechos';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -61,10 +61,11 @@ export const POST: APIRoute = async ({ request }) => {
   if (!UUID.test(companyId) || !desde || !hasta) return json({ error: 'Falta el cliente o el periodo.' }, 400);
   if (desde > hasta) return json({ error: 'El periodo está al revés.' }, 400);
 
-  const tipo = String(b?.tipo || 'trabajo') === 'entregas' ? 'entregas' : 'trabajo';
+  const pedido = String(b?.tipo || 'trabajo');
+  const tipo = pedido === 'entregas' ? 'entregas' : pedido === 'curso' ? 'curso' : 'trabajo';
 
-  const hechos = tipo === 'entregas'
-    ? await reunirEntregas(companyId, desde, hasta)
+  const hechos = tipo === 'entregas' ? await reunirEntregas(companyId, desde, hasta)
+    : tipo === 'curso' ? await reunirEnCurso(companyId, desde, hasta)
     : await reunirHechos(companyId, desde, hasta);
   if (!hechos) return json({ error: 'Ese cliente ya no existe.' }, 404);
 
@@ -74,6 +75,11 @@ export const POST: APIRoute = async ({ request }) => {
      trae soporte, uso y oportunidades. */
   if (tipo === 'entregas' && !(hechos as any).total) {
     return json({ error: 'En ese periodo no hay ninguna entrega visible para el cliente. Cambia las fechas o revisa que estén marcadas como «se le puede mostrar al cliente».' }, 400);
+  }
+  /* Y uno EN CURSO vacío tampoco: «no te estamos construyendo nada» es un
+     documento que no se manda, se conversa. */
+  if (tipo === 'curso' && !(hechos as any).total) {
+    return json({ error: 'Esta cuenta no tiene nada vivo en el taller. Un reporte de trabajo en curso sin trabajos no se manda.' }, 400);
   }
 
   const { data, error } = await supabase.from('reportes_trabajo').insert({

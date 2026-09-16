@@ -1,0 +1,169 @@
+---
+// El REPORTE DE TRABAJO EN CURSO que abre el cliente.
+//
+// El hermano del de entregas. Aquel contesta «¿qué me han hecho?»; este
+// contesta «¿qué me están haciendo?» — la pregunta que el cliente hace entre
+// una entrega y la siguiente, y que hasta hoy se respondía por WhatsApp de
+// memoria.
+//
+// Cada renglón dice QUÉ VA A CAMBIAR dentro del sistema, que es exactamente lo
+// que el cliente pidió ver: el título solo no le dice nada a quien no estuvo en
+// la junta donde se acordó.
+//
+// Va agrupado por ETAPA y no por módulo: lo que el cliente quiere saber es qué
+// ya se está haciendo y qué sigue en fila. Y usa los MISMOS estilos que el de
+// entregas —dos documentos de la misma casa se ven iguales o no se ven de la
+// misma casa—.
+//
+// Lee la FOTO guardada, no la base viva: la liga tiene que decir en diciembre
+// lo mismo que decía hoy. Lo interno —rebotes, quién la trabaja, cuántas veces
+// se movió la fecha— ni siquiera está en la foto: se filtra al generar.
+const { rep } = Astro.props;
+const h = rep.hechos || {};
+
+const dCorta = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '')
+  : '';
+const dLarga = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '';
+
+/* Cómo se le dice al cliente cada tipo. Misma traducción que el de entregas:
+   `pendiente` es como el CRM llama por dentro a los bugs, y en un documento
+   para el cliente se lee como que algo está sin hacer. */
+const TIPO: Record<string, { l: string; c: string }> = {
+  personalizacion: { l: 'personalización', c: 'per' },
+  ajuste:          { l: 'ajuste',          c: 'aju' },
+  pendiente:       { l: 'corrección',      c: 'cor' },
+  modulo:          { l: 'módulo',          c: 'mod' },
+  plugin:          { l: 'plugin',          c: 'plu' },
+  otro:            { l: 'mejora',          c: 'aju' },
+};
+const tipoDe = (k: string) => TIPO[k] || TIPO.otro;
+
+/* Los títulos vienen como bitácora del consultor —«Bug l Modulo de
+   Reparaciones l Alertas desconfiguradas»—. Al cliente eso le dice tres veces
+   lo mismo y la «l» se lee como un error de dedo. Misma limpieza que en el de
+   entregas; adentro del CRM el título no se toca. */
+const PREFIJO = /^\s*(bugs?|mejoras?|mejorar|ajustes?|correcci[oó]n|personalizaci[oó]n|pendiente)\s*[|lí·:–—-]\s*/i;
+const limpiar = (t: string | null | undefined) => {
+  let x = String(t || '').trim();
+  for (let i = 0; i < 2; i++) x = x.replace(PREFIJO, '').trim();
+  return x.replace(/\s+[l|]\s+/g, ' · ').replace(/\s{2,}/g, ' ').trim();
+};
+
+/* La especificación puede venir con saltos de línea y viñetas del consultor.
+   Se recorta a lo que se lee de un vistazo: un documento no es el ticket. */
+const corta = (t: string | null) => {
+  const x = String(t || '').replace(/\s*\n+\s*/g, ' · ').replace(/\s{2,}/g, ' ').trim();
+  return x.length > 240 ? x.slice(0, 237).trimEnd() + '…' : x;
+};
+
+const trabajos = h.trabajos || [];
+/* Agrupado por etapa, en el orden en que avanza el trabajo. «Por arrancar» va
+   al final a propósito: es lo único que todavía no tiene compromiso, y abrir
+   el documento con lo que no ha empezado dice lo contrario de lo que viene a
+   decir. */
+const grupos = Array.from(new Set(trabajos.map((t: any) => t.orden)))
+  .sort((a: any, b: any) => a - b)
+  .map((orden: any) => ({
+    orden,
+    etapa: trabajos.find((t: any) => t.orden === orden)?.etapa || '',
+    lista: trabajos.filter((t: any) => t.orden === orden),
+  }));
+
+const PIE_ETAPA: Record<number, string> = {
+  1: 'Estamos definiendo el detalle con nuestro equipo.',
+  2: 'Ya se está programando.',
+  3: 'Se está probando antes de entregártelo.',
+  4: 'Terminado y en revisión final de nuestro lado.',
+  5: 'Detenidas hasta que nos pases el dato que te pedimos.',
+  6: 'En fila. Te avisamos en cuanto tengan fecha.',
+};
+---
+
+<div class="hero">
+  <div class="top">
+    <div><div class="wm">Sacscloud</div><div class="wsub">Trabajo en curso</div></div>
+    <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
+  </div>
+  <h1>Lo que estamos construyendo para ti</h1>
+  <div class="quien">
+    {h.cuenta_sacs && <div><div class="k">Cuenta</div><div class="v">{h.cuenta_sacs}</div></div>}
+    <div><div class="k">En tu cola</div><div class="v">{h.total}</div></div>
+    <div><div class="k">Al</div><div class="v">{dLarga(h.periodo?.hasta)}</div></div>
+  </div>
+</div>
+
+<div class="ancla">
+  <div><div class="n" data-n={h.total}>0</div><div class="l">en tu cola</div></div>
+  <div><div class="n" data-n={h.en_curso}>0</div><div class="l">ya arrancadas</div></div>
+  <div><div class="n" data-n={h.por_arrancar}>0</div><div class="l">por arrancar</div></div>
+  <div><div class="n v" data-n={h.cortesias}>0</div><div class="l">sin costo adicional</div></div>
+</div>
+
+<div class="cuerpo">
+  <div class="st"><span class="x">Cómo leer este documento</span><span class="ln"></span></div>
+  <p class="p">
+    Cada renglón es algo que pediste y que ya está en nuestra cola de trabajo. Dice <b>qué va a cambiar
+    dentro del sistema</b> y en qué etapa va. Cuando quede, lo vas a ver en tu reporte de entregas
+    con el video donde se ve operando.
+  </p>
+
+  {h.proxima && (
+    <div class="lila" style="margin-top:14px">
+      <div class="t">La próxima entrega</div>
+      <div class="c">{dLarga(h.proxima)}</div>
+      <div class="d">Es la fecha más cercana que tenemos comprometida contigo.</div>
+    </div>
+  )}
+
+  {h.cortesias > 0 && (
+    <div class="lila" style="margin-top:12px">
+      <div class="t">Sin costo adicional</div>
+      <div class="c">{h.cortesias === h.total
+        ? (h.total === 1 ? 'El trabajo de tu cola' : `Los ${h.total}`)
+        : `${h.cortesias} de los ${h.total}`}</div>
+      <div class="d">Salieron de tus juntas y se hacen sin cargo.</div>
+    </div>
+  )}
+
+  {grupos.map((g: any) => (
+    <div class="grupo">
+      <div class="gh">
+        <span class="gn">{g.etapa}</span>
+        <span class="gc">{g.lista.length === 1 ? '1 trabajo' : `${g.lista.length} trabajos`} · {PIE_ETAPA[g.orden] || ''}</span>
+        <span class="ln"></span>
+      </div>
+      <div class="ent">
+        {g.lista.map((t: any) => {
+          const k = tipoDe(t.categoria);
+          return (
+            <div class="it">
+              <div class="enc">
+                <span class="tt">{limpiar(t.titulo)}</span>
+                <span class={`tipo t-${k.c}`}>{k.l}</span>
+                {t.cortesia && <span class="sc">sin costo</span>}
+                {t.fecha && <span class="fe">{dCorta(t.fecha)}</span>}
+              </div>
+              {t.cambio && <div class="dd"><b>Qué va a cambiar:</b> {corta(t.cambio)}</div>}
+              {!t.fecha && <div class="dd" style="color:#a5a2af">Todavía sin fecha comprometida.</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ))}
+
+  {h.sin_fecha > 0 && h.sin_fecha < h.total && (
+    <div class="mas">{h.sin_fecha} de los {h.total} todavía no tienen fecha. Te avisamos en cuanto la tengan.</div>
+  )}
+</div>
+
+<div class="pieE">
+  <div class="pl">Sacscloud</div>
+  <div class="pieit">
+    Este documento se generó con lo que hay en tu cuenta al {dLarga(h.periodo?.hasta)}.
+    Si algo no coincide con lo que acordamos, dínoslo y lo corregimos.
+  </div>
+</div>

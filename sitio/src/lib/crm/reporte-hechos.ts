@@ -278,3 +278,85 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
     internas: (mejoras || []).length - visibles.length,
   };
 }
+
+/* ═══ LO QUE SE ESTÁ CONSTRUYENDO ═══
+ *
+ * El hermano del reporte de entregas. Aquel contesta «¿qué me han hecho?»;
+ * este contesta «¿qué me están haciendo?» — la pregunta que el cliente hace
+ * entre una entrega y la siguiente, y que hasta hoy se respondía por WhatsApp
+ * de memoria.
+ *
+ * Sale de las ÓRDENES VIVAS del taller, no de las mejoras: es ahí donde vive
+ * la etapa, la fecha comprometida y —lo que el cliente pidió ver— la
+ * especificación de qué va a cambiar dentro del sistema.
+ *
+ * Lo entregado NO entra: eso ya es el otro documento, y repetirlo aquí haría
+ * que el cliente lea dos veces lo mismo y no sepa cuál manda.
+ *
+ * Lo interno tampoco: ni rebotes, ni quién la trabaja, ni cuántas veces se
+ * movió la fecha. Se filtra al GENERAR y no al pintar, porque la foto se
+ * guarda en un jsonb que alguien puede leer.
+ */
+const ETAPA_CLIENTE: Record<string, { l: string; orden: number }> = {
+  analisis:   { l: 'En análisis', orden: 1 },
+  desarrollo: { l: 'En desarrollo', orden: 2 },
+  pruebas:    { l: 'En pruebas', orden: 3 },
+  lista:      { l: 'Lista, en revisión', orden: 4 },
+  devuelta:   { l: 'En desarrollo', orden: 2 },   // un rebote es asunto interno
+  trabada:    { l: 'En desarrollo', orden: 2 },
+  espera:     { l: 'Esperando un dato tuyo', orden: 5 },
+  recibida:   { l: 'Por arrancar', orden: 6 },
+};
+
+export async function reunirEnCurso(companyId: string, desde: string, hasta: string) {
+  const { data: co } = await supabase.from('companies')
+    .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();
+  if (!co) return null;
+
+  const { data: ordenes } = await supabase.from('taller_ordenes')
+    .select('folio, titulo, tipo, etapa, esperado, problema, criterios, modulo, cobro, fecha_prometida, created_at')
+    .eq('company_id', companyId).is('archived_at', null)
+    .neq('etapa', 'entregada')
+    .order('fecha_prometida', { ascending: true, nullsFirst: false });
+
+  /* El periodo filtra por CUÁNDO SE PIDIÓ, no por cuándo se entrega: el
+     documento dice «esto es lo que te estamos construyendo», y una orden
+     levantada en agosto que sigue viva pertenece al reporte de septiembre
+     igual que una de ayer. Por eso el corte es `created_at <= hasta`. */
+  const vivas = (ordenes || []).filter((o: any) => String(o.created_at || '').slice(0, 10) <= hasta);
+
+  const trabajos = vivas.map((o: any) => {
+    const e = ETAPA_CLIENTE[o.etapa] || ETAPA_CLIENTE.recibida;
+    return {
+      folio: o.folio,
+      titulo: o.titulo,
+      // La especificación que el cliente pidió ver. «Qué debería pasar» es lo
+      // que se acordó; si no está, el criterio de aceptación dice lo mismo con
+      // otras palabras. Si no hay ninguno, el renglón va solo con su título.
+      cambio: (o.esperado || o.criterios || '').trim() || null,
+      categoria: o.tipo === 'falla' ? 'pendiente' : 'personalizacion',
+      modulo: o.modulo || null,
+      etapa: e.l,
+      orden: e.orden,
+      fecha: o.fecha_prometida || null,
+      cortesia: o.cobro === 'cortesia',
+    };
+  });
+
+  const conFecha = trabajos.filter(t => t.fecha);
+  return {
+    cliente: co.nombre_comercial || co.nombre,
+    cuenta_sacs: co.sacs_account || null,
+    periodo: { desde, hasta, dias: Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000) },
+    trabajos,
+    total: trabajos.length,
+    // «En desarrollo» para el cliente es todo lo que ya arrancó: análisis,
+    // desarrollo, pruebas y lo que está en revisión. Lo que no ha arrancado se
+    // cuenta aparte porque es lo único que todavía no tiene compromiso.
+    en_curso: trabajos.filter(t => t.orden <= 4).length,
+    por_arrancar: trabajos.filter(t => t.orden === 6).length,
+    cortesias: trabajos.filter(t => t.cortesia).length,
+    proxima: conFecha.length ? conFecha.map(t => t.fecha).sort()[0] : null,
+    sin_fecha: trabajos.filter(t => !t.fecha).length,
+  };
+}
