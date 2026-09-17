@@ -966,8 +966,83 @@ fundidos** que llevaban dos días acumulándose (1,173 → 1,157).
 Sin el latido, el síntoma —clusters que se acumulan— habría tardado semanas en
 ser evidente.
 
+---
+
+## Etapa 6 · parte C (17-sep-2026) — el operador de código
+
+El motor encontraba **105 cosas mal en el sitio y no podía arreglar ninguna**:
+están en archivos `.astro` del repositorio, y el motor corre en Vercel, donde el
+código fuente no existe. Nadie había cerrado ese hueco.
+
+### El reparto de conocimiento, que es lo que hace las órdenes útiles
+
+- **El motor sabe QUÉ está mal** — qué URLs, qué regla, con qué gravedad. Lo
+  midió rastreando el sitio de verdad.
+- **El operador sabe DÓNDE están los archivos** — corre dentro del repo y puede
+  COMPROBAR que el archivo existe.
+
+Si el motor adivinara rutas de archivo desde Vercel, produciría órdenes que
+apuntan a archivos inexistentes. Eso no cuesta cero: cuesta el rato de quien las
+lee antes de descubrirlo.
+
+`scripts/de-operador.mjs --pendientes` resuelve URL → archivo, **agrupa por
+archivo** (varias URLs pueden salir de la misma plantilla dinámica; abrirla siete
+veces es siete veces el mismo trabajo) y detecta las rutas dinámicas para decir
+que ahí el arreglo no es editar un archivo.
+
+### Una orden POR REGLA, no por página
+
+25 metas cortas en 25 páginas son UNA tarea —escribir 25 metas con el mismo
+criterio, de una sentada— no 25 tareas de una línea. Partirlas produce una cola
+que parece enorme y que en realidad es un rato de trabajo, y eso desanima a
+quien la abre.
+
+La clave de idempotencia lleva el **conteo de URLs**: con la fecha se crearía una
+orden nueva cada día con el mismo trabajo dentro; con solo la regla, una orden
+vieja taparía los hallazgos nuevos. Con el conteo, la orden se rehace cuando el
+alcance cambia — que es cuando de verdad es otra tarea.
+
+Corre en el ciclo **semanal**, no el diario: una cola que se reescribe cada
+mañana no es una cola, es ruido.
+
+### 🔴 Y la primera tanda de órdenes destapó dos cosas
+
+**1. Cuatro páginas que nunca debieron estar en el índice.** El motor las
+levantó como «contenido delgado» y el arreglo no era escribir más:
+
+- `/app/dashboard` y `/app/inbox` — **11 palabras cada una**, indexables. Son
+  pantallas de la aplicación: le estábamos ofreciendo a Google dos páginas
+  vacías.
+- `/bienvenida` — acuse de «tu cuenta ha sido creada». Indexarla significa que
+  un buscador puede mandar ahí a alguien que no se registró.
+- `/registro` — formulario, misma familia que `/prueba-gratis`, que ya estaba
+  fuera por esta razón exacta.
+
+Las cuatro con `noindex` y fuera del sitemap. La regla cuenta palabras y no
+puede distinguir «flaca» de «nunca fue contenido»; ahora el motor **señala las
+sospechosas por su ruta** y el operador decide. Sin eso, alguien acaba
+escribiéndole 600 palabras al inbox de la aplicación.
+
+**2. Un falso positivo mío, visto al mirar la salida.** El patrón
+`/\/bienvenida/` sin anclar marcaba `/blog/bienvenida/` —un artículo de 255
+palabras— como acuse transaccional. Es decir: proponía sacar del índice un
+artículo del blog. Los patrones van anclados al inicio de la ruta.
+
+Aquí un falso positivo es peor que un falso negativo: lo segundo deja una página
+flaca sin arreglar; lo primero esconde contenido bueno.
+
+### Las 7 órdenes que esperan
+
+    [media] Páginas con muy poco texto        41 páginas (4 son «no indexar»)
+    [media] Páginas sin H1                     5
+    [media] Páginas sin meta descripción       2
+    [media] Títulos demasiado cortos           1
+    [baja]  Meta descripciones cortas         25
+    [baja]  Meta descripciones largas         24
+    [baja]  Títulos demasiado largos           7
+
+`node scripts/de-operador.mjs --pendientes`
+
 ### Lo que sigue
 
-1. Manual del motor.
-2. Operador de código automático.
-3. Experimentos (A/B de títulos y formatos) y Demand Capture Score.
+1. Experimentos (A/B de títulos y formatos) y Demand Capture Score.

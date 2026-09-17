@@ -94,13 +94,117 @@ async function estado() {
   console.log('\nSiguiente: lee sitio/ESTADO-DEMAND-ENGINE.md y sigue la etapa que marque.\n');
 }
 
+/* De una URL del sitio al archivo que hay que abrir.
+ *
+ * Esto vive AQUÍ y no en el motor por una razón que no es de estilo: el motor
+ * corre en Vercel, donde el código fuente no existe, así que solo podría
+ * adivinar. Este script corre dentro del repo y puede COMPROBAR que el archivo
+ * está. Una orden de trabajo que apunta a un archivo inexistente no cuesta
+ * cero: cuesta el rato de quien la lee antes de darse cuenta.
+ */
+const SITIO_SRC = path.join(RAIZ, 'sitio', 'src', 'pages');
+
+function archivoDe(url) {
+  let ruta;
+  try { ruta = new URL(url).pathname; } catch { ruta = url; }
+  ruta = ruta.replace(/\/+$/, '') || '/';
+
+  const candidatos = ruta === '/'
+    ? ['index.astro']
+    : [
+        `${ruta.slice(1)}.astro`,          // /producto/x  → producto/x.astro
+        `${ruta.slice(1)}/index.astro`,    // /producto    → producto/index.astro
+      ];
+
+  for (const c of candidatos) {
+    const f = path.join(SITIO_SRC, c);
+    if (fs.existsSync(f)) return { archivo: `sitio/src/pages/${c}`, existe: true };
+  }
+
+  /* No se encontró. Casi siempre significa que la página la genera una ruta
+     dinámica —`[slug].astro`— y entonces el arreglo NO es editar un archivo:
+     es cambiar los datos o la plantilla. Decirlo es más útil que devolver una
+     ruta inventada. */
+  const partes = ruta.slice(1).split('/');
+  for (let i = partes.length - 1; i >= 0; i--) {
+    const dir = partes.slice(0, i).join('/');
+    for (const din of ['[slug].astro', '[...slug].astro', '[id].astro']) {
+      const f = path.join(SITIO_SRC, dir, din);
+      if (fs.existsSync(f)) {
+        return { archivo: `sitio/src/pages/${dir ? dir + '/' : ''}${din}`, existe: true, dinamica: true };
+      }
+    }
+  }
+  return { archivo: null, existe: false };
+}
+
 async function pendientes() {
   const filas = await sql("select id, tipo, prioridad, payload, motivo, created_at from de_acciones where estado = 'para_operador' order by prioridad desc, created_at");
   if (!filas.length) return console.log('No hay trabajo de repositorio pendiente.');
+
   for (const f of filas) {
-    console.log(`\n── ${f.id}\n   tipo: ${f.tipo} · prioridad ${f.prioridad} · ${f.created_at?.slice(0, 16)}`);
-    console.log(`   ${JSON.stringify(f.payload, null, 2).split('\n').join('\n   ')}`);
+    const p = f.payload || {};
+    console.log(`\n${'─'.repeat(72)}`);
+    console.log(`${p.titulo || f.tipo}`);
+    console.log(`  ${f.id} · prioridad ${f.prioridad} · ${p.severidad || '?'} · ${f.created_at?.slice(0, 10)}`);
+
+    if (p.por_que) console.log(`\n  POR QUÉ IMPORTA\n  ${envolver(p.por_que, 68)}`);
+    if (p.hecho_cuando) console.log(`\n  HECHO CUANDO\n  ${envolver(p.hecho_cuando, 68)}`);
+
+    if (Array.isArray(p.urls) && p.urls.length) {
+      // Se agrupan por ARCHIVO: varias URLs pueden salir de la misma plantilla
+      // dinámica, y abrirla siete veces es siete veces el mismo trabajo.
+      const porArchivo = new Map();
+      const sinArchivo = [];
+      for (const u of p.urls) {
+        const a = archivoDe(u);
+        if (!a.existe) { sinArchivo.push(u); continue; }
+        const k = a.archivo + (a.dinamica ? '  (plantilla dinámica)' : '');
+        if (!porArchivo.has(k)) porArchivo.set(k, []);
+        porArchivo.get(k).push(new URL(u).pathname);
+      }
+
+      console.log(`\n  DÓNDE (${p.urls.length} página(s) en ${porArchivo.size} archivo(s))`);
+      for (const [archivo, urls] of [...porArchivo].sort((a, b) => b[1].length - a[1].length)) {
+        const detalle = urls.length === 1 ? urls[0] : `${urls.length} páginas: ${urls.slice(0, 3).join(', ')}${urls.length > 3 ? '…' : ''}`;
+        console.log(`    ${archivo}`);
+        console.log(`      ${detalle}`);
+      }
+      /* Las que probablemente no son contenido van APARTE y arriba del resto.
+         Si se mezclan con las demás, alguien acaba escribiéndole seiscientas
+         palabras al inbox de la aplicación porque la regla dijo «faltan
+         palabras». Ya estuvo a punto de pasar. */
+      const noIndexar = p.quiza_noindex || {};
+      const cuantas = Object.keys(noIndexar).length;
+      if (cuantas) {
+        console.log(`\n  ⚠️  ${cuantas} de estas probablemente NO son páginas de contenido.`);
+        console.log(`      Ahí el arreglo es \`noindex\`, no escribir más:`);
+        for (const [u, porque] of Object.entries(noIndexar)) {
+          console.log(`      ${new URL(u).pathname.padEnd(28)} ${porque}`);
+        }
+      }
+
+      if (sinArchivo.length) {
+        console.log(`\n    ⚠️  ${sinArchivo.length} URL(s) sin archivo en el repo — o son del motor, o la ruta cambió:`);
+        for (const u of sinArchivo.slice(0, 5)) console.log(`      ${u}`);
+      }
+    }
+
+    console.log(`\n  Para tomarlo:  node scripts/de-operador.mjs --tomar ${f.id}`);
   }
+  console.log(`\n${'─'.repeat(72)}`);
+}
+
+/** Envuelve texto a N columnas sin partir palabras. */
+function envolver(t, n) {
+  const out = [];
+  let linea = '';
+  for (const p of String(t).split(/\s+/)) {
+    if ((linea + ' ' + p).trim().length > n) { out.push(linea.trim()); linea = p; }
+    else linea += ' ' + p;
+  }
+  if (linea.trim()) out.push(linea.trim());
+  return out.join('\n  ');
 }
 
 async function tomar(id) {
