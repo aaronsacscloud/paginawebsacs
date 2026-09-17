@@ -657,31 +657,54 @@ piel por lote y proveedor; ópticas → graduación más armazón; telas → rol
 tallas grandes → curva extendida y proveedores que sí la fabrican; maternidad → etapas del
 embarazo; outlet → remate por temporada con margen; merch → pedido por evento con fecha.
 
-### Estado por giro (17-sep-2026, 16:30 UTC)
+### Estado por giro (17-sep-2026, 19:00 UTC)
+
+Los referees de oficio de esta vuelta **reprobaron los siete giros a la primera** (notas de 4 a 7,
+con 34 a 51 correcciones cada uno) y **los siete pasaron en la segunda ronda** con las correcciones
+verificadas en el texto, no en el resumen del redactor. Ese es el patrón: la v1 nunca pasa.
 
 | # | Giro | Ficha + referee oficio | Datos/página | Fotos 10/10 | Referees de página 9/10 | Producción |
 |---|---|---|---|---|---|---|
-| 1 | Trajes de Baño y Playa | ✓ | ✓ | 23/23 ✓ (falta regenerar caso-maquila por diseño; sin créditos) | ✓ oficio 9 · calidad 9 · diseño 9 (ronda 2) | **en producción** |
-| 2 | Western y Vaquera | ✓ (bloque = el conjunto) | ✓ | 22/24 (escala y traspaso rehechas, sin referee por créditos; caso-feria y escala por regenerar) | ✓ oficio 9 · calidad 9 · diseño 9 (rondas 2-3) | **en producción** |
-| 3 | Uniformes | ✓ (bloque = la lista manda) | ✓ en `_borrador/` | 11/23 generadas; 12 pendientes por créditos (un-pend) | pendiente | ComingSoon en producción |
-| 4 | Lencería y Ropa Interior | ✓ (bloque = la pared que se rompe por el centro) | ✓ en `_borrador/` | 0/23: cola lista (le.json), sin créditos | pendiente | ComingSoon en producción |
-| 5 | Renta de Vestidos y Trajes | ✓ (bloque = el calendario de cada vestido) | ✓ en `_borrador/`, compila | 0/22: cola lista (re.json), sin créditos | pendiente | ComingSoon en producción |
-| 6 | Ropa Infantil y Bebés | ✓ (bloque = el niño crece, la clienta regresa) | ✓ en `_borrador/`, compila | 0/21: cola lista (ri.json), sin créditos | pendiente | ComingSoon en producción |
-| 7 | Sastrería y Trajes a la Medida | ficha v1 → referee **6/5/6/6/6 REGRESAR** (34 correcciones) → v2 en curso | | | | ComingSoon en producción |
-| 8 | Bolsas y Accesorios de Piel | ficha v1 → referee **6/5/6/4/5 REGRESAR** (46 correcciones; el bloque propio era el de joyería) → v2 en curso | | | | ComingSoon en producción |
-| 9 | Ópticas | ficha v1 → referee **7/6/7/6/6 REGRESAR** (50 correcciones) → v2 en curso | | | | ComingSoon en producción |
-| 10 | Telas y Mercería | ficha v1 → referee **6/5/7/6/7 REGRESAR** (45 correcciones) → v2 en curso | | | | ComingSoon en producción |
-| 11 | Tallas Grandes | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
-| 12 | Maternidad | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
-| 13 | Outlet y Remates | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
-| 14 | Merch de Eventos | **ya existe la landing**; la ficha queda como mejora (bloque del cierre de la fecha) | ✓ | — | — | en producción |
-| — | Las 7 hechas | auditadas 152 fotos (0 en 10) | — | 24 de las ≤7 rehechas e instaladas; faltan las 128 de 8-9 | — | en producción |
+| 1 | Trajes de Baño y Playa | ✓ | ✓ | 23/23 ✓ (falta caso-maquila) | ✓ 9 · 9 · 9 | **en producción** |
+| 2 | Western y Vaquera | ✓ | ✓ | 22/24 | ✓ 9 · 9 · 9 | **en producción** |
+| 3 | Uniformes | ✓ | ✓ en `_borrador/` | 11/23; faltan 12 por créditos | pendiente | ComingSoon |
+| 4 | Lencería y Ropa Interior | ✓ | ✓ en `_borrador/` | 0/23 (le.json) | pendiente | ComingSoon |
+| 5 | Renta de Vestidos y Trajes | ✓ | ✓ en `_borrador/` | 0/22 (re.json) | pendiente | ComingSoon |
+| 6 | Ropa Infantil y Bebés | ✓ | ✓ en `_borrador/` | 0/21 (ri.json) | pendiente | ComingSoon |
+| 7 | Sastrería y Trajes a la Medida | ✓ v2 **9/9/9/9/9** (34 corr.) | ✓ en `_borrador/` + `SaReloj` | 0/22 (sa.json) | pendiente | ComingSoon |
+| 8 | Bolsas y Accesorios de Piel | ✓ v2 **9/9/9/9/9** (46 corr.) | ✓ en `_borrador/` + `BoLote` | 0/22 (bo.json) | pendiente | ComingSoon |
+| 9 | Ópticas | ✓ v2 **9/9/9/9/9** (50 corr.) | ✓ en `_borrador/` + `OpCajon` | 0/22 (op.json) | pendiente | ComingSoon |
+| 10 | Telas y Mercería | ✓ v2 **9.5/8.5/10/8.5/9** (45 corr.) | ✓ en `_borrador/` + `TmPieza` | 0/22 (tm.json) | pendiente | ComingSoon |
+| 11 | Tallas Grandes | ✓ v2 **10/9/9/9/9** (48 corr.) | datos en curso + `TgQuiebre` | pendiente | pendiente | ComingSoon |
+| 12 | Maternidad | ✓ v2 **10/9/10/10/10** (50 corr.) | datos en curso + `MaFecha` | pendiente | pendiente | ComingSoon |
+| 13 | Outlet y Remates | ✓ v3 **9/10/9/9/9** (51 corr.) | datos en curso | pendiente | pendiente | ComingSoon |
+| 14 | Merch de Eventos | **ya existía la landing**; la ficha queda como mejora | ✓ | — | — | en producción |
+| — | Las 7 hechas | auditadas 152 fotos | — | 24 rehechas; faltan 128 de 8-9 | — | en producción |
 
-**Para reanudar fotos cuando haya créditos de OpenAI:** `scratchpad/giros/reanudar.sh` (corre
-un-pend, fix-r4, le, re y ri en orden, ~78 fotos); después `instala.sh un uniformes`, `instala.sh le
-lenceria`, `instala.sh re renta-de-vestidos`, `instala.sh ri ropa-infantil`, los referees de
-identidad 10/10, mover cada página de `_borrador/` a `src/pages/giros/` (ajustar los imports de
-`../../../` a `../../`) y correr sus 3 referees de página.
+**Para reanudar fotos cuando haya créditos de OpenAI:** `scratchpad/giros/reanudar.sh` corre en
+orden las colas pendientes (un-pend, fix-r4, le, re, ri) y hay que agregarle las nuevas (sa, op,
+tm, bo, y las de tallas grandes, maternidad y outlet cuando estén). Después, por cada giro:
+`instala.sh <prefijo> <slug>`, el referee de identidad a 10/10 foto por foto, mover la página de
+`_borrador/` a `src/pages/giros/` **ajustando los imports de `../../../` a `../../`**, y correr sus
+tres referees de página. El 17-sep se probó la API tres veces y seguía en
+`credit_balance_exhausted`.
+
+**Lo que aprendió esta vuelta (para el siguiente giro):**
+
+- **El bloque propio es lo que más se cae.** Bolsas sacó 4 y tallas grandes 5 porque copiaban el
+  mecanismo de otro giro (bolsas era joyería con decímetros en vez de gramos; tallas grandes era
+  la matriz de tienda de ropa). La prueba que hay que pasar antes de escribirlo: **nombrar los
+  cuatro giros que se le parecen y decir por qué éste no es ninguno de ellos.**
+- **Las cuentas del dato que remata se revisan con calculadora, siempre.** Cuatro fichas traían
+  aritmética que no cuadraba: margen sobre precio con IVA, merma descontada dos veces, piezas
+  contadas con dos varas distintas, pesos de tela inventados. El referee las cachó todas.
+- **La cortina antes/después no se amarra sola.** Decir "same employee" no basta: hace falta el
+  bloque de personaje y el de cámara repetidos **palabra por palabra** en las dos escenas, y que
+  solo cambien el desorden y la luz.
+- **Cada giro tiene una verdad que lo delata si se falla.** En ópticas, que el seguro es por
+  reembolso y que el rayado por uso no entra en garantía. En sastrería, decir "a medida" en vez de
+  "a la medida". En telas, que la báscula no mide metros. En maternidad, que la faja va en la
+  maleta del hospital. Preguntar por ellas antes de escribir sale más barato que corregir.
 
 **Deuda conocida de esta vuelta (componentes compartidos, para una pasada global):** la
 jerarquía de `BloqueProducto` (encabezado + título dejan un hueco de ~100 px antes del bloque; el

@@ -1,0 +1,116 @@
+---
+/**
+ * TgQuiebre — "El quiebre de la 46: tu 46 no es tu 44 más grande", el bloque propio de tallas
+ * grandes (17-sep-2026, ficha v2 aprobada 10/9/9/9/9 por la referee del giro, que había reprobado
+ * la v1 con un 5 en este mismo bloque).
+ *
+ * En una tienda normal la corrida entera cabe en un solo bloque de proporción y el patrón se
+ * escala parejo. Aquí no: de la 46 para arriba el cuerpo cambia de proporción, no de tamaño —el
+ * busto crece contra la cintura, la espalda se ensancha más rápido que el hombro, la sisa necesita
+ * otra curva, el talle se acorta arriba y el tiro se alarga—. Por eso la corrida se parte en dos
+ * bloques con dos patrones base: 36-44 y 46-52.
+ *
+ * Eso descarta a los demás giros: lencería escala por dos ejes (banda y copa) y la talla hermana lo
+ * resuelve; uniformes escala parejo por relación de tallas; infantil va por edad; tienda de ropa
+ * es talla-color fungible.
+ *
+ * La landing la ve LA DUEÑA, y la dueña ya sabe qué talla es. Lo que no sabe es cuánto le cuesta al
+ * año que su taller escale parejo. Por eso la cara de enfrente es el dinero y la prueba —las dos
+ * siluetas encimadas— solo se voltea si la quiere ver. Cifras verificadas por la referee: $445 de
+ * utilidad por pieza, 6 modelos × 108 piezas × $445 = $288,360 al año.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="Tu 46 no es tu 44 más grande."
+  titulo="Lo que te cuesta escalar parejo."
+  descripcion="De la 46 para arriba el cuerpo cambia de proporción, no de tamaño. Por eso la corrida se parte en dos patrones base: 36-44 y 46-52. Mueve tus números y mira lo que deja en la mesa cada año el taller que escala parejo."
+  vinetas={[
+    { label: 'El motivo del cambio es un diagnóstico, no un trámite', detail: 'Cuando la clienta dice “me aprieta de la sisa” o “me queda largo de talle”, eso no es una devolución: es la ficha que te dice qué corregir en el patrón.' },
+    { label: 'Se descompleta por en medio', detail: 'Las de en medio se van primero y la corrida queda partida. Ahí está la venta que no se hizo aunque el modelo se vea completo en el reporte.' },
+    { label: 'La clienta que encuentra su talla se queda', detail: 'Compra todo contigo porque no hay dónde más. Esa clienta vale muchas veces lo que cuesta el flete de un cambio.' },
+  ]}
+  suelta
+>
+  <div class="tg" id="tg-quiebre">
+    <div class="tg-cara tg-front">
+      <span class="tg-k">Lo que deja en la mesa al año</span>
+      <b class="tg-num" id="tg-num">$288,360</b>
+      <div class="tg-sl">
+        <label><span>Modelos al año <b id="tg-m">60</b></span><input type="range" id="tg-mod" min="12" max="150" step="1" value="60" aria-label="Modelos al año" /></label>
+        <label><span>Cuántos te salen mal de la 46 para arriba <b id="tg-f">6</b></span><input type="range" id="tg-fall" min="0" max="30" step="1" value="6" aria-label="Modelos que salen mal de la 46 para arriba" /></label>
+        <label><span>Piezas por corrida <b id="tg-p">300</b></span><input type="range" id="tg-pz" min="60" max="1200" step="20" value="300" aria-label="Piezas por corrida" /></label>
+      </div>
+      <p class="tg-seg">Y en fletes de cambio: <b id="tg-flete">$33,920</b> al mes. Cada punto vale <b>$1,060</b>.</p>
+      <p class="tg-linea">No es una talla. Es un tercio de cada modelo.</p>
+      <button type="button" class="tg-volt" id="tg-volt">¿Por qué pasa?</button>
+    </div>
+    <div class="tg-cara tg-back" id="tg-back" hidden>
+      <span class="tg-k">La misma talla 46, dos patrones</span>
+      <svg viewBox="0 0 240 300" class="tg-svg" role="img" aria-label="Dos siluetas de talla 46 encimadas: una escalada del patrón de la 38 y otra con su propio patrón base">
+        <path d="M120 22c14 0 22 10 22 22 0 8-3 14-3 14l36 16c12 6 18 14 20 28l10 56-26 6-6-30-4 148h-98l-4-148-6 30-26-6 10-56c2-14 8-22 20-28l36-16s-3-6-3-14c0-12 8-22 22-22z" fill="none" stroke="#C9C7C1" stroke-width="2.5" stroke-dasharray="5 4" />
+        <path d="M120 22c15 0 24 10 24 22 0 8-3 14-3 14l40 18c14 7 20 16 22 32l11 52-28 7-7-28-5 149h-108l-5-149-7 28-28-7 11-52c2-16 8-25 22-32l40-18s-3-6-3-14c0-12 9-22 24-22z" fill="none" stroke="#0E0D0C" stroke-width="2.5" />
+        <circle cx="64" cy="96" r="11" class="tg-p" /><circle cx="176" cy="96" r="11" class="tg-p" />
+        <circle cx="120" cy="150" r="11" class="tg-p" /><circle cx="120" cy="196" r="11" class="tg-p" />
+      </svg>
+      <ul class="tg-zonas">
+        <li><b>Sisa</b><span>+2.5 cm de curva</span></li>
+        <li><b>Talle</b><span>−1.5 cm arriba</span></li>
+        <li><b>Caída de hombro</b><span>+1 cm</span></li>
+        <li><b>Tiro</b><span>+2 cm</span></li>
+      </ul>
+      <p class="tg-linea">La 46 no es la 44 más grande. Cambia la proporción, no el tamaño.</p>
+      <button type="button" class="tg-volt" id="tg-volver">Volver al dinero</button>
+    </div>
+  </div>
+  <p class="tg-cta-w"><a class="tg-cta" href="/contacto">Verlo con mis modelos</a></p>
+</BloqueProducto>
+
+<style>
+  .tg { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; }
+  .tg-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .tg-num { display: block; font-family: var(--font-display); font-size: clamp(44px, 7vw, 82px); letter-spacing: -0.045em; line-height: 1; color: var(--color-text-primary); }
+  .tg-sl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .tg-sl label span { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .tg-sl label b { font-family: var(--font-display); font-size: 17px; color: var(--color-text-primary); }
+  .tg-sl input { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .tg-seg { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--color-border, #E6E8ED); font-size: 13.5px; color: var(--color-text-secondary); }
+  .tg-seg b { color: var(--color-text-primary); }
+  .tg-linea { margin: 6px 0 0; font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
+  .tg-volt { margin-top: 14px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--color-text-primary); cursor: pointer; }
+  .tg-back { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+  .tg-back .tg-k, .tg-back .tg-linea, .tg-back .tg-volt { grid-column: 1 / -1; }
+  .tg-svg { width: 190px; height: auto; }
+  .tg-p { fill: #E8A0BE; }
+  .tg-zonas { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .tg-zonas :global(li) { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 9px; border-bottom: 1px solid #E3E3DF; font-size: 14px; }
+  .tg-zonas :global(li b) { color: var(--color-text-primary); }
+  .tg-zonas :global(li span) { color: var(--color-text-secondary); }
+  .tg-cta-w { margin: 16px 0 0; }
+  .tg-cta { display: inline-flex; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .tg { padding: 14px; } .tg-sl { grid-template-columns: 1fr; gap: 12px; } .tg-back { grid-template-columns: 1fr; } .tg-svg { width: 150px; margin: 0 auto; } .tg-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('tg-quiebre'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const v = (id: string) => Number(($(id) as HTMLInputElement).value);
+    const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const pinta = () => {
+      const mod = v('tg-mod'), fall = v('tg-fall'), pz = v('tg-pz');
+      $('tg-m').textContent = String(mod); $('tg-f').textContent = String(fall); $('tg-p').textContent = String(pz);
+      // 36 % de cada corrida es de la 46 para arriba; $445 de utilidad por pieza.
+      const piezasAltas = Math.round(pz * 0.36);
+      $('tg-num').textContent = pesos(fall * piezasAltas * 445);
+      // El flete de cambio sube con los modelos que salen mal: cada punto de cambios vale $1,060.
+      $('tg-flete').textContent = pesos(26480 + fall * 1240);
+      (window as any).sacsPH?.('giro_tg_quiebre', { mod, fall, pz });
+    };
+    ['tg-mod', 'tg-fall', 'tg-pz'].forEach((id) => $(id).addEventListener('input', pinta));
+    const voltea = (atras: boolean) => { (el.querySelector('.tg-front') as HTMLElement).hidden = atras; ($('tg-back') as HTMLElement).hidden = !atras; };
+    $('tg-volt').addEventListener('click', () => voltea(true));
+    $('tg-volver').addEventListener('click', () => voltea(false));
+    pinta();
+  })();
+</script>

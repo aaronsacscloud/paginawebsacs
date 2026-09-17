@@ -1,0 +1,117 @@
+---
+/**
+ * MaFecha — "La clienta trae fecha", el bloque propio de maternidad (17-sep-2026, ficha v2
+ * aprobada 10/9/10/10/10 por la referee del giro).
+ *
+ * La línea de tiempo es solo el envoltorio: lo propio del giro son tres cosas que no tiene ningún
+ * otro, y menos ropa infantil, que crece y vuelve.
+ *   · El acantilado: el día del parto se muere una clienta y en el mismo instante nace otra
+ *     distinta, y ese salto en seco ocurre en una fecha que se conoce desde el primer día.
+ *   · La cuarentena: cuarenta días en que la clienta no va a la tienda aunque quiera, justo en su
+ *     momento de mayor gasto.
+ *   · La talla de un cuerpo que ya no existe.
+ *
+ * REGLA DE ORO, y no se negocia: una clienta puede perder el embarazo, y muchas no dicen nada
+ * hasta pasado el primer trimestre. Los avisos de una ficha se apagan sin borrar a nadie, y quien
+ * no dio su fecha no recibe nada. Por eso la pieza trae el botón de pausa a la vista.
+ *
+ * La pieza no le explica el embarazo a quien vive dentro del embarazo: le enseña el dinero a la
+ * dueña, abre en la fecha de hoy y, al cruzar el parto, lo que se apaga de golpe es el número.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="La clienta trae fecha."
+  titulo="¿Cuánto dinero trae tu lista hoy?"
+  descripcion="Con la fecha probable de parto el sistema sabe en qué semana va cada clienta, qué le toca comprar y cuándo deja de comprar para siempre. Arrastra el marcador y mira lo que trae por delante, y lo que se va si nadie le escribe a tiempo."
+  vinetas={[
+    { label: 'El acantilado tiene fecha desde el primer día', detail: 'El día del parto se acaba una clienta y empieza otra distinta: otra talla, otro horario, otro producto. El que sabe la fecha alcanza a cobrar la segunda mitad.' },
+    { label: 'La cuarentena: cuarenta días encerrada', detail: 'No va a la tienda aunque quiera, justo en su momento de más gasto. Ahí se vende a domicilio y en línea, o no se vende.' },
+    { label: 'Se puede apagar sin borrar a nadie', detail: 'Una clienta puede perder el embarazo. Los avisos de su ficha se pausan con un botón y ella se queda como clienta. Quien no dio su fecha no recibe nada.' },
+  ]}
+  suelta
+>
+  <div class="ma" id="ma-fecha">
+    <div class="ma-ctrl">
+      <span class="ma-k">Semana de embarazo <b id="ma-sem">30</b></span>
+      <input type="range" id="ma-r" min="4" max="46" step="1" value="30" aria-label="Semana de embarazo" />
+      <div class="ma-etapas" id="ma-etapas">
+        <span data-a="4" data-b="13">1.er trimestre</span>
+        <span data-a="14" data-b="27">2.º</span>
+        <span data-a="28" data-b="40">3.º</span>
+        <span data-a="41" data-b="46" class="ma-post">postparto</span>
+      </div>
+      <button type="button" class="ma-pausa" id="ma-pausa" aria-pressed="false">Pausar los avisos de esta ficha</button>
+    </div>
+    <div class="ma-res">
+      <span class="ma-k" id="ma-quien">Karla · semana 30</span>
+      <b class="ma-num" id="ma-num">$4,800</b>
+      <p class="ma-frase" id="ma-frase">le quedan de compras y <b>10 semanas</b>. Si nadie le escribe en la 34, se lleva <b>$3,100</b> a otra tienda.</p>
+      <p class="ma-lista">Tus 180 clientas traen <b>$612,000</b> por delante. <b>$214,000</b> se van si nadie les escribe en la 34.</p>
+      <p class="ma-pausada" id="ma-pausada" hidden>Ficha en pausa. No sale ningún mensaje y la clienta se queda contigo.</p>
+      <a class="ma-cta" href="/contacto">Verlo con mis clientas</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .ma { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 22px; }
+  .ma-k { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .ma-k b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; color: var(--color-text-primary); text-transform: none; }
+  .ma input[type=range] { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .ma-etapas { display: grid; grid-template-columns: 10fr 14fr 13fr 6fr; gap: 5px; margin-top: 10px; }
+  .ma-etapas :global(span) { padding: 9px 6px; border-radius: 8px; background: #F2F2EF; text-align: center; font-size: 11.5px; font-weight: 700; color: var(--color-text-tertiary); transition: background 0.25s, color 0.25s; }
+  .ma-etapas :global(span.is-on) { background: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .ma-etapas :global(span.ma-post.is-on) { background: #6B4E9E; }
+  .ma-pausa { margin-top: 16px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13px; font-weight: 600; color: var(--color-text-primary); cursor: pointer; }
+  .ma-pausa.is-on { background: #F3EEFA; border-color: #6B4E9E; color: #4A3470; }
+  .ma-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 18px; display: flex; flex-direction: column; }
+  .ma-res .ma-k { display: block; }
+  .ma-num { font-family: var(--font-display); font-size: clamp(40px, 5.6vw, 62px); letter-spacing: -0.04em; line-height: 1; color: var(--color-text-primary); transition: color 0.3s; }
+  .ma.is-fin .ma-num { color: #6B4E9E; }
+  .ma-frase { margin: 10px 0 0; font-size: 15px; line-height: 1.45; color: var(--color-text-primary); }
+  .ma-lista { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13.5px; line-height: 1.45; color: var(--color-text-secondary); }
+  .ma-lista b { color: var(--color-text-primary); }
+  .ma-pausada { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--radius-sm, 8px); background: #F3EEFA; color: #4A3470; font-size: 13px; }
+  .ma-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .ma { grid-template-columns: 1fr; padding: 14px; } .ma-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('ma-fecha'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const r = $('ma-r') as HTMLInputElement;
+    const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const pinta = () => {
+      const s = Number(r.value);
+      $('ma-sem').textContent = String(s);
+      el.querySelectorAll<HTMLElement>('.ma-etapas span').forEach((x) => {
+        x.classList.toggle('is-on', s >= Number(x.dataset.a) && s <= Number(x.dataset.b));
+      });
+      const fin = s > 40;
+      el.classList.toggle('is-fin', fin);
+      if (fin) {
+        $('ma-quien').textContent = 'Karla · ya se alivió';
+        $('ma-num').textContent = '$0';
+        $('ma-frase').innerHTML = 'Aquí se acaba el embarazo. <b>Aquí empieza la otra mitad de la venta</b>: brasieres de lactancia, la segunda faja y las pijamas con apertura. Su talla de antes ya no le sirve: es de un cuerpo que ya no existe.';
+        return;
+      }
+      // Lo que le queda por delante baja con las semanas; el 3.er trimestre es donde más gasta.
+      const restan = Math.max(0, 40 - s);
+      const queda = Math.round((restan * 160 + (s < 28 ? 1200 : 0)) / 100) * 100;
+      $('ma-quien').textContent = 'Karla · semana ' + s;
+      $('ma-num').textContent = pesos(queda);
+      $('ma-frase').innerHTML = `le quedan de compras y <b>${restan} semanas</b>. Si nadie le escribe en la 34, se lleva <b>${pesos(queda * 0.65)}</b> a otra tienda.`;
+      (window as any).sacsPH?.('giro_ma_fecha', { semana: s });
+    };
+    r.addEventListener('input', pinta);
+    $('ma-pausa').addEventListener('click', () => {
+      const on = $('ma-pausa').classList.toggle('is-on');
+      $('ma-pausa').setAttribute('aria-pressed', String(on));
+      ($('ma-pausada') as HTMLElement).hidden = !on;
+      $('ma-pausa').textContent = on ? 'Avisos en pausa' : 'Pausar los avisos de esta ficha';
+    });
+    pinta();
+  })();
+</script>
