@@ -31,8 +31,17 @@ import BloqueProducto from '../BloqueProducto.astro';
 >
   <div class="em" id="em-apartado">
     <div class="em-ctrl">
-      <span class="em-k">De cada 10 que te dicen «apártamelo», ¿cuántas te pagan? <b id="em-p">5</b></span>
-      <input type="range" id="em-pagan" min="1" max="10" step="1" value="5" aria-label="Cuántas de cada diez te pagan" />
+      <div class="em-mios">
+        <label><span>Precio de tu pieza</span><input type="number" id="em-precio" value="450" min="50" step="10" /></label>
+        <label><span>Lo que te cuesta puesta</span><input type="number" id="em-costo" value="220" min="10" step="10" title="La pieza más el flete, el viaje al proveedor y el empaque" /></label>
+      </div>
+      <span class="em-k em-k--sep">¿Les pides anticipo?</span>
+      <div class="em-ops" id="em-ant">
+        <button type="button" class="is-on" data-a="5">No</button>
+        <button type="button" data-a="7">A veces</button>
+        <button type="button" data-a="9">Siempre</button>
+      </div>
+      <input type="hidden" id="em-pagan" value="5" />
       <span class="em-k em-k--sep">¿Cuántos días se la guardas?</span>
       <div class="em-ops" id="em-dias">
         <button type="button" data-d="1">24 horas</button>
@@ -40,15 +49,12 @@ import BloqueProducto from '../BloqueProducto.astro';
         <button type="button" data-d="7">Una semana</button>
       </div>
       <ul class="em-blusas" id="em-blusas"></ul>
-      <div class="em-mios">
-        <label><span>Precio de tu pieza</span><input type="number" id="em-precio" value="450" min="50" step="10" /></label>
-        <label><span>Lo que te cuesta puesta</span><input type="number" id="em-costo" value="220" min="10" step="10" title="La pieza más el flete, el viaje al proveedor y el empaque" /></label>
-      </div>
+      <p class="em-pie">Cada cuadro es una de cada diez que te dicen «apártamelo». Verde, te pagó. Amarillo, sigue esperando comprobante. Rojo, se quedó en visto.</p>
     </div>
     <div class="em-res">
       <span class="em-k">Días de rack muertos al mes</span>
       <b class="em-num" id="em-num">135</b>
-      <p class="em-horas" id="em-piezas-w">Es como tener <b id="em-piezas">4 piezas y 5</b> colgadas sin venderse, todo el mes, todos los meses.</p>
+      <p class="em-horas" id="em-piezas-w">Es como tener <b id="em-piezas">5 piezas</b> <span id="em-colg">colgadas</span> sin venderse, todo el mes, todos los meses.</p>
       <p class="em-pesos" id="em-pesos"></p>
       <p class="em-horas" id="em-horas">Y <b>4 horas y media</b> al mes contestando «¿ya depositaste?».</p>
       <button type="button" class="em-btn" id="em-btn">¿Y si se la guardo 24 horas?</button>
@@ -74,7 +80,8 @@ import BloqueProducto from '../BloqueProducto.astro';
   .em-blusas :global(li.espera i) { background: #E0B23C; }
   .em-blusas :global(li.muerta i) { background: #B42318; }
   .em-blusas :global(li em) { display: block; height: 14px; margin-top: 3px; font-style: normal; font-size: 12px; line-height: 1; text-align: center; color: #B42318; }
-  .em-mios { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--color-border, #E6E8ED); }
+  .em-mios { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .em-pie { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--color-text-tertiary); }
   .em-mios label span { display: block; font-size: 11.5px; color: var(--color-text-tertiary); margin-bottom: 4px; }
   .em-mios input { width: 100%; padding: 9px 10px; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-sm, 8px); font: inherit; font-size: 14px; color: var(--color-text-primary); }
   .em-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 18px; display: flex; flex-direction: column; }
@@ -86,6 +93,7 @@ import BloqueProducto from '../BloqueProducto.astro';
   .em-expl { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13.5px; line-height: 1.45; color: var(--color-text-secondary); }
   .em-btn { margin-top: 14px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; }
   .em-cierre { margin: 12px 0 0; padding: 11px 13px; border-radius: var(--radius-sm, 8px); background: #E9F5EF; color: #14603F; font-size: 14px; line-height: 1.45; }
+  .em-cierre :global(.em-copiar) { display: block; margin-top: 8px; color: #14603F; font-style: italic; }
   .em-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
   @media (max-width: 767px) { .em { grid-template-columns: 1fr; padding: 14px; } .em-blusas { grid-template-columns: repeat(5, 1fr); } .em-cta { width: 100%; justify-content: center; } }
 </style>
@@ -113,12 +121,14 @@ import BloqueProducto from '../BloqueProducto.astro';
       // por eso ese es el número grande.
       const enFila = Math.round(mueren * CON_FILA);
       const perdidas = Math.floor(mueren * CON_FILA * PAGA);
-      $('em-p').textContent = String(pagan);
       const diasMuertos = Math.round(mueren * dias);
       $('em-num').textContent = diasMuertos.toLocaleString('es-MX');
-      $('em-piezas').textContent = (diasMuertos / 30).toFixed(1).replace('.', ' piezas y ').replace(' piezas y 0', ' piezas');
+      const piezasMes = diasMuertos / 30;
+      const unaSola = piezasMes < 1.05;
+      $('em-piezas').textContent = unaSola ? 'una pieza' : `${piezasMes.toFixed(1).replace('.0', '')} piezas`;
+      $('em-colg').textContent = unaSola ? 'colgada' : 'colgadas';
       // Cuatro recordatorios de minuto y medio por cada apartado que no cerró.
-      const horas = ((mueren / 10) * APARTADOS * 4 * 1.5) / 60;
+      const horas = (mueren * 4 * 1.5) / 60;
       const ent = Math.round(horas), mins = Math.round((horas % 1) * 60);
       $('em-pesos').innerHTML = `Y <b>${pesos(perdidas * margen)}</b> de ventas que de verdad se perdieron: de las ${Math.round(mueren)} que se cayeron, <b>${enFila}</b> traían a alguien preguntando, y de ésas se fue la mayoría.`;
       const textoH = horas < 1 ? `${Math.round(horas * 60)} minutos`
@@ -132,24 +142,31 @@ import BloqueProducto from '../BloqueProducto.astro';
       (window as any).sacsPH?.('giro_em_apartado', { pagan, dias });
       return { perdidas, margen };
     };
+    $('em-ant').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button'); if (!b) return;
+      $('em-ant').querySelectorAll('button').forEach((x) => x.classList.toggle('is-on', x === b));
+      ($('em-pagan') as HTMLInputElement).value = b.dataset.a!;
+      pinta();
+    });
     $('em-dias').addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button'); if (!b) return;
       $('em-dias').querySelectorAll('button').forEach((x) => x.classList.toggle('is-on', x === b));
       dias = Number(b.dataset.d); pinta();
     });
-    ['em-pagan', 'em-precio', 'em-costo'].forEach((id) => $(id).addEventListener('input', pinta));
+    ['em-precio', 'em-costo'].forEach((id) => $(id).addEventListener('input', pinta));
     $('em-btn').addEventListener('click', () => {
       const antes = pinta()!;
       // Con la regla de 24 horas y un anticipo chico, la mayoría de las que sí iban a pagar pagan.
       // Con vencimiento de 24 horas y un anticipo chico, 9 de cada 10 apartados terminan pagados.
       ($('em-pagan') as HTMLInputElement).value = '9';
+      $('em-ant').querySelectorAll<HTMLButtonElement>('button').forEach((x) => x.classList.toggle('is-on', x.dataset.a === '9'));
       $('em-dias').querySelectorAll<HTMLButtonElement>('button').forEach((x) => x.classList.toggle('is-on', x.dataset.d === '1'));
       dias = 1;
       const desp = pinta()!;
       const gana = (antes.perdidas - desp.perdidas) * antes.margen;
       const c = $('em-cierre') as HTMLElement;
       c.hidden = false;
-      c.innerHTML = `<b>${pesos(gana)} más este mes.</b> ${pesos(gana * 12)} al año, sin comprar una pieza más.`;
+      c.innerHTML = `<b>${pesos(gana)} más este mes.</b> ${pesos(gana * 12)} al año, sin comprar una pieza más.<br><span class="em-copiar">Y esto es lo que se les escribe: «Apartado 24 h. Con la mitad te la guardo una semana.»</span>`;
     });
     pinta();
   })();
