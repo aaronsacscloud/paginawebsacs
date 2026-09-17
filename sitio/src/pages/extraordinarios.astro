@@ -20,7 +20,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
 
 <BaseLayout
   title="Módulos extraordinarios — Sacs para moda"
-  description="Probador virtual en tienda, fotografía y video de producto con IA, outfits sugeridos, lookbooks digitales y pre-órdenes de colección. Lo que solo una marca de moda necesita."
+  description="Probador virtual, fotografía de producto con IA, outfits sugeridos y pre-órdenes de colección. Lo que solo una marca de moda necesita y nadie más trae."
 >
   <!-- ═══ Portada editorial ═══ -->
   <section class="xr-hero">
@@ -144,7 +144,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       display: block; font-size: 0.75rem; font-weight: 800; letter-spacing: .22em;
       text-transform: uppercase; color: rgba(255,255,255,.72); margin-bottom: 22px;
     }
-    .xr-eyebrow-dark { color: var(--color-primary); }
+    .xr-eyebrow-dark { color: var(--color-primary-texto); }
     .xr-hero-title {
       font-family: var(--font-display); font-weight: 800; color: #fff;
       font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: .98; letter-spacing: -.035em; margin: 0;
@@ -273,7 +273,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
     .xr-como-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
     .xr-como-paso { display: grid; gap: 8px; align-content: start; }
     .xr-como-num {
-      font-family: var(--font-display); font-size: 0.8125rem; font-weight: 800; color: var(--color-primary);
+      font-family: var(--font-display); font-size: 0.8125rem; font-weight: 800; color: var(--color-primary-texto);
     }
     .xr-como-paso h3 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0; color: var(--color-text-primary); }
     .xr-como-paso p { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--color-text-secondary); }
@@ -282,10 +282,10 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       display: inline-flex; align-items: center; padding: 14px 28px; border-radius: 999px;
       font-size: 0.9375rem; font-weight: 700; text-decoration: none; transition: transform .16s ease;
     }
-    .xr-btn-lleno { background: var(--color-primary); color: #fff; }
+    .xr-btn-lleno { background: var(--color-primary-btn, #4470D8); color: #fff; }
     .xr-btn-lleno:hover { background: var(--color-primary-hover); transform: translateY(-2px); }
     .xr-btn-linea { border: 1.5px solid var(--color-border); color: var(--color-text-primary); }
-    .xr-btn-linea:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .xr-btn-linea:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
 
     @media (max-width: 900px) {
       .xr-slide { grid-template-columns: 1fr; }

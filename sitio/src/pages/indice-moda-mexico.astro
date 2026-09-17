@@ -79,7 +79,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
 ---
 <BaseLayout
   title={`Índice Sacs de Retail de Moda · ${ed.edicion}`}
-  description={`Cómo operan de verdad ${ed.n_empresas} tiendas de moda en México: ticket promedio, cada cuánto venden, cuántas cuentan su inventario y qué herramientas usan. Datos propios, agregados y anónimos.`}
+  description={`Ticket promedio, cada cuánto venden y qué herramientas usan ${ed.n_empresas} tiendas de moda en México. Dato propio, agregado y anónimo. Libre de citar.`}
   structuredData={schema}
 >
   <main class="idx">
@@ -198,5 +198,5 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
   .metodo dt { font-weight: 600; font-size: .95rem; }
   .metodo dd { margin: .25rem 0 0; color: var(--color-text-secondary); line-height: 1.65; max-width: 66ch; }
   .metodo .licencia { margin-top: 1.75rem; font-size: .9rem; color: var(--color-text-tertiary); }
-  .metodo .licencia a { color: var(--color-primary); }
+  .metodo .licencia a { color: var(--color-primary-texto); }
 </style>

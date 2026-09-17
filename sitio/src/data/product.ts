@@ -79,7 +79,7 @@ export const pillars: Pillar[] = [
         pillarId: 'vende',
         label: 'Apartados y pedidos',
         title: 'Apartados y Pedidos — Sacs',
-        description: 'Gestiona apartados con anticipo, plazos y recordatorios automáticos.',
+        description: 'El apartado baja del inventario en el momento, con su anticipo y su fecha. Nadie vuelve a vender dos veces la misma prenda por no ver la libreta.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Apartados y pedidos sin complicaciones',
@@ -118,7 +118,7 @@ export const pillars: Pillar[] = [
         pillarId: 'vende',
         label: 'Facturación electrónica',
         title: 'Facturación Electrónica — Sacs',
-        description: 'CFDI, factura global, autofacturación y complementos de pago.',
+        description: 'CFDI desde la misma caja, factura global del día, autofacturación para la clienta y complementos de pago. Sin salir del punto de venta.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Facturación electrónica sin fricción',
@@ -140,7 +140,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Inventario omnicanal',
         title: 'Inventario Omnicanal — Sacs',
-        description: 'Stock por sucursal, CEDIS y canal de venta en tiempo real.',
+        description: 'Una sola existencia por talla y color para el piso, la tienda en línea y las redes. Lo que se vende en un canal desaparece en todos al instante.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Todo tu inventario sincronizado',
@@ -153,7 +153,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Conteo físico',
         title: 'Conteo Físico — Sacs',
-        description: 'Escanea con tu celular y actualiza el inventario en segundos.',
+        description: 'Cuenta con el celular, talla por talla, sin cerrar la tienda. El faltante aparece el día que ocurre y no en el inventario de fin de año.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Conteo físico en segundos',
@@ -166,7 +166,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Nivelación de inventario',
         title: 'Nivelación de Inventario — Sacs',
-        description: 'Distribuye stock automáticamente entre sucursales según demanda.',
+        description: 'Mueve las tallas que sobran en una tienda a la que las está pidiendo, antes de que se rompa la corrida. Sacs te dice qué mover y a dónde.',
         hero: {
           eyebrow: 'Controla',
           headline: 'El producto correcto, en la sucursal correcta',
@@ -179,7 +179,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Órdenes de compra',
         title: 'Órdenes de Compra — Sacs',
-        description: 'Genera órdenes de compra, recibe contra orden y controla proveedores.',
+        description: 'Arma la orden con la curva de tallas que tu propia venta pide, recibe contra orden y controla lo que cada proveedor te quedó a deber.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Compras organizadas, proveedores controlados',
@@ -192,7 +192,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Gastos',
         title: 'Control de Gastos — Sacs',
-        description: 'Registra y categoriza gastos operativos por sucursal.',
+        description: 'Registra y clasifica lo que gasta cada tienda: renta, nómina, servicios y proveedores. Para saber cuál sucursal deja dinero y cuál solo vende.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Cada peso, registrado',
@@ -205,7 +205,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Cuentas por pagar',
         title: 'Cuentas por Pagar — Sacs',
-        description: 'Complementos de pago, notas de crédito y saldos con proveedores.',
+        description: 'Lo que le debes a cada proveedor, con sus complementos de pago y notas de crédito. Sabes cuánto sale este mes antes de que llegue la fecha.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Cuentas por pagar, siempre al día',
@@ -218,7 +218,7 @@ export const pillars: Pillar[] = [
         pillarId: 'controla',
         label: 'Reportes y analítica',
         title: 'Reportes y Analítica — Sacs',
-        description: '50+ reportes de ventas, inventario y finanzas. KPIs en tiempo real.',
+        description: 'Sell-through, ABC, rotación por talla y margen por modelo. Más de 50 reportes que contestan qué comprar, qué rebajar y qué dejar de traer.',
         hero: {
           eyebrow: 'Controla',
           headline: 'Reportes que sí entiendes',
@@ -240,7 +240,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Clientes y CRM',
         title: 'Clientes y CRM — Sacs',
-        description: 'Perfil 360° de cada cliente con historial omnicanal y segmentación.',
+        description: 'La ficha de cada clienta con sus tallas, lo que compró y por dónde te escribe. La conversación es de la tienda, no del teléfono del vendedor.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Conoce a cada cliente como si fuera el único',
@@ -253,7 +253,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Programa de lealtad',
         title: 'Programa de Lealtad — Sacs',
-        description: 'Monedero electrónico, puntos y niveles integrados al punto de venta.',
+        description: 'Monedero, puntos y niveles que se aplican desde la caja sin apps ni tarjetas. La clienta lo usa en su siguiente compra, en cualquier sucursal.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Premia a tus mejores clientes',
@@ -292,7 +292,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Marketing por correo',
         title: 'Marketing por Correo — Sacs',
-        description: 'Campañas de email segmentadas con plantillas profesionales.',
+        description: 'Campañas segmentadas por lo que cada clienta compró y por su talla. El correo del restock le llega a quien preguntó por esa prenda, no a la lista entera.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Emails que tus clientes sí abren',
@@ -305,7 +305,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Marketing por WhatsApp',
         title: 'Marketing por WhatsApp — Sacs',
-        description: 'Campañas y notificaciones automáticas por WhatsApp.',
+        description: 'Avisa por WhatsApp cuando llega la talla que alguien pidió o cuando vuelve un modelo agotado. Sale del inventario real, no de un calendario.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Llega directo al WhatsApp de tus clientes',
@@ -318,7 +318,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Membresías y suscripciones',
         title: 'Membresías y Suscripciones — Sacs',
-        description: 'Planes recurrentes con cobro automático y beneficios exclusivos.',
+        description: 'Planes con cobro recurrente y beneficios por nivel: acceso anticipado al drop, envío incluido o descuento permanente. Ingreso que no depende de la temporada.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Ingresos recurrentes para tu marca',
@@ -340,7 +340,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'Especialista IA dedicado',
         title: 'Especialista IA Dedicado — Sacs',
-        description: 'Una persona real que diseña tus automatizaciones contigo.',
+        description: 'Una persona real que se sienta contigo a montar tus automatizaciones y te acompaña mientras aprendes a moverlas. No es un chat: es alguien.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Tu especialista en IA, dedicado a tu negocio',
@@ -353,7 +353,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'AXO · Copiloto IA',
         title: 'AXO · Copiloto IA — Sacs',
-        description: 'Tu asistente de IA que entiende tu negocio y actúa al instante.',
+        description: 'Pregúntale en español qué modelo se está muriendo, qué talla falta en qué tienda o cuánto vendiste ayer. Contesta con tus datos, no con generalidades.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'AXO: el copiloto que entiende tu negocio',
@@ -366,7 +366,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'Workflows',
         title: 'Workflows — Sacs',
-        description: 'Automatiza tareas repetitivas con reglas trigger → acción.',
+        description: 'Reglas que corren solas: si una talla baja de tres piezas, pide reabasto; si una clienta cumple años, avísale. Se arman sin programar nada.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Automatiza lo que se repite',
@@ -379,7 +379,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'Alertas inteligentes',
         title: 'Alertas Inteligentes — Sacs',
-        description: 'Avisos proactivos de anomalías, riesgos y oportunidades.',
+        description: 'Te avisa cuando una talla del centro se está agotando, cuando un modelo dejó de venderse y cuando una tienda lleva días sin mover algo. Antes, no después.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Alertas antes de que sea problema',
@@ -392,7 +392,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'Reportes predictivos',
         title: 'Reportes Predictivos — Sacs',
-        description: 'Reportes generados por IA con predicción de demanda y tendencias.',
+        description: 'Qué se va a vender y qué se va a quedar, calculado con tu propio histórico por talla. Para comprar con un número y no con una corazonada.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Reportes que predicen, no solo miden',
@@ -418,7 +418,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'API e integraciones',
         title: 'API e Integraciones — Sacs',
-        description: 'Conecta Sacs con +600 apps: ERP, contabilidad, logística y marketing.',
+        description: 'Conecta Sacs con más de 600 aplicaciones: contabilidad, logística, marketplaces y marketing. Y una API abierta para lo que no esté en la lista.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Conecta Sacs con todo tu stack',
