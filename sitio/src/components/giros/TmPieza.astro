@@ -1,0 +1,128 @@
+---
+/**
+ * TmPieza — "En telas las existencias no se suman", el bloque propio de telas y mercería
+ * (17-sep-2026, ficha v2 aprobada por la referee del giro: 9.5 lenguaje · 10 relevancia · 9 fotos).
+ *
+ * Lo que solo pasa aquí y no repite a bolsas y piel (el lote por decímetro), ni a joyería (el
+ * gramo), ni a sastrería (el metro de casimir por traje): TRES SALDOS NO SON UNA PIEZA. Cinco,
+ * cuatro y tres metros del mismo vino suman doce, pero si la clienta ocupa seis de un solo tono no
+ * le puedes dar ninguno, porque el corte sale de una sola pieza y del mismo baño.
+ *
+ * Abajo, la vida de la pieza: de pieza a tramo, de tramo a saldo, de saldo a retazo por kilo. La
+ * báscula solo pesa el retazo; los metros se cuentan contra el metro clavado en el mostrador.
+ *
+ * Los números son los de la ficha, ya verificados a mano por la referee: pieza de 50 m a $85 de
+ * costo, venta a $140 el metro, tela de 210 g/m² en 1.50 de ancho (6 m pesan 1.9 kg, que a $60 el
+ * kilo son $114 de retazo cuando como tela valían $840).
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="Doce metros, y ninguna venta."
+  titulo="En telas las existencias no se suman."
+  descripcion="Tres saldos de cinco, cuatro y tres metros del mismo vino suman doce. Si la clienta ocupa seis de un solo tono, no le puedes dar ninguno: el corte sale de una sola pieza y del mismo baño. Por eso el sistema no te dice cuántos metros tienes, te dice de qué pieza sale el corte."
+  vinetas={[
+    { label: 'El baño no empata entre piezas', detail: 'Dos piezas del mismo color teñidas en días distintos no son el mismo vino. La clienta lo nota en la falda y te la regresa.' },
+    { label: 'La pieza que dice 50 trae 47 y medio', detail: 'Se mide al recibirla contra el metro clavado y se reclama con nota de crédito. Tres meses después ya no hay a quién reclamarle.' },
+    { label: 'Del saldo al retazo hay una fecha', detail: 'Cuando el tramo baja del mínimo, se avisa a tiempo y se vende con descuento. Si se queda en el cajón, se va por kilo.' },
+  ]}
+  suelta
+>
+  <div class="tm" id="tm-pieza">
+    <section class="tm-a">
+      <span class="tm-k">Vino · 12 metros en existencia</span>
+      <div class="tm-fila"><span class="tm-et">Una pieza de 12 m</span><div class="tm-barra" id="tm-larga"><i style="width:100%"></i></div></div>
+      <div class="tm-fila"><span class="tm-et">Tres saldos: 5 + 4 + 3 m</span>
+        <div class="tm-tres" id="tm-tres">
+          <div class="tm-barra tm-barra--s" data-m="5"><i style="width:100%"></i></div>
+          <div class="tm-barra tm-barra--s" data-m="4"><i style="width:100%"></i></div>
+          <div class="tm-barra tm-barra--s" data-m="3"><i style="width:100%"></i></div>
+        </div>
+      </div>
+      <button type="button" class="tm-btn" id="tm-cortar">Corte con vuelo: 6 m</button>
+      <p class="tm-veredicto" id="tm-veredicto">Aprieta el botón y mira de dónde sí sale.</p>
+    </section>
+    <section class="tm-b">
+      <span class="tm-k">La vida de la pieza <b id="tm-quedan">50.0 m</b></span>
+      <div class="tm-barra tm-barra--larga" id="tm-vida"><i style="width:100%"></i></div>
+      <div class="tm-cortes">
+        <button type="button" data-m="2.5">corte 2.50</button>
+        <button type="button" data-m="1.25">corte 1.25</button>
+        <button type="button" data-m="0.8">corte 0.80</button>
+        <button type="button" class="tm-reset" data-m="0">volver a empezar</button>
+      </div>
+      <p class="tm-dato">Llevas cobrado <b id="tm-cobrado">$0</b> de los <b>$7,000</b> que da la pieza.</p>
+      <p class="tm-retazo" id="tm-retazo" hidden>Ya es retazo: <b>1.9 kg × $60 = $114</b>. Como tela valía $840.</p>
+      <label class="tm-switch"><input type="checkbox" id="tm-aviso" /> <span>Con aviso a tiempo</span></label>
+      <p class="tm-pie">Y hoy tienes <b>$48,960</b> dormidos en saldos: 180 tramos de 3.2 metros a $85 de costo.</p>
+      <a class="tm-cta" href="/contacto">Ver mis piezas en pantalla</a>
+    </section>
+  </div>
+</BloqueProducto>
+
+<style>
+  .tm { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .tm-k { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px; }
+  .tm-k b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; color: var(--color-text-primary); text-transform: none; }
+  .tm-fila { margin-bottom: 14px; }
+  .tm-et { display: block; font-size: 12.5px; color: var(--color-text-secondary); margin-bottom: 5px; }
+  .tm-barra { height: 26px; border-radius: 6px; background: #EFEFEC; overflow: hidden; }
+  .tm-barra i { display: block; height: 100%; background: linear-gradient(90deg, #6E1430, #9C2148); transition: width 0.5s cubic-bezier(0.2,0.7,0.2,1), opacity 0.3s; }
+  .tm-tres { display: grid; grid-template-columns: 5fr 4fr 3fr; gap: 6px; }
+  .tm-barra--larga { height: 34px; }
+  .tm-barra.is-no i { opacity: 0.25; filter: grayscale(1); }
+  .tm-barra.is-si { outline: 2px solid #1C7C54; outline-offset: 2px; }
+  .tm-btn { margin-top: 4px; padding: 11px 18px; border-radius: var(--radius-sm, 8px); border: none; background: var(--color-text-primary, #0E0D0C); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .tm-veredicto { margin: 12px 0 0; font-size: 14.5px; line-height: 1.45; color: var(--color-text-primary); }
+  .tm-b { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 18px; }
+  .tm-cortes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .tm-cortes button { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--color-text-primary); cursor: pointer; }
+  .tm-cortes .tm-reset { border-style: dashed; color: var(--color-text-tertiary); }
+  .tm-dato { margin: 14px 0 0; font-size: 14px; color: var(--color-text-primary); }
+  .tm-dato b { font-family: var(--font-display); font-size: 19px; }
+  .tm-retazo { margin: 8px 0 0; padding: 10px 12px; border-radius: var(--radius-sm, 8px); background: #FDF1E7; color: #8A4B00; font-size: 13.5px; }
+  .tm-switch { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13.5px; color: var(--color-text-secondary); cursor: pointer; }
+  .tm-pie { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13px; color: var(--color-text-secondary); }
+  .tm-pie b { color: var(--color-text-primary); }
+  .tm-cta { display: inline-flex; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .tm { grid-template-columns: 1fr; padding: 14px; } .tm-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('tm-pieza'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const PIEZA = 50, VENTA = 140, MINIMO = 1.5;
+    let quedan = PIEZA, cobrado = 0;
+
+    $('tm-cortar').addEventListener('click', () => {
+      $('tm-larga').classList.add('is-si');
+      ($('tm-larga').querySelector('i') as HTMLElement).style.width = '50%';
+      $('tm-tres').querySelectorAll('.tm-barra').forEach((b) => b.classList.add('is-no'));
+      $('tm-veredicto').innerHTML = 'De la pieza salió limpio y quedan 6 metros. De los tres saldos, <b>ninguno</b>: el más grande tiene 5. Doce metros, y ninguna venta.';
+      (window as any).sacsPH?.('giro_tm_corte', {});
+    });
+
+    const vida = () => {
+      const i = $('tm-vida').querySelector('i') as HTMLElement;
+      i.style.width = Math.max(0, (quedan / PIEZA) * 100) + '%';
+      $('tm-quedan').textContent = quedan.toFixed(1) + ' m';
+      $('tm-cobrado').textContent = '$' + Math.round(cobrado).toLocaleString('es-MX');
+      const esRetazo = quedan > 0 && quedan < MINIMO;
+      ($('tm-retazo') as HTMLElement).hidden = !esRetazo;
+      i.style.background = esRetazo ? 'linear-gradient(90deg, #B96A1E, #E0913C)' : '';
+    };
+    $('tm-vida').parentElement!.querySelectorAll<HTMLButtonElement>('.tm-cortes button').forEach((b) => {
+      b.addEventListener('click', () => {
+        const m = Number(b.dataset.m);
+        if (!m) { quedan = PIEZA; cobrado = 0; vida(); return; }
+        if (quedan < m) return;
+        quedan = Math.round((quedan - m) * 100) / 100;
+        cobrado += m * VENTA;
+        if (quedan < MINIMO && ($('tm-aviso') as HTMLInputElement).checked) { cobrado += quedan * VENTA * 0.7; quedan = 0; }
+        vida();
+      });
+    });
+    vida();
+  })();
+</script>

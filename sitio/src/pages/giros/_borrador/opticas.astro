@@ -1,0 +1,65 @@
+---
+/**
+ * Landing ÓPTICAS (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido vive en
+ * src/data/giros/opticas.ts y el bloque propio es OpCajon ("El cajón": lo que te deben en pares
+ * listos que nadie ha recogido).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import OpCajon from '../../../components/giros/OpCajon.astro';
+import GiroEscala from '../../../components/giros/GiroEscala.astro';
+import { bannerOP, manifiestoOP, variantesOP, cortinaOP, casosOP, seccionesOP, planoOP, pasosOP, ticketOP, escalaOP, problemasOP, cifrasOP } from '../../../data/giros/opticas';
+---
+<BaseLayout
+  title="Sistema para ópticas — Sacs"
+  description="Sistema para ópticas: el expediente del paciente con su receta y su reloj de 12 meses, la orden al laboratorio con su fecha prometida, el lensómetro que aprueba contra el número, el cajón de listos con aviso por WhatsApp y el muro de armazones por modelo, color y calibre."
+>
+  <GiroBanner eyebrow={bannerOP.eyebrow} titulo={bannerOP.titulo} resalte={bannerOP.resalte} sub={bannerOP.sub} foto={bannerOP.foto} fotoAlt={bannerOP.fotoAlt} avisos={bannerOP.avisos} selloMarcas="negocios de moda y ópticas en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoOP.intro} frases={manifiestoOP.frases} cierre={manifiestoOP.cierre} />
+
+  <SuiteVariantes eyebrow={variantesOP.eyebrow} titulo={variantesOP.titulo} resalte={variantesOP.resalte} sub={variantesOP.sub} ejeA={variantesOP.ejeA} filas={variantesOP.filas} matriz={variantesOP.matriz} unidad={variantesOP.unidad} genero={variantesOP.genero} leyendas={variantesOP.leyendas} remate={variantesOP.remate} />
+
+  <SuiteCortina titulo={cortinaOP.titulo} pieAntes={cortinaOP.pieAntes} fotoAntes={cortinaOP.fotoAntes} fotoDespues={cortinaOP.fotoDespues} altAntes={cortinaOP.altAntes} altDespues={cortinaOP.altDespues} libreta={cortinaOP.libreta} filas={cortinaOP.filas} pieDespues={cortinaOP.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasOP.entrada} quienes={problemasOP.quienes} doc1={problemasOP.doc1} doc2={problemasOP.doc2} filas={problemasOP.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la receta manda y que trae fecha." />
+
+  <SuiteCifras foto={cifrasOP.foto} alt={cifrasOP.alt} frase={cifrasOP.frase} encuadre={cifrasOP.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y ÓPTICAS' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que una óptica gana o pierde el dinero. Toca cada uno." casos={casosOP} />
+
+  <SuiteScroll eyebrow="Ópticas" titulo="El muro, el gabinete, el laboratorio y el cajón, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de una óptica real: la receta con su fecha, el muro por calibre, la orden al laboratorio, el lensómetro que aprueba y el cajón de los que no han venido por sus lentes." secciones={seccionesOP} />
+
+  <OpCajon />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la óptica de la esquina a la cadena con laboratorio propio." descripcion="El negocio cambia con cada tamaño: quién examina, quién transcribe la receta, quién talla, quién aprueba con el lensómetro y qué mira la dirección. Elige el tuyo." niveles={escalaOP} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra el paciente, pasa al gabinete, sale con su receta, escoge armazón frente al espejo del muro y deja su anticipo en caja. Atrás están el laboratorio y el cajón de los que ya están listos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu óptica — planta baja" zonas={planoOP} todoRot="Ópticas" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes agosto encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosOP} lineas={ticketOP.lineas} total={ticketOP.total} remate="<b>Tu histórico no se tira.</b> Se migran tu muro con sus calibres, tus órdenes en el laboratorio, tus pendientes de entrega y, lo que más vale, <b>los expedientes de tus pacientes con sus recetas y sus fechas</b>. Nunca te pedimos volver a examinar a nadie." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propios expedientes y tu cajón de listos en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus armazones, tus recetas y tus fechas prometidas reales. 30 min, sin compromiso." />
+</BaseLayout>

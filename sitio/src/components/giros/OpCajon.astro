@@ -1,0 +1,116 @@
+---
+/**
+ * OpCajon — "El cajón", el bloque propio de ópticas (17-sep-2026, ficha aprobada 9/9/9/9/9 por el
+ * referee de óptica).
+ *
+ * Lo que solo pasa aquí: el trabajo se aprueba contra un número y con un aparato. No hay "quedó
+ * bonito": quedó en -2.25 eje 90 o no quedó, y quien lo dice es el lensómetro. Y la receta es un
+ * activo con fecha: a los 12 o 24 meses el cliente vuelve porque su graduación cambió.
+ *
+ * El dinero parado del giro son los pares terminados que nadie recoge. La pieza enseña las DOS
+ * cuentas del referee, sin inflar ninguna:
+ *   · lo que te deben     = Σ saldo pendiente de cada par listo sin recoger
+ *   · lo que pierdes si nunca vienen = Σ costo de mica − Σ anticipo, solo cuando da positivo
+ * La segunda casi siempre da cero, y decirlo es lo que hace honesta a la primera: si cobraste la
+ * mitad, el anticipo del cliente ya pagó la mica. El armazón no cuenta, regresa al muro.
+ *
+ * Tamaños reales (no inventados): una óptica de una sucursal trae de 10 a 15 pares sin recoger al
+ * mismo tiempo; una sucursal de cadena en agosto, de 40 a 60.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="La receta manda. Y el cajón también."
+  titulo="Lo que te deben, en un cajón que cabe bajo el mostrador."
+  descripcion="Los pares terminados que nadie recoge son dinero tuyo parado bajo el mostrador. Mueve los dos deslizadores con los números de tu sucursal y mira las dos cuentas: lo que te deben, y lo que de verdad pierdes si esa gente nunca viene."
+  vinetas={[
+    { label: 'El lensómetro aprueba, no el ojo', detail: 'Quedó en su graduación o no quedó. Hasta que da, nadie le avisa al cliente que ya están listos. Lo que se retalla queda registrado con su motivo.' },
+    { label: 'La receta trae reloj de 12 meses', detail: 'A los doce meses le toca su examen. Si le hablas, buena parte vuelve; si nadie le habla, casi ninguno. Nadie mide cuántos son, y ese es el punto.' },
+    { label: 'El progresivo se sigue a los 30 días', detail: '“¿Cómo va con ellos?”. Si no se adaptó, cambio y motivo registrado, por optometrista, por sucursal y por laboratorio.' },
+  ]}
+  suelta
+>
+  <div class="op" id="op-cajon">
+    <div class="op-ctrl">
+      <label class="op-campo">
+        <span class="op-k">Pares listos sin recoger <b id="op-n">40</b></span>
+        <input type="range" id="op-pares" min="0" max="60" step="1" value="40" aria-label="Pares listos sin recoger" />
+        <em class="op-nota">Una óptica de una sucursal trae de 10 a 15. Una sucursal de cadena en agosto, de 40 a 60.</em>
+      </label>
+      <label class="op-campo">
+        <span class="op-k">Lo que te debe cada uno <b id="op-s">$900</b></span>
+        <input type="range" id="op-saldo" min="300" max="3000" step="50" value="900" aria-label="Saldo pendiente por par" />
+      </label>
+      <p class="op-sup">Costo de la mica <b id="op-mica">$500</b> · anticipo cobrado <b id="op-ant">50%</b>. Cámbialos si en tu óptica son otros.
+        <span class="op-eds">
+          <input type="range" id="op-mica-r" min="150" max="1500" step="50" value="500" aria-label="Costo de la mica" />
+          <input type="range" id="op-ant-r" min="0" max="100" step="5" value="50" aria-label="Porcentaje de anticipo cobrado" />
+        </span>
+      </p>
+    </div>
+    <div class="op-res">
+      <span class="op-k">Lo que te deben</span>
+      <b class="op-num" id="op-deben">$36,000</b>
+      <p class="op-frase">en un cajón que cabe bajo el mostrador.</p>
+      <div class="op-seg">
+        <span class="op-k">Lo que pierdes si nunca vienen</span>
+        <b class="op-num2" id="op-pierdes">$0</b>
+        <p class="op-nota2" id="op-nota2">Cobraste la mitad: el anticipo ya pagó la mica. El armazón regresa al muro.</p>
+      </div>
+      <p class="op-wa"><b id="op-wa">40</b> WhatsApps que nadie ha mandado.</p>
+      <a class="op-cta" href="/contacto">Que Sacs los mande solo</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .op { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .op-k { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .op-k b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; color: var(--color-text-primary); text-transform: none; }
+  .op-campo { display: block; margin-bottom: 18px; }
+  .op input[type=range] { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .op-nota { display: block; margin-top: 6px; font-size: 12px; font-style: normal; color: var(--color-text-tertiary); line-height: 1.4; }
+  .op-sup { margin: 0; padding-top: 14px; border-top: 1px solid var(--color-border, #E6E8ED); font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5; }
+  .op-sup b { color: var(--color-text-primary); }
+  .op-eds { display: grid; gap: 6px; margin-top: 8px; }
+  .op-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 18px; display: flex; flex-direction: column; }
+  .op-res .op-k { display: block; }
+  .op-num { font-family: var(--font-display); font-size: clamp(38px, 5.2vw, 58px); letter-spacing: -0.04em; line-height: 1; color: var(--color-text-primary); }
+  .op-frase { margin: 8px 0 0; font-size: 15px; color: var(--color-text-secondary); }
+  .op-seg { margin-top: 18px; padding-top: 14px; border-top: 1px solid #E3E3DF; }
+  .op-num2 { font-family: var(--font-display); font-size: 28px; letter-spacing: -0.03em; color: var(--color-text-primary); }
+  .op-nota2 { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--color-text-secondary); }
+  .op-wa { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 14px; color: var(--color-text-primary); }
+  .op-wa b { font-family: var(--font-display); font-size: 20px; }
+  .op-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .op { grid-template-columns: 1fr; padding: 14px; } .op-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('op-cajon'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const r = (id: string) => Number(($(id) as HTMLInputElement).value);
+    const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const pinta = () => {
+      const n = r('op-pares'), saldo = r('op-saldo'), mica = r('op-mica-r'), ant = r('op-ant-r');
+      $('op-n').textContent = String(n);
+      $('op-s').textContent = pesos(saldo);
+      $('op-mica').textContent = pesos(mica);
+      $('op-ant').textContent = ant + '%';
+      $('op-deben').textContent = pesos(n * saldo);
+      // El saldo es lo que falta: el anticipo cobrado sale de ahí. Precio = saldo / (1 - ant).
+      const precio = ant >= 100 ? saldo : saldo / (1 - ant / 100);
+      const anticipo = precio - saldo;
+      const hueco = Math.max(0, (mica - anticipo) * n);
+      $('op-pierdes').textContent = pesos(hueco);
+      $('op-nota2').textContent = hueco === 0
+        ? 'El anticipo que ya cobraste pagó la mica. El armazón regresa al muro: no lo pierdes.'
+        : 'Aquí sí duele: son las órdenes que salieron con anticipo chico o sin anticipo. El armazón regresa al muro; la mica ya se talló a su graduación y no le sirve a nadie más.';
+      $('op-wa').textContent = String(n);
+      (window as any).sacsPH?.('giro_op_cajon', { pares: n, saldo });
+    };
+    ['op-pares', 'op-saldo', 'op-mica-r', 'op-ant-r'].forEach((id) => $(id).addEventListener('input', pinta));
+    pinta();
+  })();
+</script>

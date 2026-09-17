@@ -1,0 +1,127 @@
+---
+/**
+ * SaReloj — "¿Todavía puedo vender este traje?", el bloque propio de sastrería (17-sep-2026,
+ * con la ficha del oficio aprobada 9/9/9/9/9 por el referee de sastrería).
+ *
+ * Lo que solo pasa aquí: cuando entra la tijera, esos 3.20 metros dejan de ser inventario y se
+ * vuelven de una persona con nombre. Un uniforme mal cortado le queda a otro empleado de la misma
+ * talla; un traje a la medida mal cortado no le queda a nadie más en el mundo, y además hay una
+ * boda con fecha. Por eso la decisión que manda no es la compra ni la venta: es EL CORTE.
+ *
+ * La pieza la opera el DUEÑO (la landing le habla a él), no el cliente. Dos números grandes —el
+ * último día para cortar y el último día para vender, o sea hasta cuándo puede recibir el
+ * anticipo—, la línea de tiempo hacia atrás, y cuando ya no alcanza, las dos salidas reales del
+ * piso: traje de línea con ajustes, o urgente con recargo.
+ *
+ * Los tiempos salen de la sección 8 de la ficha: de dónde sale la tela (en la pieza es hoy, el
+ * corte pedido de 2 a 6 semanas), quién arma (el maquilero necesita una semana más de colchón que
+ * el taller propio) y el colchón de entregar mínimo una semana antes del evento.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="Cuando entra la tijera, la tela ya tiene dueño."
+  titulo="¿Todavía puedo vender este traje?"
+  descripcion="Un uniforme mal cortado le queda a otro empleado de la misma talla. Un traje a la medida mal cortado no le queda a nadie más en el mundo, y encima hay una boda con fecha. Pon la fecha del evento, di de dónde sale la tela y quién lo arma: el sistema te dice el último día para cortar y hasta cuándo puedes recibir el anticipo."
+  vinetas={[
+    { label: 'Se corta por fecha de evento, no por orden de llegada', detail: 'Primero el que se casa antes. Los urgentes se meten adelante con recargo, y el sistema te dice a quién recorren.' },
+    { label: 'De dónde sale la tela cambia todo', detail: 'En la pieza es hoy. El corte pedido son de dos a seis semanas. Hasta que la tela está, no se promete fecha.' },
+    { label: 'El maquilero necesita una semana más', detail: 'Y en diciembre se va a su pueblo desde el 15: la fecha real de corte es el 12, no el 20.' },
+  ]}
+  suelta
+>
+  <div class="sa" id="sa-reloj">
+    <div class="sa-ctrl">
+      <label class="sa-campo">
+        <span class="sa-k">Fecha del evento</span>
+        <input type="date" id="sa-fecha" />
+      </label>
+      <span class="sa-k sa-k--sep">¿De dónde sale la tela?</span>
+      <div class="sa-ops" id="sa-tela">
+        <button type="button" class="is-on" data-d="0">Ya está en la pieza</button>
+        <button type="button" data-d="14">Se pide el corte</button>
+        <button type="button" data-d="42">Importada, 6 semanas</button>
+      </div>
+      <span class="sa-k sa-k--sep">¿Quién lo arma?</span>
+      <div class="sa-ops" id="sa-taller">
+        <button type="button" class="is-on" data-d="0">Taller propio</button>
+        <button type="button" data-d="7">Maquilero</button>
+      </div>
+    </div>
+    <div class="sa-res" id="sa-res">
+      <div class="sa-dos">
+        <div><span class="sa-k">Último día para cortar</span><b class="sa-fecha" id="sa-corte">—</b></div>
+        <div><span class="sa-k">Último día para vender</span><b class="sa-fecha" id="sa-vender">—</b></div>
+      </div>
+      <ol class="sa-linea" id="sa-linea"></ol>
+      <p class="sa-aviso" id="sa-aviso" hidden>
+        Ya no alcanza para hacérselo. Las dos salidas de siempre: <b>traje de línea con ajustes</b>, o <b>urgente con recargo</b>.
+      </p>
+      <p class="sa-pie">De cada pieza queda una cola de 1.5 a 2.5 m que ya no da saco. Doce piezas al año son unos <b>24 metros parados</b>: la tela de siete u ocho trajes que ya pagaste y nunca vas a vender.</p>
+      <a class="sa-cta" href="/contacto">Verlo con mis fechas</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .sa { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 22px; }
+  .sa-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .sa-k--sep { margin-top: 18px; }
+  .sa-campo input { width: 100%; padding: 11px 12px; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-sm, 8px); font: inherit; font-size: 15px; color: var(--color-text-primary); background: #fff; }
+  .sa-ops { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sa-ops button { padding: 9px 13px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .sa-ops button.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .sa-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 18px; }
+  .sa-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .sa-fecha { display: block; font-family: var(--font-display); font-size: clamp(24px, 3.2vw, 38px); letter-spacing: -0.035em; line-height: 1.05; color: var(--color-text-primary); }
+  .sa-linea { list-style: none; margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid #E3E3DF; display: grid; gap: 7px; }
+  .sa-linea :global(li) { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--color-text-secondary); }
+  .sa-linea :global(li b) { color: var(--color-text-primary); font-weight: 600; }
+  .sa-linea :global(li.is-hoy) { color: var(--color-primary, #4B7BE5); }
+  .sa-aviso { margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm, 8px); background: #FDECEC; color: #8A1F1F; font-size: 14px; line-height: 1.45; }
+  .sa.is-tarde .sa-fecha { color: #B42318; }
+  .sa-pie { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13px; line-height: 1.45; color: var(--color-text-secondary); }
+  .sa-pie b { color: var(--color-text-primary); }
+  .sa-cta { display: inline-flex; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .sa { grid-template-columns: 1fr; padding: 14px; } .sa-dos { grid-template-columns: 1fr; } .sa-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('sa-reloj'); if (!el) return;
+    const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const fechaIn = document.getElementById('sa-fecha') as HTMLInputElement;
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const porDefecto = new Date(hoy.getTime() + 75 * 864e5);
+    fechaIn.value = porDefecto.toISOString().slice(0, 10);
+    const dia = (d: Date) => `${d.getDate()} ${MES[d.getMonth()]}`;
+    const menos = (d: Date, n: number) => new Date(d.getTime() - n * 864e5);
+    const leer = (id: string) => Number((document.querySelector(`#${id} button.is-on`) as HTMLElement)?.dataset.d || 0);
+    ['sa-tela', 'sa-taller'].forEach((id) => {
+      document.getElementById(id)!.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest('button'); if (!b) return;
+        b.parentElement!.querySelectorAll('button').forEach((x) => x.classList.toggle('is-on', x === b));
+        pinta();
+      });
+    });
+    fechaIn.addEventListener('change', pinta);
+    function pinta() {
+      const ev = new Date(fechaIn.value + 'T00:00:00'); if (isNaN(+ev)) return;
+      const tela = leer('sa-tela'), extra = leer('sa-taller');
+      const entrega = menos(ev, 7);                    // se entrega una semana antes del evento
+      const terminado = menos(entrega, 3);
+      const prueba = menos(terminado, 10 + extra);     // el maquilero corre todo una semana
+      const corte = menos(prueba, 12 + extra);
+      const vender = menos(corte, tela);               // el anticipo tiene que caer antes de pedir la tela
+      document.getElementById('sa-corte')!.textContent = dia(corte);
+      document.getElementById('sa-vender')!.textContent = dia(vender);
+      const tarde = +vender < +hoy;
+      el.classList.toggle('is-tarde', tarde);
+      (document.getElementById('sa-aviso') as HTMLElement).hidden = !tarde;
+      const pasos: [string, Date][] = [['Anticipo y ficha', vender], ['Corte de la pieza', corte], ['La prueba', prueba], ['Terminado', terminado], ['Entrega en funda', entrega], ['El evento', ev]];
+      document.getElementById('sa-linea')!.innerHTML = pasos.map(([t, d]) => `<li class="${+d < +hoy ? 'is-hoy' : ''}"><span>${t}</span><b>${dia(d)}</b></li>`).join('');
+      (window as any).sacsPH?.('giro_sa_reloj', { tela, extra, tarde });
+    }
+    pinta();
+  })();
+</script>

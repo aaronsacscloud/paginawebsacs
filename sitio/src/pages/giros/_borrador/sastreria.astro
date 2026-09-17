@@ -1,0 +1,65 @@
+---
+/**
+ * Landing SASTRERÍA Y TRAJES A LA MEDIDA (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el
+ * contenido vive en src/data/giros/sastreria.ts y el bloque propio es SaReloj ("¿Todavía puedo
+ * vender este traje?").
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import SaReloj from '../../../components/giros/SaReloj.astro';
+import GiroEscala from '../../../components/giros/GiroEscala.astro';
+import { bannerSA, manifiestoSA, variantesSA, cortinaSA, casosSA, seccionesSA, planoSA, pasosSA, ticketSA, escalaSA, problemasSA, cifrasSA } from '../../../data/giros/sastreria';
+---
+<BaseLayout
+  title="Sistema para sastrerías y trajes a la medida — Sacs"
+  description="Sistema para sastrerías y trajes a la medida: la ficha de medidas del cliente que no se vuelve a tomar, la orden de taller con sus pruebas contra la fecha del evento, la pieza que se descuenta en metros al cortar, el vale de tela del maquilero y las composturas con su contraseña."
+>
+  <GiroBanner eyebrow={bannerSA.eyebrow} titulo={bannerSA.titulo} resalte={bannerSA.resalte} sub={bannerSA.sub} foto={bannerSA.foto} fotoAlt={bannerSA.fotoAlt} avisos={bannerSA.avisos} selloMarcas="negocios de moda y sastrerías en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoSA.intro} frases={manifiestoSA.frases} cierre={manifiestoSA.cierre} />
+
+  <SuiteVariantes eyebrow={variantesSA.eyebrow} titulo={variantesSA.titulo} resalte={variantesSA.resalte} sub={variantesSA.sub} ejeA={variantesSA.ejeA} filas={variantesSA.filas} matriz={variantesSA.matriz} unidad={variantesSA.unidad} genero={variantesSA.genero} leyendas={variantesSA.leyendas} remate={variantesSA.remate} />
+
+  <SuiteCortina titulo={cortinaSA.titulo} pieAntes={cortinaSA.pieAntes} fotoAntes={cortinaSA.fotoAntes} fotoDespues={cortinaSA.fotoDespues} altAntes={cortinaSA.altAntes} altDespues={cortinaSA.altDespues} libreta={cortinaSA.libreta} filas={cortinaSA.filas} pieDespues={cortinaSA.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasSA.entrada} quienes={problemasSA.quienes} doc1={problemasSA.doc1} doc2={problemasSA.doc2} filas={problemasSA.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que el corte tiene dueño y fecha." />
+
+  <SuiteCifras foto={cifrasSA.foto} alt={cifrasSA.alt} frase={cifrasSA.frase} encuadre={cifrasSA.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y SASTRERÍA' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que una sastrería gana o pierde el dinero. Toca cada uno." casos={casosSA} />
+
+  <SuiteScroll eyebrow="Sastrería y trajes a la medida" titulo="El mostrador, la mesa de corte y el taller, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de una sastrería real: la ficha de medidas, el consumo de la pieza, la orden con su fecha de prueba, el vale de tela del maquilero y la contraseña de la compostura." secciones={seccionesSA} />
+
+  <SaReloj />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la sastrería de la esquina a la cadena con taller central." descripcion="El negocio cambia con cada tamaño: quién toma la medida, quién corta, quién arma, quién responde por un talle que salió mal y qué mira la dirección. Elige el tuyo." niveles={escalaSA} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra el cliente, ve el muro de piezas, escoge en el muestrario, pasa al probador con el espejo de tres cuerpos y deja su anticipo en el mostrador. Atrás están la mesa de corte y el taller. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu sastrería — planta baja" zonas={planoSA} todoRot="Sastrería y trajes a la medida" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes la temporada de bodas encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosSA} lineas={ticketSA.lineas} total={ticketSA.total} remate="<b>Tu histórico no se tira.</b> Se migran tus piezas con sus metros, tus órdenes abiertas, tus composturas pendientes y, lo que más vale, <b>las fichas de medidas de tus clientes</b>. Nunca te pedimos volver a medir a nadie." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias fichas de medidas y tus órdenes de taller en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus telas, tus fichas de medidas y tus fechas de entrega reales. 30 min, sin compromiso." />
+</BaseLayout>
