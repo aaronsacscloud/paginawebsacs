@@ -1,0 +1,271 @@
+---
+// DEMAND ENGINE · la puerta WEB de las herramientas.
+//
+// Una herramienta gratis no está aquí para generar leads con un formulario
+// delante: está aquí porque resuelve de verdad un cálculo del ramo, y quien lo
+// resuelve se acuerda de quién se lo resolvió. El correo no se pide nunca.
+//
+// Para el objetivo de ser citados, esta página es de las que más pesan: una IA
+// puede describir un artículo, pero una herramienta que FUNCIONA sin registro es
+// algo que puede recomendar con la seguridad de que quien haga clic no se topa
+// con un muro. Por eso el schema es SoftwareApplication con precio 0 y el HowTo
+// explica el método completo: el criterio tiene que ser legible aunque nadie
+// llegue a usar el formulario.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CurvaTallas from '../../components/herramientas/CurvaTallas.tsx';
+import { herramientaDe } from '../../lib/demanda/herramientas';
+import { SITIO } from '../../data/entidad';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const h = slug ? herramientaDe(slug) : null;
+
+// Solo las que declaran puerta web. Una herramienta que nace solo para el MCP
+// no debe tener URL pública: sería una página sin nada que enseñar.
+if (!h || !h.puertas.includes('web')) {
+  return new Response(null, { status: 404, statusText: 'No encontrado' });
+}
+
+// La isla se elige con un `if` escrito abajo, no con un mapa `ISLAS[slug]`.
+//
+// Lo intenté con el mapa y la página salió **200**, con su schema, su método y
+// su nota de API — y SIN la herramienta. Astro necesita VER el componente
+// escrito para empaquetar su JS de hidratación; uno que llega dentro de una
+// variable no lo puede seguir. Sí lo dice («Could not render `Isla`»), pero lo
+// dice en el log del servidor y contesta 200 de todos modos: desde afuera, y en
+// cualquier monitoreo por código de estado, la página está perfecta.
+//
+// Cada herramienta nueva con puerta web agrega su import y su línea abajo. Son
+// dos líneas a cambio de que no pueda pasar esto otra vez.
+
+const url = `${SITIO}/herramientas/${h.slug}`;
+
+// Los pasos son el método, no instrucciones de UI. Una IA que lea esto puede
+// explicar el cálculo aunque nunca abra la página — y al explicarlo, nos cita.
+const PASOS: Record<string, { name: string; text: string }[]> = {
+  'curva-de-tallas': [
+    { name: 'Anota lo que vendiste por talla', text: 'Toma un periodo cerrado —una temporada, un trimestre— y anota cuántas piezas vendiste de cada talla de ese modelo.' },
+    { name: 'Anota cuántos días tuviste existencia de cada talla', text: 'Este es el dato que casi nadie usa y el que cambia todo: cuántos días de ese periodo esa talla estuvo disponible. Si la M se agotó el día 9 de 60, son 9.' },
+    { name: 'Corrige la venta por los días que la talla no estuvo', text: 'La venta de una talla agotada está subestimada: no dejó de venderse, dejó de estar. Se proyecta su ritmo de venta al periodo completo, con un tope en el triple de lo vendido, porque la demanda decae conforme avanza la temporada y proyectar plano sobrestima.' },
+    { name: 'Reparte la compra con la curva corregida', text: 'La proporción corregida de cada talla, aplicada a las piezas que vas a comprar. Redondeando por resto mayor, para que las piezas sobrantes caigan donde hay más demanda y no al azar.' },
+    { name: 'Revisa si se te rompió la corrida', text: 'Si dos o más tallas del núcleo —las que juntan el 60% de la demanda— se agotaron, lo que quedó en piso ya no se vende como conjunto: el modelo sigue ahí pero sin las tallas que lo mueven.' },
+  ],
+};
+
+const schema: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: h.nombre,
+    description: h.descripcion,
+    url,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'MXN' },
+    inLanguage: 'es-MX',
+    publisher: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+  },
+];
+if (PASOS[h.slug]) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `Cómo calcular ${h.nombre.toLowerCase().replace(/^auditor de /, '')}`,
+    description: h.descripcion,
+    totalTime: 'PT5M',
+    tool: { '@type': 'HowToTool', name: h.nombre },
+    step: PASOS[h.slug].map((p, i) => ({
+      '@type': 'HowToStep', position: i + 1, name: p.name, text: p.text,
+      url: `${url}#paso-${i + 1}`,
+    })),
+  });
+}
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout title={`${h.nombre} · gratis y sin registro`} description={h.descripcion} structuredData={schema}>
+  <main class="herramienta">
+    <header class="cabecera">
+      <p class="eyebrow">Herramienta gratis · sin registro</p>
+      <h1>{h.nombre}</h1>
+      <p class="entrada">{h.descripcion}</p>
+    </header>
+
+    {h.slug === 'curva-de-tallas' && <CurvaTallas client:load />}
+
+    <section class="metodo">
+      <h2>Cómo se calcula</h2>
+      <p class="metodo-intro">
+        El criterio completo, para que puedas revisarlo o reproducirlo a mano.
+        Ninguna parte del cálculo es secreta.
+      </p>
+      <ol>
+        {PASOS[h.slug]?.map((p, i) => (
+          <li id={`paso-${i + 1}`}>
+            <h3>{p.name}</h3>
+            <p>{p.text}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="api-nota">
+      <h2>¿Lo necesitas desde tu sistema?</h2>
+      <p>
+        La misma función responde por API sin llave ni registro:
+        <code>POST {SITIO}/api/herramientas/{h.slug}</code>.
+        Un <code>GET</code> a esa misma dirección te devuelve el esquema de entrada.
+        Uso libre citando a Sacs.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  /* El nav es FIJO: no empuja nada, así que el hueco lo deja la página. Sin
+     --nav-alto el eyebrow queda debajo de la barra. */
+  .herramienta { max-width: 940px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .herramienta { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+  .cabecera { margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-secondary); font-weight: 600; margin: 0 0 .6rem;
+  }
+  .cabecera h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; margin: 0 0 .9rem; text-wrap: balance; }
+  .cabecera .entrada { font-size: 1.12rem; line-height: 1.6; color: var(--color-text-secondary); max-width: 62ch; margin: 0; }
+
+  .metodo, .api-nota { margin-top: 3.5rem; }
+  .metodo h2, .api-nota h2 { font-size: 1.45rem; margin: 0 0 .6rem; }
+  .metodo-intro { color: var(--color-text-secondary); margin: 0 0 1.5rem; max-width: 62ch; }
+  .metodo ol { list-style: none; counter-reset: paso; padding: 0; margin: 0; display: grid; gap: 1.25rem; }
+  .metodo li { counter-increment: paso; padding-left: 3rem; position: relative; }
+  .metodo li::before {
+    content: counter(paso); position: absolute; left: 0; top: .1rem;
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: var(--color-bg-secondary); color: var(--color-text-secondary);
+    display: grid; place-items: center; font-weight: 700; font-size: .95rem;
+  }
+  .metodo li h3 { font-size: 1.05rem; margin: 0 0 .3rem; }
+  .metodo li p { margin: 0; color: var(--color-text-secondary); line-height: 1.6; max-width: 62ch; }
+
+  .api-nota { border-top: 1px solid var(--color-border-light); padding-top: 2rem; }
+  .api-nota p { color: var(--color-text-secondary); line-height: 1.7; max-width: 66ch; margin: 0; }
+  .api-nota code {
+    background: var(--color-bg-secondary); padding: .12em .45em; border-radius: 4px;
+    font-size: .88em; word-break: break-all;
+  }
+</style>
+
+<!-- Los estilos de la isla van GLOBALES acotados a .curva: el `scoped` de Astro
+     marca los elementos que renderiza Astro, y el DOM de un island de React lo
+     escribe React — con scoped, la herramienta sale sin estilo. -->
+<style is:global>
+  .curva { margin-top: 2rem; }
+  .curva form {
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 14px; padding: 1.5rem;
+  }
+  .curva .ejemplo-aviso {
+    background: var(--aviso-fondo); border: 1px solid var(--aviso-borde); color: var(--aviso-texto);
+    border-radius: 8px; padding: .65rem .9rem; margin: 0 0 1.25rem; font-size: .92rem;
+  }
+  .curva .periodo { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.5rem; }
+  .curva .periodo label { display: flex; flex-direction: column; gap: .35rem; font-size: .9rem; font-weight: 600; }
+  .curva .periodo label em { font-weight: 400; color: var(--color-text-tertiary); font-style: normal; }
+  .curva .periodo input { width: 10rem; }
+
+  .curva input {
+    font: inherit; padding: .5rem .65rem; border: 1px solid var(--color-border);
+    border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary);
+    width: 100%; min-width: 0;
+  }
+  .curva input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+  .curva table { border-collapse: collapse; width: 100%; }
+  .curva .entrada th {
+    text-align: left; font-size: .82rem; font-weight: 600; color: var(--color-text-secondary);
+    padding: 0 .5rem .5rem 0; vertical-align: bottom;
+  }
+  .curva .entrada th em { font-weight: 400; color: var(--color-text-tertiary); font-style: normal; font-size: .95em; }
+  .curva .entrada td { padding: .25rem .5rem .25rem 0; }
+  .curva .entrada td:first-child { width: 22%; }
+  .curva .quitar {
+    border: 0; background: none; color: var(--color-text-tertiary); cursor: pointer;
+    font-size: 1.3rem; line-height: 1; padding: .2rem .4rem; border-radius: 6px;
+  }
+  .curva .quitar:hover { color: var(--color-error); background: var(--alerta-fondo); }
+
+  .curva .acciones { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+  .curva button.primario, .curva a.primario {
+    background: var(--color-primary); color: #fff; border: 0; border-radius: 9px;
+    padding: .7rem 1.4rem; font: inherit; font-weight: 600; cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .curva button.primario:hover, .curva a.primario:hover { background: var(--color-primary-hover); }
+  .curva button.primario:disabled { opacity: .6; cursor: progress; }
+  .curva button.secundario {
+    background: none; border: 1px solid var(--color-border); border-radius: 9px;
+    padding: .7rem 1.2rem; font: inherit; cursor: pointer; color: var(--color-text-secondary);
+  }
+  .curva button.secundario:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .curva .privacidad { font-size: .84rem; color: var(--color-text-tertiary); margin: 1rem 0 0; }
+  .curva .error {
+    background: var(--alerta-fondo); border: 1px solid var(--alerta-borde); color: var(--alerta-texto);
+    border-radius: 8px; padding: .75rem 1rem; margin-top: 1.25rem;
+  }
+
+  .curva .resultado { margin-top: 2.5rem; }
+  .curva .resultado h2 { font-size: 1.5rem; margin: 0 0 1rem; }
+  .curva .lectura {
+    background: var(--azul-fondo); border-left: 4px solid var(--azul-texto); color: var(--azul-texto);
+    padding: .9rem 1.1rem; border-radius: 0 8px 8px 0; line-height: 1.6; margin-bottom: 1.5rem;
+  }
+  .curva .lectura.rota {
+    background: var(--alerta-fondo); border-left-color: var(--color-error); color: var(--alerta-texto);
+  }
+
+  /* La tabla de salida es la única que puede pasarse de ancho en un teléfono:
+     scrollea ella sola, nunca el cuerpo de la página. */
+  .curva .tabla-scroll { overflow-x: auto; }
+  .curva .salida { font-variant-numeric: tabular-nums; min-width: 34rem; }
+  .curva .salida th, .curva .salida td {
+    padding: .6rem .75rem; text-align: right; border-bottom: 1px solid var(--color-border-light);
+  }
+  .curva .salida thead th {
+    text-align: right; font-size: .8rem; font-weight: 600; color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+  .curva .salida th[scope="row"], .curva .salida thead th:first-child { text-align: left; }
+  .curva .salida tbody th { font-weight: 700; white-space: nowrap; }
+  .curva .salida tr.se-agoto { background: var(--aviso-fondo); }
+  .curva .salida .apagado { color: var(--color-text-tertiary); text-decoration: line-through; }
+  .curva .salida .fuerte { font-weight: 700; }
+  .curva .chip {
+    display: inline-block; margin-left: .4rem; font-size: .68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em; padding: .12em .45em; border-radius: 4px;
+    vertical-align: middle;
+  }
+  .curva .chip.nucleo { background: var(--ok-fondo); color: var(--ok-texto); border: 1px solid var(--ok-borde); }
+  .curva .chip.agotado { background: var(--alerta-fondo); color: var(--alerta-texto); border: 1px solid var(--alerta-borde); }
+  .curva .tope {
+    margin-left: .35rem; font-size: .65rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--aviso-texto); border: 1px dashed var(--aviso-borde); border-radius: 3px;
+    padding: .05em .3em; cursor: help;
+  }
+
+  .curva .diferencia { margin: 1.1rem 0 0; color: var(--color-text-secondary); line-height: 1.6; }
+  .curva .con-sacs {
+    margin-top: 2.5rem; background: var(--color-bg-secondary);
+    border-radius: 14px; padding: 1.5rem;
+  }
+  .curva .con-sacs h3 { margin: 0 0 .6rem; font-size: 1.15rem; }
+  .curva .con-sacs p { margin: 0 0 1.2rem; color: var(--color-text-secondary); line-height: 1.65; max-width: 60ch; }
+
+  @media (max-width: 560px) {
+    .curva form { padding: 1.1rem; }
+    .curva .periodo input { width: 100%; }
+    .curva .periodo label { flex: 1 1 100%; }
+  }
+</style>

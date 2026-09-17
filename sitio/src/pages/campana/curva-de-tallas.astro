@@ -14,6 +14,18 @@
  * formulario—: el método de "histórico de esa talla" NO se puede calcular aquí,
  * porque necesita SUS datos. Se dice con todas sus letras en vez de inventar un
  * número. El método que elija se manda al CRM como señal para el vendedor.
+ *
+ * `noindex` (17-sep-2026): esta landing y /herramientas/curva-de-tallas hablan
+ * de lo mismo, y dos URLs nuestras compitiendo por «curva de tallas» se reparten
+ * la señal en vez de sumarla. La canónica para el buscador es la herramienta
+ * —gratis, sin registro, con su API—; esta se queda para el correo, que llega
+ * por liga y no por búsqueda. Es la misma razón por la que
+ * /campana/punto-de-venta está fuera del índice.
+ *
+ * No son la misma calculadora, ojo: aquí se COMPARAN cinco métodos de estimar
+ * una talla agotada (es una demostración del problema), allá se CALCULA la
+ * curva con los días que cada talla tuvo existencia. Por eso conviven; por eso
+ * esta manda a la otra.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
@@ -21,6 +33,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <BaseLayout
   title="La talla que vendió cero porque nunca estuvo | Sacs"
   description="Calcula cuánto cambia tu próxima compra cuando el sistema distingue entre una talla que no gustó y una que se agotó."
+  noindex={true}
 >
 
 <section class="cv-hero">
@@ -105,6 +118,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </p>
     <p>
       Eso no se puede calcular aquí porque necesita <em>tu</em> histórico, no seis números que acabas de escribir.
+      Si lo que tienes a la mano son los <strong>días que cada talla estuvo disponible</strong>, eso sí se puede:
+      está en el <a href="/herramientas/curva-de-tallas">auditor de curva de tallas</a>, gratis y sin registro.
       Lo digo en vez de inventarte una cifra bonita.
     </p>
   </div>

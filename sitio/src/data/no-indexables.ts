@@ -23,6 +23,10 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   // Landing de campaña que repite lo de /producto y /planes con menos: si se
   // indexa, compite contra ellas por la misma búsqueda.
   '/campana/punto-de-venta',
+  // Misma razón: compite con /herramientas/curva-de-tallas por «curva de
+  // tallas», que es justo la búsqueda que queremos ganar. La herramienta es la
+  // canónica; esta landing se llega por el correo del día 3.
+  '/campana/curva-de-tallas',
   // VACÍAS desde el andamiaje original: el archivo solo tiene el comentario
   // «el contenido irá aquí». Fuera del índice hasta que tengan texto propio;
   // una página en blanco indexada resta, no suma.

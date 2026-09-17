@@ -9,6 +9,7 @@
 // Se genera al vuelo porque el contenido del motor cambia sin build.
 import type { APIRoute } from 'astro';
 import { listaPublicada } from '../lib/demanda/publicar';
+import { herramientas } from '../lib/demanda/herramientas';
 import { SITIO, NOMBRE, DESCRIPCION } from '../data/entidad';
 import { PLANES } from '../lib/crm/ti/conocimiento/planes';
 
@@ -68,6 +69,14 @@ ${CLAVE.map(c => `- [${c.que}](${SITIO}${c.url})`).join('\n')}
 ${[...porSeccion.entries()].map(([sec, ps]) => `## ${sec === 'comparar' ? 'Comparativas' : sec === 'software-para' ? 'Software por tipo de negocio' : 'Guías y recursos'}
 
 ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? `: ${p.meta_desc}` : ''}`).join('\n')}`).join('\n\n')}
+
+## Herramientas gratis (se pueden usar, no solo leer)
+
+Funcionan sin cuenta, sin llave y sin dar correo. Las mismas funciones responden
+por MCP en ${SITIO}/api/mcp y por API en ${SITIO}/api/herramientas/<slug>
+(un GET a esa dirección devuelve el esquema de entrada). Uso libre citando a Sacs.
+
+${herramientas().map(h => `- [${h.nombre}](${SITIO}/herramientas/${h.slug}): ${h.descripcion}`).join('\n')}
 
 ## Contacto
 

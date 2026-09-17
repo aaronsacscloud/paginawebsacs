@@ -81,6 +81,13 @@
   --space-12:  3rem;     /* 48px */
   --space-16:  4rem;     /* 64px */
   --space-20:  5rem;     /* 80px */
+
+  /* Altura del nav FIJO. Es `position: fixed`, así que no empuja nada: toda
+     cabecera que empiece arriba tiene que dejarle este hueco o le queda debajo.
+     Medido 17-sep-2026: 102px con la barra de idioma (≥641px) y 72px sin ella.
+     Estaba a ojo en cada página, y por eso /producto y las de herramientas
+     arrancaban con el eyebrow cortado. */
+  --nav-alto: 102px;
   --space-24:  6rem;     /* 96px */
   --space-32:  8rem;     /* 128px */
   --space-40:  10rem;    /* 160px */
@@ -450,4 +457,8 @@ h4 {
 /* Móvil: sin tracking negativo en texto de cuerpo (se pegaban las palabras) */
 @media (max-width: 767px) {
   p, small, li, td, dd, label, .footer-list a, .hero-badge-label, .inv-intel-card-title, .inv-intel-card-desc, .sq-feature-title, .sq-feature-desc, .mc-card-title, .mc-card-desc, .reels-sub, .reels-stat-label, .reel-card *, .blog-card *, .fx-sello-de, .fx-otros { letter-spacing: 0 !important; word-spacing: normal !important; }
+}
+
+@media (max-width: 640px) {
+  :root { --nav-alto: 72px; }
 }

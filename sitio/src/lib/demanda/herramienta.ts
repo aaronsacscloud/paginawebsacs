@@ -48,8 +48,14 @@ export type Contexto = {
 export type Resultado<S = any> = {
   ok: boolean;
   datos?: S;
-  /** Lo que se le enseña a la persona (o lo que la IA va a leer en voz alta). */
+  /** La lectura en una frase: lo que se enseña destacado en la web. */
   resumen?: string;
+  /** La RESPUESTA completa en texto plano, para las puertas que solo hablan
+   *  texto (el MCP). No es un lujo: muchos clientes de MCP le enseñan al modelo
+   *  únicamente el `content[0].text`, y si ahí solo va el resumen, el modelo
+   *  recibe la advertencia («se te rompió la corrida») sin los números que la
+   *  sostienen y no puede contestar qué comprar. Si falta, se usa `resumen`. */
+  respuesta_texto?: string;
   /** De dónde salió cada número. Sin esto no somos citables: una IA cita lo
    *  que puede verificar, y una persona confía en lo que puede rastrear. */
   fuentes?: { que: string; de: string }[];
@@ -60,7 +66,18 @@ export type Resultado<S = any> = {
 const REGISTRO = new Map<string, Herramienta>();
 
 export function definirHerramienta<E, S>(h: Herramienta<E, S>): Herramienta<E, S> {
-  if (REGISTRO.has(h.slug)) throw new Error(`[herramienta] «${h.slug}» ya estaba definida`);
+  // El duplicado que importa es DOS archivos peleándose el mismo slug: una
+  // herramienta tapando a otra sin que nadie se entere. Eso revienta.
+  //
+  // Pero en desarrollo el mismo archivo se reevalúa en cada guardado (HMR), y
+  // ahí el «duplicado» es el mismo módulo otra vez: reventar convierte cualquier
+  // edición en un 500 hasta reiniciar el servidor. En dev se reemplaza; en
+  // producción cada módulo se evalúa una vez, así que el candado sigue siendo
+  // real donde tiene que serlo.
+  if (REGISTRO.has(h.slug)) {
+    if (import.meta.env?.PROD) throw new Error(`[herramienta] «${h.slug}» ya estaba definida`);
+    console.warn(`[herramienta] «${h.slug}» se redefinió (recarga en caliente)`);
+  }
   if (!h.momento_sacs?.trim()) throw new Error(`[herramienta] «${h.slug}» sin momento_sacs: no se acepta`);
   REGISTRO.set(h.slug, h as Herramienta);
   return h;

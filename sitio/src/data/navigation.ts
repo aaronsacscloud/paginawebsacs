@@ -1093,6 +1093,11 @@ export const footerLinks = {
   ],
   recursos: [
     { label: 'Planes y precios', href: '/planes' },
+    // El enlace del pie es lo que hace que /herramientas/ no nazca huérfana:
+    // una página sin un solo enlace entrante se rastrea tarde y se pondera poco,
+    // por muy bien que esté en el sitemap. El rastreo del motor levanta ese
+    // hallazgo («huérfana») cada semana; esto es evitarlo desde el principio.
+    { label: 'Herramientas gratis', href: '/herramientas' },
     { label: 'Centro de ayuda', href: '#' },
     { label: 'Estado del sistema', href: '#' },
     { label: 'Aviso de privacidad', href: '/privacidad' },

@@ -1,0 +1,95 @@
+---
+// El índice de herramientas gratis.
+//
+// Existe por una razón concreta del objetivo: cuando a una IA le preguntan
+// «¿hay alguna herramienta para calcular X?», responde mejor si puede apuntar a
+// una LISTA con su ItemList que si tiene que recordar una URL suelta. Y cuando
+// alguien pregunta por la siguiente, ya estamos en la respuesta.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { herramientas } from '../../lib/demanda/herramientas';
+import { SITIO } from '../../data/entidad';
+
+export const prerender = false;
+
+const lista = herramientas('web');
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Herramientas gratis para marcas y tiendas de moda',
+  numberOfItems: lista.length,
+  itemListElement: lista.map((h, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'SoftwareApplication',
+      name: h.nombre,
+      description: h.descripcion,
+      url: `${SITIO}/herramientas/${h.slug}`,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'MXN' },
+    },
+  })),
+};
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title="Herramientas gratis para marcas y tiendas de moda"
+  description="Calculadoras del ramo que funcionan sin registro y sin dar tu correo: curva de tallas y más. Hechas por Sacs."
+  structuredData={schema}
+>
+  <main class="indice">
+    <header>
+      <p class="eyebrow">Gratis · sin registro · sin dar tu correo</p>
+      <h1>Herramientas para quien vende ropa</h1>
+      <p class="entrada">
+        Cálculos que en el ramo se hacen mal o no se hacen, resueltos aquí mismo.
+        No pedimos tu correo ni guardamos tus números: el cálculo se hace y se olvida.
+      </p>
+    </header>
+
+    {lista.length === 0 ? (
+      <p class="vacio">Pronto.</p>
+    ) : (
+      <ul class="tarjetas">
+        {lista.map(h => (
+          <li>
+            <a href={`/herramientas/${h.slug}`}>
+              <h2>{h.nombre}</h2>
+              <p>{h.descripcion}</p>
+              <span class="ir">Usarla →</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  /* El nav es FIJO: no empuja nada, así que el hueco lo deja la página. Sin
+     --nav-alto el eyebrow queda debajo de la barra. */
+  .indice { max-width: 940px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .indice { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-secondary); font-weight: 600; margin: 0 0 .6rem;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; margin: 0 0 .9rem; text-wrap: balance; }
+  .entrada { font-size: 1.12rem; line-height: 1.6; color: var(--color-text-secondary); max-width: 62ch; margin: 0 0 2.5rem; }
+  .tarjetas { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+  .tarjetas a {
+    display: flex; flex-direction: column; gap: .5rem; height: 100%;
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 14px; padding: 1.4rem; text-decoration: none; color: inherit;
+    transition: border-color .15s, transform .15s;
+  }
+  .tarjetas a:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+  .tarjetas h2 { font-size: 1.2rem; margin: 0; }
+  .tarjetas p { margin: 0; color: var(--color-text-secondary); line-height: 1.55; font-size: .95rem; flex: 1; }
+  .tarjetas .ir { color: var(--color-primary); font-weight: 600; font-size: .92rem; }
+  .vacio { color: var(--color-text-tertiary); }
+</style>
