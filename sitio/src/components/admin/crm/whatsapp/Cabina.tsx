@@ -13,6 +13,7 @@
 //      (`tel-mute {mute:false}`); al cerrarse, lo vuelve a cerrar.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { C } from './estilo';
+import AccionesLlamada from './AccionesLlamada';
 import { S } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { IcoTelefono, IcoMic, IcoReloj, IcoUsuario, IcoX } from './Iconos';
@@ -1014,8 +1015,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       {(!fernanda || actual.voz?.handoff) && <button onClick={() => document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: micAbierto } }))} style={btnT}>{micAbierto ? 'Silenciarme' : 'Abrir micrófono'}</button>}
                     </>
                   )}
-                  {estadoActual === 'cierre' && (
-                    <button onClick={confirmarYSeguir} disabled={!!ocupado} style={propuesta ? S.btnP : btnS}>{propuesta ? 'Confirmar y seguir' : 'Siguiente ahora'}</button>
+                  {/* Cuando te toca decidir, el botón NO va aquí arriba: va al
+                      final, después de lo que la IA propone. Confirmar algo que
+                      todavía no leíste es exactamente lo que se quería evitar. */}
+                  {estadoActual === 'cierre' && !esperaTuDecision && (
+                    <button onClick={confirmarYSeguir} disabled={!!ocupado} style={propuesta ? S.btnP : btnS}>
+                      {propuesta ? 'Confirmar lo de la IA y seguir' : 'Siguiente ahora'}
+                    </button>
                   )}
                 </div>
 
@@ -1095,10 +1101,32 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 {estadoActual === 'cierre' && actual.cierre_estado === 'sin_datos' && (
                   <div style={{ marginTop: 12, fontSize: 11.5, color: C.g400 }}>La IA no alcanzó a leer la llamada{actual.cierre_ia?.motivo ? ` (${actual.cierre_ia.motivo})` : ''}: pica cómo quedó y escribe el apunte.</div>
                 )}
+                {/* ══ LA LISTA TE ESPERA ═══════════════════════════════════
+                    «Ahí ya no debe seguir a la siguiente llamada: ahí debe
+                    aparecerme la interfaz con las decisiones a tomar en ese
+                    momento.» El motor ya no avanza ni aplica nada; esto lo
+                    DICE, porque una lista parada sin avisar se ve igual que una
+                    atorada. */}
+                {esperaTuDecision && (
+                  <div style={{ marginTop: 14, background: C.moradoSuave, border: `1px solid ${C.morado}`, borderRadius: 10, padding: '10px 13px', fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, lineHeight: 1.5 }}>
+                    Hablaste con una persona: la lista se queda aquí hasta que tú decidas.
+                    {propuesta ? ' Abajo está lo que la IA propone — nada de eso se ha ejecutado todavía.' : ' La IA está leyendo la llamada…'}
+                  </div>
+                )}
+
+                {/* LO QUE PIDIÓ EN LA LLAMADA, ejecutable desde aquí: el mismo
+                    panel de la sala. «Debo poder ejecutar desde ahí.» */}
+                {['en_linea', 'cierre'].includes(estadoActual) && actual.call_sid && (
+                  <div style={{ marginTop: 14 }}>
+                    <AccionesLlamada callId={actual.call_sid} compacto
+                      fraseCliente={String(actual.oido_texto || '').slice(-200) || null} />
+                  </div>
+                )}
+
                 {estadoActual === 'cierre' && propuesta && (
                   <div style={{ marginTop: 14, background: C.moradoAgua, borderRadius: 10, padding: '12px 14px', display: 'grid', gap: 9 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={etiqueta}>La IA entendió</span>
+                      <span style={etiqueta}>La IA entendió{esperaTuDecision ? ' · no ha hecho nada todavía' : ''}</span>
                       <span style={{ flex: 1 }} />
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: tono(propuesta.resultado).bg, color: tono(propuesta.resultado).fg }}>{ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}</span>
                     </div>
@@ -1139,6 +1167,20 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       </div>
                     ))}
                     <span style={{ fontSize: 10.5, color: C.g400 }}>Lo que piques o escribas arriba manda sobre lo que entendió la IA.</span>
+                  </div>
+                )}
+
+                {/* EL BOTÓN, AL FINAL: después de leer lo que la IA propone.
+                    Arriba invitaba a confirmar sin haber leído, que es justo lo
+                    que se quería evitar. */}
+                {esperaTuDecision && (
+                  <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button onClick={confirmarYSeguir} disabled={!!ocupado} style={propuesta ? S.btnP : btnS}>
+                      {propuesta ? 'Confirmar lo de la IA y seguir' : 'Ya decidí: pasar al siguiente'}
+                    </button>
+                    <span style={{ fontSize: 11.5, color: C.g500, flex: 1, minWidth: 180 }}>
+                      {propuesta ? 'Hasta que le des, no se agenda ni se manda nada.' : 'La IA no pudo cerrar ésta: lo que decidas arriba es lo que queda.'}
+                    </span>
                   </div>
                 )}
               </div>

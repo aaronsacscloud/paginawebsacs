@@ -38,9 +38,15 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
 
   if (url.searchParams.get('lista')) {
+    /* ⚠️ FUERA LA SESIÓN FANTASMA. Las llamadas sueltas —entrantes y las que
+       marcas a mano— cuelgan de una sesión con `origen.suelta` para poder usar
+       el mismo riel (`lib/telefonia/suelta.ts`). No es una jornada: no se armó,
+       no marca a nadie y no tiene lista. Listarla entre «tus jornadas
+       anteriores» invita a abrirla y a darle «Seguir» a algo que no sigue. */
     const { data } = await supabase.from('tel_sesiones')
       .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, iniciada_at, terminada_at, created_at, origen, presentacion_nombre, presentacion_motivo, modo')
-      .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(30);
+      .eq('owner_id', user.id).not('origen', 'cs', '{"suelta":true}')
+      .order('created_at', { ascending: false }).limit(30);
     return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id), fernanda: vozConfigurada() });
   }
 
