@@ -712,4 +712,33 @@ Mis diez, por orden de lo que más duele hoy:
    resultado, resumen y siguiente paso, y tú confirmas.
 10. **Que la llamada quede en el hilo de WhatsApp** como un mensaje más, con su
     duración y su minuta: hoy hay que ir a otra pantalla para saber que existió.
+11. **NOS LLAMAN Y NO ALCANZAMOS: WhatsApp automático** (pedido del dueño).
+    Una llamada entrante perdida hoy no deja nada: ni aviso al cliente ni rastro
+    accionable. Quien marca y escucha el tono hasta rendirse no sabe si le
+    fallamos o si el número está muerto.
 
+    **La cascada, y el orden importa.** Se intenta MARKETING primero —es la que
+    puede decir «escríbenos o mándanos una nota de voz», que es una invitación
+    comercial— y si no pasa se cae a UTILITY, que es la que Meta deja entrar
+    casi siempre porque contesta a algo que HIZO el cliente: nos llamó.
+    El fallo esperado de la de marketing no es la ventana (una plantilla de
+    marketing sí sale fuera de las 24 h) sino el **opt-out de marketing** del
+    contacto —error 131050— y los topes por frecuencia. Ahí entra la utility.
+
+    Las dos ya están creadas en Meta (17-sep, PENDING), con `grupo='llamada'`:
+
+      llamada_perdida_v1       · MARKETING · + botón «Tengo una pregunta»
+        «Hola {{1}}, nos llamaste y no alcanzamos a responderte. Te devolvemos
+         la llamada lo antes posible. Si prefieres, escríbenos por aquí lo que
+         necesitas saber del sistema o mándanos una nota de voz, y te
+         contestamos a la brevedad.»
+
+      llamada_perdida_util_v1  · UTILITY · el respaldo
+        «Hola {{1}}, recibimos tu llamada y no alcanzamos a contestarte…»
+
+    Falta el disparador: el webhook de Twilio de llamada entrante no contestada
+    tiene que llamar a un endpoint como el de `telefonia/ocupado.ts` —que ya
+    tiene el anti-repetición de 30 min, el registro en el espejo y la tarea de
+    devolver la llamada—, cambiando el texto y metiendo la cascada de dos
+    plantillas. Y la tarea SIEMPRE, se haya podido avisar o no: una llamada
+    perdida en silencio es la que no se devuelve.

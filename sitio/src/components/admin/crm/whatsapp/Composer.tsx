@@ -24,6 +24,7 @@ import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
    se enseña con su clave tal cual: nada se esconde por no estar en la lista. */
 const GRUPO_PL: Record<string, string> = {
   apertura: 'Apertura de conversación',
+  llamada: 'Llamadas',
 };
 
 type Modo = 'wa' | 'correo' | 'nota';
