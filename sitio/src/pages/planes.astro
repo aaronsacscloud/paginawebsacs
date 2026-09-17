@@ -70,6 +70,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     </div>
 
     <!-- Cards grid / carousel -->
+    <h2 class="solo-lectores">Planes y precios</h2>
     <div class="pricing-cards" id="pricing-cards">
       {plans.map((plan) => (
         <article class:list={['plan-card', { highlighted: plan.highlighted }]} data-plan={plan.id}>
@@ -416,7 +417,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
                       <span class="comparison-cell-label">{planId.charAt(0).toUpperCase() + planId.slice(1)}</span>
                       {typeof feature[planId] === 'boolean' ? (
                         feature[planId] ? (
-                          <span class="cell-check" set:html={checkIcon} aria-label="Incluido" />
+                          <span class="cell-check" role="img" set:html={checkIcon} aria-label="Incluido" />
                         ) : (
                           <span class="cell-x" set:html={xIcon} aria-label="No incluido" />
                         )

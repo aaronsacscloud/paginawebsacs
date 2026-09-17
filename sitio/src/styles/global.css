@@ -705,11 +705,6 @@ html, body { overflow-x: clip; }
 /* 24. Los puntos de un carrusel medían 10 × 10 px: imposibles de apretar sin
    fallar. Se les da un área invisible de 44 px sin cambiar el punto dibujado. */
 @media (max-width: 900px) {
-  .pf-dot, [class$="-dot"] { position: relative; }
-  .pf-dot::after, [class$="-dot"]::after {
-    content: ''; position: absolute; inset: 50% 50% auto auto;
-    translate: 50% -50%; width: 44px; height: 44px;
-  }
 }
 
 /* 25. Las pestañas del plano de la tienda («01 Piso de venta», «02 Probadores»)
@@ -765,3 +760,19 @@ a, button, [role=button], input[type=submit], label { touch-action: manipulation
    con las tres pantallas cambió el tamaño de lo que hay dentro y rompió el
    buscar-en-página del navegador. No vale el riesgo; queda escrito para que
    nadie lo vuelva a intentar sin medirlo. */
+
+/* Texto que existe para quien navega con lector de pantalla y no se dibuja.
+   Sirve para dar el título que ordena una sección sin cambiar el diseño. */
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* 33. Los puntos de los carruseles miden 10 × 10 px, y eso falla en cualquier
+   pantalla, no solo en el teléfono: con el ratón se falla igual y con el dedo
+   más. Se les da un área de 44 px alrededor sin cambiar el punto dibujado. */
+.pf-dot, [class$="-dot"] { position: relative; }
+.pf-dot::after, [class$="-dot"]::after {
+  content: ''; position: absolute; inset: 50% 50% auto auto;
+  translate: 50% -50%; width: 44px; height: 44px;
+}

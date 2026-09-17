@@ -75,7 +75,7 @@ const dias = [
   .dd-p { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.55; margin: 0; color: #55554F; }
   .dd-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
   .dd-pasos { list-style: none; margin: 0; padding: 0; }
-  .dd-paso { position: relative; padding: 22px 0 22px 30px; border-left: 2px solid #E3E3DF; opacity: 0.45; transition: opacity 0.4s; }
+  .dd-paso { position: relative; padding: 22px 0 22px 30px; border-left: 2px solid #E3E3DF; opacity: 0.68; transition: opacity 0.4s; }
   .dd-paso::before { content: ''; position: absolute; left: -7px; top: 30px; width: 12px; height: 12px; border-radius: 50%; background: #E3E3DF; transition: background 0.3s, transform 0.3s; }
   .dd-paso.is-on { opacity: 1; } .dd-paso.is-on::before { background: #0E0D0C; transform: scale(1.25); }
   .dd-n { display: block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary-texto, #3A62C4); margin-bottom: 6px; }
@@ -86,13 +86,13 @@ const dias = [
   .dd-marco { background: #fff; border-radius: 20px; border: 1px solid #E6E6E2; box-shadow: 0 40px 90px -40px rgba(0,0,0,0.25); overflow: hidden; }
   .dd-barra { display: flex; align-items: center; gap: 6px; padding: 12px 16px; border-bottom: 1px solid #EEEEEA; background: #FAFAF8; }
   .dd-barra i { width: 9px; height: 9px; border-radius: 50%; background: #E0E0DC; }
-  .dd-barra span { margin-left: 10px; font-size: 12px; color: #8A8A86; }
+  .dd-barra span { margin-left: 10px; font-size: 12px; color: #6E6E6D; }
   .dd-scrs { position: relative; min-height: 380px; }
   .dd-scr { position: absolute; inset: 0; padding: 26px; opacity: 0; transform: translateY(8px); transition: opacity 0.45s, transform 0.45s; pointer-events: none; }
   .dd-scr.is-on { opacity: 1; transform: none; pointer-events: auto; }
   .dd-scr-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .dd-scr-h b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.01em; }
-  .dd-scr-h span { font-size: 12.5px; color: #8A8A86; }
+  .dd-scr-h span { font-size: 12.5px; color: #6E6E6D; }
   .dd-ia { color: var(--color-primary-texto, #3A62C4) !important; font-weight: 700; border: 1px solid rgba(75,123,229,0.35); padding: 4px 10px; border-radius: 999px; }
   .dd-prod { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: start; }
   .dd-prod img { width: 120px; height: 150px; object-fit: cover; border-radius: 12px; }
@@ -104,7 +104,7 @@ const dias = [
   .dd-ok { margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: #EDF7F0; color: #1B6B3A; font-size: 13.5px; font-weight: 600; }
   .dd-ok--azul { background: #EEF3FF; color: #2E5BC4; }
   .dd-tab { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .dd-tab th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A86; padding: 8px 6px; border-bottom: 1px solid #EEEEEA; }
+  .dd-tab th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6E6D; padding: 8px 6px; border-bottom: 1px solid #EEEEEA; }
   .dd-tab th:not(:first-child), .dd-tab td:not(:first-child) { text-align: center; }
   .dd-tab td { padding: 11px 6px; border-bottom: 1px solid #F1F1EE; }
   .dd-tab td:first-child { font-weight: 600; }
@@ -118,7 +118,7 @@ const dias = [
   .dd-graf { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; height: 160px; margin-bottom: 18px; }
   .dd-graf div { position: relative; height: var(--h); background: #E3E3DF; border-radius: 8px 8px 4px 4px; }
   .dd-graf .dd-hoy { background: #0E0D0C; }
-  .dd-graf span { position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px; text-align: center; font-size: 11px; color: #8A8A86; }
+  .dd-graf span { position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px; text-align: center; font-size: 11px; color: #6E6E6D; }
   .dd-canales { list-style: none; margin: 24px 0 0; padding: 0; }
   .dd-canales li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F1F1EE; font-size: 14.5px; }
   .dd-canales b { font-family: var(--font-display); }

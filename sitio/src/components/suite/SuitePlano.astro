@@ -311,7 +311,7 @@ const primera = clave[0];
 
           <!-- Zonas -->
           {clave.map((z) => (
-            <g class:list={['pn-z', { on: z.id === primera.id }]} data-zona={z.id} tabindex="0" role="button" aria-label={z.nombre}>
+            <g class:list={['pn-z', { on: z.id === primera.id }]} data-zona={z.id} tabindex="0" role="button" aria-label={`${z.n} ${z.nombre}`}>
               <rect class="pn-sup" x={z.caja.x} y={z.caja.y} width={z.caja.w} height={z.caja.h} rx="2"></rect>
               <g class="pn-mobs"><Fragment set:html={mobiliario(z)} /></g>
               <circle class="pn-num-b" cx={z.caja.x + 15} cy={z.caja.y + 15} r="10"></circle>

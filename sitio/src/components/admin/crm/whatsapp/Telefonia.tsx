@@ -126,6 +126,12 @@ export default function Telefonia() {
      Es la misma instancia del componente a propósito: si se desmontara, se
      perderían el resultado elegido y la propuesta de cierre recién pedida. */
   const [finSala, setFinSala] = useState<{ sid: string | null; telefono: string; nombre: string | null; seg: number } | null>(null);
+  /* En el TELÉFONO la sala no se abre sola: la pantalla de la llamada ya ocupa
+     todo y taparla de golpe deja sin pulgar los botones de colgar y silenciar.
+     Se abre cuando la persona la pide, y se vuelve con «esconder». Al colgar sí
+     aparece sola: ahí ya no hay llamada que estorbar. */
+  const [salaMovil, setSalaMovil] = useState(false);
+  useEffect(() => { if (!viva) setSalaMovil(false); }, [!!viva]);
   const [ctx, setCtx] = useState<any>(null);        // mejora 4 · con quién estás hablando
   const esMovil = useIsMobile();
   const esMovilRef = useRef(false); esMovilRef.current = esMovil;
@@ -456,11 +462,12 @@ export default function Telefonia() {
          decide ANTES de tocar `viva`, y en el mismo bloque, para que React
          pinte los dos cambios juntos: si la sala se desmontara un instante,
          perdería el desenlace elegido y la propuesta de cierre. */
-      /* En el teléfono no: ahí la llamada tiene su propia pantalla completa
-         (más arriba, `if (esMovil …)`) con su resumen, y esta sala ni siquiera
-         se pinta. Sin esta condición el apunte se quedaría sin limpiar y se
-         arrastraría a la siguiente llamada. */
-      const conSala = salaAbiertaRef.current && !!v.desde && !esMovilRef.current;
+      /* En el escritorio, sólo si la sala estaba abierta (si la escondiste, no
+         te la devolvemos en la cara). En el TELÉFONO siempre que se haya
+         hablado: ahí no hay una ficha al lado que mirar, y el resumen completo
+         es justo lo que se pidió — «al momento de que yo responda, me tiene que
+         mostrar una pantalla completa con toda esta información». */
+      const conSala = !!v.desde && (esMovilRef.current || salaAbiertaRef.current);
       if (conSala) setFinSala({ sid: v.sid || call?.parameters?.CallSid || null, telefono: v.telefono, nombre: v.nombre, seg: segFinales });
       /* MEJORA 3 · EL APUNTE NO SE PIERDE AL COLGAR.
          Lo que se escribe mientras se habla es lo más valioso de la llamada y
@@ -764,7 +771,47 @@ export default function Telefonia() {
      ofrece lo único que puedes querer hacer ahora —volver a marcar, ir a la
      conversación, o cerrar— con botones de pulgar. Al inbox se vuelve cuando
      TÚ lo decides, no de golpe. */
-  if (esMovil && resumen && !viva && !entrante) {
+  /* LA SALA, UNA SOLA VEZ. La pintan el escritorio (sola, al contestar) y el
+     teléfono (a petición, y sola al colgar). Definirla dos veces sería tener
+     dos pantallas que en un mes ya no se parecen. */
+  const laSala = () => (
+    <Suspense fallback={null}>
+      {/* `key` por llamada: sin él, la MISMA pantalla se reusaría para la
+          siguiente y arrastraría el desenlace, el apunte y los campos a medio
+          llenar de la anterior. Con el mismo `callId`, en cambio, el paso de
+          «en curso» a «resumen» conserva todo, que es justo lo que hace falta
+          al colgar. */}
+      <SalaLlamada
+        key={finSala?.sid || viva?.sid || 'sala'}
+        telefono={finSala?.telefono || viva?.telefono || ''}
+        callId={finSala?.sid || viva?.sid || null}
+        /* El nombre CRUDO, no `quien()`: ése cae al teléfono legible cuando no
+           hay nombre, y la sala necesita saber que no lo hay para poder usar el
+           de la ficha. Es justo lo que el dueño vio («me aparecía la empresa
+           pero no el nombre de la persona»). */
+        nombre={finSala ? finSala.nombre : (viva?.nombre || null)}
+        segundos={finSala ? finSala.seg : seg}
+        fin={!!finSala}
+        nota={nota} setNota={setNota}
+        mudo={mute} onSilenciar={toggleMute}
+        onColgar={colgar}
+        onCerrar={() => {
+          if (finSala) { setFinSala(null); setNota(''); setNotaAbierta(false); return; }
+          if (esMovil) { setSalaMovil(false); return; }
+          salaCerrada.current = true; setSalaAbierta(false);
+        }} />
+    </Suspense>
+  );
+
+  /* ══ EL TELÉFONO ENTRA A LA SALA (17-sep-2026) ══════════════════════════
+     Antes esto no existía en móvil: la llamada tenía su pantalla y punto, sin
+     ficha, sin lo que se está oyendo, sin acciones y sin resumen al colgar —
+     que es donde más falta hace, porque en el celular no hay nada al lado que
+     mirar. Va aquí arriba, antes de la pantalla de llamada, para que la
+     sustituya en vez de taparla a medias. */
+  if (esMovil && (finSala || (salaMovil && viva?.fase === 'en-linea'))) return laSala();
+
+  if (esMovil && resumen && !viva && !entrante && !finSala) {
     const listo = resumen.minuta === 'lista';
     return (
       <div data-tel-panel role="dialog" aria-label="Llamada terminada" style={{
@@ -868,6 +915,16 @@ export default function Telefonia() {
           {espera && <span style={{ fontSize: 12, color: C.ambar300 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>}
         </div>
 
+        {/* LA FICHA Y LO QUE TE PIDIÓ, a un toque. Es la misma sala del
+            escritorio: quién es, lo que se está oyendo, las acciones que pidió
+            y el campo para dictarle lo que no reconoció. */}
+        {viva?.fase === 'en-linea' && (
+          <button onClick={() => setSalaMovil(true)}
+            style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 999, padding: '12px 16px', fontSize: 13.5, fontWeight: 800, fontFamily: 'inherit', width: '100%', marginBottom: 10 }}>
+            Ver la ficha y lo que te pidió
+          </button>
+        )}
+
         {/* MEJORA 3 en pantalla: el apunte, a un toque y sin salir. */}
         {viva?.fase === 'en-linea' && (
           <div style={{ marginBottom: 14 }}>
@@ -958,33 +1015,8 @@ export default function Telefonia() {
           hasta aquí. Llevar la sala al móvil es otra tarea, anotada en COLA.md.
           La misma pantalla sirve para las dos mitades: `fin` la convierte en
           el resumen en vez de desmontarla. */}
-      {((salaAbierta && viva?.fase === 'en-linea') || finSala) && (
-        <Suspense fallback={null}>
-          {/* `key` por llamada: sin él, la MISMA pantalla se reusaría para la
-              siguiente y arrastraría el desenlace, el apunte y los campos a
-              medio llenar de la anterior. Con el mismo `callId`, en cambio, el
-              paso de «en curso» a «resumen» conserva todo, que es justo lo que
-              hace falta al colgar. */}
-          <SalaLlamada
-            key={finSala?.sid || viva?.sid || 'sala'}
-            telefono={finSala?.telefono || viva?.telefono || ''}
-            callId={finSala?.sid || viva?.sid || null}
-            /* El nombre CRUDO, no `quien()`: ése cae al teléfono legible
-               cuando no hay nombre, y la sala necesita saber que no lo hay
-               para poder usar el de la ficha. Es justo lo que el dueño vio
-               («me aparecía la empresa pero no el nombre de la persona»). */
-            nombre={finSala ? finSala.nombre : (viva?.nombre || null)}
-            segundos={finSala ? finSala.seg : seg}
-            fin={!!finSala}
-            nota={nota} setNota={setNota}
-            mudo={mute} onSilenciar={toggleMute}
-            onColgar={colgar}
-            onCerrar={() => {
-              if (finSala) { setFinSala(null); setNota(''); setNotaAbierta(false); return; }
-              salaCerrada.current = true; setSalaAbierta(false);
-            }} />
-        </Suspense>
-      )}
+      {((salaAbierta && viva?.fase === 'en-linea') || finSala) && laSala()}
+
       {viva && (
         <div style={tarjeta}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>

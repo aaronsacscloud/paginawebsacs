@@ -73,7 +73,7 @@ const TEMPLATES = [
       },
       {
         type: 'text',
-        content: '\u00bfTienes dudas? Responde a este correo o escr\u00edbenos por <a href="https://wa.me/525593027234" style="color:#2AB5A0;text-decoration:underline;">WhatsApp</a>. Estamos para ayudarte.',
+        content: '\u00bfTienes dudas? Responde a este correo o escr\u00edbenos por <a href="https://wa.me/525593027234" style="color:#0E7A68;text-decoration:underline;">WhatsApp</a>. Estamos para ayudarte.',
         font_size: '14px',
         align: 'center',
         color: '#999999',
@@ -276,7 +276,7 @@ const TEMPLATES = [
       { type: 'divider', padding: '0 48px', color: '#F0F0F0' },
       {
         type: 'text',
-        content: 'Como gesto especial, te ofrecemos un <strong style="color:#2AB5A0;">30% de descuento</strong> en tu primer mes si reactivas tu cuenta antes del <strong>{{offer.fecha_limite}}</strong>.',
+        content: 'Como gesto especial, te ofrecemos un <strong style="color:#0E7A68;">30% de descuento</strong> en tu primer mes si reactivas tu cuenta antes del <strong>{{offer.fecha_limite}}</strong>.',
         font_size: '16px',
         align: 'center',
         padding: '20px 32px 8px 32px',

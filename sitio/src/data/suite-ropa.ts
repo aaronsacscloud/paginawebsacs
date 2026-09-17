@@ -47,10 +47,10 @@ export const seccionesRopa: SuiteSeccion[] = [
           .map(([t,c]:any)=>`<span class="mk-chip ${c}" style="font-size:12px;font-weight:700;border:1px solid #DFE3EA;border-radius:999px;padding:4px 10px;color:var(--color-text-secondary);background:#fff;">${t}</span>`).join('')}
       </div>
       <table style="width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;">
-        <tr><th style="text-align:left;font-size:12px;color:var(--color-text-tertiary);width:64px;"></th>
-        ${['XS','S','M','L','XL','XXL'].map(t=>`<th style="font-size:12px;color:var(--color-text-tertiary);font-weight:700;">${t}</th>`).join('')}</tr>
+        <tr><th scope="col" style="text-align:left;font-size:12px;color:var(--color-text-tertiary);width:64px;"><span class="solo-lectores">Color</span></th>
+        ${['XS','S','M','L','XL','XXL'].map(t=>`<th scope="col" style="font-size:12px;color:var(--color-text-tertiary);font-weight:700;">${t}</th>`).join('')}</tr>
         ${[['Negro',[0,8,12,9,4,0]],['Blanco',[3,11,14,7,2,0]],['Vino',[2,5,6,3,1,0]],['Camel',[1,4,7,5,2,0]]]
-          .map(([c,v]:any)=>`<tr><td style="font-size:12px;font-weight:700;color:var(--color-text-primary);">${c}</td>${v.map((n:number,i:number)=>{
+          .map(([c,v]:any)=>`<tr><th scope="row" style="font-size:12px;font-weight:700;color:var(--color-text-primary);text-align:left;">${c}</th>${v.map((n:number,i:number)=>{
             const st = n===0?est.celdaZero:(n<=3?est.celdaLo:est.celdaOk);
             const marca = (c==='Negro'&&i===2)?'box-shadow:0 0 0 2px var(--color-primary);':'';
             return `<td style="${st}${marca}border-radius:8px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;

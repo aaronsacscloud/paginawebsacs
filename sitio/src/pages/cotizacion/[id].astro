@@ -562,7 +562,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             <div style="font-size:0.875rem;color:#666;line-height:1.6;"><strong style="color:#1a1a1a;">Con SACS:</strong> {casoGiro.solucion}</div>
           </div>
           <div style="text-align:center;padding:14px 22px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;min-width:140px;">
-            <div style="font-size:1.75rem;font-weight:800;color:#2AB5A0;letter-spacing:-0.02em;">{casoGiro.stat}</div>
+            <div style="font-size:1.75rem;font-weight:800;color:#0E7A68;letter-spacing:-0.02em;">{casoGiro.stat}</div>
             <div style="font-size:0.6875rem;color:#999;line-height:1.4;margin-top:4px;max-width:160px;">{casoGiro.statLabel}</div>
           </div>
         </div>
@@ -663,7 +663,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       .quote-asesor-contact {
         display: inline-block;
         font-size: 0.8125rem;
-        color: #2AB5A0;
+        color: #0E7A68;
         text-decoration: none;
       }
       .quote-asesor-wa { color: #25D366; }
@@ -1232,7 +1232,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
                 )
               ))}
               {anyLineHasDiscount && !showRenewalCompare && (
-                <div class="quote-payment-line" style="font-size:0.6875rem;color:#2AB5A0;font-style:italic">
+                <div class="quote-payment-line" style="font-size:0.6875rem;color:#0E7A68;font-style:italic">
                   <span>El precio con descuento se mantiene en renovaciones futuras</span>
                 </div>
               )}
@@ -1463,7 +1463,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             step="500"
             value={roi.ahorro_mensual}
             data-total={quote.total || 0}
-            style="width:100%;accent-color:#2AB5A0;cursor:pointer;"
+            style="width:100%;accent-color:#0E7A68;cursor:pointer;"
           />
           <div style="display:flex;justify-content:space-between;font-size:0.6875rem;color:#999;margin-top:4px;">
             <span>conservador</span>
@@ -1949,7 +1949,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <div class="quote-case-card">
           <img src="/images/case-shakira-merch.webp" alt="Liveshow Merchandising" class="quote-case-img" width="400" height="240" loading="lazy" />
           <div class="quote-case-body">
-            <div class="quote-case-tag" style="background:#E84393">Entretenimiento</div>
+            <div class="quote-case-tag" style="background:#C42A74">Entretenimiento</div>
             <div class="quote-case-name">Liveshow Merchandising</div>
             <div class="quote-case-desc">1,500+ puntos de venta implementados para conciertos de Shakira, Metallica y Karol G en toda Latinoamérica.</div>
             <div class="quote-case-metrics">
@@ -2206,25 +2206,25 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-tab-intro-total-moneda { font-size: 1rem; color: #999; margin-left: 6px; font-weight: 400; }
 .quote-tab-intro-nav { display: flex; flex-direction: column; gap: 0; border-top: 1px solid #e5e5e5; }
 .quote-tab-intro-link { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; color: #1a1a1a; text-decoration: none; border-bottom: 1px solid #e5e5e5; transition: color 0.15s ease; }
-.quote-tab-intro-link:hover { color: #2AB5A0; }
+.quote-tab-intro-link:hover { color: #0E7A68; }
 .quote-tab-intro-link-label { font-size: 0.9375rem; font-weight: 500; }
 .quote-tab-intro-link-arrow { font-size: 1rem; color: #999; transition: transform 0.15s ease; }
-.quote-tab-intro-link:hover .quote-tab-intro-link-arrow { color: #2AB5A0; transform: translateX(4px); }
+.quote-tab-intro-link:hover .quote-tab-intro-link-arrow { color: #0E7A68; transform: translateX(4px); }
 .quote-dark .quote-tab-intro-heading, .quote-dark .quote-tab-intro-total-value, .quote-dark .quote-tab-intro-link { color: #fff; }
 .quote-dark .quote-tab-intro-total, .quote-dark .quote-tab-intro-nav, .quote-dark .quote-tab-intro-link { border-color: rgba(255,255,255,0.1); }
 .quote-dark .quote-tab-intro-eyebrow, .quote-dark .quote-tab-intro-total-moneda, .quote-dark .quote-tab-intro-total-label, .quote-dark .quote-tab-intro-link-arrow { color: rgba(255,255,255,0.5); }
 
 /* ─── Cross-tab link (e.g., "Ver desglose de pagos →") ─── */
 .quote-tab-cross { padding: 0 40px 24px; }
-.quote-tab-cross-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #2AB5A0; text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color 0.15s ease; }
-.quote-tab-cross-link:hover { border-color: #2AB5A0; }
+.quote-tab-cross-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #0E7A68; text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color 0.15s ease; }
+.quote-tab-cross-link:hover { border-color: #0E7A68; }
 .quote-tab-cross-arrow { transition: transform 0.15s ease; }
 .quote-tab-cross-link:hover .quote-tab-cross-arrow { transform: translateX(3px); }
 
 /* ─── Closed state (accepted / paid) signed card ─── */
 .quote-signed { padding: 32px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
 .quote-signed--closed { padding: 48px 40px; border-top: none; background: #fafafa; }
-.quote-signed-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #2AB5A0; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+.quote-signed-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #0E7A68; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
 .quote-signed-title { font-family: var(--font-display); font-size: 1.625rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 10px; }
 .quote-signed-sub { font-size: 0.875rem; color: #666; line-height: 1.6; max-width: 460px; margin: 0 auto 24px; }
 .quote-signed-img { max-width: 220px; height: auto; margin: 0 auto 12px; display: block; }
@@ -2317,7 +2317,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-timer-promo-name {
   font-weight: 800; letter-spacing: 0.06em;
   font-family: var(--font-display);
-  color: #2AB5A0;
+  color: #0E7A68;
 }
 .quote-timer-deadline {
   margin-top: 14px;
@@ -2390,12 +2390,12 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .qt-strikethrough { text-decoration: line-through; color: #ccc; font-weight: 400; margin-right: 6px; font-size: 0.75rem; }
 
 /* ─── Savings ─── */
-.qt-savings { color: #2AB5A0; font-weight: 600; }
+.qt-savings { color: #0E7A68; font-weight: 600; }
 
 /* ─── Totals ─── */
 .quote-totals { padding: 20px 40px; }
 .quote-total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.875rem; color: #666; }
-.quote-total-row.quote-discount { color: #2AB5A0; }
+.quote-total-row.quote-discount { color: #0E7A68; }
 .quote-total-row.quote-total-final { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; border-top: 2px solid #1a1a1a; padding-top: 12px; margin-top: 8px; }
 
 /* ─── Payment breakdown ─── */
@@ -2416,7 +2416,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-dark .quote-payment-total-row--now .quote-payment-total-label { color: #fff; }
 .quote-dark .quote-payment-total-row--now { border-color: rgba(255,255,255,0.1); }
 
-.quote-dark .quote-summary { color: #2AB5A0; }
+.quote-dark .quote-summary { color: #0E7A68; }
 .quote-dark .quote-payments { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-payment-block { background: rgba(255,255,255,0.03); }
 .quote-dark .quote-payment-label { color: rgba(255,255,255,0.4); }
@@ -2434,7 +2434,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-roi-problem { font-size: 0.8125rem; color: #888; margin-bottom: 16px; line-height: 1.5; }
 .quote-roi-numbers { display: flex; gap: 16px; margin-bottom: 12px; }
 .quote-roi-stat { flex: 1; background: #f8f9fb; border-radius: 10px; padding: 16px; text-align: center; }
-.quote-roi-value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #2AB5A0; }
+.quote-roi-value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #0E7A68; }
 .quote-roi-label { font-size: 0.625rem; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
 .quote-roi-detail { font-size: 0.75rem; color: #aaa; font-style: italic; }
 .quote-dark .quote-roi { border-color: rgba(255,255,255,0.08); }
@@ -2447,7 +2447,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-comparison-table { width: 100%; border-collapse: collapse; }
 .quote-comp-th { font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
 .quote-comp-th.quote-comp-before { color: #ccc; text-align: center; }
-.quote-comp-th.quote-comp-after { color: #2AB5A0; text-align: center; }
+.quote-comp-th.quote-comp-after { color: #0E7A68; text-align: center; }
 .quote-comp-td { padding: 10px 12px; font-size: 0.8125rem; border-bottom: 1px solid #f5f5f5; }
 .quote-comp-aspect { font-weight: 700; color: #1a1a1a; }
 .quote-comp-before-cell { color: #ccc; text-align: center; text-decoration: line-through; }
@@ -2455,7 +2455,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-dark .quote-comparison { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-comparison-title { color: #fff; }
 .quote-dark .quote-comp-aspect { color: #fff; }
-.quote-dark .quote-comp-after-cell { color: #2AB5A0; }
+.quote-dark .quote-comp-after-cell { color: #0E7A68; }
 
 /* ─── QR ─── */
 .quote-qr { padding: 20px 40px; border-top: 1px solid #f0f0f0; display: flex; flex-direction: column; align-items: center; }
@@ -2470,7 +2470,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-signature-actions { display: flex; gap: 8px; margin-top: 8px; }
 .quote-signed { padding: 24px 40px; border-top: 1px solid #f0f0f0; text-align: center; }
 .quote-signed-img { max-width: 240px; height: auto; margin: 0 auto 8px; display: block; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
-.quote-signed-label { font-size: 0.875rem; font-weight: 700; color: #2AB5A0; }
+.quote-signed-label { font-size: 0.875rem; font-weight: 700; color: #0E7A68; }
 .quote-signed-date { font-size: 0.6875rem; color: #999; }
 
 /* ─── Success overlay ─── */
@@ -2505,7 +2505,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-conscious-top { text-align: center; margin-bottom: 24px; }
 .quote-conscious-video { margin-bottom: 16px; display: flex; justify-content: center; }
 .quote-conscious-video video { width: 200px; height: 200px; object-fit: cover; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); display: block; }
-.quote-conscious-label { font-size: 0.5625rem; font-weight: 700; color: #2AB5A0; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+.quote-conscious-label { font-size: 0.5625rem; font-weight: 700; color: #0E7A68; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
 .quote-conscious-heading { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; line-height: 1.3; }
 .quote-conscious-manifesto { font-size: 0.8125rem; color: #888; line-height: 1.7; max-width: 480px; margin: 0 auto; }
 .quote-conscious-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -2526,7 +2526,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-conscious-impact { display: flex; align-items: flex-start; gap: 12px; background: rgba(42,181,160,0.04); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
 .quote-conscious-impact-icon { flex-shrink: 0; margin-top: 1px; }
 .quote-conscious-impact-text { font-size: 0.75rem; color: #666; line-height: 1.7; }
-.quote-conscious-impact-text strong { color: #2AB5A0; }
+.quote-conscious-impact-text strong { color: #0E7A68; }
 
 .quote-conscious-closing { text-align: center; font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--color-primary-texto, #3A62C4); font-style: italic; }
 
@@ -2536,7 +2536,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-dark .quote-conscious-letter { background: rgba(255,255,255,0.03); }
 .quote-dark .quote-conscious-word, .quote-dark .quote-conscious-jlabel { color: #fff; }
 .quote-dark .quote-conscious-impact { background: rgba(42,181,160,0.06); }
-.quote-dark .quote-conscious-closing { color: #2AB5A0; }
+.quote-dark .quote-conscious-closing { color: #0E7A68; }
 
 /* ─── Implementation Timeline ─── */
 .quote-timeline-section { padding: 32px 40px; border-top: 1px solid #f0f0f0; }
@@ -2560,7 +2560,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-tl-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.75rem; color: #555; line-height: 1.5; }
 .quote-tl-item svg { flex-shrink: 0; margin-top: 2px; }
 .quote-tl-problem span { color: #999; text-decoration: line-through; }
-.quote-tl-result { margin-top: 12px; font-size: 0.8125rem; font-weight: 700; color: #2AB5A0; font-style: italic; }
+.quote-tl-result { margin-top: 12px; font-size: 0.8125rem; font-weight: 700; color: #0E7A68; font-style: italic; }
 
 .quote-dark .quote-timeline-section { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-timeline-title { color: #fff; }
@@ -2583,7 +2583,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-case-desc { font-size: 0.6875rem; color: #999; line-height: 1.5; margin-bottom: 8px; }
 .quote-case-metrics { display: flex; gap: 12px; margin-bottom: 8px; }
 .quote-case-metrics span { font-size: 0.625rem; color: #666; }
-.quote-case-metrics strong { color: #2AB5A0; }
+.quote-case-metrics strong { color: #0E7A68; }
 .quote-case-quote { font-size: 0.6875rem; color: #aaa; font-style: italic; line-height: 1.5; border-left: 2px solid #f0f0f0; padding-left: 10px; }
 .quote-cases-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
 .quote-cases-dot { width: 8px; height: 8px; border-radius: 50%; border: none; background: #e0e0e0; cursor: pointer; padding: 0; transition: background 0.2s; }
@@ -2617,7 +2617,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-action-btn { padding: 10px 20px; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid #ddd; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #333; transition: background 0.15s; }
 .quote-action-btn:hover { background: #f5f5f5; }
 .quote-actions-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.quote-accepted-badge { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #2AB5A0; }
+.quote-accepted-badge { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #0E7A68; }
 .quote-expired-notice { text-align: center; padding: 8px 0; }
 .quote-expired-notice-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
 .quote-expired-notice-text { font-size: 0.8125rem; color: #999; margin-bottom: 16px; line-height: 1.5; }
@@ -2659,7 +2659,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 /* ─── Dark template ─── */
 .quote-dark .quote-container { background: #1a1a1a; color: #fff; }
 .quote-dark .quote-logo-text { color: #fff; }
-.quote-dark .quote-logo-tag { background: rgba(42,181,160,0.15); color: #2AB5A0; }
+.quote-dark .quote-logo-tag { background: rgba(42,181,160,0.15); color: #0E7A68; }
 .quote-dark .quote-number { color: #fff; }
 .quote-dark .quote-date { color: rgba(255,255,255,0.45); }
 .quote-dark .quote-client-name { color: #fff; }
@@ -2725,7 +2725,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-version-badge { font-size: 0.5rem; font-weight: 700; color: var(--color-primary-texto, #3A62C4); background: rgba(75,123,229,0.08); padding: 1px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
 .quote-version-detail { font-size: 0.6875rem; color: #999; margin-top: 1px; }
 .quote-version-up { color: #E54B4B; font-weight: 600; margin-left: 4px; }
-.quote-version-down { color: #2AB5A0; font-weight: 600; margin-left: 4px; }
+.quote-version-down { color: #0E7A68; font-weight: 600; margin-left: 4px; }
 
 .quote-dark .quote-versions { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-version-label { color: #fff; }
@@ -2737,7 +2737,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 /* ─── Promotion ─── */
 .qt-promo-row { background: rgba(42,181,160,0.03); }
 .qt-promo-badge { display: inline-block; font-size: 0.5625rem; font-weight: 800; color: #fff; background: #2AB5A0; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-.qt-promo-price { color: #2AB5A0; font-weight: 800; font-size: 1rem; }
+.qt-promo-price { color: #0E7A68; font-weight: 800; font-size: 1rem; }
 
 .quote-dark .qt-promo-row { background: rgba(42,181,160,0.06); }
 
@@ -2753,11 +2753,11 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-feature-item { display: flex; align-items: flex-start; gap: 6px; font-size: 0.75rem; color: #555; padding: 3px 0; line-height: 1.4; }
 .quote-services { margin-top: 12px; }
 .quote-services-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.quote-service-tag { font-size: 0.6875rem; font-weight: 600; color: #2AB5A0; background: rgba(42,181,160,0.08); padding: 4px 10px; border-radius: 20px; }
+.quote-service-tag { font-size: 0.6875rem; font-weight: 600; color: #0E7A68; background: rgba(42,181,160,0.08); padding: 4px 10px; border-radius: 20px; }
 
 .quote-dark .quote-features { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-features-title { color: #fff; }
-.quote-dark .quote-plan-name { color: #2AB5A0; border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-plan-name { color: #0E7A68; border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-feature-cat-name { color: rgba(255,255,255,0.4); }
 .quote-dark .quote-feature-item { color: rgba(255,255,255,0.6); }
 .quote-dark .quote-service-tag { background: rgba(42,181,160,0.12); }
@@ -2918,7 +2918,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .qph-field select:focus,
 .qph-field textarea:focus { border-color: #1a1a1a; }
 .qph-field textarea { resize: vertical; min-height: 60px; }
-.qph-file-status { font-size: 0.6875rem; color: #2AB5A0; min-height: 14px; }
+.qph-file-status { font-size: 0.6875rem; color: #0E7A68; min-height: 14px; }
 .qph-items { background: #fafafa; padding: 12px; border-radius: 6px; border: 1px solid #ececec; }
 .qph-items-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid #ececec; display: flex; flex-direction: column; gap: 6px; }
 .qph-item-check { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: #555; cursor: pointer; }
@@ -2960,21 +2960,21 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .qt-price-normal { color: #047857 !important; }
   .quote-timer-promo-dot { animation: none !important; }
   .qt-promo-row { background: rgba(42,181,160,0.03) !important; }
-  .qt-savings { color: #2AB5A0 !important; }
-  .quote-total-row.quote-discount { color: #2AB5A0 !important; }
+  .qt-savings { color: #0E7A68 !important; }
+  .quote-total-row.quote-discount { color: #0E7A68 !important; }
   .quote-total-row.quote-total-final { border-top: 2px solid #1a1a1a !important; }
   .quote-table th { background: #fafafa !important; }
   .quote-payment-block { background: #fafafa !important; }
   .quote-footer { background: #fafafa !important; }
   .quote-pay-btn { background: #4B7BE5 !important; color: #fff !important; }
-  .quote-service-tag { background: rgba(42,181,160,0.08) !important; color: #2AB5A0 !important; }
+  .quote-service-tag { background: rgba(42,181,160,0.08) !important; color: #0E7A68 !important; }
   .quote-paid-banner { background: #4B7BE5 !important; color: #fff !important; }
   .qt-nota { color: var(--color-primary-texto, #3A62C4) !important; }
   .quote-plan-name { color: var(--color-primary-texto, #3A62C4) !important; }
   .quote-feature-item svg path { stroke: #2AB5A0 !important; }
   .quote-key-point-icon svg path { stroke: #4B7BE5 !important; }
   .quote-roi-stat { background: #f8f9fb !important; }
-  .quote-roi-value { color: #2AB5A0 !important; }
+  .quote-roi-value { color: #0E7A68 !important; }
   .quote-comp-after-cell { color: #1a1a1a !important; }
   .quote-comp-before-cell { color: #ccc !important; }
   .quote-signature { display: none !important; }

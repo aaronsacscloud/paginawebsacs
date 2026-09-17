@@ -460,7 +460,7 @@ const templates: Record<string, Template> = {
           <div style="text-align:center;margin:22px 0">
             <div style="display:inline-block;padding:18px 28px;background:#fafafa;border:1px solid #ececec;border-radius:12px">
               <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.10em;margin-bottom:6px">Bono acreditado</div>
-              <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:800;color:#2AB5A0;letter-spacing:-0.015em">${fmt(d.monto)}</div>
+              <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:800;color:#0E7A68;letter-spacing:-0.015em">${fmt(d.monto)}</div>
             </div>
           </div>
           <p style="color:#555;line-height:1.6;margin:0 0 20px;text-align:center;font-size:0.875rem">

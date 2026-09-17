@@ -60,7 +60,7 @@ const ACC = [
 
   /* ── texto grande ── */
   .sn-txt { position: absolute; left: 0; right: 0; top: 12vh; text-align: center; z-index: 1; padding: 0 16px; pointer-events: none; }
-  .sn-l1 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(22px, 3.2vw, 46px); letter-spacing: -0.02em; line-height: 1; color: #8A8A86; }
+  .sn-l1 { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(22px, 3.2vw, 46px); letter-spacing: -0.02em; line-height: 1; color: #6E6E6D; }
   .sn-l2 { display: grid; height: 1.05em; margin-top: 0.12em; font-family: var(--font-display); font-weight: 600; font-size: clamp(54px, 13vw, 200px); letter-spacing: -0.05em; line-height: 1; color: #1D1D1F; overflow: hidden; }
   .sn-w { grid-area: 1 / 1; display: block; opacity: 0; transform: translateY(0.5em); transition: opacity 0.5s cubic-bezier(0.2,0.7,0.2,1), transform 0.6s cubic-bezier(0.2,0.7,0.2,1); will-change: transform, opacity; }
   .sn-w.is-on { opacity: 1; transform: none; }
@@ -79,13 +79,13 @@ const ACC = [
 
   /* ── manifiesto ── */
   .sn-fin { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 4; text-align: center; padding: 0 24px; opacity: 0; visibility: hidden; transition: opacity 0.7s, visibility 0.7s; }
-  .sn-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #8A8A86; margin-bottom: 26px; }
+  .sn-kicker { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #6E6E6D; margin-bottom: 26px; }
   .sn-kicker::after { content: ''; display: block; width: 32px; height: 1px; background: #1D1D1F; margin: 18px auto 0; opacity: 0.35; }
   .sn-h2 { max-width: 880px; margin: 0 auto; font-family: var(--font-display); font-weight: 500; font-size: clamp(22px, 2.9vw, 42px); letter-spacing: -0.025em; line-height: 1.22; color: #1D1D1F; }
   .sn-ln { display: block; opacity: 0; transform: translateY(12px); transition: opacity 0.7s, transform 0.7s; }
   .sn-ln:nth-child(2) { transition-delay: 0.18s; } .sn-ln:nth-child(3) { transition-delay: 0.36s; }
   .sn-h2 em { font-style: italic; font-weight: 500; }
-  .sn-firma { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #8A8A86; opacity: 0; transition: opacity 0.7s 0.6s; }
+  .sn-firma { display: block; margin-top: 34px; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E6E6D; opacity: 0; transition: opacity 0.7s 0.6s; }
   .sn.is-fin .sn-fin { opacity: 1; visibility: visible; }
   .sn.is-fin .sn-ln { opacity: 1; transform: none; }
   .sn.is-fin .sn-firma { opacity: 1; }
