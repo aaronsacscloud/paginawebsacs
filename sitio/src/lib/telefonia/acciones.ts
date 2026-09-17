@@ -16,7 +16,10 @@
 //    que aquí importa— SIGUE FUNCIONANDO cuando no hay saldo de IA. El caso
 //    Andrea Romo (17-sep) fue justo eso: el compromiso no se creó porque el
 //    cierre con IA murió sin crédito. Una llamada no puede depender de eso.
-//    La IA se suma cuando hay llave, para lo que las reglas no cazan.
+//    La IA sí entra, pero AL COLGAR: el cierre (`cierre.ts`) lee la llamada
+//    entera y recoge lo que las reglas no cazaron —un envío prometido con
+//    otras palabras, una cita dicha a medias—. Durante la llamada manda la
+//    regla, que contesta en el mismo segundo y no se cae con la facturación.
 //
 // 2. **No todo se ejecuta solo.** El dueño pidió que la IA EJECUTE. Pero
 //    "mándale la información" y "descalifícalo para siempre" no son la misma

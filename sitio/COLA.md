@@ -898,13 +898,21 @@ vive en la sala de la llamada. Tres decisiones que valen la pena recordar:
    todo lo de Llamadas inteligentes le sirve igual.
 
 Lo que quedó fuera y sigue pendiente:
- · **La sala en el teléfono.** En móvil la llamada tiene su propia pantalla
-   completa (`if (esMovil …)` en `Telefonia.tsx`) y nunca llega a la sala: no
-   hay contexto, ni acciones, ni resumen al colgar. Es la misma pantalla, hay
-   que llevarla.
+ · ~~La sala en el teléfono~~ → HECHA el mismo día: en móvil hay un botón «Ver
+   la ficha y lo que te pidió» durante la llamada, y al colgar la sala aparece
+   sola como resumen. Es pantalla completa, con el colgar de pulgar y con lo
+   que se está oyendo y las acciones ARRIBA (una sola columna: lo que pidió no
+   puede estar a tres pantallas de scroll).
  · **La biblioteca de envíos nace vacía**: la primera vez que alguien pida «la
    información», la sala va a preguntar qué mandarle. Se contesta una vez y
    queda para siempre (Configuración ▸ Telefonía ▸ Lo que ya sabemos mandar).
+   → Ya no: va sembrada «la información de Sacs» desde WIKI_COMERCIAL, así que
+   el caso más común sale a la primera.
  · **El caso 3 (cotización) manda un PDF de texto**, no una cotización del
    cotizador. El puente con cotizaciones sigue sin construirse.
+ · **Twilio anda en 4.34 USD** (17-sep, medido): el número cuesta 6.25 al mes,
+   así que sin recarga la línea se cae. Los 90 USD de este mes NO fueron
+   llamadas (ésas van en 1.05): fueron 14 números locales comprados y soltados
+   —Twilio cobra el mes completo por cada compra, aunque lo sueltes el mismo
+   día—. La transcripción en vivo se midió en 0.027 USD por minuto.
 
