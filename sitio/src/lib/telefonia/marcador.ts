@@ -386,7 +386,23 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
      colgó. No es «contestó»: es «volver a llamar» en 10 minutos, con prioridad. */
   const caida = previo === 'en_linea' && !!it.agente_salio_at;
   if (caida) { resultado = 'volver_llamar'; }
-  if (previo === 'en_linea') { estado = 'cierre'; resultado = resultado || 'contesto'; }
+  /* ══ UN BUZÓN NO TIENE CIERRE ══════════════════════════════════════════
+     Pedido del dueño (17-sep-2026): «cuando es buzón debe considerarlo buzón y
+     pasarlo ya a la otra llamada, porque no hay mucho que hacer y sólo
+     complica el tema — elimina el flujo».
+
+     Tenía razón y el camino era éste: un buzón al que se le dejó mensaje pasa
+     por `en_linea` (la llamada está viva mientras habla la grabadora), así que
+     caía en la rama de arriba y se iba a `cierre` a esperar a que la IA leyera
+     la llamada. No hay nada que leer: del otro lado no hubo nadie. Ocho
+     segundos de wrap-up por cada buzón, en una lista de cien, son minutos
+     mirando una pantalla que no tiene nada que decir.
+
+     Va directo a `hecho`, y el latido marca al siguiente sin que nadie toque
+     nada. Se pone ANTES de la rama de `en_linea` porque el veredicto manda
+     sobre por dónde pasó la llamada. */
+  if (it.veredicto === 'buzon') { estado = 'hecho'; resultado = 'buzon'; }
+  else if (previo === 'en_linea') { estado = 'cierre'; resultado = resultado || 'contesto'; }
   else if (['escuchando', 'portero'].includes(previo)) {
     resultado = resultado || (it.veredicto === 'buzon' ? 'buzon' : it.veredicto === 'portero' || previo === 'portero' ? 'portero' : 'no_contesto');
   } else {
@@ -407,6 +423,22 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
       payload: { ...(it.answered_by ? { answered_by: it.answered_by } : {}), from: NUMERO, to: it.telefono, marcador: true, veredicto: it.veredicto, veredicto_fuente: it.veredicto_fuente },
     }).eq('call_id', sid);
     registrarBitacoraLlamada(sid).catch(() => {});
+  }
+
+  /* ══ SI CAYÓ EN BUZÓN, EL WHATSAPP SALE SOLO ═══════════════════════════
+     «Recuerda mandar el WhatsApp donde lo intentamos contactar, con las
+      condiciones que ya tenemos.»
+
+     Reusa `avisarLlamadaPerdida`, que ya trae las condiciones: la cascada
+     marketing → utility, el anti-repetición de 30 minutos y la tarea de
+     devolver la llamada pase lo que pase. No se escribe otra vez aquí — dos
+     sitios mandando el mismo aviso acaban mandando dos mensajes.
+
+     Sin `await`: el cierre del item no puede quedarse esperando a Meta. Si el
+     mensaje falla, la tarea que deja esa misma función es la red. */
+  if (resultado === 'buzon' && it.telefono) {
+    import('./perdida').then(m => m.avisarLlamadaPerdida(it.telefono, it.nombre))
+      .catch(() => { /* el aviso es un extra: nunca detiene la lista */ });
   }
 
   if (caida) {

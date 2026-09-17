@@ -796,6 +796,24 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               </div>
             )}
 
+            {/* ══ LOS TRES NÚMEROS, ARRIBA ══════════════════════════════════
+                Pedido del dueño (17-sep-2026): «estos igual que aparezcan
+                arriba por favor».
+
+                Vivían debajo de la tarjeta del contacto, y la tarjeta crece
+                —contexto, transcripción, cierre— así que en media jornada los
+                números quedaban fuera de pantalla: para saber cuántas
+                conversaciones llevabas había que bajar. Son el marcador del
+                partido; van donde se ven sin buscarlos. */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['#4FBF95', 'Conversaciones', conversaciones, '#1E8A63', `${fmt(sesion.segundos_hablados || 0)} hablados`],
+                ['#9B8CFA', 'Costo', `US$ ${costoSesion.toFixed(2)}`, C.moradoTinta, conversaciones ? `US$ ${(costoSesion / conversaciones).toFixed(2)} por conversación` : 'llamadas, sin transcripción'],
+                ['#E8A838', 'Sin contacto', Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0), '#9a6a10', `${sesion.buzon || 0} buzón · ${sesion.sin_contestar || 0} sin contestar · ${sesion.porteros || 0} contestadora`],
+              ].map(([franja, et, v, color, sub]: any) => (
+                <div key={et} style={{ ...tarjeta(franja), flex: 1, minWidth: 140, padding: '9px 12px' }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 17, fontWeight: 800, color }}>{v}</div><div style={{ fontSize: 10.5, color: C.g500 }}>{sub}</div></div>
+              ))}
+            </div>
             {actual ? (
               <div style={{ ...tarjeta(colorEstado), padding: '16px 18px', position: 'relative',
                 ...(recienAbierto ? { boxShadow: '0 0 0 3px #4FBF95', transition: 'box-shadow .15s' } : null) }}>
@@ -1096,15 +1114,6 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {[
-                ['#4FBF95', 'Conversaciones', conversaciones, '#1E8A63', `${fmt(sesion.segundos_hablados || 0)} hablados`],
-                ['#9B8CFA', 'Costo', `US$ ${costoSesion.toFixed(2)}`, C.moradoTinta, conversaciones ? `US$ ${(costoSesion / conversaciones).toFixed(2)} por conversación` : 'llamadas, sin transcripción'],
-                ['#E8A838', 'Sin contacto', Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0), '#9a6a10', `${sesion.buzon || 0} buzón · ${sesion.sin_contestar || 0} sin contestar · ${sesion.porteros || 0} contestadora`],
-              ].map(([franja, et, v, color, sub]: any) => (
-                <div key={et} style={{ ...tarjeta(franja), flex: 1, minWidth: 140, padding: '9px 12px' }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 17, fontWeight: 800, color }}>{v}</div><div style={{ fontSize: 10.5, color: C.g500 }}>{sub}</div></div>
-              ))}
-            </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {!pausada
                 ? <button onClick={() => accion('pausar')} disabled={!!ocupado} style={btnT}><IcoReloj size={13} />Pausar</button>
