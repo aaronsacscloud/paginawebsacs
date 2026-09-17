@@ -514,7 +514,7 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 > sean a partir de las 12:00 PM: que revise si está bien en el sistema y
 > adicional a eso que bloquee todo para las 12:00 PM en adelante.»
 
-- [ ] **6 · Botón de llamar** en la lista de llamadas y en el detalle del lead.
+- [x] **6 · Botón de llamar** en la lista de llamadas y en el detalle del lead. HECHO.
 - [ ] **7 · La sesión de llamadas, de punta a punta.** Indicador en vivo de
       llamada activa · quitar la barra espaciadora y abrir el micro solo al
       pasar la llamada · ocupado + aviso por WhatsApp con reintento en 5 min ·
