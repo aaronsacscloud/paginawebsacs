@@ -386,3 +386,103 @@ Si uno falla por saldo o cuota, pasa al siguiente.
 2. Etapa 4: herramientas gratis y MCP.
 3. Etapa 5: atribución y aprendizaje.
 4. Pendiente del dueño: `XAI_API_KEY` (opcional), `DATAFORSEO_*` y Reddit.
+
+---
+
+## Etapa 4 · parte A hecha (17-sep-2026) — la primera herramienta, por tres puertas
+
+Hasta aquí el motor **escribía**. A partir de aquí **hace cosas**, y eso cambia
+el tipo de activo: una IA puede describir un artículo, pero una herramienta que
+funciona sin registro es algo que puede *ejecutar* y citar. El objetivo declarado
+por el dueño («que seamos el referente») se gana antes por ahí que por un blog.
+
+### Qué quedó construido
+
+| Puerta | Dirección | Qué hace |
+|---|---|---|
+| Web | `/herramientas/` y `/herramientas/curva-de-tallas` | Sin registro, sin pedir correo. Arranca con datos de ejemplo marcados. |
+| MCP | `POST /api/mcp` | JSON-RPC 2.0, sin llave. `initialize` · `tools/list` · `tools/call`. |
+| API | `GET/POST /api/herramientas/<slug>` | GET devuelve el esquema de entrada; POST calcula. |
+
+Las tres pasan por `invocar()` (`src/lib/demanda/herramienta.ts`): una función,
+un esquema, una medición. **Nunca dupliques el cálculo en el navegador**: el día
+que se separen, la respuesta de ChatGPT deja de ser la del sitio y no hay forma
+de notarlo.
+
+Archivos: `src/lib/demanda/herramientas/{index,curva,curva.test}.ts`,
+`src/components/herramientas/CurvaTallas.tsx`, `src/pages/herramientas/*`,
+`src/pages/api/herramientas/[slug].ts`, `src/pages/api/mcp.ts`.
+
+### Cómo se agrega la siguiente herramienta
+
+1. Un archivo en `src/lib/demanda/herramientas/` que llame a `definirHerramienta`
+   con su `slug`, su esquema zod y —obligatorio— su `momento_sacs`.
+2. Una línea de `import` en `herramientas/index.ts`. Sin eso el registro no la
+   conoce y **ninguna** puerta la ve.
+3. Si tiene puerta web: su isla, su `import` y su `{h.slug === '…' && <Isla client:load />}`
+   en `herramientas/[slug].astro`, más sus pasos en `PASOS` (son el método, y es
+   lo que una IA puede explicar sin abrir la página).
+
+Ponle `.describe()` a **cada** campo del esquema. No es documentación de
+cortesía: es lo único que un modelo lee al decidir qué mandar por el MCP.
+
+### El cálculo, y por qué está así
+
+La idea: *una talla que vendió poco no es lo mismo que una talla que no estuvo*.
+Con el ejemplo real (M agotada el día 9 de 60), la lectura de siempre manda
+comprar 30% de M y la corregida 45%: **23% de las piezas cambian de talla**.
+
+- **Tope de 3× en la proyección.** Proyectar plano 14 piezas de 9 días a 60 da
+  93 y es falso: la demanda decae con la temporada. Sin tope, una talla agotada
+  el día 2 se lleva la compra entera detrás de un dato de dos días.
+- **Núcleo mínimo de tres tallas.** Con el corte al 60% pelado, la M se llevaba
+  el núcleo sola y la alerta de corrida rota no saltaba nunca.
+- **Reparto por resto mayor.** Redondear normal devuelve 5, 6 u 8 al repartir 7
+  piezas entre 5 tallas, y la orden sale por una cantidad que nadie pidió.
+
+### Cinco trampas que salieron aquí
+
+1. **Astro contesta 200 sin la isla.** Elegir el componente con `ISLAS[slug]`
+   deja la página completa —schema, método, nota de API— y **sin la
+   herramienta**. Astro necesita verlo escrito para empaquetar su hidratación;
+   lo dice en el log del servidor y responde 200 igual. Cualquier monitoreo por
+   código de estado la ve perfecta. **Regla: componente con `client:*` va
+   escrito, nunca desde una variable.**
+2. **El nav es `fixed` y no empuja.** Tres cabeceras arrancaban debajo de él,
+   `/producto` incluido. Medido: 102px con barra de idioma, 72px bajo 641px.
+   Está en el token `--nav-alto` de `global.css`; úsalo, no lo midas otra vez.
+3. **Dos calculadoras por la misma búsqueda.** Ya existía
+   `/campana/curva-de-tallas` (del correo del día 3). No son la misma —aquella
+   compara métodos, esta calcula— pero competían por «curva de tallas». La
+   landing quedó `noindex` y manda a la herramienta. **Antes de publicar algo
+   nuevo, busca si ya hay una página nuestra por esa consulta.**
+4. **El motor inventó una URL y la publicó.** `/recursos/curva-de-tallas` decía
+   «hicimos una calculadora» apuntando a la landing de campaña. Existía de
+   casualidad. El auditor de enlaces no comprueba lo que el generador promete en
+   prosa: pendiente de la etapa 5.
+5. **`prerender = false` = fuera de los dos sitemaps.** @astrojs/sitemap solo ve
+   lo que el build escribe en disco. Las rutas dinámicas van en
+   `sitemap-demanda.xml.ts`, que es el sitemap de lo que no pasa por build.
+
+### Privacidad
+
+`de_herramienta_usos` guarda slug, puerta, visitor_id, ok y ms. **`resumen` se
+deja NULO a propósito**: es derivado, no la entrada cruda, pero nombra las tallas
+y los productos del retailer. La promesa de la herramienta es que sus números no
+se quedan aquí. Para saber qué herramienta convierte basta slug + visitor_id.
+
+### Prueba
+
+`npm test` → 4 suites, la nueva con 20 casos
+(`src/lib/demanda/herramientas/curva.test.ts`). Necesita el hook de resolución
+(`--import ./scripts/de-registrar-hooks.mjs`) porque el repo importa sin
+extensión. QA con navegador en 1280 y 390 px, sin errores de JS ni desborde:
+https://code.sacscloud.com/shots/dc7c5b22401d3636.png
+
+### Lo que sigue de la etapa 4
+
+1. Dos herramientas más (candidatas: sell-through por estilo, nivelación entre
+   tiendas — las dos ya tienen artículo publicado al que engancharse).
+2. Anunciar el MCP donde los clientes lo puedan conectar, y medir si lo usan.
+3. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
+4. Autoridad y PR.
