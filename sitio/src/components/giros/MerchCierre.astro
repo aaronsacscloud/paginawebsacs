@@ -58,6 +58,7 @@ import BloqueProducto from '../BloqueProducto.astro';
         <ul class="mc-casc" id="mc-casc"></ul>
         <label class="mc-sl"><span>Piezas que cargas <b id="mc-c">1,200</b></span><input type="range" id="mc-carga-r" min="400" max="2400" step="50" value="1200" aria-label="Piezas que cargas" /></label>
         <label class="mc-sl"><span>Regalía del contrato <b id="mc-r">25 %</b></span><input type="range" id="mc-reg-r" min="0" max="40" step="5" value="25" aria-label="Porcentaje de regalía" /></label>
+        <label class="mc-switch"><input type="checkbox" id="mc-curva" /> <span>Repartir con la curva de la plaza pasada</span></label>
         <p class="mc-fin" id="mc-fin"></p>
         <a class="mc-cta" href="/contacto">Cerrar mi próxima fecha</a>
       </section>
@@ -94,6 +95,7 @@ import BloqueProducto from '../BloqueProducto.astro';
   .mc-sl span { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
   .mc-sl b { font-family: var(--font-display); font-size: 16px; color: var(--color-text-primary); }
   .mc-sl input { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .mc-switch { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; font-size: 13.5px; color: var(--color-text-secondary); cursor: pointer; }
   .mc-fin { margin: 10px 0 0; padding: 11px 13px; border-radius: var(--radius-sm, 8px); background: var(--color-bg-primary, #F7F7F5); font-size: 13.5px; line-height: 1.45; color: var(--color-text-primary); }
   .mc-cta { display: inline-flex; margin-top: 12px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
   @media (max-width: 767px) { .mc { padding: 14px; } .mc-grid { grid-template-columns: 1fr; } .mc-resta em { display: none; } .mc-cta { width: 100%; justify-content: center; } }
@@ -119,10 +121,14 @@ import BloqueProducto from '../BloqueProducto.astro';
       const carga = Number(($('mc-carga-r') as HTMLInputElement).value);
       const reg = Number(($('mc-reg-r') as HTMLInputElement).value) / 100;
       const d = PUB[pub];
-      // La demanda de la noche no crece porque cargues más: la fija el público que entró.
-      const demanda = 890;
+      const curva = ($('mc-curva') as HTMLInputElement).checked;
+      // La demanda de la noche no crece porque cargues más: la fija el público que entró, y ahí
+      // caben los que quisieron su talla y no la encontraron. Lo que sí decides es CÓMO repartes
+      // la carga: parejo, que es lo que hace el que no tiene el dato, o con la curva de la plaza
+      // pasada. Ahí está la enseñanza: la misma playera, el mismo camión, otra curva.
+      const demanda = 1050;
       const porTalla = d.c.map((x) => Math.round(demanda * x));
-      const cargaTalla = d.c.map((x) => Math.round(carga * x));
+      const cargaTalla = curva ? d.c.map((x) => Math.round(carga * x)) : TALLAS.map(() => Math.round(carga / 5));
       const vendidas = porTalla.map((v, i) => Math.min(v, cargaTalla[i]));
       const vend = vendidas.reduce((a, b) => a + b, 0);
       const regres = carga - vend;
@@ -156,7 +162,8 @@ import BloqueProducto from '../BloqueProducto.astro';
         [`Flete y maniobra de ${carga.toLocaleString('es-MX')} piezas`, pesos(-flete)],
       ].map(([a, b]) => `<li><span>${a}</span><b>${b}</b></li>`).join('') +
         `<li class="total ${queda < 0 ? 'neg' : ''}"><span>Queda de la fecha</span><b>${pesos(queda)}</b></li>`;
-      $('mc-fin').innerHTML = `Y ${regres.toLocaleString('es-MX')} piezas regresaron al camión: <b>${pesos(sobranteCosto)} a costo</b>, parados hasta la siguiente fecha. ${d.nota}`;
+      const como = curva ? 'Repartiste con la curva de la plaza pasada' : `Cargaste parejo: ${Math.round(carga / 5)} de cada talla`;
+      $('mc-fin').innerHTML = `${como}. Regresaron <b>${regres.toLocaleString('es-MX')} piezas</b> al camión: <b>${pesos(sobranteCosto)} a costo</b>, parados hasta la siguiente fecha. ${d.nota}`;
       (window as any).sacsPH?.('giro_mc_cierre', { carga, pub });
     };
     $('mc-pub').addEventListener('click', (e) => {
@@ -165,6 +172,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       pub = b.dataset.p!; pinta();
     });
     ['mc-carga-r', 'mc-reg-r'].forEach((id) => $(id).addEventListener('input', pinta));
+    $('mc-curva').addEventListener('change', pinta);
     pinta();
   })();
 </script>
