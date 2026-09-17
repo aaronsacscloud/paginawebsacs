@@ -692,6 +692,7 @@ verificadas en el texto, no en el resumen del redactor. Ese es el patrón: la v1
 | 12 | Maternidad | ✓ v2 **10/9/10/10/10** (50 corr.) | ✓ en `_borrador/` + `MaFecha` | 0/22 (ma.json) | pendiente | ComingSoon |
 | 13 | Outlet y Remates | ✓ v3 **9/10/9/9/9** (51 corr.) | ✓ en `_borrador/` + `OuBajada` | 0/22 (ou.json) | pendiente | ComingSoon |
 | 14 | Merch de Eventos | **ya existía la landing**; la ficha queda como mejora | ✓ | — | — | en producción |
+| 15 | Emprendedoras (venta en digital) | ✓ v2 **9/9/10/10/9** (40 corr.) | datos en curso + `EmApartado` | 0/22 (em.json) | pendiente | ComingSoon, fuera del menú |
 | — | Las 7 hechas | auditadas 152 fotos | — | 24 rehechas; faltan 128 de 8-9 | — | en producción |
 
 **Las 13 páginas están escritas y compilan.** Lo único que falta es la pasada fotográfica.
@@ -728,6 +729,21 @@ números y el JavaScript de cada bloque, y salieron 51 correcciones. El patrón,
 - **Lo que se promete en una viñeta y no está en el código.** La regla de diciembre de sastrería
   («los maquileros se van desde el 15, la fecha real de corte es el 12») estaba escrita en la
   viñeta y en los datos, y el script no la tenía.
+
+**Lo que enseñó el giro 15 (emprendedoras), y sirve para todos:** su referee fue la única que
+cachó **humo en la fórmula**, y vale la pena copiar cómo lo hizo:
+
+- **No cuentes como venta segura la venta hipotética.** El bloque decía que la segunda clienta «sí
+  iba a pagar», cuando la propia ficha dice que solo paga el 55 %. Contarla completa inflaba el
+  número al doble. Su frase: *«$42,120 me suena a vendedor de curso y me pone a la defensiva»*.
+- **No restes dinero que entró contra dinero que nunca existió.** Lo que ganó y lo que dejó de
+  ganar son dos cuentas, y van separadas aunque la resta cuadre.
+- **Una variable no puede cambiar por algo que no la toca.** Los días de apartado no cambian
+  cuántas clientas había en la fila: eso sería hacer aparecer gente. Cambian cuántas ya se fueron.
+- **El mejor dato no siempre es en pesos.** Aquí pega más «135 días de rack muertos al mes, como
+  tener cuatro piezas y media colgadas sin venderse» que cualquier cifra en dinero.
+- **La palanca del bloque tiene que ser algo que el dueño decida.** Un deslizador de «cuántas te
+  pagan» no lo decide ella; «¿les pides anticipo?» sí.
 
 **Lo que aprendió esta vuelta (para el siguiente giro):**
 
