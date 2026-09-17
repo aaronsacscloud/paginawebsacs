@@ -112,7 +112,8 @@ import BloqueProducto from '../BloqueProducto.astro';
       const terminado = menos(entrega, 3);
       const prueba = menos(terminado, 10 + extra);     // el maquilero corre todo una semana
       const corte = menos(prueba, 12 + extra);
-      const vender = menos(corte, tela);               // el anticipo tiene que caer antes de pedir la tela
+      // Sin anticipo no se corta, y entre que deja el anticipo y se traza pasan un par de días.
+      const vender = menos(corte, tela + 2);
       document.getElementById('sa-corte')!.textContent = dia(corte);
       document.getElementById('sa-vender')!.textContent = dia(vender);
       const tarde = +vender < +hoy;

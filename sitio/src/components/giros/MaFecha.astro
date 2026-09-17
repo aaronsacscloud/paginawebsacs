@@ -97,12 +97,15 @@ import BloqueProducto from '../BloqueProducto.astro';
         $('ma-frase').innerHTML = 'Aquí se acaba el embarazo. <b>Aquí empieza la otra mitad de la venta</b>: brasieres de lactancia, la segunda faja y las pijamas con apertura. Su talla de antes ya no le sirve: es de un cuerpo que ya no existe.';
         return;
       }
-      // Lo que le queda por delante baja con las semanas; el 3.er trimestre es donde más gasta.
+      // Lo que le queda por delante, por tramos de gasto real: el 1.er trimestre casi no compra,
+      // el 2.o son pantalones y blusas, y el 3.o es donde se va el dinero (vestido del shower,
+      // sesión de fotos, maleta del hospital). En la semana 30 da los $4,800 de la ficha.
       const restan = Math.max(0, 40 - s);
-      const queda = Math.round((restan * 160 + (s < 28 ? 1200 : 0)) / 100) * 100;
+      const sem = (a: number, b: number, pesos: number) => Math.max(0, Math.min(b, 40) - Math.max(a, s)) * pesos;
+      const queda = Math.round((sem(4, 13, 40) + sem(14, 27, 250) + sem(28, 40, 480)) / 100) * 100;
       $('ma-quien').textContent = 'Karla · semana ' + s;
       $('ma-num').textContent = pesos(queda);
-      $('ma-frase').innerHTML = `le quedan de compras y <b>${restan} semanas</b>. Si nadie le escribe en la 34, se lleva <b>${pesos(queda * 0.65)}</b> a otra tienda.`;
+      $('ma-frase').innerHTML = `le quedan de compras y <b>${restan} semanas</b>. Si nadie le escribe en la 34, se lleva <b>${pesos(Math.round(queda * 0.65 / 100) * 100)}</b> a otra tienda.`;
       (window as any).sacsPH?.('giro_ma_fecha', { semana: s });
     };
     r.addEventListener('input', pinta);
