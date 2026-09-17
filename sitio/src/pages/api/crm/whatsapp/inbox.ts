@@ -282,9 +282,17 @@ const _GET: APIRoute = async ({ request, url }) => {
      barre la tabla entera. */
   const idsContacto = [...new Set(todas.map((c: any) => c.contact_id).filter(Boolean))];
   if (idsContacto.length) {
+    /* El tope existe para no mandar un `in()` de miles de uuids, pero NO puede
+       ser silencioso: el inbox carga hasta 1000+1000+600 filas, así que con la
+       cuenta creciendo empezaría a haber contactos cuyo seguimiento no se pinta
+       —y nadie sabría por qué—. Si se corta, se dice en el log. */
+    const TOPE_SEG = 1200;
+    if (idsContacto.length > TOPE_SEG) {
+      console.warn(`[inbox] seguimientos: ${idsContacto.length} contactos en lista, solo se consultan ${TOPE_SEG}. Los demás no van a mostrar su seguimiento — toca paginar esta consulta.`);
+    }
     const { data: segs } = await supabase.from('crm_seguimientos')
       .select('contact_id, fecha, motivo')
-      .in('contact_id', idsContacto.slice(0, 500))
+      .in('contact_id', idsContacto.slice(0, TOPE_SEG))
       .is('cumplido_at', null)
       .order('fecha', { ascending: true });
     const porContacto = new Map<string, { fecha: string; motivo: string }>();

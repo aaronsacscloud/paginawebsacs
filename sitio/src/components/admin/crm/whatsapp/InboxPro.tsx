@@ -174,11 +174,18 @@ export default function InboxPro() {
      22 s: menos se sentía un parpadeo entre mensajes; más y vuelve a envejecer. */
   const ultimaActividad = useRef<number>(Date.now());
   const marcarActividad = () => { ultimaActividad.current = Date.now(); };
+  /* El reloj se monta UNA vez (deps vacías) y por eso no puede llamar a
+     `soltarOrden` directo: capturaría la versión del primer render, con el
+     `cargarLista` de entonces —que depende de `isMobile`—. Al girar el teléfono,
+     el auto-soltado recargaría la lista con el tamaño de página equivocado.
+     Con el ref siempre llama a la versión de hoy. */
+  const soltarRef = useRef(soltarOrden);
+  soltarRef.current = soltarOrden;
   useEffect(() => {
     const t = setInterval(() => {
       if (!ordenFijo.current) return;
       if (Date.now() - ultimaActividad.current < 22000) return;
-      soltarOrden();
+      soltarRef.current();
     }, 4000);
     return () => clearInterval(t);
   }, []);

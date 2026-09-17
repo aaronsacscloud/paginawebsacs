@@ -47,7 +47,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
    *  pasadas, y era la única tarjeta de ahí con un botón que hace algo. */
   resumenIa?: string | null; resumenIaAt?: string | null;
 }) {
-  const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar' | 'seguimiento'>(accionInicial || 'menu');
+  const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar' | 'seguimiento' | 'conciliacion'>(accionInicial || 'menu');
   const [cuentaAbierta, setCuentaAbierta] = useState(false);
   const [resumenAbierto, setResumenAbierto] = useState(false);
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
@@ -63,6 +63,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   ];
 
   if (vista === 'cotizar') return <Cotizar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
+  if (vista === 'conciliacion') return <CartaConciliacion contacto={contacto} empresa={empresa} primerNombre={primerNombre} volver={() => setVista('menu')} refrescar={refrescar} />;
   if (vista === 'seguimiento') return <PedirSeguimiento contacto={contacto} conv={conv} primerNombre={primerNombre} volver={() => setVista('menu')} refrescar={refrescar} />;
   if (vista === 'agendar') return <Agendar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
 
@@ -89,6 +90,13 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
             porque si pedir un seguimiento cuesta más que anotarlo en un papel,
             se anota en el papel. Aparece en la bandeja «Pidió seguimiento». */}
         <BotonAccion e="⏰" t="Seguimiento" d="Prometiste marcarle" ok={!!contacto} onClick={() => setVista('seguimiento')} />
+        {/* La carta de conciliación se redacta AQUÍ y no por API: el motor se
+            construyó primero, pero una carta que solo se puede crear con curl
+            no la usa nadie. Se ofrece solo a quien ya se fue o se descalificó —
+            mandarle una conciliación a un cliente activo no tiene sentido. */}
+        {['churned', 'descalificado', 'rezagado', 'en_conciliacion'].includes(String(contacto?.lifecycle_stage || '')) && (
+          <BotonAccion e="🤝" t="Conciliación" d="Carta con firma" ok={!!contacto} onClick={() => setVista('conciliacion')} />
+        )}
         {atajos.map(a => (
           <BotonAccion key={a.t} e={a.e} t={a.t} d={a.ok ? a.d : 'Sin contacto'} ok={a.ok}
             onClick={() => a.onClick ? a.onClick() : (a.href && (window.location.href = a.href))} />
@@ -140,6 +148,128 @@ export function EstiloAccv() {
       .accv.accv.accv button.accv-grande { min-height: 48px !important; }
       .accv-tap.accv-tap.accv-tap { min-height: 44px !important; }
     `}</style>
+  );
+}
+
+/* ══ CARTA DE CONCILIACIÓN ═══════════════════════════════════════════════════
+   Se redacta, se manda y se copia la liga sin salir de la conversación.
+
+   Lo importante de esta pantalla es lo que NO hace: no trae la carta escrita.
+   Cada conciliación es un trato distinto —a uno le perdonas un adeudo, a otro
+   le bajas el precio— y una plantilla fija haría que se mandaran cartas que no
+   corresponden. Lo que sí trae son tres arranques para no partir de la hoja en
+   blanco, que es lo que de verdad frena.
+
+   Y avisa antes de crear: lo que escribas es lo que el cliente va a firmar, y
+   después de mandarla el texto ya no se toca — un documento editable después
+   de firmado no prueba nada. */
+function CartaConciliacion({ contacto, empresa, primerNombre, volver, refrescar }: {
+  contacto: any; empresa: any; primerNombre: string; volver: () => void; refrescar?: () => void;
+}) {
+  const [titulo, setTitulo] = useState('Volvamos a trabajar juntos');
+  const [cuerpo, setCuerpo] = useState('');
+  const [monto, setMonto] = useState('');
+  const [vigencia, setVigencia] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [url, setUrl] = useState('');
+  const [copiado, setCopiado] = useState(false);
+
+  const negocio = empresa?.nombre_comercial || empresa?.nombre || 'tu tienda';
+  const ARRANQUES: { t: string; texto: string }[] = [
+    { t: 'Le perdono el adeudo', texto: `${primerNombre}, queremos que ${negocio} vuelva a usar Sacs.\n\nCancelamos el adeudo que quedó pendiente: empiezas de cero, sin deber nada.\n\nRetomas con la misma información que ya tenías —tu catálogo, tus clientes, tu historial— y te acompañamos las primeras semanas para dejarlo funcionando.` },
+    { t: 'Le bajo el precio', texto: `${primerNombre}, queremos que ${negocio} vuelva a usar Sacs.\n\nTe respetamos el precio que tenías cuando te fuiste, congelado por 12 meses.\n\nRetomas con toda tu información y te acompañamos las primeras semanas para dejarlo funcionando.` },
+    { t: 'Le regalo meses', texto: `${primerNombre}, queremos que ${negocio} vuelva a usar Sacs.\n\nLos primeros dos meses corren por nuestra cuenta: los usas sin pagar y decides después.\n\nRetomas con toda tu información y te acompañamos para dejarlo funcionando desde el primer día.` },
+  ];
+
+  const enDias = (d: number) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
+  const crear = async (mandar: boolean) => {
+    setMsg('');
+    if (cuerpo.trim().length < 40) { setMsg('Escribe el acuerdo: qué le ofreces y qué esperas de él.'); return; }
+    setOcupado(true);
+    const r = await fetch('/api/crm/conciliacion', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'crear', contact_id: contacto?.id, company_id: empresa?.id || undefined,
+        titulo: titulo.trim() || undefined, cuerpo: cuerpo.trim(),
+        monto: monto ? Number(monto) : undefined, vigencia: vigencia || undefined,
+      }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    if (r?.error) { setOcupado(false); setMsg(r.error); return; }
+    if (mandar) {
+      const e = await fetch('/api/crm/conciliacion', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'enviar', id: r.id }),
+      }).then(x => x.json()).catch(() => ({}));
+      if (e?.error) { setOcupado(false); setMsg(e.error); return; }
+    }
+    setOcupado(false); setUrl(r.url); refrescar?.();
+  };
+
+  if (url) return (
+    <div className="accv" style={{ padding: 14 }}>
+      <EstiloAccv />
+      <Volver volver={volver} titulo="Conciliación" />
+      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 10, padding: 16, marginTop: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: C.emerald700 }}>Lista para mandar</div>
+        <p style={{ fontSize: 11.5, color: C.g500, margin: '8px 0 10px', lineHeight: 1.5 }}>
+          Mándale esta liga por WhatsApp. Cuando la firme, pasa solo a <b>En conciliación</b>, te deja la tarea del día y te avisa.
+        </p>
+        <div style={{ fontSize: 11, color: C.moradoTinta, wordBreak: 'break-all', background: C.moradoAgua, borderRadius: 8, padding: '8px 10px' }}>{url}</div>
+        <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10 }}
+          onClick={() => { navigator.clipboard?.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 2000); }}>
+          {copiado ? 'Copiada' : 'Copiar la liga'}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="accv" style={{ padding: 14 }}>
+      <EstiloAccv />
+      <Volver volver={volver} titulo="Carta de conciliación" />
+      <p style={{ fontSize: 11.5, color: C.g500, margin: '2px 0 10px', lineHeight: 1.5 }}>
+        Lo que escribas es <b>lo que va a firmar</b>. Después de mandarla el texto ya no se puede cambiar.
+      </p>
+
+      <span style={lbl}>Título</span>
+      <input value={titulo} onChange={e => setTitulo(e.target.value)} style={inp} />
+
+      <span style={lbl}>Empezar desde</span>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+        {ARRANQUES.map(a => (
+          <button key={a.t} onClick={() => setCuerpo(a.texto)} style={pill(cuerpo === a.texto)}>{a.t}</button>
+        ))}
+      </div>
+
+      <span style={lbl}>El acuerdo</span>
+      <textarea value={cuerpo} onChange={e => setCuerpo(e.target.value)} rows={9}
+        placeholder="Qué le ofreces y qué esperas de él. Se lee tal cual, así que escríbelo como se lo dirías de frente."
+        style={{ ...inp, minHeight: 150, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <span style={lbl}>Monto (opcional)</span>
+          <input type="number" value={monto} onChange={e => setMonto(e.target.value)} placeholder="9000" style={inp} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <span style={lbl}>Vence (opcional)</span>
+          <input type="date" value={vigencia} min={enDias(1)} onChange={e => setVigencia(e.target.value)} style={inp} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+        {[['15 días', 15], ['30 días', 30]].map(([t, d]) => (
+          <button key={String(t)} onClick={() => setVigencia(enDias(Number(d)))} style={pill(vigencia === enDias(Number(d)))}>{t}</button>
+        ))}
+      </div>
+
+      <button className="accv-grande" onClick={() => crear(true)} disabled={ocupado || cuerpo.trim().length < 40}
+        style={{ ...btnP, width: '100%', marginTop: 12, background: cuerpo.trim().length >= 40 ? C.moradoTinta : C.g300 }}>
+        {ocupado ? 'Creando…' : 'Crear y obtener la liga'}
+      </button>
+      <button onClick={volver} style={{ ...btnG, marginTop: 8, width: '100%', color: C.g500 }}>Volver</button>
+      {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
+    </div>
   );
 }
 
