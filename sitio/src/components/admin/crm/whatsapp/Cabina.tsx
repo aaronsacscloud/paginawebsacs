@@ -26,6 +26,11 @@ type Props = {
   /** Cuántas filas tiene la lista según el inbox (para avisar antes de armar). */
   total: number;
   yo?: any;
+  /** Abrir directo en una jornada ya existente, sin pasar por elegir lista.
+      Lo usa la pantalla propia de Llamadas inteligentes, donde las sesiones
+      anteriores se ven ANTES de entrar: sin esto había que elegir una lista
+      cualquiera sólo para llegar al botón de «Abrir» de la jornada de ayer. */
+  sesionInicial?: string | null;
   onAbrirConversacion?: (conversationId: string) => void;
   onCerrar: () => void;
   movil?: boolean;
@@ -80,8 +85,8 @@ const leerLocal = <T,>(k: string, d: T): T => { try { const v = localStorage.get
 const guardarSesion = (k: string, v: string) => { try { v ? sessionStorage.setItem(k, v) : sessionStorage.removeItem(k); } catch { /* privado */ } };
 const leerSesion = (k: string, d: string): string => { try { return sessionStorage.getItem(k) ?? d; } catch { return d; } };
 
-export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion, onCerrar, movil }: Props) {
-  const [sesionId, setSesionId] = useState<string | null>(() => leerLocal('cabina.sesion', null));
+export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAbrirConversacion, onCerrar, movil }: Props) {
+  const [sesionId, setSesionId] = useState<string | null>(() => sesionInicial || leerLocal('cabina.sesion', null));
   const [est, setEst] = useState<any>(null);           // { sesion, actual, pendientes, ahora }
   const [items, setItems] = useState<any[]>([]);
   const [previas, setPrevias] = useState<any[]>([]);

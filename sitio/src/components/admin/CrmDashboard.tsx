@@ -26,6 +26,7 @@ const PRECARGA_TAB: Record<string, () => Promise<any>> = {
   pipeline: () => import('./crm/LeadsTab'),
   clientes: () => import('./crm/ClientesTab'),
   whatsapp: () => import('./crm/whatsapp/WhatsAppTab'),
+  llamadas: () => import('./crm/LlamadasInteligentes'),
   cotizaciones: () => import('./RevenueHub'),
   pagos: () => import('./crm/PagosTab'),
   soporte: () => import('./crm/soporte/SoporteTab'),
@@ -54,6 +55,7 @@ const DemandaSeo = lazySeguro(() => import('./crm/demanda/DemandaSeo'));
 const DemandaIA = lazySeguro(() => import('./crm/demanda/DemandaIA'));
 const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
+const LlamadasInteligentes = lazySeguro(() => import('./crm/LlamadasInteligentes'));
 const WaMasivos = lazySeguro(() => import('./crm/whatsapp/Masivos'));
 const ConfigWhatsApp = lazySeguro(() => import('./crm/whatsapp/ConfigWhatsApp'));
 const MetricasWA = lazySeguro(() => import('./crm/whatsapp/MetricasWA'));
@@ -107,7 +109,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
   }
 }
 
-type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo'
+type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'llamadas' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo'
   | 'de-resumen' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema';
 
 // SVG icons (Squarespace-style, clean strokes)
@@ -146,6 +148,7 @@ const ICONS: Record<string, string> = {
      imán ni de una lupa (esos dicen «buscar», que es lo que hace media app). */
   demanda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.6" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.6a9.4 9.4 0 00-6.6 2.7"/><path d="M21.4 12a9.4 9.4 0 00-2.7-6.6" opacity=".7"/><path d="M12 21.4a9.4 9.4 0 006.6-2.7" opacity=".5"/><path d="M8.7 7.6L6.2 6.1M16.4 8.7l1.5-2.5M15.3 16.4l2.5 1.5" stroke-width="1.3" opacity=".8"/></svg>',
   automations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z" fill="url(#crmFirma)"/><path d="M3.4 11.2a7.8 7.8 0 1115.6 0c0 4.3-3.5 7.8-7.8 7.8H3.4z"/><path d="M8.6 11.4h.1M12 11.4h.1M15.4 11.4h.1" stroke-width="2.2"/></svg>',
+  llamadas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 3.8 9.4 8 7.6 9.9c-.5.5-.6 1.3-.2 1.9a14 14 0 0 0 4.8 4.8c.6.4 1.4.3 1.9-.2L16 14.6l4.2 2.2c.6.3.9 1 .7 1.7l-.6 1.9c-.2.7-.9 1.2-1.7 1.1C10.4 20.7 3.3 13.6 2.5 5.4c-.1-.8.4-1.5 1.1-1.7l1.9-.6c.7-.2 1.4.1 1.7.7Z" fill="url(#crmFirma)"/><path d="M7.2 3.8 9.4 8 7.6 9.9c-.5.5-.6 1.3-.2 1.9a14 14 0 0 0 4.8 4.8c.6.4 1.4.3 1.9-.2L16 14.6l4.2 2.2c.6.3.9 1 .7 1.7l-.6 1.9c-.2.7-.9 1.2-1.7 1.1C10.4 20.7 3.3 13.6 2.5 5.4c-.1-.8.4-1.5 1.1-1.7l1.9-.6c.7-.2 1.4.1 1.7.7Z"/></svg>',
   whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.6" width="18" height="14.8" rx="3.4" fill="url(#crmFirma)"/><rect x="3" y="4.6" width="18" height="14.8" rx="3.4"/><path d="M3.4 13h4.2l1.4 2.4h6l1.4-2.4h4.2"/></svg>',
   oportunidades: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
   abm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4" fill="url(#crmFirma)"/><circle cx="12" cy="12" r="4.4"/><path d="M12 1.6v3.6M12 18.8v3.6M1.6 12h3.6M18.8 12h3.6" stroke-width="1.2"/></svg>',
@@ -256,6 +259,10 @@ const NAV_SECTIONS = [
          estar detrás de abrir una cabecera. Y es transversal: se usa con un
          lead y con un cliente, así que no era de Ventas ni de Cuentas. */
       { id: 'whatsapp' as Tab, label: 'Inbox', icon: 'whatsapp' },
+      /* Llamadas inteligentes sale del inbox y se pone a su lado (caso 8 del
+         dueño, 17-sep). Sigue siendo diario y transversal como el Inbox, pero
+         es OTRO trabajo: ahí se contesta lo que llega, aquí se sale a buscar. */
+      { id: 'llamadas' as Tab, label: 'Llamadas', icon: 'llamadas' },
     ],
   },
   {
@@ -1221,6 +1228,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><SecuenciasTab /></ErrorBoundary>
         ) : tab === 'whatsapp' ? (
           <ErrorBoundary><WhatsAppTab /></ErrorBoundary>
+        ) : tab === 'llamadas' ? (
+          <ErrorBoundary><LlamadasInteligentes yo={yo} /></ErrorBoundary>
         ) : tab === 'wa-masivos' ? (
           <ErrorBoundary><WaMasivos /></ErrorBoundary>
         ) : tab === 'wa-config' ? (
