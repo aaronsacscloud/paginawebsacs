@@ -49,6 +49,8 @@ const {
   porQue = 'no es un módulo estándar sino una forma completa de costear',
   notaComplemento,
   moneda = 'mxn',
+  /** Frase de Fideliza; los giros de caballero pasan 'Para que el cliente regrese'. */
+  paraFideliza = 'Para que la clienta regrese',
 } = Astro.props;
 
 // El precio en la moneda pedida, con el mismo símbolo que /planes. Los
@@ -99,7 +101,7 @@ const planes = [
   {
     n: '03',
     nombre: 'Fideliza y Multiplica',
-    para: 'Para que la clienta regrese',
+    para: paraFideliza,
     precio: precioEn(2, 'monthly') || '$1,890',
     anual: precioEn(2, 'annual') || '$1,229',
     hereda: 'Controla',

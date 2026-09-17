@@ -86,7 +86,7 @@ export const cortinaWS = {
     { que: '¿Hay 27 de este modelo?', donde: 'En la tablet, desde la pared', dato: 'Los números, anchos y colores que hay aquí, en bodega y en las demás tiendas' },
     { que: 'El apartado de la graduación', donde: 'Par bloqueado, saldo y fecha', dato: 'Con aviso por WhatsApp antes de que venza; nadie le vende el par a otro' },
     { que: 'El 27 está en la del Centro', donde: 'Traspaso desde el celular', dato: 'Le das fecha al cliente; se confirma cuando llega, no se pierde en el camino' },
-    { que: 'Bota + texana + cinto', donde: 'Un solo ticket', dato: 'Bota, texana y cinto: tres tallas en un solo ticket (cinco si lleva camisa y pantalón), con la comisión por conjunto' },
+    { que: 'El conjunto', donde: 'Un solo ticket', dato: 'Bota, texana y cinto: tres tallas en un solo ticket (cinco si lleva camisa y pantalón), con la comisión por conjunto' },
   ],
   pieDespues: 'El mismo vendedor, la misma tarde. Ya no adivina qué hay en la bodega: lo ve.',
 };
@@ -131,7 +131,7 @@ export const seccionesWS: SuiteSeccion[] = [
     id: 'tresmatrices', tag: 'Inventario',
     titulo: 'Cinco matrices, un solo ticket',
     texto: 'La bota por número, medio número y horma. La texana por talla y X. El cinto por medida. La camisa por talla. El pantalón por cintura y largo. Cada uno con su matriz, y los cinco se cobran en el mismo ticket para el mismo señor.',
-    bullets: ['Bota: 25 al 30 con 26.5 y 27.5, horma normal o ancha, por piel y color', 'Texana: 6 3/4 a 7 5/8 (o “un 57”), por material y X', 'Cinto: 30 a 46; pantalón: cintura × largo, la segunda matriz más quebrada de la tienda'],
+    bullets: ['Bota: 25 al 30 con 26.5 y 27.5, horma normal o ancha, por piel y color', 'Texana: 6 3/4 a 7 5/8 (o “un 57”), por material y X', 'Cinto: 30 a 46; camisa: S a XXL; pantalón: cintura × largo, la segunda matriz más quebrada de la tienda'],
     visual: mockMatriz('Rodeo res chocolate · pares por número', ['25', '26', '26.5', '27', '27.5', '28', '29', '30'], [['Normal', [2, 3, 1, 0, 1, 2, 2, 3]], ['Ancha', [1, 1, 0, 0, 0, 1, 1, 2]]], 'Sin 27 en ninguna horma: la corrida ya está rota', [0, 3], 0),
   },
   {
