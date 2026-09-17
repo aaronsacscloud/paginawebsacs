@@ -54,6 +54,10 @@ export type Propuesta = {
 };
 
 const primerNombre = (n?: string | null) => String(n || '').trim().split(/\s+/)[0] || '';
+const sinAcentosTema = (x: string) => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+/** Las palabras que distinguen un tema de otro: «sacs» está en todos. */
+const GENERICAS_TEMA = new Set(['sacs', 'sacscloud', 'general', 'sobre', 'para', 'llamada', 'cliente', 'sistema']);
+const palabrasFuertes = (x: string) => (x.match(/[a-z0-9]{4,}/g) || []).filter(w => !GENERICAS_TEMA.has(w));
 
 /** Hoy en CDMX, con día de la semana: «el jueves» depende de qué día es. */
 function hoyCdmx() {
@@ -245,9 +249,35 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
        booking (con invitación al cliente por Google Calendar) y pisaría el `volver_at` del item con su propia
        interpretación de la hora. Un «márcame en diez minutos» terminaba como una reunión en la agenda. */
     const yaLoHizoFernanda = new Set(((it.voz as any)?.herramientas || []).map((h: any) => String(h?.nombre)));
+
+    /* ══ Y LO QUE YA SE HIZO DURANTE LA LLAMADA ═════════════════════════════
+       Desde el 17-sep, lo que el cliente pide EN la llamada se hace en la
+       llamada (`acciones.ts`): si dijo «mándame la info», el PDF ya salió por
+       WhatsApp antes de colgar. El cierre lee la MISMA transcripción y, sin
+       saberlo, propone mandarlo otra vez — y el cliente recibe dos veces el
+       mismo PDF, o acaba con dos citas para la misma hora.
+
+       Es el mismo problema que ya resolvió `yaLoHizoFernanda`, por el otro
+       lado: quien actuó primero manda. */
+    const { data: accionesHechas } = it.call_sid
+      ? await supabase.from('tel_acciones').select('accion, params').eq('call_sid', it.call_sid).eq('estado', 'hecha')
+      : { data: [] as any[] };
+    const hechas = new Set((accionesHechas || []).map((a: any) => String(a.accion)));
+    const temasMandados = (accionesHechas || [])
+      .filter((a: any) => /^mandar_/.test(String(a.accion)))
+      .map((a: any) => sinAcentosTema(String((a.params || {}).tema || a.accion)));
+    /** ¿Este envío es el mismo que ya salió en la llamada? Por palabra fuerte
+     *  compartida («cotización», «catálogo», «información»), no por el texto
+     *  exacto: la IA lo bautiza distinto cada vez. */
+    const yaSeMando = (tema: string) => {
+      const mias = palabrasFuertes(sinAcentosTema(tema));
+      return temasMandados.some(t => palabrasFuertes(t).some(w => mias.includes(w)));
+    };
     for (const cp of p.compromisos || []) {
       if (cp.tipo === 'llamada' && yaLoHizoFernanda.has('volver_a_llamar')) { hecho.push('la llamada de vuelta ya la programó Fernanda en la llamada'); continue; }
       if (cp.tipo === 'reunion' && yaLoHizoFernanda.has('agendar')) { hecho.push('la reunión ya la agendó Fernanda en la llamada'); continue; }
+      if (cp.tipo === 'llamada' && (hechas.has('volver_a_llamar') || hechas.has('ahorita_no'))) { hecho.push('la llamada de vuelta ya quedó puesta durante la llamada'); continue; }
+      if (cp.tipo === 'reunion' && hechas.has('agendar_demo')) { hecho.push('la reunión ya se agendó durante la llamada'); continue; }
       const r = await crearCompromiso(it, cp, o.userId || null);
       if (r) hecho.push(r);
     }
@@ -255,6 +285,11 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
     // ── Envíos listos → PDF + WhatsApp ────────────────────────────────────
     const { data: envios } = await supabase.from('tel_envios').select('*').eq('item_id', itemId).in('estado', ['listo', 'falta']);
     for (const e of envios || []) {
+      if (yaSeMando(e.tema)) {
+        await supabase.from('tel_envios').update({ estado: 'omitido', motivo: 'ya se le mandó durante la llamada', updated_at: t }).eq('id', e.id);
+        hecho.push(`${e.tema}: ya se le había mandado durante la llamada`);
+        continue;
+      }
       if (e.estado === 'listo') {
         const r = await mandarEnvio(e.id);
         /* Si NO salió, se dice. `mandarEnvio` ya deja la tarea con el PDF listo

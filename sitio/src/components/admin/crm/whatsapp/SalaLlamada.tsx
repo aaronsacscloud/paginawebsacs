@@ -537,7 +537,9 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             {fin && (
               <div style={{ ...CAJA, borderColor: C.morado }}>
                 <div style={ROT}>Cerrar la llamada</div>
-                {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada…</div>}
+                {/* La IA tarda unos diez segundos en leer la llamada entera.
+                    Se dice cuánto, o el silencio se lee como que se colgó. */}
+                {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada… (unos diez segundos)</div>}
                 {/* COLGÓ ÉL Y NADIE CERRÓ. Es el caso NORMAL —el que cuelga
                     suele ser el cliente— y antes dejaba la llamada abierta sin
                     apunte ni compromiso. Se pide el desenlace de arriba y se

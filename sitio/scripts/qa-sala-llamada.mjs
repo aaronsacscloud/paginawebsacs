@@ -60,6 +60,10 @@ const limpiar = async () => {
     await db.from('tel_envios').delete().eq('item_id', it.id);
     await db.from('tel_sesion_items').delete().eq('id', it.id);
   }
+  /* Las tareas que dejaron las acciones y los envíos fallidos: si no se
+     borran, cada corrida del QA deja basura en Mi día de alguien. */
+  await db.from('ti_tareas').delete().like('payload->>instruccion', 'Prueba:%');
+  await db.from('ti_tareas').delete().like('payload->>instruccion', '%Prueba Aaron%');
   await db.from('tel_acciones').delete().eq('call_sid', SID);
   await db.from('tel_accion_reglas').delete().eq('call_sid', SID);
   await db.from('wa_notas').delete().eq('metadata->>nota_llamada', SID);
@@ -74,8 +78,12 @@ await db.from('wa_llamadas').insert({
   direccion: 'entrante', estado: 'aceptada', answered_at: new Date().toISOString(), payload: { qa: true },
 });
 
+const MOVIL = process.argv.includes('--movil');
 const nav = await chromium.launch({ args: ['--no-sandbox', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
-const ctx = await nav.newContext({ viewport: { width: 1360, height: 1000 }, permissions: ['microphone'] });
+const ctx = await nav.newContext({
+  viewport: MOVIL ? { width: 390, height: 844 } : { width: 1360, height: 1000 },
+  permissions: ['microphone'], ...(MOVIL ? { isMobile: true, hasTouch: true, deviceScaleFactor: 3 } : {}),
+});
 const p = await ctx.newPage();
 const errores = [];
 p.on('pageerror', e => errores.push(e.message));
@@ -88,7 +96,7 @@ const sala = () => p.evaluate(() => {
   const d = document.querySelector('[aria-label="Llamada en curso"], [aria-label="Resumen de la llamada"]');
   return d ? d.innerText.trim().replace(/\n+/g, ' · ') : '(la sala no está abierta)';
 });
-const foto = async n => { await p.waitForTimeout(400); await p.screenshot({ path: `/tmp/qa-sala-${n}.png`, fullPage: true }); };
+const foto = async n => { await p.waitForTimeout(400); await p.screenshot({ path: `/tmp/qa-sala-${MOVIL ? 'm-' : ''}${n}.png`, fullPage: true }); };
 
 try {
   await p.goto(`${base}/admin/login`, { waitUntil: 'networkidle' });
@@ -106,8 +114,15 @@ try {
     window.__dispositivo.emit('incoming', c);
   }, conv.telefono);
   await p.waitForTimeout(600);
+  /* En el teléfono el botón de contestar no tiene texto (es un pulgar con un
+     ☎): se toma por su etiqueta accesible. Y la sala NO se abre sola ahí — se
+     pide, que es justo el botón que hay que probar. */
   await p.getByRole('button', { name: 'Contestar' }).click();
   await p.waitForTimeout(2500);
+  if (MOVIL) {
+    await p.getByRole('button', { name: /Ver la ficha y lo que te pidió/ }).click();
+    await p.waitForTimeout(1200);
+  }
   let t = await sala();
   paso('La entrante abre la sala con la ficha', /Prueba Aaron/.test(t), t.slice(0, 70));
   await foto('1-viva');
@@ -184,7 +199,14 @@ try {
   }
   t = await sala();
   paso('La sala se queda como resumen al colgar', /cerrar la llamada|lo que se dijo/i.test(t), t.slice(0, 80));
-  paso('Y dice la verdad sobre el cierre con IA', /saldo de IA|no pudo cerrarla|transcrita|Aplicar el cierre/.test(t), '');
+  /* El cierre con IA tarda ~12 s en leer la llamada: se ESPERA a que conteste
+     (o a que diga por qué no pudo) en vez de mirar la pantalla a mitad. */
+  await p.waitForFunction(() => {
+    const d = document.querySelector('[aria-label="Resumen de la llamada"]');
+    return !!d && !/Leyendo la llamada/.test(d.innerText);
+  }, null, { timeout: 40000 }).catch(() => {});
+  t = await sala();
+  paso('Y contesta sobre el cierre con IA', /saldo de IA|no pudo cerrarla|transcrita|Aplicar el cierre|Sigue:/i.test(t), t.slice(-90));
   const { data: itemFin } = await db.from('tel_sesion_items').select('estado, resultado, cierre_estado').eq('call_sid', SID).maybeSingle();
   paso('El item quedó cerrado en la base', itemFin?.estado === 'hecho', JSON.stringify(itemFin));
   await foto('4-fin');
