@@ -279,6 +279,23 @@ export const problemasRI = {
       'Abres la segunda tienda y el cambio de regalo ya no se puede leer allá.',
     ],
   },
+  doc2: {
+    membrete: 'Desarrollo a la medida', sub: 'Propuesta · rev. 4',
+    cab: ['CONCEPTO', 'PLAZO'],
+    lineas: [
+      { a: 'FICHA DEL HIJO', b: 'FASE 2' },
+      { a: 'ENTREGA REAL', b: 'PASÓ DICIEMBRE', tachado: true },
+      { a: 'TICKET DE REGALO', b: 'NO' },
+    ],
+    margen: ['+ 3 adendas', 'y llegó enero'],
+    sello: 'LLEGÓ<br />TARDE',
+    notas: [
+      'Costó <b>más de lo cotizado</b> y la ficha del hijo quedó para la fase 2.',
+      'Funciona… mientras <b>quien lo hizo conteste el teléfono</b>. Tu mes es diciembre.',
+      'Cada cambio chico —imprimir el ticket sin precio— es <b>una cotización nueva</b>.',
+      'No trae aviso de talla siguiente ni cambio con ticket de regalo. En enero, <b>la fila se hace a mano</b>.',
+    ],
+  },
   filas: [
     { que: 'La talla en meses y años, ordenada por edad', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
     { que: 'Ticket de regalo sin precio y cambio desde el ticket', generico: 'No existe', medida: 'Rara vez', sacs: 'Incluido' },

@@ -280,6 +280,23 @@ export const problemasRE = {
       'Abres la segunda tienda y el vestido de la foto ya no se sabe dónde está.',
     ],
   },
+  doc2: {
+    membrete: 'Desarrollo a la medida', sub: 'Propuesta · rev. 4',
+    cab: ['CONCEPTO', 'PLAZO'],
+    lineas: [
+      { a: 'CALENDARIO POR VESTIDO', b: 'FASE 2' },
+      { a: 'ENTREGA REAL', b: 'PASÓ JUNIO', tachado: true },
+      { a: 'SOPORTE EN SÁBADO', b: 'NO' },
+    ],
+    margen: ['+ 3 adendas', 'no contesta el sábado'],
+    sello: 'LLEGÓ<br />TARDE',
+    notas: [
+      'Costó <b>más de lo cotizado</b> y el calendario quedó para la fase 2.',
+      'Funciona… mientras <b>quien lo hizo conteste el teléfono</b>. Tus entregas son en sábado.',
+      'Cada cambio chico —un día de lavado más— es <b>una cotización nueva</b>.',
+      'No trae WhatsApp que conteste “¿está libre el 24?”, ni fotos de devolución. El día que falla, <b>la novia se queda sin vestido</b>.',
+    ],
+  },
   filas: [
     { que: 'El calendario de cada pieza con sus días de lavado', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
     { que: 'Apartado con anticipo amarrado a fecha y vestido', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
