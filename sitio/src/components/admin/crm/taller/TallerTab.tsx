@@ -17,6 +17,13 @@ import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
 import { modulosParaGiro } from '../../../../lib/crm/modulos-sacs';
+/* Los dos documentos que ya existen en Consultoría, tal cual. NO son una copia:
+   se importan los mismos componentes, así que el que se manda desde el taller
+   es el mismo documento —misma foto, mismo folio, mismo correo— que el que se
+   manda desde la ficha. Duplicarlos habría sido tener dos reportes de entregas
+   que se van separando al primer ajuste. */
+import ReporteEntregas from '../ReporteEntregas';
+import ReporteCurso from '../ReporteCurso';
 
 const ETAPAS: Record<string, string> = {
   recibida: 'Recibida', analisis: 'En análisis', desarrollo: 'En desarrollo',
@@ -165,7 +172,8 @@ export default function TallerTab() {
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
             preguntas={preguntas} abrir={setAbierta} api={api} flash={flash} />
-        : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
+        : <Lista ordenes={vivas} entregadas={ordenes.filter((o: any) => o.etapa === 'entregada')}
+            yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
             filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} api={api} flash={flash} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
@@ -454,19 +462,22 @@ const AFINAR: { k: string; l: string; f: (o: any, yo?: any) => boolean }[] = [
   { k: 'mias',     l: 'Solo mías',          f: (o, yo) => !!yo?.id && o.asignado_id === yo.id },
 ];
 
-/* EL FILTRO DE ADENTRO DE UNA CUENTA. Arriba se elige el momento del proceso
-   para toda la lista; aquí adentro se separa la gestión por la etapa en la que
-   está, que es la pregunta del proyecto abierto: «de las quince de Rubens,
-   ¿cuáles están en análisis y cuáles ni han arrancado?». Al final, después de
-   una raya, va «sin fecha»: no es una etapa, es lo que todavía no se puede
-   prometer —y por donde se cuela lo que se levantó por error. */
+/* LAS CUATRO FASES DE UNA CUENTA. Arriba se elige el momento del proceso para
+   toda la lista; aquí adentro se separa por la fase en la que está cada
+   gestión, que es la pregunta del proyecto abierto: «de las dieciséis de
+   Ruben's, ¿cuáles están en análisis y cuáles ni han arrancado?».
+   Son cuatro y cubren TODO: cada orden cae en una y solo en una. «En
+   desarrollo» absorbe pruebas, devueltas, trabadas y las que ya esperan el OK
+   —desde la cuenta todas esas son «se está trabajando»—; el detalle fino vive
+   dentro de la orden, que es donde se trabaja. Antes eran siete pestañas y
+   cinco salían en cero.
+   «Sin fecha» se fue de aquí: es otro eje, no una fase, y vive en la cajita de
+   arriba junto a «vencidos» y «sin dueño». */
 const DENTRO: { k: string; l: string; f: (o: any) => boolean }[] = [
   { k: 'arrancar',   l: 'Por arrancar',  f: o => o.etapa === 'recibida' },
   { k: 'analisis',   l: 'En análisis',   f: o => o.etapa === 'analisis' },
-  { k: 'desarrollo', l: 'En desarrollo', f: o => ['desarrollo', 'devuelta', 'trabada'].includes(o.etapa) },
-  { k: 'pruebas',    l: 'En pruebas',    f: o => o.etapa === 'pruebas' },
-  { k: 'ok',         l: 'Esperan tu OK', f: o => o.etapa === 'lista' },
-  { k: 'espera',     l: 'Detenidas',     f: o => o.etapa === 'espera' },
+  { k: 'desarrollo', l: 'En desarrollo', f: o => ['desarrollo', 'pruebas', 'devuelta', 'trabada', 'espera', 'lista'].includes(o.etapa) },
+  { k: 'entregada',  l: 'Entregado',     f: o => o.etapa === 'entregada' },
 ];
 
 /* Cómo se reparte una cuenta en la barra de la tarjeta. Lo que ya arrancó va
@@ -481,12 +492,16 @@ const TRAMOS = [
   { l: 'detenidas',    c: '#E8A838', f: (o: any) => o.etapa === 'espera' },
 ];
 
-function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, meta = {}, reuniones = {}, api, flash }: any) {
+function Lista({ ordenes, entregadas = [], yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, meta = {}, reuniones = {}, api, flash }: any) {
   const [vista, setVista] = useState('todas');
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
   /* Dentro de un proyecto: la etapa de cada gestión, o lo que no tiene fecha. */
   const [dentro, setDentro] = useState<string>('todas');
   const [afinar, setAfinar] = useState<string>('');   // la cajita de al lado del buscador
+  /* El reporte, desde aquí. El taller es donde se ve lo que se está haciendo
+     para una cuenta; tener que salirse a la ficha del cliente para mandárselo
+     es el paso que hace que no se mande. */
+  const [reporte, setReporte] = useState<'' | 'entregas' | 'curso'>('');
   /* Lo seleccionado, por id. Se vacía al cambiar de cuenta o de pestaña: una
      selección invisible es la forma segura de aplicarle una fecha a algo que
      ya no estás viendo. */
@@ -527,11 +542,18 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
      que esté elegido arriba: adentro el que separa es el filtro de etapas, y
      es justo la pregunta de «qué trae Rubens». */
   const filasCuenta = cuenta ? texto.filter((o: any) => cuentaDe(o) === cuenta) : [];
-  const abierto = filasCuenta.length ? resumir(cuenta, filasCuenta) : null;
-  const enCuenta = !abierto ? [] : abierto.filas.filter((o: any) =>
-    dentro === 'todas' ? true
-      : dentro === 'sin' ? !o.fecha_prometida
-      : (DENTRO.find(d => d.k === dentro)?.f(o) ?? true));
+  /* Lo YA ENTREGADO de la cuenta llega por separado y solo se usa en su
+     pestaña: si entrara en `filasCuenta`, los conteos de las tarjetas y el
+     «días tarde» del encabezado hablarían de trabajo que ya se cerró. */
+  const entregadasCuenta = cuenta
+    ? (entregadas || []).filter((o: any) => cuentaDe(o) === cuenta
+        && (!q || (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q)))
+    : [];
+  const abierto = (filasCuenta.length || entregadasCuenta.length) ? resumir(cuenta, filasCuenta) : null;
+  const enCuenta = !abierto ? []
+    : dentro === 'entregada' ? entregadasCuenta
+    : dentro === 'todas' ? abierto.filas
+    : abierto.filas.filter((o: any) => DENTRO.find(d => d.k === dentro)?.f(o) ?? true);
 
   /* Quitar una orden levantada por error. Se lleva TAMBIÉN el renglón del
      cliente: dejarlo allá sería un compromiso que nadie va a trabajar y que
@@ -631,7 +653,20 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
             <span style={{ fontSize: '0.75rem', color: abierto.atraso ? P.rojoTinta : '#8d8a97', fontWeight: abierto.atraso ? 700 : 400 }}>
               {abierto.atraso ? `${abierto.atraso} días tarde` : abierto.prox ? `la próxima, el ${fmt(abierto.prox)}` : 'sin fecha comprometida'}
             </span>
+            {/* Los dos documentos de la cuenta, a la derecha del todo: se
+                mandan al terminar de mirar el proyecto, no antes. */}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              <button style={{ ...S.btnG, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => setReporte('curso')}>Trabajo en curso</button>
+              <button style={{ ...S.btnSec, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => setReporte('entregas')}>Reporte de entregas</button>
+            </div>
           </div>
+
+          {reporte === 'entregas' && (
+            <ReporteEntregas companyId={abierto.filas[0]?.company_id} cliente={abierto.l} onCerrar={() => setReporte('')} />
+          )}
+          {reporte === 'curso' && (
+            <ReporteCurso companyId={abierto.filas[0]?.company_id} cliente={abierto.l} onCerrar={() => setReporte('')} />
+          )}
 
           {/* O las pestañas, o la barra de lote: nunca las dos. La barra cae
               exactamente donde estaban las pestañas, así que al marcar la
@@ -645,13 +680,15 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 2, overflowX: 'auto' }}>
               {(() => {
-                const sinF = abierto.filas.filter((o: any) => !o.fecha_prometida).length;
                 const ops: any[] = [['todas', 'Todas', abierto.filas.length]];
+                /* Las cuatro SIEMPRE, aunque alguna vaya en cero. Un juego fijo
+                   de pestañas se lee como un proceso —esto empieza aquí y
+                   termina en entregado—; uno que cambia de tamaño según el día
+                   se lee como ruido, y esconder «Entregado» hasta que haya algo
+                   entregado hace parecer que la fase no existe. */
                 DENTRO.forEach(d => {
-                  const n2 = abierto.filas.filter(d.f).length;
-                  if (n2) ops.push([d.k, d.l, n2]);
+                  ops.push([d.k, d.l, d.k === 'entregada' ? entregadasCuenta.length : abierto.filas.filter(d.f).length]);
                 });
-                if (sinF) ops.push(['sin', 'Sin fecha', sinF]);
                 return ops.map(([k, l, n2]) => {
                   const on = dentro === k;
                   return (
@@ -669,7 +706,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
                         marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
                         borderRadius: 20, padding: '2px 8px',
                         ...(on ? { background: '#fff', color: P.violetaTinta }
-                          : k === 'sin' ? SIN_FECHA
+                          : k === 'entregada' ? { background: P.verdeAgua, color: P.verdeTinta }
                           : { background: '#f3f3f6', color: '#8a8a92' }),
                       }}>{n2}</span>
                     </button>
@@ -681,7 +718,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
 
           {enCuenta.length === 0 && (
             <div style={{ ...S.caja, color: '#999', fontSize: '0.85rem' }}>
-              Nada de esta cuenta está ahí en este momento.
+              {dentro === 'entregada' ? 'Todavía no se le ha entregado nada a esta cuenta.' : 'Nada de esta cuenta está en esa fase.'}
             </div>
           )}
           {enCuenta.map((o: any) => (
