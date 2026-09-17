@@ -58,7 +58,7 @@ import BloqueProducto from '../BloqueProducto.astro';
         <div class="tc-t tc-t--ok"><span>Si lo rematas hoy con 40 % de descuento</span><b id="tc-remata">$47,880</b><small id="tc-remata-s">regresan a caja antes del cierre y compran la tela de enero</small></div>
       </div>
       <p class="tc-fecha" id="tc-fecha">La decisión se toma <b>cuatro semanas antes del cierre</b>, con la venta de las últimas dos.</p>
-      <a class="tc-cta" id="tc-cta" href="/contacto">Quiero verlo con mis estampados</a>
+      <a class="tc-cta" id="tc-cta" href="/contacto">Verlo con mis estampados</a>
     </div>
   </div>
 </BloqueProducto>
@@ -82,7 +82,7 @@ import BloqueProducto from '../BloqueProducto.astro';
   .tc-barra i { position: absolute; left: 0; top: 0; height: 100%; background: var(--color-text-primary, #0E0D0C); transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1); }
   .tc-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; font-size: 12.5px; color: var(--color-text-secondary); }
   .tc-leyenda span { display: inline-flex; align-items: center; gap: 6px; } .tc-leyenda b { color: var(--color-text-primary); font-family: var(--font-display); font-size: 15px; }
-  .tc-leyenda i { width: 10px; height: 10px; border-radius: 3px; } .tc-l-a { background: var(--color-text-primary, #0E0D0C); } .tc-l-b { background: #F3D9D2; border: 1px solid #E3B8AD; } .tc-l-de { margin-left: auto; }
+  .tc-leyenda i { width: 10px; height: 10px; border-radius: 3px; } .tc-l-a { background: var(--color-text-primary, #0E0D0C); } .tc-l-b { background: #F3D9D2; border: 1px solid #E3B8AD; } .tc-l-de { flex-basis: 100%; }
   .tc-frase { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px; letter-spacing: -0.02em; line-height: 1.2; color: var(--color-text-primary); }
   .tc-tarjetas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .tc-t { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-md, 12px); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
@@ -92,7 +92,7 @@ import BloqueProducto from '../BloqueProducto.astro';
   .tc-t small { font-size: 11.5px; line-height: 1.4; color: var(--color-text-secondary); }
   .tc-fecha { margin: 14px 0 0; font-size: 13.5px; color: var(--color-text-secondary); }
   .tc-cta { display: inline-flex; margin-top: 14px; padding: 12px 20px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
-  @media (max-width: 767px) { .tc { grid-template-columns: 1fr; padding: 14px; } .tc-tarjetas { grid-template-columns: 1fr; } .tc-cta { width: 100%; justify-content: center; } }
+  @media (max-width: 767px) { .tc { grid-template-columns: 1fr; padding: 14px; } .tc-tarjetas { grid-template-columns: 1fr; } .tc-cta { width: 100%; justify-content: center; text-align: center; } }
 </style>
 
 <script>
