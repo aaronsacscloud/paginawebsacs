@@ -227,6 +227,35 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
 /** Botón del header del hilo: estado del permiso + Llamar / pedir que nos llame. */
 export function BotonLlamar({ conversationId, telefono, nombre, api }: { conversationId: string; telefono: string; nombre?: string | null; api: any }) {
   const [pop, setPop] = useState(false);
+  /* ══ EL MENÚ NO PUEDE VIVIR DENTRO DE SU CARRIL ══════════════════════════
+     REPORTE DEL DUEÑO (17-sep-2026): «le doy clic aquí para llamar pero no me
+     aparece el selector ni nada para decidir qué tipo de llamada».
+
+     No era que no abriera: abría y se RECORTABA. El menú iba `absolute`
+     dentro del carril de iconos, y ese carril está metido en el bloque del
+     nombre, que lleva `overflow:hidden` —puesto a propósito para que las
+     pastillas no se pinten encima del contador de la ventana—. Un desplegable
+     absoluto ahí dentro se corta en el borde y no se ve nada. Por eso el botón
+     sí se quedaba marcado en morado, como en la captura: el clic llegaba.
+
+     Se pasa a `fixed` con las coordenadas del botón. Así ningún `overflow` de
+     ningún ancestro lo puede recortar —ni éste ni el que alguien ponga mañana
+     tres niveles más arriba—, que es justo la clase de bug que no se vuelve a
+     ver venir. */
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const [caja, setCaja] = useState<{ top: number; right: number } | null>(null);
+  useEffect(() => {
+    if (!pop) return;
+    const medir = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (r) setCaja({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    };
+    medir();
+    // Al hacer scroll del hilo el botón se mueve; el menú tiene que seguirlo.
+    window.addEventListener('scroll', medir, true);
+    window.addEventListener('resize', medir);
+    return () => { window.removeEventListener('scroll', medir, true); window.removeEventListener('resize', medir); };
+  }, [pop]);
   const [permiso, setPermiso] = useState<any>(null);
   const [cargando, setCargando] = useState(false);
   const abrir = async () => {
@@ -240,12 +269,12 @@ export function BotonLlamar({ conversationId, telefono, nombre, api }: { convers
   const estado = permiso?.permiso?.permission?.status;
   return (
     <span style={{ position: 'relative', flexShrink: 0 }}>
-      <button onClick={abrir} title="Llamadas de WhatsApp" aria-label="Llamadas" style={{ border: 'none', background: pop ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: pop ? C.moradoTinta : C.g400 }}>
+      <button ref={btnRef} onClick={abrir} title="Llamadas de WhatsApp" aria-label="Llamadas" style={{ border: 'none', background: pop ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: pop ? C.moradoTinta : C.g400 }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg>
       </button>
       {pop && <span onClick={() => setPop(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />}
-      {pop && (
-        <span style={{ position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', width: 280, display: 'block', padding: 12, fontSize: 12 }}>
+      {pop && caja && (
+        <span style={{ position: 'fixed', right: caja.right, top: caja.top, zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', width: 280, display: 'block', padding: 12, fontSize: 12 }}>
           <b style={{ display: 'block', marginBottom: 6 }}>Llamar a este contacto</b>
           <button onClick={() => { setPop(false); document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono, nombre } })); }}
             style={{ width: '100%', marginBottom: 8, border: '1px solid #d9d3f8', background: '#F6F5FE', color: '#5B4BD6', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>

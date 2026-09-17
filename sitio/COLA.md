@@ -650,3 +650,23 @@ de referencia. Toca el formulario de `ChurnCaso.tsx` (propuesta) y el documento
 que ve el cliente. Ojo: el punto 5 es el que más vende —enseñar lo que cuesta
 normalmente al lado de lo que va a pagar— y el que exige que la fecha y el
 monto de renovación queden escritos sin letra chica.
+
+## 17-sep-2026 — La propuesta: editarla, firmarla y ver su actividad
+
+> «Que después de hacer la carta compromiso igual pueda editarla con todos los
+> campos nuevos y que quede bien. Y también dale un espacio para que el cliente
+> realmente la firme, y ponle todo lo necesario para que vea la actividad y vea
+> si la vio, si no la vio, etc.»
+
+Tres cosas distintas:
+1. **Editar** — hoy sólo existe «Hacer otra», que crea una nueva y expira la
+   anterior. Falta abrir el formulario con los valores cargados. Ojo con la
+   regla de la conciliación: lo firmado no se edita. O sea, editable mientras
+   NO esté aceptada.
+2. **Firmar** — `quotes` ya tiene `aceptado_por`/`aceptado_fecha` y el modal de
+   aceptar cotización. Hay que exponerlo en el documento de rescate y que quede
+   el nombre como constancia, igual que en la carta de conciliación.
+3. **Actividad** — ya hay `vistas`/`primera_vista_at`/`ultima_vista_at` y el
+   aviso «Todavía no la abre». Falta el detalle: cuándo la vio, cuántas veces,
+   y qué pasó después.
+
