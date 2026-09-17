@@ -720,6 +720,55 @@ Salió un correo que abría *"Hola Juan Carlos"*. Al modelo se le pasa ya cortad
 
 ---
 
+### 7.6 bis La voz: el patrón de novias
+
+Novias es el giro que mejor se lee, y el dueño lo señaló como el tono a copiar.
+Al compararlo correo por correo con calzado, la diferencia no es «más amigable»
+en abstracto. Son **cinco cosas concretas**, y las cinco se pueden verificar:
+
+**1. Abre por el negocio de ELLOS, no por el nuestro.**
+
+> ✅ «En novias el inventario no es cuántos vestidos tienen colgados. Es qué
+> modelo, en qué talla y para qué fecha.»
+> ❌ «Le cuento cómo entra un modelo nuevo **en Sacs**.»
+
+**2. Nombra personas, no funciones.** «La novia», «la que atiende», «la persona
+que se sabe todo de memoria». Lo contrario es una ficha de producto: «arma la
+ficha: nombre, descripción, categoría, variantes».
+
+**3. Concede antes de contradecir.**
+
+> «Muchas boutiques llevan todo en una libreta de apartados, y funciona un buen
+> rato. **El problema no es que esté mal hecha. Es que no avisa.**»
+> «No le digo que su control esté mal. Le digo que **ya llegó a su tope**.»
+
+Al dueño que lleva dieciocho años con su libreta, decirle que está mal lo pierde
+en la primera línea. Darle la razón y aun así dejarlo incómodo es donde se
+contesta un correo.
+
+**4. Cierra con una pregunta corta que se contesta sin pensar.** «¿Quién lleva
+hoy esa libreta?» — no con la propuesta, y nunca anunciando la estructura del
+correo («le cuento un caso y le hago una propuesta», que es de vendedor).
+
+**5. Del correo 2 en adelante, NO se dice «Sacs».** Es la prueba más fácil de
+correr y la que más delata: el correo 2 de novias no lo menciona ni una vez; el
+de calzado lo decía tres veces en el primer párrafo. El producto se cuenta como
+lo que les pasa a ellos, no como nuestro catálogo de funciones.
+
+**Cómo se mide un giro contra este patrón:**
+
+```sql
+select giro,
+  count(*) filter (where cuerpo like '%Sacs%')     as mencionan_producto,
+  count(*) filter (where btrim(cuerpo) like '%?')  as cierran_preguntando
+from abm_plantillas
+where canal='email' and activa and orden between 2 and 7
+group by 1;
+```
+
+Lo bueno se ve así: **mencionan_producto = 0**, y casi todos cerrando con
+pregunta. El correo 0 y el 1 son la excepción: ahí sí toca presentarse.
+
 ### 7.7 Las prácticas del contacto en frío
 
 Qué hace que contesten y qué hace que reporten. Aplica a correo y a WhatsApp,
