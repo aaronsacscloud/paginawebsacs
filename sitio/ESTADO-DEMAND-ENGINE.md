@@ -1043,6 +1043,88 @@ flaca sin arreglar; lo primero esconde contenido bueno.
 
 `node scripts/de-operador.mjs --pendientes`
 
+---
+
+## Etapa 5 · parte B (17-sep-2026) — el marcador y el aprendizaje
+
+### 🔴 Primero: el ciclo se saltaba SEIS de sus dieciocho fases, en silencio
+
+`armarCadena` hacía `if (!hayHandler(f.tipo)) continue;` sin decir nada. Los
+conectores sí reportan por qué se omiten; las fases no. Resultado: el ciclo
+llevaba días reportándose completo mientras omitía métricas, atribución y todo
+el aprendizaje — **sin un solo fallo en la bitácora**, porque lo que no se
+encola no puede fallar.
+
+Ahora las fases omitidas entran en `omitidos` con su motivo, igual que los
+conectores. Quedan tres sin construir: `detectar.decay`, `detectar.competidor`,
+`aprender.recalibrar`.
+
+### El Demand Capture Score · **3.2 / 100**
+
+UN número que contesta: ¿qué tanto de la demanda que existe estamos capturando?
+No sustituye a las otras métricas, las ordena — un tablero de quince cifras no
+se mira; una que se mueve, sí.
+
+| Parte | Peso | Hoy | Por qué pesa eso |
+|---|---|---|---|
+| Visibilidad en IA | 40 | **0.0** | Es el objetivo declarado. AVS 0/100. |
+| Búsqueda sin marca | 25 | **3.0** | 5% de los clics no son de marca (meta 40%). El 95% restante es gente que ya nos conocía, y eso no es capturar demanda nueva. |
+| Uso de activos | 20 | **0.2** | 2 usos en 30 días (meta 200). Un activo que nadie toca no captura nada. |
+| Conversión | 15 | **0.0** | 0 de 26 visitantes dejaron datos (meta 5%). |
+
+**Los techos son metas declaradas, no límites naturales.** Da igual que sean
+discutibles; lo que no da igual es que estén escritos, porque si no el número
+sube o baja según quién lo calcule.
+
+Se enseña con las cuatro partes ABIERTAS: un agregado sin su descomposición no
+se puede accionar. Saber que vas en 3 no dice qué mover; saber que la
+visibilidad en IA aporta 0 de 40, sí.
+
+Pantalla: CRM → Motor de demanda → Resumen (arriba de todo)
+https://code.sacscloud.com/shots/d1fd9f0f5afd2a2f.png
+
+### La serie diaria (`metricas.calcular`, `atribucion.procesar`)
+
+Sin serie, dentro de tres meses nadie puede decir «el AVS pasó de 0 a X»: solo
+cuánto vale hoy. Y una cifra sin ayer no distingue un sistema que funciona de
+uno quieto.
+
+Se guarda TODO cada día, aunque sea cero: guardar solo cuando hay algo deja
+huecos, y un hueco es indistinguible de un cero al dibujar la gráfica seis meses
+después. La atribución se congela igual —vive en vistas, que son una foto del
+ahora— **con su cobertura al lado siempre**, porque una serie de leads
+atribuidos sin cobertura no distingue «el motor mejoró» de «llegó más gente por
+la web».
+
+### 🔴 Y me volví a equivocar igual que al principio
+
+La primera versión de `metricas.calcular` decía **«6 métricas guardadas»
+habiendo guardado CERO**: `detalle` es NOT NULL y le pasaba `null`. El error se
+registraba por consola y el resumen contaba intentos.
+
+Es exactamente la clase de mentira que esta sesión lleva arreglando todo el día,
+y la escribí otra vez. Ahora `guardarMetrica` devuelve si guardó, el handler
+cuenta resultados, y **falla** si no guardó todo — una métrica que no queda es
+un hueco en la serie, y la serie es el único motivo por el que esto existe.
+
+Verificado contando en la base: 24 métricas guardadas hoy.
+
+### Un bug de mi propio helper
+
+`contar()` pedía `select('id')` y **no toda tabla tiene `id`** — `de_paginas` se
+identifica por `url`. Fallaba con un error VACÍO (PostgREST no dice qué columna
+falta), que es la peor forma de fallar: manda a buscar donde no es. Ahora pide
+`*` con `head: true`, que no transfiere nada y no supone columnas.
+
+### Predicciones
+
+El mecanismo existe y está vacío: el motor no ha publicado nada por el flujo
+completo de oportunidad, que es donde se registra la apuesta. Construirlo antes
+que los datos es a propósito — hacerlo después, con las predicciones ya vencidas
+y sin nadie que las guardara, es no poder evaluarlas nunca.
+
 ### Lo que sigue
 
-1. Experimentos (A/B de títulos y formatos) y Demand Capture Score.
+1. Las tres fases que faltan: `detectar.decay`, `detectar.competidor`,
+   `aprender.recalibrar`.
+2. Experimentos (A/B de títulos y formatos).
