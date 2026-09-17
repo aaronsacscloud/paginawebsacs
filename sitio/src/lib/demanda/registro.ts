@@ -22,5 +22,6 @@ import './score';
 import './oportunidades';
 import './autonomia';
 import './latido';
+import './operador';
 
 export { hayHandler, handlerDe, tiposRegistrados } from './handlers';

@@ -27,6 +27,16 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   // tallas», que es justo la búsqueda que queremos ganar. La herramienta es la
   // canónica; esta landing se llega por el correo del día 3.
   '/campana/curva-de-tallas',
+  // Pantallas de la APLICACIÓN, no páginas de contenido. Sin `?user_id=` son
+  // once palabras: ofrecérselas a un buscador es ofrecerle una página vacía.
+  // Las levantó el motor como «contenido delgado», pero el arreglo no era
+  // escribir más — era que nunca debieron estar en el índice.
+  '/app/',
+  // Acuse post-registro («tu cuenta ha sido creada»). Indexarla significa que
+  // un buscador puede mandar ahí a alguien que no se registró.
+  '/bienvenida',
+  // Formulario, misma familia que /prueba-gratis.
+  '/registro',
   // VACÍAS desde el andamiaje original: el archivo solo tiene el comentario
   // «el contenido irá aquí». Fuera del índice hasta que tengan texto propio;
   // una página en blanco indexada resta, no suma.

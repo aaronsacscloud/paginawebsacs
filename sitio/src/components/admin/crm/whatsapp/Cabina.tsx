@@ -173,6 +173,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const [telefonia, setTelefonia] = useState<{ ok: boolean; faltantes: string[]; fernanda: boolean } | null>(null);
   const [enSala, setEnSala] = useState(false);
   const [micAbierto, setMicAbierto] = useState(false);
+  const [recienAbierto, setRecienAbierto] = useState(false);
+  /* El nivel lo mide `Telefonia.tsx`, que es quien tiene el stream; aquí sólo
+     se escucha. Duplicar el AnalyserNode sería abrir el micrófono dos veces. */
+  const [nivelVoz, setNivelVoz] = useState(0);
+  useEffect(() => {
+    const h = (e: any) => setNivelVoz(Number(e?.detail?.nivel || 0));
+    document.addEventListener('tel-nivel', h);
+    return () => document.removeEventListener('tel-nivel', h);
+  }, []);
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState('');
   const [armando, setArmando] = useState<{ leidas: number; total: number } | null>(null);
@@ -300,6 +309,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       avisar();
       document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: false } }));
       setMicAbierto(true);
+      /* ══ «YA TE OYEN, HABLA» ════════════════════════════════════════════
+         El micrófono se abría en silencio y la única señal era una pastilla
+         gris arriba a la derecha. Fernando contestó, tú hablaste al aire y
+         colgó a los cuatro segundos — el caso está medido en la base: una
+         línea en lo oído, suya, y ninguna tuya.
+         Medio segundo de verde en toda la tarjeta no se puede no ver, y es el
+         medio segundo que decide si la primera frase llega. */
+      setRecienAbierto(true);
+      setTimeout(() => setRecienAbierto(false), 2500);
     } else if (!id && abiertoPara.current) {
       abiertoPara.current = null;
       document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: true } }));
@@ -779,9 +797,28 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             )}
 
             {actual ? (
-              <div style={{ ...tarjeta(colorEstado), padding: '16px 18px' }}>
+              <div style={{ ...tarjeta(colorEstado), padding: '16px 18px', position: 'relative',
+                ...(recienAbierto ? { boxShadow: '0 0 0 3px #4FBF95', transition: 'box-shadow .15s' } : null) }}>
+                {recienAbierto && (
+                  <div style={{ position: 'absolute', top: -13, left: 16, background: '#1E8A63', color: '#fff', borderRadius: 999, padding: '3px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: '.02em' }}>
+                    Ya te oyen — habla
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <span className={['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) ? 'wa-pulso' : undefined} style={{ width: 10, height: 10, borderRadius: 999, background: colorEstado, flexShrink: 0 }} />
+                  {/* EL MEDIDOR DE TU PROPIA VOZ, en la línea que sí se mira.
+                      Si no se mueve mientras hablas, estás mudo — y esa es la
+                      comprobación que ningún aviso sustituye. Vivía en el
+                      widget chico de la esquina, que es justo donde no miras
+                      cuando estás hablando. */}
+                  {estadoActual === 'en_linea' && (
+                    <span title={micAbierto ? 'Así te están oyendo' : 'Tu micrófono está cerrado'} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 2, height: 14, flexShrink: 0 }}>
+                      {[0, 1, 2, 3, 4].map(i => (
+                        <span key={i} style={{ width: 3, borderRadius: 2, height: 4 + i * 2.5,
+                          background: micAbierto && nivelVoz * 5 > i ? '#1E8A63' : '#dcdce2', transition: 'background .08s' }} />
+                      ))}
+                    </span>
+                  )}
                   <b style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', color: estadoActual === 'en_linea' ? '#1E8A63' : '#4B5563' }}>
                     {/* ══ QUÉ ESTÁ PASANDO, DICHO ENTERO ══════════════════
                         Pedido del dueño (17-sep-2026): «en vez de que diga

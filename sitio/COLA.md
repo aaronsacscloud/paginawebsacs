@@ -773,3 +773,37 @@ aviso de que no quedó compromiso, y el «lo estás oyendo en vivo».
    audio sólo llega si estás en la sala. Poder «asomarse» a un timbrado sin
    entrar cambia cómo se decide saltar o esperar.
 
+## 17-sep-2026 — Los 10 puntos «wow» del marcador (2 hechos, 8 pendientes)
+
+Salieron de los bugs reales de hoy, no de una lluvia de ideas. Orden por lo que
+más cambia la sensación de usar el marcador.
+
+HECHOS (17-sep):
+ 2. **«Ya te oyen, habla»** — medio segundo de verde en toda la tarjeta cuando
+    se abre el micrófono. El caso Fernando está medido: contestó, el vendedor
+    habló al aire y colgó a los 4 s; en lo oído hay una línea suya y ninguna
+    del vendedor. La señal existía (una pastilla gris arriba a la derecha) y no
+    se veía desde donde se mira.
+ 3. **El medidor de tu propia voz** en la línea de estado de la cabina. Si no
+    se mueve mientras hablas, estás mudo — la comprobación que ningún aviso
+    sustituye. El nivel lo mide `Telefonia.tsx` (tiene el stream) y se reparte
+    por el evento `tel-nivel`: dos AnalyserNode sobre el mismo micrófono es
+    pedir problemas de audio para dibujar la misma barra dos veces.
+
+PENDIENTES, con lo que hace falta para cada uno:
+ 1. **Que la pantalla nunca pueda mentir** — marca de «última actualización» que
+    se pone roja cuando el latido se atrasa. El bug del pulso congelado no se
+    pudo ver hasta que alguien lo reportó.
+ 4. **Transcripción en vivo en la llamada manual** — la cabina la tiene colgada
+    del `item` de sesión; hay que separarla del modelo de sesión primero.
+ 5. **Primera frase sugerida** — el dato ya está en `telefonia/contexto`; falta
+    convertirlo en una línea con la que abrir.
+ 6. **Modo jornada** — una sola pregunta al colgar y todo lo demás solo.
+ 7. **Deshacer los últimos 30 s** del cierre. Sin él la gente duda antes de
+    tocar, y la duda es lo que hace lenta una jornada.
+ 8. **Reordenar la lista por buena hora** — ya hay lada, zona y el historial de
+    a qué hora contestó cada uno.
+ 9. **Cierre de jornada que diga qué cambió**, no estadísticas.
+10. **Que el silencio nunca sea el mensaje** — regla general; ya se aplicó en el
+    cierre mudo y en el aviso de buzón, falta barrer el resto.
+

@@ -9,6 +9,7 @@ export const prerender = false;
 <BaseLayout
   title="Crear cuenta — Sacs"
   description="Crea tu cuenta y activa tu plan Sacs. Configura tu tienda en 15 minutos."
+  noindex={true}  {/* Formulario. Misma razón que /prueba-gratis, que ya estaba fuera: no rankea por nada y sí parece contenido flaco. */}
 >
 
 <meta name="stripe-pk" content={stripePk} />

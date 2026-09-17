@@ -419,7 +419,15 @@ export default function Telefonia() {
        botón físico de silencio— y desde la pantalla no hay forma de saberlo:
        tú escuchas al cliente perfectamente y él no te oye a ti. Esta barrita
        se mueve con TU voz: si no se mueve, el problema es tuyo. */
-    call.on('volume', (entrada: number) => setNivel(Math.min(1, Math.max(0, entrada))));
+    /* El nivel se mide AQUÍ, que es donde está el stream, y se reparte por
+       evento: la cabina lo pinta en su línea de estado sin abrir un segundo
+       AnalyserNode. Dos medidores sobre el mismo micrófono es pedir problemas
+       de audio para dibujar la misma barra dos veces. */
+    call.on('volume', (entrada: number) => {
+      const v = Math.min(1, Math.max(0, entrada));
+      setNivel(v);
+      document.dispatchEvent(new CustomEvent('tel-nivel', { detail: { nivel: v } }));
+    });
 
     const terminar = (motivo?: string) => {
       const v = vivaRef.current;

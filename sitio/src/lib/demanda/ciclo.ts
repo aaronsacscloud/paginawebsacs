@@ -57,6 +57,11 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
      acordarse de pisar no es un freno, y catorce días es demasiado tiempo para
      que un tipo de acción que el dueño viene rechazando siga corriendo solo. */
   { tipo: 'autonomia.revisar',   prioridad: 47 },
+  /* Las órdenes de trabajo de repositorio se rehacen SEMANALMENTE, no a diario.
+     El operador es una persona (o una sesión) que trabaja por tandas: una cola
+     que se reescribe cada mañana convierte «tengo 7 tareas» en «tengo 7 tareas
+     distintas cada día», y eso no es una cola, es ruido. */
+  { tipo: 'codigo.proponer',     prioridad: 45, solo: ['semanal'] },
   { tipo: 'aprender.recalibrar', prioridad: 46, solo: ['mensual'] },
 ];
 

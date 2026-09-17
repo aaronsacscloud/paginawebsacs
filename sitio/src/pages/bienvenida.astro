@@ -5,6 +5,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout
   title="Bienvenido a Sacs"
   description="Tu cuenta ha sido creada exitosamente."
+  noindex={true}  {/* Acuse post-registro. Indexarla significa que un buscador puede mandar a un desconocido a una página que le dice «tu cuenta fue creada». */}
 >
 
 <section class="welcome-page">
