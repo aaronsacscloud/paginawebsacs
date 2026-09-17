@@ -119,6 +119,42 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
     if (r?.error) { setLigaEnviada(false); setMsg(r.error); }
   };
 
+  /* ══ LO QUE TE PIDE, HECHO EN EL MOMENTO ═══════════════════════════════
+     Pedido del dueño (17-sep-2026): «me pidió una acción: enviar la
+     información por WhatsApp… al momento de que yo responda me tiene que
+     mostrar una pantalla completa con toda esta información».
+
+     Estas tres no necesitan IA y son las que más se piden: por eso existen ya,
+     mientras el panel de propuestas automáticas espera al saldo. Y cada una
+     dice QUÉ pasó —«salió por plantilla» no es lo mismo que «salió como
+     mensaje»: el cliente ve cosas distintas y quien llamó tiene que saber cuál
+     le llegó para no prometer lo que no fue. */
+  const [hechas, setHechas] = useState<string[]>([]);
+  const [haciendo, setHaciendo] = useState('');
+  const hacer = async (id: string, texto: string, etiqueta: string) => {
+    setHaciendo(id); setMsg('');
+    const r = await fetch('/api/crm/whatsapp/enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefono, texto }),
+    }).then(x => x.json()).catch(() => ({ error: 'No se pudo mandar' }));
+    setHaciendo('');
+    if (r?.error) { setMsg(`${etiqueta}: ${r.error}`); return; }
+    /* Se dice si salió como mensaje o como plantilla, que es lo que cambia lo
+       que el cliente ve del otro lado. */
+    setHechas(h => [...h, `${etiqueta} — ${r.plantilla || r.via === 'plantilla' ? 'salió por plantilla' : 'salió como mensaje'}`]);
+  };
+  const noLlamarMas = async () => {
+    setHaciendo('optout');
+    const r = await fetch('/api/crm/whatsapp/etapa', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'etapa', contact_id: ctx?.contactId, etapa: 'descalificado' }),
+    }).then(x => x.json()).catch(() => ({ error: 'No se pudo' }));
+    setHaciendo('');
+    if (r?.error) { setMsg(r.error); return; }
+    setHechas(h => [...h, `Pidió que no le llamen — se descalificó y salió de ${(r.salidas || ['las campañas']).join(' y ')}`]);
+    setResultado('no_interesa');
+  };
+
   const cerrarLlamada = async () => {
     if (!resultado) { setMsg('Di qué pasó antes de colgar: es lo que alimenta todo lo demás.'); return; }
     setMsg('');
@@ -270,6 +306,28 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Las acciones que pide EN la llamada. Cuando haya saldo, aquí
+                mismo aparecerán las que proponga la IA de lo que oyó. */}
+            <div style={CAJA}>
+              <div style={ROT}>Te pidió algo, hazlo ya</div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                <button disabled={!!haciendo} onClick={() => hacer('info', 'Como quedamos en la llamada, aquí está la información de Sacs: https://www.sacscloud.com', 'Le mandé la información')}
+                  style={{ textAlign: 'left', border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 9, padding: '9px 12px', fontSize: 12.5, fontWeight: 700, cursor: haciendo ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  Mandarle la información por WhatsApp
+                </button>
+                <button disabled={!!haciendo || !ctx?.contactId} onClick={noLlamarMas}
+                  style={{ textAlign: 'left', border: '1px solid #f0c4bd', background: '#fff', color: '#C0554E', borderRadius: 9, padding: '9px 12px', fontSize: 12.5, fontWeight: 700, cursor: haciendo ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  Pidió que no le llamemos más
+                </button>
+              </div>
+              {/* QUEDA ESCRITO LO QUE SE HIZO. Una acción que se ejecuta y no se
+                  confirma se vuelve a pedir, o peor: se promete dos veces. */}
+              {hechas.map((h, i) => (
+                <div key={i} style={{ fontSize: 11.5, color: '#1E8A63', fontWeight: 700, marginTop: 7 }}>Hecho · {h}</div>
+              ))}
+              {haciendo && <div style={{ fontSize: 11.5, color: C.g500, marginTop: 7 }}>Mandando…</div>}
             </div>
 
             {/* NO SE CUELGA SIN DECIR QUÉ PASÓ. El resultado es lo que alimenta

@@ -127,8 +127,8 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
     <script is:inline>
     !function (w, d, t) {
       w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=r+"?sdkid="+e+"&lib="+t;var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(a,s)};
-      ttq.load('CUT9GN3C77UAVCG32N00');
-      ttq.page();
+      /* ttq.load() y ttq.page() los dispara la compuerta de marketing (arriba):
+         la cola de métodos ya está viva, así que nada se pierde mientras tanto. */
       // Enhanced matching: if visitor has email from previous session
       try {
         var v = localStorage.getItem('sacs_visitor_email');
@@ -142,7 +142,11 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
          El evento de conversión NO va aquí: vive donde la accion ocurre
          (ver registro.astro), como pide la propia documentación de OpenAI. -->
     <script is:inline>
-    !function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");
+    /* La cola se crea ya para no perder eventos; el archivo del pixel lo baja la
+   compuerta de marketing cuando la visita da su primer gesto. */
+!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;
+  w.sacsOaiCarga=function(){if(w.__oaiCargado)return;w.__oaiCargado=1;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f);};
+}(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");
     oaiq("init",{pixelId:"4qhBC3DP4VjKjFCHqmYbsS",debug:false});
 
     /* Envoltorio unico para medir con OpenAI desde cualquier pagina o isla de
@@ -202,21 +206,39 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
            que la gente teclea NO se graba. Es informacion de personas reales.
          · respect_dnt: si el navegador pide no ser rastreado, se respeta. -->
     <script>
-      import posthog from 'posthog-js';
       import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
 
-      posthog.init(POSTHOG_KEY, {
-        api_host: POSTHOG_HOST,
-        person_profiles: 'identified_only',
-        respect_dnt: true,
-        session_recording: { maskAllInputs: true },
-      });
+      /* PostHog entra por la misma compuerta que los pixeles: su archivo pesa y
+         se evalúa en el hilo principal, y hasta el primer gesto de la visita no
+         hay nada que contar. Lo que SÍ vive desde el segundo cero es la cola:
+         cualquier `sacsPH(...)` que ocurra antes se guarda y se manda entero
+         cuando el SDK despierta. Así no se pierde ni el clic más temprano. */
+      let ph: any = null;
+      const cola: Array<[string, Record<string, unknown>]> = [];
+      let cargando = false;
+
+      async function despierta() {
+        if (ph || cargando) return;
+        cargando = true;
+        const mod = await import('posthog-js');
+        ph = mod.default;
+        ph.init(POSTHOG_KEY, {
+          api_host: POSTHOG_HOST,
+          person_profiles: 'identified_only',
+          respect_dnt: true,
+          session_recording: { maskAllInputs: true },
+        });
+        for (const [ev, props] of cola.splice(0)) { try { ph.capture(ev, props); } catch (e) {} }
+      }
+      window.addEventListener('sacs:marketing', despierta, { once: true });
 
       /* Envoltorio unico, igual que sacsOai: si el SDK no cargo (bloqueador,
          sin red), nada de lo que sigue truena. */
-      (window as any).sacsPH = function (evento: string, props?: Record<string, unknown>) {
-        try { posthog.capture(evento, props || {}); } catch (e) {}
+      const captura = (evento: string, props?: Record<string, unknown>) => {
+        if (ph) { try { ph.capture(evento, props || {}); } catch (e) {} }
+        else { cola.push([evento, props || {}]); (window as any).sacsMarketingYa?.(); }
       };
+      (window as any).sacsPH = captura;
 
       /* Los tres momentos que definen el embudo del sitio, medidos en un solo
          lugar por delegacion: sirve para los enlaces que ya existen y para los
@@ -232,11 +254,11 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         };
 
         if (h.includes('wa.me') || h.includes('api.whatsapp.com')) {
-          posthog.capture('whatsapp_click', comun);
+          captura('whatsapp_click', comun);
         } else if (h.includes('/contacto')) {
-          posthog.capture('demo_click', comun);
+          captura('demo_click', comun);
         } else if (h.includes('/prueba-gratis') || h.includes('/registro')) {
-          posthog.capture('prueba_click', comun);
+          captura('prueba_click', comun);
         }
       }, true);
     </script>
