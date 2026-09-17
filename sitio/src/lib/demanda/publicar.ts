@@ -84,21 +84,35 @@ export async function publicar(id: string, motivo = 'publicación'): Promise<{ u
     throw new Error(`no se puede publicar en estado «${c.estado}»: primero tiene que pasar las auditorías`);
 
   if (c.estado === 'publicado') {
-    await supabase.from('de_contenido_versiones').insert({
+    const { error: eVer } = await supabase.from('de_contenido_versiones').insert({
       contenido_id: c.id, version: c.version, titulo: c.titulo,
       cuerpo: c.cuerpo, brief: c.brief, auditorias: c.auditorias,
       motivo, creada_por: 'motor',
     });
+    // Se aborta ANTES de sobrescribir. Guardar la versión vieja es lo único que
+    // hace reversible esta operación: si no quedó guardada y aun así
+    // publicamos encima, el contenido anterior deja de existir y `revertir()`
+    // —el botón de emergencia— se queda sin nada a lo que volver.
+    if (eVer) throw new Error(`[publicar] no se pudo guardar la versión ${c.version} antes de sobrescribir: ${eVer.message}`);
   }
 
   const version = c.estado === 'publicado' ? c.version + 1 : c.version;
-  await supabase.from('de_contenido').update({
+  const { error: ePub } = await supabase.from('de_contenido').update({
     estado: 'publicado', version,
     publicado_at: c.publicado_at || new Date().toISOString(),
     actualizado_at: new Date().toISOString(),
   }).eq('id', id);
+  // Sin esto, la función devolvía la URL y la versión nueva aunque la base no
+  // hubiera escrito nada: el motor anotaba «publicado», la bitácora decía
+  // «publicado», y la página seguía como estaba.
+  if (ePub) throw new Error(`[publicar] no se pudo publicar ${id}: ${ePub.message}`);
 
-  await supabase.rpc('de_sincronizar_paginas_publicadas');
+  const { error: eSync } = await supabase.rpc('de_sincronizar_paginas_publicadas');
+  // El espejo de páginas no bloquea la publicación (el contenido ya se sirve
+  // desde `de_contenido`), pero si se queda viejo el rastreo reporta huérfanas
+  // y enlaces rotos que no existen. Se avisa en vez de tragárselo.
+  if (eSync) console.error(`[publicar] el espejo de páginas quedó viejo: ${eSync.message}`);
+
   return { url: `${SITIO}/${c.seccion}/${c.slug}/`, version };
 }
 
@@ -109,20 +123,36 @@ export async function revertir(id: string): Promise<{ version: number }> {
     .select('*').eq('contenido_id', id).order('version', { ascending: false }).limit(1).maybeSingle();
   if (!v) throw new Error('no hay versión anterior a la que volver');
 
-  await supabase.from('de_contenido').update({
+  const { error } = await supabase.from('de_contenido').update({
     titulo: v.titulo, cuerpo: v.cuerpo, brief: v.brief, auditorias: v.auditorias,
     version: v.version, actualizado_at: new Date().toISOString(),
   }).eq('id', id);
-  await supabase.rpc('de_sincronizar_paginas_publicadas');
+  /* Este es el camino de emergencia: se llama cuando algo salió mal y hay que
+     deshacerlo YA. Devolver la versión como si hubiera funcionado, sin haber
+     escrito nada, es la peor forma de fallar que tiene este archivo: el
+     contenido dañado se queda publicado y todo el mundo cree que ya se
+     arregló. */
+  if (error) throw new Error(`[revertir] NO se pudo volver a la versión ${v.version} de ${id}: ${error.message}`);
+
+  const { error: eSync } = await supabase.rpc('de_sincronizar_paginas_publicadas');
+  if (eSync) console.error(`[revertir] el espejo de páginas quedó viejo: ${eSync.message}`);
   return { version: v.version };
 }
 
 export async function retirar(id: string, motivo: string): Promise<void> {
-  await supabase.from('de_contenido').update({
+  const { error } = await supabase.from('de_contenido').update({
     estado: 'retirado', retirado_at: new Date().toISOString(), actualizado_at: new Date().toISOString(),
   }).eq('id', id);
-  await supabase.from('de_contenido_versiones').insert({
+  // Retirar se pide cuando una página está haciendo daño. Que falle en silencio
+  // deja el daño publicado y a nadie buscándolo.
+  if (error) throw new Error(`[retirar] NO se pudo retirar ${id}: ${error.message}`);
+
+  const { error: eVer } = await supabase.from('de_contenido_versiones').insert({
     contenido_id: id, version: 0, motivo: `retirado: ${motivo}`, creada_por: 'motor',
   });
-  await supabase.rpc('de_sincronizar_paginas_publicadas');
+  // La bitácora sí puede fallar sin deshacer el retiro: lo importante ya pasó.
+  if (eVer) console.error(`[retirar] ${id} se retiró pero no quedó en la bitácora: ${eVer.message}`);
+
+  const { error: eSync } = await supabase.rpc('de_sincronizar_paginas_publicadas');
+  if (eSync) console.error(`[retirar] el espejo de páginas quedó viejo: ${eSync.message}`);
 }

@@ -201,16 +201,32 @@ export async function normalizarPendientes(limite = 40, cfg?: Config): Promise<N
         if (query_id) r.queries++;
       }
 
-      await supabase.from('de_senales').update({
+      const { error: eMarca } = await supabase.from('de_senales').update({
         procesada: true, cluster_id, query_id,
         icp: (u.res.icp || []).filter((x: string) => ICPS.includes(x)),
       }).eq('id', u.senal.id);
+      /* Si marcar falla en silencio, la señal vuelve a salir sin procesar en la
+         siguiente vuelta y se manda otra vez al modelo: el mismo texto, el
+         mismo resultado, cobrado de nuevo. Ya pasó una vez en este proyecto y
+         costó dinero antes de que alguien lo notara, porque no hay síntoma —el
+         motor se ve trabajando, solo que trabajando en lo mismo. */
+      if (eMarca) console.error(`[normalizar] la señal ${u.senal.id} quedó sin marcar y se va a volver a pagar: ${eMarca.message}`);
     }
   }
 
   // Lo descartado se marca igual: si no, se vuelve a leer y a pagar cada vuelta.
   const ids = senales.map(s => s.id).filter(id => !utiles.find(u => u.senal.id === id));
-  if (ids.length) await supabase.from('de_senales').update({ procesada: true }).in('id', ids);
+  if (ids.length) {
+    /* En tandas de 150: un `.in()` con cientos de ids arma una URL que
+       PostgREST rechaza, y el rechazo llegaría como un error que —sin esta
+       comprobación— nadie miraba. Es la misma regla que ya está escrita en el
+       manual del ABM, por el mismo motivo. */
+    for (let i = 0; i < ids.length; i += 150) {
+      const tanda = ids.slice(i, i + 150);
+      const { error } = await supabase.from('de_senales').update({ procesada: true }).in('id', tanda);
+      if (error) console.error(`[normalizar] ${tanda.length} señales descartadas quedaron sin marcar y se van a releer: ${error.message}`);
+    }
+  }
 
   await recontar();
   return r;

@@ -108,10 +108,20 @@ export async function tomar(n = 5, leaseSeg = 600): Promise<Accion[]> {
 }
 
 export async function terminar(id: string, resultado: any, costo = 0): Promise<void> {
-  await supabase.from('de_acciones').update({
+  const { error } = await supabase.from('de_acciones').update({
     estado: 'terminada', terminada_at: new Date().toISOString(), lease_hasta: null,
     resultado: resultado ?? {}, costo_usd: costo, error: null, updated_at: new Date().toISOString(),
   }).eq('id', id);
+
+  /* Si este UPDATE falla en silencio, la acción se queda 'corriendo': el
+     vigilante la revive y el trabajo se hace —y se paga— dos veces. Es
+     exactamente la forma de fallo que más caro ha salido en este proyecto (tres
+     veces ya), y siempre por lo mismo: nadie miró el error de Supabase.
+
+     Se lanza a propósito. El worker lo atrapa y llama a `fallar()`, que sí deja
+     rastro; tragárselo dejaría el motor diciendo «hecho» sobre algo que la base
+     no registró. */
+  if (error) throw new Error(`[cola] no se pudo cerrar la acción ${id}: ${error.message}`);
 }
 
 /** Espera creciente, con techo: 5 min, 10, 20, 40… hasta 6 horas. Reintentar
@@ -138,7 +148,11 @@ export async function fallar(a: Accion, err: any, definitivo = false): Promise<'
     parche.estado = 'lista';
     parche.programada_at = new Date(Date.now() + espera(a.intentos)).toISOString();
   }
-  await supabase.from('de_acciones').update(parche).eq('id', a.id);
+  const { error: errUpd } = await supabase.from('de_acciones').update(parche).eq('id', a.id);
+  // Aquí NO se lanza: estamos justamente manejando un fallo, y lanzar desde el
+  // manejador de errores deja al worker sin forma de seguir con las demás
+  // acciones. Se avisa y se sigue; el lease vencido la recupera.
+  if (errUpd) console.error(`[cola] no se pudo marcar el fallo de ${a.id}: ${errUpd.message}`);
 
   if (agotada) {
     // Una acción muerta en silencio es un agujero que nadie ve durante semanas.
@@ -160,9 +174,24 @@ export async function resolverAprobacion(id: string, aprobar: boolean, quien: st
   }).eq('id', id).eq('estado', 'necesita_aprobacion');
 }
 
+/* Cuenta por estado en la BASE, no trayéndose las filas.
+
+   La versión anterior hacía `select('estado')` sin límite y contaba en
+   JavaScript. Supabase corta en 1000 filas por omisión, así que en cuanto la
+   cola pasara de mil acciones el resumen habría empezado a mentir —sin error,
+   sin aviso, solo números cada vez más equivocados en la pantalla que se usa
+   para decidir si el motor está sano—. Hoy son 29 filas; es de esos bugs que
+   esperan un año y aparecen el día que más se necesita el tablero. */
 export async function resumenCola(): Promise<Record<string, number>> {
-  const { data } = await supabase.from('de_acciones').select('estado');
+  const ESTADOS = ['pendiente', 'lista', 'necesita_aprobacion', 'aprobada', 'corriendo',
+                   'terminada', 'fallida', 'muerta', 'rechazada', 'cancelada'];
+  const conteos = await Promise.all(ESTADOS.map(async e => {
+    const { count, error } = await supabase
+      .from('de_acciones').select('id', { count: 'exact', head: true }).eq('estado', e);
+    if (error) throw new Error(`[cola] no se pudo contar «${e}»: ${error.message}`);
+    return [e, count ?? 0] as const;
+  }));
   const r: Record<string, number> = {};
-  for (const f of data || []) r[f.estado] = (r[f.estado] || 0) + 1;
+  for (const [e, n] of conteos) if (n > 0) r[e] = n;
   return r;
 }

@@ -30,7 +30,16 @@ const esc = (s: string) =>
  *  texto generado no llega nunca a la página. */
 function urlSegura(u: string): string | null {
   const s = String(u || '').trim();
+
+  /* Ojo con `//`: `//otrositio.com` EMPIEZA CON `/`, así que la comprobación
+     ingenua lo daba por interno — y el navegador lo trata como enlace absoluto
+     al otro dominio, heredando el protocolo. Un modelo que escriba
+     `[nuestra guía](//sitio-ajeno.com)` habría publicado en nuestro sitio un
+     enlace que se lee como nuestro y manda afuera, sin `nofollow` ni aviso.
+     `/\` cuenta igual: varios navegadores lo normalizan a `//`. */
+  if (/^\/[/\\]/.test(s)) return null;
   if (s.startsWith('/')) return s;
+
   try {
     const url = new URL(s);
     return url.protocol === 'https:' ? url.toString() : null;

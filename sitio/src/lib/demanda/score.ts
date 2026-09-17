@@ -9,6 +9,7 @@
 // día que el aprendizaje diga «las oportunidades con distribución alta traen
 // mejores clientes», hay con qué demostrarlo.
 import { supabase } from '../supabase';
+import { traerTodo } from './paginar';
 import { registrar } from './handlers';
 import type { ResultadoHandler } from './tipos';
 
@@ -57,21 +58,32 @@ export function combinar(f: Factores, pesos: Pesos): number {
   return Math.round((suma / total) * 100) / 100;
 }
 
-export async function puntuarClusters(limite = 500): Promise<{ puntuados: number; version: number }> {
+export async function puntuarClusters(): Promise<{ puntuados: number; version: number }> {
   const { version, pesos } = await pesosVigentes();
-  const { data: clusters } = await supabase
-    .from('de_clusters')
-    .select('id, senales_n, queries_n, relevancia_sacs, potencial_conversion, potencial_herramienta, potencial_red, valor_dato, potencial_distribucion_ia, dificultad, pagina_sacs')
-    .not('relevancia_sacs', 'is', null)
-    .neq('estado', 'descartado')
-    .limit(limite);
-  if (!clusters?.length) return { puntuados: 0, version };
 
-  // La intención observada de las consultas del cluster, cuando la hay.
-  const { data: intenciones } = await supabase
-    .from('de_queries').select('cluster_id, intent_comercial').not('cluster_id', 'is', null).not('intent_comercial', 'is', null);
+  /* Antes esto traía 500 problemas con `.limit(500)` y sin `order`.
+     Hoy hay 120 evaluados, así que no mordía — pero el día que la evaluación
+     pase de 500, un subconjunto ARBITRARIO (el que Postgres devuelva primero,
+     sin orden definido) se quedaría fuera del score para siempre. */
+  const clusters = await traerTodo<any>(
+    'de_clusters',
+    'id, senales_n, queries_n, relevancia_sacs, potencial_conversion, potencial_herramienta, potencial_red, valor_dato, potencial_distribucion_ia, dificultad, pagina_sacs',
+    q => q.not('relevancia_sacs', 'is', null).neq('estado', 'descartado'),
+  );
+  if (!clusters.length) return { puntuados: 0, version };
+
+  /* La intención observada de las consultas del problema.
+     ESTE es el que sí estaba fallando: la lectura no tenía límite, así que
+     PostgREST cortaba en 1000 de 2,762 consultas. El 64% de la evidencia no
+     entraba al promedio del que sale el score — y el score decide qué escribe
+     el motor. Sin error, sin aviso: números correctos calculados sobre datos
+     incompletos, que es la forma de estar mal más difícil de ver. */
+  const intenciones = await traerTodo<any>(
+    'de_queries', 'cluster_id, intent_comercial',
+    q => q.not('cluster_id', 'is', null).not('intent_comercial', 'is', null),
+  );
   const porCluster = new Map<string, number[]>();
-  for (const q of intenciones || []) {
+  for (const q of intenciones) {
     if (!porCluster.has(q.cluster_id)) porCluster.set(q.cluster_id, []);
     porCluster.get(q.cluster_id)!.push(Number(q.intent_comercial));
   }

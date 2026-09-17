@@ -49,10 +49,17 @@ export async function correrWorker(limiteMs = 230_000, lote = 4): Promise<Corrid
       // 15 minutos después.
       if (restante < 15_000) { await devolver(a); r.reprogramadas++; continue; }
 
-      if (pres.agotado && cuesta(a.tipo)) {
+      /* El presupuesto se lee UNA vez antes del bucle, así que `pres.agotado`
+         es una foto vieja: dentro de una misma corrida el motor podía cruzar el
+         tope del mes sin enterarse, porque nadie volvía a preguntar. Se le suma
+         lo gastado en esta corrida, que es exacto y no cuesta otra consulta. */
+      const gastadoYa = pres.gastado + r.costo_usd;
+      const agotado = pres.tope > 0 && gastadoYa >= pres.tope;
+
+      if (agotado && cuesta(a.tipo)) {
         await devolver(a, 60 * 60);
         r.reprogramadas++;
-        r.detalle.push({ tipo: a.tipo, estado: 'diferida', resumen: 'presupuesto del mes agotado' });
+        r.detalle.push({ tipo: a.tipo, estado: 'diferida', resumen: `presupuesto del mes agotado ($${gastadoYa.toFixed(2)} de $${pres.tope})` });
         continue;
       }
 
@@ -106,10 +113,14 @@ const cuesta = (tipo: string) =>
 
 /** Vuelve a la cola sin gastar un intento (esperar no es fallar). */
 async function devolver(a: Accion, enSeg = 0, reiniciarIntentos = false) {
-  await supabase.from('de_acciones').update({
+  const { error } = await supabase.from('de_acciones').update({
     estado: 'lista', lease_hasta: null,
     programada_at: new Date(Date.now() + enSeg * 1000).toISOString(),
     intentos: reiniciarIntentos ? 0 : Math.max(0, a.intentos - 1),
     updated_at: new Date().toISOString(),
   }).eq('id', a.id);
+  // Si esto falla, la acción se queda 'corriendo' con su lease y el vigilante
+  // la recupera sola quince minutos después. No es grave, pero sin este aviso
+  // no habría forma de saber por qué el motor va lento.
+  if (error) console.error(`[worker] no se pudo devolver ${a.id} a la cola: ${error.message}`);
 }
