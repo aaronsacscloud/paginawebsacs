@@ -1,0 +1,65 @@
+---
+/**
+ * Landing ROPA INFANTIL Y BEBÉS (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido
+ * vive en src/data/giros/ropa-infantil.ts y el bloque propio es RiCrece ("El niño crece, la
+ * clienta regresa").
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import RiCrece from '../../../components/giros/RiCrece.astro';
+import GiroEscala from '../../../components/giros/GiroEscala.astro';
+import { bannerRI, manifiestoRI, variantesRI, cortinaRI, casosRI, seccionesRI, planoRI, pasosRI, ticketRI, escalaRI, problemasRI, cifrasRI } from '../../../data/giros/ropa-infantil';
+---
+<BaseLayout
+  title="Sistema para tiendas de ropa infantil y bebés — Sacs"
+  description="Punto de venta e inventario para ropa infantil y bebés: tallas en meses y años ordenadas por edad, la ficha del hijo con su última talla, ticket de regalo sin precio que se cambia en enero, aviso de talla siguiente por WhatsApp y curva por edad para la maquila."
+>
+  <GiroBanner eyebrow={bannerRI.eyebrow} titulo={bannerRI.titulo} resalte={bannerRI.resalte} sub={bannerRI.sub} foto={bannerRI.foto} fotoAlt={bannerRI.fotoAlt} avisos={bannerRI.avisos} selloMarcas="negocios de moda y ropa infantil en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoRI.intro} frases={manifiestoRI.frases} cierre={manifiestoRI.cierre} />
+
+  <SuiteVariantes eyebrow={variantesRI.eyebrow} titulo={variantesRI.titulo} resalte={variantesRI.resalte} sub={variantesRI.sub} ejeA={variantesRI.ejeA} filas={variantesRI.filas} matriz={variantesRI.matriz} unidad={variantesRI.unidad} genero={variantesRI.genero} leyendas={variantesRI.leyendas} remate={variantesRI.remate} />
+
+  <SuiteCortina titulo={cortinaRI.titulo} pieAntes={cortinaRI.pieAntes} fotoAntes={cortinaRI.fotoAntes} fotoDespues={cortinaRI.fotoDespues} altAntes={cortinaRI.altAntes} altDespues={cortinaRI.altDespues} libreta={cortinaRI.libreta} filas={cortinaRI.filas} pieDespues={cortinaRI.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasRI.entrada} quienes={problemasRI.quienes} doc1={problemasRI.doc1} filas={problemasRI.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la talla es del hijo." />
+
+  <SuiteCifras foto={cifrasRI.foto} alt={cifrasRI.alt} frase={cifrasRI.frase} encuadre={cifrasRI.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA E INFANTIL' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que una tienda de ropa infantil gana o pierde el dinero. Toca cada uno." casos={casosRI} />
+
+  <SuiteScroll eyebrow="Ropa infantil y bebés" titulo="La tienda, la mesa de regalo y el WhatsApp, con el mismo inventario" intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de ropa infantil real: la talla en meses y años, el ticket de regalo, la ficha del hijo, el apartado del ropón y la foto para Instagram con tallas." secciones={seccionesRI} />
+
+  <RiCrece />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la tienda de la colonia a la empresa de moda infantil." descripcion="El negocio cambia con cada tamaño: quién se acuerda de la talla de cada hijo, en cuál tienda está el 4, quién manda la corrida a la maquila y qué mira la dirección. Elige el tuyo." niveles={escalaRI} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la abuela, pasa por la sección de bebé, recorre el piso del 2 al 16, ve la vitrina de ocasión, paga y se lleva su ticket de regalo. Detrás está la trastienda donde llega la maquila y salen los pedidos en línea. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu tienda infantil — planta baja" zonas={planoRI} todoRot="Ropa infantil y bebés" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre o el Día del Niño encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosRI} lineas={ticketRI.lineas} total={ticketRI.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: modelos con su escalera de tallas, existencias por tienda, apartados de ocasión y las clientas con sus hijos si ya los tienes. Nunca te pedimos empezar de cero antes de diciembre." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver la ficha de tus propias clientas con sus hijos en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus tallas por edad y tu enero de cambios real. 30 min, sin compromiso." />
+</BaseLayout>

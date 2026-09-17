@@ -1,0 +1,128 @@
+---
+/**
+ * ReCalendario — "El calendario de cada vestido", el bloque propio de renta (17-sep-2026, con el
+ * dictamen del referee de oficio: junio abre con dos rentas ya pintadas, se puede dar clic en
+ * cualquier día, el choque tiembla con su explicación, leyenda de cuatro iconos, contador por
+ * fiestas y el botón de lavado urgente).
+ *
+ * Lo que solo pasa en renta: en novias el vestido se paga con tiempo; aquí el vestido se comparte
+ * en el tiempo. El mismo vestido sale cuatro sábados seguidos, y entre uno y otro tiene que volver,
+ * lavarse y soltar el ajuste. Cada renta ocupa siete días: jueves entrega, sábado fiesta, lunes
+ * devolución, martes y miércoles lavado (nueve si es foránea).
+ *
+ * Los siete puntos:
+ * · Cuándo se decide: cuando el mismo vestido puede salir el sábado que sigue; antes de probar y
+ *   antes de hablar de precio: "¿para qué día?".
+ * · Quién: la encargada aparta al recibir el anticipo; solo la dueña autoriza un lavado urgente;
+ *   la costurera suelta el ajuste; el lavado ocupa el hueco.
+ * · Qué se mueve primero: la fecha entra al calendario y se pintan los siete días; luego la
+ *   costura; al último el dinero. Si trae corsé, no pasa por costura.
+ * · Cuánto cuesta: un empalme es una renta perdida ($1,600 netos) y una clienta que no vuelve;
+ *   cada día extra de devolución le quita un día al lavado.
+ * · Qué manda sobre qué: la fecha del evento; el margen de lavado; la foránea de nueve días; los
+ *   grupos; el vestido con muchas salidas se revisa antes de prometerlo.
+ * · Paso a paso: pregunta → calendario → prueba y anticipo → recordatorios → costura → entrega
+ *   con foto → devolución con foto → lavado → soltar el ajuste → una renta más en la ficha.
+ * · El dato honesto: en unas 20 semanas fuertes cabe una renta por semana si vuelve el lunes y
+ *   sale del lavado el miércoles; en la vida real 6 a 10 al año y 15 a 25 en la vida del vestido.
+ *   $8,000 de compra, $2,000 por renta, 12 rentas, $400 de lavado y costura cada una, $3,000 de
+ *   venta final = $14,200 de utilidad; un empalme quita $1,600 y una clienta.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="El calendario de cada vestido."
+  titulo="Un vestido, muchas fiestas, cero empalmes."
+  descripcion="El azul rey sale cuatro sábados seguidos en junio. Cada renta ocupa siete días: entrega el jueves, fiesta el sábado, devolución el lunes y lavado martes y miércoles. Toca cualquier día para apartarlo y mira si cabe o choca con el lavado de la renta anterior."
+  vinetas={[
+    { label: 'Se decide con la fecha, antes que con el precio', detail: '“¿Para qué día?” es lo primero. Si el vestido está ocupado ese sábado, ni se prueba: se ofrece otro del mismo color o se pierde la venta.' },
+    { label: 'El hueco del lavado no se negocia', detail: 'Mínimo dos días entre la devolución y la siguiente entrega. El lavado urgente de un día solo lo autoriza la dueña, porque se juega el vestido.' },
+    { label: 'Cada salida suma en la ficha', detail: 'Rentas acumuladas, cuánto ganó, cuánto lleva de lavado y costura. A las 15 o 25 salidas, o a las dos temporadas, el sistema pregunta si lo vendes.' },
+  ]}
+  suelta
+>
+  <div class="rc" id="re-calendario">
+    <div class="rc-cal-wrap">
+      <div class="rc-head"><span class="rc-k">Azul rey · talla 7 · junio</span><button type="button" class="rc-urg" id="rc-urg" aria-pressed="false">Lavado urgente (1 día)</button></div>
+      <div class="rc-cal" id="rc-cal" role="grid" aria-label="Calendario de junio del vestido azul rey"></div>
+      <div class="rc-leyenda"><span><i class="rc-i rc-i--e"></i>Entrega</span><span><i class="rc-i rc-i--f"></i>Fiesta</span><span><i class="rc-i rc-i--d"></i>Devolución</span><span><i class="rc-i rc-i--l"></i>Lavado</span></div>
+      <p class="rc-aviso" id="rc-aviso">Toca cualquier día para apartar el vestido.</p>
+    </div>
+    <div class="rc-res">
+      <span class="rc-k">Con un solo vestido</span>
+      <div class="rc-big"><b id="rc-n">2</b><span id="rc-n-t">fiestas en junio</span></div>
+      <div class="rc-big rc-big--d"><b id="rc-ing">$4,000</b><span>de renta este mes</span></div>
+      <ul class="rc-lista" id="rc-lista"></ul>
+      <p class="rc-nota" id="rc-nota">Sábados 6 y 20 ya apartados. Prueba el sábado 13: cabe. Prueba el miércoles 10: choca con el lavado.</p>
+      <a class="rc-cta" id="rc-cta" href="/contacto">Verlo con mis vestidos</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .rc { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 22px; }
+  .rc-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
+  .rc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .rc-urg { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--color-text-primary); margin-bottom: 10px; }
+  .rc-urg.is-on { background: var(--color-text-primary, #0E0D0C); color: #fff; border-color: var(--color-text-primary, #0E0D0C); }
+  .rc-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .rc-cal :global(.rc-dn) { font-size: 10px; font-weight: 800; color: var(--color-text-tertiary); text-align: center; padding-bottom: 2px; }
+  .rc-cal :global(.rc-d) { height: 44px; border-radius: var(--radius-sm, 8px); border: 1px solid #EEF0F3; background: #fff; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform 0.15s; }
+  .rc-cal :global(.rc-d small) { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; }
+  .rc-cal :global(.rc-d.is-e) { background: #EEF3FF; color: #2E5BC4; border-color: transparent; }
+  .rc-cal :global(.rc-d.is-f) { background: var(--color-text-primary, #0E0D0C); color: #fff; border-color: transparent; }
+  .rc-cal :global(.rc-d.is-dv) { background: var(--aviso-fondo, #FDF3DF); color: #8A5A00; border-color: transparent; }
+  .rc-cal :global(.rc-d.is-l) { background: #F1F1EE; color: #6B6B68; border-color: transparent; }
+  .rc-cal :global(.rc-d.is-choque) { animation: rc-tiembla 0.4s ease; box-shadow: 0 0 0 2px #B4432E; }
+  .rc-cal :global(.rc-d.is-vacio) { visibility: hidden; }
+  @keyframes rc-tiembla { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .rc-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11.5px; color: var(--color-text-secondary); }
+  .rc-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+  .rc-i { width: 10px; height: 10px; border-radius: 3px; } .rc-i--e { background: #EEF3FF; border: 1px solid #C5D3F5; } .rc-i--f { background: var(--color-text-primary, #0E0D0C); } .rc-i--d { background: var(--aviso-fondo, #FDF3DF); border: 1px solid #F0D9A8; } .rc-i--l { background: #F1F1EE; border: 1px solid #E3E3DF; }
+  .rc-aviso { margin: 10px 0 0; font-size: 13px; line-height: 1.45; color: var(--color-text-secondary); min-height: 38px; }
+  .rc-aviso.is-choque { color: #B4432E; font-weight: 600; }
+  .rc-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 16px; display: flex; flex-direction: column; }
+  .rc-big { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .rc-big b { font-family: var(--font-display); font-size: clamp(30px, 3vw, 40px); letter-spacing: -0.03em; color: var(--color-text-primary); }
+  .rc-big span { font-size: 13px; color: var(--color-text-secondary); }
+  .rc-big--d b { font-size: clamp(22px, 2.2vw, 28px); }
+  .rc-lista { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid #E3E3DF; display: grid; gap: 6px; }
+  .rc-lista :global(li) { display: flex; justify-content: space-between; font-size: 13px; color: var(--color-text-primary); }
+  .rc-lista :global(li span) { color: var(--color-text-secondary); }
+  .rc-nota { margin: 12px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--color-text-secondary); }
+  .rc-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .rc { grid-template-columns: 1fr; padding: 14px; } .rc-cal :global(.rc-d) { height: 40px; font-size: 12px; } .rc-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('re-calendario'); if (!el) return;
+    const cal = document.getElementById('rc-cal')!, aviso = document.getElementById('rc-aviso')!, lista = document.getElementById('rc-lista')!, nota = document.getElementById('rc-nota')!, urg = document.getElementById('rc-urg')!;
+    const PRECIO = 2000; const DIAS = 30; const primerDia = 0; // junio 2026 empieza en lunes (columna 0)
+    let rentas: number[] = [6, 20]; let urgente = false;
+    const nombreDia = (d: number) => ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'][(primerDia + d - 1) % 7];
+    // días ocupados por una fiesta el día f: entrega f-2 y f-1, fiesta f (y f+1 si es sábado→domingo cuenta como fiesta), devolución f+2, lavado f+3 (y f+4 salvo urgente)
+    const bloque = (f: number) => { const m: Record<number, string> = {}; m[f - 2] = 'e'; m[f - 1] = 'e'; m[f] = 'f'; m[f + 1] = 'f'; m[f + 2] = 'dv'; m[f + 3] = 'l'; if (!urgente) m[f + 4] = 'l'; return m; };
+    const ocupados = () => { const o: Record<number, string> = {}; rentas.forEach((f) => Object.entries(bloque(f)).forEach(([d, t]) => { if (+d >= 1 && +d <= DIAS) o[+d] = t; })); return o; };
+    const pinta = () => {
+      const o = ocupados(); let h = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => `<span class="rc-dn">${d}</span>`).join('');
+      for (let i = 0; i < primerDia; i++) h += '<span class="rc-d is-vacio"></span>';
+      for (let d = 1; d <= DIAS; d++) { const t = o[d]; const cls = t === 'e' ? 'is-e' : t === 'f' ? 'is-f' : t === 'dv' ? 'is-dv' : t === 'l' ? 'is-l' : ''; const tag = t === 'e' ? 'entrega' : t === 'f' ? 'fiesta' : t === 'dv' ? 'vuelve' : t === 'l' ? 'lavado' : ''; h += `<button type="button" class="rc-d ${cls}" data-d="${d}"><span>${d}</span>${tag ? `<small>${tag}</small>` : ''}</button>`; }
+      cal.innerHTML = h;
+      const n = rentas.length; document.getElementById('rc-n')!.textContent = String(n); document.getElementById('rc-n-t')!.textContent = n === 1 ? 'fiesta en junio' : 'fiestas en junio'; document.getElementById('rc-ing')!.textContent = '$' + (n * PRECIO).toLocaleString('es-MX');
+      lista.innerHTML = [...rentas].sort((a, b) => a - b).map((f) => `<li><span>${nombreDia(f)} ${f} · fiesta</span><b>$${PRECIO.toLocaleString('es-MX')}</b></li>`).join('');
+      const cta = document.getElementById('rc-cta') as HTMLAnchorElement; const u = new URL('/contacto', location.origin); u.searchParams.set('estimado', String(n * PRECIO)); u.searchParams.set('de', 'renta'); cta.href = u.pathname + u.search;
+    };
+    cal.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('.rc-d') as HTMLElement | null; if (!b || b.classList.contains('is-vacio')) return;
+      const d = Number(b.dataset.d); const o = ocupados();
+      if (rentas.includes(d)) { rentas = rentas.filter((x) => x !== d); pinta(); aviso.className = 'rc-aviso'; aviso.textContent = `Quitaste la fiesta del ${d}. El vestido vuelve a estar libre esa semana.`; return; }
+      if (o[d]) { const f = rentas.find((r) => Math.abs(r - d) <= 4)!; const vuelve = f + 2, sale = f + (urgente ? 3 : 4) + 1; b.classList.add('is-choque'); aviso.className = 'rc-aviso is-choque'; aviso.textContent = `Ocupado: por la fiesta del ${f} el vestido regresa el ${nombreDia(vuelve)} ${vuelve} y sale del lavado el ${nombreDia(sale - 1)} ${sale - 1}. Está libre desde el ${nombreDia(sale)} ${sale}. Ofrécele el verde.`; setTimeout(() => b.classList.remove('is-choque'), 500); (window as any).sacsPH?.('giro_re_choque', { dia: d }); return; }
+      const nb = bloque(d); const choque = Object.keys(nb).some((x) => o[+x]);
+      if (choque) { b.classList.add('is-choque'); aviso.className = 'rc-aviso is-choque'; aviso.textContent = `Cabe la fiesta del ${d}, pero su entrega o su lavado se empalma con la renta de junto. ${urgente ? 'Ni con lavado urgente.' : 'Con lavado urgente sí cabe: pídelo a la dueña.'}`; setTimeout(() => b.classList.remove('is-choque'), 500); return; }
+      rentas.push(d); pinta(); aviso.className = 'rc-aviso'; aviso.textContent = `Apartado para el ${nombreDia(d)} ${d}: entrega el ${d - 2}, vuelve el ${d + 2}, lavado hasta el ${d + (urgente ? 3 : 4)}.`; (window as any).sacsPH?.('giro_re_aparta', { dia: d });
+    });
+    urg.addEventListener('click', () => { urgente = !urgente; urg.classList.toggle('is-on', urgente); urg.setAttribute('aria-pressed', String(urgente)); pinta(); nota.textContent = urgente ? 'Lavado urgente: un día en vez de dos. Solo lo autoriza la dueña, porque se juega el vestido.' : 'Sábados 6 y 20 ya apartados. Prueba el sábado 13: cabe. Prueba el miércoles 10: choca con el lavado.'; });
+    pinta();
+  })();
+</script>

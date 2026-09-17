@@ -1,0 +1,103 @@
+---
+/**
+ * RiCrece — "El niño crece, la clienta regresa", el bloque propio de ropa infantil (17-sep-2026,
+ * con el dictamen del referee de oficio: una sola idea; deslizador de edad → la talla de hoy en
+ * grande → "La siguiente le toca en [mes]. Ese día le escribimos a la mamá." + botón "fue regalo";
+ * la última talla y cuándo mandan, la edad solo empuja; el sistema propone, la vendedora confirma).
+ *
+ * Lo que solo pasa aquí: la talla es del hijo y cambia sola, y la mitad de lo de bebé y de
+ * diciembre lo compra alguien que no es la mamá. Los siete puntos:
+ * · Cuándo: en el primer ticket, con nombre y meses o años; en cada cambio de temporada; dos
+ *   semanas antes de las fechas de regalo; cuando regresan con la bolsa.
+ * · Quién: la de caja apunta y escanea; la encargada autoriza sin ticket; la dueña aprueba la
+ *   campaña. El sistema propone, no calcula.
+ * · Qué se mueve primero: la talla siguiente en el mismo modelo → otra sucursal → otro modelo o
+ *   vale. Nunca efectivo por un regalo ni "regrese la otra semana" sin apartado.
+ * · Cuánto cuesta: 12 tallas del RN al 12, 25-30 compras por hijo; una mamá que no regresa vale
+ *   una compra.
+ * · Criterios: última talla y fecha mandan; bebé cada tres meses, niño cada temporada; regalo se
+ *   trata como regalo; primero la que no ha vuelto en seis meses con hijo de menos de dos años;
+ *   un mensaje, una talla, una foto.
+ * · Paso a paso: la abuela compra el 4 en diciembre → la mamá cambia por el 6 con el ticket →
+ *   las dos quedan ligadas a Regina → en marzo el sistema propone 6 y avisa → Día del Niño avisa
+ *   a la abuela → cumpleaños avisa a las dos.
+ * · El dato honesto: "cambios de regalo resueltos con ticket" (medible desde el primer enero) y
+ *   "mamás que regresaron por el mismo hijo en la temporada siguiente"; lo que vimos en las
+ *   primeras tiendas que llenaron la ficha, no un dato del ramo.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="El niño crece, la clienta regresa."
+  titulo="Ponle la edad y mira cuándo le toca la siguiente."
+  descripcion="Solo aquí la talla es del hijo y cambia sola. La última talla que se llevó y cuándo mandan; la edad solo empuja. El sistema propone la que sigue, la vendedora confirma en el mostrador, y el día que le toca, le escribe a la mamá con una foto en su talla."
+  vinetas={[
+    { label: 'Se apunta en el primer ticket o no se apunta nunca', detail: '“Es para mi niña de 8 meses”: nombre, meses o años y la talla que se llevó. Diez segundos en la caja. La abuela y la mamá quedan ligadas al mismo niño.' },
+    { label: 'Bebé cada tres meses; niño cada temporada', detail: 'Del RN al 24 la talla cambia con las estaciones; del 2 al 12, con el año escolar y con Navidad. Un mensaje, una talla, una foto. Nada de catálogos.' },
+    { label: 'El regalo se trata como regalo', detail: 'Ticket sin precio siempre, cambio por talla sin preguntas, y a quien regaló se le avisa en la misma fecha del año que entra.' },
+  ]}
+  suelta
+>
+  <div class="ri" id="ri-crece">
+    <div class="ri-ctrl">
+      <span class="ri-k">Edad del hijo <b id="ri-edad">3 años</b></span>
+      <input type="range" id="ri-slider" min="0" max="144" step="1" value="36" aria-label="Edad del hijo en meses" />
+      <div class="ri-marcas"><span>RN</span><span>1 año</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span></div>
+      <div class="ri-tira" id="ri-tira"></div>
+      <button type="button" class="ri-regalo" id="ri-regalo" aria-pressed="false">Fue regalo</button>
+    </div>
+    <div class="ri-res">
+      <span class="ri-k">Hoy usa</span>
+      <b class="ri-talla" id="ri-talla">6</b>
+      <p class="ri-frase" id="ri-frase">La siguiente le toca en <b>marzo</b>. Ese día le escribimos a la mamá con una foto en talla 8.</p>
+      <p class="ri-extra" id="ri-extra" hidden>…y a la abuela, el mismo día del año que entra.</p>
+      <p class="ri-fijo">Del recién nacido al 12 son <b>12 tallas</b> y de 25 a 30 compras por hijo. ¿Cuántas te va a comprar a ti?</p>
+      <a class="ri-cta" href="/contacto">Verlo con mis clientas</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .ri { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 22px; }
+  .ri-k { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .ri-k b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; color: var(--color-text-primary); text-transform: none; }
+  .ri input[type=range] { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); margin: 4px 0 2px; }
+  .ri-marcas { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--color-text-tertiary); margin-bottom: 14px; }
+  .ri-tira { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ri-tira :global(span) { padding: 6px 9px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); font-size: 11.5px; font-weight: 700; color: var(--color-text-secondary); transition: background 0.2s, color 0.2s; }
+  .ri-tira :global(span.is-on) { background: var(--color-text-primary, #0E0D0C); color: #fff; border-color: var(--color-text-primary, #0E0D0C); }
+  .ri-tira :global(span.is-next) { border-color: var(--color-primary, #4B7BE5); color: var(--color-primary, #4B7BE5); }
+  .ri-regalo { margin-top: 14px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--color-text-primary); }
+  .ri-regalo.is-on { background: #FDF3DF; border-color: #E5B96A; }
+  .ri-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 16px; display: flex; flex-direction: column; }
+  .ri-res .ri-k { display: block; }
+  .ri-talla { font-family: var(--font-display); font-size: clamp(48px, 6vw, 72px); letter-spacing: -0.04em; line-height: 1; color: var(--color-text-primary); }
+  .ri-frase { margin: 12px 0 0; font-size: 15px; line-height: 1.45; color: var(--color-text-primary); }
+  .ri-extra { margin: 4px 0 0; font-size: 14px; color: #8A5A00; }
+  .ri-fijo { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13px; line-height: 1.45; color: var(--color-text-secondary); }
+  .ri-fijo b { color: var(--color-text-primary); }
+  .ri-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .ri { grid-template-columns: 1fr; padding: 14px; } .ri-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('ri-crece'); if (!el) return;
+    const TALLAS = [{ n: 'RN', h: 1 }, { n: '0-3', h: 3 }, { n: '3-6', h: 6 }, { n: '6-9', h: 9 }, { n: '9-12', h: 12 }, { n: '12-18', h: 18 }, { n: '18-24', h: 24 }, { n: '2', h: 36 }, { n: '4', h: 60 }, { n: '6', h: 84 }, { n: '8', h: 108 }, { n: '10', h: 132 }, { n: '12', h: 156 }];
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const sl = document.getElementById('ri-slider') as HTMLInputElement, tira = document.getElementById('ri-tira')!, regalo = document.getElementById('ri-regalo')!;
+    const idx = (m: number) => { let i = TALLAS.findIndex((t) => m < t.h); return i < 0 ? TALLAS.length - 1 : i; };
+    const pinta = () => {
+      const m = Number(sl.value); const i = idx(m); const sig = Math.min(TALLAS.length - 1, i + 1);
+      document.getElementById('ri-edad')!.textContent = m < 24 ? `${m} ${m === 1 ? 'mes' : 'meses'}` : `${Math.floor(m / 12)} años`;
+      document.getElementById('ri-talla')!.textContent = TALLAS[i].n;
+      tira.innerHTML = TALLAS.map((t, k) => `<span class="${k === i ? 'is-on' : k === sig && sig !== i ? 'is-next' : ''}">${t.n}</span>`).join('');
+      const faltan = Math.max(1, TALLAS[i].h - m); const mes = MESES[(new Date().getMonth() + faltan) % 12];
+      document.getElementById('ri-frase')!.innerHTML = sig === i ? 'Ya va en talla de adulto: la ficha pasa a la mamá como clienta de ropa.' : `La siguiente le toca en <b>${mes}</b>. Ese día le escribimos a la mamá con una foto en talla ${TALLAS[sig].n}.`;
+      (window as any).sacsPH?.('giro_ri_edad', { meses: m });
+    };
+    sl.addEventListener('input', pinta);
+    regalo.addEventListener('click', () => { const on = regalo.classList.toggle('is-on'); regalo.setAttribute('aria-pressed', String(on)); (document.getElementById('ri-extra') as HTMLElement).hidden = !on; });
+    pinta();
+  })();
+</script>
