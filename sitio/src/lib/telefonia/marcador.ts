@@ -948,10 +948,24 @@ export async function estadoSesion(sesionId: string) {
   const it = s.item_actual ? await getItem(s.item_actual) : null;
   const { count: pendientes } = await supabase.from('tel_sesion_items').select('id', { count: 'exact', head: true }).eq('sesion_id', sesionId).eq('estado', 'pendiente');
   const { data: prox } = await supabase.from('tel_sesion_items').select('nombre, telefono, volver_at').eq('sesion_id', sesionId).eq('estado', 'pendiente').gt('volver_at', ahora()).order('volver_at').limit(1).maybeSingle();
+  /* QUIÉN SIGUE, con nombre y motivo. Se decide distinto sabiendo si el que
+     viene es un lead de hoy o un rezagado de hace tres semanas; y ver el
+     siguiente mientras cierras es lo que quita la sensación de estar a ciegas
+     en una jornada de cincuenta llamadas. */
+  const { data: sig } = await supabase.from('tel_sesion_items')
+    .select('nombre, empresa, telefono, resumen, intentos, volver_at')
+    .eq('sesion_id', sesionId).eq('estado', 'pendiente')
+    .or(`volver_at.is.null,volver_at.lte.${ahora()}`)
+    .order('prioridad', { ascending: false }).order('orden').limit(1).maybeSingle();
   const zona = it ? zonaDeLada(it.lada || ladaDe(it.telefono)) : null;
   return {
     sesion: s,
-    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), dialogo: conFernanda(s) ? dialogoOido(Array.isArray(it.oido) ? it.oido : []) : '', segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
+    /* `dialogo` SIEMPRE, no sólo con Fernanda. En modo manual la cabina se
+       quedaba sin lo que se dijo justo cuando hay que decidir qué hacer con
+       esa llamada — y decidir de memoria, en la número veinte del día, es cómo
+       se agenda una cita que el cliente no pidió. */
+    actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), dialogo: dialogoOido(Array.isArray(it.oido) ? it.oido : []), segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
+    siguiente_item: sig ? { nombre: sig.nombre, empresa: sig.empresa, telefono: sig.telefono, resumen: String(sig.resumen || '').slice(0, 220), intentos: sig.intentos } : null,
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),

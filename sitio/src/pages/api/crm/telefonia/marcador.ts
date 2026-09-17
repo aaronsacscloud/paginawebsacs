@@ -188,6 +188,98 @@ export const POST: APIRoute = async ({ request }) => {
         await recontar(s.id);
         return json(r);
       }
+      /* ══ CORREGIR LO QUE LA IA PROPUSO, ANTES DE QUE PASE ═══════════════
+         Pedido del dueño (17-sep): antes era todo o nada — si la cita salía a
+         las 4 y era a las 5, o la dejabas mal o la hacías a mano después, con
+         el siguiente ya timbrando. Aquí se cambia la hora, se quita lo que
+         sobra y se aplica lo que queda. */
+      case 'cierre_editar': {
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, cierre_ia, cierre_estado').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it) return json({ error: 'No es un item de tu sesión' }, 404);
+        const p0: any = (it.cierre_ia as any)?.propuesta;
+        if (!p0) return json({ error: 'Esa llamada no tiene propuesta que corregir' }, 400);
+        const c = b.cambios || {};
+        if (Array.isArray(c.compromisos)) {
+          /* Sólo fecha y hora: el tipo, el motivo y la duración los pone la IA
+             y cambiarlos desde aquí abriría la puerta a una reunión sin tipo. */
+          p0.compromisos = (p0.compromisos || []).map((cp: any, i: number) => {
+            const e = c.compromisos.find((x: any) => Number(x.i) === i);
+            if (!e) return cp;
+            if (e.quitar) return null;
+            return { ...cp, fecha: /^\d{4}-\d{2}-\d{2}$/.test(String(e.fecha)) ? e.fecha : cp.fecha, hora: /^\d{2}:\d{2}$/.test(String(e.hora)) ? e.hora : cp.hora };
+          }).filter(Boolean);
+        }
+        if (Array.isArray(c.quitar_datos)) p0.datos = (p0.datos || []).filter((_: any, i: number) => !c.quitar_datos.includes(i));
+        if (c.etapa === null || c.etapa === 'null') p0.etapa = null;
+        if (Array.isArray(c.quitar_envios)) {
+          for (const id of c.quitar_envios) if (UUID.test(String(id))) await omitirEnvio(String(id));
+          p0.envios = (p0.envios || []).map((e: any) => (c.quitar_envios.includes(e.id) ? { ...e, estado: 'omitido' } : e));
+        }
+        await supabase.from('tel_sesion_items').update({ cierre_ia: { ...(it.cierre_ia as any), propuesta: p0, editada_at: new Date().toISOString() }, updated_at: new Date().toISOString() }).eq('id', itemId);
+        return json({ ok: true, ...(await estadoSesion(s.id)) });
+      }
+      /* «No fue eso»: se tira la propuesta entera y manda lo que diga la
+         persona. Sin esto había que desarmarla pieza por pieza para que no se
+         aplicara, y la salida fácil era dejar que la IA hiciera algo mal. */
+      case 'cierre_descartar': {
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, cierre_ia').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it) return json({ error: 'No es un item de tu sesión' }, 404);
+        for (const e of ((it.cierre_ia as any)?.propuesta?.envios || [])) if (e?.id && ['falta', 'listo'].includes(String(e.estado))) await omitirEnvio(String(e.id));
+        await supabase.from('tel_sesion_items').update({
+          cierre_estado: 'descartado',
+          cierre_ia: { ...(it.cierre_ia as any), descartada_at: new Date().toISOString(), por: user.id },
+          updated_at: new Date().toISOString(),
+        }).eq('id', itemId);
+        return json({ ok: true, ...(await estadoSesion(s.id)) });
+      }
+      /* DESHACER lo que se acaba de aplicar. Dos minutos, que es lo que tarda
+         uno en darse cuenta de que confirmó de más: cancela la reunión creada,
+         frena el PDF que no ha salido y borra la tarea. Lo que YA salió por
+         WhatsApp no se puede deshacer y se dice. */
+      case 'cierre_deshacer': {
+        const itemId = String(b.item || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, contact_id, cierre_ia, cierre_estado').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it) return json({ error: 'No es un item de tu sesión' }, 404);
+        const aplicado = (it.cierre_ia as any)?.aplicado_at;
+        if (!aplicado) return json({ error: 'Esa llamada no se ha aplicado' }, 400);
+        if (Date.now() - new Date(aplicado).getTime() > 3 * 60000) return json({ error: 'Ya pasaron más de dos minutos: hay que deshacerlo a mano' }, 400);
+        const deshecho: string[] = [];
+        // Reuniones creadas por ESTE cierre (origen llamada, del mismo contacto, recién nacidas).
+        if (it.contact_id) {
+          const { data: bks } = await supabase.from('bookings').select('id, fecha, hora_inicio')
+            .eq('contact_id', it.contact_id).eq('origen', 'llamada').eq('estado', 'agendada')
+            .gt('created_at', new Date(new Date(aplicado).getTime() - 60000).toISOString()).limit(5);
+          for (const bk of bks || []) {
+            await supabase.from('bookings').update({ estado: 'cancelada' }).eq('id', bk.id);
+            await supabase.from('ti_tareas').delete().contains('payload', { booking_id: bk.id });
+            deshecho.push(`se canceló la reunión del ${bk.fecha} a las ${String(bk.hora_inicio).slice(0, 5)}`);
+          }
+        }
+        const { data: envs } = await supabase.from('tel_envios').select('id, tema, estado').eq('item_id', itemId);
+        for (const e of envs || []) {
+          if (['listo', 'pendiente_ventana', 'falta'].includes(String(e.estado))) { await omitirEnvio(e.id); deshecho.push(`no se manda ${e.tema}`); }
+          else if (e.estado === 'enviado') deshecho.push(`${e.tema} YA se le mandó: eso no se puede deshacer`);
+        }
+        return json({ ok: true, deshecho });
+      }
+      /* La grabación, para oírla mientras decides. Firmada y corta: el audio de
+         una llamada no puede quedar colgando en una URL pública. */
+      case 'grabacion': {
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('call_sid').eq('id', itemId).eq('sesion_id', s.id).maybeSingle();
+        if (!it?.call_sid) return json({ error: 'Esa llamada no tiene grabación' }, 404);
+        const { data: ll } = await supabase.from('wa_llamadas').select('grabacion_path').eq('call_id', it.call_sid).maybeSingle();
+        if (!ll?.grabacion_path) return json({ ok: false, motivo: 'La grabación todavía no llega (tarda hasta un minuto después de colgar).' });
+        const [bucket, ...resto] = String(ll.grabacion_path).split('/');
+        const { data: firma } = await supabase.storage.from(bucket).createSignedUrl(resto.join('/'), 600);
+        return firma?.signedUrl ? json({ ok: true, url: firma.signedUrl }) : json({ ok: false, motivo: 'No se pudo abrir la grabación' });
+      }
       case 'cierre_escribiendo': {
         // El vendedor está contestando una pregunta del cierre: el auto-continuar espera (tope de 5 min desde la propuesta).
         const itemId = String(b.item || s.item_actual || '');

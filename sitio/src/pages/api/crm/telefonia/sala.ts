@@ -138,6 +138,27 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, accion_id: fila?.id || null, acciones: await deLaLlamada(callSid) });
   }
 
+  /* ── UNA SALIDA EN UN SOLO CLIC ──────────────────────────────────────────
+     «Volver a llamar mañana a las 10», «mandarle la info», «pasarlo a
+     soporte»: anotar la acción y ejecutarla en el mismo viaje. Existe porque
+     al colgar lo que sobra es tiempo de clics: dos pasos para lo que se sabe
+     desde el segundo cero es como se pierde el próximo paso de una llamada. */
+  if (accion === 'rapida') {
+    const cual = String(b.cual || '');
+    if (!catalogo().some(c => c.id === cual)) return json({ error: 'Esa acción no existe' }, 400);
+    const params = b.params || {};
+    const { data: fila } = await supabase.from('tel_acciones').insert({
+      call_sid: callSid, item_id: ctx.itemId, contact_id: ctx.contactId, conversation_id: ctx.conversationId,
+      telefono: ctx.telefono, accion: cual, params, frase: b.frase || 'lo decidiste tú al colgar',
+      origen: 'manual', confianza: 1, estado: 'propuesta', user_id: user.id,
+    }).select('id').maybeSingle();
+    // Ya estaba anotada (índice único): se ejecuta ESA con los datos nuevos.
+    const id = fila?.id || (await supabase.from('tel_acciones').select('id').eq('call_sid', callSid).eq('accion', cual).maybeSingle()).data?.id;
+    if (!id) return json({ error: 'No se pudo anotar la acción' }, 500);
+    const r = await ejecutar(id, { userId: user.id, params });
+    return json({ ...r, acciones: await deLaLlamada(callSid) });
+  }
+
   // ── Colgó: se cierra el item y se pide el cierre con IA ───────────────────
   if (accion === 'cerrar') {
     const r = await cerrarLlamadaSuelta(callSid, { userId: user.id, resultado: b.resultado || null, nota: b.nota || null });

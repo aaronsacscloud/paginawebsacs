@@ -92,6 +92,14 @@ try {
   paso('Enseña lo que propone', /Pidió que le marquen más tarde/i.test(txt), '');
   paso('Trae el panel de acciones', /Te pidió algo/i.test(txt) && /Volver a llamarle/i.test(txt), '');
   paso('El botón confirma antes de ejecutar', /Confirmar lo de la IA y seguir/i.test(txt), '');
+  paso('Salidas en un clic (1 h, mañana, el lunes)', /Llamarle en 1 h/.test(txt) && /Mañana 10:00/.test(txt) && /El lunes/.test(txt), '');
+  paso('Día y hora exactos para la llamada de vuelta', /Agendar esa llamada/.test(txt), '');
+  paso('Se puede leer lo que se dijo', /Ver lo que se dijo/.test(txt), '');
+  paso('Se puede oír la llamada', /Oír la llamada/.test(txt), '');
+  paso('La propuesta se corrige (quitar)', /Quitar/.test(txt), '');
+  paso('Se puede descartar la propuesta entera', /No fue eso: descartar/.test(txt), '');
+  paso('Dice quién sigue', /SIGUE/.test(txt), '');
+  paso('Dice los atajos de teclado', /1-5 cómo quedó/.test(txt), '');
   await p.screenshot({ path: '/tmp/qa-cabina-decision.png', fullPage: true });
   console.log(errores.length ? `\n  ⚠ ${errores.length} error(es): ${errores.slice(0, 3).join(' | ')}` : '\n  ✓ sin errores de JS');
 } finally {

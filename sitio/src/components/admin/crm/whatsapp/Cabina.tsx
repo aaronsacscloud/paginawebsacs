@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { C } from './estilo';
 import AccionesLlamada from './AccionesLlamada';
+import { confirmar } from '../../../../lib/ui/confirmar';
 import { S } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { IcoTelefono, IcoMic, IcoReloj, IcoUsuario, IcoX } from './Iconos';
@@ -499,6 +500,17 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const esperaTuDecision = actual?.estado === 'cierre' && ['persona', 'duda'].includes(String(actual?.veredicto || '')) && !sola;
   const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  /* ══ LO QUE HACE FALTA PARA DECIDIR RÁPIDO Y BIEN (17-sep-2026) ══════════
+     Las diez mejoras del momento de colgar viven aquí: corregir la propuesta,
+     rechazarla, leer lo que se dijo, saber por qué la IA no pudo, las salidas
+     en un clic, la hora de la llamada de vuelta, deshacer, quién sigue, el
+     teclado y la grabación. */
+  const [editando, setEditando] = useState<Record<number, { fecha: string; hora: string }>>({});
+  const [deshacer, setDeshacer] = useState<{ item: string; hasta: number } | null>(null);
+  const [deshecho, setDeshecho] = useState<string[] | null>(null);
+  const [verDicho, setVerDicho] = useState(false);
+  const [audio, setAudio] = useState<string | null>(null);
+  const [cuando, setCuando] = useState<{ fecha: string; hora: string }>({ fecha: '', hora: '' });
   const responderEnvio = async (envioId: string) => {
     const texto = (respuestas[envioId] || '').trim();
     if (texto.length < 10) { setError('Escribe al menos una línea de lo que se le manda.'); return; }
@@ -507,10 +519,84 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   };
   const confirmarYSeguir = async () => {
     if (!actual) return;
+    const item = actual.id;
     // Primero el cierre con lo que el vendedor ajustó (chip y apunte), luego el siguiente. Si el cierre falla, no se avanza a ciegas.
-    if (propuesta) { const r = await accion('cierre', { item: actual.id, nota: nota.trim() || undefined }); if (!r) return; }
+    if (propuesta) { const r = await accion('cierre', { item, nota: nota.trim() || undefined }); if (!r) return; }
+    /* DOS MINUTOS PARA DESHACER. Es lo que tarda uno en darse cuenta de que
+       confirmó de más — y para entonces el siguiente ya está timbrando, que es
+       justo cuando no se puede ir a cancelar una cita a mano. */
+    if (propuesta) { setDeshacer({ item, hasta: Date.now() + 120000 }); setDeshecho(null); }
     await accion('siguiente');
   };
+  /* Una salida en un clic: se anota y se ejecuta en el mismo viaje, por el
+     motor de acciones (el mismo que atiende lo que el cliente pidió). */
+  const rapida = async (cual: string, params: any = {}) => {
+    if (!actual?.call_sid) { setError('Esta llamada no tiene con qué: no se registró en el espejo.'); return; }
+    setOcupado(cual);
+    const r = await fetch('/api/crm/telefonia/sala', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ call_id: actual.call_sid, accion: 'rapida', cual, params }),
+    }).then(x => x.json()).catch(() => ({ error: 'Sin red' }));
+    setOcupado('');
+    if (r?.error) setError(r.error);
+    else if (r?.ok === false && r?.dicho) setError(r.dicho);
+    else { setError(''); latir(); }
+  };
+  /** «Márcame más tarde», con hora de verdad. Sin hora la promesa se agenda a
+   *  las 10 por omisión, y ésa es justo la que se rompe. */
+  const volverA = (horas: number | null, dia?: 'manana' | 'lunes') => {
+    const d = new Date();
+    if (horas) d.setHours(d.getHours() + horas);
+    if (dia === 'manana') { d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+    if (dia === 'lunes') { d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(10, 0, 0, 0); }
+    const fecha = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return rapida('volver_a_llamar', { fecha, hora });
+  };
+  const editarCierre = (cambios: any) => accion('cierre_editar', { item: actual?.id, cambios });
+  const descartarPropuesta = async () => {
+    if (!(await confirmar('¿Tirar lo que propuso la IA? Se cierra la llamada con lo que tú digas.'))) return;
+    await accion('cierre_descartar', { item: actual?.id });
+  };
+  const pedirGrabacion = async () => {
+    setOcupado('audio');
+    const r = await post({ accion: 'grabacion', id: sesionId, item: actual?.id });
+    setOcupado('');
+    if (r?.url) setAudio(r.url); else setError(r?.motivo || r?.error || 'No hay grabación todavía');
+  };
+  const deshacerCierre = async () => {
+    if (!deshacer) return;
+    setOcupado('deshacer');
+    const r = await post({ accion: 'cierre_deshacer', id: sesionId, item: deshacer.item });
+    setOcupado('');
+    if (r?.error) { setError(r.error); return; }
+    setDeshecho(r.deshecho || []); setDeshacer(null);
+  };
+
+  /* ══ EL TECLADO, EN EL MOMENTO DE DECIDIR ════════════════════════════════
+     1-5 eligen cómo quedó, Enter confirma y pasa al siguiente. En una jornada
+     de cincuenta llamadas, ir al ratón para cada chip es lo que convierte diez
+     minutos de trabajo en una hora. Nunca secuestra el teclado mientras se
+     escribe: si el foco está en un campo, las teclas son del campo. */
+  const RES_TECLA = ['contesto', 'volver_llamar', 'dieron_datos', 'no_interesa', 'buzon'];
+  useEffect(() => {
+    if (!esperaTuDecision) return;
+    const alTeclear = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key >= '1' && e.key <= '5') {
+        e.preventDefault();
+        const r = RES_TECLA[Number(e.key) - 1];
+        if (r && actual) post({ accion: 'resultado', id: sesionId, item: actual.id, resultado: r }).then(() => latir());
+      } else if (e.key === 'Enter') {
+        e.preventDefault(); confirmarYSeguir();
+      }
+    };
+    window.addEventListener('keydown', alTeclear);
+    return () => window.removeEventListener('keydown', alTeclear);
+  }, [esperaTuDecision, actual?.id, propuesta, nota]);
+
   // Lo que se está escribiendo para un envío sobrevive al recargar (por id de envío) y le avisa a la central que espere.
   useEffect(() => {
     if (!enviosAbiertos.length) return;
@@ -1101,6 +1187,21 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 {estadoActual === 'cierre' && actual.cierre_estado === 'sin_datos' && (
                   <div style={{ marginTop: 12, fontSize: 11.5, color: C.g400 }}>La IA no alcanzó a leer la llamada{actual.cierre_ia?.motivo ? ` (${actual.cierre_ia.motivo})` : ''}: pica cómo quedó y escribe el apunte.</div>
                 )}
+                {/* ══ DESHACER, DOS MINUTOS ═════════════════════════════════
+                    Confirmaste y el siguiente ya está timbrando: ir a cancelar
+                    una cita a mano en ese momento no pasa. Aquí sí. */}
+                {deshacer && Date.now() < deshacer.hasta && !deshecho && (
+                  <div style={{ marginTop: 12, background: '#FFF4E5', border: '1px solid #f3d9a4', borderRadius: 10, padding: '9px 12px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, color: '#9a6a10', fontWeight: 700, flex: 1, minWidth: 180 }}>Se aplicó el cierre de la llamada anterior.</span>
+                    <button onClick={deshacerCierre} disabled={!!ocupado} style={{ ...btnT, padding: '5px 11px', fontSize: 12 }}>Deshacer</button>
+                  </div>
+                )}
+                {deshecho && (
+                  <div style={{ marginTop: 12, background: '#EAF8F2', border: '1px solid #9fdcc2', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, color: '#1E8A63', lineHeight: 1.6 }}>
+                    {deshecho.length ? deshecho.map((d, i) => <div key={i}>✓ {d}</div>) : <div>No había nada que deshacer.</div>}
+                  </div>
+                )}
+
                 {/* ══ LA LISTA TE ESPERA ═══════════════════════════════════
                     «Ahí ya no debe seguir a la siguiente llamada: ahí debe
                     aparecerme la interfaz con las decisiones a tomar en ese
@@ -1111,6 +1212,76 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   <div style={{ marginTop: 14, background: C.moradoSuave, border: `1px solid ${C.morado}`, borderRadius: 10, padding: '10px 13px', fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, lineHeight: 1.5 }}>
                     Hablaste con una persona: la lista se queda aquí hasta que tú decidas.
                     {propuesta ? ' Abajo está lo que la IA propone — nada de eso se ha ejecutado todavía.' : ' La IA está leyendo la llamada…'}
+                  </div>
+                )}
+
+                {/* ══ LAS SALIDAS EN UN CLIC ═══════════════════════════════
+                    El próximo paso sin depender de la IA y sin llenar un
+                    formulario: es lo que se pide el 90% de las veces. La hora
+                    va de verdad —«en una hora» es en una hora— porque una
+                    promesa agendada a las 10 por omisión es la que se rompe. */}
+                {esperaTuDecision && (
+                  <div style={{ marginTop: 12 }}>
+                    <span style={etiqueta}>Qué sigue con esta persona</span>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button onClick={() => volverA(1)} disabled={!!ocupado} style={btnS}>Llamarle en 1 h</button>
+                      <button onClick={() => volverA(3)} disabled={!!ocupado} style={btnS}>En 3 h</button>
+                      <button onClick={() => volverA(null, 'manana')} disabled={!!ocupado} style={btnS}>Mañana 10:00</button>
+                      <button onClick={() => volverA(null, 'lunes')} disabled={!!ocupado} style={btnS}>El lunes</button>
+                      <button onClick={() => rapida('mandar_info')} disabled={!!ocupado} style={btnS}>Mandarle la info</button>
+                      <button onClick={() => rapida('soporte')} disabled={!!ocupado} style={btnS}>Es cliente: soporte</button>
+                    </div>
+                    {/* A la hora exacta, cuando ninguno de los atajos sirve. */}
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
+                      <label style={{ fontSize: 10.5, color: C.g400, fontWeight: 700 }}>
+                        <span style={{ display: 'block', marginBottom: 2 }}>O el día</span>
+                        <input type="date" value={cuando.fecha} min={new Date().toISOString().slice(0, 10)}
+                          onChange={e => setCuando(c => ({ ...c, fecha: e.target.value }))} style={{ ...campo, width: 150 }} />
+                      </label>
+                      <label style={{ fontSize: 10.5, color: C.g400, fontWeight: 700 }}>
+                        <span style={{ display: 'block', marginBottom: 2 }}>a las</span>
+                        <input type="time" value={cuando.hora} onChange={e => setCuando(c => ({ ...c, hora: e.target.value }))} style={{ ...campo, width: 120 }} />
+                      </label>
+                      <button disabled={!!ocupado || !cuando.fecha || !cuando.hora} onClick={() => rapida('volver_a_llamar', cuando)}
+                        style={{ ...btnS, opacity: cuando.fecha && cuando.hora ? 1 : .5 }}>Agendar esa llamada</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ══ LO QUE SE DIJO, para decidir con eso y no de memoria ═══
+                    Antes sólo se veía con Fernanda. En la llamada número veinte
+                    del día, decidir de memoria es como se agenda una cita que
+                    el cliente no pidió. */}
+                {estadoActual === 'cierre' && !fernanda && String(actual.dialogo || '').trim() && (
+                  <div style={{ marginTop: 12 }}>
+                    <button onClick={() => setVerDicho(v => !v)} style={{ ...btnT, padding: '5px 10px' }}>
+                      {verDicho ? 'Ocultar lo que se dijo' : 'Ver lo que se dijo'}
+                    </button>
+                    {!audio && <button onClick={pedirGrabacion} disabled={!!ocupado} style={{ ...btnT, padding: '5px 10px', marginLeft: 6 }}>Oír la llamada</button>}
+                    {audio && <audio controls src={audio} style={{ height: 32, verticalAlign: 'middle', marginLeft: 6, maxWidth: 260 }} />}
+                    {verDicho && (
+                      <div className="wa-scroll" style={{ marginTop: 8, maxHeight: 220, overflowY: 'auto', display: 'grid', gap: 5, fontSize: 12.5, lineHeight: 1.5 }}>
+                        {String(actual.dialogo).split('\n').map((l: string, i: number) => {
+                          const mia = l.startsWith('Vendedor:');
+                          return <div key={i} style={{ justifySelf: mia ? 'end' : 'start', maxWidth: '88%', background: mia ? C.moradoAgua : '#fff', border: mia ? 'none' : `1px solid ${C.g200}`, color: mia ? C.moradoTinta : C.g700, borderRadius: 10, padding: '6px 10px' }}>{l.replace(/^(Vendedor|Cliente):\s*/, '')}</div>;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ══ POR QUÉ LA IA NO PUDO ═════════════════════════════════
+                    Sin esto la pantalla se quedaba en blanco y parecía atorada.
+                    Decir qué faltó es lo que convierte un hueco en una decisión
+                    tuya. */}
+                {estadoActual === 'cierre' && !propuesta && ['sin_datos', 'descartado'].includes(String(actual.cierre_estado || '')) && (
+                  <div style={{ marginTop: 12, background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.5 }}>
+                    {actual.cierre_estado === 'descartado' ? 'Tiraste lo que propuso la IA: vale lo que tú dejes aquí.' : (() => {
+                      const m = String(actual.cierre_ia?.motivo || '');
+                      if (/credit balance|sin saldo|billing/i.test(m)) return 'La IA no pudo leer la llamada: no hay saldo. Cierra tú y sigue — lo demás quedó guardado.';
+                      if (/transcripci|no alcanz/i.test(m)) return 'No hubo transcripción suficiente para que la IA entendiera la llamada (fue muy corta, o no se oyó). Decide tú.';
+                      return `La IA no pudo cerrarla${m ? `: ${m}` : ''}. Decide tú.`;
+                    })()}
                   </div>
                 )}
 
@@ -1135,23 +1306,57 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     {(propuesta.compromisos?.length > 0 || propuesta.datos?.length > 0 || propuesta.envios?.length > 0 || propuesta.etapa) && (
                       <div style={{ display: 'grid', gap: 4, fontSize: 12, color: C.g700 }}>
                         <span style={{ ...etiqueta, marginBottom: 0 }}>Al seguir se deja hecho</span>
+                        {/* ══ CORREGIBLE ANTES DE QUE PASE ═══════════════════
+                            La IA acierta el qué y falla la hora más seguido de
+                            lo que uno cree. Antes era todo o nada: o la dejabas
+                            mal, o la rehacías a mano con el siguiente ya
+                            timbrando. */}
                         {(propuesta.compromisos || []).map((cp: any, i: number) => (
-                          <div key={`c${i}`}>· {cp.tipo === 'reunion' ? `Reunión (${cp.reunion_tipo})` : 'Llamada'} el {cp.fecha} a las {cp.hora}{cp.motivo ? `: ${cp.motivo}` : ''} → agenda, calendario{cp.tipo === 'llamada' ? ' y esta lista' : ''}</div>
+                          <div key={`c${i}`} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span>· {cp.tipo === 'reunion' ? `Reunión (${cp.reunion_tipo})` : 'Llamada'}{cp.motivo ? `: ${cp.motivo}` : ''} →</span>
+                            <input type="date" value={editando[i]?.fecha ?? cp.fecha} min={new Date().toISOString().slice(0, 10)}
+                              onChange={e => setEditando(v => ({ ...v, [i]: { fecha: e.target.value, hora: v[i]?.hora ?? cp.hora } }))}
+                              style={{ ...campo, width: 140, padding: '4px 7px', fontSize: 12 }} />
+                            <input type="time" value={editando[i]?.hora ?? cp.hora}
+                              onChange={e => setEditando(v => ({ ...v, [i]: { fecha: v[i]?.fecha ?? cp.fecha, hora: e.target.value } }))}
+                              style={{ ...campo, width: 110, padding: '4px 7px', fontSize: 12 }} />
+                            {editando[i] && (editando[i].fecha !== cp.fecha || editando[i].hora !== cp.hora) && (
+                              <button disabled={!!ocupado} onClick={() => { editarCierre({ compromisos: [{ i, ...editando[i] }] }); setEditando(v => { const n = { ...v }; delete n[i]; return n; }); }}
+                                style={{ ...btnS, padding: '4px 9px', fontSize: 11.5 }}>Cambiar la hora</button>
+                            )}
+                            <button disabled={!!ocupado} onClick={() => editarCierre({ compromisos: [{ i, quitar: true }] })}
+                              style={{ ...btnT, padding: '3px 8px', fontSize: 11, color: '#C0554E' }}>Quitar</button>
+                          </div>
                         ))}
                         {(propuesta.datos || []).map((d: any, i: number) => (
-                          <div key={`d${i}`}>· {d.corrige ? 'Corregir' : 'Llenar'} <b>{d.campo}</b>: {String(d.valor)}</div>
+                          <div key={`d${i}`} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span>· {d.corrige ? 'Corregir' : 'Llenar'} <b>{d.campo}</b>: {String(d.valor)}</span>
+                            <button disabled={!!ocupado} onClick={() => editarCierre({ quitar_datos: [i] })}
+                              style={{ ...btnT, padding: '2px 7px', fontSize: 10.5, color: '#C0554E' }}>No</button>
+                          </div>
                         ))}
-                        {propuesta.etapa === 'lead_calificado' && <div>· Pasa a lead calificado</div>}
+                        {propuesta.etapa === 'lead_calificado' && (
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span>· Pasa a lead calificado</span>
+                            <button disabled={!!ocupado} onClick={() => editarCierre({ etapa: null })} style={{ ...btnT, padding: '2px 7px', fontSize: 10.5, color: '#C0554E' }}>No</button>
+                          </div>
+                        )}
                         {/* La baja se pinta en rojo y dice TODO lo que apaga: es
                             la única acción del cierre que es difícil de deshacer,
                             así que tiene que saltar antes de confirmar. */}
                         {propuesta.etapa === 'descalificado' && (
-                          <div style={{ color: '#C0554E', fontWeight: 700 }}>
-                            · Se descalifica, sale de la cadencia del agente y de todas las secuencias
+                          <div style={{ color: '#C0554E', fontWeight: 700, display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span>· Se descalifica, sale de la cadencia del agente y de todas las secuencias</span>
+                            <button disabled={!!ocupado} onClick={() => editarCierre({ etapa: null })} style={{ ...btnT, padding: '2px 7px', fontSize: 10.5 }}>No lo bajes</button>
                           </div>
                         )}
                         {(propuesta.envios || []).filter((e: any) => e.estado !== 'falta').map((e: any) => (
-                          <div key={e.id}>· Mandarle <b>{e.tema}</b> en PDF por WhatsApp{e.estado === 'enviado' ? ' — ya salió' : e.estado === 'pendiente_ventana' ? ' — sale cuando conteste' : e.estado === 'omitido' ? ' — no' : e.estado === 'sin_via' || e.estado === 'fallo' ? ' — quedó como tarea' : ''}</div>
+                          <div key={e.id} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span>· Mandarle <b>{e.tema}</b> en PDF por WhatsApp{e.estado === 'enviado' ? ' — ya salió' : e.estado === 'pendiente_ventana' ? ' — sale cuando conteste' : e.estado === 'omitido' ? ' — no' : e.estado === 'sin_via' || e.estado === 'fallo' ? ' — quedó como tarea' : ''}</span>
+                            {['listo', 'pendiente_ventana'].includes(String(e.estado)) && (
+                              <button disabled={!!ocupado} onClick={() => editarCierre({ quitar_envios: [e.id] })} style={{ ...btnT, padding: '2px 7px', fontSize: 10.5, color: '#C0554E' }}>No mandarlo</button>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1166,7 +1371,26 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         </div>
                       </div>
                     ))}
-                    <span style={{ fontSize: 10.5, color: C.g400 }}>Lo que piques o escribas arriba manda sobre lo que entendió la IA.</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10.5, color: C.g400, flex: 1, minWidth: 160 }}>Lo que piques o escribas arriba manda sobre lo que entendió la IA.</span>
+                      {/* Entendió otra llamada: se tira entera en vez de
+                          desarmarla pieza por pieza. */}
+                      <button disabled={!!ocupado} onClick={descartarPropuesta} style={{ ...btnT, padding: '4px 10px', fontSize: 11.5, color: '#C0554E' }}>No fue eso: descartar</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ══ QUIÉN SIGUE ══════════════════════════════════════════
+                    Se decide distinto si el que viene es un lead de hoy o un
+                    rezagado de hace tres semanas. Y saber que hay alguien
+                    esperando es lo que hace que uno cierre en vez de quedarse
+                    mirando la pantalla. */}
+                {esperaTuDecision && est?.siguiente_item && (
+                  <div style={{ marginTop: 12, fontSize: 12, color: C.g500, display: 'flex', gap: 6, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                    <span style={{ ...etiqueta, marginBottom: 0 }}>Sigue</span>
+                    <b style={{ color: C.g700 }}>{est.siguiente_item.nombre || telefonoLegible(est.siguiente_item.telefono)}</b>
+                    {est.siguiente_item.empresa && <span>· {est.siguiente_item.empresa}</span>}
+                    {est.siguiente_item.intentos > 0 && <span>· ya se le marcó {est.siguiente_item.intentos} {est.siguiente_item.intentos === 1 ? 'vez' : 'veces'}</span>}
                   </div>
                 )}
 
@@ -1180,6 +1404,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     </button>
                     <span style={{ fontSize: 11.5, color: C.g500, flex: 1, minWidth: 180 }}>
                       {propuesta ? 'Hasta que le des, no se agenda ni se manda nada.' : 'La IA no pudo cerrar ésta: lo que decidas arriba es lo que queda.'}
+                      {' '}<b style={{ color: C.g400 }}>Teclas: 1-5 cómo quedó · Enter confirma.</b>
                     </span>
                   </div>
                 )}
