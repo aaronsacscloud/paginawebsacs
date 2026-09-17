@@ -62,6 +62,7 @@ export default function TallerTab() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
   const [equipo, setEquipo] = useState<any[]>([]);
   const [sinOrden, setSinOrden] = useState<any[]>([]);
+  const [preguntas, setPreguntas] = useState<any[]>([]);   // lo que desarrollo no entendió
   // El valor de cada cuenta (ARR, entregadas, cuenta de SACS), del mismo viaje.
   const [cuentas, setCuentas] = useState<Record<string, any>>({});
   /* De qué reunión salió y en qué módulo se trabaja. Vive en el renglón del
@@ -83,7 +84,7 @@ export default function TallerTab() {
   const cargar = useCallback(async () => {
     const j = await fetch('/api/crm/taller').then(r => r.json()).catch(() => null);
     if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setCuentas(j.cuentas || {}); setYo(j.yo || null);
-      setMeta(j.meta || {}); setReuniones(j.reuniones || {}); }
+      setMeta(j.meta || {}); setReuniones(j.reuniones || {}); setPreguntas(j.preguntas || []); }
     setCargando(false);
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -146,7 +147,14 @@ export default function TallerTab() {
             <button style={S.btnSec} onClick={importar}>Traer del CRM · {sinOrden.length}</button>
           )}
           <button style={vista === 'lista' ? S.btn : S.btnG} onClick={() => setVista('lista')}>Lista del taller</button>
-          <button style={vista === 'bandeja' ? S.btn : S.btnG} onClick={() => setVista('bandeja')}>Mi bandeja</button>
+          <button style={vista === 'bandeja' ? S.btn : S.btnG} onClick={() => setVista('bandeja')}>
+            Mi bandeja
+            {preguntas.length > 0 && (
+              <span style={{ marginLeft: 6, background: vista === 'bandeja' ? 'rgba(255,255,255,.28)' : P.ambarAgua, color: vista === 'bandeja' ? '#fff' : P.ambarTinta, borderRadius: 20, padding: '1px 7px', fontSize: '0.66rem', fontWeight: 800 }}>
+                {preguntas.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -156,7 +164,7 @@ export default function TallerTab() {
 
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
-            abrir={setAbierta} api={api} flash={flash} />
+            preguntas={preguntas} abrir={setAbierta} api={api} flash={flash} />
         : <Lista ordenes={vivas} yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
             filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} api={api} flash={flash} />}
 
@@ -171,7 +179,7 @@ export default function TallerTab() {
 /* ═══════════════════ La bandeja del dueño ═══════════════════
    Tres bloques y una regla: solo el primero tiene botones. Lo demás es para
    enterarse, no para trabajar —eso es la otra pantalla—. */
-function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, flash }: any) {
+function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, preguntas = [], abrir, api, flash }: any) {
   const [revisando, setRevisando] = useState<any>(null);
 
   const bloquean = vivas.filter((o: any) => o.tipo === 'falla' && o.prioridad === 'alta').length;
@@ -217,6 +225,31 @@ function Bandeja({ ordenes, vivas, esperanOK, roto, revisionTarde, abrir, api, f
             : roto.length ? `${roto.length === 1 ? 'una se salió' : 'se salieron'} de lo pactado · hay que empujar`
             : 'todo dentro de lo pactado'} />
       </div>
+
+      {/* LO QUE DESARROLLO TE PREGUNTÓ. Va ARRIBA de «esperando tu OK» porque
+          bloquea más: una orden esperando tu visto bueno ya está hecha; una
+          orden con una duda sin contestar está DETENIDA, y desde afuera se ve
+          igual que una que nadie ha empezado. */}
+      {preguntas.length > 0 && (
+        <div style={{ border: '1.5px solid #f2ddb8', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+          <div style={{ padding: '11px 14px', background: P.ambarAgua, fontSize: '0.79rem', fontWeight: 800, color: P.ambarTinta, display: 'flex', gap: 9 }}>
+            Desarrollo te preguntó
+            <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: '0.7rem' }}>
+              {preguntas.length} {preguntas.length === 1 ? 'duda detiene una orden' : 'dudas detienen sus órdenes'}
+            </span>
+          </div>
+          {preguntas.map((q: any) => (
+            <div key={q.id} onClick={() => abrir(q.orden_id)}
+              style={{ padding: '11px 14px', borderTop: '1px solid #f5f4f8', background: '#fff', cursor: 'pointer' }}>
+              <div style={{ fontSize: '0.71rem', color: '#8d8a97' }}>
+                <b style={{ color: '#55505f' }}>{q.cuenta}</b> · {q.folio} · {q.autor} · hace {dias(q.at)} d
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#3f3c4a', lineHeight: 1.5, marginTop: 3 }}>{q.texto}</div>
+              <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginTop: 3 }}>sobre «{q.titulo}»</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 1 · Lo único con acción */}
       <div style={{ border: `1.5px solid ${P.violetaBorde}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
@@ -1014,8 +1047,8 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
 
   if (!d) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', justifyContent: 'flex-end' }}>
-        <div style={{ background: '#fff', width: 720, maxWidth: '100%', padding: 30 }}><Cargando texto="Abriendo la orden…" /></div>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.58)', zIndex: 960, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ background: '#fff', width: 1040, maxWidth: '100%', padding: 30 }}><Cargando texto="Abriendo la orden…" /></div>
       </div>
     );
   }
@@ -1105,8 +1138,12 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', justifyContent: 'flex-end' }}>
-      <div style={{ background: '#fbfafd', width: 760, maxWidth: '100%', height: '100%', overflowY: 'auto', boxShadow: '-16px 0 44px rgba(16,24,40,.18)' }}>
+      /* El fondo más oscuro y el panel más ancho. Aquí se TRABAJA —se lee el
+         encargo, se ve un video y se escribe— y a 760 px el video salía del
+         tamaño de un sello. El velo al 58% en vez del 35% es lo que hace que la
+         lista de atrás deje de competir por la mirada. */
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.58)', zIndex: 960, display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ background: '#fbfafd', width: 1040, maxWidth: '100%', height: '100%', overflowY: 'auto', boxShadow: '-16px 0 44px rgba(16,24,40,.22)' }}>
         <div style={{ position: 'sticky', top: 0, zIndex: 2, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: '13px 18px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <b style={{ fontSize: '0.95rem' }}>{o.folio}</b>
           <span style={{ fontSize: '0.76rem', color: '#8d8a97' }}>
@@ -1192,6 +1229,9 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                 <span style={S.lbl}>Video o evidencia que estás mandando</span>
                 <input value={v('evidencia_url')} onChange={e => set('evidencia_url', e.target.value)}
                   placeholder="https://… la pantalla grabada, la foto del ticket" style={S.input} />
+                {/* Se ve aquí mismo: pegar una liga rota y enterarte cuando
+                    desarrollo te lo dice es una semana perdida. */}
+                {v('evidencia_url') && <div style={{ marginTop: 8, maxWidth: 520 }}><Video url={v('evidencia_url')} /></div>}
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 13, flexWrap: 'wrap' }}>
                 <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem', opacity: falta1.length || guardando ? .5 : 1, cursor: falta1.length ? 'not-allowed' : 'pointer' }}
@@ -1218,7 +1258,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
               <div style={{ marginTop: 9 }}>
                 <span style={S.lbl}>Video o evidencia de quien la levantó</span>
                 {v('evidencia_url')
-                  ? <a href={v('evidencia_url')} target="_blank" rel="noreferrer" style={{ fontSize: '0.79rem', color: P.violetaTinta }}>{v('evidencia_url')}</a>
+                  ? <div style={{ maxWidth: 520 }}><Video url={v('evidencia_url')} /></div>
                   : <div style={{ fontSize: '0.79rem', color: '#b5b2bd' }}>—</div>}
               </div>
             </Doblado>
@@ -1228,7 +1268,32 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
           {paso === 2 && !cerrada ? (
             <div style={{ ...S.caja, borderColor: P.violetaBorde, boxShadow: '0 2px 12px rgba(155,140,250,.09)', marginBottom: 11 }}>
               <span style={{ ...S.lbl, color: P.violetaTinta }}>2 · El compromiso y la entrega</span>
+
+              {/* EL ENCARGO, ARRIBA Y COMPLETO. Es lo primero que ve desarrollo
+                  al abrir la orden: el resumen del paso 1, el video que dejó
+                  quien la levantó —grande, reproducible aquí mismo— y lo que
+                  el video de entrega tiene que mostrar. Antes el video era una
+                  liga perdida dentro del paso 1 doblado, y el encargo se leía
+                  en tres lugares distintos. */}
               <Resumen o={o} api={api} traer={traer} flash={flash} />
+              {(o.evidencia_url || o.video_pide) && (
+                <div style={{ display: 'grid', gridTemplateColumns: o.evidencia_url && o.video_pide ? '1.25fr 1fr' : '1fr', gap: 12, marginTop: 12, alignItems: 'start' }}>
+                  {o.evidencia_url && (
+                    <div>
+                      <span style={S.lbl}>El video que te dejaron</span>
+                      <Video url={o.evidencia_url} />
+                    </div>
+                  )}
+                  {o.video_pide && (
+                    <div style={{ background: '#FAFAFB', border: '1px solid #f0eff4', borderRadius: 10, padding: '11px 13px' }}>
+                      <span style={{ ...S.lbl, margin: '0 0 5px' }}>El video de entrega tiene que mostrar</span>
+                      <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{o.video_pide}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <Preguntas d={d} api={api} traer={traer} flash={flash} />
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginTop: 12 }}>
                 <div><span style={S.lbl}>Fecha de entrega</span>
@@ -1268,16 +1333,11 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
               </div>
 
               <div style={{ marginTop: 11 }}>
-                {/* Lo que pidieron ver, a la vista al momento de grabar. No es
-                    editable de este lado: es el encargo, no una nota. */}
-                {o.video_pide && (
-                  <div style={{ background: '#FAFAFB', border: '1px solid #f0eff4', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
-                    <span style={{ ...S.lbl, margin: '0 0 5px' }}>El video tiene que mostrar</span>
-                    <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{o.video_pide}</div>
-                  </div>
-                )}
+                {/* El encargo ya está arriba; aquí solo se entrega. Repetirlo
+                    hacía leer lo mismo dos veces en la misma pantalla. */}
                 <span style={S.lbl}>Video de lo que entregan</span>
                 <input value={v('video_url')} onChange={e => set('video_url', e.target.value)} placeholder="https://… la pantalla grabada mostrando que ya quedó" style={S.input} />
+                {v('video_url') && <div style={{ marginTop: 8 }}><Video url={v('video_url')} /></div>}
                 <div style={{ marginTop: 8 }}>
                   <span style={S.lbl}>…o cómo verificarlo, si no lleva video</span>
                   <textarea value={v('verificacion')} onChange={e => set('verificacion', e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }} placeholder="Entra a Catálogo → Plantillas y guarda un certificado: las etiquetas siguen ahí." />
@@ -1335,7 +1395,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                 <div style={{ marginTop: 9 }}>
                   <span style={S.lbl}>Lo que entregaron</span>
                   {o.video_url
-                    ? <a href={o.video_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.79rem', color: P.violetaTinta }}>{o.video_url}</a>
+                    ? <div style={{ maxWidth: 520 }}><Video url={o.video_url} /></div>
                     : <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.55 }}>{o.verificacion}</div>}
                 </div>
               )}
@@ -1383,6 +1443,138 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* EL VIDEO, REPRODUCIÉNDOSE AQUÍ. Una liga azul obliga a abrir otra pestaña,
+   perder el encargo de vista y volver; con el video puesto se ve mientras se
+   lee lo que hay que hacer, que es justo cómo se trabaja una orden.
+   Tres casos y nada más: un archivo de video se reproduce nativo, los tres
+   sitios que SÍ se dejan incrustar —YouTube, Vimeo y Loom— van con su propio
+   reproductor, y cualquier otra cosa se queda como liga. Adivinar más allá de
+   eso da un marco en blanco, que es peor que un enlace honesto.
+   Veed NO entra, aunque sea donde más grabamos: responde con
+   `X-Frame-Options: sameorigin` y el marco sale vacío —probado, no supuesto—.
+   Para esas, la tarjeta con «▶ Abrir el video» es la verdad. */
+function embebe(url: string): string | null {
+  const u = String(url || '').trim();
+  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/i);
+  if (m) return 'https://www.youtube.com/embed/' + m[1];
+  m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (m) return 'https://player.vimeo.com/video/' + m[1];
+  m = u.match(/loom\.com\/(?:share|embed)\/([\w-]+)/i);
+  if (m) return 'https://www.loom.com/embed/' + m[1];
+  return null;
+}
+
+function Video({ url }: { url: string }) {
+  const u = String(url || '').trim();
+  if (!u) return null;
+  const marco = { width: '100%', aspectRatio: '16 / 9', border: '1px solid #e9e6f1', borderRadius: 10, background: '#0f0e14', display: 'block' } as const;
+
+  if (/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(u)) {
+    return <video src={u} controls preload="metadata" style={marco} />;
+  }
+  const emb = embebe(u);
+  if (emb) {
+    return <iframe src={emb} style={marco} allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen title="Video de la orden" />;
+  }
+  /* La tarjeta de «no se puede incrustar» va COMPACTA, no en 16:9: un marco de
+     370 px de alto con una liga en medio es un hueco, y el hueco se lee como
+     que algo falló. */
+  return (
+    <a href={u} target="_blank" rel="noreferrer" style={{
+      display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none',
+      background: '#FAFAFB', border: '1px solid #e9e6f1', borderRadius: 10, padding: '11px 13px',
+    }}>
+      <span style={{ flex: 'none', width: 34, height: 34, borderRadius: 9, background: P.violetaAgua, color: P.violetaTinta, display: 'grid', placeItems: 'center', fontSize: '0.8rem' }}>▶</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: '0.79rem', fontWeight: 700, color: P.violetaTinta }}>Abrir el video</span>
+        <span style={{ display: 'block', fontSize: '0.69rem', color: '#8d8a97', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u}</span>
+      </span>
+    </a>
+  );
+}
+
+/* LAS PREGUNTAS DE DESARROLLO, pegadas al folio.
+   Lo que no se entiende del encargo se preguntaba por WhatsApp: se perdía, y la
+   orden acababa rebotando por «mal entendida» sin que nadie supiera que había
+   una duda. Aquí la pregunta vive en la orden y sale en la bandeja del dueño de
+   la cuenta hasta que la contesta. */
+function Preguntas({ d, api, traer, flash }: any) {
+  const [txt, setTxt] = useState('');
+  const [respondiendo, setRespondiendo] = useState<string>('');
+  const [resp, setResp] = useState('');
+  const [yendo, setYendo] = useState(false);
+
+  const todos = (d.comentarios || []) as any[];
+  const preguntas = todos.filter(c => c.tipo === 'pregunta');
+  const respuestaDe = (id: string) => todos.find(c => c.tipo === 'respuesta' && c.responde_a === id);
+  const abiertas = preguntas.filter(q => !q.resuelta_at).length;
+
+  async function mandar(body: any, dicho: string) {
+    setYendo(true);
+    const j = await api(body, 'POST');
+    setYendo(false);
+    if (!j) return;
+    setTxt(''); setResp(''); setRespondiendo('');
+    flash?.(dicho);
+    await traer();
+  }
+
+  return (
+    <div style={{ background: '#FAFAFB', border: '1px solid #f0eff4', borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ ...S.lbl, margin: 0 }}>Preguntas sobre esta orden</span>
+        {abiertas > 0 && (
+          <span style={{ background: P.ambarAgua, color: P.ambarTinta, borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', fontWeight: 800 }}>
+            {abiertas} sin contestar
+          </span>
+        )}
+      </div>
+
+      {preguntas.map(q => {
+        const r = respuestaDe(q.id);
+        return (
+          <div key={q.id} style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f2f1f6' }}>
+            <div style={{ fontSize: '0.71rem', color: '#a5a2af' }}>
+              {q.autor} · {new Date(q.at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <div style={{ fontSize: '0.81rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap', marginTop: 2 }}>{q.texto}</div>
+            {r ? (
+              <div style={{ marginTop: 7, paddingLeft: 11, borderLeft: `2px solid ${P.verde}` }}>
+                <div style={{ fontSize: '0.71rem', color: '#a5a2af' }}>{r.autor} contestó</div>
+                <div style={{ fontSize: '0.81rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{r.texto}</div>
+              </div>
+            ) : respondiendo === q.id ? (
+              <div style={{ marginTop: 7 }}>
+                <textarea value={resp} onChange={e => setResp(e.target.value)} rows={2} autoFocus
+                  style={{ ...S.input, resize: 'vertical' }} placeholder="La respuesta…" />
+                <div style={{ display: 'flex', gap: 7, marginTop: 6 }}>
+                  <button style={{ ...S.btn, padding: '6px 12px', fontSize: '0.75rem', opacity: yendo || !resp.trim() ? .5 : 1 }}
+                    disabled={yendo || !resp.trim()}
+                    onClick={() => mandar({ accion: 'responder', pregunta_id: q.id, texto: resp }, 'Contestada')}>Contestar</button>
+                  <button style={{ ...S.btnG, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => { setRespondiendo(''); setResp(''); }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <button style={{ ...S.btnG, padding: '5px 11px', fontSize: '0.73rem', marginTop: 7 }}
+                onClick={() => { setRespondiendo(q.id); setResp(''); }}>Contestar</button>
+            )}
+          </div>
+        );
+      })}
+
+      <div style={{ marginTop: preguntas.length ? 12 : 8 }}>
+        <textarea value={txt} onChange={e => setTxt(e.target.value)} rows={2} style={{ ...S.input, resize: 'vertical' }}
+          placeholder="¿Algo del encargo o del video no queda claro? Pregúntalo aquí y le llega a su bandeja." />
+        <button style={{ ...S.btn, padding: '6px 12px', fontSize: '0.75rem', marginTop: 6, opacity: yendo || !txt.trim() ? .5 : 1 }}
+          disabled={yendo || !txt.trim()}
+          onClick={() => mandar({ accion: 'preguntar', orden_id: d.orden.id, texto: txt }, 'Preguntada. Le llega a su bandeja.')}>
+          Preguntar
+        </button>
       </div>
     </div>
   );
@@ -1464,7 +1656,7 @@ function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
         Compara lo que entregaron contra lo que pediste. Si está, apruébala: se marca <b>entregado</b> en Consultoría
         del cliente con su fecha y su video.
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginTop: 11 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginTop: 11, alignItems: 'start' }}>
         <div>
           <span style={S.lbl}>Con qué se da por buena</span>
           <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{o.criterios || '—'}</div>
@@ -1474,9 +1666,12 @@ function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
           </>)}
         </div>
         <div>
+          {/* El video, puesto. Revisar es comparar el criterio contra lo que se
+              ve; con una liga había que abrir otra pestaña y volver, y la
+              comparación se hacía de memoria. */}
           <span style={S.lbl}>Lo que entregaron</span>
           {o.video_url
-            ? <a href={o.video_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: P.violetaTinta, wordBreak: 'break-all' }}>{o.video_url}</a>
+            ? <Video url={o.video_url} />
             : <div style={{ fontSize: '0.78rem', color: '#3f3c4a', lineHeight: 1.55 }}>{o.verificacion || '—'}</div>}
         </div>
       </div>

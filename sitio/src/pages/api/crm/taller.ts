@@ -2,7 +2,7 @@
 //
 // GET  ?id=…            → una orden con su bitácora, comentarios y revisiones
 // GET                   → todas las órdenes vivas + el equipo + lo que falta traer del CRM
-// POST {accion:…}       → crear | importar | comentar | revisar
+// POST {accion:…}       → crear | importar | revisar | lote | preguntar | responder
 // PUT  {id, …}          → mover de etapa, poner fecha, asignar, completar datos
 //
 // La orden es la MISMA cosa que el renglón de `mejoras`, en dos vistas: allá es
@@ -196,9 +196,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     for (const b2 of bk || []) reuniones[b2.id] = { fecha: b2.fecha, asunto: b2.asunto || '' };
   }
 
+  /* LAS PREGUNTAS ABIERTAS. Van en el mismo viaje que la lista porque son la
+     otra mitad de la bandeja: lo que desarrollo no entendió y está esperando
+     respuesta para poder seguir. Una orden detenida por una duda sin contestar
+     se ve igual que una orden que nadie ha tocado, y no es lo mismo. */
+  const { data: preg } = await supabase.from('taller_comentarios')
+    .select('id, orden_id, autor, texto, at')
+    .eq('tipo', 'pregunta').is('resuelta_at', null)
+    .order('at', { ascending: true }).limit(100);
+  const preguntas = (preg || []).filter((q: any) => porOrden.has(q.orden_id)).map((q: any) => {
+    const o: any = porOrden.get(q.orden_id);
+    return { ...q, folio: o.folio, titulo: o.titulo, etapa: o.etapa,
+      cuenta: o.companies?.nombre_comercial || o.companies?.nombre || 'Sin cuenta' };
+  });
+
   return json({
     ordenes: data || [],
     equipo: equipo || [],
+    preguntas,
     ligas,
     sinOrden,
     cuentas,
@@ -383,6 +398,49 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('taller_orden_mejoras').insert({ orden_id: orden.id, mejora_id: mej.id });
     await apunta(orden.id, quien(user), null, 'recibida', 'Nació en el taller y quedó ligada a la ficha del cliente');
     return json({ ok: true, orden, mejora_id: mej.id }, 201);
+  }
+
+  /* ── La duda, pegada a su folio ──
+     Antes lo que no se entendía del encargo se preguntaba por WhatsApp: se
+     perdía, y la orden acababa rebotando por «mal entendida» sin que nadie
+     supiera que había una duda. Ahora la pregunta vive en la orden y aparece en
+     la bandeja del dueño de la cuenta hasta que la contesta. */
+  if (accion === 'preguntar' || accion === 'responder') {
+    const texto = String(b?.texto || '').trim().slice(0, 4000);
+    if (!texto) return json({ error: 'Escribe la pregunta.' }, 400);
+
+    if (accion === 'preguntar') {
+      const orden_id = String(b?.orden_id || '');
+      if (!orden_id) return json({ error: 'Falta la orden.' }, 400);
+      const { data: o } = await supabase.from('taller_ordenes')
+        .select('id, folio, titulo, company_id, companies(nombre, nombre_comercial)').eq('id', orden_id).maybeSingle();
+      if (!o) return json({ error: 'Esa orden ya no existe.' }, 404);
+      const { data: q, error } = await supabase.from('taller_comentarios')
+        .insert({ orden_id, autor: quien(user), texto, tipo: 'pregunta' }).select('*').single();
+      if (error) return json({ error: error.message }, 500);
+      const cta = (o as any).companies?.nombre_comercial || (o as any).companies?.nombre || 'Sin cuenta';
+      await apunta(orden_id, quien(user), null, null, 'Preguntó: ' + texto.slice(0, 160));
+      await notificar({
+        clave: 'taller_pregunta:' + q.id, tipo: 'taller_pregunta', nivel: 'alerta', destino: 'taller',
+        company_id: o.company_id,
+        titulo: `${cta} · ${o.folio} — desarrollo tiene una duda`,
+        detalle: texto.slice(0, 200),
+      });
+      return json({ ok: true, pregunta: q }, 201);
+    }
+
+    const pregunta_id = String(b?.pregunta_id || '');
+    if (!pregunta_id) return json({ error: 'Falta la pregunta.' }, 400);
+    const { data: pq } = await supabase.from('taller_comentarios').select('id, orden_id, resuelta_at').eq('id', pregunta_id).maybeSingle();
+    if (!pq) return json({ error: 'Esa pregunta ya no existe.' }, 404);
+    const { error: eR } = await supabase.from('taller_comentarios')
+      .insert({ orden_id: pq.orden_id, autor: quien(user), texto, tipo: 'respuesta', responde_a: pregunta_id });
+    if (eR) return json({ error: eR.message }, 500);
+    // La pregunta se marca contestada aunque ya lo estuviera: contestar dos
+    // veces es normal; lo que no puede pasar es que siga saliendo en la bandeja.
+    await supabase.from('taller_comentarios').update({ resuelta_at: new Date().toISOString() }).eq('id', pregunta_id);
+    await apunta(pq.orden_id, quien(user), null, null, 'Contestó: ' + texto.slice(0, 160));
+    return json({ ok: true });
   }
 
   /* ── Varias a la vez ──

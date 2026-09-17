@@ -109,10 +109,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [etapaLocal, setEtapaLocal] = useState<string | null>(null);
   const [etapaOcupada, setEtapaOcupada] = useState(false);
   useEffect(() => { setEtapaLocal(null); }, [conv?.id]);
-  const etapa = etapaLocal ?? (hilo as any)?.contacto?.lifecycle_stage ?? null;
-  const colorEtapa = lifecycleDe(etapa) || { bg: '#f4f4f6', fg: '#6B7280' } as any;
+  const etapaId: string | null = etapaLocal ?? (conv as any)?.contacts?.lifecycle_stage ?? null;
+  const colorEtapa: any = lifecycleDe(etapaId) || { bg: '#f4f4f6', fg: '#6B7280' };
   const cambiarEtapa = async (nueva: string) => {
-    if (!nueva || nueva === etapa) return;
+    if (!nueva || nueva === etapaId) return;
     setEtapaOcupada(true);
     const r = await fetch('/api/crm/whatsapp/etapa', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -382,7 +382,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     );
   }
 
-  const etapa = lifecycleDe(conv?.contacts?.lifecycle_stage);
+  const etapa = lifecycleDe(etapaId);   // lee `etapaId` para que la píldora cambie con el selector
   /* El nombre del encabezado: si la ficha nació como «WhatsApp 7300» y ya está
      ligada a una empresa, se lee el nombre del negocio. Ver `nombreParaMostrar`. */
   const nombre = conv?.contacts
@@ -565,7 +565,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             un dato que se decide leyendo el último mensaje.
             Mismo tamaño y misma forma que «asignar» y «estado»: son tres cosas
             del mismo rango y verlas distintas hacía dudar de cuál tocar. */}
-        {conv.id && conv.contact_id && !mobile && <select value={etapa || ''} onChange={e => cambiarEtapa(e.target.value)}
+        {conv.id && conv.contact_id && !mobile && <select value={etapaId || ''} onChange={e => cambiarEtapa(e.target.value)}
           aria-label="Etapa del ciclo de vida" title="Etapa del ciclo de vida"
           disabled={etapaOcupada}
           style={{

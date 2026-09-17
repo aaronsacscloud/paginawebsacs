@@ -47,7 +47,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
    *  pasadas, y era la única tarjeta de ahí con un botón que hace algo. */
   resumenIa?: string | null; resumenIaAt?: string | null;
 }) {
-  const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar'>(accionInicial || 'menu');
+  const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar' | 'seguimiento'>(accionInicial || 'menu');
   const [cuentaAbierta, setCuentaAbierta] = useState(false);
   const [resumenAbierto, setResumenAbierto] = useState(false);
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
@@ -63,6 +63,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   ];
 
   if (vista === 'cotizar') return <Cotizar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
+  if (vista === 'seguimiento') return <PedirSeguimiento contacto={contacto} conv={conv} primerNombre={primerNombre} volver={() => setVista('menu')} refrescar={refrescar} />;
   if (vista === 'agendar') return <Agendar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
 
   return (
@@ -83,6 +84,11 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BotonAccion e="📄" t="Cotización" d="Crear y enviar aquí" ok={!!contacto} onClick={() => setVista('cotizar')} destacado />
         <BotonAccion e="📅" t="Reunión" d="Agendar o mandar horarios" ok={!!contacto} onClick={() => setVista('agendar')} destacado />
+        {/* «Te marco en 30 días» necesitaba un lugar: vivía en la cabeza de
+            quien contestó y se perdía. Dos campos y ya — motivo y fecha—,
+            porque si pedir un seguimiento cuesta más que anotarlo en un papel,
+            se anota en el papel. Aparece en la bandeja «Pidió seguimiento». */}
+        <BotonAccion e="⏰" t="Seguimiento" d="Prometiste marcarle" ok={!!contacto} onClick={() => setVista('seguimiento')} />
         {atajos.map(a => (
           <BotonAccion key={a.t} e={a.e} t={a.t} d={a.ok ? a.d : 'Sin contacto'} ok={a.ok}
             onClick={() => a.onClick ? a.onClick() : (a.href && (window.location.href = a.href))} />
@@ -134,6 +140,86 @@ export function EstiloAccv() {
       .accv.accv.accv button.accv-grande { min-height: 48px !important; }
       .accv-tap.accv-tap.accv-tap { min-height: 44px !important; }
     `}</style>
+  );
+}
+
+/* ══ PIDIÓ SEGUIMIENTO ═══════════════════════════════════════════════════════
+   Pedido del dueño (16-sep-2026): «tengo que darle seguimiento en 30 días,
+   entonces me gustaría una opción rápida de un click, poner el motivo, ponerle
+   una fecha».
+
+   Dos campos y tres atajos de fecha. Deliberadamente NO hay más: si registrar la
+   promesa cuesta más que apuntarla en un papel, se apunta en el papel y el CRM
+   se queda sin saberlo. El resultado sale en la bandeja «Pidió seguimiento»,
+   ordenada por fecha con los vencidos arriba. */
+function PedirSeguimiento({ contacto, conv, primerNombre, volver, refrescar }: {
+  contacto: any; conv: any; primerNombre: string; volver: () => void; refrescar?: () => void;
+}) {
+  const [motivo, setMotivo] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [hecho, setHecho] = useState(false);
+
+  const enDias = (d: number) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
+  const hoy = new Date().toISOString().slice(0, 10);
+  const humana = (f: string) => { if (!f) return ''; const [y, m, d] = f.split('-').map(Number); return `${d} ${MESES[m - 1]}`; };
+
+  const guardar = async () => {
+    setMsg('');
+    if (!motivo.trim()) { setMsg('Escribe para qué es: en 30 días nadie se acuerda.'); return; }
+    if (!fecha) { setMsg('Elige la fecha en que le toca.'); return; }
+    setOcupado(true);
+    const r = await fetch('/api/crm/whatsapp/etapa', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'seguimiento', id: conv?.id, contact_id: contacto?.id, motivo: motivo.trim(), fecha }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r?.error) { setMsg(r.error); return; }
+    setHecho(true); refrescar?.();
+  };
+
+  if (hecho) return (
+    <div className="accv" style={{ padding: 14 }}>
+      <EstiloAccv />
+      <Volver volver={volver} titulo="Seguimiento" />
+      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 10, padding: 16, marginTop: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: C.emerald700 }}>Anotado para el {humana(fecha)}</div>
+        <p style={{ fontSize: 11.5, color: C.g500, margin: '8px 0 0', lineHeight: 1.5 }}>
+          Lo vas a encontrar en la bandeja <b>Pidió seguimiento</b>, con los vencidos hasta arriba.
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="accv" style={{ padding: 14 }}>
+      <EstiloAccv />
+      <Volver volver={volver} titulo="Pidió seguimiento" />
+      <p style={{ fontSize: 11.5, color: C.g500, margin: '2px 0 10px', lineHeight: 1.5 }}>
+        Lo que le prometiste a {primerNombre}. Sale de la bandeja el día que toca.
+      </p>
+
+      <span style={lbl}>¿Para qué?</span>
+      <textarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={2}
+        placeholder="Ej. Retomar cuando termine su temporada alta"
+        style={{ ...inp, minHeight: 56, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.45 }} />
+
+      <span style={lbl}>¿Cuándo?</span>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+        {[['En 7 días', 7], ['En 15', 15], ['En 30', 30], ['En 60', 60]].map(([t, d]) => (
+          <button key={String(t)} onClick={() => setFecha(enDias(Number(d)))} style={pill(fecha === enDias(Number(d)))}>{t}</button>
+        ))}
+      </div>
+      <input type="date" value={fecha} min={hoy} onChange={e => setFecha(e.target.value)} style={inp} />
+
+      <button className="accv-grande" onClick={guardar} disabled={ocupado || !motivo.trim() || !fecha}
+        style={{ ...btnP, width: '100%', marginTop: 12, background: (motivo.trim() && fecha) ? C.moradoTinta : C.g300 }}>
+        {ocupado ? 'Guardando…' : fecha ? `Recordármelo el ${humana(fecha)}` : 'Elige la fecha'}
+      </button>
+      <button onClick={volver} style={{ ...btnG, marginTop: 8, width: '100%', color: C.g500 }}>Volver</button>
+      {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
+    </div>
   );
 }
 

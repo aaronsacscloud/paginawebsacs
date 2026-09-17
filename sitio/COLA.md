@@ -440,8 +440,7 @@ correo del cliente). Ahí falta una **nota de contexto**:
       de descalificados. Arreglar el flujo.
 - [x] **2 · «Orden fijo mientras contestas» no sirve.** Deja la lista estática y
       obliga a apretar un botón. Rediseñar.
-- [ ] **3 · Selector de etapa + «En conciliación» + «Pidió seguimiento».**
-      PLAN LISTO (17-sep). Resuelto el bloqueo que frenaba: los números de churn
+- [x] **3 · Selector de etapa + «En conciliación» + «Pidió seguimiento».** HECHO. Resuelto el bloqueo que frenaba: los números de churn
       salen de `churn_casos`, NO de `lifecycle_stage`, así que una etapa nueva no
       los mueve. ⚠️ Ojo con los guards `.in('lifecycle_stage',
       ['cliente','churned'])` de churn.lib.ts:39 — hay que sumarles la etapa

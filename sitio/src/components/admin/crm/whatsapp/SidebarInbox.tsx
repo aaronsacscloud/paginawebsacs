@@ -43,6 +43,11 @@ const BANDEJAS = [
   // desde aquí. Casi nada sale solo — la etiqueta de cada fila dice cuál sí.
   { id: 'programados', label: 'Cola del agente', Ico: IcoCalendario },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
+  /* Lo que TÚ prometiste, no lo que el sistema pospuso. «Pospuestas» es una
+     conversación que decidiste no ver hoy; ésta es una promesa con fecha que le
+     hiciste al cliente («te marco en 30 días»). Se separan porque fallar la
+     segunda cuesta el trato. Ordenada por fecha y con los vencidos primero. */
+  { id: 'seguimiento', label: 'Pidió seguimiento', Ico: IcoCalendario },
   // El filtro existía en el backend y NO había cómo llegar a él: sacabas una
   // conversación del inbox y no volvías a verla nunca, aunque el código sí
   // sabía devolverla. Esconder sin poder recuperar se siente como borrar.

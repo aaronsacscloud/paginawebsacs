@@ -273,6 +273,30 @@ const _GET: APIRoute = async ({ request, url }) => {
   const todas = [...porClave.values()]
     .sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || '')));
 
+  /* ══ SEGUIMIENTOS PROMETIDOS ═══════════════════════════════════════════
+     «Te marco en 30 días» es una promesa con fecha, y hasta hoy vivía en la
+     cabeza de quien contestó. Se cuelga el MÁS PRÓXIMO pendiente de cada
+     contacto: el vencido es el que importa, y si hay varios, el que lleva más
+     tiempo esperando manda.
+     Una sola consulta acotada a los contactos que ya están en la lista — no se
+     barre la tabla entera. */
+  const idsContacto = [...new Set(todas.map((c: any) => c.contact_id).filter(Boolean))];
+  if (idsContacto.length) {
+    const { data: segs } = await supabase.from('crm_seguimientos')
+      .select('contact_id, fecha, motivo')
+      .in('contact_id', idsContacto.slice(0, 500))
+      .is('cumplido_at', null)
+      .order('fecha', { ascending: true });
+    const porContacto = new Map<string, { fecha: string; motivo: string }>();
+    for (const sg of segs || []) {
+      if (!porContacto.has(sg.contact_id)) porContacto.set(sg.contact_id, { fecha: sg.fecha, motivo: sg.motivo });
+    }
+    for (const c of todas) {
+      const sg = c.contact_id ? porContacto.get(c.contact_id) : null;
+      if (sg) { c.seguimiento_fecha = sg.fecha; c.seguimiento_motivo = sg.motivo; }
+    }
+  }
+
   // ── Contadores del rail sobre el universo unificado ──
   const ahora = new Date().toISOString();
   const pospuesta = (c: any) => c.snooze_until && c.snooze_until > ahora;
@@ -450,6 +474,10 @@ const _GET: APIRoute = async ({ request, url }) => {
     if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
     if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
     if (fi === 'programados') l = l.filter(c => !!c.programado_at).sort((a, b) => String(a.programado_at).localeCompare(String(b.programado_at)));
+    /* Por fecha ascendente = los vencidos primero, que es el orden en que hay
+       que atenderlos. No se filtra por «ya venció»: ver los de mañana es lo que
+       evita que venzan. */
+    if (fi === 'seguimiento') l = l.filter(c => !!c.seguimiento_fecha).sort((a, b) => String(a.seguimiento_fecha).localeCompare(String(b.seguimiento_fecha)));
     if (fi === 'accion') l = l.filter(requiereAccion);
     if (f.etapa) l = l.filter(c => c.contacto?.lifecycle_stage === f.etapa);
     /* Los descalificados solo se ven cuando se piden. En cualquier otra vista
