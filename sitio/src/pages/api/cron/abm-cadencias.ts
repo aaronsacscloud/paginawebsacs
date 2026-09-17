@@ -394,7 +394,16 @@ export const GET: APIRoute = async ({ request }) => {
         + (pieza ? `\n\n— ${piezaTitulo || 'Le puse abajo un ejemplo con números de su giro'} (se ve en la versión con formato de este correo).` : '')
         + cierreTexto(cierre),
       html: armarCorreo({
-        cuerpo: t.cuerpo || '', imagen: (t as any).imagen, imagenAlt: asunto,
+        /* EN FRÍO SE MANDA CARTA, NO FOLLETO (17-sep-2026). Los once correos de
+           prueba cayeron en la pestaña «Novedades» de Gmail: la cinta de
+           colores, la imagen de cabecera, los dos botones y el pie corporativo
+           son justo lo que Gmail cuenta como promoción. Sin imagen tampoco hay
+           «cargar contenido remoto», que en Apple Mail deja un hueco blanco. */
+        modo: 'carta',
+        // La primera frase del cuerpo hace de preheader: sin él, el cliente de
+        // correo repite el asunto debajo del asunto y se ve automático.
+        preheader: String(t.cuerpo || '').replace(/\[\[[^\]]*\]\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 110),
+        cuerpo: t.cuerpo || '', imagen: null, imagenAlt: asunto,
         firma: { nombre: (mio as any).firma_nombre, puesto: (mio as any).firma_puesto, foto: (mio as any).firma_foto_url },
         botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza, cierre,
       }),

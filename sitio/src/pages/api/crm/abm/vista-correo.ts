@@ -59,7 +59,10 @@ export const POST: APIRoute = async ({ request }) => {
   const { data: ti } = await supabase.from('email_tenants').select('id').eq('slug', slug).maybeSingle();
   const tenant = ti ? await tenantPorId(ti.id) : null;
   const html = armarCorreo({
-    cuerpo, imagen: b.imagen, imagenAlt: b.asunto || '',
+    // La vista tiene que enseñar lo que SALE: carta, sin imagen ni adornos.
+    modo: b.modo === 'tarjeta' ? 'tarjeta' : 'carta',
+    preheader: cuerpo.replace(/\s+/g, ' ').trim().slice(0, 110),
+    cuerpo, imagen: b.modo === 'tarjeta' ? b.imagen : null, imagenAlt: b.asunto || '',
     firma: tenant ? { nombre: (tenant as any).firma_nombre, puesto: (tenant as any).firma_puesto, foto: (tenant as any).firma_foto_url } : null,
     cierre: { giro: c.giro, nombre: c.nombre, pais: c.pais, ruta: c.ruta },
   }) + (tenant ? footerHtml(tenant as any, 'https://www.sacscloud.com', 'TOKEN-DE-EJEMPLO', 'abm') : '');

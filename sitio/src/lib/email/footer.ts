@@ -48,7 +48,31 @@ export const MOTIVO_FRIO = 'Recibes este correo porque tu negocio aparece en dir
 const motivoDe = (t: Tenant, categoria?: string) =>
   categoria === 'abm' ? MOTIVO_FRIO : (t.motivo_recepcion || `Recibiste este correo de ${t.nombre}.`);
 
+/** El pie del CORREO EN FRÍO: lo justo que exige la ley y nada más.
+ *
+ *  El pie corporativo —«visita nuestro sitio», el TikTok, el aviso de
+ *  confidencialidad, la nota del papel— es precioso para un cliente y es lo
+ *  que manda un correo en frío a la pestaña de Promociones: enlaces de más,
+ *  bloques de más, aire de boletín. Aquí queda quién escribe, dónde está, por
+ *  qué le llega y cómo cortarlo, que es lo que piden la LSSI y el RGPD. */
+function pieFrio(t: Tenant, base: string, token: string): string {
+  const FA = "font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;";
+  return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
+  <tr><td align="center" style="padding:0;">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;">
+      <tr><td style="border-top:1px solid #e6e6ea;padding-top:12px;${FA}font-size:11.5px;line-height:1.6;color:#8A8598;">
+        ${escapar(t.nombre || t.from_nombre)}${t.direccion_fisica ? ` · ${escapar(t.direccion_fisica)}` : ''}<br>
+        ${escapar(MOTIVO_FRIO)}<br>
+        <a href="${urlBaja(base, token)}" style="color:#6B6580;text-decoration:underline;">Cancelar suscripción</a>${t.aviso_privacidad_url ? ` · <a href="${escapar(t.aviso_privacidad_url)}" style="color:#6B6580;text-decoration:underline;">Aviso de privacidad</a>` : ''}
+      </td></tr>
+    </table>
+  </td></tr>
+</table>`;
+}
+
 export function footerHtml(t: Tenant, base: string, token: string, categoria?: string): string {
+  if (categoria === 'abm') return pieFrio(t, base, token);
   const FA = "font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;";
   const nombre = escapar(t.nombre || t.from_nombre);
   const dir = escapar(t.direccion_fisica || '');

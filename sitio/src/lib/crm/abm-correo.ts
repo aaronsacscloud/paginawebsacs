@@ -103,6 +103,16 @@ export type PartesCorreo = {
   /** Quién firma: sale del inquilino de correo (firma_nombre/puesto/foto). El
    *  correo lo escribe una persona y se cierra con su cara, no con un logo. */
   firma?: { nombre?: string | null; puesto?: string | null; foto?: string | null } | null;
+  /** La línea que Gmail enseña DEBAJO del asunto. Si no se pone, el cliente de
+   *  correo coge lo primero que encuentre —el texto alternativo de la imagen— y
+   *  sale el asunto repetido dos veces, que es justo lo que delata a un
+   *  automático. */
+  preheader?: string | null;
+  /** `carta` = correo en frío: sin cinta de marca, sin imagen, sin botones de
+   *  color, sin pie corporativo. Un texto y una firma, como lo escribiría una
+   *  persona. Nació de ver los primeros once caer en la pestaña de Novedades:
+   *  la plantilla bonita es la que los manda ahí. */
+  modo?: 'tarjeta' | 'carta';
   botonTexto?: string | null;
   botonUrl?: string | null;
   pieza?: string | null;        // la tabla visual del giro, del 4º correo en adelante
@@ -251,8 +261,42 @@ ${pg ? `<p style="margin:16px 0 0;color:${TINTA};font-family:${FUENTE};font-size
 }
 
 
+/** El preheader: el renglón que Gmail pinta después del asunto. Va oculto y
+ *  seguido de espacios en blanco para que el cliente no rellene con el cuerpo. */
+function preheader(texto?: string | null): string {
+  if (!texto) return '';
+  return `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(texto)}${'&#847;&zwnj;&nbsp;'.repeat(40)}</div>`;
+}
+
+/** EL CORREO EN FRÍO NO PUEDE PARECER UN BOLETÍN.
+ *
+ *  Los primeros once cayeron en «Novedades» de Gmail, y no por el texto: por
+ *  la forma. Cinta de colores, imagen de cabecera a 600 px, dos botones
+ *  rellenos, bloque lila y un pie corporativo con sitio, TikTok y dirección —
+ *  eso es exactamente lo que Gmail cuenta para mandar algo a Promociones.
+ *
+ *  El modo carta quita todo eso: fondo blanco, el texto, una firma y UN enlace.
+ *  Es lo que hace que un correo en frío llegue a la bandeja principal. */
+function armarCarta(p: PartesCorreo): string {
+  const c = p.cierre;
+  const pg = c ? paginaDe(c.giro, (p.sitio || 'https://www.sacscloud.com').replace(/\/$/, ''), c.pais) : null;
+  const fn = p.firma?.nombre?.trim();
+  const cita = c ? `<p style="margin:0 0 14px;color:#202124;font-family:${FUENTE};font-size:15px;line-height:24px;">${esc(oferta(c).frase(c.giro))}</p>
+<p style="margin:0 0 20px;color:#202124;font-family:${FUENTE};font-size:15px;line-height:24px;"><a href="${AGENDAR_DEMO}" style="color:#1a56db;text-decoration:underline;">${esc(oferta(c).boton)}</a>${pg ? ` · <a href="${esc(pg.url)}" style="color:#1a56db;text-decoration:underline;">ver la página de ${esc(pg.nombre)}</a>` : ''}</p>` : '';
+  return `${preheader(p.preheader)}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background-color:#ffffff;">
+<tr><td align="center" style="padding:16px 12px 8px;">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:collapse;">
+<tr><td style="font-family:${FUENTE};font-size:15px;line-height:24px;color:#202124;">
+${cuerpoAHtml(p.cuerpo)}
+${cita}
+${fn ? `<p style="margin:0;color:#202124;font-family:${FUENTE};font-size:15px;line-height:22px;">${esc(fn)}${p.firma?.puesto ? `<br><span style="color:${GRIS};font-size:13px;">${esc(p.firma.puesto)}</span>` : ''}</p>` : ''}
+</td></tr>
+</table></td></tr></table>`;
+}
+
 /** El correo completo, listo para mandar. */
 export function armarCorreo(p: PartesCorreo): string {
+  if (p.modo === 'carta') return armarCarta(p);
   const base = (p.sitio || 'https://www.sacscloud.com').replace(/\/$/, '');
   const img = p.imagen
     ? `<tr><td style="padding:0;"><img src="${base}/images/mail/${esc(p.imagen)}" width="600" alt="${esc(p.imagenAlt || '')}" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;" /></td></tr>`
