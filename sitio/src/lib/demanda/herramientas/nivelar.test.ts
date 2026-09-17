@@ -114,6 +114,31 @@ function aplicar(tiendas: { nombre: string; existencia: number[] }[], movs: any[
   si(r.lectura.includes('fletes'), 'y se explica por qué no: nivelar de más solo gasta fletes');
 }
 
+// ── Una fila despareja se avisa, no se rellena ─────────────────────────────
+{
+  /* Por la web nunca pasa (la rejilla manda filas parejas), pero por API y MCP
+     el que llama arma el arreglo a mano. Antes se rellenaba con ceros: una
+     tienda con una talla de menos salía con un hueco inventado en el núcleo y
+     la herramienta proponía mover piezas para taparlo. */
+  let avisó = false;
+  try {
+    calcular({ tallas: TALLAS, minimo_por_talla: min, tiendas: [
+      { nombre: 'Corta', existencia: [5, 3, 4] },
+      { nombre: 'Buena', existencia: [1, 4, 9, 4, 1] }]});
+  } catch (e: any) {
+    avisó = /Corta/.test(e.message) && /3 cantidades/.test(e.message) && /5 tallas/.test(e.message);
+  }
+  si(avisó, 'una fila con menos cantidades que tallas tiene que avisar, y decir cuál y por qué');
+
+  let avisóLarga = false;
+  try {
+    calcular({ tallas: TALLAS, minimo_por_talla: min, tiendas: [
+      { nombre: 'Larga', existencia: [5, 3, 4, 2, 1, 9] },
+      { nombre: 'Buena', existencia: [1, 4, 9, 4, 1] }]});
+  } catch { avisóLarga = true; }
+  si(avisóLarga, 'una fila con cantidades de más tampoco se recorta en silencio');
+}
+
 // ── El núcleo supuesto se declara ───────────────────────────────────────────
 {
   const sin = calcular({ tallas: TALLAS, minimo_por_talla: min, tiendas: [

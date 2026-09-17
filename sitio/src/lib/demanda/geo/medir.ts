@@ -55,11 +55,12 @@ export async function medirPrompt(promptId: string, texto: string, pais = 'MX'):
 
   for (const r of respuestas) {
     if (r.estado !== 'ok' || !r.texto) {
-      await supabase.from('de_ia_muestras').insert({
+      const { error } = await supabase.from('de_ia_muestras').upsert({
         prompt_id: promptId, plataforma: r.plataforma, modelo: r.modelo || null,
         fecha: diaCdmx(), estado: r.estado === 'no_disponible' ? 'no_disponible' : 'error',
         respuesta: { motivo: r.motivo }, confianza: 0,
-      });
+      }, { onConflict: 'prompt_id,plataforma,fecha' });
+      if (error) console.error(`[geo] no se pudo guardar el hueco de ${r.plataforma}: ${error.message}`);
       muestras.push({ prompt_id: promptId, plataforma: r.plataforma, estado: r.estado, menciona: false, posicion: 0, competidores: [], citas: [] });
       continue;
     }
@@ -79,7 +80,11 @@ export async function medirPrompt(promptId: string, texto: string, pais = 'MX'):
     const d = e.datos || {};
     const menciona = enTexto && !!d.menciona_sacs;
 
-    await supabase.from('de_ia_muestras').insert({
+    /* `upsert` y no `insert`: si el worker se murió entre guardar las muestras y
+       marcar el prompt como medido, esta misma medición se repite y antes se
+       duplicaba. El AVS es un promedio, así que un prompt contado dos veces
+       pesa el doble que los demás. La medición buena es la última. */
+    const { error: eIns } = await supabase.from('de_ia_muestras').upsert({
       prompt_id: promptId, plataforma: r.plataforma, modelo: r.modelo || null,
       fecha: diaCdmx(), estado: 'ok',
       sacs_mencionado: menciona,
@@ -95,7 +100,12 @@ export async function medirPrompt(promptId: string, texto: string, pais = 'MX'):
       // haya cambiado, la única forma de saber POR QUÉ es haberla guardado.
       respuesta: { texto: r.texto.slice(0, 20000), ms: r.ms },
       confianza: enTexto === !!d.menciona_sacs ? 0.95 : 0.6,
-    });
+    }, { onConflict: 'prompt_id,plataforma,fecha' });
+    /* Si esto falla, la medición se PAGÓ (cuatro llamadas a IAs más el
+       extractor) y no quedó en ningún lado — y el prompt se marca como medido
+       de todos modos tres líneas más abajo, así que tampoco se reintentaría.
+       Sin este aviso, el hueco en la serie no lo encuentra nadie. */
+    if (eIns) console.error(`[geo] la medición de ${r.plataforma} se pagó y NO se guardó: ${eIns.message}`);
 
     muestras.push({
       prompt_id: promptId, plataforma: r.plataforma, estado: 'ok',
@@ -150,7 +160,11 @@ registrar('geo.muestrear', async (a, ctx): Promise<ResultadoHandler> => {
     const r = await medirPrompt(p.id, p.prompt, p.pais || 'MX');
     costo += r.costo; medidos++;
     apariciones += r.muestras.filter(m => m.menciona).length;
-    await supabase.from('de_prompts_ia').update({ medido_at: new Date().toISOString() }).eq('id', p.id);
+    const { error } = await supabase.from('de_prompts_ia').update({ medido_at: new Date().toISOString() }).eq('id', p.id);
+    // Si no se marca, este prompt sigue siendo el más rancio y se vuelve a
+    // medir —y a pagar— en la próxima vuelta. Con el índice único de arriba las
+    // muestras al menos ya no se duplican, pero el gasto sí se repite.
+    if (error) console.error(`[geo] el prompt ${p.id} se midió pero no quedó marcado; se va a volver a pagar: ${error.message}`);
   }
 
   const avs = await calcularAvs();

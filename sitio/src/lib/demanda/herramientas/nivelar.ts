@@ -26,8 +26,11 @@ export const Entrada = z.object({
     .describe('Las tallas del modelo, EN ORDEN de menor a mayor: ["XS","S","M","L","XL"] o ["22","22.5","23"]. El orden importa: de ahí sale cuál es el centro de la corrida.'),
   tiendas: z.array(z.object({
     nombre: z.string().min(1).max(60),
-    existencia: z.array(z.number().min(0).max(100_000))
-      .describe('Piezas en existencia, una por talla, en el mismo orden que el arreglo `tallas`.'),
+    // Los topes de longitud no son diseño de producto, son seguridad: esto se
+    // sirve por API pública sin llave, así que el tamaño de lo que se acepta lo
+    // tiene que acotar el esquema y no lo que el cálculo aguante.
+    existencia: z.array(z.number().min(0).max(100_000)).min(1).max(40)
+      .describe('Piezas en existencia, una por talla, en el mismo orden y con la MISMA cantidad de elementos que el arreglo `tallas`.'),
   })).min(2).max(60)
     .describe('Una entrada por tienda con su existencia por talla. Mínimo dos: con una tienda no hay nada que nivelar.'),
   nucleo: z.array(z.string()).optional()
@@ -66,13 +69,24 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
   const nucleo = (nucleoSupuesto ? centroPorOrden(e.tallas) : e.nucleo!).filter(t => e.tallas.includes(t));
   const iNucleo = nucleo.map(t => e.tallas.indexOf(t));
 
+  /* Una fila que no cuadra con las tallas se AVISA, no se rellena.
+
+     Antes se completaba con ceros y se recortaba el sobrante en silencio. Por
+     la web da igual —la rejilla manda filas parejas siempre—, pero por API y
+     por MCP el arreglo lo arma quien llama: una tienda con una talla de menos
+     salía con un cero inventado en la última, ese cero se leía como hueco del
+     núcleo, y la herramienta proponía mover piezas para tapar un agujero que
+     no existe. Quien la llamó no tenía forma de enterarse. */
+  const desparejas = e.tiendas.filter(t => t.existencia.length !== e.tallas.length);
+  if (desparejas.length) {
+    throw new Error(
+      `«${desparejas[0].nombre}» trae ${desparejas[0].existencia.length} cantidades y hay ${e.tallas.length} tallas. ` +
+      `Cada tienda necesita una cantidad por talla, en el mismo orden.`);
+  }
+
   // Copia de trabajo: los movimientos se aplican sobre ella para que dos
   // propuestas no repartan la misma pieza dos veces.
-  const stock = e.tiendas.map(t => {
-    const fila = [...t.existencia];
-    while (fila.length < e.tallas.length) fila.push(0);   // fila corta = ceros
-    return fila.slice(0, e.tallas.length);
-  });
+  const stock = e.tiendas.map(t => [...t.existencia]);
   const nombre = (i: number) => e.tiendas[i].nombre;
 
   const huecosDe = (ti: number) => iNucleo.filter(k => stock[ti][k] < minimo);
