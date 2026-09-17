@@ -106,7 +106,14 @@ export async function armarCadena(ciclo_id: string, tipo: TipoCiclo, cfg?: Confi
 
   for (const f of FASES) {
     if (f.solo && !f.solo.includes(tipo)) continue;
-    if (!hayHandler(f.tipo)) continue;
+    /* Una fase sin handler se salta —encolarla sería encolar un fallo seguro—
+       pero se DICE. Antes se saltaba en silencio, y el resultado fue que el
+       ciclo llevaba días reportándose completo mientras omitía seis de sus
+       dieciocho pasos: métricas, atribución y todo el aprendizaje.
+
+       Los conectores ya lo hacían bien (cada uno explica por qué se omitió);
+       las fases no, y era exactamente el mismo problema. */
+    if (!hayHandler(f.tipo)) { omitidos.push({ id: f.tipo, por_que: 'fase todavía no construida' }); continue; }
     acciones.push({ tipo: f.tipo, clave_idem: `${f.tipo}:${dia}`, prioridad: f.prioridad, ciclo_id, payload: { dia, ciclo: tipo } });
   }
 

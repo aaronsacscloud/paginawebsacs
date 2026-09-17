@@ -59,6 +59,15 @@ export const GET: APIRoute = async () => {
     });
     const pistas = latido && !latido.vivo ? await diagnosticar(latido).catch(() => []) : [];
 
+    /* El Demand Capture Score: UN número que dice qué tanto de la demanda que
+       existe estamos capturando. No sustituye a las otras métricas, las ordena
+       — un tablero de quince cifras no se mira; una que se mueve, sí. */
+    const { calcularDcs } = await import('../../../../lib/demanda/aprender');
+    const dcs = await calcularDcs().catch(e => {
+      console.error(`[estado] no se pudo calcular el DCS: ${e?.message}`);
+      return null;
+    });
+
     const { evaluar } = await import('../../../../lib/demanda/autonomia');
     const rampa = await evaluar().catch(e => {
       // Que la rampa falle no puede dejar sin pantalla al dueño: Sistema es
@@ -72,6 +81,7 @@ export const GET: APIRoute = async () => {
       config: cfg,
       rampa,
       latido: latido ? { ...latido, pistas } : null,
+      dcs,
       presupuesto: pres,
       cola,
       ciclos: ciclos.data || [],

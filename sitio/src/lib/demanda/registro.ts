@@ -23,5 +23,6 @@ import './oportunidades';
 import './autonomia';
 import './latido';
 import './operador';
+import './aprender';
 
 export { hayHandler, handlerDe, tiposRegistrados } from './handlers';

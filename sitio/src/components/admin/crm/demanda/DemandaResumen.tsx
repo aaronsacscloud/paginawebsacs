@@ -39,6 +39,38 @@ export default function DemandaResumen() {
 
   return (
     <div style={{ ...WRAP, ...(isMobile ? { padding: '16px 16px 80px' } : {}) }}>
+      {/* EL DEMAND CAPTURE SCORE · lo primero, y solo.
+          Es la única cifra de esta pantalla que junta las cuatro cosas que
+          importan. Se enseña con sus cuatro partes abiertas porque un número
+          agregado sin su descomposición no se puede accionar: saber que vas en
+          3 no dice qué mover; saber que la visibilidad en IA aporta 0 de 40, sí. */}
+      {sis?.dcs ? (
+        <Tarjeta franja={sis.dcs.dcs >= 50 ? P.verde : sis.dcs.dcs >= 20 ? P.ambar : P.rosa} style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <span style={{ fontSize: 34, fontWeight: 700, color: P.tinta, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {sis.dcs.dcs}
+            </span>
+            <span style={{ fontSize: 14, color: P.suave }}>de 100 · qué tanto de la demanda estamos capturando</span>
+          </div>
+          <div style={{ display: 'grid', gap: 9 }}>
+            {Object.entries(sis.dcs.partes).map(([k, p]: any) => (
+              <div key={k}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5, marginBottom: 3 }}>
+                  <span style={{ color: P.texto, fontWeight: 600 }}>{k.replace(/_/g, ' ')}</span>
+                  <span style={{ color: P.suave, fontVariantNumeric: 'tabular-nums' }}>
+                    {((p.valor / 100) * (sis.dcs.partes[k].de ?? 0)).toFixed(1)} de {p.de}
+                  </span>
+                </div>
+                <div style={{ background: P.lineaSuave, borderRadius: 999, height: 6, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.max(p.valor, 0.5)}%`, height: '100%', background: P.violetaTinta, borderRadius: 999 }} />
+                </div>
+                <div style={{ fontSize: 11.5, color: P.tenue, marginTop: 3 }}>{p.nota}</div>
+              </div>
+            ))}
+          </div>
+        </Tarjeta>
+      ) : null}
+
       <h2 style={{ margin: 0, fontSize: 21, color: P.tinta }}>Motor de demanda</h2>
       <p style={{ margin: '4px 0 0', color: P.suave, fontSize: 13.5, maxWidth: '64ch' }}>
         Qué está buscando el retail de moda, qué estamos capturando y qué hizo el motor.

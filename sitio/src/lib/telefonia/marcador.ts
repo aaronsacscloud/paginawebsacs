@@ -39,9 +39,27 @@ export type ItemEntrada = {
   contact_id?: string | null; company_id?: string | null; conversation_id?: string | null;
   nombre?: string | null; empresa?: string | null; telefono: string;
 };
-export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean; disyuntor_fallidas?: number };
+export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean; disyuntor_fallidas?: number; reintentos_buzon?: number };
 
-const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true, disyuntor_fallidas: 8 };
+const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true, disyuntor_fallidas: 8, reintentos_buzon: 0 };
+
+/* ══ REINTENTAR CUANDO TIMBRÓ Y SE FUE AL BUZÓN ═══════════════════════════
+   Pedido del dueño (17-sep-2026): «si suena y manda a buzón, que yo tenga
+   opción de decidir si reintentar automáticamente 1, 2 o 3 veces antes de
+   pasar a la siguiente. Si sólo manda a buzón en automático, ahí no aplica
+   porque el teléfono está apagado».
+
+   La distinción es exacta y vale oro: un teléfono QUE SUENA está encendido y
+   con alguien cerca — no contestó esta vez, puede contestar en veinte minutos.
+   Uno que va derecho al buzón está apagado o sin señal, y reintentarlo es
+   quemar llamadas contra una grabadora.
+
+   Cómo se sabe cuál fue, sin datos nuevos: el TIEMPO entre marcar y
+   «contestar». Está medido en producción y escrito tres líneas más abajo —
+   3.3 s cuando cae directo al buzón—. Con diez segundos de margen no hay
+   confusión posible: menos de eso no sonó, más de eso sí. */
+const TIMBRE_REAL_MS = 10000;
+const REINTENTO_BUZON_MIN = 25;   // ni tan pronto que moleste, ni tan tarde que se olvide
 /** Los resultados que significan que SÍ se habló con alguien. */
 export const CONVERSACION = ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos'];
 
@@ -436,6 +454,18 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
 
      Sin `await`: el cierre del item no puede quedarse esperando a Meta. Si el
      mensaje falla, la tarea que deja esa misma función es la red. */
+  /* ¿SONÓ, O FUE DERECHO AL BUZÓN? Sólo se reintenta el primero. */
+  if (resultado === 'buzon') {
+    const sCfg = await getSesion(it.sesion_id);
+    const veces = Math.max(0, Math.min(3, Number(sCfg?.config?.reintentos_buzon || 0)));
+    const timbro = it.marcado_at && it.contestado_at
+      && (Date.parse(it.contestado_at) - Date.parse(it.marcado_at)) >= TIMBRE_REAL_MS;
+    if (veces > 0 && timbro && Number(it.intentos || 1) <= veces) {
+      await reprogramar(it, REINTENTO_BUZON_MIN, `sonó y se fue al buzón (intento ${it.intentos} de ${veces + 1})`);
+      estado = 'pendiente';
+    }
+  }
+
   if (resultado === 'buzon' && it.telefono) {
     import('./perdida').then(m => m.avisarLlamadaPerdida(it.telefono, it.nombre))
       .catch(() => { /* el aviso es un extra: nunca detiene la lista */ });

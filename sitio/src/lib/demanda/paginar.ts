@@ -31,6 +31,11 @@ export async function traerTodo<T = any>(
   columnas: string,
   afinar?: (q: any) => any,
   tope = 50_000,
+  /** Columna por la que ordenar al paginar. No toda tabla tiene `id`:
+   *  `de_paginas` se identifica por `url`, y suponer lo contrario reventaba la
+   *  lectura con un error VACÍO —PostgREST no dice cuál columna falta—, que es
+   *  la peor forma de fallar: un error sin mensaje manda a buscar donde no es. */
+  orden = 'id',
 ): Promise<T[]> {
   const todo: T[] = [];
   for (let desde = 0; desde < tope; desde += PAGINA) {
@@ -38,7 +43,7 @@ export async function traerTodo<T = any>(
     if (afinar) q = afinar(q);
     // El orden es obligatorio al paginar: sin `order`, Postgres no garantiza
     // que dos páginas consecutivas no repitan o se salten filas.
-    const { data, error } = await q.order('id', { ascending: true }).range(desde, desde + PAGINA - 1);
+    const { data, error } = await q.order(orden, { ascending: true }).range(desde, desde + PAGINA - 1);
     if (error) throw new Error(`[paginar] ${tabla}: ${error.message}`);
     if (!data?.length) break;
     todo.push(...(data as T[]));
@@ -50,11 +55,16 @@ export async function traerTodo<T = any>(
   return todo;
 }
 
-/** Cuenta sin traerse las filas. */
+/** Cuenta sin traerse las filas.
+ *
+ *  Se pide `*` y no `id`: con `head: true` no se transfiere ninguna fila, así
+ *  que el `*` no cuesta nada — y evita el supuesto de que toda tabla tenga una
+ *  columna llamada `id`, que es falso (`de_paginas` se identifica por `url`) y
+ *  fallaba con un error vacío. */
 export async function contar(tabla: string, afinar?: (q: any) => any): Promise<number> {
-  let q = supabase.from(tabla).select('id', { count: 'exact', head: true });
+  let q = supabase.from(tabla).select('*', { count: 'exact', head: true });
   if (afinar) q = afinar(q);
   const { count, error } = await q;
-  if (error) throw new Error(`[paginar] al contar ${tabla}: ${error.message}`);
+  if (error) throw new Error(`[paginar] al contar ${tabla}: ${error.message || '(PostgREST no dio mensaje: casi siempre es una columna que no existe)'}`);
   return count ?? 0;
 }

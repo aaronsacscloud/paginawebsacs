@@ -613,6 +613,32 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               <span style={etiqueta}>Cómo te presentas</span>
               {formPresentacion}
             </div>
+            {/* SI SUENA Y SE VA AL BUZÓN, ¿SE VUELVE A INTENTAR?
+                Un teléfono que SUENA está encendido y con alguien cerca: no
+                contestó ahora, puede contestar en veinte minutos. Uno que va
+                derecho al buzón está apagado, y reintentarlo es quemar llamadas
+                contra una grabadora. Por eso la opción sólo aplica al primero —
+                el motor los distingue por cuánto tardó en «contestar». */}
+            <div style={tarjeta('#E8A838')}>
+              <span style={etiqueta}>Si suena y se va al buzón</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                {[0, 1, 2, 3].map(v => (
+                  <button key={v} onClick={() => accion('presentacion', { config: { reintentos_buzon: v } })}
+                    style={{ border: `1px solid ${Number(sesion?.config?.reintentos_buzon || 0) === v ? '#E8A838' : C.g200}`,
+                      background: Number(sesion?.config?.reintentos_buzon || 0) === v ? '#FFF8EC' : '#fff',
+                      color: Number(sesion?.config?.reintentos_buzon || 0) === v ? '#9a6a10' : C.g500,
+                      borderRadius: 999, padding: '5px 13px', fontSize: 12.5,
+                      fontWeight: Number(sesion?.config?.reintentos_buzon || 0) === v ? 800 : 600,
+                      cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {v === 0 ? 'No reintentar' : `${v} ${v === 1 ? 'vez' : 'veces'} más`}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 11.5, color: C.g500, marginTop: 7, lineHeight: 1.5 }}>
+                Se reintenta a los 25 minutos. Al que va DIRECTO al buzón no se le
+                reintenta nunca: ese teléfono está apagado.
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button onClick={armar} disabled={!!ocupado || total === 0} style={{ ...S.btnP, opacity: !!ocupado || total === 0 ? 0.6 : 1 }}>
                 {ocupado === 'armar' ? 'Armando…' : 'Armar la lista con los filtros actuales'}
