@@ -489,6 +489,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const segCierre = actual?.estado === 'cierre' && actual.terminado_at && est?.ahora
     ? Math.max(0, Number(sesion?.config?.wrapup_seg ?? 8) - Math.round((new Date(est.ahora).getTime() - new Date(actual.terminado_at).getTime()) / 1000)) : null;
   const propuesta = actual?.estado === 'cierre' ? actual?.cierre_ia?.propuesta : null;
+  /* ══ CONTESTÓ UNA PERSONA: LA LISTA TE ESPERA ══════════════════════════
+     Pedido del dueño (17-sep-2026): «hablé con ella, me pidió que le marcara
+     más tarde… ahí ya no debe seguir a la siguiente: ahí debe aparecerme la
+     interfaz con las decisiones, y ya al tomar la decisión me pasa a la otra».
+     El motor hace su parte (no avanza ni aplica nada); aquí se DICE, porque un
+     proceso que se para sin avisar se siente igual que uno atorado. */
+  const esperaTuDecision = actual?.estado === 'cierre' && ['persona', 'duda'].includes(String(actual?.veredicto || '')) && !sola;
   const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
   const responderEnvio = async (envioId: string) => {
@@ -880,8 +887,11 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     {ETIQUETA_ITEM[estadoActual] || estadoActual}
                     {['marcando', 'timbrando'].includes(estadoActual) && actual.intentos > 1 ? ` · intento ${actual.intentos}` : ''}
                     {estadoActual === 'en_linea' && actual.segundos_en_linea > 0 ? ` · ${fmt(actual.segundos_en_linea)}` : ''}
-                    {estadoActual === 'cierre' && sesion.config?.auto_continuar !== false && segCierre !== null
-                      ? (enviosAbiertos.length ? ' · esperando tu respuesta' : !actual.cierre_estado || actual.cierre_estado === 'proponiendo' ? ' · la IA está cerrando' : ` · siguiente en ${segCierre} s`) : ''}
+                    {estadoActual === 'cierre' && (
+                      esperaTuDecision ? ' · te toca decidir'
+                      : sesion.config?.auto_continuar !== false && segCierre !== null
+                        ? (enviosAbiertos.length ? ' · esperando tu respuesta' : !actual.cierre_estado || actual.cierre_estado === 'proponiendo' ? ' · la IA está cerrando' : ` · siguiente en ${segCierre} s`)
+                        : '')}
                   </b>
                   <span style={{ flex: 1 }} />
                   <span style={{ fontSize: 11, color: C.g400 }}>{actual.orden + 1} de {sesion.total}{est?.pendientes ? ` · ${est.pendientes} por marcar` : ''}</span>

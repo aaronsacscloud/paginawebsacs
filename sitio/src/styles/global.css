@@ -16,6 +16,9 @@
   --color-primary-claro:  #7FA3F0;
   --color-primary-hover:  #3D6BD4;
   --color-secondary:      #2AB5A0;
+  /* Verde de TEXTO: el de marca da 2.56 sobre blanco y no se lee. Éste llega
+     a 5.25 y sigue siendo el mismo verde, más oscuro. */
+  --color-secondary-texto: #0E7A68;
   --color-accent:         #E8A838;
   --color-error:          #E54B4B;
 
@@ -414,7 +417,7 @@ h4 {
 
 .badge-teal {
   background: rgba(42, 181, 160, 0.1);
-  color: var(--color-secondary);
+  color: var(--color-secondary-texto);
 }
 
 .badge-gold {

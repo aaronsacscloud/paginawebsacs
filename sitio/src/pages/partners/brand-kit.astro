@@ -719,7 +719,7 @@ const SECTIONS = [
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
   .bk-btn--primary { background: #1a1a1a; color: #fff; }
-  .bk-btn--primary:hover { background: #4B7BE5; color: #fff; transform: translateY(-1px); }
+  .bk-btn--primary:hover { background: var(--color-primary-btn, #4470D8); color: #fff; transform: translateY(-1px); }
   .bk-btn--ghost { background: transparent; color: #1a1a1a; border-color: #e5e5e5; }
   .bk-btn--ghost:hover { border-color: #1a1a1a; color: #1a1a1a; text-decoration: none; }
 
@@ -1141,7 +1141,7 @@ const SECTIONS = [
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
-  .bk-tag:hover { background: #4B7BE5; color: #fff; }
+  .bk-tag:hover { background: var(--color-primary-btn, #4470D8); color: #fff; }
   .bk-tag.is-copied { background: #2AB5A0; color: #fff; border-color: #0E7A68; }
 
   .bk-disclosure {

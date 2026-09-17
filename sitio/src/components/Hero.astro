@@ -4895,7 +4895,7 @@ const useCases = [
   .inv-op b { font-size: 12px; letter-spacing: -0.01em; }
   .inv-op small { font-size: 10.5px; color: #6B7280; line-height: 1.3; }
   .inv-op.is-best { border-color: var(--color-primary-texto, #3A62C4); background: rgba(75, 123, 229, 0.06); box-shadow: 0 0 0 1px #4B7BE5; }
-  .inv-op-b { position: absolute; top: -8px; right: 8px; background: #4B7BE5; color: #fff; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 999px; padding: 3px 8px; }
+  .inv-op-b { position: absolute; top: -8px; right: 8px; background: var(--color-primary-btn, #4470D8); color: #fff; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 999px; padding: 3px 8px; }
   /* órdenes y canales */
   .inv-ok { position: relative; padding-left: 22px; font-size: 12px; font-weight: 600; }
   .inv-ok::before { content: "✓"; position: absolute; left: 0; top: -1px; width: 16px; height: 16px; border-radius: 50%; background: #1F8F5F; color: #fff; font-size: 10px; display: grid; place-items: center; }
@@ -4903,7 +4903,7 @@ const useCases = [
   .inv-ch span { position: relative; border: 1px solid rgba(31, 143, 95, 0.35); background: rgba(31, 143, 95, 0.07); color: #14161A; border-radius: 8px; padding: 7px 8px 7px 22px; font-size: 11px; font-weight: 600; }
   .inv-ch span::before { content: "✓"; position: absolute; left: 7px; color: #1F8F5F; font-weight: 700; }
   .inv-big { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
-  .inv-cta { justify-self: start; background: #4B7BE5; color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 14px; }
+  .inv-cta { justify-self: start; background: var(--color-primary-btn, #4470D8); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 14px; }
   @media (max-width: 1023px) {
     .inv-scr, .inv-scr--wide { left: 8px; right: 8px; width: auto; max-width: none; top: auto; bottom: 8px; transform: translateY(10px); padding: 10px 11px 11px; font-size: 11px; }
     .inv-scr.is-on { transform: none; }
@@ -5617,7 +5617,7 @@ const useCases = [
     font-size: 11px; font-weight: 700;
   }
   .apt-step-icon--done { background: #2AB5A0; color: #fff; }
-  .apt-step-icon--active { background: #4B7BE5; color: #fff; }
+  .apt-step-icon--active { background: var(--color-primary-btn, #4470D8); color: #fff; }
   .apt-step-label { font-size: 10px; font-weight: 600; color: rgba(0,0,0,0.35); }
   .apt-step--done .apt-step-label { color: #0E7A68; }
   .apt-step--active .apt-step-label { color: var(--color-primary-texto, #3A62C4); font-weight: 700; }
@@ -17695,7 +17695,7 @@ const useCases = [
     color: var(--color-text-tertiary, #8C8C8C);
   }
 
-  .bento-qty-positive { color: var(--color-secondary, #2AB5A0); }
+  .bento-qty-positive { color: var(--color-secondary-texto, #0E7A68); }
 
   .bento-transfer-arrow {
     display: flex;
@@ -17709,7 +17709,7 @@ const useCases = [
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-secondary, #2AB5A0);
+    color: var(--color-secondary-texto, #0E7A68);
   }
 
   /* Card 4: AXO suggestion */

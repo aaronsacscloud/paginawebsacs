@@ -759,6 +759,32 @@ export async function corregir(it: any, correccion: 'era_persona' | 'era_maquina
 // 5 · EL LATIDO: el navegador pregunta cada segundo y aquí se cierran los
 //     huecos en los que Twilio no avisa (silencios, porteros que no pasan).
 // ─────────────────────────────────────────────────────────────────────────────
+/* ══ UNA LLAMADA CON PERSONA NO SE CIERRA SOLA ════════════════════════════
+   Pedido del dueño (17-sep-2026), después de una llamada real: «hablé con ella,
+   me pidió que le marcara más tarde… ahí ya no debe seguir a la siguiente
+   llamada: ahí debe aparecerme la interfaz con las decisiones a tomar en ese
+   momento, y ya al tomar la decisión me pasa a la otra. Y aun así me debe decir
+   qué decisión tomó la IA ANTES de ejecutarla.»
+
+   Tenía razón y el orden estaba invertido: a los ocho segundos el motor
+   aplicaba el cierre de la IA —agendaba, mandaba, cambiaba la etapa— y marcaba
+   al siguiente. La propuesta se veía ocho segundos, o no se veía.
+
+   Ahora, cuando contestó una PERSONA y hay alguien mirando (todo lo que no sea
+   Fernanda sola), la lista se queda parada: enseña lo que la IA decidió y no
+   ejecuta nada hasta «Confirmar y seguir». Lo que NO cambia: buzón, no
+   contestó, portero y número inválido siguen saltando solos — para eso está el
+   marcador.
+
+   La válvula: si a los diez minutos nadie decidió Y el vendedor ya no está en
+   la sala, se aplica y se sigue. Una sesión parada para siempre porque alguien
+   cerró la pestaña no es prudencia, es una lista muerta. */
+const DECISION_MAX_MS = 10 * 60000;
+const esperaDecision = (it: any, s: any) =>
+  !sinSala(s)
+  && ['persona', 'duda'].includes(String(it?.veredicto || ''))
+  && (s?.agente_en_sala || ms(it?.terminado_at) < DECISION_MAX_MS);
+
 export async function latir(sesionId: string) {
   let s = await getSesion(sesionId);
   if (!s) return null;
@@ -815,7 +841,7 @@ export async function latir(sesionId: string) {
     } else if (it.estado === 'cierre' && !it.cierre_estado) {
       // Colgó con una persona: la IA propone el cierre (candado dentro; solo un latido lo hace; la IA tiene tope de 18 s).
       await (await cierre()).proponerCierre(it.id);
-    } else if (it.estado === 'cierre' && (cfg.auto_continuar || sinSala(s)) && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000 && (await cierre()).cierreListo(it)) {
+    } else if (it.estado === 'cierre' && (cfg.auto_continuar || sinSala(s)) && ms(it.terminado_at) > Number(cfg.wrapup_seg || 8) * 1000 && !esperaDecision(it, s) && (await cierre()).cierreListo(it)) {
       await siguiente(sesionId);
     }
   } else if (!it && s.estado === 'activa' && (s.agente_en_sala || sinSala(s))) {

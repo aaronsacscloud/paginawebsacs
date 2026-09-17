@@ -38,6 +38,7 @@ import { useEffect, useRef, useState } from 'react';
 import { C } from './estilo';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { useIsMobile } from '../../../../lib/ui/mobile';
+import AccionesLlamada, { type Accion } from './AccionesLlamada';
 
 type Props = {
   telefono: string;
@@ -73,13 +74,6 @@ const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
 const esNumero = (s?: string | null) => !String(s || '').trim() || /^[+\d\s()\-.]+$/.test(String(s));
 const dia = (f: any) => (f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '');
 
-type Accion = {
-  id: string; accion: string; etiqueta: string; auto: boolean; frase: string | null;
-  origen: string; estado: string; resultado: string | null; params: any; aprendido_de?: string | null;
-  pide: { campo: string; etiqueta: string; tipo: string; valor?: string }[];
-  pide_texto: boolean; envio_id: string | null;
-};
-
 export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar, fin }: Props) {
   /* En el teléfono esto NO es un modal: es la pantalla. Un recuadro centrado
      con el CRM asomando por los bordes, en 390 píxeles, se lee como algo que
@@ -97,10 +91,6 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   const [oido, setOido] = useState<any[]>([]);
   const [cierre, setCierre] = useState<any>(null);
   const [itemId, setItemId] = useState<string | null>(null);
-  const [haciendo, setHaciendo] = useState('');
-  const [dictado, setDictado] = useState('');
-  const [campos, setCampos] = useState<Record<string, Record<string, string>>>({});
-  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
   const [cerrando, setCerrando] = useState(false);
   const [aplicado, setAplicado] = useState<string[] | null>(null);
 
@@ -206,45 +196,6 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
     return j;
   };
 
-  const hacer = async (a: Accion) => {
-    setHaciendo(a.id); setMsg('');
-    const j = await api({ accion: 'hacer', accion_id: a.id, params: campos[a.id] || {} });
-    setHaciendo('');
-    if (j?.error) setMsg(j.error);
-    else if (j && j.ok === false && j.dicho) setMsg(j.dicho);
-  };
-  const descartar = async (a: Accion) => { setHaciendo(a.id); await api({ accion: 'descartar', accion_id: a.id }); setHaciendo(''); };
-
-  const dictar = async () => {
-    const texto = dictado.trim();
-    if (texto.length < 4) { setMsg('Escribe qué había que hacer, aunque sea corto.'); return; }
-    setHaciendo('dictado'); setMsg('');
-    /* La frase del CLIENTE que nadie cazó viaja junto al dictado: es LO QUE SE
-       APRENDE. Sin ella sólo se hace la acción de esta vez. */
-    const suya = [...oido].reverse().find(o => o.quien !== 'vendedor')?.texto || null;
-    const j = await api({ accion: 'dictar', texto, frase: suya });
-    setHaciendo('');
-    setDictado('');
-    if (j?.error) setMsg(j.error);
-    else if (j?.dicho) setMsg(j.ok ? `Hecho · ${j.dicho}` : j.dicho);
-  };
-
-  const responder = async (a: Accion) => {
-    const texto = (respuestas[a.id] || '').trim();
-    if (texto.length < 10) { setMsg('Escribe al menos una línea: eso es lo que se le manda.'); return; }
-    setHaciendo(a.id); setMsg('');
-    const j = await api({ accion: 'responder', envio_id: a.envio_id, accion_id: a.id, texto });
-    setHaciendo('');
-    if (j?.ok) setRespuestas(r => ({ ...r, [a.id]: '' }));
-    else setMsg(j?.dicho || j?.motivo || 'No se pudo mandar');
-  };
-
-  const agregar = async (cual: string) => {
-    setHaciendo(cual);
-    await api({ accion: 'agregar', cual });
-    setHaciendo('');
-  };
-
   /* ══ COLGAR ════════════════════════════════════════════════════════════
      Se cuelga el audio PRIMERO —el cliente no tiene por qué esperar a que el
      CRM escriba— y después se cierra la llamada en el servidor: item cerrado y
@@ -339,70 +290,6 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
       )}
     </>
   );
-
-  /* ── Una acción, con lo que le falte para poder salir ─────────────────── */
-  const pintarAccion = (a: Accion) => {
-    const hecha = a.estado === 'hecha';
-    /* «No sé qué mandarle» no es un error: es una pregunta. Va en ámbar, no en
-       rojo, porque lo único que hace falta es que alguien escriba una línea. */
-    const pregunta = a.estado === 'pregunta' || a.pide_texto;
-    const borde = hecha ? '#cbe8db' : a.estado === 'fallo' ? '#f0c4bd' : pregunta ? '#f0d9b0' : C.g200;
-    return (
-      <div key={a.id} style={{ border: `1px solid ${borde}`, background: hecha ? '#F4FBF8' : pregunta ? '#FFFCF6' : '#fff', borderRadius: 10, padding: '9px 11px' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-          <b style={{ fontSize: 12.5, color: hecha ? '#1E8A63' : '#33313d', flex: 1 }}>{hecha ? '✓ ' : ''}{a.etiqueta}</b>
-          {a.origen === 'dictada' && <span style={{ fontSize: 10, color: '#a5a2af', fontWeight: 700 }}>se lo dictaste</span>}
-          {a.origen === 'aprendida' && <span style={{ fontSize: 10, color: '#a5a2af', fontWeight: 700 }}>lo aprendió de ti</span>}
-        </div>
-        {/* LA EVIDENCIA: la frase con la que se disparó. Sin ella, quien acaba
-            de colgar no puede saber si la máquina entendió bien. */}
-        {a.frase && <div style={{ fontSize: 11.5, color: C.g500, fontStyle: 'italic', marginTop: 3 }}>«{a.frase}»</div>}
-        {/* Lo que quedó aprendido: la próxima vez que un cliente diga eso, esta
-            acción se propone sola. Se enseña para que se pueda desmentir. */}
-        {a.aprendido_de && <div style={{ fontSize: 11, color: '#5B4BD6', marginTop: 3 }}>Aprendido: si alguien dice «{a.aprendido_de}», lo propongo solo.</div>}
-        {/* QUÉ PASÓ, no «listo»: el cliente ve cosas distintas si salió por
-            plantilla o como mensaje, y quien llamó tiene que saber cuál. */}
-        {a.resultado && <div style={{ fontSize: 12, color: hecha ? '#1E8A63' : pregunta ? '#9a6a10' : '#C0554E', fontWeight: 700, marginTop: 5 }}>{a.resultado}</div>}
-
-        {/* No sabíamos qué mandarle: se escribe aquí, sale ahora y queda guardado. */}
-        {!hecha && a.pide_texto && a.envio_id && (
-          <div style={{ marginTop: 7 }}>
-            <textarea rows={3} value={respuestas[a.id] || ''} onChange={e => setRespuestas(r => ({ ...r, [a.id]: e.target.value }))}
-              placeholder="Escribe lo que hay que mandarle. Se manda ahora y se guarda para la próxima vez que alguien lo pida."
-              style={{ ...CAMPO, width: '100%', lineHeight: 1.5, resize: 'vertical' }} />
-            <button disabled={haciendo === a.id} onClick={() => responder(a)} style={{ ...BTN, marginTop: 5, borderColor: C.morado, color: C.moradoTinta }}>
-              {haciendo === a.id ? 'Mandando…' : 'Mandarlo y guardarlo'}
-            </button>
-          </div>
-        )}
-
-        {/* Lo que le falta para poder salir (fecha de un compromiso, el dato a
-            corregir, quién es la otra persona). */}
-        {!hecha && !a.pide_texto && !!a.pide?.length && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
-            {a.pide.map(c => (
-              <label key={c.campo} style={{ fontSize: 10.5, color: '#999', fontWeight: 700 }}>
-                <span style={{ display: 'block', marginBottom: 2 }}>{c.etiqueta}</span>
-                <input type={c.tipo === 'fecha' ? 'date' : c.tipo === 'hora' ? 'time' : 'text'}
-                  value={campos[a.id]?.[c.campo] ?? c.valor ?? ''}
-                  onChange={e => setCampos(v => ({ ...v, [a.id]: { ...(v[a.id] || {}), [c.campo]: e.target.value } }))}
-                  style={{ ...CAMPO, minWidth: c.tipo === 'texto' ? 160 : 120 }} />
-              </label>
-            ))}
-          </div>
-        )}
-
-        {!hecha && !a.pide_texto && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <button disabled={!!haciendo} onClick={() => hacer(a)} style={{ ...BTN, background: C.morado, color: '#fff', border: 'none' }}>
-              {haciendo === a.id ? 'Haciéndolo…' : a.estado === 'fallo' ? 'Intentarlo otra vez' : 'Hacerlo'}
-            </button>
-            <button disabled={!!haciendo} onClick={() => descartar(a)} style={{ ...BTN, color: C.g500 }}>No era eso</button>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -598,47 +485,17 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
 
             {/* ══ LO QUE TE PIDIÓ ════════════════════════════════════════
                 El corazón del pedido: lo que el cliente pide se hace AHORA y
-                queda escrito qué pasó. Las seguras (mandar material, un
-                recordatorio) ya salieron solas cuando se oyeron; las que tocan
-                la ficha, la agenda o la baja esperan un clic. */}
-            <div style={{ ...CAJA, borderColor: abiertas.length ? C.morado : C.g200 }}>
-              <div style={ROT}>Te pidió algo</div>
-              {!acciones.length && (
-                <div style={{ fontSize: 12.5, color: C.g500 }}>
-                  Nada todavía. Si pide algo —«mándame la info», «márcame el jueves»— aparece aquí solo.
-                </div>
-              )}
-              <div style={{ display: 'grid', gap: 7 }}>
-                {abiertas.map(pintarAccion)}
-                {hechas.map(pintarAccion)}
-              </div>
-
-              {/* ══ «SI NO RECONOCES QUÉ ACCIÓN HACER, QUE YO TE EXPLIQUE» ══
-                  Lo que se escriba aquí se HACE ahora y además se guarda como
-                  ejemplo: la próxima vez que alguien diga esa misma frase, la
-                  acción aparece sola. Es el mismo ciclo de reglas-como-datos
-                  de Trabajo Inteligente, no un modelo nuevo. */}
-              {/* También DESPUÉS de colgar: acordarse de lo que pidió es algo
-                  que pasa justo al colgar, y entonces todavía se puede hacer. */}
-              {(
-                <div style={{ marginTop: 10, borderTop: `1px dashed ${C.g200}`, paddingTop: 10 }}>
-                  <div style={{ ...ROT, marginBottom: 5 }}>¿Pidió algo que no ves aquí?</div>
-                  <textarea rows={2} value={dictado} onChange={e => setDictado(e.target.value)}
-                    placeholder="Dime qué había que hacer: «mándale el PDF de precios», «agéndale demo el jueves a las 4»…"
-                    style={{ ...CAMPO, width: '100%', lineHeight: 1.5, resize: 'vertical' }} />
-                  <button disabled={haciendo === 'dictado'} onClick={dictar} style={{ ...BTN, marginTop: 5, borderColor: C.morado, color: C.moradoTinta }}>
-                    {haciendo === 'dictado' ? 'Haciéndolo…' : 'Hazlo y apréndelo'}
-                  </button>
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
-                    {[['mandar_info', 'Mandar info'], ['mandar_cotizacion', 'Mandar cotización'], ['volver_a_llamar', 'Volver a llamar'], ['no_llamar', 'No llamarle más']].map(([id, l]) => (
-                      <button key={id} disabled={!!haciendo || acciones.some(a => a.accion === id)} onClick={() => agregar(id)}
-                        style={{ ...BTN, padding: '5px 9px', fontSize: 11.5, opacity: acciones.some(a => a.accion === id) ? 0.4 : 1 }}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {msg && <div style={{ fontSize: 12, color: msg.startsWith('Hecho') ? '#1E8A63' : '#C0554E', marginTop: 8, fontWeight: 700 }}>{msg}</div>}
-            </div>
+                queda escrito qué pasó. Vive en `AccionesLlamada.tsx` porque la
+                cabina de Llamadas inteligentes enseña exactamente lo mismo al
+                colgar, y dos copias de algo que manda WhatsApps a clientes se
+                separan en un mes. */}
+            {callId && (
+              <AccionesLlamada
+                callId={callId}
+                acciones={acciones}
+                onAcciones={setAcciones}
+                fraseCliente={[...oido].reverse().find(o => o.quien !== 'vendedor')?.texto || null} />
+            )}
 
             <div style={CAJA}>
               <div style={ROT}>{fin ? 'Tu apunte' : 'Apunta mientras hablas'}</div>
