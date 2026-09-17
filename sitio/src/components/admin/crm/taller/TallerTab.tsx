@@ -686,7 +686,7 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
           )}
           {enCuenta.map((o: any) => (
             <Renglon key={o.id} o={o} abrir={abrir}
-              marcada={sel.has(o.id)} onMarcar={() => marca(o.id)}
+              marcada={sel.has(o.id)} onMarcar={() => marca(o.id)} verCasilla={sel.size > 0}
               meta={meta[o.id]} reuniones={reuniones}
               acciones={<MenuFila onEditar={() => abrir(o.id)} onEliminar={() => quitar(o)} />} />
           ))}
@@ -731,7 +731,10 @@ function Lista({ ordenes, yo, equipo, abrir, filtro, setFiltro, onNueva, recarga
 
 /* El renglón. Color en DOS ejes nada más: el tipo (la barra) y la temperatura
    del tiempo (la fecha). Todo lo demás en gris, o deja de leerse de un vistazo. */
-function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any) {
+function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones, verCasilla }: any) {
+  // La casilla asoma al pasar por CUALQUIER punto del renglón, no solo por su
+  // esquina: buscar un cuadro invisible de 17 px no es una interacción.
+  const [enFila, setEnFila] = useState(false);
   const q = diasHasta(o.fecha_prometida);
   const fecha = o.etapa === 'espera' ? <span style={{ color: '#8d8a97' }}>en pausa</span>
     : o.falta_dato ? <span style={{ color: P.ambarTinta, fontWeight: 700 }}>falta un dato</span>
@@ -741,14 +744,16 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any
     : <span style={{ color: '#55505f' }}>{fmt(o.fecha_prometida)}</span>;
 
   return (
-    <div onClick={() => abrir(o.id)} style={{
+    <div onClick={() => abrir(o.id)}
+      onMouseEnter={() => setEnFila(true)} onMouseLeave={() => setEnFila(false)}
+      style={{
       display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
       minHeight: 44, background: '#fff', cursor: 'pointer', paddingRight: 10,
       opacity: o.etapa === 'espera' ? .62 : 1,
       ...(marcada ? { background: '#fdf7fa' } : null),   // el mismo rosa, en agua
     }}>
       <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: o.etapa === 'espera' ? '#d8d5e0' : COLOR_T[o.tipo] }} />
-      {onMarcar && <Casilla marcada={marcada} onMarcar={onMarcar} />}
+      {onMarcar && <Casilla marcada={marcada} onMarcar={onMarcar} visible={verCasilla || enFila} />}
       <span style={{ ...CHIP_T[o.tipo], flex: 'none', width: 58, fontSize: '0.55rem', fontWeight: 800, textAlign: 'center', borderRadius: 5, padding: '2px 0', letterSpacing: '.04em' }}>
         {o.tipo.toUpperCase()}
       </span>
@@ -761,12 +766,15 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones }: any
         border: o.asignado_id ? 'none' : '1.5px dashed #e0b869' }}>
         {o.team_members?.nombre ? o.team_members.nombre.split(' ').map((x: string) => x[0]).slice(0, 2).join('') : '+'}
       </span>
-      {/* DE QUÉ REUNIÓN SALIÓ Y DÓNDE SE TRABAJA. Lo que falta se dibuja como
-          un hueco punteado: invita a llenarlo sin gritar, y de un vistazo se ve
-          cuántas órdenes están sin clasificar. La reunión se escribe corta
-          —fecha · asunto— porque el asunto completo no cabe en un renglón. */}
-      <Dato titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones, cuentaDe(o))}</Dato>
-      <Dato titulo={meta?.modulo || ''} falta="+ módulo" tono="modulo">{meta?.modulo || ''}</Dato>
+      {/* DE QUÉ REUNIÓN SALIÓ Y DÓNDE SE TRABAJA, en COLUMNA y no flotando.
+          Con ancho automático cada renglón empezaba la pastilla en un sitio
+          distinto y la lista se veía como un diente de sierra; ahora la reunión
+          siempre ocupa 168 px y el módulo 132, de modo que las fechas de la
+          derecha quedan alineadas aunque falte el dato.
+          Lo que falta se dibuja como hueco punteado: invita a llenarlo sin
+          gritar, y de un vistazo se ve cuánto está sin clasificar. */}
+      <Dato ancho={168} titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones, cuentaDe(o))}</Dato>
+      <Dato ancho={132} titulo={meta?.modulo || ''} falta="+ módulo" tono="modulo">{meta?.modulo || ''}</Dato>
       <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', fontVariantNumeric: 'tabular-nums' }}>{fecha}</span>
       <span style={{ flex: 'none', width: 38, textAlign: 'right', fontSize: '0.69rem', color: '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{dias(o.created_at)} d</span>
       {acciones}
@@ -924,8 +932,16 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
    veinte renglones, cinco cuadros morados sólidos son cinco manchas que pesan
    más que los títulos. Lo que marca la selección es el fondo lila del renglón
    y la barra de arriba diciendo cuántas van. */
-function Casilla({ marcada, onMarcar }: any) {
+function Casilla({ marcada, onMarcar, visible }: any) {
   const [encima, setEncima] = useState(false);
+  /* En reposo la casilla NO se dibuja: son once cuadros vacíos compitiendo con
+     los títulos para una acción que casi nunca se usa. Aparece al pasar el
+     ratón por el renglón —de ahí el `grupo-fila`—, cuando ya hay algo marcado,
+     o cuando se entró a modo selección desde la barra. El hueco de 17 px se
+     reserva siempre, para que al aparecer no se recorra la lista. */
+  if (!visible && !marcada && !encima) {
+    return <span onMouseEnter={() => setEncima(true)} style={{ flex: 'none', width: 17, height: 17, marginLeft: 9 }} />;
+  }
   return (
     <span role="checkbox" aria-checked={!!marcada} tabIndex={0}
       onClick={e => { e.stopPropagation(); onMarcar(); }}
@@ -967,12 +983,12 @@ function reunionLarga(meta: any, reuniones: any) {
 }
 
 /** Un dato del renglón, o el hueco que lo pide. */
-function Dato({ children, falta, tono, titulo }: any) {
+function Dato({ children, falta, tono, titulo, ancho = 150 }: any) {
   const hay = !!children;
   return (
     <span title={titulo || undefined} style={{
       flex: 'none', borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', whiteSpace: 'nowrap',
-      maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis',
+      width: ancho, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis',
       ...(hay
         ? (tono === 'reunion' ? { background: P.azulAgua, color: P.azulTinta, fontWeight: 700 }
                               : { background: '#f3f1f8', color: '#6f6a80', fontWeight: 700 })

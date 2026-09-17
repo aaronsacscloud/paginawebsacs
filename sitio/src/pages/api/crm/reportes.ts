@@ -64,7 +64,8 @@ export const POST: APIRoute = async ({ request }) => {
   const pedido = String(b?.tipo || 'trabajo');
   const tipo = pedido === 'entregas' ? 'entregas' : pedido === 'curso' ? 'curso' : 'trabajo';
 
-  const hechos = tipo === 'entregas' ? await reunirEntregas(companyId, desde, hasta)
+  const modulos = Array.isArray(b?.modulos) ? b.modulos.map(String).slice(0, 40) : null;
+  const hechos = tipo === 'entregas' ? await reunirEntregas(companyId, desde, hasta, modulos)
     : tipo === 'curso' ? await reunirEnCurso(companyId, desde, hasta)
     : await reunirHechos(companyId, desde, hasta);
   if (!hechos) return json({ error: 'Ese cliente ya no existe.' }, 404);

@@ -187,6 +187,31 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .ent details[open]>summary:before{content:'▾ '}
 .ent .mas{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;white-space:pre-line;max-width:76ch}
 
+/* ── LA PIEL DEL REPORTE DE ENTREGAS ──
+   Los dos documentos comparten esqueleto, y en el celular el dueño abría uno
+   creyendo que era el otro: la portada, las cifras y la lista se veían iguales.
+   Aquí el de ENTREGAS se pinta con más degradado y con el VERDE de la casa
+   —el color de lo que ya entró, que es justo lo que este documento cuenta—,
+   mientras el de trabajo en curso se queda en el morado del sistema. No es
+   adorno: es lo que deja saber cuál tienes abierto antes de leer el título. */
+.doc-entregas .cinta{background:linear-gradient(90deg,#4FBF95,#9B8CFA 48%,rgba(244,168,205,.95))}
+.doc-entregas .hero{background:linear-gradient(150deg,#EAF8F2 0%,#f7f5ff 46%,#fdf6fa 100%)}
+.doc-entregas .hero:after{background:radial-gradient(circle,rgba(79,191,149,.18),transparent 65%)}
+.doc-entregas .wm{background:linear-gradient(100deg,#1E8A63,#7C6BF0 52%,#D9538E);-webkit-background-clip:text;background-clip:text;color:transparent}
+.doc-entregas .ancla{background:linear-gradient(180deg,#fbfdfc,#fff 70%)}
+/* El encabezado de cada módulo deja de ser una línea suelta y pasa a ser una
+   banda: es la única estructura del documento y ahora se ve como tal. */
+.doc-entregas .gh{background:linear-gradient(100deg,#EAF8F2,rgba(238,236,254,.75) 60%,rgba(244,168,205,.16));
+  border:1px solid #e6f1ec;border-radius:11px;padding:8px 13px;margin:0 0 6px}
+.doc-entregas .gh .gn{color:#1E8A63}
+.doc-entregas .gh .gc{background:#fff;color:#1E8A63}
+.doc-entregas .gh .ln{display:none}
+.doc-entregas .ent{border-color:#e9eeeb}
+.doc-entregas .ent .it:hover{background:linear-gradient(100deg,rgba(234,248,242,.5),transparent 60%)}
+.doc-entregas .vid{border-color:#4FBF95;color:#1E8A63}
+.doc-entregas .vid:hover{background:#4FBF95;color:#fff}
+.doc-entregas .lila{background:linear-gradient(135deg,#EAF8F2,rgba(238,236,254,.7) 55%,rgba(244,168,205,.26))}
+
 /* ── Grupos por módulo ──
    La única estructura real del documento: en qué parte del sistema se trabajó.
    El encabezado es discreto a propósito; el peso lo lleva la entrega. */

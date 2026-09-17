@@ -133,7 +133,9 @@ export const GET: APIRoute = async ({ request, url }) => {
   const ligas: Record<string, any> = {};
   for (const l of ligadas || []) {
     const o: any = porOrden.get(l.orden_id);
-    if (o) ligas[l.mejora_id] = { id: o.id, folio: o.folio, etapa: o.etapa, fecha_prometida: o.fecha_prometida };
+    // El módulo viaja en la liga: la ficha del cliente filtra por él y sin esto
+    // tendría que pedir la orden completa de cada renglón.
+    if (o) ligas[l.mejora_id] = { id: o.id, folio: o.folio, etapa: o.etapa, fecha_prometida: o.fecha_prometida, modulo: o.modulo || null };
   }
   /* Lo comprometido con el cliente que todavía no tiene orden. Sin `tipo` —en
      null— también cuenta: los renglones viejos nacieron antes de que el campo

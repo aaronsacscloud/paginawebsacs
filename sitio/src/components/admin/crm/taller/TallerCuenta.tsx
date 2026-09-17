@@ -88,6 +88,10 @@ export default function TallerCuenta({ companyId, flash }: any) {
   const [datos, setDatos] = useState<any>(null);
   const [mejoras, setMejoras] = useState<any[]>([]);
   const [orden, setOrden] = useState<any>(null);
+  /* En qué parte del sistema se está trabajando. Con doce órdenes de la misma
+     cuenta repartidas entre membresías, certificados y el portal, «¿cómo va lo
+     del portal?» no se contesta leyendo doce renglones. */
+  const [modulo, setModulo] = useState('');
 
   const cargar = () => Promise.all([
     fetch('/api/crm/taller?company_id=' + companyId).then(r => r.json()).catch(() => null),
@@ -136,8 +140,16 @@ export default function TallerCuenta({ companyId, flash }: any) {
   const filas = Object.entries(ligas).map(([mejoraId, o]: any) => {
     const m: any = porMejora.get(mejoraId);
     const prometida = o.fecha_prometida || m?.fecha_compromiso || null;
-    return { ...o, mejoraId, titulo: m?.titulo || '(sin título)', categoria: m?.categoria || 'ajuste', prometida, aviso: avisoDe(prometida, o.etapa) };
+    return { ...o, mejoraId, titulo: m?.titulo || '(sin título)', categoria: m?.categoria || 'ajuste',
+      modulo: o.modulo || m?.modulo || null, prometida, aviso: avisoDe(prometida, o.etapa) };
   }).sort((a, b) => (b.aviso.tarde || 0) - (a.aviso.tarde || 0) || String(a.prometida || '9999').localeCompare(String(b.prometida || '9999')));
+
+  /* Los módulos que ESTA cuenta tiene, con su conteo. No sale el catálogo
+     entero: un filtro con cuarenta opciones en cero no es un filtro. */
+  const modulos = Object.entries(filas.reduce((a: any, f: any) => {
+    if (f.modulo) a[f.modulo] = (a[f.modulo] || 0) + 1; return a;
+  }, {})).sort((a: any, b: any) => b[1] - a[1]) as [string, number][];
+  const enVista = modulo ? filas.filter(f => f.modulo === modulo) : filas;
 
   const vivas = filas.filter(f => f.etapa !== 'entregada');
   const tarde = vivas.filter(f => f.aviso.tarde);
@@ -212,7 +224,31 @@ export default function TallerCuenta({ companyId, flash }: any) {
         </div>
       )}
 
-      {filas.map(f => (
+      {/* El filtro por módulo. Solo aparece si hay al menos dos: con uno solo
+          es un botón que no cambia nada. */}
+      {modulos.length > 1 && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', margin: '4px 0 2px' }}>
+          {([['', 'Todo', filas.length], ...modulos.map(([m, n]) => [m, m, n])] as any[]).map(([k, l, n]) => {
+            const on = modulo === k;
+            return (
+              <button key={k || 'todo'} onClick={() => setModulo(k)}
+                style={{
+                  border: on ? '1px solid #9B8CFA' : '1px solid #e9e3ee', background: on ? '#9B8CFA' : '#fff',
+                  color: on ? '#fff' : '#666', borderRadius: 9, padding: '4px 10px', fontSize: '0.71rem',
+                  fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+                }}>
+                {l} <span style={{ opacity: .75, fontWeight: 700 }}>{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {enVista.length === 0 && filas.length > 0 && (
+        <div style={{ ...S.kpi, color: '#999', fontSize: '0.82rem' }}>Nada de esta cuenta se está trabajando en {modulo}.</div>
+      )}
+
+      {enVista.map(f => (
         <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid #f4f4f4', flexWrap: 'wrap' }}>
           {/* La franja de 3 px del estado, como toda tarjeta del CRM. */}
           <span style={{ flex: '0 0 3px', alignSelf: 'stretch', minHeight: 34, borderRadius: 99, background: f.aviso.tarde ? '#EF7A72' : f.etapa === 'entregada' ? '#4FBF95' : f.prometida ? '#9B8CFA' : '#E8A838' }} />
@@ -224,6 +260,7 @@ export default function TallerCuenta({ companyId, flash }: any) {
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 3 }}>
               {ETAPAS_TALLER[f.etapa] || f.etapa}
+              {f.modulo && <> · <b style={{ color: '#6f6a80', fontWeight: 700 }}>{f.modulo}</b></>}
               {f.prometida && <> · se prometió para el {fmtDate(f.prometida)}</>}
               {!f.asignado_id && f.etapa !== 'entregada' && <> · sin asignar</>}
             </div>

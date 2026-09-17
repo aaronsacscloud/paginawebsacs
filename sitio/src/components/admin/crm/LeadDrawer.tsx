@@ -297,6 +297,18 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
               {!esMovil && tel && <a style={D.btnW} href={waLink(tel)}>WhatsApp</a>}
+              {/* LLAMAR, desde la ficha. En el teléfono ya existía —la fila al
+                  pulgar de abajo— pero en escritorio no: había que copiar el
+                  número o irse al inbox a buscar la conversación. Pedido del
+                  dueño (17-sep-2026) para acortar ese camino.
+                  Dispara `tel-llamar`, el mismo evento que ya escucha
+                  Telefonia.tsx, así que la barra de llamada, la grabación y la
+                  minuta salen igual que desde cualquier otro lado. */}
+              {!esMovil && tel && <button style={D.btnA}
+                title={`Llamar a ${c.nombre || tel} ahora`}
+                onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: tel, nombre: [c.nombre, c.apellido].filter(Boolean).join(' ') || null } }))}>
+                Llamar
+              </button>}
               {!esMovil && c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
               {!esMovil && <button style={D.btnP} onClick={() => window.open(urlCotizar(c), '_blank', 'noopener')}>Cotizar</button>}
               {!esMovil && <button onClick={cerrar} aria-label="Cerrar"

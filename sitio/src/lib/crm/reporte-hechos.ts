@@ -232,7 +232,11 @@ export async function reunirHechos(companyId: string, desde: string, hasta: stri
  * Misma regla de la casa: aquí no se interpreta nada. Se cuenta lo entregado y
  * se dice cuál trae video y cuál no.
  */
-export async function reunirEntregas(companyId: string, desde: string, hasta: string) {
+/** `modulos` acota el documento a esas partes del sistema. Vacío = todo.
+ *  Existe porque un reporte de doce entregas repartidas en cinco módulos no
+ *  contesta «¿cómo va lo del portal?»: el dueño manda uno POR tema cuando la
+ *  conversación con el cliente es sobre un tema. */
+export async function reunirEntregas(companyId: string, desde: string, hasta: string, soloModulos?: string[] | null) {
   const { data: co } = await supabase.from('companies')
     .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();
   if (!co) return null;
@@ -247,7 +251,10 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
      filtra al pintar; aquí se filtra al generar, porque este documento no tiene
      otra cosa adentro: una foto con lo interno sería una fuga esperando a que
      alguien lea el jsonb. */
-  const visibles = (mejoras || []).filter((m: any) => m.visible_cliente !== false);
+  const pedidos = (soloModulos || []).filter(Boolean);
+  const visibles = (mejoras || [])
+    .filter((m: any) => m.visible_cliente !== false)
+    .filter((m: any) => !pedidos.length || pedidos.includes(m.modulo || 'Sin módulo'));
 
   const entregas = visibles.map((m: any) => ({
     titulo: m.titulo,
@@ -273,6 +280,9 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
     con_video: entregas.filter(e => e.video).length,
     cortesias: entregas.filter(e => e.cortesia).length,
     modulos,
+    // Qué se pidió, para que el documento pueda decirlo: «solo lo de Portal de
+    // clientes» no es lo mismo que «no hubo nada más».
+    solo_modulos: pedidos.length ? pedidos : null,
     // Cuántas se ocultaron por internas: el consultor tiene que poder explicar
     // por qué el documento trae ocho y en su pantalla se ven diez.
     internas: (mejoras || []).length - visibles.length,

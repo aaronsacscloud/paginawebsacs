@@ -79,7 +79,7 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
   <div class="bar"><b>{h.cliente}</b>
     <button class="btn" onclick="window.print()">Descargar PDF</button></div>
 
-  <div class="doc">
+  <div class={`doc${esEntregas ? ' doc-entregas' : ''}${esCurso ? ' doc-curso' : ''}`}>
     <div class="cinta"></div>
 
     {esEntregas ? <Entregas rep={rep} /> : esCurso ? <Curso rep={rep} /> : (<>

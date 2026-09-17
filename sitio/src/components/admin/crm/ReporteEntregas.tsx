@@ -8,7 +8,7 @@
 //
 // Ese video es la razón de existir del documento. Sin él, esto ya lo decía el
 // reporte ejecutivo.
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const fmtDate = (d?: string | null) => d
   ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '')
@@ -38,6 +38,32 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [rep, setRep] = useState<any>(null);
+  /* POR MÓDULO. Un documento de doce entregas repartidas en cinco partes del
+     sistema no contesta «¿cómo va lo del portal?». Los módulos no se piden a
+     un endpoint nuevo: se sacan de las mismas mejoras que el reporte va a leer,
+     así que lo que ofrece el filtro es exactamente lo que va a salir. */
+  const [todas, setTodas] = useState<any[]>([]);
+  const [modulos, setModulos] = useState<string[]>([]);   // vacío = todo
+
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (vivo) setTodas(j?.data || []); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [companyId]);
+
+  const enPeriodo = useMemo(() => (todas || []).filter((m: any) =>
+    m.estado === 'entregada' && m.visible_cliente !== false && !m.archived_at &&
+    String(m.fecha_entrega || '') >= desde && String(m.fecha_entrega || '') <= hasta), [todas, desde, hasta]);
+
+  const porModulo = useMemo(() => {
+    const a: Record<string, number> = {};
+    for (const m of enPeriodo) a[m.modulo || 'Sin módulo'] = (a[m.modulo || 'Sin módulo'] || 0) + 1;
+    return Object.entries(a).sort((x, y) => y[1] - x[1]);
+  }, [enPeriodo]);
+
+  const toggleModulo = (k: string) =>
+    setModulos(p => (p.includes(k) ? p.filter(x => x !== k) : [...p, k]));
 
   const liga = rep ? `${typeof window !== 'undefined' ? window.location.origin : ''}/reporte/${rep.id}` : '';
   const h = rep?.hechos;
@@ -47,7 +73,7 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
     setBusy('generando'); setError(''); setAviso(''); setRep(null);
     const r = await fetch('/api/crm/reportes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_id: companyId, desde, hasta, tipo: 'entregas' }),
+      body: JSON.stringify({ company_id: companyId, desde, hasta, tipo: 'entregas', modulos }),
     }).then(x => x.json()).catch(() => null);
     setBusy('');
     if (!r || r.error) { setError(r?.error || 'No se pudo generar.'); return; }
@@ -97,6 +123,33 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
             {busy === 'generando' ? 'Generando…' : 'Generar'}
           </button>
         </div>
+
+        {/* Los módulos del periodo. Solo se pintan si hay más de uno: con uno
+            solo el filtro no puede cambiar nada. Nada marcado = todo. */}
+        {porModulo.length > 1 && (
+          <div style={{ padding: '10px 18px', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', borderBottom: '1px solid #f6f5fa' }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#9c99a6', marginRight: 2 }}>Módulos</span>
+            {porModulo.map(([k, n]) => {
+              const on = modulos.includes(k);
+              return (
+                <button key={k} onClick={() => toggleModulo(k)}
+                  style={{
+                    border: on ? '1px solid #9B8CFA' : '1px solid #e9e3ee', background: on ? '#EEECFE' : '#fff',
+                    color: on ? '#5B4BD6' : '#666', borderRadius: 9, padding: '4px 10px',
+                    fontSize: '0.71rem', fontWeight: on ? 800 : 600, fontFamily: 'inherit', cursor: 'pointer',
+                  }}>
+                  {k} <span style={{ opacity: .7, fontWeight: 700 }}>{n}</span>
+                </button>
+              );
+            })}
+            <span style={{ fontSize: '0.69rem', color: '#a5a2af' }}>
+              {modulos.length ? `solo ${modulos.length === 1 ? 'ese módulo' : 'esos ' + modulos.length}` : 'sin marcar nada sale todo'}
+            </span>
+            {modulos.length > 0 && (
+              <button onClick={() => setModulos([])} style={{ border: 'none', background: 'none', color: '#8d8a97', fontSize: '0.71rem', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>quitar</button>
+            )}
+          </div>
+        )}
 
         <div style={{ padding: '4px 18px 16px', overflowY: 'auto', flex: 1 }}>
           {error && (

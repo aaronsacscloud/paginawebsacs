@@ -46,6 +46,34 @@ export const GET: APIRoute = async ({ url }) => {
       return json({ ok: true, oportunidades: data || [] });
     }
 
+    if (vista === 'ia') {
+      const dias = Math.min(Number(url.searchParams.get('dias')) || 30, 180);
+      const [prompts, competidores, fuentes, avs, ultimas] = await Promise.all([
+        supabase.rpc('de_ia_por_prompt', { dias }),
+        supabase.rpc('de_competidores_en_ia', { dias }),
+        supabase.rpc('de_fuentes_citadas_ia', { dias }),
+        supabase.rpc('de_avs', { dias }),
+        supabase.from('de_metricas_diarias').select('fecha, metrica, valor')
+          .eq('dimension', 'ia').order('fecha', { ascending: false }).limit(60),
+      ]);
+      const a = (avs.data || [])[0] || {};
+      const medidas = Number(a.medidas || 0);
+      return json({
+        ok: true,
+        resumen: {
+          medidas,
+          prompts: Number(a.prompts || 0),
+          menciones: Number(a.con_mencion || 0),
+          citas: Number(a.con_cita || 0),
+          avs: medidas ? Math.round(((Number(a.con_mencion) / medidas) * 40 + (Number(a.con_cita) / medidas) * 25 + (Number(a.en_top3) / medidas) * 35) * 10) / 10 : 0,
+        },
+        prompts: prompts.data || [],
+        competidores: (competidores.data || []).slice(0, 25),
+        fuentes: (fuentes.data || []).slice(0, 25),
+        serie: ultimas.data || [],
+      });
+    }
+
     if (vista === 'issues') {
       let sel = supabase.from('de_issues')
         .select('id, tipo, severidad, url, detalle, estado, detectado_at, resuelto_at')

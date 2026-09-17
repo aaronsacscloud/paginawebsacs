@@ -494,6 +494,20 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
       {i.estado === 'hecho' || i.estado === 'saltado'
         ? <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...tono(i.resultado), background: tono(i.resultado).bg, color: tono(i.resultado).fg }}>{ETIQUETA_RESULTADO[i.resultado] || ETIQUETA_ITEM[i.estado]}</span>
         : <span style={{ fontSize: 11, color: i.volver_at ? C.moradoTinta : C.g500, fontWeight: i.volver_at ? 700 : 400 }}>{i.estado === 'pendiente' && fase === 'fin' ? 'Sin marcar' : i.estado === 'pendiente' && i.volver_at ? `A las ${new Date(i.volver_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}` : (ETIQUETA_ITEM[i.estado] || i.estado)}</span>}
+      {/* LLAMAR A ESTE, YA. Pedido del dueño (17-sep-2026): la lista sabe a
+          quién hay que marcar, pero para llamarle a UNO en concreto —el que te
+          interesa, el que te devolvió la llamada— había que esperar a que la
+          corrida llegara a él o buscarlo en el inbox. Reusa el evento
+          `tel-llamar` que ya escucha Telefonia.tsx: es el mismo camino que un
+          enlace `tel:` del hilo, así que la barra de llamada, la grabación y la
+          minuta funcionan igual sin código nuevo. */}
+      {!compacto && i.telefono && (
+        <button onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: i.telefono, nombre: i.nombre || null } }))}
+          title={`Llamar a ${i.nombre || telefonoLegible(i.telefono)} ahora`}
+          style={{ ...btnT, padding: '3px 8px', fontSize: 11, borderColor: '#c9bcf7', color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <IcoTelefono size={11} /> Llamar
+        </button>
+      )}
       {!compacto && i.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(i.conversation_id)} title="Ver la conversación" style={{ ...btnT, padding: '3px 8px', fontSize: 11 }}>Chat</button>}
       {conAcciones && i.estado === 'pendiente' && <button onClick={() => accion('excluir', { item: i.id })} title="Quitar de la lista" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 2 }}><IcoX size={14} /></button>}
       {conAcciones && !compacto && i.estado === 'excluido' && <button onClick={() => accion('incluir', { item: i.id })} style={{ ...btnT, padding: '3px 8px', fontSize: 11 }}>Volver a meter</button>}

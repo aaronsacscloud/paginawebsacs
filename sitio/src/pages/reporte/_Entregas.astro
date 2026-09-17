@@ -122,7 +122,12 @@ const agrupar = grupos.length > 1;
     <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
   </div>
   <h1>Lo que se entregó en tu cuenta</h1>
-  <p class="sub">{h.cliente} · del {dLarga(rep.desde)} al {dLarga(rep.hasta)}</p>
+  <p class="sub">
+    {h.cliente} · del {dLarga(rep.desde)} al {dLarga(rep.hasta)}
+    {/* Si se pidió por módulo, el documento lo DICE. Sin esta línea, un reporte
+        de tres entregas se lee como «solo hicieron tres». */}
+    {h.solo_modulos && <> · solo {h.solo_modulos.join(' y ')}</>}
+  </p>
   <div class="quien">
     {h.cuenta_sacs && <div><div class="k">Cuenta</div><div class="v">{h.cuenta_sacs}</div></div>}
     <div><div class="k">Entregas</div><div class="v">{h.total}</div></div>
@@ -180,7 +185,10 @@ const agrupar = grupos.length > 1;
                 {e.cortesia && <span class="sc">sin costo</span>}
                 <span class="fe">{dCorta(e.fecha)}</span>
               </div>
-              {!agrupar && e.modulo && <div class="mod">{e.modulo}</div>}
+              {/* El módulo del renglón sobra cuando el documento entero es de
+                  ese módulo: el subtítulo ya dijo «solo Reparaciones / taller»
+                  y repetirlo nueve veces es ruido. */}
+              {!agrupar && e.modulo && (h.solo_modulos || []).length !== 1 && <div class="mod">{e.modulo}</div>}
               {d.corto && <div class="dd">{d.corto}</div>}
               <div class="pieit">
                 {e.video
