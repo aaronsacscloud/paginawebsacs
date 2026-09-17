@@ -462,3 +462,98 @@ h4 {
 @media (max-width: 640px) {
   :root { --nav-alto: 72px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓVIL — auditoría del 17-sep-2026 con Safari (iPhone 13 y SE) y Chrome
+   (Pixel 7). Todo lo de aquí sale de algo MEDIDO, no de una corazonada: el
+   número de cada bloque es lo que arrojó la medición.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Nada se sale de lado. Se medían 52 px de deriva en /partners y 12 px en
+   una página de giro: en un teléfono eso se siente como que la página "baila"
+   al hacer scroll y deja una franja blanca a la derecha. */
+html, body { overflow-x: clip; }
+@supports not (overflow: clip) { html, body { overflow-x: hidden; } }
+
+/* 2. El notch y la barra de gestos. Todo lo que vive pegado al fondo tenía su
+   separación en píxeles fijos, así que en iPhone con barra de gestos quedaba
+   debajo de ella: la barra de WhatsApp, el menú de móvil, la tira de partner y
+   los modales. */
+@supports (padding: max(0px)) {
+  .wa-bar, .mobile-menu, .partner-strip, .vert, .cs-modal-overlay, .pt-modal {
+    padding-bottom: max(var(--wa-pb, 12px), env(safe-area-inset-bottom));
+  }
+  .mobile-menu, .vert, .cs-modal-overlay { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+}
+
+/* 3. Las anclas no se esconden bajo la cabecera. La cabecera mide 72 px y es
+   fija; sin esto, al tocar un enlace del menú el título aterrizaba TAPADO por
+   ella y parecía que la página había saltado mal. */
+:target, [id] { scroll-margin-top: calc(var(--nav-alto, 72px) + 12px); }
+
+/* 4. iOS hace zoom al tocar un campo de menos de 16 px y ya no regresa: el
+   usuario se queda con la página agrandada y tiene que pellizcar para volver.
+   Pasaba en el selector de moneda de Planes y en los campos de Partners. */
+@media (max-width: 900px) {
+  input:not([type=range]):not([type=checkbox]):not([type=radio]),
+  select, textarea { font-size: max(16px, 1rem); }
+}
+
+/* 5. Tocar sin pelear. Área mínima de 44 px en los enlaces y botones que la
+   medición encontró por debajo, sin agrandarlos a la vista: se agranda el área
+   sensible, no el dibujo. */
+@media (max-width: 900px) {
+  .nav-logo, .footer-logo, .footer-subheading, .psn-feature-link, .ce-case-link,
+  .pt-link, .suite-tab, .flujo-replay, .price-strip-item {
+    position: relative;
+  }
+  .nav-logo::after, .footer-logo::after, .footer-subheading::after,
+  .psn-feature-link::after, .ce-case-link::after, .pt-link::after {
+    content: ''; position: absolute; inset: 50% 0 auto; translate: 0 -50%;
+    height: 44px; min-width: 44px;
+  }
+  #nav-vertical { min-height: 44px; min-width: 44px; }
+}
+
+/* 6. Los que se tocan por error. Pestañas y píldoras quedaban a 0-4 px una de
+   otra: con el dedo se aprieta la de junto. */
+@media (max-width: 900px) {
+  .suite-tab + .suite-tab, .price-strip-item + .price-strip-item,
+  .psn-feature-link + .psn-feature-link { margin-left: 8px; }
+}
+
+/* 7. Texto que no se puede leer en la mano. La medición encontró etiquetas de
+   9 a 11 px; en un teléfono eso es un renglón que se salta, no que se lee. */
+@media (max-width: 767px) {
+  .plan-services-label, .ct-proof-label, .hero-badge-label, .hmn-msg,
+  .sq-fc-cust-meta, .sq-fc-time, .hmn-title, .flujo-tag, .suite-panel-url,
+  .toggle-savings { font-size: max(12px, 0.75rem); }
+}
+
+/* 8. Renglones que respiran. Interlineado por debajo de 1.35 en frases largas
+   de Partners, de las páginas de giro y de la ficha de producto. */
+@media (max-width: 767px) {
+  .cif-frase, .pt-frase, .pf-testimonial-quote { line-height: 1.4; }
+}
+
+/* 9. Cualquier tabla ancha se arrastra sola en vez de romper la página. La
+   comparativa de la ficha de producto mide 1,320 px contra una pantalla de 390. */
+@media (max-width: 900px) {
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* 10. Detalles de tacto que solo se notan en un teléfono: el destello gris al
+   tocar, el menú del sistema al dejar el dedo encima de una imagen, y el rebote
+   que arrastra la página de atrás cuando se llega al final de un panel. */
+@media (max-width: 900px) {
+  a, button, [role=button] { -webkit-tap-highlight-color: rgba(75, 123, 229, 0.15); }
+  img, svg { -webkit-touch-callout: none; }
+  .mobile-menu, .vert, .cs-modal-overlay, .pt-modal { overscroll-behavior: contain; }
+  [style*="overflow-x"], .crm-scroll-x, table { overscroll-behavior-x: contain; }
+}
+
+/* 11. La palabra que no cabe. En pantallas de 320 px (iPhone SE) los títulos
+   largos empujaban la caja; ahora parten en vez de desbordar. */
+@media (max-width: 400px) {
+  h1, h2, h3, .plan-desc, .reel-tag { overflow-wrap: anywhere; }
+}

@@ -11,7 +11,12 @@
 // Cada salto tiene su propio texto porque cada uno se siente distinto: no es
 // lo mismo «no te dio el micrófono» que «el cliente no contestó», y antes las
 // dos se veían igual (la barra simplemente desaparecía).
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
+/* La sala grande de la llamada: vive en su propio chunk porque la mayoría de
+   las sesiones del CRM no hacen ni una llamada, y no tiene por qué viajar en
+   el bundle de todas. */
+const SalaLlamada = lazy(() => import('./SalaLlamada'));
 import { telefonoLegible, telefonoWhatsApp } from '../../../../lib/telefono';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import { C } from './estilo';
@@ -102,6 +107,15 @@ export default function Telefonia() {
   const [nivel, setNivel] = useState(0);            // mejora 2 · cuánto te está oyendo el micrófono
   const [nota, setNota] = useState('');             // mejora 3 · apunte durante la llamada
   const [notaAbierta, setNotaAbierta] = useState(false);
+  /* ══ LA SALA GRANDE ══════════════════════════════════════════════════════
+     Se abre SOLA en cuanto alguien contesta —que es el pedido: «cuando el
+     cliente responda, que me aparezca»— y sólo en escritorio: en el teléfono
+     la pantalla ya la ocupa la llamada y un modal encima tapa los botones.
+     Se puede esconder sin colgar, porque a veces hay que mirar otra cosa
+     mientras hablas. `salaCerrada` recuerda ESA decisión para esta llamada: si
+     no, el efecto la volvería a abrir al siguiente render. */
+  const [salaAbierta, setSalaAbierta] = useState(false);
+  const salaCerrada = useRef(false);
   const [ctx, setCtx] = useState<any>(null);        // mejora 4 · con quién estás hablando
   const esMovil = useIsMobile();
   const wakeRef = useRef<any>(null);
@@ -110,6 +124,10 @@ export default function Telefonia() {
   const notaRef = useRef(''); notaRef.current = nota;
   const deviceRef = useRef<any>(null);
   const vivaRef = useRef<Viva | null>(null); vivaRef.current = viva;
+  useEffect(() => {
+    if (viva?.fase === 'en-linea' && !salaCerrada.current) setSalaAbierta(true);
+    if (!viva) { setSalaAbierta(false); salaCerrada.current = false; }
+  }, [viva?.fase, !!viva]);
   const entranteRef = useRef<any>(null); entranteRef.current = entrante;
   const armandoRef = useRef<Promise<any> | null>(null);   // evita dos Devices a la vez
   const [sala, setSala] = useState<Sala | null>(null);
@@ -898,6 +916,16 @@ export default function Telefonia() {
       )}
 
       {/* ── LLAMADA EN CURSO ─────────────────────────────────────────────── */}
+      {salaAbierta && viva?.fase === 'en-linea' && !esMovil && (
+        <Suspense fallback={null}>
+          <SalaLlamada
+            telefono={viva.telefono || ''} nombre={quien(viva)} segundos={seg}
+            nota={nota} setNota={setNota}
+            mudo={mute} onSilenciar={toggleMute}
+            onColgar={() => { setSalaAbierta(false); colgar(); }}
+            onCerrar={() => { salaCerrada.current = true; setSalaAbierta(false); }} />
+        </Suspense>
+      )}
       {viva && (
         <div style={tarjeta}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>

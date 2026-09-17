@@ -38,9 +38,46 @@ export const GET: APIRoute = async ({ request, url }) => {
       .order('started_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
 
+  /* ══ LO QUE LA SALA DE LA LLAMADA NECESITA VER ═══════════════════════════
+     Pedido del dueño (17-sep-2026): «cuando el cliente responda, que me
+     aparezca un modal bonito y grande con el contexto de lo que se ha hablado,
+     las sucursales, la marca en grande, si hemos tenido otras llamadas
+     anteriormente, y la parte de agendar viendo los horarios disponibles».
+
+     Todo eso se pide DE UNA VEZ y no en cinco llamadas desde la pantalla: el
+     modal se abre en el segundo en que alguien contesta, y cinco viajes a la
+     red ahí son cinco huecos en blanco justo cuando hay que hablar. */
+  const cid = (conv as any).contact_id;
+  const [{ data: ficha }, { data: msjs }, { data: previas }] = await Promise.all([
+    cid ? supabase.from('contacts')
+      .select('marca, giro, sucursales_interes, puesto, propiedades, companies(nombre_comercial, nombre, sucursales, giro, sitio_web, ciudad)')
+      .eq('id', cid).maybeSingle() : Promise.resolve({ data: null as any }),
+    // Los últimos mensajes, tal cual: llamar sin saber qué se le acaba de
+    // escribir es cómo uno se contradice a los diez segundos.
+    supabase.from('wa_mensajes').select('direccion, cuerpo, tipo, created_at')
+      .eq('conversation_id', (conv as any).id).order('created_at', { ascending: false }).limit(8),
+    // Las llamadas anteriores con su desenlace, no sólo el conteo: «la última
+    // cayó al buzón» y «la última habló 6 minutos» piden saludos distintos.
+    supabase.from('wa_llamadas').select('estado, direccion, duracion_seg, started_at, minuta, resultado')
+      .eq('conversation_id', (conv as any).id).eq('canal', 'telefono')
+      .order('started_at', { ascending: false }).limit(6),
+  ]);
+  const emp: any = (ficha as any)?.companies || null;
+
   const u: any = ultima;
   return json({
     hay: true,
+    contactId: cid || null,
+    /* La marca en grande es lo primero que pidió: es lo que dice en voz alta
+       quien contesta, y equivocarla en el saludo cuesta la llamada. */
+    marca: (ficha as any)?.marca || emp?.nombre_comercial || emp?.nombre || null,
+    giro: (ficha as any)?.giro || emp?.giro || null,
+    puesto: (ficha as any)?.puesto || null,
+    ciudad: emp?.ciudad || null,
+    sitio: emp?.sitio_web || null,
+    sucursales: emp?.sucursales ?? (ficha as any)?.sucursales_interes ?? null,
+    mensajes: (msjs || []).reverse(),
+    previas: previas || [],
     conversationId: (conv as any).id,
     nombre: c?.nombre ? `${c.nombre} ${c.apellido || ''}`.trim() : null,
     empresa: e ? (e.nombre_comercial || e.nombre) : null,
