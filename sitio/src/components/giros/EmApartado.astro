@@ -111,9 +111,10 @@ import BloqueProducto from '../BloqueProducto.astro';
       $('em-num').textContent = pesos(perdidas * margen);
       // Cuatro recordatorios de minuto y medio por cada apartado que no cerró.
       const horas = ((mueren / 10) * APARTADOS * 4 * 1.5) / 60;
+      const ent = Math.round(horas), mins = Math.round((horas % 1) * 60);
       const textoH = horas < 1 ? `${Math.round(horas * 60)} minutos`
-        : Math.abs(horas - Math.round(horas)) < 0.1 ? `${Math.round(horas)} horas`
-        : `${Math.floor(horas)} horas y ${Math.round((horas % 1) * 60)} minutos`;
+        : Math.abs(horas - ent) < 0.1 ? (ent === 1 ? 'una hora' : `${ent} horas`)
+        : `${Math.floor(horas)} ${Math.floor(horas) === 1 ? 'hora' : 'horas'} y ${mins} minutos`;
       $('em-horas').innerHTML = `y <b>${textoH}</b> al mes contestando «¿ya depositaste?».`;
       $('em-blusas').innerHTML = Array.from({ length: 10 }, (_, i) => {
         const cls = i < pagan ? 'pago' : i === pagan && pagan < 10 ? 'espera' : 'muerta';
