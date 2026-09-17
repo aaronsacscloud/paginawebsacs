@@ -52,6 +52,11 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
   { tipo: 'metricas.calcular',   prioridad: 52 },
   { tipo: 'atribucion.procesar', prioridad: 50 },
   { tipo: 'aprender.evaluar',    prioridad: 48 },
+  /* La revisión de autonomía va al FINAL del ciclo y todos los días, no solo el
+     mensual. La parte que baja el nivel es automática: un freno que hay que
+     acordarse de pisar no es un freno, y catorce días es demasiado tiempo para
+     que un tipo de acción que el dueño viene rechazando siga corriendo solo. */
+  { tipo: 'autonomia.revisar',   prioridad: 47 },
   { tipo: 'aprender.recalibrar', prioridad: 46, solo: ['mensual'] },
 ];
 

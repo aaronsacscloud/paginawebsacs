@@ -784,3 +784,96 @@ saberlo al leer los conteos pequeños.)
 2. Recalibración de pesos con lo aprendido.
 3. Experimentos (A/B de títulos y formatos).
 4. Demand Capture Score.
+
+
+---
+
+## Etapa 6 · parte A hecha (17-sep-2026) — la rampa de autonomía
+
+La pregunta de esta etapa no es técnica: **¿cómo se gana un sistema el derecho a
+hacer más cosas solo?**
+
+### La asimetría, que es lo único importante
+
+- **BAJAR es automático.** Dos rechazos del dueño del mismo tipo en 14 días y
+  ese tipo pierde autonomía al instante, sin preguntar. Corre dentro del ciclo
+  diario: un freno que hay que acordarse de pisar no es un freno.
+- **SUBIR solo se PROPONE.** El motor reúne la evidencia y la enseña; el permiso
+  lo da una persona con un clic.
+
+Un sistema que se otorga permisos a sí mismo no es autónomo, es un sistema sin
+frenos con buena prensa. Y la asimetría no es timidez, es aritmética: equivocarse
+bajando cuesta unas aprobaciones de más; equivocarse subiendo cuesta que el
+motor publique en un sitio real algo que nadie quería — y eso se paga en
+confianza, que es lo que más tarda en volver.
+
+### Los criterios (`src/lib/demanda/autonomia.ts`)
+
+Se evalúa **tipo por tipo**, no en bloque: subir la autonomía global de golpe
+mezcla lo que el motor ya hace bien (agrupar señales) con lo que apenas empieza
+(publicar), y el permiso acaba concedido por el promedio de dos cosas que no se
+parecen.
+
+1. **Ningún rechazo del dueño en 14 días.** Es el que más pesa: el único que
+   mide si el CRITERIO del motor coincide con el de la persona, y no solo si el
+   código no truena.
+2. **Al menos 5 aprobaciones del dueño.** Cero rechazos sobre cero decisiones no
+   es buen historial, es un historial VACÍO — y confundir las dos cosas es
+   exactamente cómo un sistema se sube solo.
+3. **Menos del 10% de corridas muertas**, sobre un mínimo de 10 corridas.
+4. Para contenido, lo que fijó el plan (tarea 6.1): **20 publicaciones seguidas
+   con auditoría ≥ 9** (se toma la PEOR nota de cada una, no el promedio) y
+   **ninguna retirada**.
+
+Las políticas `inmutable` y las de riesgo `CRITICAL` quedan fuera de la rampa:
+si bastara con portarse bien un rato para quitarse los frenos, no serían frenos.
+`autonomia.revisar` es ella misma inmutable.
+
+### El candado del servidor
+
+`POST /api/crm/demanda/ajustes` con `conceder_autonomia` **vuelve a calcular la
+evidencia en el servidor** antes de conceder. Un permiso concedido sobre una
+lista que mandó el cliente es un permiso concedido por el cliente.
+
+Probado: conceder algo no ganado → 409 con lo que falta; conceder un guardrail →
+403; conceder un tipo inventado → 400. Cero políticas cambiadas.
+
+### Probado de punta a punta
+
+Se simularon dos rechazos de `contenido.borrador`:
+
+    bajó solo: nivel 2 → 3
+    y con la autonomía global en 2, ese tipo pasó a nacer «necesita_aprobacion»
+
+Datos de prueba borrados y política restaurada a 2.
+
+### Dónde va hoy
+
+Ningún tipo se ha ganado subir, y la pantalla dice por qué: **el dueño no ha
+aprobado nada todavía** (0 aprobaciones de las 2 que esperan) y falta historial.
+Es la respuesta correcta, no un bloqueo.
+
+Pantalla: CRM → Motor de demanda → Sistema → Ajustes
+https://code.sacscloud.com/shots/33e793e84f582e70.png
+
+### Un estorbo local que cuesta tres minutos cada vez
+
+El segundo `astro build` seguido en esta máquina falla siempre con
+`EEXIST: mkdir '.vercel/output/server/'`. **No es un bug del código**: el
+adaptador de Vercel hace `mkdirSync` sin `recursive` sobre el directorio que
+dejó el build anterior. En el CI de Vercel nunca pasa porque cada build arranca
+en limpio; en local pasa uno de cada dos.
+
+La compilación en sí ya terminó cuando esto revienta —el log dice
+`Rearranging server assets ✓`— así que es puro tiempo perdido diagnosticando
+algo que no está roto.
+
+**Usa `npm run build:local`**, que borra `.vercel/output` antes. Tres minutos
+por build, y ya lo pagué dos veces en esta sesión.
+
+### Lo que sigue
+
+1. Latido y autodiagnóstico (el motor avisa cuando se queda callado).
+2. Modo simulación de punta a punta.
+3. Manual del motor.
+4. Operador de código automático.

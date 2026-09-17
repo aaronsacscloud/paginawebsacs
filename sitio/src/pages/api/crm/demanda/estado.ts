@@ -44,9 +44,22 @@ export const GET: APIRoute = async () => {
         impacto: k.impacto, construido: registrados.includes(`ingerir.${k.id}`),
       }));
 
+    /* La rampa entra en el mismo viaje que todo lo demás.
+       Que la pantalla Sistema enseñe la autonomía sin enseñar qué falta para
+       la siguiente deja al dueño con un número —«nivel 2»— y sin la pregunta
+       útil, que es: ¿qué tendría que pasar para que sea 3? */
+    const { evaluar } = await import('../../../../lib/demanda/autonomia');
+    const rampa = await evaluar().catch(e => {
+      // Que la rampa falle no puede dejar sin pantalla al dueño: Sistema es
+      // donde se mira si el motor está vivo, y también donde está el apagador.
+      console.error(`[estado] la rampa de autonomía no se pudo evaluar: ${e?.message}`);
+      return [];
+    });
+
     return json({
       ok: true,
       config: cfg,
+      rampa,
       presupuesto: pres,
       cola,
       ciclos: ciclos.data || [],

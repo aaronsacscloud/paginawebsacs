@@ -61,5 +61,37 @@ export const POST: APIRoute = async ({ request }) => {
     return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
   }
 
+  /* CONCEDER AUTONOMÍA · el clic del dueño sobre lo que el motor se ganó.
+     Se podría hacer con `body.politica` cambiando el nivel a mano, y por eso
+     esto existe aparte: aquí la evidencia se vuelve a calcular EN EL SERVIDOR
+     antes de conceder. Si el cliente pide subir un tipo que no cumple los
+     criterios, se rechaza — aunque la pantalla lo haya enseñado como ganado
+     hace diez minutos y el historial haya cambiado desde entonces.
+
+     Un permiso concedido sobre una lista que el cliente mandó es un permiso
+     concedido por el cliente. */
+  if (body.conceder_autonomia?.tipo_accion) {
+    const tipo = String(body.conceder_autonomia.tipo_accion);
+    const { evaluar } = await import('../../../../lib/demanda/autonomia');
+    const propuestas = await evaluar();
+    const p = propuestas.find(x => x.tipo_accion === tipo);
+
+    if (!p) return json({ ok: false, error: `«${tipo}» no es un tipo que pueda subir de nivel.` }, 400);
+    if (p.inmutable) return json({ ok: false, error: 'Esta política es un guardrail: no se toca desde aquí.' }, 403);
+    if (!p.se_lo_gano) {
+      const faltan = p.criterios.filter(c => !c.cumple).map(c => `${c.que} (${c.medido})`);
+      return json({ ok: false, error: `Todavía no se lo gana. Falta: ${faltan.join('; ')}.` }, 409);
+    }
+
+    const { error } = await supabase.from('de_politicas').update({
+      nivel: p.nivel_propuesto,
+      notas: `Subió por evidencia el ${new Date().toISOString().slice(0, 10)}: ${p.criterios.map(c => c.medido).join(' · ')}. Concedido por ${user?.email || 'el dueño'}.`,
+      actualizado_at: new Date().toISOString(),
+    }).eq('tipo_accion', tipo).eq('inmutable', false);
+
+    if (error) return json({ ok: false, error: error.message }, 500);
+    return json({ ok: true, tipo_accion: tipo, nivel: p.nivel_propuesto });
+  }
+
   return json({ ok: false, error: 'nada que guardar' }, 400);
 };

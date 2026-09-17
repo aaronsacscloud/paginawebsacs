@@ -219,6 +219,57 @@ export default function DemandaSistema() {
 
       {vista === 'ajustes' ? (
         <>
+          {/* LA RAMPA · va ANTES del selector de autonomía a propósito.
+              El selector contesta «¿en qué nivel estoy?»; la rampa contesta la
+              pregunta útil, que es «¿qué tendría que pasar para subir?». Verlas
+              en el orden contrario invita a mover el selector a ojo, que es
+              justo lo que estos criterios existen para evitar. */}
+          <Seccion titulo="Qué se ha ganado el motor"
+            aparte={<span style={{ fontSize: 12.5, color: P.suave }}>baja solo · sube solo si tú lo concedes</span>}>
+            <Tarjeta>
+              <p style={{ margin: '0 0 12px', fontSize: 12.5, color: P.suave, lineHeight: 1.6, maxWidth: '70ch' }}>
+                Si rechazas dos cosas del mismo tipo en 14 días, ese tipo <strong>pierde autonomía
+                solo y sin preguntar</strong>. Para subir, en cambio, el motor reúne la evidencia y
+                te la enseña: el permiso lo das tú. Equivocarse bajando cuesta unas aprobaciones de
+                más; equivocarse subiendo cuesta que publique algo que nadie quería.
+              </p>
+              {!(e.rampa || []).length ? (
+                <div style={{ fontSize: 13.5, color: P.suave }}>Nada evaluable todavía.</div>
+              ) : (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {(e.rampa || []).slice(0, 8).map((r: any) => (
+                    <div key={r.tipo_accion} style={{
+                      border: `1px solid ${r.se_lo_gano ? P.verdeTinta : P.lineaSuave}`,
+                      borderRadius: 9, padding: '10px 12px',
+                      background: r.se_lo_gano ? P.verdeAgua : 'transparent',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: P.tinta }}>
+                          {r.tipo_accion}
+                          <span style={{ color: P.suave, fontWeight: 400 }}> · pide nivel {r.nivel_actual} → {r.nivel_propuesto}</span>
+                        </div>
+                        {r.se_lo_gano ? (
+                          <button disabled={ocupado} style={btn(true)}
+                            onClick={() => guardar({ conceder_autonomia: { tipo_accion: r.tipo_accion } })}>
+                            Concederlo
+                          </button>
+                        ) : null}
+                      </div>
+                      <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 3 }}>
+                        {r.criterios.map((c: any, i: number) => (
+                          <li key={i} style={{ fontSize: 12.5, color: c.cumple ? P.verdeTinta : P.suave, display: 'flex', gap: 7 }}>
+                            <span style={{ fontWeight: 700 }}>{c.cumple ? '✓' : '·'}</span>
+                            <span>{c.que} — <span style={{ color: P.tenue }}>{c.medido}</span></span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Tarjeta>
+          </Seccion>
+
           <Seccion titulo="Cómo se comporta">
             <Tarjeta>
               <label style={{ display: 'block', fontSize: 13, color: P.texto, fontWeight: 600 }}>Autonomía</label>

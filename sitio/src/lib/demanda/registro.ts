@@ -20,5 +20,6 @@ import './competidores';
 import './evaluar';
 import './score';
 import './oportunidades';
+import './autonomia';
 
 export { hayHandler, handlerDe, tiposRegistrados } from './handlers';
