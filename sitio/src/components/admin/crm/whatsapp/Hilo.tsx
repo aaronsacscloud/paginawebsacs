@@ -50,6 +50,26 @@ const memoriaScroll = new Map<string, number>();
 
    Se arma desde LIFECYCLE y no a mano: era la segunda lista de etapas del
    sistema y ya se había separado del catálogo en el orden. */
+/* LOS CUATRO CONTROLES DE LA CABECERA SE VEN IGUAL.
+   Asignado, agente, etapa y estado son cuatro cosas del mismo rango —cuatro
+   cosas que decides sobre esta conversación— y se veían como cuatro cosas de
+   familias distintas: dos píldoras de radio 999 y dos selects de radio 8, con
+   tres tamaños de letra, dos pesos y cuatro paddings. Juntos parecían un
+   montón de controles, no una fila.
+
+   Aquí van con una sola forma y un solo tamaño. El color deja de ser adorno:
+   en reposo la fila entera es blanca y gris, y sólo se enciende lo que
+   significa algo —la etapa (su pastel), «Pendiente» (ámbar) y el agente
+   cuando NO está observando—. */
+const CTL: any = {
+  height: 28, borderRadius: 999, border: '1px solid', borderColor: '#e6e6ea',
+  background: '#fff', color: '#6b7280',
+  fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit',
+  padding: '0 11px', cursor: 'pointer', whiteSpace: 'nowrap',
+  minWidth: 118, maxWidth: 172, flex: '0 1 auto',
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+};
+
 const NO_MANUALES = new Set(['cliente', 'evangelista']);
 const ETAPAS_INBOX = LIFECYCLE.map(e => ({ id: e.id, label: e.label, bloqueada: NO_MANUALES.has(e.id) }));
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir, ancla }: {
@@ -435,14 +455,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               legible, lo que se recorta es la pastilla —que se puede deducir—,
               no el nombre de la persona. */}
           <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: mobile ? 0 : 90, maxWidth: mobile ? undefined : 260, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
-          {/* La etapa iba en píldora rellena, y entre ella, el agente, el
-              estado y la ventana el encabezado tenía cuatro colores fuertes
-              compitiendo con el nombre del cliente. El color de la etapa se
-              queda en el punto; la palabra, en gris. */}
+          {/* LA ETAPA YA NO SE ESCRIBE AQUÍ. El selector del renglón de abajo
+              dice la misma palabra, a cuatro centímetros: «● Nuevo lead» junto
+              al nombre y «Nuevo lead» debajo. Queda sólo el punto de color, que
+              es lo que sí aporta —se lee de reojo sin ocupar ancho— y deja de
+              empujar al nombre del cliente. */}
           {etapa && !mobile && (
-            <span title={`Etapa: ${etapa.label}`} style={{ fontSize: 10, color: C.g500, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, flexShrink: 0 }} />{etapa.label}
-            </span>
+            <span title={`Etapa: ${etapa.label}`} style={{ width: 7, height: 7, borderRadius: 999, background: etapa.fg, flexShrink: 0 }} />
           )}
           {hilo?.web_en_vivo && !mobile && (
             <span title={`Está viendo ${hilo.web_en_vivo} en este momento: es EL mejor momento para escribirle`}
@@ -547,13 +566,30 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               : <>{urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min</>}
           </span>;
         })()}
+        {/* ══ EL SEGUNDO RENGLÓN, EN SU PROPIO CARRIL ══════════════════════
+            Los cuatro controles estaban sueltos en el flex que envuelve, así
+            que el corte caía donde tocara: en pantalla real quedaban tres
+            arriba y «Abierta» sola en un tercer renglón, con hueco al lado.
+            Metidos en un carril que ocupa la línea entera (`flexBasis:100%`),
+            el encabezado son SIEMPRE dos renglones: arriba quién es y hasta
+            cuándo puedes escribirle; abajo las cuatro cosas que decides.
+            En móvil el carril desaparece (`display:contents`): ahí el
+            encabezado no envuelve y sólo se pinta la píldora del agente. */}
+        <span style={mobile
+          ? { display: 'contents' }
+          : { flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
         {conv.id && !mobile && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
           /* Estos dos SÍ se encogen. El orden de quién cede es a propósito:
              primero los selects, que se leen igual acortados; después el
              nombre, que ya lleva puntos suspensivos; el contador nunca, porque
              a medias no sirve de nada. */
-          style={{ border: `1px solid ${esAgente ? C.morado : C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: esAgente ? C.moradoAgua : '#fff', color: esAgente ? C.morado : C.g500, fontWeight: esAgente ? 800 : undefined, maxWidth: mobile ? 78 : 110, minWidth: 74, flexShrink: 1, cursor: 'pointer' }}>
+          /* Iba en morado RELLENO cuando la conversación es del Agente IA, y
+             justo al lado va la píldora del agente: dos controles gritando lo
+             mismo con dos colores distintos. Queda la letra en tinta morada y
+             nada más — se sigue viendo de un vistazo sin ser el bloque más
+             brillante del encabezado. */
+          style={{ ...CTL, ...(mobile ? { maxWidth: 88, minWidth: 74 } : null), ...(esAgente ? { color: C.moradoTinta, fontWeight: 800 } : null) }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
@@ -571,10 +607,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {conv.id && conv.contact_id && !mobile && <select value={etapaId || ''} onChange={e => cambiarEtapa(e.target.value)}
           aria-label="Etapa del ciclo de vida" title="Etapa del ciclo de vida"
           disabled={etapaOcupada}
+          /* El único de los cuatro que se pinta siempre: la etapa es el dato
+             que cambia cómo se trata a esta persona. Pastel en la forma, tinta
+             en la palabra — la regla de la casa. */
           style={{
-            border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
-            fontFamily: 'inherit', cursor: etapaOcupada ? 'wait' : 'pointer', flexShrink: 1,
-            minWidth: 92, maxWidth: 124, opacity: etapaOcupada ? .6 : 1,
+            ...CTL, cursor: etapaOcupada ? 'wait' : 'pointer', opacity: etapaOcupada ? .6 : 1,
             borderColor: colorEtapa.bg === '#f4f4f6' ? C.g200 : colorEtapa.bg,
             background: colorEtapa.bg, color: colorEtapa.fg,
           }}>
@@ -592,19 +629,19 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
-            border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
-            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, minWidth: 96, maxWidth: mobile ? 84 : undefined,
+            ...CTL,
             /* Solo «Pendiente» lleva color: es el único estado que pide algo.
                «Resuelta» en verde era celebrar en el encabezado algo que ya no
                necesita tu atención, y competía con el nombre del cliente. */
-            borderColor: conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
-            background: conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
-            color: conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
+            ...(conv.estado_crm === 'pendiente'
+              ? { borderColor: C.ambar200, background: C.ambar50, color: C.ambar700 }
+              : null),
           }}>
           <option value="abierta">Abierta</option>
           <option value="pendiente">Pendiente</option>
           <option value="resuelta">Resuelta</option>
         </select>}
+        </span>
 
         {/* Acciones (cotizar, agendar) a un toque: en el teléfono estaban
             enterradas dentro de la ficha, y son lo que se hace DURANTE la
@@ -1316,12 +1353,19 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
      confundiría. */
   if (e.en_alcance === false) {
     return (
-      <span title={e.fuera_motivo || 'El agente de ventas no atiende esta etapa'} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${C.g200}`, background: C.g50, color: C.g500, borderRadius: 999, padding: mobile ? '3px 8px' : '5px 12px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+      <span title={e.fuera_motivo || 'El agente de ventas no atiende esta etapa'} style={{ ...CTL, cursor: 'default', background: C.g50 }}>
         <span style={{ width: 7, height: 7, borderRadius: 99, background: C.g300, flexShrink: 0 }} />Sin agente
       </span>
     );
   }
-  const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' } : e.estado === 'observando' ? { bg: '#f3f4f6', fg: '#4a4658', bd: '#e5e7eb' } : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
+  /* «Observando» es el estado NORMAL —el agente mira y no manda—, así que se
+     queda en blanco como los otros tres controles. Sólo se pinta lo que no es
+     lo de siempre: morado cuando contesta solo, rojo cuando está apagado aquí.
+     Antes los tres llevaban fondo, y una fila de cuatro bloques de color en el
+     encabezado hace que ninguno destaque. */
+  const col = e.estado === 'activo' ? { bg: '#EEECFE', fg: '#4c1d95', bd: '#c9c1ea' }
+    : e.estado === 'observando' ? { bg: '#fff', fg: '#6b7280', bd: '#e6e6ea' }
+    : { bg: '#fff1f2', fg: '#7f1d1d', bd: '#fecdd3' };
   const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : e.entrenando ? 'Agente IA en entrenamiento' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
   /* YA NO se encoge. Antes cedía espacio como los selects y acababa en «● I»
@@ -1330,8 +1374,8 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
      necesitas saber antes de escribirle a este lead. El header ahora envuelve,
      así que hay dónde ponerlo entero. */
   return (
-    <span style={{ position: 'relative', flexShrink: 0 }}>
-      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+    <span style={{ position: 'relative', flex: '0 1 auto', minWidth: 118, maxWidth: 172 }}>
+      <button onClick={() => setAbierto(a => !a)} title={label} style={{ ...CTL, borderColor: col.bd, background: col.bg, color: col.fg, justifyContent: 'center', width: '100%' }}>
         <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
       </button>
       {abierto && (

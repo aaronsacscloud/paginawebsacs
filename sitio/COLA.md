@@ -547,3 +547,29 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
       ofrecía desde las 09:00. Ahora 12:00–18:00 L-V, verificado contra el
       agendador público. ⚠️ Quedan 2 reuniones reales ya agendadas antes de las
       12 (Grecia 18-sep 10:00, Jose 18-sep 11:15) — no se tocaron.
+
+## 17-sep-2026 — Etapas de «Perdido» (APROBADO por el dueño)
+
+> «ok adelante con esto» — sobre el plan de tres cajones:
+>
+> **Etapa — lo que se decide (3 cajones, no 4):**
+> - `churned` → Perdido · se fue, la puerta sigue abierta
+> - `en_conciliacion` → Perdido · en conciliación · aceptó sentarse
+> - `perdido_definitivo` → Perdido · definitivo · dijo que no; no se le vuelve a escribir
+>
+> **Derivado — lo que pasa (sin trabajo humano):**
+> - «Sin respuesta al proceso» = tiene carta `enviada` hace ≥7 días sin contestar
+>   → columna y filtro en Churn, más la tarea del día. Siempre correcto, cero
+>   mantenimiento. Visualmente lo ves como un cajón más; el dato no se parte.
+>
+> **Lo que hay que conectar para que sirva de algo:**
+> 1. Un solo sitio que diga «a estos no se les toca»: winback, ABM, secuencias y
+>    el agente lo consultan. Hoy cada uno decide por su cuenta.
+> 2. `perdido_definitivo` se pone solo en tres momentos: rechaza la carta de
+>    conciliación (ya lo detecto), aprieta «no me interesa» siendo `churned`, o a
+>    mano desde el selector.
+> 3. Que la parada sea por «dijo que no» y no por «respondió» — es lo que separa
+>    a Mónica de Ezequiel.
+
+Llegó mientras estaba ordenando los selectores de la cabecera del hilo. Se toma
+en cuanto eso quede cerrado y verificado.
