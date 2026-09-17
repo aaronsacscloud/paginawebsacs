@@ -22,7 +22,18 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 const ETAPAS_MANUALES = new Set([
   'lead', 'lead_calificado', 'oportunidad', 'en_conciliacion',
   'rezagado', 'churned', 'perdido_definitivo', 'descalificado', 'suscriptor',
+  /* `cliente` SÍ se puede poner a mano, pero sólo con cuenta detrás — ver
+     abajo. El problema nunca fue marcar cliente: fue marcarlo suelto, sin
+     empresa, que es lo que descuadra el ARR. Con la cuenta ligada, el número
+     sigue cuadrando y se ahorra el rodeo de tres pantallas. (Pedido del dueño,
+     17-sep-2026: «que me pida si relacionarlo o crear uno nuevo».) */
+  'cliente',
 ]);
+
+/* Las que NO se sostienen solas: exigen una empresa a la que colgarlas.
+   `evangelista` se queda fuera del catálogo manual entero: eso lo gana el
+   cliente con el tiempo, no se decide en una conversación. */
+const ETAPAS_CON_CUENTA = new Set(['cliente']);
 
 /* Entrar aquí significa «ya lo lleva una persona»: se apagan los automatismos.
    `en_conciliacion` es el caso que lo pidió —un perdido que aceptó negociar no
@@ -76,8 +87,22 @@ export const POST: APIRoute = async ({ request }) => {
   const etapa = String(b.etapa || '').trim();
   if (!ETAPAS_MANUALES.has(etapa)) return json({ error: 'Esa etapa no se puede poner desde aquí' }, 400);
 
-  const { error } = await supabase.from('contacts')
-    .update({ lifecycle_stage: etapa, updated_at: ahora }).eq('id', contactId);
+  /* LA PUERTA DEL ARR. Si la etapa exige cuenta, o viene una en el cuerpo o el
+     contacto ya tiene la suya. Un «cliente» sin empresa no aparece en ningún
+     informe de ARR, y un número que no cuadra es peor que un dato que falta:
+     el que falta se nota. */
+  let parche: any = { lifecycle_stage: etapa, updated_at: ahora };
+  if (ETAPAS_CON_CUENTA.has(etapa)) {
+    const { data: ct } = await supabase.from('contacts').select('company_id').eq('id', contactId).maybeSingle();
+    const compId = b.company_id || ct?.company_id || null;
+    if (!compId) return json({ error: 'Para marcarlo como cliente hace falta la cuenta: relaciónalo con una que ya exista o crea una nueva.', falta: 'company_id' }, 400);
+    const { data: co } = await supabase.from('companies').select('id').eq('id', compId).maybeSingle();
+    if (!co) return json({ error: 'Esa cuenta no existe.', falta: 'company_id' }, 400);
+    parche.company_id = compId;
+    parche.tipo = 'cliente';
+  }
+
+  const { error } = await supabase.from('contacts').update(parche).eq('id', contactId);
   if (error) return json({ error: error.message }, 500);
 
   /* Apagar los automatismos es parte del cambio, no un paso aparte que alguien

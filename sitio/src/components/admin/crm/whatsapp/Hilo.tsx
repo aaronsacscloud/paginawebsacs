@@ -134,12 +134,22 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   useEffect(() => { setEtapaLocal(null); }, [conv?.id]);
   const etapaId: string | null = etapaLocal ?? (conv as any)?.contacts?.lifecycle_stage ?? null;
   const colorEtapa: any = lifecycleDe(etapaId) || { bg: '#f4f4f6', fg: '#6B7280' };
-  const cambiarEtapa = async (nueva: string) => {
+  /* «CLIENTE» PIDE CUENTA ANTES DE PONERSE.
+     Pedido del dueño (17-sep-2026): «quiero relacionar este contacto a un
+     cliente que ya existe, entonces me debería dejar ponerlo en Cliente y que
+     me pida si relacionarlo o crear uno nuevo, y cada uno con su flujo».
+     Desmonta la objeción original, y con razón: el problema nunca fue marcar
+     cliente, fue marcarlo SUELTO —sin empresa no aparece en ningún informe de
+     ARR—. Con la cuenta ligada el número cuadra igual y se ahorra el rodeo de
+     tres pantallas. Si el contacto YA tiene empresa, no se pregunta nada. */
+  const [pideCuenta, setPideCuenta] = useState(false);
+  const cambiarEtapa = async (nueva: string, companyId?: string) => {
     if (!nueva || nueva === etapaId) return;
+    if (nueva === 'cliente' && !companyId && !(conv as any)?.contacts?.company_id && !(conv as any)?.company_id) { setPideCuenta(true); return; }
     setEtapaOcupada(true);
     const r = await fetch('/api/crm/whatsapp/etapa', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accion: 'etapa', id: conv?.id, contact_id: conv?.contact_id, etapa: nueva }),
+      body: JSON.stringify({ accion: 'etapa', id: conv?.id, contact_id: conv?.contact_id, etapa: nueva, company_id: companyId }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setEtapaOcupada(false);
     if (r?.error) { alert(r.error); return; }
@@ -1024,6 +1034,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           convId={conv.id} equipo={equipo} yoId={hilo?.yo?.id || null} asignadoA={conv.asignado_a}
           onAsignar={(id: string) => api.patchConversacion({ asignado_a: id })} />
       )}
+      {pideCuenta && (
+        <LigarCuenta nombre={nombre} onCerrar={() => setPideCuenta(false)}
+          onElegida={(id: string) => { setPideCuenta(false); cambiarEtapa('cliente', id); }} />
+      )}
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string, forzar?: boolean) => {
         const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota, ...(forzar ? { forzar: true } : {}) });
         if (!r?.error) setCierre(false);
@@ -1168,6 +1182,87 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
 }
 
 /** Modal de cierre: categoría obligatoria + nota opcional (alimenta métricas). */
+/* ══ «CLIENTE»: RELACIONAR O CREAR ════════════════════════════════════════
+   Los dos flujos que pidió el dueño, en una sola pantalla y sin salir del
+   hilo. Buscar va primero y por mucho —el caso normal es que la cuenta YA
+   exista y el error caro es crear la segunda «Lily Boutique»—; crear vive
+   debajo, como salida cuando de verdad no está.
+
+   El buscador es el mismo de las cotizaciones (`/api/crm/buscar-cliente`): un
+   solo sitio donde se busca una cuenta en todo el CRM. Dos buscadores con
+   criterios distintos terminan encontrando cosas distintas para la misma
+   palabra, y ahí es donde nacen los duplicados. */
+function LigarCuenta({ nombre, onCerrar, onElegida }: { nombre: string | null; onCerrar: () => void; onElegida: (companyId: string) => void }) {
+  const [q, setQ] = useState('');
+  const [res, setRes] = useState<any[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [nueva, setNueva] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    const t = String(q).trim();
+    if (t.length < 2) { setRes([]); return; }
+    // 300 ms: teclear «boutique» son ocho consultas si se busca por letra.
+    const id = setTimeout(() => {
+      setBuscando(true);
+      fetch(`/api/crm/buscar-cliente?q=${encodeURIComponent(t)}`).then(r => r.json())
+        .then(j => setRes((j.resultados || []).filter((x: any) => x.company_id).slice(0, 8)))
+        .catch(() => setRes([])).finally(() => setBuscando(false));
+    }, 300);
+    return () => clearTimeout(id);
+  }, [q]);
+  const crear = async () => {
+    const n = nueva.trim();
+    if (n.length < 2) { setErr('Ponle nombre a la cuenta.'); return; }
+    setOcupado(true); setErr('');
+    const r = await fetch('/api/crm/buscar-cliente', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empresa: n, es_cliente: true }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r?.error || !r?.company_id) { setErr(r?.error || 'No se pudo crear la cuenta.'); return; }
+    onElegida(r.company_id);
+  };
+  const campo: any = { width: '100%', border: `1px solid ${C.g200}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
+  return (
+    <>
+      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.32)', zIndex: 900 }} />
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(460px, 94vw)', maxHeight: '86vh', overflowY: 'auto', background: '#fff', borderRadius: 16, zIndex: 901, padding: 20, boxShadow: '0 18px 50px rgba(16,24,40,.22)' }}>
+        <b style={{ fontSize: 15 }}>¿De qué cuenta es {nombre ? nombre.split(' ')[0] : 'este contacto'}?</b>
+        <p style={{ fontSize: 12, color: C.g500, margin: '6px 0 14px', lineHeight: 1.5 }}>
+          Un cliente sin cuenta no aparece en el ARR. Relaciónalo con la que ya existe —lo normal— o crea una nueva.
+        </p>
+
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999' }}>Buscar la cuenta</span>
+        <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Nombre de la tienda o del cliente…" style={{ ...campo, marginTop: 5 }} />
+        <div style={{ display: 'grid', gap: 5, marginTop: 8 }}>
+          {buscando && <span style={{ fontSize: 11.5, color: C.g400 }}>Buscando…</span>}
+          {!buscando && q.trim().length >= 2 && !res.length && <span style={{ fontSize: 11.5, color: C.g400 }}>Ninguna cuenta con ese nombre. Créala abajo.</span>}
+          {res.map((x: any) => (
+            <button key={x.company_id} onClick={() => onElegida(x.company_id)}
+              style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 9, padding: '9px 11px' }}>
+              <b style={{ fontSize: 13 }}>{x.empresa || x.nombre}</b>
+              {/* La clase importa: ligarlo a un EXCLIENTE no es lo mismo que a
+                  una cuenta viva, y saberlo antes de tocar evita deshacerlo. */}
+              <span style={{ fontSize: 11, color: C.g500, marginLeft: 6 }}>{x.clase === 'excliente' ? 'excliente' : x.clase}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ borderTop: `1px solid ${C.g100}`, margin: '16px 0 12px' }} />
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999' }}>O crear una cuenta nueva</span>
+        <input value={nueva} onChange={e => setNueva(e.target.value)} placeholder="Nombre de la cuenta" style={{ ...campo, marginTop: 5 }} />
+        <button onClick={crear} disabled={ocupado || nueva.trim().length < 2}
+          style={{ width: '100%', marginTop: 9, border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: nueva.trim().length >= 2 ? 'pointer' : 'default', background: nueva.trim().length >= 2 ? C.morado : C.g200, color: '#fff' }}>
+          {ocupado ? 'Creando…' : 'Crear la cuenta y marcarlo cliente'}
+        </button>
+        {err && <p style={{ fontSize: 11.5, color: '#C0554E', margin: '8px 0 0' }}>{err}</p>}
+        <button onClick={onCerrar} style={{ width: '100%', marginTop: 8, border: 'none', background: 'none', color: C.g500, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', padding: 6 }}>Cancelar</button>
+      </div>
+    </>
+  );
+}
+
 function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolver: (categoria: string, nota: string, forzar?: boolean) => Promise<any> }) {
   const [cats, setCats] = useState<{ id: number; nombre: string }[]>([]);
   const [cat, setCat] = useState('');

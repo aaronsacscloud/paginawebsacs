@@ -603,3 +603,50 @@ armar «los rezagados de Guadalajara con más de dos sucursales». Hace falta un
 armador de filtros en la propia pantalla, que entregue el mismo `qs` que ya
 consume la cabina.
 
+## 17-sep-2026 — Churn: la actividad de las secuencias, en el caso
+
+> «aquí hay que agregar una sección de actividad donde se ligue una de las
+> secuencias, y saber: qué se le ha enviado, qué ha visto, si se ha dado
+> respuesta negativa o positiva. Un listado claro que permita ver si el cliente
+> con churn está respondiendo o no a los correos, para tomar decisiones
+> rápidas. Que junte toda la información de todas las fuentes de actividad, y
+> basado en eso poder decidir más rápido: si seguimos con él, seguimos
+> intentando o de plano ya no.»
+
+Va en el drawer del caso (ChurnCaso.tsx), como bloque o pestaña. Fuentes a
+juntar: `crm_secuencia_miembros`/`enviados` (qué salió y de qué secuencia),
+aperturas y clics del correo, `wa_mensajes` (entrantes y salientes), y la
+señal de sí/no que ya sabe leer el agente (RECHAZO_BOTON_RE / senalDeInteres).
+La decisión que tiene que soportar la pantalla es una: seguir o soltar — así
+que arriba va el veredicto, no la lista.
+
+## 17-sep-2026 — La propuesta de rescate: más campos y un documento formal
+
+> 1. Que me permita personalizar el tiempo que le damos gratis.
+> 2. Que me permita agregar más puntos a los que nos comprometemos.
+> 3. Que me permita agregar comentarios.
+> 4. Que me permita agregar a qué se compromete el cliente.
+> 5. Que me permita agregar un valor a lo que normalmente cuesta todo, para
+>    que vea el beneficio y lo que le estamos brindando; y que sea clara la
+>    fecha en la que pagaría y cuánto pagaría por si desea seguir después del
+>    año correspondiente.
+>
+> «Y mejora el diseño del documento, que se vea muy moderno con toda esta data
+> y métele más formal, que se vea como un acuerdo formal.»
+
+Y además (mismo pedido, minutos después):
+
+> «Agrega otras cosas que NO están incluidas y que sí tienen un costo extra de
+> la plataforma: son los tokens y la IA, por ejemplo. Que lo pueda agregar como
+> no incluido.»
+
+O sea que el documento necesita las dos columnas: lo que SÍ entra en el rescate
+y lo que se cobra aparte (tokens, IA). Escribir sólo lo incluido es lo que hace
+que el primer recibo con consumo de IA se sienta a traición.
+
+Hoy los meses gratis son tres botones fijos (1/3/6), los compromisos una lista
+cerrada de seis, y no hay comentarios, ni compromisos del cliente, ni el valor
+de referencia. Toca el formulario de `ChurnCaso.tsx` (propuesta) y el documento
+que ve el cliente. Ojo: el punto 5 es el que más vende —enseñar lo que cuesta
+normalmente al lado de lo que va a pagar— y el que exige que la fecha y el
+monto de renovación queden escritos sin letra chica.
