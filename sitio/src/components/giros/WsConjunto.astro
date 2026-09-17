@@ -113,7 +113,9 @@ const fmt = (n: number) => '$' + n.toLocaleString('es-MX');
   .wc-fichas :global(.wc-f.is-aqui) { background: var(--ok-fondo, #E6F7F3); border-color: transparent; } .wc-fichas :global(.wc-f.is-aqui i) { background: var(--ok-texto, #1B6B3A); }
   .wc-fichas :global(.wc-f.is-otra) { background: var(--aviso-fondo, #FDF3DF); border-color: transparent; } .wc-fichas :global(.wc-f.is-otra i) { background: #B7791F; }
   .wc-fichas :global(.wc-f.is-pedido) { background: #FBE9E4; border-color: transparent; } .wc-fichas :global(.wc-f.is-pedido i) { background: #B4432E; }
-  .wc-fichas :global(.wc-f.is-pedido) em, .wc-fichas :global(.wc-f.is-otra em) { opacity: 0.45; text-decoration: line-through; }
+  .wc-fichas :global(.wc-f.is-pedido em), .wc-fichas :global(.wc-f.is-otra em) { opacity: 0.55; font-size: 12px; text-decoration: none; }
+  .wc-fichas :global(.wc-f.is-otra em::after), .wc-fichas :global(.wc-f.is-pedido em::after) { content: " · se va"; font-family: var(--font-body); font-weight: 700; color: #B4432E; }
+  .wc-fichas :global(.wc-f.is-listo em::after) { content: ""; }
   .wc-fichas :global(.wc-f.is-listo) { background: var(--ok-fondo, #E6F7F3); } .wc-fichas :global(.wc-f.is-listo i) { background: var(--ok-texto, #1B6B3A); } .wc-fichas :global(.wc-f.is-listo em) { opacity: 1; font-size: 15px; }
   .wc-ticket { background: var(--color-bg-primary, #F7F7F5); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; }
   .wc-k { font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
