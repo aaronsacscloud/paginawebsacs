@@ -18,8 +18,9 @@ porque **costaron cuatro referees cada una** y porque el scratchpad de una sesi�
 | `tg.json` | Tallas grandes | 22 |
 | `ma.json` | Maternidad y lactancia | 22 |
 | `ou.json` | Outlet y saldos | 22 |
+| `em.json` | Emprendedoras que venden en digital | 22 |
 
-**Total: 235 fotos** esperando créditos de OpenAI.
+**Total: 257 fotos** esperando créditos de OpenAI.
 
 **El nombre del archivo manda.** Cada `file` corresponde, sin el prefijo, al nombre que la página
 ya espera en `/images/giros/<slug>/<nombre>.webp`. Si se renombra una escena aquí, la página se
