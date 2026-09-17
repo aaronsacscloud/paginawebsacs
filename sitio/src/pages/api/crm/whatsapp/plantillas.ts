@@ -183,6 +183,11 @@ export const POST: APIRoute = async ({ request }) => {
       variables: esAuth ? 1 : vars.n, status: creada?.status || 'PENDING', status_at: new Date().toISOString(),
       ejemplos: ejemplos.length ? ejemplos : null,
       variables_map: Array.isArray(b.variables_map) ? b.variables_map : null,
+      /* NUESTRO grupo, no el de Meta. `categoria` dice cómo se cobra y cuándo
+         puede salir; `grupo` dice para qué sirve («apertura»), que es lo que
+         se busca cuando hay treinta aprobadas. Minúsculas y sin espacios para
+         que la clave sea estable aunque el rótulo cambie. */
+      grupo: b.grupo ? String(b.grupo).trim().toLowerCase().replace(/\s+/g, '_').slice(0, 40) : null,
       tipo_especial: esAuth ? 'otp' : null,
     });
     return json({ ok: true, status: creada?.status || 'PENDING' });

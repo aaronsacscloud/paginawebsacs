@@ -18,6 +18,14 @@ import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } from '../../../../lib/crm/recientes';
 import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
 
+/* Cómo se escriben nuestros grupos de plantillas cuando se enseñan.
+   La clave es corta —cabe en el chip y se teclea al crear la plantilla— y el
+   rótulo es la frase con la que el dueño la pidió. Un grupo sin entrada aquí
+   se enseña con su clave tal cual: nada se esconde por no estar en la lista. */
+const GRUPO_PL: Record<string, string> = {
+  apertura: 'Apertura de conversación',
+};
+
 type Modo = 'wa' | 'correo' | 'nota';
 type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar' | 'prueba';
 
@@ -1512,8 +1520,17 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
     window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
   }, []);
   const idiomas = [...new Set((lista || []).map(p => p.idioma))];
+  /* EL FILTRO MEZCLA DOS COSAS A PROPÓSITO, Y ESO ES LO ÚTIL.
+     Las de Meta (UTILITY/MARKETING) dicen cómo se COBRA la plantilla y cuándo
+     puede salir. Las nuestras (`grupo`) dicen PARA QUÉ sirve. Con treinta
+     plantillas aprobadas, lo que se busca al abrir esto no es «cuál es
+     marketing» sino «cuál me sirve para arrancar la conversación» — y esa
+     pregunta no la contesta ninguna de las tres de Meta.
+     Los grupos van primero porque son los que se buscan. */
   const cats = [...new Set((lista || []).map(p => p.categoria))];
-  const coinciden = (lista || []).filter(p => (tab === 'todas' || p.status === 'APPROVED') && (!idioma || p.idioma === idioma) && (!cat || p.categoria === cat)
+  const grupos = [...new Set((lista || []).map(p => p.grupo).filter(Boolean))];
+  const coinciden = (lista || []).filter(p => (tab === 'todas' || p.status === 'APPROVED') && (!idioma || p.idioma === idioma)
+    && (!cat || p.categoria === cat || `g:${p.grupo}` === cat)
     && (!q || `${p.nombre} ${p.cuerpo}`.toLowerCase().includes(q.toLowerCase())));
   // Las últimas que mandé, arriba. Una cuenta con 30 plantillas aprobadas usa
   // tres; sin esto había que buscarlas escribiendo cada vez. Al BUSCAR se
@@ -1579,7 +1596,7 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
               queda, porque ahí sí se busca escribiendo. */}
           <input autoFocus={!movilPl} value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar plantilla…" style={{ flex: movilPl ? '1 0 100%' : 1, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '10px 12px' : '7px 10px', fontSize: movilPl ? 16 : 12, fontFamily: 'inherit' }} />
           <select value={idioma} onChange={e => setIdioma(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Idioma</option>{idiomas.map(i => <option key={i} value={i}>{i}</option>)}</select>
-          <select value={cat} onChange={e => setCat(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Categoría</option>{cats.map(c => <option key={c} value={c}>{c}</option>)}</select>
+          <select value={cat} onChange={e => setCat(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Categoría</option>{grupos.map(g => <option key={g} value={`g:${g}`}>{GRUPO_PL[g] || g}</option>)}{cats.map(c => <option key={c} value={c}>{c}</option>)}</select>
         </div>
         {error && <div style={{ margin: '0 20px 8px', fontSize: 12, color: C.rojo500 }}>{error}</div>}
         <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, padding: '0 12px 12px' }}>
@@ -1614,6 +1631,11 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
                   <b style={{ fontSize: 13 }}>{p.nombre}</b>
                   <span style={{ fontSize: 10, color: C.g400 }}>{p.idioma} ·</span>
                   <span style={{ fontSize: 9, fontWeight: 700, borderRadius: 999, padding: '1px 7px', background: p.categoria === 'MARKETING' ? '#F3E8FF' : '#E0F2FE', color: p.categoria === 'MARKETING' ? '#7E22CE' : '#0369A1' }}>{p.categoria}</span>
+                  {/* El grupo se pinta en morado —el color de la casa— para que
+                      se distinga de un vistazo del chip de Meta, que es de
+                      Meta. Son dos etiquetas que dicen cosas distintas y verlas
+                      iguales invitaba a leerlas como una sola. */}
+                  {p.grupo && <span style={{ fontSize: 9, fontWeight: 700, borderRadius: 999, padding: '1px 7px', background: C.moradoAgua, color: C.moradoTinta }}>{GRUPO_PL[p.grupo] || p.grupo}</span>}
                   {!ok && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 7px' }}>{p.status}</span>}
                 </span>
                 <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 12, color: C.g500, marginTop: 3 }}>{p.cuerpo}</span>

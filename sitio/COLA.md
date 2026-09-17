@@ -573,3 +573,22 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 
 Llegó mientras estaba ordenando los selectores de la cabecera del hilo. Se toma
 en cuanto eso quede cerrado y verificado.
+
+## 17-sep-2026 — «Cliente» en el selector: relacionar o crear
+
+> «aquí me lo pone así [Cliente · lo pone el cobro, en gris] pero por ejemplo
+> este caso es que quiero relacionar este contacto a un cliente que ya existe,
+> entonces me debería dejar ponerlo en Cliente y que me pida si relacionarlo o
+> crear uno nuevo, y cada uno con su respectivo flujo.»
+
+Tiene razón y resuelve la objeción original: el problema nunca fue marcar
+«cliente», fue marcarlo **sin cuenta detrás** —eso es lo que descuadra el ARR—.
+Si al elegirlo se obliga a vincular a una `company` que ya existe o a crear la
+cuenta ahí mismo, el ARR no se rompe y se ahorra el rodeo de tres pantallas.
+
+Queda por definir: qué es «crear uno nuevo» exactamente (¿empresa sin
+suscripción? ¿abre el modal de Nueva suscripción?) y qué pasa con el contacto
+que ya tiene `company_id`.
+
+Llegó mientras armaba las plantillas de apertura.
+
