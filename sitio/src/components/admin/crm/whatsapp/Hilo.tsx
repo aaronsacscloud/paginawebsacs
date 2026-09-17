@@ -1223,7 +1223,13 @@ function LigarCuenta({ nombre, onCerrar, onElegida }: { nombre: string | null; o
     setOcupado(true); setErr('');
     const r = await fetch('/api/crm/buscar-cliente', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ empresa: n, es_cliente: true }),
+      /* Sin `tipo:'cliente'` A PROPÓSITO: la cuenta nace como `prospecto`.
+         Marcarla activa aquí la metería en el ARR sin una suscripción detrás,
+         que es justo lo que este flujo existe para evitar. El contacto sí pasa
+         a «cliente» —es lo que se pidió—; la cuenta se activa cuando haya un
+         cobro. (Antes mandaba `es_cliente:true`, un parámetro que el endpoint
+         ni lee: no rompía nada, pero el código decía una cosa y hacía otra.) */
+      body: JSON.stringify({ empresa: n }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setOcupado(false);
     if (r?.error || !r?.company_id) { setErr(r?.error || 'No se pudo crear la cuenta.'); return; }
