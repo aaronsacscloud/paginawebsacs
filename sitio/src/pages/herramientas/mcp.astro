@@ -1,0 +1,207 @@
+---
+// Cómo conectar las herramientas de Sacs a una IA.
+//
+// El MCP ya funciona desde que se construyó, pero un servidor que nadie sabe
+// conectar es un servidor que nadie usa. Esta página es la diferencia entre
+// tener la capacidad y tenerla disponible.
+//
+// Dos decisiones sobre qué se dice aquí:
+//
+// · **No se describen menús de productos ajenos.** Los clientes de MCP cambian
+//   su interfaz cada pocas semanas; unas instrucciones con nombres de botones
+//   envejecen mal y hacen quedar mal a quien las siguió. Se da la dirección, el
+//   JSON estándar y el nombre genérico del ajuste. Eso no caduca.
+//
+// · **Se enseña lo que la IA va a contestar.** Quien evalúa conectar algo a su
+//   asistente quiere ver la respuesta antes de instalar nada, y es también lo
+//   que hace la página citable: el ejemplo ES el resultado real de la
+//   herramienta, no una promesa.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { herramientas } from '../../lib/demanda/herramientas';
+import { SITIO } from '../../data/entidad';
+
+export const prerender = false;
+
+const lista = herramientas('mcp');
+const url = `${SITIO}/api/mcp`;
+
+const config = JSON.stringify({
+  mcpServers: { sacs: { url } },
+}, null, 2);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: 'Conecta las herramientas de Sacs a ChatGPT, Claude o tu propio agente',
+    description: `Servidor MCP público de Sacs: ${lista.length} herramientas de cálculo para retail de moda, sin llave ni registro.`,
+    url: `${SITIO}/herramientas/mcp`,
+    inLanguage: 'es-MX',
+    author: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+    publisher: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebAPI',
+    name: 'Sacs · servidor MCP',
+    description: 'Herramientas de cálculo para marcas y tiendas de moda por Model Context Protocol. Sin autenticación.',
+    documentation: `${SITIO}/herramientas/mcp`,
+    endpointURL: url,
+    provider: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+    termsOfService: `${SITIO}/terminos`,
+  },
+];
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title="Conecta las herramientas de Sacs a tu IA"
+  description={`Servidor MCP público: ${lista.length} herramientas de cálculo para retail de moda, sin llave y sin registro. Funciona con ChatGPT, Claude o tu propio agente.`}
+  structuredData={schema}
+>
+  <main class="mcp">
+    <header>
+      <p class="eyebrow">Servidor MCP público · sin llave</p>
+      <h1>Que tu IA haga las cuentas de tu negocio</h1>
+      <p class="entrada">
+        Las mismas {lista.length} herramientas que están aquí en la web responden por
+        <abbr title="Model Context Protocol">MCP</abbr>. Conéctalas una vez y le puedes pedir
+        a tu asistente «revisa mi curva de tallas» o «¿saco este estilo a tiempo?» sin salir
+        de la conversación. No hay llave, no hay registro y no guardamos tus números.
+      </p>
+    </header>
+
+    <section class="direccion">
+      <h2>La dirección</h2>
+      <p class="codigo"><code>{url}</code></p>
+      <p>
+        Es un servidor MCP remoto por HTTP. En los ajustes de conectores de tu cliente
+        —los que en unos se llaman «conectores», en otros «servidores MCP»— agrégalo como
+        servidor remoto con esa dirección. No pide credenciales.
+      </p>
+      <p class="nota">
+        No ponemos aquí los nombres de los botones de cada producto a propósito: cambian
+        cada pocas semanas y unas instrucciones viejas hacen perder más tiempo del que
+        ahorran. La dirección y el JSON de abajo no caducan.
+      </p>
+    </section>
+
+    <section>
+      <h2>Si tu cliente se configura por archivo</h2>
+      <pre><code>{config}</code></pre>
+      <p>
+        Es la forma estándar. Algunos clientes usan <code>"type": "http"</code> junto a la
+        <code>url</code>; si el tuyo lo pide, agrégalo.
+      </p>
+    </section>
+
+    <section>
+      <h2>Qué queda disponible</h2>
+      <ul class="tools">
+        {lista.map(h => (
+          <li>
+            <code>{h.slug.replace(/-/g, '_')}</code>
+            <div>
+              <p class="que">{h.descripcion}</p>
+              <p class="sacs"><strong>Lo que le falta a la respuesta:</strong> {h.momento_sacs}</p>
+              {h.puertas.includes('web') && (
+                <p class="ver"><a href={`/herramientas/${h.slug}`}>Probarla aquí sin conectar nada →</a></p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section>
+      <h2>Qué ve la IA cuando la usa</h2>
+      <p>
+        La respuesta trae el cálculo, de dónde sale cada número y qué le falta para estar
+        completo. Es a propósito: un resultado que no se puede rastrear no lo debería citar
+        nadie, ni una persona ni un modelo.
+      </p>
+      <pre class="muestra"><code>{`Se te rompió la corrida: M, L son de tu núcleo y se agotaron.
+
+Curva corregida por talla:
+· S: vendió 12, demanda real 12, curva 26.1% → 12.9%, comprar 8 (núcleo)
+· M: vendió 14, demanda real 42, curva 30.4% → 45.2%, comprar 27 (núcleo; se agotó, le faltaron 51 días)
+· L: vendió 11, demanda real 30, curva 23.9% → 32.3%, comprar 19 (núcleo; se agotó, le faltaron 38 días)
+
+De dónde sale cada número:
+· La demanda real de una talla: su ritmo de venta mientras tuvo existencia,
+  proyectado al periodo — con tope en el triple de lo vendido, porque la
+  demanda decae con la temporada y proyectar plano sobrestima.
+
+Cálculo de Sacs (https://www.sacscloud.com).`}</code></pre>
+    </section>
+
+    <section class="cierre">
+      <h2>Las mismas cuentas, con tus datos de verdad</h2>
+      <p>
+        Por aquí escribes los números a mano, un modelo a la vez. Sacs los tiene: sabe cuándo
+        se agotó cada talla de cada tienda sin que nadie lo anote, lleva el sell-through de
+        todos tus estilos y avisa cuando una corrida se rompe — no cuando alguien se acuerda
+        de revisarla.
+      </p>
+      <a class="boton" href="/prueba-gratis">Probar Sacs gratis</a>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .mcp { max-width: 820px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .mcp { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-secondary); font-weight: 600; margin: 0 0 .6rem;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 .9rem; text-wrap: balance; }
+  .entrada { font-size: 1.1rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 64ch; margin: 0; }
+  abbr { text-decoration: underline dotted; cursor: help; }
+
+  section { margin-top: 3rem; }
+  section h2 { font-size: 1.35rem; margin: 0 0 .8rem; }
+  section p { color: var(--color-text-secondary); line-height: 1.7; max-width: 66ch; margin: 0 0 .9rem; }
+  .nota { font-size: .92rem; color: var(--color-text-tertiary); }
+
+  .direccion .codigo { margin-bottom: 1.1rem; }
+  .direccion code {
+    display: inline-block; background: var(--color-bg-dark); color: #fff;
+    padding: .7rem 1rem; border-radius: 9px; font-size: .95rem; word-break: break-all;
+  }
+
+  pre {
+    background: var(--color-bg-dark); color: var(--claro-texto); border-radius: 12px;
+    padding: 1.1rem 1.25rem; overflow-x: auto; margin: 0 0 .9rem;
+  }
+  pre code { font-size: .86rem; line-height: 1.6; white-space: pre; }
+  pre.muestra code { font-size: .8rem; }
+  p code { background: var(--color-bg-secondary); padding: .1em .4em; border-radius: 4px; font-size: .9em; }
+
+  .tools { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.1rem; }
+  .tools li {
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 12px; padding: 1.2rem 1.35rem;
+    display: grid; gap: .7rem;
+  }
+  .tools > li > code {
+    justify-self: start; background: var(--color-bg-secondary); color: var(--color-text-primary);
+    padding: .2em .6em; border-radius: 6px; font-size: .9rem; font-weight: 600;
+  }
+  .tools .que { margin: 0 0 .6rem; color: var(--color-text-primary); }
+  .tools .sacs { margin: 0 0 .6rem; font-size: .93rem; }
+  .tools .ver { margin: 0; font-size: .93rem; }
+  .tools .ver a { color: var(--color-primary); font-weight: 600; text-decoration: none; }
+  .tools .ver a:hover { text-decoration: underline; }
+
+  .cierre {
+    background: var(--color-bg-secondary); border-radius: 14px; padding: 1.75rem;
+  }
+  .cierre h2 { margin-top: 0; }
+  .boton {
+    display: inline-block; background: var(--color-primary); color: #fff;
+    padding: .75rem 1.5rem; border-radius: 9px; font-weight: 600; text-decoration: none;
+  }
+  .boton:hover { background: var(--color-primary-hover); }
+</style>

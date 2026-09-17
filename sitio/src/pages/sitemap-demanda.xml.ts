@@ -40,6 +40,12 @@ export const GET: APIRoute = async () => {
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>${esc(`${SITIO}/herramientas/mcp`)}</loc>
+    <lastmod>${hoy}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 ${hs.map(h => `  <url>
     <loc>${esc(`${SITIO}/herramientas/${h.slug}`)}</loc>
     <lastmod>${hoy}</lastmod>

@@ -558,13 +558,36 @@ tabuladores, comas y punto y coma, con o sin encabezado. Dos trampas medidas:
 tabla editable, así que ningún error de lectura llega al cálculo sin que la
 persona lo vea.
 
+### La página del MCP (`/herramientas/mcp`)
+
+Un servidor que nadie sabe conectar es un servidor que nadie usa. Esta página es
+la diferencia entre tener la capacidad y tenerla disponible, y se enlaza desde el
+índice de herramientas, el sitemap del motor y `/llms.txt`.
+
+Dos decisiones sobre qué dice:
+
+- **No describe menús de productos ajenos.** Los clientes de MCP cambian su
+  interfaz cada pocas semanas; unas instrucciones con nombres de botones
+  envejecen mal y hacen quedar mal a quien las siguió. Da la dirección, el JSON
+  estándar y el nombre genérico del ajuste. Eso no caduca.
+- **Enseña lo que la IA va a contestar**, con la salida real de la herramienta.
+  Quien evalúa conectar algo a su asistente quiere ver la respuesta antes de
+  instalar nada — y eso es también lo que hace la página citable.
+
+La lista de herramientas de esa página sale del registro, así que una
+herramienta nueva aparece sola.
+
+⚠️ `/herramientas/mcp` es un archivo estático (`mcp.astro`) que convive con la
+ruta dinámica `[slug].astro`. Astro le da precedencia al estático; si algún día
+se define una herramienta con slug `mcp`, su página quedaría tapada sin avisar.
+
 ### Lo que sigue de la etapa 4
 
-1. Anunciar el MCP donde los clientes lo puedan conectar, y medir si lo usan.
-   Hoy funciona y está en `/llms.txt`, pero no hay una página que le explique a
-   una persona cómo conectarlo en su cliente.
-2. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
-3. Autoridad y PR.
+1. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
+2. Autoridad y PR.
+3. Medir si el MCP se usa de verdad (`de_herramienta_usos` con `puerta='mcp'`).
+   Hoy la tabla está limpia: las filas de prueba se borraron y desarrollo ya no
+   escribe.
 
 ### Cómo se ven las tres juntas
 

@@ -66,6 +66,16 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
         ))}
       </ul>
     )}
+
+    <section class="mcp-nota">
+      <h2>También las puede usar tu IA</h2>
+      <p>
+        Las mismas herramientas responden por MCP, sin llave y sin registro: conéctalas
+        una vez y le pides a tu asistente «revisa mi curva de tallas» sin salir de la
+        conversación.
+      </p>
+      <a href="/herramientas/mcp">Cómo conectarlas →</a>
+    </section>
   </main>
 </BaseLayout>
 
@@ -92,4 +102,12 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
   .tarjetas p { margin: 0; color: var(--color-text-secondary); line-height: 1.55; font-size: .95rem; flex: 1; }
   .tarjetas .ir { color: var(--color-primary); font-weight: 600; font-size: .92rem; }
   .vacio { color: var(--color-text-tertiary); }
+
+  .mcp-nota {
+    margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--color-border-light);
+  }
+  .mcp-nota h2 { font-size: 1.25rem; margin: 0 0 .6rem; }
+  .mcp-nota p { color: var(--color-text-secondary); line-height: 1.65; max-width: 62ch; margin: 0 0 .8rem; }
+  .mcp-nota a { color: var(--color-primary); font-weight: 600; text-decoration: none; }
+  .mcp-nota a:hover { text-decoration: underline; }
 </style>

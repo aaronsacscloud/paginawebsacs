@@ -75,6 +75,7 @@ ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? 
 Funcionan sin cuenta, sin llave y sin dar correo. Las mismas funciones responden
 por MCP en ${SITIO}/api/mcp y por API en ${SITIO}/api/herramientas/<slug>
 (un GET a esa dirección devuelve el esquema de entrada). Uso libre citando a Sacs.
+Cómo conectar el MCP: ${SITIO}/herramientas/mcp
 
 ${herramientas().map(h => `- [${h.nombre}](${SITIO}/herramientas/${h.slug}): ${h.descripcion}`).join('\n')}
 
