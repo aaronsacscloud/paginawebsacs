@@ -1,0 +1,65 @@
+---
+/**
+ * Landing ROPA DE MATERNIDAD Y LACTANCIA (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el
+ * contenido vive en src/data/giros/maternidad.ts y el bloque propio es MaFecha ("La clienta trae
+ * fecha").
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import MaFecha from '../../../components/giros/MaFecha.astro';
+import GiroEscala from '../../../components/giros/GiroEscala.astro';
+import { bannerMA, manifiestoMA, variantesMA, cortinaMA, casosMA, seccionesMA, planoMA, pasosMA, ticketMA, escalaMA, problemasMA, cifrasMA } from '../../../data/giros/maternidad';
+---
+<BaseLayout
+  title="Sistema para boutiques de maternidad y lactancia — Sacs"
+  description="Sistema para boutiques de maternidad y lactancia: la ficha con la fecha probable de parto, el surtido por trimestre y no por temporada, el aviso que sale a tiempo y se puede pausar sin borrar a la clienta, la maleta del hospital y el cruce a lactancia y postparto."
+>
+  <GiroBanner eyebrow={bannerMA.eyebrow} titulo={bannerMA.titulo} resalte={bannerMA.resalte} sub={bannerMA.sub} foto={bannerMA.foto} fotoAlt={bannerMA.fotoAlt} avisos={bannerMA.avisos} selloMarcas="negocios de moda y maternidad en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoMA.intro} frases={manifiestoMA.frases} cierre={manifiestoMA.cierre} />
+
+  <SuiteVariantes eyebrow={variantesMA.eyebrow} titulo={variantesMA.titulo} resalte={variantesMA.resalte} sub={variantesMA.sub} ejeA={variantesMA.ejeA} filas={variantesMA.filas} matriz={variantesMA.matriz} unidad={variantesMA.unidad} genero={variantesMA.genero} leyendas={variantesMA.leyendas} remate={variantesMA.remate} />
+
+  <SuiteCortina titulo={cortinaMA.titulo} pieAntes={cortinaMA.pieAntes} fotoAntes={cortinaMA.fotoAntes} fotoDespues={cortinaMA.fotoDespues} altAntes={cortinaMA.altAntes} altDespues={cortinaMA.altDespues} libreta={cortinaMA.libreta} filas={cortinaMA.filas} pieDespues={cortinaMA.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasMA.entrada} quienes={problemasMA.quienes} doc1={problemasMA.doc1} doc2={problemasMA.doc2} filas={problemasMA.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la clienta trae fecha." />
+
+  <SuiteCifras foto={cifrasMA.foto} alt={cifrasMA.alt} frase={cifrasMA.frase} encuadre={cifrasMA.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y MATERNIDAD' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos en que una boutique de maternidad gana o pierde el dinero. Toca cada uno." casos={casosMA} />
+
+  <SuiteScroll eyebrow="Maternidad y lactancia" titulo="El piso por trimestre, el probador, las fajas y el WhatsApp, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de una boutique de maternidad real: la fecha probable de parto, el rack por trimestre, la maleta del hospital, el aviso que se pausa con un botón y el cruce a lactancia." secciones={seccionesMA} />
+
+  <MaFecha />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la boutique de una plaza a la marca que vende a todo el país." descripcion="El negocio cambia con cada tamaño: quién apunta la fecha, quién arma el surtido del trimestre, quién manda el aviso y qué mira la dirección. Elige el tuyo." niveles={escalaMA} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la clienta, recorre el rack de su trimestre, se prueba frente al espejo, pasa por la zona de fajas y lactancia y deja su fecha en el mostrador. Atrás está la trastienda de los envíos a todo el país. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu boutique de maternidad — planta baja" zonas={planoMA} todoRot="Maternidad y lactancia" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes el 10 de mayo encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosMA} lineas={ticketMA.lineas} total={ticketMA.total} remate="<b>Tu histórico no se tira.</b> Se migran tus prendas por trimestre, tus existencias, tus apartados y, lo que más vale, <b>tus clientas con su fecha</b>, las que están y las que ya se aliviaron. Nunca te pedimos volver a preguntar nada." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia lista de clientas con sus semanas en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus prendas, tus trimestres y tus clientas reales. 30 min, sin compromiso." />
+</BaseLayout>

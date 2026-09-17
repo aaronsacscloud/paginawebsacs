@@ -1,0 +1,109 @@
+---
+/**
+ * OuBajada — "El lote a ciegas", el bloque propio de outlet y saldos (17-sep-2026, ficha v3
+ * aprobada 9/10/9/9/9 por el referee del giro, que rehizo toda la aritmética con calculadora en
+ * tres rondas).
+ *
+ * Lo que solo pasa aquí: el bulto entra a ciegas con una lista aproximada, se cuenta, se clasifica
+ * en cuatro montones, se le reparte el costo con flete y maniobra, y cada pieza es única —cuando
+ * se vende no hay otra—. Y la bajada corre sola por tanda hasta que sale.
+ *
+ * El remate NO es "se vende más": son las mismas 1,144 piezas vendidas en los dos escenarios. Lo
+ * que cambia es de qué escalón sale cada una y, sobre todo, que el dinero regresa doce semanas
+ * antes: 3.7 vueltas al año en vez de 2. Ese, y no el margen de un bulto, es el negocio completo.
+ *
+ * Números verificados por el referee (no recalcular ni redondear distinto): costo puesto en piso
+ * $116,600, 1,174 contadas, 30 de merma, 1,144 vendidas, costo por pieza vendida $101.92; a ojo
+ * $229,658 (49.2 % sobre la venta, 26 semanas, $4,348 por semana); con la bajada corriendo
+ * $261,908 (55.5 %, 14 semanas, $10,379); diferencia $32,250; abajo de costo 314 contra 139.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="El bulto entra a ciegas."
+  titulo="Las mismas piezas, doce semanas antes."
+  descripcion="Un lote de 1,174 piezas que costó $116,600 puestas en el piso. En los dos casos se venden las mismas 1,144: las otras 30 son la merma, que se pagó y nunca pasó por la caja. Lo único que cambia es de qué escalón sale cada pieza y cuándo regresa tu dinero."
+  vinetas={[
+    { label: 'El costo real no es el del bulto', detail: 'Al precio del lote se le suma flete, maniobra, clasificación, etiquetado y lo que se echó a perder. Esas 1,144 piezas costaron $101.92 cada una, no $85.' },
+    { label: 'La bajada corre por tanda, no por pieza', detail: 'Cada tanda baja sola con los días. Nadie tiene que acordarse un jueves, y ninguna pieza se despeña de $199 a $99 de un brinco.' },
+    { label: 'Lo que manda es la vuelta, no el margen', detail: 'Un lote de 26 semanas da 2 vueltas al año. Uno de 14 da 3.7: casi el doble de compras con el mismo capital.' },
+  ]}
+  suelta
+>
+  <div class="ou" id="ou-bajada">
+    <div class="ou-sw">
+      <button type="button" class="is-on" data-e="a">A ojo</button>
+      <button type="button" data-e="b">Con la bajada corriendo</button>
+    </div>
+    <div class="ou-grid">
+      <div class="ou-big">
+        <span class="ou-k">Se cobró del lote</span>
+        <b class="ou-num" id="ou-num">$229,658</b>
+        <p class="ou-sub" id="ou-sub">Dejó <b>$113,058</b>, o sea <b>49.2 %</b> sobre la venta, en <b>26 semanas</b>.</p>
+        <p class="ou-sem"><span id="ou-sem">$4,348</span> por semana · <span id="ou-vu">2</span> vueltas al año</p>
+      </div>
+      <ul class="ou-esc" id="ou-esc"></ul>
+    </div>
+    <p class="ou-mal" id="ou-mal"><b>314 piezas</b> salieron abajo de los $101.92 que costaron. Esas no se vendieron: se regalaron.</p>
+    <p class="ou-pie">El tercer escalón de $99 no sale de ninguna regla: sale de la prisa de fin de temporada.</p>
+    <a class="ou-cta" href="/contacto">Verlo con mi último lote</a>
+  </div>
+</BloqueProducto>
+
+<style>
+  .ou { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; }
+  .ou-sw { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: #F2F2EF; margin-bottom: 18px; }
+  .ou-sw button { padding: 9px 16px; border-radius: 999px; border: none; background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--color-text-secondary); cursor: pointer; }
+  .ou-sw button.is-on { background: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .ou-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .ou-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .ou-num { display: block; font-family: var(--font-display); font-size: clamp(40px, 6vw, 68px); letter-spacing: -0.045em; line-height: 1; color: var(--color-text-primary); }
+  .ou-sub { margin: 10px 0 0; font-size: 15px; line-height: 1.45; color: var(--color-text-secondary); }
+  .ou-sub b { color: var(--color-text-primary); }
+  .ou-sem { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid #E3E3DF; font-size: 14px; color: var(--color-text-primary); font-weight: 600; }
+  .ou-esc { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .ou-esc :global(li) { display: grid; grid-template-columns: 74px 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+  .ou-esc :global(li span.p) { font-weight: 700; color: var(--color-text-primary); }
+  .ou-esc :global(li i) { display: block; height: 16px; border-radius: 4px; background: #CFCFC9; transition: width 0.5s cubic-bezier(0.2,0.7,0.2,1), background 0.3s; }
+  .ou-esc :global(li.verde i) { background: #1C7C54; } .ou-esc :global(li.amar i) { background: #D9A521; }
+  .ou-esc :global(li.rojo i) { background: #C0552F; } .ou-esc :global(li.bajo i) { background: #9B2C2C; }
+  .ou-esc :global(li em) { font-style: normal; color: var(--color-text-tertiary); }
+  .ou-mal { margin: 18px 0 0; padding: 12px 14px; border-radius: var(--radius-sm, 8px); background: #FDECEC; color: #8A1F1F; font-size: 14px; line-height: 1.45; }
+  .ou-pie { margin: 10px 0 0; font-size: 12.5px; color: var(--color-text-tertiary); }
+  .ou-cta { display: inline-flex; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .ou { padding: 14px; } .ou-grid { grid-template-columns: 1fr; } .ou-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('ou-bajada'); if (!el) return;
+    const COSTO = 101.92;
+    const E = {
+      a: { num: '$229,658', dejo: '$113,058', pct: '49.2 %', sem: '26 semanas', porSem: '$4,348', vueltas: '2', malas: 314,
+           esc: [['$299', 430], ['$199', 320], ['$129', 60], ['$99', 220], ['$69', 34], ['$49', 38], ['$50', 22]] },
+      b: { num: '$261,908', dejo: '$145,308', pct: '55.5 %', sem: '14 semanas', porSem: '$10,379', vueltas: '3.7', malas: 139,
+           esc: [['$299', 560], ['$209', 160], ['$199', 165], ['$149', 60], ['$129', 60], ['$99', 90], ['$69', 9], ['$49', 18], ['$50', 22]] },
+    };
+    const pinta = (k: 'a' | 'b') => {
+      const d = E[k], max = Math.max(...d.esc.map((x) => x[1] as number));
+      document.getElementById('ou-num')!.textContent = d.num;
+      document.getElementById('ou-sub')!.innerHTML = `Dejó <b>${d.dejo}</b>, o sea <b>${d.pct}</b> sobre la venta, en <b>${d.sem}</b>.`;
+      document.getElementById('ou-sem')!.textContent = d.porSem;
+      document.getElementById('ou-vu')!.textContent = d.vueltas;
+      document.getElementById('ou-esc')!.innerHTML = d.esc.map(([p, n]) => {
+        const precio = Number(String(p).replace(/[$,]/g, ''));
+        const cls = precio < COSTO ? 'bajo' : precio >= 280 ? 'verde' : precio >= 190 ? 'amar' : 'rojo';
+        return `<li class="${cls}"><span class="p">${p}</span><i style="width:${Math.round((n as number / max) * 100)}%"></i><em>${n} pzas</em></li>`;
+      }).join('');
+      document.getElementById('ou-mal')!.innerHTML = `<b>${d.malas} piezas</b> salieron abajo de los $101.92 que costaron. Esas no se vendieron: se regalaron.`;
+      (window as any).sacsPH?.('giro_ou_bajada', { escenario: k });
+    };
+    el.querySelectorAll<HTMLButtonElement>('.ou-sw button').forEach((b) => {
+      b.addEventListener('click', () => {
+        el.querySelectorAll('.ou-sw button').forEach((x) => x.classList.toggle('is-on', x === b));
+        pinta(b.dataset.e as 'a' | 'b');
+      });
+    });
+    pinta('a');
+  })();
+</script>
