@@ -789,7 +789,7 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
   }
 
   const bt = {
-    border: '1px solid rgba(255,255,255,.34)', background: 'rgba(255,255,255,.12)', color: '#fff',
+    border: '1px solid rgba(217,83,142,.26)', background: 'rgba(255,255,255,.72)', color: P.rosaTinta,
     borderRadius: 8, padding: '5px 11px', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
   } as const;
   const pop = {
@@ -802,19 +802,21 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
   };
 
   const Boton = ({ k, children }: any) => (
-    <button style={{ ...bt, ...(abierto === k ? { background: '#fff', color: P.rosaTinta, borderColor: '#fff' } : null) }}
+    <button style={{ ...bt, ...(abierto === k ? { background: '#fff', border: `1.5px solid ${P.rosa}`, fontWeight: 800 } : null) }}
       onClick={() => setAbierto(abierto === k ? '' : k)}>{children}</button>
   );
 
   return (
     <div ref={caja} style={{
       display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', position: 'relative',
-      /* En ROSA y no en morado. El morado es el color del sistema —las
-         pestañas, los botones, las tarjetas— y una barra morada encima de una
-         pestaña morada se lee como parte del mismo bloque. El rosa es la firma
-         de la casa y aquí hace de subrayador: dice «esto que marcaste» sin
-         competir con nada de lo que ya hay en la pantalla. */
-      background: P.rosaTinta, color: '#fff', padding: '10px 14px', borderRadius: '10px 10px 0 0',
+      /* EL MISMO ROSA SUTIL DE LA CASA: el degradado lila→rosa de la pastilla
+         de «sin fecha», de la cinta de los documentos y de la tarjeta faro, con
+         la letra en tinta. El rosa sólido se veía como una alarma, y esto no es
+         una alarma: es un subrayador que dice «esto que marcaste». Y el morado
+         tampoco servía —encima de una pestaña morada se lee como el mismo
+         bloque—. Se reusa SIN_FECHA para que exista un solo rosa en el archivo. */
+      ...SIN_FECHA, border: '1px solid rgba(217,83,142,.16)',
+      padding: '10px 14px', borderRadius: '10px 10px 0 0',
     }}>
       <b style={{ fontSize: '0.82rem', marginRight: 3 }}>{n} {n === 1 ? 'seleccionada' : 'seleccionadas'}</b>
 
@@ -898,7 +900,7 @@ function Casilla({ marcada, onMarcar }: any) {
       onMouseEnter={() => setEncima(true)} onMouseLeave={() => setEncima(false)}
       style={{
         flex: 'none', width: 17, height: 17, borderRadius: 5, marginLeft: 9, background: '#fff',
-        border: `1.5px solid ${marcada || encima ? P.rosa : '#d8d3e6'}`,
+        border: `1.5px solid ${marcada ? P.rosa : encima ? P.rosaSuave : '#d8d3e6'}`,
         position: 'relative', cursor: 'pointer',
       }}>
       {marcada && <span style={{
