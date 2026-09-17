@@ -126,21 +126,55 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   }, []);
   useEffect(() => { cargarPrevias(); }, [cargarPrevias]);
 
-  // Cada respuesta lleva su número: una respuesta vieja que llega tarde no pisa a una más nueva (el pulso va a 400 ms).
+  /* ══ EL PULSO: POR QUÉ LA TARJETA DEL CENTRO SE CONGELABA ═══════════════
+     REPORTE DEL DUEÑO (17-sep-2026): «no me aparece en pantalla realmente a
+     quién está marcando; mandan a buzón, pasa al siguiente, pero no se
+     actualiza el contacto que aparece en medio… y le doy clic en pausar y
+     parece que no hace nada».
+
+     Los tres síntomas eran UN bug, y estaba en estas cuatro líneas. El guard
+     anti-desorden comparaba contra la última petición LANZADA
+     (`n !== seqEst.current`), no contra la última APLICADA. Con el pulso a
+     400 ms mientras la central decide —y un `latir` de servidor que hace
+     trabajo de verdad: cuelga items vencidos, cobra llamadas, rescata
+     cierres— casi ninguna respuesta vuelve en menos de 400 ms. Y entonces,
+     cuando llega, ya se lanzó otra: `n !== seqEst.current` y se tira.
+
+     O sea que NINGUNA respuesta se aplicaba justo mientras más rápido latía,
+     que es exactamente cuando está marcando. El centro se quedaba clavado en
+     el contacto de hace cuatro, la lista de la derecha —que late cada 5 s y
+     sí alcanzaba a aplicarse— iba adelantada, y «Pausar» parecía no hacer
+     nada porque la acción SÍ salía pero el estado ya no se repintaba.
+
+     Dos arreglos, y los dos hacen falta:
+      · se aplica si la respuesta es MÁS NUEVA que la última aplicada
+        (`n > aplicadoEst.current`), que es lo que de verdad evita el
+        desorden sin tirar lo bueno;
+      · y no se lanza otra mientras una sigue en vuelo, para no encolar
+        peticiones contra un servidor que tarda más que el intervalo. */
   const seqEst = useRef(0), seqItems = useRef(0);
+  const aplicadoEst = useRef(0), aplicadoItems = useRef(0);
+  const enVueloEst = useRef(false), enVueloItems = useRef(false);
   const latir = useCallback(async () => {
-    if (!sesionId) return;
+    if (!sesionId || enVueloEst.current) return;
     const n = ++seqEst.current;
-    const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
-    if (!j || n !== seqEst.current) return;
+    enVueloEst.current = true;
+    const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}`, { cache: 'no-store' })
+      .then(r => r.json()).catch(() => null)
+      .finally(() => { enVueloEst.current = false; });
+    if (!j || n <= aplicadoEst.current) return;
+    aplicadoEst.current = n;
     if (j.error) { setSesionId(null); setEst(null); return; }
     setEst(j);
   }, [sesionId]);
   const cargarItems = useCallback(async () => {
-    if (!sesionId) return;
+    if (!sesionId || enVueloItems.current) return;
     const n = ++seqItems.current;
-    const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}&items=1`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
-    if (j?.items && n === seqItems.current) setItems(j.items);
+    enVueloItems.current = true;
+    const j = await fetch(`/api/crm/telefonia/marcador?id=${sesionId}&items=1`, { cache: 'no-store' })
+      .then(r => r.json()).catch(() => null)
+      .finally(() => { enVueloItems.current = false; });
+    if (j?.items && n > aplicadoItems.current) { aplicadoItems.current = n; setItems(j.items); }
   }, [sesionId]);
 
   // El pulso: cada 400 ms mientras la central decide quién contestó (ahí cada
@@ -294,6 +328,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     const r = await post({ accion: a, id: sesionId, ...extra });
     setOcupado('');
     if (r?.error) { setError(r.error + (r.faltantes?.length ? ` (faltan: ${r.faltantes.join(', ')})` : '')); return null; }
+    /* LA RESPUESTA DEL BOTÓN NO ESPERA AL SIGUIENTE LATIDO. Si el servidor ya
+       contestó cómo quedó la sesión, se pinta YA: «Pausar» tiene que cambiar
+       la pantalla en el momento en que se aprieta. Con el pulso congelado eso
+       tardaba segundos o no llegaba, y parecía que el botón no hacía nada —que
+       es justo lo que reportó el dueño—. El latido sigue detrás para lo demás.
+
+       Se salta el guard de secuencia a propósito: esto no es una carrera entre
+       sondeos, es la respuesta directa a lo que acabas de pedir. */
+    if (r?.sesion) setEst((prev: any) => ({ ...(prev || {}), ...r }));
     latir(); cargarItems();
     return r;
   };
@@ -329,7 +372,12 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (!r?.total) { setError('No quedó nadie a quien volver a llamar.'); return; }
     setSesionId(r.id); setTab('lista'); cargarPrevias();
   };
-  const salirDeSesion = () => { setSesionId(null); setEst(null); setItems([]); cargarPrevias(); };
+  const salirDeSesion = () => {
+    // Los contadores se reinician con la sesión: si no, la primera respuesta de
+    // la sesión nueva llega con n=1 contra un `aplicado` de 800 y se tira.
+    seqEst.current = 0; aplicadoEst.current = 0; seqItems.current = 0; aplicadoItems.current = 0;
+    setSesionId(null); setEst(null); setItems([]); cargarPrevias();
+  };
 
   // ── Cálculos de pantalla ──────────────────────────────────────────────
   const hechos = useMemo(() => items.filter(i => ['hecho', 'saltado'].includes(i.estado)), [items]);

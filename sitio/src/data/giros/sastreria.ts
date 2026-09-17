@@ -33,13 +33,13 @@ export const bannerSA = {
   eyebrow: 'SACS · Sastrería y trajes a la medida',
   titulo: 'Cuando entra la tijera,',
   resalte: 'la tela ya tiene dueño.',
-  sub: 'La ficha de medidas que no se pierde, la orden de trabajo pegada a la tela, las fechas de corte y de prueba contadas para atrás desde la boda, los metros que quedan de cada clave, el vale de tela del maquilero y la compostura con su contraseña — en el mostrador, en el taller y en el WhatsApp, con un solo sistema.',
+  sub: 'La ficha de medidas que no se pierde, la orden de trabajo pegada a la tela y las fechas de corte y de prueba contadas para atrás desde la boda. Los metros que quedan de cada clave, el vale de tela del maquilero y la compostura con su contraseña. En el mostrador, en la mesa de corte y en el WhatsApp.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Sastrería moderna a la medida con el muro de piezas de casimir, la mesa de corte y la ficha de medidas del cliente en la tablet',
   avisos: [
     { modulo: 'Último día para cortar', texto: 'Boda del 20 de mayo · corta a más tardar el 8 de abril · si va con maquilero, una semana antes', pos: 1 as const, tono: 'ambar' as const, sello: 'Abril' },
-    { modulo: 'Metros que quedan', texto: 'Azul marino clave 4711 · quedan 6.20 m · faltan 2 padrinos · el corte pedido llega en 4 semanas', pos: 2 as const, tono: 'rojo' as const, sello: 'Mayo' },
-    { modulo: 'Ya está tu traje', texto: 'Sr. Ibarra · terminado y planchado · saldo $4,200 · contraseña 1187', pos: 3 as const, tono: 'verde' as const, sello: 'Hoy' },
+    { modulo: 'Metros que quedan', texto: 'Azul marino clave 4711 · quedan 6.20 m · alcanza para un padrino, faltan 2 · el corte pedido llega en 4 semanas', pos: 2 as const, tono: 'rojo' as const, sello: 'Mayo' },
+    { modulo: 'Ya está tu traje', texto: 'Sr. Ibarra · terminado y planchado · saldo $4,200 · orden 3187', pos: 3 as const, tono: 'verde' as const, sello: 'Hoy' },
   ],
 };
 
@@ -62,7 +62,7 @@ export const variantesSA = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“el traje azul”.',
-  sub: 'Un mismo saco de dos botones va de la 38 a la 48, y cada talla en regular, corto y largo: son 18 existencias por casimir, no seis. Abajo está solo el regular en cuatro telas —marino, gris Oxford, negro y de raya—; contando corto y largo son 72 trajes distintos de un solo modelo, y el de raya además se lleva de 10 a 30 cm más porque hay que casar la raya.',
+  sub: 'Un mismo saco de dos botones va de la 38 a la 48 en este ejemplo —el traje de línea llega hasta la 54—, y cada talla en regular, corto y largo: son 18 existencias por casimir, no seis. Abajo está solo el regular en cuatro telas —marino, gris Oxford, negro y de raya—; contando corto y largo son 72 trajes distintos de un solo modelo, y el de raya además se lleva de 10 a 30 cm más porque hay que casar la raya.',
   ejeA: ['38R', '40R', '42R', '44R', '46R', '48R'],
   filas: [
     { nombre: 'Azul marino', img: `${IMG}/prod-marino.webp`, alt: 'Saco de traje de casimir azul marino de dos botones' },
@@ -79,7 +79,7 @@ export const variantesSA = {
   unidad: 'trajes',
   genero: 'm' as const,
   leyendas: ['Con existencia', 'Quedan pocos', 'Agotado'] as [string, string, string],
-  remate: 'que comprar, colgar y contar por talla y por largo. Y eso es solo el regular: el señor de hoy medía 44L y no hay un solo largo colgado en toda la tienda. El reporte decía que del “traje azul” había 22.',
+  remate: 'que comprar, colgar y contar por talla y por largo. Y eso es solo el regular: el señor de hoy medía 44L y no hay un solo 44 largo colgado en toda la tienda. El reporte decía que del “traje azul” había 22.',
 };
 
 export const cortinaSA = {
@@ -93,7 +93,7 @@ export const cortinaSA = {
   filas: [
     { que: '“Ya me ha hecho traje”', donde: 'Su ficha de medidas', dato: 'Las 18 medidas de hace 14 meses, con sus notas de postura; solo se le saca de la pretina dos dedos y se abre la orden' },
     { que: '¿Alcanza para la boda del 20?', donde: 'Las fechas contadas para atrás', dato: 'Último día para cortar: 8 de abril. Prueba el 24 de abril, entrega el 13 de mayo. Con maquilero, una semana antes' },
-    { que: '¿Cuánto queda del azul marino?', donde: 'La pieza, en metros', dato: '6.20 m de la clave 4711: dos padrinos más y se acaba; el corte pedido llega en cuatro semanas y es otro lote' },
+    { que: '¿Cuánto queda del azul marino?', donde: 'La pieza, en metros', dato: '6.20 m de la clave 4711: sale uno de los dos padrinos que faltan y ya no da el otro; el corte pedido llega en cuatro semanas y es otro lote' },
     { que: '“Perdí mi contraseña”', donde: 'La compostura, por su nombre', dato: 'Subir bastilla y meter de la pretina, pagada, lista desde el martes, bolsa del jueves' },
   ],
   pieDespues: 'El mismo sastre, el mismo cliente. Ya no lo vuelve a medir: abre su ficha.',
@@ -139,7 +139,7 @@ export const seccionesSA: SuiteSeccion[] = [
     id: 'ficha', tag: 'Clientes',
     titulo: 'La tarjeta del cliente, que es el oro de la sastrería',
     texto: 'De 12 a 20 medidas más las notas de postura —hombro caído, espalda encorvada, panza— y sus fotos, guardadas en el cliente para siempre y con historial por fecha para ver cómo cambió de peso. La ficha de dama es otra: traje sastre, falda, blusa. Y la de camisa lleva lo suyo: cuello, puño, largo de manga y pecho.',
-    bullets: ['Ficha de caballero, de dama y de camisa, cada una con sus campos', 'Repetir traje sin volver a medir: se jala la tarjeta anterior y solo se ajusta la pretina', 'Auditoría de la medida capturada en tienda: lo que sale de rango no se manda a cortar'],
+    bullets: ['Ficha de caballero, de dama y de camisa, cada una con sus campos', 'Repetir traje sin volver a medir: se jala la tarjeta anterior y solo se ajusta la pretina', 'La medida que sale de rango no se manda a cortar: se pregunta antes de que entre la tijera'],
     visual: mockLista('Ficha del Sr. Ibarra · última medida hace 14 meses', [['Pecho 104 · cintura 96 (+3) · sisa y bota sin cambio', 'Actualizada', 'ok'], ['Nota de postura: hombro derecho caído', 'De su tarjeta', 'gris'], ['Traje anterior: casimir gris Oxford, dos botones, valenciana', 'Repetir', 'ok'], ['Pretina: sacarle dos dedos', 'A confirmar en la prueba', 'aviso']], 'La medida no se vuelve a tomar: se corrige en la prueba y se guarda'),
   },
   {
@@ -153,7 +153,7 @@ export const seccionesSA: SuiteSeccion[] = [
     id: 'taller', tag: 'Taller',
     titulo: 'La orden de trabajo va pegada a la tela, y el tablero dice dónde va',
     texto: 'Modelo, tela, forro, botones, solapa normal o de pico, tipo de bolsa, valenciana, las medidas y las cuatro fechas: se imprime y se engrapa al bulto. Sin orden no se corta. Todas las órdenes se ven por etapa —cortado, armado, prueba, terminado, entregado— y por sastre, con lo que va tarde en rojo.',
-    bullets: ['Vale de tela al maquilero: cuántos metros salieron, con qué orden, qué regresó y qué se le paga a destajo', 'Lo que echó a perder se le descuenta; lo que se rehace queda marcado como reproceso con culpable y costo', 'Hechura: “tela recibida 3.40 m, del cliente”, sin consumo de pieza y con precio solo de mano de obra'],
+    bullets: ['Vale de tela al maquilero: cuántos metros salieron, con qué orden, qué regresó y qué se le paga a destajo', 'Lo que echó a perder se le descuenta; lo que se rehace queda marcado como reproceso con culpable y costo', 'Hechura: “tela recibida 3.40 m, del cliente”, sin consumo de pieza y con precio solo de mano de obra — y queda escrito que si se echa a perder, se la pagas'],
     visual: mockLista('Tablero del taller · hoy', [['Orden 3184 · novio · boda 20 de mayo · corte hecho', 'Armado', 'ok'], ['Orden 3190 · urgente con recargo · sábado', 'Va primero', 'aviso'], ['Orden 3171 · maquilero Ramírez · vale de 3.40 m', 'Viernes', 'gris'], ['Orden 3155 · se levanta el cuello · rehacer talle', 'Reproceso', 'aviso']], 'El maquilero recoge el lunes y entrega el viernes; su vale de tela sale con el bulto'),
   },
   {
@@ -161,21 +161,21 @@ export const seccionesSA: SuiteSeccion[] = [
     titulo: 'La tela en metros, no en piezas',
     texto: 'Cada pieza con su clave y sus metros: el corte de cada traje se descuenta al momento, se marca dónde hay banderilla para no cortar ahí y se pide bonificación. El consumo sale de lo que se llevó tu taller —3.20 un 42R de dos botones, +0.30 el cruzado, de 0.50 a 0.70 el chaleco y de 10 a 30 cm más si hay que casar la raya o el cuadro.',
     bullets: ['Pedido al proveedor en metros, con clave del muestrario y fecha prometida', 'El corte pedido por traje (de 2 a 6 semanas) se distingue de la pieza de resurtido', 'La cola de pieza menor a 3 m queda como inventario aparte: da chaleco o pantalón suelto, y se traspasa'],
-    visual: mockBarras('Metros que quedan por clave', [['4711 marino', '6.20 m', 21], ['5028 gris Ox.', '18.40 m', 61], ['3390 negro', '0.00 m', 0], ['Colas < 3 m', '11.70 m', 39]], 'Del marino salen dos padrinos más y se acaba; el corte pedido llega en cuatro semanas y es otro lote'),
+    visual: mockBarras('Metros que quedan por clave', [['4711 marino', '6.20 m', 21], ['5028 gris Ox.', '18.40 m', 61], ['3390 negro', '0.00 m', 0], ['Colas < 3 m', '11.70 m', 39]], 'Del marino sale un padrino más y el segundo ya no: son 3.20 m cada uno y quedan 6.20'),
   },
   {
     id: 'linea', tag: 'Traje de línea',
     titulo: 'Talla y largo, que es la matriz de verdad de una tienda de trajes',
     texto: 'De la 36 a la 54, cada una en regular, corto y largo, con el saco y el pantalón como par y su drop en la etiqueta. Se surte casi todo regular y unas pocas de corto y largo, y ahí se decide la temporada: en el norte se venden más largos y tallas grandes; en el centro, regular.',
     bullets: ['Existencias por sucursal y traspaso: dónde está el 44L y quién lo manda', 'Al vender el traje de gancho se abre sola la orden de ajuste: bastilla, meter de los costados, acortar manga, con su fecha', 'El pantalón se entrega sin bastilla: el largo lo resuelve el taller en dos o tres días'],
-    visual: mockMatriz('Traje de línea · existencia por talla y largo', ['38', '40', '42', '44', '46', '48'], [['Regular', [4, 11, 14, 9, 5, 2]], ['Corto', [1, 2, 3, 1, 0, 0]], ['Largo', [0, 1, 2, 0, 1, 0]]], 'Cuarenta regulares colgados y ni un 44L: justo el que entró hoy', [2, 3]),
+    visual: mockMatriz('Traje de línea · existencia por talla y largo', ['38', '40', '42', '44', '46', '48'], [['Regular', [4, 11, 14, 9, 5, 2]], ['Corto', [1, 2, 3, 1, 0, 0]], ['Largo', [0, 1, 2, 0, 1, 0]]], 'Cuarenta y cinco regulares colgados y ni un 44L: justo el que entró hoy', [2, 3]),
   },
   {
     id: 'mostrador', tag: 'Mostrador',
     titulo: 'El anticipo, la contraseña y el “ya está tu traje”',
     texto: 'Sin anticipo no se corta: la mitad o cuando menos lo de la tela, con abonos y recordatorio del saldo. La compostura entra con precio de lista y sale con su contraseña impresa y su fecha, con estado —recibida, en taller, lista, entregada— aunque el cliente pierda el papelito. Y el WhatsApp avisa solo cuando la orden cambia de etapa.',
     bullets: ['Composturas que entran por la tintorería de junto, con su comisión y su corte', 'Trajes abandonados: días parados, saldo pendiente y aviso a los 30, 90 y 180 días', 'Costo real por orden: tela, forro, botones, hechura a destajo, pruebas y reprocesos contra lo que cobraste'],
-    visual: mockTicket('Orden 3184 · novio · boda 20 de mayo', [['Traje a la medida · casimir azul marino · tres piezas', '$14,800'], ['Corte de 3.70 m (casar la raya +0.30)', 'de la pieza 4711'], ['Anticipo recibido', '−$7,400']], ['Saldo a la entrega', '$7,400'], 'Se entrega en funda contra el saldo, una semana antes de la boda'),
+    visual: mockTicket('Orden 3184 · novio · boda 20 de mayo', [['Traje a la medida · casimir azul marino · tres piezas', '$14,800'], ['Corte de 3.70 m (3.20 del 42R + 0.50 del chaleco)', 'de la pieza 4711'], ['Anticipo recibido', '−$7,400']], ['Saldo a la entrega', '$7,400'], 'Se entrega en funda contra el saldo, una semana antes de la boda'),
   },
 ];
 

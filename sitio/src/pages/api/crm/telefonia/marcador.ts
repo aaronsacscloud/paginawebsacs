@@ -106,7 +106,11 @@ export const POST: APIRoute = async ({ request }) => {
         await supabase.from('tel_sesiones').update({ modo, updated_at: new Date().toISOString() }).eq('id', s.id);
         return json({ ok: true, modo });
       }
-      case 'pausar': await pausarSesion(s.id, 'Pausada por ti'); return json({ ok: true });
+      /* Devuelve el ESTADO, no un `{ok:true}` pelado: así el botón repinta la
+         pantalla con la respuesta y no tiene que esperar al siguiente sondeo.
+         «Pausar» que tarda dos segundos en verse es «Pausar» que parece roto, y
+         entonces se aprieta otra vez. */
+      case 'pausar': await pausarSesion(s.id, 'Pausada por ti'); return json({ ok: true, ...(await estadoSesion(s.id)) });
       case 'terminar': await terminarSesion(s.id); return json({ ok: true });
       case 'siguiente': return json(await siguiente(s.id));
       case 'saltar': return json(await saltar(s.id));

@@ -75,6 +75,22 @@ const palabras = (s: string) => s.split(/\s+/).filter(Boolean).length;
  */
 export function juzgar(oidoTodo: Oido[], ms: number, amd?: string | null, extra?: ReglasExtra | null): { veredicto: Veredicto; motivo: string } | null {
   const oido = delContacto(oidoTodo);
+
+  /* SI EL VENDEDOR YA ESTÁ HABLANDO, DEL OTRO LADO HAY UNA PERSONA.
+     Reporte del dueño (17-sep-2026): «un usuario respondió y como que le corté
+     la llamada porque hablé, y de ahí se colgó en automático».
+
+     Nadie le habla a una grabadora. Si el vendedor se adelantó y saludó
+     mientras la central seguía juzgando, eso es la señal más fiable que puede
+     haber de que contestó alguien —mejor que cualquier expresión regular— y
+     seguir deliberando sólo puede terminar mal: un veredicto de «buzón» a
+     mitad de un «bueno, buenas tardes» cuelga una llamada que estaba viva.
+
+     Va lo PRIMERO, antes de mirar nada de lo que se oyó. Una regla que llega
+     después de las de buzón llega tarde: para entonces ya se colgó. */
+  if (oidoTodo.some(o => o.quien === 'vendedor' && String(o.texto || '').trim().length > 1)) {
+    return { veredicto: 'persona', motivo: 'ya estás hablando con alguien' };
+  }
   const finales = oido.filter(o => o.final).map(o => sinAcentos(o.texto)).join(' ').trim();
   const ultimoParcial = sinAcentos([...oido].reverse().find(o => !o.final)?.texto || '');
   const todo = `${finales} ${ultimoParcial}`.trim();
