@@ -131,9 +131,29 @@ export async function auditar(): Promise<{ abiertos: number; nuevos: number; res
 
   /* Lo que YA NO aparece se cierra solo. Sin esto, un problema arreglado se
      queda abierto para siempre y la cola pierde el sentido: el día que tenga
-     doscientas filas viejas nadie la va a volver a abrir. */
+     doscientas filas viejas nadie la va a volver a abrir.
+
+     PERO SOLO LO SUYO. `de_issues` la comparten varios detectores —el técnico,
+     el de Search Console, el de decaimiento, el de competidores— y esta función
+     solo sabe reconocer lo que ella misma produce. Sin el filtro por tipo,
+     cerraba todo lo demás por no encontrarlo en SUS hallazgos.
+
+     Pasó de verdad y en el peor momento: los 15 huecos frente a competidores y
+     los 3 subdominios indexados —incluido `dev.sacscloud.com`, un entorno de
+     desarrollo abierto a Google— quedaron marcados como «resueltos» treinta
+     segundos después de crearse. Sin error, sin aviso: el hallazgo más valioso
+     del día, borrado por una limpieza que creía que la tabla era suya.
+
+     La regla general: una función que limpia una tabla compartida tiene que
+     declarar qué le pertenece. Si no, lo que limpia es el trabajo de los demás. */
+  const MIOS = [
+    'estado_http', 'sin_titulo', 'titulo_corto', 'titulo_largo', 'titulo_duplicado',
+    'sin_meta', 'meta_corta', 'meta_larga', 'meta_duplicada',
+    'sin_h1', 'contenido_delgado', 'huerfana', 'sin_enlaces_salientes',
+    'sin_canonical', 'canonical_distinta', 'sin_schema', 'noindex_en_sitemap',
+  ];
   const { data: abiertos } = await supabase.from('de_issues')
-    .select('id, clave_idem').eq('estado', 'abierto');
+    .select('id, clave_idem').eq('estado', 'abierto').in('tipo', MIOS);
   const aCerrar = (abiertos || []).filter(i => !vistas.has(i.clave_idem)).map(i => i.id);
   if (aCerrar.length) {
     for (let i = 0; i < aCerrar.length; i += 300) {
