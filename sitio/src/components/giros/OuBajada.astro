@@ -45,6 +45,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       <ul class="ou-esc" id="ou-esc"></ul>
     </div>
     <p class="ou-mal" id="ou-mal"><b>314 piezas</b> salieron abajo de los $101.92 que costaron. Esas no se vendieron: se regalaron.</p>
+    <p class="ou-mas" id="ou-mas" hidden><b>$32,250 más</b>, con el mismo bulto.</p>
     <p class="ou-pie">El tercer escalón de $99 no sale de ninguna regla: sale de la prisa de fin de temporada.</p>
     <a class="ou-cta" href="/contacto">Verlo con mi último lote</a>
   </div>
@@ -69,6 +70,8 @@ import BloqueProducto from '../BloqueProducto.astro';
   .ou-esc :global(li.rojo i) { background: #C0552F; } .ou-esc :global(li.bajo i) { background: #9B2C2C; }
   .ou-esc :global(li em) { font-style: normal; color: var(--color-text-tertiary); }
   .ou-mal { margin: 18px 0 0; padding: 12px 14px; border-radius: var(--radius-sm, 8px); background: #FDECEC; color: #8A1F1F; font-size: 14px; line-height: 1.45; }
+  .ou-mas { margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm, 8px); background: #E9F5EF; color: #14603F; font-size: 15px; }
+  .ou-mas b { font-family: var(--font-display); font-size: 19px; }
   .ou-pie { margin: 10px 0 0; font-size: 12.5px; color: var(--color-text-tertiary); }
   .ou-cta { display: inline-flex; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
   @media (max-width: 767px) { .ou { padding: 14px; } .ou-grid { grid-template-columns: 1fr; } .ou-cta { width: 100%; justify-content: center; } }
@@ -80,7 +83,7 @@ import BloqueProducto from '../BloqueProducto.astro';
     const COSTO = 101.92;
     const E = {
       a: { num: '$229,658', dejo: '$113,058', pct: '49.2 %', sem: '26 semanas', porSem: '$4,348', vueltas: '2', malas: 314,
-           esc: [['$299', 430], ['$199', 320], ['$129', 60], ['$99', 220], ['$69', 34], ['$49', 38], ['$50', 22]] },
+           esc: [['$299', 430], ['$199', 320], ['$129', 80], ['$99', 220], ['$69', 34], ['$49', 38], ['$50', 22]] },
       b: { num: '$261,908', dejo: '$145,308', pct: '55.5 %', sem: '14 semanas', porSem: '$10,379', vueltas: '3.7', malas: 139,
            esc: [['$299', 560], ['$209', 160], ['$199', 165], ['$149', 60], ['$129', 60], ['$99', 90], ['$69', 9], ['$49', 18], ['$50', 22]] },
     };
@@ -96,6 +99,7 @@ import BloqueProducto from '../BloqueProducto.astro';
         return `<li class="${cls}"><span class="p">${p}</span><i style="width:${Math.round((n as number / max) * 100)}%"></i><em>${n} pzas</em></li>`;
       }).join('');
       document.getElementById('ou-mal')!.innerHTML = `<b>${d.malas} piezas</b> salieron abajo de los $101.92 que costaron. Esas no se vendieron: se regalaron.`;
+      (document.getElementById('ou-mas') as HTMLElement).hidden = k !== 'b';
       (window as any).sacsPH?.('giro_ou_bajada', { escenario: k });
     };
     el.querySelectorAll<HTMLButtonElement>('.ou-sw button').forEach((b) => {

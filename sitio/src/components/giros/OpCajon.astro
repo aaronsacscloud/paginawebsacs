@@ -44,7 +44,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       <p class="op-sup">Costo de la mica <b id="op-mica">$500</b> · anticipo cobrado <b id="op-ant">50%</b>. Cámbialos si en tu óptica son otros.
         <span class="op-eds">
           <input type="range" id="op-mica-r" min="150" max="1500" step="50" value="500" aria-label="Costo de la mica" />
-          <input type="range" id="op-ant-r" min="0" max="100" step="5" value="50" aria-label="Porcentaje de anticipo cobrado" />
+          <input type="range" id="op-ant-r" min="0" max="90" step="5" value="50" aria-label="Porcentaje de anticipo cobrado" />
         </span>
       </p>
     </div>
@@ -99,8 +99,10 @@ import BloqueProducto from '../BloqueProducto.astro';
       $('op-mica').textContent = pesos(mica);
       $('op-ant').textContent = ant + '%';
       $('op-deben').textContent = pesos(n * saldo);
-      // El saldo es lo que falta: el anticipo cobrado sale de ahí. Precio = saldo / (1 - ant).
-      const precio = ant >= 100 ? saldo : saldo / (1 - ant / 100);
+      // El saldo es lo que falta por cobrar, así que el precio del par sale de ahí: si te deben
+      // $900 y cobraste la mitad, el par costó $1,800 y el anticipo fue de $900. El deslizador
+      // llega al 90 %: un par cobrado al 100 % ya no tiene saldo pendiente y no cae en este cajón.
+      const precio = saldo / (1 - ant / 100);
       const anticipo = precio - saldo;
       const hueco = Math.max(0, (mica - anticipo) * n);
       $('op-pierdes').textContent = pesos(hueco);

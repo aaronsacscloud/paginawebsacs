@@ -57,6 +57,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       <p class="sa-aviso" id="sa-aviso" hidden>
         Ya no alcanza para hacérselo. Las dos salidas de siempre: <b>traje de línea con ajustes</b>, o <b>urgente con recargo</b>.
       </p>
+      <p class="sa-dic" id="sa-dic" hidden>Cae en diciembre: los maquileros se van a su pueblo desde el 15, así que la fecha real de corte es el <b>12</b>.</p>
       <p class="sa-pie">De cada pieza queda una cola de 1.5 a 2.5 m que ya no da saco. Doce piezas al año son unos <b>24 metros parados</b>: la tela de siete u ocho trajes que ya pagaste y nunca vas a vender.</p>
       <a class="sa-cta" href="/contacto">Verlo con mis fechas</a>
     </div>
@@ -77,7 +78,8 @@ import BloqueProducto from '../BloqueProducto.astro';
   .sa-linea { list-style: none; margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid #E3E3DF; display: grid; gap: 7px; }
   .sa-linea :global(li) { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--color-text-secondary); }
   .sa-linea :global(li b) { color: var(--color-text-primary); font-weight: 600; }
-  .sa-linea :global(li.is-hoy) { color: var(--color-primary, #4B7BE5); }
+  .sa-linea :global(li.is-pasado), .sa-linea :global(li.is-pasado b) { color: #B42318; text-decoration: line-through; }
+  .sa-dic { margin: 12px 0 0; padding: 11px 13px; border-radius: var(--radius-sm, 8px); background: #FDF3DF; color: #8A5A00; font-size: 13.5px; line-height: 1.45; }
   .sa-aviso { margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm, 8px); background: #FDECEC; color: #8A1F1F; font-size: 14px; line-height: 1.45; }
   .sa.is-tarde .sa-fecha { color: #B42318; }
   .sa-pie { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13px; line-height: 1.45; color: var(--color-text-secondary); }
@@ -93,7 +95,8 @@ import BloqueProducto from '../BloqueProducto.astro';
     const fechaIn = document.getElementById('sa-fecha') as HTMLInputElement;
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     const porDefecto = new Date(hoy.getTime() + 75 * 864e5);
-    fechaIn.value = porDefecto.toISOString().slice(0, 10);
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    fechaIn.value = iso(porDefecto);
     const dia = (d: Date) => `${d.getDate()} ${MES[d.getMonth()]}`;
     const menos = (d: Date, n: number) => new Date(d.getTime() - n * 864e5);
     const leer = (id: string) => Number((document.querySelector(`#${id} button.is-on`) as HTMLElement)?.dataset.d || 0);
@@ -110,18 +113,26 @@ import BloqueProducto from '../BloqueProducto.astro';
       const tela = leer('sa-tela'), extra = leer('sa-taller');
       const entrega = menos(ev, 7);                    // se entrega una semana antes del evento
       const terminado = menos(entrega, 3);
-      const prueba = menos(terminado, 10 + extra);     // el maquilero corre todo una semana
-      const corte = menos(prueba, 12 + extra);
+      const prueba = menos(terminado, 16 + extra);     // el maquilero corre una semana, y solo aquí
+      const corte = menos(prueba, 16);
+      // Diciembre: los maquileros se van a su pueblo desde el 15, así que un corte del 13 al 31 se
+      // recorre al 12 y hay que avisarlo. Es la regla que promete la viñeta, no un adorno.
+      let corteReal = corte, dic = false;
+      if (corte.getMonth() === 11 && corte.getDate() > 12) {
+        corteReal = new Date(corte.getFullYear(), 11, 12); dic = true;
+      }
       // Sin anticipo no se corta, y entre que deja el anticipo y se traza pasan un par de días.
-      const vender = menos(corte, tela + 2);
-      document.getElementById('sa-corte')!.textContent = dia(corte);
+      const vender = menos(corteReal, tela + 2);
+      document.getElementById('sa-corte')!.textContent = dia(corteReal);
       document.getElementById('sa-vender')!.textContent = dia(vender);
       const tarde = +vender < +hoy;
       el.classList.toggle('is-tarde', tarde);
       (document.getElementById('sa-aviso') as HTMLElement).hidden = !tarde;
-      const pasos: [string, Date][] = [['Anticipo y ficha', vender], ['Corte de la pieza', corte], ['La prueba', prueba], ['Terminado', terminado], ['Entrega en funda', entrega], ['El evento', ev]];
-      document.getElementById('sa-linea')!.innerHTML = pasos.map(([t, d]) => `<li class="${+d < +hoy ? 'is-hoy' : ''}"><span>${t}</span><b>${dia(d)}</b></li>`).join('');
-      (window as any).sacsPH?.('giro_sa_reloj', { tela, extra, tarde });
+      const av = document.getElementById('sa-dic') as HTMLElement;
+      av.hidden = !dic;
+      const pasos: [string, Date][] = [['Anticipo y ficha', vender], ['Corte de la pieza', corteReal], ['La prueba', prueba], ['Terminado', terminado], ['Entrega en funda', entrega], ['El evento', ev]];
+      document.getElementById('sa-linea')!.innerHTML = pasos.map(([t, d]) => `<li class="${+d < +hoy ? 'is-pasado' : ''}"><span>${t}</span><b>${dia(d)}</b></li>`).join('');
+      (window as any).sacsPH?.('giro_sa_reloj', { tela, extra, tarde, dic });
     }
     pinta();
   })();

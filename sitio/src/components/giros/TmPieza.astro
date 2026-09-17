@@ -52,7 +52,7 @@ import BloqueProducto from '../BloqueProducto.astro';
         <button type="button" class="tm-reset" data-m="0">volver a empezar</button>
       </div>
       <p class="tm-dato">Llevas cobrado <b id="tm-cobrado">$0</b> de los <b>$7,000</b> que da la pieza.</p>
-      <p class="tm-retazo" id="tm-retazo" hidden>Ya es retazo: <b>1.9 kg × $60 = $114</b>. Como tela valía $840.</p>
+      <p class="tm-retazo" id="tm-retazo" hidden></p>
       <label class="tm-switch"><input type="checkbox" id="tm-aviso" /> <span>Con aviso a tiempo</span></label>
       <p class="tm-pie">Y hoy tienes <b>$48,960</b> dormidos en saldos: 180 tramos de 3.2 metros a $85 de costo.</p>
       <a class="tm-cta" href="/contacto">Ver mis piezas en pantalla</a>
@@ -108,8 +108,14 @@ import BloqueProducto from '../BloqueProducto.astro';
       i.style.width = Math.max(0, (quedan / PIEZA) * 100) + '%';
       $('tm-quedan').textContent = quedan.toFixed(1) + ' m';
       $('tm-cobrado').textContent = '$' + Math.round(cobrado).toLocaleString('es-MX');
-      const esRetazo = quedan > 0 && quedan < MINIMO;
-      ($('tm-retazo') as HTMLElement).hidden = !esRetazo;
+      const esRetazo = quedan > 0 && quedan <= MINIMO;
+      const r = $('tm-retazo') as HTMLElement;
+      r.hidden = !esRetazo;
+      if (esRetazo) {
+        // Tela de 1.50 de ancho y 210 g/m²: cada metro pesa 315 g, y el retazo se paga a $60 el kilo.
+        const kg = quedan * 1.5 * 0.21;
+        r.innerHTML = `Ya es retazo: <b>${kg.toFixed(1)} kg × $60 = $${Math.round(kg * 60)}</b>. Como tela valía $${Math.round(quedan * VENTA)}.`;
+      }
       i.style.background = esRetazo ? 'linear-gradient(90deg, #B96A1E, #E0913C)' : '';
     };
     $('tm-vida').parentElement!.querySelectorAll<HTMLButtonElement>('.tm-cortes button').forEach((b) => {
@@ -117,11 +123,21 @@ import BloqueProducto from '../BloqueProducto.astro';
         const m = Number(b.dataset.m);
         if (!m) { quedan = PIEZA; cobrado = 0; vida(); return; }
         if (quedan < m) return;
-        quedan = Math.round((quedan - m) * 100) / 100;
+        // El dedito de más: nadie corta exacto, y esos 3 cm por corte no se cobran. Por eso una
+        // pieza de 50 nunca deja los $7,000 completos, ni cortándola en tramos parejos.
+        quedan = Math.round((quedan - m - 0.03) * 100) / 100;
         cobrado += m * VENTA;
-        if (quedan < MINIMO && ($('tm-aviso') as HTMLInputElement).checked) { cobrado += quedan * VENTA * 0.7; quedan = 0; }
+        if (quedan <= MINIMO && quedan > 0 && ($('tm-aviso') as HTMLInputElement).checked) {
+          cobrado += quedan * VENTA * 0.7; quedan = 0;
+        }
         vida();
       });
+    });
+    // Prender el aviso a tiempo remata el saldo que ya está en la mesa, sin tener que cortar otra vez.
+    $('tm-aviso').addEventListener('change', () => {
+      if (($('tm-aviso') as HTMLInputElement).checked && quedan <= MINIMO && quedan > 0) {
+        cobrado += quedan * VENTA * 0.7; quedan = 0; vida();
+      }
     });
     vida();
   })();

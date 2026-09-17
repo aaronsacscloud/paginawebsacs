@@ -98,6 +98,14 @@ import BloqueProducto from '../BloqueProducto.astro';
     const $ = (id: string) => document.getElementById(id)!;
     const v = (id: string) => Number(($(id) as HTMLInputElement).value);
     const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    // Los modelos que salen mal se mueven CON el catálogo: si son 6 de 60 y el catálogo se va a
+    // 120, son 12. Si no, el deslizador de modelos no cambiaba nada y el dueño lo notaba.
+    let ratio = 6 / 60;
+    ($('tg-mod') as HTMLInputElement).addEventListener('input', () => {
+      const f = $('tg-fall') as HTMLInputElement;
+      f.value = String(Math.min(Number(f.max), Math.max(0, Math.round(v('tg-mod') * ratio))));
+    });
+    ($('tg-fall') as HTMLInputElement).addEventListener('input', () => { ratio = v('tg-fall') / Math.max(1, v('tg-mod')); });
     const pinta = () => {
       const mod = v('tg-mod'), fall = v('tg-fall'), pz = v('tg-pz');
       $('tg-m').textContent = String(mod); $('tg-f').textContent = String(fall); $('tg-p').textContent = String(pz);
