@@ -807,3 +807,38 @@ PENDIENTES, con lo que hace falta para cada uno:
 10. **Que el silencio nunca sea el mensaje** — regla general; ya se aplicó en el
     cierre mudo y en el aviso de buzón, falta barrer el resto.
 
+## 17-sep-2026 — «Enséñame la acción que se va a generar» (con el caso medido)
+
+> «Andrea me dijo: márcame en una hora más. Ahí en automático se debe generar
+> una cita en el calendario de seguimiento antes de pasar a la otra llamada, se
+> debe transcribir, y se debe demostrar que existe esta acción… cuando en la
+> llamada hay un tipo de acción, tienes que mostrar la acción que se va a
+> generar para que quien llama tenga certeza de que se está ejecutando.»
+
+**LO MEDIDO EN EL CASO REAL (Andrea Romo, 17-sep 21:02):**
+  resultado: contestó · 23 s · grabación: SÍ · transcripción: SÍ
+  cierre_estado: `sin_datos`
+  cierre_ia.motivo: «Your credit balance is too low to access the Anthropic API»
+
+O sea: **la función existe y no falló — se acabó el saldo de Anthropic**. El
+cierre con IA es quien lee la llamada, saca «márcame en una hora» y crea el
+compromiso; sin saldo no lee nada, y por eso no se generó la cita. En las
+últimas 6 h: 8 cierres `sin_datos`, 4 de ellos por saldo.
+
+Y la grabación que pidió PARA PODER EVALUAR BUGS ya existe: `grabacion_path` y
+`transcript` están llenos en esa llamada. Falta decir dónde se oyen.
+
+QUEDA POR HACER:
+1. **Recargar saldo de Anthropic** (esto no es código).
+2. **Que el cierre diga que murió por saldo, no «sin datos».** Hoy pinta «La IA
+   no alcanzó a leer la llamada» con el error crudo escondido en un campo. Eso
+   se lee como «la IA no entendió» cuando en realidad es «no hay con qué
+   pagarle» — dos problemas con soluciones opuestas.
+3. **Enseñar la acción ANTES de pasar al siguiente**, con certeza: el bloque
+   «Al seguir se deja hecho» ya lista los compromisos con fecha y hora cuando
+   la IA los propone. Falta que NO se pueda pasar al siguiente sin haberla
+   visto, y que diga «ya quedó en tu calendario» con el link, no «se va a
+   crear».
+4. **Un botón para oír la grabación** desde el item de la lista y desde el hilo.
+   Los datos están; no hay por dónde reproducirlos.
+
