@@ -62,8 +62,10 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
     <link rel="preload" href="/fonts/PlusJakartaSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/ClashDisplay-Bold.woff2" as="font" type="font/woff2" crossorigin />
-    <!-- Preload hero image (above-fold, LCP element) -->
-    <link rel="preload" href={preloadImage || '/images/hero-sacs-store-1400.webp'} as="image" type="image/webp" fetchpriority="high" />
+    <!-- La foto de portada YA lleva fetchpriority en su etiqueta. Aquí solo se
+         precarga cuando la página declara una propia, porque en el inicio el
+         elemento más grande es el título y la fuente tiene que ganar la carrera. -->
+    {preloadImage && <link rel="preload" href={preloadImage} as="image" type="image/webp" fetchpriority="high" />}
 
     <SEO
       title={title}
