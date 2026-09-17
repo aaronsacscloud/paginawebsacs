@@ -31,7 +31,7 @@ const { foto, alt, frase, datos, encuadre = 'center 45%' } = Astro.props;
 ---
 
 <section class="cif">
-  <img src={foto} alt={alt} loading="lazy" decoding="async" style={`object-position:${encuadre}`} />
+  <img src={foto} alt={alt} loading="lazy" decoding="async" style={`object-position:${encuadre}`} width="1536" height="1024" />
   <div class="cif-velo"></div>
   <div class="cif-inner">
     <p class="cif-frase">{frase}</p>

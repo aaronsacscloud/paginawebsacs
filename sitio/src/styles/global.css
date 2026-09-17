@@ -496,7 +496,7 @@ html, body { overflow-x: clip; }
    Pasaba en el selector de moneda de Planes y en los campos de Partners. */
 @media (max-width: 900px) {
   input:not([type=range]):not([type=checkbox]):not([type=radio]),
-  select, textarea { font-size: max(16px, 1rem); }
+  select, textarea { font-size: max(16px, 1rem) !important; }
 }
 
 /* 5. Tocar sin pelear. Área mínima de 44 px en los enlaces y botones que la
@@ -507,6 +507,11 @@ html, body { overflow-x: clip; }
   .pt-link, .suite-tab, .flujo-replay, .price-strip-item {
     position: relative;
   }
+  /* Los que ocupan su propio renglón crecen de verdad, centrando lo que ya tenían dentro. */
+  .nav-logo, .footer-subheading, .pt-link, .psn-feature-link {
+    min-height: 44px; display: flex; align-items: center;
+  }
+  .footer-logo, .ce-case-link { min-height: 44px; display: inline-flex; align-items: center; }
   .nav-logo::after, .footer-logo::after, .footer-subheading::after,
   .psn-feature-link::after, .ce-case-link::after, .pt-link::after {
     content: ''; position: absolute; inset: 50% 0 auto; translate: 0 -50%;
@@ -527,7 +532,8 @@ html, body { overflow-x: clip; }
 @media (max-width: 767px) {
   .plan-services-label, .ct-proof-label, .hero-badge-label, .hmn-msg,
   .sq-fc-cust-meta, .sq-fc-time, .hmn-title, .flujo-tag, .suite-panel-url,
-  .toggle-savings { font-size: max(12px, 0.75rem); }
+  .toggle-savings, .sq-fc-stock-qty, .sq-fc-qr-meta, .blog-home-tag,
+  .enterprise-card-label, .pf-plan-save, .reels-stat-label { font-size: max(12px, 0.75rem) !important; }
 }
 
 /* 8. Renglones que respiran. Interlineado por debajo de 1.35 en frases largas

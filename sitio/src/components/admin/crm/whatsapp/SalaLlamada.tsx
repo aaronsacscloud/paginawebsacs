@@ -90,6 +90,19 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
     setHorarios(Array.isArray(slots) ? slots.slice(0, 12) : []);
   };
 
+  /* «TE MANDO LA LIGA» DESDE AQUÍ, no después. El «después» es media hora más
+     tarde, cuando ya vas por la cuarta llamada y no te acuerdas — y es
+     exactamente la cita que se pierde. */
+  const [ligaEnviada, setLigaEnviada] = useState(false);
+  const mandarLiga = async () => {
+    setLigaEnviada(true);
+    const r = await fetch('/api/crm/whatsapp/enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefono, texto: 'Como quedamos, aquí puedes elegir el día y la hora que te acomode: https://www.sacscloud.com/agendar/demo' }),
+    }).then(x => x.json()).catch(() => null);
+    if (r?.error) { setLigaEnviada(false); setMsg(r.error); }
+  };
+
   const cerrarLlamada = async () => {
     if (!resultado) { setMsg('Di qué pasó antes de colgar: es lo que alimenta todo lo demás.'); return; }
     setMsg('');
@@ -123,6 +136,14 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
             <span style={{ display: 'block', fontSize: 13, color: C.g500, marginTop: 3 }}>
               {[nombre, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
             </span>
+            {/* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de CDMX es llamar
+                a las 7, y esa llamada no se recupera con una disculpa. Sólo se
+                enseña si difiere: repetir tu propia hora es ruido. */}
+            {ctx?.hora_local && (
+              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11.5, fontWeight: 800, background: '#FFF4E5', color: '#9a6a10', borderRadius: 999, padding: '3px 10px' }}>
+                Allá son las {ctx.hora_local.hora}
+              </span>
+            )}
           </span>
           <span style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button onClick={onSilenciar} style={{ border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -202,9 +223,15 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
             <div style={CAJA}>
               <div style={ROT}>Agendar</div>
               {horarios === null ? (
-                <button onClick={verHorarios} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
-                  Ver los horarios que tengo libres
-                </button>
+                <>
+                  <button onClick={verHorarios} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
+                    Ver los horarios que tengo libres
+                  </button>
+                  <button onClick={mandarLiga} disabled={ligaEnviada}
+                    style={{ border: 'none', background: 'none', color: ligaEnviada ? '#1E8A63' : C.g500, fontSize: 12.5, fontWeight: 700, cursor: ligaEnviada ? 'default' : 'pointer', fontFamily: 'inherit', padding: '8px 0 0', width: '100%' }}>
+                    {ligaEnviada ? 'Liga enviada por WhatsApp' : 'O mándale la liga por WhatsApp ahora'}
+                  </button>
+                </>
               ) : !horarios.length ? (
                 <div style={{ fontSize: 12.5, color: C.g500 }}>No hay horarios libres en los próximos días. Queda como «volver a llamar» y lo cuadras después.</div>
               ) : (

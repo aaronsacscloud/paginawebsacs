@@ -6,6 +6,7 @@
 // cambia cómo saludas: quién es, en qué etapa va, y cuántas veces le has
 // marcado sin encontrarlo.
 import type { APIRoute } from 'astro';
+import { ladaDe, zonaDeLada, horaLocal } from '../../../../lib/telefonia/zonas';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 
@@ -76,6 +77,13 @@ export const GET: APIRoute = async ({ request, url }) => {
     ciudad: emp?.ciudad || null,
     sitio: emp?.sitio_web || null,
     sucursales: emp?.sucursales ?? (ficha as any)?.sucursales_interes ?? null,
+    /* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de la mañana de CDMX es
+       llamar a las 7, y esa llamada no se recupera con una disculpa. Sale de
+       la lada, que es lo único que se sabe seguro antes de que contesten. */
+    hora_local: (() => {
+      const z = zonaDeLada(ladaDe(`+52${limpio}`));
+      return z && z !== 'America/Mexico_City' ? { zona: z, hora: horaLocal(z) } : null;
+    })(),
     mensajes: (msjs || []).reverse(),
     previas: previas || [],
     conversationId: (conv as any).id,

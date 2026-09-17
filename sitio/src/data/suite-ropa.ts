@@ -239,7 +239,7 @@ export const seccionesRopa: SuiteSeccion[] = [
          ['Cinturón piel','$450','sugerido','/images/prod-cinturon-piel.webp']]
         .map(([n,p,t,img]:any)=>`<div style="display:flex;align-items:center;gap:13px;border:1px solid ${t==='sugerido'?'#DBE7FB':'var(--color-border-light)'};background:${t==='sugerido'?'#FAFCFF':'#fff'};border-radius:8px;padding:10px 13px;margin-bottom:9px;">
           <span style="width:58px;height:58px;border-radius:8px;overflow:hidden;flex-shrink:0;background:linear-gradient(160deg,#F1F3F8,var(--color-border-light));box-shadow:inset 0 0 0 1px rgba(15,23,42,.06);">
-            <img src="${img}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+            <img src="${img}" alt="" width="400" height="400" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
           </span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);line-height:1.3;">${n}</div>
@@ -298,7 +298,7 @@ export const seccionesRopa: SuiteSeccion[] = [
       </div>
       <div style="background:var(--ok-fondo);border:1px solid #A7F3D0;border-radius:8px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
         <span style="width:52px;height:52px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--color-border-light);">
-          <img src="/images/prod-blusa-negra.webp" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+          <img width="400" height="400" src="/images/prod-blusa-negra.webp" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
         </span>
         <div>
           <div style="font-size:12px;font-weight:800;color:var(--ok-texto);">Llegó su talla</div>

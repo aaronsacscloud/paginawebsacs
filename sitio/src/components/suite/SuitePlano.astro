@@ -368,7 +368,7 @@ const primera = clave[0];
           <article class:list={['pn-hoja', { on: z.id === primera.id }]} data-hoja={z.id}>
             {z.foto && (
               <div class="pn-foto">
-                <img src={z.foto} alt={z.alt || z.nombre} loading={z.id === primera.id ? 'eager' : 'lazy'} decoding="async" />
+                <img src={z.foto} alt={z.alt || z.nombre} loading={z.id === primera.id ? 'eager' : 'lazy'} decoding="async" width="1536" height="1024" />
                 <span class="pn-foto-n">{z.n}</span>
                 {z.pie && <span class="pn-foto-p">{z.pie}</span>}
               </div>
