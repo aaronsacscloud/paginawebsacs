@@ -323,3 +323,66 @@ que la arquitectura de la etapa 2A funciona.
 ### Sigue bloqueado
 El saldo de Anthropic. Sin él no corren `normalizar`, `clasificar` ni el pipeline
 de contenido generado. Todo lo de arriba se hizo sin tocarlo.
+
+---
+
+## Etapa 3 · Visibilidad en IA — hecha (17-sep-2026)
+
+**Dónde vamos:** el motor mide en cuatro plataformas y tiene su línea base.
+
+### La línea base, que es el dato del proyecto
+- **48 mediciones** (12 preguntas × 4 plataformas). **Sacs aparece 0 veces.**
+- **Visibilidad en IA: 0 de 100.**
+- En buscadores: **5.1% del tráfico** viene de gente que no nos conocía; el 95%
+  restante son clientes tecleando «sacscloud iniciar sesión».
+- Buscando consultas del ramo en 16 meses de Search Console: **cero**.
+
+### Qué se construyó
+- `geo/proveedores.ts` — ChatGPT, Gemini, Claude y Perplexity, **todas con
+  búsqueda web encendida** (sin eso se mide lo que el modelo recuerda, no lo que
+  contesta hoy). Grok queda fuera: falta llave y su uso en México es marginal.
+- `geo/medir.ts` — medición, extracción con modelo barato, AVS y series.
+- 30 preguntas de comprador redactadas a mano (giro · problema · comparativa ·
+  tamaño). No son keywords: nadie le escribe «software moda méxico» a ChatGPT.
+- Pantalla **Visibilidad en IA** con las tres vistas.
+- Muestreo dentro del ciclo diario.
+
+### Lo que la medición encontró
+- **Quién ocupa el lugar:** Shopify (3 de 4 plataformas), Odoo, Alegra POS,
+  Square, Bind ERP, ManagementPro, Loyverse.
+- **En quién confía la IA:** syskapos.com, alegra.com, mproerp.com, sicar.mx,
+  puntodeventa.com.mx, capterra.mx.
+- **Los competidores reales de México no eran los que yo había puesto.** La
+  semilla tenía Shopify, Odoo, NetSuite. Los que salen son SICAR X, Syska POS,
+  Multicomercio, Loggro, INTAC… y los de moda: **Sizes and Colors** (lo señaló
+  el dueño), Adiasoft, Regtrix. Son 45 competidores ahora.
+- **La categoría «software hecho para moda» está VACANTE**: al pedir
+  explícitamente software especializado, las IAs siguen contestando genéricos.
+  Ni Sizes and Colors domina esa respuesta. No vamos tarde a una carrera que
+  otro lidera: la carrera no ha empezado.
+
+### Decisiones y trampas
+- **Plataforma no consultable = `NO_DISPONIBLE` con motivo, nunca un cero.** Un
+  cero se promedia y arrastra; un hueco declarado se ve y se arregla.
+- **El dato duro manda sobre el juicio**: si el texto no contiene el nombre, no
+  lo menciona, diga lo que diga el extractor. Si discrepan, la confianza baja a
+  0.6 en vez de fingir certeza.
+- **Perplexity: la API cambió.** `sonar` en `/chat/completions` ya no existe;
+  ahora es `perplexity/sonar` en `/v1/responses`. Y los créditos de API se
+  compran APARTE de la suscripción Pro, que no sirve para esto.
+- **Tercer fallo silencioso del proyecto**: se crearon funciones de SQL antes que
+  su tabla y el error se mandó a `/dev/null`; el motor dijo «no hay prompts que
+  medir» tan tranquilo. Regla: verificar después de crear.
+- **No compilar mientras corre un trabajo pesado**: el servidor se queda sin
+  memoria y el build falla con un error que no es el real.
+
+### Proveedores de IA
+Cuatro con llave (Gemini, Groq, Anthropic, OpenAI) y el orden **depende del
+trabajo**: volumen a Gemini (3× más barato), criterio y estrategia a Anthropic.
+Si uno falla por saldo o cuota, pasa al siguiente.
+
+### Lo que sigue
+1. Medir las 18 preguntas restantes del catálogo.
+2. Etapa 4: herramientas gratis y MCP.
+3. Etapa 5: atribución y aprendizaje.
+4. Pendiente del dueño: `XAI_API_KEY` (opcional), `DATAFORSEO_*` y Reddit.
