@@ -65,11 +65,16 @@ const RESULTADOS: { id: string; l: string; tono: string }[] = [
 ];
 
 const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/* «+52 56 1035 3669» NO es un nombre. Quien llama de fuera llega sin nombre y
+   en el camino alguien lo sustituye por el teléfono legible; si eso gana, la
+   ficha —que sí tiene el nombre— nunca se enseña. Es exactamente lo que
+   reportó el dueño: «me aparecía el nombre de la empresa, no el de la persona». */
+const esNumero = (s?: string | null) => !String(s || '').trim() || /^[+\d\s()\-.]+$/.test(String(s));
 const dia = (f: any) => (f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '');
 
 type Accion = {
   id: string; accion: string; etiqueta: string; auto: boolean; frase: string | null;
-  origen: string; estado: string; resultado: string | null; params: any;
+  origen: string; estado: string; resultado: string | null; params: any; aprendido_de?: string | null;
   pide: { campo: string; etiqueta: string; tipo: string; valor?: string }[];
   pide_texto: boolean; envio_id: string | null;
 };
@@ -259,6 +264,9 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   const BTN: any = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 9, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' };
   const CAMPO: any = { border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit', boxSizing: 'border-box' };
 
+  /* Quién es, en una sola decisión y no repartida por la pantalla. */
+  const persona = ctx?.nombre || (esNumero(nombre) ? null : nombre);
+  const titulo = ctx?.marca || ctx?.empresa || persona || telefonoLegible(telefono);
   const hechas = acciones.filter(a => a.estado === 'hecha');
   const abiertas = acciones.filter(a => ['propuesta', 'haciendo', 'pregunta', 'fallo'].includes(a.estado));
   const p = cierre?.propuesta;
@@ -280,6 +288,9 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
         {/* LA EVIDENCIA: la frase con la que se disparó. Sin ella, quien acaba
             de colgar no puede saber si la máquina entendió bien. */}
         {a.frase && <div style={{ fontSize: 11.5, color: C.g500, fontStyle: 'italic', marginTop: 3 }}>«{a.frase}»</div>}
+        {/* Lo que quedó aprendido: la próxima vez que un cliente diga eso, esta
+            acción se propone sola. Se enseña para que se pueda desmentir. */}
+        {a.aprendido_de && <div style={{ fontSize: 11, color: '#5B4BD6', marginTop: 3 }}>Aprendido: si alguien dice «{a.aprendido_de}», lo propongo solo.</div>}
         {/* QUÉ PASÓ, no «listo»: el cliente ve cosas distintas si salió por
             plantilla o como mensaje, y quien llamó tiene que saber cuál. */}
         {a.resultado && <div style={{ fontSize: 12, color: hecha ? '#1E8A63' : pregunta ? '#9a6a10' : '#C0554E', fontWeight: 700, marginTop: 5 }}>{a.resultado}</div>}
@@ -340,7 +351,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             {reloj(segundos)}
           </span>
           <span style={{ flex: '1 1 260px', minWidth: 0 }}>
-            <b style={{ display: 'block', fontSize: 26, letterSpacing: '-0.03em', lineHeight: 1.1 }}>{ctx?.marca || nombre || ctx?.nombre || telefonoLegible(telefono)}</b>
+            <b style={{ display: 'block', fontSize: 26, letterSpacing: '-0.03em', lineHeight: 1.1 }}>{titulo}</b>
             {/* EL NOMBRE SALE DEL CONTEXTO CUANDO NO VIENE EN LA LLAMADA.
                 En una ENTRANTE, Twilio sólo trae el número: `enganchar()` la
                 registra con `nombre = null`, así que la sala pintaba la marca
@@ -348,7 +359,9 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 dueño: «me aparecía el nombre de la empresa pero no el de la
                 persona». El contexto ya lo traía; sólo no se estaba mirando. */}
             <span style={{ display: 'block', fontSize: 13, color: C.g500, marginTop: 3 }}>
-              {[nombre || ctx?.nombre, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
+              {/* Sin repetir el título: cuando no hay marca, el nombre YA está
+                  arriba en grande y volver a ponerlo abajo se lee como un error. */}
+              {[persona === titulo ? null : persona, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
             </span>
             {/* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de CDMX es llamar
                 a las 7, y esa llamada no se recupera con una disculpa. Sólo se
@@ -460,6 +473,53 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
 
           {/* ── Columna derecha: lo que haces DURANTE la llamada ── */}
           <div style={{ flex: '1 1 340px', display: 'grid', gap: 12, minWidth: 0 }}>
+            {/* ══ AL COLGAR: EL CIERRE ════════════════════════════════════
+                Lo que la IA leyó de la llamada, propuesto para confirmar. Si no
+                hay IA —sin saldo, o la transcripción no alcanzó— se dice con
+                todas sus letras en vez de fingir que no había nada que cerrar:
+                las acciones que sí se hicieron siguen arriba, hechas. */}
+            {fin && (
+              <div style={{ ...CAJA, borderColor: C.morado }}>
+                <div style={ROT}>Cerrar la llamada</div>
+                {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada…</div>}
+                {!cerrando && aplicado && (
+                  <div style={{ fontSize: 12.5, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
+                    {aplicado.length ? aplicado.map((h, i) => <div key={i}>✓ {h}</div>) : <div>✓ Quedó cerrada.</div>}
+                  </div>
+                )}
+                {!cerrando && !aplicado && p && (
+                  <>
+                    <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
+                    {p.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {p.siguiente_paso}</div>}
+                    {!!(p.compromisos || []).length && (
+                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.compromisos.map((c: any, i: number) => (
+                        <div key={i}>📅 {c.tipo === 'reunion' ? 'Reunión' : 'Llamada'} el {c.fecha} a las {c.hora}</div>
+                      ))}</div>
+                    )}
+                    {!!(p.envios || []).length && (
+                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.envios.map((e: any, i: number) => (
+                        <div key={i}>📎 Mandarle {e.tema}{e.estado === 'falta' ? ' (no sabemos qué: te lo va a preguntar)' : ''}</div>
+                      ))}</div>
+                    )}
+                    {!!(p.datos || []).length && <div style={{ fontSize: 12.5, marginTop: 6 }}>✍️ Datos: {p.datos.map((d: any) => `${d.campo} = ${d.valor}`).join(' · ')}</div>}
+                    <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>
+                  </>
+                )}
+                {!cerrando && !aplicado && !p && (
+                  <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6 }}>
+                    {/* El error de facturación de Anthropic llega en inglés y
+                        con su JSON: aquí se dice en una frase lo que significa
+                        y qué hay que hacer, que es cargarle saldo. */}
+                    {/credit balance|billing|quota/i.test(cierre?.motivo || '')
+                      ? 'No hay saldo de IA, así que nadie leyó la llamada por ti (se carga en console.anthropic.com).'
+                      : cierre?.motivo ? `La IA no pudo cerrarla: ${cierre.motivo}.`
+                      : 'No hubo suficiente conversación transcrita para cerrar con IA.'}
+                    {' '}Tu apunte y el desenlace ya quedaron guardados, y lo que se hizo en la llamada está arriba.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ══ LO QUE TE PIDIÓ ════════════════════════════════════════
                 El corazón del pedido: lo que el cliente pide se hace AHORA y
                 queda escrito qué pasó. Las seguras (mandar material, un
@@ -482,7 +542,9 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                   ejemplo: la próxima vez que alguien diga esa misma frase, la
                   acción aparece sola. Es el mismo ciclo de reglas-como-datos
                   de Trabajo Inteligente, no un modelo nuevo. */}
-              {!fin && (
+              {/* También DESPUÉS de colgar: acordarse de lo que pidió es algo
+                  que pasa justo al colgar, y entonces todavía se puede hacer. */}
+              {(
                 <div style={{ marginTop: 10, borderTop: `1px dashed ${C.g200}`, paddingTop: 10 }}>
                   <div style={{ ...ROT, marginBottom: 5 }}>¿Pidió algo que no ves aquí?</div>
                   <textarea rows={2} value={dictado} onChange={e => setDictado(e.target.value)}
@@ -565,53 +627,6 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                       onChange={e => setVolverEl(e.target.value)}
                       style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit' }} />
                   </label>
-                )}
-              </div>
-            )}
-
-            {/* ══ AL COLGAR: EL CIERRE ════════════════════════════════════
-                Lo que la IA leyó de la llamada, propuesto para confirmar. Si no
-                hay IA —sin saldo, o la transcripción no alcanzó— se dice con
-                todas sus letras en vez de fingir que no había nada que cerrar:
-                las acciones que sí se hicieron siguen arriba, hechas. */}
-            {fin && (
-              <div style={{ ...CAJA, borderColor: C.morado }}>
-                <div style={ROT}>Cerrar la llamada</div>
-                {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada…</div>}
-                {!cerrando && aplicado && (
-                  <div style={{ fontSize: 12.5, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
-                    {aplicado.length ? aplicado.map((h, i) => <div key={i}>✓ {h}</div>) : <div>✓ Quedó cerrada.</div>}
-                  </div>
-                )}
-                {!cerrando && !aplicado && p && (
-                  <>
-                    <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
-                    {p.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {p.siguiente_paso}</div>}
-                    {!!(p.compromisos || []).length && (
-                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.compromisos.map((c: any, i: number) => (
-                        <div key={i}>📅 {c.tipo === 'reunion' ? 'Reunión' : 'Llamada'} el {c.fecha} a las {c.hora}</div>
-                      ))}</div>
-                    )}
-                    {!!(p.envios || []).length && (
-                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.envios.map((e: any, i: number) => (
-                        <div key={i}>📎 Mandarle {e.tema}{e.estado === 'falta' ? ' (no sabemos qué: te lo va a preguntar)' : ''}</div>
-                      ))}</div>
-                    )}
-                    {!!(p.datos || []).length && <div style={{ fontSize: 12.5, marginTop: 6 }}>✍️ Datos: {p.datos.map((d: any) => `${d.campo} = ${d.valor}`).join(' · ')}</div>}
-                    <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>
-                  </>
-                )}
-                {!cerrando && !aplicado && !p && (
-                  <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6 }}>
-                    {/* El error de facturación de Anthropic llega en inglés y
-                        con su JSON: aquí se dice en una frase lo que significa
-                        y qué hay que hacer, que es cargarle saldo. */}
-                    {/credit balance|billing|quota/i.test(cierre?.motivo || '')
-                      ? 'No hay saldo de IA, así que nadie leyó la llamada por ti (se carga en console.anthropic.com).'
-                      : cierre?.motivo ? `La IA no pudo cerrarla: ${cierre.motivo}.`
-                      : 'No hubo suficiente conversación transcrita para cerrar con IA.'}
-                    {' '}Tu apunte y el desenlace ya quedaron guardados, y lo que se hizo en la llamada está arriba.
-                  </div>
                 )}
               </div>
             )}

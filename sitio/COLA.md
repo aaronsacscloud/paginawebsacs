@@ -883,7 +883,28 @@ dictarla —«mándale el PDF de precios»— que además se guarda como ejemplo
 último es lo que pidió con «para que aprendas»: el mismo ciclo de reglas-como-
 datos que ya existe en Trabajo Inteligente (ti_reglas), no un modelo nuevo.
 
-NO EMPEZARLO SIN: saldo de Anthropic (sin IA no hay propuesta que ejecutar) y
-el refactor que saca el cierre del `item` de sesión, o las entrantes no podrán
-usarlo.
+HECHO (17-sep-2026, commits `033cb4ba` y el siguiente). Los diez están en
+`lib/telefonia/acciones-frases.ts` con 54 pruebas en `npm test`, y el panel
+vive en la sala de la llamada. Tres decisiones que valen la pena recordar:
+
+ · **Reglas antes que IA.** Lo que dispara una acción es una frase, y para eso
+   una expresión regular es instantánea, gratis y sigue funcionando sin saldo
+   de Anthropic — que era el bloqueo que aquí decía «no empezarlo sin».
+ · **No todas salen solas.** Mandar material o dejar un recordatorio, sí; tocar
+   la ficha, la agenda o dar de baja, un clic. Un mandado de más se perdona;
+   una baja de más, no.
+ · **Las entrantes entraron al riel** con la sesión fantasma de `suelta.ts`, en
+   vez de refactorizar el cierre entero: cada llamada normal tiene su item y
+   todo lo de Llamadas inteligentes le sirve igual.
+
+Lo que quedó fuera y sigue pendiente:
+ · **La sala en el teléfono.** En móvil la llamada tiene su propia pantalla
+   completa (`if (esMovil …)` en `Telefonia.tsx`) y nunca llega a la sala: no
+   hay contexto, ni acciones, ni resumen al colgar. Es la misma pantalla, hay
+   que llevarla.
+ · **La biblioteca de envíos nace vacía**: la primera vez que alguien pida «la
+   información», la sala va a preguntar qué mandarle. Se contesta una vez y
+   queda para siempre (Configuración ▸ Telefonía ▸ Lo que ya sabemos mandar).
+ · **El caso 3 (cotización) manda un PDF de texto**, no una cotización del
+   cotizador. El puente con cotizaciones sigue sin construirse.
 

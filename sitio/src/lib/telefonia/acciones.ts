@@ -436,10 +436,21 @@ export async function dictar(ctx: Ctx, texto: string, o: { userId?: string | nul
   const a = porId(accionId)!;
   const params = elegida?.params || { tema: dicho.slice(0, 120), detalle: dicho.slice(0, 300) };
 
+  /* 1 bis · LA REGLA QUE SE VA A APRENDER, decidida ANTES de guardar la acción
+     para poder enseñarla en la pantalla tal cual queda. Se aprenden las
+     primeras seis palabras de lo que dijo EL CLIENTE: una frase entera nunca
+     se repite igual, y media frase caza cualquier cosa. */
+  const aprender = sinAcentos(String(o.frase || '')).replace(/[^a-z0-9ñ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const patron = aprender.length >= 10 ? aprender.split(' ').slice(0, 6).join(' ') : null;
+
   const { data: fila } = await supabase.from('tel_acciones').insert({
     call_sid: ctx.callSid, item_id: ctx.itemId || null, contact_id: ctx.contactId || null,
     conversation_id: ctx.conversationId || null, telefono: ctx.telefono,
-    accion: accionId, params, frase: o.frase || dicho, origen: 'dictada', confianza: 1,
+    /* La frase que se enseña es LO QUE SE DICTÓ («mándale el PDF de precios»),
+       no lo que dijo el cliente: eso otro viaja en `params.aprendido_de`, que es
+       de dónde sale la regla. Pintar la del cliente aquí hacía que la acción
+       pareciera disparada por una frase que no tenía nada que ver. */
+    accion: accionId, params: { ...params, aprendido_de: patron }, frase: dicho.slice(0, 300), origen: 'dictada', confianza: 1,
     estado: 'propuesta', user_id: o.userId || ctx.userId || null,
   }).select('id').maybeSingle();
 
@@ -447,10 +458,7 @@ export async function dictar(ctx: Ctx, texto: string, o: { userId?: string | nul
         cazó (`o.frase`), no lo que escribió el vendedor: la próxima vez quien
         va a hablar es el cliente. Sin frase del cliente no hay nada que
         aprender y sólo se hace la acción. */
-  const aprender = sinAcentos(String(o.frase || '')).replace(/[^a-z0-9ñ\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (aprender.length >= 10) {
-    // Las primeras 6 palabras: una frase entera nunca se repite igual.
-    const patron = aprender.split(' ').slice(0, 6).join(' ');
+  if (patron) {
     await supabase.from('tel_accion_reglas').upsert({
       accion: accionId, patron, origen: 'vendedor', estado: 'activa',
       ejemplo: String(o.frase).slice(0, 300), call_sid: ctx.callSid, updated_at: ahora(),
@@ -471,7 +479,8 @@ export async function deLaLlamada(callSid: string) {
     const a = porId(f.accion);
     return {
       id: f.id, accion: f.accion, etiqueta: a?.etiqueta || f.accion, auto: !!a?.auto,
-      frase: f.frase, origen: f.origen, estado: f.estado, resultado: f.resultado,
+      frase: f.frase, aprendido_de: (f.params || {}).aprendido_de || null,
+      origen: f.origen, estado: f.estado, resultado: f.resultado,
       params: f.params || {}, pide: a?.pide ? a.pide(f.params || {}) : [],
       pide_texto: !!(f.params || {}).pide_texto, envio_id: (f.params || {}).envio_id || null,
       created_at: f.created_at,

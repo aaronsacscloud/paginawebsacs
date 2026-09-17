@@ -958,7 +958,11 @@ export default function Telefonia() {
           <SalaLlamada
             telefono={finSala?.telefono || viva?.telefono || ''}
             callId={finSala?.sid || viva?.sid || null}
-            nombre={finSala?.nombre || (viva ? quien(viva) : null)}
+            /* El nombre CRUDO, no `quien()`: ése cae al teléfono legible
+               cuando no hay nombre, y la sala necesita saber que no lo hay
+               para poder usar el de la ficha. Es justo lo que el dueño vio
+               («me aparecía la empresa pero no el nombre de la persona»). */
+            nombre={finSala ? finSala.nombre : (viva?.nombre || null)}
             segundos={finSala ? finSala.seg : seg}
             fin={!!finSala}
             nota={nota} setNota={setNota}
