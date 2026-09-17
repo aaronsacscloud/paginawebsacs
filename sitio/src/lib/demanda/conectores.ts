@@ -51,7 +51,11 @@ export const REQUISITOS: Record<string, Requisito> = {
   ia_openai:     { llaves: ['OPENAI_API_KEY'],     comoSeArregla: 'Poner OPENAI_API_KEY en Vercel.' },
   ia_gemini:     { llaves: ['GEMINI_API_KEY'],     comoSeArregla: 'Poner GEMINI_API_KEY en Vercel.' },
   ia_anthropic:  { llaves: ['ANTHROPIC_API_KEY'],  comoSeArregla: 'Poner ANTHROPIC_API_KEY en Vercel.' },
-  ia_perplexity: { llaves: ['PERPLEXITY_API_KEY'], comoSeArregla: 'Sacar una llave de la API de Perplexity y ponerla como PERPLEXITY_API_KEY en Vercel.' },
+  /* ⚠️ La API de Perplexity CAMBIÓ: `sonar` en /chat/completions ya no existe.
+     Ahora es `perplexity/sonar` en /v1/responses. La documentación vieja sigue
+     circulando, así que si un día responde «model not supported», es esto y no
+     la llave. Medido el 17-sep-2026: $0.0008 por pregunta. */
+  ia_perplexity: { llaves: ['PERPLEXITY_API_KEY'], comoSeArregla: 'Comprar créditos de API en perplexity.ai/account/api (NO la suscripción Pro, que es para el navegador) y poner la llave como PERPLEXITY_API_KEY en Vercel.' },
   ia_xai:        { llaves: ['XAI_API_KEY'],        comoSeArregla: 'Sacar una llave de la API de xAI (Grok) y ponerla como XAI_API_KEY en Vercel.' },
 };
 
