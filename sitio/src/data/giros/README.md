@@ -624,6 +624,14 @@ Trajes · 7 Sastrería y Trajes a Medida · 8 Bolsas y Accesorios de Piel · 9 �
 10 Telas y Mercería · 11 Tallas Grandes · 12 Ropa de Maternidad · 13 Outlet y Remates ·
 14 Merch de Eventos. Se trabajan de dos en dos.
 
+> **Corrección del 17-sep-2026:** el giro 14 (Merch de Eventos) **ya tiene landing completa** en
+> `src/pages/giros/merchandising-eventos.astro`, con su bloque propio `MerchPico.astro` (la
+> calculadora de cajas para la hora pico). No hay que construirla: son **13** páginas nuevas, no 14.
+> La ficha del oficio que se escribió para ese giro (`scratchpad/giros-fichas/merch-eventos.md`)
+> sirve para **enriquecer** la página que ya existe: propone un segundo bloque complementario —la
+> fecha se carga, se vende y se cierra: cargado − regresado − cortesías − diferencia, con el
+> sobrante valuado a costo— que no repite la hora pico. Queda como mejora, no como página nueva.
+
 **Por giro, en este orden:**
 
 1. *Ficha del oficio* (agente experto): vocabulario del piso, calendario del año, cómo compra y
@@ -659,9 +667,14 @@ embarazo; outlet → remate por temporada con margen; merch → pedido por event
 | 4 | Lencería y Ropa Interior | ✓ (bloque = la pared que se rompe por el centro) | ✓ en `_borrador/` | 0/23: cola lista (le.json), sin créditos | pendiente | ComingSoon en producción |
 | 5 | Renta de Vestidos y Trajes | ✓ (bloque = el calendario de cada vestido) | ✓ en `_borrador/`, compila | 0/22: cola lista (re.json), sin créditos | pendiente | ComingSoon en producción |
 | 6 | Ropa Infantil y Bebés | ✓ (bloque = el niño crece, la clienta regresa) | ✓ en `_borrador/`, compila | 0/21: cola lista (ri.json), sin créditos | pendiente | ComingSoon en producción |
-| 7 | Sastrería y Trajes | ficha escrita; referee en curso | | | | ComingSoon en producción |
-| 8 | Bolsas y Accesorios de Piel | ficha escrita; referee en curso | | | | ComingSoon en producción |
-| 9–14 | Ópticas, Telas, Tallas Grandes, Maternidad, Outlet, Merch | | | | | |
+| 7 | Sastrería y Trajes a la Medida | ficha v1 → referee **6/5/6/6/6 REGRESAR** (34 correcciones) → v2 en curso | | | | ComingSoon en producción |
+| 8 | Bolsas y Accesorios de Piel | ficha v1 → referee **6/5/6/4/5 REGRESAR** (46 correcciones; el bloque propio era el de joyería) → v2 en curso | | | | ComingSoon en producción |
+| 9 | Ópticas | ficha v1 → referee **7/6/7/6/6 REGRESAR** (50 correcciones) → v2 en curso | | | | ComingSoon en producción |
+| 10 | Telas y Mercería | ficha v1 → referee **6/5/7/6/7 REGRESAR** (45 correcciones) → v2 en curso | | | | ComingSoon en producción |
+| 11 | Tallas Grandes | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
+| 12 | Maternidad | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
+| 13 | Outlet y Remates | ficha v1 escrita; referee en curso | | | | ComingSoon en producción |
+| 14 | Merch de Eventos | **ya existe la landing**; la ficha queda como mejora (bloque del cierre de la fecha) | ✓ | — | — | en producción |
 | — | Las 7 hechas | auditadas 152 fotos (0 en 10) | — | 24 de las ≤7 rehechas e instaladas; faltan las 128 de 8-9 | — | en producción |
 
 **Para reanudar fotos cuando haya créditos de OpenAI:** `scratchpad/giros/reanudar.sh` (corre
