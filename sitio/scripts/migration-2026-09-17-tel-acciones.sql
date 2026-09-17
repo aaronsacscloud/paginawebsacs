@@ -60,3 +60,39 @@ create index if not exists tel_accion_reglas_estado_idx on tel_accion_reglas (es
 -- hacer en el momento lo que el cliente pide. Se apaga aquí si algún día la
 -- factura de Twilio lo pide.
 alter table wa_config add column if not exists tel_dictado boolean not null default true;
+
+-- LA PRIMERA ENTRADA DE LA BIBLIOTECA DE ENVÍOS.
+-- Sin esto, el caso más común —«mándame la información por WhatsApp»— no puede
+-- ejecutarse: la sala tendría que preguntar qué mandar justo la primera vez,
+-- que es cuando más caro sale no tenerlo. El texto sale de WIKI_COMERCIAL (lo
+-- aprobado y público: módulos, planes de /planes y la demo de 15 minutos) y NO
+-- trae nada interno — ni datos bancarios, ni política de descuentos. Se edita
+-- desde Configuración ▸ Telefonía ▸ «Lo que ya sabemos mandar».
+insert into tel_conocimiento (tema, claves, texto, origen, estado)
+select 'la información de Sacs',
+  array['informacion','info','material','que es','presentacion','planes','precios','demo','general'],
+  $txt$Sacs es el sistema para marcas y tiendas de moda en México: punto de venta, inventario por talla y color, tienda en línea y facturación, todo en el mismo lugar.
+
+LO QUE RESUELVE
+· Punto de venta rápido, que sigue vendiendo aunque se caiga el internet, con cortes de caja y turnos.
+· Inventario por talla y color, en todas tus tiendas, con traspasos entre ellas y conteo físico.
+· Tu tienda en línea, WhatsApp, Instagram, TikTok Shop y Mercado Libre trabajando sobre el MISMO inventario.
+· Facturación electrónica (CFDI 4.0) directo desde la venta.
+· Tus clientas: monedero y puntos, apartados, pedidos y promociones.
+· Reportes de lo que se vende, lo que no se mueve y cuánto estás ganando de verdad.
+
+LOS PLANES (precio mensual por sucursal; en anual es alrededor de 35 % menos)
+· Vende — $810: tu primera tienda.
+· Controla — $1,215: varias tiendas, traspasos y compras de temporada.
+· Fideliza y Multiplica — $1,890: tus clientas, monedero, membresías.
+· Automatiza — $3,780: automatizaciones e inteligencia artificial.
+Cada plan incluye todo lo del anterior. Sin permanencia.
+
+EL SIGUIENTE PASO
+Una demostración en línea de 15 minutos, sin costo, con TUS productos dentro del sistema: www.sacscloud.com/agendar/demo
+
+Si hoy trabajas en Excel o en otro sistema, la migración la hacemos nosotros: productos, clientes e historial. Tú no vacías nada a mano.
+
+www.sacscloud.com$txt$,
+  'semilla', 'activo'
+where not exists (select 1 from tel_conocimiento where tema = 'la información de Sacs');

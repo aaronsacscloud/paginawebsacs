@@ -82,7 +82,13 @@ async function mandarMaterial(ctx: Ctx, tema: string, detalle: string): Promise<
   const tel = telefonoWhatsApp(ctx.telefono) || ctx.telefono;
   // ¿Ya sabemos contestar esto? La biblioteca es la misma que alimenta el
   // cierre: lo que un vendedor dictó una vez sirve para todos.
-  const claves = Array.from(new Set(sinAcentos(`${tema} ${detalle}`).match(/[a-z0-9]{4,}/g) || [])).slice(0, 12);
+  /* «Sacs» está en TODOS los temas, así que si cuenta como coincidencia todo
+     coincide con todo: pedir la cotización acabaría mandando el PDF general
+     porque los dos dicen «Sacs». Las palabras que no distinguen nada no
+     puntúan. */
+  const GENERICAS = new Set(['sacs', 'sacscloud', 'llamada', 'pidio', 'whats', 'whatsapp', 'favor', 'sistema']);
+  const claves = Array.from(new Set(sinAcentos(`${tema} ${detalle}`).match(/[a-z0-9]{4,}/g) || []))
+    .filter(c => !GENERICAS.has(c)).slice(0, 12);
   const { data: biblio } = await supabase.from('tel_conocimiento')
     .select('id, tema, claves, veces_usado').eq('estado', 'activo').order('veces_usado', { ascending: false }).limit(80);
   const puntua = (k: any) => {
