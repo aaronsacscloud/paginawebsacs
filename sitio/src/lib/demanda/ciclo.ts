@@ -45,6 +45,7 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
   { tipo: 'detectar.competidor', prioridad: 60 },
   { tipo: 'ingerir.sitio',       prioridad: 76, solo: ['semanal'] },
   { tipo: 'detectar.tecnico',    prioridad: 58 },
+  { tipo: 'geo.muestrear',       prioridad: 57 },
   { tipo: 'geo.score',           prioridad: 56 },
   { tipo: 'puntuar',             prioridad: 54 },
   { tipo: 'oportunidad.crear',   prioridad: 53 },

@@ -51,6 +51,7 @@ const DemandaResumen = lazySeguro(() => import('./crm/demanda/DemandaResumen'));
 const DemandaExplorador = lazySeguro(() => import('./crm/demanda/DemandaExplorador'));
 const DemandaOportunidades = lazySeguro(() => import('./crm/demanda/DemandaOportunidades'));
 const DemandaSeo = lazySeguro(() => import('./crm/demanda/DemandaSeo'));
+const DemandaIA = lazySeguro(() => import('./crm/demanda/DemandaIA'));
 const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
 const WaMasivos = lazySeguro(() => import('./crm/whatsapp/Masivos'));
@@ -348,6 +349,7 @@ const NAV_SECTIONS = [
       { id: 'de-explorador' as Tab, label: 'Explorador', icon: 'demanda' },
       { id: 'de-oportunidades' as Tab, label: 'Oportunidades', icon: 'oportunidades' },
       { id: 'de-seo' as Tab, label: 'SEO técnico', icon: 'mejoras' },
+      { id: 'de-ia' as Tab, label: 'Visibilidad en IA', icon: 'trabajo' },
       { id: 'de-sistema' as Tab, label: 'Sistema', icon: 'automations' },
     ],
   },
@@ -1239,6 +1241,8 @@ export default function CrmDashboard() {
           <DemandaOportunidades />
         ) : tab === 'de-seo' ? (
           <DemandaSeo />
+        ) : tab === 'de-ia' ? (
+          <DemandaIA />
         ) : tab === 'abm' ? (
           <AbmTab />
         ) : tab === 'eventos' ? (
