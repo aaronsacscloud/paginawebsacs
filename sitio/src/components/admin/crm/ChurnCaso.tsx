@@ -801,9 +801,22 @@ function BloqueUso({ caso, emp }: { caso: any; emp: any }) {
    estado, que es lo que decide el siguiente movimiento: si no la ha visto, el
    problema es de entrega; si la vio y no contesta, es de oferta. */
 function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: () => void }) {
+  const planPrevio = d?.plan_previo || null;
   const [abriendo, setAbriendo] = useState(false);
   const [f, setF] = useState<any>({ meses: 3, rescate_mrr_regreso: '', rescate_compromisos: [], rescate_esperamos: '',
-    rescate_valor_normal: '', rescate_no_incluido: [], rescate_cliente_compromisos: [], rescate_comentarios: '' });
+    rescate_valor_normal: '', rescate_no_incluido: [], rescate_cliente_compromisos: [], rescate_comentarios: '',
+    rescate_ciclo: 'mensual' });
+  /* El plan viejo llega con el caso y se precarga UNA vez: si se recargara en
+     cada render, borraría lo que el vendedor acabara de corregir. */
+  useEffect(() => {
+    if (!planPrevio || f.rescate_mrr_regreso) return;
+    const anual = String(planPrevio.ciclo || '').startsWith('anual');
+    const monto = anual ? Number(planPrevio.precio || 0) : Number(planPrevio.mrr || planPrevio.precio || 0);
+    setF((p: any) => ({ ...p, rescate_ciclo: anual ? 'anual' : 'mensual', rescate_mrr_regreso: monto > 0 ? String(Math.round(monto)) : '', rescate_plan_nombre: planPrevio.nombre_plan || '' }));
+  }, [planPrevio]);
+  /* En qué fecha cae el fin del período libre, para decirlo antes de mandar. */
+  const fechaFin = (meses: number) => new Date(Date.now() + Math.max(1, Number(meses) || 1) * 30 * 86400000)
+    .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
   // Lo que se teclea para AÑADIR a cada lista (no es parte de la propuesta).
   const [nuevoNuestro, setNuevoNuestro] = useState('');
   const [nuevoSuyo, setNuevoSuyo] = useState('');
@@ -828,7 +841,14 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
   async function crear() {
     setGuardando(true); setErr('');
     const r = await fetch('/api/crm/churn/propuesta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ caso_id: id, ...f, rescate_mrr_regreso: Number(f.rescate_mrr_regreso) }) })
+      /* Cada compromiso viaja como objeto si tiene fechas y como texto si no:
+         así lo viejo sigue leyéndose igual y lo nuevo añade el cuándo sin
+         obligar a migrar las propuestas que ya están mandadas. */
+      body: JSON.stringify({ caso_id: id, ...f, rescate_mrr_regreso: Number(f.rescate_mrr_regreso),
+        rescate_compromisos: f.rescate_compromisos.map((c: string) => {
+          const fe = (f.fechas || {})[c];
+          return fe?.desde || fe?.hasta ? { texto: c, desde: fe.desde || null, hasta: fe.hasta || null } : c;
+        }) }) })
       .then(x => x.json()).catch(() => ({ error: 'No se pudo crear' }));
     setGuardando(false);
     if (r?.error) { setErr(r.error); return; }
@@ -943,6 +963,40 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
             extras={f.rescate_compromisos.filter((c: string) => !compromisos.includes(c))}
             onQuitar={(t: string) => setF({ ...f, rescate_compromisos: f.rescate_compromisos.filter((x: string) => x !== t) })} />
 
+          {/* ══ CUÁNDO, NO SÓLO QUÉ ═══════════════════════════════════════
+              Pedido del dueño (17-sep-2026): «agrega un tema de fechas de
+              compromiso a lo que nos comprometemos nosotros directamente… pon
+              un lugar donde yo pueda poner de día tal a día tal esto».
+
+              Y es lo que separa esto de la primera vez: esta gente se fue por
+              servicio, y «acompañamiento el primer mes» sin fechas es
+              exactamente la clase de promesa que ya les fallamos. Con fecha
+              hay algo que incumplir, y por tanto algo que cumplir.
+
+              Las fechas son OPCIONALES por compromiso: hay cosas que de verdad
+              no tienen fecha («canal directo de soporte» es permanente), y
+              obligar a inventarle una a todo llena el documento de fechas
+              falsas, que es peor que no tenerlas. */}
+          {f.rescate_compromisos.length > 0 && (
+            <div style={{ marginTop: 10, background: '#F7F6FC', border: '1px solid #e8e6ef', borderRadius: 12, padding: '10px 12px' }}>
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 7 }}>
+                Cuándo (opcional, por renglón)
+              </div>
+              {f.rescate_compromisos.map((c: string) => (
+                <div key={c} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', padding: '4px 0' }}>
+                  <span style={{ flex: '1 1 180px', fontSize: '0.8rem', color: '#241d43' }}>{c}</span>
+                  <input type="date" value={(f.fechas || {})[c]?.desde || ''}
+                    onChange={e => setF({ ...f, fechas: { ...(f.fechas || {}), [c]: { ...((f.fechas || {})[c] || {}), desde: e.target.value } } })}
+                    style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 8px', fontSize: '0.76rem', fontFamily: 'inherit' }} />
+                  <span style={{ fontSize: '0.76rem', color: '#8e88a8' }}>al</span>
+                  <input type="date" value={(f.fechas || {})[c]?.hasta || ''}
+                    onChange={e => setF({ ...f, fechas: { ...(f.fechas || {}), [c]: { ...((f.fechas || {})[c] || {}), hasta: e.target.value } } })}
+                    style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 8px', fontSize: '0.76rem', fontFamily: 'inherit' }} />
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', margin: '14px 0 6px' }}>
             A qué se compromete él
           </div>
@@ -983,13 +1037,52 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
               onChange={e => setF({ ...f, rescate_valor_normal: e.target.value })} />
           </label>
 
-          <label style={{ display: 'block', marginBottom: 10 }}>
-            {/* Igual: al mes. Este número se imprime tal cual en el PDF de la
-                propuesta que ve el cliente. */}
-            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>A cuánto vuelve al mes, al terminar</span>
-            <input type="number" style={inp} value={f.rescate_mrr_regreso} placeholder={String(Math.round(Number(caso.mrr_perdido || 0)))}
-              onChange={e => setF({ ...f, rescate_mrr_regreso: e.target.value })} />
-          </label>
+          {/* ══ EL PLAN QUE YA TENÍA ═══════════════════════════════════════
+              Pedido del dueño (17-sep-2026): «aquí no es a cuánto vuelve al
+              mes: pon una sección donde se confirma el plan que ella pagó en su
+              momento, ya sea anual o mensual, y manéjalo en automático después
+              de los meses gratis».
+
+              Dos cosas cambian, y la segunda importa más que la primera.
+              Primera: el número sale de su suscripción cancelada, no de los
+              dedos —todo dato que se teclea pudiendo leerse acaba distinto del
+              real—. Segunda: se guarda el CICLO. Quien pagaba $42,000 al año no
+              vuelve a «$3,500 al mes»: vuelve a su anualidad. Convertirlo a
+              mensual cambia el trato en el documento que firma, y ahí es donde
+              nacen los malentendidos de cobranza. */}
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', margin: '14px 0 6px' }}>
+            El plan que ya tenía · confírmalo
+          </div>
+          <div style={{ background: '#F7F6FC', border: '1px solid #e8e6ef', borderRadius: 12, padding: '12px 14px', marginBottom: 12 }}>
+            {planPrevio?.nombre_plan
+              ? <div style={{ fontSize: '0.84rem', color: '#241d43', marginBottom: 9 }}>Pagaba <b>{planPrevio.nombre_plan}</b>{planPrevio.ciclo ? <> · {planPrevio.ciclo}</> : null}.</div>
+              : <div style={{ fontSize: '0.8rem', color: '#71707C', marginBottom: 9 }}>No encontramos su suscripción anterior en la base: ponlo a mano.</div>}
+            <div style={{ display: 'flex', gap: 5, marginBottom: 9 }}>
+              {(['mensual', 'anual'] as const).map(c => (
+                <button key={c} onClick={() => setF({ ...f, rescate_ciclo: c })}
+                  style={{ border: `1px solid ${f.rescate_ciclo === c ? '#9B8CFA' : '#e0dfe6'}`, background: f.rescate_ciclo === c ? '#EEECFE' : '#fff',
+                    color: f.rescate_ciclo === c ? '#5B4BD6' : '#5a5a63', borderRadius: 20, padding: '5px 13px', fontSize: '0.76rem',
+                    fontWeight: f.rescate_ciclo === c ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {c === 'anual' ? 'Anual' : 'Mensual'}
+                </button>
+              ))}
+            </div>
+            <label style={{ display: 'block' }}>
+              <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>
+                Cuánto pagaba {f.rescate_ciclo === 'anual' ? 'al año' : 'al mes'}
+              </span>
+              <input type="number" style={inp} value={f.rescate_mrr_regreso}
+                onChange={e => setF({ ...f, rescate_mrr_regreso: e.target.value })} />
+            </label>
+            {/* La fecha se calcula sola: es el punto del pedido —«manéjalo en
+                automático después de los meses gratis»— y además evita la
+                pregunta que todo cliente hace, «¿entonces cuándo me cobran?». */}
+            <div style={{ fontSize: '0.8rem', color: '#5B4BD6', marginTop: 9, fontWeight: 700 }}>
+              {f.rescate_mrr_regreso
+                ? <>El {fechaFin(f.meses)} empieza a pagar ${Math.round(Number(f.rescate_mrr_regreso)).toLocaleString('es-MX')} {f.rescate_ciclo === 'anual' ? 'al año' : 'al mes'}.</>
+                : <>Al confirmar el monto, aquí se calcula la fecha en que empieza a pagar.</>}
+            </div>
+          </div>
           <label style={{ display: 'block', marginBottom: 12 }}>
             <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Qué esperamos de ti (opcional)</span>
             <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={f.rescate_esperamos}

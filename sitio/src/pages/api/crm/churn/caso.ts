@@ -104,6 +104,13 @@ export const GET: APIRoute = async ({ request, url }) => {
     .eq('company_id', caso.company_id).is('archived_at', null)
     .order('fecha_compromiso', { ascending: true });
 
+  /* LA SUSCRIPCIÓN QUE CANCELÓ: plan, ciclo y precio, para no pedirle a nadie
+     que teclee lo que la base ya sabe. Va al formulario de la propuesta como
+     valor de partida, y quien la manda confirma o corrige. */
+  const { data: subVieja } = caso.subscription_id
+    ? await supabase.from('subscriptions').select('id, nombre_plan, ciclo, mrr, precio, cancelada_at').eq('id', caso.subscription_id).maybeSingle()
+    : { data: null } as any;
+
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
@@ -172,7 +179,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     };
   }
 
-  return json({ caso, actividad, uso_antes: usoAntes, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
+  return json({ caso, actividad, plan_previo: subVieja || null, uso_antes: usoAntes, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */

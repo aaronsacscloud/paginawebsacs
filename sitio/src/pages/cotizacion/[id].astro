@@ -336,7 +336,13 @@ const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminM
    fecha vuelves a pagar esto». Sin este bloque, el documento se leía como una
    cotización de $0 —o sea, como algo sin valor— en vez de como una oferta. */
 const esRescate = quote.tipo === 'rescate';
-const rescateCompromisos: string[] = Array.isArray(quote.rescate_compromisos) ? quote.rescate_compromisos : [];
+/* Un compromiso puede venir como texto o como {texto, desde, hasta}: se
+   normaliza aquí, en un solo sitio, en vez de preguntar el tipo en cada `map`
+   del documento. */
+const rescateCompromisos = (Array.isArray(quote.rescate_compromisos) ? quote.rescate_compromisos : [])
+  .map((c: any) => (typeof c === 'string' ? { texto: c, desde: null, hasta: null }
+    : { texto: String(c?.texto || ''), desde: c?.desde || null, hasta: c?.hasta || null }))
+  .filter((c: any) => c.texto);
 const rescateSuyos: string[] = Array.isArray(quote.rescate_cliente_compromisos) ? quote.rescate_cliente_compromisos : [];
 const rescateNoIncluido: string[] = Array.isArray(quote.rescate_no_incluido) ? quote.rescate_no_incluido : [];
 const valorNormal = Number(quote.rescate_valor_normal || 0);
@@ -588,6 +594,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
      no es un riesgo, es información. Ámbar suave —«atención, no es problema»,
      la regla de la casa— y nunca rojo, que en un documento que intenta
      recuperar a alguien se lee como una amenaza. */
+  .quote-rescate-cuando { display:block; font-size:.82rem; color:#5B4BD6; font-weight:700; margin-top:2px; }
   .quote-rescate-fuera { background:#FFFBF4; border-color:#f0e2c6; }
   .quote-rescate-fuera .quote-rescate-k { color:#9a6a10; }
   /* El cierre es lo último que se lee antes de decidir: lila de marca y letra
@@ -710,8 +717,14 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           </div>
           <div class="quote-rescate-caja">
             <div class="quote-rescate-k">Después</div>
-            <div class="quote-rescate-v">${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')} <span style="font-size:.6em;font-weight:600">/mes</span></div>
-            <div class="quote-rescate-n">A partir del {fmtFechaLarga(quote.rescate_hasta)}. Sin sorpresas.</div>
+            <div class="quote-rescate-v">${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')} <span style="font-size:.6em;font-weight:600">{quote.rescate_ciclo === 'anual' ? '/año' : '/mes'}</span></div>
+            {/* El ciclo importa: quien pagaba $42,000 al año no vuelve a
+                «$3,500 al mes». Escribirlo como mensualidad cambia el trato en
+                el documento que firma, y ahí nacen los líos de cobranza. */}
+            <div class="quote-rescate-n">
+              {quote.rescate_plan_nombre ? <>{quote.rescate_plan_nombre} — el mismo plan que tenías. </> : null}
+              A partir del {fmtFechaLarga(quote.rescate_hasta)}. Sin sorpresas.
+            </div>
           </div>
         </div>
 
@@ -719,7 +732,21 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           <div class="quote-rescate-bloque">
             <div class="quote-rescate-k">A esto nos comprometemos</div>
             <ul class="quote-rescate-lista">
-              {rescateCompromisos.map((c: string) => <li>{c}</li>)}
+              {rescateCompromisos.map((c: any) => (
+                <li>
+                  {c.texto}
+                  {/* La fecha, con el mismo peso que el compromiso: «del 1 al 30
+                      de octubre» es lo que lo vuelve exigible. Sin fecha no se
+                      inventa ninguna — hay cosas que de verdad son permanentes. */}
+                  {(c.desde || c.hasta) && (
+                    <span class="quote-rescate-cuando">
+                      {c.desde && c.hasta ? <>del {fmtFechaLarga(c.desde)} al {fmtFechaLarga(c.hasta)}</>
+                        : c.desde ? <>a partir del {fmtFechaLarga(c.desde)}</>
+                        : <>hasta el {fmtFechaLarga(c.hasta)}</>}
+                    </span>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         )}
@@ -776,7 +803,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             hasta el <b>{fmtFechaLarga(quote.rescate_hasta)}</b>.
             {valorNormal > 0 ? <> Lo que estás recibiendo cuesta normalmente <b>${Math.round(valorNormal).toLocaleString('es-MX')}</b>.</> : null}
             {' '}Si decides seguir, el <b>{fmtFechaLarga(quote.rescate_hasta)}</b> empieza a correr la mensualidad de
-            <b> ${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')}</b>.
+            <b> ${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')} {quote.rescate_ciclo === 'anual' ? 'al año' : 'al mes'}</b>.
             Si no, no pagas nada y no hay penalización: aceptar esto no te amarra a quedarte.
           </p>
         </div>

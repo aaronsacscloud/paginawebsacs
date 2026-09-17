@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const caso = url.searchParams.get('caso');
   if (!caso) return json({ error: 'Falta el caso.' }, 400);
   const { data } = await supabase.from('quotes')
-    .select('id, numero, estado, total, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos, rescate_valor_normal, rescate_no_incluido, rescate_cliente_compromisos, rescate_comentarios')
+    .select('id, numero, estado, total, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos, rescate_valor_normal, rescate_no_incluido, rescate_cliente_compromisos, rescate_comentarios, rescate_ciclo, rescate_plan_nombre')
     .eq('churn_caso_id', caso).order('created_at', { ascending: false });
   return json({ data: data || [], compromisos: COMPROMISOS });
 };
@@ -87,11 +87,29 @@ export const POST: APIRoute = async ({ request }) => {
   if (String(hasta) <= new Date().toISOString().slice(0, 10)) {
     return json({ error: 'La fecha de fin tiene que ser futura.', campo: 'rescate_hasta' }, 400);
   }
+  /* EL PLAN QUE YA TENÍA, leído de su suscripción y confirmado por quien
+     manda la propuesta. Se sigue guardando el monto —el documento lo imprime—
+     pero por omisión sale de la base, no de los dedos: la suscripción que
+     canceló está ahí con su plan, su ciclo y su precio. Un dato que se teclea
+     pudiendo leerse termina distinto del real. */
+  const ciclo = ['anual', 'mensual'].includes(String(b.rescate_ciclo || '')) ? String(b.rescate_ciclo) : 'mensual';
   const vuelve = Number(b.rescate_mrr_regreso);
   if (!Number.isFinite(vuelve) || vuelve <= 0) {
-    return json({ error: 'Di a cuánto vuelve a pagar al terminar (más de cero). Sin eso, acepta sin saber a qué vuelve.', campo: 'rescate_mrr_regreso' }, 400);
+    return json({ error: `Confirma cuánto pagaba ${ciclo === 'anual' ? 'al año' : 'al mes'}: es lo que va a volver a pagar y tiene que quedar escrito.`, campo: 'rescate_mrr_regreso' }, 400);
   }
-  const compromisos: string[] = lista(b.rescate_compromisos) || [];
+  /* Un compromiso es texto («Capacitación al equipo») o texto con fechas
+     ({texto, desde, hasta}). Se aceptan los dos: las propuestas ya mandadas
+     guardaron textos y tienen que seguir leyéndose sin migrar nada. */
+  const compromisos: any[] = (Array.isArray(b.rescate_compromisos) ? b.rescate_compromisos : [])
+    .map((c: any) => {
+      if (typeof c === 'string') return c.trim();
+      const t = String(c?.texto || '').trim();
+      if (!t) return '';
+      const fecha = (x: any) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x || '')) ? String(x) : null);
+      const desde = fecha(c.desde), hasta = fecha(c.hasta);
+      return desde || hasta ? { texto: t, desde, hasta } : t;
+    })
+    .filter(Boolean).slice(0, 20);
   /* Sin compromisos, esto es un descuento disfrazado — y a esta gente el
      descuento no la rescata: se fueron por servicio. */
   if (!compromisos.length) return json({ error: 'Elige al menos una cosa a la que nos comprometemos: sin eso, la propuesta es solo un descuento.', campo: 'rescate_compromisos' }, 400);
@@ -123,6 +141,8 @@ export const POST: APIRoute = async ({ request }) => {
     rescate_desde: desde,
     rescate_hasta: hasta,
     rescate_mrr_regreso: vuelve,
+    rescate_ciclo: ciclo,
+    rescate_plan_nombre: String(b.rescate_plan_nombre || '').trim() || null,
     rescate_compromisos: compromisos,
     rescate_esperamos: String(b.rescate_esperamos || '').trim() || null,
     /* Los cuatro campos nuevos. Todos opcionales menos por una razón: si
