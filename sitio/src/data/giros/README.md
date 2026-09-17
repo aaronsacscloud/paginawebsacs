@@ -675,11 +675,20 @@ verificadas en el texto, no en el resumen del redactor. Ese es el patrón: la v1
 | 8 | Bolsas y Accesorios de Piel | ✓ v2 **9/9/9/9/9** (46 corr.) | ✓ en `_borrador/` + `BoLote` | 0/22 (bo.json) | pendiente | ComingSoon |
 | 9 | Ópticas | ✓ v2 **9/9/9/9/9** (50 corr.) | ✓ en `_borrador/` + `OpCajon` | 0/22 (op.json) | pendiente | ComingSoon |
 | 10 | Telas y Mercería | ✓ v2 **9.5/8.5/10/8.5/9** (45 corr.) | ✓ en `_borrador/` + `TmPieza` | 0/22 (tm.json) | pendiente | ComingSoon |
-| 11 | Tallas Grandes | ✓ v2 **10/9/9/9/9** (48 corr.) | datos en curso + `TgQuiebre` | pendiente | pendiente | ComingSoon |
-| 12 | Maternidad | ✓ v2 **10/9/10/10/10** (50 corr.) | datos en curso + `MaFecha` | pendiente | pendiente | ComingSoon |
-| 13 | Outlet y Remates | ✓ v3 **9/10/9/9/9** (51 corr.) | datos en curso | pendiente | pendiente | ComingSoon |
+| 11 | Tallas Grandes | ✓ v2 **10/9/9/9/9** (48 corr.) | ✓ en `_borrador/` + `TgQuiebre` | 0/22 (tg.json) | pendiente | ComingSoon |
+| 12 | Maternidad | ✓ v2 **10/9/10/10/10** (50 corr.) | ✓ en `_borrador/` + `MaFecha` | 0/22 (ma.json) | pendiente | ComingSoon |
+| 13 | Outlet y Remates | ✓ v3 **9/10/9/9/9** (51 corr.) | ✓ en `_borrador/` + `OuBajada` | 0/22 (ou.json) | pendiente | ComingSoon |
 | 14 | Merch de Eventos | **ya existía la landing**; la ficha queda como mejora | ✓ | — | — | en producción |
 | — | Las 7 hechas | auditadas 152 fotos | — | 24 rehechas; faltan 128 de 8-9 | — | en producción |
+
+**Las 13 páginas están escritas y compilan.** Lo único que falta es la pasada fotográfica.
+
+**`_borrador/` no publica nada, y está comprobado.** Astro no rutea carpetas ni archivos que
+empiezan con guion bajo, así que `/giros/sastreria` y las demás **siguen sirviendo su plantilla de
+próximamente** aunque la página nueva ya esté en el repo y aunque otra sesión haga push. Verificado
+el 17-sep en el HTML construido: la ruta de sastrería trae el texto del ComingSoon y cero rastro
+del bloque propio. Al mover una página a `src/pages/giros/` hay que **ajustar sus imports de
+`../../../` a `../../`** y borrar la plantilla vieja.
 
 **Para reanudar fotos cuando haya créditos de OpenAI:** `scratchpad/giros/reanudar.sh` corre en
 orden las colas pendientes (un-pend, fix-r4, le, re, ri) y hay que agregarle las nuevas (sa, op,
