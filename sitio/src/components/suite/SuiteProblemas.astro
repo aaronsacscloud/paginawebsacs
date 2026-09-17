@@ -43,6 +43,8 @@ interface Props {
 }
 
 const {
+  /** Cabecera de la columna del sistema genérico; los giros nuevos pasan 'Sistema de ropa'. */
+  colGenerico = 'Genérico',
   quienes = 'las más de 3,000 marcas que ya la usan',
   filas = [
     { que: 'Matriz de tallas × colores', generico: 'No existe', medida: 'Si la pagaste', sacs: 'Incluida' },
@@ -154,7 +156,7 @@ const documentos = [doc1, doc2];
 
       <div class="pp-cab">
         <span class="pp-cab-que">Necesidad</span>
-        <span>Genérico</span>
+        <span>{colGenerico}</span>
         <span>A la medida</span>
         <span class="pp-cab-sacs">SACS</span>
       </div>

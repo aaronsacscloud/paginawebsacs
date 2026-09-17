@@ -663,6 +663,15 @@ const primera = clave[0];
   @media (prefers-reduced-motion: reduce) {
     .pn-sup, .pn-num-b, .pn-col, .pn-col-n, .pn-z-t { transition: none; }
   }
+  /* Móvil (17-sep-2026): las cinco pestañas no caben en 390 px; van en una fila con scroll y nombre completo. */
+  @media (max-width: 640px) {
+    .pn-pasos { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; padding-bottom: 4px; scrollbar-width: none; }
+    .pn-pasos::-webkit-scrollbar { display: none; }
+    .pn-pasos li { flex: 0 0 auto; scroll-snap-align: start; }
+    .pn-pasos button { width: auto; padding-right: 10px; }
+    .pn-pasos button span { white-space: nowrap; overflow: visible; text-overflow: clip; }
+  }
+  .pn-pasos--scroll {}
 </style>
 
 <style is:global>
