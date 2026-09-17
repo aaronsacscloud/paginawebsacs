@@ -21,7 +21,7 @@ export interface SuiteSeccion {
    rehacer capturas cada que cambia la UI). */
 const est = {
   wrap: 'font-family:var(--font-body), system-ui, sans-serif;',
-  h: 'font-size:11px;font-weight:800;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;',
+  h: 'font-size:12px;font-weight:800;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;',
   celdaOk: 'background:var(--ok-fondo);color:var(--ok-texto);',
   celdaLo: 'background:var(--aviso-fondo);color:var(--aviso-texto);',
   celdaZero: 'background:var(--color-bg-primary);color:#D4D4D4;',
@@ -44,19 +44,19 @@ export const seccionesRopa: SuiteSeccion[] = [
       <p style="${est.h}">Blusa satinada · existencia por talla y color</p>
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
         ${[['Negro','mk-chip-1'],['Talla M','mk-chip-2'],['Con existencia','mk-chip-3']]
-          .map(([t,c]:any)=>`<span class="mk-chip ${c}" style="font-size:10.5px;font-weight:700;border:1px solid #DFE3EA;border-radius:999px;padding:4px 10px;color:var(--color-text-secondary);background:#fff;">${t}</span>`).join('')}
+          .map(([t,c]:any)=>`<span class="mk-chip ${c}" style="font-size:12px;font-weight:700;border:1px solid #DFE3EA;border-radius:999px;padding:4px 10px;color:var(--color-text-secondary);background:#fff;">${t}</span>`).join('')}
       </div>
       <table style="width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;">
-        <tr><th style="text-align:left;font-size:10.5px;color:var(--color-text-tertiary);width:64px;"></th>
-        ${['XS','S','M','L','XL','XXL'].map(t=>`<th style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:700;">${t}</th>`).join('')}</tr>
+        <tr><th style="text-align:left;font-size:12px;color:var(--color-text-tertiary);width:64px;"></th>
+        ${['XS','S','M','L','XL','XXL'].map(t=>`<th style="font-size:12px;color:var(--color-text-tertiary);font-weight:700;">${t}</th>`).join('')}</tr>
         ${[['Negro',[0,8,12,9,4,0]],['Blanco',[3,11,14,7,2,0]],['Vino',[2,5,6,3,1,0]],['Camel',[1,4,7,5,2,0]]]
-          .map(([c,v]:any)=>`<tr><td style="font-size:11px;font-weight:700;color:var(--color-text-primary);">${c}</td>${v.map((n:number,i:number)=>{
+          .map(([c,v]:any)=>`<tr><td style="font-size:12px;font-weight:700;color:var(--color-text-primary);">${c}</td>${v.map((n:number,i:number)=>{
             const st = n===0?est.celdaZero:(n<=3?est.celdaLo:est.celdaOk);
             const marca = (c==='Negro'&&i===2)?'box-shadow:0 0 0 2px var(--color-primary);':'';
             return `<td style="${st}${marca}border-radius:8px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;
           }).join('')}</tr>`).join('')}
       </table>
-      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">Negro M · 12 disponibles en esta sucursal</p>
+      <p style="margin:12px 0 0;font-size:12px;color:var(--color-text-tertiary);">Negro M · 12 disponibles en esta sucursal</p>
     </div>`,
   },
   {
@@ -74,13 +74,13 @@ export const seccionesRopa: SuiteSeccion[] = [
       <p style="${est.h}">Pedido a proveedor · 60 piezas</p>
       ${[['XS',6,10],['S',15,25],['M',18,30],['L',12,20],['XL',7,12],['XXL',2,3]]
         .map(([t,n,p]:any)=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
-          <span style="width:34px;font-size:11.5px;font-weight:800;color:var(--color-text-primary);">${t}</span>
+          <span style="width:34px;font-size:12px;font-weight:800;color:var(--color-text-primary);">${t}</span>
           <div style="flex:1;height:22px;background:var(--color-bg-primary);border-radius:8px;overflow:hidden;">
             <div style="width:${p*3.2}%;height:100%;background:linear-gradient(90deg,var(--color-primary),var(--color-primary));"></div>
           </div>
-          <span style="width:56px;text-align:right;font-size:11.5px;font-weight:700;color:var(--color-text-secondary);">${n} pz · ${p}%</span>
+          <span style="width:56px;text-align:right;font-size:12px;font-weight:700;color:var(--color-text-secondary);">${n} pz · ${p}%</span>
         </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:var(--color-text-tertiary);">Curva calculada con la venta real de la temporada anterior</p>
+      <p style="margin:10px 0 0;font-size:12px;color:var(--color-text-tertiary);">Curva calculada con la venta real de la temporada anterior</p>
     </div>`,
   },
   {
@@ -100,11 +100,11 @@ export const seccionesRopa: SuiteSeccion[] = [
         .map(([n,t,e,v,m]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
-            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${t} · entregadas ${e} · vendidas ${v}</div>
+            <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;">${t} · entregadas ${e} · vendidas ${v}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:13px;font-weight:800;color:var(--ok-texto);font-variant-numeric:tabular-nums;">${m}</div>
-            <div style="font-size:9.5px;color:var(--color-text-tertiary);font-weight:700;">por liquidar</div>
+            <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:700;">por liquidar</div>
           </div>
         </div>`).join('')}
     </div>`,
@@ -130,11 +130,11 @@ export const seccionesRopa: SuiteSeccion[] = [
           .map(([t,d,bg]:any)=>`<div class="mk-env-p"><div class="mk-env-tela" style="background:${bg}"></div><small>${t} · ${d}</small></div>`).join('')}
       </div>
       <div class="mk-env-barra"><i></i></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
         <span style="color:var(--color-text-tertiary);">Recién llegado</span>
         <span style="color:var(--alerta-texto);">$118,000 parados</span>
       </div>
-      <p style="margin:14px 0 0;font-size:11px;color:var(--color-text-tertiary);">La colección vieja pierde color en el tablero: se ve el rezago sin abrir un reporte</p>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--color-text-tertiary);">La colección vieja pierde color en el tablero: se ve el rezago sin abrir un reporte</p>
     </div>`,
   },
   {
@@ -151,16 +151,16 @@ export const seccionesRopa: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de talla · sin ticket</p>
       <div style="border:1px solid var(--color-border-light);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="font-size:11px;color:var(--color-text-tertiary);font-weight:700;margin-bottom:6px;">SE LLEVÓ (12 mar · Sucursal Centro)</div>
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:700;margin-bottom:6px;">SE LLEVÓ (12 mar · Sucursal Centro)</div>
         <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Playera oversize negra
-          <span style="background:var(--alerta-fondo);color:var(--alerta-texto);border-radius:8px;padding:2px 7px;font-size:10.5px;margin-left:6px;">M</span></div>
+          <span style="background:var(--alerta-fondo);color:var(--alerta-texto);border-radius:8px;padding:2px 7px;font-size:12px;margin-left:6px;">M</span></div>
       </div>
       <div style="text-align:center;color:#D4D4D4;font-size:16px;margin:2px 0 8px;">↓</div>
       <div style="border:1.5px solid var(--ok-texto);background:var(--ok-fondo);border-radius:8px;padding:12px;">
-        <div style="font-size:11px;color:var(--ok-texto);font-weight:700;margin-bottom:6px;">SE LLEVA HOY</div>
+        <div style="font-size:12px;color:var(--ok-texto);font-weight:700;margin-bottom:6px;">SE LLEVA HOY</div>
         <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Playera oversize negra
-          <span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:8px;padding:2px 7px;font-size:10.5px;margin-left:6px;">L</span></div>
-        <div style="font-size:11px;color:var(--color-text-tertiary);font-weight:600;margin-top:5px;">Sin diferencia a pagar · 4 disponibles</div>
+          <span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:8px;padding:2px 7px;font-size:12px;margin-left:6px;">L</span></div>
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;margin-top:5px;">Sin diferencia a pagar · 4 disponibles</div>
       </div>
     </div>`,
   },
@@ -188,8 +188,8 @@ export const seccionesRopa: SuiteSeccion[] = [
       </div>
       <div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;display:flex;align-items:center;gap:10px;">
         <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">Tomar de Satélite</div>
-        <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">Sale de su inventario, entra al tuyo</div></div>
-        <span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;">TOMAR</span>
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;">Sale de su inventario, entra al tuyo</div></div>
+        <span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:800;">TOMAR</span>
       </div>
     </div>`,
   },
@@ -211,12 +211,12 @@ export const seccionesRopa: SuiteSeccion[] = [
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
-            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${s}</div>
+            <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;">${s}</div>
           </div>
           <span style="font-size:13px;font-weight:800;color:var(--color-text-primary);font-variant-numeric:tabular-nums;">${q} pz</span>
         </div>`).join('')}
       <div style="border:1.5px solid var(--color-primary);background:var(--azul-fondo);border-radius:8px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span style="font-size:11.5px;font-weight:800;color:var(--color-primary);">Existencia única · los 4 canales</span>
+        <span style="font-size:12px;font-weight:800;color:var(--color-primary);">Existencia única · los 4 canales</span>
         <span style="font-size:15px;font-weight:800;color:var(--color-text-primary);font-variant-numeric:tabular-nums;">4</span>
       </div>
     </div>`,
@@ -243,7 +243,7 @@ export const seccionesRopa: SuiteSeccion[] = [
           </span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);line-height:1.3;">${n}</div>
-            <div style="font-size:10.5px;color:${t==='sugerido'?'var(--color-primary)':'var(--color-text-tertiary)'};font-weight:700;margin-top:3px;">${t==='sugerido'?'+ SUGERIDO POR EL SISTEMA':'EN EL TICKET'}</div>
+            <div style="font-size:12px;color:${t==='sugerido'?'var(--color-primary)':'var(--color-text-tertiary)'};font-weight:700;margin-top:3px;">${t==='sugerido'?'+ SUGERIDO POR EL SISTEMA':'EN EL TICKET'}</div>
           </div>
           <span style="font-size:13.5px;font-weight:800;color:var(--color-text-primary);font-variant-numeric:tabular-nums;">${p}</span>
         </div>`).join('')}
@@ -270,8 +270,8 @@ export const seccionesRopa: SuiteSeccion[] = [
         .map(([n,d,c,a]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
-          <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${d}</div></div>
-          <span style="font-size:11px;font-weight:800;color:${c==='var(--color-text-tertiary)'?'var(--color-text-tertiary)':'var(--color-primary)'};">${a}</span>
+          <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;">${d}</div></div>
+          <span style="font-size:12px;font-weight:800;color:${c==='var(--color-text-tertiary)'?'var(--color-text-tertiary)':'var(--color-primary)'};">${a}</span>
         </div>`).join('')}
     </div>`,
   },
@@ -291,10 +291,10 @@ export const seccionesRopa: SuiteSeccion[] = [
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
         <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--azul-fondo),#BFDBFE);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--color-primary);">MR</div>
         <div><div style="font-size:14px;font-weight:800;color:var(--color-text-primary);">Mariana R.</div>
-        <div style="font-size:11px;color:var(--color-text-tertiary);font-weight:600;">14 compras · $38,400 · desde 2024</div></div>
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-weight:600;">14 compras · $38,400 · desde 2024</div></div>
       </div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">
-        ${['Talla S','Negro','Camel','Blusas','Sastre'].map(t=>`<span style="background:var(--azul-fondo);color:var(--color-primary);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700;">${t}</span>`).join('')}
+        ${['Talla S','Negro','Camel','Blusas','Sastre'].map(t=>`<span style="background:var(--azul-fondo);color:var(--color-primary);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;">${t}</span>`).join('')}
       </div>
       <div style="background:var(--ok-fondo);border:1px solid #A7F3D0;border-radius:8px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
         <span style="width:52px;height:52px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--color-border-light);">
@@ -302,7 +302,7 @@ export const seccionesRopa: SuiteSeccion[] = [
         </span>
         <div>
           <div style="font-size:12px;font-weight:800;color:var(--ok-texto);">Llegó su talla</div>
-          <div style="font-size:11.5px;color:var(--ok-texto);margin-top:3px;">3 prendas nuevas en S, negro. Avisar por WhatsApp.</div>
+          <div style="font-size:12px;color:var(--ok-texto);margin-top:3px;">3 prendas nuevas en S, negro. Avisar por WhatsApp.</div>
         </div>
       </div>
     </div>`,
@@ -327,7 +327,7 @@ export const seccionesRopa: SuiteSeccion[] = [
       <div class="mk-accion" style="margin-top:10px;">
         <b>EJECUTÓ</b><span>Apartado #4471 creado en Centro · pieza tomada de Satélite</span>
       </div>
-      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">Tú decides si el agente solo avisa o si ya ejecuta</p>
+      <p style="margin:12px 0 0;font-size:12px;color:var(--color-text-tertiary);">Tú decides si el agente solo avisa o si ya ejecuta</p>
     </div>`,
   },
 ];

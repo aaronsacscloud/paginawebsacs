@@ -4941,8 +4941,9 @@ const useCases = [
     .sc-eyebrow, .loyalty-pro-eyebrow, .reels-eyebrow { font-size: 11px !important; letter-spacing: 0.14em !important; text-transform: uppercase; font-weight: 600 !important; background: none !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; color: inherit !important; opacity: 0.6; }
     .loyalty-pro-title br { display: none; } .loyalty-pro-title { text-wrap: balance; }
     .hero-badges { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (max-width: 400px) { .hero-badges { grid-template-columns: 1fr 1fr; } .hero-badge:last-child { grid-column: 1 / -1; } }
     .hero-badge { flex-direction: column !important; align-items: center !important; text-align: center; gap: 2px !important; }
-    .hero-badge-icon { display: none !important; } .hero-badge-label { font-size: 10px !important; line-height: 1.2; }
+    .hero-badge-icon { display: none !important; } .hero-badge-label { font-size: 12px !important; line-height: 1.25; }
     .hero-subtitle-full { display: none; } .hero-subtitle-short { display: inline; }
     .inv-intel-card-icon { margin-bottom: 10px !important; }
     .flujo-text { min-height: 132px; }

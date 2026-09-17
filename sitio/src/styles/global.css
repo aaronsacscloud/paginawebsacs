@@ -507,8 +507,10 @@ html, body { overflow-x: clip; }
   .pt-link, .suite-tab, .flujo-replay, .price-strip-item {
     position: relative;
   }
-  /* Los que ocupan su propio renglón crecen de verdad, centrando lo que ya tenían dentro. */
-  .nav-logo, .footer-subheading, .pt-link, .psn-feature-link {
+  /* Los que ocupan su propio renglón crecen de verdad, centrando lo que ya tenían
+     dentro. El logo de la cabecera NO entra aquí: cambiarle el display le partía
+     el bloque en dos y cortaba la palabra. A ése se le da solo el área invisible. */
+  .footer-subheading, .pt-link, .psn-feature-link {
     min-height: 44px; display: flex; align-items: center;
   }
   .footer-logo, .ce-case-link { min-height: 44px; display: inline-flex; align-items: center; }
@@ -517,7 +519,8 @@ html, body { overflow-x: clip; }
     content: ''; position: absolute; inset: 50% 0 auto; translate: 0 -50%;
     height: 44px; min-width: 44px;
   }
-  #nav-vertical { min-height: 44px; min-width: 44px; }
+  #nav-vertical { position: relative; min-width: 44px; }
+  #nav-vertical::after { content: ''; position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; width: 100%; min-width: 44px; height: 44px; }
 }
 
 /* 6. Los que se tocan por error. Pestañas y píldoras quedaban a 0-4 px una de
@@ -542,10 +545,20 @@ html, body { overflow-x: clip; }
   .cif-frase, .pt-frase, .pf-testimonial-quote { line-height: 1.4; }
 }
 
-/* 9. Cualquier tabla ancha se arrastra sola en vez de romper la página. La
-   comparativa de la ficha de producto mide 1,320 px contra una pantalla de 390. */
+/* 9. Lo que se desliza, que se note que se desliza. La comparativa de la ficha de
+   producto mide 1,320 px contra una pantalla de 390: sí se arrastra con el dedo,
+   pero nada lo decía y el usuario se quedaba viendo dos columnas de siete. Ahora
+   hay una sombra en el borde derecho que desaparece al llegar al final. */
 @media (max-width: 900px) {
-  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pf-compare-table-wrap, .crm-scroll-x, .suite-tabs, .pn-pasos {
+    -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(to right, #fff 30%, rgba(255,255,255,0)) left / 28px 100% no-repeat,
+      linear-gradient(to left, #fff 30%, rgba(255,255,255,0)) right / 28px 100% no-repeat,
+      radial-gradient(farthest-side at 0 50%, rgba(14,13,12,.14), transparent) left / 12px 100% no-repeat,
+      radial-gradient(farthest-side at 100% 50%, rgba(14,13,12,.14), transparent) right / 12px 100% no-repeat;
+    background-attachment: local, local, scroll, scroll;
+  }
 }
 
 /* 10. Detalles de tacto que solo se notan en un teléfono: el destello gris al
@@ -562,4 +575,157 @@ html, body { overflow-x: clip; }
    largos empujaban la caja; ahora parten en vez de desbordar. */
 @media (max-width: 400px) {
   h1, h2, h3, .plan-desc, .reel-tag { overflow-wrap: anywhere; }
+}
+
+/* 12. Las cajas de una rejilla no se encogen solas. En iPhone SE (320 px) los
+   pasos de Partners salían 72 px más anchos que su columna y la ficha de la
+   comparativa de giros, 48 px: el texto quedaba cortado por el borde. Es el
+   min-width automático de grid y flex, que hay que bajar a mano. */
+@media (max-width: 480px) {
+  .dd-grid > *, .dd-pasos, .dd-paso, .pp-hojas > *, .pp-hoja,
+  [class*="-grid"] > *, [class*="-cols"] > * { min-width: 0; }
+  .dd-paso, .pp-hoja { overflow-wrap: anywhere; }
+}
+
+/* 13. Más superficie para el dedo en los controles que quedaban por debajo de
+   44 px: las pestañas de la ficha de producto, los enlaces de bloque, los de
+   preguntas frecuentes y los interruptores de periodo. */
+@media (max-width: 900px) {
+  .suite-tab, .sq-block-link, .faq-link, .toggle-btn, .flujo-replay,
+  .cat-btn, .rtn-confirm-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* 14. Etiquetas que seguían en 10 y 11 px en el teléfono. */
+@media (max-width: 767px) {
+  .social-proof-label, .ct-caso-tag, .rtn-topbar-title, .rtn-topbar-meta,
+  .rtn-mini-label, .rtn-item-name, .mk-chip, .sq-fc-cust-meta,
+  .crm2m-chip, .mk-wa2-var { font-size: max(12px, 0.75rem) !important; }
+}
+
+/* 15. El teclado del teléfono tapa el campo que estás llenando. Con esto, al
+   enfocarlo el navegador lo sube lo suficiente para que se vea, junto con su
+   etiqueta y el botón de enviar. */
+@media (max-width: 900px) {
+  input, select, textarea { scroll-margin-top: calc(var(--nav-alto, 72px) + 24px); scroll-margin-bottom: 120px; }
+}
+
+/* 16. El botón flotante de WhatsApp tapaba el último botón de cada página, que
+   suele ser el que más importa. Se le deja aire al final del contenido. */
+@media (max-width: 767px) {
+  body:has(.wa-bar.is-visible) main { padding-bottom: 76px; }
+}
+
+/* 17. El foco se tiene que ver también aquí. Mucha gente navega el sitio desde
+   una tableta con teclado, y el contorno del navegador se perdía sobre fondos
+   oscuros. */
+@media (max-width: 900px) {
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--color-primary, #4B7BE5);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* 18. Animaciones que no se ven y sí se pagan. En un teléfono, los fondos que
+   se mueven solos y los desenfoques grandes se comen la batería y hacen que el
+   scroll se sienta pesado, sin aportar nada en una pantalla de 390 px. */
+@media (max-width: 767px) {
+  [class*="parallax"], [class*="-glow"], [class*="blob"] { animation: none !important; }
+  [style*="backdrop-filter"], [class*="backdrop"] { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
+}
+
+/* 19. El pie de página es donde más se falla el toque. Sus enlaces medían 18 px
+   de alto y van uno debajo de otro: en el teléfono se aprieta el de arriba o el
+   de abajo, nunca el que se quería. Ahora cada uno ocupa 44 px de alto real y
+   la lista se lee como lista, no como un bloque de texto azul. */
+@media (max-width: 767px) {
+  .footer-list a, .footer-col a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding-block: 2px;
+  }
+  .footer-list li + li { border-top: 1px solid rgba(255, 255, 255, 0.07); }
+}
+
+/* 20. Los enlaces de «ver más» al final de una sección medían 26 px. Son el
+   siguiente paso natural de la lectura y hay que poder apretarlos sin puntería. */
+@media (max-width: 900px) {
+  .pl-link, .ce-link, .pc-link, .cta-link, [class$="-link"]:not(.nav-link) {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* 21. Las antetítulos y etiquetas de sección estaban en 10 y 11 px. Son las que
+   dicen dónde estás parado («01 · Tipo de alianza», «Calcula tu ingreso»,
+   «Migración incluida»), y en el teléfono se volvían decoración ilegible. */
+@media (max-width: 767px) {
+  .hero-badge-label, .price-strip-name, .addon-ia-kicker, .calc-category-label,
+  .pi-kicker, .pt-eyebrow, .ce-ano, .ce-eyebrow, .pc-eyebrow,
+  .ct-session-label, .ct-stat-label, .ct-trusted-label, .ct-migrate-flotante-k,
+  .sq-fc-ranking-title, .sq-fc-metric-delta, .sq-fc-qty,
+  [class$="-eyebrow"], [class$="-kicker"], [class$="-label"] {
+    font-size: max(12px, 0.75rem) !important;
+    letter-spacing: 0.06em;
+  }
+  dt { font-size: max(12px, 0.75rem); }
+}
+
+/* 22. Las maquetas que imitan la pantalla de Sacs se dibujan con HTML, y al
+   encogerse a 390 px sus renglones llegaban a 6.5 px: dejaban de contar nada.
+   Se les sube el piso al tamaño en que todavía se leen. */
+@media (max-width: 767px) {
+  .rtn-item-meta, .rtn-mini-label, .sq-fc-cust-meta, .sq-fc-time,
+  .sq-fc-qr-meta, .sq-fc-stock-qty, .mk-wa2-var, .crm2m-chip,
+  [class*="-meta"], [class*="-mini"] { font-size: max(11px, 0.7rem) !important; }
+}
+
+/* 23. Los botones dentro de esas maquetas también se tocan de verdad: «Apartar»,
+   «Pagar y apartar», «Cobrar», «Enviar broadcast». Medían de 23 a 36 px de alto. */
+@media (max-width: 900px) {
+  .apt3-btn, .mk-wa2-btn, .sq-fc-cobrar, .psn-pillar-btn {
+    min-height: 40px;
+  }
+}
+
+/* 24. Los puntos de un carrusel medían 10 × 10 px: imposibles de apretar sin
+   fallar. Se les da un área invisible de 44 px sin cambiar el punto dibujado. */
+@media (max-width: 900px) {
+  .pf-dot, [class$="-dot"] { position: relative; }
+  .pf-dot::after, [class$="-dot"]::after {
+    content: ''; position: absolute; inset: 50% 50% auto auto;
+    translate: 50% -50%; width: 44px; height: 44px;
+  }
+}
+
+/* 25. Las pestañas del plano de la tienda («01 Piso de venta», «02 Probadores»)
+   se quedaban en 34 px de alto y van pegadas entre sí. */
+@media (max-width: 900px) {
+  .pn-pasos button, .pn-tabs button { min-height: 44px; }
+  .pn-pasos button + button, .pn-tabs button + button { margin-left: 6px; }
+}
+
+/* 26. Últimos rescates de tamaño, los que se defendían con reglas propias:
+   etiquetas de tabla y de lista de definición, la letra chica de la calculadora
+   de Partners, y los renglones de las maquetas que se quedaron en 11.2 px. */
+@media (max-width: 767px) {
+  small, dt, th, .pc-res-k, .pc-fine, .reel-tag,
+  .rtn-topbar-meta, .rtn-mini-label, .rtn-item-meta {
+    font-size: max(12px, 0.75rem) !important;
+  }
+}
+
+/* 27. Los botones de las maquetas se quedaban a un pelo del mínimo (38 y 39 px).
+   Un botón que se ve apretable y falla al primer intento es peor que uno chico. */
+@media (max-width: 900px) {
+  .apt3-btn, .mk-wa2-btn, .sq-fc-cobrar, .psn-pillar-btn { min-height: 44px; }
+}
+
+/* 28. Los enlaces dentro de un párrafo («del análisis al surtido») se apretaban
+   con el dedo encima de la línea de arriba. Se les da altura de línea propia. */
+@media (max-width: 900px) {
+  p > a, li > a:not(.footer-list a) { padding-block: 6px; }
 }

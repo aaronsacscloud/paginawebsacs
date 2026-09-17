@@ -1604,11 +1604,19 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .nav-vertical svg { opacity: 0.6; transition: transform 0.2s; }
   .nav-vertical:hover svg { transform: translateY(1px); }
   @media (max-width: 767px) {
-    .nav-marca { flex-direction: column; align-items: flex-start; gap: 0; margin-right: auto; }
-    .nav-wordmark { font-size: 24px; }
-    .nav-vertical { margin: -5px 0 0 1px; padding: 0; border-left: 0; font-size: 12px; letter-spacing: -0.005em; }
-
+    /* En el teléfono la marca iba en dos renglones, y no cabía: el bloque se
+       salía de la cabecera de 72 px y la palabra «Sacs» aparecía CORTADA por
+       arriba en iPhone y en Android (medido el 17-sep-2026 en las tres
+       pantallas). Vuelve a una sola línea, como en escritorio, que además es
+       como se escribe la marca: Sacs | Fashion Commerce. */
+    .nav-marca { flex-direction: row; align-items: center; gap: 0; margin-right: auto; }
+    .nav-wordmark { font-size: 22px; }
+    .nav-vertical { margin: 1px 0 0 7px; padding: 0 0 0 7px; border-left: 1.5px solid #1D1D1F; font-size: 11px; letter-spacing: -0.005em; }
     .nav-vertical svg { width: 7px; height: 5px; }
+  }
+  @media (max-width: 360px) {
+    .nav-wordmark { font-size: 20px; }
+    .nav-vertical { font-size: 10px; margin-left: 5px; padding-left: 5px; }
   }
 
   /* ─── Modal de verticales: pantalla completa, una línea ─── */

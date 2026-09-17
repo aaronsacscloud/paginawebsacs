@@ -919,7 +919,7 @@ export default function Telefonia() {
       {salaAbierta && viva?.fase === 'en-linea' && !esMovil && (
         <Suspense fallback={null}>
           <SalaLlamada
-            telefono={viva.telefono || ''} nombre={quien(viva)} segundos={seg}
+            telefono={viva.telefono || ''} callId={viva.sid || null} nombre={quien(viva)} segundos={seg}
             nota={nota} setNota={setNota}
             mudo={mute} onSilenciar={toggleMute}
             onColgar={() => { setSalaAbierta(false); colgar(); }}

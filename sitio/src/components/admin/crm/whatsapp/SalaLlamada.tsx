@@ -27,6 +27,9 @@ import { telefonoLegible } from '../../../../lib/telefono';
 
 type Props = {
   telefono: string;
+  /** El CallSid de Twilio: es la llave con la que el servidor encuentra ESTA
+      llamada. Sin él la nota y el desenlace no tienen a qué colgarse. */
+  callId?: string | null;
   nombre?: string | null;
   segundos: number;
   /** El texto del apunte vive arriba: al colgar tiene que seguir existiendo. */
@@ -49,7 +52,7 @@ const RESULTADOS: { id: string; l: string; tono: string }[] = [
 const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const dia = (f: any) => (f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '');
 
-export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar }: Props) {
+export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar }: Props) {
   const [ctx, setCtx] = useState<any>(null);
   const [horarios, setHorarios] = useState<any[] | null>(null);
   const [resultado, setResultado] = useState('');
@@ -68,26 +71,39 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
   const primeraVez = useRef(true);
   useEffect(() => {
     if (primeraVez.current) { primeraVez.current = false; return; }
-    if (!nota.trim() || !ctx?.conversationId) return;
+    if (!nota.trim() || !callId) return;
     setGuardado('guardando');
     const t = setTimeout(() => {
       fetch('/api/crm/telefonia/nota', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono, nota, conversation_id: ctx.conversationId }),
-      }).then(() => setGuardado('ok')).catch(() => setGuardado('no'));
+        body: JSON.stringify({ call_id: callId, texto: nota }),
+      }).then(r => setGuardado(r.ok ? 'ok' : 'no')).catch(() => setGuardado('no'));
     }, 4000);
     return () => clearTimeout(t);
-  }, [nota, ctx?.conversationId, telefono]);
+  }, [nota, callId]);
 
   /* Los horarios REALES, no un «te mando la liga». Se piden al abrir la agenda
      y no al abrir la sala: la mayoría de las llamadas no acaban en cita, y
      traerlos siempre sería pagar una consulta por cada timbrazo. */
   const verHorarios = async () => {
-    setHorarios([]);
-    const desde = new Date().toISOString().slice(0, 10);
-    const j = await fetch(`/api/scheduling/availability?from=${desde}&days=7`).then(r => r.json()).catch(() => null);
-    const slots = (j?.slots || j?.disponibles || j?.horarios || []) as any[];
-    setHorarios(Array.isArray(slots) ? slots.slice(0, 12) : []);
+    setHorarios([]); setMsg('');
+    /* `available-slots` y NO `availability`: el segundo devuelve la
+       CONFIGURACIÓN de tu agenda (horarios semanales y excepciones), no huecos
+       libres. Empecé pidiéndole slots y siempre devolvía la lista vacía sin
+       decir por qué — el clásico «no hay horarios» que en realidad es «estás
+       preguntando a la puerta equivocada». Éste sí cruza tu agenda con Google
+       y devuelve los huecos de verdad. */
+    const hoy = new Date().toISOString().slice(0, 10);
+    const hasta = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const j = await fetch(`/api/scheduling/available-slots?slug=demo&from=${hoy}&to=${hasta}`)
+      .then(r => r.json()).catch(() => null);
+    if (j?.error) { setMsg(`No se pudieron traer los horarios: ${j.error}`); setHorarios([]); return; }
+    /* La forma que devuelve es `{dates: {"2026-09-18": ["13:00","15:00"]}}`.
+       Medido contra el endpoint, no supuesto: la primera versión buscaba
+       `slots` y siempre pintaba vacío. */
+    const slots = Object.entries(j?.dates || {})
+      .flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora })));
+    setHorarios(slots.slice(0, 12));
   };
 
   /* «TE MANDO LA LIGA» DESDE AQUÍ, no después. El «después» es media hora más
@@ -106,10 +122,15 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
   const cerrarLlamada = async () => {
     if (!resultado) { setMsg('Di qué pasó antes de colgar: es lo que alimenta todo lo demás.'); return; }
     setMsg('');
-    await fetch('/api/crm/telefonia/nota', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefono, nota, resultado, volver_el: volverEl || null, conversation_id: ctx?.conversationId }),
-    }).catch(() => {});
+    /* Se guarda ANTES de colgar y se espera: si se colgara primero, el
+       componente se desmonta y la petición se queda a medias. El desenlace es
+       justo lo que no puede perderse. */
+    if (callId) {
+      await fetch('/api/crm/telefonia/nota', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ call_id: callId, texto: nota, resultado, volver_el: volverEl || null }),
+      }).catch(() => {});
+    }
     onColgar();
   };
 
@@ -238,7 +259,7 @@ export default function SalaLlamada({ telefono, nombre, segundos, nota, setNota,
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {horarios.map((h: any, i: number) => (
                     <span key={i} style={{ background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '6px 11px', fontSize: 12, fontWeight: 700 }}>
-                      {new Date(h.inicio || h.start || h).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(`${h.fecha}T${h.hora}:00`).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   ))}
                 </div>

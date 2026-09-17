@@ -25,7 +25,9 @@ export const POST: APIRoute = async ({ request }) => {
   const callId = String(b.call_id || '').trim();
   const texto = String(b.texto || '').trim().slice(0, 4000);
   if (!/^CA[0-9a-f]{32}$/i.test(callId)) return json({ error: 'call_id inválido' }, 400);
-  if (!texto) return json({ error: 'La nota viene vacía' }, 400);
+  // Se puede colgar sin apunte pero con resultado: entonces no hay nota que
+  // escribir, y aun así el desenlace tiene que guardarse.
+  if (!texto && !b.resultado) return json({ error: 'La nota viene vacía' }, 400);
 
   const { data: ll } = await supabase.from('wa_llamadas')
     .select('conversation_id, telefono').eq('call_id', callId).maybeSingle();
@@ -33,6 +35,29 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: conv } = await supabase.from('wa_conversaciones')
     .select('contact_id').eq('id', ll.conversation_id).maybeSingle();
+
+  /* ══ EL DESENLACE, JUNTO CON LA NOTA ══════════════════════════════════════
+     La sala de la llamada obliga a decir qué pasó antes de colgar. Ese dato
+     tenía que llegar a algún lado o la obligación sería una molestia sin
+     premio: pedir un dato y tirarlo es peor que no pedirlo.
+
+     Va aquí y no en un endpoint nuevo porque llega en el MISMO momento que la
+     nota —al colgar— y separarlos daría dos viajes que pueden fallar por
+     separado, dejando media llamada guardada. */
+  const resultado = String(b.resultado || '').trim().slice(0, 40);
+  if (resultado) {
+    await supabase.from('wa_llamadas').update({ resultado }).eq('call_id', callId).then(() => {}, () => {});
+  }
+  /* «Volver a llamar» sin fecha es la promesa que se evapora: si viene fecha,
+     queda la tarea. Sin fecha no se inventa ninguna — la sala ya la exige. */
+  const volverEl = String(b.volver_el || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(volverEl) && (conv as any)?.contact_id) {
+    await supabase.from('crm_seguimientos').insert({
+      contact_id: (conv as any).contact_id, conversation_id: ll.conversation_id,
+      motivo: 'Quedaste de volver a llamarle (lo dijiste en la llamada)',
+      fecha: volverEl, creado_por: (user as any)?.id || null,
+    }).then(() => {}, () => {});
+  }
 
   /* Idempotente por llamada: la pantalla guarda al colgar y también si el
      usuario toca «guardar». Se ACTUALIZA la nota de esa llamada en vez de
