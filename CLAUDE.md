@@ -255,6 +255,26 @@ hay que pedir uno nuevo y reescribir ese archivo, no buscarlo en el historial.
 el resultado. Todo cambio de esquema se guarda además como archivo en
 `sitio/scripts/migration-*.sql` para que quede rastro en el repo.
 
+## 🤖 Motor de demanda — el manual antes que el código
+
+`sitio/MANUAL-DEMAND-ENGINE.md` es para **operarlo**: cómo se apaga, cómo se ve
+si está vivo, qué hacer cuando algo falla. Empieza ahí, no por el código.
+
+- `sitio/ESTADO-DEMAND-ENGINE.md` — en qué punto va y qué se aprendió a golpes.
+  **Es el primer archivo que hay que leer en una sesión nueva.**
+- `sitio/PLAN-DEMAND-ENGINE.md` — cómo está construido y por qué.
+
+Cuatro reglas que salieron de errores reales y que cuestan caro ignorar:
+
+1. **Toda escritura a Supabase mira su error.** Publicar, revertir y marcar
+   señales como procesadas devolvían éxito sin haber escrito.
+2. **Toda lectura que cuenta o promedia usa `traerTodo()`** (`lib/demanda/paginar.ts`).
+   PostgREST corta en 1000 filas SIN avisar; eso falseó los scores del motor entero.
+3. **Todo efecto hacia afuera pasa por `frenoDeSalida()`** (`lib/demanda/salida.ts`),
+   o los interruptores de apagado y simulación se vuelven mentira para tu función.
+4. **UPDATE y DELETE siempre llevan WHERE**, aunque toquen todas las filas y
+   aunque la tabla sea temporal. Supabase los bloquea y ya paró el motor dos veces.
+
 ## 🎯 Prospección en frío (motor ABM) — lee el manual antes de tocarlo
 
 `sitio/MANUAL-PROSPECCION-ABM.md` tiene el proceso completo: cómo se arma el
