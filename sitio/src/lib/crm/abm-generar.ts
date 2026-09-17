@@ -125,6 +125,7 @@ export function expediente(c: any, canales: any[], personas: any[], senales: any
 }
 
 export const REGLAS = `Reglas de escritura, sin excepción:
+- La marca se escribe «Sacs». Nunca SACS en mayúsculas ni «Sacscloud» en el cuerpo.
 - El español que dice el expediente (de México, o neutro de Latinoamérica), tono de persona. Nada de "solución integral", "potenciar", "revolucionar", "líder".
 - TODOS los correos van en TEXTO PLANO, sin imágenes. Nunca HTML.
 - El correo 1 es el de PRESENTACIÓN y es el único largo (hasta 200 palabras).
@@ -326,6 +327,26 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
           boton_texto: base0[i]?.boton_texto || null, boton_url: base0[i]?.boton_url || null,
         }));
         conIa = true;
+        /* ── LA APERTURA DEL ALIADO NO SE NEGOCIA ────────────────────────────
+           Medido el 17-sep-2026 con las tres primeras de la fila: a las
+           cuentas que traen `contexto` en el expediente, la IA tira la
+           apertura del texto base y escribe la suya («Vi que son la primera
+           universidad especializada en moda…»). Contra dos cuentas sin
+           contexto la instrucción se respetaba, así que el error era invisible.
+
+           Pedírselo mejor no sirve: pedírselo ya se le pidió. La apertura es
+           lo único del correo que el dueño segmentó a mano por tipo de aliado
+           —«los que venden talleres son unos y los que venden insumos no les
+           interesa nada de clases»—, así que se impone aquí: si el primer
+           correo no la trae, se le pone delante y la IA se queda con el resto. */
+        const ap = String(vars.apertura || '').trim();
+        if (ap && correos[0]) {
+          const cuerpo = String(correos[0].cuerpo || '');
+          if (!cuerpo.includes(ap)) {
+            const saludo = cuerpo.match(/^(Hola [^.\n]{1,40}\.|Buen día\.)\s*/);
+            correos[0].cuerpo = `${saludo ? saludo[0].trim() + '\n\n' : ''}${rellenar(String(base0[0]?.cuerpo || '').split('\n')[0], vars).replace(/^(Hola [^.\n]{1,40}\.|Buen día\.)\s*/, '')}\n\n${cuerpo.slice(saludo ? saludo[0].length : 0)}`;
+          }
+        }
       }
     } catch (e: any) {
       // Se distingue el corte por longitud de cualquier otro fallo: son dos
