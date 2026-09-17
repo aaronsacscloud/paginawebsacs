@@ -45,6 +45,7 @@
 // conversación real.
 import { GIROS } from './abm-giros';
 import { COPY } from './abm-giro-copy';
+import { ALIADOS, type TipoAliado } from './abm-aliados';
 
 export type PlantillaFria = {
   nombre: string;                  // el que se da de alta en Meta
@@ -176,6 +177,112 @@ Gracias por el tiempo y mucho éxito con la temporada.`,
     ejemplos: ['llevar los apartados, las pruebas y los abonos en libreta'],
   },
 ];
+
+/* ── EL WHATSAPP DEL ALIADO ───────────────────────────────────────────────────
+   Las tres de arriba son de PROSPECTO: «tenemos una versión hecha para casas de
+   novia, ¿le muestro una demo?». A un aliado eso no le aplica —no le vendemos
+   el sistema, le proponemos que sus clientes lo tengan—, así que lleva sus
+   propias tres.
+
+   Y llevan el hueco de la apertura por TIPO, que es la regla del dueño: al
+   taller se le habla del pedido sin curva de tallas, al contador de su cierre
+   de mes, al de insumos del cliente que le pide de urgencia lo que ya se le
+   acabó. Sale del mismo catálogo que los correos (`abm-aliados.ts`), así que
+   no hay dos versiones del mismo texto.
+
+   Solo se manda a quien publicó su `wa.me` en su propio sitio (§6 bis). De los
+   460 aliados, 122 lo publicaron. */
+export const ALIADO_FRIO: PlantillaFria[] = [
+  {
+    nombre: 'abm_aliado_apertura_v1',
+    categoria: 'MARKETING',
+    idioma: 'es_MX',
+    // {{1}} la cuenta con su seña · {{2}} la apertura de SU tipo · {{3}} qué gana
+    cuerpo:
+`Buen día. Le escribo de Sacs — hacemos software mexicano de inventario y punto de venta para negocios de moda.
+
+Estamos armando la red de aliados de México y {{1}} salió en la lista. Los encontramos en Google Maps; nadie nos pasó su contacto.
+
+No le escribo para venderle un sistema. Le escribo porque {{2}}, y lo que le propongo es que sus clientes lo tengan: {{3}}
+
+¿Le cuento cómo funciona?`,
+    botones: [
+      { tipo: 'QUICK_REPLY', texto: 'Sí, cuénteme' },
+      { tipo: 'QUICK_REPLY', texto: 'Ahora no' },
+    ],
+    ejemplos: [
+      'Gorras CJ, en León, con 4.8 estrellas y 41 reseñas,',
+      'le mandan bordar doscientas piezas sin decirle en qué tallas, y la mitad se queda sin vender',
+      'usted nos presenta a su cliente, nosotros hacemos la venta y usted cobra el 40% de esa cuenta mientras siga pagando.',
+    ],
+  },
+  {
+    nombre: 'abm_aliado_seguimiento_v1',
+    categoria: 'MARKETING',
+    idioma: 'es_MX',
+    // {{1}} a quién le vende él · {{2}} qué se le rompe a ese cliente
+    cuerpo:
+`Le escribo una vez más y ya no le insisto.
+
+Usted le vende a {{1}}. Lo que vemos del otro lado es esto: {{2}}
+
+Antes de venderle a nadie le hacemos un diagnóstico gratis: con sus existencias y sus ventas le decimos cuánto dinero trae parado y qué está dejando de vender por faltantes. Si no le sirve, ahí muere, y usted queda como quien le dio algo concreto.
+
+¿Lo probamos con un cliente suyo, el que usted quiera?`,
+    botones: [
+      { tipo: 'QUICK_REPLY', texto: 'Va, con uno' },
+      { tipo: 'QUICK_REPLY', texto: 'Mejor no' },
+    ],
+    ejemplos: [
+      'locatarios y marcas que le mandan a bordar y estampar',
+      'le piden 200 piezas sin decirle en qué tallas, y la mitad se queda sin vender',
+    ],
+  },
+  {
+    nombre: 'abm_aliado_cierre_v1',
+    categoria: 'MARKETING',
+    idioma: 'es_MX',
+    // {{1}} a quién le vende él
+    cuerpo:
+`Con este cierro el tema — no quiero ser el que insiste.
+
+Si algún día uno de {{1}} le dice que no sabe qué comprar o que no le cuadra el inventario, acuérdese de este mensaje: el diagnóstico es gratis y la comisión es del 40% mientras esa cuenta pague. Este número queda abierto.
+
+Gracias por el tiempo.`,
+    botones: [{ tipo: 'URL', texto: 'Agendar cuando quiera', url: AGENDAR }],
+    ejemplos: ['sus clientes'],
+  },
+];
+
+/** Los huecos del WhatsApp del aliado. Null si la cuenta no tiene tipo: sin
+ *  saber a quién le vende, el mensaje no dice nada suyo y no vale mandarlo. */
+export function paramsAliado(paso: 1 | 2 | 3, c: any): string[] | null {
+  const t = ALIADOS[String(c.subgiro || '')] || tipoPorNombreViejo(c.subgiro);
+  if (!t) return null;
+  const gana = GANA[t.perfil];
+  if (paso === 1) return [senaDeLaCuenta(c), bajar(t.apertura), gana];
+  if (paso === 2) return [bajar(t.suGente), bajar(t.dolor)];
+  return [bajar(t.suGente)];
+}
+
+/** Lo que gana, en una frase de un solo renglón (Meta no acepta saltos). */
+const GANA: Record<string, string> = {
+  referidor: 'usted nos presenta a su cliente, nosotros hacemos la venta y usted cobra el 40% de esa cuenta mientras siga pagando.',
+  consultor: 'usted lo suma a su servicio y cobra comisión por la licencia además de sus propias horas de implementación.',
+  orquestador: 'lo certificamos para que usted lo venda y lo opere, y cada tienda que opere le deja ingreso recurrente.',
+  tecnologia: 'conectamos lo suyo con nuestra API y nuestro MCP, y usted llega a todas las marcas que operan con Sacs.',
+};
+
+const bajar = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
+/** Los subgiros con los que se cargaron los 41 aliados viejos («Escuela»,
+ *  «Firma»…) no son la clave del tipo. Sin esto se quedaban sin WhatsApp. */
+function tipoPorNombreViejo(subgiro?: string | null): TipoAliado | null {
+  const s = String(subgiro || '').trim().toLowerCase();
+  if (!s) return null;
+  for (const t of Object.values(ALIADOS)) if ((t.ya || []).some((v: string) => v.toLowerCase() === s)) return t;
+  return null;
+}
 
 /** La seña que hace que el mensaje suene investigado y no masivo.
  *  Se arma con lo MEJOR que tengamos de esa cuenta, en este orden: calificación

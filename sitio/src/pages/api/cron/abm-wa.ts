@@ -27,7 +27,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { apuntar, quien, quienPuedeCorrerCrons } from '../../../lib/crm/abm.lib';
-import { ABM_FRIO, paramsFrios, GIRO_FRIO } from '../../../lib/crm/abm-wa-plantillas';
+import { ABM_FRIO, paramsFrios, GIRO_FRIO, ALIADO_FRIO, paramsAliado } from '../../../lib/crm/abm-wa-plantillas';
 import { enviarPlantilla, sanearParam, conLinea } from '../../../lib/whatsapp/kapso-api';
 import { lineaPara, infoLinea } from '../../../lib/whatsapp/linea';
 import { telefonoWhatsApp } from '../../../lib/telefono';
@@ -146,6 +146,18 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data: candidatos, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
+  /* La vista de contactables no trae `subgiro`, y el mensaje del aliado se
+     arma con él: es lo que decide si se le habla del pedido sin curva de
+     tallas o de su cierre de mes. Sin esto `paramsAliado` devolvía null y
+     todos los aliados se saltaban en silencio como «sin parámetros». Se pide
+     de una vez para todos los candidatos, no uno por uno. */
+  const idsAliados = (candidatos || []).filter((c: any) => c.giro === 'aliados').map((c: any) => c.cuenta_id);
+  const subgiros = new Map<string, string>();
+  if (idsAliados.length) {
+    const { data: subs } = await supabase.from('abm_cuentas').select('id, subgiro').in('id', idsAliados);
+    for (const x of subs || []) subgiros.set(x.id, x.subgiro || '');
+  }
+
   const hoy = Date.now();
   const salida: any[] = [];
   const saltados: Record<string, number> = {};
@@ -154,7 +166,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   const cupo = Math.min(cuantas, restante);
   for (const c of candidatos || []) {
     if (salida.length >= cupo) break;
-    if (!GIRO_FRIO[c.giro]) { salta(`sin guion para ${c.giro}`); continue; }
+    /* Los aliados tienen su propio juego de tres: las de arriba dicen «tenemos
+       una versión hecha para casas de novia, ¿le muestro una demo?», y al
+       aliado no le vendemos el sistema —le proponemos que sus clientes lo
+       tengan—. `aliados` no está en GIRO_FRIO a propósito. */
+    const esAliado = c.giro === 'aliados';
+    if (!esAliado && !GIRO_FRIO[c.giro]) { salta(`sin guion para ${c.giro}`); continue; }
 
     /* Si ya contestaron, la cadencia terminó: lo que sigue es una conversación.
        EL NÚMERO SE NORMALIZA ANTES DE COMPARAR. `abm_canales.valor` se guarda
@@ -196,9 +213,11 @@ export const GET: APIRoute = async ({ request, url }) => {
     const v = await puedeMandarWa(c.valor);
     if (!v.ok) { salta('escrito hace poco'); continue; }
 
-    const params = paramsFrios((hechos + 1) as 1 | 2 | 3, { ...c, nombre: c.cuenta_nombre });
+    const params = esAliado
+      ? paramsAliado((hechos + 1) as 1 | 2 | 3, { ...c, nombre: c.cuenta_nombre, subgiro: subgiros.get(c.cuenta_id) })
+      : paramsFrios((hechos + 1) as 1 | 2 | 3, { ...c, nombre: c.cuenta_nombre });
     if (!params) { salta('sin parámetros'); continue; }
-    const plantilla = ABM_FRIO[hechos];
+    const plantilla = (esAliado ? ALIADO_FRIO : ABM_FRIO)[hechos];
 
     if (dry) {
       salida.push({ cuenta: c.cuenta_nombre, giro: c.giro, paso: hechos + 1, plantilla: plantilla.nombre, params });
