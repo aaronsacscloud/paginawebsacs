@@ -42,7 +42,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       <ul class="em-blusas" id="em-blusas"></ul>
       <div class="em-mios">
         <label><span>Precio de tu pieza</span><input type="number" id="em-precio" value="450" min="50" step="10" /></label>
-        <label><span>Lo que te cuesta</span><input type="number" id="em-costo" value="180" min="10" step="10" /></label>
+        <label><span>Lo que te cuesta puesta</span><input type="number" id="em-costo" value="220" min="10" step="10" title="La pieza más el flete, el viaje al proveedor y el empaque" /></label>
       </div>
     </div>
     <div class="em-res">
@@ -102,17 +102,17 @@ import BloqueProducto from '../BloqueProducto.astro';
     const pinta = () => {
       const pagan = Number(($('em-pagan') as HTMLInputElement).value);
       const precio = Math.max(50, Number(($('em-precio') as HTMLInputElement).value) || 450);
-      const costo = Math.max(10, Number(($('em-costo') as HTMLInputElement).value) || 180);
+      const costo = Math.max(10, Number(($('em-costo') as HTMLInputElement).value) || 220);
       const margen = Math.max(0, precio - costo);
       // De las que no pagan, unas se caen con otra clienta detrás esperando y otras no. Mientras
       // más días la guardes, más veces le dices «ya está apartada» a alguien que sí iba a pagar.
       const mueren = (10 - pagan) / 10 * APARTADOS;
-      // De las que se cayeron, una de cada cinco traía a alguien preguntando por esa misma pieza.
-      // Lo que cambia con los días NO es cuántas había: es cuántas de ésas ya no volvieron. Si la
-      // sueltas en 24 horas, casi todas siguen ahí; si la guardas una semana, ya se fueron.
-      const yaSeFueron = dias === 1 ? 0.2 : dias === 3 ? 0.55 : 0.8;
-      const perdidas = Math.round(mueren * CON_FILA * yaSeFueron * PAGA);
+      // De las que se cayeron, una de cada cinco traía a alguien preguntando por esa misma pieza y
+      // esa segunda paga como cualquier otra, no con certeza. Los días NO cambian cuántas había
+      // atrás: eso sería hacer aparecer clientas. Lo que cambia con los días es el rack muerto, y
+      // por eso ese es el número grande.
       const enFila = Math.round(mueren * CON_FILA);
+      const perdidas = Math.floor(mueren * CON_FILA * PAGA);
       $('em-p').textContent = String(pagan);
       const diasMuertos = Math.round(mueren * dias);
       $('em-num').textContent = diasMuertos.toLocaleString('es-MX');
