@@ -523,4 +523,7 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 - [ ] **8 · Llamadas inteligentes con espacio propio**, con su filtro de arranque
       y lista dinámica, sin depender del inbox.
 - [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).
-- [ ] **10 · Agenda de Andrea a partir de las 12:00 PM** — revisar y bloquear.
+- [x] **10 · Agenda de Andrea a partir de las 12:00 PM.** HECHO. NO estaba bien:
+      ofrecía desde las 09:00. Ahora 12:00–18:00 L-V, verificado contra el
+      agendador público. ⚠️ Quedan 2 reuniones reales ya agendadas antes de las
+      12 (Grecia 18-sep 10:00, Jose 18-sep 11:15) — no se tocaron.
