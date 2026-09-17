@@ -581,11 +581,86 @@ herramienta nueva aparece sola.
 ruta dinámica `[slug].astro`. Astro le da precedencia al estático; si algún día
 se define una herramienta con slug `mcp`, su página quedaría tapada sin avisar.
 
+### Índice Sacs de Retail de Moda — CALCULADO, **NO PUBLICADO**
+
+De todo lo que el motor puede hacer para que una IA nos cite, esto es lo único
+que ningún competidor puede copiar. Un artículo sobre curva de tallas lo escribe
+cualquiera con un buen prompt; «el ticket mediano de las tiendas de moda en
+México es de $640» solo lo puede decir quien tiene las cajas.
+
+**Edición 2026-09, sobre 91 tiendas operando:**
+
+| | |
+|---|---|
+| Ticket promedio | **$640** (p25 $350 · p75 $1,740) |
+| Tickets al mes | **318** (p25 66 · p75 901) |
+| Días seguidos sin vender | **0** (p75 = 1) |
+| Hizo conteo físico esta semana | **7%** |
+| Movió mercancía entre tiendas esta semana | **18%** |
+
+Y la adopción de 31 módulos. Los tres números que sostienen todo el argumento
+del sitio:
+
+- **48% mueve inventario entre tiendas · 5% lo nivela.** Mover es la mitad del
+  trabajo; saber QUÉ mover es la otra, y ahí casi nadie tiene método.
+- **82% compra sin orden de compra en el sistema.** La decisión de curva de
+  tallas se toma fuera de cualquier sistema, de memoria o en una hoja.
+- **48% no cuenta su inventario nunca.**
+
+#### ⚠️ Por qué NO está publicado (y qué falta para publicarlo)
+
+`de_indice.publicado` arranca en `false` y **ninguna rutina lo cambia**. La
+página `/indice-moda-mexico` contesta **404** mientras no haya una edición
+publicada, y está fuera del sitemap.
+
+No es un pendiente técnico, es una decisión que no me toca: los **Términos y
+condiciones traen cláusula de confidencialidad** sobre «información revelada
+durante el cumplimiento de este Acuerdo». Un agregado anónimo de 91 empresas no
+identifica a nadie ni es dato personal bajo la LFPDPPP, pero publicar
+estadística sacada de la operación de los clientes lo decide el dueño.
+
+**Para abrirlo hacen falta dos cosas, en este orden:**
+
+1. Una cláusula en los Términos que permita publicar estadística agregada y
+   anónima, e idealmente una salida para quien no quiera estar.
+2. El OK del dueño. Entonces basta un `update de_indice set publicado = true`
+   — no hace falta desplegar.
+
+#### Las reglas de anonimato viven en el código, no en el buen juicio
+
+`src/lib/demanda/indice.ts`:
+
+- **`MIN_EMPRESAS = 20`.** Debajo de eso una cifra no se publica con advertencia:
+  no se publica. Es un umbral de anonimato, no de significancia.
+- **Solo «operando»** (`ventas_30d > 0 y dias_sin_venta <= 30`). Sin ese filtro
+  la mediana de días sin venta daba **p90 = 271 días** — una estadística sobre
+  NUESTRA baja de clientes disfrazada de dato del ramo. La definición se guarda
+  con cada edición: si cambia, las ediciones dejan de ser comparables y hay que
+  poder notarlo.
+- **El mismo filtro para la adopción.** La primera versión la medía sobre «toda
+  empresa con datos de uso» y metía cuentas dormidas al denominador: decía que
+  el ramo usa menos de lo que usa. (Punto de venta salía 93%; es 100%.)
+- **El ticket se redondea a decenas** y nunca sale la cifra de una sola tienda.
+
+Verificado en el HTML generado: cero UUIDs, cero correos, cero nombres de
+cuenta.
+
+**Correr:** `node --experimental-strip-types --import ./scripts/de-registrar-hooks.mjs scripts/de-indice.mjs [--guardar]`
+(sin `--guardar` solo imprime).
+
+#### Lo que le falta al índice para ser fuerte
+
+- **No se puede segmentar por giro.** `companies.giro` está vacío en 111 de 145
+  y donde existe es texto libre («moda», «Moda», «SNEAKERS», «Multimarca…»).
+  Con giro limpio el índice pasaría de una cifra nacional a una por ramo, que
+  es mucho más citable. Es trabajo de datos, no de código.
+- **Ocho semanas de historia** (desde 2026-07-25). Una edición mensual empieza a
+  tener serie —y por tanto tendencia, que es lo más citable— en unos meses.
+
 ### Lo que sigue de la etapa 4
 
-1. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
-2. Autoridad y PR.
-3. Medir si el MCP se usa de verdad (`de_herramienta_usos` con `puerta='mcp'`).
+1. Autoridad y PR.
+2. Medir si el MCP se usa de verdad (`de_herramienta_usos` con `puerta='mcp'`).
    Hoy la tabla está limpia: las filas de prueba se borraron y desarrollo ya no
    escribe.
 

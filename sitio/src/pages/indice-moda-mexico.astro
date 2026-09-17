@@ -1,0 +1,202 @@
+---
+// EL ÍNDICE SACS DE RETAIL DE MODA.
+//
+// De todo lo que este motor puede hacer para que una IA nos cite, esto es lo
+// único que ningún competidor puede copiar. Un artículo sobre curva de tallas lo
+// escribe cualquiera con un buen prompt; «el ticket mediano de las tiendas de
+// moda en México es de $640» solo lo puede decir quien tiene las cajas.
+//
+// ⚠️ ESTA PÁGINA NO EXISTE HASTA QUE EL DUEÑO LA PUBLIQUE.
+//
+// `leerPublicado()` devuelve null mientras ninguna edición tenga `publicado =
+// true`, y entonces la ruta contesta 404. No es un borrador olvidado: es un
+// candado a propósito. Los Términos traen cláusula de confidencialidad sobre la
+// información que se revela durante el contrato, y aunque un agregado anónimo
+// de 91 empresas no identifica a nadie ni es dato personal bajo la LFPDPPP,
+// publicar estadística sacada de la operación de los clientes es una decisión
+// del dueño. Se prende con un UPDATE, no con un despliegue.
+//
+// La URL está fuera del sitemap por lo mismo: mientras no exista, no se anuncia.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { leerPublicado } from '../lib/demanda/indice';
+import { SITIO } from '../data/entidad';
+
+export const prerender = false;
+
+const ed = await leerPublicado();
+if (!ed) return new Response(null, { status: 404, statusText: 'No encontrado' });
+
+const url = `${SITIO}/indice-moda-mexico`;
+const generales = ed.metricas?.generales ?? [];
+const adopcion = ed.metricas?.adopcion ?? [];
+
+const fmt = (m: any) => {
+  if (m.valor === null || m.valor === undefined) return '—';
+  if (m.unidad === 'pesos') return `$${Number(m.valor).toLocaleString('es-MX')}`;
+  if (m.unidad === 'pct') return `${m.valor}%`;
+  if (m.unidad === 'dias') return `${m.valor}`;
+  return Number(m.valor).toLocaleString('es-MX');
+};
+const sufijo = (m: any) => m.unidad === 'dias' ? (m.valor === 1 ? 'día' : 'días') : '';
+
+const fecha = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Mexico_City' })
+  .format(new Date(ed.corte + 'T12:00:00Z'));
+
+/* `Dataset` y no `Article`: es lo que le dice a un buscador y a un modelo que
+   esto es una FUENTE, no una opinión sobre el tema. Y `isAccessibleForFree` +
+   `license` para que citarlo no tenga que consultarse con nadie: una fuente que
+   hay que pedir permiso para citar no la cita nadie. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: `Índice Sacs de Retail de Moda · ${ed.edicion}`,
+    description: `Operación real de ${ed.n_empresas} tiendas de moda en México: ticket promedio, frecuencia de venta, conteo de inventario y adopción de herramientas. Agregado y anónimo.`,
+    url,
+    license: 'https://creativecommons.org/licenses/by/4.0/',
+    isAccessibleForFree: true,
+    inLanguage: 'es-MX',
+    datePublished: ed.publicado_at ?? ed.corte,
+    temporalCoverage: ed.corte,
+    spatialCoverage: { '@type': 'Place', name: 'México' },
+    creator: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+    publisher: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+    measurementTechnique: ed.definicion?.regla,
+    variableMeasured: [
+      ...generales.map((m: any) => ({
+        '@type': 'PropertyValue', name: m.titulo, description: m.que_es,
+        value: m.valor, unitText: m.unidad === 'pesos' ? 'MXN' : m.unidad === 'pct' ? '%' : m.unidad,
+      })),
+      ...adopcion.map((a: any) => ({
+        '@type': 'PropertyValue',
+        name: `Tiendas que usan ${a.modulo}`, value: a.pct, unitText: '%',
+      })),
+    ],
+  },
+];
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title={`Índice Sacs de Retail de Moda · ${ed.edicion}`}
+  description={`Cómo operan de verdad ${ed.n_empresas} tiendas de moda en México: ticket promedio, cada cuánto venden, cuántas cuentan su inventario y qué herramientas usan. Datos propios, agregados y anónimos.`}
+  structuredData={schema}
+>
+  <main class="idx">
+    <header>
+      <p class="eyebrow">Datos propios · edición {ed.edicion}</p>
+      <h1>Cómo opera de verdad una tienda de moda en México</h1>
+      <p class="entrada">
+        No es una encuesta ni una estimación: son <strong>{ed.n_empresas} tiendas</strong> operando,
+        medidas en su propia caja y su propio inventario al {fecha}. Todo lo que sigue se puede
+        citar libremente.
+      </p>
+    </header>
+
+    <section class="cifras">
+      {generales.map((m: any) => (
+        <article>
+          <h2>{m.titulo}</h2>
+          <p class="dato">{fmt(m)}<span class="suf">{sufijo(m)}</span></p>
+          {/* Cada cuartil se enseña solo si existe. Con un `—` de relleno —que
+              es lo que salía en «días sin vender», donde el p25 es cero y no se
+              calcula— la cifra parece incompleta en vez de sencilla. */}
+          {(m.p25 != null || m.p75 != null) && (
+            <p class="rango">
+              {m.p25 != null && <>La cuarta parte más baja:&nbsp;{fmt({ ...m, valor: m.p25 })}</>}
+              {m.p25 != null && m.p75 != null && <>&nbsp;· </>}
+              {m.p75 != null && <>La cuarta parte más alta:&nbsp;{fmt({ ...m, valor: m.p75 })}</>}
+            </p>
+          )}
+          <p class="que">{m.que_es}</p>
+        </article>
+      ))}
+    </section>
+
+    <section class="adopcion">
+      <h2>Qué usan y qué no</h2>
+      <p class="intro">
+        Porcentaje de esas mismas tiendas que tiene cada herramienta en uso. Las de abajo de la
+        lista no son funciones que falten: son decisiones que hoy se toman sin sistema, de memoria
+        o en una hoja de cálculo.
+      </p>
+      <ul>
+        {adopcion.map((a: any) => (
+          <li>
+            <span class="barra"><span style={`width:${Math.max(a.pct, 1)}%`} /></span>
+            <span class="pct">{a.pct}%</span>
+            <span class="mod">{a.modulo}</span>
+            <span class="fam">{a.familia}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="metodo">
+      <h2>Cómo se midió</h2>
+      <dl>
+        <dt>Qué cuenta como tienda</dt>
+        <dd>{ed.definicion?.regla}. {ed.definicion?.porque}</dd>
+        <dt>Cuántas</dt>
+        <dd>{ed.n_empresas} tiendas operando al {fecha}. Ninguna cifra se publica con menos de {ed.definicion?.min_empresas}.</dd>
+        <dt>De dónde salen los números</dt>
+        <dd>{ed.definicion?.fuente} Nunca se publica la cifra de una sola tienda, ni nada que permita reconocerla: solo medianas, cuartiles y porcentajes sobre el conjunto.</dd>
+        <dt>Por qué medianas y no promedios</dt>
+        <dd>En un mercado disparejo, unas cuantas tiendas grandes mueven un promedio y no mueven una mediana. La mediana describe a la tienda de en medio, que es de la que se está hablando.</dd>
+      </dl>
+      <p class="licencia">
+        Publicado por <a href={SITIO}>Sacs</a>. Se puede citar y reproducir citando la fuente
+        (<a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license">CC BY 4.0</a>).
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .idx { max-width: 900px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .idx { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+
+  .eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--color-secondary); font-weight: 600; margin: 0 0 .6rem; }
+  h1 { font-size: clamp(1.9rem, 4.2vw, 2.8rem); line-height: 1.12; margin: 0 0 1rem; text-wrap: balance; }
+  .entrada { font-size: 1.12rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 62ch; margin: 0; }
+
+  .cifras {
+    margin-top: 3rem; display: grid; gap: 1.1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+  .cifras article {
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 14px; padding: 1.4rem;
+  }
+  .cifras h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-tertiary); margin: 0 0 .5rem; font-weight: 600; }
+  .cifras .dato { font-size: 2.3rem; font-weight: 700; line-height: 1; margin: 0 0 .5rem; font-variant-numeric: tabular-nums; }
+  .cifras .dato .suf { font-size: .42em; font-weight: 500; color: var(--color-text-tertiary); margin-left: .25em; }
+  .cifras .rango { font-size: .82rem; color: var(--color-text-tertiary); margin: 0 0 .7rem; font-variant-numeric: tabular-nums; }
+  .cifras .que { font-size: .9rem; line-height: 1.55; color: var(--color-text-secondary); margin: 0; }
+
+  .adopcion { margin-top: 3.5rem; }
+  .adopcion h2 { font-size: 1.5rem; margin: 0 0 .7rem; }
+  .adopcion .intro { color: var(--color-text-secondary); line-height: 1.65; max-width: 64ch; margin: 0 0 1.5rem; }
+  .adopcion ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; }
+  .adopcion li {
+    display: grid; align-items: center; gap: .75rem;
+    grid-template-columns: 7rem 3rem 1fr auto;
+  }
+  .adopcion .barra { background: var(--color-bg-secondary); border-radius: 999px; height: .55rem; overflow: hidden; }
+  .adopcion .barra span { display: block; height: 100%; background: var(--color-primary); border-radius: 999px; }
+  .adopcion .pct { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; font-size: .95rem; }
+  .adopcion .mod { font-size: .95rem; }
+  .adopcion .fam { font-size: .78rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: .04em; }
+  @media (max-width: 560px) {
+    .adopcion li { grid-template-columns: 4.5rem 2.6rem 1fr; }
+    .adopcion .fam { display: none; }
+  }
+
+  .metodo { margin-top: 3.5rem; border-top: 1px solid var(--color-border-light); padding-top: 2rem; }
+  .metodo h2 { font-size: 1.35rem; margin: 0 0 1rem; }
+  .metodo dl { margin: 0; display: grid; gap: 1rem; }
+  .metodo dt { font-weight: 600; font-size: .95rem; }
+  .metodo dd { margin: .25rem 0 0; color: var(--color-text-secondary); line-height: 1.65; max-width: 66ch; }
+  .metodo .licencia { margin-top: 1.75rem; font-size: .9rem; color: var(--color-text-tertiary); }
+  .metodo .licencia a { color: var(--color-primary); }
+</style>
