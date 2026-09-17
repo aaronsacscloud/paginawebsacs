@@ -38,7 +38,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
   const [toque, setToque] = useState<any>({ tipo: 'llamada', texto: '', proximo_paso: '', proximo_paso_at: '' });
   /* En qué pestaña estás. Abre en «Resumen»: al entrar a un caso lo primero
      que se necesita es saber quién es, desde cuándo y por qué se fue. */
-  const [vista, setVista] = useState<'resumen' | 'conciliacion' | 'seguimiento' | 'cliente'>('resumen');
+  const [vista, setVista] = useState<'resumen' | 'conciliacion' | 'seguimiento' | 'actividad' | 'cliente'>('resumen');
   const [extendiendo, setExtendiendo] = useState(false);
   const esMovil = useIsMobile();
   /* En el teléfono, «atrás» tiene que cerrar la hoja, no sacarte de la
@@ -215,7 +215,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
 
           <div style={{ position: 'sticky', top: 64, zIndex: 4, background: '#fff', borderBottom: '1px solid #ececec', padding: '0 22px' }}>
             <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', overflowX: 'auto' }}>
-              {([['resumen', 'Resumen'], ['conciliacion', 'Conciliación'], ['seguimiento', `Seguimiento${(d.historia || []).filter((h: any) => h.churn_caso_id).length ? ` (${(d.historia || []).filter((h: any) => h.churn_caso_id).length})` : ''}`], ['cliente', 'Ficha del cliente']] as const).map(([k, l]) => (
+              {([['resumen', 'Resumen'], ['conciliacion', 'Conciliación'], ['seguimiento', `Seguimiento${(d.historia || []).filter((h: any) => h.churn_caso_id).length ? ` (${(d.historia || []).filter((h: any) => h.churn_caso_id).length})` : ''}`], ['actividad', '¿Nos responde?'], ['cliente', 'Ficha del cliente']] as const).map(([k, l]) => (
                 <button key={k} onClick={() => setVista(k as any)} style={{
                   background: vista === k ? '#EEECFE' : 'none', border: 'none',
                   borderRadius: '9px 9px 0 0', borderBottom: vista === k ? '2px solid #9B8CFA' : '2px solid transparent',
@@ -538,6 +538,76 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             <BloqueCompromisos lista={d.compromisos || []} />
             </div>
 
+            {/* ══ ¿NOS RESPONDE? ═══════════════════════════════════════════
+                Se llama así y no «Actividad» a propósito: el nombre es la
+                pregunta que trae quien la abre. Una pestaña llamada
+                «Actividad» invita a leerla toda; ésta invita a mirar una línea
+                y cerrar, que es lo que pidió el dueño —decidir rápido si
+                seguimos o ya no—. */}
+            <div className="caso-col" style={{ display: vista === 'actividad' ? 'flex' : 'none', flexDirection: 'column', gap: 12 }}>
+              {(() => {
+                const a = d.actividad || {}; const r = a.resumen;
+                if (!r) return <div style={{ fontSize: '0.82rem', color: '#71707C' }}>Sin datos de contacto todavía.</div>;
+                const T: any = { bien: { bg: '#EAF8F2', fg: '#1E8A63' }, ojo: { bg: '#FFF8EC', fg: '#a06600' }, mal: { bg: '#FDF6F5', fg: '#C0554E' }, nd: { bg: '#f4f4f6', fg: '#74727F' } };
+                const t = T[r.veredicto.tono] || T.nd;
+                const dato = (l: string, v: any, col?: string) => (
+                  <div style={{ flex: '1 1 96px' }}>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999' }}>{l}</div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: col || '#241d43', fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                  </div>
+                );
+                return (
+                  <>
+                    {/* El veredicto arriba y en una frase: es lo único que se lee con prisa. */}
+                    <div style={{ background: t.bg, color: t.fg, borderRadius: 12, padding: '14px 16px', fontSize: '0.9rem', fontWeight: 700, lineHeight: 1.5 }}>{r.veredicto.txt}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
+                      {dato('Le mandamos', r.enviados)}
+                      {/* Abrió y contestó separados: abrir no es contestar, y la
+                          diferencia es justo sobre lo que se decide. */}
+                      {dato('Los abrió', r.abiertos, r.abiertos ? '#1E8A63' : '#C0554E')}
+                      {dato('Entró a la liga', r.clics)}
+                      {dato('Nos escribió', r.respuestas, r.respuestas ? '#1E8A63' : '#C0554E')}
+                      {r.rebotes > 0 && dato('Rebotaron', r.rebotes, '#C0554E')}
+                    </div>
+                    {!!(a.secuencias || []).length && (
+                      <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999', marginBottom: 7 }}>En qué secuencias está</div>
+                        {a.secuencias.map((x: any, i: number) => (
+                          <div key={i} style={{ fontSize: '0.82rem', color: '#241d43', padding: '3px 0' }}>
+                            {x.nombre} <span style={{ color: x.detenida_at ? '#C0554E' : '#1E8A63', fontWeight: 700 }}>{x.detenida_at ? `detenida — ${x.motivo || 'sin motivo'}` : 'corriendo'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999', marginBottom: 7 }}>Los correos, uno por uno</div>
+                      {!(a.correos || []).length ? <div style={{ fontSize: '0.82rem', color: '#71707C' }}>Ninguno todavía.</div>
+                        : a.correos.map((c: any) => (
+                        <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', borderTop: '1px solid #f4f4f6', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#999', minWidth: 62 }}>{String(c.sent_at || '').slice(0, 10)}</span>
+                          <span style={{ flex: 1, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.asunto || '(sin asunto)'}</span>
+                          <span style={{ fontWeight: 700, color: c.bounced_at ? '#C0554E' : c.clicked_at ? '#1E8A63' : c.opened_at ? '#a06600' : '#999' }}>
+                            {c.bounced_at ? 'rebotó' : c.clicked_at ? 'entró a la liga' : c.opened_at ? `lo abrió${c.open_count > 1 ? ` ${c.open_count}×` : ''}` : 'sin abrir'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999', marginBottom: 7 }}>WhatsApp</div>
+                      {!(a.wa || []).length ? <div style={{ fontSize: '0.82rem', color: '#71707C' }}>Nada por aquí.</div>
+                        : a.wa.map((m: any) => (
+                        <div key={m.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', borderTop: '1px solid #f4f4f6', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#999', minWidth: 62 }}>{String(m.created_at || '').slice(0, 10)}</span>
+                          <span style={{ fontWeight: 800, color: m.direccion === 'entrante' ? '#1E8A63' : '#5B4BD6', minWidth: 40 }}>{m.direccion === 'entrante' ? 'él' : 'tú'}</span>
+                          <span style={{ flex: 1, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.cuerpo || `(${m.tipo})`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
             <div className="caso-col" style={{ display: vista === 'seguimiento' ? 'flex' : 'none' }}>
 
             {/* ── Registrar lo que pasó. Va ARRIBA de la historia porque es
@@ -732,7 +802,12 @@ function BloqueUso({ caso, emp }: { caso: any; emp: any }) {
    problema es de entrega; si la vio y no contesta, es de oferta. */
 function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: () => void }) {
   const [abriendo, setAbriendo] = useState(false);
-  const [f, setF] = useState<any>({ meses: 3, rescate_mrr_regreso: '', rescate_compromisos: [], rescate_esperamos: '' });
+  const [f, setF] = useState<any>({ meses: 3, rescate_mrr_regreso: '', rescate_compromisos: [], rescate_esperamos: '',
+    rescate_valor_normal: '', rescate_no_incluido: [], rescate_cliente_compromisos: [], rescate_comentarios: '' });
+  // Lo que se teclea para AÑADIR a cada lista (no es parte de la propuesta).
+  const [nuevoNuestro, setNuevoNuestro] = useState('');
+  const [nuevoSuyo, setNuevoSuyo] = useState('');
+  const [nuevoNo, setNuevoNo] = useState('');
   const [err, setErr] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [compromisos, setCompromisos] = useState<string[]>([]);
@@ -828,6 +903,15 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
                 {m} {m === 1 ? 'mes' : 'meses'} sin costo
               </button>
             ))}
+            {/* Los tres botones son los atajos, no el catálogo. Un caso de
+                $35,100 no se negocia igual que uno de $9,000, y con sólo 1/3/6
+                el acuerdo se acomodaba al formulario en vez de al revés. */}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.76rem', color: '#5a5a63' }}>
+              <input type="number" min={1} max={36} value={[1, 3, 6].includes(f.meses) ? '' : f.meses}
+                placeholder="otro" onChange={e => setF({ ...f, meses: Math.max(1, Math.min(36, Number(e.target.value) || 1)) })}
+                style={{ width: 64, border: '1px solid #e0dfe6', borderRadius: 20, padding: '5px 10px', fontSize: '0.76rem', fontFamily: 'inherit' }} />
+              meses
+            </label>
           </div>
 
           <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 6 }}>
@@ -849,6 +933,56 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
             })}
           </div>
 
+          {/* Escribir uno que no está en la lista. El catálogo salió de lo que
+              midió el módulo, pero una negociación real inventa cosas —«les
+              pongo a Andrea de consultora»— y sin esto había que meterlas en
+              «qué esperamos de ti», donde significan lo contrario. */}
+          <AgregarALista valor={nuevoNuestro} setValor={setNuevoNuestro}
+            placeholder="Otra cosa a la que nos comprometemos…"
+            onAgregar={(t: string) => setF({ ...f, rescate_compromisos: [...f.rescate_compromisos, t] })}
+            extras={f.rescate_compromisos.filter((c: string) => !compromisos.includes(c))}
+            onQuitar={(t: string) => setF({ ...f, rescate_compromisos: f.rescate_compromisos.filter((x: string) => x !== t) })} />
+
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', margin: '14px 0 6px' }}>
+            A qué se compromete él
+          </div>
+          {/* Un acuerdo con obligaciones de un solo lado no es un acuerdo: es
+              una promesa. Y lo que se firma con obligaciones de los dos lados
+              se cumple más, que es de lo que va todo esto. */}
+          <AgregarALista valor={nuevoSuyo} setValor={setNuevoSuyo}
+            placeholder="ej. cargar el catálogo la primera semana"
+            onAgregar={(t: string) => setF({ ...f, rescate_cliente_compromisos: [...f.rescate_cliente_compromisos, t] })}
+            extras={f.rescate_cliente_compromisos}
+            onQuitar={(t: string) => setF({ ...f, rescate_cliente_compromisos: f.rescate_cliente_compromisos.filter((x: string) => x !== t) })} />
+
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', margin: '14px 0 6px' }}>
+            Lo que NO entra y se cobra aparte
+          </div>
+          {/* Pedido del dueño, y es el apartado que más cuida la relación:
+              escribir sólo lo incluido es lo que hace que el primer recibo con
+              consumo de IA se sienta a traición — y a esta gente, que ya se fue
+              una vez sintiéndose mal atendida, esa sorpresa la pierde para
+              siempre. */}
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+            {['Tokens de IA', 'Asistente de IA', 'Sucursales adicionales', 'Desarrollos a la medida'].map(t => (
+              <button key={t} onClick={() => setF({ ...f, rescate_no_incluido: f.rescate_no_incluido.includes(t) ? f.rescate_no_incluido.filter((x: string) => x !== t) : [...f.rescate_no_incluido, t] })}
+                style={{ border: `1px solid ${f.rescate_no_incluido.includes(t) ? '#9B8CFA' : '#e0dfe6'}`, background: f.rescate_no_incluido.includes(t) ? '#EEECFE' : '#fff',
+                  color: f.rescate_no_incluido.includes(t) ? '#5B4BD6' : '#5a5a63', borderRadius: 20, padding: '4px 11px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t}</button>
+            ))}
+          </div>
+          <AgregarALista valor={nuevoNo} setValor={setNuevoNo} placeholder="Otra cosa que se cobra aparte…"
+            onAgregar={(t: string) => setF({ ...f, rescate_no_incluido: [...f.rescate_no_incluido, t] })}
+            extras={f.rescate_no_incluido.filter((c: string) => !['Tokens de IA', 'Asistente de IA', 'Sucursales adicionales', 'Desarrollos a la medida'].includes(c))}
+            onQuitar={(t: string) => setF({ ...f, rescate_no_incluido: f.rescate_no_incluido.filter((x: string) => x !== t) })} />
+
+          <label style={{ display: 'block', margin: '14px 0 10px' }}>
+            {/* El número tachado al lado del cero: es lo que hace visible el
+                tamaño del gesto. Sin él, «tres meses gratis» es una frase. */}
+            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Lo que todo esto cuesta normalmente (opcional)</span>
+            <input type="number" style={inp} value={f.rescate_valor_normal} placeholder="ej. 35100"
+              onChange={e => setF({ ...f, rescate_valor_normal: e.target.value })} />
+          </label>
+
           <label style={{ display: 'block', marginBottom: 10 }}>
             {/* Igual: al mes. Este número se imprime tal cual en el PDF de la
                 propuesta que ve el cliente. */}
@@ -861,6 +995,13 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
             <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={f.rescate_esperamos}
               placeholder="ej. que cargues tu catálogo la primera semana y tengamos una llamada al mes"
               onChange={e => setF({ ...f, rescate_esperamos: e.target.value })} />
+          </label>
+
+          <label style={{ display: 'block', marginBottom: 12 }}>
+            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Comentarios (opcional)</span>
+            <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={f.rescate_comentarios}
+              placeholder="Lo que quieras decirle a ÉL en este acuerdo y no cabe en las listas."
+              onChange={e => setF({ ...f, rescate_comentarios: e.target.value })} />
           </label>
 
           {err && <div style={{ padding: '9px 12px', borderRadius: 9, background: '#FDF6F5', color: '#A8433C', fontSize: '0.8rem', marginBottom: 10 }}>{err}</div>}
@@ -917,5 +1058,39 @@ function BloqueCompromisos({ lista }: { lista: any[] }) {
         Trabajarlos en Acompañamiento ›
       </a>
     </div>
+  );
+}
+
+/* Añadir renglones a una lista y quitarlos. Se repite en tres sitios del
+   formulario —lo que prometemos, lo que promete él, lo que no entra— y son el
+   mismo gesto: escribe, Enter, aparece como pastilla con su «×». Hacerlo tres
+   veces a mano habría dado tres comportamientos ligeramente distintos. */
+function AgregarALista({ valor, setValor, placeholder, onAgregar, extras, onQuitar }: {
+  valor: string; setValor: (v: string) => void; placeholder: string;
+  onAgregar: (t: string) => void; extras: string[]; onQuitar: (t: string) => void;
+}) {
+  const meter = () => { const t = valor.trim(); if (t.length < 2) return; onAgregar(t); setValor(''); };
+  return (
+    <>
+      {!!extras.length && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+          {extras.map(t => (
+            <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '4px 10px', fontSize: '0.74rem', fontWeight: 700 }}>
+              {t}
+              <button onClick={() => onQuitar(t)} aria-label={`Quitar ${t}`} style={{ border: 'none', background: 'none', color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9rem', lineHeight: 1, padding: 0 }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 6 }}>
+        {/* Enter añade: obligar a apuntar al botón entre renglón y renglón es
+            lo que hace que la gente escriba sólo uno. */}
+        <input value={valor} onChange={e => setValor(e.target.value)} placeholder={placeholder}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); meter(); } }}
+          style={{ flex: 1, boxSizing: 'border-box', border: '1px solid #e2e4e9', borderRadius: 9, padding: '8px 11px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
+        <button onClick={meter} disabled={valor.trim().length < 2}
+          style={{ border: '1px solid #9B8CFA', background: '#fff', color: '#5B4BD6', borderRadius: 9, padding: '0 14px', fontSize: '0.8rem', fontWeight: 800, cursor: valor.trim().length < 2 ? 'default' : 'pointer', fontFamily: 'inherit', opacity: valor.trim().length < 2 ? .5 : 1 }}>Añadir</button>
+      </div>
+    </>
   );
 }

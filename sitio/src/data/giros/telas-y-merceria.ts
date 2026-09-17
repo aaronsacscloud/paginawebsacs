@@ -40,7 +40,7 @@ export const bannerTM = {
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Tienda de telas moderna con la pared de piezas por color, la mesa de corte con su metro clavado y la tablet del mostrador',
   avisos: [
-    { modulo: 'Último saldo', texto: 'Popelina vino · pieza 4471 · quedan 3.00 m · ya llegó el baño nuevo', pos: 1 as const, tono: 'ambar' as const, sello: 'Hoy' },
+    { modulo: 'Último saldo', texto: 'Popelina vino · pieza 4502 · quedan 3.00 m · ya llegó el baño nuevo', pos: 1 as const, tono: 'ambar' as const, sello: 'Hoy' },
     { modulo: 'Llegó la pieza', texto: 'Gabardina azul marino · facturados 50 · medidos 47.50 · faltante reclamado', pos: 2 as const, tono: 'azul' as const, sello: 'Recepción' },
     { modulo: 'Apartado con fecha', texto: 'Sra. Robles · pieza cerrada de chifón vino · vence en 3 días', pos: 3 as const, tono: 'verde' as const, sello: 'Mayo' },
   ],
@@ -94,7 +94,7 @@ export const cortinaTM = {
   altDespues: 'La misma empleada escaneando la etiqueta de la tabla de la pieza y viendo en la tablet los metros que quedan y su tono',
   libreta: ['Vino chifón — ¿cuánto queda?', 'Sra. Robles — apartó la pieza, ¿qué día?', 'Gabardina marino — ¿en cuál tienda?'],
   filas: [
-    { que: '“¿Cuánto te queda del vino?”', donde: 'Se escanea la tabla de la pieza', dato: 'Pieza 4471, tono A: quedan 3.00 m. Y la 4488, cerrada de 50, es del tono B: no se mezclan' },
+    { que: '“¿Cuánto te queda del vino?”', donde: 'Se escanea la tabla de la pieza', dato: 'Pieza 4502, tono A: quedan 3.00 m. Y la 4488, cerrada de 50, es del tono B: no se mezclan' },
     { que: '¿La pieza trajo sus metros?', donde: 'La recepción midiendo', dato: 'Facturados 50, medidos 47.50: faltan 2.50 y el reclamo al proveedor sale el mismo día' },
     { que: '¿En cuál tienda está el marino?', donde: 'Existencias por sucursal, pieza por pieza', dato: 'En la del norte hay 6 piezas cerradas del mismo tono; traspaso con folio, no “de ese color”' },
     { que: '¿Ya es retazo o todavía sale un corte?', donde: 'El aviso de último saldo', dato: '1.20 m de popelina: abajo del mínimo de su familia. Descuento de último saldo con clave, o pasa a retazo por kilo' },
@@ -141,9 +141,9 @@ export const seccionesTM: SuiteSeccion[] = [
   {
     id: 'pieza', tag: 'Inventario',
     titulo: 'La pieza, con su folio, su tono y sus metros',
-    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina lila”: hay la pieza 4471 con 6.40 del tono A y la 4488 cerrada de 50 del tono B. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
+    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina lila”: hay la pieza 4517 con 6.40 del tono A y la 4488 cerrada de 50 del tono B. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
     bullets: ['Folio, tono, ancho y metros por pieza; las cerradas contadas aparte de los saldos', 'Etiqueta con código de barras en la tabla: la de mostrador escanea la pieza y no teclea el color', 'Dos piezas del mismo color y distinto baño no se ofrecen juntas para un mismo corte'],
-    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4471 · A', '5.00 m', 10], ['4488 · B', '4.00 m', 8], ['4502 · C', '3.00 m', 6], ['4517 · D', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque sumen doce'),
+    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · A', '5.00 m', 10], ['4488 · B', '4.00 m', 8], ['4502 · C', '3.00 m', 6], ['4517 · D', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque sumen doce'),
   },
   {
     id: 'mostrador', tag: 'Mesa de corte',

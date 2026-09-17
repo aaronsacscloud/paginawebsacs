@@ -107,7 +107,72 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
-  return json({ caso, uso_antes: usoAntes, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
+  /* ══ ¿ESTE CLIENTE ESTÁ RESPONDIENDO, SÍ O NO? ════════════════════════
+     Pedido del dueño (17-sep-2026): «saber qué se le ha enviado, qué ha visto,
+     si ha dado respuesta negativa o positiva… para poder decidir más rápido:
+     si seguimos con él, seguimos intentando o de plano ya no».
+
+     La información existía, repartida en cuatro sitios que nadie cruza a mano:
+     los correos de las secuencias, sus aperturas, los mensajes de WhatsApp y
+     la etapa. El que tiene que decidir no va a abrir cuatro pantallas para
+     sumar, así que se suma aquí y llega ya juntada.
+
+     ABRIR NO ES CONTESTAR, y por eso van separados. Un cliente que abrió seis
+     correos y no escribió una línea está diciendo algo muy concreto —te lee y
+     no le mueve— y es distinto del que ni los abre (no te llegó) y del que
+     contestó (ahí sí hay conversación). Mezclarlos en un «interacciones: 7»
+     borraría justo la diferencia sobre la que se decide. */
+  const { data: ctsEmp } = await supabase.from('contacts').select('id').eq('company_id', caso.company_id);
+  const cids = (ctsEmp || []).map((x: any) => x.id);
+  let actividad: any = { correos: [], wa: [], resumen: null };
+  if (cids.length) {
+    const [{ data: correos }, { data: convs }, { data: miembros }] = await Promise.all([
+      supabase.from('email_sends')
+        .select('id, asunto, sent_at, opened_at, clicked_at, open_count, click_count, estado, bounced_at')
+        .in('contact_id', cids).order('sent_at', { ascending: false }).limit(40),
+      supabase.from('wa_conversaciones').select('id').in('contact_id', cids),
+      supabase.from('crm_secuencia_miembros')
+        .select('inicio, detenida_at, motivo, crm_secuencias(nombre)').in('contact_id', cids),
+    ]);
+    let wa: any[] = [];
+    const convIds = (convs || []).map((c: any) => c.id);
+    if (convIds.length) {
+      const { data: msjs } = await supabase.from('wa_mensajes')
+        .select('id, direccion, cuerpo, created_at, tipo')
+        .in('conversation_id', convIds).order('created_at', { ascending: false }).limit(40);
+      wa = msjs || [];
+    }
+    const salieron = (correos || []).filter((c: any) => c.sent_at);
+    const abiertos = salieron.filter((c: any) => c.opened_at);
+    const clics = salieron.filter((c: any) => c.clicked_at);
+    const rebotes = salieron.filter((c: any) => c.bounced_at);
+    const entrantes = wa.filter((m: any) => m.direccion === 'entrante');
+    const ultimoEntrante = entrantes[0]?.created_at || null;
+    /* El veredicto en una frase, porque es lo único que se va a leer con prisa.
+       No decide por nadie: dice qué está pasando para que decidir cueste poco. */
+    const veredicto = rebotes.length && rebotes.length === salieron.length
+      ? { tono: 'mal', txt: 'Ni le llegan: todos los correos rebotaron. El problema es el dato de contacto, no el interés.' }
+      : entrantes.length
+        ? { tono: 'bien', txt: `Sí responde: ${entrantes.length} ${entrantes.length === 1 ? 'mensaje suyo' : 'mensajes suyos'}, el último el ${String(ultimoEntrante).slice(0, 10)}.` }
+        : abiertos.length
+          ? { tono: 'ojo', txt: `Te lee y no contesta: abrió ${abiertos.length} de ${salieron.length} correos${clics.length ? ` y entró a ${clics.length}` : ''}, pero no ha escrito nunca. Vale más una llamada que otro correo.` }
+          : salieron.length
+            ? { tono: 'mal', txt: `Silencio total: ${salieron.length} correos, ninguno abierto, ninguna respuesta. Seguir mandando correos no va a cambiarlo.` }
+            : { tono: 'nd', txt: 'Todavía no se le ha mandado nada. No hay de qué sacar conclusiones.' };
+    actividad = {
+      correos: salieron.slice(0, 12), wa: wa.slice(0, 12),
+      secuencias: (miembros || []).map((m: any) => ({
+        nombre: m.crm_secuencias?.nombre || 'Secuencia', inicio: m.inicio,
+        detenida_at: m.detenida_at, motivo: m.motivo,
+      })),
+      resumen: {
+        enviados: salieron.length, abiertos: abiertos.length, clics: clics.length,
+        rebotes: rebotes.length, respuestas: entrantes.length, ultima_respuesta: ultimoEntrante, veredicto,
+      },
+    };
+  }
+
+  return json({ caso, actividad, uso_antes: usoAntes, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */

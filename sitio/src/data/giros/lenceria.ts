@@ -278,6 +278,23 @@ export const problemasLE = {
       'Abres la segunda tienda y empiezas de cero.',
     ],
   },
+  doc2: {
+    membrete: 'Desarrollo a la medida', sub: 'Propuesta · rev. 4',
+    cab: ['CONCEPTO', 'PLAZO'],
+    lineas: [
+      { a: 'NÚMERO Y COPA', b: 'FASE 2' },
+      { a: 'ENTREGA REAL', b: 'PASÓ DICIEMBRE', tachado: true },
+      { a: 'CATÁLOGO DE AFILIADAS', b: 'NO' },
+    ],
+    margen: ['+ 3 adendas', 'y sin la pared'],
+    sello: 'LLEGÓ<br />TARDE',
+    notas: [
+      'Costó <b>más de lo cotizado</b> y el número con copa quedó para la fase 2.',
+      'Funciona… mientras <b>quien lo hizo conteste el teléfono</b>. Tu temporada es diciembre y mayo.',
+      'Cada cambio chico —marcar una talla hermana— es <b>una cotización nueva</b>.',
+      'No trae catálogo para las afiliadas ni la ganancia de cada vendedora. Eso, <b>en otra libreta</b>.',
+    ],
+  },
   filas: [
     { que: 'La talla como número y copa, no una letra', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
     { que: 'La talla hermana en la caja', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },

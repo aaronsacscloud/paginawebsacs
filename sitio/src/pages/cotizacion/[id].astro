@@ -337,6 +337,18 @@ const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminM
    cotización de $0 —o sea, como algo sin valor— en vez de como una oferta. */
 const esRescate = quote.tipo === 'rescate';
 const rescateCompromisos: string[] = Array.isArray(quote.rescate_compromisos) ? quote.rescate_compromisos : [];
+const rescateSuyos: string[] = Array.isArray(quote.rescate_cliente_compromisos) ? quote.rescate_cliente_compromisos : [];
+const rescateNoIncluido: string[] = Array.isArray(quote.rescate_no_incluido) ? quote.rescate_no_incluido : [];
+const valorNormal = Number(quote.rescate_valor_normal || 0);
+/* Los meses del período, para poder escribir «3 meses» y no sólo dos fechas:
+   nadie calcula de cabeza cuánto hay entre el 17 de septiembre y el 17 de
+   diciembre, y el tamaño del gesto es justo eso. */
+const mesesRescate = (() => {
+  if (!quote.rescate_hasta) return 0;
+  const a = new Date((quote.rescate_desde || new Date().toISOString().slice(0, 10)) + 'T12:00:00');
+  const b = new Date(String(quote.rescate_hasta) + 'T12:00:00');
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / (30 * 86400000)));
+})();
 const fmtFechaLarga = (f: any) => f ? new Date(String(f) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
 const tabsDef = [
@@ -572,6 +584,17 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-rescate-v { font-size:1.5rem; font-weight:800; color:#241d43; letter-spacing:-.02em; margin-top:8px; line-height:1.25; }
   .quote-rescate-n { font-size:.84rem; color:#71707C; margin-top:8px; line-height:1.5; }
   .quote-rescate-bloque { background:#fff; border:1px solid #e8e6ef; border-radius:16px; padding:20px 22px; margin-bottom:16px; }
+  /* Lo que NO entra se ve distinto de lo que sí, pero NO como una advertencia:
+     no es un riesgo, es información. Ámbar suave —«atención, no es problema»,
+     la regla de la casa— y nunca rojo, que en un documento que intenta
+     recuperar a alguien se lee como una amenaza. */
+  .quote-rescate-fuera { background:#FFFBF4; border-color:#f0e2c6; }
+  .quote-rescate-fuera .quote-rescate-k { color:#9a6a10; }
+  /* El cierre es lo último que se lee antes de decidir: lila de marca y letra
+     un punto más grande, para que no se confunda con un apartado más. */
+  .quote-rescate-cierre { background:linear-gradient(135deg,#EEECFE,rgba(244,168,205,.18)); border-color:#ddd6fb; }
+  .quote-rescate-cierre .quote-rescate-p { font-size:1.02rem; line-height:1.65; }
+  .quote-rescate-cierre s { color:#8e8b99; text-decoration-thickness:2px; }
   .quote-rescate-lista { margin:12px 0 0; padding-left:20px; }
   .quote-rescate-lista li { margin:7px 0; color:#3f3856; font-size:.95rem; line-height:1.5; }
   .quote-rescate-lista li::marker { color:#9B8CFA; }
@@ -679,7 +702,11 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
               {quote.rescate_desde ? <>Del {fmtFechaLarga(quote.rescate_desde)}<br /></> : null}
               al {fmtFechaLarga(quote.rescate_hasta)}
             </div>
-            <div class="quote-rescate-n">Sin costo. Acceso completo al sistema.</div>
+            <div class="quote-rescate-n">
+              {valorNormal > 0
+                ? <>Normalmente <s>${Math.round(valorNormal).toLocaleString('es-MX')}</s> — hoy sin costo. Acceso completo al sistema.</>
+                : <>Sin costo. Acceso completo al sistema.</>}
+            </div>
           </div>
           <div class="quote-rescate-caja">
             <div class="quote-rescate-k">Después</div>
@@ -697,6 +724,19 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           </div>
         )}
 
+        {/* A QUÉ SE COMPROMETE ÉL. Va junto a lo nuestro y con el mismo peso
+            visual: un acuerdo con obligaciones de un solo lado es una promesa,
+            no un acuerdo — y lo que se firma con obligaciones de los dos lados
+            se cumple más. */}
+        {rescateSuyos.length > 0 && (
+          <div class="quote-rescate-bloque">
+            <div class="quote-rescate-k">A esto te comprometes tú</div>
+            <ul class="quote-rescate-lista">
+              {rescateSuyos.map((c: string) => <li>{c}</li>)}
+            </ul>
+          </div>
+        )}
+
         {quote.rescate_esperamos && (
           <div class="quote-rescate-bloque">
             <div class="quote-rescate-k">Lo que esperamos de ti</div>
@@ -704,6 +744,42 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             <p class="quote-rescate-n">Sin esto no funciona: el sistema solo sirve si se usa.</p>
           </div>
         )}
+
+        {/* LO QUE NO ENTRA, ESCRITO Y NO EN LETRA CHICA.
+            Decir sólo lo incluido es lo que hace que el primer recibo con
+            consumo de IA se sienta a traición — y quien lee esto ya se fue una
+            vez sintiéndose mal atendido. Un acuerdo formal dice las dos cosas.
+            Por eso va en el documento y no en un pie de página. */}
+        {rescateNoIncluido.length > 0 && (
+          <div class="quote-rescate-bloque quote-rescate-fuera">
+            <div class="quote-rescate-k">Lo que no entra y se cobra aparte</div>
+            <ul class="quote-rescate-lista">
+              {rescateNoIncluido.map((c: string) => <li>{c}</li>)}
+            </ul>
+            <p class="quote-rescate-n">Se cobra sólo si lo usas y se te dice antes. Preferimos decírtelo aquí que en el primer recibo.</p>
+          </div>
+        )}
+
+        {quote.rescate_comentarios && (
+          <div class="quote-rescate-bloque">
+            <div class="quote-rescate-k">Nota</div>
+            <p class="quote-rescate-p">{quote.rescate_comentarios}</p>
+          </div>
+        )}
+
+        {/* El cierre formal: qué se firma, cuándo empieza a pagarse y cuánto.
+            Un acuerdo termina diciendo a qué te obliga, no con una despedida. */}
+        <div class="quote-rescate-bloque quote-rescate-cierre">
+          <div class="quote-rescate-k">En resumen</div>
+          <p class="quote-rescate-p">
+            {mesesRescate > 0 ? <>Tienes <b>{mesesRescate} {mesesRescate === 1 ? 'mes' : 'meses'}</b> de acceso completo sin pagar nada</> : <>Tienes acceso completo sin pagar nada</>},
+            hasta el <b>{fmtFechaLarga(quote.rescate_hasta)}</b>.
+            {valorNormal > 0 ? <> Lo que estás recibiendo cuesta normalmente <b>${Math.round(valorNormal).toLocaleString('es-MX')}</b>.</> : null}
+            {' '}Si decides seguir, el <b>{fmtFechaLarga(quote.rescate_hasta)}</b> empieza a correr la mensualidad de
+            <b> ${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')}</b>.
+            Si no, no pagas nada y no hay penalización: aceptar esto no te amarra a quedarte.
+          </p>
+        </div>
       </section>
     )}
 

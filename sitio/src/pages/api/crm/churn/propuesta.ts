@@ -16,6 +16,14 @@ import { getCurrentUser } from '../../../../lib/auth/scope';
 import { anotar } from '../../../../lib/crm/churn.lib';
 
 export const prerender = false;
+
+/** Una lista de textos limpia, o `null` si no quedó nada: null se lee «no hay»,
+    `[]` se lee «hay cero», y en un documento eso es la diferencia entre callar
+    un apartado y enseñarlo vacío. */
+const lista = (x: any): string[] | null => {
+  const v = (Array.isArray(x) ? x : []).map((s: any) => String(s || '').trim()).filter(Boolean).slice(0, 20);
+  return v.length ? v : null;
+};
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
@@ -38,7 +46,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const caso = url.searchParams.get('caso');
   if (!caso) return json({ error: 'Falta el caso.' }, 400);
   const { data } = await supabase.from('quotes')
-    .select('id, numero, estado, total, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos')
+    .select('id, numero, estado, total, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos, rescate_valor_normal, rescate_no_incluido, rescate_cliente_compromisos, rescate_comentarios')
     .eq('churn_caso_id', caso).order('created_at', { ascending: false });
   return json({ data: data || [], compromisos: COMPROMISOS });
 };
@@ -83,7 +91,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!Number.isFinite(vuelve) || vuelve <= 0) {
     return json({ error: 'Di a cuánto vuelve a pagar al terminar (más de cero). Sin eso, acepta sin saber a qué vuelve.', campo: 'rescate_mrr_regreso' }, 400);
   }
-  const compromisos: string[] = Array.isArray(b.rescate_compromisos) ? b.rescate_compromisos.filter(Boolean) : [];
+  const compromisos: string[] = lista(b.rescate_compromisos) || [];
   /* Sin compromisos, esto es un descuento disfrazado — y a esta gente el
      descuento no la rescata: se fueron por servicio. */
   if (!compromisos.length) return json({ error: 'Elige al menos una cosa a la que nos comprometemos: sin eso, la propuesta es solo un descuento.', campo: 'rescate_compromisos' }, 400);
@@ -117,6 +125,15 @@ export const POST: APIRoute = async ({ request }) => {
     rescate_mrr_regreso: vuelve,
     rescate_compromisos: compromisos,
     rescate_esperamos: String(b.rescate_esperamos || '').trim() || null,
+    /* Los cuatro campos nuevos. Todos opcionales menos por una razón: si
+       fueran obligatorios, la propuesta urgente de un martes se quedaría sin
+       mandar por rellenar un formulario — y la propuesta que no sale no
+       rescata a nadie. Lo que sí hace el documento es callarse los que estén
+       vacíos en vez de enseñar apartados huecos. */
+    rescate_valor_normal: Number.isFinite(Number(b.rescate_valor_normal)) && Number(b.rescate_valor_normal) > 0 ? Number(b.rescate_valor_normal) : null,
+    rescate_no_incluido: lista(b.rescate_no_incluido),
+    rescate_cliente_compromisos: lista(b.rescate_cliente_compromisos),
+    rescate_comentarios: String(b.rescate_comentarios || '').trim() || null,
     condiciones: String(b.condiciones || '').trim() || null,
     created_via: 'churn',
   }).select('id, numero').single();

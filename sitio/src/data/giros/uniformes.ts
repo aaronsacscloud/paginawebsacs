@@ -258,6 +258,49 @@ export const escalaUN = [
 ];
 
 export const problemasUN = {
+  doc1: {
+    membrete: 'Sistema de ropa', sub: 'Reporte de inventario',
+    cab: ['CÓDIGO', 'DESCRIPCIÓN', 'EXIST.'],
+    lineas: [
+      { a: 'SKU-0442', b: 'PLAYERA POLO BLANCA', c: '96' },
+      { a: '—', b: '—', c: '—', tenue: true },
+      { a: '—', b: '—', c: '—', tenue: true },
+    ],
+    margen: ['¿de cuál escuela?', '¿y la 8 de niña?'],
+    sello: 'NO SABE<br />DE LISTAS',
+    notas: [
+      'Te dice que hay <b>96</b>. No te dice de cuál escuela ni qué tallas quedan.',
+      'La lista que mandó la escuela vive en <b>una hoja impresa</b> junto a la caja.',
+      'Te dice cuánto vendiste, <b>no qué talla dejó de tener cada modelo en agosto</b>.',
+      'Abres el módulo dentro de la escuela y el inventario de allá <b>no existe para el sistema</b>.',
+    ],
+  },
+  doc2: {
+    membrete: 'Desarrollo a la medida', sub: 'Propuesta · rev. 4',
+    cab: ['CONCEPTO', 'PLAZO'],
+    lineas: [
+      { a: 'LISTA POR ESCUELA', b: 'FASE 2' },
+      { a: 'ENTREGA REAL', b: 'PASÓ JULIO', tachado: true },
+      { a: 'SOPORTE EN AGOSTO', b: 'NO' },
+    ],
+    margen: ['+ 3 adendas', 'y ya entraron a clases'],
+    sello: 'LLEGÓ<br />TARDE',
+    notas: [
+      'Costó <b>más de lo cotizado</b> y la lista de la escuela quedó para la fase 2.',
+      'Funciona… mientras <b>quien lo hizo conteste el teléfono</b>. Tu año son cuatro semanas de agosto.',
+      'Cada cambio chico —un modelo nuevo de una escuela— es <b>una cotización nueva</b>.',
+      'No trae el apoyo a la escuela ni el cambio de talla de septiembre. En la fila, <b>se resuelve a mano</b>.',
+    ],
+  },
+  filas: [
+    { que: 'La lista de cada escuela con sus prendas y sus reglas', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Relación de tallas por empleado o por alumno', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Módulo dentro de la escuela, con y sin internet', generico: 'A medias', medida: 'Rara vez', sacs: 'Incluido' },
+    { que: 'Apoyo a la escuela calculado y liquidado', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
+    { que: 'Cambio de talla de septiembre sin discutir', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+    { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+  ],
   entrada: 'Casi toda tienda de uniformes que llega con nosotros trae uno de estos dos papeles en el cajón: el reporte de un sistema de ropa que no sabe qué es una lista de escuela ni un módulo, o la cotización de un desarrollo a la medida que iba a resolverlo. Ninguno fue una tontería. Los dos fallan, por motivos distintos.',
   quienes: 'las tiendas y fábricas de uniformes que ya la usan',
 };

@@ -22,6 +22,7 @@
  */
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { P } from '../../../lib/crm/paleta';
+import { LIFECYCLE } from '../../../lib/crm/lifecycle';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
@@ -77,7 +78,96 @@ const LISTAS: Lista[] = [
   },
 ];
 
+/* ══ ARMAR UNA LISTA A LA MEDIDA ══════════════════════════════════════════
+   Pedido del dueño (17-sep-2026): «debo poder crear una nueva lista y operarla
+   desde aquí con los filtros que seleccione de forma dinámica».
+
+   Las cinco de arriba cubren los cinco motivos de siempre, pero no dejan armar
+   «los rezagados de Guadalajara» ni «los míos que no han contestado». Esto no
+   inventa un motor de filtros nuevo: arma el MISMO query string que ya consume
+   el inbox —y por tanto la cabina—, así que cualquier filtro que aprenda el
+   inbox aparece aquí sin tocar nada.
+
+   Sin `search` a propósito: buscar por texto sirve para encontrar UNA
+   conversación, no para armar una jornada de llamadas. Quien busca «Lily» no
+   quiere llamarle a los once Lily. */
+const BANDEJAS: { id: string; l: string }[] = [
+  { id: 'todas', l: 'Todas' },
+  { id: 'accion', l: 'Requieren mi acción' },
+  { id: 'no_leidas', l: 'Te escribieron y no contestamos' },
+  { id: 'sin_respuesta', l: 'Escribimos y no contestaron' },
+  { id: 'mias', l: 'Asignadas a mí' },
+  { id: 'sin_asignar', l: 'Sin asignar' },
+];
+
+function Armador({ etapas, counts, onListo, onCerrar }: {
+  etapas: { id: string; label: string }[]; counts: any;
+  onListo: (l: { titulo: string; qs: string }) => void; onCerrar: () => void;
+}) {
+  const [bandeja, setBandeja] = useState('todas');
+  const [etapa, setEtapa] = useState('');
+  const [estado, setEstado] = useState('');
+
+  const qs = [
+    `filtro=${bandeja}`,
+    etapa ? `etapa=${etapa}` : '',
+    estado ? `estado=${estado}` : '',
+  ].filter(Boolean).join('&');
+  const nombreEtapa = etapas.find(e => e.id === etapa)?.label;
+  const titulo = [
+    BANDEJAS.find(b => b.id === bandeja)?.l,
+    nombreEtapa, estado === 'abierta' ? 'sin resolver' : estado === 'resuelta' ? 'ya resueltas' : '',
+  ].filter(Boolean).join(' · ');
+
+  /* El número que se enseña es una ESTIMACIÓN y se dice que lo es. Sale de los
+     contadores que ya están en memoria, que se cruzan pero no se multiplican:
+     «rezagados» y «no contestaron» a la vez no son la suma ni el mínimo exacto.
+     La cuenta buena la hace la cabina al armar, contra la lista de verdad.
+     Poner aquí un número redondo y llamarlo exacto sería mentir dos veces: en
+     el número y en la confianza. */
+  const aprox = etapa ? Number(counts?.counts?.por_etapa?.[etapa] || 0)
+    : Number(counts?.counts?.[bandeja] ?? counts?.counts?.todas ?? 0);
+  const sel: any = { width: '100%', border: '1px solid #e0dfe6', borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' };
+  const rot: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999', display: 'block', marginBottom: 5 };
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${P.violeta}`, borderRadius: 10, padding: '16px 18px', marginBottom: 14 }}>
+      <b style={{ fontSize: 14 }}>Arma tu lista</b>
+      <p style={{ fontSize: 11.5, color: '#888', margin: '4px 0 12px', lineHeight: 1.5 }}>
+        Cruza los filtros que quieras. Vas a poder revisar la lista completa antes de que suene el primer timbre.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        <label style={{ flex: '1 1 210px' }}><span style={rot}>Bandeja</span>
+          <select value={bandeja} onChange={e => setBandeja(e.target.value)} style={sel}>
+            {BANDEJAS.map(b => <option key={b.id} value={b.id}>{b.l}</option>)}
+          </select></label>
+        <label style={{ flex: '1 1 210px' }}><span style={rot}>Etapa</span>
+          <select value={etapa} onChange={e => setEtapa(e.target.value)} style={sel}>
+            <option value="">Cualquiera</option>
+            {etapas.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+          </select></label>
+        <label style={{ flex: '1 1 210px' }}><span style={rot}>Conversación</span>
+          <select value={estado} onChange={e => setEstado(e.target.value)} style={sel}>
+            <option value="">Como esté</option>
+            <option value="abierta">Sin resolver</option>
+            <option value="resuelta">Ya resueltas</option>
+          </select></label>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 13, flexWrap: 'wrap' }}>
+        <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs })}
+          style={{ border: 'none', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff' }}>
+          Llamar a estos
+        </button>
+        <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+        <span style={{ fontSize: 11.5, color: '#888' }}>≈ {aprox} antes de cruzar filtros · la cuenta buena la hace la cabina</span>
+      </div>
+    </div>
+  );
+}
+
 export default function LlamadasInteligentes({ yo }: { yo?: any }) {
+  const [armando, setArmando] = useState(false);
+  const [aMedida, setAMedida] = useState<{ titulo: string; qs: string } | null>(null);
   const [counts, setCounts] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [elegida, setElegida] = useState<Lista | null>(null);
@@ -103,15 +193,20 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
     return () => { vivo = false; };
   }, []);
 
-  if (elegida || verSesion) {
+  if (elegida || verSesion || aMedida) {
     const n = elegida && counts ? elegida.cuenta(counts) : 0;
     return (
       <div style={{ ...WRAP, paddingTop: 22 }}>
         <div style={{ border: `1px solid ${'#ececec'}`, borderRadius: 12, overflow: 'hidden', background: '#fff', minHeight: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}>
           <Suspense fallback={<Cargando texto="Abriendo la cabina…" alto={260} />}>
-            <Cabina qs={elegida?.qs || 'filtro=todas'} descripcion={elegida?.titulo || 'Jornada anterior'} total={n} yo={yo}
+            <Cabina qs={aMedida?.qs || elegida?.qs || 'filtro=todas'}
+              descripcion={aMedida?.titulo || elegida?.titulo || 'Jornada anterior'}
+              /* La lista a medida entra con total 0: el número real lo cuenta la
+                 cabina al leer la lista, y adivinarlo aquí sólo serviría para
+                 desmentirse dos segundos después. */
+              total={aMedida ? 0 : n} yo={yo}
               sesionInicial={verSesion}
-              onCerrar={() => { setElegida(null); setVerSesion(null); }}
+              onCerrar={() => { setElegida(null); setVerSesion(null); setAMedida(null); }}
               onAbrirConversacion={id => { window.location.href = `/admin/crm?tab=whatsapp&wa_conv=${id}`; }} />
           </Suspense>
         </div>
@@ -135,6 +230,11 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
         <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 13px', fontSize: 12.5, marginBottom: 14 }}>
           La telefonía no está configurada (faltan {tel.faltantes.length} datos). Puedes armar la lista y revisarla, pero no marcar.
         </div>
+      )}
+
+      {armando && (
+        <Armador etapas={LIFECYCLE} counts={counts}
+          onListo={l => { setArmando(false); setAMedida(l); }} onCerrar={() => setArmando(false)} />
       )}
 
       {cargando ? <Cargando texto="Contando a quién se le puede llamar…" alto={220} /> : (
@@ -167,6 +267,18 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
               </button>
             );
           })}
+          {/* La sexta tarjeta: misma forma que las cinco, para que se lea como
+              «una lista más» y no como un ajuste escondido. */}
+          {!armando && (
+            <button onClick={() => setArmando(true)}
+              style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#fff',
+                border: `1px dashed ${P.violeta}`, borderRadius: 10, padding: '15px 17px',
+                display: 'flex', flexDirection: 'column', flex: '1 1 200px' }}>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Otra lista</span>
+              <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: P.violetaTinta, margin: '2px 0 4px' }}>+</span>
+              <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.5, marginTop: 'auto' }}>Ármala tú con los filtros que quieras.</span>
+            </button>
+          )}
         </div>
       )}
 
