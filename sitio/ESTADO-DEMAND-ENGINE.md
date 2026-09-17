@@ -1299,3 +1299,51 @@ llegó y luego no se pudo aprovechar se pagó igual.
 
 El motor lleva **$3.64 de $150** en el mes. Lo que se comió el saldo de las
 cuentas fue el CRM (agente de Trabajo Inteligente, ABM, guiones), no esto.
+
+### La primera medición completa: AVS 0.4 y la primera mención
+
+30 prompts × 4 plataformas, con saldo en las cuatro y Perplexity buscando de
+verdad. 163 mediciones buenas, 5 errores (todos de Claude por tiempo de espera,
+ninguno de saldo).
+
+**Sacs apareció UNA vez en 120 respuestas**, y vale la pena leer cuál:
+
+> **ChatGPT · «¿Cuál es el mejor punto de venta para una zapatería en México?»**
+> Posición 6 · positivo · citó `www.sacscloud.com/?utm_source=openai`
+> «Especializado en moda/calzado (matriz por número y color) y puede timbrar
+> CFDI 4.0 desde el sistema. Ideal si haces apartados y comisiones por vendedor.»
+
+Ese `?utm_source=openai` importa: **ChatGPT entró a la página y la leyó.** El
+sitio no es invisible ni ilegible para el buscador de la IA. El problema no es
+técnico — es que para las otras 29 preguntas no nos encuentra.
+
+Y la pregunta donde sí nos encontró es la MÁS específica de las 30: zapatería,
+no «tienda de ropa». Donde el nicho se estrecha, lo especializado gana. Eso dice
+por dónde se escribe.
+
+### Lo que citan las IAs (y no es lo que uno espera)
+
+```
+ 12/30 preguntas  youtube.com          ← la fuente #1, por encima de Shopify
+  9/30            shopify.com
+  7/30            alegra.com · mproerp.com · loggro.com.mx
+  6/30            help.shopify.com · gestionqbsmoda.com · infor.com
+                  squareup.com · larksuite.com · emergeapp.net
+  5/30            stockagile.com · treinta.co
+  4/30            sicar.mx · pulpos.com · aptean.com · joor.com
+```
+
+**YouTube es la fuente que más citan las IAs para estas preguntas.** No es un
+competidor: es una superficie donde no hay que ganarle a nadie, hay que existir.
+Sacs tiene 31 videos en `public/` y video-guías hechas para clientes; nada de
+eso está donde la IA lo pueda citar.
+
+Los competidores que las IAs NOMBRAN (distinto de a quién citan):
+
+```
+ 11/30  Shopify POS · Odoo        7/30  Pulpos · Lightspeed Retail · Alegra POS
+  9/30  Shopify                   6/30  Square POS · Bind ERP · ManagementPro POS
+```
+
+Casi todos son genéricos. Los especializados en moda —Sizes and Colors,
+gestionQBS, Stockagile— aparecen abajo. Ese es el hueco.
