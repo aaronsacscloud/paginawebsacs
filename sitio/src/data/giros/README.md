@@ -649,12 +649,12 @@ piel por lote y proveedor; ópticas → graduación más armazón; telas → rol
 tallas grandes → curva extendida y proveedores que sí la fabrican; maternidad → etapas del
 embarazo; outlet → remate por temporada con margen; merch → pedido por evento con fecha.
 
-### Estado por giro (17-sep-2026, 14:30 UTC)
+### Estado por giro (17-sep-2026, 15:40 UTC)
 
 | # | Giro | Ficha + referee oficio | Datos/página | Fotos 10/10 | Referees de página 9/10 | Producción |
 |---|---|---|---|---|---|---|
 | 1 | Trajes de Baño y Playa | ✓ | ✓ | 23/23 ✓ (falta regenerar caso-maquila por diseño; sin créditos) | ✓ oficio 9 · calidad 9 · diseño 9 (ronda 2) | commiteada, sin push |
-| 2 | Western y Vaquera | ✓ (bloque = el conjunto) | ✓ | 22/24 (escala y traspaso rehechas, sin referee por créditos) | pendiente (capturas listas al volver los créditos) | commiteada, sin push |
+| 2 | Western y Vaquera | ✓ (bloque = el conjunto) | ✓ | 22/24 (escala y traspaso rehechas, sin referee por créditos; caso-feria y escala por regenerar) | ✓ oficio 9 · calidad 9 · diseño 9 (rondas 2-3) | commiteada, sin push |
 | 3 | Uniformes | ✓ (bloque = la lista manda) | ✓ escrita, compila | 11/23 generadas; 12 pendientes por créditos de OpenAI | pendiente | commiteada, sin push |
 | 4 | Lencería y Ropa Interior | ✓ (bloque = la pared que se rompe por el centro) | ✓ escrita, compila | 0/23: cola lista (le.json), sin créditos | pendiente | commiteada, sin push |
 | 5–14 | Ropa Infantil, Renta, Sastrería, Bolsas, Ópticas, Telas, Tallas Grandes, Maternidad, Outlet, Merch | | | | | |
@@ -664,7 +664,9 @@ embarazo; outlet → remate por temporada con margen; merch → pedido por event
 un-pend, fix-r4 y le en orden); después `instala.sh un uniformes`, `instala.sh le lenceria` y los
 referees de identidad.
 
-**Deuda conocida de esta vuelta (componentes compartidos, para una pasada global):** las pestañas
+**Deuda conocida de esta vuelta (componentes compartidos, para una pasada global):** la
+jerarquía de `BloqueProducto` (encabezado + título dejan un hueco de ~100 px antes del bloque; el
+referee de diseño pide kicker + h2); el `doc2` de `SuiteProblemas` sigue genérico en los giros nuevos; las pestañas
 de `SuitePlano` se truncan en móvil (aplica a todos los giros); la burbuja 3 del `GiroBanner` queda
 en el borde inferior de la foto en móvil; la cabecera "Genérico" de `SuiteProblemas` es fija aunque
 el documento diga "Sistema de ropa" (pedir prop `colGenerico`).
