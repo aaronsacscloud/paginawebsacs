@@ -698,6 +698,24 @@ tm, bo, y las de tallas grandes, maternidad y outlet cuando estén). Después, p
 tres referees de página. El 17-sep se probó la API tres veces y seguía en
 `credit_balance_exhausted`.
 
+**Los referees de página (17-sep, sin fotos): las siete regresaron.** Se revisó el texto, los
+números y el JavaScript de cada bloque, y salieron 51 correcciones. El patrón, para el siguiente:
+
+- **El bloque interactivo desmiente a la página.** Sastrería daba corte el 18 de abril donde el
+  banner, la cortina y el calendario dicen el 8. Ópticas volteaba la cuenta al subir el anticipo al
+  tope. Telas dejaba la pieza cobrada al 100 % después de veinte cortes, que es justo lo contrario
+  de lo que el bloque enseña. **Al escribir un bloque, correrlo con los valores extremos y con los
+  del ejemplo de la página, y comparar contra lo que la página promete en texto.**
+- **Los deslizadores que no mueven nada.** El de modelos al año de tallas grandes se arrastraba y
+  el contador no cambiaba; el interruptor del aviso de telas no tenía listener. Se ve en dos
+  minutos con el navegador y no se ve nunca leyendo el código.
+- **Los identificadores repetidos.** Seis piezas de telas compartían dos folios, en la página cuya
+  tesis es que el folio es la identidad de la pieza. Si la página inventa folios, órdenes o lotes,
+  **contarlos y verificar que ninguno se repita**.
+- **Lo que se promete en una viñeta y no está en el código.** La regla de diciembre de sastrería
+  («los maquileros se van desde el 15, la fecha real de corte es el 12») estaba escrita en la
+  viñeta y en los datos, y el script no la tenía.
+
 **Lo que aprendió esta vuelta (para el siguiente giro):**
 
 - **El bloque propio es lo que más se cae.** Bolsas sacó 4 y tallas grandes 5 porque copiaban el
