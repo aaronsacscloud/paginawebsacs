@@ -506,6 +506,32 @@ export async function procesarTranscripcion(itemId: string, p: Record<string, st
  */
 export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'portero' | 'duda', fuente: string, motivo: string) {
   const t = ahora();
+
+  /* ══ NO SE CUELGA UNA CONVERSACIÓN VIVA ════════════════════════════════
+     El candado va AQUÍ y no en cada rama que decide, porque a «buzón» se
+     llega por cinco caminos distintos —el AMD, las reglas de lo oído, el
+     desempate por tiempo, el tono que nunca llegó, las reglas aprendidas— y
+     blindar cuatro y olvidar el quinto es cómo se cuelga una llamada viva.
+     Esta función es por donde pasan todos.
+
+     La regla: si en la llamada ya se oyó hablar a alguien, no es un buzón.
+     Un buzón no conversa. El AMD de Twilio es una PISTA —y se equivoca seguido
+     con quien contesta como contesta una tienda, «Boutique Lily, buenas
+     tardes», porque es un saludo largo, que es justo su criterio de
+     grabadora—; que se haya oído voz es un HECHO. Entre una pista y un hecho
+     no hay discusión.
+
+     Pasa a «duda» y no a «persona»: el sistema no sabe con quién habla, sólo
+     sabe que hay alguien. «Duda» abre la línea igual y deja que lo resuelva
+     quien está escuchando, que es quien puede. */
+  if (veredicto === 'buzon') {
+    const oidoTodo: any[] = Array.isArray(it.oido) ? it.oido : [];
+    if (oidoTodo.some((o: any) => String(o?.texto || '').trim().length > 1)) {
+      veredicto = 'duda';
+      motivo = `${motivo} — pero ya se había oído voz en la llamada, así que no se cuelga`;
+      fuente = `${fuente}+voz`;
+    }
+  }
   const desde = it.estado === 'portero' ? ['portero'] : ['escuchando'];
   const cambio: any = { veredicto, veredicto_fuente: fuente, veredicto_ms: ms(it.contestado_at), updated_at: t };
   if (veredicto === 'persona' || veredicto === 'duda') { cambio.estado = 'en_linea'; cambio.en_linea_at = t; }
@@ -678,8 +704,29 @@ export async function latir(sesionId: string) {
     if (it.estado === 'en_linea' && it.agente_salio_at && !s.agente_en_sala && ms(it.agente_salio_at) > ESPERA.caida) {
       await colgarItem(it);   // la TwiML de espera debió colgar sola; esto es la red por si Twilio no la corrió
     } else if (it.estado === 'escuchando' && !it.veredicto && ms(it.contestado_at) > ESPERA.juicio) {
-      const maquina = /^machine_/.test(String(it.answered_by || ''));
-      await alVeredicto(it, maquina ? 'buzon' : 'duda', 'tiempo', maquina ? 'nadie dijo nada claro y el detector dice máquina' : 'contestaron y no se entendió quién');
+      /* ══ EL HUECO QUE COLGABA CONVERSACIONES VIVAS ══════════════════════
+         Reporte del dueño (17-sep-2026): «el cliente habló, yo hablé, y de
+         repente se cortó; siento que al momento de realmente conectar no lo
+         toma en cuenta». Tenía razón, y el hueco está justo aquí.
+
+         Esta rama es el desempate por tiempo: a los 9 s sin veredicto, si el
+         AMD de Twilio dijo «máquina» se daba `buzon` —y `buzon` cuelga—. El
+         problema es que MIRA SÓLO `answered_by`, sin pasar por `juzgar()`: no
+         se entera de que los dos llevan nueve segundos hablando. Y el AMD se
+         equivoca seguido con quien contesta como contesta una tienda
+         —«Boutique Lily, buenas tardes, ¿en qué le puedo ayudar?»— porque es
+         un saludo largo, que es justo su criterio de grabadora.
+
+         Así que antes de creerle al detector se mira lo que de verdad pasó: si
+         se oyó al vendedor, o al contacto, hay una conversación. El AMD es una
+         pista; que los dos estén hablando es un hecho. */
+      const oidoTodo: any[] = Array.isArray(it.oido) ? it.oido : [];
+      const hablaronDeVerdad = oidoTodo.some((o: any) => String(o?.texto || '').trim().length > 1);
+      const maquina = /^machine_/.test(String(it.answered_by || '')) && !hablaronDeVerdad;
+      await alVeredicto(it, maquina ? 'buzon' : 'duda', 'tiempo',
+        maquina ? 'nadie dijo nada claro y el detector dice máquina'
+          : hablaronDeVerdad ? 'ya se está hablando: el detector decía máquina, pero se oyó voz'
+          : 'contestaron y no se entendió quién');
       it = await getItem(it.id);
     } else if (buzonEsperandoTono(it) && ms(it.contestado_at) > ESPERA.buzon) {
       // El tono nunca llegó (AMD sin machine_end): se deja el mensaje igual.

@@ -29,9 +29,9 @@ const IMG = '/images/giros/tallas-grandes';
 
 export const bannerTG = {
   eyebrow: 'SACS · Ropa de tallas grandes',
-  titulo: 'Tu 46 no es tu 44 más grande.',
+  titulo: 'La 46 no es la 44 más grande.',
   resalte: 'Son dos patrones base.',
-  sub: 'La corrida completa de la 36 a la 52 en una sola cuadrícula, la alerta de las de en medio antes de que se descompleten, la ficha de medidas de cada modelo para que la clienta sepa su talla antes de pagar, el motivo del cambio que te dice si falló la talla o falló tu patrón del bloque alto, y la curva invertida para mandar la corrida a maquila — con un mismo inventario para tus tiendas, el vivo y el WhatsApp.',
+  sub: 'La corrida completa de la 36 a la 52 en una cuadrícula, las medidas de cada modelo para que sepa su talla antes de pagar, y el motivo del cambio que te dice si falló la talla o falló tu patrón — con un mismo inventario para tus tiendas, el vivo y el WhatsApp.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Boutique de tallas grandes con la corrida completa en el riel, los separadores de talla a la vista y la matriz talla por color en la tablet del mostrador',
   avisos: [
@@ -52,6 +52,7 @@ export const manifiestoTG = {
     'Llega una clienta que no encontró nada en tres tiendas, se prueba, le queda y se lleva cuatro cosas. Esa clienta <b>vale oro</b> y ni sabes cómo se llama.',
     'Tienes la <b>46</b> en la otra sucursal y no te enteras. Le dices que no hay y se va a comprarla en línea a otro lado.',
     'Lo que más te piden es vestido de fiesta <b>de la 46 para arriba</b>, y es justo lo que nadie te surte y lo que más te tardas en mandar hacer.',
+    'Te enseña el teléfono: <b>“allá me sale en $180 y sí hay 5XL”</b>. De precio no le compites, y ella tampoco quiere esperar tres semanas para que le llegue algo que no sabe si le va a quedar. Le compites con que aquí se la prueba hoy, aquí le queda y aquí se la ajustas.',
   ],
   cierre: 'Ningún sistema de ropa entiende que aquí la corrida empieza donde las demás la terminan, que la venta está en las de en medio y que de la 46 para arriba cambia la proporción y no el tamaño. Sacs sí: cada pantalla que sigue funciona igual en el mostrador, en el probador, en el vivo y en el WhatsApp. Y encima puedes poner agentes de IA para que hagan el trabajo repetitivo: el aviso de la talla que se está acabando, el resurtido del centro de la corrida y el mensaje de “ya llegó en 48” a quien la estaba esperando.',
 };
@@ -60,7 +61,7 @@ export const variantesTG = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“el vestido negro”.',
-  sub: 'De la 38 a la 52 son ocho tallas, y las de en medio —42, 44 y 46— son el 60 % de la venta. En cuatro telas son 32 existencias de un solo modelo, y la corrida se descompleta por el centro, nunca por las orillas.',
+  sub: 'De la 38 a la 52 son ocho tallas, y las de en medio —42, 44 y 46— son el 60 % de la venta. En cuatro colores son 32 existencias de un solo modelo, y la corrida se descompleta por el centro, nunca por las orillas.',
   ejeA: ['38', '40', '42', '44', '46', '48', '50', '52'],
   filas: [
     { nombre: 'Negro', img: `${IMG}/prod-negro.webp`, alt: 'Vestido de punto negro de talla extra' },
@@ -102,7 +103,7 @@ export const casosTG = [
     id: 'maquila',
     titulo: 'Febrero y agosto: la corrida que se manda a maquila',
     texto: 'En una tarde se decide cuánta tela se corta por talla para los siguientes cuatro meses. La curva sale del histórico real de venta por talla, por sucursal y por temporada —no del promedio de la cadena—, y el consumo promedio del trazo dice cuántos metros comprar. Antes de firmar la orden, el sistema enseña en qué va la muestra de los dos bloques: la baja en 40 o 42 y la alta en 48 o 50.',
-    remate: 'Si el bloque alto sale mal no pierdes una talla: pierdes el 36 % del modelo.',
+    remate: 'Hacerlo bien cuesta $65,960 al año —el segundo patrón base, la muestra del bloque alto, la prueba de ajuste, el reetiquetado y la sesión de foto— y devuelve 4.4 veces eso. Si el bloque alto sale mal no pierdes una talla: pierdes el 36 % del modelo.',
     img: `${IMG}/proceso-maquila.webp`,
     alt: 'Dueña de una marca de tallas grandes revisando con el taller la corrida por talla antes de cortar',
   },
@@ -136,7 +137,7 @@ export const seccionesTG: SuiteSeccion[] = [
   {
     id: 'corrida', tag: 'Inventario',
     titulo: 'La corrida completa, de la 36 a la 52, en una sola cuadrícula',
-    texto: 'Aquí la matriz es el doble de ancha que en una tienda normal y aguanta las doce tallas por color sin volverse ilegible en el celular. El sistema habla en el tallaje de cada proveedor —par, non o letra— y avisa cuando hay que correr el tallaje y reimprimir la etiqueta, que con proveedor nuevo pasa seguido. Y sabe que las letras se acaban en la 48: de la 50 para arriba solo hay número.',
+    texto: 'Aquí la matriz es el doble de ancha que en una tienda normal y aguanta las nueve tallas de la 36 a la 52 —y hasta doce cuando el proveedor las trae— sin volverse ilegible en el celular. El sistema habla en el tallaje de cada proveedor —par, non o letra— y avisa cuando hay que correr el tallaje y reimprimir la etiqueta, que con proveedor nuevo pasa seguido. Y sabe que las letras se acaban en la 48: de la 50 para arriba solo hay número.',
     bullets: ['Matriz talla × color de nueve a doce tallas, legible en el mostrador y en el celular', 'Alerta de las de en medio descompletadas: no “se acabó el modelo”, sino “te quedaste sin 42-46”', 'Conteo cíclico por talla desde la primera tienda: la 46 que se probó y se colgó mal descuadra sola'],
     visual: mockMatriz('Vestido de punto · existencia por talla', ['38', '40', '42', '44', '46', '48', '50', '52'], [['Negro', [6, 4, 1, 0, 0, 3, 4, 3]], ['Rojo', [5, 3, 0, 0, 1, 2, 3, 2]]], 'Las de en medio en cero y las orillas llenas: eso es la corrida rota', [0, 3]),
   },

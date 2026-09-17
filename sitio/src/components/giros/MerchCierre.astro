@@ -1,0 +1,166 @@
+---
+/**
+ * MerchCierre — "El cierre de la fecha", el SEGUNDO bloque propio de merch de eventos
+ * (17-sep-2026). La página ya tiene MerchPico, que calcula cuántas cajas hacen falta para aguantar
+ * la fila. Este calcula otra cosa: cuánto cargas y cuánto te queda. Uno resuelve la fila, el otro
+ * resuelve el camión; no se pisan.
+ *
+ * Sale de la ficha del oficio de merch, escrita el 17-sep-2026 por un experto del giro. Lo que
+ * solo pasa aquí: una tienda que nace a las seis de la tarde, vende seis horas y muere a las dos
+ * de la mañana, y una cuenta que la cierra esa misma noche.
+ *
+ *   Vendido de la fecha = Cargado − Regresado − Cortesías − Diferencia
+ *   Utilidad = venta bruta − comisión del recinto − costo de lo vendido − regalía − staff − montaje
+ *   Sobrante = lo regresado, valuado A COSTO: todavía no es pérdida, pero tampoco es utilidad.
+ *
+ * La enseñanza que no está en ninguna otra landing: la misma playera tiene curvas de talla
+ * distintas según el público, y por eso cargar más no siempre deja más. Al subir la carga, la
+ * utilidad sube hasta que el sobrante se la come.
+ *
+ * NO ESTÁ INSERTADO EN LA PÁGINA TODAVÍA: /giros/merchandising-eventos está en producción y
+ * meterle un bloque nuevo es un cambio visible que decide el dueño. Para activarlo, importarlo en
+ * src/pages/giros/merchandising-eventos.astro y ponerlo después de MerchPico.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="Una tienda que nace a las seis y muere a las dos."
+  titulo="El cierre de la fecha."
+  descripcion="Cargas el camión, abres cuatro cajas, vendes seis horas sin señal y cuentas lo que regresó. Lo vendido es lo que falta. Mueve la carga y el público y mira dónde deja de convenirte llevar más."
+  vinetas={[
+    { label: 'Lo que no subió al camión no existe esa noche', detail: 'La carga se decide de tres a siete días antes, con lo que dejó la plaza anterior y lo que entró a la preventa. Después ya no hay vuelta.' },
+    { label: 'Cada público tiene su curva', detail: 'La misma playera se agota por la L en un festival y por la 2XL en un concierto de banda. No es la talla: es quién viene.' },
+    { label: 'El sobrante se valúa a costo', detail: 'La pieza que regresó todavía no es pérdida, pero tampoco es utilidad. Por eso cargar de más no se ve hasta que se cierra la fecha.' },
+  ]}
+  suelta
+>
+  <div class="mc" id="mc-cierre">
+    <div class="mc-resta">
+      <div><span>Cargué</span><b id="mc-carga">1,200</b></div>
+      <em>−</em>
+      <div><span>Regresaron</span><b id="mc-reg">310</b></div>
+      <em>=</em>
+      <div class="mc-vendi"><span>Vendí</span><b id="mc-vend">890</b></div>
+    </div>
+    <div class="mc-grid">
+      <section>
+        <span class="mc-k">La curva de la noche</span>
+        <div class="mc-ops" id="mc-pub">
+          <button type="button" class="is-on" data-p="fest">Festival</button>
+          <button type="button" data-p="banda">Banda</button>
+          <button type="button" data-p="club">Club</button>
+          <button type="button" data-p="uni">Uni</button>
+        </div>
+        <ul class="mc-barras" id="mc-barras"></ul>
+      </section>
+      <section>
+        <span class="mc-k">La cascada del dinero</span>
+        <ul class="mc-casc" id="mc-casc"></ul>
+        <label class="mc-sl"><span>Piezas que cargas <b id="mc-c">1,200</b></span><input type="range" id="mc-carga-r" min="400" max="2400" step="50" value="1200" aria-label="Piezas que cargas" /></label>
+        <label class="mc-sl"><span>Regalía del contrato <b id="mc-r">25 %</b></span><input type="range" id="mc-reg-r" min="0" max="40" step="5" value="25" aria-label="Porcentaje de regalía" /></label>
+        <p class="mc-fin" id="mc-fin"></p>
+        <a class="mc-cta" href="/contacto">Cerrar mi próxima fecha</a>
+      </section>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .mc { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; }
+  .mc-resta { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--color-border, #E6E8ED); }
+  .mc-resta div span { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 4px; }
+  .mc-resta div b { font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 52px); letter-spacing: -0.04em; line-height: 1; color: var(--color-text-secondary); }
+  .mc-resta .mc-vendi b { color: var(--color-text-primary); }
+  .mc-resta em { font-style: normal; font-size: 26px; color: var(--color-text-tertiary); padding-bottom: 6px; }
+  .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 18px; }
+  .mc-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
+  .mc-ops { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .mc-ops button { padding: 8px 13px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; }
+  .mc-ops button.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .mc-barras { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+  .mc-barras :global(li) { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; font-size: 12.5px; }
+  .mc-barras :global(li b) { color: var(--color-text-primary); }
+  .mc-barras :global(li i) { display: block; height: 18px; border-radius: 4px; background: #CFCFC9; transition: width 0.5s cubic-bezier(0.2,0.7,0.2,1); }
+  .mc-barras :global(li.agot i) { background: #B42318; }
+  .mc-barras :global(li.sobra i) { background: #C9C7C1; }
+  .mc-barras :global(li em) { font-style: normal; color: var(--color-text-tertiary); font-size: 11.5px; }
+  .mc-casc { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 7px; }
+  .mc-casc :global(li) { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--color-text-secondary); }
+  .mc-casc :global(li b) { color: var(--color-text-primary); }
+  .mc-casc :global(li.total) { padding-top: 9px; border-top: 1px solid #E3E3DF; font-size: 15px; color: var(--color-text-primary); font-weight: 600; }
+  .mc-casc :global(li.total b) { font-family: var(--font-display); font-size: 22px; }
+  .mc-casc :global(li.neg b) { color: #B42318; }
+  .mc-sl { display: block; margin-bottom: 12px; }
+  .mc-sl span { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
+  .mc-sl b { font-family: var(--font-display); font-size: 16px; color: var(--color-text-primary); }
+  .mc-sl input { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .mc-fin { margin: 10px 0 0; padding: 11px 13px; border-radius: var(--radius-sm, 8px); background: var(--color-bg-primary, #F7F7F5); font-size: 13.5px; line-height: 1.45; color: var(--color-text-primary); }
+  .mc-cta { display: inline-flex; margin-top: 12px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .mc { padding: 14px; } .mc-grid { grid-template-columns: 1fr; } .mc-resta em { display: none; } .mc-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('mc-cierre'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id)!;
+    const TALLAS = ['S', 'M', 'L', 'XL', '2XL'];
+    // Cómo se reparte la demanda de la noche según quién vino. Suman 1. Salen de la ficha: en
+    // festival joven manda la M y la L; en concierto de banda el público es mayor y pesa la 2XL.
+    const PUB: Record<string, { c: number[]; nota: string }> = {
+      fest: { c: [0.10, 0.31, 0.33, 0.19, 0.07], nota: 'público joven: la L se agota antes de la medianoche y la S regresa casi completa.' },
+      banda: { c: [0.06, 0.20, 0.28, 0.27, 0.19], nota: 'público mayor: aquí la 2XL se acaba y sobra la S. Es la misma playera, otra curva.' },
+      club: { c: [0.09, 0.26, 0.31, 0.22, 0.12], nota: 'la tienda del club vende todo el año, así que la talla que falta se repone: no se pierde la venta.' },
+      uni: { c: [0.14, 0.34, 0.30, 0.16, 0.06], nota: 'graduación: casi todo M y L, y la talla grande se pide por encargo.' },
+    };
+    const PRECIO = 450, COSTO = 168, RECINTO = 0.15, STAFF = 9600, MONTAJE = 7500;
+    const pesos = (n: number) => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('es-MX');
+    let pub = 'fest';
+    const pinta = () => {
+      const carga = Number(($('mc-carga-r') as HTMLInputElement).value);
+      const reg = Number(($('mc-reg-r') as HTMLInputElement).value) / 100;
+      const d = PUB[pub];
+      // La demanda de la noche no crece porque cargues más: la fija el público que entró.
+      const demanda = 890;
+      const porTalla = d.c.map((x) => Math.round(demanda * x));
+      const cargaTalla = d.c.map((x) => Math.round(carga * x));
+      const vendidas = porTalla.map((v, i) => Math.min(v, cargaTalla[i]));
+      const vend = vendidas.reduce((a, b) => a + b, 0);
+      const regres = carga - vend;
+      $('mc-carga').textContent = carga.toLocaleString('es-MX');
+      $('mc-reg').textContent = regres.toLocaleString('es-MX');
+      $('mc-vend').textContent = vend.toLocaleString('es-MX');
+      $('mc-c').textContent = carga.toLocaleString('es-MX');
+      $('mc-r').textContent = Math.round(reg * 100) + ' %';
+      $('mc-barras').innerHTML = TALLAS.map((t, i) => {
+        const agotada = vendidas[i] >= cargaTalla[i] && porTalla[i] > cargaTalla[i];
+        const sobra = cargaTalla[i] - vendidas[i] > cargaTalla[i] * 0.3;
+        const pct = cargaTalla[i] ? Math.round((vendidas[i] / cargaTalla[i]) * 100) : 0;
+        const et = agotada ? `agotada · faltaron ${porTalla[i] - cargaTalla[i]}` : sobra ? `regresaron ${cargaTalla[i] - vendidas[i]}` : `${pct} %`;
+        return `<li class="${agotada ? 'agot' : sobra ? 'sobra' : ''}"><b>${t}</b><i style="width:${pct}%"></i><em>${et}</em></li>`;
+      }).join('');
+      const bruta = vend * PRECIO;
+      const comision = bruta * RECINTO;
+      const costoVend = vend * COSTO;
+      const regalia = (bruta - comision) * reg;
+      const queda = bruta - comision - costoVend - regalia - STAFF - MONTAJE;
+      const sobranteCosto = regres * COSTO;
+      $('mc-casc').innerHTML = [
+        ['Venta de la fecha', pesos(bruta)],
+        ['Comisión del recinto', pesos(-comision)],
+        ['Costo de lo vendido', pesos(-costoVend)],
+        ['Regalía del contrato', pesos(-regalia)],
+        ['Staff y montaje', pesos(-(STAFF + MONTAJE))],
+      ].map(([a, b]) => `<li><span>${a}</span><b>${b}</b></li>`).join('') +
+        `<li class="total ${queda < 0 ? 'neg' : ''}"><span>Queda de la fecha</span><b>${pesos(queda)}</b></li>`;
+      $('mc-fin').innerHTML = `Y ${regres.toLocaleString('es-MX')} piezas regresaron al camión: <b>${pesos(sobranteCosto)} a costo</b>, parados hasta la siguiente fecha. ${d.nota}`;
+      (window as any).sacsPH?.('giro_mc_cierre', { carga, pub });
+    };
+    $('mc-pub').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button'); if (!b) return;
+      $('mc-pub').querySelectorAll('button').forEach((x) => x.classList.toggle('is-on', x === b));
+      pub = b.dataset.p!; pinta();
+    });
+    ['mc-carga-r', 'mc-reg-r'].forEach((id) => $(id).addEventListener('input', pinta));
+    pinta();
+  })();
+</script>

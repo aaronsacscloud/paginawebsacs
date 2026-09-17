@@ -30,13 +30,13 @@ import { bannerOP, manifiestoOP, variantesOP, cortinaOP, casosOP, seccionesOP, p
 
   <SuiteManifiesto intro={manifiestoOP.intro} frases={manifiestoOP.frases} cierre={manifiestoOP.cierre} />
 
-  <SuiteVariantes eyebrow={variantesOP.eyebrow} titulo={variantesOP.titulo} resalte={variantesOP.resalte} sub={variantesOP.sub} ejeA={variantesOP.ejeA} filas={variantesOP.filas} matriz={variantesOP.matriz} unidad={variantesOP.unidad} genero={variantesOP.genero} leyendas={variantesOP.leyendas} remate={variantesOP.remate} />
+  <SuiteVariantes eyebrow={variantesOP.eyebrow} titulo={variantesOP.titulo} resalte={variantesOP.resalte} sub={variantesOP.sub} ejeA={variantesOP.ejeA} filas={variantesOP.filas} matriz={variantesOP.matriz} unidad={variantesOP.unidad} genero={variantesOP.genero} leyendas={variantesOP.leyendas} remate={variantesOP.remate} anchoCelda="200px" />
 
   <SuiteCortina titulo={cortinaOP.titulo} pieAntes={cortinaOP.pieAntes} fotoAntes={cortinaOP.fotoAntes} fotoDespues={cortinaOP.fotoDespues} altAntes={cortinaOP.altAntes} altDespues={cortinaOP.altDespues} libreta={cortinaOP.libreta} filas={cortinaOP.filas} pieDespues={cortinaOP.pieDespues} />
 
-  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasOP.entrada} quienes={problemasOP.quienes} doc1={problemasOP.doc1} doc2={problemasOP.doc2} filas={problemasOP.filas} />
+  <SuiteProblemas colGenerico="Punto de venta general" entrada={problemasOP.entrada} quienes={problemasOP.quienes} doc1={problemasOP.doc1} doc2={problemasOP.doc2} filas={problemasOP.filas} />
 
-  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la receta manda y que trae fecha." />
+  <SuiteSalida frase="Si ya probaste un punto de venta general y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la receta manda y que trae fecha." />
 
   <SuiteCifras foto={cifrasOP.foto} alt={cifrasOP.alt} frase={cifrasOP.frase} encuadre={cifrasOP.encuadre} datos={[
     { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y ÓPTICAS' },
@@ -53,7 +53,7 @@ import { bannerOP, manifiestoOP, variantesOP, cortinaOP, casosOP, seccionesOP, p
 
   <GiroEscala encabezado="Tu tamaño" titulo="De la óptica de la esquina a la cadena con laboratorio propio." descripcion="El negocio cambia con cada tamaño: quién examina, quién transcribe la receta, quién talla, quién aprueba con el lensómetro y qué mira la dirección. Elige el tuyo." niveles={escalaOP} />
 
-  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra el paciente, pasa al gabinete, sale con su receta, escoge armazón frente al espejo del muro y deja su anticipo en caja. Atrás están el laboratorio y el cajón de los que ya están listos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu óptica — planta baja" zonas={planoOP} todoRot="Ópticas" />
+  <SuitePlano titulo="Tu óptica, por dentro." sub="Entra el paciente, pasa al gabinete, sale con su receta, escoge armazón frente al espejo del muro y deja su anticipo en caja. Atrás están el laboratorio y el cajón de los que ya están listos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu óptica — planta baja" zonas={planoOP} todoRot="Ópticas" />
 
   <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes agosto encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosOP} lineas={ticketOP.lineas} total={ticketOP.total} remate="<b>Tu histórico no se tira.</b> Se migran tu muro con sus calibres, tus órdenes en el laboratorio, tus pendientes de entrega y, lo que más vale, <b>los expedientes de tus pacientes con sus recetas y sus fechas</b>. Nunca te pedimos volver a examinar a nadie." />
 

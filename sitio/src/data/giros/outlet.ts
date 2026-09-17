@@ -68,7 +68,7 @@ export const variantesOU = {
   eyebrow: 'Un solo bulto',
   titulo: 'Esto es lo que de verdad hay dentro de',
   resalte: '“el lote de dama”.',
-  sub: 'Aquí no se compra una corrida: llega lo que llegó. De cada modelo hay una o dos piezas, la talla viene descompletada de origen y lo que se vendió ya no vuelve. El sistema no pide reponer ni marca faltante: sabe que cada pieza es una sola.',
+  sub: 'Aquí no se compra una corrida: llega lo que llegó. De cada modelo hay una o dos piezas, la talla viene descompletada de origen y lo que se vendió ya no vuelve. El sistema no pide reponer ni marca faltante: sabe que cada pieza es una sola. Y que quede claro de qué se habla: esto es saldo nuevo de marca, con su etiqueta original. La paca de ropa americana es otro negocio y otro sistema.',
   ejeA: ['28', '30', '32', '34', '36', '38', '40'],
   filas: [
     { nombre: 'Blusa satinada', img: `${IMG}/prod-uno.webp`, alt: 'Blusa satinada de saldo de marca con su etiqueta original' },
@@ -165,7 +165,7 @@ export const seccionesOU: SuiteSeccion[] = [
   {
     id: 'desmarque', tag: 'Precio y desmarque',
     titulo: 'Dos precios en la etiqueta, y lo que la marca te obliga',
-    texto: 'El argumento de venta no es el precio, es el porcentaje, y todos los escalones se calculan contra el precio original de la marca: entra al 50, pasa al 65, se va al 75 y de ahí al tendido. Si el contrato pide desmarque, la etiqueta se imprime sin el nombre de la marca, con el precio mínimo bloqueado y con aviso si una sucursal cae dentro del radio prohibido.',
+    texto: 'El argumento de venta no es el precio, es el porcentaje, y todos los escalones se calculan contra el precio original de la marca: entra al 50, pasa al 65, se va al 75 y, si la marca lo autoriza, de ahí al tendido. Si el contrato pide desmarque, la etiqueta se imprime sin el nombre de la marca, con el precio mínimo bloqueado y con aviso si una sucursal cae dentro del radio prohibido.',
     bullets: ['Un solo criterio: cada escalón contra el precio original, nunca sobre el ya rebajado', 'Etiqueta sin marca, precio mínimo bloqueado y aviso de radio, como lo pide el contrato', 'Quién puede bajar un precio: la encargada cambia etiquetas, el gerente autoriza en su rango, abajo del mínimo solo el dueño'],
     visual: mockTicket('Blusa satinada · la escalera contra el original', [['Precio original de la marca', '$599'], ['Etiqueta verde · al 50', '$299'], ['Etiqueta amarilla · al 65', '$209'], ['Etiqueta roja · al 75', '$149']], ['Piso que pide la marca', '$149'], 'Se imprime sin el nombre de la marca cuando el contrato lo pide, y no deja cobrar abajo del mínimo'),
   },

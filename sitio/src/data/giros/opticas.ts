@@ -38,11 +38,11 @@ export const bannerOP = {
   eyebrow: 'SACS · Ópticas',
   titulo: 'La receta manda.',
   resalte: 'Y trae fecha.',
-  sub: 'El expediente con su receta —esfera, cilindro, eje, adición, DIP y quién la firmó—, la orden de trabajo al lab con su fecha de entrega, el lensómetro que aprueba antes de avisarle a nadie, el “ya están listos” con el saldo que debe, el cajón de listos con los días sin recoger y la lista de a quién le toca su examen este mes.',
+  sub: 'El expediente con su receta —esfera, cilindro, eje, adición, DIP— y quién la firmó. La orden al lab con su fecha de entrega. El lensómetro que aprueba antes de que nadie avise. El “ya están listos” con el saldo que debe. Y la lista de a quién le toca su examen este mes.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Óptica moderna en México con el muro de armazones iluminado y la orden de trabajo en la tablet del mostrador',
   avisos: [
-    { modulo: 'Ya están listos', texto: 'Sra. Ruiz · progresivo con antirreflejo · revisado en lensómetro · debe $1,450', pos: 1 as const, tono: 'verde' as const, sello: 'Hoy' },
+    { modulo: 'Ya están listos', texto: 'Sra. Ruiz · monofocal con antirreflejo · revisado en lensómetro · debe $1,450', pos: 1 as const, tono: 'verde' as const, sello: 'Hoy' },
     { modulo: 'El cajón', texto: '14 pares sin recoger · 6 pasan de 15 días · te deben $12,600', pos: 2 as const, tono: 'rojo' as const, sello: 'Agosto' },
     { modulo: 'Le toca su examen', texto: '38 recetas cumplen 12 meses este mes · el WhatsApp sale con su nombre', pos: 3 as const, tono: 'azul' as const, sello: 'Septiembre' },
   ],
@@ -67,8 +67,8 @@ export const variantesOP = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“el armazón negro”.',
-  sub: 'Un armazón no es un artículo: es modelo, color y medida. El mismo modelo vive en cuatro o seis colores y en dos o tres calibres, y el 52 se pide tres veces más que el 46 y el 56. Y el armazón no trae código pegado: se cuenta charola por charola, leyendo la varilla.',
-  ejeA: ['46', '48', '50', '52', '54', '56'],
+  sub: 'Un armazón no es un artículo: es modelo, color y medida. El mismo modelo vive en cuatro o seis colores y en dos o tres calibres: cinco colores por dos o tres medidas ya son de diez a quince piezas distintas, y el que se lleva el 52 no se lleva el 54. Y el armazón no trae código pegado: se cuenta charola por charola, leyendo la varilla.',
+  ejeA: ['50', '52', '54'],
   filas: [
     { nombre: 'Metal · negro', img: `${IMG}/prod-metal.webp`, alt: 'Armazón de metal negro con varillas delgadas' },
     { nombre: 'Pasta · carey', img: `${IMG}/prod-pasta.webp`, alt: 'Armazón de pasta color carey' },
@@ -76,15 +76,15 @@ export const variantesOP = {
     { nombre: 'Infantil · azul', img: `${IMG}/prod-infantil.webp`, alt: 'Armazón infantil azul flexible' },
   ],
   matriz: [
-    [3, 4, 2, 0, 1, 4],
-    [2, 3, 3, 0, 0, 3],
-    [1, 2, 4, 1, 2, 5],
-    [5, 4, 3, 2, 0, 0],
+    [2, 0, 1],
+    [3, 0, 0],
+    [4, 1, 2],
+    [3, 2, 0],
   ],
   unidad: 'armazones',
   genero: 'm' as const,
   leyendas: ['Con existencia', 'Quedan pocos', 'Agotado'] as [string, string, string],
-  remate: 'El 52 y el 54 ya se fueron y quedan los calibres de las puntas. Y falta el estado que ningún reporte enseña: el armazón que ya salió del muro porque va en la ruta del martes. El sistema decía que tenías tres; en la pared hay uno.',
+  remate: 'que comprar, colgar y contar por modelo, color y calibre. El 52 se acabó en metal y en pasta, y falta el estado que ningún reporte enseña: el armazón que ya salió del muro porque va en la ruta del martes. El sistema decía que tenías tres; en la pared hay uno.',
 };
 
 export const cortinaOP = {
@@ -152,34 +152,27 @@ export const seccionesOP: SuiteSeccion[] = [
     titulo: 'Modelo, color y medida — y el que ya va en la ruta del lab',
     texto: 'Cada armazón es modelo, color y medida, y el muro es tu inventario a la vista. Cuando se ordena, el armazón sale del muro pero todavía no se entregó: queda “en lab”. Sin ese estado el muro miente. Y lo que se vende en Instagram y en la tienda en línea sale de este mismo muro.',
     bullets: ['Existencia por color y calibre, por sucursal: “¿lo tienes en café, en 52?”', 'Traspaso entre tiendas: el armazón dormido en una plaza se vende en otra', 'Consignación y comodato: lo que está en tu pared pero no es tuyo, con lo que hay que liquidar, devolver o canjear'],
-    visual: mockMatriz('Armazón de metal · existencia por calibre', ['46', '48', '50', '52', '54', '56'], [['Negro', [3, 4, 2, 0, 1, 4]], ['Carey', [2, 3, 3, 0, 0, 3]]], 'El 52 y el 54 en cero: justo los que más se piden. Dos están “en lab”, no en el muro', [0, 3]),
+    visual: mockMatriz('Armazón de metal · existencia por calibre', ['50', '52', '54'], [['Negro', [2, 0, 1]], ['Carey', [3, 0, 0]]], 'El 52 en cero en los dos colores: justo el que más se pide. Dos están “en lab”, no en el muro', [0, 1]),
   },
   {
     id: 'orden', tag: 'Laboratorio',
     titulo: 'La orden de trabajo y la fecha de entrega',
     texto: 'Armazón, micas, tratamientos, la receta completa y la fecha de entrega en una sola hoja que va al lab, con su estado: ordenado, en lab, llegó, revisado, listo, entregado. La ruta pasa martes y jueves; con biseladora propia el terminado de stock sale el mismo día. En agosto y en diciembre todo se corre, y el sistema lo dice antes que el cliente.',
-    bullets: ['La receta se relee antes de mandar la orden: ahí se cachan los ejes', 'Órdenes por fecha de entrega, con las vencidas en rojo y el aviso listo', 'Costo real por orden: armazón, mica, tratamientos, flete del lab y retallados'],
-    visual: mockCalendario('Órdenes y ruta del lab', 'Agosto', 31, { 4: 'ok', 5: 'lleno', 7: 'lleno', 11: 'aviso', 12: 'lleno', 14: 'lleno', 18: 'aviso', 19: 'lleno', 21: 'lleno', 22: 'aviso', 25: 'aviso', 26: 'lleno', 28: 'lleno' }, 'Martes y jueves sale y regresa la ruta; el 22 y el 25 hay entregas prometidas que el lab ya corrió'),
+    bullets: ['La receta se relee antes de mandar la orden: ahí se cachan los ejes', 'Órdenes por fecha de entrega, con las vencidas en rojo; el “ya están listos, debe $X” sale solo cuando la orden se marca revisada', 'Costo real por orden: armazón, mica, tratamientos, flete del lab y retallados'],
+    visual: mockCalendario('Órdenes y ruta del lab', 'Agosto', 31, { 2: 'lleno', 4: 'lleno', 9: 'lleno', 11: 'aviso', 16: 'lleno', 18: 'aviso', 23: 'lleno', 25: 'aviso', 30: 'lleno' }, 'Martes y jueves sale y regresa la ruta; el 11, el 18 y el 25 hay entregas prometidas que el lab ya corrió'),
   },
   {
     id: 'lensometro', tag: 'Lensómetro',
     titulo: 'Nadie avisa hasta que el lensómetro dice que dio',
-    texto: 'Aquí el trabajo no se aprueba a ojo: la mica se pone en el lensómetro y se compara contra la receta. Dio o no dio. La orden no pasa a “listo” hasta que alguien capturó que el número salió, y si no salió se retalla y se registra el motivo: no adaptación, antirreflejo craquelado, eje o armazón.',
-    bullets: ['Retallado con su causa y su responsable: si el error fue de la orden lo pagas tú, si fue del lab se le reclama con datos', 'El antirreflejo craquelado es garantía de un año y lo paga el lab; el rayado por uso no entra, y si se da es cortesía una sola vez', 'Los 30 días de adaptación del progresivo: quién está en ventana y a quién hay que hablarle antes de que se venza'],
-    visual: mockBarras('Retallados del mes · por motivo', [['Eje', '9 · 41%', 100], ['AR craquelado', '6 · 27%', 66], ['No adaptación', '5 · 23%', 55], ['Armazón', '2 · 9%', 22]], '22 retallados de 214 órdenes. Catorce los pagó el laboratorio porque el motivo estaba registrado'),
-  },
-  {
-    id: 'cajon', tag: 'Pendientes de entrega',
-    titulo: 'El cajón de listos: lo que te deben bajo el mostrador',
-    texto: 'Cada bolsita es una venta a medias: te deben el saldo y la mica ya se le pagó al lab. Días sin recoger, saldo pendiente y a quién falta hablarle, con el recordatorio a los 7, a los 15 y la decisión a los 30. Y cuando por fin viene: se los pones, se le ajustan en la cara, saldo, factura y firma el acuse de entrega.',
-    bullets: ['“Ya están listos, debe $X” sale solo cuando la orden se marca revisada', 'Acuse de entrega firmado contra la orden: es lo que te salva del “yo nunca los recogí”', 'Una óptica de una sucursal trae 10 a 15 pares al mismo tiempo; una sucursal de cadena en agosto, 40 a 60'],
-    visual: mockTicket('El cajón · lo que te deben hoy', [['Sra. Ruiz · progresivo + AR · 23 días', '$1,450'], ['Niño Pérez · policarbonato · 16 días', '$620'], ['Sr. Andrade · monofocal + AR · 9 días', '$380'], ['Otros 11 pares listos', '$10,150']], ['14 pares sin recoger', '$12,600'], 'Seis pasan de 15 días y a cuatro nadie les ha hablado. Si cobraste la mitad, el anticipo ya pagó la mica'),
+    texto: 'Aquí el trabajo no se aprueba a ojo: el tallador la pone en el lensómetro y la compara contra la receta. Dio o no dio. La orden no pasa a “listo” hasta que alguien capturó que el número salió, y si no salió se retalla y se registra el motivo: no adaptación, antirreflejo craquelado, eje o armazón.',
+    bullets: ['Retallado con su causa y su responsable: si el error fue de la orden lo pagas tú, si fue del lab se le reclama con datos', 'El antirreflejo craquelado es garantía de un año y lo paga el lab; el rayado por uso no entra, y si se da es cortesía una sola vez, cobrando la mica a costo', 'Los 30 días de adaptación del progresivo: quién está en ventana y a quién hay que hablarle antes de que se venza'],
+    visual: mockBarras('Retallados del mes · por motivo', [['Eje', '9 · 41%', 100], ['AR craquelado', '6 · 27%', 66], ['No adaptación', '5 · 23%', 55], ['Armazón', '2 · 9%', 22]], '22 retallados de 214 órdenes. Los seis de antirreflejo craquelado los pagó el laboratorio porque el motivo estaba registrado; los nueve de eje los pagaste tú'),
   },
   {
     id: 'caja', tag: 'Caja y convenios',
     titulo: 'El anticipo, el abono, el convenio y la factura que sí sirve',
-    texto: 'Mínimo la mitad al ordenar, y todo si es progresivo, alto índice o armazón del cliente — esa mica no le sirve a nadie más. El que viene cada semana paga su abono con su saldo a la vista. Y la factura sale al momento con la descripción correcta, con los lentes oftálmicos graduados separados del solar y de los accesorios.',
-    bullets: ['Precio de convenio por empresa, sindicato, escuela o institución, con el tope del vale y su cuenta por cobrar a 30 o 60 días', 'El seguro de gastos médicos es por reembolso: el cliente paga todo aquí y con esa factura le cobra él a su aseguradora; si le falta la descripción, te la regresa', 'Pago mixto, meses sin intereses del Buen Fin y cobro con y sin internet, porque en plaza se cae la señal'],
+    texto: 'Mínimo la mitad al ordenar, y todo si es progresivo, alto índice —“las delgaditas”, las que pide el que ya no quiere traer fondo de botella— o armazón del cliente: esa mica no le sirve a nadie más. El que viene cada semana paga su abono con su saldo a la vista. Y la factura sale al momento con la descripción correcta, con los lentes oftálmicos graduados separados del solar y de los accesorios.',
+    bullets: ['Precio de convenio por empresa, sindicato, escuela o institución, con el tope del vale y su cuenta por cobrar a 30 o 60 días', 'El seguro de gastos médicos es por reembolso: el cliente paga todo aquí y con esa factura le cobra él a su aseguradora; si le falta la descripción, te la regresa', 'Pago mixto, meses sin intereses del Buen Fin y cobro con y sin internet, porque en plaza se cae la señal', 'Acuse de entrega firmado contra la orden: es lo que te salva del “yo nunca los recogí”'],
     visual: mockLista('Cobranza de convenios · hoy', [['Vale de empresa · 14 pares entregados y firmados · a 60 días', 'Por cobrar', 'aviso'], ['Sindicato · lista autorizada de 9 · falta que recojan 2', 'Detenida', 'gris'], ['Abonos semanales · 23 clientes al corriente', 'Al día', 'ok'], ['Factura del seguro · descripción y diagnóstico completos', 'Entregada', 'ok']], 'La cuenta por cobrar del convenio depende de que recoja y firme el acuse'),
   },
   {
@@ -221,7 +214,7 @@ export const planoOP = [
     ],
   },
   {
-    id: 'listos', nombre: 'El cajón de listos y la bodega chica', simbolo: 'anaqueles' as const,
+    id: 'listos', nombre: 'El cajón de los que no han venido', simbolo: 'anaqueles' as const,
     foto: `${IMG}/zona-listos.webp`, alt: 'Cajón bajo el mostrador de una óptica abierto y lleno de bolsitas con lentes terminados, cada una con su nombre',
     pie: 'Las bolsitas con los lentes listos, cada una con su nombre y su saldo; atrás, las cajas de pupilentes por cliente.',
     pregunta: '¿Cuánto me deben en el cajón?',
@@ -241,7 +234,7 @@ export const planoOP = [
     pregunta: '¿Con antirreflejo en cuánto le queda?',
     caja: { x: 68, y: 264, w: 216, h: 104 },
     items: [
-      { t: 'Cotización de armazón, micas y tratamientos, y la nota con su fecha de entrega' },
+      { t: 'Cotización de armazón, micas y tratamientos —las delgaditas, el antirreflejo, los de la computadora— y la nota con su fecha de entrega' },
       { t: 'Anticipo mínimo del 50%, y el 100% en progresivo, alto índice o armazón del cliente' },
       { t: 'Abonos semanales o quincenales con su saldo; pago mixto y meses sin intereses' },
       { t: 'Factura con RFC al momento, con la descripción correcta y separada del solar' },
@@ -271,7 +264,7 @@ export const pasosOP = [
   { cuando: 'Día 4', titulo: 'Arranca una sucursal', texto: 'La primera óptica vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con las órdenes vivas y el cajón de listos ya migrados: ningún cliente llega por sus lentes y se encuentra con que su orden no existe.', img: `${IMG}/proceso-entrega.webp`, alt: 'Vendedora ajustando los lentes nuevos en la cara de la clienta con el calentador y recabando la firma del acuse' },
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de armazones entre sucursales y la lista de “le toca su examen” ya corren desde la primera semana.', img: `${IMG}/proceso-campana.webp`, alt: 'Dueño de una cadena de ópticas revisando en la tablet la campaña de recordatorio de examen antes de mandarla' },
 ];
-export const ticketOP = { lineas: [{ n: 'Armazón metal negro · 52-18-140', p: '$1,290' }, { n: 'Micas progresivas · alto índice + antirreflejo', p: '$3,450' }, { n: 'Anticipo recibido', p: '−$2,370' }], total: '$2,370 · se liquida al recoger' };
+export const ticketOP = { lineas: [{ n: 'Armazón metal negro · 52-18-140', p: '$1,290' }, { n: 'Micas progresivas · alto índice + antirreflejo', p: '$3,450' }, { n: 'Anticipo recibido (progresivo: se cobra completo)', p: '−$4,740' }], total: 'Liquidado · se entrega al recoger' };
 
 export const escalaOP = [
   { n: '1 sucursal', nombre: 'La óptica de barrio', cambia: ['El dueño lo hace todo: examen, venta, orden al lab, cobro y WhatsApp', 'La receta en un cuaderno y la venta a abonos en libreta', 'Lab externo, mensajero martes y jueves, entrega en 5 a 8 días'], sistema: ['El expediente con la receta y su fecha: el cuaderno que no se pierde', 'La orden de trabajo con su estado y el “ya están listos” que sale solo', 'El cajón de listos con días sin recoger y saldo, desde el celular'], dato: { valor: '10 a 15', rotulo: 'pares sin recoger al mismo tiempo en una óptica de una sucursal' } },

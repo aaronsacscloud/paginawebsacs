@@ -41,7 +41,7 @@ export const bannerMA = {
   eyebrow: 'SACS · Ropa de maternidad y lactancia',
   titulo: 'La clienta trae fecha.',
   resalte: 'Y se sabe desde el día uno.',
-  sub: 'La ficha con su fecha probable de parto y la semana calculada sola, la pregunta de si le van a programar cesárea —que recorre todos sus avisos dos semanas—, la maleta del hospital con la faja adentro en la 34-36, el aviso de la segunda faja a las cinco semanas, y el botón que apaga los avisos de una ficha sin borrar a la clienta — con un mismo inventario para tus tiendas, tu tienda en línea y tu WhatsApp.',
+  sub: 'La ficha con su fecha probable de parto y la semana calculada sola, la maleta del hospital con la faja adentro en la 34-36, y el botón que apaga los avisos de una ficha sin borrar a la clienta — con un mismo inventario para tus tiendas, tu tienda en línea y tu WhatsApp.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Boutique de maternidad moderna con los racks por trimestre, el maniquí con panza en la entrada y la ficha con fecha en la tablet del mostrador',
   avisos: [
@@ -163,7 +163,7 @@ export const seccionesMA: SuiteSeccion[] = [
     titulo: 'La maleta como paquete, con la faja adentro',
     texto: 'Un código que descuenta cada pieza de su existencia: camisón con apertura, bata, pantuflas, la faja —de cesárea o de parto natural, que son dos productos distintos— y la muda de salida de la mamá. El brasier de lactancia va apartado y se mide lo más tarde que se pueda, en la 36-38, porque medido antes se queda corto: se recoge medido. Fajas y brasieres llevan su propia matriz de talla, copa y medida de cintura.',
     bullets: ['Paquetes armados: la maleta del hospital, el kit de lactancia y el kit postparto de cesárea', 'Brasieres por talla y copa (34B, 36C) y fajas por medida, con aviso de qué tallas quedaron en cero antes del pico de nacimientos', 'Aviso de la segunda faja a las 4-6 semanas, una talla menos: la venta más fácil del giro y casi nadie la hace'],
-    visual: mockTicket('La maleta del hospital · semana 33-34', [['Camisón con apertura · M', '$560'], ['Faja postparto de cesárea', '$1,290'], ['Bata y pantuflas', '$450'], ['Muda de salida de la mamá', '$500'], ['Brasier de lactancia · apartado, se mide en la 35-36', 'pendiente']], ['Un solo ticket', '$2,800'], 'La faja va adentro, no después del parto. Ofrecerla al cuarto día es llegar a una venta que ya ocurrió'),
+    visual: mockTicket('La maleta del hospital · semana 33-34', [['Camisón con apertura · M', '$560'], ['Faja postparto de cesárea', '$1,290'], ['Bata y pantuflas', '$450'], ['Muda de salida de la mamá', '$500'], ['Brasier de lactancia · apartado, se mide en la 35-36 porque la cesárea está puesta en la 38', 'pendiente']], ['Un solo ticket', '$2,800'], 'La faja va adentro, no después del parto. Ofrecerla al cuarto día es llegar a una venta que ya ocurrió'),
   },
   {
     id: 'renta', tag: 'Ocasión',
@@ -269,7 +269,7 @@ export const pasosMA = [
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y sale la primera lista por semana de embarazo: quién va en 16, quién en 33-34 y quién ya se alivió — con las fichas en pausa apagadas desde el minuto uno.', img: `${IMG}/proceso-aviso.webp`, alt: 'Dueña revisando en su laptop la lista de clientas por semana de embarazo, con dos fichas apagadas en pausa' },
 ];
 
-export const ticketMA = { lineas: [{ n: 'Camisón con apertura · M', p: '$560' }, { n: 'Faja postparto de cesárea', p: '$1,290' }, { n: 'Bata y pantuflas', p: '$450' }, { n: 'Muda de salida de la mamá', p: '$500' }, { n: 'Brasier de lactancia · apartado, se mide en la 35-36', p: '—' }], total: '$2,800' };
+export const ticketMA = { lineas: [{ n: 'Camisón con apertura · M', p: '$560' }, { n: 'Faja postparto de cesárea', p: '$1,290' }, { n: 'Bata y pantuflas', p: '$450' }, { n: 'Muda de salida de la mamá', p: '$500' }, { n: 'Brasier de lactancia · apartado, se mide en la 35-36 porque la cesárea está puesta en la 38', p: '—' }], total: '$2,800' };
 
 export const escalaMA = [
   { n: '1 tienda', nombre: 'La boutique de la plaza', cambia: ['La dueña compra, vende, sube la historia y contesta el WhatsApp a las once de la noche', 'La lista de clientas vive en su memoria: sabe que “la de los gemelos ya va en la 32” porque se acuerda', 'El apartado, la renta y las fechas van en libreta, y la libreta no se acuerda de doscientas'], sistema: ['La ficha con fecha y con pausa, la matriz por talla y etapa y el apartado con saldo', 'Calendario de renta con tintorería bloqueada y tienda en línea para salir de su ciudad', 'Una caja, un teléfono y una impresora de etiquetas — y todo se mueve desde el celular'], dato: { valor: '27 semanas', rotulo: 'útiles por clienta: de la 14 a la 36, más la cuarentena. Y no se repiten' } },

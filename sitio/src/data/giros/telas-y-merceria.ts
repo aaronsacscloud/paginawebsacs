@@ -12,7 +12,7 @@
  * El eje de toda la página, y lo único que no cuentan las otras landings de moda: EN TELAS LAS
  * EXISTENCIAS NO SE SUMAN. Tres saldos de cinco, cuatro y tres metros no son doce metros, porque el
  * corte tiene que salir de una sola pieza y del mismo baño. Y de ahí sale el desarrollo: la vida de
- * la pieza, que se va muriendo corte por corte —de pieza a tramo, de tramo a saldo, de saldo a
+ * la pieza, que se va muriendo corte por corte —de pieza a saldo, de saldo a punta, de punta a
  * retazo por kilo—. La báscula NO mide metros: solo pesa el retazo; los metros se miden contra el
  * metro clavado o en la revisadora.
  *
@@ -28,7 +28,7 @@
  * metros por pieza, la alerta de tono que se acaba y el número de cuántas veces recuperas cada pieza.
  */
 import type { SuiteSeccion } from '../suite-ropa';
-import { mockMatriz, mockBarras, mockTicket, mockLista, mockCalendario } from './_mocks';
+import { mockBarras, mockTicket, mockLista, mockCalendario } from './_mocks';
 
 const IMG = '/images/giros/telas-y-merceria';
 
@@ -65,7 +65,7 @@ export const variantesTM = {
   eyebrow: 'Una sola tela',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“hay 12 metros de vino”.',
-  sub: 'La popelina no vive en el reporte: vive en piezas, y cada pieza trae su baño. Cuatro colores en cinco baños son veinte existencias distintas de una sola tela, y lo que ves en cada casilla son los metros que quedan de esa pieza — no un total que se pueda sumar.',
+  sub: 'La popelina no vive en el reporte: vive en piezas, y cada pieza trae su baño. Cuatro colores en cinco baños son veinte cosas distintas que contar, y lo que ves en cada casilla son los metros que quedan de esa pieza — no un total que se pueda sumar.',
   ejeA: ['Baño A', 'Baño B', 'Baño C', 'Baño D', 'Baño E'],
   filas: [
     { nombre: 'Vino', img: `${IMG}/prod-vino.webp`, alt: 'Pieza de popelina vino doblada en tabla' },
@@ -81,6 +81,7 @@ export const variantesTM = {
   ],
   unidad: 'metros',
   genero: 'm' as const,
+  umbralBajo: 1,
   leyendas: ['De aquí sale un corte', 'Último saldo', 'De ese baño no hay'] as [string, string, string],
   remate: 'La clienta pedía seis metros de vino para un corte de vestido. Hay cinco, cuatro y tres —doce— y son tres baños distintos: doce metros, y ninguna venta. En telas las existencias no se suman.',
 };
@@ -97,7 +98,7 @@ export const cortinaTM = {
     { que: '“¿Cuánto te queda del vino?”', donde: 'Se escanea la tabla de la pieza', dato: 'Pieza 4531, tono A: quedan 3.00 m. Y la 4488, cerrada de 50, es del tono B: no se mezclan' },
     { que: '¿La pieza trajo sus metros?', donde: 'La recepción midiendo', dato: 'Facturados 50, medidos 47.50: faltan 2.50 y el reclamo al proveedor sale el mismo día' },
     { que: '¿En cuál tienda está el marino?', donde: 'Existencias por sucursal, pieza por pieza', dato: 'En la del norte hay 6 piezas cerradas del mismo tono; traspaso con folio, no “de ese color”' },
-    { que: '¿Ya es retazo o todavía sale un corte?', donde: 'El aviso de último saldo', dato: '1.20 m de popelina: abajo del mínimo de su familia. Descuento de último saldo con clave, o pasa a retazo por kilo' },
+    { que: '¿Ya es retazo o todavía sale un corte?', donde: 'El aviso de último saldo', dato: '0.80 m de popelina: abajo del mínimo de su familia. Descuento de último saldo con clave, o pasa a retazo por kilo' },
   ],
   pieDespues: 'La misma empleada, la misma clienta. Ya no desenrolla para contar: escanea.',
 };
@@ -141,16 +142,16 @@ export const seccionesTM: SuiteSeccion[] = [
   {
     id: 'pieza', tag: 'Inventario',
     titulo: 'La pieza, con su folio, su tono y sus metros',
-    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina lila”: hay la pieza 4517 con 4.40 del tono C y la 4488 cerrada de 50 del tono B. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
+    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina vino”: hay la pieza 4517 con 4.40 del tono C y la 4488 cerrada de 50 del tono B. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
     bullets: ['Folio, tono, ancho y metros por pieza; las cerradas contadas aparte de los saldos', 'Etiqueta con código de barras en la tabla: la de mostrador escanea la pieza y no teclea el color', 'Dos piezas del mismo color y distinto baño no se ofrecen juntas para un mismo corte'],
-    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque sumen doce'),
+    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque entre las tres sumen 12.40'),
   },
   {
     id: 'mostrador', tag: 'Mesa de corte',
     titulo: 'El metro con fracción, y la tela con sus avíos en una sola nota',
     texto: 'Se vende como se pide: metro y cuarto, dos y medio, ochenta centímetros. Se escanea la pieza, se mide contra el metro clavado, se pregunta “¿se lo rasgo o se lo corto?”, se da el dedito de más y el corte y la nota son lo mismo. Y en el mismo cobro entran los avíos: forro, cierre, hilo, entretela, botones y listón.',
     bullets: ['Venta por metro con centavos de metro desde la tablet del mostrador', 'La receta de avíos guardada por prenda, para volver a cobrar el juego completo igual', 'Menudeo, medio mayoreo desde 10 metros, mayoreo y pieza cerrada: el precio salta solo', 'Descuento de último saldo con clave de la encargada, y tela cortada bloqueada para devolución'],
-    visual: mockTicket('Una nota · la tela y sus avíos', [['Chifón vino · 2.50 m · pieza 4471', '$437'], ['Forro · 2.50 m', '$162'], ['Cierre invisible 50 · color 415', '$28'], ['Hilo · 2 carretes del tono', '$36'], ['Entretela · 0.60 m', '$21'], ['Botones · 6 pz del cartón', '$30'], ['Listón del 5 · 1.20 m', '$14']], ['Total', '$728'], 'Cuatro unidades distintas —metro, pieza, cartón y carrete— en un solo cobro'),
+    visual: mockTicket('Una nota · la tela y sus avíos', [['Chifón vino · 2.50 m · pieza 4471', '$350'], ['Forro · 2.50 m', '$162'], ['Cierre invisible 50 · color 415', '$28'], ['Hilo · 2 carretes del tono', '$36'], ['Entretela · 0.60 m', '$21'], ['Botones · 6 pz del cartón', '$30'], ['Listón del 5 · 1.20 m', '$14']], ['Total', '$641'], 'Cuatro unidades distintas —metro, pieza, cartón y carrete— en un solo cobro'),
   },
   {
     id: 'recepcion', tag: 'Recepción y costo',
@@ -178,7 +179,7 @@ export const seccionesTM: SuiteSeccion[] = [
     titulo: '“¿Tiene el chifón en vino? Mándeme foto”',
     texto: 'La de mostrador extiende el tramo, lo saca a la luz de la puerta —porque con el foco el tono miente—, lo fotografía y contesta desde el inventario: “quedan 8 metros del tono A en centro”. Cobra por transferencia y manda los metros cortados con guía. Y el taller pide su cotización por 40 piezas, recibe remisiones todo el mes y una sola factura al corte.',
     bullets: ['Existencias por sucursal, pieza por pieza y con su tono, para contestar sin llamar', 'Apartado de pieza o saldo con anticipo y fecha: si no se liquida en 8 o 15 días, se libera solo', 'Crédito a costureras y talleres con saldo, cobro de los sábados y corte de mes', 'Tienda en línea por metro con mínimo y pasos de 0.25, para que nadie venda 8 m de una pieza que tiene 6'],
-    visual: mockLista('El WhatsApp de hoy', [['Chifón vino · pieza 4471 · quedan 3.00 m en centro', 'Foto enviada', 'ok'], ['Gabardina marino · 40 piezas cerradas · taller El Roble', 'Cotización', 'aviso'], ['Sra. Robles · apartó pieza de satín · vence el jueves', 'Con anticipo', 'ok'], ['Pedido en línea · 2.25 m de popelina lila · Mérida', 'Guía lista', 'gris']], 'Cada chat queda en la ficha de la costurera, con lo que compra y cada cuándo'),
+    visual: mockLista('El WhatsApp de hoy', [['Chifón vino · pieza 4388 · quedan 8.00 m del tono A en centro', 'Foto enviada', 'ok'], ['Gabardina marino · 40 piezas cerradas · taller El Roble', 'Cotización', 'aviso'], ['Sra. Robles · apartó pieza de satín · vence el jueves', 'Con anticipo', 'ok'], ['Pedido en línea · 2.25 m de popelina lila · Mérida', 'Guía lista', 'gris']], 'Cada chat queda en la ficha de la costurera, con lo que compra y cada cuándo'),
   },
 ];
 
@@ -262,7 +263,7 @@ export const pasosTM = [
   { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados ya migrados: ninguna modista llega por su pieza y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-luz.webp`, alt: 'Clienta y empleada sacando un tramo de tela a la luz de la puerta para ver el tono de verdad' },
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de piezas del mismo tono entre la del centro y la del norte ya corre desde el primer fin de semana.', img: `${IMG}/proceso-conteo.webp`, alt: 'Conteo de enero en una tienda de telas: se miden los saldos contra el metro clavado y se capturan en la tablet' },
 ];
-export const ticketTM = { lineas: [{ n: 'Chifón vino · 2.50 m · pieza 4471', p: '$437' }, { n: 'Forro · 2.50 m', p: '$162' }, { n: 'Cierre invisible 50 · color 415', p: '$28' }, { n: 'Hilo · 2 carretes · botones · listón', p: '$80' }], total: '$707' };
+export const ticketTM = { lineas: [{ n: 'Chifón vino · 2.50 m · pieza 4471', p: '$350' }, { n: 'Forro · 2.50 m', p: '$162' }, { n: 'Cierre invisible 50 · color 415', p: '$28' }, { n: 'Hilo · 2 carretes · botones · listón', p: '$80' }], total: '$620' };
 
 export const escalaTM = [
   { n: '1 tienda', nombre: 'La tienda del centro', cambia: ['La dueña compra, mide, corta, cobra y a veces fía', 'La memoria es el inventario: sabe de cabeza cuánto le queda del vino y de qué tono', 'El saldo que nadie apuntó, la pieza que llegó corta y la nota con .25 hecha a mano'], sistema: ['Metro con fracción, folio y metros por pieza, y la venta con avíos en una sola nota', 'Recepción midiendo, para dejar de regalar dos metros y medio por pieza', 'La libreta del fiado que suma sola'], dato: { valor: '1.48 veces', rotulo: 'lo que hoy recuperas de cada pieza; con el aviso a tiempo, 1.63' } },

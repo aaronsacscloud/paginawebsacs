@@ -27,7 +27,7 @@ const IMG = '/images/giros/bolsas-y-accesorios';
 export const bannerBO = {
   eyebrow: 'SACS · Bolsas y accesorios de piel',
   titulo: 'La bolsa no tiene talla.',
-  resalte: 'Tiene lote.',
+  resalte: 'Tiene color, piel y lote.',
   sub: 'El modelo con sus colores y su piel, el lote con su costo por decímetro y lo que le queda, el consumo de cada modelo, el vale de piel de la maquila, la nota de reparación con estatus y el grabado de iniciales en el ticket — con un mismo inventario para tus tiendas, tu Instagram y tu WhatsApp.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Boutique moderna de bolsas de piel con la pared de un modelo en todos sus colores y la ficha del lote en la tablet del mostrador',
@@ -57,13 +57,13 @@ export const variantesBO = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“la Tote camel”.',
-  sub: 'Aquí no hay talla: hay color y hay piel. El modelo vive años y lo que se repone es el color, y cada color nace de un lote con su tono, sus cicatrices y su precio por decímetro. Cuatro colores en cinco pieles son veinte existencias de un solo modelo, y al camel le quedan 60 decímetros.',
+  sub: 'Aquí no hay talla: hay color y hay piel. El modelo vive años y lo que se repone es el color, y cada color nace de un lote con su tono, sus cicatrices y su precio por decímetro. Cuatro colores en cinco pieles son veinte existencias de un solo modelo, y al camel del lote 17 le quedan 60 decímetros.',
   ejeA: ['Vaqueta', 'Napa', 'Nobuk', 'Gamuza', 'Grabada'],
   filas: [
-    { nombre: 'Camel · 60 dm²', img: `${IMG}/prod-camel.webp`, alt: 'Bolsa Tote de piel en camel, vaqueta natural' },
-    { nombre: 'Negro · 1,400 dm²', img: `${IMG}/prod-negro.webp`, alt: 'Bolsa Tote de piel negra, el básico que nunca se liquida' },
-    { nombre: 'Vino · 180 dm²', img: `${IMG}/prod-vino.webp`, alt: 'Bolsa Tote de piel en vino, color de temporada' },
-    { nombre: 'Hueso · 1,200 dm²', img: `${IMG}/prod-hueso.webp`, alt: 'Bolsa Tote de piel en hueso, colección de primavera' },
+    { nombre: 'Camel · lote 17: quedan 60 dm²', img: `${IMG}/prod-camel.webp`, alt: 'Bolsa Tote de piel en camel, vaqueta natural' },
+    { nombre: 'Negro · lote 21: quedan 1,400 dm²', img: `${IMG}/prod-negro.webp`, alt: 'Bolsa Tote de piel negra, el básico que nunca se liquida' },
+    { nombre: 'Vino · lote 19: quedan 180 dm²', img: `${IMG}/prod-vino.webp`, alt: 'Bolsa Tote de piel en vino, color de temporada' },
+    { nombre: 'Hueso · lote 22: quedan 1,200 dm²', img: `${IMG}/prod-hueso.webp`, alt: 'Bolsa Tote de piel en hueso, colección de primavera' },
   ],
   matriz: [
     [0, 2, 0, 1, 0],
@@ -73,6 +73,7 @@ export const variantesBO = {
   ],
   unidad: 'piezas',
   genero: 'f' as const,
+  umbralBajo: 1,
   leyendas: ['Con existencia', 'Queda la última', 'Agotada'] as [string, string, string],
   remate: 'El reporte dice que tienes 36 “Totes”. No dice que el camel de vaqueta —el de la foto que sube en Instagram— ya se fue, ni que lo que queda es del lote nuevo y sale medio tono más oscuro.',
 };
@@ -87,7 +88,7 @@ export const cortinaBO = {
   libreta: ['Camel — ¿lote 14 o 17?', 'Bolsa Sra. Mora — ¿ya la trajo el taller?', 'Maquila Cruzada — ¿cuánta piel regresó?'],
   filas: [
     { que: '“¿Es del mismo camel?”', donde: 'Se escanea la etiqueta', dato: 'Tote camel, lote 17, $12.80 el decímetro. Las dos de la pared son del 17; la del aparador es del 14 y va a rotación' },
-    { que: '¿Cuánto queda del lote 17?', donde: 'La ficha del lote', dato: '60 dm² de 1,500. Alcanza para una Tote de 45 o para siete carteras de 8. Después, ese camel se despide' },
+    { que: '¿Cuánto queda del lote 17?', donde: 'La ficha del lote', dato: '60 dm² de los 5,000 que trajo la partida. Alcanza para una Tote de 45 o para siete carteras de 8. Después, ese camel se despide' },
     { que: '¿Cuánta piel regresó de maquila?', donde: 'El vale de la orden', dato: '1,500 dm² entregados, 34 bolsas y 260 dm² devueltos: faltan 60 dm² por justificar y se le cobran' },
     { que: '¿Ya está la bolsa de la Sra. Mora?', donde: 'La nota de reparación', dato: 'Cierre YKK de 30 cm, en garantía con su nota, en el taller desde el 4; sale el jueves y se le avisa por WhatsApp' },
   ],
@@ -170,7 +171,7 @@ export const seccionesBO: SuiteSeccion[] = [
     titulo: 'La boutique, la consignación y el córner en departamental',
     texto: 'La boutique cada vez compra menos y cada vez pide más a consignación: la bolsa y el riesgo son míos, parados en otra ciudad. El sistema separa lo vendido a crédito de lo dejado en consignación, concilia la liquidación del mes y, en departamental, la del córner con su comisión y sus notas de cargo.',
     bullets: ['Precio de mayoreo con su piso: abajo del costo real del lote, el sistema no deja cerrar', 'Consignación: lo dejado, lo vendido, lo liquidado y lo que sigue siendo mío', 'Concesión en departamental con cita en CEDIS, su código de etiqueta y su liquidación conciliada'],
-    visual: mockTicket('Pedido de mayoreo · boutique de Querétaro', [['6 Tote camel · lote 23 · $1,245 c/u con IVA', '$7,470'], ['Precio sin IVA por pieza', '$1,073'], ['Costo real por pieza · lote 23', '$1,139'], ['Diferencia por pieza', '−$66']], ['Piso de precio', '$1,322'], 'Con este lote el pedido se vende abajo del costo. Para dejar 25 % hay que cobrar $1,519 sin IVA'),
+    visual: mockTicket('Pedido de mayoreo · boutique de Querétaro', [['6 Tote camel · lote 23 · $1,245 c/u con IVA', '$7,470'], ['Precio sin IVA por pieza', '$1,073'], ['Costo real por pieza · lote 23', '$1,139'], ['Diferencia por pieza', '−$66']], ['Piso de precio con IVA', '$1,322'], 'Con este lote el pedido se vende abajo del costo. Para dejar 25 % hay que cobrar $1,519 sin IVA'),
   },
 ];
 
