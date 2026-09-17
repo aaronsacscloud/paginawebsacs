@@ -70,7 +70,13 @@ const CTL: any = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
 };
 
-const NO_MANUALES = new Set(['cliente', 'evangelista']);
+/* `cliente` SALIÓ de aquí el 17-sep: ya se puede poner a mano, pero pidiendo
+   la cuenta (ver `LigarCuenta`). Quedó bloqueado por olvido al hacer el cambio
+   —el servidor lo aceptaba y la pantalla no dejaba elegirlo—, así que el
+   diálogo de «relacionar o crear» era inalcanzable. Lo cazó el QA.
+   `evangelista` sí sigue fuera: eso se gana con el tiempo, no se decide en una
+   conversación. */
+const NO_MANUALES = new Set(['evangelista']);
 const ETAPAS_INBOX = LIFECYCLE.map(e => ({ id: e.id, label: e.label, bloqueada: NO_MANUALES.has(e.id) }));
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir, ancla }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
@@ -632,7 +638,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                «Cliente · lo pone». La explicación hace falta cuando quieres
                elegirla y no puedes, no cuando ya la tienes. */
             <option key={e.id} value={e.id} disabled={e.bloqueada && e.id !== etapaId}>
-              {e.label}{e.bloqueada && e.id !== etapaId ? ' · lo pone el cobro' : ''}
+              {e.label}{e.bloqueada && e.id !== etapaId ? ' · lo gana con el tiempo' : ''}
             </option>
           ))}
         </select>}
