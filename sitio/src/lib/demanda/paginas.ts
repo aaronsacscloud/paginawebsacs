@@ -165,6 +165,35 @@ export async function inventariar(limite = 60): Promise<{ vistas: number; nuevas
 
   const { error: errConteo } = await supabase.rpc('de_recontar_enlaces');
   if (errConteo) throw new Error(`[paginas] no se pudieron recontar los enlaces: ${errConteo.message}`);
+
+  /* Las que YA NO están en el sitemap dejan de ser indexables.
+
+     El rastreador solo visita URLs del sitemap, así que una página que sale de
+     él se queda con su última foto **para siempre** — y esa foto sigue
+     generando hallazgos que nadie puede resolver, porque la página ya no se
+     vuelve a mirar.
+
+     Pasó hoy: al poner `/app/dashboard` e `/app/inbox` en la lista de no
+     indexables salieron del sitemap, y sus hallazgos de «sin H1» y «sin meta»
+     quedaron atascados en abierto con datos de la víspera. La orden de trabajo
+     mandaba a escribirle una meta descripción al inbox de la aplicación.
+
+     Se marca en `en_sitemap` y NO en `indexable`. La primera versión usó
+     `indexable` y el efecto fue inmediato: la regla `noindex_en_sitemap` empezó
+     a acusar de estar-en-el-sitemap-con-noindex a páginas que acababan de SALIR
+     del sitemap. Siete hallazgos de severidad alta diciendo lo contrario de la
+     verdad. Un campo que significa dos cosas acaba mintiendo sobre las dos. */
+  const enSitemap = new Set(urls);
+  const desaparecidas = [...mapa.keys()].filter(u => !enSitemap.has(u));
+  if (desaparecidas.length) {
+    for (let i = 0; i < desaparecidas.length; i += 150) {
+      const { error } = await supabase.from('de_paginas')
+        .update({ en_sitemap: false, updated_at: new Date().toISOString() })
+        .in('url', desaparecidas.slice(i, i + 150));
+      if (error) console.error(`[paginas] no se pudieron marcar las que salieron del sitemap: ${error.message}`);
+    }
+  }
+
   return out;
 }
 

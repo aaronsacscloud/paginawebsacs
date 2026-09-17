@@ -38,8 +38,27 @@ export function reglas(paginas: any[]): Hallazgo[] {
 
     // Estar en el sitemap y pedir que no te indexen es contradecirse: el
     // sitemap dice «mírame» y la etiqueta dice «ignórame».
-    if (p.indexable === false)
+    // Solo es contradicción si la página SIGUE en el sitemap. Una que salió y
+    // además pide noindex es simplemente coherente.
+    if (p.indexable === false && p.en_sitemap !== false)
       h.push({ tipo: 'noindex_en_sitemap', severidad: 'alta', url, detalle: { robots: 'noindex' } });
+
+    /* A partir de aquí, TODO son reglas sobre cómo se ve la página en un
+       buscador. Si la página pide no ser indexada, ninguna aplica: el título,
+       la meta y el H1 existen para el resultado de búsqueda, y esa página no va
+       a tener resultado de búsqueda.
+
+       Sin este corte, la lista se llenaba de trabajo imposible: cuatro de los
+       siete hallazgos de severidad media eran `/app/dashboard` y `/app/inbox`
+       —pantallas de la aplicación que acababan de ponerse en `noindex`
+       precisamente porque no son contenido— pidiendo un H1 y una meta
+       descripción que no sirven para nada.
+
+       Mandar a alguien a escribirle una meta descripción al inbox de la
+       aplicación es gastarle el rato en algo que, si lo hace bien, no cambia
+       nada. Y una lista con trabajo inútil deja de leerse entera. */
+    // Fuera del sitemap o con noindex: ninguna regla de buscador aplica.
+    if (p.indexable === false || p.en_sitemap === false) continue;
 
     // ── Título ─────────────────────────────────────────────────────────────
     if (!p.titulo) h.push({ tipo: 'sin_titulo', severidad: 'alta', url, detalle: {} });
@@ -108,7 +127,7 @@ const normaliza = (u: string) => String(u || '').replace(/\/$/, '').replace(/^ht
 
 export async function auditar(): Promise<{ abiertos: number; nuevos: number; resueltos: number; por_severidad: Record<string, number> }> {
   const { data: paginas } = await supabase.from('de_paginas')
-    .select('url, titulo, h1, meta_desc, canonical, estado_http, indexable, palabras, huerfana, enlaces_out, schema_tipos')
+    .select('url, titulo, h1, meta_desc, canonical, estado_http, indexable, en_sitemap, palabras, huerfana, enlaces_out, schema_tipos')
     .not('rastreada_at', 'is', null);
 
   const hallazgos = reglas(paginas || []);
