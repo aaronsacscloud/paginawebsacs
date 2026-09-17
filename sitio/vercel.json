@@ -234,6 +234,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/de-latido",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/cron/de-ciclo?tipo=diario",
       "schedule": "0 6 * * *"
     },

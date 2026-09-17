@@ -871,9 +871,93 @@ algo que no está roto.
 **Usa `npm run build:local`**, que borra `.vercel/output` antes. Tres minutos
 por build, y ya lo pagué dos veces en esta sesión.
 
+---
+
+## Etapa 6 · parte B (17-sep-2026) — el latido, y dos controles que no controlaban
+
+### 🔴 El modo simulación era un interruptor sin efecto
+
+«Modo simulación (decide y muestra, sin publicar)» solo marcaba la fila del
+ciclo y cambiaba su clave de idempotencia. **Ninguna función que publica,
+revierte, retira o edita una página consultaba esa bandera.** Quien lo
+encendiera para ir con cuidado habría publicado igual.
+
+Un control de seguridad que no controla nada es peor que no tenerlo: el que no
+existe se nota, y el que miente da permiso para confiarse.
+
+Lo mismo con el **apagador**: `encolar()` lo respeta, así que no entra trabajo
+nuevo — pero una publicación disparada desde la API no pasa por la cola. El
+dueño que aprieta «Apagar el motor» espera que deje de escribir, no que deje de
+encolar.
+
+**Los dos viven ahora en `src/lib/demanda/salida.ts`, en UNA pregunta:** ¿puedo
+afectar al mundo de afuera ahora mismo? Repartir esa comprobación por cada
+función que escribe es garantizar que la próxima se olvide.
+
+Cubre `publicar`, `retirar` y —el agujero más fácil de no ver— **`enlaces`, que
+edita el cuerpo de páginas ya publicadas**: es un efecto hacia afuera tanto como
+publicar, aunque no lo parezca por llamarse «enlaces».
+
+`revertir` NO se frena por simulación: deshacer un daño no es afectar al mundo,
+es dejar de afectarlo. Sí respeta el apagador, que es otra decisión.
+
+Probado de punta a punta sobre contenido real: simulación → no tocó nada y dijo
+qué habría hecho; normal → publicó; apagado → no publicó. El artículo se
+restauró a su versión anterior.
+
+### El latido (`/api/cron/de-latido`, cada 30 min)
+
+Un sistema autónomo no muere gritando: **se queda callado**. Deja de tomar
+trabajo, o lo toma y no lo acaba — y todas esas formas de estar muerto se ven
+igual desde fuera que estar tranquilo.
+
+**Es un cron PROPIO y no un paso del ciclo**, y esa es la decisión que importa:
+un vigilante que se ejecuta desde la cola no puede avisar cuando el muerto es la
+cola.
+
+Cuatro signos, con topes generosos a propósito (un latido que avisa por
+cualquier cosa se silencia a la semana, y entonces no avisa por nada):
+
+1. **El worker termina trabajo** — solo cuenta si hay trabajo esperando.
+2. **El ciclo diario abre** — 26 h de margen: un despliegue a las 6 se come la
+   invocación y esperar al día siguiente es lo correcto.
+3. **El motor se revisa a sí mismo.**
+4. **Nada se queda colgado** — leases vencidos son el síntoma de un worker que
+   se muere a media acción.
+
+Avisa **como mucho una vez al día** (la clave lleva la fecha): un motor callado
+tres días avisando cada media hora convierte la campana en ruido.
+
+El panel va ARRIBA de todo en la pantalla Sistema:
+https://code.sacscloud.com/shots/4bb8538b9f6fc88e.png
+
+### 🔴 Y el autodiagnóstico encontró un bug a la primera
+
+`diagnosticar()` agrupa las acciones muertas de 24 h y enseña el error más
+repetido. La primera vez que se corrió:
+
+    «agrupar» se rindió 4 veces en 24 h: DELETE requires a WHERE clause
+
+**`agrupar` llevaba DOS DÍAS muriendo en producción** (16 y 17 de septiembre, 3
+intentos cada día) y nadie lo había visto. La causa: `delete from _pares;`
+dentro de `de_refundir_clusters`. Supabase trae encendida la extensión que
+bloquea UPDATE y DELETE sin WHERE, **y también aplica dentro de una función y
+sobre una tabla temporal**.
+
+Es la SEGUNDA vez que este proyecto tropieza con eso (la primera fue un UPDATE
+en `de_recontar_enlaces`, que falló en silencio). Queda como regla: **en este
+proyecto UPDATE y DELETE siempre llevan WHERE**, aunque la intención sea tocar
+todas las filas y aunque la tabla sea temporal.
+
+Arreglado con `truncate` —hace lo que se quiere, es más rápido, y no se puede
+«simplificar» de vuelta sin que se note—. Al correrlo: **16 problemas duplicados
+fundidos** que llevaban dos días acumulándose (1,173 → 1,157).
+
+Sin el latido, el síntoma —clusters que se acumulan— habría tardado semanas en
+ser evidente.
+
 ### Lo que sigue
 
-1. Latido y autodiagnóstico (el motor avisa cuando se queda callado).
-2. Modo simulación de punta a punta.
-3. Manual del motor.
-4. Operador de código automático.
+1. Manual del motor.
+2. Operador de código automático.
+3. Experimentos (A/B de títulos y formatos) y Demand Capture Score.

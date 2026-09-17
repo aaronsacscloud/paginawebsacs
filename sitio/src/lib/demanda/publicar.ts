@@ -1,5 +1,6 @@
 // DEMAND ENGINE · leer y publicar contenido.
 import { supabase } from '../supabase';
+import { frenoDeSalida } from './salida';
 import { aHtml, palabras, schemaDeCuerpo, indice, aTexto, type Bloque } from './bloques';
 import { SITIO, ENTIDAD_ID } from '../../data/entidad';
 
@@ -77,11 +78,16 @@ export async function listaPublicada(): Promise<{ seccion: string; slug: string;
  * update, no una arqueología. Y sincroniza el inventario de páginas, porque el
  * enlazado interno y la canibalización no distinguen quién escribió qué.
  */
-export async function publicar(id: string, motivo = 'publicación'): Promise<{ url: string; version: number }> {
+export async function publicar(id: string, motivo = 'publicación'): Promise<{ url: string; version: number; simulado?: string }> {
   const { data: c, error } = await supabase.from('de_contenido').select('*').eq('id', id).maybeSingle();
   if (error || !c) throw new Error('no existe ese contenido');
   if (!['aprobado', 'publicado', 'refrescar'].includes(c.estado))
     throw new Error(`no se puede publicar en estado «${c.estado}»: primero tiene que pasar las auditorías`);
+
+  /* El freno va ANTES de tocar nada —ni la versión, ni el estado—. Si se
+     comprobara al final, la simulación ya habría escrito la mitad. */
+  const freno = await frenoDeSalida(`publicado ${c.seccion}/${c.slug}`);
+  if (freno) return { url: `${SITIO}/${c.seccion}/${c.slug}/`, version: c.version, simulado: freno.motivo };
 
   if (c.estado === 'publicado') {
     const { error: eVer } = await supabase.from('de_contenido_versiones').insert({
@@ -123,6 +129,17 @@ export async function revertir(id: string): Promise<{ version: number }> {
     .select('*').eq('contenido_id', id).order('version', { ascending: false }).limit(1).maybeSingle();
   if (!v) throw new Error('no hay versión anterior a la que volver');
 
+  /* Revertir NO se frena por simulación: deshacer un daño no es «afectar al
+     mundo de afuera», es dejar de afectarlo. Pero sí respeta el apagador, que
+     es una decisión distinta: con el motor apagado, quien decide qué se
+     restaura es una persona.
+
+     El apagador se comprueba a mano y no con `frenoDeSalida` justamente para
+     poder hacer esta distinción. */
+  const { leerConfig: leerCfg } = await import('./config');
+  const cfgRev = await leerCfg();
+  if (cfgRev.kill_switch) throw new Error('[revertir] El motor está apagado: la reversión la tiene que disparar una persona.');
+
   const { error } = await supabase.from('de_contenido').update({
     titulo: v.titulo, cuerpo: v.cuerpo, brief: v.brief, auditorias: v.auditorias,
     version: v.version, actualizado_at: new Date().toISOString(),
@@ -140,6 +157,12 @@ export async function revertir(id: string): Promise<{ version: number }> {
 }
 
 export async function retirar(id: string, motivo: string): Promise<void> {
+  // Retirar sí pasa por el freno: quitar una página del sitio es un cambio
+  // visible para cualquiera, y en simulación el dueño espera ver qué se
+  // retiraría, no encontrarse la página fuera.
+  const freno = await frenoDeSalida(`retirado el contenido ${id} (${motivo})`);
+  if (freno) throw new Error(freno.motivo);
+
   const { error } = await supabase.from('de_contenido').update({
     estado: 'retirado', retirado_at: new Date().toISOString(), actualizado_at: new Date().toISOString(),
   }).eq('id', id);

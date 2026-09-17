@@ -48,6 +48,17 @@ export const GET: APIRoute = async () => {
        Que la pantalla Sistema enseñe la autonomía sin enseñar qué falta para
        la siguiente deja al dueño con un número —«nivel 2»— y sin la pregunta
        útil, que es: ¿qué tendría que pasar para que sea 3? */
+    /* El latido va en el mismo viaje. La pantalla Sistema se abre para saber
+       «¿está vivo?», y ese es literalmente el nombre de esto: enseñar la salud
+       (un 85/100) sin enseñar qué signo falla deja al dueño con una nota y sin
+       la frase. */
+    const { tomar, diagnosticar } = await import('../../../../lib/demanda/latido');
+    const latido = await tomar().catch(e => {
+      console.error(`[estado] el latido no se pudo tomar: ${e?.message}`);
+      return null;
+    });
+    const pistas = latido && !latido.vivo ? await diagnosticar(latido).catch(() => []) : [];
+
     const { evaluar } = await import('../../../../lib/demanda/autonomia');
     const rampa = await evaluar().catch(e => {
       // Que la rampa falle no puede dejar sin pantalla al dueño: Sistema es
@@ -60,6 +71,7 @@ export const GET: APIRoute = async () => {
       ok: true,
       config: cfg,
       rampa,
+      latido: latido ? { ...latido, pistas } : null,
       presupuesto: pres,
       cola,
       ciclos: ciclos.data || [],

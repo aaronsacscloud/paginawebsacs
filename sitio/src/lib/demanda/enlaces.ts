@@ -9,6 +9,7 @@
 // enlaces internos son el mapa que le dice qué apartado responde qué — una
 // página suelta se lee como un callejón sin salida.
 import { supabase } from '../supabase';
+import { frenoDeSalida } from './salida';
 import { unEmbedding, aVector, hayEmbeddings } from './embeddings';
 import { registrar } from './handlers';
 import { SITIO } from '../../data/entidad';
@@ -96,7 +97,20 @@ export async function enlazarDesdeContenido(contenidoId: string, max = 4): Promi
     { t: 'h2', texto: 'Relacionado' },
     { t: 'lista', items: utiles.map((x: any) => `[${x.titulo.replace(/\s*[|·—-]\s*Sacs.*$/i, '').trim()}](${x.url.replace(SITIO, '')})`) },
   ];
-  await supabase.from('de_contenido').update({ cuerpo: bloques, actualizado_at: new Date().toISOString() }).eq('id', contenidoId);
+  /* Esto EDITA una página publicada: `de_contenido` es de donde se sirve, así
+     que el cambio se ve en el sitio en cuanto se escribe. Es un efecto hacia
+     afuera tanto como publicar, aunque no lo parezca por llamarse «enlaces».
+     Que no pasara por el freno era el agujero más fácil de no ver del modo
+     simulación. */
+  const freno = await frenoDeSalida(`agregado ${utiles.length} enlace(s) relacionados a ${c.seccion}/${c.slug}`);
+  if (freno) return 0;
+
+  const { error } = await supabase.from('de_contenido')
+    .update({ cuerpo: bloques, actualizado_at: new Date().toISOString() }).eq('id', contenidoId);
+  // Sin esto, los enlaces «se aplicaban» y la página seguía igual — y el motor
+  // lo contaba como hecho, así que tampoco lo reintentaba.
+  if (error) throw new Error(`[enlaces] no se pudieron guardar los relacionados de ${c.slug}: ${error.message}`);
+
   return utiles.length;
 }
 

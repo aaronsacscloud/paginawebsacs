@@ -81,6 +81,39 @@ export default function DemandaSistema() {
 
   return (
     <div style={{ ...WRAP, ...(isMobile ? { padding: '16px 16px 80px' } : {}) }}>
+      {/* EL LATIDO · lo primero de la pantalla, antes que cualquier pestaña.
+          Un sistema autónomo no muere gritando: se queda callado. «Salud
+          85/100» no distingue tranquilo de muerto; «el worker lleva 3 h sin
+          terminar nada y hay 12 esperando» sí. */}
+      {e.latido ? (
+        <Tarjeta franja={e.latido.vivo ? P.verde : P.rojo} style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: e.latido.vivo ? 0 : 10 }}>
+            <span style={{
+              width: 9, height: 9, borderRadius: '50%',
+              background: e.latido.vivo ? P.verdeTinta : P.rojoTinta, flexShrink: 0,
+            }} />
+            <strong style={{ fontSize: 14, color: P.tinta }}>
+              {e.latido.vivo ? 'El motor está latiendo' : 'El motor no está latiendo bien'}
+            </strong>
+            <span style={{ fontSize: 12.5, color: P.suave }}>
+              {e.latido.signos.filter((s: any) => s.bien).length} de {e.latido.signos.length} signos bien
+            </span>
+          </div>
+          {!e.latido.vivo ? (
+            <ul style={{ margin: '0 0 0 2px', padding: 0, listStyle: 'none', display: 'grid', gap: 5 }}>
+              {e.latido.signos.filter((s: any) => !s.bien).map((s: any, i: number) => (
+                <li key={i} style={{ fontSize: 13, color: P.rojoTinta }}>
+                  <strong>{s.que}:</strong> <span style={{ color: P.texto }}>{s.detalle}</span>
+                </li>
+              ))}
+              {(e.latido.pistas || []).map((x: string, i: number) => (
+                <li key={'p' + i} style={{ fontSize: 12.5, color: P.suave, paddingLeft: 12 }}>· {x}</li>
+              ))}
+            </ul>
+          ) : null}
+        </Tarjeta>
+      ) : null}
+
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 21, color: P.tinta }}>Sistema</h2>
