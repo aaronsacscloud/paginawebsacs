@@ -24,7 +24,7 @@
 // arrastrar dependencias del navegador para pintar un correo.
 import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE, waLink } from '../whatsapp';
 import { operacionDe, paginaDe } from './abm-giros';
-import { alcanceDe, paisDe } from './abm-paises';
+import { alcanceDe, paisDe, regionDe } from './abm-paises';
 
 const MORADO = '#9B8CFA';
 const MORADO_TINTA = '#5B4BD6';
@@ -206,8 +206,20 @@ function invitacionPagina(nombre: string): string {
   return `Y para ver más detalles de lo que hacemos para ${nombre}, la página completa`;
 }
 
-/** La oferta de esta cuenta. `demo` es el caso normal y usa la frase del dueño. */
+/** La oferta de esta cuenta. `demo` es el caso normal y usa la frase del dueño.
+ *
+ *  España va aparte (17-sep-2026). Su cadencia entera está escrita al revés de
+ *  una demo: no ofrece que le enseñemos el producto, ofrece media hora de la
+ *  que normalmente se cobra, y quien la da es quien conoce el módulo por
+ *  dentro. Firmar esos ocho correos con un bloque que grita «DEMO EN LÍNEA ·
+ *  AGENDAR LA DEMO» los desmiente en la última línea — el mismo choque que ya
+ *  se arregló para las rutas de aliados. */
 function oferta(c: Cierre): Oferta {
+  if (regionDe(c.pais) === 'espana' && String(c.ruta || 'demo') === 'demo') return {
+    titulo: 'Media hora con quien lo conoce por dentro',
+    boton: 'Reservar la media hora',
+    frase: (giro?: string | null) => `Es el rato que reservamos para consultoría de pago y con usted no lo cobramos: nos cuenta cómo trabaja hoy y le montamos su operación de ${operacionDe(giro)} dentro del sistema, con sus modelos y sus fechas.`,
+  };
   return OFERTAS[String(c.ruta || 'demo')] || {
     titulo: 'Demo en línea · 30 minutos',
     boton: 'Agendar la demo',
