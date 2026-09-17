@@ -378,6 +378,39 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
   // con una alerta visible hasta que el cliente vuelva a escribir.
   if (status === 'failed' && error) {
     const x = explicarError(error);
+
+    /* ══ RESCATE DE LA CONFIRMACIÓN DE CITA ════════════════════════════════
+       Caso real (Grecia, 15-sep-2026): se agendó la reunión, salió el mensaje
+       con su liga de Meet… y NUNCA le llegó. En el inbox quedó en rojo con
+       «Ventana de 24 h cerrada», pero nadie lo vio: la clienta se enteraría el
+       día de la junta, o no.
+
+       `confirmacion-cita.ts` YA tiene el respaldo por plantilla, pero solo se
+       dispara si el envío falla AL INSTANTE. Aquí no falló al instante: Kapso
+       aceptó el mensaje, se registró como enviado, y Meta lo rechazó DESPUÉS
+       por webhook — que es donde estamos parados ahora. Por eso el respaldo
+       nunca entró.
+
+       Se reintenta solo con la plantilla UTILITY, que es lo único que Meta
+       permite fuera de la ventana. Dice menos que el mensaje completo —no
+       lleva la liga de Meet— pero llega, y la invitación de calendario con el
+       enlace ya salió por correo. Mejor eso que el silencio.
+
+       El marcador `rescate_intentado` evita el bucle: si la plantilla también
+       falla, su propio `failed` entraría aquí otra vez. */
+    if (x.tipo === 'ventana') {
+      const { data: mm } = await supabase.from('wa_mensajes').select('metadata').eq('id', msj.id).maybeSingle();
+      const meta: any = mm?.metadata || {};
+      if (meta.confirmacion_cita && !meta.rescate_intentado) {
+        await supabase.from('wa_mensajes')
+          .update({ metadata: { ...meta, rescate_intentado: new Date().toISOString() } }).eq('id', msj.id);
+        try {
+          const { reenviarConfirmacionPorPlantilla } = await import('../crm/confirmacion-cita');
+          await reenviarConfirmacionPorPlantilla(String(meta.confirmacion_cita));
+        } catch { /* si el rescate falla, queda la alerta de abajo y el correo */ }
+      }
+    }
+
     // Solo los fallos que hablan del CLIENTE o de su permiso quedan como alerta
     // de la conversación (un error de plantilla o de red no es culpa del número).
     if (['numero', 'permiso', 'limite'].includes(x.tipo)) {

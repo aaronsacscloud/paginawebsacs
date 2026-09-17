@@ -57,6 +57,50 @@ export function textoConfirmacion(o: {
 
 /** Manda la confirmación al cliente y la deja espejada en su conversación.
  *  No lanza: una cita agendada no se cae porque el aviso falle. */
+/* ══ RESCATE: reenviar la confirmación como PLANTILLA ═══════════════════════
+   La llama `actualizarStatus` (lib/whatsapp/espejo.ts) cuando el mensaje de
+   confirmación se cae DESPUÉS de haber sido aceptado, por ventana de 24 h
+   cerrada. El respaldo de `confirmarCitaPorWhatsApp` no sirve para ese caso:
+   solo cubre el fallo inmediato, y ahí Kapso ya había dicho que sí.
+
+   Manda lo único que Meta permite fuera de la ventana. No lleva la liga de
+   Meet —la plantilla tiene parámetros fijos— pero la invitación de calendario
+   con el enlace ya salió por correo al agendar. Caso real: Grecia, 15-sep-2026;
+   quedó en rojo en el inbox y nadie lo vio. */
+export async function reenviarConfirmacionPorPlantilla(bookingId: string): Promise<{ ok: boolean; motivo?: string }> {
+  try {
+    const { data: b } = await supabase.from('bookings')
+      .select('id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, contact_id')
+      .eq('id', bookingId).maybeSingle();
+    if (!b) return { ok: false, motivo: 'La cita no existe' };
+    let tel = b.invitee_whatsapp || null;
+    if (!tel && b.contact_id) {
+      const { data: c } = await supabase.from('contacts').select('whatsapp, telefono').eq('id', b.contact_id).maybeSingle();
+      tel = (c as any)?.whatsapp || (c as any)?.telefono || null;
+    }
+    const destino = telefonoWhatsApp(tel || '');
+    if (!destino) return { ok: false, motivo: 'Sin WhatsApp al cual avisar' };
+
+    enContexto('cita');
+    const cuando = `${fechaLarga(b.fecha as string)} a las ${horaAmPm(String(b.hora_inicio))}`;
+    const quien = String(b.invitee_nombre || '').trim().split(/\s+/)[0] || 'hola';
+    const r = await enviarPlantilla(destino, 'reunion_confirmar', 'es_MX', [quien, cuando]);
+    const wamid = r?.messages?.[0]?.id || null;
+    if (wamid) {
+      await registrarMensaje({
+        kapsoMessageId: wamid, telefono: destino, direccion: 'saliente',
+        tipo: 'template', cuerpo: `Hola ${quien}, te escribo para confirmar nuestra reunión del ${cuando}.`,
+        status: 'sent', autor: 'Agenda',
+        // `rescate_de` deja el rastro de por qué salió una plantilla sola.
+        metadata: { confirmacion_cita: bookingId, plantilla: 'reunion_confirmar', rescate_de: 'ventana_cerrada', rescate_intentado: new Date().toISOString() },
+      });
+    }
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, motivo: String(e?.message || e) };
+  }
+}
+
 export async function confirmarCitaPorWhatsApp(bookingId: string, extra?: { lugar?: string | null }): Promise<{ ok: boolean; motivo?: string }> {
   if (!(await permitido('agenda_confirmacion'))) return { ok: false, motivo: 'pausado' };
   try {
