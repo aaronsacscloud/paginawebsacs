@@ -183,34 +183,43 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
     }
   }, [actual?.id, actual?.estado]);
 
-  // BARRA ESPACIADORA = «Hablar yo». Mientras la central decide, el vendedor
-  // ya oye la llamada: si reconoce una persona antes que el detector, un
-  // toque abre su micrófono en ese instante (sin esperar al servidor) y le
-  // avisa a la central. Fuera de cualquier campo de texto, para no robar espacios.
+  /* ══ EL MICRÓFONO SE ABRE SOLO EN CUANTO CONTESTAN ═══════════════════════
+     REPORTE DEL DUEÑO (17-sep-2026): «por más que hablaba, el usuario no me
+     escuchaba; quita lo de la barra espaciadora, que yo me escuche automático
+     al momento que me pases la llamada».
+
+     Qué pasaba: al contestar, el item entra en `escuchando` mientras el
+     detector decide si es persona o contestadora. En ese rato el vendedor OÍA
+     pero seguía MUDO, y solo la barra espaciadora lo abría. Si no la apretabas
+     —o no sabías que existía— hablabas al vacío durante los primeros segundos,
+     que son justo los que deciden la llamada.
+
+     Ahora, en cuanto alguien descuelga (`escuchando` o `portero`), se toma la
+     llamada sola: micrófono abierto y aviso a la central. El costo de
+     equivocarse es asimétrico y por eso se prefiere abrir: si resultó ser una
+     contestadora, se habló solo unos segundos a una máquina; si era una
+     persona, se salvó la llamada.
+
+     Se quitó el atajo de la barra espaciadora: con la apertura automática ya no
+     hace falta, y dos mecanismos para lo mismo es justo lo que produjo el
+     malentendido — creer que estabas al aire cuando no lo estabas. */
   const actualRef = useRef<any>(null);
   useEffect(() => { actualRef.current = actual; }, [actual]);
+  const tomadoPara = useRef<string | null>(null);
   useEffect(() => {
     if (fase !== 'viva') return;
-    const h = (e: KeyboardEvent) => {
-      if (e.code !== 'Space' && e.key !== ' ') return;
-      if (e.repeat) return;                                    // tecla sostenida: un solo «tomar»
-      const el = e.target as HTMLElement | null;
-      if (el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || el.closest('button, a, [role="button"]'))) return;   // en un botón el espacio es «clic»
-      const it = actualRef.current;
-      if (!it || !['escuchando', 'portero', 'timbrando'].includes(it.estado)) return;
-      e.preventDefault();
-      if (it.estado === 'timbrando') return;   // todavía no contestan: nada que tomar
-      document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: false } }));
-      setMicAbierto(true);
-      post({ accion: 'tomar', id: sesionId }).then(r => {
-        if (r?.ok) { abiertoPara.current = it.id; }           // ya está abierto para este item: el efecto de en_linea no lo vuelve a abrir
-        else { document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: true } })); setMicAbierto(false); }
-        latir();
-      });
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [fase, sesionId, latir]);
+    const it = actual;
+    if (!it || !['escuchando', 'portero'].includes(it.estado)) return;
+    if (tomadoPara.current === it.id) return;      // ya se tomó para este item
+    tomadoPara.current = it.id;
+    document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: false } }));
+    setMicAbierto(true);
+    post({ accion: 'tomar', id: sesionId }).then(r => {
+      if (r?.ok) { abiertoPara.current = it.id; }   // el efecto de `en_linea` ya no lo reabre
+      else { document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: true } })); setMicAbierto(false); tomadoPara.current = null; }
+      latir();
+    });
+  }, [fase, actual?.id, actual?.estado, sesionId, latir]);
 
   // SALA QUE NO SE CAE: si la sesión está activa y el teléfono se salió de la
   // sala (se cayó la red, se durmió la pestaña), se vuelve a entrar solo, con
@@ -683,10 +692,40 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                 )}
 
                 {/* Acciones del item según su momento */}
+                {/* ══ ¿ESTOY AL AIRE? ══════════════════════════════════════
+                    Reporte del dueño: «la pantalla debe ser más clara, mostrarme
+                    un punto verde o algo que muestre que está activo». Antes la
+                    única pista de que el micrófono estaba abierto era el texto
+                    del botón de silenciar —al final de una fila de botones—, así
+                    que se hablaba sin saber si salía o no.
+                    Dos estados y nada más: verde con punto latiendo = te oyen;
+                    gris = no. Es la primera cosa que hay que poder contestar sin
+                    leer. */}
+                {['escuchando', 'portero', 'en_linea'].includes(estadoActual) && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 9, marginTop: 14,
+                    padding: '9px 13px', borderRadius: 10,
+                    background: micAbierto ? '#EAF8F2' : C.g50,
+                    border: `1px solid ${micAbierto ? '#9fdcc2' : C.g200}`,
+                  }}>
+                    <span style={{
+                      width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
+                      background: micAbierto ? '#1E8A63' : C.g400,
+                      animation: micAbierto ? 'cab-late 1.25s ease-in-out infinite' : undefined,
+                    }} />
+                    <b style={{ fontSize: 13, color: micAbierto ? '#1E8A63' : C.g500, letterSpacing: '-0.01em' }}>
+                      {micAbierto ? 'Estás al aire — te escuchan' : 'Micrófono cerrado — no te escuchan'}
+                    </b>
+                    {micAbierto && estadoActual !== 'en_linea' && (
+                      <span style={{ fontSize: 11, color: '#1E8A63', opacity: .8 }}>· tu micrófono se abrió solo al contestar</span>
+                    )}
+                  </div>
+                )}
+                <style>{`@keyframes cab-late{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}`}</style>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
                   {['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) && !sola && (
                     <>
-                      <button onClick={() => accion('tomar')} disabled={!!ocupado} style={btnS}><IcoMic size={13} />Hablar yo{!movil && <kbd style={{ fontSize: 10, fontWeight: 600, color: C.g500, border: `1px solid ${C.g200}`, borderRadius: 4, padding: '0 5px', marginLeft: 4 }}>espacio</kbd>}</button>
+                      <button onClick={() => accion('tomar')} disabled={!!ocupado} style={btnS}><IcoMic size={13} />Hablar yo</button>
                       <button onClick={() => accion('saltar')} disabled={!!ocupado} style={btnT}>Saltar</button>
                     </>
                   )}

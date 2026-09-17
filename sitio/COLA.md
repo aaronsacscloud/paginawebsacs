@@ -515,11 +515,13 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 > adicional a eso que bloquee todo para las 12:00 PM en adelante.»
 
 - [x] **6 · Botón de llamar** en la lista de llamadas y en el detalle del lead. HECHO.
-- [ ] **7 · La sesión de llamadas, de punta a punta.** Indicador en vivo de
-      llamada activa · quitar la barra espaciadora y abrir el micro solo al
-      pasar la llamada · ocupado + aviso por WhatsApp con reintento en 5 min ·
-      cierre automático (agendar / descalificar / notas de IA) con confirmación
-      previa de las acciones · verlo todo en tiempo real.
+- [ ] **7 · La sesión de llamadas, de punta a punta.**
+      - [x] 7.1 Indicador en vivo: semáforo verde «Estás al aire — te escuchan».
+      - [x] 7.2 Fuera la barra espaciadora; el micrófono se abre SOLO al contestar.
+      - [ ] 7.3 Ocupado + aviso por WhatsApp con reintento en 5 min.
+      - [ ] 7.4 Cierre automático (agendar / descalificar / notas de IA) con
+            confirmación previa de las acciones.
+      - [ ] 7.5 Verlo todo ejecutándose en tiempo real.
 - [ ] **8 · Llamadas inteligentes con espacio propio**, con su filtro de arranque
       y lista dinámica, sin depender del inbox.
 - [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).
