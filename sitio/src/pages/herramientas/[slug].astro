@@ -14,6 +14,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CurvaTallas from '../../components/herramientas/CurvaTallas.tsx';
 import Temporada from '../../components/herramientas/Temporada.tsx';
+import Nivelar from '../../components/herramientas/Nivelar.tsx';
 import { herramientaDe } from '../../lib/demanda/herramientas';
 import { SITIO } from '../../data/entidad';
 
@@ -60,6 +61,14 @@ const PASOS: Record<string, { name: string; text: string }[]> = {
     { name: 'Encuentra tu última semana útil', text: 'Cada semana que pasa sin actuar, la existencia baja despacio pero las semanas restantes bajan rápido, así que la aceleración que haría falta sube. La semana límite es la última en la que esa aceleración todavía cabe en lo que una rebaja puede mover de verdad. Después de esa semana la decisión ya no es si vas a perder, sino cuánto.' },
     { name: 'Antes de rebajar, mira las tallas', text: 'El sell-through del estilo esconde el de la talla. Un estilo al 30% puede ser centro agotado y extremos intactos, y ahí la rebaja no arregla nada: lo que sobra no lo iba a comprar nadie a ningún precio.' },
   ],
+  'nivelar-entre-tiendas': [
+    { name: 'Anota la existencia por talla de cada tienda', text: 'Una fila por tienda, una columna por talla, del mismo modelo. Es el dato que cualquiera tiene a la mano; la venta por talla y tienda en un periodo comparable casi nadie.' },
+    { name: 'Define el centro de tu corrida', text: 'Las tallas donde haces la mayor parte de tu venta. No son las mismas en todos los giros ni en todas las plazas: en calzado de dama suelen ser tres números seguidos, y en una tienda de playa se recorren hacia arriba.' },
+    { name: 'Marca qué tiendas tienen la corrida rota', text: 'Una tienda a la que le falta una talla del centro no vende poco ese modelo: no lo vende. Y su reporte dirá «aquí no gusta», que es la mentira que entra a la siguiente orden de compra y le compra menos, y le rompe la corrida otra vez.' },
+    { name: 'Busca quién puede dar sin romperse', text: 'Solo puede donar quien queda por encima del mínimo después de donar. Quitarle a una tienda hasta dejarla corta no resuelve nada: mueve el problema y paga el flete.' },
+    { name: 'Repara entero o no muevas', text: 'Si una tienda no puede quedar con la corrida completa, no se le manda nada. Media reparación cuesta flete, días en tránsito y personal, y no devuelve una sola venta — encima desarma a la tienda que sí estaba completa.' },
+    { name: 'Separa lo que es acomodo de lo que es compra', text: 'Si sumando toda la cadena no alcanza para que cada tienda llegue a su mínimo, no hay traspaso que lo arregle. Esa es una respuesta distinta y más útil que una lista de movimientos imposibles.' },
+  ],
 };
 
 const schema: Record<string, unknown>[] = [
@@ -104,6 +113,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
 
     {h.slug === 'curva-de-tallas' && <CurvaTallas client:load />}
     {h.slug === 'sale-o-no-sale' && <Temporada client:load />}
+    {h.slug === 'nivelar-entre-tiendas' && <Nivelar client:load />}
 
     <section class="metodo">
       <h2>Cómo se calcula</h2>
@@ -330,6 +340,72 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
   .temporada .cruce {
     border-left: 3px solid var(--color-secondary); padding-left: .9rem;
   }
+
+  /* ── Nivelar entre tiendas ─────────────────────────────────────────────── */
+  .nivelar .modo { display: flex; gap: .5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .nivelar .modo button { padding: .5rem 1rem; font-size: .92rem; border-radius: 8px; }
+  .nivelar .modo button.activo {
+    background: var(--color-primary); color: #fff; border: 1px solid var(--color-primary);
+    font: inherit; font-size: .92rem; font-weight: 600; cursor: pointer;
+  }
+  .nivelar .pegar { display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; }
+  .nivelar .pegar label { font-size: .9rem; color: var(--color-text-secondary); line-height: 1.5; max-width: 62ch; }
+  .nivelar .pegar textarea {
+    font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem;
+    width: 100%; padding: .7rem; border: 1px solid var(--color-border); border-radius: 8px;
+    background: var(--color-bg-primary); color: var(--color-text-primary); resize: vertical;
+  }
+
+  .nivelar .matriz { min-width: 30rem; }
+  .nivelar .matriz th, .nivelar .matriz td { padding: .2rem .25rem; }
+  .nivelar .matriz thead th:first-child {
+    text-align: left; font-size: .82rem; color: var(--color-text-secondary); padding-left: 0;
+  }
+  .nivelar .matriz thead input { text-align: center; font-weight: 600; padding: .4rem .3rem; }
+  .nivelar .matriz tbody th { padding-left: 0; }
+  .nivelar .matriz tbody th input { min-width: 7rem; font-weight: 600; }
+  .nivelar .matriz td input { text-align: center; padding: .45rem .3rem; }
+
+  .nivelar fieldset.nucleo { border: 0; padding: 1.25rem 0 0; margin: 1.25rem 0 0; border-top: 1px solid var(--color-border-light); }
+  .nivelar fieldset.nucleo legend { font-size: .9rem; font-weight: 600; padding: 0; }
+  .nivelar fieldset.nucleo legend em { font-weight: 400; font-style: normal; color: var(--color-text-tertiary); }
+  .nivelar .ayuda { font-size: .85rem; color: var(--color-text-tertiary); margin: .4rem 0 .8rem; max-width: 60ch; line-height: 1.5; }
+  .nivelar .chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .nivelar label.chip {
+    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: 999px; padding: .3rem .8rem;
+    font-size: .9rem; font-weight: 600; user-select: none;
+  }
+  .nivelar label.chip.on { background: var(--ok-fondo); border-color: var(--ok-borde); color: var(--ok-texto); }
+  .nivelar label.chip input { width: auto; margin: 0; }
+
+  .nivelar .minimo { display: flex; flex-direction: column; gap: .3rem; margin-top: 1.25rem; font-size: .9rem; font-weight: 600; max-width: 26rem; }
+  .nivelar .minimo input { width: 6rem; }
+  .nivelar .minimo em { font-weight: 400; font-style: normal; font-size: .82rem; color: var(--color-text-tertiary); line-height: 1.45; }
+
+  .nivelar .resultado h3 { font-size: 1.1rem; margin: 1.75rem 0 .75rem; }
+  .nivelar .movs { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+  .nivelar .movs li {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 10px; padding: .7rem .9rem;
+  }
+  .nivelar .movs .pz {
+    background: var(--color-primary); color: #fff; border-radius: 6px;
+    padding: .1rem .55rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .nivelar .movs .tl { font-weight: 600; }
+  .nivelar .movs .ruta { color: var(--color-text-secondary); }
+  .nivelar .movs .ruta b { color: var(--color-primary); margin: 0 .2rem; }
+  .nivelar .total { margin: 1rem 0 0; color: var(--color-text-secondary); line-height: 1.6; max-width: 66ch; }
+
+  .nivelar .comprar {
+    margin-top: 1.75rem; background: var(--aviso-fondo); border: 1px solid var(--aviso-borde);
+    border-radius: 12px; padding: 1.2rem 1.35rem; color: var(--aviso-texto);
+  }
+  .nivelar .comprar h3 { margin: 0 0 .5rem; }
+  .nivelar .comprar p { margin: 0 0 .7rem; line-height: 1.55; }
+  .nivelar .comprar ul { margin: 0; padding-left: 1.2rem; line-height: 1.7; }
 
   @media (max-width: 560px) {
     .curva form { padding: 1.1rem; }

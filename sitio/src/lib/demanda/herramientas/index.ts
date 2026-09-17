@@ -9,6 +9,7 @@
 // previene: la puerta funcionaría para esa y estaría vacía para las demás.
 import './curva';
 import './temporada';
+import './nivelar';
 
 export { herramientas, herramientaDe, invocar } from '../herramienta';
 export type { Herramienta, Puerta, Contexto, Resultado } from '../herramienta';

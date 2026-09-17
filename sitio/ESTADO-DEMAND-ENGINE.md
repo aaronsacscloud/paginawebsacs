@@ -512,12 +512,66 @@ auditor de curva de tallas, porque el sell-through del estilo esconde el de la
 talla — un estilo «al 30%» puede ser centro agotado y extremos intactos, y ahí
 la rebaja no arregla nada.
 
+### Tercera herramienta: «Qué mover entre tus tiendas» (`/herramientas/nivelar-entre-tiendas`)
+
+Las hojas de cálculo de nivelación igualan cobertura. Esta no: **repara el
+máximo de corridas rotas con las menos piezas movidas**, que es lo que de verdad
+devuelve ventas. Una tienda a la que le falta una talla del centro no vende poco
+ese modelo: no lo vende. Y su reporte dirá «aquí no gusta», que es la mentira
+que entra a la siguiente orden de compra, le compra menos, y le rompe la corrida
+otra vez.
+
+Tres reglas del algoritmo, cada una de un error que cometió antes:
+
+- **Se atienden primero las tiendas con MENOS huecos.** Empezar por la más rota
+  gasta el inventario disponible en el caso más caro y deja sin reparar dos que
+  costaban poco.
+- **O repara entera o no mueve nada.** La primera versión mandaba 4 piezas a una
+  tienda a la que igual le seguía faltando otra talla: cero corridas reparadas,
+  flete pagado, y la donante más débil. Ahora se simula y se confirma o se
+  deshace — es atómico.
+- **Nadie puede donar hasta quedar por debajo del mínimo.** Eso es mover el
+  problema y pagar por moverlo.
+
+Y una respuesta que no da ninguna competencia: cuando sumando la cadena entera
+no alcanza, dice **«esto no se mueve, se compra»** y lista cuántas piezas
+faltan por talla. Es una respuesta distinta y más útil que una lista de
+traspasos imposibles.
+
+**La entrada se puede pegar desde Excel**, que es donde el dato vive de verdad;
+nadie tiene la existencia por talla y tienda en la cabeza. El parser acepta
+tabuladores, comas y punto y coma, con o sin encabezado. Dos trampas medidas:
+
+- **En calzado las tallas SON números** (23, 23.5, 24), así que «¿tiene alguna
+  celda no numérica?» no detecta el encabezado y la fila de títulos se leía como
+  una tienda. Se agregó la señal que sí sirve: cómo se llama la primera celda.
+- **«Plaza» es nombre de tienda tan común como etiqueta de columna.** Estaba en
+  la lista de etiquetas y se comía la primera tienda de una tabla sin encabezado.
+  La lista quedó solo con palabras que nadie le pone de nombre a una tienda —
+  entre equivocarse comiéndose una tienda y equivocarse dejando las tallas sin
+  nombre, lo segundo se ve en la rejilla y se corrige.
+- **`filter(Boolean)` sobre los encabezados recorría las columnas.** Una celda
+  vacía a media tabla dejaba las cantidades pegadas a la talla equivocada, y el
+  resultado salía coherente pero mal. Ahora se conserva la posición.
+
+**El pegado propone, la rejilla confirma**: el resultado del parseo cae en una
+tabla editable, así que ningún error de lectura llega al cálculo sin que la
+persona lo vea.
+
 ### Lo que sigue de la etapa 4
 
-1. Una tercera herramienta: nivelación entre tiendas (ya tiene artículo
-   publicado al que engancharse). Es la más «Sacs» de las tres y la de entrada
-   más pesada: hay que resolver cómo se captura una matriz tienda × talla sin
-   que la persona abandone.
-2. Anunciar el MCP donde los clientes lo puedan conectar, y medir si lo usan.
-3. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
-4. Autoridad y PR.
+1. Anunciar el MCP donde los clientes lo puedan conectar, y medir si lo usan.
+   Hoy funciona y está en `/llms.txt`, pero no hay una página que le explique a
+   una persona cómo conectarlo en su cliente.
+2. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
+3. Autoridad y PR.
+
+### Cómo se ven las tres juntas
+
+Se enganchan entre ellas y con los artículos, que era el punto:
+
+- `/recursos/curva-de-tallas` → auditor de curva
+- auditor de curva → `/recursos/nivelacion-...` cuando la corrida está rota
+- `sale-o-no-sale` → auditor de curva antes de rebajar (el sell-through del
+  estilo esconde el de la talla)
+- `nivelar-entre-tiendas` → auditor de curva cuando el núcleo fue supuesto
