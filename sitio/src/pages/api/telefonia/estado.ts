@@ -25,5 +25,24 @@ export const POST: APIRoute = async ({ request }) => {
      enterara de que se había intentado. Ahora cada una escribe su nota en el
      inbox y su renglón en la ficha. */
   await registrarBitacoraLlamada(p.CallSid);
+
+  /* ══ NOS LLAMARON Y NO ALCANZAMOS ══════════════════════════════════════
+     Sólo para ENTRANTES que se quedaron sin contestar. En las salientes no
+     aplica: ahí el que no contestó fue él, y avisarle «no alcanzamos a
+     responderte» sería mentirle.
+
+     Va después de la bitácora y sin esperar a que termine: Twilio quiere el
+     TwiML rápido, y si el aviso tarda o truena no debe arrastrar la llamada.
+     Lo que no puede fallar —el rastro— ya se escribió arriba. */
+  const estadoFinal = MAPA[p.DialCallStatus || p.CallStatus] || 'terminada';
+  if (estadoFinal === 'perdida' || estadoFinal === 'rechazada') {
+    const { data: ll } = await supabase.from('wa_llamadas')
+      .select('direccion, telefono').eq('call_id', p.CallSid).maybeSingle();
+    if (ll?.direccion === 'entrante' && ll.telefono) {
+      import('../../../lib/telefonia/perdida')
+        .then(m => m.avisarLlamadaPerdida(ll.telefono))
+        .catch(() => { /* el aviso es un extra: nunca tumba el webhook */ });
+    }
+  }
   return xml('');
 };
