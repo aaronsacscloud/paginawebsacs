@@ -842,3 +842,48 @@ QUEDA POR HACER:
 4. **Un botón para oír la grabación** desde el item de la lista y desde el hilo.
    Los datos están; no hay por dónde reproducirlos.
 
+## 17-sep-2026 — Las acciones que pide el cliente EN la llamada (10 casos)
+
+> «Me pidió una acción: enviar la información por WhatsApp. En el momento en que
+> alguien pida una acción, la IA tiene que ejecutar esa acción. Debes explicar
+> qué acción hiciste o, si no reconoces qué acción hacer, que yo te explique
+> cuál deberías hacer para que aprendas… ya sea enviarle una plantilla, si la
+> ventana está abierta enviarle un mensaje directamente.»
+
+HECHO YA: la sala se abre igual en llamadas ENTRANTES, y el nombre sale del
+contexto cuando Twilio sólo trae el número (era el bug: se veía la empresa y no
+la persona, porque `enganchar()` registra las entrantes con `nombre = null`).
+
+LOS 10 CASOS, en orden de cuántas veces pasan de verdad:
+
+ 1. **«Mándame la info por WhatsApp»** — el de hoy. Si la ventana de 24 h está
+    abierta: texto libre con el PDF. Si está cerrada: plantilla. Hay que decir
+    CUÁL de las dos salió, porque el cliente ve cosas distintas.
+ 2. **«Márcame en una hora / el jueves»** — compromiso con fecha. `cierre.ts` ya
+    lo extrae; hoy muere si no hay saldo de IA (caso Andrea Romo).
+ 3. **«Mándame la cotización»** — hay cotizador; falta el puente desde la sala.
+ 4. **«Agéndame una demo»** — ya resuelto por el bloque de horarios del cierre.
+ 5. **«Háblalo con mi socio / pásame con él»** — segundo contacto en la misma
+    cuenta: hoy no hay dónde apuntarlo sin salir.
+ 6. **«Ya no me llamen»** — opt-out. `aplicarOptOut` existe; falta el botón en
+    la sala, que es cuando lo dicen.
+ 7. **«Mi correo es otro / cámbiame el teléfono»** — corrección de datos. La IA
+    ya propone `datos` en el cierre; falta poder dictarlos a mano.
+ 8. **«Mándame el precio de X»** — pide material concreto: debería ofrecer los
+    PDF que ya existen en la biblioteca.
+ 9. **«Estoy manejando, márcame luego»** — reintento corto (15 min) sin gastar
+    un intento del tope.
+10. **«Ya soy cliente, tengo un problema»** — no es venta: tarea de soporte. El
+    candado de cliente del agente ya hace esto para WhatsApp; falta en la voz.
+
+EL PATRÓN QUE LOS UNE, y es lo que hay que construir una sola vez: un panel de
+«acciones de la llamada» donde la IA propone lo que oyó, se EJECUTA con un
+clic, y queda escrito qué se hizo. Y cuando no reconoce nada, un campo para
+dictarla —«mándale el PDF de precios»— que además se guarda como ejemplo. Eso
+último es lo que pidió con «para que aprendas»: el mismo ciclo de reglas-como-
+datos que ya existe en Trabajo Inteligente (ti_reglas), no un modelo nuevo.
+
+NO EMPEZARLO SIN: saldo de Anthropic (sin IA no hay propuesta que ejecutar) y
+el refactor que saca el cierre del `item` de sesión, o las entrantes no podrán
+usarlo.
+

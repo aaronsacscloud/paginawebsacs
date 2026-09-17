@@ -74,14 +74,54 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
 
     <StructuredData data={allSchemas} />
 
-    <!-- Microsoft Clarity -->
+    <!-- LA COMPUERTA DE MARKETING (17-sep-2026, auditoría de PageSpeed).
+         Los cuatro scripts de medición —Clarity, TikTok, OpenAI y PostHog— se
+         cargaban en el primer instante y costaban caro: un segundo entero de
+         evaluación de JavaScript en el hilo principal, 250 KB de descarga y 13
+         cookies de terceros. Eso hundía la nota de rendimiento y la de buenas
+         prácticas, y lo pagaba el visitante en el tiempo que tarda la página en
+         responder al primer toque.
+
+         Ahora se cargan cuando de verdad hacen falta, SIN perder un solo evento:
+
+         · Si la visita viene de una campaña (trae utm, ttclid, gclid o fbclid),
+           se cargan en el acto: a esa persona hay que medirla desde el primer
+           segundo, que para eso se pagó el clic.
+         · Si no, esperan al primer gesto —mover el dedo, hacer clic, teclear o
+           empezar a bajar— y ahí cargan. Nadie que valga la pena medir llega sin
+           hacer ninguna de esas cuatro cosas.
+         · Y si alguien se queda quieto, entran solas a los 20 segundos.
+
+         Mientras tanto las colas ya existen, así que un clic en WhatsApp hecho
+         en el segundo uno se guarda y se manda en cuanto el pixel despierta. -->
     <script is:inline>
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "wad8td38cy");
+    (function () {
+      var listo = false;
+      function arranca() {
+        if (listo) return; listo = true;
+        quita();
+        // Clarity
+        (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "wad8td38cy");
+        // TikTok
+        if (window.ttq && window.ttq.load) { window.ttq.load('CUT9GN3C77UAVCG32N00'); window.ttq.page(); }
+        // OpenAI
+        if (window.sacsOaiCarga) window.sacsOaiCarga();
+        // PostHog
+        window.dispatchEvent(new Event('sacs:marketing'));
+      }
+      var gestos = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel'];
+      function quita() { gestos.forEach(function (g) { window.removeEventListener(g, arranca, { capture: true }); }); }
+      gestos.forEach(function (g) { window.addEventListener(g, arranca, { capture: true, passive: true, once: true }); });
+      var deCampana = /[?&](utm_|ttclid|gclid|fbclid|msclkid)/i.test(location.search);
+      if (deCampana) arranca(); else setTimeout(arranca, 20000);
+      window.sacsMarketingYa = arranca;
+    })();
     </script>
+
 
     <!-- TikTok Pixel -->
     <script is:inline>

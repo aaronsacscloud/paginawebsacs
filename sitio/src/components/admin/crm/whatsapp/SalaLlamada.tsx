@@ -153,9 +153,15 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             {reloj(segundos)}
           </span>
           <span style={{ flex: '1 1 260px', minWidth: 0 }}>
-            <b style={{ display: 'block', fontSize: 26, letterSpacing: '-0.03em', lineHeight: 1.1 }}>{ctx?.marca || nombre || telefonoLegible(telefono)}</b>
+            <b style={{ display: 'block', fontSize: 26, letterSpacing: '-0.03em', lineHeight: 1.1 }}>{ctx?.marca || nombre || ctx?.nombre || telefonoLegible(telefono)}</b>
+            {/* EL NOMBRE SALE DEL CONTEXTO CUANDO NO VIENE EN LA LLAMADA.
+                En una ENTRANTE, Twilio sólo trae el número: `enganchar()` la
+                registra con `nombre = null`, así que la sala pintaba la marca
+                —que sí viene de la ficha— y a la persona no. Lo reportó el
+                dueño: «me aparecía el nombre de la empresa pero no el de la
+                persona». El contexto ya lo traía; sólo no se estaba mirando. */}
             <span style={{ display: 'block', fontSize: 13, color: C.g500, marginTop: 3 }}>
-              {[nombre, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
+              {[nombre || ctx?.nombre, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
             </span>
             {/* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de CDMX es llamar
                 a las 7, y esa llamada no se recupera con una disculpa. Sólo se
