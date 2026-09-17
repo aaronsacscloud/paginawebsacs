@@ -649,20 +649,26 @@ piel por lote y proveedor; ópticas → graduación más armazón; telas → rol
 tallas grandes → curva extendida y proveedores que sí la fabrican; maternidad → etapas del
 embarazo; outlet → remate por temporada con margen; merch → pedido por evento con fecha.
 
-### Estado por giro (17-sep-2026, 15:40 UTC)
+### Estado por giro (17-sep-2026, 16:30 UTC)
 
 | # | Giro | Ficha + referee oficio | Datos/página | Fotos 10/10 | Referees de página 9/10 | Producción |
 |---|---|---|---|---|---|---|
-| 1 | Trajes de Baño y Playa | ✓ | ✓ | 23/23 ✓ (falta regenerar caso-maquila por diseño; sin créditos) | ✓ oficio 9 · calidad 9 · diseño 9 (ronda 2) | commiteada, sin push |
-| 2 | Western y Vaquera | ✓ (bloque = el conjunto) | ✓ | 22/24 (escala y traspaso rehechas, sin referee por créditos; caso-feria y escala por regenerar) | ✓ oficio 9 · calidad 9 · diseño 9 (rondas 2-3) | commiteada, sin push |
-| 3 | Uniformes | ✓ (bloque = la lista manda) | ✓ escrita, compila | 11/23 generadas; 12 pendientes por créditos de OpenAI | pendiente | commiteada, sin push |
-| 4 | Lencería y Ropa Interior | ✓ (bloque = la pared que se rompe por el centro) | ✓ escrita, compila | 0/23: cola lista (le.json), sin créditos | pendiente | commiteada, sin push |
-| 5–14 | Ropa Infantil, Renta, Sastrería, Bolsas, Ópticas, Telas, Tallas Grandes, Maternidad, Outlet, Merch | | | | | |
-| — | Las 7 hechas | auditadas 152 fotos (0 en 10) | — | 24 de las ≤7 rehechas e instaladas; faltan las 128 de 8-9 | — | commiteadas, sin push |
+| 1 | Trajes de Baño y Playa | ✓ | ✓ | 23/23 ✓ (falta regenerar caso-maquila por diseño; sin créditos) | ✓ oficio 9 · calidad 9 · diseño 9 (ronda 2) | **en producción** |
+| 2 | Western y Vaquera | ✓ (bloque = el conjunto) | ✓ | 22/24 (escala y traspaso rehechas, sin referee por créditos; caso-feria y escala por regenerar) | ✓ oficio 9 · calidad 9 · diseño 9 (rondas 2-3) | **en producción** |
+| 3 | Uniformes | ✓ (bloque = la lista manda) | ✓ en `_borrador/` | 11/23 generadas; 12 pendientes por créditos (un-pend) | pendiente | ComingSoon en producción |
+| 4 | Lencería y Ropa Interior | ✓ (bloque = la pared que se rompe por el centro) | ✓ en `_borrador/` | 0/23: cola lista (le.json), sin créditos | pendiente | ComingSoon en producción |
+| 5 | Renta de Vestidos y Trajes | ✓ (bloque = el calendario de cada vestido) | ✓ en `_borrador/`, compila | 0/22: cola lista (re.json), sin créditos | pendiente | ComingSoon en producción |
+| 6 | Ropa Infantil y Bebés | ✓ (bloque = el niño crece, la clienta regresa) | ✓ en `_borrador/`, compila | 0/21: cola lista (ri.json), sin créditos | pendiente | ComingSoon en producción |
+| 7 | Sastrería y Trajes | ficha escrita; referee en curso | | | | ComingSoon en producción |
+| 8 | Bolsas y Accesorios de Piel | ficha escrita; referee en curso | | | | ComingSoon en producción |
+| 9–14 | Ópticas, Telas, Tallas Grandes, Maternidad, Outlet, Merch | | | | | |
+| — | Las 7 hechas | auditadas 152 fotos (0 en 10) | — | 24 de las ≤7 rehechas e instaladas; faltan las 128 de 8-9 | — | en producción |
 
 **Para reanudar fotos cuando haya créditos de OpenAI:** `scratchpad/giros/reanudar.sh` (corre
-un-pend, fix-r4 y le en orden); después `instala.sh un uniformes`, `instala.sh le lenceria` y los
-referees de identidad.
+un-pend, fix-r4, le, re y ri en orden, ~78 fotos); después `instala.sh un uniformes`, `instala.sh le
+lenceria`, `instala.sh re renta-de-vestidos`, `instala.sh ri ropa-infantil`, los referees de
+identidad 10/10, mover cada página de `_borrador/` a `src/pages/giros/` (ajustar los imports de
+`../../../` a `../../`) y correr sus 3 referees de página.
 
 **Deuda conocida de esta vuelta (componentes compartidos, para una pasada global):** la
 jerarquía de `BloqueProducto` (encabezado + título dejan un hueco de ~100 px antes del bloque; el
