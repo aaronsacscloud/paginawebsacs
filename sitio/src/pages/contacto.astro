@@ -409,7 +409,7 @@ const urlAgenda = estimado
     font-family: var(--font-display);
     font-size: 0.6875rem;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-primary-texto);
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -594,7 +594,7 @@ const urlAgenda = estimado
     font-family: var(--font-display);
     font-size: 0.8125rem;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-primary-texto);
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -645,7 +645,7 @@ const urlAgenda = estimado
     border-color: var(--color-border);
   }
   .ct-after-card--accent {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-texto);
     box-shadow: 0 0 0 1px var(--color-primary);
   }
   .ct-after-badge {
@@ -659,7 +659,7 @@ const urlAgenda = estimado
     display: block;
   }
   .ct-after-badge--accent {
-    color: var(--color-primary);
+    color: var(--color-primary-texto);
   }
   .ct-after-card h3 {
     font-family: var(--font-display);
@@ -928,7 +928,7 @@ const urlAgenda = estimado
   /* ── Consultoría con valor + credibilidad (15-sep-2026) ── */
   .ct-valor { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; padding: 8px 14px; border-radius: 999px; background: #EEF3FF; color: #1D1D1F; font-size: 14px; }
   .ct-valor s { color: #6B6B68; }
-  .ct-valor b { color: var(--color-primary, #4B7BE5); font-weight: 700; }
+  .ct-valor b { color: var(--color-primary-texto, #3A62C4); font-weight: 700; }
   .ct-cred { padding: clamp(56px, 8vw, 96px) 0; background: #F7F7F5; }
   .ct-cred-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
   .ct-casos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; }
@@ -936,7 +936,7 @@ const urlAgenda = estimado
   .ct-caso:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.25); }
   .ct-caso img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
   .ct-caso-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; }
-  .ct-caso-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); }
+  .ct-caso-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary-texto, #3A62C4); }
   .ct-caso h3 { font-family: var(--font-display); font-size: 20px; margin: 0; }
   .ct-caso blockquote { margin: 4px 0 0; font-size: 15px; line-height: 1.5; color: #3A3A38; }
   .ct-caso cite { font-style: normal; font-size: 13px; color: #6B6B68; }
@@ -946,7 +946,7 @@ const urlAgenda = estimado
   .ct-razones { margin-top: clamp(48px, 7vw, 72px); }
   .ct-razones-lista { list-style: none; counter-reset: rz; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
   .ct-razones-lista li { counter-increment: rz; position: relative; padding: 18px 20px 18px 62px; background: #fff; border: 1px solid #ECECE9; border-radius: 16px; font-size: 15px; line-height: 1.5; color: #3A3A38; }
-  .ct-razones-lista li::before { content: counter(rz); position: absolute; left: 18px; top: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .ct-razones-lista li::before { content: counter(rz); position: absolute; left: 18px; top: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--color-primary-btn, #4470D8); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
   .ct-razones-lista b { display: block; color: #1D1D1F; margin-bottom: 2px; }
   @media (max-width: 1023px) { .ct-casos { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 767px) { .ct-casos { grid-template-columns: 1fr; gap: 14px; } .ct-razones-lista { grid-template-columns: 1fr; } .ct-valor { font-size: 13px; } }
@@ -957,8 +957,8 @@ const urlAgenda = estimado
   .ct-hito { position: relative; text-align: center; padding: 0 8px; }
   .ct-hito-cuando { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6B6B68; margin-bottom: 10px; }
   .ct-hito-icono { position: relative; z-index: 1; display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #fff; border: 2px solid #E6E6E2; color: #1D1D1F; margin-bottom: 14px; }
-  .ct-hito.is-on .ct-hito-icono { background: var(--color-primary, #4B7BE5); border-color: var(--color-primary, #4B7BE5); color: #fff; box-shadow: 0 10px 24px rgba(75,123,229,0.3); }
-  .ct-hito.is-on .ct-hito-cuando { color: var(--color-primary, #4B7BE5); }
+  .ct-hito.is-on .ct-hito-icono { background: var(--color-primary-btn, #4470D8); border-color: var(--color-primary-texto, #3A62C4); color: #fff; box-shadow: 0 10px 24px rgba(75,123,229,0.3); }
+  .ct-hito.is-on .ct-hito-cuando { color: var(--color-primary-texto, #3A62C4); }
   .ct-hito h3 { font-family: var(--font-display); font-size: 18px; margin: 0 0 6px; }
   .ct-hito p { font-size: 14px; line-height: 1.5; color: #6B6B68; margin: 0; }
   /* ── Migración ── */
@@ -966,7 +966,7 @@ const urlAgenda = estimado
   .ct-migrate-foto { position: relative; border-radius: 22px; overflow: hidden; }
   .ct-migrate-foto img { width: 100%; height: 100%; aspect-ratio: 4 / 3.4; object-fit: cover; display: block; }
   .ct-migrate-flotante { position: absolute; left: 18px; bottom: 18px; background: #fff; border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
-  .ct-migrate-flotante-k { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary, #4B7BE5); }
+  .ct-migrate-flotante-k { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary-texto, #3A62C4); }
   .ct-migrate-flotante b { font-family: var(--font-display); font-size: 30px; line-height: 1.1; color: #1D1D1F; }
   .ct-migrate-flotante span:last-child { font-size: 13px; color: #6B6B68; }
   .ct-migra-lista { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }

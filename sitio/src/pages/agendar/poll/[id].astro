@@ -59,7 +59,7 @@ function formatOption(op: { fecha: string; hora: string }) {
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
               {opciones.map((op: { fecha: string; hora: string }, idx: number) => (
                 <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid #E0E0E0;border-radius:10px;cursor:pointer;transition:border-color 0.15s;">
-                  <input type="checkbox" name="selected" value={String(idx)} style="width:18px;height:18px;accent-color:#4B7BE5;" />
+                  <input type="checkbox" name="selected" value={String(idx)} style="width:18px;height:18px;accent-color:var(--color-primary-texto, #3A62C4);" />
                   <span style="font-size:0.9375rem;color:#1A1A1A;font-weight:500;">{formatOption(op)}</span>
                 </label>
               ))}

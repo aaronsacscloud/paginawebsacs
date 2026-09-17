@@ -129,13 +129,13 @@ const {
   .dir-head { max-width: 760px; margin-bottom: 56px; }
   .dir-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #4B7BE5; margin: 0 0 18px;
+    color: var(--color-primary-texto, #3A62C4); margin: 0 0 18px;
   }
   .dir-head h2 {
     font-size: clamp(30px, 4.6vw, 54px); font-weight: 800; letter-spacing: -1.9px;
     line-height: 1.04; color: #1A1A1A; margin: 0 0 18px;
   }
-  .dir-head h2 span { color: #4B7BE5; }
+  .dir-head h2 span { color: var(--color-primary-texto, #3A62C4); }
   .dir-sub { color: #4A4A4A; font-size: clamp(16px, 1.8vw, 19px); margin: 0; line-height: 1.65; }
 
   .dir-torre-rot {
@@ -143,7 +143,7 @@ const {
     padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,.09); margin-bottom: 20px;
   }
   .dir-torre-rot span:first-child { font-size: 15.5px; font-weight: 700; color: #1A1A1A; }
-  .dir-torre-rot span:last-child { font-size: 13px; color: #8C8C8C; font-weight: 600; }
+  .dir-torre-rot span:last-child { font-size: 13px; color: #6E6E6D; font-weight: 600; }
 
   /* ── Las torres ──
      Cada sucursal es una columna y su relleno es la venta. La comparacion se
@@ -200,7 +200,7 @@ const {
     display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
     margin: 0 0 9px; font-size: 14px;
   }
-  .dir-detalle i { font-style: normal; color: #8C8C8C; }
+  .dir-detalle i { font-style: normal; color: #6E6E6D; }
   .dir-detalle b { color: #1A1A1A; font-weight: 700; font-variant-numeric: tabular-nums; }
   .dir-nota {
     display: block !important; margin: 14px 0 0 !important; padding-top: 14px;
@@ -227,7 +227,7 @@ const {
     font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
     color: #A0A0A0;
   }
-  .dir-kw-2 { color: #4B7BE5; }
+  .dir-kw-2 { color: var(--color-primary-texto, #3A62C4); }
   .dir-flecha { color: #C9C9C9; font-size: 18px; }
   .dir-condicion b { color: #1A1A1A; font-weight: 800; }
   .dir-regla-detalle { margin: 0; font-size: 15px; line-height: 1.65; color: #4A4A4A; max-width: 78ch; }

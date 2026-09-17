@@ -848,7 +848,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     text-decoration: none;
   }
   .nav-lang-option.active {
-    color: var(--color-primary);
+    color: var(--color-primary-texto);
     font-weight: 700;
   }
 
@@ -923,7 +923,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     font-weight: 600;
     padding: 10px 19px;
     border-radius: 10px;
-    background: #4B7BE5;
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
     text-decoration: none;
     line-height: 1.2;
@@ -1068,7 +1068,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   }
 
   .mobile-link:hover {
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     text-decoration: none;
   }
 
@@ -1104,7 +1104,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   }
 
   .mobile-accordion-trigger:hover {
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   .mobile-accordion-chevron {
@@ -1117,7 +1117,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   .mobile-accordion-trigger[aria-expanded="true"] .mobile-accordion-chevron {
     transform: rotate(180deg);
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   .mobile-accordion-content {
@@ -1148,7 +1148,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   .mobile-pillar-verb:hover {
     text-decoration: none;
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   .mobile-sub-links {
@@ -1169,7 +1169,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   }
 
   .mobile-sub-link:hover {
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     background: rgba(75, 123, 229, 0.04);
     text-decoration: none;
   }
@@ -1242,7 +1242,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     text-transform: uppercase; color: #9A9690; margin-bottom: 14px;
   }
   .gw-rows { list-style: none; margin: 0; padding: 0; }
-  .gw-more { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; padding: 13px 16px; border-radius: 12px; background: var(--color-primary, #4B7BE5); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; transition: background 0.2s, transform 0.2s; }
+  .gw-more { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; padding: 13px 16px; border-radius: 12px; background: var(--color-primary-btn, #4470D8); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; transition: background 0.2s, transform 0.2s; }
   .gw-more:hover { background: #3B6BD5; transform: translateY(-1px); }
   .gw-more svg { transition: transform 0.2s; } .gw-more:hover svg { transform: translateX(3px); }
   .gw-row {
@@ -1259,7 +1259,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .gw-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gw-name {
     flex: 1; font-family: var(--font-display); font-size: 1.1875rem; font-weight: 400;
-    letter-spacing: -0.02em; line-height: 1.1; color: #8C8C8C; transition: color 0.25s ease;
+    letter-spacing: -0.02em; line-height: 1.1; color: #6E6E6D; transition: color 0.25s ease;
   }
   .gw-arrow { color: #1a1a1a; opacity: 0; transform: translateX(-4px); transition: 0.25s ease; }
   .gw-row:hover .gw-name, .gw-row.active .gw-name { color: #1a1a1a; }
@@ -1267,7 +1267,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .gw-row:hover .gw-th, .gw-row.active .gw-th { opacity: 1; filter: none; }
   .gw-row.active { padding-left: 10px; }
   .gw-row.active .gw-arrow { opacity: 1; transform: none; }
-  .gw-todos { display: inline-block; margin-top: 14px; font-size: 0.8125rem; color: #8C8C8C; text-decoration: none; transition: color 0.2s ease; line-height: 1.45; }
+  .gw-todos { display: inline-block; margin-top: 14px; font-size: 0.8125rem; color: #6E6E6D; text-decoration: none; transition: color 0.2s ease; line-height: 1.45; }
   .gw-todos b { color: #1a1a1a; font-weight: 600; }
   .gw-todos:hover { color: #1a1a1a; text-decoration: none; }
 
@@ -1309,7 +1309,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .gw-cta-demo:hover { background: #1ebe5b; color: #fff; text-decoration: none; transform: translateY(-1px); }
   .gw-cta-demo-icon { width: 18px; height: 18px; display: inline-flex; flex: none; }
   .gw-cta-demo-icon :global(svg) { width: 100%; height: 100%; }
-  .gw-actions-nota { font-size: 0.75rem; color: #8C8C8C; }
+  .gw-actions-nota { font-size: 0.75rem; color: #6E6E6D; }
 
   /* ─── Mobile sectors — Minimal list ─── */
   .mobile-sectors-list {
@@ -1353,7 +1353,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   .mobile-sector-row:hover .mobile-sector-row-icon,
   .mobile-sector-row:active .mobile-sector-row-icon {
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   .mobile-sector-wa {
@@ -1393,7 +1393,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     margin: 0 16px 12px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     text-decoration: none;
   }
 
@@ -1414,7 +1414,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   .mobile-sector-row:hover .mobile-sector-row-name,
   .mobile-sector-row:active .mobile-sector-row-name {
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   /* Mobile perf: replace expensive backdrop-filter */
@@ -1456,7 +1456,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .gw-mitem:hover { border-color: rgba(0, 0, 0, 0.2); box-shadow: 0 8px 22px -12px rgba(0, 0, 0, 0.2); text-decoration: none; color: #1a1a1a; }
   .gw-mname { font-family: var(--font-display); font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
   .gw-mdesc { display: none; }
-  .gw-marrow { color: var(--color-primary); align-self: center; }
+  .gw-marrow { color: var(--color-primary-texto); align-self: center; }
 
   .mobile-modelos {
     display: flex;
@@ -1483,7 +1483,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .moda-head { margin-bottom: 16px; }
   .moda-eyebrow {
     display: block; font-size: 0.6875rem; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--color-primary); margin-bottom: 7px;
+    text-transform: uppercase; color: var(--color-primary-texto); margin-bottom: 7px;
   }
   .moda-eyebrow-alt { color: #DB2777; }
   .moda-title {
@@ -1505,7 +1505,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   }
   .moda-etapa:hover {
-    transform: translateY(-2px); border-color: var(--color-primary);
+    transform: translateY(-2px); border-color: var(--color-primary-texto);
     box-shadow: 0 10px 26px rgba(75,123,229,.10); background: #fff;
   }
   /* el hilo que une las tres etapas */
@@ -1516,7 +1516,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .moda-etapa:last-child .moda-etapa-linea { display: none; }
   .moda-etapa-num {
     font-family: var(--font-display); font-size: 0.6875rem; font-weight: 800;
-    letter-spacing: .08em; color: var(--color-primary);
+    letter-spacing: .08em; color: var(--color-primary-texto);
   }
   .moda-etapa-label {
     font-family: var(--font-display); font-size: 0.875rem; font-weight: 700;
@@ -1535,7 +1535,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   .moda-ciclo-cta {
     display: inline-flex; align-items: center; gap: 7px; margin-top: 16px;
-    font-size: 0.8125rem; font-weight: 700; color: var(--color-primary);
+    font-size: 0.8125rem; font-weight: 700; color: var(--color-primary-texto);
     text-decoration: none; transition: gap .15s ease;
   }
   .moda-ciclo-cta:hover { gap: 11px; }
@@ -1560,7 +1560,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   }
   .moda-mod-precio { font-size: 0.6875rem; color: var(--color-text-tertiary); }
   .moda-mod-arrow { color: var(--color-text-tertiary); opacity: 0; transition: opacity .15s ease; }
-  .moda-mod:hover .moda-mod-arrow { opacity: 1; color: var(--color-primary); }
+  .moda-mod:hover .moda-mod-arrow { opacity: 1; color: var(--color-primary-texto); }
 
   @media (max-width: 1180px) {
     .moda-split { grid-template-columns: 1fr; gap: 26px; }
@@ -1637,7 +1637,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .vert-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.05) 100%); }
   .vert-num { position: absolute; left: 22px; top: 20px; z-index: 2; font-family: 'Clash Display', var(--font-display); font-size: 14px; letter-spacing: 0.2em; color: rgba(255,255,255,0.75); }
   .vert-card-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 22px 24px; }
-  .vert-aqui { display: inline-block; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: var(--color-primary, #4B7BE5); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+  .vert-aqui { display: inline-block; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: var(--color-primary-btn, #4470D8); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
   .vert-card-body b { display: block; font-family: 'Clash Display', var(--font-display); font-size: clamp(24px, 2.1vw, 34px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.02; }
   .vert-card-body small { display: block; margin-top: 8px; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,0.78); max-width: 34ch; }
   .vert-card-body i { display: inline-block; margin-top: 14px; font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #fff; opacity: 0.85; transition: opacity 0.2s, transform 0.3s; }

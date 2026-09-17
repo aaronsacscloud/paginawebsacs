@@ -262,7 +262,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   :global(.cv-met-top) { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
   :global(.cv-met-n) { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
   :global(.cv-met-tot) {
-    font-size: 16px; font-weight: 700; color: var(--color-primary);
+    font-size: 16px; font-weight: 700; color: var(--color-primary-texto);
     font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   :global(.cv-met-d) { font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); margin: 6px 0 10px; }
@@ -315,7 +315,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .cv-btn {
     grid-column: 1 / -1; justify-self: start; padding: 18px 36px;
     font-family: var(--font-body); font-size: 16px; font-weight: 700; cursor: pointer;
-    background: var(--color-primary); color: #fff; border: 0;
+    background: var(--color-primary-btn, #4470D8); color: #fff; border: 0;
     border-radius: var(--radius-full); box-shadow: var(--shadow-primary);
     transition: transform .15s cubic-bezier(.25,.1,.25,1), background .15s;
   }

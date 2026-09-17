@@ -94,7 +94,7 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
   .cs-head { max-width: 700px; margin-bottom: 52px; }
   .cs-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #4B7BE5; margin: 0 0 16px;
+    color: var(--color-primary-texto, #3A62C4); margin: 0 0 16px;
   }
   .cs-head h2 {
     font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
@@ -115,12 +115,12 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
   .cs-txt {
     font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: -.4px; line-height: 1.3;
   }
-  .cs-boton svg { width: 20px; height: 20px; color: #8C8C8C; flex-shrink: 0; transition: color .3s ease; }
+  .cs-boton svg { width: 20px; height: 20px; color: #6E6E6D; flex-shrink: 0; transition: color .3s ease; }
   .cs-mas { transition: opacity .25s ease; }
   .cs-caso.on .cs-mas { opacity: 0; }
   /* El aspa se lee "cerrar"; abierto tiene que ser un menos. Se esconde el
      trazo vertical en vez de girar el signo. */
-  .cs-caso.on .cs-boton svg { color: #4B7BE5; }
+  .cs-caso.on .cs-boton svg { color: var(--color-primary-texto, #3A62C4); }
   .cs-boton:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; border-radius: 4px; }
 
   /* 0fr → 1fr: el detalle se abre a su altura real, la mida lo que la mida.

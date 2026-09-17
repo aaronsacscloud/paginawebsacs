@@ -61,8 +61,9 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
     <!-- Preload critical fonts -->
     <link rel="preload" href="/fonts/PlusJakartaSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/ClashDisplay-Bold.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Preload hero image (above-fold, LCP element) -->
-    <link rel="preload" href={preloadImage || '/images/hero-sacs-store.webp'} as="image" type="image/webp" />
+    <link rel="preload" href={preloadImage || '/images/hero-sacs-store-1400.webp'} as="image" type="image/webp" fetchpriority="high" />
 
     <SEO
       title={title}
@@ -535,7 +536,7 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         width: 36px; height: 36px;
         border-radius: 50%;
         background: rgba(75,123,229,0.10);
-        color: #4B7BE5;
+        color: var(--color-primary-texto, #3A62C4);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -650,7 +651,7 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         font-family: var(--font-body);
         font-size: 0.875rem;
         font-weight: 600;
-        color: var(--color-primary);
+        color: var(--color-primary-texto);
         margin: 0 0 16px;
       }
       .cs-modal-desc {

@@ -163,7 +163,7 @@ const structuredData = {
     .ent-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
     .ent-eyebrow {
       font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary);
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto);
       display: block; margin-bottom: 14px;
     }
     .ent-h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: 700; color: var(--color-text-primary); }
@@ -175,25 +175,25 @@ const structuredData = {
     .ent-sub { margin: 18px auto 0; max-width: 680px; font-size: clamp(1rem, 1.6vw, 1.1875rem); line-height: 1.6; color: var(--color-text-secondary); }
     .ent-ctas { margin-top: 32px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
     .ent-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.9875rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
-    .ent-btn-primary { background: var(--color-primary); color: #fff; }
+    .ent-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
     .ent-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
     .ent-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
-    .ent-btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .ent-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
     .ent-nota { margin-top: 14px; font-size: 0.8125rem; color: var(--color-text-tertiary); }
 
     .ent-caps { padding: clamp(64px, 9vw, 120px) 0; background: #fff; }
     .ent-caps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .ent-cap { display: flex; flex-direction: column; gap: 8px; padding: 26px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 14px; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
-    .ent-cap:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 12px 32px rgba(0,0,0,0.07); }
-    .ent-cap-plan { align-self: flex-start; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); background: rgba(75, 123, 229, 0.08); border-radius: 6px; padding: 4px 8px; }
+    .ent-cap:hover { transform: translateY(-3px); border-color: var(--color-primary-texto); box-shadow: 0 12px 32px rgba(0,0,0,0.07); }
+    .ent-cap-plan { align-self: flex-start; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary-texto); background: rgba(75, 123, 229, 0.08); border-radius: 6px; padding: 4px 8px; }
     .ent-cap-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); }
     .ent-cap-desc { font-size: 0.9rem; line-height: 1.55; color: var(--color-text-secondary); flex: 1; }
-    .ent-cap-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8438rem; font-weight: 600; color: var(--color-primary); }
+    .ent-cap-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8438rem; font-weight: 600; color: var(--color-primary-texto); }
 
     .ent-erp { padding: clamp(64px, 9vw, 120px) 0; background: var(--color-bg-primary); }
     .ent-erp-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
     .ent-erp-text { margin-top: 14px; font-size: 1.0313rem; line-height: 1.65; color: var(--color-text-secondary); }
-    .ent-link { display: inline-block; margin-top: 16px; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+    .ent-link { display: inline-block; margin-top: 16px; font-weight: 600; color: var(--color-primary-texto); text-decoration: none; }
     .ent-erp-caja { background: var(--color-bg-dark); border-radius: 16px; padding: 32px 30px; color: #fff; }
     .ent-erp-caja-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 700; }
     .ent-erp-caja-text { margin-top: 6px; font-size: 0.9rem; color: rgba(255,255,255,0.75); }
@@ -205,7 +205,7 @@ const structuredData = {
     .ent-programa { padding: clamp(64px, 9vw, 120px) 0; background: #fff; }
     .ent-programa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .ent-paso { padding: 26px 24px; border: 1px solid var(--color-border-light); border-radius: 14px; display: flex; flex-direction: column; gap: 8px; }
-    .ent-paso-num { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--color-primary); }
+    .ent-paso-num { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--color-primary-texto); }
     .ent-final { margin-top: 40px; text-align: center; }
 
     @media (max-width: 900px) {

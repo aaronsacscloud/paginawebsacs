@@ -62,7 +62,7 @@ const steps = [
       { id: 'crm-omnicanal', label: 'Una ficha por clienta', desc: 'Talla, marcas favoritas y compras en tienda, en línea y por WhatsApp en una sola ficha. Segmentos que se arman solos: quien compra cada temporada, quien no volvió, quien siempre aparta.', href: '/producto/clientes-y-crm', image: null },
       { id: 'crm-email', label: 'Email marketing', desc: 'Campañas de nueva colección, rebajas de temporada y "llegó tu talla" con editor visual y resultados medidos en ventas reales, no en aperturas.', href: '/producto/marketing-por-correo', image: null },
       { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Avisos a segmentos con plantillas aprobadas por Meta: la clienta que compra tu marca recibe el drop antes que nadie. Conectado al CRM, con pedidos que caen al mismo inventario.', href: '/producto/marketing-por-whatsapp', image: null },
-      { id: 'crm-momentos', label: 'Cumpleaños, aniversarios y reactivación', desc: 'Mensajes automáticos en el momento clave: cumpleaños, primer aniversario o baja de actividad. Recupera clientas dormidas y premia a las leales sin que muevas un dedo.' },
+      { id: 'crm-momentos', label: 'Cumpleaños, aniversarios y reactivación', desc: 'Mensajes automáticos en el momento clave: cumpleaños, primer aniversario o baja de actividad. Recupera clientas dormidas y premia a las leales sin que muevas un dedo.', href: '/producto/programa-de-lealtad' },
     ],
   },
   {
@@ -160,7 +160,9 @@ const useCases = [
       <div class="hero-mobile-visual">
         <div class="hero-mobile-image-wrapper">
           <img
-            src="/images/hero-sacs-store.webp"
+            src="/images/hero-sacs-store-1400.webp"
+            srcset="/images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
+            sizes="100vw"
             alt="Persona usando SACS en tablet en su tienda de ropa"
             class="hero-mobile-image"
             width="900"
@@ -193,7 +195,9 @@ const useCases = [
     <div class="hero-visual">
       <div class="hero-image-wrapper">
         <img
-          src="/images/hero-sacs-store.webp"
+          src="/images/hero-sacs-store-1400.webp"
+          srcset="/images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
+          sizes="(max-width: 900px) 100vw, 1100px"
           alt="Persona usando SACS en tablet en su tienda de ropa"
           class="hero-image"
           width="900"
@@ -297,7 +301,7 @@ const useCases = [
         </div>
       </div>
       <div class="flujo-video" id="flujoVideo">
-        <img class="flujo-still" src="/tienda/59-live.webp" alt="" decoding="async"  width="1536" height="1024" />
+        <img class="flujo-still" src="/tienda/59-live-900.webp" alt="" decoding="async"  width="1536" height="1024" />
         <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/59-live.webp"><track kind="captions" src="/tienda/recorrido.vtt?v=2" srclang="es" label="Español" /></video>
         <div class="flujo-tag flujo-tag--live" data-tag="0"><i></i>En vivo · TikTok Shop · Instagram · Facebook</div>
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
@@ -329,7 +333,7 @@ const useCases = [
         <span class="pillar-eyebrow">{steps[0].verb.toUpperCase()}</span>
         <h2 class="pillar-h2">{steps[0].title}.</h2>
         <p class="pillar-subtitle">{steps[0].subtitle}</p>
-        <div class="pillar-accordion" role="tablist" aria-label="Opciones de Vende">
+        <div class="pillar-accordion" role="group" aria-label="Opciones de Vende">
           {steps[0].subs.map((sub, i) => (
             <div class={`pillar-acc${i === 0 ? ' is-open' : ''}`} data-acc-idx={i} style={`--i:${i}`}>
               <button class="pillar-acc-btn" type="button" aria-expanded={i === 0 ? 'true' : 'false'} data-slide-target={sub.id}>
@@ -355,7 +359,7 @@ const useCases = [
 
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
-              <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" loading="lazy"  width="1999" height="1252" />
+              <img src="/images/screen-pos-1500.webp" alt="Punto de Venta SACS" class="tablet-slide-img" loading="lazy"  width="1999" height="1252" />
             </div>
 
             {/* ── Vende: Cambios y devoluciones ── */}
@@ -1052,7 +1056,7 @@ const useCases = [
 
                         {/* Story / craftmanship strip */}
                         <div class="ec-story">
-                          <div class="ec-story-img"><img src="/images/fideliza-loyalty.webp" alt="" loading="lazy" width="500" height="320" /></div>
+                          <div class="ec-story-img"><img src="/images/fideliza-loyalty.webp" alt="" loading="lazy" width="1024" height="1536" /></div>
                           <div class="ec-story-body">
                             <div class="ec-story-eyebrow">HECHO A MANO</div>
                             <div class="ec-story-title">Cosido en Oaxaca,<br/>diseñado en CDMX.</div>
@@ -1068,7 +1072,7 @@ const useCases = [
                             <div class="ec-section-title">Resort 2026 · Tulum</div>
                           </div>
                           <div class="ec-look-grid">
-                            <div class="ec-look-tile ec-look-tile--lg"><img src="/images/recomendaciones-productos.webp" alt="" loading="lazy" width="320" height="400" /></div>
+                            <div class="ec-look-tile ec-look-tile--lg"><img src="/images/recomendaciones-productos.webp" alt="" loading="lazy" width="1024" height="1536" /></div>
                             <div class="ec-look-col">
                               <div class="ec-look-tile"><img src="/images/reco-blazer.webp" alt="" loading="lazy" width="200" height="180" /></div>
                               <div class="ec-look-tile"><img src="/images/reco-falda.webp" alt="" loading="lazy" width="200" height="180" /></div>
@@ -1233,24 +1237,24 @@ const useCases = [
                   alt="SACS — Catálogo de productos sincronizado en móvil y tablet con canales de venta sociales"
                   class="social-devices-img"
                   width="1200"
-                  height="900"
+                  height="825"
                   loading="lazy"
                 />
                 {/* Logos flotantes animados */}
                 <div class="social-floating-logos">
-                  <div class="floating-logo floating-logo--tiktok" aria-label="TikTok Shop">
+                  <div role="img" class="floating-logo floating-logo--tiktok" aria-label="TikTok Shop">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
                   </div>
-                  <div class="floating-logo floating-logo--instagram" aria-label="Instagram Shop">
+                  <div role="img" class="floating-logo floating-logo--instagram" aria-label="Instagram Shop">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8z"/></svg>
                   </div>
-                  <div class="floating-logo floating-logo--facebook" aria-label="Facebook Shop">
+                  <div role="img" class="floating-logo floating-logo--facebook" aria-label="Facebook Shop">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                   </div>
-                  <div class="floating-logo floating-logo--google" aria-label="Google Shopping">
+                  <div role="img" class="floating-logo floating-logo--google" aria-label="Google Shopping">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                   </div>
-                  <div class="floating-logo floating-logo--chatgpt" aria-label="ChatGPT Commerce">
+                  <div role="img" class="floating-logo floating-logo--chatgpt" aria-label="ChatGPT Commerce">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M22.282 9.821a5.985 5.985 0 00-.516-4.91 6.046 6.046 0 00-6.51-2.9A6.065 6.065 0 0011.67.5 6.04 6.04 0 005.337 4.14a6.015 6.015 0 00-4.02 2.916 6.043 6.043 0 00.743 7.097 5.98 5.98 0 00.516 4.911 6.043 6.043 0 006.51 2.9A5.99 5.99 0 0012.33 23.5a6.04 6.04 0 006.333-3.64 6.015 6.015 0 004.02-2.916 6.043 6.043 0 00-.743-7.097z"/></svg>
                   </div>
                 </div>
@@ -1337,7 +1341,7 @@ const useCases = [
           </div>
         </div>
         <div class="flujo-video" id="creativoVideo">
-          <img class="flujo-still" src="/tienda/101-foto-celular.webp" alt="" decoding="async"  width="1280" height="852" />
+          <img class="flujo-still" src="/tienda/101-foto-celular-900.webp" alt="" decoding="async"  width="1280" height="852" />
           <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/101-foto-celular.webp"><track kind="captions" src="/tienda/reel.vtt?v=3" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
@@ -1361,7 +1365,7 @@ const useCases = [
         <span class="pillar-eyebrow">{steps[1].verb.toUpperCase()}</span>
         <h2 class="pillar-h2">{steps[1].title}.</h2>
         <p class="pillar-subtitle">{steps[1].subtitle}</p>
-        <div class="pillar-accordion" role="tablist" aria-label="Opciones de Controla">
+        <div class="pillar-accordion" role="group" aria-label="Opciones de Controla">
           {steps[1].subs.map((sub, i) => (
             <div class={`pillar-acc${i === 0 ? ' is-open' : ''}`} data-acc-idx={i} style={`--i:${i}`}>
               <button class="pillar-acc-btn" type="button" aria-expanded={i === 0 ? 'true' : 'false'} data-slide-target={sub.id}>
@@ -2054,7 +2058,7 @@ const useCases = [
         <span class="pillar-eyebrow">{steps[2].verb.toUpperCase()}</span>
         <h2 class="pillar-h2">{steps[2].title}.</h2>
         <p class="pillar-subtitle">{steps[2].subtitle}</p>
-        <div class="pillar-accordion" role="tablist" aria-label="Opciones de Fideliza">
+        <div class="pillar-accordion" role="group" aria-label="Opciones de Fideliza">
           {steps[2].subs.map((sub, i) => (
             <div class={`pillar-acc${i === 0 ? ' is-open' : ''}`} data-acc-idx={i} style={`--i:${i}`}>
               <button class="pillar-acc-btn" type="button" aria-expanded={i === 0 ? 'true' : 'false'} data-slide-target={sub.id}>
@@ -2153,7 +2157,7 @@ const useCases = [
               <div class="reco-split">
                 {/* Left: lifestyle photo */}
                 <div class="reco-photo">
-                  <img src="/images/recomendaciones-productos.webp" alt="Vendedora mostrando recomendaciones de productos en tablet a cliente" loading="lazy" width="900" height="1340" />
+                  <img src="/images/recomendaciones-productos.webp" alt="Vendedora mostrando recomendaciones de productos en tablet a cliente" loading="lazy" width="1024" height="1536" />
                 </div>
                 {/* Right: Phone with recommendations */}
                 <div class="reco-phone-wrap">
@@ -3036,7 +3040,7 @@ const useCases = [
         <span class="pillar-eyebrow">{steps[3].verb.toUpperCase()}</span>
         <h2 class="pillar-h2">{steps[3].title}.</h2>
         <p class="pillar-subtitle">{steps[3].subtitle}</p>
-        <div class="pillar-accordion" role="tablist" aria-label="Opciones de Automatiza">
+        <div class="pillar-accordion" role="group" aria-label="Opciones de Automatiza">
           {steps[3].subs.map((sub, i) => (
             <div class={`pillar-acc${i === 0 ? ' is-open' : ''}`} data-acc-idx={i} style={`--i:${i}`}>
               <button class="pillar-acc-btn" type="button" aria-expanded={i === 0 ? 'true' : 'false'} data-slide-target={sub.id}>
@@ -3131,7 +3135,7 @@ const useCases = [
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
-          <div class="mc-card-visual"><img src="/images/screen-pos.webp" alt="Punto de Venta SACS" loading="lazy" width="800" height="500"></div>
+          <div class="mc-card-visual"><img src="/images/screen-pos-1500.webp" alt="Punto de Venta SACS" loading="lazy" width="800" height="500"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Punto de Venta</div>
             <div class="mc-card-desc">Cobra por talla y color, con o sin internet, desde cualquier dispositivo.</div>
@@ -3174,7 +3178,7 @@ const useCases = [
           </div>
         </div>
         <div class="mc-card">
-          <div class="mc-card-visual"><img src="/images/social-commerce-devices.webp" alt="Redes Sociales y IA SACS" loading="lazy" width="800" height="600"></div>
+          <div class="mc-card-visual"><img src="/images/social-commerce-devices.webp" alt="Redes Sociales y IA SACS" loading="lazy" width="1200" height="825"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Instagram, Facebook y TikTok Shop</div>
             <div class="mc-card-desc">Publica el drop una vez y vende con las mismas tallas y existencias.</div>
@@ -3261,14 +3265,14 @@ const useCases = [
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
-          <div class="mc-card-visual"><img src="/images/fideliza-loyalty.webp" alt="Monedero electrónico" loading="lazy" width="1000" height="795"></div>
+          <div class="mc-card-visual"><img src="/images/fideliza-loyalty.webp" alt="Monedero electrónico" loading="lazy" width="1024" height="1536"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Monedero electrónico</div>
             <div class="mc-card-desc">Cashback en su monedero, canjeable en piso y en línea con su teléfono.</div>
           </div>
         </div>
         <div class="mc-card">
-          <div class="mc-card-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones de productos" loading="lazy" width="900" height="1340"></div>
+          <div class="mc-card-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones de productos" loading="lazy" width="1024" height="1536"></div>
           <div class="mc-card-body">
             <div class="mc-card-title">Recomendaciones por talla</div>
             <div class="mc-card-desc">Prendas o calzado en su talla o número, que combinan con lo que ya compró.</div>
@@ -3323,7 +3327,7 @@ const useCases = [
           </div>
         </div>
         <div class="flujo-video" id="inventarioVideo">
-          <img class="flujo-still" src="/tienda/96-oficina-moda.webp" alt="" decoding="async"  width="1280" height="852" />
+          <img class="flujo-still" src="/tienda/96-oficina-moda-900.webp" alt="" decoding="async"  width="1280" height="852" />
           <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/96-oficina-moda.webp"><track kind="captions" src="/tienda/inventario.vtt?v=7" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
@@ -3572,7 +3576,15 @@ const useCases = [
     letter-spacing: -0.04em;
     color: var(--color-text-primary);
     margin-bottom: var(--space-6);
-    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    animation: heroSube 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Igual que heroFadeUp pero SIN empezar en invisible: el título es el elemento
+     más grande de la primera pantalla y el navegador lo tiene que poder pintar de
+     inmediato. Lo que se mueve es su posición, no su presencia. */
+  @keyframes heroSube {
+    from { transform: translateY(14px); }
+    to   { transform: none; }
   }
 
   .hero-subtitle {
@@ -3581,14 +3593,14 @@ const useCases = [
     color: var(--color-text-secondary);
     max-width: 500px;
     margin-bottom: var(--space-10);
-    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+    animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
   }
 
   .hero-ctas {
     display: flex;
     gap: var(--space-3);
     flex-wrap: wrap;
-    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+    animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
   }
 
   @keyframes heroFadeUp {
@@ -3621,7 +3633,7 @@ const useCases = [
 
   .hero-btn:hover { text-decoration: none; }
 
-  .hero-btn-filled { background: var(--color-primary); color: #fff; }
+  .hero-btn-filled { background: var(--color-primary-btn, #4470D8); color: #fff; }
   .hero-btn-filled:hover {
     background: var(--color-primary-hover);
     transform: translateY(-1px);
@@ -3653,7 +3665,7 @@ const useCases = [
   }
   .hero-bottom-bar {
     padding-top: var(--space-8);
-    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+    animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.32s both;
   }
 
   .hero-badges {
@@ -3820,7 +3832,7 @@ const useCases = [
 
   .hero-image-wrapper {
     position: relative;
-    animation: heroImageIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    animation: heroImageIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .hero-image {
@@ -3974,7 +3986,7 @@ const useCases = [
     font-size: 0.5625rem;
     font-weight: 700;
     color: #fff;
-    background: #E54B4B;
+    background: #D63A3A;
     border-radius: 50px;
     padding: 2px 6px;
     flex-shrink: 0;
@@ -4167,7 +4179,7 @@ const useCases = [
     gap: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     border: 1.5px solid var(--color-primary, #4B7BE5);
     background: none;
     padding: 10px 24px;
@@ -4179,7 +4191,7 @@ const useCases = [
 
   .tablet-section-cta:hover {
     background: rgba(75,123,229,0.06);
-    border-color: var(--color-primary, #4B7BE5);
+    border-color: var(--color-primary-texto, #3A62C4);
     gap: 12px;
   }
 
@@ -4256,7 +4268,7 @@ const useCases = [
   }
 
   .tablet-vpill.active .tablet-vpill-num {
-    background: var(--color-primary, #4B7BE5);
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
   }
 
@@ -4427,7 +4439,7 @@ const useCases = [
     margin-top: 12px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     text-decoration: none;
     transition: gap 0.2s ease;
   }
@@ -4821,7 +4833,7 @@ const useCases = [
   /* barra de avance abajo: lo que ya pasó, lo que se muestra (con progreso) y lo que falta; y la salida */
   .flujo-nav { position: absolute; left: 0; right: 0; bottom: 26px; display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 5; }
   .flujo-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 22px; }
-  .flujo-dots li { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.4); transition: color 0.3s; }
+  .flujo-dots li { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55); transition: color 0.3s; }
   .flujo-dots li i { position: relative; display: block; width: 44px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.2); overflow: hidden; transition: background 0.3s; }
   .flujo-dots li i b { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #E8A838; }
   .flujo-dots li.is-done i { background: rgba(255, 255, 255, 0.75); }
@@ -4882,7 +4894,7 @@ const useCases = [
   .inv-op-t { font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6B7280; }
   .inv-op b { font-size: 12px; letter-spacing: -0.01em; }
   .inv-op small { font-size: 10.5px; color: #6B7280; line-height: 1.3; }
-  .inv-op.is-best { border-color: #4B7BE5; background: rgba(75, 123, 229, 0.06); box-shadow: 0 0 0 1px #4B7BE5; }
+  .inv-op.is-best { border-color: var(--color-primary-texto, #3A62C4); background: rgba(75, 123, 229, 0.06); box-shadow: 0 0 0 1px #4B7BE5; }
   .inv-op-b { position: absolute; top: -8px; right: 8px; background: #4B7BE5; color: #fff; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 999px; padding: 3px 8px; }
   /* órdenes y canales */
   .inv-ok { position: relative; padding-left: 22px; font-size: 12px; font-weight: 600; }
@@ -5143,7 +5155,7 @@ const useCases = [
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     margin-bottom: clamp(14px, 1.6vw, 22px);
   }
   .loyalty-pro-title {
@@ -5584,7 +5596,7 @@ const useCases = [
   }
   .apt-topbar-left { display: flex; align-items: center; gap: 10px; }
   .apt-topbar-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--color-text-primary); }
-  .apt-topbar-badge { font-size: 11px; font-weight: 600; color: #4B7BE5; background: rgba(75,123,229,0.08); padding: 3px 8px; border-radius: 100px; }
+  .apt-topbar-badge { font-size: 11px; font-weight: 600; color: var(--color-primary-texto, #3A62C4); background: rgba(75,123,229,0.08); padding: 3px 8px; border-radius: 100px; }
   .apt-topbar-btn { font-size: 11px; font-weight: 700; color: #fff; background: #1A1A1A; border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
 
   /* Process timeline */
@@ -5608,7 +5620,7 @@ const useCases = [
   .apt-step-icon--active { background: #4B7BE5; color: #fff; }
   .apt-step-label { font-size: 10px; font-weight: 600; color: rgba(0,0,0,0.35); }
   .apt-step--done .apt-step-label { color: #2AB5A0; }
-  .apt-step--active .apt-step-label { color: #4B7BE5; font-weight: 700; }
+  .apt-step--active .apt-step-label { color: var(--color-primary-texto, #3A62C4); font-weight: 700; }
   .apt-step-line { width: 32px; height: 2px; background: #eee; margin-bottom: 16px; }
   .apt-step-line--done { background: #2AB5A0; }
 
@@ -5636,7 +5648,7 @@ const useCases = [
   .apt-detail-id { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--color-text-primary); }
   .apt-detail-client { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
   .apt-status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; }
-  .apt-status--active { color: #4B7BE5; background: rgba(75,123,229,0.08); }
+  .apt-status--active { color: var(--color-primary-texto, #3A62C4); background: rgba(75,123,229,0.08); }
 
   .apt-detail-product { display: flex; gap: 10px; align-items: center; }
   .apt-product-thumb { width: 48px; height: 48px; border-radius: 8px; background: linear-gradient(135deg, #f0c4c8, #e8a0a8); flex-shrink: 0; }
@@ -6742,7 +6754,7 @@ const useCases = [
   .rec2-step-tag {
     font-family: 'SF Mono', 'Menlo', monospace;
     font-size: 7px;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-align: center;
@@ -6815,7 +6827,7 @@ const useCases = [
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     font-size: 14px;
     font-weight: 800;
   }
@@ -8467,7 +8479,7 @@ const useCases = [
     font-weight: 800;
     letter-spacing: 0.08em;
     background: rgba(75,123,229,0.10);
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     padding: 4px 7px;
     border-radius: 4px;
     text-transform: uppercase;
@@ -9322,7 +9334,7 @@ const useCases = [
     font-size: 14px;
   }
   .apt2-side-icon--ok    { background: rgba(42,181,160,0.12); color: #1A8F7A; }
-  .apt2-side-icon--cash  { background: rgba(75,123,229,0.12); color: #4B7BE5; }
+  .apt2-side-icon--cash  { background: rgba(75,123,229,0.12); color: var(--color-primary-texto, #3A62C4); }
   .apt2-side-icon--wa    { background: #25D366; color: #fff; }
   .apt2-side-body { flex: 1; min-width: 0; }
   .apt2-side-title {
@@ -11165,8 +11177,8 @@ const useCases = [
     white-space: nowrap;
   }
   .sc-ttab:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--color-primary-texto);
+    color: var(--color-primary-texto);
   }
   .sc-ttab--active {
     background: var(--color-text-primary);
@@ -11451,7 +11463,7 @@ const useCases = [
     .mc-cat-count { font-size: 11px; color: #999; }
     .mc-cat-tabs { display: flex; gap: 12px; margin-bottom: 10px; padding-bottom: 7px; border-bottom: 1px solid #eee; }
     .mc-cat-tab { font-size: 11px; color: #999; }
-    .mc-cat-tab--active { color: #4B7BE5; font-weight: 600; border-bottom: 2px solid #4B7BE5; padding-bottom: 5px; margin-bottom: -8px; }
+    .mc-cat-tab--active { color: var(--color-primary-texto, #3A62C4); font-weight: 600; border-bottom: 2px solid #4B7BE5; padding-bottom: 5px; margin-bottom: -8px; }
     .mc-cat-header { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 6px; padding: 4px 0; font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em; }
     .mc-cat-row { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
     .mc-cat-row--alert { background: #fff5f5; margin: 0 -14px; padding-left: 14px; padding-right: 14px; }
@@ -11742,7 +11754,7 @@ const useCases = [
     filter: blur(8px);
     transform: translateY(30px);
     transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
   }
 
   .fw-word--active {
@@ -11959,10 +11971,10 @@ const useCases = [
     border-radius: 6px;
     white-space: nowrap;
   }
-  .inv-intel-action--transfer { background: rgba(75,123,229,0.1); color: #4B7BE5; }
+  .inv-intel-action--transfer { background: rgba(75,123,229,0.1); color: var(--color-primary-texto, #3A62C4); }
   .inv-intel-action--restock { background: rgba(42,181,160,0.1); color: #2AB5A0; }
   .inv-intel-action--promo { background: rgba(232,168,56,0.1); color: #C08A2A; }
-  .inv-intel-action--buy { background: rgba(75,123,229,0.1); color: #4B7BE5; }
+  .inv-intel-action--buy { background: rgba(75,123,229,0.1); color: var(--color-primary-texto, #3A62C4); }
   .inv-intel-action--liquidate { background: rgba(232,67,147,0.08); color: #D63384; }
 
   .inv-intel-screen-footer {
@@ -12481,7 +12493,7 @@ const useCases = [
   }
   .reels-subtitle {
     font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
-    color: rgba(0,0,0,0.45);
+    color: rgba(0,0,0,0.62);
     margin: var(--space-4, 16px) auto 0;
     max-width: 620px;
     line-height: 1.5;
@@ -12493,7 +12505,7 @@ const useCases = [
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--color-primary, #4B7BE5);
+    color: var(--color-primary-texto, #3A62C4);
     background: rgba(75, 123, 229, 0.08);
     padding: 6px 14px;
     border-radius: 999px;
@@ -12520,7 +12532,7 @@ const useCases = [
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
   }
   .reels-stat-unit {
     font-size: 0.7em;
@@ -12955,7 +12967,7 @@ const useCases = [
   }
 
   .accordion-header:hover {
-    color: var(--color-primary);
+    color: var(--color-primary-texto);
   }
 
   .accordion-icon {
@@ -13007,8 +13019,8 @@ const useCases = [
 
   .accordion-link:hover {
     text-decoration: none;
-    color: var(--color-primary);
-    border-color: var(--color-primary);
+    color: var(--color-primary-texto);
+    border-color: var(--color-primary-texto);
   }
 
   .accordion-progress {
@@ -13232,7 +13244,7 @@ const useCases = [
 
   .pm-sidebar-btn {
     margin-top: 16px;
-    background: var(--color-primary);
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
     font-size: 14px;
     font-weight: 600;
@@ -13286,7 +13298,7 @@ const useCases = [
     grid-template-columns: 2fr 1fr 1fr 1fr;
     font-size: 8px;
     font-weight: 700;
-    color: #8C8C8C;
+    color: #6E6E6D;
     text-transform: uppercase;
     padding-bottom: 4px;
     border-bottom: 1px solid rgba(0,0,0,0.06);
@@ -13438,7 +13450,7 @@ const useCases = [
     font-family: var(--font-body);
     font-size: 10px;
     font-weight: 700;
-    color: #8C8C8C;
+    color: #6E6E6D;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
@@ -13469,14 +13481,14 @@ const useCases = [
   .conteo-result-sku {
     font-family: var(--font-body);
     font-size: 9px;
-    color: #8C8C8C;
+    color: #6E6E6D;
   }
   .conteo-result-count {
     margin-bottom: 10px;
   }
   .conteo-result-label {
     font-size: 9px;
-    color: #8C8C8C;
+    color: #6E6E6D;
     display: block;
     margin-bottom: 2px;
   }
@@ -13490,7 +13502,7 @@ const useCases = [
   .conteo-count-of {
     font-family: var(--font-body);
     font-size: 13px;
-    color: #8C8C8C;
+    color: #6E6E6D;
   }
   .conteo-result-btn {
     font-family: var(--font-display);
@@ -15222,7 +15234,7 @@ const useCases = [
     border-radius: 10px 10px 0 0;
   }
   .crm2-ai-typing-cue {
-    color: #4B7BE5 !important;
+    color: var(--color-primary-texto, #3A62C4) !important;
     text-decoration: none !important;
     font-weight: 700;
     font-size: 8px;
@@ -16487,7 +16499,7 @@ const useCases = [
   .mk-wa2-tmpl-body > div:last-child { margin-bottom: 0; }
   .mk-wa2-var {
     background: rgba(75,123,229,0.12);
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     padding: 0 3px;
     border-radius: 3px;
     font-weight: 700;
@@ -16900,7 +16912,7 @@ const useCases = [
   }
   .cat-topbar-count {
     font-size: 11px;
-    color: #8C8C8C;
+    color: #6E6E6D;
   }
   .cat-topbar-actions {
     display: flex;
@@ -16919,9 +16931,9 @@ const useCases = [
     white-space: nowrap;
   }
   .cat-btn--primary {
-    background: var(--color-primary);
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-texto);
   }
   .cat-filters {
     display: flex;
@@ -16938,7 +16950,7 @@ const useCases = [
   }
   .cat-filter-label {
     font-size: 9px;
-    color: #8C8C8C;
+    color: #6E6E6D;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -16960,14 +16972,14 @@ const useCases = [
   .cat-tab-item {
     font-size: 10px;
     font-weight: 600;
-    color: #8C8C8C;
+    color: #6E6E6D;
     padding: 7px 10px;
     border-bottom: 2px solid transparent;
     cursor: pointer;
   }
   .cat-tab-item--active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    color: var(--color-primary-texto);
+    border-bottom-color: var(--color-primary-texto);
   }
   .cat-table {
     flex: 1;
@@ -16980,7 +16992,7 @@ const useCases = [
     padding: 6px 14px;
     font-size: 9px;
     font-weight: 700;
-    color: #8C8C8C;
+    color: #6E6E6D;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     border-bottom: 1px solid #eee;
@@ -17072,7 +17084,7 @@ const useCases = [
   .cat-table-row--variant {
     background: #fafafa;
     font-size: 9px;
-    color: #8C8C8C;
+    color: #6E6E6D;
     padding: 4px 14px 4px 28px;
   }
   .cat-indent {
@@ -17140,7 +17152,7 @@ const useCases = [
   }
   .cat-import-file-size {
     font-size: 10px;
-    color: #8C8C8C;
+    color: #6E6E6D;
   }
   .cat-import-progress {
     height: 6px;
@@ -17167,7 +17179,7 @@ const useCases = [
   }
   .cat-import-status {
     font-size: 11px;
-    color: #8C8C8C;
+    color: #6E6E6D;
   }
   .cat-import-done {
     font-size: 12px;
@@ -17257,7 +17269,7 @@ const useCases = [
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--color-primary);
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
     font-size: 18px;
     font-weight: 700;
@@ -17344,7 +17356,7 @@ const useCases = [
   }
 
   .pm-chat-user {
-    background: var(--color-primary);
+    background: var(--color-primary-btn, #4470D8);
     color: #fff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -18240,8 +18252,9 @@ const useCases = [
 </style>
 
 <script>
-  import gsap from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  const gsapMod = await import('gsap');
+  const gsap = gsapMod.default;
+  const { ScrollTrigger } = await import('gsap/ScrollTrigger');
   gsap.registerPlugin(ScrollTrigger);
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -269,7 +269,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-head h2, .nv-head .nv-sub { max-width: 760px; }
   .nv-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #4B7BE5; margin: 0 0 16px;
+    color: var(--color-primary-texto, #3A62C4); margin: 0 0 16px;
   }
   .nv-head h2 {
     font-family: var(--font-display, 'Sora', sans-serif);
@@ -285,7 +285,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
   .nv-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; color: var(--color-text-primary, #1a1a2e); }
-  .nv-estado { font-size: 12px; font-weight: 700; color: #4B7BE5; }
+  .nv-estado { font-size: 12px; font-weight: 700; color: var(--color-primary-texto, #3A62C4); }
 
   .nv-tabla-envoltura { overflow-x: auto; }
   .nv-tabla { width: 100%; border-collapse: separate; border-spacing: 4px; min-width: 540px; }
@@ -360,7 +360,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-aplicar:hover { transform: scale(1.03); }
   .nv-aplicar:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-  .nv-tr.hecho .nv-aplicar { background: #E2E8F0; color: #8C8C8C; pointer-events: none; }
+  .nv-tr.hecho .nv-aplicar { background: #E2E8F0; color: #6E6E6D; pointer-events: none; }
   /* Los traspasos van en orden: el segundo no se puede autorizar antes que el
      primero, porque el primero es el que le deja los pares al segundo. */
   .nv-aplicar[disabled] { background: #E2E8F0; color: var(--color-text-tertiary, #8C8C8C); cursor: default; }
@@ -396,7 +396,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-dinero-n {
     margin: 0 0 18px; font-family: var(--font-display, 'Sora', sans-serif);
     font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -.04em;
-    color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums;
+    color: var(--color-primary-texto, #3A62C4); font-variant-numeric: tabular-nums;
   }
   .nv-supuesto { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
   .nv-supuesto span { font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
@@ -425,7 +425,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
   .nv-cta {
     display: block; margin-top: 26px; text-align: center;
-    background: var(--color-primary, #4B7BE5); color: #fff; text-decoration: none;
+    background: var(--color-primary-btn, #4470D8); color: #fff; text-decoration: none;
     border-radius: var(--radius-full); padding: 14px 22px;
     font-size: 14.5px; font-weight: 700; transition: transform .2s ease;
   }

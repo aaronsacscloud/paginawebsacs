@@ -37,7 +37,7 @@ const { intro, frases, cierre } = Astro.props;
   .mf-inner { max-width: 900px; margin: 0 auto; }
   .mf-intro {
     font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--color-primary, #4B7BE5); margin: 0 0 56px;
+    color: var(--color-primary-texto, #3A62C4); margin: 0 0 56px;
   }
   .mf-frases { display: grid; gap: 40px; }
   .mf-frase {
@@ -47,7 +47,7 @@ const { intro, frases, cierre } = Astro.props;
   }
   .mf-frase.on { color: var(--color-text-primary, #1A1A1A); transform: translateX(6px); }
   /* La palabra clave se queda encendida siempre: es el ancla visual de la frase. */
-  .mf-frase :global(b) { color: var(--color-primary, #4B7BE5); font-weight: 800; }
+  .mf-frase :global(b) { color: var(--color-primary-texto, #3A62C4); font-weight: 800; }
   .mf-cierre {
     margin: 72px 0 0; padding-top: 40px; border-top: 1px solid #1F1F23;
     font-size: clamp(17px, 2.2vw, 22px); line-height: 1.55; color: var(--color-text-secondary, #4A4A4A); max-width: 62ch;

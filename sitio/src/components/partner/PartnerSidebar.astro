@@ -161,7 +161,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
   .psb-eyebrow {
     font-size: 0.625rem;
     font-weight: 700;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
@@ -224,7 +224,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     font-family: var(--font-display, inherit);
     font-size: 1.5rem;
     font-weight: 300;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     margin-top: 8px;
     letter-spacing: -0.01em;
   }
@@ -263,7 +263,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
   .psb--dark .psb-tab:hover { color: #fff; }
   .psb-tab.psb-tab--active {
     color: #1a1a1a;
-    border-left-color: #4B7BE5;
+    border-left-color: var(--color-primary-texto, #3A62C4);
     border-left-width: 2px;
     padding-left: 16px;
   }
@@ -275,7 +275,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     left: 2px;
     top: 50%;
     transform: translateY(-50%);
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     font-size: 1.125rem;
     line-height: 1;
   }
@@ -288,7 +288,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     min-width: 20px;
   }
   .psb--dark .psb-tab-num { color: rgba(255,255,255,0.35); }
-  .psb-tab.psb-tab--active .psb-tab-num { color: #4B7BE5; }
+  .psb-tab.psb-tab--active .psb-tab-num { color: var(--color-primary-texto, #3A62C4); }
   .psb-tab-label {
     font-size: 0.9375rem;
     font-weight: 400;
@@ -320,7 +320,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
   }
   .psb-cta--muted {
     background: transparent;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     border: 1px solid #4B7BE5;
     cursor: default;
   }

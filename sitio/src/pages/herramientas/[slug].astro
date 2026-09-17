@@ -219,7 +219,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
 
   .curva .acciones { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
   .curva button.primario, .curva a.primario {
-    background: var(--color-primary); color: #fff; border: 0; border-radius: 9px;
+    background: var(--color-primary-btn, #4470D8); color: #fff; border: 0; border-radius: 9px;
     padding: .7rem 1.4rem; font: inherit; font-weight: 600; cursor: pointer;
     text-decoration: none; display: inline-block;
   }
@@ -229,7 +229,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
     background: none; border: 1px solid var(--color-border); border-radius: 9px;
     padding: .7rem 1.2rem; font: inherit; cursor: pointer; color: var(--color-text-secondary);
   }
-  .curva button.secundario:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .curva button.secundario:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
   .curva .privacidad { font-size: .84rem; color: var(--color-text-tertiary); margin: 1rem 0 0; }
   .curva .error {
     background: var(--alerta-fondo); border: 1px solid var(--alerta-borde); color: var(--alerta-texto);
@@ -345,7 +345,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
   .nivelar .modo { display: flex; gap: .5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
   .nivelar .modo button { padding: .5rem 1rem; font-size: .92rem; border-radius: 8px; }
   .nivelar .modo button.activo {
-    background: var(--color-primary); color: #fff; border: 1px solid var(--color-primary);
+    background: var(--color-primary-btn, #4470D8); color: #fff; border: 1px solid var(--color-primary);
     font: inherit; font-size: .92rem; font-weight: 600; cursor: pointer;
   }
   .nivelar .pegar { display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; }
@@ -391,12 +391,12 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
     border-radius: 10px; padding: .7rem .9rem;
   }
   .nivelar .movs .pz {
-    background: var(--color-primary); color: #fff; border-radius: 6px;
+    background: var(--color-primary-btn, #4470D8); color: #fff; border-radius: 6px;
     padding: .1rem .55rem; font-weight: 700; font-variant-numeric: tabular-nums;
   }
   .nivelar .movs .tl { font-weight: 600; }
   .nivelar .movs .ruta { color: var(--color-text-secondary); }
-  .nivelar .movs .ruta b { color: var(--color-primary); margin: 0 .2rem; }
+  .nivelar .movs .ruta b { color: var(--color-primary-texto); margin: 0 .2rem; }
   .nivelar .total { margin: 1rem 0 0; color: var(--color-text-secondary); line-height: 1.6; max-width: 66ch; }
 
   .nivelar .comprar {

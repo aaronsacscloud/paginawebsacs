@@ -362,7 +362,7 @@ export const prerender = false;
 
 .signup-field input:focus,
 .signup-field select:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-texto);
   box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.1);
 }
 
@@ -417,7 +417,7 @@ export const prerender = false;
 }
 .signup-field.valid .signup-phone-wrap { border-color: var(--color-secondary); }
 .signup-field.invalid .signup-phone-wrap { border-color: var(--color-error); }
-.signup-phone-wrap:focus-within { border-color: var(--color-primary); }
+.signup-phone-wrap:focus-within { border-color: var(--color-primary-texto); }
 
 .signup-lada-inline {
   font-family: var(--font-body);
@@ -660,7 +660,7 @@ export const prerender = false;
 }
 
 .signup-step.active {
-  color: var(--color-primary);
+  color: var(--color-primary-texto);
 }
 
 .signup-step.done {
@@ -680,7 +680,7 @@ export const prerender = false;
 }
 
 .signup-step.active .signup-step-num {
-  background: var(--color-primary);
+  background: var(--color-primary-btn, #4470D8);
   color: #fff;
 }
 
@@ -737,7 +737,7 @@ export const prerender = false;
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--color-primary);
+  color: var(--color-primary-texto);
   letter-spacing: -0.02em;
 }
 .signup-plan-summary-price {
@@ -757,7 +757,7 @@ export const prerender = false;
 }
 
 .stripe-card-element.StripeElement--focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-texto);
   box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.1);
 }
 

@@ -77,7 +77,7 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     margin-bottom: 16px;
   }
 
@@ -152,7 +152,7 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     width: 44px;
     height: 44px;
     background: rgba(75, 123, 229, 0.1);
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -200,7 +200,7 @@ const { eyebrow, title, subtitle, items } = Astro.props;
   }
 
   .sq2-discovery-list svg {
-    color: #4B7BE5;
+    color: var(--color-primary-texto, #3A62C4);
     flex-shrink: 0;
     margin-top: 4px;
   }
