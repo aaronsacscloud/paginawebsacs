@@ -530,8 +530,14 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
             vivo y el cierre enumera lo que va a hacer antes de hacerlo; el
             semáforo del micrófono (7.1) cubre lo que faltaba de la llamada en
             curso. Si quiere una bitácora corriendo, decirlo.
-- [ ] **8 · Llamadas inteligentes con espacio propio**, con su filtro de arranque
-      y lista dinámica, sin depender del inbox.
+- [~] **8 · Llamadas inteligentes con espacio propio.**
+      - [x] El bug reportado: tocar un filtro ya te saca de la cabina y te lleva
+            al inbox, en vez de dejarte atrapado con una lista que no coincide.
+      - [ ] El espacio propio de verdad: hoy la cabina VIVE dentro de InboxPro
+            y recibe `qs={armarQS(filtros)}` — el filtro del inbox. Sacarla es
+            registrarla como pestaña propia en CrmDashboard (Tab + allIds + NAV)
+            y darle su propio armador de lista de arranque. Es refactor de
+            estructura: se hace aparte y con QA de navegador, no al vuelo.
 - [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).
 - [x] **10 · Agenda de Andrea a partir de las 12:00 PM.** HECHO. NO estaba bien:
       ofrecía desde las 09:00. Ahora 12:00–18:00 L-V, verificado contra el

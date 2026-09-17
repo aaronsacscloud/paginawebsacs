@@ -49,6 +49,18 @@ export default function InboxPro() {
   const [mostrar, setMostrar] = useState('conversaciones');
   // Llamadas inteligentes: la cabina ocupa el lugar de la lista + el hilo.
   const [cabina, setCabina] = useState(false);
+
+  /* ══ TOCAR UN FILTRO TE SACA DE LA CABINA ════════════════════════════════
+     Reporte del dueño (17-sep-2026): «cuando estoy en llamadas inteligentes
+     pero le doy click a cualquier filtro no me lleva al inbox, se queda en
+     llamadas inteligentes».
+     Pasaba porque la cabina y los filtros comparten pantalla: el filtro sí
+     cambiaba, pero encima seguía la cabina —con la lista que se armó ANTES— así
+     que parecía que el clic no había hecho nada. Peor: la lista de la cabina y
+     el filtro elegido decían cosas distintas.
+     Elegir un filtro es querer ver esa bandeja. Se cierra la cabina y se va al
+     inbox, que es lo que uno esperaría de cualquier menú. */
+  const filtrarYSalirDeCabina = (f: any) => { if (cabina) setCabina(false); setFiltros(f); };
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   /* Lo que llegó MIENTRAS mirabas, en el teléfono. Es donde más falta hace:
      en escritorio la lista entera está a la vista, aquí caben cuatro filas.
@@ -1544,7 +1556,7 @@ export default function InboxPro() {
             onAbrir={() => { abrir(aviso.conv); setAviso(null); }} onCerrar={() => setAviso(null)} />
         )}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
-          <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
+          <SidebarInbox counts={counts} filtros={filtros} setFiltros={filtrarYSalirDeCabina} yo={yo} tick={tick}
             cabina={cabina} onCabina={v => { setCabina(v); setActiva(null); setFiltrosMobile(false); }}
             vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         </Sheet>
@@ -1563,7 +1575,7 @@ export default function InboxPro() {
         <Suspense fallback={null}>
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
         </Suspense>
-        <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
+        <SidebarInbox counts={counts} filtros={filtros} setFiltros={filtrarYSalirDeCabina} yo={yo} tick={tick}
           cabina={cabina} onCabina={setCabina}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         {cabina ? cabinaEl : (<>
