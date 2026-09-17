@@ -8,7 +8,7 @@ import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
 import DecisionSugerencia, { CAMBIOS } from '../ti/DecisionSugerencia';
 import { EsqueletoChat } from './Esqueletos';
 import { telefonoLegible } from '../../../../lib/telefono';
-import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
+import { LIFECYCLE, lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
 import { C, L, burbuja, separador, etiquetaDia } from './estilo';
 import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Iconos';
 import { Avatar, IconoCanal } from './ListaConversaciones';
@@ -33,22 +33,25 @@ import { tic, ticListo } from '../../../../lib/ui/tacto';
 // sobrevivir a que el hilo se desmonte al cambiar de conversación.
 const memoriaScroll = new Map<string, number>();
 
-/* Las etapas que se pueden poner A MANO desde el inbox, en orden de embudo.
-   Es un subconjunto del catálogo y el servidor valida el mismo: `cliente` y
-   `evangelista` los pone el cobro, no un clic —marcar cliente a quien no ha
-   pagado descuadra el ARR—. «En conciliación» es la que pidió el dueño para el
-   perdido que aceptó negociar. */
-const ETAPAS_INBOX: { id: string; label: string }[] = [
-  { id: 'suscriptor', label: 'Suscriptor' },
-  { id: 'lead', label: 'Nuevo lead' },
-  { id: 'lead_calificado', label: 'Calificado' },
-  { id: 'oportunidad', label: 'Oportunidad' },
-  { id: 'en_conciliacion', label: 'En conciliación' },
-  { id: 'rezagado', label: 'Rezagado' },
-  { id: 'churned', label: 'Perdido' },
-  { id: 'descalificado', label: 'Descalificado' },
-];
+/* EL SELECTOR ENSEÑA EL CATÁLOGO COMPLETO; lo que cambia es cuáles se pueden
+   tocar. `cliente` y `evangelista` salen en gris: los pone el COBRO —una
+   suscripción, un pago de Stripe, un trato ganado—, nunca un clic, porque
+   marcarle «cliente» a quien no ha pagado descuadra el ARR, que es el número
+   del que cuelga todo lo demás. El servidor las rechaza igual
+   (ETAPAS_MANUALES en api/crm/whatsapp/etapa.ts); esto es la explicación, no
+   la defensa.
 
+   ANTES SE OMITÍAN Y ESO ERA UN BUG, no una omisión limpia: un `<select>`
+   cuyo `value` no coincide con ninguna `<option>` se queda en blanco o cae a
+   la primera. Con 135 contactos en `cliente` —el grupo más grande del CRM—,
+   abrir la conversación de un cliente enseñaba «Suscriptor» y cualquier clic
+   distraído lo degradaba. Una etapa que no se puede poner sí se tiene que
+   poder VER.
+
+   Se arma desde LIFECYCLE y no a mano: era la segunda lista de etapas del
+   sistema y ya se había separado del catálogo en el orden. */
+const NO_MANUALES = new Set(['cliente', 'evangelista']);
+const ETAPAS_INBOX = LIFECYCLE.map(e => ({ id: e.id, label: e.label, bloqueada: NO_MANUALES.has(e.id) }));
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir, ancla }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
   onBack?: () => void; onVerDetalle?: () => void;
@@ -575,7 +578,16 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             borderColor: colorEtapa.bg === '#f4f4f6' ? C.g200 : colorEtapa.bg,
             background: colorEtapa.bg, color: colorEtapa.fg,
           }}>
-          {ETAPAS_INBOX.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+          {ETAPAS_INBOX.map(e => (
+            /* El rótulo largo SÓLO cuando no es la actual: el `<select>`
+               cerrado enseña el texto de la opción elegida, y «Cliente · lo
+               pone el cobro» no cabe en la píldora de 124 px — se leía
+               «Cliente · lo pone». La explicación hace falta cuando quieres
+               elegirla y no puedes, no cuando ya la tienes. */
+            <option key={e.id} value={e.id} disabled={e.bloqueada && e.id !== etapaId}>
+              {e.label}{e.bloqueada && e.id !== etapaId ? ' · lo pone el cobro' : ''}
+            </option>
+          ))}
         </select>}
         {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
