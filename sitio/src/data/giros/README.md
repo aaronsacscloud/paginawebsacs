@@ -624,6 +624,19 @@ Trajes · 7 Sastrería y Trajes a Medida · 8 Bolsas y Accesorios de Piel · 9 �
 10 Telas y Mercería · 11 Tallas Grandes · 12 Ropa de Maternidad · 13 Outlet y Remates ·
 14 Merch de Eventos. Se trabajan de dos en dos.
 
+> **Giro 15, pedido por el dueño el 17-sep-2026: LA EMPRENDEDORA QUE VENDE EN DIGITAL.**
+> «La emprendedora que aún no tiene tienda física pero todo lo vende en digital; esa es
+> importante». Es el único giro del catálogo que **no tiene local**: no hay mostrador, ni
+> aparador, ni probador. Hay un teléfono, un rack, una mesa de empaque y una báscula.
+> Por eso su plano no son cinco zonas de tienda sino cinco del negocio real —el cuarto del
+> inventario, la esquina de fotos, la mesa de empaque, el teléfono (que es el mostrador de
+> verdad) y la entrega—, y su escala no se mide en sucursales sino en personas y canales:
+> sola → con una que contesta → con equipo y bodega → su primera tienda física.
+> Su bloque propio, que ningún otro giro puede copiar: **la pieza se aparta dentro de una
+> conversación y se muere ahí.** No hay caja que cierre la venta, hay un chat que se queda en
+> visto, y todo el negocio se juega entre el «¿sigue disponible?» y el comprobante que llega o
+> no llega. Slug: `/giros/emprendedoras`.
+
 > **Corrección del 17-sep-2026:** el giro 14 (Merch de Eventos) **ya tiene landing completa** en
 > `src/pages/giros/merchandising-eventos.astro`, con su bloque propio `MerchPico.astro` (la
 > calculadora de cajas para la hora pico). No hay que construirla: son **13** páginas nuevas, no 14.
