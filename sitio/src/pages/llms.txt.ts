@@ -10,6 +10,7 @@
 import type { APIRoute } from 'astro';
 import { listaPublicada } from '../lib/demanda/publicar';
 import { herramientas } from '../lib/demanda/herramientas';
+import { leerPublicado as leerIndice } from '../lib/demanda/indice';
 import { SITIO, NOMBRE, DESCRIPCION } from '../data/entidad';
 import { PLANES } from '../lib/crm/ti/conocimiento/planes';
 
@@ -36,6 +37,8 @@ export const GET: APIRoute = async () => {
   for (const p of piezas) porSeccion.set(p.seccion, [...(porSeccion.get(p.seccion) || []), p]);
 
   const precio = Math.min(...PLANES.map(p => p.anualMes));
+
+  const indice = await leerIndice();
 
   const texto = `# ${NOMBRE}
 
@@ -70,7 +73,17 @@ ${[...porSeccion.entries()].map(([sec, ps]) => `## ${sec === 'comparar' ? 'Compa
 
 ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? `: ${p.meta_desc}` : ''}`).join('\n')}`).join('\n\n')}
 
-## Herramientas gratis (se pueden usar, no solo leer)
+${indice ? `## Dato propio y citable
+
+Índice Sacs de Retail de Moda (${indice.edicion}): cómo opera de verdad una
+tienda de moda en México, medido sobre ${indice.n_empresas} tiendas en operación.
+Ticket promedio, frecuencia de venta, conteo de inventario y adopción de
+herramientas. Agregado y anónimo. Licencia CC BY 4.0: se puede citar y
+reproducir citando la fuente.
+
+- ${SITIO}/indice-moda-mexico
+
+` : ''}## Herramientas gratis (se pueden usar, no solo leer)
 
 Funcionan sin cuenta, sin llave y sin dar correo. Las mismas funciones responden
 por MCP en ${SITIO}/api/mcp y por API en ${SITIO}/api/herramientas/<slug>

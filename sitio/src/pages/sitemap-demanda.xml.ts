@@ -20,6 +20,12 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 export const GET: APIRoute = async () => {
   const piezas = await listaPublicada();
 
+  /* El Índice entra al sitemap SOLO si hay una edición publicada. Anunciar una
+     URL que contesta 404 gasta la credibilidad del sitemap entero en una página
+     que no existe, y esa credibilidad se usa para las que sí. */
+  const { leerPublicado } = await import('../lib/demanda/indice');
+  const hayIndice = !!(await leerPublicado());
+
   /* Las herramientas también viven aquí, no en el sitemap del build.
      No es una decisión estética: son rutas `prerender = false`, así que
      @astrojs/sitemap —que solo ve lo que el build escribe en disco— no las
@@ -40,6 +46,12 @@ export const GET: APIRoute = async () => {
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+${hayIndice ? `  <url>
+    <loc>${esc(`${SITIO}/indice-moda-mexico`)}</loc>
+    <lastmod>${hoy}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>` : ''}
   <url>
     <loc>${esc(`${SITIO}/herramientas/mcp`)}</loc>
     <lastmod>${hoy}</lastmod>

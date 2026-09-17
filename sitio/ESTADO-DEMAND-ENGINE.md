@@ -1123,8 +1123,91 @@ completo de oportunidad, que es donde se registra la apuesta. Construirlo antes
 que los datos es a propósito — hacerlo después, con las predicciones ya vencidas
 y sin nadie que las guardara, es no poder evaluarlas nunca.
 
+---
+
+## 17-sep-2026 (noche) — el ciclo completo, y el Índice publicado
+
+### ✅ El Índice está PÚBLICO
+
+Decisión del dueño: publicar y él se encarga de la parte legal.
+`/indice-moda-mexico` responde 200, con schema `Dataset` y licencia CC BY 4.0
+—citarlo no hay que consultarlo con nadie—. Anunciado en el sitemap del motor y
+en `/llms.txt` bajo «Dato propio y citable».
+
+El sitemap solo lo incluye **si hay edición publicada**: anunciar una URL que
+contesta 404 gasta la credibilidad del sitemap en una página que no existe, y
+esa credibilidad se usa para las que sí.
+
+### ❌ Las «2 acciones esperando tu OK» no existían
+
+Eran artefactos de mi propia prueba de vida de la cola (`clave_idem: local:…`,
+payload vacío). Lo dije como si fueran decisiones reales del dueño y no lo eran.
+Borradas. La rampa de autonomía no está bloqueada por inacción: está esperando
+que el motor produzca trabajo real que aprobar.
+
+### Las 18 fases del ciclo, completas
+
+Faltaban tres y ya están:
+
+**`detectar.decay`** — páginas que pierden visibilidad. La corrección que lo hace
+honesto: **se compara contra el movimiento del PROPIO sitio**. Una página que
+cae 30% mientras todo el sitio cae 30% no decae: es la temporada. En moda eso no
+es académico — un sistema sin esa corrección avisaría cada enero de que todo se
+muere.
+
+Resultado hoy: *ninguna página cae más que el sitio* (el sitio −4.2% en 28 días).
+
+Dos falsos positivos que se quitaron al verlos:
+- `/prueba-gratis` pasó de 68 impresiones a 0 **porque yo la saqué del índice**
+  esta mañana. Reportar eso es avisar de una decisión propia.
+- Otros subdominios (`app.`, `middle.`) no son contenido que el motor gestione.
+
+**Y eso destapó algo que sí importa:** en Search Console aparecen
+`dev.sacscloud.com` (578 impresiones, **responde 200 sin noindex ni
+robots.txt** — un entorno de desarrollo abierto a Google) y `ww.sacscloud.com`
+(con una w de menos, **310 impresiones y 106 clics** que eran del sitio bueno).
+Quedan como hallazgos `subdominio_indexado` de severidad alta. No los arreglo
+desde este repo: son DNS y otros despliegues.
+
+**`detectar.competidor`** — temas que varios competidores tocaron y nosotros no.
+
+La primera versión sacaba palabras sueltas de la ruta y devolvió **3,356
+«temas»** encabezados por `product`, `marketing`, `contact` y `pricing` — que no
+son temas, son secciones de menú que tiene todo el mundo. Ahora usa el último
+segmento de la URL y exige que sea de **varias palabras**: un slug de una
+palabra es una sección, uno de varias es un artículo.
+
+Con eso: **120 temas reales**, y el mercado dice algo claro —
+
+    5 comp · case-studies              4 comp · inventory-management
+    4 comp · whatsapp-business-api     4 comp · marketing-automation
+    3 comp · whatsapp-business         3 comp · chatbot-whatsapp
+    3 comp · whatsapp-marketing        3 comp · crm-whatsapp
+    3 comp · fashion-and-apparel
+
+**Cinco temas distintos de WhatsApp**, cada uno tocado por 3-4 competidores. Y
+Sacs TIENE WhatsApp —inbox, Kapso, multilínea— y no tiene contenido sobre eso.
+
+**`aprender.recalibrar`** — ajusta los pesos del score con la evidencia. La regla
+que lo hace seguro: **sin 30 predicciones evaluadas NO recalibra**. Un ajuste
+sobre cuatro casos no aprende: mueve los pesos al azar y lo llama aprendizaje —
+y como el score decide qué escribe el motor, eso son semanas trabajando en lo
+que no importa. Tope del 20% de movimiento por ronda, para que una racha de un
+mes no dé la vuelta al criterio.
+
+Pide aprobación **siempre**, y guarda la versión nueva SIN activarla: la
+aprobación de la acción y la activación de los pesos son dos decisiones.
+
+### La evidencia ahora dice su edad
+
+La orden «páginas sin H1» incluía `/producto/`, que tenía H1 desde hacía horas:
+el rastreo es semanal y yo pedí las órdenes el mismo día. Ahora cada orden dice
+cuándo se midió y avisa si pasa de tres días.
+
+Se rastreó de nuevo (105 de 127 páginas frescas) antes de tocar nada.
+
 ### Lo que sigue
 
-1. Las tres fases que faltan: `detectar.decay`, `detectar.competidor`,
-   `aprender.recalibrar`.
-2. Experimentos (A/B de títulos y formatos).
+1. Experimentos (A/B de títulos y formatos).
+2. Las 7 órdenes de trabajo del sitio.
+3. El contenido de WhatsApp, que es el hueco más grande que encontró el motor.

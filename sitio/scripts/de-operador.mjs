@@ -148,6 +148,16 @@ async function pendientes() {
     console.log(`${p.titulo || f.tipo}`);
     console.log(`  ${f.id} · prioridad ${f.prioridad} · ${p.severidad || '?'} · ${f.created_at?.slice(0, 10)}`);
 
+    /* La edad de la evidencia, y con aviso si pasa de tres días. Una orden que
+       se lee como nueva cuando se midió la semana pasada manda a arreglar lo
+       que quizá ya está arreglado. */
+    if (p.medido_hace_h != null) {
+      const d = Math.round(p.medido_hace_h / 24);
+      const viejo = p.medido_hace_h > 72;
+      console.log(`  medido ${p.medido_hace_h < 24 ? `hace ${p.medido_hace_h} h` : `hace ${d} día(s)`}` +
+        (viejo ? '  ⚠️  rastrea otra vez antes de trabajar: puede que ya esté arreglado' : ''));
+    }
+
     if (p.por_que) console.log(`\n  POR QUÉ IMPORTA\n  ${envolver(p.por_que, 68)}`);
     if (p.hecho_cuando) console.log(`\n  HECHO CUANDO\n  ${envolver(p.hecho_cuando, 68)}`);
 

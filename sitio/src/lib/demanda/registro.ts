@@ -24,5 +24,8 @@ import './autonomia';
 import './latido';
 import './operador';
 import './aprender';
+import './decay';
+import './competidor-movimiento';
+import './recalibrar';
 
 export { hayHandler, handlerDe, tiposRegistrados } from './handlers';

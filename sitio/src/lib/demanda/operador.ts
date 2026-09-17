@@ -62,6 +62,16 @@ const REGLAS: Record<string, { titulo: string; por_que: string; hecho_cuando: st
     por_que: 'Pasados ~60 caracteres el buscador corta, y lo que se corta es el final — donde suele estar «| Sacs» o la parte diferenciadora.',
     hecho_cuando: 'El `title` baja de 60 caracteres conservando lo que distingue la página.',
   },
+  subdominio_indexado: {
+    titulo: 'Subdominios rankeando que nadie gestiona',
+    por_que: 'Aparecen en Search Console bajo nuestro dominio y no son contenido del sitio. Dos casos que ya salieron: `dev.sacscloud.com` responde 200 sin noindex ni robots.txt —un entorno de desarrollo abierto a Google, que además puede enseñar estado interno— y `ww.sacscloud.com`, con una w de menos, sirve contenido y se lleva clics que eran del sitio bueno.',
+    hecho_cuando: 'Cada subdominio tiene una decisión tomada y escrita: se le pone `noindex` y `robots.txt`, se redirige al dominio bueno, o se deja indexado a propósito y se anota por qué. Ojo: los subdominios de clientes son decisión comercial, no técnica — puede que el cliente SÍ quiera aparecer.',
+  },
+  decaimiento: {
+    titulo: 'Páginas que pierden visibilidad más rápido que el sitio',
+    por_que: 'Una página que traía gente y dejó de traerla es la oportunidad más barata que hay: ya está escrita, indexada y enlazada. Y no tiene síntoma — simplemente deja de aparecer. La comparación es contra el movimiento del PROPIO sitio, así que una caída aquí no es la temporada: es esa página.',
+    hecho_cuando: 'Para cada página: se actualiza con lo que hoy busca la gente, o se decide que su consulta ya no existe y se retira. Mirar primero qué consultas perdió en Search Console, no reescribir a ciegas.',
+  },
   contenido_delgado: {
     titulo: 'Páginas con muy poco texto',
     por_que: 'Una página de 200 palabras no responde nada completo, así que ni se posiciona ni se cita. Ojo: el arreglo NO es rellenar — es que la página conteste de verdad lo que promete, o que deje de estar en el índice.',
@@ -110,6 +120,9 @@ function sospechaNoIndexar(url: string): string | null {
 
 export type Orden = {
   regla: string;
+  /** Horas desde el último rastreo. Sin esto, una orden vieja se lee como
+   *  nueva y manda a arreglar lo que ya está arreglado. */
+  medido_hace_h?: number | null;
   titulo: string;
   por_que: string;
   hecho_cuando: string;
@@ -130,13 +143,30 @@ export async function armarOrdenes(): Promise<Orden[]> {
   const issues = await traerTodo<any>('de_issues', 'id, tipo, severidad, url, detalle',
     q => q.eq('estado', 'abierto'));
 
+  /* Cuándo se midió esto. Los hallazgos se cierran solos cuando la regla deja
+     de detectarlos, pero eso pasa al RASTREAR, y el rastreo es semanal. Entre
+     medias, una página ya arreglada sigue en la lista.
+
+     Ya mordió: la primera orden de «páginas sin H1» incluía `/producto/`, que
+     tenía H1 desde hacía horas. Alguien habría abierto el archivo, visto el H1
+     y perdido el rato preguntándose qué se le escapaba.
+
+     No se puede arreglar rastreando aquí —el motor no debe disparar un rastreo
+     completo cada vez que agrupa hallazgos— así que se DICE, que es lo que
+     permite al operador juzgar. */
+  const { data: ultimoRastreo } = await supabase.from('de_paginas')
+    .select('rastreada_at').order('rastreada_at', { ascending: false }).limit(1).maybeSingle();
+  const medidoHace = ultimoRastreo?.rastreada_at
+    ? Math.round((Date.now() - new Date(ultimoRastreo.rastreada_at).getTime()) / 3600e3)
+    : null;
+
   const porRegla = new Map<string, Orden>();
 
   for (const i of issues) {
     if (!REGLAS[i.tipo]) continue;              // regla que no sabemos explicar: no se manda
     if (await esContenidoDelMotor(i.url)) continue;   // eso lo arregla el motor, no el operador
 
-    const o: Orden = porRegla.get(i.tipo) || { regla: i.tipo, ...REGLAS[i.tipo], severidad: i.severidad, urls: [] };
+    const o: Orden = porRegla.get(i.tipo) || { regla: i.tipo, ...REGLAS[i.tipo], severidad: i.severidad, urls: [], medido_hace_h: medidoHace };
     o.urls.push({
       url: i.url, detalle: i.detalle,
       // Solo para «contenido delgado»: en las demás reglas, una pantalla de app
@@ -174,6 +204,7 @@ registrar('codigo.proponer', async (): Promise<ResultadoHandler> => {
         por_que: o.por_que,
         hecho_cuando: o.hecho_cuando,
         severidad: o.severidad,
+        medido_hace_h: o.medido_hace_h,
         // Las URLs, no rutas de archivo: el motor no puede ver el disco y una
         // ruta adivinada manda al operador a un archivo que no existe.
         urls: o.urls.map(u => u.url),
