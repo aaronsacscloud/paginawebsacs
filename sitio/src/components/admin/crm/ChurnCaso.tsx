@@ -460,7 +460,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   </Campo>
                   <Acciones onCancelar={() => setPidiendo(null)} guardando={guardando} peligro
                     onOk={async () => {
-                      if (!await confirmar('¿Cerrar este caso como perdido?', { accion: 'Cerrar', detalle: 'Es definitivo: si el cliente vuelve, se abre un episodio nuevo.' })) return;
+                      if (!await confirmar('¿Cerrar este caso como perdido?', { accion: 'Cerrar', detalle: 'El contacto pasa a «Perdido · definitivo» y deja de entrar a cualquier campaña automática, winback incluido. Si el cliente vuelve, se abre un episodio nuevo.' })) return;
                       mover('irrecuperable', { resultado_motivo: form.resultado_motivo, motivo_categoria: form.motivo_categoria });
                     }} />
                 </div>

@@ -249,5 +249,33 @@ export const PUT: APIRoute = async ({ request }) => {
     : destino === 'recuperado' ? 'Suscripción nueva ligada al caso' : '';
   await anotar(caso, 'nota', `Pasó a ${ETAPA(destino).l}`, detalle, false);
 
+  /* ══ CERRAR COMO PERDIDO CIERRA TAMBIÉN LA PUERTA ══════════════════════
+     Pedido del dueño (17-sep-2026): «aquí dentro me debe permitir cambiar su
+     etapa de ciclo de vida ya, por si lo quiero dar por perdido definitivo o
+     no me interesa rescatarlo».
+
+     Va sin casilla que marcar: cerrar el caso como irrecuperable YA ES la
+     decisión de no perseguirlo. Dejar el contacto en `churned` después de eso
+     era un estado incoherente —el caso cerrado y el winback escribiéndole—, y
+     una casilla sólo habría hecho que a veces se olvidara. */
+  if (destino === 'irrecuperable' && caso.company_id) {
+    const ahora = new Date().toISOString();
+    const { data: cts } = await supabase.from('contacts').select('id')
+      .eq('company_id', caso.company_id).in('lifecycle_stage', ['churned', 'en_conciliacion', 'rezagado']);
+    const cids = (cts || []).map((x: any) => x.id);
+    if (cids.length) {
+      await supabase.from('contacts')
+        .update({ lifecycle_stage: 'perdido_definitivo', updated_at: ahora }).in('id', cids);
+      await supabase.from('crm_secuencia_miembros')
+        .update({ detenida_at: ahora, motivo: 'caso cerrado como perdido' })
+        .in('contact_id', cids).is('detenida_at', null);
+      await supabase.from('activities').insert(cids.map((id: string) => ({
+        contact_id: id, tipo: 'descalificado', automatico: true,
+        titulo: 'Pasó a «Perdido · definitivo»',
+        descripcion: 'Su caso de churn se cerró como perdido: deja de entrar a cualquier campaña automática.',
+      }))).then(() => {}, () => {});
+    }
+  }
+
   return json({ ok: true, acceso });
 };

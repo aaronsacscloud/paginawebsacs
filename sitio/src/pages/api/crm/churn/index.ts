@@ -42,6 +42,38 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
+  /* ══ LA CARTA DE CONCILIACIÓN, PEGADA AL CASO ══════════════════════════
+     El dueño propuso un «Perdido sin respuesta» como etapa del ciclo de vida.
+     No se hizo así a propósito: nadie DECIDE que alguien no ha contestado, lo
+     decide el reloj — y como etapa habría que moverlos a mano cuando pasan los
+     días y devolverlos en cuanto contesten. Además el dato ya existe exacto en
+     `conciliaciones.estado`; copiarlo al contacto son dos verdades que se
+     separan.
+
+     Así que se DERIVA aquí y llega calculado a la pantalla: cero mantenimiento
+     y nunca miente. En la lista se ve como un cajón más, que era el objetivo.
+     «Sin respuesta» a partir de 7 días: antes de eso no es silencio, es que la
+     gente tarda en leer. */
+  const compIds = [...new Set((data || []).map((c: any) => c.company_id).filter(Boolean))];
+  const porEmpresa: Record<string, any> = {};
+  if (compIds.length) {
+    const { data: cartas } = await supabase.from('conciliaciones')
+      .select('company_id, estado, enviada_at, aceptada_at, rechazada_at, titulo')
+      .in('company_id', compIds).order('created_at', { ascending: false });
+    for (const k of cartas || []) {
+      // La primera que llega por empresa es la MÁS NUEVA (viene ordenado): una
+      // empresa puede tener tres cartas y la que cuenta es la última.
+      if (!k.company_id || porEmpresa[k.company_id]) continue;
+      const ref = k.enviada_at || k.aceptada_at || k.rechazada_at;
+      const dias = ref ? Math.floor((Date.now() - Date.parse(ref)) / 86400000) : null;
+      porEmpresa[k.company_id] = {
+        estado: k.estado, titulo: k.titulo, dias,
+        sin_respuesta: k.estado === 'enviada' && (dias ?? 0) >= 7,
+      };
+    }
+  }
+  for (const c of (data || []) as any[]) c.carta = porEmpresa[c.company_id] || null;
+
   /* El teléfono con el que se le escribe vive en el CONTACTO, no en la
      empresa. Se resuelve aquí para que la fila no tenga que pedir nada más:
      un renglón que obliga a otra petición para poder escribir es un renglón
@@ -140,6 +172,47 @@ export const PATCH: APIRoute = async ({ request }) => {
       .update({ owner_id: b.owner_id || null, updated_at: new Date().toISOString() })
       .in('id', vivos.map(c => c.id));
     return json({ ok: true, tocados: vivos.length, ignorados: ids.length - vivos.length });
+  }
+
+  /* ══ «YA VA PARA AFUERA» ═══════════════════════════════════════════════
+     Pedido del dueño (17-sep-2026): «que una me permita cambiarlo de etapa de
+     ciclo de vida si de plano es un cliente que no nos interesa recuperar y ya
+     va para afuera».
+
+     Ojo con la diferencia, que no es cosmética: las otras dos etapas de perdido
+     las decide EL CLIENTE —dijo que no—. Ésta la decidimos NOSOTROS: no vale la
+     pena perseguirlo. Termina en la misma casilla porque el efecto es el mismo
+     —no se le vuelve a escribir solo—, pero queda escrito quién lo decidió,
+     que es lo que se va a querer saber cuando alguien pregunte por qué esta
+     cuenta nunca volvió a recibir nada. */
+  if (b.accion === 'perdido_definitivo') {
+    const ahora = new Date().toISOString();
+    const comps = [...new Set(vivos.map(c => c.company_id).filter(Boolean))];
+    let personas = 0;
+    if (comps.length) {
+      // Sólo los que todavía se podían trabajar: un `cliente` de otra cuenta
+      // colgado de la misma empresa no se toca.
+      const { data: cts } = await supabase.from('contacts').select('id')
+        .in('company_id', comps).in('lifecycle_stage', ['churned', 'en_conciliacion', 'rezagado']);
+      const cids = (cts || []).map((x: any) => x.id);
+      personas = cids.length;
+      if (cids.length) {
+        await supabase.from('contacts')
+          .update({ lifecycle_stage: 'perdido_definitivo', updated_at: ahora }).in('id', cids);
+        await supabase.from('crm_secuencia_miembros')
+          .update({ detenida_at: ahora, motivo: 'no lo vamos a recuperar' })
+          .in('contact_id', cids).is('detenida_at', null);
+        await supabase.from('activities').insert(cids.map((id: string) => ({
+          contact_id: id, tipo: 'descalificado', automatico: false,
+          titulo: 'Marcado «Perdido · definitivo»',
+          descripcion: 'Decisión nuestra desde Churn: no se va a perseguir. Deja de entrar a cualquier campaña automática.',
+        }))).then(() => {}, () => {});
+      }
+    }
+    await supabase.from('churn_casos')
+      .update({ ...camposDeTransicion('irrecuperable'), updated_at: ahora })
+      .in('id', vivos.map(c => c.id));
+    return json({ ok: true, tocados: vivos.length, personas, ignorados: ids.length - vivos.length });
   }
 
   if (b.accion === 'conciliar') {

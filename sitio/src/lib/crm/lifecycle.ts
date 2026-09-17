@@ -30,6 +30,12 @@ export const LIFECYCLE: LifecycleStage[] = [
      separado de los que ya no van a volver. Ámbar: pide atención, aún no es
      problema. (Pedido del dueño, caso Jose Francisco, 16-sep-2026.) */
   { id: 'en_conciliacion', label: 'En conciliación', bg: '#FFF4E5', fg: '#9a6a10' },
+  /* El final del camino de un perdido: dijo que NO a volver. Va pegado a
+     «Perdido» y a «En conciliación» porque los tres son el mismo tramo —el de
+     después del cliente— y separarlo del grupo haría creer que es otra cosa.
+     Rojo y no gris: gris es «nunca encajó», y éste sí encajó y pagó; lo que
+     pasó es que se fue y cerró la puerta. (Pedido del dueño, 17-sep-2026.) */
+  { id: 'perdido_definitivo', label: 'Perdido · definitivo', bg: '#FEF0EF', fg: '#9c3f38' },
   { id: 'descalificado',   label: 'Descalificado', bg: '#F1EFEF', fg: '#7A6E6C' },
   { id: 'rezagado',       label: 'Rezagado',    bg: '#FFF4E5', fg: '#9a6a10' },
 ];

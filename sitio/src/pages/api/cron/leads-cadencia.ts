@@ -30,6 +30,8 @@ import { valoresPlantilla } from '../../../lib/whatsapp/variables-plantilla';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
+import { ETAPAS_CERRADAS_SQL } from '../../../lib/crm/puerta';
+
 const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
 
 
@@ -171,6 +173,13 @@ export const GET: APIRoute = async ({ url }) => {
     let q = supabase.from('contacts')
       .select('id, estatus_lead_at, prueba_inicio, ultima_actividad_venta_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, company_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
+      /* LA PUERTA, AQUÍ Y NO EN LA CONFIGURACIÓN DE CADA SECUENCIA.
+         Esto protege a TODAS las secuencias —las de hoy y las que alguien
+         cree el año que viene— sin que nadie tenga que acordarse de excluir
+         nada al armarlas. Confiar en la config es lo que falló: el winback
+         entra por `lifecycle: ['churned']`, y un churned que ya había dicho
+         que no seguía cumpliendo esa condición. Aquí ya no. */
+      .not('lifecycle_stage', 'in', ETAPAS_CERRADAS_SQL)
       .is('archived_at', null);
     if (mandaWa) q = q.eq('wa_optout', false);
     const { data: crudos } = await q.limit(tope);

@@ -31,6 +31,13 @@ const fechaCorta = (iso?: string | null) => {
 const PESTANAS: { id: string; l: string }[] = [
   { id: 'detectado', l: 'Detectados' },
   { id: 'conciliacion', l: 'En conciliación' },
+  /* «Sin respuesta» NO es una etapa del caso: es el estado de su CARTA, que
+     el servidor ya manda calculado (`carta.sin_respuesta`: enviada hace 7 días
+     o más y todavía sin contestar). Vive como pestaña porque es la pregunta
+     que se hace a diario —«¿a quién le mandé la propuesta y no me ha dicho
+     nada?»— pero no ensucia el ciclo de vida del contacto con un dato que en
+     realidad lo decide el reloj. */
+  { id: 'sin_respuesta', l: 'Sin respuesta' },
   { id: 'gracia', l: 'En gracia' },
   { id: 'recuperado', l: 'En observación' },
   { id: 'estable', l: 'Estables' },
@@ -81,13 +88,26 @@ export default function ChurnTab() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const cargar = () => {
-    fetch(`/api/crm/churn?etapa=${etapa}`)
+    // `sin_respuesta` no existe como etapa en la base: se piden los abiertos y
+    // se cuela por el estado de la carta, que viene calculado del servidor.
+    fetch(`/api/crm/churn?etapa=${etapa === 'sin_respuesta' ? 'todos' : etapa}`)
       .then(r => r.json())
       /* Un error NO se pinta como lista vacía: el 403 de permisos salía como
          «Nadie sin atender», o sea una falla disfrazada de buena noticia. */
       .then(j => {
         if (j?.error) { setErrorCarga(j.error); setFilas([]); return; }
-        setErrorCarga(''); setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {}); setEquipo(j.equipo || []);
+        const todo = j.data || [];
+        setErrorCarga('');
+        setFilas(etapa === 'sin_respuesta' ? todo.filter((c: any) => c.carta?.sin_respuesta) : todo);
+        /* El contador SOLO se recalcula cuando la carga trae el universo
+           entero. Estando en «Detectados», `todo` son únicamente los
+           detectados: poner ahí el número sería un tope silencioso, la pestaña
+           diría «2» y al entrar saldrían nueve. Si no se puede saber, se deja
+           el que había — mejor un número viejo que uno inventado. */
+        setCuenta((prev: any) => ['todos', 'sin_respuesta'].includes(etapa)
+          ? { ...(j.cuenta || {}), sin_respuesta: todo.filter((c: any) => c.carta?.sin_respuesta).length }
+          : { ...(j.cuenta || {}), sin_respuesta: prev?.sin_respuesta ?? 0 });
+        setKpis(j.kpis || {}); setEquipo(j.equipo || []);
         setPorCaer(j.por_caer || []);
       })
       .catch(() => { setErrorCarga('No se pudo cargar la lista.'); setFilas([]); });
@@ -416,13 +436,33 @@ export default function ChurnTab() {
           </table>
         </div>
         {sel.size > 0 && (
-          <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 10,
-            padding: '11px 16px', background: '#241d43', color: '#fff', borderRadius: '0 0 12px 12px', flexWrap: 'wrap' }}>
+          /* FIJA A LA VENTANA, no al final de la tabla.
+             Era `sticky bottom:0` dentro del contenedor: con 37 casos la tabla
+             es más alta que la pantalla, así que la barra se quedaba abajo del
+             todo, medio tapada, y había que bajar hasta el final para ver qué
+             se podía hacer con lo que acababas de seleccionar. Seleccionar y
+             actuar son el mismo gesto: la barra tiene que estar donde estás
+             mirando. Flotante, centrada y por encima de todo. */
+          <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 18, zIndex: 40,
+            /* `width` y no `maxWidth`: un `fixed` se ajusta a su contenido, así
+               que con maxWidth la barra medía 755 px, no cabían las cinco cosas
+               y «Asignar a…» se caía sola a un segundo renglón. Con ancho dado,
+               el separador empuja y todo entra en una línea. */
+            display: 'flex', alignItems: 'center', gap: 10, width: 'min(1060px, calc(100vw - 48px))',
+            padding: '11px 16px', background: '#241d43', color: '#fff', borderRadius: 14,
+            boxShadow: '0 12px 34px rgba(16,24,40,.34)' }}>
             <b style={{ fontSize: '0.83rem' }}>{sel.size} {sel.size === 1 ? 'caso' : 'casos'}</b>
             <button onClick={() => setSel(new Set())} style={{ background: 'none', border: 'none', color: '#c9c2ec', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 600 }}>Quitar la selección</button>
             <div style={{ flex: 1 }} />
             <button style={T.btnSel} onClick={() => exportar(lista.filter((c: any) => sel.has(c.id)))}>Exportar</button>
             <button style={T.btnSel} onClick={() => enBloque({ accion: 'conciliar' })}>Pasar a conciliación</button>
+            {/* La contraria de «Pasar a conciliación», y va a su lado porque es
+                la otra mitad de la misma decisión: lo persigo o lo suelto.
+                Pregunta antes: cierra la puerta a lo automático para siempre. */}
+            <button style={T.btnSel}
+              onClick={() => { if (confirm(`¿Marcar ${sel.size === 1 ? 'esta cuenta' : `estas ${sel.size} cuentas`} como «Perdido · definitivo»?\n\nDejan de entrar a cualquier campaña automática —winback incluido— y el caso se cierra como irrecuperable. Se puede revertir desde la ficha.`)) enBloque({ accion: 'perdido_definitivo' }); }}>
+              Ya va para afuera
+            </button>
             <select value="" style={{ ...T.btnSel, appearance: 'none' as const }}
               onChange={e => { if (e.target.value) { enBloque({ accion: 'asignar', owner_id: e.target.value }); e.target.value = ''; } }}>
               <option value="">Asignar a…</option>

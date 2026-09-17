@@ -44,9 +44,21 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       rechazo_motivo: String(b.motivo || '').slice(0, 300), updated_at: ahora,
     }).eq('id', c.id).eq('estado', 'enviada');
     if (c.contact_id) {
+      /* RECHAZAR LA CARTA ES EL «NO» MÁS CLARO QUE EXISTE: leyó la propuesta
+         completa, con su nombre y sus términos, y contestó que no. Pasa a
+         «Perdido · definitivo» y con eso deja de entrar a cualquier campaña
+         (lib/crm/puerta.ts). Dejarlo en `churned` era lo que hacía que el
+         winback volviera a escribirle. */
+      await supabase.from('contacts')
+        .update({ lifecycle_stage: 'perdido_definitivo', updated_at: ahora }).eq('id', c.contact_id)
+        .in('lifecycle_stage', ['churned', 'en_conciliacion', 'rezagado']).then(() => {}, () => {});
+      await supabase.from('crm_secuencia_miembros')
+        .update({ detenida_at: ahora, motivo: 'rechazó la conciliación' })
+        .eq('contact_id', c.contact_id).is('detenida_at', null).then(() => {}, () => {});
       await supabase.from('activities').insert({
         contact_id: c.contact_id, tipo: 'conciliacion', automatico: true,
         titulo: 'Dijo que no a la conciliación',
+        descripcion: 'Pasó a «Perdido · definitivo»: no vuelve a entrar a ninguna campaña automática.',
       }).then(() => {}, () => {});
     }
     return json({ ok: true });

@@ -20,6 +20,24 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
   const [trabajando, setTrabajando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ t: string; mal?: boolean } | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
+  // «Ver cómo llega»: el correo armado de verdad, en un iframe. Antes solo se
+  // podía revisar el TEXTO, y el texto no enseña el pie, la firma ni el bloque
+  // de cierre — ahí aparecieron dos errores que nadie había visto.
+  const [vista, setVista] = useState<{ pais: string; html: string; asunto: string } | null>(null);
+  const [viendo, setViendo] = useState<string | null>(null);
+
+  const verCorreo = async (p: any) => {
+    setViendo(p.iso); setAviso(null);
+    try {
+      const cad = (p.cadencias || [])[0];
+      const r = await fetch('/api/crm/abm/vista-correo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pais: p.iso, giro, cadencia_id: cad?.id }),
+      }).then(x => x.json());
+      if (r?.html) setVista({ pais: p.pais, html: r.html, asunto: r.asunto || '' });
+      else setAviso({ t: r?.error || 'No se pudo armar el correo', mal: true });
+    } finally { setViendo(null); }
+  };
 
   const traer = () => fetch(`/api/crm/abm/paises?giro=${encodeURIComponent(giro)}`).then(r => r.json())
     .then(r => { setPaises(r.paises || []); setCargando(false); })
@@ -64,6 +82,21 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
         <div style={{ fontSize: '.8125rem', color: aviso.mal ? P.rojoTinta : P.verdeTinta, background: aviso.mal ? P.rojoAgua : P.verdeAgua, borderRadius: 8, padding: '8px 12px' }}>{aviso.t}</div>
       )}
 
+      {vista && (
+        <div onClick={() => setVista(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(29,26,33,.55)', zIndex: 60, display: 'grid', placeItems: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 'min(680px,100%)', maxHeight: '90vh', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '13px 16px', borderBottom: `1px solid ${P.linea}` }}>
+              <div>
+                <div style={{ fontSize: '.6875rem', letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>Así llega · {vista.pais}</div>
+                <div style={{ fontSize: '.9375rem', fontWeight: 800 }}>{vista.asunto}</div>
+              </div>
+              <button onClick={() => setVista(null)} style={{ ...btn(false), marginLeft: 'auto' }}>Cerrar</button>
+            </div>
+            <iframe title="Vista del correo" srcDoc={vista.html} style={{ border: 0, width: '100%', height: '70vh', background: '#f6f6f9' }} />
+          </div>
+        </div>
+      )}
+
       {(paises || []).map((p: any) => {
         const ver = abierto === p.iso;
         // Un país pausado con cuentas ya en cadencia no está «sin lanzar»: esas
@@ -100,6 +133,7 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
                   {p.lanzado && (
                     <button disabled={!!trabajando} onClick={() => pedir({ accion: 'pausar', pais: p.iso }, p.iso, j => `${p.pais} en pausa: ${j.goteos} goteo(s). Lo que ya está programado no se cancela.`)} style={btn(false)}>Pausar el país</button>
                   )}
+                  <button disabled={viendo === p.iso} onClick={() => verCorreo(p)} style={btn(false)}>{viendo === p.iso ? 'Armando…' : 'Ver cómo llega'}</button>
                   <button onClick={() => setAbierto(ver ? null : p.iso)} style={btn(false)}>{ver ? 'Cerrar' : 'Ver detalle'}</button>
                 </div>
               </div>

@@ -592,3 +592,14 @@ que ya tiene `company_id`.
 
 Llegó mientras armaba las plantillas de apertura.
 
+## 17-sep-2026 — Llamadas inteligentes: crear una lista nueva a la medida
+
+> «aquí debo poder crear una nueva lista y poder operarla desde aquí con los
+> filtros que seleccione de forma dinámica. Hazlo junto con todos los de la
+> cola hasta terminar.»
+
+Las cinco listas fijas cubren los cinco motivos de siempre, pero no dejan
+armar «los rezagados de Guadalajara con más de dos sucursales». Hace falta un
+armador de filtros en la propia pantalla, que entregue el mismo `qs` que ya
+consume la cabina.
+

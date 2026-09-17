@@ -9,6 +9,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
+import { ETAPAS_CERRADAS } from '../../../../lib/crm/puerta';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -20,14 +21,17 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
    clic —marcar cliente a alguien que no ha pagado descuadra el ARR—. */
 const ETAPAS_MANUALES = new Set([
   'lead', 'lead_calificado', 'oportunidad', 'en_conciliacion',
-  'rezagado', 'churned', 'descalificado', 'suscriptor',
+  'rezagado', 'churned', 'perdido_definitivo', 'descalificado', 'suscriptor',
 ]);
 
 /* Entrar aquí significa «ya lo lleva una persona»: se apagan los automatismos.
    `en_conciliacion` es el caso que lo pidió —un perdido que aceptó negociar no
    puede seguir recibiendo la cadencia de recuperación mientras negocia—, y
    `descalificado` por la misma razón que el caso Montse. */
-const ETAPAS_QUE_APAGAN = new Set(['en_conciliacion', 'descalificado']);
+/* Las que apagan lo automático salen de LA PUERTA (lib/crm/puerta.ts), que es
+   el único sitio donde eso se decide. Antes estaba escrito aquí y otra vez en
+   la cadencia y otra vez en el ABM: tres listas que se creían la misma. */
+const ETAPAS_QUE_APAGAN = new Set(Object.keys(ETAPAS_CERRADAS));
 
 async function contactoDe(b: any): Promise<string | null> {
   if (b.contact_id) return String(b.contact_id);

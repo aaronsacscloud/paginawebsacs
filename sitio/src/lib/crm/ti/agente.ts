@@ -18,6 +18,7 @@ import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead, detectarGiro } from './conocimiento/index.ts';
 import { puntosPara, bloquePuntos, detectarSubgiro } from './conocimiento/puntos-giro.ts';
 import { leerConfig } from './motor';
+import { etapaTrasRechazo, etapaCerrada } from '../puerta';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA, horariosParaLlamada, llamadaTexto } from './agenda-agente';
 import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
@@ -281,8 +282,18 @@ const RECHAZO_BOTON_RE = /^\s*(ahora no|no,? gracias|no me interesa|no gracias|p
 
 export async function aplicarRechazo(contactId: string, motivo: string) {
   const ahora = new Date().toISOString();
-  await supabase.from('contacts').update({ lifecycle_stage: 'descalificado', updated_at: ahora })
-    .eq('id', contactId).in('lifecycle_stage', ['lead', 'lead_calificado', 'rezagado']).then(() => {}, () => {});
+  /* EL MISMO «NO» NO SIGNIFICA LO MISMO. De un lead que nunca compró,
+     «ahorita no» es `descalificado`. De alguien que YA FUE CLIENTE y le
+     ofrecimos volver, es `perdido_definitivo` — mandarlo a `descalificado`
+     borraría de los informes que un día pagó, que es justo lo que hay que
+     saber para medir cuánto se recupera. Lo decide `etapaTrasRechazo`, en la
+     puerta, y no una lista escrita aquí. */
+  const { data: cAct } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contactId).maybeSingle();
+  const destino = etapaTrasRechazo(cAct?.lifecycle_stage);
+  if (destino) {
+    await supabase.from('contacts').update({ lifecycle_stage: destino, updated_at: ahora })
+      .eq('id', contactId).then(() => {}, () => {});
+  }
   await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descalificado', updated_at: ahora })
     .eq('contact_id', contactId).neq('estado', 'terminada').then(() => {}, () => {});
   await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'descalificado' })
@@ -291,7 +302,9 @@ export async function aplicarRechazo(contactId: string, motivo: string) {
     .eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
   await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'descalificado', updated_at: ahora })
     .eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
-  await supabase.from('activities').insert({ contact_id: contactId, tipo: 'descalificado', titulo: 'Dijo que no le interesa por ahora', descripcion: motivo, automatico: true }).then(() => {}, () => {});
+  await supabase.from('activities').insert({ contact_id: contactId, tipo: 'descalificado',
+    titulo: destino === 'perdido_definitivo' ? 'Dijo que no a volver' : 'Dijo que no le interesa por ahora',
+    descripcion: motivo, automatico: true }).then(() => {}, () => {});
 }
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
@@ -777,6 +790,26 @@ export async function proponerRespuestas(): Promise<any> {
     }
     // EL LEAD RESPONDIÓ: lo automático que estuviera programado para él se cancela; solo sale la respuesta.
     try { const n = await alResponderElLead(cid); if (n) res.cancelados_por_respuesta = (res.cancelados_por_respuesta || 0) + n; } catch {}
+    /* ══ EL «NO» SE LEE PARA TODOS, ESTÉN O NO EN ALCANCE ══════════════════
+       ESTE ERA EL BUG. El detector de rechazo vivía cincuenta líneas más
+       abajo, o sea DESPUÉS de este filtro — y un `churned` no está en alcance
+       de SDR, así que salía por aquí sin que nadie leyera su mensaje. Ezequiel
+       apretó «Ahorita no» el 15-sep y el winback le escribió el 16: el agente
+       no lo miró (fuera de alcance) y la secuencia no se enteró.
+
+       Un «no» no es trabajo de SDR: es una baja, y una baja hay que
+       respetarla venga de quien venga. Por eso sube aquí, antes de cualquier
+       criterio de a quién le toca hablar. */
+    if (!ETAPAS_SDR.includes(c.lifecycle_stage) && !etapaCerrada(c.lifecycle_stage)) {
+      try {
+        const { texto: txtNo } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 60e3).toISOString(), 2);
+        if (RECHAZO_BOTON_RE.test(String(txtNo || '').trim())) {
+          await aplicarRechazo(cid, `eligió «${String(txtNo).trim().slice(0, 60)}»`);
+          await log({ accion: 'agente_descalifica', contact_id: cid, razon: `dijo «${String(txtNo).trim().slice(0, 60)}» estando en ${c.lifecycle_stage}: se cierra la puerta y se apagan secuencias` });
+          res.saltados++; continue;
+        }
+      } catch { /* si no se pudo leer, sigue el camino de siempre */ }
+    }
     if (!ETAPAS_SDR.includes(c.lifecycle_stage)) {
       // CANDADO DE CLIENTE (S5.1): el agente no propone, no toca ni manda plantillas. Si un cliente escribe, va a soporte como tarea (una por cliente abierta).
       res.saltados++;
