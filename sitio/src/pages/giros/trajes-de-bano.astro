@@ -54,10 +54,11 @@ import { bannerTB, manifiestoTB, variantesTB, cortinaTB, casosTB, seccionesTB, p
     genero={variantesTB.genero}
     leyendas={variantesTB.leyendas}
     remate={variantesTB.remate}
-    anchoCelda="44px"
+    anchoCelda="56px"
   />
 
   <SuiteCortina
+    titulo="¿Hay bottom M del coral?"
     fotoAntes={cortinaTB.fotoAntes}
     fotoDespues={cortinaTB.fotoDespues}
     altAntes={cortinaTB.altAntes}
@@ -67,7 +68,7 @@ import { bannerTB, manifiestoTB, variantesTB, cortinaTB, casosTB, seccionesTB, p
     pieDespues={cortinaTB.pieDespues}
   />
 
-  <SuiteProblemas entrada={problemasTB.entrada} quienes={problemasTB.quienes} />
+  <SuiteProblemas entrada={problemasTB.entrada} quienes={problemasTB.quienes} doc1={problemasTB.doc1} filas={problemasTB.filas} />
 
   <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que un set son dos piezas." />
 
@@ -101,10 +102,10 @@ import { bannerTB, manifiestoTB, variantesTB, cortinaTB, casosTB, seccionesTB, p
   <TbCorte />
 
   <GiroEscala
+    encabezado="De 1 a 150 tiendas"
     titulo="De una boutique en la playa a 150 puntos con hoteles y franquicias."
     descripcion="El negocio cambia con cada tamaño: quién compra, cómo se mueven las piezas entre tiendas y qué mira la dirección. Elige el tuyo."
     niveles={escalaTB}
-    fondo
   />
 
   <SuitePlano

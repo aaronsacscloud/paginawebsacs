@@ -53,9 +53,9 @@ const uid = 'ge-' + Math.random().toString(36).slice(2, 7);
 </BloqueProducto>
 
 <style>
-  .ge { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: 18px; padding: 20px; }
+  .ge { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; }
   .ge-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .ge-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.2s, border-color 0.2s, color 0.2s; }
+  .ge-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border-radius: var(--radius-md, 12px); border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.2s, border-color 0.2s, color 0.2s; }
   .ge-tab b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; line-height: 1.1; }
   .ge-tab span { font-size: 11.5px; color: var(--color-text-tertiary); }
   .ge-tab.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
@@ -65,7 +65,7 @@ const uid = 'ge-' + Math.random().toString(36).slice(2, 7);
   .ge-panel { display: none; grid-template-columns: 1fr 1fr; gap: 18px; }
   .ge-panel.is-on { display: grid; animation: ge-in 0.4s ease; }
   @keyframes ge-in { from { opacity: 0; transform: translateY(6px); } }
-  .ge-col { padding: 16px; border-radius: 14px; background: var(--color-bg-primary, #F7F7F5); }
+  .ge-col { padding: 16px; border-radius: var(--radius-lg, 16px); background: var(--color-bg-primary, #F7F7F5); }
   .ge-col--sis { background: #EEF3FF; }
   .ge-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
   .ge-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

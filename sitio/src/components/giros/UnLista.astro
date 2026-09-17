@@ -1,0 +1,132 @@
+---
+/**
+ * UnLista — "La lista manda", el bloque propio de uniformes (17-sep-2026, con el dictamen del
+ * referee de oficio: nada de curva ni de sobrante, que ya son de ropa y zapatería).
+ *
+ * Lo que solo existe en este oficio: el pedido no lo arma el cliente ni el vendedor, lo arma la
+ * lista de la escuela (o la relación de tallas de la empresa); y el módulo de regreso a clases es
+ * un almacén de temporada que nace en julio y muere en septiembre.
+ *
+ * Los siete puntos (versión del referee):
+ * · Cuándo se decide: marzo, cuando la escuela da el visto bueno a la lista del ciclo; con la lista
+ *   se abre el apartado en mayo y con el apartado se decide cuánto coser.
+ * · Quién decide y quién lo hace: la escuela dice qué; el dueño, cuánto; cose el taller; borda la
+ *   bordadora; atiende el módulo la encargada con una eventual.
+ * · La lista es la plantilla: prenda lisa + escudo; se borda lo apartado, lo demás se queda liso.
+ * · El módulo es un almacén de temporada: salió − vendido − regresó = diferencia.
+ * · Qué va primero: lo apartado antes que lo de piso; la escuela con módulo antes que la que no
+ *   tiene; diario antes que deportivo y gala; escudo propio antes que comprado.
+ * · Cuánto cuesta: la nota perdida, la diferencia del módulo (2-4 %), el apoyo a la escuela pagado
+ *   a ojo, y la prenda bordada de una escuela que cambió de modelo (vale cero).
+ * · El número: vendido antes de coser = apartados × prendas de la lista; dinero en caja antes de
+ *   coser = apartados × anticipo. Salen de lo que el visitante capture, no del sistema.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+
+interface Prenda { n: string; talla: string; p: number }
+const escuelas: Record<string, { rot: string; grados: Record<string, Prenda[]> }> = {
+  kinder: { rot: 'Kínder', grados: {
+    '2º': [{ n: 'Playera polo', talla: '3', p: 240 }, { n: 'Short o falda-short', talla: '3', p: 260 }, { n: 'Suéter con escudo', talla: '3', p: 430 }, { n: 'Delantal', talla: '3', p: 180 }],
+    '3º': [{ n: 'Playera polo', talla: '4', p: 240 }, { n: 'Short o falda-short', talla: '4', p: 260 }, { n: 'Suéter con escudo', talla: '4', p: 430 }, { n: 'Delantal', talla: '4', p: 180 }],
+  } },
+  primaria: { rot: 'Primaria', grados: {
+    '1º': [{ n: 'Polo blanco', talla: '6', p: 280 }, { n: 'Pantalón o falda gris', talla: '6', p: 390 }, { n: 'Suéter marino con escudo', talla: '6', p: 520 }, { n: 'Deportivo: pants y playera', talla: '6', p: 610 }],
+    '4º': [{ n: 'Polo blanco', talla: '10', p: 280 }, { n: 'Pantalón o falda gris', talla: '10', p: 390 }, { n: 'Suéter marino con escudo', talla: '10', p: 520 }, { n: 'Deportivo: pants y playera', talla: '10', p: 610 }],
+    '6º': [{ n: 'Polo blanco', talla: '14', p: 280 }, { n: 'Pantalón o falda gris', talla: '14', p: 390 }, { n: 'Suéter marino con escudo', talla: '14', p: 520 }, { n: 'Deportivo: pants y playera', talla: '14', p: 610 }],
+  } },
+  secundaria: { rot: 'Secundaria', grados: {
+    '1º': [{ n: 'Camisa blanca', talla: 'S', p: 320 }, { n: 'Pantalón por cintura', talla: '28', p: 450 }, { n: 'Suéter con escudo', talla: 'S', p: 560 }, { n: 'Deportivo', talla: 'S', p: 680 }],
+    '3º': [{ n: 'Camisa blanca', talla: 'L', p: 320 }, { n: 'Pantalón por cintura', talla: '32', p: 450 }, { n: 'Suéter con escudo', talla: 'L', p: 560 }, { n: 'Deportivo', talla: 'L', p: 680 }],
+  } },
+};
+---
+<BloqueProducto
+  encabezado="La lista manda."
+  titulo="El pedido lo arma la escuela. Y se vende antes de coser."
+  descripcion="Solo aquí el pedido lo dicta un tercero: la lista de la escuela dice qué prendas, para qué grado y con qué escudo. Elige escuela y grado y mira cómo se arma el apartado; mueve cuántas mamás ya apartaron y mira cuánto dinero tienes en caja antes de cortar una sola prenda."
+  vinetas={[
+    { label: 'Marzo decide agosto', detail: 'La escuela da el visto bueno a la lista del ciclo; con la lista se abre el apartado en mayo y con el apartado se decide cuánto coser. Todo lo de agosto ya estaba decidido en marzo.' },
+    { label: 'La prenda lisa sirve para diez escuelas', detail: 'El suéter liso vale para todas hasta que se le borda el escudo. Se borda lo apartado; lo demás se queda liso y sirve el ciclo que entra aunque la escuela cambie de modelo.' },
+    { label: 'El módulo: salió, vendido, regresó', detail: 'Nace con un traspaso contado por talla, cobra sin internet, entrega apartados y muere con un regreso contado. La diferencia que nadie explicaba ahora tiene nombre.' },
+  ]}
+  suelta
+>
+  <div class="ul" id="un-lista" data-escuelas={JSON.stringify(escuelas)}>
+    <div class="ul-ctrl">
+      <span class="ul-k">Escuela</span>
+      <div class="ul-chips" id="ul-esc">{Object.entries(escuelas).map(([k, e], i) => <button type="button" class:list={['ul-chip', { 'is-on': k === 'primaria' }]} data-e={k} aria-pressed={k === 'primaria' ? 'true' : 'false'}>{e.rot}</button>)}</div>
+      <span class="ul-k">Grado</span>
+      <div class="ul-chips" id="ul-gra"></div>
+      <span class="ul-k ul-k--sep">Mamás que ya apartaron <b id="ul-n">400</b></span>
+      <input type="range" id="ul-apart" min="0" max="800" step="10" value="400" aria-label="Mamás que ya apartaron" />
+      <div class="ul-dos">
+        <div class="ul-big"><b id="ul-caja">$360,000</b><span>en caja antes de coser</span></div>
+        <div class="ul-big"><b id="ul-piezas">1,600</b><span>piezas ya vendidas</span></div>
+      </div>
+    </div>
+    <div class="ul-lista">
+      <span class="ul-k">La lista arma el apartado</span>
+      <b class="ul-t" id="ul-titulo">Primaria · 4º grado</b>
+      <ul id="ul-prendas"></ul>
+      <div class="ul-tot"><span>Total</span><b id="ul-total">$1,800</b></div>
+      <div class="ul-tot ul-tot--s"><span>Anticipo 50 %</span><b id="ul-ant">$900</b></div>
+      <div class="ul-tot ul-tot--s"><span>Saldo al recoger</span><b id="ul-saldo">$900</b></div>
+      <div class="ul-mod"><span class="ul-k">El módulo, al cerrar</span><div><i><b>900</b>salió</i><i><b>812</b>vendido</i><i><b>70</b>regresó</i><i class="ul-dif"><b>18</b>diferencia</i></div></div>
+      <a class="ul-cta" id="ul-cta" href="/contacto">Quiero verlo con mis escuelas</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .ul { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: 18px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .ul-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .ul-k--sep { margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline; }
+  .ul-k b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; color: var(--color-text-primary); text-transform: none; }
+  .ul-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .ul-chips :global(.ul-chip), .ul-chip { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; color: var(--color-text-primary); }
+  .ul-chips :global(.ul-chip.is-on), .ul-chip.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .ul input[type=range] { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); margin: 4px 0 12px; }
+  .ul-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ul-big { background: var(--color-bg-primary, #F7F7F5); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .ul-big b { font-family: var(--font-display); font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -0.03em; color: var(--color-text-primary); }
+  .ul-big span { font-size: 12px; color: var(--color-text-secondary); }
+  .ul-lista { background: var(--color-bg-primary, #F7F7F5); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; }
+  .ul-t { font-family: var(--font-display); font-size: 18px; margin-bottom: 8px; }
+  .ul-lista ul { list-style: none; margin: 0; padding: 0; }
+  .ul-lista :global(li) { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #E3E3DF; font-size: 13.5px; animation: ul-in 0.3s ease; }
+  .ul-lista :global(li small) { color: var(--color-text-secondary); margin-left: 6px; }
+  .ul-lista :global(li b) { font-variant-numeric: tabular-nums; }
+  @keyframes ul-in { from { opacity: 0; transform: translateY(4px); } }
+  .ul-tot { display: flex; justify-content: space-between; padding: 10px 0 2px; font-family: var(--font-display); font-size: 19px; }
+  .ul-tot--s { font-family: inherit; font-size: 13.5px; padding: 4px 0; color: var(--color-text-secondary); }
+  .ul-tot--s b { color: var(--color-text-primary); }
+  .ul-mod { margin-top: 14px; padding-top: 12px; border-top: 1px solid #E3E3DF; }
+  .ul-mod div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .ul-mod i { font-style: normal; display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--color-text-secondary); background: #fff; border-radius: 10px; padding: 8px; }
+  .ul-mod i b { font-family: var(--font-display); font-size: 18px; color: var(--color-text-primary); }
+  .ul-mod .ul-dif b { color: #B4432E; }
+  .ul-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: 10px; background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .ul { grid-template-columns: 1fr; padding: 14px; } .ul-mod div { grid-template-columns: repeat(2, 1fr); } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('un-lista'); if (!el) return;
+    const E = JSON.parse(el.dataset.escuelas!); let esc = 'primaria', gra = '4º';
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const $ = (id: string) => document.getElementById(id)!;
+    const grados = () => { const g = Object.keys(E[esc].grados); if (!g.includes(gra)) gra = g[Math.min(1, g.length - 1)]; $('ul-gra').innerHTML = g.map((k) => `<button type="button" class="ul-chip${k === gra ? ' is-on' : ''}" data-g="${k}" aria-pressed="${k === gra}">${k}</button>`).join(''); };
+    const pinta = () => {
+      const lista = E[esc].grados[gra]; const total = lista.reduce((a: number, p: any) => a + p.p, 0); const n = Number(($('ul-apart') as HTMLInputElement).value);
+      $('ul-titulo').textContent = `${E[esc].rot} · ${gra} grado`;
+      $('ul-prendas').innerHTML = lista.map((p: any) => `<li><span>${p.n}<small>talla ${p.talla}</small></span><b>${fmt(p.p)}</b></li>`).join('');
+      $('ul-total').textContent = fmt(total); $('ul-ant').textContent = fmt(total / 2); $('ul-saldo').textContent = fmt(total / 2);
+      $('ul-n').textContent = String(n); $('ul-caja').textContent = fmt(n * total / 2); $('ul-piezas').textContent = (n * lista.length).toLocaleString('es-MX');
+      const u = new URL('/contacto', location.origin); if (n > 0) u.searchParams.set('estimado', String(Math.round(n * total / 2))); ($('ul-cta') as HTMLAnchorElement).href = u.pathname + u.search;
+    };
+    el.querySelectorAll<HTMLButtonElement>('#ul-esc .ul-chip').forEach((b) => b.addEventListener('click', () => { el.querySelectorAll('#ul-esc .ul-chip').forEach((x) => { x.classList.remove('is-on'); x.setAttribute('aria-pressed', 'false'); }); b.classList.add('is-on'); b.setAttribute('aria-pressed', 'true'); esc = b.dataset.e!; grados(); pinta(); (window as any).sacsPH?.('giro_un_lista', { esc, gra }); }));
+    $('ul-gra').addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('button'); if (!b) return; gra = b.dataset.g!; grados(); pinta(); });
+    $('ul-apart').addEventListener('input', pinta);
+    grados(); pinta();
+  })();
+</script>

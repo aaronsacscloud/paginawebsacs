@@ -24,11 +24,11 @@ export const bannerTB = {
   eyebrow: 'SACS · Trajes de baño y playa',
   titulo: 'El top se vende por su lado.',
   resalte: 'El bottom, por el suyo.',
-  sub: 'Matriz de tallas por pieza, sets que descuentan las dos, apartados que la de Instagram y la de tienda ven igual, y el remate a tiempo antes del regreso a clases — con un mismo inventario para tu tienda, tu tienda en línea y tu WhatsApp.',
+  sub: 'Matriz de tallas por pieza, sets que descuentan las dos, apartados que tienda e Instagram ven igual y el remate a tiempo, con un mismo inventario para tu tienda, tu web y tu WhatsApp.',
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Dueña de una boutique de trajes de baño en una plaza de playa, con la matriz de tallas por color en su tablet y los rieles de bikinis detrás',
   avisos: [
-    { modulo: 'Se está descompletando', texto: 'Estampado coral: quedan 9 bottoms y 31 tops', pos: 1 as const, tono: 'ambar' as const, sello: 'Hoy' },
+    { modulo: 'Se está descompletando', texto: 'Estampado coral: quedan 4 bottoms y 22 tops', pos: 1 as const, tono: 'ambar' as const, sello: 'Hoy' },
     { modulo: 'Apartado desde Instagram', texto: 'Top triángulo negro M · anticipo recibido · bloqueado en tienda', pos: 2 as const, tono: 'azul' as const, sello: 'Ahora' },
     { modulo: '¿Remato o guardo?', texto: 'Faltan 4 semanas: te van a sobrar 84 piezas del estampado de primavera', pos: 3 as const, tono: 'rojo' as const, sello: 'Regreso a clases' },
   ],
@@ -55,8 +55,8 @@ export const variantesTB = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“un bikini”.',
-  sub: 'Tres tallas de top y cinco de bottom, en cuatro estampados. Y el top y el bottom llevan cada uno su propia existencia: cuando el bottom coral se acaba, el set coral se descompleta aunque el reporte diga que “el modelo” sigue vendiendo.',
-  ejeA: ['Top S', 'Top M', 'Top L', 'Bot XS', 'Bot S', 'Bot M', 'Bot L', 'Bot XL'],
+  sub: 'Tres tallas de top y cinco de bottom, en cuatro colores: dos estampados y dos lisos. Y el top y el bottom llevan cada uno su propia existencia: cuando el bottom coral se acaba, el set coral se descompleta aunque el reporte diga que “el modelo” sigue vendiendo.',
+  ejeA: ['Top S', 'Top M', 'Top L', 'Bottom XS', 'Bottom S', 'Bottom M', 'Bottom L', 'Bottom XL'],
   filas: [
     { nombre: 'Coral', img: `${IMG}/prod-coral.webp`, alt: 'Top de bikini triángulo coral' },
     { nombre: 'Negro', img: `${IMG}/prod-negro.webp`, alt: 'Top de bikini triángulo negro' },
@@ -103,19 +103,19 @@ export const casosTB = [
   },
   {
     id: 'santa',
-    titulo: 'Semana Santa: diez días que son un tercio del año',
+    titulo: 'Semana Santa: diez días que son hasta un tercio del año',
     texto: 'Cada pieza que está en la tienda equivocada es venta perdida sin regreso. Existencias por sucursal en vivo desde el celular, traspaso en dos toques y una caja que no se cae aunque se caiga el internet.',
     remate: 'En ciudad, Semana Santa es el 25 al 35 % de la venta del año.',
     img: `${IMG}/caso-ciudad.webp`,
     alt: 'Tienda de trajes de baño en una plaza de Monterrey llena la semana antes de Semana Santa, con la caja cobrando un set',
   },
   {
-    id: 'corte',
-    titulo: 'Regreso a clases: ¿remato o guardo?',
-    texto: 'Con el regreso a clases decides qué baja de precio. El sistema te dice cuántas semanas te dura lo que tienes contra las que quedan de temporada, y el descuento se aplica en todos los canales el mismo día. En playa, lo liso se guarda para diciembre y sale a precio lleno.',
-    remate: 'Rematar tarde es guardar un año. Rematar temprano es regalar margen en piezas que sí se iban a vender.',
-    img: `${IMG}/proceso-corte.webp`,
-    alt: 'Encargada reetiquetando un riel para el remate, con la lista de lo que va a sobrar por talla y color en la tablet',
+    id: 'diciembre',
+    titulo: 'Diciembre en playa: lo guardado sale a precio lleno',
+    texto: 'La turista de diciembre no sabe qué es “de año pasado”: en playa, hasta el estampado que sobró en agosto se guarda y sale a precio lleno del 15 de diciembre en adelante. El sistema lo cuenta al guardarlo, lo valúa y lo vuelve a subir a la tienda y a la web con un clic cuando empieza la temporada.',
+    remate: 'En playa, guardar bien vale más que rematar. En ciudad, al revés.',
+    img: `${IMG}/caso-playa.webp`,
+    alt: 'Boutique de trajes de baño dentro de un hotel de Los Cabos, con la encargada cobrando un set en el celular y turistas viendo los sombreros',
   },
   {
     id: 'capsula',
@@ -134,7 +134,7 @@ export const seccionesTB: SuiteSeccion[] = [
     titulo: 'El top y el bottom, cada uno por su lado',
     texto: 'Cada pieza con su propia matriz: el top por su talla, el bottom por su talla y su corte. Un modelo en tres colores son 24 existencias, y el sistema las ve así desde que las das de alta.',
     bullets: ['Top por S/M/L, y “copa C+” o “D+” como talla extra si la manejas', 'Bottom por XS a XL y por corte: brasileño, cheeky, el que cubre, de tiro alto', 'Cada color con su propia curva, arriba y abajo; el entero y el reductor por su lado'],
-    visual: mockMatriz('Bikini Marea · coral · existencia por pieza', ['S', 'M', 'L', '', 'XS', 'S', 'M', 'L', 'XL'], [['Top', [6, 11, 5, 0, 0, 0, 0, 0, 0]], ['Bottom', [0, 0, 0, 0, 1, 2, 0, 0, 1]]], 'Top con existencia, bottom casi en cero: el coral se está descompletando', [1, 6]),
+    visual: mockMatriz('Bikini Marea · coral · top', ['S', 'M', 'L'], [['Top', [6, 11, 5]]]) + mockMatriz('Bikini Marea · coral · bottom', ['XS', 'S', 'M', 'L', 'XL'], [['Bottom', [1, 2, 0, 0, 1]]], 'Top con existencia, bottom casi en cero: el coral se está descompletando', [0, 2]),
   },
   {
     id: 'set', tag: 'Caja',
@@ -148,7 +148,7 @@ export const seccionesTB: SuiteSeccion[] = [
     titulo: 'Un apartado que todos ven',
     texto: 'La clienta escribe “¿tienen en M?”, se le manda la foto del color, deja anticipo por link y la pieza queda bloqueada para la tienda, la web y el chat. Nadie vende dos veces el mismo bikini.',
     bullets: ['Apartado con anticipo desde el chat, con la pieza bloqueada', 'Foto por color lista para mandar, la misma que en la tienda en línea', 'La conversación queda en la ficha de la clienta, con su talla de top y de bottom'],
-    visual: mockLista('Apartados de hoy', [['Top negro M · Fernanda · anticipo $300', 'Bloqueado', 'ok'], ['Set salvia S/M · Instagram · link enviado', 'Por pagar', 'aviso'], ['Entero negro 8 · tienda · recoge mañana', 'Bloqueado', 'ok'], ['Bottom coral L · web · cambio de talla', 'Cambio', 'gris']], 'Tienda, web y chat ven la misma lista'),
+    visual: mockLista('Apartados de hoy', [['Top negro M · Fernanda · anticipo $300', 'Bloqueado', 'ok'], ['Set salvia S/M · Instagram · link enviado', 'Por pagar', 'aviso'], ['Entero negro M · tienda · recoge mañana', 'Bloqueado', 'ok'], ['Bottom coral L · web · cambio de talla', 'Cambio', 'gris']], 'Tienda, web y chat ven la misma lista'),
   },
   {
     id: 'sucursales', tag: 'Sucursales',
@@ -168,8 +168,8 @@ export const seccionesTB: SuiteSeccion[] = [
     id: 'linea', tag: 'Tienda en línea',
     titulo: 'La tienda en línea con talla por pieza',
     texto: 'Guía de tallas por modelo, foto por color, top y bottom por separado, y la regla de higiene en el pedido: cambio de talla con el protector puesto, no devolución. Y el mismo inventario también en marketplaces y TikTok Shop.',
-    bullets: ['Talla por pieza y “cómo tallea” en cada modelo', 'El cambio de talla en línea es un cambio de talla con nota de crédito, no una devolución', 'Pedidos de web, marketplaces, Instagram y WhatsApp en una sola lista de empaque'],
-    visual: mockLista('Pedidos por empacar', [['#2231 · Set coral S/M · Mérida', 'Empacar', 'ok'], ['#2232 · Entero negro 8 · CDMX', 'Empacar', 'ok'], ['#2228 · Bottom animal L → M', 'Cambio de talla', 'aviso'], ['#2230 · Cover-up lino · Cancún', 'Enviado', 'gris']], 'La pieza ya bajó del inventario al confirmarse el pago'),
+    bullets: ['Talla por pieza y “cómo tallea” en cada modelo', 'En línea se cambia la talla; si no hay, nota de crédito. Nunca devolución de dinero', 'Pedidos de web, marketplaces, Instagram y WhatsApp en una sola lista de empaque'],
+    visual: mockLista('Pedidos por empacar', [['#2231 · Set coral S/M · Mérida', 'Empacar', 'ok'], ['#2232 · Entero negro M · CDMX', 'Empacar', 'ok'], ['#2228 · Bottom animal L → M', 'Cambio de talla', 'aviso'], ['#2230 · Cover-up lino · Cancún', 'Enviado', 'gris']], 'La pieza ya bajó del inventario al confirmarse el pago'),
   },
 ];
 
@@ -186,7 +186,7 @@ export const planoTB = [
       { t: 'Hangtag con código, talla, color y pieza impreso desde la recepción' },
       { t: 'Foto por color igual en tienda, en línea y en el catálogo de WhatsApp' },
       { t: 'Aviso de que un estampado se está descompletando: se acaba abajo y no arriba' },
-      { t: 'La vendedora aparta desde el celular lo que está en otra sucursal' },
+      { t: 'La vendedora aparta desde el celular lo que está en otra sucursal', plan: 'Controla' },
     ],
   },
   {
@@ -196,11 +196,11 @@ export const planoTB = [
     pregunta: '¿Hay bottom L de este, sin ir a bodega?',
     caja: { x: 68, y: 170, w: 216, h: 86 },
     items: [
-      { t: 'Existencia por modelo, color, talla y pieza, en vivo' },
+      { t: 'Existencia por modelo, color, talla y pieza, en vivo, en todas tus tiendas', plan: 'Controla' },
       { t: 'Mínimo por talla y sucursal para negro, blanco y nude' },
       { t: 'Estampados con temporada: entran a la lista de remate cuando te duran más semanas de las que quedan' },
       { t: 'La curva del año que entra sale de lo que salió de estos rieles' },
-      { t: 'Traspaso pedido desde el riel, pendiente hasta que la otra tienda confirma' },
+      { t: 'Traspaso pedido desde el riel, pendiente hasta que la otra tienda confirma', plan: 'Controla' },
     ],
   },
   {
@@ -212,7 +212,7 @@ export const planoTB = [
     items: [
       { t: 'Se registra qué talla se probó y cuál se llevó: así sabes cómo tallea cada modelo' },
       { t: 'Apartado con anticipo desde el probador, bloqueado en todos los canales' },
-      { t: 'Cambio de talla de una compra en línea como cambio de talla, no devolución' },
+      { t: 'La compra en línea se cambia de talla aquí mismo, sin devolver dinero' },
       { t: '“No hay devoluciones, solo cambio con el protector puesto” en el ticket y en el sistema' },
       { t: 'La clienta queda en el CRM con su talla de top y de bottom', plan: 'Fideliza' },
     ],
@@ -225,25 +225,25 @@ export const planoTB = [
     caja: { x: 68, y: 264, w: 216, h: 104 },
     items: [
       { t: 'Set que descuenta top y bottom, y precio de set aunque se cobren sueltas' },
-      { t: 'Te pagan en dólares y la caja lo pasa a pesos sola; tarjeta, transferencia o link por WhatsApp' },
+      { t: 'Te pagan en dólares y la caja lo pasa a pesos sola; tarjeta, transferencia o link por WhatsApp', plan: 'Controla' },
       { t: 'Factura desde la caja sin que te la pidan por correo; corte de caja por turno desde el celular' },
       { t: 'Cobra sin internet en playa, hotel o bazar, y sincroniza después' },
-      { t: 'Cada venta ligada a la vendedora; el hotel cobra más caro que la plaza sin cambiar etiquetas' },
-      { t: 'Pareos, sombreros, bloqueador y playeras UV como unitalla con reposición por mínimo' },
+      { t: 'Cada venta ligada a la vendedora; el hotel cobra más caro que la plaza sin cambiar etiquetas', plan: 'Controla' },
+      { t: 'Pareos, sombreros y bloqueador como unitalla con mínimo; las playeras UV de niño, por talla' },
     ],
   },
   {
-    id: 'trastienda', nombre: 'La trastienda y la mesa de empaque', fuera: true, simbolo: 'paquetes' as const,
+    id: 'trastienda', nombre: 'Trastienda y empaque', fuera: true, simbolo: 'paquetes' as const,
     foto: `${IMG}/zona-empaque.webp`, alt: 'Trastienda de una marca de trajes de baño: cajas de la maquila recién llegadas y la mesa de empaque de pedidos en línea',
     pie: 'La corrida se recibe contra la orden; los pedidos de web, Instagram y WhatsApp salen de la misma mesa.',
     pregunta: '¿Cuántas me faltó entregar el maquilero?',
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
-      { t: 'Recepción de la corrida contra lo que pediste: llegaron, faltan, cuánta tela se quedó' },
+      { t: 'Recepción de la corrida contra lo que pediste: llegaron, faltan, cuánta tela se quedó', plan: 'Controla' },
       { t: 'Pedidos de Instagram, WhatsApp y web en una sola lista, ya descontados' },
       { t: 'Guía de envío y etiqueta desde la misma pantalla' },
       { t: 'Lo que sobra se cuenta y sabes cuánto dinero tienes guardado en cajas', plan: 'Controla' },
-      { t: 'Cuentas la tienda con el celular, sin cerrar' },
+      { t: 'Cuentas la tienda con el celular, sin cerrar', plan: 'Controla' },
     ],
   },
 ];
@@ -261,13 +261,39 @@ export const ticketTB = { lineas: [{ n: 'Top triángulo coral · M', p: '$590' }
 /* ── De 1 a 150 sucursales ── */
 export const escalaTB = [
   { n: '1 tienda', nombre: 'La boutique o la marca que arranca', cambia: ['La dueña compra, vende, cobra y contesta Instagram', 'La “tienda en línea” es el chat y el apartado en una libreta', 'La primera cápsula maquilada: 3 a 5 modelos, 30 a 50 piezas por color'], sistema: ['Un solo inventario para tienda, chat y web, desde el celular', 'Apartados con anticipo que no se pisan entre canales', 'Qué talla y color se vendió, para la próxima ficha técnica'], dato: { valor: '24', rotulo: 'existencias distintas en un solo modelo de tres colores' } },
-  { n: '5 tiendas', nombre: 'La marca consolidada o la boutique del destino', cambia: ['Maquila el 60 o 70 %; compra tela por rollo', 'Traspasos diarios entre la de la plaza y la del hotel', 'Ya hay jefa de tiendas y alguien de e-commerce'], sistema: ['Existencias por sucursal y traspasos con confirmación', 'Comisión por vendedora y reporte por tienda', 'Curva de compra por pieza con los datos de cada sucursal'], dato: { valor: '2 toques', rotulo: 'para mandar seis L de la plaza al hotel' } },
-  { n: '50 tiendas', nombre: 'La cadena regional: plazas y aeropuertos', cambia: ['Compradora por categoría: bikini, entero, resort, accesorios', 'Bodega central que surte por curva según el perfil de cada tienda', 'E-commerce con su equipo; el pedido sale de la tienda que tiene la talla'], sistema: ['Surtido por perfil de tienda con IA: Tulum pide S, Cancún M y L', 'Remate por temporada de toda la cadena, el mismo día en todos los canales', 'Finanzas por sucursal y por colección; el pedido en línea sale de la tienda que sí tiene la talla'], dato: { valor: '3', rotulo: 'remates al año en playa: después de Reyes, de Semana Santa y del regreso a clases' } },
+  { n: '5 tiendas', nombre: 'La marca consolidada o la boutique del destino', cambia: ['Maquila el 60 o 70 %; compra tela por rollo', 'Traspasos diarios entre la de la plaza y la del hotel', 'Ya vendes por curva a boutiques de Tulum y Sayulita, con lista de mayoreo'], sistema: ['Existencias por sucursal y traspasos con confirmación', 'Lista de precios de mayoreo, menudeo y hotel; el pedido de mayoreo sale de bodega, no del piso', 'El punto del hotel en consignación: inventario tuyo, corte por porcentaje al hotel'], dato: { valor: '2 toques', rotulo: 'para mandar seis L de la plaza al hotel' } },
+  { n: '50 tiendas', nombre: 'La cadena regional: plazas y aeropuertos', cambia: ['Compradora por categoría: bikini, entero, niños y caballero, resort, accesorios', 'Bodega central que surte por curva según el perfil de cada tienda', 'E-commerce con su propio equipo y envíos a todo el país'], sistema: ['Surtido por perfil de tienda con IA: Tulum pide S, Cancún M y L', 'Remate por temporada de toda la cadena, el mismo día en todos los canales; el pedido en línea sale de la tienda que sí tiene la talla', 'Finanzas por sucursal y por colección: cuánto se ganó de verdad en la temporada, ya con remates y sobrante'], dato: { valor: '3', rotulo: 'remates al año en playa: después de Reyes, de Semana Santa y del regreso a clases' } },
   { n: '150 tiendas', nombre: 'La cadena nacional con franquicias y hoteles', cambia: ['Presupuesto de compra por temporada, región y línea: dama, niños, caballero, UV', 'Bodegas regionales: Riviera Maya, Pacífico, Bajío', 'Franquiciatarios y hoteles con su propio acceso'], sistema: ['Permisos por rol y por franquicia; consolidado nacional', 'Reglas para mover piezas entre tiendas y reabastecer desde bodega', 'La temporada en una pantalla: venta contra plan, qué porcentaje ya se vendió, remate y margen por región'], dato: { valor: '1 pantalla', rotulo: 'para ver la temporada completa de la cadena' } },
 ];
 
 /* ── Objeciones: los dos caminos que ya probó ── */
 export const problemasTB = {
+  doc1: {
+    membrete: 'Sistema de ropa', sub: 'Reporte de inventario',
+    cab: ['CÓDIGO', 'DESCRIPCIÓN', 'EXIST.'],
+    lineas: [
+      { a: 'SKU-0417', b: 'BIKINI MAREA CORAL', c: '26' },
+      { a: '—', b: '—', c: '—', tenue: true },
+      { a: '—', b: '—', c: '—', tenue: true },
+    ],
+    margen: ['¿top o bottom?', '¿queda bottom M?'],
+    sello: 'NO VE<br />EL SET',
+    notas: [
+      'Te pide <b>un solo código</b>. Tu top S/M/L y tu bottom XS-XL se vuelven esa fila.',
+      'Para saber si queda bottom M abres un <b>Excel aparte</b> que alguien mantiene a mano.',
+      'Te dice cuánto vendiste, <b>no qué pieza se quedó sola</b>.',
+      'Abres la tienda del hotel y empiezas de cero.',
+    ],
+  },
+  filas: [
+    { que: 'El top y el bottom por su lado, con su talla', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'El set descuenta dos piezas y cobra precio de set', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Un apartado que ven tienda, web y chat', generico: 'No existe', medida: 'Rara vez', sacs: 'Uno solo' },
+    { que: 'Existencias por sucursal y traspaso confirmado', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Remate en todos los canales el mismo día', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+    { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+    { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+  ],
   entrada: 'Casi toda marca de trajes de baño que llega con nosotros trae uno de estos dos papeles en el cajón: el reporte de un sistema de ropa que ve “un bikini” donde hay dos piezas, o la cotización de un desarrollo a la medida que iba a resolverlo. Ninguno fue una tontería. Los dos fallan, por motivos distintos.',
   quienes: 'las marcas de trajes de baño y playa que ya la usan',
 };
