@@ -656,7 +656,7 @@ embarazo; outlet → remate por temporada con margen; merch → pedido por event
 | 1 | Trajes de Baño y Playa | ✓ (referee oficio, 25 correcciones aplicadas) | ✓ | en referee | ✓ compila, QA escritorio+móvil | pendiente | pendiente |
 | 2 | Western y Vaquera | ✓ (referee oficio: bloque = el conjunto) | ✓ | en referee | ✓ compila, QA escritorio+móvil | pendiente | pendiente |
 | 3–14 | (ver orden arriba) | | | | | | |
-| — | Las 7 hechas: pasada fotográfica 10/10 | en curso | | | | | |
+| — | Las 7 hechas: pasada fotográfica 10/10 | auditadas 152 fotos: 0 en 10, 66 en 9, 62 en 8, 24 en ≤7 | — | 23 de las ≤7 ya regeneradas e instaladas (respaldo en scratchpad/respaldo-fotos); faltan la bolsa de consignación y las 128 de 8-9 (texto garabato en pantallas, papeles en blanco) | — | referee 10/10 pendiente (límite de sesión hasta 9 UTC) | sin push |
 
 ### Trampas pagadas en trajes de baño y western (17-sep-2026)
 
