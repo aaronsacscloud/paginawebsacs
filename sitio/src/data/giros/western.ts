@@ -176,7 +176,7 @@ export const planoWS = [
     foto: `${IMG}/zona-pared.webp`, alt: 'Pared de botas de una tienda western, un par de muestra por modelo',
     pie: 'Se escanea el par de muestra y se ven todos los números que hay aquí y en las demás tiendas.',
     pregunta: '¿Hay en 27 de esta punta?',
-    caja: { x: 68, y: 82, w: 216, h: 110 },
+    caja: { x: 68, y: 82, w: 216, h: 96 },
     items: [
       { t: 'Escaneas el par de muestra y ves números, hormas y colores en bodega y en las demás tiendas' },
       { t: 'Si no hay aquí, traspaso desde el celular con fecha para el cliente' },
@@ -190,7 +190,7 @@ export const planoWS = [
     foto: `${IMG}/zona-texanas.webp`, alt: 'Anaquel de texanas por talla y la máquina de vapor para hormar',
     pie: 'La texana se horma aquí mismo: el cliente sale con “su” texana, y el hormado queda en el ticket.',
     pregunta: '¿Queda 7 1/8 de la gris 20X?',
-    caja: { x: 68, y: 200, w: 216, h: 56 },
+    caja: { x: 68, y: 186, w: 216, h: 74 },
     items: [
       { t: 'Inventario por talla (6 3/4 a 7 5/8), material (lana, pelo, castor) y X, por color' },
       { t: 'El hormado entra al ticket como servicio, con o sin cobro' },

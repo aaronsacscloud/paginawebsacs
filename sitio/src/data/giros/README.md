@@ -653,7 +653,26 @@ embarazo; outlet → remate por temporada con margen; merch → pedido por event
 
 | # | Giro | Ficha | Datos | Fotos 10/10 | Página | Referees 9/10 | Producción |
 |---|---|---|---|---|---|---|---|
-| 1 | Trajes de Baño y Playa | en curso | | | | | |
-| 2 | Western y Vaquera | en curso | | | | | |
+| 1 | Trajes de Baño y Playa | ✓ (referee oficio, 25 correcciones aplicadas) | ✓ | en referee | ✓ compila, QA escritorio+móvil | pendiente | pendiente |
+| 2 | Western y Vaquera | ✓ (referee oficio: bloque = el conjunto) | ✓ | en referee | ✓ compila, QA escritorio+móvil | pendiente | pendiente |
 | 3–14 | (ver orden arriba) | | | | | | |
 | — | Las 7 hechas: pasada fotográfica 10/10 | en curso | | | | | |
+
+### Trampas pagadas en trajes de baño y western (17-sep-2026)
+
+- **Lo que se crea por JavaScript no recibe el CSS con ámbito de Astro.** Las fichas del conjunto
+  (`WsConjunto`) y los renglones del selector del globo se pintan con `innerHTML`; sus reglas van
+  con `:global(...)` o no se aplican y el bloque sale "desacomodado" sin ningún error.
+- **`SuitePlano`: la caja de una zona necesita `h ≥ 74`** o el símbolo dibuja un `<rect>` con
+  altura negativa (consola: "A negative value is not valid").
+- **El referee de oficio corrige vocabulario que suena bien y está mal**: "viudo" (es
+  descompletado), "salida de baño" (es salida de playa), tallas por copa (en México S/M/L), "corte"
+  a secas (es corte de caja), "tribal" (moda de 2010), "extra ancho" (horma normal o ancha),
+  "capital dormido" (dinero parado). Pedirle SIEMPRE la ficha antes de escribir.
+- **El bloque propio no puede repetir el de otro giro**: la corrida ya es de zapatería; western
+  tuvo que cambiar a "el conjunto" (cinco tallas en un ticket).
+- **gpt-image-2 rechaza escenas de probador con bikini** (safety): la clienta va vestida y afuera
+  del probador, con la pieza en gancho.
+- **Dos builds a la vez en el mismo repo se pisan** (`dist/` y `.vercel/output`): para QA usar
+  `astro build --outDir <carpeta propia>`; el error final del adaptador de Vercel no invalida el HTML.
+- **Nunca `pkill -f` con un patrón que esté en tu propia línea de comando**: mata la shell.
