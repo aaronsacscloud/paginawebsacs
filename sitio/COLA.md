@@ -538,7 +538,11 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
             registrarla como pestaña propia en CrmDashboard (Tab + allIds + NAV)
             y darle su propio armador de lista de arranque. Es refactor de
             estructura: se hace aparte y con QA de navegador, no al vuelo.
-- [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).
+- [x] **9 · Carta y proceso de conciliación.** HECHO el motor: tabla, link con
+      token, página pública donde lee y firma, y al firmar arranca solo (pasa a
+      «En conciliación», deja la tarea del día y suena la campana). Probado de
+      punta a punta. ⚠️ FALTA la pantalla en el CRM para redactarla y mandarla:
+      hoy se crea por API. Los TÉRMINOS los escribe el dueño por caso.
 - [x] **10 · Agenda de Andrea a partir de las 12:00 PM.** HECHO. NO estaba bien:
       ofrecía desde las 09:00. Ahora 12:00–18:00 L-V, verificado contra el
       agendador público. ⚠️ Quedan 2 reuniones reales ya agendadas antes de las

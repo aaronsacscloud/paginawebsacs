@@ -1,0 +1,171 @@
+---
+/* La carta de conciliación que ve y firma el cliente.
+ *
+ * Quien abre esto es alguien que YA SE FUE y está decidiendo si vuelve. Por eso
+ * la página no vende ni insiste: enseña el acuerdo tal cual, y deja decir sí o
+ * no con el mismo peso. Un «no» honesto vale más que un sí arrancado a presión,
+ * porque el que firma a fuerzas se vuelve a ir en tres meses.
+ *
+ * Mismo lenguaje visual que la cotización y el acuse (ver skill del CRM): cinta
+ * de marca, bloque lila para el ancla del documento, botón morado, «Sacscloud».
+ */
+import { supabase } from '../../lib/supabase';
+
+/* El proyecto es `output: 'static'`: sin esto, Astro exige `getStaticPaths()`
+   —quiere conocer los tokens en tiempo de build— y la página truena con 500.
+   Aquí es imposible: el token nace cuando alguien crea la carta, mucho después
+   del build. Por eso se renderiza en el servidor, igual que /cotizacion/[id]. */
+export const prerender = false;
+
+const { token } = Astro.params;
+const valido = /^[0-9a-f]{48}$/i.test(String(token || ''));
+
+const { data: c } = valido
+  ? await supabase.from('conciliaciones')
+      .select('titulo, cuerpo, monto, moneda, vigencia, estado, firmante, aceptada_at, contact_id')
+      .eq('token', token).maybeSingle()
+  : { data: null } as any;
+
+let nombre = '';
+if (c?.contact_id) {
+  const { data: ct } = await supabase.from('contacts').select('nombre, apellido').eq('id', c.contact_id).maybeSingle();
+  nombre = [ct?.nombre, ct?.apellido].filter(Boolean).join(' ');
+}
+
+const hoy = new Date().toISOString().slice(0, 10);
+const vencida = !!(c?.vigencia && c.vigencia < hoy && c.estado === 'enviada');
+const firmada = c?.estado === 'aceptada';
+const rechazada = c?.estado === 'rechazada';
+// Un borrador no se le enseña a nadie: todavía no está listo.
+const abierta = c?.estado === 'enviada' && !vencida;
+const dinero = (n: any) => n == null ? null
+  : new Intl.NumberFormat('es-MX', { style: 'currency', currency: c?.moneda || 'MXN', maximumFractionDigits: 0 }).format(Number(n));
+const fechaLarga = (f: string) => new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{c?.titulo || 'Propuesta'} · Sacscloud</title>
+  <style>
+    :root { --ink:#16181d; --muted:#6b7280; --faint:#a5a2af; --violeta:#9B8CFA; --tinta:#5B4BD6; --hondo:#7C6BF0; --verde:#1E8A63; --rojo:#C0554E; --line:#f0eff3; --bg:#eceef1; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.6; padding:26px 16px 60px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .doc { max-width:640px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06), 0 14px 36px rgba(16,24,40,.10); }
+    .cinta { height:5px; background:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,rgba(244,168,205,.9)); }
+    .head { padding:22px 26px 18px; border-bottom:1px solid var(--line); }
+    .marca { font-size:1.25rem; font-weight:800; letter-spacing:-.01em; }
+    .firma-marca { font-size:.55rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; margin-top:3px;
+      background:linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .cuerpo { padding:24px 26px 8px; }
+    h1 { font-size:1.35rem; line-height:1.25; letter-spacing:-.02em; margin:0 0 16px; }
+    .texto { font-size:.95rem; color:#33313d; white-space:pre-wrap; }
+    .ancla { margin:22px 0 4px; padding:16px 18px; border-radius:12px; background:linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22)); }
+    .k { font-size:.57rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#8a6a9c; }
+    .monto { font-size:1.7rem; font-weight:800; letter-spacing:-.03em; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .vig { font-size:.78rem; color:var(--muted); margin-top:6px; }
+    .acciones { padding:8px 26px 26px; }
+    .campo { width:100%; height:46px; border:1px solid #e0dfe6; border-radius:11px; padding:0 14px; font-size:.95rem; font-family:inherit; outline:none; }
+    .campo:focus { border-color:var(--violeta); }
+    .btn { width:100%; height:50px; border:none; border-radius:12px; font-size:.95rem; font-weight:800; cursor:pointer; font-family:inherit; margin-top:10px; }
+    .btn-si { background:var(--violeta); color:#fff; }
+    .btn-si:hover { background:var(--hondo); }
+    .btn-si:disabled { background:#d9d6e6; cursor:default; }
+    .btn-no { background:#fff; color:var(--muted); border:1px solid #e6e6ea; }
+    .nota { font-size:.74rem; color:var(--faint); margin-top:12px; line-height:1.55; }
+    .estado { padding:24px 26px 28px; text-align:center; }
+    .estado .t { font-size:1.05rem; font-weight:800; }
+    .estado .d { font-size:.86rem; color:var(--muted); margin-top:7px; }
+    .ok .t { color:var(--verde); }
+    .no .t { color:var(--rojo); }
+    .pie { max-width:640px; margin:14px auto 0; text-align:center; font-size:.7rem; color:#8e8b99; }
+    .err { font-size:.8rem; color:var(--rojo); margin-top:10px; }
+  </style>
+</head>
+<body>
+  {!c ? (
+    <div class="doc"><div class="cinta"></div>
+      <div class="estado"><div class="t">Esta liga ya no sirve</div>
+        <div class="d">Puede que la propuesta se haya vencido o reemplazado. Escríbenos y te mandamos una nueva.</div></div>
+    </div>
+  ) : (
+    <div class="doc">
+      <div class="cinta"></div>
+      <div class="head">
+        <div class="marca">Sacscloud</div>
+        <div class="firma-marca">Propuesta de conciliación</div>
+      </div>
+
+      <div class="cuerpo">
+        <h1>{c.titulo}</h1>
+        {nombre && <p style="font-size:.86rem;color:#6b7280;margin:-8px 0 16px">Para {nombre}</p>}
+        <div class="texto">{c.cuerpo}</div>
+
+        {c.monto != null && (
+          <div class="ancla">
+            <div class="k">Lo que te proponemos</div>
+            <div class="monto">{dinero(c.monto)}</div>
+            {c.vigencia && <div class="vig">Esta propuesta es válida hasta el {fechaLarga(c.vigencia)}.</div>}
+          </div>
+        )}
+        {c.monto == null && c.vigencia && <p class="vig">Válida hasta el {fechaLarga(c.vigencia)}.</p>}
+      </div>
+
+      {firmada && (
+        <div class="estado ok">
+          <div class="t">Ya quedó. Gracias por volver.</div>
+          <div class="d">Firmado por {c.firmante}. Te vamos a contactar hoy mismo para arrancar.</div>
+        </div>
+      )}
+      {rechazada && (
+        <div class="estado no"><div class="t">Quedó registrado</div>
+          <div class="d">Gracias por tomarte el tiempo de contestar. Aquí estamos si algún día cambia.</div></div>
+      )}
+      {vencida && (
+        <div class="estado no"><div class="t">Esta propuesta venció</div>
+          <div class="d">Escríbenos y la renovamos sin problema.</div></div>
+      )}
+
+      {abierta && (
+        <div class="acciones">
+          <input id="firmante" class="campo" placeholder="Escribe tu nombre completo" autocomplete="name" />
+          <button id="si" class="btn btn-si">Acepto y quiero continuar</button>
+          <button id="no" class="btn btn-no">Ahora no, gracias</button>
+          <div id="err" class="err" style="display:none"></div>
+          <p class="nota">
+            Al escribir tu nombre y aceptar, estás de acuerdo con lo que dice esta propuesta.
+            Guardamos tu nombre y la fecha como constancia de la aceptación.
+          </p>
+        </div>
+      )}
+    </div>
+  )}
+  <p class="pie">Sacscloud · Si tienes dudas, contéstale por WhatsApp a quien te mandó esta liga.</p>
+
+  <script define:vars={{ token }}>
+    const $ = (id) => document.getElementById(id);
+    const err = (m) => { const e = $('err'); if (e) { e.textContent = m; e.style.display = 'block'; } };
+    async function mandar(accion, extra) {
+      const si = $('si'), no = $('no');
+      if (si) si.disabled = true; if (no) no.disabled = true;
+      try {
+        const r = await fetch('/api/conciliacion-respuesta', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion, token, ...extra }),
+        }).then(x => x.json());
+        if (r && r.ok) { location.reload(); return; }
+        err((r && r.error) || 'No se pudo guardar. Vuelve a intentar.');
+      } catch { err('No se pudo guardar. Revisa tu conexión y vuelve a intentar.'); }
+      if (si) si.disabled = false; if (no) no.disabled = false;
+    }
+    $('si')?.addEventListener('click', () => {
+      const n = ($('firmante')?.value || '').trim();
+      if (n.length < 3) { err('Escribe tu nombre completo para firmar.'); $('firmante')?.focus(); return; }
+      mandar('firmar', { firmante: n });
+    });
+    $('no')?.addEventListener('click', () => mandar('rechazar', {}));
+  </script>
+</body>
+</html>
