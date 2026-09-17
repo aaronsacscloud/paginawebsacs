@@ -112,17 +112,26 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   useEffect(() => {
     if (!callId || fin) return;
     let vivo = true;
+    let veces = 0;
+    let t: any = null;
     const tira = async () => {
+      veces++;
       const j = await fetch(`/api/crm/telefonia/sala?call_id=${encodeURIComponent(callId)}`).then(r => r.json()).catch(() => null);
-      if (!vivo || !j?.hay) return;
-      setAcciones(j.acciones || []);
-      setOido(j.oido || []);
-      setItemId(j.item_id || null);
-      if (j.cierre?.estado) setCierre(j.cierre);
+      if (!vivo) return;
+      if (j?.hay) {
+        setAcciones(j.acciones || []);
+        setOido(j.oido || []);
+        setItemId(j.item_id || null);
+        if (j.cierre?.estado) setCierre(j.cierre);
+      }
+      /* Se pregunta cada 3 s los primeros cinco minutos —que es cuando se
+         deciden las cosas— y cada 8 s si la llamada se alarga. Una llamada de
+         cuarenta minutos a tres segundos son ochocientas consultas para ver lo
+         mismo. */
+      if (vivo) t = setTimeout(tira, veces > 100 ? 8000 : 3000);
     };
     tira();
-    const t = setInterval(tira, 3000);
-    return () => { vivo = false; clearInterval(t); };
+    return () => { vivo = false; if (t) clearTimeout(t); };
   }, [callId, fin]);
 
   /* LA NOTA SE GUARDA SOLA. Un cierre que se pierde por cerrar la pestaña es
@@ -270,6 +279,32 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   const hechas = acciones.filter(a => a.estado === 'hecha');
   const abiertas = acciones.filter(a => ['propuesta', 'haciendo', 'pregunta', 'fallo'].includes(a.estado));
   const p = cierre?.propuesta;
+
+  /* LOS CHIPS DE «¿QUÉ PASÓ?» · se usan en dos sitios: en su caja mientras
+     hablas, y DENTRO del bloque de cierre cuando colgó el cliente — ahí tienen
+     que estar pegados al botón que los necesita, no al final de la columna. */
+  const quePaso = (
+    <>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {RESULTADOS.map(r => (
+          <button key={r.id} onClick={() => setResultado(r.id)}
+            style={{ border: `1px solid ${resultado === r.id ? r.tono : C.g200}`, background: '#fff',
+              color: resultado === r.id ? r.tono : C.g500, borderRadius: 999, padding: '6px 12px', fontSize: 12.5,
+              fontWeight: resultado === r.id ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>{r.l}</button>
+        ))}
+      </div>
+      {/* «Volver a llamar» sin fecha es la promesa que ya nos costó esta gente:
+          si se elige, se pide el día. */}
+      {resultado === 'volver' && (
+        <label style={{ display: 'block', marginTop: 9 }}>
+          <span style={{ ...ROT, marginBottom: 4 }}>¿Qué día le vuelves a marcar?</span>
+          <input type="date" value={volverEl} min={new Date().toISOString().slice(0, 10)}
+            onChange={e => setVolverEl(e.target.value)}
+            style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit' }} />
+        </label>
+      )}
+    </>
+  );
 
   /* ── Una acción, con lo que le falte para poder salir ─────────────────── */
   const pintarAccion = (a: Accion) => {
@@ -482,12 +517,30 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
               <div style={{ ...CAJA, borderColor: C.morado }}>
                 <div style={ROT}>Cerrar la llamada</div>
                 {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada…</div>}
+                {/* COLGÓ ÉL Y NADIE CERRÓ. Es el caso NORMAL —el que cuelga
+                    suele ser el cliente— y antes dejaba la llamada abierta sin
+                    apunte ni compromiso. Se pide el desenlace de arriba y se
+                    cierra desde aquí. Si se cierra la pestaña sin hacerlo, el
+                    latido la cierra solo a los dos minutos: esto es para que lo
+                    haga quien estuvo en la llamada, que sabe más que la IA. */}
+                {!cerrando && !aplicado && !cierre && (
+                  <>
+                    <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6, marginBottom: 9 }}>
+                      La llamada terminó. Dime qué pasó y la cierro: apunte, compromisos y lo que quedó de mandar.
+                    </div>
+                    {quePaso}
+                    <button onClick={cerrarLlamada} disabled={!resultado}
+                      style={{ ...BTN, marginTop: 9, background: resultado ? C.morado : C.g100, color: resultado ? '#fff' : C.g500, border: 'none', width: '100%', cursor: resultado ? 'pointer' : 'default' }}>
+                      {resultado ? 'Cerrar la llamada' : 'Elige qué pasó para cerrarla'}
+                    </button>
+                  </>
+                )}
                 {!cerrando && aplicado && (
                   <div style={{ fontSize: 12.5, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
                     {aplicado.length ? aplicado.map((h, i) => <div key={i}>✓ {h}</div>) : <div>✓ Quedó cerrada.</div>}
                   </div>
                 )}
-                {!cerrando && !aplicado && p && (
+                {!cerrando && !aplicado && cierre && p && (
                   <>
                     <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
                     {p.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {p.siguiente_paso}</div>}
@@ -505,7 +558,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                     <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>
                   </>
                 )}
-                {!cerrando && !aplicado && !p && (
+                {!cerrando && !aplicado && cierre && !p && (
                   <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6 }}>
                     {/* El error de facturación de Anthropic llega en inglés y
                         con su JSON: aquí se dice en una frase lo que significa
@@ -606,28 +659,13 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
 
             {/* NO SE CUELGA SIN DECIR QUÉ PASÓ. El resultado es lo que alimenta
                 la etapa, el seguimiento y los informes; pedirlo después, cuando
-                ya colgaste y vas por el siguiente, es pedirlo para nunca. */}
+                ya colgaste y vas por el siguiente, es pedirlo para nunca.
+                Cuando colgó el otro, estos mismos chips viven arriba, dentro
+                del bloque de cierre. */}
             {!fin && (
               <div style={{ ...CAJA, borderColor: resultado ? C.g200 : '#f0c4bd' }}>
                 <div style={ROT}>¿Qué pasó? · hace falta para colgar</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {RESULTADOS.map(r => (
-                    <button key={r.id} onClick={() => setResultado(r.id)}
-                      style={{ border: `1px solid ${resultado === r.id ? r.tono : C.g200}`, background: '#fff',
-                        color: resultado === r.id ? r.tono : C.g500, borderRadius: 999, padding: '6px 12px', fontSize: 12.5,
-                        fontWeight: resultado === r.id ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>{r.l}</button>
-                  ))}
-                </div>
-                {/* «Volver a llamar» sin fecha es la promesa que ya nos costó
-                    esta gente: si se elige, se pide el día. */}
-                {resultado === 'volver' && (
-                  <label style={{ display: 'block', marginTop: 9 }}>
-                    <span style={{ ...ROT, marginBottom: 4 }}>¿Qué día le vuelves a marcar?</span>
-                    <input type="date" value={volverEl} min={new Date().toISOString().slice(0, 10)}
-                      onChange={e => setVolverEl(e.target.value)}
-                      style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit' }} />
-                  </label>
-                )}
+                {quePaso}
               </div>
             )}
 

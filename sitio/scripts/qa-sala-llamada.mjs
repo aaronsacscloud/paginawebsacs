@@ -64,6 +64,7 @@ const limpiar = async () => {
   await db.from('tel_accion_reglas').delete().eq('call_sid', SID);
   await db.from('wa_notas').delete().eq('metadata->>nota_llamada', SID);
   await db.from('wa_llamadas').delete().eq('call_id', SID);
+  await db.from('tel_conocimiento').delete().ilike('texto', 'QA: así se factura%');
 };
 await limpiar();
 
@@ -99,7 +100,11 @@ try {
   await p.waitForTimeout(7000);
 
   // ── Entra una llamada y se contesta ─────────────────────────────────────
-  await p.evaluate(tel => window.__dispositivo.emit('incoming', new window.__LlamadaFalsa(tel)), conv.telefono);
+  await p.evaluate(tel => {
+    const c = new window.__LlamadaFalsa(tel);
+    window.__llamada = c;                     // para poder colgar desde el otro lado
+    window.__dispositivo.emit('incoming', c);
+  }, conv.telefono);
   await p.waitForTimeout(600);
   await p.getByRole('button', { name: 'Contestar' }).click();
   await p.waitForTimeout(2500);
@@ -125,7 +130,13 @@ try {
       if (d.length) await anotarYHacer(c, d);
     }
   }
-  await p.waitForTimeout(3800);   // el pulso de la sala es cada 3 s
+  /* Se ESPERA a que el pulso de la sala (cada 3 s) traiga las acciones, en vez
+     de dormir un rato fijo: con un `waitForTimeout` la prueba pasaba o fallaba
+     según lo que tardara la red de ese momento. */
+  await p.waitForFunction(() => {
+    const d = document.querySelector('[aria-label="Llamada en curso"]');
+    return !!d && /Volver a llamarle/.test(d.innerText);
+  }, null, { timeout: 20000 }).catch(() => {});
   t = await sala();
   paso('Se pinta lo que se está oyendo', /me puedes mandar la informacion|información por WhatsApp/i.test(t), '');
   paso('Aparece «te pidió algo» con la acción', /Mandarle la información por WhatsApp/.test(t), '');
@@ -140,14 +151,42 @@ try {
   paso('El dictado deja su acción en la pantalla', /manual de facturaci|se lo dictaste/i.test(t), '');
   await foto('3-dictado');
 
-  // ── Colgar → la misma pantalla se vuelve el resumen ─────────────────────
+  /* ── «No sé qué mandarle»: se escribe una vez y queda para siempre ──────
+     Es la mitad de aprender que más se usa: el envío sale ahora y el texto se
+     guarda en la biblioteca. Aquí el envío NO puede salir (el servidor de
+     desarrollo no tiene llave de Kapso), pero lo que se comprueba es lo otro:
+     que lo escrito quede guardado. */
+  const pendiente = p.getByPlaceholder(/Escribe lo que hay que mandarle/).first();
+  await pendiente.fill('QA: así se factura en Sacs — se timbra desde la venta, con CFDI 4.0, y el PDF le llega al cliente por correo.');
+  await p.getByRole('button', { name: /Mandarlo y guardarlo/ }).first().click();
+  await p.waitForTimeout(3500);
+  const { data: aprendido } = await db.from('tel_conocimiento').select('id, tema, texto').ilike('texto', 'QA: así se factura%').maybeSingle();
+  paso('Lo que se escribe queda en la biblioteca', !!aprendido, aprendido?.tema || 'NO se guardó');
+
+  // ── Se termina la llamada → la misma pantalla se vuelve el resumen ──────
   const enSala = p.getByLabel('Llamada en curso');
-  await enSala.getByRole('button', { name: 'Le interesa', exact: true }).click();
-  await enSala.getByRole('button', { name: 'Colgar' }).click();
-  await p.waitForTimeout(6000);
+  if (process.argv.includes('--colgo-el')) {
+    /* EL CASO NORMAL: cuelga el CLIENTE. Nadie tocó el botón, así que nadie
+       dijo qué pasó — y antes eso dejaba la llamada abierta para siempre. */
+    await p.evaluate(() => window.__llamada.disconnect());
+    await p.waitForTimeout(2500);
+    t = await sala();
+    paso('Colgó él: la sala se queda y pide el desenlace', /colgó él|qué pasó/i.test(t), t.slice(0, 80));
+    await foto('4-colgo-el');
+    const resumenSala = p.getByLabel('Resumen de la llamada');
+    await resumenSala.getByRole('button', { name: 'Le interesa', exact: true }).click();
+    await resumenSala.getByRole('button', { name: 'Cerrar la llamada' }).click();
+    await p.waitForTimeout(6000);
+  } else {
+    await enSala.getByRole('button', { name: 'Le interesa', exact: true }).click();
+    await enSala.getByRole('button', { name: 'Colgar' }).click();
+    await p.waitForTimeout(6000);
+  }
   t = await sala();
   paso('La sala se queda como resumen al colgar', /cerrar la llamada|lo que se dijo/i.test(t), t.slice(0, 80));
   paso('Y dice la verdad sobre el cierre con IA', /saldo de IA|no pudo cerrarla|transcrita|Aplicar el cierre/.test(t), '');
+  const { data: itemFin } = await db.from('tel_sesion_items').select('estado, resultado, cierre_estado').eq('call_sid', SID).maybeSingle();
+  paso('El item quedó cerrado en la base', itemFin?.estado === 'hecho', JSON.stringify(itemFin));
   await foto('4-fin');
 
   const { data: acciones } = await db.from('tel_acciones').select('accion, estado, resultado').eq('call_sid', SID);

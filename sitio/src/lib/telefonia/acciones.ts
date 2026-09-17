@@ -202,7 +202,7 @@ const CATALOGO: Accion[] = [
         ? new Date(`${p.cuando.fecha}T${p.cuando.hora}:00`)
         : new Date(Date.now() + (Number(p?.minutos) || 15) * 60000);
       const { data } = await supabase.from('ti_tareas').insert({
-        contact_id: ctx.contactId || null, owner_id: ctx.userId || null, familia: 'llamar', tipo: 'llamada',
+        contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'llamar', tipo: 'llamada',
         prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
         payload: {
           instruccion: `${ctx.nombre || 'El contacto'}: volver a marcarle (no podía hablar)`,
@@ -220,7 +220,7 @@ const CATALOGO: Accion[] = [
     auto: true,   // sólo crea la tarea interna
     ejecutar: async (ctx, p) => {
       const { data } = await supabase.from('ti_tareas').insert({
-        contact_id: ctx.contactId || null, owner_id: ctx.userId || null, familia: 'soporte', tipo: 'responder',
+        contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'soporte', tipo: 'responder',
         prioridad: 1, vence_at: ahora(), origen: 'evento',
         payload: {
           instruccion: `${ctx.nombre || 'El contacto'}: reportó un problema por teléfono`,
@@ -250,7 +250,7 @@ const CATALOGO: Accion[] = [
         }).then(() => {}, () => {});
       }
       await supabase.from('ti_tareas').insert({
-        contact_id: ctx.contactId || null, owner_id: ctx.userId || null, familia: 'avanzar', tipo: 'responder',
+        contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'avanzar', tipo: 'responder',
         prioridad: 2, vence_at: ahora(), origen: 'evento',
         payload: { instruccion: `Buscar a ${quien} (decide por ${ctx.nombre || 'el contacto'})`, porque: 'Lo dijo en la llamada.', nombre: ctx.nombre, whatsapp: p?.telefono_otro || ctx.telefono },
       }).then(() => {}, () => {});
@@ -389,8 +389,18 @@ export async function ejecutar(accionId: string, o: { userId?: string | null; pa
     .update({ estado: 'haciendo', updated_at: ahora() })
     .eq('id', accionId).in('estado', ['propuesta', 'pregunta', 'fallo']).select('*').maybeSingle();
   if (!fila) {
-    const { data: ya } = await supabase.from('tel_acciones').select('estado, resultado').eq('id', accionId).maybeSingle();
-    return { ok: ya?.estado === 'hecha', dicho: ya?.resultado || 'esa acción ya se hizo', estado: ya?.estado || 'desconocido' };
+    const { data: ya } = await supabase.from('tel_acciones').select('estado, resultado, updated_at').eq('id', accionId).maybeSingle();
+    /* UN CANDADO QUE NO SE ABRE ES UNA ACCIÓN PERDIDA. Si la función murió en
+       plena ejecución, la acción se queda en «haciendo» y el botón contestaría
+       para siempre «ya se hizo» — cuando no se hizo. Pasado un minuto se
+       considera muerta y se puede reintentar. */
+    const colgada = ya?.estado === 'haciendo' && Date.now() - new Date(ya.updated_at || 0).getTime() > 60000;
+    if (colgada) {
+      const { data: suelta } = await supabase.from('tel_acciones').update({ estado: 'propuesta', updated_at: ahora() })
+        .eq('id', accionId).eq('estado', 'haciendo').select('id').maybeSingle();
+      if (suelta) return ejecutar(accionId, o);
+    }
+    return { ok: ya?.estado === 'hecha', dicho: ya?.resultado || (ya?.estado === 'haciendo' ? 'esa acción va en camino' : 'esa acción ya se hizo'), estado: ya?.estado || 'desconocido' };
   }
   const a = porId(fila.accion);
   if (!a) {
@@ -414,6 +424,16 @@ export async function ejecutar(accionId: string, o: { userId?: string | null; pa
     user_id: o.userId || fila.user_id || null, updated_at: ahora(),
   }).eq('id', accionId);
   return { ok: r.ok, dicho: r.dicho, estado };
+}
+
+/** El dueño de lo que se cree (tareas, reunión). Si la llamada no dijo quién
+ *  atendía —pasa en las entrantes hasta que alguien abre la sala—, se cae al
+ *  dueño de la sesión de llamadas sueltas. Una tarea sin dueño no la ve nadie. */
+async function duenoDe(ctx: Ctx): Promise<string | null> {
+  if (ctx.userId) return ctx.userId;
+  if (!ctx.itemId) return null;
+  const { data } = await supabase.from('tel_sesion_items').select('tel_sesiones(owner_id)').eq('id', ctx.itemId).maybeSingle();
+  return (data as any)?.tel_sesiones?.owner_id || null;
 }
 
 async function nombreDe(contactId: string | null): Promise<string | null> {
@@ -472,7 +492,16 @@ export async function dictar(ctx: Ctx, texto: string, o: { userId?: string | nul
     cacheReglas = { t: 0, reglas: [] };
   }
 
-  if (!fila) return { ok: false, dicho: 'esa acción ya estaba anotada en esta llamada', accion: accionId, accion_id: null };
+  /* Ya estaba anotada en esta llamada (el índice único). Dictarla otra vez no
+     es un error: es «hazla». Se ejecuta la que ya existe con lo que se acaba
+     de dictar, en vez de contestar que no se puede. */
+  if (!fila) {
+    const { data: previa } = await supabase.from('tel_acciones').select('id, estado').eq('call_sid', ctx.callSid).eq('accion', accionId).maybeSingle();
+    if (!previa) return { ok: false, dicho: 'no se pudo anotar la acción', accion: a.etiqueta, accion_id: null };
+    if (previa.estado === 'hecha') return { ok: true, dicho: 'eso ya se hizo en esta llamada', accion: a.etiqueta, accion_id: previa.id };
+    const r0 = await ejecutar(previa.id, { userId: o.userId || ctx.userId || null, params });
+    return { ok: r0.ok, dicho: r0.dicho, accion: a.etiqueta, accion_id: previa.id };
+  }
   // 3. Se hace YA: el dictado es una orden, no una propuesta.
   const r = await ejecutar(fila.id, { userId: o.userId || ctx.userId || null, params });
   return { ok: r.ok, dicho: r.dicho, accion: a.etiqueta, accion_id: fila.id };

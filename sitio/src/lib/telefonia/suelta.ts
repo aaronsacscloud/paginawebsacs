@@ -109,10 +109,25 @@ export async function itemDeLlamada(callSid: string, o: { userId?: string | null
 
 /** Al colgar una llamada suelta: se cierra el item y arranca el cierre con IA
  *  (el MISMO que usan las llamadas de la lista). Nunca lanza. */
-export async function cerrarLlamadaSuelta(callSid: string, o: { userId?: string | null; resultado?: string | null; nota?: string | null } = {}): Promise<{ ok: boolean; itemId: string | null }> {
+export async function cerrarLlamadaSuelta(callSid: string, o: { userId?: string | null; resultado?: string | null; nota?: string | null; soloSiExiste?: boolean } = {}): Promise<{ ok: boolean; itemId: string | null }> {
   try {
-    const it = await itemDeLlamada(callSid, { userId: o.userId });
+    /* `soloSiExiste` es para quien llama sin saber si esta llamada es suelta —el
+       webhook del final del <Dial>, que recibe TODAS—: si no hay item, no se
+       crea uno nuevo para cerrarlo en el mismo suspiro. */
+    const it = o.soloSiExiste
+      ? await (async () => {
+          const { data } = await supabase.from('tel_sesion_items').select('id, sesion_id, contact_id, conversation_id, telefono, nombre').eq('call_sid', callSid).limit(1).maybeSingle();
+          return data ? { ...(data as any), nuevo: false } as ItemSuelto : null;
+        })()
+      : await itemDeLlamada(callSid, { userId: o.userId });
     if (!it) return { ok: false, itemId: null };
+    /* ══ NUNCA UN ITEM DE LA CABINA ════════════════════════════════════════
+       `call_sid` también identifica a las llamadas de Llamadas inteligentes, y
+       ésas las cierra la cabina con su propio flujo (resultado, nota, siguiente
+       de la lista). Cerrarlas desde aquí sería adelantarse a la sesión y dejar
+       al vendedor sin su pantalla de cierre. */
+    const { data: ses } = await supabase.from('tel_sesiones').select('origen').eq('id', it.sesion_id).maybeSingle();
+    if (!esSuelta(ses)) return { ok: false, itemId: null };
     const { data: fila } = await supabase.from('tel_sesion_items').select('estado, contestado_at, oido, cierre_estado').eq('id', it.id).maybeSingle();
     if (!fila || fila.estado === 'hecho') return { ok: true, itemId: it.id };
     const seg = fila.contestado_at ? Math.max(0, Math.round((Date.now() - new Date(fila.contestado_at).getTime()) / 1000)) : 0;

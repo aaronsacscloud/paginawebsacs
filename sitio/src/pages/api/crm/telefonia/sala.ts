@@ -30,6 +30,23 @@ const ES_SID = (s: string) => /^CA[0-9a-f]{32}$/i.test(s);
 async function contexto(callSid: string, user: any): Promise<Ctx | null> {
   const it = await itemDeLlamada(callSid, { userId: user?.id || null, nombreUsuario: user?.nombre || user?.name || null });
   if (!it) return null;
+  /* QUIÉN ATENDIÓ. En una ENTRANTE, Twilio no lo sabe: el espejo la guarda con
+     `atendida_por` vacío y nadie lo llena nunca. Eso no es sólo un dato de
+     informe — es el dueño de las tareas que crean las acciones («recordármelo
+     en un rato» acababa en la bandeja de NADIE) y el anfitrión de la reunión
+     que se agenda. Quien abre la sala es quien está en la llamada. */
+  if (user?.id) {
+    await supabase.from('wa_llamadas').update({ atendida_por: user.id })
+      .eq('call_id', callSid).is('atendida_por', null).then(() => {}, () => {});
+    /* Y LA MARCA DE QUE SÍ SE CONTESTÓ. En una entrante nadie la ponía: el
+       `<Dial>` que timbra en el navegador no trae aviso de «contestaron», así
+       que `answered_at` se quedaba en nulo aunque hablaras veinte minutos — y
+       la bitácora escribe «📞 Llamada perdida» en el hilo justo con ese dato.
+       Abrir la sala ES contestar: es el único momento en que el servidor se
+       entera. */
+    await supabase.from('wa_llamadas').update({ estado: 'aceptada', answered_at: new Date().toISOString() })
+      .eq('call_id', callSid).is('answered_at', null).then(() => {}, () => {});
+  }
   return {
     callSid, itemId: it.id, contactId: it.contact_id, conversationId: it.conversation_id,
     telefono: it.telefono, nombre: it.nombre, userId: user?.id || null,
@@ -111,8 +128,13 @@ export const POST: APIRoute = async ({ request }) => {
       telefono: ctx.telefono, accion: cual, params: b.params || {}, frase: b.frase || 'lo elegiste tú',
       origen: 'manual', confianza: 1, estado: 'propuesta', user_id: user.id,
     }).select('id').maybeSingle();
-    // El índice único: esa acción ya estaba en esta llamada, y eso no es un error.
-    if (error && !fila) return json({ ok: true, ya: true, acciones: await deLaLlamada(callSid) });
+    /* El índice único (una acción por llamada) no es un error: es que ya
+       estaba. Cualquier OTRO error sí hay que decirlo — callarlo dejaría a la
+       pantalla enseñando «listo» sobre algo que no se guardó. */
+    if (error && !fila) {
+      if (String((error as any).code) === '23505') return json({ ok: true, ya: true, acciones: await deLaLlamada(callSid) });
+      return json({ error: `No se pudo anotar la acción: ${error.message}` }, 500);
+    }
     return json({ ok: true, accion_id: fila?.id || null, acciones: await deLaLlamada(callSid) });
   }
 

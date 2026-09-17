@@ -34,6 +34,24 @@ export const POST: APIRoute = async ({ request }) => {
      Va después de la bitácora y sin esperar a que termine: Twilio quiere el
      TwiML rápido, y si el aviso tarda o truena no debe arrastrar la llamada.
      Lo que no puede fallar —el rastro— ya se escribió arriba. */
+  /* ══ LA LLAMADA SE CIERRA AUNQUE NADIE TOQUE LA PANTALLA (17-sep-2026) ═══
+     El que cuelga primero casi siempre es el cliente, y quien atendió puede
+     cerrar la pestaña sin decir nada. Si el cierre dependiera del botón
+     «Colgar» de la sala, esas llamadas se quedarían abiertas para siempre: sin
+     apunte, sin compromiso y sin el envío prometido.
+
+     Aquí sólo se CIERRA el item (un UPDATE, rápido: Twilio quiere su respuesta
+     en segundos). Proponer y aplicar el cierre con IA lo hace el latido,
+     `rescatarCierres`, a los dos minutos — que es también el rato que se le da
+     a la persona para cerrarlo ella desde la pantalla, que siempre sabe más.
+     `soloSiExiste` evita crearle item a una llamada que nunca tuvo sala.
+
+     Se ESPERA (son tres consultas) y no se deja corriendo: en serverless lo que
+     no se espera se muere a medias cuando la función contesta. */
+  await import('../../../lib/telefonia/suelta')
+    .then(m => m.cerrarLlamadaSuelta(p.CallSid, { soloSiExiste: true }))
+    .catch(() => { /* el rescate del latido lo vuelve a intentar */ });
+
   const estadoFinal = MAPA[p.DialCallStatus || p.CallStatus] || 'terminada';
   if (estadoFinal === 'perdida' || estadoFinal === 'rechazada') {
     const { data: ll } = await supabase.from('wa_llamadas')

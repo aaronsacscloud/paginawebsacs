@@ -404,6 +404,11 @@ export default function Telefonia() {
 
   /** Engancha los eventos del `call` de Twilio a la máquina de estados. */
   const enganchar = (call: any, telefono: string, nombre: string | null, direccion: 'entrante' | 'saliente') => {
+    /* EL RESUMEN DE LA ANTERIOR SE VA. Si no, la sala de la llamada que acaba
+       de terminar se queda encima de la que está empezando: enseñando otro
+       nombre, otro contexto y un botón de cerrar que cierra la llamada
+       equivocada. */
+    setFinSala(null);
     const arranque: Viva = {
       call, telefono, nombre, direccion, sid: call.parameters?.CallSid || null,
       // Una ENTRANTE que acabo de contestar ya está en conversación. Una
@@ -955,7 +960,13 @@ export default function Telefonia() {
           el resumen en vez de desmontarla. */}
       {((salaAbierta && viva?.fase === 'en-linea') || finSala) && (
         <Suspense fallback={null}>
+          {/* `key` por llamada: sin él, la MISMA pantalla se reusaría para la
+              siguiente y arrastraría el desenlace, el apunte y los campos a
+              medio llenar de la anterior. Con el mismo `callId`, en cambio, el
+              paso de «en curso» a «resumen» conserva todo, que es justo lo que
+              hace falta al colgar. */}
           <SalaLlamada
+            key={finSala?.sid || viva?.sid || 'sala'}
             telefono={finSala?.telefono || viva?.telefono || ''}
             callId={finSala?.sid || viva?.sid || null}
             /* El nombre CRUDO, no `quien()`: ése cae al teléfono legible

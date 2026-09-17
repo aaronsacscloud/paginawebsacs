@@ -285,6 +285,30 @@ export async function rescatarCierres(): Promise<void> {
   ultimoRescate = Date.now();
   try {
     const viejo = new Date(Date.now() - COLGADO_MS).toISOString();
+
+    /* ══ LA LLAMADA QUE NADIE CERRÓ (17-sep-2026) ═══════════════════════════
+       Un item puede quedar «hecho» SIN cierre: pasa cada vez que el cliente
+       cuelga primero o que quien atendió cierra la pestaña. En la cabina eso no
+       existía —el vendedor siempre pasa por el cierre para seguir a la
+       siguiente— pero en las llamadas sueltas es el caso NORMAL: el que cuelga
+       suele ser el otro. Sin esto, esas llamadas no dejaban ni apunte, ni
+       compromiso, ni el envío que se prometió.
+
+       Dos topes, y los dos importan: se espera a que lleve 2 minutos colgada
+       (para no pelearse con la pantalla, que está pidiendo el cierre en ese
+       momento) y se ignora lo que lleve más de 2 HORAS. Sin ese segundo tope,
+       el día que esto se estrene se pondría a cerrar el historial entero —
+       agendando reuniones y mandando PDF por llamadas de la semana pasada. */
+    const hace2h = new Date(Date.now() - 2 * 3600e3).toISOString();
+    const { data: sinCierre } = await supabase.from('tel_sesion_items')
+      .select('id').eq('estado', 'hecho').is('cierre_estado', null)
+      .lt('terminado_at', viejo).gt('terminado_at', hace2h)
+      .order('terminado_at').limit(3);
+    for (const it of sinCierre || []) {
+      const p = await proponerCierre(it.id);
+      if (p) await aplicarCierre(it.id, { userId: null, rescate: true });
+    }
+
     const { data } = await supabase.from('tel_sesion_items').select('id, cierre_estado').eq('estado', 'hecho').in('cierre_estado', ['proponiendo', 'propuesto', 'aplicando']).lt('updated_at', viejo).order('updated_at').limit(5);
     for (const it of data || []) {
       if (it.cierre_estado === 'proponiendo') {

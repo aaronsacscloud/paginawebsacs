@@ -35,8 +35,12 @@ export const POST: APIRoute = async ({ request }) => {
 
      Se enciende con `<Start>` sobre la llamada padre, así que sigue viva
      aunque el <Dial> cambie de pata, y va a `/api/telefonia/dictado`, que
-     apunta lo oído y dispara las acciones (lib/telefonia/acciones.ts). */
-  const dictado = (sid: string) => `<Start><Transcription statusCallbackUrl="${BASE}/api/telefonia/dictado?call=${sid}" statusCallbackMethod="POST" languageCode="es-MX" track="both_tracks" partialResults="true" enableAutomaticPunctuation="true"/></Start>`;
+     apunta lo oído y dispara las acciones (lib/telefonia/acciones.ts).
+
+     `partialResults="false"`: sólo frases terminadas. Los parciales servirían
+     para decidir rápido quién contestó —eso lo hace el marcador— y aquí sólo
+     multiplicarían por cinco los avisos y las escrituras sobre la misma fila. */
+  const dictado = (sid: string) => `<Start><Transcription statusCallbackUrl="${BASE}/api/telefonia/dictado?call=${sid}" statusCallbackMethod="POST" languageCode="es-MX" track="both_tracks" partialResults="false" enableAutomaticPunctuation="true"/></Start>`;
 
   /* ⚠️ CÓMO SE DISTINGUE ENTRANTE DE SALIENTE — la trampa que rompió las
      llamadas en producción (10-sep-2026).

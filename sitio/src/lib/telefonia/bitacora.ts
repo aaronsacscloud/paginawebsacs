@@ -181,7 +181,14 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
        `ultimo_entrante_at` NO se toca: esa marca es la ventana de 24 h de Meta,
        y una llamada no abre la ventana de WhatsApp. Decir que sí nos dejaría
        mandando texto libre que Meta rechaza. */
-    if (ll.conversation_id && ll.direccion === 'entrante' && !ll.answered_at) {
+    /* ⚠️ Y NO BASTA CON `answered_at` (17-sep-2026). En una entrante esa marca
+       la pone el navegador al abrir la sala; si esa llamada nunca llegó a la
+       pantalla —el CRM cerrado, otra pestaña, una versión vieja— una llamada
+       que se habló veinte minutos se anunciaba en el hilo como PERDIDA. Lo que
+       no miente es la duración: nadie habla dos minutos con una llamada que no
+       contestó. */
+    const hablada = Number(ll.duracion_seg || 0) > 0;
+    if (ll.conversation_id && ll.direccion === 'entrante' && !ll.answered_at && !hablada) {
       const cuando = ll.ended_at || ll.started_at || new Date().toISOString();
       const { data: cv } = await supabase.from('wa_conversaciones')
         .select('ultimo_mensaje_at').eq('id', ll.conversation_id).maybeSingle();
