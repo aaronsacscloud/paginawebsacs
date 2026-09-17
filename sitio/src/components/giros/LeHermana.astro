@@ -1,0 +1,139 @@
+---
+/**
+ * LeHermana — "La pared que se rompe por el centro", el bloque propio de lencería (17-sep-2026,
+ * con el dictamen del referee de oficio: ejes "Número" y "Copa", celda pulsando al inicio, letrero
+ * "Ofrécele 36B (tienes 2) o 32D con extensor (tienes 1)", orillas con una sola hermana explicada,
+ * el renglón del lunes dinámico, sin calculadora de centímetros).
+ *
+ * Lo que solo existe en este oficio: la talla son dos números que se cruzan (número y copa); si
+ * falta una celda hay dos vecinas que la salvan (misma copa de volumen: número arriba con letra
+ * abajo, o número abajo con letra arriba, con extensor); y la talla de la clienta se mide en la
+ * tienda y vale dinero si se guarda.
+ *
+ * Los siete puntos:
+ * · Cuándo se decide: en la caja con la clienta enfrente (diez segundos); cada lunes antes de pedir
+ *   (huecos del centro); dos veces al año antes de la maquila.
+ * · Quién decide y quién lo hace: la muchacha ofrece la hermana, mide y guarda la talla; la
+ *   encargada autoriza abrir un tripack, un cambio de brasier o un traspaso; la dueña, el pedido.
+ * · Qué se mueve primero: su número en otro color del mismo modelo → la hermana en el color que
+ *   pidió → otro color → otra sucursal con apartado. Nunca "regresa la otra semana" sin apartado.
+ * · Cuánto cuesta: una venta perdida por no ofrecer la hermana ($250-450 de venta); un centro
+ *   vacío con orillas llenas es dinero parado; la maquila mal calculada son copas A dos años.
+ * · Qué va primero al pedir: celdas del centro antes que orillas; básicos antes que moda; hermana
+ *   hacia arriba en número antes que hacia abajo.
+ * · Paso a paso: pedido sin existencia → hermana → se apunta la petición → lista del lunes → llega
+ *   la talla → aviso por WhatsApp a las que la tienen en su ficha.
+ * · El dato honesto: "huecos del centro hoy" = celdas del centro (34B a 38D) en cero en los básicos
+ *   ÷ celdas del centro. Sale del inventario solo. "Ventas salvadas por hermana" solo cuenta si se
+ *   anota la talla que pidió.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+const numeros = ['32', '34', '36', '38', '40']; const copas = ['A', 'B', 'C', 'D', 'DD'];
+// existencia del básico negro: renglón = número, columna = copa
+const ex = [
+  [3, 2, 1, 1, 0],
+  [2, 0, 0, 1, 1],
+  [1, 0, 0, 0, 1],
+  [0, 1, 0, 1, 2],
+  [0, 1, 2, 2, 2],
+];
+---
+<BloqueProducto
+  encabezado="La pared que se rompe por el centro."
+  titulo="Pidieron 34C y no hay. Ofrécele 36B."
+  descripcion="Solo aquí la talla son dos números que se cruzan, y si falta una celda hay dos vecinas que la salvan: número arriba con copa abajo, o número abajo con copa arriba y un extensor. Toca la talla que te pidieron y no hay, y mira qué le ofreces en vez de dejarla ir."
+  vinetas={[
+    { label: 'Primero su número en otro color; luego la hermana', detail: 'De negro básico siempre hay tres modelos. Si no, la hermana en el color que pidió. Y si no, otra sucursal con apartado. Nunca “regresa la otra semana” sin talla anotada.' },
+    { label: 'La petición se apunta aunque se venda la hermana', detail: 'El sistema guarda que se pidió 34C y se vendió 36B. Eso es lo que el lunes te dice qué celdas pedir, y qué orillas dejar morir.' },
+    { label: 'La talla medida se queda en su ficha', detail: 'Dos minutos con la cinta y su WhatsApp. Cuando llegue su 34D en vino, el aviso sale solo: la siguiente venta se hace por foto.' },
+  ]}
+  suelta
+>
+  <div class="lh" id="le-hermana" data-ex={JSON.stringify(ex)}>
+    <div class="lh-grid-wrap">
+      <span class="lh-k">Toca la talla que te pidieron y no hay · básico negro</span>
+      <div class="lh-grid" role="grid" aria-label="Existencia por número y copa">
+        <span class="lh-corner"><small>Número</small><small>Copa</small></span>
+        {copas.map((c) => <span class="lh-h">{c}</span>)}
+        {numeros.map((n, i) => (
+          <>
+            <span class="lh-h lh-h--n">{n}</span>
+            {copas.map((c, j) => <button type="button" class:list={['lh-c', { 'is-0': ex[i][j] === 0, 'is-1': ex[i][j] === 1, 'is-pulsa': n === '34' && c === 'C' }]} data-i={i} data-j={j} aria-label={`${n}${c}: ${ex[i][j]} piezas`}><b>{n}{c}</b><small>{ex[i][j]}</small></button>)}
+          </>
+        ))}
+      </div>
+      <div class="lh-leyenda"><span><i class="lh-i lh-i--ok"></i>Hay</span><span><i class="lh-i lh-i--1"></i>Queda una</span><span><i class="lh-i lh-i--0"></i>No hay</span><span><i class="lh-i lh-i--h"></i>Hermana</span></div>
+    </div>
+    <div class="lh-res">
+      <span class="lh-k">Lo que le ofreces</span>
+      <p class="lh-frase" id="lh-frase">Toca una talla en cero.</p>
+      <ul class="lh-opc" id="lh-opc"></ul>
+      <p class="lh-lunes" id="lh-lunes">El lunes te pide solo estas: <b>34B, 34C, 36B, 36C, 36D, 38C</b>.</p>
+      <button type="button" class="lh-ficha" id="lh-ficha"><span>Guardar su talla en su ficha</span><i>WhatsApp</i></button>
+      <a class="lh-cta" id="lh-cta" href="/contacto">Verlo con mi pared</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .lh { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 22px; }
+  .lh-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
+  .lh-grid { display: grid; grid-template-columns: 52px repeat(5, 1fr); gap: 5px; }
+  .lh-corner { display: flex; flex-direction: column; justify-content: flex-end; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); line-height: 1.2; }
+  .lh-h { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--color-text-secondary); }
+  .lh-h--n { justify-content: flex-start; padding-left: 6px; }
+  .lh-c { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; height: 48px; border-radius: var(--radius-sm, 8px); border: 1px solid transparent; background: var(--ok-fondo, #E6F7F3); color: var(--ok-texto, #1B6B3A); font: inherit; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s; }
+  .lh-c b { font-size: 12.5px; } .lh-c small { font-size: 10.5px; opacity: 0.8; }
+  .lh-c.is-1 { background: var(--aviso-fondo, #FDF3DF); color: var(--aviso-texto, #8A5A00); }
+  .lh-c.is-0 { background: var(--color-bg-primary, #F3F4F6); color: #9A9A96; }
+  .lh-c.is-0 small { opacity: 0.6; }
+  .lh-c.is-pulsa { animation: lh-pulsa 1.4s ease-in-out infinite; }
+  @keyframes lh-pulsa { 50% { box-shadow: 0 0 0 4px rgba(75,123,229,0.35); } }
+  .lh-c.is-sel { box-shadow: 0 0 0 2px var(--color-text-primary, #0E0D0C); animation: none; }
+  .lh-c.is-herm { box-shadow: 0 0 0 2px var(--color-primary, #4B7BE5); background: #EEF3FF; color: var(--color-primary, #4B7BE5); }
+  .lh-c:hover { transform: translateY(-1px); }
+  .lh-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11.5px; color: var(--color-text-secondary); }
+  .lh-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+  .lh-i { width: 10px; height: 10px; border-radius: 3px; } .lh-i--ok { background: var(--ok-fondo, #E6F7F3); border: 1px solid #BFE6D8; } .lh-i--1 { background: var(--aviso-fondo, #FDF3DF); border: 1px solid #F0D9A8; } .lh-i--0 { background: #F3F4F6; border: 1px solid #E3E3DF; } .lh-i--h { background: #EEF3FF; border: 2px solid var(--color-primary, #4B7BE5); }
+  .lh-res { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 16px; display: flex; flex-direction: column; }
+  .lh-frase { margin: 0 0 10px; font-family: var(--font-display); font-size: 19px; letter-spacing: -0.02em; line-height: 1.2; color: var(--color-text-primary); }
+  .lh-opc { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .lh-opc :global(li) { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm, 8px); background: #fff; border: 1px solid var(--color-border, #E6E8ED); font-size: 13px; animation: lh-in 0.3s ease; }
+  .lh-opc :global(li b) { color: var(--color-primary, #4B7BE5); white-space: nowrap; }
+  .lh-opc :global(li.is-nada) { color: var(--color-text-secondary); font-style: italic; }
+  @keyframes lh-in { from { opacity: 0; transform: translateY(4px); } }
+  .lh-lunes { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13px; color: var(--color-text-secondary); }
+  .lh-lunes b { color: var(--color-text-primary); }
+  .lh-ficha { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm, 8px); border: 1px dashed var(--color-border, #E6E8ED); background: transparent; font: inherit; font-size: 13px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; }
+  .lh-ficha i { font-style: normal; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 999px; background: #E6F7F3; color: #1B6B3A; opacity: 0.45; transition: opacity 0.3s; }
+  .lh-ficha.is-on { border-style: solid; border-color: #1B6B3A; } .lh-ficha.is-on i { opacity: 1; }
+  .lh-cta { display: inline-flex; align-self: flex-start; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .lh { grid-template-columns: 1fr; padding: 14px; } .lh-grid { grid-template-columns: 40px repeat(5, 1fr); gap: 4px; } .lh-c { height: 44px; } .lh-c b { font-size: 11.5px; } .lh-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('le-hermana'); if (!el) return;
+    const ex: number[][] = JSON.parse(el.dataset.ex!); const N = ['32', '34', '36', '38', '40'], C = ['A', 'B', 'C', 'D', 'DD'];
+    const celdas = Array.from(el.querySelectorAll<HTMLButtonElement>('.lh-c'));
+    const frase = document.getElementById('lh-frase')!, opc = document.getElementById('lh-opc')!, lunes = document.getElementById('lh-lunes')!, ficha = document.getElementById('lh-ficha')!;
+    const centro = () => { const h: string[] = []; for (let i = 1; i <= 3; i++) for (let j = 1; j <= 3; j++) if (ex[i][j] === 0) h.push(N[i] + C[j]); return h; };
+    const pinta = (i: number, j: number) => {
+      celdas.forEach((c) => c.classList.remove('is-sel', 'is-herm', 'is-pulsa'));
+      const sel = celdas.find((c) => Number(c.dataset.i) === i && Number(c.dataset.j) === j)!; sel.classList.add('is-sel');
+      const t = N[i] + C[j];
+      if (ex[i][j] > 0) { frase.textContent = `${t} sí hay (${ex[i][j]}). Toca una talla en cero.`; opc.innerHTML = ''; return; }
+      const herm: { t: string; n: number; nota: string }[] = [];
+      if (i + 1 < 5 && j - 1 >= 0) { herm.push({ t: N[i + 1] + C[j - 1], n: ex[i + 1][j - 1], nota: 'número arriba, copa abajo: misma copa de volumen' }); celdas.find((c) => Number(c.dataset.i) === i + 1 && Number(c.dataset.j) === j - 1)!.classList.add('is-herm'); }
+      if (i - 1 >= 0 && j + 1 < 5) { herm.push({ t: N[i - 1] + C[j + 1], n: ex[i - 1][j + 1], nota: 'número abajo, copa arriba: con extensor' }); celdas.find((c) => Number(c.dataset.i) === i - 1 && Number(c.dataset.j) === j + 1)!.classList.add('is-herm'); }
+      const con = herm.filter((h) => h.n > 0);
+      frase.textContent = con.length ? `No pierdas la venta: ofrécele ${con.map((h, k) => `${h.t}${k === 1 || h.nota.includes('extensor') ? ' con extensor' : ''} (tienes ${h.n})`).join(' o ')}.` : herm.length ? `Sus hermanas también están en cero. Pídelo a otra sucursal y apártalo con anticipo.` : `${t} es orilla: de este lado ya no hay hermana. Pídelo a otra sucursal o en otro modelo.`;
+      opc.innerHTML = herm.map((h) => `<li${h.n ? '' : ' class="is-nada"'}><span>${h.t} · ${h.nota}</span><b>${h.n ? 'tienes ' + h.n : 'en cero'}</b></li>`).join('') + (herm.length < 2 ? `<li class="is-nada"><span>De este lado ya no hay hermana</span><b>orilla</b></li>` : '');
+      const hu = centro(); if (!hu.includes(t) && ex[i][j] === 0) hu.push(t);
+      lunes.innerHTML = `El lunes te pide solo estas: <b>${hu.join(', ')}</b>.`;
+      (window as any).sacsPH?.('giro_le_hermana', { talla: t });
+    };
+    celdas.forEach((c) => c.addEventListener('click', () => pinta(Number(c.dataset.i), Number(c.dataset.j))));
+    ficha.addEventListener('click', () => { ficha.classList.toggle('is-on'); const on = ficha.classList.contains('is-on'); ficha.querySelector('span')!.textContent = on ? 'Guardada en su ficha: le avisa el WhatsApp cuando llegue' : 'Guardar su talla en su ficha'; });
+  })();
+</script>
