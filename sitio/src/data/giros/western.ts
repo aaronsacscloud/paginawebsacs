@@ -29,7 +29,7 @@ export const bannerWS = {
   foto: `${IMG}/portada.webp`,
   fotoAlt: 'Tienda western moderna en León: pared de botas, texanas en el anaquel y la corrida por número en la tablet del mostrador',
   avisos: [
-    { modulo: 'Hay en otra tienda', texto: 'Bota rodeo chocolate 27 · 0 aquí · 3 en la del centro · llega el jueves', pos: 1 as const, tono: 'azul' as const, sello: 'Ahora' },
+    { modulo: 'Hay en otra tienda', texto: 'Bota rodeo chocolate 27 · 0 aquí · 3 en la del Centro · llega el jueves', pos: 1 as const, tono: 'azul' as const, sello: 'Ahora' },
     { modulo: 'Apartado por vencer', texto: 'Graduación · bota + texana 7 1/8 · saldo $2,400 · vence el viernes', pos: 2 as const, tono: 'ambar' as const, sello: 'Mayo' },
     { modulo: 'Corrida rota', texto: 'Picuda negra: sin 26, 27 ni 28 · quedan 25 y 30', pos: 3 as const, tono: 'rojo' as const, sello: 'Hoy' },
   ],
@@ -45,7 +45,7 @@ export const manifiestoWS = {
     'A las once de la noche te escriben “¿hay en <b>26 punta rodeo</b>?” y nadie sabe qué contestar hasta el otro día.',
     'En la <b>carpa de la feria</b> vendes sin internet y al regresar la caja no cuadra con las cajas.',
     'Vendes mucha texana, pero no sabes si te deja más la <b>20X o la 6X</b> después del descuento y la comisión del muchacho.',
-    'El muchacho se llevó la bota y la texana, pero el <b>cinto en 36</b> no había, y el conjunto de la boda se fue a la tienda de enfrente.',
+    'El <b>novio</b> se llevó la bota y la texana, pero el <b>cinto en 36</b> no había, y el conjunto de la boda se fue a la tienda de enfrente.',
   ],
   cierre: 'Ningún sistema de ropa entiende que una bota es un número con horma, que una texana es una talla con X y que un cinto es una medida, y que los tres van en el mismo ticket para el mismo señor. Sacs sí: cada pantalla que sigue funciona igual en el mostrador, en la carpa de la feria y en el WhatsApp. Y encima puedes poner agentes de IA para que hagan el trabajo repetitivo: el sugerido de resurtido por número, el aviso de apartados por vencer y el recordatorio del Día del Padre.',
 };
@@ -54,38 +54,40 @@ export const variantesWS = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“una bota rodeo”.',
-  sub: 'Una corrida trae del 25 al 30. En tres pieles y con horma normal y ancha, son 36 existencias distintas de un solo modelo. Y los números de en medio se van en las primeras semanas: lo que queda en la pared son las orillas.',
-  ejeA: ['25', '26', '27', '28', '29', '30'],
+  sub: 'Una corrida trae del 25 al 30, con medios números. En cuatro pieles son 32 existencias de un solo modelo, y con la horma ancha, 64. Los números de en medio se van en las primeras semanas: lo que queda en la pared son las orillas.',
+  ejeA: ['25', '26', '26.5', '27', '27.5', '28', '29', '30'],
   filas: [
     { nombre: 'Res chocolate', img: `${IMG}/prod-res.webp`, alt: 'Bota vaquera punta rodeo en piel de res color chocolate' },
     { nombre: 'Venado miel', img: `${IMG}/prod-venado.webp`, alt: 'Bota vaquera punta rodeo en piel de venado color miel' },
-    { nombre: 'Avestruz negro', img: `${IMG}/prod-avestruz.webp`, alt: 'Bota vaquera punta rodeo en piel de avestruz color negro' },
+    { nombre: 'Avestruz panza negro', img: `${IMG}/prod-avestruz.webp`, alt: 'Bota vaquera punta rodeo en piel de avestruz panza color negro' },
     { nombre: 'Toro nobuck', img: `${IMG}/prod-toro.webp`, alt: 'Bota vaquera punta rodeo en piel de toro nobuck' },
   ],
   matriz: [
-    [2, 0, 0, 1, 2, 3],
-    [1, 2, 0, 0, 1, 2],
-    [1, 1, 0, 1, 2, 2],
-    [2, 3, 1, 0, 1, 1],
+    [2, 0, 0, 0, 1, 1, 2, 3],
+    [1, 2, 0, 0, 0, 0, 1, 2],
+    [1, 1, 0, 0, 0, 1, 2, 2],
+    [2, 3, 1, 0, 0, 0, 1, 1],
   ],
   unidad: 'pares',
   genero: 'm' as const,
-  umbralBajo: 0,
+  umbralBajo: 1,
   leyendas: ['Con existencia', 'Queda uno', 'Agotado'] as [string, string, string],
-  remate: 'Las cuatro corridas ya están rotas en el 27 y el 28. Lo que queda son orillas: 25 y 30 que se van a quedar meses en la pared.',
+  remate: 'Las cuatro corridas ya están rotas en el 27, que es el número que más se pide. Lo que queda son orillas: 25, 29 y 30 que se van a quedar meses en la pared.',
 };
 
 export const cortinaWS = {
+  titulo: '“¿Hay en 27 punta rodeo?”',
+  pieAntes: 'Dos vueltas a la bodega<br />y el señor esperando.',
   fotoAntes: `${IMG}/cortina-antes.webp`,
   fotoDespues: `${IMG}/cortina-despues.webp`,
   altAntes: 'Vendedor en la bodega de una tienda western buscando un número entre cajas de bota apiladas, con la libreta en la mano',
   altDespues: 'El mismo vendedor frente a la pared de botas, enseñando en la tablet los números que hay en cada tienda',
-  libreta: ['Rodeo choc. 27 — ¿hay?', 'Apartado grad. — texana 7 1/8', 'Pedir al taller: cocodrilo 27.5 ancha'],
+  libreta: ['Rodeo choc. 27 — ¿hay?', 'Apartado grad. — texana 7 1/8', 'Cuánto le debo a la fábrica'],
   filas: [
     { que: '¿Hay 27 de este modelo?', donde: 'En la tablet, desde la pared', dato: 'Los números, anchos y colores que hay aquí, en bodega y en las demás tiendas' },
     { que: 'El apartado de la graduación', donde: 'Par bloqueado, saldo y fecha', dato: 'Con aviso por WhatsApp antes de que venza; nadie le vende el par a otro' },
-    { que: 'El 27 está en la del centro', donde: 'Traspaso desde el celular', dato: 'Le das fecha al cliente; se confirma cuando llega, no se pierde en el camino' },
-    { que: 'Bota + texana + cinto', donde: 'Un solo ticket', dato: 'Tres tallas distintas en cinco líneas, con la comisión por conjunto' },
+    { que: 'El 27 está en la del Centro', donde: 'Traspaso desde el celular', dato: 'Le das fecha al cliente; se confirma cuando llega, no se pierde en el camino' },
+    { que: 'Bota + texana + cinto', donde: 'Un solo ticket', dato: 'Bota, texana y cinto: tres tallas en un solo ticket (cinco si lleva camisa y pantalón), con la comisión por conjunto' },
   ],
   pieDespues: 'El mismo vendedor, la misma tarde. Ya no adivina qué hay en la bodega: lo ve.',
 };
@@ -102,7 +104,7 @@ export const casosWS = [
   {
     id: 'feria',
     titulo: 'La carpa de la feria',
-    texto: 'Dos semanas de carpa o stand, sin señal estable, con precio de feria y mucha texana y exótica. La carpa es un almacén aparte, cobra sin internet y sincroniza al volver la señal, con corte de caja por día de feria.',
+    texto: 'Tres semanas de carpa o stand, sin señal estable, con precio de feria y mucha texana y exótica. La carpa es un almacén aparte, cobra sin internet y sincroniza al volver la señal, con corte de caja por día de feria.',
     remate: 'Lo que no se cobra bien en la carpa se pierde en la cuenta. Y la feria de tu plaza es tu diciembre chiquito.',
     img: `${IMG}/caso-feria.webp`,
     alt: 'Carpa de una tienda western en la feria de noche, con botas en mesas, texanas colgadas y el cobro desde el celular',
@@ -118,7 +120,7 @@ export const casosWS = [
   {
     id: 'taller',
     titulo: 'El pedido especial al taller',
-    texto: 'Cocodrilo panza en 27.5, horma ancha, punta rodeo, caña de su color. Se levanta con la medida, la piel del muestrario y el anticipo del 50 %; el sistema lleva la etapa (corte, montado, suela, acabado) y le avisa al cliente cuando está lista.',
+    texto: 'Cocodrilo panza en 27.5, horma ancha, punta rodeo, caña de su color. Se levanta con la medida, la piel del muestrario y el anticipo del 50 %; el sistema lleva la etapa (corte, pespunte, montado, suela y acabado) y le avisa al cliente cuando está lista.',
     remate: 'Hoy cada paso vive en un chat distinto. Ahí es donde se pasa avisarle.',
     img: `${IMG}/caso-taller.webp`,
     alt: 'Maestro botero montando una bota de avestruz sobre la horma, con la encargada mostrando el pedido especial en la tablet',
@@ -128,8 +130,8 @@ export const casosWS = [
 export const seccionesWS: SuiteSeccion[] = [
   {
     id: 'tresmatrices', tag: 'Inventario',
-    titulo: 'Tres matrices, un solo ticket',
-    texto: 'La bota por número, medio número y horma. La texana por talla y X. El cinto por medida. El pantalón por cintura y largo. Cada uno con su matriz, y los cuatro se cobran en el mismo ticket para el mismo señor.',
+    titulo: 'Cinco matrices, un solo ticket',
+    texto: 'La bota por número, medio número y horma. La texana por talla y X. El cinto por medida. La camisa por talla. El pantalón por cintura y largo. Cada uno con su matriz, y los cinco se cobran en el mismo ticket para el mismo señor.',
     bullets: ['Bota: 25 al 30 con 26.5 y 27.5, horma normal o ancha, por piel y color', 'Texana: 6 3/4 a 7 5/8 (o “un 57”), por material y X', 'Cinto: 30 a 46; pantalón: cintura × largo, la segunda matriz más quebrada de la tienda'],
     visual: mockMatriz('Rodeo res chocolate · pares por número', ['25', '26', '26.5', '27', '27.5', '28', '29', '30'], [['Normal', [2, 3, 1, 0, 1, 2, 2, 3]], ['Ancha', [1, 1, 0, 0, 0, 1, 1, 2]]], 'Sin 27 en ninguna horma: la corrida ya está rota', [0, 3], 0),
   },
@@ -138,7 +140,7 @@ export const seccionesWS: SuiteSeccion[] = [
     titulo: '¿Dónde hay un 27 de este modelo?',
     texto: 'Desde cualquier mostrador y desde tu celular. El vendedor escanea el par de muestra y ve los números que hay en bodega y en las demás tiendas; pide el traspaso ahí mismo y le da fecha al cliente.',
     bullets: ['Existencias por sucursal en vivo, por número, horma y color', 'Traspaso pedido, en tránsito y recibido: nada se pierde en el camino', 'Las orillas de una plaza se mandan a la plaza donde sí rotan'],
-    visual: mockBarras('Rodeo res chocolate · 27 · por tienda', [['Centro', '3 pares', 100], ['Plaza', '0 pares', 0], ['Feria', '1 par', 33]], 'Traspaso sugerido: 1 del Centro a Plaza, llega el jueves'),
+    visual: mockBarras('Rodeo res chocolate · 27 · por tienda', [['Centro', '3 pares', 100], ['Mercado', '0 pares', 0], ['Feria', '1 par', 33]], 'Traspaso sugerido: 1 del Centro a la del Mercado, llega el jueves'),
   },
   {
     id: 'apartados', tag: 'Apartados',
@@ -151,22 +153,22 @@ export const seccionesWS: SuiteSeccion[] = [
     id: 'feria', tag: 'Feria',
     titulo: 'La carpa cobra sin internet',
     texto: 'Lo que te llevas a la feria sale como un almacén aparte, con precio de feria. La caja cobra sin señal y sincroniza al volver; al cerrar el día, el corte de la carpa cuadra con las cajas que quedan.',
-    bullets: ['Inventario de la carpa separado del de la tienda', 'Precio de feria y de Buen Fin sin tocar el precio de lista', 'Corte de caja por día de feria, en dólares y en pesos'],
-    visual: mockTicket('Carpa San Marcos · ticket', [['Bota picuda avestruz 27', '$5,900'], ['Texana 20X castor 7 1/8', '$1,800'], ['Hormado de texana', '$0']], ['Total', '$7,700'], 'Cobrado sin señal · se sincroniza al volver'),
+    bullets: ['Inventario de la carpa separado del de la tienda', 'Precio de feria y de Buen Fin sin tocar el precio de lista', 'Corte de caja por día de feria, cuadrado con la caja de la tienda'],
+    visual: mockTicket('Carpa San Marcos · ticket', [['Bota picuda avestruz 27', '$5,900'], ['Texana 20X gris 7 1/8', '$1,800'], ['Hormado de texana', '$0']], ['Total', '$7,700'], 'Cobrado sin señal · se sincroniza al volver'),
   },
   {
     id: 'whatsapp', tag: 'WhatsApp y redes',
     titulo: '“¿Hay en 26 punta rodeo?” a las once de la noche',
     texto: 'El WhatsApp conectado al inventario contesta con la existencia real, manda el link para pagar y la guía de paquetería. Y el pedido del live de Facebook nace en el comentario y se aparta desde el chat.',
     bullets: ['Existencia real en la conversación, sin preguntarle a nadie', 'Link de pago y envío a todo el país y a Estados Unidos', 'La tienda en línea vende la pared, la bodega y las demás tiendas con número y horma'],
-    visual: mockLista('WhatsApp · pedidos de hoy', [['¿Hay rodeo choc. en 26? · Sí, 2 en Plaza · link enviado', 'Pagado', 'ok'], ['Live de anoche · texana gris 7 1/4 · apartada por comentario', 'Apartado', 'aviso'], ['Envío a Dallas · cinto piteado 38', 'Guía lista', 'ok'], ['¿Tienen de venado en 29? · lista de espera', 'Avisar', 'gris']], 'Cada chat queda en la ficha del cliente con su número y su talla de texana'),
+    visual: mockLista('WhatsApp · pedidos de hoy', [['¿Hay rodeo choc. en 26? · Sí, 2 en la del Mercado · link enviado', 'Pagado', 'ok'], ['Live de anoche · texana gris 7 1/4 · apartada por comentario', 'Apartado', 'aviso'], ['Envío a Dallas · cinto piteado 38', 'Guía lista', 'ok'], ['¿Tienen de venado en 29? · lista de espera', 'Avisar', 'gris']], 'Cada chat queda en la ficha del cliente con su número y su talla de texana'),
   },
   {
     id: 'corrida', tag: 'Compras',
     titulo: 'La corrida con tu curva, no con la de fábrica',
     texto: 'Antes de ir a León ves por modelo y tienda qué números se fueron y cuáles sobraron. La IA te sugiere cuántos de cada número pedir y a qué tienda mandarlos, y la corrida se recibe aunque llegue en dos embarques.',
     bullets: ['Cuántos de cada número, con la venta real de cada plaza', 'Recepción parcial: llegaron 8 de 12 y sabes cuáles faltan', 'Orillas con más de 90 días y el dinero parado que representan'],
-    visual: mockBarras('Rodeo res · sugerido de resurtido por número', [['25', '1 par', 33], ['26', '2 pares', 66], ['27', '3 pares', 100], ['28', '3 pares', 100], ['29', '2 pares', 66], ['30', '1 par', 33]], 'Con la venta de los últimos 12 meses de esta tienda; la fábrica mandaba 2 del 25 y 2 del 30'),
+    visual: mockBarras('Rodeo res · sugerido de resurtido por número', [['25', '0 pares', 0], ['26', '2 pares', 50], ['27', '4 pares', 100], ['28', '3 pares', 75], ['29', '2 pares', 50], ['30', '1 par', 25]], 'La fábrica manda 1-2-3-3-2-1; aquí el 25 no sale y el 27 se acaba en dos semanas'),
   },
 ];
 
@@ -207,8 +209,8 @@ export const planoWS = [
     caja: { x: 68, y: 264, w: 216, h: 104 },
     items: [
       { t: 'Cobra con y sin internet: terminal, meses sin intereses, efectivo y dólares' },
-      { t: 'Apartados con anticipo, abonos, fecha límite, par bloqueado y aviso por WhatsApp' },
-      { t: 'Cambio de número sin deshacer la venta; garantía con el historial del par' },
+      { t: 'Apartados con anticipo, abonos, fecha límite, par bloqueado y aviso por WhatsApp', plan: 'Fideliza' },
+      { t: 'Cambio de número sin deshacer la venta; garantía con el historial del par y la devolución a fábrica con su nota de crédito' },
       { t: 'Comisión del vendedor por par y por conjunto, visible al cerrar el turno' },
       { t: 'Factura al ganadero al momento; ticket simple al paisano' },
     ],
@@ -234,7 +236,7 @@ export const planoWS = [
     pregunta: '¿Se manda a Dallas?',
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
-      { t: 'WhatsApp conectado al inventario: “¿hay en 26?” con existencia real y link de pago' },
+      { t: 'WhatsApp conectado al inventario: “¿hay en 26?” con existencia real y link de pago', plan: 'Automatiza' },
       { t: 'Tienda en línea con número y horma, vendiendo pared, bodega y demás tiendas' },
       { t: 'Pedidos de la página, del live y de redes salen de la tienda más cercana, con guía' },
       { t: 'Pedidos especiales: especificación, anticipo, etapa en el taller y aviso al cliente' },
@@ -253,13 +255,39 @@ export const pasosWS = [
 export const ticketWS = { lineas: [{ n: 'Bota rodeo res chocolate · 27', p: '$2,200' }, { n: 'Texana 20X gris · 7 1/8', p: '$1,800' }, { n: 'Cinto piteado · 36', p: '$2,500' }], total: '$6,500' };
 
 export const escalaWS = [
-  { n: '1 tienda', nombre: 'La tienda del pueblo o de la plaza', cambia: ['El dueño va a León dos veces al año y resurte con el agente por WhatsApp', 'Hay bodega atrás y la pared; los apartados van en libreta', 'Vende por WhatsApp e Instagram y manda por paquetería'], sistema: ['Pide con la curva de su tienda, no con la de fábrica', 'Sabe qué hay en la bodega sin ir a ver; los apartados con fecha desde el celular', 'La página y el chat venden lo que hay, no lo que ya se vendió'], dato: { valor: '36', rotulo: 'existencias distintas en un solo modelo con tres pieles y dos hormas' } },
-  { n: '5 tiendas', nombre: 'La cadena de la región', cambia: ['Una persona compra para todas y reparte a ojo', 'Traspasos diarios por mensaje, con pares que “se pierden en el camino”', 'Encargados por tienda y el dueño rotando'], sistema: ['Reparte por curva de cada plaza: rodeo para el pueblo, picuda para la ciudad', 'Traspaso registrado: pedido, en tránsito y recibido', 'Cierre de caja de las cinco sin ir; comisiones sin hoja de cálculo'], dato: { valor: '1 clic', rotulo: 'para mandar el 27 de la tienda del centro a la de la plaza' } },
+  { n: '1 tienda', nombre: 'La tienda del pueblo o de la plaza', cambia: ['El dueño va a León dos veces al año y resurte con el agente por WhatsApp', 'Hay bodega atrás y la pared; los apartados van en libreta', 'Vende por WhatsApp e Instagram y manda por paquetería'], sistema: ['Pide con la curva de su tienda, no con la de fábrica', 'Sabe qué hay en la bodega sin ir a ver; los apartados con fecha desde el celular', 'La página y el chat venden lo que hay, no lo que ya se vendió'], dato: { valor: '32', rotulo: 'existencias de un solo modelo con cuatro pieles y medios números; 64 con la horma ancha' } },
+  { n: '5 tiendas', nombre: 'La cadena de la región', cambia: ['Una persona compra para todas y reparte a ojo', 'Traspasos diarios por mensaje, con pares que “se pierden en el camino”', 'Encargados por tienda y el dueño rotando'], sistema: ['Reparte por curva de cada plaza: rodeo para el pueblo, picuda para la ciudad', 'Traspaso registrado: pedido, en tránsito y recibido', 'Cierre de caja de las cinco sin ir; comisiones sin hoja de cálculo; cuánto le debes a cada fábrica contra lo que ya vendiste de esa corrida'], dato: { valor: '1 clic', rotulo: 'para mandar el 27 de la tienda del Centro a la del Mercado' } },
   { n: '50 tiendas', nombre: 'La cadena con bodega madre', cambia: ['Comprador por categoría: bota de hombre, de dama, texana, ropa', 'Bodega central con recepción por corrida y resurtido a cada tienda', 'Marca propia maquilada; tienda en línea que vende el inventario de todas'], sistema: ['Surtido inicial y resurtido automático por sucursal con IA', 'Orillas visibles por región; el sistema propone mover números entre plazas cada semana', 'Margen por línea y por piel, rotación por número, dinero parado: en un tablero'], dato: { valor: '2+', rotulo: 'piezas por ticket cuando el conjunto se arma con la existencia de todas las tiendas' } },
   { n: '150 tiendas', nombre: 'La cadena nacional con fábrica propia', cambia: ['La compra de cada temporada con fábrica propia y maquiladores; corridas por volumen', 'Bodegas regionales y rutas; el traspaso es una orden con tiempos', 'Franquicias o concesiones con su propia caja'], sistema: ['Órdenes de producción conectadas al inventario que viene', 'Cliente único en el CRM sin importar dónde compró: número, texana y cinto', 'Cada franquicia con su caja y el corporativo con la foto completa por tienda y región'], dato: { valor: '1 ficha', rotulo: 'por cliente, con su número de bota, su talla de texana y su medida de cinto' } },
 ];
 
 export const problemasWS = {
+  doc1: {
+    membrete: 'Sistema de ropa', sub: 'Reporte de inventario',
+    cab: ['CÓDIGO', 'DESCRIPCIÓN', 'EXIST.'],
+    lineas: [
+      { a: 'SKU-0873', b: 'BOTA RODEO RES CHOCOLATE', c: '14' },
+      { a: '—', b: '—', c: '—', tenue: true },
+      { a: '—', b: '—', c: '—', tenue: true },
+    ],
+    margen: ['¿y el 27?', '¿horma ancha?'],
+    sello: 'NO VE<br />EL NÚMERO',
+    notas: [
+      'Te pide <b>un solo código</b>. Tus ocho números y dos hormas se vuelven esa fila.',
+      'Para saber si queda 27 vas a la <b>bodega</b> o abres un Excel que alguien mantiene a mano.',
+      'Te dice cuánto vendiste, <b>no qué número se te acabó</b>.',
+      'Abres la tienda del Mercado y empiezas de cero.',
+    ],
+  },
+  filas: [
+    { que: 'Bota por número y horma, texana por talla, cinto por medida', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'El conjunto en un solo ticket con comisión por conjunto', generico: 'No existe', medida: 'Rara vez', sacs: 'Incluido' },
+    { que: 'Existencias por sucursal y traspaso con fecha', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'Apartado de diciembre con par bloqueado y aviso', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+    { que: 'La carpa de la feria cobrando sin internet', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+    { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+    { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+  ],
   entrada: 'Casi toda tienda western que llega con nosotros trae uno de estos dos papeles en el cajón: el reporte de un sistema de ropa que ve “una bota” donde hay ocho números y dos hormas, o la cotización de un desarrollo a la medida que iba a resolverlo. Ninguno fue una tontería. Los dos fallan, por motivos distintos.',
   quienes: 'las tiendas western y de calzado que ya la usan',
 };

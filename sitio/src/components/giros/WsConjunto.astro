@@ -36,29 +36,29 @@ interface Pieza { k: string; n: string; talla: string; p: number; estado: Estado
 const clientes: Record<string, { rot: string; piezas: Pieza[] }> = {
   graduado: { rot: 'El graduado', piezas: [
     { k: 'bota', n: 'Bota picuda avestruz', talla: '27', p: 5900, estado: 'aqui', nota: 'Hay aquí' },
-    { k: 'texana', n: 'Texana 20X gris', talla: '7 1/8', p: 1800, estado: 'otra', nota: 'En la del centro · llega el jueves' },
+    { k: 'texana', n: 'Texana 20X gris', talla: '7 1/8', p: 1800, estado: 'otra', nota: 'En la del Centro · llega el jueves' },
     { k: 'cinto', n: 'Cinto piteado', talla: '36', p: 2500, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'camisa', n: 'Camisa a cuadros', talla: 'L', p: 750, estado: 'aqui', nota: 'Hay aquí' },
-    { k: 'pantalon', n: 'Pantalón vaquero', talla: '34 × 32', p: 850, estado: 'otra', nota: 'En la de la plaza · llega el jueves' },
+    { k: 'pantalon', n: 'Pantalón vaquero', talla: '34 × 32', p: 850, estado: 'otra', nota: 'En la del Mercado · llega el jueves' },
   ] },
   novio: { rot: 'El novio', piezas: [
     { k: 'bota', n: 'Bota rodeo cocodrilo', talla: '28 ancha', p: 9800, estado: 'pedido', nota: 'Sobre pedido al taller · 4 semanas' },
-    { k: 'texana', n: 'Texana castor plata', talla: '7 1/4', p: 3400, estado: 'aqui', nota: 'Hay aquí' },
-    { k: 'cinto', n: 'Cinto piteado fino', talla: '38', p: 3200, estado: 'otra', nota: 'En la del centro · llega mañana' },
+    { k: 'texana', n: 'Texana 100X castor plata', talla: '7 1/4', p: 6800, estado: 'aqui', nota: 'Hay aquí' },
+    { k: 'cinto', n: 'Cinto piteado fino', talla: '38', p: 3200, estado: 'otra', nota: 'En la del Centro · llega mañana' },
     { k: 'camisa', n: 'Camisa blanca', talla: 'XL', p: 890, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'pantalon', n: 'Pantalón de vestir', talla: '36 × 32', p: 1100, estado: 'aqui', nota: 'Hay aquí' },
   ] },
   paisano: { rot: 'El paisano', piezas: [
-    { k: 'bota', n: 'Bota rodeo res chocolate', talla: '“un 8” = 26', p: 2200, estado: 'otra', nota: 'En la de la plaza · llega hoy' },
-    { k: 'texana', n: 'Texana 6X negra', talla: '7', p: 1200, estado: 'aqui', nota: 'Hay aquí' },
+    { k: 'bota', n: 'Bota rodeo res chocolate', talla: '“un 8” = 26', p: 2200, estado: 'otra', nota: 'En la del Mercado · llega hoy' },
+    { k: 'texana', n: 'Texana 6X negra', talla: '7', p: 850, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'cinto', n: 'Cinto liso con hebilla', talla: '34', p: 900, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'camisa', n: 'Camisa de manga larga', talla: 'M', p: 650, estado: 'aqui', nota: 'Hay aquí' },
-    { k: 'pantalon', n: 'Pantalón vaquero', talla: '32 × 30', p: 850, estado: 'otra', nota: 'En la del centro · llega hoy' },
+    { k: 'pantalon', n: 'Pantalón vaquero', talla: '32 × 30', p: 850, estado: 'otra', nota: 'En la del Centro · llega hoy' },
   ] },
   ganadero: { rot: 'El ganadero', piezas: [
     { k: 'bota', n: 'Bota de trabajo toro', talla: '29', p: 2600, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'texana', n: 'Sombrero de palma', talla: '58', p: 450, estado: 'aqui', nota: 'Hay aquí' },
-    { k: 'cinto', n: 'Cinto de piel gruesa', talla: '40', p: 700, estado: 'otra', nota: 'En la de la plaza · llega el jueves' },
+    { k: 'cinto', n: 'Cinto de piel gruesa', talla: '40', p: 700, estado: 'otra', nota: 'En la del Mercado · llega el jueves' },
     { k: 'camisa', n: 'Camisa de mezclilla', talla: 'XL', p: 700, estado: 'aqui', nota: 'Hay aquí' },
     { k: 'pantalon', n: 'Pantalón de trabajo', talla: '38 × 32', p: 800, estado: 'aqui', nota: 'Hay aquí' },
   ] },
@@ -138,11 +138,11 @@ const fmt = (n: number) => '$' + n.toLocaleString('es-MX');
         html += `<li class="wc-f is-${p.estado}${listo ? ' is-listo' : ''}"><i></i><div><b>${p.n} · ${p.talla}</b><small>${completo && p.estado === 'otra' ? 'Traspaso pedido · ' + p.nota.split('·')[1].trim() : p.nota}</small></div><em>${fmt(p.p)}</em></li>`;
         if (listo) { total += p.p; n++; tk += `<li><span>${p.n} · ${p.talla}</span><b>${fmt(p.p)}</b></li>`; } else fuga += p.p;
       });
-      fichas.innerHTML = html; lineas.innerHTML = tk; document.getElementById('wc-total')!.textContent = fmt(total); document.getElementById('wc-n')!.textContent = String(n);
+      fichas.innerHTML = html; lineas.innerHTML = tk; document.getElementById('wc-total')!.textContent = fmt(total); document.getElementById('wc-n')!.textContent = String(n); document.getElementById('wc-n')!.nextSibling!.textContent = n === 1 ? ' pieza en el ticket · ' : ' piezas en el ticket · ';
       const otras = c.piezas.filter((p: any) => p.estado === 'otra').length, pedidos = c.piezas.filter((p: any) => p.estado === 'pedido').length;
       document.getElementById('wc-fuga')!.textContent = fuga ? `${fmt(fuga)} se van a la tienda de enfrente` : 'nada se va a la tienda de enfrente';
       btn.disabled = completo || otras === 0; btn.textContent = completo ? 'Conjunto completado' : otras ? `Completar con traspaso (${otras})` : 'Nada que traspasar';
-      document.getElementById('wc-nota')!.textContent = pedidos ? 'La bota de cocodrilo se levanta como pedido especial al taller con 50 % de anticipo; el resto se cobra hoy y se le avisa por WhatsApp cuando esté lista.' : completo ? 'Las piezas que estaban en otra tienda ya van en traspaso con fecha. El ticket salió completo y la comisión del vendedor es por conjunto.' : 'Lo verde hay aquí. Lo amarillo está en otra tienda: si no lo pides, el cliente se lleva el par y busca lo demás enfrente.';
+      document.getElementById('wc-nota')!.textContent = pedidos && completo ? 'El cinto ya va en traspaso con fecha. La bota de cocodrilo sigue como pedido especial al taller con 50 % de anticipo: se cobra hoy y se le avisa por WhatsApp cuando esté lista.' : pedidos ? 'La bota de cocodrilo se levanta como pedido especial al taller con 50 % de anticipo; el resto se cobra hoy y se le avisa por WhatsApp cuando esté lista.' : completo ? 'Las piezas que estaban en otra tienda ya van en traspaso con fecha. El ticket salió completo y la comisión del vendedor es por conjunto.' : 'Lo verde hay aquí. Lo amarillo está en otra tienda: si no lo pides, el cliente se lleva el par y busca lo demás enfrente.';
     };
     el.querySelectorAll<HTMLButtonElement>('.wc-tab').forEach((t) => t.addEventListener('click', () => { el.querySelectorAll('.wc-tab').forEach((x) => { x.classList.remove('is-on'); x.setAttribute('aria-pressed', 'false'); }); t.classList.add('is-on'); t.setAttribute('aria-pressed', 'true'); actual = t.dataset.c!; completo = false; pinta(); (window as any).sacsPH?.('giro_ws_conjunto', { cliente: actual }); }));
     btn.addEventListener('click', () => { completo = true; pinta(); (window as any).sacsPH?.('giro_ws_conjunto_completar', { cliente: actual }); });

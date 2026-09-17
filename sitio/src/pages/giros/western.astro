@@ -31,11 +31,11 @@ import { bannerWS, manifiestoWS, variantesWS, cortinaWS, casosWS, seccionesWS, p
 
   <SuiteVariantes eyebrow={variantesWS.eyebrow} titulo={variantesWS.titulo} resalte={variantesWS.resalte} sub={variantesWS.sub} ejeA={variantesWS.ejeA} filas={variantesWS.filas} matriz={variantesWS.matriz} unidad={variantesWS.unidad} genero={variantesWS.genero} umbralBajo={variantesWS.umbralBajo} leyendas={variantesWS.leyendas} remate={variantesWS.remate} />
 
-  <SuiteCortina fotoAntes={cortinaWS.fotoAntes} fotoDespues={cortinaWS.fotoDespues} altAntes={cortinaWS.altAntes} altDespues={cortinaWS.altDespues} libreta={cortinaWS.libreta} filas={cortinaWS.filas} pieDespues={cortinaWS.pieDespues} />
+  <SuiteCortina titulo={cortinaWS.titulo} pieAntes={cortinaWS.pieAntes} fotoAntes={cortinaWS.fotoAntes} fotoDespues={cortinaWS.fotoDespues} altAntes={cortinaWS.altAntes} altDespues={cortinaWS.altDespues} libreta={cortinaWS.libreta} filas={cortinaWS.filas} pieDespues={cortinaWS.pieDespues} />
 
-  <SuiteProblemas entrada={problemasWS.entrada} quienes={problemasWS.quienes} />
+  <SuiteProblemas entrada={problemasWS.entrada} quienes={problemasWS.quienes} doc1={problemasWS.doc1} filas={problemasWS.filas} />
 
-  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una corrida y qué es una horma." />
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la bota, la texana y el cinto van en el mismo ticket." />
 
   <SuiteCifras foto={cifrasWS.foto} alt={cifrasWS.alt} frase={cifrasWS.frase} encuadre={cifrasWS.encuadre} datos={[
     { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y CALZADO ACTIVOS' },
@@ -56,9 +56,9 @@ import { bannerWS, manifiestoWS, variantesWS, cortinaWS, casosWS, seccionesWS, p
 
   <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre o la feria encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosWS} lineas={ticketWS.lineas} total={ticketWS.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: clientes con su número, modelos con su horma, existencias por número y apartados vivos. Nunca te pedimos empezar de cero antes de diciembre." />
 
-  <SuitePlanes suite="Suite de Moda" />
+  <SuitePlanes suite="Suite de Moda y Calzado" />
 
-  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia pared de botas, por número, en pantalla." cta="Agenda una demo" />
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propio conjunto, con tus números y tus tallas, en pantalla." cta="Agenda una demo" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus números y tu venta real de diciembre. 30 min, sin compromiso." />
 </BaseLayout>
