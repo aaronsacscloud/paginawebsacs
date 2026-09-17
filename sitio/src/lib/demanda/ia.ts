@@ -88,8 +88,30 @@ export async function ordenDeProveedores(trabajo: Trabajo = 'volumen'): Promise<
   // Se puede forzar por trabajo (`ia_proveedor_volumen`) o en general
   // (`ia_proveedor`); lo específico manda sobre lo general.
   const forzado = (u[`ia_proveedor_${trabajo}`] || u.ia_proveedor) as Proveedor | undefined;
-  const orden = [forzado, ...PREFERENCIA[trabajo]].filter((p): p is Proveedor => !!p && hay.includes(p));
-  return [...new Set(orden)];
+  const orden = [...new Set([forzado, ...PREFERENCIA[trabajo]].filter((p): p is Proveedor => !!p && hay.includes(p)))];
+
+  /* Un proveedor que hace diez minutos contestó «tu saldo es demasiado bajo» va
+     a contestar lo mismo ahora. Preguntarle otra vez cuesta un viaje de red por
+     llamada y ensucia `ia_uso` con fallos que no son fallos del motor.
+
+     Medido en este proyecto el 17-sep-2026: 9,152 llamadas fallidas en cinco
+     días contra una cuenta sin saldo, y la del CRM llegó a 5,474 en un solo día.
+     Nadie las miraba porque cada una conmutaba bien al siguiente proveedor; el
+     desperdicio estaba en volver a descubrirlo cada vez. */
+  const ahora = Date.now();
+  const marcas = (u.ia_sin_saldo || {}) as Record<string, { hasta?: string }>;
+  const caido = (p: Proveedor) => {
+    const local = sinSaldoLocal.get(p);
+    if (local && local > ahora) return true;
+    const t = Date.parse(marcas[p]?.hasta || '');
+    return Number.isFinite(t) && t > ahora;
+  };
+
+  const vivos = orden.filter(p => !caido(p));
+  /* Si TODOS están marcados, se intenta igual con el orden completo: una marca
+     vieja no puede dejar al motor mudo. Más vale un viaje perdido que no hacer
+     nada. */
+  return vivos.length ? vivos : orden;
 }
 
 export type Peticion = {
@@ -116,6 +138,36 @@ export type Respuesta<T = any> = {
 /* Fallos que NO se arreglan insistiendo — pero SÍ cambiando de proveedor. Es la
    diferencia entre «reintenta en cinco minutos» y «prueba con otro». */
 const SIN_REMEDIO = /credit balance|insufficient|billing|quota|invalid.?api.?key|authentication|permission|not have access|exceeded/i;
+
+/* De todos los «sin remedio», estos son los que NO se arreglan solos y valen la
+   pena RECORDAR: el proveedor se quedó sin saldo o su llave no sirve. Ninguno
+   cambia en los próximos minutos.
+
+   `quota` y `exceeded` quedan fuera a propósito: en Gemini casi siempre son el
+   límite POR MINUTO, que se libera solo. Apuntar a Gemini como caído media hora
+   por un límite de sesenta segundos sería cambiar un problema por otro peor. */
+const SIN_SALDO = /credit balance|no credits remaining|insufficient|billing|invalid.?api.?key|authentication/i;
+
+/** Cuánto se recuerda. Media hora: suficiente para que una corrida entera del
+ *  worker deje de tocar la puerta, y poco para que pagar se note pronto. */
+const OLVIDO_MS = 30 * 60 * 1000;
+
+/* En memoria para la corrida en curso —que es donde está el volumen: un worker
+   procesa decenas de acciones seguidas— y en `de_config.umbrales` para que la
+   siguiente corrida tampoco lo reintente.
+   Persistir ahí es gratis: `ordenDeProveedores` YA lee `umbrales`. */
+const sinSaldoLocal = new Map<Proveedor, number>();
+
+async function apuntarSinSaldo(prov: Proveedor, motivo: string) {
+  const hasta = Date.now() + OLVIDO_MS;
+  sinSaldoLocal.set(prov, hasta);
+  try {
+    const { data } = await supabase.from('de_config').select('umbrales').eq('id', 1).maybeSingle();
+    const u = { ...(data?.umbrales || {}) };
+    u.ia_sin_saldo = { ...(u.ia_sin_saldo || {}), [prov]: { hasta: new Date(hasta).toISOString(), motivo: motivo.slice(0, 160) } };
+    await supabase.from('de_config').update({ umbrales: u }).eq('id', 1);
+  } catch { /* recordar no puede impedir el trabajo */ }
+}
 
 /** Gemini no acepta el vocabulario completo de JSON Schema. */
 function esquemaGemini(e: any): any {
@@ -258,6 +310,8 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
       // Un problema de saldo o de llave NO se arregla insistiendo con el mismo
       // proveedor — pero sí probando con el siguiente. Eso es lo que evita que
       // una factura de un tercero detenga el motor.
+      if (SIN_SALDO.test(mensaje)) await apuntarSinSaldo(prov, mensaje);
+
       if (!SIN_REMEDIO.test(mensaje)) {
         return { ok: false, datos: null, texto: '', costo_usd: 0, run_id, error: mensaje, proveedor: prov, modelo };
       }
