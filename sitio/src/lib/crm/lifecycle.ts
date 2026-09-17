@@ -24,6 +24,12 @@ export const LIFECYCLE: LifecycleStage[] = [
   { id: 'cliente',         label: 'Cliente',     bg: '#EAF8F2', fg: '#1E8A63' },
   { id: 'evangelista',     label: 'Evangelista', bg: '#EAF8F2', fg: '#1E8A63' },
   { id: 'churned',         label: 'Perdido',     bg: '#FEF0EF', fg: '#C0554E' },
+  /* Un perdido que aceptó sentarse a negociar. Va JUNTO a «Perdido» y no cerca
+     de «Oportunidad» a propósito: todavía no compró nada, pero ya no se trabaja
+     con la cadencia automática —lo lleva una persona— y por eso necesita estar
+     separado de los que ya no van a volver. Ámbar: pide atención, aún no es
+     problema. (Pedido del dueño, caso Jose Francisco, 16-sep-2026.) */
+  { id: 'en_conciliacion', label: 'En conciliación', bg: '#FFF4E5', fg: '#9a6a10' },
   { id: 'descalificado',   label: 'Descalificado', bg: '#F1EFEF', fg: '#7A6E6C' },
   { id: 'rezagado',       label: 'Rezagado',    bg: '#FFF4E5', fg: '#9a6a10' },
 ];

@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","include":["src/components/admin/crm/whatsapp/Hilo.tsx","src/components/admin/crm/whatsapp/InboxPro.tsx","src/pages/api/crm/whatsapp/etapa.ts","src/lib/crm/lifecycle.ts","src/lib/crm/churn.lib.ts"],"compilerOptions":{"noEmit":true,"skipLibCheck":true,"jsx":"react-jsx"}}

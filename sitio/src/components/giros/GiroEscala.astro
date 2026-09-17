@@ -1,0 +1,99 @@
+---
+/**
+ * GiroEscala — "de 1 a 150 sucursales" (17-sep-2026). Bloque base de toda landing de giro:
+ * el visitante elige su tamaño (1 · 5 · 50 · 150 tiendas) y ve qué cambia en la operación de
+ * SU giro en ese tamaño y qué hace el sistema en cada uno. El contenido llega por props desde
+ * src/data/giros/<slug>.ts; este archivo solo pinta y cambia de pestaña.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+
+export interface NivelEscala {
+  /** "1 tienda", "5 tiendas", "50 tiendas", "150 tiendas" */
+  n: string;
+  /** Cómo se llama ese negocio en el gremio: "la boutique", "la cadena regional"… */
+  nombre: string;
+  /** Qué cambia en la operación a ese tamaño, en 3-4 renglones del oficio. */
+  cambia: string[];
+  /** Qué hace el sistema ahí, en 3-4 renglones. */
+  sistema: string[];
+  /** El dato que remata (opcional): { valor, rotulo }. */
+  dato?: { valor: string; rotulo: string };
+}
+interface Props {
+  encabezado?: string;
+  titulo: string;
+  descripcion: string;
+  niveles: NivelEscala[];
+  vinetas?: { label: string; detail: string }[];
+  fondo?: boolean;
+}
+const { encabezado, titulo, descripcion, niveles, vinetas = [], fondo = false } = Astro.props;
+const uid = 'ge-' + Math.random().toString(36).slice(2, 7);
+---
+<BloqueProducto encabezado={encabezado} titulo={titulo} descripcion={descripcion} vinetas={vinetas} fondo={fondo} suelta>
+  <div class="ge" id={uid}>
+    <div class="ge-tabs" role="tablist" aria-label="Tamaño del negocio">
+      {niveles.map((nv, i) => <button type="button" role="tab" class:list={['ge-tab', { 'is-on': i === 0 }]} aria-selected={i === 0 ? 'true' : 'false'} data-i={i}><b>{nv.n}</b><span>{nv.nombre}</span></button>)}
+    </div>
+    <div class="ge-riel" aria-hidden="true"><i style="--p:0"></i></div>
+    {niveles.map((nv, i) => (
+      <div class:list={['ge-panel', { 'is-on': i === 0 }]} role="tabpanel" data-i={i}>
+        <div class="ge-col">
+          <span class="ge-k">Qué cambia a este tamaño</span>
+          <ul>{nv.cambia.map((x) => <li>{x}</li>)}</ul>
+        </div>
+        <div class="ge-col ge-col--sis">
+          <span class="ge-k">Qué hace el sistema</span>
+          <ul>{nv.sistema.map((x) => <li>{x}</li>)}</ul>
+          {nv.dato && <div class="ge-dato"><b>{nv.dato.valor}</b><span>{nv.dato.rotulo}</span></div>}
+        </div>
+      </div>
+    ))}
+  </div>
+</BloqueProducto>
+
+<style>
+  .ge { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: 18px; padding: 20px; }
+  .ge-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .ge-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.2s, border-color 0.2s, color 0.2s; }
+  .ge-tab b { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em; line-height: 1.1; }
+  .ge-tab span { font-size: 11.5px; color: var(--color-text-tertiary); }
+  .ge-tab.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .ge-tab.is-on span { color: rgba(255,255,255,0.7); }
+  .ge-riel { position: relative; height: 4px; margin: 14px 4px 18px; background: var(--color-bg-primary, #F3F4F6); border-radius: 2px; }
+  .ge-riel i { position: absolute; left: 0; top: 0; height: 100%; width: calc((var(--p) + 1) * 25%); background: var(--color-primary, #4B7BE5); border-radius: 2px; transition: width 0.45s cubic-bezier(0.2,0.7,0.2,1); }
+  .ge-panel { display: none; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .ge-panel.is-on { display: grid; animation: ge-in 0.4s ease; }
+  @keyframes ge-in { from { opacity: 0; transform: translateY(6px); } }
+  .ge-col { padding: 16px; border-radius: 14px; background: var(--color-bg-primary, #F7F7F5); }
+  .ge-col--sis { background: #EEF3FF; }
+  .ge-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
+  .ge-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .ge-col li { position: relative; padding-left: 16px; font-size: 13.5px; line-height: 1.45; color: var(--color-text-primary); }
+  .ge-col li::before { content: ''; position: absolute; left: 0; top: 9px; width: 8px; height: 2px; background: currentColor; opacity: 0.5; }
+  .ge-col--sis li::before { background: var(--color-primary, #4B7BE5); opacity: 1; }
+  .ge-dato { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(75,123,229,0.25); display: flex; flex-direction: column; gap: 2px; }
+  .ge-dato b { font-family: var(--font-display); font-size: 24px; letter-spacing: -0.03em; color: var(--color-text-primary); }
+  .ge-dato span { font-size: 12px; color: var(--color-text-secondary); }
+  @media (max-width: 767px) {
+    .ge { padding: 14px; }
+    .ge-tabs { grid-template-columns: 1fr 1fr; }
+    .ge-tab b { font-size: 16px; }
+    .ge-panel { grid-template-columns: 1fr; gap: 10px; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.ge').forEach((ge) => {
+    const tabs = Array.from(ge.querySelectorAll<HTMLButtonElement>('.ge-tab'));
+    const paneles = Array.from(ge.querySelectorAll<HTMLElement>('.ge-panel'));
+    const riel = ge.querySelector<HTMLElement>('.ge-riel i')!;
+    tabs.forEach((t) => t.addEventListener('click', () => {
+      const i = Number(t.dataset.i);
+      tabs.forEach((x, k) => { x.classList.toggle('is-on', k === i); x.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+      paneles.forEach((p, k) => p.classList.toggle('is-on', k === i));
+      riel.style.setProperty('--p', String(i));
+      (window as any).sacsPH?.('giro_escala', { tamano: t.querySelector('b')?.textContent });
+    }));
+  });
+</script>

@@ -846,6 +846,11 @@ export default function InboxPro() {
   const waId = () => activaRef.current?.wa || null;
 
   const api = {
+    /* Avisos de lo que el sistema hizo SOLO a raíz de una acción tuya (sacar de
+       cadencias al cambiar de etapa, por ejemplo). Va por el mismo carril que
+       los errores porque es el único lugar del inbox donde el usuario ya mira
+       cuando algo pasó — un toast nuevo sería otra convención que aprender. */
+    avisar: (m: string) => setError(m),
     quitarDeMasivo: async (broadcastId: string) => {
       const tel = (listaRef.current || []).find((c: any) => c.id === activaRef.current?.id)?.telefono || hiloRef.current?.conversacion?.telefono;
       const r = await fetch('/api/crm/whatsapp/broadcasts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'quitar_destinatario', id: broadcastId, telefono: tel }) }).then(x => x.json()).catch(e => ({ error: String(e) }));

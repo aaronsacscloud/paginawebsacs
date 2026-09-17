@@ -1,0 +1,121 @@
+---
+/**
+ * TbCorte — "¿Remato o guardo?", el bloque propio de trajes de baño (17-sep-2026, con el
+ * dictamen del referee de oficio: no se llama "corte" porque en una tienda mexicana el corte es
+ * el de caja; tres entradas, no cinco; interruptor playa/ciudad; costo y precio escondidos).
+ *
+ * Solo en este oficio el set son dos piezas con dos curvas que se descompletan, la temporada dura
+ * diez semanas, la maquila tarda de seis a diez y lo que sobra en ciudad se guarda un año con un
+ * estampado que ya envejeció. En playa no: se guarda para diciembre y sale a precio lleno.
+ *
+ * Los siete puntos del oficio (de la ficha):
+ * · Cuándo se decide: a la mitad de la temporada (última reposición), cuatro semanas antes del
+ *   fin (qué se remata) y al cierre (qué se guarda). Con la venta de las últimas dos semanas.
+ * · Quién autoriza: la dueña o la compradora. Ejecutan tienda, e-commerce e Instagram el mismo día.
+ * · Qué se mueve primero: viudos, tallas rotas, estampado con cobertura de más. Los lisos nunca.
+ * · Cuánto cuesta: guardar = dinero parado + 25-40 % de caída por "año pasado"; rematar = el
+ *   descuento, pero el dinero regresa hoy y compra la tela de enero.
+ * · Criterios: cobertura vs semanas restantes → estampado o liso → viudo → otra sucursal → en línea
+ *   → margen restante.
+ * · Paso a paso: venta semanal → cobertura → excedente → separar → traspasar → % → aplicar en todos
+ *   los canales el mismo día → etiquetas → campaña → revisar a la semana.
+ * · El dato honesto: cobertura = existencia ÷ venta semanal; excedente = existencia − venta
+ *   semanal × semanas restantes. No se promete un % de ahorro: se enseña la comparación.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="¿Remato o guardo?"
+  titulo="Un set son dos piezas con dos curvas. Y la temporada dura diez semanas."
+  descripcion="Solo aquí el top y el bottom se venden por su lado y se descompletan, y lo que no vendas antes del regreso a clases lo guardas un año. Mueve cuántas piezas tienes de un estampado, cuántas vendes por semana y cuántas semanas quedan: mira cuántas te van a sobrar y qué te conviene."
+  vinetas={[
+    { label: 'Se decide con dos semanas de venta, no con el mes', detail: 'En este giro dos semanas malas ya son un tercio de la temporada. El sistema lo calcula con la venta reciente de cada pieza, talla y color.' },
+    { label: 'Lo descompletado y las tallas rotas van primero; los lisos, nunca', detail: 'El negro y el nude se venden igual en marzo. El estampado no. Y un top que se quedó solo se remata o se combina con un liso, pero no se guarda.' },
+    { label: 'En playa no es lo mismo', detail: 'La turista de diciembre no sabe qué es “de año pasado”: en playa lo que sobra en agosto se guarda y sale a precio lleno en diciembre. En ciudad, no.' },
+  ]}
+  suelta
+>
+  <div class="tc" id="tb-corte">
+    <div class="tc-ctrl">
+      <div class="tc-seg tc-seg--top" role="radiogroup" aria-label="Dónde está tu tienda"><button type="button" class="is-on" data-lugar="ciudad" aria-pressed="true">Ciudad</button><button type="button" data-lugar="playa" aria-pressed="false">Playa</button></div>
+      <label class="tc-c"><span>Piezas que tengo de este estampado <b id="tc-v-piezas">200</b></span><input type="range" id="tc-piezas" min="10" max="500" step="5" value="200" /></label>
+      <label class="tc-c"><span>Cuántas vendo a la semana <b id="tc-v-semana">14</b></span><input type="range" id="tc-semana" min="1" max="50" value="14" /></label>
+      <label class="tc-c"><span>Semanas que quedan de temporada <b id="tc-v-restan">4</b></span><input type="range" id="tc-restan" min="1" max="12" value="4" /></label>
+      <details class="tc-ajusta"><summary>Ajustar costo y precio</summary>
+        <div class="tc-fila">
+          <div class="tc-seg" role="radiogroup" aria-label="Tipo de pieza"><button type="button" class="is-on" data-tipo="estampado" aria-pressed="true">Estampado</button><button type="button" data-tipo="liso" aria-pressed="false">Liso</button></div>
+          <label class="tc-num">Costo <input type="number" id="tc-costo" min="50" max="5000" step="10" value="350" /></label>
+          <label class="tc-num">Precio <input type="number" id="tc-precio" min="100" max="9000" step="10" value="950" /></label>
+        </div>
+      </details>
+    </div>
+    <div class="tc-res">
+      <div class="tc-barra" aria-hidden="true"><i id="tc-b-vende" style="width:28%"></i><span id="tc-b-txt-a">A precio lleno</span><span id="tc-b-txt-b">Te va a sobrar</span></div>
+      <p class="tc-frase" id="tc-frase">Te van a sobrar 144. Remata 144, no 200.</p>
+      <div class="tc-tarjetas">
+        <div class="tc-t"><span>Si lo guardas un año</span><b id="tc-guarda">$50,400 parados</b><small id="tc-guarda-s">más lo que baja por ser “de año pasado”: $27,360 a $41,040</small></div>
+        <div class="tc-t tc-t--ok"><span>Si lo rematas hoy con 40 % de descuento</span><b id="tc-remata">$82,080</b><small id="tc-remata-s">regresan a caja esta semana y compran la tela de enero</small></div>
+      </div>
+      <p class="tc-fecha" id="tc-fecha">La decisión se toma <b>cuatro semanas antes del cierre</b>, con la venta de las últimas dos.</p>
+      <a class="tc-cta" id="tc-cta" href="/contacto">Quiero verlo con mis estampados</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .tc { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: 18px; padding: 20px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 22px; }
+  .tc-c { display: block; margin-bottom: 14px; }
+  .tc-c span { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .tc-c b { font-family: var(--font-display); font-size: 16px; color: var(--color-text-primary); }
+  .tc input[type=range] { width: 100%; accent-color: var(--color-text-primary, #0E0D0C); }
+  .tc-fila { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 4px; }
+  .tc-seg--top { margin-bottom: 14px; }
+  .tc-ajusta { margin-top: 6px; } .tc-ajusta summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); } .tc-ajusta .tc-fila { margin-top: 10px; }
+  .tc-seg { display: inline-flex; border: 1px solid var(--color-border, #E6E8ED); border-radius: 10px; overflow: hidden; }
+  .tc-seg button { padding: 8px 14px; border: 0; background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--color-text-primary); }
+  .tc-seg button.is-on { background: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .tc-num { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); }
+  .tc-num input { width: 84px; padding: 7px 8px; border: 1px solid var(--color-border, #E6E8ED); border-radius: 8px; font: inherit; font-size: 13px; }
+  .tc-res { background: var(--color-bg-primary, #F7F7F5); border-radius: 14px; padding: 18px; }
+  .tc-barra { position: relative; height: 34px; border-radius: 10px; background: #F3D9D2; overflow: hidden; margin-bottom: 12px; }
+  .tc-barra i { position: absolute; left: 0; top: 0; height: 100%; background: var(--color-text-primary, #0E0D0C); transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1); }
+  .tc-barra span { position: absolute; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+  #tc-b-txt-a { left: 12px; color: #fff; } #tc-b-txt-b { right: 12px; color: #8B3A2C; }
+  .tc-frase { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px; letter-spacing: -0.02em; line-height: 1.2; color: var(--color-text-primary); }
+  .tc-tarjetas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tc-t { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .tc-t span { font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); }
+  .tc-t b { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.02em; color: #8B3A2C; }
+  .tc-t--ok b { color: var(--ok-texto, #1B6B3A); }
+  .tc-t small { font-size: 11.5px; line-height: 1.4; color: var(--color-text-secondary); }
+  .tc-fecha { margin: 14px 0 0; font-size: 13.5px; color: var(--color-text-secondary); }
+  .tc-cta { display: inline-flex; margin-top: 14px; padding: 12px 20px; border-radius: 10px; background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 767px) { .tc { grid-template-columns: 1fr; padding: 14px; } .tc-tarjetas { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('tb-corte'); if (!el) return;
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    let tipo = 'estampado', lugar = 'ciudad';
+    const calcula = () => {
+      const piezas = +$('tc-piezas').value, semana = +$('tc-semana').value, restan = +$('tc-restan').value, costo = +$('tc-costo').value || 0, precio = +$('tc-precio').value || 0;
+      $('tc-v-piezas').textContent = String(piezas); $('tc-v-semana').textContent = String(semana); $('tc-v-restan').textContent = String(restan);
+      const vende = Math.min(piezas, semana * restan), sobra = piezas - vende;
+      $('tc-b-vende').style.width = (piezas ? (vende / piezas) * 100 : 0).toFixed(1) + '%';
+      const parado = sobra * costo, bajaMin = sobra * precio * 0.2, bajaMax = sobra * precio * 0.3, remata = sobra * precio * 0.6;
+      const guarda = tipo === 'liso' || lugar === 'playa';
+      $('tc-guarda').textContent = sobra ? `${fmt(parado)} parados` : '$0';
+      $('tc-guarda-s').textContent = !sobra ? 'no te sobra nada' : guarda ? 'pero se venden igual: el liso en marzo, en playa en diciembre a precio lleno' : `más lo que baja por ser “de año pasado”: ${fmt(bajaMin)} a ${fmt(bajaMax)}`;
+      $('tc-remata').textContent = sobra ? fmt(remata) : '$0';
+      $('tc-remata-s').textContent = sobra ? (guarda ? 'regresan hoy, pero regalas margen en piezas que sí se iban a vender' : 'regresan a caja esta semana y compran la tela de enero') : 'no hay nada que rematar';
+      $('tc-frase').textContent = !sobra ? 'Te alcanza justo: no toques el precio.' : tipo === 'liso' ? `Es liso: guarda las ${sobra} que sobran, se venden igual en marzo.` : lugar === 'playa' ? `Te van a sobrar ${sobra}. En playa, guárdalas para diciembre: salen a precio lleno.` : `Te van a sobrar ${sobra}. Remata ${sobra}, no ${piezas}.`;
+      $('tc-fecha').innerHTML = guarda ? 'Sin fecha de remate: se repone y se guarda.' : 'La decisión se toma <b>cuatro semanas antes del cierre</b>, con la venta de las últimas dos.';
+      const cta = document.getElementById('tc-cta') as HTMLAnchorElement; const u = new URL('/contacto', location.origin); if (sobra && !guarda && remata > 0) u.searchParams.set('estimado', String(Math.round(remata))); cta.href = u.pathname + u.search;
+    };
+    ['tc-piezas', 'tc-semana', 'tc-restan', 'tc-costo', 'tc-precio'].forEach((id) => $(id).addEventListener('input', calcula));
+    el.querySelectorAll<HTMLButtonElement>('.tc-seg button').forEach((b) => b.addEventListener('click', () => { const g = b.parentElement!; g.querySelectorAll('button').forEach((x) => { x.classList.remove('is-on'); x.setAttribute('aria-pressed', 'false'); }); b.classList.add('is-on'); b.setAttribute('aria-pressed', 'true'); if (b.dataset.tipo) tipo = b.dataset.tipo; if (b.dataset.lugar) lugar = b.dataset.lugar; calcula(); (window as any).sacsPH?.('giro_tb_remato', { tipo, lugar }); }));
+    calcula();
+  })();
+</script>

@@ -36,7 +36,12 @@ export async function sincronizarHermanos(caso: any, destino: Etapa) {
     await supabase.from('contacts')
       .update({ lifecycle_stage: destino === 'recuperado' ? 'cliente' : 'churned' })
       .eq('company_id', caso.company_id)
-      .in('lifecycle_stage', destino === 'recuperado' ? ['churned'] : ['cliente', 'churned']);
+      /* `en_conciliacion` entra en los dos lados (17-sep-2026): es un perdido que
+         está negociando, así que puede terminar recuperado —y entonces hay que
+         poder subirlo a cliente— o cerrarse como perdido de verdad. Sin él aquí,
+         un caso que se recuperara DESDE conciliación actualizaba el churn pero
+         dejaba al contacto colgado en la etapa intermedia para siempre. */
+      .in('lifecycle_stage', destino === 'recuperado' ? ['churned', 'en_conciliacion'] : ['cliente', 'churned', 'en_conciliacion']);
   }
 }
 

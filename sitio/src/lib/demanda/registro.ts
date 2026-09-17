@@ -14,6 +14,7 @@ import './normalizar';
 import './paginas';
 import './tecnico';
 import './seo';
+import './geo/medir';
 import './enlaces';
 import './competidores';
 import './evaluar';

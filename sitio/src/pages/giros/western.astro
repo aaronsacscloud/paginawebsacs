@@ -1,4 +1,64 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Landing WESTERN Y VAQUERO (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido
+ * vive en src/data/giros/western.ts y el bloque propio es WsConjunto ("Arma el conjunto").
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import WsConjunto from '../../components/giros/WsConjunto.astro';
+import GiroEscala from '../../components/giros/GiroEscala.astro';
+import { bannerWS, manifiestoWS, variantesWS, cortinaWS, casosWS, seccionesWS, planoWS, pasosWS, ticketWS, escalaWS, problemasWS, cifrasWS } from '../../data/giros/western';
 ---
-<ComingSoon giro="Western y Vaquera" title="Western y Vaquera" description="Software de punto de venta para tiendas western y vaqueras: botas por número y horma, texanas y cintos por medida, apartados para la feria." color="#B45309" />
+<BaseLayout
+  title="Sistema para tiendas western y vaqueras — Sacs"
+  description="Punto de venta e inventario para botas, texanas y ropa vaquera: corridas por número con medios números y horma ancha, texanas por talla, cintos por medida, apartados, la carpa de la feria sin internet y el WhatsApp conectado al inventario."
+>
+  <GiroBanner eyebrow={bannerWS.eyebrow} titulo={bannerWS.titulo} resalte={bannerWS.resalte} sub={bannerWS.sub} foto={bannerWS.foto} fotoAlt={bannerWS.fotoAlt} avisos={bannerWS.avisos} selloMarcas="negocios de moda y calzado en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoWS.intro} frases={manifiestoWS.frases} cierre={manifiestoWS.cierre} />
+
+  <SuiteVariantes eyebrow={variantesWS.eyebrow} titulo={variantesWS.titulo} resalte={variantesWS.resalte} sub={variantesWS.sub} ejeA={variantesWS.ejeA} filas={variantesWS.filas} matriz={variantesWS.matriz} unidad={variantesWS.unidad} genero={variantesWS.genero} umbralBajo={variantesWS.umbralBajo} leyendas={variantesWS.leyendas} remate={variantesWS.remate} />
+
+  <SuiteCortina fotoAntes={cortinaWS.fotoAntes} fotoDespues={cortinaWS.fotoDespues} altAntes={cortinaWS.altAntes} altDespues={cortinaWS.altDespues} libreta={cortinaWS.libreta} filas={cortinaWS.filas} pieDespues={cortinaWS.pieDespues} />
+
+  <SuiteProblemas entrada={problemasWS.entrada} quienes={problemasWS.quienes} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una corrida y qué es una horma." />
+
+  <SuiteCifras foto={cifrasWS.foto} alt={cifrasWS.alt} frase={cifrasWS.frase} encuadre={cifrasWS.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y CALZADO ACTIVOS' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos en que una tienda western gana o pierde el dinero. Toca cada uno." casos={casosWS} />
+
+  <SuiteScroll eyebrow="Western y vaquero" titulo="La pared, la carpa y el WhatsApp, con el mismo inventario" intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda western real: la corrida por número, la texana por talla, el apartado de diciembre y la carpa de la feria." secciones={seccionesWS} />
+
+  <WsConjunto />
+
+  <GiroEscala titulo="De la tienda del pueblo a 150 tiendas con fábrica propia." descripcion="El negocio cambia con cada tamaño: quién compra en León, cómo se mueven los números entre plazas y qué mira la dirección. Elige el tuyo." niveles={escalaWS} fondo />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra el cliente a la pared de botas, pasa al rincón de las texanas, se mira al espejo, paga y se va. Detrás está la bodega de cajas por número y la mesa donde se contesta el WhatsApp y salen los envíos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu tienda western — planta baja" zonas={planoWS} todoRot="Western y vaquero" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre o la feria encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosWS} lineas={ticketWS.lineas} total={ticketWS.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: clientes con su número, modelos con su horma, existencias por número y apartados vivos. Nunca te pedimos empezar de cero antes de diciembre." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia pared de botas, por número, en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus números y tu venta real de diciembre. 30 min, sin compromiso." />
+</BaseLayout>

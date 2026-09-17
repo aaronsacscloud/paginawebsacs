@@ -1,4 +1,133 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Landing de TRAJES DE BAÑO Y ROPA DE PLAYA (17-sep-2026).
+ *
+ * Misma estructura que marcas-de-ropa.astro (la referencia): portada → manifiesto → variantes →
+ * cortina → expediente → salida → cifras → casos → recorrido → bloque propio → escala → plano →
+ * proceso → planes → salida → cierre. Todo el contenido vive en src/data/giros/trajes-de-bano.ts;
+ * el bloque propio es TbCorte ("¿Remato o guardo?").
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import TbCorte from '../../components/giros/TbCorte.astro';
+import GiroEscala from '../../components/giros/GiroEscala.astro';
+import { bannerTB, manifiestoTB, variantesTB, cortinaTB, casosTB, seccionesTB, planoTB, pasosTB, ticketTB, escalaTB, problemasTB, cifrasTB } from '../../data/giros/trajes-de-bano';
 ---
-<ComingSoon giro="Trajes de Baño y Playa" title="Trajes de Baño y Playa" description="Software de punto de venta para trajes de baño y playa: piezas sueltas y sets, temporada corta y liquidación a tiempo." color="#0D9488" />
+<BaseLayout
+  title="Sistema para tiendas de trajes de baño y playa — Sacs"
+  description="Punto de venta e inventario para trajes de baño: top y bottom por su lado, sets que descuentan dos piezas, apartados desde Instagram y WhatsApp, tienda en línea con el mismo inventario y el remate a tiempo antes del regreso a clases."
+>
+  <GiroBanner
+    eyebrow={bannerTB.eyebrow}
+    titulo={bannerTB.titulo}
+    resalte={bannerTB.resalte}
+    sub={bannerTB.sub}
+    foto={bannerTB.foto}
+    fotoAlt={bannerTB.fotoAlt}
+    avisos={bannerTB.avisos}
+    selloMarcas="negocios de moda en México y Latam"
+  />
+
+  <SuiteManifiesto intro={manifiestoTB.intro} frases={manifiestoTB.frases} cierre={manifiestoTB.cierre} />
+
+  <SuiteVariantes
+    eyebrow={variantesTB.eyebrow}
+    titulo={variantesTB.titulo}
+    resalte={variantesTB.resalte}
+    sub={variantesTB.sub}
+    ejeA={variantesTB.ejeA}
+    filas={variantesTB.filas}
+    matriz={variantesTB.matriz}
+    unidad={variantesTB.unidad}
+    genero={variantesTB.genero}
+    leyendas={variantesTB.leyendas}
+    remate={variantesTB.remate}
+    anchoCelda="44px"
+  />
+
+  <SuiteCortina
+    fotoAntes={cortinaTB.fotoAntes}
+    fotoDespues={cortinaTB.fotoDespues}
+    altAntes={cortinaTB.altAntes}
+    altDespues={cortinaTB.altDespues}
+    libreta={cortinaTB.libreta}
+    filas={cortinaTB.filas}
+    pieDespues={cortinaTB.pieDespues}
+  />
+
+  <SuiteProblemas entrada={problemasTB.entrada} quienes={problemasTB.quienes} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que un set son dos piezas." />
+
+  <SuiteCifras
+    foto={cifrasTB.foto}
+    alt={cifrasTB.alt}
+    frase={cifrasTB.frase}
+    encuadre={cifrasTB.encuadre}
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <SuiteCasos
+    eyebrow="Cuatro momentos del año"
+    titulo="Dónde te sirve, en concreto"
+    sub="Los cuatro momentos en que una tienda de trajes de baño gana o pierde el dinero. Toca cada uno."
+    casos={casosTB}
+  />
+
+  <SuiteScroll
+    eyebrow="Trajes de baño y playa"
+    titulo="Tu tienda, tu Instagram y tu tienda en línea, con el mismo inventario"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de trajes de baño real: el top y el bottom por su lado, el set que descuenta dos piezas, el apartado desde el chat y la curva de la maquila."
+    secciones={seccionesTB}
+  />
+
+  <TbCorte />
+
+  <GiroEscala
+    titulo="De una boutique en la playa a 150 puntos con hoteles y franquicias."
+    descripcion="El negocio cambia con cada tamaño: quién compra, cómo se mueven las piezas entre tiendas y qué mira la dirección. Elige el tuyo."
+    niveles={escalaTB}
+    fondo
+  />
+
+  <SuitePlano
+    titulo="Tu tienda, por dentro."
+    sub="Entra la clienta a la mesa de novedades, recorre los rieles, se prueba, paga y se va. Detrás hay una trastienda donde llega la corrida y salen los pedidos de Instagram, WhatsApp y web. Toca cada zona y mira qué hace Sacs ahí."
+    proyecto="Tu boutique de playa — planta baja"
+    zonas={planoTB}
+    todoRot="Trajes de baño y playa"
+  />
+
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin cerrar la tienda."
+    sub="Tienes la temporada encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte."
+    pasos={pasosTB}
+    lineas={ticketTB.lineas}
+    total={ticketTB.total}
+    remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: clientas con su talla, modelos, existencias por pieza y apartados vivos. Nunca te pedimos empezar de cero a mitad de temporada."
+  />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia matriz de tops y bottoms en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus tallas por pieza y tu venta real de temporada. 30 min, sin compromiso." />
+</BaseLayout>

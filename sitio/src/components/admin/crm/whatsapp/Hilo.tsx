@@ -33,6 +33,22 @@ import { tic, ticListo } from '../../../../lib/ui/tacto';
 // sobrevivir a que el hilo se desmonte al cambiar de conversación.
 const memoriaScroll = new Map<string, number>();
 
+/* Las etapas que se pueden poner A MANO desde el inbox, en orden de embudo.
+   Es un subconjunto del catálogo y el servidor valida el mismo: `cliente` y
+   `evangelista` los pone el cobro, no un clic —marcar cliente a quien no ha
+   pagado descuadra el ARR—. «En conciliación» es la que pidió el dueño para el
+   perdido que aceptó negociar. */
+const ETAPAS_INBOX: { id: string; label: string }[] = [
+  { id: 'suscriptor', label: 'Suscriptor' },
+  { id: 'lead', label: 'Nuevo lead' },
+  { id: 'lead_calificado', label: 'Calificado' },
+  { id: 'oportunidad', label: 'Oportunidad' },
+  { id: 'en_conciliacion', label: 'En conciliación' },
+  { id: 'rezagado', label: 'Rezagado' },
+  { id: 'churned', label: 'Perdido' },
+  { id: 'descalificado', label: 'Descalificado' },
+];
+
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir, ancla }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
   onBack?: () => void; onVerDetalle?: () => void;
@@ -85,6 +101,31 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [acciones, setAcciones] = useState(false);   // móvil: hoja de cotizar/agendar
   const [cita, setCita] = useState<any>(null);            // mensaje que se va a citar al responder
   const [cierre, setCierre] = useState(false);            // modal de nota de cierre
+
+  /* ══ ETAPA DEL CICLO DE VIDA, desde la cabecera ═══════════════════════════
+     `etapaLocal` existe porque el contacto viaja dentro del hilo y refrescarlo
+     entero por un cambio de etapa tarda: sin esto, el selector se quedaba en el
+     valor viejo medio segundo y parecía que no había guardado. */
+  const [etapaLocal, setEtapaLocal] = useState<string | null>(null);
+  const [etapaOcupada, setEtapaOcupada] = useState(false);
+  useEffect(() => { setEtapaLocal(null); }, [conv?.id]);
+  const etapa = etapaLocal ?? (hilo as any)?.contacto?.lifecycle_stage ?? null;
+  const colorEtapa = lifecycleDe(etapa) || { bg: '#f4f4f6', fg: '#6B7280' } as any;
+  const cambiarEtapa = async (nueva: string) => {
+    if (!nueva || nueva === etapa) return;
+    setEtapaOcupada(true);
+    const r = await fetch('/api/crm/whatsapp/etapa', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'etapa', id: conv?.id, contact_id: conv?.contact_id, etapa: nueva }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setEtapaOcupada(false);
+    if (r?.error) { alert(r.error); return; }
+    setEtapaLocal(nueva);
+    /* Que se apaguen las cadencias es el punto de la etapa, no un detalle: si no
+       se dice, nadie sabe que pasó y alguien lo vuelve a hacer a mano. */
+    if (r.salidas?.length) api?.avisar?.(`Se sacó de ${r.salidas.join(' y ')}.`);
+  };
+
   const [cargandoMas, setCargandoMas] = useState(false);
   const [modalPlantillaVirtual, setModalPlantillaVirtual] = useState<{ presel?: string | null } | false>(false);
   const etapasCat = useLifecycle();
@@ -517,6 +558,25 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {/* También para los hilos que viven SOLO en el correo (`email_only_id`):
             sin este selector no había forma de cerrarlos y se quedaban en «No
             contestadas» para siempre. */}
+        {/* ── ETAPA DEL CICLO DE VIDA ──────────────────────────────────────
+            Pedido del dueño (16-sep-2026, caso Jose Francisco): poder moverla
+            desde aquí, «con los mismos selectores que los demás». Antes había
+            que abrir la ficha, buscar el campo y volver — tres pantallas para
+            un dato que se decide leyendo el último mensaje.
+            Mismo tamaño y misma forma que «asignar» y «estado»: son tres cosas
+            del mismo rango y verlas distintas hacía dudar de cuál tocar. */}
+        {conv.id && conv.contact_id && !mobile && <select value={etapa || ''} onChange={e => cambiarEtapa(e.target.value)}
+          aria-label="Etapa del ciclo de vida" title="Etapa del ciclo de vida"
+          disabled={etapaOcupada}
+          style={{
+            border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
+            fontFamily: 'inherit', cursor: etapaOcupada ? 'wait' : 'pointer', flexShrink: 1,
+            minWidth: 92, maxWidth: 124, opacity: etapaOcupada ? .6 : 1,
+            borderColor: colorEtapa.bg === '#f4f4f6' ? C.g200 : colorEtapa.bg,
+            background: colorEtapa.bg, color: colorEtapa.fg,
+          }}>
+          {ETAPAS_INBOX.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+        </select>}
         {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{

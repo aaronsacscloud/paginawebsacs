@@ -15,6 +15,7 @@
  *   node scripts/de-probar.mjs inventario  # rastrea el sitio y arma el grafo de enlaces
  *   node scripts/de-probar.mjs tecnico     # aplica las reglas técnicas sobre lo rastreado
  *   node scripts/de-probar.mjs competidores # revisa los sitemaps de los competidores
+ *   node scripts/de-probar.mjs geo N       # mide N preguntas en las 4 plataformas de IA
  *   node scripts/de-probar.mjs gsc         # Search Console: acceso y primera ingesta
  *   node scripts/de-probar.mjs agrupar     # funde los problemas que son el mismo
  *   node scripts/de-probar.mjs calibrar    # mide el umbral de parecido del modelo
@@ -78,6 +79,15 @@ if (que === 'ingerir') {
       console.log(await ingerirGsc(Number(process.argv[3]) || 3));
     }
   } catch (e) { console.log('error:', e.message); }
+} else if (que === 'geo') {
+  await import('../src/lib/demanda/registro.ts');
+  const { handlerDe } = await import('../src/lib/demanda/handlers.ts');
+  const { leerConfig } = await import('../src/lib/demanda/config.ts');
+  const cfg = await leerConfig(true);
+  const r = await handlerDe('geo.muestrear')(
+    { payload: { limite: Number(process.argv[3]) || 3 } },
+    { limite: Date.now() + 900000, cfg, ciclo_id: null });
+  console.log(r.resumen); console.log(r.datos);
 } else if (que === 'seo') {
   await import('../src/lib/demanda/registro.ts');
   const { handlerDe } = await import('../src/lib/demanda/handlers.ts');

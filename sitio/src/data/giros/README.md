@@ -595,3 +595,65 @@ Cómo se les habla:
 - El **CFDI** quedó como una viñeta dentro de *Administrar* al retirar
   `SuiteFormal`. Para una cadena con contabilidad formal es eliminatorio: vale
   la pena vigilar que no se pierda.
+
+---
+
+## 7. Plan 2026-09-17 — las 14 páginas de moda que faltan (y la pasada fotográfica a las 7 hechas)
+
+**Decisiones del dueño (17-sep-2026), mandan sobre lo anterior:**
+
+- **La referencia es `marcas-de-ropa.astro`.** Misma estructura y mismo orden de bloques para
+  todas; lo que cambia es el contenido y el bloque propio.
+- **Funciones que Sacs todavía no tiene: se presentan como parte del sistema.** Palabras del
+  dueño: «ponlo como si está; ya si el usuario lo pide lo construimos». La regla de *Verdad*
+  contra `plans.ts` sigue para PRECIOS y PLANES (desde qué plan viene incluido y qué se cobra
+  aparte), pero NO bloquea funciones del oficio. Cada giro anota abajo, en su tabla, qué
+  funciones prometidas NO están construidas, para que ventas sepa qué se enseña en la demo y qué
+  se cotiza como desarrollo.
+- **Fotos: gpt-image-2 `quality: high` siempre**, escena específica del giro (no "una tienda"),
+  con gente, moderna, real, y pantallas mostrando Sacs. **Cuarto referee: identidad/realismo, a
+  10 de 10**, foto por foto, al 300 %. Tope de 4 regeneraciones por foto; si no pasa, se cambia la
+  escena. Aplica también a las 7 páginas ya hechas.
+- **Cada giro con su agente experto del oficio** (ficha antes de escribir) **y su referee de
+  oficio** que verifica que lo que está en la página le importa a ese negocio para operar y
+  automatizar, de 1 a 150 sucursales, y que habla como habla ese gremio en México.
+
+**Orden (por demanda comercial y ferias):** 1 Trajes de Baño y Playa · 2 Western y Vaquera ·
+3 Uniformes · 4 Lencería y Ropa Interior · 5 Ropa Infantil y Bebés · 6 Renta de Vestidos y
+Trajes · 7 Sastrería y Trajes a Medida · 8 Bolsas y Accesorios de Piel · 9 Ópticas de Moda ·
+10 Telas y Mercería · 11 Tallas Grandes · 12 Ropa de Maternidad · 13 Outlet y Remates ·
+14 Merch de Eventos. Se trabajan de dos en dos.
+
+**Por giro, en este orden:**
+
+1. *Ficha del oficio* (agente experto): vocabulario del piso, calendario del año, cómo compra y
+   cómo vende, dolores, los cuatro momentos del año, funciones que le importan (con las de Sacs y
+   las que no están construidas marcadas), escala 1 → 5 → 50 → 150 sucursales, y el bloque propio
+   con los siete puntos. La revisa el referee de oficio antes de escribir la página.
+2. `src/data/giros/<slug>.ts` con todo el contenido (banner, manifiesto, variantes, cortina,
+   casos, secciones del scroll ≤ 6, plano con 5 zonas × 5 renglones, proceso, escala).
+3. Fotos (~14) con gpt-image-2 high + referee de identidad 10/10.
+4. Página con los bloques base + **un bloque nuevo `GiroEscala`** (1 a 150 sucursales) + el
+   bloque propio interactivo del giro.
+5. QA a mano (escritorio, móvil, consola, cada bloque interactivo), los tres referees del
+   manual a 9/10 en paralelo, rondas hasta pasar.
+6. Commit por giro; push cuando el dueño lo diga; verificación en producción con un marcador
+   único del commit. Tabla de estado y este manual, al día.
+
+**Bloques propios previstos** (se confirman con la ficha): trajes de baño → top y bottom que se
+venden por separado con curva de colores; western → numeración de bota y sombrero por talla;
+uniformes → pedido por empresa o escuela con tallas por persona; lencería → talla de copa y
+banda; infantil → tallas por edad y el cambio de temporada por crecimiento; renta → calendario
+de disponibilidad, depósito y ajuste; sastrería → orden de medidas y etapas del taller; bolsas →
+piel por lote y proveedor; ópticas → graduación más armazón; telas → rollo, metro y merma;
+tallas grandes → curva extendida y proveedores que sí la fabrican; maternidad → etapas del
+embarazo; outlet → remate por temporada con margen; merch → pedido por evento con fecha.
+
+### Estado por giro (17-sep-2026)
+
+| # | Giro | Ficha | Datos | Fotos 10/10 | Página | Referees 9/10 | Producción |
+|---|---|---|---|---|---|---|---|
+| 1 | Trajes de Baño y Playa | en curso | | | | | |
+| 2 | Western y Vaquera | en curso | | | | | |
+| 3–14 | (ver orden arriba) | | | | | | |
+| — | Las 7 hechas: pasada fotográfica 10/10 | en curso | | | | | |
