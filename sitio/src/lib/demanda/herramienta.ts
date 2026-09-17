@@ -118,7 +118,15 @@ async function registrarUso(h: Herramienta, ctx: Contexto, ok: boolean, ms: numb
   // tabla es el primer eslabón de la cadena herramienta → lead → cliente, y ahí
   // una fila de prueba no es ruido: es una atribución falsa que no se distingue
   // de una verdadera.
-  if (import.meta.env?.DEV) return;
+  if (import.meta.env?.DEV) {
+    /* En desarrollo no se escribe, pero sí se DICE. Un `return` mudo dejaba sin
+       forma de comprobar que el visitante llega —y justo ahí había un bug: las
+       islas leían `sacs_vid` de localStorage cuando es una cookie, así que
+       siempre iba vacío—. Una medición que no se puede verificar acaba rota sin
+       que nadie lo sepa. */
+    console.log(`[herramienta] (dev, no se guarda) ${h.slug} · ${ctx.puerta} · visitante ${ctx.visitor_id || '(ninguno)'} · ${ok ? 'ok' : 'falló'} · ${ms} ms`);
+    return;
+  }
 
   try {
     const { supabase } = await import('../supabase');

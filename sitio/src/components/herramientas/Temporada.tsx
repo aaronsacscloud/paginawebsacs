@@ -55,8 +55,11 @@ export default function Temporada() {
           semanas_transcurridas: Number(f.transcurridas), semanas_restantes: Number(f.restantes),
           costo_unitario: f.costo.trim() === '' ? undefined : Number(f.costo),
           aceleracion_max: Number(acel) || 2,
+          // El visitante NO se manda desde aquí: lo lee la API de la cookie
+          // `sacs_vid`, que viaja sola en cada petición. Antes se mandaba con
+          // `localStorage.getItem('sacs_vid')` —que es una cookie, no una clave
+          // de localStorage— y siempre iba vacío.
           __puerta: 'web',
-          __visitor: (typeof localStorage !== 'undefined' && localStorage.getItem('sacs_vid')) || undefined,
         }),
       });
       const d = await res.json();

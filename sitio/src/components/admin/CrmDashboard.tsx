@@ -53,6 +53,7 @@ const DemandaExplorador = lazySeguro(() => import('./crm/demanda/DemandaExplorad
 const DemandaOportunidades = lazySeguro(() => import('./crm/demanda/DemandaOportunidades'));
 const DemandaSeo = lazySeguro(() => import('./crm/demanda/DemandaSeo'));
 const DemandaIA = lazySeguro(() => import('./crm/demanda/DemandaIA'));
+const DemandaAtribucion = lazySeguro(() => import('./crm/demanda/DemandaAtribucion'));
 const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
 const WhatsAppTab = lazySeguro(() => import('./crm/whatsapp/WhatsAppTab'));
 const LlamadasInteligentes = lazySeguro(() => import('./crm/LlamadasInteligentes'));
@@ -110,7 +111,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
 }
 
 type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'llamadas' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo'
-  | 'de-resumen' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema';
+  | 'de-resumen' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema' | 'de-atribucion';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -357,6 +358,7 @@ const NAV_SECTIONS = [
       { id: 'de-oportunidades' as Tab, label: 'Oportunidades', icon: 'oportunidades' },
       { id: 'de-seo' as Tab, label: 'SEO técnico', icon: 'mejoras' },
       { id: 'de-ia' as Tab, label: 'Visibilidad en IA', icon: 'trabajo' },
+      { id: 'de-atribucion' as Tab, label: '¿Qué trae clientes?', icon: 'finanzas' },
       { id: 'de-sistema' as Tab, label: 'Sistema', icon: 'automations' },
     ],
   },
@@ -1252,6 +1254,8 @@ export default function CrmDashboard() {
           <DemandaSeo />
         ) : tab === 'de-ia' ? (
           <DemandaIA />
+        ) : tab === 'de-atribucion' ? (
+          <DemandaAtribucion />
         ) : tab === 'abm' ? (
           <AbmTab />
         ) : tab === 'eventos' ? (

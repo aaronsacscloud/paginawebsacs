@@ -62,8 +62,11 @@ export default function CurvaTallas() {
           periodo_dias: Number(periodo) || 60,
           piezas_a_comprar: compra.trim() === '' ? undefined : Number(compra),
           tallas,
+          // El visitante NO se manda desde aquí: lo lee la API de la cookie
+          // `sacs_vid`, que viaja sola en cada petición. Antes se mandaba con
+          // `localStorage.getItem('sacs_vid')` —que es una cookie, no una clave
+          // de localStorage— y siempre iba vacío.
           __puerta: 'web',
-          __visitor: (typeof localStorage !== 'undefined' && localStorage.getItem('sacs_vid')) || undefined,
         }),
       });
       const d = await res.json();

@@ -673,3 +673,114 @@ Se enganchan entre ellas y con los artículos, que era el punto:
 - `sale-o-no-sale` → auditor de curva antes de rebajar (el sell-through del
   estilo esconde el de la talla)
 - `nivelar-entre-tiendas` → auditor de curva cuando el núcleo fue supuesto
+
+
+---
+
+## Revisión de bugs (17-sep-2026) — nueve fallos, tres ya hacían daño
+
+Revisión sistemática buscando fallos **silenciosos**: los que no tiran nada y
+por eso nadie encuentra. El patrón que más apareció es siempre el mismo —una
+escritura a Supabase cuyo error nadie mira, o una lectura que PostgREST corta en
+1000 filas sin avisar—.
+
+### Los que ya estaban ocurriendo
+
+1. **El motor priorizaba mal lo que escribe.** `puntuarClusters` leía
+   `de_queries` sin límite: 2,762 consultas, entraban 1,000. El 64% de la
+   evidencia no contaba. Al arreglarlo: **92 de 149 problemas cambiaron de
+   score** y **9 de las 10 posiciones del top cambiaron**.
+2. **Las herramientas guardaban el visitante vacío.** Las tres islas leían
+   `localStorage.getItem('sacs_vid')` y `sacs_vid` es una **cookie**. Siempre
+   null → la cadena de atribución de la etapa 5 no tenía de dónde colgarse. Se
+   lee del lado del servidor, donde nadie lo puede olvidar.
+3. **La nivelación rellenaba filas con ceros inventados.** Por API/MCP, una
+   tienda con una talla de menos salía con un cero en la última, el cero se leía
+   como hueco del núcleo, y la herramienta proponía mover piezas para tapar un
+   agujero inexistente.
+
+### Los que esperaban su momento
+
+4. **Bucle infinito de pago.** El vigilante revivía acciones con lease vencido
+   sin mirar `max_intentos`. El tope solo vivía en `fallar()`, que corre cuando
+   el worker SOBREVIVE — o sea, no en el caso para el que existe el vigilante.
+5. **El presupuesto del mes se podía cruzar dentro de una corrida** (foto vieja
+   leída una vez antes del bucle).
+6. **`//otrositio.com` pasaba como enlace interno** (empieza con `/`).
+7. **Pagar dos veces por la misma señal** (marcado sin revisar el error).
+8. **Publicar/revertir/retirar devolvían éxito sin escribir.** `revertir()` es
+   el botón de emergencia: devolver la versión sin haber escrito deja el daño
+   publicado y a todos creyendo que ya se arregló.
+9. **El AVS se podía mover por un accidente de infraestructura** (sin índice
+   único, un worker muerto entre medir y marcar duplicaba muestras).
+
+### La regla que sale de aquí
+
+**Toda escritura a Supabase mira su error.** Si el fallo pierde trabajo ya
+pagado, se lanza; si estamos ya manejando un error, se avisa por consola y se
+sigue. Y **toda lectura que cuenta, promedia o agrupa usa `traerTodo()`**
+(`src/lib/demanda/paginar.ts`): si leer bien es más incómodo que leer mil,
+alguien va a leer mil.
+
+Prueba nueva: `bloques.test.ts`, 62 casos sobre la frontera de seguridad —donde
+texto de un MODELO se vuelve HTML servido en el dominio—. `npm test` son 7
+suites, 202 casos.
+
+---
+
+## Etapa 5 · parte A hecha (17-sep-2026) — la atribución
+
+La pregunta que justifica el motor entero: **¿qué de esto trae clientes?** Todo
+lo demás cuenta lo que el motor HACE; esto cuenta lo que CONSIGUE. Sin ello el
+sistema optimiza lo que sabe medir en vez de lo que importa.
+
+### La cadena
+
+    activo del motor  →  toque anónimo   →  contacto   →  cliente   →  ARR
+    (página o          (sacs_vid en      (contacts.    (subscri-
+     herramienta)       cookie)           visitor_id)   ptions)
+
+Cuatro vistas en la base (`2026-09-17-demand-engine-E5-atribucion.sql`):
+
+- **`de_toques`** — cada contacto entre un visitante y un activo del motor. Es
+  vista y no tabla: el dato ya vive en `de_herramienta_usos` y `contact_visits`,
+  y copiarlo crearía dos verdades que se separan.
+- **`de_recorridos`** — por contacto: qué lo trajo (primer toque) y qué lo
+  convenció (último). Son dos preguntas distintas y dos presupuestos distintos.
+  **Solo cuenta toques ANTERIORES al alta**: lo que alguien navegó después de
+  ser cliente no lo trajo, y contarlo es la manera más fácil de que estos
+  números mientan a favor.
+- **`de_atribucion`** — el resumen por activo: leads, clientes, ARR.
+- **`de_atribucion_cobertura`** — sobre cuántos se puede opinar.
+
+Pantalla: CRM → Motor de demanda → **«¿Qué trae clientes?»**
+https://code.sacscloud.com/shots/755df3efa91d2c08.png
+
+### ⚠️ La cobertura va SIEMPRE junto a las cifras
+
+Solo **17 de 388 contactos (4.4%)** traen rastro web, porque la mayoría de los
+leads llegan por WhatsApp, por el ABM y por TikTok — esa gente nunca tuvo una
+cookie nuestra. Enseñar «0 clientes atribuidos» sin ese marco es **inventar un
+fracaso**, y a un dueño que lee eso hay que darle tres meses para que vuelva a
+creer en el número.
+
+Por eso la cobertura viaja en la misma respuesta del endpoint y no en una
+llamada aparte: separarlas es garantizar que alguna pantalla acabe enseñando una
+sin la otra.
+
+### Dónde va hoy
+
+    26 visitantes tocaron el motor · 0 se han vuelto contacto · $0 atribuido
+
+Es el resultado correcto, no un bug: las páginas llevan un día y las
+herramientas horas. (Y una parte de esos toques es tráfico propio de QA con
+navegador; no convierte nunca, así que no ensucia la atribución, pero conviene
+saberlo al leer los conteos pequeños.)
+
+### Lo que sigue de la etapa 5
+
+1. Evaluación de predicciones: el motor apuesta un score y hay que medir si
+   acertó.
+2. Recalibración de pesos con lo aprendido.
+3. Experimentos (A/B de títulos y formatos).
+4. Demand Capture Score.

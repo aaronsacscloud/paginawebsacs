@@ -51,7 +51,7 @@ export const GET: APIRoute = async ({ params }) => {
   });
 };
 
-export const POST: APIRoute = async ({ params, request, clientAddress }) => {
+export const POST: APIRoute = async ({ params, request, clientAddress, cookies }) => {
   const ip = clientAddress || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'sin-ip';
   if (!pasaTope(ip)) return json({ error: 'Demasiadas peticiones. Espera un minuto.' }, 429);
 
@@ -63,8 +63,20 @@ export const POST: APIRoute = async ({ params, request, clientAddress }) => {
   // medición; no da permisos, porque `invocar` valida contra `puertas` de todos
   // modos y las tres están abiertas para las herramientas públicas.
   const puerta = (cuerpo as any)?.__puerta === 'web' ? 'web' : 'api';
-  const visitor = typeof (cuerpo as any)?.__visitor === 'string'
-    ? String((cuerpo as any).__visitor).slice(0, 80) : null;
+
+  /* El visitante se lee de la COOKIE, aquí, y no de lo que mande el cliente.
+     Las tres islas lo mandaban leyendo `localStorage.getItem('sacs_vid')` — y
+     `sacs_vid` es una cookie, no una clave de localStorage. Siempre era null.
+     Resultado: todos los usos de herramienta se guardaban sin visitante, y la
+     cadena herramienta → lead → cliente que la etapa 5 necesita no tenía de
+     dónde colgarse. Se veía perfecto: la tabla se llenaba de filas.
+
+     El propio PageTracker ya lo advertía cuando escribe la cookie: «cualquier
+     formulario que no se acuerde de mandar el visitorId a mano rompe el puente;
+     en cookie el servidor lo lee SIEMPRE». Así que se lee aquí, donde nadie lo
+     puede olvidar al escribir la siguiente herramienta. */
+  const visitor = (cookies.get('sacs_vid')?.value || '').slice(0, 80) || null;
+
   if (cuerpo && typeof cuerpo === 'object') {
     delete (cuerpo as any).__puerta;
     delete (cuerpo as any).__visitor;

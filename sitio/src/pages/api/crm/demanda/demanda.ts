@@ -103,6 +103,39 @@ export const GET: APIRoute = async ({ url }) => {
       return json({ ok: true, paginas: data || [] });
     }
 
+    /* ATRIBUCIÓN · qué de lo que hace el motor acaba en un cliente.
+       La cobertura va SIEMPRE junto a las cifras, en la misma respuesta y no en
+       una llamada aparte: solo 4% de los contactos trae rastro web porque la
+       mayoría llega por WhatsApp, ABM y TikTok. Una atribución baja sin ese
+       contexto al lado se lee como «el motor no funciona», y sería inventar un
+       fracaso. Separarlas en dos endpoints es garantizar que alguna pantalla
+       acabe enseñando una sin la otra. */
+    if (vista === 'atribucion') {
+      const [activos, cobertura, recorridos, toques] = await Promise.all([
+        supabase.from('de_atribucion').select('*').order('clientes', { ascending: false }).order('leads', { ascending: false }),
+        supabase.from('de_atribucion_cobertura').select('*').maybeSingle(),
+        supabase.from('de_recorridos').select('*').order('contacto_at', { ascending: false }).limit(limite),
+        supabase.from('de_toques').select('tipo, activo'),
+      ]);
+
+      // Los toques se agrupan aquí porque la vista devuelve uno por fila y lo
+      // que la pantalla enseña es el conteo por activo.
+      const porActivo = new Map<string, { tipo: string; activo: string; toques: number }>();
+      for (const t of toques.data || []) {
+        const k = `${t.tipo}|${t.activo}`;
+        const v = porActivo.get(k) || { tipo: t.tipo, activo: t.activo, toques: 0 };
+        v.toques++; porActivo.set(k, v);
+      }
+
+      return json({
+        ok: true,
+        activos: activos.data || [],
+        cobertura: cobertura.data || null,
+        recorridos: recorridos.data || [],
+        toques: [...porActivo.values()].sort((a, b) => b.toques - a.toques),
+      });
+    }
+
     if (vista === 'senales') {
       let sel = supabase.from('de_senales')
         .select('id, fuente, tipo_senal, naturaleza, texto, query_cruda, observada_at, confianza, cluster_id')
