@@ -147,6 +147,30 @@ export default function InboxPro() {
   };
   const soltarOrden = () => { ordenFijo.current = null; setOrdenFijoN(0); cargarLista(filtrosRef.current); };
 
+  /* ══ SE SUELTA SOLO ═══════════════════════════════════════════════════════
+     Reporte del dueño (16-sep-2026): «deja de ser dinámico y estar apretando un
+     botón es muy incómodo». Tenía razón, y el problema no era congelar: era que
+     una vez congelado se quedaba así hasta que alguien apretara «Reordenar».
+     Si contestas veinte conversaciones seguidas en la misma bandeja, la lista
+     envejece toda la sesión.
+
+     La regla nueva: el orden se congela al contestar —que es cuando estorba que
+     se mueva— y se suelta SOLO en cuanto dejas de trabajar la lista unos
+     segundos. Mientras tecleas, envías o navegas, no se mueve nada; en la
+     primera pausa se pone al día sin que toques un botón.
+
+     22 s: menos se sentía un parpadeo entre mensajes; más y vuelve a envejecer. */
+  const ultimaActividad = useRef<number>(Date.now());
+  const marcarActividad = () => { ultimaActividad.current = Date.now(); };
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!ordenFijo.current) return;
+      if (Date.now() - ultimaActividad.current < 22000) return;
+      soltarOrden();
+    }, 4000);
+    return () => clearInterval(t);
+  }, []);
+
   /* ══ EN EL TELÉFONO, LA MISMA ANCLA ═══════════════════════════════════════
      Aquí no hay carril con scroll propio: la lista es la página. Se guarda cuál
      es la primera fila que se ve y a qué altura, y después de cada refresco se
@@ -829,7 +853,7 @@ export default function InboxPro() {
       return r;
     },
     enviarTexto: async (texto: string, cita?: string | null) => {
-      fijarOrden();   // no se te mueve la lista debajo del dedo
+      marcarActividad(); fijarOrden();   // no se te mueve la lista debajo del dedo
       // E3 · El mensaje entra a la cola ANTES de salir a la red. Así, si la
       // red falla o el navegador se muere a media petición, el texto sigue
       // ahí: se ve pendiente en el hilo y se reintenta solo.
@@ -872,7 +896,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarInteractivo: async (interactivo: any) => {
-      fijarOrden();   // no se te mueve la lista debajo del dedo
+      marcarActividad(); fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), interactivo }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
     },
@@ -911,7 +935,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarPlantilla: async (plantilla: any, telefono?: string, phoneNumberId?: string) => {
-      fijarOrden();   // no se te mueve la lista debajo del dedo
+      marcarActividad(); fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(telefono ? { telefono, plantilla, ...(phoneNumberId ? { phone_number_id: phoneNumberId } : {}) } : { conversation_id: waId(), plantilla }),
@@ -923,7 +947,7 @@ export default function InboxPro() {
     // `onProgreso` es opcional a propósito: quien no lo pase se comporta
     // exactamente igual que antes, así que ningún otro consumidor cambia.
     enviarArchivo: async (file: File, caption?: string, voz?: boolean, cita?: string | null, onProgreso?: (pct: number | null) => void) => {
-      fijarOrden();   // no se te mueve la lista debajo del dedo
+      marcarActividad(); fijarOrden();   // no se te mueve la lista debajo del dedo
       const esAudio = voz || file.type.startsWith('audio/');
       // Archivos grandes (> 4 MB): directo del navegador a Storage con URL
       // firmada y luego se manda por link — la función serverless no los aguanta.
@@ -961,7 +985,7 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     enviarCorreo: async (o: { texto: string; asunto?: string }) => {
-      fijarOrden();   // no se te mueve la lista debajo del dedo
+      marcarActividad(); fijarOrden();   // no se te mueve la lista debajo del dedo
       const r = await fetch('/api/crm/whatsapp/enviar-correo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1354,11 +1378,12 @@ export default function InboxPro() {
                 {!!ordenFijo.current && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 24px 6px', padding: '7px 11px', borderRadius: 10, background: '#F3F1FE' }}>
                     <span style={{ flex: 1, minWidth: 0, fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', lineHeight: 1.35 }}>
-                      Orden fijo mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+                      Quieta mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+                      <span style={{ display: 'block', fontWeight: 500, opacity: .75 }}>Se acomoda sola al hacer una pausa</span>
                     </span>
                     <button onClick={soltarOrden}
                       style={{ flexShrink: 0, minHeight: 32, border: 'none', background: '#fff', color: '#5B4BD6', borderRadius: 999, padding: '0 12px', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      Reordenar
+                      Ya
                     </button>
                   </div>
                 )}

@@ -317,11 +317,12 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
       {ordenFijo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid ${C.g100}`, background: C.moradoSuave }}>
           <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: C.moradoTinta, fontWeight: 600, lineHeight: 1.4 }}>
-            Orden fijo mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+            Quieta mientras contestas{ordenFijoN ? ` · ${ordenFijoN} nueva${ordenFijoN === 1 ? '' : 's'} al final` : ''}
+            <span style={{ fontWeight: 400, opacity: .8 }}> · se acomoda sola al hacer una pausa</span>
           </span>
-          <button onClick={onSoltarOrden}
+          <button onClick={onSoltarOrden} title="Acomodar la lista ahora, sin esperar la pausa"
             style={{ flexShrink: 0, border: `1px solid ${C.moradoAgua}`, background: '#fff', color: C.moradoTinta, borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Reordenar
+            Ya
           </button>
         </div>
       )}
