@@ -435,14 +435,19 @@ correo del cliente). Ahí falta una **nota de contexto**:
 > **Caso 4:** «Aqui no llego el correo de confirmación por Marketing, debemos
 > tener algna alternativa de utility para estos casos tambien.»
 
-- [ ] **1 · Montse dijo que no y siguió viva.** Diagnosticar por qué el botón
+- [x] **1 · Montse dijo que no y siguió viva.** Diagnosticar por qué el botón
       «Ahora no» no la descalificó, no la sacó de la cadencia ni la metió a la
       de descalificados. Arreglar el flujo.
-- [ ] **2 · «Orden fijo mientras contestas» no sirve.** Deja la lista estática y
+- [x] **2 · «Orden fijo mientras contestas» no sirve.** Deja la lista estática y
       obliga a apretar un botón. Rediseñar.
 - [ ] **3 · Selector de etapa + «En conciliación» + «Pidió seguimiento».**
-      PRIMERO el plan, lo pidió explícitamente.
-- [ ] **4 · Confirmación que no llegó.** Plantilla UTILITY de respaldo cuando la
+      PLAN LISTO (17-sep). Resuelto el bloqueo que frenaba: los números de churn
+      salen de `churn_casos`, NO de `lifecycle_stage`, así que una etapa nueva no
+      los mueve. ⚠️ Ojo con los guards `.in('lifecycle_stage',
+      ['cliente','churned'])` de churn.lib.ts:39 — hay que sumarles la etapa
+      nueva o un caso que se recupere DESDE conciliación no cerraría. Falta
+      construirlo.
+- [x] **4 · Confirmación que no llegó.** Plantilla UTILITY de respaldo cuando la
       de marketing no entra.
 
 ## 16-sep-2026 · video del dueño sobre el Taller (HECHO)
@@ -472,4 +477,4 @@ en el video se ve el aviso «Versión nueva lista · Actualizar»).
 Texto del dueño: «vamos ahora con las paginas completas de cada giro y necesito que me ayudes a
 orquestrar la instrucción ahi te van los puntos clave a seguir.» — el dueño va a mandar los puntos
 clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, certificación,
-5 días, portal, niveles). Estado: PENDIENTE.
+5 días, portal, niveles). Estado: EN CURSO desde 17-sep (plan en src/data/giros/README.md §7).
