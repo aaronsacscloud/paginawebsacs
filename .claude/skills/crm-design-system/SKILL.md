@@ -160,10 +160,16 @@ para colgarle el faro.
 | Taller | Aquí se pule cada estrella |
 | Consultoría | Sembramos relaciones, cosechamos constelaciones |
 | Leads | Cada nombre es una estrella por encender |
+| Llamadas inteligentes | La voz que las enciende |
 
 Las eligió el dueño el 13-sep-2026 de entre cuatro opciones por pantalla; la de
 Consultoría se rehizo pidiendo que hablara de **relación y abundancia**, que es
 como él describe ese trabajo.
+
+La de Llamadas inteligentes (17-sep-2026) sigue el verbo de la de Leads a
+propósito: si cada nombre es «una estrella por encender», la llamada es lo que
+la enciende — y de paso la separa del Inbox, que hace el mismo trabajo por
+escrito.
 
 Una pantalla nueva **no inventa su frase sola**: se propone al dueño y se anota
 aquí, porque el catálogo es lo que impide que en un año haya once voces.

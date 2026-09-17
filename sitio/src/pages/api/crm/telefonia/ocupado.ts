@@ -22,16 +22,22 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
-/* ⚠️ LA PLANTILLA TODAVÍA NO EXISTE EN META.
-   Quien te llama por teléfono casi nunca tiene la ventana de 24 h de WhatsApp
-   abierta —la abre quien ESCRIBE, no quien marca—, así que en la mayoría de los
-   casos el texto libre no va a entrar y hace falta una plantilla UTILITY
-   aprobada. Ninguna de las 27 aprobadas sirve para esto.
-   El mecanismo queda listo: en cuanto exista, se pone su nombre aquí y empieza a
-   salir sola. Mientras tanto se intenta el texto libre (sirve para quien SÍ nos
-   escribió hace poco) y siempre queda la tarea, que es lo que evita que la
-   llamada perdida se pierda de verdad. */
-const PLANTILLA_OCUPADO: string | null = null;   // ej. 'llamada_ocupado_v1'
+/* LA PLANTILLA: `llamada_ocupado_v1`, UTILITY, es_MX. Creada en Meta el
+   17-sep-2026; entra en cuanto Meta la apruebe, sin desplegar nada.
+
+   Hace falta porque quien te llama por teléfono casi nunca tiene abierta la
+   ventana de 24 h de WhatsApp —la abre quien ESCRIBE, no quien marca—, así que
+   el texto libre no entra. Ninguna de las 27 plantillas aprobadas servía.
+
+   Es UTILITY y no MARKETING a propósito, y por eso está redactada como está:
+   contesta a algo que HIZO el cliente (nos llamó), no ofrece nada y no vende.
+   Una plantilla de esta familia con una frase comercial se reclasifica sola a
+   MARKETING y entonces ya no puede salir fuera de la ventana, que es justo lo
+   único para lo que existe.
+
+   Mientras siga PENDING el envío falla y cae a `solo_tarea`, que es el mismo
+   camino que ya había: nada se rompe mientras Meta decide. */
+const PLANTILLA_OCUPADO: string | null = 'llamada_ocupado_v1';
 
 const TEXTO = (n: string) =>
   `Hola${n ? ` ${n}` : ''}, te marqué pero estoy en otra llamada en este momento. `
@@ -80,7 +86,10 @@ export const POST: APIRoute = async ({ request }) => {
     const cerrada = e instanceof KapsoError && /131047|window|24/i.test(String(e.message));
     if (cerrada && PLANTILLA_OCUPADO) {
       try {
-        const r = await enviarPlantilla(destino, PLANTILLA_OCUPADO, 'es_MX', [nombre || 'hola']);
+        // Meta no acepta una variable vacía, y la plantilla empieza con
+        // «Hola {{1}},». Sin nombre, «qué tal» es lo único que deja la frase
+        // leyéndose bien: «Hola qué tal, recibimos tu llamada».
+        const r = await enviarPlantilla(destino, PLANTILLA_OCUPADO, 'es_MX', [nombre || 'qué tal']);
         const wamid = r?.messages?.[0]?.id || null;
         if (wamid) {
           await registrarMensaje({

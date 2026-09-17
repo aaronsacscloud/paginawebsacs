@@ -41,20 +41,40 @@ export const GET: APIRoute = async ({ request }) => {
     '6': { enabled: false, ranges: [] }, // Saturday
   };
 
-  const { data: schedule, error: schedErr } = await supabase
+  /* SI YA HAY HORARIO, NO SE SIEMBRA OTRO. Esto insertaba a ciegas, y como es
+     un endpoint que se llama a mano, correrlo tres veces dejó tres horarios por
+     defecto de Andrea (14-abr-2026, 03:43/03:44/03:45) — todos `es_default`,
+     todos `activo`. El endpoint de disponibilidad ordena por `es_default` y se
+     queda con el primero: con tres empatados, cuál gana no lo decide nadie.
+     Y sembrar de nuevo PISARÍA el horario real con el de fábrica (9-13/14-18),
+     que no es lo que quiere quien corre un «seed» para dejar listo lo que falta.
+     Hay además un índice único que lo impide desde la base
+     (migration-2026-09-agenda-un-solo-horario.sql); esto es para contestar
+     bonito en vez de tronar con un error de Postgres. */
+  const { data: yaHay } = await supabase
     .from('availability_schedules')
-    .insert({
-      team_member_id: adminId,
-      weekly_hours: weeklyHours,
-      timezone: 'America/Mexico_City',
-      es_default: true,
-      activo: true,
-    })
-    .select()
-    .single();
+    .select('id')
+    .eq('team_member_id', adminId).eq('es_default', true).eq('activo', true)
+    .maybeSingle();
 
-  if (schedErr) {
-    return new Response(JSON.stringify({ error: `Schedule: ${schedErr.message}` }), { status: 500 });
+  let schedule = yaHay;
+  if (!yaHay) {
+    const { data: creado, error: schedErr } = await supabase
+      .from('availability_schedules')
+      .insert({
+        team_member_id: adminId,
+        weekly_hours: weeklyHours,
+        timezone: 'America/Mexico_City',
+        es_default: true,
+        activo: true,
+      })
+      .select()
+      .single();
+
+    if (schedErr) {
+      return new Response(JSON.stringify({ error: `Schedule: ${schedErr.message}` }), { status: 500 });
+    }
+    schedule = creado;
   }
 
   // 3. Create event types

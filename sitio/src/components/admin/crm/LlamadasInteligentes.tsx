@@ -24,7 +24,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
-import Chispas, { CSS_CHISPAS } from './ui/Chispas';
+import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 const Cabina = lazy(() => import('./whatsapp/Cabina'));
 
@@ -121,10 +121,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
 
   return (
     <div style={{ ...WRAP, paddingTop: 22 }}>
-      <style>{CSS_CHISPAS}</style>
+      <style>{CSS_CHISPAS + CSS_SELLO}</style>
       <div className="chispas-cab" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <Chispas />
-        <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes</h1>
+        <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes <Sello>La voz que las enciende</Sello></h1>
       </div>
       <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 18px', maxWidth: 620, lineHeight: 1.55 }}>
         Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
