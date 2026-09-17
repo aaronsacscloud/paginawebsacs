@@ -112,8 +112,9 @@ import BloqueProducto from '../BloqueProducto.astro';
       // 36 % de cada corrida es de la 46 para arriba; $445 de utilidad por pieza.
       const piezasAltas = Math.round(pz * 0.36);
       $('tg-num').textContent = pesos(fall * piezasAltas * 445);
-      // El flete de cambio sube con los modelos que salen mal: cada punto de cambios vale $1,060.
-      $('tg-flete').textContent = pesos(26480 + fall * 1240);
+      // El flete de cambio sube con los modelos que salen mal, y cada punto vale $1,060, que es
+      // justo lo que dice el renglón de al lado. Antes el código sumaba 1,240 y se desmentía solo.
+      $('tg-flete').textContent = pesos(27560 + fall * 1060);
       (window as any).sacsPH?.('giro_tg_quiebre', { mod, fall, pz });
     };
     ['tg-mod', 'tg-fall', 'tg-pz'].forEach((id) => $(id).addEventListener('input', pinta));

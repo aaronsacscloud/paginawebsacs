@@ -112,7 +112,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       club: { c: [0.09, 0.26, 0.31, 0.22, 0.12], nota: 'la tienda del club vende todo el año, así que la talla que falta se repone: no se pierde la venta.' },
       uni: { c: [0.14, 0.34, 0.30, 0.16, 0.06], nota: 'graduación: casi todo M y L, y la talla grande se pide por encargo.' },
     };
-    const PRECIO = 450, COSTO = 168, RECINTO = 0.15, STAFF = 9600, MONTAJE = 7500;
+    const PRECIO = 450, COSTO = 168, RECINTO = 0.15, STAFF = 9600, MONTAJE = 7500, FLETE = 14;
     const pesos = (n: number) => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('es-MX');
     let pub = 'fest';
     const pinta = () => {
@@ -142,7 +142,10 @@ import BloqueProducto from '../BloqueProducto.astro';
       const comision = bruta * RECINTO;
       const costoVend = vend * COSTO;
       const regalia = (bruta - comision) * reg;
-      const queda = bruta - comision - costoVend - regalia - STAFF - MONTAJE;
+      // El flete y la maniobra se pagan por pieza CARGADA, no por pieza vendida: por eso llevar de
+      // más no es gratis, y a partir de cierto punto la fecha deja menos aunque vendas lo mismo.
+      const flete = carga * FLETE;
+      const queda = bruta - comision - costoVend - regalia - STAFF - MONTAJE - flete;
       const sobranteCosto = regres * COSTO;
       $('mc-casc').innerHTML = [
         ['Venta de la fecha', pesos(bruta)],
@@ -150,6 +153,7 @@ import BloqueProducto from '../BloqueProducto.astro';
         ['Costo de lo vendido', pesos(-costoVend)],
         ['Regalía del contrato', pesos(-regalia)],
         ['Staff y montaje', pesos(-(STAFF + MONTAJE))],
+        [`Flete y maniobra de ${carga.toLocaleString('es-MX')} piezas`, pesos(-flete)],
       ].map(([a, b]) => `<li><span>${a}</span><b>${b}</b></li>`).join('') +
         `<li class="total ${queda < 0 ? 'neg' : ''}"><span>Queda de la fecha</span><b>${pesos(queda)}</b></li>`;
       $('mc-fin').innerHTML = `Y ${regres.toLocaleString('es-MX')} piezas regresaron al camión: <b>${pesos(sobranteCosto)} a costo</b>, parados hasta la siguiente fecha. ${d.nota}`;

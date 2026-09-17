@@ -142,9 +142,9 @@ export const seccionesTM: SuiteSeccion[] = [
   {
     id: 'pieza', tag: 'Inventario',
     titulo: 'La pieza, con su folio, su tono y sus metros',
-    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina vino”: hay la pieza 4517 con 4.40 del tono C y la 4488 cerrada de 50 del tono B. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
+    texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina vino”: hay la pieza 4517 con 4.40 del tono C aquí, y la 4488 cerrada de 50 del tono B en el centro. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
     bullets: ['Folio, tono, ancho y metros por pieza; las cerradas contadas aparte de los saldos', 'Etiqueta con código de barras en la tabla: la de mostrador escanea la pieza y no teclea el color', 'Dos piezas del mismo color y distinto baño no se ofrecen juntas para un mismo corte'],
-    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque entre las tres sumen 12.40'),
+    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque entre las tres sumen 12.40. La cerrada sí da, pero es del baño B y está en el centro: o se traspasa, o no empata con lo que ya compró'),
   },
   {
     id: 'mostrador', tag: 'Mesa de corte',

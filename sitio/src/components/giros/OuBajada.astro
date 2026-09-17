@@ -83,9 +83,9 @@ import BloqueProducto from '../BloqueProducto.astro';
     const COSTO = 101.92;
     const E = {
       a: { num: '$229,658', dejo: '$113,058', pct: '49.2 %', sem: '26 semanas', porSem: '$4,348', vueltas: '2', malas: 314,
-           esc: [['$299', 430], ['$199', 320], ['$129', 80], ['$99', 220], ['$69', 34], ['$49', 38], ['$50', 22]] },
+           esc: [['$299', 430], ['$199', 320], ['$129', 80], ['$99', 220], ['$69', 34], ['$49', 38], ['$50 · bulto', 22]] },
       b: { num: '$261,908', dejo: '$145,308', pct: '55.5 %', sem: '14 semanas', porSem: '$10,379', vueltas: '3.7', malas: 139,
-           esc: [['$299', 560], ['$209', 160], ['$199', 165], ['$149', 60], ['$129', 60], ['$99', 90], ['$69', 9], ['$49', 18], ['$50', 22]] },
+           esc: [['$299', 560], ['$209', 160], ['$199', 165], ['$149', 60], ['$129', 60], ['$99', 90], ['$69', 9], ['$49', 18], ['$50 · bulto', 22]] },
     };
     const pinta = (k: 'a' | 'b') => {
       const d = E[k], max = Math.max(...d.esc.map((x) => x[1] as number));
@@ -94,7 +94,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       document.getElementById('ou-sem')!.textContent = d.porSem;
       document.getElementById('ou-vu')!.textContent = d.vueltas;
       document.getElementById('ou-esc')!.innerHTML = d.esc.map(([p, n]) => {
-        const precio = Number(String(p).replace(/[$,]/g, ''));
+        const precio = Number(String(p).replace(/[^0-9.]/g, ''));
         const cls = precio < COSTO ? 'bajo' : precio >= 280 ? 'verde' : precio >= 190 ? 'amar' : 'rojo';
         return `<li class="${cls}"><span class="p">${p}</span><i style="width:${Math.round((n as number / max) * 100)}%"></i><em>${n} pzas</em></li>`;
       }).join('');
