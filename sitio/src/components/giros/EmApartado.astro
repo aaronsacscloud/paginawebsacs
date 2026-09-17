@@ -19,12 +19,12 @@
 import BloqueProducto from '../BloqueProducto.astro';
 ---
 <BloqueProducto
-  encabezado="No hay caja. Hay un chat que se queda en visto."
-  titulo="¿Cuánto se te quedó en el chat este mes?"
-  descripcion="«Te lo aparto» son tres segundos y ninguna pantalla de por medio. La pieza se congela dentro de la conversación y ahí se queda. Mueve tus números y mira lo que de verdad cuesta, que no es la venta que no se hizo: es la que sí ibas a hacer y rechazaste."
+  encabezado="Nadie anotó a las que también preguntaron."
+  titulo="La fila invisible de cada pieza apartada."
+  descripcion="«Te lo aparto» son tres segundos y ninguna pantalla de por medio. La pieza se congela dentro de la conversación, y detrás quedan las otras que preguntaron por esa misma blusa, en esa misma talla, y a las que les dijiste que ya estaba apartada. Esas no están anotadas en ningún lado. Mueve tus números y mira qué tan larga es tu fila."
   vinetas={[
-    { label: 'El apartado con fecha, no con buena fe', detail: 'La pieza se guarda las horas que tú digas y se libera sola. Nadie tiene que acordarse, y a la que sigue en la lista le llega el aviso.' },
-    { label: 'La segunda clienta no se pierde', detail: 'Mientras una piensa, la otra queda anotada. Si la primera no deposita, la pieza pasa sola a la que sí quería pagar.' },
+    { label: 'Aquí no es el apartado de una joyería', detail: 'Allá la pieza está en la vitrina, hay abonos a meses y hay mostrador. Aquí se congela con una frase escrita a las once de la noche, sin un peso y sin testigo.' },
+    { label: 'La fila queda anotada sola', detail: 'Cada «¿sigue disponible?» de esa pieza se guarda en orden. Si la primera no deposita, a la que sigue le llega el aviso el mismo día, no a los cuatro.' },
     { label: 'Una sola existencia para todos tus canales', detail: 'La misma blusa publicada en tres lados descuenta del mismo inventario. Se acaba vender dos veces lo que tenías una vez.' },
   ]}
   suelta
@@ -46,10 +46,11 @@ import BloqueProducto from '../BloqueProducto.astro';
       </div>
     </div>
     <div class="em-res">
-      <span class="em-k">Se te quedaron en el chat</span>
-      <b class="em-num" id="em-num">$4,050</b>
-      <p class="em-horas" id="em-horas">y <b>4 horas y media</b> al mes contestando «¿ya depositaste?».</p>
-      <p class="em-expl" id="em-expl">Por cada pieza que se muere en visto hay una clienta que sí iba a pagar y se dio la vuelta cuando le dijiste que ya estaba apartada.</p>
+      <span class="em-k">Días de rack muertos al mes</span>
+      <b class="em-num" id="em-num">135</b>
+      <p class="em-horas" id="em-piezas-w">Es como tener <b id="em-piezas">4 piezas y 5</b> colgadas sin venderse, todo el mes, todos los meses.</p>
+      <p class="em-pesos" id="em-pesos"></p>
+      <p class="em-horas" id="em-horas">Y <b>4 horas y media</b> al mes contestando «¿ya depositaste?».</p>
       <button type="button" class="em-btn" id="em-btn">¿Y si se la guardo 24 horas?</button>
       <p class="em-cierre" id="em-cierre" hidden></p>
       <a class="em-cta" href="/contacto">Quiero que se libere sola</a>
@@ -80,6 +81,8 @@ import BloqueProducto from '../BloqueProducto.astro';
   .em-res .em-k { display: block; }
   .em-num { font-family: var(--font-display); font-size: clamp(40px, 5.6vw, 64px); letter-spacing: -0.04em; line-height: 1; color: var(--color-text-primary); }
   .em-horas { margin: 10px 0 0; font-size: 15px; color: var(--color-text-primary); }
+  .em-pesos { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13.5px; line-height: 1.45; color: var(--color-text-secondary); }
+  .em-pesos b { color: var(--color-text-primary); }
   .em-expl { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 13.5px; line-height: 1.45; color: var(--color-text-secondary); }
   .em-btn { margin-top: 14px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; }
   .em-cierre { margin: 12px 0 0; padding: 11px 13px; border-radius: var(--radius-sm, 8px); background: #E9F5EF; color: #14603F; font-size: 14px; line-height: 1.45; }
@@ -93,6 +96,8 @@ import BloqueProducto from '../BloqueProducto.astro';
     const $ = (id: string) => document.getElementById(id)!;
     const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
     const APARTADOS = 100; // al mes, el ejemplo de la ficha; el resto se escala con sus números
+    const CON_FILA = 0.2;  // de las que se caen, una de cada cinco traía a alguien preguntando
+    const PAGA = 0.55;     // y esa segunda clienta paga como cualquier otra, no con certeza
     let dias = 3;
     const pinta = () => {
       const pagan = Number(($('em-pagan') as HTMLInputElement).value);
@@ -101,17 +106,21 @@ import BloqueProducto from '../BloqueProducto.astro';
       const margen = Math.max(0, precio - costo);
       // De las que no pagan, unas se caen con otra clienta detrás esperando y otras no. Mientras
       // más días la guardes, más veces le dices «ya está apartada» a alguien que sí iba a pagar.
-      const mueren = 10 - pagan;
-      // Cuántas de las que se murieron traían otra clienta detrás. Crece con los días: si la
-      // guardas una semana, le dices «ya está apartada» a más gente. Con 5 de 10 y 3 días da las
-      // 15 piezas del ejemplo de la ficha.
-      const conFila = dias === 1 ? 0.25 : dias === 3 ? 0.3 : 0.38;
-      const perdidas = Math.round((mueren / 10) * APARTADOS * conFila);
+      const mueren = (10 - pagan) / 10 * APARTADOS;
+      // De las que se cayeron, una de cada cinco traía a alguien preguntando por esa misma pieza.
+      // Lo que cambia con los días NO es cuántas había: es cuántas de ésas ya no volvieron. Si la
+      // sueltas en 24 horas, casi todas siguen ahí; si la guardas una semana, ya se fueron.
+      const yaSeFueron = dias === 1 ? 0.2 : dias === 3 ? 0.55 : 0.8;
+      const perdidas = Math.round(mueren * CON_FILA * yaSeFueron * PAGA);
+      const enFila = Math.round(mueren * CON_FILA);
       $('em-p').textContent = String(pagan);
-      $('em-num').textContent = pesos(perdidas * margen);
+      const diasMuertos = Math.round(mueren * dias);
+      $('em-num').textContent = diasMuertos.toLocaleString('es-MX');
+      $('em-piezas').textContent = (diasMuertos / 30).toFixed(1).replace('.', ' piezas y ').replace(' piezas y 0', ' piezas');
       // Cuatro recordatorios de minuto y medio por cada apartado que no cerró.
       const horas = ((mueren / 10) * APARTADOS * 4 * 1.5) / 60;
       const ent = Math.round(horas), mins = Math.round((horas % 1) * 60);
+      $('em-pesos').innerHTML = `Y <b>${pesos(perdidas * margen)}</b> de ventas que de verdad se perdieron: de las ${Math.round(mueren)} que se cayeron, <b>${enFila}</b> traían a alguien preguntando, y de ésas se fue la mayoría.`;
       const textoH = horas < 1 ? `${Math.round(horas * 60)} minutos`
         : Math.abs(horas - ent) < 0.1 ? (ent === 1 ? 'una hora' : `${ent} horas`)
         : `${Math.floor(horas)} ${Math.floor(horas) === 1 ? 'hora' : 'horas'} y ${mins} minutos`;

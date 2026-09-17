@@ -465,12 +465,17 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             no cabe se recorta dentro de su propio carril en vez de invadir el
             contador de la ventana. */}
         <span style={{ minWidth: 160, flex: '1 1 240px', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
-          {/* El nombre es lo ÚLTIMO que cede. Las pastillas de al lado llevan
-              `flex-shrink:0`, así que cuando el carril se apretaba el único que
-              encogía era él: se veía «C…» en vez de «Carmina». Con un mínimo
-              legible, lo que se recorta es la pastilla —que se puede deducir—,
-              no el nombre de la persona. */}
-          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: mobile ? 0 : 90, maxWidth: mobile ? undefined : 260, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
+          {/* El `minWidth:90` que protegía al nombre de quedar en «C…» YA NO
+              HACE FALTA, y estorbaba: con un nombre corto —«Carlos»— reservaba
+              aire de más y el punto de la etapa quedaba flotando a medio
+              camino, como un lunar suelto. Lo reportó el dueño: «al lado de
+              Carlos parece como vacío, se ve raro».
+
+              Se pudo quitar porque el encabezado ya envuelve en dos renglones
+              (17-sep): los cuatro controles se fueron a su propia línea, así
+              que este carril tiene la fila entera para él y nadie lo aprieta.
+              El `maxWidth:260` sigue, que es el que corta los nombres largos. */}
+          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 260, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {/* LA ETAPA YA NO SE ESCRIBE AQUÍ. El selector del renglón de abajo
               dice la misma palabra, a cuatro centímetros: «● Nuevo lead» junto
               al nombre y «Nuevo lead» debajo. Queda sólo el punto de color, que

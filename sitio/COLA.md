@@ -670,3 +670,46 @@ Tres cosas distintas:
    aviso «Todavía no la abre». Falta el detalle: cuándo la vio, cuántas veces,
    y qué pasó después.
 
+## 17-sep-2026 — La sala de la llamada MANUAL (pendiente, es grande)
+
+> «Cuando llame manual, que también me permita reintentar la llamada con un
+> clic, que sea rápido. Y cuando el cliente responda, que me aparezca una
+> pantalla, un modal bonito y grande, con: el contexto de lo que se ha hablado,
+> las sucursales, la marca en grande, si hemos tenido otras llamadas
+> anteriormente, y la parte de agendar una reunión —simple, y que yo pueda ver
+> los horarios disponibles—. Todo el proceso similar al que tenemos automatizado
+> en llamadas inteligentes… analiza esto, agrega otras 10 cosas que consideres
+> importantes.»
+
+**El análisis, para no empezar de cero la próxima vez.** Hoy la llamada manual
+usa el widget chico de `Telefonia.tsx` (el negro de la esquina: cronómetro,
+nota, silenciar, teclas, colgar). La cabina de Llamadas inteligentes ya tiene
+casi todo lo que pide —contexto, resultado, cierre con IA, agenda— pero está
+atada a una SESIÓN con lista. Lo correcto NO es duplicarla: es sacar su panel a
+un componente que sirva para las dos, con o sin sesión detrás. Si se copia,
+en un mes son dos salas distintas y una se queda vieja.
+
+Lo pedido: reintentar con un clic · contexto de la conversación · sucursales ·
+marca en grande · llamadas anteriores · agendar viendo horarios reales · notas.
+
+Mis diez, por orden de lo que más duele hoy:
+1. **Que no se pueda colgar sin decir qué pasó.** El resultado (contestó /
+   buzón / no era / volver a llamar) es lo que alimenta todo lo demás.
+2. **Transcripción en vivo**, como en la cabina: leer mientras hablas es lo que
+   evita la nota de memoria diez minutos después.
+3. **Quién es y qué le duele en una línea**, arriba: etapa, ARR, días sin
+   comprar, último motivo. Lo que ya arma `ia.ts` para el consultor.
+4. **Lo último que se le dijo por WhatsApp/correo**, textual. Llamar sin saber
+   qué le acaban de escribir es cómo se contradice uno.
+5. **«Volver a llamar el …»** con fecha, que deje el seguimiento solo. Prometer
+   sin fecha es lo que ya nos costó esta gente.
+6. **Mandar la liga de agenda por WhatsApp desde la misma sala**, para cuando
+   dice «mándamelo y lo veo».
+7. **Aviso de zona horaria y de si es buena hora ahí**, que la cabina ya calcula.
+8. **Que la nota se guarde sola mientras se escribe** — un cierre que se pierde
+   por cerrar la pestaña es peor que no tener nota.
+9. **Sugerencia de cierre con IA** al colgar, como en la cabina: propone
+   resultado, resumen y siguiente paso, y tú confirmas.
+10. **Que la llamada quede en el hilo de WhatsApp** como un mensaje más, con su
+    duración y su minuta: hoy hay que ir a otra pantalla para saber que existió.
+
