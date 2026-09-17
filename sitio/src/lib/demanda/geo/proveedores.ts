@@ -22,6 +22,10 @@ export type Respuesta = {
   citas: string[];
   motivo?: string;
   ms: number;
+  /** Lo que consumió la llamada. Sin esto la medición GEO gasta sin aparecer en
+   *  ninguna cuenta: las 68 primeras muestras costaron dinero real y quedaron
+   *  registradas en cero. */
+  uso?: { ent: number; sal: number; busquedas: number };
 };
 
 const LLAVE: Record<Plataforma, string> = {
@@ -44,17 +48,20 @@ async function conTiempo<T>(f: () => Promise<T>, ms: number): Promise<T> {
 export async function preguntarA(plataforma: Plataforma, pregunta: string, pais = 'MX'): Promise<Respuesta> {
   const t0 = Date.now();
   const llave = env(LLAVE[plataforma]);
-  if (!llave) return { plataforma, estado: 'no_disponible', texto: '', citas: [], motivo: `falta ${LLAVE[plataforma]}`, ms: 0 };
+  if (!llave) return { plataforma, estado: 'no_disponible', texto: '', citas: [], motivo: `falta ${LLAVE[plataforma]}`, ms: 0, uso: SIN_USO };
 
   try {
     const r = await conTiempo(() => consultar(plataforma, pregunta, llave, pais), 180_000);
     return { plataforma, estado: 'ok', ...r, ms: Date.now() - t0 };
   } catch (e: any) {
-    return { plataforma, estado: 'error', texto: '', citas: [], motivo: String(e?.message || e).slice(0, 300), ms: Date.now() - t0 };
+    return { plataforma, estado: 'error', texto: '', citas: [], motivo: String(e?.message || e).slice(0, 300), ms: Date.now() - t0, uso: SIN_USO };
   }
 }
 
-async function consultar(p: Plataforma, q: string, llave: string, pais: string): Promise<{ texto: string; citas: string[]; modelo: string }> {
+type Uso = { ent: number; sal: number; busquedas: number };
+const SIN_USO: Uso = { ent: 0, sal: 0, busquedas: 0 };
+
+async function consultar(p: Plataforma, q: string, llave: string, pais: string): Promise<{ texto: string; citas: string[]; modelo: string; uso: Uso }> {
   if (p === 'chatgpt') {
     const r = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST', headers: { Authorization: `Bearer ${llave}`, 'Content-Type': 'application/json' },
@@ -64,6 +71,7 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
     if (j.error) throw new Error(j.error.message);
     return {
       modelo: j.model || 'gpt-5',
+      uso: { ent: j.usage?.input_tokens || 0, sal: j.usage?.output_tokens || 0, busquedas: 0 },
       texto: (j.output || []).flatMap((o: any) => (o.content || []).map((c: any) => c.text || '')).join(''),
       citas: sinDuplicar((j.output || []).flatMap((o: any) => (o.content || []).flatMap((c: any) => (c.annotations || []).map((a: any) => a.url)))),
     };
@@ -79,6 +87,7 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
     const c = j.candidates?.[0];
     return {
       modelo: 'gemini-2.5-flash',
+      uso: { ent: j.usageMetadata?.promptTokenCount || 0, sal: j.usageMetadata?.candidatesTokenCount || 0, busquedas: 0 },
       texto: (c?.content?.parts || []).map((x: any) => x.text || '').join(''),
       // Gemini devuelve el dominio en `title` y un redirector en `uri`; el
       // dominio es lo que sirve para saber a quién está citando.
@@ -105,6 +114,7 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
     if (j.error) throw new Error(j.error.message);
     return {
       modelo: j.model || 'claude-sonnet-5',
+      uso: { ent: j.usage?.input_tokens || 0, sal: j.usage?.output_tokens || 0, busquedas: j.usage?.server_tool_use?.web_search_requests || 0 },
       texto: (j.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join(''),
       citas: sinDuplicar((j.content || []).flatMap((b: any) => (b.citations || []).map((x: any) => x.url))),
     };
@@ -129,6 +139,7 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
     const texto = (j.output || []).flatMap((o: any) => (o.content || []).map((c: any) => c.text || '')).join('') || j.output_text || '';
     return {
       modelo: j.model || 'perplexity/sonar', texto,
+      uso: { ent: j.usage?.input_tokens || 0, sal: j.usage?.output_tokens || 0, busquedas: j.usage?.num_search_queries || 0 },
       /* Las fuentes vienen como un ELEMENTO PROPIO del `output`, con
          `type: 'search_results'` — no dentro de `content[].annotations`, que es
          donde las buscaba la versión anterior y por eso salían siempre vacías.
@@ -153,5 +164,8 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
   });
   const j: any = await r.json();
   if (j.error) throw new Error(j.error.message || JSON.stringify(j.error));
-  return { modelo: j.model || 'grok-4', texto: j.choices?.[0]?.message?.content || '', citas: sinDuplicar(j.citations || []) };
+  return {
+    modelo: j.model || 'grok-4', texto: j.choices?.[0]?.message?.content || '', citas: sinDuplicar(j.citations || []),
+    uso: { ent: j.usage?.prompt_tokens || 0, sal: j.usage?.completion_tokens || 0, busquedas: j.usage?.num_sources_used || 0 },
+  };
 }

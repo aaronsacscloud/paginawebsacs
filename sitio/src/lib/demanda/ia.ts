@@ -52,12 +52,46 @@ const PRECIOS: Record<string, { in: number; out: number }> = {
   'gpt-5': { in: 1.25, out: 10 },
   'gpt-5-pro': { in: 15, out: 120 },
   'openai/gpt-oss-120b': { in: 0.15, out: 0.75 },
+  // Solo lo usa la medición GEO, no el motor: ahí Perplexity se consulta como
+  // plataforma —«¿qué le contesta a un comprador?»— y no como proveedor.
+  'perplexity/sonar': { in: 1, out: 1 },
 };
 
-const costoDe = (modelo: string, ent: number, sal: number) => {
-  const p = PRECIOS[modelo];
-  return p ? (ent * p.in + sal * p.out) / 1_000_000 : 0;
+/* Las APIs devuelven el modelo CON FECHA —`gpt-5-2025-08-07`, no `gpt-5`— y la
+   tabla está escrita sin ella, que es como uno pide el modelo. Buscar solo por
+   igualdad convertía la llamada más cara de la medición (22,582 tokens de
+   entrada, ~$0.06) en un cero perfecto.
+
+   Se busca primero exacto y luego por prefijo MÁS LARGO. Lo del prefijo más
+   largo no es un detalle: si se tomara el primero que empata, `gpt-5-pro-...`
+   caería en la tarifa de `gpt-5` y se cobraría doce veces menos de lo real. */
+const PREFIJOS = Object.keys(PRECIOS).sort((a, b) => b.length - a.length);
+
+export const costoDe = (modelo: string, ent: number, sal: number) => {
+  const p = PRECIOS[modelo] || PRECIOS[PREFIJOS.find(k => modelo.startsWith(k)) || ''];
+  if (!p) {
+    /* «Precio desconocido» tiene que DOLER en la bitácora. Antes se devolvía
+       cero en silencio y el presupuesto del mes se quedaba corto sin que nadie
+       supiera por cuánto. */
+    if (ent || sal) console.warn(`[ia] sin tarifa para «${modelo}»: ${ent + sal} tokens contados como $0. Agrégalo a PRECIOS.`);
+    return 0;
+  }
+  return (ent * p.in + sal * p.out) / 1_000_000;
 };
+
+/* La medición GEO llama a las plataformas por HTTP directo, no por `preguntar`:
+   tiene que preguntar TAL CUAL, sin sistema ni esquema, o deja de medir lo que
+   ve un comprador. El efecto secundario fue que ese gasto no pasaba por aquí y
+   por tanto no existía para el presupuesto: `de_ia_muestras.costo_usd` salía en
+   cero en las 68 muestras, y el tope mensual de $150 no lo veía venir.
+
+   Esto le da la misma puerta de entrada a `ia_uso` sin obligarla a pasar por el
+   contrato de `preguntar`, que es justo lo que no puede usar. */
+export async function anotarUso(modelo: string, proposito: string, ent: number, sal: number, ok: boolean, error: string | null, ms: number, busquedas = 0) {
+  const costo = costoDe(modelo, ent, sal);
+  await registrar(modelo.includes(':') ? '' : 'geo', modelo, proposito, ent, sal, costo, ok, error, ms, busquedas);
+  return costo;
+}
 
 export const disponibles = (): Proveedor[] =>
   (Object.keys(LLAVE) as Proveedor[]).filter(p => env(LLAVE[p]).length > 0);
@@ -328,11 +362,11 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
 
 /** Todo queda en ia_uso, venga del proveedor que venga: el gasto del mes es uno
  *  solo aunque las facturas sean cuatro. */
-async function registrar(prov: string, modelo: string, agente: string, ent: number, sal: number, costo: number, ok: boolean, error: string | null, ms: number) {
+async function registrar(prov: string, modelo: string, agente: string, ent: number, sal: number, costo: number, ok: boolean, error: string | null, ms: number, busquedas = 0) {
   try {
     await supabase.from('ia_uso').insert({
-      modelo: `${prov}:${modelo}`, proposito: `demanda:${agente}`,
-      input_tokens: ent, output_tokens: sal, cache_read: 0, cache_write: 0, busquedas_web: 0,
+      modelo: prov ? `${prov}:${modelo}` : modelo, proposito: `demanda:${agente}`,
+      input_tokens: ent, output_tokens: sal, cache_read: 0, cache_write: 0, busquedas_web: busquedas,
       costo_usd: costo, ok, error: error ? error.slice(0, 300) : null, ms,
     });
   } catch { /* medir no puede tumbar lo que mide */ }

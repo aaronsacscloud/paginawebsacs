@@ -9,7 +9,7 @@
 // arrastra el resultado; un hueco declarado se ve y se arregla.
 import { supabase } from '../../supabase';
 import { preguntarA, plataformasDisponibles, type Plataforma } from './proveedores';
-import { preguntar } from '../ia';
+import { preguntar, anotarUso } from '../ia';
 import { registrar } from '../handlers';
 import { diaCdmx } from '../fechas';
 import type { ResultadoHandler } from '../tipos';
@@ -54,6 +54,19 @@ export async function medirPrompt(promptId: string, texto: string, pais = 'MX'):
   const respuestas = await Promise.all(plataformas.map(p => preguntarA(p, texto, pais)));
 
   for (const r of respuestas) {
+    /* El gasto se apunta ANTES de mirar si la muestra sirve. Una respuesta que
+       llegó y luego no se pudo aprovechar se pagó igual, y el presupuesto del
+       mes tiene que verla. Al revés —cobrar solo lo aprovechado— el tope de
+       $150 se rebasa sin que nadie lo note, que es lo que venía pasando. */
+    let costoPlataforma = 0;
+    if (r.uso && (r.uso.ent || r.uso.sal)) {
+      try {
+        costoPlataforma = await anotarUso(r.modelo || String(r.plataforma), `geo:${r.plataforma}`,
+          r.uso.ent, r.uso.sal, r.estado === 'ok', r.motivo || null, r.ms, r.uso.busquedas);
+        costo += costoPlataforma;
+      } catch { /* medir el gasto no puede tumbar la medición */ }
+    }
+
     if (r.estado !== 'ok' || !r.texto) {
       const { error } = await supabase.from('de_ia_muestras').upsert({
         prompt_id: promptId, plataforma: r.plataforma, modelo: r.modelo || null,
@@ -99,6 +112,7 @@ export async function medirPrompt(promptId: string, texto: string, pais = 'MX'):
       // La respuesta completa se guarda: dentro de seis meses, cuando el número
       // haya cambiado, la única forma de saber POR QUÉ es haberla guardado.
       respuesta: { texto: r.texto.slice(0, 20000), ms: r.ms },
+      costo_usd: costoPlataforma + (e.costo_usd || 0),
       confianza: enTexto === !!d.menciona_sacs ? 0.95 : 0.6,
     }, { onConflict: 'prompt_id,plataforma,fecha' });
     /* Si esto falla, la medición se PAGÓ (cuatro llamadas a IAs más el

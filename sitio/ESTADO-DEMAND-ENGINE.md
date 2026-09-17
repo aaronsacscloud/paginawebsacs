@@ -1211,3 +1211,91 @@ Se rastreó de nuevo (105 de 127 páginas frescas) antes de tocar nada.
 1. Experimentos (A/B de títulos y formatos).
 2. Las 7 órdenes de trabajo del sitio.
 3. El contenido de WhatsApp, que es el hueco más grande que encontró el motor.
+
+---
+
+## 17-sep-2026 · Las cuentas de IA y por qué el AVS era 0
+
+### Perplexity contestaba sin buscar
+
+`perplexity/sonar` en `/v1/responses` responde **de su propia memoria** si no se
+le pasa `tools: [{ type: 'web_search' }]`. No da error, no avisa: contesta bien
+y sin una sola fuente. Así estuvimos midiendo lo que el modelo recuerda de su
+entrenamiento en vez de lo que ve un usuario de Perplexity en pantalla — que es
+justo lo que la gente usa Perplexity para hacer.
+
+17 muestras con cero fuentes que parecían «la IA no cita a nadie».
+
+Y las fuentes **no** vienen donde uno las busca: son un elemento propio del
+`output` con `type: 'search_results'`, no `content[].annotations`. Se leen las
+dos formas porque las dos existen.
+
+### Cada plataforma guarda las citas distinto
+
+ChatGPT y Perplexity devuelven la URL completa; **Gemini devuelve solo el
+dominio** en `title` (su `uri` es un redirector de Google que no dice de quién
+es la fuente). Cualquier cosa que agrupe citas por dominio tiene que aceptar las
+dos formas — de ahí la función `de_dominio_citado()`.
+
+Sin eso, 199 citas se agrupaban bajo un dominio vacío y parecía que nadie citaba
+nada.
+
+### Quién SÍ está citado (y nosotros no)
+
+Con la medición arreglada, los dominios que las IAs usan como fuente:
+
+```
+treinta.co · mproerp.com · alegra.com · emergeapp.net · joor.com · orisha.com
+youtube.com · syskapos.com · sicarx.com · bind.com.mx · lightspeedhq.com
+gestionqbsmoda.com · sizesandcolors.com · infor.com · powergest.com · capterra.mx
+```
+
+`sacscloud.com` **no aparece ninguna vez**. Y dos de esa lista no son
+competidores: **capterra.mx** (directorio de reseñas) y **youtube.com**. Son
+superficies de terceros donde no hay que ganarle a nadie — hay que existir. Es
+el camino más corto a la primera cita, más corto que otro artículo propio.
+
+### El saldo de las cuentas: lo que enseñó el apagón
+
+Anthropic y OpenAI se quedaron sin crédito. Lo importante no es el apagón, es lo
+que se vio al medirlo:
+
+- **9,152 llamadas fallidas en cinco días**, 5,474 en un solo día. No cuestan
+  dinero (un 400 no se cobra), pero cada una es un viaje de red antes de empezar
+  a trabajar y deja un fallo en `ia_uso` que no es un fallo del motor. Con miles
+  así, la bitácora deja de servir para encontrar los fallos que sí importan.
+- **La conmutación entre proveedores funcionaba** —por eso nadie lo vio: el
+  trabajo salía por Gemini—. Lo que faltaba era **memoria**: cada llamada volvía
+  a descubrir lo mismo desde cero. Ahora un proveedor que responde por saldo o
+  llave inválida queda apuntado media hora, en memoria y en
+  `de_config.umbrales.ia_sin_saldo`.
+- `quota` y `exceeded` quedan FUERA de esa marca aunque sí disparen la
+  conmutación: en Gemini casi siempre son el límite **por minuto**, que se libera
+  solo. Marcar a Gemini media hora por un límite de sesenta segundos sería
+  cambiar un problema por otro peor.
+- Si TODOS están marcados se intenta igual con el orden completo. Una marca
+  vieja no puede dejar al motor mudo.
+
+**El CRM no tiene esa conmutación** (solo respaldo de plantilla de WhatsApp):
+`agente:silencio` y `agente:respuesta` simplemente no corrieron. Ningún cliente
+quedó sin contestar —se verificó: 0 conversaciones con entrante sin respuesta—
+pero el seguimiento de leads callados se detuvo. Es un hueco pendiente.
+
+### La medición GEO gastaba sin contarlo
+
+`medirPrompt` sumaba solo el extractor. Las **cuatro llamadas a las plataformas**
+no pasaban por `preguntar()` —no pueden: tienen que preguntar tal cual, sin
+sistema ni esquema, o dejan de medir lo que ve un comprador— y por eso no
+entraban a `ia_uso` ni al presupuesto. Las 68 muestras decían `costo_usd = 0`.
+
+Con un tope de $150 al mes, eso es un tope que no ve venir su propio gasto. Se
+agregó `anotarUso()` en `ia.ts`: la misma puerta a `ia_uso` sin obligar a pasar
+por el contrato de `preguntar`.
+
+El gasto se apunta **antes** de mirar si la muestra sirve: una respuesta que
+llegó y luego no se pudo aprovechar se pagó igual.
+
+### Contexto de gasto
+
+El motor lleva **$3.64 de $150** en el mes. Lo que se comió el saldo de las
+cuentas fue el CRM (agente de Trabajo Inteligente, ABM, guiones), no esto.
