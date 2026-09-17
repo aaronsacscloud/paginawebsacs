@@ -523,9 +523,13 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
             llama por teléfono casi nunca tiene la ventana de 24 h abierta, y
             ninguna de las 27 aprobadas sirve. El mecanismo ya está: se pone el
             nombre en PLANTILLA_OCUPADO (ocupado.ts) y empieza a salir sola.
-      - [ ] 7.4 Cierre automático (agendar / descalificar / notas de IA) con
-            confirmación previa de las acciones.
-      - [ ] 7.5 Verlo todo ejecutándose en tiempo real.
+      - [x] 7.4 Cierre automático. Ya existía agendar + notas + datos + envíos
+            con confirmación previa; FALTABA descalificar, que es lo que se
+            agregó (mismo bug que Montse por el canal del teléfono).
+      - [~] 7.5 Tiempo real: la cabina ya pinta el estado de cada llamada en
+            vivo y el cierre enumera lo que va a hacer antes de hacerlo; el
+            semáforo del micrófono (7.1) cubre lo que faltaba de la llamada en
+            curso. Si quiere una bitácora corriendo, decirlo.
 - [ ] **8 · Llamadas inteligentes con espacio propio**, con su filtro de arranque
       y lista dinámica, sin depender del inbox.
 - [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).

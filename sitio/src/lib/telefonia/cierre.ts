@@ -98,14 +98,14 @@ Tu trabajo: dejar la llamada cerrada en el CRM. Responde SOLO un JSON válido co
  "compromisos": [{"tipo":"llamada|reunion","fecha":"YYYY-MM-DD","hora":"HH:MM","duracion_min":15,"motivo":"…","reunion_tipo":"demo|seguimiento|cotizacion|llamada-discovery","confianza":0.0-1.0}],
  "datos": [{"campo":"…","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":false}],
  "envios": [{"tema":"…","detalle":"qué pidió exactamente","conocimiento_id":"uuid o null"}],
- "etapa": "lead_calificado|null"
+ "etapa": "lead_calificado|descalificado|null"
 }
 REGLAS:
 - "resultado": volver_llamar si pidió que se le marque después; dieron_datos si dio datos pero no hubo compromiso; no_interesa si lo dijo claramente; buzon si en realidad era una grabadora; si no, contesto.
 - "compromisos": SOLO los que tengan fecha u hora dichas o deducibles («el jueves», «mañana a las 4», «la otra semana» = mismo día de la semana + 7). Hoy es ${hoy.dia} ${hoy.fecha}, ${hoy.hora} (hora del centro de México). Si dijo hora sin fecha, es hoy si aún no pasa y mañana si ya pasó. Sin hora: 10:00. «Te marco» = llamada (15 min, reunion_tipo llamada-discovery); «vemos el sistema / una demo / me lo enseñas» = reunion (60 min, demo). Fines de semana pasan al lunes. Nada de compromisos vagos («luego te busco»).
 - "datos": solo lo dicho EXPLÍCITAMENTE. Campos posibles: ${CAMPOS_LEAD.join(', ')}. «sucursales» es un número; «empresa» es el nombre de su marca/tienda; «giro» qué vende. Si CONTRADICE lo que el CRM tiene, "corrige": true.
 - "envios": TODO lo que el vendedor prometió mandar (información, precios, un PDF, un video, una liga, cómo funciona algo). Si el tema coincide con uno de LO QUE YA SABEMOS RESPONDER, pon su id en conocimiento_id; si no, null.
-- "etapa": lead_calificado solo si quedó claro que es dueño/decisor de una tienda de moda con interés real; si no, null.
+- "etapa": lead_calificado solo si quedó claro que es dueño/decisor de una tienda de moda con interés real. descalificado si dijo que NO le interesa, que no es para él, que no tiene tienda, o que ya no lo contacten — es decir, siempre que "resultado" sea no_interesa. Si no es ninguno de los dos, null. Un «ahora no puedo hablar» o «márcame luego» NO es descalificado: eso es volver_llamar.
 - "no_llamar": true solo si pidió que no se le vuelva a llamar, y entonces "no_llamar_evidencia" trae sus palabras.
 
 LO QUE EL CRM YA TIENE: contacto «${[c?.nombre, c?.apellido].filter(Boolean).join(' ') || it.nombre || '?'}», puesto ${c?.puesto || '?'}, correo ${c?.email || 'ninguno'}, giro ${c?.giro || emp?.giro || '?'}, tiendas ${c?.sucursales_interes ?? emp?.sucursales ?? '?'}, empresa ${emp?.nombre_comercial || emp?.nombre || it.empresa || '?'}, ciudad ${emp?.ciudad || '?'}, etapa ${c?.lifecycle_stage || '?'}.
@@ -136,7 +136,7 @@ ${dialogo.slice(0, 9000)}`;
       datos: (Array.isArray(p.datos) ? p.datos : []).filter((d: any) => d && (CAMPOS_LEAD as readonly string[]).includes(String(d.campo)) && String(d.valor || '').trim()).slice(0, 12),
       envios: (Array.isArray(p.envios) ? p.envios : []).filter((e: any) => e && String(e.tema || '').trim())
         .map((e: any) => ({ tema: String(e.tema).slice(0, 120), detalle: String(e.detalle || '').slice(0, 300), conocimiento_id: conocidos.has(String(e.conocimiento_id)) ? String(e.conocimiento_id) : null })).slice(0, 5),
-      etapa: p.etapa === 'lead_calificado' ? 'lead_calificado' : null,
+      etapa: p.etapa === 'lead_calificado' ? 'lead_calificado' : p.etapa === 'descalificado' ? 'descalificado' : null,
     };
 
     // Los envíos nacen como filas: «listo» si ya sabemos qué mandar, «falta» si hay que preguntarle al vendedor.
@@ -213,6 +213,21 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
     if (it.contact_id && p.datos?.length) {
       const { cambios } = await aplicarDatos(it.contact_id, p.datos, { fuente: 'llamada', conversation_id: it.conversation_id });
       if (cambios.length) hecho.push(`${cambios.length} dato${cambios.length > 1 ? 's' : ''}: ${cambios.map(c => c.campo).join(', ')}`);
+    }
+    /* ── LA BAJA, QUE ES LA MITAD QUE FALTABA ──────────────────────────────
+       La IA ya detectaba `resultado: no_interesa` —sabía perfectamente que el
+       prospecto había dicho que no— pero `etapa` solo aceptaba
+       `lead_calificado`, así que nadie lo descalificaba: el contacto se quedaba
+       en `lead`, con su cadencia viva y dentro de las secuencias, y le seguían
+       llegando correos después de haber dicho que no por teléfono.
+       Es EXACTAMENTE el caso Montse (15-sep) pero por el otro canal. Se reusa
+       `aplicarRechazo`, el mismo camino que ya arregló el de WhatsApp: baja la
+       etapa, termina la cadencia, detiene las secuencias y veta los envíos
+       pendientes. Una sola forma de descalificar en todo el CRM. */
+    if (it.contact_id && p.etapa === 'descalificado') {
+      const { aplicarRechazo } = await import('../crm/ti/agente');
+      await aplicarRechazo(it.contact_id, `lo dijo en la llamada: «${String(p.nota || '').slice(0, 120)}»`);
+      hecho.push('etapa: descalificado, y fuera de cadencias y secuencias');
     }
     // ── Etapa: solo se sube, nunca se baja ────────────────────────────────
     if (it.contact_id && p.etapa === 'lead_calificado') {

@@ -786,6 +786,14 @@ export default function Cabina({ qs, descripcion, total, yo, onAbrirConversacion
                           <div key={`d${i}`}>· {d.corrige ? 'Corregir' : 'Llenar'} <b>{d.campo}</b>: {String(d.valor)}</div>
                         ))}
                         {propuesta.etapa === 'lead_calificado' && <div>· Pasa a lead calificado</div>}
+                        {/* La baja se pinta en rojo y dice TODO lo que apaga: es
+                            la única acción del cierre que es difícil de deshacer,
+                            así que tiene que saltar antes de confirmar. */}
+                        {propuesta.etapa === 'descalificado' && (
+                          <div style={{ color: '#C0554E', fontWeight: 700 }}>
+                            · Se descalifica, sale de la cadencia del agente y de todas las secuencias
+                          </div>
+                        )}
                         {(propuesta.envios || []).filter((e: any) => e.estado !== 'falta').map((e: any) => (
                           <div key={e.id}>· Mandarle <b>{e.tema}</b> en PDF por WhatsApp{e.estado === 'enviado' ? ' — ya salió' : e.estado === 'pendiente_ventana' ? ' — sale cuando conteste' : e.estado === 'omitido' ? ' — no' : e.estado === 'sin_via' || e.estado === 'fallo' ? ' — quedó como tarea' : ''}</div>
                         ))}
