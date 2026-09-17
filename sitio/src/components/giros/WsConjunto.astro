@@ -77,9 +77,11 @@ const fmt = (n: number) => '$' + n.toLocaleString('es-MX');
   suelta
 >
   <div class="wc" id="ws-conjunto" data-clientes={JSON.stringify(clientes)}>
+    <span class="wc-k">Elige quién entra a la tienda</span>
     <div class="wc-tabs" role="radiogroup" aria-label="Quién es el cliente">
       {Object.entries(clientes).map(([k, c], i) => <button type="button" class:list={['wc-tab', { 'is-on': i === 0 }]} data-c={k} aria-pressed={i === 0 ? 'true' : 'false'}>{c.rot}</button>)}
     </div>
+    <div class="wc-leyenda"><span><i class="wc-l wc-l--a"></i>Hay aquí</span><span><i class="wc-l wc-l--o"></i>En otra tienda</span><span><i class="wc-l wc-l--p"></i>Sobre pedido</span><span><i class="wc-l wc-l--f"></i>Se va a la tienda de enfrente</span></div>
     <div class="wc-grid">
       <ol class="wc-fichas" id="wc-fichas"></ol>
       <div class="wc-ticket">
