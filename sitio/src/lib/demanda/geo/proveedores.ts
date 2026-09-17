@@ -82,6 +82,11 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
       texto: (c?.content?.parts || []).map((x: any) => x.text || '').join(''),
       // Gemini devuelve el dominio en `title` y un redirector en `uri`; el
       // dominio es lo que sirve para saber a quién está citando.
+      /* Gemini da `title` (que en sus chunks ES el dominio, tipo
+         «solopsoftware.com») y `uri` (un redirector de Google que no dice de
+         quién es la fuente). Se prefiere el título justamente por eso, pero hay
+         que recordar que aquí NO viene una URL completa: quien lo lea después
+         tiene que aceptar las dos formas. */
       citas: sinDuplicar((c?.groundingMetadata?.groundingChunks || []).map((x: any) => x.web?.title || x.web?.uri)),
     };
   }
@@ -111,17 +116,29 @@ async function consultar(p: Plataforma, q: string, llave: string, pais: string):
        circulando; si responde «model not supported», es esto. */
     const r = await fetch('https://api.perplexity.ai/v1/responses', {
       method: 'POST', headers: { Authorization: `Bearer ${llave}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'perplexity/sonar', input: q }),
+      /* `tools: web_search` NO es opcional aquí, y es el bug más caro que ha
+         tenido esta medición: sin él, `perplexity/sonar` contesta de su propia
+         memoria SIN BUSCAR — o sea que estábamos midiendo lo que el modelo
+         recuerda, no lo que un usuario de Perplexity ve en pantalla. Y buscar
+         es exactamente para lo que la gente usa Perplexity.
+         17 mediciones con 0 fuentes, que parecían «la IA no cita». */
+      body: JSON.stringify({ model: 'perplexity/sonar', input: q, tools: [{ type: 'web_search' }] }),
     });
     const j: any = await r.json();
     if (j.error) throw new Error(j.error.message || JSON.stringify(j.error));
     const texto = (j.output || []).flatMap((o: any) => (o.content || []).map((c: any) => c.text || '')).join('') || j.output_text || '';
     return {
       modelo: j.model || 'perplexity/sonar', texto,
+      /* Las fuentes vienen como un ELEMENTO PROPIO del `output`, con
+         `type: 'search_results'` — no dentro de `content[].annotations`, que es
+         donde las buscaba la versión anterior y por eso salían siempre vacías.
+         Se leen las dos formas porque las dos existen: el bloque de búsqueda y
+         las citas en línea del mensaje. */
       citas: sinDuplicar([
+        ...(j.output || [])
+          .filter((o: any) => o.type === 'search_results')
+          .flatMap((o: any) => (o.results || []).map((r: any) => r.url)),
         ...(j.output || []).flatMap((o: any) => (o.content || []).flatMap((c: any) => (c.annotations || []).map((a: any) => a.url || a.uri))),
-        ...(j.citations || []),
-        ...(j.search_results || []).map((s: any) => s.url),
       ]),
     };
   }
