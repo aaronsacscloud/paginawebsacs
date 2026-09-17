@@ -928,6 +928,16 @@ cualquier cosa se silencia a la semana, y entonces no avisa por nada):
 Avisa **como mucho una vez al día** (la clave lleva la fecha): un motor callado
 tres días avisando cada media hora convierte la campana en ruido.
 
+**El latido deja huella de que corrió** (`de_config.latido_at`), sano o no. Sin
+eso, «corrió y todo bien» era indistinguible de «no corrió» — y el fallo que el
+latido NO puede reportar es el suyo propio. Con la marca, ese silencio envejece
+y se ve: si pasan más de 90 minutos, el propio latido lo levanta como signo
+(«lo que ves puede estar viejo»). Probado simulando 3 h sin correr.
+
+Es el problema clásico del vigilante. La salida barata no es otro vigilante
+—tendría el mismo problema un nivel más arriba— sino hacer que **el silencio sea
+medible**.
+
 El panel va ARRIBA de todo en la pantalla Sistema:
 https://code.sacscloud.com/shots/4bb8538b9f6fc88e.png
 
