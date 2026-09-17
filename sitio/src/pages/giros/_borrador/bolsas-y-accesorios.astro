@@ -1,0 +1,65 @@
+---
+/**
+ * Landing BOLSAS Y ACCESORIOS DE PIEL (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el
+ * contenido vive en src/data/giros/bolsas-y-accesorios.ts y el bloque propio es BoLote ("El lote
+ * se acaba y ese camel ya no vuelve").
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GiroBanner from '../../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../../components/CtaDudas.astro';
+import BoLote from '../../../components/giros/BoLote.astro';
+import GiroEscala from '../../../components/giros/GiroEscala.astro';
+import { bannerBO, manifiestoBO, variantesBO, cortinaBO, casosBO, seccionesBO, planoBO, pasosBO, ticketBO, escalaBO, problemasBO, cifrasBO } from '../../../data/giros/bolsas-y-accesorios';
+---
+<BaseLayout
+  title="Sistema para marcas y tiendas de bolsas de piel — Sacs"
+  description="Sistema para marcas y tiendas de bolsas y accesorios de piel: el lote con su costo por decímetro, el consumo de cada modelo, el vale de piel del taller, modelo por color y por piel, la reparación y el grabado como servicio, el mayoreo con su piso de precio y la tienda en línea."
+>
+  <GiroBanner eyebrow={bannerBO.eyebrow} titulo={bannerBO.titulo} resalte={bannerBO.resalte} sub={bannerBO.sub} foto={bannerBO.foto} fotoAlt={bannerBO.fotoAlt} avisos={bannerBO.avisos} selloMarcas="negocios de moda y marroquinería en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoBO.intro} frases={manifiestoBO.frases} cierre={manifiestoBO.cierre} />
+
+  <SuiteVariantes eyebrow={variantesBO.eyebrow} titulo={variantesBO.titulo} resalte={variantesBO.resalte} sub={variantesBO.sub} ejeA={variantesBO.ejeA} filas={variantesBO.filas} matriz={variantesBO.matriz} unidad={variantesBO.unidad} genero={variantesBO.genero} leyendas={variantesBO.leyendas} remate={variantesBO.remate} />
+
+  <SuiteCortina titulo={cortinaBO.titulo} pieAntes={cortinaBO.pieAntes} fotoAntes={cortinaBO.fotoAntes} fotoDespues={cortinaBO.fotoDespues} altAntes={cortinaBO.altAntes} altDespues={cortinaBO.altDespues} libreta={cortinaBO.libreta} filas={cortinaBO.filas} pieDespues={cortinaBO.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasBO.entrada} quienes={problemasBO.quienes} doc1={problemasBO.doc1} doc2={problemasBO.doc2} filas={problemasBO.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que el lote se acaba." />
+
+  <SuiteCifras foto={cifrasBO.foto} alt={cifrasBO.alt} frase={cifrasBO.frase} encuadre={cifrasBO.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y PIEL' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que una marca de bolsas gana o pierde el dinero. Toca cada uno." casos={casosBO} />
+
+  <SuiteScroll eyebrow="Bolsas y accesorios de piel" titulo="La pared, la caja, el taller y la trastienda, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de una marca de bolsas real: el lote con su costo por decímetro, el consumo de cada modelo, el vale de piel, la nota de reparación y el grabado que se cobra en el mismo ticket." secciones={seccionesBO} />
+
+  <BoLote />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="Del changarro con una vitrina a la marca con taller en León." descripcion="El negocio cambia con cada tamaño: quién compra la piel, quién acomoda los moldes, quién decide el precio de mayoreo y qué mira la dirección. Elige el tuyo." niveles={escalaBO} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la clienta, recorre la pared de bolsas por color, prueba el asa, pasa por el rincón de caballero y paga en la caja, donde también se graban las iniciales. Atrás están el taller y la trastienda de envíos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu tienda de piel — planta baja" zonas={planoBO} todoRot="Bolsas y accesorios de piel" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes la feria encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosBO} lineas={ticketBO.lineas} total={ticketBO.total} remate="<b>Tu histórico no se tira.</b> Se migran tus modelos con sus colores y sus pieles, tus existencias por tienda, tus apartados y, lo que más vale, <b>tus lotes con su costo por decímetro</b>. Nunca te pedimos volver a medir la piel." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propios lotes y tus márgenes reales en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus lotes de piel y tus precios de mayoreo reales. 30 min, sin compromiso." />
+</BaseLayout>

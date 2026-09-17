@@ -1,0 +1,115 @@
+---
+/**
+ * BoLote — "El lote se acaba y ese camel ya no vuelve", el bloque propio de bolsas y accesorios de
+ * piel (17-sep-2026, ficha v2 aprobada 9/9/9/9/9 por la referee del giro tras reprobar la v1 con un
+ * 4 en este mismo bloque: la primera versión era el de joyería con decímetros en vez de gramos).
+ *
+ * Lo que solo pasa aquí, y NO es "sube el insumo y se come el margen" (eso le pasa a todos):
+ *   · La tela la vuelves a pedir igual. El lote de piel, cuando se acaba, se acabó: el siguiente
+ *     sale medio tono distinto aunque la etiqueta diga lo mismo.
+ *   · El cuero es una pieza irregular con cicatrices: no se calcula, se acomoda. Dos bandas del
+ *     mismo lote dan cinco Totes o cuatro según dónde traigan la garrapata, y eso no se sabe hasta
+ *     que se corta.
+ *   · La bolsa del aparador se quema: la vaqueta se oscurece con la luz y el manoseo, y esa pieza
+ *     ya no empata con las de la pared.
+ *
+ * Todos los números están sin IVA y verificados por la referee: etiqueta $2,490 con IVA = $2,146
+ * sin IVA; costo $1,036 con el lote 17 y $1,139.50 con el 23; margen 51.7 % y 46.9 %; +$249 de
+ * etiqueta para volver al margen de antes; y el mayoreo a $1,073 sin IVA, que con el lote de
+ * agosto queda $66 abajo del costo.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+---
+<BloqueProducto
+  encabezado="El lote se acaba y ese camel ya no vuelve."
+  titulo="El mismo modelo, dos lotes, y uno ya no existe."
+  descripcion="La tela la vuelves a pedir igual. El lote de piel, cuando se acaba, se acabó: el siguiente sale medio tono distinto aunque la etiqueta diga lo mismo. Y el cuero no se calcula, se acomoda: dos bandas dan cinco bolsas o cuatro según dónde traigan la garrapata."
+  vinetas={[
+    { label: 'Cada color nace de un lote con su costo', detail: 'El decímetro del lote de marzo y el del de agosto no valen lo mismo, y la etiqueta en la pared sí es la misma. El sistema te dice de qué lote salió cada pieza.' },
+    { label: 'El mayoreo es donde se pierde sin darse cuenta', detail: 'La misma bolsa, del mismo lote, sale por dos canales con dos precios. Con el lote caro, el pedido de la boutique se va abajo del costo.' },
+    { label: 'La del aparador se quema', detail: 'La vaqueta se oscurece con la luz y el manoseo en semanas. Esa pieza ya no empata con su caja ni con la pared, y esa merma nadie la apunta.' },
+  ]}
+  suelta
+>
+  <div class="bo" id="bo-lote">
+    <div class="bo-cards">
+      <article class="bo-card">
+        <span class="bo-sw" style="background:#C79A6B"></span>
+        <b>Lote 17 · marzo</b>
+        <span class="bo-dm">$12.80 el dm²</span>
+        <span class="bo-q">quedan 60 dm²</span>
+        <dl><div><dt>Costo</dt><dd>$1,036</dd></div><div><dt>Margen</dt><dd>51.7 %</dd></div></dl>
+      </article>
+      <div class="bo-medio">
+        <span class="bo-et">Misma etiqueta: $2,490</span>
+        <b class="bo-num">+$249</b>
+        <p>lo que tiene que subir la etiqueta para quedar como estabas.</p>
+        <span class="bo-mayoreo">A la boutique esa bolsa sale en <b>$1,073</b> sin IVA. Del lote de agosto te cuesta <b>$1,139</b>.</span>
+      </div>
+      <article class="bo-card">
+        <span class="bo-sw" style="background:#A97B4E"></span>
+        <b>Lote 23 · agosto</b>
+        <span class="bo-dm">$15.10 el dm²</span>
+        <span class="bo-q">1,200 dm²</span>
+        <dl><div><dt>Costo</dt><dd>$1,139</dd></div><div><dt>Margen</dt><dd>46.9 %</dd></div></dl>
+      </article>
+    </div>
+    <div class="bo-corte">
+      <span class="bo-k">¿Qué corto con los últimos 60 dm² del lote 17?</span>
+      <div class="bo-ops">
+        <button type="button" data-o="tote" class="is-on">Una bolsa más</button>
+        <button type="button" data-o="cart">Siete carteras</button>
+      </div>
+      <p class="bo-expl" id="bo-expl">45 dm². Se vende esta semana, deja <b>$1,111</b> y el camel sigue en la pared.</p>
+      <p class="bo-nota">No hay respuesta correcta: esa es la decisión, y es la que ningún sistema de ropa tiene que tomar.</p>
+      <a class="bo-cta" href="/contacto">Verlo con mis lotes</a>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .bo { background: #fff; border: 1px solid var(--color-border, #E6E8ED); border-radius: var(--radius-xl, 20px); padding: 20px; }
+  .bo-cards { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 16px; align-items: stretch; }
+  .bo-card { background: var(--color-bg-primary, #F7F7F5); border-radius: var(--radius-lg, 16px); padding: 16px; display: flex; flex-direction: column; }
+  .bo-sw { display: block; width: 100%; height: 44px; border-radius: 8px; margin-bottom: 12px; }
+  .bo-card b { font-family: var(--font-display); font-size: 17px; letter-spacing: -0.02em; color: var(--color-text-primary); }
+  .bo-dm { font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; }
+  .bo-q { font-size: 12.5px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .bo-card dl { display: grid; gap: 4px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #E3E3DF; }
+  .bo-card dl div { display: flex; justify-content: space-between; }
+  .bo-card dt { font-size: 12px; color: var(--color-text-tertiary); }
+  .bo-card dd { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); }
+  .bo-medio { text-align: center; padding: 14px 10px; display: flex; flex-direction: column; justify-content: center; }
+  .bo-et { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); }
+  .bo-num { display: block; font-family: var(--font-display); font-size: clamp(44px, 6vw, 68px); letter-spacing: -0.045em; line-height: 1.05; color: var(--color-text-primary); margin: 6px 0; }
+  .bo-medio p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--color-text-secondary); }
+  .bo-mayoreo { display: block; margin-top: 14px; padding-top: 12px; border-top: 1px solid #E3E3DF; font-size: 12.5px; line-height: 1.45; color: var(--color-text-secondary); }
+  .bo-mayoreo b { color: #B42318; }
+  .bo-corte { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-border, #E6E8ED); }
+  .bo-k { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 10px; }
+  .bo-ops { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bo-ops button { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--color-border, #E6E8ED); background: #fff; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; }
+  .bo-ops button.is-on { background: var(--color-text-primary, #0E0D0C); border-color: var(--color-text-primary, #0E0D0C); color: #fff; }
+  .bo-expl { margin: 12px 0 0; font-size: 15px; line-height: 1.45; color: var(--color-text-primary); }
+  .bo-nota { margin: 6px 0 0; font-size: 12.5px; color: var(--color-text-tertiary); }
+  .bo-cta { display: inline-flex; margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-sm, 8px); background: var(--color-text-primary, #0E0D0C); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+  @media (max-width: 900px) { .bo-cards { grid-template-columns: 1fr; } .bo-medio { order: -1; } }
+  @media (max-width: 767px) { .bo { padding: 14px; } .bo-cta { width: 100%; justify-content: center; } }
+</style>
+
+<script>
+  (() => {
+    const el = document.getElementById('bo-lote'); if (!el) return;
+    const T = {
+      tote: '45 dm². Se vende esta semana, deja <b>$1,111</b> y el camel sigue en la pared.',
+      cart: '56 dm². Dejan <b>$2,012</b>, pero salen en tres meses y el camel desaparece de la foto.',
+    };
+    el.querySelectorAll<HTMLButtonElement>('.bo-ops button').forEach((b) => {
+      b.addEventListener('click', () => {
+        el.querySelectorAll('.bo-ops button').forEach((x) => x.classList.toggle('is-on', x === b));
+        document.getElementById('bo-expl')!.innerHTML = T[b.dataset.o as keyof typeof T];
+        (window as any).sacsPH?.('giro_bo_lote', { opcion: b.dataset.o });
+      });
+    });
+  })();
+</script>
