@@ -44,6 +44,17 @@ const ETIQUETA_ITEM: Record<string, string> = {
   pendiente: 'En espera', marcando: 'Marcando', timbrando: 'Timbrando', escuchando: 'Escuchando quién contesta',
   portero: 'Pasando la contestadora', en_linea: 'En línea', cierre: 'Cierre', hecho: 'Hecha', saltado: 'Saltada', excluido: 'Fuera de la lista',
 };
+/* Las etapas que se pueden poner al colgar. NO es el catálogo entero: `cliente`
+   pide cuenta ligada y `evangelista` se gana con el tiempo — ninguna de las dos
+   se decide en una llamada de prospección. Éstas sí. */
+const ETAPAS_CIERRE: { id: string; l: string }[] = [
+  { id: 'lead_calificado', l: 'Calificado — encaja y sigue' },
+  { id: 'oportunidad', l: 'Oportunidad — hay trato en camino' },
+  { id: 'rezagado', l: 'Rezagado — no ahora, más adelante' },
+  { id: 'descalificado', l: 'Descalificado — no encaja' },
+  { id: 'perdido_definitivo', l: 'Perdido definitivo — dijo que no vuelve' },
+];
+
 const ETIQUETA_RESULTADO: Record<string, string> = {
   contesto: 'Contestó', buzon: 'Buzón de voz', portero: 'Contestadora', no_contesto: 'No contestó', ocupado: 'Ocupado', invalido: 'Número inválido',
   volver_llamar: 'Volver a llamar', no_interesa: 'No le interesa', dieron_datos: 'Dio datos', saltado: 'Saltada', cancelado: 'Cancelada',
@@ -102,11 +113,16 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   }));
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
+  // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
+  const [etapaTocada, setEtapaTocada] = useState('');
   const notaItem = useRef<string | null>(null);
   const [tab, setTab] = useState<'lista' | 'hechas'>('lista');
 
   const sesion = est?.sesion;
   const actual = est?.actual;
+  // La etapa tocada es de ESTA llamada: al pasar al siguiente se limpia, o el
+  // «Listo: quedó en…» del anterior se leería como si fuera del nuevo.
+  useEffect(() => { setEtapaTocada(''); }, [actual?.id]);
   // Quién habla en esta sesión: 'manual' (yo), 'ia' (Fernanda sola) o 'asistido' (Fernanda abre, yo puedo tomar la llamada).
   const modo: 'manual' | 'ia' | 'asistido' = sesion?.modo && sesion.modo !== 'manual' ? sesion.modo : 'manual';
   const fernanda = modo !== 'manual';
@@ -835,6 +851,40 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       </label>
                     )}
                     <textarea value={nota} onChange={e => setNota(e.target.value)} onBlur={guardarNota} placeholder="Apunte de la llamada (se guarda en la conversación)" rows={3} style={{ ...campo, resize: 'vertical' }} />
+
+                    {/* ══ LA ETAPA, A MANO, AL COLGAR ══════════════════════════
+                        Caso del dueño (17-sep-2026): «un cliente me respondió,
+                        apareció la información, hablé con él pero realmente no
+                        era calificado; entonces al colgar sí me debe mostrar las
+                        opciones para cambiarlo de ciclo de vida».
+
+                        La IA ya propone etapa, pero sólo dos —calificado o
+                        descalificado— y sólo cuando entendió la llamada. El que
+                        habló sabe más que ella en ese momento, y si no lo puede
+                        corregir AQUÍ tiene que acordarse de entrar a la ficha
+                        después, con el siguiente ya timbrando. No se acuerda. */}
+                    {actual.contact_id && (
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={etiqueta}>Después de hablar, ¿en qué etapa queda?</span>
+                        <select value={etapaTocada || ''} disabled={!!ocupado}
+                          onChange={async e => {
+                            const v = e.target.value; if (!v) return;
+                            setEtapaTocada(v); setOcupado('etapa');
+                            const r = await fetch('/api/crm/whatsapp/etapa', {
+                              method: 'POST', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ accion: 'etapa', contact_id: actual.contact_id, etapa: v }),
+                            }).then(x => x.json()).catch(() => ({ error: 'No se pudo' }));
+                            setOcupado('');
+                            if (r?.error) { setError(r.error); setEtapaTocada(''); return; }
+                            if (r.salidas?.length) setError('');
+                          }}
+                          style={{ ...campo, cursor: 'pointer' }}>
+                          <option value="">Déjala como está</option>
+                          {ETAPAS_CIERRE.map(e => <option key={e.id} value={e.id}>{e.l}</option>)}
+                        </select>
+                        {etapaTocada && <span style={{ fontSize: 11.5, color: '#1E8A63', fontWeight: 700 }}>Listo: quedó en «{ETAPAS_CIERRE.find(x => x.id === etapaTocada)?.l}».</span>}
+                      </label>
+                    )}
                   </div>
                 )}
 

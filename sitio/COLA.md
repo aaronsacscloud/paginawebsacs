@@ -742,3 +742,31 @@ Mis diez, por orden de lo que más duele hoy:
     devolver la llamada—, cambiando el texto y metiendo la cascada de dos
     plantillas. Y la tarea SIEMPRE, se haya podido avisar o no: una llamada
     perdida en silencio es la que no se devuelve.
+
+## 17-sep-2026 — Cierre de llamada: lo que falta del caso del dueño
+
+Su caso, textual: «un cliente me respondió, apareció la información, hablé con
+él pero realmente no era calificado; entonces al colgar sí me debe mostrar las
+opciones para cambiarlo de ciclo de vida, poner una nota clara, y de ahí que ya
+me mande a la próxima; igual que me aparezca la opción del calendario ahí mismo
+en caso de que de forma automática no se haya creado alguna sesión, y si sí se
+creó algo automático que me lo diga al colgar».
+
+HECHO: el selector de etapa en el cierre (5 opciones, las que se deciden en una
+llamada). Nota y resultado ya estaban. Y «Al seguir se deja hecho» ya lista los
+compromisos con su fecha, la agenda y el calendario cuando la IA los propuso.
+
+FALTA:
+1. **El calendario cuando NO se creó nada.** Hoy, si la IA no entendió un
+   compromiso, el cierre no ofrece agendar: hay que salir a la agenda. Debería
+   salir el mismo bloque de horarios libres que lleva `SalaLlamada` (ya usa
+   `available-slots`, probado), para cerrar la fecha antes de pasar al
+   siguiente.
+2. **Decir en una línea qué quedó hecho, aunque sea nada.** Cuando la IA no
+   propone, el cierre se queda mudo y no se sabe si se creó algo o no. «No se
+   creó ningún compromiso» es información, y su ausencia se lee como «algo se
+   creó y no me lo dijeron».
+3. **Escuchar la llamada con un clic mientras timbra** (pedido aparte): hoy el
+   audio sólo llega si estás en la sala. Poder «asomarse» a un timbrado sin
+   entrar cambia cómo se decide saltar o esperar.
+
