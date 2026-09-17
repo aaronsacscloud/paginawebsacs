@@ -518,7 +518,11 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 - [ ] **7 · La sesión de llamadas, de punta a punta.**
       - [x] 7.1 Indicador en vivo: semáforo verde «Estás al aire — te escuchan».
       - [x] 7.2 Fuera la barra espaciadora; el micrófono se abre SOLO al contestar.
-      - [ ] 7.3 Ocupado + aviso por WhatsApp con reintento en 5 min.
+      - [x] 7.3 Ocupado + aviso por WhatsApp + tarea de devolver la llamada.
+            ⚠️ FALTA la plantilla UTILITY en Meta («llamada_ocupado_v1»): quien
+            llama por teléfono casi nunca tiene la ventana de 24 h abierta, y
+            ninguna de las 27 aprobadas sirve. El mecanismo ya está: se pone el
+            nombre en PLANTILLA_OCUPADO (ocupado.ts) y empieza a salir sola.
       - [ ] 7.4 Cierre automático (agendar / descalificar / notas de IA) con
             confirmación previa de las acciones.
       - [ ] 7.5 Verlo todo ejecutándose en tiempo real.

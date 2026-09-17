@@ -173,6 +173,20 @@ export default function Telefonia() {
          hasta que Twilio se rendía, sin que nadie en el CRM se enterara. */
       if (vivaRef.current || salaRef.current) {
         setEspera(call);
+        /* ══ Y SE LE AVISA, SIN QUE NADIE HAGA NADA ═══════════════════════
+           Reporte del dueño (17-sep-2026): quien marca mientras hablas escucha
+           el tono hasta que se rinde y no sabe si le fallaste o si el número
+           está muerto. El servidor le manda un WhatsApp de inmediato —«estoy en
+           otra llamada, remárcame en 5 minutos o yo te llamo»— y deja la tarea
+           de devolverle la llamada HOY, se haya podido avisar o no.
+           No bloquea nada: si falla, la llamada en espera sigue en pantalla. */
+        const de = call?.parameters?.From || call?.parameters?.from || null;
+        if (de) {
+          fetch('/api/crm/telefonia/ocupado', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telefono: de }),
+          }).catch(() => { /* el aviso es un extra, no puede tumbar la llamada viva */ });
+        }
         const limpiar = () => setEspera((c: any) => (c === call ? null : c));
         call.on('cancel', limpiar); call.on('disconnect', limpiar); call.on('reject', limpiar);
         return;
