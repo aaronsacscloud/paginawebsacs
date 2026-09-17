@@ -100,6 +100,9 @@ export type PartesCorreo = {
   cuerpo: string;
   imagen?: string | null;       // nombre del archivo en /images/mail/
   imagenAlt?: string | null;
+  /** Quién firma: sale del inquilino de correo (firma_nombre/puesto/foto). El
+   *  correo lo escribe una persona y se cierra con su cara, no con un logo. */
+  firma?: { nombre?: string | null; puesto?: string | null; foto?: string | null } | null;
   botonTexto?: string | null;
   botonUrl?: string | null;
   pieza?: string | null;        // la tabla visual del giro, del 4º correo en adelante
@@ -123,7 +126,7 @@ export type Cierre = { giro?: string | null; nombre?: string | null; pais?: stri
    equivocamos: es que le estamos cambiando la oferta a media frase.
    Son 117 cuentas y 47 correos ya agendados (16-sep-2026). El bloque se arma
    al ENVIAR, así que esto también arregla los que ya están en la cola. */
-type Oferta = { titulo: string; boton: string; frase: (giro?: string | null) => string };
+type Oferta = { titulo: string; boton: string; frase: (giro?: string | null) => string; pie?: string };
 const OFERTAS: Record<string, Oferta> = {
   /* Las rutas de ALIADOS no ofrecen demo ni diagnóstico: ofrecen una alianza.
      Se me fueron en el primer arreglo —cubrí las 215 cuentas de `diagnostico` y
@@ -218,12 +221,14 @@ function oferta(c: Cierre): Oferta {
   if (regionDe(c.pais) === 'espana' && String(c.ruta || 'demo') === 'demo') return {
     titulo: 'Media hora con quien lo conoce por dentro',
     boton: 'Reservar la media hora',
+    pie: 'De lunes a viernes, en su horario',
     frase: (giro?: string | null) => `Es el rato que reservamos para consultoría de pago y con usted no lo cobramos: nos cuenta cómo trabaja hoy y le montamos su operación de ${operacionDe(giro)} dentro del sistema, con sus modelos y sus fechas.`,
   };
   return OFERTAS[String(c.ruta || 'demo')] || {
     titulo: 'Demo en línea · 30 minutos',
     boton: 'Agendar la demo',
     frase: fraseCierre,
+    pie: 'Demos en línea de lunes a viernes, en su horario',
   };
 }
 
@@ -264,6 +269,16 @@ export function armarCorreo(p: PartesCorreo): string {
   // …y con el PAÍS de la cuenta: sin él, el pie de un correo a Madrid mandaba
   // a la página de México mientras el bloque de arriba mandaba a la de España.
   const pg = p.cierre ? paginaDe(p.cierre.giro, base, p.cierre.pais) : null;
+  /* La firma de quien escribe, con su foto en circulito: el mismo bloque que
+     usan las campañas del CRM (plantillas.ts). Sin foto, solo el nombre. */
+  const fn = p.firma?.nombre?.trim();
+  const firma = fn ? `<tr><td style="padding:2px 28px 6px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
+${p.firma?.foto ? `<td width="62" valign="middle"><img src="${esc(p.firma.foto)}" width="50" height="50" alt="" style="border-radius:50%;display:block;border:2px solid #EEECFE;" /></td>` : ''}
+<td valign="middle" style="font-family:${FUENTE};">
+<div style="font-size:14px;font-weight:bold;color:#1a1633;line-height:18px;">${esc(fn)}</div>
+${p.firma?.puesto ? `<div style="font-size:13px;color:${GRIS};line-height:17px;">${esc(p.firma.puesto)}</div>` : ''}
+</td></tr></table></td></tr>` : '';
   const ligaSitio = pg ? pg.url : base;
   const textoSitio = pg ? pg.url.replace(/^https?:\/\/(www\.)?/, '') : 'www.sacscloud.com';
 
@@ -290,10 +305,11 @@ ${cierre}
      pone el pipeline de envío, y duplicarlos daría dos ligas de baja en el
      mismo correo. -->
 <tr><td style="padding:0 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td height="1" bgcolor="${LINEA}" style="background-color:${LINEA};height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td></tr>
+${firma}
 <tr><td style="padding:18px 28px 24px;">
 <p style="margin:0;color:${MORADO_TINTA};font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:18px;">Sacscloud</p>
 <p style="margin:4px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;">${esc(firmaQueSomos(p.cierre?.pais))}</p>
-<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;Demos en línea de lunes a viernes, en su horario</p>
+<p style="margin:8px 0 0;color:${GRIS};font-family:${FUENTE};font-size:12px;line-height:17px;"><a href="${esc(ligaSitio)}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(textoSitio)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;WhatsApp <a href="https://wa.me/${WHATSAPP_NUMBER}" style="color:${MORADO_TINTA};text-decoration:none;">${esc(WHATSAPP_LEGIBLE)}</a>&nbsp;&nbsp;·&nbsp;&nbsp;${esc(oferta(p.cierre || { giro: '', nombre: '', pais: null, ruta: null }).pie || 'Demos en línea de lunes a viernes, en su horario')}</p>
 </td></tr>
 
 </table>

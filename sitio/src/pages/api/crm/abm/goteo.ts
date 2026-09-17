@@ -148,6 +148,15 @@ export const POST: APIRoute = async ({ request }) => {
     catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
   }
 
+  if (accion === 'prioridad') {
+    // 1 entra primero en el reparto del cupo, 9 al final. Lo decide una
+    // persona: mientras el dominio calienta no alcanza para todos, y quien se
+    // quedaba fuera era siempre el goteo pequeño.
+    const n = Math.min(9, Math.max(1, Math.round(Number(b.prioridad) || 5)));
+    const { error } = await supabase.from('abm_goteo').update({ prioridad: n, updated_at: new Date().toISOString() }).eq('id', b.id);
+    return error ? json({ error: error.message }, 500) : json({ ok: true, prioridad: n });
+  }
+
   if (accion === 'editar') {
     const patch: any = { updated_at: new Date().toISOString() };
     if (b.cuentas_dia !== undefined) patch.cuentas_dia = porDia(b.cuentas_dia);

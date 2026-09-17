@@ -104,7 +104,7 @@ export const GET: APIRoute = async ({ request }) => {
      `tenant_slug_intl` configurado, todo sale por el de siempre y no cambia
      nada. */
   const slugIntl = (cfg.tenant_slug_intl || '').trim();
-  const { data: inquilinos } = await supabase.from('email_tenants').select('id, slug, from_email')
+  const { data: inquilinos } = await supabase.from('email_tenants').select('id, slug, from_email, firma_nombre, firma_puesto, firma_foto_url')
     .in('slug', [tenantSlug, slugIntl].filter(Boolean));
   const inquilino = (inquilinos || []).find((x: any) => x.slug === tenantSlug);
   const inquilinoIntl = slugIntl ? (inquilinos || []).find((x: any) => x.slug === slugIntl) : null;
@@ -219,7 +219,7 @@ export const GET: APIRoute = async ({ request }) => {
   if (!restante) return json({ enviados: 0, cupo, dias_calentando: dias, ya_hoy: yaHoy || 0, motivo: 'cupo del día agotado', espejo, goteo, whatsapp: { ...whatsapp, respondieron: waRespuestas.respondieron } });
 
   const { data: pendientes } = await supabase.from('abm_toques')
-    .select('id, cuenta_id, destino, asunto, cuerpo, programado_at, imagen, boton_texto, boton_url')
+    .select('id, cuenta_id, destino, asunto, cuerpo, programado_at, imagen, boton_texto, boton_url, goteo_id')
     .eq('estado', 'aprobado').eq('canal', 'email')
     .lte('programado_at', new Date().toISOString())
     .order('programado_at').limit(3000);   // la cola completa cabe: el programa son 2,639 toques
@@ -230,9 +230,19 @@ export const GET: APIRoute = async ({ request }) => {
   const { data: yaTocadas } = await supabase.from('abm_toques')
     .select('cuenta_id').eq('estado', 'enviado').limit(5000);
   const enCurso = new Set((yaTocadas || []).map((r: any) => r.cuenta_id));
+  /* Y dentro de eso, por PRIORIDAD del goteo (17-sep-2026). El cupo del día es
+     de veintitantos correos mientras el dominio calienta, y se lo llevaba
+     entero quien hubiera enrolado más: novias tenía 80 correos escritos, 10 de
+     ellos vencidos, sin haber mandado NUNCA uno. La prioridad la pone el dueño
+     en la pantalla; a igual prioridad, manda la fecha programada. */
+  const { data: gs } = await supabase.from('abm_goteo').select('id, prioridad');
+  const prioridadDe = new Map((gs || []).map((g: any) => [g.id, Number(g.prioridad ?? 5)]));
   const toques = (pendientes || []).sort((a: any, b: any) => {
     const ea = enCurso.has(a.cuenta_id) ? 0 : 1, eb = enCurso.has(b.cuenta_id) ? 0 : 1;
-    return ea !== eb ? ea - eb : String(a.programado_at).localeCompare(String(b.programado_at));
+    if (ea !== eb) return ea - eb;
+    const pa = prioridadDe.get(a.goteo_id) ?? 5, pb = prioridadDe.get(b.goteo_id) ?? 5;
+    if (pa !== pb) return pa - pb;
+    return String(a.programado_at).localeCompare(String(b.programado_at));
   });
 
   const bloqueadas = new Set<string>();
@@ -385,6 +395,7 @@ export const GET: APIRoute = async ({ request }) => {
         + cierreTexto(cierre),
       html: armarCorreo({
         cuerpo: t.cuerpo || '', imagen: (t as any).imagen, imagenAlt: asunto,
+        firma: { nombre: (mio as any).firma_nombre, puesto: (mio as any).firma_puesto, foto: (mio as any).firma_foto_url },
         botonTexto: (t as any).boton_texto, botonUrl: (t as any).boton_url, pieza, cierre,
       }),
       categoria: 'abm', tenantId: mio.id,

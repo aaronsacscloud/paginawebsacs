@@ -195,7 +195,12 @@ export async function enrolarLote(g: any, hoy: string, quien = 'el goteo', tope 
 /** Corre los goteos que toquen hoy. `forzar` repite aunque ya haya corrido (botón «enrolar ahora»). */
 export async function correrGoteos(op: { hoy?: string; solo_id?: string; forzar?: boolean; quien?: string } = {}): Promise<ResultadoLote[]> {
   const hoy = op.hoy || new Date().toISOString().slice(0, 10);
-  let q = supabase.from('abm_goteo').select('*').eq('estado', 'activo').order('created_at');
+  /* Por PRIORIDAD, no por antigüedad (17-sep-2026). El presupuesto de la
+     corrida (170 s de IA) se lo comían los goteos grandes y los de más abajo
+     se quedaban con «sin tiempo en esta corrida» día tras día: la cadencia de
+     novias llevaba una semana escribiendo correos que nunca salían. Ahora el
+     dueño decide quién entra primero cuando no alcanza. */
+  let q = supabase.from('abm_goteo').select('*').eq('estado', 'activo').order('prioridad').order('created_at');
   if (op.solo_id) q = q.eq('id', op.solo_id);
   const { data: goteos } = await q;
   const salida: ResultadoLote[] = [];
