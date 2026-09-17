@@ -729,3 +729,28 @@ html, body { overflow-x: clip; }
 @media (max-width: 900px) {
   p > a, li > a:not(.footer-list a) { padding-block: 6px; }
 }
+
+/* 29. Con el menú abierto, el dedo arrastraba la página de atrás y al cerrarlo
+   uno aparecía en otro punto del sitio sin saber por qué. Ahora el fondo se
+   queda quieto mientras el menú está arriba. */
+body:has(.mobile-menu.is-open), body:has(.vert.is-open), body:has(.cs-modal-overlay.is-open) {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* 30. El retraso de 300 ms al tocar. Safari espera por si viene un doble toque
+   para hacer zoom; en botones y enlaces esa espera se siente como que la página
+   no responde. */
+a, button, [role=button], input[type=submit], label { touch-action: manipulation; }
+
+/* 31. Los precios bailaban al cambiar de plan o de moneda porque cada cifra
+   tiene su propio ancho. Con cifras de ancho fijo, el número cambia y la caja
+   se queda en su sitio. */
+.plan-price, .plan-price-amount, .price-dynamic, .pc-res-n, .em-num, .op-num,
+[class*="-price"], [class*="-precio"] { font-variant-numeric: tabular-nums; }
+
+/* 32. PROBADO Y DESCARTADO: `content-visibility: auto` en las secciones de
+   abajo. En el papel ahorra trabajo en páginas de 30,000 px, pero al medirlo
+   con las tres pantallas cambió el tamaño de lo que hay dentro y rompió el
+   buscar-en-página del navegador. No vale el riesgo; queda escrito para que
+   nadie lo vuelva a intentar sin medirlo. */

@@ -100,68 +100,137 @@ const BANDEJAS: { id: string; l: string }[] = [
   { id: 'sin_asignar', l: 'Sin asignar' },
 ];
 
-function Armador({ etapas, counts, onListo, onCerrar }: {
-  etapas: { id: string; label: string }[]; counts: any;
+function Armador({ etapas, onListo, onCerrar }: {
+  etapas: { id: string; label: string }[];
   onListo: (l: { titulo: string; qs: string }) => void; onCerrar: () => void;
 }) {
+  const [paso, setPaso] = useState<1 | 2>(1);
   const [bandeja, setBandeja] = useState('todas');
   const [etapa, setEtapa] = useState('');
   const [estado, setEstado] = useState('');
+  const [previa, setPrevia] = useState<{ filas: any[]; total: number } | null>(null);
+  const [cargando, setCargando] = useState(false);
 
-  const qs = [
-    `filtro=${bandeja}`,
-    etapa ? `etapa=${etapa}` : '',
-    estado ? `estado=${estado}` : '',
-  ].filter(Boolean).join('&');
-  const nombreEtapa = etapas.find(e => e.id === etapa)?.label;
-  const titulo = [
-    BANDEJAS.find(b => b.id === bandeja)?.l,
-    nombreEtapa, estado === 'abierta' ? 'sin resolver' : estado === 'resuelta' ? 'ya resueltas' : '',
-  ].filter(Boolean).join(' · ');
+  const qs = [`filtro=${bandeja}`, etapa ? `etapa=${etapa}` : '', estado ? `estado=${estado}` : ''].filter(Boolean).join('&');
+  const titulo = [BANDEJAS.find(b => b.id === bandeja)?.l, etapas.find(e => e.id === etapa)?.label,
+    estado === 'abierta' ? 'sin resolver' : estado === 'resuelta' ? 'ya resueltas' : ''].filter(Boolean).join(' · ');
 
-  /* El número que se enseña es una ESTIMACIÓN y se dice que lo es. Sale de los
-     contadores que ya están en memoria, que se cruzan pero no se multiplican:
-     «rezagados» y «no contestaron» a la vez no son la suma ni el mínimo exacto.
-     La cuenta buena la hace la cabina al armar, contra la lista de verdad.
-     Poner aquí un número redondo y llamarlo exacto sería mentir dos veces: en
-     el número y en la confianza. */
-  const aprox = etapa ? Number(counts?.counts?.por_etapa?.[etapa] || 0)
-    : Number(counts?.counts?.[bandeja] ?? counts?.counts?.todas ?? 0);
-  const sel: any = { width: '100%', border: '1px solid #e0dfe6', borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' };
-  const rot: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999', display: 'block', marginBottom: 5 };
+  /* EL PREVIEW ES EL NÚMERO BUENO, no una estimación. Antes la pantalla decía
+     «≈ 348 antes de cruzar filtros» porque los contadores en memoria se cruzan
+     pero no se multiplican. Preguntando de verdad con el query armado, el
+     número que ves ES el que va a marcar — y ver los nombres antes de que suene
+     el primer timbre es lo que evita descubrir a media jornada que la lista no
+     era la que creías. */
+  useEffect(() => {
+    let vivo = true;
+    setCargando(true);
+    const t = setTimeout(() => {
+      fetch(`/api/crm/whatsapp/inbox?${qs}&limit=60`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(j => { if (vivo) setPrevia({ filas: (j.conversaciones || []).filter((c: any) => !c.virtual), total: Number(j.total_filtrado || 0) }); })
+        .catch(() => { if (vivo) setPrevia({ filas: [], total: 0 }); })
+        .finally(() => { if (vivo) setCargando(false); });
+    }, 350);   // el debounce evita una consulta pesada por cada clic en un select
+    return () => { vivo = false; clearTimeout(t); };
+  }, [qs]);
+
+  const sel: any = { width: '100%', border: '1px solid #e0dfe6', borderRadius: 10, padding: '10px 12px', fontSize: 13.5, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' };
+  const rot: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', display: 'block', marginBottom: 6 };
+  const n = previa?.total ?? 0;
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${P.violeta}`, borderRadius: 10, padding: '16px 18px', marginBottom: 14 }}>
-      <b style={{ fontSize: 14 }}>Arma tu lista</b>
-      <p style={{ fontSize: 11.5, color: '#888', margin: '4px 0 12px', lineHeight: 1.5 }}>
-        Cruza los filtros que quieras. Vas a poder revisar la lista completa antes de que suene el primer timbre.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-        <label style={{ flex: '1 1 210px' }}><span style={rot}>Bandeja</span>
-          <select value={bandeja} onChange={e => setBandeja(e.target.value)} style={sel}>
-            {BANDEJAS.map(b => <option key={b.id} value={b.id}>{b.l}</option>)}
-          </select></label>
-        <label style={{ flex: '1 1 210px' }}><span style={rot}>Etapa</span>
-          <select value={etapa} onChange={e => setEtapa(e.target.value)} style={sel}>
-            <option value="">Cualquiera</option>
-            {etapas.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-          </select></label>
-        <label style={{ flex: '1 1 210px' }}><span style={rot}>Conversación</span>
-          <select value={estado} onChange={e => setEstado(e.target.value)} style={sel}>
-            <option value="">Como esté</option>
-            <option value="abierta">Sin resolver</option>
-            <option value="resuelta">Ya resueltas</option>
-          </select></label>
+    <>
+      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.5)', zIndex: 960 }} />
+      <div role="dialog" aria-label="Nueva llamada inteligente" style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+        width: 'min(980px, 95vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        background: '#fff', borderRadius: 20, zIndex: 961, boxShadow: '0 24px 70px rgba(12,11,18,.34)', overflow: 'hidden',
+      }}>
+        {/* EL STEPPER. Dos pasos y no cinco: elegir a quién y confirmar. Un
+            asistente de cinco pantallas para armar una lista de llamadas pesa
+            más que la tarea. */}
+        <div style={{ padding: '18px 24px 0', borderBottom: '1px solid #f0eff3' }}>
+          <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>Nueva llamada inteligente</b>
+          <div style={{ display: 'flex', gap: 22, marginTop: 14 }}>
+            {[[1, 'A quién le llamas'], [2, 'Revisa y arranca']].map(([k, l]: any) => (
+              <span key={k} onClick={() => k === 1 && setPaso(1)}
+                style={{ paddingBottom: 10, borderBottom: `2px solid ${paso === k ? P.violeta : 'transparent'}`,
+                  color: paso === k ? P.violetaTinta : '#999', fontWeight: paso === k ? 800 : 600, fontSize: 13,
+                  cursor: k === 1 ? 'pointer' : 'default', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ width: 20, height: 20, borderRadius: 999, background: paso === k ? P.violetaTinta : '#ececec', color: paso === k ? '#fff' : '#999', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{k}</span>
+                {l}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          {/* ── Izquierda: los filtros ── */}
+          <div style={{ flex: '0 0 380px', padding: 22, borderRight: '1px solid #f0eff3', overflowY: 'auto' }}>
+            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Bandeja</span>
+              <select value={bandeja} onChange={e => setBandeja(e.target.value)} style={sel}>
+                {BANDEJAS.map(b => <option key={b.id} value={b.id}>{b.l}</option>)}
+              </select></label>
+            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Etapa del ciclo de vida</span>
+              <select value={etapa} onChange={e => setEtapa(e.target.value)} style={sel}>
+                <option value="">Cualquiera</option>
+                {etapas.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+              </select></label>
+            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Conversación</span>
+              <select value={estado} onChange={e => setEstado(e.target.value)} style={sel}>
+                <option value="">Como esté</option>
+                <option value="abierta">Sin resolver</option>
+                <option value="resuelta">Ya resueltas</option>
+              </select></label>
+            <p style={{ fontSize: 11.5, color: '#a5a2af', lineHeight: 1.55, margin: 0 }}>
+              De cualquier lista se quitan solos los que no tienen teléfono, los
+              marcados «no llamar» y los que ya se intentaron tres veces esta semana.
+            </p>
+          </div>
+
+          {/* ── Derecha: a quién vas a llamar, con nombre y apellido ── */}
+          <div style={{ flex: 1, minWidth: 0, padding: 22, overflowY: 'auto', background: '#fafafb' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginBottom: 12 }}>
+              <b style={{ fontSize: 30, letterSpacing: '-0.03em', color: n ? P.violetaTinta : '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{cargando ? '…' : n}</b>
+              <span style={{ fontSize: 13, color: '#6b7280' }}>{n === 1 ? 'contacto' : 'contactos'}{titulo ? ` · ${titulo}` : ''}</span>
+            </div>
+            {!cargando && !n && <div style={{ fontSize: 13, color: '#6b7280' }}>Con esos filtros no queda nadie. Prueba con otra bandeja o quita la etapa.</div>}
+            <div style={{ display: 'grid', gap: 4 }}>
+              {(previa?.filas || []).map((c: any) => (
+                <div key={c.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 9, padding: '8px 11px', display: 'flex', gap: 9, alignItems: 'baseline' }}>
+                  {/* El nombre vive en `contacto`, no en la raíz de la fila:
+                      poniendo `c.nombre` salían puros teléfonos, y una lista de
+                      números no se revisa —no puedes reconocer a nadie—. */}
+                  <b style={{ fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.contacto?.nombre || c.telefono}
+                    {c.empresa?.nombre_comercial || c.empresa?.nombre
+                      ? <span style={{ fontWeight: 500, color: '#999' }}> · {c.empresa.nombre_comercial || c.empresa.nombre}</span> : null}
+                  </b>
+                  <span style={{ fontSize: 11.5, color: '#999', flexShrink: 0 }}>{c.contacto?.lifecycle_stage || ''}</span>
+                </div>
+              ))}
+            </div>
+            {n > (previa?.filas || []).length && (
+              <div style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 9 }}>
+                {/* Se dice cuántos no se enseñan: una lista cortada en silencio
+                    se lee como la lista entera. */}
+                y {n - (previa?.filas || []).length} más. Vas a poder revisarlos todos antes de marcar.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: '14px 22px', borderTop: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+          <div style={{ flex: 1 }} />
+          <button onClick={() => { setPaso(2); onListo({ titulo: titulo || 'Lista a la medida', qs }); }} disabled={!n || cargando}
+            style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
+              cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: '#fff' }}>
+            {n ? `Llamar a estos ${n}` : 'Llamar a estos'}
+          </button>
+        </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 13, flexWrap: 'wrap' }}>
-        <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs })}
-          style={{ border: 'none', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff' }}>
-          Llamar a estos
-        </button>
-        <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-        <span style={{ fontSize: 11.5, color: '#888' }}>≈ {aprox} antes de cruzar filtros · la cuenta buena la hace la cabina</span>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -221,10 +290,21 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
         <Chispas />
         <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes <Sello>La voz que las enciende</Sello></h1>
       </div>
-      <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 18px', maxWidth: 620, lineHeight: 1.55 }}>
-        Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
-        llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
-      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', margin: '0 0 18px' }}>
+        <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55, flex: '1 1 380px' }}>
+          Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
+          llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
+        </p>
+        {/* EL BOTÓN, NO UNA TARJETA MÁS. Como sexto recuadro de la fila se leía
+            igual que las cinco listas fijas —o sea, como una lista más— cuando
+            en realidad es la ACCIÓN de la pantalla. Arriba y en morado sólido:
+            uno por pantalla, la regla de la casa. */}
+        <button onClick={() => setArmando(true)}
+          style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800,
+            fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff', flexShrink: 0 }}>
+          Nueva llamada inteligente
+        </button>
+      </div>
 
       {tel && !tel.ok && (
         <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 13px', fontSize: 12.5, marginBottom: 14 }}>
@@ -233,7 +313,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
       )}
 
       {armando && (
-        <Armador etapas={LIFECYCLE} counts={counts}
+        <Armador etapas={LIFECYCLE}
           onListo={l => { setArmando(false); setAMedida(l); }} onCerrar={() => setArmando(false)} />
       )}
 
@@ -267,18 +347,6 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
               </button>
             );
           })}
-          {/* La sexta tarjeta: misma forma que las cinco, para que se lea como
-              «una lista más» y no como un ajuste escondido. */}
-          {!armando && (
-            <button onClick={() => setArmando(true)}
-              style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#fff',
-                border: `1px dashed ${P.violeta}`, borderRadius: 10, padding: '15px 17px',
-                display: 'flex', flexDirection: 'column', flex: '1 1 200px' }}>
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Otra lista</span>
-              <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: P.violetaTinta, margin: '2px 0 4px' }}>+</span>
-              <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.5, marginTop: 'auto' }}>Ármala tú con los filtros que quieras.</span>
-            </button>
-          )}
         </div>
       )}
 

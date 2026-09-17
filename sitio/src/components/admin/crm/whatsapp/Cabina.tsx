@@ -698,7 +698,21 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <span className={['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) ? 'wa-pulso' : undefined} style={{ width: 10, height: 10, borderRadius: 999, background: colorEstado, flexShrink: 0 }} />
                   <b style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', color: estadoActual === 'en_linea' ? '#1E8A63' : '#4B5563' }}>
+                    {/* ══ QUÉ ESTÁ PASANDO, DICHO ENTERO ══════════════════
+                        Pedido del dueño (17-sep-2026): «en vez de que diga
+                        micrófono mudo, pon en el centro qué está pasando: que
+                        diga marcando, cuántas veces ya marcó, cuando entre a
+                        buzón que lo diga, y de ahí lo que va a pasar después —
+                        pero todo automático, sin que yo haga clics».
+
+                        Antes decía sólo «TIMBRANDO» y el resto había que
+                        deducirlo de la lista de la derecha. Ahora la misma
+                        línea lleva el intento y, cuando cae en buzón, lo dice
+                        con todas sus letras y anuncia el salto: la certeza de
+                        que la máquina sigue sola es lo que deja al vendedor
+                        mirar en vez de vigilar. */}
                     {ETIQUETA_ITEM[estadoActual] || estadoActual}
+                    {['marcando', 'timbrando'].includes(estadoActual) && actual.intentos > 1 ? ` · intento ${actual.intentos}` : ''}
                     {estadoActual === 'en_linea' && actual.segundos_en_linea > 0 ? ` · ${fmt(actual.segundos_en_linea)}` : ''}
                     {estadoActual === 'cierre' && sesion.config?.auto_continuar !== false && segCierre !== null
                       ? (enviosAbiertos.length ? ' · esperando tu respuesta' : !actual.cierre_estado || actual.cierre_estado === 'proponiendo' ? ' · la IA está cerrando' : ` · siguiente en ${segCierre} s`) : ''}
@@ -706,6 +720,17 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   <span style={{ flex: 1 }} />
                   <span style={{ fontSize: 11, color: C.g400 }}>{actual.orden + 1} de {sesion.total}{est?.pendientes ? ` · ${est.pendientes} por marcar` : ''}</span>
                 </div>
+
+                {/* CAYÓ EN BUZÓN: se dice, y se dice qué sigue. El salto ya era
+                    automático —lo hace el servidor— pero en pantalla no se veía
+                    nada y parecía que se había atorado. Un proceso que avanza
+                    solo sin decirlo se siente igual que uno roto. */}
+                {actual.veredicto === 'buzon' && (
+                  <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>
+                    Cayó en el buzón{actual.veredicto_fuente ? ` (${actual.veredicto_fuente})` : ''}.
+                    {sesion.buzon_dejar_mensaje ? ' Se le está dejando el mensaje y' : ''} pasamos solos al siguiente — no tienes que tocar nada.
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ width: 44, height: 44, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoUsuario size={22} /></span>
                   <div style={{ minWidth: 0, flex: 1 }}>

@@ -55,23 +55,46 @@ function conEnlaces(linea: string): string {
 /** El cuerpo de texto a párrafos. Los renglones que empiezan con · son lista:
  *  se pintan con su punto morado en vez de dejar el carácter suelto, que en
  *  algunos clientes se ve como basura. */
-function cuerpoAHtml(texto: string): string {
+function cuerpoAHtml(texto: string, carta = false): string {
   const lineas = String(texto || '').split('\n').map(l => l.trim()).filter(Boolean);
   const out: string[] = [];
   let enLista = false;
+  const cerrarLista = () => { if (enLista) { out.push(carta ? '</table></td></tr></table>' : '</table>'); enLista = false; } };
   for (const l of lineas) {
     const esItem = /^[·•-]\s+/.test(l);
-    if (esItem && !enLista) { out.push(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 14px;">`); enLista = true; }
-    if (!esItem && enLista) { out.push('</table>'); enLista = false; }
+    /* Un renglón que acaba en dos puntos y no es item hace de TÍTULO de la
+       sección que viene («En qué somos distintos, en concreto:»). Le da
+       jerarquía al correo sin meterle una imagen. */
+    const esTitulo = !esItem && /:$/.test(l) && l.length < 80;
+    if (esItem && !enLista) {
+      /* La lista de la carta va en su cajita: fondo casi blanco y una línea
+         morada a la izquierda. Da color y jerarquía sin parecer un folleto —
+         nada de imágenes de 600 px, que es lo que manda un correo a
+         Promociones. */
+      out.push(carta
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:2px 0 16px;"><tr><td style="background-color:#FAF9FF;border-left:3px solid ${MORADO};border-radius:0 8px 8px 0;padding:12px 14px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">`
+        : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 14px;">`);
+      enLista = true;
+    }
+    if (!esItem) cerrarLista();
     if (esItem) {
       out.push(`<tr><td width="16" valign="top" style="padding:3px 0 3px 0;color:${MORADO};font-size:16px;line-height:22px;font-family:${FUENTE};">&bull;</td>`
-        + `<td valign="top" style="padding:3px 0;color:${TINTA};font-size:15px;line-height:22px;font-family:${FUENTE};">${conEnlaces(l.replace(/^[·•-]\s+/, ''))}</td></tr>`);
+        + `<td valign="top" style="padding:3px 0;color:${TINTA};font-size:15px;line-height:22px;font-family:${FUENTE};">${negritas(conEnlaces(l.replace(/^[·•-]\s+/, '')))}</td></tr>`);
+    } else if (esTitulo) {
+      out.push(`<p style="margin:18px 0 8px;color:${MORADO_TINTA};font-size:13px;font-weight:bold;letter-spacing:.04em;line-height:19px;font-family:${FUENTE};">${negritas(conEnlaces(l))}</p>`);
     } else {
-      out.push(`<p style="margin:0 0 14px;color:${TINTA};font-size:15px;line-height:23px;font-family:${FUENTE};">${conEnlaces(l)}</p>`);
+      out.push(`<p style="margin:0 0 14px;color:${TINTA};font-size:15px;line-height:23px;font-family:${FUENTE};">${negritas(conEnlaces(l))}</p>`);
     }
   }
-  if (enLista) out.push('</table>');
+  cerrarLista();
   return out.join('');
+}
+
+/** *Así* se pone una frase en negrita desde el texto de la plantilla. El
+ *  correo en frío se lee en diagonal: sin una o dos frases marcadas, el lector
+ *  no encuentra dónde está lo suyo. */
+function negritas(html: string): string {
+  return html.replace(/\*([^*\n]{2,80})\*/g, `<strong style="color:#1a1633;">$1</strong>`);
 }
 
 /** El botón. Lleva su respaldo de VML porque Outlook ignora el padding de un
@@ -281,13 +304,17 @@ function armarCarta(p: PartesCorreo): string {
   const c = p.cierre;
   const pg = c ? paginaDe(c.giro, (p.sitio || 'https://www.sacscloud.com').replace(/\/$/, ''), c.pais) : null;
   const fn = p.firma?.nombre?.trim();
-  const cita = c ? `<p style="margin:0 0 14px;color:#202124;font-family:${FUENTE};font-size:15px;line-height:24px;">${esc(oferta(c).frase(c.giro))}</p>
-<p style="margin:0 0 20px;color:#202124;font-family:${FUENTE};font-size:15px;line-height:24px;"><a href="${AGENDAR_DEMO}" style="color:#1a56db;text-decoration:underline;">${esc(oferta(c).boton)}</a>${pg ? ` · <a href="${esc(pg.url)}" style="color:#1a56db;text-decoration:underline;">ver la página de ${esc(pg.nombre)}</a>` : ''}</p>` : '';
+  const cita = c ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:20px 0 18px;"><tr>
+<td bgcolor="${LILA}" style="background-color:${LILA};border-radius:10px;padding:16px 18px;">
+<p style="margin:0 0 6px;color:${MORADO_TINTA};font-family:${FUENTE};font-size:12px;font-weight:bold;letter-spacing:.05em;line-height:16px;">${esc(oferta(c).titulo)}</p>
+<p style="margin:0 0 12px;color:${TINTA};font-family:${FUENTE};font-size:15px;line-height:23px;">${esc(oferta(c).frase(c.giro))}</p>
+<p style="margin:0;font-family:${FUENTE};font-size:15px;line-height:23px;"><a href="${AGENDAR_DEMO}" style="color:${MORADO_TINTA};font-weight:bold;text-decoration:underline;">${esc(oferta(c).boton)}</a>${pg ? ` &nbsp;·&nbsp; <a href="${esc(pg.url)}" style="color:${MORADO_TINTA};text-decoration:underline;">ver la página de ${esc(pg.nombre)}</a>` : ''}</p>
+</td></tr></table>` : '';
   return `${preheader(p.preheader)}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background-color:#ffffff;">
 <tr><td align="center" style="padding:16px 12px 8px;">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:collapse;">
 <tr><td style="font-family:${FUENTE};font-size:15px;line-height:24px;color:#202124;">
-${cuerpoAHtml(p.cuerpo)}
+${cuerpoAHtml(p.cuerpo, true)}
 ${cita}
 ${fn ? `<p style="margin:0;color:#202124;font-family:${FUENTE};font-size:15px;line-height:22px;">${esc(fn)}${p.firma?.puesto ? `<br><span style="color:${GRIS};font-size:13px;">${esc(p.firma.puesto)}</span>` : ''}</p>` : ''}
 </td></tr>

@@ -526,9 +526,17 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
      quien está escuchando, que es quien puede. */
   if (veredicto === 'buzon') {
     const oidoTodo: any[] = Array.isArray(it.oido) ? it.oido : [];
-    if (oidoTodo.some((o: any) => String(o?.texto || '').trim().length > 1)) {
+    /* ⚠️ SÓLO LA VOZ DEL VENDEDOR. La primera versión de este candado miraba
+       CUALQUIER voz, y eso rompió la detección de buzón entera: un buzón de voz
+       siempre habla —«deje su mensaje después del tono» es voz— así que todos
+       los buzones pasaban a «duda» y se quedaban en línea. Lo reportó el dueño
+       a los minutos: «ahora cuando es buzón no lo detecta».
+
+       Lo que de verdad prueba que hay alguien es que hable EL VENDEDOR: nadie
+       le contesta a una grabadora. Esa es la señal, y es la que se mira. */
+    if (oidoTodo.some((o: any) => o?.quien === 'vendedor' && String(o?.texto || '').trim().length > 1)) {
       veredicto = 'duda';
-      motivo = `${motivo} — pero ya se había oído voz en la llamada, así que no se cuelga`;
+      motivo = `${motivo} — pero tú ya estabas hablando, así que no se cuelga`;
       fuente = `${fuente}+voz`;
     }
   }
