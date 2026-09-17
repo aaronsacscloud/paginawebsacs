@@ -37,6 +37,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { C } from './estilo';
 import { telefonoLegible } from '../../../../lib/telefono';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 
 type Props = {
   telefono: string;
@@ -80,6 +81,10 @@ type Accion = {
 };
 
 export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar, fin }: Props) {
+  /* En el teléfono esto NO es un modal: es la pantalla. Un recuadro centrado
+     con el CRM asomando por los bordes, en 390 píxeles, se lee como algo que
+     se va a cerrar solo — y aquí es donde se trabaja la llamada. */
+  const esMovil = useIsMobile();
   const [ctx, setCtx] = useState<any>(null);
   const [horarios, setHorarios] = useState<any[] | null>(null);
   const [resultado, setResultado] = useState('');
@@ -280,6 +285,35 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   const abiertas = acciones.filter(a => ['propuesta', 'haciendo', 'pregunta', 'fallo'].includes(a.estado));
   const p = cierre?.propuesta;
 
+  /* Lo que se está oyendo, aparte: en el escritorio va en la columna de la
+     izquierda y en el TELÉFONO arriba del todo, pegado a las acciones. Es lo
+     único que se mira mientras se habla. */
+  /* ══ LO QUE SE ESTÁ OYENDO ═════════════════════════════════════════════
+     No es un adorno: es la prueba de que la máquina oye lo mismo que tú.
+     Cuando propone una acción rara, aquí se ve por qué. */
+  const bloqueOido = (oido.length > 0 || !fin) ? (
+              <div style={{ ...CAJA, background: fin ? '#fff' : '#FCFBFF' }}>
+                <div style={{ ...ROT, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {fin ? 'Lo que se dijo' : 'Lo que se está oyendo'}
+                  {!fin && <span style={{ width: 7, height: 7, borderRadius: 999, background: oido.length ? '#1E8A63' : '#d8d5e4', display: 'inline-block' }} />}
+                </div>
+                {!oido.length ? (
+                  <div style={{ fontSize: 12.5, color: C.g500 }}>
+                    Todavía nada. La transcripción tarda unos segundos en arrancar; si no llega, la llamada igual se graba y la minuta cae al colgar.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 4, maxHeight: fin ? 320 : 180, overflowY: 'auto' }}>
+                    {oido.map((o, i) => (
+                      <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+                        <b style={{ color: o.quien === 'vendedor' ? C.moradoTinta : '#1E8A63' }}>{o.quien === 'vendedor' ? 'Tú' : 'Él'}</b>
+                        <span style={{ color: '#33313d' }}> · {o.texto}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+  ) : null;
+
   /* LOS CHIPS DE «¿QUÉ PASÓ?» · se usan en dos sitios: en su caja mientras
      hablas, y DENTRO del bloque de cierre cuando colgó el cliente — ahí tienen
      que estar pegados al botón que los necesita, no al final de la columna. */
@@ -372,8 +406,11 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
 
   return (
     <>
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.55)', zIndex: 980 }} />
-      <div role="dialog" aria-label={fin ? 'Resumen de la llamada' : 'Llamada en curso'} style={{
+      {!esMovil && <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.55)', zIndex: 980 }} />}
+      <div role="dialog" aria-label={fin ? 'Resumen de la llamada' : 'Llamada en curso'} style={esMovil ? {
+        position: 'fixed', inset: 0, zIndex: 1001, overflowY: 'auto', background: C.g50,
+        paddingBottom: 'env(safe-area-inset-bottom)', WebkitOverflowScrolling: 'touch',
+      } : {
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: 'min(1040px, 96vw)', maxHeight: '92vh', overflowY: 'auto', zIndex: 981,
         background: C.g50, borderRadius: 20, boxShadow: '0 24px 70px rgba(12,11,18,.4)',
@@ -381,7 +418,12 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
         {/* ══ LA CABECERA: la marca en grande, que es lo que se pidió primero.
             Es lo que dice en voz alta quien contesta, y equivocarla en el
             saludo cuesta la llamada entera. */}
-        <div style={{ padding: '20px 24px 16px', background: '#fff', borderRadius: '20px 20px 0 0', borderBottom: `1px solid ${C.g200}`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{
+          padding: esMovil ? '14px 16px 12px' : '20px 24px 16px', background: '#fff',
+          borderRadius: esMovil ? 0 : '20px 20px 0 0', borderBottom: `1px solid ${C.g200}`,
+          display: 'flex', alignItems: 'center', gap: esMovil ? 10 : 16, flexWrap: 'wrap',
+          ...(esMovil ? { position: 'sticky', top: 0, zIndex: 2, paddingTop: 'max(14px, env(safe-area-inset-top))' } : {}),
+        }}>
           <span style={{ width: 54, height: 54, borderRadius: 16, background: fin ? C.g100 : C.moradoAgua, color: fin ? C.g500 : C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
             {reloj(segundos)}
           </span>
@@ -413,7 +455,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 <button onClick={onSilenciar} style={{ border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {mudo ? 'Estás en mudo' : 'Silenciar'}
                 </button>
-                <button onClick={cerrarLlamada} disabled={cerrando} style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={cerrarLlamada} disabled={cerrando} style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: esMovil ? 999 : 10, padding: esMovil ? '12px 22px' : '9px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {cerrando ? 'Cerrando…' : 'Colgar'}
                 </button>
               </>
@@ -427,32 +469,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
         <div style={{ padding: 18, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           {/* ── Columna izquierda: quién es y qué ha pasado ── */}
           <div style={{ flex: '1 1 380px', display: 'grid', gap: 12, minWidth: 0 }}>
-            {/* ══ LO QUE SE ESTÁ OYENDO ═══════════════════════════════════
-                No es un adorno: es la prueba de que la máquina oye lo mismo
-                que tú. Cuando propone una acción rara, aquí se ve por qué. */}
-            {(oido.length > 0 || !fin) && (
-              <div style={{ ...CAJA, background: fin ? '#fff' : '#FCFBFF' }}>
-                <div style={{ ...ROT, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {fin ? 'Lo que se dijo' : 'Lo que se está oyendo'}
-                  {!fin && <span style={{ width: 7, height: 7, borderRadius: 999, background: oido.length ? '#1E8A63' : '#d8d5e4', display: 'inline-block' }} />}
-                </div>
-                {!oido.length ? (
-                  <div style={{ fontSize: 12.5, color: C.g500 }}>
-                    Todavía nada. La transcripción tarda unos segundos en arrancar; si no llega, la llamada igual se graba y la minuta cae al colgar.
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gap: 4, maxHeight: fin ? 320 : 180, overflowY: 'auto' }}>
-                    {oido.map((o, i) => (
-                      <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45 }}>
-                        <b style={{ color: o.quien === 'vendedor' ? C.moradoTinta : '#1E8A63' }}>{o.quien === 'vendedor' ? 'Tú' : 'Él'}</b>
-                        <span style={{ color: '#33313d' }}> · {o.texto}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
+            {!esMovil && bloqueOido}
             <div style={CAJA}>
               <div style={ROT}>Quién es</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
@@ -506,8 +523,12 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             </div>
           </div>
 
-          {/* ── Columna derecha: lo que haces DURANTE la llamada ── */}
-          <div style={{ flex: '1 1 340px', display: 'grid', gap: 12, minWidth: 0 }}>
+          {/* ── Columna derecha: lo que haces DURANTE la llamada ──
+              En el teléfono va PRIMERO (`order: -1`): con una sola columna, lo
+              que el cliente acaba de pedir no puede estar a tres pantallas de
+              scroll de distancia. */}
+          <div style={{ flex: '1 1 340px', display: 'grid', gap: 12, minWidth: 0, order: esMovil ? -1 : 0 }}>
+            {esMovil && bloqueOido}
             {/* ══ AL COLGAR: EL CIERRE ════════════════════════════════════
                 Lo que la IA leyó de la llamada, propuesto para confirmar. Si no
                 hay IA —sin saldo, o la transcripción no alcanzó— se dice con

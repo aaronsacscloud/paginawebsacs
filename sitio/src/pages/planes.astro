@@ -287,7 +287,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
           <span class="addon-ia-kicker">Conector de datos de Sacs</span>
           <h3 class="addon-plugin-name">Opera todo Sacs desde ChatGPT, Claude, Grok o Muse</h3>
           <p class="addon-desc">Conectas tu cuenta de Sacs a la plataforma de IA que ya usas y le preguntas y le pides en lenguaje natural: qué talla se está acabando en Polanco, cuánto vendió la colección esta semana, que arme el traspaso o la orden de compra. Tus datos, en tu asistente, con permisos por usuario.</p>
-          <div class="addon-ia-plataformas" aria-label="Plataformas compatibles">
+          <div class="addon-ia-plataformas" role="group" aria-label="Plataformas compatibles">
             <span>ChatGPT</span><span>Claude</span><span>Grok</span><span>Muse</span>
           </div>
           <ul class="addon-points addon-points--2col">
@@ -419,7 +419,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
                         feature[planId] ? (
                           <span class="cell-check" role="img" set:html={checkIcon} aria-label="Incluido" />
                         ) : (
-                          <span class="cell-x" set:html={xIcon} aria-label="No incluido" />
+                          <span class="cell-x" role="img" set:html={xIcon} aria-label="No incluido" />
                         )
                       ) : (
                         <span class="cell-text">{feature[planId]}</span>

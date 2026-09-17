@@ -255,7 +255,17 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
     // ── Envíos listos → PDF + WhatsApp ────────────────────────────────────
     const { data: envios } = await supabase.from('tel_envios').select('*').eq('item_id', itemId).in('estado', ['listo', 'falta']);
     for (const e of envios || []) {
-      if (e.estado === 'listo') { const r = await mandarEnvio(e.id); if (r) hecho.push(r); }
+      if (e.estado === 'listo') {
+        const r = await mandarEnvio(e.id);
+        /* Si NO salió, se dice. `mandarEnvio` ya deja la tarea con el PDF listo
+           —no se pierde— pero la pantalla de cierre enseñaba sólo lo que sí
+           pasó, y «no te lo dije» es como se promete dos veces lo mismo. */
+        if (r) hecho.push(r);
+        else {
+          const { data: f } = await supabase.from('tel_envios').select('estado, motivo').eq('id', e.id).maybeSingle();
+          hecho.push(`${e.tema}: no salió (${f?.motivo || 'sin motivo'}) — quedó la tarea de mandarlo a mano`);
+        }
+      }
       else {
         // Nadie contestó qué mandar: queda como tarea para que no se pierda.
         await supabase.from('tel_envios').update({ estado: 'omitido', motivo: 'sin respuesta del vendedor; quedó como tarea', updated_at: t }).eq('id', e.id);
@@ -334,7 +344,9 @@ async function caducarEnvio(e: any) {
 export async function crearCompromiso(it: any, cp: Compromiso, userId: string | null): Promise<string | null> {
   const { data: s } = await supabase.from('tel_sesiones').select('owner_id').eq('id', it.sesion_id).maybeSingle();
   const hostId = s?.owner_id || userId;
-  if (!hostId) return null;
+  /* Sin anfitrión no hay agenda donde poner la cita — y callarlo es peor que
+     no agendarla: quien colgó se queda creyendo que quedó. Se dice. */
+  if (!hostId) return `no se pudo agendar ${cp.tipo === 'llamada' ? 'la llamada' : 'la reunión'} del ${cp.fecha}: la llamada no tiene dueño (ábrela en la pantalla de la llamada o asígnale el contacto a alguien)`;
   const { data: tipo } = await supabase.from('event_types').select('id, nombre, duracion_minutos').eq('slug', cp.reunion_tipo || (cp.tipo === 'reunion' ? 'demo' : 'llamada-discovery')).maybeSingle();
   if (!tipo) return null;
   // La hora que dijo el contacto es en SU zona; la reunión se guarda en la del vendedor (centro), que es la que ve la agenda.

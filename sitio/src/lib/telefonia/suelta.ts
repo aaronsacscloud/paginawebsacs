@@ -86,7 +86,32 @@ export async function itemDeLlamada(callSid: string, o: { userId?: string | null
     empresa = c?.companies?.nombre_comercial || c?.companies?.nombre || null;
   }
 
-  const userId = o.userId || ll?.atendida_por || null;
+  /* ══ DE QUIÉN ES ESTA LLAMADA ══════════════════════════════════════════
+     Importa más de lo que parece: el dueño de la sesión es el ANFITRIÓN de la
+     reunión que se agende («el jueves a las 4») y el dueño de las tareas que
+     salgan. Sin dueño, `crearCompromiso` devuelve null y el compromiso
+     desaparece en silencio — medido el 17-sep con el cierre de una entrante.
+
+     Tres intentos, en orden de qué tan seguro es: quien abrió la sala, quien
+     contestó según el espejo, y —para las entrantes que nadie alcanzó a abrir
+     en pantalla— el dueño del CONTACTO, que es el vendedor que lleva ese lead
+     y en cuya agenda tiene sentido que caiga la cita. */
+  let userId = o.userId || ll?.atendida_por || null;
+  if (!userId && conversationId) {
+    // Quien lleva esa conversación en el inbox.
+    const { data: cv } = await supabase.from('wa_conversaciones').select('asignado_a').eq('id', conversationId).maybeSingle();
+    userId = (cv as any)?.asignado_a || null;
+  }
+  if (!userId) {
+    /* Y si nadie la tiene asignada: quién tenía el CRM abierto cuando entró la
+       llamada. Una entrante timbra en todas las identidades vivas; si sólo hay
+       una, ésa es la persona que contestó. Con varias no se adivina — mejor
+       decir «no tiene dueño» en el cierre que ponerle la cita a quien no habló. */
+    const { data: vivas } = await supabase.from('tel_identidades').select('user_id')
+      .gte('visto_at', new Date(Date.now() - 10 * 60e3).toISOString()).limit(3);
+    const unicos = Array.from(new Set((vivas || []).map(v => v.user_id).filter(Boolean)));
+    if (unicos.length === 1) userId = unicos[0] as string;
+  }
   const sesionId = await sesionSuelta(userId, o.nombreUsuario);
   if (!sesionId) return null;
 
