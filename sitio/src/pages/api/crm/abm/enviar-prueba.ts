@@ -1,8 +1,15 @@
-// TEMPORAL (17-sep-2026): manda la cadencia completa a un buzón de revisión.
-// El dueño quiere leer los once correos en su propio Gmail antes de que salga
-// ninguno de verdad. Va por el pipeline real —misma plantilla, misma firma,
-// mismo pie— pero con categoría `prueba`: no gasta cupo del cartero, no cuenta
-// como toque de ninguna cuenta y no toca la cadencia de nadie.
+// Cuentas objetivo · MÁNDAMELA A MÍ: la cadencia entera al buzón de quien la
+// pide, para leerla antes de que salga a nadie.
+//
+// Nació de «me mandas los correos a mi correo para poder revisarlos primero».
+// Va por el pipeline real —misma plantilla, misma firma, mismo pie, mismo
+// remitente que le tocaría a ese país— pero con categoría `prueba`: no gasta
+// cupo del cartero, no cuenta como toque de ninguna cuenta y no arranca
+// ninguna cadencia.
+//
+// SIEMPRE al correo de quien lo pide. La dirección no se acepta del navegador:
+// una ruta que manda correos a donde le digan es una ruta para mandar correo
+// ajeno con nuestro dominio.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { armarCorreo } from '../../../../lib/crm/abm-correo';
@@ -17,10 +24,11 @@ export const POST: APIRoute = async ({ request }) => {
   const yo = await quien(request);
   if (!yo) return json({ error: 'sin sesión' }, 401);
   const b = await request.json().catch(() => ({} as any));
-  const para = limpiar(b.para, 120);
+  const { data: mi } = await supabase.from('team_members').select('email').eq('id', yo.id).maybeSingle();
+  const para = String(mi?.email || '').trim();
   const giro = limpiar(b.giro, 40) || 'novias';
   const pp = paisDe(String(b.pais || 'es'));
-  if (!para) return json({ error: 'falta el correo' }, 400);
+  if (!para) return json({ error: 'tu usuario no tiene correo: no sé a dónde mandarla' }, 409);
 
   // Una cuenta real de ese país para rellenar las variables: así se lee como
   // le va a llegar a un negocio, no con marcadores.
@@ -54,6 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Las imágenes todavía no están desplegadas: para la revisión se apunta a
     // la copia pública de cada una.
     for (const [archivo, url] of Object.entries(fotos)) html = html.split(`/images/mail/${archivo}`).join(url);
+    // El día va en el asunto: llegan todos juntos y hay que leerlos en orden.
     const asunto = `[${dia ? `día ${dia}` : `correo ${Number(p.orden) + 1}`}] ${asuntoPais(c.pais, rellenar(String(p.asunto || ''), vars))}`;
     const r = await enviarCorreo({ tenantId: tenant.id, para, categoria: 'prueba', asunto, html, texto: rellenar(String(p.cuerpo || ''), vars), sinRastreo: true });
     salida.push({ orden: p.orden, dia, asunto, enviado: r.enviado, motivo: r.motivo || null });

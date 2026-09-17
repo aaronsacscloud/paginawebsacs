@@ -26,6 +26,20 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
   const [vista, setVista] = useState<{ pais: string; html: string; asunto: string } | null>(null);
   const [viendo, setViendo] = useState<string | null>(null);
 
+  /** La cadencia entera al correo de quien la pide, para leerla antes de lanzar. */
+  const pedirPrueba = async (p: any) => {
+    setTrabajando('prueba' + p.iso); setAviso(null);
+    try {
+      const r = await fetch('/api/crm/abm/enviar-prueba', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pais: p.iso, giro }),
+      }).then(x => x.json());
+      setAviso(r?.correos
+        ? { t: `Te mandé ${r.correos.filter((x: any) => x.enviado).length} correos de ${p.pais} a tu buzón, con el día en el asunto. Van rellenados con ${r.cuenta}.` }
+        : { t: r?.error || 'No se pudo', mal: true });
+    } finally { setTrabajando(null); }
+  };
+
   const verCorreo = async (p: any) => {
     setViendo(p.iso); setAviso(null);
     try {
@@ -134,6 +148,10 @@ export default function Paises({ giro = 'novias' }: { giro?: string }) {
                     <button disabled={!!trabajando} onClick={() => pedir({ accion: 'pausar', pais: p.iso }, p.iso, j => `${p.pais} en pausa: ${j.goteos} goteo(s). Lo que ya está programado no se cancela.`)} style={btn(false)}>Pausar el país</button>
                   )}
                   <button disabled={viendo === p.iso} onClick={() => verCorreo(p)} style={btn(false)}>{viendo === p.iso ? 'Armando…' : 'Ver cómo llega'}</button>
+                  <button disabled={!!trabajando} onClick={() => {
+                    if (!window.confirm(`Mandarte la cadencia entera de ${p.pais} a tu correo para leerla. No sale a ningún prospecto. ¿Te la mando?`)) return;
+                    pedirPrueba(p);
+                  }} style={btn(false)}>{trabajando === 'prueba' + p.iso ? 'Mandando…' : 'Mándamela a mí'}</button>
                   <button onClick={() => setAbierto(ver ? null : p.iso)} style={btn(false)}>{ver ? 'Cerrar' : 'Ver detalle'}</button>
                 </div>
               </div>
