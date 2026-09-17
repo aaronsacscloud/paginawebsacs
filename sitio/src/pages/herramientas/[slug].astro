@@ -13,6 +13,7 @@
 // llegue a usar el formulario.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CurvaTallas from '../../components/herramientas/CurvaTallas.tsx';
+import Temporada from '../../components/herramientas/Temporada.tsx';
 import { herramientaDe } from '../../lib/demanda/herramientas';
 import { SITIO } from '../../data/entidad';
 
@@ -50,6 +51,14 @@ const PASOS: Record<string, { name: string; text: string }[]> = {
     { name: 'Corrige la venta por los días que la talla no estuvo', text: 'La venta de una talla agotada está subestimada: no dejó de venderse, dejó de estar. Se proyecta su ritmo de venta al periodo completo, con un tope en el triple de lo vendido, porque la demanda decae conforme avanza la temporada y proyectar plano sobrestima.' },
     { name: 'Reparte la compra con la curva corregida', text: 'La proporción corregida de cada talla, aplicada a las piezas que vas a comprar. Redondeando por resto mayor, para que las piezas sobrantes caigan donde hay más demanda y no al azar.' },
     { name: 'Revisa si se te rompió la corrida', text: 'Si dos o más tallas del núcleo —las que juntan el 60% de la demanda— se agotaron, lo que quedó en piso ya no se vende como conjunto: el modelo sigue ahí pero sin las tallas que lo mueven.' },
+  ],
+  'sale-o-no-sale': [
+    { name: 'Calcula tu sell-through sobre lo RECIBIDO', text: 'Piezas vendidas entre piezas recibidas de ese estilo. El error más común es dividir entre lo que queda: sobre la existencia actual el número siempre sale alto y nunca sirve para decidir.' },
+    { name: 'Saca tu ritmo por semana', text: 'Piezas vendidas entre semanas que lleva en piso. Con menos de dos semanas el ritmo todavía es ruido: un fin de semana bueno lo mueve entero.' },
+    { name: 'Compara la cobertura contra el tiempo que queda', text: 'Las piezas que te quedan divididas entre tu ritmo son tus semanas de cobertura. Si son más que las semanas que le quedan a la temporada, no sale: la diferencia es lo que te va a sobrar.' },
+    { name: 'Trata el sobrante como un piso, no como un techo', text: 'La cuenta supone que el ritmo se mantiene, y en moda baja conforme avanza la temporada: la novedad se agota antes que el inventario. Lo normal es que sobre más de lo proyectado, no menos.' },
+    { name: 'Encuentra tu última semana útil', text: 'Cada semana que pasa sin actuar, la existencia baja despacio pero las semanas restantes bajan rápido, así que la aceleración que haría falta sube. La semana límite es la última en la que esa aceleración todavía cabe en lo que una rebaja puede mover de verdad. Después de esa semana la decisión ya no es si vas a perder, sino cuánto.' },
+    { name: 'Antes de rebajar, mira las tallas', text: 'El sell-through del estilo esconde el de la talla. Un estilo al 30% puede ser centro agotado y extremos intactos, y ahí la rebaja no arregla nada: lo que sobra no lo iba a comprar nadie a ningún precio.' },
   ],
 };
 
@@ -94,6 +103,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
     </header>
 
     {h.slug === 'curva-de-tallas' && <CurvaTallas client:load />}
+    {h.slug === 'sale-o-no-sale' && <Temporada client:load />}
 
     <section class="metodo">
       <h2>Cómo se calcula</h2>
@@ -262,6 +272,64 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
   }
   .curva .con-sacs h3 { margin: 0 0 .6rem; font-size: 1.15rem; }
   .curva .con-sacs p { margin: 0 0 1.2rem; color: var(--color-text-secondary); line-height: 1.65; max-width: 60ch; }
+
+  /* ── Sale o no sale ─────────────────────────────────────────────────────
+     Reutiliza el lienzo de .curva (formulario, botones, avisos) y solo agrega
+     lo suyo: la rejilla de campos y el veredicto. Dos herramientas con dos
+     hojas de estilo paralelas se despintan la una de la otra en la tercera. */
+  .temporada .campos {
+    display: grid; gap: 1.1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+  .temporada .campos label { display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; font-weight: 600; }
+  .temporada .campos label i { font-style: normal; font-weight: 400; color: var(--color-text-tertiary); }
+  .temporada .campos label em {
+    font-style: normal; font-weight: 400; font-size: .8rem;
+    color: var(--color-text-tertiary); line-height: 1.35;
+  }
+  .temporada select {
+    font: inherit; padding: .5rem .65rem; border: 1px solid var(--color-border);
+    border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary);
+    width: 100%;
+  }
+
+  /* El veredicto va grande y arriba: quien abre esto tiene una pregunta binaria
+     en la cabeza, y enterrar la respuesta entre seis métricas no la contesta. */
+  .temporada .veredicto { border-radius: 12px; padding: 1.2rem 1.35rem; border: 1px solid; }
+  .temporada .veredicto .etiqueta {
+    margin: 0 0 .5rem; font-size: .78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em;
+  }
+  .temporada .veredicto .frase { margin: 0; font-size: 1.06rem; line-height: 1.6; }
+  .temporada .veredicto.bien   { background: var(--ok-fondo);     border-color: var(--ok-borde);     color: var(--ok-texto); }
+  .temporada .veredicto.ojo    { background: var(--aviso-fondo);  border-color: var(--aviso-borde);  color: var(--aviso-texto); }
+  .temporada .veredicto.mal    { background: var(--alerta-fondo); border-color: var(--alerta-borde); color: var(--alerta-texto); }
+  .temporada .veredicto.neutro { background: var(--azul-fondo);   border-color: var(--azul-borde);   color: var(--azul-texto); }
+
+  .temporada .cifras {
+    display: grid; gap: .8rem; margin: 1.5rem 0 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+  }
+  .temporada .cifras > div {
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 10px; padding: .8rem .9rem;
+  }
+  .temporada .cifras > div.malo { border-color: var(--alerta-borde); background: var(--alerta-fondo); }
+  .temporada .cifras dt {
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--color-text-tertiary); margin-bottom: .25rem;
+  }
+  .temporada .cifras dd {
+    margin: 0; font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .temporada .cifras dd small { font-size: .62em; font-weight: 500; color: var(--color-text-tertiary); margin-left: .15em; }
+
+  .temporada .piso, .temporada .cruce {
+    margin: 1.4rem 0 0; color: var(--color-text-secondary); line-height: 1.6; max-width: 66ch;
+  }
+  .temporada .cruce {
+    border-left: 3px solid var(--color-secondary); padding-left: .9rem;
+  }
 
   @media (max-width: 560px) {
     .curva form { padding: 1.1rem; }

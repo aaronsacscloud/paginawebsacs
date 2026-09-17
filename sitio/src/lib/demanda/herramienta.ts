@@ -112,6 +112,14 @@ export async function invocar(slug: string, entradaCruda: unknown, ctx: Contexto
 
 /** Se guarda QUE se usó y CÓMO resultó, nunca lo que la persona subió. */
 async function registrarUso(h: Herramienta, ctx: Contexto, ok: boolean, ms: number) {
+  // En desarrollo NO se mide. El repo apunta a la base de producción, así que
+  // cada prueba local escribía una fila real: las primeras diez del sistema eran
+  // seis mías. Da igual mientras solo se cuentan usos, pero en la etapa 5 esta
+  // tabla es el primer eslabón de la cadena herramienta → lead → cliente, y ahí
+  // una fila de prueba no es ruido: es una atribución falsa que no se distingue
+  // de una verdadera.
+  if (import.meta.env?.DEV) return;
+
   try {
     const { supabase } = await import('../supabase');
     await supabase.from('de_herramienta_usos').insert({

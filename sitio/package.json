@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node --experimental-strip-types src/components/admin/crm/equipo/css-sin-backticks.test.ts && node --experimental-strip-types src/lib/email/puro.test.ts && node --experimental-strip-types src/lib/telefono.test.ts && node --experimental-strip-types src/lib/scheduling/recordatorios.test.ts && node --experimental-strip-types src/lib/quotes/plan.test.ts && node --experimental-strip-types src/lib/crm/fiscal.test.ts && node --experimental-strip-types src/lib/crm/nombre.test.ts && node --experimental-strip-types src/lib/demanda/privacidad.test.ts && node --experimental-strip-types --import ./scripts/de-registrar-hooks.mjs src/lib/demanda/herramientas/curva.test.ts"
+    "test": "node --experimental-strip-types src/components/admin/crm/equipo/css-sin-backticks.test.ts && node --experimental-strip-types src/lib/email/puro.test.ts && node --experimental-strip-types src/lib/telefono.test.ts && node --experimental-strip-types src/lib/scheduling/recordatorios.test.ts && node --experimental-strip-types src/lib/quotes/plan.test.ts && node --experimental-strip-types src/lib/crm/fiscal.test.ts && node --experimental-strip-types src/lib/crm/nombre.test.ts && node --experimental-strip-types src/lib/demanda/privacidad.test.ts && node --experimental-strip-types --import ./scripts/de-registrar-hooks.mjs src/lib/demanda/herramientas/curva.test.ts && node --experimental-strip-types --import ./scripts/de-registrar-hooks.mjs src/lib/demanda/herramientas/temporada.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.71",

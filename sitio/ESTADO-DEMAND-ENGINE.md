@@ -479,10 +479,45 @@ se quedan aquí. Para saber qué herramienta convierte basta slug + visitor_id.
 extensión. QA con navegador en 1280 y 390 px, sin errores de JS ni desborde:
 https://code.sacscloud.com/shots/dc7c5b22401d3636.png
 
+### Segunda herramienta: «¿Vas a sacar este estilo a tiempo?» (`/herramientas/sale-o-no-sale`)
+
+Hay cien calculadoras de sell-through en internet y todas hacen lo mismo:
+dividir. Ninguna contesta la pregunta que el comprador trae en la cabeza, que es
+binaria: **¿rebajo o no rebajo?** Esta parte del sell-through y llega hasta el
+sobrante proyectado, el dinero parado y —lo que no hace nadie— la **última
+semana útil para actuar**.
+
+La semana límite sale de que cada semana sin actuar la existencia baja despacio
+pero las semanas restantes bajan rápido: la aceleración que haría falta sube.
+El límite es la última semana en que esa aceleración todavía cabe en lo que el
+usuario cree que puede acelerar (2× por omisión, elegible). **Ese múltiplo es un
+supuesto declarado, no un dato del mercado**, y se dice en la respuesta: inventar
+una elasticidad de precio habría sido fabricar un número con cara de hecho.
+
+Tres decisiones:
+
+- **El veredicto va por el TAMAÑO del sobrante, no por si existe.** Partir en
+  `sobrante > 0` equivale exactamente a `aceleración > 1`, y daba la misma
+  alarma por 3 piezas de 100 que por 80 de 200. Un aviso que salta por nada
+  enseña a ignorar el aviso. El corte quedó en 5% de lo recibido.
+- **Sin una sola venta no hay ritmo que proyectar.** Salía «vender 0× más
+  rápido», que no significa nada. Ahora nombra el problema real: el estilo no
+  arrancó, y eso no se arregla con una rebaja.
+- **El sobrante es un PISO.** La cuenta supone ritmo constante y en moda el
+  ritmo baja. Va en la respuesta, no en la letra chica: quien cree que su
+  estimación es generosa espera, y esperar es lo que no hay que hacer.
+
+Cierra el círculo con la primera: cuando el veredicto es «no sale», manda al
+auditor de curva de tallas, porque el sell-through del estilo esconde el de la
+talla — un estilo «al 30%» puede ser centro agotado y extremos intactos, y ahí
+la rebaja no arregla nada.
+
 ### Lo que sigue de la etapa 4
 
-1. Dos herramientas más (candidatas: sell-through por estilo, nivelación entre
-   tiendas — las dos ya tienen artículo publicado al que engancharse).
+1. Una tercera herramienta: nivelación entre tiendas (ya tiene artículo
+   publicado al que engancharse). Es la más «Sacs» de las tres y la de entrada
+   más pesada: hay que resolver cómo se captura una matriz tienda × talla sin
+   que la persona abandone.
 2. Anunciar el MCP donde los clientes lo puedan conectar, y medir si lo usan.
 3. Sacs Fashion Retail Index: el dato propio que nadie más puede publicar.
 4. Autoridad y PR.
