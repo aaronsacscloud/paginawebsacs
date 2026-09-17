@@ -141,7 +141,14 @@ export const REGLAS = `Reglas de escritura, sin excepción:
 - Al saludar usa SOLO el nombre de pila: "Hola Cielo", nunca "Hola Cielo Inzunza".
   Nombre y apellido suena a base de datos. Si no hay nombre, no saludes por
   nombre: "Buen día." y a lo que sigue.
-- Asunto de 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji.
+- EL ASUNTO SE ESCRIBE PARA ESTE NEGOCIO, no se copia. El del guion es el
+  ÁNGULO —de qué trata ese correo—, no el texto a reusar. Dos negocios del
+  mismo giro tienen que recibir asuntos DISTINTOS, porque los dos pueden estar
+  en el mismo buzón de Gmail el mismo día y veinte asuntos idénticos se leen
+  como una campaña. Usa lo que sabes de ellos: su ciudad, lo que venden, su
+  plataforma. Si no sabes nada particular, cambia al menos las palabras.
+  De 3 a 6 palabras, en minúscula, sin signos de admiración ni emoji, y que no
+  parezca carnada: nada de cifras de dinero ni de «no te lo pierdas».
 - NO INVENTES NADA. Solo puedes usar hechos del expediente. Si un dato no está, no escribas esa frase.
 - Prohibido inventar cifras de resultados. El único caso que puedes citar: en un cliente nuestro,
   cadena de moda, encontramos 1.2 millones de pesos mexicanos (unos 60 mil dólares) mal repartidos entre su centro de distribución
@@ -231,7 +238,7 @@ export async function generarCadencia(cuenta_id: string, op: OpcionesGenerar): P
     .eq('region', (base as any)?.region || 'mexico').order('orden');
 
   const guion = (plantillas || []).map((p: any, i: number) =>
-    `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 7, 11, 16, 22, 30][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nAsunto base: ${p.asunto}\nTexto base:\n${p.cuerpo}`
+    `Correo ${i + 1} (día ${(pasos || [])[i]?.dia ?? [1, 3, 5, 8, 12, 16, 21, 26][i] ?? 1}) — objetivo: ${p.objetivo || 'avanzar'}\nÁngulo del asunto (reescríbelo para este negocio): ${p.asunto}\nTexto base:\n${p.cuerpo}`
   ).join('\n\n---\n\n');
   if (!guion) return { ok: false, error: `todavía no hay plantillas escritas para el giro ${c.giro}`, status: 409 };
   /* NINGÚN CORREO CON UN HUECO SIN RELLENAR. Pasó de verdad (16-sep-2026): la
@@ -286,7 +293,10 @@ Devuelve SOLO un JSON válido, sin explicaciones ni cercas de código:
      de verdad agenda, y leía otra cosa. */
   const dias = (pasos || []).map((x: any) => Number(x.dia)).filter(Boolean);
   const base0 = (plantillas || []).map((p: any, i: number) => ({
-    dia: dias[i] ?? [1, 3, 7, 11, 16, 22, 30][i] ?? (i * 4 + 1),
+    // El respaldo, con el ritmo vivo (26 días). No debería usarse nunca —la
+    // guarda de arriba exige tantos pasos como plantillas— pero si se usa, que
+    // al menos no contradiga la cadencia que sí está escrita.
+    dia: dias[i] ?? [1, 3, 5, 8, 12, 16, 21, 26][i] ?? (i * 4 + 1),
     asunto: asuntoPais(c.pais, rellenar(p.asunto, vars)),
     cuerpo: rellenar(p.cuerpo, vars),
     // La imagen y el botón NO los toca la IA: son del correo, no del texto.
