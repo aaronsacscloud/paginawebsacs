@@ -96,6 +96,75 @@ const leerLocal = <T,>(k: string, d: T): T => { try { const v = localStorage.get
 const guardarSesion = (k: string, v: string) => { try { v ? sessionStorage.setItem(k, v) : sessionStorage.removeItem(k); } catch { /* privado */ } };
 const leerSesion = (k: string, d: string): string => { try { return sessionStorage.getItem(k) ?? d; } catch { return d; } };
 
+/* AGENDAR SIN SALIR DEL CIERRE. Los mismos huecos que enseña la sala de la
+   llamada manual (`available-slots`, que cruza la agenda con Google y devuelve
+   los libres de verdad). Se piden al TOCAR el botón y no al abrir el cierre:
+   la mayoría de las llamadas no acaban en cita, y pedirlos siempre sería pagar
+   una consulta por cada una que no lleva a nada. */
+function AgendarEnCierre({ contactId, nombre, telefono }: { contactId?: string | null; nombre?: string | null; telefono?: string | null }) {
+  const [slots, setSlots] = useState<any[] | null>(null);
+  const [puesto, setPuesto] = useState('');
+  const [yendo, setYendo] = useState(false);
+  const [err, setErr] = useState('');
+  const traer = async () => {
+    setSlots([]);
+    const hoy = new Date().toISOString().slice(0, 10);
+    const hasta = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const j = await fetch(`/api/scheduling/available-slots?slug=demo&from=${hoy}&to=${hasta}`).then(r => r.json()).catch(() => null);
+    const l = Object.entries(j?.dates || {}).flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora })));
+    setSlots(l.slice(0, 10));
+  };
+  const agendar = async (h: any) => {
+    setYendo(true);
+    /* `/api/scheduling/book` y NO `agenda-oferta`: el segundo le MANDA los
+       horarios al cliente para que elija, y aquí el cliente ya está al
+       teléfono diciendo cuál quiere. Reservar directo es lo que cierra la
+       cita; mandarle una lista a alguien que te está hablando es devolverle
+       la pelota. Y `book` corre la cadena entera —Google Calendar, correo de
+       confirmación, recordatorios— igual que si hubiera agendado él. */
+    const r = await fetch('/api/scheduling/book', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type_slug: 'demo', fecha: h.fecha, hora_inicio: h.hora,
+        nombre: nombre || 'Contacto', whatsapp: telefono || undefined,
+        notas: 'Quedó en la llamada', timezone: 'America/Mexico_City',
+      }),
+    }).then(x => x.json()).catch(() => ({ error: 'No se pudo agendar' }));
+    setYendo(false);
+    if (r?.error) { setErr(r.error); return; }
+    setPuesto(`${h.fecha} ${h.hora}`);
+  };
+  if (puesto) return (
+    <div style={{ marginTop: 12, background: '#EAF8F2', color: '#1E8A63', borderRadius: 10, padding: '10px 13px', fontSize: 12.5, fontWeight: 700 }}>
+      Cita puesta para el {puesto}. Queda en la agenda y en el calendario.
+    </div>
+  );
+  return (
+    <div style={{ marginTop: 12, background: '#FFF8EC', border: '1px solid #f3d9a4', borderRadius: 10, padding: '10px 13px' }}>
+      <div style={{ fontSize: 12.5, color: '#9a6a10', fontWeight: 700, marginBottom: slots ? 8 : 0 }}>
+        No quedó ninguna cita ni compromiso de esta llamada.
+      </div>
+      {err && <div style={{ fontSize: 12, color: '#C0554E', fontWeight: 700, marginBottom: 7 }}>{err}</div>}
+      {slots === null ? (
+        <button onClick={traer} style={{ border: '1px solid #e0c99a', background: '#fff', color: '#9a6a10', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>
+          Ponerle una ahora
+        </button>
+      ) : !slots.length ? (
+        <div style={{ fontSize: 12, color: '#9a6a10' }}>No tienes huecos libres esta semana.</div>
+      ) : (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {slots.map((h, i) => (
+            <button key={i} disabled={yendo} onClick={() => agendar(h)}
+              style={{ border: '1px solid #e0c99a', background: '#fff', color: '#9a6a10', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, cursor: yendo ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+              {new Date(`${h.fecha}T${h.hora}:00`).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAbrirConversacion, onCerrar, movil }: Props) {
   const [sesionId, setSesionId] = useState<string | null>(() => sesionInicial || leerLocal('cabina.sesion', null));
   const [est, setEst] = useState<any>(null);           // { sesion, actual, pendientes, ahora }
@@ -741,6 +810,30 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     automático —lo hace el servidor— pero en pantalla no se veía
                     nada y parecía que se había atorado. Un proceso que avanza
                     solo sin decirlo se siente igual que uno roto. */}
+                {/* ══ «QUIERO OÍR QUÉ PASA» ════════════════════════════════
+                    Pedido del dueño: «otra opción que con un clic puedas
+                    escuchar la parte si timbra o qué está pasando, para que
+                    sepas cómo manejarlo».
+
+                    Y resulta que YA SE PUEDE: estando en la sala oyes la
+                    llamada entera —el tono, el buzón, el «bueno»— sin que te
+                    oigan. Lo que faltaba no era la función, era decirlo: la
+                    etiqueta vivía arriba a la derecha, lejos de donde miras
+                    mientras marca, y nadie relaciona «En la sala, mudo» con
+                    «esto que oigo es esta llamada». Se dice aquí, en la línea
+                    de lo que está pasando, y si NO estás dentro se ofrece
+                    entrar de un clic en vez de explicarlo. */}
+                {['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) && (
+                  <div style={{ fontSize: 12, color: enSala ? '#1E8A63' : C.moradoTinta, fontWeight: 700, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {enSala ? 'Lo estás oyendo en vivo — te oyen sólo si abres el micrófono.' : (
+                      <>
+                        <span>No estás en la sala: no oyes lo que pasa.</span>
+                        <button onClick={entrarSala} style={{ ...btnT, padding: '4px 10px' }}>Entrar a escuchar</button>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {actual.veredicto === 'buzon' && (
                   <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>
                     Cayó en el buzón{actual.veredicto_fuente ? ` (${actual.veredicto_fuente})` : ''}.
@@ -886,6 +979,22 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       </label>
                     )}
                   </div>
+                )}
+
+                {/* ══ EL CIERRE NUNCA SE QUEDA MUDO ════════════════════════
+                    Pedido del dueño: «si se creó algo automático que me lo diga
+                    al momento de colgar, y que me aparezca la opción del
+                    calendario en caso de que no se haya creado alguna sesión».
+
+                    Cuando la IA proponía algo ya se decía (abajo, «Al seguir se
+                    deja hecho»). El agujero era el silencio: si no entendía
+                    nada, el cierre no decía NI QUE NO —y un cierre mudo se lee
+                    como «algo se creó y no me lo contaron»—. Aquí se dice que
+                    no se creó nada, y se ofrece cerrar la fecha en el momento,
+                    que es cuando todavía lo tienes al teléfono. */}
+                {estadoActual === 'cierre' && actual.cierre_estado && actual.cierre_estado !== 'proponiendo'
+                  && !(propuesta?.compromisos || []).length && (
+                  <AgendarEnCierre contactId={actual.contact_id} nombre={actual.nombre} telefono={actual.telefono} />
                 )}
 
                 {/* EL CIERRE CON IA: lo que la IA entendió de la llamada y va a dejar hecho al seguir. */}

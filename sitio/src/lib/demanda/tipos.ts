@@ -69,6 +69,10 @@ export type Config = {
   mes_en_curso: string | null;
   kill_switch: boolean;
   modo: 'normal' | 'simulacion';
+  /** Cuándo corrió el latido y qué encontró. Si `latido_at` envejece, el que
+   *  murió es el vigilante — el único fallo que él mismo no puede reportar. */
+  latido_at?: string | null;
+  latido_vivo?: boolean | null;
   mercados: string[];
   idiomas: string[];
   umbrales: Record<string, number>;

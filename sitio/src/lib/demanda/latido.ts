@@ -110,6 +110,24 @@ export async function tomar(): Promise<Latido> {
       : `${corriendo.count ?? 0} corriendo, ninguna colgada`,
   });
 
+  /* El latido se mira a sí mismo. Corre cada 30 min; con más de 90 sin marca,
+     el cron no se está disparando — y eso significa que lo que se está leyendo
+     ahora mismo pudo ser lo último que se supo del motor hace horas.
+
+     Solo tiene sentido cuando alguien abre la pantalla: el propio latido, al
+     correr, acaba de poner la marca. Por eso el signo se calcula sobre la marca
+     ANTERIOR, que es la que dice si hubo un hueco. */
+  const mLatido = minDesde(cfg.latido_at);
+  if (mLatido !== null) {
+    signos.push({
+      que: 'El vigilante se dispara', minutos: mLatido, tope: 90,
+      bien: mLatido <= 90,
+      detalle: mLatido <= 90
+        ? `último latido ${humano(mLatido)}`
+        : `el latido no corre desde ${humano(mLatido)}: lo que ves puede estar viejo`,
+    });
+  }
+
   // El apagador no es un fallo: es una decisión. Pero un motor apagado que
   // nadie recuerda haber apagado es un motor muerto con otro nombre.
   if (cfg.kill_switch) {
@@ -120,7 +138,18 @@ export async function tomar(): Promise<Latido> {
   }
 
   const problemas = signos.filter(s => !s.bien).map(s => `${s.que}: ${s.detalle}`);
-  return { vivo: problemas.length === 0, signos, problemas, ahora };
+  const vivo = problemas.length === 0;
+
+  /* La huella: el latido deja constancia de que corrió, sano o no.
+     Sin esto, un latido que solo escribe cuando algo va mal hace que «corrió y
+     todo bien» sea indistinguible de «no corrió». Y el fallo que el latido NO
+     puede reportar es el suyo propio: si el cron deja de dispararse, nadie
+     avisa de nada. Con la marca, ese silencio envejece y se ve. */
+  const { error } = await supabase.from('de_config')
+    .update({ latido_at: ahora, latido_vivo: vivo }).eq('id', 1);
+  if (error) console.error(`[latido] no se pudo dejar la huella: ${error.message}`);
+
+  return { vivo, signos, problemas, ahora };
 }
 
 /**

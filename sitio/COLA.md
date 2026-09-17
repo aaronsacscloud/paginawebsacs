@@ -756,7 +756,10 @@ HECHO: el selector de etapa en el cierre (5 opciones, las que se deciden en una
 llamada). Nota y resultado ya estaban. Y «Al seguir se deja hecho» ya lista los
 compromisos con su fecha, la agenda y el calendario cuando la IA los propuso.
 
-FALTA:
+HECHO TAMBIÉN (17-sep, misma tanda): el calendario cuando no se creó nada, el
+aviso de que no quedó compromiso, y el «lo estás oyendo en vivo».
+
+(quedaba, ya resuelto):
 1. **El calendario cuando NO se creó nada.** Hoy, si la IA no entendió un
    compromiso, el cierre no ofrece agendar: hay que salir a la agenda. Debería
    salir el mismo bloque de horarios libres que lleva `SalaLlamada` (ya usa
