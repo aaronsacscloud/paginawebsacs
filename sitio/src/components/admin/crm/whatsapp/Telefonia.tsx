@@ -116,8 +116,19 @@ export default function Telefonia() {
      no, el efecto la volvería a abrir al siguiente render. */
   const [salaAbierta, setSalaAbierta] = useState(false);
   const salaCerrada = useRef(false);
+  const salaAbiertaRef = useRef(false); salaAbiertaRef.current = salaAbierta;
+  /* ══ LA SALA SE QUEDA AL COLGAR (17-sep-2026) ════════════════════════════
+     «Al momento de que yo responda, me tiene que mostrar una pantalla completa
+     con toda esta información.» Antes, al colgar, la sala desaparecía y todo
+     lo de la llamada —lo que se oyó, lo que se hizo, lo que la IA propone
+     cerrar— quedaba detrás de un resumen de tres renglones. Ahora la MISMA
+     pantalla se queda abierta como resumen hasta que la persona diga «listo».
+     Es la misma instancia del componente a propósito: si se desmontara, se
+     perderían el resultado elegido y la propuesta de cierre recién pedida. */
+  const [finSala, setFinSala] = useState<{ sid: string | null; telefono: string; nombre: string | null; seg: number } | null>(null);
   const [ctx, setCtx] = useState<any>(null);        // mejora 4 · con quién estás hablando
   const esMovil = useIsMobile();
+  const esMovilRef = useRef(false); esMovilRef.current = esMovil;
   const wakeRef = useRef<any>(null);
   // El apunte se lee desde el cierre de `terminar`, que se creó antes de la
   // última tecla: sin la ref se guardaría el texto de hace varios caracteres.
@@ -377,15 +388,18 @@ export default function Telefonia() {
     setTimeout(sondear, 2500);
   }, []);
 
-  /** Manda el apunte al hilo. Silencioso: nunca estorba al colgar. */
-  const guardarNota = useCallback((sid: string | null) => {
+  /** Manda el apunte al hilo. Silencioso: nunca estorba al colgar.
+   *  `limpiar` es false cuando la sala se queda abierta como resumen: ahí el
+   *  apunte se sigue viendo y borrarlo de la pantalla sería decirle a quien
+   *  acaba de colgar que su nota se perdió. */
+  const guardarNota = useCallback((sid: string | null, limpiar = true) => {
     const texto = notaRef.current.trim();
     if (!texto || !sid) return;
     fetch('/api/crm/telefonia/nota', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ call_id: sid, texto }),
     }).then(() => { document.dispatchEvent(new CustomEvent('wa-refrescar-hilo')); }).catch(() => {});
-    setNota(''); setNotaAbierta(false);
+    if (limpiar) { setNota(''); setNotaAbierta(false); }
   }, []);
 
   /** Engancha los eventos del `call` de Twilio a la máquina de estados. */
@@ -433,11 +447,21 @@ export default function Telefonia() {
       const v = vivaRef.current;
       if (!v || v.call !== call) return;
       const segFinales = v.desde ? Math.round((Date.now() - v.desde) / 1000) : 0;
+      /* La sala se queda de resumen si estaba abierta y hubo conversación. Se
+         decide ANTES de tocar `viva`, y en el mismo bloque, para que React
+         pinte los dos cambios juntos: si la sala se desmontara un instante,
+         perdería el desenlace elegido y la propuesta de cierre. */
+      /* En el teléfono no: ahí la llamada tiene su propia pantalla completa
+         (más arriba, `if (esMovil …)`) con su resumen, y esta sala ni siquiera
+         se pinta. Sin esta condición el apunte se quedaría sin limpiar y se
+         arrastraría a la siguiente llamada. */
+      const conSala = salaAbiertaRef.current && !!v.desde && !esMovilRef.current;
+      if (conSala) setFinSala({ sid: v.sid || call?.parameters?.CallSid || null, telefono: v.telefono, nombre: v.nombre, seg: segFinales });
       /* MEJORA 3 · EL APUNTE NO SE PIERDE AL COLGAR.
          Lo que se escribe mientras se habla es lo más valioso de la llamada y
          es justo lo que se evapora: al colgar hay que buscar la conversación y
          escribirlo de memoria. Se guarda solo, sin botón, en cuanto cuelgas. */
-      guardarNota(v.sid || call?.parameters?.CallSid || null);
+      guardarNota(v.sid || call?.parameters?.CallSid || null, !conSala);
       setViva(null); setMute(false); setAviso(''); setTeclado(false); setTonos(''); setNivel(0);
       cerrarCon(v, segFinales);
       if (motivo) setResumen(r => (r ? { ...r, desenlace: motivo } : r));
@@ -923,15 +947,27 @@ export default function Telefonia() {
         </div>
       )}
 
-      {/* ── LLAMADA EN CURSO ─────────────────────────────────────────────── */}
-      {salaAbierta && viva?.fase === 'en-linea' && !esMovil && (
+      {/* ── LLAMADA EN CURSO, Y SU RESUMEN AL COLGAR ─────────────────────
+          Sólo en escritorio: en el teléfono la llamada tiene su propia
+          pantalla completa, más arriba (`if (esMovil …)`), y nunca se llega
+          hasta aquí. Llevar la sala al móvil es otra tarea, anotada en COLA.md.
+          La misma pantalla sirve para las dos mitades: `fin` la convierte en
+          el resumen en vez de desmontarla. */}
+      {((salaAbierta && viva?.fase === 'en-linea') || finSala) && (
         <Suspense fallback={null}>
           <SalaLlamada
-            telefono={viva.telefono || ''} callId={viva.sid || null} nombre={quien(viva)} segundos={seg}
+            telefono={finSala?.telefono || viva?.telefono || ''}
+            callId={finSala?.sid || viva?.sid || null}
+            nombre={finSala?.nombre || (viva ? quien(viva) : null)}
+            segundos={finSala ? finSala.seg : seg}
+            fin={!!finSala}
             nota={nota} setNota={setNota}
             mudo={mute} onSilenciar={toggleMute}
-            onColgar={() => { setSalaAbierta(false); colgar(); }}
-            onCerrar={() => { salaCerrada.current = true; setSalaAbierta(false); }} />
+            onColgar={colgar}
+            onCerrar={() => {
+              if (finSala) { setFinSala(null); setNota(''); setNotaAbierta(false); return; }
+              salaCerrada.current = true; setSalaAbierta(false);
+            }} />
         </Suspense>
       )}
       {viva && (
@@ -1005,7 +1041,9 @@ export default function Telefonia() {
       )}
 
       {/* ── RESUMEN + MINUTA ─────────────────────────────────────────────── */}
-      {resumen && !viva && (
+      {/* La tarjetita de «llamada terminada» no se pinta si la sala se quedó
+          abierta como resumen: dirían lo mismo, una encima de la otra. */}
+      {resumen && !viva && !finSala && (
         <div style={{ ...tarjeta, background: '#fff', color: C.g900, border: `1px solid ${C.g200}`, boxShadow: '0 18px 50px rgba(0,0,0,.16)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span style={{ minWidth: 0, flex: 1 }}>

@@ -708,6 +708,13 @@ export async function procesarSala(sesionId: string, p: Record<string, string>) 
 /** El mismo contacto, otra vez en la lista, para una hora concreta. */
 export async function reprogramar(it: any, minutos: number, motivo: string, cuando?: Date) {
   const volver = (cuando || new Date(Date.now() + minutos * 60000)).toISOString();
+  /* UNA LLAMADA SUELTA NO VUELVE A NINGUNA LISTA. Las entrantes y las que se
+     marcan a mano cuelgan de la sesión fantasma (`suelta.ts`), que nunca marca
+     a nadie: meterle un item pendiente sería dejar basura que jamás se llama.
+     El compromiso ya quedó donde sí se ve — la reunión, Google Calendar y la
+     tarea en Mi día, que las crea `crearCompromiso` antes de llegar aquí. */
+  const { data: ses } = await supabase.from('tel_sesiones').select('origen').eq('id', it.sesion_id).maybeSingle();
+  if ((ses?.origen as any)?.suelta) return null;
   const { data: ya } = await supabase.from('tel_sesion_items').select('id').eq('sesion_id', it.sesion_id).eq('telefono', it.telefono).eq('estado', 'pendiente').limit(1).maybeSingle();
   if (ya) { await supabase.from('tel_sesion_items').update({ volver_at: volver, prioridad: 1, updated_at: ahora() }).eq('id', ya.id); return ya.id; }
   const { data } = await supabase.from('tel_sesion_items').insert({

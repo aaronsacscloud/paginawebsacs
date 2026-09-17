@@ -25,6 +25,19 @@ export const POST: APIRoute = async ({ request }) => {
   const grabar = `record="record-from-answer-dual" recordingStatusCallback="${BASE}/api/telefonia/grabacion" recordingStatusCallbackEvent="completed"`;
   const estado = `action="${BASE}/api/telefonia/estado"`;
 
+  /* ── OÍR LA LLAMADA MIENTRAS PASA (17-sep-2026) ─────────────────────────
+     Las llamadas de la lista se transcriben en vivo desde el primer día; las
+     normales —las entrantes y las que se marcan a mano— no, y por eso al
+     colgar una entrante no quedaba nada: ni apunte, ni compromiso, ni el
+     «mándame la info por WhatsApp» que el cliente acababa de pedir. La
+     grabación sí llegaba, pero MINUTOS DESPUÉS: no sirve para hacer algo
+     durante la llamada.
+
+     Se enciende con `<Start>` sobre la llamada padre, así que sigue viva
+     aunque el <Dial> cambie de pata, y va a `/api/telefonia/dictado`, que
+     apunta lo oído y dispara las acciones (lib/telefonia/acciones.ts). */
+  const dictado = (sid: string) => `<Start><Transcription statusCallbackUrl="${BASE}/api/telefonia/dictado?call=${sid}" statusCallbackMethod="POST" languageCode="es-MX" track="both_tracks" partialResults="true" enableAutomaticPunctuation="true"/></Start>`;
+
   /* ⚠️ CÓMO SE DISTINGUE ENTRANTE DE SALIENTE — la trampa que rompió las
      llamadas en producción (10-sep-2026).
 
@@ -94,12 +107,16 @@ export const POST: APIRoute = async ({ request }) => {
     ...(agente?.user_id ? { atendida_por: agente.user_id } : {}),
   }, { onConflict: 'call_id' });
 
+  // ¿Se transcribe en vivo? Encendido por omisión; se apaga desde Configuración.
+  const { data: cfgVoz } = await supabase.from('wa_config').select('tel_dictado').eq('id', 1).maybeSingle();
+  const oir = cfgVoz?.tel_dictado !== false ? dictado(p.CallSid) : '';
+
   if (esEntrante) {
     // Timbrar en el CRM: todas las identidades registradas ahora mismo.
     const { data: regs } = await supabase.from('tel_identidades').select('identity').gte('visto_at', new Date(Date.now() - 5 * 60e3).toISOString());
     const clientes = (regs || []).map(r => `<Client>${r.identity}</Client>`).join('');
     if (!clientes) return decir('Gracias por llamar a Sacscloud. Por el momento no podemos atenderte; escríbenos por WhatsApp a este mismo número.');
-    return xml(`<Dial ${grabar} ${estado} answerOnBridge="true">${clientes}</Dial>`);
+    return xml(`${oir}<Dial ${grabar} ${estado} answerOnBridge="true">${clientes}</Dial>`);
   }
 
   // ── Saliente. Validaciones ANTES de gastar una llamada ──────────────────
@@ -142,5 +159,5 @@ export const POST: APIRoute = async ({ request }) => {
     // había que inferirlo restando lo hablado del total, y cuando los avisos
     // llegaban juntos salía «timbró 0 s». Con la marca real no se inventa nada.
     + ` statusCallback="${avisos}" statusCallbackEvent="answered"`;
-  return xml(`<Dial callerId="${await callerIdSaliente()}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number ${amd}>${destino}</Number></Dial>`);
+  return xml(`${oir}<Dial callerId="${await callerIdSaliente()}" ${grabar} ${estado} answerOnBridge="true" timeout="30"><Number ${amd}>${destino}</Number></Dial>`);
 };

@@ -274,6 +274,7 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/telefonia/estado',
   '/api/telefonia/grabacion',
   '/api/telefonia/amd',
+  '/api/telefonia/dictado',        // transcripción en vivo de las llamadas normales
   // Los del marcador (Llamadas inteligentes): sala, estado, amd, transcripción,
   // twiml y anuncio. Mismo esquema: firma de Twilio, fallo cerrado.
   '/api/telefonia/marcador/sala',

@@ -535,7 +535,7 @@ function Aprendido() {
     if (r?.error) setD((x: any) => ({ ...(x || {}), error: r.error })); else { setD((x: any) => ({ ...(x || {}), error: '' })); setEdit(null); cargar(); }
   };
   if (!d) return <div style={{ ...S.card, marginBottom: 14 }}><Cargando texto="Cargando lo aprendido…" /></div>;
-  const reglas: any[] = d.reglas || [], conocimiento: any[] = d.conocimiento || [];
+  const reglas: any[] = d.reglas || [], conocimiento: any[] = d.conocimiento || [], accionesAprendidas: any[] = d.acciones || [];
   const puedeEditar = !!d.puede_editar;   // solo el dueño aprueba o quita (el servidor lo exige; aquí no se enseñan botones que van a fallar)
   const propuestas = reglas.filter(r => r.estado === 'propuesta');
   const activas = reglas.filter(r => r.estado === 'activa');
@@ -562,9 +562,28 @@ function Aprendido() {
   );
   return (
     <div style={{ ...S.card, marginBottom: 14, borderLeft: `3px solid ${propuestas.length ? '#E8A838' : '#9B8CFA'}` }}>
-      <b style={{ fontSize: 13.5, display: 'block' }}>Lo que el marcador aprende</b>
+      <b style={{ fontSize: 13.5, display: 'block' }}>Lo que las llamadas enseñan</b>
       {d.error && <div style={{ marginTop: 8 }}><Aviso tono="malo">{d.error}</Aviso></div>}
       {!puedeEditar && <span style={{ fontSize: 11, color: '#999', display: 'block', marginTop: 3 }}>Solo el dueño aprueba o quita lo aprendido.</span>}
+      {/* OÍR LA LLAMADA MIENTRAS PASA. Es lo que permite reconocer en el
+          momento lo que el cliente pide; apagarlo deja las llamadas como
+          antes: grabadas, con minuta al colgar, y sin poder hacer nada
+          durante. Está aquí porque es de lo que se alimenta todo esto. */}
+      {puedeEditar && (
+        <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, cursor: 'pointer' }}>
+          <input type="checkbox" checked={d.tel_dictado !== false} disabled={!!ocupado}
+            onChange={e => post({ accion: 'dictado', valor: e.target.checked, id: '00000000-0000-0000-0000-000000000000' })}
+            style={{ marginTop: 2 }} />
+          <span style={{ minWidth: 0 }}>
+            <b style={{ fontSize: 12.5, display: 'block' }}>Oír las llamadas mientras pasan</b>
+            <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.5 }}>
+              Transcribe en vivo las llamadas normales (entrantes y las que marcas a mano) para reconocer lo que el cliente pide
+              y hacerlo ahí mismo. Apagado, la llamada se sigue grabando y la minuta sigue llegando al colgar, pero la pantalla
+              de la llamada ya no propone nada. Twilio cobra esa transcripción por minuto.
+            </span>
+          </span>
+        </label>
+      )}
       <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
         Cuando el vendedor toma una llamada que el detector creía buzón —o salta una que creía persona— la frase
         que lo engañó queda aquí propuesta. Al aprobarla, el detector la usa en las siguientes llamadas.
@@ -577,6 +596,37 @@ function Aprendido() {
         {activas.length > 0 && <div style={{ fontSize: 10.5, color: '#999', marginTop: 8 }}>Activas ({activas.length})</div>}
         {activas.map(fila)}
       </div>
+      {/* ══ LO QUE APRENDIÓ DE LAS ACCIONES (17-sep-2026) ═══════════════════
+          «Si no reconoces qué acción hacer, que yo te explique cuál deberías
+          hacer para que aprendas.» Cada dictado en la sala de la llamada deja
+          una frase aquí. Tiene que poder verse y quitarse: una máquina que
+          aprende a puerta cerrada no es de fiar, y una frase demasiado general
+          («mándame») propondría lo mismo en todas las llamadas. */}
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#555', letterSpacing: .3, textTransform: 'uppercase' }}>Lo que aprendió a hacer en la llamada</span>
+        <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
+          Cuando el cliente pide algo y el sistema no lo reconoce, quien está en la llamada le dicta qué hacer.
+          Esa frase queda aquí y la próxima vez la acción se PROPONE sola — nunca se ejecuta sola: eso es sólo para las frases de fábrica.
+        </span>
+        {!accionesAprendidas.length && <p style={{ fontSize: 11.5, color: '#999', margin: '6px 0 0' }}>Nada todavía. Se llena solo con el primer «dile qué hacer» de una llamada.</p>}
+        {accionesAprendidas.map(a => (
+          <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f2f0fa' }}>
+            <span style={{ minWidth: 0, flex: 1 }}>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                {pill(a.accion.replace(/_/g, ' '), '#EEECFE', '#5B4BD6')}
+                <b style={{ fontSize: 12.5 }}>«{a.patron}»</b>
+              </span>
+              {a.ejemplo && <span style={{ fontSize: 11, color: '#888', display: 'block', marginTop: 3, lineHeight: 1.5 }}>Se oyó: «{a.ejemplo}»</span>}
+            </span>
+            {puedeEditar && (
+              <span style={{ flexShrink: 0 }}>
+                {btn('Quitar', async () => { if (await confirmar(`¿Quitar «${a.patron}»? Deja de proponer esa acción cuando alguien lo diga.`)) post({ accion: 'accion_quitar', id: a.id }); }, false, true)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
         <span style={{ fontSize: 11, fontWeight: 800, color: '#555', letterSpacing: .3, textTransform: 'uppercase' }}>Lo que ya sabemos mandar</span>
         <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
