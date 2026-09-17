@@ -478,3 +478,50 @@ Texto del dueño: «vamos ahora con las paginas completas de cada giro y necesit
 orquestrar la instrucción ahi te van los puntos clave a seguir.» — el dueño va a mandar los puntos
 clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, certificación,
 5 días, portal, niveles). Estado: EN CURSO desde 17-sep (plan en src/data/giros/README.md §7).
+
+## 2026-09-17 · Llamadas: botón, sesión en vivo, espacio propio, conciliación
+
+> **Caso 6:** «Agregar un botón para llamar desde esta sección con un click y
+> tambien en el detalle del lead para que sea mas rapido el proceso.»
+>
+> **Caso 7 (sesión de llamadas):** «1. Al momento que contestan la llamada la
+> pantalla debe ser más clara, mostrarme un punto verde o algo que muestre que
+> está activo. 2. Por más que hablaba el usuario no me escuchaba, entonces quita
+> lo de la barra espaciadora: de forma automática que yo me escuche al momento
+> que me pases la llamada. 3. Pasó que estaba llamando y un contacto me estaba
+> llamando al mismo tiempo: que se marque como ocupado, en automático le llegue
+> un WhatsApp al contacto diciendo que estoy en llamada y que reintente en 5
+> minutos o espere a que nosotros le llamemos. 4. Cuando agendo una demo a un
+> horario específico, o discovery, o el prospecto dice que no le interesa:
+> agendar en automático al terminar la llamada, o descalificar y cambiarle el
+> status, además de las notas que tome la IA; y debe decirme justo después de la
+> llamada qué acciones se van a realizar para confirmarlas. Todo lo más
+> automático posible y al mismo tiempo confiable, y yo debo ver lo que está
+> ejecutando siempre en tiempo real. 5. Cualquier otra cosa que pueda hacer más
+> eficiente el proceso, bienvenido sea.»
+>
+> **Caso 8:** «Cuando estoy en la sección de llamadas inteligentes pero le doy
+> click a cualquier filtro no me lleva al inbox, se queda en llamadas
+> inteligentes. Debemos sacarlo de ahí, darle su propio espacio, y al inicio de
+> la experiencia generar un filtro específico y de ahí crear la lista, pero que
+> sea dinámico, que no dependa del inbox. Optimiza esa lógica.»
+>
+> **Caso 9:** «Hacer carta de conciliación y proceso para conciliación de los
+> clientes perdidos (ya tengo 3 que me dijeron que sí les interesa). Una carta
+> tipo acuerdo con su link que le pueda cargar todo, para que me den el sí,
+> firmen, y se inicie el proceso de reconciliación.»
+>
+> **Caso 10:** «Optimizar el calendario de Andrea para que las reuniones siempre
+> sean a partir de las 12:00 PM: que revise si está bien en el sistema y
+> adicional a eso que bloquee todo para las 12:00 PM en adelante.»
+
+- [ ] **6 · Botón de llamar** en la lista de llamadas y en el detalle del lead.
+- [ ] **7 · La sesión de llamadas, de punta a punta.** Indicador en vivo de
+      llamada activa · quitar la barra espaciadora y abrir el micro solo al
+      pasar la llamada · ocupado + aviso por WhatsApp con reintento en 5 min ·
+      cierre automático (agendar / descalificar / notas de IA) con confirmación
+      previa de las acciones · verlo todo en tiempo real.
+- [ ] **8 · Llamadas inteligentes con espacio propio**, con su filtro de arranque
+      y lista dinámica, sin depender del inbox.
+- [ ] **9 · Carta y proceso de conciliación** con link y firma (3 casos vivos).
+- [ ] **10 · Agenda de Andrea a partir de las 12:00 PM** — revisar y bloquear.
