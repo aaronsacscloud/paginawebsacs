@@ -567,9 +567,25 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     }
   }
 
+  /* ══ 🔴 UN BUZÓN NUESTRO NO SE AVISA COMO SI ÉL NOS HUBIERA LLAMADO ══════
+     Reporte del dueño (18-sep-2026), con la captura delante: «nosotros le
+     llamamos y hubo un buzón interactivo que nos contestó, pero el mensaje que
+     estás enviando de WhatsApp es incorrecto porque él no nos llamó».
+
+     Tenía toda la razón, y el error salió a clientes reales. Aquí se llamaba a
+     `avisarLlamadaPerdida`, que es la función de «NOS LLAMARON y no
+     alcanzamos»: su plantilla dice, literal, «nos llamaste y no alcanzamos a
+     responderte». Mandársela a alguien a quien MARCAMOS nosotros y cayó en su
+     buzón es contarle algo que no pasó — y dejarlo esperando una devolución de
+     llamada que nunca pidió.
+
+     El aviso que sí corresponde —«te acabamos de marcar»— lo manda la regla de
+     llamadas (`aplicarReglasLlamada`), que corre sola desde la bitácora unas
+     líneas más arriba. Aquí sólo se anota que el buzón está avisado, para que
+     la cabina lo cuente sin que nadie abra la conversación a comprobarlo. */
   if (resultado === 'buzon' && it.telefono) {
-    import('./perdida').then(m => m.avisarLlamadaPerdida(it.telefono, it.nombre))
-      .catch(() => { /* el aviso es un extra: nunca detiene la lista */ });
+    supabase.from('tel_sesion_items').update({ nota: 'Buzón · avisando por WhatsApp…', updated_at: ahora() })
+      .eq('id', itemId).then(() => {}, () => {});
   }
 
   if (caida) {

@@ -916,3 +916,25 @@ Lo que quedó fuera y sigue pendiente:
    —Twilio cobra el mes completo por cada compra, aunque lo sueltes el mismo
    día—. La transcripción en vivo se midió en 0.027 USD por minuto.
 
+## 18-sep-2026 — Lo que llegó mientras trabajaba en la cabina
+
+- [x] **Plantillas con variables fáciles** (nombre · campo del CRM · campo abierto con etiqueta) →
+      HECHO: botones que insertan y renumeran, ejemplos automáticos, las reglas de Meta avisadas
+      antes de mandarla, y UNA sola lista de campos (había dos y no coincidían: elegías «email» y
+      la cadencia nunca mandaba esa plantilla).
+- [x] **KPIs al header, en chico** mientras la jornada está viva → HECHO.
+- [x] **La pantalla de decidir, en colapsables** («¿Cómo quedó?», «Etapa», «Seguimiento»,
+      «Solicitudes extras»), con lo que la IA entendió arriba y el botón grande abajo → HECHO.
+- [x] **Seguimiento con las salidas de verdad**: demo, discovery, volver a marcar en 5/10/15 min,
+      1 h, mañana, el lunes, día y hora exactos, y «no llamarle más» que además lo saca de la
+      lista → HECHO.
+- [x] **«No quedó ninguna cita»** se movió al final de la sesión, en gris → HECHO.
+- [x] **Buzón**: se cuenta solo («avisando por WhatsApp…») y sigue a la siguiente → HECHO.
+- [x] 🔴 **El WhatsApp del buzón decía «nos llamaste»** en llamadas que hicimos NOSOTROS →
+      ARREGLADO (ver el commit; salió a dos clientes reales y se paró en cuanto lo reportó).
+- [ ] **El loader de los botones**: «al darle clic en colgar que me muestre un loader o algo, que
+      se quede como trabajando y de ahí haga la acción; siempre el botón debe tener interacción».
+- [ ] **¿Dónde escucho las grabaciones?** → contestado en el chat; falta ponerlo en una pantalla:
+      hoy se oyen desde la cabina («Oír la llamada») y el PDF/minuta va en el hilo, pero no hay una
+      lista de grabaciones para buscar una de hace tres días.
+- [ ] **Las 5 mejoras extra por cada punto** que pidió (UX) — van saliendo con cada bloque.
