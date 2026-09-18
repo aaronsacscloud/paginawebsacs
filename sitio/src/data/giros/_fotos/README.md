@@ -98,8 +98,8 @@ de cuatro dictámenes seguidos, no de una corazonada.
 
 | giro | ronda 1 | ronda 2 (tras correcciones) | cortina |
 |---|---|---|---|
-| uniformes | 4 de 23 | 14 de 23 · 9 recompuestas en ronda 3 | **resuelta** |
-| renta de vestidos | 1 de 22 | 19 de 22 · 3 recompuestas en ronda 3 | **resuelta a 10** |
+| uniformes | 4 de 23 | 14 de 23 · 9 recompuestas en ronda 3 · **las 23 aprobadas en ronda 4** | **resuelta** |
+| renta de vestidos | 1 de 22 | 19 de 22 · 3 recompuestas en ronda 3 · **las 22 aprobadas en ronda 4** | **resuelta a 10** |
 | telas y mercería | 11 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
 | ópticas | 5 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
 | sastrería | 1 de 22 | 20 de 22 · 2 recompuestas | **resuelta** |
