@@ -10,17 +10,30 @@
  * todos los permisos del proyecto. No es una restricción que se pueda rodear.
  *
  * QUÉ HACE FALTA, UNA SOLA VEZ
- *   1. console.cloud.google.com → el proyecto donde vive GOOGLE_API_KEY_YT
- *   2. APIs y servicios → Biblioteca → habilitar «YouTube Data API v3»
- *   3. Credenciales → Crear credenciales → ID de cliente de OAuth
- *      Tipo de aplicación: **Aplicación de escritorio**
- *   4. Copiar el ID y el secreto a `sitio/.env` (que NO se commitea):
+ *   1. Habilitar «YouTube Data API v3» en el proyecto sacs3-da4a6
+ *   2. Credenciales → ID de cliente de OAuth → tipo **Aplicación web**
+ *      URI de redirección autorizada:
+ *        https://www.sacscloud.com/api/yt/oauth
+ *   3. Copiar ID y secreto a `sitio/.env` (que NO se commitea):
  *        YT_OAUTH_CLIENT_ID=...apps.googleusercontent.com
  *        YT_OAUTH_CLIENT_SECRET=...
- *   5. Correr:  node scripts/yt-aplicar.mjs --login
- *      Imprime un enlace, se abre en el navegador con la cuenta DUEÑA del
- *      canal, se autoriza y se pega el código de vuelta. El refresh token
- *      queda en `.yt-token.json` (gitignored) y ya no hay que repetirlo.
+ *   4. node scripts/yt-aplicar.mjs --enlace   → imprime la URL a abrir
+ *   5. Abrirla, ELEGIR EL CANAL @sacscloud, autorizar
+ *   6. node scripts/yt-aplicar.mjs --canjear  → guarda el refresh token
+ *
+ * POR QUÉ APLICACIÓN WEB Y NO ESCRITORIO NI DISPOSITIVO
+ * @sacscloud es una CUENTA DE MARCA, y a una cuenta de marca solo se llega por
+ * el selector de canal de la pantalla de consentimiento web.
+ *   · El flujo de dispositivo (google.com/device) NO tiene selector: autoriza
+ *     con la cuenta personal de quien teclea el código. Se probó y el token
+ *     salía válido, leía bien, y al escribir devolvía `forbidden`.
+ *   · El de escritorio tampoco: Google retiró el pegado manual de códigos (OOB)
+ *     y ahora exige escuchar en `127.0.0.1:PUERTO`, que sería el localhost de
+ *     quien autoriza y no el del servidor.
+ *
+ * El sitio recibe el regreso en `/api/yt/oauth` y guarda SOLO el código de
+ * autorización —minutos de vida, un solo uso, inútil sin el secreto—. El canje
+ * por el refresh token se hace aquí, donde vive el secreto.
  *
  * CÓMO SE USA DESPUÉS
  *   node scripts/yt-aplicar.mjs --dry      ← enseña qué cambiaría, no toca nada
@@ -33,7 +46,7 @@
  * cada video que toca, antes de tocarlo.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { createInterface } from 'node:readline/promises';
+import { randomBytes } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -57,52 +70,95 @@ function env() {
 const E = env();
 const ID = E.YT_OAUTH_CLIENT_ID, SECRET = E.YT_OAUTH_CLIENT_SECRET;
 const SCOPE = 'https://www.googleapis.com/auth/youtube';
+const REDIR = 'https://www.sacscloud.com/api/yt/oauth';
 
 const arg = (n) => process.argv.includes(n);
 const valor = (n) => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
 
-// ── login ───────────────────────────────────────────────────────────────────
-async function login() {
-  if (!ID || !SECRET) {
-    console.error('\nFaltan YT_OAUTH_CLIENT_ID y YT_OAUTH_CLIENT_SECRET en sitio/.env');
-    console.error('Lee el encabezado de este archivo: son cinco pasos en Google Cloud Console.\n');
+// ── login: enlace y canje ───────────────────────────────────────────────────
+function exigeCredenciales() {
+  if (ID && SECRET) return;
+  console.error('\nFaltan YT_OAUTH_CLIENT_ID y YT_OAUTH_CLIENT_SECRET en sitio/.env');
+  console.error('Lee el encabezado de este archivo: son tres pasos en Google Cloud Console.\n');
+  process.exit(1);
+}
+
+async function enlace() {
+  exigeCredenciales();
+  const { supabase } = await import('../src/lib/supabase.ts');
+
+  /* El `state` es lo que ata esta petición a la respuesta que reciba el sitio.
+     Sin él, la ruta pública aceptaría el código de cualquiera. */
+  const state = randomBytes(24).toString('base64url');
+  const { data } = await supabase.from('de_config').select('umbrales').eq('id', 1).maybeSingle();
+  const u = { ...(data?.umbrales || {}) };
+  u.yt_oauth = { state, hasta: new Date(Date.now() + 20 * 60 * 1000).toISOString() };
+  const { error } = await supabase.from('de_config').update({ umbrales: u }).eq('id', 1);
+  if (error) { console.error(`\nNo se pudo dejar la autorización pendiente: ${error.message}\n`); process.exit(1); }
+
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.searchParams.set('client_id', ID);
+  url.searchParams.set('redirect_uri', REDIR);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('scope', SCOPE);
+  url.searchParams.set('access_type', 'offline');
+  /* `prompt=consent` obliga a Google a devolver refresh_token. Sin esto, una
+     segunda autorización de la misma cuenta devuelve solo un access_token de
+     una hora y el script se queda sin con qué renovar. */
+  url.searchParams.set('prompt', 'consent select_account');
+
+  console.log('\nAbre este enlace y ELIGE EL CANAL @sacscloud (no la cuenta personal):\n');
+  console.log(url.toString());
+  console.log('\nTienes 20 minutos. Al terminar corre:  node scripts/yt-aplicar.mjs --canjear\n');
+}
+
+async function canjear() {
+  exigeCredenciales();
+  const { supabase } = await import('../src/lib/supabase.ts');
+  const { data } = await supabase.from('de_config').select('umbrales').eq('id', 1).maybeSingle();
+  const pend = (data?.umbrales || {}).yt_oauth;
+
+  if (!pend?.code) {
+    console.error('\nNo hay ningún código esperando. ¿Ya abriste el enlace de --enlace y autorizaste?\n');
     process.exit(1);
   }
-  /* `urn:ietf:wg:oauth:2.0:oob` está retirado. Para una app de escritorio sin
-     servidor, el flujo vigente es redirigir a localhost — pero aquí no hay
-     navegador, así que se usa el modo manual de Google: se autoriza en TU
-     máquina y se pega el código. `redirect_uri` tiene que coincidir con el que
-     el cliente de escritorio acepta. */
-  const redirect = 'http://localhost';
-  const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  u.searchParams.set('client_id', ID);
-  u.searchParams.set('redirect_uri', redirect);
-  u.searchParams.set('response_type', 'code');
-  u.searchParams.set('scope', SCOPE);
-  u.searchParams.set('access_type', 'offline');
-  u.searchParams.set('prompt', 'consent');
-
-  console.log('\n1. Abre este enlace en el navegador donde tengas la sesión DUEÑA del canal:\n');
-  console.log(u.toString());
-  console.log('\n2. Autoriza. El navegador se irá a una página de «no se puede acceder» en localhost.');
-  console.log('   Eso es normal. Copia de la barra de direcciones el valor de `code=`.\n');
-
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const code = (await rl.question('3. Pega aquí el código: ')).trim();
-  rl.close();
 
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ code, client_id: ID, client_secret: SECRET, redirect_uri: redirect, grant_type: 'authorization_code' }),
+    body: new URLSearchParams({
+      code: pend.code, client_id: ID, client_secret: SECRET,
+      redirect_uri: REDIR, grant_type: 'authorization_code',
+    }),
   });
   const j = await r.json();
+
+  /* El código se borra pase lo que pase: es de un solo uso, así que después de
+     intentarlo ya no vale ni en caso de error. Dejarlo ahí solo haría creer que
+     se puede reintentar. */
+  const u = { ...(data?.umbrales || {}) };
+  delete u.yt_oauth;
+  await supabase.from('de_config').update({ umbrales: u }).eq('id', 1);
+
   if (!j.refresh_token) {
-    console.error('\nGoogle no devolvió refresh_token:', JSON.stringify(j).slice(0, 300));
+    console.error(`\nGoogle no dio refresh_token: ${JSON.stringify(j).slice(0, 300)}`);
+    if (j.error === 'invalid_grant') console.error('El código ya se usó o venció. Vuelve a correr --enlace.');
     process.exit(1);
   }
+
   writeFileSync(TOKEN, JSON.stringify(j, null, 2), { mode: 0o600 });
-  console.log(`\nListo. Token guardado en ${TOKEN} (permisos 600, ignorado por git).`);
-  console.log('Ahora corre:  node scripts/yt-aplicar.mjs --dry\n');
+  console.log(`\nToken guardado en ${TOKEN} (permisos 600, ignorado por git).`);
+
+  // Comprobar CUÁL canal quedó autorizado: es el error que acabamos de cometer.
+  const c = await (await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
+    { headers: { Authorization: `Bearer ${j.access_token}` } })).json();
+  const ch = c.items?.[0];
+  if (!ch) {
+    console.error('\nOJO: el token no administra NINGÚN canal. Se autorizó con la cuenta equivocada.');
+    console.error('Vuelve a correr --enlace y elige @sacscloud en el selector de canal.\n');
+    process.exit(1);
+  }
+  console.log(`Canal autorizado: ${ch.snippet.title} · ${ch.statistics.videoCount} videos`);
+  console.log('\nAhora corre:  node scripts/yt-aplicar.mjs --dry\n');
 }
 
 async function accessToken() {
@@ -180,4 +236,6 @@ async function aplicar() {
   for (const x of fallos) console.log(`  FALLÓ ${x.id}: ${x.por}`);
 }
 
-if (arg('--login')) await login(); else await aplicar();
+if (arg('--enlace')) await enlace();
+else if (arg('--canjear')) await canjear();
+else await aplicar();
