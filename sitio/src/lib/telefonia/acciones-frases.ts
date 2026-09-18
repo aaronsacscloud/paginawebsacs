@@ -199,7 +199,11 @@ export const LEER: Partial<Record<AccionId, (frase: string) => Record<string, an
   no_llamar: (f) => ({ evidencia: f.slice(0, 200) }),
 };
 
-export type Detectada = { accion: AccionId | string; frase: string; origen: 'regla' | 'aprendida'; confianza: number; params: Record<string, any> };
+export type Detectada = {
+  accion: AccionId | string; frase: string; origen: 'regla' | 'aprendida'; confianza: number; params: Record<string, any>;
+  /** La regla aprendida que la cazó, para poder contarle los aciertos. */
+  regla_id?: string | null;
+};
 
 /** Qué pide esta frase, según el catálogo. Vacío casi siempre, y está bien. */
 export function detectarCatalogo(fraseCruda: string): Detectada[] {

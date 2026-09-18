@@ -841,6 +841,31 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         <div style={{ fontSize: 13, fontWeight: 600, color: C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nombre || telefonoLegible(i.telefono)}{i.empresa ? <span style={{ fontWeight: 400, color: C.g500 }}> · {i.empresa}</span> : null}</div>
         <div style={{ fontSize: 11.5, color: C.g500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{telefonoLegible(i.telefono)}{i.intentos ? ` · ${i.intentos} ${i.intentos === 1 ? 'intento' : 'intentos'}` : ''}{i.duracion_seg ? ` · ${fmt(i.duracion_seg)}` : ''}{i.motivo_exclusion ? ` · ${i.motivo_exclusion}` : ''}</div>
         {i.nota && <div style={{ fontSize: 11.5, color: '#4B5563', marginTop: 2, fontStyle: 'italic' }}>{i.nota}</div>}
+        {/* ══ QUÉ QUEDÓ HECHO EN ESTA LLAMADA ══════════════════════════════
+            Pedido del dueño (18-sep-2026): «en el resumen de las terminadas
+            debe decirme si se hizo corrección de datos, si se agendó demo, si
+            se agendó discovery y así, para que yo pueda ver si todo se agendó
+            en orden y bien».
+
+            Antes sólo había una píldora con el desenlace («Hablamos») y había
+            que abrir la conversación para saber si de verdad quedó la cita, si
+            el PDF salió y si los datos se guardaron. Ahora está en la fila,
+            con la misma frase que dejó el cierre al ejecutarlo — incluida la
+            confirmación por WhatsApp de la reunión, que es lo que faltaba. */}
+        {(i.hecho || []).length > 0 && (
+          <div style={{ marginTop: 3, display: 'grid', gap: 1 }}>
+            {i.hecho.map((h: string, n: number) => (
+              <div key={n} style={{ fontSize: 11, lineHeight: 1.45, color: /no se pudo|no salió|no se le pudo|sin fecha|tarea:/i.test(h) ? '#9a6a10' : '#1E8A63' }}>
+                {/no se pudo|no salió|no se le pudo/i.test(h) ? '⚠️' : '✓'} {h}
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Y si la IA no pudo cerrarla, se dice aquí mismo: una llamada sin
+            nada hecho y sin explicación se lee como que el sistema falló. */}
+        {i.estado === 'hecho' && !(i.hecho || []).length && i.cierre_motivo && (
+          <div style={{ fontSize: 11, color: '#9a6a10', marginTop: 3 }}>La IA no la cerró: {i.cierre_motivo}</div>
+        )}
       </div>
       {i.estado === 'hecho' || i.estado === 'saltado'
         ? <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...tono(i.resultado), background: tono(i.resultado).bg, color: tono(i.resultado).fg }}>{ETIQUETA_RESULTADO[i.resultado] || ETIQUETA_ITEM[i.estado]}</span>

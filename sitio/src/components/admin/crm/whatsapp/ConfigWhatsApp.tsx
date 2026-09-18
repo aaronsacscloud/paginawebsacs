@@ -615,6 +615,12 @@ function Aprendido() {
               <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 {pill(a.accion.replace(/_/g, ' '), '#EEECFE', '#5B4BD6')}
                 <b style={{ fontSize: 12.5 }}>«{a.patron}»</b>
+                {/* Cuántas veces ha servido de verdad: una frase que nunca pega
+                    se puede quitar sin miedo, y una que pega seguido dice qué
+                    están pidiendo los clientes. */}
+                <span style={{ fontSize: 10.5, color: a.veces ? '#1E8A63' : '#a5a2af', fontWeight: 700 }}>
+                  {a.veces ? `ha servido ${a.veces} ${a.veces === 1 ? 'vez' : 'veces'}` : 'sin usar aún'}
+                </span>
               </span>
               {a.ejemplo && <span style={{ fontSize: 11, color: '#888', display: 'block', marginTop: 3, lineHeight: 1.5 }}>Se oyó: «{a.ejemplo}»</span>}
             </span>

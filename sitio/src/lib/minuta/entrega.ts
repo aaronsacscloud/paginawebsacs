@@ -34,11 +34,13 @@ const BUCKET = 'wa-media';   // público: Meta tiene que poder descargar el arch
 
 export type ResultadoEntrega = {
   pdf: string | null;
-  estado: 'enviada' | 'pendiente_ventana' | 'no_aplica' | 'fallo' | null;
+  estado: 'enviada' | 'pendiente_ventana' | 'no_aplica' | 'omitida' | 'fallo' | null;
   motivo: string;
 };
 
 const primerNombre = (n?: string | null) => String(n || '').trim().split(/\s+/)[0] || '';
+/** Segundos hablados por debajo de los cuales al cliente NO se le manda minuta. */
+const MINIMO_PARA_MINUTA = 90;
 
 /** Sube el PDF y devuelve su URL pública. */
 async function guardar(callId: string, buf: Buffer, sufijo = ''): Promise<string> {
@@ -121,6 +123,32 @@ export async function generarYEntregarMinuta(callId: string): Promise<ResultadoE
           await supabase.from('wa_llamadas').update({ minuta_pdf_cliente_url: urlCliente }).eq('call_id', callId);
         }
       } catch (e: any) { console.warn(`[minuta/entrega] la versión del cliente falló: ${String(e?.message || e)}`); }
+    }
+
+    /* ══ 2 · ¿SE LE MANDA? ────────────────────────────────────────────────
+       ⏱ MENOS DE 90 SEGUNDOS NO LLEVA MINUTA (18-sep-2026, decisión del dueño):
+       «sólo se debe enviar minuta cuando la conversación pasa los 90 segundos;
+       si es menor, sólo se ejecuta la acción específica o se envía el WhatsApp
+       específico según el caso».
+
+       Y es de sentido común leído del otro lado: recibir un PDF de «minuta de
+       nuestra conversación» por una llamada de cuarenta segundos —«ahorita no
+       puedo, márcame luego»— hace que la próxima minuta, la que sí importa, se
+       lea como spam. Lo que esa llamada sí merece (el material que pidió, la
+       hora de la llamada de vuelta) lo manda `acciones.ts`, que no depende de
+       esto.
+
+       El PDF SÍ se genera y queda en el hilo: adentro sirve como registro. Lo
+       que no sale es el mensaje al cliente. */
+    const habloSeg = Number(ll.duracion_seg || 0);
+    if (habloSeg < MINIMO_PARA_MINUTA) {
+      const motivo = `la conversación duró ${habloSeg} s: por debajo de ${MINIMO_PARA_MINUTA} no se le manda minuta al cliente`;
+      await supabase.from('wa_llamadas').update({ minuta_envio_estado: 'omitida', minuta_envio_motivo: motivo }).eq('call_id', callId);
+      try {
+        const { registrarBitacoraLlamada } = await import('../telefonia/bitacora');
+        await registrarBitacoraLlamada(callId);
+      } catch { /* la nota vieja sigue ahí */ }
+      return { pdf: url, estado: 'omitida', motivo };
     }
 
     // ── 2 · ¿Se le manda? ─────────────────────────────────────────────────

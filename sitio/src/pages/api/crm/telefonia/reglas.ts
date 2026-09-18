@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ request }) => {
   const [{ data: reglas }, { data: conocimiento }, { data: acciones }] = await Promise.all([
     supabase.from('tel_reglas').select('id, tipo, patron, origen, estado, ejemplo, veces, created_at').neq('estado', 'descartada').order('estado').order('veces', { ascending: false }).order('created_at', { ascending: false }).limit(200),
     supabase.from('tel_conocimiento').select('id, tema, claves, texto, pdf_url, origen, estado, veces_usado, created_at').neq('estado', 'descartado').order('veces_usado', { ascending: false }).order('created_at', { ascending: false }).limit(200),
-    supabase.from('tel_accion_reglas').select('id, accion, patron, origen, estado, ejemplo, created_at').neq('estado', 'rechazada').order('created_at', { ascending: false }).limit(200),
+    supabase.from('tel_accion_reglas').select('id, accion, patron, origen, estado, ejemplo, veces, created_at').neq('estado', 'rechazada').order('created_at', { ascending: false }).limit(200),
   ]);
   const { data: cfg } = await supabase.from('wa_config').select('tel_dictado').eq('id', 1).maybeSingle();
   return json({ reglas: reglas || [], conocimiento: conocimiento || [], acciones: acciones || [], tel_dictado: cfg?.tel_dictado !== false, puede_editar: user.role === 'founder' });

@@ -973,22 +973,46 @@ export default function Telefonia() {
   }
 
 
+  /* ══ LA TARJETA DE LA LLAMADA ══════════════════════════════════════════
+     Pedido del dueño (18-sep-2026): «ese cuadro negro, que aparezca central en
+     el centro de trabajo, que sea más visible; igual cuando responde el cliente
+     que sea claro que estamos en un proceso de llamada».
+
+     Tenía razón: en la esquina de abajo a la derecha, de 320 px y del mismo
+     gris que el resto del CRM, una llamada VIVA se veía como una notificación
+     que se va sola. Ahora es más ancha, con más aire, y —mientras timbra o se
+     está hablando— con un aro de color latiendo alrededor: de un vistazo, desde
+     el otro lado del escritorio, se sabe que hay una llamada en curso. */
+  const enCurso = !!viva || !!entrante;
+  const colorLlamada = viva?.fase === 'en-linea' ? C.emerald500 : '#9B8CFA';
   const tarjeta: React.CSSProperties = {
-    background: C.g900, color: '#fff', borderRadius: 16, padding: 14,
-    boxShadow: '0 18px 50px rgba(0,0,0,.4)', width: 'min(320px, calc(100vw - 32px))',
+    background: C.g900, color: '#fff', borderRadius: 18, padding: enCurso ? 18 : 14,
+    width: enCurso ? 'min(420px, calc(100vw - 32px))' : 'min(320px, calc(100vw - 32px))',
+    boxShadow: enCurso ? `0 24px 70px rgba(0,0,0,.45), 0 0 0 3px ${colorLlamada}55` : '0 18px 50px rgba(0,0,0,.4)',
+    animation: enCurso ? 'tel-aro 2s ease-in-out infinite' : undefined,
   };
 
-  /* Dónde vive esta barra, que no es un capricho:
-     - ABAJO A LA DERECHA, no arriba al centro: arriba vive el banner de las
-       llamadas de WhatsApp (Llamadas.tsx, top 10). Cuando las dos se prendían
-       a la vez salían encimadas y no se entendía cuál era cuál.
-     - `bottom: 90` y no 18: en esa esquina ya estaba el botón flotante del
-       equipo (58 px de alto pegado abajo). A ras de piso la tarjeta le caía
-       justo encima.
-     - `zIndex` por arriba de TODO (ese botón usa 899): una llamada en curso es
-       lo más urgente de la pantalla; que algo la tape no es una opción. */
+  /* ══ DÓNDE VIVE ESTA BARRA (18-sep-2026: se mudó al centro) ═════════════
+     Vivía abajo a la derecha por una razón real —arriba al centro está el
+     banner de las llamadas de WhatsApp (`Llamadas.tsx`, top 10) y encimadas no
+     se entendía cuál era cuál— pero el costo era peor: la llamada de verdad,
+     la que está sonando AHORA, se veía como un aviso de esquina.
+
+     Ahora: CENTRADA arriba mientras hay llamada (que es cuando tiene que
+     robarse la mirada) y de vuelta a su esquina cuando no hay ninguna. El
+     choque con el banner de WhatsApp se evita bajándola a 74 px, por debajo de
+     él: pueden convivir sin taparse.
+
+     `zIndex` por arriba de TODO (el botón flotante del equipo usa 899): una
+     llamada en curso es lo más urgente de la pantalla. */
   return (
-    <div data-tel-panel style={{ position: 'fixed', right: 18, bottom: 90, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+    <div data-tel-panel style={{
+      position: 'fixed', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 10,
+      ...(enCurso
+        ? { top: 74, left: '50%', transform: 'translateX(-50%)', alignItems: 'center' }
+        : { right: 18, bottom: 90, alignItems: 'flex-end' }),
+    }}>
+      <style>{`@keyframes tel-aro{0%,100%{box-shadow:0 24px 70px rgba(0,0,0,.45),0 0 0 3px ${colorLlamada}55}50%{box-shadow:0 24px 70px rgba(0,0,0,.45),0 0 0 8px ${colorLlamada}22}}`}</style>
 
       {/* ── ENTRANTE ─────────────────────────────────────────────────────── */}
       {entrante && (
@@ -1082,7 +1106,11 @@ export default function Telefonia() {
           </div>
 
           <div style={{ marginTop: 9, fontSize: 10.5, color: '#9CA3AF', lineHeight: 1.45 }}>
-            Se está grabando. Al colgar, si la llamada pasa de 20 segundos, la minuta se escribe sola.
+            {/* La regla real, dicha completa: la minuta INTERNA se escribe desde
+                los 20 s; al cliente sólo se le manda si de verdad hubo
+                conversación (minuto y medio). Decir sólo lo primero hacía creer
+                que al cliente le llega un PDF por cualquier llamadita. */}
+            Se está grabando. Al colgar queda la minuta aquí adentro; al cliente sólo se le manda si hablan más de minuto y medio.
           </div>
         </div>
       )}

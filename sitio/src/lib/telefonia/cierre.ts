@@ -464,6 +464,29 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
       }
     }
   }
+  /* ══ 🔴 LA CONFIRMACIÓN AL CLIENTE, QUE NUNCA SALÍA ════════════════════
+     Reporte del dueño (18-sep-2026): «se le agendó demo y sí aparece la demo
+     agendada, pero no le llegó el WhatsApp de la confirmación».
+
+     Tenía razón y el hueco era éste: `confirmarCitaPorWhatsApp` la llamaban la
+     página pública (`book.ts`) y el módulo de eventos, pero NO el cierre de la
+     llamada — que es justo por donde entran las citas que salen hablando. La
+     reunión quedaba en la agenda y en Google Calendar, y el cliente no se
+     enteraba por WhatsApp de nada.
+
+     Va DESPUÉS del intento de Google Calendar a propósito: así el mensaje
+     lleva la liga de Meet. Y devuelve por qué no salió, si no salió: «se
+     agendó» a secas, cuando al cliente no le llegó nada, es la clase de
+     silencio que hace que alguien no se presente. */
+  let aviso = '';
+  if (cp.tipo === 'reunion') {
+    try {
+      const { confirmarCitaPorWhatsApp } = await import('../crm/confirmacion-cita');
+      const r = await confirmarCitaPorWhatsApp(bk.id);
+      aviso = r.ok ? ' y le llegó la confirmación por WhatsApp' : ` (no se le pudo confirmar por WhatsApp: ${r.motivo || 'sin motivo'})`;
+    } catch (e: any) { aviso = ` (no se le pudo confirmar por WhatsApp: ${String(e?.message || e).slice(0, 80)})`; }
+  }
+
   if (cp.tipo === 'llamada') {
     // Vuelve a la lista a esa hora (si la sesión sigue viva la marca sola) y a Mi día del vendedor.
     const { reprogramar } = await import('./marcador');
@@ -473,7 +496,7 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
       payload: { de_llamada: true, instruccion: `${primerNombre(nombre)}: le prometiste llamarle a las ${hora}${suHora}`, porque: cp.motivo ? `Quedaron en: ${cp.motivo}.` : 'Lo pidió en la llamada.', nombre, whatsapp: it.telefono, booking_id: bk.id, resultados: { contesto: 'Contestó', buzon: 'Buzón', no_contesto: 'No contestó', reagendar: 'Pidió otra hora' } },
     }).then(() => {}, () => {});
   }
-  return `${cp.tipo === 'llamada' ? 'llamada' : tipo.nombre.toLowerCase()} el ${fecha} a las ${hora}${suHora}${google}`;
+  return `${cp.tipo === 'llamada' ? 'llamada' : tipo.nombre.toLowerCase()} el ${fecha} a las ${hora}${suHora}${google}${aviso}`;
 }
 
 /* ────────────────────────────────────────────────────────────────────────

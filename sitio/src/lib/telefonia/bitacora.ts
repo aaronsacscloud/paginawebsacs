@@ -143,6 +143,7 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
       : ll.minuta_envio_estado === 'enviada' ? '\n\n✅ Ya se le mandó el PDF al cliente por WhatsApp.'
       : ll.minuta_envio_estado === 'pendiente_ventana' ? '\n\n⏳ Se le avisó que tenemos la minuta. **En cuanto responda, el PDF le sale solo** (fuera de la ventana de 24 h Meta no deja mandar archivos).'
       : ll.minuta_envio_estado === 'caducada' ? '\n\n🗑️ No respondió a tiempo y la minuta ya no se le mandará.'
+      : ll.minuta_envio_estado === 'omitida' ? `\n\n📄 La minuta queda aquí adentro: ${ll.minuta_envio_motivo || 'la llamada fue muy corta'}.`
       : ll.minuta_envio_estado && ll.minuta_envio_motivo ? `\n\nEl PDF no se le mandó: ${ll.minuta_envio_motivo}.`
       : '';
 

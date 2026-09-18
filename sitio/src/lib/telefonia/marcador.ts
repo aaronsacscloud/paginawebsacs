@@ -1216,9 +1216,27 @@ export async function estadoSesion(sesionId: string) {
 
 export async function listarItems(sesionId: string) {
   const { data } = await supabase.from('tel_sesion_items')
-    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid, volver_at, prioridad, costo_usd, cierre_estado, correccion')
+    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid, volver_at, prioridad, costo_usd, cierre_estado, cierre_ia, correccion, cortes')
     .eq('sesion_id', sesionId).order('orden').limit(2000);
-  return data || [];
+  /* ══ QUÉ QUEDÓ HECHO EN CADA LLAMADA (18-sep-2026) ══════════════════════
+     Pedido del dueño: «en el resumen de las terminadas debe decirme si se hizo
+     corrección de datos, si se agendó reunión de demo, si se agendó discovery
+     y así, para que yo pueda ver si todo se agendó en orden y bien».
+
+     El dato ya existía y no se estaba mirando: `aplicarCierre` deja en
+     `cierre_ia.hecho` la lista exacta de lo que ejecutó —«demo personalizada el
+     24 a las 16:00 (en Google Calendar) y le llegó la confirmación por
+     WhatsApp», «3 datos: email, ciudad, giro», «Información de Sacs: se mandó
+     por WhatsApp»—. Se saca aquí y el `cierre_ia` completo no viaja: trae la
+     propuesta entera y la transcripción, y esto se pide cada pocos segundos. */
+  return (data || []).map((it: any) => {
+    const { cierre_ia, ...resto } = it;
+    return {
+      ...resto,
+      hecho: Array.isArray(cierre_ia?.hecho) ? cierre_ia.hecho : [],
+      cierre_motivo: cierre_ia?.motivo || null,
+    };
+  });
 }
 
 /** Una sesión nueva con los que no se pudo hablar. */

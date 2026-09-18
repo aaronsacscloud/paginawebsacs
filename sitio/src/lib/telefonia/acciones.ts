@@ -354,7 +354,7 @@ export async function detectar(fraseCruda: string): Promise<Detectada[]> {
   for (const r of await reglasAprendidasAcciones()) {
     if (salida.some(s => s.accion === r.accion)) continue;
     if (r.re.test(frase)) {
-      salida.push({ accion: r.accion, frase: fraseCruda.slice(0, 300), origen: 'aprendida', confianza: 0.7, params: LEER[r.accion as AccionId]?.(fraseCruda) || {} });
+      salida.push({ accion: r.accion, frase: fraseCruda.slice(0, 300), origen: 'aprendida', confianza: 0.7, params: LEER[r.accion as AccionId]?.(fraseCruda) || {}, regla_id: r.id });
     }
   }
   return salida;
@@ -379,6 +379,15 @@ export async function anotarYHacer(ctx: Ctx, detectadas: Detectada[]): Promise<v
         estado: 'propuesta', user_id: ctx.userId || null,
       }).select('id').maybeSingle();
       if (!fila) continue;   // el índice único dice que ya se había propuesto
+      /* ══ LO QUE ENSEÑASTE, ¿SIRVE? ════════════════════════════════════════
+         Se cuenta cada vez que una regla aprendida caza de verdad. Sin esta
+         cuenta, en Configuración todas las frases se ven iguales y no hay forma
+         de saber cuál está trabajando y cuál se enseñó una vez y nunca volvió a
+         pasar. Es la mitad que faltaba del ciclo: enseñar, y ver si sirvió. */
+      if (d.regla_id) {
+        const { data: r0 } = await supabase.from('tel_accion_reglas').select('veces').eq('id', d.regla_id).maybeSingle();
+        await supabase.from('tel_accion_reglas').update({ veces: Number(r0?.veces || 0) + 1, updated_at: ahora() }).eq('id', d.regla_id);
+      }
       /* AUTO. Sólo las seguras (ver decisión 2), sólo si la cazó una regla del
          catálogo —nunca una aprendida de oído— y sólo si no le falta un dato. */
       const completa = !a.pide || !a.pide(d.params).some(c => !c.valor);
