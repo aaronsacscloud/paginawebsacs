@@ -1,4 +1,65 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Landing TALLAS GRANDES (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido vive en
+ * src/data/giros/tallas-grandes.ts y el bloque propio es TgQuiebre ("Tu 46 no es tu 44 más
+ * grande").
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import TgQuiebre from '../../components/giros/TgQuiebre.astro';
+import GiroEscala from '../../components/giros/GiroEscala.astro';
+import { bannerTG, manifiestoTG, variantesTG, cortinaTG, casosTG, seccionesTG, planoTG, pasosTG, ticketTG, escalaTG, problemasTG, cifrasTG } from '../../data/giros/tallas-grandes';
 ---
-<ComingSoon giro="Tallas Grandes" title="Tallas Grandes" description="Software de punto de venta para tiendas de tallas grandes: curvas extendidas, ficha por clienta y aviso cuando llega su talla." color="#BE185D" />
+<BaseLayout
+  title="Sistema para boutiques de tallas grandes — Sacs"
+  description="Sistema para marcas y boutiques de tallas grandes: la corrida de la 36 a la 52 con sus dos patrones base, el motivo del cambio como diagnóstico del patrón, la guía por medidas reales, la orden a la maquila con el consumo por talla y el cambio en línea sin perder a la clienta."
+>
+  <GiroBanner eyebrow={bannerTG.eyebrow} titulo={bannerTG.titulo} resalte={bannerTG.resalte} sub={bannerTG.sub} foto={bannerTG.foto} fotoAlt={bannerTG.fotoAlt} avisos={bannerTG.avisos} selloMarcas="negocios de moda y tallas grandes en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoTG.intro} frases={manifiestoTG.frases} cierre={manifiestoTG.cierre} />
+
+  <SuiteVariantes eyebrow={variantesTG.eyebrow} titulo={variantesTG.titulo} resalte={variantesTG.resalte} sub={variantesTG.sub} ejeA={variantesTG.ejeA} filas={variantesTG.filas} matriz={variantesTG.matriz} unidad={variantesTG.unidad} genero={variantesTG.genero} leyendas={variantesTG.leyendas} remate={variantesTG.remate} />
+
+  <SuiteCortina titulo={cortinaTG.titulo} pieAntes={cortinaTG.pieAntes} fotoAntes={cortinaTG.fotoAntes} fotoDespues={cortinaTG.fotoDespues} altAntes={cortinaTG.altAntes} altDespues={cortinaTG.altDespues} libreta={cortinaTG.libreta} filas={cortinaTG.filas} pieDespues={cortinaTG.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasTG.entrada} quienes={problemasTG.quienes} doc1={problemasTG.doc1} doc2={problemasTG.doc2} filas={problemasTG.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que la 46 no es la 44 más grande." />
+
+  <SuiteCifras foto={cifrasTG.foto} alt={cifrasTG.alt} frase={cifrasTG.frase} encuadre={cifrasTG.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y TALLAS GRANDES' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que una boutique de tallas grandes gana o pierde el dinero. Toca cada uno." casos={casosTG} />
+
+  <SuiteScroll eyebrow="Tallas grandes" titulo="El piso, el probador, la vitrina de ocasión y el cuarto de atrás, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de una boutique de tallas grandes real: la corrida con sus dos patrones, las medidas de la clienta, el motivo del cambio, la orden a la maquila con su consumo por talla y el vivo con apartado." secciones={seccionesTG} />
+
+  <TgQuiebre />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la boutique con un probador a la marca con maquila propia." descripcion="El negocio cambia con cada tamaño: quién hace el patrón, quién mide a la clienta, quién decide la corrida y qué mira la dirección. Elige el tuyo." niveles={escalaTG} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la clienta, recorre el piso con la corrida completa, pasa al probador amplio, ve la vitrina de ocasión y paga en el mostrador. Atrás está el taller donde se corrige el patrón y se arreglan las prendas. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu boutique — planta baja" zonas={planoTG} todoRot="Tallas grandes" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes la temporada de fiestas encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosTG} lineas={ticketTG.lineas} total={ticketTG.total} remate="<b>Tu histórico no se tira.</b> Se migran tus modelos con su corrida completa, tus existencias por tienda, tus apartados y, lo que más vale, <b>las medidas de tus clientas y el motivo de cada cambio</b>. Nunca te pedimos volver a medir a nadie." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia corrida y tus motivos de cambio en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tu corrida real y tus cambios del mes. 30 min, sin compromiso." />
+</BaseLayout>

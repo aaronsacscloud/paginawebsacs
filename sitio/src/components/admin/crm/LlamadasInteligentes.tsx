@@ -246,6 +246,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
      hora buena es lo más barato que existe para subir la contactabilidad: no
      cuesta una función nueva, cuesta mirar el reloj antes de empezar. */
   const [horas, setHoras] = useState<any[]>([]);
+  /* ¿Esto está sirviendo? Seis cifras, no quince: un tablero que no se mira es
+     un tablero que no existe. Se pide aparte porque tarda más que la lista y no
+     puede retrasar lo primero que ves. */
+  const [informe, setInforme] = useState<any>(null);
   const [verSesion, setVerSesion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -263,6 +267,8 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' })
       .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); setHoras(j.horas || []); } })
       .catch(() => {});
+    fetch('/api/crm/telefonia/informe?dias=30', { cache: 'no-store' })
+      .then(r => r.json()).then(j => { if (vivo && !j?.error) setInforme(j); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
 
@@ -366,6 +372,59 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* ══ ¿ESTO ESTÁ SIRVIENDO? ════════════════════════════════════════════
+          La otra mitad del trabajo: llamar rápido se ve en la cabina; si sirve,
+          no se veía en ningún lado. Seis cifras de los últimos treinta días, y
+          las dos que de verdad mandan van marcadas: cuántas CONVERSACIONES
+          (no llamadas marcadas, que suben solas marcando más) y cuántas
+          promesas se están cayendo. Rejilla que se acomoda sola: en el teléfono
+          quedan de dos en dos. */}
+      {informe && informe.llamadas > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Cómo van tus llamadas · últimos {informe.dias} días</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 7 }}>
+            {[
+              { n: informe.conversaciones, t: 'conversaciones', d: `de ${informe.llamadas} llamadas · ${informe.contactabilidad}% contesta`, fuerte: true },
+              { n: informe.minutos_hablados, t: 'minutos hablados', d: informe.costo_por_conversacion ? `US$ ${informe.costo_por_conversacion} por conversación` : 'con gente de verdad' },
+              { n: informe.citas, t: 'citas de esas llamadas', d: informe.cita_por_conversacion ? `${informe.cita_por_conversacion}% de las conversaciones` : 'todavía ninguna' },
+              { n: informe.promesas_vencidas, t: 'promesas vencidas', d: informe.promesas_vencidas ? 'prometido y sin hacer: están en Mi día' : 'nada prometido sin cumplir', alerta: informe.promesas_vencidas > 0 },
+            ].map(c => (
+              <div key={c.t} style={{
+                background: '#fff', border: `1px solid ${c.alerta ? '#f0c4bd' : '#ececec'}`,
+                borderLeft: `3px solid ${c.alerta ? '#C0554E' : c.fuerte ? P.violeta : '#ececec'}`,
+                borderRadius: 10, padding: '10px 13px',
+              }}>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: c.alerta ? '#C0554E' : '#16181d' }}>{c.n}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#4B5563' }}>{c.t}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, lineHeight: 1.4 }}>{c.d}</div>
+              </div>
+            ))}
+          </div>
+          {/* Las citas que ya pasaron y nadie cerró: es trabajo que se escapa
+              en silencio, distinto de «no asistió». */}
+          {informe.citas_pasadas > 0 && (
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 7 }}>
+              De {informe.citas_pasadas} citas que ya pasaron: {informe.citas_asistieron} asistieron
+              {informe.citas_no_asistieron > 0 && `, ${informe.citas_no_asistieron} no`}
+              {informe.citas_sin_cerrar > 0 && <b style={{ color: '#9a6a10' }}> · {informe.citas_sin_cerrar} sin cerrar en la agenda</b>}
+            </div>
+          )}
+          {/* Quién está llamando. Sin ranking ni colores: los números bastan. */}
+          {(informe.vendedores || []).length > 1 && (
+            <div style={{ display: 'grid', gap: 4, marginTop: 9 }}>
+              {informe.vendedores.map((v: any) => (
+                <div key={v.id} style={{ fontSize: 12, color: '#4B5563', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <b style={{ minWidth: 150, color: '#16181d' }}>{v.nombre}</b>
+                  <span>{v.llamadas} llamadas</span>
+                  <span>· {v.conversaciones} conversaciones</span>
+                  <span>· {v.citas} citas</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

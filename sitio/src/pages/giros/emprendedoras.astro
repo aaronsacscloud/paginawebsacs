@@ -1,4 +1,65 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Landing EMPRENDEDORAS QUE VENDEN EN DIGITAL (17-sep-2026). El único giro del catálogo SIN LOCAL: no
+ * hay mostrador, ni aparador, ni probador. El contenido vive en src/data/giros/emprendedoras.ts y
+ * el bloque propio es EmApartado ("La fila invisible de cada pieza apartada").
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import EmApartado from '../../components/giros/EmApartado.astro';
+import GiroEscala from '../../components/giros/GiroEscala.astro';
+import { bannerEM, manifiestoEM, variantesEM, cortinaEM, casosEM, seccionesEM, planoEM, pasosEM, ticketEM, escalaEM, problemasEM, cifrasEM } from '../../data/giros/emprendedoras';
 ---
-<ComingSoon giro="Emprendedoras que venden en digital" title="Emprendedoras que venden en digital" description="Para vender sin tienda física: apartados que no se mueren en el chat, una sola existencia para todos tus canales y el cobro desde la conversación." color="#7C3AED" />
+<BaseLayout
+  title="Sistema para vender en línea sin tienda física — Sacs"
+  description="Sistema para emprendedoras que venden en digital: apartados con fecha que se liberan solos, la fila de las que también preguntaron, una sola existencia para todos tus canales, cobros y comprobantes dentro de la conversación, guías y paquetes desde el mismo pedido."
+>
+  <GiroBanner eyebrow={bannerEM.eyebrow} titulo={bannerEM.titulo} resalte={bannerEM.resalte} sub={bannerEM.sub} foto={bannerEM.foto} fotoAlt={bannerEM.fotoAlt} avisos={bannerEM.avisos} selloMarcas="negocios de moda en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoEM.intro} frases={manifiestoEM.frases} cierre={manifiestoEM.cierre} />
+
+  <SuiteVariantes eyebrow={variantesEM.eyebrow} titulo={variantesEM.titulo} resalte={variantesEM.resalte} sub={variantesEM.sub} ejeA={variantesEM.ejeA} filas={variantesEM.filas} matriz={variantesEM.matriz} unidad={variantesEM.unidad} genero={variantesEM.genero} leyendas={variantesEM.leyendas} remate={variantesEM.remate} />
+
+  <SuiteCortina titulo={cortinaEM.titulo} pieAntes={cortinaEM.pieAntes} fotoAntes={cortinaEM.fotoAntes} fotoDespues={cortinaEM.fotoDespues} altAntes={cortinaEM.altAntes} altDespues={cortinaEM.altDespues} libreta={cortinaEM.libreta} filas={cortinaEM.filas} pieDespues={cortinaEM.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasEM.entrada} quienes={problemasEM.quienes} doc1={problemasEM.doc1} doc2={problemasEM.doc2} filas={problemasEM.filas} />
+
+  <SuiteSalida frase="Si ya probaste una libreta y un sistema de tienda que pide caja y mostrador, esta conversación es distinta: esta ya sabe que tu mostrador es el teléfono." />
+
+  <SuiteCifras foto={cifrasEM.foto} alt={cifrasEM.alt} frase={cifrasEM.frase} encuadre={cifrasEM.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que se te va o se te queda el dinero. Toca cada uno." casos={casosEM} />
+
+  <SuiteScroll eyebrow="Vendes en digital, sin tienda" titulo="El rack, la esquina de fotos, la mesa de empaque y el teléfono, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de alguien que vende como tú: el apartado con fecha, la fila de las que también preguntaron, la misma blusa publicada en tres lados descontando de un solo inventario, el comprobante que llega y la guía que sale." secciones={seccionesEM} />
+
+  <EmApartado />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De vender tú sola a tu primera tienda física." descripcion="Aquí no se crece en sucursales: se crece en manos y en canales. Primero contestas tú todo, luego entra una que contesta, después una que empaca, y un día abres. Elige dónde estás." niveles={escalaEM} />
+
+  <SuitePlano titulo="Tu sastrería, por dentro." sub="No hay aparador ni probador: hay un rack, una esquina con luz, una mesa de empaque, un teléfono que es el mostrador de verdad, y la salida a dejar paquetes. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu negocio — el cuarto de atrás" zonas={planoEM} todoRot="Vendes en digital" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre encima y no puedes parar ni un día de contestar. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosEM} lineas={ticketEM.lineas} total={ticketEM.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que tengas, aunque sea una libreta o una hoja de cálculo: tus piezas con sus tallas, lo que está apartado y, lo que más vale, <b>tus clientas con lo que te han comprado</b>. Nunca te pedimos empezar de cero en diciembre." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propios apartados y tu fila en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tus piezas, tus apartados y tus clientas reales. 30 min, sin compromiso." />
+</BaseLayout>

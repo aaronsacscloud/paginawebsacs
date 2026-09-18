@@ -1,4 +1,65 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Landing OUTLET Y SALDOS DE MODA (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido
+ * vive en src/data/giros/outlet.ts y el bloque propio es OuBajada ("El bulto entra a ciegas": las
+ * mismas piezas, doce semanas antes).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import OuBajada from '../../components/giros/OuBajada.astro';
+import GiroEscala from '../../components/giros/GiroEscala.astro';
+import { bannerOU, manifiestoOU, variantesOU, cortinaOU, casosOU, seccionesOU, planoOU, pasosOU, ticketOU, escalaOU, problemasOU, cifrasOU } from '../../data/giros/outlet';
 ---
-<ComingSoon giro="Outlet y Remates de Marca" title="Outlet y Remates de Marca" description="Software de punto de venta para outlets: lotes con costo real, descuentos por etiqueta y margen por marca y lote." color="#DC2626" />
+<BaseLayout
+  title="Sistema para outlets y tiendas de saldos — Sacs"
+  description="Sistema para outlets y tiendas de saldos: el lote con su costo puesto en el piso, la clasificación al recibir, la bajada que corre sola por tanda, el precio con su descuento sobre el original, la pieza única que no se repone y el cierre del lote con lo que de verdad dejó."
+>
+  <GiroBanner eyebrow={bannerOU.eyebrow} titulo={bannerOU.titulo} resalte={bannerOU.resalte} sub={bannerOU.sub} foto={bannerOU.foto} fotoAlt={bannerOU.fotoAlt} avisos={bannerOU.avisos} selloMarcas="negocios de moda y outlets en México y Latam" />
+
+  <SuiteManifiesto intro={manifiestoOU.intro} frases={manifiestoOU.frases} cierre={manifiestoOU.cierre} />
+
+  <SuiteVariantes eyebrow={variantesOU.eyebrow} titulo={variantesOU.titulo} resalte={variantesOU.resalte} sub={variantesOU.sub} ejeA={variantesOU.ejeA} filas={variantesOU.filas} matriz={variantesOU.matriz} unidad={variantesOU.unidad} genero={variantesOU.genero} leyendas={variantesOU.leyendas} remate={variantesOU.remate} />
+
+  <SuiteCortina titulo={cortinaOU.titulo} pieAntes={cortinaOU.pieAntes} fotoAntes={cortinaOU.fotoAntes} fotoDespues={cortinaOU.fotoDespues} altAntes={cortinaOU.altAntes} altDespues={cortinaOU.altDespues} libreta={cortinaOU.libreta} filas={cortinaOU.filas} pieDespues={cortinaOU.pieDespues} />
+
+  <SuiteProblemas colGenerico="Sistema de ropa" entrada={problemasOU.entrada} quienes={problemasOU.quienes} doc1={problemasOU.doc1} doc2={problemasOU.doc2} filas={problemasOU.filas} />
+
+  <SuiteSalida frase="Si ya probaste un sistema de ropa y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe que cada pieza es única." />
+
+  <SuiteCifras foto={cifrasOU.foto} alt={cifrasOU.alt} frase={cifrasOU.frase} encuadre={cifrasOU.encuadre} datos={[
+    { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA Y SALDOS' },
+    { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+    { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+    { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+  ]} />
+
+  <SuiteCasos eyebrow="Cuatro momentos del año" titulo="Dónde te sirve, en concreto" sub="Los cuatro momentos del año en que un outlet gana o pierde el dinero. Toca cada uno." casos={casosOU} />
+
+  <SuiteScroll eyebrow="Outlet y saldos" titulo="Los racks, la revoltura, la caja rápida y la bodega, con las mismas piezas" intro="Baja para ver cada pieza. Todos los ejemplos son de un outlet real: el lote que entra a ciegas, la clasificación en cuatro montones, el costo puesto en el piso, la bajada por tanda y la caja que cobra escaneando una sola etiqueta." secciones={seccionesOU} />
+
+  <OuBajada />
+
+  <GiroEscala encabezado="Tu tamaño" titulo="De la tienda de saldos de la esquina a la cadena con bodega propia." descripcion="El negocio cambia con cada tamaño: quién compra el lote, quién clasifica, quién decide la bajada y qué mira la dirección. Elige el tuyo." niveles={escalaOU} />
+
+  <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la marchanta el sábado, recorre los racks largos, se mete a la revoltura a buscar su talla, pasa a los probadores y sale por la caja rápida. Atrás está la bodega donde se abren los bultos. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu outlet — planta baja" zonas={planoOU} todoRot="Outlet y saldos" />
+
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes un lote nuevo encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosOU} lineas={ticketOU.lineas} total={ticketOU.total} remate="<b>Tu histórico no se tira.</b> Se migran tus lotes con su costo, lo que queda de cada uno, tus precios con su escalón y tus proveedores. Nunca te pedimos volver a contar el piso." />
+
+  <SuitePlanes suite="Suite de Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propio último lote y lo que de verdad dejó en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos Sacs con tu último lote, tus escalones y tus semanas reales. 30 min, sin compromiso." />
+</BaseLayout>
