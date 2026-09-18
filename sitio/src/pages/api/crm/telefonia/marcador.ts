@@ -47,7 +47,36 @@ export const GET: APIRoute = async ({ request, url }) => {
       .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, iniciada_at, terminada_at, created_at, origen, presentacion_nombre, presentacion_motivo, modo')
       .eq('owner_id', user.id).not('origen', 'cs', '{"suelta":true}')
       .order('created_at', { ascending: false }).limit(30);
-    return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id), fernanda: vozConfigurada() });
+    /* ══ A QUÉ HORA SÍ CONTESTAN (referee, 17-sep-2026) ══════════════════
+       Lo que separa a un marcador bueno de uno rápido: llamar a la hora en que
+       esta gente contesta. No se adivina — se mide contra las llamadas que ya
+       se hicieron. Se piden las últimas 400 salientes con hora de inicio y se
+       cuenta, por franja, cuántas acabaron con alguien del otro lado.
+
+       Se calcula aquí y no en el navegador porque es una sola consulta y
+       ahorra mandar cuatrocientas filas para contar dos números. */
+    const { data: hist } = await supabase.from('wa_llamadas')
+      .select('started_at, duracion_seg, estado, payload')
+      .eq('canal', 'telefono').eq('direccion', 'saliente')
+      .gte('started_at', new Date(Date.now() - 90 * 86400e3).toISOString())
+      .order('started_at', { ascending: false }).limit(400);
+    const franjas: Record<string, { t: number; ok: number }> = {};
+    for (const l of hist || []) {
+      if (!l.started_at) continue;
+      const h = Number(new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }).format(new Date(l.started_at)));
+      const franja = h < 11 ? '9-11' : h < 13 ? '11-13' : h < 15 ? '13-15' : h < 17 ? '15-17' : h < 19 ? '17-19' : 'fuera';
+      if (franja === 'fuera') continue;
+      // «Contestó alguien» = habló más de 20 s y no fue una grabadora.
+      const buzon = /^machine_/.test(String((l.payload as any)?.answered_by || ''));
+      franjas[franja] = franjas[franja] || { t: 0, ok: 0 };
+      franjas[franja].t++;
+      if (!buzon && Number(l.duracion_seg || 0) > 20) franjas[franja].ok++;
+    }
+    const horas = Object.entries(franjas)
+      .filter(([, v]) => v.t >= 8)        // con menos de ocho llamadas, el porcentaje es ruido
+      .map(([franja, v]) => ({ franja, total: v.t, contestadas: v.ok, tasa: Math.round((v.ok / v.t) * 100) }))
+      .sort((a, b) => b.tasa - a.tasa);
+    return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id), fernanda: vozConfigurada(), horas });
   }
 
   const id = String(url.searchParams.get('id') || '');

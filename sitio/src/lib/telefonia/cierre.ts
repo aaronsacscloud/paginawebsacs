@@ -309,6 +309,38 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
       }
     }
 
+    /* ══ «VOLVER A LLAMAR» NO PUEDE QUEDAR EN EL AIRE (17-sep-2026) ════════
+       El hueco más caro del cierre, y estaba a la vista: si el desenlace es
+       «volver a llamar» pero la IA no sacó una fecha —y nadie apretó uno de los
+       atajos— NO QUEDA NADA. Ni tarea, ni item pendiente, ni recordatorio: sólo
+       una palabra en un informe. Esa es, literalmente, la llamada que se
+       pierde: la persona dijo «márcame luego» y nadie le marcó nunca.
+
+       Si no hay compromiso ni acción hecha, se deja una tarea para mañana a
+       las 10 en Mi día y SE DICE en la pantalla de cierre. Mañana a las 10 no
+       es adivinar: es el suelo por debajo del cual no se puede caer. Si la
+       persona quería otra hora, ahí están los atajos y la fecha exacta. */
+    const quedoFecha = (p.compromisos || []).some(cp => cp.tipo === 'llamada')
+      || hechas.has('volver_a_llamar') || hechas.has('ahorita_no') || hechas.has('agendar_demo');
+    if (resultado === 'volver_llamar' && !quedoFecha && it.contact_id) {
+      const { data: ses } = await supabase.from('tel_sesiones').select('owner_id').eq('id', it.sesion_id).maybeSingle();
+      const manana = new Date(Date.now() + 86400e3);
+      const cuando = instanteEnZona(fechaHoraEn(zonaDeLada(it.lada || ladaDe(it.telefono)), manana).fecha, '10:00', zonaDeLada(it.lada || ladaDe(it.telefono)));
+      const { data: ya } = await supabase.from('ti_tareas').select('id').eq('contact_id', it.contact_id).eq('estado', 'pendiente').eq('tipo', 'llamada')
+        .gte('vence_at', new Date(Date.now() - 12 * 3600e3).toISOString()).limit(1).maybeSingle();
+      if (!ya) {
+        await supabase.from('ti_tareas').insert({
+          contact_id: it.contact_id, company_id: it.company_id, owner_id: ses?.owner_id || o.userId || null,
+          familia: 'llamar', tipo: 'llamada', prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
+          payload: {
+            instruccion: `${primerNombre(it.nombre) || 'El contacto'}: quedó de volver a llamar y no se puso fecha`,
+            porque: 'En la llamada dijo «márcame luego» y nadie fijó día ni hora.', nombre: it.nombre, whatsapp: it.telefono,
+          },
+        }).then(() => {}, () => {});
+        hecho.push('quedó de volver a llamar sin fecha: te lo dejé mañana a las 10 en Mi día');
+      }
+    }
+
     await cerrarItem(itemId, { aplicado_at: ahora(), hecho, por: o.userId ? 'vendedor' : 'auto' });
     return { ok: true, hecho };
   } catch (e: any) {

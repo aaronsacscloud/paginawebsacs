@@ -242,6 +242,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   const [elegida, setElegida] = useState<Lista | null>(null);
   const [tel, setTel] = useState<{ ok: boolean; faltantes: string[] } | null>(null);
   const [previas, setPrevias] = useState<any[]>([]);
+  /* A qué hora contesta ESTA gente, medido de tus propias llamadas. Llamar a la
+     hora buena es lo más barato que existe para subir la contactabilidad: no
+     cuesta una función nueva, cuesta mirar el reloj antes de empezar. */
+  const [horas, setHoras] = useState<any[]>([]);
   const [verSesion, setVerSesion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -257,7 +261,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
        encendida. Dos pantallas preguntando lo mismo a dos sitios distintos
        terminan contradiciéndose. */
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); } })
+      .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); setHoras(j.horas || []); } })
       .catch(() => {});
     return () => { vivo = false; };
   }, []);
@@ -294,6 +298,21 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
         <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55, flex: '1 1 380px' }}>
           Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
           llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
+          {/* ══ LA HORA A LA QUE SÍ CONTESTAN ═══════════════════════════════
+              Medido de tus propias llamadas de los últimos tres meses, no de un
+              estudio de otro país. Es lo más barato que hay para subir la
+              contactabilidad: no cuesta una función nueva, cuesta mirar el
+              reloj antes de empezar. Se calla si no hay suficientes llamadas
+              para que el porcentaje signifique algo. */}
+          {horas.length > 0 && (
+            <span style={{ display: 'block', marginTop: 8, fontSize: 12.5, color: '#5B4BD6', fontWeight: 700 }}>
+              A esta gente le contestan más de {horas[0].franja.replace('-', ' a ')} h
+              ({horas[0].tasa}% de {horas[0].total} llamadas)
+              {horas.length > 1 && horas[horas.length - 1].tasa < horas[0].tasa && (
+                <span style={{ color: '#9a6a10', fontWeight: 600 }}> · la peor es de {horas[horas.length - 1].franja.replace('-', ' a ')} h ({horas[horas.length - 1].tasa}%)</span>
+              )}
+            </span>
+          )}
         </p>
         {/* EL BOTÓN, NO UNA TARJETA MÁS. Como sexto recuadro de la fila se leía
             igual que las cinco listas fijas —o sea, como una lista más— cuando

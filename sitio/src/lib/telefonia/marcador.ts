@@ -21,7 +21,7 @@ import { callerIdSaliente } from './caller-id';
 import { juzgar, textoOido, dialogoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
-import { ladaDe, zonaDeLada, horaLocal } from './zonas';
+import { ladaDe, zonaDeLada, horaLocal, fechaHoraEn, instanteEnZona } from './zonas';
 // Fernanda al teléfono: el aviso a la central de voz se carga aparte (solo lo usan las sesiones con IA).
 const voz = () => import('./voz');
 /** ¿Habla Fernanda en esta sesión? («ia» sola, «asistido» con el vendedor escuchando). */
@@ -60,6 +60,26 @@ const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00
    confusión posible: menos de eso no sonó, más de eso sí. */
 const TIMBRE_REAL_MS = 10000;
 const REINTENTO_BUZON_MIN = 25;   // ni tan pronto que moleste, ni tan tarde que se olvide
+
+/* ══ EL REINTENTO VA A OTRA FRANJA DEL DÍA (17-sep-2026) ══════════════════
+   Volver a marcar veinticinco minutos después es marcarle a la misma persona
+   en la misma situación: si a las diez de la mañana está abriendo la tienda, a
+   las diez y veinticinco sigue abriendo la tienda. Lo que sí cambia el
+   resultado es cambiar de FRANJA — es de lo más medido que hay en telefonía de
+   ventas: quien no contesta en la mañana contesta en la tarde, y al revés.
+
+   Regla: mañana (antes de las 13) → esa misma tarde a las 16:30. Tarde → al
+   día siguiente a las 10:30. Todo en la hora DEL CONTACTO, que para eso está
+   `zonas.ts`, y respetando el horario de la sesión (si la tarde ya se pasó,
+   cae al día siguiente). */
+function otraFranja(telefono: string, lada?: string | null): Date {
+  const zona = zonaDeLada(lada || ladaDe(telefono));
+  const ahoraAlla = fechaHoraEn(zona, new Date());
+  const h = Number(ahoraAlla.hora.slice(0, 2));
+  if (h < 13) return instanteEnZona(ahoraAlla.fecha, '16:30', zona);
+  const manana = fechaHoraEn(zona, new Date(Date.now() + 86400e3)).fecha;
+  return instanteEnZona(manana, '10:30', zona);
+}
 /** Los resultados que significan que SÍ se habló con alguien. */
 export const CONVERSACION = ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos'];
 
@@ -461,7 +481,12 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     const timbro = it.marcado_at && it.contestado_at
       && (Date.parse(it.contestado_at) - Date.parse(it.marcado_at)) >= TIMBRE_REAL_MS;
     if (veces > 0 && timbro && Number(it.intentos || 1) <= veces) {
-      await reprogramar(it, REINTENTO_BUZON_MIN, `sonó y se fue al buzón (intento ${it.intentos} de ${veces + 1})`);
+      /* El primer reintento es pronto (25 min: pudo estar ocupado un momento);
+         del segundo en adelante se cambia de franja, que es lo que de verdad
+         mueve la aguja. */
+      const pronto = Number(it.intentos || 1) <= 1;
+      await reprogramar(it, REINTENTO_BUZON_MIN, `sonó y se fue al buzón (intento ${it.intentos} de ${veces + 1})`,
+        pronto ? undefined : otraFranja(it.telefono, it.lada));
       estado = 'pendiente';
     }
   }
