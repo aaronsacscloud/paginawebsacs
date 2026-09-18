@@ -201,7 +201,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 export const nivelar = definirHerramienta({
   slug: 'nivelar-entre-tiendas',
   nombre: 'Qué mover entre tus tiendas',
-  descripcion: 'Te dice qué piezas mover de qué tienda a cuál para reparar las corridas rotas. No empareja existencias: repara el máximo de corridas con las menos piezas movidas, que es lo que de verdad devuelve ventas.',
+  descripcion: 'Te dice qué piezas mover de qué tienda a cuál para reparar corridas rotas. No empareja existencias: repara más corridas moviendo menos piezas.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],
   momento_sacs: 'Esto lo corriste con la existencia de un modelo, copiada a mano. Sacs ve la existencia por talla de TODOS tus modelos en TODAS tus tiendas al mismo tiempo, en vivo, y te avisa cuando una corrida se rompe — no cuando alguien se acuerda de revisarla. Además sabe la venta por talla de cada tienda, así que el centro de la corrida no lo supone: lo sabe.',

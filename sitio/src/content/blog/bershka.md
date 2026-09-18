@@ -1,6 +1,6 @@
 ---
 title: "Innovación sin Límites: Cómo Bershka Redefine la Experiencia de Compra en México"
-description: "La nueva tienda de Bershka en Ciudad de México combina realidad aumentada, espejos inteligentes, pagos contactless y diseño sostenible para transformar el panorama del retail de moda."
+description: "La nueva tienda de Bershka en CDMX: realidad aumentada, espejos inteligentes y pagos contactless. Qué puede tomar de ahí una tienda de moda mexicana."
 pubDate: 2025-06-07
 author: "Andrea Araujo"
 tags: ["Retail", "Innovación", "Omnicanal"]

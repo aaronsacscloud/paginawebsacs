@@ -141,7 +141,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 export const termometro = definirHerramienta({
   slug: 'sale-o-no-sale',
   nombre: '¿Vas a sacar este estilo a tiempo?',
-  descripcion: 'Toma tu sell-through y contesta lo que el porcentaje no dice: si el estilo sale antes de que acabe la temporada, cuántas piezas te van a sobrar si no, y cuál es la última semana útil para hacer algo.',
+  descripcion: 'Toma tu sell-through y contesta lo que el porcentaje no dice: si el estilo sale antes de fin de temporada, cuántas piezas sobran si no, y la última semana útil.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],
   momento_sacs: 'Aquí escribiste un estilo, de memoria o de un reporte. Sacs lleva este cálculo de TODOS tus estilos al mismo tiempo, con sus recibos y sus ventas reales por tienda, y te avisa cuando uno cruza su semana límite — que es el único momento en que el dato sirve. Un cálculo que hay que acordarse de hacer es un cálculo que no se hace.',

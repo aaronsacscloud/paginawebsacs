@@ -159,7 +159,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 export const auditorCurva = definirHerramienta({
   slug: 'curva-de-tallas',
   nombre: 'Auditor de curva de tallas',
-  descripcion: 'Calcula qué proporción de cada talla comprar, corrigiendo por los días que cada talla estuvo agotada. Una talla que vendió poco no es lo mismo que una talla que no estuvo.',
+  descripcion: 'Calcula qué proporción de cada talla comprar, corrigiendo por los días que cada talla estuvo agotada. Vender poco no es lo mismo que no haber estado.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],
   momento_sacs: 'La herramienta calcula la curva con los días de agotamiento que tú le des. Sacs los REGISTRA solos: sabe desde qué momento cada talla de cada tienda estuvo en cero, sin que nadie lo anote. Esa es la diferencia entre hacer este cálculo una vez al año a mano y tenerlo en cada orden de compra.',

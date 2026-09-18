@@ -32,7 +32,7 @@ const porAmigo = GIFT_ACTIVATION_BONUS_MXN + Math.round(GIFT_LICENSE_VALUE_MXN *
 const tabla = [1, 3, 5, 10].map((n) => ({ amigos: n, total: porAmigo * n }));
 
 const title = `Programa Padrino Sacs · Regala una licencia y gana ${pct}% en créditos`;
-const description = `Regala el primer año del Plan Vende a un amigo empresario. Cuando lo active ganas ${pct}% del valor en créditos Sacs (${fmt(GIFT_ACTIVATION_BONUS_MXN)}), y otro ${pct}% cuando pague su plan. Redímelo en plugins y consultorías.`;
+const description = `Regala el primer año del Plan Vende a un amigo empresario y gana ${pct}% del valor en créditos Sacs cuando lo active, y otro ${pct}% cuando pague su plan.`;
 ---
 
 <BaseLayout title={title} description={description} image="/og-default.png">
