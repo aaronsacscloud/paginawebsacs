@@ -23,6 +23,32 @@ export default defineConfig({
   redirects: {
     '/marcas': '/enterprise',
     '/soluciones/marca': '/enterprise',
+    /* Giros que NO son moda, retirados el 18-sep-2026 por decisión del dueño:
+       el sitio es Fashion Commerce y estas eran páginas «próximamente» de 200
+       palabras —ferreterías, farmacias, supermercados— indexadas como si fueran
+       contenido. `electronica` era la más vista de TODOS los giros (405
+       impresiones) y no dio un solo clic: atraía a quien nunca iba a comprar.
+
+       Van a /giros/ y no a 404 a propósito: Google ya las tiene indexadas y un
+       301 mueve lo poco que valgan al índice de moda, que es lo que sí
+       queremos que encuentre. */
+    '/giros/belleza-y-cosmetica': '/giros/',
+    '/giros/bicicletas': '/giros/',
+    '/giros/comestibles': '/giros/',
+    '/giros/electronica': '/giros/',
+    '/giros/farmacias': '/giros/',
+    '/giros/ferreterias': '/giros/',
+    '/giros/florerias': '/giros/',
+    '/giros/franquicias': '/giros/',
+    '/giros/fundas-celulares': '/giros/',
+    '/giros/jugueterias': '/giros/',
+    '/giros/mascotas': '/giros/',
+    '/giros/minisupers': '/giros/',
+    '/giros/novedades': '/giros/',
+    '/giros/parques-y-atracciones': '/giros/',
+    '/giros/retail-entretenimiento': '/giros/',
+    '/giros/supermercado': '/giros/',
+    '/giros/vinos-y-licores': '/giros/',
   },
   // maxDuration en el ADAPTADOR, no en el bloque `functions` de vercel.json:
   // ese patrón apunta a rutas del código fuente y en Astro las funciones las
