@@ -11,7 +11,7 @@ import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { twilioRest, telefoniaConfigurada, telefoniaFaltantes } from '../../../../lib/telefonia/twilio';
 import {
-  crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, relanzar, recontar, getSesion,
+  crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, compromisosDeSesion, relanzar, recontar, getSesion,
 } from '../../../../lib/telefonia/marcador';
 import { aplicarCierre, responderEnvio, omitirEnvio, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
 import { vozConfigurada, configVoz, MODOS, type Modo } from '../../../../lib/telefonia/voz';
@@ -54,6 +54,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const s = await mia(id, user);
   if (!s) return json({ error: 'No existe la sesión' }, 404);
   if (url.searchParams.get('items')) return json({ items: await listarItems(id) });
+  if (url.searchParams.get('compromisos')) return json({ compromisos: await compromisosDeSesion(id) });
   const est = await latir(id);
   return json({ ...est, identity: identidadDe(user.id) });
 };

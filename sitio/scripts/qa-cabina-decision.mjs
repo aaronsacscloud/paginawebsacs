@@ -127,6 +127,30 @@ try {
   paso('Se puede descartar la propuesta entera', /No fue eso: descartar/.test(txt), '');
   paso('Dice quién sigue', /SIGUE/.test(txt), '');
   paso('Dice los atajos de teclado', /1-5 cómo quedó/.test(txt), '');
+
+  /* ── La pestaña de compromisos: lo que se prometió al hablar ───────────
+     Se fabrican los dos tipos que puede haber: una reunión agendada (con y sin
+     Google Calendar) y una llamada de vuelta con hora. */
+  const { data: et } = await db.from('event_types').select('id').eq('slug', 'demo').maybeSingle();
+  const manana = new Date(Date.now() + 86400e3).toISOString().slice(0, 10);
+  await db.from('bookings').insert({
+    event_type_id: et?.id, host_id: USER, consultor_id: USER, fecha: manana, hora_inicio: '16:00', hora_fin: '17:00',
+    timezone_host: 'America/Mexico_City', invitee_nombre: 'Prueba Aaron', contact_id: conv.contact_id,
+    asunto: 'QA compromiso demo', estado: 'agendada', origen: 'llamada', google_event_id: 'qa-evento-google',
+  });
+  await db.from('tel_sesion_items').insert({
+    sesion_id: ses.id, telefono: '+525599887766', nombre: 'Llamada prometida', empresa: 'QA', orden: 9,
+    estado: 'pendiente', intentos: 1, volver_at: new Date(Date.now() + 3 * 3600e3).toISOString(),
+    nota: 'Volver a llamar: lo pidió en la llamada',
+  });
+
+  await p.getByRole('button', { name: /Compromisos/ }).click();
+  await p.waitForTimeout(2500);
+  const tc = (await p.locator('body').innerText()).replace(/\n+/g, ' · ');
+  paso('Hay pestaña de compromisos', /Compromisos/.test(tc), '');
+  paso('Con la hora y si está en Google Calendar', /En Google Calendar/.test(tc), '');
+  paso('Y la llamada prometida con su hora', /La marca sola a esa hora/.test(tc), '');
+  await p.screenshot({ path: '/tmp/qa-compromisos.png', fullPage: true });
   await p.screenshot({ path: '/tmp/qa-cabina-decision.png', fullPage: true });
   console.log(errores.length ? `\n  ⚠ ${errores.length} error(es): ${errores.slice(0, 3).join(' | ')}` : '\n  ✓ sin errores de JS');
 } finally {

@@ -30,7 +30,16 @@ export interface ConfigEntrante {
             *  esa conversación. Ver `alRecibirMensaje`. */
            silencio_humano_horas: number };
   horario: Horario | null;
-  presion: { horas_entre_whatsapps: number; dias_pausa_por_manual: number; permitir_forzar_manual: boolean };
+  presion: {
+    horas_entre_whatsapps: number; dias_pausa_por_manual: number; permitir_forzar_manual: boolean;
+    /** Los envíos HECHOS A MANO desde la bandeja no tienen tope. Decisión del
+     *  dueño (18-sep-2026): «quita la restricción de poder enviar un mensaje
+     *  por plantilla después de 1 hora, para poder mandar varios de marketing y
+     *  utility sin límite». El tope sigue vivo para lo AUTOMÁTICO —la cadencia,
+     *  el ABM, el agente—, que es donde de verdad se quema un número: ahí nadie
+     *  está mirando y un error se multiplica por cientos. */
+    sin_tope_manual: boolean;
+  };
   intencion: { etiquetar: boolean; notificar: boolean; solo_desde_cta: boolean };
   cierre: { bloquear_con_no_leidos: boolean };
 }
@@ -42,7 +51,7 @@ export const POR_DEFECTO: ConfigEntrante = {
   activa: false,
   acuse: { activo: false, en_horario: '', fuera: '', rearme_horas: 20, silencio_humano_horas: 6 },
   horario: null,
-  presion: { horas_entre_whatsapps: 24, dias_pausa_por_manual: 5, permitir_forzar_manual: true },
+  presion: { horas_entre_whatsapps: 24, dias_pausa_por_manual: 5, permitir_forzar_manual: true, sin_tope_manual: true },
   intencion: { etiquetar: true, notificar: true, solo_desde_cta: true },
   cierre: { bloquear_con_no_leidos: true },
 };
@@ -72,11 +81,13 @@ export async function configEntrante(): Promise<ConfigEntrante> {
         },
         horario: e.horario?.desde && e.horario?.hasta ? e.horario as Horario : null,
         presion: {
-          // Tope duro: por más que alguien escriba 0 en la pantalla, no se
-          // permite escribirle a un lead cada minuto.
-          horas_entre_whatsapps: Math.max(1, num(e.presion?.horas_entre_whatsapps, POR_DEFECTO.presion.horas_entre_whatsapps)),
+          // 0 = sin tope. Antes había un suelo de una hora «por si acaso», y
+          // ese «por si acaso» era justo la restricción que estorbaba: quien
+          // escribe 0 en la pantalla lo está decidiendo a propósito.
+          horas_entre_whatsapps: Math.max(0, num(e.presion?.horas_entre_whatsapps, POR_DEFECTO.presion.horas_entre_whatsapps)),
           dias_pausa_por_manual: Math.max(0, num(e.presion?.dias_pausa_por_manual, POR_DEFECTO.presion.dias_pausa_por_manual)),
           permitir_forzar_manual: bool(e.presion?.permitir_forzar_manual, POR_DEFECTO.presion.permitir_forzar_manual),
+          sin_tope_manual: bool(e.presion?.sin_tope_manual, POR_DEFECTO.presion.sin_tope_manual),
         },
         intencion: {
           etiquetar: bool(e.intencion?.etiquetar, POR_DEFECTO.intencion.etiquetar),

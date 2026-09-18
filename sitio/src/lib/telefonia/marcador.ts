@@ -1239,6 +1239,65 @@ export async function listarItems(sesionId: string) {
   });
 }
 
+/* ══ LOS COMPROMISOS DE ESTA JORNADA ══════════════════════════════════════
+   Pedido del dueño (18-sep-2026): «una pestaña específica que diga compromisos,
+   con las agendas que se generaron al hablar, para tenerlos presentes en un
+   espacio más específico; que sea fácil ver fecha y hora en que se quedó, y si
+   ya está en Google Calendar o no».
+
+   Sale de dos sitios, porque un compromiso puede ser de dos clases:
+    · una REUNIÓN (demo, discovery) → vive en `bookings`, con su evento de
+      Google y su liga de Meet;
+    · una LLAMADA de vuelta («márcame el jueves a las 4») → vive en la propia
+      lista, como un item pendiente con `volver_at`.
+   Las dos cuentan como «lo que prometiste al hablar», así que van juntas. */
+export async function compromisosDeSesion(sesionId: string) {
+  const items = await supabase.from('tel_sesion_items')
+    .select('id, nombre, empresa, telefono, contact_id, volver_at, nota, estado, resultado, terminado_at')
+    .eq('sesion_id', sesionId).limit(2000);
+  const filas = items.data || [];
+  const contactos = Array.from(new Set(filas.map(i => i.contact_id).filter(Boolean))) as string[];
+
+  /* Las reuniones: las que nacieron DE UNA LLAMADA y son de gente de esta
+     jornada. `origen = llamada` es lo que las separa de las que se agendaron
+     solas desde la página pública. */
+  const { data: bks } = contactos.length
+    ? await supabase.from('bookings')
+      .select('id, contact_id, fecha, hora_inicio, asunto, estado, google_event_id, google_meet_link, created_at, event_types(nombre, slug)')
+      .in('contact_id', contactos).eq('origen', 'llamada').order('fecha').limit(500)
+    : { data: [] as any[] };
+
+  const nombreDe = (cid: string | null) => filas.find(f => f.contact_id === cid);
+  const reuniones = (bks || []).map((b: any) => {
+    const it = nombreDe(b.contact_id);
+    return {
+      tipo: 'reunion' as const, id: b.id, item_id: it?.id || null,
+      nombre: it?.nombre || null, empresa: it?.empresa || null, telefono: it?.telefono || null,
+      contact_id: b.contact_id, fecha: b.fecha, hora: String(b.hora_inicio || '').slice(0, 5),
+      titulo: b.event_types?.nombre || b.asunto || 'Reunión', slug: b.event_types?.slug || null,
+      estado: b.estado, en_google: !!b.google_event_id, meet: b.google_meet_link || null,
+    };
+  });
+
+  /* Las llamadas prometidas: item pendiente con hora. Se quedan fuera las que
+     el motor reprogramó solo (buzón, línea cortada): un compromiso es algo que
+     una persona dijo, no un reintento. */
+  const llamadas = filas
+    .filter(i => i.estado === 'pendiente' && i.volver_at && !/buz[oó]n|se cort|otro contest|conexi[oó]n/i.test(String(i.nota || '')))
+    .map(i => ({
+      tipo: 'llamada' as const, id: i.id, item_id: i.id,
+      nombre: i.nombre, empresa: i.empresa, telefono: i.telefono, contact_id: i.contact_id,
+      /* ⚠️ La fecha, EN LA HORA DEL CENTRO y no en UTC. Cortar el ISO daba el
+         día en Greenwich: una llamada prometida a las 7 de la tarde de hoy
+         aparecía como «mañana», porque en UTC ya lo es. */
+      ...fechaHoraEn('America/Mexico_City', new Date(i.volver_at as string)),
+      titulo: 'Llamada de vuelta', slug: null, estado: 'agendada', en_google: false, meet: null,
+      motivo: String(i.nota || '').replace(/^Volver a llamar:\s*/i, '') || null,
+    }));
+
+  return [...reuniones, ...llamadas].sort((a, b) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`));
+}
+
 /** Una sesión nueva con los que no se pudo hablar. */
 export async function relanzar(sesionId: string, ownerId: string | null, cuales?: string[]) {
   const s = await getSesion(sesionId);

@@ -72,6 +72,7 @@ export async function puedeMandarWa(telefono: string, opts?: { forzar?: boolean 
 
   const cfg = await configEntrante();
   const tope = cfg.presion.horas_entre_whatsapps;
+  if (tope <= 0) return { ok: true };   // 0 = sin tope, decidido a propósito en la pantalla
   const horas = (Date.now() - ultimo.cuando.getTime()) / 36e5;
   if (horas >= tope) return { ok: true };
 

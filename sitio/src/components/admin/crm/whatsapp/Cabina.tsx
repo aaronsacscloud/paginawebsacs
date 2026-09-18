@@ -196,7 +196,14 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
   const [etapaTocada, setEtapaTocada] = useState('');
   const notaItem = useRef<string | null>(null);
-  const [tab, setTab] = useState<'lista' | 'hechas'>('lista');
+  const [tab, setTab] = useState<'lista' | 'hechas' | 'compromisos'>('lista');
+  /* ══ LOS COMPROMISOS DE LA JORNADA ══════════════════════════════════════
+     Pedido del dueño (18-sep-2026): «una pestaña específica que diga
+     compromisos, con las agendas que se generaron al hablar… que sea fácil ver
+     fecha y hora en que se quedó, y si ya está en Google Calendar o no».
+     Se piden aparte y sólo al abrir la pestaña: una consulta que cruza citas y
+     contactos no puede ir en el pulso de cada segundo. */
+  const [compromisos, setCompromisos] = useState<any[]>([]);
 
   const sesion = est?.sesion;
   const actual = est?.actual;
@@ -500,6 +507,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const esperaTuDecision = actual?.estado === 'cierre' && ['persona', 'duda'].includes(String(actual?.veredicto || '')) && !sola;
   const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (tab !== 'compromisos' || !sesionId) return;
+    let vivo = true;
+    const traer = () => fetch(`/api/crm/telefonia/marcador?id=${sesionId}&compromisos=1`, { cache: 'no-store' })
+      .then(r => r.json()).then(j => { if (vivo) setCompromisos(j.compromisos || []); }).catch(() => {});
+    traer();
+    const t = setInterval(traer, 15000);   // se llena conforme cuelgas: no hace falta más seguido
+    return () => { vivo = false; clearInterval(t); };
+  }, [tab, sesionId, hechos.length]);
   /* ══ LO QUE HACE FALTA PARA DECIDIR RÁPIDO Y BIEN (17-sep-2026) ══════════
      Las diez mejoras del momento de colgar viven aquí: corregir la propuesta,
      rechazarla, leer lo que se dijo, saber por qué la IA no pudo, las salidas
@@ -1524,16 +1540,66 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         {/* Derecha: la lista con su estado */}
         <div className="wa-scroll" style={{ width: movil ? '100%' : 340, flexShrink: 0, borderLeft: movil ? 'none' : `1px solid ${C.g200}`, borderTop: movil ? `1px solid ${C.g200}` : 'none', background: '#fff', overflowY: 'auto', maxHeight: movil ? 260 : 'none' }}>
           <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.g200}`, position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-            {(['lista', 'hechas'] as const).map(t => (
+            {(['lista', 'hechas', 'compromisos'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={{
                 flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 10px', fontSize: 12.5,
                 background: tab === t ? C.moradoAgua : 'transparent', color: tab === t ? C.moradoTinta : '#4B5563', fontWeight: tab === t ? 800 : 500,
                 borderBottom: tab === t ? '2px solid #9B8CFA' : '2px solid transparent',
-              }}>{t === 'lista' ? `Por marcar (${pendientes.length})` : `Hechas (${hechos.length})`}</button>
+              }}>{t === 'lista' ? `Por marcar (${pendientes.length})` : t === 'hechas' ? `Hechas (${hechos.length})` : `Compromisos${compromisos.length ? ` (${compromisos.length})` : ''}`}</button>
             ))}
           </div>
-          {(tab === 'lista' ? items.filter(i => !['hecho', 'saltado', 'excluido'].includes(i.estado)) : hechos).map(i => filaItem(i, tab === 'lista', true))}
+          {tab !== 'compromisos' && (tab === 'lista' ? items.filter(i => !['hecho', 'saltado', 'excluido'].includes(i.estado)) : hechos).map(i => filaItem(i, tab === 'lista', true))}
           {tab === 'hechas' && hechos.length === 0 && <div style={{ padding: 18, fontSize: 12, color: C.g400 }}>Aún no hay llamadas hechas.</div>}
+
+          {/* ══ COMPROMISOS ══════════════════════════════════════════════════
+              Lo que prometiste al hablar, en un solo sitio y en orden de cuándo
+              toca: las reuniones que se agendaron y las llamadas de vuelta.
+              Con la fecha y la hora grandes —es lo que se viene a buscar— y
+              diciendo si YA está en Google Calendar, que es la diferencia entre
+              una cita que le va a sonar al cliente y una que sólo existe aquí. */}
+          {tab === 'compromisos' && compromisos.length === 0 && (
+            <div style={{ padding: 18, fontSize: 12, color: C.g400 }}>Todavía no hay compromisos. Aparecen aquí en cuanto quedas de algo en una llamada.</div>
+          )}
+          {tab === 'compromisos' && compromisos.map((c: any) => {
+            const cuando = new Date(`${c.fecha}T${c.hora || '10:00'}:00`);
+            /* Hoy y mañana EN LA HORA DEL CENTRO. Con `toISOString` (que es
+               UTC) toda la tarde mexicana ya es «mañana» en Greenwich, y la
+               etiqueta mentía justo en las horas en que más se llama. */
+            const enCdmx = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            const hoy = enCdmx(new Date());
+            const dia = c.fecha === hoy ? 'hoy'
+              : c.fecha === enCdmx(new Date(Date.now() + 86400e3)) ? 'mañana'
+              : cuando.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+            const paso = c.fecha < hoy;
+            return (
+              <div key={`${c.tipo}-${c.id}`} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderBottom: `1px solid ${C.g100}`, opacity: paso ? .6 : 1 }}>
+                <span style={{
+                  flexShrink: 0, width: 62, textAlign: 'center', borderRadius: 10, padding: '6px 4px',
+                  background: c.tipo === 'reunion' ? C.moradoAgua : '#FFF4E5', color: c.tipo === 'reunion' ? C.moradoTinta : '#9a6a10',
+                }}>
+                  <b style={{ display: 'block', fontSize: 14, lineHeight: 1.1 }}>{c.hora}</b>
+                  <span style={{ fontSize: 10.5, fontWeight: 700 }}>{dia}</span>
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.nombre || telefonoLegible(c.telefono)}{c.empresa ? <span style={{ fontWeight: 400, color: C.g500 }}> · {c.empresa}</span> : null}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.g500 }}>{c.titulo}{c.motivo ? ` · ${c.motivo}` : ''}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
+                    {c.tipo === 'reunion' ? (
+                      <span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: c.en_google ? '#EAF8F2' : '#FFF4E5', color: c.en_google ? '#1E8A63' : '#9a6a10' }}>
+                        {c.en_google ? 'En Google Calendar' : 'No está en Google Calendar'}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: C.moradoAgua, color: C.moradoTinta }}>La marca sola a esa hora</span>
+                    )}
+                    {c.meet && <a href={c.meet} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.moradoTinta, fontWeight: 700 }}>Meet</a>}
+                    {paso && <span style={{ fontSize: 10.5, color: '#C0554E', fontWeight: 700 }}>ya pasó</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

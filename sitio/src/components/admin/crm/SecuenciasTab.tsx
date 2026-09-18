@@ -138,8 +138,8 @@ export default function SecuenciasTab() {
 
           <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '18px 0 8px', color: '#666' }}>3 · Cuánto lo podemos molestar</div>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <div><span style={lbl}>Horas entre WhatsApps</span>
-              <input type="number" min={1} max={168} style={{ ...inp, width: 84 }} value={ent.presion?.horas_entre_whatsapps ?? 24}
+            <div><span style={lbl}>Horas entre WhatsApps <span style={{ color: '#a5a2af', fontWeight: 400 }}>(0 = sin tope)</span></span>
+              <input type="number" min={0} max={168} style={{ ...inp, width: 84 }} value={ent.presion?.horas_entre_whatsapps ?? 24}
                 onChange={e => setEnt({ presion: { ...(ent.presion || {}), horas_entre_whatsapps: Number(e.target.value) } })} /></div>
             <div><span style={lbl}>Días de pausa si un humano contesta</span>
               <input type="number" min={0} max={30} style={{ ...inp, width: 84 }} value={ent.presion?.dias_pausa_por_manual ?? 5}
@@ -148,6 +148,13 @@ export default function SecuenciasTab() {
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer', marginTop: 10 }}>
             <input type="checkbox" checked={ent.presion?.permitir_forzar_manual !== false} onChange={e => setEnt({ presion: { ...(ent.presion || {}), permitir_forzar_manual: e.target.checked } })} />
             Dejar que un vendedor mande de todos modos, confirmando
+          </label>
+          {/* El tope nació para que la CADENCIA no atropellara a nadie. A quien
+              está leyendo el chat y decide mandar otra plantilla no hay nada que
+              discutirle: con esto encendido, lo manual no pasa por el tope. */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer', marginTop: 8 }}>
+            <input type="checkbox" checked={ent.presion?.sin_tope_manual !== false} onChange={e => setEnt({ presion: { ...(ent.presion || {}), sin_tope_manual: e.target.checked } })} />
+            Sin tope para lo que se manda A MANO desde la bandeja (marketing, utility, las que sean)
           </label>
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>
             El candado cuenta los mensajes REALES, así que incluye lo que manda la cadencia y lo que manda una persona desde la bandeja. Cero días de pausa = la cadencia nunca se aparta.

@@ -249,7 +249,20 @@ export const POST: APIRoute = async ({ request }) => {
       // El candado mira los mensajes reales, así que cuenta los dos orígenes.
       // Se puede forzar (`forzar: true`) porque aquí SÍ hay una persona mirando
       // y a veces el segundo mensaje es la respuesta correcta.
-      const presion = await puedeMandarWa(destino.telefono, { forzar: !!b.forzar });
+      /* ══ LO QUE MANDAS TÚ NO TIENE TOPE (18-sep-2026) ══════════════════
+         Decisión del dueño: «quita la restricción de poder enviar un mensaje
+         por plantilla después de 1 hora, para poder mandar varios de marketing
+         y utility sin límite».
+
+         Aquí hay una persona mirando la conversación y decidiendo: el tope
+         existía para que la CADENCIA no atropellara a nadie, no para discutirle
+         a quien está leyendo el chat. Para lo automático —cadencia, ABM,
+         agente— el tope sigue igual, que es donde un error se multiplica por
+         cientos y donde se queman los números. Se puede volver a poner desde
+         Secuencias ▸ WhatsApp entrante. */
+      const { configEntrante } = await import('../../../../lib/whatsapp/config-entrante');
+      const sinTope = (await configEntrante()).presion.sin_tope_manual;
+      const presion = sinTope ? { ok: true } as any : await puedeMandarWa(destino.telefono, { forzar: !!b.forzar });
       if (!presion.ok) {
         return json({
           error: presion.motivo,
