@@ -1233,8 +1233,18 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   {actual.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={btnT}>Ver chat</button>}
                 </div>
 
-                {actual.apertura && ['en_linea', 'cierre'].includes(estadoActual) && (
-                  <div style={{ marginTop: 12, background: C.moradoSuave, borderRadius: 9, padding: '9px 12px', fontSize: 13.5, color: C.moradoTinta, fontWeight: 600 }}>{actual.apertura}</div>
+                {/* ══ ¿Y ESTO MORADO QUÉ ES? (18-sep-2026) ════════════════════
+                    Lo preguntó el dueño viendo la tarjeta de Gabriela, y la
+                    pregunta ES el defecto: era una frase suelta en morado, sin
+                    rótulo, en medio de la ficha. Es tu primera frase —la que se
+                    arma con el nombre y el motivo que pusiste al crear la
+                    sesión— y hay que reconocerla de un vistazo mientras el otro
+                    ya está diciendo «bueno». Dos palabras encima lo resuelven. */}
+                {actual.apertura && ['escuchando', 'portero', 'en_linea', 'cierre'].includes(estadoActual) && (
+                  <div style={{ marginTop: 12, background: C.moradoSuave, borderRadius: 9, padding: '9px 12px' }}>
+                    <div style={{ ...etiqueta, color: C.morado, marginBottom: 3 }}>Lo que dices al contestar</div>
+                    <div style={{ fontSize: 13.5, color: C.moradoTinta, fontWeight: 600 }}>{actual.apertura}</div>
+                  </div>
                 )}
                 {actual.resumen && (
                   <div style={{ marginTop: 10 }}>

@@ -14,7 +14,7 @@
 import { supabase } from '../supabase';
 import { telefonoLegible, telefonoWhatsApp } from '../telefono';
 import { permitido } from '../whatsapp/permisos';
-import { puedeMandarWa, cadenciaPausadaPorPersona } from '../whatsapp/presion';
+import { puedeMandarWa } from '../whatsapp/presion';
 import { enviarTexto, enContexto } from '../whatsapp/kapso-api';
 import { mandarPlantilla } from '../whatsapp/plantilla-espejo';
 import { ventanaEnLinea } from '../whatsapp/linea';
@@ -101,7 +101,21 @@ export async function aplicarReglasLlamada(callId: string): Promise<ResultadoReg
     if (cfg.llamadas_regla_horario && !enHorario(cfg.horario)) return { mandado: false, motivo: 'fuera del horario de atención' };
     const presion = await puedeMandarWa(tel);
     if (!presion.ok) return { mandado: false, motivo: 'ya se le escribió hoy por WhatsApp' };
-    if (await cadenciaPausadaPorPersona(tel)) return { mandado: false, motivo: 'una persona tomó la conversación' };
+    /* ══ 🔴 «LE LLAMÉ Y NO SE ENVIÓ EL MENSAJE» (18-sep-2026) ═══════════════
+       Reporte del dueño sobre Manuel Arturo: le marcó desde el inbox, sonó el
+       buzón y no salió nada. La nota interna lo decía: «no se le mandó el
+       WhatsApp automático: una persona tomó la conversación».
+
+       Ese freno existe para que una CADENCIA automática no se meta encima de
+       una conversación que ya lleva un humano. Aquí no aplica, y por eso
+       estorbaba: este aviso no lo dispara un cron, lo dispara una persona que
+       acaba de marcarle a otra. El humano no es el que hay que esquivar: es el
+       que hizo la llamada. Frenarlo deja al contacto viendo una llamada
+       perdida de un número que no conoce, que es lo peor de los dos mundos.
+
+       Los otros frenos siguen: la lista de permitidos (el interruptor del
+       dueño), el horario, la presión de mensajes y la marca única. */
+
 
     /* ── LA MARCA ÚNICA ─────────────────────────────────────────────────────
        Con `una_vez` la marca es del CONTACTO y no caduca: aunque le marques

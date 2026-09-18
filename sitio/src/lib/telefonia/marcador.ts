@@ -1097,6 +1097,34 @@ export async function latir(sesionId: string) {
 
   if (it && s.estado === 'activa') {
     const cfg = { ...CONFIG_BASE, ...(s.config || {}) };
+    /* ══ 🔴 EL BUCLE QUE PARABA LA JORNADA ENTERA (18-sep-2026) ════════════
+       Reporte del dueño, con la captura: «aquí hay un bucle que cuando se pone
+       así ya no puedo avanzar más, y pues no me das más opciones». La tarjeta
+       decía HECHA, quedaban 70 por marcar, y los únicos botones eran «Pausar»
+       y «Terminar la sesión». Le dio a arrancar y le salió «La sesión está
+       activa» — claro: ya lo estaba. Callejón sin salida.
+
+       El latido tenía rama para el que timbra, el que habla, el buzón que
+       espera el tono, el que está en cierre… y NINGUNA para el que ya terminó.
+       Normalmente da igual, porque quien cierra el item limpia `item_actual` y
+       marca al siguiente de una vez. Pero basta con que el item llegue a
+       `hecho` por cualquier otro camino —deshacer un cierre, un webhook
+       tardío, un salto a mano— para que `item_actual` se quede apuntando a un
+       muerto. Y entonces: `it` existe, así que no entra la rama de «no hay
+       nadie, marca al siguiente»; y su estado no es ninguno de los vigilados,
+       así que tampoco entra a ninguna otra. El latido corre cada segundo sin
+       hacer nada, para siempre.
+
+       Un item terminado NUNCA es el actual. Se despeja y sigue la lista —con
+       el mismo UPDATE condicional de siempre, para no pisar a quien ya puso
+       otro ahí—. Cubre los tres caminos de salida y cualquiera que se invente
+       después, que es lo que hace que esto no vuelva a pasar. */
+    if (['hecho', 'saltado', 'excluido'].includes(String(it.estado))) {
+      await supabase.from('tel_sesiones').update({ item_actual: null, updated_at: ahora() }).eq('id', sesionId).eq('item_actual', it.id);
+      await recontar(sesionId);
+      if (s.agente_en_sala || sinSala(s)) await marcarSiguiente(sesionId);
+      return estadoSesion(sesionId);
+    }
     if (it.estado === 'en_linea' && it.agente_salio_at && !s.agente_en_sala && ms(it.agente_salio_at) > ESPERA.caida) {
       await colgarItem(it);   // la TwiML de espera debió colgar sola; esto es la red por si Twilio no la corrió
     } else if (it.estado === 'escuchando' && !it.veredicto && ms(it.contestado_at) > ESPERA.juicio) {

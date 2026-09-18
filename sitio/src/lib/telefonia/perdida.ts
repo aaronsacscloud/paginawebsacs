@@ -25,14 +25,31 @@
 import { supabase } from '../supabase';
 import { enContexto } from '../whatsapp/kapso-api';
 import { notaSistema } from '../whatsapp/espejo';
-import { mandarPlantilla } from '../whatsapp/plantilla-espejo';
+import { mandarPlantilla, plantillaAprobada } from '../whatsapp/plantilla-espejo';
 import { telefonoWhatsApp } from '../telefono';
 
 /* Creadas en Meta el 17-sep. Mientras alguna siga PENDING su envío falla y la
    cascada sigue al siguiente escalón; si fallan las dos, queda la tarea, que es
    lo que de verdad evita que la llamada se pierda. */
-const PLANTILLA_MARKETING = 'llamada_perdida_v1';
-const PLANTILLA_UTILITY = 'llamada_perdida_util_v1';
+/* ══ LA CÁLIDA PRIMERO, LA VIEJA COMO RED (18-sep-2026) ════════════════════
+   Pedido del dueño: «que sea una plantilla muy cordial, que explique que le
+   llamamos, presentándonos y qué hacemos como Sacs; que no sean mensajes tan
+   cerrados… que nos veamos formales, que le decimos que le marcamos por la
+   solicitud que él mismo hizo, que nos ponemos a sus órdenes».
+
+   Las `_v2` son esas. Están recién mandadas a Meta y tardan en aprobarse, así
+   que la lista se recorre EN ORDEN y sale la primera que ya esté aprobada: hoy
+   la vieja, y sola —sin que nadie tenga que volver aquí— la nueva en cuanto
+   Meta la apruebe. Meta no deja editar el texto de una plantilla aprobada; por
+   eso se versiona en vez de corregirse. */
+const MARKETING = ['llamada_perdida_v2', 'llamada_perdida_v1'];
+const UTILITY = ['llamada_perdida_util_v2', 'llamada_perdida_util_v1'];
+
+/** La primera de la lista que Meta ya tenga aprobada. */
+async function primeraViva(nombres: string[]): Promise<string | null> {
+  for (const n of nombres) if (await plantillaAprobada(n)) return n;
+  return null;
+}
 
 /** Media hora: quien insiste tres veces seguidas no necesita tres avisos. */
 const ANTI_REPE_MS = 30 * 60000;
@@ -79,10 +96,13 @@ export async function avisarLlamadaPerdida(telefonoCrudo: string, nombreDado?: s
      el cuerpo APROBADO con las variables puestas, con su footer y sus botones,
      y trae la cascada marketing → utility de fábrica. Aquí sólo se le entrega
      el trabajo. La categoría se queda en `metadata`, que es su lugar. */
+  const mkt = await primeraViva(MARKETING);
+  const util = await primeraViva(UTILITY);
+  if (!mkt && !util) return { via: 'solo_tarea' };
   const r = await mandarPlantilla({
-    telefono: destino, plantilla: PLANTILLA_MARKETING, params: [param], autor: 'Telefonía',
+    telefono: destino, plantilla: mkt || util!, params: [param], autor: 'Telefonía',
     metadata: { llamada_perdida: true },
-    respaldo: { plantilla: PLANTILLA_UTILITY, params: [param] },
+    respaldo: mkt && util ? { plantilla: util, params: [param] } : null,
     textoRespaldo: `Hola ${param}, nos llamaste y no alcanzamos a responderte. Te devolvemos la llamada lo antes posible.`,
   }).catch(() => null);
   if (r?.enviado) via = r.via === 'respaldo' ? 'utility' : 'marketing';
