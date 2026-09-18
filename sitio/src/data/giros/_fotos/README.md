@@ -100,12 +100,12 @@ de cuatro dictámenes seguidos, no de una corazonada.
 |---|---|---|---|
 | uniformes | 4 de 23 | 14 de 23 · 9 recompuestas en ronda 3 · **las 23 aprobadas en ronda 4** | **resuelta** |
 | renta de vestidos | 1 de 22 | 19 de 22 · 3 recompuestas en ronda 3 · **las 22 aprobadas en ronda 4** | **resuelta a 10** |
-| telas y mercería | 11 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
+| telas y mercería | 11 de 22 | 21 de 22 · prod-negro en ronda 6 (luz espejeada respecto a sus hermanas) | **resuelta** |
 | ópticas | 5 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
-| sastrería | 1 de 22 | 20 de 22 · 2 recompuestas | **resuelta** |
-| ropa infantil | 6 de 21 | 17 de 21 · 4 en ronda 3 | **resuelta** |
-| bolsas y piel | 4 de 22 | 21 de 22 · el «antes» con un tercer brazo, en ronda 3 | **resuelta** |
-| maternidad | 0 de 22 (2 retiradas por dignidad) | 22 de 22 · **cero fallas de dignidad** | **resuelta** |
+| sastrería | 1 de 22 | 21 de 22 · caso-regresa en ronda 6 (el generador no cuenta cuatro brazos: el cliente ahora va de espaldas) | **resuelta** |
+| ropa infantil | 6 de 21 | 17 de 21 · 4 en ronda 3 · **las 21 aprobadas** | **resuelta** |
+| bolsas y piel | 4 de 22 | 21 de 22 · el «antes» rehecho en ronda 3 · **las 22 aprobadas** | **resuelta, par confirmado** |
+| maternidad | 0 de 22 (2 retiradas por dignidad) | **las 22 aprobadas · cero fallas de dignidad** | **resuelta** |
 | tallas grandes | 9 de 22 | 13 en corrección | no (otro local) |
 | outlet | 10 de 22 | 12 en corrección | no (otra mujer y otro local) |
 | emprendedoras | 9 de 22 | 13 en corrección | no (salió estudio, no cuarto de casa) |
