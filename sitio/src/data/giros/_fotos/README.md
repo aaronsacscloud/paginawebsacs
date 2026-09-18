@@ -91,3 +91,50 @@ de cuatro dictámenes seguidos, no de una corazonada.
 7. **Las fotos de producto no son el mismo producto.** Cuatro colores de la misma
    playera salieron con distinto número de botones y distinto corte. Se generan
    con un prompt base idéntico donde solo cambia la palabra del color.
+
+---
+
+## Estado al 18-sep-2026, 22:15 UTC — 265 de 265 generadas, tres rondas
+
+| giro | ronda 1 | ronda 2 (tras correcciones) | cortina |
+|---|---|---|---|
+| uniformes | 4 de 23 | 14 de 23 · 9 recompuestas en ronda 3 | **resuelta** |
+| renta de vestidos | 1 de 22 | 19 de 22 · 3 recompuestas en ronda 3 | **resuelta a 10** |
+| telas y mercería | 11 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
+| ópticas | 5 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
+| sastrería | 1 de 22 | 20 de 22 · 2 recompuestas | **resuelta** |
+| ropa infantil | 6 de 21 | en revisión | pendiente de confirmar |
+| bolsas y piel | 4 de 22 | en revisión | pendiente de confirmar |
+| maternidad | 0 de 22 (2 retiradas por dignidad) | en revisión | pendiente de confirmar |
+| tallas grandes, outlet, emprendedoras, lencería | en primera revisión | — | — |
+
+## Lo que enseñaron las tres rondas
+
+**1. La cortina se resuelve con imagen de referencia, y con nada más.** Falló en
+los siete giros con el bloque de personaje repetido palabra por palabra. Con el
+«antes» pasado como referencia al generador (`gen-ref.mjs`), salió resuelta en
+los siete a la primera. En renta salió a 10: misma cara, mismo chongo, misma
+cinta métrica, la misma pulsera de chaquira. **Desde el próximo giro, el
+«después» se genera así desde el principio.**
+
+**2. Cuando el generador repite un defecto, prohibirlo no sirve: hay que cambiar
+la escena.** Doce fotos fallaron dos veces seguidas con EXACTAMENTE el mismo
+error aunque el prompt corregido lo prohibía (la tablet de espaldas, el bordado
+con nombre mal escrito, la bolsa flotando, la corrida de tallas absurda). No era
+el prompt: el modelo insiste. La tercera ronda las recompuso para que el error
+no tuviera dónde aparecer —la tablet se volvió una laptop abierta hacia la
+cámara, el bordado un escudo geométrico sin letras, la bolsa quedó en las dos
+manos de la empleada— y así pasaron.
+
+**3. Las portadas van en vertical.** El banner las dibuja en 4/5 y se generaban
+apaisadas: el navegador recortaba media escena. El generador ya respeta
+`"vertical": true` por escena.
+
+**4. Los cuatro productos se generan con un prompt base idéntico donde solo cambia
+la palabra del color**, y se fija la escala («fills 70 percent of the frame
+height») para que no salgan de tamaños distintos.
+
+**5. Lo impreso dentro del cuadro también cuenta.** Dos fotos de maternidad
+traían empaques y un cartel con mujeres en ropa interior. La regla de dignidad
+tiene que decir explícitamente que ninguna imagen impresa en la escena (cajas,
+carteles, pantallas, catálogos) puede mostrar cuerpos descubiertos.
