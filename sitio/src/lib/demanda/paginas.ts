@@ -92,9 +92,53 @@ export function leerHtml(html: string) {
   };
 }
 
+/**
+ * TODOS los sitemaps, leídos de robots.txt.
+ *
+ * Antes se leía solo `sitemap-index.xml` —el que genera el build— y eso dejaba
+ * ciego al motor sobre SU PROPIO CONTENIDO: lo que publica va a
+ * `sitemap-demanda.xml`, porque son rutas `prerender = false` que el build
+ * nunca escribe en disco.
+ *
+ * El efecto no era sutil. Las once guías publicadas quedaban marcadas
+ * `en_sitemap: false` y `huerfana: true`, nunca se rastreaban (por eso su conteo
+ * de palabras salía vacío), y generaban hallazgos que nadie podía resolver
+ * porque describían un problema que no existía. El motor se acusaba a sí mismo
+ * de esconder lo que acababa de publicar.
+ *
+ * Se leen de `robots.txt` y no de una lista aquí a propósito: robots.txt ya es
+ * la declaración pública de cuáles son, y así agregar un tercero no obliga a
+ * tocar este archivo. Si robots.txt falla, se cae al índice del build en vez de
+ * quedarse sin nada.
+ */
+async function sitemapsDeclarados(): Promise<string[]> {
+  try {
+    const r = await fetch(`${SITIO}/robots.txt`, { headers: { 'User-Agent': 'SacsDemandEngine/1.0' } });
+    if (!r.ok) throw new Error(`robots.txt → ${r.status}`);
+    const txt = await r.text();
+    const ls = [...txt.matchAll(/^\s*sitemap:\s*(\S+)\s*$/gim)].map(m => m[1]);
+    if (ls.length) return [...new Set(ls)];
+    console.error('[paginas] robots.txt no declara ningún Sitemap; se usa solo el del build');
+  } catch (e: any) {
+    console.error(`[paginas] no se pudo leer robots.txt (${e?.message}); se usa solo el del build`);
+  }
+  return [`${SITIO}/sitemap-index.xml`];
+}
+
 export async function inventariar(limite = 60): Promise<{ vistas: number; nuevas: number; enlaces: number; errores: number }> {
-  const urls = [...new Set((await urlsDelSitemap(`${SITIO}/sitemap-index.xml`))
-    .map(normalizarUrl).filter((u): u is string => !!u))];
+  /* Un sitemap caído no puede borrar el mapa entero: si `sitemap-demanda.xml`
+     responde 500, lo que NO hay que hacer es concluir que sus once guías
+     salieron del sitemap y marcarlas todas. Por eso cada uno se lee aparte y el
+     que falle se avisa y se salta. */
+  const crudas: string[] = [];
+  let fallaron = 0;
+  for (const sm of await sitemapsDeclarados()) {
+    try { crudas.push(...await urlsDelSitemap(sm)); }
+    catch (e: any) { fallaron++; console.error(`[paginas] sitemap ilegible ${sm}: ${e?.message}`); }
+  }
+  if (fallaron) throw new Error(`${fallaron} sitemap(s) no se pudieron leer: no se rastrea con un mapa incompleto, porque lo que falte se marcaría como salido del sitemap`);
+
+  const urls = [...new Set(crudas.map(normalizarUrl).filter((u): u is string => !!u))];
   const out = { vistas: 0, nuevas: 0, enlaces: 0, errores: 0 };
   if (!urls.length) throw new Error('el sitemap no devolvió ninguna URL');
 
