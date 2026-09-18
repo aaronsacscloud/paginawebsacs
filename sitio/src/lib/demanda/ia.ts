@@ -215,7 +215,18 @@ function esquemaGemini(e: any): any {
   return out;
 }
 
-type Cruda = { texto: string; ent: number; sal: number; stop?: string };
+/* `yaAnotado`: la llamada YA quedó escrita en `ia_uso` por quien la hizo, y
+   volver a anotarla aquí la contaría dos veces.
+   Pasa con Anthropic y no con los demás: los otros proveedores se llaman por
+   `fetch` pelón, pero Anthropic va por el cliente instrumentado del repo
+   (`lib/ai/client.ts`), que registra su propio consumo.
+
+   Medido el 18-sep-2026: cada llamada del motor a Anthropic dejaba DOS filas
+   con los mismos tokens y el mismo costo —una como `claude-sonnet-5` y otra
+   como `anthropic:claude-sonnet-5`—, o sea $1.03 de $2.5 del mes contados
+   doble. El tope de $150 habría frenado el motor a los $75 reales, que es la
+   peor forma de fallar: parece un límite respetado. */
+type Cruda = { texto: string; ent: number; sal: number; stop?: string; yaAnotado?: boolean };
 
 const trabajoDe = (p: Peticion): Trabajo => p.trabajo || 'volumen';
 
@@ -232,6 +243,7 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
     return {
       texto: (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join(''),
       ent: r.usage?.input_tokens || 0, sal: r.usage?.output_tokens || 0, stop: r.stop_reason,
+      yaAnotado: true,
     };
   }
 
@@ -311,7 +323,8 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
       (globalThis as any).__ia_proposito = `demanda:${p.agente}`;
       const r = await pedirA(prov, modelo, p, usuario);
       const costo = costoDe(modelo, r.ent, r.sal);
-      await registrar(prov, modelo, p.agente, r.ent, r.sal, costo, true, null, Date.now() - t0);
+      // El costo se devuelve igual; lo que se evita es la SEGUNDA fila.
+      if (!r.yaAnotado) await registrar(prov, modelo, p.agente, r.ent, r.sal, costo, true, null, Date.now() - t0);
 
       let datos: T | null = null;
       try { datos = r.texto ? JSON.parse(r.texto) : null; } catch { datos = null; }
