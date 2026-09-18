@@ -716,12 +716,18 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       {/* El marcador del partido, de reojo: conversaciones · costo · sin
           contacto. Sin tarjetas, sin etiquetas largas, sin robarle sitio a la
           llamada. Se esconde en el teléfono, donde el header ya va lleno. */}
-      {fase === 'viva' && sesion && !movil && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 11, color: C.g500, fontVariantNumeric: 'tabular-nums' }}>
+      {fase === 'viva' && sesion && (
+        /* En el teléfono se quedaban FUERA —el header iba lleno— y con eso
+           desaparecía el marcador del partido justo en la pantalla donde más
+           se trabaja hoy. Caben los dos que se miran de reojo entre llamada y
+           llamada: cuántas conversaciones llevas y cuánto has hablado. El
+           costo y el detalle del «sin contacto» son para estudiarlos al final,
+           y al final ya salen en tarjetas. */
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: movil ? 7 : 10, fontSize: 11, color: C.g500, fontVariantNumeric: 'tabular-nums' }}>
           <span title="Conversaciones de verdad"><b style={{ color: '#1E8A63', fontSize: 12.5 }}>{conversaciones}</b> conv</span>
           <span title="Lo que llevas hablado">{fmt(sesion.segundos_hablados || 0)}</span>
-          <span title="Costo de la jornada"><b style={{ color: C.moradoTinta, fontSize: 12.5 }}>US$ {costoSesion.toFixed(2)}</b></span>
-          <span title="Buzón · sin contestar · contestadora">{Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0)} sin contacto</span>
+          {!movil && <span title="Costo de la jornada"><b style={{ color: C.moradoTinta, fontSize: 12.5 }}>US$ {costoSesion.toFixed(2)}</b></span>}
+          {!movil && <span title="Buzón · sin contestar · contestadora">{Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0)} sin contacto</span>}
         </span>
       )}
       {fase === 'viva' && fernanda && (

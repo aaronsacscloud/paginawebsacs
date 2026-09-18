@@ -20,6 +20,7 @@
  * inbox ya devuelve `counts` y `por_etapa` completos con cualquier filtro. Cinco
  * llamadas (una por tarjeta) serían cinco veces la misma consulta pesada.
  */
+import { useIsMobile } from '../../../lib/ui/mobile';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import { LIFECYCLE } from '../../../lib/crm/lifecycle';
@@ -235,6 +236,15 @@ function Armador({ etapas, onListo, onCerrar }: {
 }
 
 export default function LlamadasInteligentes({ yo }: { yo?: any }) {
+  /* ══ LA CABINA TAMBIÉN VIVE EN EL TELÉFONO (18-sep-2026) ═════════════════
+     Pedido del dueño: «todas las mejoras de llamadas inteligentes en web,
+     hazlas funcionar igual en la versión móvil».
+
+     Esta pantalla montaba la cabina SIN decirle que estaba en un teléfono
+     —sólo el inbox lo hacía—, así que en el celular se dibujaba con el diseño
+     de escritorio: 22 px de margen, la columna de la lista clavada en 340 px y
+     todo en fila. La cabina ya sabe acomodarse sola; nadie le avisaba. */
+  const esMovil = useIsMobile();
   const [armando, setArmando] = useState(false);
   const [aMedida, setAMedida] = useState<{ titulo: string; qs: string } | null>(null);
   const [counts, setCounts] = useState<any>(null);
@@ -286,7 +296,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
               /* La lista a medida entra con total 0: el número real lo cuenta la
                  cabina al leer la lista, y adivinarlo aquí sólo serviría para
                  desmentirse dos segundos después. */
-              total={aMedida ? 0 : n} yo={yo}
+              total={aMedida ? 0 : n} yo={yo} movil={esMovil}
               sesionInicial={verSesion}
               onCerrar={() => { setElegida(null); setVerSesion(null); setAMedida(null); }}
               onAbrirConversacion={id => { window.location.href = `/admin/crm?tab=whatsapp&wa_conv=${id}`; }} />
