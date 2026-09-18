@@ -100,13 +100,13 @@ de cuatro dictámenes seguidos, no de una corazonada.
 |---|---|---|---|
 | uniformes | 4 de 23 | 14 de 23 · 9 recompuestas en ronda 3 · **las 23 aprobadas en ronda 4** | **resuelta** |
 | renta de vestidos | 1 de 22 | 19 de 22 · 3 recompuestas en ronda 3 · **las 22 aprobadas en ronda 4** | **resuelta a 10** |
-| telas y mercería | 11 de 22 | 21 de 22 · prod-negro en ronda 6 (luz espejeada respecto a sus hermanas) | **resuelta** |
+| telas y mercería | 11 de 22 | 21 de 22 · prod-negro aprobado en ronda 6 · prod-azul en ronda 8 con el prompt exacto del negro (al arreglar uno, otro hermano quedó desentonado: los cuatro deben salir del MISMO prompt) | **resuelta** |
 | ópticas | 5 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
-| sastrería | 1 de 22 | 21 de 22 · caso-regresa en ronda 6 (el generador no cuenta cuatro brazos: el cliente ahora va de espaldas) | **resuelta** |
+| sastrería | 1 de 22 | 21 de 22 · caso-regresa reprobada seis veces por manos; en ronda 8 se quita a la gente del cuadro (saco listo en el gancho, cliente desenfocado en la puerta) | **resuelta** |
 | ropa infantil | 6 de 21 | 17 de 21 · 4 en ronda 3 · **las 21 aprobadas** | **resuelta** |
 | bolsas y piel | 4 de 22 | 21 de 22 · el «antes» rehecho en ronda 3 · **las 22 aprobadas** | **resuelta, par confirmado** |
 | maternidad | 0 de 22 (2 retiradas por dignidad) | **las 22 aprobadas · cero fallas de dignidad** | **resuelta** |
-| tallas grandes | 9 de 22 | **las 22 aprobadas en ronda 2** · 4 rehechas con discos en blanco por coherencia de numeración | **resuelta, par confirmado** |
+| tallas grandes | 9 de 22 | **las 22 aprobadas en ronda 2** · 4 rehechas con discos en blanco (aprobadas en ronda 7); el giro queda 38-52 + discos lisos, ya sin 14-24 | **resuelta, par confirmado** |
 | outlet | 10 de 22 | **las 22 aprobadas en ronda 2** | **resuelta, par confirmado** |
 | emprendedoras | 9 de 22 | 13 en corrección | no (salió estudio, no cuarto de casa) |
 | lencería | 7 de 23 (2 retiradas por dignidad) | 16 en corrección | no (otra mujer y otro local) |
