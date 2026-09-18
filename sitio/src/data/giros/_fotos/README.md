@@ -106,8 +106,8 @@ de cuatro dictámenes seguidos, no de una corazonada.
 | ropa infantil | 6 de 21 | 17 de 21 · 4 en ronda 3 · **las 21 aprobadas** | **resuelta** |
 | bolsas y piel | 4 de 22 | 21 de 22 · el «antes» rehecho en ronda 3 · **las 22 aprobadas** | **resuelta, par confirmado** |
 | maternidad | 0 de 22 (2 retiradas por dignidad) | **las 22 aprobadas · cero fallas de dignidad** | **resuelta** |
-| tallas grandes | 9 de 22 | 13 en corrección | no (otro local) |
-| outlet | 10 de 22 | 12 en corrección | no (otra mujer y otro local) |
+| tallas grandes | 9 de 22 | **las 22 aprobadas en ronda 2** · 4 rehechas con discos en blanco por coherencia de numeración | **resuelta, par confirmado** |
+| outlet | 10 de 22 | **las 22 aprobadas en ronda 2** | **resuelta, par confirmado** |
 | emprendedoras | 9 de 22 | 13 en corrección | no (salió estudio, no cuarto de casa) |
 | lencería | 7 de 23 (2 retiradas por dignidad) | 16 en corrección | no (otra mujer y otro local) |
 
