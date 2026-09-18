@@ -139,6 +139,20 @@ export async function inventariar(limite = 60): Promise<{ vistas: number; nuevas
   if (fallaron) throw new Error(`${fallaron} sitemap(s) no se pudieron leer: no se rastrea con un mapa incompleto, porque lo que falte se marcaría como salido del sitemap`);
 
   const urls = [...new Set(crudas.map(normalizarUrl).filter((u): u is string => !!u))];
+
+  /* Qué URLs son del MOTOR y no del repo. El rastreador visita una lista de
+     URLs y no puede saberlo por la forma de la URL, así que se lo pregunta a
+     `de_contenido`.
+
+     Sin esto, el upsert de abajo escribía `origen: 'repo'` en todo, incluidas
+     las guías que el motor publica — y la limpieza de contenido retirado borra
+     precisamente `where origen = 'motor'`. O sea: una guía retirada se habría
+     quedado para siempre en `de_paginas` como página viva, generando hallazgos
+     sobre una URL que ya devuelve 404. */
+  const { listaPublicada } = await import('./publicar');
+  const delMotor = new Map(
+    (await listaPublicada()).map(c => [normalizarUrl(`${SITIO}/${c.seccion}/${c.slug}/`) || '', 'dinamica'] as const),
+  );
   const out = { vistas: 0, nuevas: 0, enlaces: 0, errores: 0 };
   if (!urls.length) throw new Error('el sitemap no devolvió ninguna URL');
 
@@ -161,8 +175,18 @@ export async function inventariar(limite = 60): Promise<{ vistas: number; nuevas
 
       await supabase.from('de_paginas').upsert({
         url: u,
-        tipo: u.includes('/herramientas/') ? 'herramienta' : 'estatica',
-        origen: 'repo',
+        tipo: delMotor.has(u) ? 'dinamica' : u.includes('/herramientas/') ? 'herramienta' : 'estatica',
+        origen: delMotor.has(u) ? 'motor' : 'repo',
+        /* `en_sitemap: true` porque esta URL SALIÓ de un sitemap: es de dónde
+           viene la lista que estamos recorriendo.
+
+           Faltaba, y convertía la bandera en un cerrojo de una sola vuelta: el
+           bloque de más abajo la pone en `false` cuando una página desaparece
+           del sitemap, y nada la devolvía a `true` cuando volvía. Una página
+           que salió y regresó se quedaba marcada como fuera para siempre — y
+           con ella, la regla que decide si se le aplican las reglas de
+           buscador. */
+        en_sitemap: true,
         titulo: d?.titulo || null, h1: d?.h1 || null, meta_desc: d?.meta_desc || null,
         canonical: d?.canonical || null,
         estado_http: r.status, indexable: d?.indexable ?? null,
