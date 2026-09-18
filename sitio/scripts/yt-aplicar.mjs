@@ -105,6 +105,12 @@ async function enlace() {
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', ID);
   url.searchParams.set('redirect_uri', REDIR);
+  /* El `state` va EN LA URL, no solo guardado en la base. Se generaba, se
+     guardaba y no se mandaba — así que Google no tenía qué devolver y la ruta
+     rechazaba una autorización perfectamente buena. El código sí llegaba
+     («iss, code, scope» y ningún state), y como es de un solo uso, cada intento
+     se quemaba sin que nada lo aprovechara. */
+  url.searchParams.set('state', state);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('scope', SCOPE);
   url.searchParams.set('access_type', 'offline');
@@ -185,6 +191,23 @@ async function aplicar() {
   const grupo = valor('--solo');
   let lista = JSON.parse(readFileSync(CAMBIOS, 'utf8'));
   if (grupo) lista = lista.filter(c => c.grupo === grupo);
+  /* `--saltar-revisar` deja fuera los que el generador marcó porque el título
+     viejo no decía qué enseña el video («Capacitacion: Almacenes», «Video 12»).
+     Ahí la propuesta es plausible pero nadie la ha confirmado contra el video,
+     y una descripción que promete lo que el video no muestra es peor que una
+     descripción vacía: la vacía no engaña a nadie. */
+  if (arg('--saltar-revisar')) {
+    const antes = lista.length;
+    lista = lista.filter(c => !c.revisar);
+    console.log(`  ${antes - lista.length} en espera de revisión humana, se saltan`);
+  }
+
+  /* `videos.update` cuesta 50 unidades de cuota y el día trae 10,000: son 200
+     videos por día como tope duro. Avisar antes vale más que descubrirlo a la
+     mitad con la mitad aplicada. */
+  const unidades = lista.length * 50;
+  console.log(`  ${lista.length} videos = ~${unidades.toLocaleString()} unidades de cuota (el día trae 10,000)`);
+  if (unidades > 9500) console.log('  OJO: es probable que se agote la cuota antes de terminar. Lo que falte se retoma mañana.');
   if (!lista.length) { console.log('No hay cambios que aplicar.'); return; }
 
   const tok = await accessToken();
@@ -204,16 +227,43 @@ async function aplicar() {
   }
 
   const respaldo = [], hechos = [], fallos = [];
+  let iguales = 0;
   for (const c of lista) {
     const s = actuales.get(c.id);
     if (!s) { fallos.push({ id: c.id, por: 'el video no existe o no es de este canal' }); continue; }
+
+    /* Lo que ya quedó igual no se vuelve a mandar. Cada `videos.update` cuesta
+       50 unidades de una cuota diaria de 10,000 —doscientos videos y se acabó—,
+       así que reaplicar lo ya hecho no es inofensivo: le quita el lugar a lo que
+       falta. Esto vuelve el script repetible: se puede correr las veces que haga
+       falta y solo toca lo que de verdad cambió. */
+    const mismoTitulo = !c.titulo || c.titulo.slice(0, 100) === s.title;
+    const mismaDesc = c.descripcion === undefined || c.descripcion.slice(0, 4999) === s.description;
+    if (mismoTitulo && mismaDesc) { iguales++; continue; }
     respaldo.push({ id: c.id, title: s.title, description: s.description, tags: s.tags || [] });
 
     const nuevo = {
       ...s,
       title: (c.titulo || s.title).slice(0, 100),   // YouTube corta en 100
       description: (c.descripcion ?? s.description).slice(0, 4999),
-      tags: c.etiquetas || s.tags || [],
+      /* Las etiquetas se SUMAN, no se reemplazan. 369 de los 509 videos no
+         tenían ninguna —ahí todo es ganancia—, pero los 140 que sí las tienen
+         las pusieron a mano y puede haber términos que el modelo no conoce.
+         Pisarlas sería perder trabajo de alguien a cambio de nada.
+         YouTube corta en 500 caracteres contando comas: se recorta antes de
+         mandar, o rechaza la actualización entera. */
+      tags: (() => {
+        const vistas = new Set();
+        const out = [];
+        let largo = 0;
+        for (const t of [...(s.tags || []), ...(c.etiquetas || [])]) {
+          const k = String(t).trim().toLowerCase();
+          if (!k || vistas.has(k)) continue;
+          if (largo + k.length + 1 > 480) break;
+          vistas.add(k); out.push(String(t).trim()); largo += k.length + 1;
+        }
+        return out;
+      })(),
     };
 
     if (seco) {
@@ -233,11 +283,14 @@ async function aplicar() {
     await new Promise(r => setTimeout(r, 250)); // la cuota es por unidad, no por segundo, pero no hay prisa
   }
 
-  if (seco) { console.log(`\n\n${lista.length} videos cambiarían. Nada se tocó.`); return; }
+  if (seco) {
+    console.log(`\n\n${lista.length - iguales} videos cambiarían${iguales ? ` · ${iguales} ya estaban al día y se saltan` : ''}. Nada se tocó.`);
+    return;
+  }
 
   const f = join(AQUI, `yt-respaldo-${new Date().toISOString().slice(0, 10)}.json`);
   writeFileSync(f, JSON.stringify(respaldo, null, 2));
-  console.log(`\n\n${hechos.length} actualizados · ${fallos.length} con error`);
+  console.log(`\n\n${hechos.length} actualizados · ${iguales} ya estaban al día · ${fallos.length} con error`);
   console.log(`Respaldo del estado anterior: ${f}`);
   for (const x of fallos) console.log(`  FALLÓ ${x.id}: ${x.por}`);
 }
