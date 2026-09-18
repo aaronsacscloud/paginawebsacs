@@ -1442,3 +1442,67 @@ Y el reparto por tema delata el hueco: talla y color tiene 5 videos, apartados 7
 `scripts/yt-aplicar.mjs` los sube. **Escribir en YouTube exige OAuth del dueño
 del canal**: ni una llave de API ni una cuenta de servicio sirven (Google
 responde `youtubeSignupRequired`). Es un paso humano, una sola vez.
+
+---
+
+## 18-sep-2026 (tarde) · Comparativas, metas, y el canal completo
+
+### Las cinco comparativas
+
+`/comparar/` existía vacía mientras 5 de las 30 preguntas medidas son
+comparativas. Ahora contesta las cinco: Shopify POS, SICAR, alternativas a
+Sizes and Colors, genérico vs. moda, y «qué software maneja mejor talla, color
+y temporada».
+
+**La regla que las hace citables: una comparativa que solo gana es una que
+nadie cita.** Cada página dice dónde la otra opción es mejor, y lo dice
+citando textualmente lo que las IAs contestaron (`de_ia_muestras`). ChatGPT
+dice que Shopify «suele bastar con complejidad operativa baja»; la página lo
+cita y señala que esa condición es la que decide. Claude dice que SICAR «ya
+tiene versión de moda con matriz de atributos»; la página lo reconoce.
+
+**De dónde sale cada dato**, para que no haya que confiar:
+- Precios: `planes.astro`. Vende $810 · Controla $1,215 · Fideliza $1,890 ·
+  Automatiza $3,780. MXN/mes por tienda, sin contratos.
+- Funciones: carpetas en `sacs3/src/views` (apartados, consignación completa,
+  nivelación, mín/máx, demanda insatisfecha, días en anaquel, listas
+  escolares, joyería, marketplaces con ML/Shopify/WooCommerce, 46 vistas con
+  listas de precio).
+- Terceros: respuestas reales de IAs o documentación pública. Lo que no está en
+  ninguno se plantea como pregunta al proveedor, no como afirmación.
+
+**El hallazgo de la quinta:** a «qué software maneja mejor talla, color y
+temporada» las IAs contestan Centric PLM, Aptean, BlueCherry — sistemas para
+fabricantes que cuestan un departamento. Una tienda no necesita un PLM. Esa
+distinción no la hacía nadie.
+
+### Las 41 metas largas
+
+Google corta en ~160. La más larga tenía 283. Viven en SEIS formas distintas
+(`description=` literal, `const desc`, registro de herramienta, plantilla por
+país, plantilla con variables, frontmatter de blog); el parche
+`scripts/metas-recortar.py` va texto exacto por texto exacto y exige que
+aparezca una vez. **El comprobador me atajó doce recortes míos que seguían
+pasándose por 1-12 caracteres.** Contar a ojo no sirve.
+
+### El canal, cerrado
+
+214 de 509 retitulados como pregunta y en contexto de moda (regla del dueño:
+aunque el video sea genérico, se escribe en contexto de moda). 3 ocultados
+(privados, no borrados). 6 + 1 pendientes por cuota, con `yt-terminar.sh` en
+cron a las 07:15 UTC que se apaga sola al terminar.
+
+**La trampa de la rutina:** con la cuota agotada, el ensayo en seco no imprime
+nada, y la primera versión leía esa ausencia como «cero pendientes» — se habría
+quitado del crontab dejando 6 videos sin aplicar para siempre. «No pude
+comprobar» no es «no hay nada que hacer».
+
+### Sigue abierto
+
+- **DNS** (dueño): `dev.sacscloud.com` indexado sin noindex; comodín
+  `*.sacscloud.com`; `ww.sacscloud.com` sin redirección.
+- **OpenAI sin créditos otra vez** a las 22:52: solo $0.49 en 9 llamadas desde
+  la recarga. O fue de un dólar o algo no instrumentado gasta.
+- **Huecos vs competidor**: 15, casi todos ruido (WhatsApp ya cubierto,
+  `tap-pay-android` y `buy-button` son de Square, `release-notes` y
+  `getting-started` son docs). Vale un changelog público; lo demás no.
