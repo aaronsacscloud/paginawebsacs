@@ -59,7 +59,7 @@ async function guardar(callId: string, buf: Buffer, sufijo = ''): Promise<string
  * Genera el PDF de una minuta ya redactada y decide su entrega.
  * Nunca lanza: la minuta ya está guardada y no puede perderse por esto.
  */
-export async function generarYEntregarMinuta(callId: string): Promise<ResultadoEntrega> {
+export async function generarYEntregarMinuta(callId: string, o: { forzar?: boolean } = {}): Promise<ResultadoEntrega> {
   try {
     const { data: ll } = await supabase.from('wa_llamadas')
       .select('call_id, canal, direccion, telefono, duracion_seg, minuta, minuta_cliente, minuta_pdf_url, minuta_pdf_cliente_url, minuta_envio_estado, conversation_id, started_at, atendida_por_nombre')
@@ -141,7 +141,9 @@ export async function generarYEntregarMinuta(callId: string): Promise<ResultadoE
        El PDF SÍ se genera y queda en el hilo: adentro sirve como registro. Lo
        que no sale es el mensaje al cliente. */
     const habloSeg = Number(ll.duracion_seg || 0);
-    if (habloSeg < MINIMO_PARA_MINUTA) {
+    // `forzar` = lo pidió una persona desde el panel. El tope es para lo
+    // automático; a quien decide mandarla a mano no hay nada que discutirle.
+    if (habloSeg < MINIMO_PARA_MINUTA && !o.forzar) {
       const motivo = `la conversación duró ${habloSeg} s: por debajo de ${MINIMO_PARA_MINUTA} no se le manda minuta al cliente`;
       await supabase.from('wa_llamadas').update({ minuta_envio_estado: 'omitida', minuta_envio_motivo: motivo }).eq('call_id', callId);
       try {

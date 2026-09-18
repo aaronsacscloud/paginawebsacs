@@ -54,6 +54,8 @@ export const POST: APIRoute = async ({ request }) => {
     }).eq('call_id', callId);
   }
 
-  const r = await generarYEntregarMinuta(callId);
+  /* Quien aprieta el botón en el panel está decidiendo mandarla: se salta el
+     mínimo de 90 s que sí aplica a lo automático. */
+  const r = await generarYEntregarMinuta(callId, { forzar: true });
   return json(r);
 };

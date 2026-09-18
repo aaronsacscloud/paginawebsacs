@@ -633,6 +633,28 @@ function Aprendido() {
         ))}
       </div>
 
+      {/* ══ LO QUE NOS PIDEN Y NO SABEMOS MANDAR ═══════════════════════════
+          Cada vez que un cliente pide algo y nadie contestó qué mandarle, el
+          tema queda apuntado aquí con su cuenta. Es la lista de lo que falta
+          escribir, ordenada por cuántas veces lo han pedido — y con eso una
+          tarde de escribir tres textos ahorra decenas de envíos a mano. */}
+      {(d.huecos || []).length > 0 && (
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#9a6a10', letterSpacing: .3, textTransform: 'uppercase' }}>Lo que piden y no sabemos mandar</span>
+          <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>
+            Escribe una vez cada uno —desde la sala de la llamada o aquí— y deja de preguntarse para siempre.
+          </span>
+          {(d.huecos || []).map((h: any) => (
+            <div key={h.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f2f0fa' }}>
+              <b style={{ fontSize: 12.5, flex: 1, minWidth: 0 }}>{h.tema}</b>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: h.veces_usado > 1 ? '#C0554E' : '#9a6a10' }}>
+                {h.veces_usado > 1 ? `lo han pedido ${h.veces_usado} veces` : 'lo pidieron una vez'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f2f0fa' }}>
         <span style={{ fontSize: 11, fontWeight: 800, color: '#555', letterSpacing: .3, textTransform: 'uppercase' }}>Lo que ya sabemos mandar</span>
         <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.55, display: 'block', marginTop: 3 }}>

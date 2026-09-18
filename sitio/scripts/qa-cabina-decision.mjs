@@ -29,6 +29,10 @@ const limpiar = async () => {
   }
   await db.from('tel_acciones').delete().eq('call_sid', SID);
   await db.from('wa_llamadas').delete().eq('call_id', SID);
+  /* La cita de prueba se borra al EMPEZAR y al terminar: si la prueba muere a
+     medias —pasó— se quedaba una cita falsa en la agenda de verdad, y encima
+     salía contada en el tablero de citas. */
+  await db.from('bookings').delete().eq('asunto', 'QA compromiso demo');
 };
 await limpiar();
 

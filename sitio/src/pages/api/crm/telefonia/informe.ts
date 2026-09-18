@@ -34,11 +34,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   const dias = Math.max(1, Math.min(180, Number(url.searchParams.get('dias') || 30)));
   const desde = new Date(Date.now() - dias * 86400e3).toISOString();
 
-  const [{ data: llamadas }, { data: citas }, { data: tareas }, { data: sesiones }, { data: equipo }] = await Promise.all([
+  const [{ data: llamadas }, { data: citas }, { data: tareas }, { data: proximas }, { data: sesiones }, { data: equipo }] = await Promise.all([
     supabase.from('wa_llamadas').select('call_id, started_at, duracion_seg, estado, payload, atendida_por, direccion, resultado')
       .eq('canal', 'telefono').gte('started_at', desde).limit(4000),
     // Las citas que NACIERON de una llamada: es la conversión que importa.
-    supabase.from('bookings').select('id, fecha, estado, created_at, host_id')
+    supabase.from('bookings').select('id, fecha, estado, created_at, host_id, google_event_id')
       .eq('origen', 'llamada').gte('created_at', desde).limit(1000),
     /* ⚠️ SÓLO LO QUE NACIÓ DE UNA LLAMADA. La primera versión contaba TODAS
        las tareas vencidas de tipo llamada/responder y decía «72 promesas
@@ -52,6 +52,14 @@ export const GET: APIRoute = async ({ request, url }) => {
       .eq('estado', 'pendiente')
       .or('payload->>de_llamada.eq.true,payload->>booking_id.not.is.null,payload->>envio_id.not.is.null')
       .lt('vence_at', new Date().toISOString()).gte('vence_at', desde).limit(500),
+    /* LO QUE VIENE: lo prometido en una llamada cuya hora todavía no llega.
+       Va en la pantalla principal para poder mirarlo sin entrar a una jornada
+       —una promesa sólo sirve si la ves ANTES de que se te pase. */
+    supabase.from('ti_tareas').select('id, tipo, vence_at, payload')
+      .eq('estado', 'pendiente').eq('payload->>de_llamada', 'true')
+      .gte('vence_at', new Date().toISOString())
+      .lte('vence_at', new Date(Date.now() + 7 * 86400e3).toISOString())
+      .order('vence_at').limit(40),
     supabase.from('tel_sesiones').select('id, costo_usd, segundos_hablados, contestadas, total, iniciada_at, owner_id')
       .gte('created_at', desde).limit(200),
     supabase.from('team_members').select('id, nombre').limit(60),
@@ -103,6 +111,13 @@ export const GET: APIRoute = async ({ request, url }) => {
      del marcador), así que el «por conversación» se divide entre las
      conversaciones DE ESAS jornadas, no entre todas las del CRM: mezclarlas
      daba un costo por conversación más barato de lo que es. */
+  /* ══ CITAS EN RIESGO ═══════════════════════════════════════════════════
+     Una cita que salió de una llamada y NO quedó en Google Calendar es una cita
+     a la que probablemente nadie llegue: no le suena al vendedor ni sale en su
+     día. Se cuentan sólo las que todavía no han pasado — las de ayer ya no se
+     arreglan. */
+  const enRiesgo = (citas || []).filter(c => !c.google_event_id && String(c.fecha) >= hoy && ['agendada', 'confirmada'].includes(String(c.estado)));
+
   const costo = (sesiones || []).reduce((a, s) => a + Number(s.costo_usd || 0), 0);
   const convJornadas = (sesiones || []).reduce((a, s) => a + Number(s.contestadas || 0), 0);
 
@@ -121,6 +136,20 @@ export const GET: APIRoute = async ({ request, url }) => {
     citas_asistieron: asistieron.length,
     citas_no_asistieron: noAsistieron.length,
     citas_sin_cerrar: sinCerrar.length,
+    citas_en_riesgo: enRiesgo.length,
+    /* Las dos clases juntas y en orden de cuándo toca: la reunión agendada y la
+       llamada prometida. Es lo mismo que enseña la pestaña «Compromisos» de una
+       jornada, pero de TODAS: al llegar en la mañana, esto es lo que hay que
+       mirar antes de armar la lista del día. */
+    compromisos: [
+      ...(citas || []).filter(c => String(c.fecha) >= hoy && ['agendada', 'confirmada'].includes(String(c.estado)))
+        .map(c => ({ tipo: 'reunion', id: c.id, cuando: `${c.fecha}T${'00:00'}`, fecha: c.fecha, quien: null as string | null, que: 'Reunión agendada', en_google: !!c.google_event_id })),
+      ...(proximas || []).map((t: any) => ({
+        tipo: 'llamada', id: t.id, cuando: t.vence_at, fecha: String(t.vence_at).slice(0, 10),
+        quien: t.payload?.nombre || t.payload?.whatsapp || null,
+        que: t.payload?.instruccion || 'Llamada prometida', en_google: false,
+      })),
+    ].sort((a, b) => String(a.cuando).localeCompare(String(b.cuando))).slice(0, 12),
     promesas_vencidas: (tareas || []).length,
     costo_usd: Math.round(costo * 100) / 100,
     costo_por_conversacion: convJornadas ? Math.round((costo / convJornadas) * 100) / 100 : 0,

@@ -408,6 +408,13 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
           </div>
           {/* Las citas que ya pasaron y nadie cerró: es trabajo que se escapa
               en silencio, distinto de «no asistió». */}
+          {/* Lo que se puede arreglar HOY: citas futuras que no están en el
+              calendario de nadie. Va antes que el histórico a propósito. */}
+          {informe.citas_en_riesgo > 0 && (
+            <div style={{ fontSize: 12.5, color: '#9a6a10', background: '#FFF4E5', border: '1px solid #f3d9a4', borderRadius: 10, padding: '9px 12px', marginTop: 8, fontWeight: 700 }}>
+              ⚠️ {informe.citas_en_riesgo} {informe.citas_en_riesgo === 1 ? 'cita que viene no está' : 'citas que vienen no están'} en Google Calendar: no le va a sonar a nadie. Conecta tu cuenta en Ajustes ▸ Agenda y vuelve a agendarlas.
+            </div>
+          )}
           {informe.citas_pasadas > 0 && (
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 7 }}>
               De {informe.citas_pasadas} citas que ya pasaron: {informe.citas_asistieron} asistieron
@@ -428,6 +435,37 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ══ LO QUE PROMETISTE ════════════════════════════════════════════════
+          Los compromisos vivos de TODAS las jornadas, no sólo de la que está
+          abierta. Al llegar en la mañana esto es lo que hay que mirar antes de
+          armar la lista del día: una promesa sólo sirve si la ves ANTES de que
+          se te pase. */}
+      {(informe?.compromisos || []).length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Lo que prometiste al hablar</span>
+          <div style={{ display: 'grid', gap: 6, marginTop: 7 }}>
+            {informe.compromisos.map((c: any) => {
+              const d = new Date(c.cuando);
+              const hoyCdmx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+              const dia = c.fecha === hoyCdmx ? 'hoy' : d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+              return (
+                <div key={`${c.tipo}-${c.id}`} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: c.fecha === hoyCdmx ? '#C0554E' : '#5B4BD6', minWidth: 96 }}>
+                    {dia}{c.tipo === 'llamada' ? ` · ${d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}` : ''}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 180, fontSize: 12.5, color: '#16181d' }}>
+                    {c.quien ? <b>{c.quien}</b> : null}{c.quien ? ' · ' : ''}{c.que}
+                  </span>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: c.tipo === 'reunion' ? (c.en_google ? '#EAF8F2' : '#FFF4E5') : '#EEECFE', color: c.tipo === 'reunion' ? (c.en_google ? '#1E8A63' : '#9a6a10') : '#5B4BD6' }}>
+                    {c.tipo === 'reunion' ? (c.en_google ? 'En Google Calendar' : 'Sin Google Calendar') : 'Llamada prometida'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

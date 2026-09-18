@@ -302,10 +302,29 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
         }
       }
       else {
-        // Nadie contestó qué mandar: queda como tarea para que no se pierda.
+        /* Nadie contestó qué mandar: queda como tarea para que no se pierda…
+           y ADEMÁS se apunta el hueco de la biblioteca. Si tres clientes piden
+           lo mismo y nadie lo escribe nunca, el sistema pregunta tres veces y
+           el vendedor lo manda tres veces a mano: el agujero está en que no hay
+           contenido, no en que falte una tarea. */
         await supabase.from('tel_envios').update({ estado: 'omitido', motivo: 'sin respuesta del vendedor; quedó como tarea', updated_at: t }).eq('id', e.id);
         await tareaMandarAMano(e, null, `En la llamada quedaste de mandárselo${e.detalle ? `: «${e.detalle}»` : ''}. Nadie dijo qué mandar.`, o.userId || null);
         hecho.push(`tarea: mandar ${e.tema}`);
+        try {
+          const { data: hueco } = await supabase.from('tel_conocimiento')
+            .select('id, veces_usado').eq('tema', e.tema).eq('estado', 'hueco').maybeSingle();
+          if (hueco) {
+            await supabase.from('tel_conocimiento').update({ veces_usado: Number(hueco.veces_usado || 0) + 1, updated_at: t }).eq('id', hueco.id);
+          } else {
+            await supabase.from('tel_conocimiento').insert({
+              tema: e.tema, claves: [], texto: '', origen: 'hueco',
+              // `hueco` = lo pidieron y no tenemos qué mandar. No se usa para
+              // enviar (el envío sólo mira `activo`): es la lista de lo que
+              // falta escribir, ordenada por cuántas veces lo han pedido.
+              estado: 'hueco', veces_usado: 1,
+            });
+          }
+        } catch { /* apuntar el hueco no puede tumbar el cierre */ }
       }
     }
 
@@ -444,14 +463,24 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
   }).select('id').maybeSingle();
   if (!bk) return `no se pudo agendar ${cp.tipo === 'llamada' ? 'la llamada' : tipo.nombre.toLowerCase()} del ${fecha}: ${errBk?.message || 'error al guardar'}`;
 
+  /* ══ SI NO ENTRÓ A GOOGLE CALENDAR, SE DICE POR QUÉ ═══════════════════
+     Una cita que sólo vive en el CRM es una cita a la que nadie va a llegar:
+     no le suena al cliente ni al vendedor. Antes, cuando no había conexión de
+     Google, el cierre decía «demo el 24 a las 16:00» a secas y parecía que
+     todo había quedado. Ahora se nombra el hueco y se dice dónde se arregla. */
   let google = '';
   try {
     const { data: conexion } = await supabase.from('calendar_connections').select('email').eq('team_member_id', hostId).eq('provider', 'google').eq('activo', true).maybeSingle();
+    if (!conexion) google = ' — ⚠️ NO quedó en Google Calendar: conecta tu cuenta en Ajustes ▸ Agenda';
     if (conexion) {
       const ev = await createCalendarEvent(hostId, { summary: asunto, description: [it.empresa, cp.motivo, `Teléfono: ${it.telefono}`].filter(Boolean).join('\n'), startDateTime: `${fecha}T${hora}:00`, endDateTime: `${fecha}T${horaFin}:00`, timezone: 'America/Mexico_City', attendeeEmail: c?.email || undefined });
       if (ev?.eventId) { await supabase.from('bookings').update({ google_event_id: ev.eventId, google_meet_link: ev.meetLink || null }).eq('id', bk.id); google = ' (en Google Calendar)'; }
+      else google = ' — ⚠️ Google no aceptó el evento: la cita está en el CRM pero no en tu calendario';
     }
-  } catch { /* la reunión ya quedó en el CRM */ }
+  } catch (e: any) {
+    // La reunión ya quedó en el CRM; lo que falta es el calendario, y se dice.
+    google = ` — ⚠️ no se pudo poner en Google Calendar (${String(e?.message || e).slice(0, 60)})`;
+  }
 
   if (it.contact_id) {
     await marcarAgendado(it.contact_id).catch(() => {});

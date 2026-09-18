@@ -31,13 +31,15 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export const GET: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'Sin sesión' }, 401);
-  const [{ data: reglas }, { data: conocimiento }, { data: acciones }] = await Promise.all([
+  const [{ data: reglas }, { data: conocimiento }, { data: acciones }, { data: huecos }] = await Promise.all([
     supabase.from('tel_reglas').select('id, tipo, patron, origen, estado, ejemplo, veces, created_at').neq('estado', 'descartada').order('estado').order('veces', { ascending: false }).order('created_at', { ascending: false }).limit(200),
     supabase.from('tel_conocimiento').select('id, tema, claves, texto, pdf_url, origen, estado, veces_usado, created_at').neq('estado', 'descartado').order('veces_usado', { ascending: false }).order('created_at', { ascending: false }).limit(200),
+    // Los HUECOS: temas que los clientes pidieron y no sabemos contestar.
+    supabase.from('tel_conocimiento').select('id, tema, veces_usado, created_at').eq('estado', 'hueco').order('veces_usado', { ascending: false }).limit(30),
     supabase.from('tel_accion_reglas').select('id, accion, patron, origen, estado, ejemplo, veces, created_at').neq('estado', 'rechazada').order('created_at', { ascending: false }).limit(200),
   ]);
   const { data: cfg } = await supabase.from('wa_config').select('tel_dictado').eq('id', 1).maybeSingle();
-  return json({ reglas: reglas || [], conocimiento: conocimiento || [], acciones: acciones || [], tel_dictado: cfg?.tel_dictado !== false, puede_editar: user.role === 'founder' });
+  return json({ reglas: reglas || [], conocimiento: (conocimiento || []).filter((k: any) => k.estado !== 'hueco'), acciones: acciones || [], huecos: huecos || [], tel_dictado: cfg?.tel_dictado !== false, puede_editar: user.role === 'founder' });
 };
 
 export const POST: APIRoute = async ({ request }) => {
