@@ -680,6 +680,28 @@ export const businessSectors: BusinessSector[] = [
     bgColor: 'rgba(220, 38, 38, 0.1)',
     image: '/images/giros/outlet.webp',
   },
+
+  {
+    label: 'Emprendedoras Digitales',
+    moda: true,
+    description: 'Vendes por redes y envías; sin local',
+    personalizations: [
+      { label: 'Apartado con reloj', description: 'La pieza se guarda las horas que tú digas y se libera sola; a la que sigue en la lista le llega el aviso.', viz: 'calendario' },
+      { label: 'La fila de cada pieza', description: 'Cada «¿sigue disponible?» queda anotado en orden: si la primera no deposita, la pieza pasa sola a la siguiente.', viz: 'perfil' },
+      { label: 'Un inventario para todos tus canales', description: 'La misma blusa publicada en tres lados descuenta del mismo lugar. Se acaba vender dos veces lo que tenías una vez.', viz: 'matriz' },
+      { label: 'El comprobante, en la conversación', description: 'La foto del depósito se guarda junto al pedido y el paquete no sale hasta que el dinero está en la cuenta.', viz: 'ticket' },
+      { label: 'Guías y paquetes desde el pedido', description: 'El peso, el domicilio y la guía salen de donde ya capturaste la venta, sin volver a teclear nada.', viz: 'paquetes' },
+      { label: 'Venta en vivo sin sobreventa', description: 'Apartas cuarenta piezas en una hora gritando números y el inventario baja solo.', viz: 'rotacion' },
+      { label: 'Preventa y pedido especial', description: 'Cobras antes de tener la pieza y el sistema sabe qué le debes a quién.', viz: 'curva' },
+      { label: 'Cambios a distancia', description: 'La pieza que viene de regreso se aparta para quien la estaba esperando.', viz: 'look' },
+      { label: 'Cobra como tienda, sin tener tienda', description: 'Link de pago, transferencia, contra entrega y factura cuando te la piden.', viz: 'tablet' },
+    ],
+    href: '/giros/emprendedoras',
+    iconId: 'novelty',
+    color: '#7C3AED',
+    bgColor: 'rgba(124, 58, 237, 0.1)',
+    image: '/images/giros/emprendedoras.webp',
+  },
   {
     label: 'Papelería y Arte',
     description: 'Materiales escolares y bellas artes',
