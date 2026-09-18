@@ -244,7 +244,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   const [previas, setPrevias] = useState<any[]>([]);
   /* A qué hora contesta ESTA gente, medido de tus propias llamadas. Llamar a la
      hora buena es lo más barato que existe para subir la contactabilidad: no
-     cuesta una función nueva, cuesta mirar el reloj antes de empezar. */
+     cuesta una función nueva, cuesta mirar el reloj antes de empezar.
+     Sale del MISMO sitio que el tablero (`/informe`) y no de una segunda cuenta
+     en el endpoint de la lista: dos pantallas preguntando lo mismo a dos sitios
+     distintos terminan contradiciéndose. */
   const [horas, setHoras] = useState<any[]>([]);
   /* ¿Esto está sirviendo? Seis cifras, no quince: un tablero que no se mira es
      un tablero que no existe. Se pide aparte porque tarda más que la lista y no
@@ -265,10 +268,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
        encendida. Dos pantallas preguntando lo mismo a dos sitios distintos
        terminan contradiciéndose. */
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); setHoras(j.horas || []); } })
+      .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); } })
       .catch(() => {});
     fetch('/api/crm/telefonia/informe?dias=30', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo && !j?.error) setInforme(j); }).catch(() => {});
+      .then(r => r.json()).then(j => { if (vivo && !j?.error) { setInforme(j); setHoras(j.horas || []); } }).catch(() => {});
     return () => { vivo = false; };
   }, []);
 

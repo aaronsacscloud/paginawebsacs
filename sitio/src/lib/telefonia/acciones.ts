@@ -208,6 +208,7 @@ const CATALOGO: Accion[] = [
         contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'llamar', tipo: 'llamada',
         prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
         payload: {
+          de_llamada: true,
           instruccion: `${ctx.nombre || 'El contacto'}: volver a marcarle (no podía hablar)`,
           porque: 'En la llamada dijo que no era buen momento.', nombre: ctx.nombre, whatsapp: ctx.telefono,
         },
@@ -226,6 +227,7 @@ const CATALOGO: Accion[] = [
         contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'soporte', tipo: 'responder',
         prioridad: 1, vence_at: ahora(), origen: 'evento',
         payload: {
+          de_llamada: true,
           instruccion: `${ctx.nombre || 'El contacto'}: reportó un problema por teléfono`,
           porque: p?.detalle ? `Dijo: «${p.detalle}»` : 'Lo dijo en la llamada.', nombre: ctx.nombre, whatsapp: ctx.telefono,
         },
@@ -255,7 +257,7 @@ const CATALOGO: Accion[] = [
       await supabase.from('ti_tareas').insert({
         contact_id: ctx.contactId || null, owner_id: await duenoDe(ctx), familia: 'avanzar', tipo: 'responder',
         prioridad: 2, vence_at: ahora(), origen: 'evento',
-        payload: { instruccion: `Buscar a ${quien} (decide por ${ctx.nombre || 'el contacto'})`, porque: 'Lo dijo en la llamada.', nombre: ctx.nombre, whatsapp: p?.telefono_otro || ctx.telefono },
+        payload: { de_llamada: true, instruccion: `Buscar a ${quien} (decide por ${ctx.nombre || 'el contacto'})`, porque: 'Lo dijo en la llamada.', nombre: ctx.nombre, whatsapp: p?.telefono_otro || ctx.telefono },
       }).then(() => {}, () => {});
       return { ok: true, dicho: `apuntado en la ficha y en Mi día: hay que buscar a ${quien}` };
     },

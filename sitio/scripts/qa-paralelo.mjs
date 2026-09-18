@@ -49,7 +49,7 @@ const nuevoItem = async (n, orden) => (await db.from('tel_sesion_items').insert(
 const A = await nuevoItem('Primero en contestar', 1);
 const B = await nuevoItem('Contestó tarde', 2);
 
-const { alVeredicto, itemsVivos, lineasDe } = await import('../src/lib/telefonia/marcador.ts');
+const { alVeredicto, itemsVivos, lineasDe, procesarEstado } = await import('../src/lib/telefonia/marcador.ts');
 
 console.log('\n── Dos líneas vivas ──────────────────────────────────────');
 es((await itemsVivos(ses.id)).length, 2, 'hay dos llamadas vivas');
@@ -63,6 +63,16 @@ const { data: b1 } = await db.from('tel_sesion_items').select('estado, intentos,
 es(b1.estado, 'pendiente', 'a la otra se le cuelga y vuelve a la lista');
 es(b1.intentos, 0, 'no se le gasta el intento (nadie levantó el teléfono)');
 es(!!b1.volver_at && new Date(b1.volver_at) > new Date(), true, 'vuelve con hora, no al final de la fila');
+
+/* 🔴 El bug que se comía contactos en silencio: Twilio avisa un segundo
+   después de que ESA llamada terminó, y quien recibía el aviso cerraba el item
+   como «no contestó» — al que le colgamos NOSOTROS. Quedaba fuera de la lista
+   y nadie le volvía a marcar. */
+console.log('\n── Y el aviso tardío de Twilio de la que colgamos ────────');
+await procesarEstado(B.id, { CallStatus: 'completed', CallSid: B.call_sid });
+const { data: b2 } = await db.from('tel_sesion_items').select('estado, resultado').eq('id', B.id).maybeSingle();
+es(b2.estado, 'pendiente', 'el aviso tardío NO la cierra: sigue en la lista');
+es(b2.resultado, null, 'y no queda marcada como «no contestó»');
 
 console.log('\n── Y si contesta la segunda cuando ya hay alguien ────────');
 // Se revive a B como si hubiera contestado justo en ese instante.

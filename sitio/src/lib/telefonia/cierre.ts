@@ -333,6 +333,7 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
           contact_id: it.contact_id, company_id: it.company_id, owner_id: ses?.owner_id || o.userId || null,
           familia: 'llamar', tipo: 'llamada', prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
           payload: {
+            de_llamada: true,
             instruccion: `${primerNombre(it.nombre) || 'El contacto'}: quedó de volver a llamar y no se puso fecha`,
             porque: 'En la llamada dijo «márcame luego» y nadie fijó día ni hora.', nombre: it.nombre, whatsapp: it.telefono,
           },
@@ -469,7 +470,7 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
     await reprogramar(it, 0, cp.motivo || 'lo pidió en la llamada', cuando);
     await supabase.from('ti_tareas').insert({
       contact_id: it.contact_id, company_id: it.company_id, owner_id: hostId, familia: 'llamar', tipo: 'llamada', prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
-      payload: { instruccion: `${primerNombre(nombre)}: le prometiste llamarle a las ${hora}${suHora}`, porque: cp.motivo ? `Quedaron en: ${cp.motivo}.` : 'Lo pidió en la llamada.', nombre, whatsapp: it.telefono, booking_id: bk.id, resultados: { contesto: 'Contestó', buzon: 'Buzón', no_contesto: 'No contestó', reagendar: 'Pidió otra hora' } },
+      payload: { de_llamada: true, instruccion: `${primerNombre(nombre)}: le prometiste llamarle a las ${hora}${suHora}`, porque: cp.motivo ? `Quedaron en: ${cp.motivo}.` : 'Lo pidió en la llamada.', nombre, whatsapp: it.telefono, booking_id: bk.id, resultados: { contesto: 'Contestó', buzon: 'Buzón', no_contesto: 'No contestó', reagendar: 'Pidió otra hora' } },
     }).then(() => {}, () => {});
   }
   return `${cp.tipo === 'llamada' ? 'llamada' : tipo.nombre.toLowerCase()} el ${fecha} a las ${hora}${suHora}${google}`;
@@ -618,6 +619,7 @@ async function tareaMandarAMano(e: any, url: string | null, motivo: string, user
   await supabase.from('ti_tareas').insert({
     contact_id: it?.contact_id || null, company_id: it?.company_id || null, owner_id: (it as any)?.tel_sesiones?.owner_id || userId || null, familia: 'avanzar', tipo: 'responder', prioridad: 2, vence_at: ahora(), origen: 'evento',
     payload: {
+      de_llamada: true,
       instruccion: `${primer || 'El contacto'}: mandarle ${e.tema}${url ? ' (PDF listo)' : ''}`, porque: motivo, nombre: it?.nombre, whatsapp: it?.telefono, pdf_url: url, envio_id: e.id, tema: e.tema, detalle: e.detalle || null,
       mensaje: `Hola${primer ? ` ${primer}` : ''}, como quedamos en la llamada, aquí te dejo ${String(e.tema).toLowerCase()}.${url ? ` ${url}` : ''} Cualquier duda, con gusto.`,
     },

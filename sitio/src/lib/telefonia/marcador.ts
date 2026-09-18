@@ -506,6 +506,19 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     resultado = resultado || (st === 'busy' ? 'ocupado' : st === 'failed' ? 'invalido' : 'no_contesto');
   }
   if (['hecho', 'cierre', 'saltado'].includes(previo)) return;   // ya lo cerró otro webhook
+  /* ══ 🔴 Y TAMPOCO SE CIERRA LO QUE YA VOLVIÓ A LA LISTA (18-sep-2026) ═════
+     Encontrado en el repaso de la marcación en paralelo, y se habría comido
+     contactos en silencio: cuando alguien contesta, a las otras líneas se les
+     cuelga y se les devuelve a `pendiente` para marcarles en diez minutos. El
+     aviso de Twilio de que ESA llamada terminó llega un segundo después —y
+     esta función, que no sabía nada, las cerraba como «no contestó».
+     Resultado: el contacto al que le colgamos nosotros quedaba marcado como si
+     no hubiera contestado, fuera de la lista y sin que nadie le volviera a
+     marcar nunca.
+     Un item en `pendiente` está ahí porque alguien lo puso ahí a propósito
+     (esto, `reprogramar`, o la caída del vendedor). Un webhook tardío no tiene
+     nada que decir sobre él. */
+  if (previo === 'pendiente') return;
   const dur = previo === 'en_linea' && it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0;
   const { data: cerrado } = await supabase.from('tel_sesion_items').update({ estado, resultado, terminado_at: fin, duracion_seg: dur, updated_at: fin })
     .eq('id', itemId).eq('estado', previo).select('id');
@@ -710,9 +723,12 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
            le cuelga mudo: se le dice quién llamaba, se le vuelve a marcar en
            quince minutos y se cuenta, porque la tasa de abandono es lo que hay
            que vigilar para subir o bajar el número de líneas. */
-        const quien = s.presentacion_nombre ? `${s.presentacion_nombre}, de Sacscloud` : 'Sacscloud';
+        /* `escapar`: el nombre lo escribe una persona («Andy & Co») y un `&`
+           suelto rompe el TwiML entero — del otro lado se oiría silencio y un
+           error de Twilio. Es la misma función que usa el recado del buzón. */
+        const quien = escapar(s.presentacion_nombre ? `${s.presentacion_nombre}, de Sacscloud` : 'Sacscloud');
         twilioRest(`/Calls/${it.call_sid}.json`, {
-          Twiml: `<Response><Say language="es-MX" voice="Polly.Mia-Neural">Hola, le llamaba ${quien}. Disculpe, tuvimos un problema con la línea: le marcamos en un momento.</Say><Hangup/></Response>`,
+          Twiml: `<Response><Say language="es-MX" voice="${escapar(String(s.presentacion_voz || 'Polly.Mia-Neural'))}">Hola, le llamaba ${quien}. Disculpe, tuvimos un problema con la línea: le marcamos en un momento.</Say><Hangup/></Response>`,
         }).catch(() => {});
         await supabase.from('tel_sesion_items').update({
           estado: 'pendiente', veredicto: null, veredicto_fuente: null, intentos: Math.max(0, Number(it.intentos || 1) - 1),

@@ -40,9 +40,17 @@ export const GET: APIRoute = async ({ request, url }) => {
     // Las citas que NACIERON de una llamada: es la conversión que importa.
     supabase.from('bookings').select('id, fecha, estado, created_at, host_id')
       .eq('origen', 'llamada').gte('created_at', desde).limit(1000),
-    // Lo prometido que ya venció y sigue pendiente: las promesas que se caen.
-    supabase.from('ti_tareas').select('id, tipo, estado, vence_at, owner_id')
-      .in('tipo', ['llamada', 'responder']).eq('estado', 'pendiente')
+    /* ⚠️ SÓLO LO QUE NACIÓ DE UNA LLAMADA. La primera versión contaba TODAS
+       las tareas vencidas de tipo llamada/responder y decía «72 promesas
+       vencidas» — pero midiendo salió que 45 eran de soporte y 12 del agente
+       de WhatsApp: nada que ver con una llamada. Un número que dice otra cosa
+       de la que promete es peor que no tenerlo, porque se actúa sobre él.
+       Ahora se filtra por la marca que ponen el cierre y las acciones
+       (`de_llamada`), más las que traen `booking_id`/`envio_id`, que salieron
+       de ahí también. Empieza en cero y se llena con las llamadas nuevas. */
+    supabase.from('ti_tareas').select('id, tipo, estado, vence_at, owner_id, payload')
+      .eq('estado', 'pendiente')
+      .or('payload->>de_llamada.eq.true,payload->>booking_id.not.is.null,payload->>envio_id.not.is.null')
       .lt('vence_at', new Date().toISOString()).gte('vence_at', desde).limit(500),
     supabase.from('tel_sesiones').select('id, costo_usd, segundos_hablados, contestadas, total, iniciada_at, owner_id')
       .gte('created_at', desde).limit(200),
@@ -91,7 +99,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   const noAsistieron = pasadas.filter(c => ['no_asistio', 'cancelada'].includes(String(c.estado)));
   const sinCerrar = pasadas.filter(c => ['agendada', 'confirmada'].includes(String(c.estado)));
 
+  /* El costo que se conoce es el de las JORNADAS (ahí se cobra cada llamada
+     del marcador), así que el «por conversación» se divide entre las
+     conversaciones DE ESAS jornadas, no entre todas las del CRM: mezclarlas
+     daba un costo por conversación más barato de lo que es. */
   const costo = (sesiones || []).reduce((a, s) => a + Number(s.costo_usd || 0), 0);
+  const convJornadas = (sesiones || []).reduce((a, s) => a + Number(s.contestadas || 0), 0);
 
   return json({
     dias,
@@ -110,7 +123,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     citas_sin_cerrar: sinCerrar.length,
     promesas_vencidas: (tareas || []).length,
     costo_usd: Math.round(costo * 100) / 100,
-    costo_por_conversacion: conversaciones.length ? Math.round((costo / conversaciones.length) * 100) / 100 : 0,
+    costo_por_conversacion: convJornadas ? Math.round((costo / convJornadas) * 100) / 100 : 0,
     vendedores: Object.entries(porVendedor)
       .filter(([, v]) => v.llamadas + v.citas > 0)
       .map(([id, v]) => ({ id, nombre: nombre(id || null), ...v }))
