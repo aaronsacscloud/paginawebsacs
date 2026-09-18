@@ -103,10 +103,20 @@ de cuatro dictámenes seguidos, no de una corazonada.
 | telas y mercería | 11 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
 | ópticas | 5 de 22 | 21 de 22 · 1 recompuesta | **resuelta** |
 | sastrería | 1 de 22 | 20 de 22 · 2 recompuestas | **resuelta** |
-| ropa infantil | 6 de 21 | en revisión | pendiente de confirmar |
-| bolsas y piel | 4 de 22 | en revisión | pendiente de confirmar |
-| maternidad | 0 de 22 (2 retiradas por dignidad) | en revisión | pendiente de confirmar |
-| tallas grandes, outlet, emprendedoras, lencería | en primera revisión | — | — |
+| ropa infantil | 6 de 21 | 17 de 21 · 4 en ronda 3 | **resuelta** |
+| bolsas y piel | 4 de 22 | 21 de 22 · el «antes» con un tercer brazo, en ronda 3 | **resuelta** |
+| maternidad | 0 de 22 (2 retiradas por dignidad) | 22 de 22 · **cero fallas de dignidad** | **resuelta** |
+| tallas grandes | 9 de 22 | 13 en corrección | no (otro local) |
+| outlet | 10 de 22 | 12 en corrección | no (otra mujer y otro local) |
+| emprendedoras | 9 de 22 | 13 en corrección | no (salió estudio, no cuarto de casa) |
+| lencería | 7 de 23 (2 retiradas por dignidad) | 16 en corrección | no (otra mujer y otro local) |
+
+**Lo que se retiró de producción por dignidad, y por qué.** Cuatro fotos en total:
+dos de maternidad (empaques y un cartel impresos con mujeres en ropa interior) y
+dos de lencería (catálogos impresos con modelos en ropa interior). Las mujeres
+reales de las escenas iban todas vestidas: el problema era lo IMPRESO en el
+decorado. Se sustituyeron por una foto limpia del mismo giro el mismo día y se
+regeneran con la escena cambiada (catálogos cerrados o de canto, empaques lisos).
 
 ## Lo que enseñaron las tres rondas
 
