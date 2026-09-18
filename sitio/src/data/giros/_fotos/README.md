@@ -148,3 +148,25 @@ height») para que no salgan de tamaños distintos.
 traían empaques y un cartel con mujeres en ropa interior. La regla de dignidad
 tiene que decir explícitamente que ninguna imagen impresa en la escena (cajas,
 carteles, pantallas, catálogos) puede mostrar cuerpos descubiertos.
+
+**6. El cuarteto se rehace completo o no se rehace.** «Fills 70 percent of the
+frame height» no basta: el generador tira anchos distintos y cambia el gancho o
+el rollo. La forma que sí funciona es la misma de la cortina: se aprueba UNO, y
+los otros tres se generan con ése como imagen de referencia diciendo «cambia
+SOLO el color». Y si se corrige uno solo, el que se quedó fuera se vuelve el
+raro: en lencería se emparejaron vino y blanco con el negro y el nude, que nadie
+tocó, pasó a desentonar; en telas pasó igual con el azul cuando se arregló el
+negro. Se tocan los cuatro en la misma tanda.
+
+**7. Cuando una foto lleva seis rondas reprobada por manos, se quita la gente.**
+`sastreria/caso-regresa` falló seis veces por dedos de más, manos sin palma y
+brazos huérfanos, con el cliente de frente, de espaldas y con solo las manos del
+sastre en cuadro. Pasó a la séptima cuando la escena dejó de tener personas en
+foco: el saco terminado colgado en su gancho y el cliente como silueta
+desenfocada en la puerta. Dice lo mismo y no tiene dónde equivocarse.
+
+**8. A veces no hay que regenerar, hay que recortar.** En
+`lenceria/proceso-calceteria` el problema eran dos empaques desenfocados de la
+esquina superior izquierda que a 5x se leían como un torso. Recortar 245 px por
+la izquierda lo resolvió sin gastar una imagen, y de paso el 1.26:1 resultante
+le queda mejor al marco 4/3 del componente que el 1.5:1 original.
