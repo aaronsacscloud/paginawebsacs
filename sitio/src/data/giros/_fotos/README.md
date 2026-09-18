@@ -170,3 +170,26 @@ desenfocada en la puerta. Dice lo mismo y no tiene dónde equivocarse.
 esquina superior izquierda que a 5x se leían como un torso. Recortar 245 px por
 la izquierda lo resolvió sin gastar una imagen, y de paso el 1.26:1 resultante
 le queda mejor al marco 4/3 del componente que el 1.5:1 original.
+
+**9. Antes de cerrar un giro, mide la portada.** El banner la dibuja en 4/5
+vertical y tres giros (western, trajes de baño y lencería) se habían quedado
+apaisadas: el navegador se comía media escena sin avisar. El chequeo es una
+línea y vale la pena correrlo sobre todas:
+
+```bash
+python3 -c "
+from PIL import Image; import glob
+for f in sorted(glob.glob('public/images/giros/*/portada.webp')):
+    w,h=Image.open(f).size
+    if w>=h: print('HORIZONTAL', f)"
+```
+
+Y cuidado al regenerar una portada desde el JSON viejo del giro: esos prompts
+son de la tanda apaisada y no traen `"vertical": true`. Los verticales están en
+`portadas.json`.
+
+**10. La portada tiene que ser el MISMO local que las zonas.** La de lencería
+salió boutique europea —muro blanco, herrajes dorados, banco de terciopelo,
+espejo arqueado— mientras `zona-mostrador` y `zona-probador` son pared verde,
+loseta y mostrador de melamina. Parecían dos negocios. En el prompt de la
+portada se nombran los materiales concretos de las zonas ya aprobadas.
