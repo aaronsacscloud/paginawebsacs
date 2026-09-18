@@ -109,7 +109,7 @@ de cuatro dictámenes seguidos, no de una corazonada.
 | tallas grandes | 9 de 22 | **las 22 aprobadas en ronda 2** · 4 rehechas con discos en blanco (aprobadas en ronda 7); el giro queda 38-52 + discos lisos, ya sin 14-24 | **resuelta, par confirmado** |
 | outlet | 10 de 22 | **las 22 aprobadas en ronda 2** | **resuelta, par confirmado** |
 | emprendedoras | 9 de 22 | **las 22 aprobadas en ronda 2** · el cuarteto de blusas salió parejo a la primera (altura 899-914 px en las cuatro) | **resuelta, par confirmado** (mismo cuarto de casa) |
-| lencería | 7 de 23 (2 retiradas por dignidad) | **las 23 aprobadas en ronda 2** · cero fallas de dignidad · calcetería recortada por el borde izquierdo (dos empaques desenfocados que a 5x parecían un torso) · vino y blanco del cuarteto rehechos en ronda 8b con el negro como referencia (escala dispar) · probador recompuesto (la prenda ya no se encima con el cuerpo) | **resuelta, par confirmado** |
+| lencería | 7 de 23 (2 retiradas por dignidad) | **las 23 aprobadas en ronda 2** · cero fallas de dignidad · calcetería recortada por el borde izquierdo (dos empaques desenfocados que a 5x parecían un torso) · vino, blanco y nude del cuarteto rehechos con el negro como imagen de referencia (al emparejar tres, el cuarto quedó de primo: el cuarteto se rehace COMPLETO o no se rehace) · probador recompuesto (la prenda ya no se encima con el cuerpo) | **resuelta, par confirmado** |
 
 **Lo que se retiró de producción por dignidad, y por qué.** Cuatro fotos en total:
 dos de maternidad (empaques y un cartel impresos con mujeres en ropa interior) y
