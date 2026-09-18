@@ -880,6 +880,14 @@ export const footerLinks = {
     // por muy bien que esté en el sitemap. El rastreo del motor levanta ese
     // hallazgo («huérfana») cada semana; esto es evitarlo desde el principio.
     { label: 'Herramientas gratis', href: '/herramientas' },
+      // Mismo motivo que la línea de arriba, y lo volví a olvidar al crear las
+      // secciones: publiqué once guías y diecisiete comparativas, les puse su
+      // índice, y el índice quedó sin un solo enlace entrante. Estaban en el
+      // sitemap y aun así eran islas — y un buscador entiende «está en el
+      // sitemap» como «existe», no como «importa». Los enlaces internos son lo
+      // que dice qué importa.
+      { label: 'Guías del ramo', href: '/recursos/' },
+      { label: 'Comparativas', href: '/comparar/' },
     { label: 'Centro de ayuda', href: '#' },
     { label: 'Estado del sistema', href: '#' },
     { label: 'Aviso de privacidad', href: '/privacidad' },
