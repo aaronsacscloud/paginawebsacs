@@ -60,10 +60,12 @@ const ETAPAS_CIERRE: { id: string; l: string }[] = [
 const ETIQUETA_RESULTADO: Record<string, string> = {
   contesto: 'Contestó', buzon: 'Buzón de voz', portero: 'Contestadora', no_contesto: 'No contestó', ocupado: 'Ocupado', invalido: 'Número inválido',
   volver_llamar: 'Volver a llamar', no_interesa: 'No le interesa', dieron_datos: 'Dio datos', saltado: 'Saltada', cancelado: 'Cancelada',
+  colgo_rapido: 'Colgó sin que hablaras',
 };
 const TONO_RESULTADO: Record<string, { bg: string; fg: string }> = {
   contesto: { bg: '#EAF8F2', fg: '#1E8A63' }, dieron_datos: { bg: '#EAF8F2', fg: '#1E8A63' }, volver_llamar: { bg: '#FFF4E5', fg: '#9a6a10' },
   no_interesa: { bg: '#FEF0EF', fg: '#C0554E' }, invalido: { bg: '#FEF0EF', fg: '#C0554E' },
+  colgo_rapido: { bg: '#FFF4E5', fg: '#9a6a10' },
 };
 const tono = (r?: string | null) => TONO_RESULTADO[r || ''] || { bg: C.g100, fg: '#4B5563' };
 
@@ -312,7 +314,22 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   // no abrir dos veces si el polling repite el estado.
   const abiertoPara = useRef<string | null>(null);
   useEffect(() => {
-    const id = actual?.estado === 'en_linea' ? actual.id : null;
+    /* ══ 🔴 EL AVISO VA EN EL DESCUELGUE, NO EN EL VEREDICTO (18-sep-2026) ══
+       Medido en la llamada de Kike: contestó a las 17:04:52.6 y el item no pasó
+       a `en_linea` hasta las 17:04:54.3. El pitido y el destello verde —lo
+       único que de verdad se nota— sólo miraban `en_linea`, así que durante
+       1.7 s el micrófono ya estaba abierto y en la pantalla no pasaba nada.
+       Él dijo «bueno» a los 3.2 s y colgó a los 5.5 s sin oír una palabra
+       nuestra: en toda la llamada no se transcribió ni una sílaba del vendedor.
+
+       `escuchando` ES el momento en que descolgaron —lo que sigue es sólo la
+       IA decidiendo si era persona o grabadora—, y el micrófono ya se abre ahí
+       desde el arreglo del 17-sep. Que el aviso llegara después era la última
+       pieza que faltaba: ahora suena en cuanto hay alguien del otro lado.
+
+       Si resulta ser una contestadora se habrán dicho dos palabras a una
+       máquina. El error contrario cuesta el contacto entero. */
+    const id = ['en_linea', 'escuchando', 'portero'].includes(String(actual?.estado)) ? actual.id : null;
     if (id && abiertoPara.current !== id) {
       abiertoPara.current = id;
       avisar();
@@ -1065,6 +1082,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   ['#4FBF95', 'Conversaciones', conversaciones, '#1E8A63', `${fmt(sesion.segundos_hablados || 0)} hablados`],
                   ['#9B8CFA', 'Costo', `US$ ${costoSesion.toFixed(2)}`, C.moradoTinta, conversaciones ? `US$ ${(costoSesion / conversaciones).toFixed(2)} por conversación` : 'llamadas, sin transcripción'],
                   ['#E8A838', 'Sin contacto', Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0), '#9a6a10', `${sesion.buzon || 0} buzón · ${sesion.sin_contestar || 0} sin contestar · ${sesion.porteros || 0} contestadora`],
+                  /* El cuarto sólo aparece cuando hay alguno, y aparece en rojo
+                     a propósito: cada uno es alguien que SÍ descolgó y colgó sin
+                     oír una palabra nuestra. Es el número más caro de la jornada
+                     —contacto hecho y perdido en tres segundos— y el único que
+                     dice si el hueco entre «contestaron» y tu primera frase se
+                     está cerrando. Ya se les vuelve a marcar solos en 10 min. */
+                  ...(Number(est?.colgaron_en_silencio || 0) > 0
+                    ? [['#C0554E', 'Colgaron sin que hablaras', Number(est.colgaron_en_silencio), '#C0554E', 'descolgaron y colgaron en silencio · se les marca de nuevo en 10 min']]
+                    : []),
                 ].map(([franja, et, v, color, sub]: any) => (
                   <div key={et} style={{ ...tarjeta(franja), flex: 1, minWidth: 140, padding: '9px 12px' }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 17, fontWeight: 800, color }}>{v}</div><div style={{ fontSize: 10.5, color: C.g500 }}>{sub}</div></div>
                 ))}

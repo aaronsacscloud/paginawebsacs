@@ -23,8 +23,9 @@
  * 131047 aquí sería vigilar la puerta equivocada.
  */
 import { supabase } from '../supabase';
-import { enviarPlantilla, enContexto, KapsoError } from '../whatsapp/kapso-api';
-import { registrarMensaje, notaSistema } from '../whatsapp/espejo';
+import { enContexto } from '../whatsapp/kapso-api';
+import { notaSistema } from '../whatsapp/espejo';
+import { mandarPlantilla } from '../whatsapp/plantilla-espejo';
 import { telefonoWhatsApp } from '../telefono';
 
 /* Creadas en Meta el 17-sep. Mientras alguna siga PENDING su envío falla y la
@@ -59,26 +60,32 @@ export async function avisarLlamadaPerdida(telefonoCrudo: string, nombreDado?: s
 
   enContexto('cita');
   let via: ResultadoPerdida['via'] = 'solo_tarea';
-  for (const [plantilla, etiqueta] of [[PLANTILLA_MARKETING, 'marketing'], [PLANTILLA_UTILITY, 'utility']] as const) {
-    try {
-      const r = await enviarPlantilla(destino, plantilla, 'es_MX', [param]);
-      const wamid = r?.messages?.[0]?.id || null;
-      if (!wamid) continue;
-      await registrarMensaje({
-        kapsoMessageId: wamid, telefono: destino, direccion: 'saliente', tipo: 'template',
-        cuerpo: `Te llamamos de vuelta: nos llamaste y no alcanzamos a contestar (${etiqueta}).`,
-        status: 'sent', autor: 'Telefonía',
-        metadata: { llamada_perdida: true, plantilla },
-      });
-      via = etiqueta;
-      break;
-    } catch (e: any) {
-      /* Se sigue a la siguiente sin ruido: que la de marketing no entre es lo
-         ESPERADO en quien se dio de baja de marketing, no una avería. Lo que sí
-         se cuenta es cuando fallan las dos. */
-      if (!(e instanceof KapsoError)) break;
-    }
-  }
+  /* ══ 🔴 EN EL CHAT SE LEE LO QUE LE LLEGÓ, NO UN RESUMEN ═════════════════
+     Reporte del dueño (18-sep-2026), con la captura del inbox: «¿en este
+     WhatsApp tiene en asteriscos marketing??? ¡mejóralo!».
+
+     La burbuja decía «Te llamamos de vuelta: nos llamaste y no alcanzamos a
+     contestar (marketing)». Eso NUNCA salió al cliente —lo que él recibió fue
+     el cuerpo aprobado en Meta—, pero era lo único que veía quien abría el
+     chat: un resumen escrito a mano aquí, con la categoría de Meta pegada al
+     final como si fuera parte del mensaje.
+
+     Dos daños: parece que le mandamos una nota técnica al cliente, y —peor—
+     quien abre la conversación NO puede saber qué se le dijo, así que la
+     llamada de vuelta empieza a ciegas. Un espejo que no espeja es peor que
+     no tener espejo, porque se le cree.
+
+     `mandarPlantilla` ya resuelve esto para todo el CRM desde el 2-sep: guarda
+     el cuerpo APROBADO con las variables puestas, con su footer y sus botones,
+     y trae la cascada marketing → utility de fábrica. Aquí sólo se le entrega
+     el trabajo. La categoría se queda en `metadata`, que es su lugar. */
+  const r = await mandarPlantilla({
+    telefono: destino, plantilla: PLANTILLA_MARKETING, params: [param], autor: 'Telefonía',
+    metadata: { llamada_perdida: true },
+    respaldo: { plantilla: PLANTILLA_UTILITY, params: [param] },
+    textoRespaldo: `Hola ${param}, nos llamaste y no alcanzamos a responderte. Te devolvemos la llamada lo antes posible.`,
+  }).catch(() => null);
+  if (r?.enviado) via = r.via === 'respaldo' ? 'utility' : 'marketing';
 
   if (via === 'solo_tarea') {
     await notaSistema(destino, 'Te llamó y no se alcanzó a contestar. NO se le pudo avisar por WhatsApp (ninguna plantilla entró). Hay que devolverle la llamada.')

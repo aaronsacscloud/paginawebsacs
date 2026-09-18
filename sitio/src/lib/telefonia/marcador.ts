@@ -523,6 +523,44 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
      (esto, `reprogramar`, o la caída del vendedor). Un webhook tardío no tiene
      nada que decir sobre él. */
   if (previo === 'pendiente') return;
+
+  /* ══ 🔴 CONTESTÓ Y COLGÓ SIN QUE ALCANZARAS A HABLAR (18-sep-2026) ═══════
+     Reporte del dueño, sobre Kike: «parecía que quería seguir hablando, pero
+     de alguna forma se cortó; creo que hay personas que responden y lo
+     detectas como buzón y lo cortas».
+
+     No era el detector: su llamada quedó `veredicto: persona` por voz, a los
+     1.7 s. Lo que enseña la base es otra cosa, y es peor:
+
+       contestó 17:04:52.6 · se le pasó la llamada 17:04:54.3
+       él dijo «bueno» a los 3.2 s · colgó a los 5.5 s
+       lo que se oyó del vendedor: NADA, en toda la llamada
+
+     Y no fue un caso suelto: de las 26 conversaciones de esa jornada, nueve
+     duraron menos de quince segundos, y en otra se oye entero el patrón —
+     «bueno» (2.7 s), «bueno» (8.3 s), y hasta los 9.4 s el vendedor: «Hola
+     Emilio, ¿me escuchas?»—. Contestan, saludan al vacío y cuelgan. Desde su
+     lado somos exactamente una llamada de robot.
+
+     Eso NO es «hablamos». Es un contacto caliente —descolgó— que se perdió por
+     tres segundos de silencio nuestro, y si se cuenta como conversación queda
+     enterrado entre las buenas y nadie le vuelve a marcar. Se le da resultado
+     propio, se le marca de nuevo en diez minutos y se cuenta aparte, que es lo
+     único que permite ver si el silencio se está cerrando.
+
+     Las tres condiciones son deliberadamente estrechas —menos de doce segundos
+     hablados, ni una palabra nuestra, y el contacto sí se oyó— porque el error
+     caro es el contrario: volver a marcarle a alguien con quien SÍ se habló.
+     Que se haya oído al contacto es además la prueba de que la transcripción
+     estaba viva; sin ella, callar no significa nada y no se toca. */
+  const oidoFin: any[] = Array.isArray(it.oido) ? it.oido : [];
+  const hablamosNosotros = oidoFin.some((o: any) => o?.quien === 'vendedor' && String(o?.texto || '').trim().length > 1);
+  const seOyoAlContacto = oidoFin.some((o: any) => (o?.quien || 'contacto') === 'contacto' && String(o?.texto || '').trim());
+  const segHablados = previo === 'en_linea' && it.en_linea_at ? ms(it.en_linea_at) / 1000 : 0;
+  const colgoEnSilencio = previo === 'en_linea' && !caida && ['persona', 'duda'].includes(String(it.veredicto))
+    && segHablados < 12 && !hablamosNosotros && seOyoAlContacto;
+  if (colgoEnSilencio) { estado = 'hecho'; resultado = 'colgo_rapido'; }
+
   const dur = previo === 'en_linea' && it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0;
   const { data: cerrado } = await supabase.from('tel_sesion_items').update({ estado, resultado, terminado_at: fin, duracion_seg: dur, updated_at: fin })
     .eq('id', itemId).eq('estado', previo).select('id');
@@ -563,6 +601,21 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
       const pronto = Number(it.intentos || 1) <= 1;
       await reprogramar(it, REINTENTO_BUZON_MIN, `sonó y se fue al buzón (intento ${it.intentos} de ${veces + 1})`,
         pronto ? undefined : otraFranja(it.telefono, it.lada));
+      estado = 'pendiente';
+    }
+  }
+
+  /* Se le vuelve a marcar en diez minutos: descolgó, o sea que el número es
+     bueno y a esa hora contesta. Dos veces y ya —a la tercera el problema no es
+     el silencio—. El contador va en la nota, igual que en las promesas de
+     llamada: contar items del mismo teléfono mezclaría los de otros días.
+     Va DESPUÉS del cierre del item, como el reintento del buzón: `reprogramar`
+     lo manda a `pendiente`, y hacerlo antes dejaría el UPDATE de arriba sin
+     fila que tocar. */
+  if (colgoEnSilencio) {
+    const veces = Number(/silencio \((\d+)/.exec(String(it.nota || ''))?.[1] || 0) + 1;
+    if (veces <= 2) {
+      await reprogramar(it, 10, `contestó y colgó sin que alcanzaras a hablar · silencio (${veces})`);
       estado = 'pendiente';
     }
   }
@@ -1224,6 +1277,13 @@ export async function estadoSesion(sesionId: string) {
       segundos: v.marcado_at ? Math.round(ms(v.marcado_at) / 1000) : 0,
     })) : [],
     abandonadas: Number(s.config?.abandonadas || 0),
+    /* «Contestó y colgó sin que alcanzaras a hablar»: no es conversación (no se
+       dijo nada) ni falta de contacto (descolgó), así que no cabe en ninguno de
+       los contadores de la sesión y quedaría invisible. Se cuenta al vuelo —es
+       una consulta de cabecera, no una columna nueva— porque es EL número que
+       dice si el silencio de los primeros segundos se está cerrando. */
+    colgaron_en_silencio: (await supabase.from('tel_sesion_items')
+      .select('id', { count: 'exact', head: true }).eq('sesion_id', sesionId).eq('resultado', 'colgo_rapido')).count || 0,
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),
