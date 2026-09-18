@@ -53,6 +53,12 @@ ${hayIndice ? `  <url>
     <priority>0.9</priority>
   </url>` : ''}
   <url>
+    <loc>${esc(`${SITIO}/comparar/`)}</loc>
+    <lastmod>${hoy}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>${esc(`${SITIO}/recursos/`)}</loc>
     <lastmod>${hoy}</lastmod>
     <changefreq>weekly</changefreq>
