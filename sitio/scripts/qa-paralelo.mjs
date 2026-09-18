@@ -89,6 +89,31 @@ const { data: s2 } = await db.from('tel_sesiones').select('config, item_actual')
 es(s2.config?.abandonadas, 1, 'se cuenta como abandonada, para poder vigilarla');
 es(s2.item_actual, A.id, 'el que ya estaba con el vendedor no se movió');
 
+/* ══ QUE NO QUEDE EN PING-PONG ══════════════════════════════════════════════
+   Al mismo contacto le puede tocar ser el cortado varias veces. Se comprueba
+   que la espera CREZCA, que a la tercera el intento sí cuente y que deje de
+   colarse al principio de la fila — si no, le suena el teléfono todo el día
+   sin que nadie le hable nunca. */
+console.log('\n── Y si a uno le toca ser el cortado tres veces ──────────');
+// Se empieza de cero: B ya lleva cortes de las pruebas de arriba.
+await db.from('tel_sesion_items').update({ cortes: 0 }).eq('id', B.id);
+const esperas = [];
+for (let vuelta = 1; vuelta <= 3; vuelta++) {
+  await db.from('tel_sesiones').update({ item_actual: null }).eq('id', ses.id);
+  await db.from('tel_sesion_items').update({ estado: 'timbrando', call_sid: `CA${'7'.repeat(30)}${vuelta}${vuelta}`, volver_at: null, intentos: 1 }).eq('id', B.id);
+  await db.from('tel_sesion_items').update({ estado: 'escuchando', veredicto: null, contestado_at: new Date().toISOString() }).eq('id', A.id);
+  const { data: A2 } = await db.from('tel_sesion_items').select('*').eq('id', A.id).maybeSingle();
+  await alVeredicto(A2, 'persona', 'reglas', `vuelta ${vuelta}`);
+  const { data: b } = await db.from('tel_sesion_items').select('cortes, intentos, volver_at, prioridad').eq('id', B.id).maybeSingle();
+  esperas.push(Math.round((new Date(b.volver_at) - Date.now()) / 60000));
+  if (vuelta === 3) {
+    es(b.cortes, 3, 'se cuentan los tres cortes');
+    es(b.intentos, 1, 'a la tercera el intento SÍ cuenta');
+    es(b.prioridad, 0, 'y deja de colarse al principio de la fila');
+  }
+}
+es(esperas[0] < esperas[1] && esperas[1] < esperas[2], true, `la espera crece: ${esperas.join(' → ')} min`);
+
 await limpiar();
 if (fallas.length) { console.error(`\n❌ ${fallas.length} fallas de ${ok + fallas.length}:\n\n${fallas.join('\n\n')}\n`); process.exit(1); }
 console.log(`\n✅ ${ok} pruebas de la marcación en paralelo · base limpia`);

@@ -32,3 +32,9 @@ leads-captura-token.txt
 .cron-secret-prod
 .vercel-token
 .google-maps-key
+
+# Sesión OAuth de YouTube. Lleva un refresh_token que permite editar el canal
+# entero: si entra al historial, no se arregla borrándolo del repo — hay que
+# revocarlo en myaccount.google.com/permissions. Misma regla que .supabase-token.
+.yt-token.json
+sitio/.yt-token.json

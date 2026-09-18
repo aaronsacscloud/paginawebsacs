@@ -386,7 +386,11 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     const tope = Number(s.config?.tope_intentos || 3);
     const { data: cand } = await supabase.from('tel_sesion_items').select('*').eq('sesion_id', sesionId).eq('estado', 'pendiente')
       .lt('intentos', tope).or(`volver_at.is.null,volver_at.lte.${ahora()}`)
-      .order('volver_at', { ascending: true, nullsFirst: false }).order('prioridad', { ascending: false }).order('orden').limit(60);
+      /* `cortes` antes que el orden de la lista: entre dos a los que ya les toca,
+         primero el que nunca se ha quedado sin hablar por culpa nuestra. Sin
+         esto, con varias líneas el mismo contacto podía quedar siempre en el
+         lugar del que se corta. */
+      .order('volver_at', { ascending: true, nullsFirst: false }).order('prioridad', { ascending: false }).order('cortes').order('orden').limit(60);
     const it = (cand || []).find(c => enHorario(s.config?.horario, zonaDeLada(c.lada || ladaDe(c.telefono))));
     if (!it) {
       // Nadie marcable ahora. ¿Queda alguien? Se mira TODO lo pendiente (no la muestra de 60): sus zonas y sus horas.
@@ -730,11 +734,34 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
         twilioRest(`/Calls/${it.call_sid}.json`, {
           Twiml: `<Response><Say language="es-MX" voice="${escapar(String(s.presentacion_voz || 'Polly.Mia-Neural'))}">Hola, le llamaba ${quien}. Disculpe, tuvimos un problema con la línea: le marcamos en un momento.</Say><Hangup/></Response>`,
         }).catch(() => {});
+        /* Se cuenta CUÁNTAS VECES le hemos colgado sin hablarle. A la tercera ya
+           no es un problema de agenda sino de trato: contestó tres veces y tres
+           veces le dijimos «ahorita le marcamos». Ahí deja de ser cosa del
+           marcador y se le pasa a una persona. */
+        const cortes = Number(it.cortes || 0) + 1;
         await supabase.from('tel_sesion_items').update({
-          estado: 'pendiente', veredicto: null, veredicto_fuente: null, intentos: Math.max(0, Number(it.intentos || 1) - 1),
-          nota: 'Contestó mientras el vendedor estaba en otra llamada: se le marca de nuevo.',
+          estado: 'pendiente', veredicto: null, veredicto_fuente: null, cortes,
+          // El intento se le devuelve las dos primeras veces; a la tercera cuenta,
+          // o nunca se agotaría y el mismo contacto giraría en la lista sin fin.
+          intentos: cortes <= 2 ? Math.max(0, Number(it.intentos || 1) - 1) : Number(it.intentos || 1),
+          nota: `Contestó mientras el vendedor estaba en otra llamada (${cortes}${cortes === 1 ? 'ª vez' : 'ª vez'}): se le marca de nuevo.`,
           volver_at: new Date(Date.now() + 15 * 60000).toISOString(), prioridad: 1, updated_at: t,
         }).eq('id', it.id);
+        if (cortes >= 3 && it.contact_id) {
+          const { data: ya } = await supabase.from('ti_tareas').select('id').eq('contact_id', it.contact_id)
+            .eq('estado', 'pendiente').contains('payload', { colgadas: true }).limit(1).maybeSingle();
+          if (!ya) {
+            await supabase.from('ti_tareas').insert({
+              contact_id: it.contact_id, company_id: it.company_id, owner_id: s.owner_id, familia: 'llamar', tipo: 'llamada',
+              prioridad: 1, vence_at: ahora(), origen: 'evento',
+              payload: {
+                de_llamada: true, colgadas: true, nombre: it.nombre, whatsapp: it.telefono,
+                instruccion: `${it.nombre || 'El contacto'}: contestó ${cortes} veces y ${cortes} veces le colgamos`,
+                porque: 'El marcador lo alcanzó mientras había otra llamada en curso. Llámale tú, directo.',
+              },
+            }).then(() => {}, () => {});
+          }
+        }
         await supabase.from('tel_sesiones').update({
           config: { ...(s.config || {}), abandonadas: Number(s.config?.abandonadas || 0) + 1 }, updated_at: t,
         }).eq('id', it.sesion_id);
@@ -755,10 +782,21 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
       for (const otro of await itemsVivos(it.sesion_id)) {
         if (otro.id === it.id || ['en_linea', 'portero'].includes(String(otro.estado))) continue;
         if (otro.call_sid) twilioRest(`/Calls/${otro.call_sid}.json`, { Status: 'completed' }).catch(() => {});
+        /* ══ QUE NO QUEDE EN PING-PONG ═══════════════════════════════════
+           Devolverle el intento es lo justo —a él no le hablamos— pero
+           devolvérselo SIEMPRE tiene dos costos: nunca se le agotan los
+           intentos, y si le toca ser el cortado cada vez, le suena el teléfono
+           una y otra vez sin que nadie le hable. Así que la espera crece
+           (10 → 25 → 45 minutos), a la tercera el intento SÍ cuenta, y deja de
+           colarse al principio de la fila. */
+        const cortes = Number(otro.cortes || 0) + 1;
+        const espera = cortes === 1 ? 10 : cortes === 2 ? 25 : 45;
         await supabase.from('tel_sesion_items').update({
-          estado: 'pendiente', call_sid: null, veredicto: null, veredicto_fuente: null, oido: [],
-          intentos: Math.max(0, Number(otro.intentos || 1) - 1),
-          volver_at: new Date(Date.now() + 10 * 60000).toISOString(), prioridad: 1, updated_at: t,
+          estado: 'pendiente', call_sid: null, veredicto: null, veredicto_fuente: null, oido: [], cortes,
+          intentos: cortes <= 2 ? Math.max(0, Number(otro.intentos || 1) - 1) : Number(otro.intentos || 1),
+          nota: cortes >= 2 ? `Se le cortó ${cortes} veces porque otro contestó primero.` : otro.nota,
+          volver_at: new Date(Date.now() + espera * 60000).toISOString(),
+          prioridad: cortes >= 3 ? 0 : 1, updated_at: t,
         }).eq('id', otro.id).in('estado', ['marcando', 'timbrando', 'escuchando']);
         await supabase.from('wa_llamadas').update({ estado: 'terminada', motivo: 'se cortó: otro contestó primero' }).eq('call_id', otro.call_sid).then(() => {}, () => {});
       }

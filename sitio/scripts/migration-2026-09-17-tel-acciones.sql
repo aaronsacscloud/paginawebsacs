@@ -96,3 +96,10 @@ Si hoy trabajas en Excel o en otro sistema, la migración la hacemos nosotros: p
 www.sacscloud.com$txt$,
   'semilla', 'activo'
 where not exists (select 1 from tel_conocimiento where tema = 'la información de Sacs');
+
+-- CUÁNTAS VECES LE COLGAMOS SIN HABLAR (18-sep-2026, marcación en paralelo).
+-- Cuando alguien contesta, a las otras líneas se les cuelga mientras timbran y
+-- vuelven a la lista sin gastarles el intento. Sin contar esos cortes, el mismo
+-- contacto podía quedar en ping-pong: marcado, cortado y devuelto una y otra
+-- vez, sonándole el teléfono sin que nadie le hable nunca.
+alter table tel_sesion_items add column if not exists cortes integer not null default 0;

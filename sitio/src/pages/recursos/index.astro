@@ -1,0 +1,123 @@
+---
+// El índice de las guías.
+//
+// Existía el contenido y no existía esta página: `/recursos/` respondía 404
+// mientras había once guías publicadas debajo. El efecto no era cosmético —el
+// rastreo del propio motor las marcaba `huerfana: true`— porque una página a la
+// que no llega ningún enlace le dice a un buscador que ni nosotros la
+// consideramos parte del sitio.
+//
+// `prerender = false` a propósito, igual que las guías: el motor publica sin
+// pasar por un build, así que un índice compilado nacería viejo. Aquí se lee la
+// lista en cada visita y una guía nueva aparece sola.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listaPublicada } from '../../lib/demanda/publicar';
+import { SITIO } from '../../data/entidad';
+
+export const prerender = false;
+
+const todas = await listaPublicada();
+const guias = todas.filter(g => g.seccion === 'recursos');
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Guías para tiendas de ropa, calzado y joyería',
+  numberOfItems: guias.length,
+  itemListElement: guias.map((g, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'Article',
+      name: g.titulo,
+      description: g.meta_desc || undefined,
+      url: `${SITIO}/recursos/${g.slug}/`,
+      inLanguage: 'es-MX',
+      dateModified: g.actualizado_at,
+    },
+  })),
+};
+
+const fecha = (s: string) =>
+  new Date(s).toLocaleDateString('es-MX', { year: 'numeric', month: 'long' });
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title="Guías para tiendas de ropa, calzado y joyería"
+  description="Cómo se resuelven de verdad la curva de tallas, los apartados, las corridas rotas y el inventario entre tiendas. Guías del ramo, sin registro."
+  structuredData={schema}
+>
+  <main class="indice">
+    <header>
+      <p class="eyebrow">Guías · sin registro</p>
+      <h1>Cómo se resuelven los problemas del ramo</h1>
+      <p class="entrada">
+        Las preguntas que de verdad se hacen quienes venden ropa, calzado y joyería —
+        curva de tallas, apartados, corridas rotas, mercancía parada — contestadas
+        como se contestan en el piso, no como las contesta un folleto.
+      </p>
+    </header>
+
+    {guias.length === 0 ? (
+      <p class="vacio">Pronto.</p>
+    ) : (
+      <ul class="tarjetas">
+        {guias.map(g => (
+          <li>
+            <a href={`/recursos/${g.slug}/`}>
+              <h2>{g.titulo}</h2>
+              {g.meta_desc && <p>{g.meta_desc}</p>}
+              <span class="pie">
+                <span class="ir">Leerla →</span>
+                <time datetime={g.actualizado_at}>{fecha(g.actualizado_at)}</time>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <section class="nota">
+      <h2>Y las calculadoras</h2>
+      <p>
+        Varias de estas guías tienen su herramienta: la curva de tallas y el
+        sell-through se pueden calcular aquí mismo con tus números, sin registro y
+        sin dar tu correo.
+      </p>
+      <a href="/herramientas/">Ver las herramientas →</a>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  /* El nav es FIJO: no empuja nada, así que el hueco lo deja la página. */
+  .indice { max-width: 940px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .indice { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-secondary-texto); font-weight: 600; margin: 0 0 .6rem;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; margin: 0 0 .9rem; text-wrap: balance; }
+  .entrada { font-size: 1.12rem; line-height: 1.6; color: var(--color-text-secondary); max-width: 62ch; margin: 0 0 2.5rem; }
+
+  .tarjetas { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); }
+  .tarjetas a {
+    display: flex; flex-direction: column; gap: .55rem; height: 100%;
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 14px; padding: 1.4rem; text-decoration: none; color: inherit;
+    transition: border-color .15s, transform .15s;
+  }
+  .tarjetas a:hover { border-color: var(--color-primary-texto); transform: translateY(-2px); }
+  .tarjetas h2 { font-size: 1.15rem; margin: 0; line-height: 1.3; text-wrap: balance; }
+  .tarjetas p { margin: 0; color: var(--color-text-secondary); line-height: 1.55; font-size: .93rem; flex: 1; }
+  .tarjetas .pie { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: .2rem; }
+  .tarjetas .ir { color: var(--color-primary-texto); font-weight: 600; font-size: .92rem; }
+  .tarjetas time { color: var(--color-text-tertiary); font-size: .8rem; }
+  .vacio { color: var(--color-text-tertiary); }
+
+  .nota { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--color-border-light); }
+  .nota h2 { font-size: 1.25rem; margin: 0 0 .6rem; }
+  .nota p { color: var(--color-text-secondary); line-height: 1.65; max-width: 62ch; margin: 0 0 .8rem; }
+  .nota a { color: var(--color-primary-texto); font-weight: 600; }
+</style>

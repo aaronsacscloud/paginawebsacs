@@ -1,0 +1,104 @@
+[
+  {
+    "id": "G_Yqob8f63g",
+    "titulo": "¿Qué señales indican que el software de tu zapatería ya no te deja crecer?",
+    "descripcion": "Si en tu zapatería no sabes qué tallas te faltan, no puedes mover mercancía entre sucursales sin perder medio día, o los reportes de venta tardan horas en armarse, es una señal de que tu sistema actual ya no acompaña el crecimiento del negocio. Muchas zapaterías arrancan con un programa sencillo que funciona bien con una sola tienda, pero cuando abres una segunda sucursal o empiezas a manejar más marcas y corridas, ese mismo sistema se vuelve un obstáculo: no avisa cuándo una talla se agotó, no controla bien las corridas rotas y obliga a hacer todo a mano en Excel.\n\nEn este video se revisan las señales más comunes de que el software se quedó chico para tu zapatería:\n\n· Falta de visibilidad de existencias por talla y color en cada sucursal\n· Dificultad para trasladar mercancía entre tiendas cuando una sucursal se queda sin números\n· Reportes de venta y de rotación que tardan en generarse o que no reflejan la realidad\n· Decisiones de compra que se toman a ojo, sin datos de qué corridas se venden completas y cuáles no\n\nSi te identificas con dos o más de estos puntos, vale la pena replantear si tu sistema actual te está ayudando o frenando.\n\nGuía completa: https://www.sacscloud.com/recursos/corridas-rotas-zapateria/\n#zapaterias #calzado #inventario #software",
+    "etiquetas": [
+      "zapaterias",
+      "calzado",
+      "corridas rotas",
+      "software para zapaterias",
+      "inventario calzado"
+    ],
+    "pagina": "corridas-rotas-zapateria",
+    "revisar": true,
+    "grupo": "A",
+    "antes": "¿Tu software está frenando el crecimiento de tu zapatería? 👠🤖 #calzado #leónguanajuato #corrida",
+    "vistas": 5
+  },
+  {
+    "id": "y2FNgMOvMpc",
+    "titulo": "¿Qué tipos de cancelación de apartado existen y qué hace cada una?",
+    "descripcion": "Cuando cancelas un apartado no todas las cancelaciones funcionan igual: depende de si el cliente ya no quiere la mercancía, si se pasó del plazo acordado o si hubo un error al capturarlo, cambia lo que pasa con el producto y con el dinero que ya se había abonado. Elegir mal el tipo de cancelación puede generar diferencias en caja o dejar mercancía \"atrapada\" como apartada cuando en realidad ya está libre para venderse, así que conviene que todo el equipo de piso sepa distinguir cada opción antes de cancelar cualquier apartado.\n\nEn este video se explica:\n\n· Los distintos tipos de cancelación que puede tener un apartado\n· Qué pasa con la mercancía apartada en cada caso: si vuelve a existencias o queda retenida\n· Qué pasa con el dinero abonado según el motivo de la cancelación\n· Cómo elegir el tipo de cancelación correcto para no generar diferencias en caja ni en el inventario\n\nEntender esto evita malos entendidos con el cliente y errores de caja al final del día, sobre todo cuando el apartado lleva varios abonos registrados.\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#apartados #tiendaderopa #puntodeventa #abonos",
+    "etiquetas": [
+      "apartados",
+      "cancelacion de apartado",
+      "abonos",
+      "tienda de ropa",
+      "punto de venta"
+    ],
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
+    "grupo": "A",
+    "antes": "Cancelaciones de apartados  qué hace cada una",
+    "vistas": 9
+  },
+  {
+    "id": "yslUQOJ7wmc",
+    "titulo": "¿Cómo cobro o abono un apartado desde el punto de venta?",
+    "descripcion": "Para cobrar o abonar un apartado desde el punto de venta primero localizas el apartado a nombre del cliente y ahí puedes registrar un abono parcial o liquidar el saldo restante, dependiendo del plazo y de las reglas que hayas definido para tu tienda. No es necesario crear una venta nueva ni buscar la mercancía otra vez: el sistema ya tiene guardado qué se apartó, cuánto se ha pagado y cuánto falta.\n\nEn este video se muestra paso a paso:\n\n· Cómo buscar un apartado ya creado dentro del punto de venta\n· Cómo registrar un abono parcial sin cerrar el apartado\n· Cómo liquidar el saldo completo cuando el cliente viene a recoger la mercancía\n· Qué pasa con el ticket y el comprobante en cada tipo de pago\n· Cómo queda actualizado el saldo pendiente después de cada abono\n\nEsto ayuda a que cualquier persona en caja, no solo quien hizo el apartado original, pueda cobrar un abono sin equivocarse de monto ni de mercancía.\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#apartados #puntodeventa #abonos #tiendaderopa",
+    "etiquetas": [
+      "apartados",
+      "abonos",
+      "punto de venta",
+      "cobrar apartado",
+      "tienda de ropa"
+    ],
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
+    "grupo": "A",
+    "antes": "Cobrar y abonar un apartado en el Punto de Venta 1",
+    "vistas": 3
+  },
+  {
+    "id": "w_q70LyceT0",
+    "titulo": "¿Cómo configuro las reglas de apartados en mi tienda de ropa?",
+    "descripcion": "Antes de dejar que tu equipo tome apartados conviene definir reglas claras: cuánto de anticipo mínimo se pide, cuántos días de plazo da la tienda para liquidar y qué pasa si el cliente nunca vuelve a pagar. Sin estas reglas cada vendedor decide a su criterio, y eso suele terminar en apartados eternos o en mercancía detenida sin que nadie se haga responsable.\n\nEn este video se explica:\n\n· Dónde se configuran las reglas generales de apartados de la tienda\n· Cómo definir el porcentaje o monto mínimo de anticipo\n· Cómo establecer el plazo máximo antes de que el apartado venza\n· Qué opciones hay para cuando el cliente no liquida a tiempo\n· Por qué tener estas reglas por escrito evita conflictos con clientes y con el equipo de venta\n\nDefinir esto una sola vez, en lugar de improvisarlo en cada mostrador, hace que los apartados se manejen igual sin importar quién esté en caja ese día ni en qué sucursal.\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#apartados #configuracion #tiendaderopa #abonos",
+    "etiquetas": [
+      "apartados",
+      "configuracion de apartados",
+      "reglas de apartado",
+      "tienda de ropa",
+      "abonos"
+    ],
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
+    "grupo": "A",
+    "antes": "Configuración de apartados  define tus reglas",
+    "vistas": 5
+  },
+  {
+    "id": "QjhV7mIbaPc",
+    "titulo": "¿Cómo creo un apartado desde el punto de venta?",
+    "descripcion": "Crear un apartado desde el punto de venta te permite reservar la mercancía a nombre de un cliente y registrar su primer abono, sin salir de la venta que estás haciendo en ese momento. La mercancía queda marcada como apartada y ya no aparece disponible para otra venta, mientras el cliente completa el pago en el plazo que definiste.\n\nEn este video se muestra:\n\n· Cómo seleccionar los productos que se van a apartar dentro del punto de venta\n· Cómo capturar los datos del cliente y el anticipo inicial\n· Cómo queda registrado el saldo pendiente y el plazo del apartado\n· Dónde consultar después ese apartado para darle seguimiento o registrar más abonos\n· Qué cambia en el inventario disponible una vez que la mercancía se apartó\n\nEsto es útil sobre todo en temporadas de mucha venta, cuando varios clientes quieren la misma pieza y necesitas dejar claro, desde el primer momento, a quién le corresponde cada apartado.\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#apartados #puntodeventa #tiendaderopa #ventas",
+    "etiquetas": [
+      "apartados",
+      "crear apartado",
+      "punto de venta",
+      "tienda de ropa",
+      "anticipo"
+    ],
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
+    "grupo": "A",
+    "antes": "Crear un apartado desde el Punto de Venta 1",
+    "vistas": 6
+  },
+  {
+    "id": "ML6z86H1N8M",
+    "titulo": "¿Qué es un apartado y cómo funciona en una tienda de ropa o calzado?",
+    "descripcion": "Un apartado es cuando un cliente deja reservada una mercancía a su nombre entregando un anticipo, y se compromete a pagar el resto en un plazo definido antes de llevársela. A diferencia de una venta normal, el producto no sale del inventario ni se cobra completo en ese momento: queda \"congelado\" para ese cliente mientras dura el plazo acordado.\n\nEn este video se explica:\n\n· Qué es exactamente un apartado y en qué se diferencia de una venta normal\n· Cómo se mueve la mercancía apartada dentro del inventario mientras espera al cliente\n· Qué pasa con el saldo pendiente y los abonos que se van registrando en el camino\n· Qué sucede si el cliente no liquida en el plazo acordado\n· Por qué es importante que el sistema y no solo la memoria del vendedor lleve el control de cada apartado\n\nEntender esta lógica básica ayuda a que, sin importar el tamaño de la tienda, los apartados se manejen de forma ordenada y no terminen siendo mercancía perdida en un cajón.\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#apartados #inventario #tiendaderopa #calzado",
+    "etiquetas": [
+      "apartados",
+      "que es un apartado",
+      "inventario",
+      "tienda de ropa",
+      "calzado"
+    ],
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
+    "grupo": "A",
+    "antes": "Qué es un apartado y cómo funciona su lógica 1",
+    "vistas": 11
+  }
+]
