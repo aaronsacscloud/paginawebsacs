@@ -1347,3 +1347,98 @@ Los competidores que las IAs NOMBRAN (distinto de a quién citan):
 
 Casi todos son genéricos. Los especializados en moda —Sizes and Colors,
 gestionQBS, Stockagile— aparecen abajo. Ese es el hueco.
+
+---
+
+## 18-sep-2026 · El motor era ciego a lo que el motor publica
+
+El día empezó buscando por qué las IAs no nos encuentran y terminó encontrando
+que **el problema no era el sitio: era que el motor no veía su propio trabajo.**
+
+### La cadena completa, porque cada eslabón escondía al siguiente
+
+1. `/recursos/` devolvía **404** teniendo once guías publicadas debajo. No había
+   índice, así que nada las enlazaba.
+2. El rastreo leía **un solo sitemap** —`sitemap-index.xml`, el del build— y todo
+   lo que el motor publica vive en `sitemap-demanda.xml`, porque son rutas
+   `prerender = false` que el build nunca escribe en disco.
+3. Por eso las guías salían `en_sitemap: false`, `huerfana: true` y con
+   `palabras: null` — nunca se rastreaban.
+4. Y esos hallazgos **no se podían resolver**, porque describían un problema que
+   no existía. El motor se acusaba a sí mismo de esconder lo que acababa de
+   publicar.
+
+**Yo caí en el mismo error al diagnosticar**: comprobé si las guías estaban en el
+sitemap mirando `sitemap-0.xml`, concluí que faltaban y lo reporté así. Estaban,
+en el otro. Cuando un sistema tiene dos sitemaps, «¿está en el sitemap?» es una
+pregunta mal hecha.
+
+### Dos fallos más en el mismo upsert del rastreo
+
+- **`en_sitemap` era un cerrojo de una sola vuelta.** Un bloque la pone en
+  `false` cuando una página desaparece del sitemap y nada la devolvía a `true`
+  cuando volvía. Una página recuperada quedaba fuera de la auditoría —título,
+  meta, H1, schema— sin que nadie lo notara.
+- **El rastreo escribía `origen: 'repo'` en todo**, incluidas las guías del
+  motor. La limpieza de contenido retirado borra `where origen = 'motor'`: una
+  guía retirada se habría quedado para siempre como página viva, generando
+  hallazgos sobre una URL que devuelve 404.
+
+Ahora los sitemaps se leen de **robots.txt** (ya es la declaración pública de
+cuáles son) y un sitemap caído detiene el rastreo en vez de dejarlo continuar
+con un mapa incompleto — sin eso, un 500 pasajero habría marcado once guías
+como salidas del sitemap.
+
+### El gasto se contaba doble
+
+Cada llamada del motor a Anthropic dejaba DOS filas en `ia_uso` con los mismos
+tokens y el mismo costo: `claude-sonnet-5` y `anthropic:claude-sonnet-5`. Los
+demás proveedores se llaman con `fetch` pelón, pero Anthropic va por el cliente
+instrumentado del repo (`lib/ai/client.ts`), que ya registra su consumo — y
+`preguntar()` lo registraba otra vez.
+
+**El tope de $150 al mes habría frenado el motor a los $75 reales.** Esa es la
+peor forma de fallar: desde afuera parece un límite respetado, no un error.
+
+### El tope real del título es 53, no 60
+
+La plantilla agrega « | Sacs» al renderizar y lo que Google recorta es el
+`<title>` completo. Dos guías salieron con 62 caracteres estando «dentro» de 60.
+Al escribir contenido nuevo, el título del CONTENIDO cabe en **53**.
+
+### Y el caché de media hora
+
+Las páginas dinámicas llevan `s-maxage=1800`. Un cambio a una guía publicada
+tarda hasta treinta minutos en verse en producción — y mientras tanto el rastreo
+lee lo viejo y levanta hallazgos correctos pero caducos. No es un error; hay que
+saberlo antes de perseguir un fantasma.
+
+### Resultado medible del día
+
+```
+hallazgos abiertos   89 → 55     (51 resueltos)
+severidad crítica     0
+severidad alta        0  ← eran 3, y eran los subdominios
+guías huérfanas      11 → 0
+guías en el sitemap   0 → 12
+```
+
+### El canal de YouTube: 509 videos, no 30
+
+`@sacscloud` tiene **509 videos y 219,914 vistas** con 550 suscriptores. El
+diagnóstico duro: **0 de 509 tienen subtítulos**, 154 no tienen descripción y
+369 no tienen etiquetas. El 81% de las vistas está en 20 videos, y uno solo —el
+de márgenes del ticket, de 2020— tiene 113,435: la mitad del canal.
+
+Lo que importa para el objetivo: los 20 más vistos **ya están titulados como
+pregunta** («¿Cómo funciona la versión OFFLINE?») y por eso funcionan. Los que no
+jalan son los que se llaman como el módulo interno («EXCEL Y VENTAS SIN
+EXISTENCIA», «ALTA MANIAL CON RECEPCION»).
+
+Y el reparto por tema delata el hueco: talla y color tiene 5 videos, apartados 7,
+**mayoreo cero** — siendo las tres preguntas medidas.
+
+`scripts/yt-generar.mjs` reescribe los 224 que concentran el 95% de las vistas;
+`scripts/yt-aplicar.mjs` los sube. **Escribir en YouTube exige OAuth del dueño
+del canal**: ni una llave de API ni una cuenta de servicio sirven (Google
+responde `youtubeSignupRequired`). Es un paso humano, una sola vez.
