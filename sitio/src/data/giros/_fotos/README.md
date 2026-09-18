@@ -38,3 +38,56 @@ queda sin esa foto.
 
 Cómo se corren: `scratchpad/giros/reanudar.sh` (las doce colas en orden), y luego por cada giro
 `instala.sh <prefijo> <slug>`, que las deja en `public/images/giros/<slug>/` a 1600 px y calidad 82.
+
+---
+
+## Estado real al 18-sep-2026, 00:30 UTC
+
+**237 de 265 fotos generadas.** Los créditos se acabaron a media cola por segunda
+vez. Lo que falta está escrito y listo para correr en `scratchpad/giros/pendientes.sh`:
+10 de outlet, 15 de emprendedoras y dos cortinas por rehacer.
+
+| giro | generadas | referee de identidad |
+|---|---|---|
+| uniformes | 23/23 | **4 de 23** pasan |
+| lencería | 20/23 | pendiente |
+| renta de vestidos | 22/22 | **1 de 22** pasa |
+| ropa infantil | 21/21 | **6 de 21** pasan |
+| sastrería | 22/22 | en revisión |
+| ópticas | 22/22 | en revisión |
+| telas y mercería | 22/22 | **11 de 22** pasan |
+| bolsas y piel | 22/22 | pendiente |
+| tallas grandes | 22/22 | pendiente |
+| maternidad | 22/22 | pendiente |
+| outlet | 12/22 | pendiente |
+| emprendedoras | 7/22 | pendiente |
+
+## Lo que el referee de identidad reprueba, por orden de frecuencia
+
+Esto es lo que de verdad hay que escribir en los prompts desde el principio. Sale
+de cuatro dictámenes seguidos, no de una corazonada.
+
+1. **LA CORTINA. Falla SIEMPRE.** El «después» sale con otra mujer, en otra
+   tienda, con otra ropa. Repetir el bloque de personaje palabra por palabra no
+   bastó ni una sola vez. **La solución es generar el «después» con el «antes»
+   como imagen de referencia** (`gen-ref.mjs` con `ref` y `refNota`), que es lo
+   único que ancla la cara. Hacerlo así desde el principio ahorra una vuelta
+   entera por giro.
+2. **Manos y cuerpos.** Dedos fundidos en mitón, una mano huérfana sin dueño, una
+   mujer sin brazo, un cuerpo sin cabeza sosteniendo una gasa, brazos estirados
+   imposibles. Hay que pedir manos completas y que se vea quién sostiene cada cosa.
+3. **Cosas que flotan.** Una bolsa en el aire, un gancho dentro de una funda sin
+   colgar de nada, una pieza de tela de 20 kilos cargada al hombro sin manos.
+4. **Texto inventado.** Bordados mal escritos («J. Hennandez»), calendarios con
+   números garabateados, billetes con leyendas, logos en la espalda de un
+   uniforme. La prohibición hay que repetirla en CADA escena, no solo en la regla
+   general.
+5. **Pantallas apagadas o de espaldas.** Una tablet en gris, o mostrando su tapa
+   trasera, no cuenta como «la pantalla del sistema».
+6. **Deja de verse el oficio.** Sale una boutique europea de centro comercial en
+   vez de una tienda de uniformes de calle, o camisas de vestir en vez de
+   uniformes escolares. Cada escena necesita dos o tres señales concretas del
+   giro.
+7. **Las fotos de producto no son el mismo producto.** Cuatro colores de la misma
+   playera salieron con distinto número de botones y distinto corte. Se generan
+   con un prompt base idéntico donde solo cambia la palabra del color.
