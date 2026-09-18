@@ -189,7 +189,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const [armando, setArmando] = useState<{ leidas: number; total: number } | null>(null);
   // La presentación se recuerda entre sesiones: es la misma casi siempre.
   const [pres, setPres] = useState(() => leerLocal('cabina.presentacion', {
-    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8, modo: 'manual',
+    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8, modo: 'manual', lineas: 1,
   }));
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
@@ -418,7 +418,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         accion: 'crear', items, nombre: descripcion.slice(0, 120),
         origen: { qs, descripcion, filas: filas.length, total: tot },
         presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon,
-        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 }, modo: pres.modo,
+        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1 }, modo: pres.modo,
       });
       if (r?.error) { setError(r.error); return; }
       setSesionId(r.id); setTab('lista');
@@ -448,7 +448,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
 
   const empezar = async () => {
     // Guardar la presentación por si la editó, luego arrancar y entrar a la sala.
-    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8 }, modo: pres.modo });
+    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1 }, modo: pres.modo });
     if (!ok1) return;
     const r = await accion(sesion?.estado === 'pausada' ? 'reanudar' : 'iniciar');
     // Con Fernanda sola no hay sala que abrir: la central marca y ella habla.
@@ -517,6 +517,44 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     const r = await accion('cierre_respuesta', { envio: envioId, texto });
     if (r && !r.ok) setError(r.motivo || 'No se pudo mandar');
   };
+  /* ══ LAS LÍNEAS QUE ESTÁN MARCANDO ═══════════════════════════════════════
+     Se pinta en DOS sitios y por eso vive aquí: dentro de la tarjeta de la
+     llamada cuando ya hay alguien, y en el hueco del centro mientras nadie ha
+     contestado todavía —que con varias líneas es la mayor parte del tiempo, y
+     antes era un «Marcando al siguiente…» que no decía a quién—.
+
+     «Yo vería a quiénes se les está marcando.» Una columna, renglones grandes:
+     igual en la compu y en el teléfono. */
+  const bloqueLineas = (est?.vivos || []).length > 1 && !actual?.veredicto ? (
+    <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+      <span style={etiqueta}>Marcando a {est.vivos.length} a la vez</span>
+      {est.vivos.map((v: any) => (
+        <div key={v.id} style={{
+          display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', borderRadius: 10,
+          border: `1px solid ${v.veredicto === 'persona' || v.estado === 'en_linea' ? '#9fdcc2' : C.g200}`,
+          background: v.veredicto === 'persona' || v.estado === 'en_linea' ? '#EAF8F2' : '#fff',
+        }}>
+          <span className={['marcando', 'timbrando'].includes(v.estado) ? 'wa-pulso' : undefined} style={{
+            width: 9, height: 9, borderRadius: 999, flexShrink: 0,
+            background: v.estado === 'en_linea' ? '#1E8A63' : v.veredicto === 'buzon' ? '#9a6a10' : '#9B8CFA',
+          }} />
+          <b style={{ fontSize: 13, minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {v.nombre || telefonoLegible(v.telefono)}
+            {v.empresa && <span style={{ fontWeight: 500, color: C.g500 }}> · {v.empresa}</span>}
+          </b>
+          <span style={{ fontSize: 11.5, color: v.estado === 'en_linea' ? '#1E8A63' : C.g500, fontWeight: 700, flexShrink: 0 }}>
+            {v.veredicto === 'buzon' ? 'Buzón' : ETIQUETA_ITEM[v.estado] || v.estado}
+            {['marcando', 'timbrando'].includes(v.estado) && v.segundos > 0 ? ` · ${v.segundos}s` : ''}
+          </span>
+        </div>
+      ))}
+      <span style={{ fontSize: 11, color: C.g400, lineHeight: 1.5 }}>
+        Te pasamos con el primero que conteste; a los demás se les cuelga mientras todavía timbran.
+        {est.abandonadas > 0 && ` · ${est.abandonadas} contestaron cuando ya estabas en otra llamada (se les vuelve a marcar).`}
+      </span>
+    </div>
+  ) : null;
+
   const confirmarYSeguir = async () => {
     if (!actual) return;
     const item = actual.id;
@@ -673,6 +711,34 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           </span>
         </div>
       )}
+      {/* ══ CUÁNTAS LLAMADAS A LA VEZ ══════════════════════════════════════
+          El tiempo de una jornada no se va hablando: se va TIMBRANDO. Contesta
+          uno de cada cinco y cada intento cuesta media vuelta de reloj. Con dos
+          o tres líneas sólo oyes a los que contestaron.
+          Lo que se paga a cambio está escrito abajo sin adornos: con una línea
+          oyes el timbre y el buzón; con varias, no — y de vez en cuando alguien
+          contesta cuando ya estás hablando con otro. */}
+      {pres.modo === 'manual' && (
+        <div>
+          <label style={etiqueta}>Cuántas llamadas a la vez</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {([[1, 'Una'], [2, 'Dos'], [3, 'Tres']] as const).map(([v, t]) => (
+              <button key={v} type="button" onClick={() => setPres((p: any) => ({ ...p, lineas: v }))}
+                disabled={!!sesionId && !['borrador', 'lista', 'pausada'].includes(sesion?.estado)}
+                style={{
+                  border: `1.5px solid ${Number(pres.lineas || 1) === v ? '#9B8CFA' : C.g200}`, background: Number(pres.lineas || 1) === v ? '#9B8CFA' : '#fff',
+                  color: Number(pres.lineas || 1) === v ? '#fff' : C.g700, borderRadius: 999, padding: '5px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                }}>{t}</button>
+            ))}
+          </div>
+          <span style={{ fontSize: 11, color: C.g400, display: 'block', marginTop: 4, lineHeight: 1.5 }}>
+            {Number(pres.lineas || 1) === 1
+              ? 'Una por una: oyes el timbre, el buzón y todo lo que pasa. Es lo más tranquilo y lo más lento.'
+              : `Se marca a ${pres.lineas} a la vez y te pasamos al PRIMERO que conteste; a los demás se les cuelga mientras todavía timbra. No oyes el timbre —serían ${pres.lineas} audios encimados— y, muy de vez en cuando, alguien contesta justo cuando ya estás con otro: a ése se le dice que le marcamos en un momento y vuelve a la lista.`}
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', fontSize: 12.5, color: C.g700 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={!!pres.buzon} onChange={e => setPres((p: any) => ({ ...p, buzon: e.target.checked }))} /> Dejar recado en el buzón de voz</label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={!!pres.auto} onChange={e => setPres((p: any) => ({ ...p, auto: e.target.checked }))} /> Seguir solo con el siguiente</label>
@@ -1187,6 +1253,8 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 {estadoActual === 'cierre' && actual.cierre_estado === 'sin_datos' && (
                   <div style={{ marginTop: 12, fontSize: 11.5, color: C.g400 }}>La IA no alcanzó a leer la llamada{actual.cierre_ia?.motivo ? ` (${actual.cierre_ia.motivo})` : ''}: pica cómo quedó y escribe el apunte.</div>
                 )}
+                {bloqueLineas}
+
                 {/* ══ DESHACER, DOS MINUTOS ═════════════════════════════════
                     Confirmaste y el siguiente ya está timbrando: ir a cancelar
                     una cita a mano en ese momento no pasa. Aquí sí. */}
@@ -1412,6 +1480,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             ) : (
               <div style={{ ...tarjeta('#9B8CFA'), textAlign: 'center', padding: '28px 18px' }}>
                 {pausada ? <div style={{ fontSize: 14, color: '#4B5563' }}>En pausa. {est?.pendientes || 0} por marcar.</div>
+                  : (est?.vivos || []).length > 0 ? <div style={{ textAlign: 'left' }}>{bloqueLineas}</div>
                   : enSala ? <><Cargando texto={est?.pendientes ? 'Marcando al siguiente…' : 'Cerrando la lista…'} alto={80} /></>
                   : <div style={{ fontSize: 14, color: '#4B5563' }}>Entra a la sala para que la central empiece a marcar.</div>}
               </div>

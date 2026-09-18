@@ -39,9 +39,45 @@ export type ItemEntrada = {
   contact_id?: string | null; company_id?: string | null; conversation_id?: string | null;
   nombre?: string | null; empresa?: string | null; telefono: string;
 };
-export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean; disyuntor_fallidas?: number; reintentos_buzon?: number };
+export type Config = { horario?: { desde: string; hasta: string; dias?: number[] } | null; tope_intentos?: number; wrapup_seg?: number; auto_continuar?: boolean; disyuntor_fallidas?: number; reintentos_buzon?: number; lineas?: number };
 
-const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true, disyuntor_fallidas: 8, reintentos_buzon: 0 };
+const CONFIG_BASE: Required<Config> = { horario: { desde: '09:00', hasta: '19:00', dias: [1, 2, 3, 4, 5, 6] }, tope_intentos: 3, wrapup_seg: 8, auto_continuar: true, disyuntor_fallidas: 8, reintentos_buzon: 0, lineas: 1 };
+
+/* ══ MARCAR EN PARALELO (18-sep-2026) ═══════════════════════════════════════
+   Pedido del dueño: «se estarían marcando tres personas al mismo tiempo desde
+   esa vista y, una vez que alguien responda, ya se paran las otras dos, tomo la
+   llamada, termino, y de ahí siguen otra vez».
+
+   Es lo que hacen los marcadores buenos del mundo (Orum, Nooks): el tiempo que
+   se pierde no es hablando, es timbrando — contesta uno de cada cinco y cada
+   intento se lleva media vuelta de reloj. Con varias líneas, el vendedor sólo
+   oye a los que SÍ contestaron.
+
+   Lo que lo hace posible aquí sin colgarle a la gente: ya sabemos en 1.5-3 s si
+   del otro lado hay una persona (reglas sobre la transcripción + AMD). Nadie se
+   conecta a la sala hasta ese veredicto.
+
+   LAS TRES REGLAS QUE NO SE NEGOCIAN
+   1. En paralelo el contacto NO entra a la sala del vendedor: espera en su
+      propio cuarto, en silencio, hasta que se le pasa. Si entrara, el vendedor
+      oiría tres tonos encimados.
+   2. Gana el primero que dice «bueno»: se le pasa al vendedor y a las demás
+      líneas se les cuelga MIENTRAS TIMBRAN — antes de que nadie levante.
+   3. Si dos contestan casi a la vez, al segundo NO se le cuelga mudo: se le
+      dice quién llamaba y se le vuelve a marcar en quince minutos. Eso es una
+      llamada abandonada y se cuenta, porque es lo que hay que mantener abajo.
+   Con `lineas: 1` (lo de siempre) nada de esto corre: el camino es el mismo de
+   antes, línea por línea y con el vendedor oyendo el timbre. */
+const LINEAS_MAX = 3;
+export const lineasDe = (s: any) => Math.max(1, Math.min(LINEAS_MAX, Number(s?.config?.lineas || 1)));
+/** Las llamadas de esta sesión que están vivas ahora mismo (marcando, timbrando,
+ *  escuchando, con portero o ya en línea). En una línea es cero o una. */
+export async function itemsVivos(sesionId: string) {
+  const { data } = await supabase.from('tel_sesion_items').select('*')
+    .eq('sesion_id', sesionId).in('estado', ['marcando', 'timbrando', 'escuchando', 'portero', 'en_linea'])
+    .order('marcado_at');
+  return data || [];
+}
 
 /* ══ REINTENTAR CUANDO TIMBRÓ Y SE FUE AL BUZÓN ═══════════════════════════
    Pedido del dueño (17-sep-2026): «si suena y manda a buzón, que yo tenga
@@ -330,6 +366,19 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     if (!s.agente_en_sala && !sinSala(s)) return { ok: false, motivo: 'el vendedor no está en la sala' };
     if (s.item_actual) return { ok: false, motivo: 'ya hay una llamada en curso' };
 
+    /* ══ CUÁNTAS LÍNEAS CABEN AHORA ════════════════════════════════════════
+       En una línea manda `item_actual`, como siempre. En paralelo el freno es
+       cuántas llamadas hay vivas: se rellena hasta el número elegido y ni una
+       más. Puede pasar que dos latidos entren a la vez y salga una de sobra
+       durante unos segundos — el candado de verdad está en el ITEM (sólo uno
+       gana el `pendiente → marcando`), así que nunca se le marca dos veces a la
+       misma persona, que es lo que no se puede permitir. */
+    const lineas = lineasDe(s);
+    if (lineas > 1) {
+      const vivos = await itemsVivos(sesionId);
+      if (vivos.length >= lineas) return { ok: false, motivo: 'las líneas están llenas' };
+    }
+
     /* A quién le toca: primero los compromisos cuya hora ya llegó (`volver_at`),
        luego los prioritarios, luego el orden de la lista. Los compromisos
        futuros esperan su hora y nadie se marca fuera de SU horario (la lada
@@ -360,8 +409,14 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     const { data: gane } = await supabase.from('tel_sesion_items').update({ estado: 'marcando', marcado_at: ahora(), intentos: it.intentos + 1, call_sid: null, veredicto: null, veredicto_fuente: null, oido: [], agente_salio_at: null, volver_at: null, updated_at: ahora() })
       .eq('id', it.id).eq('estado', 'pendiente').select('id');
     if (!gane?.length) continue;
-    const { data: turno } = await supabase.from('tel_sesiones').update({ item_actual: it.id, updated_at: ahora() }).eq('id', sesionId).is('item_actual', null).select('id');
-    if (!turno?.length) { await supabase.from('tel_sesion_items').update({ estado: 'pendiente', intentos: it.intentos }).eq('id', it.id); return { ok: false, motivo: 'ya hay una llamada en curso' }; }
+    /* `item_actual` es EL CONTACTO QUE ESTÁ CON EL VENDEDOR, no «el que se está
+       marcando». En una línea son lo mismo y se reclama aquí. En paralelo se
+       queda vacío hasta que alguien contesta: lo reclama `alVeredicto`, y ése
+       es justo el candado que decide quién se lleva al vendedor. */
+    if (lineas === 1) {
+      const { data: turno } = await supabase.from('tel_sesiones').update({ item_actual: it.id, updated_at: ahora() }).eq('id', sesionId).is('item_actual', null).select('id');
+      if (!turno?.length) { await supabase.from('tel_sesion_items').update({ estado: 'pendiente', intentos: it.intentos }).eq('id', it.id); return { ok: false, motivo: 'ya hay una llamada en curso' }; }
+    }
 
     try {
       const q = `item=${it.id}`;
@@ -383,6 +438,10 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
           payload: { from: NUMERO, to: it.telefono, marcador: true, sesion_id: sesionId },
         }, { onConflict: 'call_id' }),
       ]);
+      /* Con varias líneas se sigue rellenando en la misma vuelta: marcar de a
+         una por latido daría un goteo de tres segundos entre líneas y se
+         perdería justo la ventaja. */
+      if (lineas > 1 && (await itemsVivos(sesionId)).length < lineas) continue;
       return { ok: true, item: { ...it, estado: 'marcando', call_sid: c.sid } };
     } catch (e: any) {
       // Twilio no quiso (número mal formado, país bloqueado…): se anota y se sigue.
@@ -636,6 +695,59 @@ export async function alVeredicto(it: any, veredicto: 'persona' | 'buzon' | 'por
   const s = await getSesion(it.sesion_id);
 
   if (veredicto === 'persona' || veredicto === 'duda') {
+    /* ══ QUIÉN SE LLEVA AL VENDEDOR ═══════════════════════════════════════
+       Con varias líneas, aquí se decide todo. `item_actual` está vacío hasta
+       este momento y sólo uno puede llenarlo: ese UPDATE condicional es el
+       candado. Quien gana pasa a la sala; quien pierde contestó cuando ya no
+       había con quién hablar, y eso hay que tratarlo bien (abajo). */
+    if (s && lineasDe(s) > 1) {
+      const { data: turno } = await supabase.from('tel_sesiones')
+        .update({ item_actual: it.id, updated_at: t }).eq('id', it.sesion_id).is('item_actual', null).select('id');
+
+      if (!turno?.length) {
+        /* PERDIÓ: hay otra persona ya con el vendedor. Esto es una llamada
+           abandonada y es lo único de verdad feo de marcar en paralelo. No se
+           le cuelga mudo: se le dice quién llamaba, se le vuelve a marcar en
+           quince minutos y se cuenta, porque la tasa de abandono es lo que hay
+           que vigilar para subir o bajar el número de líneas. */
+        const quien = s.presentacion_nombre ? `${s.presentacion_nombre}, de Sacscloud` : 'Sacscloud';
+        twilioRest(`/Calls/${it.call_sid}.json`, {
+          Twiml: `<Response><Say language="es-MX" voice="Polly.Mia-Neural">Hola, le llamaba ${quien}. Disculpe, tuvimos un problema con la línea: le marcamos en un momento.</Say><Hangup/></Response>`,
+        }).catch(() => {});
+        await supabase.from('tel_sesion_items').update({
+          estado: 'pendiente', veredicto: null, veredicto_fuente: null, intentos: Math.max(0, Number(it.intentos || 1) - 1),
+          nota: 'Contestó mientras el vendedor estaba en otra llamada: se le marca de nuevo.',
+          volver_at: new Date(Date.now() + 15 * 60000).toISOString(), prioridad: 1, updated_at: t,
+        }).eq('id', it.id);
+        await supabase.from('tel_sesiones').update({
+          config: { ...(s.config || {}), abandonadas: Number(s.config?.abandonadas || 0) + 1 }, updated_at: t,
+        }).eq('id', it.sesion_id);
+        await supabase.from('wa_llamadas').update({ estado: 'terminada', motivo: 'abandonada: el vendedor estaba en otra llamada' }).eq('call_id', it.call_sid).then(() => {}, () => {});
+        return false;
+      }
+
+      /* GANÓ: se le pasa a la sala del vendedor. La llamada está viva en su
+         propio cuarto; cambiarle el TwiML la mueve sin cortarla. */
+      await twilioRest(`/Calls/${it.call_sid}.json`, {
+        Twiml: `<Response><Dial><Conference startConferenceOnEnter="false" endConferenceOnExit="false" beep="false" waitUrl="" `
+          + `statusCallback="${BASE}/api/telefonia/marcador/sala?sesion=${it.sesion_id}" statusCallbackMethod="POST" statusCallbackEvent="start end join leave">sesion-${it.sesion_id}</Conference></Dial></Response>`,
+      }).catch(() => {});
+
+      /* Y SE CORTAN LAS OTRAS LÍNEAS, mientras todavía timbran. Vuelven a la
+         lista sin gastarles el intento y con diez minutos de espera: nadie
+         levantó el teléfono, así que para ellos no hubo llamada. */
+      for (const otro of await itemsVivos(it.sesion_id)) {
+        if (otro.id === it.id || ['en_linea', 'portero'].includes(String(otro.estado))) continue;
+        if (otro.call_sid) twilioRest(`/Calls/${otro.call_sid}.json`, { Status: 'completed' }).catch(() => {});
+        await supabase.from('tel_sesion_items').update({
+          estado: 'pendiente', call_sid: null, veredicto: null, veredicto_fuente: null, oido: [],
+          intentos: Math.max(0, Number(otro.intentos || 1) - 1),
+          volver_at: new Date(Date.now() + 10 * 60000).toISOString(), prioridad: 1, updated_at: t,
+        }).eq('id', otro.id).in('estado', ['marcando', 'timbrando', 'escuchando']);
+        await supabase.from('wa_llamadas').update({ estado: 'terminada', motivo: 'se cortó: otro contestó primero' }).eq('call_id', otro.call_sid).then(() => {}, () => {});
+      }
+    }
+
     // Ahora sí se graba: solo las conversaciones con personas generan minuta.
     twilioRest(`/Calls/${it.call_sid}/Recordings.json`, {
       RecordingChannels: 'dual', RecordingStatusCallback: `${BASE}/api/telefonia/grabacion`, RecordingStatusCallbackEvent: 'completed',
@@ -810,6 +922,25 @@ const esperaDecision = (it: any, s: any) =>
   && ['persona', 'duda'].includes(String(it?.veredicto || ''))
   && (s?.agente_en_sala || ms(it?.terminado_at) < DECISION_MAX_MS);
 
+/** El reloj de UNA línea: lo que hay que hacer cuando lleva demasiado en un
+ *  estado. Es lo mismo que vigila `latir` para la llamada del vendedor, pero
+ *  aplicable a las que están timbrando en paralelo. */
+async function vigilarLinea(it: any, s: any, cfg: any) {
+  if (it.estado === 'escuchando' && !it.veredicto && ms(it.contestado_at) > ESPERA.juicio) {
+    const oidoTodo: any[] = Array.isArray(it.oido) ? it.oido : [];
+    const hablaron = oidoTodo.some((o: any) => String(o?.texto || '').trim().length > 1);
+    const maquina = /^machine_/.test(String(it.answered_by || '')) && !hablaron;
+    await alVeredicto(it, maquina ? 'buzon' : 'duda', 'tiempo',
+      maquina ? 'nadie dijo nada claro y el detector dice máquina' : 'contestaron y no se entendió quién');
+  } else if (buzonEsperandoTono(it) && ms(it.contestado_at) > ESPERA.buzon) {
+    if (s.buzon_dejar_mensaje) await decirEnBuzon(it, s); else await colgarItem(it);
+  } else if (it.estado === 'portero' && ms(it.contestado_at) > ESPERA.portero) {
+    await colgarItem(it, 'portero');
+  } else if (['marcando', 'timbrando'].includes(it.estado) && ms(it.marcado_at) > ESPERA.timbre) {
+    await cerrarPorTiempo(it);
+  }
+}
+
 export async function latir(sesionId: string) {
   let s = await getSesion(sesionId);
   if (!s) return null;
@@ -824,6 +955,20 @@ export async function latir(sesionId: string) {
     if (Array.from(zonas).some(z => enHorario(s.config?.horario, z))) {
       await supabase.from('tel_sesiones').update({ estado: 'activa', pausa_motivo: null, updated_at: ahora(), config: { ...(s.config || {}), aviso: s.agente_en_sala || sinSala(s) ? null : 'Ya es hora de llamar: entra a la sala para seguir.' } }).eq('id', sesionId).eq('estado', 'pausada');
       s = await getSesion(sesionId);
+    }
+  }
+
+  /* ══ VIGILAR CADA LÍNEA VIVA, NO SÓLO LA DEL VENDEDOR (18-sep-2026) ═════
+     Con una línea, la que está viva y la que está con el vendedor son la
+     misma. Con varias, no: mientras hablas con uno pueden quedar dos timbrando,
+     y esas también necesitan quien les mire el reloj —el que contestó y no se
+     entiende quién es, el buzón esperando el tono, el que lleva media vuelta
+     de reloj timbrando—. Sin esto se quedarían colgadas en el limbo. */
+  if (s.estado === 'activa' && lineasDe(s) > 1) {
+    const cfgP = { ...CONFIG_BASE, ...(s.config || {}) };
+    for (const v of await itemsVivos(sesionId)) {
+      if (v.id === s.item_actual) continue;   // ésa se mira abajo, con su cierre y todo
+      await vigilarLinea(v, s, cfgP);
     }
   }
 
@@ -871,6 +1016,12 @@ export async function latir(sesionId: string) {
     }
   } else if (!it && s.estado === 'activa' && (s.agente_en_sala || sinSala(s))) {
     await marcarSiguiente(sesionId);
+  }
+  /* Y con varias líneas se rellena aunque ya haya alguien marcando: el hueco
+     que deja una que se cayó se vuelve a llenar en el siguiente latido. Nunca
+     mientras hay una persona con el vendedor: ahí la lista está parada. */
+  if (s.estado === 'activa' && !s.item_actual && lineasDe(s) > 1 && (s.agente_en_sala || sinSala(s))) {
+    if ((await itemsVivos(sesionId)).length < lineasDe(s)) await marcarSiguiente(sesionId);
   }
   cobrarLlamadas(sesionId).catch(() => {});
   cierre().then(c => c.rescatarCierres()).catch(() => {});   // cierres que se quedaron a medias (acotado y con freno de 30 s)
@@ -991,6 +1142,18 @@ export async function estadoSesion(sesionId: string) {
        se agenda una cita que el cliente no pidió. */
     actual: it ? { ...it, oido_texto: textoOido(Array.isArray(it.oido) ? it.oido : []), dialogo: dialogoOido(Array.isArray(it.oido) ? it.oido : []), segundos_en_linea: it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0, hora_local: zona && zona !== 'America/Mexico_City' ? horaLocal(zona) : null } : null,
     siguiente_item: sig ? { nombre: sig.nombre, empresa: sig.empresa, telefono: sig.telefono, resumen: String(sig.resumen || '').slice(0, 220), intentos: sig.intentos } : null,
+    /* LAS LÍNEAS VIVAS, para que la pantalla enseñe a quién se le está marcando
+       ahora mismo. Con una línea es la de siempre (la cabina la ignora); con
+       varias es lo que el dueño pidió ver: «yo vería a quiénes se les está
+       marcando». Va ligero a propósito —nombre, estado y poco más—: esto viaja
+       cada segundo. */
+    lineas: lineasDe(s),
+    vivos: lineasDe(s) > 1 ? (await itemsVivos(sesionId)).map(v => ({
+      id: v.id, nombre: v.nombre, empresa: v.empresa, telefono: v.telefono, estado: v.estado,
+      veredicto: v.veredicto, intentos: v.intentos, con_vendedor: v.id === s.item_actual,
+      segundos: v.marcado_at ? Math.round(ms(v.marcado_at) / 1000) : 0,
+    })) : [],
+    abandonadas: Number(s.config?.abandonadas || 0),
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),

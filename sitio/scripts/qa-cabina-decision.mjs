@@ -32,10 +32,11 @@ const limpiar = async () => {
 };
 await limpiar();
 
+const PARALELO = process.argv.includes('--paralelo');
 const { data: ses } = await db.from('tel_sesiones').insert({
   owner_id: USER, nombre: 'QA decisión', estado: 'activa', modo: 'manual', total: 2,
   presentacion_nombre: 'QA', iniciada_at: new Date().toISOString(), agente_en_sala: true,
-  config: { auto_continuar: true, wrapup_seg: 8 },
+  config: { auto_continuar: true, wrapup_seg: 8, ...(PARALELO ? { lineas: 2 } : {}) },
 }).select('id').maybeSingle();
 
 const propuesta = {
@@ -63,13 +64,31 @@ await db.from('tel_acciones').insert({
   frase: 'márcame más tarde por favor', origen: 'regla', estado: 'propuesta', user_id: USER,
 });
 
+/* Con `--paralelo`: dos llamadas timbrando a la vez y NADIE contestando
+   todavía, que es lo que el dueño quiere ver en pantalla. */
+if (PARALELO) {
+  /* Timbrando AHORA: con `marcado_at` viejo el motor haría lo correcto —darla
+     por no contestada— y la prueba nunca vería las dos líneas. */
+  await db.from('tel_sesion_items').update({
+    estado: 'timbrando', cierre_estado: null, cierre_ia: null, terminado_at: null, veredicto: null,
+    marcado_at: new Date(Date.now() - 5000).toISOString(), contestado_at: null, duracion_seg: null,
+  }).eq('id', it.id);
+  await db.from('tel_sesiones').update({ item_actual: null }).eq('id', ses.id);
+  await db.from('tel_sesion_items').insert({
+    sesion_id: ses.id, telefono: '+525512345678', nombre: 'Segunda línea', empresa: 'Boutique dos', orden: 1,
+    estado: 'timbrando', intentos: 1, call_sid: 'CA' + '9'.repeat(32).slice(0, 32),
+    marcado_at: new Date(Date.now() - 6000).toISOString(),
+  });
+}
+
 const nav = await chromium.launch({ args: ['--no-sandbox', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await nav.newContext({ viewport: { width: 1400, height: 1000 }, permissions: ['microphone'] });
 const p = await ctx.newPage();
 const errores = [];
 p.on('pageerror', e => errores.push(e.message));
 p.on('console', m => { if (m.type() === 'error') errores.push(m.text()); });
-const paso = (n, ok, d = '') => console.log(`  ${ok ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`);
+let fallasUI = 0;
+const paso = (n, ok, d = '') => { if (!ok) fallasUI++; console.log(`  ${ok ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
 try {
   await p.goto(`${base}/admin/login`, { waitUntil: 'networkidle' });
   await p.fill('input[type="email"]', login.CRM_EMAIL);
@@ -86,6 +105,14 @@ try {
     : p.getByRole('button', { name: /Seguir/ }).first()).click({ timeout: 20000 });
   await p.waitForTimeout(7000);
   const txt = (await p.locator('body').innerText()).replace(/\n+/g, ' · ');
+  if (PARALELO) {
+    paso('Enseña las dos líneas marcando a la vez', /Marcando a 2 a la vez/i.test(txt), '');
+    paso('Con nombre de cada una', /Prueba Aaron/.test(txt) && /Segunda línea/.test(txt), '');
+    paso('Y dice qué pasa con las otras', /se les cuelga mientras todavía timbran/i.test(txt), '');
+    await p.screenshot({ path: '/tmp/qa-paralelo.png', fullPage: true });
+    console.log(errores.length ? `\n  ⚠ ${errores.length} error(es)` : '\n  ✓ sin errores de JS');
+    await nav.close(); await limpiar(); console.log('  ✓ base limpia'); process.exit(fallasUI ? 1 : 0);
+  }
   if (process.argv.includes('--ver')) console.log('\nPANTALLA:', txt.slice(0, 1200), '\n');
   paso('Dice que la lista te espera', /la lista se queda aquí hasta que tú decidas/i.test(txt), '');
   paso('Dice que la IA NO ha hecho nada', /no ha hecho nada todavía/i.test(txt), '');
