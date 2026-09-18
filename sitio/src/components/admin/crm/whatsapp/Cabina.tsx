@@ -191,8 +191,19 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const [armando, setArmando] = useState<{ leidas: number; total: number } | null>(null);
   // La presentación se recuerda entre sesiones: es la misma casi siempre.
   const [pres, setPres] = useState(() => leerLocal('cabina.presentacion', {
-    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8, modo: 'manual', lineas: 1,
+    nombre: yo?.nombre ? `${String(yo.nombre).split(' ')[0]} de Sacscloud` : '', motivo: 'le llamo para dar seguimiento a su solicitud de información', buzon: false, auto: true, wrapup: 8, modo: 'manual', lineas: 1, reintentos: 0,
   }));
+  /* Al abrir una sesión que ya existe, el control del buzón adopta lo que esa
+     sesión tenga guardado (una vez, no en cada latido: si no, pisaría el clic
+     que acabas de dar mientras el servidor todavía contesta). */
+  const buzonAdoptado = useRef<string | null>(null);
+  useEffect(() => {
+    const cfg = est?.sesion?.config;
+    if (!sesionId || !cfg || buzonAdoptado.current === sesionId) return;
+    buzonAdoptado.current = sesionId;
+    if (cfg.reintentos_buzon != null) setPres((x: any) => ({ ...x, reintentos: Number(cfg.reintentos_buzon) || 0 }));
+  }, [sesionId, est?.sesion?.config]);
+
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
   // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
@@ -442,7 +453,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         accion: 'crear', items, nombre: descripcion.slice(0, 120),
         origen: { qs, descripcion, filas: filas.length, total: tot },
         presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon,
-        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1 }, modo: pres.modo,
+        config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1, reintentos_buzon: Number(pres.reintentos) || 0 }, modo: pres.modo,
       });
       if (r?.error) { setError(r.error); return; }
       setSesionId(r.id); setTab('lista');
@@ -477,7 +488,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
 
   const empezar = async () => {
     // Guardar la presentación por si la editó, luego arrancar y entrar a la sala.
-    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1 }, modo: pres.modo });
+    const ok1 = await accion('presentacion', { presentacion_nombre: pres.nombre, presentacion_motivo: pres.motivo, buzon_dejar_mensaje: pres.buzon, config: { auto_continuar: pres.auto, wrapup_seg: Number(pres.wrapup) || 8, lineas: Number(pres.lineas) || 1, reintentos_buzon: Number(pres.reintentos) || 0 }, modo: pres.modo });
     if (!ok1) return;
     const r = await accion(sesion?.estado === 'pausada' ? 'reanudar' : 'iniciar');
     // Con Fernanda sola no hay sala que abrir: la central marca y ella habla.
@@ -833,17 +844,42 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             <div style={tarjeta('#E8A838')}>
               <span style={etiqueta}>Si suena y se va al buzón</span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                {[0, 1, 2, 3].map(v => (
-                  <button key={v} onClick={() => accion('presentacion', { config: { reintentos_buzon: v } })}
-                    style={{ border: `1px solid ${Number(sesion?.config?.reintentos_buzon || 0) === v ? '#E8A838' : C.g200}`,
-                      background: Number(sesion?.config?.reintentos_buzon || 0) === v ? '#FFF8EC' : '#fff',
-                      color: Number(sesion?.config?.reintentos_buzon || 0) === v ? '#9a6a10' : C.g500,
+                {/* ══ 🔴 ERA UN BOTÓN MUERTO (18-sep-2026) ═══════════════════
+                    Reporte del dueño: «intento escoger "1 vez más" y no me lo
+                    selecciona». No era el pintado: es que este control era el
+                    ÚNICO de esta pantalla que guardaba con `accion()`, y
+                    `accion()` empieza con `if (!sesionId) return` — aquí la
+                    sesión todavía no existe, se crea al armar la lista. El clic
+                    se iba al vacío, sin error y sin cambiar nada.
+
+                    Ahora vive en `pres`, como el resto de lo que se decide
+                    antes de arrancar (auto-continuar, wrap-up, líneas, quién
+                    habla): se pinta al instante, se recuerda en el navegador y
+                    viaja en el `config` al crear o al empezar. Si la sesión YA
+                    existe —se entró a cambiarlo a media jornada— además se
+                    guarda en el momento, que era la intención original. */}
+                {[0, 1, 2, 3].map(v => {
+                  /* Se pinta desde `pres` y NO desde la sesión, aunque haya
+                     sesión: el clic tiene que verse en el momento, y la sesión
+                     no se refresca hasta el siguiente latido (hasta 6 s). El
+                     efecto de abajo adopta el valor guardado al abrir una
+                     sesión, así que las dos cosas no se pelean. */
+                  const elegido = Number(pres.reintentos || 0) === v;
+                  return (
+                  <button key={v} onClick={() => {
+                    setPres((x: any) => { const n = { ...x, reintentos: v }; guardarLocal('cabina.presentacion', n); return n; });
+                    if (sesionId) accion('presentacion', { config: { reintentos_buzon: v } });
+                  }}
+                    style={{ border: `1px solid ${elegido ? '#E8A838' : C.g200}`,
+                      background: elegido ? '#FFF8EC' : '#fff',
+                      color: elegido ? '#9a6a10' : C.g500,
                       borderRadius: 999, padding: '5px 13px', fontSize: 12.5,
-                      fontWeight: Number(sesion?.config?.reintentos_buzon || 0) === v ? 800 : 600,
+                      fontWeight: elegido ? 800 : 600,
                       cursor: 'pointer', fontFamily: 'inherit' }}>
                     {v === 0 ? 'No reintentar' : `${v} ${v === 1 ? 'vez' : 'veces'} más`}
                   </button>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ fontSize: 11.5, color: C.g500, marginTop: 7, lineHeight: 1.5 }}>
                 Se reintenta a los 25 minutos. Al que va DIRECTO al buzón no se le

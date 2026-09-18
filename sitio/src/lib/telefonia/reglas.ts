@@ -15,7 +15,8 @@ import { supabase } from '../supabase';
 import { telefonoLegible, telefonoWhatsApp } from '../telefono';
 import { permitido } from '../whatsapp/permisos';
 import { puedeMandarWa, cadenciaPausadaPorPersona } from '../whatsapp/presion';
-import { enviarTexto, enviarPlantilla, enContexto } from '../whatsapp/kapso-api';
+import { enviarTexto, enContexto } from '../whatsapp/kapso-api';
+import { mandarPlantilla } from '../whatsapp/plantilla-espejo';
 import { ventanaEnLinea } from '../whatsapp/linea';
 import { NUMERO } from './twilio';
 
@@ -76,7 +77,7 @@ export async function aplicarReglasLlamada(callId: string): Promise<ResultadoReg
     if (desenlace === 'contestada' || desenlace === 'otro') return { mandado: false, motivo: 'sí hubo contacto' };
 
     const { data: cfg } = await supabase.from('wa_config')
-      .select('llamadas_regla_activa, llamadas_regla_cuando, llamadas_regla_texto, llamadas_regla_plantilla, llamadas_regla_una_vez, llamadas_regla_horario, horario')
+      .select('llamadas_regla_activa, llamadas_regla_cuando, llamadas_regla_texto, llamadas_regla_plantilla, llamadas_regla_plantilla_util, llamadas_regla_una_vez, llamadas_regla_horario, horario')
       .eq('id', 1).maybeSingle();
     if (!cfg?.llamadas_regla_activa) return { mandado: false, motivo: 'la regla está apagada' };
 
@@ -134,13 +135,43 @@ export async function aplicarReglasLlamada(callId: string): Promise<ResultadoReg
         return { mandado: true, motivo: 'mandado por WhatsApp', via: 'texto' };
       }
 
-      /* Fuera de la ventana Meta NO acepta texto libre: hace falta una
-         plantilla UTILITY aprobada. Sin plantilla elegida se prefiere NO
-         mandar y decirlo, en vez de intentar un envío que Meta rechaza y que
-         nadie vería fallar. */
-      if (!cfg.llamadas_regla_plantilla) throw new Error('fuera de la ventana de 24 h y sin plantilla elegida');
-      await enviarPlantilla(tel, String(cfg.llamadas_regla_plantilla), 'es_MX', [nombre]);
-      return { mandado: true, motivo: 'mandado con plantilla (fuera de la ventana de 24 h)', via: 'plantilla' };
+      /* ══ FUERA DE LA VENTANA: MARKETING Y, SI NO, UTILITY ════════════════
+         Decisión del dueño (18-sep-2026): «siempre intentas mandar uno de
+         marketing; si el de marketing no sale, mandas el de utility».
+
+         Y tiene razón en el orden: la de marketing puede decir más —una oferta,
+         una razón para devolver la llamada— pero Meta la bloquea seguido (topes
+         de marketing, gente que se dio de baja de promociones). La de utility
+         dice menos y casi siempre pasa. Antes, con una sola plantilla
+         configurada, el 100% de esos casos se quedaban sin avisar: el cliente
+         veía una llamada perdida de un número que no conoce y ya.
+
+         Dos intentos, en ese orden, y se dice cuál salió. */
+      const cascada: { nombre: string; clase: 'marketing' | 'utility' }[] = [
+        ...(cfg.llamadas_regla_plantilla ? [{ nombre: String(cfg.llamadas_regla_plantilla), clase: 'marketing' as const }] : []),
+        ...(cfg.llamadas_regla_plantilla_util ? [{ nombre: String(cfg.llamadas_regla_plantilla_util), clase: 'utility' as const }] : []),
+      ];
+      if (!cascada.length) throw new Error('fuera de la ventana de 24 h y sin plantilla elegida');
+      let ultimo = '';
+      /* El envío va por `mandarPlantilla` y no por `enviarPlantilla` a secas
+         porque ésa NO espeja: el cliente recibía el aviso y quien abría el chat
+         no veía nada —o peor, veía un resumen escrito a mano, que es lo que el
+         dueño reportó el 18-sep («¿en este WhatsApp tiene en asteriscos
+         marketing???»)—. Aquí se guarda el cuerpo APROBADO con el nombre ya
+         puesto, que es lo que él leyó.
+         La cascada se queda en este bucle, no en el respaldo de
+         `mandarPlantilla`: las dos plantillas las elige el dueño en
+         Configuración, y el orden que pidió es marketing primero. */
+      for (const plan of cascada) {
+        const env = await mandarPlantilla({
+          telefono: tel, plantilla: plan.nombre, params: [nombre], autor: 'Telefonía',
+          metadata: { regla_llamada: true, clase: plan.clase, call_id: callId },
+        }).catch((e: any) => ({ enviado: false, motivo: String(e?.message || e) } as any));
+        if (env?.enviado) return { mandado: true, motivo: `mandado con plantilla de ${plan.clase} (fuera de la ventana de 24 h)`, via: 'plantilla' };
+        ultimo = String(env?.motivo || 'no salió');
+        // Se intenta la siguiente; el motivo del primero queda para el rastro.
+      }
+      throw new Error(`ninguna plantilla salió (${ultimo})`);
     } catch (e: any) {
       // Se libera la marca: si no salió, el próximo intento SÍ debe poder.
       await supabase.from('wa_envios_idem').delete().eq('idem', idem);
