@@ -68,6 +68,12 @@ function env() {
   return e;
 }
 const E = env();
+/* Lo leído se vuelca a `process.env` y no solo a `E`: este script importa el
+   cliente de Supabase del repo, que lee del entorno. Sin esto había que
+   acordarse de correrlo con `--env-file=.env`, y olvidarlo daba un error que no
+   menciona ni el .env ni la bandera («supabaseUrl is required»). */
+for (const [k, v] of Object.entries(E)) if (process.env[k] === undefined) process.env[k] = v;
+
 const ID = E.YT_OAUTH_CLIENT_ID, SECRET = E.YT_OAUTH_CLIENT_SECRET;
 const SCOPE = 'https://www.googleapis.com/auth/youtube';
 const REDIR = 'https://www.sacscloud.com/api/yt/oauth';

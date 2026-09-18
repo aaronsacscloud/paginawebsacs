@@ -51,7 +51,20 @@ export const GET: APIRoute = async ({ url }) => {
 
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
-  if (!code || !state) return responder('Falta información', 'Este enlace no trae el código de autorización.', false, 400);
+
+  /* Cuando falta algo, DECIR QUÉ falta. La primera versión decía «falta
+     información» y punto, y con eso no se podía distinguir entre tres causas
+     muy distintas: que Google no mandara el código, que el navegador dentro de
+     una app recortara la query, o que alguien abriera la URL pelona.
+     El código se enseña recortado: es de un solo uso y de minutos, pero no hay
+     razón para ponerlo entero en una pantalla. */
+  if (!code || !state) {
+    const vistos = [...url.searchParams.keys()];
+    const detalle = vistos.length
+      ? `Llegaron estos parámetros: ${vistos.join(', ')}. ${code ? 'Sí trae código pero le falta el «state».' : 'No trae el código.'}`
+      : 'No llegó ningún parámetro. Si abriste esta dirección a mano o recargaste la página, vuelve a empezar desde el enlace de autorización.';
+    return responder('Falta información', detalle, false, 400);
+  }
 
   /* El `state` lo genera el servidor antes de mandar a autorizar y se guarda
      con vencimiento. Sin comprobarlo, cualquiera que descubra esta URL podría
