@@ -2,16 +2,16 @@
   {
     "id": "G_Yqob8f63g",
     "titulo": "¿Cómo saber si mi software ya no da para el crecimiento de mi zapatería?",
-    "descripcion": "Si cada vez que llega una corrida nueva tienes que corregir a mano tallas y colores, o si no puedes ver rápido qué numeración te falta en cada sucursal, tu sistema actual probablemente ya no alcanza para el tamaño que tiene tu negocio. Ese es el tema de este video.\n\n· Señales de que tu punto de venta se quedó chico para tu zapatería\n· Qué pasa cuando las corridas llegan incompletas y nadie lo detecta a tiempo\n· Por qué controlar talla y color por sucursal se vuelve imposible a mano\n· Qué deberías poder ver en un reporte para decidir si repones o no\n\nGuía completa: https://www.sacscloud.com/recursos/corridas-rotas-zapateria/\n\n#zapateria #calzado #corridasrotas #inventario",
+    "descripcion": "Tu sistema se está quedando corto si ya no te dice qué números de calzado te faltan por sucursal, si armar un reporte de existencias te toma media hora, o si cada vez que abres una tienda nueva tienes que capturar el catálogo otra vez desde cero. Esas son las señales de que el software con el que empezaste ya no aguanta el tamaño que tiene hoy tu negocio.\n\nEn este video repasamos:\n· Qué preguntas hacerte para saber si tu sistema actual sigue siendo el correcto\n· Señales de que estás perdiendo tiempo por corridas incompletas o números que no cuadran\n· Qué necesitas si vas a abrir más sucursales o vender por internet\n· Qué revisar antes de decidir cambiar de software\n\nSi te identificas con varias de estas señales, vale la pena revisar cómo llevas el control de tus tallas y sucursales antes de que el crecimiento se te complique más.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#zapateria #puntodeventa #inventario #software",
     "etiquetas": [
-      "zapateria",
-      "calzado",
-      "corridas rotas",
-      "software para zapaterias",
-      "inventario calzado"
+      "zapatería",
+      "software para zapaterías",
+      "crecimiento de negocio",
+      "inventario por sucursal",
+      "punto de venta calzado"
     ],
-    "pagina": "corridas-rotas-zapateria",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "A",
     "antes": "¿Tu software está frenando el crecimiento de tu zapatería? 👠🤖 #calzado #leónguanajuato #corrida",
     "vistas": 5
@@ -103,32 +103,32 @@
   },
   {
     "id": "YX2n5OnguMI",
-    "titulo": "¿Cómo doy de alta un producto con variantes de talla y color en Sacs?",
-    "descripcion": "Cuando un mismo modelo se vende en distintas tallas y colores, en Sacs se registra como producto con variantes, para que el sistema controle cada combinación por separado y no se te mezcle el inventario.\n\nEn el video se ve:\n· Cómo dar de alta un producto nuevo y activar la opción de variantes\n· Cómo capturar las combinaciones de talla y color que maneja el producto\n· Cómo queda reflejada cada variante dentro del inventario, con su propia existencia\n· Qué pasa si vendes una variante que ya no tiene piezas disponibles\n\nEsto sirve tanto para tiendas de ropa como de calzado, donde un mismo modelo puede tener veinte o más combinaciones distintas. Sin este control es fácil perder de vista qué talla o color ya se agotó, o duplicar productos por error.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#variantes #tallaycolor #inventario #puntodeventa",
+    "titulo": "¿Cómo doy de alta ropa con sus tallas y colores sin capturar una por una?",
+    "descripcion": "En vez de crear un producto distinto por cada combinación de talla y color, puedes dar de alta la prenda una sola vez y generar de golpe todas sus variantes, para no capturar cada talla y cada color a mano una por una.\n\nEn el video se muestra:\n· Cómo dar de alta un producto nuevo desde cero\n· Cómo definir qué tallas y qué colores va a tener esa prenda\n· Cómo se genera automáticamente la corrida completa de variantes\n· Cómo revisar y ajustar precio y existencias de cada variante ya generada\n\nEsto ahorra bastante tiempo cuando llega una prenda nueva en, digamos, cinco tallas y tres colores: en lugar de dar de alta quince productos por separado, armas uno solo y el sistema arma toda la corrida por ti. Es especialmente útil al inicio de temporada, cuando llega mercancía nueva y hay que capturarla rápido antes de que empiece la venta.\n\nUna vez que tienes bien armada la corrida completa, es más fácil llevar el control de qué tallas se agotan primero en cada sucursal.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#curvadetallas #tallasycolores #tiendaderopa #altadeproductos",
     "etiquetas": [
-      "productos con variantes",
-      "talla y color",
-      "inventario ropa",
-      "configuracion sacs"
+      "alta de productos",
+      "curva de tallas",
+      "tallas y colores",
+      "corrida de tallas"
     ],
     "pagina": "curva-de-tallas",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "Productos con Variantes",
     "vistas": 8
   },
   {
     "id": "aQ-tcEqALrg",
-    "titulo": "¿Cómo configuro las variantes de talla y color de un producto en Sacs?",
-    "descripcion": "Configurar las variantes de un producto es el paso donde defines qué tallas y colores maneja ese modelo, para que el sistema lleve el inventario de cada combinación por separado, no de forma general.\n\nEn el video se ve:\n· Dónde se activa la configuración de variantes al crear o editar un producto\n· Cómo agregar las tallas y colores disponibles\n· Cómo se generan automáticamente las combinaciones (variantes)\n· Cómo revisar que cada variante quedó bien capturada antes de guardar\n\nEste paso es clave si vendes ropa o calzado, porque evita que dos tallas del mismo modelo se registren como si fueran el mismo producto, lo que después complica saber qué se vendió y qué queda en existencia.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#variantes #configuracion #tallaycolor #inventario",
+    "titulo": "¿Cómo configuro las variantes de talla y color de un producto en mi tienda?",
+    "descripcion": "Configurar variantes te permite registrar una sola prenda con todas sus tallas y colores disponibles como un solo producto, pero llevando el control de existencias por separado para cada combinación.\n\nEn el video se muestra:\n· Cómo crear el producto base con su descripción general\n· Cómo agregar las tallas disponibles de esa prenda\n· Cómo agregar los colores disponibles\n· Cómo revisar la matriz de variantes que queda armada al final\n\nEsto es útil cuando un mismo modelo, por ejemplo un pantalón, viene en varias tallas y varios colores, y necesitas que el sistema sepa diferenciar cuánto tienes de la talla 32 en azul y cuánto de la 34 en negro, sin tratarlos como productos completamente distintos.\n\nUna vez armada bien esta configuración, es más fácil detectar cuando una talla o color específico se agota antes que las demás, y decidir con tiempo qué reponer para la siguiente temporada en lugar de descubrirlo hasta que el cliente ya se fue sin comprar.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#tallasycolores #variantesdeproducto #tiendaderopa #inventario",
     "etiquetas": [
-      "configuracion de variantes",
-      "talla y color",
-      "productos",
-      "sacs"
+      "variantes de producto",
+      "tallas y colores",
+      "configuracion de producto",
+      "inventario"
     ],
-    "pagina": "curva-de-tallas",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "A",
     "antes": "configuracion de variantes 1",
     "vistas": 11
@@ -151,32 +151,33 @@
   },
   {
     "id": "R8bN46TwSaQ",
-    "titulo": "¿Cómo configuro el ticket de venta en Sacs?",
-    "descripcion": "El ticket de venta es el comprobante que se imprime o se envía al cliente después de cada venta, y en Sacs se puede configurar para que muestre los datos de tu negocio, el detalle de la compra y otra información que necesites.\n\nEn el video se ve:\n· Dónde se encuentra la configuración del ticket dentro del sistema\n· Qué datos se pueden agregar o quitar, como nombre del negocio, dirección o mensaje al final\n· Cómo queda el ticket una vez guardados los cambios\n· Cómo probar la configuración antes de usarla en ventas reales\n\nTener el ticket bien configurado es importante no solo para que se vea profesional, sino porque muchos clientes lo piden para cambios o garantías. Si falta información básica, como el nombre de la tienda o la fecha, se complica atender esas devoluciones después.\n\nEste ajuste normalmente se hace una sola vez, al empezar a usar el sistema en caja, aunque se puede modificar cuando lo necesites.\n\n#ticket #puntodeventa #configuracion #ventas",
+    "titulo": "¿Cómo configuro el ticket de venta de mi boutique?",
+    "descripcion": "El ticket de venta es lo que le entregas al cliente cuando compra, y puedes personalizarlo para que muestre el nombre de tu tienda, el logo, la talla y el color de cada prenda vendida, además del folio, la forma de pago y un mensaje al pie.\n\nEn el video se ve:\n· cómo agregar el logo y los datos de tu boutique al ticket\n· cómo hacer que se muestre la talla y el color de cada prenda en cada línea\n· cómo elegir entre imprimir en papel o mandar el ticket digital\n· cómo activar un mensaje de pie de página, por ejemplo tu política de cambios\n\nSi vendes ropa, calzado o joyería, que el ticket muestre la talla y el color exactos que se llevó el cliente evita confusiones al momento de un cambio o una garantía. Aquí ves paso a paso dónde se configura cada parte del ticket.\n\n#ticketdeventa #boutique #puntodeventa #configuracion",
     "etiquetas": [
-      "configuracion de ticket",
-      "comprobante de venta",
+      "ticket de venta",
+      "configuracion",
+      "boutique",
       "punto de venta",
-      "sacs"
+      "impresion"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "CONFIGURACION TICKET",
     "vistas": 104
   },
   {
     "id": "2Hfz8QYpxYo",
-    "titulo": "¿Cómo configuro mis sucursales en Sacs?",
-    "descripcion": "Si tu negocio tiene más de una tienda, en Sacs cada sucursal se registra por separado dentro del sistema, para que puedas llevar el control de ventas e inventario de cada una sin que se mezclen entre sí.\n\nEn el video se ve:\n· Cómo dar de alta una nueva sucursal en el sistema\n· Qué datos básicos se capturan por sucursal (nombre, dirección, entre otros)\n· Cómo queda organizada la información una vez que tienes varias sucursales activas\n· Qué se debe revisar antes de empezar a operar en una sucursal nueva\n\nEsta configuración es el primer paso antes de poder ver el inventario o las ventas separadas por tienda. Sin darla de alta correctamente, es común que la información de una sucursal se mezcle con la de otra, o que no aparezca donde debería al momento de hacer reportes.\n\nEste video aplica para negocios con dos o más puntos de venta, ya sea que estén en la misma ciudad o en distintas plazas.\n\n#sucursales #configuracion #multitienda #administracion",
+    "titulo": "¿Cómo configuro mis sucursales para ver el inventario de todas mis tiendas?",
+    "descripcion": "Configurar tus sucursales sirve para registrar cada tienda por separado dentro del sistema, y así poder revisar el inventario de cada una por su cuenta o ver el total combinado de todas juntas.\n\nEn el video se muestra:\n· Cómo dar de alta una sucursal nueva\n· Cómo asignarle nombre, dirección y datos básicos\n· Cómo activarla para que empiece a vender y a registrar existencias\n· Cómo consultar el inventario de una sucursal específica o de todas en conjunto\n\nSi tienes más de un local, esto es lo primero que necesitas configurar antes de poder mover mercancía entre tiendas o comparar qué tan bien se vende cada modelo en cada sucursal. Sin las sucursales bien dadas de alta, el sistema no puede separar correctamente el inventario de cada punto de venta.\n\nEsto es la base para después poder hacer traspasos de mercancía entre tiendas cuando una sucursal se queda sin una talla o un color que sí tiene otra.\n\nGuía completa: https://www.sacscloud.com/recursos/nivelacion-inventario-entre-tiendas/\n\n#sucursales #inventario #tiendaderopa #puntodeventa",
     "etiquetas": [
       "configuracion de sucursales",
-      "multitienda",
-      "administracion",
-      "sacs"
+      "inventario por sucursal",
+      "multi tienda",
+      "punto de venta"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "nivelacion-inventario-entre-tiendas",
+    "revisar": false,
     "grupo": "A",
     "antes": "CONFIGURACIÓN DE SUCURSALES",
     "vistas": 25
@@ -351,15 +352,15 @@
   {
     "id": "5HFooGcyucU",
     "titulo": "¿Cómo evito hacer a mano las nivelaciones de inventario entre mis tiendas de calzado?",
-    "descripcion": "Cuando vendes calzado en varias sucursales, calcular a mano qué pares mover de una tienda a otra para completar corridas o surtir tallas faltantes toma tiempo y se presta a errores. Este video muestra cómo dejar de hacer ese cálculo manualmente.\n\nEn el video se aborda:\n· Por qué las nivelaciones manuales entre sucursales generan errores y tiendas desbalanceadas\n· Cómo identificar qué tienda tiene exceso de un modelo y cuál le hace falta\n· Cómo mover mercancía entre tiendas sin tener que revisar sucursal por sucursal a mano\n\nSi manejas varias tiendas de zapatería, seguro te ha pasado que en una sucursal sobran pares de un número y en otra no hay ni uno, y que enterarte de eso toma días porque alguien tiene que revisar cada punto de venta. Automatizar ese proceso ayuda a que el inventario se mueva a donde realmente se necesita, sin depender de que una persona haga las cuentas cada semana. Este video es una introducción al tema y conviene revisarlo junto con el equipo antes de aplicar los cambios en tu operación diaria.\n\nGuía completa: https://www.sacscloud.com/recursos/nivelacion-inventario-entre-tiendas/\n#calzado #inventario #zapateria #puntodeventa",
+    "descripcion": "Nivelar a mano significa revisar sucursal por sucursal qué números de calzado sobran en una tienda y faltan en otra, y armar el traspaso tú mismo. Eso se puede evitar si el sistema te dice de dónde mover el par exacto que falta.\n\n· Por qué se rompen las corridas de calzado entre sucursales con el tiempo\n· Cómo saber en qué tienda hay excedente de un número y en cuál hace falta\n· Qué información necesitas para armar un traspaso sin adivinar\n· Cómo se ve la nivelación cuando ya no la haces manualmente\n\nGuía completa: https://www.sacscloud.com/recursos/nivelacion-inventario-entre-tiendas/\n#calzado #corridas #traspasos #inventario",
     "etiquetas": [
-      "nivelación de inventario",
+      "nivelacion de inventario",
+      "traspasos entre tiendas",
       "calzado",
-      "traspasos",
-      "zapatería"
+      "corridas de tallas"
     ],
     "pagina": "nivelacion-inventario-entre-tiendas",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "Olvídate de las Nivelaciones Manuales 👠 #nivelación #fashionretail #calzado #puntodeventa #boutique",
     "vistas": 120
@@ -455,7 +456,7 @@
       "calzado"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Próximamente Sacscloud OS 👠👗",
     "vistas": 284
@@ -478,8 +479,8 @@
   },
   {
     "id": "l88FsdM06Ig",
-    "titulo": "¿Cómo le ayudó Sacscloud a una tienda de botas y cuero a vender más?",
-    "descripcion": "Esta es la historia de una tienda de botas y artículos de cuero que usa Sacscloud para llevar el control de su inventario y de sus ventas. En el video cuentan cómo era su negocio antes y qué cambió al tener el control del sistema en sus tiendas.\n\n· Testimonio real de un negocio de calzado y artículos de cuero.\n· Cómo organizan su inventario por modelo y talla.\n· Cómo llevan el control de sus ventas en sucursal.\n· Qué resultados notaron en su negocio después de usar el sistema.\n\nSi tienes una zapatería o una tienda de productos de cuero y quieres saber cómo le fue a otro negocio parecido al tuyo, este testimonio te puede servir como referencia antes de decidir si un sistema como este te conviene.\n\n#zapateria #calzado #cuero #casodeexito",
+    "titulo": "¿Cómo lleva su inventario una tienda de botas y cuero?",
+    "descripcion": "Un vistazo corto a cómo una tienda de botas y artículos de cuero lleva el control de su inventario y sus ventas con Sacscloud.\n\nEn una tienda de calzado el inventario no se cuenta por pares sino por modelo y número: saber que tienes veinte pares no sirve de nada si son todos del 22 y del 28. Sacscloud maneja la corrida completa de cada modelo, en cada sucursal.\n\nGuía completa sobre corridas rotas: https://www.sacscloud.com/recursos/corridas-rotas-zapateria/\n\n#zapateria #calzado #cuero #inventario",
     "etiquetas": [
       "zapateria",
       "calzado",
@@ -487,23 +488,24 @@
       "caso de exito"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "Cómo SACSCLOUD multiplica las ventas de tu tienda de botas y cuero! #fashionretail #calzados",
     "vistas": 897
   },
   {
     "id": "q9PjGTttCCg",
-    "titulo": "¿Cómo consultar el inventario de mi tienda en tiempo real sin imprimir reportes?",
-    "descripcion": "En Sacs no necesitas imprimir un reporte para saber cuánto tienes en existencia: puedes consultarlo al instante desde el sistema, en cualquier momento del día. Así evitas depender de papeles que quedan desactualizados en cuanto entra o sale una sola pieza de tu tienda.\n\nEn el video se ve:\n· Cómo revisar la existencia de un producto en tiempo real desde el sistema\n· Por qué un reporte impreso ya no sirve unos minutos después de sacarlo\n· Qué información puedes consultar al instante: existencia, talla, color y sucursal\n· Por qué conviene tomar decisiones con datos actualizados y no con papeles viejos\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n#inventario #puntodeventa #retail #boutique",
+    "titulo": "¿Cómo consulto el inventario por talla y color de mi tienda en tiempo real?",
+    "descripcion": "Puedes ver las existencias por talla y color de tu tienda en el momento exacto en que las necesitas, sin esperar a que alguien te imprima un reporte desactualizado. Aquí se explica cómo consultar tu inventario en tiempo real desde Sacs.\n\n· Cómo revisar existencias por talla, color y sucursal al instante\n· Cómo filtrar el inventario por producto, categoría o proveedor\n· Por qué los reportes impresos se desactualizan tan rápido\n· Cómo ver el inventario general de todas tus tiendas junto\n\nEsto es útil cuando un cliente te pregunta por una talla o color específico y no quieres tardar en contestarle, o cuando necesitas tomar una decisión de compra o traspaso rápido y no puedes esperar al reporte del día siguiente. Ver el inventario en tiempo real evita que vendas algo que ya no tienes, o que mandes a un cliente a otra sucursal sin estar seguro de que ahí sí hay la pieza que busca.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#inventario #tiendaderopa #tallaycolor #sacscloud",
     "etiquetas": [
+      "sacs",
       "inventario en tiempo real",
-      "control de existencias",
-      "punto de venta",
-      "retail"
+      "talla y color",
+      "tienda de ropa",
+      "reportes"
     ],
     "pagina": "inventario-talla-color-sucursales",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "El control real no se imprime, se consulta al instante ✨👠 #sacscloud #fashionretail #boutique",
     "vistas": 200
@@ -720,32 +722,14 @@
     "vistas": 214
   },
   {
-    "id": "QSLfDGN2J1A",
-    "titulo": "¿Dónde encuentro ayuda, soporte y guías de Sacscloud?",
-    "descripcion": "Dentro de Sacscloud tienes un canal de ayuda con chat de soporte en vivo, guías interactivas paso a paso, cursos de capacitación completos y las últimas novedades de la plataforma, todo en un solo lugar.\n\n· Dónde abrir el chat de soporte en vivo\n· Cómo acceder a las guías interactivas\n· Dónde están los cursos de capacitación completos\n· En qué sección ver las novedades y mejoras\n\n#sacscloud #soporte #ayuda #capacitacion",
-    "etiquetas": [
-      "canal de ayuda",
-      "soporte",
-      "guias",
-      "capacitacion",
-      "sacscloud"
-    ],
-    "pagina": "",
-    "revisar": true,
-    "grupo": "C",
-    "antes": "🆘 Conoce el canal de ayuda",
-    "vistas": 160
-  },
-  {
     "id": "Q8d3jWz4HnI",
-    "titulo": "¿Cómo es la plataforma de Sacscloud y dónde están sus módulos?",
-    "descripcion": "La plataforma se organiza en módulos como Ventas, Inventarios, Reportes y Promociones, y puedes moverte entre sucursales y cajas desde la misma pantalla usando la barra de navegación y los paneles laterales.\n\n· Dónde está cada módulo (Ventas, Inventarios, Reportes, Promociones)\n· Cómo cambiar entre sucursales y cajas\n· Qué iconos y atajos usar para ir más rápido\n· Cómo se ve la barra de navegación, los paneles laterales y el tablero\n\n#sacscloud #plataforma #puntodeventa #retail",
+    "titulo": "¿Cómo funciona Sacscloud y dónde encuentro sus módulos para mi tienda de ropa?",
+    "descripcion": "Sacscloud es el sistema de punto de venta e inventario pensado para tiendas de ropa, calzado y joyería: maneja tallas, colores, corridas y sucursales en un solo lugar. Este video es un recorrido general para que ubiques dónde está cada parte antes de empezar a usarlo.\n\n· Dónde está el módulo de productos con tallas y colores\n· Dónde se ven las existencias por sucursal\n· Dónde se registran las ventas y los apartados\n· Cómo moverte entre los módulos principales de la plataforma\n\nSi ya usas Sacscloud y quieres profundizar en algún tema puntual, busca los videos específicos de tallas, sucursales o apartados en este canal.\n#sacscloud #puntodeventa #tiendaderopa #inventario",
     "etiquetas": [
-      "plataforma",
-      "navegacion",
-      "modulos",
-      "tablero",
-      "sacscloud"
+      "sacscloud",
+      "modulos de sacscloud",
+      "sistema para tienda de ropa",
+      "punto de venta ropa"
     ],
     "pagina": "",
     "revisar": true,
@@ -771,16 +755,17 @@
   },
   {
     "id": "_ndBIUt4i5w",
-    "titulo": "¿Cómo empiezo a usar Sacscloud en mi tienda desde cero?",
-    "descripcion": "Si acabas de contratar Sacscloud, este curso básico te guía paso a paso para moverte por la plataforma, configurar tus usuarios y productos, y hacer tus primeras ventas sin depender de nadie más.\n\n· Cómo moverte por la plataforma\n· Cómo configurar usuarios y productos\n· Cómo hacer tus primeras ventas\n· Cómo abrir caja y revisar tus reportes\n\n#sacscloud #puntodeventa #retail #capacitacion",
+    "titulo": "¿Cómo empiezo a usar Sacs en mi tienda de ropa desde cero?",
+    "descripcion": "Si acabas de comprar Sacs y no sabes por dónde arrancar, aquí ves los primeros pasos para dejarlo funcionando en tu tienda de ropa o calzado: crear tu catálogo con tallas y colores, dar de alta tu primera sucursal y capturar tu inventario inicial antes de abrir la caja.\n\n· Cómo crear tu cuenta y llenar los datos básicos de tu negocio\n· Cómo dar de alta tus primeros productos con talla y color\n· Cómo registrar tu inventario inicial por sucursal\n· Cómo hacer tu primera venta de prueba antes de salir al piso\n\nEstá pensado para quien nunca ha usado un punto de venta y quiere ver el camino completo, desde que abre el sistema por primera vez hasta que hace su primer ticket. Si ya tienes experiencia con otro sistema, te sirve para ubicar dónde está cada cosa en Sacs.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#puntodeventa #tiendaderopa #sacscloud #inventario",
     "etiquetas": [
-      "bienvenida",
-      "curso basico",
-      "arranque",
-      "sacscloud"
+      "sacs",
+      "punto de venta",
+      "tienda de ropa",
+      "configuracion inicial",
+      "inventario"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "curva-de-tallas",
+    "revisar": false,
     "grupo": "C",
     "antes": "¡Bienvenido a Sacscloud! Tu Guía de Arranque Rápido",
     "vistas": 223
@@ -819,8 +804,8 @@
   },
   {
     "id": "yDwzacElDsA",
-    "titulo": "¿Cómo mejoró Forja Western el control de su tienda con Sacscloud?",
-    "descripcion": "Forja Western cuenta en este video cómo cambió su forma de controlar inventario y ventas al pasar a Sacscloud. Es un testimonio directo de la marca, sin guion de venta, sobre los problemas que tenían antes y qué cambió después.\n\n· Qué retos tenía Forja Western antes de usar Sacscloud\n· Qué proceso siguieron para migrar su información\n· Qué parte de su operación diaria cambió más\n· Qué le dirían a otro dueño de tienda que está por decidir\n\nSi estás evaluando cambiar de sistema para tu tienda de ropa o calzado, este tipo de testimonios te sirve para ver el proceso desde la experiencia de alguien que ya lo vivió, no desde el folleto del proveedor.\n\nNota: este video no trae descripción original, así que los detalles exactos que se tocan pueden variar; revísalo antes de confiar en los puntos anteriores al pie de la letra.\n\n#historiadeexito #sacscloud #fashionretail #boutique",
+    "titulo": "Forja Western: por qué un sistema de moda y no uno genérico",
+    "descripcion": "Forja Western cuenta por qué un sistema hecho para moda les cambió la operación frente a uno genérico: Sacscloud maneja tallas, colores y corridas completas, que es justo lo que un punto de venta común no sabe hacer.\n\nLa diferencia no es de funciones sueltas, es de cómo está pensado el inventario. Un sistema genérico cuenta piezas: te dice que tienes veinte. Uno de moda cuenta la corrida: te dice que esas veinte son del 22 y del 28, y que los números de en medio se acabaron hace tres semanas.\n\nLo que mencionan en el video:\n· Por qué el manejo de tallas y colores les simplificó la gestión diaria\n· Qué diferencia hay contra un sistema genérico adaptado a moda\n· Por qué la especialización pesa en el día a día de una tienda de calzado\n\nGuía completa sobre corridas rotas: https://www.sacscloud.com/recursos/corridas-rotas-zapateria/\n\n#casodeexito #calzado #western #puntodeventa",
     "etiquetas": [
       "historiadeexito",
       "sacscloud",
@@ -828,15 +813,15 @@
       "boutique"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "✨HISTORIA DE ÉXITO l Forja Western x Sacscloud ✨👢 #fashionretail #sacscloud #boutiquefashion",
     "vistas": 839
   },
   {
     "id": "w171n104thI",
-    "titulo": "¿Cómo mejoró Casa Maca el control de su tienda con Sacscloud?",
-    "descripcion": "Casa Maca comparte en este video su experiencia al usar Sacscloud para controlar su tienda de ropa. Es un testimonio de la marca sobre lo que cambió en su operación después de dejar su sistema anterior.\n\n· Qué problemas tenía Casa Maca antes de Sacscloud\n· Qué proceso siguieron para empezar a usarlo\n· Qué parte de su día a día se simplificó\n· Qué le dirían a otra tienda que está por decidir\n\nSirve como referencia si estás comparando opciones de software para tu tienda y quieres escuchar la experiencia de alguien que ya pasó por ese cambio, más allá de lo que promete cualquier proveedor.\n\nNota: este video no incluye descripción original, así que los puntos anteriores son una guía general de lo que suele tratarse en este tipo de testimonios; confírmalos antes de publicar.\n\n#historiadeexito #sacscloud #fashionretail #boutique",
+    "titulo": "Casa Maca: tallas, colores y la venta de menudeo y mayoreo en un solo sistema",
+    "descripcion": "Casa Maca cuenta cómo unificó la operación de su marca en un solo sistema: el manejo de tallas y colores, la conexión del punto de venta con la tienda en línea, y la venta de menudeo y mayoreo sin llevar dos controles separados.\n\nSon los tres problemas que aparecen juntos cuando una marca de ropa crece. El inventario por talla y color deja de caber en una hoja de cálculo; la tienda en línea empieza a vender lo que ya se vendió en el mostrador; y el mayoreo necesita precios y mínimos distintos sobre la misma existencia.\n\nLo que resolvieron:\n· El control por talla y color de toda su línea\n· Unificar el punto de venta con la tienda en línea, con una sola existencia\n· Operar menudeo y mayoreo desde el mismo inventario\n\nGuía sobre unir tienda física y en línea: https://www.sacscloud.com/recursos/tienda-fisica-y-en-linea/\n\n#casodeexito #tiendaderopa #mayoreo #tallasycolores",
     "etiquetas": [
       "historiadeexito",
       "sacscloud",
@@ -844,7 +829,7 @@
       "boutique"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "HISTORIA DE ÉXITOl Casa Maca x Sacscloud 👗✨! Gracias por la confianza #fashionretail #testimonial",
     "vistas": 233
@@ -899,48 +884,50 @@
   },
   {
     "id": "-xgfVjnOl8U",
-    "titulo": "¿Cómo asigno tallas, colores y precios a mis productos?",
-    "descripcion": "Para vender un mismo producto en distintas tallas y colores usas las variantes: primero das de alta el producto base y después defines cada combinación de talla y color, con su propio precio si así lo necesitas.\n\n· Cómo crear una variante desde el catálogo de productos\n· Cómo asignar talla y color a cada variante\n· Cómo poner precios distintos por variante cuando aplica\n· Qué pasa con el inventario de cada variante por separado\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#tallas #colores #inventario #tutorial",
+    "titulo": "¿Cómo asigno tallas, colores y precios a mis productos de ropa?",
+    "descripcion": "Cada combinación de talla y color de una misma prenda es una variante distinta, y a cada una le asignas su propio precio y su propio control de existencias al momento de dar de alta el producto.\n\nEn el video se muestra:\n· Cómo dar de alta un producto nuevo\n· Cómo agregar las tallas disponibles de esa prenda\n· Cómo agregar los colores disponibles\n· Cómo asignar un precio a cada variante resultante\n· Cómo queda armada la matriz completa de talla y color\n\nEsto resuelve un problema común en ropa y calzado: una playera talla M color azul y la misma playera talla L color negro no son lo mismo para efectos de inventario, aunque sean el mismo modelo. Si no separas bien esa información desde el alta, después es difícil saber cuánto tienes de cada combinación real.\n\nArmar bien esta matriz desde el principio también te ayuda más adelante a saber qué tallas se agotan primero y cuáles necesitas reponer antes de la siguiente temporada.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#tallasycolores #curvadetallas #tiendaderopa #altadeproductos",
     "etiquetas": [
-      "tallas",
-      "colores",
-      "inventario",
-      "tutorial"
+      "tallas y colores",
+      "matriz de producto",
+      "alta de productos",
+      "curva de tallas"
     ],
     "pagina": "curva-de-tallas",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "👗🎨 Variantes que Venden",
     "vistas": 58
   },
   {
     "id": "Q9mmFgTpkBs",
-    "titulo": "¿Cómo migro mis productos de mi sistema anterior a Sacscloud?",
-    "descripcion": "Si ya tienes un sistema de punto de venta y quieres pasarte a Sacscloud, el área técnica te apoya a importar tus productos y existencias sin perder información, de forma segura.\n\n· Qué información necesitas tener lista antes de migrar\n· Cómo se apoya el área técnica en el proceso de importación\n· Cómo se validan tus existencias después de la migración\n· A quién contactar si tienes dudas durante el proceso\n\n#migracion #productos #inventario #tutorial",
+    "titulo": "¿Cómo migro mis productos con tallas y colores de mi sistema anterior a Sacscloud?",
+    "descripcion": "Puedes migrar tu catálogo completo -incluyendo tallas y colores- desde tu sistema anterior a Sacscloud sin volver a capturar cada prenda una por una. En el video se muestra el proceso paso a paso para importar tus productos, conservar sus variantes y dejarlos listos para vender en tus sucursales.\n\n· Cómo exportar tu catálogo de tu sistema actual (Excel u otro formato).\n· Cómo mapear las columnas de talla, color y precio al importarlas a Sacscloud.\n· Qué revisar antes de subir el archivo para evitar productos duplicados.\n· Cómo confirmar que tus productos quedaron con su matriz de tallas y colores correcta.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n#migraciondedatos #tallasycolores #inventario #boutique",
     "etiquetas": [
-      "migracion",
-      "productos",
-      "inventario",
-      "tutorial"
+      "migracion de productos",
+      "tallas y colores",
+      "importar catalogo",
+      "sacscloud",
+      "inventario boutique"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "curva-de-tallas",
+    "revisar": false,
     "grupo": "C",
     "antes": "🔵 CASO 1: Ya tienes un sistema anterior y quieres migrar tus productos",
     "vistas": 138
   },
   {
     "id": "i7v4UqHPUoA",
-    "titulo": "¿Cómo doy de alta mis productos por primera vez en Sacscloud?",
-    "descripcion": "Antes de cargar tus productos en Sacscloud necesitas identificar cuál es tu caso: si vienes de otro sistema, si es tu primera vez con un inventario digital, o si ya tienes un catálogo armado. Ubicar tu situación te ayuda a elegir el proceso correcto de carga.\n\n· Los distintos casos de uso para dar de alta productos\n· Cómo saber cuál aplica a tu negocio\n· Qué preparar antes de empezar la carga\n\n#productos #inventario #tutorial #sacscloud",
+    "titulo": "¿Cómo doy de alta mi ropa con tallas y colores por primera vez?",
+    "descripcion": "Cuando abres tu tienda por primera vez tienes que capturar cada prenda con todas sus tallas y colores, para que el sistema controle el inventario por variante y no solo por modelo. Aquí se explica el proceso completo desde cero, antes de empezar a vender.\n\nEn el video se ve:\n· cómo crear un producto y armar su matriz de tallas y colores\n· cómo asignar precio y costo por modelo\n· cómo dar de alta varias prendas sin repetir la captura talla por talla\n· cómo importar tu catálogo si ya lo tienes en excel\n· cómo revisar que las existencias iniciales queden correctas antes de abrir la tienda\n\nEste es el paso que más dudas genera cuando alguien empieza: si la ropa no queda bien dada de alta por talla y color desde el inicio, después cuesta más corregir el inventario. Aquí ves el orden correcto para hacerlo bien la primera vez.\n\nGuía completa: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#tallasycolores #inventarioderopa #puntodeventa #boutique",
     "etiquetas": [
-      "productos",
-      "inventario",
-      "tutorial",
-      "sacscloud"
+      "alta de productos",
+      "tallas y colores",
+      "matriz de tallas",
+      "inventario de ropa",
+      "primera vez"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "curva-de-tallas",
+    "revisar": false,
     "grupo": "C",
     "antes": "¡Bienvenido a Sacscloud! Comienza a dar de alta tus productos",
     "vistas": 114
@@ -948,15 +935,16 @@
   {
     "id": "uXAxdRk3uhA",
     "titulo": "¿Puedo administrar mi tienda de ropa desde el celular?",
-    "descripcion": "Sí, puedes revisar y controlar varias tareas de tu tienda de ropa desde el celular, sin necesidad de estar todo el día frente a la computadora.\n\n· Qué puedes revisar desde el celular\n· Para qué te sirve tener esta información a la mano\n· Cómo te ayuda a tomar decisiones más rápido, estés donde estés\n\n#tiendaderopa #celular #emprendedores #moda",
+    "descripcion": "Sí, puedes revisar ventas, existencias y el corte de caja de tu tienda de ropa desde el celular, sin necesidad de estar frente a la computadora todo el día. Aquí se muestra qué puedes checar desde tu teléfono con Sacs.\n\n· Cómo consultar tus ventas del día desde el celular\n· Cómo revisar existencias por talla y color desde tu teléfono\n· Cómo ver el corte de caja de una o varias sucursales\n· Qué información puedes consultar sin estar en la tienda\n\nEsto sirve mucho si tienes más de una sucursal y no puedes estar físicamente en todas, o si simplemente quieres darte una vuelta rápida por tus números mientras estás fuera. No reemplaza la computadora para tareas más pesadas como dar de alta catálogo o hacer traspasos grandes, pero sí te deja al tanto de lo esencial: qué se vendió, qué queda y cómo va la caja.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#tiendaderopa #puntodeventa #inventario #sacscloud",
     "etiquetas": [
-      "tiendaderopa",
+      "sacs",
       "celular",
-      "emprendedores",
-      "moda"
+      "tienda de ropa",
+      "ventas",
+      "inventario"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "A",
     "antes": "Administra tu tienda de moda desde tu celular! #emprededores #moda #mexico #sacscloud #fashionretail",
     "vistas": 210
@@ -1171,8 +1159,8 @@
   },
   {
     "id": "00_-yciu1Kg",
-    "titulo": "¿Cómo dar de alta productos correctamente en mi sistema de punto de venta?",
-    "descripcion": "Dar de alta bien tus productos evita errores en tus ventas, tanto en tienda física como en línea. Este video es una capacitación para que tu personal sepa qué información no debe faltar al crear cada producto y cómo hacerlo de forma correcta desde el inicio.\n· Qué datos necesita cada producto al darlo de alta\n· Por qué un mal registro afecta tus ventas en línea\n· Cómo capacitar a tu equipo para que lo haga bien siempre\n#puntodeventa #productos #capacitacion #tienda",
+    "titulo": "¿Cómo doy de alta ropa con sus tallas y colores sin capturar una por una?",
+    "descripcion": "Una playera en cinco tallas y cuatro colores son veinte combinaciones. Darlas de alta como veinte productos distintos funciona el primer mes y después hace imposible lo demás: no puedes saber qué vendió el estilo, ni ver la corrida completa, ni pedirle al proveedor por talla.\n\nLo correcto es dar de alta UNA prenda con su matriz. Cada combinación de talla y color lleva su propia existencia y su propio código, pero todas viven bajo el mismo estilo — así el reporte te dice que la M en negro se acabó mientras la XL en blanco lleva tres meses parada.\n\nEste video es la introducción a la capacitación de alta de productos:\n· Qué datos no pueden faltar al crear cada prenda\n· Por qué un mal registro se paga después en la tienda en línea\n· Cómo dejar el criterio claro para que todo el equipo lo capture igual\n\nGuía completa sobre la curva de tallas: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#tallasycolores #tiendaderopa #inventario #puntodeventa",
     "etiquetas": [
       "alta de productos",
       "capacitación",
@@ -1180,7 +1168,7 @@
       "inventario"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Introducción: Capacitación alta de productos",
     "vistas": 270
@@ -1203,16 +1191,16 @@
   },
   {
     "id": "3g_WpcAPRes",
-    "titulo": "¿Cómo programar promociones y descuentos con anticipación en mi tienda?",
-    "descripcion": "Puedes programar tus promociones desde meses antes para que se activen y desactiven solas en la fecha que tú definas, sin tener que estar pendiente ese día. Esto incluye descuentos por tiempo limitado, el clásico 2x1 y ofertas distintas según el tipo de cliente.\n· Cómo programar una promoción con fecha de inicio y de fin\n· Cómo configurar una oferta tipo 2x1\n· Cómo dar descuentos diferentes según el tipo de cliente\n#promociones #descuentos #tienda #ventas",
+    "titulo": "¿Cómo programo promociones y descuentos con anticipación en mi tienda de ropa?",
+    "descripcion": "Puedes armar una promoción o descuento con fecha de inicio y fin definidas desde antes, para que se active solo el día que tú elegiste sin que tengas que estar pendiente de aplicarlo a mano ese día.\n\nEn el video se muestra:\n· Cómo crear una promoción nueva\n· Cómo definir la fecha y hora en que empieza y en que termina\n· Cómo elegir qué productos o categorías entran en el descuento\n· Cómo se aplica automáticamente el precio con descuento en el punto de venta\n\nEsto es útil para quienes preparan con tiempo un buen fin, una liquidación de temporada o un descuento de aniversario, y no quieren depender de que alguien en la tienda se acuerde de activarlo el día exacto. Programas la promoción una vez y el sistema se encarga de aplicarla y de quitarla cuando corresponde.\n\nSi manejas varias sucursales, esto ayuda a que todas las tiendas apliquen el mismo descuento el mismo día, sin que dependa de que cada encargado lo configure por su cuenta.\n\n#promociones #descuentos #tiendaderopa #puntodeventa",
     "etiquetas": [
       "promociones",
-      "descuentos",
-      "2x1",
-      "tienda"
+      "descuentos programados",
+      "punto de venta",
+      "tienda de ropa"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "Introducción a Capacitación de Promociones",
     "vistas": 86
@@ -1468,7 +1456,7 @@
       "sacscloud"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Introducción punto de venta",
     "vistas": 278
@@ -2012,17 +2000,17 @@
   },
   {
     "id": "7tu2fw_zpzU",
-    "titulo": "¿Cómo accedo al panel de administración de mi tienda en línea?",
-    "descripcion": "El panel de administración es donde controlas todo lo que se ve en tu tienda en línea: productos, banners, logotipo y precios. Se accede con tu usuario y contraseña desde cualquier navegador, sin instalar nada.\n\nEn el video se ve:\n· Cómo entrar al panel de administración por primera vez\n· Qué secciones tiene el panel y para qué sirve cada una\n· Los primeros pasos recomendados antes de empezar a editar tu tienda\n· Dónde encontrar las opciones de banners, logotipo y catálogo que se explican en los siguientes videos de la serie\n\nEste video es la cuarta parte de una serie pensada para dueños de tienda que están armando su tienda en línea por primera vez y quieren entender, sin tecnicismos, dónde está cada cosa antes de empezar a personalizarla. Una vez que ya sabes moverte en el panel, editar banners, cambiar el logo o subir productos se vuelve mucho más sencillo.\n\n#tiendaenlinea #paneladministracion #ecommerce #sacscloud",
+    "titulo": "¿Cómo accedo al panel de administración de mi tienda en línea de ropa o calzado?",
+    "descripcion": "Para administrar tu tienda en línea -agregar productos, revisar pedidos o cambiar precios- necesitas entrar al panel de administración con tu usuario y contraseña de Sacscloud. En el video se muestra dónde encontrar el enlace de acceso y qué puedes hacer una vez dentro del panel.\n\n· Dónde encontrar la liga de acceso al panel de tu tienda en línea.\n· Cómo iniciar sesión con tu cuenta de Sacscloud.\n· Qué secciones vas a ver: productos, pedidos y configuración.\n· Cómo confirmar que el inventario de tu tienda física y en línea está sincronizado.\n\nGuía completa: https://www.sacscloud.com/recursos/tienda-fisica-y-en-linea/\n#tiendaenlinea #ecommerce #panelweb #boutique",
     "etiquetas": [
       "panel de administracion",
       "tienda en linea",
-      "acceso tienda online",
-      "primeros pasos tienda en linea",
-      "sacscloud"
+      "ecommerce moda",
+      "sacscloud",
+      "omnicanal"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "tienda-fisica-y-en-linea",
+    "revisar": false,
     "grupo": "A",
     "antes": "4.- Tu panel de administración de tu tienda en linea y como acceder.",
     "vistas": 126
@@ -2064,16 +2052,16 @@
   {
     "id": "A4Fq3b2y1rM",
     "titulo": "¿Cómo empiezo a vender en línea usando el inventario de mi tienda física?",
-    "descripcion": "Este video es la introducción a un curso para conectar tu tienda física con tu venta en línea usando el mismo inventario, sin llevar dos controles por separado.\n\n· Qué necesitas tener listo antes de empezar (catálogo, existencias, precios).\n· Qué vas a lograr al terminar el curso.\n· Cómo se conecta lo que vendes en línea con lo que tienes en tus sucursales.\n· Qué verás en los siguientes videos de la serie.\n\nGuía completa: https://www.sacscloud.com/recursos/tienda-fisica-y-en-linea/\n#tiendaenlinea #inventario #ecommerce #tiendasderopa",
+    "descripcion": "Si ya tienes tu tienda física dada de alta en Sacs, puedes usar ese mismo inventario para vender en línea sin duplicar tu catálogo ni capturar tus existencias dos veces. Aquí se muestra cómo arrancar tu venta en línea con lo que ya tienes cargado en el sistema.\n\n· Cómo conectar tu catálogo físico a tu canal en línea\n· Cómo mantener las mismas existencias por talla y color en ambos canales\n· Cómo evitar vender de más cuando compartes inventario entre tienda física y en línea\n· Qué necesitas revisar antes de activar tu venta en línea\n\nEsto te ahorra el trabajo de manejar dos catálogos por separado y el riesgo de que se te venda en línea algo que ya no tienes en la tienda, o al revés. Si estás pensando en abrir un canal en línea pero te preocupa perder el control de tus tallas y colores, este video te da una idea clara de por dónde empezar sin duplicar trabajo.\n\nGuía completa: https://www.sacscloud.com/recursos/tienda-fisica-y-en-linea/\n\n#tiendaenlinea #ecommerce #tiendaderopa #inventario",
     "etiquetas": [
-      "tienda en línea",
-      "inventario",
+      "sacs",
+      "venta en linea",
       "ecommerce",
-      "omnicanal",
-      "curso"
+      "tienda de ropa",
+      "inventario"
     ],
     "pagina": "tienda-fisica-y-en-linea",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "1.- Introducción a tu tienda en linea",
     "vistas": 195
@@ -2629,16 +2617,17 @@
   },
   {
     "id": "9YvLLZsoZ_w",
-    "titulo": "¿Cómo filtrar y gestionar variantes de productos por color y categoría?",
-    "descripcion": "En el módulo de productos puedes ver de un vistazo la información de cada variante, es decir, cada combinación de talla, color o modelo de un mismo producto, y aplicar filtros para encontrar rápido lo que buscas dentro de un catálogo grande.\n\nEn el video se muestra:\n· Cómo ver la información de cada variante de un producto\n· Cómo aplicar filtros por color\n· Cómo aplicar filtros por categoría\n· Cómo combinar varios filtros al mismo tiempo para acotar la búsqueda\n· Cómo esto ayuda a revisar el catálogo más rápido cuando tienes muchos productos\n\nSi tu catálogo tiene cientos de variantes entre tallas, colores y modelos, buscar un producto específico a mano se vuelve lento. Estos filtros te permiten llegar directo a lo que necesitas revisar, ya sea para checar precios, existencias o simplemente para depurar tu catálogo. Aplica tanto para tiendas de ropa como de calzado que manejan muchas combinaciones de talla y color por producto.",
+    "titulo": "¿Cómo filtro mi inventario de ropa por color y categoría para encontrarla rápido?",
+    "descripcion": "Cuando tu catálogo tiene muchas variantes de un mismo modelo, buscar una prenda específica a mano toma tiempo. Con los filtros puedes acotar tu inventario por color, por categoría, o por ambos al mismo tiempo, y ver solo lo que necesitas sin recorrer toda la lista de productos.\n\nEn el video se muestra:\n· Cómo abrir el panel de filtros del catálogo\n· Cómo filtrar productos por color específico\n· Cómo filtrar por categoría (por ejemplo, pantalones o blusas)\n· Cómo combinar ambos filtros para una búsqueda más precisa\n· Cómo se ve el resultado en pantalla y cómo limpiar el filtro\n\nEsto sirve sobre todo cuando manejas varias tallas y colores del mismo modelo y necesitas ubicar rápido una variante puntual, ya sea para revisar existencias, hacer un ajuste de precio o preparar un pedido. En vez de scrollear producto por producto, filtras y listo.\n\nSi tu tienda maneja tallas y colores en varias sucursales, esto se conecta directo con llevar un control ordenado de existencias por variante en cada punto de venta.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#filtrodeinventario #tiendaderopa #tallasycolores #puntodeventa",
     "etiquetas": [
-      "variantes de productos",
-      "filtros",
-      "catalogo",
-      "gestion de inventario"
+      "filtro de productos",
+      "inventario por color",
+      "categorías de ropa",
+      "variantes de producto",
+      "punto de venta"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "A",
     "antes": "¿Cómo gestionar variantes de manera eficiente en el modulo de productos?",
     "vistas": 99
@@ -2661,15 +2650,16 @@
   },
   {
     "id": "CmccvMChfXA",
-    "titulo": "¿Cómo le envío un pedido a mi cliente por WhatsApp?",
-    "descripcion": "Puedes mandar el detalle de un pedido, con productos, cantidades y precio, directo al WhatsApp de tu cliente desde el sistema, sin tener que escribirlo a mano en el chat. Esto sirve para cotizar, confirmar un pedido antes de cobrarlo o mandarle el resumen a alguien que compró a distancia. · Cómo generar el pedido dentro del sistema · Cómo mandarlo por WhatsApp desde la misma pantalla · Qué información incluye el pedido que se envía · Para qué lo puedes usar: cotizar, confirmar o dar seguimiento Guía completa: https://www.sacscloud.com/recursos/whatsapp-para-tiendas-de-ropa/ #whatsapp #pedidos #tiendaderopa #ventasporwhatsapp",
+    "titulo": "¿Cómo le envío un pedido o cotización a mi cliente por WhatsApp desde mi tienda de ropa?",
+    "descripcion": "Cuando un cliente pregunta por WhatsApp si tienes cierta talla o color, no tienes que salir de la conversación para armarle el pedido: puedes generarlo desde el sistema y mandárselo directo por chat con el detalle de piezas y precio.\n\n· Cómo armar el pedido con las prendas, tallas y colores que pide el cliente\n· Cómo se ve el pedido cuando le llega por WhatsApp\n· Qué información incluye para que el cliente confirme sin dudas\n· Qué hacer después de que el cliente confirma o pide un cambio\n\nEsto sirve tanto si vendes desde tu boutique física como si atiendes pedidos que llegan solo por chat.\n\nGuía completa: https://www.sacscloud.com/recursos/whatsapp-para-tiendas-de-ropa/\n#whatsapp #ventaporchat #tiendaderopa #pedidos",
     "etiquetas": [
-      "whatsapp",
-      "pedidos",
-      "ventas por whatsapp"
+      "pedido por whatsapp",
+      "cotizar por whatsapp",
+      "vender ropa por whatsapp",
+      "tienda de ropa"
     ],
     "pagina": "whatsapp-para-tiendas-de-ropa",
-    "revisar": true,
+    "revisar": false,
     "grupo": "A",
     "antes": "¿Cómo enviar un pedido por WhatsApp?",
     "vistas": 142
@@ -2692,29 +2682,33 @@
   {
     "id": "LDtRQyYb_fw",
     "titulo": "¿Cómo cierro un pedido para que aparezca en mi reporte de ventas?",
-    "descripcion": "Mientras un pedido sigue abierto no cuenta como venta terminada. Para que aparezca en tu reporte de ventas necesitas cerrarlo, y ahí el sistema lo convierte en una venta completa. · Diferencia entre un pedido abierto y un pedido cerrado · Cómo cerrar el pedido desde el sistema · Cómo verificar que ya aparece en tu reporte de ventas · Qué pasa si dejas el pedido abierto por error Esto es importante porque si nunca cierras el pedido, esa venta no se refleja en tus reportes ni en tus cortes de caja, aunque el cliente ya se haya llevado la mercancía. #reportedeventas #pedidos #tiendaderopa #puntodeventa",
+    "descripcion": "Si dejas un pedido abierto o pendiente, no se refleja en tu reporte de ventas; hay que cerrarlo para que cuente como venta terminada. En este video se explica cómo cerrar un pedido en Sacscloud paso a paso para que tus reportes de venta diaria o por sucursal salgan correctos.\n\n· Cómo identificar un pedido que quedó pendiente de cierre.\n· Los pasos para cerrar el pedido y marcarlo como vendido.\n· Cómo verificar que la venta ya aparece en el reporte de ventas.\n· Qué pasa si cierras un pedido que tenía un abono parcial (apartado).\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#reportedeventas #pedidos #apartados #tiendaderopa",
     "etiquetas": [
-      "pedidos",
+      "cerrar pedido",
       "reporte de ventas",
-      "cerrar venta"
+      "apartados",
+      "sacscloud",
+      "tienda de ropa"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "apartados-tienda-de-ropa",
+    "revisar": false,
     "grupo": "C",
     "antes": "Cierra tu pedido y completa la venta.",
     "vistas": 133
   },
   {
     "id": "o5BGNEnTIKc",
-    "titulo": "¿Cómo se descuenta mi inventario al preparar un pedido?",
-    "descripcion": "Al preparar un pedido, el sistema descuenta esos productos de tu inventario disponible aunque la venta todavía no se cierre por completo, para que no vuelvas a ofrecer o vender esa misma mercancía a otro cliente. · Cómo preparar un pedido paso a paso · Cómo se refleja el descuento en tu inventario disponible · Diferencia entre inventario disponible e inventario apartado · Cómo revisar tu inventario después de preparar el pedido Esto te sirve sobre todo cuando manejas pedidos por anticipado o ventas que tardan en cerrarse, para no vender dos veces lo mismo. Guía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/ #inventario #pedidos #tiendaderopa #controldestock",
+    "titulo": "¿Cómo se descuenta mi inventario al preparar un pedido de ropa?",
+    "descripcion": "El inventario se descuenta en cuanto generas el pedido, tomando en cuenta la talla y el color exactos que se vendieron, no hasta que factures. Así evitas que dos vendedoras vendan la misma pieza sin darse cuenta.\n\n· Qué pasa en el inventario al capturar un pedido antes de cobrarlo\n· Cómo se refleja el descuento por talla y color, no solo por modelo\n· Diferencia entre apartar una pieza y descontarla del stock disponible\n· Qué ves en pantalla cuando una talla ya no tiene existencia\n\nGuía completa: https://www.sacscloud.com/recursos/apartados-tienda-de-ropa/\n#inventario #tallas #apartados #tiendaderopa",
     "etiquetas": [
-      "inventario",
-      "pedidos",
-      "control de stock"
+      "inventario por talla",
+      "descuento de inventario",
+      "pedidos ropa",
+      "apartados",
+      "tienda de ropa"
     ],
     "pagina": "apartados-tienda-de-ropa",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Prepara un pedido y ve como se descuenta de tu inventario",
     "vistas": 123
@@ -2975,82 +2969,51 @@
     "vistas": 670
   },
   {
-    "id": "fWtbmWnSpTA",
-    "titulo": "What is Sacscloud? Company overview video (English)",
-    "descripcion": "Este es el video corporativo de Sacscloud en inglés, pensado para presentar el sistema a clientes, socios o inversionistas que no hablan español.\n\nComo no hay más contexto disponible sobre este video en específico, aquí se describe de forma general lo que suele mostrarse en este tipo de material: quién es Sacscloud, a qué tipo de negocios atiende y por qué una tienda decidiría usar un sistema de punto de venta e inventario como este.\n\nQué se ve en el video:\n· Qué es Sacscloud, explicado para una audiencia internacional\n· A qué tipo de negocios está dirigido el sistema\n· Por qué negocios en México y otros países lo usan\n· Una idea general de cómo se ve trabajar con el sistema\n\nSi buscas información más detallada de una función en particular, es mejor revisar los videos específicos del canal en español, donde se explica paso a paso cómo se usa cada parte del sistema.\n\n#sacscloud #software #puntodeventa #corporativo",
-    "etiquetas": [
-      "sacscloud",
-      "video corporativo",
-      "company overview",
-      "english"
-    ],
-    "pagina": "",
-    "revisar": true,
-    "grupo": "C",
-    "antes": "Sacscloud video corporativo - version en ingles.",
-    "vistas": 100
-  },
-  {
-    "id": "gTuaaJSJoJc",
-    "titulo": "¿Qué es Sacscloud y para qué tipo de negocio sirve?",
-    "descripcion": "Sacscloud es un sistema de punto de venta e inventario pensado para tiendas de ropa, calzado y joyería en México, que ayuda a controlar ventas, existencias y sucursales desde un solo lugar en vez de llevar todo por separado o en hojas de cálculo.\n\nEste video corporativo da una idea general de quién es Sacscloud y qué tipo de negocio lo usa, sin entrar al detalle de cada función (eso se explica en otros videos del canal).\n\nQué se ve en el video:\n· Qué es Sacscloud y a qué tipo de negocios está dirigido\n· Qué problemas del día a día de una tienda busca resolver\n· Cómo se ve, en general, trabajar con el sistema\n· Por qué negocios de ropa, calzado y joyería lo eligen\n\nSi quieres ver cómo funciona una parte específica del sistema, como el control de tallas, los traspasos entre sucursales o las ventas por WhatsApp, en el canal hay videos dedicados a cada tema.\n\n#sacscloud #puntodeventa #inventario #tiendasderopa",
-    "etiquetas": [
-      "sacscloud",
-      "video corporativo",
-      "punto de venta",
-      "inventario"
-    ],
-    "pagina": "",
-    "revisar": true,
-    "grupo": "C",
-    "antes": "Video corporativo Sacscloud - Español",
-    "vistas": 557
-  },
-  {
     "id": "2ejALFGpi3s",
-    "titulo": "¿Cómo administro mis almacenes o sucursales en Sacs?",
-    "descripcion": "Puedes crear y administrar varios almacenes o sucursales en Sacs para llevar el control de existencias de cada uno por separado, sin mezclar el inventario de una tienda con el de otra ni con el de tu bodega central.\n\nEsto es útil si tienes más de un punto de venta, una bodega aparte de la tienda, o si necesitas saber con exactitud cuánto producto hay en cada lugar antes de mover mercancía de uno a otro.\n\nQué se ve en el video:\n· Cómo dar de alta un almacén o sucursal nueva\n· Cómo consultar las existencias de cada almacén por separado\n· Cómo mover producto de un almacén a otro\n· Qué permisos conviene configurar para cada sucursal\n· Recomendaciones para no perder el control cuando ya tienes varios almacenes activos\n\nGuía completa: https://www.sacscloud.com/recursos/nivelacion-inventario-entre-tiendas/\n\n#almacenes #sucursales #inventario #traspasos",
+    "titulo": "¿Cómo administro el inventario de mis sucursales o almacenes de ropa?",
+    "descripcion": "Si tienes más de una sucursal o un almacén central, puedes ver y mover las existencias entre ellos sin perder el control de qué hay en cada lugar. Aquí se muestra cómo administrar tus almacenes y sucursales dentro de Sacs.\n\n· Cómo dar de alta tus sucursales y almacenes\n· Cómo ver el inventario de cada sucursal por separado o en conjunto\n· Cómo mover mercancía entre sucursales cuando falta una talla o color\n· Cómo asignar usuarios y permisos por sucursal\n\nEsto sirve cuando tienes una sucursal con exceso de una talla y otra que ya se quedó sin existencias del mismo producto, o cuando necesitas surtir una tienda nueva desde tu almacén central. Tener claro cuánto hay en cada sucursal, y poder moverlo cuando hace falta, evita que pierdas ventas por no saber dónde está la mercancía o que te quedes con producto parado en un solo lugar mientras en otro se pide.\n\nGuía completa: https://www.sacscloud.com/recursos/nivelacion-inventario-entre-tiendas/\n\n#sucursales #inventario #tiendaderopa #puntodeventa",
     "etiquetas": [
-      "almacenes",
+      "sacs",
       "sucursales",
+      "almacenes",
       "inventario",
-      "traspasos",
-      "sacscloud"
+      "traspasos"
     ],
     "pagina": "nivelacion-inventario-entre-tiendas",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Capacitacion: Almacenes",
     "vistas": 162
   },
   {
     "id": "c5FQnbfovUQ",
-    "titulo": "¿Cómo configuro Sacs por primera vez en mi tienda?",
-    "descripcion": "Antes de empezar a vender necesitas dejar bien armada la base de tu sistema: los datos de tu negocio, tus sucursales, tu catálogo y quién puede entrar a qué. Este video te lleva paso a paso por esa configuración inicial de Sacs para que no se te pase nada importante.\n\nQué se ve en el video:\n· Cómo dar de alta los datos generales de tu negocio\n· Cómo registrar una o varias sucursales\n· Cómo empezar a cargar tu catálogo de productos\n· Cómo crear usuarios y definir qué puede ver o hacer cada uno\n· Recomendaciones antes de empezar a vender con el sistema\n\nSi apenas estás arrancando con Sacs, este video te ahorra el ir y venir de preguntar qué configurar primero. Está pensado para dueños de tienda que van a usar el sistema por primera vez, no para técnicos.\n\n#sacscloud #configuracioninicial #puntodeventa #tiendaderopa",
+    "titulo": "¿Cómo configuro Sacs por primera vez en mi tienda de ropa o calzado?",
+    "descripcion": "Antes de empezar a vender necesitas dejar armada la configuración inicial: tus datos fiscales, tus sucursales, tus usuarios y las tallas y colores que manejas en tu catálogo. Aquí se muestra paso a paso cómo dejar todo listo la primera vez que entras a Sacs.\n\n· Cómo registrar los datos de tu negocio y tus sucursales\n· Cómo configurar las tallas y colores de tu catálogo\n· Cómo dar de alta usuarios y asignar permisos\n· Cómo configurar impuestos y métodos de pago antes de vender\n\nEsta configuración inicial es la base de todo lo demás: si tus tallas, colores y sucursales quedan bien capturados desde el principio, después es mucho más fácil controlar existencias, hacer traspasos y sacar reportes por tienda. Si tienes dudas sobre cómo acomodar tu catálogo de ropa o calzado antes de dar de alta productos, este video te ayuda a arrancar con el pie derecho.\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#puntodeventa #tiendaderopa #configuracion #sacscloud",
     "etiquetas": [
-      "configuracion inicial sacs",
-      "primeros pasos punto de venta",
-      "como configurar sacs",
-      "capacitacion sacs"
+      "sacs",
+      "configuracion inicial",
+      "punto de venta",
+      "tienda de ropa",
+      "sucursales"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "C",
     "antes": "Capacitacion: Configuracion Inicial",
     "vistas": 222
   },
   {
     "id": "lJKtE_6unr4",
-    "titulo": "¿Cómo llevo el control de mi inventario en Sacs?",
-    "descripcion": "Si no sabes cuánto tienes de cada producto, terminas comprando de más o vendiendo lo que ya no existe. Este video explica cómo se maneja el inventario dentro de Sacs para que tu stock refleje lo que de verdad hay en la tienda.\n\nQué se ve en el video:\n· Cómo dar de alta productos en tu inventario\n· Cómo registrar entradas de mercancía nueva\n· Cómo hacer ajustes cuando algo no cuadra\n· Cómo consultar existencias por producto\n· Buenas prácticas para mantener el inventario actualizado\n\nEste video es una capacitación pensada para quien empieza a usar el módulo de inventarios de Sacs, ya sea el dueño de la tienda o quien lleva el control de mercancía. No necesitas experiencia previa con sistemas de punto de venta para seguirlo.\n\n#sacscloud #inventarios #puntodeventa #tiendaderopa",
+    "titulo": "¿Cómo controlo el inventario de mi tienda de ropa por talla y color?",
+    "descripcion": "Llevar el control significa saber, talla por talla y color por color, cuánto te queda de cada modelo en cada sucursal, sin tener que ir a contar percha por percha. Ese es el problema que resuelve el control de inventario en una tienda de ropa.\n\n· Cómo se organiza el inventario por talla, color y sucursal\n· Dónde consultar existencias reales antes de prometerle una talla al cliente\n· Cómo detectar diferencias entre lo que dice el sistema y lo que hay en la tienda\n· Qué reportes te ayudan a revisar el inventario sin hacerlo a mano\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n#inventario #tallas #colores #tiendaderopa",
     "etiquetas": [
       "control de inventario",
-      "capacitacion inventarios sacs",
-      "como manejar mi inventario",
-      "sistema de inventarios tienda"
+      "talla y color",
+      "sucursales",
+      "tienda de ropa"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "C",
     "antes": "Capacitacion: Inventarios",
     "vistas": 121
@@ -3125,17 +3088,18 @@
   },
   {
     "id": "oNasGHkOUaA",
-    "titulo": "¿Cómo registro una venta de impulso en mi tienda?",
-    "descripcion": "Una venta de impulso es cuando le agregas al cliente un producto extra justo antes de cobrar, como un accesorio, unos calcetines o un artículo en oferta que tienes cerca de la caja. Este video muestra cómo agregar ese producto al ticket sin interrumpir el cobro que ya venías haciendo.\n\nEs una forma sencilla de aumentar el ticket promedio sin cambiar todo el proceso de venta, aprovechando el momento en que el cliente ya está decidido a comprar.\n\nEn el video se ve:\n· Cómo agregar un producto extra a una venta que ya está en proceso de cobro\n· Dónde queda reflejada esa venta adicional dentro del ticket\n· Cómo aparece este tipo de venta en el corte de caja del día\n· Un ejemplo práctico de cómo ofrecerlo en el mostrador\n\nSi tu tienda vende ropa, calzado o accesorios y quieres sacarle más provecho a cada cliente que ya está frente a la caja, este video te da una idea rápida de cómo hacerlo dentro del sistema.\n\n#ventasdeimpulso #puntodeventa #caja #tiendaderopa",
+    "titulo": "¿Cómo registro una venta de impulso en mi tienda de ropa?",
+    "descripcion": "Una venta de impulso es esa pieza que el cliente agrega justo antes de pagar —un cinturón, unos aretes, una bolsa de regalo— y no quieres perder tiempo abriendo otro ticket. Se agrega directo dentro de la venta que ya tienes en curso, buscando el producto por nombre o código de barras y ajustando la cantidad antes de cobrar todo junto.\n\nEn el video se ve:\n· cómo buscar el producto sin cerrar el ticket que ya llevas abierto\n· cómo agregarlo con su talla o color si aplica\n· cómo ajustar la cantidad antes de cobrar\n· cómo se refleja esa pieza extra en el total de la venta\n\nSi en tu mostrador manejas piezas sueltas o de exhibición (joyería, accesorios) que se agregan al último minuto, este video te muestra el flujo exacto para no perder la venta ni descontrolar el inventario.\n\n#puntodeventa #boutique #accesorios #ventaderopa",
     "etiquetas": [
-      "ventas de impulso",
+      "venta de impulso",
       "punto de venta",
-      "ticket promedio",
-      "caja",
-      "sacscloud"
+      "boutique",
+      "accesorios",
+      "joyeria",
+      "caja"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Ventas de impulso: Tutorial paso a paso",
     "vistas": 117
@@ -3261,8 +3225,8 @@
   },
   {
     "id": "XXbornGcM6U",
-    "titulo": "¿Cómo hago que mi tienda física venda más frente a la competencia?",
-    "descripcion": "Vender más en un negocio físico no depende solo de bajar precios: hay cinco formas distintas de comercializar tu producto, sin importar si eres creador o distribuidor, y combinarlas es lo que te ayuda a fidelizar clientes y crecer aunque tu producto sea genérico. En este video se explica el problema de competir solo por precio cuando vendes lo mismo que todos, y qué puedes hacer para que el cliente te elija a ti y regrese. · Los 5 modelos de comercialización que puede usar un comercio físico local · Por qué vender producto genérico te desgasta si compites solo por precio · Ideas prácticas para generar lealtad en clientes que ya te compraron · Pasos para armar una estrategia que te ayude a vender más este año Es un video pensado para dueños de tiendas físicas que quieren dejar de depender de las ofertas para atraer clientes y buscan una forma más sólida de diferenciarse. Si tienes una boutique, zapatería o tienda de accesorios, aquí encuentras ideas aplicables sin necesidad de grandes inversiones. #tiendaderopa #ventas #retail #comerciolocal",
+    "titulo": "¿Cómo compite una tienda de ropa física contra el comercio en línea?",
+    "descripcion": "Una tienda física no compite contra internet bajando precios: compite con lo que internet no puede dar —probarse la prenda, el consejo de quien atiende, llevársela hoy—. Este video repasa los tipos de comercio que existen hoy y qué puede hacer una tienda local para vender más.\n\nY hay una parte que sí es de sistema: la tienda física gana cuando quien atiende sabe, con el cliente enfrente, si la talla que pide está en la otra sucursal. Eso convierte un «no tengo» en una venta.\n\nLo que se ve:\n· Los tipos de comercio y dónde queda una tienda local\n· Qué ventajas reales tiene el piso frente a lo digital\n· Qué hace falta para aprovecharlas\n\nGuía sobre inventario en varias tiendas: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n\n#tiendaderopa #comerciolocal #retail #ventas",
     "etiquetas": [
       "comercio físico",
       "estrategia de ventas",
@@ -3270,23 +3234,23 @@
       "fidelización de clientes"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "C",
     "antes": "Como vender más si eres un comercio físico local y los 5 tipos de comercios que ganarán en el 2022",
     "vistas": 172
   },
   {
     "id": "mn9kcyPvsXc",
-    "titulo": "¿Cómo actualizo la existencia de mis productos en Sacs?",
-    "descripcion": "Actualizar la existencia de tus productos en Sacs sirve para que tu inventario refleje lo que realmente tienes en tienda, ya sea porque llegó mercancía nueva, hiciste un ajuste o detectaste una diferencia entre lo que dice el sistema y lo que hay en el anaquel. Mantener esto al día evita que vendas algo que ya no tienes o que dejes de ofrecer algo que sí está disponible. · Cómo entrar a la pantalla donde se consulta la existencia por producto · Cómo hacer un ajuste manual cuando la cantidad no coincide · Qué pasa con el historial del producto cuando cambias su existencia · Recomendaciones para revisar tu inventario con regularidad Este video es útil si llevas el control de inventario de tu tienda y quieres asegurarte de que los números en el sistema coincidan con lo que tienes físicamente, algo especialmente importante cuando manejas varias tallas, colores o modelos al mismo tiempo. Guía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/ #inventario #puntodeventa #tiendasderopa #stock",
+    "titulo": "¿Cómo corrijo las existencias por talla y color de mi tienda?",
+    "descripcion": "Cuando el conteo físico no coincide con el sistema, tienes que ajustar la existencia de cada prenda por talla y color, no solo el total del producto. Así evitas vender algo que ya no tienes o dejar oculta una pieza que sí está en el anaquel.\n\n· Cómo entrar a la ficha del producto y ver su matriz de tallas y colores\n· Cómo capturar el ajuste de entrada o salida sin alterar el historial de ventas\n· Cómo revisar que la existencia por sucursal quede correcta después del ajuste\n· Qué pasa con el inventario si tienes el mismo producto en varias tiendas\n\nGuía completa: https://www.sacscloud.com/recursos/inventario-talla-color-sucursales/\n#inventario #tallas #tiendaderopa #puntodeventa",
     "etiquetas": [
+      "existencias por talla y color",
       "actualizar inventario",
-      "existencias",
-      "control de stock",
-      "sacs"
+      "ajuste de inventario ropa",
+      "tienda de ropa"
     ],
-    "pagina": "",
-    "revisar": true,
+    "pagina": "inventario-talla-color-sucursales",
+    "revisar": false,
     "grupo": "C",
     "antes": "Actualización de existencia de productos",
     "vistas": 147
@@ -3302,7 +3266,7 @@
       "inventario"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "B",
     "antes": "Sacscloud - Punto de venta de nueva generación todo integrado.",
     "vistas": 2281
@@ -3368,7 +3332,7 @@
       "inventario"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "?",
     "antes": "Sacscloud el sistema para Fashion Retail 👠✨ #fashionretail #boutique #puntodeventa",
     "vistas": 993
@@ -3484,7 +3448,7 @@
       "omnicanal"
     ],
     "pagina": "tienda-fisica-y-en-linea",
-    "revisar": true,
+    "revisar": false,
     "grupo": "?",
     "antes": "Mejora la gestión de tu negocio de moda con Sacscloud #fashionretail #puntodeventa #omnicanal",
     "vistas": 980
@@ -3556,7 +3520,7 @@
   {
     "id": "tezon8DOQ1w",
     "titulo": "¿Cómo preparo las promociones de mi tienda de ropa para la temporada alta?",
-    "descripcion": "Preparar tus promociones antes de que llegue la temporada alta te ayuda a vender más rápido y a no quedarte con exceso de inventario cuando baje la demanda. Aquí se revisa qué tomar en cuenta antes de lanzar tus ofertas.\n\n· Qué inventario conviene mover primero\n· Cómo definir el porcentaje de descuento sin perder margen\n· En qué momento activar las promociones antes de fechas clave\n\n#modaretail #promociones #tiendaderopa #temporadaalta",
+    "descripcion": "Preparar las promociones antes de que llegue la temporada alta es lo que evita terminarla rematando. En este clip se ve la pantalla de promociones del sistema y cómo se arma una.\n\nEn una tienda de ropa la promoción no es solo un porcentaje: es decidir qué estilos y qué tallas entran. Descontar la corrida completa cuando lo que no se mueve son dos números es regalar margen en lo que sí se estaba vendiendo.\n\nGuía completa sobre qué mercancía conviene mover: https://www.sacscloud.com/recursos/ropa-que-no-se-vende/\n\n#promociones #tiendaderopa #temporadaalta #puntodeventa",
     "etiquetas": [
       "promociones",
       "temporada alta",
@@ -3564,7 +3528,7 @@
       "fashion retail"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "?",
     "antes": "¿Listas tus promos para la temporada alta? #fashionretail  #hotsales #omnicanal #retailtech",
     "vistas": 277
@@ -3587,8 +3551,8 @@
   },
   {
     "id": "bnhO7XnbhRs",
-    "titulo": "¿Qué hago después de pagar mi suscripción de Sacscloud?",
-    "descripcion": "Cuando tu pago se procesa correctamente, tu cuenta de Sacscloud queda activa y puedes seguir usando el sistema sin interrupciones. Aquí se explica qué pasa justo después de que se confirma el pago.\n\n· Cómo saber que tu pago fue exitoso\n· Qué acceso se mantiene activo en tu cuenta\n· A quién contactar si tienes dudas sobre tu facturación\n\n#sacscloud #suscripcion #pagos #puntodeventa",
+    "titulo": "¿Ya contraté Sacscloud, qué sigue? Academia, implementación y soporte",
+    "descripcion": "Si acabas de contratar Sacscloud, este video es el paso a paso de lo que viene: cómo entras a la academia, cómo arranca la implementación de tu tienda y cuáles son los canales de soporte cuando necesites ayuda.\n\nEl orden importa. Las tiendas que hacen la capacitación antes de cargar su catálogo capturan bien desde el principio, y eso se nota meses después: un producto mal dado de alta —sin su matriz de tallas y colores— se arrastra a cada reporte y a la tienda en línea.\n\nLo que se explica:\n· Cómo entrar a la academia y qué ver primero\n· Cómo arranca la implementación en tu tienda\n· Por dónde pedir soporte cuando algo no sale\n\nGuía para dar de alta bien desde el inicio: https://www.sacscloud.com/recursos/curva-de-tallas/\n\n#sacscloud #implementacion #soporte #puntodeventa",
     "etiquetas": [
       "sacscloud",
       "suscripcion",
@@ -3596,7 +3560,7 @@
       "facturacion"
     ],
     "pagina": "",
-    "revisar": true,
+    "revisar": false,
     "grupo": "?",
     "antes": "¡Tu pago en Sacscloud fue un éxito! Descubre qué sigue",
     "vistas": 232

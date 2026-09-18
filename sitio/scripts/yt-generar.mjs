@@ -45,6 +45,26 @@ ChatGPT, Gemini, Claude y Perplexity puedan CITARLO al contestar una pregunta. L
 IA lee de un video es el título y la descripción. Si la descripción no contesta nada, no
 hay nada que citar.
 
+LA REGLA QUE MANDA SOBRE TODAS (regla del dueño, 18-sep-2026)
+Aunque el video hable de algo GENÉRICO, escríbelo en CONTEXTO DE MODA y elige tú
+las palabras con las que conviene rankear. Sacs compite contra sistemas genéricos
+—Shopify POS, Odoo, Square— que ya ganan las búsquedas genéricas y siempre las
+van a ganar. Donde Sacs gana es en lo específico: talla, color, corrida,
+temporada, apartado, curva, sucursal.
+
+  «¿Cómo dar de alta productos?»
+    → «¿Cómo doy de alta ropa con sus tallas y colores sin capturar una por una?»
+  «Actualizar existencias»
+    → «¿Cómo corrijo las existencias por talla y color de mi tienda?»
+  «Configuración de sucursales»
+    → «¿Cómo configuro mis sucursales para ver el inventario de todas?»
+
+El límite: NO inventes funciones para que suene a moda. Se reencuadra el MISMO
+contenido con el vocabulario del ramo; no se promete algo que el video no
+muestra. Si el video enseña a configurar una impresora, sigue siendo de
+impresoras — ahí el contexto de moda va en la descripción («el ticket de tu
+boutique»), no en una promesa falsa.
+
 REGLAS DEL TÍTULO
 - Es la PREGUNTA que hace el cliente, escrita como la escribiría él. Máximo 100 caracteres.
 - Nada de mayúsculas gritadas, nada de asteriscos, nada de emoji de relleno, nada del
@@ -105,7 +125,14 @@ const { preguntar } = await import('../src/lib/demanda/ia.ts');
 const catalogo = JSON.parse(readFileSync(valor('--catalogo'), 'utf8'));
 const limite = Number(valor('--limite') || 0);
 const lista = limite ? catalogo.slice(0, limite) : catalogo;
-const LOTE = 6;
+/* Tres, no seis. Con seis, una descripción de ~1,200 caracteres por video hacía
+   que el JSON pasara del tope de tokens y la respuesta se cortara a media
+   llave: el lote entero se perdía y esos videos quedaban fuera sin que nada lo
+   dijera. Pasó de verdad —dieciocho videos se quedaron sin reescribir, entre
+   ellos los tres de moda que más importaban— y el script reportaba éxito.
+   Menos elementos por llamada cuestan lo mismo: se paga por token, no por
+   llamada. */
+const LOTE = 3;
 
 const paginas = Object.entries(PAGINAS).map(([s, q]) => `  ${s} → ${q}`).join('\n');
 const out = [];
@@ -120,7 +147,7 @@ for (let i = 0; i < lista.length; i += LOTE) {
 
   const r = await preguntar({
     agente: 'yt_reescritor', trabajo: 'trabajo',
-    sistema: SISTEMA, usuario, esquema: ESQUEMA, max_tokens: 8000,
+    sistema: SISTEMA, usuario, esquema: ESQUEMA, max_tokens: 12000,
   });
   costo += r.costo_usd || 0;
 
