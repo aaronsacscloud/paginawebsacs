@@ -189,7 +189,48 @@ export async function registrarBitacoraLlamada(callId: string): Promise<void> {
        no miente es la duración: nadie habla dos minutos con una llamada que no
        contestó. */
     const hablada = Number(ll.duracion_seg || 0) > 0;
-    if (ll.conversation_id && ll.direccion === 'entrante' && !ll.answered_at && !hablada) {
+
+    /* ══ 🔴 UNA LLAMADA QUE HICIMOS NOSOTROS NO ES «NO CONTESTADA» ══════════
+       Pedido del dueño (19-sep-2026): «cuando le llamo a un prospecto no debe
+       aparecerme en las no contestadas; sólo debe loguearse que se le llamó y
+       no contestó. Como le llamo a muchos leads en frío se ensucia la sección
+       y ya no logro ver lo verdaderamente relevante. Sólo debe aparecer si el
+       prospecto me llamó y no contesté: ahí sí hay intención».
+
+       La bandeja significa «te buscaron y no les contestaste». Un marcado
+       nuestro que no contestan es lo contrario —nosotros buscamos a alguien—,
+       y mezclarlos convierte la única lista accionable del inbox en el registro
+       de la jornada de llamadas en frío.
+
+       El caso que se colaba NO era el flujo normal, sino el de las llamadas
+       propias guardadas como ENTRANTES: cuando la llamada nace en el navegador,
+       Twilio reporta esa pata como `inbound` (es el cliente el que «llama» a la
+       central), y así quedaba en la base. Medido: tres filas entrantes en tres
+       días contra 131 salientes, y en el hilo de Majo se veían las DOS notas de
+       la misma llamada —«saliente a +52 77 1471 5020 — no contestó» y
+       «entrante de +52 77 1471 5020 — no se pudo completar»—.
+
+       Se reconoce por lo que es: si hay una llamada NUESTRA al mismo número en
+       los tres minutos de alrededor, esta «entrante» es su eco. No mueve la
+       conversación ni escribe «llamada perdida»; la nota de la llamada real ya
+       cuenta lo que pasó. */
+    let ecoDeLaNuestra = false;
+    if (ll.direccion === 'entrante' && ll.telefono) {
+      const t = new Date(ll.started_at || Date.now()).getTime();
+      const { data: nuestra } = await supabase.from('wa_llamadas')
+        .select('call_id').eq('telefono', ll.telefono).eq('direccion', 'saliente')
+        .gte('started_at', new Date(t - 3 * 60000).toISOString())
+        .lte('started_at', new Date(t + 3 * 60000).toISOString())
+        .limit(1).maybeSingle();
+      ecoDeLaNuestra = !!nuestra;
+      if (ecoDeLaNuestra) {
+        await supabase.from('wa_llamadas')
+          .update({ motivo: 'eco de nuestra propia llamada (la pata del navegador la reporta Twilio como entrante)' })
+          .eq('call_id', callId).is('motivo', null).then(() => {}, () => {});
+      }
+    }
+
+    if (ll.conversation_id && ll.direccion === 'entrante' && !ecoDeLaNuestra && !ll.answered_at && !hablada) {
       const cuando = ll.ended_at || ll.started_at || new Date().toISOString();
       const { data: cv } = await supabase.from('wa_conversaciones')
         .select('ultimo_mensaje_at').eq('id', ll.conversation_id).maybeSingle();

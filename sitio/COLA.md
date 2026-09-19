@@ -991,4 +991,9 @@ Lo que quedó fuera y sigue pendiente:
       listas con «Ver 6 más», las vistas, y lo de abajo).
 - [ ] **Vista «Con reunión próxima»** entre las vistas del inbox, para verificar rápido a quién le
       toca reunión pronto.
+- [ ] **«Ver ficha» sobra en leads**: la ficha ya es lo que se ve en pantalla. Dejarlo sólo en
+      clientes.
+- [ ] **La cuenta a la que pertenece el cliente, en el panel derecho**, para identificarlo rápido
+      cuando ya tiene cuenta. Y si «Marca» está vacía, normalmente la marca ES el nombre de la
+      cuenta: rellenarla desde ahí (caso Ramon, ligado a su cuenta).
 - ~~Plantilla que no se enviaba~~ → el dueño confirmó que no era un error; se omite.

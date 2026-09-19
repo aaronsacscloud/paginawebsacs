@@ -520,7 +520,7 @@ export default function InboxPro() {
     const vivas = lista.filter((c: any) => !c.virtual && c.estado_crm !== 'resuelta');
     const vals: Record<string, number> = {
       nocontestadas: vivas.filter((c: any) => c.ultima_direccion === 'entrante').length,
-      sinrespuesta: vivas.filter((c: any) => c.ultima_direccion === 'saliente').length,
+      sinrespuesta: vivas.filter(sinRespuestaDeEllos).length,
     };
     const sig: Record<string, boolean> = {};
     for (const k of Object.keys(vals)) {
@@ -1166,7 +1166,28 @@ export default function InboxPro() {
      lista porque los usan dos sitios que ya no están juntos: las pestañas y la
      hoja de «Ir a». Es un filtro sobre lo que ya está en memoria. */
   const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta';
-  const sinRespuestaDeEllos = (c: any) => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta';
+  /* ══ «SIN RESPUESTA DE ELLOS» ERA MEDIO REGISTRO DE PROSPECCIÓN (19-sep-2026)
+     El dueño lo dijo de «No contestadas» y aplica igual aquí, que es donde el
+     efecto es mayor: «como le llamo a muchos leads en frío se ensucia la
+     sección y ya no logro ver lo verdaderamente relevante».
+
+     Medido: 160 conversaciones en esa bandeja, y 64 de ellas —el 40%— son de
+     gente que NUNCA nos ha escrito ni una vez. Son dos cosas distintas
+     metidas en la misma lista:
+
+       · «hablamos y se enfrió» (96) → eso sí es seguimiento, y es la lista.
+       · «le escribimos en frío y nunca contestó» (64) → eso es el registro de
+         la prospección, no una bandeja de trabajo. Aparecen ahí por existir,
+         no por haber hecho nada.
+
+     `ultimo_entrante_at` ya distingue las dos: es la marca de la ventana de 24
+     h de Meta, o sea la última vez que ESA persona escribió. En null = nunca
+     abrió la boca. No hace falta un campo nuevo ni otra consulta.
+
+     Los 64 no se pierden: siguen en «Todas» y en su etapa del ciclo de vida,
+     que es donde se trabaja la prospección en frío. */
+  const sinRespuestaDeEllos = (c: any) => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta'
+    && (!!c.ultimo_entrante_at || c.ultimo_canal === 'email');   // el correo no tiene ventana de 24 h: entra como antes
   const sinVirtuales = (lista || []).filter((c: any) => !c.virtual);
   const nPendientes = sinVirtuales.filter(esperaRespuesta).length;
   const nSinResp = sinVirtuales.filter(sinRespuestaDeEllos).length;

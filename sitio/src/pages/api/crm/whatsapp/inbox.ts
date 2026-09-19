@@ -176,6 +176,11 @@ const _GET: APIRoute = async ({ request, url }) => {
       ultima_direccion: c.ultima_direccion, ultimo_canal: 'wa',
       no_leidos: leidoAt.has(c.id) ? (pendientesPersonal.get(c.id) || 0) : (c.no_leidos || 0),
       ventana_expira_at: c.ultimo_entrante_at ? new Date(new Date(c.ultimo_entrante_at).getTime() + 24 * 3600e3).toISOString() : null,
+      /* Crudo, además de la ventana: en null significa que esa persona NUNCA
+         nos ha escrito, y eso es lo que separa «se enfrió el seguimiento» de
+         «le escribimos en frío y jamás contestó». `ventana_expira_at` no sirve
+         para preguntarlo: a las 24 h caduca en los dos casos. */
+      ultimo_entrante_at: c.ultimo_entrante_at || null,
       alerta: c.alerta || null, mencion: mencionesPend.has(c.id), tiene_notas: conNota.has(c.id),
       phone_number_id: c.phone_number_id || null,   // multilínea: la línea por la que vive (chip y filtro «Línea»)
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
@@ -373,7 +378,15 @@ const _GET: APIRoute = async ({ request, url }) => {
     // El espejo: nosotros escribimos al último y ELLOS no volvieron. Son las
     // dos mitades del seguimiento y hasta ahora solo se contaba una, así que la
     // pantalla de Inicio no podía avisar de la que se queda sin cerrar.
-    if (c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta') counts.sin_respuesta++;
+    /* Sólo quien ALGUNA VEZ nos escribió: los 64 que nunca dijeron nada (de
+       160) son prospección en frío, no seguimiento pendiente. Misma regla en
+       el contador, en el filtro y en la pantalla — si se separan, el menú dice
+       un número y la lista enseña otro. */
+    /* `email_conversations` no tiene `ultimo_entrante_at` (es la ventana de 24
+       h de Meta, que en correo no existe), así que sus hilos entran como antes:
+       filtrarlos por una columna que no tienen los habría borrado de la
+       bandeja en silencio. */
+    if (c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta' && (c.ultimo_entrante_at || c.canal === 'email')) counts.sin_respuesta++;
     /* El ciclo se cuenta SOLO sobre lo no resuelto, que es el universo al que
        lleva el menú de vistas. Contando también las resueltas, el menú decía
        «Oportunidades 6» y al entrar salían 0 — un número que no corresponde
@@ -480,7 +493,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y
     // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
     if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
-    if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
+    if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta' && (c.ultimo_entrante_at || c.ultimo_canal === 'email'));
     if (fi === 'programados') l = l.filter(c => !!c.programado_at).sort((a, b) => String(a.programado_at).localeCompare(String(b.programado_at)));
     /* Por fecha ascendente = los vencidos primero, que es el orden en que hay
        que atenderlos. No se filtra por «ya venció»: ver los de mañana es lo que
