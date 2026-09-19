@@ -1129,6 +1129,29 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     );
                   })}
                 </div>
+                {/* ══ EL HUECO, CON NÚMERO ═══════════════════════════════════
+                    El embudo dice cuánta gente descuelga y no llega a los 30
+                    segundos; esto dice por qué. Se mide desde SU primera palabra
+                    y no desde el descuelgue: la transcripción tarda un par de
+                    segundos en entregar cada frase y ese retraso lo llevan las
+                    dos pistas, así que restándolas queda lo que pasó en la línea.
+                    Lo que no entra en ninguna media —las llamadas donde no se te
+                    oyó nunca— va aparte, porque son las que más cuestan. */}
+                {(est.embudo.saludo_seg != null || Number(est.embudo.sin_voz_tuya) > 0) && (
+                  <div style={{ marginTop: 9, display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 11.5, color: C.g500 }}>
+                    {est.embudo.saludo_seg != null && (
+                      <span>
+                        Tardaste <b style={{ color: est.embudo.saludo_seg > 4 ? '#C0554E' : '#1E8A63', fontSize: 12.5 }}>{est.embudo.saludo_seg} s</b> de media
+                        en contestarle al «bueno»
+                      </span>
+                    )}
+                    {Number(est.embudo.sin_voz_tuya) > 0 && (
+                      <span>
+                        En <b style={{ color: '#C0554E', fontSize: 12.5 }}>{est.embudo.sin_voz_tuya}</b> no se te oyó nunca
+                      </span>
+                    )}
+                  </div>
+                )}
                 {Number(est.embudo.contestaron) > 0 && Number(est.embudo.hablaron) / Number(est.embudo.contestaron) < 0.5 && (
                   <div style={{ marginTop: 9, fontSize: 11.5, color: '#9a6a10', lineHeight: 1.5 }}>
                     Más de la mitad de los que descolgaron colgaron antes de los 30 segundos. Eso casi

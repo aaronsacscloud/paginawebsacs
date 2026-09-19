@@ -362,7 +362,7 @@ async function repasoSiTerminó(s: any) {
 /** Dónde se cae la gente en esta jornada: descolgaron → hablaron → quedó algo → demo. */
 async function embudoSesion(sesionId: string, desde?: string | null) {
   const { data } = await supabase.from('tel_sesion_items')
-    .select('id, contact_id, resultado, duracion_seg').eq('sesion_id', sesionId).limit(2000);
+    .select('id, contact_id, resultado, duracion_seg, saludo_ms').eq('sesion_id', sesionId).limit(2000);
   const its = data || [];
   const contestaron = its.filter(i => ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos', 'colgo_rapido'].includes(String(i.resultado)));
   const hablaron = contestaron.filter(i => Number(i.duracion_seg || 0) >= 30);
@@ -387,7 +387,13 @@ async function embudoSesion(sesionId: string, desde?: string | null) {
     conCita = new Set((bks || []).map((b: any) => b.contact_id)).size;
     demos = new Set((bks || []).filter((b: any) => b.event_types?.slug === 'demo').map((b: any) => b.contact_id)).size;
   }
-  return { contestaron: contestaron.length, hablaron: hablaron.length, con_cita: conCita, demos };
+  /* El hueco del saludo, sólo de esta jornada: la media de lo que tardaste en
+     contestarle al «bueno». Y aparte, en cuántas no se te oyó NUNCA — que son
+     las que no entran en ninguna media y son las que más cuestan. */
+  const saludos = contestaron.map(i => Number((i as any).saludo_ms)).filter(n => Number.isFinite(n) && n > 0);
+  const saludoMedio = saludos.length ? Math.round(saludos.reduce((a, b) => a + b, 0) / saludos.length / 100) / 10 : null;
+  const mudas = contestaron.filter(i => (i as any).saludo_ms == null && Number(i.duracion_seg || 0) > 0).length;
+  return { contestaron: contestaron.length, hablaron: hablaron.length, con_cita: conCita, demos, saludo_seg: saludoMedio, sin_voz_tuya: mudas };
 }
 
 /** Recalcula los contadores de la sesión a partir de sus items. */
@@ -614,8 +620,29 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     && segHablados < 12 && !hablamosNosotros && seOyoAlContacto;
   if (colgoEnSilencio) { estado = 'hecho'; resultado = 'colgo_rapido'; }
 
+  /* ══ CUÁNTO TARDASTE EN CONTESTARLE AL «BUENO» (19-sep-2026) ════════════
+     El embudo ya enseña cuánta gente descuelga y no llega a los 30 segundos.
+     Esto dice POR QUÉ: el hueco entre su primera palabra y la tuya.
+
+     Se mide contra el primer trozo DEL CONTACTO y no contra el descuelgue, a
+     propósito: la transcripción en vivo tarda un par de segundos en entregar
+     cada frase, y ese retraso lo llevan las dos pistas por igual. Al restarlas
+     se va, y queda lo que de verdad pasó en la línea.
+
+     Se guarda al cerrar y no se calcula al mirarlo: sacarlo de `oido` obliga a
+     leer los 194 trozos de cada llamada larga, por las 113 de la jornada, cada
+     vez que alguien abre el resumen. */
+  const oidoCierre: any[] = Array.isArray(it.oido) ? it.oido : [];
+  const primera = (quien: 'vendedor' | 'contacto') => oidoCierre
+    .filter((o: any) => (quien === 'vendedor' ? o?.quien === 'vendedor' : (o?.quien || 'contacto') === 'contacto') && String(o?.texto || '').trim().length > 1)
+    .map((o: any) => Number(o.t) || 0).sort((a, b) => a - b)[0];
+  const tNuestra = primera('vendedor');
+  const tSuya = primera('contacto');
+  // Un negativo sería que ya venías hablando cuando descolgó: ahí no hubo espera.
+  const saludoMs = tNuestra != null && tSuya != null && tNuestra > tSuya ? tNuestra - tSuya : null;
+
   const dur = previo === 'en_linea' && it.en_linea_at ? Math.round(ms(it.en_linea_at) / 1000) : 0;
-  const { data: cerrado } = await supabase.from('tel_sesion_items').update({ estado, resultado, terminado_at: fin, duracion_seg: dur, updated_at: fin })
+  const { data: cerrado } = await supabase.from('tel_sesion_items').update({ estado, resultado, terminado_at: fin, duracion_seg: dur, ...(saludoMs != null ? { saludo_ms: saludoMs } : {}), updated_at: fin })
     .eq('id', itemId).eq('estado', previo).select('id');
   if (!cerrado?.length) return;
 
