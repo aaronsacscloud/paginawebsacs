@@ -81,7 +81,9 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
 
     <StructuredData data={allSchemas} />
 
-    <!-- LA COMPUERTA DE MARKETING (17-sep-2026, auditoría de PageSpeed).
+    <!-- LA COMPUERTA DE MARKETING (17-sep-2026, auditoría de PageSpeed;
+         retocada 19-sep-2026, auditoría de /planes — ver los dos bloques de
+         comentarios abajo, son dos arreglos distintos sobre la misma idea).
          Los cuatro scripts de medición —Clarity, TikTok, OpenAI y PostHog— se
          cargaban en el primer instante y costaban caro: un segundo entero de
          evaluación de JavaScript en el hilo principal, 250 KB de descarga y 13
@@ -100,32 +102,137 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
          · Y si alguien se queda quieto, entran solas a los 20 segundos.
 
          Mientras tanto las colas ya existen, así que un clic en WhatsApp hecho
-         en el segundo uno se guarda y se manda en cuanto el pixel despierta. -->
+         en el segundo uno se guarda y se manda en cuanto el pixel despierta.
+
+         ARREGLO 1 — el "gesto" falso de /planes (causa real de que esa página
+         sacara 74 de rendimiento en móvil, la peor del sitio, cuando el resto
+         va en 93-100 con la MISMA compuerta): el carrusel de precios de
+         planes.astro hace un `scrollIntoView()` al cargar, en viewport de
+         móvil, para centrar la tarjeta destacada. Eso dispara un evento
+         "scroll" nativo del navegador, y el listener de abajo —a propósito en
+         `capture: true` para detectar el scroll de CUALQUIER contenedor, no
+         solo el de window— lo veía igual que si el visitante hubiera movido
+         el dedo. Resultado medido: la compuerta se abría a los ~400ms de
+         cargar, SIEMPRE, sin campaña y sin visitante real, exactamente el
+         comportamiento que se quería evitar. Lighthouse hace lo mismo que
+         cualquier móvil real (viewport angosto), así que la auditoría
+         reproducía el bug en cada corrida. El contador `sacsIgnorarScrollAuto`
+         deja que planes.astro avise "el siguiente scroll es layout mío, no un
+         gesto" justo antes de reposicionar el carrusel.
+
+         ARREGLO 2 — el respaldo de 20s (y el gesto real) ya no disparan los
+         cuatro scripts en la misma tarea del hilo principal: eso es
+         precisamente lo que mide el Total Blocking Time. `escalona()` los
+         reparte uno por uno en tiempo ocioso (`requestIdleCallback`, con
+         `setTimeout` de respaldo donde no exista). El trabajo total es el
+         mismo; ya no se paga junto. Solo la campaña real sigue siendo
+         inmediata y sin escalonar: ahí la prioridad es la atribución, no el
+         TBT. -->
     <script is:inline>
     (function () {
       var listo = false;
-      function arranca() {
-        if (listo) return; listo = true;
-        quita();
-        // Clarity
+
+      // Reparte una lista de funciones en tiempo ocioso, una por tarea, para
+      // que el navegador pueda pintar/responder entre una y otra.
+      function escalona(tareas, i) {
+        i = i || 0;
+        if (i >= tareas.length) return;
+        var siguiente = function () { tareas[i](); escalona(tareas, i + 1); };
+        if (window.requestIdleCallback) window.requestIdleCallback(siguiente, { timeout: 1500 });
+        else setTimeout(siguiente, 100);
+      }
+
+      function cargaClarity() {
         (function(c,l,a,r,i,t,y){
           c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
           t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
         })(window, document, "clarity", "script", "wad8td38cy");
-        // TikTok
+      }
+      function cargaTikTok() {
         if (window.ttq && window.ttq.load) { window.ttq.load('CUT9GN3C77UAVCG32N00'); window.ttq.page(); }
-        // OpenAI
+      }
+      function cargaOpenAI() {
         if (window.sacsOaiCarga) window.sacsOaiCarga();
-        // PostHog
+      }
+      function cargaPostHog() {
+        // ARREGLO 4 (19-sep-2026, mismo hallazgo que el 3): el script de
+        // PostHog más abajo trae un `import`, así que Astro lo compila a
+        // `<script type="module" src="...">` — se ejecuta DESPUÉS de bajar
+        // ese archivo por red, no en el momento en que el parser lo
+        // encuentra como los demás bloques `is:inline`. En una visita de
+        // campaña, para cuando ese módulo por fin registraba su listener de
+        // 'sacs:marketing', el evento YA se había disparado al vacío: PostHog
+        // nunca despertaba en un anuncio pagado. Por eso, además del evento
+        // (que sigue sirviendo para el caso normal, cuando el módulo ya
+        // cargó), se deja una bandera que el módulo revisa al registrarse:
+        // si ya está en true, no hace falta esperar el evento.
+        window.__sacsMarketingAbierta = true;
         window.dispatchEvent(new Event('sacs:marketing'));
       }
+
+      function arranca(urgente) {
+        if (listo) return; listo = true;
+        quita();
+        var tareas = [cargaClarity, cargaTikTok, cargaOpenAI, cargaPostHog];
+        if (urgente) {
+          // Campaña real (o una conversión explícita vía sacsMarketingYa):
+          // sin escalonar, se mide desde el primer instante.
+          tareas.forEach(function (fn) { fn(); });
+        } else {
+          escalona(tareas);
+        }
+      }
+
+      // Ver ARREGLO 1 arriba: silencia "scroll"/"wheel" por una VENTANA de
+      // tiempo (no por cuenta de eventos) mientras el layout propio del sitio
+      // se reacomoda (el carrusel de /planes), para no confundirlo con un
+      // gesto real. Hace falta que sea por tiempo y no por cantidad: un solo
+      // `scrollIntoView` con scroll-behavior heredado puede disparar DOCENAS
+      // de eventos "scroll" (uno por frame de la animación), y un contador
+      // que solo perdona el primero deja pasar el segundo como si fuera un
+      // gesto de verdad. planes.astro ya fuerza `behavior:'instant'` para
+      // evitar esa animación, pero esta ventana queda como red de seguridad.
+      var silenciarScrollHasta = 0;
+      window.sacsIgnorarScrollAuto = function (ms) {
+        silenciarScrollHasta = Date.now() + (ms || 500);
+      };
+
       var gestos = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel'];
-      function quita() { gestos.forEach(function (g) { window.removeEventListener(g, arranca, { capture: true }); }); }
-      gestos.forEach(function (g) { window.addEventListener(g, arranca, { capture: true, passive: true, once: true }); });
+      function onGesto(e) {
+        if ((e.type === 'scroll' || e.type === 'wheel') && Date.now() < silenciarScrollHasta) {
+          return;
+        }
+        arranca(false);
+      }
+      function quita() { gestos.forEach(function (g) { window.removeEventListener(g, onGesto, { capture: true }); }); }
+      gestos.forEach(function (g) { window.addEventListener(g, onGesto, { capture: true, passive: true }); });
       var deCampana = /[?&](utm_|ttclid|gclid|fbclid|msclkid)/i.test(location.search);
-      if (deCampana) arranca(); else setTimeout(arranca, 20000);
-      window.sacsMarketingYa = arranca;
+      if (deCampana) {
+        // ARREGLO 3 (19-sep-2026, hallado midiendo esta misma tarea, NO es un
+        // efecto secundario del arreglo de rendimiento): en una visita de
+        // campaña, `arranca(true)` se llamaba EN EL ACTO, en el instante en
+        // que corre este primer <script> del <head> — antes de que se
+        // ejecuten los bloques de abajo que definen `window.ttq`
+        // (TikTok Pixel), `window.sacsOaiCarga` (OpenAI) y el listener de
+        // `sacs:marketing` (PostHog). Resultado, verificado con Playwright
+        // contra una visita con ttclid real: SOLO Clarity llegaba a cargar.
+        // TikTok, OpenAI y PostHog nunca se ejecutaban en un anuncio pagado —
+        // exactamente el caso que esta compuerta existe para proteger. Un
+        // `setTimeout(…, 0)` alcanza: para cuando corre, el navegador ya
+        // terminó de parsear/ejecutar los <script> síncronos que siguen en
+        // este <head>, así que las tres quedan definidas. Sigue siendo
+        // "en el acto" para cualquier propósito práctico (menos de 1ms de
+        // diferencia) y YA NO se pierde la mitad de la medición.
+        setTimeout(function () { arranca(true); }, 0);
+      } else {
+        setTimeout(function () { arranca(false); }, 20000);
+      }
+      // Safety net para conversiones explícitas (ver sacsPH en el bloque de
+      // PostHog, más abajo): si alguien dispara un evento antes de que la
+      // compuerta abra sola, se abre YA y sin escalonar — es una señal de
+      // negocio, no hay que ahorrarle milisegundos al TBT a costa de perderla.
+      window.sacsMarketingYa = function () { arranca(true); };
     })();
     </script>
 
@@ -219,12 +326,22 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
          se evalúa en el hilo principal, y hasta el primer gesto de la visita no
          hay nada que contar. Lo que SÍ vive desde el segundo cero es la cola:
          cualquier `sacsPH(...)` que ocurra antes se guarda y se manda entero
-         cuando el SDK despierta. Así no se pierde ni el clic más temprano. */
+         cuando el SDK despierta. Así no se pierde ni el clic más temprano.
+
+         19-sep-2026 (auditoría /planes): el chunk de posthog-js pesa 84 KB y
+         su init tarda ~850ms de scripting — es el costo individual más caro
+         de los cuatro scripts de marketing, más que TikTok o Clarity. Antes
+         corría entero dentro del mismo evento 'sacs:marketing' que dispara la
+         compuerta, así que competía por el mismo frame que Clarity/TikTok/
+         OpenAI. Ahora ese trabajo pesado se manda a su PROPIO
+         requestIdleCallback: la compuerta ya reparte cuándo se dispara el
+         evento (ver BaseLayout, escalona()), y aquí se reparte OTRA VEZ el
+         propio import()+init() para que no se junte con nada más. */
       let ph: any = null;
       const cola: Array<[string, Record<string, unknown>]> = [];
       let cargando = false;
 
-      async function despierta() {
+      async function cargaYArranca() {
         if (ph || cargando) return;
         cargando = true;
         const mod = await import('posthog-js');
@@ -237,7 +354,24 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         });
         for (const [ev, props] of cola.splice(0)) { try { ph.capture(ev, props); } catch (e) {} }
       }
-      window.addEventListener('sacs:marketing', despierta, { once: true });
+      function despierta() {
+        const w = window as any;
+        if (w.requestIdleCallback) w.requestIdleCallback(cargaYArranca, { timeout: 1500 });
+        else setTimeout(cargaYArranca, 0);
+      }
+      /* ARREGLO 4 (ver el comentario en cargaPostHog(), en la Compuerta de
+         Marketing arriba en este mismo archivo): este script es un `type=
+         "module"` — Astro lo compila así por el `import` de arriba — y se
+         ejecuta DESPUÉS de bajarlo por red, no en el momento en que el
+         parser lo encuentra. En una visita de campaña la compuerta dispara
+         'sacs:marketing' de inmediato, y ese módulo bien puede seguir sin
+         llegar: el evento se perdía y PostHog nunca despertaba en un anuncio
+         pagado (medido con Playwright). Por eso primero se revisa la bandera
+         `__sacsMarketingAbierta` — si la compuerta ya abrió, se arranca
+         directo sin esperar un evento que ya pasó. */
+      const w = window as any;
+      if (w.__sacsMarketingAbierta) despierta();
+      else window.addEventListener('sacs:marketing', despierta, { once: true });
 
       /* Envoltorio unico, igual que sacsOai: si el SDK no cargo (bloqueador,
          sin red), nada de lo que sigue truena. */

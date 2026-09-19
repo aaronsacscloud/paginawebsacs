@@ -3200,10 +3200,32 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
 
   if (cardsContainer && window.innerWidth < 768) {
     // Scroll to Fideliza (index 2) on load
+    //
+    // 19-sep-2026 (auditoría de rendimiento): este scrollIntoView() dispara
+    // un evento "scroll" nativo del navegador, y ese evento es indistinguible
+    // de que el visitante haya movido el dedo — la Compuerta de Marketing de
+    // BaseLayout.astro escucha "scroll" en window (a propósito, con capture,
+    // para detectar el gesto en cualquier contenedor) como señal de que ya
+    // hay que medir. Sin este aviso, CADA carga de /planes en móvil abría la
+    // compuerta a los ~400ms, sin campaña y sin visitante real: era la causa
+    // de que esta página, sola, sacara 74 de rendimiento en Lighthouse móvil
+    // mientras el resto del sitio va en 93-100 con la MISMA compuerta.
+    // `sacsIgnorarScrollAuto()` le avisa "el siguiente scroll es layout mío,
+    // no un gesto" justo antes de reposicionar el carrusel. NO QUITAR sin
+    // volver a medir /planes en Lighthouse móvil.
     requestAnimationFrame(() => {
       const cards = cardsContainer.querySelectorAll('.plan-card');
       if (cards[2]) {
-        (cards[2] as HTMLElement).scrollIntoView({ inline: 'center', block: 'nearest' });
+        (window as any).sacsIgnorarScrollAuto?.();
+        // `behavior: 'instant'` es lo que de verdad arregla esto: sin él, el
+        // scroll heredaba `scroll-behavior: smooth` de global.css (declarado
+        // en <html>, y por defecto se hereda a cualquier contenedor) y el
+        // navegador animaba el centrado en ~30 eventos "scroll" repartidos en
+        // medio segundo — de sobra para agotar el aviso de arriba y para que
+        // el listener de la sincronía de puntos (abajo) recalculara posición
+        // en cada uno de esos frames. 'instant' hace el salto en un solo
+        // evento y de paso ahorra ese trabajo de layout.
+        (cards[2] as HTMLElement).scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' as ScrollBehavior });
         updateCarouselState(2);
       }
     });
