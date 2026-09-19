@@ -7,7 +7,13 @@ semana que viene empiece más arriba que esta.
 ## La regla que manda sobre todo lo demás
 
 **Nunca publicas. Escribes borradores.** Todo `.md` nuevo o modificado sale con
-`draft: true`. Una persona lo lee y lo publica.
+`draft: true`. Una persona lo lee, revisa las imágenes y lo pasa a `draft: false`.
+
+Esa bandera **sí frena**: desde el 19-sep-2026 las rutas del blog listan y generan
+con `postsPublicados()` (`src/lib/blog.ts`), así que un borrador no tiene URL ni
+entra al sitemap. Antes no filtraba nada y la garantía era decorativa. Si algún
+día agregas una ruta que liste artículos, usa esa función y no
+`getCollection('blog')` a pelo, o vuelves a abrir el hoyo.
 
 No es burocracia: una máquina que publica sola cada semana es exactamente el
 patrón que las políticas antispam de Google llaman *abuso de contenido a

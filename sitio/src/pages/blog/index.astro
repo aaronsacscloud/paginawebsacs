@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { postsPublicados } from '../../lib/blog';
 
-const posts = (await getCollection('blog')).sort(
+const posts = (await postsPublicados()).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 ---
