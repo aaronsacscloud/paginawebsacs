@@ -827,7 +827,7 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones, verCa
    64 ya traían su reunión —la guarda la minuta— pero solo 12 traían módulo.
    Nadie entra quince veces a escribir lo mismo. */
 function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any) {
-  const [abierto, setAbierto] = useState('');     // 'fecha' | 'junta' | 'modulo'
+  const [abierto, setAbierto] = useState('');     // 'fecha' | 'junta' | 'modulo' | 'cobro'
   const [juntas, setJuntas] = useState<any[]>([]);
   const [fecha, setFecha] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -954,6 +954,34 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
               </div>
             ))}
             <button style={{ ...op, color: '#8d8a97' }} onClick={() => aplicar('modulo', null, 'sin módulo')}>— Quitar el módulo</button>
+          </div>
+        )}
+      </div>
+
+      {/* CORTESÍA O PAGADA. Va en el lote porque así se decide: lo que salió de
+          una junta se regala completo y lo que se cotizó se cobra completo.
+          Marcarlo orden por orden es como se llega a un reporte donde la mitad
+          de lo mismo dice «sin costo» y la otra mitad no dice nada. */}
+      <div style={{ position: 'relative' }}>
+        <Boton k="cobro">Cortesía o cobro</Boton>
+        {abierto === 'cobro' && (
+          <div style={{ ...pop, minWidth: 235 }}>
+            <div style={{ ...S.lbl, color: '#999', margin: '3px 6px 6px' }}>Cómo se le cobra</div>
+            <button style={op}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+              onClick={() => aplicar('cobro', 'cortesia', 'cortesía')}>
+              <b style={{ color: P.verdeTinta }}>Cortesía</b>
+              <span style={{ display: 'block', fontSize: '0.69rem', color: '#8d8a97' }}>sale en su reporte como «sin costo»</span>
+            </button>
+            <button style={op}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+              onClick={() => aplicar('cobro', 'pagada', 'pagada')}>
+              <b style={{ color: P.violetaTinta }}>Pagada</b>
+              <span style={{ display: 'block', fontSize: '0.69rem', color: '#8d8a97' }}>se cobró o se va a cobrar</span>
+            </button>
+            <button style={{ ...op, color: '#8d8a97' }} onClick={() => aplicar('cobro', null, 'sin definir')}>— Sin definir todavía</button>
           </div>
         )}
       </div>

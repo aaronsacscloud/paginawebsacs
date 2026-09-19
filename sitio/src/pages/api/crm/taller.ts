@@ -460,20 +460,28 @@ export const POST: APIRoute = async ({ request }) => {
     const ponFecha = 'fecha_prometida' in (b || {});
     const ponModulo = 'modulo' in (b || {});
     const ponJunta = 'booking_id' in (b || {});
-    if (!ponFecha && !ponModulo && !ponJunta) return json({ error: 'No hay nada que cambiar.' }, 400);
+    const ponCobro = 'cobro' in (b || {});
+    if (!ponFecha && !ponModulo && !ponJunta && !ponCobro) return json({ error: 'No hay nada que cambiar.' }, 400);
 
     const fecha = b?.fecha_prometida || null;
     const modulo = typeof b?.modulo === 'string' && b.modulo.trim() ? b.modulo.trim().slice(0, 120) : null;
     const booking = b?.booking_id || null;
+    /* Cortesía o pagada. Se decide en bloque porque se decide en bloque: lo que
+       salió de una junta va sin cargo COMPLETO, y lo que se cotizó se cobra
+       completo. Marcarlo orden por orden es como se llega a un reporte donde
+       la mitad dice «sin costo» y la otra mitad de lo mismo no dice nada. */
+    const cobro = ['cortesia', 'pagada'].includes(b?.cobro) ? b.cobro : null;
+    if (ponCobro && b?.cobro && !cobro) return json({ error: 'El cobro solo puede ser cortesía o pagada.' }, 400);
     if (modulo && !esModuloValido(modulo)) return json({ error: 'Ese módulo no está en el menú de SACS.' }, 400);
 
     const { data: antes } = await supabase.from('taller_ordenes')
-      .select('id, folio, fecha_prometida, fecha_prometida_1, modulo, company_id').in('id', ids);
+      .select('id, folio, fecha_prometida, fecha_prometida_1, modulo, cobro, company_id').in('id', ids);
     if (!antes?.length) return json({ error: 'Esas órdenes ya no existen.' }, 404);
 
     const patch: any = { updated_at: new Date().toISOString() };
     if (ponFecha) patch.fecha_prometida = fecha;
     if (ponModulo) patch.modulo = modulo;
+    if (ponCobro) patch.cobro = cobro;
     const { error: eU } = await supabase.from('taller_ordenes').update(patch).in('id', ids);
     if (eU) return json({ error: eU.message }, 500);
 
@@ -486,13 +494,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     // El renglón del cliente: ahí viven la reunión de origen y el módulo que
     // sale en sus reportes.
-    if (ponJunta || ponModulo) {
+    if (ponJunta || ponModulo || ponCobro) {
       const { data: lig } = await supabase.from('taller_orden_mejoras').select('mejora_id').in('orden_id', ids);
       const mIds = (lig || []).map((x: any) => x.mejora_id);
       if (mIds.length) {
         const pm: any = { updated_at: new Date().toISOString() };
         if (ponJunta) { pm.booking_id = booking; pm.origen = booking ? 'junta' : 'manual'; }
         if (ponModulo) pm.modulo = modulo;
+        /* `cortesia` se mueve con `cobro` y no se deja para después: es la
+           columna que lee el reporte de entregas para poner «sin costo», y las
+           dos desincronizadas son un documento que le cobra al cliente algo que
+           se le regaló. */
+        if (ponCobro) { pm.cobro = cobro; pm.cortesia = cobro === 'cortesia'; }
         await supabase.from('mejoras').update(pm).in('id', mIds);
       }
     }
@@ -503,6 +516,7 @@ export const POST: APIRoute = async ({ request }) => {
       ponFecha ? (fecha ? 'fecha de entrega → ' + fecha : 'se le quitó la fecha') : '',
       ponJunta ? (booking ? 'ligada a una reunión' : 'se le quitó la reunión') : '',
       ponModulo ? (modulo ? 'módulo → ' + modulo : 'se le quitó el módulo') : '',
+      ponCobro ? (cobro === 'cortesia' ? 'queda como cortesía' : cobro === 'pagada' ? 'queda como pagada' : 'se le quitó el cobro') : '',
     ].filter(Boolean).join(' · ');
     for (const o of antes || []) await apunta(o.id, quien(user), null, null, 'En bloque: ' + nota);
 
