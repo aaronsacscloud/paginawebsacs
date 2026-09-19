@@ -460,7 +460,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     El texto es lo flexible y los chips no se encogen: si algo
                     tiene que cortarse, que sea el nombre de la empresa y no
                     un chip que quede en «→ …». */}
-                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.reunion_fecha || resuelta) && (
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || resuelta) && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                     {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
                     {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
@@ -493,14 +493,20 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                         en la cabecera del hilo, junto al composer, que es donde
                         importa — justo antes de escribir. */}
                     {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>Pendiente</span>}
-                    {/* Cuándo es la cita, en la fila: en la bandeja «Con reunión
-                        próxima» es EL dato, y en el resto avisa de que a esa
-                        persona la ves pronto — que cambia lo que le escribes. */}
-                    {c.reunion_fecha && (
-                      <span title={c.reunion_titulo || 'Reunión agendada'} style={{ fontSize: 9, fontWeight: 700, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                        {new Date(`${c.reunion_fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).replace('.', '')} {c.reunion_hora}
-                      </span>
-                    )}
+                    {/* ══ LA PÍLDORA DE LA CITA TAMBIÉN SE FUE (19-sep-2026) ══
+                        La puse yo esta tarde al hacer la bandeja «Con reunión
+                        próxima», dando por hecho que ver la fecha en cada fila
+                        ayudaba. El dueño: «quita este pill que aparece como de
+                        una fecha de una agenda, sólo mete ruido, no va ahí».
+
+                        Tiene razón y el error de criterio es el mismo que llevo
+                        corrigiendo todo el día: la lista es para ELEGIR a quién
+                        abrir, y para eso bastan quién es, en qué etapa está y
+                        qué dijo. La fecha de la cita se necesita cuando ya estás
+                        dentro —o en la bandeja que existe justo para eso, donde
+                        van ordenadas por hora—, no repetida en el renglón.
+                        El dato sigue viajando: lo usa esa bandeja para filtrar
+                        y ordenar. Lo que se quita es pintarlo aquí. */}
                     {/* ══ LA PÍLDORA «NOTA» SE FUE (19-sep-2026) ══════════════
                         Pedido del dueño: «quítala de aquí, satura demasiado la
                         pantalla». Y es cierto: la llevaban CASI TODAS las
