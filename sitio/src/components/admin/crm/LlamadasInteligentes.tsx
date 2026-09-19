@@ -289,8 +289,14 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
 
   if (elegida || verSesion || aMedida) {
     const n = elegida && counts ? elegida.cuenta(counts) : 0;
+    /* ══ 🔴 56 PX DE PADDING EN UNA PANTALLA DE 390 (19-sep-2026) ═══════
+          `WRAP` es el margen del escritorio: 56 px a cada lado, pensado para
+          separar del menú lateral en un monitor. En el teléfono son 112 de 390
+          —el 29% de la pantalla— gastados en aire, y por eso la cabina se
+          dibujaba dentro de 278 px con las tarjetas cortadas por la derecha.
+          Medido con el navegador a 390: el carril útil pasa de 278 a 366. */
     return (
-      <div style={{ ...WRAP, paddingTop: 22 }}>
+      <div style={{ ...WRAP, ...(esMovil ? { padding: '10px 12px' } : { paddingTop: 22 }) }}>
         <div style={{ border: `1px solid ${'#ececec'}`, borderRadius: 12, overflow: 'hidden', background: '#fff', minHeight: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}>
           <Suspense fallback={<Cargando texto="Abriendo la cabina…" alto={260} />}>
             <Cabina qs={aMedida?.qs || elegida?.qs || 'filtro=todas'}
@@ -309,7 +315,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   }
 
   return (
-    <div style={{ ...WRAP, paddingTop: 22 }}>
+    <div style={{ ...WRAP, ...(esMovil ? { padding: '10px 12px' } : { paddingTop: 22 }) }}>
       <style>{CSS_CHISPAS + CSS_SELLO}</style>
       <div className="chispas-cab" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <Chispas />

@@ -804,13 +804,23 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const cab = (
     <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', borderBottom: `1px solid ${C.g200}`, flexShrink: 0, background: '#fff' }}>
       <IcoTelefono size={16} style={{ color: C.moradoTinta }} />
+      {/* En el teléfono sobra «Llamadas inteligentes»: la pantalla ya se llama
+          «Llamadas» dos centímetros más arriba. Repetirlo dejaba el título en
+          «Llam…» y escondía lo único que distingue una jornada de otra, que es
+          su nombre. */}
       <b style={{ fontSize: 14, letterSpacing: '-0.01em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        Llamadas inteligentes{sesion?.nombre ? <span style={{ fontWeight: 500, color: C.g500 }}> · {sesion.nombre}</span> : null}
+        {movil
+          ? (sesion?.nombre || 'Llamadas inteligentes')
+          : <>Llamadas inteligentes{sesion?.nombre ? <span style={{ fontWeight: 500, color: C.g500 }}> · {sesion.nombre}</span> : null}</>}
       </b>
       {/* El marcador del partido, de reojo: conversaciones · costo · sin
           contacto. Sin tarjetas, sin etiquetas largas, sin robarle sitio a la
           llamada. Se esconde en el teléfono, donde el header ya va lleno. */}
-      {fase === 'viva' && sesion && (
+      {/* En el teléfono, con la píldora de «Fuera de la sala» puesta, los KPIs
+          dejan el nombre de la jornada en «Vista …». Cuando hay un aviso que
+          resolver, el marcador del partido puede esperar: se esconde y el
+          título recupera su sitio. */}
+      {fase === 'viva' && sesion && !(movil && !enSala && !sola) && (
         /* En el teléfono se quedaban FUERA —el header iba lleno— y con eso
            desaparecía el marcador del partido justo en la pantalla donde más
            se trabaja hoy. Caben los dos que se miran de reojo entre llamada y
@@ -1109,7 +1119,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: C.g50, borderLeft: `1px solid ${C.g200}` }}>
         {cab}
         <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? '14px 14px 110px' : 22 }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gap: 14 }}>
+          <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {errorBox}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ ...tarjeta('#9B8CFA'), flex: 1, minWidth: 140 }}><span style={etiqueta}>En la lista</span><div style={{ fontSize: 22, fontWeight: 800, color: C.moradoTinta }}>{pendientes.length}</div></div>
@@ -1149,7 +1159,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: C.g50, borderLeft: `1px solid ${C.g200}` }}>
         {cab}
         <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? '14px 14px 110px' : 22 }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gap: 14 }}>
+          <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {errorBox}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {kpi('#4FBF95', 'Contestaron', s.contestadas, '#1E8A63', `${fmt(s.segundos_hablados || 0)} hablados`)}
@@ -1319,11 +1329,27 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: movil ? 'column' : 'row' }}>
         {/* Izquierda: el item actual */}
         <div className="wa-scroll" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: movil ? '14px 14px 96px' : 22 }}>
-          <div style={{ maxWidth: 640, margin: '0 auto', display: 'grid', gap: 12 }}>
+          {/* ══ 🔴 `minmax(0, 1fr)`: LA REJILLA NO PUEDE ESTIRARSE (19-sep-2026)
+              Medido a 390 px: esta rejilla se dibujaba de 618 px y las tarjetas
+              salían cortadas por la derecha. No era el padre —ya estaba en
+              342— sino la regla de CSS que más muerde en móvil: una columna de
+              grid vale `auto`, y `auto` significa «tan ancha como el hijo más
+              ancho que no sepa encogerse». Basta una fila con dos textos que no
+              envuelven para que la rejilla entera crezca, y `maxWidth` no lo
+              impide: sólo pone el techo en 640.
+
+              `minmax(0, 1fr)` dice lo contrario: el mínimo es CERO, o sea que
+              la columna cede y los hijos se apañan. Es el arreglo canónico y no
+              cambia nada en escritorio, donde nunca falta sitio. */}
+          <div style={{ maxWidth: 640, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 12 }}>
             {errorBox}
             {!enSala && !sola && (
-              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ flex: 1 }}>
+              /* `minWidth: 0` en la caja y en su texto: sin eso, el botón
+                 «Reanudar y entrar a la sala» —que no envuelve— estiraba el
+                 aviso a 618 px dentro de una columna de 247, y en el teléfono
+                 se salía por la derecha con todo y tarjeta. Medido a 390. */
+              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
+                <span style={{ flex: '1 1 160px', minWidth: 0 }}>
                   {pausada && sesion.pausa_motivo === 'caida' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se cortó tu conexión</b>}
                   {pausada && sesion.pausa_motivo === 'disyuntor' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se detuvo sola</b>}
                   {pausada && sesion.pausa_motivo === 'horario' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Fuera de horario</b>}
@@ -1469,13 +1495,22 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     )}
                   </div>
                 )}
+                {/* En el teléfono el avatar se va y el nombre usa el ancho
+                    entero: con 44 px de foto y el botón «Ver chat» a la
+                    derecha, «Manuela vidal gonzalez» se partía en dos renglones
+                    alrededor del círculo. El nombre de a quién le hablas es lo
+                    más grande de la pantalla por algo. «Ver chat» baja debajo,
+                    donde además se alcanza con el pulgar. */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ width: 44, height: 44, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoUsuario size={22} /></span>
+                  {!movil && <span style={{ width: 44, height: 44, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoUsuario size={22} /></span>}
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em', color: C.g900 }}>{actual.nombre || 'Sin nombre'}</div>
+                    <div style={{ fontSize: movil ? 20 : 19, fontWeight: 800, letterSpacing: '-0.02em', color: C.g900, lineHeight: 1.2 }}>{actual.nombre || 'Sin nombre'}</div>
                     <div style={{ fontSize: 12.5, color: C.g500 }}>{[actual.empresa, telefonoLegible(actual.telefono), actual.hora_local ? `allá son las ${actual.hora_local}` : null].filter(Boolean).join(' · ')}</div>
+                    {movil && actual.conversation_id && onAbrirConversacion && (
+                      <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={{ ...btnT, marginTop: 7 }}>Ver chat</button>
+                    )}
                   </div>
-                  {actual.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={btnT}>Ver chat</button>}
+                  {!movil && actual.conversation_id && onAbrirConversacion && <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={btnT}>Ver chat</button>}
                 </div>
 
                 {/* ══ ¿Y ESTO MORADO QUÉ ES? (18-sep-2026) ════════════════════

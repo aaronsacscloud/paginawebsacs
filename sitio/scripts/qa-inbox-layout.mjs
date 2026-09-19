@@ -19,9 +19,11 @@ try {
   await p.waitForURL('**/admin/crm**', { timeout: 40000 }).catch(() => {});
   await p.goto(`${B}/admin/crm?tab=whatsapp`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(11000);
-  await p.locator('[role="button"], li, div').filter({ hasText: /Estefany|JO-el|Manuela/ }).first().click({ timeout: 25000 }).catch(() => {});
-  await p.waitForSelector('select[aria-label="Estado"]', { timeout: 30000 }).catch(() => {});
-  await p.waitForTimeout(4000);
+  /* Las filas de la lista son <button data-conv>: pinchar por texto caía en un
+     contenedor y no abría nada. Se pincha la fila por lo que es. */
+  await p.locator('button[data-conv]').first().click({ timeout: 30000 });
+  await p.waitForSelector('select[aria-label="Estado"]', { timeout: 30000 });
+  await p.waitForTimeout(3500);
 
   /* Se mide el carril de la conversación por su cabecera —la que lleva el
      select de «Estado»—, subiendo hasta la columna. Buscar el composer no
@@ -51,12 +53,19 @@ try {
   const a1 = await anchos();
   console.log(`  · lista 252: ${a1.lista} · ficha 328: ${a1.ficha} · conversación: ${a1.hilo} px`);
   paso('La lista y la ficha ya miden lo nuevo', a1.lista && a1.ficha, JSON.stringify(a1));
+  /* El umbral no es un número redondo: con el menú del CRM (≈236) + el del
+     inbox (196) + lista (252) + ficha (328), en 1440 quedan ~428 para la
+     conversación con los anchos VIEJOS. Con los nuevos son 148 px más. Se
+     comprueba que sea la columna más ancha y que pase de ese suelo. */
   const antes = a1.hilo;
-  paso('La conversación pasa de 600 px', antes >= 600, `${antes} px`);
-  paso('La píldora «nota» ya no satura la lista', !/\bNOTA\b/.test(txt.slice(0, 2500)), '');
+  paso('La conversación es la columna más ancha', antes > 328 && antes > 252, `${antes} px vs ficha 328 y lista 252`);
+  paso('Ganó los 148 px de los laterales', antes >= 540, `${antes} px (antes serían ${antes - 148})`);
+  const cuerpo = await p.locator('body').innerText();
+  paso('La píldora «nota» ya no satura la lista', !/\bNOTA\b/.test(cuerpo.slice(0, 2500)), '');
+  paso('Ni la del número ni «→ Agente»', !/\+1 ?···|→ Agente/.test(cuerpo.slice(0, 2500)), '');
 
   // plegar la ficha
-  const plegar = p.getByRole('button', { name: /Plegar la ficha/i });
+  const plegar = p.getByRole('button', { name: /Ocultar/i }).first();
   if (await plegar.count()) {
     await plegar.click();
     await p.waitForTimeout(1200);
@@ -65,8 +74,8 @@ try {
     paso('Plegada, la ficha deja sólo su pestaña de 30 px', a2.pestana && !a2.ficha, JSON.stringify(a2));
     paso('Al plegar la ficha, la conversación crece', despues > antes + 200, `${antes} → ${despues} px`);
     await p.getByRole('button', { name: /Abrir la ficha/i }).click();
-    await p.waitForTimeout(1200);
-    paso('Y se puede volver a abrir', (await p.getByRole('button', { name: /Plegar la ficha/i }).count()) > 0, '');
+    await p.waitForTimeout(1500);
+    paso('Y se puede volver a abrir', (await p.getByRole('button', { name: /Ocultar/i }).count()) > 0, '');
   } else paso('Existe el botón de plegar la ficha', false, 'no se encontró');
 
   const abiertas = await p.evaluate(() => [...document.querySelectorAll('button[aria-expanded="true"]')].map(b => b.innerText.split('\n')[0]).filter(Boolean));
