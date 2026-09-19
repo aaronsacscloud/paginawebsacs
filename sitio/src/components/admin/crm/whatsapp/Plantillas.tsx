@@ -138,7 +138,24 @@ export function PlantillasMeta() {
                 {pagina.map(p => (
                   <tr key={p.id}>
                     <td style={{ ...S.td, fontWeight: 700, fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{p.nombre}</td>
-                    <td style={S.td}><Tag tono={p.categoria === 'MARKETING' ? 'acento' : 'info'}>{p.categoria}</Tag></td>
+                    <td style={S.td}>
+                      <Tag tono={p.categoria === 'MARKETING' ? 'acento' : 'info'}>{p.categoria}</Tag>
+                      {/* ══ MARKETING SIN GEMELA DE UTILITY (19-sep-2026) ══════
+                          Meta frena los mensajes de marketing a un número sin
+                          avisar antes, y entonces sale la plantilla de utility
+                          que diga LO MISMO. Si no hay ninguna declarada, el
+                          código prefiere el silencio a mandar algo que no venga
+                          al caso —la regla salió del caso de Jakob, que recibió
+                          «quedamos pendientes de tu solicitud» cuando le íbamos
+                          a avisar del número nuevo—.
+                          Ese silencio es correcto pero invisible: se enseña aquí
+                          para que se vea qué plantillas se quedarían mudas, y en
+                          gris, no en rojo: no está rota, le falta su pareja. */}
+                      {p.categoria === 'MARKETING' && p.status === 'APPROVED' && !p.respaldo_utility && (
+                        <div title="Si Meta frena el marketing a ese número, esta plantilla no manda nada: no tiene una de utility que diga lo mismo."
+                          style={{ fontSize: 10, color: C.g400, marginTop: 3 }}>sin respaldo de utility</div>
+                      )}
+                    </td>
                     <td style={S.td}>{p.idioma}</td>
                     <td style={S.td}>
                       <Tag tono={TONO[p.status] || 'gris'}>{p.status === 'APPROVED' ? 'Aprobada' : p.status === 'REJECTED' ? 'Rechazada' : p.status === 'PENDING' ? 'En revisión' : p.status === 'PAUSED' ? 'Pausada' : p.status === 'DISABLED' ? 'Deshabilitada' : p.status}</Tag>

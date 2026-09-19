@@ -21,10 +21,6 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       que sí lo abrió y otro dice que no» → HECHO: eran DOS correos (la campaña y nuestra respuesta, con el mismo
       asunto). Cada renglón lleva su hora y su estado completo.
 
-- [ ] **2026-09-15 · El respaldo de utility debe hablar del MISMO tema.** «a Jakob se le envió lo del nuevo número, pero
-      al no salir el de marketing salió este de utility que no tiene nada que ver con el mensaje anterior; aquí debemos
-      manejar otro tipo de formas en caso de que el de marketing no pase, pero que no sea algo que saque de onda al
-      cliente o al prospecto porque no tiene nada que ver.» → EN CURSO.
 
 - [x] **2026-09-15 · «No contestadas» también con correos y llamadas.** «que igual aparezca cuando envía correo el
       cliente y pues no le hemos contestado… y las llamadas que lleguen por aquí que aparezcan ahí» → HECHO.
@@ -87,19 +83,7 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       pasos de WhatsApp no tenían respaldo configurado. Los 10 leads que se quedaron sin nada RECUPERADOS el 14-sep
       («si dale»): 10 de 10 entregados, cero fallos.
 
-- [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
-      «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que
-      hagan que se descuadre el diseno de la informacion general del cliente. Adicional, quiero que me agregues un
-      campo de sucursal: las que tienen activas dentro del sistema y las que tiene el negocio […] si Oculani en
-      realidad tiene cuatro sucursales pero contrató una, ahí ya sé que existe una oportunidad de expansión […] y
-      que al final esto se pueda agregar como una oportunidad»
-      → Ya lo había pedido antes (bloque fiscal suelto). Dos piezas: (1) los datos fiscales viven DENTRO de Info
-      general sin romper la rejilla; (2) `sucursales_negocio` en companies + la brecha contra las activas + botón
-      para volverla oportunidad.
 
-- [ ] **2026-09-14 · El flujo de ideas → oportunidad → cotización en la ficha del cliente.**
-      Propuesta y prototipo entregados (code.sacscloud.com/shots/flujo-ideas.html). Falta el visto bueno del dueño
-      para montarlo: cuatro listas, una acción principal por renglón y la idea que sale de la lista al cotizarse.
 
 - [x] **2026-09-13 · La firma de pantalla en los demás módulos (Soporte, Taller, Consultoría, Leads).** → HECHO el mismo día: las cuatro montadas con las frases que eligió el dueño, y el Tablero pasó a usar el componente compartido.
       «me gustaria que en estas pantallas puedas poner los efectos del mensaje y las estrellas de acuerdo a su
@@ -116,51 +100,12 @@ Ver la regla en `CLAUDE.md` (Cola de trabajo).
       dueño: plantilla de bienvenida por edición «vamos», plantilla de invitación aprobada con hasta 4 variables
       (nombre, feria, stand, liga), y el horario_stand de prueba (10–18 h, 30 min, cupo 2) que dejé en JOYA Octubre 2026.
 
-- [ ] **2026-09-07 · Outbound.** «de ahí regresamos con todo el tema outboubd» → sigue al cerrar los 10 puntos de eventos.
 
-- [ ] **2026-09-07 · Cuentas objetivo: piezas visuales de los 14 giros que faltan + diagnóstico hecho antes de escribir.**
-      Propuesto por mí y el dueño respondió «HAZ ESTO [eventos] Y DE AHÍ REFINAMOS LA OTRO». Se toma al cerrar Eventos.
 
-- [ ] **2026-09-07 · Eventos físicos (ferias) como módulo del CRM.** «hacer una sección clara y un calendario claro ahí
-      mismo de los eventos más importantes: cuándo es SAPICA, cuándo Intermoda, cuándo son los lugares donde van a
-      comprar textiles las boutiques, qué más hay como Intermoda, qué más hay como SAPICA, qué más hay de renta de
-      vestidos de novia. Saquemos toda la data: explicación del evento, participantes que van, si es buen fit para
-      poner un stand y ganar ahí muchos clientes. Necesito una lista clara de lugares donde debemos asistir y ahí
-      mismo todo lo necesario para agregar a los registrados del evento, medir conversiones, medir todo lo requerido
-      para llevar una gestión recurrente correcta de cada evento físico. Analiza el caso, considera huecos escondidos,
-      crea un plan con todo lo que debe tener el sistema y ejecuta hasta lograr el /goal. Referee de UI/UX/lógica de
-      negocio y referee de innovación que simplifique el proceso.» → HECHO 2026-09-07 (commits sin push). Quedan
-      del referee: service worker para la cola sin red de /e/[token] (hoy el texto dice la verdad: hay que dejar la
-      página abierta o volver a abrir el QR), y el OK del dueño para borrar 4 eventos viejos duplicados.
 
-- [ ] **2026-09-05 · Respuestas libres + evaluación desde el inbox + acciones pedidas por el prospecto.** «Ya me
-      gustaría dejar estas respuestas libres pero que desde el inbox pueda evaluar la respuesta y mejorarla para
-      futuras, para probar los tiempos, y que al editar un mensaje me ponga más campos para llenarte los datos que
-      necesitas para que realmente aprendas. Y otro caso: cuando el prospecto sí desea seguir contactado pero dice
-      estoy de viaje o llámame en 3 días (registrar una llamada de discovery) o contáctame en 3 semanas. Cuando pide
-      una acción concreta: responder con empatía y programar internamente el seguimiento; si pide llamada un día
-      específico, preguntar hora y agendar; si dice contáctame en 30 días, programar el seguimiento a 30 días. Eso va
-      en otra subsección de Trabajo inteligente tipo mensajes por agenda. Considerar otros 50 casos típicos.» → HECHO (5-sep): motor de compromisos + sección Programados + respuesta en vivo 24 h + Evaluar en el inbox + chips de cambios.
 
-- [ ] **2026-09-05 · El nombre y los mensajes de bot.** «Verifica que el nombre esté bien, que sea un nombre real, y
-      llámala por su nombre; el nombre al inicio es importante. En los primeros dos mensajes sí se usa, como "Hola,
-      nombre" o solo "nombre", con variaciones; si ya mandaste dos mensajes con el nombre, ya es demasiado. Y hay que
-      generar un patrón que identifique los promocionales: a veces el usuario tiene su propio bot que manda un mensaje
-      genérico; esos hay que omitirlos y basar el próximo mensaje en los mensajes anteriores.» → EN CURSO.
 
-- [ ] **2026-09-04 · Mensajes de seguimiento más cálidos y con una pizca de solución.** «Hay algunos que están muy
-      duros, no invitan a la respuesta y no se entiende que queríamos conocer más del negocio o cómo Sacs puede
-      ayudarlo. Si tenemos algo de información del prospecto, darle una pizca de cómo podemos ayudarle, y de ahí
-      decirle que lo mejor sería agendar una demo con opciones esta semana o la próxima. Si ya le ofreciste demo y
-      dijo que no, ofrecer una llamada, o al revés. Variar dentro del mensaje, y siempre dar una solución más
-      concreta a lo que busca o preguntarle más sobre algo que dijo y no hemos profundizado. Regenerar las
-      respuestas con esto.» → SE HACE ANTES DEL ÁRBITRO: cambia los criterios que el árbitro va a medir.
 
-- [ ] **2026-09-04 · Plan de revisión y árbitro de calidad.** «Haz un plan de revisión y dime qué otra cosa no
-      estoy viendo o qué otras cosas debemos mejorar en el entendimiento de la IA de qué mensaje enviar para
-      asegurar que siempre sea el mejor mensaje posible. Utiliza un referee que analice bien cada respuesta hasta
-      que sea 10/10 y avísame cuando se hayan cubierto los criterios de aceptación de cada caso por el cual llega
-      un lead, se le da seguimiento y también la descalificación.» → HECHO (5-sep).
 
 ## Hecho
 
@@ -293,7 +238,6 @@ MX, ~1 centavo USD cada una (~$12 USD). El cron `abm-verificar-correos` ya
 existe (`?cuantas=100&giro=…`). Se corre cuando el dueño diga que ya hay
 presupuesto; mientras, el disyuntor y la rampa cuidan el dominio.
 
-- [ ] Esperando el OK del dueño (mañana o pasado, 15/16-sep-2026)
 
 ## 2026-09-14 · Correos ABM fuera de México: empresa global + agenda que funcione desde España
 
@@ -329,13 +273,6 @@ Qué significa, para no equivocarse al aplicarlo:
   BLANCAS, con su franja de color de 3 px como el resto del CRM.
 
 - [x] Quitar el degradado morado de la tarjeta grande del Taller de la cuenta (14-sep-2026).
-- [ ] Poner la banda de destellos + sello en las pestañas de la ficha del cliente que todavía no la
-      tienen: Info general, Suscripciones, Actividad, Reuniones, Conversaciones, Soporte, Outbound,
-      Renovación.
-- [ ] Revisar las demás vistas con clientes (Onboarding, Churn, Cobranza, Renovaciones) y ponerles la
-      suya con su frase.
-- [ ] Decidir qué pasa con la tarjeta faro que YA existe en Clientes: el dueño la aprobó como branding
-      en su momento; preguntarle si también la quiere en blanco o si esa se queda como la excepción.
 
 ## 2026-09-15 · El diseño de TODAS las vistas del cliente: tarjetas primero, limpias, y solo las estrellas de fondo
 
@@ -515,21 +452,6 @@ clave; se toma al terminar las 5 secciones nuevas de /partners (calculadora, cer
 > adicional a eso que bloquee todo para las 12:00 PM en adelante.»
 
 - [x] **6 · Botón de llamar** en la lista de llamadas y en el detalle del lead. HECHO.
-- [ ] **7 · La sesión de llamadas, de punta a punta.**
-      - [x] 7.1 Indicador en vivo: semáforo verde «Estás al aire — te escuchan».
-      - [x] 7.2 Fuera la barra espaciadora; el micrófono se abre SOLO al contestar.
-      - [x] 7.3 Ocupado + aviso por WhatsApp + tarea de devolver la llamada.
-            ⚠️ FALTA la plantilla UTILITY en Meta («llamada_ocupado_v1»): quien
-            llama por teléfono casi nunca tiene la ventana de 24 h abierta, y
-            ninguna de las 27 aprobadas sirve. El mecanismo ya está: se pone el
-            nombre en PLANTILLA_OCUPADO (ocupado.ts) y empieza a salir sola.
-      - [x] 7.4 Cierre automático. Ya existía agendar + notas + datos + envíos
-            con confirmación previa; FALTABA descalificar, que es lo que se
-            agregó (mismo bug que Montse por el canal del teléfono).
-      - [~] 7.5 Tiempo real: la cabina ya pinta el estado de cada llamada en
-            vivo y el cierre enumera lo que va a hacer antes de hacerlo; el
-            semáforo del micrófono (7.1) cubre lo que faltaba de la llamada en
-            curso. Si quiere una bitácora corriendo, decirlo.
 - [~] **8 · Llamadas inteligentes con espacio propio.**
       - [x] El bug reportado: tocar un filtro ya te saca de la cabina y te lleva
             al inbox, en vez de dejarte atrapado con una lista que no coincide.
@@ -937,7 +859,7 @@ Lo que quedó fuera y sigue pendiente:
 - [x] **¿Dónde escucho las grabaciones?** → contestado en el chat; falta ponerlo en una pantalla:
       hoy se oyen desde la cabina («Oír la llamada») y el PDF/minuta va en el hilo, pero no hay una
       lista de grabaciones para buscar una de hace tres días.
-- [ ] **Las 5 mejoras extra por cada punto** que pidió (UX) — van saliendo con cada bloque.
+- [x] **Las 5 mejoras extra por cada punto** (UX) → salieron repartidas en cada bloque del día.
 
 ## 19-sep-2026 — de la jornada de llamadas del dueño
 
@@ -951,7 +873,7 @@ Lo que quedó fuera y sigue pendiente:
       aprobada, así que entran solas — pero hay que CONFIRMAR que Meta las aprobó.
 - [x] **Pantalla de grabaciones** → HECHA (buscar, oír, y bajar una sola voz en WAV para clonarla).: hoy sólo se oyen desde la tarjeta de la llamada. Falta poder
       buscar una de hace tres días. (28 de 124 llamadas tienen audio: la grabación es a petición.)
-- [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep, sigue abierto).
+
 
 ## 19-sep-2026 · tarde — llegó mientras ensanchaba la conversación
 
@@ -1000,10 +922,118 @@ Lo que quedó fuera y sigue pendiente:
 
 ## 19-sep-2026 · lo ÚNICO que queda abierto de esta sesión
 
-- [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep). «A Jakob se le
-      envió lo del nuevo número, pero al no salir el de marketing salió este de utility que no
-      tiene nada que ver con el mensaje anterior.» Hoy la cascada elige la utility por
-      configuración, no por tema: hay que emparejarlas por asunto.
+- [x] **El respaldo de utility debe hablar del MISMO tema** (venía del 15-sep) → HECHO. El
+      mecanismo ya existía desde entonces (`respaldo_utility` en cada plantilla, y silencio si no
+      hay gemela); lo que faltaba eran los DATOS. Emparejadas las que se usan: «nuevo número» y
+      «número oficial» con una utility nueva que dice lo mismo, y la de anualidad vencida con otra
+      igual. Las cuatro aperturas EN FRÍO se quedan sin pareja a propósito: a quien nunca nos
+      escribió no hay utility honesta que mandarle, y el código ya prefiere el silencio.
+      En la pantalla de Plantillas ahora se ve cuáles se quedarían mudas («sin respaldo de
+      utility»), que es lo que evita que esto se vuelva a pudrir.
 - [ ] **QA visual de todo lo de hoy.** El servidor de dev lleva la tarde caído por
       `src/data/navigation.ts` (otra sesión). Todo está compilado, medido contra la base y con 8
       suites en verde, pero las pantallas nuevas no las he visto con el navegador.
+
+---
+
+## 🧊 CONGELADO — no tocar sin que el dueño lo diga
+
+Decisión del dueño (19-sep-2026): «esos no importan ahora». Son los pendientes
+que traía la cola de antes de esta sesión. No se borran —cada uno es una
+petición suya con su contexto— pero salen del camino para que lo que queda
+arriba sea lo que de verdad está en juego.
+
+Para descongelar uno: se mueve otra vez arriba, con su fecha.
+
+- [ ] **2026-09-15 · El respaldo de utility debe hablar del MISMO tema.** «a Jakob se le envió lo del nuevo número, pero
+      al no salir el de marketing salió este de utility que no tiene nada que ver con el mensaje anterior; aquí debemos
+      manejar otro tipo de formas en caso de que el de marketing no pase, pero que no sea algo que saque de onda al
+      cliente o al prospecto porque no tiene nada que ver.» → EN CURSO.
+
+- [ ] **2026-09-14 · Facturación dentro de Info general + campo de sucursales del negocio.**
+      «la informacion de facturacion puede estar dentro de la informacion del cliente. No me manejes formatos que
+      hagan que se descuadre el diseno de la informacion general del cliente. Adicional, quiero que me agregues un
+      campo de sucursal: las que tienen activas dentro del sistema y las que tiene el negocio […] si Oculani en
+      realidad tiene cuatro sucursales pero contrató una, ahí ya sé que existe una oportunidad de expansión […] y
+      que al final esto se pueda agregar como una oportunidad»
+      → Ya lo había pedido antes (bloque fiscal suelto). Dos piezas: (1) los datos fiscales viven DENTRO de Info
+      general sin romper la rejilla; (2) `sucursales_negocio` en companies + la brecha contra las activas + botón
+      para volverla oportunidad.
+
+- [ ] **2026-09-14 · El flujo de ideas → oportunidad → cotización en la ficha del cliente.**
+      Propuesta y prototipo entregados (code.sacscloud.com/shots/flujo-ideas.html). Falta el visto bueno del dueño
+      para montarlo: cuatro listas, una acción principal por renglón y la idea que sale de la lista al cotizarse.
+
+- [ ] **2026-09-07 · Outbound.** «de ahí regresamos con todo el tema outboubd» → sigue al cerrar los 10 puntos de eventos.
+
+- [ ] **2026-09-07 · Cuentas objetivo: piezas visuales de los 14 giros que faltan + diagnóstico hecho antes de escribir.**
+      Propuesto por mí y el dueño respondió «HAZ ESTO [eventos] Y DE AHÍ REFINAMOS LA OTRO». Se toma al cerrar Eventos.
+
+- [ ] **2026-09-07 · Eventos físicos (ferias) como módulo del CRM.** «hacer una sección clara y un calendario claro ahí
+      mismo de los eventos más importantes: cuándo es SAPICA, cuándo Intermoda, cuándo son los lugares donde van a
+      comprar textiles las boutiques, qué más hay como Intermoda, qué más hay como SAPICA, qué más hay de renta de
+      vestidos de novia. Saquemos toda la data: explicación del evento, participantes que van, si es buen fit para
+      poner un stand y ganar ahí muchos clientes. Necesito una lista clara de lugares donde debemos asistir y ahí
+      mismo todo lo necesario para agregar a los registrados del evento, medir conversiones, medir todo lo requerido
+      para llevar una gestión recurrente correcta de cada evento físico. Analiza el caso, considera huecos escondidos,
+      crea un plan con todo lo que debe tener el sistema y ejecuta hasta lograr el /goal. Referee de UI/UX/lógica de
+      negocio y referee de innovación que simplifique el proceso.» → HECHO 2026-09-07 (commits sin push). Quedan
+      del referee: service worker para la cola sin red de /e/[token] (hoy el texto dice la verdad: hay que dejar la
+      página abierta o volver a abrir el QR), y el OK del dueño para borrar 4 eventos viejos duplicados.
+
+- [ ] **2026-09-05 · Respuestas libres + evaluación desde el inbox + acciones pedidas por el prospecto.** «Ya me
+      gustaría dejar estas respuestas libres pero que desde el inbox pueda evaluar la respuesta y mejorarla para
+      futuras, para probar los tiempos, y que al editar un mensaje me ponga más campos para llenarte los datos que
+      necesitas para que realmente aprendas. Y otro caso: cuando el prospecto sí desea seguir contactado pero dice
+      estoy de viaje o llámame en 3 días (registrar una llamada de discovery) o contáctame en 3 semanas. Cuando pide
+      una acción concreta: responder con empatía y programar internamente el seguimiento; si pide llamada un día
+      específico, preguntar hora y agendar; si dice contáctame en 30 días, programar el seguimiento a 30 días. Eso va
+      en otra subsección de Trabajo inteligente tipo mensajes por agenda. Considerar otros 50 casos típicos.» → HECHO (5-sep): motor de compromisos + sección Programados + respuesta en vivo 24 h + Evaluar en el inbox + chips de cambios.
+
+- [ ] **2026-09-05 · El nombre y los mensajes de bot.** «Verifica que el nombre esté bien, que sea un nombre real, y
+      llámala por su nombre; el nombre al inicio es importante. En los primeros dos mensajes sí se usa, como "Hola,
+      nombre" o solo "nombre", con variaciones; si ya mandaste dos mensajes con el nombre, ya es demasiado. Y hay que
+      generar un patrón que identifique los promocionales: a veces el usuario tiene su propio bot que manda un mensaje
+      genérico; esos hay que omitirlos y basar el próximo mensaje en los mensajes anteriores.» → EN CURSO.
+
+- [ ] **2026-09-04 · Mensajes de seguimiento más cálidos y con una pizca de solución.** «Hay algunos que están muy
+      duros, no invitan a la respuesta y no se entiende que queríamos conocer más del negocio o cómo Sacs puede
+      ayudarlo. Si tenemos algo de información del prospecto, darle una pizca de cómo podemos ayudarle, y de ahí
+      decirle que lo mejor sería agendar una demo con opciones esta semana o la próxima. Si ya le ofreciste demo y
+      dijo que no, ofrecer una llamada, o al revés. Variar dentro del mensaje, y siempre dar una solución más
+      concreta a lo que busca o preguntarle más sobre algo que dijo y no hemos profundizado. Regenerar las
+      respuestas con esto.» → SE HACE ANTES DEL ÁRBITRO: cambia los criterios que el árbitro va a medir.
+
+- [ ] **2026-09-04 · Plan de revisión y árbitro de calidad.** «Haz un plan de revisión y dime qué otra cosa no
+      estoy viendo o qué otras cosas debemos mejorar en el entendimiento de la IA de qué mensaje enviar para
+      asegurar que siempre sea el mejor mensaje posible. Utiliza un referee que analice bien cada respuesta hasta
+      que sea 10/10 y avísame cuando se hayan cubierto los criterios de aceptación de cada caso por el cual llega
+      un lead, se le da seguimiento y también la descalificación.» → HECHO (5-sep).
+
+- [ ] Esperando el OK del dueño (mañana o pasado, 15/16-sep-2026)
+
+- [ ] Poner la banda de destellos + sello en las pestañas de la ficha del cliente que todavía no la
+      tienen: Info general, Suscripciones, Actividad, Reuniones, Conversaciones, Soporte, Outbound,
+      Renovación.
+
+- [ ] Revisar las demás vistas con clientes (Onboarding, Churn, Cobranza, Renovaciones) y ponerles la
+      suya con su frase.
+
+- [ ] Decidir qué pasa con la tarjeta faro que YA existe en Clientes: el dueño la aprobó como branding
+      en su momento; preguntarle si también la quiere en blanco o si esa se queda como la excepción.
+
+- [ ] **7 · La sesión de llamadas, de punta a punta.**
+      - [x] 7.1 Indicador en vivo: semáforo verde «Estás al aire — te escuchan».
+      - [x] 7.2 Fuera la barra espaciadora; el micrófono se abre SOLO al contestar.
+      - [x] 7.3 Ocupado + aviso por WhatsApp + tarea de devolver la llamada.
+            ⚠️ FALTA la plantilla UTILITY en Meta («llamada_ocupado_v1»): quien
+            llama por teléfono casi nunca tiene la ventana de 24 h abierta, y
+            ninguna de las 27 aprobadas sirve. El mecanismo ya está: se pone el
+            nombre en PLANTILLA_OCUPADO (ocupado.ts) y empieza a salir sola.
+      - [x] 7.4 Cierre automático. Ya existía agendar + notas + datos + envíos
+            con confirmación previa; FALTABA descalificar, que es lo que se
+            agregó (mismo bug que Montse por el canal del teléfono).
+      - [~] 7.5 Tiempo real: la cabina ya pinta el estado de cada llamada en
+            vivo y el cierre enumera lo que va a hacer antes de hacerlo; el
+            semáforo del micrófono (7.1) cubre lo que faltaba de la llamada en
+            curso. Si quiere una bitácora corriendo, decirlo.
