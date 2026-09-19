@@ -19,6 +19,7 @@
 //      la próxima.
 import { supabase } from '../supabase';
 import { claseDeFallo } from './fallo-cierre';
+import { tiposDeReunion, huecosProximos, ajustarAHueco } from './agenda-huecos';
 import { anthropic, MODELS, hasApiKey } from '../ai/client';
 import { dialogoOido, type Oido } from './oidos';
 import { telefonoWhatsApp } from '../telefono';
@@ -32,7 +33,12 @@ import { zonaDeLada, ladaDe, instanteEnZona, fechaHoraEn } from './zonas';
 
 const ahora = () => new Date().toISOString();
 export const RESULTADOS_CIERRE = ['contesto', 'volver_llamar', 'dieron_datos', 'no_interesa', 'buzon'];
-const TIPOS_REUNION: Record<string, string> = { demo: 'demo', seguimiento: 'seguimiento', cotizacion: 'cotizacion', 'llamada-discovery': 'llamada-discovery' };
+/* Respaldo si la agenda no contesta: los cuatro de siempre. La lista BUENA se
+   lee de `event_types` en cada cierre —hay catorce tipos activos, cada uno con
+   su duración, su disponibilidad y sus correos— porque una lista escrita aquí
+   se queda vieja el día que alguien crea un tipo nuevo, y entonces el prospecto
+   que pide una capacitación termina con una «demo» agendada. */
+const TIPOS_BASE: Record<string, number> = { demo: 30, seguimiento: 60, cotizacion: 45, 'llamada-discovery': 15 };
 /* ══ 🔴 LA LLAMADA DE 19 MINUTOS QUE SE QUEDÓ SIN CIERRE (18-sep-2026) ═════
    Reporte del dueño sobre la reunión con Maela: «fue una reunión de 30 o 40
    minutos y por alguna razón no veo las referencias ni las solicitudes de la
@@ -86,7 +92,12 @@ function instanteCompromiso(fecha: string, hora: string, zona = 'America/Mexico_
   return dt > 5 * 60000 && dt < 90 * 86400e3 ? d : null;
 }
 
-export type Compromiso = { tipo: 'llamada' | 'reunion'; fecha: string; hora: string; duracion_min?: number; motivo?: string; reunion_tipo?: string; confianza?: number };
+export type Compromiso = {
+  tipo: 'llamada' | 'reunion'; fecha: string; hora: string; duracion_min?: number;
+  motivo?: string; reunion_tipo?: string; confianza?: number;
+  /** La hora que dijo la IA no existía en la agenda de ese flujo y se movió al hueco real más cercano. */
+  movido?: boolean;
+};
 export type Envio = { id?: string; tema: string; detalle?: string; conocimiento_id?: string | null; estado?: string };
 export type Propuesta = {
   resultado: string; nota: string; siguiente_paso: string; no_llamar?: boolean; no_llamar_evidencia?: string;
@@ -136,6 +147,30 @@ export async function proponerCierre(itemId: string, opciones?: { reintento?: bo
     const hoy = hoyCdmx();
     const emp: any = c?.companies;
 
+    /* ══ LA CITA SE PROPONE SOBRE LOS FLUJOS QUE YA EXISTEN (19-sep-2026) ═══
+       Pedido del dueño: «la cita que me debe sugerir debe estar basada en las
+       reuniones que tiene el usuario, para que haga match con los flujos que ya
+       se tienen —que en automático generan la reunión, el mensaje y todo lo
+       demás—; la IA debe elegir si es demo o llamada de seguimiento o cualquier
+       CTA que haga match con la intención, y validar los horarios».
+
+       Así que se le dan las dos cosas de verdad: los tipos ACTIVOS de la agenda
+       con su duración, y los huecos reales de los tres más probables. Ya no
+       inventa ni el tipo ni la hora; elige de lo que existe. Y si la agenda no
+       contesta, se sigue con los cuatro de siempre y sin huecos: un cierre sin
+       cita es malo, un cierre que no se hace es peor. */
+    const tipos = await tiposDeReunion().catch(() => [] as any[]);
+    const catalogo = tipos.length ? tipos : Object.entries(TIPOS_BASE).map(([slug, minutos]) => ({ slug, nombre: slug, minutos }));
+    /* Sólo de los candidatos probables: pedir los huecos de los catorce tipos
+       son catorce viajes a la agenda dentro del cierre de una llamada. */
+    const probables = ['demo', 'llamada-discovery', 'seguimiento'].filter(sl => catalogo.some((t: any) => t.slug === sl));
+    const huecosPorTipo: Record<string, any[]> = {};
+    await Promise.all(probables.map(async sl => { huecosPorTipo[sl] = await huecosProximos(sl, 10, 8); }));
+    const agendaTexto = probables.map(sl => {
+      const hs = huecosPorTipo[sl] || [];
+      return `${sl}: ${hs.length ? hs.map(h => `${h.fecha} ${h.hora}`).join(', ') : '(sin huecos en 10 días)'}`;
+    }).join('\n');
+
     const prompt = `Eres el asistente de cierre de llamadas del CRM de Sacs (software para tiendas de moda en México). Un vendedor acaba de colgar. Abajo va la TRANSCRIPCIÓN EN VIVO (imperfecta: es reconocimiento de voz) con quién dijo qué.
 Tu trabajo: dejar la llamada cerrada en el CRM. Responde SOLO un JSON válido con esta forma exacta:
 {
@@ -151,7 +186,12 @@ Tu trabajo: dejar la llamada cerrada en el CRM. Responde SOLO un JSON válido co
 }
 REGLAS:
 - "resultado": volver_llamar si pidió que se le marque después; dieron_datos si dio datos pero no hubo compromiso; no_interesa si lo dijo claramente; buzon si en realidad era una grabadora; si no, contesto.
-- "compromisos": SOLO los que tengan fecha u hora dichas o deducibles («el jueves», «mañana a las 4», «la otra semana» = mismo día de la semana + 7). Hoy es ${hoy.dia} ${hoy.fecha}, ${hoy.hora} (hora del centro de México). Si dijo hora sin fecha, es hoy si aún no pasa y mañana si ya pasó. Sin hora: 10:00. «Te marco» = llamada (15 min, reunion_tipo llamada-discovery); «vemos el sistema / una demo / me lo enseñas» = reunion (60 min, demo). Fines de semana pasan al lunes. Nada de compromisos vagos («luego te busco»).
+- "compromisos": SOLO los que tengan fecha u hora dichas o deducibles («el jueves», «mañana a las 4», «la otra semana» = mismo día de la semana + 7). Hoy es ${hoy.dia} ${hoy.fecha}, ${hoy.hora} (hora del centro de México). Si dijo hora sin fecha, es hoy si aún no pasa y mañana si ya pasó. Fines de semana pasan al lunes. Nada de compromisos vagos («luego te busco»).
+- "reunion_tipo": elige el que HAGA MATCH con lo que pidió, de esta lista de flujos que existen en la agenda (cada uno trae su duración en minutos y dispara su propio correo, su invitación y sus recordatorios):
+${catalogo.map((t: any) => `  · ${t.slug} — ${t.nombre} (${t.minutos} min)`).join('\n')}
+  «Te marco / te llamo» = llamada-discovery. «Vemos el sistema / una demo / enséñamelo» = demo. «Ya lo vi, lo platicamos otra vez» = seguimiento. Si pide precios formales = cotizacion. Si pide que le enseñen a usarlo = capacitacion. Usa "duracion_min" la del tipo que elijas.
+- HORARIOS QUE DE VERDAD SE PUEDEN AGENDAR (hora del centro de México). Elige UNO de éstos, el más cercano a lo que se habló; NO inventes otra hora:
+${agendaTexto || '  (la agenda no contestó: usa la hora que se dijo)'}
 - "datos": solo lo dicho EXPLÍCITAMENTE. Campos posibles: ${CAMPOS_LEAD.join(', ')}. «sucursales» es un número; «empresa» es el nombre de su marca/tienda; «giro» qué vende. Si CONTRADICE lo que el CRM tiene, "corrige": true.
 - "envios": TODO lo que el vendedor prometió mandar (información, precios, un PDF, un video, una liga, cómo funciona algo). Si el tema coincide con uno de LO QUE YA SABEMOS RESPONDER, pon su id en conocimiento_id; si no, null.
 - "etapa": lead_calificado solo si quedó claro que es dueño/decisor de una tienda de moda con interés real. descalificado si dijo que NO le interesa, que no es para él, que no tiene tienda, o que ya no lo contacten — es decir, siempre que "resultado" sea no_interesa. Si no es ninguno de los dos, null. Un «ahora no puedo hablar» o «márcame luego» NO es descalificado: eso es volver_llamar.
@@ -181,7 +221,29 @@ ${dialogo.slice(0, 9000)}`;
       no_llamar_evidencia: String(p.no_llamar_evidencia || '').slice(0, 200),
       // Compromisos: fecha real, en el futuro y a menos de 90 días. Una fecha del pasado volvería a marcar al contacto al instante.
       compromisos: (Array.isArray(p.compromisos) ? p.compromisos : []).filter((x: any) => x && instanteCompromiso(String(x.fecha), String(x.hora), zonaDeLada(it.lada || ladaDe(it.telefono))) && Number(x.confianza ?? 1) >= 0.6)
-        .map((x: any) => ({ tipo: x.tipo === 'reunion' ? 'reunion' : 'llamada', fecha: x.fecha, hora: x.hora, duracion_min: Math.min(Math.max(Number(x.duracion_min) || (x.tipo === 'reunion' ? 60 : 15), 15), 240), motivo: String(x.motivo || '').slice(0, 200), reunion_tipo: TIPOS_REUNION[String(x.reunion_tipo)] || (x.tipo === 'reunion' ? 'demo' : 'llamada-discovery'), confianza: Number(x.confianza ?? 1) })).slice(0, 3),
+        .map((x: any) => {
+          /* El tipo sale del catálogo VIVO. Si la IA se inventa un slug que no
+             existe, se cae al de siempre según sea reunión o llamada — nunca se
+             agenda contra un flujo inexistente, que es una cita que no manda
+             correo ni invitación. */
+          const tipoReal = catalogo.find((t: any) => t.slug === String(x.reunion_tipo));
+          const slug = tipoReal?.slug || (x.tipo === 'reunion' ? 'demo' : 'llamada-discovery');
+          /* Y la hora se valida contra los huecos de ESE flujo: si la que dijo
+             la IA no existe en la agenda, se mueve al hueco real más cercano y
+             se dice en el motivo, para que quien confirma lo vea antes de
+             aceptar. Antes se creaba la cita igual, encimada o fuera del
+             horario de atención de ese tipo. */
+          const hs = huecosPorTipo[slug] || [];
+          const ajuste = ajustarAHueco(String(x.fecha), String(x.hora), hs);
+          const movido = !!ajuste?.movido;
+          return {
+            tipo: x.tipo === 'reunion' ? 'reunion' : 'llamada',
+            fecha: ajuste?.fecha || x.fecha, hora: ajuste?.hora || x.hora,
+            duracion_min: Math.min(Math.max(Number(tipoReal?.minutos) || Number(x.duracion_min) || (x.tipo === 'reunion' ? 60 : 15), 15), 240),
+            motivo: `${String(x.motivo || '').slice(0, 200)}${movido ? ` (se movió a ${ajuste!.fecha} ${ajuste!.hora}: a la hora que se habló no había hueco)` : ''}`.slice(0, 260),
+            reunion_tipo: slug, confianza: Number(x.confianza ?? 1), movido,
+          };
+        }).slice(0, 3),
       datos: (Array.isArray(p.datos) ? p.datos : []).filter((d: any) => d && (CAMPOS_LEAD as readonly string[]).includes(String(d.campo)) && String(d.valor || '').trim()).slice(0, 12),
       envios: (Array.isArray(p.envios) ? p.envios : []).filter((e: any) => e && String(e.tema || '').trim())
         .map((e: any) => ({ tema: String(e.tema).slice(0, 120), detalle: String(e.detalle || '').slice(0, 300), conocimiento_id: conocidos.has(String(e.conocimiento_id)) ? String(e.conocimiento_id) : null })).slice(0, 5),
@@ -503,6 +565,32 @@ async function caducarEnvio(e: any) {
 }
 
 /** Una reunión del CRM (con Google Calendar si el host lo tiene conectado) y, si es llamada, la vuelta a la lista con hora. */
+/* ══ AGENDAR A MANO DESDE LA LLAMADA (19-sep-2026) ═════════════════════════
+   El dueño quiere poder leerle los horarios al prospecto y cerrar ahí mismo,
+   «con IA o sin IA». Esto es el «sin IA»: la misma puerta que usa el cierre
+   automático —`crearCompromiso`—, así que la cita nace igual que cualquier
+   otra: con su tipo de evento, su anfitrión, su invitación de Google, su correo
+   y sus recordatorios. Un camino paralelo que insertara en `bookings` a mano
+   crearía citas de segunda, sin nada de eso. */
+export async function agendarDesdeLlamada(
+  itemId: string,
+  o: { fecha: string; hora: string; reunion_tipo: string; motivo?: string | null; userId?: string | null },
+): Promise<{ ok: boolean; dicho?: string; error?: string }> {
+  const { data: it } = await supabase.from('tel_sesion_items').select('*').eq('id', itemId).maybeSingle();
+  if (!it) return { ok: false, error: 'No existe esa llamada' };
+  const esLlamada = o.reunion_tipo === 'llamada-discovery';
+  const dicho = await crearCompromiso(it, {
+    tipo: esLlamada ? 'llamada' : 'reunion',
+    fecha: o.fecha, hora: o.hora, reunion_tipo: o.reunion_tipo,
+    motivo: o.motivo || undefined, confianza: 1,
+  }, o.userId || null);
+  /* `crearCompromiso` devuelve texto cuando NO pudo (y ese texto explica por
+     qué), y null cuando fue bien o cuando ya existía. El texto se pasa tal cual
+     a la pantalla: es la diferencia entre «ya quedó» y «no quedó y por esto». */
+  if (dicho && /^no se pudo/.test(dicho)) return { ok: false, error: dicho };
+  return { ok: true, dicho: dicho || `Quedó agendada para el ${o.fecha} a las ${o.hora}.` };
+}
+
 export async function crearCompromiso(it: any, cp: Compromiso, userId: string | null): Promise<string | null> {
   const { data: s } = await supabase.from('tel_sesiones').select('owner_id').eq('id', it.sesion_id).maybeSingle();
   const hostId = s?.owner_id || userId;

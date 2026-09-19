@@ -13,7 +13,8 @@ import { twilioRest, telefoniaConfigurada, telefoniaFaltantes } from '../../../.
 import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, compromisosDeSesion, relanzar, recontar, getSesion,
 } from '../../../../lib/telefonia/marcador';
-import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
+import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, agendarDesdeLlamada, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
+import { tiposDeReunion, huecosProximos } from '../../../../lib/telefonia/agenda-huecos';
 import { vozConfigurada, configVoz, MODOS, type Modo } from '../../../../lib/telefonia/voz';
 
 export const prerender = false;
@@ -359,6 +360,37 @@ export const POST: APIRoute = async ({ request }) => {
            `cierre` NO: ése lo estás decidiendo tú ahora mismo. */
         if (it.estado === 'hecho') await aplicarCierre(itemId, { userId: user.id, rescate: true });
         return json({ ok: true, aplicado: it.estado === 'hecho', ...(await estadoSesion(s.id)) });
+      }
+      /* ══ LOS HORARIOS, EN LA PANTALLA, MIENTRAS HABLAS (19-sep-2026) ═══
+         Pedido del dueño: «en la llamada inteligente, en la pantalla central,
+         debo poder ver los horarios de las reuniones rápido para decidir cuál
+         voy a elegir, con IA o sin IA, pero debo visualizarlo para decirle al
+         prospecto cuál puede ser».
+
+         Son los huecos de VERDAD del flujo que elijas —el mismo motor que la
+         página pública: disponibilidad, excepciones, Google Calendar, buffers—,
+         no una lista de horas bonitas. Lo que se lee en voz alta tiene que ser
+         lo que se pueda agendar. */
+      case 'huecos': {
+        const slug = String(b.tipo || 'demo');
+        const [tipos, huecos] = await Promise.all([tiposDeReunion(), huecosProximos(slug, 14, 12)]);
+        return json({ ok: true, tipo: slug, tipos, huecos });
+      }
+      /* Agendar a mano lo que acabas de acordar por teléfono, sin esperar a la
+         IA: mismo camino que usa el cierre, así que dispara el mismo correo, la
+         misma invitación y los mismos recordatorios que cualquier otra cita. */
+      case 'agendar': {
+        const itemId = String(b.item || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta la llamada' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id').eq('id', itemId).maybeSingle();
+        if (!it || it.sesion_id !== s.id) return json({ error: 'No es una llamada de tu sesión' }, 404);
+        const fecha = String(b.fecha || ''), hora = String(b.hora || '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !/^\d{2}:\d{2}$/.test(hora)) return json({ error: 'Falta la fecha o la hora' }, 400);
+        const r = await agendarDesdeLlamada(itemId, {
+          fecha, hora, reunion_tipo: String(b.tipo || 'demo'),
+          motivo: String(b.motivo || '').slice(0, 200) || null, userId: user.id,
+        });
+        return r.ok ? json({ ok: true, dicho: r.dicho, ...(await estadoSesion(s.id)) }) : json({ error: r.error || 'No se pudo agendar' }, 409);
       }
       case 'estado': return json(await estadoSesion(s.id));
       default: return json({ error: 'Acción desconocida' }, 400);

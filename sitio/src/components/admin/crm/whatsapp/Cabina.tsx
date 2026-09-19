@@ -204,6 +204,27 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (cfg.reintentos_buzon != null) setPres((x: any) => ({ ...x, reintentos: Number(cfg.reintentos_buzon) || 0 }));
   }, [sesionId, est?.sesion?.config]);
 
+  /* ══ LOS HORARIOS, A LA VISTA, MIENTRAS HABLAS (19-sep-2026) ═════════════
+     Pedido del dueño: «en la pantalla central debo poder ver los horarios de
+     las reuniones rápido, para decidir cuál elegir con IA o sin IA, pero debo
+     visualizarlo para decirle al prospecto cuál puede ser».
+
+     Se cargan al descolgar y no al abrir la sesión: son los huecos de HOY, y
+     entre la primera llamada y la número cuarenta pueden haber cambiado —una
+     cita agendada por la web, un hueco que se llenó en Google Calendar—. Leerle
+     al prospecto una hora que ya no existe es peor que no leerle ninguna. */
+  const [tipoCita, setTipoCita] = useState<string>(() => leerLocal('cabina.tipocita', 'demo'));
+  const [tiposCita, setTiposCita] = useState<any[]>([]);
+  const [huecos, setHuecos] = useState<any[]>([]);
+  const [cargandoHuecos, setCargandoHuecos] = useState(false);
+  const traerHuecos = useCallback(async (tipo: string) => {
+    if (!sesionId) return;
+    setCargandoHuecos(true);
+    const r = await post({ accion: 'huecos', id: sesionId, tipo });
+    setCargandoHuecos(false);
+    if (r?.ok) { setHuecos(r.huecos || []); setTiposCita(r.tipos || []); }
+  }, [sesionId]);
+
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
   // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
@@ -552,6 +573,19 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       : `No se pudo leer la llamada (${String(ia.motivo || 'sin detalle').slice(0, 90)}). La transcripción sigue guardada.`;
     return { fallo, dicho };
   })();
+
+  useEffect(() => { guardarLocal('cabina.tipocita', tipoCita); }, [tipoCita]);
+  useEffect(() => {
+    if (fase !== 'viva' || !['escuchando', 'portero', 'en_linea', 'cierre'].includes(String(actual?.estado))) return;
+    traerHuecos(tipoCita);
+  }, [fase, actual?.id, tipoCita, traerHuecos]);
+
+  /* Agendar lo que acabas de acordar de viva voz, sin esperar a la IA. */
+  const agendarHueco = async (h: { fecha: string; hora: string }) => {
+    if (!actual) return;
+    const r = await accion('agendar', { item: actual.id, fecha: h.fecha, hora: h.hora, tipo: tipoCita, motivo: nota.slice(0, 160) || undefined });
+    if (r?.ok) { traerHuecos(tipoCita); cargarItems(); }
+  };
 
   const regenerarCierre = async () => {
     if (!actual) return;
@@ -1420,6 +1454,47 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   <div style={{ marginTop: 12, background: C.moradoSuave, borderRadius: 9, padding: '9px 12px' }}>
                     <div style={{ ...etiqueta, color: C.morado, marginBottom: 3 }}>Lo que dices al contestar</div>
                     <div style={{ fontSize: 13.5, color: C.moradoTinta, fontWeight: 600 }}>{actual.apertura}</div>
+                  </div>
+                )}
+                {/* ══ LOS HORARIOS QUE PUEDES OFRECERLE ══════════════════════
+                    Aquí, en la tarjeta, no en el cierre: la hora se acuerda
+                    HABLANDO, no después de colgar. Cada botón es un hueco real
+                    del flujo elegido —mismo motor que la agenda pública, con
+                    Google Calendar incluido—, así que lo que lees en voz alta
+                    es exactamente lo que se puede agendar. Un clic lo agenda
+                    con su correo, su invitación y sus recordatorios. */}
+                {['escuchando', 'portero', 'en_linea', 'cierre'].includes(estadoActual) && (
+                  <div style={{ marginTop: 12, border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
+                      <span style={etiqueta}>Horarios que le puedes ofrecer</span>
+                      <select value={tipoCita} onChange={e => setTipoCita(e.target.value)}
+                        style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '3px 8px', fontSize: 11.5, fontFamily: 'inherit', fontWeight: 700, color: C.moradoTinta }}>
+                        {(tiposCita.length ? tiposCita : [{ slug: 'demo', nombre: 'Demo personalizada', minutos: 30 }]).map((t: any) => (
+                          <option key={t.slug} value={t.slug}>{t.nombre} · {t.minutos} min</option>
+                        ))}
+                      </select>
+                    </div>
+                    {cargandoHuecos && !huecos.length ? (
+                      <div style={{ fontSize: 11.5, color: C.g500 }}>Mirando la agenda…</div>
+                    ) : huecos.length ? (
+                      <>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {huecos.slice(0, 8).map((h: any) => (
+                            <button key={`${h.fecha}-${h.hora}`} onClick={() => agendarHueco(h)} disabled={!!ocupado}
+                              style={{ border: `1.5px solid ${C.g200}`, background: '#fff', color: C.g900, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              {ocupado === 'agendar' ? '…' : `${new Date(`${h.fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).replace('.', '')} · ${h.hora}`}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.g500, marginTop: 6 }}>
+                          Léelos tal cual: son los huecos reales de tu agenda. Al picar uno queda agendado con su invitación y su recordatorio.
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 11.5, color: '#9a6a10' }}>
+                        No hay huecos de «{(tiposCita.find((t: any) => t.slug === tipoCita)?.nombre) || tipoCita}» en los próximos 14 días. Prueba otro tipo de reunión o abre tu disponibilidad en Agenda.
+                      </div>
+                    )}
                   </div>
                 )}
                 {actual.resumen && (
