@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Liberation Sans, Arial, sans-serif">
+  <rect width="1600" height="900" fill="#FAFAF8"/>
+
+  <text x="800" y="66" text-anchor="middle" font-size="22" letter-spacing="3" fill="#6E6E6D" font-weight="700">MISMO PRODUCTO &#8212; MISMO ALMAC&#201;N &#8212; CREADOS 13:59:47</text>
+
+  <!-- fork -->
+  <circle cx="800" cy="118" r="10" fill="#E54B4B"/>
+  <path d="M800,128 L800,160 L470,250" fill="none" stroke="#E54B4B" stroke-width="4"/>
+  <path d="M800,128 L800,160 L1130,250" fill="none" stroke="#E54B4B" stroke-width="4"/>
+  <rect x="612" y="150" width="376" height="52" rx="26" fill="#FDE7E7"/>
+  <text x="800" y="184" text-anchor="middle" font-size="24" font-weight="700" fill="#C22F2F">un solo registro partido en dos</text>
+
+  <!-- LEFT card -->
+  <rect x="140" y="250" width="560" height="530" rx="24" fill="#FFFFFF" stroke="#F3AEAE" stroke-width="3"/>
+  <rect x="140" y="250" width="560" height="70" rx="24" fill="#FDE7E7"/>
+  <rect x="140" y="296" width="560" height="24" fill="#FDE7E7"/>
+  <text x="420" y="294" text-anchor="middle" font-size="24" font-weight="700" fill="#C22F2F" letter-spacing="2">COPIA A</text>
+
+  <text x="420" y="410" text-anchor="middle" font-size="24" fill="#6E6E6D" letter-spacing="2" font-weight="700">EXISTENCIA</text>
+  <text x="420" y="500" text-anchor="middle" font-size="110" font-weight="700" fill="#1A1A1A">409</text>
+
+  <line x1="220" y1="560" x2="620" y2="560" stroke="#F5F3EE" stroke-width="2"/>
+
+  <text x="420" y="630" text-anchor="middle" font-size="24" fill="#6E6E6D" letter-spacing="2" font-weight="700">VENTAS</text>
+  <text x="420" y="720" text-anchor="middle" font-size="110" font-weight="700" fill="#1A1A1A">0</text>
+
+  <!-- RIGHT card -->
+  <rect x="900" y="250" width="560" height="530" rx="24" fill="#FFFFFF" stroke="#F3AEAE" stroke-width="3"/>
+  <rect x="900" y="250" width="560" height="70" rx="24" fill="#FDE7E7"/>
+  <rect x="900" y="296" width="560" height="24" fill="#FDE7E7"/>
+  <text x="1180" y="294" text-anchor="middle" font-size="24" font-weight="700" fill="#C22F2F" letter-spacing="2">COPIA B</text>
+
+  <text x="1180" y="410" text-anchor="middle" font-size="24" fill="#6E6E6D" letter-spacing="2" font-weight="700">EXISTENCIA</text>
+  <text x="1180" y="500" text-anchor="middle" font-size="110" font-weight="700" fill="#1A1A1A">0</text>
+
+  <line x1="980" y1="560" x2="1380" y2="560" stroke="#F5F3EE" stroke-width="2"/>
+
+  <text x="1180" y="630" text-anchor="middle" font-size="24" fill="#6E6E6D" letter-spacing="2" font-weight="700">VENTAS</text>
+  <text x="1180" y="720" text-anchor="middle" font-size="110" font-weight="700" fill="#1A1A1A">409</text>
+
+  <text x="800" y="838" text-anchor="middle" font-size="22" fill="#6E6E6D">cada copia se queda con la mitad de la historia &#8212; ninguna cuadra sola</text>
+</svg>

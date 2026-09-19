@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Liberation Sans, Arial, sans-serif">
+  <rect width="1600" height="900" fill="#FAFAF8"/>
+
+  <!-- Kicker -->
+  <text x="800" y="86" text-anchor="middle" font-size="22" letter-spacing="3" fill="#6E6E6D" font-weight="700">MISMO PRODUCTO &#8212; MISMO ALMAC&#201;N</text>
+
+  <!-- center divider -->
+  <line x1="800" y1="150" x2="800" y2="790" stroke="#D4D4D4" stroke-width="3" stroke-dasharray="10 12"/>
+  <circle cx="800" cy="470" r="34" fill="#FAFAF8" stroke="#D4D4D4" stroke-width="3"/>
+  <text x="800" y="480" text-anchor="middle" font-size="30" fill="#6E6E6D" font-weight="700">&#8800;</text>
+
+  <!-- LEFT: system screen -->
+  <rect x="140" y="150" width="560" height="640" rx="28" fill="#1A1A2E"/>
+  <rect x="176" y="196" width="488" height="470" rx="18" fill="#FFFFFF"/>
+  <rect x="176" y="196" width="488" height="60" rx="18" fill="#FFFFFF"/>
+  <text x="420" y="234" text-anchor="middle" font-size="20" letter-spacing="2" fill="#6E6E6D" font-weight="700">PUNTO DE VENTA</text>
+  <line x1="196" y1="266" x2="644" y2="266" stroke="#D4D4D4" stroke-width="2"/>
+
+  <text x="420" y="470" text-anchor="middle" font-size="220" font-weight="700" fill="#E8A838">409</text>
+  <text x="420" y="530" text-anchor="middle" font-size="30" fill="#4A4A4A">piezas de existencia</text>
+
+  <rect x="266" y="600" width="308" height="52" rx="26" fill="#FDF3DF"/>
+  <text x="420" y="634" text-anchor="middle" font-size="26" font-weight="700" fill="#9A6B10">EN SISTEMA</text>
+
+  <text x="420" y="740" text-anchor="middle" font-size="24" fill="#6E6E6D">el n&#250;mero no se movi&#243; en toda la noche</text>
+
+  <!-- RIGHT: empty shelf -->
+  <rect x="900" y="150" width="560" height="640" rx="28" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="2"/>
+
+  <!-- rack rail -->
+  <line x1="960" y1="280" x2="1440" y2="280" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="960" cy="280" r="10" fill="#1A1A1A"/>
+  <circle cx="1440" cy="280" r="10" fill="#1A1A1A"/>
+  <!-- empty hanger ghosts -->
+  <g stroke="#D4D4D4" stroke-width="3" fill="none" stroke-dasharray="6 8">
+    <path d="M1010 280 v18 M1010 298 q30 -26 60 0 M1010 298 h60"/>
+    <path d="M1130 280 v18 M1130 298 q30 -26 60 0 M1130 298 h60"/>
+    <path d="M1250 280 v18 M1250 298 q30 -26 60 0 M1250 298 h60"/>
+    <path d="M1370 280 v18 M1370 298 q30 -26 60 0 M1370 298 h60"/>
+  </g>
+
+  <text x="1180" y="470" text-anchor="middle" font-size="220" font-weight="700" fill="#1A1A1A">0</text>
+  <text x="1180" y="530" text-anchor="middle" font-size="30" fill="#4A4A4A">piezas en la repisa</text>
+
+  <rect x="994" y="600" width="372" height="52" rx="26" fill="#F5F3EE"/>
+  <text x="1180" y="634" text-anchor="middle" font-size="26" font-weight="700" fill="#4A4A4A">EN EL ALMAC&#201;N</text>
+
+  <text x="1180" y="740" text-anchor="middle" font-size="24" fill="#6E6E6D">se vendi&#243; todo, pieza por pieza</text>
+</svg>

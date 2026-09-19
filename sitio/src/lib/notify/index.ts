@@ -86,7 +86,7 @@ const templates: Record<string, Template> = {
         <a href="${d.quoteUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver cotización</a>
         ${d.partner
           ? `<p style="color:#555;font-size:0.8125rem;margin-top:28px;line-height:1.55">Saludos,<br/><strong>${d.partner.nombre}</strong>${d.partner.empresa ? `<br/>${d.partner.empresa}` : ''}${d.partner.email ? `<br/><a href="mailto:${d.partner.email}" style="color:#4B7BE5;text-decoration:none">${d.partner.email}</a>` : ''}${d.partner.whatsapp ? `<br/>${d.partner.whatsapp}` : ''}</p><p style="color:#bbb;font-size:0.6875rem;margin-top:18px;line-height:1.5">Enviado por SACS en nombre de ${d.partner.nombre}, partner certificado.</p>`
-          : `<p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Saludos,<br/>Equipo SACS</p>`}
+          : `<p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Saludos,<br/>Equipo Sacs</p>`}
       </div>
     `,
     text: `Hola ${d.contacto || ''}, te recordamos tu cotización ${d.numero}: ${d.quoteUrl}${d.partner ? `\n\n— ${d.partner.nombre}` : ''}`,
@@ -220,7 +220,7 @@ const templates: Record<string, Template> = {
           Mientras tanto, puedes revisar de nuevo los términos de tu invitación cuando quieras:
         </p>
         <a href="${d.partnerUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi invitación</a>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Cualquier duda, responde directo a este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Cualquier duda, responde directo a este correo.<br/>Equipo Sacs · partners@sacscloud.com</p>
       </div>
     `,
     text: `Hola ${d.nombre || ''}, recibimos tu solicitud para ${d.programa}. La revisaremos en 24-48h. Ver invitación: ${d.partnerUrl || ''}`,
@@ -344,7 +344,7 @@ const templates: Record<string, Template> = {
           ✓ Email + WhatsApp marketing<br/>
           ✓ 5 sucursales · 5 usuarios incluidos
         </div>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">¿Necesitas ayuda? Responde este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">¿Necesitas ayuda? Responde este correo.<br/>Equipo Sacs · partners@sacscloud.com</p>
       </div>
     `,
     text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
@@ -411,7 +411,7 @@ const templates: Record<string, Template> = {
           Mientras tanto, échale un vistazo al manual de marca para que vayas viendo cómo opera el programa:
         </p>
         <a href="https://www.sacscloud.com/partners/brand-kit" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver brand kit</a>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px">Cualquier duda responde directo a este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Cualquier duda responde directo a este correo.<br/>Equipo Sacs · partners@sacscloud.com</p>
       </div>
     `,
     text: `Hola ${d.nombre}, recibimos tu solicitud (folio ${d.numero}). Te contactaremos en 3-5 días hábiles. Brand kit: https://www.sacscloud.com/partners/brand-kit`,
@@ -523,7 +523,7 @@ const templates: Record<string, Template> = {
         <p style="color:#777;font-size:0.8125rem;line-height:1.5;margin:0 0 8px">
           Este link expira en <strong>1 hora</strong>. Si tú no solicitaste el cambio, puedes ignorar este correo — tu contraseña actual sigue funcionando.
         </p>
-        <p style="color:#999;font-size:0.75rem;margin-top:20px;line-height:1.5">Equipo SACS · partners@sacscloud.com</p>
+        <p style="color:#999;font-size:0.75rem;margin-top:20px;line-height:1.5">Equipo Sacs · partners@sacscloud.com</p>
       </div>
     `,
     text: `Restablece tu contraseña: ${d.resetUrl} (expira en 1h)`,

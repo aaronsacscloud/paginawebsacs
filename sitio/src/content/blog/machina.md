@@ -5,6 +5,7 @@ pubDate: 2025-06-07
 author: "Andrea Araujo"
 tags: ["Moda", "Tecnologia", "Innovacion"]
 image: "/images/blog-machina-hero.webp"
+imageAlt: "Interior de la tienda Machina con el logotipo de la marca entre plantas colgantes, prendas exhibidas en los muros y un pasillo con luces LED amarillas"
 ---
 
 Descubre la inspiradora historia de **Machina**, la marca mexicana que esta revolucionando el sector con su ropa inteligente. A pesar de enfrentar escepticismo y desafios al inicio, sus fundadores persistieron y apostaron por fusionar moda y tecnologia, transformando cada prenda en una pieza de innovacion.

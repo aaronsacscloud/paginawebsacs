@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Liberation Sans, Arial, sans-serif">
+  <rect width="1600" height="900" fill="#FAFAF8"/>
+
+  <!-- root question -->
+  <rect x="440" y="24" width="720" height="128" rx="20" fill="#1A1A1A"/>
+  <text x="800" y="58" text-anchor="middle" font-size="19" fill="#FFFFFF" letter-spacing="1" opacity="0.7">PASO 1</text>
+  <text x="800" y="94" text-anchor="middle" font-size="26" fill="#FFFFFF" font-weight="700">&#191;El registro de movimientos</text>
+  <text x="800" y="128" text-anchor="middle" font-size="26" fill="#FFFFFF" font-weight="700">cuadra con la existencia?</text>
+
+  <!-- branch lines -->
+  <path d="M800,152 L800,180 L420,204" fill="none" stroke="#4A4A4A" stroke-width="3"/>
+  <path d="M800,152 L800,180 L1180,204" fill="none" stroke="#4A4A4A" stroke-width="3"/>
+  <circle cx="610" cy="182" r="24" fill="#E6F7F3" stroke="#B9E8DE" stroke-width="2"/>
+  <text x="610" y="190" text-anchor="middle" font-size="22" font-weight="700" fill="#12796A">S&#205;</text>
+  <circle cx="990" cy="182" r="24" fill="#FDE7E7" stroke="#F3AEAE" stroke-width="2"/>
+  <text x="990" y="190" text-anchor="middle" font-size="22" font-weight="700" fill="#C22F2F">NO</text>
+
+  <!-- LEFT column: LECTURA -->
+  <rect x="140" y="204" width="560" height="96" rx="16" fill="#EAF0FD" stroke="#C9DAF8" stroke-width="2"/>
+  <text x="420" y="240" text-anchor="middle" font-size="26" font-weight="700" fill="#2A5FD4" letter-spacing="1">PROBLEMA DE LECTURA</text>
+  <text x="420" y="270" text-anchor="middle" font-size="19" fill="#2A5FD4">el inventario est&#225; bien; falla lo que se ve en pantalla</text>
+
+  <rect x="140" y="326" width="560" height="120" rx="14" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="2"/>
+  <text x="168" y="366" font-size="22" font-weight="700" fill="#1A1A1A">&#191;Hay renglones</text>
+  <text x="168" y="394" font-size="22" font-weight="700" fill="#1A1A1A">duplicados por producto y almac&#233;n?</text>
+  <rect x="410" y="410" width="264" height="34" rx="17" fill="#FDF3DF"/>
+  <text x="542" y="434" text-anchor="middle" font-size="18" font-weight="700" fill="#9A6B10">SI &#8594; causa 2 &#8226; renglon partido</text>
+
+  <rect x="140" y="472" width="560" height="120" rx="14" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="2"/>
+  <text x="168" y="512" font-size="22" font-weight="700" fill="#1A1A1A">&#191;El total coincide con</text>
+  <text x="168" y="540" font-size="22" font-weight="700" fill="#1A1A1A">la suma de las tallas?</text>
+  <rect x="330" y="556" width="344" height="34" rx="17" fill="#FDF3DF"/>
+  <text x="502" y="580" text-anchor="middle" font-size="18" font-weight="700" fill="#9A6B10">NO &#8594; causa 1 &#8226; total congelado</text>
+
+  <!-- RIGHT column: OPERATIVO -->
+  <rect x="900" y="204" width="560" height="96" rx="16" fill="#FDF3DF" stroke="#F2DCA8" stroke-width="2"/>
+  <text x="1180" y="240" text-anchor="middle" font-size="26" font-weight="700" fill="#9A6B10" letter-spacing="1">PROBLEMA OPERATIVO</text>
+  <text x="1180" y="270" text-anchor="middle" font-size="19" fill="#9A6B10">se vendi&#243; mercanc&#237;a que el sistema no ten&#237;a</text>
+
+  <rect x="900" y="326" width="560" height="120" rx="14" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="2"/>
+  <text x="928" y="366" font-size="22" font-weight="700" fill="#1A1A1A">&#191;La primera venta fue</text>
+  <text x="928" y="394" font-size="22" font-weight="700" fill="#1A1A1A">antes que la primera entrada?</text>
+  <rect x="1160" y="410" width="280" height="34" rx="17" fill="#FDE7E7"/>
+  <text x="1300" y="434" text-anchor="middle" font-size="18" font-weight="700" fill="#C22F2F">SI &#8594; causa 3 &#8226; venta sin traspaso</text>
+
+  <rect x="900" y="472" width="560" height="120" rx="14" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="2"/>
+  <text x="928" y="512" font-size="22" font-weight="700" fill="#1A1A1A">&#191;Hay dos almacenes con</text>
+  <text x="928" y="540" font-size="22" font-weight="700" fill="#1A1A1A">el mismo nombre?</text>
+  <rect x="1090" y="556" width="350" height="34" rx="17" fill="#FDE7E7"/>
+  <text x="1265" y="580" text-anchor="middle" font-size="18" font-weight="700" fill="#C22F2F">SI &#8594; causa 4 &#8226; almacen duplicado</text>
+
+  <!-- convergence -->
+  <path d="M420,592 L420,660 L620,706" fill="none" stroke="#6E6E6D" stroke-width="2" stroke-dasharray="6 7"/>
+  <path d="M1180,592 L1180,660 L980,706" fill="none" stroke="#6E6E6D" stroke-width="2" stroke-dasharray="6 7"/>
+
+  <rect x="480" y="706" width="640" height="110" rx="18" fill="#F5F3EE" stroke="#D4D4D4" stroke-width="2"/>
+  <text x="800" y="748" text-anchor="middle" font-size="20" letter-spacing="2" fill="#4A4A4A" font-weight="700">SOLO ENTONCES</text>
+  <text x="800" y="782" text-anchor="middle" font-size="27" font-weight="700" fill="#1A1A1A">conteo f&#237;sico &#8212; merma, robo o error de captura</text>
+
+  <text x="800" y="862" text-anchor="middle" font-size="21" fill="#6E6E6D">contar antes de tiempo no arregla nada: vuelve a descuadrarse en d&#237;as</text>
+</svg>

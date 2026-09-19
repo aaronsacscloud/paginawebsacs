@@ -6,6 +6,7 @@ author: "Equipo Sacs"
 tags: ["Inventario", "Retail", "Moda", "Diagnóstico", "Eventos"]
 category: "retail"
 image: "/images/blog-descuadre-inventario-kardex-409-vs-cero.webp"
+imageAlt: "Diagrama que compara la pantalla de un punto de venta mostrando 409 piezas en sistema contra una repisa de tienda completamente vacía con existencia real de cero"
 draft: true
 ---
 

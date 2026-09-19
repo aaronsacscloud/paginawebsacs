@@ -5,6 +5,7 @@ pubDate: 2025-06-07
 author: "Andrea Araujo"
 tags: ["Retail", "Innovación", "Omnicanal"]
 image: "/images/blog-bershka-hero.webp"
+imageAlt: "Fachada de la nueva tienda Bershka en el Centro Histórico de la Ciudad de México, con el nombre de la marca en letras iluminadas sobre los arcos de cantera"
 ---
 
 Bershka, la emblemática cadena de moda joven del Grupo Inditex, ha dado un paso audaz en su expansión internacional al inaugurar su nuevo concepto de tienda en la avenida Francisco I. Madero de Ciudad de México. Este proyecto, desarrollado en colaboración con Castel Estudio, un prestigioso estudio de arquitectura especializado en retail, marca un hito significativo en la estrategia de Bershka para transformar la experiencia de compra en el mercado mexicano.

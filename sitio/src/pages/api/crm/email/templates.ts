@@ -20,14 +20,14 @@ function prediseñadas(): Array<{ nombre: string; asunto: string; bloques: Bloqu
         { id: 'b', tipo: 'texto', texto: 'Hola {{nombre|}}, te contamos qué cambió y por qué te conviene.' },
         { id: 'c', tipo: 'lista', items: ['El primer beneficio', 'El segundo', 'El tercero'] },
         { id: 'd', tipo: 'boton', texto: 'Ver cómo funciona', href: 'https://www.sacscloud.com' },
-        { id: 'e', tipo: 'firma', puesto: 'Equipo SACS Cloud' },
+        { id: 'e', tipo: 'firma', puesto: 'Equipo Sacs Cloud' },
       ] },
     { nombre: 'Recordatorio de renovación', asunto: 'Tu plan se renueva pronto',
       bloques: [
         { id: 'a', tipo: 'encabezado', texto: 'Tu plan {{plan|actual}} se renueva pronto', nivel: 2 },
         { id: 'b', tipo: 'texto', texto: 'Hola {{nombre|}}, te escribimos con tiempo para que no te tome por sorpresa.' },
         { id: 'c', tipo: 'boton', texto: 'Ver mi suscripción', href: 'https://www.sacscloud.com' },
-        { id: 'd', tipo: 'firma', puesto: 'Equipo SACS Cloud' },
+        { id: 'd', tipo: 'firma', puesto: 'Equipo Sacs Cloud' },
       ] },
     { nombre: 'Invitación a demo', asunto: '¿15 minutos para verlo funcionando?',
       bloques: [

@@ -11,10 +11,11 @@ interface Props {
   pubDate: Date;
   author?: string;
   image?: string;
+  imageAlt?: string;
   tags?: string[];
 }
 
-const { title, description, pubDate, author = 'Equipo SACS', image, tags = [] } = Astro.props;
+const { title, description, pubDate, author = 'Equipo Sacs', image, imageAlt, tags = [] } = Astro.props;
 
 // El slug sale de la URL en vez de que `blog/[...slug].astro` tenga que
 // pasarlo como prop: así esta plantilla puede ir a buscar `updatedDate`
@@ -25,7 +26,7 @@ const entry = posts.find((p) => p.id === slug);
 const updatedDate = entry?.data.updatedDate;
 
 // «SACS» como autor por defecto era una Person que en realidad es un equipo.
-// Regla: un nombre de persona real → Person; «Equipo SACS» (o el genérico
+// Regla: un nombre de persona real → Person; «Equipo Sacs» (o el genérico
 // «SACS») → Organization, referenciada por @id — la MISMA entidad que
 // `organizacion()` ya declara en todas las páginas, nunca una segunda
 // Organization inline (era el bug: dos fichas de Sacs distintas en el sitio).
@@ -83,7 +84,7 @@ const breadcrumbSchema = breadcrumbList([
         <h1>{title}</h1>
         <p class="body-large blog-description">{description}</p>
         {image && (
-          <img src={image} alt={title} class="blog-hero-img" width="720" height="400" loading="eager" />
+          <img src={image} alt={imageAlt ?? title} class="blog-hero-img" width="720" height="400" loading="eager" />
         )}
       </header>
 

@@ -70,3 +70,27 @@ para que el alt describa la imagen en vez de repetir el título — hoy usa
 2. Revisar que la pieza se vea bien: `cd sitio && npm run dev` → `/blog/descuadre-inventario-anatomia`.
 3. Cambiar `draft: true` → `draft: false` en el frontmatter.
 4. Push (regla del repo: solo cuando el dueño lo pida).
+
+---
+
+## Hecho (19-sep-2026)
+
+Las 4 imágenes se hicieron en **SVG** (no con modelo de imagen) y se convirtieron a
+`.webp` 1600×900 con `sharp` — un generador de imágenes escribe mal las letras en
+español y estos diagramas llevan números y texto que tienen que salir exactos.
+Los `.svg` fuente quedaron en `sitio/public/images/fuentes-diagramas/` por si hay
+que editarlos después. Pesos finales, todos bajo el límite de 150 KB:
+
+- `blog-descuadre-inventario-kardex-409-vs-cero.webp` — 32 KB
+- `blog-descuadre-linea-tiempo-409-congelado.webp` — 39 KB
+- `blog-descuadre-renglon-partido-dos-mitades.webp` — 32 KB
+- `blog-descuadre-arbol-diagnostico.webp` — 67 KB
+
+También se corrigió el pendiente del `alt`: `BlogLayout.astro` ya no usa
+`alt={title}` para la imagen principal, usa un campo nuevo `imageAlt` del
+frontmatter (con `title` como respaldo si un artículo no lo trae todavía). Se le
+dio valor a los 4 artículos existentes (`bershka.md`, `bienvenida.md`,
+`machina.md`, `descuadre-inventario-anatomia.md`).
+
+Falta el paso 3 de esta lista (`draft: true` → `false`): no se tocó porque no
+formaba parte de este encargo — lo decide el dueño.
