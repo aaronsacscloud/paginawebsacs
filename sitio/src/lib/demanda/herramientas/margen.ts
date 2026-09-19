@@ -117,7 +117,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 
 export const margenYMarkup = definirHerramienta({
   slug: 'margen',
-  nombre: 'Calculadora de margen y markup para moda',
+  nombre: 'Margen y markup para moda',
   descripcion: 'Calcula margen y markup a partir de costo y precio, y hasta qué % de descuento de temporada puedes rematar antes de vender bajo costo.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],

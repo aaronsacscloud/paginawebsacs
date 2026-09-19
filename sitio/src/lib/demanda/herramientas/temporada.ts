@@ -140,7 +140,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 
 export const termometro = definirHerramienta({
   slug: 'sale-o-no-sale',
-  nombre: '¿Vas a sacar este estilo a tiempo?',
+  nombre: '¿Sacas este estilo a tiempo?',
   descripcion: 'Toma tu sell-through y contesta lo que el porcentaje no dice: si el estilo sale antes de fin de temporada, cuántas piezas sobran si no, y la última semana útil.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],

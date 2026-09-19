@@ -117,7 +117,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 
 export const costoDeMaquila = definirHerramienta({
   slug: 'costo-de-maquila',
-  nombre: 'Calculadora de costo de maquila',
+  nombre: 'Costo de maquila por prenda',
   descripcion: 'Para marcas que fabrican: suma telas, insumos, corte, confección y merma para sacar el costo real por prenda, el costo del lote y el precio mínimo de venta para el margen que quieres.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],

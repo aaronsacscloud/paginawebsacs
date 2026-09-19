@@ -106,7 +106,7 @@ export function calcular(e: z.infer<typeof Entrada>): Salida {
 
 export const puntoDeReorden = definirHerramienta({
   slug: 'punto-de-reorden',
-  nombre: 'Calculadora de punto de reorden por talla',
+  nombre: 'Punto de reorden por talla',
   descripcion: 'Con tu venta diaria, el tiempo de entrega del proveedor y un colchón de seguridad, calcula cuándo volver a pedir cada talla y cuánto, antes de que se rompa la corrida.',
   entrada: Entrada,
   puertas: ['web', 'mcp', 'api'],
