@@ -49,6 +49,13 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
   { tipo: 'geo.score',           prioridad: 56 },
   { tipo: 'puntuar',             prioridad: 54 },
   { tipo: 'oportunidad.crear',   prioridad: 53 },
+  /* Escribir va DESPUÉS de detectar y puntuar, y en este orden: el brief decide
+     qué página hace falta, el borrador la escribe. Nada de esto publica —eso
+     necesita el visto bueno del dueño y así se queda—, así que correrlo a
+     diario es seguro: lo peor que puede pasar es que haya borradores de más
+     esperando en la bandeja. Los topes los pone `de_politicas`, no esto. */
+  { tipo: 'contenido.brief',     prioridad: 52 },
+  { tipo: 'contenido.borrador',  prioridad: 51 },
   { tipo: 'metricas.calcular',   prioridad: 52 },
   { tipo: 'atribucion.procesar', prioridad: 50 },
   { tipo: 'aprender.evaluar',    prioridad: 48 },
