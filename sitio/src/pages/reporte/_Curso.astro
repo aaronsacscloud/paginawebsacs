@@ -28,6 +28,8 @@
 // Lee la FOTO guardada, no la base viva: la liga tiene que decir en diciembre
 // lo mismo que decía hoy. Lo interno —rebotes, quién la trabaja, cuántas veces
 // se movió la fecha— ni siquiera está en la foto: se filtra al generar.
+import Chispas from '../../components/reporte/ChispasDoc.astro';
+import Sello from '../../components/reporte/SelloChispa.astro';
 const { rep } = Astro.props;
 const h = rep.hechos || {};
 
@@ -110,11 +112,16 @@ const PIE_ETAPA: Record<number, string> = {
 ---
 
 <div class="hero">
+  <Chispas capa="hero" color="#D9538E" />
   <div class="top">
     <div><div class="wm">Sacscloud</div><div class="wsub">Trabajo en curso</div></div>
     <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
   </div>
   <h1>Lo que estamos construyendo para ti</h1>
+  <div class="sello">
+    <Sello color="#D9538E" />
+    Aquí se pule cada estrella
+  </div>
   <div class="quien">
     {h.cuenta_sacs && <div><div class="k">Cuenta</div><div class="v">{h.cuenta_sacs}</div></div>}
     <div><div class="k">En tu cola</div><div class="v">{h.total}</div></div>
@@ -123,6 +130,7 @@ const PIE_ETAPA: Record<number, string> = {
 </div>
 
 <div class="ancla">
+  <Chispas capa="ancla" color="#EFA6CA" />
   <div><div class="n" data-n={h.total}>0</div><div class="l">en tu cola</div></div>
   <div><div class="n" data-n={h.en_curso}>0</div><div class="l">ya arrancadas</div></div>
   <div><div class="n" data-n={h.por_arrancar}>0</div><div class="l">por arrancar</div></div>
@@ -162,6 +170,7 @@ const PIE_ETAPA: Record<number, string> = {
     <div class="grupo">
       {agrupar && (
         <div class="gh">
+          <Chispas capa="banda" color="#D9538E" />
           <span class="gn">{g.modulo}</span>
           <span class="gc">{g.lista.length === 1 ? '1 trabajo' : `${g.lista.length} trabajos`}</span>
           <span class="ln"></span>

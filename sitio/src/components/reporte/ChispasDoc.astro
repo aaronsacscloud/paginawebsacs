@@ -1,0 +1,52 @@
+---
+/* Los destellos de la marca, para los documentos que abre el cliente.
+ *
+ * Es la misma chispa que el CRM —`components/admin/crm/ui/Chispas.tsx`—, pero
+ * en Astro y sin React: estos documentos son páginas públicas que se imprimen,
+ * y traer el framework entero para pintar veinte SVG decorativos no se paga.
+ *
+ * Vive en `components/` y NO junto a los reportes: un `.astro` con guion bajo
+ * dentro de `src/pages/` no se puede importar —Astro lo excluye del grafo y el
+ * import falla con «failed to load module for SSR»—. Costó media hora
+ * descubrirlo; queda escrito para que nadie lo mueva de vuelta.
+ *
+ * Tres juegos según dónde va, y siempre en los márgenes: una chispa encima de
+ * una cifra deja de ser adorno y se vuelve estorbo.
+ *
+ * Son DECORACIÓN: sin texto y ocultas al lector de pantalla.
+ */
+import { CHISPA } from './chispa';
+
+/* [tamaño, x%, y%, opacidad, retraso] */
+const CAPAS: Record<string, number[][]> = {
+  // La portada: las que de verdad se ven.
+  hero: [
+    [18, 6, 16, .34, 0], [13, 17, 62, .24, .7], [21, 34, 10, .28, 1.3],
+    [11, 47, 72, .20, .4], [16, 63, 22, .30, 1.8], [10, 74, 66, .18, .9],
+    [19, 86, 14, .26, 2.2], [12, 93, 58, .20, 1.1], [8, 26, 36, .16, 1.5],
+    [9, 55, 46, .14, .2],
+  ],
+  // La banda de cifras: mucho más tenues. Ahí hay números que se leen con
+  // cuidado y no pueden competir con nada.
+  // Pegadas a los bordes de arriba y de abajo, nunca a media altura: ahí es
+  // donde están las cifras, y una chispa al lado de un número se lee como si
+  // alguien hubiera manchado el documento.
+  ancla: [
+    [10, 4, 8, .16, .3], [8, 27, 84, .12, 1.2], [11, 49, 6, .14, .8],
+    [9, 68, 86, .11, 1.9], [10, 95, 10, .14, .5], [7, 84, 88, .10, 1.4],
+  ],
+  // La banda de cada módulo: solo a la derecha, donde no hay texto.
+  banda: [[9, 90, 24, .30, .2], [7, 95, 62, .22, 1.1], [11, 83, 52, .25, 1.6]],
+};
+
+interface Props { capa?: 'hero' | 'ancla' | 'banda'; color?: string }
+const { capa = 'hero', color = '#9B8CFA' } = Astro.props;
+const puntos = CAPAS[capa] || CAPAS.hero;
+---
+<div class="chispas" aria-hidden="true">
+  {puntos.map(([w, x, y, o, d]) => (
+    <svg width={w} height={w} viewBox="0 0 24 24" style={`left:${x}%;top:${y}%;opacity:${o};animation-delay:${d}s`}>
+      <path d={CHISPA} fill={color} />
+    </svg>
+  ))}
+</div>

@@ -1,0 +1,8 @@
+---
+/* Una sola chispita, la del sello del encabezado. Es su propio componente y no
+ * un `<svg>` suelto en la plantilla porque así los dos documentos dibujan
+ * exactamente el mismo trazo con el mismo tamaño. */
+import { CHISPA } from './chispa';
+const { color = '#9B8CFA' } = Astro.props;
+---
+<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d={CHISPA} fill={color} /></svg>

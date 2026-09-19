@@ -212,6 +212,42 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .doc-entregas .vid:hover{background:#4FBF95;color:#fff}
 .doc-entregas .lila{background:linear-gradient(135deg,#EAF8F2,rgba(238,236,254,.7) 55%,rgba(244,168,205,.26))}
 
+/* ── LAS ESTRELLAS DE LA CASA, EN EL DOCUMENTO ──
+   La misma chispa del CRM y del menú, llevada a lo que abre el cliente. Van en
+   la portada, en la banda de cifras y en el encabezado de cada módulo —la
+   opción C—, y toman el color de SU documento: rosa en el de trabajo en curso,
+   verde en el de entregas. Son decoración: «aria-hidden» y sin texto.
+   Se quedan en los márgenes y nunca encima de una cifra o de un título: una
+   chispa sobre un número deja de ser adorno y se vuelve estorbo. */
+.chispas{position:absolute;inset:0;pointer-events:none;z-index:0}
+.chispas svg{position:absolute;animation:latir 3.6s ease-in-out infinite}
+@keyframes latir{0%,100%{opacity:1}50%{opacity:.62}}
+@media (prefers-reduced-motion:reduce){.chispas svg{animation:none}}
+/* Impresas se quedan quietas y un poco más tenues: en papel el degradado pesa
+   más que en pantalla. */
+@media print{.chispas svg{animation:none;opacity:.5!important}}
+.hero .top,.hero h1,.hero .sub,.hero .quien{position:relative;z-index:1}
+/* La capa de chispas de la banda de cifras NO es una columna más. «.ancla>div»
+   le estaba imponiendo «position:relative» —se declara después y gana—, así
+   que entraba al grid como quinta celda y empujaba la última cifra a otro
+   renglón. Aquí se le devuelve el absolute y se le quitan el aire y la raya
+   que le tocaban por ser hija de la banda. */
+.ancla{position:relative}
+.ancla>.chispas{position:absolute;padding:0;border-left:none}
+.ancla>div{z-index:1}
+.gh{position:relative;overflow:hidden}
+.gh .gn,.gh .gc,.gh .ln{position:relative;z-index:1}
+
+/* ── EL SELLO DE LA CASA ──
+   «Aquí se pule cada estrella» es la frase del taller, y este documento es
+   justo lo que sale de ahí. Va debajo del título, en su propia pastilla y en
+   versalitas: no compite con el encabezado y le pone nombre al oficio. */
+.sello{display:inline-flex;align-items:center;gap:7px;margin-top:12px;position:relative;z-index:1;
+  border-radius:20px;padding:5px 13px;font-size:.58rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.sello svg{flex:none}
+.doc-entregas .sello{background:rgba(255,255,255,.72);border:1px solid #d8ece2;color:#1E8A63}
+.doc-curso .sello{background:rgba(255,255,255,.72);border:1px solid #f3dbe7;color:#9c3d70}
+
 /* ── LA PIEL DEL REPORTE DE TRABAJO EN CURSO ──
    El tercero en discordia. El de entregas se pintó de verde —lo que ya entró—;
    este va en ROSA, que en la casa es lo que está en camino, y así los dos se

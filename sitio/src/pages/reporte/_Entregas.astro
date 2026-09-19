@@ -10,6 +10,8 @@
 // Lee la FOTO guardada, no la base viva: la liga tiene que decir en diciembre
 // lo mismo que decía hoy. Y lo marcado como interno ni siquiera está en la foto
 // —se filtra al generar—, así que aquí no hay nada que esconder.
+import Chispas from '../../components/reporte/ChispasDoc.astro';
+import Sello from '../../components/reporte/SelloChispa.astro';
 const { rep } = Astro.props;
 const h = rep.hechos || {};
 
@@ -117,6 +119,7 @@ grupos.sort((a, b) => (a.modulo === 'Otras entregas' ? 1 : 0) - (b.modulo === 'O
 const agrupar = grupos.length > 1;
 ---
 <div class="hero">
+  <Chispas capa="hero" color="#4FBF95" />
   <div class="top">
     <div><div class="wm">Sacscloud</div><div class="wsub">Reporte de entregas</div></div>
     <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
@@ -128,6 +131,10 @@ const agrupar = grupos.length > 1;
         de tres entregas se lee como «solo hicieron tres». */}
     {h.solo_modulos && <> · solo {h.solo_modulos.join(' y ')}</>}
   </p>
+  <div class="sello">
+    <Sello color="#4FBF95" />
+    Aquí se pule cada estrella
+  </div>
   <div class="quien">
     {h.cuenta_sacs && <div><div class="k">Cuenta</div><div class="v">{h.cuenta_sacs}</div></div>}
     <div><div class="k">Entregas</div><div class="v">{h.total}</div></div>
@@ -136,6 +143,7 @@ const agrupar = grupos.length > 1;
 </div>
 
 <div class="ancla">
+  <Chispas capa="ancla" color="#9ad9be" />
   <div><div class="n" data-n={h.total}>0</div><div class="l">entregas</div></div>
   <div><div class="n v" data-n={h.cortesias}>0</div><div class="l">sin costo adicional</div></div>
   <div><div class="n" data-n={h.con_video}>0</div><div class="l">con video</div></div>
@@ -168,6 +176,7 @@ const agrupar = grupos.length > 1;
     <div class="grupo">
       {agrupar && (
         <div class="gh">
+          <Chispas capa="banda" color="#4FBF95" />
           <span class="gn">{g.modulo}</span>
           <span class="gc">{g.lista.length === 1 ? '1 entrega' : `${g.lista.length} entregas`}</span>
           <span class="ln"></span>
