@@ -238,6 +238,25 @@ export const GET: APIRoute = async ({ request, url }) => {
       .eq('contact_id', conv.contact_id).order('created_at', { ascending: false }).limit(15);
     for (const en of envs || []) {
       if (['queued', 'failed'].includes(String(en.estado))) continue;
+      /* ══ EN EL HILO SÓLO LO QUE HIZO ALGO (19-sep-2026) ══════════════════
+         Pedido del dueño, con la captura de cinco renglones seguidos que
+         decían «entregado a las 10:00 a.m., todavía sin abrir»: «limítalos a
+         sólo los que los abrieron o le dieron clic; no me interesa saber que
+         les llegó y no le dieron clic, aquí me interesa saber sólo lo
+         realmente importante».
+
+         Tiene razón y es la misma regla de hoy: un correo entregado y sin
+         abrir es el estado NORMAL de una cadencia — sale un renglón por día,
+         por contacto, para no decir nada. Que lo abriera sí es una señal: eso
+         cambia cómo le escribes. Y un rebote también, porque hay que
+         arreglarlo.
+
+         Los que no se abrieron no desaparecen del CRM: siguen contados en la
+         ficha («correos abiertos», «con clic») y en la sección de Actividad,
+         que es donde se mira el rendimiento de una cadencia. Lo que dejan de
+         hacer es ocupar el hilo. */
+      const seAbrio = !!((en as any).first_opened_at || en.opened_at || en.clicked_at);
+      if (!seAbrio && String(en.estado) !== 'bounced') continue;
       const t: any = (en as any).email_templates;
       /* El asunto propio del envío manda. La plantilla es el respaldo, y
          «campaña» el último recurso — que era lo ÚNICO que se veía, porque
