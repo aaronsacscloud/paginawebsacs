@@ -13,15 +13,21 @@ const verticales = [
   { id: 'consignacion', label: 'Consignación de lujo', desc: 'Bolsas, relojes y piezas de diseñador a consignación.', img: '/images/verticales/consignacion' },
   { id: 'parques', label: 'Parques de diversiones', desc: 'Taquilla, brazaletes, tiendas y alimentos en un solo sistema.', img: '/images/verticales/parques' },
 ].map((v: any) => ({ ...v, wa: v.aqui ? '/' : waLink(`Hola, me interesa Sacs para ${v.label}. ¿Me cuentan más?`) }));
-import { t, getLocalizedUrl, getHreflangLinks } from '../i18n/utils';
-import { locales, languageNames, defaultLocale } from '../i18n/config';
+import { t, getLocalizedUrl } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
 
 interface Props { locale?: Locale; }
 const { locale = 'es' } = Astro.props;
 const currentPath = Astro.url.pathname;
-const banderas: Record<string, string> = { es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', it: '🇮🇹', pt: '🇧🇷' };
-const idiomas = getHreflangLinks(currentPath).filter((l) => (locales as readonly string[]).includes(l.lang));
+// Selector de idioma QUITADO (18-sep-2026): mandaba a /en/, /fr/, /it/, /pt/,
+// que no existen — no hay ni una página construida en esos prefijos (sin
+// src/pages/en/, sin [locale], sin middleware). Era un 404 real desde
+// CUALQUIER página del sitio, porque el Nav es global. `src/i18n/config.ts`
+// y `src/i18n/utils.ts` (getHreflangLinks, getLocalizedUrl) siguen ahí para
+// cuando existan esas páginas de verdad; mientras tanto no se debe revivir
+// este selector. Para volver a ponerlo: construir las páginas en /en/, /fr/,
+// /it/, /pt/ primero, y solo entonces restaurar `idiomas`/`banderas` aquí y
+// los bloques `.nt-lang` / `.mm-lang` que se quitaron con este cambio.
 
 const sectorIcons = giroIcons;
 
@@ -39,17 +45,11 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 ---
 
 <header class="nav" id="nav">
-  <!-- Barra superior: idiomas + iniciar sesión (jerarquía aparte para descargar el nav) -->
+  <!-- Barra superior: solo iniciar sesión (jerarquía aparte para descargar el nav).
+       El selector de idioma se quitó de aquí (18-sep-2026): ver el comentario
+       arriba, en el frontmatter, con la razón completa y cómo revivirlo. -->
   <div class="nt">
     <div class="nt-inner container">
-      <div class="nt-lang">
-        <button type="button" class="nt-lang-btn" aria-haspopup="true" aria-expanded="false" id="nt-lang-btn"><span class="nt-flag">{banderas[locale] ?? '🌐'}</span>{languageNames[locale as Locale]}<svg width="8" height="5" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div class="nt-lang-menu" id="nt-lang-menu" role="menu">
-          {idiomas.map((l) => (
-            <a href={l.href} class:list={['nt-lang-opt', { 'is-on': l.lang === locale }]} role="menuitem" hreflang={l.lang} lang={l.lang}><span class="nt-flag">{banderas[l.lang]}</span>{languageNames[l.lang as Locale]}</a>
-          ))}
-        </div>
-      </div>
       <a href="https://app.sacscloud.com/" class="nt-login">Iniciar sesión</a>
     </div>
   </div>
@@ -301,9 +301,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
   <!-- Mobile menu -->
   <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
-    <div class="mm-lang" aria-label="Idioma">
-      {idiomas.map((l) => (<a href={l.href} class:list={['mm-lang-opt', { 'is-on': l.lang === locale }]} hreflang={l.lang} lang={l.lang}>{banderas[l.lang]} {languageNames[l.lang as Locale]}</a>))}
-    </div>
+    <!-- Selector de idioma QUITADO (18-sep-2026): ver el comentario en el
+         frontmatter de este archivo con la razón y cómo revivirlo. -->
     <nav class="mobile-nav" aria-label="Navegación móvil">
       {navLinks.map((link) => (
         <>
@@ -1876,9 +1875,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     const abre = () => { modal.hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; (modal.querySelector('.vert-x') as HTMLElement)?.focus(); (window as any).sacsPH?.('vertical_modal_abrir'); };
     const cierra = () => { modal.hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; btn.focus(); };
     btn.addEventListener('click', abre);
-    const lb = document.getElementById('nt-lang-btn'); const lw = lb?.parentElement;
-    lb?.addEventListener('click', () => { const o = lw!.classList.toggle('is-open'); lb.setAttribute('aria-expanded', String(o)); });
-    document.addEventListener('click', (e) => { if (lw && !lw.contains(e.target as Node)) lw.classList.remove('is-open'); });
+    // (el toggle de #nt-lang-btn se quitó junto con el selector de idioma, 18-sep-2026)
     const strip = document.getElementById('vert-strip');
     strip?.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { strip.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
     modal.querySelectorAll('[data-vert-cerrar]').forEach((el) => el.addEventListener('click', cierra));

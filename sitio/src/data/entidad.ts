@@ -14,6 +14,7 @@
 //
 // Lo encontró el motor de demanda al auditar el sitio (15-sep-2026).
 import { PLANES } from '../lib/crm/ti/conocimiento/planes';
+import { businessSectors } from './navigation';
 
 export const SITIO = 'https://www.sacscloud.com';
 
@@ -26,11 +27,21 @@ export const PRODUCTO_ID = `${SITIO}/#software`;
 export const NOMBRE = 'Sacs';
 export const DESCRIPCION = 'El sistema para marcas y tiendas de moda en México: inventario por talla y color, punto de venta, tienda en línea, mayoreo y WhatsApp sobre una sola base.';
 
-/** Perfiles verificables en otros sitios. Va VACÍO a propósito mientras no haya
- *  perfiles confirmados: inventar un `sameAs` que no existe es peor que no
- *  tenerlo — un enlace roto en la ficha de identidad resta credibilidad justo
- *  donde se está pidiendo credibilidad. */
-export const PERFILES: string[] = [];
+/** Perfiles verificables en otros sitios. Solo entra aquí lo confirmado a mano:
+ *  inventar un `sameAs` que no existe (o que nadie revisó que siga activo) es
+ *  peor que no tenerlo — un enlace roto en la ficha de identidad resta
+ *  credibilidad justo donde se está pidiendo credibilidad. */
+export const PERFILES: string[] = [
+  // Verificado en vivo (auditoría 15-sep-2026): página de empresa activa,
+  // 1,283 seguidores, "Sacscloud.com", Cancún, fundada 2010. Ya referenciada
+  // en la plantilla de correo (src/pages/api/email-templates/seed.ts:434).
+  'https://www.linkedin.com/company/sacscloud',
+  // Instagram, Facebook, TikTok y YouTube (@sacscloud) existen, pero no se
+  // agregan aquí todavía: un fetch anónimo no confirma que la cuenta está
+  // activa ni que el handle es el correcto, y el propio dueño tiene que
+  // abrirlos a mano y confirmarlo primero — el mismo riesgo que ya evitó
+  // este archivo con el dominio muerto sacs.com.mx.
+];
 
 export function organizacion() {
   return {
@@ -113,6 +124,30 @@ export function software() {
       availability: 'https://schema.org/InStock',
       url: `${SITIO}/planes`,
     },
+  };
+}
+
+/**
+ * El `Service` de una página de giro (/giros/[slug]).
+ *
+ * A propósito NO es otro `SoftwareApplication` genérico repetido 23 veces:
+ * eso le pelearía la identidad a la entidad principal (`PRODUCTO_ID`, el
+ * único software que existe). Cada giro es una FORMA de dar el mismo
+ * software, no un producto distinto — de ahí `Service` con `provider`
+ * apuntando siempre a la misma Organization.
+ */
+export function servicioGiro(href: string) {
+  const giro = businessSectors.find((s) => s.href === href);
+  const nombre = giro?.label ?? href.split('/').pop() ?? '';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${SITIO}${href}#servicio`,
+    serviceType: `Software para ${nombre.toLowerCase()}`,
+    provider: { '@id': ENTIDAD_ID },
+    areaServed: { '@type': 'Country', name: 'MX' },
+    audience: { '@type': 'BusinessAudience', audienceType: nombre },
+    url: `${SITIO}${href}`,
   };
 }
 

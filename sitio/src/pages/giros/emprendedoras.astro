@@ -5,6 +5,8 @@
  * el bloque propio es EmApartado ("La fila invisible de cada pieza apartada").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -24,7 +26,8 @@ import { bannerEM, manifiestoEM, variantesEM, cortinaEM, casosEM, seccionesEM, p
 ---
 <BaseLayout
   title="Sistema para vender en línea sin tienda física — Sacs"
-  description="Sistema para emprendedoras que venden en digital: apartados que se liberan solos, una sola existencia para todos tus canales y cobros dentro de la conversación."
+  description="Sistema para emprendedoras que venden en digital: apartados que se liberan solos, una sola existencia para tus canales y cobros dentro de la conversación."
+  structuredData={[servicioGiro('/giros/emprendedoras'), breadcrumbGiro('/giros/emprendedoras')]}
 >
   <GiroBanner eyebrow={bannerEM.eyebrow} titulo={bannerEM.titulo} resalte={bannerEM.resalte} sub={bannerEM.sub} foto={bannerEM.foto} fotoAlt={bannerEM.fotoAlt} avisos={bannerEM.avisos} selloMarcas="negocios de moda en México y Latam" />
 

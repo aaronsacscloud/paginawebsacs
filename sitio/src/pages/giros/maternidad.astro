@@ -5,6 +5,8 @@
  * fecha").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -24,7 +26,8 @@ import { bannerMA, manifiestoMA, variantesMA, cortinaMA, casosMA, seccionesMA, p
 ---
 <BaseLayout
   title="Sistema para boutiques de maternidad y lactancia — Sacs"
-  description="Sistema para boutiques de maternidad y lactancia: la ficha con fecha probable de parto, surtido por trimestre, avisos que salen a tiempo y el cruce a lactancia."
+  description="Sistema para boutiques de maternidad y lactancia: la ficha con fecha probable de parto, surtido por trimestre y avisos a tiempo para el cruce a lactancia."
+  structuredData={[servicioGiro('/giros/maternidad'), breadcrumbGiro('/giros/maternidad')]}
 >
   <GiroBanner eyebrow={bannerMA.eyebrow} titulo={bannerMA.titulo} resalte={bannerMA.resalte} sub={bannerMA.sub} foto={bannerMA.foto} fotoAlt={bannerMA.fotoAlt} avisos={bannerMA.avisos} selloMarcas="negocios de moda y maternidad en México y Latam" />
 

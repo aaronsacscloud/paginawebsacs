@@ -5,6 +5,8 @@
  * listos que nadie ha recogido).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -23,8 +25,9 @@ import GiroEscala from '../../components/giros/GiroEscala.astro';
 import { bannerOP, manifiestoOP, variantesOP, cortinaOP, casosOP, seccionesOP, planoOP, pasosOP, ticketOP, escalaOP, problemasOP, cifrasOP } from '../../data/giros/opticas';
 ---
 <BaseLayout
-  title="Sistema para ópticas — Sacs"
+  title="Sistema para ópticas y tiendas de lentes — Sacs"
   description="Sistema para ópticas: expediente con receta y reloj de 12 meses, orden al laboratorio con fecha prometida y armazones por modelo, color y calibre."
+  structuredData={[servicioGiro('/giros/opticas'), breadcrumbGiro('/giros/opticas')]}
 >
   <GiroBanner eyebrow={bannerOP.eyebrow} titulo={bannerOP.titulo} resalte={bannerOP.resalte} sub={bannerOP.sub} foto={bannerOP.foto} fotoAlt={bannerOP.fotoAlt} avisos={bannerOP.avisos} selloMarcas="negocios de moda y ópticas en México y Latam" />
 

@@ -3,15 +3,54 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import { plans, universalFeatures, comparisonCategories, pricingFaqs } from '../data/plans';
+import { PRODUCTO_ID, SITIO } from '../data/entidad';
 
 const checkIcon = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4 9.5l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const xIcon = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// La página comercial más importante del sitio no emitía NADA propio: solo el
+// Organization + un único Offer genérico de SCHEMA_BASE(). Los precios salen
+// SIEMPRE de `plans` (src/data/plans.ts) — la misma tabla que ve la persona
+// en esta página — nunca de la ficha que usa el agente comercial
+// (src/lib/crm/ti/conocimiento/planes.ts): son dos fuentes distintas y
+// mezclarlas es como el `Offer` global le dice a Google/una IA un precio
+// mientras la página le dice otro.
+const preciosAnuales = plans.map((p) => p.annual.mxn);
+const aggregateOfferSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  '@id': PRODUCTO_ID,
+  name: 'Sacs',
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'MXN',
+    lowPrice: Math.min(...preciosAnuales),
+    highPrice: Math.max(...preciosAnuales),
+    offerCount: plans.length,
+    url: `${SITIO}/planes`,
+  },
+};
+
+// Las 6 preguntas son las mismas que se recorren más abajo en
+// "SECTION 6: FAQ" (`pricingFaqs.map(...)`) — ninguna se escribe de nuevo aquí.
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: pricingFaqs.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer },
+  })),
+};
+
+const planesStructuredData = [aggregateOfferSchema, faqSchema];
 ---
 
 <BaseLayout
   title="Planes y precios — Sacs para moda"
   description="Planes de Sacs para marcas y tiendas de moda: tallas y colores, traspasos entre tiendas y sell-through. Desde $810/mes por tienda, sin contratos."
+  structuredData={planesStructuredData}
 >
 
 <!-- ═══ SECTION 1: Hero ═══ -->

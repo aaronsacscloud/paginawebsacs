@@ -5,6 +5,8 @@
  * vender este traje?").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerSA, manifiestoSA, variantesSA, cortinaSA, casosSA, seccionesSA, p
 <BaseLayout
   title="Sistema para sastrerías y trajes a la medida — Sacs"
   description="Sistema para sastrerías y trajes a la medida: ficha de medidas que no se vuelve a tomar, orden de taller con pruebas contra la fecha y tela en metros."
+  structuredData={[servicioGiro('/giros/sastreria'), breadcrumbGiro('/giros/sastreria')]}
 >
   <GiroBanner eyebrow={bannerSA.eyebrow} titulo={bannerSA.titulo} resalte={bannerSA.resalte} sub={bannerSA.sub} foto={bannerSA.foto} fotoAlt={bannerSA.fotoAlt} avisos={bannerSA.avisos} selloMarcas="negocios de moda y sastrerías en México y Latam" />
 

@@ -5,6 +5,8 @@
  * clienta regresa").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerRI, manifiestoRI, variantesRI, cortinaRI, casosRI, seccionesRI, p
 <BaseLayout
   title="Sistema para tiendas de ropa infantil y bebés — Sacs"
   description="Punto de venta para ropa infantil: tallas en meses y años por edad, la ficha del hijo con su última talla, ticket de regalo sin precio y curva por edad."
+  structuredData={[servicioGiro('/giros/ropa-infantil'), breadcrumbGiro('/giros/ropa-infantil')]}
 >
   <GiroBanner eyebrow={bannerRI.eyebrow} titulo={bannerRI.titulo} resalte={bannerRI.resalte} sub={bannerRI.sub} foto={bannerRI.foto} fotoAlt={bannerRI.fotoAlt} avisos={bannerRI.avisos} selloMarcas="negocios de moda y ropa infantil en México y Latam" />
 

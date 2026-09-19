@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+const structuredData = breadcrumbCaso();
 
 const cases = [
   {
@@ -81,6 +84,7 @@ const cases = [
 <BaseLayout
   title="Casos de éxito — Retailers que crecen con SACS"
   description="Descubre cómo retailers mexicanos transforman su operación con SACS. Desde 1 tienda hasta 42 sucursales."
+  structuredData={structuredData}
 >
 
 <!-- Hero -->

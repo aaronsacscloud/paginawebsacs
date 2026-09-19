@@ -1,5 +1,7 @@
 ---
-import { SITIO } from '../data/entidad';
+import { getCollection } from 'astro:content';
+import { SITIO, ENTIDAD_ID } from '../data/entidad';
+import { breadcrumbList } from '../lib/breadcrumb';
 import BaseLayout from './BaseLayout.astro';
 import StructuredData from '../components/StructuredData.astro';
 
@@ -12,44 +14,44 @@ interface Props {
   tags?: string[];
 }
 
-const { title, description, pubDate, author = 'SACS', image, tags = [] } = Astro.props;
+const { title, description, pubDate, author = 'Equipo SACS', image, tags = [] } = Astro.props;
+
+// El slug sale de la URL en vez de que `blog/[...slug].astro` tenga que
+// pasarlo como prop: así esta plantilla puede ir a buscar `updatedDate`
+// directo en la colección sin que la página intermedia cambie.
+const slug = Astro.url.pathname.replace(/^\/blog\//, '').replace(/\/$/, '');
+const posts = await getCollection('blog');
+const entry = posts.find((p) => p.id === slug);
+const updatedDate = entry?.data.updatedDate;
+
+// «SACS» como autor por defecto era una Person que en realidad es un equipo.
+// Regla: un nombre de persona real → Person; «Equipo SACS» (o el genérico
+// «SACS») → Organization, referenciada por @id — la MISMA entidad que
+// `organizacion()` ya declara en todas las páginas, nunca una segunda
+// Organization inline (era el bug: dos fichas de Sacs distintas en el sitio).
+const esEquipo = /^(equipo sacs|sacs)$/i.test(author.trim());
+const authorSchema = esEquipo ? { '@id': ENTIDAD_ID } : { '@type': 'Person', name: author };
 
 const articleSchema = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
+  '@id': `${SITIO}${Astro.url.pathname}#articulo`,
+  mainEntityOfPage: `${SITIO}${Astro.url.pathname}`,
   headline: title,
   description: description,
   datePublished: pubDate.toISOString(),
-  author: {
-    '@type': 'Person',
-    name: author,
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'SACS',
-    url: SITIO,
-  },
+  dateModified: (updatedDate ?? pubDate).toISOString(),
+  author: authorSchema,
+  publisher: { '@id': ENTIDAD_ID },
   ...(image && { image: `${SITIO}${image}` }),
-  keywords: tags.join(', '),
+  ...(tags.length ? { keywords: tags.join(', ') } : {}),
 };
 
-const breadcrumbSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      name: 'Blog',
-      item: `${SITIO}/blog`,
-    },
-    {
-      '@type': 'ListItem',
-      position: 2,
-      name: title,
-    },
-  ],
-};
+const breadcrumbSchema = breadcrumbList([
+  { name: 'Inicio', url: `${SITIO}/` },
+  { name: 'Blog', url: `${SITIO}/blog` },
+  { name: title },
+]);
 ---
 
 <BaseLayout

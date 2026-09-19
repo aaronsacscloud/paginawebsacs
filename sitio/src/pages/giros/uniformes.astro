@@ -5,6 +5,8 @@
  * UnLista ("La lista manda").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerUN, manifiestoUN, variantesUN, cortinaUN, casosUN, seccionesUN, p
 <BaseLayout
   title="Sistema para tiendas y fábricas de uniformes — Sacs"
   description="Punto de venta para uniformes: listas por escuela que arman el pedido, apartados con anticipo, regreso a clases sin internet y bordado como servicio."
+  structuredData={[servicioGiro('/giros/uniformes'), breadcrumbGiro('/giros/uniformes')]}
 >
   <GiroBanner eyebrow={bannerUN.eyebrow} titulo={bannerUN.titulo} resalte={bannerUN.resalte} sub={bannerUN.sub} foto={bannerUN.foto} fotoAlt={bannerUN.fotoAlt} avisos={bannerUN.avisos} selloMarcas="negocios de moda y uniformes en México y Latam" />
 

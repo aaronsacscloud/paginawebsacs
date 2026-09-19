@@ -11,6 +11,8 @@
  * prendas con nombre. Ver src/data/suite-ropa.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -27,12 +29,12 @@ import GiroBanner from '../../components/giros/GiroBanner.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
 import { cortinaModa, casosModa, pasosModa, planoModa } from '../../data/giros/moda';
 
-const titulo = 'Suite para Tiendas de Ropa';
+const titulo = 'Sistema para tiendas de ropa';
 const desc =
   'El sistema para boutiques y marcas de moda: matriz de tallas y colores, existencia por talla en cada tienda, traspasos y control de todas tus sucursales.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/marcas-de-ropa'), breadcrumbGiro('/giros/marcas-de-ropa')]}>
   <!-- ── Portada: la forma del Home. El mensaje a la izquierda, la tienda a
        la derecha y los avisos del sistema encima — pero avisos de moda. ── -->
   <GiroBanner

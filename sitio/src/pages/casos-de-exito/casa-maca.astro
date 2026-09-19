@@ -1,10 +1,31 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// OJO: esta página NO lleva `review`. La cita del cuerpo ("Casa Maca no solo
+// vende ropa...") es de Andrea Araujo, CGO de Sacscloud — personal propio,
+// no de Casa Maca. Marcarla como Review de cliente sería una reseña de
+// cliente inventada (schema.org/Google la trataría como testimonio de
+// Casa Maca cuando no lo es). Por eso el Article va sin `review`, a
+// diferencia de liveshow.astro donde la cita SÍ es de una persona real del
+// cliente. NUNCA se agrega `aggregateRating`: no hay calificación real detrás.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Cómo Casa Maca pasó de operar entre Excel y chats a tener una operación sincronizada, ágil y conectada en menos de 30 días',
+  description: 'Cómo Casa Maca pasó de operar entre Excel y chats a tener una operación sincronizada, ágil y conectada en menos de 30 días.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+
+const structuredData = [articleSchema, breadcrumbCaso('Casa Maca')];
 ---
 
 <BaseLayout
   title="Casa Maca — Caso de éxito SACS"
   description="Cómo Casa Maca pasó de operar entre Excel y chats a tener una operación sincronizada, ágil y conectada en menos de 30 días."
+  structuredData={structuredData}
 >
 
 <!-- Back link -->

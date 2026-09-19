@@ -8,6 +8,8 @@
  * Contenido en data/giros/activewear.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -24,12 +26,18 @@ import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ActiveSet from '../../components/giros/ActiveSet.astro';
 import { cortinaActive, casosActive, pasosActive, planoActive, seccionesActive } from '../../data/giros/activewear';
 
-const titulo = 'Suite Moda para Marcas de Activewear';
+// Patrón de título unificado para los 21 giros (SEO, sep-2026): "Sistema
+// para <giro> — Sacs". Antes convivían dos patrones ("Suite Moda para X" /
+// "Suite para X" en 8 archivos, "Sistema para X — Sacs" en los otros 13):
+// se eligió "Sistema" porque coincide con cómo se busca de verdad ("sistema
+// para zapatería", "sistema para tienda de ropa"), mientras "suite" es
+// lenguaje de producto, no de búsqueda. Cabe en 60 caracteres con "— Sacs".
+const titulo = 'Sistema para marcas de activewear';
 const desc =
   'El sistema para marcas de activewear: drops por colorway con un solo inventario, sets que no se rompen, cambios de talla sin drama y el lote con datos.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/activewear'), breadcrumbGiro('/giros/activewear')]}>
   <GiroBanner
     eyebrow="SACS · Suite Moda"
     titulo="Tu marca no vende piezas."

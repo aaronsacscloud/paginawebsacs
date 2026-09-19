@@ -1,10 +1,28 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Sin `review`: la cita del cuerpo está firmada "Equipo Sandmade", sin un
+// nombre de persona real — no cumple la barra de un testimonio verificable
+// de alguien identificable del cliente. NUNCA se agrega `aggregateRating`:
+// no hay calificación real detrás de esta página.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Sandmade Swimwear: de Tulum a Los Cabos, 8 boutiques con un solo inventario',
+  description: 'Swimwear premium conectado de Tulum a Los Cabos. 8 boutiques, 98% precisión de inventario, 20 segundos por transacción.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+
+const structuredData = [articleSchema, breadcrumbCaso('Sandmade Swimwear')];
 ---
 
 <BaseLayout
   title="Sandmade Swimwear — Caso de éxito SACS"
   description="Swimwear premium conectado de Tulum a Los Cabos. 8 boutiques, 98% precisión de inventario, 20 segundos por transacción."
+  structuredData={structuredData}
 >
 
 <!-- Back link -->

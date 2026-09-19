@@ -4,6 +4,8 @@
  * vive en src/data/giros/western.ts y el bloque propio es WsConjunto ("Arma el conjunto").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -24,6 +26,7 @@ import { bannerWS, manifiestoWS, variantesWS, cortinaWS, casosWS, seccionesWS, p
 <BaseLayout
   title="Sistema para tiendas western y vaqueras — Sacs"
   description="Punto de venta para botas, texanas y ropa vaquera: corridas por número con medios números y horma ancha, apartados y la carpa de la feria sin internet."
+  structuredData={[servicioGiro('/giros/western'), breadcrumbGiro('/giros/western')]}
 >
   <GiroBanner eyebrow={bannerWS.eyebrow} titulo={bannerWS.titulo} resalte={bannerWS.resalte} sub={bannerWS.sub} foto={bannerWS.foto} fotoAlt={bannerWS.fotoAlt} avisos={bannerWS.avisos} selloMarcas="negocios de moda y calzado en México y Latam" />
 

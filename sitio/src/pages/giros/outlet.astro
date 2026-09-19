@@ -5,6 +5,8 @@
  * mismas piezas, doce semanas antes).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerOU, manifiestoOU, variantesOU, cortinaOU, casosOU, seccionesOU, p
 <BaseLayout
   title="Sistema para outlets y tiendas de saldos — Sacs"
   description="Sistema para outlets y saldos: el lote con su costo puesto en el piso, la bajada de precio que corre sola por tanda y la pieza única que no se repone."
+  structuredData={[servicioGiro('/giros/outlet'), breadcrumbGiro('/giros/outlet')]}
 >
   <GiroBanner eyebrow={bannerOU.eyebrow} titulo={bannerOU.titulo} resalte={bannerOU.resalte} sub={bannerOU.sub} foto={bannerOU.foto} fotoAlt={bannerOU.fotoAlt} avisos={bannerOU.avisos} selloMarcas="negocios de moda y outlets en México y Latam" />
 

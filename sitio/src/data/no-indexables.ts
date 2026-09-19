@@ -37,6 +37,17 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   '/bienvenida',
   // Formulario, misma familia que /prueba-gratis.
   '/registro',
+  // Biblioteca de referencia de componentes para desarrollo, no una página de
+  // contenido. Sin enlaces entrantes y el propio body dice "no es una página
+  // pública" — no debe rankear ni aparecer en el sitemap.
+  '/componentes',
+  // Programa Padrino: cero enlaces internos en todo el repo y sin intención
+  // de búsqueda propia (no es un giro ni una función, es material de
+  // campaña para compartir por partners). Una página sin enlaces y sin
+  // búsqueda detrás no debe vivir en el índice; si se decide más adelante
+  // ganarle tráfico orgánico, quítese de aquí Y dele un enlace real primero
+  // (Footer o /partners) — nunca solo lo segundo.
+  '/buddy',
   // VACÍAS desde el andamiaje original: el archivo solo tiene el comentario
   // «el contenido irá aquí». Fuera del índice hasta que tengan texto propio;
   // una página en blanco indexada resta, no suma.
@@ -53,5 +64,27 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
 
 /** ¿Va esta URL en el sitemap? */
 export function enSitemap(url: string): boolean {
-  return !NO_INDEXABLES.some(p => (typeof p === 'string' ? url.includes(p) : p.test(url)));
+  // Antes esto era `url.includes(p)`: un match de SUBCADENA. Eso hacía que
+  // '/bienvenida' (pensada para bloquear solo el acuse post-registro,
+  // https://www.sacscloud.com/bienvenida) también capturara
+  // https://www.sacscloud.com/blog/bienvenida/ — que la CONTIENE como
+  // subcadena — y la dejaba fuera del sitemap sin que nadie lo decidiera.
+  //
+  // Ahora se compara por RUTA, no por texto suelto:
+  // - Los patrones que terminan en '/' (p.ej. '/admin/', '/email/') siguen
+  //   siendo "carpeta": bloquean esa ruta y todo lo que cuelgue de ella.
+  // - Los que NO terminan en '/' (p.ej. '/bienvenida', '/registro') son una
+  //   página exacta: solo bloquean esa ruta (con o sin '/' final), nunca una
+  //   ruta más larga que la contenga como subcadena.
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    pathname = url;
+  }
+  return !NO_INDEXABLES.some(p => {
+    if (typeof p !== 'string') return p.test(url);
+    if (p.endsWith('/')) return pathname === p || pathname.startsWith(p);
+    return pathname === p || pathname === `${p}/`;
+  });
 }

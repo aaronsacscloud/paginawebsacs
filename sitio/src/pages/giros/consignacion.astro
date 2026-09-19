@@ -12,6 +12,8 @@
  * Estructura calcada de marcas-de-ropa.astro. Contenido en data/giros/consignacion.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -28,12 +30,12 @@ import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ConsignaCuenta from '../../components/giros/ConsignaCuenta.astro';
 import { cortinaConsigna, casosConsigna, pasosConsigna, planoConsigna, seccionesConsigna } from '../../data/giros/consignacion';
 
-const titulo = 'Suite Moda para Tiendas de Consignación';
+const titulo = 'Sistema para tiendas de consignación';
 const desc =
   'El sistema para consignación y segunda mano: cada pieza con su dueña y comisión por contrato, Lives con piezas contadas y estado de cuenta por consignante.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/consignacion'), breadcrumbGiro('/giros/consignacion')]}>
   <!-- ── Portada: avisos del oficio de consignación ── -->
   <GiroBanner
     eyebrow="SACS · Suite Moda"

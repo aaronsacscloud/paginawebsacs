@@ -5,6 +5,8 @@
  * se acaba y ese camel ya no vuelve").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerBO, manifiestoBO, variantesBO, cortinaBO, casosBO, seccionesBO, p
 <BaseLayout
   title="Sistema para marcas y tiendas de bolsas de piel — Sacs"
   description="Sistema para bolsas y accesorios de piel: lote con costo por decímetro, consumo por modelo, vale de piel del taller, modelo por color y piel, y mayoreo."
+  structuredData={[servicioGiro('/giros/bolsas-y-accesorios'), breadcrumbGiro('/giros/bolsas-y-accesorios')]}
 >
   <GiroBanner eyebrow={bannerBO.eyebrow} titulo={bannerBO.titulo} resalte={bannerBO.resalte} sub={bannerBO.sub} foto={bannerBO.foto} fotoAlt={bannerBO.fotoAlt} avisos={bannerBO.avisos} selloMarcas="negocios de moda y marroquinería en México y Latam" />
 

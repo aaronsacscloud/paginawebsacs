@@ -1,10 +1,41 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Cita real, atribuible a una persona real del cliente (no de Sacs): nombre,
+// cargo y empresa confirmados en el propio cuerpo de la página. Es el único
+// de los 4 casos de éxito que cumple la barra para `Review` — los otros 3
+// citan a "Equipo X" (sin nombre de persona) o a alguien de Sacs, no del
+// cliente. NUNCA se agrega `aggregateRating`: no existe un número de reseñas
+// ni una calificación real detrás de estas páginas.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Cómo Liveshow Merchandising opera 100+ puntos de venta simultáneos en conciertos de Shakira, Metallica, Karol G y Lady Gaga con SACS',
+  description: 'Cómo Liveshow pasó de perder 20% de ventas por caídas de sistema a procesar 150,000 transacciones sin errores en una temporada.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+  review: {
+    '@type': 'Review',
+    reviewBody: 'En un concierto llegamos a perder el 20% de nuestras ventas en solo dos horas porque el sistema cayó.',
+    author: {
+      '@type': 'Person',
+      name: 'Mariana López',
+      jobTitle: 'Directora de Operaciones',
+      worksFor: { '@type': 'Organization', name: 'Liveshow Merchandising' },
+    },
+    itemReviewed: { '@id': PRODUCTO_ID },
+  },
+};
+
+const structuredData = [articleSchema, breadcrumbCaso('Liveshow Merchandising')];
 ---
 
 <BaseLayout
   title="Liveshow Merchandising — Caso de éxito SACS"
   description="Cómo Liveshow Merchandising opera 100+ puntos de venta simultáneos en conciertos de Shakira, Metallica, Karol G y Lady Gaga con SACS."
+  structuredData={structuredData}
 >
 
 <!-- Back link -->

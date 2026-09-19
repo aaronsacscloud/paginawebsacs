@@ -5,6 +5,8 @@
  * calendario de cada vestido").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerRE, manifiestoRE, variantesRE, cortinaRE, casosRE, seccionesRE, p
 <BaseLayout
   title="Sistema para renta de vestidos y trajes — Sacs"
   description="Sistema para renta de vestidos y trajes: calendario por vestido con días de lavado, apartado amarrado a la fecha, depósito con foto de entrega y devolución."
+  structuredData={[servicioGiro('/giros/renta-de-vestidos'), breadcrumbGiro('/giros/renta-de-vestidos')]}
 >
   <GiroBanner eyebrow={bannerRE.eyebrow} titulo={bannerRE.titulo} resalte={bannerRE.resalte} sub={bannerRE.sub} foto={bannerRE.foto} fotoAlt={bannerRE.fotoAlt} avisos={bannerRE.avisos} selloMarcas="negocios de moda y fiesta en México y Latam" />
 

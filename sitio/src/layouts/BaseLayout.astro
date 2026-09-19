@@ -6,7 +6,7 @@ import Footer from '../components/Footer.astro';
 import WhatsAppButton from '../components/WhatsAppButton.astro';
 import PageTracker from '../components/PageTracker.astro';
 import '../styles/global.css';
-import { getLangFromUrl, getHreflangLinks, t } from '../i18n/utils';
+import { getLangFromUrl, t } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
 
 import { SCHEMA_BASE } from '../data/entidad';
@@ -31,7 +31,11 @@ interface Props {
 
 const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout = false, manifestUrl, themeColor = '#4B7BE5' } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
-const hreflangLinks = getHreflangLinks(Astro.url.pathname);
+// `hreflangLinks`/`getHreflangLinks` se quitó (18-sep-2026): no existe ni una
+// sola página en /en/, /fr/, /it/, /pt/ (ver el comentario del selector de
+// idioma en Nav.astro), así que emitir hoy `<link rel="alternate" hreflang>`
+// apuntaría a 404s. El día que existan esas páginas de verdad, se vuelve a
+// calcular aquí y se imprime en el <head> junto al resto de SEO.
 
 /* La identidad de Sacs vive en un solo archivo (src/data/entidad.ts). Antes se
    escribía aquí a mano y apuntaba a `sacs.com.mx`, un dominio que no responde:

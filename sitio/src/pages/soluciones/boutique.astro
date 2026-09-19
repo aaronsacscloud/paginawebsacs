@@ -2,6 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import { waLink } from '../../lib/whatsapp';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { breadcrumbSolucion } from '../../lib/breadcrumb';
 
 // ── Solución: una boutique (una tienda) ──
 // Todo lo listado está respaldado en plans.ts; se marca el plan cuando la
@@ -35,11 +37,31 @@ const bloques = [
     href: '/producto/programa-de-lealtad',
   },
 ];
+
+// SoftwareApplication propio (no otro genérico): mismo software (`PRODUCTO_ID`),
+// pero con el público y el featureList de ESTE escenario. Las 4 funciones
+// salen de `bloques` de arriba — las mismas que ve la persona, nada inventado.
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}/soluciones/boutique#app`,
+  name: 'Sacs para boutiques',
+  description: 'Para boutiques de ropa, calzado y accesorios: tallas y colores controlados, apartados, ecommerce y TikTok Shop desde una sola tienda.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Retail Management Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+  audience: { '@type': 'BusinessAudience', audienceType: 'Boutiques de una sola tienda' },
+  featureList: bloques.map((b) => b.title),
+};
+
+const structuredData = [softwareSchema, breadcrumbSolucion('/soluciones/boutique')];
 ---
 
 <BaseLayout
   title="Sacs para boutiques — una tienda, todo en orden"
   description="Para boutiques de ropa, calzado y accesorios: tallas y colores controlados, apartados, ecommerce y TikTok Shop desde una sola tienda."
+  structuredData={structuredData}
 >
   <section class="sol-hero">
     <div class="sol-container">

@@ -23,7 +23,7 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
 ---
 <BaseLayout
   title={pieza.titulo}
-  description={pieza.meta_desc || ''}
+  description={pieza.meta_desc || pieza.titulo}
   type="article"
   structuredData={pieza.schema}
 >

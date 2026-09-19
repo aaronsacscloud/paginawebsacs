@@ -7,6 +7,8 @@
  * boda o los XV. Contenido en data/giros/novias-fiesta.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -28,7 +30,7 @@ const desc =
   'El sistema para novias, XV años y fiesta: apartados con abonos y fecha de evento, muestras que no se venden por error y el taller por etapas.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — SACS`} description={desc} structuredData={[servicioGiro('/giros/novias-y-fiesta'), breadcrumbGiro('/giros/novias-y-fiesta')]}>
   <GiroBanner
     eyebrow="SACS · Suite Moda"
     titulo="Tu venta no termina en la caja."

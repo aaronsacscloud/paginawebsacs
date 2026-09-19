@@ -11,6 +11,8 @@
  * existía y se conserva. Contenido en data/giros/merch-eventos.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -27,12 +29,12 @@ import GiroBanner from '../../components/giros/GiroBanner.astro';
 import MerchPico from '../../components/giros/MerchPico.astro';
 import { cortinaMerch, casosMerch, pasosMerch, planoMerch, seccionesMerch } from '../../data/giros/merch-eventos';
 
-const titulo = 'Suite Moda para Merch de Eventos';
+const titulo = 'Sistema para merchandising de eventos';
 const desc =
   'El sistema del merch en vivo: POS sin internet, un almacén por módulo, traspasos durante el show y corte por fecha. Probado en giras de 100+ puntos de venta.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/merchandising-eventos'), breadcrumbGiro('/giros/merchandising-eventos')]}>
   <GiroBanner
     eyebrow="SACS · Suite Moda"
     titulo="Tu venta no dura un mes."

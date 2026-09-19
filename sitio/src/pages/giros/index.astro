@@ -4,6 +4,7 @@ import { businessSectors } from '../../data/navigation';
 import { giroIcons } from '../../data/giro-icons';
 import { waDemoGiro, waLink } from '../../lib/whatsapp';
 import { girosCasos } from '../../data/giros-casos';
+import { breadcrumbList } from '../../lib/breadcrumb';
 
 // Los giros salen del MISMO arreglo que alimenta el mega-menú, así que agregar
 // un giro allá lo publica aquí sin tocar esta página. Desde el giro moda-first
@@ -23,7 +24,7 @@ const waGenerico = waLink('¡Hola! Quiero agendar una demo en línea de Sacsclou
 // completa su giro en el mismo mensaje y el asesor abre con esa información.
 const waOtroGiro = waLink('¡Hola! Quiero agendar una demo en línea de Sacscloud. Mi giro es: ');
 
-const structuredData = {
+const itemListSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
   name: 'Giros de negocio que atiende SACS',
@@ -35,11 +36,18 @@ const structuredData = {
     url: `https://www.sacscloud.com${g.href}`,
   })),
 };
+
+const breadcrumbSchema = breadcrumbList([
+  { name: 'Inicio', url: 'https://www.sacscloud.com/' },
+  { name: 'Giros de negocio' },
+]);
+
+const structuredData = [itemListSchema, breadcrumbSchema];
 ---
 
 <BaseLayout
-  title="Giros de negocio — SACS"
-  description="SACS se configura para tu giro: ropa, zapaterías, joyerías, farmacias, ferreterías, minisúpers y más. Cada giro con sus propias personalizaciones."
+  title="Giros de moda — Sacs"
+  description="Sacs se ajusta a tu giro de moda: ropa, calzado, joyería, novias y fiesta, lencería, uniformes y 16 giros más. Cada uno con su propia configuración."
   structuredData={structuredData}
 >
   <section class="giros-hero">

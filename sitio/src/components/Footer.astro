@@ -2,7 +2,7 @@
 // Footer enfocado en moda (Aaron, 15-sep-2026): "Plataforma" repite los cuatro pilares del
 // menú (Vende · Controla · Fideliza · Automatiza) con sus páginas, y "Giros" lista los 21 giros
 // de moda con su link. Todo sale de navigation.ts: agregar un giro o un módulo allá lo publica aquí.
-import { footerLinks, navLinks, modaSectors } from '../data/navigation';
+import { footerLinks, navLinks, modaSectors, modelosNegocio } from '../data/navigation';
 import { t, getLocalizedUrl } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
 
@@ -13,6 +13,11 @@ const pilares = navLinks.find((l) => l.pillars)?.pillars ?? [];
 const giros = modaSectors;
 const mitad = Math.ceil(giros.length / 2);
 const girosCols = [giros.slice(0, mitad), giros.slice(mitad)];
+// /enterprise, /soluciones/boutique y /soluciones/cadena ("modelos de negocio")
+// solo se veían en el submenú móvil de "Giros de negocio" — en escritorio no
+// tenían ni un enlace (18-sep-2026). /enterprise ya vive en footerLinks.empresa
+// (navigation.ts), así que aquí solo se agregan los dos que faltaban.
+const modelosNegocioPie = modelosNegocio.filter((m) => m.href !== '/enterprise');
 ---
 
 <footer class="footer">
@@ -63,6 +68,9 @@ const girosCols = [giros.slice(0, mitad), giros.slice(mitad)];
           {footerLinks.empresa.map((link) => (
             <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
           ))}
+          {modelosNegocioPie.map((m) => (
+            <li><a href={getLocalizedUrl(m.href, locale)}>{m.label}</a></li>
+          ))}
         </ul>
       </details>
 
@@ -72,6 +80,10 @@ const girosCols = [giros.slice(0, mitad), giros.slice(mitad)];
           {footerLinks.recursos.map((link) => (
             <li><a href={getLocalizedUrl(link.href, locale)}>{link.label}</a></li>
           ))}
+          {/* Página propia con datos y schema, pensada como activo citable, pero
+              sin un solo enlace entrante en todo el sitio (18-sep-2026): solo se
+              llegaba por URL directa, llms.txt o su propio sitemap. */}
+          <li><a href={getLocalizedUrl('/indice-moda-mexico', locale)}>Índice Sacs de Retail de Moda</a></li>
         </ul>
       </details>
     </div>

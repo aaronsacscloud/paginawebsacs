@@ -17,6 +17,9 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
+User-agent: Applebot-Extended
+Allow: /
+
 Sitemap: https://www.sacscloud.com/sitemap-index.xml
 # Lo que publica el motor de demanda va en su propio sitemap: ese contenido no
 # pasa por un build, así que no puede vivir en el que genera el build.

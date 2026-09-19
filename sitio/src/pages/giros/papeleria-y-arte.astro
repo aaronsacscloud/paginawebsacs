@@ -19,6 +19,8 @@
  * Todo el contenido vive en src/data/giros/papeleria.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -38,12 +40,12 @@ import {
   variantesPapeleria, moduloPapeleria,
 } from '../../data/giros/papeleria';
 
-const titulo = 'Suite para Papelerías';
+const titulo = 'Sistema para papelerías y tiendas de arte';
 const desc =
   'El sistema para papelerías y tiendas de arte: listas escolares por colegio y grado, kits que el papá desglosa y la orden de compra que sale de las listas.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/papeleria-y-arte'), breadcrumbGiro('/giros/papeleria-y-arte')]}>
   <!-- ── Portada: la forma del Home, con avisos del oficio ── -->
   <GiroBanner
     eyebrow="SACS · Suite Papelería"

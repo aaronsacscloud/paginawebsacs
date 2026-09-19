@@ -11,6 +11,8 @@
  * Padrón de sucursales de la página: Centro · Del Valle · Querétaro.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -27,12 +29,12 @@ import GiroBanner from '../../components/giros/GiroBanner.astro';
 import MultiPercha from '../../components/giros/MultiPercha.astro';
 import { cortinaMulti, casosMulti, pasosMulti, planoMulti, seccionesMulti } from '../../data/giros/boutique-multimarca';
 
-const titulo = 'Suite Moda para Boutiques Multimarca';
+const titulo = 'Sistema para boutiques multimarca';
 const desc =
   'El sistema para boutiques multimarca: cada prenda con su marca y proveedor, consigna separada de lo firme, etiquetado al recibir y el corte por marca.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/boutique-multimarca'), breadcrumbGiro('/giros/boutique-multimarca')]}>
   <!-- ── Portada: avisos del oficio multimarca ── -->
   <GiroBanner
     eyebrow="SACS · Suite Moda"

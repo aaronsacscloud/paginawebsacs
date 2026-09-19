@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { breadcrumbSolucion } from '../../lib/breadcrumb';
 
 // ── Solución: cadena de tiendas (2+ sucursales, con o sin CEDIS) ──
 // Todo lo listado está respaldado en plans.ts, con su plan marcado.
@@ -43,11 +45,30 @@ const bloques = [
     href: '/producto/reportes-y-analitica',
   },
 ];
+
+// SoftwareApplication propio (no otro genérico): mismo software (`PRODUCTO_ID`),
+// con el público y el featureList de este escenario, sacados de `bloques`.
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}/soluciones/cadena#app`,
+  name: 'Sacs para cadenas de tiendas',
+  description: 'Para cadenas de moda con 2+ sucursales: inventario en tiempo real, traspasos auditados, nivelación con IA y reabasto sugerido.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Retail Management Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+  audience: { '@type': 'BusinessAudience', audienceType: 'Cadenas de tiendas con 2 o más sucursales' },
+  featureList: bloques.map((b) => b.title),
+};
+
+const structuredData = [softwareSchema, breadcrumbSolucion('/soluciones/cadena')];
 ---
 
 <BaseLayout
   title="Sacs para cadenas de tiendas — sucursales bajo control"
   description="Para cadenas de moda con 2+ sucursales: inventario en tiempo real, traspasos auditados, nivelación con IA y reabasto sugerido."
+  structuredData={structuredData}
 >
   <section class="sol-hero">
     <div class="sol-container">

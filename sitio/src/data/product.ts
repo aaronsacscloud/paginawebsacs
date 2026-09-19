@@ -39,7 +39,7 @@ export const pillars: Pillar[] = [
         slug: 'punto-de-venta',
         pillarId: 'vende',
         label: 'Punto de venta',
-        title: 'Punto de Venta — Sacs',
+        title: 'Punto de Venta para Tiendas de Ropa — Sacs',
         description: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo. El punto de venta omnicanal de Sacs.',
         hero: {
           eyebrow: 'Vende',
@@ -52,8 +52,8 @@ export const pillars: Pillar[] = [
         slug: 'tienda-en-linea',
         pillarId: 'vende',
         label: 'Tienda en línea',
-        title: 'Tienda en Línea — Sacs',
-        description: 'Tu ecommerce conectado al mismo inventario y clientes de tu tienda física.',
+        title: 'Tienda en Línea para Marcas de Moda — Sacs',
+        description: 'Tu ecommerce conectado al mismo inventario y clientes de tu tienda física: lo que vendes en línea baja del mismo stock que el piso, sin duplicar captura.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Tu tienda en línea, siempre conectada',
@@ -65,8 +65,8 @@ export const pillars: Pillar[] = [
         slug: 'promociones',
         pillarId: 'vende',
         label: 'Promociones',
-        title: 'Promociones — Sacs',
-        description: 'Crea promociones avanzadas: 3x2, descuentos por volumen, temporada y más.',
+        title: 'Promociones para tu Tienda de Moda — Sacs',
+        description: 'Crea promociones avanzadas para tu tienda de moda: 3x2, descuentos por volumen, fin de temporada y remates, en el piso y en línea al mismo tiempo.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Promociones que mueven inventario',
@@ -78,7 +78,7 @@ export const pillars: Pillar[] = [
         slug: 'apartados-y-pedidos',
         pillarId: 'vende',
         label: 'Apartados y pedidos',
-        title: 'Apartados y Pedidos — Sacs',
+        title: 'Apartados y Pedidos para tu Boutique — Sacs',
         description: 'El apartado baja del inventario en el momento, con su anticipo y su fecha. Nadie vuelve a vender dos veces la misma prenda por no ver la libreta.',
         hero: {
           eyebrow: 'Vende',
@@ -91,8 +91,8 @@ export const pillars: Pillar[] = [
         slug: 'social-commerce',
         pillarId: 'vende',
         label: 'Social & WhatsApp Commerce',
-        title: 'Social & WhatsApp Commerce — Sacs',
-        description: 'Vende en TikTok, Instagram, Facebook y WhatsApp con inventario sincronizado.',
+        title: 'WhatsApp y Redes Sociales para Vender Moda — Sacs',
+        description: 'Vende ropa, calzado y accesorios en TikTok, Instagram, Facebook y WhatsApp con el mismo inventario sincronizado que tu tienda física.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Vende donde están tus clientes',
@@ -104,8 +104,8 @@ export const pillars: Pillar[] = [
         slug: 'agentic-commerce',
         pillarId: 'vende',
         label: 'Agentic Commerce',
-        title: 'Agentic Commerce — Sacs',
-        description: 'Un agente de IA que atiende, cotiza, cobra y entrega por WhatsApp — con tu catálogo real.',
+        title: 'Agente de IA por WhatsApp para tu Boutique — Sacs',
+        description: 'Un agente de IA que atiende, cotiza, cobra y entrega por WhatsApp con el catálogo real de tu tienda de moda: tallas, colores y existencia al día.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Un agente que vende como si conociera tu tienda',
@@ -117,7 +117,7 @@ export const pillars: Pillar[] = [
         slug: 'facturacion-electronica',
         pillarId: 'vende',
         label: 'Facturación electrónica',
-        title: 'Facturación Electrónica — Sacs',
+        title: 'Facturación Electrónica para tu Tienda de Ropa — Sacs',
         description: 'CFDI desde la misma caja, factura global del día, autofacturación para la clienta y complementos de pago. Sin salir del punto de venta.',
         hero: {
           eyebrow: 'Vende',
@@ -139,7 +139,7 @@ export const pillars: Pillar[] = [
         slug: 'inventario-omnicanal',
         pillarId: 'controla',
         label: 'Inventario omnicanal',
-        title: 'Inventario Omnicanal — Sacs',
+        title: 'Inventario por Talla y Color — Sacs',
         description: 'Una sola existencia por talla y color para el piso, la tienda en línea y las redes. Lo que se vende en un canal desaparece en todos al instante.',
         hero: {
           eyebrow: 'Controla',
@@ -152,7 +152,7 @@ export const pillars: Pillar[] = [
         slug: 'conteo-fisico',
         pillarId: 'controla',
         label: 'Conteo físico',
-        title: 'Conteo Físico — Sacs',
+        title: 'Conteo Físico por Talla para tu Tienda — Sacs',
         description: 'Cuenta con el celular, talla por talla, sin cerrar la tienda. El faltante aparece el día que ocurre y no en el inventario de fin de año.',
         hero: {
           eyebrow: 'Controla',
@@ -165,7 +165,7 @@ export const pillars: Pillar[] = [
         slug: 'nivelacion-de-inventario',
         pillarId: 'controla',
         label: 'Nivelación de inventario',
-        title: 'Nivelación de Inventario — Sacs',
+        title: 'Nivelación de Tallas entre Sucursales — Sacs',
         description: 'Mueve las tallas que sobran en una tienda a la que las está pidiendo, antes de que se rompa la corrida. Sacs te dice qué mover y a dónde.',
         hero: {
           eyebrow: 'Controla',
@@ -178,7 +178,7 @@ export const pillars: Pillar[] = [
         slug: 'ordenes-de-compra',
         pillarId: 'controla',
         label: 'Órdenes de compra',
-        title: 'Órdenes de Compra — Sacs',
+        title: 'Órdenes de Compra por Talla y Color — Sacs',
         description: 'Arma la orden con la curva de tallas que tu propia venta pide, recibe contra orden y controla lo que cada proveedor te quedó a deber.',
         hero: {
           eyebrow: 'Controla',
@@ -191,7 +191,7 @@ export const pillars: Pillar[] = [
         slug: 'gastos',
         pillarId: 'controla',
         label: 'Gastos',
-        title: 'Control de Gastos — Sacs',
+        title: 'Control de Gastos para tu Cadena de Tiendas — Sacs',
         description: 'Registra y clasifica lo que gasta cada tienda: renta, nómina, servicios y proveedores. Para saber cuál sucursal deja dinero y cuál solo vende.',
         hero: {
           eyebrow: 'Controla',
@@ -204,7 +204,7 @@ export const pillars: Pillar[] = [
         slug: 'cuentas-por-pagar',
         pillarId: 'controla',
         label: 'Cuentas por pagar',
-        title: 'Cuentas por Pagar — Sacs',
+        title: 'Cuentas por Pagar a Proveedores de Moda — Sacs',
         description: 'Lo que le debes a cada proveedor, con sus complementos de pago y notas de crédito. Sabes cuánto sale este mes antes de que llegue la fecha.',
         hero: {
           eyebrow: 'Controla',
@@ -217,7 +217,7 @@ export const pillars: Pillar[] = [
         slug: 'reportes-y-analitica',
         pillarId: 'controla',
         label: 'Reportes y analítica',
-        title: 'Reportes y Analítica — Sacs',
+        title: 'Reportes y Analítica para Retail de Moda — Sacs',
         description: 'Sell-through, ABC, rotación por talla y margen por modelo. Más de 50 reportes que contestan qué comprar, qué rebajar y qué dejar de traer.',
         hero: {
           eyebrow: 'Controla',
@@ -239,7 +239,7 @@ export const pillars: Pillar[] = [
         slug: 'clientes-y-crm',
         pillarId: 'fideliza',
         label: 'Clientes y CRM',
-        title: 'Clientes y CRM — Sacs',
+        title: 'CRM de Clientes para tu Tienda de Ropa — Sacs',
         description: 'La ficha de cada clienta con sus tallas, lo que compró y por dónde te escribe. La conversación es de la tienda, no del teléfono del vendedor.',
         hero: {
           eyebrow: 'Fideliza',
@@ -252,7 +252,7 @@ export const pillars: Pillar[] = [
         slug: 'programa-de-lealtad',
         pillarId: 'fideliza',
         label: 'Programa de lealtad',
-        title: 'Programa de Lealtad — Sacs',
+        title: 'Programa de Lealtad para tu Boutique — Sacs',
         description: 'Monedero, puntos y niveles que se aplican desde la caja sin apps ni tarjetas. La clienta lo usa en su siguiente compra, en cualquier sucursal.',
         hero: {
           eyebrow: 'Fideliza',
@@ -265,8 +265,8 @@ export const pillars: Pillar[] = [
         slug: 'portal-de-clientes',
         pillarId: 'fideliza',
         label: 'Portal de clientes',
-        title: 'Portal de Clientes — Sacs',
-        description: 'Portal personalizado con tu marca para consulta de puntos y autofacturación.',
+        title: 'Portal de Clientes para tu Marca de Moda — Sacs',
+        description: 'Portal con tu marca para que tu clienta consulte puntos y saldo, autofacture su ticket y compre otra vez sin escribirle a nadie.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Un portal con tu marca para tus clientes',
@@ -278,8 +278,8 @@ export const pillars: Pillar[] = [
         slug: 'tarjetas-de-regalo',
         pillarId: 'fideliza',
         label: 'Tarjetas de regalo',
-        title: 'Tarjetas de Regalo — Sacs',
-        description: 'Tarjetas de regalo físicas y digitales canjeables en cualquier sucursal.',
+        title: 'Tarjetas de Regalo para tu Tienda de Moda — Sacs',
+        description: 'Tarjetas de regalo físicas y digitales canjeables en cualquier sucursal de tu tienda de moda, con saldo que se descuenta solo en la caja.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Tarjetas de regalo que generan nuevos clientes',
@@ -291,7 +291,7 @@ export const pillars: Pillar[] = [
         slug: 'marketing-por-correo',
         pillarId: 'fideliza',
         label: 'Marketing por correo',
-        title: 'Marketing por Correo — Sacs',
+        title: 'Email Marketing para Marcas de Moda — Sacs',
         description: 'Campañas segmentadas por lo que cada clienta compró y por su talla. El correo del restock le llega a quien preguntó por esa prenda, no a la lista entera.',
         hero: {
           eyebrow: 'Fideliza',
@@ -304,7 +304,7 @@ export const pillars: Pillar[] = [
         slug: 'marketing-por-whatsapp',
         pillarId: 'fideliza',
         label: 'Marketing por WhatsApp',
-        title: 'Marketing por WhatsApp — Sacs',
+        title: 'Marketing por WhatsApp para tu Boutique — Sacs',
         description: 'Avisa por WhatsApp cuando llega la talla que alguien pidió o cuando vuelve un modelo agotado. Sale del inventario real, no de un calendario.',
         hero: {
           eyebrow: 'Fideliza',
@@ -317,7 +317,7 @@ export const pillars: Pillar[] = [
         slug: 'membresias-y-suscripciones',
         pillarId: 'fideliza',
         label: 'Membresías y suscripciones',
-        title: 'Membresías y Suscripciones — Sacs',
+        title: 'Membresías para Marcas y Tiendas de Moda — Sacs',
         description: 'Planes con cobro recurrente y beneficios por nivel: acceso anticipado al drop, envío incluido o descuento permanente. Ingreso que no depende de la temporada.',
         hero: {
           eyebrow: 'Fideliza',
@@ -339,7 +339,7 @@ export const pillars: Pillar[] = [
         slug: 'especialista-ia',
         pillarId: 'automatiza',
         label: 'Especialista IA dedicado',
-        title: 'Especialista IA Dedicado — Sacs',
+        title: 'Especialista IA para tu Negocio de Moda — Sacs',
         description: 'Una persona real que se sienta contigo a montar tus automatizaciones y te acompaña mientras aprendes a moverlas. No es un chat: es alguien.',
         hero: {
           eyebrow: 'Automatiza',
@@ -352,7 +352,7 @@ export const pillars: Pillar[] = [
         slug: 'axo-copiloto-ia',
         pillarId: 'automatiza',
         label: 'AXO · Copiloto IA',
-        title: 'AXO · Copiloto IA — Sacs',
+        title: 'AXO: Copiloto IA para tu Tienda de Ropa — Sacs',
         description: 'Pregúntale en español qué modelo se está muriendo, qué talla falta en qué tienda o cuánto vendiste ayer. Contesta con tus datos, no con generalidades.',
         hero: {
           eyebrow: 'Automatiza',
@@ -365,7 +365,7 @@ export const pillars: Pillar[] = [
         slug: 'workflows',
         pillarId: 'automatiza',
         label: 'Workflows',
-        title: 'Workflows — Sacs',
+        title: 'Automatizaciones para tu Tienda de Moda — Sacs',
         description: 'Reglas que corren solas: si una talla baja de tres piezas, pide reabasto; si una clienta cumple años, avísale. Se arman sin programar nada.',
         hero: {
           eyebrow: 'Automatiza',
@@ -378,7 +378,7 @@ export const pillars: Pillar[] = [
         slug: 'alertas-inteligentes',
         pillarId: 'automatiza',
         label: 'Alertas inteligentes',
-        title: 'Alertas Inteligentes — Sacs',
+        title: 'Alertas de Inventario para tu Boutique — Sacs',
         description: 'Te avisa cuando una talla del centro se está agotando, cuando un modelo dejó de venderse y cuando una tienda lleva días sin mover algo. Antes, no después.',
         hero: {
           eyebrow: 'Automatiza',
@@ -391,7 +391,7 @@ export const pillars: Pillar[] = [
         slug: 'reportes-predictivos',
         pillarId: 'automatiza',
         label: 'Reportes predictivos',
-        title: 'Reportes Predictivos — Sacs',
+        title: 'Reportes Predictivos de Venta de Moda — Sacs',
         description: 'Qué se va a vender y qué se va a quedar, calculado con tu propio histórico por talla. Para comprar con un número y no con una corazonada.',
         hero: {
           eyebrow: 'Automatiza',
@@ -404,8 +404,8 @@ export const pillars: Pillar[] = [
         slug: 'orquestador-de-agentes',
         pillarId: 'automatiza',
         label: 'Orquestador de agentes',
-        title: 'Orquestador de Agentes — Sacs',
-        description: 'Conecta Claude, GPT y Gemini para ejecutar tareas complejas en cadena.',
+        title: 'Orquestador de IA para tu Negocio de Moda — Sacs',
+        description: 'Conecta Claude, GPT y Gemini para ejecutar tareas complejas en cadena: reabasto, pricing y campañas de tu tienda de moda, sin armarlas a mano.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Múltiples IAs trabajando para ti',
@@ -417,7 +417,7 @@ export const pillars: Pillar[] = [
         slug: 'api-e-integraciones',
         pillarId: 'automatiza',
         label: 'API e integraciones',
-        title: 'API e Integraciones — Sacs',
+        title: 'API e Integraciones para tu Tienda de Moda — Sacs',
         description: 'Conecta Sacs con más de 600 aplicaciones: contabilidad, logística, marketplaces y marketing. Y una API abierta para lo que no esté en la lista.',
         hero: {
           eyebrow: 'Automatiza',

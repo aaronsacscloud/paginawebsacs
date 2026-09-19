@@ -75,6 +75,19 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-
             </a>
           </li>
         ))}
+        {/* /recursos/tiktok-fashion está escrita a mano, no sale de listaPublicada()
+            (no es contenido del motor de demanda), así que el .map de arriba nunca
+            la incluye. Sin esta línea quedaba sin un solo enlace entrante en todo
+            el sitio (18-sep-2026). */}
+        <li>
+          <a href="/recursos/tiktok-fashion/">
+            <h2>TikTok Keywords para Fashion Retail</h2>
+            <p>Mapa de keywords y ángulos de contenido en TikTok para tiendas de ropa, boutiques y marcas de moda.</p>
+            <span class="pie">
+              <span class="ir">Leerla →</span>
+            </span>
+          </a>
+        </li>
       </ul>
     )}
 

@@ -1,10 +1,28 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Sin `review`: la cita del cuerpo está firmada "Equipo La Bella Pandita",
+// sin un nombre de persona real — no cumple la barra de un testimonio
+// verificable de alguien identificable del cliente. NUNCA se agrega
+// `aggregateRating`: no hay calificación real detrás de esta página.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Cómo La Bella Pandita automatizó su operación y construyó una comunidad leal mientras escalaba a 42 sucursales en todo México',
+  description: 'Cómo La Bella Pandita automatizó su operación y construyó una comunidad leal mientras escalaba a 42 sucursales en todo México.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+
+const structuredData = [articleSchema, breadcrumbCaso('La Bella Pandita')];
 ---
 
 <BaseLayout
   title="La Bella Pandita — Caso de éxito SACS"
   description="Cómo La Bella Pandita automatizó su operación y construyó una comunidad leal mientras escalaba a 42 sucursales en todo México."
+  structuredData={structuredData}
 >
 
 <!-- Back link -->

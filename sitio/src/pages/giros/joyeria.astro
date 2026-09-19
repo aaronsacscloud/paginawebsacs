@@ -15,6 +15,8 @@
  * Todo el contenido vive en src/data/giros/joyeria.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -36,12 +38,12 @@ import {
   reglasJoyeria, documentosJoyeria, pasosJoyeria, planoJoyeria,
 } from '../../data/giros/joyeria';
 
-const titulo = 'Suite para Joyerías';
+const titulo = 'Sistema para tiendas de joyería';
 const desc =
   'El sistema para joyerías: precio por gramo con tu colchón del fino, factor por quilataje, costo histórico inmutable y apartados con precio congelado.';
 ---
 
-<BaseLayout title={`${titulo} — SACS`} description={desc}>
+<BaseLayout title={`${titulo} — Sacs`} description={desc} structuredData={[servicioGiro('/giros/joyeria'), breadcrumbGiro('/giros/joyeria')]}>
   <!-- ── Portada: la forma del Home. El mensaje a la izquierda, la vitrina a
        la derecha y los avisos del sistema encima — pero avisos de joyería. ── -->
   <GiroBanner

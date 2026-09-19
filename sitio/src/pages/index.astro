@@ -6,10 +6,29 @@ import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
 import FlujosIA from '../components/home/FlujosIA.astro';
 import { sitioWeb } from '../data/entidad';
+import { t } from '../i18n/utils';
 
 // La ficha del sitio sale del archivo de identidad: un solo lugar donde
 // cambiarla y cero riesgo de que la portada diga una cosa y el resto otra.
 const websiteSchema = sitioWeb();
+
+// Las 6 preguntas son las MISMAS que ya renderiza <FAQAccordion locale="es" />
+// más abajo (src/i18n/translations/es.json, llaves faq.q1..q6/a1..a6) — no se
+// escribe ni una palabra nueva aquí, solo se marca lo que ya existe.
+// NO se agrega `potentialAction` (SearchAction): no hay página de resultados
+// de búsqueda real en el sitio, y declarar una acción que no resuelve nada
+// es justo el marcado engañoso que Google penaliza.
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [1, 2, 3, 4, 5, 6].map((n) => ({
+    '@type': 'Question',
+    name: t(`faq.q${n}`, 'es'),
+    acceptedAnswer: { '@type': 'Answer', text: t(`faq.a${n}`, 'es') },
+  })),
+};
+
+const homeStructuredData = [websiteSchema, faqSchema];
 
 // Los tres casos de moda que se enseñan en el home. Los datos completos viven
 // en /casos-de-exito; aquí solo la tarjeta.
@@ -18,7 +37,7 @@ const websiteSchema = sitioWeb();
 <BaseLayout
   title="Sacs — El sistema para marcas y tiendas de moda"
   description="Tallas, colores, temporadas y sucursales bajo control. Punto de venta, ecommerce y TikTok Shop sobre un solo inventario, con IA que lo mueve por ti."
-  structuredData={websiteSchema}
+  structuredData={homeStructuredData}
 >
   <Hero
     eyebrow="Software para el retail de moda"

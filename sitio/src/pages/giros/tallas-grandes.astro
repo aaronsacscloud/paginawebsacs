@@ -5,6 +5,8 @@
  * grande").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerTG, manifiestoTG, variantesTG, cortinaTG, casosTG, seccionesTG, p
 <BaseLayout
   title="Sistema para boutiques de tallas grandes — Sacs"
   description="Sistema para tallas grandes: la corrida de la 36 a la 52 con dos patrones base, guía por medidas reales y la orden a la maquila con consumo por talla."
+  structuredData={[servicioGiro('/giros/tallas-grandes'), breadcrumbGiro('/giros/tallas-grandes')]}
 >
   <GiroBanner eyebrow={bannerTG.eyebrow} titulo={bannerTG.titulo} resalte={bannerTG.resalte} sub={bannerTG.sub} foto={bannerTG.foto} fotoAlt={bannerTG.fotoAlt} avisos={bannerTG.avisos} selloMarcas="negocios de moda y tallas grandes en México y Latam" />
 

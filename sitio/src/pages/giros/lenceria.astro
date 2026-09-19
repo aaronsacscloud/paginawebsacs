@@ -5,6 +5,8 @@
  * rompe por el centro").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerLE, manifiestoLE, variantesLE, cortinaLE, casosLE, seccionesLE, p
 <BaseLayout
   title="Sistema para tiendas de lencería y ropa interior — Sacs"
   description="Punto de venta para lencería: la pared por número y copa, la talla hermana en la caja, la talla de cada clienta en su ficha y tripacks que no se abren."
+  structuredData={[servicioGiro('/giros/lenceria'), breadcrumbGiro('/giros/lenceria')]}
 >
   <GiroBanner eyebrow={bannerLE.eyebrow} titulo={bannerLE.titulo} resalte={bannerLE.resalte} sub={bannerLE.sub} foto={bannerLE.foto} fotoAlt={bannerLE.fotoAlt} avisos={bannerLE.avisos} selloMarcas="negocios de moda y lencería en México y Latam" />
 

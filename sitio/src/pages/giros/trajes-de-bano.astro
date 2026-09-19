@@ -8,6 +8,8 @@
  * el bloque propio es TbCorte ("¿Remato o guardo?").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -28,6 +30,7 @@ import { bannerTB, manifiestoTB, variantesTB, cortinaTB, casosTB, seccionesTB, p
 <BaseLayout
   title="Sistema para tiendas de trajes de baño y playa — Sacs"
   description="Punto de venta para trajes de baño: top y bottom por su lado, sets que descuentan dos piezas, apartados desde Instagram y WhatsApp y el remate a tiempo."
+  structuredData={[servicioGiro('/giros/trajes-de-bano'), breadcrumbGiro('/giros/trajes-de-bano')]}
 >
   <GiroBanner
     eyebrow={bannerTB.eyebrow}

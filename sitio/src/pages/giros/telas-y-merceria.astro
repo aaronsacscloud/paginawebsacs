@@ -5,6 +5,8 @@
  * se suman").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { servicioGiro } from '../../data/entidad';
+import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
@@ -25,6 +27,7 @@ import { bannerTM, manifiestoTM, variantesTM, cortinaTM, casosTM, seccionesTM, p
 <BaseLayout
   title="Sistema para tiendas de telas y mercerías — Sacs"
   description="Sistema para telas y mercerías: venta por metro con fracción, la pieza con sus metros restantes, avíos por pieza y docena, y medio mayoreo."
+  structuredData={[servicioGiro('/giros/telas-y-merceria'), breadcrumbGiro('/giros/telas-y-merceria')]}
 >
   <GiroBanner eyebrow={bannerTM.eyebrow} titulo={bannerTM.titulo} resalte={bannerTM.resalte} sub={bannerTM.sub} foto={bannerTM.foto} fotoAlt={bannerTM.fotoAlt} avisos={bannerTM.avisos} selloMarcas="negocios de moda y tiendas de telas en México y Latam" />
 

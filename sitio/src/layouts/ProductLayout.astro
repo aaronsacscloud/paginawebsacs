@@ -1,7 +1,10 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import ProductSubnav from '../components/ProductSubnav.astro';
-import type { PillarId } from '../data/product';
+import { getFeatureBySlug, type PillarId } from '../data/product';
+import { pageContent } from '../data/product-pages';
+import { SITIO, PRODUCTO_ID } from '../data/entidad';
+import { breadcrumbProducto } from '../lib/breadcrumb';
 
 interface Props {
   title: string;
@@ -13,9 +16,42 @@ interface Props {
 }
 
 const { title, description, currentSlug, currentPillar, noindex, preloadImage } = Astro.props;
+
+// Antes esta plantilla no emitía NADA propio: las 28 páginas de función (más
+// las de soluciones, que la reutilizan) solo llevaban el Organization +
+// SoftwareApplication genérico de SCHEMA_BASE(). Al calcularlo aquí, con los
+// mismos `currentSlug`/`currentPillar` que ya recibe la plantilla, las 28
+// páginas quedan cubiertas sin tocar cada [slug].astro una por una.
+const feature = getFeatureBySlug(currentSlug);
+const content = pageContent[currentSlug];
+// El featureList sale de las 4 bullets reales que ya se muestran en la
+// página (content.features[].title) — nunca inventado. Si algún slug no
+// tiene ese bloque, cae al nombre de la función tal cual aparece en el nav.
+const featureList: string[] = Array.isArray(content?.features)
+  ? content.features.map((f: { title: string }) => f.title)
+  : feature
+    ? [feature.label]
+    : [];
+
+const softwareSchema = feature
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      '@id': `${SITIO}/producto/${currentSlug}#app`,
+      name: `Sacs — ${feature.label}`,
+      description: feature.description,
+      applicationCategory: 'BusinessApplication',
+      applicationSubCategory: 'Retail Management Software',
+      operatingSystem: 'Web',
+      isPartOf: { '@id': PRODUCTO_ID },
+      ...(featureList.length ? { featureList } : {}),
+    }
+  : null;
+
+const productStructuredData = [softwareSchema, breadcrumbProducto(currentSlug)].filter(Boolean);
 ---
 
-<BaseLayout title={title} description={description} noindex={noindex} preloadImage={preloadImage}>
+<BaseLayout title={title} description={description} noindex={noindex} preloadImage={preloadImage} structuredData={productStructuredData}>
   <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />
   <slot />
 </BaseLayout>

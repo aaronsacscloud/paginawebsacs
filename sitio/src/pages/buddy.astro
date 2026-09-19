@@ -35,7 +35,11 @@ const title = `Programa Padrino Sacs · Regala una licencia y gana ${pct}% en cr
 const description = `Regala el primer año del Plan Vende a un amigo empresario y gana ${pct}% del valor en créditos Sacs cuando lo active, y otro ${pct}% cuando pague su plan.`;
 ---
 
-<BaseLayout title={title} description={description} image="/og-default.png">
+{/* noindex (18-sep-2026): cero enlaces internos en todo el sitio y sin intención de
+    búsqueda propia ("programa padrino" no es una consulta que alguien haga buscando
+    un POS) — es material de campaña que se comparte por link directo, misma familia
+    que /prueba-gratis. Ver la nota completa en src/data/no-indexables.ts. */}
+<BaseLayout title={title} description={description} image="/og-default.png" noindex={true}>
   <main class="bd">
 
     <!-- HERO -->
