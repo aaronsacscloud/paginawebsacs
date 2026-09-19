@@ -930,7 +930,8 @@ Lo que quedó fuera y sigue pendiente:
       escribió no hay utility honesta que mandarle, y el código ya prefiere el silencio.
       En la pantalla de Plantillas ahora se ve cuáles se quedarían mudas («sin respaldo de
       utility»), que es lo que evita que esto se vuelva a pudrir.
-- [ ] **Quitar las pills «→ Agente» de la lista de conversaciones**: «no son relevantes».
+- [x] **Quitar las pills «→ Agente» de la lista de conversaciones** → HECHO. (La de la reunión
+      —«lun 21 17:00»— se queda: ésa la pediste hoy y sí distingue una fila de otra.)
 - [ ] **QA visual de todo lo de hoy.** El servidor de dev lleva la tarde caído por
       `src/data/navigation.ts` (otra sesión). Todo está compilado, medido contra la base y con 8
       suites en verde, pero las pantallas nuevas no las he visto con el navegador.

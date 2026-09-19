@@ -389,13 +389,8 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
         {ordenada.map(c => {
           const etapa = lifecycleDe(c.contacto?.lifecycle_stage);
           const activa = c.id === activaId;
-          const asignado = equipo.find((m: any) => m.id === c.asignado_a);
           const canal = c.virtual ? 'crm' : (c.ultimo_canal === 'email' ? 'email' : 'wa');
           const resuelta = c.estado_crm === 'resuelta';
-          // Asignada a ALGUIEN MÁS: que diga «→ Ana» sirve; que diga «→ tú» en
-          // todas las tuyas es ruido. Se calcula aquí para poder preguntar si
-          // el renglón de chips tiene algo que enseñar antes de pintarlo.
-          const asignadoOtro = asignado && (!yo || c.asignado_a !== yo.id) ? asignado : null;
           return (
             <button key={c.id} data-conv={c.id} className="wa-fila-hover"
               onClick={e => {
@@ -465,7 +460,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     El texto es lo flexible y los chips no se encogen: si algo
                     tiene que cortarse, que sea el nombre de la empresa y no
                     un chip que quede en «→ …». */}
-                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.reunion_fecha || resuelta || asignadoOtro) && (
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.reunion_fecha || resuelta) && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                     {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
                     {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
@@ -516,9 +511,15 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                         fila a fila. Las notas se ven al abrir la conversación,
                         que es donde se leen. */}
                     {resuelta && <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px', textTransform: 'uppercase', flexShrink: 0 }}>Resuelta</span>}
-                    {asignadoOtro && (
-                      <span title={`Asignada a ${asignadoOtro.nombre}`} style={{ fontSize: 9, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>→ {asignadoOtro.nombre.split(' ')[0]}</span>
-                    )}
+                    {/* ══ LA PÍLDORA «→ AGENTE» SE FUE (19-sep-2026) ══════════
+                        Pedido del dueño: «quita las pills que aparecen aquí a la
+                        derecha, no son relevantes». Y no lo son: casi todas las
+                        conversaciones están asignadas al Agente IA, así que la
+                        píldora salía en fila tras fila diciendo siempre lo
+                        mismo. Una marca que no distingue no informa — sólo le
+                        quita sitio a la etapa y a la empresa, que sí cambian.
+                        A quién está asignada se ve en la cabecera del hilo, en
+                        su selector, que además deja cambiarla. */}
                   </span>
                 )}
                 {/* Flotan sobre la hora: ver `.wa-fila-acciones`. El fondo va
