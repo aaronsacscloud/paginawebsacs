@@ -378,7 +378,7 @@ const useCases = [
       <div class="pillar-visual">
         <div class="hero-tablet-frame pillar-frame">
           <div class="tablet-camera"></div>
-          <div class="tablet-screen">
+          <div class="tablet-screen" data-nosnippet>
 
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
@@ -710,7 +710,7 @@ const useCases = [
                   </div>
 
                   {/* Receipt-style ticket — emerges during Pago aprobado */}
-                  <div class="mob-ticket-wrap">
+                  <div class="mob-ticket-wrap" data-nosnippet>
                     <div class="mob-ticket">
                       <div class="mob-ticket-zigzag mob-ticket-zigzag--top" aria-hidden="true"></div>
                       <div class="mob-ticket-inner">
@@ -1410,7 +1410,7 @@ const useCases = [
       <div class="pillar-visual">
         <div class="hero-tablet-frame pillar-frame">
           <div class="tablet-camera"></div>
-          <div class="tablet-screen">
+          <div class="tablet-screen" data-nosnippet>
             {/* ── Controla: Inventario (catálogo enriquecido) ── */}
             <div class="tablet-slide active" data-slide="stock-inventario">
               <div class="pm-window cat-window">
@@ -2103,7 +2103,7 @@ const useCases = [
       <div class="pillar-visual">
         <div class="hero-tablet-frame pillar-frame">
           <div class="tablet-camera"></div>
-          <div class="tablet-screen">
+          <div class="tablet-screen" data-nosnippet>
             {/* ── Fideliza: Programa de lealtad ── */}
             <div class="tablet-slide active" data-slide="crm-lealtad">
               <div class="loyalty-split">
@@ -2264,7 +2264,7 @@ const useCases = [
                 </aside>
 
                 {/* Main panel */}
-                <main class="crm2-main">
+                <main class="crm2-main" data-nosnippet>
                   {/* Header — always visible */}
                   <div class="crm2-head">
                     <div class="crm2-head-left">
@@ -2766,7 +2766,7 @@ const useCases = [
 
             {/* ── Fideliza: Email marketing ── */}
             <div class="tablet-slide" data-slide="crm-email">
-              <div class="mk-email-frame">
+              <div class="mk-email-frame" data-nosnippet>
                 <div class="mk-email-grid">
                   <div class="mk-email-preview">
                     <div class="mk-email-window">
@@ -3085,7 +3085,7 @@ const useCases = [
       <div class="pillar-visual">
         <div class="hero-tablet-frame pillar-frame">
           <div class="tablet-camera"></div>
-          <div class="tablet-screen">
+          <div class="tablet-screen" data-nosnippet>
             {/* ── Automatiza: IA Empresarial ── */}
             <div class="tablet-slide active" data-slide="ai-empresarial">
               <div class="axo-split">
@@ -5499,6 +5499,13 @@ const useCases = [
 
   .tablet-slide-img {
     width: 100%;
+    /* `height: auto` NO es cosmético: sin él, el atributo `height` del <img>
+       (puesto en la pasada de PageSpeed para reservar espacio y evitar saltos)
+       se queda como altura usada, el `aspect-ratio` de abajo NO aplica —solo
+       aplica con la altura en auto— y la foto queda encajonada en 1252 px de
+       alto con barras blancas arriba y abajo. Así se rompió la sección del
+       punto de venta el 19-sep-2026. */
+    height: auto;
     aspect-ratio: 16 / 10;
     object-fit: contain;
     object-position: center;
