@@ -113,6 +113,16 @@ export async function publicar(id: string, motivo = 'publicación'): Promise<{ u
   // «publicado», y la página seguía como estaba.
   if (ePub) throw new Error(`[publicar] no se pudo publicar ${id}: ${ePub.message}`);
 
+  /* Avisar a Bing EN EL MOMENTO, sin esperar al ciclo de mañana. Publicar una
+     guía a las diez y que se pueda encontrar a las once, en vez de la semana
+     que viene, es la diferencia entre el contenido y el contenido que sirve.
+     Va con `void`: que el aviso falle no puede desandar una publicación que ya
+     está hecha, y el ciclo diario lo reintenta de todos modos. */
+  void import('./indexar')
+    .then(m => m.avisarIndexNow([`${SITIO}/${c.seccion}/${c.slug}/`]))
+    .then(r => { if (!r.ok) console.error(`[publicar] no se pudo avisar a Bing: ${r.detalle}`); })
+    .catch(e => console.error(`[publicar] el aviso a Bing falló: ${e?.message}`));
+
   const { error: eSync } = await supabase.rpc('de_sincronizar_paginas_publicadas');
   // El espejo de páginas no bloquea la publicación (el contenido ya se sirve
   // desde `de_contenido`), pero si se queda viejo el rastreo reporta huérfanas

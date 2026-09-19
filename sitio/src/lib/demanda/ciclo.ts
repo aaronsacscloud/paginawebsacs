@@ -56,6 +56,11 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
      mensual. La parte que baja el nivel es automática: un freno que hay que
      acordarse de pisar no es un freno, y catorce días es demasiado tiempo para
      que un tipo de acción que el dueño viene rechazando siga corriendo solo. */
+  /* Avisar a los buscadores va DESPUÉS de todo lo que publica, y todos los
+     días. Es lo único de la lista que acorta el tiempo entre «lo publicamos» y
+     «alguien lo puede encontrar» — de semanas a horas en Bing, que es donde
+     busca ChatGPT. */
+  { tipo: 'indexar.avisar',      prioridad: 49 },
   { tipo: 'autonomia.revisar',   prioridad: 47 },
   /* Las órdenes de trabajo de repositorio se rehacen SEMANALMENTE, no a diario.
      El operador es una persona (o una sesión) que trabaja por tandas: una cola
