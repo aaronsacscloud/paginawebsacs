@@ -51,6 +51,46 @@ function wavDeUnCanal(datos: Float32Array, hz: number): Blob {
   return new Blob([buf], { type: 'audio/wav' });
 }
 
+/* ══ FUERA LOS SILENCIOS (19-sep-2026) ═══════════════════════════════════════
+   En una llamada tu pista está callada la mitad del tiempo: mientras habla el
+   otro. Para oírla da igual, pero un clonador de voz aprende de lo que le das —
+   y si la mitad es silencio de línea telefónica, aprende también ese silencio:
+   el clon sale con pausas raras y con el ruido de fondo del canal.
+
+   Se cortan los tramos callados y se pegan los que tienen voz, dejando 120 ms
+   de respiro entre frases para que no suene atropellado. El resultado es un
+   WAV de puro habla: menos minutos, mucho mejor material.
+
+   El umbral es relativo al propio audio (5% del pico), no un número fijo: una
+   llamada grabada bajita tiene su silencio mucho más abajo que una fuerte. */
+function quitarSilencios(d: Float32Array, hz: number): Float32Array {
+  const ventana = Math.max(1, Math.round(hz * 0.02));      // 20 ms
+  const respiro = Math.round(hz * 0.12);                   // 120 ms entre frases
+  let pico = 0;
+  for (let i = 0; i < d.length; i += 7) { const v = Math.abs(d[i]); if (v > pico) pico = v; }
+  const umbral = Math.max(0.006, pico * 0.05);
+  const trozos: [number, number][] = [];
+  let ini = -1;
+  for (let i = 0; i < d.length; i += ventana) {
+    let max = 0;
+    for (let j = i; j < Math.min(i + ventana, d.length); j++) { const v = Math.abs(d[j]); if (v > max) max = v; }
+    const hayVoz = max >= umbral;
+    if (hayVoz && ini < 0) ini = Math.max(0, i - respiro);
+    else if (!hayVoz && ini >= 0) {
+      const fin = Math.min(d.length, i + respiro);
+      if (fin - ini > hz * 0.25) trozos.push([ini, fin]);   // menos de 250 ms no es una frase
+      ini = -1;
+    }
+  }
+  if (ini >= 0) trozos.push([ini, d.length]);
+  if (!trozos.length) return d;                             // todo silencio: se devuelve tal cual
+  const total = trozos.reduce((a, [x, y]) => a + (y - x), 0);
+  const out = new Float32Array(total);
+  let k = 0;
+  for (const [x, y] of trozos) { out.set(d.subarray(x, y), k); k += y - x; }
+  return out;
+}
+
 /** Cuánto se habla en cada pista: la energía media, en porcentaje relativo.
  *  Sirve para saber cuál eres tú sin tener que oír las dos cada vez. */
 function cuantoHabla(a: AudioBuffer): number[] {
@@ -77,6 +117,7 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [pistas, setPistas] = useState<Record<string, { canales: number; reparto: number[] }>>({});
   const [bajando, setBajando] = useState('');
+  const [sinSilencios, setSinSilencios] = useState(true);
   const [error, setError] = useState('');
   const audios = useRef<Record<string, AudioBuffer>>({});
 
@@ -123,10 +164,12 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
     setError(''); setBajando(`${g.call_id}-${canal}`);
     try {
       const buf = await preparar(g);
-      const wav = wavDeUnCanal(buf.getChannelData(Math.min(canal, buf.numberOfChannels - 1)), buf.sampleRate);
+      const cruda = buf.getChannelData(Math.min(canal, buf.numberOfChannels - 1));
+      const limpia = sinSilencios ? quitarSilencios(cruda, buf.sampleRate) : cruda;
+      const wav = wavDeUnCanal(limpia, buf.sampleRate);
       const a = document.createElement('a');
       a.href = URL.createObjectURL(wav);
-      a.download = `${(g.nombre || g.telefono).replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'llamada'}-pista${canal + 1}.wav`;
+      a.download = `${(g.nombre || g.telefono).replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'llamada'}-pista${canal + 1}${sinSilencios ? '-solo-voz' : ''}.wav`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     } catch { setError('No se pudo separar la pista de esa llamada'); }

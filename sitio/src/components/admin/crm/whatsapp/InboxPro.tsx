@@ -1660,10 +1660,8 @@ export default function InboxPro() {
              `flexShrink: 0` —intocable— así que el único que se apretaba era el
              hilo, justo al revés de lo que hay que proteger. */
           <div className="wa-scroll" style={{ width: L.detalle, flex: `0 1 ${L.detalle}px`, minWidth: L.detalleMin, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff', position: 'relative' }}>
-            <button onClick={() => setDetallePlegado(true)} title="Plegar la ficha para ver más conversación" aria-label="Plegar la ficha"
-              style={{ position: 'absolute', top: 9, right: 8, zIndex: 3, border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, lineHeight: 0, borderRadius: 7 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M9 6l6 6-6 6" stroke={C.g400} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
+            {/* El botón de ocultar vive DENTRO del panel, en su barra de
+                pestañas: aquí flotaba encima de ellas y no se encontraba. */}
             {conv || filaActiva?.virtual ? <Suspense fallback={<EsqueletoPanel />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>

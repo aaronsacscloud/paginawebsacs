@@ -1224,6 +1224,22 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
                 {subInfo === s && <span style={{ position: 'absolute', bottom: 0, left: 8, right: 8, height: 2, borderRadius: 999, background: C.moradoTinta }} />}
               </button>
             )) : <b style={{ fontSize: 13, paddingLeft: 8 }}>{TABS.find(t => t.id === tab)?.t}</b>}
+            {/* ══ OCULTAR LA FICHA, DONDE SE VE (19-sep-2026) ═══════════════
+                El plegado existía desde esta mañana, pero como un chevron gris
+                de 15 px flotando ENCIMA de la fila de pestañas. El dueño volvió
+                a pedirlo —«genera una opción para colapsar esta sección a la
+                derecha para sólo ver la conversación»— y esa petición repetida
+                ES el veredicto: un control que hay que descubrir no existe.
+
+                Ahora vive en la barra de pestañas, con su flecha y su rótulo,
+                en el sitio donde se busca algo que cierra un panel: la esquina
+                de arriba a la derecha del panel que va a cerrar. */}
+            <button onClick={() => document.dispatchEvent(new CustomEvent('wa-plegar-ficha'))}
+              title="Ocultar la ficha y dejar toda la pantalla a la conversación" aria-label="Ocultar la ficha"
+              style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 6, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10.5, fontWeight: 700, color: C.g500 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Ocultar
+            </button>
           </div>
           <div className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
