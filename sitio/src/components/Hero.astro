@@ -157,6 +157,8 @@ const useCases = [
       </div>
 
       <!-- Mobile hero image -->
+      <div class="hero-mobile-visual">
+        <div class="hero-mobile-image-wrapper">
       <!-- LCP móvil: es ESTA imagen la que Lighthouse mide (la de escritorio de
            abajo está en display:none en <1024px). Rendimiento 2026-09-19:
            - Se agrega la variante -900 al srcset: a 412px de viewport y DPR~1.75
@@ -3607,6 +3609,15 @@ const useCases = [
     from { transform: translateY(14px); }
     to   { transform: none; }
   }
+
+  /* El hero trae DOS subtítulos en el HTML: el largo para escritorio y uno
+     corto para móvil. Las dos reglas que los alternan vivían las dos dentro de
+     `@media (max-width: 767px)`, así que fuera de móvil no había nada que
+     escondiera el corto y se pintaban LOS DOS, uno tras otro, en la portada de
+     escritorio. Esta es la regla base que faltaba: por defecto manda el largo,
+     y el bloque de móvil lo invierte. */
+  .hero-subtitle-short { display: none; }
+  .hero-subtitle-full { display: inline; }
 
   .hero-subtitle {
     font-size: clamp(1rem, 1.5vw, 1.175rem);
