@@ -1,28 +1,189 @@
 {
-  "_nota": "Las preguntas objetivo. Se miden cada semana con scripts/seo-medir.mjs. El nivel dice qué tan ganable es hoy: cabeza (competencia establecida), vertical (ganable), problema (abierta). La rutina semanal AGREGA preguntas nuevas aquí cuando descubre una consulta con hueco — este archivo crece solo.",
+  "_nota": "Preguntas objetivo. La vara NO es que la pregunta diga 'ropa': es que quien la teclea sea un dueño de moda o calzado. Se miden cada semana con scripts/seo-medir.mjs. La rutina AGREGA preguntas cuando descubre hueco — este archivo crece solo.",
+  "_persona": "dueño de boutique · zapatería · mayorista de moda · merch de eventos",
+  "_niveles": "cabeza (competencia establecida) · vertical (ganable) · problema (abierta) · negocio (la pregunta del dueño, no del comprador de software)",
   "medido_por_primera_vez": "2026-09-19",
+  "reenfocado": "2026-09-19 — se quitaron CFDI genérico y traspasos genéricos; se agregaron 12 que solo teclea alguien que vende ropa o calzado",
   "preguntas": [
-    { "id": 1,  "nivel": "cabeza",   "texto": "¿Cuál es el mejor sistema de punto de venta para una tienda de ropa en México?" },
-    { "id": 2,  "nivel": "cabeza",   "texto": "¿Qué software de inventario me recomiendas para una boutique?" },
-    { "id": 3,  "nivel": "cabeza",   "texto": "Necesito un punto de venta mexicano que facture CFDI 4.0, ¿cuál me conviene?" },
-    { "id": 4,  "nivel": "cabeza",   "texto": "¿Me conviene Shopify o un sistema mexicano para mi tienda de ropa?" },
-
-    { "id": 5,  "nivel": "vertical", "texto": "¿Qué sistema de punto de venta sirve para una zapatería que maneja tallas del 22 al 30?" },
-    { "id": 6,  "nivel": "vertical", "texto": "Busco software para una tienda de ropa con varias sucursales en México, ¿qué opciones hay?" },
-    { "id": 7,  "nivel": "vertical", "texto": "¿Qué sistema uso si soy mayorista de ropa y vendo por bulto?" },
-    { "id": 8,  "nivel": "vertical", "texto": "¿Qué punto de venta sirve para vender en ferias de moda como Intermoda o SAPICA?" },
-    { "id": 9,  "nivel": "vertical", "texto": "¿Cómo manejo mercancía en consignación en mi boutique y qué sistema lo soporta?" },
-    { "id": 10, "nivel": "vertical", "texto": "¿Cómo llevo el control de apartados en una tienda de ropa sin perder el control?" },
-    { "id": 11, "nivel": "vertical", "texto": "¿Cómo vendo en tienda física, Shopify, TikTok Shop y Mercado Libre sin que se me desincronice el inventario?" },
-    { "id": 12, "nivel": "vertical", "texto": "¿Qué sistema de inventario para tienda de ropa funciona sin internet?" },
-
-    { "id": 13, "nivel": "problema", "texto": "¿Cómo controlo el inventario en puntos de venta temporales de un evento o concierto?" },
-    { "id": 14, "nivel": "problema", "texto": "¿Cómo puedo saber qué tallas se me están acabando en cada sucursal?" },
-    { "id": 15, "nivel": "problema", "texto": "¿Cómo traspaso mercancía entre mis tiendas sin que se descuadre el inventario?" },
-    { "id": 16, "nivel": "problema", "texto": "¿Por qué mi sistema dice que tengo existencia y en la tienda no hay nada?" },
-    { "id": 17, "nivel": "problema", "texto": "¿Cómo sé qué producto tengo parado y cuál debería resurtir en mi boutique?" },
-    { "id": 18, "nivel": "problema", "texto": "¿Cómo pongo mi catálogo de ropa en línea sin construir una tienda desde cero?" },
-    { "id": 19, "nivel": "problema", "texto": "¿Cómo cuadro el inventario después de un evento con varios puntos de venta?" },
-    { "id": 20, "nivel": "problema", "texto": "¿Cuánto dinero puedo tener detenido en tallas que no se venden y cómo lo calculo?" }
+    {
+      "id": 1,
+      "nivel": "cabeza",
+      "persona": "boutique",
+      "texto": "¿Cuál es el mejor sistema de punto de venta para una tienda de ropa en México?"
+    },
+    {
+      "id": 2,
+      "nivel": "cabeza",
+      "persona": "boutique",
+      "texto": "¿Qué software de inventario me recomiendas para una boutique?"
+    },
+    {
+      "id": 4,
+      "nivel": "cabeza",
+      "persona": "boutique",
+      "texto": "¿Me conviene Shopify o un sistema mexicano para mi tienda de ropa?"
+    },
+    {
+      "id": 21,
+      "nivel": "cabeza",
+      "persona": "zapateria",
+      "texto": "¿Qué sistema me recomiendas para administrar una zapatería en México?"
+    },
+    {
+      "id": 5,
+      "nivel": "vertical",
+      "persona": "zapateria",
+      "texto": "¿Qué sistema de punto de venta sirve para una zapatería que maneja tallas del 22 al 30?"
+    },
+    {
+      "id": 6,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "Busco software para una tienda de ropa con varias sucursales en México, ¿qué opciones hay?"
+    },
+    {
+      "id": 7,
+      "nivel": "vertical",
+      "persona": "mayorista",
+      "texto": "¿Qué sistema uso si soy mayorista de ropa y vendo por bulto?"
+    },
+    {
+      "id": 8,
+      "nivel": "vertical",
+      "persona": "mayorista",
+      "texto": "¿Qué punto de venta sirve para vender en ferias de moda como Intermoda o SAPICA?"
+    },
+    {
+      "id": 9,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Cómo manejo mercancía en consignación en mi boutique y qué sistema lo soporta?"
+    },
+    {
+      "id": 10,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Cómo llevo el control de apartados en una tienda de ropa sin perder el control?"
+    },
+    {
+      "id": 11,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Cómo vendo ropa en tienda física, Shopify, TikTok Shop y Mercado Libre sin que se me desincronice el inventario?"
+    },
+    {
+      "id": 12,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Qué sistema de inventario para tienda de ropa funciona sin internet?"
+    },
+    {
+      "id": 22,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Cómo manejo un catálogo de ropa por talla y color sin capturar cada combinación a mano?"
+    },
+    {
+      "id": 23,
+      "nivel": "vertical",
+      "persona": "boutique",
+      "texto": "¿Cómo vendo ropa por WhatsApp con catálogo y que me descuente el inventario?"
+    },
+    {
+      "id": 24,
+      "nivel": "vertical",
+      "persona": "zapateria",
+      "texto": "¿Cómo controlo el inventario de calzado por par y por número en varias sucursales?"
+    },
+    {
+      "id": 13,
+      "nivel": "problema",
+      "persona": "merch",
+      "texto": "¿Cómo controlo el inventario en puntos de venta temporales de un evento o concierto?"
+    },
+    {
+      "id": 14,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Cómo puedo saber qué tallas se me están acabando en cada sucursal?"
+    },
+    {
+      "id": 16,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Por qué mi sistema dice que tengo existencia y en la tienda no hay nada?"
+    },
+    {
+      "id": 17,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Cómo sé qué producto tengo parado y cuál debería resurtir en mi boutique?"
+    },
+    {
+      "id": 18,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Cómo pongo mi catálogo de ropa en línea sin construir una tienda desde cero?"
+    },
+    {
+      "id": 19,
+      "nivel": "problema",
+      "persona": "merch",
+      "texto": "¿Cómo cuadro el inventario después de un evento con varios puntos de venta?"
+    },
+    {
+      "id": 25,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Cómo manejo los cambios de talla y las devoluciones en mi tienda de ropa?"
+    },
+    {
+      "id": 26,
+      "nivel": "problema",
+      "persona": "boutique",
+      "texto": "¿Cómo saco la ropa de temporada pasada sin regalar el margen?"
+    },
+    {
+      "id": 27,
+      "nivel": "problema",
+      "persona": "zapateria",
+      "texto": "Se me acabaron los números de en medio y me quedaron los extremos, ¿cómo evito que vuelva a pasar?"
+    },
+    {
+      "id": 20,
+      "nivel": "negocio",
+      "persona": "boutique",
+      "texto": "¿Cuánto dinero puedo tener detenido en tallas que no se venden y cómo lo calculo?"
+    },
+    {
+      "id": 28,
+      "nivel": "negocio",
+      "persona": "boutique",
+      "texto": "¿Cómo armo la curva de tallas para mi próxima compra de temporada?"
+    },
+    {
+      "id": 29,
+      "nivel": "negocio",
+      "persona": "mayorista",
+      "texto": "¿Cuánto debo comprar de cada talla y color para la próxima temporada?"
+    },
+    {
+      "id": 30,
+      "nivel": "negocio",
+      "persona": "boutique",
+      "texto": "¿Cómo sé qué marcas y qué prendas me dejan más ganancia en mi boutique?"
+    },
+    {
+      "id": 31,
+      "nivel": "negocio",
+      "persona": "zapateria",
+      "texto": "¿Cómo le hago para que no se me quede dinero parado en inventario de calzado?"
+    },
+    {
+      "id": 32,
+      "nivel": "negocio",
+      "persona": "mayorista",
+      "texto": "¿Cómo le hago para vender a otras tiendas de ropa y llevar el control de lo que les mando?"
+    }
   ]
 }
