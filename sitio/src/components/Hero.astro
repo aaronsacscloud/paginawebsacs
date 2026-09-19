@@ -157,17 +157,26 @@ const useCases = [
       </div>
 
       <!-- Mobile hero image -->
-      <div class="hero-mobile-visual">
-        <div class="hero-mobile-image-wrapper">
+      <!-- LCP móvil: es ESTA imagen la que Lighthouse mide (la de escritorio de
+           abajo está en display:none en <1024px). Rendimiento 2026-09-19:
+           - Se agrega la variante -900 al srcset: a 412px de viewport y DPR~1.75
+             (Moto G, el equipo que usa Lighthouse) el ancho real que hace falta
+             es ~720px, así que servir el candidato de 1400px era 2× de más.
+           - `sizes` ajustado al ancho real del contenedor (hay ~20px de margen
+             por lado), no 100vw completo.
+           - `fetchpriority="high"` — antes solo lo tenía la <img> de escritorio,
+             que en móvil ni se pinta. Sin esto el navegador no sabe que ESTA es
+             la imagen más grande de la pantalla y no le da prioridad de red. -->
           <img
             src="/images/hero-sacs-store-1400.webp"
-            srcset="/images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
-            sizes="100vw"
+            srcset="/images/hero-sacs-store-900.webp 900w, /images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
+            sizes="(max-width: 1023px) calc(100vw - 40px), 100vw"
             alt="Persona usando SACS en tablet en su tienda de ropa"
             class="hero-mobile-image"
             width="900"
             height="600"
             loading="eager"
+            fetchpriority="high"
           />
           <div class="hero-mobile-notif hero-mobile-notif-1" aria-hidden="true">
             <div class="hmn-icon hmn-icon-shop">
@@ -191,12 +200,15 @@ const useCases = [
       </div>
     </div>
 
-    <!-- Hero image + floating notifications -->
+    <!-- Hero image + floating notifications (solo se pinta en escritorio,
+         ≥1024px — ver .hero-visual { display:none } abajo). Se agrega el
+         mismo candidato -900 al srcset por consistencia, aunque `sizes` no lo
+         va a elegir en esta variante. -->
     <div class="hero-visual">
       <div class="hero-image-wrapper">
         <img
           src="/images/hero-sacs-store-1400.webp"
-          srcset="/images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
+          srcset="/images/hero-sacs-store-900.webp 900w, /images/hero-sacs-store-1400.webp 1400w, /images/hero-sacs-store.webp 2400w"
           sizes="(max-width: 900px) 100vw, 1100px"
           alt="Persona usando SACS en tablet en su tienda de ropa"
           class="hero-image"
@@ -300,9 +312,18 @@ const useCases = [
           </a>
         </div>
       </div>
+      <!-- Rendimiento 2026-09-19: se quitó `poster` de los 3 <video class="flujo-clip">
+           de esta página (aquí y más abajo, 101-foto-celular e 96-oficina-moda). El
+           <video> nace en opacity:0 (línea "flujo-clip { opacity: 0 }" del <style>)
+           y el <img class="flujo-still"> de al lado es quien se ve mientras tanto —
+           el poster no se pintaba NUNCA antes del primer play(). Aun así el navegador
+           lo bajaba entero y completo (no el -900 chico) desde el primer momento,
+           compitiendo por ancho de banda con la foto del hero: entre los 3 posters
+           eran ~300 KB gratis. También se le puso loading="lazy" al still: esta
+           sección va debajo del doblez en móvil. -->
       <div class="flujo-video" id="flujoVideo">
-        <img class="flujo-still" src="/tienda/59-live-900.webp" alt="" decoding="async"  width="1536" height="1024" />
-        <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/59-live.webp"><track kind="captions" src="/tienda/recorrido.vtt?v=2" srclang="es" label="Español" /></video>
+        <img class="flujo-still" src="/tienda/59-live-900.webp" alt="" decoding="async" loading="lazy" width="1536" height="1024" />
+        <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/recorrido.vtt?v=2" srclang="es" label="Español" /></video>
         <div class="flujo-tag flujo-tag--live" data-tag="0"><i></i>En vivo · TikTok Shop · Instagram · Facebook</div>
         <div class="flujo-tag" data-tag="5"><span class="flujo-tag-check">✓</span>Pago procesado</div>
         <div class="flujo-tag flujo-tag--sug" data-tag="4">Sugerencia · Botín negro 25</div>
@@ -1341,8 +1362,8 @@ const useCases = [
           </div>
         </div>
         <div class="flujo-video" id="creativoVideo">
-          <img class="flujo-still" src="/tienda/101-foto-celular-900.webp" alt="" decoding="async"  width="1280" height="852" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/101-foto-celular.webp"><track kind="captions" src="/tienda/reel.vtt?v=3" srclang="es" label="Español" /></video>
+          <img class="flujo-still" src="/tienda/101-foto-celular-900.webp" alt="" decoding="async" loading="lazy" width="1280" height="852" />
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/reel.vtt?v=3" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
@@ -3327,8 +3348,8 @@ const useCases = [
           </div>
         </div>
         <div class="flujo-video" id="inventarioVideo">
-          <img class="flujo-still" src="/tienda/96-oficina-moda-900.webp" alt="" decoding="async"  width="1280" height="852" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none" poster="/tienda/96-oficina-moda.webp"><track kind="captions" src="/tienda/inventario.vtt?v=7" srclang="es" label="Español" /></video>
+          <img class="flujo-still" src="/tienda/96-oficina-moda-900.webp" alt="" decoding="async" loading="lazy" width="1280" height="852" />
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/inventario.vtt?v=7" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
