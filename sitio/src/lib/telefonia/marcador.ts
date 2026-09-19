@@ -337,6 +337,31 @@ async function colgarItem(it: any, resultado?: string) {
   if (it.call_sid) { try { await twilioRest(`/Calls/${it.call_sid}.json`, { Status: 'completed' }); } catch { /* ya colgó */ } }
 }
 
+/** Dónde se cae la gente en esta jornada: descolgaron → hablaron → quedó algo → demo. */
+async function embudoSesion(sesionId: string) {
+  const { data } = await supabase.from('tel_sesion_items')
+    .select('id, contact_id, resultado, duracion_seg').eq('sesion_id', sesionId).limit(2000);
+  const its = data || [];
+  const contestaron = its.filter(i => ['contesto', 'volver_llamar', 'no_interesa', 'dieron_datos', 'colgo_rapido'].includes(String(i.resultado)));
+  const hablaron = contestaron.filter(i => Number(i.duracion_seg || 0) >= 30);
+  /* Lo que quedó agendado se lee de `bookings` —la agenda de verdad—, no de la
+     propuesta de la IA: lo que cuenta es la cita que existe, no la que se
+     propuso. `origen = llamada` la separa de las que se agendaron solas desde
+     la página pública, que no son mérito de esta jornada.
+     Se usa la MISMA fuente que la pestaña de Compromisos: dos maneras de contar
+     lo mismo acaban dando dos números distintos en la misma pantalla. */
+  const contactos = Array.from(new Set(contestaron.map(i => (i as any).contact_id).filter(Boolean))) as string[];
+  let conCita = 0, demos = 0;
+  if (contactos.length) {
+    const { data: bks } = await supabase.from('bookings')
+      .select('contact_id, event_types(slug)').in('contact_id', contactos).eq('origen', 'llamada')
+      .gte('created_at', new Date(Date.now() - 24 * 3600e3).toISOString()).limit(500);
+    conCita = new Set((bks || []).map((b: any) => b.contact_id)).size;
+    demos = new Set((bks || []).filter((b: any) => b.event_types?.slug === 'demo').map((b: any) => b.contact_id)).size;
+  }
+  return { contestaron: contestaron.length, hablaron: hablaron.length, con_cita: conCita, demos };
+}
+
 /** Recalcula los contadores de la sesión a partir de sus items. */
 export async function recontar(id: string) {
   const { data } = await supabase.from('tel_sesion_items').select('estado, resultado, duracion_seg, costo_usd').eq('sesion_id', id).limit(2000);
@@ -1312,6 +1337,18 @@ export async function estadoSesion(sesionId: string) {
        dice si el silencio de los primeros segundos se está cerrando. */
     colgaron_en_silencio: (await supabase.from('tel_sesion_items')
       .select('id', { count: 'exact', head: true }).eq('sesion_id', sesionId).eq('resultado', 'colgo_rapido')).count || 0,
+    /* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═════════════════════════════════
+       «30 conversaciones» incluía las de cuatro segundos, así que el número
+       grande y verde de la jornada decía que había ido bien justo los días que
+       había ido mal. Un embudo no es un contador: es dónde se cae la gente.
+
+         descolgaron → hablaron de verdad (>30 s) → quedó algo → demo
+
+       Los 30 segundos no son un número redondo: por debajo de eso no cabe una
+       presentación y una respuesta, así que no hubo conversación, hubo un
+       «ahorita no puedo». Y «quedó algo» son los compromisos reales creados
+       por el cierre, no la intención del vendedor. */
+    embudo: await embudoSesion(sesionId),
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),

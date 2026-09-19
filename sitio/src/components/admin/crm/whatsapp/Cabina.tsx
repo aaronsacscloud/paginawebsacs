@@ -1166,6 +1166,48 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 Son el marcador del partido: se miran de reojo, no se leen.
                 Arriba y chiquitos mientras la jornada está viva; en tamaño
                 normal cuando termina, que es cuando sí se estudian. */}
+            {/* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═══════════════════════════
+                «30 conversaciones» contaba las de cuatro segundos, así que el
+                número grande y verde decía que la jornada había ido bien justo
+                los días que había ido mal. Un embudo no es un contador: es
+                dónde se cae la gente, y cada escalón dice qué arreglar.
+
+                  descolgaron → hablaron (>30 s) → quedó algo → demo
+
+                Debajo de 30 s no cabe una presentación y una respuesta: eso no
+                fue una conversación, fue un «ahorita no puedo». Y lo agendado
+                sale de la agenda de verdad, no de lo que la IA propuso. */}
+            {fase !== 'viva' && est?.embudo && Number(est.embudo.contestaron) > 0 && (
+              <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 15px', marginBottom: 10 }}>
+                <span style={etiqueta}>Dónde se te fue la gente</span>
+                <div style={{ display: 'flex', alignItems: 'stretch', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  {[
+                    ['Descolgaron', est.embudo.contestaron, '#4FBF95', null],
+                    ['Hablaron de verdad', est.embudo.hablaron, '#5B4BD6', 'más de 30 s'],
+                    ['Quedó algo', est.embudo.con_cita, '#9B8CFA', 'cita o compromiso'],
+                    ['Demos', est.embudo.demos, '#E8A838', null],
+                  ].map(([et, v, color, sub]: any, i: number, todo: any[]) => {
+                    const previo = i > 0 ? Number(todo[i - 1][1]) : 0;
+                    const pct = i > 0 && previo > 0 ? Math.round((Number(v) / previo) * 100) : null;
+                    return (
+                      <div key={et} style={{ flex: '1 1 110px', minWidth: 96, borderLeft: `3px solid ${color}`, paddingLeft: 9 }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1.1 }}>{v}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.g900 }}>{et}</div>
+                        <div style={{ fontSize: 10.5, color: C.g500 }}>
+                          {sub || ''}{sub && pct != null ? ' · ' : ''}{pct != null ? `${pct}% de los de antes` : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {Number(est.embudo.contestaron) > 0 && Number(est.embudo.hablaron) / Number(est.embudo.contestaron) < 0.5 && (
+                  <div style={{ marginTop: 9, fontSize: 11.5, color: '#9a6a10', lineHeight: 1.5 }}>
+                    Más de la mitad de los que descolgaron colgaron antes de los 30 segundos. Eso casi
+                    nunca es la lista: es el hueco entre que contestan y tu primera frase.
+                  </div>
+                )}
+              </div>
+            )}
             {fase !== 'viva' && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[
