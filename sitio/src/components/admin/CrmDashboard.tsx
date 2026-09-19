@@ -1713,7 +1713,35 @@ const CRM_MOBILE_CSS = `
        se veía cortado —parecía un fallo de render, no un final de lista—.
        La barra mide --crm-bottomnav-h; se le suma el alto de la esfera para que
        tampoco se pare encima del último renglón. */
-    .m-bleed, .m-lienzo { padding-bottom: calc(var(--crm-bottomnav-h, 64px) + 76px); }
+    .m-bleed, .m-lienzo { padding-bottom: calc(var(--crm-bottomnav-h, 64px) + 40px); }
+    /* ══ 🔴 LA FILA QUE SE PARTE CONTRA LA BARRA (19-sep-2026) ═══════════════
+       Reporte del dueño con la captura del teléfono: «aquí se rompe». Medido
+       contra producción a 390×844: la barra va fija arriba de y=788, y al
+       detener el scroll a media lista SIEMPRE queda una fila cruzada por ella
+       — media fila visible y media tapada de golpe, que no se lee como «sigue
+       abajo» sino como un error de dibujo.
+
+       Dos cosas lo arreglan sin tocar el scroll de la página, que es lo que no
+       hay que tocar (el tirón para refrescar y las cabeceras pegadas cuelgan de
+       él):
+
+       · un degradado de 22 px justo encima de la barra: la fila que pasa por
+         debajo se desvanece en vez de cortarse a cuchillo. Es lo que hace que
+         se lea «hay más abajo».
+       · y el aire del final baja de 76 a 40 px. Los 76 eran para que la esfera
+         flotante no se parara encima del último renglón, pero con la barra ya
+         sumada dejaban casi doscientos píxeles de vacío después de la última
+         conversación — la mancha negra de la captura. Cuarenta bastan para
+         librar la esfera. */
+    .m-lienzo::after {
+      content: ''; position: fixed; left: 0; right: 0; z-index: 399;
+      bottom: var(--crm-bottomnav-h, 64px); height: 22px; pointer-events: none;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), #fff);
+    }
+    html[data-crm-dark="1"] .m-lienzo::after { background: linear-gradient(to bottom, rgba(19,19,24,0), #131318); }
+    /* Con el hilo abierto la barra no está (se esconde), así que el degradado
+       sobraría: sería una banda blanca encima del teclado. */
+    html[data-crm-hilo="1"] .m-lienzo::after { display: none; }
     /* …PERO SOLO DEBAJO DE LA LISTA. Ese aire es para el ÚLTIMO renglón, y hay
        pantallas que usan «m-bleed» dos veces: una para la cabecera y otra para
        la lista. En Leads eso dejaba 140 px de vacío ENTRE las pestañas y el

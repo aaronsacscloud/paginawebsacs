@@ -969,6 +969,11 @@ Lo que quedó fuera y sigue pendiente:
 - [ ] 📌 **REGLA DEL INBOX — siempre debe quedar claro QUÉ se le mandó al cliente.** «En vez de que
       la plantilla diga [Document], que aparezca un preview del PDF, y si le doy clic que pueda ver
       rápido el documento.» Aplica a todo adjunto, no sólo a este caso.
+      · YA DIAGNOSTICADO (19-sep): esos mensajes tienen `media_url` NULO en la base, así que hoy no
+        hay PDF que previsualizar. El texto «[Document]» lo pone el espejo del webhook al vernos
+        mandar la plantilla. La causa raíz es que la minuta sale por `enviarPlantilla` a secas
+        —camino que no espeja— en vez de `mandarPlantilla`, que sí guarda `mediaUrl` y `mime`.
+        Arreglar eso primero; el preview sale solo detrás.
 - [ ] 🧹 **Sacar los comentarios internos del hilo** (telefonía, cierre con IA, secuencias): «lo
       satura demasiado». Toda esa información se va a **Actividad**, cada cosa en su sección con su
       detalle. De secuencias basta con: en cuál está activo AHORA, en cuáles estuvo, y qué se mandó
@@ -980,4 +985,10 @@ Lo que quedó fuera y sigue pendiente:
       ese espacio lo satura».
 - [ ] **El aviso «Meta limitó los mensajes de marketing» no va en la cabecera**: sólo en el mensaje
       que fue rechazado. «Normalmente no es un tema a nivel general.»
+- [ ] 🐞 **Doble clic en el riel de «Notas» deja el panel en blanco** (el segundo clic lo cierra
+      pero la columna se queda vacía en vez de volver a Info).
+- [ ] 🧹 **El menú del inbox se ve saturado**: ordenarlo para que todo se lea más limpio (las dos
+      listas con «Ver 6 más», las vistas, y lo de abajo).
+- [ ] **Vista «Con reunión próxima»** entre las vistas del inbox, para verificar rápido a quién le
+      toca reunión pronto.
 - ~~Plantilla que no se enviaba~~ → el dueño confirmó que no era un error; se omite.

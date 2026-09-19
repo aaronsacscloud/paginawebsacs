@@ -762,6 +762,23 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           ventana cerrada eran 200 px de cromo sobre el hilo. */}
       {conv.alerta && (() => {
         const roto = /bloquead|no alcanzable|inexistente|no existe/i.test(conv.alerta);
+        /* ══ EL LÍMITE DE MARKETING NO ES UN AVISO DE CABECERA (19-sep-2026) ══
+           Pedido del dueño: «esto no debe aparecer aquí, sólo debe aparecer en
+           el mensaje que se rechazó, porque normalmente no es un tema a nivel
+           general».
+
+           Tiene razón: «Meta limitó los mensajes de marketing a este número»
+           NO describe el estado de la conversación —se puede seguir hablando,
+           se puede mandar utility, y en cuanto el cliente escriba se abre todo—
+           sino el destino de UN mensaje concreto. Puesto arriba y en ámbar, se
+           lee como «esta conversación está bloqueada», que es falso, y encima
+           se queda ahí días después del rechazo.
+
+           En la burbuja del mensaje rechazado ya sale, con su explicación y al
+           lado del texto que no llegó, que es donde significa algo. Los avisos
+           de cabecera se reservan para lo que SÍ es del hilo entero: número
+           bloqueado, inalcanzable o inexistente. */
+        if (/limitó los mensajes de marketing|131049/i.test(conv.alerta)) return null;
         // Con la ventana cerrada, el panel del composer ya dice qué hacer y
         // trae el botón: dos avisos ámbar seguidos diciendo casi lo mismo solo
         // hacen dudar cuál obedecer. El texto viaja al panel.

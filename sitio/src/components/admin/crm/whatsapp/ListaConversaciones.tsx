@@ -396,10 +396,6 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
           // todas las tuyas es ruido. Se calcula aquí para poder preguntar si
           // el renglón de chips tiene algo que enseñar antes de pintarlo.
           const asignadoOtro = asignado && (!yo || c.asignado_a !== yo.id) ? asignado : null;
-          // Por cuál línea entra el chat, solo si NO es la principal.
-          const lineaOtra = lineas.length > 1 && c.phone_number_id && c.phone_number_id !== lineaDef
-            ? (lineas.find(x => x.id === c.phone_number_id) || { numero: null as string | null })
-            : null;
           return (
             <button key={c.id} data-conv={c.id} className="wa-fila-hover"
               onClick={e => {
@@ -469,7 +465,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     El texto es lo flexible y los chips no se encogen: si algo
                     tiene que cortarse, que sea el nombre de la empresa y no
                     un chip que quede en «→ …». */}
-                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || resuelta || asignadoOtro || lineaOtra) && (
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || resuelta || asignadoOtro) && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                     {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
                     {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
@@ -490,11 +486,17 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                       <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
                         style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>de WhatsApp</span>
                     )}
-                    {/* Multilínea: por cuál número va este chat. Solo cuando hay más de una línea; la
-                        principal no lleva chip (sería ruido en cada renglón), la otra sí. */}
-                    {lineaOtra && (
-                      <span title={`Va por la línea ${lineaOtra.numero || c.phone_number_id}`} style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g700, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>{lineaOtra.numero ? numeroCorto(lineaOtra.numero) : 'otra línea'}</span>
-                    )}
+                    {/* ══ EL NÚMERO DE LÍNEA SE FUE DE LA LISTA (19-sep-2026) ══
+                        Pedido del dueño: «quita el teléfono que aparece, ensucia
+                        mucho ese espacio, lo satura». Y en su captura se ve por
+                        qué: «+1 ···0417» salía en casi todos los renglones —la
+                        mayoría de las conversaciones van por la segunda línea—,
+                        robándole sitio al nombre de la empresa, que es lo que sí
+                        cambia de fila a fila.
+
+                        Por qué línea va el chat sigue estando a un clic: se lee
+                        en la cabecera del hilo, junto al composer, que es donde
+                        importa — justo antes de escribir. */}
                     {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>Pendiente</span>}
                     {/* ══ LA PÍLDORA «NOTA» SE FUE (19-sep-2026) ══════════════
                         Pedido del dueño: «quítala de aquí, satura demasiado la
