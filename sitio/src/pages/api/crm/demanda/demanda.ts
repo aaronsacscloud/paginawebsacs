@@ -110,6 +110,66 @@ export const GET: APIRoute = async ({ url }) => {
        contexto al lado se lee como «el motor no funciona», y sería inventar un
        fracaso. Separarlas en dos endpoints es garantizar que alguna pantalla
        acabe enseñando una sin la otra. */
+    /* La serie diaria del tráfico: lo único que contesta «¿vamos mejor que la
+       semana pasada?» sin que nadie tenga que abrir Search Console.
+
+       Se sirven juntas las métricas de tráfico y las del motor porque la
+       pregunta real las cruza: si publicamos doce páginas y las impresiones sin
+       marca no se mueven en tres semanas, el problema no es el ritmo de
+       publicación. */
+    if (vista === 'serie') {
+      const dias = Math.min(Number(url.searchParams.get('dias')) || 30, 365);
+      const desde = new Date(Date.now() - dias * 864e5).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('de_metricas_diarias')
+        .select('fecha, metrica, valor')
+        .gte('fecha', desde)
+        .order('fecha', { ascending: true });
+      if (error) return json({ ok: false, error: error.message }, 500);
+
+      // fecha → { metrica: valor }
+      const porDia = new Map<string, Record<string, number>>();
+      for (const r of data || []) {
+        const d = porDia.get(r.fecha) || {};
+        d[r.metrica] = Number(r.valor);
+        porDia.set(r.fecha, d);
+      }
+      const serie: Record<string, any>[] = [...porDia.entries()].map(([fecha, m]) => ({ fecha, ...m }));
+
+      /* Comparar la última semana contra la anterior, no contra el día previo:
+         el tráfico de búsqueda tiene forma de semana —los lunes no se parecen a
+         los domingos— y comparar días sueltos hace ver subidas y caídas que son
+         el calendario, no el trabajo. */
+      const ult7 = serie.slice(-7), prev7 = serie.slice(-14, -7);
+      const suma = (xs: any[], k: string) => xs.reduce((n, x) => n + (Number(x[k]) || 0), 0);
+      const cambio = (k: string) => {
+        const a = suma(ult7, k), b = suma(prev7, k);
+        return { ahora: a, antes: b, delta: a - b, pct: b > 0 ? Math.round(((a - b) / b) * 1000) / 10 : null };
+      };
+
+      return json({
+        ok: true,
+        serie,
+        dias_con_dato: serie.length,
+        semana: {
+          clics_sin_marca: cambio('clics_sin_marca'),
+          impresiones_sin_marca: cambio('impresiones_sin_marca'),
+          consultas_sin_marca: cambio('consultas_sin_marca'),
+          clics_totales: cambio('clics_totales'),
+          herramientas_usos_dia: cambio('herramientas_usos_dia'),
+          leads_atribuidos: cambio('leads_atribuidos'),
+        },
+        // Lo último de lo que no es acumulable por semana (son fotos, no sumas).
+        hoy: serie.length ? {
+          avs: serie[serie.length - 1].avs ?? null,
+          dcs: serie[serie.length - 1].dcs ?? null,
+          paginas_indexables: serie[serie.length - 1].paginas_indexables ?? null,
+          contenido_publicado: serie[serie.length - 1].contenido_publicado ?? null,
+          pct_sin_marca: serie[serie.length - 1].pct_sin_marca ?? null,
+        } : null,
+      });
+    }
+
     if (vista === 'atribucion') {
       const [activos, cobertura, recorridos, toques] = await Promise.all([
         supabase.from('de_atribucion').select('*').order('clientes', { ascending: false }).order('leads', { ascending: false }),
