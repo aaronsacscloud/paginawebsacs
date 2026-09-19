@@ -537,6 +537,28 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
      interfaz con las decisiones, y ya al tomar la decisión me pasa a la otra».
      El motor hace su parte (no avanza ni aplica nada); aquí se DICE, porque un
      proceso que se para sin avisar se siente igual que uno atorado. */
+  /* Qué decirle cuando la IA no dejó propuesta. La clase del fallo la escribe
+     el servidor (`cierre_ia.fallo`); aquí sólo se traduce a algo que se pueda
+     leer sin saber qué es un timeout. `sin_transcripcion` no aparece: ése es el
+     caso de la llamada de quince segundos, donde no hay nada que arreglar. */
+  const falloCierre = (() => {
+    const ia = actual?.cierre_ia;
+    if (!ia || actual?.cierre_estado !== 'sin_datos') return null;
+    const fallo = String(ia.fallo || 'otro');
+    const min = Number(actual?.duracion_seg || 0) > 60 ? `${Math.round(Number(actual.duracion_seg) / 60)} min de llamada` : 'esta llamada';
+    const dicho = fallo === 'tiempo' ? `No alcanzó a leer ${min} antes de que se acabara el tiempo. Lo que se dijo NO se perdió: sigue guardado, sólo hay que volver a leerlo.`
+      : fallo === 'saldo' ? 'La cuenta de IA se quedó sin saldo, así que no se leyó la llamada. Recarga y dale a «Volver a leer»: la transcripción sigue guardada.'
+      : fallo === 'sin_llave' ? 'La IA no está configurada en el servidor, así que nadie leyó la llamada.'
+      : `No se pudo leer la llamada (${String(ia.motivo || 'sin detalle').slice(0, 90)}). La transcripción sigue guardada.`;
+    return { fallo, dicho };
+  })();
+
+  const regenerarCierre = async () => {
+    if (!actual) return;
+    const r = await accion('cierre_regenerar', { item: actual.id });
+    if (r?.ok) { latir(); cargarItems(); }
+  };
+
   const esperaTuDecision = actual?.estado === 'cierre' && ['persona', 'duda'].includes(String(actual?.veredicto || '')) && !sola;
   const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
@@ -927,6 +949,17 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     );
   }
 
+  /* Volver a leer una llamada YA pasada, desde la lista. El botón del panel de
+     cierre sólo alcanza a la llamada que tienes delante; cuando la jornada
+     siguió, la que se quedó sin leer es justo la que se pierde de vista. */
+  const releer = async (itemId: string) => {
+    setError(''); setOcupado(`releer-${itemId}`);
+    const r = await post({ accion: 'cierre_regenerar', id: sesionId, item: itemId });
+    setOcupado('');
+    if (r?.error) { setError(r.error); return; }
+    latir(); cargarItems();
+  };
+
   const filaItem = (i: any, conAcciones: boolean, compacto = false) => (
     <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderBottom: `1px solid ${C.g100}`, background: i.id === actual?.id ? C.moradoSuave : '#fff', opacity: i.estado === 'excluido' ? 0.55 : 1 }}>
       <span style={{ width: 22, fontSize: 11, color: C.g400, textAlign: 'right', flexShrink: 0 }}>{i.orden + 1}</span>
@@ -957,7 +990,22 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         {/* Y si la IA no pudo cerrarla, se dice aquí mismo: una llamada sin
             nada hecho y sin explicación se lee como que el sistema falló. */}
         {i.estado === 'hecho' && !(i.hecho || []).length && i.cierre_motivo && (
-          <div style={{ fontSize: 11, color: '#9a6a10', marginTop: 3 }}>La IA no la cerró: {i.cierre_motivo}</div>
+          <div style={{ fontSize: 11, color: '#9a6a10', marginTop: 3, display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+            <span>{i.cierre_fallo === 'tiempo' ? 'No alcanzó a leerla: se acabó el tiempo'
+              : i.cierre_fallo === 'saldo' ? 'No la leyó: la cuenta de IA se quedó sin saldo'
+              : i.cierre_fallo === 'sin_transcripcion' ? 'Sin transcripción que leer'
+              : `La IA no la cerró: ${i.cierre_motivo}`}</span>
+            {/* La llamada ya pasó y la lista siguió, pero lo que se dijo SIGUE
+                guardado: aquí se rescata sin tener que volver a la tarjeta.
+                Sólo donde hay algo que releer — con `sin_transcripcion` no lo
+                hay, y ofrecerlo sería prometer algo que no va a pasar. */}
+            {i.cierre_estado === 'sin_datos' && i.cierre_fallo && i.cierre_fallo !== 'sin_transcripcion' && (
+              <button onClick={() => releer(i.id)} disabled={!!ocupado}
+                style={{ border: '1px solid #E8A838', background: '#fff', color: '#9a6a10', borderRadius: 999, padding: '2px 9px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {ocupado === `releer-${i.id}` ? 'Leyendo…' : 'Volver a leer'}
+              </button>
+            )}
+          </div>
         )}
       </div>
       {i.estado === 'hecho' || i.estado === 'saltado'
@@ -1394,7 +1442,44 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         siguiente. */}
                 {esperaTuDecision && (
                   <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-                    {actual.cierre_estado === 'proponiendo' && <Cargando texto="Leyendo la llamada…" alto={48} />}
+                    {/* ══ 🔴 UNA LECTURA QUE FALLA TIENE QUE DECIRLO (18-sep-2026) ══
+                        Reporte del dueño sobre la reunión con Maela, de 19
+                        minutos: «no veo las referencias ni las solicitudes de la
+                        IA… en dado caso de que algo no suceda, me tiene que
+                        marcar el error o entender el error; o, si está
+                        transcribiendo en ese momento y se está tardando porque
+                        fue una llamada muy grande, también lo debería decir».
+
+                        Tenía toda la razón y el silencio era mío: el aviso de «la
+                        IA no alcanzó a leer» se había quitado hace unas horas —a
+                        petición suya— porque en llamadas de veinte segundos era
+                        puro ruido. Pero quitarlo del todo dejó el caso opuesto sin
+                        voz: la llamada de diecinueve minutos, la valiosa, se
+                        quedaba muda y parecía que la IA simplemente no tenía nada
+                        que decir. No es lo mismo «no había nada que leer» que «no
+                        me dio tiempo de leerlo»: lo primero se decide y ya, lo
+                        segundo SE ARREGLA volviendo a leer.
+
+                        Así que el ruido no vuelve —una llamada corta sin
+                        transcripción sigue sin decir nada— pero un fallo de tiempo,
+                        de saldo o cualquier otro se dice con su nombre y con el
+                        botón que lo resuelve. */}
+                    {actual.cierre_estado === 'proponiendo' && (
+                      <Cargando texto={Number(actual.duracion_seg || 0) > 240
+                        ? `Leyendo la llamada… fueron ${Math.round(Number(actual.duracion_seg) / 60)} min, esto tarda un poco más`
+                        : 'Leyendo la llamada…'} alto={48} />
+                    )}
+                    {actual.cierre_estado === 'sin_datos' && falloCierre && falloCierre.fallo !== 'sin_transcripcion' && (
+                      <div style={{ background: '#FFF8EC', border: '1px solid #F0D8AC', borderRadius: 10, padding: '10px 13px', display: 'grid', gap: 7 }}>
+                        <div style={{ fontSize: 12.5, color: '#9a6a10', fontWeight: 700, lineHeight: 1.45 }}>{falloCierre.dicho}</div>
+                        <div>
+                          <button onClick={regenerarCierre} disabled={!!ocupado}
+                            style={{ ...btnS, borderColor: '#E8A838', color: '#9a6a10' }}>
+                            {ocupado === 'cierre_regenerar' ? <><Cargador chico />Volviendo a leer…</> : 'Volver a leer la llamada'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* 1 · LO QUE LA IA ENTENDIÓ — primero, porque es lo que
                            permite cerrar en un clic. */}

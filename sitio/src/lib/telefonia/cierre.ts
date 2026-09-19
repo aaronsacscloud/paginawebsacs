@@ -32,7 +32,52 @@ import { zonaDeLada, ladaDe, instanteEnZona, fechaHoraEn } from './zonas';
 const ahora = () => new Date().toISOString();
 export const RESULTADOS_CIERRE = ['contesto', 'volver_llamar', 'dieron_datos', 'no_interesa', 'buzon'];
 const TIPOS_REUNION: Record<string, string> = { demo: 'demo', seguimiento: 'seguimiento', cotizacion: 'cotizacion', 'llamada-discovery': 'llamada-discovery' };
-const ESPERA_PROPUESTA_MS = 20000;   // si la IA no contesta en 20 s, el cierre sigue sin ella
+/* ══ 🔴 LA LLAMADA DE 19 MINUTOS QUE SE QUEDÓ SIN CIERRE (18-sep-2026) ═════
+   Reporte del dueño sobre la reunión con Maela: «fue una reunión de 30 o 40
+   minutos y por alguna razón no veo las referencias ni las solicitudes de la
+   IA». En la base: `cierre_estado: sin_datos`, motivo «Request timed out», con
+   194 trozos de transcripción y 1162 segundos hablados.
+
+   O sea: la llamada MÁS valiosa del día —diecinueve minutos de conversación
+   real— es justo la que se perdía, porque el tope de lectura era fijo en 20 s
+   y daba igual si la transcripción traía tres renglones o nueve mil
+   caracteres. Cuanto mejor la llamada, más seguro que se caía.
+
+   Ahora el tope crece con lo que hay que leer, y con un techo alto: la sesión
+   no se queda esperando —el vendedor decide mientras y la lista sigue—, así
+   que alargarlo no cuesta nada salvo unos segundos de una llamada a la IA. El
+   que manda a la sesión a seguir sola sigue siendo el de 20 s. */
+const ESPERA_PROPUESTA_MS = 20000;   // lo que la SESIÓN espera antes de seguir sin la IA
+/* MEDIDO, no estimado: la relectura de la llamada de Maela —11,014 caracteres
+   de diálogo— volvió a caerse con 18 s. Sonnet tarda lo que tarda en escribir
+   la propuesta entera (nota, compromisos, datos, envíos): son cerca de mil
+   tokens de salida, y eso solo ya pasa de veinte segundos.
+
+   Por eso hay DOS presupuestos, y la diferencia es quién espera:
+
+   · `LECTURA_PULSO`: la lectura que corre dentro del latido del navegador. Se
+     queda corta a propósito. Un latido que tarda un minuto CONGELA la cabina
+     —el guard del pulso tira todo lo que llegue mientras—, y eso ya pasó una
+     vez y es peor que quedarse sin propuesta.
+   · `LECTURA_HOLGADA`: la del cron de cada 2 minutos y la del botón «volver a
+     leer». Ahí nadie está mirando una pantalla que se tenga que mover, así que
+     se le da tiempo de sobra. Es la que rescata las llamadas largas, que son
+     justo las que importan. */
+const LECTURA_PULSO_MS = 18000;
+const LECTURA_HOLGADA_MS = 100000;
+const tiempoDeLectura = (largo: number, holgado?: boolean) =>
+  holgado ? Math.min(LECTURA_HOLGADA_MS, 45000 + Math.round(largo / 4)) : LECTURA_PULSO_MS;
+
+/** Por qué no hubo propuesta, en una palabra que la pantalla pueda usar. */
+export type FalloCierre = 'tiempo' | 'saldo' | 'sin_transcripcion' | 'sin_llave' | 'otro';
+export function claseDeFallo(motivo: string): FalloCierre {
+  const m = String(motivo || '').toLowerCase();
+  if (/timed out|timeout|aborted/.test(m)) return 'tiempo';
+  if (/credit balance|sin saldo|quota|insufficient/.test(m)) return 'saldo';
+  if (/transcripción no alcanzó/.test(m)) return 'sin_transcripcion';
+  if (/sin llave/.test(m)) return 'sin_llave';
+  return 'otro';
+}
 const COLGADO_MS = 2 * 60000;        // un cierre a medias más viejo que esto se rescata
 
 /** Fecha y hora de un compromiso como instante, en la hora DEL CONTACTO (su zona por la lada: «a las 10» en Tijuana son las 12 del centro), o null si no es real, ya pasó o está a más de 90 días. */
@@ -71,17 +116,22 @@ function hoyCdmx() {
 /* ────────────────────────────────────────────────────────────────────────
    1 · PROPONER: la IA lee la llamada y deja la propuesta en el item.
    ──────────────────────────────────────────────────────────────────────── */
-export async function proponerCierre(itemId: string): Promise<Propuesta | null> {
-  // Candado: solo un latido lo propone.
-  const { data: it } = await supabase.from('tel_sesion_items').update({ cierre_estado: 'proponiendo', updated_at: ahora() })
-    .eq('id', itemId).is('cierre_estado', null).select('*').maybeSingle();
+export async function proponerCierre(itemId: string, opciones?: { reintento?: boolean; holgado?: boolean }): Promise<Propuesta | null> {
+  /* Candado: sólo un latido lo propone. Con `reintento` se admite además
+     repetir sobre un cierre que ya falló —lo pide el dueño a mano desde la
+     cabina, o el rescate cuando el fallo fue de tiempo—: ahí el trabajo no
+     está hecho, está PERDIDO, y volver a leer la misma transcripción no cuesta
+     más que otra llamada a la IA. */
+  const q = supabase.from('tel_sesion_items').update({ cierre_estado: 'proponiendo', updated_at: ahora() }).eq('id', itemId);
+  const { data: it } = await (opciones?.reintento ? q.in('cierre_estado', ['sin_datos']) : q.is('cierre_estado', null)).select('*').maybeSingle();
   if (!it) return null;
   try {
     const oido: Oido[] = Array.isArray(it.oido) ? it.oido : [];
     const dialogo = dialogoOido(oido);
     const delContacto = oido.filter(o => o.final && o.quien !== 'vendedor').map(o => o.texto).join(' ');
     if (!hasApiKey() || delContacto.trim().length < 25) {
-      await supabase.from('tel_sesion_items').update({ cierre_estado: 'sin_datos', cierre_ia: { motivo: !hasApiKey() ? 'sin llave de IA' : 'la transcripción no alcanzó', generado_at: ahora() }, updated_at: ahora() }).eq('id', itemId);
+      const motivo = !hasApiKey() ? 'sin llave de IA' : 'la transcripción no alcanzó';
+      await supabase.from('tel_sesion_items').update({ cierre_estado: 'sin_datos', cierre_ia: { motivo, fallo: claseDeFallo(motivo), largo: delContacto.trim().length, generado_at: ahora() }, updated_at: ahora() }).eq('id', itemId);
       return null;
     }
 
@@ -120,7 +170,7 @@ ${(conocimiento || []).map(k => `${k.id} · ${k.tema} · ${(k.claves || []).join
 TRANSCRIPCIÓN:
 ${dialogo.slice(0, 9000)}`;
 
-    const r = await anthropic.messages.create({ proposito: 'lib/telefonia/cierre.ts:119', model: MODELS.sonnet, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] }, { timeout: ESPERA_PROPUESTA_MS - 2000, maxRetries: 0 });
+    const r = await anthropic.messages.create({ proposito: 'lib/telefonia/cierre.ts:119', model: MODELS.sonnet, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] }, { timeout: tiempoDeLectura(dialogo.length, opciones?.holgado), maxRetries: 0 });
     const texto = (r.content[0] as any)?.text || '';
     const m = texto.match(/\{[\s\S]*\}/);
     const p: any = m ? JSON.parse(m[0]) : null;
@@ -152,7 +202,13 @@ ${dialogo.slice(0, 9000)}`;
     await supabase.from('tel_sesion_items').update({ cierre_estado: 'propuesto', cierre_ia: { propuesta, generado_at: ahora() }, updated_at: ahora() }).eq('id', itemId);
     return propuesta;
   } catch (e: any) {
-    await supabase.from('tel_sesion_items').update({ cierre_estado: 'sin_datos', cierre_ia: { motivo: String(e?.message || e).slice(0, 200), generado_at: ahora() }, updated_at: ahora() }).eq('id', itemId);
+    const motivo = String(e?.message || e).slice(0, 200);
+    /* Se guarda además CUÁNTO había que leer: un «se acabó el tiempo» con nueve
+       mil caracteres de transcripción se explica solo, y eso es lo que la
+       pantalla le dice al vendedor en vez de dejarlo mirando una tarjeta muda. */
+    const largo = dialogoOido(Array.isArray(it.oido) ? it.oido : []).length;
+    const intento = Number((it as any)?.cierre_ia?.intento || 0) + (opciones?.reintento ? 1 : 0);
+    await supabase.from('tel_sesion_items').update({ cierre_estado: 'sin_datos', cierre_ia: { motivo, fallo: claseDeFallo(motivo), largo, intento, generado_at: ahora() }, updated_at: ahora() }).eq('id', itemId);
     return null;
   }
 }
@@ -403,6 +459,30 @@ export async function rescatarCierres(): Promise<void> {
       .order('terminado_at').limit(3);
     for (const it of sinCierre || []) {
       const p = await proponerCierre(it.id);
+      if (p) await aplicarCierre(it.id, { userId: null, rescate: true });
+    }
+
+    /* ══ LO QUE SE PERDIÓ POR TIEMPO SE VUELVE A LEER SOLO (18-sep-2026) ═══
+       Un cierre que murió con «Request timed out» no es una llamada sin nada
+       que decir: es una llamada CON todo que decir, cuya lectura no alcanzó a
+       terminar. La transcripción sigue guardada, así que releerla no cuesta más
+       que otra llamada a la IA — y con el tope de lectura ya escalado por
+       tamaño, el segundo intento es el que sí entra.
+
+       Sólo los de tiempo, y sólo dentro de la ventana de 2 horas. Los de saldo
+       NO se reintentan solos a propósito: sin crédito, reintentar es quemar
+       llamadas fallidas cada 30 segundos. Ése lo dispara el dueño desde la
+       cabina cuando ya recargó, que es lo que pidió. */
+    const { data: porTiempo } = await supabase.from('tel_sesion_items')
+      .select('id, cierre_ia').eq('estado', 'hecho').eq('cierre_estado', 'sin_datos')
+      .eq('cierre_ia->>fallo', 'tiempo')
+      .lt('terminado_at', viejo).gt('terminado_at', hace2h)
+      .order('terminado_at').limit(3);
+    /* UN solo reintento automático. Si la segunda lectura también se cae, el
+       problema no es el tiempo y seguir pidiéndola cada 30 segundos sólo gasta
+       llamadas a la IA; ahí se queda con su botón para que el dueño decida. */
+    for (const it of (porTiempo || []).filter((x: any) => !Number(x.cierre_ia?.intento))) {
+      const p = await proponerCierre(it.id, { reintento: true, holgado: true });
       if (p) await aplicarCierre(it.id, { userId: null, rescate: true });
     }
 

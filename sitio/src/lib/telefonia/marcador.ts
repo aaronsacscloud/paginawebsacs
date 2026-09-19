@@ -1339,6 +1339,11 @@ export async function listarItems(sesionId: string) {
       ...resto,
       hecho: Array.isArray(cierre_ia?.hecho) ? cierre_ia.hecho : [],
       cierre_motivo: cierre_ia?.motivo || null,
+      /* La CLASE del fallo, no sólo el texto: es lo que deja a la lista ofrecer
+         «volver a leer» sólo donde tiene sentido. Una llamada de quince
+         segundos sin transcripción no se relee — no hay nada que leer—; una de
+         diecinueve minutos que se quedó sin tiempo, sí. */
+      cierre_fallo: cierre_ia?.fallo || null,
     };
   });
 }

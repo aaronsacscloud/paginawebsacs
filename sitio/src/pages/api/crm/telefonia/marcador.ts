@@ -13,7 +13,7 @@ import { twilioRest, telefoniaConfigurada, telefoniaFaltantes } from '../../../.
 import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, compromisosDeSesion, relanzar, recontar, getSesion,
 } from '../../../../lib/telefonia/marcador';
-import { aplicarCierre, responderEnvio, omitirEnvio, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
+import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
 import { vozConfigurada, configVoz, MODOS, type Modo } from '../../../../lib/telefonia/voz';
 
 export const prerender = false;
@@ -305,6 +305,37 @@ export const POST: APIRoute = async ({ request }) => {
         if (!e || (e as any)?.tel_sesion_items?.sesion_id !== s.id) return json({ error: 'No es un envío de tu sesión' }, 404);
         await omitirEnvio(envioId);
         return json({ ok: true });
+      }
+      /* ══ VOLVER A LEER LA LLAMADA (18-sep-2026) ════════════════════════
+         Pedido del dueño: «si por alguna razón algo no se generó al terminar
+         la llamada por créditos, que pueda recargar créditos y de ahí
+         regenerarlo, para que no se pierda todo eso que se tuvo que haber
+         realizado».
+
+         Ésa es la clave: cuando el cierre falla, el trabajo NO está hecho, está
+         PERDIDO — y la transcripción, que es lo caro de conseguir, sigue
+         guardada. Releerla cuesta una llamada a la IA. Los fallos de tiempo se
+         reintentan solos; los de saldo no, porque sin crédito reintentar solo
+         sería quemar fallos cada 30 segundos. Éste es ese botón. */
+      case 'cierre_regenerar': {
+        const itemId = String(b.item || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta la llamada' }, 400);
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id, cierre_estado').eq('id', itemId).maybeSingle();
+        if (!it || it.sesion_id !== s.id) return json({ error: 'No es una llamada de tu sesión' }, 404);
+        if (it.cierre_estado !== 'sin_datos') return json({ error: 'Esa llamada no quedó pendiente de leer' }, 409);
+        const p = await proponerCierre(itemId, { reintento: true, holgado: true });
+        if (!p) {
+          const { data: post } = await supabase.from('tel_sesion_items').select('cierre_ia').eq('id', itemId).maybeSingle();
+          const motivo = String((post as any)?.cierre_ia?.motivo || '');
+          const fallo = String((post as any)?.cierre_ia?.fallo || 'otro');
+          return json({
+            error: fallo === 'saldo' ? 'La cuenta de IA sigue sin saldo. Recarga en Anthropic y vuelve a intentar.'
+              : fallo === 'tiempo' ? 'Otra vez se acabó el tiempo de lectura. Intenta de nuevo en un momento.'
+              : fallo === 'sin_transcripcion' ? 'Esta llamada no dejó transcripción que leer.'
+              : `No se pudo leer la llamada: ${motivo || 'sin detalle'}`,
+          }, 409);
+        }
+        return json({ ok: true, ...(await estadoSesion(s.id)) });
       }
       case 'estado': return json(await estadoSesion(s.id));
       default: return json({ error: 'Acción desconocida' }, 400);
