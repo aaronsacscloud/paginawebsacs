@@ -1594,7 +1594,11 @@ export default function InboxPro() {
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
         )}
         {!isCompact && (
-          <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
+          /* `flex: 0 1 auto` + `minWidth`: el detalle CEDE antes que la
+             conversación cuando la ventana se estrecha. Antes era
+             `flexShrink: 0` —intocable— así que el único que se apretaba era el
+             hilo, justo al revés de lo que hay que proteger. */
+          <div className="wa-scroll" style={{ width: L.detalle, flex: `0 1 ${L.detalle}px`, minWidth: L.detalleMin, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
             {conv || filaActiva?.virtual ? <Suspense fallback={<EsqueletoPanel />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>

@@ -17,13 +17,33 @@ export const C = {
   g50: '#F9FAFB', g100: '#F3F4F6', g200: '#E5E7EB', g300: '#D1D5DB', g400: '#9CA3AF', g500: '#6B7280', g700: '#374151', g900: '#111827',
 };
 
-/** Alturas/anchos del layout (px) — la firma del look. */
+/* ══ LA JERARQUÍA DEL INBOX (19-sep-2026) ════════════════════════════════════
+   Pedido del dueño: «haz esta sección un 30% más ancha y haz más pequeñas las
+   secciones de al lado; la conversación tiene que tener mayor jerarquía».
+
+   Tenía razón y el número lo dice: en una pantalla de 1440, entre el menú
+   (224), la lista (300) y el detalle (400) se iban 924 px FIJOS y a la
+   conversación —lo único que se lee palabra por palabra— le quedaban 516. La
+   columna más importante era la tercera en tamaño, y encima la única que cedía
+   cuando algo crecía.
+
+   Los tres laterales ceden un poco y todo va a la conversación: 516 → 668 px,
+   un 29% más. Ninguno queda por debajo de lo que necesita —el menú sigue
+   cabiendo con sus rótulos, la lista enseña nombre y último mensaje, el detalle
+   mantiene sus pares de etiqueta y dato— porque achicar hasta romper habría
+   sido cambiar un problema por otro.
+
+   Y el ancho del detalle deja de ser intocable: cede antes que la conversación
+   cuando la ventana se estrecha (ver `flex` en InboxPro). El orden de quién se
+   sacrifica es la decisión de diseño; los píxeles son sólo su consecuencia. */
 export const L = {
   header: 44,           // h-11: TODOS los headers de columna, alineados al píxel
-  sidebar: 224,         // w-56
+  sidebar: 196,         // antes 224
   sidebarColapsado: 64, // w-16
-  lista: 300,           // cede 20px al detalle
-  detalle: 400,         // los datos de Info necesitan aire (antes 288 → 340 → 400)
+  lista: 252,           // antes 300
+  detalle: 328,         // antes 400 (y antes 288 → 340 → 400)
+  detalleMin: 292,      // hasta aquí puede encogerse antes que la conversación
+  hiloMin: 520,         // la conversación nunca baja de esto: es la que se lee
   railito: 44,          // w-11: barra de iconos del panel derecho
 };
 

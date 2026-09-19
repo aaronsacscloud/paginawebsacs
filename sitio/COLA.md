@@ -952,3 +952,14 @@ Lo que quedó fuera y sigue pendiente:
 - [ ] **Pantalla de grabaciones**: hoy sólo se oyen desde la tarjeta de la llamada. Falta poder
       buscar una de hace tres días. (28 de 124 llamadas tienen audio: la grabación es a petición.)
 - [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep, sigue abierto).
+
+## 19-sep-2026 · tarde — llegó mientras ensanchaba la conversación
+
+- [x] **Un rezagado que agenda pasa a Oportunidad** (y con eso la IA le suelta el hilo) → HECHO,
+      más los 4 contactos que ya estaban agendados y se habían quedado en Rezagado.
+- [x] **El select de «Abierta» se desborda** → HECHO: los cuatro controles del encabezado ceden en
+      vez de tener un mínimo rígido de 118 px cada uno.
+- [x] **La conversación, 30% más ancha** y los laterales más chicos → HECHO (516 → 668 px).
+- [ ] **Poder COLAPSAR el panel de detalle** para agrandar todavía más la conversación.
+- [ ] **Quitar la píldora «NOTA» de la lista de conversaciones**: «satura demasiado la pantalla».
+- ~~Plantilla que no se enviaba~~ → el dueño confirmó que no era un error; se omite.

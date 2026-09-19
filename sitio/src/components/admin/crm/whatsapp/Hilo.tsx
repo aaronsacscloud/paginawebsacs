@@ -61,12 +61,42 @@ const memoriaScroll = new Map<string, number>();
    en reposo la fila entera es blanca y gris, y sólo se enciende lo que
    significa algo —la etapa (su pastel), «Pendiente» (ámbar) y el agente
    cuando NO está observando—. */
+/* ══ LOS CUATRO CONTROLES DEL ENCABEZADO (19-sep-2026) ═══════════════════════
+   Reporte del dueño, con la captura: «el select de Abierta se desborda cuando
+   está así; optimízalo y hazlo más pequeño, más enterprise y estético, que
+   quede bien en cualquier aspecto».
+
+   Qué lo desbordaba: `minWidth: 118` en los cuatro. Cuatro controles de 118 px
+   más sus separaciones son 500 px de mínimo que no ceden NUNCA — da igual lo
+   ancha que esté la ventana, si el panel de la derecha está abierto o si el
+   nombre es largo. Un mínimo rígido no es un diseño responsivo: es un desborde
+   esperando a que alguien estreche la ventana.
+
+   El ancho fijo estaba para que los cuatro se vieran del mismo tamaño, y eso
+   es perseguir una simetría que nadie pidió a costa de que el último se salga.
+   La regla enterprise es la contraria: cada control ocupa lo que dice su
+   contenido, todos ceden cuando falta sitio, y el que se queda corto lo enseña
+   con puntos suspensivos en vez de romper la línea.
+
+   · `minWidth: 0` + `flex: 0 1 auto`: ceden en orden, de mayor a menor.
+   · `maxWidth` por control (el de asignar es el que más texto lleva).
+   · `textOverflow: ellipsis`: «Andrea Gutié…» y no «Andrea Gutié» cortado a
+     hachazos contra el borde.
+   · Un punto menos de alto y de letra (26 px / 11) y las esquinas a 8 en vez
+     de píldora: cuatro píldoras seguidas se leen como etiquetas de colores; un
+     control con esquina suave se lee como algo que se puede tocar.
+   · `appearance: none` y la flecha dibujada: la del sistema mide distinto en
+     cada navegador y era la que empujaba el texto contra el borde. */
 const CTL: any = {
-  height: 28, borderRadius: 999, border: '1px solid', borderColor: '#e6e6ea',
+  height: 26, borderRadius: 8, border: '1px solid', borderColor: '#e6e6ea',
   background: '#fff', color: '#6b7280',
-  fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit',
-  padding: '0 11px', cursor: 'pointer', whiteSpace: 'nowrap',
-  minWidth: 118, maxWidth: 172, flex: '0 1 auto',
+  fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
+  padding: '0 22px 0 9px', cursor: 'pointer', whiteSpace: 'nowrap',
+  minWidth: 0, maxWidth: 150, flex: '0 1 auto',
+  overflow: 'hidden', textOverflow: 'ellipsis',
+  appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
+  backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'10\' viewBox=\'0 0 24 24\' fill=\'none\'><path d=\'M6 9l6 6 6-6\' stroke=\'%239ca3af\' stroke-width=\'2.4\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/></svg>")',
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 7px center',
   display: 'inline-flex', alignItems: 'center', gap: 6,
 };
 
@@ -364,7 +394,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   // Fila virtual (contacto sin conversación): héroe + elegir plantilla.
   if (!hilo && filaActiva?.virtual) {
     return (
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: C.g50 }}>
+      <div style={{ flex: 1, minWidth: mobile ? 0 : L.hiloMin, display: 'flex', flexDirection: 'column', borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: C.g50 }}>
         <div style={{ height: L.header, display: 'flex', alignItems: 'center', gap: 9, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
           {onBack && <button onClick={onBack} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36 }}>←</button>}
           <Avatar nombre={filaActiva.contacto?.nombre} telefono={String(filaActiva.telefono || '?')} size={28} canal="crm" />
@@ -405,8 +435,12 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     const nom = filaActiva?.contacto?.nombre
       ? `${filaActiva.contacto.nombre} ${filaActiva.contacto.apellido || ''}`.trim()
       : (filaActiva?.telefono ? telefonoLegible(String(filaActiva.telefono)) : '');
+    /* `minWidth: L.hiloMin` en escritorio: la conversación es la columna que se
+       lee palabra por palabra, así que es la ÚLTIMA que cede. Con `minWidth: 0`
+       —lo de antes— era la primera, porque los laterales tenían ancho fijo y
+       ella se comía todo el recorte. */
     return (
-      <div ref={panelRef} className={mobile ? 'wa-hilo-m wa-hilo-entra' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
+      <div ref={panelRef} className={mobile ? 'wa-hilo-m wa-hilo-entra' : undefined} style={{ flex: 1, minWidth: mobile ? 0 : L.hiloMin, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
         <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
           {onBack && <button onClick={volver} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
           {nom
@@ -446,7 +480,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   })();
 
   return (
-    <div className={mobile ? 'wa-hilo-m' : undefined} style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
+    <div className={mobile ? 'wa-hilo-m' : undefined} style={{ position: 'relative', flex: 1, minWidth: mobile ? 0 : L.hiloMin, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header ──
           DOS RENGLONES en escritorio, no uno. En 44 px de alto cabían el
           nombre, la etapa, el teléfono, el contador de la ventana, el estado
@@ -598,7 +632,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             encabezado no envuelve y sólo se pinta la píldora del agente. */}
         <span style={mobile
           ? { display: 'contents' }
-          : { flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          /* `flexWrap` como última red: si aun cediendo no caben —pantalla muy
+             estrecha, panel de la derecha abierto—, bajan a otro renglón en vez
+             de salirse del encabezado. Un control fuera de la caja no se puede
+             ni tocar; uno en el renglón de abajo, sí. */
+          : { flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap' }}>
         {conv.id && !mobile && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
           /* Estos dos SÍ se encogen. El orden de quién cede es a propósito:
@@ -610,7 +648,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
              mismo con dos colores distintos. Queda la letra en tinta morada y
              nada más — se sigue viendo de un vistazo sin ser el bloque más
              brillante del encabezado. */
-          style={{ ...CTL, ...(mobile ? { maxWidth: 88, minWidth: 74 } : null), ...(esAgente ? { color: C.moradoTinta, fontWeight: 800 } : null) }}>
+          style={{ ...CTL, maxWidth: mobile ? 88 : 158, ...(mobile ? { minWidth: 74 } : null), ...(esAgente ? { color: C.moradoTinta, fontWeight: 800 } : null) }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
@@ -650,7 +688,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
-            ...CTL,
+            ...CTL, maxWidth: 108,
             /* Solo «Pendiente» lleva color: es el único estado que pide algo.
                «Resuelta» en verde era celebrar en el encabezado algo que ya no
                necesita tu atención, y competía con el nombre del cliente. */

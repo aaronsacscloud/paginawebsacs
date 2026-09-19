@@ -649,10 +649,27 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
     await marcarAgendado(it.contact_id).catch(() => {});
     await supabase.from('contacts').update({ next_followup: fecha, updated_at: ahora() }).eq('id', it.contact_id);
     if (cp.tipo === 'reunion') {
+      /* ══ 🔴 UN REZAGADO QUE AGENDA ES UNA OPORTUNIDAD (19-sep-2026) ════════
+         Reporte del dueño sobre Estefany: agendó demo en la llamada, quedó
+         «Agendó demo»… y su etapa siguió siendo «Rezagado», con la IA
+         proponiendo respuestas encima. Le tocaba a él escribirle, que es lo que
+         hace un seguimiento personalizado antes de una demo.
+
+         La promoción sólo miraba `lead` y `lead_calificado`. Pero el agente
+         atiende TRES etapas —`ETAPAS_SDR` incluye `rezagado` desde el 8-sep— y
+         por eso justo la que faltaba era la que más lo necesitaba: un rezagado
+         que acepta una demo es el caso de éxito del agente, y se quedaba dentro
+         de su alcance para siempre.
+
+         Se lee la lista del propio agente en vez de escribir otra: la regla no
+         es «estas tres etapas», es «las etapas que lleva la IA» — y el día que
+         alguien le quite o le sume una, esto se entera solo. Dos listas
+         parecidas en dos archivos es cómo nació este bug. */
+      const { ETAPAS_SDR } = await import('../crm/ti/agente');
       const { data: cl } = await supabase.from('contacts').select('lifecycle_stage').eq('id', it.contact_id).maybeSingle();
-      if (cl && ['lead', 'lead_calificado'].includes(cl.lifecycle_stage)) {
+      if (cl && ETAPAS_SDR.includes(String(cl.lifecycle_stage))) {
         await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', it.contact_id);
-        await supabase.from('activities').insert({ contact_id: it.contact_id, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión en la llamada', automatico: true, metadata: { regla: 'booking_creado', actor: 'ia' } }).then(() => {}, () => {});
+        await supabase.from('activities').insert({ contact_id: it.contact_id, tipo: 'etapa_cambio', titulo: `Promovido a Oportunidad desde ${cl.lifecycle_stage === 'rezagado' ? 'Rezagado' : 'Lead'}: agendó reunión en la llamada`, automatico: true, metadata: { regla: 'booking_creado', actor: 'ia', desde: cl.lifecycle_stage } }).then(() => {}, () => {});
       }
     }
   }
