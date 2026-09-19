@@ -12,6 +12,7 @@
  * Estructura calcada de marcas-de-ropa.astro. Contenido en data/giros/consignacion.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -185,5 +186,7 @@ const desc =
   <SuiteSalida frase="Ya viste cómo se cotiza. Lo que sigue es ver el estado de cuenta de tus consignantes en pantalla." cta="Agenda una demo" />
 
   <!-- El mismo cierre que la portada -->
+  <GiroEnlaces giro="consignacion" />
+
   <CtaDudas demoDesc="Te mostramos SACS con tus piezas, tus consignantes y tu comisión real. 30 min, sin compromiso." />
 </BaseLayout>

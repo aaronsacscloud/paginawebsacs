@@ -50,7 +50,7 @@ export const manifiestoEM = {
   intro: 'Sabemos cómo se vende cuando no hay tienda',
   frases: [
     'Le apartaste la blusa, se la guardaste <b>tres días</b>, nunca te depositó — y a la que sí iba a pagar ya le dijiste que no había.',
-    'Se te <b>encimó</b>: vendiste dos veces la misma pieza porque la traías publicada en tres lados, y tuviste que pedirle perdón a la clienta.',
+    'Se te <a href="/producto/inventario-omnicanal"><b>encimó</b></a>: vendiste dos veces la misma pieza porque la traías publicada en tres lados, y tuviste que pedirle perdón a la clienta.',
     'Contestaste dos horas después y te dijo <b>“gracias, ya la conseguí”</b>. La venta se murió en el chat.',
     'Hiciste el live, apartaste <b>40 piezas</b> en una hora, y te quedaste hasta la una de la mañana cobrando y armando paquetes con un papel.',
     'Te mandó la foto del comprobante, la viste de reojo, <b>mandaste el paquete</b> y nunca te cayó el dinero.',

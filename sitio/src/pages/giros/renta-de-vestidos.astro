@@ -5,6 +5,7 @@
  * calendario de cada vestido").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerRE, manifiestoRE, variantesRE, cortinaRE, casosRE, seccionesRE, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver el calendario de tu propio vestido más pedido en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="renta-de-vestidos" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus vestidos, tus fechas de junio y tu lunes de devoluciones real. 30 min, sin compromiso." />
 </BaseLayout>

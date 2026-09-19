@@ -5,6 +5,7 @@
  * se suman").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerTM, manifiestoTM, variantesTM, cortinaTM, casosTM, seccionesTM, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias piezas con sus metros y tus saldos en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="telas-y-merceria" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus telas, tus baños y tus saldos reales. 30 min, sin compromiso." />
 </BaseLayout>

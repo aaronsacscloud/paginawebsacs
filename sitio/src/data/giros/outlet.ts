@@ -52,7 +52,7 @@ export const bannerOU = {
 export const manifiestoOU = {
   intro: 'Sabemos cómo se vende un lote',
   frases: [
-    'Le entraste al <b>lote</b> y no sabes si ganaste o perdiste hasta que salió la última pieza.',
+    'Le entraste al <a href="/producto/ordenes-de-compra"><b>lote</b></a> y no sabes si ganaste o perdiste hasta que salió la última pieza.',
     '¿Cómo das de alta <b>1,174 piezas</b> si cada una es distinta? Nadie va a teclear mil claves.',
     'En la lista venían 1,200 y contaste <b>1,174</b>. Esas 26 las pagaste y nadie te volvió a sacar el costo.',
     'Tienes ropa colgada de hace <b>ocho meses</b> y nadie te avisa: se te hizo vieja en el gancho.',

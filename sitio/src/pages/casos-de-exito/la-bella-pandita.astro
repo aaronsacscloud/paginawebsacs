@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
 import { breadcrumbCaso } from '../../lib/breadcrumb';
+import CasoEnlaces from '../../components/CasoEnlaces.astro';
 
 // Sin `review`: la cita del cuerpo está firmada "Equipo La Bella Pandita",
 // sin un nombre de persona real — no cumple la barra de un testimonio
@@ -222,6 +223,17 @@ const structuredData = [articleSchema, breadcrumbCaso('La Bella Pandita')];
     </div>
   </div>
 </section>
+
+<CasoEnlaces
+  giroHref="/giros/boutique-multimarca"
+  giroNombre="boutiques multimarca"
+  giroAncla="La Bella Pandita opera 42 sucursales con múltiples categorías: así resuelve Sacs el inventario, las promociones y la lealtad de una boutique multimarca de este tamaño."
+  funciones={[
+    { slug: 'inventario-omnicanal', ancla: 'La precisión de inventario del 98% que consiguieron desde el primer mes.' },
+    { slug: 'promociones', ancla: 'Las flash sales y promociones automatizadas en todos sus canales.' },
+    { slug: 'programa-de-lealtad', ancla: 'El wallet digital y el programa de puntos que convirtió compradores casuales en clientes recurrentes.' },
+  ]}
+/>
 
 <!-- CTA -->
 <section class="cs-cta">

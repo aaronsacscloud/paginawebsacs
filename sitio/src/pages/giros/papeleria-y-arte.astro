@@ -19,6 +19,7 @@
  * Todo el contenido vive en src/data/giros/papeleria.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -231,5 +232,7 @@ const desc =
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias listas, con tus colegios, en pantalla." cta="Agenda una demo" />
 
   <!-- El mismo cierre que la portada -->
+  <GiroEnlaces giro="papeleria-y-arte" />
+
   <CtaDudas demoDesc="Te mostramos SACS con tus colegios, tus listas y tu catálogo real. 30 min, sin compromiso." />
 </BaseLayout>

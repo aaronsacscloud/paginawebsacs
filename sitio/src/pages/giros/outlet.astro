@@ -5,6 +5,7 @@
  * mismas piezas, doce semanas antes).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerOU, manifiestoOU, variantesOU, cortinaOU, casosOU, seccionesOU, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propio último lote y lo que de verdad dejó en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="outlet" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tu último lote, tus escalones y tus semanas reales. 30 min, sin compromiso." />
 </BaseLayout>

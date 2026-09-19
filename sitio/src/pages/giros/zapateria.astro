@@ -15,6 +15,7 @@
  * Todo el contenido vive en src/data/giros/zapateria.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -67,7 +68,7 @@ const desc =
       'El <b>23½</b> se acabó el primer fin de semana.',
       'Del <b>27</b> te quedan tres pares desde la temporada pasada.',
       '"¿Me lo trae en el 24?" — y alguien camina a la <b>bodega</b> a ver.',
-      'Ese modelo ya está roto: sin los números de en medio, <b>eso ya es saldo</b>.',
+      'Ese modelo ya está <a href="/recursos/corridas-rotas-zapateria">roto</a>: sin los números de en medio, <b>eso ya es saldo</b>.',
       'Le apretó el 26 y <b>lo compró en la otra tienda</b>.',
     ]}
     cierre="Ningún sistema de abarrotes entiende esto, y uno de ropa tampoco: aquí la unidad es el par, el SKU es modelo × color × número, y los medios números no son un detalle. Un modelo con la corrida rota es dinero muerto aunque el reporte diga que tienes diecisiete pares. Cada pantalla que sigue está hecha con esa lógica."
@@ -186,6 +187,8 @@ const desc =
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia corrida en pantalla." cta="Agenda una demo" />
 
   <!-- El mismo cierre que la portada -->
+  <GiroEnlaces giro="zapateria" />
+
   <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus números y tu venta real. 30 min, sin compromiso." />
 </BaseLayout>
 

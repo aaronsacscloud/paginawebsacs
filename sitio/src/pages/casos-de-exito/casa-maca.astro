@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
 import { breadcrumbCaso } from '../../lib/breadcrumb';
+import CasoEnlaces from '../../components/CasoEnlaces.astro';
 
 // OJO: esta página NO lleva `review`. La cita del cuerpo ("Casa Maca no solo
 // vende ropa...") es de Andrea Araujo, CGO de Sacscloud — personal propio,
@@ -224,6 +225,17 @@ const structuredData = [articleSchema, breadcrumbCaso('Casa Maca')];
     </ul>
   </div>
 </section>
+
+<CasoEnlaces
+  giroHref="/giros/marcas-de-ropa"
+  giroNombre="marcas de ropa"
+  giroAncla="Casa Maca opera como marca propia con boutiques y tienda en línea: así resuelve Sacs el inventario, el mayoreo y la venta omnicanal de una marca de ropa."
+  funciones={[
+    { slug: 'inventario-omnicanal', ancla: 'La sincronización de inventario entre boutiques y tienda en línea que resolvió su error de disponibilidad.' },
+    { slug: 'apartados-y-pedidos', ancla: 'Apartados sin duplicación ni papel, el mismo problema que tenían con las promociones a mano.' },
+    { slug: 'marketing-por-whatsapp', ancla: 'Las campañas de WhatsApp con códigos de descuento automáticos que ahora usa Casa Maca.' },
+  ]}
+/>
 
 <!-- CTA -->
 <section class="cs-cta">

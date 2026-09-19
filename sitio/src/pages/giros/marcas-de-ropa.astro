@@ -11,6 +11,7 @@
  * prendas con nombre. Ver src/data/suite-ropa.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -61,7 +62,7 @@ const desc =
       'Vendiste <b>en línea</b> una talla que ya se había vendido en el mostrador.',
       'Tu clienta pregunta por <b>WhatsApp</b> y nadie sabe si eso sigue disponible.',
       'Dejaste 40 vestidos en una <b>departamental</b> y nadie sabe cuántos se vendieron.',
-      'Compraste parejo de todas las tallas porque <b>así se ha hecho siempre</b>.',
+      'Compraste parejo de <a href="/herramientas/curva-de-tallas">todas las tallas</a> porque <b>así se ha hecho siempre</b>.',
     ]}
     cierre="Ningún sistema de abarrotes entiende esto. Y hoy ya no basta con entender el mostrador: tu tienda física, tu tienda en línea, tus marketplaces y tu WhatsApp son el mismo negocio, con el mismo inventario y la misma clienta. Esa es la nueva era del retail y es la que llevamos años construyendo: cada pantalla que sigue funciona igual en el piso de venta que en digital, y encima puedes poner agentes de IA — programados por ti — para que hagan el trabajo repetitivo."
   />
@@ -167,6 +168,8 @@ const desc =
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia matriz de tallas en pantalla." cta="Agenda una demo" />
 
   <!-- El mismo cierre que la portada -->
+  <GiroEnlaces giro="marcas-de-ropa" />
+
   <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus tallas y tu venta real. 30 min, sin compromiso." />
 </BaseLayout>
 

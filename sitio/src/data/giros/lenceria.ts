@@ -43,7 +43,7 @@ export const manifiestoLE = {
     'Vendiste un set por <b>WhatsApp</b> que ya estaba apartado para una vendedora de catálogo. Le quedaste mal a las dos.',
     'Te piden fotos de cada color y contestas “déjame checar” y corres a contar. Para cuando contestas, <b>ya compró en otro lado</b>.',
     'Mediste a la señora, le encontraste su talla y se fue feliz. Al mes regresó y <b>nadie se acordaba</b> cuál era.',
-    'Mandaste a coser <b>300 brasieres</b> con la corrida que tú creías, y te quedaste dos años con las copas A del coral.',
+    'Mandaste a coser <b>300 brasieres</b> con <a href="/herramientas/curva-de-tallas">la corrida que tú creías</a>, y te quedaste dos años con las copas A del coral.',
     'Abrieron un <b>tripack</b> para vender una pantaleta y te quedó una bolsa con dos que ya nadie paga.',
   ],
   cierre: 'Ningún sistema de ropa entiende que aquí la talla son dos números que se cruzan, que si falta una celda hay dos vecinas que salvan la venta, ni que la talla de la clienta se mide en la tienda y vale dinero. Sacs sí: cada pantalla que sigue funciona igual en el mostrador, en la mesa de catálogo y en el WhatsApp. Y encima puedes poner agentes de IA para que hagan el trabajo repetitivo: la lista de huecos del lunes, el aviso de “ya llegó tu talla” y el cierre de campaña.',

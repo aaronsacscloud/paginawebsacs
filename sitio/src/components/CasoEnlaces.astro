@@ -1,0 +1,160 @@
+---
+/**
+ * CasoEnlaces — enlaces de vuelta al final de un caso de éxito.
+ *
+ * Hoy cada /casos-de-exito/[slug] solo enlaza a /casos-de-exito, /prueba-gratis
+ * y /contacto (informe SEO §4). Este bloque agrega el camino de vuelta: el
+ * giro del cliente y las funciones de /producto que de verdad usa, con texto
+ * de ancla que dice qué es cada cosa, no un "ver más" genérico.
+ *
+ * Va antes del CTA de cierre (cs-cta), no en el pie.
+ */
+import { getFeatureBySlug } from '../data/product';
+
+interface FuncionUsada {
+  slug: string;
+  ancla: string;
+}
+
+interface Props {
+  giroHref: string;
+  giroNombre: string;
+  giroAncla: string;
+  funciones: FuncionUsada[];
+}
+
+const { giroHref, giroNombre, giroAncla, funciones } = Astro.props;
+---
+
+<section class="ce">
+  <div class="ce-inner">
+    <p class="ce-eyebrow">Sigue leyendo</p>
+    <a href={giroHref} class="ce-giro-link">
+      <span class="ce-giro-kicker">El giro de {giroNombre}</span>
+      <span class="ce-giro-desc">{giroAncla}</span>
+    </a>
+
+    <p class="ce-col-kicker">Las funciones que usa</p>
+    <ul class="ce-lista">
+      {funciones.map((f) => {
+        const feature = getFeatureBySlug(f.slug);
+        return (
+          <li>
+            <a href={`/producto/${f.slug}`} class="ce-link">
+              <span class="ce-link-title">{feature?.label || f.slug}</span>
+              <span class="ce-link-desc">{f.ancla}</span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .ce {
+    padding: clamp(56px, 7vw, 90px) 0;
+    background: var(--color-bg-secondary, #F5F3EE);
+  }
+
+  .ce-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .ce-eyebrow {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary-texto);
+    margin: 0 0 18px;
+  }
+
+  .ce-giro-link {
+    display: block;
+    text-decoration: none;
+    padding: 22px 24px;
+    border-radius: var(--radius-lg, 14px);
+    background: var(--color-text-primary);
+    margin-bottom: 32px;
+    transition: transform 0.15s ease;
+  }
+
+  .ce-giro-link:hover {
+    transform: translateY(-2px);
+  }
+
+  .ce-giro-kicker {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 6px;
+  }
+
+  .ce-giro-desc {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.5;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .ce-col-kicker {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary, #8A8A85);
+    margin: 0 0 14px;
+  }
+
+  .ce-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .ce-link {
+    display: block;
+    text-decoration: none;
+    padding: 16px 18px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .ce-link:hover {
+    border-color: var(--color-primary-texto);
+    transform: translateY(-1px);
+  }
+
+  .ce-link-title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+
+  .ce-link-desc {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+  }
+</style>

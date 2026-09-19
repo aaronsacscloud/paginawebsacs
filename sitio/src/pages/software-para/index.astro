@@ -1,0 +1,175 @@
+---
+// El índice de /software-para.
+//
+// La ruta [slug] ya existía y ya sabía leer piezas de esta sección desde
+// `de_contenido` — pero /software-para/ sin barra final respondía 404 porque
+// nunca hubo un `index.astro`, y encima ninguna pieza se había publicado
+// todavía debajo. Es el mismo hueco que ya se cerró en /recursos/ y
+// /comparar/, con una diferencia real: aquí SÍ puede quedar vacío por un
+// tiempo, y una página vacía no es una página — es una cáscara que le dice a
+// quien la rastree que aquí no hay nada que valga la pena.
+//
+// Por qué existe esta sección y en qué se distingue de /giros y /producto:
+// alguien que busca «software para tienda de ropa» o «programa para
+// zapatería» TODAVÍA está comparando opciones — no sabe que Sacs existe. Esa
+// intención de investigación es distinta de /giros (cómo Sacs sirve a un
+// giro, para quien ya nos conoce) y de /producto (qué hace una función, para
+// quien ya decidió). Mientras no haya piezas propias publicadas, el valor de
+// esta página es apuntar a las tres para que la visita no llegue a un hueco.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listaPublicada } from '../../lib/demanda/publicar';
+import { SITIO } from '../../data/entidad';
+
+export const prerender = false;
+
+const todas = await listaPublicada();
+const piezas = todas.filter(g => g.seccion === 'software-para');
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Software para tiendas de ropa, calzado y moda en México',
+  numberOfItems: piezas.length,
+  itemListElement: piezas.map((g, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'Article',
+      name: g.titulo,
+      description: g.meta_desc || undefined,
+      url: `${SITIO}/software-para/${g.slug}/`,
+      inLanguage: 'es-MX',
+      dateModified: g.actualizado_at,
+    },
+  })),
+};
+
+const fecha = (s: string) =>
+  new Date(s).toLocaleDateString('es-MX', { year: 'numeric', month: 'long' });
+
+// El respaldo mientras la sección no tiene piezas propias todavía: las rutas
+// del sitio que ya contestan la misma intención por otro ángulo. Se enlaza a
+// mano (no se recorre `navigation.ts`) porque esto es un puñado curado de
+// destinos con valor propio, no un menú completo.
+const RESPALDO = [
+  {
+    titulo: 'Giros de moda que ya atendemos',
+    texto: 'Boutique multimarca, zapatería, novias y fiesta, marcas de ropa y más: cómo Sacs resuelve cada uno.',
+    href: '/giros/',
+  },
+  {
+    titulo: 'Qué trae el sistema, función por función',
+    texto: 'Punto de venta, inventario por talla y color, apartados y pedidos, tienda en línea, órdenes de compra.',
+    href: '/producto/',
+  },
+  {
+    titulo: 'Sacs contra otras opciones del mercado',
+    texto: 'Comparativas honestas con Shopify POS, SICAR, Sizes and Colors y más: qué hace mejor cada uno.',
+    href: '/comparar/',
+  },
+  {
+    titulo: 'Calculadoras gratis, sin registro',
+    texto: 'Curva de tallas, punto de reorden, margen y markup, costo de maquila: tus números, no una demo.',
+    href: '/herramientas/',
+  },
+] as const;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title="Software para tiendas de ropa y moda en México"
+  description="Qué debe traer un software para tu tipo de tienda de moda: boutique, mayoreo, zapatería o novias. Guías, comparativas y calculadoras gratis, sin registro."
+  structuredData={schema}
+>
+  <main class="indice">
+    <header>
+      <p class="eyebrow">Software para moda · antes de decidir</p>
+      <h1>Qué pedirle a un software para tu tienda</h1>
+      <p class="entrada">
+        Boutique, zapatería, mayoreo o novias: cada tipo de negocio de moda necesita
+        cosas distintas de un sistema, y un programa genérico —de abarrotes o de
+        retail sin más— casi nunca las trae. Aquí está lo que sí debe traer,
+        con o sin Sacs.
+      </p>
+    </header>
+
+    {piezas.length > 0 ? (
+      <ul class="tarjetas">
+        {piezas.map(g => (
+          <li>
+            <a href={`/software-para/${g.slug}/`}>
+              <h2>{g.titulo}</h2>
+              {g.meta_desc && <p>{g.meta_desc}</p>}
+              <span class="pie">
+                <span class="ir">Leerla →</span>
+                <time datetime={g.actualizado_at}>{fecha(g.actualizado_at)}</time>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <section class="respaldo">
+        <p class="respaldo-nota">
+          Todavía no hay guías propias publicadas en esta sección — están en
+          camino. Mientras tanto, esto ya contesta la misma pregunta:
+        </p>
+        <ul class="tarjetas">
+          {RESPALDO.map(r => (
+            <li>
+              <a href={r.href}>
+                <h2>{r.titulo}</h2>
+                <p>{r.texto}</p>
+                <span class="ir">Ver →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <section class="nota">
+      <h2>¿Ya sabes que quieres ver Sacs funcionando?</h2>
+      <p>
+        Nada de lo de arriba pide tu correo. Cuando quieras verlo con tus datos,
+        agenda una demo o revisa los planes.
+      </p>
+      <a href="/agendar/">Agendar una demo →</a>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .indice { max-width: 940px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-10)) 1.25rem 5rem; }
+  @media (max-width: 640px) { .indice { padding: calc(var(--nav-alto) + var(--space-6)) 1rem 3.5rem; } }
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-secondary-texto); font-weight: 600; margin: 0 0 .6rem;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; margin: 0 0 .9rem; text-wrap: balance; }
+  .entrada { font-size: 1.12rem; line-height: 1.6; color: var(--color-text-secondary); max-width: 62ch; margin: 0 0 2.5rem; }
+
+  .respaldo-nota {
+    color: var(--color-text-secondary); line-height: 1.6; max-width: 62ch; margin: 0 0 1.5rem;
+    font-style: italic;
+  }
+
+  .tarjetas { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); }
+  .tarjetas a {
+    display: flex; flex-direction: column; gap: .55rem; height: 100%;
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: 14px; padding: 1.4rem; text-decoration: none; color: inherit;
+    transition: border-color .15s, transform .15s;
+  }
+  .tarjetas a:hover { border-color: var(--color-primary-texto); transform: translateY(-2px); }
+  .tarjetas h2 { font-size: 1.15rem; margin: 0; line-height: 1.3; text-wrap: balance; }
+  .tarjetas p { margin: 0; color: var(--color-text-secondary); line-height: 1.55; font-size: .93rem; flex: 1; }
+  .tarjetas .pie { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: .2rem; }
+  .tarjetas .ir { color: var(--color-primary-texto); font-weight: 600; font-size: .92rem; }
+  .tarjetas time { color: var(--color-text-tertiary); font-size: .8rem; }
+
+  .nota { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--color-border-light); }
+  .nota h2 { font-size: 1.25rem; margin: 0 0 .6rem; }
+  .nota p { color: var(--color-text-secondary); line-height: 1.65; max-width: 62ch; margin: 0 0 .8rem; }
+  .nota a { color: var(--color-primary-texto); font-weight: 600; }
+</style>

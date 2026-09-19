@@ -5,6 +5,7 @@
  * vender este traje?").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerSA, manifiestoSA, variantesSA, cortinaSA, casosSA, seccionesSA, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias fichas de medidas y tus órdenes de taller en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="sastreria" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus telas, tus fichas de medidas y tus fechas de entrega reales. 30 min, sin compromiso." />
 </BaseLayout>

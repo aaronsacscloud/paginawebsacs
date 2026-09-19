@@ -5,6 +5,7 @@
  * se acaba y ese camel ya no vuelve").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerBO, manifiestoBO, variantesBO, cortinaBO, casosBO, seccionesBO, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propios lotes y tus márgenes reales en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="bolsas-y-accesorios" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus lotes de piel y tus precios de mayoreo reales. 30 min, sin compromiso." />
 </BaseLayout>

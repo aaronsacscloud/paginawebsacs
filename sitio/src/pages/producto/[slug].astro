@@ -8,6 +8,7 @@ import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
 import GiroStats from '../../components/giros/GiroStats.astro';
 import GiroTestimonial from '../../components/giros/GiroTestimonial.astro';
 import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import ProductoGiros from '../../components/producto/ProductoGiros.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import { pillars, getFeatureBySlug, getPillarForFeature, getAllSlugs } from '../../data/product';
 import { plans } from '../../data/plans';
@@ -4617,6 +4618,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
       </section>
 
       <GiroFAQ faqs={content.faqs} />
+
+      <ProductoGiros slug={slug!} />
     </Fragment>
   )}
 

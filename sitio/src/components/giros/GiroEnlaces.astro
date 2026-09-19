@@ -1,0 +1,199 @@
+---
+/**
+ * GiroEnlaces — "Sigue leyendo" del final de cada página de giro.
+ *
+ * Resuelve el hueco de enlazado interno documentado en el informe SEO
+ * (§4 «Arquitectura de enlaces»): hoy una página de giro solo enlaza al
+ * menú, al pie, a /prueba-gratis y a /contacto. Este bloque la conecta con
+ * las funciones de /producto que le importan, su comparativa en /comparar,
+ * la herramienta gratis que puede usar hoy y su caso de éxito, si lo hay.
+ *
+ * Va cerca del final del contenido (antes del CTA de cierre), no en el pie:
+ * el pie es fijo para todas las páginas y este bloque es propio de cada
+ * giro. Las relaciones viven como datos en src/data/relaciones-giro.ts —
+ * esta página solo las pinta.
+ */
+import { GIRO_RELACIONES } from '../../data/relaciones-giro';
+import { getFeatureBySlug } from '../../data/product';
+
+interface Props {
+  /** Clave del giro en GIRO_RELACIONES, p.ej. 'zapateria'. */
+  giro: string;
+}
+const { giro } = Astro.props;
+const rel = GIRO_RELACIONES[giro];
+---
+
+{rel && (
+  <section class="ge">
+    <div class="ge-inner container">
+      <p class="ge-eyebrow">Sigue leyendo</p>
+      <h2 class="ge-titulo">Lo que le sirve a {rel.nombre}</h2>
+
+      <div class="ge-grid">
+        <div class="ge-col">
+          <p class="ge-col-kicker">Funciones que resuelven esto</p>
+          <ul class="ge-lista">
+            {rel.funciones.map((f) => {
+              const feature = getFeatureBySlug(f.slug);
+              return (
+                <li>
+                  <a href={`/producto/${f.slug}`} class="ge-link">
+                    <span class="ge-link-title">{feature?.label || f.slug}</span>
+                    <span class="ge-link-desc">{f.ancla}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div class="ge-col">
+          <p class="ge-col-kicker">Herramienta gratis</p>
+          <ul class="ge-lista">
+            <li>
+              <a href={`/herramientas/${rel.herramienta.slug}`} class="ge-link">
+                <span class="ge-link-desc">{rel.herramienta.ancla}</span>
+              </a>
+            </li>
+          </ul>
+
+          {rel.comparativa && (
+            <Fragment>
+              <p class="ge-col-kicker ge-col-kicker--sep">Comparativa</p>
+              <ul class="ge-lista">
+                <li>
+                  <a href={`/comparar/${rel.comparativa.slug}`} class="ge-link">
+                    <span class="ge-link-desc">{rel.comparativa.ancla}</span>
+                  </a>
+                </li>
+              </ul>
+            </Fragment>
+          )}
+
+          {rel.recurso && (
+            <Fragment>
+              <p class="ge-col-kicker ge-col-kicker--sep">Guía</p>
+              <ul class="ge-lista">
+                <li>
+                  <a href={`/recursos/${rel.recurso.slug}`} class="ge-link">
+                    <span class="ge-link-desc">{rel.recurso.ancla}</span>
+                  </a>
+                </li>
+              </ul>
+            </Fragment>
+          )}
+
+          {rel.caso && (
+            <Fragment>
+              <p class="ge-col-kicker ge-col-kicker--sep">Caso real</p>
+              <ul class="ge-lista">
+                <li>
+                  <a href={`/casos-de-exito/${rel.caso.slug}`} class="ge-link">
+                    <span class="ge-link-desc">{rel.caso.ancla}</span>
+                  </a>
+                </li>
+              </ul>
+            </Fragment>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .ge {
+    padding: var(--space-16, 64px) 0;
+    background: var(--color-bg-secondary, #F5F3EE);
+    border-top: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+  }
+
+  .ge-inner {
+    max-width: 1000px;
+  }
+
+  .ge-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary-texto, #3A62C4);
+    margin: 0 0 10px;
+  }
+
+  .ge-titulo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.375rem, 2.6vw, 1.875rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary, #1A1A1A);
+    margin: 0 0 36px;
+  }
+
+  .ge-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 40px;
+  }
+
+  .ge-col-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary, #8A8A85);
+    margin: 0 0 14px;
+  }
+
+  .ge-col-kicker--sep {
+    margin-top: 22px;
+  }
+
+  .ge-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ge-link {
+    display: block;
+    text-decoration: none;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--color-bg-card, #fff);
+    border: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .ge-link:hover {
+    border-color: var(--color-primary-texto, #3A62C4);
+    transform: translateY(-1px);
+  }
+
+  .ge-link-title {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-primary, #1A1A1A);
+    margin-bottom: 4px;
+  }
+
+  .ge-link-desc {
+    display: block;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  @media (max-width: 760px) {
+    .ge-grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+</style>

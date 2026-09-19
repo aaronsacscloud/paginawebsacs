@@ -8,6 +8,7 @@
  * Contenido en data/giros/activewear.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -57,7 +58,7 @@ const desc =
   <SuiteManifiesto
     intro="Sabemos cómo vive una marca de activewear"
     frases={[
-      'El drop salió a las 8 y a las 8:20 ya habías <b>sobrevendido</b> la S.',
+      'El drop salió a las 8 y a las 8:20 ya habías <a href="/producto/alertas-inteligentes"><b>sobrevendido</b></a> la S.',
       'El top voló y el legging se quedó <b>viudo</b> en el rack.',
       'La clienta pide <b>cambio de talla</b> y su talla ya voló.',
       'Instagram dice que hay, la bodega dice que <b>no</b>.',
@@ -170,6 +171,8 @@ const desc =
   <SuitePlanes suite="Suite Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu descase real, colorway por colorway." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="activewear" />
 
   <CtaDudas demoDesc="Te mostramos SACS con tus colorways, tus sets y tu drop real. 30 min, sin compromiso." />
 </BaseLayout>

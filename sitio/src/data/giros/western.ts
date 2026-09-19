@@ -39,7 +39,7 @@ export const manifiestoWS = {
   intro: 'Sabemos cómo se vende lo vaquero',
   frases: [
     'Tienes el modelo pero no el número: el <b>27</b> se acabó aquí y en la de allá hay tres pares parados.',
-    'De cada corrida se te quedan el <b>25 y el 30</b>, y ya llevas tres años juntando orillas.',
+    'De cada <a href="/herramientas/curva-de-tallas">corrida</a> se te quedan el <b>25 y el 30</b>, y ya llevas tres años juntando orillas.',
     'Los apartados van en una <b>libreta</b>; cada diciembre se pierde un anticipo o dos clientes se pelean el mismo par.',
     'Mandaste hacer la bota al <b>taller</b>, se te pasó avisarle, llegó tres semanas después y ya no la quiso.',
     'A las once de la noche te escriben “¿hay en <b>26 punta rodeo</b>?” y nadie sabe qué contestar hasta el otro día.',

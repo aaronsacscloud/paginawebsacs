@@ -15,6 +15,7 @@
  * Todo el contenido vive en src/data/giros/joyeria.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
@@ -195,5 +196,7 @@ const desc =
   <SuiteSalida frase="Ya viste cómo se cotiza. Lo que sigue es ver tu propio colchón del gramo en pantalla." cta="Agenda una demo" />
 
   <!-- El mismo cierre que la portada -->
+  <GiroEnlaces giro="joyeria" />
+
   <CtaDudas demoDesc="Te mostramos SACS con tus piezas, tu colchón del gramo y tus quilatajes. 30 min, sin compromiso." />
 </BaseLayout>

@@ -4,6 +4,7 @@
  * vive en src/data/giros/western.ts y el bloque propio es WsConjunto ("Arma el conjunto").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -62,6 +63,8 @@ import { bannerWS, manifiestoWS, variantesWS, cortinaWS, casosWS, seccionesWS, p
   <SuitePlanes suite="Suite Calzado" paraFideliza="Para que el cliente regrese" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propio conjunto, con tus números y tus tallas, en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="western" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus números y tu venta real de diciembre. 30 min, sin compromiso." />
 </BaseLayout>

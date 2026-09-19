@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
 import { breadcrumbCaso } from '../../lib/breadcrumb';
+import CasoEnlaces from '../../components/CasoEnlaces.astro';
 
 // Cita real, atribuible a una persona real del cliente (no de Sacs): nombre,
 // cargo y empresa confirmados en el propio cuerpo de la página. Es el único
@@ -223,6 +224,17 @@ const structuredData = [articleSchema, breadcrumbCaso('Liveshow Merchandising')]
     </div>
   </div>
 </section>
+
+<CasoEnlaces
+  giroHref="/giros/merchandising-eventos"
+  giroNombre="merchandising de eventos"
+  giroAncla="Liveshow despliega pop-ups y módulos de venta en conciertos y festivales: así resuelve Sacs el punto de venta sin internet y los traspasos entre módulos de un evento en vivo."
+  funciones={[
+    { slug: 'punto-de-venta', ancla: 'El modo offline que sincroniza cada transacción cuando vuelve la conexión, sin perder un registro.' },
+    { slug: 'nivelacion-de-inventario', ancla: 'Las transferencias de inventario en tiempo real entre módulos durante el evento.' },
+    { slug: 'tienda-en-linea', ancla: 'La operación omnicanal que une puntos físicos, pop-ups y tienda en línea en un solo inventario.' },
+  ]}
+/>
 
 <!-- CTA -->
 <section class="cs-cta">

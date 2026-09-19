@@ -10,6 +10,9 @@
 import './curva';
 import './temporada';
 import './nivelar';
+import './margen';
+import './reorden';
+import './maquila';
 
 export { herramientas, herramientaDe, invocar } from '../herramienta';
 export type { Herramienta, Puerta, Contexto, Resultado } from '../herramienta';

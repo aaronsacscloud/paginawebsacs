@@ -44,7 +44,7 @@ export const bannerTG = {
 export const manifiestoTG = {
   intro: 'Sabemos cómo se vende la talla extra',
   frases: [
-    'Compras cien piezas y a los diez días ya no tienes <b>44 ni 46</b>: te quedan puras 38 y una 52 que nadie se lleva. El rack se ve lleno y no hay nada que vender.',
+    'Compras cien piezas y a los diez días ya no tienes <a href="/herramientas/curva-de-tallas"><b>44 ni 46</b></a>: te quedan puras 38 y una 52 que nadie se lleva. El rack se ve lleno y no hay nada que vender.',
     'El proveedor te manda la corrida al revés: te <b>carga de chicas</b> y de la 48 te manda dos. Y si compra en non, además hay que correr el tallaje antes de colgarla.',
     'Vendes un vestido en el vivo, lo apartas en comentarios, y a los veinte minutos lo vendes otra vez en el piso. <b>Quedaste mal con las dos.</b>',
     'En línea <b>de cada diez pedidos te regresan tres o cuatro</b>. No es que no les guste: es que nadie sabe qué talla es en <i>ese</i> modelo.',

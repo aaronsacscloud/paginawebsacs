@@ -11,6 +11,7 @@
  * existía y se conserva. Contenido en data/giros/merch-eventos.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -168,6 +169,8 @@ const desc =
   <SuitePlanes suite="Suite Moda" notaComplemento="la Torre de Control del Evento (el semáforo por módulo y el reabasto propuesto en vivo) es un plugin y sí se cotiza aparte. Y como aquí no hay sucursales sino fechas: los módulos y almacenes de una gira no se cobran por separado — qué cuenta como sucursal se define contigo en la demo." />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu fecha en el tablero, módulo por módulo." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="merchandising-eventos" />
 
   <CtaDudas demoDesc="Te mostramos SACS con tus diseños, tus módulos y tu fecha real. 30 min, sin compromiso." />
 </BaseLayout>

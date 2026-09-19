@@ -5,6 +5,7 @@
  * el bloque propio es EmApartado ("La fila invisible de cada pieza apartada").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerEM, manifiestoEM, variantesEM, cortinaEM, casosEM, seccionesEM, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propios apartados y tu fila en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="emprendedoras" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus piezas, tus apartados y tus clientas reales. 30 min, sin compromiso." />
 </BaseLayout>

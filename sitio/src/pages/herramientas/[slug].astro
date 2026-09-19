@@ -15,6 +15,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import CurvaTallas from '../../components/herramientas/CurvaTallas.tsx';
 import Temporada from '../../components/herramientas/Temporada.tsx';
 import Nivelar from '../../components/herramientas/Nivelar.tsx';
+import Margen from '../../components/herramientas/Margen.tsx';
+import Reorden from '../../components/herramientas/Reorden.tsx';
+import Maquila from '../../components/herramientas/Maquila.tsx';
 import { herramientaDe } from '../../lib/demanda/herramientas';
 import { SITIO } from '../../data/entidad';
 
@@ -69,6 +72,24 @@ const PASOS: Record<string, { name: string; text: string }[]> = {
     { name: 'Repara entero o no muevas', text: 'Si una tienda no puede quedar con la corrida completa, no se le manda nada. Media reparación cuesta flete, días en tránsito y personal, y no devuelve una sola venta — encima desarma a la tienda que sí estaba completa.' },
     { name: 'Separa lo que es acomodo de lo que es compra', text: 'Si sumando toda la cadena no alcanza para que cada tienda llegue a su mínimo, no hay traspaso que lo arregle. Esa es una respuesta distinta y más útil que una lista de movimientos imposibles.' },
   ],
+  'margen': [
+    { name: 'Saca el precio sin IVA', text: 'El precio de etiqueta ya trae el IVA incluido, pero esa parte no es ingreso de la tienda. Se divide entre (1 + IVA) para saber cuánto de ese precio es realmente tuyo.' },
+    { name: 'Calcula margen y markup por separado', text: 'Margen es la ganancia entre el precio de venta; markup es la ganancia entre el costo. Son números distintos de la misma prenda, y usar uno por el otro fija precios mal — casi siempre por debajo de lo que se cree.' },
+    { name: 'Encuentra tu precio de equilibrio', text: 'Es el costo llevado al precio de etiqueta con el mismo IVA: por debajo de ese precio, cada pieza se vende perdiendo dinero.' },
+    { name: 'Prueba el descuento de temporada contra ese precio', text: 'Un remate solo conviene mientras el precio con descuento se quede arriba del precio de equilibrio. Por debajo, la rebaja cuesta más de lo que recupera.' },
+  ],
+  'punto-de-reorden': [
+    { name: 'Saca el consumo diario de cada talla', text: 'Piezas vendidas entre días del periodo medido. Con 2 a 4 semanas de venta ya hay ritmo suficiente para calcular.' },
+    { name: 'Calcula cuánto se va a vender mientras llega el pedido nuevo', text: 'Consumo diario por los días que tarda el proveedor en surtir. Es la mercancía que se consume ENTRE que se levanta el pedido y que llega.' },
+    { name: 'Súmale el colchón de seguridad', text: 'Días extra de venta, convertidos en piezas al mismo ritmo, para cubrir imprevistos: que el proveedor se atrase o que la talla venda más rápido de lo normal.' },
+    { name: 'Compara contra tu existencia actual', text: 'Si lo que tienes hoy ya está en ese nivel o por debajo, el pedido no es para «cuando se pueda»: es para hoy. Cada día de retraso es un día más cerca de vender en cero.' },
+  ],
+  'costo-de-maquila': [
+    { name: 'Suma telas e insumos por prenda', text: 'Cada tela, forro, cierre, botón o etiqueta, ya en la cantidad que lleva UNA prenda —no el rollo completo—.' },
+    { name: 'Agrégale la merma', text: 'El desperdicio de tela por trazo, retazo y piezas defectuosas no es un accidente: es un porcentaje esperado del patrón. Omitirlo es regalar tela en cada prenda sin saberlo.' },
+    { name: 'Súmale corte y confección', text: 'Lo que cobra quien corta y quien cose, por prenda. Estos dos NO llevan merma: la merma es solo de material.' },
+    { name: 'Saca el precio mínimo del margen que quieres, no del costo', text: 'El precio se calcula dividiendo el costo entre (1 − margen objetivo), no multiplicando el costo por (1 + margen) — esa segunda fórmula da markup, un número distinto y siempre menor al margen que en realidad se busca.' },
+  ],
 };
 
 const schema: Record<string, unknown>[] = [
@@ -114,6 +135,9 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
     {h.slug === 'curva-de-tallas' && <CurvaTallas client:load />}
     {h.slug === 'sale-o-no-sale' && <Temporada client:load />}
     {h.slug === 'nivelar-entre-tiendas' && <Nivelar client:load />}
+    {h.slug === 'margen' && <Margen client:load />}
+    {h.slug === 'punto-de-reorden' && <Reorden client:load />}
+    {h.slug === 'costo-de-maquila' && <Maquila client:load />}
 
     <section class="metodo">
       <h2>Cómo se calcula</h2>

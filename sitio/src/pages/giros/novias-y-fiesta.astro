@@ -7,6 +7,7 @@
  * boda o los XV. Contenido en data/giros/novias-fiesta.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -50,7 +51,7 @@ const desc =
     intro="Sabemos cómo trabaja una casa de novias"
     frases={[
       'La boda es el <b>14 de marzo</b> y el vestido "ya merito llega".',
-      '"¿Cuánto debo?" — y a buscar el <b>cuaderno</b> de abonos.',
+      '"¿Cuánto debo?" — y a buscar el <a href="/producto/apartados-y-pedidos"><b>cuaderno</b></a> de abonos.',
       'La <b>muestra</b> talla 6 se vendió — y era la única.',
       'La 1ª prueba era <b>¿el 25 o el 29?</b> Nadie anotó.',
       'La costurera tiene <b>ocho vestidos</b> y nadie sabe cuál va primero.',
@@ -162,6 +163,8 @@ const desc =
   <SuitePlanes suite="Suite Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus apartados con su fecha en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="novias-y-fiesta" />
 
   <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus apartados y tus fechas reales. 30 min, sin compromiso." />
 </BaseLayout>

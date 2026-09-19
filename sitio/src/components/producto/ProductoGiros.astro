@@ -1,0 +1,117 @@
+---
+/**
+ * ProductoGiros — "dónde pesa más esta función" al final de /producto/[slug].
+ *
+ * El camino de vuelta del enlazado giro ⇄ producto (informe SEO §4): cada
+ * página de giro ya enlaza a sus funciones (GiroEnlaces.astro); esta es la
+ * mitad que faltaba, para que la función también enlace a los 2-3 giros
+ * donde más importa. Las relaciones viven en src/data/relaciones-giro.ts.
+ */
+import { FUNCION_GIROS, GIRO_NOMBRE } from '../../data/relaciones-giro';
+
+interface Props {
+  /** Slug de la función de producto, p.ej. 'inventario-omnicanal'. */
+  slug: string;
+}
+const { slug } = Astro.props;
+const giros = FUNCION_GIROS[slug];
+---
+
+{giros && giros.length > 0 && (
+  <section class="pg">
+    <div class="pg-inner container">
+      <p class="pg-eyebrow">Dónde pesa más</p>
+      <h2 class="pg-titulo">Los giros donde esta función marca la diferencia</h2>
+      <div class="pg-grid">
+        {giros.map((g) => (
+          <a href={`/giros/${g.slug}`} class="pg-card">
+            <span class="pg-card-giro">{GIRO_NOMBRE[g.slug] || g.slug}</span>
+            <span class="pg-card-desc">{g.ancla}</span>
+            <span class="pg-card-cta">
+              Ver el giro
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .pg {
+    padding: var(--space-16, 64px) 0;
+    background: var(--color-bg-secondary, #F5F3EE);
+    border-top: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+  }
+
+  .pg-inner {
+    max-width: 1000px;
+  }
+
+  .pg-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary-texto, #3A62C4);
+    margin: 0 0 10px;
+  }
+
+  .pg-titulo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.375rem, 2.6vw, 1.875rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary, #1A1A1A);
+    margin: 0 0 32px;
+  }
+
+  .pg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .pg-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 22px 20px;
+    border-radius: 12px;
+    background: var(--color-bg-card, #fff);
+    border: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .pg-card:hover {
+    border-color: var(--color-primary-texto, #3A62C4);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+  }
+
+  .pg-card-giro {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-primary-texto, #3A62C4);
+  }
+
+  .pg-card-desc {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-primary, #1A1A1A);
+    flex: 1;
+  }
+
+  .pg-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary-texto, #3A62C4);
+  }
+</style>

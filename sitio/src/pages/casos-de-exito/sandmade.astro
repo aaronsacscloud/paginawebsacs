@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
 import { breadcrumbCaso } from '../../lib/breadcrumb';
+import CasoEnlaces from '../../components/CasoEnlaces.astro';
 
 // Sin `review`: la cita del cuerpo está firmada "Equipo Sandmade", sin un
 // nombre de persona real — no cumple la barra de un testimonio verificable
@@ -138,6 +139,17 @@ const structuredData = [articleSchema, breadcrumbCaso('Sandmade Swimwear')];
     </blockquote>
   </div>
 </section>
+
+<CasoEnlaces
+  giroHref="/giros/trajes-de-bano"
+  giroNombre="trajes de baño"
+  giroAncla="Sandmade vende swimwear premium en 8 boutiques de Tulum a Los Cabos: así resuelve Sacs el inventario omnicanal y la venta multicanal de una marca de trajes de baño."
+  funciones={[
+    { slug: 'inventario-omnicanal', ancla: 'El inventario unificado en tiempo real entre las 8 boutiques, Shopify, Instagram y WhatsApp.' },
+    { slug: 'social-commerce', ancla: 'La venta por Instagram Shopping y WhatsApp Business del mismo inventario que sus boutiques.' },
+    { slug: 'punto-de-venta', ancla: 'Las transacciones de 20 segundos que reemplazaron los 12 a 15 minutos de antes.' },
+  ]}
+/>
 
 <!-- CTA -->
 <section class="cs-cta">

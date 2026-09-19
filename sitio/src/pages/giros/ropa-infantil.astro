@@ -5,6 +5,7 @@
  * clienta regresa").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerRI, manifiestoRI, variantesRI, cortinaRI, casosRI, seccionesRI, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver la ficha de tus propias clientas con sus hijos en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="ropa-infantil" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus modelos, tus tallas por edad y tu enero de cambios real. 30 min, sin compromiso." />
 </BaseLayout>

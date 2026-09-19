@@ -5,6 +5,7 @@
  * UnLista ("La lista manda").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
@@ -63,6 +64,8 @@ import { bannerUN, manifiestoUN, variantesUN, cortinaUN, casosUN, seccionesUN, p
   <SuitePlanes suite="Suite de Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias listas de escuela armando el pedido en pantalla." cta="Agenda una demo" />
+
+  <GiroEnlaces giro="uniformes" />
 
   <CtaDudas demoDesc="Te mostramos Sacs con tus escuelas, tus listas y tu regreso a clases real. 30 min, sin compromiso." />
 </BaseLayout>
