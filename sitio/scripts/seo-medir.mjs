@@ -43,7 +43,11 @@ const NOSOTROS = [/\bsacscloud\b/i, /\bsacs\s*cloud\b/i, /\bsacs\b(?!\w)/i];
    es lo que dice dónde hay hueco. Se amplía sola con `descubiertos`. */
 const RIVALES = ['SICAR', 'SIFO', 'Multicomercio', 'Syska', 'Pulpos', 'Clip', 'Alegra',
     'Bsale', 'CORE', 'Kordata', 'UpSeller', 'Sizes and Colors', 'Profitar', 'MeliSync',
-    'Mecalux', 'Sage', 'Clavei', 'ClickBalance', 'MrPeasy', 'Shopify', 'Odoo', 'Zoho'];
+    'Mecalux', 'Sage', 'Clavei', 'ClickBalance', 'MrPeasy', 'Shopify', 'Odoo', 'Zoho',
+    /* Descubiertos por el propio medidor el 19-sep-2026: en lo que el modelo
+       APRENDIÓ mandan los internacionales, no los mexicanos. Los locales
+       (SICAR, SIFO, Multicomercio) solo aparecen vía búsqueda web. */
+    'Square', 'Lightspeed', 'Loyverse', 'Vend', 'Clover', 'Toast'];
 
 const MODELOS = {
     claude: {

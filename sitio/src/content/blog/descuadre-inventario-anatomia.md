@@ -3,7 +3,7 @@ title: "Por qué tu sistema dice que tienes existencia y en la tienda no hay"
 description: "La pantalla decía 409 piezas. En el almacén había cero. Reconstruimos el caso movimiento por movimiento: las seis causas reales de un descuadre de inventario, cómo distinguir cuál tienes y qué revisar hoy en tu propio sistema."
 pubDate: 2026-09-19
 author: "Equipo Sacs"
-tags: ["Inventario", "Retail", "Moda", "Diagnóstico"]
+tags: ["Inventario", "Retail", "Moda", "Diagnóstico", "Eventos"]
 category: "retail"
 image: "/images/blog-descuadre-inventario-kardex-409-vs-cero.webp"
 draft: true
@@ -29,11 +29,13 @@ Con eso de contexto, vamos al caso.
 
 ## El caso: nueve puntos de venta, una noche, 133 piezas en negativo
 
-Un cliente que opera comercialización en eventos masivos reportó que, después de recibir la mercancía y repartirla a sus puntos de venta, **las existencias no se descontaban**. La pantalla seguía mostrando el inventario completo mientras la mercancía se vendía.
+**LiveShows Merchandising** opera la comercialización de mercancía oficial en conciertos y giras. El 12 de septiembre de 2026 montaron nueve puntos de venta para el concierto de **Laufey en el Palacio de los Deportes** de la Ciudad de México.
 
-El evento: un recinto con nueve almacenes —un general y ocho puntos de venta—, 3,688 movimientos de inventario en una sola noche.
+Al día siguiente reportaron que, después de recibir la mercancía y repartirla a los puntos, **las existencias no se descontaban**. La pantalla seguía mostrando el inventario completo mientras la mercancía se vendía.
 
-Lo primero fue sumar el registro de movimientos de un producto concreto, almacén por almacén:
+El evento: un almacén general y ocho puntos de venta, **3,688 movimientos de inventario en una sola noche**, 1,902 ventas cobradas desde la app móvil.
+
+Lo primero fue sumar el registro de movimientos de la sudadera del reporte —la *AMOT Hoodie*— almacén por almacén:
 
 | Almacén | Entró | Salió | Debe quedar | Existencia real |
 |---|---:|---:|---:|---:|
@@ -41,8 +43,11 @@ Lo primero fue sumar el registro de movimientos de un producto concreto, almacé
 | Puerta 6 | 62 | 62 | 0 | 0 ✓ |
 | Puerta 5 | 83 | 83 | 0 | 0 ✓ |
 | Puerta 7 | 37 | 28 | 9 | 9 ✓ |
-| Punto interior | 145 | 148 | −3 | −3 ✓ |
+| MR Merch | 145 | 148 | −3 | −3 ✓ |
 | Cárcamo | 33 | 47 | −14 | −14 ✓ |
+| Gym | 22 | 22 | 0 | 0 ✓ |
+| Baños | 22 | 19 | 3 | 3 ✓ |
+| Dominos | 28 | 30 | −2 | −2 ✓ |
 
 **Los nueve cuadraban.** El motor de inventario nunca dejó de descontar. Entonces, ¿de dónde salía el 409?
 
@@ -61,7 +66,7 @@ Si la pantalla que estás mirando lee el segundo, puede estar congelada. Las hor
 | 13:59 | Llega la mercancía | 409 |
 | 14:18 | Sale por transferencia | 409 |
 | 17:57 | Empiezan las ventas | 409 |
-| 21:31 | El cliente graba el video | **409** (real: 0) |
+| 21:31 | El cliente graba el video del reporte | **409** (real: 0) |
 
 **Cómo detectarlo en tu sistema:** toma un producto con tallas y compara el número que ves en el catálogo contra la suma de sus tallas en ese mismo almacén. Si no coinciden, estás viendo un total derivado que dejó de actualizarse.
 
@@ -91,7 +96,7 @@ En el caso, 133 piezas quedaron en negativo repartidas en 42 renglones. Al revis
 | Recibieron primero, pero vendieron más de lo surtido | 17 |
 | Nunca se les registró ninguna entrada | 3 |
 
-El caso más claro: un punto de venta empezó a cobrar a las **16:17** y su transferencia se registró a las **18:28**. Dos horas y once minutos vendiendo mercancía que, para el sistema, nunca llegó ahí.
+El caso más claro fue **Cárcamo**: empezó a cobrar a las **16:17** y su transferencia se registró a las **18:28**. Dos horas y once minutos vendiendo mercancía que, para el sistema, nunca llegó ahí.
 
 **Cómo detectarlo:** para cada par producto–almacén en negativo, compara la fecha de la primera venta contra la de la primera entrada. Si la venta es anterior, ya sabes qué pasó.
 
@@ -107,7 +112,7 @@ Lo insidioso es que a veces la diferencia es invisible: `"ACCESO B"` y `"ACCESO 
 
 Esta no descuadra el inventario, pero hace imposible *demostrar* que está cuadrado —y en la práctica produce la misma llamada.
 
-En el caso, las compras y las transferencias escribían la variante completa —*«Hoodie M»*— pero las ventas escribían solo *«Hoodie»*. Con cuatro tallas revueltas bajo el mismo nombre, el saldo del registro brincaba: 19, 17, 13, 5, 12.
+En el caso, las compras y las transferencias escribían la variante completa —*«LAUFEY AMOT HOODIE M»*— pero las ventas escribían solo *«LAUFEY AMOT HOODIE»*. Con cuatro tallas revueltas bajo el mismo nombre, el saldo del registro brincaba: 19, 17, 13, 5, 12.
 
 Cada talla bajaba perfecto por su lado. Pero cualquiera que sume las entradas y mire ese saldo concluye lo mismo que concluyó el cliente: *«no está descontando»*.
 
@@ -172,7 +177,7 @@ Casi siempre porque varias tallas del mismo producto se escriben bajo un solo no
 
 ---
 
-*Este análisis salió de una revisión real sobre el registro completo de movimientos de una cuenta —950,639 movimientos— y los 3,688 del evento reconstruido. Los nombres del cliente y del evento se omiten a propósito.*
+*Este análisis salió de una revisión real sobre el registro completo de movimientos de la cuenta de LiveShows Merchandising —950,639 movimientos— y los 3,688 del evento de Laufey en el Palacio de los Deportes del 12 de septiembre de 2026. Publicado con su autorización: el caso se cuenta con nombre porque la lección le sirve a cualquiera que monte puntos de venta temporales, y porque fue su reporte el que lo destapó.*
 
 **Fuentes citadas:**
 - [Auburn University RFID Lab — exactitud de inventario en tienda](https://cybra.com/average-retailer-inventory-accuracy/)
