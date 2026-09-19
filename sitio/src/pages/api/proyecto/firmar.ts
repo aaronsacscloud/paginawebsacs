@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { briefPorToken, etapasDe, bitacora, json } from '../../../lib/proyecto/store';
+import { faltantes } from '../../../lib/proyecto/etapas';
 
 export const prerender = false;
 
@@ -24,6 +25,21 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     : null;
   if (!firma) return json({ error: 'Falta la firma' }, 400);
 
+  // La firma CIERRA el brief, asi que no se acepta a medias. El boton ya se
+  // enciende solo cuando no falta nada, pero esto es lo que de verdad lo
+  // impide: sin esta puerta, un POST directo firmaria un brief vacio.
+  const previas = await etapasDe(brief.id);
+  let pendientes = 0;
+  for (const f of previas) pendientes += faltantes(f.clave, f.respuestas || {}).length;
+  if (pendientes) {
+    return json({
+      error: 'Todavia faltan ' + pendientes +
+        (pendientes === 1 ? ' respuesta obligatoria' : ' respuestas obligatorias') +
+        ' por contestar. La firma se habilita cuando el brief esta completo.',
+      faltan: pendientes,
+    }, 400);
+  }
+
   // A qué correos avisamos cada vez que revisemos una etapa. Se pide aquí y no
   // después porque es el único momento en que tenemos su atención completa.
   const correos = String(avisos || email || '')
@@ -46,13 +62,9 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     .eq('id', brief.id)
     .is('firmado_at', null);
 
-  // Firmado: se abren TODAS las etapas, no solo la primera.
-  //
-  // El brief dejo de ser secuencial a peticion del dueno (19-sep-2026). El
-  // cliente conoce su negocio y no siempre tiene a la mano lo que pide la
-  // etapa 1; obligarlo a cerrarla para ver la 2 lo dejaba parado esperando un
-  // dato ajeno en vez de avanzar por donde si podia. Ahora contesta en el
-  // orden que quiera y cada etapa se envia a revision por separado.
+  // La firma ya NO abre nada: las etapas nacen abiertas y se contestan desde
+  // que llega el link. Esto solo recoge cualquiera que hubiera quedado
+  // bloqueada de antes del cambio del 19-sep-2026.
   const etapas = await etapasDe(brief.id);
   const bloqueadas = etapas.filter((e) => e.estado === 'bloqueada').map((e) => e.id);
   if (bloqueadas.length) {

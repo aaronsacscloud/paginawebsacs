@@ -1,8 +1,9 @@
 ---
 // Brief de proyecto por etapas. El cliente entra con un link — sin cuenta, sin
-// contraseña — firma la portada y a partir de ahí contesta las etapas EN EL
-// ORDEN QUE QUIERA: al firmar se abren todas. Cada una se envía a revisión por
-// separado y Sacs la aprueba o la devuelve con preguntas.
+// contraseña — y contesta las etapas EN EL ORDEN QUE QUIERA: nacen todas
+// abiertas, sin depender de la firma ni de cerrar la anterior. Cada una se
+// envía a revisión por separado y Sacs la aprueba o la devuelve con preguntas.
+// La firma sigue ahí como constancia de quién responde, pero no es una puerta.
 //
 // La portada se pinta en el servidor (es un documento y tiene que verse
 // completa aunque el JS tarde). Las etapas se pintan en el navegador desde
@@ -131,7 +132,7 @@ const fechaFirma = brief.firmado_at
           {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
         </div>
         <p class="pb-parr">
-          El brief va por etapas y, en cuanto firmen, <b>se abren todas</b>.
+          El brief va por etapas y <b>están todas abiertas desde ahora</b>.
           Contesten en el orden que les convenga: si hoy tienen a la mano las
           fotos pero no los precios, empiecen por las fotos. Cada etapa se
           envía a revisión por separado, Sacs la revisa y —cuando queda
@@ -167,9 +168,12 @@ const fechaFirma = brief.firmado_at
         ) : (
           <div class="pb-firma-caja">
             <p class="pb-parr">
-              Firmar aquí abre el brief y deja asentado quién responde por él
-              del lado de {brief.cliente}. No es un documento comercial: los
-              montos y las formas de pago viven en la propuesta.
+              La firma <b>cierra</b> el brief: se habilita cuando no falte
+              ninguna respuesta obligatoria, y deja asentado quién responde por
+              él del lado de {brief.cliente}. Las etapas están abiertas desde
+              ahora — no hace falta firmar para empezar a contestar. No es un
+              documento comercial: los montos y las formas de pago viven en la
+              propuesta.
             </p>
             <div class="pb-campos">
               <label>
@@ -204,8 +208,9 @@ const fechaFirma = brief.firmado_at
               <canvas id="f-canvas" class="pb-firma-lienzo"></canvas>
               <div class="pb-firma-linea"></div>
             </div>
+            <p class="pb-firma-falta" id="f-falta" hidden></p>
             <div class="pb-firma-acc">
-              <button type="button" class="pb-btn" id="f-firmar" disabled>Firma para comenzar</button>
+              <button type="button" class="pb-btn" id="f-firmar" disabled>Contesta el brief para poder firmar</button>
             </div>
             <div class="pb-error" id="f-error" hidden></div>
           </div>
@@ -620,6 +625,10 @@ const fechaFirma = brief.firmado_at
 
 .pb-et-cuerpo { padding: 4px 22px 24px; border-top: 1px solid var(--linea); }
 
+.pb-firma-falta {
+  margin: 0 0 10px; font-size: .86rem; line-height: 1.5; color: var(--ambar);
+  background: var(--ambar-suave); border-radius: 10px; padding: 10px 13px;
+}
 .pb-puerta-libre {
   margin: 10px 0 0; font-size: .82rem; line-height: 1.45; color: var(--tenue);
 }
@@ -1092,6 +1101,33 @@ const fechaFirma = brief.firmado_at
     const FIRMADO = !!raiz.getAttribute('data-firmado');
 
     // ── Firma ──────────────────────────────────────────────────────────
+    //
+    // La firma va al FINAL, no al principio (dueno, 19-sep-2026: "la firma
+    // unicamente se habilita cuando ya se llena todo"). Las etapas estan
+    // abiertas desde que llega el link; el boton se enciende cuando no queda
+    // ninguna respuesta obligatoria sin contestar Y hay un trazo en el lienzo.
+    let firmaTrazada = false;
+    let faltaParaFirmar = null;  // null = todavia no se ha medido
+
+    function pintarBotonFirma() {
+      const btn = document.getElementById('f-firmar');
+      const nota = document.getElementById('f-falta');
+      if (!btn) return;
+      const incompleto = !faltaParaFirmar || !faltaParaFirmar.ok;
+      btn.disabled = incompleto || !firmaTrazada;
+      btn.textContent = incompleto
+        ? 'Contesta el brief para poder firmar'
+        : (firmaTrazada ? 'Firmar y cerrar el brief' : 'Firma para cerrar el brief');
+      if (!nota) return;
+      if (!faltaParaFirmar || faltaParaFirmar.ok) { nota.hidden = true; nota.textContent = ''; return; }
+      const f = faltaParaFirmar;
+      nota.hidden = false;
+      nota.textContent = 'Todavia no: faltan ' + f.faltan +
+        (f.faltan === 1 ? ' respuesta obligatoria' : ' respuestas obligatorias') +
+        ' en ' + f.etapas + (f.etapas === 1 ? ' etapa' : ' etapas') +
+        '. En cuanto no falte ninguna se habilita la firma.';
+    }
+
     const lienzo = document.getElementById('f-canvas');
     if (lienzo) {
       const ctx = lienzo.getContext('2d');
@@ -1131,9 +1167,10 @@ const fechaFirma = brief.firmado_at
       const encender = (hay) => {
         // "Borrar" solo existe cuando hay algo que borrar.
         if (btnBorrar) btnBorrar.hidden = !hay;
-        if (!btnFirmar) return;
-        btnFirmar.disabled = !hay;
-        btnFirmar.textContent = hay ? 'Firmar y comenzar' : 'Firma para comenzar';
+        // El trazo es solo LA MITAD de lo que enciende el boton; la otra mitad
+        // es que el brief este completo, y eso lo sabe pintar().
+        firmaTrazada = hay;
+        pintarBotonFirma();
       };
 
       const mueve = (e) => {
@@ -1336,6 +1373,19 @@ const fechaFirma = brief.firmado_at
       if (!cajaEtapas) return;
       const aprobadas = ETAPAS.filter((e) => e.estado === 'aprobada').length;
 
+      // Cuanto falta para poder firmar. Se mide sobre el borrador —lo que hay
+      // escrito ahora mismo— y no sobre lo enviado, para que el boton se
+      // encienda mientras el cliente escribe y no hasta que recargue.
+      let faltanReq = 0, etapasIncompletas = 0;
+      for (const f of ETAPAS) {
+        const d = DEF.find((x) => x.clave === f.clave);
+        if (!d) continue;
+        const n = contar(d, borrador[f.clave] || {});
+        if (n.faltanReq) { faltanReq += n.faltanReq; etapasIncompletas++; }
+      }
+      faltaParaFirmar = { ok: etapasIncompletas === 0, faltan: faltanReq, etapas: etapasIncompletas };
+      pintarBotonFirma();
+
       // La cabecera es la única superficie que lo acompaña durante toda la
       // página. Antes decía "0 de 12 aprobadas" — un cero que no se mueve en
       // semanas. Ahora dice dónde va y, si le toca algo, cuánto; y se toca.
@@ -1383,9 +1433,9 @@ const fechaFirma = brief.firmado_at
         // que hacer" se leía como "estamos revisando lo que mandaste" — un
         // mensaje sobre algo que el cliente todavía no manda.
         banner = '<div class="pb-aviso-global">' +
-          '<strong>Empieza firmando el brief</strong>' +
-          '<span>Con la firma se abren las ' + ETAPAS.length +
-          ' etapas de una vez, para contestarlas en el orden que quieras. ' +
+          '<strong>Falta tu firma, pero ya puedes contestar</strong>' +
+          '<span>Las ' + ETAPAS.length + ' etapas están abiertas: empieza por donde quieras. ' +
+          'La firma deja asentado quién responde por el brief y se puede hacer en cualquier momento. ' +
           '<a href="#firma" data-firma>Ir a la firma</a></span></div>';
       } else if (totalPreg) {
         banner = '<div class="pb-aviso-global" data-tono="preguntas">' +
@@ -1535,9 +1585,7 @@ const fechaFirma = brief.firmado_at
      * firmar: firmada la portada, las doce quedan abiertas.
      */
     function vistaPrevia(def, fila) {
-      const motivo = FIRMADO
-        ? 'Se abre en cuanto la habilitemos de nuestro lado.'
-        : 'Se abre en cuanto firmes el brief — junto con todas las demás.';
+      const motivo = 'Se abre en cuanto la habilitemos de nuestro lado.';
 
       let h = '<div class="pb-previa-nota">' +
         '<span class="pb-campo-t">Todavía no se puede contestar</span>' +

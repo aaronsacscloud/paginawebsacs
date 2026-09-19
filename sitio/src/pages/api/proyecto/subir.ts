@@ -28,7 +28,8 @@ export const POST: APIRoute = async ({ request }) => {
   const token = String(form.get('token') || '');
   const brief = await briefPorToken(token);
   if (!brief) return json({ error: 'No encontrado' }, 404);
-  if (!brief.firmado_at) return json({ error: 'Primero hay que firmar el brief' }, 403);
+  // La firma NO es requisito para contestar: va al final, cuando el brief ya
+  // esta completo (dueno, 19-sep-2026). El token sigue siendo la unica llave.
 
   const file = form.get('file') as File | null;
   if (!file) return json({ error: 'No llegó el archivo' }, 400);

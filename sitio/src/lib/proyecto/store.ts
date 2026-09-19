@@ -60,21 +60,16 @@ export async function etapasDe(briefId: string): Promise<EtapaFila[]> {
   const hay = new Set(filas.map((f) => f.clave));
   const faltan = ETAPAS.filter((e) => !hay.has(e.clave));
   if (faltan.length) {
-    // Una etapa que se agrega a un brief YA FIRMADO nace abierta. Si naciera
-    // bloqueada se quedaria asi para siempre: desde que el brief no es
-    // secuencial, nada la abriria despues. Se consulta solo cuando de verdad
-    // falta alguna, que es lo raro.
-    const { data: b } = await supabase
-      .from('proyecto_brief')
-      .select('firmado_at')
-      .eq('id', briefId)
-      .maybeSingle();
-    const inicial = b && (b as any).firmado_at ? 'abierta' : 'bloqueada';
+    // Las etapas nacen ABIERTAS. No dependen de la firma ni de que se haya
+    // cerrado la anterior (dueno, 19-sep-2026: "lo que se necesita es que
+    // estas secciones esten abiertas"). La firma sigue existiendo como
+    // constancia de quien responde por el brief, pero ya no es una puerta:
+    // quien entra con el link puede empezar a contestar de inmediato.
     const nuevas = faltan.map((e) => ({
       brief_id: briefId,
       clave: e.clave,
       orden: e.orden,
-      estado: inicial,
+      estado: 'abierta',
     }));
     const { data: creadas } = await supabase.from('proyecto_etapa').insert(nuevas).select('*');
     filas.push(...(((creadas || []) as EtapaFila[]) || []));
