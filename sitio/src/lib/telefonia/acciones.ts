@@ -133,11 +133,13 @@ async function comprometer(ctx: Ctx, tipo: 'llamada' | 'reunion', params: any): 
   const { crearCompromiso } = await import('./cierre');
   const it = await itemParaCompromiso(ctx);
   if (!it) return { ok: false, dicho: 'esta llamada no está ligada a una ficha; agéndalo desde la agenda' };
+  const tipoReunion = ['demo', 'seguimiento', 'cotizacion', 'llamada-discovery'].includes(String(params?.reunion_tipo))
+    ? String(params.reunion_tipo) : (tipo === 'reunion' ? 'demo' : 'llamada-discovery');
   const r = await crearCompromiso(it, {
     tipo, fecha, hora,
-    duracion_min: tipo === 'reunion' ? 60 : 15,
+    duracion_min: tipo === 'reunion' ? (tipoReunion === 'llamada-discovery' ? 15 : 60) : 15,
     motivo: params.motivo || 'lo pidió en la llamada',
-    reunion_tipo: tipo === 'reunion' ? 'demo' : 'llamada-discovery',
+    reunion_tipo: tipoReunion,
   }, ctx.userId || null);
   return r ? { ok: true, dicho: `quedó ${r}` } : { ok: false, dicho: 'no se pudo agendar (revisa que la fecha sea futura)' };
 }
@@ -193,6 +195,9 @@ const CATALOGO: Accion[] = [
       { campo: 'fecha', etiqueta: '¿Qué día?', tipo: 'fecha', valor: p?.fecha || '' },
       { campo: 'hora', etiqueta: '¿A qué hora?', tipo: 'hora', valor: p?.hora || '' },
     ],
+    /* `reunion_tipo` viene de la pantalla: demo o discovery. Son dos reuniones
+       distintas de verdad —duración, guion y quién la toma— y elegirla al
+       colgar es lo que evita agendar una demo a quien todavía no califica. */
     ejecutar: (ctx, p) => comprometer(ctx, 'reunion', p),
   },
   {

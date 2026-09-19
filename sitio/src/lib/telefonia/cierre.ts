@@ -18,6 +18,7 @@
 //      qué, la cabina le pregunta al vendedor y lo que conteste se guarda para
 //      la próxima.
 import { supabase } from '../supabase';
+import { claseDeFallo } from './fallo-cierre';
 import { anthropic, MODELS, hasApiKey } from '../ai/client';
 import { dialogoOido, type Oido } from './oidos';
 import { telefonoWhatsApp } from '../telefono';
@@ -68,16 +69,10 @@ const LECTURA_HOLGADA_MS = 100000;
 const tiempoDeLectura = (largo: number, holgado?: boolean) =>
   holgado ? Math.min(LECTURA_HOLGADA_MS, 45000 + Math.round(largo / 4)) : LECTURA_PULSO_MS;
 
-/** Por qué no hubo propuesta, en una palabra que la pantalla pueda usar. */
-export type FalloCierre = 'tiempo' | 'saldo' | 'sin_transcripcion' | 'sin_llave' | 'otro';
-export function claseDeFallo(motivo: string): FalloCierre {
-  const m = String(motivo || '').toLowerCase();
-  if (/timed out|timeout|aborted/.test(m)) return 'tiempo';
-  if (/credit balance|sin saldo|quota|insufficient/.test(m)) return 'saldo';
-  if (/transcripción no alcanzó/.test(m)) return 'sin_transcripcion';
-  if (/sin llave/.test(m)) return 'sin_llave';
-  return 'otro';
-}
+/** Por qué no hubo propuesta, en una palabra que la pantalla pueda usar.
+ *  Vive en `fallo-cierre.ts` porque `marcador.ts` también la necesita y carga
+ *  este archivo de forma perezosa. */
+export { claseDeFallo, type FalloCierre } from './fallo-cierre';
 const COLGADO_MS = 2 * 60000;        // un cierre a medias más viejo que esto se rescata
 
 /** Fecha y hora de un compromiso como instante, en la hora DEL CONTACTO (su zona por la lada: «a las 10» en Tijuana son las 12 del centro), o null si no es real, ya pasó o está a más de 90 días. */

@@ -30,6 +30,7 @@ export const conFernanda = (s: any) => !!s?.modo && s.modo !== 'manual';
 const sinSala = (s: any) => s?.modo === 'ia';
 // `./cierre` arrastra googleapis, pdfkit y el SDK de IA: se carga solo cuando hace falta (los webhooks TwiML importan este módulo y deben arrancar rápido).
 const cierre = () => import('./cierre');
+import { claseDeFallo } from './fallo-cierre';
 
 export const BASE = 'https://www.sacscloud.com';
 const ahora = () => new Date().toISOString();
@@ -1378,9 +1379,15 @@ export async function listarItems(sesionId: string) {
       cierre_motivo: cierre_ia?.motivo || null,
       /* La CLASE del fallo, no sólo el texto: es lo que deja a la lista ofrecer
          «volver a leer» sólo donde tiene sentido. Una llamada de quince
-         segundos sin transcripción no se relee — no hay nada que leer—; una de
-         diecinueve minutos que se quedó sin tiempo, sí. */
-      cierre_fallo: cierre_ia?.fallo || null,
+         segundos sin transcripción no se relee —no hay nada que leer—; una de
+         diecinueve minutos que se quedó sin tiempo, sí.
+
+         Si el fallo no trae clase, se deduce del motivo: los que se cayeron
+         ANTES de que esto existiera son justo los que hay que rescatar —hay
+         cuatro perdidos por «credit balance is too low», de cuando se acabó el
+         saldo—, y dejarlos fuera por no llevar una etiqueta que entonces no se
+         escribía sería perderlos dos veces. */
+      cierre_fallo: cierre_ia?.motivo ? (cierre_ia.fallo || claseDeFallo(String(cierre_ia.motivo))) : null,
     };
   });
 }

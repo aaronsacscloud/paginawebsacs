@@ -563,14 +563,17 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const enviosAbiertos: any[] = (propuesta?.envios || []).filter((e: any) => e.estado === 'falta');
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (tab !== 'compromisos' || !sesionId) return;
+    /* También al TERMINAR, no sólo dentro de su pestaña: el repaso del final
+       necesita saber cuáles no entraron a Google Calendar, y si sólo se cargan
+       al abrir la pestaña, el repaso diría «cero» hasta que alguien la abra. */
+    if ((tab !== 'compromisos' && fase !== 'fin') || !sesionId) return;
     let vivo = true;
     const traer = () => fetch(`/api/crm/telefonia/marcador?id=${sesionId}&compromisos=1`, { cache: 'no-store' })
       .then(r => r.json()).then(j => { if (vivo) setCompromisos(j.compromisos || []); }).catch(() => {});
     traer();
     const t = setInterval(traer, 15000);   // se llena conforme cuelgas: no hace falta más seguido
     return () => { vivo = false; clearInterval(t); };
-  }, [tab, sesionId, hechos.length]);
+  }, [tab, fase, sesionId, hechos.length]);
   /* ══ LO QUE HACE FALTA PARA DECIDIR RÁPIDO Y BIEN (17-sep-2026) ══════════
      Las diez mejoras del momento de colgar viven aquí: corregir la propuesta,
      rechazarla, leer lo que se dijo, saber por qué la IA no pudo, las salidas
@@ -1086,6 +1089,107 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               {kpi('#D1D5DB', 'Sin marcar', items.filter(i => i.estado === 'pendiente').length, '#4B5563')}
               {kpi('#9B8CFA', 'Costo', `US$ ${Number(s.costo_usd || 0).toFixed(2)}`, C.moradoTinta, s.contestadas ? `US$ ${(Number(s.costo_usd || 0) / s.contestadas).toFixed(2)} por conversación` : 'solo llamadas')}
             </div>
+            {/* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═══════════════════════════
+                «30 conversaciones» contaba las de cuatro segundos, así que el
+                número grande y verde decía que la jornada había ido bien justo
+                los días que había ido mal. Un embudo no es un contador: es
+                dónde se cae la gente, y cada escalón dice qué arreglar.
+
+                  descolgaron → hablaron (>30 s) → quedó algo → demo
+
+                Debajo de 30 s no cabe una presentación y una respuesta: eso no
+                fue una conversación, fue un «ahorita no puedo». Y lo agendado
+                sale de la agenda de verdad, no de lo que la IA propuso. */}
+            {est?.embudo && Number(est.embudo.contestaron) > 0 && (
+              <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 15px', marginBottom: 10 }}>
+                <span style={etiqueta}>Dónde se te fue la gente</span>
+                <div style={{ display: 'flex', alignItems: 'stretch', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  {[
+                    ['Descolgaron', est.embudo.contestaron, '#4FBF95', null],
+                    ['Hablaron de verdad', est.embudo.hablaron, '#5B4BD6', 'más de 30 s'],
+                    ['Quedó algo', est.embudo.con_cita, '#9B8CFA', 'cita o compromiso'],
+                    ['Demos', est.embudo.demos, '#E8A838', null],
+                  ].map(([et, v, color, sub]: any, i: number, todo: any[]) => {
+                    const previo = i > 0 ? Number(todo[i - 1][1]) : 0;
+                    const pct = i > 0 && previo > 0 ? Math.round((Number(v) / previo) * 100) : null;
+                    return (
+                      <div key={et} style={{ flex: '1 1 110px', minWidth: 96, borderLeft: `3px solid ${color}`, paddingLeft: 9 }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1.1 }}>{v}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.g900 }}>{et}</div>
+                        <div style={{ fontSize: 10.5, color: C.g500 }}>
+                          {sub || ''}{sub && pct != null ? ' · ' : ''}{pct != null ? `${pct}% de los de antes` : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {Number(est.embudo.contestaron) > 0 && Number(est.embudo.hablaron) / Number(est.embudo.contestaron) < 0.5 && (
+                  <div style={{ marginTop: 9, fontSize: 11.5, color: '#9a6a10', lineHeight: 1.5 }}>
+                    Más de la mitad de los que descolgaron colgaron antes de los 30 segundos. Eso casi
+                    nunca es la lista: es el hueco entre que contestan y tu primera frase.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ══ QUÉ QUEDÓ SUELTO (19-sep-2026) ═══════════════════════════════
+                Una jornada no termina cuando se acaba la lista: termina cuando
+                no queda nada colgando. Y lo que queda colgando estaba repartido
+                por tres sitios —la llamada que la IA no alcanzó a leer, el PDF
+                que prometiste y nadie sabe cuál es, la cita que no entró al
+                calendario—, así que en la práctica no lo revisaba nadie.
+                Justo lo que pasó con Maela: su cierre se perdió y sólo se supo
+                un día después, porque nada lo estaba esperando.
+
+                Aquí está todo junto, y sólo aparece si hay algo: una tarjeta
+                vacía que sale siempre se deja de leer a los dos días. */}
+            {(() => {
+              const sinLeer = items.filter(i => i.cierre_estado === 'sin_datos' && i.cierre_fallo && i.cierre_fallo !== 'sin_transcripcion');
+              const fueraDeGoogle = compromisos.filter((c: any) => c.tipo === 'reunion' && !c.en_google);
+              const mudos = items.filter(i => i.resultado === 'colgo_rapido');
+              if (!sinLeer.length && !fueraDeGoogle.length && !mudos.length) return null;
+              return (
+                <div style={{ background: '#FFF8EC', border: '1px solid #F0D8AC', borderRadius: 12, padding: '13px 15px', display: 'grid', gap: 10 }}>
+                  <div>
+                    <span style={{ ...etiqueta, color: '#9a6a10' }}>Qué quedó suelto</span>
+                    <div style={{ fontSize: 12, color: '#9a6a10' }}>Nada de esto se pierde solo, pero tampoco se arregla solo.</div>
+                  </div>
+                  {sinLeer.length > 0 && (
+                    <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ flex: '1 1 240px', fontSize: 12.5, color: C.g900 }}>
+                        <b>{sinLeer.length}</b> {sinLeer.length === 1 ? 'llamada que la IA no alcanzó a leer' : 'llamadas que la IA no alcanzó a leer'}.
+                        Lo que se dijo sigue guardado: releerlas recupera el apunte, los datos y lo que se prometió.
+                      </span>
+                      <button onClick={async () => {
+                        /* De una en una y no todas a la vez: cada relectura es
+                           una llamada a la IA de hasta minuto y medio, y diez en
+                           paralelo es la forma más rápida de que Anthropic nos
+                           corte por ráfaga. */
+                        for (const i of sinLeer) await releer(i.id);
+                      }} disabled={!!ocupado} style={{ ...btnS, borderColor: '#E8A838', color: '#9a6a10' }}>
+                        {String(ocupado).startsWith('releer') ? <><Cargador chico />Releyendo…</> : `Volver a leer ${sinLeer.length === 1 ? 'la llamada' : `las ${sinLeer.length}`}`}
+                      </button>
+                    </div>
+                  )}
+                  {fueraDeGoogle.length > 0 && (
+                    <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ flex: '1 1 240px', fontSize: 12.5, color: C.g900 }}>
+                        <b>{fueraDeGoogle.length}</b> {fueraDeGoogle.length === 1 ? 'cita quedó fuera de Google Calendar' : 'citas quedaron fuera de Google Calendar'}.
+                        Están en el CRM, pero a esa hora no te va a sonar nada.
+                      </span>
+                      <button onClick={() => setTab('compromisos')} style={btnS}>Ver los compromisos</button>
+                    </div>
+                  )}
+                  {mudos.length > 0 && (
+                    <div style={{ fontSize: 12.5, color: C.g900 }}>
+                      <b>{mudos.length}</b> {mudos.length === 1 ? 'persona descolgó y colgó' : 'personas descolgaron y colgaron'} sin que alcanzaras a hablar.
+                      Ya están de vuelta en la lista para marcarles en diez minutos — no hay que hacer nada,
+                      pero si se repite a diario, el problema es el arranque de la llamada, no la lista.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => relanzar(s.id)} disabled={!relanzables || ocupado === 'relanzar'} style={{ ...S.btnP, opacity: relanzables ? 1 : 0.6 }}>Volver a llamar a los {relanzables} que faltan</button>
               <button onClick={salirDeSesion} style={btnS}>Armar otra lista</button>
@@ -1166,48 +1270,6 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 Son el marcador del partido: se miran de reojo, no se leen.
                 Arriba y chiquitos mientras la jornada está viva; en tamaño
                 normal cuando termina, que es cuando sí se estudian. */}
-            {/* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═══════════════════════════
-                «30 conversaciones» contaba las de cuatro segundos, así que el
-                número grande y verde decía que la jornada había ido bien justo
-                los días que había ido mal. Un embudo no es un contador: es
-                dónde se cae la gente, y cada escalón dice qué arreglar.
-
-                  descolgaron → hablaron (>30 s) → quedó algo → demo
-
-                Debajo de 30 s no cabe una presentación y una respuesta: eso no
-                fue una conversación, fue un «ahorita no puedo». Y lo agendado
-                sale de la agenda de verdad, no de lo que la IA propuso. */}
-            {fase !== 'viva' && est?.embudo && Number(est.embudo.contestaron) > 0 && (
-              <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 15px', marginBottom: 10 }}>
-                <span style={etiqueta}>Dónde se te fue la gente</span>
-                <div style={{ display: 'flex', alignItems: 'stretch', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  {[
-                    ['Descolgaron', est.embudo.contestaron, '#4FBF95', null],
-                    ['Hablaron de verdad', est.embudo.hablaron, '#5B4BD6', 'más de 30 s'],
-                    ['Quedó algo', est.embudo.con_cita, '#9B8CFA', 'cita o compromiso'],
-                    ['Demos', est.embudo.demos, '#E8A838', null],
-                  ].map(([et, v, color, sub]: any, i: number, todo: any[]) => {
-                    const previo = i > 0 ? Number(todo[i - 1][1]) : 0;
-                    const pct = i > 0 && previo > 0 ? Math.round((Number(v) / previo) * 100) : null;
-                    return (
-                      <div key={et} style={{ flex: '1 1 110px', minWidth: 96, borderLeft: `3px solid ${color}`, paddingLeft: 9 }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1.1 }}>{v}</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.g900 }}>{et}</div>
-                        <div style={{ fontSize: 10.5, color: C.g500 }}>
-                          {sub || ''}{sub && pct != null ? ' · ' : ''}{pct != null ? `${pct}% de los de antes` : ''}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {Number(est.embudo.contestaron) > 0 && Number(est.embudo.hablaron) / Number(est.embudo.contestaron) < 0.5 && (
-                  <div style={{ marginTop: 9, fontSize: 11.5, color: '#9a6a10', lineHeight: 1.5 }}>
-                    Más de la mitad de los que descolgaron colgaron antes de los 30 segundos. Eso casi
-                    nunca es la lista: es el hueco entre que contestan y tu primera frase.
-                  </div>
-                )}
-              </div>
-            )}
             {fase !== 'viva' && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[
