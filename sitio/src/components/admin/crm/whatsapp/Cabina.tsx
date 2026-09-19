@@ -225,6 +225,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (r?.ok) { setHuecos(r.huecos || []); setTiposCita(r.tipos || []); }
   }, [sesionId]);
 
+  /* ══ LA JORNADA DE LLAMADAS, EN UN TELÉFONO (19-sep-2026) ════════════════
+     Pedido del dueño: que todo lo de esta sesión funcione bien en móvil «con la
+     mejor experiencia y diseño posible». Marcar cien números desde el teléfono
+     no es la versión chica del escritorio: es otra postura —una mano, el
+     aparato pegado a la oreja, la pantalla apagándose sola— y pide tres cosas
+     que en escritorio no hacen falta. */
+  const [listaAbierta, setListaAbierta] = useState(false);
+
+
   const [nota, setNota] = useState('');
   const [noLlamar, setNoLlamar] = useState(false);
   // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
@@ -251,6 +260,28 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const fase: 'armar' | 'lista' | 'viva' | 'fin' = !sesionId || !sesion ? 'armar'
     : ['borrador', 'lista'].includes(sesion.estado) ? 'lista'
     : ['activa', 'pausada'].includes(sesion.estado) ? 'viva' : 'fin';
+
+  /* 1 · LA PANTALLA NO SE APAGA MIENTRAS MARCAS. Con la sesión viva, el
+     teléfono se bloqueaba a los treinta segundos: volvías a desbloquear, la
+     pestaña se había dormido y el pulso se había parado justo cuando alguien
+     contestaba. Wake Lock se pide sólo con la sesión activa y se suelta al
+     terminar — retenerlo de más se come la batería de quien no está llamando.
+     Safari sólo lo soporta desde iOS 16.4: donde no hay, no pasa nada. */
+  const candado = useRef<any>(null);
+  useEffect(() => {
+    if (!movil) return;
+    const nav: any = navigator;
+    const pedir = async () => {
+      if (fase !== 'viva' || document.visibilityState !== 'visible' || candado.current) return;
+      try { candado.current = await nav.wakeLock?.request('screen'); candado.current?.addEventListener?.('release', () => { candado.current = null; }); } catch { /* sin permiso: se sigue igual */ }
+    };
+    const soltar = () => { try { candado.current?.release?.(); } catch { /* ya se fue */ } candado.current = null; };
+    if (fase === 'viva') pedir(); else soltar();
+    // Al volver de otra app hay que volver a pedirlo: el sistema lo suelta solo.
+    const vis = () => { if (document.visibilityState === 'visible') pedir(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { document.removeEventListener('visibilitychange', vis); soltar(); };
+  }, [movil, fase]);
 
   useEffect(() => { guardarLocal('cabina.presentacion', pres); }, [pres]);
   useEffect(() => { guardarLocal('cabina.sesion', sesionId); }, [sesionId]);
@@ -365,6 +396,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (id && abiertoPara.current !== id) {
       abiertoPara.current = id;
       avisar();
+      /* El pitido no sirve con el teléfono en silencio —que es como anda casi
+         siempre— y menos con el aparato en la oreja. La vibración sí llega:
+         dos toques cortos, el patrón de «te están esperando». */
+      try { (navigator as any).vibrate?.([60, 45, 60]); } catch { /* sin motor */ }
       document.dispatchEvent(new CustomEvent('tel-mute', { detail: { mute: false } }));
       setMicAbierto(true);
       /* ══ «YA TE OYEN, HABLA» ════════════════════════════════════════════
@@ -1283,7 +1318,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       {cab}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: movil ? 'column' : 'row' }}>
         {/* Izquierda: el item actual */}
-        <div className="wa-scroll" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: movil ? '14px 14px 110px' : 22 }}>
+        <div className="wa-scroll" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: movil ? '14px 14px 96px' : 22 }}>
           <div style={{ maxWidth: 640, margin: '0 auto', display: 'grid', gap: 12 }}>
             {errorBox}
             {!enSala && !sola && (
@@ -1478,10 +1513,16 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       <div style={{ fontSize: 11.5, color: C.g500 }}>Mirando la agenda…</div>
                     ) : huecos.length ? (
                       <>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {/* En el teléfono los huecos van en una tira que se
+                            desliza: envueltos en cuatro renglones empujaban el
+                            resto de la tarjeta fuera de la pantalla, y son
+                            justo lo que se lee EN VOZ ALTA mientras hablas. */}
+                        <div className="wa-scroll" style={movil
+                          ? { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollSnapType: 'x proximity' }
+                          : { display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {huecos.slice(0, 8).map((h: any) => (
                             <button key={`${h.fecha}-${h.hora}`} onClick={() => agendarHueco(h)} disabled={!!ocupado}
-                              style={{ border: `1.5px solid ${C.g200}`, background: '#fff', color: C.g900, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ border: `1.5px solid ${C.g200}`, background: '#fff', color: C.g900, borderRadius: 999, padding: movil ? '8px 13px' : '5px 11px', fontSize: movil ? 13 : 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, scrollSnapAlign: 'start' }}>
                               {ocupado === 'agendar' ? '…' : `${new Date(`${h.fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).replace('.', '')} · ${h.hora}`}
                             </button>
                           ))}
@@ -1903,8 +1944,81 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           </div>
         </div>
 
-        {/* Derecha: la lista con su estado */}
-        <div className="wa-scroll" style={{ width: movil ? '100%' : 340, flexShrink: 0, borderLeft: movil ? 'none' : `1px solid ${C.g200}`, borderTop: movil ? `1px solid ${C.g200}` : 'none', background: '#fff', overflowY: 'auto', maxHeight: movil ? 260 : 'none' }}>
+        {/* ══ LA BARRA DEL PULGAR (19-sep-2026) ═══════════════════════════════
+            En escritorio las acciones viven en la tarjeta y se alcanzan con el
+            ratón esté donde esté. En un teléfono esa misma tarjeta es un scroll
+            de pantalla y media —ficha, apertura, horarios, colapsables— y la
+            decisión que cierra la llamada quedaba hasta el fondo. Cien llamadas
+            al día × un scroll cada una es media hora de pulgar.
+
+            Lo que se puede hacer AHORA vive fijo abajo, en la zona que alcanza
+            el pulgar sin recolocar la mano, y cambia con el momento:
+              · timbrando  → Saltar
+              · hablando   → Colgar (rojo, lo más grande) y Hablar yo
+              · cierre     → «Ya decidí, siguiente», que es la salida
+            Y siempre el acceso a la lista, con cuántos faltan. */}
+        {movil && (enSala || sola) && !pausada && (
+          <div style={{
+            position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 55,
+            background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(10px)',
+            borderTop: `1px solid ${C.g200}`, padding: '9px 12px calc(9px + env(safe-area-inset-bottom))',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <button onClick={() => setListaAbierta(v => !v)}
+              style={{ flexShrink: 0, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 11, padding: '10px 12px', fontSize: 12, fontWeight: 800, color: C.g700, fontFamily: 'inherit', cursor: 'pointer' }}>
+              Lista · {pendientes.length}
+            </button>
+            {estadoActual === 'en_linea' ? (<>
+              <button onClick={() => accion('tomar')} disabled={!!ocupado}
+                style={{ flexShrink: 0, border: `1.5px solid #9B8CFA`, background: '#fff', borderRadius: 11, padding: '10px 12px', fontSize: 12, fontWeight: 800, color: '#5B4BD6', fontFamily: 'inherit', cursor: 'pointer' }}>
+                {ocupado === 'tomar' ? '…' : 'Hablar yo'}
+              </button>
+              <button onClick={() => accion('colgar')} disabled={!!ocupado}
+                style={{ flex: 1, border: 'none', background: '#C0554E', color: '#fff', borderRadius: 11, padding: '12px 14px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                {ocupado === 'colgar' ? <><Cargador />Colgando…</> : 'Colgar'}
+              </button>
+            </>) : esperaTuDecision ? (
+              <button onClick={confirmarYSeguir} disabled={!!ocupado}
+                style={{ flex: 1, border: 'none', background: C.morado, color: '#fff', borderRadius: 11, padding: '12px 14px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                {ocupado ? <><Cargador />{ocupado === 'cierre' ? 'Aplicando…' : 'Marcando…'}</> : (propuesta ? 'Confirmar y seguir' : 'Ya decidí · siguiente')}
+              </button>
+            ) : ['marcando', 'timbrando', 'escuchando', 'portero'].includes(estadoActual) ? (<>
+              <span style={{ flex: 1, fontSize: 12, color: C.g500, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ETIQUETA_ITEM[estadoActual] || estadoActual}{actual?.nombre ? ` · ${actual.nombre}` : ''}
+              </span>
+              <button onClick={() => accion('saltar')} disabled={!!ocupado}
+                style={{ flexShrink: 0, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 11, padding: '10px 14px', fontSize: 12, fontWeight: 800, color: C.g700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                {ocupado === 'saltar' ? '…' : 'Saltar'}
+              </button>
+            </>) : (
+              <span style={{ flex: 1, fontSize: 12, color: C.g400 }}>Listo para marcar al siguiente.</span>
+            )}
+          </div>
+        )}
+
+        {/* ══ EN EL TELÉFONO, LA LISTA ES UNA HOJA (19-sep-2026) ══════════════
+            Ocupaba 260 px fijos debajo de la llamada: en una pantalla de 844
+            eso es un tercio, permanente, para algo que se mira entre llamada y
+            llamada y no durante. Lo que importa mientras hablas es quién es y
+            qué decides; la lista se abre cuando la quieres, desde el botón de
+            la barra de abajo, y se va con un toque fuera. */}
+        {movil && listaAbierta && (
+          <div onClick={e => { if (e.target === e.currentTarget) setListaAbierta(false); }}
+            style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(12,11,18,.45)' }} />
+        )}
+        <div className="wa-scroll" style={movil ? {
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 61,
+          maxHeight: '72vh', background: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16,
+          boxShadow: '0 -10px 40px rgba(12,11,18,.22)', overflowY: 'auto',
+          transform: listaAbierta ? 'translateY(0)' : 'translateY(101%)',
+          transition: 'transform .22s cubic-bezier(.2,.7,.3,1)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        } : { width: 340, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, background: '#fff', overflowY: 'auto' }}>
+          {movil && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 2px' }}>
+              <span onClick={() => setListaAbierta(false)} style={{ width: 38, height: 4, borderRadius: 999, background: C.g200, cursor: 'pointer' }} />
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.g200}`, position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
             {(['lista', 'hechas', 'compromisos'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={{

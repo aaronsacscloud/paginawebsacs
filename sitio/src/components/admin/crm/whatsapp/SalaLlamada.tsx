@@ -337,12 +337,17 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             )}
           </span>
           <span style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            {!fin && (
+            {/* En el teléfono, Colgar y Silenciar NO viven aquí arriba: se van a
+                la barra del pulgar, al final de este mismo componente. Tenerlos
+                en la cabecera obligaba a estirar la mano hasta arriba con el
+                aparato pegado a la oreja — y «Colgar» es el botón que más se
+                pica de todo el CRM. */}
+            {!fin && !esMovil && (
               <>
                 <button onClick={onSilenciar} style={{ border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {mudo ? 'Estás en mudo' : 'Silenciar'}
                 </button>
-                <button onClick={cerrarLlamada} disabled={cerrando} style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: esMovil ? 999 : 10, padding: esMovil ? '12px 22px' : '9px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={cerrarLlamada} disabled={cerrando} style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {cerrando ? 'Cerrando…' : 'Colgar'}
                 </button>
               </>
@@ -556,6 +561,31 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             )}
           </div>
         </div>
+
+        {/* ══ LA BARRA DEL PULGAR EN LA SALA (19-sep-2026) ═══════════════════
+            Colgar y Silenciar, fijos abajo y sólo en el teléfono. Con el
+            aparato en la oreja, la mano sostiene el celular por el medio: lo
+            que está a tres centímetros del pulgar se toca sin mirar, lo que
+            está arriba pide recolocar la mano — y es el botón que más se pica
+            del CRM. Colgar es el grande y el rojo; Silenciar cede sitio.
+            El aire de `paddingBottom` en el cuerpo evita que la barra tape la
+            última línea de la transcripción. */}
+        {esMovil && !fin && (
+          <div style={{
+            position: 'sticky', bottom: 0, zIndex: 3, display: 'flex', gap: 8,
+            padding: '10px 14px calc(10px + env(safe-area-inset-bottom))',
+            background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(10px)', borderTop: `1px solid ${C.g200}`,
+          }}>
+            <button onClick={onSilenciar}
+              style={{ flexShrink: 0, border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 12, padding: '13px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {mudo ? 'En mudo' : 'Silenciar'}
+            </button>
+            <button onClick={cerrarLlamada} disabled={cerrando}
+              style={{ flex: 1, border: 'none', background: '#C0554E', color: '#fff', borderRadius: 12, padding: '13px 18px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {cerrando ? 'Cerrando…' : 'Colgar'}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

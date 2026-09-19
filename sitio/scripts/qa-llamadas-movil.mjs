@@ -13,12 +13,12 @@ const errores = []; p.on('pageerror', e => errores.push(e.message));
 let fallas = 0;
 const paso = (n, ok, d = '') => { if (!ok) fallas++; console.log(`  ${ok ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
 try {
-  await p.goto('http://localhost:4321/admin/login', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/login', { waitUntil: 'networkidle' });
   await p.fill('input[type="email"]', login.CRM_EMAIL);
   await p.fill('input[type="password"]', login.CRM_PASSWORD);
   await p.click('button[type="submit"]');
   await p.waitForURL('**/admin/crm**', { timeout: 40000 }).catch(() => {});
-  await p.goto('http://localhost:4321/admin/crm?tab=llamadas', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/crm?tab=llamadas', { waitUntil: 'networkidle' });
   await p.waitForTimeout(9000);
   const txt = (await p.locator('body').innerText()).replace(/\n+/g, ' · ');
   paso('Abre Llamadas inteligentes', /[Ll]lamadas inteligentes/.test(txt), txt.slice(0, 110));
