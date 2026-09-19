@@ -159,18 +159,39 @@ export const GET: APIRoute = async ({ request, url }) => {
      por cuenta al abrirla: con veinte cuentas serían veinte viajes. */
   const ids = Array.from(new Set((data || []).map((o: any) => o.company_id).filter(Boolean)));
   const cuentas: Record<string, any> = {};
+  /* LO QUE YA SE LE ENTREGÓ, renglón por renglón y no solo el número.
+     El encabezado decía «12 ya entregadas» y la pestaña Entregado salía en
+     cero: contaban cosas distintas. Lo entregado vive en el renglón del
+     cliente —`mejoras` en estado entregada—, y la mayoría se cerró antes de
+     que el taller existiera o desde Consultoría, así que nunca hubo una orden
+     con etapa «entregada» que enseñar. Se traen los renglones, no el conteo:
+     es la misma consulta que ya se hacía para contar. */
+  const entregas: Record<string, any[]> = {};
   if (ids.length) {
     const [subs, entregadas, cos] = await Promise.all([
       supabase.from('subscriptions').select('company_id, arr, estado').in('company_id', ids),
-      supabase.from('mejoras').select('company_id, valor, cortesia').in('company_id', ids)
-        .is('archived_at', null).eq('estado', 'entregada'),
+      supabase.from('mejoras')
+        .select('id, company_id, titulo, valor, cortesia, cobro, modulo, categoria, tipo, fecha_entrega, url')
+        .in('company_id', ids).is('archived_at', null).eq('estado', 'entregada')
+        .order('fecha_entrega', { ascending: false }).limit(800),
       supabase.from('companies').select('id, sacs_account, giro').in('id', ids),
     ]);
     for (const id of ids) cuentas[id as string] = { arr: 0, entregadas: 0, sacs: null, giro: null };
     for (const x of subs.data || []) {
       if (x.estado === 'activa' && cuentas[x.company_id]) cuentas[x.company_id].arr += Number(x.arr || 0);
     }
-    for (const m of entregadas.data || []) if (cuentas[m.company_id]) cuentas[m.company_id].entregadas++;
+    for (const m of entregadas.data || []) {
+      if (!cuentas[m.company_id]) continue;
+      cuentas[m.company_id].entregadas++;
+      (entregas[m.company_id] = entregas[m.company_id] || []).push({
+        id: m.id, titulo: m.titulo, fecha: m.fecha_entrega, modulo: m.modulo || null,
+        categoria: m.categoria || null, tipo: m.tipo || null,
+        cortesia: !!m.cortesia || m.cobro === 'cortesia',
+        // Solo http(s): la liga se pinta como botón y se abre en otra pestaña.
+        video: /^https?:\/\//i.test(String(m.url || '').trim()) ? String(m.url).trim() : null,
+        folio: (ligadas || []).find((l: any) => l.mejora_id === m.id) ? 'con orden' : null,
+      });
+    }
     for (const c of cos.data || []) if (cuentas[c.id]) { cuentas[c.id].sacs = c.sacs_account; cuentas[c.id].giro = c.giro; }
   }
 
@@ -219,6 +240,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     ligas,
     sinOrden,
     cuentas,
+    entregas,
     meta,
     reuniones,
     yo: { id: user.id, nombre: quien(user), rol: user.role },

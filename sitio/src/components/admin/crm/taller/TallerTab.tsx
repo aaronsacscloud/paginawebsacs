@@ -76,6 +76,10 @@ export default function TallerTab() {
      cliente, no en la orden; el taller lo lee por la liga. */
   const [meta, setMeta] = useState<Record<string, any>>({});
   const [reuniones, setReuniones] = useState<Record<string, any>>({});
+  /* Lo que ya se le entregó a cada cuenta, renglón por renglón. Viene del
+     renglón del cliente y no del taller: casi todo se cerró antes de que el
+     taller existiera. */
+  const [entregas, setEntregas] = useState<Record<string, any[]>>({});
   const [yo, setYo] = useState<any>(null);
   /* Se abre en LA LISTA. «Mi bandeja» abría con cero órdenes asignadas —las 18
      estaban sin dueño— y lo primero que veía quien entraba era «no tienes
@@ -94,7 +98,8 @@ export default function TallerTab() {
   const cargar = useCallback(async () => {
     const j = await fetch('/api/crm/taller').then(r => r.json()).catch(() => null);
     if (j && !j.error) { setOrdenes(j.ordenes || []); setEquipo(j.equipo || []); setSinOrden(j.sinOrden || []); setCuentas(j.cuentas || {}); setYo(j.yo || null);
-      setMeta(j.meta || {}); setReuniones(j.reuniones || {}); setPreguntas(j.preguntas || []); }
+      setMeta(j.meta || {}); setReuniones(j.reuniones || {}); setPreguntas(j.preguntas || []);
+      setEntregas(j.entregas || {}); }
     setCargando(false);
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -175,8 +180,8 @@ export default function TallerTab() {
       {vista === 'bandeja'
         ? <Bandeja ordenes={ordenes} vivas={vivas} esperanOK={esperanOK} roto={roto} revisionTarde={revisionTarde}
             preguntas={preguntas} abrir={setAbierta} api={api} flash={flash} />
-        : <Lista ordenes={vivas} entregadas={ordenes.filter((o: any) => o.etapa === 'entregada')}
-            yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
+        : <Lista ordenes={vivas}
+            yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones} entregas={entregas}
             filtro={filtro} setFiltro={setFiltro} onNueva={(cid?: string) => setNueva(cid || '')} recargar={cargar} api={api} flash={flash} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
@@ -495,7 +500,7 @@ const TRAMOS = [
   { l: 'detenidas',    c: '#E8A838', f: (o: any) => o.etapa === 'espera' },
 ];
 
-function Lista({ ordenes, entregadas = [], yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, meta = {}, reuniones = {}, api, flash }: any) {
+function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, onNueva, recargar, cuentas = {}, meta = {}, reuniones = {}, api, flash }: any) {
   const [vista, setVista] = useState('todas');
   const [cuenta, setCuenta] = useState<string>('');   // el proyecto abierto
   /* Dentro de un proyecto: la etapa de cada gestión, o lo que no tiene fecha. */
@@ -548,11 +553,18 @@ function Lista({ ordenes, entregadas = [], yo, equipo, abrir, filtro, setFiltro,
   /* Lo YA ENTREGADO de la cuenta llega por separado y solo se usa en su
      pestaña: si entrara en `filasCuenta`, los conteos de las tarjetas y el
      «días tarde» del encabezado hablarían de trabajo que ya se cerró. */
-  const entregadasCuenta = cuenta
-    ? (entregadas || []).filter((o: any) => cuentaDe(o) === cuenta
-        && (!q || (o.titulo + ' ' + cuentaDe(o) + ' ' + (o.folio || '')).toLowerCase().includes(q)))
+  /* LO ENTREGADO SALE DEL RENGLÓN DEL CLIENTE, no de órdenes con etapa
+     «entregada». El encabezado decía «12 ya entregadas» y la pestaña salía en
+     cero porque contaban cosas distintas: la mayoría se cerró antes de que el
+     taller existiera o desde Consultoría, y nunca hubo una orden que enseñar.
+     Las órdenes que SÍ se entregaron por aquí ya cerraron su renglón, así que
+     aparecen una sola vez. */
+  const idCuenta = filasCuenta[0]?.company_id || null;
+  const entregadasCuenta: any[] = idCuenta
+    ? (entregas[idCuenta] || []).filter((e: any) =>
+        !q || (String(e.titulo || '') + ' ' + cuenta).toLowerCase().includes(q))
     : [];
-  const abierto = (filasCuenta.length || entregadasCuenta.length) ? resumir(cuenta, filasCuenta) : null;
+  const abierto = filasCuenta.length ? resumir(cuenta, filasCuenta) : null;
   const enCuenta = !abierto ? []
     : dentro === 'entregada' ? entregadasCuenta
     : dentro === 'todas' ? abierto.filas
@@ -731,7 +743,33 @@ function Lista({ ordenes, entregadas = [], yo, equipo, abrir, filtro, setFiltro,
               {dentro === 'entregada' ? 'Todavía no se le ha entregado nada a esta cuenta.' : 'Nada de esta cuenta está en esa fase.'}
             </div>
           )}
-          {enCuenta.map((o: any) => (
+          {/* Lo entregado se pinta distinto: no es trabajo, es historial. Sin
+              casilla ni menú —no hay nada que cambiarle— y con su video, que
+              es lo que el cliente ya tiene en la mano. */}
+          {dentro === 'entregada' && enCuenta.map((e: any) => (
+            <div key={e.id} style={{
+              display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
+              minHeight: 44, background: '#fff', paddingRight: 12,
+            }}>
+              <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: P.verde }} />
+              <span style={{ flex: 'none', width: 56, textAlign: 'center', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.04em', borderRadius: 5, padding: '2px 0', background: P.verdeAgua, color: P.verdeTinta, marginLeft: 9 }}>
+                LISTO
+              </span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: '0.81rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titulo}</span>
+              {e.cortesia && <span style={{ flex: 'none', borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', fontWeight: 700, background: P.verdeAgua, color: P.verdeTinta }}>sin costo</span>}
+              <Dato ancho={132} titulo={e.modulo || ''} falta="sin módulo" tono="modulo">{e.modulo || ''}</Dato>
+              <span style={{ flex: 'none', width: 92, textAlign: 'right', fontSize: '0.71rem' }}>
+                {e.video
+                  ? <a href={e.video} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()}
+                      style={{ color: P.violetaTinta, fontWeight: 700, textDecoration: 'none' }}>▶ su video</a>
+                  : <span style={{ color: '#c4c1cc' }}>sin video</span>}
+              </span>
+              <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', color: '#55505f', fontVariantNumeric: 'tabular-nums' }}>{fmt(e.fecha)}</span>
+              <span style={{ flex: 'none', width: 22 }} />
+            </div>
+          ))}
+
+          {dentro !== 'entregada' && enCuenta.map((o: any) => (
             <Renglon key={o.id} o={o} abrir={abrir}
               marcada={sel.has(o.id)} onMarcar={() => marca(o.id)} verCasilla={sel.size > 0}
               meta={meta[o.id]} reuniones={reuniones}
