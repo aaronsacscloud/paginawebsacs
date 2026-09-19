@@ -874,6 +874,7 @@ export const footerLinks = {
     { label: 'Contacto', href: '/contacto' },
   ],
   recursos: [
+    { label: 'Entrar a mi cuenta', href: '/entrar' },
     { label: 'Planes y precios', href: '/planes' },
     // El enlace del pie es lo que hace que /herramientas/ no nazca huérfana:
     // una página sin un solo enlace entrante se rastrea tarde y se pondera poco,

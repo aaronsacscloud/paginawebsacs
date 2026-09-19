@@ -21,6 +21,11 @@ export default defineConfig({
   // /enterprise es la URL canónica del track de marcas/fabricantes; estas dos
   // son las formas en que la gente lo escribe o lo linkeamos por modelo.
   redirects: {
+    // Formas en las que alguien escribe «entrar» buscando la app: todas
+    // llegan a /entrar, la página del dominio principal que las resuelve.
+    '/login': '/entrar',
+    '/acceso': '/entrar',
+    '/iniciar-sesion': '/entrar',
     '/marcas': '/enterprise',
     '/soluciones/marca': '/enterprise',
     /* Giros que NO son moda, retirados el 18-sep-2026 por decisión del dueño:

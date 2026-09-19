@@ -1,0 +1,215 @@
+---
+// /entrar — puerta de acceso a la aplicación en el dominio principal.
+//
+// app.sacscloud.com va a marcarse noindex (es la app, no contenido), pero
+// quien busca «entrar a sacscloud» / «sacscloud login» necesita un resultado
+// en un dominio que sí controlamos. Esta página no vende nada: lleva al botón
+// de la app y resuelve, de paso, las tres dudas con las que llega alguien que
+// escribe «entrar» — dónde, qué hago si olvidé mi contraseña, y a quién le
+// escribo si no puedo entrar.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { breadcrumbList } from '../lib/breadcrumb';
+import { SITIO } from '../data/entidad';
+import { WHATSAPP_LEGIBLE, waLink } from '../lib/whatsapp';
+
+const APP_URL = 'https://app.sacscloud.com/';
+
+const waSoporte = waLink('Hola, no puedo entrar a mi cuenta de Sacs. ¿Me ayudan?');
+
+const faqs = [
+  {
+    q: '¿Dónde entro a mi cuenta de Sacs?',
+    a: 'Siempre en app.sacscloud.com, con el correo y la contraseña de tu cuenta. No hay una dirección distinta por negocio: el nombre de tu cuenta es un dato interno, no una URL.',
+  },
+  {
+    q: 'Olvidé mi contraseña, ¿cómo la recupero?',
+    a: 'Desde la pantalla de acceso de app.sacscloud.com hay una opción para recuperarla con tu correo. Si no te llega o tienes dudas, escríbenos por WhatsApp y te ayudamos.',
+  },
+  {
+    q: 'No puedo entrar, ¿a quién le escribo?',
+    a: `Escríbenos por WhatsApp al ${WHATSAPP_LEGIBLE} y te ayudamos a recuperar el acceso a tu cuenta.`,
+  },
+];
+
+const breadcrumbSchema = breadcrumbList([
+  { name: 'Inicio', url: `${SITIO}/` },
+  { name: 'Entrar' },
+]);
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+---
+
+<BaseLayout
+  title="Entrar a Sacs — iniciar sesión en tu cuenta"
+  description="Accede a tu cuenta de Sacs en app.sacscloud.com. Si olvidaste tu contraseña o no puedes entrar, aquí te decimos qué hacer y a quién escribirle."
+  structuredData={[breadcrumbSchema, faqSchema]}
+>
+  <section class="en-hero">
+    <div class="en-hero-inner">
+      <span class="en-eyebrow">Acceso a tu cuenta</span>
+      <h1 class="en-h1">Entrar a Sacs</h1>
+      <p class="en-lead">Tu cuenta vive en <strong>app.sacscloud.com</strong>. Entra ahí con tu correo y tu contraseña.</p>
+      <a href={APP_URL} class="en-cta" data-analytics="entrar-cta-app">
+        Entrar a mi cuenta
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <p class="en-url-hint">app.sacscloud.com</p>
+    </div>
+  </section>
+
+  <section class="en-ayuda">
+    <div class="en-ayuda-inner">
+      <h2 class="en-h2">¿Necesitas ayuda para entrar?</h2>
+      <div class="en-faq">
+        {faqs.map((f) => (
+          <div class="en-faq-item">
+            <h3 class="en-faq-q">{f.q}</h3>
+            <p class="en-faq-a">{f.a}</p>
+          </div>
+        ))}
+      </div>
+      <a href={waSoporte} class="en-wa" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.8-.9-2.1-1-.28-.1-.48-.15-.68.15-.2.3-.78 1-.96 1.2-.18.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.68-2.08-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.53.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.68-1.63-.93-2.23-.24-.58-.5-.5-.68-.5h-.58c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.08 4.5.71.3 1.26.48 1.7.62.71.22 1.36.2 1.87.12.57-.08 1.76-.72 2-1.42.25-.7.25-1.28.17-1.4-.07-.13-.27-.2-.57-.35z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.53 3.66 1.44 5.18L2 22l4.94-1.4A9.9 9.9 0 0012 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.7 0-3.28-.5-4.6-1.36l-.33-.2-2.93.83.8-2.86-.22-.35A7.94 7.94 0 014 12c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8z"/></svg>
+        Escríbenos al {WHATSAPP_LEGIBLE}
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .en-hero {
+    background: var(--color-bg-primary);
+    padding: clamp(96px, 12vw, 140px) 0 clamp(48px, 6vw, 64px);
+  }
+  .en-hero-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 clamp(24px, 4vw, 48px);
+    text-align: center;
+  }
+  .en-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-text-tertiary);
+    margin: 0 0 var(--space-4);
+  }
+  .en-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    margin: 0 0 var(--space-4);
+  }
+  .en-lead {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.4vw, 1.1rem);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0 0 var(--space-8);
+  }
+  .en-lead strong { color: var(--color-text-primary); }
+  .en-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-primary-btn);
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-decoration: none;
+    padding: 18px 36px;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(75, 123, 229, 0.28);
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .en-cta:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+  .en-cta svg { flex-shrink: 0; }
+  .en-url-hint {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--color-text-tertiary);
+    margin: var(--space-4) 0 0;
+  }
+
+  .en-ayuda {
+    background: #fff;
+    padding: clamp(48px, 7vw, 80px) 0 clamp(64px, 8vw, 96px);
+    border-top: 1px solid var(--color-border-light);
+  }
+  .en-ayuda-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 clamp(24px, 4vw, 48px);
+  }
+  .en-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin: 0 0 var(--space-8);
+  }
+  .en-faq {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin: 0 0 var(--space-10);
+  }
+  .en-faq-item {
+    padding: 20px 24px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 14px;
+  }
+  .en-faq-q {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 8px;
+  }
+  .en-faq-a {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .en-wa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #0B7A43;
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    padding: 15px 24px;
+    border-radius: 14px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 600px) {
+    .en-cta { width: 100%; justify-content: center; padding: 17px 24px; }
+    .en-faq-item { padding: 16px 18px; }
+  }
+</style>
