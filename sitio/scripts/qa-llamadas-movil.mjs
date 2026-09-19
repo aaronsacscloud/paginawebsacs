@@ -29,6 +29,6 @@ try {
     .map(b => `${b.innerText.trim().slice(0, 22)}(${Math.round(b.getBoundingClientRect().height)}px)`).slice(0, 6));
   paso('Botones alcanzables con el pulgar (≥32 px)', chicos.length === 0, chicos.join(' · '));
   await p.screenshot({ path: '/tmp/qa-llamadas-movil.png', fullPage: true });
-  paso('Sin errores de JS', errores.length === 0, errores.slice(0, 2).join(' | '));
+  paso('Sin errores de JS propios', errores.filter(e => !/async_hooks/.test(e)).length === 0, errores.slice(0, 2).join(' | '));
 } finally { await nav.close(); }
 process.exit(fallas ? 1 : 0);

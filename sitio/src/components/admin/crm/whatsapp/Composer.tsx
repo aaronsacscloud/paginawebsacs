@@ -17,6 +17,7 @@ import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } from '../../../../lib/crm/recientes';
 import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
+import { campoDe, ES_LIBRE, nombreVariable } from '../../../../lib/whatsapp/variables-plantilla';
 
 /* Cómo se escriben nuestros grupos de plantillas cuando se enseñan.
    La clave es corta —cabe en el chip y se teclea al crear la plantilla— y el
@@ -1476,17 +1477,13 @@ function ModalSnippetRapido({ inicial, onClose, onGuardado }: { inicial: { atajo
 }
 
 // ───────────────────────── Selector de plantillas ─────────────────────────
-/** Resuelve el dato del CRM que va en una variable (variables_map de la plantilla). */
+/** Resuelve el dato del CRM que va en una variable (variables_map de la plantilla).
+ *  Usa la MISMA lista que el motor de cadencias (`variables-plantilla.ts`): antes
+ *  había dos, con campos distintos, y lo que se elegía aquí podía no existir
+ *  allá — la plantilla se veía bien y el envío automático nunca salía. */
 export function valorVariable(campo: string, contacto: any, yo: any): string {
-  const c = contacto || {};
-  switch (campo) {
-    case 'primer_nombre': return String(c.nombre || '').split(' ')[0] || '';
-    case 'nombre': return c.nombre || ''; case 'empresa': return c.empresa || ''; case 'plan': return c.plan || ''; case 'email': return c.email || '';
-    case 'telefono': return c.telefono || ''; case 'etapa': return c.etapa || ''; case 'mrr': return c.mrr != null ? `$${Number(c.mrr).toLocaleString('es-MX')}` : '';
-    case 'fecha_renovacion': return c.fecha_renovacion ? new Date(c.fecha_renovacion + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
-    case 'sucursales': return c.sucursales != null ? String(c.sucursales) : ''; case 'agente': return yo?.nombre || '';
-    default: return '';
-  }
+  if (!campo || ES_LIBRE(campo)) return '';   // el campo abierto lo escribe quien manda
+  return campoDe(campo)?.leer(contacto || {}, yo) || '';
 }
 
 export function SelectorPlantilla({ telefono, api, onClose, contacto, preseleccion, elegirLinea }: { telefono: string; api: any; onClose: () => void; contacto?: any; preseleccion?: string | null;
@@ -1659,7 +1656,15 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
             const campo = (sel.variables_map || [])[i];
             return (
               <div key={i} style={{ margin: '8px 4px 0' }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>{`Variable {{${i + 1}}}`}{campo && <span style={{ fontWeight: 500, color: C.emerald700, marginLeft: 6 }}>· del CRM ({campo.replace(/_/g, ' ')})</span>}</label>
+                {/* El nombre del dato, no «Variable {{3}}»: quien manda la
+                    plantilla tiene que saber qué va ahí sin abrir el editor a
+                    leer el texto. El campo abierto lleva el nombre que le
+                    pusiste al crearla («Promoción del mes»). */}
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>
+                  {nombreVariable(campo, i)}
+                  {campo && !ES_LIBRE(campo) && <span style={{ fontWeight: 500, color: C.emerald700, marginLeft: 6 }}>· se rellenó del CRM</span>}
+                  {ES_LIBRE(campo) && <span style={{ fontWeight: 500, color: C.moradoTinta, marginLeft: 6 }}>· lo escribes tú</span>}
+                </label>
                 <input value={v} onChange={e => { const p = [...params]; p[i] = e.target.value; setParams(p); }} style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${!v.trim() ? C.rojo300 : C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
               </div>
             );

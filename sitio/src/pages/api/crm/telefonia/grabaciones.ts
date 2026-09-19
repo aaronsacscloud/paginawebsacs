@@ -37,9 +37,11 @@ export const GET: APIRoute = async ({ request }) => {
     .select('call_id, telefono, direccion, duracion_seg, started_at, grabacion_path, transcript, resultado, conversation_id')
     .not('grabacion_path', 'is', null)
     .gte('started_at', desde)
-    .gte('duracion_seg', minSeg)
     .order('started_at', { ascending: false })
     .limit(300);
+  /* El filtro de duración se aplica aquí y no en la consulta: `gte` sobre una
+     columna NULA la descarta, así que con «Todas» (min = 0) se habrían caído
+     justo las grabaciones a las que Twilio no les mandó duración. */
   if (error) return json({ error: error.message }, 500);
 
   /* El nombre no vive en la llamada: se trae de la conversación en UN viaje
@@ -62,16 +64,29 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
-  const filas = [] as any[];
-  for (const l of data || []) {
+  /* Las firmas, TODAS DE UN VIAJE. Una por una eran hasta 300 llamadas de red
+     encadenadas antes de contestar: la pantalla tardaba lo que tardara la más
+     lenta, multiplicado por trescientas. `createSignedUrls` (plural) existe
+     justo para esto. */
+  const visibles = (data || []).filter(l => {
+    if (minSeg > 0 && Number(l.duracion_seg || 0) < minSeg) return false;
     const quien = (l.conversation_id && nombres.get(String(l.conversation_id))) || '';
-    if (busca && !`${quien} ${l.telefono}`.toLowerCase().includes(busca)) continue;
-    const { data: firma } = await supabase.storage.from('wa-media').createSignedUrl(String(l.grabacion_path), 3600);
-    if (!firma?.signedUrl) continue;
+    return !busca || `${quien} ${l.telefono}`.toLowerCase().includes(busca);
+  });
+  const { data: firmas } = visibles.length
+    ? await supabase.storage.from('wa-media').createSignedUrls(visibles.map(l => String(l.grabacion_path)), 3600)
+    : { data: [] as any[] };
+  const urlDe = new Map((firmas || []).map((f: any) => [String(f.path), f.signedUrl as string]));
+
+  const filas = [] as any[];
+  for (const l of visibles) {
+    const quien = (l.conversation_id && nombres.get(String(l.conversation_id))) || '';
+    const url = urlDe.get(String(l.grabacion_path));
+    if (!url) continue;
     filas.push({
       call_id: l.call_id, telefono: l.telefono, nombre: quien, direccion: l.direccion,
       segundos: Number(l.duracion_seg || 0), cuando: l.started_at, resultado: l.resultado,
-      url: firma.signedUrl, tiene_transcripcion: !!l.transcript,
+      url, tiene_transcripcion: !!l.transcript,
     });
   }
   return json({ ok: true, grabaciones: filas, total: filas.length });

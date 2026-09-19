@@ -1073,7 +1073,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     const kpi = (franja: string, et: string, v: any, color: string, sub?: string) => (
       <div style={{ ...tarjeta(franja), flex: 1, minWidth: 120 }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 22, fontWeight: 800, color }}>{v}</div>{sub && <div style={{ fontSize: 11, color: C.g500 }}>{sub}</div>}</div>
     );
-    const relanzables = items.filter(i => ['no_contesto', 'ocupado', 'buzon', 'portero', 'volver_llamar'].includes(i.resultado) || i.estado === 'pendiente').length;
+    // La misma lista que usa el servidor en `relanzar`: si aquí falta alguno,
+    // el botón dice un número y se relanzan otros.
+    const relanzables = items.filter(i => ['no_contesto', 'ocupado', 'buzon', 'portero', 'volver_llamar', 'colgo_rapido'].includes(i.resultado) || i.estado === 'pendiente').length;
     return (
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: C.g50, borderLeft: `1px solid ${C.g200}` }}>
         {cab}
@@ -1088,6 +1090,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               {kpi('#EF7A72', 'Inválidos', s.invalidos, '#C0554E')}
               {kpi('#D1D5DB', 'Sin marcar', items.filter(i => i.estado === 'pendiente').length, '#4B5563')}
               {kpi('#9B8CFA', 'Costo', `US$ ${Number(s.costo_usd || 0).toFixed(2)}`, C.moradoTinta, s.contestadas ? `US$ ${(Number(s.costo_usd || 0) / s.contestadas).toFixed(2)} por conversación` : 'solo llamadas')}
+              {/* En rojo y sólo si hay alguno: cada uno es alguien que SÍ
+                  descolgó y colgó sin oír una palabra nuestra. Es el número más
+                  caro de la jornada. Ya se les vuelve a marcar solos. */}
+              {Number(est?.colgaron_en_silencio || 0) > 0 && kpi('#C0554E', 'Colgaron sin que hablaras', Number(est.colgaron_en_silencio), '#C0554E', 'se les marca de nuevo en 10 min')}
             </div>
             {/* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═══════════════════════════
                 «30 conversaciones» contaba las de cuatro segundos, así que el
@@ -1270,26 +1276,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 Son el marcador del partido: se miran de reojo, no se leen.
                 Arriba y chiquitos mientras la jornada está viva; en tamaño
                 normal cuando termina, que es cuando sí se estudian. */}
-            {fase !== 'viva' && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[
-                  ['#4FBF95', 'Conversaciones', conversaciones, '#1E8A63', `${fmt(sesion.segundos_hablados || 0)} hablados`],
-                  ['#9B8CFA', 'Costo', `US$ ${costoSesion.toFixed(2)}`, C.moradoTinta, conversaciones ? `US$ ${(costoSesion / conversaciones).toFixed(2)} por conversación` : 'llamadas, sin transcripción'],
-                  ['#E8A838', 'Sin contacto', Number(sesion.buzon || 0) + Number(sesion.sin_contestar || 0) + Number(sesion.porteros || 0), '#9a6a10', `${sesion.buzon || 0} buzón · ${sesion.sin_contestar || 0} sin contestar · ${sesion.porteros || 0} contestadora`],
-                  /* El cuarto sólo aparece cuando hay alguno, y aparece en rojo
-                     a propósito: cada uno es alguien que SÍ descolgó y colgó sin
-                     oír una palabra nuestra. Es el número más caro de la jornada
-                     —contacto hecho y perdido en tres segundos— y el único que
-                     dice si el hueco entre «contestaron» y tu primera frase se
-                     está cerrando. Ya se les vuelve a marcar solos en 10 min. */
-                  ...(Number(est?.colgaron_en_silencio || 0) > 0
-                    ? [['#C0554E', 'Colgaron sin que hablaras', Number(est.colgaron_en_silencio), '#C0554E', 'descolgaron y colgaron en silencio · se les marca de nuevo en 10 min']]
-                    : []),
-                ].map(([franja, et, v, color, sub]: any) => (
-                  <div key={et} style={{ ...tarjeta(franja), flex: 1, minWidth: 140, padding: '9px 12px' }}><span style={etiqueta}>{et}</span><div style={{ fontSize: 17, fontWeight: 800, color }}>{v}</div><div style={{ fontSize: 10.5, color: C.g500 }}>{sub}</div></div>
-                ))}
-              </div>
-            )}
+            {/* ══ 🔴 ESTO NO SE PINTABA NUNCA (19-sep-2026) ════════════════
+                Las tarjetas grandes del resumen colgaban de `fase !== 'viva'`
+                estando DENTRO del bloque que sólo se dibuja cuando la fase ES
+                'viva' —las otras tres fases salen por un `return` de más
+                arriba—. Condición imposible: código muerto desde que se
+                movieron los KPIs al header, y ahí se me fue también el contador
+                de «colgaron sin que hablaras», que por eso no aparecía.
+                El sitio donde sí se estudian los números es el resumen del
+                final, y ahí ya están sus propias tarjetas. */}
             {actual ? (
               <div style={{ ...tarjeta(colorEstado), padding: '16px 18px', position: 'relative',
                 ...(recienAbierto ? { boxShadow: '0 0 0 3px #4FBF95', transition: 'box-shadow .15s' } : null) }}>

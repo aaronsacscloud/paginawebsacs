@@ -338,8 +338,29 @@ async function colgarItem(it: any, resultado?: string) {
   if (it.call_sid) { try { await twilioRest(`/Calls/${it.call_sid}.json`, { Status: 'completed' }); } catch { /* ya colgó */ } }
 }
 
+/* ══ 🔴 ESTO NO PUEDE CORRER EN CADA LATIDO (19-sep-2026) ═══════════════════
+   Bug mío, de hace una hora. `estadoSesion` la contesta el navegador del
+   vendedor CADA SEGUNDO —cada 400 ms mientras la central decide quién
+   contestó— y le metí dentro el embudo y el contador de «colgaron en
+   silencio»: tres consultas más por latido, una de ellas leyendo hasta 2000
+   items de la sesión, contra un Supabase en cómputo Small. En una jornada de
+   dos horas son miles de lecturas de la tabla entera para pintar cuatro
+   números que sólo se miran cuando la jornada ya acabó.
+
+   El repaso es del FINAL, así que se calcula al final. Mientras la lista está
+   viva, `estadoSesion` vuelve a ser lo que era: lo justo para mover la
+   pantalla. */
+async function repasoSiTerminó(s: any) {
+  if (!['terminada', 'cancelada'].includes(String(s?.estado))) return {};
+  const [silencio, embudo] = await Promise.all([
+    supabase.from('tel_sesion_items').select('id', { count: 'exact', head: true }).eq('sesion_id', s.id).eq('resultado', 'colgo_rapido'),
+    embudoSesion(s.id, s.iniciada_at || s.created_at),
+  ]);
+  return { colgaron_en_silencio: silencio.count || 0, embudo };
+}
+
 /** Dónde se cae la gente en esta jornada: descolgaron → hablaron → quedó algo → demo. */
-async function embudoSesion(sesionId: string) {
+async function embudoSesion(sesionId: string, desde?: string | null) {
   const { data } = await supabase.from('tel_sesion_items')
     .select('id, contact_id, resultado, duracion_seg').eq('sesion_id', sesionId).limit(2000);
   const its = data || [];
@@ -354,9 +375,15 @@ async function embudoSesion(sesionId: string) {
   const contactos = Array.from(new Set(contestaron.map(i => (i as any).contact_id).filter(Boolean))) as string[];
   let conCita = 0, demos = 0;
   if (contactos.length) {
+    /* ══ 🔴 LA VENTANA ERA DE 24 HORAS (19-sep-2026) ═══════════════════
+       Bug mío: la cita contaba si se había creado «en las últimas 24 horas»,
+       contadas desde AHORA. O sea que el embudo de una jornada de la semana
+       pasada enseñaba cero citas y cero demos —el escalón que más importa— y
+       parecía que ese día no se había cerrado nada. El corte tiene que ser la
+       jornada, no el reloj de hoy: desde que arrancó la sesión. */
     const { data: bks } = await supabase.from('bookings')
       .select('contact_id, event_types(slug)').in('contact_id', contactos).eq('origen', 'llamada')
-      .gte('created_at', new Date(Date.now() - 24 * 3600e3).toISOString()).limit(500);
+      .gte('created_at', desde || new Date(Date.now() - 24 * 3600e3).toISOString()).limit(500);
     conCita = new Set((bks || []).map((b: any) => b.contact_id)).size;
     demos = new Set((bks || []).filter((b: any) => b.event_types?.slug === 'demo').map((b: any) => b.contact_id)).size;
   }
@@ -1336,20 +1363,7 @@ export async function estadoSesion(sesionId: string) {
        los contadores de la sesión y quedaría invisible. Se cuenta al vuelo —es
        una consulta de cabecera, no una columna nueva— porque es EL número que
        dice si el silencio de los primeros segundos se está cerrando. */
-    colgaron_en_silencio: (await supabase.from('tel_sesion_items')
-      .select('id', { count: 'exact', head: true }).eq('sesion_id', sesionId).eq('resultado', 'colgo_rapido')).count || 0,
-    /* ══ EL EMBUDO DE VERDAD (19-sep-2026) ═════════════════════════════════
-       «30 conversaciones» incluía las de cuatro segundos, así que el número
-       grande y verde de la jornada decía que había ido bien justo los días que
-       había ido mal. Un embudo no es un contador: es dónde se cae la gente.
-
-         descolgaron → hablaron de verdad (>30 s) → quedó algo → demo
-
-       Los 30 segundos no son un número redondo: por debajo de eso no cabe una
-       presentación y una respuesta, así que no hubo conversación, hubo un
-       «ahorita no puedo». Y «quedó algo» son los compromisos reales creados
-       por el cierre, no la intención del vendedor. */
-    embudo: await embudoSesion(sesionId),
+    ...(await repasoSiTerminó(s)),
     pendientes: pendientes || 0,
     proximo: prox ? { nombre: prox.nombre, telefono: prox.telefono, volver_at: prox.volver_at } : null,
     ahora: ahora(),
@@ -1456,7 +1470,11 @@ export async function relanzar(sesionId: string, ownerId: string | null, cuales?
   const s = await getSesion(sesionId);
   if (!s) throw new Error('No existe la sesión');
   const items = await listarItems(sesionId);
-  const base = cuales?.length ? new Set(cuales) : new Set(['no_contesto', 'ocupado', 'buzon', 'portero', 'volver_llamar']);
+  /* `colgo_rapido` va en la lista: descolgó —o sea que el número es bueno y a
+     esa hora está— y se quedó sin que le habláramos. Se le remarca solo dos
+     veces; pasadas ésas, si no entra aquí ya no lo llama nadie nunca, que es
+     justo lo contrario de lo que merece quien sí levantó el teléfono. */
+  const base = cuales?.length ? new Set(cuales) : new Set(['no_contesto', 'ocupado', 'buzon', 'portero', 'volver_llamar', 'colgo_rapido']);
   const otra = items.filter(i => (i.estado === 'hecho' || i.estado === 'saltado') && base.has(String(i.resultado)) || (i.estado === 'pendiente'));
   if (!otra.length) throw new Error('No hay a quién volver a llamar');
   return crearSesion(ownerId, {

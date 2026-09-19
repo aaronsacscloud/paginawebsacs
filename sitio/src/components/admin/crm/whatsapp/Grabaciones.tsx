@@ -90,16 +90,25 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
   };
   useEffect(traer, [dias, minSeg]);
 
-  /* Se decodifica UNA vez por grabación y se guarda: volver a bajar y decodificar
-     un mp3 de veinte minutos cada vez que se pica un botón es medio segundo de
-     pestaña congelada por clic. */
+  /* ══ 🔴 LA MEMORIA (19-sep-2026) ═══════════════════════════════════════
+     Primera versión: se guardaba cada audio decodificado «para no decodificar
+     dos veces». Un AudioBuffer NO pesa lo que el mp3 — pesa muestras en coma
+     flotante: la llamada de 19 minutos de Maela, decodificada a los 48 kHz que
+     usa el navegador por defecto, son 1162 s × 48000 × 4 bytes × 2 pistas ≈
+     446 MB. Abres tres y la pestaña se cae.
+
+     Dos cambios y deja de ser un problema:
+     · se decodifica a 16 kHz, que es lo que piden los clonadores de voz y es
+       de sobra para una llamada de teléfono (Twilio entrega 8 kHz): ×3 menos;
+     · se guarda UNA sola, la última. Volver a decodificar cuesta un segundo;
+       quedarse sin memoria cuesta la pestaña. */
   const preparar = async (g: Grab) => {
     if (audios.current[g.call_id]) return audios.current[g.call_id];
     const bruto = await fetch(g.url).then(r => r.arrayBuffer());
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
     const buf = await ctx.decodeAudioData(bruto);
     ctx.close().catch(() => {});
-    audios.current[g.call_id] = buf;
+    audios.current = { [g.call_id]: buf };
     setPistas(p => ({ ...p, [g.call_id]: { canales: buf.numberOfChannels, reparto: cuantoHabla(buf) } }));
     return buf;
   };
@@ -204,6 +213,7 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
                       <div style={{ fontSize: 11, color: C.g500, lineHeight: 1.5 }}>
                         La que más habla en una llamada de ventas suele ser la tuya — va marcada en verde. Si al
                         oírla resulta ser la otra, baja la de al lado: no se adivina, se comprueba.
+                        {g.segundos > 600 ? ' Ojo: ésta es larga y separarla tarda unos segundos; para clonar una voz con dos o tres minutos buenos basta.' : ''}
                       </div>
                     </div>
                   ) : info ? (

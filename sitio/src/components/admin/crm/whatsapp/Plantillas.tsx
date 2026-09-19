@@ -7,6 +7,7 @@ import Cargando, { Corazones } from '../ui/Cargando';
 import { S, Tag, Aviso, Vacio, chip } from '../email/ui';
 import { C, label } from './estilo';
 import MockupWhatsApp from './MockupWhatsApp';
+import { CAMPOS, campoDe, ES_LIBRE, etiquetaLibre } from '../../../../lib/whatsapp/variables-plantilla';
 import SubirImagen from '../ui/SubirImagen';
 import { confirmar } from '../../../../lib/ui/confirmar';
 
@@ -19,10 +20,14 @@ const MOTIVO: Record<string, string> = {
   TAG_CONTENT_MISMATCH: 'El contenido no coincide con la categoría.',
 };
 /** Dato del CRM que puede ir en cada {{n}} (prellenado al enviar y en masivos). */
+/* ⚠️ LA LISTA DE CAMPOS VIVE EN EL SERVIDOR, no aquí. Había dos y no
+   coincidían: elegías «email» en esta pantalla, se guardaba… y el día que una
+   cadencia intentaba mandar esa plantilla, el motor no sabía qué era «email» y
+   el mensaje NO SALÍA, sin error a la vista. Ahora la pantalla ofrece
+   exactamente lo que el motor sabe resolver. */
 export const CAMPOS_VARIABLE = [
-  { v: '', l: 'Escribir a mano' }, { v: 'primer_nombre', l: 'Primer nombre' }, { v: 'nombre', l: 'Nombre completo' }, { v: 'empresa', l: 'Empresa' },
-  { v: 'plan', l: 'Plan' }, { v: 'email', l: 'Email' }, { v: 'telefono', l: 'Teléfono' }, { v: 'etapa', l: 'Etapa' }, { v: 'mrr', l: 'MRR' },
-  { v: 'fecha_renovacion', l: 'Fecha de renovación' }, { v: 'sucursales', l: 'Sucursales' }, { v: 'agente', l: 'Nombre del agente' },
+  { v: '', l: 'Escribir a mano al enviar' },
+  ...CAMPOS.map(c => ({ v: c.clave, l: `${c.etiqueta} · ${c.grupo.toLowerCase()}` })),
 ];
 const LIM = { cuerpo: 1024, header: 60, footer: 60, boton: 20, botones: 3 };
 const extraerVars = (t: string) => [...new Set([...t.matchAll(/\{\{([^}]+)\}\}/g)].map(m => m[1]))];
@@ -235,6 +240,15 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
   if ((form.header || '').length > LIM.header) errores.push(`Encabezado excede ${LIM.header}`);
   if ((form.footer || '').length > LIM.footer) errores.push(`Pie excede ${LIM.footer}`);
   if (!varsOk) errores.push('Las variables deben ser {{1}}, {{2}}… en orden y sin huecos');
+  /* ══ LAS REGLAS DE META, ANTES DE MANDARLA A REVISIÓN ═══════════════════
+     Estas tres rechazan la plantilla de inmediato y hoy sólo se descubrían
+     después —a veces horas—, con el mensaje seco de Meta. Se dicen aquí, con
+     el arreglo dentro de la frase. */
+  const cuerpoTx = String(form.cuerpo || '').trim();
+  if (!esAuth && /^\{\{\d+\}\}/.test(cuerpoTx)) errores.push('Meta no acepta que el texto EMPIECE con una variable: pon una palabra antes («Hola {{1}}…»)');
+  if (!esAuth && /\{\{\d+\}\}$/.test(cuerpoTx)) errores.push('Meta no acepta que el texto TERMINE con una variable: agrega algo después (un punto basta)');
+  if (!esAuth && /\{\{\d+\}\}\s*\{\{\d+\}\}/.test(cuerpoTx)) errores.push('Dos variables pegadas: Meta las rechaza. Pon texto entre ellas');
+  if (!esAuth && ht === 'TEXT' && (String(form.header || '').match(/\{\{\d+\}\}/g) || []).length > 1) errores.push('El encabezado admite UNA variable como máximo');
   if ((form.botones || []).some((b: any) => !b.texto?.trim())) errores.push('Hay un botón sin texto');
   const ejemplos: string[] = form.ejemplos || [];
   if (!esAuth && vars.some((_, i) => !(ejemplos[i] || '').trim())) errores.push('Meta exige un ejemplo por cada variable');
@@ -242,6 +256,45 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
   const puede = errores.length === 0;
   const setEjemplo = (i: number, v: string) => { const e = [...ejemplos]; e[i] = v; setForm({ ...form, ejemplos: e }); };
   const setBoton = (i: number, texto: string) => setForm({ ...form, botones: form.botones.map((b: any, j: number) => j === i ? { ...b, texto: texto.slice(0, LIM.boton) } : b) });
+
+  /** Renumera {{n}} de izquierda a derecha y reordena ejemplos y mapa con
+   *  ellas. Es lo que permite insertar y borrar variables en cualquier orden
+   *  sin pelearse con la regla de Meta («{{1}}, {{2}}… sin huecos»). */
+  const renumerar = (texto: string, ejs: string[], mapa: string[]) => {
+    const orden: number[] = [];
+    const nuevo = texto.replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, n) => {
+      orden.push(Number(n));
+      return `{{${orden.length}}}`;
+    });
+    return {
+      cuerpo: nuevo,
+      ejemplos: orden.map(n => ejs[n - 1] || ''),
+      variables_map: orden.map(n => mapa[n - 1] || ''),
+    };
+  };
+
+  const insertarVar = (campo: string) => {
+    const el = document.getElementById('plantilla-cuerpo') as HTMLTextAreaElement | null;
+    const texto = String(form.cuerpo || '');
+    const pos = el && typeof el.selectionStart === 'number' ? el.selectionStart : texto.length;
+    const usadas = extraerVars(texto).length;
+    // Se mete con el número que le toca y luego se renumera todo junto: así da
+    // igual si se insertó en medio del texto.
+    const marca = `{{${usadas + 1}}}`;
+    const conMarca = texto.slice(0, pos) + marca + texto.slice(pos);
+    const ejs = [...(form.ejemplos || [])]; const mapa = [...(form.variables_map || [])];
+    ejs[usadas] = ES_LIBRE(campo) ? etiquetaLibre(campo) : (campoDe(campo)?.ejemplo || 'ejemplo');
+    mapa[usadas] = campo;
+    const r = renumerar(conMarca, ejs, mapa);
+    setForm({ ...form, ...r });
+    setTimeout(() => { if (el) { el.focus(); const p = pos + marca.length; el.setSelectionRange(p, p); } }, 0);
+  };
+
+  const quitarVar = (n: number) => {
+    const texto = String(form.cuerpo || '').replace(new RegExp(`\\{\\{\\s*${n}\\s*\\}\\}`, 'g'), '');
+    const r = renumerar(texto, form.ejemplos || [], form.variables_map || []);
+    setForm({ ...form, ...r });
+  };
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
@@ -298,8 +351,56 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
         {ht === 'LOCATION' && <div style={{ fontSize: 11, color: C.g500, marginTop: 6 }}>La ubicación se elige al enviar (lat/lng + nombre).</div>}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Cuerpo</label><Contador n={(form.cuerpo || '').length} max={LIM.cuerpo} /></div>
-        <textarea style={{ ...inp, minHeight: 120, resize: 'vertical', borderColor: (form.cuerpo || '').length > LIM.cuerpo || !varsOk ? C.rojo300 : C.g200 }} value={form.cuerpo}
+        <textarea id="plantilla-cuerpo" style={{ ...inp, minHeight: 120, resize: 'vertical', borderColor: (form.cuerpo || '').length > LIM.cuerpo || !varsOk ? C.rojo300 : C.g200 }} value={form.cuerpo}
           onChange={e => setForm({ ...form, cuerpo: e.target.value })} placeholder={'Hola {{1}}, tu suscripción de {{2}} se renueva el {{3}}.'} />
+
+        {/* ══ INSERTAR UNA VARIABLE, SIN SABER CÓMO SE ESCRIBEN ═══════════════
+            Pedido del dueño (18-sep-2026): «debo poder agregar variables a la
+            plantilla de forma sencilla: la de un nombre, la de un campo
+            específico, y una de campo abierto para poner lo que yo quiera».
+
+            Antes había que teclear `{{1}}`, acordarse de que van en orden y sin
+            huecos, escribir el ejemplo que Meta exige y luego elegir el campo
+            en otra lista de abajo. Cuatro pasos y tres formas de equivocarse.
+            Ahora: un clic pone la variable donde está el cursor, la numera, le
+            pone su ejemplo y la deja mapeada al campo. Y si se borra una del
+            texto, las demás se renumeran solas. */}
+        {!esAuth && (
+          <div style={{ marginTop: 8, border: `1px solid ${C.g100}`, borderRadius: 10, padding: '9px 11px', background: C.g50 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g500, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 7 }}>Insertar una variable</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button style={{ ...S.btnP, padding: '5px 11px', fontSize: 12 }} onClick={() => insertarVar('primer_nombre')}>Su nombre</button>
+              <select style={{ ...inp, width: 'auto', padding: '5px 9px', fontSize: 12 }} value="" onChange={e => { if (e.target.value) insertarVar(e.target.value); }}>
+                <option value="">Un campo del CRM…</option>
+                {['Persona', 'Negocio', 'Comercial', 'Nosotros'].map(g => (
+                  <optgroup key={g} label={g}>
+                    {CAMPOS.filter(c => c.grupo === g).map(c => <option key={c.clave} value={c.clave}>{c.etiqueta}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+              <button style={{ ...S.btnG, padding: '5px 11px', fontSize: 12 }}
+                onClick={() => { const et = window.prompt('¿Cómo se llama ese dato? (lo vas a ver al mandar la plantilla)', 'Promoción del mes'); if (et?.trim()) insertarVar(`libre:${et.trim().slice(0, 40)}`); }}>
+                Campo abierto…
+              </button>
+            </div>
+            {vars.length > 0 && (
+              <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
+                {vars.map((v, i) => {
+                  const campo = (form.variables_map || [])[i] || '';
+                  const nombreCampo = ES_LIBRE(campo) ? `✍️ ${etiquetaLibre(campo)} (lo escribes al enviar)` : (campoDe(campo)?.etiqueta || 'lo escribes al enviar');
+                  return (
+                    <div key={v} style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 11.5, color: C.g700 }}>
+                      <span style={{ fontWeight: 700, color: C.moradoTinta, minWidth: 34 }}>{`{{${v}}}`}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>{nombreCampo}</span>
+                      <button title="Quitar esta variable del texto" onClick={() => quitarVar(Number(v))}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 13 }}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         {vars.length > 0 && (
           <div style={{ marginTop: 6, fontSize: 11, color: C.g500, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
             Variables: {vars.map(v => <span key={v} style={{ fontSize: 10, fontWeight: 700, background: varsOk ? C.moradoAgua : C.rojo50, color: varsOk ? C.moradoTinta : C.rojo500, borderRadius: 999, padding: '1px 7px' }}>{`{{${v}}}`}</span>)}
@@ -318,7 +419,7 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
               ))}
             </div>
             <div style={{ fontSize: 10, color: C.g400, marginTop: 6 }}>Meta revisa la plantilla con estos valores; sin ellos la rechaza de inmediato.</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.g500, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 6px' }}>Se rellena solo con (opcional)</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g500, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 6px' }}>De dónde sale cada una al enviar</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 6 }}>
               {vars.map((v, i) => (
                 <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>

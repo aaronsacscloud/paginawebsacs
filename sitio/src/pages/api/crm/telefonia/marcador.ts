@@ -331,7 +331,7 @@ export const POST: APIRoute = async ({ request }) => {
       case 'cierre_regenerar': {
         const itemId = String(b.item || '');
         if (!UUID.test(itemId)) return json({ error: 'Falta la llamada' }, 400);
-        const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id, cierre_estado').eq('id', itemId).maybeSingle();
+        const { data: it } = await supabase.from('tel_sesion_items').select('id, sesion_id, estado, cierre_estado').eq('id', itemId).maybeSingle();
         if (!it || it.sesion_id !== s.id) return json({ error: 'No es una llamada de tu sesión' }, 404);
         if (it.cierre_estado !== 'sin_datos') return json({ error: 'Esa llamada no quedó pendiente de leer' }, 409);
         const p = await proponerCierre(itemId, { reintento: true, holgado: true });
@@ -346,7 +346,19 @@ export const POST: APIRoute = async ({ request }) => {
               : `No se pudo leer la llamada: ${motivo || 'sin detalle'}`,
           }, 409);
         }
-        return json({ ok: true, ...(await estadoSesion(s.id)) });
+        /* ══ 🔴 Y SE APLICA, SI LA LLAMADA YA PASÓ (19-sep-2026) ════════
+           Bug mío: esto dejaba la propuesta guardada y se acababa ahí. Para la
+           llamada que tienes DELANTE está bien —la propuesta aparece en el
+           panel y tú confirmas—, pero desde el repaso del final se releen
+           llamadas que ya se cerraron hace horas: ahí no hay panel donde
+           confirmar, así que el apunte, los datos, la cita y el envío se
+           quedaban escritos en un campo que nadie vuelve a mirar. El botón
+           decía «volver a leer las 7» y en el CRM no entraba nada.
+
+           Un item ya `hecho` se aplica solo, como hace el rescate. Uno en
+           `cierre` NO: ése lo estás decidiendo tú ahora mismo. */
+        if (it.estado === 'hecho') await aplicarCierre(itemId, { userId: user.id, rescate: true });
+        return json({ ok: true, aplicado: it.estado === 'hecho', ...(await estadoSesion(s.id)) });
       }
       case 'estado': return json(await estadoSesion(s.id));
       default: return json({ error: 'Acción desconocida' }, 400);
