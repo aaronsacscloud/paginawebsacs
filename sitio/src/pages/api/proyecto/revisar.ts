@@ -40,13 +40,14 @@ export const POST: APIRoute = async ({ request }) => {
       })
       .eq('id', fila.id);
 
-    // Aprobar una etapa abre la siguiente. Es la mecánica entera del brief:
-    // nadie contesta la etapa 3 antes de que la 2 esté cerrada.
-    const sig = etapas.find((e) => e.orden === fila.orden + 1);
-    if (sig && sig.estado === 'bloqueada') {
-      await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).eq('id', sig.id);
+    // Aprobar ya no abre nada: al firmar quedan todas abiertas. Esto solo
+    // recoge las que hubieran quedado bloqueadas antes del cambio.
+    const rezagadas = etapas.filter((e) => e.estado === 'bloqueada');
+    if (rezagadas.length) {
+      await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).in('id', rezagadas.map((e) => e.id));
     }
     await bitacora(brief.id, 'sacs', 'Etapa aprobada', def.clave, quien);
+    const sig = etapas.find((e) => e.orden === fila.orden + 1);
     return json({ ok: true, siguiente: sig?.clave || null });
   }
 

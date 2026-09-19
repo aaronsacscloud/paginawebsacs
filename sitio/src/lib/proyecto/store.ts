@@ -60,19 +60,29 @@ export async function etapasDe(briefId: string): Promise<EtapaFila[]> {
   const hay = new Set(filas.map((f) => f.clave));
   const faltan = ETAPAS.filter((e) => !hay.has(e.clave));
   if (faltan.length) {
+    // Una etapa que se agrega a un brief YA FIRMADO nace abierta. Si naciera
+    // bloqueada se quedaria asi para siempre: desde que el brief no es
+    // secuencial, nada la abriria despues. Se consulta solo cuando de verdad
+    // falta alguna, que es lo raro.
+    const { data: b } = await supabase
+      .from('proyecto_brief')
+      .select('firmado_at')
+      .eq('id', briefId)
+      .maybeSingle();
+    const inicial = b && (b as any).firmado_at ? 'abierta' : 'bloqueada';
     const nuevas = faltan.map((e) => ({
       brief_id: briefId,
       clave: e.clave,
       orden: e.orden,
-      estado: 'bloqueada',
+      estado: inicial,
     }));
     const { data: creadas } = await supabase.from('proyecto_etapa').insert(nuevas).select('*');
     filas.push(...(((creadas || []) as EtapaFila[]) || []));
   }
 
-  // Si se intercala una etapa nueva, las viejas se quedarían con el orden de
-  // antes y la secuencia "aprobar abre la siguiente" saltaría etapas. Aquí se
-  // sincroniza contra la definición, que es la única fuente de verdad.
+  // Si se intercala una etapa nueva, las viejas se quedarian con el orden de
+  // antes y la lista saldria desordenada. Aqui se sincroniza contra la
+  // definicion, que es la unica fuente de verdad del orden.
   for (const e of ETAPAS) {
     const f = filas.find((x) => x.clave === e.clave);
     if (f && f.orden !== e.orden) {

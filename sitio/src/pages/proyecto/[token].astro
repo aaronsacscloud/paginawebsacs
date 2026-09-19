@@ -1,7 +1,8 @@
 ---
 // Brief de proyecto por etapas. El cliente entra con un link — sin cuenta, sin
-// contraseña — firma la portada y a partir de ahí contesta una etapa a la vez.
-// Sacs aprueba cada etapa y esa aprobación abre la siguiente.
+// contraseña — firma la portada y a partir de ahí contesta las etapas EN EL
+// ORDEN QUE QUIERA: al firmar se abren todas. Cada una se envía a revisión por
+// separado y Sacs la aprueba o la devuelve con preguntas.
 //
 // La portada se pinta en el servidor (es un documento y tiene que verse
 // completa aunque el JS tarde). Las etapas se pintan en el navegador desde
@@ -130,16 +131,17 @@ const fechaFirma = brief.firmado_at
           {firmado && <span class="pb-plegar" aria-hidden="true"></span>}
         </div>
         <p class="pb-parr">
-          El brief va por etapas. Se abre una a la vez: ustedes la contestan,
-          la envían, Sacs la revisa y —cuando queda completa— la aprueba. Esa
-          aprobación abre la siguiente. Nada se pierde: lo que escriban se
-          guarda solo conforme lo escriben, y pueden volver otro día con el
-          mismo link.
+          El brief va por etapas y, en cuanto firmen, <b>se abren todas</b>.
+          Contesten en el orden que les convenga: si hoy tienen a la mano las
+          fotos pero no los precios, empiecen por las fotos. Cada etapa se
+          envía a revisión por separado, Sacs la revisa y —cuando queda
+          completa— la aprueba. Nada se pierde: lo que escriban se guarda solo
+          conforme lo escriben, y pueden volver otro día con el mismo link.
         </p>
         <p class="pb-parr">
-          Se hace así por una razón práctica: si las cinco etapas se abren
-          juntas, se contestan a medias y el proyecto arranca sobre supuestos.
-          Una etapa aprobada es una decisión cerrada que ya no se rediscute.
+          Arriba les vamos marcando por dónde conviene seguir, pero es una
+          sugerencia, no un candado. Lo único que sí es definitivo: una etapa
+          aprobada es una decisión cerrada que ya no se rediscute.
         </p>
       </section>
 
@@ -618,6 +620,9 @@ const fechaFirma = brief.firmado_at
 
 .pb-et-cuerpo { padding: 4px 22px 24px; border-top: 1px solid var(--linea); }
 
+.pb-puerta-libre {
+  margin: 10px 0 0; font-size: .82rem; line-height: 1.45; color: var(--tenue);
+}
 .pb-previa-nota {
   margin: 18px 0 4px; padding: 15px 18px; border-radius: 11px;
   background: var(--papel-2); border: 1px dashed var(--linea-fuerte);
@@ -1278,7 +1283,7 @@ const fechaFirma = brief.firmado_at
       }
       if (firmoRecien) {
         celebrar('medio', '¡Brief firmado!',
-          'Ya se abrió la primera etapa. Se contesta una a la vez, y se guarda solo.');
+          'Ya se abrieron las ' + ETAPAS.length + ' etapas. Contesta en el orden que quieras: se guarda solo.');
         return;
       }
       // Las aprobaciones llegan mientras el cliente no está: sin esto se
@@ -1307,7 +1312,7 @@ const fechaFirma = brief.firmado_at
         // que está esperando revisión.
         const activa = SACS
           ? (ETAPAS.find((e) => e.estado === 'enviada') || ETAPAS.find((e) => e.estado === 'cambios') || ETAPAS.find((e) => e.estado === 'abierta'))
-          : (ETAPAS.find((e) => e.estado === 'cambios') || ETAPAS.find((e) => e.estado === 'abierta'));
+          : sugerida();
         abierta = activa ? activa.clave : null;
       }
       pintar();
@@ -1368,7 +1373,7 @@ const fechaFirma = brief.firmado_at
         return n ? { titulo: def.titulo, clave: f.clave, n } : null;
       }).filter(Boolean);
       const totalPreg = conPreg.reduce((a, x) => a + x.n, 0);
-      const enTurno = ETAPAS.find((e) => e.estado === 'abierta' || e.estado === 'cambios');
+      const enTurno = sugerida();
       const defTurno = enTurno ? DEF.find((d) => d.clave === enTurno.clave) : null;
 
       if (conPuerta) {
@@ -1379,8 +1384,9 @@ const fechaFirma = brief.firmado_at
         // mensaje sobre algo que el cliente todavía no manda.
         banner = '<div class="pb-aviso-global">' +
           '<strong>Empieza firmando el brief</strong>' +
-          '<span>Con la firma se abre la primera etapa. Son ' + ETAPAS.length +
-          ', y solo se contesta una a la vez. <a href="#firma" data-firma>Ir a la firma</a></span></div>';
+          '<span>Con la firma se abren las ' + ETAPAS.length +
+          ' etapas de una vez, para contestarlas en el orden que quieras. ' +
+          '<a href="#firma" data-firma>Ir a la firma</a></span></div>';
       } else if (totalPreg) {
         banner = '<div class="pb-aviso-global" data-tono="preguntas">' +
           '<strong>' + (totalPreg === 1 ? 'Hay una pregunta esperándote' : 'Hay ' + totalPreg + ' preguntas esperándote') + '</strong>' +
@@ -1390,10 +1396,10 @@ const fechaFirma = brief.firmado_at
         const f = ETAPAS.find((e) => e.clave === defTurno.clave);
         const n = contar(defTurno, borrador[defTurno.clave] || {});
         banner = '<div class="pb-aviso-global">' +
-          '<strong>Te toca: ' + esc(defTurno.titulo) + '</strong>' +
+          '<strong>Puedes seguir por: ' + esc(defTurno.titulo) + '</strong>' +
           '<span>' + n.hechas + ' de ' + n.total + ' contestadas' +
           (n.faltanReq ? ' · faltan ' + n.faltanReq + ' obligatorias para poder enviarla' : ' · ya puedes enviarla') +
-          '</span></div>';
+          ' · o abre cualquier otra etapa, están todas disponibles</span></div>';
       } else if (aprobadas === ETAPAS.length) {
         banner = '<div class="pb-aviso-global" data-tono="listo">' +
           '<strong>El brief está completo</strong><span>Las ocho etapas quedaron aprobadas. Nos ponemos en contacto para arrancar.</span></div>';
@@ -1462,13 +1468,15 @@ const fechaFirma = brief.firmado_at
         '<div class="pb-puerta-t">' +
           (faltan
             ? (faltan === 1 ? 'Sacs te dejó una pregunta' : 'Sacs te dejó ' + faltan + ' preguntas')
-            : 'Te toca contestar') +
+            : 'Puedes seguir por aquí') +
         '</div>' +
         '<p><b>Etapa ' + enCurso.orden + ' · ' + esc(defCurso.titulo) + '</b></p>' +
         '<div class="pb-puerta-riel"><span style="width:' + pct + '%"></span></div>' +
         '<p class="pb-puerta-n">' + n.hechas + ' de ' + n.total + ' preguntas contestadas' +
           (n.faltanReq ? ' · ' + n.faltanReq + ' obligatorias sin contestar' : '') + '</p>' +
-        '<button type="button" class="pb-btn pb-puerta-btn" data-ver="' + enCurso.clave + '">Continuar ahí</button>';
+        '<button type="button" class="pb-btn pb-puerta-btn" data-ver="' + enCurso.clave + '">Continuar ahí</button>' +
+        '<p class="pb-puerta-libre">Es una sugerencia: las ' + ETAPAS.length +
+        ' etapas están abiertas y puedes contestarlas en el orden que quieras.</p>';
     }
 
     const vacioCliente = (v) =>
@@ -1521,23 +1529,15 @@ const fechaFirma = brief.firmado_at
     /**
      * Lo que va a pedir una etapa que todavía no se abre. Se enseñan las
      * preguntas —agrupadas y con su ayuda— pero sin un solo campo que se pueda
-     * llenar: la regla de "una a la vez" no se toca, y aun así el cliente
-     * puede ir juntando el material de las siguientes.
+     * llenar, para que el cliente vaya juntando el material.
+     *
+     * Desde que el brief dejo de ser secuencial esto solo se ve ANTES de
+     * firmar: firmada la portada, las doce quedan abiertas.
      */
     function vistaPrevia(def, fila) {
-      // El motivo tiene que ser el REAL. Decir "se abre cuando firmes" a alguien
-      // que ya firmó, o nombrar una etapa que ya está aprobada, se lee como
-      // "no me registraron la firma" — y eso termina en una llamada.
-      const trabando = ETAPAS
-        .filter((e) => e.orden < fila.orden && e.estado !== 'aprobada')
-        .sort((a, b) => a.orden - b.orden)[0];
-      const defTrabando = trabando ? DEF.find((d) => d.clave === trabando.clave) : null;
-      let motivo;
-      if (!FIRMADO) motivo = 'Se abre en cuanto firmes el brief.';
-      else if (defTrabando) {
-        motivo = 'Se abre en cuanto quede aprobada la etapa ' + trabando.orden +
-          ', <b>' + esc(defTrabando.titulo) + '</b>.';
-      } else motivo = 'Se abre en cuanto terminemos la etapa anterior.';
+      const motivo = FIRMADO
+        ? 'Se abre en cuanto la habilitemos de nuestro lado.'
+        : 'Se abre en cuanto firmes el brief — junto con todas las demás.';
 
       let h = '<div class="pb-previa-nota">' +
         '<span class="pb-campo-t">Todavía no se puede contestar</span>' +
@@ -1630,7 +1630,7 @@ const fechaFirma = brief.firmado_at
             '<textarea data-cierre="' + fila.clave + '" placeholder="Un párrafo para ellos (opcional)"></textarea>' +
             '<div class="pb-rev-acc">' +
             '<button type="button" class="pb-btn pb-btn-verde" data-responder="' + fila.clave + '">Mandar la revisión</button>' +
-            '<span class="pb-et-pie-nota">Si dejas al menos una pregunta, la etapa regresa a ellos. Si no dejas ninguna, se aprueba y se abre la siguiente.</span>' +
+            '<span class="pb-et-pie-nota">Si dejas al menos una pregunta, la etapa regresa a ellos. Si no dejas ninguna, se aprueba.</span>' +
             '</div><div class="pb-error" data-reverr="' + fila.clave + '" hidden></div></div>';
         }
         if (fila.estado === 'enviada' && !SACS) {
@@ -1704,6 +1704,31 @@ const fechaFirma = brief.firmado_at
       const hechas = def.campos.filter((c) => lleno(resp[c.id])).length;
       const faltanReq = def.campos.filter((c) => c.requerido && !lleno(resp[c.id])).length;
       return { total, hechas, faltanReq };
+    }
+
+    /**
+     * Por donde conviene seguir. El brief ya no es secuencial —se contesta en
+     * el orden que quiera el cliente—, pero aterrizar en "doce etapas
+     * abiertas, tu veras" es peor que no abrirlas: hay que proponer UNA.
+     *
+     * El orden de preferencia es el del apuro real: primero donde Sacs dejo
+     * una pregunta esperando, luego lo que ya se empezo y quedo a medias, y
+     * al final la primera sin tocar.
+     */
+    function sugerida() {
+      const editables = ETAPAS.filter((e) => e.estado === 'abierta' || e.estado === 'cambios');
+      const conPregunta = editables.find((e) => {
+        const def = DEF.find((d) => d.clave === e.clave);
+        return def && def.campos.some((c) => esperaCliente(hiloDe(e.clave, c.id)));
+      });
+      if (conPregunta) return conPregunta;
+      const empezada = editables.find((e) => {
+        const def = DEF.find((d) => d.clave === e.clave);
+        if (!def) return false;
+        const n = contar(def, borrador[e.clave] || {});
+        return n.hechas > 0 && n.hechas < n.total;
+      });
+      return empezada || editables[0] || null;
     }
 
     function barra(def, resp, clave) {

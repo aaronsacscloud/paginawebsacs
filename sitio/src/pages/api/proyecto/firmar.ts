@@ -4,8 +4,8 @@ import { briefPorToken, etapasDe, bitacora, json } from '../../../lib/proyecto/s
 
 export const prerender = false;
 
-// Firmar el brief. Es lo que arranca el proyecto: hasta que se firma, la
-// etapa 1 sigue bloqueada. Firmar dos veces no hace nada — la primera firma
+// Firmar el brief. Es lo que arranca el proyecto: hasta que se firma, las
+// etapas siguen bloqueadas. Firmar dos veces no hace nada — la primera firma
 // es la que vale y no se puede sobrescribir desde aquí.
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   const body = await request.json().catch(() => ({}));
@@ -46,11 +46,17 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     .eq('id', brief.id)
     .is('firmado_at', null);
 
-  // Firmado: se abre la primera etapa.
+  // Firmado: se abren TODAS las etapas, no solo la primera.
+  //
+  // El brief dejo de ser secuencial a peticion del dueno (19-sep-2026). El
+  // cliente conoce su negocio y no siempre tiene a la mano lo que pide la
+  // etapa 1; obligarlo a cerrarla para ver la 2 lo dejaba parado esperando un
+  // dato ajeno en vez de avanzar por donde si podia. Ahora contesta en el
+  // orden que quiera y cada etapa se envia a revision por separado.
   const etapas = await etapasDe(brief.id);
-  const primera = etapas.find((e) => e.orden === 1);
-  if (primera && primera.estado === 'bloqueada') {
-    await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).eq('id', primera.id);
+  const bloqueadas = etapas.filter((e) => e.estado === 'bloqueada').map((e) => e.id);
+  if (bloqueadas.length) {
+    await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).in('id', bloqueadas);
   }
 
   await bitacora(brief.id, 'cliente', 'Brief firmado', null, n);

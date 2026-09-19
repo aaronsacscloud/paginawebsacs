@@ -16,8 +16,12 @@ export const prerender = false;
  *   { token, clave, notas: [{ campo, texto, pregunta?: boolean }], cierre?: string }
  *
  * Si queda al menos una pregunta abierta, la etapa vuelve al cliente en
- * 'cambios'. Si no queda ninguna, se aprueba y se abre la siguiente. Esa es
- * toda la mecánica: no hay un botón de aprobar aparte que pueda contradecirla.
+ * 'cambios'. Si no queda ninguna, se aprueba. Esa es toda la mecánica: no hay
+ * un botón de aprobar aparte que pueda contradecirla.
+ *
+ * Aprobar ya NO abre la siguiente: desde el 19-sep-2026 todas las etapas
+ * quedan abiertas al firmar. Lo que sigue aquí es solo una red por si quedó
+ * alguna bloqueada de antes.
  */
 export const POST: APIRoute = async ({ request }) => {
   const user = await getSessionFromRequest(request);
@@ -63,10 +67,10 @@ export const POST: APIRoute = async ({ request }) => {
       .from('proyecto_etapa')
       .update({ estado: 'aprobada', aprobada_at: new Date().toISOString(), nota_sacs: cierre || null })
       .eq('id', fila.id);
-    const sig = etapas.find((e) => e.orden === fila.orden + 1);
-    if (sig && sig.estado === 'bloqueada') {
-      await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).eq('id', sig.id);
-      siguiente = sig.clave;
+    const rezagadas = etapas.filter((e) => e.estado === 'bloqueada');
+    if (rezagadas.length) {
+      await supabase.from('proyecto_etapa').update({ estado: 'abierta' }).in('id', rezagadas.map((e) => e.id));
+      siguiente = rezagadas.sort((a, b) => a.orden - b.orden)[0].clave;
     }
     await bitacora(brief.id, 'sacs', 'Etapa aprobada', def.clave, cierre || null);
   } else {
