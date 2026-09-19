@@ -214,3 +214,25 @@ viejos no tienen carpeta, sus fotos están planas en `public/images/` con
 prefijos (`hero-`, `suite-`, `caso-`, `proc-`, `plano-`). Ahí aparecieron tres
 más: dos laptops de activewear con un catálogo de torsos recortados en la
 pantalla y una mujer en bralette en la trastienda de multimarca.
+
+### Barrida de dignidad de todo el sitio, 19-sep-2026
+
+Se revisaron los 24 giros, foto por foto, con la regla completa. Resultado:
+
+| giro | fotos | fuera de regla | qué tenían |
+|---|---|---|---|
+| trajes de baño | 23 | **12** | seis maniquíes y bustos con el traje puesto, empleadas y clientas con el traje o con recortes en la ropa, un catálogo impreso con cuerpos |
+| activewear | 24 | 2 | las dos laptops mostraban en pantalla un catálogo de torsos recortados |
+| boutique multimarca | 24 | 1 | la mujer del fondo de la trastienda, en bralette |
+| joyería | 19 | 1 | un cuadro al fondo con una figura reclinada desnuda |
+| merch de eventos | 22 | 1 | una mujer con malla transparente sobre bralette |
+| lencería | 23 | 2 (ya corregidas antes) | catálogos impresos con modelos en ropa interior |
+| maternidad | 22 | 2 (ya corregidas antes) | empaques y un cartel con mujeres en ropa interior |
+| los otros 17 | — | 0 | — |
+
+Las 19 se rehicieron y las 19 pasaron la revisión. **Criterio que se aplicó y
+conviene mantener:** un busto o maniquí VESTIDO en una tienda de ropa es mueble
+normal de tienda y no incumple; lo que incumple es el maniquí o busto con la
+mercancía puesta cuando esa mercancía va sobre el cuerpo desnudo (traje de baño,
+lencería). Por eso los tres bustos vestidos de marcas de ropa se dejaron como
+están.
