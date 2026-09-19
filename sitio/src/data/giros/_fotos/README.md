@@ -193,3 +193,24 @@ salió boutique europea —muro blanco, herrajes dorados, banco de terciopelo,
 espejo arqueado— mientras `zona-mostrador` y `zona-probador` son pared verde,
 loseta y mostrador de melamina. Parecían dos negocios. En el prompt de la
 portada se nombran los materiales concretos de las zonas ya aprobadas.
+
+**11. En trajes de baño y lencería, el generador viste al maniquí con la
+mercancía.** La barrida de dignidad encontró 10 de 22 fotos del giro de trajes
+de baño fuera de regla, y seis eran el mismo error: un maniquí, un busto o una
+figura de aparador con el bikini puesto, casi siempre en un ventanal o al borde
+del cuadro, donde no se busca. Las otras cuatro eran empleadas o clientas con el
+traje puesto y un catálogo impreso con cuerpos. Decir «nadie en ropa interior»
+no basta: hay que prohibir **el maniquí, el busto, el torso y la figura de
+aparador**, en cualquier parte del cuadro, borrosos y a través de ventanales, y
+exigir que la mercancía se quede en gancho, doblada, en caja o en bolsa.
+
+El texto que sí funcionó, palabra por palabra, está en `ronda15.json`. Conviene
+pegarlo tal cual en todo giro cuya mercancía se usa sobre el cuerpo.
+
+**12. La barrida de dignidad se corre al final, giro por giro, sobre TODAS las
+fotos.** El referee de identidad revisa las que se corrigieron; las fallas de
+dignidad estaban en fotos que ya habían pasado. Y ojo con dónde viven: los giros
+viejos no tienen carpeta, sus fotos están planas en `public/images/` con
+prefijos (`hero-`, `suite-`, `caso-`, `proc-`, `plano-`). Ahí aparecieron tres
+más: dos laptops de activewear con un catálogo de torsos recortados en la
+pantalla y una mujer en bralette en la trastienda de multimarca.
