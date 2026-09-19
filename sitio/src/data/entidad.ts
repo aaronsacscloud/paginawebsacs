@@ -28,6 +28,38 @@ export const PRODUCTO_ID = `${SITIO}/#software`;
 export const NOMBRE = 'Sacs';
 export const DESCRIPCION = 'El sistema para marcas y tiendas de moda en México: inventario por talla y color, punto de venta, tienda en línea, mayoreo y WhatsApp sobre una sola base.';
 
+/** Datos legales y de contacto, confirmados por el dueño (19-sep-2026). Antes
+ *  este archivo declaraba a propósito que NO existían — mejor nada que
+ *  inventado. Ya existen: se agregan aquí, una sola vez, para que
+ *  `/nosotros` y el schema `Organization` los lean de la misma fuente. */
+export const RAZON_SOCIAL = 'DESARROLLOS TECNOLOGICOS CON AMOR E IMPACTO POSITIVO';
+export const RFC = 'DTA240507AX3';
+export const FUNDACION = '2014';
+export const EMAIL = 'hola@sacscloud.com';
+export const DOMICILIO = {
+  calle: 'Senda de Inspiración 19A',
+  colonia: 'Milenio III',
+  ciudad: 'Santiago de Querétaro',
+  estado: 'Querétaro',
+  cp: '76060',
+};
+
+/** El fundador, como entidad propia (Person) para que `Organization.founder`
+ *  y la ficha de `/nosotros` apunten al mismo `@id` en vez de declararlo dos
+ *  veces con el riesgo de que se desincronice. */
+export const AARON_ID = `${SITIO}/#aaron-herzberg`;
+
+export function fundador() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': AARON_ID,
+    name: 'Aaron Herzberg',
+    jobTitle: 'Director general y fundador',
+    sameAs: ['https://www.linkedin.com/in/aaronherzberg/'],
+  };
+}
+
 /** Perfiles verificables en otros sitios. Solo entra aquí lo confirmado a mano:
  *  inventar un `sameAs` que no existe (o que nadie revisó que siga activo) es
  *  peor que no tenerlo — un enlace roto en la ficha de identidad resta
@@ -66,8 +98,7 @@ export function organizacion() {
     ],
     /* El WhatsApp de ventas sale de la fuente única (src/lib/whatsapp.ts):
        si el número cambia, cambia en un solo lugar y este schema no se queda
-       con uno viejo. Solo se declara lo que existe de verdad — nada de
-       dirección, RFC, fecha de fundación ni número de empleados inventados. */
+       con uno viejo. */
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'sales',
@@ -76,6 +107,20 @@ export function organizacion() {
       areaServed: { '@type': 'Country', name: 'MX' },
       availableLanguage: ['Spanish'],
     },
+    legalName: RAZON_SOCIAL,
+    taxID: RFC,
+    foundingDate: FUNDACION,
+    telephone: WHATSAPP_LEGIBLE,
+    email: EMAIL,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: `${DOMICILIO.calle}, Col. ${DOMICILIO.colonia}`,
+      addressLocality: DOMICILIO.ciudad,
+      addressRegion: DOMICILIO.estado,
+      postalCode: DOMICILIO.cp,
+      addressCountry: 'MX',
+    },
+    founder: fundador(),
     ...(PERFILES.length ? { sameAs: PERFILES } : {}),
   };
 }

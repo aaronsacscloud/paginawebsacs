@@ -23,6 +23,10 @@ export default defineConfig({
   redirects: {
     // Formas en las que alguien escribe «entrar» buscando la app: todas
     // llegan a /entrar, la página del dominio principal que las resuelve.
+    /* /manifiesto se retiró el 19-sep-2026: era una página vacía (un comentario
+       en el código y nada más) que respondía 200. Va a /nosotros, que es donde
+       ahora sí está quién está detrás de Sacs. */
+    '/manifiesto': '/nosotros',
     '/login': '/entrar',
     '/acceso': '/entrar',
     '/iniciar-sesion': '/entrar',

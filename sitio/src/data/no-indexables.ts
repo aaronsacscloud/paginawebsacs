@@ -48,11 +48,6 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   // ganarle tráfico orgánico, quítese de aquí Y dele un enlace real primero
   // (Footer o /partners) — nunca solo lo segundo.
   '/buddy',
-  // VACÍAS desde el andamiaje original: el archivo solo tiene el comentario
-  // «el contenido irá aquí». Fuera del índice hasta que tengan texto propio;
-  // una página en blanco indexada resta, no suma.
-  '/nosotros',
-  '/manifiesto',
   // Transaccionales: se llega por el enlace del correo y sin token dan 400.
   // Que un buscador intente indexar un 400 no ayuda a nadie.
   '/agendar/cancelar',

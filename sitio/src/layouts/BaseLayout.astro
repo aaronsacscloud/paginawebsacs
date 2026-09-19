@@ -839,10 +839,12 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         const closeBtn = document.getElementById('cs-modal-close');
 
         // Links that should trigger the modal
+        /* 19-sep-2026: salen de aquí /nosotros y /manifiesto. La primera ya
+           tiene contenido real —equipo, domicilio, once años de oficio— y con
+           esta lista el clic abría un aviso de «próximamente» en vez de la
+           página. La segunda se retiró del sitio y ahora redirige. */
         const comingSoonSelectors = [
           'a[href="#"]',
-          'a[href="/nosotros"]',
-          'a[href="/manifiesto"]',
           'a[href="/componentes"]',
         ];
 

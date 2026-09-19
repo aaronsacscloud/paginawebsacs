@@ -1,12 +1,248 @@
 ---
+/**
+ * /nosotros — quiénes hacen Sacs.
+ *
+ * Antes era un cascarón: un comentario «el contenido irá aquí», sin equipo,
+ * sin domicilio, sin RFC, con `noindex`. Para un buscador y para un modelo,
+ * una página "sobre nosotros" vacía es la señal más barata de que no hay
+ * nadie real detrás del software. Los datos de esta página los confirmó el
+ * dueño el 7-sep-2026: equipo, año de arranque, razón social, RFC, domicilio
+ * y la calificación real de la ficha de Google. No se inventa nada más.
+ *
+ * El resto del contenido —qué problema resuelve Sacs, para quién y qué lo
+ * distingue— no se redacta desde cero: se reconstruye con lo que el propio
+ * sitio ya dice de sí mismo en src/data/entidad.ts, /llms.txt, /producto y
+ * los casos de éxito, para no repetir una historia distinta en cada lugar.
+ */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaDudas from '../components/CtaDudas.astro';
+import { waLink } from '../lib/whatsapp';
+import { EMAIL, DOMICILIO, AARON_ID, ENTIDAD_ID, PRODUCTO_ID, SITIO } from '../data/entidad';
+import { breadcrumbList } from '../lib/breadcrumb';
+
+const wa = waLink('¡Hola! Vi la página de Nosotros en Sacscloud y quiero saber más.');
+
+// Nombre · cargo · LinkedIn (solo dos lo tienen). Nada más se agrega sin que
+// el dueño lo confirme primero — es la misma regla que ya sigue `PERFILES`
+// en entidad.ts para los perfiles de la empresa.
+const equipo = [
+  {
+    id: 'aaron-herzberg',
+    nombre: 'Aaron Herzberg',
+    cargo: 'Director general y fundador',
+    linkedin: 'https://www.linkedin.com/in/aaronherzberg/',
+  },
+  {
+    id: 'andrea-gutierrez-araujo',
+    nombre: 'Andrea Gutierrez Araujo',
+    cargo: 'Consultor Sr',
+    linkedin: 'https://www.linkedin.com/in/andrea-g-araujo-095b75220/',
+  },
+  {
+    id: 'paul-nunez',
+    nombre: 'Paul Nuñez',
+    cargo: 'Lead Developer',
+    linkedin: null,
+  },
+  {
+    id: 'marisol-gutierrez',
+    nombre: 'Marisol Gutierrez',
+    cargo: 'Developer',
+    linkedin: null,
+  },
+  {
+    id: 'shormeiker-lugo',
+    nombre: 'Shormeiker Lugo',
+    cargo: 'Diseñador Sr',
+    linkedin: null,
+  },
+];
+
+const diferenciadores = [
+  {
+    title: 'Talla y color, no SKU suelto',
+    desc: 'Un vestido o un par de zapatos no es un producto: es una matriz de tallas y colores, cada una con su propia existencia y su propia curva. Es el dato que la mayoría del software de punto de venta trata como texto libre.',
+  },
+  {
+    title: 'Un sistema, no herramientas conectadas',
+    desc: 'Inventario, punto de venta, tienda en línea, mayoreo, compras, clientes y WhatsApp corren sobre la misma base. Una venta en el piso descuenta al instante lo que se ve en línea: no hay nada que sincronizar porque nunca estuvo separado.',
+  },
+  {
+    title: 'Hecho para cómo se vende moda en México',
+    desc: 'Apartados con anticipo, cambios de talla sin ticket, comisión por vendedora, mayoreo con lista de precios propia, TikTok Shop. Lo que ya hace la tienda de ropa, la boutique o la zapatería del día a día, no lo que hace un ERP genérico.',
+  },
+];
+
+const equipoSchema = equipo.map((m) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': m.id === 'aaron-herzberg' ? AARON_ID : `${SITIO}/#${m.id}`,
+  name: m.nombre,
+  jobTitle: m.cargo,
+  worksFor: { '@id': ENTIDAD_ID },
+  ...(m.linkedin ? { sameAs: [m.linkedin] } : {}),
+}));
+
+const aboutSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  '@id': `${SITIO}/nosotros#pagina`,
+  name: 'Nosotros — Sacs',
+  url: `${SITIO}/nosotros`,
+  about: { '@id': ENTIDAD_ID },
+  mainEntity: { '@id': ENTIDAD_ID },
+};
+
+const structuredData = [
+  aboutSchema,
+  ...equipoSchema,
+  breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Nosotros' }]),
+];
 ---
 
 <BaseLayout
-  title="Nosotros"
-  description="Conoce al equipo detrás de SACS."
-
-  noindex={true}
+  title="Nosotros — el equipo detrás de Sacs"
+  description="Sacs opera desde Querétaro desde 2014: quiénes somos, el equipo, qué problema resolvemos en retail de moda y cómo contactarnos."
+  structuredData={structuredData}
 >
-  <!-- About page content will go here -->
+  <!-- ═══ Hero ═══ -->
+  <section class="nos-hero">
+    <div class="nos-container">
+      <span class="nos-eyebrow">Nosotros</span>
+      <h1 class="nos-title">Software para retail de moda, hecho por quien lo usa todos los días</h1>
+      <p class="nos-sub">
+        Sacs arrancó en 2014. Once años después seguimos siendo un equipo chico
+        que construye para un solo tipo de negocio: tiendas de ropa, boutiques,
+        zapaterías, joyerías, marcas propias y mayoristas en México.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Qué hacemos ═══ -->
+  <section class="nos-que">
+    <div class="nos-container">
+      <div class="nos-header">
+        <span class="nos-eyebrow">Qué hacemos</span>
+        <h2 class="nos-h2">Un sistema para vender, controlar y fidelizar en moda</h2>
+        <p class="nos-header-sub">
+          Punto de venta, inventario por talla y color, tienda en línea,
+          mayoreo, compras, clientes y WhatsApp, sobre una sola base de datos.
+          No es una suite de módulos que hay que conectar: es un sistema
+          construido desde el principio alrededor de la talla y el color, que
+          es como de verdad se vende y se controla la ropa y el calzado.
+        </p>
+      </div>
+      <div class="nos-dif-grid">
+        {diferenciadores.map((d) => (
+          <div class="nos-dif-card">
+            <h3 class="nos-dif-title">{d.title}</h3>
+            <p class="nos-dif-desc">{d.desc}</p>
+          </div>
+        ))}
+      </div>
+      <p class="nos-ver-mas">
+        Ve <a href="/producto">todo lo que hace Sacs</a> o
+        <a href="/casos-de-exito">casos reales de clientes</a> — de una boutique
+        de playa en Tulum a 100+ puntos de venta simultáneos en un concierto.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Equipo ═══ -->
+  <section class="nos-equipo">
+    <div class="nos-container">
+      <div class="nos-header">
+        <span class="nos-eyebrow">El equipo</span>
+        <h2 class="nos-h2">Quién construye y quién acompaña la implementación</h2>
+      </div>
+      <div class="nos-equipo-grid">
+        {equipo.map((m) => (
+          <div class="nos-persona">
+            <h3 class="nos-persona-nombre">{m.nombre}</h3>
+            <p class="nos-persona-cargo">{m.cargo}</p>
+            {m.linkedin && (
+              <a href={m.linkedin} target="_blank" rel="noopener" class="nos-persona-li">
+                LinkedIn
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Dónde y cómo contactarnos ═══ -->
+  <section class="nos-contacto">
+    <div class="nos-container nos-contacto-inner">
+      <div class="nos-contacto-col">
+        <span class="nos-eyebrow">Dónde estamos</span>
+        <h2 class="nos-h2">{DOMICILIO.ciudad}</h2>
+        <p class="nos-contacto-text">
+          {DOMICILIO.calle}, Col. {DOMICILIO.colonia}, {DOMICILIO.ciudad},
+          {DOMICILIO.estado}, C.P. {DOMICILIO.cp}.
+        </p>
+        <p class="nos-contacto-text nos-rating">
+          4.7 sobre 5 en Google, con 113 reseñas.
+        </p>
+      </div>
+      <div class="nos-contacto-col">
+        <span class="nos-eyebrow">Cómo escribirnos</span>
+        <h2 class="nos-h2">WhatsApp o correo</h2>
+        <div class="nos-ctas">
+          <a href={wa} target="_blank" rel="noopener noreferrer" class="nos-btn nos-btn-primary">Escríbenos por WhatsApp</a>
+          <a href={`mailto:${EMAIL}`} class="nos-btn nos-btn-outline">{EMAIL}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CtaDudas />
+
+  <style>
+    .nos-container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .nos-eyebrow { font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto); display: block; margin-bottom: 14px; }
+    .nos-h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2rem); font-weight: 700; color: var(--color-text-primary); }
+    .nos-header { text-align: center; margin-bottom: 40px; }
+    .nos-header-sub { margin: 14px auto 0; max-width: 700px; font-size: 1rem; line-height: 1.65; color: var(--color-text-secondary); }
+
+    .nos-hero { padding: clamp(90px, 12vw, 150px) 0 clamp(56px, 7vw, 90px); background: var(--color-bg-secondary); text-align: center; }
+    .nos-title { font-family: var(--font-display); font-size: clamp(1.9rem, 4.2vw, 2.9rem); font-weight: 700; color: var(--color-text-primary); max-width: 760px; margin: 0 auto; }
+    .nos-sub { margin: 18px auto 0; max-width: 660px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.65; color: var(--color-text-secondary); }
+
+    .nos-que { padding: clamp(60px, 8vw, 110px) 0; background: #fff; }
+    .nos-dif-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .nos-dif-card { padding: 26px 24px; border: 1px solid var(--color-border-light); border-radius: 14px; background: var(--color-bg-card); }
+    .nos-dif-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); margin-bottom: 8px; }
+    .nos-dif-desc { font-size: 0.9375rem; line-height: 1.6; color: var(--color-text-secondary); }
+    .nos-ver-mas { text-align: center; margin-top: 36px; font-size: 0.9375rem; color: var(--color-text-secondary); }
+    .nos-ver-mas a { color: var(--color-primary-texto); font-weight: 600; text-decoration: none; }
+
+    .nos-equipo { padding: clamp(60px, 8vw, 110px) 0; background: var(--color-bg-primary); }
+    .nos-equipo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+    .nos-persona { padding: 22px 18px; border: 1px solid var(--color-border-light); border-radius: 14px; background: #fff; text-align: center; }
+    .nos-persona-nombre { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-text-primary); }
+    .nos-persona-cargo { margin-top: 4px; font-size: 0.875rem; color: var(--color-text-secondary); }
+    .nos-persona-li { margin-top: 12px; display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; font-weight: 600; color: var(--color-primary-texto); text-decoration: none; }
+
+    .nos-contacto { padding: clamp(60px, 8vw, 110px) 0; background: #fff; }
+    .nos-contacto-inner { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
+    .nos-contacto-text { margin-top: 14px; font-size: 1.0313rem; line-height: 1.6; color: var(--color-text-secondary); }
+    .nos-rating { font-weight: 600; color: var(--color-text-primary); }
+    .nos-ctas { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+    .nos-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.9875rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .nos-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+    .nos-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .nos-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .nos-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+    @media (max-width: 900px) {
+      .nos-dif-grid { grid-template-columns: 1fr; }
+      .nos-equipo-grid { grid-template-columns: repeat(2, 1fr); }
+      .nos-contacto-inner { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .nos-equipo-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </BaseLayout>
