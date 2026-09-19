@@ -932,9 +932,23 @@ Lo que quedó fuera y sigue pendiente:
 - [x] **Buzón**: se cuenta solo («avisando por WhatsApp…») y sigue a la siguiente → HECHO.
 - [x] 🔴 **El WhatsApp del buzón decía «nos llamaste»** en llamadas que hicimos NOSOTROS →
       ARREGLADO (ver el commit; salió a dos clientes reales y se paró en cuanto lo reportó).
-- [ ] **El loader de los botones**: «al darle clic en colgar que me muestre un loader o algo, que
-      se quede como trabajando y de ahí haga la acción; siempre el botón debe tener interacción».
+- [x] **El loader de los botones** → HECHO (Colgando… / Abriendo el micrófono… / Aplicando lo que
+      decidiste…, con 600 ms mínimo para que el clic siempre se vea).
 - [ ] **¿Dónde escucho las grabaciones?** → contestado en el chat; falta ponerlo en una pantalla:
       hoy se oyen desde la cabina («Oír la llamada») y el PDF/minuta va en el hilo, pero no hay una
       lista de grabaciones para buscar una de hace tres días.
 - [ ] **Las 5 mejoras extra por cada punto** que pidió (UX) — van saliendo con cada bloque.
+
+## 19-sep-2026 — de la jornada de llamadas del dueño
+
+- [x] 🔴 **El bucle que paraba la jornada** (tarjeta HECHA y sin salida) → ARREGLADO.
+- [x] 🔴 **La llamada de 19 min de Maela sin cierre** («Request timed out») → ARREGLADO y
+      RECUPERADA; más botón «Volver a leer» para cuando falla por saldo.
+- [x] 🔴 **«1 vez más» no se seleccionaba** (botón muerto) → ARREGLADO.
+- [x] 🔴 **«Le llamé y no se envió la plantilla»** (candado de cadencias) → ARREGLADO.
+- [x] **Móvil**: la pantalla propia de Llamadas no le pasaba `movil` a la cabina → ARREGLADO.
+- [ ] **Las 5 plantillas cálidas `_v2`** están PENDING en Meta. El código ya usa la primera
+      aprobada, así que entran solas — pero hay que CONFIRMAR que Meta las aprobó.
+- [ ] **Pantalla de grabaciones**: hoy sólo se oyen desde la tarjeta de la llamada. Falta poder
+      buscar una de hace tres días. (28 de 124 llamadas tienen audio: la grabación es a petición.)
+- [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep, sigue abierto).

@@ -43,7 +43,13 @@ import { telefonoWhatsApp } from '../telefono';
    Meta la apruebe. Meta no deja editar el texto de una plantilla aprobada; por
    eso se versiona en vez de corregirse. */
 const MARKETING = ['llamada_perdida_v2', 'llamada_perdida_v1'];
-const UTILITY = ['llamada_perdida_util_v2', 'llamada_perdida_util_v1'];
+/* ⚠️ `llamada_perdida_util_v2` NO está en esta lista aunque exista y esté
+   aprobada: Meta la reclasificó como MARKETING al revisarla. Una «utility» que
+   en realidad es marketing no sirve de respaldo — se bloquea por lo MISMO que
+   bloqueó a la principal, y el contacto se queda sin nada. La `_v3` es la que
+   volvió a salir UTILITY: seca, sin presentación de marca y sin dominio en el
+   pie, que es lo que hacía que Meta la leyera como promoción. */
+const UTILITY = ['llamada_perdida_util_v3', 'llamada_perdida_util_v1'];
 
 /** La primera de la lista que Meta ya tenga aprobada. */
 async function primeraViva(nombres: string[]): Promise<string | null> {
