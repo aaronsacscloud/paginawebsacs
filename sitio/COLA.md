@@ -934,7 +934,7 @@ Lo que quedó fuera y sigue pendiente:
       ARREGLADO (ver el commit; salió a dos clientes reales y se paró en cuanto lo reportó).
 - [x] **El loader de los botones** → HECHO (Colgando… / Abriendo el micrófono… / Aplicando lo que
       decidiste…, con 600 ms mínimo para que el clic siempre se vea).
-- [ ] **¿Dónde escucho las grabaciones?** → contestado en el chat; falta ponerlo en una pantalla:
+- [x] **¿Dónde escucho las grabaciones?** → contestado en el chat; falta ponerlo en una pantalla:
       hoy se oyen desde la cabina («Oír la llamada») y el PDF/minuta va en el hilo, pero no hay una
       lista de grabaciones para buscar una de hace tres días.
 - [ ] **Las 5 mejoras extra por cada punto** que pidió (UX) — van saliendo con cada bloque.
@@ -947,9 +947,9 @@ Lo que quedó fuera y sigue pendiente:
 - [x] 🔴 **«1 vez más» no se seleccionaba** (botón muerto) → ARREGLADO.
 - [x] 🔴 **«Le llamé y no se envió la plantilla»** (candado de cadencias) → ARREGLADO.
 - [x] **Móvil**: la pantalla propia de Llamadas no le pasaba `movil` a la cabina → ARREGLADO.
-- [ ] **Las 5 plantillas cálidas `_v2`** están PENDING en Meta. El código ya usa la primera
+- [x] **Las 5 plantillas cálidas `_v2`** → APROBADAS. Y las `_v3` de utility también (Meta reclasificó las `_v2` de utility como marketing; ver commit). Enganchadas. están PENDING en Meta. El código ya usa la primera
       aprobada, así que entran solas — pero hay que CONFIRMAR que Meta las aprobó.
-- [ ] **Pantalla de grabaciones**: hoy sólo se oyen desde la tarjeta de la llamada. Falta poder
+- [x] **Pantalla de grabaciones** → HECHA (buscar, oír, y bajar una sola voz en WAV para clonarla).: hoy sólo se oyen desde la tarjeta de la llamada. Falta poder
       buscar una de hace tres días. (28 de 124 llamadas tienen audio: la grabación es a petición.)
 - [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep, sigue abierto).
 
@@ -960,13 +960,13 @@ Lo que quedó fuera y sigue pendiente:
 - [x] **El select de «Abierta» se desborda** → HECHO: los cuatro controles del encabezado ceden en
       vez de tener un mínimo rígido de 118 px cada uno.
 - [x] **La conversación, 30% más ancha** y los laterales más chicos → HECHO (516 → 668 px).
-- [ ] **Poder COLAPSAR el panel de detalle** para agrandar todavía más la conversación.
-- [ ] **Quitar la píldora «NOTA» de la lista de conversaciones**: «satura demasiado la pantalla».
+- [x] **Poder COLAPSAR el panel de detalle** para agrandar todavía más la conversación.
+- [x] **Quitar la píldora «NOTA» de la lista de conversaciones**: «satura demasiado la pantalla».
 - [x] **La píldora «NOTA» de la lista** → QUITADA (la llevaban casi todas las filas).
 - [x] **Secciones del panel colapsadas por defecto** → HECHO (la llave sube a v4: por código ya
       nacían cerradas, pero su navegador tenía guardadas las que abrió una vez).
 - [x] **Colapsar el panel de detalle** → HECHO: pestaña de 30 px, se recuerda entre sesiones.
-- [ ] 📌 **REGLA DEL INBOX — siempre debe quedar claro QUÉ se le mandó al cliente.** «En vez de que
+- [x] 📌 **REGLA DEL INBOX — siempre debe quedar claro QUÉ se le mandó al cliente.** «En vez de que
       la plantilla diga [Document], que aparezca un preview del PDF, y si le doy clic que pueda ver
       rápido el documento.» Aplica a todo adjunto, no sólo a este caso.
       · YA DIAGNOSTICADO (19-sep): esos mensajes tienen `media_url` NULO en la base, así que hoy no
@@ -974,26 +974,36 @@ Lo que quedó fuera y sigue pendiente:
         mandar la plantilla. La causa raíz es que la minuta sale por `enviarPlantilla` a secas
         —camino que no espeja— en vez de `mandarPlantilla`, que sí guarda `mediaUrl` y `mime`.
         Arreglar eso primero; el preview sale solo detrás.
-- [ ] 🧹 **Sacar los comentarios internos del hilo** (telefonía, cierre con IA, secuencias): «lo
+- [x] 🧹 **Sacar los comentarios internos del hilo** (telefonía, cierre con IA, secuencias): «lo
       satura demasiado». Toda esa información se va a **Actividad**, cada cosa en su sección con su
       detalle. De secuencias basta con: en cuál está activo AHORA, en cuáles estuvo, y qué se mandó
       en cada una — sólo para contexto. Objetivo: que la información se lea más limpia y más clara.
-- [ ] 📊 **Más señales en el bloque Info de la ficha**, cada una con su modal de detalle al hacer
+- [x] 📊 **Más señales en el bloque Info de la ficha**, cada una con su modal de detalle al hacer
       clic: correos abiertos · correos con clic · reuniones completadas · reuniones agendadas ·
       secuencias activas · llamadas conectadas · llamadas realizadas.
-- [ ] **Quitar el chip del número (+1 ···0417) de la lista de conversaciones**: «lo ensucia mucho,
+- [x] **Quitar el chip del número (+1 ···0417) de la lista de conversaciones**: «lo ensucia mucho,
       ese espacio lo satura».
-- [ ] **El aviso «Meta limitó los mensajes de marketing» no va en la cabecera**: sólo en el mensaje
+- [x] **El aviso «Meta limitó los mensajes de marketing» no va en la cabecera**: sólo en el mensaje
       que fue rechazado. «Normalmente no es un tema a nivel general.»
-- [ ] 🐞 **Doble clic en el riel de «Notas» deja el panel en blanco** (el segundo clic lo cierra
+- [x] 🐞 **Doble clic en el riel de «Notas» deja el panel en blanco** (el segundo clic lo cierra
       pero la columna se queda vacía en vez de volver a Info).
-- [ ] 🧹 **El menú del inbox se ve saturado**: ordenarlo para que todo se lea más limpio (las dos
+- [x] 🧹 **El menú del inbox se ve saturado**: ordenarlo para que todo se lea más limpio (las dos
       listas con «Ver 6 más», las vistas, y lo de abajo).
-- [ ] **Vista «Con reunión próxima»** entre las vistas del inbox, para verificar rápido a quién le
+- [x] **Vista «Con reunión próxima»** entre las vistas del inbox, para verificar rápido a quién le
       toca reunión pronto.
-- [ ] **«Ver ficha» sobra en leads**: la ficha ya es lo que se ve en pantalla. Dejarlo sólo en
+- [x] **«Ver ficha» sobra en leads**: la ficha ya es lo que se ve en pantalla. Dejarlo sólo en
       clientes.
-- [ ] **La cuenta a la que pertenece el cliente, en el panel derecho**, para identificarlo rápido
+- [x] **La cuenta a la que pertenece el cliente, en el panel derecho**, para identificarlo rápido
       cuando ya tiene cuenta. Y si «Marca» está vacía, normalmente la marca ES el nombre de la
       cuenta: rellenarla desde ahí (caso Ramon, ligado a su cuenta).
 - ~~Plantilla que no se enviaba~~ → el dueño confirmó que no era un error; se omite.
+
+## 19-sep-2026 · lo ÚNICO que queda abierto de esta sesión
+
+- [ ] **El respaldo de utility debe hablar del MISMO tema** (viene del 15-sep). «A Jakob se le
+      envió lo del nuevo número, pero al no salir el de marketing salió este de utility que no
+      tiene nada que ver con el mensaje anterior.» Hoy la cascada elige la utility por
+      configuración, no por tema: hay que emparejarlas por asunto.
+- [ ] **QA visual de todo lo de hoy.** El servidor de dev lleva la tarde caído por
+      `src/data/navigation.ts` (otra sesión). Todo está compilado, medido contra la base y con 8
+      suites en verde, pero las pantallas nuevas no las he visto con el navegador.
