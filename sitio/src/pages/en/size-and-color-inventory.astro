@@ -1,0 +1,169 @@
+---
+/**
+ * /en/size-and-color-inventory — targets "size and color inventory
+ * software" / "size run inventory management".
+ *
+ * Paired in hreflang with /producto/inventario-omnicanal (the closest real
+ * match: same feature, same underlying data model). Content is grounded in
+ * that page's real copy and the "Existencia por talla y color" category of
+ * comparisonCategories in src/data/plans.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EnHeader from '../../components/en/EnHeader.astro';
+import EnFooter from '../../components/en/EnFooter.astro';
+import EnClose from '../../components/en/EnClose.astro';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+
+const features = [
+  { title: 'A size × color matrix per style', desc: 'A style is not one line item — it is every size in every color it comes in, each with its own count. Capture it once and the system builds the full grid.' },
+  { title: 'One stock count, every channel', desc: 'The floor, your online store, and your social channels read and write the same stock. A sale on Instagram takes the same unit off the shelf as a sale at the counter.' },
+  { title: 'Barcodes and QR per size and color', desc: 'Every size/color combination gets its own code, so scanning at receiving, at the counter, or during a count always resolves to the exact variant.' },
+  { title: 'Bulk catalog upload', desc: 'Load your full catalog at once instead of typing in each style, size and color by hand.' },
+  { title: 'Physical counts without closing the store', desc: 'Count by scanner, cycle by cycle, while the store stays open — a missing unit shows up the day it happens, not at year-end inventory.' },
+  { title: 'Transfers between stores', desc: 'Move a size from the store that has too much of it to the one that is asking for it, before the size run breaks.' },
+  { title: 'Real-time stock per store', desc: 'What size is where, right now — not what a spreadsheet said yesterday.' },
+  { title: 'Full movement history per item', desc: 'Every unit has a trail: received, transferred, sold, returned. When a count is off, you can see why.' },
+];
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}/en/size-and-color-inventory#app`,
+  name: 'Sacs Size & Color Inventory',
+  description: 'Inventory software built around the size × color matrix for apparel and footwear: one stock count across every store and channel, transfers, and cycle counts without closing the store.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Inventory Management Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+  inLanguage: 'en-US',
+  audience: {
+    '@type': 'BusinessAudience',
+    audienceType: 'Apparel and footwear brands and stores that stock products by size and color',
+  },
+  featureList: features.map((f) => f.title),
+};
+
+const faqs = [
+  {
+    q: 'Why not just use a generic inventory system with size and color as product options?',
+    a: 'You can, but every size/color pair ends up as a separate flat SKU with no shared identity as "one style." That makes size-curve reporting, transfers by size, and catalog uploads far more manual than treating the size × color grid as the native unit, which is what this is built around.',
+  },
+  {
+    q: 'Does the online store share stock with the physical stores?',
+    a: 'Yes — one inventory count is read and written by the floor, the online store, and social selling channels. A sale in any of them updates the same stock.',
+  },
+  {
+    q: 'Can I count inventory without closing the store?',
+    a: 'Yes. Cycle counts run by scanner while the store stays open, so a discrepancy is caught close to when it happened instead of at a single year-end count.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+
+const breadcrumb = breadcrumbList([
+  { name: 'Home', url: `${SITIO}/en` },
+  { name: 'Size & color inventory' },
+]);
+
+const structuredData = [softwareSchema, faqSchema, breadcrumb];
+---
+
+<BaseLayout
+  title="Size & Color Inventory Software — Sacs"
+  description="Inventory built around the size × color grid, not a flat SKU count: one stock number across every store and channel, transfers, barcodes, and cycle counts without closing the store."
+  locale="en"
+  structuredData={structuredData}
+  bareLayout
+>
+  <EnHeader />
+
+  <section class="en-hero">
+    <div class="en-container">
+      <span class="en-eyebrow">Size &amp; color inventory</span>
+      <h1 class="en-h1">A style isn't one SKU — it's a size run in every color</h1>
+      <p class="en-sub">
+        Most inventory tools bolt size and color on as product "options,"
+        which turns every combination into a disconnected flat line. Sacs
+        treats the size × color matrix as the actual unit of stock, so one
+        style keeps one identity across every size, every color, every store,
+        and every channel that sells it.
+      </p>
+      <div class="en-ctas">
+        <a href="/prueba-gratis" class="en-btn en-btn-primary">Try 7 days free</a>
+        <a href="/producto/inventario-omnicanal" class="en-btn en-btn-outline">Full feature list (ES)</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="en-features">
+    <div class="en-container">
+      <div class="en-header-block">
+        <span class="en-eyebrow">Built around the grid</span>
+        <h2 class="en-h2">What changes when size and color are the base unit</h2>
+      </div>
+      <div class="en-features-grid">
+        {features.map((f) => (
+          <div class="en-feature">
+            <h3>{f.title}</h3>
+            <p>{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="en-next">
+    <div class="en-container en-next-inner">
+      <div>
+        <span class="en-eyebrow">Related</span>
+        <h2 class="en-h2">The rest of the catalog</h2>
+      </div>
+      <div class="en-next-grid">
+        <a href="/en/apparel-pos" class="en-next-card">Apparel POS — where the grid gets sold</a>
+        <a href="/en/fashion-erp" class="en-next-card">Fashion ERP — distribution across stores</a>
+        <a href="/en/wholesale-apparel-software" class="en-next-card">Wholesale — the same grid, a buyer's price list</a>
+        <a href="/en/pricing" class="en-next-card">Pricing — plans and what's included</a>
+      </div>
+    </div>
+  </section>
+
+  <EnClose />
+  <EnFooter />
+
+  <style>
+    .en-container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .en-eyebrow { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto); display: block; margin-bottom: 14px; }
+    .en-h1 { font-family: var(--font-display); font-size: clamp(2rem, 4.2vw, 2.9rem); font-weight: 700; color: var(--color-text-primary); max-width: 820px; margin: 0 auto; letter-spacing: -0.02em; }
+    .en-h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2.125rem); font-weight: 700; color: var(--color-text-primary); }
+    .en-sub { margin: 18px auto 0; max-width: 700px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.65; color: var(--color-text-secondary); }
+    .en-hero { padding: clamp(56px, 9vw, 100px) 0 clamp(48px, 7vw, 80px); background: var(--color-bg-secondary); text-align: center; }
+    .en-ctas { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .en-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 0.9375rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .en-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+    .en-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .en-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .en-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+    .en-features { padding: clamp(64px, 9vw, 110px) 0; background: #fff; }
+    .en-header-block { text-align: center; margin-bottom: 44px; }
+    .en-features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .en-feature { padding: 24px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 14px; }
+    .en-feature h3 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 8px; }
+    .en-feature p { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0; }
+
+    .en-next { padding: clamp(56px, 8vw, 100px) 0; background: var(--color-bg-secondary); }
+    .en-next-inner { display: flex; flex-direction: column; gap: 28px; }
+    .en-next-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .en-next-card { display: block; padding: 20px 22px; background: #fff; border: 1px solid var(--color-border-light); border-radius: 12px; font-weight: 700; font-size: 0.9375rem; color: var(--color-text-primary); text-decoration: none; transition: border-color 0.15s ease; }
+    .en-next-card:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+    @media (max-width: 760px) {
+      .en-features-grid, .en-next-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,88 @@
+---
+/**
+ * EnFooter — pie propio del track en inglés, mismo motivo que EnHeader
+ * (ver ese archivo): `Footer.astro` cuelga los 21 giros y los 4 pilares en
+ * español, y no hay página en inglés a la que apuntarlos.
+ *
+ * Los links de cuenta/legal (privacidad, términos, iniciar sesión) SÍ
+ * apuntan a las páginas reales del sitio en español — no existen versiones
+ * en inglés de esas páginas — y se marcan "(ES)" para no fingir que están
+ * traducidas.
+ */
+const year = new Date().getFullYear();
+
+const platform = [
+  { href: '/en/fashion-erp', label: 'Fashion ERP' },
+  { href: '/en/apparel-pos', label: 'Apparel POS' },
+  { href: '/en/wholesale-apparel-software', label: 'Wholesale software' },
+  { href: '/en/size-and-color-inventory', label: 'Size & color inventory' },
+  { href: '/en/pricing', label: 'Pricing' },
+];
+---
+
+<footer class="en-footer">
+  <div class="en-footer-inner">
+    <div class="en-footer-brand">
+      <span class="en-footer-logo">Sacs</span>
+      <p class="en-footer-tagline">
+        The operating system for fashion brands and stores across Mexico and
+        Latin America — size &amp; color inventory, POS, online store,
+        wholesale and WhatsApp on a single base.
+      </p>
+      <a href="/" class="en-footer-lang">Ver Sacscloud en español →</a>
+    </div>
+
+    <div class="en-footer-col">
+      <p class="en-footer-heading">Platform</p>
+      <ul class="en-footer-list">
+        {platform.map((p) => <li><a href={p.href}>{p.label}</a></li>)}
+      </ul>
+    </div>
+
+    <div class="en-footer-col">
+      <p class="en-footer-heading">Company</p>
+      <ul class="en-footer-list">
+        <li><a href="/enterprise">Sacs Enterprise (ES)</a></li>
+        <li><a href="/casos-de-exito">Case studies (ES)</a></li>
+        <li><a href="/contacto">Contact / book a demo (ES)</a></li>
+        <li><a href="https://app.sacscloud.com/">Log in</a></li>
+      </ul>
+    </div>
+
+    <div class="en-footer-col">
+      <p class="en-footer-heading">Legal</p>
+      <ul class="en-footer-list">
+        <li><a href="/privacidad">Privacy notice (ES)</a></li>
+        <li><a href="/terminos">Terms of use (ES)</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="en-footer-bottom">
+    <p>&copy; {year} Sacs. All rights reserved.</p>
+    <p class="en-footer-impact">10% of every license funds social impact.</p>
+  </div>
+</footer>
+
+<style>
+  .en-footer { background: var(--color-bg-dark); color: var(--color-text-on-dark-muted); padding: 64px 0 32px; }
+  .en-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+  .en-footer-logo { display: block; font-family: 'Clash Display', var(--font-display); font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+  .en-footer-tagline { font-size: 0.875rem; line-height: 1.6; color: var(--color-text-on-dark-subtle); max-width: 320px; margin: 0 0 16px; }
+  .en-footer-lang { font-size: 0.8125rem; font-weight: 700; color: var(--color-primary-claro, #7FA3F0); text-decoration: none; }
+  .en-footer-lang:hover { text-decoration: underline; }
+  .en-footer-heading { font-family: var(--font-body); font-size: 0.875rem; font-weight: 700; color: #fff; margin: 0 0 16px; }
+  .en-footer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+  .en-footer-list a { font-size: 0.875rem; color: var(--color-text-on-dark-subtle); text-decoration: none; }
+  .en-footer-list a:hover { color: #fff; }
+  .en-footer-bottom { max-width: 1280px; margin: 40px auto 0; padding: 20px clamp(20px, 4vw, 48px) 0; border-top: 1px solid var(--color-border-on-dark); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  .en-footer-bottom p { font-size: 0.75rem; color: var(--color-text-on-dark-faint); margin: 0; }
+  .en-footer-impact { color: var(--color-primary-claro, #7FA3F0) !important; font-weight: 500; }
+
+  @media (max-width: 860px) {
+    .en-footer-inner { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .en-footer-inner { grid-template-columns: 1fr; gap: 28px; }
+  }
+</style>

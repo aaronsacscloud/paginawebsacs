@@ -1,0 +1,260 @@
+---
+/**
+ * /en/pricing — English pair of /planes.
+ *
+ * Numbers come straight from `src/data/plans.ts` (the same source /planes
+ * renders) — nothing here is a separate, hand-typed price that can drift.
+ * Only the USD column is shown: `currencyMap` in src/i18n/config.ts already
+ * maps the `en` locale to `usd`.
+ *
+ * IMPORTANT and easy to get wrong for an English/US reader: Sacs bills in
+ * Mexican pesos (MXN) with CFDI (Mexican tax invoice) — see
+ * `pricingFaqs` in plans.ts, "Facturamos en pesos mexicanos con CFDI". The
+ * USD figures below are a reference conversion, not the billing currency.
+ * Saying otherwise would be exactly the kind of invented commercial
+ * presence this build was told not to fabricate.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EnHeader from '../../components/en/EnHeader.astro';
+import EnFooter from '../../components/en/EnFooter.astro';
+import EnClose from '../../components/en/EnClose.astro';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { plans, universalFeatures } from '../../data/plans';
+import { breadcrumbList } from '../../lib/breadcrumb';
+
+const planNames: Record<string, { name: string; blurb: string; highlights: string[] }> = {
+  vende: {
+    name: 'Sell',
+    blurb: 'Your first store. Ring up sales at the counter and online, by size and color.',
+    highlights: [
+      'Point of sale, with or without internet',
+      'Layaway with deposits, quotes and credit sales',
+      'Online store on the same stock as the floor',
+      'Retail and wholesale price lists',
+    ],
+  },
+  controla: {
+    name: 'Control',
+    blurb: 'Running more than one store. See what size is where, right now, and move it to where it sells.',
+    highlights: [
+      'Real-time stock by store, transfers and warehouse distribution',
+      'Physical counts without closing the store',
+      'Purchase orders and supplier receiving',
+      'Sell-through, ABC and rotation reporting',
+    ],
+  },
+  fideliza: {
+    name: 'Retain & Grow',
+    blurb: 'For customers who come back every season, not once a year.',
+    highlights: [
+      'Full customer profile: in-store, online and WhatsApp purchases',
+      'Points, store credit and loyalty tiers',
+      'Branded customer portal and gift cards',
+      'Email and WhatsApp campaigns to customer segments',
+    ],
+  },
+  automatiza: {
+    name: 'Automate',
+    blurb: 'AI moves sizes between your stores and tells you what to buy next season.',
+    highlights: [
+      'Dedicated AI specialist for your automations',
+      'AI-proposed transfers that complete a broken size run',
+      'Rules that fire on their own ("size sells out → PO goes out")',
+      '24/7 support and an open API for +600 integrations',
+    ],
+  },
+};
+
+const faqs = [
+  {
+    q: 'What currency do you bill in?',
+    a: "Sacs is a Mexican company and bills in Mexican pesos (MXN) with a CFDI tax invoice. The USD prices on this page are a reference so you can budget in dollars — your card is charged the MXN equivalent, not a separate USD price.",
+  },
+  {
+    q: 'Can I change plans at any time?',
+    a: 'Yes. Move up or down whenever you need to, at no penalty. If peak season needs more, upgrade for a couple of months and downgrade after — the change takes effect on your next billing cycle.',
+  },
+  {
+    q: 'What happens to my catalog if I cancel?',
+    a: 'Everything stays available for 90 days after cancellation. Export your styles with their sizes and colors, your customer list, and your sales history whenever you want. There is no cancellation fee.',
+  },
+  {
+    q: 'Do you load my catalog, or do I have to do it myself?',
+    a: "We load it for you at no extra cost on every paid plan. On Control and above, our team uploads each style with its full size-and-color matrix in 1 to 3 business days — you just review it.",
+  },
+  {
+    q: 'What payment methods do you accept?',
+    a: 'Credit and debit cards (including international cards), Mexican bank transfer (SPEI), and cash payment at OXXO convenience stores in Mexico.',
+  },
+  {
+    q: 'Is support included, or is it extra?',
+    a: 'Included on every plan, by chat and WhatsApp, at no extra cost. Sell and Control answer 9 AM–5 PM CT with tickets resolved in 30–90 minutes; Retain & Grow resolves in 15–30 minutes; Automate includes 24/7 support and a dedicated AI specialist.',
+  },
+];
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  '@id': `${SITIO}/en/pricing#producto`,
+  name: 'Sacs',
+  description: 'Fashion retail software: size and color inventory, point of sale, online store, and wholesale — plans from Sell to Automate.',
+  isPartOf: { '@id': PRODUCTO_ID },
+  inLanguage: 'en-US',
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'USD',
+    lowPrice: Math.min(...plans.map((p) => p.annual.usd)),
+    highPrice: Math.max(...plans.map((p) => p.annual.usd)),
+    offerCount: plans.length,
+    url: `${SITIO}/en/pricing`,
+  },
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+
+const breadcrumb = breadcrumbList([
+  { name: 'Home', url: `${SITIO}/en` },
+  { name: 'Pricing' },
+]);
+
+const structuredData = [softwareSchema, faqSchema, breadcrumb];
+---
+
+<BaseLayout
+  title="Sacs Pricing — Fashion POS & Inventory Plans"
+  description="Sacs plans for fashion brands and stores, from a single boutique to multi-store operations with AI automation. Prices from src/data/plans.ts, shown in USD; billed in MXN."
+  locale="en"
+  structuredData={structuredData}
+  bareLayout
+>
+  <EnHeader />
+
+  <section class="en-hero">
+    <div class="en-container">
+      <span class="en-eyebrow">Pricing</span>
+      <h1 class="en-h1">Plans that grow from one boutique to a full chain</h1>
+      <p class="en-sub">
+        Every plan includes point of sale, an online store, unlimited styles with
+        all their sizes and colors, and chat + WhatsApp support. No setup fee,
+        no long-term contract.
+      </p>
+      <p class="en-currency-note">
+        Prices below are in USD for reference. Sacs is billed in Mexican pesos
+        (MXN) with a CFDI tax invoice — see the currency FAQ below.
+      </p>
+    </div>
+  </section>
+
+  <section class="en-plans">
+    <div class="en-container">
+      <div class="en-plans-grid">
+        {plans.map((p) => {
+          const info = planNames[p.id];
+          return (
+            <div class={`en-plan-card ${p.highlighted ? 'en-plan-card--highlight' : ''}`}>
+              {p.highlighted && <span class="en-plan-badge">Most popular</span>}
+              <h2 class="en-plan-name">{info.name}</h2>
+              <p class="en-plan-blurb">{info.blurb}</p>
+              <p class="en-plan-price">
+                <span class="en-plan-price-num">${p.annual.usd}</span>
+                <span class="en-plan-price-unit">/mo per store, billed annually</span>
+              </p>
+              <p class="en-plan-price-alt">or ${p.monthly.usd}/mo billed monthly</p>
+              <ul class="en-plan-features">
+                {info.highlights.map((h) => <li>{h}</li>)}
+              </ul>
+              <a href="/prueba-gratis" class="en-btn en-btn-primary en-plan-cta">Try 7 days free</a>
+            </div>
+          );
+        })}
+      </div>
+
+      <div class="en-universal">
+        <p class="en-universal-title">Included in every plan</p>
+        <ul class="en-universal-list">
+          {universalFeatures.map((f) => <li>{f}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="en-faq">
+    <div class="en-container en-faq-inner">
+      <h2 class="en-h2">Pricing questions</h2>
+      <div class="en-faq-list">
+        {faqs.map((f) => (
+          <details class="en-faq-item">
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <EnClose
+    title="Questions about which plan fits?"
+    demoDesc="We'll walk through your store count, catalog size, and channels, and tell you honestly which plan fits — in USD terms if that's easier for you."
+  />
+  <EnFooter />
+
+  <style>
+    .en-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .en-eyebrow { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto); display: block; margin-bottom: 14px; }
+    .en-h1 { font-family: var(--font-display); font-size: clamp(2rem, 4.4vw, 3rem); font-weight: 700; color: var(--color-text-primary); max-width: 780px; margin: 0 auto; letter-spacing: -0.02em; }
+    .en-h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2rem); font-weight: 700; color: var(--color-text-primary); }
+    .en-sub { margin: 18px auto 0; max-width: 640px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.6; color: var(--color-text-secondary); }
+    .en-currency-note { margin: 16px auto 0; max-width: 640px; font-size: 0.875rem; color: var(--color-text-tertiary); }
+    .en-hero { padding: clamp(56px, 9vw, 100px) 0 clamp(48px, 7vw, 80px); background: var(--color-bg-secondary); text-align: center; }
+
+    .en-plans { padding: clamp(56px, 8vw, 100px) 0; background: #fff; }
+    .en-plans-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: stretch; }
+    .en-plan-card { position: relative; display: flex; flex-direction: column; padding: 26px 22px; border: 1.5px solid var(--color-border-light); border-radius: 16px; background: var(--color-bg-card); }
+    .en-plan-card--highlight { border-color: var(--color-primary-texto); box-shadow: 0 16px 40px rgba(0,0,0,0.08); }
+    .en-plan-badge { position: absolute; top: -12px; left: 22px; background: var(--color-primary-btn, #4470D8); color: #fff; font-size: 0.6875rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .en-plan-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary); margin: 6px 0 8px; }
+    .en-plan-blurb { font-size: 0.875rem; line-height: 1.5; color: var(--color-text-secondary); min-height: 60px; }
+    .en-plan-price { margin: 12px 0 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+    .en-plan-price-num { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--color-text-primary); }
+    .en-plan-price-unit { font-size: 0.75rem; color: var(--color-text-tertiary); }
+    .en-plan-price-alt { font-size: 0.75rem; color: var(--color-text-tertiary); margin: 2px 0 18px; }
+    .en-plan-features { list-style: none; margin: 0 0 24px; padding: 0; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .en-plan-features li { font-size: 0.8438rem; line-height: 1.45; color: var(--color-text-secondary); padding-left: 18px; position: relative; }
+    .en-plan-features li::before { content: '✓'; position: absolute; left: 0; color: var(--color-primary-texto); font-weight: 700; }
+    .en-plan-cta { justify-content: center; width: 100%; }
+
+    .en-universal { margin-top: 48px; padding: 32px; background: var(--color-bg-secondary); border-radius: 16px; }
+    .en-universal-title { font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; margin: 0 0 16px; }
+    .en-universal-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 24px; }
+    .en-universal-list li { font-size: 0.875rem; color: var(--color-text-secondary); padding-left: 18px; position: relative; }
+    .en-universal-list li::before { content: '✓'; position: absolute; left: 0; color: var(--color-primary-texto); font-weight: 700; }
+
+    .en-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .en-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+    .en-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+
+    .en-faq { padding: clamp(56px, 8vw, 100px) 0; background: #fff; border-top: 1px solid var(--color-border-light); }
+    .en-faq-inner { max-width: 800px; }
+    .en-faq-list { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; }
+    .en-faq-item { padding: 18px 20px; border: 1px solid var(--color-border-light); border-radius: 12px; }
+    .en-faq-item summary { font-weight: 700; font-size: 0.9375rem; color: var(--color-text-primary); cursor: pointer; }
+    .en-faq-item p { margin: 12px 0 0; font-size: 0.9rem; line-height: 1.6; color: var(--color-text-secondary); }
+
+    @media (max-width: 980px) {
+      .en-plans-grid { grid-template-columns: repeat(2, 1fr); }
+      .en-universal-list { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .en-plans-grid { grid-template-columns: 1fr; }
+      .en-universal-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

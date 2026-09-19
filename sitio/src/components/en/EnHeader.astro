@@ -1,0 +1,120 @@
+---
+/**
+ * EnHeader — header propio del track en inglés (/en/*).
+ *
+ * Por qué no se reusa `Nav.astro`: ese componente es el mega-menú completo
+ * del sitio en español (23 giros, 28 funciones de producto, todo el copy en
+ * español), y pasarle `locale="en"` generaría enlaces a `/en/giros/...` y
+ * `/en/producto/...` que NO existen — exactamente el problema de 404s que ya
+ * le pasó al selector de idioma que se quitó de Nav.astro el 18-sep-2026.
+ * El track en inglés es acotado a 6 páginas propias, así que tiene su propio
+ * header pequeño y 100% en inglés, con un solo puente de vuelta al sitio en
+ * español (el link "ES").
+ */
+import { waLink } from '../../lib/whatsapp';
+
+const wa = waLink("Hi! I'd like to see Sacs in action for my fashion brand. Can we book a demo?");
+
+const links = [
+  { href: '/en/fashion-erp', label: 'Fashion ERP' },
+  { href: '/en/apparel-pos', label: 'Apparel POS' },
+  { href: '/en/wholesale-apparel-software', label: 'Wholesale' },
+  { href: '/en/size-and-color-inventory', label: 'Inventory' },
+  { href: '/en/pricing', label: 'Pricing' },
+];
+---
+
+<header class="en-header" id="en-header">
+  <div class="en-header-inner">
+    <a href="/en/" class="en-logo" aria-label="Sacs — Home">
+      <span class="en-wordmark">Sacs</span>
+      <span class="en-lockup">Fashion Commerce</span>
+    </a>
+
+    <nav class="en-nav" aria-label="English site navigation">
+      {links.map((l) => (
+        <a href={l.href} class="en-nav-link">{l.label}</a>
+      ))}
+    </nav>
+
+    <div class="en-actions">
+      <a href="/" class="en-lang-switch" title="Ver este sitio en español">ES</a>
+      <a href={wa} class="en-btn en-btn-outline" target="_blank" rel="noopener noreferrer">Book a demo</a>
+      <a href="/prueba-gratis" class="en-btn en-btn-primary">Start free trial</a>
+    </div>
+
+    <button class="en-burger" id="en-burger" aria-expanded="false" aria-controls="en-mobile-menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <div class="en-mobile-menu" id="en-mobile-menu">
+    {links.map((l) => (
+      <a href={l.href} class="en-mobile-link">{l.label}</a>
+    ))}
+    <div class="en-mobile-divider"></div>
+    <a href="/" class="en-mobile-link en-mobile-link-muted">Ver en español (ES)</a>
+    <a href={wa} class="en-btn en-btn-outline en-mobile-btn" target="_blank" rel="noopener noreferrer">Book a demo</a>
+    <a href="/prueba-gratis" class="en-btn en-btn-primary en-mobile-btn">Start free trial</a>
+  </div>
+</header>
+
+<style>
+  .en-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .en-header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 4vw, 48px);
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: clamp(16px, 3vw, 40px);
+  }
+  .en-logo { display: flex; align-items: baseline; gap: 8px; text-decoration: none; flex-shrink: 0; }
+  .en-wordmark { font-family: 'Clash Display', var(--font-display); font-size: 26px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.01em; }
+  .en-lockup { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--color-text-tertiary); border-left: 1.5px solid var(--color-border); padding-left: 8px; white-space: nowrap; }
+  .en-nav { display: flex; align-items: center; gap: clamp(14px, 2vw, 26px); flex: 1; }
+  .en-nav-link { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; color: var(--color-text-secondary); text-decoration: none; white-space: nowrap; }
+  .en-nav-link:hover { color: var(--color-primary-texto); }
+  .en-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .en-lang-switch { font-size: 0.8125rem; font-weight: 700; color: var(--color-text-tertiary); text-decoration: none; padding: 6px 8px; border-radius: 6px; }
+  .en-lang-switch:hover { color: var(--color-text-primary); background: var(--color-bg-secondary); }
+  .en-btn { display: inline-flex; align-items: center; padding: 10px 18px; border-radius: 9px; font-size: 0.875rem; font-weight: 700; text-decoration: none; white-space: nowrap; transition: background 0.15s ease, transform 0.15s ease; }
+  .en-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+  .en-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+  .en-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); }
+  .en-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+  .en-burger { display: none; flex-direction: column; gap: 5px; width: 32px; height: 32px; align-items: center; justify-content: center; background: none; border: 0; cursor: pointer; margin-left: auto; }
+  .en-burger span { width: 22px; height: 2px; background: var(--color-text-primary); border-radius: 2px; transition: transform 0.2s ease, opacity 0.2s ease; }
+  .en-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .en-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .en-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .en-mobile-menu { display: none; flex-direction: column; padding: 8px 20px 20px; border-top: 1px solid var(--color-border-light); background: #fff; }
+  .en-mobile-menu.is-open { display: flex; }
+  .en-mobile-link { padding: 12px 0; font-family: var(--font-body); font-size: 1rem; font-weight: 600; color: var(--color-text-primary); text-decoration: none; border-bottom: 1px solid var(--color-border-light); }
+  .en-mobile-link-muted { color: var(--color-text-tertiary); font-weight: 500; font-size: 0.875rem; }
+  .en-mobile-divider { height: 1px; }
+  .en-mobile-btn { justify-content: center; margin-top: 10px; }
+
+  @media (max-width: 900px) {
+    .en-nav, .en-actions { display: none; }
+    .en-burger { display: flex; }
+  }
+</style>
+
+<script>
+  const burger = document.getElementById('en-burger');
+  const menu = document.getElementById('en-mobile-menu');
+  burger?.addEventListener('click', () => {
+    const open = menu?.classList.toggle('is-open');
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+</script>

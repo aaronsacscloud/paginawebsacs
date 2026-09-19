@@ -91,6 +91,12 @@ const modelosNegocioPie = modelosNegocio.filter((m) => m.href !== '/enterprise')
     <div class="footer-divider"></div>
     <div class="footer-bottom">
       <p class="footer-copyright">&copy; {currentYear} Sacs. {t('footer.copyright', locale)}</p>
+      {/* Único puente al track en inglés (19-sep-2026): 6 páginas reales en
+          /en/ (ver src/pages/en/). No se pone en el mega-menú (Nav.astro) más
+          que como un link discreto en la barra superior — este del pie es el
+          que un visitante que llegó en español y de repente quiere ver el
+          sitio en inglés puede encontrar sin buscar. */}
+      <a href="/en/" class="footer-en-link">Sacs in English →</a>
       <p class="footer-impact">{t('footer.impact', locale)}</p>
     </div>
   </div>
@@ -138,6 +144,8 @@ const modelosNegocioPie = modelosNegocio.filter((m) => m.href !== '/enterprise')
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-4); }
   .footer-copyright { font-size: 0.75rem; color: var(--color-text-on-dark-faint); }
   .footer-impact { font-size: 0.75rem; font-weight: 500; color: var(--color-primary-claro, #7FA3F0); }
+  .footer-en-link { font-size: 0.75rem; font-weight: 600; color: var(--color-text-on-dark-subtle); text-decoration: none; }
+  .footer-en-link:hover { color: #fff; text-decoration: underline; }
 
   @media (max-width: 1023px) {
     .footer-pilares { grid-template-columns: repeat(2, 1fr); }

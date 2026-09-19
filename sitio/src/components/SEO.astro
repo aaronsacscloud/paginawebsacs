@@ -44,7 +44,11 @@ const fullTitle = /\bsacs(cloud)?\b/i.test(title) ? title : `${title} | Sacs`;
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={imageUrl} />
-<meta property="og:locale" content="es_MX" />
+<!-- El idioma de la ficha social sale de la RUTA, no de una constante: desde el
+     19-sep-2026 hay seis páginas reales en /en/, y anunciarlas como es_MX le
+     dice a Facebook y a LinkedIn que la página está en español cuando no lo
+     está. -->
+<meta property="og:locale" content={Astro.url.pathname.startsWith('/en/') || Astro.url.pathname === '/en' ? 'en_US' : 'es_MX'} />
 <meta property="og:site_name" content="SACS" />
 
 <!-- Twitter -->

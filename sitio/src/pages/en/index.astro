@@ -1,0 +1,205 @@
+---
+/**
+ * /en/ — hub of the English track.
+ *
+ * SCOPE NOTE (19-sep-2026, see also the comment at the top of each other
+ * /en/ page): Sacs runs 111 pages, all in Spanish, built for the Mexican
+ * fashion market. This track does NOT translate the site — it opens 6 new
+ * pages aimed at the actual audience that searches in English for this
+ * category: fashion and apparel brands and wholesalers operating between
+ * the US, Mexico and Latin America, and English-language buyers researching
+ * terms like "fashion ERP", "apparel POS", "size and color inventory
+ * software" and "wholesale apparel software". The other ~105 pages (Mexican
+ * business verticals, trade-show guides, peso pricing FAQs written for a
+ * Mexican shopkeeper) don't serve that reader, so they stay in Spanish —
+ * translating them would be expensive to keep in sync and wouldn't rank for
+ * anything real in English anyway.
+ *
+ * The 6 pages: this hub, /en/pricing, /en/fashion-erp, /en/apparel-pos,
+ * /en/wholesale-apparel-software, /en/size-and-color-inventory.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EnHeader from '../../components/en/EnHeader.astro';
+import EnFooter from '../../components/en/EnFooter.astro';
+import EnClose from '../../components/en/EnClose.astro';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { plans } from '../../data/plans';
+
+const startingUsd = Math.min(...plans.map((p) => p.annual.usd));
+
+const topics = [
+  {
+    href: '/en/fashion-erp',
+    title: 'Fashion ERP',
+    desc: 'Distribution from your warehouse, sell-through by store, wholesale + retail on one catalog, and season planning — for brands running more than a handful of stores.',
+  },
+  {
+    href: '/en/apparel-pos',
+    title: 'Apparel POS',
+    desc: 'A point of sale built around size and color: holds a sale while a customer tries another size, prints WhatsApp receipts, and keeps ringing up sales with no internet.',
+  },
+  {
+    href: '/en/wholesale-apparel-software',
+    title: 'Wholesale apparel software',
+    desc: 'Retail and wholesale price lists on the same inventory. Buyer catalogs, order minimums, deposits and pre-orders — no second system to reconcile.',
+  },
+  {
+    href: '/en/size-and-color-inventory',
+    title: 'Size & color inventory',
+    desc: 'One stock count per size and color, synced across every store, your online shop, and social channels. Not a flat SKU count.',
+  },
+];
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}/en#app`,
+  name: 'Sacs',
+  description: 'The system for fashion brands and stores in Mexico and Latin America: size and color inventory, point of sale, online store, wholesale, and WhatsApp on a single base.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Retail Management Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+  inLanguage: 'en-US',
+  audience: {
+    '@type': 'BusinessAudience',
+    audienceType: 'Fashion and apparel brands, wholesalers and retail chains operating in Mexico, the US–Mexico corridor and Latin America',
+  },
+  featureList: topics.map((t) => t.title),
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'USD',
+    price: startingUsd,
+    availability: 'https://schema.org/InStock',
+    url: `${SITIO}/en/pricing`,
+  },
+};
+---
+
+<BaseLayout
+  title="Sacs — Fashion Inventory, POS & Wholesale Software"
+  description="Sacs is the platform fashion and apparel brands use to run size and color inventory, point of sale, online store, and wholesale from one catalog. Built for Mexico and Latin America."
+  locale="en"
+  structuredData={softwareSchema}
+  bareLayout
+>
+  <EnHeader />
+
+  <section class="en-hero">
+    <div class="en-container">
+      <span class="en-eyebrow">Retail software for fashion brands</span>
+      <h1 class="en-h1">Inventory, POS and wholesale — built for fashion, not retail in general</h1>
+      <p class="en-sub">
+        Sacs runs size and color inventory, point of sale, an online store, and wholesale
+        from a single catalog — one stock count, not three systems that drift apart.
+        Built in Mexico for brands and wholesalers operating across Mexico,
+        the US–Mexico corridor, and Latin America.
+      </p>
+      <div class="en-ctas">
+        <a href="/prueba-gratis" class="en-btn en-btn-primary">Try 7 days free</a>
+        <a href="/en/pricing" class="en-btn en-btn-outline">See pricing (from {startingUsd} USD/mo)</a>
+      </div>
+      <div class="en-proof">
+        <div class="en-proof-item"><strong>4.8/5</strong><span>Google Reviews</span></div>
+        <div class="en-proof-item"><strong>3,000+</strong><span>active brands in Mexico &amp; Latin America</span></div>
+        <div class="en-proof-item"><strong>99.9%</strong><span>uptime</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="en-topics">
+    <div class="en-container">
+      <div class="en-header-block">
+        <span class="en-eyebrow">Four ways teams find this page</span>
+        <h2 class="en-h2">Whatever term you searched, here's the module</h2>
+      </div>
+      <div class="en-topics-grid">
+        {topics.map((t) => (
+          <a href={t.href} class="en-topic-card">
+            <h3>{t.title}</h3>
+            <p>{t.desc}</p>
+            <span class="en-topic-link">Read more <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="en-fit">
+    <div class="en-container en-fit-inner">
+      <div>
+        <span class="en-eyebrow">Where Sacs fits</span>
+        <h2 class="en-h2">Built in Mexico, for the Mexico–US–Latin America fashion trade</h2>
+        <p class="en-fit-text">
+          Sacs is a Mexican company and Sacs bills in Mexican pesos (MXN) — it is
+          not a US-based vendor, and we don't claim offices or local support
+          in the United States. What it does well is the operational core of a
+          fashion business on either side of the border: a size run that has
+          to stay intact across stores, a wholesale price list that has to sit
+          on the same inventory as retail, and a season that has to be read
+          week by week instead of guessed at. If your brand, manufacturer, or
+          wholesale operation works across Mexico and Latin America — or you
+          buy from or sell into that market — that's the problem this
+          platform is built to solve.
+        </p>
+        <a href="/enterprise" class="en-fit-link">See Sacs Enterprise, in Spanish (ES) →</a>
+      </div>
+      <div class="en-fit-stats">
+        <p class="en-fit-stats-title">On one catalog:</p>
+        <ul>
+          <li>Point of sale + online store + wholesale</li>
+          <li>Facebook, Instagram, WhatsApp and TikTok Shop</li>
+          <li>Multi-store transfers and warehouse distribution</li>
+          <li>Sell-through, ABC and rotation reporting</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <EnClose />
+  <EnFooter />
+
+  <style>
+    .en-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .en-eyebrow { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto); display: block; margin-bottom: 14px; }
+    .en-h1 { font-family: var(--font-display); font-size: clamp(2.1rem, 4.6vw, 3.4rem); font-weight: 700; color: var(--color-text-primary); max-width: 900px; margin: 0 auto; letter-spacing: -0.02em; }
+    .en-h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: 700; color: var(--color-text-primary); }
+    .en-sub { margin: 20px auto 0; max-width: 720px; font-size: clamp(1rem, 1.6vw, 1.1875rem); line-height: 1.65; color: var(--color-text-secondary); }
+
+    .en-hero { padding: clamp(56px, 9vw, 100px) 0 clamp(56px, 8vw, 90px); background: var(--color-bg-secondary); text-align: center; }
+    .en-ctas { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .en-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.9875rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .en-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+    .en-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .en-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .en-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+    .en-proof { margin-top: 40px; display: flex; justify-content: center; gap: clamp(24px, 5vw, 56px); flex-wrap: wrap; }
+    .en-proof-item { display: flex; flex-direction: column; align-items: center; }
+    .en-proof-item strong { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-text-primary); }
+    .en-proof-item span { font-size: 0.8125rem; color: var(--color-text-tertiary); max-width: 160px; text-align: center; }
+
+    .en-topics { padding: clamp(64px, 9vw, 120px) 0; background: #fff; }
+    .en-header-block { text-align: center; margin-bottom: 44px; }
+    .en-topics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .en-topic-card { display: flex; flex-direction: column; gap: 10px; padding: 30px 26px; border: 1px solid var(--color-border-light); border-radius: 16px; text-decoration: none; background: var(--color-bg-card); transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+    .en-topic-card:hover { transform: translateY(-3px); border-color: var(--color-primary-texto); box-shadow: 0 12px 32px rgba(0,0,0,0.07); }
+    .en-topic-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+    .en-topic-card p { font-size: 0.9375rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0; flex: 1; }
+    .en-topic-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 700; color: var(--color-primary-texto); }
+
+    .en-fit { padding: clamp(64px, 9vw, 120px) 0; background: var(--color-bg-secondary); }
+    .en-fit-inner { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+    .en-fit-text { margin-top: 14px; font-size: 1.0313rem; line-height: 1.7; color: var(--color-text-secondary); }
+    .en-fit-link { display: inline-block; margin-top: 16px; font-weight: 700; color: var(--color-primary-texto); text-decoration: none; }
+    .en-fit-stats { background: var(--color-bg-dark); border-radius: 16px; padding: 32px 30px; color: #fff; }
+    .en-fit-stats-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0 0 16px; }
+    .en-fit-stats ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    .en-fit-stats li { font-size: 0.9375rem; color: rgba(255,255,255,0.85); padding-left: 20px; position: relative; }
+    .en-fit-stats li::before { content: '✓'; position: absolute; left: 0; color: #9DB9F0; font-weight: 700; }
+
+    @media (max-width: 860px) {
+      .en-topics-grid { grid-template-columns: 1fr; }
+      .en-fit-inner { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

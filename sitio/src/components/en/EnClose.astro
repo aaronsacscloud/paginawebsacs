@@ -1,0 +1,60 @@
+---
+/**
+ * EnClose — cierre de página del track en inglés. Equivalente ligero de
+ * `CtaDudas.astro` (el cierre del resto del sitio), pero sin su animación de
+ * scroll: ese componente tiene texto en español cableado directo en el
+ * markup ("Agenda una demo", "Reservar horario"), no solo en props, así que
+ * no se puede traducir pasándole otros props. Se rehace en inglés desde
+ * cero para el track — mismo trabajo (agenda una demo / empieza gratis),
+ * forma simple.
+ */
+import { waLink } from '../../lib/whatsapp';
+
+interface Props {
+  title?: string;
+  demoDesc?: string;
+  startDesc?: string;
+}
+const {
+  title = 'Still have questions?',
+  demoDesc = "We'll show you Sacs with your own catalog and use case. 30 minutes, no pressure.",
+  startDesc = 'Create your account and set up your store in about 15 minutes. No credit card.',
+} = Astro.props;
+
+const wa = waLink("Hi! I'd like to see Sacs in action for my fashion brand. Can we book a demo?");
+---
+
+<section class="en-close">
+  <div class="en-close-inner">
+    <h2 class="en-close-title">{title}</h2>
+    <div class="en-close-cards">
+      <a href={wa} class="en-close-card" target="_blank" rel="noopener noreferrer">
+        <h3>Book a demo</h3>
+        <p>{demoDesc}</p>
+        <span class="en-close-cta">Chat with us on WhatsApp <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </a>
+      <a href="/prueba-gratis" class="en-close-card en-close-card-alt">
+        <h3>Start free trial</h3>
+        <p>{startDesc}</p>
+        <span class="en-close-cta">Try 7 days free <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .en-close { background: #0E0D0C; padding: clamp(72px, 10vw, 120px) 0; }
+  .en-close-inner { max-width: 1000px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); text-align: center; }
+  .en-close-title { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; margin: 0 0 40px; }
+  .en-close-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; }
+  .en-close-card { display: block; padding: 30px 28px; border-radius: 16px; background: #171614; border: 1px solid rgba(255,255,255,0.08); text-decoration: none; transition: transform 0.18s ease, border-color 0.18s ease; }
+  .en-close-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.22); }
+  .en-close-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 10px; }
+  .en-close-card p { font-size: 0.9375rem; line-height: 1.55; color: rgba(255,255,255,0.65); margin: 0 0 18px; }
+  .en-close-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 700; color: #9DB9F0; }
+  .en-close-card-alt .en-close-cta { color: #B9E3B0; }
+
+  @media (max-width: 640px) {
+    .en-close-cards { grid-template-columns: 1fr; }
+  }
+</style>

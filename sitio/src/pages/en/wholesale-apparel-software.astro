@@ -1,0 +1,202 @@
+---
+/**
+ * /en/wholesale-apparel-software — targets "wholesale apparel software",
+ * "B2B order management for fashion brands", "line sheet software".
+ *
+ * No hreflang pair: there is no real Spanish equivalent of this page today.
+ * `contenido.md` §1a flags "sistema para mayoreo de ropa" as the single
+ * biggest content gap on the ES side too — nothing to translate FROM, and
+ * inventing a fake ES pair just to satisfy hreflang would be worse than
+ * having none (see the comment in src/i18n/utils.ts). If a Spanish
+ * `/software-para/mayoreo-de-ropa` gets built later, add the pair there.
+ *
+ * Content is grounded in the real wholesale-relevant rows of
+ * comparisonCategories in src/data/plans.ts ("Apartados, abonos y pedidos",
+ * the wholesale price-list rows across categories) — not invented features.
+ * The trade-show paragraph describes a real Mexican market workflow
+ * (Intermoda, SAPICA) as context for the problem, not as a Sacs feature
+ * that doesn't exist yet.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EnHeader from '../../components/en/EnHeader.astro';
+import EnFooter from '../../components/en/EnFooter.astro';
+import EnClose from '../../components/en/EnClose.astro';
+import { SITIO, PRODUCTO_ID } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+
+const features = [
+  { title: 'One inventory, two kinds of price lists', desc: 'Retail, mid-wholesale and wholesale price lists sit on the same stock. A style sold to a boutique buyer and a walk-in customer is one count, not two catalogs to keep in sync.' },
+  { title: 'Price breaks by quantity or customer type', desc: 'Automatic pricing by how much a buyer orders and what kind of account they are — no manual discount typed in at checkout.' },
+  { title: 'Deposits and pre-orders', desc: 'Take a deposit against a wholesale order or a pre-order for a style that has not shipped yet, with partial payments tracked to close-out.' },
+  { title: 'A catalog buyers can order from', desc: 'A wholesale-facing catalog view of your line, so a buyer sees availability by size run instead of calling to ask what is in stock.' },
+  { title: 'Retail channels on the same stock', desc: 'Your online store, WhatsApp, and social channels sell from the same inventory a wholesale order draws down — no separate reservation to track by hand.' },
+];
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}/en/wholesale-apparel-software#app`,
+  name: 'Sacs Wholesale',
+  description: 'Wholesale and retail apparel software on one catalog: price lists by customer type and quantity, deposits and pre-orders, and a buyer-facing catalog — all on the same size-and-color inventory.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'B2B Commerce Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+  inLanguage: 'en-US',
+  audience: {
+    '@type': 'BusinessAudience',
+    audienceType: 'Fashion brands and manufacturers selling wholesale to boutiques and retailers, alongside their own retail or ecommerce',
+  },
+  featureList: features.map((f) => f.title),
+};
+
+const faqs = [
+  {
+    q: 'Do I need a separate system for wholesale and retail?',
+    a: 'No — that is the specific problem this is built to avoid. Wholesale and retail price lists sit on the same inventory, so a style is one stock count regardless of which channel sells it.',
+  },
+  {
+    q: 'Can I take a deposit on a wholesale order that has not shipped?',
+    a: 'Yes. Deposits and pre-orders are tracked with partial payments until the balance is settled and the order ships.',
+  },
+  {
+    q: 'Does this replace how I sell at trade shows?',
+    a: "Not the trade-show floor itself — there is no dedicated trade-show mode today. What it does solve is what happens after: the order you took by hand becomes a real order against your actual size-and-color stock, on the same catalog your retail and wholesale customers already share, instead of a second spreadsheet to reconcile.",
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+
+const breadcrumb = breadcrumbList([
+  { name: 'Home', url: `${SITIO}/en` },
+  { name: 'Wholesale apparel software' },
+]);
+
+const structuredData = [softwareSchema, faqSchema, breadcrumb];
+---
+
+<BaseLayout
+  title="Wholesale Apparel Software — Sacs"
+  description="Wholesale and retail on one inventory: price lists by customer type and quantity, deposits and pre-orders, and a buyer-facing catalog for fashion brands selling B2B."
+  locale="en"
+  structuredData={structuredData}
+  bareLayout
+>
+  <EnHeader />
+
+  <section class="en-hero">
+    <div class="en-container">
+      <span class="en-eyebrow">Wholesale apparel software</span>
+      <h1 class="en-h1">Retail and wholesale on one catalog, not two systems to reconcile</h1>
+      <p class="en-sub">
+        Most fashion brands that sell wholesale end up running it next to
+        retail in a second spreadsheet, or a second system, because the two
+        don't share stock. Sacs puts wholesale price lists on the same
+        size-and-color inventory your stores and online shop already use — a
+        style sold by the dozen and a style sold one at a time are the same
+        stock count.
+      </p>
+      <div class="en-ctas">
+        <a href="/contacto" class="en-btn en-btn-primary">Talk through your wholesale setup</a>
+        <a href="/prueba-gratis" class="en-btn en-btn-outline">Try 7 days free</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="en-features">
+    <div class="en-container">
+      <div class="en-header-block">
+        <span class="en-eyebrow">On the same catalog</span>
+        <h2 class="en-h2">What wholesale needs that a retail-only system skips</h2>
+      </div>
+      <div class="en-features-grid">
+        {features.map((f) => (
+          <div class="en-feature">
+            <h3>{f.title}</h3>
+            <p>{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="en-context">
+    <div class="en-container">
+      <span class="en-eyebrow">Where this comes from</span>
+      <h2 class="en-h2">The trade-show order problem</h2>
+      <p class="en-context-text">
+        A lot of wholesale brands in Mexico and Latin America take orders the
+        same way: a buyer walks a booth at a trade show like Intermoda or
+        SAPICA, fills out an order form by hand or on a tablet with no
+        signal, and then someone on the team has to turn a stack of those
+        into real purchase orders against real stock the following Monday —
+        without double-booking a size run two different buyers both wrote
+        down. That reconciliation step is exactly where a shared,
+        size-and-color-accurate inventory earns its keep: the order becomes
+        a real allocation against real stock, on the same catalog your
+        retail channels already draw from, instead of a parallel spreadsheet
+        someone has to keep matching by hand.
+      </p>
+    </div>
+  </section>
+
+  <section class="en-next">
+    <div class="en-container en-next-inner">
+      <div>
+        <span class="en-eyebrow">Related</span>
+        <h2 class="en-h2">The rest of the operation</h2>
+      </div>
+      <div class="en-next-grid">
+        <a href="/en/fashion-erp" class="en-next-card">Fashion ERP — distribution and season planning</a>
+        <a href="/en/size-and-color-inventory" class="en-next-card">Size &amp; color inventory — the shared stock count</a>
+        <a href="/en/apparel-pos" class="en-next-card">Apparel POS — checking out a buyer vs. a customer</a>
+        <a href="/giros/marcas-de-ropa" class="en-next-card">Fashion brands &amp; manufacturers, in Spanish (ES)</a>
+      </div>
+    </div>
+  </section>
+
+  <EnClose
+    title="Selling wholesale and retail from the same stock?"
+    demoDesc="Bring your current wholesale price list and we'll show how it sits on the same inventory as your retail and online channels."
+  />
+  <EnFooter />
+
+  <style>
+    .en-container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .en-eyebrow { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary-texto); display: block; margin-bottom: 14px; }
+    .en-h1 { font-family: var(--font-display); font-size: clamp(2rem, 4.2vw, 2.9rem); font-weight: 700; color: var(--color-text-primary); max-width: 860px; margin: 0 auto; letter-spacing: -0.02em; }
+    .en-h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2.125rem); font-weight: 700; color: var(--color-text-primary); }
+    .en-sub { margin: 18px auto 0; max-width: 700px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.65; color: var(--color-text-secondary); }
+    .en-hero { padding: clamp(56px, 9vw, 100px) 0 clamp(48px, 7vw, 80px); background: var(--color-bg-secondary); text-align: center; }
+    .en-ctas { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .en-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 0.9375rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .en-btn-primary { background: var(--color-primary-btn, #4470D8); color: #fff; }
+    .en-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .en-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .en-btn-outline:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+    .en-features { padding: clamp(64px, 9vw, 110px) 0; background: #fff; }
+    .en-header-block { text-align: center; margin-bottom: 44px; }
+    .en-features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .en-feature { padding: 24px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 14px; }
+    .en-feature h3 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 8px; }
+    .en-feature p { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0; }
+
+    .en-context { padding: clamp(56px, 8vw, 100px) 0; background: var(--color-bg-secondary); text-align: center; }
+    .en-context-text { max-width: 760px; margin: 18px auto 0; font-size: 1.0313rem; line-height: 1.7; color: var(--color-text-secondary); text-align: left; }
+
+    .en-next { padding: clamp(56px, 8vw, 100px) 0; background: #fff; }
+    .en-next-inner { display: flex; flex-direction: column; gap: 28px; }
+    .en-next-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .en-next-card { display: block; padding: 20px 22px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; font-weight: 700; font-size: 0.9375rem; color: var(--color-text-primary); text-decoration: none; transition: border-color 0.15s ease; }
+    .en-next-card:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+    @media (max-width: 760px) {
+      .en-features-grid, .en-next-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

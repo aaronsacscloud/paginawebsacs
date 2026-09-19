@@ -50,6 +50,13 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
        arriba, en el frontmatter, con la razón completa y cómo revivirlo. -->
   <div class="nt">
     <div class="nt-inner container">
+      {/* Puente al track en inglés (19-sep-2026): un solo link fijo a /en/,
+          NO el selector de idiomas que se quitó (ver el comentario del
+          frontmatter arriba) — ese apuntaba a /en/, /fr/, /it/, /pt/ como si
+          fueran espejo 1:1 de la página actual, y hoy solo existen 6 páginas
+          reales en inglés, con slugs distintos a los del español. Un link
+          simple al hub (/en/) no promete una traducción que no existe. */}
+      <a href="/en/" class="nt-login" title="View this site in English">EN</a>
       <a href="https://app.sacscloud.com/" class="nt-login">Iniciar sesión</a>
     </div>
   </div>
@@ -371,6 +378,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
         </>
       ))}
       <div class="mobile-divider"></div>
+      <a href="/en/" class="mobile-link mobile-link-secondary">English (EN)</a>
       <a href="https://app.sacscloud.com/" class="mobile-link mobile-link-secondary">{t('nav.login', locale)}</a>
       <div class="mobile-cta-group">
         <a href={getLocalizedUrl('/prueba-gratis', locale)} class="btn-mobile-cta btn-mobile-primary">
