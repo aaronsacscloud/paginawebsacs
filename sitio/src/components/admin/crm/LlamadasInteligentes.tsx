@@ -29,6 +29,7 @@ import Cargando from './ui/Cargando';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 const Cabina = lazy(() => import('./whatsapp/Cabina'));
+const Grabaciones = lazy(() => import('./whatsapp/Grabaciones'));
 
 type Lista = {
   id: string;
@@ -245,6 +246,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
      de escritorio: 22 px de margen, la columna de la lista clavada en 340 px y
      todo en fila. La cabina ya sabe acomodarse sola; nadie le avisaba. */
   const esMovil = useIsMobile();
+  const [verGrabaciones, setVerGrabaciones] = useState(false);
   const [armando, setArmando] = useState(false);
   const [aMedida, setAMedida] = useState<{ titulo: string; qs: string } | null>(null);
   const [counts, setCounts] = useState<any>(null);
@@ -337,12 +339,39 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
             igual que las cinco listas fijas —o sea, como una lista más— cuando
             en realidad es la ACCIÓN de la pantalla. Arriba y en morado sólido:
             uno por pantalla, la regla de la casa. */}
-        <button onClick={() => setArmando(true)}
-          style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800,
-            fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff', flexShrink: 0 }}>
-          Nueva llamada inteligente
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+          {/* ══ LAS GRABACIONES, EN SU PROPIA PUERTA (19-sep-2026) ══════════
+              El audio existía y no se podía alcanzar: sólo salía desde la
+              tarjeta de la llamada que tenías delante. El dueño lo quiere para
+              clonar su voz con su pitch en ElevenLabs, y para eso hace falta
+              elegir VARIAS grabaciones buenas de días distintos. */}
+          <button onClick={() => setVerGrabaciones(true)}
+            style={{ border: `1.5px solid ${P.violeta}`, borderRadius: 11, padding: '10px 16px', fontSize: 13.5, fontWeight: 700,
+              fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: P.violetaTinta }}>
+            Grabaciones
+          </button>
+          <button onClick={() => setArmando(true)}
+            style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800,
+              fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff' }}>
+            Nueva llamada inteligente
+          </button>
+        </div>
       </div>
+
+      {verGrabaciones && (
+        <div role="dialog" aria-label="Grabaciones" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(12,11,18,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: esMovil ? 0 : 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setVerGrabaciones(false); }}>
+          <div style={{ background: '#F7F7F9', borderRadius: esMovil ? 0 : 16, width: esMovil ? '100%' : 'min(820px, 100%)', height: esMovil ? '100%' : 'min(88vh, 900px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderBottom: '1px solid #ececec' }}>
+              <b style={{ fontSize: 14 }}>Grabaciones</b>
+              <button onClick={() => setVerGrabaciones(false)} style={{ border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1 }} aria-label="Cerrar">×</button>
+            </div>
+            <Suspense fallback={<Cargando texto="Abriendo las grabaciones…" alto={200} />}>
+              <Grabaciones movil={esMovil} />
+            </Suspense>
+          </div>
+        </div>
+      )}
 
       {tel && !tel.ok && (
         <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 13px', fontSize: 12.5, marginBottom: 14 }}>

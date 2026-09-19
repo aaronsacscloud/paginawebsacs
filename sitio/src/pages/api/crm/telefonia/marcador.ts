@@ -277,8 +277,19 @@ export const POST: APIRoute = async ({ request }) => {
         if (!it?.call_sid) return json({ error: 'Esa llamada no tiene grabación' }, 404);
         const { data: ll } = await supabase.from('wa_llamadas').select('grabacion_path').eq('call_id', it.call_sid).maybeSingle();
         if (!ll?.grabacion_path) return json({ ok: false, motivo: 'La grabación todavía no llega (tarda hasta un minuto después de colgar).' });
-        const [bucket, ...resto] = String(ll.grabacion_path).split('/');
-        const { data: firma } = await supabase.storage.from(bucket).createSignedUrl(resto.join('/'), 600);
+        /* ══ 🔴 «OÍR LA LLAMADA» NUNCA PUDO FUNCIONAR (19-sep-2026) ══════
+           Partía `grabacion_path` por la primera barra y usaba ese trozo como
+           nombre del bucket. Pero la ruta que guarda la minuta es
+           `llamadas/CAxxx.mp3` DENTRO del bucket `wa-media` — no hay ningún
+           bucket llamado «llamadas» (comprobado: los seis del proyecto son
+           quotes, crm-docs, wa-media, comprobantes, proyectos y espacio). O
+           sea que el botón pedía la firma en un bucket inexistente y devolvía
+           «no se pudo abrir la grabación», SIEMPRE, desde el primer día.
+
+           Nadie lo notó porque el mensaje de error se parece mucho al de «la
+           grabación todavía no llega», que sí es un caso normal durante el
+           primer minuto. Dos fallos distintos contando la misma historia. */
+        const { data: firma } = await supabase.storage.from('wa-media').createSignedUrl(String(ll.grabacion_path), 600);
         return firma?.signedUrl ? json({ ok: true, url: firma.signedUrl }) : json({ ok: false, motivo: 'No se pudo abrir la grabación' });
       }
       case 'cierre_escribiendo': {

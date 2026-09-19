@@ -19,10 +19,32 @@ export const POST: APIRoute = async ({ request }) => {
   const callId = p.CallSid;
   const dur = parseInt(p.RecordingDuration || '0', 10) || 0;
   if (dur > 0) await supabase.from('wa_llamadas').update({ duracion_seg: dur }).eq('call_id', callId).is('duracion_seg', null);
-  if (dur < 20) return json({ ok: true, motivo: 'muy corta para minuta' });
 
+  /* ══ 🔴 GUARDAR EL AUDIO Y HACER LA MINUTA SON DOS COSAS (19-sep-2026) ════
+     Pedido del dueño: «todo hay que grabarlo, porque quiero usar esto luego
+     para pasarlo a ElevenLabs y clonar mi voz junto al pitch que hago, para
+     optimizar la llamada inicial».
+
+     La grabación YA se disparaba sola en toda conversación con una persona
+     —dual, una pista por voz— pero este webhook la TIRABA sin guardarla cuando
+     la llamada duraba menos de 20 segundos: «muy corta para minuta». Y tenía
+     sentido para la minuta… y ninguno para el audio. De 124 llamadas del mes
+     sólo 28 tienen archivo, y las que faltan son justo las cortas: las de la
+     apertura, que es el material que él quiere.
+
+     Ahora se guarda SIEMPRE, y la minuta sigue con su umbral. Dos decisiones
+     distintas, cada una con su criterio: el audio cuesta unos kilobytes y no
+     se puede volver a pedir; la minuta cuesta una transcripción y una llamada
+     a la IA, y de veinte segundos no sale nada que leer. */
   try {
     const buf = await descargarGrabacion(p.RecordingUrl);
+    if (dur < 20) {
+      // Mismo bucket y misma forma de ruta que la minuta: `wa-media` + `llamadas/<sid>.mp3`.
+      const path = `llamadas/${callId}.mp3`;
+      const { error } = await supabase.storage.from('wa-media').upload(path, buf, { contentType: 'audio/mpeg', upsert: true });
+      if (!error) await supabase.from('wa_llamadas').update({ grabacion_path: path }).eq('call_id', callId);
+      return json({ ok: true, motivo: 'guardada; muy corta para minuta' });
+    }
     const r = await generarMinutaDesdeAudio(callId, buf, 'audio/mpeg');
     return json({ ok: r.ok, ...(r.ok ? {} : { motivo: r.error }) });
   } catch (e: any) {
