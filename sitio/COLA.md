@@ -962,4 +962,22 @@ Lo que quedó fuera y sigue pendiente:
 - [x] **La conversación, 30% más ancha** y los laterales más chicos → HECHO (516 → 668 px).
 - [ ] **Poder COLAPSAR el panel de detalle** para agrandar todavía más la conversación.
 - [ ] **Quitar la píldora «NOTA» de la lista de conversaciones**: «satura demasiado la pantalla».
+- [x] **La píldora «NOTA» de la lista** → QUITADA (la llevaban casi todas las filas).
+- [x] **Secciones del panel colapsadas por defecto** → HECHO (la llave sube a v4: por código ya
+      nacían cerradas, pero su navegador tenía guardadas las que abrió una vez).
+- [x] **Colapsar el panel de detalle** → HECHO: pestaña de 30 px, se recuerda entre sesiones.
+- [ ] 📌 **REGLA DEL INBOX — siempre debe quedar claro QUÉ se le mandó al cliente.** «En vez de que
+      la plantilla diga [Document], que aparezca un preview del PDF, y si le doy clic que pueda ver
+      rápido el documento.» Aplica a todo adjunto, no sólo a este caso.
+- [ ] 🧹 **Sacar los comentarios internos del hilo** (telefonía, cierre con IA, secuencias): «lo
+      satura demasiado». Toda esa información se va a **Actividad**, cada cosa en su sección con su
+      detalle. De secuencias basta con: en cuál está activo AHORA, en cuáles estuvo, y qué se mandó
+      en cada una — sólo para contexto. Objetivo: que la información se lea más limpia y más clara.
+- [ ] 📊 **Más señales en el bloque Info de la ficha**, cada una con su modal de detalle al hacer
+      clic: correos abiertos · correos con clic · reuniones completadas · reuniones agendadas ·
+      secuencias activas · llamadas conectadas · llamadas realizadas.
+- [ ] **Quitar el chip del número (+1 ···0417) de la lista de conversaciones**: «lo ensucia mucho,
+      ese espacio lo satura».
+- [ ] **El aviso «Meta limitó los mensajes de marketing» no va en la cabecera**: sólo en el mensaje
+      que fue rechazado. «Normalmente no es un tema a nivel general.»
 - ~~Plantilla que no se enviaba~~ → el dueño confirmó que no era un error; se omite.

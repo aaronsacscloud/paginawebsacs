@@ -11,12 +11,12 @@ const paso = (n, ok, d = '') => { if (!ok) fallas++; console.log(`  ${ok ? '✓'
 const ctx = await nav.newContext({ viewport: { width: 1440, height: 950 } });
 const p = await ctx.newPage();
 try {
-  await p.goto('http://localhost:4321/admin/login', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/login', { waitUntil: 'networkidle' });
   await p.fill('input[type="email"]', login.CRM_EMAIL);
   await p.fill('input[type="password"]', login.CRM_PASSWORD);
   await p.click('button[type="submit"]');
   await p.waitForURL('**/admin/crm**', { timeout: 40000 }).catch(() => {});
-  await p.goto('http://localhost:4321/admin/crm?tab=whatsapp', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/crm?tab=whatsapp', { waitUntil: 'networkidle' });
   await p.waitForTimeout(10000);
   // abrir la primera conversación
   await p.locator('[role="button"], li, div').filter({ hasText: /Estefany|JO-el|Mario/ }).first().click({ timeout: 25000 }).catch(() => {});

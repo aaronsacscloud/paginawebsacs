@@ -597,7 +597,8 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
   /* Sin anfitrión no hay agenda donde poner la cita — y callarlo es peor que
      no agendarla: quien colgó se queda creyendo que quedó. Se dice. */
   if (!hostId) return `no se pudo agendar ${cp.tipo === 'llamada' ? 'la llamada' : 'la reunión'} del ${cp.fecha}: la llamada no tiene dueño (ábrela en la pantalla de la llamada o asígnale el contacto a alguien)`;
-  const { data: tipo } = await supabase.from('event_types').select('id, nombre, duracion_minutos').eq('slug', cp.reunion_tipo || (cp.tipo === 'reunion' ? 'demo' : 'llamada-discovery')).maybeSingle();
+  const slugCita = cp.reunion_tipo || (cp.tipo === 'reunion' ? 'demo' : 'llamada-discovery');
+  const { data: tipo } = await supabase.from('event_types').select('id, nombre, duracion_minutos').eq('slug', slugCita).maybeSingle();
   if (!tipo) return null;
   // La hora que dijo el contacto es en SU zona; la reunión se guarda en la del vendedor (centro), que es la que ve la agenda.
   const zonaContacto = zonaDeLada(it.lada || ladaDe(it.telefono));
@@ -648,7 +649,23 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
   if (it.contact_id) {
     await marcarAgendado(it.contact_id).catch(() => {});
     await supabase.from('contacts').update({ next_followup: fecha, updated_at: ahora() }).eq('id', it.contact_id);
-    if (cp.tipo === 'reunion') {
+    /* ══ 🔴 SÓLO UNA DEMO PROMUEVE (19-sep-2026, corrección) ═══════════════
+       Reporte del dueño sobre Emilio Achar: «sólo se pidió una reunión de
+       seguimiento, no una demostración en línea, y lo marcó como oportunidad.
+       Cuando hay una reunión de seguimiento NO se marca como oportunidad, se
+       queda en el estatus que está; lo único que lo marca como oportunidad es
+       cuando agenda una demo del sistema».
+
+       Tiene razón y el error fue mío, de hace dos horas: la condición era «es
+       una reunión», y bajo eso caben la llamada de vuelta que pidió, el
+       seguimiento, la capacitación y la cotización. Una oportunidad es otra
+       cosa: es alguien que va a VER el sistema. Confundirlo infla el embudo y
+       —peor— le quita el hilo al agente en gente que todavía está en nutrición.
+
+       Ya corregido en los datos: Liduvina vuelve a Rezagado (su cita era una
+       llamada de continuación). Francisco Javier y JO-el se quedan: los suyos
+       sí eran demos. */
+    if (slugCita === 'demo') {
       /* ══ 🔴 UN REZAGADO QUE AGENDA ES UNA OPORTUNIDAD (19-sep-2026) ════════
          Reporte del dueño sobre Estefany: agendó demo en la llamada, quedó
          «Agendó demo»… y su etapa siguió siendo «Rezagado», con la IA

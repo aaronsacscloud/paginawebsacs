@@ -469,7 +469,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     El texto es lo flexible y los chips no se encogen: si algo
                     tiene que cortarse, que sea el nombre de la empresa y no
                     un chip que quede en «→ …». */}
-                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.tiene_notas || resuelta || asignadoOtro || lineaOtra) && (
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || resuelta || asignadoOtro || lineaOtra) && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                     {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
                     {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
@@ -496,8 +496,15 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                       <span title={`Va por la línea ${lineaOtra.numero || c.phone_number_id}`} style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g700, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>{lineaOtra.numero ? numeroCorto(lineaOtra.numero) : 'otra línea'}</span>
                     )}
                     {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>Pendiente</span>}
-                    {/* E8.1 · Nota interna del equipo: se sabe antes de abrir. */}
-                    {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo" style={{ flexShrink: 0 }}>nota</span>}
+                    {/* ══ LA PÍLDORA «NOTA» SE FUE (19-sep-2026) ══════════════
+                        Pedido del dueño: «quítala de aquí, satura demasiado la
+                        pantalla». Y es cierto: la llevaban CASI TODAS las
+                        filas, porque cualquier llamada deja su comentario
+                        interno. Una marca que sale en todos lados no distingue
+                        nada — sólo mete una etiqueta gris en cada renglón,
+                        compitiendo con la etapa y la empresa, que sí cambian de
+                        fila a fila. Las notas se ven al abrir la conversación,
+                        que es donde se leen. */}
                     {resuelta && <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px', textTransform: 'uppercase', flexShrink: 0 }}>Resuelta</span>}
                     {asignadoOtro && (
                       <span title={`Asignada a ${asignadoOtro.nombre}`} style={{ fontSize: 9, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>→ {asignadoOtro.nombre.split(' ')[0]}</span>

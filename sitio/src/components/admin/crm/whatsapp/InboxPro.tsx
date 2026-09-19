@@ -91,6 +91,12 @@ export default function InboxPro() {
   // conversación que abrir, y quedarse en una búsqueda vacía se lee como que el
   // contacto "no está".
   const [nuevoChat, setNuevoChat] = useState<boolean | string>(false);
+  /* Plegado del panel derecho: se recuerda entre sesiones porque quien trabaja
+     leyendo hilos largos lo quiere cerrado siempre, no una vez. */
+  const [detallePlegado, setDetallePlegado] = useState<boolean>(() => {
+    try { return localStorage.getItem('wa_detalle_plegado') === '1'; } catch { return false; }
+  });
+  useEffect(() => { try { localStorage.setItem('wa_detalle_plegado', detallePlegado ? '1' : '0'); } catch { /* privado */ } }, [detallePlegado]);
   const [error, setError] = useState('');
   const campos = useCamposFiltro(equipo);
 
@@ -1243,7 +1249,6 @@ export default function InboxPro() {
                       {/* E8.1 · Alguien del equipo dejó una nota interna aquí.
                           Hay que saberlo ANTES de abrir, no después de leer
                           toda la conversación. */}
-                      {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
                       {/* El nombre viene del perfil de WhatsApp, no del CRM:
                           se enseña —es mejor que un número pelón— pero se dice
                           de dónde salió, igual que en escritorio. */}
@@ -1593,16 +1598,36 @@ export default function InboxPro() {
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
         )}
-        {!isCompact && (
+        {/* ══ EL DETALLE SE PLIEGA (19-sep-2026) ═══════════════════════════
+            Pedido del dueño: «que pueda igual colapsar esta sección, por si
+            quiero hacer más grande la sección de conversación».
+
+            Plegado deja una pestaña de 30 px con el mismo icono de la ficha:
+            no desaparece —eso obligaría a buscar dónde volver a abrirlo— y esos
+            330 px se los queda la conversación entera. Se recuerda en el
+            navegador, porque quien trabaja leyendo hilos largos lo quiere
+            cerrado SIEMPRE, no una vez. */}
+        {!isCompact && (detallePlegado ? (
+          <button onClick={() => setDetallePlegado(false)} title="Abrir la ficha del cliente" aria-label="Abrir la ficha del cliente"
+            style={{ width: 30, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, borderTop: 'none', borderRight: 'none', borderBottom: 'none',
+              background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 13, fontFamily: 'inherit' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M15 6l-6 6 6 6" stroke={C.g400} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: C.g400 }}>Ficha</span>
+          </button>
+        ) : (
           /* `flex: 0 1 auto` + `minWidth`: el detalle CEDE antes que la
              conversación cuando la ventana se estrecha. Antes era
              `flexShrink: 0` —intocable— así que el único que se apretaba era el
              hilo, justo al revés de lo que hay que proteger. */
-          <div className="wa-scroll" style={{ width: L.detalle, flex: `0 1 ${L.detalle}px`, minWidth: L.detalleMin, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
+          <div className="wa-scroll" style={{ width: L.detalle, flex: `0 1 ${L.detalle}px`, minWidth: L.detalleMin, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff', position: 'relative' }}>
+            <button onClick={() => setDetallePlegado(true)} title="Plegar la ficha para ver más conversación" aria-label="Plegar la ficha"
+              style={{ position: 'absolute', top: 9, right: 8, zIndex: 3, border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, lineHeight: 0, borderRadius: 7 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M9 6l6 6-6 6" stroke={C.g400} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
             {conv || filaActiva?.virtual ? <Suspense fallback={<EsqueletoPanel />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
-        )}
+        ))}
         </>)}
       </div>
       {isCompact && (

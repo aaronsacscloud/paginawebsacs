@@ -58,8 +58,16 @@ function Seccion({ id, titulo, n, abiertaDefault, children }: { id: string; titu
      usó el panel tenía guardado «Llamadas y minutas: abierta» y lo seguiría
      viendo abierto para siempre. Subir la versión descarta lo guardado UNA vez
      y deja que manden los nuevos valores; de ahí en adelante su preferencia se
-     vuelve a respetar. */
-  const KEY = 'wa_panel_secciones_v3';
+     vuelve a respetar.
+
+     v4 (19-sep-2026) — pedido del dueño: «todos estos deben estar siempre
+     colapsados por defecto para no saturar la pantalla». Por código ya lo
+     estaban (ningún `Seccion` pide `abiertaDefault`), pero en SU navegador
+     había secciones guardadas como abiertas de cuando se probaron —«Contacto»
+     entre ellas— y seguían saliendo abiertas cada vez. Subir la versión es lo
+     que de verdad las cierra; sin eso, el arreglo sólo lo verían los usuarios
+     nuevos. */
+  const KEY = 'wa_panel_secciones_v4';
   const leer = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
   const [abierta, setAbierta] = useState<boolean>(() => { const m = leer(); return id in m ? m[id] : !!abiertaDefault; });
   const toggle = () => { const v = !abierta; setAbierta(v); try { localStorage.setItem(KEY, JSON.stringify({ ...leer(), [id]: v })); } catch { /* privado */ } };
