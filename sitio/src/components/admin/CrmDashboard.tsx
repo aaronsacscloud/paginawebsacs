@@ -53,6 +53,7 @@ const DemandaExplorador = lazySeguro(() => import('./crm/demanda/DemandaExplorad
 const DemandaOportunidades = lazySeguro(() => import('./crm/demanda/DemandaOportunidades'));
 const DemandaSeo = lazySeguro(() => import('./crm/demanda/DemandaSeo'));
 const DemandaTrafico = lazySeguro(() => import('./crm/demanda/DemandaTrafico'));
+const DemandaBandeja = lazySeguro(() => import('./crm/demanda/DemandaBandeja'));
 const DemandaIA = lazySeguro(() => import('./crm/demanda/DemandaIA'));
 const DemandaAtribucion = lazySeguro(() => import('./crm/demanda/DemandaAtribucion'));
 const EventosTab = lazySeguro(() => import('./crm/eventos/EventosTab'));
@@ -112,7 +113,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; silencioso?: boolea
 }
 
 type Tab = 'ti-seguimiento' | 'ti-descalificar' | 'ti-compromisos' | 'ti-reactivacion' | 'ti-informes' | 'fin-gastos' | 'fin-adeudos' | 'fin-ingresos' | 'fin-cierre' | 'finanzas' | 'embudo' | 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'llamadas' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'abm' | 'eventos' | 'secuencias' | 'soporte' | 'taller' | 'wiki' | 'equipo'
-  | 'de-resumen' | 'de-trafico' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema' | 'de-atribucion';
+  | 'de-resumen' | 'de-trafico' | 'de-bandeja' | 'de-explorador' | 'de-seo' | 'de-ia' | 'de-competidores' | 'de-oportunidades' | 'de-contenido' | 'de-herramientas' | 'de-sistema' | 'de-atribucion';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -354,6 +355,7 @@ const NAV_SECTIONS = [
        decide; esto decide. */
     label: 'Motor de demanda', sec: 'demanda', icon: 'demanda',
     items: [
+      { id: 'de-bandeja' as Tab, label: 'Por aprobar', icon: 'mejoras' },
       { id: 'de-resumen' as Tab, label: 'Resumen', icon: 'dashboard' },
       { id: 'de-trafico' as Tab, label: 'Tráfico', icon: 'finanzas' },
       { id: 'de-explorador' as Tab, label: 'Explorador', icon: 'demanda' },
@@ -1248,6 +1250,8 @@ export default function CrmDashboard() {
           <DemandaSistema />
         ) : tab === 'de-resumen' ? (
           <DemandaResumen />
+        ) : tab === 'de-bandeja' ? (
+          <DemandaBandeja />
         ) : tab === 'de-trafico' ? (
           <DemandaTrafico />
         ) : tab === 'de-explorador' ? (

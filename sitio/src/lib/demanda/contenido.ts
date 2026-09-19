@@ -117,6 +117,21 @@ export async function escribirBrief(oportunidadId: string): Promise<{ ok: boolea
   // Lo ya publicado, para no escribir dos veces lo mismo.
   const publicadas = await traerTodo<any>('de_contenido', 'seccion, slug, titulo', q => q.eq('estado', 'publicado'));
 
+  /* LO QUE EL DUEÑO YA RECHAZÓ, y por qué. Es la única pieza que hace que esto
+     mejore con el tiempo en vez de repetir el mismo fallo cada semana.
+     Sin esto, la sensación es que el motor no aprende — cuando lo que pasa es
+     que nadie le contó. */
+  const { data: rechazos } = await supabase.from('de_contenido')
+    .select('slug, auditorias')
+    .eq('estado', 'rechazado')
+    .order('actualizado_at', { ascending: false })
+    .limit(12);
+  const aprendido = (rechazos || [])
+    .map(r => (r.auditorias as any)?.rechazo?.motivo)
+    .filter(Boolean)
+    .map((m: string) => `  - ${m}`)
+    .join('\n');
+
   const formas = (queries || []).map(q =>
     `  «${q.texto_original}» · ${q.intent || 'intención desconocida'}` +
     (q.impresiones_28d ? ` · ${q.impresiones_28d} impresiones en 28 días` : '') +
@@ -138,6 +153,7 @@ ${fichaSacs()}
 
 YA PUBLICADO (no repitas; si el tema ya está cubierto, dilo en «nota_honestidad»)
 ${publicadas.map(p => `  /${p.seccion}/${p.slug}/ — ${p.titulo}`).join('\n')}
+${aprendido ? `\nPOR ESTO SE RECHAZARON PÁGINAS ANTERIORES — no lo repitas:\n${aprendido}` : ''}
 
 Escribe el encargo de la página.`;
 
