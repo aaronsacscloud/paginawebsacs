@@ -212,6 +212,33 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .doc-entregas .vid:hover{background:#4FBF95;color:#fff}
 .doc-entregas .lila{background:linear-gradient(135deg,#EAF8F2,rgba(238,236,254,.7) 55%,rgba(244,168,205,.26))}
 
+/* ── LA PIEL DEL REPORTE DE TRABAJO EN CURSO ──
+   El tercero en discordia. El de entregas se pintó de verde —lo que ya entró—;
+   este va en ROSA, que en la casa es lo que está en camino, y así los dos se
+   distinguen de un vistazo en el celular sin leer el título.
+   Mismo esqueleto, distinta piel: es la misma casa, no otro producto. */
+.doc-curso .cinta{background:linear-gradient(90deg,#D9538E,#9B8CFA 52%,rgba(155,140,250,.65))}
+.doc-curso .hero{background:linear-gradient(150deg,rgba(244,168,205,.30) 0%,#f7f5ff 52%,#fdf9fb 100%)}
+.doc-curso .hero:after{background:radial-gradient(circle,rgba(217,83,142,.16),transparent 65%)}
+.doc-curso .wm{background:linear-gradient(100deg,#9c3d70,#7C6BF0 55%,#9B8CFA);-webkit-background-clip:text;background-clip:text;color:transparent}
+.doc-curso .ancla{background:linear-gradient(180deg,#fefbfd,#fff 70%)}
+.doc-curso .gh{background:linear-gradient(100deg,rgba(244,168,205,.26),rgba(238,236,254,.8) 62%,rgba(238,236,254,.25));
+  border:1px solid #f3e3ec;border-radius:11px;padding:8px 13px;margin:0 0 6px}
+.doc-curso .gh .gn{color:#9c3d70}
+.doc-curso .gh .gc{background:#fff;color:#9c3d70}
+.doc-curso .gh .ln{display:none}
+.doc-curso .ent{border-color:#f1e7ed}
+.doc-curso .ent .it:hover{background:linear-gradient(100deg,rgba(244,168,205,.12),transparent 60%)}
+.doc-curso .vid{border-color:#D9538E;color:#9c3d70}
+.doc-curso .vid:hover{background:#D9538E;color:#fff}
+.doc-curso .lila{background:linear-gradient(135deg,rgba(244,168,205,.30),rgba(238,236,254,.85) 58%,rgba(238,236,254,.35))}
+.doc-curso .lila .t{color:#9c3d70}
+/* La etapa, en el renglón. Discreta: el peso lo lleva el trabajo, no su fase. */
+.etp{font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap;
+  background:var(--agua);color:var(--tinta)}
+.doc-curso .etp{background:rgba(244,168,205,.22);color:#9c3d70}
+.fe.sf{color:#9c3d70;font-weight:700}
+
 /* ── Grupos por módulo ──
    La única estructura real del documento: en qué parte del sistema se trabajó.
    El encabezado es discreto a propósito; el peso lo lleva la entrega. */

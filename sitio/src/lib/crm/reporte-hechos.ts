@@ -324,7 +324,7 @@ export async function reunirEnCurso(companyId: string, desde: string, hasta: str
   if (!co) return null;
 
   const { data: ordenes } = await supabase.from('taller_ordenes')
-    .select('folio, titulo, tipo, etapa, esperado, problema, criterios, modulo, cobro, fecha_prometida, created_at')
+    .select('folio, titulo, tipo, etapa, esperado, problema, criterios, modulo, cobro, fecha_prometida, created_at, evidencia_url')
     .eq('company_id', companyId).is('archived_at', null)
     .neq('etapa', 'entregada')
     .order('fecha_prometida', { ascending: true, nullsFirst: false });
@@ -344,8 +344,19 @@ export async function reunirEnCurso(companyId: string, desde: string, hasta: str
       // que se acordó; si no está, el criterio de aceptación dice lo mismo con
       // otras palabras. Si no hay ninguno, el renglón va solo con su título.
       cambio: (o.esperado || o.criterios || '').trim() || null,
+      /* Qué pasa hoy: es la otra mitad de la descripción. Con solo «qué va a
+         cambiar», el cliente lee la solución sin recordar el problema que él
+         mismo contó en la junta; con las dos, el renglón se explica solo. */
+      hoy: (o.problema || '').trim() || null,
       categoria: o.tipo === 'falla' ? 'pendiente' : 'personalizacion',
       modulo: o.modulo || null,
+      /* EL VIDEO QUE SE LE PASÓ A DESARROLLO. Es el mismo que grabó quien
+         levantó la orden explicando lo que quiere, y enseñárselo al cliente es
+         lo que convierte este documento en prueba de que se está trabajando:
+         no es una promesa, es el encargo con voz y pantalla.
+         Solo http(s): una liga guardada a mano puede traer «javascript:» o un
+         «www.…» sin esquema, y esto es un documento público. */
+      video: /^https?:\/\//i.test(String(o.evidencia_url || '').trim()) ? String(o.evidencia_url).trim() : null,
       etapa: e.l,
       orden: e.orden,
       fecha: o.fecha_prometida || null,
@@ -368,5 +379,7 @@ export async function reunirEnCurso(companyId: string, desde: string, hasta: str
     cortesias: trabajos.filter(t => t.cortesia).length,
     proxima: conFecha.length ? conFecha.map(t => t.fecha).sort()[0] : null,
     sin_fecha: trabajos.filter(t => !t.fecha).length,
+    con_video: trabajos.filter(t => t.video).length,
+    modulos: Array.from(new Set(trabajos.map(t => t.modulo).filter(Boolean))),
   };
 }

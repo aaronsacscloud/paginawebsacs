@@ -10,10 +10,20 @@
 // que el cliente pidió ver: el título solo no le dice nada a quien no estuvo en
 // la junta donde se acordó.
 //
-// Va agrupado por ETAPA y no por módulo: lo que el cliente quiere saber es qué
-// ya se está haciendo y qué sigue en fila. Y usa los MISMOS estilos que el de
-// entregas —dos documentos de la misma casa se ven iguales o no se ven de la
-// misma casa—.
+// Va agrupado POR MÓDULO, igual que el de entregas: los diecisiete trabajos de
+// una cuenta salen de tres partes del sistema, y lo que el cliente quiere saber
+// primero es «qué están haciendo de membresías». La etapa no se pierde: viaja
+// como chip en cada renglón, que es donde de verdad se consulta.
+// (Antes agrupaba por etapa y el módulo no aparecía; con seis etapas y tres
+// módulos, el documento se leía como seis listas sueltas.)
+//
+// Y trae EL VIDEO que se le pasó a desarrollo: el mismo que grabó quien levantó
+// la orden explicando lo que quiere. Eso es lo que convierte este documento en
+// prueba de que se está trabajando, en vez de una promesa escrita.
+//
+// Usa los mismos estilos que el de entregas —dos documentos de la misma casa se
+// ven iguales o no se ven de la misma casa— y se separa por el TONO: aquel va
+// en verde, lo que ya entró; este en rosa, lo que está en camino.
 //
 // Lee la FOTO guardada, no la base viva: la liga tiene que decir en diciembre
 // lo mismo que decía hoy. Lo interno —rebotes, quién la trabaja, cuántas veces
@@ -52,26 +62,43 @@ const limpiar = (t: string | null | undefined) => {
   return x.replace(/\s+[l|]\s+/g, ' · ').replace(/\s{2,}/g, ' ').trim();
 };
 
-/* La especificación puede venir con saltos de línea y viñetas del consultor.
-   Se recorta a lo que se lee de un vistazo: un documento no es el ticket. */
-const corta = (t: string | null) => {
-  const x = String(t || '').replace(/\s*\n+\s*/g, ' · ').replace(/\s{2,}/g, ' ').trim();
-  return x.length > 240 ? x.slice(0, 237).trimEnd() + '…' : x;
+/* La especificación viene con saltos de línea y viñetas del consultor. Se
+   parte en dos: lo que se lee de un vistazo y el resto, que se abre a mano.
+   Recortar a secas dejaba frases colgando —el mismo problema que ya se había
+   resuelto en el de entregas—, así que aquí se corta en el último punto. */
+const parte = (t: string | null) => {
+  const txt = String(t || '').trim();
+  if (!txt) return { corto: '', resto: '' };
+  const corrido = txt.replace(/\s*\n+\s*/g, ' · ').replace(/\s{2,}/g, ' ').trim();
+  if (corrido.length <= 260) return { corto: corrido, resto: txt.includes('\n') ? txt : '' };
+  const recorte = corrido.slice(0, 260);
+  const corte = Math.max(recorte.lastIndexOf('. '), recorte.lastIndexOf(' · '), recorte.lastIndexOf(' '));
+  return { corto: recorte.slice(0, corte > 150 ? corte + 1 : 260).trim() + '…', resto: txt };
 };
 
 const trabajos = h.trabajos || [];
-/* Agrupado por etapa, en el orden en que avanza el trabajo. «Por arrancar» va
-   al final a propósito: es lo único que todavía no tiene compromiso, y abrir
-   el documento con lo que no ha empezado dice lo contrario de lo que viene a
-   decir. */
-const grupos = Array.from(new Set(trabajos.map((t: any) => t.orden)))
-  .sort((a: any, b: any) => a - b)
-  .map((orden: any) => ({
-    orden,
-    etapa: trabajos.find((t: any) => t.orden === orden)?.etapa || '',
-    lista: trabajos.filter((t: any) => t.orden === orden),
-  }));
 
+/* ── Agrupado por MÓDULO ──
+   La estructura real del documento: en qué parte del sistema estamos metidos.
+   Dentro de cada módulo, los trabajos van en el orden en que avanzan —lo que
+   ya está en revisión arriba, lo que no ha arrancado al final—, porque abrir
+   un grupo con lo que todavía no empieza dice lo contrario de lo que este
+   documento viene a decir.
+   Lo que no tiene módulo cae en «Otros trabajos» y va al final: es lo menos
+   clasificado, no lo primero. Con un solo grupo no se pinta encabezado. */
+const grupos: { modulo: string; lista: any[] }[] = [];
+for (const t of trabajos) {
+  const k = t.modulo || 'Otros trabajos';
+  const g = grupos.find(x => x.modulo === k);
+  g ? g.lista.push(t) : grupos.push({ modulo: k, lista: [t] });
+}
+for (const g of grupos) g.lista.sort((a: any, b: any) => (a.orden || 9) - (b.orden || 9));
+grupos.sort((a, b) => (a.modulo === 'Otros trabajos' ? 1 : 0) - (b.modulo === 'Otros trabajos' ? 1 : 0)
+  || b.lista.length - a.lista.length);
+const agrupar = grupos.length > 1;
+
+/* Qué significa cada etapa, en una línea. Va en el chip como tooltip y en el
+   pie del grupo: «en análisis» no le dice nada a quien no trabaja aquí. */
 const PIE_ETAPA: Record<number, string> = {
   1: 'Estamos definiendo el detalle con nuestro equipo.',
   2: 'Ya se está programando.',
@@ -105,9 +132,12 @@ const PIE_ETAPA: Record<number, string> = {
 <div class="cuerpo">
   <div class="st"><span class="x">Cómo leer este documento</span><span class="ln"></span></div>
   <p class="p">
-    Cada renglón es algo que pediste y que ya está en nuestra cola de trabajo. Dice <b>qué va a cambiar
-    dentro del sistema</b> y en qué etapa va. Cuando quede, lo vas a ver en tu reporte de entregas
-    con el video donde se ve operando.
+    Cada renglón es algo que pediste y que ya está en nuestra cola de trabajo. Dice <b>qué pasa hoy</b>,
+    <b>qué va a cambiar</b> dentro del sistema y en qué etapa va. Va ordenado por la parte del sistema
+    que estamos tocando.
+    {h.con_video > 0 && <> Donde lo hay, trae el <b>video del encargo</b>: lo que le pasamos a nuestro
+    equipo para construirlo, para que veas exactamente lo que se está haciendo.</>}
+    {' '}Cuando quede, lo vas a ver en tu reporte de entregas con el video donde se ve operando.
   </p>
 
   {h.proxima && (
@@ -128,26 +158,52 @@ const PIE_ETAPA: Record<number, string> = {
     </div>
   )}
 
-  {grupos.map((g: any) => (
+  {grupos.map(g => (
     <div class="grupo">
-      <div class="gh">
-        <span class="gn">{g.etapa}</span>
-        <span class="gc">{g.lista.length === 1 ? '1 trabajo' : `${g.lista.length} trabajos`} · {PIE_ETAPA[g.orden] || ''}</span>
-        <span class="ln"></span>
-      </div>
+      {agrupar && (
+        <div class="gh">
+          <span class="gn">{g.modulo}</span>
+          <span class="gc">{g.lista.length === 1 ? '1 trabajo' : `${g.lista.length} trabajos`}</span>
+          <span class="ln"></span>
+        </div>
+      )}
       <div class="ent">
         {g.lista.map((t: any) => {
           const k = tipoDe(t.categoria);
+          const q = parte(t.cambio);
+          const hoy = parte(t.hoy);
           return (
             <div class="it">
               <div class="enc">
                 <span class="tt">{limpiar(t.titulo)}</span>
+                {/* La etapa, en el renglón. Al agrupar por módulo deja de ser el
+                    encabezado, y es el dato que más se consulta: «¿esta ya
+                    arrancó?». Con su explicación en el tooltip. */}
+                <span class="etp" title={PIE_ETAPA[t.orden] || ''}>{t.etapa}</span>
                 <span class={`tipo t-${k.c}`}>{k.l}</span>
                 {t.cortesia && <span class="sc">sin costo</span>}
-                {t.fecha && <span class="fe">{dCorta(t.fecha)}</span>}
+                {t.fecha ? <span class="fe">{dCorta(t.fecha)}</span> : <span class="fe sf">sin fecha</span>}
               </div>
-              {t.cambio && <div class="dd"><b>Qué va a cambiar:</b> {corta(t.cambio)}</div>}
-              {!t.fecha && <div class="dd" style="color:#a5a2af">Todavía sin fecha comprometida.</div>}
+              {hoy.corto && <div class="dd"><b>Qué pasa hoy:</b> {hoy.corto}</div>}
+              {q.corto && <div class="dd"><b>Qué va a cambiar:</b> {q.corto}</div>}
+              {/* El video del encargo y el detalle completo, en el mismo
+                  renglón: son las dos formas de profundizar y apiladas hacían
+                  que cada trabajo midiera el doble. */}
+              {(t.video || q.resto || hoy.resto) && (
+                <div class="pieit">
+                  {t.video && (
+                    <a class="vid" href={t.video} target="_blank" rel="noopener noreferrer">
+                      <span class="pl">▶</span> Ver lo que pedimos
+                    </a>
+                  )}
+                  {(q.resto || hoy.resto) && (
+                    <details>
+                      <summary>Ver el detalle completo</summary>
+                      <div class="mas">{[hoy.resto, q.resto].filter(Boolean).join('\n\n')}</div>
+                    </details>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
