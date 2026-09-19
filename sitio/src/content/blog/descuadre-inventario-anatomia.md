@@ -1,5 +1,6 @@
 ---
 title: "Por qué tu sistema dice que tienes existencia y en la tienda no hay"
+seoTitle: "El sistema dice que hay y en la tienda no hay: por qué"
 description: "La pantalla decía 409 piezas. En el almacén había cero. Reconstruimos el caso movimiento por movimiento: las seis causas reales de un descuadre de inventario, cómo distinguir cuál tienes y qué revisar hoy en tu propio sistema."
 pubDate: 2026-09-19
 author: "Equipo Sacs"

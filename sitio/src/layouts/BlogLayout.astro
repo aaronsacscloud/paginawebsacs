@@ -15,7 +15,7 @@ interface Props {
   tags?: string[];
 }
 
-const { title, description, pubDate, author = 'Equipo Sacs', image, imageAlt, tags = [] } = Astro.props;
+const { title, seoTitle, description, pubDate, author = 'Equipo Sacs', image, imageAlt, tags = [] } = Astro.props;
 
 // El slug sale de la URL en vez de que `blog/[...slug].astro` tenga que
 // pasarlo como prop: así esta plantilla puede ir a buscar `updatedDate`
@@ -56,7 +56,7 @@ const breadcrumbSchema = breadcrumbList([
 ---
 
 <BaseLayout
-  title={title}
+  title={seoTitle ?? title}
   description={description}
   image={image}
   type="article"

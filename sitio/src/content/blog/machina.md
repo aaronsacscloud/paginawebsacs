@@ -1,5 +1,6 @@
 ---
 title: "Machina: La Revolucion Mexicana que Fusiona Moda y Tecnologia"
+seoTitle: "Machina: la marca mexicana de moda y tecnología"
 description: "Machina, la marca mexicana que integra tecnología en la ropa: su historia, la colaboración con Nike y qué puede aprender de ella una tienda de moda."
 pubDate: 2025-06-07
 author: "Andrea Araujo"
