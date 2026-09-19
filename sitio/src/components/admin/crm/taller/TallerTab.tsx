@@ -82,7 +82,10 @@ export default function TallerTab() {
      órdenes»: parecía que no había trabajo cuando había dieciocho sin arrancar.
      Sigue existiendo, pero ya no es la puerta. */
   const [vista, setVista] = useState<'bandeja' | 'lista'>('lista');
-  const [nueva, setNueva] = useState(false);
+  /* `nueva` guarda PARA QUIÉN se está levantando: '' es «desde el taller, sin
+     cuenta elegida» y un id es «desde el proyecto de esa cuenta». Con un
+     booleano no había forma de que el formulario supiera dónde estabas. */
+  const [nueva, setNueva] = useState<false | string>(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [abierta, setAbierta] = useState<string>('');
   const [aviso, setAviso] = useState('');
@@ -174,10 +177,10 @@ export default function TallerTab() {
             preguntas={preguntas} abrir={setAbierta} api={api} flash={flash} />
         : <Lista ordenes={vivas} entregadas={ordenes.filter((o: any) => o.etapa === 'entregada')}
             yo={yo} equipo={equipo} abrir={setAbierta} cuentas={cuentas} meta={meta} reuniones={reuniones}
-            filtro={filtro} setFiltro={setFiltro} onNueva={() => setNueva(true)} recargar={cargar} api={api} flash={flash} />}
+            filtro={filtro} setFiltro={setFiltro} onNueva={(cid?: string) => setNueva(cid || '')} recargar={cargar} api={api} flash={flash} />}
 
       {abierta && <PanelOrden id={abierta} equipo={equipo} onCerrar={() => setAbierta('')} api={api} flash={flash} />}
-      {nueva && <NuevaOrden clientes={clientes} equipo={equipo} onCerrar={() => setNueva(false)}
+      {nueva !== false && <NuevaOrden clientes={clientes} equipo={equipo} deCuenta={nueva} onCerrar={() => setNueva(false)}
         onCreada={async (id: string) => { setNueva(false); await cargar(); setAbierta(id); flash('Creada y ligada a la ficha del cliente'); }}
         flash={flash} />}
     </div>
@@ -612,7 +615,14 @@ function Lista({ ordenes, entregadas = [], yo, equipo, abrir, filtro, setFiltro,
             quitar el filtro
           </button>
         )}
-        <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem', marginLeft: 'auto' }} onClick={onNueva}>+ Nueva orden</button>
+        {/* Dentro de un proyecto, la orden nueva es PARA ESA CUENTA y el botón
+            lo dice. Fuera, el formulario pide a quién. Preguntar el cliente
+            estando dentro de Ruben's es preguntar algo que la pantalla ya sabe
+            —y es por donde se cuelan las órdenes en la cuenta equivocada—. */}
+        <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem', marginLeft: 'auto' }}
+          onClick={() => onNueva(abierto ? abierto.filas[0]?.company_id : undefined)}>
+          + Nueva orden{abierto ? ` para ${abierto.l}` : ''}
+        </button>
       </div>
 
       {proyectos.length === 0 && (
@@ -1807,9 +1817,13 @@ function RevisionPaso({ o, d, api, traer, flash, quedan }: any) {
  * cuando la orden llega de una minuta. Dos formularios distintos para la misma
  * orden son dos maneras de llenarla a medias.
  */
-function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
+function NuevaOrden({ clientes, equipo, deCuenta, onCerrar, onCreada, flash }: any) {
+  /* Si se levantó desde un proyecto, la cuenta llega puesta y el campo se ve
+     como un dato, no como una pregunta. Se puede cambiar —con «cambiar»—
+     porque a veces uno se da cuenta a la mitad de que era de otro cliente. */
+  const [cambiando, setCambiando] = useState(false);
   const [f, setF] = useState<any>({
-    company_id: '', titulo: '', tipo: 'mejora', categoria: 'personalizacion',
+    company_id: deCuenta || '', titulo: '', tipo: 'mejora', categoria: 'personalizacion',
     problema: '', esperado: '', pasos: '', criterios: '', video_pide: '',
     fecha_prometida: '', asignado_id: '', prioridad: 'baja', cobro: '', booking_id: '', modulo: '',
   });
@@ -1854,10 +1868,20 @@ function NuevaOrden({ clientes, equipo, onCerrar, onCreada, flash }: any) {
         <div style={{ padding: '16px 18px' }}>
           <div style={{ ...S.caja, borderColor: P.violetaBorde }}>
             <div><span style={S.lbl}>Cliente</span>
-              <select value={f.company_id} onChange={e => set('company_id', e.target.value)} style={S.input}>
-                <option value="">— elige la cuenta —</option>
-                {clientes.map((c: any) => <option key={c.id} value={c.id}>{c.n}</option>)}
-              </select>
+              {deCuenta && !cambiando ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                  <b style={{ fontSize: '0.88rem' }}>{clientes.find((c: any) => c.id === deCuenta)?.n || 'esta cuenta'}</b>
+                  <button onClick={() => setCambiando(true)}
+                    style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: P.violetaTinta }}>
+                    cambiar
+                  </button>
+                </div>
+              ) : (
+                <select value={f.company_id} onChange={e => set('company_id', e.target.value)} style={S.input} autoFocus={cambiando}>
+                  <option value="">— elige la cuenta —</option>
+                  {clientes.map((c: any) => <option key={c.id} value={c.id}>{c.n}</option>)}
+                </select>
+              )}
               <div style={{ fontSize: '0.69rem', color: '#8d8a97', marginTop: 5, lineHeight: 1.45 }}>
                 Queda ligada a su ficha: aparece en su Taller y, al aprobarla, en «Ya entregado» de Consultoría y en
                 el reporte de entregas.
