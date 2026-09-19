@@ -15,6 +15,7 @@
 // Lo encontró el motor de demanda al auditar el sitio (15-sep-2026).
 import { PLANES } from '../lib/crm/ti/conocimiento/planes';
 import { businessSectors } from './navigation';
+import { WHATSAPP_NUMBER, WHATSAPP_LEGIBLE } from '../lib/whatsapp';
 
 export const SITIO = 'https://www.sacscloud.com';
 
@@ -63,6 +64,18 @@ export function organizacion() {
       'punto de venta para tiendas de ropa', 'mayoreo de ropa', 'consignación',
       'nivelación de inventario entre sucursales', 'sell-through', 'zapaterías', 'joyerías',
     ],
+    /* El WhatsApp de ventas sale de la fuente única (src/lib/whatsapp.ts):
+       si el número cambia, cambia en un solo lugar y este schema no se queda
+       con uno viejo. Solo se declara lo que existe de verdad — nada de
+       dirección, RFC, fecha de fundación ni número de empleados inventados. */
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'sales',
+      telephone: WHATSAPP_LEGIBLE,
+      url: `https://wa.me/${WHATSAPP_NUMBER}`,
+      areaServed: { '@type': 'Country', name: 'MX' },
+      availableLanguage: ['Spanish'],
+    },
     ...(PERFILES.length ? { sameAs: PERFILES } : {}),
   };
 }

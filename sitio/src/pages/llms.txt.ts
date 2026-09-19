@@ -73,6 +73,24 @@ ${[...porSeccion.entries()].map(([sec, ps]) => `## ${sec === 'comparar' ? 'Compa
 
 ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? `: ${p.meta_desc}` : ''}`).join('\n')}`).join('\n\n')}
 
+${!porSeccion.has('software-para') ? `## Software por tipo de negocio (en construcción)
+
+${SITIO}/software-para/ — mientras se publican guías propias, ya redirige a
+giros, producto, comparativas y herramientas.
+
+` : ''}## English
+
+The main site is in Mexican Spanish (es-MX). There is also a small English
+track — six pages, not a full translated site — for English-speaking readers,
+with USD reference pricing (billing is always in MXN):
+
+- [Overview](${SITIO}/en/)
+- [Pricing](${SITIO}/en/pricing)
+- [Apparel POS](${SITIO}/en/apparel-pos)
+- [Fashion ERP](${SITIO}/en/fashion-erp)
+- [Wholesale apparel software](${SITIO}/en/wholesale-apparel-software)
+- [Size and color inventory](${SITIO}/en/size-and-color-inventory)
+
 ${indice ? `## Dato propio y citable
 
 Índice Sacs de Retail de Moda (${indice.edicion}): cómo opera de verdad una

@@ -56,7 +56,7 @@ Venden: ${g.queVenden}
 Cómo operan: ${g.comoOperan}
 Lo que les duele: ${g.dolores.join('; ')}
 Lo que Sacs les resuelve: ${g.argumento}
-Más detalle: ${SITIO}${g.landing}`).join('\n\n')}
+Más detalle: ${g.landing}`).join('\n\n')}
 
 ## Qué hace, por área
 
@@ -89,6 +89,25 @@ ${piezas.length ? `## Guías y definiciones publicadas
 
 ${piezas.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? `\n  ${p.meta_desc}` : ''}`).join('\n')}
 ` : ''}
+## Software por tipo de negocio
+
+${SITIO}/software-para/ — en construcción: mientras se publican guías propias
+para cada tipo de negocio, ya redirige a giros, producto, comparativas y
+herramientas. No es una página vacía.
+
+## English
+
+The main site is in Mexican Spanish (es-MX). There is also a small English
+track — six pages, not a full translated site — for English-speaking readers,
+with USD reference pricing (billing is always in MXN):
+
+- ${SITIO}/en/ — overview
+- ${SITIO}/en/pricing — plans and FAQ in English
+- ${SITIO}/en/apparel-pos
+- ${SITIO}/en/fashion-erp
+- ${SITIO}/en/wholesale-apparel-software
+- ${SITIO}/en/size-and-color-inventory
+
 ## Contacto
 
 - Demostración con un consultor: ${SITIO}/contacto
