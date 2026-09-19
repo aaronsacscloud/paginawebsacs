@@ -825,7 +825,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           (ctx?.senales?.detalle?.correos || []).length
             ? (ctx.senales.detalle.correos as any[]).map((e, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{e.asunto}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{String(e.asunto ?? 'Correo')}</span>
                 {e.clic ? <span style={tag(C.emerald50, C.emerald700)}>clic</span> : e.abierto ? <span style={tag(C.moradoAgua, C.moradoTinta)}>abierto</span> : <span style={tag(C.g100, C.g400)}>enviado</span>}
                 <span style={{ fontSize: 10.5, color: C.g400, flexShrink: 0 }}>{fecha(e.cuando)}</span>
               </div>
@@ -836,8 +836,8 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           (ctx?.senales?.detalle?.reuniones || []).length
             ? (ctx.senales.detalle.reuniones as any[]).map((b, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{b.titulo}</span>
-                <span style={tag(b.estado === 'cancelada' ? C.rojo50 : C.moradoAgua, b.estado === 'cancelada' ? C.rojo700 : C.moradoTinta)}>{b.estado}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{String(b.titulo ?? 'Reunión')}</span>
+                <span style={tag(b.estado === 'cancelada' ? C.rojo50 : C.moradoAgua, b.estado === 'cancelada' ? C.rojo700 : C.moradoTinta)}>{String(b.estado ?? '')}</span>
                 <span style={{ fontSize: 10.5, color: C.g400, flexShrink: 0 }}>{fecha(b.fecha)} {b.hora}</span>
               </div>
             ))
@@ -847,8 +847,13 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           (ctx?.senales?.detalle?.secuencias || []).length
             ? (ctx.senales.detalle.secuencias as any[]).map((x, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{x.nombre}</span>
-                <span style={{ fontSize: 10.5, color: C.g400 }}>{x.enviados} enviado{x.enviados === 1 ? '' : 's'}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{String(x.nombre ?? 'Secuencia')}</span>
+                {/* `Number(...)`: el servidor manda el número, pero si algún día
+                    vuelve a llegar el objeto crudo —fue el bug de esta tarde,
+                    `enviados` es un `jsonb` y tumbó el panel entero con el error
+                    #31 de React— aquí sale un 0 y la pantalla sigue viva. Un
+                    dato raro no puede costar la pantalla. */}
+                <span style={{ fontSize: 10.5, color: C.g400 }}>{Number(x.enviados) || 0} enviado{Number(x.enviados) === 1 ? '' : 's'}</span>
                 <span style={tag(x.activa ? C.emerald50 : C.g100, x.activa ? C.emerald700 : C.g500)} title={x.motivo || ''}>{x.activa ? 'activa' : 'salió'}</span>
               </div>
             ))

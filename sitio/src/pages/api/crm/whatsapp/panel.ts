@@ -283,7 +283,22 @@ export const GET: APIRoute = async ({ url }) => {
       secuencias_activas: (secs || []).filter(x => !x.detenida_at).length,
       detalle: {
         reuniones: reuniones.slice(0, 20).map(b => ({ fecha: b.fecha, hora: String(b.hora_inicio || '').slice(0, 5), estado: b.estado, titulo: (b as any).event_types?.nombre || b.asunto || 'Reunión' })),
-        secuencias: (secs || []).slice(0, 20).map(x => ({ nombre: (x as any).crm_secuencias?.nombre || 'Secuencia', activa: !x.detenida_at, enviados: x.enviados || 0, desde: x.inicio, motivo: x.motivo || null })),
+        /* ══ 🔴 `enviados` NO ES UN NÚMERO (19-sep-2026) ════════════════════
+           Bug mío de hace un rato, y de los que tumban la pantalla: la columna
+           es `jsonb` —un mapa de paso → cuándo se mandó, no una cuenta— y se
+           pasaba tal cual. La pantalla intentaba pintar `{x.enviados}`, React
+           se encontró un objeto donde esperaba texto y reventó el panel entero
+           con «Minified React error #31». El dueño lo vio al abrir Secuencias.
+
+           Lo que sirve de ese mapa es cuántas llaves tiene: los pasos que ya
+           salieron. Se cuenta AQUÍ y viaja un número, que es lo que la pantalla
+           puede pintar. */
+        secuencias: (secs || []).slice(0, 20).map(x => ({
+          nombre: (x as any).crm_secuencias?.nombre || 'Secuencia',
+          activa: !x.detenida_at,
+          enviados: x.enviados && typeof x.enviados === 'object' ? Object.keys(x.enviados).length : Number(x.enviados) || 0,
+          desde: x.inicio, motivo: x.motivo || null,
+        })),
         correos: (envios || []).slice(0, 30).map(e => ({ asunto: e.asunto || 'Correo', abierto: !!e.opened_at, clic: !!e.clicked_at, cuando: e.created_at })),
       },
     };
