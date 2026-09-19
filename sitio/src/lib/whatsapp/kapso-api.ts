@@ -24,8 +24,10 @@ export const kapsoConfigurado = () => !!(API_KEY && PHONE_NUMBER_ID);
 
 /** El parámetro de plantilla como Meta lo acepta: sin saltos ni tabs, nunca
  *  vacío (un parámetro vacío al enviar es 400; se sustituye por "—"). */
-export const sanearParam = (v: any): string =>
-  (String(v ?? '').replace(/[\n\r\t]+/g, ' ').replace(/ {4,}/g, '   ').trim()) || '—';
+/* Se mudó a `./sanear` para que el navegador pueda usarla sin arrastrar
+   este módulo (que importa `node:async_hooks`). Se reexporta para no romper
+   ningún import existente. */
+export { sanearParam } from './sanear';
 
 class KapsoError extends Error {
   status: number;
