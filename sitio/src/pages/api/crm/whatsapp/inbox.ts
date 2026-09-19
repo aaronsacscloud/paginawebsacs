@@ -181,6 +181,9 @@ const _GET: APIRoute = async ({ request, url }) => {
          «le escribimos en frío y jamás contestó». `ventana_expira_at` no sirve
          para preguntarlo: a las 24 h caduca en los dos casos. */
       ultimo_entrante_at: c.ultimo_entrante_at || null,
+      /* El último entrante lo escribió su bot, no él: no cuenta como contacto
+         real y por eso no manda la conversación a «No contestadas». */
+      ultimo_entrante_auto: !!c.ultimo_entrante_auto,
       alerta: c.alerta || null, mencion: mencionesPend.has(c.id), tiene_notas: conNota.has(c.id),
       phone_number_id: c.phone_number_id || null,   // multilínea: la línea por la que vive (chip y filtro «Línea»)
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
@@ -310,6 +313,38 @@ const _GET: APIRoute = async ({ request, url }) => {
     }
   }
 
+  /* ══ QUIÉN TIENE REUNIÓN PRÓXIMA (19-sep-2026) ════════════════════════════
+     Pedido del dueño: «crea un filtro que tenga las reuniones programadas, para
+     verificar rápido a los que tienen reunión próxima».
+
+     Es la lista con la que se prepara el día: a quién le vas a hablar en las
+     próximas horas y con qué contexto. Antes había que abrir contacto por
+     contacto para saberlo, o fiarse de la memoria.
+
+     Misma consulta acotada que los seguimientos —sólo los contactos que ya
+     están en la lista— y sólo lo que viene: desde ahora hasta dentro de siete
+     días, agendadas, sin canceladas ni las de la semana pasada. */
+  const finVentana = new Date(Date.now() + 7 * 86400e3).toISOString().slice(0, 10);
+  const hoyYmd = new Date().toISOString().slice(0, 10);
+  if (idsContacto.length) {
+    const { data: bks } = await supabase.from('bookings')
+      .select('contact_id, fecha, hora_inicio, asunto, estado, event_types(nombre)')
+      .in('contact_id', idsContacto.slice(0, 1200))
+      .eq('estado', 'agendada')
+      .gte('fecha', hoyYmd).lte('fecha', finVentana)
+      .order('fecha').order('hora_inicio');
+    const porContacto = new Map<string, any>();
+    for (const b of bks || []) if (!porContacto.has(b.contact_id)) porContacto.set(b.contact_id, b);
+    for (const c of todas) {
+      const b = c.contact_id ? porContacto.get(c.contact_id) : null;
+      if (b) {
+        c.reunion_fecha = b.fecha;
+        c.reunion_hora = String(b.hora_inicio || '').slice(0, 5);
+        c.reunion_titulo = (b as any).event_types?.nombre || b.asunto || 'Reunión';
+      }
+    }
+  }
+
   // ── Contadores del rail sobre el universo unificado ──
   const ahora = new Date().toISOString();
   const pospuesta = (c: any) => c.snooze_until && c.snooze_until > ahora;
@@ -317,11 +352,11 @@ const _GET: APIRoute = async ({ request, url }) => {
   // mencionaron, el seguimiento del contacto ya venció, o la ventana se cierra.
   const hoy = ahora.slice(0, 10);
   const requiereAccion = (c: any) => !c.virtual && c.estado_crm !== 'resuelta' && (
-    (c.ultima_direccion === 'entrante' && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
+    (c.ultima_direccion === 'entrante' && !c.ultimo_entrante_auto && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.alerta && (!c.asignado_a || (user && c.asignado_a === user.id))) ||   // el último envío falló: alguien tiene que decidir
     c.mencion ||
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
-    (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
+    (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && !c.ultimo_entrante_auto && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
   );
   /* MENSAJES PROGRAMADOS (decisión 2026-09-03) · lo que el agente va a mandar.
    *
@@ -353,7 +388,7 @@ const _GET: APIRoute = async ({ request, url }) => {
       : p.origen === 'reenganche' ? 'espera_ok'
       : enSombra ? 'propuesta' : 'sale';
   }
-  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, programados: 0, por_etapa: {} as Record<string, number> };
+  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, programados: 0, con_reunion: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
     if (c.programado_at) counts.programados++;
     // No cuentan en ninguna bandeja porque no son trabajo, pero SÍ se cuentan
@@ -372,9 +407,10 @@ const _GET: APIRoute = async ({ request, url }) => {
     if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
     counts.todas++;
     if (requiereAccion(c)) counts.accion++;
+    if (c.reunion_fecha && c.estado_crm !== 'resuelta') counts.con_reunion++;
     if (user && c.asignado_a === user.id) counts.mias++;
     if (!c.asignado_a && c.estado_crm !== 'resuelta') counts.sin_asignar++;
-    if (c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') counts.no_leidas++;   // el cliente habló y nadie contestó
+    if (c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.ultimo_entrante_auto) counts.no_leidas++;   // el cliente habló y nadie contestó
     // El espejo: nosotros escribimos al último y ELLOS no volvieron. Son las
     // dos mitades del seguimiento y hasta ahora solo se contaba una, así que la
     // pantalla de Inicio no podía avisar de la que se queda sin cerrar.
@@ -492,7 +528,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     if (fi === 'sin_asignar') l = l.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
     // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y
     // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
-    if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
+    if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.ultimo_entrante_auto);
     if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta' && (c.ultimo_entrante_at || c.ultimo_canal === 'email'));
     if (fi === 'programados') l = l.filter(c => !!c.programado_at).sort((a, b) => String(a.programado_at).localeCompare(String(b.programado_at)));
     /* Por fecha ascendente = los vencidos primero, que es el orden en que hay
@@ -500,6 +536,10 @@ const _GET: APIRoute = async ({ request, url }) => {
        evita que venzan. */
     if (fi === 'seguimiento') l = l.filter(c => !!c.seguimiento_fecha).sort((a, b) => String(a.seguimiento_fecha).localeCompare(String(b.seguimiento_fecha)));
     if (fi === 'accion') l = l.filter(requiereAccion);
+    /* Ordenada por cuándo es la reunión, no por el último mensaje: en esta
+       bandeja lo que manda es el reloj de la cita. */
+    if (fi === 'con_reunion') l = l.filter(c => c.reunion_fecha && c.estado_crm !== 'resuelta')
+      .sort((a, b) => `${a.reunion_fecha} ${a.reunion_hora}`.localeCompare(`${b.reunion_fecha} ${b.reunion_hora}`));
     if (f.etapa) l = l.filter(c => c.contacto?.lifecycle_stage === f.etapa);
     /* Los descalificados solo se ven cuando se piden. En cualquier otra vista
        —incluida «todas»— se van: ya se decidió que no, y tenerlos en medio

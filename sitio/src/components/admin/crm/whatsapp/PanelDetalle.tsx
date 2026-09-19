@@ -486,7 +486,17 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           );
         })()}
         {!esCliente && estatusPill && <span title="Estatus operativo: se deriva de los hechos (mensajes, llamadas, reuniones, cotizaciones)" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.02em', borderRadius: 999, padding: '3px 10px', background: estatusPill.fondo, color: estatusPill.tinta }}>{estatusPill.label}</span>}
-        {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
+        {/* ══ «VER FICHA» SÓLO EN CLIENTES (19-sep-2026) ══════════════════════
+            Pedido del dueño: «esto de Ver ficha no aplica en leads, sólo en
+            clientes, ya que la ficha es la que vemos directo en pantalla,
+            entonces está de más».
+
+            Exacto: en un lead, este panel YA es la ficha —contacto, empresa,
+            propiedades, secuencias, todo—. El enlace abría un cajón con lo
+            mismo que tenías delante. En un CLIENTE sí lleva a otra cosa: la
+            ficha 360 con sus suscripciones, cobros y uso del sistema, que aquí
+            no caben. */}
+        {empresa && esCliente && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
       </div>
 
       {/* Resumen compacto: los 5 datos que se leen de un vistazo. Antes eran
@@ -495,9 +505,26 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       {(empresa || contactoBase) && (
         <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px' }}>
           {[
+            /* ══ LA CUENTA, ARRIBA Y A LA VISTA (19-sep-2026) ══════════════
+               Pedido del dueño sobre Ramon, recién ligado a su cuenta: «cuando
+               hablo con clientes y ellos ya tienen una cuenta, debe aparecer del
+               lado derecho la cuenta a la que pertenecen para poder
+               identificarlos rápido».
+
+               Estaba, pero enterrada: dentro del colapsable «Cuenta SACS», que
+               desde hoy nace cerrado. Quien contesta necesita saber en el primer
+               vistazo si le habla a un cliente y a cuál cuenta — la respuesta
+               cambia entera según eso. Sólo sale cuando de verdad hay cuenta. */
+            ...(ctx?.sacs?.cuenta ? [['Cuenta', `${ctx.sacs.cuenta}${ctx.sacs.cuentas?.length > 1 ? ` +${ctx.sacs.cuentas.length - 1}` : ''}`]] : []),
             /* Sin empresa todavía (un lead que apenas conversa) los datos viven en el
-               contacto: lo que el agente o el consultor le sacó en el chat. */
-            ['Marca', empresa?.nombre_comercial || empresa?.nombre || contacto?.propiedades?.datos_lead?.empresa || null],
+               contacto: lo que el agente o el consultor le sacó en el chat.
+
+               Y si nada de eso hay pero SÍ hay cuenta de Sacs, la marca es el
+               nombre de la cuenta: «si el campo marca no está puesto, la marca
+               normalmente es el nombre de la cuenta» (dueño, 19-sep). Es
+               preferible el dato bueno al hueco gris — sin escribirlo en la
+               ficha, porque lo que se deduce se enseña, no se guarda. */
+            ['Marca', empresa?.nombre_comercial || empresa?.nombre || contacto?.propiedades?.datos_lead?.empresa || ctx?.sacs?.cuenta || null],
             ['Giro', empresa?.giro || contacto?.giro || null],
             ['Oferta dicha', (() => { const l = contacto?.propiedades?.ofertas; const o = Array.isArray(l) && l.length ? l[l.length - 1] : null; return o ? `${o.nombre} · vence ${o.vence}` : null; })()],
             ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : contacto?.sucursales_interes != null ? String(contacto.sucursales_interes) : null],
@@ -536,6 +563,37 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             ['Visitas web', ctx?.web?.en_vivo
               ? `● AHORA en ${ctx.web.en_vivo}`
               : ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],
+            /* ══ LAS SIETE SEÑALES DE LA RELACIÓN (19-sep-2026) ═════════════
+               Pedido del dueño: «agrega correos abiertos, correos con clic,
+               reuniones completadas, reuniones agendadas, secuencias activas,
+               llamadas conectadas y llamadas realizadas; y al darle clic a
+               cualquiera, un modal con el detalle completo».
+
+               Contestan «¿qué tan vivo está esto?» sin abrir nada. Van en dos
+               renglones y no en siete —un panel con siete números más sería
+               justo lo que él lleva todo el día pidiendo que deje de ser— y
+               cada uno lleva a su detalle. Los que están en cero no se pintan:
+               un cero repetido cinco veces es ruido, no información. */
+            ...((() => {
+              const sn = ctx?.senales, tc = ctx?.tel_contadores;
+              const correo = [
+                Number(sn?.correos_abiertos) ? `${sn.correos_abiertos} abierto${sn.correos_abiertos === 1 ? '' : 's'}` : null,
+                Number(sn?.correos_clic) ? `${sn.correos_clic} con clic` : null,
+              ].filter(Boolean).join(' · ');
+              const citas = [
+                Number(sn?.reuniones_agendadas) ? `${sn.reuniones_agendadas} agendada${sn.reuniones_agendadas === 1 ? '' : 's'}` : null,
+                Number(sn?.reuniones_hechas) ? `${sn.reuniones_hechas} ya tenida${sn.reuniones_hechas === 1 ? '' : 's'}` : null,
+              ].filter(Boolean).join(' · ');
+              const llam = tc && Number(tc.total)
+                ? `${tc.total} marcada${Number(tc.total) === 1 ? '' : 's'}${Number(tc.contestadas) ? ` · ${tc.contestadas} conectada${Number(tc.contestadas) === 1 ? '' : 's'}` : ''}`
+                : null;
+              return [
+                ...(correo ? [['Correos', correo, 'correos']] : []),
+                ...(citas ? [['Reuniones', citas, 'reuniones']] : []),
+                ...(llam ? [['Llamadas hechas', llam, 'interacciones']] : []),
+                ...(Number(sn?.secuencias_activas) ? [['Secuencias', `${sn.secuencias_activas} activa${sn.secuencias_activas === 1 ? '' : 's'}`, 'secuencias']] : []),
+              ];
+            })()),
             /* ── LO QUE ERAN PASTILLAS DE COLORES ────────────────────────
                Debajo de esta tarjeta había una tira de botones redondos —ARR
                en verde, Salud en ámbar, «5 d sin vender» en morado— que
@@ -753,6 +811,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const TITULO_DETALLE: Record<string, string> = {
     suscripciones: 'Suscripciones y ARR', salud: 'Salud de la cuenta', sacs: 'Uso de SACS', cotizaciones: 'Cotizaciones',
     conversion: 'Conversión del lead', oportunidad: 'Pipeline', origen: 'Origen del lead', interacciones: 'Interacciones',
+    correos: 'Correos que le llegaron', reuniones: 'Reuniones', secuencias: 'Secuencias',
   };
   const DetalleInfo = () => (
     <div>
@@ -762,6 +821,39 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         <b style={{ fontSize: 12.5 }}>{TITULO_DETALLE[detalle!] || 'Detalle'}</b>
       </div>
       <div style={{ padding: '4px 16px 16px' }}>
+        {detalle === 'correos' && (
+          (ctx?.senales?.detalle?.correos || []).length
+            ? (ctx.senales.detalle.correos as any[]).map((e, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{e.asunto}</span>
+                {e.clic ? <span style={tag(C.emerald50, C.emerald700)}>clic</span> : e.abierto ? <span style={tag(C.moradoAgua, C.moradoTinta)}>abierto</span> : <span style={tag(C.g100, C.g400)}>enviado</span>}
+                <span style={{ fontSize: 10.5, color: C.g400, flexShrink: 0 }}>{fecha(e.cuando)}</span>
+              </div>
+            ))
+            : <div style={{ fontSize: 12, color: C.g400 }}>Todavía no se le ha mandado ningún correo.</div>
+        )}
+        {detalle === 'reuniones' && (
+          (ctx?.senales?.detalle?.reuniones || []).length
+            ? (ctx.senales.detalle.reuniones as any[]).map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{b.titulo}</span>
+                <span style={tag(b.estado === 'cancelada' ? C.rojo50 : C.moradoAgua, b.estado === 'cancelada' ? C.rojo700 : C.moradoTinta)}>{b.estado}</span>
+                <span style={{ fontSize: 10.5, color: C.g400, flexShrink: 0 }}>{fecha(b.fecha)} {b.hora}</span>
+              </div>
+            ))
+            : <div style={{ fontSize: 12, color: C.g400 }}>Sin reuniones registradas.</div>
+        )}
+        {detalle === 'secuencias' && (
+          (ctx?.senales?.detalle?.secuencias || []).length
+            ? (ctx.senales.detalle.secuencias as any[]).map((x, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.g50}`, fontSize: 12 }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g900 }}>{x.nombre}</span>
+                <span style={{ fontSize: 10.5, color: C.g400 }}>{x.enviados} enviado{x.enviados === 1 ? '' : 's'}</span>
+                <span style={tag(x.activa ? C.emerald50 : C.g100, x.activa ? C.emerald700 : C.g500)} title={x.motivo || ''}>{x.activa ? 'activa' : 'salió'}</span>
+              </div>
+            ))
+            : <div style={{ fontSize: 12, color: C.g400 }}>Nunca ha entrado a una secuencia.</div>
+        )}
         {detalle === 'suscripciones' && (<>
           <div style={{ background: C.emerald50, borderRadius: 10, padding: '10px 13px', marginBottom: 10 }}>
             <span style={{ ...label(9), color: C.emerald700 }}>ARR total</span>
@@ -1089,13 +1181,32 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             Pospuesta hasta {new Date(conv.snooze_until).toLocaleString('es-MX')}
           </div>
         )}
-        <div style={{ ...label(10), marginBottom: 6 }}>Comentarios internos</div>
-        {!notas.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin comentarios. Usa "Añadir comentario" en el composer.</div>}
-        {notas.map((n: any) => (
-          <div key={n.id} style={{ background: C.ambar50, border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, color: '#7a5a15', marginBottom: 6, lineHeight: 1.45 }}>
-            <b style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>{n.autor} · {fecha(n.created_at)}</b>{n.texto}
-          </div>
-        ))}
+        {/* ══ AQUÍ TAMPOCO VA LA BITÁCORA (19-sep-2026) ═══════════════════
+            Misma razón que en el hilo: esta pestaña se llamaba «Notas» y
+            enseñaba 668 «Entró a la secuencia qa-…» por cada ocho comentarios
+            que alguien escribió a mano. Quedan los de las personas —que es lo
+            que se viene a leer aquí—, y lo automático vive en Actividad, con
+            más detalle del que cabe en una tarjeta amarilla. */}
+        {(() => {
+          const AUTOMATICAS = ['Secuencias', 'Telefonía', 'Cierre con IA', 'Sistema', 'Agenda'];
+          const mias = (notas || []).filter((n: any) => !AUTOMATICAS.includes(String(n.autor || '')));
+          const auto = (notas || []).length - mias.length;
+          return (<>
+            <div style={{ ...label(10), marginBottom: 6 }}>Comentarios internos</div>
+            {!mias.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin comentarios. Usa "Añadir comentario" en el composer.</div>}
+            {mias.map((n: any) => (
+              <div key={n.id} style={{ background: C.ambar50, border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, color: '#7a5a15', marginBottom: 6, lineHeight: 1.45 }}>
+                <b style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>{n.autor} · {fecha(n.created_at)}</b>{n.texto}
+              </div>
+            ))}
+            {auto > 0 && (
+              <button onClick={() => { setTab('info'); setSubInfo('actividad'); }}
+                style={{ marginTop: 8, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, color: C.moradoTinta, padding: 0, textAlign: 'left' }}>
+                {auto} apunte{auto === 1 ? '' : 's'} del sistema (llamadas, secuencias) → verlos en Actividad
+              </button>
+            )}
+          </>);
+        })()}
       </div>
     );
   };
@@ -1135,8 +1246,22 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       <div style={{ width: L.railito, flexShrink: 0, borderLeft: `1px solid ${C.g100}`, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 6, gap: 4 }}>
         {TABS.map(t => {
           const activo = tab === t.id && abiertoPanel;
+          /* ══ 🔴 EL SEGUNDO CLIC DEJABA LA COLUMNA EN BLANCO (19-sep-2026)
+                Reporte del dueño: «cuando le doy clic 2 veces aquí me aparece
+                así», con la captura de una columna vacía de 328 px.
+
+                Pasaba porque había DOS plegados distintos: éste, interno, que
+                escondía el contenido dejando el hueco reservado —la columna
+                sigue midiendo lo mismo, sólo que sin nada dentro— y el de la
+                pestaña «Ficha», que sí recoge la columna entera y se lo regala
+                a la conversación.
+
+                Se queda uno solo, el bueno: el segundo clic pide plegar al
+                contenedor, que es quien sabe el ancho. Dos mecanismos para lo
+                mismo siempre acaban en un estado que ninguno de los dos
+                esperaba. */
           return (
-            <button key={t.id} title={t.t} onClick={() => { if (tab === t.id) setAbiertoPanel(a => !a); else { setTab(t.id); setAbiertoPanel(true); } }}
+            <button key={t.id} title={t.t} onClick={() => { if (tab === t.id) document.dispatchEvent(new CustomEvent('wa-plegar-ficha')); else { setTab(t.id); setAbiertoPanel(true); } }}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: t.accent ? C.morado : activo ? C.moradoAgua : 'none', color: t.accent ? '#fff' : activo ? C.moradoTinta : C.g400 }}>
               <t.Ico size={17} />
             </button>

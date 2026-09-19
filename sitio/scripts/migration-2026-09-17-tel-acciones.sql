@@ -103,3 +103,11 @@ where not exists (select 1 from tel_conocimiento where tema = 'la información d
 -- contacto podía quedar en ping-pong: marcado, cortado y devuelto una y otra
 -- vez, sonándole el teléfono sin que nadie le hable nunca.
 alter table tel_sesion_items add column if not exists cortes integer not null default 0;
+
+-- EL BUZÓN AVISA SIEMPRE (18-sep-2026, decisión del dueño): «cuando suena y se
+-- va a buzón no hay nada que hacer: se le manda un WhatsApp diciendo que le
+-- intentamos llamar, y ya. Siempre intentas mandar uno de marketing; si el de
+-- marketing no sale, mandas el de utility».
+-- Por eso hacen falta DOS plantillas, no una: la de marketing dice más y la de
+-- utility es la que Meta deja pasar cuando la otra no puede.
+alter table wa_config add column if not exists llamadas_regla_plantilla_util text;

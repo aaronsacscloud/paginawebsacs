@@ -255,7 +255,28 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       }
       msjs.push({ ...m, _clase: 'mensaje', _t: m.enviado_at || m.created_at });
     }
-    const notas = (hilo.notas || []).map((n: any) => ({ ...n, _clase: 'nota', _t: n.created_at }));
+    /* ══ EL HILO ES LA CONVERSACIÓN, NO LA BITÁCORA (19-sep-2026) ═══════════
+       Pedido del dueño con tres capturas seguidas —una de Telefonía, otra de
+       Cierre con IA, otra con seis «Entró a la secuencia qa-…»—: «todo esto
+       vamos a quitarlo de la sección de conversaciones porque lo satura
+       demasiado, pero toda esa información considérala en la sección de
+       actividad, en su sección específica».
+
+       Los números le dan la razón: en diez días se escribieron 668 notas de
+       Secuencias, 155 de Telefonía y 39 de Cierre con IA… contra 8 de una
+       persona. Por cada comentario que alguien del equipo escribió a mano hay
+       ciento cinco automáticos encima. Leer el hilo de un cliente se había
+       vuelto leer el log del sistema.
+
+       Se quedan en el hilo las notas que ESCRIBIÓ UNA PERSONA —ésas son parte
+       de la conversación: «ojo, ya le bajamos el precio»— y salen las
+       automáticas, que van a Actividad, donde ya tienen sus secciones
+       («Llamadas y minutas», «Secuencias») con más detalle del que cabía en
+       una burbuja. No se borra nada: cambia de sitio. */
+    const AUTOMATICAS = ['Secuencias', 'Telefonía', 'Cierre con IA', 'Sistema', 'Agenda'];
+    const notas = (hilo.notas || [])
+      .filter((n: any) => !AUTOMATICAS.includes(String(n.autor || '')))
+      .map((n: any) => ({ ...n, _clase: 'nota', _t: n.created_at }));
     const correos = (hilo.correos || []).flatMap((h: any) => (h.mensajes || []).map((m: any) => ({
       ...m, _clase: 'correo', _t: m.created_at, _asunto: m.asunto || h.conversacion?.asunto || '',
     })));
@@ -345,7 +366,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     // donde ibas: se avisa con un botón y bajas tú.
     const alFinal = primeraVez || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     if (alFinal) { el.scrollTo({ top: el.scrollHeight }); setNuevosAbajo(0); }
-    else setNuevosAbajo(n => n + 1);
+    /* ══ «1 MENSAJE NUEVO» ES DEL CLIENTE, NO TUYO (19-sep-2026) ═══════════
+       Reporte del dueño con la captura del teléfono: mandaba un mensaje y le
+       salía el aviso de «1 mensaje nuevo» — por lo suyo. El contador miraba
+       sólo si la lista había crecido, y crece igual cuando el que escribe
+       eres tú.
+
+       Pasa de verdad y no es un detalle: si estabas leyendo hacia arriba y
+       mandas algo desde el composer, la pantalla no baja (a propósito, para no
+       arrancarte de donde ibas) y entonces aparece el aviso. Terminas picando
+       un botón que te lleva a tu propio mensaje. Sólo cuentan los ENTRANTES:
+       lo tuyo ya sabes que lo mandaste. */
+    else if (String(timeline[timeline.length - 1]?.direccion || '') === 'entrante') setNuevosAbajo(n => n + 1);
   }, [timeline]);
 
   // ── E1.5 · La posición de lectura se recuerda por conversación ──────────
@@ -582,7 +614,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
             onCompartir={() => setCompartir(true)}
             onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)}
-            notas={(hilo?.notas || []).length}
+            /* Las del sistema salieron del hilo: contarlas aquí prometía
+               comentarios que ya no están. Se cuentan las de personas. */
+            notas={(hilo?.notas || []).filter((n: any) => !['Secuencias', 'Telefonía', 'Cierre con IA', 'Sistema', 'Agenda'].includes(String(n.autor || ''))).length}
             onVerNotas={() => {
               const ult = [...timeline].reverse().find((t: any) => t._clase === 'nota');
               if (!ult) return;

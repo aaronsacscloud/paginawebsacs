@@ -90,6 +90,16 @@ export async function mandarPlantilla(o: {
   pl?: PlantillaViva | null;
   /** La de UTILIDAD que sale si la principal no está aprobada o Meta la rechaza. */
   respaldo?: Respaldo | null;
+  /* ══ UN ARCHIVO DISTINTO EN CADA ENVÍO (19-sep-2026) ═════════════════════
+     La plantilla guarda SU archivo de encabezado —el mismo para todos—, y eso
+     vale para un folleto. Pero la minuta de una llamada es un PDF por llamada:
+     sin esto, el único camino que espejaba no servía para ella, y la minuta
+     salía por `enviarPlantilla` a secas. ¿Consecuencia? El mensaje quedaba
+     registrado por el eco del webhook como «[Document]» pelado, sin URL ni
+     mime — el dueño lo reportó: «en vez de que diga [Document], que aparezca un
+     preview del PDF». Con el archivo aquí, el mensaje guarda su adjunto y la
+     burbuja lo pinta como lo que es. */
+  headerMedia?: { tipo: 'image' | 'video' | 'document'; link: string; filename?: string } | null;
 }): Promise<{ enviado: boolean; wamid: string | null; texto: string; motivo?: string; via?: 'principal' | 'respaldo' }> {
   const idioma = o.idioma || 'es_MX';
 
@@ -150,9 +160,11 @@ export async function mandarPlantilla(o: {
   if (!pl) return conRespaldo(`«${o.plantilla}» no está aprobada`, null);
 
   const ht = String(pl.header_tipo || 'TEXT').toUpperCase();
-  const media = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && pl.header_media_url
-    ? { tipo: ht.toLowerCase() as 'image' | 'video' | 'document', link: String(pl.header_media_url) }
-    : null;
+  const media = o.headerMedia
+    ? o.headerMedia
+    : (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && pl.header_media_url
+      ? { tipo: ht.toLowerCase() as 'image' | 'video' | 'document', link: String(pl.header_media_url) }
+      : null);
 
   let r: any;
   try {
@@ -168,10 +180,17 @@ export async function mandarPlantilla(o: {
 
   if (wamid) {
     await registrarMensaje({
-      kapsoMessageId: wamid, telefono: o.telefono, direccion: 'saliente', tipo: 'template',
+      kapsoMessageId: wamid, telefono: o.telefono, direccion: 'saliente',
+      /* Con archivo, el tipo es el del ARCHIVO y no «template»: la burbuja
+         dibuja la tarjeta del documento —con su extensión y «verlo aquí
+         mismo»— sólo si el tipo se lo dice. Como «template» salía el texto y
+         el PDF quedaba invisible, que es lo que el dueño reportó viendo un
+         «[Document]» pelado. El cuerpo aprobado se sigue guardando y se pinta
+         debajo de la tarjeta; que era una plantilla queda en `metadata`. */
+      tipo: media ? media.tipo : 'template',
       cuerpo: texto, status: 'sent', autor: o.autor || 'Agenda',
       mediaUrl: media ? media.link : null,
-      mime: media ? MIME[ht] : null,
+      mime: media ? (MIME[media.tipo.toUpperCase()] || MIME[ht] || null) : null,
       metadata: {
         ...(o.metadata || {}), plantilla: pl.nombre, botones: pl.botones || null,
         /* EL PLAN DE RESPALDO VIAJA CON EL MENSAJE.

@@ -28,7 +28,14 @@ import { confirmar } from '../../../../lib/ui/confirmar';
    un envío que no ocurre es peor que no avisar: se espera un WhatsApp que
    nunca llega. «Cola del agente» dice lo que hay —cosas encoladas— y cada
    renglón dice su estado real. */
-const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta', 'programados'];
+/* ══ QUÉ SE VE SIN DESPLEGAR (19-sep-2026) ═════════════════════════════════
+   «Todas» + las cuatro que son TRABAJO: lo que te escribieron y no contestaste,
+   lo que se enfrió, a quién ves pronto y lo que el agente quiere mandar. El
+   resto —míos, sin asignar, pospuestas, fuera del inbox— son cortes de la misma
+   gente, no colas de trabajo: se consultan de vez en cuando y por eso van bajo
+   «Ver N bandejas más» (el número lo cuenta el propio botón). Un menú se ordena
+   por lo que se hace a diario, no por lo que existe. */
+const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta', 'con_reunion', 'programados'];
 
 const BANDEJAS = [
   { id: 'accion', label: 'Requiere mi acción', Ico: IcoRayo },
@@ -41,6 +48,13 @@ const BANDEJAS = [
   { id: 'sin_respuesta', label: 'Sin respuesta de ellos', Ico: IcoBurbuja },
   // Lo que el agente PROPONE mandar: el vendedor lo ve, lo aprueba o lo detiene
   // desde aquí. Casi nada sale solo — la etiqueta de cada fila dice cuál sí.
+  /* ══ CON REUNIÓN PRÓXIMA (19-sep-2026) ═══════════════════════════════════
+     Pedido del dueño: «crea un filtro que tenga las reuniones programadas, para
+     verificar rápido a los que tienen reunión próxima». Es la lista con la que
+     se prepara el día: los que tienen cita en los próximos siete días, en orden
+     de reloj y no de último mensaje. Antes había que abrir contacto por
+     contacto o acordarse. */
+  { id: 'con_reunion', label: 'Con reunión próxima', Ico: IcoCalendario },
   { id: 'programados', label: 'Cola del agente', Ico: IcoCalendario },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
   /* Lo que TÚ prometiste, no lo que el sistema pospuso. «Pospuestas» es una
@@ -66,15 +80,21 @@ const fila = (activo: boolean): React.CSSProperties => ({
 });
 const num: React.CSSProperties = { marginLeft: 'auto', fontSize: 11, color: C.g400, fontVariantNumeric: 'tabular-nums' };
 
-/** «Ver más (4)» / «Ver menos» — el mismo en las tres secciones. */
-function VerMas({ abierto, n, onClick }: { abierto: boolean; n: number; onClick: () => void }) {
+/** «Ver 6 bandejas más» / «Ver menos» — el mismo en las tres secciones.
+ *
+ *  El rótulo lleva el QUÉ desde el 19-sep-2026: el dueño mandó la captura del
+ *  menú diciendo que se veía saturado, y ahí salían DOS «Ver 6 más» idénticos a
+ *  cuatro dedos de distancia, uno de bandejas y otro de etapas. Dos botones que
+ *  dicen lo mismo y hacen cosas distintas obligan a probar para saber cuál es
+ *  cuál — y eso, en un menú, es lo que lo vuelve ruido. */
+function VerMas({ abierto, n, que, onClick }: { abierto: boolean; n: number; que?: string; onClick: () => void }) {
   if (!n) return null;
   return (
     <button onClick={onClick}
       style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', border: 'none', background: 'none',
-        cursor: 'pointer', fontFamily: 'inherit', padding: '6px 12px 8px', fontSize: 11.5, fontWeight: 700, color: C.g400, textAlign: 'left' }}>
+        cursor: 'pointer', fontFamily: 'inherit', padding: '5px 12px 7px', fontSize: 11, fontWeight: 700, color: C.g400, textAlign: 'left' }}>
       <span style={{ display: 'inline-block', transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>›</span>
-      {abierto ? 'Ver menos' : `Ver ${n} más`}
+      {abierto ? 'Ver menos' : `Ver ${n} ${que || 'más'}`}
     </button>
   );
 }
@@ -280,10 +300,10 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         );
       })}
       <VerMas abierto={masBandejas} n={BANDEJAS.filter(b => !BANDEJAS_SIEMPRE.includes(b.id)).length}
-        onClick={() => setMasBandejas(v => !v)} />
+        que="bandejas más" onClick={() => setMasBandejas(v => !v)} />
 
       <div className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 12px 4px' }}>
           <span style={label(10)}>Ciclo de vida</span>
           <span style={{ marginLeft: 6, fontSize: 10, color: C.g300 }}>{etapas.reduce((a, e) => a + (e.n || 0), 0)}</span>
           <button onClick={() => setGestorEtapas(true)} title="Configurar etapas del ciclo de vida" aria-label="Configurar etapas"
@@ -314,11 +334,11 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         {(() => {
           const corte = etapas.findIndex(e => e.id === 'cliente');
           const ocultas = corte >= 0 ? etapas.length - (corte + 1) : 0;
-          return <VerMas abierto={masEtapas} n={ocultas} onClick={() => setMasEtapas(v => !v)} />;
+          return <VerMas abierto={masEtapas} n={ocultas} que="etapas más" onClick={() => setMasEtapas(v => !v)} />;
         })()}
 
         {/* ── VISTAS: header fijo con acciones visibles + tabs Todas/Mías/Equipo ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '16px 12px 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 12px 4px' }}>
           <IcoOjo size={13} style={{ color: C.g400 }} />
           <span style={label(10)}>Vistas</span>
           <span style={{ fontSize: 10, color: C.g300 }}>{visibles.length}</span>

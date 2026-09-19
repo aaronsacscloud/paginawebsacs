@@ -242,8 +242,55 @@ export const GET: APIRoute = async ({ url }) => {
     tel_contadores = data || null;
   }
 
+  /* ══ LAS SEÑALES DE LA RELACIÓN (19-sep-2026) ═══════════════════════════
+     Pedido del dueño: «agrega correos abiertos, correos con clic, reuniones
+     completadas, reuniones agendadas, secuencias activas, llamadas conectadas y
+     llamadas realizadas; y al darle clic a cualquiera, un modal con el detalle
+     completo».
+
+     Son las siete que contestan «¿qué tan vivo está esto?» sin abrir nada. Tres
+     ya existían sueltas (las de llamadas viven en `tel_contadores`); las otras
+     cuatro se cuentan aquí, de una vez, sobre TODA la historia del contacto y
+     no sólo desde el último mensaje — `desde_ultimo` sirve para otra pregunta.
+
+     Una consulta por familia y con tope: esto lo pide el panel cada vez que se
+     abre una conversación. */
+  let senales: any = null;
+  if (contactId) {
+    const [{ data: bks }, { data: envios }, { data: secs }] = await Promise.all([
+      supabase.from('bookings').select('id, fecha, hora_inicio, estado, asunto, event_types(nombre)')
+        .eq('contact_id', contactId).order('fecha', { ascending: false }).limit(60),
+      /* `email_sends` guarda el envío con SUS marcas (`opened_at`, `clicked_at`),
+         no una bitácora de eventos: un correo abierto tres veces es una
+         apertura, que es justo lo que se quiere contar aquí. */
+      supabase.from('email_sends').select('id, asunto, opened_at, clicked_at, created_at')
+        .eq('contact_id', contactId).order('created_at', { ascending: false }).limit(200),
+      supabase.from('crm_secuencia_miembros').select('id, inicio, enviados, detenida_at, motivo, crm_secuencias(nombre)')
+        .eq('contact_id', contactId).order('inicio', { ascending: false }).limit(40),
+    ]);
+    const hoyYmd = new Date().toISOString().slice(0, 10);
+    const reuniones = (bks || []);
+    senales = {
+      correos_abiertos: (envios || []).filter(e => e.opened_at).length,
+      correos_clic: (envios || []).filter(e => e.clicked_at).length,
+      /* «Completada» es la que YA pasó y no se canceló. El estado de una cita
+         no se actualiza solo cuando termina, así que preguntar sólo por el
+         estado daría cero para siempre: manda el calendario. */
+      reuniones_hechas: reuniones.filter(b => b.fecha < hoyYmd && b.estado !== 'cancelada').length,
+      reuniones_agendadas: reuniones.filter(b => b.fecha >= hoyYmd && b.estado === 'agendada').length,
+      /* «Activa» = dentro y sin detener. `detenida_at` es la única marca
+         fiable: una secuencia terminada tampoco tiene estado propio. */
+      secuencias_activas: (secs || []).filter(x => !x.detenida_at).length,
+      detalle: {
+        reuniones: reuniones.slice(0, 20).map(b => ({ fecha: b.fecha, hora: String(b.hora_inicio || '').slice(0, 5), estado: b.estado, titulo: (b as any).event_types?.nombre || b.asunto || 'Reunión' })),
+        secuencias: (secs || []).slice(0, 20).map(x => ({ nombre: (x as any).crm_secuencias?.nombre || 'Secuencia', activa: !x.detenida_at, enviados: x.enviados || 0, desde: x.inicio, motivo: x.motivo || null })),
+        correos: (envios || []).slice(0, 30).map(e => ({ asunto: e.asunto || 'Correo', abierto: !!e.opened_at, clic: !!e.clicked_at, cuando: e.created_at })),
+      },
+    };
+  }
+
   return json({
-    llamadas, tel_contadores, web,
+    llamadas, tel_contadores, web, senales,
     salud, desde_ultimo, otros_contactos, sugerencias, cotizaciones, sacs,
     propiedades: { empresa: empresa?.propiedades || null, contacto: contacto?.propiedades || null },
     contacto: contacto ? { owner_id: contacto.owner_id, email: (contacto as any).email, created_at: (contacto as any).created_at, resumen_ia: (contacto as any).resumen_ia, resumen_ia_at: (contacto as any).resumen_ia_at, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,

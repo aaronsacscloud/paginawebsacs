@@ -243,9 +243,19 @@ async function entregar(callId: string, url: string | null, ll: any, conv: any, 
   // ── B · Cerrada, pero hay plantilla que admite documento ────────────────
   if (await aprobada(cfg.minuta_envio_plantilla_doc)) {
     try {
-      await enviarPlantilla(tel, String(cfg.minuta_envio_plantilla_doc), 'es_MX', [nombre], {
+      /* Por `mandarPlantilla` y no por `enviarPlantilla`: es el único camino que
+         ESPEJA. Con el otro, el mensaje sólo existía por el eco del webhook —un
+         «[Document]» pelado, sin URL ni mime— y en el inbox no había forma de
+         saber qué PDF se le mandó al cliente. Regla del dueño (19-sep): en el
+         inbox siempre tiene que quedar claro qué se le envió. */
+      const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
+      const r = await mandarPlantilla({
+        telefono: tel, plantilla: String(cfg.minuta_envio_plantilla_doc), params: [nombre], autor: 'Minuta',
         headerMedia: { tipo: 'document', link: url, filename: archivo },
+        metadata: { minuta: true, call_id: callId },
+        textoRespaldo: `Te comparto el resumen de la llamada: ${archivo}`,
       });
+      if (!r.enviado) throw new Error(r.motivo || 'no salió');
       return { estado: 'enviada', motivo: 'se le mandó el PDF con plantilla (fuera de la ventana de 24 h)' };
     } catch (e: any) {
       /* Que la plantilla con documento falle NO puede dejar al cliente sin

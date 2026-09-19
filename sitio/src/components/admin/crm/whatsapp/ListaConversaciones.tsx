@@ -465,7 +465,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     El texto es lo flexible y los chips no se encogen: si algo
                     tiene que cortarse, que sea el nombre de la empresa y no
                     un chip que quede en «→ …». */}
-                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || resuelta || asignadoOtro) && (
+                {(etapa || c.contacto?.de_perfil || c.estado_crm === 'pendiente' || c.reunion_fecha || resuelta || asignadoOtro) && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                     {etapa && <span style={{ width: 6, height: 6, borderRadius: 999, background: etapa.fg, opacity: .6, flexShrink: 0 }} />}
                     {/* La etapa NO se encoge y la empresa SÍ. Yendo juntas en
@@ -498,6 +498,14 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                         en la cabecera del hilo, junto al composer, que es donde
                         importa — justo antes de escribir. */}
                     {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>Pendiente</span>}
+                    {/* Cuándo es la cita, en la fila: en la bandeja «Con reunión
+                        próxima» es EL dato, y en el resto avisa de que a esa
+                        persona la ves pronto — que cambia lo que le escribes. */}
+                    {c.reunion_fecha && (
+                      <span title={c.reunion_titulo || 'Reunión agendada'} style={{ fontSize: 9, fontWeight: 700, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 6px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        {new Date(`${c.reunion_fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).replace('.', '')} {c.reunion_hora}
+                      </span>
+                    )}
                     {/* ══ LA PÍLDORA «NOTA» SE FUE (19-sep-2026) ══════════════
                         Pedido del dueño: «quítala de aquí, satura demasiado la
                         pantalla». Y es cierto: la llevaban CASI TODAS las

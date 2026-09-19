@@ -97,6 +97,13 @@ export default function InboxPro() {
     try { return localStorage.getItem('wa_detalle_plegado') === '1'; } catch { return false; }
   });
   useEffect(() => { try { localStorage.setItem('wa_detalle_plegado', detallePlegado ? '1' : '0'); } catch { /* privado */ } }, [detallePlegado]);
+  /* El riel de la ficha pide plegar con el segundo clic en la pestaña activa:
+     el ancho lo manda esta pantalla, no el panel. */
+  useEffect(() => {
+    const h = () => setDetallePlegado(true);
+    document.addEventListener('wa-plegar-ficha', h);
+    return () => document.removeEventListener('wa-plegar-ficha', h);
+  }, []);
   const [error, setError] = useState('');
   const campos = useCamposFiltro(equipo);
 
@@ -1147,7 +1154,7 @@ export default function InboxPro() {
   // ── Móvil: lista → hilo apilado; sidebar y detalle en Sheets ──
 
   // ── Llamadas inteligentes ───────────────────────────────────────────────
-  const BANDEJA_LABEL: Record<string, string> = { accion: 'Requiere mi acción', todas: 'Todas', mias: 'Míos', sin_asignar: 'Sin asignar', no_leidas: 'No contestadas', sin_respuesta: 'Sin respuesta de ellos', programados: 'Cola del agente', pospuestas: 'Pospuestas', internas: 'Fuera del inbox' };
+  const BANDEJA_LABEL: Record<string, string> = { accion: 'Requiere mi acción', todas: 'Todas', mias: 'Míos', sin_asignar: 'Sin asignar', no_leidas: 'No contestadas', sin_respuesta: 'Sin respuesta de ellos', con_reunion: 'Con reunión próxima', programados: 'Cola del agente', pospuestas: 'Pospuestas', internas: 'Fuera del inbox' };
   const descripcionLista = [
     vistaActiva?.nombre ? `Vista ${vistaActiva.nombre}` : (BANDEJA_LABEL[filtros.filtro] || filtros.filtro),
     filtros.etapa ? `etapa ${filtros.etapa}` : null,
@@ -1165,7 +1172,19 @@ export default function InboxPro() {
   /* Los dos números de las bandejas de trabajo. Viven aquí y no dentro de la
      lista porque los usan dos sitios que ya no están juntos: las pestañas y la
      hoja de «Ir a». Es un filtro sobre lo que ya está en memoria. */
-  const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta';
+  /* ══ UNA RESPUESTA AUTOMÁTICA NO ES UN CONTACTO (19-sep-2026) ════════════
+     Pedido del dueño: «cuando el prospecto responde algún mensaje automático no
+     debe manejarse como no contestadas, ya que no hay nada que responder; debe
+     seguir donde esté el contacto en ese momento, porque eso no representa
+     ningún tipo de contacto real».
+
+     Es el tercer caso de la misma familia y el más engañoso: aquí SÍ entra un
+     mensaje del otro lado, sólo que no lo escribió nadie — su WhatsApp Business
+     contesta «gracias por contactarnos, nuestro horario es…» a los dos segundos
+     de escribirle, y con eso la conversación saltaba al tope de la única
+     bandeja que sirve para trabajar. El mensaje se sigue viendo en el hilo: lo
+     único que cambia es que deja de pedir tu atención. */
+  const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.ultimo_entrante_auto;
   /* ══ «SIN RESPUESTA DE ELLOS» ERA MEDIO REGISTRO DE PROSPECCIÓN (19-sep-2026)
      El dueño lo dijo de «No contestadas» y aplica igual aquí, que es donde el
      efecto es mayor: «como le llamo a muchos leads en frío se ensucia la

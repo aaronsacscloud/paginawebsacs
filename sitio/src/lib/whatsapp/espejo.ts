@@ -10,6 +10,7 @@
 //  - Número sin contacto: se espeja igual (contact_id null), sin activity y
 //    sin tocar last_contact_at — no se inventan contactos.
 import { etiquetaTipo } from './parse';
+import { esAutorespuesta } from './autorespuesta';
 import { explicarError } from './errores';
 import { sincronizarContactoKapso } from './kapso-sync';
 import { supabase } from '../supabase';
@@ -316,6 +317,12 @@ export async function registrarMensaje(o: {
     ultimo_mensaje_at: cuando,
     ultimo_mensaje_texto: texto.slice(0, 200) || null,
     ultima_direccion: o.direccion,
+    /* ¿Lo escribió alguien, o su WhatsApp Business? Se resuelve AL GUARDAR y
+       se recuerda en la conversación: el inbox no carga mensajes —son mil
+       conversaciones por pantallazo— así que preguntarlo después serían mil
+       consultas por carga. En los salientes siempre false: el automático del
+       otro lado sólo importa cuando entra. */
+    ...(o.direccion === 'entrante' ? { ultimo_entrante_auto: esAutorespuesta(texto) } : {}),
     estado: 'active',
     ...(o.direccion === 'entrante' ? { alerta: null } : {}),
     // El contador GLOBAL = entrantes desde nuestra última respuesta: se

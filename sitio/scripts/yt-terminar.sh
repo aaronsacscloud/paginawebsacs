@@ -23,7 +23,7 @@ set -uo pipefail
 SITIO=/opt/sacs/paginawebsacs/sitio
 LOG=/home/aaron/yt-terminar.log
 NODE=/tmp/node-v22.12.0-linux-x64/bin
-OCULTAR=Q8d3jWz4HnI          # 🗺️ Conoce la plataforma — el dueño confirmó que ya no está vigente
+OCULTAR=            # ya está oculto
 
 di() { echo "[$(date -u +'%Y-%m-%d %H:%M UTC')] $*" >> "$LOG"; }
 
