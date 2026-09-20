@@ -1,0 +1,49 @@
+# SEO de sacscloud.com · dónde quedó todo (19 y 20-sep-2026)
+
+Esta carpeta es el estado del trabajo de posicionamiento. Vive en el repo y no
+en una carpeta temporal a propósito: cualquier sesión o cualquier persona del
+equipo tiene que poder retomarlo sin depender de una conversación.
+
+## Para retomar el trabajo
+
+Empieza por este archivo, luego `geo.md`, que es el diagnóstico más reciente.
+
+| Archivo | Qué trae |
+|---|---|
+| `alta-capterra-g2.md` | **Lo accionable ahora.** Campo por campo del formulario de Capterra y de G2, listo para copiar. Los mensajes para pedir reseñas (WhatsApp, correo y recordatorio). Qué tener a la mano antes de empezar. |
+| `fichas-externas.md` | La ficha maestra: descripciones de 50, 150 y 500 palabras, categorías, diferenciadores, precios con su base. Es la fuente para que TODAS las altas digan lo mismo, que es lo que hace que una IA reconozca la entidad. |
+| `geo.md` | Qué le falta al sitio para que ChatGPT, Claude, Perplexity y Gemini lo citen. Separa lo que se arregla dentro del sitio de lo que depende de terceros. |
+| `contenido.md` | Mapa de intención de búsqueda, las 30 búsquedas que más importan y los 12 contenidos a escribir, con su URL y a qué enlazan. |
+| `tecnico.md` | Auditoría técnica: títulos, descripciones, encabezados, canónicas, sitemap, enlazado, huérfanas. Casi todo aplicado ya. |
+| `estructurados.md` | Los datos estructurados por tipo de página, con el JSON-LD. Aplicado. |
+| `indexacion.md` | Mediciones: sitemaps, estado HTTP, contenido delgado, Lighthouse móvil. |
+| `decision-subdominios.md` | Los subdominios que gastan los enlaces secundarios de Google y qué hacer con cada uno. **Parado por decisión del dueño.** |
+
+## Lo que falta y depende del dueño
+
+1. **Número de empleados** para las fichas. Son 5 de equipo propio más
+   consultores externos recurrentes; falta el total para elegir el rango. No se
+   inventa: el dato se cruza con LinkedIn y una mentira ahí tumba la
+   credibilidad de todo lo demás.
+2. **A quién pedirle reseña** en La Bella Pandita, Casa Maca y Sandmade. Los
+   casos publicados solo dicen «equipo», sin persona. El único con nombre es
+   Liveshow.
+3. **Las altas**: Crunchbase (la ficha ya existe y la descripción la pinta como
+   ERP genérico, hay que reclamarla y corregirla), G2 y Capterra. Piden cuenta
+   y verificación de dominio, así que las hace el dueño.
+4. **La ficha de Google de la empresa** anuncia un teléfono retirado (55 3663
+   4392); el vigente es el 55 9302 7234.
+
+## Reglas que no se negocian en este trabajo
+
+- La marca se escribe «Sacs», nunca «SACS».
+- Todo el contenido se escribe en contexto de moda, con el lenguaje del ramo
+  como se habla en México, aunque el tema sea genérico.
+- Los precios y las cifras tienen que ser verdad y coincidir con
+  `src/data/plans.ts`. De las funciones se habla como existentes; de los
+  números, no.
+- Las 113 reseñas de Google **no** se marcan como datos estructurados propios:
+  marcar una calificación de un tercero como tuya va contra las reglas de Google
+  y arriesga los resultados enriquecidos de todo el sitio.
+- Nunca se ofrece nada a cambio de una reseña. Capterra y G2 lo prohíben y
+  pueden retirar la ficha completa.
