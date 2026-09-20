@@ -147,7 +147,19 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   const [error, setError] = useState<string | null>(null);
   // El calendario abre la pestaña. Una agenda se lee en una cuadrícula de mes;
   // la tabla es para buscar algo concreto, y eso viene después.
-  const [vista, setVista] = useState<'lista' | 'calendario'>('calendario');
+  const [vista, setVista] = useState<'lista' | 'calendario' | 'personas'>('calendario');
+  /* ══ LA AGENDA DE CADA QUIEN (20-sep-2026) ═══════════════════════════════
+     Pedido del dueño: «como superadmin, una sección donde podamos ver el
+     calendario de cada usuario para ver qué tipo de eventos tiene cada uno,
+     pero que se manejen totalmente separados, cada uno con su Google
+     Calendar». Se carga sólo al entrar a la vista: es una consulta de equipo
+     entero y no tiene por qué pagarla quien viene a ver sus reuniones. */
+  const [personas, setPersonas] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (vista !== 'personas' || personas) return;
+    fetch('/api/crm/agenda/por-persona', { cache: 'no-store' })
+      .then(r => r.json()).then(j => setPersonas(j.personas || [])).catch(() => setPersonas([]));
+  }, [vista, personas]);
   // Arranca en la semana y no en 'proximas': lo primero que se pregunta al
   // entrar es qué hay estos días, y con la agenda vacía a futuro 'proximas'
   // dejaba la pestaña en blanco aunque la semana tuviera diez reuniones.
@@ -591,6 +603,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         <div style={{ flex: 1 }} />
         <button style={S.seg(vista === 'calendario')} onClick={() => setVista('calendario')}>▦ Calendario</button>
         <button style={S.seg(vista === 'lista')} onClick={() => setVista('lista')}>☰ Lista</button>
+        <button style={S.seg(vista === 'personas')} onClick={() => setVista('personas')} title="La agenda de cada persona del equipo y con qué Google está conectada">👤 Por persona</button>
       </div>
 
       {/* Filtros */}
@@ -612,7 +625,48 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         </select>
       </div>
 
-      {vista === 'lista' && isMobile ? (
+      {vista === 'personas' ? (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {personas === null && <div style={{ fontSize: '0.8rem', color: '#9a97a6' }}>Leyendo la agenda del equipo…</div>}
+          {personas?.length === 0 && <div style={{ fontSize: '0.8rem', color: '#9a97a6' }}>No hay nadie con agenda todavía.</div>}
+          {(personas || []).map((p: any) => (
+            <div key={p.id} style={{ border: '1px solid #eeeef1', borderRadius: 12, background: '#fff', padding: '13px 15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <b style={{ fontSize: '0.95rem' }}>{p.nombre}</b>
+                <span style={{ fontSize: '0.7rem', color: '#9a97a6' }}>{p.email}</span>
+                {/* Lo primero que hay que poder ver: si sus citas le suenan.
+                    Sin Google conectado, una reunión existe en el CRM y en
+                    ningún teléfono — y eso no se nota hasta que alguien falta. */}
+                {p.google?.activo
+                  ? <span title={`Sus eventos van a ${p.google.email}`} style={{ fontSize: '0.66rem', fontWeight: 800, background: '#ECFDF5', color: '#047857', borderRadius: 20, padding: '2px 9px' }}>Google · {p.google.email}</span>
+                  : <span title="Sus reuniones quedan solo en el CRM: no le llegan al calendario ni le suenan" style={{ fontSize: '0.66rem', fontWeight: 800, background: '#FEF3C7', color: '#B45309', borderRadius: 20, padding: '2px 9px' }}>sin calendario conectado</span>}
+                {!p.recibe_entrantes && <span title="Las llamadas entrantes no le suenan" style={{ fontSize: '0.66rem', fontWeight: 700, background: '#f5f4f8', color: '#6B7280', borderRadius: 20, padding: '2px 9px' }}>fuera del teléfono</span>}
+                <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#6B7280' }}>
+                  <b style={{ color: '#111827' }}>{p.proximas}</b> en 30 días{p.hoy ? ` · ${p.hoy} hoy` : ''}{p.de_llamada ? ` · ${p.de_llamada} de llamadas` : ''}
+                </span>
+              </div>
+              {p.por_tipo?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 }}>
+                  {p.por_tipo.map(([t, n]: any) => (
+                    <span key={t} style={{ fontSize: '0.68rem', fontWeight: 700, background: '#f5f4f8', color: '#4B5563', borderRadius: 20, padding: '3px 9px' }}>{t} · {n}</span>
+                  ))}
+                </div>
+              )}
+              {p.siguientes?.length > 0 && (
+                <div style={{ marginTop: 9, display: 'grid', gap: 4 }}>
+                  {p.siguientes.map((b: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, fontSize: '0.74rem', color: '#4B5563' }}>
+                      <span style={{ color: '#9a97a6', minWidth: 96 }}>{new Date(`${b.fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '')} {b.hora}</span>
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.titulo}{b.con ? ` · ${b.con}` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!p.proximas && <div style={{ marginTop: 8, fontSize: '0.74rem', color: '#9a97a6' }}>Sin nada agendado en los próximos 30 días.</div>}
+            </div>
+          ))}
+        </div>
+      ) : vista === 'lista' && isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(b => {
             const est = ESTADOS[normalizaEstado(b.estado)];
