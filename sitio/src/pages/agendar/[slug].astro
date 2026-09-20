@@ -100,6 +100,10 @@ if (!eventType) {
        cualquier hoja. Si algún día cambia el ancho en el componente, esta regla
        deja de aplicar sola y no rompe nada. */
     .agendar-booking div[style*="max-width"] { max-width: 640px !important; }
+    /* Y el contenedor que BookingPage se pinta alrededor tiene que estirarse:
+       como `.agendar-booking` es flex y ese div es el ítem, se encogía al ancho
+       de su contenido (458 px medidos) y la tarjeta nunca llegaba a sus 640. */
+    .agendar-booking astro-island > div { width: 100%; }
 
     .agendar-panel { order: initial; }
     .agendar-booking {
