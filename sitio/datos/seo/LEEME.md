@@ -19,6 +19,15 @@ Empieza por este archivo, luego `geo.md`, que es el diagnóstico más reciente.
 | `indexacion.md` | Mediciones: sitemaps, estado HTTP, contenido delgado, Lighthouse móvil. |
 | `decision-subdominios.md` | Los subdominios que gastan los enlaces secundarios de Google y qué hacer con cada uno. **Parado por decisión del dueño.** |
 
+## Estado de las altas
+
+| Destino | Estado |
+|---|---|
+| Crunchbase | **Hecho (20-sep-2026).** Ficha reclamada y corregida: descripción, industrias, domicilio, logo y fundador. Las ediciones entran a revisión de Crunchbase y tardan de un día a dos semanas en verse. |
+| G2 | **Perfil aprobado (20-sep-2026).** G2 asigna las categorías él mismo: cuando llegue el correo con la liga del perfil, hay que revisar que sean de retail de moda y no de software genérico. |
+| Capterra (con GetApp y Software Advice) | Pendiente. Alta gratuita en `capterra.com/vendors`. El texto está en `alta-capterra-g2.md`. |
+| Reseñas | Pendiente. Es lo que hace que las tres fichas sirvan: sin reseñas no rankean ni las citan. |
+
 ## Lo que falta y depende del dueño
 
 1. **Número de empleados** para las fichas. Son 5 de equipo propio más
