@@ -99,8 +99,10 @@ const plano = localiza(planoNovias);
 const secciones = localiza(seccionesNovias);
 
 const titulo = `Sistema para casas de novias en ${pais.nombre}`;
+/* Se acortó el 20-sep-2026: con los nombres largos —República Dominicana,
+   Costa Rica— la descripción pasaba de 160 y Google la cortaba a media frase. */
 const desc =
-  `El sistema para novias, ${pais.xv} y fiesta en ${pais.nombre}: apartados con abonos y fecha de evento, muestras que no se venden por error y el taller por etapas.`;
+  `El sistema para novias, ${pais.xv} y fiesta en ${pais.nombre}: apartados con abonos y fecha de evento, y muestras que no se venden por error.`;
 ---
 
 <BaseLayout title={titulo} description={desc}>
