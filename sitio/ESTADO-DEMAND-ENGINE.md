@@ -1506,3 +1506,18 @@ comprobar» no es «no hay nada que hacer».
 - **Huecos vs competidor**: 15, casi todos ruido (WhatsApp ya cubierto,
   `tap-pay-android` y `buy-button` son de Square, `release-notes` y
   `getting-started` son docs). Vale un changelog público; lo demás no.
+
+## 20-sep-2026 · El gate de calidad: nada llega a la bandeja sin pasar el referee
+
+Construido `src/lib/demanda/calidad.ts` con tres fases nuevas del ciclo diario
+entre el brief y la bandeja: **competencia** (gpt-5 `web_search` lee las 5
+páginas que hoy rankean para la pregunta y guarda en `de_paginas_similares`),
+**referee** (comprobaciones duras + juicio en 6 ejes contra la competencia;
+devuelve a brief con correcciones, máx. 2 rondas, luego «atascada») e
+**imagen** (portada documental con gpt-image-2 a storage, solo para lo que
+pasó). Bloque `imagen` en `bloques.ts`; cierre por giro en `ContenidoMotor`
+(`brief.giro` → `/giros/<giro>`); OG image en las tres rutas del motor. La
+bandeja enseña veredicto, competencia, portada y giro; solo lista lo aprobado
+y lo atascado. Primera pieza que pasó: `/software-para/tienda-de-novias/`
+(8.4/10 tras 2 reescrituras, $1.27). El flujo completo y lo aprendido están
+en `FLUJO-CONTENIDO.md`.

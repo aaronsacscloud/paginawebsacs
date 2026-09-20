@@ -21,7 +21,10 @@ export type Bloque =
   | { t: 'faq'; items: { p: string; r: string }[] }
   | { t: 'pasos'; items: { titulo: string; texto: string }[] }
   | { t: 'dato'; valor: string; etiqueta: string; fuente: string }
-  | { t: 'cta'; texto: string; boton: string; url: string };
+  | { t: 'cta'; texto: string; boton: string; url: string }
+  /* Una imagen con su pie. La URL viene de storage (la genera el motor), nunca
+     del texto del modelo: el bloque lo agrega el pipeline, no el redactor. */
+  | { t: 'imagen'; url: string; alt: string; pie?: string; ancho?: number; alto?: number };
 
 const esc = (s: string) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -106,6 +109,15 @@ export function aHtml(bloques: Bloque[]): string {
         out.push(`<div class="de-cta"><p>${enLinea(b.texto)}</p><a class="de-cta-b" href="${esc(u)}">${esc(b.boton)}</a></div>`);
         break;
       }
+      case 'imagen': {
+        const u = urlSegura(b.url);
+        if (!u) break;
+        // width/height explícitos: sin ellos la página salta al cargar (CLS), y
+        // eso Google lo mide. `loading="lazy"` porque la portada va aparte.
+        out.push(`<figure class="de-imagen"><img src="${esc(u)}" alt="${esc(b.alt)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 630}">` +
+          (b.pie ? `<figcaption>${enLinea(b.pie)}</figcaption>` : '') + `</figure>`);
+        break;
+      }
     }
   }
   return out.join('\n');
@@ -131,8 +143,39 @@ export function aTexto(bloques: Bloque[]): string {
     else if (b?.t === 'pasos') for (const i of b.items || []) p.push(i.titulo, i.texto);
     else if (b?.t === 'cita') p.push(b.texto);
     else if (b?.t === 'tabla') for (const f of b.filas || []) p.push(...f);
+    // 'imagen' y 'dato' no cuentan como texto: son apoyo, no prosa.
   }
   return p.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * La misma página en texto CON estructura (encabezados, tablas, pasos, faq
+ * marcados). Es lo que se le da al referee: con `aTexto()` una tabla de
+ * abonos se le presentaba como «03 ago Anticipo $7,200 $16,800 05 sep…» y la
+ * marcaba como «texto corrido ilegible» — el defecto estaba en la vista, no en
+ * la página, y costó una reescritura entera.
+ */
+export function aMarkdown(bloques: Bloque[]): string {
+  const out: string[] = [];
+  for (const b of bloques || []) {
+    switch (b?.t) {
+      case 'h2': out.push(`\n## ${b.texto}`); break;
+      case 'h3': out.push(`\n### ${b.texto}`); break;
+      case 'p': out.push(b.texto); break;
+      case 'lista': out.push((b.items || []).map((i, n) => `${b.ordenada ? `${n + 1}.` : '-'} ${i}`).join('\n')); break;
+      case 'tabla':
+        out.push(`[TABLA]\n| ${(b.encabezados || []).join(' | ')} |\n| ${(b.encabezados || []).map(() => '---').join(' | ')} |\n` +
+          (b.filas || []).map(f => `| ${f.join(' | ')} |`).join('\n') + (b.nota ? `\n_${b.nota}_` : ''));
+        break;
+      case 'cita': out.push(`> ${b.texto}\n> — ${b.fuente}`); break;
+      case 'faq': out.push(`[FAQ]\n` + (b.items || []).map(i => `**P: ${i.p}**\nR: ${i.r}`).join('\n\n')); break;
+      case 'pasos': out.push(`[PASOS]\n` + (b.items || []).map((i, n) => `${n + 1}. **${i.titulo}** ${i.texto}`).join('\n')); break;
+      case 'dato': out.push(`[DATO] ${b.valor} — ${b.etiqueta} (${b.fuente})`); break;
+      case 'cta': out.push(`[CTA] ${b.texto} → [${b.boton}](${b.url})`); break;
+      case 'imagen': out.push(`[IMAGEN: ${b.alt}]`); break;
+    }
+  }
+  return out.join('\n\n').trim();
 }
 
 export const palabras = (bloques: Bloque[]) => aTexto(bloques).split(/\s+/).filter(Boolean).length;

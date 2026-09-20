@@ -18,6 +18,7 @@ import { supabase } from '../../../lib/supabase';
 import { firmaValida, xml } from '../../../lib/telefonia/twilio';
 import type { Oido } from '../../../lib/telefonia/oidos';
 import { itemDeLlamada } from '../../../lib/telefonia/suelta';
+import { corregirTerminos } from '../../../lib/telefonia/terminos';
 import { detectar, anotarYHacer } from '../../../lib/telefonia/acciones';
 
 export const prerender = false;
@@ -67,7 +68,11 @@ export const POST: APIRoute = async ({ request, url }) => {
   const { data: fila } = await supabase.from('tel_sesion_items').select('oido, contestado_at').eq('id', it.id).maybeSingle();
   const oido: Oido[] = Array.isArray(fila?.oido) ? (fila!.oido as any).slice() : [];
   const t = fila?.contestado_at ? Date.now() - new Date(fila.contestado_at).getTime() : 0;
-  oido.push({ t, texto: texto.trim().slice(0, 300), final, quien });
+  /* Los nombres propios, bien escritos desde que entran. Aquí SÍ se corrige lo
+     que se guarda —al revés que en la minuta, donde la transcripción cruda es
+     la evidencia—: esto es lo que se lee en pantalla durante la llamada y de
+     donde salen el cierre con IA y las acciones. Ver `lib/telefonia/terminos`. */
+  oido.push({ t, texto: corregirTerminos(texto.trim()).slice(0, 300), final, quien });
   // Una llamada muy larga no puede crecer sin fin: se quedan las últimas 300
   // frases, que son de sobra para el cierre con IA (lee 9000 caracteres).
   if (oido.length > 300) oido.splice(0, oido.length - 300);

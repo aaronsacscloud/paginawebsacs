@@ -15,6 +15,7 @@ import './paginas';
 import './tecnico';
 import './indexar';
 import './contenido';
+import './calidad';
 import './seo';
 import './geo/medir';
 import './enlaces';

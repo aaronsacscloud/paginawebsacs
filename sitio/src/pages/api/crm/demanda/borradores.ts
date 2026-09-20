@@ -18,12 +18,33 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { aHtml, palabras as contarPalabras } from '../../../../lib/demanda/bloques';
+import { giroDe } from '../../../../lib/demanda/publicar';
+
+/* Lo que el referee dejó dicho, en el tamaño que cabe en una tarjeta. */
+function resumenReferee(auditorias: any) {
+  const r = auditorias?.referee;
+  if (!r?.puntajes) return null;
+  const vals = Object.values(r.puntajes as Record<string, number>);
+  return {
+    pasa: !!r.pasa,
+    promedio: Math.round((vals.reduce((a, b) => a + b, 0) / Math.max(vals.length, 1)) * 10) / 10,
+    puntajes: r.puntajes,
+    ronda: r.ronda ?? 0,
+    por_que: r.por_que || '',
+    fallos: r.fallos || [],
+    mejor_que_competencia: !!r.mejor_que_competencia,
+    cuando: r.cuando || null,
+  };
+}
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 export const GET: APIRoute = async ({ url }) => {
-  const estado = url.searchParams.get('estado') || 'borrador,aprobado';
+  /* Por defecto solo lo APROBADO por el referee. Lo que está en «borrador» y no
+     pasó no se le enseña al dueño: se reescribe solo. La excepción son las
+     atascadas (dos rondas sin pasar), que se listan aparte con el veredicto. */
+  const estado = url.searchParams.get('estado') || 'aprobado,borrador';
   const id = url.searchParams.get('id');
 
   // Una pieza concreta, con su HTML listo para leer.
@@ -32,6 +53,9 @@ export const GET: APIRoute = async ({ url }) => {
       .select('id, seccion, slug, titulo, h1, meta_desc, cuerpo, brief, estado, auditorias, created_at, actualizado_at')
       .eq('id', id).maybeSingle();
     if (error || !data) return json({ ok: false, error: error?.message || 'no existe' }, 404);
+    const { data: similares } = await supabase.from('de_paginas_similares')
+      .select('url, titulo, tipo, palabras_aprox, tiene_faq, tiene_tabla_o_pasos, cubre_bien, le_falta, por_que_rankea')
+      .eq('contenido_id', id).order('analizada_at', { ascending: false }).limit(8);
     return json({
       ok: true,
       pieza: {
@@ -39,6 +63,11 @@ export const GET: APIRoute = async ({ url }) => {
         html: aHtml(data.cuerpo as any),
         palabras: contarPalabras(data.cuerpo as any),
         url: `https://www.sacscloud.com/${data.seccion}/${data.slug}/`,
+        referee: resumenReferee(data.auditorias),
+        portada: (data.brief as any)?.portada || null,
+        giro: giroDe(data.brief),
+        atascada: !!(data.brief as any)?.atascada,
+        competencia: { paginas: similares || [], hueco: (data.brief as any)?.competencia?.hueco_comun || null },
       },
     });
   }
@@ -53,9 +82,16 @@ export const GET: APIRoute = async ({ url }) => {
   /* Se manda un resumen por pieza, no el cuerpo entero: la bandeja lista veinte
      y cargar veinte artículos de dos mil palabras para enseñar veinte títulos es
      tráfico que nadie pidió. El cuerpo llega al abrir una. */
-  const piezas = (data || []).map(p => {
+  const piezas = (data || []).filter(p => {
+    // En «borrador» solo las atascadas: las demás están a medio camino del referee.
+    return p.estado !== 'borrador' || !!(p.brief as any)?.atascada;
+  }).map(p => {
     const c = (p.cuerpo || []) as any[];
     return {
+      referee: resumenReferee(p.auditorias),
+      portada: (p.brief as any)?.portada?.url || null,
+      giro: giroDe(p.brief)?.label || null,
+      atascada: !!(p.brief as any)?.atascada,
       id: p.id, seccion: p.seccion, slug: p.slug, titulo: p.titulo,
       meta_desc: p.meta_desc, estado: p.estado, created_at: p.created_at,
       palabras: contarPalabras(c),

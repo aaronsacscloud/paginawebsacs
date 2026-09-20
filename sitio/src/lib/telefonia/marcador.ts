@@ -31,6 +31,7 @@ const sinSala = (s: any) => s?.modo === 'ia';
 // `./cierre` arrastra googleapis, pdfkit y el SDK de IA: se carga solo cuando hace falta (los webhooks TwiML importan este módulo y deben arrancar rápido).
 const cierre = () => import('./cierre');
 import { claseDeFallo } from './fallo-cierre';
+import { corregirTerminos } from './terminos';
 
 export const BASE = 'https://www.sacscloud.com';
 const ahora = () => new Date().toISOString();
@@ -800,7 +801,10 @@ export async function procesarTranscripcion(itemId: string, p: Record<string, st
   // Un parcial reemplaza al parcial anterior de la MISMA pista; un final se queda.
   const ultimo = oido.length ? oido[oido.length - 1] : null;
   if (ultimo && !ultimo.final && (ultimo.quien || 'contacto') === quien) oido.pop();
-  oido.push({ t: ms(it.contestado_at), texto: texto.trim().slice(0, 300), final, quien });
+  // Los nombres propios, bien escritos desde que entran (ver `terminos.ts`):
+  // esto es lo que se lee en la cabina, lo que juzga el veredicto y de lo que
+  // sale el cierre con IA.
+  oido.push({ t: ms(it.contestado_at), texto: corregirTerminos(texto.trim()).slice(0, 300), final, quien });
   // Tope: se tiran primero los parciales (los finales son lo que lee el cierre con IA).
   if (oido.length > 300) { const fin = oido.filter(o => o.final), par = oido.filter(o => !o.final); oido.splice(0, oido.length, ...[...fin.slice(-260), ...par.slice(-40)].sort((a, b) => a.t - b.t)); }
   await supabase.from('tel_sesion_items').update({ oido, updated_at: ahora() }).eq('id', itemId);

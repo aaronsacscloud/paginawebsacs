@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { frenoDeSalida } from './salida';
 import { aHtml, palabras, schemaDeCuerpo, indice, aTexto, type Bloque } from './bloques';
 import { SITIO, ENTIDAD_ID } from '../../data/entidad';
+import { modaSectors } from '../../data/navigation';
 
 export const SECCIONES = ['recursos', 'comparar', 'software-para'] as const;
 export type Seccion = typeof SECCIONES[number];
@@ -13,7 +14,21 @@ export type Publicado = {
   html: string; indice: { texto: string; ancla: string }[];
   schema: Record<string, any>[]; publicado_at: string | null; actualizado_at: string;
   palabras: number; brief: any;
+  /** La foto de portada que generó el motor (brief.portada). */
+  portada: { url: string; alt: string } | null;
+  /** El giro al que pertenece la pieza, resuelto contra navigation.ts: da el
+   *  CTA «Sacs para tu giro». Null si el brief no lo fijó o ya no existe. */
+  giro: { label: string; description: string; href: string; image?: string } | null;
 };
+
+/** El giro del brief, resuelto contra la fuente única (`navigation.ts`). Acepta
+ *  el slug («novias-y-fiesta») o el href completo. */
+export function giroDe(brief: any): Publicado['giro'] {
+  const g = String(brief?.giro || '').trim().replace(/^\/giros\//, '').replace(/\/$/, '');
+  if (!g) return null;
+  const s = modaSectors.find(x => x.href === `/giros/${g}`);
+  return s ? { label: s.label, description: s.description, href: s.href, image: s.image } : null;
+}
 
 /** Lo que la ruta necesita para pintar la página, ya listo. */
 export async function leerPublicado(seccion: string, slug: string): Promise<Publicado | null> {
@@ -26,8 +41,11 @@ export async function leerPublicado(seccion: string, slug: string): Promise<Publ
 
   const cuerpo = (data.cuerpo || []) as Bloque[];
   const url = `${SITIO}/${seccion}/${slug}/`;
+  const portada = (data.brief as any)?.portada?.url ? { url: (data.brief as any).portada.url, alt: (data.brief as any).portada.alt || data.titulo } : null;
 
   return {
+    portada,
+    giro: giroDe(data.brief),
     id: data.id,
     titulo: data.titulo,
     h1: data.h1 || data.titulo,
@@ -55,6 +73,9 @@ export async function leerPublicado(seccion: string, slug: string): Promise<Publ
         publisher: { '@id': ENTIDAD_ID },
         datePublished: data.publicado_at,
         dateModified: data.actualizado_at,
+        // La imagen en el schema es lo que Discover y los resultados enriquecidos
+        // enseñan; sin ella el artículo compite en texto plano.
+        ...(portada ? { image: { '@type': 'ImageObject', url: portada.url, width: 1200, height: 630 } } : {}),
       },
       ...schemaDeCuerpo(cuerpo),
     ],

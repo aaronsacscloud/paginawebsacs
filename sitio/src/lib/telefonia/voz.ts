@@ -14,6 +14,7 @@
 import crypto from 'node:crypto';
 import { supabase } from '../supabase';
 import { juzgar, type Oido } from './oidos';
+import { corregirTerminos } from './terminos';
 import { BASE, getSesion, alVeredicto, reglasAprendidas, escapar, latir, reprogramar } from './marcador';
 import { ladaDe, zonaDeLada, horaLocal, instanteEnZona } from './zonas';
 import { guionActual, reglasVigentes } from '../crm/ti/guion-datos';
@@ -344,7 +345,8 @@ export async function registrarTurno(itemId: string, d: { quien: 'contacto' | 'f
   if (esPrueba(itemId)) return { ok: true };
   const it = await getItem(itemId);
   if (!it) return { ok: false };
-  const texto = String(d.texto || '').trim().slice(0, 400);
+  // Con los nombres propios ya bien escritos (ver `terminos.ts`).
+  const texto = corregirTerminos(String(d.texto || '').trim()).slice(0, 400);
   if (!texto) return { ok: true };
   // Fernanda entra como «vendedor»: es lo que lee el cierre con IA (qué se prometió, qué se acordó).
   const quien: Oido['quien'] = d.quien === 'fernanda' ? 'vendedor' : 'contacto';

@@ -54,9 +54,15 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
      necesita el visto bueno del dueño y así se queda—, así que correrlo a
      diario es seguro: lo peor que puede pasar es que haya borradores de más
      esperando en la bandeja. Los topes los pone `de_politicas`, no esto. */
-  { tipo: 'contenido.brief',     prioridad: 52 },
-  { tipo: 'contenido.borrador',  prioridad: 51 },
-  { tipo: 'metricas.calcular',   prioridad: 52 },
+  { tipo: 'contenido.brief',       prioridad: 52 },
+  /* Entre el brief y el borrador se lee a la competencia; después del borrador
+     juzga el referee; solo lo que pasa recibe portada. Nada llega a la bandeja
+     del dueño sin haber pasado por el referee (ver lib/demanda/calidad.ts). */
+  { tipo: 'contenido.competencia', prioridad: 51 },
+  { tipo: 'contenido.borrador',    prioridad: 50 },
+  { tipo: 'contenido.referee',     prioridad: 49 },
+  { tipo: 'contenido.imagen',      prioridad: 48 },
+  { tipo: 'metricas.calcular',     prioridad: 52 },
   { tipo: 'atribucion.procesar', prioridad: 50 },
   { tipo: 'aprender.evaluar',    prioridad: 48 },
   /* La revisión de autonomía va al FINAL del ciclo y todos los días, no solo el

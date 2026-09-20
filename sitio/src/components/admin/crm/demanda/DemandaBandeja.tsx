@@ -19,12 +19,61 @@ import { useIsMobile } from '../../../../lib/ui/mobile';
 import Cargando from '../ui/Cargando';
 import { Seccion, Tarjeta, btn, haceRato } from './ui';
 
+type Referee = {
+  pasa: boolean; promedio: number; puntajes: Record<string, number>; ronda: number;
+  por_que: string; fallos: string[]; mejor_que_competencia: boolean; cuando: string | null;
+};
 type Resumen = {
   id: string; seccion: string; slug: string; titulo: string; meta_desc: string;
   estado: string; created_at: string; palabras: number; bloques: number;
   pregunta: string | null; quien: string | null; advertencia: string | null; revisado: boolean;
+  referee: Referee | null; portada: string | null; giro: string | null; atascada: boolean;
 };
-type Pieza = Resumen & { html: string; cuerpo: any[]; brief: any; url: string };
+type Similar = { url: string; titulo: string; tipo: string; palabras_aprox: number; tiene_faq: boolean; tiene_tabla_o_pasos: boolean; cubre_bien: string[]; le_falta: string[]; por_que_rankea: string };
+type Pieza = Omit<Resumen, 'portada' | 'giro'> & {
+  html: string; cuerpo: any[]; brief: any; url: string;
+  portada: { url: string; alt: string } | null;
+  giro: { label: string; href: string } | null;
+  competencia: { paginas: Similar[]; hueco: string | null };
+};
+
+const EJES: Record<string, string> = {
+  contesta: 'Contesta la pregunta', profundidad: 'Enseña algo', voz_experto: 'Voz de mostrador',
+  honestidad: 'Solo afirma lo real', estructura_geo: 'Citable por una IA', vs_competencia: 'Mejor que lo que rankea',
+};
+
+function Puntaje({ n }: { n: number }) {
+  const color = n >= 8.5 ? P.verdeTinta : n >= 7 ? P.ambarTinta : P.rojoTinta;
+  return <span style={{ fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{n}</span>;
+}
+
+/* El veredicto del referee: por qué esta página llegó hasta aquí. Es lo que
+   le ahorra al dueño leer dos mil palabras buscando dónde falla. */
+function VeredictoReferee({ r }: { r: Referee }) {
+  return (
+    <div style={{ marginTop: 12, padding: '14px 16px', borderRadius: 10, background: r.pasa ? P.verdeAgua : P.rojoAgua, borderLeft: `3px solid ${r.pasa ? P.verdeTinta : P.rojoTinta}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+        <div style={{ fontSize: 11.5, color: r.pasa ? P.verdeTinta : P.rojoTinta, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>
+          {r.pasa ? 'Pasó el referee' : 'No pasó el referee'} · promedio {r.promedio} / 10 · {r.ronda === 0 ? 'a la primera' : `tras ${r.ronda} reescritura${r.ronda > 1 ? 's' : ''}`}
+        </div>
+        <span style={{ fontSize: '.8rem', color: P.suave }}>{r.mejor_que_competencia ? 'Mejor que lo que hoy rankea' : 'NO supera a lo que hoy rankea'}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '6px 14px', marginTop: 10 }}>
+        {Object.entries(r.puntajes).map(([k, n]) => (
+          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.85rem', color: P.texto, borderBottom: `1px solid ${P.lineaSuave}`, padding: '3px 0' }}>
+            <span>{EJES[k] || k}</span><Puntaje n={n} />
+          </div>
+        ))}
+      </div>
+      <p style={{ margin: '.8rem 0 0', fontSize: '.88rem', lineHeight: 1.6, color: P.texto }}>{r.por_que}</p>
+      {!r.pasa && r.fallos.length > 0 && (
+        <ul style={{ margin: '.6rem 0 0', paddingLeft: '1.1rem', fontSize: '.85rem', lineHeight: 1.6, color: P.texto }}>
+          {r.fallos.map((f, i) => <li key={i}>{f}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function DemandaBandeja() {
   const [lista, setLista] = useState<Resumen[] | null>(null);
@@ -36,7 +85,7 @@ export default function DemandaBandeja() {
   const movil = useIsMobile();
 
   const cargar = () =>
-    fetch('/api/crm/demanda/borradores?estado=borrador,aprobado')
+    fetch('/api/crm/demanda/borradores?estado=aprobado,borrador')
       .then(r => r.json())
       .then(j => setLista(j.ok ? j.piezas : []))
       .catch(() => setLista([]));
@@ -76,7 +125,7 @@ export default function DemandaBandeja() {
   if (abierta) {
     return (
       <div style={WRAP}>
-        <button style={{ ...btn, marginBottom: 14 }} onClick={() => { setAbierta(null); setAviso(null); }}>← Volver a la bandeja</button>
+        <button style={{ ...btn(), marginBottom: 14 }} onClick={() => { setAbierta(null); setAviso(null); }}>← Volver a la bandeja</button>
 
         <Tarjeta>
           <div style={{ fontSize: 11.5, color: P.tenue, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 600 }}>
@@ -91,6 +140,29 @@ export default function DemandaBandeja() {
             </p>
           )}
         </Tarjeta>
+
+        {abierta.referee && <VeredictoReferee r={abierta.referee} />}
+
+        {abierta.competencia.paginas.length > 0 && (
+          <Seccion titulo="Contra qué compite" aparte={<span style={{ fontSize: '.8rem', color: P.suave }}>lo que hoy rankea para esta pregunta</span>}>
+            <Tarjeta>
+              {abierta.competencia.hueco && (
+                <p style={{ margin: '0 0 .8rem', fontSize: '.88rem', lineHeight: 1.6, color: P.texto }}>
+                  <strong>El hueco que ninguna cubre:</strong> {abierta.competencia.hueco}
+                </p>
+              )}
+              <div style={{ display: 'grid', gap: 8 }}>
+                {abierta.competencia.paginas.map(c => (
+                  <div key={c.url} style={{ fontSize: '.83rem', lineHeight: 1.5, borderTop: `1px solid ${P.lineaSuave}`, paddingTop: 8 }}>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: P.azulTinta, fontWeight: 600 }}>{c.titulo || c.url}</a>
+                    <span style={{ color: P.suave }}> · {c.tipo} · ~{c.palabras_aprox} palabras{c.tiene_faq ? ' · faq' : ''}{c.tiene_tabla_o_pasos ? ' · tabla/pasos' : ''}</span>
+                    {c.le_falta?.length > 0 && <div style={{ color: P.suave }}>Le falta: {c.le_falta.join('; ')}</div>}
+                  </div>
+                ))}
+              </div>
+            </Tarjeta>
+          </Seccion>
+        )}
 
         {abierta.brief?.nota_honestidad && (
           <div style={{
@@ -114,6 +186,16 @@ export default function DemandaBandeja() {
           aparte={<span style={{ fontSize: '.8rem', color: P.suave }}>{abierta.palabras} palabras · irá a {abierta.url.replace('https://www.sacscloud.com', '')}</span>}
         >
           <Tarjeta>
+            {abierta.portada ? (
+              <img src={abierta.portada.url} alt={abierta.portada.alt} style={{ width: '100%', height: 'auto', aspectRatio: '1200 / 630', objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
+            ) : (
+              <p style={{ margin: '0 0 1rem', fontSize: '.83rem', color: P.ambarTinta }}>Sin portada todavía: se genera en el ciclo diario después de pasar el referee.</p>
+            )}
+            {abierta.giro && (
+              <p style={{ margin: '0 0 .6rem', fontSize: '.83rem', color: P.suave }}>
+                Cierra mandando a <strong style={{ color: P.texto }}>Sacs para {abierta.giro.label}</strong> ({abierta.giro.href}).
+              </p>
+            )}
             <p style={{ margin: '0 0 1rem', fontSize: '.85rem', color: P.suave, borderBottom: `1px solid ${P.lineaSuave}`, paddingBottom: '.8rem' }}>
               <strong style={{ color: P.texto }}>En el buscador se verá:</strong> {abierta.meta_desc}
               <span style={{ marginLeft: 6, color: abierta.meta_desc.length > 160 ? P.rojoTinta : P.suave }}>
@@ -142,14 +224,14 @@ export default function DemandaBandeja() {
             />
             <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
               <button
-                style={{ ...btn, background: P.verdeTinta, color: '#fff', borderColor: P.verdeTinta, opacity: trabajando ? .6 : 1 }}
+                style={{ ...btn(), background: P.verdeTinta, color: '#fff', borderColor: P.verdeTinta, opacity: trabajando ? .6 : 1 }}
                 disabled={trabajando}
                 onClick={() => decidir('publicar')}
               >
                 {trabajando ? 'Publicando…' : 'Publicar ahora'}
               </button>
               <button
-                style={{ ...btn, color: P.rojoTinta, borderColor: P.rojo, opacity: trabajando ? .6 : 1 }}
+                style={{ ...btn(), color: P.rojoTinta, borderColor: P.rojo, opacity: trabajando ? .6 : 1 }}
                 disabled={trabajando}
                 onClick={() => decidir('rechazar')}
               >
@@ -191,20 +273,30 @@ export default function DemandaBandeja() {
             {lista.map(p => (
               <Tarjeta key={p.id}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: movil ? 'wrap' : 'nowrap' }}>
+                  {p.portada && !movil && (
+                    <img src={p.portada} alt="" style={{ width: 120, height: 63, objectFit: 'cover', borderRadius: 6, flex: 'none' }} />
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: '.98rem', fontWeight: 600, lineHeight: 1.4 }}>
                       {p.pregunta || p.titulo}
                     </p>
                     <p style={{ margin: '.3rem 0 0', fontSize: '.83rem', color: P.suave }}>
-                      /{p.seccion}/{p.slug}/ · {p.palabras} palabras · {haceRato(p.created_at)}
+                      /{p.seccion}/{p.slug}/ · {p.palabras} palabras · {haceRato(p.created_at)}{p.giro ? ` · ${p.giro}` : ''}
                     </p>
+                    {p.referee && (
+                      <p style={{ margin: '.4rem 0 0', fontSize: '.82rem', color: p.atascada ? P.rojoTinta : P.verdeTinta, fontWeight: 600 }}>
+                        {p.atascada
+                          ? `Atascada: no pasó el referee en ${p.referee.ronda + 1} rondas (${p.referee.promedio}/10). Léela con el veredicto al lado.`
+                          : `Referee ${p.referee.promedio}/10 · ${p.referee.mejor_que_competencia ? 'mejor que lo que hoy rankea' : 'sin comparar'}${p.portada ? ' · con portada' : ' · sin portada aún'}`}
+                      </p>
+                    )}
                     {p.advertencia && (
                       <p style={{ margin: '.5rem 0 0', fontSize: '.82rem', color: P.ambarTinta, lineHeight: 1.5 }}>
                         ⚠ {p.advertencia.slice(0, 150)}{p.advertencia.length > 150 ? '…' : ''}
                       </p>
                     )}
                   </div>
-                  <button style={{ ...btn, flex: 'none' }} onClick={() => abrir(p.id)}>Leerla</button>
+                  <button style={{ ...btn(), flex: 'none' }} onClick={() => abrir(p.id)}>Leerla</button>
                 </div>
               </Tarjeta>
             ))}
@@ -215,6 +307,7 @@ export default function DemandaBandeja() {
       <Seccion titulo="Cómo leer un borrador en dos minutos">
         <Tarjeta>
           <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '.88rem', lineHeight: 1.7, color: P.tinta }}>
+            <li><strong>Lo que ves aquí ya pasó el referee:</strong> se leyó lo que hoy rankea para esa pregunta, se juzgó la página en seis ejes (contesta, enseña, voz de mostrador, honestidad, citable, mejor que la competencia) y se reescribió hasta pasar. Lo que no pasó en dos rondas aparece como «atascada» con el veredicto, para que decidas tú.</li>
             <li><strong>Empieza por el aviso en ámbar</strong>, si lo hay. Es lo que el motor se advirtió a sí mismo que no podía afirmar; comprobar que lo respetó es el 80% de la revisión.</li>
             <li><strong>Lee el primer párrafo y el FAQ.</strong> Si el primero contesta la pregunta y el FAQ no promete nada raro, el resto casi siempre está bien.</li>
             <li><strong>Busca cifras y nombres de producto.</strong> Es donde un modelo inventa. Los precios de Sacs son $810, $1,215, $1,890 y $3,780 al mes por tienda; cualquier otro número junto a «plan» hay que mirarlo.</li>

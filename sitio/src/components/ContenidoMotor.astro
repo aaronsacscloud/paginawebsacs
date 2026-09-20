@@ -32,6 +32,12 @@ const fecha = (s: string | null) => s
     </p>
   </header>
 
+  {pieza.portada && (
+    <figure class="cm-portada">
+      <img src={pieza.portada.url} alt={pieza.portada.alt} width="1200" height="630" fetchpriority="high" decoding="async" />
+    </figure>
+  )}
+
   {pieza.indice.length > 0 && (
     <nav class="cm-indice" aria-label="Contenido de la página">
       <p>En esta página</p>
@@ -41,10 +47,29 @@ const fecha = (s: string | null) => s
 
   <div class="cm-cuerpo" set:html={pieza.html} />
 
-  <footer class="cm-pie">
-    <p>Esto lo escribimos en <strong>Sacs</strong>, el sistema para marcas y tiendas de moda en México.</p>
-    <a class="cm-boton" href="/contacto">Ver cómo funciona con tu catálogo</a>
-  </footer>
+  {/* El cierre manda al giro de quien lee, no a un /contacto genérico: quien
+      llegó buscando cómo llevar apartados de novias quiere ver qué hace Sacs
+      con una boutique de novias, no «ver cómo funciona». Si la pieza no tiene
+      giro, se cae al cierre general. */}
+  {pieza.giro ? (
+    <footer class="cm-pie cm-pie-giro">
+      {pieza.giro.image && <img class="cm-giro-foto" src={pieza.giro.image} alt="" width="320" height="220" loading="lazy" decoding="async" />}
+      <div class="cm-giro-texto">
+        <p class="cm-giro-eyebrow">Sacs para {pieza.giro.label}</p>
+        <p class="cm-giro-titulo">Así se lleva esto en Sacs, con tu catálogo y tus tallas.</p>
+        <p class="cm-giro-desc">{pieza.giro.description}. Sin contratos, desde $810 al mes por tienda.</p>
+        <div class="cm-giro-acciones">
+          <a class="cm-boton" href={pieza.giro.href}>Ver Sacs para {pieza.giro.label.toLowerCase()}</a>
+          <a class="cm-boton-sec" href="/contacto">Hablar con alguien del ramo</a>
+        </div>
+      </div>
+    </footer>
+  ) : (
+    <footer class="cm-pie">
+      <p>Esto lo escribimos en <strong>Sacs</strong>, el sistema para marcas y tiendas de moda en México.</p>
+      <a class="cm-boton" href="/contacto">Ver cómo funciona con tu catálogo</a>
+    </footer>
+  )}
 </article>
 
 <style>
@@ -61,6 +86,9 @@ const fecha = (s: string | null) => s
   }
   .cm-entrada { font-size: 1.1875rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
   .cm-meta { font-size: .8125rem; color: var(--color-text-secondary); opacity: .75; margin: 0; }
+
+  .cm-portada { margin: var(--space-8) 0 0; }
+  .cm-portada img { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); aspect-ratio: 1200 / 630; object-fit: cover; }
 
   .cm-indice {
     background: var(--color-bg-secondary); border: 1px solid var(--color-border-light);
@@ -130,6 +158,10 @@ const fecha = (s: string | null) => s
   .cm-cuerpo :global(.de-dato-e) { font-size: .9375rem; color: var(--color-text-secondary); }
   .cm-cuerpo :global(.de-dato-f) { font-size: .75rem; color: var(--color-text-secondary); opacity: .75; }
 
+  .cm-cuerpo :global(.de-imagen) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-imagen img) { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); }
+  .cm-cuerpo :global(.de-imagen figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
+
   .cm-cuerpo :global(.de-cta) {
     margin: var(--space-8) 0; padding: var(--space-6); border-radius: var(--radius-lg);
     background: var(--color-bg-secondary); display: grid; gap: var(--space-4); justify-items: start;
@@ -146,4 +178,23 @@ const fecha = (s: string | null) => s
     border-top: 1px solid var(--color-border-light); display: grid; gap: var(--space-4); justify-items: start;
   }
   .cm-pie p { margin: 0; color: var(--color-text-secondary); }
+
+  /* El cierre por giro: la misma tarjeta que usa el home para mandar a un giro. */
+  .cm-pie-giro {
+    display: grid; grid-template-columns: 200px 1fr; gap: var(--space-6); align-items: center;
+    padding: var(--space-6); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
+    background: var(--gradient-cream, var(--color-bg-secondary)); border-top: 1px solid var(--color-border-light);
+  }
+  @media (max-width: 640px) { .cm-pie-giro { grid-template-columns: 1fr; } }
+  .cm-giro-foto { width: 100%; height: auto; aspect-ratio: 320 / 220; object-fit: cover; border-radius: var(--radius-md); }
+  .cm-giro-texto { display: grid; gap: var(--space-2); }
+  .cm-giro-eyebrow { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--color-primary-texto) !important; }
+  .cm-giro-titulo { font-family: var(--font-display); font-size: 1.375rem; line-height: 1.25; color: var(--color-text-primary) !important; text-wrap: balance; }
+  .cm-giro-desc { font-size: .9375rem; }
+  .cm-giro-acciones { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-2); }
+  .cm-boton-sec {
+    display: inline-block; padding: var(--space-3) var(--space-5); border-radius: var(--radius-full);
+    border: 1px solid var(--color-border); color: var(--color-text-primary); text-decoration: none; font-weight: 600; font-size: .9375rem;
+  }
+  .cm-boton-sec:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
 </style>

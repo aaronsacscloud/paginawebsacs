@@ -4,6 +4,7 @@
 // Twilio (audio que descarga el servidor).
 import { supabase } from '../supabase';
 import { anthropic, MODELS } from '../ai/client';
+import { corregirTerminos, VOCABULARIO_LLAMADA } from '../telefonia/terminos';
 
 const BUCKET = 'wa-media';
 const GROQ_KEY = ((import.meta as any).env?.GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
@@ -29,6 +30,11 @@ export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, 
   wf.append('model', 'whisper-large-v3-turbo');
   wf.append('language', 'es');
   wf.append('response_format', 'json');
+  /* El vocabulario, POR DELANTE. Whisper no conoce nuestra marca y ante un
+     sonido que no reconoce escribe lo que más se le parezca: «Sax», «Saks»,
+     «odo». Diciéndole de qué va la llamada acierta de entrada — y de paso oye
+     mejor el resto de la frase, porque deja de pelearse con la palabra rara. */
+  wf.append('prompt', VOCABULARIO_LLAMADA);
   const wr = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST', headers: { Authorization: `Bearer ${GROQ_KEY}` }, body: wf,
   });
@@ -145,6 +151,12 @@ export async function redactarMinuta(o: {
 11. SIN RELLENO. Nada de "se trataron diversos temas". Si de algo no se habló, esa sección no existe.
 12. CIERRA CON EL SIGUIENTE HITO: cuándo vuelve a haber contacto y para qué.`;
 
+  /* Se corrige ANTES de redactar, y no la transcripción guardada: esa es la
+     evidencia de lo que se oyó y se deja tal cual. Aquí entra también lo que
+     se transcribió hace meses, porque esta función es la que usa el botón de
+     «generar la minuta» de la ficha. */
+  const transcript = corregirTerminos(o.transcript);
+
   const prompt = `Eres quien levanta la minuta en el CRM de Sacscloud (software de punto de venta para comercios en México). Esta es la transcripción de ${canal} ${o.direccion === 'saliente' ? 'que el equipo le hizo a' : 'que recibió el equipo de'} ${o.quien}. Duración: ${o.dur}. La transcripción mezcla ambas voces sin etiquetar quién habla; dedúcelo por contexto y NO inventes nada que no esté dicho.
 
 ${REGLAS}
@@ -159,7 +171,7 @@ LAS DOS VERSIONES
   Todo lo demás se queda, con el mismo detalle.
 
 TRANSCRIPCIÓN:
-${String(o.transcript).slice(0, 24000)}
+${transcript.slice(0, 24000)}
 
 Responde SOLO un JSON válido, sin texto alrededor, con esta forma exacta:
 {"minuta": "markdown", "minuta_cliente": "markdown", "siguiente_paso": "UNA frase imperativa con el siguiente paso más importante para el equipo (o cadena vacía si no hay)"}`;

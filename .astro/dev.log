@@ -1,0 +1,111 @@
+{"message":"Missing pages directory: src/pages","label":null,"level":"warn"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Generated 1ms","label":"types","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
+{"message":"Failed to resolve dependency: astro > aria-query, present in client 'optimizeDeps.include'","label":"vite","level":"warn"}
+{"message":"Failed to resolve dependency: astro > axobject-query, present in client 'optimizeDeps.include'","label":"vite","level":"warn"}
+{"message":"Failed to resolve dependency: astro > html-escaper, present in client 'optimizeDeps.include'","label":"vite","level":"warn"}
+{"message":"Failed to resolve dependency: astro/runtime/client/dev-toolbar/entrypoint.js, present in client 'optimizeDeps.include'","label":"vite","level":"warn"}
+{"message":" astro  v7.3.3 ready in 413 ms\n┃ Local    http://localhost:4321/\n┃ Network  use --host to expose","label":"SKIP_FORMAT","level":"info"}
+{"message":"watching for file changes...","label":null,"level":"info"}
+{"message":"Failed to create the dev server app: Cannot find module 'astro/app/manifest' imported from '\u0000virtual:astro:manifest'","label":null,"level":"error"}
+{"message":"sitio/.vercel/output/static/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/mobile-demo.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/bienvenida/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/blog/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/buddy/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/casos-de-exito/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/componentes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/enterprise/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/extraordinarios/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/manifiesto/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/nosotros/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/privacidad/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/planes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/agentic-commerce/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/alertas-inteligentes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/apartados-y-pedidos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/api-e-integraciones/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/axo-copiloto-ia/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/conteo-fisico/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/clientes-y-crm/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/cuentas-por-pagar/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/facturacion-electronica/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/especialista-ia/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/gastos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/inventario-omnicanal/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/marketing-por-whatsapp/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/marketing-por-correo/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/membresias-y-suscripciones/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/nivelacion-de-inventario/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/ordenes-de-compra/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/orquestador-de-agentes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/portal-de-clientes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/programa-de-lealtad/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/promociones/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/punto-de-venta/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/reportes-predictivos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/reportes-y-analitica/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/social-commerce/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/tarjetas-de-regalo/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/tienda-en-linea/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/producto/workflows/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/partners/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/partners/brand-kit/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/terminos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/blog/bershka/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/blog/bienvenida/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/blog/descuadre-inventario-anatomia/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/blog/machina/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/campana/curva-de-tallas/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/campana/punto-de-venta/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/casos-de-exito/casa-maca/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/casos-de-exito/liveshow/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/casos-de-exito/la-bella-pandita/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/casos-de-exito/sandmade/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/apparel-pos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/fashion-erp/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/pricing/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/wholesale-apparel-software/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/en/size-and-color-inventory/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/activewear/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/bolsas-y-accesorios/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/boutique-multimarca/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/consignacion/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/emprendedoras/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/joyeria/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/lenceria/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/marcas-de-ropa/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/maternidad/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/merchandising-eventos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/opticas/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/outlet/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/papeleria-y-arte/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/ropa-infantil/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/renta-de-vestidos/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/colombia/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/argentina/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/costa-rica/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/chile/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/ecuador/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/guatemala/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/espana/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/uruguay/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/panama/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/republica-dominicana/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/novias-y-fiesta/peru/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/sastreria/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/tallas-grandes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/telas-y-merceria/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/trajes-de-bano/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/uniformes/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/western/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/giros/zapateria/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/recursos/tiktok-fashion/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/soluciones/boutique/index.html","label":"watch","level":"info"}
+{"message":"sitio/.vercel/output/static/soluciones/cadena/index.html","label":"watch","level":"info"}

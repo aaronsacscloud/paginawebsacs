@@ -25,6 +25,7 @@
 import { supabase } from '../supabase';
 import { preguntar } from './ia';
 import { registrar } from './handlers';
+import { modaSectors } from '../../data/navigation';
 import { fichaSacs } from './capacidades';
 import { traerTodo } from './paginar';
 import type { Bloque } from './bloques';
@@ -56,6 +57,12 @@ export type Brief = {
   slug: string;
   enlaces: string[];         // slugs de guías propias que encajan
   nota_honestidad?: string;  // lo que NO podemos afirmar y hay que rodear
+  giro?: string;             // slug de /giros/<giro> al que va el cierre de la página
+  /* Lo que agregan las fases posteriores (competencia, referee, imagen): */
+  competencia?: any;         // páginas que hoy rankean + hueco común (contenido.competencia)
+  correcciones?: string[];   // lo que el referee mandó cambiar en la última ronda
+  reescrituras?: number;     // cuántas rondas lleva
+  portada?: { url: string; alt: string };
 };
 
 const ESQUEMA_BRIEF = {
@@ -69,8 +76,9 @@ const ESQUEMA_BRIEF = {
     slug: { type: 'string' },
     enlaces: { type: 'array', items: { type: 'string' } },
     nota_honestidad: { type: 'string' },
+    giro: { type: 'string' },
   },
-  required: ['pregunta', 'quien', 'promesa', 'demostrar', 'secciones', 'faq', 'seccion', 'slug', 'enlaces'],
+  required: ['pregunta', 'quien', 'promesa', 'demostrar', 'secciones', 'faq', 'seccion', 'slug', 'enlaces', 'giro'],
 };
 
 const SISTEMA_BRIEF = `Decides qué página hace falta escribir para el sitio de Sacs, un sistema de punto de venta e inventario para tiendas de ropa, calzado y joyería en México.
@@ -93,6 +101,7 @@ CÓMO SE DECIDE CADA CAMPO
 - «slug»: corto, en minúsculas y guiones, sin la marca, en el idioma de la pregunta.
 - «enlaces»: slugs de la lista de guías publicadas que de verdad tratan lo mismo. Ninguno si ninguno encaja. NO inventes slugs.
 - «nota_honestidad»: si lo que preguntan toca algo que Sacs NO hace según la ficha, dilo aquí y di cómo rodearlo sin mentir. Es el campo más valioso cuando aplica.
+- «giro»: el slug del giro de la lista GIROS al que pertenece quien pregunta. La página cierra mandando a esa sección de Sacs. Si es transversal a todos, «tiendas-de-ropa». Solo slugs de la lista.
 
 Español de México, llano. Si la pregunta es sobre precio, el brief tiene que ir sobre precio.`;
 
@@ -150,6 +159,9 @@ CÓMO LO PREGUNTÓ LA GENTE (léelo antes de decidir nada)
 ${formas}
 
 ${fichaSacs()}
+
+GIROS (para el campo «giro»; slug — a quién sirve)
+${modaSectors.map(g => `  ${g.href.replace('/giros/', '')} — ${g.label}: ${g.description}`).join('\n')}
 
 YA PUBLICADO (no repitas; si el tema ya está cubierto, dilo en «nota_honestidad»)
 ${publicadas.map(p => `  /${p.seccion}/${p.slug}/ — ${p.titulo}`).join('\n')}
@@ -263,12 +275,20 @@ Contesta la PREGUNTA del encargo, no el tema. Si la pregunta es sobre precio, la
 LO QUE PUEDES AFIRMAR
 Solo lo que está en la ficha de Sacs. Si el encargo pide demostrar algo que la ficha no respalda, NO lo inventes: descríbelo como el problema que es y di qué habría que hacer, sin prometer que Sacs lo hace.
 Nada de estadísticas inventadas. Nada de «estudios dicen». Los ejemplos se presentan como ejemplos.
+LA TRAMPA MÁS COMÚN: los automatismos. «El sistema lo ejecuta solo», «manda el recordatorio automáticamente», «se domicilia», «se calcula solo» — cada una de esas frases es una promesa de producto. Solo se dice si la ficha usa esa palabra para esa función. Si la ficha dice «marketing por WhatsApp», la página dice que el recordatorio SALE por WhatsApp, no que sale solo.
+Enlaces internos: solo a las rutas que te doy en el encargo (guías, /agendar para pedir demo, /giros/<giro>). Sin diagonal final en /agendar y /contacto.
+
+MEJOR QUE LO QUE YA EXISTE
+Te doy las páginas que hoy rankean para esta pregunta, con lo que cubren y lo que les falta, y el HUECO que ninguna cubre. La nuestra tiene que cubrir ese hueco de frente, con hechos, y no repetir lo que las otras ya dicen igual de bien. No se gana siendo más larga: se gana contestando lo que las otras esquivan.
+
+VOZ DE QUIEN HA ESTADO EN EL MOSTRADOR
+Lo que hace que una página se lea como escrita por alguien del ramo —y no como texto de máquina— es lo concreto: una prenda con su talla y su precio, una semana con su número, una decisión con su porqué («preferimos cerrar el apartado a 90 días porque…»), un límite admitido. Los ejemplos van como ejemplos, con cifras verosímiles para el giro, nunca como casos reales con nombre de cliente. Se permite opinar. Se prohíbe la lista genérica de consejos que valdría para cualquier negocio.
 
 CÓMO SE ESCRIBE
 - Español de México, llano, como habla un dueño de tienda. El vocabulario del ramo: corrida, curva, talla, apartado, temporada, sucursal, sell-through.
 - Nada de «potencia tu negocio», «solución integral», «revoluciona», «en el mundo actual». Si una frase podría estar en el folleto de cualquier software, sobra.
 - Empieza CONTESTANDO. El primer párrafo da la respuesta corta; el resto la sostiene.
-- 1,000 a 1,600 palabras. Una guía que contesta de verdad necesita espacio; lo que sobra no son palabras, son párrafos que no dicen nada.
+- 1,200 a 2,000 palabras. Una guía que contesta de verdad necesita espacio; lo que sobra no son palabras, son párrafos que no dicen nada. TERMINA la página: el último bloque es la cta, y antes el faq completo. Una página cortada a media frase no pasa.
 - Si no sabes algo con certeza, DILO y manda a preguntarlo en la demo. Una página que reconoce su límite se cita; una que promete de más se desmiente en la primera llamada.
 - «titulo» máximo 53 caracteres (la plantilla agrega « | Sacs»). «meta_desc» máximo 150, y que termine en punto: si se corta, Google enseña una frase a medias.
 - Negritas con **…** dentro de los párrafos, con criterio.
@@ -293,7 +313,23 @@ export async function escribirBorrador(contenidoId: string): Promise<{ ok: boole
   const b = c.brief as any as Brief;
   const enlaces = (b.enlaces || []).map(s => `  /recursos/${s}/`).join('\n') || '  (ninguno)';
 
-  const usuario = `EL ENCARGO
+  /* Lo que hoy rankea (lo trajo contenido.competencia) y lo que el referee
+     mandó corregir (si esto es una reescritura). Las dos cosas van ARRIBA del
+     encargo: son lo que decide si esta versión pasa o vuelve. */
+  const comp = b.competencia;
+  const competencia = comp?.paginas?.length
+    ? `LO QUE HOY RANKEA PARA ESTA PREGUNTA (y hay que superar)
+${comp.paginas.map((p: any, i: number) => `  ${i + 1}. ${p.titulo} (${p.tipo}, ~${p.palabras_aprox} palabras)\n     cubre bien: ${(p.cubre_bien || []).join('; ')}\n     le falta: ${(p.le_falta || []).join('; ')}`).join('\n')}
+  EL HUECO QUE NINGUNA CUBRE — la página va sobre esto: ${comp.hueco_comun}
+`
+    : '';
+  const correcciones = b.correcciones?.length
+    ? `ESTA ES UNA REESCRITURA (ronda ${b.reescrituras || 1}). El referee NO aprobó la versión anterior. Aplica EXACTAMENTE estas correcciones, en este orden de importancia, y conserva lo que no se menciona:
+${b.correcciones.map((x: string, i: number) => `  ${i + 1}. ${x}`).join('\n')}
+`
+    : '';
+
+  const usuario = `${correcciones}${competencia}EL ENCARGO
 Pregunta que hay que contestar: ${b.pregunta}
 Quién pregunta y en qué momento: ${b.quien}
 Qué se lleva al terminar de leer: ${b.promesa}
@@ -309,6 +345,8 @@ ${(b.faq || []).map(x => `  - ${x}`).join('\n')}
 
 Enlaces propios que encajan (úsalos dentro del texto con [texto](/ruta/) o en la cta):
 ${enlaces}
+  /agendar — para pedir una demo (texto ancla natural, nunca la ruta pegada)
+${b.giro ? `  /giros/${b.giro} — la sección de Sacs para este giro; enlázala una vez en el cuerpo` : ''}
 ${b.nota_honestidad ? `\nCUIDADO — lo que NO podemos afirmar:\n  ${b.nota_honestidad}` : ''}
 
 ${fichaSacs()}
@@ -317,7 +355,9 @@ Escribe la página.`;
 
   const r = await preguntar<any>({
     agente: 'contenido_borrador', trabajo: 'estrategia',
-    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 10000,
+    /* 20000: con 10000 una página de 2,500 palabras llegaba «entera» al JSON con el
+       último FAQ cortado a media frase — y el referee la devolvía por eso. */
+    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 20000,
   });
   if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin datos', costo: r.costo_usd || 0 };
 
@@ -341,6 +381,9 @@ Escribe la página.`;
     meta_desc: recortar(String(r.datos.meta_desc || ''), 158),
     cuerpo,
     estado: 'borrador',
+    // Las correcciones ya se aplicaron: se quitan del brief para que la
+    // siguiente ronda (si la hay) traiga solo las nuevas.
+    brief: { ...(c.brief as any), correcciones: undefined },
     actualizado_at: new Date().toISOString(),
   }).eq('id', contenidoId);
   if (error) return { ok: false, error: error.message, costo: r.costo_usd || 0 };
