@@ -373,8 +373,17 @@ export const POST: APIRoute = async ({ request }) => {
          lo que se pueda agendar. */
       case 'huecos': {
         const slug = String(b.tipo || 'demo');
-        const [tipos, huecos] = await Promise.all([tiposDeReunion(), huecosProximos(slug, 14, 12)]);
-        return json({ ok: true, tipo: slug, tipos, huecos });
+        /* Las llamadas —seguimiento y discovery— las atiende QUIEN LLAMA, así
+           que sus huecos salen de SU agenda y de su Google. Las reuniones
+           siguen saliendo de la agenda de quien las da. Sin esto, la cabina le
+           leía al prospecto las horas libres de otra persona y luego metía la
+           cita en la del que llamó: un hueco prometido que podía no existir. */
+        const esLlamada = slug === 'llamada-discovery' || slug === 'seguimiento';
+        const [tipos, huecos] = await Promise.all([
+          tiposDeReunion(),
+          huecosProximos(slug, 14, 12, 'America/Mexico_City', esLlamada ? user.id : null),
+        ]);
+        return json({ ok: true, tipo: slug, tipos, huecos, de_quien: esLlamada ? 'tuya' : 'de quien la da' });
       }
       /* Agendar a mano lo que acabas de acordar por teléfono, sin esperar a la
          IA: mismo camino que usa el cierre, así que dispara el mismo correo, la

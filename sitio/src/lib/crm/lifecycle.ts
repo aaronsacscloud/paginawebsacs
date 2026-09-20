@@ -21,6 +21,20 @@ export const LIFECYCLE: LifecycleStage[] = [
   { id: 'lead',            label: 'Nuevo lead',  bg: '#f4f4f6', fg: '#6B7280' },
   { id: 'lead_calificado', label: 'Calificado',  bg: '#EEECFE', fg: '#5B4BD6' },
   { id: 'oportunidad',     label: 'Oportunidad', bg: '#E3EDFD', fg: '#2C5FC4' },
+  /* ══ EN COTIZACIÓN (20-sep-2026) ══════════════════════════════════════════
+     Pedido del dueño: «significa que tiene una cotización activa; o si no la
+     tiene pero el usuario quiere cambiarlo a en cotización, significa que es
+     algo muy seguro, una muy buena oportunidad, y está más adelante que la
+     oportunidad en ese proceso».
+
+     Va DESPUÉS de «Oportunidad» y antes de «Prueba gratis» porque es un paso
+     más del mismo camino, no otra cosa: ya hay un número sobre la mesa. Morado
+     y no azul —el azul es el de oportunidad— para que se distingan de un
+     vistazo en una lista donde van a salir juntas.
+
+     Se pone sola cuando se manda una cotización, y también a mano: el dueño
+     pidió las dos puertas, porque a veces la certeza va por delante del papel. */
+  { id: 'en_cotizacion',   label: 'En cotización', bg: '#EDE9FE', fg: '#7C3AED' },
   { id: 'cliente',         label: 'Cliente',     bg: '#EAF8F2', fg: '#1E8A63' },
   { id: 'evangelista',     label: 'Evangelista', bg: '#EAF8F2', fg: '#1E8A63' },
   { id: 'churned',         label: 'Perdido',     bg: '#FEF0EF', fg: '#C0554E' },

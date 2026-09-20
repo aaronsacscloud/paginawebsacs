@@ -435,6 +435,13 @@ export const PUT: APIRoute = async ({ request }) => {
           targetStage: 'cotizacion_enviada', valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_sent',
         });
       }
+      /* Y la etapa del CONTACTO pasa a «En cotización»: ya tiene un número
+         sobre la mesa. Sólo avanza —nunca devuelve a un cliente al embudo— y
+         no bloquea el envío si falla. */
+      try {
+        const { marcarEnCotizacion } = await import('../../../lib/crm/sync-quote-deal');
+        await marcarEnCotizacion(data?.contact_id);
+      } catch (e) { console.error('[quotes] etapa En cotización:', e); }
     } else if (data?.deal_id && (valorTotal !== (prev?.total || 0))) {
       // Total changed → sync deal amounts without moving stage
       await supabase.from('deals').update({ valor_total: valorTotal, valor_mensual: valorMensual }).eq('id', data.deal_id);

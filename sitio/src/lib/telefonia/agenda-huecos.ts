@@ -55,13 +55,18 @@ export async function tiposDeReunion(): Promise<TipoReunion[]> {
  * en curso no se puede quedar esperando a la agenda, y sin huecos la pantalla
  * enseña «no hay horarios» en vez de romperse.
  */
-export async function huecosProximos(slug: string, dias = 10, tope = 12, tz = 'America/Mexico_City'): Promise<Hueco[]> {
+export async function huecosProximos(slug: string, dias = 10, tope = 12, tz = 'America/Mexico_City', host?: string | null): Promise<Hueco[]> {
   if (!slug) return [];
   const hoy = new Date();
   const fin = new Date(hoy.getTime() + dias * 86400e3);
   const ymd = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
   try {
-    const r = await fetch(`${BASE}/api/scheduling/available-slots?slug=${encodeURIComponent(slug)}&from=${ymd(hoy)}&to=${ymd(fin)}&tz=${encodeURIComponent(tz)}`, {
+    /* `host`: de quién son los huecos. Sin él, los del dueño del tipo de
+       evento (una demo la da quien la da). Con él, los de quien va a atender —
+       el seguimiento de una llamada es de quien llamó, y ofrecer las horas
+       libres de otra agenda para meter la cita en la propia es prometer un
+       hueco que quizá no existe. */
+    const r = await fetch(`${BASE}/api/scheduling/available-slots?slug=${encodeURIComponent(slug)}&from=${ymd(hoy)}&to=${ymd(fin)}&tz=${encodeURIComponent(tz)}${host ? `&host=${encodeURIComponent(host)}` : ''}`, {
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return [];

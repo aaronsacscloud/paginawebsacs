@@ -485,3 +485,27 @@ export async function syncQuoteToDeal(
   const deal = await createDealFromQuote(quote, options.targetStage, options);
   return { dealId: deal?.id || null, created: !!deal, advanced: false, skipped: !deal };
 }
+
+/* ══ UNA COTIZACIÓN VIVA MUEVE LA ETAPA (20-sep-2026) ═══════════════════════
+   Pedido del dueño: la etapa «En cotización» «significa que tiene una
+   cotización activa». Que haya que acordarse de moverla a mano es cómo se
+   llenan los embudos de gente que ya recibió un número y sigue marcada como
+   «Oportunidad».
+
+   Sólo AVANZA, nunca retrocede: si el contacto ya es cliente, prueba gratis o
+   está perdido, mandar otra cotización no lo devuelve al principio. Y sólo
+   desde las etapas anteriores del mismo camino — un suscriptor que recibe una
+   cotización sí sube, porque ya está negociando. */
+const ANTES_DE_COTIZAR = ['suscriptor', 'lead', 'lead_calificado', 'oportunidad', 'rezagado'];
+
+export async function marcarEnCotizacion(contactId: string | null | undefined): Promise<void> {
+  if (!contactId) return;
+  const { data: c } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contactId).maybeSingle();
+  if (!c || !ANTES_DE_COTIZAR.includes(String(c.lifecycle_stage))) return;
+  await supabase.from('contacts').update({ lifecycle_stage: 'en_cotizacion' }).eq('id', contactId);
+  await supabase.from('activities').insert({
+    contact_id: contactId, tipo: 'etapa_cambio', automatico: true,
+    titulo: `Pasa a En cotización desde ${c.lifecycle_stage === 'rezagado' ? 'Rezagado' : 'Oportunidad'}: se le mandó una cotización`,
+    metadata: { regla: 'cotizacion_enviada', actor: 'sistema', desde: c.lifecycle_stage },
+  }).then(() => {}, () => {});
+}

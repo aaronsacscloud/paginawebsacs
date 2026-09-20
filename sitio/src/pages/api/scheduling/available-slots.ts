@@ -127,9 +127,29 @@ export const GET: APIRoute = async ({ url }) => {
   // slot_interval can be a column OR stored in routing_rules (fallback)
   const slot_interval_minutos = eventType.slot_interval_minutos || routing_rules?.slot_interval_minutos || null;
 
+  /* ══ DE QUIÉN SON LOS HUECOS (20-sep-2026) ═══════════════════════════════
+     Por omisión, del dueño del tipo de evento: una demo la da quien la da, y
+     sus horas son las suyas. Pero el mismo tipo puede atenderlo otra persona —
+     el caso que lo motivó: las llamadas de seguimiento las hace quien llamó, y
+     hasta hoy la cabina le ofrecía al prospecto los huecos libres de OTRA
+     agenda mientras la cita caía en la suya.
+
+     `host` sólo puede pedir a alguien del equipo activo. No es un dato
+     sensible —son horas libres— pero sin validar sería una forma de sondear
+     ids ajenos, y devolver la agenda de un id inventado como si fuera de
+     alguien confunde más que un error. */
+  const hostPedido = url.searchParams.get('host');
+  let hostOverride: string | null = null;
+  if (hostPedido) {
+    const { data: m } = await supabase.from('team_members')
+      .select('id').eq('id', hostPedido).eq('activo', true).maybeSingle();
+    if (!m) return new Response(JSON.stringify({ error: 'Ese anfitrión no existe o está inactivo' }), { status: 404 });
+    hostOverride = String(m.id);
+  }
+
   // Determine which hosts to check availability for (Feature 13: Round-Robin)
-  const isRoundRobin = eventType.tipo_reunion === 'round_robin' && eventType.host_ids?.length > 0;
-  const hostIds: string[] = isRoundRobin ? eventType.host_ids : [owner_id];
+  const isRoundRobin = !hostOverride && eventType.tipo_reunion === 'round_robin' && eventType.host_ids?.length > 0;
+  const hostIds: string[] = hostOverride ? [hostOverride] : (isRoundRobin ? eventType.host_ids : [owner_id]);
 
   // 2. Load availability schedules, overrides, bookings, and gcal busy for ALL hosts
   interface HostData {
