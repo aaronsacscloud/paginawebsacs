@@ -13,12 +13,12 @@ const errores = []; p.on('pageerror', e => errores.push(e.message));
 let fallas = 0;
 const paso = (n, ok, d = '') => { if (!ok) fallas++; console.log(`  ${ok ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
 try {
-  await p.goto('http://localhost:4321/admin/login', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/login', { waitUntil: 'networkidle' });
   await p.fill('input[type="email"]', login.CRM_EMAIL);
   await p.fill('input[type="password"]', login.CRM_PASSWORD);
   await p.click('button[type="submit"]');
   await p.waitForURL('**/admin/crm**', { timeout: 40000 }).catch(() => {});
-  await p.goto('http://localhost:4321/admin/crm?tab=llamadas', { waitUntil: 'networkidle' });
+  await p.goto('http://127.0.0.1:4321/admin/crm?tab=llamadas', { waitUntil: 'networkidle' });
   await p.waitForTimeout(9000);
   await p.getByRole('button', { name: 'Grabaciones' }).first().click({ timeout: 25000 });
   await p.waitForTimeout(6000);
@@ -34,6 +34,21 @@ try {
     paso('Ofrece separar las pistas', /habla el \d+%|una sola pista/.test(t2), /Preparando/.test(t2) ? 'seguía preparando' : t2.slice(0, 150));
     paso('Hay reproductor', await p.locator('audio').count() > 0, '');
   }
+  // El corpus: filtro por desenlace, diálogo por turnos y la marca de ejemplo
+  const t3 = (await p.locator('body').innerText()).replace(/\n+/g, ' · ');
+  paso('Enseña en qué acabó cada llamada', /Agendó demo|No le interesa|Volver a llamar|Hablamos/.test(t3), '');
+  paso('Se puede filtrar por desenlace', /En qué acabó/i.test(t3), '');
+  paso('Está la curaduría («solo las que marqué»)', /solo las que marqué/i.test(t3), '');
+  paso('Se puede marcar una llamada como buena', await p.locator('[role="dialog"]').getByTitle(/Marcar como buena/i).count() > 0, '');
+  /* Acotado al diálogo: detrás del modal hay otra lista con botones «Ver»
+     (las jornadas anteriores) y `.first()` caía en uno de ésos. */
+  const verTurnos = p.locator('[role="dialog"]').getByRole('button', { name: /^Ver$/ }).first();
+  if (await verTurnos.count()) {
+    await verTurnos.click(); await p.waitForTimeout(1200);
+    const t4 = (await p.locator('body').innerText()).replace(/\n+/g, ' · ');
+    paso('Enseña el diálogo por turnos', /Cliente/.test(t4) && /lo que se dijo/i.test(t4), '');
+  } else paso('Hay diálogo por turnos que ver', false, 'ninguna llamada trae turnos');
+  paso('Se puede bajar el diálogo', await p.getByRole('button', { name: /Bajar el diálogo/i }).count() > 0, '');
   await p.screenshot({ path: `/tmp/qa-grabaciones${MOVIL ? '-movil' : ''}.png`, fullPage: true });
   paso('Sin errores de JS propios', errores.filter(e => !/async_hooks/.test(e)).length === 0, errores.slice(0, 2).join(' | '));
 } finally { await nav.close(); }

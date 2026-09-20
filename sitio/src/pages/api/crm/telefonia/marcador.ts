@@ -254,7 +254,11 @@ export const POST: APIRoute = async ({ request }) => {
         // Reuniones creadas por ESTE cierre (origen llamada, del mismo contacto, recién nacidas).
         if (it.contact_id) {
           const { data: bks } = await supabase.from('bookings').select('id, fecha, hora_inicio')
-            .eq('contact_id', it.contact_id).eq('origen', 'llamada').eq('estado', 'agendada')
+            /* Deshacer tiene que alcanzar también a la que ya se confirmó: la
+               ventana de un minuto garantiza que es la cita que creó ESTE
+               cierre, y dejarla viva por haber cambiado de estado sería
+               deshacer a medias. */
+            .eq('contact_id', it.contact_id).eq('origen', 'llamada').in('estado', ['agendada', 'confirmada'])
             .gt('created_at', new Date(new Date(aplicado).getTime() - 60000).toISOString()).limit(5);
           for (const bk of bks || []) {
             await supabase.from('bookings').update({ estado: 'cancelada' }).eq('id', bk.id);

@@ -932,6 +932,11 @@ Lo que quedó fuera y sigue pendiente:
       utility»), que es lo que evita que esto se vuelva a pudrir.
 - [x] **Quitar las pills «→ Agente» de la lista de conversaciones** → HECHO. (La de la reunión
       —«lun 21 17:00»— se queda: ésa la pediste hoy y sí distingue una fila de otra.)
+- [ ] **Las grabaciones, en la ficha del contacto** (inbox ▸ detalle): una sección «Grabaciones»
+      para que el consultor que va a dar la reunión escuche rápido el contexto antes de entrar.
+- [ ] **Cadencia de la llamada de discovery** (correo + WhatsApp): esa llamada suele ser el mismo
+      día o el siguiente, así que hay que recordarle al prospecto después de crearla para asegurar
+      que llegue a la hora.
 - [ ] **QA visual de todo lo de hoy.** El servidor de dev lleva la tarde caído por
       `src/data/navigation.ts` (otra sesión). Todo está compilado, medido contra la base y con 8
       suites en verde, pero las pantallas nuevas no las he visto con el navegador.

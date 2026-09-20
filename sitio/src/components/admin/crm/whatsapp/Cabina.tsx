@@ -622,6 +622,21 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (r?.ok) { traerHuecos(tipoCita); cargarItems(); }
   };
 
+  /* La marca de «buena» es de la LLAMADA, no del item: vive junto al audio,
+     que es lo que se va a usar para entrenar. Se pinta al instante. */
+  const [ejemploMarcado, setEjemploMarcado] = useState(false);
+  useEffect(() => { setEjemploMarcado(false); }, [actual?.id]);
+  const marcarEjemplo = async () => {
+    if (!actual?.call_sid) { setError('Esta llamada todavía no tiene grabación'); return; }
+    const v = !ejemploMarcado;
+    setEjemploMarcado(v);
+    const r = await fetch('/api/crm/telefonia/grabaciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ call_id: actual.call_sid, ejemplo: v }),
+    }).then(x => x.json()).catch(() => null);
+    if (!r?.ok) { setEjemploMarcado(!v); setError(r?.error || 'No se pudo guardar la marca'); }
+  };
+
   const regenerarCierre = async () => {
     if (!actual) return;
     const r = await accion('cierre_regenerar', { item: actual.id });
@@ -1848,6 +1863,18 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         <button onClick={() => setVerDicho(v => !v)} style={{ ...btnT, padding: '4px 10px', fontSize: 11.5 }}>{verDicho ? 'Ocultar lo que se dijo' : 'Ver lo que se dijo'}</button>
                         {!audio && <button onClick={pedirGrabacion} disabled={!!ocupado} style={{ ...btnT, padding: '4px 10px', fontSize: 11.5 }}>Oír la llamada</button>}
                         {audio && <audio controls src={audio} style={{ height: 30, maxWidth: 240 }} />}
+                        {/* ══ «ESTA ESTUVO BUENA» (20-sep-2026) ══════════════
+                            Pedido del dueño, para entrenar el modelo: «veinte
+                            llamadas que tú marcaste valen más que doscientas
+                            sin filtrar». Va AQUÍ y no sólo en Grabaciones
+                            porque el único momento en que sabes si estuvo
+                            buena es al colgar, con la conversación todavía en
+                            la cabeza. Dos días después son todas iguales. */}
+                        <button onClick={marcarEjemplo} disabled={!!ocupado}
+                          title="Guardarla como ejemplo para entrenar el guion y la voz"
+                          style={{ ...btnT, padding: '4px 10px', fontSize: 11.5, ...(ejemploMarcado ? { borderColor: '#4FBF95', color: '#1E8A63' } : null) }}>
+                          {ejemploMarcado ? '★ Guardada como ejemplo' : '☆ Esta estuvo buena'}
+                        </button>
                       </div>
                       {verDicho && String(actual.dialogo || '').trim() && (
                         <div className="wa-scroll" style={{ marginTop: 8, maxHeight: 200, overflowY: 'auto', display: 'grid', gap: 5, fontSize: 12.5, lineHeight: 1.5 }}>

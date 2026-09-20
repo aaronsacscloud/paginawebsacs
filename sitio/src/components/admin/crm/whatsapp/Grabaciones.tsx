@@ -106,7 +106,22 @@ function cuantoHabla(a: AudioBuffer): number[] {
   return por.map(x => Math.round((x / tot) * 100));
 }
 
-type Grab = { call_id: string; telefono: string; nombre: string; direccion: string; segundos: number; cuando: string; resultado: string | null; url: string; tiene_transcripcion: boolean };
+/** En qué acabó, en palabras. El orden es el del embudo: lo más comprometido
+ *  arriba, porque es lo que se busca primero al armar un corpus. */
+const DESENLACES: [string, string][] = [
+  ['agendo_demo', 'Agendó demo'],
+  ['agendo_reunion', 'Agendó reunión'],
+  ['dio_datos', 'Dio datos'],
+  ['volver_llamar', 'Volver a llamar'],
+  ['hablamos', 'Hablamos'],
+  ['no_interesa', 'No le interesa'],
+  ['colgo_sin_hablar', 'Colgó sin que hablaras'],
+  ['buzon', 'Buzón'],
+];
+const rotulo = (d?: string | null) => DESENLACES.find(x => x[0] === d)?.[1] || null;
+
+type Turno = { seg: number; quien: 'vendedor' | 'cliente'; texto: string };
+type Grab = { call_id: string; telefono: string; nombre: string; direccion: string; segundos: number; cuando: string; resultado: string | null; url: string; tiene_transcripcion: boolean; desenlace: string | null; ejemplo: boolean; objeciones: any[]; turnos: Turno[] };
 
 export default function Grabaciones({ movil }: { movil?: boolean }) {
   const [grabs, setGrabs] = useState<Grab[]>([]);
@@ -114,6 +129,9 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
   const [busca, setBusca] = useState('');
   const [dias, setDias] = useState(30);
   const [minSeg, setMinSeg] = useState(30);
+  const [desenlace, setDesenlace] = useState('');
+  const [soloEjemplos, setSoloEjemplos] = useState(false);
+  const [verTurnos, setVerTurnos] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
   const [pistas, setPistas] = useState<Record<string, { canales: number; reparto: number[] }>>({});
   const [bajando, setBajando] = useState('');
@@ -123,13 +141,37 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
 
   const traer = () => {
     setCargando(true);
-    fetch(`/api/crm/telefonia/grabaciones?dias=${dias}&min=${minSeg}${busca ? `&busca=${encodeURIComponent(busca)}` : ''}`, { cache: 'no-store' })
+    fetch(`/api/crm/telefonia/grabaciones?dias=${dias}&min=${minSeg}${desenlace ? `&desenlace=${desenlace}` : ''}${soloEjemplos ? '&ejemplos=1' : ''}${busca ? `&busca=${encodeURIComponent(busca)}` : ''}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(j => { setGrabs(j.grabaciones || []); setError(j.error || ''); })
       .catch(() => setError('No se pudieron traer las grabaciones'))
       .finally(() => setCargando(false));
   };
-  useEffect(traer, [dias, minSeg]);
+  useEffect(traer, [dias, minSeg, desenlace, soloEjemplos]);
+
+  /* Marcar una llamada como ejemplo: la curaduría humana del corpus. Se pinta
+     al instante y se manda después — con cien llamadas, esperar al servidor en
+     cada clic vuelve la revisión un trámite. */
+  const marcar = async (g: Grab, v: boolean) => {
+    setGrabs(gs => gs.map(x => x.call_id === g.call_id ? { ...x, ejemplo: v } : x));
+    const r = await fetch('/api/crm/telefonia/grabaciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ call_id: g.call_id, ejemplo: v }),
+    }).then(x => x.json()).catch(() => null);
+    if (!r?.ok) { setGrabs(gs => gs.map(x => x.call_id === g.call_id ? { ...x, ejemplo: !v } : x)); setError('No se pudo guardar la marca'); }
+  };
+
+  /* El diálogo, como texto plano de dos columnas. Es el formato que entiende
+     cualquier cosa —un prompt, un fine-tuning, una hoja— sin convertir nada. */
+  const bajarDialogo = (g: Grab) => {
+    const cab = `# ${g.nombre || g.telefono} · ${new Date(g.cuando).toLocaleString('es-MX')}\n# ${fmt(g.segundos)} · ${rotulo(g.desenlace) || 'sin desenlace'}\n\n`;
+    const cuerpo = g.turnos.map(t => `[${fmt(t.seg)}] ${t.quien === 'vendedor' ? 'VENDEDOR' : 'CLIENTE '}: ${t.texto}`).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([cab + cuerpo], { type: 'text/plain;charset=utf-8' }));
+    a.download = `${(g.nombre || g.telefono).replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'llamada'}-dialogo.txt`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
 
   /* ══ 🔴 LA MEMORIA (19-sep-2026) ═══════════════════════════════════════
      Primera versión: se guardaba cada audio decodificado «para no decodificar
@@ -212,7 +254,21 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
             <option value={300}>Más de 5 min</option>
           </select>
         </label>
+        <label>
+          <span style={etiqueta}>En qué acabó</span>
+          <select value={desenlace} onChange={e => setDesenlace(e.target.value)} style={{ ...campo, width: 'auto' }}>
+            <option value="">Todas</option>
+            {DESENLACES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </label>
         <button onClick={traer} style={btnS}>Buscar</button>
+        {/* La curaduría: veinte llamadas marcadas a mano valen más que
+            doscientas sin filtrar, porque sin esto el modelo aprende igual de
+            las que salieron mal — y ésas son la mayoría. */}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.g700, cursor: 'pointer' }}>
+          <input type="checkbox" checked={soloEjemplos} onChange={e => setSoloEjemplos(e.target.checked)} />
+          Solo las que marqué
+        </label>
       </div>
 
       {error && <div style={{ background: '#FEF0EF', border: '1px solid #F3C9C6', color: '#C0554E', borderRadius: 10, padding: '9px 12px', fontSize: 12.5 }}>{error}</div>}
@@ -236,12 +292,61 @@ export default function Grabaciones({ movil }: { movil?: boolean }) {
                     {g.tiene_transcripcion ? ' · con transcripción' : ''}
                   </div>
                 </div>
+                {g.desenlace && (
+                  <span title="En qué acabó la llamada" style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 9px', flexShrink: 0,
+                    background: g.desenlace === 'agendo_demo' ? C.emerald50 : g.desenlace === 'no_interesa' ? '#FEF0EF' : C.g100,
+                    color: g.desenlace === 'agendo_demo' ? C.emerald700 : g.desenlace === 'no_interesa' ? '#C0554E' : C.g500 }}>
+                    {rotulo(g.desenlace)}
+                  </span>
+                )}
+                <button onClick={() => marcar(g, !g.ejemplo)} title={g.ejemplo ? 'Quitar de tus ejemplos' : 'Marcar como buena: material para entrenar'}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 2, flexShrink: 0, filter: g.ejemplo ? 'none' : 'grayscale(1) opacity(.35)' }}>★</button>
                 <button onClick={() => abrir(g)} style={btnS}>{abierta === g.call_id ? 'Cerrar' : 'Oírla'}</button>
               </div>
 
               {abierta === g.call_id && (
                 <div style={{ marginTop: 10, display: 'grid', gap: 9 }}>
                   <audio src={g.url} controls preload="none" style={{ width: '100%', height: 36 }} />
+                  {/* El diálogo por turnos: el audio enseña el TONO, esto enseña
+                      qué decir y cuándo. Ya se guardaba y no se podía sacar. */}
+                  {g.turnos?.length > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ ...etiqueta, marginBottom: 0 }}>Lo que se dijo · {g.turnos.length} turnos</span>
+                        <button onClick={() => setVerTurnos(verTurnos === g.call_id ? null : g.call_id)} style={{ ...btnS, padding: '3px 9px', fontSize: 11 }}>
+                          {verTurnos === g.call_id ? 'Ocultar' : 'Ver'}
+                        </button>
+                        <button onClick={() => bajarDialogo(g)} style={{ ...btnS, padding: '3px 9px', fontSize: 11 }}>Bajar el diálogo</button>
+                      </div>
+                      {verTurnos === g.call_id && (
+                        <div className="wa-scroll" style={{ marginTop: 7, maxHeight: 240, overflowY: 'auto', border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 10px', display: 'grid', gap: 5 }}>
+                          {g.turnos.map((t, i) => (
+                            <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, lineHeight: 1.45 }}>
+                              <span style={{ color: C.g400, fontSize: 10.5, minWidth: 34, fontVariantNumeric: 'tabular-nums' }}>{fmt(t.seg)}</span>
+                              <b style={{ color: t.quien === 'vendedor' ? C.moradoTinta : C.emerald700, minWidth: 62, fontSize: 11 }}>{t.quien === 'vendedor' ? 'Tú' : 'Cliente'}</b>
+                              <span style={{ flex: 1, minWidth: 0, color: C.g900 }}>{t.texto}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {g.objeciones?.length > 0 && (
+                    <div>
+                      <span style={etiqueta}>Lo que puso como freno</span>
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        {g.objeciones.map((o: any, i: number) => (
+                          <div key={i} style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '7px 10px', fontSize: 12, lineHeight: 1.45 }}>
+                            <div style={{ color: C.g900 }}>«{String(o.objecion)}»</div>
+                            <div style={{ color: C.g500, marginTop: 3 }}>Le contestaste: {String(o.respuesta)}</div>
+                            {o.funciono != null && (
+                              <span style={{ fontSize: 10.5, fontWeight: 800, color: o.funciono ? C.emerald700 : '#C0554E' }}>{o.funciono ? 'y siguió adelante' : 'y ahí se enfrió'}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {info && info.canales > 1 ? (
                     <div style={{ display: 'grid', gap: 6 }}>
                       <span style={etiqueta}>Bájate una sola voz (para clonarla)</span>

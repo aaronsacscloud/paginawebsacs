@@ -99,8 +99,11 @@ export type Compromiso = {
   movido?: boolean;
 };
 export type Envio = { id?: string; tema: string; detalle?: string; conocimiento_id?: string | null; estado?: string };
+/** Lo que puso el cliente y cómo se respondió. El material del guion. */
+export type Objecion = { objecion: string; respuesta: string; funciono: boolean | null };
 export type Propuesta = {
   resultado: string; nota: string; siguiente_paso: string; no_llamar?: boolean; no_llamar_evidencia?: string;
+  objeciones?: Objecion[];
   compromisos: Compromiso[]; datos: DatoLead[]; envios: Envio[]; etapa?: string | null;
 };
 
@@ -182,6 +185,7 @@ Tu trabajo: dejar la llamada cerrada en el CRM. Responde SOLO un JSON válido co
  "compromisos": [{"tipo":"llamada|reunion","fecha":"YYYY-MM-DD","hora":"HH:MM","duracion_min":15,"motivo":"…","reunion_tipo":"demo|seguimiento|cotizacion|llamada-discovery","confianza":0.0-1.0}],
  "datos": [{"campo":"…","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":false}],
  "envios": [{"tema":"…","detalle":"qué pidió exactamente","conocimiento_id":"uuid o null"}],
+ "objeciones": [{"objecion":"lo que dijo para frenar, en SUS palabras","respuesta":"lo que le contestó el vendedor","funciono":true|false|null}],
  "etapa": "lead_calificado|descalificado|null"
 }
 REGLAS:
@@ -194,6 +198,7 @@ ${catalogo.map((t: any) => `  · ${t.slug} — ${t.nombre} (${t.minutos} min)`).
 ${agendaTexto || '  (la agenda no contestó: usa la hora que se dijo)'}
 - "datos": solo lo dicho EXPLÍCITAMENTE. Campos posibles: ${CAMPOS_LEAD.join(', ')}. «sucursales» es un número; «empresa» es el nombre de su marca/tienda; «giro» qué vende. Si CONTRADICE lo que el CRM tiene, "corrige": true.
 - "envios": TODO lo que el vendedor prometió mandar (información, precios, un PDF, un video, una liga, cómo funciona algo). Si el tema coincide con uno de LO QUE YA SABEMOS RESPONDER, pon su id en conocimiento_id; si no, null.
+- "objeciones": TODO lo que el cliente puso como freno —precio, «ya tengo sistema», «lo veo con mi socio», «ahorita no», «es muy complicado»— con la respuesta que le dio el vendedor. "objecion" va en SUS palabras, no resumida: lo que se quiere aprender es cómo lo dice la gente. "funciono": true si después de esa respuesta siguió adelante (agendó, dio datos, se interesó), false si ahí se enfrió, null si no se alcanza a saber. Si no puso ninguna objeción, lista vacía — no inventes.
 - "etapa": lead_calificado solo si quedó claro que es dueño/decisor de una tienda de moda con interés real. descalificado si dijo que NO le interesa, que no es para él, que no tiene tienda, o que ya no lo contacten — es decir, siempre que "resultado" sea no_interesa. Si no es ninguno de los dos, null. Un «ahora no puedo hablar» o «márcame luego» NO es descalificado: eso es volver_llamar.
 - "no_llamar": true solo si pidió que no se le vuelva a llamar, y entonces "no_llamar_evidencia" trae sus palabras.
 
@@ -254,6 +259,13 @@ ${dialogo.slice(0, 9000)}`;
       envios: (Array.isArray(p.envios) ? p.envios : []).filter((e: any) => e && String(e.tema || '').trim())
         .map((e: any) => ({ tema: String(e.tema).slice(0, 120), detalle: String(e.detalle || '').slice(0, 300), conocimiento_id: conocidos.has(String(e.conocimiento_id)) ? String(e.conocimiento_id) : null })).slice(0, 5),
       etapa: p.etapa === 'lead_calificado' ? 'lead_calificado' : p.etapa === 'descalificado' ? 'descalificado' : null,
+      /* Tres objeciones como mucho: más que eso no es una llamada con frenos,
+         es la IA troceando la misma frase. Y las dos partes son obligatorias —
+         una objeción sin respuesta no enseña nada. */
+      objeciones: (Array.isArray(p.objeciones) ? p.objeciones : [])
+        .filter((o: any) => o && String(o.objecion || '').trim().length > 3 && String(o.respuesta || '').trim().length > 3)
+        .map((o: any) => ({ objecion: String(o.objecion).slice(0, 300), respuesta: String(o.respuesta).slice(0, 300), funciono: o.funciono === true ? true : o.funciono === false ? false : null }))
+        .slice(0, 3),
     };
 
     // Los envíos nacen como filas: «listo» si ya sabemos qué mandar, «falta» si hay que preguntarle al vendedor.
@@ -480,12 +492,55 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
       }
     }
 
+    /* ══ EL DESENLACE, PEGADO A LA GRABACIÓN (20-sep-2026) ════════════════
+       Pedido del dueño: va a grabar muchas más llamadas para entrenar el
+       modelo. Medido hoy: de 36 grabaciones, 27 tenían como resultado
+       «contestó» — eso dice que alguien levantó el teléfono, no qué pasó. Sin
+       saber cuáles acabaron en demo y cuáles en «no me interesa», el audio no
+       enseña nada: es archivo, no corpus.
+
+       Aquí es el único sitio donde se sabe de verdad, porque es después de
+       aplicar: si se creó la cita, si dio datos, si dijo que no. Se escribe en
+       la llamada —junto al audio— para poder pedir «las que acabaron en demo»
+       sin cruzar cuatro tablas. Y las objeciones viajan con él, que es lo que
+       convierte el corpus en guion. */
+    await marcarDesenlace(it, p, hecho);
     await cerrarItem(itemId, { aplicado_at: ahora(), hecho, por: o.userId ? 'vendedor' : 'auto' });
     return { ok: true, hecho };
   } catch (e: any) {
     await cerrarItem(itemId, { aplicado_at: ahora(), hecho, error: String(e?.message || e).slice(0, 200) });
     return { ok: false, hecho };
   }
+}
+
+/**
+ * En qué acabó la llamada, en una palabra que se pueda filtrar.
+ *
+ * El orden importa: se mira primero lo más comprometido. Alguien que agendó una
+ * demo Y dio datos cuenta como demo — es el desenlace que define la llamada, y
+ * mezclarlo con «dio datos» haría que el corpus de demos se quedara corto.
+ */
+async function marcarDesenlace(it: any, p: Propuesta | null, hecho: string[]) {
+  if (!it?.call_sid) return;
+  const conDemo = hecho.some(h => /demo/i.test(h));
+  const conCita = hecho.some(h => /reunión|reunion|demo|discovery|capacitaci/i.test(h));
+  const conLlamada = hecho.some(h => /llamada|volver a llamar/i.test(h));
+  const r = String(p?.resultado || it.resultado || '');
+
+  const desenlace = conDemo ? 'agendo_demo'
+    : conCita ? 'agendo_reunion'
+    : conLlamada || r === 'volver_llamar' ? 'volver_llamar'
+    : r === 'no_interesa' ? 'no_interesa'
+    : r === 'dieron_datos' || hecho.some(h => /^\d+ dato/.test(h)) ? 'dio_datos'
+    : r === 'buzon' || it.resultado === 'buzon' ? 'buzon'
+    : it.resultado === 'colgo_rapido' ? 'colgo_sin_hablar'
+    : r === 'contesto' || it.resultado === 'contesto' ? 'hablamos'
+    : 'sin_contacto';
+
+  await supabase.from('wa_llamadas').update({
+    desenlace,
+    ...(Array.isArray((p as any)?.objeciones) && (p as any).objeciones.length ? { objeciones: (p as any).objeciones } : {}),
+  }).eq('call_id', it.call_sid).then(() => {}, () => {});
 }
 
 /** Cierra sobre el `cierre_ia` FRESCO: los envíos ya escribieron ahí sus estados y la foto del claim los pisaría. */

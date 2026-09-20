@@ -330,7 +330,16 @@ const _GET: APIRoute = async ({ request, url }) => {
     const { data: bks } = await supabase.from('bookings')
       .select('contact_id, fecha, hora_inicio, asunto, estado, event_types(nombre)')
       .in('contact_id', idsContacto.slice(0, 1200))
-      .eq('estado', 'agendada')
+      /* ══ 🔴 «AGENDADA» NO ES EL ÚNICO ESTADO VIVO (20-sep-2026) ══════════
+         Reporte del dueño: «Manuela también tiene una reunión el lunes, ¿por
+         qué no aparece?». Porque la suya está CONFIRMADA. Filtré por una sola
+         palabra y en la tabla hay seis estados: de las 5 citas de la próxima
+         semana, sólo 2 estaban en «agendada» — las otras 3 existían y no se
+         veían.
+         Lo que define «la tengo pendiente» no es haberla creado, es que no se
+         haya caído. Se pregunta por lo contrario: fuera cancelada, no_asistio
+         y reagendada (ésa ya dejó otra cita en su lugar). */
+      .not('estado', 'in', '("cancelada","no_asistio","reagendada")')
       .gte('fecha', hoyYmd).lte('fecha', finVentana)
       .order('fecha').order('hora_inicio');
     const porContacto = new Map<string, any>();

@@ -382,7 +382,11 @@ async function embudoSesion(sesionId: string, desde?: string | null) {
        parecía que ese día no se había cerrado nada. El corte tiene que ser la
        jornada, no el reloj de hoy: desde que arrancó la sesión. */
     const { data: bks } = await supabase.from('bookings')
+      /* Mismo criterio que la bandeja: vale toda cita que no se haya caído.
+         Contar sólo «agendada» dejaba fuera las confirmadas —que son las MÁS
+         seguras— y hacía que el embudo enseñara menos cierres de los reales. */
       .select('contact_id, event_types(slug)').in('contact_id', contactos).eq('origen', 'llamada')
+      .not('estado', 'in', '("cancelada","no_asistio","reagendada")')
       .gte('created_at', desde || new Date(Date.now() - 24 * 3600e3).toISOString()).limit(500);
     conCita = new Set((bks || []).map((b: any) => b.contact_id)).size;
     demos = new Set((bks || []).filter((b: any) => b.event_types?.slug === 'demo').map((b: any) => b.contact_id)).size;

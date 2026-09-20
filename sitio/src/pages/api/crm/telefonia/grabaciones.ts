@@ -30,11 +30,15 @@ export const GET: APIRoute = async ({ request }) => {
      material suficiente y sí mucho ruido de saludo cortado. Es un filtro, no
      un borrado: el audio corto se sigue guardando. */
   const minSeg = Math.max(0, Number(url.searchParams.get('min') || 0));
+  /* Los dos filtros que convierten el archivo en corpus: «dame las que
+     acabaron en demo» y «dame sólo las que marqué como buenas». */
+  const desenlace = String(url.searchParams.get('desenlace') || '').trim();
+  const soloEjemplos = url.searchParams.get('ejemplos') === '1';
 
   const desde = new Date(Date.now() - dias * 86400e3).toISOString();
   const { data, error } = await supabase
     .from('wa_llamadas')
-    .select('call_id, telefono, direccion, duracion_seg, started_at, grabacion_path, transcript, resultado, conversation_id')
+    .select('call_id, telefono, direccion, duracion_seg, started_at, grabacion_path, transcript, resultado, desenlace, ejemplo, objeciones, conversation_id')
     .not('grabacion_path', 'is', null)
     .gte('started_at', desde)
     .order('started_at', { ascending: false })
@@ -70,6 +74,8 @@ export const GET: APIRoute = async ({ request }) => {
      justo para esto. */
   const visibles = (data || []).filter(l => {
     if (minSeg > 0 && Number(l.duracion_seg || 0) < minSeg) return false;
+    if (desenlace && String(l.desenlace || '') !== desenlace) return false;
+    if (soloEjemplos && !l.ejemplo) return false;
     const quien = (l.conversation_id && nombres.get(String(l.conversation_id))) || '';
     return !busca || `${quien} ${l.telefono}`.toLowerCase().includes(busca);
   });
@@ -77,6 +83,27 @@ export const GET: APIRoute = async ({ request }) => {
     ? await supabase.storage.from('wa-media').createSignedUrls(visibles.map(l => String(l.grabacion_path)), 3600)
     : { data: [] as any[] };
   const urlDe = new Map((firmas || []).map((f: any) => [String(f.path), f.signedUrl as string]));
+
+  /* ══ EL DIÁLOGO POR TURNOS (20-sep-2026) ════════════════════════════════
+     Ya existía y no se podía sacar: `tel_sesion_items.oido` guarda quién dijo
+     qué y en qué segundo, con las pistas separadas (25 llamadas, 26 turnos de
+     media). El audio enseña el TONO; esto enseña qué decir y cuándo — para
+     entrenar un agente de voz hacen falta los dos, y la transcripción corrida
+     de Whisper no distingue quién habla.
+
+     Se pide en UN viaje para todas las llamadas de la página, no una por una. */
+  const sids = visibles.map(l => l.call_id).filter(Boolean);
+  const dialogoDe = new Map<string, any[]>();
+  if (sids.length) {
+    const { data: items } = await supabase.from('tel_sesion_items')
+      .select('call_sid, oido').in('call_sid', sids.slice(0, 300));
+    for (const it of items || []) {
+      const turnos = (Array.isArray(it.oido) ? it.oido : [])
+        .filter((o: any) => o?.final && String(o?.texto || '').trim())
+        .map((o: any) => ({ seg: Math.round(Number(o.t || 0) / 1000), quien: o.quien === 'vendedor' ? 'vendedor' : 'cliente', texto: String(o.texto).trim() }));
+      if (turnos.length) dialogoDe.set(String(it.call_sid), turnos);
+    }
+  }
 
   const filas = [] as any[];
   for (const l of visibles) {
@@ -87,7 +114,33 @@ export const GET: APIRoute = async ({ request }) => {
       call_id: l.call_id, telefono: l.telefono, nombre: quien, direccion: l.direccion,
       segundos: Number(l.duracion_seg || 0), cuando: l.started_at, resultado: l.resultado,
       url, tiene_transcripcion: !!l.transcript,
+      desenlace: l.desenlace || null,
+      ejemplo: !!l.ejemplo,
+      objeciones: Array.isArray(l.objeciones) ? l.objeciones : [],
+      turnos: dialogoDe.get(String(l.call_id)) || [],
     });
   }
   return json({ ok: true, grabaciones: filas, total: filas.length });
+};
+
+/**
+ * Marcar una llamada como EJEMPLO (o quitarle la marca).
+ *
+ * Pedido del dueño: «veinte llamadas que tú marcaste valen más que doscientas
+ * sin filtrar». Es la curaduría humana del corpus — sin ella, el modelo aprende
+ * igual de las llamadas que salieron mal, y esas son la mayoría.
+ */
+export const POST: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return json({ error: 'Sin sesión' }, 401);
+  const b = await request.json().catch(() => ({} as any));
+  const callId = String(b.call_id || '');
+  if (!callId) return json({ error: 'Falta la llamada' }, 400);
+
+  const { data, error } = await supabase.from('wa_llamadas')
+    .update({ ejemplo: b.ejemplo !== false })
+    .eq('call_id', callId).select('call_id, ejemplo').maybeSingle();
+  if (error) return json({ error: error.message }, 500);
+  if (!data) return json({ error: 'No existe esa llamada' }, 404);
+  return json({ ok: true, ejemplo: data.ejemplo });
 };
