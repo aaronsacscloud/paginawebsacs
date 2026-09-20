@@ -809,6 +809,50 @@ export const WIKI: PaginaWiki[] = [
 </tbody></table>`,
   },
   {
+    id: 'resenas', grupo: 'Después de la venta', titulo: 'Reseñas · Google y Capterra',
+    bajada: 'Tres por semana. No llegan solas: se piden.', chip: { texto: 'meta 3 / semana', tono: 'warn' },
+    cuerpo: `
+<p>El objetivo es <b>3 reseñas nuevas por semana</b> repartidas entre <b>Google</b> y <b>Capterra</b> — unas doce al mes. Es la única forma de posicionarnos en las dos plataformas, y las dos hacen trabajos distintos:</p>
+<table class="w-tab"><thead><tr><th>Dónde</th><th>A quién alcanza</th></tr></thead><tbody>
+<tr><td><b>Google</b></td><td>Al que ya oyó el nombre y lo busca. Es la primera pantalla que ve alguien que nos está checando antes de contestar.</td></tr>
+<tr><td><b>Capterra</b></td><td>Al que todavía no nos conoce y está <b>comparando software</b>. Ahí se aparece o no se aparece en la categoría, y eso lo deciden las reseñas.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Por qué 3 por semana y no 20 de un jalón</span><p>Una tanda grande y luego cuatro meses en cero se ve exactamente como lo que es. El ritmo sostenido es lo que hace que el perfil se mueva, y además obliga a que <b>pedirla sea parte del trabajo de la semana</b> y no una campaña que se hace una vez y se olvida.</p></div>
+
+<h3>El pedido más fácil: el que ya reseñó en Google</h3>
+<div class="w-caja"><span class="w-k">Esa lista es la primera fuente de cada semana</span>
+<p>Quien ya dejó reseña en Google <b>ya dijo que sí una vez y ya escribió el texto</b>. Pedirle que lo publique también en Capterra es el pedido más barato que existe: no se le está pidiendo una opinión nueva, se le está pidiendo dos minutos de copiar y pegar.</p>
+<p>Se le manda <b>el link directo al perfil</b>, no «búscanos en Capterra». Cada paso que se le deja al cliente es gente que se cae en el camino.</p></div>
+
+<h3>A quién se le pide</h3>
+<ul>
+<li><b>Cliente que usa el sistema de verdad</b> y está en un buen momento: terminó el onboarding, una consultoría le resolvió algo, acaba de renovar, abrió sucursal.</li>
+<li><b>Nunca</b> a quien tiene un ticket abierto, está en churn o viene de un problema de cobro. Ahí no se pide reseña: se resuelve el problema.</li>
+<li>Se pide <b>justo después del momento bueno</b>. A los quince días ya se le pasó el entusiasmo y contesta «sí, al rato».</li>
+</ul>
+
+<h3>Que hable de moda — eso es lo que nos posiciona</h3>
+<p>Una reseña que dice «<i>buen sistema, buen soporte</i>» no nos encuentra nadie. La que sirve es la que nombra <b>el trabajo real de una tienda de ropa o calzado</b>, porque esas son las palabras con las que nos busca quien todavía no nos conoce:</p>
+<ul>
+<li>Inventario <b>por talla y color</b>, no por producto suelto.</li>
+<li><b>Temporadas</b>, entrada de colección, rebajas y liquidación.</li>
+<li><b>Traspasos entre sucursales</b> y ver el inventario de todas desde una.</li>
+<li><b>Apartados</b>, pedidos y venta en mostrador.</li>
+<li>Cuántas tiendas maneja y cuánta gente atiende.</li>
+</ul>
+<div class="w-caja w-warn"><span class="w-k">Se dan los temas, NUNCA el texto</span><p>Se le dice de qué puede hablar y él escribe lo suyo. Una reseña dictada se nota al leerla —todas suenan igual— y las plataformas las bajan. Lo que se pide es que cuente <b>su caso</b>, con sus números, usando sus palabras.</p></div>
+
+<h3>Lo que no se hace</h3>
+<ul>
+<li><b>No se paga ni se cambia por descuento.</b> Google lo prohíbe y tumba la reseña, el perfil o las dos cosas. Si algún día hacemos un programa con incentivo en Capterra, se hace <b>con ellos y bajo sus reglas</b>, no por nuestra cuenta.</li>
+<li><b>No se publican cinco el mismo día desde la oficina.</b> Cada quien desde su cuenta y su dispositivo.</li>
+<li><b>No se escriben desde nuestras cuentas.</b> Ni «para ayudar a arrancar».</li>
+</ul>
+
+<h3>Dónde se reporta</h3>
+<p>En la <b>junta de los lunes</b>, en su propio bloque: cuántas salieron por plataforma, quién las publicó, quién dijo que sí y no lo hizo, y a quién se le pide esta semana — <b>con nombre y cuenta</b>. Un número suelto no se puede perseguir; una lista de cinco nombres sí.</p>`,
+  },
+  {
     id: 'churn', grupo: 'Después de la venta', titulo: 'Churn · rescatar al que canceló',
     bajada: 'El que se fue no se archiva: se trabaja.', chip: { texto: '$38,608 en rescate', tono: 'bad' },
     cuerpo: `
