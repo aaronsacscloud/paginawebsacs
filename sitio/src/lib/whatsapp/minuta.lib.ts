@@ -36,8 +36,9 @@ export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, 
   if (!wr.ok) return { ok: false, error: `Whisper: ${wj?.error?.message || wr.status}`, status: 502 };
   const transcript = String(wj.text || '').trim();
   if (transcript.length < 30) {
-    await supabase.from('wa_llamadas').update({ grabacion_path: path, transcript }).eq('call_id', callId);
-    return { ok: false, error: 'La llamada casi no tiene voz: no hay material para una minuta', status: 422, transcript };
+    const error = 'La llamada casi no tiene voz: no hay material para una minuta';
+    await supabase.from('wa_llamadas').update({ grabacion_path: path, transcript, minuta_error: error, minuta_error_at: new Date().toISOString() }).eq('call_id', callId);
+    return { ok: false, error, status: 422, transcript };
   }
 
   // 3) Contexto del contacto para que la minuta hable con nombres.
@@ -57,14 +58,23 @@ export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, 
     const r = await redactarMinuta({ transcript, quien, dur, canal: (ll as any).canal, direccion: ll.direccion });
     minuta = r.minuta; minutaCliente = r.minuta_cliente; siguiente = r.siguiente_paso;
   } catch (e: any) {
-    await supabase.from('wa_llamadas').update({ grabacion_path: path, transcript }).eq('call_id', callId);
-    return { ok: false, error: `La transcripción quedó guardada pero la minuta falló: ${String(e?.message || e)}`, status: 502 };
+    /* El motivo se GUARDA, no solo se devuelve. A quien llama aquí —el webhook
+       de grabaciones de Twilio— no lo lee nadie: así fue como una llamada de
+       veinte minutos se quedó sin minuta y sin que se notara hasta dos días
+       después. Escrito en la llamada, la ficha lo enseña y ofrece reintentar. */
+    const error = `La transcripción quedó guardada pero la minuta falló: ${String(e?.message || e)}`;
+    await supabase.from('wa_llamadas').update({
+      grabacion_path: path, transcript, minuta_error: error.slice(0, 500), minuta_error_at: new Date().toISOString(),
+    }).eq('call_id', callId);
+    return { ok: false, error, status: 502 };
   }
   if (!minuta) minuta = `## Resumen\n${transcript.slice(0, 600)}…`;
 
   await supabase.from('wa_llamadas').update({
     grabacion_path: path, transcript, minuta, minuta_cliente: minutaCliente || null,
     siguiente_paso: siguiente || null, minuta_at: new Date().toISOString(),
+    // Salió bien: se borra el aviso de un intento anterior.
+    minuta_error: null, minuta_error_at: null,
   }).eq('call_id', callId);
 
   // 5) Actividad del contacto (ficha 360) + siguiente paso sugerido en el CRM.
@@ -159,13 +169,68 @@ Responde SOLO un JSON válido, sin texto alrededor, con esta forma exacta:
      `minuta_cliente` sale vacía — con lo que el envío se cancela solo. Pasó con
      2200 y volvió a pasar con 6000. 12000 deja margen para una llamada larga
      con muchos temas; una corta no gasta más por tenerlo alto. */
-  const r = await anthropic.messages.create({ proposito: 'lib/whatsapp/minuta.lib.ts:162', model: MODELS.sonnet, max_tokens: 12000, messages: [{ role: 'user', content: prompt }] });
-  const texto = (r.content[0] as any)?.text || '';
-  const m = texto.match(/\{[\s\S]*\}/);
-  const parsed = m ? JSON.parse(m[0]) : null;
+  /* ── POR QUÉ ESTO NO ES UN `JSON.parse` Y YA (20-sep-2026) ──────────────────
+     Se perdió la minuta de la llamada más larga del día —19 min con Maela
+     Sport— y el modelo NO había fallado: en `ia_uso` quedó su respuesta con
+     `ok = true`, 6,235 tokens de salida, 140 segundos. Lo que reventó fue
+     convertirla en datos. Se le piden DOS markdown largos dentro de un JSON, y
+     en un markdown largo tarde o temprano se cuela un salto de línea sin
+     escapar dentro de la cadena: `JSON.parse` lanza, el `catch` de arriba
+     guarda la transcripción, y una llamada de veinte minutos queda en el CRM
+     como una raya.
+
+     Tres intentos, del más barato al más caro, porque lo que ya se pagó no se
+     tira: el texto crudo, el texto reparado, y —solo si los dos fallan— una
+     segunda pasada al modelo. */
+  const pedir = async (extra: string) => {
+    const r = await anthropic.messages.create({ proposito: 'lib/whatsapp/minuta.lib.ts:162', model: MODELS.sonnet, max_tokens: 12000, messages: [{ role: 'user', content: prompt + extra }] });
+    return (r.content[0] as any)?.text || '';
+  };
+
+  let texto = await pedir('');
+  let parsed = leerJSON(texto);
+  if (!parsed?.minuta) {
+    /* La segunda pasada dice QUÉ salió mal. Repetir el mismo encargo palabra por
+       palabra suele repetir el mismo error. */
+    texto = await pedir('\n\nIMPORTANTE: tu respuesta anterior no se pudo leer como JSON. Dentro de las cadenas, los saltos de línea van como \\n y las comillas como \\" — no pongas saltos de línea reales. Responde SOLO el JSON.');
+    parsed = leerJSON(texto);
+  }
+  if (!parsed?.minuta) throw new Error(`el modelo contestó pero su respuesta no se pudo leer (${texto.length} caracteres, empieza con «${texto.slice(0, 120).replace(/\s+/g, ' ')}»)`);
+
   return {
     minuta: String(parsed?.minuta || '').trim(),
     minuta_cliente: String(parsed?.minuta_cliente || '').trim(),
     siguiente_paso: String(parsed?.siguiente_paso || '').trim(),
   };
+}
+
+/**
+ * El JSON de la respuesta, tolerante con el error que de verdad ocurre.
+ *
+ * `repara()` recorre el texto sabiendo cuándo está dentro de una cadena y
+ * escapa ahí los saltos de línea y tabuladores crudos — que es como se rompe un
+ * markdown largo metido en un JSON. No intenta arreglar nada más: un reparador
+ * ambicioso terminaría «arreglando» una respuesta mala hasta que parsee, y eso
+ * es peor que no tener minuta.
+ */
+function leerJSON(texto: string): any | null {
+  const m = String(texto || '').match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { /* sigue */ }
+  try { return JSON.parse(repara(m[0])); } catch { return null; }
+}
+
+function repara(s: string): string {
+  let out = '', dentro = false, esc = false;
+  for (const ch of s) {
+    if (esc) { out += ch; esc = false; continue; }
+    if (ch === '\\') { out += ch; esc = true; continue; }
+    if (ch === '"') { dentro = !dentro; out += ch; continue; }
+    if (dentro && (ch === '\n' || ch === '\r' || ch === '\t')) {
+      out += ch === '\n' ? '\\n' : ch === '\r' ? '\\r' : '\\t';
+      continue;
+    }
+    out += ch;
+  }
+  return out;
 }

@@ -59,7 +59,7 @@ async function guardar(callId: string, buf: Buffer, sufijo = ''): Promise<string
  * Genera el PDF de una minuta ya redactada y decide su entrega.
  * Nunca lanza: la minuta ya está guardada y no puede perderse por esto.
  */
-export async function generarYEntregarMinuta(callId: string, o: { forzar?: boolean } = {}): Promise<ResultadoEntrega> {
+export async function generarYEntregarMinuta(callId: string, o: { forzar?: boolean; soloDocumento?: boolean } = {}): Promise<ResultadoEntrega> {
   try {
     const { data: ll } = await supabase.from('wa_llamadas')
       .select('call_id, canal, direccion, telefono, duracion_seg, minuta, minuta_cliente, minuta_pdf_url, minuta_pdf_cliente_url, minuta_envio_estado, conversation_id, started_at, atendida_por_nombre')
@@ -123,6 +123,21 @@ export async function generarYEntregarMinuta(callId: string, o: { forzar?: boole
           await supabase.from('wa_llamadas').update({ minuta_pdf_cliente_url: urlCliente }).eq('call_id', callId);
         }
       } catch (e: any) { console.warn(`[minuta/entrega] la versión del cliente falló: ${String(e?.message || e)}`); }
+    }
+
+    /* ── 1c · RECUPERAR UNA MINUTA NO ES MANDÁRSELA AL CLIENTE ─────────────
+       Quien rescata desde la ficha una minuta que se perdió está arreglando el
+       registro interno, meses después a veces. Mandarle de paso un PDF al
+       cliente por una llamada de la semana pasada —o peor, de hace un mes— es
+       un mensaje que nadie pidió, saliendo de un botón que dice «generar».
+       El documento se hace y se guarda; el envío, si se quiere, es otro clic.
+       `minuta_envio_estado` no se toca: lo pendiente sigue pendiente. */
+    if (o.soloDocumento) {
+      try {
+        const { registrarBitacoraLlamada } = await import('../telefonia/bitacora');
+        await registrarBitacoraLlamada(callId);
+      } catch { /* la nota vieja sigue ahí; el PDF ya está guardado */ }
+      return { pdf: url, estado: ll.minuta_envio_estado || null, motivo: 'se generó el documento; no se le mandó nada al cliente' };
     }
 
     /* ══ 2 · ¿SE LE MANDA? ────────────────────────────────────────────────

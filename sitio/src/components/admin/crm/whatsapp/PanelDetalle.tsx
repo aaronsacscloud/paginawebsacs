@@ -773,9 +773,16 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           mismo sitio no dan más opciones: dan la duda de si hacen lo mismo. Se
           quedan donde se usan —abajo, mientras escribes— y esta columna se
           libera para lo que sí es de aquí: los datos del cliente. */}
-      {(ctx?.llamadas || []).some((l: any) => l.minuta || l.minuta_pdf_url || l.minuta_pdf_cliente_url) && (
-        <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).length}>
-          {(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
+      {/* La que FALTA entra aquí también, y no solo la que está: esta sección es
+          donde se viene a leer «qué se habló con este cliente», y una llamada
+          larga sin minuta es precisamente lo que hay que ver desde aquí — con
+          su botón, no con un hueco. */}
+      {(ctx?.llamadas || []).some((l: any) => l.minuta || l.minuta_pdf_url || l.minuta_pdf_cliente_url || l.minuta_error) && (
+        <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url || l.minuta_error).length}>
+          {(ctx.llamadas || []).filter((l: any) => l.minuta || l.minuta_pdf_url || l.minuta_error).map((l: any) => (
+            l.minuta ? <MinutaPanel key={l.call_id} l={l} />
+              : <LlamadaSinMinuta key={l.call_id} l={l} onListo={() => setNonceCtx((n: number) => n + 1)} />
+          ))}
         </Seccion>
       )}
       {contactoBase && (
@@ -1066,15 +1073,24 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       {/* 6 · Llamadas */}
       <Seccion id="a-llamadas" titulo="Llamadas" n={llamadas.length}>
         {llamadas.length ? llamadas.map((l: any) => (
-          l.minuta ? <MinutaPanel key={l.call_id} l={l} /> : (
-            <div key={l.call_id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
-              <span style={{ color: C.g400, width: 62, flexShrink: 0 }}>{fecha(l.ended_at || l.created_at)}</span>
-              <span style={{ flex: 1 }}>{l.canal === 'telefono' ? 'Telefónica' : 'WhatsApp'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'}</span>
-              <span style={tag(l.estado === 'terminada' ? C.emerald50 : C.g100, l.estado === 'terminada' ? C.emerald700 : C.g500)}>
-                {l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : l.estado}
-              </span>
-            </div>
-          )
+          l.minuta ? <MinutaPanel key={l.call_id} l={l} />
+            /* Con transcripción o con un error que contar, la llamada tiene su
+               propio cajón: es lo que convierte «Telefónica · realizada» en algo
+               que se puede leer o arreglar. Las demás —las de nueve segundos,
+               las que no contestaron— se quedan en su renglón de una línea: no
+               hay nada que enseñar y llenar de cajones la ficha esconde lo que
+               sí importa. */
+            : (l.minuta_error || Number(l.transcript_len || 0) > 400)
+              ? <LlamadaSinMinuta key={l.call_id} l={l} onListo={() => setNonceCtx((n: number) => n + 1)} />
+              : (
+                <div key={l.call_id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+                  <span style={{ color: C.g400, width: 62, flexShrink: 0 }}>{fecha(l.ended_at || l.created_at)}</span>
+                  <span style={{ flex: 1 }}>{l.canal === 'telefono' ? 'Telefónica' : 'WhatsApp'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'}</span>
+                  <span style={tag(l.estado === 'terminada' ? C.emerald50 : C.g100, l.estado === 'terminada' ? C.emerald700 : C.g500)}>
+                    {l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : l.estado}
+                  </span>
+                </div>
+              )
         )) : vacio('Sin llamadas registradas.')}
       </Seccion>
 
@@ -1374,20 +1390,60 @@ function FooterEtiquetas({ entidad, id }: { entidad: string; id: string }) {
 }
 
 
+/**
+ * El markdown de la minuta, legible en una columna de 240 px.
+ *
+ * El modelo escribe títulos con `#`, negritas con `**` y separadores con
+ * `---`, y hasta ahora se volcaban tal cual: la minuta se leía «# Minuta
+ * interna» / «**Duración:** 19 min 22 s», que es peor que texto plano porque
+ * los signos compiten con las palabras. No entra una librería de markdown por
+ * esto: son cuatro marcas, y en un panel lateral lo único que hace falta es
+ * que los títulos se vean como títulos.
+ */
+function Markdowncito({ texto }: { texto: string }) {
+  const lineas = String(texto || '').split('\n');
+  const limpia = (s: string) => s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/`(.+?)`/g, '$1');
+  return (
+    <>
+      {lineas.map((cruda, i) => {
+        const s = cruda.trim();
+        if (!s || /^-{3,}$/.test(s)) return <div key={i} style={{ height: 6 }} />;
+        const t = s.match(/^(#{1,6})\s*(.*)$/);
+        if (t) return <div key={i} style={{ fontWeight: 800, color: C.g700, marginTop: i ? 9 : 0, marginBottom: 2 }}>{limpia(t[2])}</div>;
+        if (/^[-*]\s+/.test(s)) return <div key={i} style={{ paddingLeft: 10, textIndent: -8 }}>• {limpia(s.replace(/^[-*]\s+/, ''))}</div>;
+        return <div key={i} style={{ marginBottom: 2 }}>{limpia(s)}</div>;
+      })}
+    </>
+  );
+}
+
 /** Una llamada con minuta en el panel derecho: fecha, duración, expandir. */
 function MinutaPanel({ l }: { l: any }) {
   const [abierta, setAbierta] = useState(false);
   const dur = l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : '—';
+  /* ── EL ASOMO, CERRADA ────────────────────────────────────────────────────
+     Pedido del dueño (20-sep-2026): «ponerla en esta sección el resumen de la
+     llamada para que cualquiera pueda verla rápido». Cerrada, el cajón decía
+     «Tel · realizada · 19:22» y nada más: para saber de qué se habló había que
+     abrir. Ahora se lee el primer párrafo de verdad —saltando los títulos de
+     sección, que dicen el tema pero no lo que pasó— y con eso casi siempre
+     basta para saber si hay que abrirla. */
+  const asomo = String(l.minuta || '')
+    .split('\n').map((x: string) => x.trim())
+    .find((x: string) => x && !x.startsWith('#') && !x.startsWith('-') && !x.startsWith('*') && x.length > 30) || '';
   return (
     <div style={{ border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.emerald500}`, borderRadius: 10, marginBottom: 6, overflow: 'hidden' }}>
       <button onClick={() => setAbierta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', textAlign: 'left' }}>
         <span style={{ minWidth: 0, flex: 1 }}>
           <b style={{ fontSize: 11.5, display: 'block' }}>{l.canal === 'telefono' ? 'Tel' : 'WA'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'} · {dur}</b>
           <span style={{ fontSize: 10, color: C.g400 }}>{fecha(l.ended_at || l.created_at)}{l.atendida_por_nombre ? ` · ${l.atendida_por_nombre}` : ''}</span>
+          {!abierta && asomo && (
+            <span style={{ fontSize: 10.5, color: C.g500, lineHeight: 1.45, marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' } as any}>{asomo}</span>
+          )}
         </span>
-        <span style={{ color: C.g300, fontSize: 10 }}>{abierta ? '▲' : '▼'}</span>
+        <span style={{ color: C.g300, fontSize: 10, alignSelf: 'flex-start', marginTop: 2 }}>{abierta ? '▲' : '▼'}</span>
       </button>
-      {abierta && <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 10px', fontSize: 11.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', maxHeight: 260, overflowY: 'auto' }}>{String(l.minuta).replace(/^## /gm, '').replace(/^- /gm, '• ')}</div>}
+      {abierta && <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 10px', fontSize: 11.5, color: C.g700, lineHeight: 1.55, maxHeight: 320, overflowY: 'auto' }}><Markdowncito texto={String(l.minuta)} /></div>}
       {/* El documento formal, aquí y no solo en la conversación: la ficha es
           donde alguien busca «qué se habló con este cliente» meses después. */}
       {l.minuta_pdf_cliente_url && (
@@ -1407,6 +1463,67 @@ function MinutaPanel({ l }: { l: any }) {
         </a>
       )}
       {l.siguiente_paso && <div style={{ borderTop: `1px solid ${C.g100}`, background: C.moradoAgua, padding: '5px 10px', fontSize: 10.5, color: C.moradoTinta }}><b>Siguiente:</b> {l.siguiente_paso}</div>}
+    </div>
+  );
+}
+
+/**
+ * LA LLAMADA QUE SE QUEDÓ SIN MINUTA.
+ *
+ * Existe por un caso concreto: 19 minutos con Maela Sport, transcripción
+ * completa guardada, y en la ficha se leía «Telefónica · realizada» — igual que
+ * una llamada de nueve segundos. La minuta se había perdido al convertir la
+ * respuesta del modelo en datos, y el error vivía en el `return` de un webhook
+ * que no lee nadie.
+ *
+ * Regla del dueño, ya dicha antes para las llamadas: si algo no sucedió, tiene
+ * que marcar el error. Y si se puede arreglar, que se arregle desde donde se
+ * ve. El botón NO le manda nada al cliente (`enviar: false`): rescata el
+ * registro interno, que es lo que se está pidiendo meses después.
+ */
+function LlamadaSinMinuta({ l, onListo }: { l: any; onListo: () => void }) {
+  const [estado, setEstado] = useState<'quieto' | 'yendo' | 'error'>('quieto');
+  const [error, setError] = useState<string>('');
+  const dur = l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : (l.estado || '—');
+  const hayMaterial = Number(l.transcript_len || 0) > 400;
+  const aviso = l.minuta_error || (hayMaterial ? 'Esta llamada no tiene minuta.' : '');
+
+  const generar = async () => {
+    setEstado('yendo'); setError('');
+    try {
+      const r = await fetch('/api/crm/telefonia/minuta-pdf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ call_id: l.call_id, redactar: true, enviar: false }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error || `no se pudo (${r.status})`);
+      onListo();
+    } catch (e: any) { setEstado('error'); setError(String(e?.message || e)); }
+  };
+
+  return (
+    <div style={{ border: `1px solid ${C.g100}`, borderLeft: `3px solid ${aviso ? C.ambar500 : C.g300}`, borderRadius: 10, marginBottom: 6, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 10px' }}>
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 11.5, display: 'block' }}>{l.canal === 'telefono' ? 'Tel' : 'WA'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'} · {dur}</b>
+          <span style={{ fontSize: 10, color: C.g400 }}>{fecha(l.ended_at || l.created_at)}{l.atendida_por_nombre ? ` · ${l.atendida_por_nombre}` : ''}</span>
+        </span>
+      </div>
+      {aviso && (
+        <div style={{ borderTop: `1px solid ${C.g100}`, background: C.ambar50, padding: '7px 10px' }}>
+          <div style={{ fontSize: 10.5, color: C.ambar700, lineHeight: 1.45 }}>{aviso}</div>
+          {estado === 'error' && <div style={{ fontSize: 10.5, color: '#B91C1C', marginTop: 4, lineHeight: 1.45 }}>No salió: {error}</div>}
+          {hayMaterial && (
+            <button onClick={generar} disabled={estado === 'yendo'}
+              style={{ marginTop: 6, border: 'none', borderRadius: 8, padding: '5px 10px', fontSize: 10.5, fontWeight: 700, fontFamily: 'inherit', cursor: estado === 'yendo' ? 'wait' : 'pointer', background: estado === 'yendo' ? C.g100 : C.moradoAgua, color: estado === 'yendo' ? C.g400 : C.moradoTinta }}>
+              {estado === 'yendo' ? 'Escribiéndola… (tarda ~1 min)' : estado === 'error' ? 'Intentar otra vez' : 'Generar la minuta'}
+            </button>
+          )}
+          {/* Sin transcripción no hay botón: apretar algo que no puede funcionar
+              es peor que no tenerlo. Se dice qué falta y por qué. */}
+          {!hayMaterial && <div style={{ fontSize: 10, color: C.g400, marginTop: 4 }}>No hay transcripción guardada, así que no se puede reintentar desde aquí.</div>}
+        </div>
+      )}
     </div>
   );
 }
