@@ -1,4 +1,18 @@
-# Crunchbase · todo listo para copiar y pegar
+# Crunchbase · APLICADO el 20-sep-2026
+
+**Estado: hecho.** El dueño reclamó la ficha y reemplazó lo que estaba mal: la
+descripción corta (el campo tiene tope de 140 caracteres), la descripción
+larga, las etiquetas de industria (traía Enterprise Software, Information
+Services e Information Technology, que lo pintaban como software genérico), el
+domicilio (decía Quintana Roo), el logo y el fundador. Crunchbase encola las
+ediciones y las revisa antes de publicarlas: puede tardar de un día a dos
+semanas en verse.
+
+**Sin resolver:** la ficha traía fundación el 25 de mayo de 2013 y el sitio
+publica 2014. Hay que dejar el mismo año en los dos lados.
+
+Lo que sigue abajo es el material tal como se usó, por si hay que volver a
+editar.
 
 Ficha: `crunchbase.com/organization/sacscloud` — **ya existe**. No crear otra:
 dos fichas de la misma empresa se contradicen entre sí y ninguna se cita.
