@@ -418,9 +418,25 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
       }
     }
 
-    // Solo los fallos que hablan del CLIENTE o de su permiso quedan como alerta
-    // de la conversación (un error de plantilla o de red no es culpa del número).
-    if (['numero', 'permiso', 'limite'].includes(x.tipo)) {
+    /* ══ LOS LÍMITES DE META NO SON DEL HILO (20-sep-2026) ═══════════════
+       Reporte del dueño, el segundo del mismo tipo en dos días: primero «Meta
+       limitó los mensajes de marketing» y ahora «Experimento de Meta: no
+       recibe marketing» — «quítalo de aquí, ya viene en el mensaje, está de
+       más».
+
+       Ayer lo tapé en la pantalla por el texto del aviso, y eso fue tratar el
+       síntoma: hay cinco códigos distintos de la familia `limite` y cada uno
+       iba a volver a salir con otras palabras. La raíz está aquí: un límite de
+       Meta describe el destino de UN mensaje —se puede seguir hablando, se
+       puede mandar utility, y en cuanto el cliente escriba se abre todo— y no
+       el estado de la conversación. Puesto arriba y en ámbar se lee como «esta
+       conversación está bloqueada», que es falso, y se queda ahí días.
+
+       Se quedan `numero` (bloqueado, inexistente, inalcanzable) y `permiso`,
+       que sí valen para todo el hilo: mientras no se arreglen, NADA sale. El
+       mensaje que no salió sigue contando su error en su propia burbuja, que
+       es donde se puede hacer algo. */
+    if (['numero', 'permiso'].includes(x.tipo)) {
       const { data: m } = await supabase.from('wa_mensajes').select('conversation_id').eq('id', msj.id).maybeSingle();
       if (m?.conversation_id) await supabase.from('wa_conversaciones').update({ alerta: `${x.titulo}: ${x.que_hacer}` }).eq('id', m.conversation_id);
     }
