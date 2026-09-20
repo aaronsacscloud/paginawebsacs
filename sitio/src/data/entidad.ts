@@ -125,12 +125,21 @@ export function organizacion() {
   };
 }
 
+/** El NOMBRE DEL SITIO que Google pinta encima del título en su resultado.
+ *  Va «Sacscloud» y no «Sacs» a propósito, y no contradice la regla de marca:
+ *  son dos cosas distintas. La marca del producto, la que se escribe en el
+ *  contenido y en las fichas, sigue siendo Sacs. Esto es el nombre del SITIO, y
+ *  Google lo elige entre este `name`, el `og:site_name` y el dominio. Medido el
+ *  20-sep-2026: mostraba «sacscloud.com» pelado, porque «Sacs» no se parece al
+ *  dominio y el algoritmo desconfía. «Sacscloud» sí coincide, así que es el que
+ *  tiene posibilidades reales de quedarse. `alternateName` conserva el otro. */
 export function sitioWeb() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': `${SITIO}/#sitio`,
-    name: NOMBRE,
+    name: 'Sacscloud',
+    alternateName: [NOMBRE, 'Sacs Cloud'],
     url: SITIO,
     description: DESCRIPCION,
     publisher: { '@id': ENTIDAD_ID },
