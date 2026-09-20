@@ -450,8 +450,21 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     {c.virtual ? <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px' }}>CRM</span> : horaRelativa(c.ultimo_mensaje_at)}
                   </span>
                   {c.mencion && <span title="Te mencionaron en una nota" style={{ fontSize: 9, fontWeight: 800, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 5px', flexShrink: 0 }}>@</span>}
-                  {c.alerta && <span title={c.alerta} style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0, display: 'inline-block' }} />}
-                  {!c.alerta && c.ventana_expira_at && c.ultima_direccion === 'entrante' && (() => { const r = new Date(c.ventana_expira_at).getTime() - Date.now(); return r > 0 && r < 4 * 3600e3; })() && (
+                  {/* ══ EL PUNTO ROJO SE FUE (20-sep-2026) ══════════════════
+                      Pedido del dueño: «quita los puntos rojos que aparecen a
+                      la derecha, confunden». Y confunden por lo que son: un
+                      círculo de 8 px sin una palabra al lado. En la misma
+                      esquina hay puntos de otros colores —el morado de no
+                      leídos, el ámbar de la ventana— y ninguno dice qué
+                      significa salvo si dejas el ratón encima, cosa que en un
+                      teléfono no existe.
+
+                      Marcaba `alerta`: que el último envío a ese número falló.
+                      Eso NO se pierde: se sigue viendo al abrir la
+                      conversación, en la burbuja del mensaje que no salió y con
+                      su explicación. Ahí sí se puede hacer algo; en la lista
+                      sólo servía para inquietar. */}
+                  {c.ventana_expira_at && c.ultima_direccion === 'entrante' && (() => { const r = new Date(c.ventana_expira_at).getTime() - Date.now(); return r > 0 && r < 4 * 3600e3; })() && (
                     <span title={`La ventana de 24 h cierra en ${Math.max(1, Math.round((new Date(c.ventana_expira_at).getTime() - Date.now()) / 60000))} min`} style={{ width: 8, height: 8, borderRadius: 999, background: C.ambar400, flexShrink: 0, display: 'inline-block' }} />
                   )}
                 </span>
