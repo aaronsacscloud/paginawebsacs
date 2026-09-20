@@ -1,0 +1,251 @@
+---
+/*
+  Panel de marca para /agendar/[slug]. Vive junto a la tarjeta de agendado
+  (que no se toca) para que quien llega ahí sepa qué es Sacs antes de dar
+  sus datos. En escritorio va a la izquierda; en móvil/tablet, la tarjeta
+  de agendado sigue siendo lo primero que se ve (a eso vino la persona) y
+  este panel queda debajo, condensado.
+
+  El nombre del anfitrión y la duración salen del propio eventType — igual
+  que hace BookingPage.tsx (línea ~615) — para que el bloque "Qué pasa en
+  esta llamada" lea bien también en los otros ~14 tipos de evento, no solo
+  en la demo.
+*/
+interface Props {
+  eventType: {
+    duracion_minutos: number;
+    anfitrion_nombre?: string | null;
+    team_members?: { nombre: string } | null;
+  };
+}
+
+const { eventType } = Astro.props;
+
+const hostFullName =
+  eventType.anfitrion_nombre || eventType.team_members?.nombre || 'Equipo Sacs';
+const hostFirstName = hostFullName.split(' ')[0];
+const duracion = eventType.duracion_minutos;
+---
+
+<aside class="abp" aria-label="Sobre Sacs">
+  <div class="abp-inner">
+    <img
+      class="abp-logo"
+      src="/brand/sacs-logo-full-dark.svg"
+      alt="Sacs"
+      width="150"
+      height="50"
+      loading="eager"
+    />
+
+    <div class="abp-copy">
+      <h1 class="abp-title">El sistema para marcas y tiendas de moda</h1>
+      <p class="abp-sub">
+        En ropa y calzado no vendes un producto: vendes una talla y un color.
+        Todo Sacs está construido alrededor de eso.
+      </p>
+    </div>
+
+    <ul class="abp-proof">
+      <li>
+        <strong>4.7 de 5</strong>
+        <span>113 reseñas en Google</span>
+      </li>
+      <li>
+        <strong>+3,000 marcas</strong>
+        <span>activas en México y Latam</span>
+      </li>
+      <li>
+        <strong>Más de una década</strong>
+        <span>en el ramo</span>
+      </li>
+    </ul>
+
+    <div class="abp-call">
+      <p class="abp-call-kicker">Qué pasa en esta llamada</p>
+      <ul>
+        <li>
+          Te la da {hostFirstName}, que lleva años viendo tiendas de moda por
+          dentro.
+        </li>
+        <li>
+          Son {duracion} minutos por videollamada, con tu catálogo y tus
+          tallas sobre la mesa.
+        </li>
+        <li>Sales con el precio claro y sin compromiso.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="abp-foot">
+    Boutiques, zapaterías, joyerías, marcas propias y mayoristas.
+  </p>
+</aside>
+
+<style>
+  .abp {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-8);
+    height: 100%;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8) var(--space-6);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .abp-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .abp-logo {
+    width: 108px;
+    height: auto;
+  }
+
+  .abp-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .abp-title {
+    font-size: clamp(1.5rem, 2.4vw, 1.875rem); /* 24px → 30px */
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+  }
+
+  .abp-sub {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+    max-width: 40ch;
+  }
+
+  /* ─── Pruebas (reseña, marcas, años) ─── */
+
+  .abp-proof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    list-style: none;
+    padding: var(--space-5) 0;
+    border-top: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .abp-proof li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .abp-proof strong {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.0625rem; /* 17px */
+    color: var(--color-primary-texto);
+    letter-spacing: -0.01em;
+  }
+
+  .abp-proof span {
+    font-size: 0.8125rem; /* 13px */
+    color: var(--color-text-tertiary);
+  }
+
+  /* ─── Qué pasa en esta llamada ─── */
+
+  .abp-call-kicker {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+
+  .abp-call ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .abp-call li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+
+  .abp-call li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.45em;
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+    background: var(--color-primary);
+    opacity: 0.85;
+  }
+
+  .abp-foot {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  /* ─── Condensado en móvil/tablet ─── */
+  @media (max-width: 1023px) {
+    .abp {
+      height: auto;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6) var(--space-5);
+      gap: var(--space-6);
+    }
+
+    .abp-inner {
+      gap: var(--space-5);
+    }
+
+    .abp-logo {
+      width: 92px;
+    }
+
+    .abp-title {
+      font-size: 1.375rem; /* 22px */
+    }
+
+    .abp-sub {
+      max-width: none;
+    }
+
+    .abp-proof {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: var(--space-4) 0;
+    }
+
+    .abp-proof li {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      flex: 1 1 auto;
+    }
+
+    .abp-foot {
+      padding-top: var(--space-4);
+    }
+  }
+</style>

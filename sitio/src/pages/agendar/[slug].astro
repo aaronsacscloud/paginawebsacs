@@ -2,6 +2,7 @@
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import BookingLoader from '../../components/scheduling/BookingLoader';
+import AgendarBrandPanel from '../../components/AgendarBrandPanel.astro';
 import { supabase } from '../../lib/supabase';
 
 const slug = Astro.params.slug || 'demo';
@@ -35,10 +36,65 @@ if (!eventType) {
 ---
 
 <BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
-  <BookingLoader client:only="react" eventType={eventType} questions={questions} />
+  <div class="agendar-shell">
+    <div class="agendar-panel">
+      <AgendarBrandPanel eventType={eventType} />
+    </div>
+    <div class="agendar-booking">
+      <BookingLoader client:only="react" eventType={eventType} questions={questions} />
+    </div>
+  </div>
 </BaseLayout>
 
 <style is:global>
   .nav, .wa-bar, footer { display: none !important; }
   main { padding: 0 !important; margin: 0 !important; }
+
+  /*
+    BookingPage.tsx (no se toca) se pinta a sí mismo dentro de un div con
+    min-height:100vh que centra su tarjeta — pensado para vivir solo en la
+    pantalla. Aquí vive junto al panel de marca, así que es esta capa (el
+    shell de la página, no el componente) la que decide la altura real y
+    quién centra qué. `client:only` monta el árbol dentro de <astro-island>,
+    que Astro deja en `display:contents`, así que el div de BookingPage
+    queda como hijo directo de `.agendar-booking` para efectos de layout.
+  */
+  .agendar-booking > astro-island > div {
+    min-height: 0 !important;
+  }
+
+  .agendar-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--color-bg-primary);
+    padding: var(--space-6) var(--space-4);
+    gap: var(--space-6);
+  }
+
+  .agendar-panel { order: 2; }
+  .agendar-booking {
+    order: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (min-width: 1024px) {
+    .agendar-shell {
+      display: grid;
+      grid-template-columns: minmax(360px, 42%) 1fr;
+      align-items: center;
+      justify-content: center;
+      max-width: 1180px;
+      margin-inline: auto;
+      padding: var(--space-10) var(--space-8);
+      gap: var(--space-8);
+    }
+
+    .agendar-panel { order: initial; }
+    .agendar-booking {
+      order: initial;
+      justify-content: flex-start;
+    }
+  }
 </style>
