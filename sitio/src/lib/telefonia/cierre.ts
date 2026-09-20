@@ -233,7 +233,13 @@ ${dialogo.slice(0, 9000)}`;
              se dice en el motivo, para que quien confirma lo vea antes de
              aceptar. Antes se creaba la cita igual, encimada o fuera del
              horario de atención de ese tipo. */
-          const hs = huecosPorTipo[slug] || [];
+          /* Los huecos sólo mandan en las REUNIONES. Un «te marco el jueves a
+             las 4» es un recordatorio tuyo: no ocupa la agenda de nadie, no
+             manda invitación y no tiene por qué caer en un hueco libre de otra
+             persona. Ajustarlo movía la hora que el cliente pidió a la
+             conveniencia de un calendario ajeno. */
+          const esLlamadaDeVuelta = x.tipo !== 'reunion';
+          const hs = esLlamadaDeVuelta ? [] : (huecosPorTipo[slug] || []);
           const ajuste = ajustarAHueco(String(x.fecha), String(x.hora), hs);
           const movido = !!ajuste?.movido;
           return {
@@ -610,13 +616,29 @@ export async function crearCompromiso(it: any, cp: Compromiso, userId: string | 
 
      Hasta hoy las dos usaban el dueño de la jornada, así que los seguimientos
      de él caían en el Google de ella y él no veía ninguno. */
+  const slugCitaPrevio = cp.reunion_tipo || (cp.tipo === 'reunion' ? 'demo' : 'llamada-discovery');
+  /* ══ 🔴 LA DEMO SE OFRECÍA DE UNA AGENDA Y SE GUARDABA EN OTRA ═══════════
+     Encontrado trazando el flujo completo (20-sep-2026), a petición del dueño.
+     Las horas que la cabina lee en voz alta salen de la disponibilidad del
+     DUEÑO DEL TIPO DE EVENTO —los trece tipos son de Andrea— pero la cita se
+     creaba con el dueño de la JORNADA como anfitrión. O sea: le ofrecías al
+     prospecto un hueco libre de Andrea y la reunión caía en TU calendario, a
+     una hora que quizá tú tenías ocupada. Dos agendas distintas para la misma
+     cita.
+
+     La regla, que es la que él describió: una REUNIÓN (demo y las demás de
+     agenda) es de quien la da —el dueño del tipo de evento—; una LLAMADA
+     (volver a marcar, discovery acordado al teléfono) es de quien habló. */
+  const { data: tipoDueno } = cp.tipo === 'reunion'
+    ? await supabase.from('event_types').select('owner_id').eq('slug', slugCitaPrevio).maybeSingle()
+    : { data: null as any };
   const hostId = cp.tipo === 'llamada'
     ? (userId || s?.owner_id)
-    : (s?.owner_id || userId);
+    : (tipoDueno?.owner_id || s?.owner_id || userId);
   /* Sin anfitrión no hay agenda donde poner la cita — y callarlo es peor que
      no agendarla: quien colgó se queda creyendo que quedó. Se dice. */
   if (!hostId) return `no se pudo agendar ${cp.tipo === 'llamada' ? 'la llamada' : 'la reunión'} del ${cp.fecha}: la llamada no tiene dueño (ábrela en la pantalla de la llamada o asígnale el contacto a alguien)`;
-  const slugCita = cp.reunion_tipo || (cp.tipo === 'reunion' ? 'demo' : 'llamada-discovery');
+  const slugCita = slugCitaPrevio;
   const { data: tipo } = await supabase.from('event_types').select('id, nombre, duracion_minutos').eq('slug', slugCita).maybeSingle();
   if (!tipo) return null;
   // La hora que dijo el contacto es en SU zona; la reunión se guarda en la del vendedor (centro), que es la que ve la agenda.
