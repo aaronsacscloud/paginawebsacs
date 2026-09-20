@@ -58,36 +58,6 @@ export default defineConfig({
     '/giros/retail-entretenimiento': '/giros/',
     '/giros/supermercado': '/giros/',
     '/giros/vinos-y-licores': '/giros/',
-
-    /* Las mismas rutas CON barra final. El sitio publica sus URLs con barra
-       (así salen en el sitemap y así las guarda Google), pero las claves de
-       arriba se escribieron sin ella: medido el 20-sep-2026, /giros/electronica
-       redirigía bien y /giros/electronica/ daba 404. Por eso el resultado viejo
-       de un giro retirado seguía saliendo en Google con su título de antes:
-       el rastreador llegaba a una página muerta y se quedaba con lo que tenía. */
-    '/manifiesto/': '/nosotros',
-    '/login/': '/entrar',
-    '/acceso/': '/entrar',
-    '/iniciar-sesion/': '/entrar',
-    '/marcas/': '/enterprise',
-    '/soluciones/marca/': '/enterprise',
-    '/giros/belleza-y-cosmetica/': '/giros/',
-    '/giros/bicicletas/': '/giros/',
-    '/giros/comestibles/': '/giros/',
-    '/giros/electronica/': '/giros/',
-    '/giros/farmacias/': '/giros/',
-    '/giros/ferreterias/': '/giros/',
-    '/giros/florerias/': '/giros/',
-    '/giros/franquicias/': '/giros/',
-    '/giros/fundas-celulares/': '/giros/',
-    '/giros/jugueterias/': '/giros/',
-    '/giros/mascotas/': '/giros/',
-    '/giros/minisupers/': '/giros/',
-    '/giros/novedades/': '/giros/',
-    '/giros/parques-y-atracciones/': '/giros/',
-    '/giros/retail-entretenimiento/': '/giros/',
-    '/giros/supermercado/': '/giros/',
-    '/giros/vinos-y-licores/': '/giros/',
   },
   // maxDuration en el ADAPTADOR, no en el bloque `functions` de vercel.json:
   // ese patrón apunta a rutas del código fuente y en Astro las funciones las
