@@ -82,14 +82,24 @@ if (!eventType) {
   @media (min-width: 1024px) {
     .agendar-shell {
       display: grid;
-      grid-template-columns: minmax(360px, 42%) 1fr;
+      grid-template-columns: minmax(320px, 36%) 1fr;
       align-items: center;
       justify-content: center;
-      max-width: 1180px;
+      max-width: 1320px;
       margin-inline: auto;
       padding: var(--space-10) var(--space-8);
       gap: var(--space-8);
     }
+
+    /* La tarjeta de agendado trae `max-width` en estilo EN LÍNEA desde
+       BookingPage.tsx (480 px, y 560 en la pantalla de confirmación). Con el
+       panel al lado se veía angosta y sobraba espacio a la derecha. No se toca
+       el componente a propósito: también lo usan /contacto y el embebido, y ahí
+       el ancho chico está bien. Por eso la regla vive aquí, acotada a esta
+       página, y necesita `!important` porque un estilo en línea gana a
+       cualquier hoja. Si algún día cambia el ancho en el componente, esta regla
+       deja de aplicar sola y no rompe nada. */
+    .agendar-booking div[style*="max-width"] { max-width: 640px !important; }
 
     .agendar-panel { order: initial; }
     .agendar-booking {
