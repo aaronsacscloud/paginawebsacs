@@ -593,7 +593,26 @@ export async function agendarDesdeLlamada(
 
 export async function crearCompromiso(it: any, cp: Compromiso, userId: string | null): Promise<string | null> {
   const { data: s } = await supabase.from('tel_sesiones').select('owner_id').eq('id', it.sesion_id).maybeSingle();
-  const hostId = s?.owner_id || userId;
+  /* ══ CADA COSA AL CALENDARIO DE QUIEN LA TRABAJA (20-sep-2026) ═══════════
+     Pedido del dueño: «a mi cuenta también agregaremos mi propio calendario
+     para que yo tenga el evento de seguimiento de llamadas, que esas deben ir
+     a mi calendario directo; Andrea no ve nada de seguimiento de llamadas pero
+     sí la agenda de las reuniones».
+
+     Son dos cosas distintas con dos dueños distintos:
+
+     · VOLVER A LLAMAR («te marco el jueves») es un recordatorio DE QUIEN HABLÓ.
+       Nadie más lo puede atender: el hilo de esa conversación está en su
+       cabeza. Va a SU calendario — `userId`, quien cerró la llamada.
+     · UNA REUNIÓN (demo, discovery, capacitación) es de la AGENDA: tiene
+       invitación, correo y a veces otro anfitrión. Sigue colgando del dueño de
+       la jornada, que es quien la atiende.
+
+     Hasta hoy las dos usaban el dueño de la jornada, así que los seguimientos
+     de él caían en el Google de ella y él no veía ninguno. */
+  const hostId = cp.tipo === 'llamada'
+    ? (userId || s?.owner_id)
+    : (s?.owner_id || userId);
   /* Sin anfitrión no hay agenda donde poner la cita — y callarlo es peor que
      no agendarla: quien colgó se queda creyendo que quedó. Se dice. */
   if (!hostId) return `no se pudo agendar ${cp.tipo === 'llamada' ? 'la llamada' : 'la reunión'} del ${cp.fecha}: la llamada no tiene dueño (ábrela en la pantalla de la llamada o asígnale el contacto a alguien)`;

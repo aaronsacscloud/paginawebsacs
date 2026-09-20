@@ -45,7 +45,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data, error } = await supabase
     .from('team_members')
-    .select('id, nombre, email, rol, activo, foto_url, permisos, last_login_at, created_at')
+    .select('id, nombre, email, rol, activo, foto_url, permisos, recibe_entrantes, last_login_at, created_at')
     .order('created_at');
   if (error) return json({ error: error.message }, 500);
 
@@ -79,7 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
       password_hash: await hashPassword(temporal),
       permisos: saneaPermisos(b.permisos) || PRESETS[rol]?.permisos || null,
     })
-    .select('id, nombre, email, rol, activo, permisos').maybeSingle();
+    .select('id, nombre, email, rol, activo, permisos, recibe_entrantes').maybeSingle();
 
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true, usuario: { ...data, permisos_efectivos: permisosDe(data as any) }, password_temporal: temporal });
@@ -98,6 +98,10 @@ export const PUT: APIRoute = async ({ request }) => {
   if (Object.prototype.hasOwnProperty.call(PRESETS, String(b.rol))) patch.rol = b.rol;
   if (b.permisos !== undefined) patch.permisos = saneaPermisos(b.permisos);
   if (typeof b.activo === 'boolean') patch.activo = b.activo;
+  /* Quién está en la cola del teléfono. No pasa por `saneaPermisos` porque no
+     es una sección del menú: es un turno, y el founder también lo puede tener
+     apagado (de hecho es el caso que lo motivó). */
+  if (typeof b.recibe_entrantes === 'boolean') patch.recibe_entrantes = b.recibe_entrantes;
 
   let temporal: string | null = null;
   if (b.resetear_password === true) {
@@ -114,7 +118,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
   const { data, error } = await supabase
     .from('team_members').update(patch).eq('id', id)
-    .select('id, nombre, email, rol, activo, permisos').maybeSingle();
+    .select('id, nombre, email, rol, activo, permisos, recibe_entrantes').maybeSingle();
   if (error) return json({ error: error.message }, 500);
 
   return json({ ok: true, usuario: { ...data, permisos_efectivos: permisosDe(data as any) }, password_temporal: temporal });

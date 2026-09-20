@@ -116,9 +116,29 @@ export const POST: APIRoute = async ({ request }) => {
   const oir = cfgVoz?.tel_dictado !== false ? dictado(p.CallSid) : '';
 
   if (esEntrante) {
-    // Timbrar en el CRM: todas las identidades registradas ahora mismo.
-    const { data: regs } = await supabase.from('tel_identidades').select('identity').gte('visto_at', new Date(Date.now() - 5 * 60e3).toISOString());
-    const clientes = (regs || []).map(r => `<Client>${r.identity}</Client>`).join('');
+    /* ══ A QUIÉN LE SUENA (20-sep-2026) ══════════════════════════════════
+       Pedido del dueño: «el problema es que los 2 estamos en la misma cuenta y
+       a ella le aparece cuando yo estoy haciendo llamadas y me llaman, cuando
+       al final ella no debería recibir esas llamadas».
+
+       Antes timbraba a TODAS las identidades vivas, sin mirar de quién eran:
+       cualquiera con la sala abierta oía cualquier llamada. Ahora sólo a quien
+       está en la cola del teléfono (`recibe_entrantes`).
+
+       Ojo con el orden: primero se filtra y DESPUÉS se pregunta si quedó
+       alguien. Si nadie está en la cola, la llamada no se pierde en silencio —
+       cae en el mismo mensaje de siempre, el que manda a escribir por WhatsApp. */
+    const { data: regs } = await supabase.from('tel_identidades')
+      .select('identity, user_id').gte('visto_at', new Date(Date.now() - 5 * 60e3).toISOString());
+    const ids = [...new Set((regs || []).map(r => r.user_id).filter(Boolean))];
+    const enCola = new Set<string>();
+    if (ids.length) {
+      const { data: miembros } = await supabase.from('team_members')
+        .select('id, recibe_entrantes').in('id', ids);
+      for (const m of miembros || []) if ((m as any).recibe_entrantes !== false) enCola.add(String(m.id));
+    }
+    const clientes = (regs || []).filter(r => !r.user_id || enCola.has(String(r.user_id)))
+      .map(r => `<Client>${r.identity}</Client>`).join('');
     if (!clientes) return decir('Gracias por llamar a Sacscloud. Por el momento no podemos atenderte; escríbenos por WhatsApp a este mismo número.');
     return xml(`${oir}<Dial ${grabar} ${estado} answerOnBridge="true">${clientes}</Dial>`);
   }

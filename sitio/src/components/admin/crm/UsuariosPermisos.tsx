@@ -139,6 +139,7 @@ export default function UsuariosPermisos() {
             <tr>
               <th style={th}>Usuario</th>
               <th style={th}>Rol</th>
+              <th style={{ ...th, textAlign: 'center' }} title="Si las llamadas entrantes le suenan en el CRM">Entrantes</th>
               {SECCIONES.map(s => <th key={s.id} style={{ ...th, textAlign: 'center', padding: '11px 6px' }} title={`${s.label}: ${s.desc}`}>{CORTO[s.id] || s.label}</th>)}
               <th style={th} />
             </tr>
@@ -175,6 +176,20 @@ export default function UsuariosPermisos() {
                       {!ROLES.some(r => r.id === u.rol) && <option value={u.rol}>{u.rol} (rol antiguo)</option>}
                       {ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                     </select>
+                  </td>
+                  {/* ══ QUIÉN ESTÁ EN LA COLA DEL TELÉFONO (20-sep-2026) ══════
+                      No es un permiso de sección —el founder se los salta
+                      todos— sino un turno: si las llamadas ENTRANTES le suenan
+                      o no. Sale aquí, junto al rol, porque es de la misma
+                      familia: quién hace qué. Las salientes y la cabina no se
+                      tocan: cualquiera puede marcar. */}
+                  <td style={{ ...td, textAlign: 'center' }}>
+                    <label title="Si las llamadas entrantes le suenan en el CRM. No afecta a marcar ni a la cabina."
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: guardando === u.id ? 'wait' : 'pointer', fontSize: '0.72rem', color: '#6B7280' }}>
+                      <input type="checkbox" checked={u.recibe_entrantes !== false} disabled={guardando === u.id}
+                        onChange={e => cambiar(u, { recibe_entrantes: e.target.checked })} />
+                      {u.recibe_entrantes !== false ? 'Sí' : 'No'}
+                    </label>
                   </td>
                   {SECCIONES.map(s => {
                     const nivel: Nivel = (u.permisos_efectivos?.[s.id] || 'no') as Nivel;
