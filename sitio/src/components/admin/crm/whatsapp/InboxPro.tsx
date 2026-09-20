@@ -235,8 +235,32 @@ export default function InboxPro() {
     }
   }, [lista, isMobile]);
 
+  const seqLista = useRef(0);
+  const aplicadaLista = useRef(0);
   const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
-    const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+    /* ══ 🔴 LA LISTA QUE NO CUADRABA CON EL FILTRO (20-sep-2026) ════════════
+       Reporte del dueño, con la captura: «Nuevo lead 68» en el menú y «No hay
+       conversaciones» en la lista, y sólo se arreglaba dándole a refrescar.
+
+       Es una carrera, y por eso era intermitente. Aquí conviven tres cosas que
+       piden la lista: el cambio de filtro, el refresco automático cada 6 s y el
+       que dispara volver a la pestaña. Ninguna miraba si su respuesta seguía
+       siendo la buena, así que bastaba con que la petición VIEJA —la del filtro
+       anterior— llegara después de la nueva para pintar encima sus resultados.
+       Con el servidor respondiendo en 370 ms casi siempre y en 8 s de vez en
+       cuando (ya medido), ese adelantamiento pasa seguido.
+
+       El mismo candado que la cabina: cada petición toma un número, y la que
+       vuelve con un número más viejo que el ya aplicado se tira. Refrescar
+       «arreglaba» el síntoma porque dejaba una sola petición en el aire.
+
+       La QS entera es la identidad: si cambió el filtro, la vista o el orden,
+       lo que vuelve de la anterior ya no describe esta pantalla. */
+    const qs = `${armarQS(f)}&limit=${50 * paginas}`;
+    const n = ++seqLista.current;
+    const j = await fetch(`/api/crm/whatsapp/inbox?${qs}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+    if (n < aplicadaLista.current) return;          // llegó tarde: ya hay una respuesta más nueva
+    aplicadaLista.current = n;
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
     // ⚠️ UN ERROR NO ES UNA LISTA VACÍA.
     // El servidor se cuelga de forma intermitente (medido en producción: /inbox
