@@ -26,7 +26,9 @@ Empieza por este archivo, luego `geo.md`, que es el diagnóstico más reciente.
 | Crunchbase | **Hecho (20-sep-2026).** Ficha reclamada y corregida: descripción, industrias, domicilio, logo y fundador. Las ediciones entran a revisión de Crunchbase y tardan de un día a dos semanas en verse. |
 | G2 | **Perfil aprobado (20-sep-2026).** G2 asigna las categorías él mismo: cuando llegue el correo con la liga del perfil, hay que revisar que sean de retail de moda y no de software genérico. |
 | Capterra (con GetApp y Software Advice) | Pendiente. Alta gratuita en `capterra.com/vendors`. El texto está en `alta-capterra-g2.md`. |
-| Reseñas | Pendiente. Es lo que hace que las tres fichas sirvan: sin reseñas no rankean ni las citan. |
+| Reseñas | Pendiente. Es lo que hace que las fichas sirvan: sin reseñas no rankean ni las citan. |
+| LinkedIn (perfil de Aaron y página de empresa) | **Hecho (20-sep-2026).** Titular, «Acerca de» y descripción del puesto reescritos en español y en inglés, en contexto de moda. Página de empresa con eslogan, información, especialidades, botón al calendario propio (`/agendar/demo`, ya no el de HubSpot de otra persona) y dato de credibilidad con el 4.7 de Google. Publicación fija escrita. |
+| Página de agendado | **Rediseñada (20-sep-2026).** `/agendar/<slug>` lleva panel de marca con logo, las tres pruebas verificables y qué pasa en la llamada. El anfitrión y la duración salen del evento, así que sirve para las 13 rutas. |
 
 ## Lo que falta y depende del dueño
 
