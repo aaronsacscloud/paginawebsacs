@@ -32,7 +32,14 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.redactar === true) {
     const { data: ll } = await supabase.from('wa_llamadas')
       .select('transcript, canal, direccion, duracion_seg, conversation_id, telefono').eq('call_id', callId).maybeSingle();
-    if (!ll?.transcript) return json({ error: 'Esta llamada no tiene transcripción guardada' }, 404);
+    if (!ll?.transcript) {
+      /* Sin transcripción no hay nada que redactar, y hay que decir POR QUÉ: la
+         grabación pudo no llegar, o la llamada pudo ser de nueve segundos. Un
+         «404» pelado deja a quien aprieta el botón sin saber si insistir. */
+      const motivo = 'Esta llamada no tiene transcripción guardada: sin el audio transcrito no hay con qué escribir la minuta.';
+      await supabase.from('wa_llamadas').update({ minuta_error: motivo, minuta_error_at: new Date().toISOString() }).eq('call_id', callId);
+      return json({ error: motivo }, 404);
+    }
 
     let quien = ll.telefono;
     if (ll.conversation_id) {
@@ -42,20 +49,38 @@ export const POST: APIRoute = async ({ request }) => {
       if (c?.nombre) quien = `${c.nombre} ${c.apellido || ''}`.trim() + (e ? ` (${e.nombre_comercial || e.nombre})` : '');
     }
     const seg = Number(ll.duracion_seg || 0);
-    const red = await redactarMinuta({
-      transcript: ll.transcript, quien, canal: ll.canal, direccion: ll.direccion,
-      dur: seg ? `${Math.floor(seg / 60)} min ${seg % 60} s` : 'desconocida',
-    });
+    let red;
+    try {
+      red = await redactarMinuta({
+        transcript: ll.transcript, quien, canal: ll.canal, direccion: ll.direccion,
+        dur: seg ? `${Math.floor(seg / 60)} min ${seg % 60} s` : 'desconocida',
+      });
+    } catch (e: any) {
+      /* Que falle DOS veces seguidas es información, y se guarda para que la
+         ficha la enseñe en vez de dejar el botón como si nunca se hubiera
+         apretado. */
+      const motivo = `No se pudo escribir la minuta: ${String(e?.message || e)}`;
+      await supabase.from('wa_llamadas').update({ minuta_error: motivo.slice(0, 500), minuta_error_at: new Date().toISOString() }).eq('call_id', callId);
+      return json({ error: motivo }, 502);
+    }
     await supabase.from('wa_llamadas').update({
       minuta: red.minuta || undefined, minuta_cliente: red.minuta_cliente || null,
       siguiente_paso: red.siguiente_paso || null, minuta_at: new Date().toISOString(),
       // Los PDF viejos se descartan para que se vuelvan a dibujar con el texto nuevo.
       minuta_pdf_url: null, minuta_pdf_cliente_url: null,
+      minuta_error: null, minuta_error_at: null,
     }).eq('call_id', callId);
   }
 
-  /* Quien aprieta el botón en el panel está decidiendo mandarla: se salta el
+  /* `enviar: false` = sólo rescatar el registro interno. Es lo que hace el botón
+     de la ficha, y es deliberadamente lo CONTRARIO al default histórico de este
+     endpoint: recuperar una minuta vieja no puede acabar en un PDF llegándole
+     al cliente por una llamada que ya olvidó.
+     Con `enviar` sin especificar se mantiene lo de antes —generar y entregar—,
+     que es para lo que se hizo esta puerta. */
+  const soloDocumento = b.enviar === false;
+  /* Quien aprieta el botón para MANDARLA está decidiendo mandarla: se salta el
      mínimo de 90 s que sí aplica a lo automático. */
-  const r = await generarYEntregarMinuta(callId, { forzar: true });
-  return json(r);
+  const r = await generarYEntregarMinuta(callId, { forzar: !soloDocumento, soloDocumento });
+  return json({ ...r, redactada: b.redactar === true });
 };

@@ -297,53 +297,8 @@ function csrfSospechoso(request: Request, url: URL): boolean {
   try { return new URL(origin).host !== url.host; } catch { return true; }
 }
 
-/* RUTAS RETIRADAS, CON BARRA FINAL.
- *
- * El bloque `redirects` de astro.config resuelve `/giros/electronica`, pero NO
- * `/giros/electronica/`: Astro le borra la barra a la clave y genera la misma
- * regla dos veces, así que la versión con barra caía en 404. Y el sitio publica
- * sus URLs CON barra —así salen en el sitemap y así las tiene Google—, o sea
- * que el 404 era justo el que visitaba el rastreador.
- *
- * Medido el 20-sep-2026: por eso «Electrónica» seguía saliendo como enlace
- * secundario en el resultado de Google, con su título de cuando el sitio era
- * multi-giro, aunque la página llevaba días retirada. Google llegaba a una
- * página muerta y se quedaba con lo último que tenía.
- *
- * Aquí se atiende antes que nada: es una redirección permanente, sin sesión ni
- * base de datos de por medio. Si se agrega un giro a la lista de retirados en
- * astro.config, hay que agregarlo aquí también. */
-const RETIRADAS: Record<string, string> = {
-  '/manifiesto/': '/nosotros',
-  '/login/': '/entrar',
-  '/acceso/': '/entrar',
-  '/iniciar-sesion/': '/entrar',
-  '/marcas/': '/enterprise',
-  '/soluciones/marca/': '/enterprise',
-  '/giros/belleza-y-cosmetica/': '/giros/',
-  '/giros/bicicletas/': '/giros/',
-  '/giros/comestibles/': '/giros/',
-  '/giros/electronica/': '/giros/',
-  '/giros/farmacias/': '/giros/',
-  '/giros/ferreterias/': '/giros/',
-  '/giros/florerias/': '/giros/',
-  '/giros/franquicias/': '/giros/',
-  '/giros/fundas-celulares/': '/giros/',
-  '/giros/jugueterias/': '/giros/',
-  '/giros/mascotas/': '/giros/',
-  '/giros/minisupers/': '/giros/',
-  '/giros/novedades/': '/giros/',
-  '/giros/parques-y-atracciones/': '/giros/',
-  '/giros/retail-entretenimiento/': '/giros/',
-  '/giros/supermercado/': '/giros/',
-  '/giros/vinos-y-licores/': '/giros/',
-};
-
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
-
-  const destino = RETIRADAS[path];
-  if (destino) return context.redirect(destino, 301);
 
   if (csrfSospechoso(context.request, context.url)) {
     return new Response('Cross-site form submission forbidden', { status: 403 });

@@ -1,0 +1,15 @@
+---
+/* Página de redirección, no de contenido.
+ *
+ * El bloque `redirects` de astro.config NO servía para estas rutas: Astro le
+ * borra la barra final a la clave, así que `/giros/novedades` redirigía y `/giros/novedades/` daba
+ * 404. El sitio publica sus URLs CON barra —así salen en el sitemap y así las
+ * guarda Google—, o sea que el 404 era justo el que visitaba el rastreador, y
+ * por eso los giros retirados seguían saliendo en el resultado de Google con su
+ * título viejo. El middleware tampoco alcanza: el sitio es estático y Vercel
+ * contesta 404 antes de llegar a la función.
+ *
+ * Una página de verdad sí responde en las dos formas. Medido el 20-sep-2026. */
+export const prerender = false;
+return Astro.redirect('/giros/', 301);
+---

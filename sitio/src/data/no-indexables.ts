@@ -40,6 +40,33 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   // Biblioteca de referencia de componentes para desarrollo, no una página de
   // contenido. Sin enlaces entrantes y el propio body dice "no es una página
   // pública" — no debe rankear ni aparecer en el sitemap.
+  /* Las 23 rutas retiradas (giros que no son moda, /manifiesto, las formas
+     viejas de escribir «entrar»). Son páginas de redirección 301, no contenido:
+     no deben anunciarse en el sitemap ni indexarse. Se detectan por el
+     comentario «Página de redirección, no de contenido» en su archivo. */
+  '/acceso',
+  '/giros/belleza-y-cosmetica',
+  '/giros/bicicletas',
+  '/giros/comestibles',
+  '/giros/electronica',
+  '/giros/farmacias',
+  '/giros/ferreterias',
+  '/giros/florerias',
+  '/giros/franquicias',
+  '/giros/fundas-celulares',
+  '/giros/jugueterias',
+  '/giros/mascotas',
+  '/giros/minisupers',
+  '/giros/novedades',
+  '/giros/parques-y-atracciones',
+  '/giros/retail-entretenimiento',
+  '/giros/supermercado',
+  '/giros/vinos-y-licores',
+  '/iniciar-sesion',
+  '/login',
+  '/manifiesto',
+  '/marcas',
+  '/soluciones/marca',
   '/componentes',
   // Programa Padrino: cero enlaces internos en todo el repo y sin intención
   // de búsqueda propia (no es un giro ni una función, es material de

@@ -21,43 +21,10 @@ export default defineConfig({
   // /enterprise es la URL canónica del track de marcas/fabricantes; estas dos
   // son las formas en que la gente lo escribe o lo linkeamos por modelo.
   redirects: {
-    // Formas en las que alguien escribe «entrar» buscando la app: todas
-    // llegan a /entrar, la página del dominio principal que las resuelve.
-    /* /manifiesto se retiró el 19-sep-2026: era una página vacía (un comentario
-       en el código y nada más) que respondía 200. Va a /nosotros, que es donde
-       ahora sí está quién está detrás de Sacs. */
-    '/manifiesto': '/nosotros',
-    '/login': '/entrar',
-    '/acceso': '/entrar',
-    '/iniciar-sesion': '/entrar',
-    '/marcas': '/enterprise',
-    '/soluciones/marca': '/enterprise',
-    /* Giros que NO son moda, retirados el 18-sep-2026 por decisión del dueño:
-       el sitio es Fashion Commerce y estas eran páginas «próximamente» de 200
-       palabras —ferreterías, farmacias, supermercados— indexadas como si fueran
-       contenido. `electronica` era la más vista de TODOS los giros (405
-       impresiones) y no dio un solo clic: atraía a quien nunca iba a comprar.
-
-       Van a /giros/ y no a 404 a propósito: Google ya las tiene indexadas y un
-       301 mueve lo poco que valgan al índice de moda, que es lo que sí
-       queremos que encuentre. */
-    '/giros/belleza-y-cosmetica': '/giros/',
-    '/giros/bicicletas': '/giros/',
-    '/giros/comestibles': '/giros/',
-    '/giros/electronica': '/giros/',
-    '/giros/farmacias': '/giros/',
-    '/giros/ferreterias': '/giros/',
-    '/giros/florerias': '/giros/',
-    '/giros/franquicias': '/giros/',
-    '/giros/fundas-celulares': '/giros/',
-    '/giros/jugueterias': '/giros/',
-    '/giros/mascotas': '/giros/',
-    '/giros/minisupers': '/giros/',
-    '/giros/novedades': '/giros/',
-    '/giros/parques-y-atracciones': '/giros/',
-    '/giros/retail-entretenimiento': '/giros/',
-    '/giros/supermercado': '/giros/',
-    '/giros/vinos-y-licores': '/giros/',
+    /* Vaciado el 20-sep-2026: estas redirecciones ahora viven como páginas en
+       src/pages/, porque desde aquí Astro les borraba la barra final y la versión
+       con barra —la que tiene Google— caía en 404. Ver el comentario de
+       cualquiera de ellas, por ejemplo src/pages/giros/electronica.astro. */
   },
   // maxDuration en el ADAPTADOR, no en el bloque `functions` de vercel.json:
   // ese patrón apunta a rutas del código fuente y en Astro las funciones las

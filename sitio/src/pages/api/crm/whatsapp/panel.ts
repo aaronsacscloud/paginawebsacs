@@ -223,7 +223,10 @@ export const GET: APIRoute = async ({ url }) => {
   let llamadas: any[] = [];
   if (conv?.id) {
     const { data: lls } = await supabase.from('wa_llamadas')
-      .select('call_id, canal, direccion, estado, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre, minuta_pdf_url, minuta_pdf_cliente_url, minuta_envio_estado')
+      /* `transcript_len` y no `transcript`: el panel solo necesita saber si hay
+         material para reintentar la minuta, y la transcripción de una llamada
+         larga pesa 15 KB — por ocho llamadas, en cada apertura de la ficha. */
+      .select('call_id, canal, direccion, estado, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre, minuta_pdf_url, minuta_pdf_cliente_url, minuta_envio_estado, minuta_error, minuta_error_at, transcript_len')
       .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(8);
     llamadas = lls || [];
   }
