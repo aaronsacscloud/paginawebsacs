@@ -102,7 +102,7 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
   const esMovil = useIsMobile();
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState<string>('');
-  const [tab, setTab] = useState<'reuniones' | 'seguimientos' | 'oportunidades' | 'listas'>('reuniones');
+  const [tab, setTab] = useState<'reuniones' | 'seguimientos' | 'oportunidades' | 'descalificados' | 'listas'>('reuniones');
   /* Los seguimientos vencidos NO se mezclan con los de hoy: la pestaña es para
      decidir a quién le toca ahora. Pero tampoco se esconden — un botón los
      trae, con su número siempre a la vista. */
@@ -231,6 +231,37 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
     { key: 'duenio', label: 'Dueño', ftype: 'select', val: (r: any) => r.duenio, render: (r: any) => <td style={TD}>{r.duenio}</td> },
   ], []);
 
+  /* Los descalificados reusan las columnas de oportunidades menos las dos que
+     ahí no dicen nada —el monto y la etapa, que siempre es la misma— y con el
+     porqué en su lugar. Pedido del dueño (21-sep-2026): «que aparezcan los
+     descalificados para que yo pueda ver rápido aquí todos los que hemos
+     descalificado a través de una llamada». */
+  const colsDescalificados: ColDef[] = useMemo(() => [
+    { key: 'quien', label: 'Quién', width: 200, fija: true, val: (r: any) => r.quien, render: (r: any) => (
+      <td style={{ ...TD }}><b>{r.quien}</b>{r.empresa && <div style={{ fontSize: 11.5, color: P.gris }}>{r.empresa}</div>}</td>
+    ) },
+    { key: 'hablamos', label: 'Cuándo hablamos', width: 130, ftype: 'date', val: (r: any) => String(r.hablamos || '').slice(0, 10), render: (r: any) => (
+      <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fechaCorta(r.hablamos)}{r.minutos ? <div style={{ fontSize: 11, color: P.gris }}>{r.minutos} min</div> : null}</td>
+    ) },
+    {
+      key: 'nota', label: 'Por qué se descartó', width: 420,
+      val: (r: any) => `${r.motivo || ''} ${r.nota || ''}`,
+      render: (r: any) => (
+        <td style={{ ...TD, fontSize: 11.5, color: '#4B5563' }}>
+          {r.motivo && <div style={{ marginBottom: 3 }}><span style={pill(P.ambarAgua, P.ambar)}>{r.motivo}</span></div>}
+          <span style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.45 } as any}>{r.nota || 'Sin nota de la llamada.'}</span>
+        </td>
+      ),
+    },
+    { key: 'giro', label: 'Qué vende', val: (r: any) => r.giro || '', render: (r: any) => (
+      <td style={{ ...TD, fontSize: 11.5, lineHeight: 1.45 }}>{r.giro || '—'}{r.sucursales != null && <div style={{ color: P.gris }}>{r.sucursales} {r.sucursales === 1 ? 'tienda' : 'tiendas'}</div>}</td>
+    ) },
+    { key: 'contacto', label: 'Cómo localizarlo', val: (r: any) => `${r.telefono || ''} ${r.email || ''}`, render: (r: any) => (
+      <td style={{ ...TD, fontSize: 11.5, lineHeight: 1.5 }}>{r.telefono || '—'}{r.email && <div style={{ color: P.gris }}>{r.email}</div>}</td>
+    ) },
+    { key: 'duenio', label: 'Quién lo descartó', ftype: 'select', val: (r: any) => r.duenio, render: (r: any) => <td style={TD}>{r.duenio}</td> },
+  ], []);
+
   const colsListas: ColDef[] = useMemo(() => [
     { key: 'nombre', label: 'Lista', width: 230, fija: true, val: (r: any) => r.nombre, render: (r: any) => (
       <td style={TD}><b>{r.nombre}</b><div style={{ fontSize: 11.5, color: P.gris }}>{fechaCorta(r.fecha)} · {r.duenio}</div></td>
@@ -293,6 +324,7 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
     { id: 'reuniones' as const, label: 'Reuniones', n: c.reuniones, pie: 'Las citas que salieron de llamar y todavía no pasan.', alerta: 0 },
     { id: 'seguimientos' as const, label: 'Seguimientos', n: c.seguimientos, pie: 'Lo que prometiste al hablar, de hoy y de los días que vienen.', alerta: c.seguimientos_vencidos },
     { id: 'oportunidades' as const, label: 'Oportunidades', n: c.oportunidades, pie: 'Quién avanzó después de que le llamaras, y qué dijo.', alerta: 0 },
+    { id: 'descalificados' as const, label: 'Descalificados', n: c.descalificados, pie: 'A quién se descartó después de hablarle, y por qué. Aquí se ve si se está descartando de más.', alerta: 0 },
     { id: 'listas' as const, label: 'Listas', n: c.listas, pie: 'Cada jornada y qué le falta por marcar.', alerta: c.listas_reanudables },
   ];
   const activa = TABS.find(t => t.id === tab)!;
@@ -385,6 +417,22 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
           )}
           onRowClick={(r: any) => irAlContacto(r.contact_id)}
           emptyMsg="Todavía nadie avanzó de etapa después de una llamada." />
+      )}
+      {tab === 'descalificados' && (
+        <TablaEnterprise tabla="tel_descalificados" data={d.descalificados} cols={colsDescalificados} vistasBase={VISTA_UNICA} sinVistas
+          rowKey={(r: any) => r.contact_id}
+          searchText={(r: any) => `${r.quien} ${r.empresa || ''} ${r.nota || ''} ${r.motivo || ''}`}
+          searchPlaceholder="Buscar por nombre, marca o motivo…" minWidth={1220}
+          onRowClick={(r: any) => irAlContacto(r.contact_id)}
+          mobileCard={(r: any) => (
+            <Tarjeta alto={r.quien} bajo={r.empresa || r.giro}
+              derecha={<span style={{ color: '#c4c8cf', fontSize: '1.1rem' }}>›</span>}
+              pie={<>
+                <span style={pill(P.ambarAgua, P.ambar)}>descartado</span>
+                <span style={{ fontSize: '0.72rem', color: '#9aa0a8' }}>habló {fechaCorta(r.hablamos)}</span>
+              </>} />
+          )}
+          emptyMsg="Todavía no has descartado a nadie después de llamarle." />
       )}
       {tab === 'listas' && (
         <TablaEnterprise tabla="tel_listas" data={d.listas} cols={colsListas} vistasBase={VISTA_UNICA} sinVistas

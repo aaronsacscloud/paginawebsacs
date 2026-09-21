@@ -174,6 +174,7 @@ export const GET: APIRoute = async ({ request }) => {
   for (const i of hablados || []) if (!ultima.has(String(i.contact_id))) ultima.set(String(i.contact_id), i);
 
   let oportunidades: any[] = [];
+  let descalificados: any[] = [];
   const ids = [...ultima.keys()];
   if (ids.length) {
     /* En tandas de 150: `.in()` con una lista larga revienta la URL de
@@ -181,12 +182,17 @@ export const GET: APIRoute = async ({ request }) => {
     const filas: any[] = [];
     for (let i = 0; i < ids.length; i += 150) {
       const { data } = await supabase.from('contacts')
-        .select('id, nombre, apellido, telefono, whatsapp, email, lifecycle_stage, giro, sucursales_interes, owner_id, company_id, companies(nombre_comercial, nombre)')
+        .select('id, nombre, apellido, telefono, whatsapp, email, lifecycle_stage, giro, sucursales_interes, owner_id, company_id, descarte_categoria, calificacion_motivo, companies(nombre_comercial, nombre)')
         .in('id', ids.slice(i, i + 150))
         /* Las que avanzaron. `rezagado` y `descalificado` no entran: son el
            resultado normal de llamar, no una oportunidad, y con ellas dentro
            esta pestaña sería otra vez la lista de todo el mundo. */
-        .in('lifecycle_stage', ['oportunidad', 'en_cotizacion', 'cliente'])
+        /* Los que AVANZARON y los que se DESCARTARON, en la misma consulta:
+           son las dos caras de haber llamado, y separarlas en dos viajes a la
+           base para partirlas después sería pagar dos veces lo mismo.
+           `rezagado` sigue fuera: no es un desenlace, es el estado normal de
+           quien todavía no contesta. */
+        .in('lifecycle_stage', ['oportunidad', 'en_cotizacion', 'cliente', 'descalificado', 'perdido'])
         .is('archived_at', null);
       filas.push(...(data || []));
     }
@@ -200,7 +206,7 @@ export const GET: APIRoute = async ({ request }) => {
         .order('created_at', { ascending: false });
       for (const d of ds || []) if (!dinero.has(String(d.contact_id))) dinero.set(String(d.contact_id), d);
     }
-    oportunidades = filas.map((c: any) => {
+    const armar = (c: any) => {
       const i = ultima.get(String(c.id));
       const d = dinero.get(String(c.id));
       return {
@@ -220,8 +226,18 @@ export const GET: APIRoute = async ({ request }) => {
         nota: i?.nota ? String(i.nota).split('\n')[0].slice(0, 260) : null,
         monto: d ? Number(d.valor_mensual || d.valor_total || 0) || null : null,
         deal: d?.nombre || null,
+        /* El porqué del descarte. Medido: `descarte_categoria`, `desenlace` y
+           `calificacion_motivo` están VACÍOS en los diez descalificados que
+           pasaron por la cabina — nadie los llena a mano al colgar. Lo único
+           que explica el caso es la nota del cierre con IA, así que es eso lo
+           que se enseña, y no un campo bonito que siempre saldría «—». */
+        motivo: c.descarte_categoria || c.calificacion_motivo || null,
       };
-    }).sort((a, b) => String(b.hablamos || '').localeCompare(String(a.hablamos || '')));
+    };
+    const porEtapa = (e: string[]) => filas.filter((c: any) => e.includes(c.lifecycle_stage))
+      .map(armar).sort((a, b) => String(b.hablamos || '').localeCompare(String(a.hablamos || '')));
+    oportunidades = porEtapa(['oportunidad', 'en_cotizacion', 'cliente']);
+    descalificados = porEtapa(['descalificado', 'perdido']);
   }
 
   // ── ④ Listas ──────────────────────────────────────────────────────────────
@@ -263,7 +279,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   return json({
     ok: true, hoy,
-    reuniones, seguimientos, vencidos, oportunidades, listas,
+    reuniones, seguimientos, vencidos, oportunidades, descalificados, listas,
     /* Los contadores de las pestañas salen de aquí y no de `array.length` en
        el navegador, para que el número y la tabla no se puedan contradecir. */
     conteos: {
@@ -271,6 +287,7 @@ export const GET: APIRoute = async ({ request }) => {
       seguimientos: seguimientos.length,
       seguimientos_vencidos: vencidos.length,
       oportunidades: oportunidades.length,
+      descalificados: descalificados.length,
       listas: listas.length,
       listas_reanudables: listas.filter(l => l.reanudable).length,
     },
