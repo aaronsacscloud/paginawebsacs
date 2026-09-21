@@ -125,7 +125,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     conReunion = new Set((data || []).map(b => String(b.contact_id)));
   }
 
-  const filas: any[] = [];
+  /* 🔴 BUG (bug review 21-sep-2026): con `fuente=ambas` se perdían TODAS las
+     filas del ABM. Cada fuente pedía su ventana entera y luego se cortaba la
+     lista mezclada a `limit`; como el CRM va primero, el corte se comía lo del
+     ABM — y la página siguiente, que avanza el offset en las dos fuentes, ya
+     nunca volvía a pedirlas. Medido: «Las dos» devolvía puro CRM en las dos
+     primeras páginas. Ahora cada fuente tiene su mitad del cupo y su propio
+     avance, así que las dos aportan en cada página. */
+  const porFuente = fuente === 'ambas' ? Math.ceil(limit / 2) : limit;
+  /* El `offset` que entra es POR FUENTE, no de la lista mezclada, y quien
+     pagina usa el `siguiente_offset` que se devuelve abajo. Deducirlo del
+     número de filas entregadas (offset += lote.length) se desincronizaba en
+     cuanto una de las dos fuentes se agotaba: la otra seguía dando filas, el
+     cliente avanzaba de más y se saltaba contactos. El cursor lo manda el
+     servidor, que es el único que sabe cuánto pidió a cada lado. */
+  const offsetFuente = offset;
+
+  const crmFilas: any[] = [];
+  const abmFilas: any[] = [];
   let total = 0;
 
   // ══ FUENTE 1 · EL CRM (contactos y leads de siempre) ══════════════════════
@@ -157,8 +174,14 @@ export const GET: APIRoute = async ({ request, url }) => {
     /* Regla del repo: toda lectura mira su error. Sin esto una consulta mal
        armada devuelve cero filas y en pantalla se lee «no hay nadie con esos
        filtros», que es la mentira más cara de este endpoint. */
-    const { data, count, error } = await sel.order('last_contact_at', { ascending: true, nullsFirst: true })
-      .range(offset, offset + limit * 2 - 1);
+    /* 🔴 BUG (mismo review): sin desempate, la paginación repetía filas. La
+       mayoría de contactos tiene `last_contact_at` nulo, así que el orden entre
+       ellos lo decidía Postgres y cambiaba entre una página y la siguiente —
+       «QA Test Nombre» salía en la página 1 Y en la 2, y alguien más no salía
+       en ninguna. El `id` de desempate hace el orden total y estable. */
+    const { data, count, error } = await sel
+      .order('last_contact_at', { ascending: true, nullsFirst: true }).order('id')
+      .range(offsetFuente, offsetFuente + porFuente - 1);
     if (error) return json({ error: `CRM: ${error.message}`, detalle: error.details || null }, 500);
 
     for (const c of data || []) {
@@ -166,7 +189,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (!tel || /@/.test(tel)) continue;
       if (quemadosSet.has(tel)) continue;
       if (conReunion.has(String(c.id))) continue;
-      filas.push({
+      crmFilas.push({
         id: `crm:${c.id}`, fuente: 'crm', virtual: true, wa_id: null,
         contact_id: c.id, company_id: c.company_id || null, telefono: tel,
         contacto: { nombre: `${c.nombre || ''} ${c.apellido || ''}`.trim() || null, lifecycle_stage: c.lifecycle_stage },
@@ -215,15 +238,16 @@ export const GET: APIRoute = async ({ request, url }) => {
     /* El orden por defecto es el puntaje: si hay que cortar treinta mil en
        cien, que los cien sean los mejores. */
     const col = orden === 'sucursales' ? 'sucursales' : orden === 'rating' ? 'google_rating' : 'puntaje';
-    const { data, count, error } = await sel.order(col, { ascending: false, nullsFirst: false })
-      .range(offset, offset + limit * 2 - 1);
+    const { data, count, error } = await sel
+      .order(col, { ascending: false, nullsFirst: false }).order('id')
+      .range(offsetFuente, offsetFuente + porFuente - 1);
     if (error) return json({ error: `ABM: ${error.message}`, detalle: error.details || null }, 500);
 
     for (const a of data || []) {
       const tel = String((a as any).marcar || '');
       if (!tel) continue;
       if (quemadosSet.has(tel)) continue;
-      filas.push({
+      abmFilas.push({
         id: `abm:${a.id}`, fuente: 'abm', virtual: true, wa_id: null,
         contact_id: null, company_id: null, telefono: tel,
         contacto: { nombre: a.nombre, lifecycle_stage: 'prospección' },
@@ -242,13 +266,21 @@ export const GET: APIRoute = async ({ request, url }) => {
      todo. Se avisa con `aprox` en vez de presentar un número redondo que luego
      no coincide con lo que marca — un contador que miente se descubre a media
      jornada. */
+  /* Se intercalan en vez de concatenar: si la jornada se corta a la mitad, que
+     lo que se llamó tenga de las dos fuentes y no sólo de la primera. */
+  const filas: any[] = [];
+  for (let i = 0; i < Math.max(crmFilas.length, abmFilas.length); i++) {
+    if (crmFilas[i]) filas.push(crmFilas[i]);
+    if (abmFilas[i]) filas.push(abmFilas[i]);
+  }
   const recortado = filas.length;
   return json({
     ok: true,
-    conversaciones: filas.slice(0, limit),
+    conversaciones: filas,
     total_filtrado: total,
     aprox: quemadosSet.size > 0 || conReunion.size > 0,
-    hay_mas: recortado > limit || offset + recortado < total,
+    hay_mas: (crmFilas.length >= porFuente) || (abmFilas.length >= porFuente),
+    siguiente_offset: offsetFuente + porFuente,
     descartados: { quemados: quemadosSet.size, con_reunion: conReunion.size },
   });
 };

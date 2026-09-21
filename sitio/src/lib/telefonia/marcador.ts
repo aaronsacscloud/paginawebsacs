@@ -748,7 +748,17 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     const veces = Math.max(0, Math.min(3, Number(sCfg?.config?.reintentos_buzon || 0)));
     const timbro = it.marcado_at && it.contestado_at
       && (Date.parse(it.contestado_at) - Date.parse(it.marcado_at)) >= TIMBRE_REAL_MS;
-    if (veces > 0 && timbro && Number(it.intentos || 1) <= veces) {
+    /* 🔴 BUG (bug review 21-sep-2026): una PROMESA que cae en buzón entraba
+       por los dos caminos a la vez. Se cerraba la tarea y se le mandaba el
+       WhatsApp de «te marqué como quedamos, dime tú cuándo» —o sea, le decimos
+       que la pelota es suya— y 25 minutos después el reintento de buzón le
+       volvía a marcar. Justo lo contrario de la regla del dueño: «si no
+       contesta, ya se elimina ese seguimiento».
+       No salta con la configuración de fábrica (`reintentos_buzon: 0`), pero sí
+       en cuanto se elige «1 vez más» en la cabina, que es un clic.
+       El flujo de la promesa manda sobre el reintento genérico: quien pidió la
+       llamada ya tiene su respuesta y su mensaje. */
+    if (veces > 0 && timbro && Number(it.intentos || 1) <= veces && !it.compromiso_tarea_id) {
       /* El primer reintento es pronto (25 min: pudo estar ocupado un momento);
          del segundo en adelante se cambia de franja, que es lo que de verdad
          mueve la aguja. */

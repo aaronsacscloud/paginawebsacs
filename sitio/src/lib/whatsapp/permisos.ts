@@ -22,7 +22,13 @@ export type ClaveWA =
   | 'agenda_confirmacion' | 'agenda_recordatorio' | 'agenda_seguimiento'
   | 'primer_mensaje' | 'acuse_entrante' | 'agenda_horarios_auto'
   | 'agenda_reagendar_auto' | 'cadencia_leads' | 'cobranza'
-  | 'copiloto_ia' | 'valvula_ti' | 'agente_sdr' | 'llamada_sin_contacto' | 'minuta_llamada';
+  | 'copiloto_ia' | 'valvula_ti' | 'agente_sdr' | 'llamada_sin_contacto' | 'minuta_llamada'
+  /* El aviso a quien pidió la llamada y no la contestó (21-sep-2026). Va como
+     clave propia y no dentro de `llamada_sin_contacto` porque son dos mensajes
+     distintos a dos personas distintas: uno a quien llamamos por nuestra
+     cuenta, otro a quien nos pidió que le llamáramos. Poder apagar uno sin el
+     otro es justo lo que hace falta si uno de los dos empieza a molestar. */
+  | 'seguimiento_llamada';
 
 let cache: { v: Record<string, boolean>; hasta: number } | null = null;
 let cacheCfg: { v: Record<string, any>; hasta: number } | null = null;

@@ -500,7 +500,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         const fuente = /(^|&)fuente=/.test(qs) ? '/api/crm/telefonia/candidatos' : '/api/crm/whatsapp/inbox';
         const j = await fetch(`${fuente}?${qs}&limit=200&offset=${offset}`, { cache: 'no-store' }).then(r => r.json());
         const lote: any[] = j?.conversaciones || [];
-        filas.push(...lote); offset += lote.length; hayMas = !!j?.hay_mas && lote.length > 0;
+        /* El cursor lo manda el servidor cuando lo manda: con dos fuentes
+           (CRM + prospección) el avance no es «cuántas filas me diste», porque
+           cada fuente lleva su propia ventana. Ver `candidatos.ts`. */
+        filas.push(...lote); offset = Number(j?.siguiente_offset ?? (offset + lote.length)); hayMas = !!j?.hay_mas && lote.length > 0;
         tot = Number(j?.total_filtrado ?? tot);
         setArmando({ leidas: filas.length, total: tot });
       }
