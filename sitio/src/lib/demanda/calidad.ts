@@ -411,7 +411,8 @@ export function comprobacionesDuras(p: { titulo: string; meta_desc: string; h1: 
 
   // ── Largo ──
   const nPal = plano.split(/\s+/).filter(Boolean).length;
-  if (nPal > 4000) f.push(`${nPal} palabras: máximo 3,600 — se lee en el celular; elimina lo que menos enseña (nunca el glosario ni el faq)`);
+  // 4,500 porque el conteo incluye glosario, faq, tablas y campos de capturas (estructura, no prosa).
+  if (nPal > 4500) f.push(`${nPal} palabras: máximo 4,000 — se lee en el celular; elimina lo que menos enseña (nunca el glosario ni el faq)`);
 
   // ── Marcadores sin resolver ──
   // «Descarga la plantilla aquí: [ENLACE]» pasó el referee de novias; un

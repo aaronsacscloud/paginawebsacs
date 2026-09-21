@@ -26,6 +26,7 @@ import { supabase } from '../supabase';
 import { preguntar } from './ia';
 import { registrar } from './handlers';
 import { modaSectors } from '../../data/navigation';
+import { videosCanal } from '../../data/videos-canal';
 import { fichaSacs } from './capacidades';
 import { traerTodo } from './paginar';
 import { aMarkdown, type Bloque } from './bloques';
@@ -341,7 +342,9 @@ export function normalizarBloque(x: any): Bloque | null {
       if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
       if (x.t === 'video') {
         const id = String(x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\/|^.*youtube:/, '').match(/[A-Za-z0-9_-]{11}/)?.[0] || '';
-        return id ? { t: 'video', youtube_id: id, titulo: x.titulo || x.texto || '' } : null;
+        // Solo videos que existen en el canal: el modelo inventó un id «ficticio» en novias.
+        const real = id && videosCanal.some(v => v.id === id);
+        return real ? { t: 'video', youtube_id: id, titulo: x.titulo || videosCanal.find(v => v.id === id)?.titulo || '' } : null;
       }
       if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
       if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
@@ -356,6 +359,21 @@ export function normalizarBloque(x: any): Bloque | null {
       return { t: x.t, texto: /^h[23]$/.test(x.t) ? texto.replace(/^\s*\d{1,2}[).:-]\s*/, '') : texto };
   })();
   return b && (b.items?.length || b.filas?.length || b.texto || b.escena || b.youtube_id || b.campos?.length) ? b : null;
+}
+
+/** Un párrafo de más de 110 palabras se parte en la oración más cercana a la
+ *  mitad. Determinista: pedírselo al modelo costaba una ronda entera. */
+export function partirParrafosLargos(cuerpo: Bloque[]): Bloque[] {
+  const out: Bloque[] = [];
+  for (const b of cuerpo) {
+    if (b.t !== 'p' || (b as any).texto.split(/\s+/).length <= 110) { out.push(b); continue; }
+    const oraciones = (b as any).texto.match(/[^.!?]+[.!?]+(\s|$)/g) || [(b as any).texto];
+    if (oraciones.length < 2) { out.push(b); continue; }
+    const total = (b as any).texto.length; let acc = 0, corte = 1, mejor = Infinity;
+    oraciones.forEach((o: string, i: number) => { acc += o.length; const d = Math.abs(acc - total / 2); if (i < oraciones.length - 1 && d < mejor) { mejor = d; corte = i + 1; } });
+    out.push({ t: 'p', texto: oraciones.slice(0, corte).join('').trim() }, { t: 'p', texto: oraciones.slice(corte).join('').trim() });
+  }
+  return out;
 }
 
 /* Limpieza antes de normalizar: nada que parezca código o marcado en los
@@ -430,7 +448,7 @@ Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_i
     ...(datos.titulo ? { titulo: String(datos.titulo).slice(0, 80) } : {}),
     ...(datos.h1 ? { h1: datos.h1 } : {}),
     ...(datos.meta_desc ? { meta_desc: recortar(String(datos.meta_desc), 158) } : {}),
-    cuerpo: nuevo, estado: 'borrador',
+    cuerpo: partirParrafosLargos(nuevo), estado: 'borrador',
     brief: { ...(c.brief as any), correcciones: undefined },
     actualizado_at: new Date().toISOString(),
   }).eq('id', contenidoId);
@@ -546,6 +564,7 @@ Escribe la página.`;
     else break;
   }
 
+  const cuerpoFinal = partirParrafosLargos(cuerpo);
   const { error } = await supabase.from('de_contenido').update({
     titulo: String(r.datos.titulo || '').slice(0, 80),
     h1: r.datos.h1 || r.datos.titulo,
@@ -553,7 +572,7 @@ Escribe la página.`;
        terminadas a mitad de palabra («…cierre separado de mayoreo »), que es
        exactamente lo que se ve en el buscador. */
     meta_desc: recortar(String(r.datos.meta_desc || ''), 158),
-    cuerpo,
+    cuerpo: cuerpoFinal,
     estado: 'borrador',
     // Las correcciones ya se aplicaron: se quitan del brief para que la
     // siguiente ronda (si la hay) traiga solo las nuevas.
