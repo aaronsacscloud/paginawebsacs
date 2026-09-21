@@ -230,6 +230,71 @@ export async function crearSesion(ownerId: string | null, o: {
     if (motivo) { excluidos.push({ nombre: nombre || telefonoLegible(e164 || it.telefono), telefono: e164 || it.telefono, motivo }); }
     filas.push({ ...base, telefono: e164 || String(it.telefono || '').slice(0, 30), lada: ladaDe(e164), orden: filas.length, estado: motivo ? 'excluido' : 'pendiente', motivo_exclusion: motivo, prioridad: e164 && pidioLlamada.has(e164) ? 1 : 0 });
   }
+  /* ══ LAS PROMESAS DEL DÍA ENTRAN SOLAS (21-sep-2026) ═══════════════════
+     Pedido del dueño: «aunque yo cree una sala nueva, si ya tengo una llamada
+     de seguimiento a tal hora en ese día, en automático me tienes que
+     posicionar la llamada para que a esa hora le llame a ese prospecto».
+
+     El «llámame en dos horas» de la misma sala ya funcionaba: `reprogramar()`
+     mete el item con su `volver_at` y el motor lo adelanta cuando llega la
+     hora. Lo que no existía era el puente entre una sala y la siguiente — un
+     «llámame mañana a las 11» vivía en `ti_tareas` y en Mi día, y la lista del
+     día siguiente ni lo miraba. Se armaba la jornada y la promesa de ayer se
+     quedaba mirando.
+
+     Entran con `volver_at` a SU hora, no de primeros: una promesa para las 11
+     no puede empujar a la cola a los veinte de las 10. El motor ya sabe
+     esperarla y adelantarla en su momento.
+
+     Sólo las de LLAMADA. Las demos tienen su propio camino (invitación,
+     recordatorio, Google Calendar) y meterlas aquí sería llamar a alguien con
+     quien ya quedaste en verte. */
+  const finDelDia = new Date(); finDelDia.setHours(23, 59, 59, 999);
+  const { data: promesas } = await supabase.from('ti_tareas')
+    .select('id, contact_id, company_id, vence_at, payload')
+    .eq('estado', 'pendiente').eq('tipo', 'llamada').eq('payload->>de_llamada', 'true')
+    .lte('vence_at', finDelDia.toISOString())
+    .order('vence_at').limit(60);
+
+  const compromisos: any[] = [];
+  for (const t of promesas || []) {
+    const tel = telefonoWhatsApp(String((t.payload as any)?.whatsapp || ''));
+    if (!tel) continue;
+    const hora = new Date(String(t.vence_at)).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
+    /* ⚠️ UN TELÉFONO, UN RENGLÓN. Medido al probarlo: Emilio Achar tenía DOS
+       promesas vivas (una de las 14:26 y otra de las 17:43) y entró dos veces
+       en la misma jornada — o sea, marcarle dos veces la misma tarde. Se mira
+       contra `vistos`, que ya lleva los teléfonos de la lista Y los de las
+       promesas metidas antes; como vienen ordenadas por hora, gana la más
+       temprana. La otra tarea no se toca: sigue viva y sale en la pestaña de
+       seguimientos, que es donde se decide qué hacer con ella. */
+    if (vistos.has(tel)) {
+      const ya0 = filas.find(f => f.telefono === tel);
+      if (!ya0) continue;
+    }
+    const ya = filas.find(f => f.telefono === tel) || compromisos.find(c => c.telefono === tel);
+    if (ya && ya.compromiso_tarea_id) continue;   // ya lo trajo una promesa anterior (más temprana)
+    if (ya) {
+      /* Ya estaba en la lista por otro filtro: no se duplica, se le pone su
+         hora y su marca. Dos renglones del mismo contacto en una jornada es
+         llamarle dos veces. */
+      ya.volver_at = String(t.vence_at); ya.prioridad = 1; ya.compromiso_tarea_id = t.id;
+      ya.nota = `Volver a llamar: seguimiento que pidió para las ${hora}`;
+      if (ya.estado === 'excluido') { ya.estado = 'pendiente'; ya.motivo_exclusion = null; }
+      continue;
+    }
+    compromisos.push({
+      contact_id: t.contact_id || null, company_id: t.company_id || null, conversation_id: null,
+      nombre: String((t.payload as any)?.nombre || '').trim() || null, empresa: null,
+      telefono: tel, lada: ladaDe(tel), orden: filas.length + compromisos.length,
+      estado: 'pendiente', motivo_exclusion: null, prioridad: 1,
+      volver_at: String(t.vence_at), compromiso_tarea_id: t.id,
+      nota: `Volver a llamar: seguimiento que pidió para las ${hora}`,
+    });
+    vistos.add(tel);
+  }
+  filas.push(...compromisos);
+
   const pendientes = filas.filter(f => f.estado === 'pendiente').length;
 
   const { data: s, error } = await supabase.from('tel_sesiones').insert({
@@ -733,17 +798,43 @@ export async function procesarEstado(itemId: string, p: Record<string, string>) 
     const s = await getSesion(it.sesion_id);
     if (s && !s.agente_en_sala) await pausarSesion(it.sesion_id, `Se cortó tu conexión. ${it.nombre || 'El contacto'} quedó para volver a llamar en ${ESPERA.caida_remarcar} min.`, 'caida');
   }
-  /* La llamada PROMETIDA («márcame en diez minutos») que no contesta no se pierde:
-     se vuelve a intentar dos veces, cada quince minutos. Es el «flujo de reintentos»
-     que pidió el dueño para Fernanda: el contacto pidió la llamada, así que insistir
-     un par de veces es cumplirle, no molestarlo. Al tercer fallo se queda como
-     cualquier otro item hecho (el cierre lo manda a Mi día del vendedor). */
-  if (estado === 'hecho' && /^Volver a llamar/.test(String(it.nota || '')) && ['no_contesto', 'ocupado', 'buzon'].includes(String(resultado))) {
-    /* El contador va en la nota, no en una consulta: contar los items del teléfono mezclaba las caídas del
-       vendedor (misma nota) y las promesas de días anteriores, así que una promesa nueva podía nacer sin
-       reintentos o gastarse los de otra. */
-    const n = Number(/intento (\d+) de/.exec(String(it.nota || ''))?.[1] || 0);
-    if (n < ESPERA.prometida_max) await reprogramar(it, ESPERA.prometida_reintento, `no contestó la llamada que pidió (intento ${n + 1} de ${ESPERA.prometida_max})`);
+  /* ══ LA PROMESA QUE NO CONTESTA SE CIERRA, NO SE PERSIGUE (21-sep-2026) ══
+     Regla del dueño: «si no contesta, ya se elimina ese seguimiento que el
+     prospecto previamente solicitó… de ahí se termina el seguimiento de ese
+     prospecto hasta que responde el WhatsApp, y se hará un nuevo seguimiento».
+
+     Esto CAMBIA lo de antes, que reintentaba dos veces cada quince minutos. El
+     razonamiento viejo era «él la pidió, insistir es cumplirle»; el nuevo es
+     más fino: quien pidió que le marcaran a las cuatro y no contestó a las
+     cuatro no está esperando otra llamada a las cuatro y cuarto — está
+     ocupado. Lo que sí sirve es dejarle por escrito que se le marcó a SU hora
+     y devolverle la pelota. Si responde, nace un seguimiento nuevo con una
+     hora que él vuelve a elegir; si no, no seguimos marcando a ciegas.
+
+     Los reintentos siguen existiendo para todo lo demás (buzón, silencio,
+     caída): esto es sólo para la llamada que el contacto pidió. */
+  if (estado === 'hecho' && it.compromiso_tarea_id && ['no_contesto', 'ocupado', 'buzon'].includes(String(resultado))) {
+    const hora = it.volver_at || it.marcado_at
+      ? new Date(String(it.volver_at || it.marcado_at)).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })
+      : '';
+    const { avisarSeguimientoSinContestar } = await import('./seguimiento-aviso');
+    const r = await avisarSeguimientoSinContestar({
+      telefono: it.telefono, nombre: it.nombre, hora, conversationId: it.conversation_id,
+    });
+    /* La tarea se cierra con su desenlace. `no_contesto` y no «hecha» a secas:
+       la pestaña de seguimientos necesita distinguir la que se cumplió de la
+       que se cayó, y el motivo del aviso queda escrito para cuando no salga. */
+    await supabase.from('ti_tareas').update({
+      estado: 'hecha', hecho_at: ahora(), seguimiento_desenlace: 'no_contesto',
+      resultado: 'no_contesto', resultado_detalle: r.enviado ? r.motivo : `sin aviso: ${r.motivo}`,
+      updated_at: ahora(),
+    }).eq('id', it.compromiso_tarea_id).then(() => {}, () => {});
+  }
+  /* La promesa que SÍ contestó se cierra igual, pero por la buena. */
+  if (estado === 'hecho' && it.compromiso_tarea_id && !['no_contesto', 'ocupado', 'buzon'].includes(String(resultado))) {
+    await supabase.from('ti_tareas').update({
+      estado: 'hecha', hecho_at: ahora(), seguimiento_desenlace: 'contesto', resultado: String(resultado || 'contesto'), updated_at: ahora(),
+    }).eq('id', it.compromiso_tarea_id).then(() => {}, () => {});
   }
   /* Disyuntor: una racha de llamadas que ni timbran es un problema de la
      cuenta (caller ID, permisos, saldo), no de los contactos. Se para antes
@@ -1068,7 +1159,11 @@ export async function reprogramar(it: any, minutos: number, motivo: string, cuan
   const { data } = await supabase.from('tel_sesion_items').insert({
     sesion_id: it.sesion_id, contact_id: it.contact_id, company_id: it.company_id, conversation_id: it.conversation_id,
     nombre: it.nombre, empresa: it.empresa, telefono: it.telefono, lada: it.lada || ladaDe(it.telefono), orden: it.orden,
+    compromiso_tarea_id: it.compromiso_tarea_id || null,
     estado: 'pendiente', intentos: 0, volver_at: volver, prioridad: 1, resumen: it.resumen, apertura: it.apertura,
+    // Se hereda la promesa: si este item nació de un compromiso, el nuevo
+    // también responde por él (y al colgar se cierra la tarea correcta).
+    compromiso_tarea_id: it.compromiso_tarea_id || null,
     nota: `Volver a llamar: ${motivo}`,
   }).select('id').single();
   return data?.id || null;
@@ -1407,7 +1502,7 @@ export async function estadoSesion(sesionId: string) {
 
 export async function listarItems(sesionId: string) {
   const { data } = await supabase.from('tel_sesion_items')
-    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid, volver_at, prioridad, costo_usd, cierre_estado, cierre_ia, correccion, cortes')
+    .select('id, contact_id, conversation_id, nombre, empresa, telefono, orden, estado, intentos, resultado, motivo_exclusion, veredicto, veredicto_fuente, veredicto_ms, resumen, nota, duracion_seg, terminado_at, call_sid, volver_at, prioridad, costo_usd, cierre_estado, cierre_ia, correccion, cortes, compromiso_tarea_id')
     .eq('sesion_id', sesionId).order('orden').limit(2000);
   /* ══ QUÉ QUEDÓ HECHO EN CADA LLAMADA (18-sep-2026) ══════════════════════
      Pedido del dueño: «en el resumen de las terminadas debe decirme si se hizo

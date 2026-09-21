@@ -1522,6 +1522,31 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     alrededor del círculo. El nombre de a quién le hablas es lo
                     más grande de la pantalla por algo. «Ver chat» baja debajo,
                     donde además se alcanza con el pulgar. */}
+{/* ══ ÉL PIDIÓ ESTA LLAMADA ═══════════════════════════════════════
+                    Pedido del dueño (21-sep-2026): «al momento de llamar a ese
+                    prospecto que ya tiene un seguimiento previo debe aparecer
+                    en grande: llamando por seguimiento previo de X».
+
+                    Va ARRIBA del nombre y no como una pastilla al lado: cambia
+                    la primera frase de la llamada entera. No es lo mismo abrir
+                    con «le hablo de Sacs» que con «le llamo como quedamos» — y
+                    esa frase se dice en el primer segundo, cuando no da tiempo
+                    de leer letra chica. */}
+                {actual.compromiso_tarea_id && (
+                  <div style={{
+                    background: C.moradoAgua, border: `1px solid #d6d0fb`, borderLeft: `4px solid ${C.moradoTinta}`,
+                    borderRadius: 12, padding: movil ? '10px 12px' : '12px 15px', marginBottom: 12,
+                  }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: C.moradoTinta, opacity: .75 }}>Él pidió esta llamada</div>
+                    <div style={{ fontSize: movil ? 17 : 18, fontWeight: 800, letterSpacing: '-0.02em', color: C.moradoTinta, lineHeight: 1.25, marginTop: 2 }}>
+                      Llamando por seguimiento previo de {actual.nombre || 'este contacto'}
+                    </div>
+                    {/* La nota trae la hora que él pidió: decírsela —«te marco a
+                        las 4 como quedamos»— es lo que separa esta llamada de
+                        una insistencia. */}
+                    {actual.nota && <div style={{ fontSize: 12.5, color: C.moradoTinta, opacity: .85, marginTop: 3 }}>{String(actual.nota).replace(/^Volver a llamar:\s*/, '')}</div>}
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {!movil && <span style={{ width: 44, height: 44, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoUsuario size={22} /></span>}
                   <div style={{ minWidth: 0, flex: 1 }}>

@@ -180,7 +180,10 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
       render: (r: any) => (
         <td style={{ ...TD, fontWeight: 800, color: r.vencida ? P.rojo : P.violetaTinta }}>
           <div style={{ whiteSpace: 'nowrap' }}>{cuandoLargo(r.cuando)}</div>
-          {r.vencida && <div style={{ marginTop: 3 }}><span style={pill(P.rojoAgua, P.rojo)}>vencida</span></div>}
+          {/* «No se marcó» y no «vencida»: vencida dice cuándo era, no qué
+              pasó. Lo que hay que ver de un golpe es que esa llamada no se
+              hizo. */}
+          {r.vencida && <div style={{ marginTop: 3 }}><span style={pill(P.rojoAgua, P.rojo)}>no se marcó</span></div>}
         </td>
       ),
     },
@@ -375,11 +378,17 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
       {tab === 'seguimientos' && c.seguimientos_vencidos > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: verVencidos ? P.rojoAgua : '#fff', border: `1px solid ${verVencidos ? '#f0c4bd' : '#e6e4ec'}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10 }}>
           <span style={{ fontSize: 12.5, color: verVencidos ? P.rojo : '#4B5563', flex: 1, minWidth: 180 }}>
-            <b>{c.seguimientos_vencidos}</b> {c.seguimientos_vencidos === 1 ? 'se pasó de fecha' : 'se pasaron de fecha'} y {c.seguimientos_vencidos === 1 ? 'sigue' : 'siguen'} sin hacerse.
+            {/* Estos son, por definición, los que NUNCA se marcaron: desde el
+                21-sep-2026 una promesa que se llama se cierra sola al colgar
+                —contestara o no—, así que lo único que puede seguir pendiente
+                con la hora pasada es lo que no se intentó. Se dice con esas
+                palabras porque es la pregunta del dueño: «saber a quién no le
+                di seguimiento, en qué fecha y horario acordé dárselo». */}
+            <b>{c.seguimientos_vencidos}</b> {c.seguimientos_vencidos === 1 ? 'seguimiento que no se llegó a marcar' : 'seguimientos que no se llegaron a marcar'}. Aquí sale con quién y a qué hora habías quedado.
           </span>
           <button onClick={() => setVerVencidos(v => !v)}
             style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#fff', border: `1.5px solid ${verVencidos ? P.rojo : P.violeta}`, color: verVencidos ? P.rojo : P.violetaTinta, borderRadius: 8, padding: '5px 11px' }}>
-            {verVencidos ? 'Ver solo lo de hoy' : 'Ver las vencidas'}
+            {verVencidos ? 'Ver solo lo de hoy' : 'Ver los no marcados'}
           </button>
         </div>
       )}
@@ -396,7 +405,7 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
               </>} />
           )}
           onRowClick={(r: any) => irAlContacto(r.contact_id)}
-          emptyMsg={verVencidos ? 'Nada vencido.' : 'Nada que devolver hoy ni en los próximos días. Lo que prometas al colgar aparece aquí.'} />
+          emptyMsg={verVencidos ? 'No dejaste ningún seguimiento sin marcar.' : 'Nada que devolver hoy ni en los próximos días. Lo que prometas al colgar aparece aquí.'} />
       )}
       {tab === 'oportunidades' && (
         /* `rowKey` explícito: estas filas son de CONTACTOS y no traen `id`
