@@ -163,7 +163,10 @@ export const GET: APIRoute = async ({ request }) => {
       vencida: String(t.vence_at || '') < ahora,
       tipo: t.tipo,
       quien: p.nombre || p.quien || null,
-      telefono: p.telefono || null,
+      /* El número vive en `whatsapp` dentro del payload (así lo escribe el
+         cierre); `telefono` casi nunca está. Se miran los dos o el botón de
+         «Llamar ahora» se queda sin a quién marcar. */
+      telefono: p.whatsapp || p.telefono || null,
       que: p.titulo || p.que || p.detalle || (t.tipo === 'llamada' ? 'Llamar de vuelta' : 'Responder'),
       duenio: nombreDe(t.owner_id) || 'Sin dueño',
       contact_id: t.contact_id || null,

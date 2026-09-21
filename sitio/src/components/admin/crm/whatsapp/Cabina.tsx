@@ -1390,6 +1390,22 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 {sesion.pausa_motivo !== 'horario' && <button onClick={() => accion('reanudar')} disabled={!!ocupado} style={S.btnP}>{sesion.pausa_motivo === 'disyuntor' ? 'Ya lo revisé, seguir' : 'Reanudar'}</button>}
               </div>
             )}
+{/* ── MEJORA 5 · LA PROMESA QUE ESTÁ POR CAER, MIENTRAS HABLAS ──
+                El aviso de abajo sólo salía ENTRE llamadas (`!actual`), que es
+                justo cuando no hace falta: si no estás hablando, el marcador se
+                encarga solo. Donde sirve es a media conversación — saber que en
+                seis minutos te toca la llamada que alguien te pidió cambia cómo
+                cierras ésta. A menos de 15 minutos y en ámbar, para que se vea
+                sin robarle la pantalla al contacto que tienes delante. */}
+            {est?.proximo && actual && (() => {
+              const min = Math.round((new Date(est.proximo.volver_at).getTime() - Date.now()) / 60000);
+              if (min < 0 || min > 15) return null;
+              return (
+                <div style={{ background: C.ambar50, border: `1px solid ${C.ambar200}`, borderRadius: 10, padding: '8px 12px', marginBottom: 10, fontSize: 12.5, color: C.ambar700, fontWeight: 700 }}>
+                  ⏱ En {min <= 1 ? 'menos de 1 min' : `${min} min`} te toca el seguimiento de <b>{est.proximo.nombre || telefonoLegible(est.proximo.telefono)}</b> — él pidió esa llamada.
+                </div>
+              );
+            })()}
             {est?.proximo && !actual && (
               <div style={{ background: C.moradoAgua, color: C.moradoTinta, borderRadius: 9, padding: '9px 12px', fontSize: 12.5, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <IcoReloj size={13} />

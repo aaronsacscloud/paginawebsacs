@@ -144,6 +144,14 @@ export const POST: APIRoute = async ({ request, url }) => {
             const { entregarMinutasPendientes } = await import('../../../lib/minuta/entrega');
             await entregarMinutasPendientes(r.conversationId);
           } catch (e: any) { console.warn('[webhook] minutas pendientes:', e?.message || e); }
+          /* Si responde a la llamada de seguimiento que no contestó, el
+             seguimiento revive. Es la mitad que le faltaba al ciclo: sin esto
+             la promesa moría justo cuando el cliente volvía a levantar la
+             mano. */
+          try {
+            const { reabrirSeguimientoPorRespuesta } = await import('../../../lib/telefonia/seguimiento-aviso');
+            await reabrirSeguimientoPorRespuesta(r.conversationId);
+          } catch (e: any) { console.warn('[webhook] reabrir seguimiento:', e?.message || e); }
           // Lo mismo con lo que se prometió mandar en una llamada (PDF del cierre con IA).
           try {
             const { entregarEnviosPendientes } = await import('../../../lib/telefonia/cierre');

@@ -65,6 +65,17 @@ Lo que un especialista en búsqueda con IA revisa ADEMÁS de los 18 (viven en
 | 9 | Estar en las fuentes que las IAs ya citan | Los 3-5 dominios que citan para la pregunta (`de_ia_muestras.urls_citadas`): aparecer ahí |
 | 10 | Consistencia en terceros | Misma descripción/precio/categoría en Capterra, GetApp, Google Business, LinkedIn |
 
+## Las URLs: /guias/<giro>/<slug>/
+
+Decisión del dueño (22-sep-2026): el contenido de un giro vive en
+`/guias/<giro>/<slug>/` (giro corto y legible: `novias`, `zapaterias`…, tabla
+`GIRO_URL` en publicar.ts); `/guias/<giro>/` es el índice del giro (hub
+primero). Lo transversal sigue en `/recursos/`, las comparativas en
+`/comparar/`. La sección guardada es `guias/<giro>`, así que sitemap, llms.txt
+e IndexNow no cambian. Una pieza movida guarda `brief.urls_anteriores` y la
+ruta vieja responde 301 (`destinoSiMovida`). Novias: `/software-para/tienda-de-novias/`
+→ `/guias/novias/apartado-vestido-de-novia-6-meses/`.
+
 ## El loop después del referee (especialista.ts)
 
 ```

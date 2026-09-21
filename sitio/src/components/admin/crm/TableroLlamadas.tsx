@@ -107,6 +107,29 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
      decidir a quién le toca ahora. Pero tampoco se esconden — un botón los
      trae, con su número siempre a la vista. */
   const [verVencidos, setVerVencidos] = useState(false);
+  const [marcando, setMarcando] = useState<string | null>(null);
+
+  /* Una jornada de UNA persona, con su nombre y su teléfono, y se abre la
+     cabina en ella. Pasa por el mismo `crear` que cualquier lista: así hereda
+     los candados —no llamar, teléfono inválido, tope de intentos— en vez de
+     abrir un camino paralelo donde no aplican. */
+  const llamarAhora = async (r: any) => {
+    if (!r.telefono) { alert('Ese seguimiento no tiene teléfono guardado.'); return; }
+    setMarcando(r.id);
+    try {
+      const j = await fetch('/api/crm/telefonia/marcador', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'crear', nombre: `Seguimiento · ${r.quien || r.telefono}`.slice(0, 120),
+          items: [{ contact_id: r.contact_id || null, nombre: r.quien || null, telefono: r.telefono }],
+          origen: { seguimiento: true, tarea_id: r.id },
+        }),
+      }).then(x => x.json());
+      if (j?.error) { alert(j.error); return; }
+      if (j?.id) onAbrirSesion(j.id);
+    } catch (e: any) { alert(String(e?.message || e)); }
+    finally { setMarcando(null); }
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -196,7 +219,23 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
       render: (r: any) => <td style={TD}><span style={pill(P.agua, P.violetaTinta)}>{r.tipo === 'llamada' ? 'Llamar' : 'Responder'}</span></td>,
     },
     { key: 'duenio', label: 'Quién lo debe', ftype: 'select', val: (r: any) => r.duenio, render: (r: any) => <td style={TD}>{r.duenio}</td> },
-  ], []);
+    {
+      /* ── MEJORA 2 · MARCARLE AHÍ MISMO ──────────────────────────────────
+         Pedido del dueño: «ya le puedo dar un seguimiento individual a ese
+         prospecto específico para ese caso específico». Ver que no llamaste a
+         alguien y tener que ir a armar una jornada para llamarle es el camino
+         más corto a no llamarle nunca. Abre la cabina con una lista de uno. */
+      key: 'llamar', label: '', width: 110,
+      render: (r: any) => (
+        <td style={{ ...TD, textAlign: 'right' }}>
+          <button onClick={e => { e.stopPropagation(); llamarAhora(r); }} disabled={marcando === r.id}
+            style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: marcando === r.id ? 'wait' : 'pointer', background: '#fff', border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, borderRadius: 8, padding: '5px 11px', whiteSpace: 'nowrap' }}>
+            {marcando === r.id ? 'Abriendo…' : 'Llamar ahora'}
+          </button>
+        </td>
+      ),
+    },
+  ], [marcando]);
 
   const colsOportunidades: ColDef[] = useMemo(() => [
     { key: 'quien', label: 'Quién', width: 200, fija: true, val: (r: any) => r.quien, render: (r: any) => (

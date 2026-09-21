@@ -402,7 +402,7 @@ Secciones de la madre:\n${((c.cuerpo || []) as Bloque[]).filter(x => x.t === 'h2
   if (!r.ok || !r.datos) return { ok: false, creados: 0, error: r.error, costo: r.costo_usd || 0 };
 
   let creados = 0;
-  const angulos = (r.datos.angulos || []).slice(0, 5).map(x => ({ ...x, slug: String(x.slug || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '').slice(0, 60), seccion: ['recursos', 'comparar', 'software-para'].includes(x.seccion) ? x.seccion : 'recursos' }));
+  const angulos = (r.datos.angulos || []).slice(0, 5).map(x => ({ ...x, slug: String(x.slug || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '').slice(0, 60), seccion: x.tipo === 'comparativa' ? 'comparar' : (b.giro ? 'guias' : 'recursos') }));
   for (const ang of angulos) {
     if (!ang.slug) continue;
     const clave = `SEO_CONTENT:angulo:${c.slug}:${ang.slug}`;

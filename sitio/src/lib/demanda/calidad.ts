@@ -261,7 +261,7 @@ export type Veredicto = {
 /* Las rutas del sitio a las que una página puede enlazar. Las guías y
    herramientas salen de la ficha; el resto son las secciones fijas del sitio
    (src/pages). Se compara sin la diagonal final: Astro sirve las dos formas. */
-const RUTAS_FIJAS = ['/agendar', '/prueba-gratis', '/contacto', '/planes', '/producto', '/giros', '/herramientas', '/recursos', '/comparar', '/casos-de-exito', '/soluciones', '/software-para', '/nosotros', '/marcas', '/enterprise', '/blog', '/partners'];
+const RUTAS_FIJAS = ['/guias', '/agendar', '/prueba-gratis', '/contacto', '/planes', '/producto', '/giros', '/herramientas', '/recursos', '/comparar', '/casos-de-exito', '/soluciones', '/software-para', '/nosotros', '/marcas', '/enterprise', '/blog', '/partners'];
 export function rutaExiste(ruta: string): boolean {
   const r = String(ruta || '').replace(/\/$/, '');
   if (!r.startsWith('/')) return true; // externas: las juzga el modelo

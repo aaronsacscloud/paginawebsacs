@@ -27,7 +27,7 @@ const fecha = (s: string | null) => s
     </div>
   )}
   <header class="cm-cab">
-    <a class="cm-volver" href={`/${pieza.seccion}`}>← {pieza.seccion === 'comparar' ? 'Comparativas' : pieza.seccion === 'software-para' ? 'Software para tu negocio' : 'Recursos'}</a>
+    <a class="cm-volver" href={`/${pieza.seccion}/`}>← {pieza.seccion === 'comparar' ? 'Comparativas' : pieza.seccion === 'software-para' ? 'Software para tu negocio' : pieza.seccion.startsWith('guias/') && pieza.giro ? `Guías para ${pieza.giro.label.toLowerCase()}` : 'Recursos'}</a>
     <h1>{pieza.h1}</h1>
     {pieza.meta_desc && <p class="cm-entrada">{pieza.meta_desc}</p>}
     <p class="cm-meta">

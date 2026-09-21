@@ -1,0 +1,48 @@
+---
+// El índice de un giro: hub primero, spokes después. Es el nivel 1.5 del
+// árbol (landing → índice/hub → spokes) y lo que hace que ninguna guía del giro
+// quede sin un enlace entrante.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { listaPorGiro, giroDeUrl } from '../../../lib/demanda/publicar';
+import { modaSectors } from '../../../data/navigation';
+import { SITIO } from '../../../data/entidad';
+
+export const prerender = false;
+const { giro } = Astro.params;
+const giroNav = giroDeUrl(giro || '');
+const sector = modaSectors.find(s => s.href === `/giros/${giroNav}`);
+const piezas = await listaPorGiro(giroNav);
+if (!sector || !piezas.length) return new Response(null, { status: 404 });
+const hub = piezas.find(p => p.es_hub);
+const resto = piezas.filter(p => !p.es_hub);
+const schema = {
+  '@context': 'https://schema.org', '@type': 'ItemList', name: `Guías para ${sector.label}`, numberOfItems: piezas.length,
+  itemListElement: piezas.map((p, i) => ({ '@type': 'ListItem', position: i + 1, item: { '@type': 'Article', name: p.titulo, url: `${SITIO}${p.url}` } })),
+};
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+---
+<BaseLayout title={`Guías para ${sector.label}`} description={`Cómo se resuelven de verdad los problemas de ${sector.label.toLowerCase()}: ${sector.description}. Guías del ramo, sin registro.`} structuredData={schema}>
+  <main class="gi">
+    <p class="eyebrow">Guías · <a href={sector.href}>{sector.label}</a></p>
+    <h1>Guías para {sector.label.toLowerCase()}</h1>
+    {hub && <a class="hub" href={hub.url}><span>La guía completa</span><strong>{hub.titulo}</strong>{hub.meta_desc && <em>{hub.meta_desc}</em>}</a>}
+    {resto.length > 0 && <ul>{resto.map(p => <li><a href={p.url}><strong>{p.titulo}</strong>{p.meta_desc && <span>{p.meta_desc}</span>}</a></li>)}</ul>}
+    <p class="cierre">Así se lleva este giro en Sacs: <a href={sector.href}>Sacs para {sector.label.toLowerCase()} →</a></p>
+  </main>
+</BaseLayout>
+<style>
+  .gi { max-width: 900px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-12)) 1.25rem 5rem; }
+  .eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--color-secondary-texto); font-weight: 600; margin: 0 0 .6rem; }
+  .eyebrow a { color: inherit; }
+  h1 { font-family: var(--font-display); font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; margin: 0 0 1.5rem; text-wrap: balance; }
+  .hub { display: grid; gap: .3rem; padding: 1.4rem; border-radius: 14px; background: var(--gradient-cream, var(--color-bg-secondary)); border: 1px solid var(--color-border-light); text-decoration: none; color: inherit; margin-bottom: 1.2rem; }
+  .hub span { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--color-primary-texto); }
+  .hub strong { font-family: var(--font-display); font-size: 1.25rem; }
+  .hub em { font-style: normal; color: var(--color-text-secondary); }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+  ul a { display: grid; gap: .3rem; padding: 1.1rem 1.2rem; border: 1px solid var(--color-border-light); border-radius: 12px; text-decoration: none; color: inherit; }
+  ul a:hover { border-color: var(--color-primary-texto); }
+  ul span { color: var(--color-text-secondary); font-size: .92rem; }
+  .cierre { margin-top: 2.5rem; color: var(--color-text-secondary); }
+  .cierre a { color: var(--color-primary-texto); font-weight: 600; }
+</style>

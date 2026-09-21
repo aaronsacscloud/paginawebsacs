@@ -294,6 +294,10 @@ export async function crearSesion(ownerId: string | null, o: {
     vistos.add(tel);
   }
   filas.push(...compromisos);
+  /* MEJORA 3 · se devuelve cuántas promesas entraron. Una jornada que dice «60
+     contactos» cuando 4 de ellos son compromisos con hora se opera distinto:
+     esos 4 mandan sobre el orden del día. Callarlo hace que el vendedor los
+     descubra cuando el marcador se los pone delante. */
 
   const pendientes = filas.filter(f => f.estado === 'pendiente').length;
 
@@ -310,7 +314,7 @@ export async function crearSesion(ownerId: string | null, o: {
   }
   // Las fichas se escriben en segundo plano: la sesión ya se puede abrir.
   prepararFichas(s.id).catch(() => {});
-  return { id: s.id, total: pendientes, excluidos };
+  return { id: s.id, total: pendientes, excluidos, compromisos: compromisos.length };
 }
 
 /**

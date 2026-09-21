@@ -69,7 +69,7 @@ la empresa, no una campaña.
 
 ${CLAVE.map(c => `- [${c.que}](${SITIO}${c.url})`).join('\n')}
 
-${[...porSeccion.entries()].map(([sec, ps]) => `## ${sec === 'comparar' ? 'Comparativas' : sec === 'software-para' ? 'Software por tipo de negocio' : 'Guías y recursos'}
+${[...porSeccion.entries()].map(([sec, ps]) => `## ${sec === 'comparar' ? 'Comparativas' : sec === 'software-para' ? 'Software por tipo de negocio' : sec.startsWith('guias/') ? `Guías para ${sec.slice(6).replace(/-/g, ' ')}` : 'Guías y recursos'}
 
 ${ps.map(p => `- [${p.titulo}](${SITIO}/${p.seccion}/${p.slug}/)${p.meta_desc ? `: ${p.meta_desc}` : ''}`).join('\n')}`).join('\n\n')}
 

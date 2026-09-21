@@ -1,0 +1,34 @@
+---
+// Las guías del motor por giro: /guias/<giro>/<slug>/. La sección guardada es
+// «guias/<giro>», así que se lee igual que las demás rutas del motor.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ContenidoMotor from '../../../components/ContenidoMotor.astro';
+import { leerPublicado, leerPieza, destinoSiMovida } from '../../../lib/demanda/publicar';
+import { getCurrentUser } from '../../../lib/auth/scope';
+
+export const prerender = false;
+
+const { giro, slug } = Astro.params;
+const seccion = `guias/${giro}`;
+const quierePrevia = Astro.url.searchParams.get('borrador') === '1';
+const previa = quierePrevia && !!(await getCurrentUser(Astro.request).catch(() => null));
+const pieza = slug ? (previa ? await leerPieza(seccion, slug, true) : await leerPublicado(seccion, slug)) : null;
+
+if (!pieza) {
+  const destino = slug ? await destinoSiMovida(seccion, slug) : null;
+  if (destino) return Astro.redirect(destino, 301);
+  return new Response(null, { status: 404, statusText: 'No encontrado' });
+}
+
+Astro.response.headers.set('Cache-Control', previa ? 'private, no-store' : 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<BaseLayout
+  title={pieza.titulo}
+  description={pieza.meta_desc || pieza.titulo}
+  type="article"
+  image={pieza.portada?.url}
+  noindex={previa}
+  structuredData={pieza.schema}
+>
+  <ContenidoMotor pieza={pieza} />
+</BaseLayout>

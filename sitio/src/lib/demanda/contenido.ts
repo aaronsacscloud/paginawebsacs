@@ -29,6 +29,7 @@ import { modaSectors } from '../../data/navigation';
 import { videosCanal } from '../../data/videos-canal';
 import { fichaSacs } from './capacidades';
 import { traerTodo } from './paginar';
+import { seccionPara } from './publicar';
 import { aMarkdown, type Bloque } from './bloques';
 import type { ResultadoHandler } from './tipos';
 
@@ -54,7 +55,7 @@ export type Brief = {
   demostrar: string[];       // lo que la página tiene que probar para ser creíble
   secciones: string[];       // el esqueleto
   faq: string[];             // las preguntas que hay que contestar sí o sí
-  seccion: 'recursos' | 'comparar' | 'software-para';
+  seccion: 'recursos' | 'comparar' | 'software-para' | 'guias' | string;
   slug: string;
   enlaces: string[];         // slugs de guías propias que encajan
   nota_honestidad?: string;  // lo que NO podemos afirmar: precios, planes, datos externos, ley
@@ -86,7 +87,7 @@ const ESQUEMA_BRIEF = {
     demostrar: { type: 'array', items: { type: 'string' } },
     secciones: { type: 'array', items: { type: 'string' } },
     faq: { type: 'array', items: { type: 'string' } },
-    seccion: { type: 'string', enum: ['recursos', 'comparar', 'software-para'] },
+    seccion: { type: 'string', enum: ['recursos', 'comparar', 'guias'] },
     slug: { type: 'string' },
     enlaces: { type: 'array', items: { type: 'string' } },
     nota_honestidad: { type: 'string' },
@@ -112,7 +113,7 @@ CÓMO SE DECIDE CADA CAMPO
 - «demostrar»: dos a cuatro cosas que la página tiene que PROBAR para que le crean. Con qué dato, ejemplo o número. No «hablar de X», sino «probar que X».
 - «secciones»: cuatro a siete encabezados, en orden. Que cuenten algo, no que enumeren.
 - «faq»: tres a cinco preguntas que alguien haría de verdad después de leer.
-- «seccion»: «recursos» para guías del ramo; «comparar» solo si compara con otro producto; «software-para» para páginas por tipo de negocio.
+- «seccion»: «guias» para todo lo que es de un giro concreto (vive en /guias/<giro>/); «recursos» solo si es transversal a todos los giros; «comparar» solo si compara con otro producto.
 - «slug»: corto, en minúsculas y guiones, sin la marca, en el idioma de la pregunta.
 - «enlaces»: slugs de la lista de guías publicadas que de verdad tratan lo mismo. Ninguno si ninguno encaja. NO inventes slugs.
 - «nota_honestidad»: SOLO para precios, planes, datos externos y reglas legales que no se pueden afirmar. Las FUNCIONES no van aquí: por regla del dueño se presentan como existentes en su mejor versión (si el tema pide agenda de probadores, cobros programados o alertas, la página las describe como parte de Sacs). Si el tema toca funciones que la ficha no lista, ponlas en «funciones_a_prometer».
@@ -221,7 +222,8 @@ registrar('contenido.brief', async (a): Promise<ResultadoHandler> => {
     costo += r.costo;
     if (!r.ok || !r.brief) { fallos.push(`${op.titulo.slice(0, 30)}: ${r.error}`); continue; }
 
-    const clave = `${r.brief.seccion}:${r.brief.slug}`;
+    const seccion = seccionPara(r.brief.seccion, r.brief.giro);
+    const clave = `${seccion}:${r.brief.slug}`;
     const { data: ya } = await supabase.from('de_contenido').select('id, estado').eq('clave_idem', clave).maybeSingle();
     if (ya) {
       // Ya existe: se ata la oportunidad a lo que existe en vez de duplicar.
@@ -230,7 +232,7 @@ registrar('contenido.brief', async (a): Promise<ResultadoHandler> => {
     }
 
     const { data: nuevo, error } = await supabase.from('de_contenido').insert({
-      clave_idem: clave, tipo: 'guia', seccion: r.brief.seccion, slug: r.brief.slug,
+      clave_idem: clave, tipo: 'guia', seccion, slug: r.brief.slug,
       titulo: r.brief.pregunta, h1: r.brief.pregunta, meta_desc: r.brief.promesa.slice(0, 160),
       brief: { ...r.brief, oportunidad_id: op.id },
       cuerpo: [], auditorias: {},

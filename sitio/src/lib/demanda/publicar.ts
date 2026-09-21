@@ -5,8 +5,34 @@ import { aHtml, palabras, schemaDeCuerpo, indice, aTexto, type Bloque } from './
 import { SITIO, ENTIDAD_ID } from '../../data/entidad';
 import { modaSectors } from '../../data/navigation';
 
-export const SECCIONES = ['recursos', 'comparar', 'software-para'] as const;
+export const SECCIONES = ['recursos', 'comparar', 'software-para', 'guias'] as const;
 export type Seccion = typeof SECCIONES[number];
+
+/* URLs por giro: el contenido de un giro vive en /guias/<giro>/<slug>/, con el
+   giro corto y legible en la URL (el árbol landing → hub → spokes se ve en la
+   ruta). La sección guardada es «guias/<giro>», así todo lo que arma la URL
+   como `/${seccion}/${slug}/` (sitemap, llms.txt, IndexNow, bandeja) sigue
+   valiendo sin tocarlo. Decisión del dueño 22-sep-2026 («/software-para/
+   tienda-de-novias/ se ve raro»). */
+export const GIRO_URL: Record<string, string> = {
+  'novias-y-fiesta': 'novias', 'marcas-de-ropa': 'tiendas-de-ropa', 'boutique-multimarca': 'boutiques', 'zapateria': 'zapaterias',
+  'joyeria': 'joyerias', 'renta-de-vestidos': 'renta-de-vestidos', 'ropa-infantil': 'ropa-infantil', 'bolsas-y-accesorios': 'bolsas',
+  'trajes-de-bano': 'trajes-de-bano', 'sastreria': 'sastrerias', 'opticas': 'opticas', 'telas-y-merceria': 'telas', 'tallas-grandes': 'tallas-grandes',
+  'maternidad': 'maternidad', 'outlet': 'outlet', 'emprendedoras': 'emprendedoras', 'western': 'western', 'lenceria': 'lenceria', 'uniformes': 'uniformes',
+  'activewear': 'activewear', 'consignacion': 'consignacion', 'merchandising-eventos': 'merch',
+};
+export const giroUrl = (giro: string) => GIRO_URL[giro] || giro;
+export const giroDeUrl = (seg: string) => Object.entries(GIRO_URL).find(([, v]) => v === seg)?.[0] || seg;
+/** La sección donde vive una pieza nueva según su giro: con giro → guias/<giro>. */
+export const seccionPara = (seccionBrief: string, giro?: string | null) =>
+  seccionBrief === 'comparar' ? 'comparar' : giro && giro !== 'marcas-de-ropa' ? `guias/${giroUrl(giro)}` : (seccionBrief === 'software-para' ? 'recursos' : seccionBrief || 'recursos');
+
+/** Si una pieza se movió de URL, dónde vive ahora (para el 301). */
+export async function destinoSiMovida(seccion: string, slug: string): Promise<string | null> {
+  const ruta = `/${seccion}/${slug}/`;
+  const { data } = await supabase.from('de_contenido').select('seccion, slug').eq('estado', 'publicado').contains('brief', { urls_anteriores: [ruta] }).limit(1).maybeSingle();
+  return data ? `/${data.seccion}/${data.slug}/` : null;
+}
 
 export type Publicado = {
   id: string; titulo: string; h1: string; meta_desc: string | null;

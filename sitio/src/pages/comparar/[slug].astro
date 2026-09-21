@@ -10,7 +10,7 @@
 // hace mejor. Una comparativa que solo gana es una que nadie cita.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ContenidoMotor from '../../components/ContenidoMotor.astro';
-import { leerPublicado, leerPieza } from '../../lib/demanda/publicar';
+import { leerPublicado, leerPieza, destinoSiMovida } from '../../lib/demanda/publicar';
 import { getCurrentUser } from '../../lib/auth/scope';
 
 export const prerender = false;
@@ -22,7 +22,12 @@ const quierePrevia = Astro.url.searchParams.get('borrador') === '1';
 const previa = quierePrevia && !!(await getCurrentUser(Astro.request).catch(() => null));
 const pieza = slug ? (previa ? await leerPieza('comparar', slug, true) : await leerPublicado('comparar', slug)) : null;
 
-if (!pieza) return new Response(null, { status: 404, statusText: 'No encontrado' });
+if (!pieza) {
+  // Movida a /guias/<giro>/…: 301, que es lo que conserva lo indexado.
+  const destino = slug ? await destinoSiMovida('comparar', slug) : null;
+  if (destino) return Astro.redirect(destino, 301);
+  return new Response(null, { status: 404, statusText: 'No encontrado' });
+}
 
 Astro.response.headers.set('Cache-Control', previa ? 'private, no-store' : 'public, s-maxage=3600, stale-while-revalidate=86400');
 ---

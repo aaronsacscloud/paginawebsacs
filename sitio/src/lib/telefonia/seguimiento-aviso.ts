@@ -86,3 +86,76 @@ export async function avisarSeguimientoSinContestar(o: {
     return { enviado: false, motivo: String(e?.message || e).slice(0, 160) };
   }
 }
+
+
+/* ── MEJORA 1 · QUE SU RESPUESTA REABRA EL SEGUIMIENTO ──────────────────────
+ * Lo pidió el dueño en la misma frase y se me había quedado fuera: «de ahí se
+ * termina el seguimiento de ese prospecto HASTA QUE RESPONDE EL WHATSAPP, y se
+ * hará un nuevo seguimiento».
+ *
+ * Sin esto, el ciclo quedaba cojo: no contesta → se cierra la tarea → se le
+ * escribe → contesta «sí, márcame mañana» → y nadie lo vuelve a poner en una
+ * lista. La promesa moría justo en el momento en que el cliente volvía a
+ * levantar la mano, que es el peor sitio donde puede morir.
+ *
+ * QUÉ HACE, Y QUÉ NO. Crea una tarea NUEVA para mañana a la misma hora, con la
+ * historia escrita («no contestó el {fecha}; escribió de vuelta»). NO adivina
+ * la hora que él quiere: eso lo dice él, y quien abra la tarea lo lee en el
+ * chat. Poner una hora inventada sería volver a marcarle cuando no toca.
+ *
+ * Y sólo reabre UNA vez por respuesta: si escribe tres mensajes seguidos no
+ * nacen tres seguimientos.
+ */
+export async function reabrirSeguimientoPorRespuesta(conversationId: string): Promise<number> {
+  try {
+    const { data: conv } = await supabase.from('wa_conversaciones')
+      .select('id, telefono, contact_id, company_id, contacts(nombre)').eq('id', conversationId).maybeSingle();
+    if (!conv?.contact_id) return 0;
+
+    /* Sólo si se le cerró un seguimiento por no contestar en los últimos 3
+       días. Más atrás, su mensaje ya no es respuesta a aquella llamada: es una
+       conversación nueva, y tratarla como seguimiento pone al contacto en una
+       lista que nadie acordó. */
+    const desde = new Date(Date.now() - 3 * 86400e3).toISOString();
+    const { data: cerrada } = await supabase.from('ti_tareas')
+      .select('id, vence_at, owner_id, payload, hecho_at')
+      .eq('contact_id', conv.contact_id).eq('tipo', 'llamada')
+      .eq('seguimiento_desenlace', 'no_contesto').gte('hecho_at', desde)
+      .order('hecho_at', { ascending: false }).limit(1).maybeSingle();
+    if (!cerrada) return 0;
+
+    // ¿Ya se reabrió por un mensaje anterior? Entonces no se duplica.
+    const { count } = await supabase.from('ti_tareas').select('id', { count: 'exact', head: true })
+      .eq('contact_id', conv.contact_id).eq('tipo', 'llamada').eq('estado', 'pendiente')
+      .eq('payload->>reabierto_de', String(cerrada.id));
+    if (Number(count || 0) > 0) return 0;
+
+    /* ── MEJORA 4 · NI UN BUCLE INFINITO DE PROMESAS ──────────────────────
+       Un contacto que ya falló TRES seguimientos no vuelve a entrar solo. Sin
+       este tope, alguien que contesta el WhatsApp pero nunca el teléfono se
+       reabre para siempre: cada respuesta suya crea otra promesa, y la lista
+       del lunes acaba llena de gente a la que llevamos un mes marcando en
+       balde. A la tercera deja de ser automático y pasa a ser una decisión —
+       la tarea no nace y el caso se ve en la pestaña de seguimientos. */
+    const { count: fallidos } = await supabase.from('ti_tareas').select('id', { count: 'exact', head: true })
+      .eq('contact_id', conv.contact_id).eq('tipo', 'llamada').eq('seguimiento_desenlace', 'no_contesto');
+    if (Number(fallidos || 0) >= 3) return 0;
+
+    const p: any = cerrada.payload || {};
+    const nombre = p.nombre || (conv as any)?.contacts?.nombre || null;
+    const cuando = new Date(String(cerrada.vence_at));
+    cuando.setDate(cuando.getDate() + 1);          // mañana, a la misma hora acordada
+    const dia = new Date(String(cerrada.vence_at)).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
+
+    await supabase.from('ti_tareas').insert({
+      contact_id: conv.contact_id, company_id: conv.company_id || null, owner_id: cerrada.owner_id,
+      familia: 'llamar', tipo: 'llamada', prioridad: 1, vence_at: cuando.toISOString(), origen: 'evento',
+      payload: {
+        de_llamada: true, reabierto_de: cerrada.id, nombre, whatsapp: conv.telefono,
+        instruccion: `${String(nombre || 'El contacto').split(' ')[0]}: te escribió de vuelta — confirma con él la hora antes de marcar`,
+        porque: `No contestó la llamada que pidió (${dia}) y respondió por WhatsApp.`,
+      },
+    });
+    return 1;
+  } catch { return 0; }
+}
