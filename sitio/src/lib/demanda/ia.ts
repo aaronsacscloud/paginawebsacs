@@ -244,7 +244,11 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
     /* La etiqueta va en el CUERPO y no solo en la global: `pedirA` se llama
        desde dos caminos y solo uno pone `__ia_proposito`, así que el otro caía
        en «desconocido». El proxy la lee y la borra antes de salir a la API. */
-    const cuerpo: any = { proposito: `demanda:${p.agente || trabajoDe(p)}`, model: modelo, max_tokens: max, system: p.sistema, messages: [{ role: 'user', content: usuario }] };
+    /* Opus razona por defecto y el razonamiento sale del mismo max_tokens: se
+       le da el doble de tope (hasta 64k) cuando razona, para que el tope pedido
+       sea el de la RESPUESTA. Los especialistas se cortaban en 6k/5k/3k. */
+    const topeAnthropic = p.pensar === false ? max : Math.min(64000, max * 2 + 4000);
+    const cuerpo: any = { proposito: `demanda:${p.agente || trabajoDe(p)}`, model: modelo, max_tokens: topeAnthropic, system: p.sistema, messages: [{ role: 'user', content: usuario }] };
     if (p.esquema) cuerpo.output_config = { format: { type: 'json_schema', schema: p.esquema } };
     if (p.pensar === false) cuerpo.thinking = { type: 'disabled' };
     const r: any = await anthropic.messages.create(cuerpo);
