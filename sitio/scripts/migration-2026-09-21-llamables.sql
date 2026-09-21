@@ -32,7 +32,12 @@ select
   (wa.valor is not null)          as tiene_wa,
   (wa.verificado_at is not null)  as wa_verificado,
   -- El teléfono con el que se va a marcar: el fijo si lo hay, si no el WhatsApp.
-  coalesce(tel.valor, wa.valor)   as marcar
+  coalesce(tel.valor, wa.valor)   as marcar,
+  -- ⚠️ `ya_es_cliente` es TEXTO ('sí' o nulo), no booleano. Preguntarle
+  -- `is true` desde PostgREST devuelve «argument of IS TRUE must be type
+  -- boolean, not type text» y tumba la consulta entera con un 500 — pasó el
+  -- primer día. Se expone ya convertido para que nadie más tropiece.
+  (c.ya_es_cliente is not null)   as es_cliente
 from abm_cuentas c
 left join lateral (
   select k.valor from abm_canales k

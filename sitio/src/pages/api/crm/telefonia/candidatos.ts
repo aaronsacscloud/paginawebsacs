@@ -181,7 +181,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   // ══ FUENTE 2 · EL ABM (prospección en frío) ═══════════════════════════════
   if (fuente === 'abm' || fuente === 'ambas') {
     let sel = supabase.from('v_abm_llamables')
-      .select('id, nombre, giro, subgiro, ciudad, estado_geo, sucursales, google_rating, google_resenas, puntaje, etapa, ya_es_cliente, ultimo_toque_at, telefono, whatsapp, tiene_wa, wa_verificado, marcar', { count: 'exact' });
+      .select('id, nombre, giro, subgiro, ciudad, estado_geo, sucursales, google_rating, google_resenas, puntaje, etapa, ya_es_cliente, ultimo_toque_at, telefono, whatsapp, tiene_wa, wa_verificado, marcar, es_cliente', { count: 'exact' });
 
     if (giros.length) sel = sel.in('giro', giros);
     /* Las tres opciones que pidió, literales: verificadas con WhatsApp, con
@@ -201,7 +201,10 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (estados.length) sel = sel.in('estado_geo', estados);
     const ciudad = q.get('ciudad');
     if (ciudad) sel = sel.ilike('ciudad', `%${ciudad}%`);
-    if (excluirClientes) sel = sel.not('ya_es_cliente', 'is', true);
+    /* `es_cliente` y no `ya_es_cliente`: la columna de la tabla es TEXTO
+       ('sí' o nulo) y preguntarle `is true` tumba la consulta con un 500. La
+       vista la expone ya convertida. */
+    if (excluirClientes) sel = sel.eq('es_cliente', false);
     /* En cadencia = le está escribiendo el ABM ahora mismo. Llamarle encima es
        tocar dos veces el mismo día por dos canales, que es como se gana un
        bloqueo. */
