@@ -409,6 +409,10 @@ export function comprobacionesDuras(p: { titulo: string; meta_desc: string; h1: 
   if (capturas.length < 2) f.push(`solo ${capturas.length} captura(s) de Sacs; mínimo 2 bloques «captura» con la pantalla que resuelve cada sección clave`);
   for (const cp of capturas) if ((cp.campos || []).length < 5) f.push(`la captura «${cp.titulo}» tiene ${(cp.campos || []).length} campos; mínimo 5 realistas`);
 
+  // ── Largo ──
+  const nPal = plano.split(/\s+/).filter(Boolean).length;
+  if (nPal > 4000) f.push(`${nPal} palabras: máximo 3,600 — se lee en el celular; elimina lo que menos enseña (nunca el glosario ni el faq)`);
+
   // ── Marcadores sin resolver ──
   // «Descarga la plantilla aquí: [ENLACE]» pasó el referee de novias; un
   // especialista lo vio después. Ningún corchete-marcador llega a la bandeja.
@@ -612,7 +616,7 @@ Meta: ${c.meta_desc}
 Cuerpo (${contarPalabras(cuerpo)} palabras; los bloques [RESUMEN], [TABLA], [PASOS], [FAQ], [GLOSARIO], [DIAGRAMA], [IMAGEN], [VIDEO] y [CTA] se renderizan con su propio diseño — no son texto corrido):
 ${aMarkdown(cuerpo).slice(0, 26000)}`;
 
-  const r = await preguntar<Veredicto>({ agente: 'contenido_referee', trabajo: 'estrategia', sistema: SISTEMA_REFEREE, usuario, esquema: ESQUEMA_VEREDICTO, max_tokens: 14000 });
+  const r = await preguntar<Veredicto>({ agente: 'contenido_referee', trabajo: 'estrategia', sistema: SISTEMA_REFEREE, usuario, esquema: ESQUEMA_VEREDICTO, max_tokens: 32000 }); // el referee sí razona y esos tokens cuentan aquí
   if (!r.ok || !r.datos) return { ok: false, error: r.error, duras, costo: costoComp + (r.costo_usd || 0) };
 
   const v = r.datos;

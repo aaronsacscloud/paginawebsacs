@@ -28,7 +28,7 @@ import { registrar } from './handlers';
 import { modaSectors } from '../../data/navigation';
 import { fichaSacs } from './capacidades';
 import { traerTodo } from './paginar';
-import type { Bloque } from './bloques';
+import { aMarkdown, type Bloque } from './bloques';
 import type { ResultadoHandler } from './tipos';
 
 /** Recorta sin partir palabras ni dejar la frase colgando. */
@@ -316,7 +316,7 @@ LOS BLOQUES
 - «tabla» → encabezados + filas (+ nota), cuando se comparan cosas
 - «diagrama» → titulo + encabezados + filas (+ nota; el alt va en «texto»): LA IMAGEN DE REFERENCIA con el dato de la página (un calendario de abonos con fechas y montos, una ficha de medidas, una curva de tallas). Se dibuja como imagen y es lo que Google enseña junto a la respuesta. Exactamente UNA, con datos reales de la página, ≥ 3 filas.
 - «imagen» → el alt en «texto» (en español, lo que se ve) y la escena en «nota» (en inglés, ≥ 40 caracteres, documental: una persona real haciendo eso en una tienda de México, sin pantallas). UNA o DOS, junto a los pasos o la tabla. La foto se genera después; tú describes la escena.
-- «captura» → LA PANTALLA DE SACS que resuelve eso, como se vería: «titulo» = nombre de la pantalla (p. ej. «Apartado · Vestido Alba talla 8 marfil»), «nota» = la ruta de migas («Clientas › Karina López › Apartado #1042»), «items» = campos de la pantalla como {p: etiqueta, r: valor} (6-10 campos realistas: fechas, montos, estatus, responsable), y opcionalmente «encabezados» + «filas» para la tabla de la pantalla (abonos, pruebas, tareas), «texto» = alt. DOS o TRES capturas, cada una junto a la sección que describe. Se dibujan después con el diseño de Sacs; tú das los datos.
+- «captura» → LA PANTALLA DE SACS que resuelve eso, como se vería: «titulo» = nombre de la pantalla (p. ej. «Apartado · Vestido Alba talla 8 marfil»), «nota» = la ruta de migas («Clientes › Karina López › Apartado #1042»), «items» = campos de la pantalla como {p: etiqueta, r: valor} (6-10 campos realistas: fechas, montos, estatus, responsable), y opcionalmente «encabezados» + «filas» para la tabla de la pantalla (abonos, pruebas, tareas), «texto» = alt. DOS o TRES capturas, cada una junto a la sección que describe. Se dibujan después con el diseño de Sacs; tú das los datos.
 - «cita» → texto, fuente, url: SOLO de la lista FUENTES VERIFICADAS del encargo, con su url tal cual. Mínimo 2 datos con fuente (cita o enlace [texto](https://…) a una fuente de la lista).
 - «glosario» → items con titulo (el término) y texto (la definición): 6-10 términos del ramo definidos como los dice la gente del giro, ANTES del faq. Usa los términos del encargo.
 - «faq» → items con p y r: 6-8 preguntas que la gente hace de verdad (las del encargo y las «sin contestar»), contestadas de verdad.
@@ -327,6 +327,118 @@ ENCABEZADOS: «h2»/«h3» llevan el texto en «texto». Mínimo 5 h2. NADA va d
 ORDEN: resumen → párrafo de respuesta (≤ 80 palabras) → secciones del encargo (con tabla/pasos, diagrama, capturas de Sacs, imagen, cita, cta intermedia donde toquen) → glosario → faq → cta final.
 ENLACES INTERNOS: ≥ 3 rutas distintas de las permitidas, con anchor natural (nunca la ruta cruda), y una a /giros/<giro>.`;
 
+/** Un bloque tal como lo manda el modelo (10 campos reutilizados) → el bloque
+ *  tipado del motor. Lo usan el borrador y los parches. */
+export function normalizarBloque(x: any): Bloque | null {
+  if (!x || typeof x !== 'object') return null;
+  const b: any = (() => {
+
+        if (x.t === 'lista') return { t: 'lista', items: x.lista_items || [] };
+      if (x.t === 'resumen') return { t: 'resumen', items: x.lista_items || (x.items || []).map((i: any) => i.texto || i.p).filter(Boolean) };
+      if (x.t === 'glosario') return { t: 'glosario', items: (x.items || []).map((i: any) => ({ termino: i.termino || i.titulo || i.p, definicion: i.definicion || i.texto || i.r })).filter((i: any) => i.termino && i.definicion) };
+      if (x.t === 'imagen') return { t: 'imagen', url: x.url && /^https:\/\//.test(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'video') {
+        const id = String(x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\/|^.*youtube:/, '').match(/[A-Za-z0-9_-]{11}/)?.[0] || '';
+        return id ? { t: 'video', youtube_id: id, titulo: x.titulo || x.texto || '' } : null;
+      }
+      if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
+      if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
+      if (x.t === 'tabla') return { t: 'tabla', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}) };
+      if (x.t === 'cita') return { t: 'cita', texto: x.texto, fuente: x.fuente || '', ...(x.url ? { url: x.url } : {}) };
+      if (x.t === 'cta') return { t: 'cta', texto: x.texto, boton: x.boton || x.titulo || 'Ver más', url: x.url || '/contacto' };
+      /* gpt-5 manda los encabezados en «titulo» y no en «texto»; sin este
+         respaldo se perdían TODOS los h2 y el referee tumbaba la página por
+         «0 secciones h2» tres rondas seguidas (21-sep-2026). */
+      const texto = String(x.texto || x.titulo || '');
+      // gpt-5 numera los encabezados («1) …», «2. …»); el índice ya numera solo.
+      return { t: x.t, texto: /^h[23]$/.test(x.t) ? texto.replace(/^\s*\d{1,2}[).:-]\s*/, '') : texto };
+  })();
+  return b && (b.items?.length || b.filas?.length || b.texto || b.escena || b.youtube_id || b.campos?.length) ? b : null;
+}
+
+/* Limpieza antes de normalizar: nada que parezca código o marcado en los
+   textos (el modelo metió «','','')</script>» en un url de video y en la
+   siguiente ronda eso disparó un bucle). */
+export const limpiaSalida = (v: any): any => typeof v === 'string' ? v.replace(/<\/?script[^>]*>/gi, '').replace(/\/\*x\*\/;?/g, '').trim() : Array.isArray(v) ? v.map(limpiaSalida) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, w]) => [k, limpiaSalida(w)])) : v;
+
+const ESQUEMA_PARCHES = {
+  type: 'object', additionalProperties: false,
+  properties: {
+    titulo: { type: 'string' }, h1: { type: 'string' }, meta_desc: { type: 'string' },
+    parches: { type: 'array', items: { type: 'object', additionalProperties: false, properties: {
+      op: { type: 'string', enum: ['reemplazar', 'insertar_despues', 'insertar_antes', 'eliminar'] },
+      i: { type: 'number' },
+      bloque: { type: 'object', additionalProperties: false, properties: {
+        t: { type: 'string' }, texto: { type: 'string' }, titulo: { type: 'string' },
+        lista_items: { type: 'array', items: { type: 'string' } }, encabezados: { type: 'array', items: { type: 'string' } },
+        filas: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+        items: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { p: { type: 'string' }, r: { type: 'string' }, titulo: { type: 'string' }, texto: { type: 'string' } } } },
+        nota: { type: 'string' }, fuente: { type: 'string' }, url: { type: 'string' },
+      }, required: ['t'] },
+    }, required: ['op', 'i'] } },
+  },
+  required: ['parches'],
+};
+
+/**
+ * Corregir por PARCHES, no regenerando. Regenerar una página de 4,000 palabras
+ * para meter una CTA y partir dos párrafos perdía bloques en cada ronda (las
+ * capturas en una, el resumen en otra) y a veces el modelo entraba en bucle.
+ * Aquí el modelo devuelve solo las operaciones sobre bloques numerados; el
+ * resto de la página no se toca y las imágenes ya generadas se quedan.
+ */
+export async function aplicarParches(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number; parches?: number }> {
+  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, brief, cuerpo, titulo, h1, meta_desc').eq('id', contenidoId).maybeSingle();
+  if (!c) return { ok: false, error: 'no existe', costo: 0 };
+  const b = c.brief as any as Brief;
+  const cuerpo = ((c.cuerpo || []) as Bloque[]).slice();
+  if (!b.correcciones?.length) return { ok: false, error: 'no hay correcciones', costo: 0 };
+
+  const numerado = cuerpo.map((bl, i) => `[#${i}] ` + aMarkdown([bl]).replace(/\n/g, '\n      ')).join('\n\n');
+  const usuario = `CORRECCIONES DEL REFEREE (aplica TODAS, nada más):
+${b.correcciones.map((x: string, i: number) => `  ${i + 1}. ${x}`).join('\n')}
+
+LA PÁGINA, POR BLOQUES NUMERADOS [#i] (los bloques [IMAGEN], [DIAGRAMA], [CAPTURA] con url ya están generados: no los toques salvo que una corrección lo pida):
+Título: ${c.titulo}
+H1: ${c.h1}
+Meta: ${c.meta_desc}
+
+${numerado}
+
+RUTAS INTERNAS PERMITIDAS: ${(b.enlaces || []).map(s => `/recursos/${s}/`).join(', ')}, /agendar, /giros/${b.giro || ''}${b.fuentes?.length ? `\nFUENTES VERIFICADAS (solo estas urls): ${b.fuentes.map((f: any) => f.url).join(' · ')}` : ''}
+
+Devuelve SOLO las operaciones necesarias, como JSON: {"titulo"?, "h1"?, "meta_desc"? (solo si una corrección los cambia), "parches":[{"op":"reemplazar|insertar_despues|insertar_antes|eliminar","i":<índice del bloque de referencia>,"bloque":{...}}]}.
+Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_items, encabezados, filas, items{p,r,titulo,texto}, nota, fuente, url); «captura»: titulo, nota=migas, items{p,r}=campos, texto=alt; «imagen»: texto=alt, nota=escena. Para partir un párrafo: «reemplazar» el [#i] por la primera mitad e «insertar_despues» del mismo i la segunda. Índices siempre referidos a la numeración de arriba.`;
+
+  const r = await preguntar<any>({ agente: 'contenido_parches', trabajo: 'estrategia', pensar: false, sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_PARCHES, max_tokens: 16000 });
+  if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin parches', costo: r.costo_usd || 0 };
+  const datos = limpiaSalida(r.datos);
+  const parches: any[] = (datos.parches || []).filter((p: any) => Number.isInteger(p.i) && p.i >= 0 && p.i < cuerpo.length);
+  // De mayor a menor índice: así los índices originales siguen valiendo.
+  const orden = parches.map((p, k) => ({ p, k })).sort((a, b) => b.p.i - a.p.i || a.k - b.k);
+  const nuevo = cuerpo.slice();
+  for (const { p } of orden) {
+    const bl = p.bloque ? normalizarBloque(p.bloque) : null;
+    if (p.op === 'eliminar') nuevo.splice(p.i, 1);
+    else if (p.op === 'reemplazar' && bl) nuevo.splice(p.i, 1, bl);
+    else if (p.op === 'insertar_despues' && bl) nuevo.splice(p.i + 1, 0, bl);
+    else if (p.op === 'insertar_antes' && bl) nuevo.splice(p.i, 0, bl);
+  }
+  const { error } = await supabase.from('de_contenido').update({
+    ...(datos.titulo ? { titulo: String(datos.titulo).slice(0, 80) } : {}),
+    ...(datos.h1 ? { h1: datos.h1 } : {}),
+    ...(datos.meta_desc ? { meta_desc: recortar(String(datos.meta_desc), 158) } : {}),
+    cuerpo: nuevo, estado: 'borrador',
+    brief: { ...(c.brief as any), correcciones: undefined },
+    actualizado_at: new Date().toISOString(),
+  }).eq('id', contenidoId);
+  if (error) return { ok: false, error: error.message, costo: r.costo_usd || 0 };
+  return { ok: true, costo: r.costo_usd || 0, palabras: aTextoPalabras(nuevo), parches: parches.length };
+}
+const aTextoPalabras = (bl: Bloque[]) => JSON.stringify(bl).split(/\s+/).length;
+
 export async function escribirBorrador(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number }> {
   const { data: c } = await supabase.from('de_contenido')
     .select('id, slug, seccion, brief, estado, cuerpo, titulo, h1, meta_desc').eq('id', contenidoId).maybeSingle();
@@ -334,6 +446,12 @@ export async function escribirBorrador(contenidoId: string): Promise<{ ok: boole
   if (!c.brief || !(c.brief as any).pregunta) return { ok: false, error: 'no tiene brief', costo: 0 };
 
   const b = c.brief as any as Brief;
+  // Con correcciones y una página ya escrita, se parcha; no se regenera.
+  if (b.correcciones?.length && ((c as any).cuerpo || []).length >= 10) {
+    const pr = await aplicarParches(contenidoId);
+    if (pr.ok) return pr;
+    // si los parches fallan, se cae a la reescritura completa de abajo
+  }
   const enlaces = (b.enlaces || []).map(s => `  /recursos/${s}/`).join('\n') || '  (ninguno)';
 
   /* Lo que hoy rankea (lo trajo contenido.competencia) y lo que el referee
@@ -403,27 +521,20 @@ Escribe la página.`;
   });
   if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin datos', costo: r.costo_usd || 0 };
 
-  // Normalizar al formato de bloques del motor.
-  const cuerpo: Bloque[] = (r.datos.cuerpo || []).map((x: any) => {
-    if (x.t === 'lista') return { t: 'lista', items: x.lista_items || [] };
-    if (x.t === 'resumen') return { t: 'resumen', items: x.lista_items || (x.items || []).map((i: any) => i.texto || i.p).filter(Boolean) };
-    if (x.t === 'glosario') return { t: 'glosario', items: (x.items || []).map((i: any) => ({ termino: i.termino || i.titulo || i.p, definicion: i.definicion || i.texto || i.r })).filter((i: any) => i.termino && i.definicion) };
-    if (x.t === 'imagen') return { t: 'imagen', url: x.url && /^https:\/\//.test(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
-    if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
-    if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
-    if (x.t === 'video') return { t: 'video', youtube_id: (x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\//, ''), titulo: x.titulo || x.texto || '' };
-    if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
-    if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
-    if (x.t === 'tabla') return { t: 'tabla', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}) };
-    if (x.t === 'cita') return { t: 'cita', texto: x.texto, fuente: x.fuente || '', ...(x.url ? { url: x.url } : {}) };
-    if (x.t === 'cta') return { t: 'cta', texto: x.texto, boton: x.boton || x.titulo || 'Ver más', url: x.url || '/contacto' };
-    /* gpt-5 manda los encabezados en «titulo» y no en «texto»; sin este
-       respaldo se perdían TODOS los h2 y el referee tumbaba la página por
-       «0 secciones h2» tres rondas seguidas (21-sep-2026). */
-    const texto = String(x.texto || x.titulo || '');
-    // gpt-5 numera los encabezados («1) …», «2. …»); el índice ya numera solo.
-    return { t: x.t, texto: /^h[23]$/.test(x.t) ? texto.replace(/^\s*\d{1,2}[).:-]\s*/, '') : texto };
-  }).filter((x: any) => x.items?.length || x.filas?.length || x.texto || x.escena || x.youtube_id || x.campos?.length);
+  r.datos = limpiaSalida(r.datos);
+  const previos = ((c as any).cuerpo || []) as any[];
+
+  const cuerpo: Bloque[] = (r.datos.cuerpo || []).map(normalizarBloque).filter(Boolean) as Bloque[];
+
+  /* Conservar las imágenes ya generadas: en una reescritura el modelo devuelve
+     los bloques sin url (o con otra); si el alt/título coincide con uno
+     anterior, se hereda la url y no se paga la foto otra vez. */
+  for (const b of cuerpo as any[]) {
+    if (!['imagen', 'diagrama', 'captura'].includes(b.t) || (b.url && /^https:\/\//.test(b.url))) continue;
+    const llave = (v: any) => String(v?.alt || v?.titulo || '').toLowerCase().slice(0, 60);
+    const prev = previos.find(q => q.t === b.t && q.url && llave(q) && llave(q) === llave(b));
+    if (prev) { b.url = prev.url; b.ancho = prev.ancho; b.alto = prev.alto; }
+  }
 
   /* Nada después de la cta final: la fecha de actualización y las fuentes las
      pone la plantilla. Un «Última actualización: …» suelto al final tumbaba la

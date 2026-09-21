@@ -492,7 +492,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       const filas: any[] = [];
       let offset = 0; let hayMas = true; let tot = total;
       while (hayMas && filas.length < 500) {
-        const j = await fetch(`/api/crm/whatsapp/inbox?${qs}&limit=200&offset=${offset}`, { cache: 'no-store' }).then(r => r.json());
+        /* DE DÓNDE SE LEE LA LISTA. El inbox sólo conoce conversaciones; las
+           listas que trae el armador nuevo pueden venir del ABM, que no tiene
+           ninguna. El query dice cuál es su origen (`fuente=`), y ése es el
+           único lugar donde hay que mirarlo: las dos rutas contestan con la
+           misma forma, así que el resto de esta función no se entera. */
+        const fuente = /(^|&)fuente=/.test(qs) ? '/api/crm/telefonia/candidatos' : '/api/crm/whatsapp/inbox';
+        const j = await fetch(`${fuente}?${qs}&limit=200&offset=${offset}`, { cache: 'no-store' }).then(r => r.json());
         const lote: any[] = j?.conversaciones || [];
         filas.push(...lote); offset += lote.length; hayMas = !!j?.hay_mas && lote.length > 0;
         tot = Number(j?.total_filtrado ?? tot);

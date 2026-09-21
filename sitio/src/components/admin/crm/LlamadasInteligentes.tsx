@@ -34,6 +34,7 @@ const Grabaciones = lazy(() => import('./whatsapp/Grabaciones'));
    arrastra `TablaEnterprise` entera, y lo primero que tiene que pintarse en
    esta pantalla son las listas a las que se puede llamar. */
 const TableroLlamadas = lazy(() => import('./TableroLlamadas'));
+const ArmadorLista = lazy(() => import('./ArmadorLista'));
 
 type Lista = {
   id: string;
@@ -84,161 +85,10 @@ const LISTAS: Lista[] = [
   },
 ];
 
-/* ══ ARMAR UNA LISTA A LA MEDIDA ══════════════════════════════════════════
-   Pedido del dueño (17-sep-2026): «debo poder crear una nueva lista y operarla
-   desde aquí con los filtros que seleccione de forma dinámica».
-
-   Las cinco de arriba cubren los cinco motivos de siempre, pero no dejan armar
-   «los rezagados de Guadalajara» ni «los míos que no han contestado». Esto no
-   inventa un motor de filtros nuevo: arma el MISMO query string que ya consume
-   el inbox —y por tanto la cabina—, así que cualquier filtro que aprenda el
-   inbox aparece aquí sin tocar nada.
-
-   Sin `search` a propósito: buscar por texto sirve para encontrar UNA
-   conversación, no para armar una jornada de llamadas. Quien busca «Lily» no
-   quiere llamarle a los once Lily. */
-const BANDEJAS: { id: string; l: string }[] = [
-  { id: 'todas', l: 'Todas' },
-  { id: 'accion', l: 'Requieren mi acción' },
-  { id: 'no_leidas', l: 'Te escribieron y no contestamos' },
-  { id: 'sin_respuesta', l: 'Escribimos y no contestaron' },
-  { id: 'mias', l: 'Asignadas a mí' },
-  { id: 'sin_asignar', l: 'Sin asignar' },
-];
-
-function Armador({ etapas, onListo, onCerrar }: {
-  etapas: { id: string; label: string }[];
-  onListo: (l: { titulo: string; qs: string }) => void; onCerrar: () => void;
-}) {
-  const [paso, setPaso] = useState<1 | 2>(1);
-  const [bandeja, setBandeja] = useState('todas');
-  const [etapa, setEtapa] = useState('');
-  const [estado, setEstado] = useState('');
-  const [previa, setPrevia] = useState<{ filas: any[]; total: number } | null>(null);
-  const [cargando, setCargando] = useState(false);
-
-  const qs = [`filtro=${bandeja}`, etapa ? `etapa=${etapa}` : '', estado ? `estado=${estado}` : ''].filter(Boolean).join('&');
-  const titulo = [BANDEJAS.find(b => b.id === bandeja)?.l, etapas.find(e => e.id === etapa)?.label,
-    estado === 'abierta' ? 'sin resolver' : estado === 'resuelta' ? 'ya resueltas' : ''].filter(Boolean).join(' · ');
-
-  /* EL PREVIEW ES EL NÚMERO BUENO, no una estimación. Antes la pantalla decía
-     «≈ 348 antes de cruzar filtros» porque los contadores en memoria se cruzan
-     pero no se multiplican. Preguntando de verdad con el query armado, el
-     número que ves ES el que va a marcar — y ver los nombres antes de que suene
-     el primer timbre es lo que evita descubrir a media jornada que la lista no
-     era la que creías. */
-  useEffect(() => {
-    let vivo = true;
-    setCargando(true);
-    const t = setTimeout(() => {
-      fetch(`/api/crm/whatsapp/inbox?${qs}&limit=60`, { cache: 'no-store' })
-        .then(r => r.json())
-        .then(j => { if (vivo) setPrevia({ filas: (j.conversaciones || []).filter((c: any) => !c.virtual), total: Number(j.total_filtrado || 0) }); })
-        .catch(() => { if (vivo) setPrevia({ filas: [], total: 0 }); })
-        .finally(() => { if (vivo) setCargando(false); });
-    }, 350);   // el debounce evita una consulta pesada por cada clic en un select
-    return () => { vivo = false; clearTimeout(t); };
-  }, [qs]);
-
-  const sel: any = { width: '100%', border: '1px solid #e0dfe6', borderRadius: 10, padding: '10px 12px', fontSize: 13.5, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' };
-  const rot: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', display: 'block', marginBottom: 6 };
-  const n = previa?.total ?? 0;
-
-  return (
-    <>
-      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.5)', zIndex: 960 }} />
-      <div role="dialog" aria-label="Nueva llamada inteligente" style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: 'min(980px, 95vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-        background: '#fff', borderRadius: 20, zIndex: 961, boxShadow: '0 24px 70px rgba(12,11,18,.34)', overflow: 'hidden',
-      }}>
-        {/* EL STEPPER. Dos pasos y no cinco: elegir a quién y confirmar. Un
-            asistente de cinco pantallas para armar una lista de llamadas pesa
-            más que la tarea. */}
-        <div style={{ padding: '18px 24px 0', borderBottom: '1px solid #f0eff3' }}>
-          <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>Nueva llamada inteligente</b>
-          <div style={{ display: 'flex', gap: 22, marginTop: 14 }}>
-            {[[1, 'A quién le llamas'], [2, 'Revisa y arranca']].map(([k, l]: any) => (
-              <span key={k} onClick={() => k === 1 && setPaso(1)}
-                style={{ paddingBottom: 10, borderBottom: `2px solid ${paso === k ? P.violeta : 'transparent'}`,
-                  color: paso === k ? P.violetaTinta : '#999', fontWeight: paso === k ? 800 : 600, fontSize: 13,
-                  cursor: k === 1 ? 'pointer' : 'default', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ width: 20, height: 20, borderRadius: 999, background: paso === k ? P.violetaTinta : '#ececec', color: paso === k ? '#fff' : '#999', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{k}</span>
-                {l}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          {/* ── Izquierda: los filtros ── */}
-          <div style={{ flex: '0 0 380px', padding: 22, borderRight: '1px solid #f0eff3', overflowY: 'auto' }}>
-            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Bandeja</span>
-              <select value={bandeja} onChange={e => setBandeja(e.target.value)} style={sel}>
-                {BANDEJAS.map(b => <option key={b.id} value={b.id}>{b.l}</option>)}
-              </select></label>
-            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Etapa del ciclo de vida</span>
-              <select value={etapa} onChange={e => setEtapa(e.target.value)} style={sel}>
-                <option value="">Cualquiera</option>
-                {etapas.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-              </select></label>
-            <label style={{ display: 'block', marginBottom: 14 }}><span style={rot}>Conversación</span>
-              <select value={estado} onChange={e => setEstado(e.target.value)} style={sel}>
-                <option value="">Como esté</option>
-                <option value="abierta">Sin resolver</option>
-                <option value="resuelta">Ya resueltas</option>
-              </select></label>
-            <p style={{ fontSize: 11.5, color: '#a5a2af', lineHeight: 1.55, margin: 0 }}>
-              De cualquier lista se quitan solos los que no tienen teléfono, los
-              marcados «no llamar» y los que ya se intentaron tres veces esta semana.
-            </p>
-          </div>
-
-          {/* ── Derecha: a quién vas a llamar, con nombre y apellido ── */}
-          <div style={{ flex: 1, minWidth: 0, padding: 22, overflowY: 'auto', background: '#fafafb' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginBottom: 12 }}>
-              <b style={{ fontSize: 30, letterSpacing: '-0.03em', color: n ? P.violetaTinta : '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{cargando ? '…' : n}</b>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>{n === 1 ? 'contacto' : 'contactos'}{titulo ? ` · ${titulo}` : ''}</span>
-            </div>
-            {!cargando && !n && <div style={{ fontSize: 13, color: '#6b7280' }}>Con esos filtros no queda nadie. Prueba con otra bandeja o quita la etapa.</div>}
-            <div style={{ display: 'grid', gap: 4 }}>
-              {(previa?.filas || []).map((c: any) => (
-                <div key={c.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 9, padding: '8px 11px', display: 'flex', gap: 9, alignItems: 'baseline' }}>
-                  {/* El nombre vive en `contacto`, no en la raíz de la fila:
-                      poniendo `c.nombre` salían puros teléfonos, y una lista de
-                      números no se revisa —no puedes reconocer a nadie—. */}
-                  <b style={{ fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.contacto?.nombre || c.telefono}
-                    {c.empresa?.nombre_comercial || c.empresa?.nombre
-                      ? <span style={{ fontWeight: 500, color: '#999' }}> · {c.empresa.nombre_comercial || c.empresa.nombre}</span> : null}
-                  </b>
-                  <span style={{ fontSize: 11.5, color: '#999', flexShrink: 0 }}>{c.contacto?.lifecycle_stage || ''}</span>
-                </div>
-              ))}
-            </div>
-            {n > (previa?.filas || []).length && (
-              <div style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 9 }}>
-                {/* Se dice cuántos no se enseñan: una lista cortada en silencio
-                    se lee como la lista entera. */}
-                y {n - (previa?.filas || []).length} más. Vas a poder revisarlos todos antes de marcar.
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ padding: '14px 22px', borderTop: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-          <div style={{ flex: 1 }} />
-          <button onClick={() => { setPaso(2); onListo({ titulo: titulo || 'Lista a la medida', qs }); }} disabled={!n || cargando}
-            style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
-              cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: '#fff' }}>
-            {n ? `Llamar a estos ${n}` : 'Llamar a estos'}
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
+/* El armador vive aparte desde el 21-sep-2026. Eran tres desplegables sobre el
+   inbox —bandeja, etapa, estado— y pasó a ser la pantalla de filtros que pidió
+   el dueño: fuente (CRM o prospección), giro, WhatsApp verificado, sucursales,
+   estado, calidad y todo lo que se excluye. Con eso ya no cabía aquí. */
 
 export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   /* ══ LA CABINA TAMBIÉN VIVE EN EL TELÉFONO (18-sep-2026) ═════════════════
@@ -389,8 +239,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
       )}
 
       {armando && (
-        <Armador etapas={LIFECYCLE}
-          onListo={l => { setArmando(false); setAMedida(l); }} onCerrar={() => setArmando(false)} />
+        <Suspense fallback={null}>
+          <ArmadorLista etapas={LIFECYCLE}
+            onListo={l => { setArmando(false); setAMedida(l); }} onCerrar={() => setArmando(false)} />
+        </Suspense>
       )}
 
       {cargando ? <Cargando texto="Contando a quién se le puede llamar…" alto={220} /> : (

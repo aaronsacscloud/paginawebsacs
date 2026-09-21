@@ -348,10 +348,19 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
         const corto = /max_tokens|length|MAX_TOKENS/i.test(String(r.stop));
         // Para diagnosticar QUÉ se cortó (¿contenido real o el modelo dando vueltas?).
         if (corto && process.env.IA_DUMP_CORTES) { try { (await import('node:fs')).writeFileSync(`${process.env.IA_DUMP_CORTES}/corte-${p.agente}-${Date.now()}.txt`, r.texto || ''); } catch {} }
-        const porque = corto
-          ? `la respuesta se cortó en ${p.max_tokens || 4000} tokens: manda menos elementos por lote`
-          : `la respuesta no es JSON válido (fin: ${r.stop})`;
+        /* Degeneración: el modelo entra en bucle («/*x*\/;/*x*\/;…» 228 veces en
+           novias, 22-sep-2026) y llena el tope con basura. No es un problema de
+           tamaño: es una falla de esa corrida. Se prueba con el siguiente
+           proveedor en vez de devolver «se cortó». */
+        const cola = String(r.texto || '').slice(-400);
+        const degenerado = corto && cola.length > 100 && (cola.match(new RegExp(cola.slice(-40).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length >= 4;
+        const porque = degenerado
+          ? `el modelo degeneró en un bucle y llenó ${p.max_tokens || 4000} tokens de basura`
+          : corto
+            ? `la respuesta se cortó en ${p.max_tokens || 4000} tokens: manda menos elementos por lote`
+            : `la respuesta no es JSON válido (fin: ${r.stop})`;
         if (run_id) await finishAgentRun({ run_id, status: 'failed', error: { porque, stop: r.stop }, latency_ms: Date.now() - t0 });
+        if (degenerado) { fallos.push(`${prov}: ${porque}`); continue; }
         return { ok: false, datos: null, texto: r.texto, costo_usd: costo, run_id, error: porque, proveedor: prov, modelo };
       }
 

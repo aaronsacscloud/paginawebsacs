@@ -67,7 +67,7 @@ if (reescribir) {
   process.stdout.write('  escribiendo borrador nuevo con la investigación… ');
   const w = await escribirBorrador(c.id);
   costo += w.costo;
-  console.log(w.ok ? `${w.palabras} palabras · $${w.costo.toFixed(2)}` : `FALLÓ: ${w.error}`);
+  console.log(w.ok ? `${w.parches !== undefined ? w.parches + ' parches · ' : ''}${w.palabras} palabras · $${w.costo.toFixed(2)}` : `FALLÓ: ${w.error}`);
   if (!w.ok) process.exit(1);
   const { data: f2 } = await supabase.from('de_contenido').select('brief').eq('id', c.id).single();
   brief = f2.brief;
@@ -113,7 +113,7 @@ for (let ronda = 0; ronda <= MAX; ronda++) {
   process.stdout.write(`  reescribiendo con ${v.fallos.length} correcciones… `);
   const w = await escribirBorrador(c.id);
   costo += w.costo;
-  console.log(w.ok ? `${w.palabras} palabras · $${w.costo.toFixed(2)}` : `FALLÓ: ${w.error}`);
+  console.log(w.ok ? `${w.parches !== undefined ? w.parches + ' parches · ' : ''}${w.palabras} palabras · $${w.costo.toFixed(2)}` : `FALLÓ: ${w.error}`);
   if (!w.ok) break;
   const { data: f2 } = await supabase.from('de_contenido').select('brief').eq('id', c.id).single();
   brief = f2.brief;
