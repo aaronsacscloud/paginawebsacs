@@ -30,6 +30,10 @@ import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 const Cabina = lazy(() => import('./whatsapp/Cabina'));
 const Grabaciones = lazy(() => import('./whatsapp/Grabaciones'));
+/* Las cuatro listas de lo que salió de llamar. Perezoso como los otros dos:
+   arrastra `TablaEnterprise` entera, y lo primero que tiene que pintarse en
+   esta pantalla son las listas a las que se puede llamar. */
+const TableroLlamadas = lazy(() => import('./TableroLlamadas'));
 
 type Lista = {
   id: string;
@@ -253,7 +257,6 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   const [cargando, setCargando] = useState(true);
   const [elegida, setElegida] = useState<Lista | null>(null);
   const [tel, setTel] = useState<{ ok: boolean; faltantes: string[] } | null>(null);
-  const [previas, setPrevias] = useState<any[]>([]);
   /* A qué hora contesta ESTA gente, medido de tus propias llamadas. Llamar a la
      hora buena es lo más barato que existe para subir la contactabilidad: no
      cuesta una función nueva, cuesta mirar el reloj antes de empezar.
@@ -261,10 +264,6 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
      en el endpoint de la lista: dos pantallas preguntando lo mismo a dos sitios
      distintos terminan contradiciéndose. */
   const [horas, setHoras] = useState<any[]>([]);
-  /* ¿Esto está sirviendo? Seis cifras, no quince: un tablero que no se mira es
-     un tablero que no existe. Se pide aparte porque tarda más que la lista y no
-     puede retrasar lo primero que ves. */
-  const [informe, setInforme] = useState<any>(null);
   const [verSesion, setVerSesion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -280,10 +279,14 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
        encendida. Dos pantallas preguntando lo mismo a dos sitios distintos
        terminan contradiciéndose. */
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo) { setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); setPrevias(j.sesiones || []); } })
+      .then(r => r.json()).then(j => { if (vivo) setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); })
       .catch(() => {});
+    /* De `/informe` ya sólo se usa UNA cosa: a qué hora contesta esta gente.
+       El resto de ese endpoint —las seis cifras de treinta días— dejó de
+       pintarse aquí el 21-sep-2026; el endpoint sigue vivo porque de él come
+       Reportes. */
     fetch('/api/crm/telefonia/informe?dias=30', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo && !j?.error) { setInforme(j); setHoras(j.horas || []); } }).catch(() => {});
+      .then(r => r.json()).then(j => { if (vivo && !j?.error) setHoras(j.horas || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
 
@@ -423,126 +426,24 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
         </div>
       )}
 
-      {/* ══ ¿ESTO ESTÁ SIRVIENDO? ════════════════════════════════════════════
-          La otra mitad del trabajo: llamar rápido se ve en la cabina; si sirve,
-          no se veía en ningún lado. Seis cifras de los últimos treinta días, y
-          las dos que de verdad mandan van marcadas: cuántas CONVERSACIONES
-          (no llamadas marcadas, que suben solas marcando más) y cuántas
-          promesas se están cayendo. Rejilla que se acomoda sola: en el teléfono
-          quedan de dos en dos. */}
-      {informe && informe.llamadas > 0 && (
-        <div style={{ marginTop: 22 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Cómo van tus llamadas · últimos {informe.dias} días</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 7 }}>
-            {[
-              { n: informe.conversaciones, t: 'conversaciones', d: `de ${informe.llamadas} llamadas · ${informe.contactabilidad}% contesta`, fuerte: true },
-              { n: informe.minutos_hablados, t: 'minutos hablados', d: informe.costo_por_conversacion ? `US$ ${informe.costo_por_conversacion} por conversación` : 'con gente de verdad' },
-              { n: informe.citas, t: 'citas de esas llamadas', d: informe.cita_por_conversacion ? `${informe.cita_por_conversacion}% de las conversaciones` : 'todavía ninguna' },
-              { n: informe.promesas_vencidas, t: 'promesas vencidas', d: informe.promesas_vencidas ? 'prometido y sin hacer: están en Mi día' : 'nada prometido sin cumplir', alerta: informe.promesas_vencidas > 0 },
-            ].map(c => (
-              <div key={c.t} style={{
-                background: '#fff', border: `1px solid ${c.alerta ? '#f0c4bd' : '#ececec'}`,
-                borderLeft: `3px solid ${c.alerta ? '#C0554E' : c.fuerte ? P.violeta : '#ececec'}`,
-                borderRadius: 10, padding: '10px 13px',
-              }}>
-                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: c.alerta ? '#C0554E' : '#16181d' }}>{c.n}</div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#4B5563' }}>{c.t}</div>
-                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, lineHeight: 1.4 }}>{c.d}</div>
-              </div>
-            ))}
-          </div>
-          {/* Las citas que ya pasaron y nadie cerró: es trabajo que se escapa
-              en silencio, distinto de «no asistió». */}
-          {/* Lo que se puede arreglar HOY: citas futuras que no están en el
-              calendario de nadie. Va antes que el histórico a propósito. */}
-          {informe.citas_en_riesgo > 0 && (
-            <div style={{ fontSize: 12.5, color: '#9a6a10', background: '#FFF4E5', border: '1px solid #f3d9a4', borderRadius: 10, padding: '9px 12px', marginTop: 8, fontWeight: 700 }}>
-              ⚠️ {informe.citas_en_riesgo} {informe.citas_en_riesgo === 1 ? 'cita que viene no está' : 'citas que vienen no están'} en Google Calendar: no le va a sonar a nadie. Conecta tu cuenta en Ajustes ▸ Agenda y vuelve a agendarlas.
-            </div>
-          )}
-          {informe.citas_pasadas > 0 && (
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 7 }}>
-              De {informe.citas_pasadas} citas que ya pasaron: {informe.citas_asistieron} asistieron
-              {informe.citas_no_asistieron > 0 && `, ${informe.citas_no_asistieron} no`}
-              {informe.citas_sin_cerrar > 0 && <b style={{ color: '#9a6a10' }}> · {informe.citas_sin_cerrar} sin cerrar en la agenda</b>}
-            </div>
-          )}
-          {/* Quién está llamando. Sin ranking ni colores: los números bastan. */}
-          {(informe.vendedores || []).length > 1 && (
-            <div style={{ display: 'grid', gap: 4, marginTop: 9 }}>
-              {informe.vendedores.map((v: any) => (
-                <div key={v.id} style={{ fontSize: 12, color: '#4B5563', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <b style={{ minWidth: 150, color: '#16181d' }}>{v.nombre}</b>
-                  <span>{v.llamadas} llamadas</span>
-                  <span>· {v.conversaciones} conversaciones</span>
-                  <span>· {v.citas} citas</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* ══ LO QUE SALIÓ DE LLAMAR ══════════════════════════════════════════
+          Aquí vivían tres bloques sueltos —seis cifras de treinta días, los
+          compromisos y las jornadas anteriores— y los tres se retiraron el
+          21-sep-2026 por decisión del dueño: «quita los cards que aparecen de
+          KPIs y sólo vamos a agregar un data table que muestre en tabs…».
 
-      {/* ══ LO QUE PROMETISTE ════════════════════════════════════════════════
-          Los compromisos vivos de TODAS las jornadas, no sólo de la que está
-          abierta. Al llegar en la mañana esto es lo que hay que mirar antes de
-          armar la lista del día: una promesa sólo sirve si la ves ANTES de que
-          se te pase. */}
-      {(informe?.compromisos || []).length > 0 && (
-        <div style={{ marginTop: 22 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Lo que prometiste al hablar</span>
-          <div style={{ display: 'grid', gap: 6, marginTop: 7 }}>
-            {informe.compromisos.map((c: any) => {
-              const d = new Date(c.cuando);
-              const hoyCdmx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-              const dia = c.fecha === hoyCdmx ? 'hoy' : d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
-              return (
-                <div key={`${c.tipo}-${c.id}`} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: c.fecha === hoyCdmx ? '#C0554E' : '#5B4BD6', minWidth: 96 }}>
-                    {dia}{c.tipo === 'llamada' ? ` · ${d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}` : ''}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 180, fontSize: 12.5, color: '#16181d' }}>
-                    {c.quien ? <b>{c.quien}</b> : null}{c.quien ? ' · ' : ''}{c.que}
-                  </span>
-                  <span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: c.tipo === 'reunion' ? (c.en_google ? '#EAF8F2' : '#FFF4E5') : '#EEECFE', color: c.tipo === 'reunion' ? (c.en_google ? '#1E8A63' : '#9a6a10') : '#5B4BD6' }}>
-                    {c.tipo === 'reunion' ? (c.en_google ? 'En Google Calendar' : 'Sin Google Calendar') : 'Llamada prometida'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          No es mover cosas de sitio. Las cifras («24 conversaciones · 96
+          minutos · 8 citas») informaban cómo vas, pero con ninguna se podía
+          hacer nada: no dicen a quién le toca. Los compromisos y las jornadas
+          sí eran accionables, pero eran listas planas sin buscar, ordenar ni
+          filtrar, y con dieciséis jornadas ya no se encontraba la de ayer.
 
-      {previas.length > 0 && (
-        /* Las jornadas anteriores viven AQUÍ y no sólo dentro de la cabina.
-           Es lo primero que se pregunta al llegar —«¿cómo me fue ayer y qué
-           quedó sin marcar?»— y tenerlo detrás de elegir una lista obligaba a
-           fingir que ibas a empezar otra para poder mirar la de ayer. */
-        <div style={{ marginTop: 22 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>Tus jornadas anteriores</span>
-          <div style={{ display: 'grid', gap: 6, marginTop: 7 }}>
-            {previas.slice(0, 6).map(p => {
-              const viva = ['activa', 'pausada'].includes(p.estado);
-              return (
-                <div key={p.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#16181d' }}>{p.nombre || 'Jornada'}</div>
-                    <div style={{ fontSize: 11.5, color: '#6b7280' }}>
-                      {String(p.created_at).slice(0, 10)} · {p.total} en lista · {p.contestadas} contestaron · {p.buzon} buzón · {p.sin_contestar} sin contestar
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: viva ? '#EAF8F2' : '#f4f4f6', color: viva ? '#1E8A63' : '#4B5563' }}>{p.estado}</span>
-                  <button onClick={() => setVerSesion(p.id)}
-                    style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#fff', border: `1.5px solid ${P.violeta}`, color: P.violetaTinta, borderRadius: 8, padding: '5px 11px' }}>
-                    {viva ? 'Seguir' : 'Ver'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          Ahora son cuatro pestañas de una tabla de verdad, y cada una contesta
+          una pregunta con nombre y apellido. El histórico de treinta días que
+          se pierde aquí vive en Reportes, que es su sitio. */}
+      <Suspense fallback={<Cargando texto="Cargando lo que salió de tus llamadas…" alto={180} />}>
+        <TableroLlamadas onAbrirSesion={id => setVerSesion(id)} />
+      </Suspense>
 
       <p style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 14, maxWidth: 620, lineHeight: 1.55 }}>
         De cualquier lista se quitan solos los que no tienen teléfono, los marcados
