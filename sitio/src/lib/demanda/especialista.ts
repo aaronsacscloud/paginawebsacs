@@ -329,7 +329,7 @@ Secciones de la madre:\n${((c.cuerpo || []) as Bloque[]).filter(x => x.t === 'h2
       clave_idem: clave, tipo: 'SEO_CONTENT', titulo: ang.pregunta || ang.titulo,
       descripcion: `Ángulo «${ang.tipo}» derivado de /${c.seccion}/${c.slug}/: ${ang.por_que}`,
       evidencia: { angulo: ang.tipo, padre: `/${c.seccion}/${c.slug}/`, padre_id: c.id, titulo_propuesto: ang.titulo, seccion_propuesta: ang.seccion, slug_propuesto: ang.slug, giro: b.giro || null },
-      score: 60, desglose: { angulo: true }, pesos_version: 'angulos-1', accion_recomendada: 'Escribir la pieza hermana y enlazarla con la madre en ambos sentidos', esfuerzo: 'M', riesgo: 'LOW', estado: 'nueva',
+      score: 60, desglose: { angulo: true }, pesos_version: 0 /* entero: la versión de pesos no aplica a un ángulo */, accion_recomendada: 'Escribir la pieza hermana y enlazarla con la madre en ambos sentidos', esfuerzo: 'M', riesgo: 'LOW', estado: 'nueva',
     });
     if (!error) creados++;
   }
