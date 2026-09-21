@@ -47,6 +47,36 @@ siguientes son los que faltan ahí y que deciden si la página se usa.
 Pasa si: honestidad ≥ 9, contesta ≥ 8, promedio ≥ 8, mejor que la competencia,
 y los criterios 8, 10, 11, 12, 13, 15 y 6 en ok. Máximo 3 reescrituras.
 
+## Los 10 criterios de IA y agentes que van más allá del referee
+
+Lo que un especialista en búsqueda con IA revisa ADEMÁS de los 18 (viven en
+`lib/demanda/especialista.ts` → `CRITERIOS_AGENTES`):
+
+| # | Criterio | Qué exige |
+|---|---|---|
+| 1 | llms.txt / llms-full.txt | La pieza sale ahí con su resumen (= la respuesta, no el título) |
+| 2 | Rastreadores de IA permitidos y rápidos | robots ya permite GPTBot/ClaudeBot/PerplexityBot/Google-Extended; falta medir < 1.5 s sin JS |
+| 3 | Entidad + categoría en la misma frase | «Sacs, el sistema para tiendas de moda en México (sacscloud.com)» al menos una vez; `knowsAbout` con el giro |
+| 4 | La pregunta en 3 formas | H2 en forma de pregunta; variantes «¿qué sistema me recomiendas…?», «¿existe un software que…?» |
+| 5 | Todo dato extraíble sin ver la imagen | El diagrama con caption/tabla; tablas ≤ 6 columnas; nada solo en imagen |
+| 6 | Cifras con atribución en línea | «486,645 matrimonios en 2024 (INEGI)» en la misma frase, además del enlace |
+| 7 | Qué cambió y cuándo | dateModified real + línea visible «actualizado: qué cambió» |
+| 8 | Acciones que un agente puede ejecutar | Agendar sin fricción, calculadora con parámetros en URL, MCP/API cuando exista |
+| 9 | Estar en las fuentes que las IAs ya citan | Los 3-5 dominios que citan para la pregunta (`de_ia_muestras.urls_citadas`): aparecer ahí |
+| 10 | Consistencia en terceros | Misma descripción/precio/categoría en Capterra, GetApp, Google Business, LinkedIn |
+
+## El loop después del referee (especialista.ts)
+
+```
+aprobada ──► contenido.especialista (SEO + IA/agentes) ──► de_contenido_pendientes ──► pestaña «Seguimiento»
+publicada ──► contenido.autoridad (cada 7 días: indexada, clics, posición, citas IA, enlaces) ──► pendientes «autoridad»
+publicada ──► contenido.angulos (3-5 piezas hermanas) ──► de_oportunidades ──► brief ──► … ──► referee
+```
+
+- Cada pendiente dice **quién**: `motor` (lo hace el ciclo) o `dueno` (grabar, subir capturas, conseguir una mención, confirmar un dato). El dueño tacha en «Seguimiento»; lo del motor se tacha solo.
+- Corrida manual: `scripts/especialistas-correr.mjs <slug> [--angulos]`.
+- Los tres handlers tienen política en `de_politicas` y corren al final del ciclo diario.
+
 ## El proceso, paso a paso
 
 ```

@@ -16,6 +16,7 @@ import './tecnico';
 import './indexar';
 import './contenido';
 import './calidad';
+import './especialista';
 import './seo';
 import './geo/medir';
 import './enlaces';

@@ -62,6 +62,12 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
   { tipo: 'contenido.borrador',    prioridad: 50 },
   { tipo: 'contenido.referee',     prioridad: 49 },
   { tipo: 'contenido.imagen',      prioridad: 48 },
+  /* Después de que una pieza pasó: los especialistas (SEO + IA/agentes) dejan
+     lo que le falta en de_contenido_pendientes; ya publicada, «autoridad» mide
+     y propone cada semana, y «ángulos» saca las piezas hermanas del tema. */
+  { tipo: 'contenido.especialista', prioridad: 47 },
+  { tipo: 'contenido.autoridad',    prioridad: 46 },
+  { tipo: 'contenido.angulos',      prioridad: 45 },
   { tipo: 'metricas.calcular',     prioridad: 52 },
   { tipo: 'atribucion.procesar', prioridad: 50 },
   { tipo: 'aprender.evaluar',    prioridad: 48 },
