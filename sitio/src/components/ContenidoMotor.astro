@@ -1,155 +1,334 @@
 ---
-// El lienzo de las páginas que publica el motor de demanda.
+// El lienzo de las páginas que publica el motor de demanda — la plantilla de
+// TODAS las guías, así que cada decisión de aquí se repite en cientos de páginas.
 //
-// Usa los mismos tokens del sitio (tipografías, colores, escala) para que una
-// página generada no se distinga de una escrita a mano — y si se distinguiera,
-// el problema no sería estético: una página que parece de segunda no la cita
-// nadie.
+// Tres columnas en escritorio: a la izquierda el temario FIJO (se queda
+// mientras bajas y marca la sección en la que vas), al centro el artículo, a
+// la derecha una tarjeta DISCRETA y fija con las dos acciones (agendar demo /
+// WhatsApp) — sin colores fuertes, para que acompañe la lectura y no la
+// interrumpa. En el celular el temario se pliega arriba y las dos acciones
+// viven en una barra fija abajo.
 //
-// Dos decisiones que sirven al objetivo de ser citados:
-//   · el índice con anclas, para que una IA pueda enlazar el APARTADO exacto
-//     que responde la pregunta, no la página entera;
-//   · la fecha de actualización visible, porque la frescura verificable es de
-//     las pocas señales que un modelo puede comprobar por su cuenta.
+// Lo que sirve al objetivo de ser citados: índice con anclas (una IA enlaza el
+// APARTADO exacto), migas con BreadcrumbList, fecha visible, autor = la
+// organización, y cada captura de Sacs con «Ver más funciones →» hacia la
+// landing del giro (el lector sigue su camino, no se queda en un callejón).
 import CierreArticulo from './CierreArticulo.astro';
+import { waLink, WHATSAPP_LEGIBLE } from '../lib/whatsapp';
 interface Props { pieza: any }
 const { pieza } = Astro.props;
 
 const fecha = (s: string | null) => s
   ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Mexico_City' }).format(new Date(s))
   : null;
+const url = `/${pieza.seccion}/${pieza.slug}/`;
+const urlAbs = `https://www.sacscloud.com${url}`;
+const giroLabel: string | null = pieza.giro?.label || null;
+const especialista = giroLabel ? `un especialista en ${giroLabel.toLowerCase()}` : 'un especialista del ramo';
+const wa = waLink(`Hola, leí «${pieza.titulo}» en sacscloud.com y tengo dudas.`);
+const waCompartir = `https://wa.me/?text=${encodeURIComponent(`${pieza.titulo} — ${urlAbs}`)}`;
+const minutos = Math.max(1, Math.round((pieza.palabras || 0) / 220));
+const migas = (pieza.migas || []) as { nombre: string; url: string }[];
 ---
 
-<article class="cm">
-  {pieza.vista_previa && (
-    <div class="cm-previa" role="status">
-      <strong>Vista previa</strong> · esta página no está publicada ({pieza.estado}). Solo la ves tú por tu sesión del CRM; los buscadores no la indexan.
-    </div>
-  )}
-  <header class="cm-cab">
-    <a class="cm-volver" href={`/${pieza.seccion}/`}>← {pieza.seccion === 'comparar' ? 'Comparativas' : pieza.seccion === 'software-para' ? 'Software para tu negocio' : pieza.seccion.startsWith('guias/') && pieza.giro ? `Guías para ${pieza.giro.label.toLowerCase()}` : 'Recursos'}</a>
-    <h1>{pieza.h1}</h1>
-    {pieza.meta_desc && <p class="cm-entrada">{pieza.meta_desc}</p>}
-    <p class="cm-meta">
-      {pieza.publicado_at && <time datetime={pieza.publicado_at}>Publicado el {fecha(pieza.publicado_at)}</time>}
-      {pieza.actualizado_at && pieza.actualizado_at !== pieza.publicado_at &&
-        <>{pieza.publicado_at ? ' · ' : ''}<time datetime={pieza.actualizado_at}>Actualizado el {fecha(pieza.actualizado_at)}</time></>}
-      {pieza.palabras > 0 && <> · {Math.max(1, Math.round(pieza.palabras / 220))} min de lectura</>}
-    </p>
-  </header>
+<div class="cm-progreso" aria-hidden="true"><span id="cm-progreso-barra"></span></div>
 
-  {pieza.portada && (
-    <figure class="cm-portada">
-      <img src={pieza.portada.url} alt={pieza.portada.alt} width="1200" height="630" fetchpriority="high" decoding="async" />
-    </figure>
-  )}
-
-  {pieza.indice.length > 0 && (
-    <nav class="cm-indice" aria-label="Contenido de la página">
-      <p>En esta página</p>
-      <ol>{pieza.indice.map((i: any) => <li><a href={`#${i.ancla}`}>{i.texto}</a></li>)}</ol>
-    </nav>
-  )}
-
-  <div class="cm-cuerpo" set:html={pieza.html} />
-
-  {/* Hub-and-spoke: el hub enlaza a TODOS sus spokes agrupados por intención;
-      un spoke enlaza al hub y a dos hermanos. Es lo que hace que ninguna pieza
-      del giro quede suelta y que la autoridad suba por el árbol. */}
-  {pieza.hermanas?.length > 0 && (
-    <nav class="cm-mapa" aria-label={pieza.es_hub ? 'Mapa del tema' : 'Sigue leyendo'}>
-      <p class="cm-mapa-t">{pieza.es_hub ? `Todo sobre este tema para ${pieza.giro?.label?.toLowerCase() || 'tu giro'}` : 'Sigue leyendo'}</p>
-      {['entender', 'hacer', 'comparar', 'casos'].map(g => {
-        const xs = pieza.hermanas.filter((h: any) => h.intencion === g);
-        if (!xs.length) return null;
-        const nombre = { entender: 'Entender', hacer: 'Hacer: plantillas y calculadoras', comparar: 'Comparar', casos: 'Casos' }[g];
-        return (
-          <div class="cm-mapa-grupo">
-            {pieza.es_hub && <p class="cm-mapa-g">{nombre}</p>}
-            <ul>{xs.map((h: any) => <li><a href={h.url}>{h.es_hub ? `La guía completa: ${h.titulo}` : h.titulo}</a>{h.meta_desc && pieza.es_hub && <span> — {h.meta_desc}</span>}</li>)}</ul>
-          </div>
-        );
-      })}
-    </nav>
-  )}
-
-  {/* El cierre manda al giro de quien lee, no a un /contacto genérico: quien
-      llegó buscando cómo llevar apartados de novias quiere ver qué hace Sacs
-      con una boutique de novias, no «ver cómo funciona». Si la pieza no tiene
-      giro, se cae al cierre general. */}
-  {pieza.giro ? (
-    <footer class="cm-pie cm-pie-giro">
-      {pieza.giro.image && <img class="cm-giro-foto" src={pieza.giro.image} alt="" width="320" height="220" loading="lazy" decoding="async" />}
-      <div class="cm-giro-texto">
-        <p class="cm-giro-eyebrow">Sacs para {pieza.giro.label}</p>
-        <p class="cm-giro-titulo">Así se lleva esto en Sacs, con tu catálogo y tus tallas.</p>
-        <p class="cm-giro-desc">{pieza.giro.description}. Sin contratos, desde $810 al mes por tienda.</p>
-        <div class="cm-giro-acciones">
-          <a class="cm-boton" href={pieza.giro.href}>Ver Sacs para {pieza.giro.label.toLowerCase()}</a>
-          <a class="cm-boton-sec" href="/contacto">Hablar con alguien del ramo</a>
-        </div>
+<div class="cm-page">
+  {/* ── Temario fijo (escritorio) ── */}
+  <aside class="cm-rail cm-rail-izq" aria-label="Temario">
+    <div class="cm-sticky">
+      {pieza.indice.length > 0 && (
+        <nav class="cm-toc" aria-label="Contenido de la página">
+          <p class="cm-toc-t">En esta página</p>
+          <ol>{pieza.indice.map((i: any) => <li><a href={`#${i.ancla}`} data-toc={i.ancla}>{i.texto}</a></li>)}</ol>
+        </nav>
+      )}
+      <div class="cm-utiles">
+        <a class="cm-util" href={waCompartir} target="_blank" rel="noopener">Compartir por WhatsApp</a>
+        <button class="cm-util" type="button" id="cm-copiar" data-url={urlAbs}>Copiar enlace</button>
+        <button class="cm-util" type="button" onclick="window.print()">Imprimir / PDF</button>
       </div>
-    </footer>
-  ) : null}
+    </div>
+  </aside>
 
-  {/* El cierre grande, como el home: agenda con disponibilidad ahí mismo o WhatsApp. */}
-  <CierreArticulo titulo={pieza.titulo} giro={pieza.giro?.label || null} url={`/${pieza.seccion}/${pieza.slug}/`} />
-</article>
+  <article class="cm">
+    {pieza.vista_previa && (
+      <div class="cm-previa" role="status">
+        <strong>Vista previa</strong> · esta página no está publicada ({pieza.estado}). Solo la ves tú por tu sesión del CRM; los buscadores no la indexan.
+      </div>
+    )}
+
+    <header class="cm-cab">
+      {migas.length > 0 && (
+        <nav class="cm-migas" aria-label="Estás en">
+          {migas.map((m, i) => (
+            <>{i > 0 && <span aria-hidden="true">›</span>}{i < migas.length - 1 ? <a href={m.url.replace('https://www.sacscloud.com', '')}>{m.nombre}</a> : <span class="cm-migas-actual">{m.nombre}</span>}</>
+          ))}
+        </nav>
+      )}
+      <h1>{pieza.h1}</h1>
+      {pieza.meta_desc && <p class="cm-entrada">{pieza.meta_desc}</p>}
+      <p class="cm-meta">
+        <span class="cm-autor"><span class="cm-autor-s" aria-hidden="true">S</span> Equipo de Sacs</span>
+        {pieza.publicado_at && <> · <time datetime={pieza.publicado_at}>{fecha(pieza.publicado_at)}</time></>}
+        {pieza.actualizado_at && pieza.actualizado_at !== pieza.publicado_at && <> · <time datetime={pieza.actualizado_at}>actualizada el {fecha(pieza.actualizado_at)}</time></>}
+        <> · {minutos} min de lectura</>
+      </p>
+    </header>
+
+    {pieza.portada && (
+      <figure class="cm-portada">
+        <img src={pieza.portada.url} alt={pieza.portada.alt} width="1200" height="630" fetchpriority="high" decoding="async" />
+      </figure>
+    )}
+
+    {/* Temario plegable: solo se ve donde no cabe el rail (celular/tablet). */}
+    {pieza.indice.length > 0 && (
+      <details class="cm-toc-movil">
+        <summary>En esta página · {pieza.indice.length} secciones</summary>
+        <ol>{pieza.indice.map((i: any) => <li><a href={`#${i.ancla}`}>{i.texto}</a></li>)}</ol>
+      </details>
+    )}
+
+    <div class="cm-cuerpo" set:html={pieza.html} />
+
+    <div class="cm-compartir">
+      <span>¿Te sirvió? Pásala a quien la necesite:</span>
+      <a href={waCompartir} target="_blank" rel="noopener">WhatsApp</a>
+      <button type="button" class="cm-copiar-2" data-url={urlAbs}>Copiar enlace</button>
+    </div>
+
+    <aside class="cm-autoria">
+      <span class="cm-autor-s cm-autor-s-g" aria-hidden="true">S</span>
+      <div>
+        <p class="cm-autoria-t">Escrito por el equipo de Sacs</p>
+        <p>El sistema para marcas y tiendas de moda en México. Lo que dice esta guía se revisa contra el producto, precios de lista y fuentes verificables; si algo cambia, se actualiza y se pone la fecha. <a href="/nosotros">Quiénes somos →</a></p>
+      </div>
+    </aside>
+
+    {/* Hub-and-spoke: el hub enlaza a TODOS sus spokes agrupados por intención;
+        un spoke enlaza al hub y a dos hermanos. */}
+    {pieza.hermanas?.length > 0 && (
+      <nav class="cm-mapa" aria-label={pieza.es_hub ? 'Mapa del tema' : 'Sigue leyendo'}>
+        <p class="cm-mapa-t">{pieza.es_hub ? `Todo sobre este tema para ${giroLabel?.toLowerCase() || 'tu giro'}` : 'Sigue leyendo'}</p>
+        {['entender', 'hacer', 'comparar', 'casos'].map(g => {
+          const xs = pieza.hermanas.filter((h: any) => h.intencion === g);
+          if (!xs.length) return null;
+          const nombre = { entender: 'Entender', hacer: 'Hacer: plantillas y calculadoras', comparar: 'Comparar', casos: 'Casos' }[g];
+          return (
+            <div class="cm-mapa-grupo">
+              {pieza.es_hub && <p class="cm-mapa-g">{nombre}</p>}
+              <ul>{xs.map((h: any) => <li><a href={h.url}>{h.es_hub ? `La guía completa: ${h.titulo}` : h.titulo}</a>{h.meta_desc && pieza.es_hub && <span> — {h.meta_desc}</span>}</li>)}</ul>
+            </div>
+          );
+        })}
+      </nav>
+    )}
+
+    {pieza.giro && (
+      <footer class="cm-pie cm-pie-giro">
+        {pieza.giro.image && <img class="cm-giro-foto" src={pieza.giro.image} alt="" width="320" height="220" loading="lazy" decoding="async" />}
+        <div class="cm-giro-texto">
+          <p class="cm-giro-eyebrow">Sacs para {pieza.giro.label}</p>
+          <p class="cm-giro-titulo">Así se lleva esto en Sacs, con tu catálogo y tus tallas.</p>
+          <p class="cm-giro-desc">{pieza.giro.description}. Sin contratos, desde $810 al mes por tienda.</p>
+          <div class="cm-giro-acciones">
+            <a class="cm-boton" href={pieza.giro.href}>Ver Sacs para {pieza.giro.label.toLowerCase()}</a>
+            <a class="cm-boton-sec" href="/contacto">Hablar con alguien del ramo</a>
+          </div>
+        </div>
+      </footer>
+    )}
+
+  </article>
+
+  {/* ── Tarjeta fija y discreta con las dos acciones (escritorio ancho) ── */}
+  <aside class="cm-rail cm-rail-der" aria-label="Agenda una demo">
+    <div class="cm-sticky">
+      <div class="cm-tarjeta">
+        <p class="cm-tarjeta-e">¿Lo quieres ver en tu tienda?</p>
+        <p class="cm-tarjeta-t">Agenda una demo con {especialista}</p>
+        <p class="cm-tarjeta-p">30 minutos, en línea, con tus modelos y tus tallas. Sin compromiso.</p>
+        <a class="cm-tarjeta-b" href="#agenda">Elegir horario</a>
+        <a class="cm-tarjeta-wa" href={wa} target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.3-.6-.4zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
+          O envía un WhatsApp
+        </a>
+        <p class="cm-tarjeta-n">{WHATSAPP_LEGIBLE} · respondemos hoy</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+{/* El cierre grande, a todo lo ancho, fuera de la rejilla. */}
+<CierreArticulo titulo={pieza.titulo} giro={giroLabel} url={url} />
+
+{/* Barra fija abajo en el celular: las mismas dos acciones, siempre a la mano. */}
+<div class="cm-barra" aria-label="Agenda una demo">
+  <a class="cm-barra-demo" href="#agenda">Agendar demo</a>
+  <a class="cm-barra-wa" href={wa} target="_blank" rel="noopener">WhatsApp</a>
+</div>
+
+<button class="cm-arriba" type="button" id="cm-arriba" aria-label="Volver arriba" hidden>↑</button>
+
+<dialog class="cm-zoom" id="cm-zoom"><img alt="" /><button type="button" aria-label="Cerrar">✕</button></dialog>
+
+<script>
+  // Progreso de lectura, sección activa del temario, lightbox y copiar enlace.
+  // Todo con lo que trae el navegador: sin librerías, sin peso.
+  const barra = document.getElementById('cm-progreso-barra');
+  const arriba = document.getElementById('cm-arriba');
+  const art = document.querySelector('.cm');
+  const onScroll = () => {
+    if (!art || !barra) return;
+    const r = art.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    const p = Math.min(1, Math.max(0, -r.top / Math.max(total, 1)));
+    barra.style.transform = `scaleX(${p})`;
+    if (arriba) arriba.hidden = window.scrollY < 1200;
+  };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  arriba?.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // La sección que se está leyendo, marcada en el temario.
+  const enlaces = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc]')];
+  if (enlaces.length && 'IntersectionObserver' in window) {
+    const h2s = [...document.querySelectorAll<HTMLElement>('.cm-cuerpo h2[id]')];
+    const marcar = (id: string) => enlaces.forEach(a => a.classList.toggle('activo', a.dataset.toc === id));
+    const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) marcar(e.target.id); }, { rootMargin: '-25% 0px -60% 0px' });
+    h2s.forEach(h => io.observe(h));
+  }
+
+  // Zoom de capturas, diagramas y fotos.
+  const dlg = document.getElementById('cm-zoom') as HTMLDialogElement | null;
+  if (dlg) {
+    const img = dlg.querySelector('img')!;
+    document.querySelectorAll<HTMLImageElement>('.cm-cuerpo img[data-zoom]').forEach(i => {
+      i.style.cursor = 'zoom-in';
+      i.addEventListener('click', () => { img.src = i.currentSrc || i.src; img.alt = i.alt; dlg.showModal(); });
+    });
+    dlg.addEventListener('click', e => { if (e.target === dlg || (e.target as HTMLElement).tagName === 'BUTTON') dlg.close(); });
+  }
+
+  // Copiar enlace (los dos botones).
+  document.querySelectorAll<HTMLButtonElement>('#cm-copiar, .cm-copiar-2').forEach(b => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.url || location.href); const t = b.textContent; b.textContent = 'Enlace copiado ✓'; setTimeout(() => { b.textContent = t; }, 1800); } catch {}
+  }));
+</script>
 
 <style>
-  /* El nav es FIJO y no empuja nada: el hueco de arriba lo deja la página
-     (nav + aire), si no el título queda pegado al header. */
-  .cm { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-16)) var(--space-6) var(--space-24); }
-  @media (max-width: 640px) { .cm { padding: calc(var(--nav-alto) + var(--space-10)) var(--space-4) var(--space-16); } }
+  /* ── Rejilla: temario · artículo · tarjeta ── */
+  .cm-page {
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    max-width: 1280px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-12)) var(--space-6) 0;
+    column-gap: clamp(24px, 3vw, 48px);
+  }
+  @media (min-width: 960px) { .cm-page { grid-template-columns: 220px minmax(0, 1fr); } }
+  @media (min-width: 1240px) { .cm-page { grid-template-columns: 220px minmax(0, 720px) 260px; justify-content: center; } }
+  @media (max-width: 640px) { .cm-page { padding: calc(var(--nav-alto) + var(--space-8)) var(--space-4) 0; } }
+
+  .cm-rail { display: none; }
+  @media (min-width: 960px) { .cm-rail-izq { display: block; } }
+  @media (min-width: 1240px) { .cm-rail-der { display: block; } }
+  .cm-sticky { position: sticky; top: calc(var(--nav-alto) + 24px); }
+
+  /* Barra de progreso: una línea fina bajo el nav. */
+  .cm-progreso { position: fixed; left: 0; right: 0; top: var(--nav-alto); height: 3px; z-index: 40; pointer-events: none; }
+  .cm-progreso span { display: block; height: 100%; background: var(--color-primary-btn, #4470D8); transform-origin: left; transform: scaleX(0); transition: transform .1s linear; }
+
+  /* ── Temario ── */
+  .cm-toc-t { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; color: var(--color-text-secondary); margin: 0 0 var(--space-3); }
+  .cm-toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; border-left: 2px solid var(--color-border-light); }
+  .cm-toc a { display: block; padding: 6px 0 6px 14px; margin-left: -2px; border-left: 2px solid transparent; color: var(--color-text-secondary); text-decoration: none; font-size: .875rem; line-height: 1.4; }
+  .cm-toc a:hover { color: var(--color-text-primary); }
+  .cm-toc a.activo { color: var(--color-primary-texto); border-left-color: var(--color-primary-btn, #4470D8); font-weight: 600; }
+  .cm-utiles { margin-top: var(--space-6); display: grid; gap: 4px; }
+  .cm-util { text-align: left; background: none; border: 0; padding: 4px 0; font: inherit; font-size: .8125rem; color: var(--color-text-secondary); cursor: pointer; text-decoration: none; }
+  .cm-util:hover { color: var(--color-primary-texto); }
+
+  .cm-toc-movil { margin: var(--space-6) 0 0; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-bg-secondary); }
+  @media (min-width: 960px) { .cm-toc-movil { display: none; } }
+  .cm-toc-movil summary { padding: var(--space-3) var(--space-4); font-weight: 600; font-size: .9375rem; cursor: pointer; }
+  .cm-toc-movil ol { margin: 0; padding: 0 var(--space-4) var(--space-4) var(--space-8); display: grid; gap: 6px; }
+  .cm-toc-movil a { color: var(--color-text-primary); text-decoration: none; font-size: .9375rem; }
+
+  /* ── Tarjeta discreta ── */
+  .cm-tarjeta { border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: var(--space-5); background: var(--color-bg-secondary); display: grid; gap: var(--space-2); }
+  .cm-tarjeta-e { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; color: var(--color-text-secondary); margin: 0; }
+  .cm-tarjeta-t { font-family: var(--font-display); font-size: 1.0625rem; line-height: 1.3; margin: 0; color: var(--color-text-primary); text-wrap: balance; }
+  .cm-tarjeta-p { font-size: .8125rem; color: var(--color-text-secondary); margin: 0 0 var(--space-2); line-height: 1.5; }
+  .cm-tarjeta-b { display: block; text-align: center; padding: 10px 14px; border-radius: var(--radius-full); border: 1.5px solid var(--color-text-primary); color: var(--color-text-primary); text-decoration: none; font-weight: 600; font-size: .875rem; }
+  .cm-tarjeta-b:hover { background: var(--color-text-primary); color: #fff; }
+  .cm-tarjeta-wa { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius-full); color: #1E8A63; background: #EAF8F2; text-decoration: none; font-weight: 600; font-size: .875rem; }
+  .cm-tarjeta-wa:hover { background: #dcf3e8; }
+  .cm-tarjeta-n { font-size: .75rem; color: var(--color-text-secondary); margin: 2px 0 0; text-align: center; }
+
+  /* ── Barra fija abajo (celular) ── */
+  .cm-barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: none; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.92); backdrop-filter: blur(10px); border-top: 1px solid var(--color-border-light); }
+  /* Deja hueco a la derecha para la burbuja de WhatsApp del sitio, que flota ahí. */
+  @media (max-width: 959px) { .cm-barra { display: flex; padding-right: 92px; } }
+  .cm-barra a { flex: 1; text-align: center; padding: 11px 12px; border-radius: var(--radius-full); text-decoration: none; font-weight: 600; font-size: .9rem; }
+  .cm-barra-demo { background: var(--color-text-primary); color: #fff; }
+  .cm-barra-wa { background: #EAF8F2; color: #1E8A63; }
+
+  .cm-arriba { position: fixed; right: 18px; bottom: 90px; z-index: 34; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border-light); background: #fff; color: var(--color-text-primary); font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+  @media (min-width: 960px) { .cm-arriba { bottom: 28px; right: 28px; } }
+
+  .cm-zoom { border: 0; padding: 0; background: transparent; max-width: min(96vw, 1400px); }
+  .cm-zoom::backdrop { background: rgba(10,10,20,.82); }
+  .cm-zoom img { display: block; max-width: 96vw; max-height: 90vh; border-radius: var(--radius-lg); background: #fff; }
+  .cm-zoom button { position: absolute; top: -10px; right: -10px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; cursor: pointer; font-size: .9rem; }
+
+  /* ── El artículo ── */
+  .cm { min-width: 0; padding-bottom: var(--space-24); }
+  @media (max-width: 959px) { .cm { padding-bottom: calc(var(--space-24) + 64px); } }
 
   .cm-previa { margin: 0 0 var(--space-6); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: #FFF4E5; color: #7a5208; border: 1px solid #f3d9a4; font-size: .875rem; }
 
-  .cm-volver { font-size: .875rem; color: var(--color-text-secondary); text-decoration: none; }
-  .cm-volver:hover { color: var(--color-primary-texto); }
+  .cm-migas { display: flex; flex-wrap: wrap; gap: 6px; font-size: .8125rem; color: var(--color-text-secondary); margin-bottom: var(--space-4); }
+  .cm-migas a { color: inherit; text-decoration: none; }
+  .cm-migas a:hover { color: var(--color-primary-texto); }
+  .cm-migas-actual { color: var(--color-text-primary); max-width: 40ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .cm-cab h1 {
-    font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3rem);
-    line-height: 1.1; letter-spacing: -.02em; margin: var(--space-4) 0 var(--space-4);
+    font-family: var(--font-display); font-size: clamp(2rem, 4.6vw, 2.9rem);
+    line-height: 1.1; letter-spacing: -.02em; margin: 0 0 var(--space-4);
     color: var(--color-text-primary); text-wrap: balance;
   }
-  .cm-entrada { font-size: 1.1875rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
-  .cm-meta { font-size: .8125rem; color: var(--color-text-secondary); opacity: .75; margin: 0; }
+  .cm-entrada { font-size: 1.1875rem; line-height: 1.6; color: var(--color-text-secondary); margin: 0 0 var(--space-4); max-width: 62ch; }
+  .cm-meta { font-size: .8125rem; color: var(--color-text-secondary); margin: 0; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .cm-autor { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-primary); font-weight: 600; }
+  .cm-autor-s { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--color-text-primary); color: #fff; font-family: var(--font-display); font-size: .7rem; font-weight: 800; }
+  .cm-autor-s-g { width: 44px; height: 44px; font-size: 1.1rem; flex: none; }
 
   .cm-portada { margin: var(--space-8) 0 0; }
   .cm-portada img { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); aspect-ratio: 1200 / 630; object-fit: cover; }
 
-  .cm-indice {
-    background: var(--color-bg-secondary); border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); margin: var(--space-10) 0;
-  }
-  .cm-indice p { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; margin: 0 0 var(--space-3); color: var(--color-text-secondary); }
-  .cm-indice ol { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); }
-  .cm-indice a { color: var(--color-text-primary); text-decoration: none; font-size: .9375rem; }
-  .cm-indice a:hover { color: var(--color-primary-texto); text-decoration: underline; }
-
   /* El cuerpo lo genera lib/demanda/bloques.ts; aquí solo se le da forma. */
-  .cm-cuerpo { font-size: 1.0625rem; line-height: 1.75; color: var(--color-text-primary); }
+  .cm-cuerpo { font-size: 1.0625rem; line-height: 1.75; color: var(--color-text-primary); margin-top: var(--space-8); }
   .cm-cuerpo :global(h2) {
     font-family: var(--font-display); font-size: 1.625rem; line-height: 1.25;
-    margin: var(--space-12) 0 var(--space-4); letter-spacing: -.01em; scroll-margin-top: 90px; text-wrap: balance;
+    margin: var(--space-12) 0 var(--space-4); letter-spacing: -.01em; scroll-margin-top: calc(var(--nav-alto) + 24px); text-wrap: balance;
   }
-  .cm-cuerpo :global(h3) { font-family: var(--font-display); font-size: 1.25rem; margin: var(--space-8) 0 var(--space-3); scroll-margin-top: 90px; }
-  .cm-cuerpo :global(p) { margin: 0 0 var(--space-5); }
-  .cm-cuerpo :global(ul), .cm-cuerpo :global(ol) { margin: 0 0 var(--space-5); padding-left: var(--space-6); display: grid; gap: var(--space-2); }
+  .cm-cuerpo :global(h3) { font-family: var(--font-display); font-size: 1.25rem; margin: var(--space-8) 0 var(--space-3); scroll-margin-top: calc(var(--nav-alto) + 24px); }
+  .cm-cuerpo :global(p) { margin: 0 0 var(--space-5); max-width: 68ch; }
+  .cm-cuerpo :global(ul), .cm-cuerpo :global(ol) { margin: 0 0 var(--space-5); padding-left: var(--space-6); display: grid; gap: var(--space-2); max-width: 68ch; }
   .cm-cuerpo :global(a) { color: var(--color-primary-texto); text-underline-offset: 3px; }
   .cm-cuerpo :global(code) { background: var(--color-bg-secondary); padding: 1px 6px; border-radius: 5px; font-size: .9em; }
   .cm-cuerpo :global(strong) { font-weight: 650; }
 
-  /* Tablas: se desbordan a lo ancho en su propia caja, nunca el cuerpo. */
-  .cm-cuerpo :global(.de-tabla) { overflow-x: auto; margin: 0 0 var(--space-6); }
-  .cm-cuerpo :global(table) { width: 100%; border-collapse: collapse; font-size: .9375rem; min-width: 480px; }
+  /* Tablas: se desbordan a lo ancho en su propia caja, nunca el cuerpo; cabecera fija al bajar. */
+  .cm-cuerpo :global(.de-tabla) { overflow: auto; max-height: 70vh; margin: 0 0 var(--space-6); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); }
+  .cm-cuerpo :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .9375rem; min-width: 480px; }
   .cm-cuerpo :global(th) {
+    position: sticky; top: 0; background: var(--color-bg-secondary);
     text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
     color: var(--color-text-secondary); padding: var(--space-2) var(--space-3);
     border-bottom: 2px solid var(--color-border-light); font-weight: 600;
   }
   .cm-cuerpo :global(td) { padding: var(--space-3); border-bottom: 1px solid var(--color-border-light); vertical-align: top; }
-  .cm-cuerpo :global(.de-nota) { font-size: .8125rem; color: var(--color-text-secondary); margin-top: var(--space-2); }
+  .cm-cuerpo :global(tbody tr:nth-child(even) td) { background: rgba(0,0,0,.015); }
+  .cm-cuerpo :global(.de-nota) { font-size: .8125rem; color: var(--color-text-secondary); margin: var(--space-2) var(--space-3) var(--space-3); }
 
   /* La cita con su fuente: es lo que hace verificable una afirmación. */
   .cm-cuerpo :global(.de-cita) {
@@ -162,14 +341,14 @@ const fecha = (s: string | null) => s
 
   .cm-cuerpo :global(.de-faq) { display: grid; gap: var(--space-2); margin: var(--space-6) 0; }
   .cm-cuerpo :global(.de-faq details) { border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: #fff; }
-  .cm-cuerpo :global(.de-faq summary) { padding: var(--space-4) var(--space-5); cursor: pointer; font-weight: 600; }
+  .cm-cuerpo :global(.de-faq summary) { padding: var(--space-4) var(--space-5); cursor: pointer; font-weight: 600; list-style: none; position: relative; padding-right: var(--space-10); }
+  .cm-cuerpo :global(.de-faq summary::-webkit-details-marker) { display: none; }
+  .cm-cuerpo :global(.de-faq summary::after) { content: '+'; position: absolute; right: var(--space-5); top: 50%; transform: translateY(-50%); font-size: 1.25rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-faq details[open] summary::after) { content: '–'; }
   .cm-cuerpo :global(.de-faq details > div) { padding: 0 var(--space-5) var(--space-4); color: var(--color-text-secondary); }
 
   .cm-cuerpo :global(.de-pasos) { counter-reset: paso; list-style: none; padding: 0; display: grid; gap: var(--space-4); margin: var(--space-6) 0; }
-  .cm-cuerpo :global(.de-pasos li) {
-    counter-increment: paso; display: grid; gap: var(--space-1);
-    padding-left: var(--space-10); position: relative;
-  }
+  .cm-cuerpo :global(.de-pasos li) { counter-increment: paso; display: grid; gap: var(--space-1); padding-left: var(--space-10); position: relative; }
   .cm-cuerpo :global(.de-pasos li::before) {
     content: counter(paso); position: absolute; left: 0; top: 0;
     width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
@@ -177,11 +356,7 @@ const fecha = (s: string | null) => s
   }
   .cm-cuerpo :global(.de-pasos span) { color: var(--color-text-secondary); }
 
-  /* El dato propio: lo más citable de una página, así que se ve como tal. */
-  .cm-cuerpo :global(.de-dato) {
-    display: grid; gap: 2px; margin: var(--space-6) 0; padding: var(--space-5) var(--space-6);
-    background: var(--gradient-cream); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
-  }
+  .cm-cuerpo :global(.de-dato) { display: grid; gap: 2px; margin: var(--space-6) 0; padding: var(--space-5) var(--space-6); background: var(--gradient-cream); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); }
   .cm-cuerpo :global(.de-dato-v) { font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; line-height: 1; }
   .cm-cuerpo :global(.de-dato-e) { font-size: .9375rem; color: var(--color-text-secondary); }
   .cm-cuerpo :global(.de-dato-f) { font-size: .75rem; color: var(--color-text-secondary); opacity: .75; }
@@ -193,7 +368,7 @@ const fecha = (s: string | null) => s
     border-radius: var(--radius-md); background: var(--color-bg-secondary);
   }
   .cm-cuerpo :global(.de-resumen-t) { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin: 0 0 var(--space-2); color: var(--color-text-secondary); }
-  .cm-cuerpo :global(.de-resumen ul) { margin: 0; gap: var(--space-1); }
+  .cm-cuerpo :global(.de-resumen ul) { margin: 0; gap: var(--space-1); max-width: none; }
   .cm-cuerpo :global(.de-resumen li) { font-size: 1rem; }
 
   .cm-cuerpo :global(.de-glosario) { margin: var(--space-6) 0; display: grid; gap: var(--space-3); }
@@ -202,39 +377,38 @@ const fecha = (s: string | null) => s
   .cm-cuerpo :global(.de-glosario dt) { font-weight: 650; color: var(--color-text-primary); }
   .cm-cuerpo :global(.de-glosario dd) { margin: 0; color: var(--color-text-secondary); font-size: .9375rem; }
 
-  .cm-cuerpo :global(.de-diagrama) { margin: var(--space-8) 0; }
-  .cm-cuerpo :global(.de-diagrama img) { display: block; width: 100%; height: auto; border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); }
-  .cm-cuerpo :global(.de-diagrama figcaption), .cm-cuerpo :global(.de-diagrama-t) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
-  .cm-cuerpo :global(.de-diagrama-t) { margin: 0 0 var(--space-2); font-weight: 600; }
-
-  .cm-cuerpo :global(.de-captura) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-diagrama), .cm-cuerpo :global(.de-imagen), .cm-cuerpo :global(.de-captura), .cm-cuerpo :global(.de-video) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-diagrama img), .cm-cuerpo :global(.de-imagen img) { display: block; width: 100%; height: auto; border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); }
   .cm-cuerpo :global(.de-captura img) { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: 0 12px 40px rgba(20, 20, 60, .12); border: 1px solid var(--color-border-light); }
-  .cm-cuerpo :global(.de-captura figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(figcaption), .cm-cuerpo :global(.de-diagrama-t) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-captura figcaption) { display: flex; justify-content: space-between; gap: var(--space-4); align-items: baseline; flex-wrap: wrap; }
+  /* «Ver más funciones →»: la captura no es un cuadro, es una puerta a la landing del giro. */
+  .cm-cuerpo :global(.de-captura-mas) { font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .cm-cuerpo :global(.de-captura-mas:hover) { text-decoration: underline; }
+  .cm-cuerpo :global(.de-diagrama-t) { margin: 0 0 var(--space-2); font-weight: 600; }
   .cm-cuerpo :global(.de-captura-html) { margin: var(--space-6) 0; padding: var(--space-5); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
   .cm-cuerpo :global(.de-captura-t) { margin: 0 0 var(--space-3); font-weight: 650; }
   .cm-cuerpo :global(.de-captura-html dl) { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2) var(--space-5); }
   .cm-cuerpo :global(.de-captura-html dt) { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-secondary); }
   .cm-cuerpo :global(.de-captura-html dd) { margin: 0; font-weight: 600; }
-
-  .cm-cuerpo :global(.de-video) { margin: var(--space-8) 0; }
   .cm-cuerpo :global(.de-video-marco) { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
   .cm-cuerpo :global(.de-video-marco iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-  .cm-cuerpo :global(.de-video figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
 
-  .cm-cuerpo :global(.de-imagen) { margin: var(--space-8) 0; }
-  .cm-cuerpo :global(.de-imagen img) { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); }
-  .cm-cuerpo :global(.de-imagen figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
-
-  .cm-cuerpo :global(.de-cta) {
-    margin: var(--space-8) 0; padding: var(--space-6); border-radius: var(--radius-lg);
-    background: var(--color-bg-secondary); display: grid; gap: var(--space-4); justify-items: start;
-  }
+  .cm-cuerpo :global(.de-cta) { margin: var(--space-8) 0; padding: var(--space-6); border-radius: var(--radius-lg); background: var(--color-bg-secondary); display: grid; gap: var(--space-4); justify-items: start; }
   .cm-cuerpo :global(.de-cta p) { margin: 0; }
   .cm-cuerpo :global(.de-cta-b), .cm-boton {
     display: inline-block; background: var(--color-primary-btn, #4470D8); color: #fff; text-decoration: none;
     padding: var(--space-3) var(--space-6); border-radius: var(--radius-full); font-weight: 600; font-size: .9375rem;
   }
   .cm-cuerpo :global(.de-cta-b:hover), .cm-boton:hover { background: var(--color-primary-hover); }
+
+  .cm-compartir { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin-top: var(--space-10); padding-top: var(--space-5); border-top: 1px solid var(--color-border-light); font-size: .875rem; color: var(--color-text-secondary); }
+  .cm-compartir a, .cm-compartir button { font: inherit; font-weight: 600; color: var(--color-primary-texto); background: none; border: 1px solid var(--color-border-light); border-radius: var(--radius-full); padding: 6px 14px; text-decoration: none; cursor: pointer; }
+
+  .cm-autoria { display: flex; gap: var(--space-4); align-items: flex-start; margin-top: var(--space-8); padding: var(--space-5); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); font-size: .9rem; color: var(--color-text-secondary); }
+  .cm-autoria p { margin: 0; }
+  .cm-autoria-t { font-weight: 700; color: var(--color-text-primary); margin-bottom: 4px !important; }
+  .cm-autoria a { color: var(--color-primary-texto); font-weight: 600; }
 
   .cm-mapa { margin-top: var(--space-12); padding: var(--space-6); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
   .cm-mapa-t { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 var(--space-4); }
@@ -244,17 +418,12 @@ const fecha = (s: string | null) => s
   .cm-mapa a:hover { text-decoration: underline; }
   .cm-mapa span { color: var(--color-text-secondary); font-size: .9rem; }
 
-  .cm-pie {
-    margin-top: var(--space-16); padding-top: var(--space-8);
-    border-top: 1px solid var(--color-border-light); display: grid; gap: var(--space-4); justify-items: start;
-  }
+  .cm-pie { margin-top: var(--space-12); display: grid; gap: var(--space-4); justify-items: start; }
   .cm-pie p { margin: 0; color: var(--color-text-secondary); }
-
-  /* El cierre por giro: la misma tarjeta que usa el home para mandar a un giro. */
   .cm-pie-giro {
     display: grid; grid-template-columns: 200px 1fr; gap: var(--space-6); align-items: center;
     padding: var(--space-6); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
-    background: var(--gradient-cream, var(--color-bg-secondary)); border-top: 1px solid var(--color-border-light);
+    background: var(--gradient-cream, var(--color-bg-secondary));
   }
   @media (max-width: 640px) { .cm-pie-giro { grid-template-columns: 1fr; } }
   .cm-giro-foto { width: 100%; height: auto; aspect-ratio: 320 / 220; object-fit: cover; border-radius: var(--radius-md); }
@@ -263,9 +432,16 @@ const fecha = (s: string | null) => s
   .cm-giro-titulo { font-family: var(--font-display); font-size: 1.375rem; line-height: 1.25; color: var(--color-text-primary) !important; text-wrap: balance; }
   .cm-giro-desc { font-size: .9375rem; }
   .cm-giro-acciones { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-2); }
-  .cm-boton-sec {
-    display: inline-block; padding: var(--space-3) var(--space-5); border-radius: var(--radius-full);
-    border: 1px solid var(--color-border); color: var(--color-text-primary); text-decoration: none; font-weight: 600; font-size: .9375rem;
-  }
+  .cm-boton-sec { display: inline-block; padding: var(--space-3) var(--space-5); border-radius: var(--radius-full); border: 1px solid var(--color-border); color: var(--color-text-primary); text-decoration: none; font-weight: 600; font-size: .9375rem; }
   .cm-boton-sec:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+
+  /* Imprimir / guardar como PDF: solo el artículo. */
+  @media print {
+    .cm-rail, .cm-barra, .cm-arriba, .cm-progreso, .cm-compartir, .cm-toc-movil, .cm-previa { display: none !important; }
+    .cm-page { display: block; padding: 0; }
+    .cm-cuerpo :global(.de-faq details) { break-inside: avoid; }
+    .cm-cuerpo :global(.de-faq details > div) { display: block; }
+    a[href^="http"]::after { content: ' (' attr(href) ')'; font-size: .8em; color: #666; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cm-progreso span { transition: none; } }
 </style>

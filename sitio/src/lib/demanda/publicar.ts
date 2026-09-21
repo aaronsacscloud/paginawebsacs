@@ -49,6 +49,7 @@ export type Publicado = {
    *  si es un spoke, el hub y dos hermanos. */
   es_hub: boolean;
   hermanas: PiezaGiro[];
+  migas: { nombre: string; url: string }[];
 };
 
 /** El giro del brief, resuelto contra la fuente única (`navigation.ts`). Acepta
@@ -85,6 +86,14 @@ export async function leerPieza(seccion: string, slug: string, incluirBorrador: 
   const portada = (data.brief as any)?.portada?.url ? { url: (data.brief as any).portada.url, alt: (data.brief as any).portada.alt || data.titulo } : null;
 
   const resumen = cuerpo.find(b => b.t === 'resumen');
+  const giroInfo = giroDe(data.brief);
+  const migas = [
+    { nombre: 'Inicio', url: `${SITIO}/` },
+    seccion.startsWith('guias/') && giroInfo
+      ? { nombre: `Guías para ${giroInfo.label.toLowerCase()}`, url: `${SITIO}/${seccion}/` }
+      : { nombre: seccion === 'comparar' ? 'Comparativas' : seccion === 'software-para' ? 'Software para tu negocio' : 'Guías', url: `${SITIO}/${seccion}/` },
+    { nombre: data.titulo, url },
+  ];
   const esHub = !!(data.brief as any)?.es_hub;
   const delGiro = (await listaPorGiro(String((data.brief as any)?.giro || ''))).filter(x => x.slug !== data.slug);
   const hermanas = esHub ? delGiro : [...delGiro.filter(x => x.es_hub), ...delGiro.filter(x => !x.es_hub).slice(0, 2)];
@@ -100,7 +109,8 @@ export async function leerPieza(seccion: string, slug: string, incluirBorrador: 
     h1: data.h1 || data.titulo,
     meta_desc: data.meta_desc,
     seccion: data.seccion, slug: data.slug, tipo: data.tipo,
-    html: aHtml(cuerpo),
+    html: aHtml(cuerpo, giroInfo ? { giroHref: giroInfo.href, giroLabel: giroInfo.label } : {}),
+    migas,
     indice: indice(cuerpo),
     palabras: palabras(cuerpo),
     brief: data.brief,
@@ -128,6 +138,7 @@ export async function leerPieza(seccion: string, slug: string, incluirBorrador: 
         // `speakable`: le dice a un asistente qué parte leer en voz alta / citar.
         ...(resumen ? { speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.de-resumen', 'h1'] } } : {}),
       },
+      { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: migas.map((m, i) => ({ '@type': 'ListItem', position: i + 1, name: m.nombre, item: m.url })) },
       ...schemaDeCuerpo(cuerpo),
     ],
   };

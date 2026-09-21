@@ -83,11 +83,28 @@ function enLinea(texto: string): string {
     const fuera = url.startsWith('http') && !url.includes('sacscloud.com');
     return `<a href="${esc(url)}"${fuera ? ' rel="nofollow noopener" target="_blank"' : ''}>${t}</a>`;
   });
+  /* Una URL suelta en el texto («(https://www.bodas.com.mx/articulos/…)») se
+     vuelve enlace con el dominio como texto: el modelo a veces cita así y en el
+     celular una URL de 90 caracteres parte la lectura. */
+  h = h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (m, pre, u) => {
+    const url = urlSegura(u.replace(/&amp;/g, '&')); if (!url) return m;
+    let host = ''; try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return m; }
+    const fuera = !url.includes('sacscloud.com');
+    return `${pre}<a href="${esc(url)}"${fuera ? ' rel="nofollow noopener" target="_blank"' : ''}>${esc(host)}</a>`;
+  });
   return h;
 }
 
-export function aHtml(bloques: Bloque[]): string {
+export const ES_MEDIA_NUESTRA = (u: string) => /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//.test(String(u || ''));
+
+export type OpcionesHtml = {
+  /** La landing del giro: cada captura de Sacs lleva «Ver más funciones →» hacia ahí. */
+  giroHref?: string; giroLabel?: string;
+};
+
+export function aHtml(bloques: Bloque[], op: OpcionesHtml = {}): string {
   const out: string[] = [];
+  let faqAbierto = false;
   for (const b of bloques || []) {
     switch (b?.t) {
       case 'h2': out.push(`<h2 id="${esc(anclaDe(b.texto))}">${esc(b.texto)}</h2>`); break;
@@ -111,8 +128,11 @@ export function aHtml(bloques: Bloque[]): string {
         break;
       }
       case 'faq':
-        out.push(`<div class="de-faq">${(b.items || []).map(i =>
-          `<details><summary>${esc(i.p)}</summary><div>${enLinea(i.r)}</div></details>`).join('')}</div>`);
+        // La primera pregunta abierta: se ve que hay respuesta, no solo títulos.
+        out.push(`<div class="de-faq">${(b.items || []).map((i, k) => {
+          const abrir = k === 0 && !faqAbierto; if (abrir) faqAbierto = true;
+          return `<details${abrir ? ' open' : ''}><summary>${esc(i.p)}</summary><div>${enLinea(i.r)}</div></details>`;
+        }).join('')}</div>`);
         break;
       case 'pasos':
         out.push(`<ol class="de-pasos">${(b.items || []).map(i =>
@@ -128,9 +148,11 @@ export function aHtml(bloques: Bloque[]): string {
         break;
       }
       case 'diagrama': {
-        const u = b.url ? urlSegura(b.url) : null;
+        // Solo imágenes nuestras: el modelo puso la URL de la FUENTE en `url` y
+        // salió un cuadro roto con el alt (22-sep-2026). Si no es nuestra, tabla.
+        const u = b.url && ES_MEDIA_NUESTRA(b.url) ? urlSegura(b.url) : null;
         if (u) {
-          out.push(`<figure class="de-diagrama"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 800}"><figcaption>${esc(b.titulo)}${b.nota ? ` — ${enLinea(b.nota)}` : ''}</figcaption></figure>`);
+          out.push(`<figure class="de-diagrama"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 800}" data-zoom><figcaption>${esc(b.titulo)}${b.nota ? ` — ${enLinea(b.nota)}` : ''}</figcaption></figure>`);
         } else {
           out.push(`<div class="de-tabla de-diagrama-tabla"><p class="de-diagrama-t">${esc(b.titulo)}</p><table><thead><tr>${(b.encabezados || []).map(e => `<th>${esc(e)}</th>`).join('')}</tr></thead>` +
             `<tbody>${(b.filas || []).map(f => `<tr>${f.map(c => `<td>${enLinea(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` + (b.nota ? `<p class="de-nota">${enLinea(b.nota)}</p>` : '') + `</div>`);
@@ -138,9 +160,10 @@ export function aHtml(bloques: Bloque[]): string {
         break;
       }
       case 'captura': {
-        const u = b.url ? urlSegura(b.url) : null;
+        const u = b.url && ES_MEDIA_NUESTRA(b.url) ? urlSegura(b.url) : null;
         if (u) {
-          out.push(`<figure class="de-captura"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 760}"><figcaption>En Sacs: ${esc(b.titulo)}</figcaption></figure>`);
+          const mas = op.giroHref ? `<a class="de-captura-mas" href="${esc(op.giroHref)}">Ver más funciones${op.giroLabel ? ` para ${esc(op.giroLabel.toLowerCase())}` : ''} →</a>` : '';
+          out.push(`<figure class="de-captura"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 760}" data-zoom><figcaption><span>En Sacs: ${esc(b.titulo)}</span>${mas}</figcaption></figure>`);
         } else {
           out.push(`<div class="de-captura-html"><p class="de-captura-t">${esc(b.titulo)}</p><dl>${(b.campos || []).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div>`);
         }
@@ -161,11 +184,11 @@ export function aHtml(bloques: Bloque[]): string {
         break;
       }
       case 'imagen': {
-        const u = urlSegura(b.url);
+        const u = b.url && ES_MEDIA_NUESTRA(b.url) ? urlSegura(b.url) : null;
         if (!u) break; // pendiente de generar: no se pinta un hueco
         // width/height explícitos: sin ellos la página salta al cargar (CLS), y
         // eso Google lo mide. `loading="lazy"` porque la portada va aparte.
-        out.push(`<figure class="de-imagen"><img src="${esc(u)}" alt="${esc(b.alt)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 630}">` +
+        out.push(`<figure class="de-imagen"><img src="${esc(u)}" alt="${esc(b.alt)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 630}" data-zoom>` +
           (b.pie ? `<figcaption>${enLinea(b.pie)}</figcaption>` : '') + `</figure>`);
         break;
       }

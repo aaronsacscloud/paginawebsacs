@@ -58,13 +58,8 @@ const embed = `/agendar/embed/demo?origen=${encodeURIComponent(url || 'articulo'
 <style>
   /* A todo lo ancho: el artículo mide 760px, la agenda necesita más. Se sale
      del contenedor con el truco de 100vw centrado. */
-  .cierre {
-    position: relative; width: 100vw; left: 50%; transform: translateX(-50%);
-    margin: var(--space-16) 0 calc(-1 * var(--space-24));
-    padding: clamp(40px, 6vw, 72px) clamp(20px, 4vw, 48px);
-    background: #0E0D0C; color: #fff;
-  }
-  @media (max-width: 640px) { .cierre { margin-top: var(--space-12); margin-bottom: calc(-1 * var(--space-16)); } }
+  /* Vive fuera de la rejilla del artículo: ancho completo sin trucos. */
+  .cierre { margin: 0; padding: clamp(40px, 6vw, 72px) clamp(20px, 4vw, 48px); background: #0E0D0C; color: #fff; }
   .cierre-in { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(28px, 4vw, 56px); align-items: start; }
   @media (max-width: 900px) { .cierre-in { grid-template-columns: 1fr; } }
 

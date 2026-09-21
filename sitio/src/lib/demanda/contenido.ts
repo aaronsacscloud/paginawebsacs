@@ -30,7 +30,7 @@ import { videosCanal } from '../../data/videos-canal';
 import { fichaSacs } from './capacidades';
 import { traerTodo } from './paginar';
 import { seccionPara } from './publicar';
-import { aMarkdown, type Bloque } from './bloques';
+import { aMarkdown, ES_MEDIA_NUESTRA, type Bloque } from './bloques';
 import type { ResultadoHandler } from './tipos';
 
 /** Recorta sin partir palabras ni dejar la frase colgando. */
@@ -339,9 +339,9 @@ export function normalizarBloque(x: any): Bloque | null {
         if (x.t === 'lista') return { t: 'lista', items: x.lista_items || [] };
       if (x.t === 'resumen') return { t: 'resumen', items: x.lista_items || (x.items || []).map((i: any) => i.texto || i.p).filter(Boolean) };
       if (x.t === 'glosario') return { t: 'glosario', items: (x.items || []).map((i: any) => ({ termino: i.termino || i.titulo || i.p, definicion: i.definicion || i.texto || i.r })).filter((i: any) => i.termino && i.definicion) };
-      if (x.t === 'imagen') return { t: 'imagen', url: x.url && /^https:\/\//.test(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
-      if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
-      if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'imagen') return { t: 'imagen', url: x.url && ES_MEDIA_NUESTRA(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && ES_MEDIA_NUESTRA(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+      if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && ES_MEDIA_NUESTRA(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
       if (x.t === 'video') {
         const id = String(x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\/|^.*youtube:/, '').match(/[A-Za-z0-9_-]{11}/)?.[0] || '';
         // Solo videos que existen en el canal: el modelo inventó un id «ficticio» en novias.
@@ -349,7 +349,8 @@ export function normalizarBloque(x: any): Bloque | null {
         return real ? { t: 'video', youtube_id: id, titulo: x.titulo || videosCanal.find(v => v.id === id)?.titulo || '' } : null;
       }
       if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
-      if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
+      // «1. Captura la fecha…»: el número ya lo pone el diseño; se quita del título.
+      if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: String(i.titulo || '').replace(/^\s*\d{1,2}[).:-]\s*/, ''), texto: i.texto })) };
       if (x.t === 'tabla') return { t: 'tabla', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}) };
       if (x.t === 'cita') return { t: 'cita', texto: x.texto, fuente: x.fuente || '', ...(x.url ? { url: x.url } : {}) };
       if (x.t === 'cta') return { t: 'cta', texto: x.texto, boton: x.boton || x.titulo || 'Ver más', url: x.url || '/contacto' };
