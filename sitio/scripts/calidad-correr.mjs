@@ -12,7 +12,7 @@
  * página no pasa antes de que el ciclo la deje atascada.
  */
 const { supabase } = await import('../src/lib/supabase.ts');
-const { analizarCompetencia, buscarFuentes, juzgar, generarPortada, generarIntermedias, generarDiagramas, CRITERIOS } = await import('../src/lib/demanda/calidad.ts');
+const { analizarCompetencia, buscarFuentes, juzgar, generarPortada, generarIntermedias, generarDiagramas, generarCapturas, CRITERIOS } = await import('../src/lib/demanda/calidad.ts');
 const { escribirBorrador } = await import('../src/lib/demanda/contenido.ts');
 
 const args = process.argv.slice(2);
@@ -88,6 +88,7 @@ for (let ronda = 0; ronda <= MAX; ronda++) {
   console.log(`    criterios: ${(v.criterios || []).length - noOk.length}/${(v.criterios || []).length} ok${noOk.length ? ' · fallan: ' + noOk.map(k => k.clave).join(', ') : ''}`);
   if (v.video_sugerido) console.log(`    video: ${v.video_sugerido}`);
   if (v.necesita_del_dueno?.length) console.log(`    necesita del dueño: ${v.necesita_del_dueno.join(' | ')}`);
+  if (v.funciones_prometidas?.length) console.log(`    promete (para ventas): ${v.funciones_prometidas.join(' | ')}`);
   if (r.duras.length) console.log(`    duras: ${r.duras.join(' | ')}`);
   if (v.pasa) {
     await supabase.from('de_contenido').update({
@@ -124,6 +125,9 @@ if (fin.estado === 'aprobado' && !sinImagen) {
   process.stdout.write('  diagrama… ');
   const d = await generarDiagramas(c.id);
   console.log(d.ok ? `${d.hechos} generado(s)` : `FALLÓ: ${d.error}`);
+  process.stdout.write('  capturas de Sacs… ');
+  const k = await generarCapturas(c.id);
+  console.log(k.ok ? `${k.hechas} generada(s)` : `FALLÓ: ${k.error}`);
   process.stdout.write('  portada… ');
   const r = await generarPortada(c.id);
   costo += r.costo;

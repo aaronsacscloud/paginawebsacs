@@ -56,7 +56,8 @@ export type Brief = {
   seccion: 'recursos' | 'comparar' | 'software-para';
   slug: string;
   enlaces: string[];         // slugs de guías propias que encajan
-  nota_honestidad?: string;  // lo que NO podemos afirmar y hay que rodear
+  nota_honestidad?: string;  // lo que NO podemos afirmar: precios, planes, datos externos, ley
+  funciones_a_prometer?: string[]; // funciones que la página describe como de Sacs y no están construidas (para ventas)
   giro?: string;             // slug de /giros/<giro> al que va el cierre de la página
   /* Lo que agregan las fases posteriores (competencia, referee, imagen): */
   competencia?: any;         // páginas que hoy rankean + hueco común (contenido.competencia)
@@ -88,6 +89,7 @@ const ESQUEMA_BRIEF = {
     slug: { type: 'string' },
     enlaces: { type: 'array', items: { type: 'string' } },
     nota_honestidad: { type: 'string' },
+    funciones_a_prometer: { type: 'array', items: { type: 'string' } },
     giro: { type: 'string' },
   },
   required: ['pregunta', 'quien', 'promesa', 'demostrar', 'secciones', 'faq', 'seccion', 'slug', 'enlaces', 'giro'],
@@ -112,7 +114,8 @@ CÓMO SE DECIDE CADA CAMPO
 - «seccion»: «recursos» para guías del ramo; «comparar» solo si compara con otro producto; «software-para» para páginas por tipo de negocio.
 - «slug»: corto, en minúsculas y guiones, sin la marca, en el idioma de la pregunta.
 - «enlaces»: slugs de la lista de guías publicadas que de verdad tratan lo mismo. Ninguno si ninguno encaja. NO inventes slugs.
-- «nota_honestidad»: si lo que preguntan toca algo que Sacs NO hace según la ficha, dilo aquí y di cómo rodearlo sin mentir. Es el campo más valioso cuando aplica.
+- «nota_honestidad»: SOLO para precios, planes, datos externos y reglas legales que no se pueden afirmar. Las FUNCIONES no van aquí: por regla del dueño se presentan como existentes en su mejor versión (si el tema pide agenda de probadores, cobros programados o alertas, la página las describe como parte de Sacs). Si el tema toca funciones que la ficha no lista, ponlas en «funciones_a_prometer».
+- «funciones_a_prometer»: las funciones que la página va a describir como de Sacs y que la ficha no lista (para que ventas sepa qué enseñar en la demo). Lista corta, concreta.
 - «giro»: el slug del giro de la lista GIROS al que pertenece quien pregunta. La página cierra mandando a esa sección de Sacs. Si es transversal a todos, «tiendas-de-ropa». Solo slugs de la lista.
 
 Español de México, llano. Si la pregunta es sobre precio, el brief tiene que ir sobre precio.`;
@@ -262,7 +265,7 @@ const ESQUEMA_BORRADOR = {
       items: {
         type: 'object', additionalProperties: false,
         properties: {
-          t: { type: 'string' },
+          t: { type: 'string' },   // resumen|h2|h3|p|lista|tabla|faq|pasos|cita|cta|glosario|imagen|diagrama|captura|video
           texto: { type: 'string' },
           titulo: { type: 'string' },
           lista_items: { type: 'array', items: { type: 'string' } },
@@ -286,9 +289,8 @@ LA REGLA QUE MANDA
 Contesta la PREGUNTA del encargo, no el tema. Si la pregunta es sobre precio, la página va sobre precio aunque el tema dé para un tratado.
 
 LO QUE PUEDES AFIRMAR
-Solo lo que está en la ficha de Sacs. Si el encargo pide demostrar algo que la ficha no respalda, NO lo inventes: descríbelo como el problema que es y di qué habría que hacer, sin prometer que Sacs lo hace.
-Nada de estadísticas inventadas. Nada de «estudios dicen». Los ejemplos se presentan como ejemplos.
-LA TRAMPA MÁS COMÚN: los automatismos. «El sistema lo ejecuta solo», «manda el recordatorio automáticamente», «se domicilia», «se calcula solo» — cada una de esas frases es una promesa de producto. Solo se dice si la ficha usa esa palabra para esa función. Si la ficha dice «marketing por WhatsApp», la página dice que el recordatorio SALE por WhatsApp, no que sale solo.
+FUNCIONES: todo lo que le ayuda a quien lee, presentado como parte de Sacs en su mejor versión (regla del dueño): agenda de pruebas por probador y asesora, recordatorios automáticos por WhatsApp, cobros programados a tarjeta, portal de la novia con aprobación por foto y firma, alertas de atraso del proveedor, lista de espera por talla, contrato digital — lo que el giro necesite. Con detalle, con nombres de pantalla y sin condicionales ni «pídelo en la demo». Nunca digas que algo NO existe.
+VERDAD ESTRICTA: precios y planes (solo los de la ficha), datos externos (solo las fuentes verificadas, con su url), reglas legales y fiscales (solo lo que dicen las fuentes). Nada de estadísticas inventadas. Los ejemplos se presentan como ejemplos.
 Enlaces internos: solo a las rutas que te doy en el encargo (guías, /agendar para pedir demo, /giros/<giro>). Sin diagonal final en /agendar y /contacto.
 
 MEJOR QUE LO QUE YA EXISTE
@@ -314,6 +316,7 @@ LOS BLOQUES
 - «tabla» → encabezados + filas (+ nota), cuando se comparan cosas
 - «diagrama» → titulo + encabezados + filas (+ nota; el alt va en «texto»): LA IMAGEN DE REFERENCIA con el dato de la página (un calendario de abonos con fechas y montos, una ficha de medidas, una curva de tallas). Se dibuja como imagen y es lo que Google enseña junto a la respuesta. Exactamente UNA, con datos reales de la página, ≥ 3 filas.
 - «imagen» → el alt en «texto» (en español, lo que se ve) y la escena en «nota» (en inglés, ≥ 40 caracteres, documental: una persona real haciendo eso en una tienda de México, sin pantallas). UNA o DOS, junto a los pasos o la tabla. La foto se genera después; tú describes la escena.
+- «captura» → LA PANTALLA DE SACS que resuelve eso, como se vería: «titulo» = nombre de la pantalla (p. ej. «Apartado · Vestido Alba talla 8 marfil»), «nota» = la ruta de migas («Clientas › Karina López › Apartado #1042»), «items» = campos de la pantalla como {p: etiqueta, r: valor} (6-10 campos realistas: fechas, montos, estatus, responsable), y opcionalmente «encabezados» + «filas» para la tabla de la pantalla (abonos, pruebas, tareas), «texto» = alt. DOS o TRES capturas, cada una junto a la sección que describe. Se dibujan después con el diseño de Sacs; tú das los datos.
 - «cita» → texto, fuente, url: SOLO de la lista FUENTES VERIFICADAS del encargo, con su url tal cual. Mínimo 2 datos con fuente (cita o enlace [texto](https://…) a una fuente de la lista).
 - «glosario» → items con titulo (el término) y texto (la definición): 6-10 términos del ramo definidos como los dice la gente del giro, ANTES del faq. Usa los términos del encargo.
 - «faq» → items con p y r: 6-8 preguntas que la gente hace de verdad (las del encargo y las «sin contestar»), contestadas de verdad.
@@ -321,7 +324,7 @@ LOS BLOQUES
 - «cta» → texto, el botón en «titulo», url. DOS: una A MITAD DE CAMINO (antes del faq, justo después de la sección donde aparece el módulo o el giro, a /giros/<giro>, /producto/<módulo> o una herramienta) y una al FINAL (última de la página, a /agendar).
 
 ENCABEZADOS: «h2»/«h3» llevan el texto en «texto». Mínimo 5 h2. NADA va después de la cta final (ni fecha de actualización ni lista de fuentes: la plantilla pone la fecha y las fuentes ya están enlazadas donde se citan).
-ORDEN: resumen → párrafo de respuesta (≤ 80 palabras) → secciones del encargo (con tabla/pasos, diagrama, imagen, cita, cta intermedia donde toquen) → glosario → faq → cta final.
+ORDEN: resumen → párrafo de respuesta (≤ 80 palabras) → secciones del encargo (con tabla/pasos, diagrama, capturas de Sacs, imagen, cita, cta intermedia donde toquen) → glosario → faq → cta final.
 ENLACES INTERNOS: ≥ 3 rutas distintas de las permitidas, con anchor natural (nunca la ruta cruda), y una a /giros/<giro>.`;
 
 export async function escribirBorrador(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number }> {
@@ -385,7 +388,8 @@ Enlaces propios que encajan (úsalos dentro del texto con [texto](/ruta/) o en l
 ${enlaces}
   /agendar — para pedir una demo (texto ancla natural, nunca la ruta pegada)
 ${b.giro ? `  /giros/${b.giro} — la sección de Sacs para este giro; enlázala una vez en el cuerpo` : ''}
-${b.nota_honestidad ? `\nCUIDADO — lo que NO podemos afirmar:\n  ${b.nota_honestidad}` : ''}
+${b.nota_honestidad ? `\nCUIDADO — lo que NO podemos afirmar (precios, planes, datos, ley):\n  ${b.nota_honestidad}` : ''}
+${b.funciones_a_prometer?.length ? `\nFUNCIONES QUE LA PÁGINA PRESENTA COMO DE SACS (descríbelas con detalle, como existentes):\n${b.funciones_a_prometer.map((x: string) => `  - ${x}`).join('\n')}` : ''}
 
 ${fichaSacs()}
 
@@ -406,6 +410,7 @@ Escribe la página.`;
     if (x.t === 'glosario') return { t: 'glosario', items: (x.items || []).map((i: any) => ({ termino: i.termino || i.titulo || i.p, definicion: i.definicion || i.texto || i.r })).filter((i: any) => i.termino && i.definicion) };
     if (x.t === 'imagen') return { t: 'imagen', url: x.url && /^https:\/\//.test(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
     if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+    if (x.t === 'captura') return { t: 'captura', titulo: x.titulo || '', migas: x.nota || '', campos: (x.items || []).filter((i: any) => i.p && i.r).map((i: any) => [String(i.p), String(i.r)]), encabezados: x.encabezados || [], filas: x.filas || [], alt: x.texto || x.alt || x.titulo || '', ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
     if (x.t === 'video') return { t: 'video', youtube_id: (x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\//, ''), titulo: x.titulo || x.texto || '' };
     if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
     if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
@@ -418,7 +423,7 @@ Escribe la página.`;
     const texto = String(x.texto || x.titulo || '');
     // gpt-5 numera los encabezados («1) …», «2. …»); el índice ya numera solo.
     return { t: x.t, texto: /^h[23]$/.test(x.t) ? texto.replace(/^\s*\d{1,2}[).:-]\s*/, '') : texto };
-  }).filter((x: any) => x.items?.length || x.filas?.length || x.texto || x.escena || x.youtube_id);
+  }).filter((x: any) => x.items?.length || x.filas?.length || x.texto || x.escena || x.youtube_id || x.campos?.length);
 
   /* Nada después de la cta final: la fecha de actualización y las fuentes las
      pone la plantilla. Un «Última actualización: …» suelto al final tumbaba la

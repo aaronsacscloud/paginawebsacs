@@ -19,6 +19,10 @@ export type Publicado = {
   /** El giro al que pertenece la pieza, resuelto contra navigation.ts: da el
    *  CTA «Sacs para tu giro». Null si el brief no lo fijó o ya no existe. */
   giro: { label: string; description: string; href: string; image?: string } | null;
+  /** Hub-and-spoke: si es el hub del giro, sus spokes agrupados por intención;
+   *  si es un spoke, el hub y dos hermanos. */
+  es_hub: boolean;
+  hermanas: PiezaGiro[];
 };
 
 /** El giro del brief, resuelto contra la fuente única (`navigation.ts`). Acepta
@@ -55,11 +59,16 @@ export async function leerPieza(seccion: string, slug: string, incluirBorrador: 
   const portada = (data.brief as any)?.portada?.url ? { url: (data.brief as any).portada.url, alt: (data.brief as any).portada.alt || data.titulo } : null;
 
   const resumen = cuerpo.find(b => b.t === 'resumen');
+  const esHub = !!(data.brief as any)?.es_hub;
+  const delGiro = (await listaPorGiro(String((data.brief as any)?.giro || ''))).filter(x => x.slug !== data.slug);
+  const hermanas = esHub ? delGiro : [...delGiro.filter(x => x.es_hub), ...delGiro.filter(x => !x.es_hub).slice(0, 2)];
   return {
     estado: data.estado,
     vista_previa: data.estado !== 'publicado',
     portada,
     giro: giroDe(data.brief),
+    es_hub: esHub,
+    hermanas,
     id: data.id,
     titulo: data.titulo,
     h1: data.h1 || data.titulo,
@@ -96,6 +105,31 @@ export async function leerPieza(seccion: string, slug: string, incluirBorrador: 
       ...schemaDeCuerpo(cuerpo),
     ],
   };
+}
+
+export type PiezaGiro = { seccion: string; slug: string; titulo: string; meta_desc: string | null; es_hub: boolean; intencion: string; url: string };
+
+/* La intención de una pieza, para agrupar el «Mapa del tema»: entender (guías),
+   hacer (plantillas, calculadoras, pasos), comparar, casos. Sale del ángulo
+   con que nació o, si no, de la sección. */
+function intencionDe(b: any, seccion: string): string {
+  const t = String(b?.angulo || b?.tipo_angulo || '');
+  if (/plantilla|calculadora|paso_a_paso|checklist/.test(t)) return 'hacer';
+  if (/comparativa/.test(t) || seccion === 'comparar') return 'comparar';
+  if (/caso/.test(t)) return 'casos';
+  return 'entender';
+}
+
+/** Lo publicado de un giro: el hub y sus spokes. Es lo que enlaza la landing
+ *  del giro y el «Mapa del tema» del hub. */
+export async function listaPorGiro(giro: string): Promise<PiezaGiro[]> {
+  if (!giro) return [];
+  const { data } = await supabase.from('de_contenido').select('seccion, slug, titulo, meta_desc, brief')
+    .eq('estado', 'publicado').filter('brief->>giro', 'eq', giro).order('publicado_at', { ascending: true });
+  return (data || []).map(p => ({
+    seccion: p.seccion, slug: p.slug, titulo: p.titulo, meta_desc: p.meta_desc,
+    es_hub: !!(p.brief as any)?.es_hub, intencion: intencionDe(p.brief, p.seccion), url: `/${p.seccion}/${p.slug}/`,
+  }));
 }
 
 /** Todo lo publicado, para el sitemap y para llms.txt. */

@@ -38,6 +38,9 @@ export type Bloque =
      (calendario de abonos, curva de tallas, ficha de medidas). Es lo que un AI
      Overview enseña al lado de la respuesta. Sin url se pinta como tabla. */
   | { t: 'diagrama'; titulo: string; encabezados: string[]; filas: string[][]; nota?: string; alt?: string; url?: string; ancho?: number; alto?: number }
+  /* La pantalla de Sacs que resuelve eso, dibujada con el diseño del sistema a
+     partir de datos (campos y tabla). Se rasteriza como el diagrama. */
+  | { t: 'captura'; titulo: string; migas?: string; campos: [string, string][]; encabezados?: string[]; filas?: string[][]; alt: string; url?: string; ancho?: number; alto?: number }
   /* Un video del canal, con su ficha. VideoObject en el schema. */
   | { t: 'video'; youtube_id: string; titulo: string; descripcion?: string; duracion_seg?: number; subido_at?: string };
 
@@ -134,6 +137,15 @@ export function aHtml(bloques: Bloque[]): string {
         }
         break;
       }
+      case 'captura': {
+        const u = b.url ? urlSegura(b.url) : null;
+        if (u) {
+          out.push(`<figure class="de-captura"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 760}"><figcaption>En Sacs: ${esc(b.titulo)}</figcaption></figure>`);
+        } else {
+          out.push(`<div class="de-captura-html"><p class="de-captura-t">${esc(b.titulo)}</p><dl>${(b.campos || []).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div>`);
+        }
+        break;
+      }
       case 'resumen':
         out.push(`<div class="de-resumen"><p class="de-resumen-t">En corto</p><ul>${(b.items || []).map(i => `<li>${enLinea(i)}</li>`).join('')}</ul></div>`);
         break;
@@ -184,6 +196,7 @@ export function aTexto(bloques: Bloque[]): string {
     else if (b?.t === 'tabla') for (const f of b.filas || []) p.push(...f);
     else if (b?.t === 'resumen') p.push(...(b.items || []));
     else if (b?.t === 'diagrama') { p.push(b.titulo); for (const f of b.filas || []) p.push(...f); }
+    else if (b?.t === 'captura') { p.push(b.titulo); for (const [k, v] of b.campos || []) p.push(`${k}: ${v}`); }
     else if (b?.t === 'glosario') for (const i of b.items || []) p.push(i.termino, i.definicion);
     // 'imagen', 'video' y 'dato' no cuentan como texto: son apoyo, no prosa.
   }
@@ -216,6 +229,7 @@ export function aMarkdown(bloques: Bloque[]): string {
       case 'cta': out.push(`[CTA] ${b.texto} → [${b.boton}](${b.url})`); break;
       case 'imagen': out.push(`[IMAGEN${b.url ? '' : ' pendiente de generar'}: ${b.alt}${b.escena ? ` · escena: ${b.escena}` : ''}]`); break;
       case 'diagrama': out.push(`[DIAGRAMA → imagen${b.url ? '' : ' pendiente'}: ${b.titulo}]\n| ${(b.encabezados || []).join(' | ')} |\n` + (b.filas || []).map(f => `| ${f.join(' | ')} |`).join('\n')); break;
+      case 'captura': out.push(`[CAPTURA DE SACS → imagen${b.url ? '' : ' pendiente'}: ${b.titulo}${b.migas ? ` · ${b.migas}` : ''}]\n` + (b.campos || []).map(([k, v]) => `${k}: ${v}`).join(' · ') + ((b.filas || []).length ? `\n| ${(b.encabezados || []).join(' | ')} |\n` + (b.filas || []).map(f => `| ${f.join(' | ')} |`).join('\n') : '')); break;
       case 'resumen': out.push(`[RESUMEN «En corto»]\n` + (b.items || []).map(i => `- ${i}`).join('\n')); break;
       case 'glosario': out.push(`[GLOSARIO]\n` + (b.items || []).map(i => `**${i.termino}**: ${i.definicion}`).join('\n')); break;
       case 'video': out.push(`[VIDEO youtube:${b.youtube_id}] ${b.titulo}`); break;
@@ -259,8 +273,8 @@ export function schemaDeCuerpo(bloques: Bloque[]): Record<string, any>[] {
     });
   }
 
-  for (const d of (bloques || []).filter(b => b?.t === 'diagrama' && (b as any).url) as Extract<Bloque, { t: 'diagrama' }>[]) {
-    out.push({ '@context': 'https://schema.org', '@type': 'ImageObject', contentUrl: d.url, url: d.url, name: d.titulo, caption: d.alt || d.titulo, width: d.ancho || 1200, height: d.alto || 800 });
+  for (const d of (bloques || []).filter(b => (b?.t === 'diagrama' || b?.t === 'captura') && (b as any).url) as any[]) {
+    out.push({ '@context': 'https://schema.org', '@type': 'ImageObject', contentUrl: (d as any).url, url: (d as any).url, name: (d as any).titulo, caption: (d as any).alt || (d as any).titulo, width: (d as any).ancho || 1200, height: (d as any).alto || 800 });
   }
 
   for (const v of (bloques || []).filter(b => b?.t === 'video') as Extract<Bloque, { t: 'video' }>[]) {

@@ -8,6 +8,7 @@
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
+import GuiasDelGiro from '../../components/giros/GuiasDelGiro.astro';
 import { servicioGiro } from '../../data/entidad';
 import { breadcrumbGiro } from '../../lib/breadcrumb';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
@@ -163,6 +164,8 @@ const desc =
   <SuitePlanes suite="Suite Moda" />
 
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus apartados con su fecha en pantalla." cta="Agenda una demo" />
+
+  <GuiasDelGiro giro="novias-y-fiesta" titulo="Guías para boutiques de novias y fiesta" />
 
   <GiroEnlaces giro="novias-y-fiesta" />
 

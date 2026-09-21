@@ -52,6 +52,26 @@ const fecha = (s: string | null) => s
 
   <div class="cm-cuerpo" set:html={pieza.html} />
 
+  {/* Hub-and-spoke: el hub enlaza a TODOS sus spokes agrupados por intención;
+      un spoke enlaza al hub y a dos hermanos. Es lo que hace que ninguna pieza
+      del giro quede suelta y que la autoridad suba por el árbol. */}
+  {pieza.hermanas?.length > 0 && (
+    <nav class="cm-mapa" aria-label={pieza.es_hub ? 'Mapa del tema' : 'Sigue leyendo'}>
+      <p class="cm-mapa-t">{pieza.es_hub ? `Todo sobre este tema para ${pieza.giro?.label?.toLowerCase() || 'tu giro'}` : 'Sigue leyendo'}</p>
+      {['entender', 'hacer', 'comparar', 'casos'].map(g => {
+        const xs = pieza.hermanas.filter((h: any) => h.intencion === g);
+        if (!xs.length) return null;
+        const nombre = { entender: 'Entender', hacer: 'Hacer: plantillas y calculadoras', comparar: 'Comparar', casos: 'Casos' }[g];
+        return (
+          <div class="cm-mapa-grupo">
+            {pieza.es_hub && <p class="cm-mapa-g">{nombre}</p>}
+            <ul>{xs.map((h: any) => <li><a href={h.url}>{h.es_hub ? `La guía completa: ${h.titulo}` : h.titulo}</a>{h.meta_desc && pieza.es_hub && <span> — {h.meta_desc}</span>}</li>)}</ul>
+          </div>
+        );
+      })}
+    </nav>
+  )}
+
   {/* El cierre manda al giro de quien lee, no a un /contacto genérico: quien
       llegó buscando cómo llevar apartados de novias quiere ver qué hace Sacs
       con una boutique de novias, no «ver cómo funciona». Si la pieza no tiene
@@ -186,6 +206,15 @@ const fecha = (s: string | null) => s
   .cm-cuerpo :global(.de-diagrama figcaption), .cm-cuerpo :global(.de-diagrama-t) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
   .cm-cuerpo :global(.de-diagrama-t) { margin: 0 0 var(--space-2); font-weight: 600; }
 
+  .cm-cuerpo :global(.de-captura) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-captura img) { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: 0 12px 40px rgba(20, 20, 60, .12); border: 1px solid var(--color-border-light); }
+  .cm-cuerpo :global(.de-captura figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-captura-html) { margin: var(--space-6) 0; padding: var(--space-5); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
+  .cm-cuerpo :global(.de-captura-t) { margin: 0 0 var(--space-3); font-weight: 650; }
+  .cm-cuerpo :global(.de-captura-html dl) { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2) var(--space-5); }
+  .cm-cuerpo :global(.de-captura-html dt) { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-captura-html dd) { margin: 0; font-weight: 600; }
+
   .cm-cuerpo :global(.de-video) { margin: var(--space-8) 0; }
   .cm-cuerpo :global(.de-video-marco) { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
   .cm-cuerpo :global(.de-video-marco iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -205,6 +234,14 @@ const fecha = (s: string | null) => s
     padding: var(--space-3) var(--space-6); border-radius: var(--radius-full); font-weight: 600; font-size: .9375rem;
   }
   .cm-cuerpo :global(.de-cta-b:hover), .cm-boton:hover { background: var(--color-primary-hover); }
+
+  .cm-mapa { margin-top: var(--space-12); padding: var(--space-6); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
+  .cm-mapa-t { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 var(--space-4); }
+  .cm-mapa-g { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--color-text-secondary); margin: var(--space-4) 0 var(--space-2); }
+  .cm-mapa ul { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); }
+  .cm-mapa a { color: var(--color-primary-texto); font-weight: 600; text-decoration: none; }
+  .cm-mapa a:hover { text-decoration: underline; }
+  .cm-mapa span { color: var(--color-text-secondary); font-size: .9rem; }
 
   .cm-pie {
     margin-top: var(--space-16); padding-top: var(--space-8);

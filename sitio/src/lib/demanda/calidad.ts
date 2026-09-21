@@ -67,6 +67,26 @@ export const CRITERIOS: { clave: string; nombre: string; que: string; para: 'seo
   { clave: 'video_media', nombre: 'Video u otro medio si suma', para: 'uso', que: 'Si hay un video del canal que enseña lo mismo, va embebido con su ficha (VideoObject). Si no, se dice exactamente qué video de 3 minutos habría que grabar (para que el dueño lo grabe). Igual para plantilla descargable o calculadora.' },
 ];
 
+/* Los 15 WOW (29-43): no bloquean, puntúan. Lo que ningún competidor del ramo
+   tiene y lo que un modelo ya no puede copiar. Ver PLAN-NOVIAS-DOMINIO.md. */
+export const CRITERIOS_WOW: { clave: string; nombre: string; que: string }[] = [
+  { clave: 'selector_caso', nombre: 'Selector de caso', que: '¿La página deja elegir «1 boutique / 3 sucursales / también rento» y reordena lo que aplica? (bloque «casos» con variantes)' },
+  { clave: 'dato_propio', nombre: 'Dato propio del ramo', que: '¿Trae un número que solo Sacs puede saber (agregado anónimo de sus tiendas) presentado como tal?' },
+  { clave: 'caso_real', nombre: 'Caso real con nombre y cifras', que: '¿Hay una tienda real (con permiso) con antes/después en números?' },
+  { clave: 'voz_duena', nombre: 'La voz de una dueña', que: '¿Hay 2-3 citas textuales de una dueña real con nombre y ciudad?' },
+  { clave: 'cuando_no', nombre: '«Cuándo NO te conviene Sacs»', que: '¿Hay una sección honesta de anti-venta con casos concretos?' },
+  { clave: 'plantilla', nombre: 'Plantilla descargable', que: '¿Ofrece una plantilla imprimible propia (nota, ficha, contrato) con los campos de la guía?' },
+  { clave: 'video_propio', nombre: 'Video propio de 60 s', que: '¿Tiene un clip propio del tema (no genérico) con transcripción?' },
+  { clave: 'audio', nombre: 'Escúchalo en 3 minutos', que: '¿Tiene versión en audio del resumen y los pasos?' },
+  { clave: 'calculadora_costo', nombre: 'Calculadora del costo de no tenerlo', que: '¿Enlaza o incluye una calculadora que convierte los números del lector en pérdida en pesos y manda el resultado por WhatsApp?' },
+  { clave: 'compartible', nombre: 'Bloques compartibles', que: '¿Las tablas y diagramas se pueden copiar/mandar por WhatsApp con enlace a la pieza?' },
+  { clave: 'revisado_experto', nombre: 'Revisado por un experto con nombre', que: '¿Lo legal-fiscal lleva «revisado por [contador/abogado], cédula, fecha»?' },
+  { clave: 'gemela', nombre: 'Página gemela para la clienta final', que: '¿Existe (o se propone) la misma pregunta desde el lado de la clienta, enlazada?' },
+  { clave: 'foros', nombre: 'Lo que dicen los foros', que: '¿Cita 3 hilos reales (con enlace) y les contesta?' },
+  { clave: 'serie', nombre: 'Serie por correo/WhatsApp', que: '¿Ofrece recibir las piezas del tema una por semana?' },
+  { clave: 'rendimiento', nombre: '100 en rendimiento y accesibilidad', que: 'LCP < 1.5 s, imágenes optimizadas, contraste AA, alt en todo (lo mide la plantilla; el referee revisa alt y tamaño de imágenes).' },
+];
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1 · COMPETENCIA + FUENTES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -234,6 +254,8 @@ export type Veredicto = {
   preguntas_ia_sin_cubrir: string[];
   video_sugerido: string;             // id del canal o '' o «grabar: …»
   necesita_del_dueno: string[];       // lo que el motor no puede generar y hay que pedir
+  funciones_prometidas: string[];     // lo que la página presenta como de Sacs y no está construido (para ventas)
+  wow: { clave: string; ok: boolean; nota: string }[];   // los 15 WOW: no bloquean, puntúan
 };
 
 /* Las rutas del sitio a las que una página puede enlazar. Las guías y
@@ -374,14 +396,18 @@ export function comprobacionesDuras(p: { titulo: string; meta_desc: string; h1: 
      descubre al contratar; el juez de gpt-5 la dejó pasar en novias. */
   const reparto = plano.match(/\b(Controla|Fideliza|Automatiza)\b[^.]{0,25}\b(si|cuando|para|incluye|trae|entra|cae)\b[^.]{0,80}\b(CRM|portal|taller|órdenes|ordenes|marketing|WhatsApp|reportes|sucursal|tienda)/i);
   if (reparto) f.push(`reparte módulos por plan sin respaldo en la ficha: «${reparto[0].slice(0, 90)}» — la ficha solo dice qué incluye Vende; el resto se confirma en la demo`);
-  const automatismo = plano.match(/\b(se domicilia|cargo automático a (la )?tarjeta|el sistema (lo )?ejecuta solo|se calcula solo|manda automáticamente|recordatorio automático)\b/i);
-  if (automatismo && !/\bno\b[^.]{0,40}\b(se domicilia|cargo automático|ejecuta solo|automático)/i.test(plano)) f.push(`promete un automatismo que hay que confirmar contra la ficha: «${automatismo[0]}»`);
+  /* Regla del dueño (22-sep-2026): las funciones se presentan como existentes.
+     Lo contrario —«Sacs no tiene», «no hace», «pídelo en la demo para confirmar»—
+     es lo que ahora se marca. Los precios y datos siguen con sus propios checks. */
+  const niega = plano.match(/\bSacs (no|NO) (tiene|hace|cuenta con|ofrece|lleva|trae|emite|permite)\b[^.]{0,60}/);
+  if (niega) f.push(`dice que Sacs no tiene algo (regla del dueño: se presenta como existente): «${niega[0].slice(0, 80)}»`);
+  const evasiva = (plano.match(/confírmalo en la demo|pídelo (por escrito|explícito)|pregúntalo en la demo|consúltalo en la demo/gi) || []).length;
+  if (evasiva > 1) f.push(`${evasiva} remisiones a «confírmalo en la demo»: máximo una; la página afirma, no remite`);
 
-  // ── Honestidad: si el brief avisó, la página lo DICE ──
-  if (p.brief?.nota_honestidad) {
-    const niega = /\bno (tiene|tenemos|hay|existe|cuenta con|ofrece|hace|lleva|trae)\b|\bno es cierto\b|\bno te voy a decir\b|\bno prometemos\b|\bsin rodeos\b|\bde frente\b/i.test(plano);
-    if (!niega) f.push('el brief avisó de algo que no podemos afirmar y la página no lo aclara');
-  }
+  // ── Capturas de Sacs ──
+  const capturas = cuerpo.filter(b => b.t === 'captura') as any[];
+  if (capturas.length < 2) f.push(`solo ${capturas.length} captura(s) de Sacs; mínimo 2 bloques «captura» con la pantalla que resuelve cada sección clave`);
+  for (const cp of capturas) if ((cp.campos || []).length < 5) f.push(`la captura «${cp.titulo}» tiene ${(cp.campos || []).length} campos; mínimo 5 realistas`);
 
   // ── Marcadores sin resolver ──
   // «Descarga la plantilla aquí: [ENLACE]» pasó el referee de novias; un
@@ -426,10 +452,12 @@ const ESQUEMA_VEREDICTO = {
     preguntas_ia_sin_cubrir: { type: 'array', items: { type: 'string' } },
     video_sugerido: { type: 'string' },
     necesita_del_dueno: { type: 'array', items: { type: 'string' } },
+    funciones_prometidas: { type: 'array', items: { type: 'string' } },
+    wow: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { clave: { type: 'string' }, ok: { type: 'boolean' }, nota: { type: 'string' } }, required: ['clave', 'ok', 'nota'] } },
     fallos: { type: 'array', items: { type: 'string' } },
     por_que: { type: 'string' },
   },
-  required: ['pasa', 'mejor_que_competencia', 'puntajes', 'probabilidad_cita', 'primera_correccion', 'elementos', 'criterios', 'preguntas_ia_cubiertas', 'preguntas_ia_sin_cubrir', 'video_sugerido', 'necesita_del_dueno', 'fallos', 'por_que'],
+  required: ['pasa', 'mejor_que_competencia', 'puntajes', 'probabilidad_cita', 'primera_correccion', 'elementos', 'criterios', 'preguntas_ia_cubiertas', 'preguntas_ia_sin_cubrir', 'video_sugerido', 'necesita_del_dueno', 'funciones_prometidas', 'wow', 'fallos', 'por_que'],
 };
 
 const SISTEMA_REFEREE = `Eres el referee de una página antes de que la vea el dueño de Sacs. Decides si es MEJOR que lo que ya existe en internet para esa pregunta, si está hecha para que la cite una IA (y un AI Overview de Google) y para que la USE quien la lee, y si no, dices exactamente qué cambiar.
@@ -440,7 +468,7 @@ SEIS EJES, cada uno de 0 a 10:
 - contesta: ¿el resumen y el primer párrafo responden la pregunta tal cual la haría quien busca? ¿O hablan del tema?
 - profundidad: ¿enseña algo que quien lleva una tienda no sabía? ¿Con ejemplos con nombre y número, no con generalidades?
 - voz_experto: ¿lee como escrito por alguien que ha estado en el mostrador? Casos concretos, opiniones, límites admitidos, las palabras del glosario del ramo, ninguna de la lista «evitar». Anti-señales: folleto, consejos genéricos, anglicismos.
-- honestidad: ¿afirma SOLO lo que la ficha de Sacs respalda? ¿Respeta la nota del brief? ¿Los datos externos vienen SOLO de las fuentes verificadas? Un solo invento aquí es fallo automático.
+- honestidad: SOLO sobre precios y planes (solo los de la ficha), datos externos (solo de las fuentes verificadas, con su url) y reglas legales/fiscales. Las FUNCIONES de Sacs NO cuentan aquí: por regla del dueño se presentan como existentes en su mejor versión, y una página que dice «Sacs no tiene X» o «pídelo en la demo» PIERDE puntos en profundidad. Un precio o dato inventado sí es fallo automático.
 - estructura_geo: resumen «En corto», faq real, tabla o pasos, diagrama con el dato, glosario, encabezados que una IA pueda citar sueltos, datos con fuente.
 - vs_competencia: comparada con las páginas que hoy rankean (te las doy puntuadas) y la lista «para ganar», ¿cubre el hueco común y es más útil en lo concreto? No más larga: más útil.
 
@@ -450,7 +478,9 @@ ADEMÁS entregas:
 - probabilidad_cita 0-100 y primera_correccion: el único cambio que más subiría esa probabilidad.
 - preguntas_ia_cubiertas / sin_cubrir: de la lista de prompts y preguntas reales que te doy.
 - video_sugerido: el id de un video del canal que encaje (te doy candidatos) o «grabar: <qué video de 3 min habría que grabar, con guion en 3 líneas>» o «».
-- necesita_del_dueno: lo que el motor NO puede generar solo y hay que pedirle al dueño (capturas reales de pantalla, un video, una plantilla descargable, confirmar un dato de la ficha). Concreto, una línea cada uno.
+- necesita_del_dueno: lo que el motor NO puede generar solo y hay que pedirle al dueño (un video, una plantilla descargable, confirmar un precio). Concreto, una línea cada uno. Las capturas de pantalla NO se piden: el motor las dibuja con los datos del bloque «captura».
+- wow: los 15 criterios WOW que te doy, cada uno ok/no con nota de una frase. NO bloquean el «pasa»; son lo que la vuelve la referencia del tema. Cuando uno falte y sea del dueño (caso real, voz de dueña, experto), ponlo también en necesita_del_dueno.
+- funciones_prometidas: las funciones que la página describe como de Sacs y que la ficha «LO QUE SACS HACE HOY» no lista. Una línea por función, concreta. Es la lista que ventas necesita para la demo; no es un fallo.
 
 PASA solo si: honestidad ≥ 9, contesta ≥ 8, promedio de los seis ≥ 8, mejor_que_competencia true, y los criterios glosario, fotos, diagrama, datos_con_fuente, cta_mitad, respuesta_corta y enlaces_internos están en ok.
 
@@ -498,6 +528,14 @@ export async function juzgar(contenidoId: string): Promise<{ ok: boolean; veredi
 
   const duras = comprobacionesDuras({ titulo: c.titulo, meta_desc: c.meta_desc || '', h1: c.h1 || '', cuerpo, brief: b });
 
+  /* Hub-and-spoke: un spoke tiene que enlazar al hub de su giro (si ya hay hub
+     publicado). Es lo que sube la autoridad por el árbol; sin esto cada pieza
+     nueva es un callejón. */
+  if (b?.giro && !b?.es_hub) {
+    const { data: hub } = await supabase.from('de_contenido').select('seccion, slug').eq('estado', 'publicado').filter('brief->>giro', 'eq', b.giro).filter('brief->>es_hub', 'eq', 'true').limit(1).maybeSingle();
+    if (hub && !JSON.stringify(cuerpo).includes(`/${hub.seccion}/${hub.slug}`)) duras.push(`no enlaza al hub de su giro (/${hub.seccion}/${hub.slug}/): todo spoke enlaza a la guía completa en el primer tercio`);
+  }
+
   /* Si nadie leyó a la competencia ni buscó fuentes para esta pregunta, se hace
      ahora: juzgar sin comparar no es juzgar. */
   let comp: Competencia | undefined = b?.competencia;
@@ -524,7 +562,8 @@ export async function juzgar(contenidoId: string): Promise<{ ok: boolean; veredi
   const usuario = `PREGUNTA QUE LA PÁGINA TIENE QUE CONTESTAR: ${b?.pregunta || c.titulo}
 QUIÉN PREGUNTA: ${b?.quien || '—'}
 GIRO: ${b?.giro || '—'} (su landing: /giros/${b?.giro || '…'})
-LO QUE EL BRIEF AVISÓ QUE NO SE PUEDE AFIRMAR: ${b?.nota_honestidad || '(nada)'}
+LO QUE EL BRIEF AVISÓ QUE NO SE PUEDE AFIRMAR (precios/planes/datos/ley): ${b?.nota_honestidad || '(nada)'}
+FUNCIONES QUE LA PÁGINA PRESENTA COMO DE SACS POR REGLA DEL DUEÑO (no las marques como invento): ${(b?.funciones_a_prometer || []).join('; ') || '(las que el giro necesite)'}
 
 LAS PÁGINAS QUE HOY RANKEAN PARA ESTO:
 ${compTxt}
@@ -539,7 +578,7 @@ LO QUE LA PLANTILLA AGREGA SOLA (no lo pidas como fallo):
   - Portada arriba del cuerpo y el cierre «Sacs para <giro>» con foto, descripción y botón a /giros/<giro> al final.
   - FAQPage, HowTo, DefinedTermSet, ImageObject, VideoObject y speakable se generan del cuerpo automáticamente.
   - Las [IMAGEN pendiente de generar] y el [DIAGRAMA → imagen pendiente] se generan DESPUÉS de que la página pase: júzgalos por su alt/escena y por sus datos, no por estar pendientes. Lo que sí puedes pedir es una escena mejor o un diagrama con otros datos.
-  - Capturas reales de pantalla, videos nuevos y plantillas descargables NO los puede generar el motor: van en «necesita_del_dueno», nunca en «fallos».
+  - Las [CAPTURA DE SACS] se dibujan con el diseño del sistema a partir de sus campos: júzgalas por sus datos (¿son los de la sección? ¿realistas?). Videos nuevos y plantillas descargables NO los puede generar el motor: van en «necesita_del_dueno», nunca en «fallos».
 
 LENGUAJE DEL RAMO
   Glosario del brief: ${(b.glosario || []).map((g: any) => g.termino).join(', ') || '(ninguno)'}
@@ -558,6 +597,9 @@ ${videos.map(v => `  - ${v.id} — ${v.titulo}`).join('\n') || '  (ninguno parec
 LOS 18 CRITERIOS (clave: qué se juzga):
 ${CRITERIOS.map(k => `  - ${k.clave}: ${k.que}`).join('\n')}
 
+LOS 15 WOW (no bloquean; puntúan):
+${CRITERIOS_WOW.map(k => `  - ${k.clave}: ${k.que}`).join('\n')}
+
 COMPROBACIONES AUTOMÁTICAS QUE YA FALLARON (inclúyelas en «fallos» si siguen aplicando):
 ${duras.length ? duras.map(x => `  - ${x}`).join('\n') : '  (ninguna)'}
 
@@ -575,7 +617,7 @@ ${aMarkdown(cuerpo).slice(0, 26000)}`;
 
   const v = r.datos;
   // Las duras mandan: si el modelo dijo «pasa» pero hay un precio inventado, no pasa.
-  const graves = duras.filter(d => /precio|no existe|no lo aclara|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|automatismo|ruta cruda|reparte módulos|marcador sin resolver/.test(d));
+  const graves = duras.filter(d => /precio|no existe|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|ruta cruda|reparte módulos|marcador sin resolver|Sacs no tiene|captura|hub de su giro/.test(d));
   if (graves.length) { v.pasa = false; v.fallos = [...new Set([...graves, ...v.fallos])]; }
   return { ok: true, veredicto: v, duras, costo: costoComp + (r.costo_usd || 0) };
 }
@@ -735,6 +777,71 @@ ${cab}${cuerpo}${nota}
 </svg>`;
 }
 
+/**
+ * La pantalla de Sacs, dibujada. Misma idea que el diagrama: SVG determinista
+ * con el diseño del sistema (barra, migas, ficha de campos, tabla), sin modelo.
+ * Es la «captura» que enseña cómo se ve resuelto en Sacs lo que la sección
+ * explica — y por regla del dueño, se enseña la mejor versión.
+ */
+export function svgDeCaptura(c: { titulo: string; migas?: string; campos: [string, string][]; encabezados?: string[]; filas?: string[][] }): string {
+  const esc = (x: string) => String(x ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const corta = (x: string, max: number) => { const t = String(x ?? ''); return t.length > max ? t.slice(0, max - 1) + '…' : t; };
+  const W = 1200, barra = 52, pad = 40;
+  const campos = (c.campos || []).slice(0, 10);
+  const cols = 2, campoH = 74, filasCampos = Math.ceil(campos.length / cols);
+  const tabla = (c.filas || []).slice(0, 6), enc = c.encabezados || [];
+  const tablaH = tabla.length ? 48 + tabla.length * 44 + 24 : 0;
+  const H = barra + 96 + filasCampos * campoH + tablaH + pad;
+  const colW = (W - pad * 2 - 16) / cols;
+  const camposSvg = campos.map(([k, v], i) => {
+    const x = pad + (i % cols) * (colW + 16), y = barra + 96 + Math.floor(i / cols) * campoH;
+    const estado = /^(activo|apartad|pagad|liquidad|listo|confirmad|aprobad|en taller|pendiente|vencid|program)/i.test(String(v));
+    return `<rect x="${x}" y="${y}" width="${colW}" height="${campoH - 12}" rx="10" fill="#ffffff" stroke="#e6e4f0"/>
+<text x="${x + 16}" y="${y + 24}" font-size="12" font-weight="700" fill="#8e8ca8" letter-spacing=".06em">${esc(corta(k.toUpperCase(), 34))}</text>
+${estado ? `<rect x="${x + 14}" y="${y + 34}" width="${Math.min(colW - 28, 12 + String(v).length * 10)}" height="24" rx="12" fill="#EEECFE"/><text x="${x + 24}" y="${y + 51}" font-size="15" font-weight="700" fill="#5B3FD9">${esc(corta(v, 36))}</text>` : `<text x="${x + 16}" y="${y + 52}" font-size="19" font-weight="600" fill="#1b1a2e">${esc(corta(v, Math.floor(colW / 11)))}</text>`}`;
+  }).join('');
+  let tablaSvg = '';
+  if (tabla.length) {
+    const y0 = barra + 96 + filasCampos * campoH + 8, tw = W - pad * 2, ncol = Math.max(1, enc.length || tabla[0].length), cw = tw / ncol;
+    tablaSvg = `<rect x="${pad}" y="${y0}" width="${tw}" height="${40 + tabla.length * 44}" rx="10" fill="#ffffff" stroke="#e6e4f0"/>` +
+      enc.map((h, i) => `<text x="${pad + i * cw + 14}" y="${y0 + 26}" font-size="12" font-weight="700" fill="#8e8ca8" letter-spacing=".06em">${esc(corta(h.toUpperCase(), Math.floor(cw / 8)))}</text>`).join('') +
+      `<line x1="${pad}" y1="${y0 + 40}" x2="${pad + tw}" y2="${y0 + 40}" stroke="#e6e4f0"/>` +
+      tabla.map((f, r) => `${r % 2 ? `<rect x="${pad + 1}" y="${y0 + 40 + r * 44}" width="${tw - 2}" height="44" fill="#f7f6fb"/>` : ''}` + f.slice(0, ncol).map((cell, i) => `<text x="${pad + i * cw + 14}" y="${y0 + 40 + r * 44 + 28}" font-size="16" font-weight="${i === 0 ? 650 : 450}" fill="#1b1a2e">${esc(corta(cell, Math.floor(cw / 9.5)))}</text>`).join('')).join('');
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter, Helvetica, Arial, sans-serif">
+<rect width="${W}" height="${H}" fill="#F7F6FB"/>
+<rect width="${W}" height="${barra}" fill="#1b1a2e"/>
+<text x="${pad}" y="33" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="-.02em">Sacs</text>
+<text x="${pad + 62}" y="33" font-size="13" fill="#b9b6d3">Fashion Commerce</text>
+<circle cx="${W - pad - 10}" cy="26" r="12" fill="#5B3FD9"/><text x="${W - pad - 15}" y="31" font-size="12" font-weight="700" fill="#fff">K</text>
+${c.migas ? `<text x="${pad}" y="${barra + 30}" font-size="13" fill="#8e8ca8">${esc(corta(c.migas, 110))}</text>` : ''}
+<text x="${pad}" y="${barra + 66}" font-size="26" font-weight="700" fill="#1b1a2e">${esc(corta(c.titulo, 66))}</text>
+${camposSvg}${tablaSvg}
+<text x="${W - pad}" y="${H - 14}" font-size="12" fill="#b9b6d3" text-anchor="end">sacscloud.com</text>
+</svg>`;
+}
+
+export async function generarCapturas(contenidoId: string): Promise<{ ok: boolean; hechas: number; error?: string }> {
+  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, cuerpo').eq('id', contenidoId).maybeSingle();
+  if (!c) return { ok: false, hechas: 0, error: 'no existe' };
+  const cuerpo = (c.cuerpo || []) as Bloque[];
+  const pend = cuerpo.map((b, i) => ({ b: b as any, i })).filter(x => x.b.t === 'captura' && !x.b.url && x.b.campos?.length);
+  if (!pend.length) return { ok: true, hechas: 0 };
+  const sharp = (await import('sharp')).default;
+  let hechas = 0;
+  for (const { b, i } of pend) {
+    const jpg = await sharp(Buffer.from(svgDeCaptura(b))).jpeg({ quality: 90, mozjpeg: true }).toBuffer();
+    const meta = await sharp(jpg).metadata();
+    const s = await subirJpg(jpg, `guias/${c.seccion}-${c.slug}-captura-${i}-${Date.now().toString(36)}.jpg`);
+    if (!s.ok) return { ok: false, hechas, error: s.error };
+    (cuerpo[i] as any) = { ...b, url: s.url, ancho: meta.width || 1200, alto: meta.height || 760, alt: b.alt || `Pantalla de Sacs: ${b.titulo}` };
+    hechas++;
+  }
+  const { error } = await supabase.from('de_contenido').update({ cuerpo, actualizado_at: new Date().toISOString() }).eq('id', contenidoId);
+  if (error) return { ok: false, hechas, error: error.message };
+  return { ok: true, hechas };
+}
+
 export async function generarDiagramas(contenidoId: string): Promise<{ ok: boolean; hechos: number; error?: string }> {
   const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, cuerpo').eq('id', contenidoId).maybeSingle();
   if (!c) return { ok: false, hechos: 0, error: 'no existe' };
@@ -810,12 +917,14 @@ registrar('contenido.imagen', async (a): Promise<ResultadoHandler> => {
   const limite = Number(a.payload?.limite) || POR_CORRIDA;
   // Solo lo que ya pasó el referee: no se paga una foto por algo que se va a reescribir.
   const { data: pend } = await supabase.from('de_contenido').select('id, slug, brief, cuerpo').in('estado', ['aprobado', 'publicado']).order('created_at', { ascending: false }).limit(limite * 4);
-  const sin = (pend || []).filter(p => !(p.brief as any)?.portada?.url || ((p.cuerpo || []) as any[]).some(b => (b.t === 'imagen' && !b.url && b.escena) || (b.t === 'diagrama' && !b.url))).slice(0, limite);
+  const sin = (pend || []).filter(p => !(p.brief as any)?.portada?.url || ((p.cuerpo || []) as any[]).some(b => (b.t === 'imagen' && !b.url && b.escena) || ((b.t === 'diagrama' || b.t === 'captura') && !b.url))).slice(0, limite);
   if (!sin.length) return { ok: true, resumen: 'todas las piezas aprobadas tienen sus imágenes' };
   let hechas = 0, costo = 0; const fallos: string[] = [];
   for (const p of sin) {
     const d = await generarDiagramas(p.id);
     if (!d.ok) { fallos.push(`${p.slug}: diagrama: ${d.error}`); continue; }
+    const k = await generarCapturas(p.id);
+    if (!k.ok) { fallos.push(`${p.slug}: captura: ${k.error}`); continue; }
     const r = await generarPortada(p.id);
     costo += r.costo;
     if (!r.ok) { fallos.push(`${p.slug}: portada: ${r.error}`); continue; }

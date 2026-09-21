@@ -42,6 +42,8 @@ function resumenReferee(auditorias: any) {
     preguntas_ia_sin_cubrir: r.preguntas_ia_sin_cubrir || [],
     video_sugerido: r.video_sugerido || '',
     necesita_del_dueno: r.necesita_del_dueno || [],
+    funciones_prometidas: r.funciones_prometidas || [],
+    wow: r.wow || [],
   };
 }
 

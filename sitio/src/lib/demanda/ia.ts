@@ -253,7 +253,10 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
     const cuerpo: any = {
       systemInstruction: { parts: [{ text: p.sistema }] },
       contents: [{ role: 'user', parts: [{ text: usuario }] }],
-      generationConfig: { maxOutputTokens: max, temperature: 0 },
+      /* Gemini 3.x «piensa» dentro del MISMO tope de salida: con 28k un borrador
+         de 3,000 palabras llegaba cortado. Se le da margen (hasta 65k) para que
+         el razonamiento no se coma la respuesta. */
+      generationConfig: { maxOutputTokens: max > 8000 ? Math.min(65536, max * 2) : max, temperature: 0 },
     };
     /* Gemini 2.5 «piensa» antes de responder y esos tokens salen del MISMO
        presupuesto de salida. Para clasificar —«¿esto es demanda, sí o no?»— el

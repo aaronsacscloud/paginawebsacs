@@ -1044,3 +1044,8 @@ Para descongelar uno: se mueve otra vez arriba, con su fecha.
             vivo y el cierre enumera lo que va a hacer antes de hacerlo; el
             semáforo del micrófono (7.1) cubre lo que faltaba de la llamada en
             curso. Si quiere una bitácora corriendo, decirlo.
+
+## 2026-09-22 · pedido del dueño (llegó a media tarea de «funciones como existentes» en novias)
+> «y genera otros 15 criterios mas que nos den el WOW y vamos a usarlo para todos los contenidos que generemos vuelate la barda ve mas alla que cualquiera tambien en tema de linkbuilding segun se una pagina deb llebar a otra subpagina y esa pagina a una pagina principal (considerando que tenemos una pagina principal de novias como sería la mejor estrategia o sobre que estrategia usas este checklist, pensando que nos queremos posicionar y abarcar todos los angulos posibles para este segmento como sería tu estrategia completa para lograrlo, analizalo y dame un plan completo junto con lo otro que te he comentado. pon esta tarea en cola hasta terminar la anterior»
+- [ ] 15 criterios «WOW» adicionales (28 → 43) aplicables a todo el contenido
+- [ ] Estrategia de linkbuilding hub/cluster: pieza → subpágina → landing principal de novias; cómo se aplica el checklist; plan completo por ángulos para dominar el segmento

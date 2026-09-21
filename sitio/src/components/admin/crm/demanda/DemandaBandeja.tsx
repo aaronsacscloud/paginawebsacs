@@ -26,7 +26,8 @@ type Referee = {
   criterios?: { clave: string; ok: boolean; nota: string }[];
   elementos?: { elemento: string; veredicto: 'mantener' | 'cambiar'; confianza: number; propuesta: string }[];
   preguntas_ia_cubiertas?: string[]; preguntas_ia_sin_cubrir?: string[];
-  video_sugerido?: string; necesita_del_dueno?: string[];
+  video_sugerido?: string; necesita_del_dueno?: string[]; funciones_prometidas?: string[];
+  wow?: { clave: string; ok: boolean; nota: string }[];
 };
 type Resumen = {
   id: string; seccion: string; slug: string; titulo: string; meta_desc: string;
@@ -106,6 +107,30 @@ function VeredictoReferee({ r }: { r: Referee }) {
           <ul style={{ margin: '.4rem 0 0', paddingLeft: '1.1rem', fontSize: '.85rem', lineHeight: 1.6, color: P.texto }}>
             {r.necesita_del_dueno.map((x, i) => <li key={i}>{x}</li>)}
             {r.video_sugerido && r.video_sugerido.startsWith('grabar') && <li>Video: {r.video_sugerido}</li>}
+          </ul>
+        </div>
+      )}
+      {r.wow && r.wow.length > 0 && (
+        <details style={{ marginTop: 10 }}>
+          <summary style={{ cursor: 'pointer', fontSize: '.85rem', fontWeight: 600, color: P.texto }}>
+            WOW {r.wow.filter(k => k.ok).length} de {r.wow.length} (no bloquean: son lo que la vuelve la referencia)
+          </summary>
+          <div style={{ display: 'grid', gap: 4, marginTop: 8 }}>
+            {r.wow.map(k => (
+              <div key={k.clave} style={{ display: 'grid', gridTemplateColumns: '18px 190px 1fr', gap: 8, fontSize: '.82rem', lineHeight: 1.5, alignItems: 'baseline' }}>
+                <span style={{ color: k.ok ? P.verdeTinta : P.suave, fontWeight: 700 }}>{k.ok ? '✓' : '○'}</span>
+                <span style={{ fontWeight: 600, color: P.texto }}>{k.clave.replace(/_/g, ' ')}</span>
+                <span style={{ color: P.suave }}>{k.nota}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+      {r.funciones_prometidas && r.funciones_prometidas.length > 0 && (
+        <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: P.papel, border: `1px solid ${P.linea}` }}>
+          <div style={{ fontSize: 11.5, color: P.violetaTinta, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Lo que promete y no está construido (para ventas)</div>
+          <ul style={{ margin: '.4rem 0 0', paddingLeft: '1.1rem', fontSize: '.85rem', lineHeight: 1.6, color: P.texto }}>
+            {r.funciones_prometidas.map((x, i) => <li key={i}>{x}</li>)}
           </ul>
         </div>
       )}

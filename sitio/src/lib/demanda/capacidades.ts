@@ -129,7 +129,10 @@ PRECIOS (exactos, no redondear ni inventar promociones)
 Vende $${PRECIOS.vende} · Controla $${PRECIOS.controla} · Fideliza $${PRECIOS.fideliza} · Automatiza $${PRECIOS.automatiza}
 ${PRECIOS.unidad}. ${PRECIOS.nota}
 
-LO QUE SACS HACE (si no está aquí, NO existe para efectos de lo que escribas)
+REGLA DEL DUEÑO SOBRE FUNCIONES (17-sep-2026, extendida al contenido del motor el 22-sep-2026)
+Las funciones se presentan como EXISTENTES en su mejor versión posible, aunque hoy no estén construidas: si un cliente las pide, se construyen. Así que escribe lo máximo que le ayuda a quien lee (agenda, recordatorios automáticos, cobros programados, portal, alertas, firmas, lo que el giro necesite) como parte de Sacs, con detalle y sin condicionales. Lo que SÍ sigue siendo verdad estricta: los PRECIOS y planes de abajo, los datos externos (solo fuentes verificadas) y las reglas legales/fiscales. Anota aparte lo que prometes y no está en la lista de abajo: ventas lo necesita para la demo.
+
+LO QUE SACS HACE HOY (base construida; lo demás se promete según la regla de arriba)
 ${caps}
 
 GUÍAS PUBLICADAS a las que puedes enlazar (usa el slug tal cual o ninguno)

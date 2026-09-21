@@ -1,0 +1,48 @@
+---
+// Las guías del motor de demanda que pertenecen a este giro, enlazadas desde su
+// landing. Es el enlace de NIVEL 0 → NIVEL 1 del hub-and-spoke: sin él, la
+// página con más autoridad del giro no le pasa nada a las guías (medido
+// 22-sep-2026: la landing de novias tenía 0 enlaces a /recursos o
+// /software-para). Se lee en el build; cada push la refresca.
+import { listaPorGiro } from '../../lib/demanda/publicar';
+interface Props { giro: string; titulo?: string }
+const { giro, titulo = 'Guías para este giro' } = Astro.props;
+let piezas: Awaited<ReturnType<typeof listaPorGiro>> = [];
+try { piezas = await listaPorGiro(giro); } catch { piezas = []; }
+const hub = piezas.find(p => p.es_hub);
+const resto = piezas.filter(p => !p.es_hub).slice(0, 8);
+---
+{piezas.length > 0 && (
+  <section class="gdg">
+    <div class="gdg-in">
+      <p class="gdg-eyebrow">Sin registro</p>
+      <h2>{titulo}</h2>
+      {hub && (
+        <a class="gdg-hub" href={hub.url}>
+          <span class="gdg-hub-k">La guía completa</span>
+          <strong>{hub.titulo}</strong>
+          {hub.meta_desc && <span class="gdg-hub-d">{hub.meta_desc}</span>}
+        </a>
+      )}
+      {resto.length > 0 && (
+        <ul class="gdg-lista">
+          {resto.map(p => <li><a href={p.url}>{p.titulo}</a></li>)}
+        </ul>
+      )}
+    </div>
+  </section>
+)}
+<style>
+  .gdg { padding: var(--space-16) var(--space-6); }
+  .gdg-in { max-width: 960px; margin: 0 auto; }
+  .gdg-eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--color-secondary-texto); font-weight: 600; margin: 0 0 .5rem; }
+  .gdg h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3.5vw, 2.2rem); margin: 0 0 var(--space-6); text-wrap: balance; }
+  .gdg-hub { display: grid; gap: .3rem; padding: var(--space-6); border-radius: var(--radius-lg); background: var(--gradient-cream, var(--color-bg-secondary)); border: 1px solid var(--color-border-light); text-decoration: none; color: inherit; margin-bottom: var(--space-5); }
+  .gdg-hub:hover { border-color: var(--color-primary-texto); }
+  .gdg-hub-k { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--color-primary-texto); }
+  .gdg-hub strong { font-family: var(--font-display); font-size: 1.25rem; }
+  .gdg-hub-d { color: var(--color-text-secondary); }
+  .gdg-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+  .gdg-lista a { display: block; padding: var(--space-4); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); text-decoration: none; color: inherit; font-weight: 600; }
+  .gdg-lista a:hover { border-color: var(--color-primary-texto); color: var(--color-primary-texto); }
+</style>
