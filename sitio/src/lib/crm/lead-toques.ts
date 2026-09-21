@@ -66,6 +66,30 @@ export function tituloToque(canal: Canal, resultado?: string | null): string {
   return `${c?.l}: ${r.l.toLowerCase()}`;
 }
 
+/* ── Lo que se habló FUERA del CRM ─────────────────────────────────────────
+ * El celular de alguien, un grupo de WhatsApp, un número que no está conectado.
+ * Pasa todo el tiempo y hasta hoy no quedaba en ningún lado: se perdía en el
+ * teléfono de quien lo atendió, y seis semanas después nadie podía reconstruir
+ * por qué el lead dijo que sí o que no.
+ *
+ * Se guarda como una actividad MÁS —la misma tabla y el mismo `tipo` del canal,
+ * así que cuenta como toque para la etapa y para el esfuerzo—, con
+ * `metadata.fuera_crm` y el medio por el que pasó. No es una gestión paralela:
+ * es la misma gestión, hecha por otro teléfono. */
+export const MEDIOS_FUERA: { v: string; l: string; tipo: string; corto: string }[] = [
+  { v: 'wa_otro',    l: 'WhatsApp desde otro número', tipo: 'whatsapp_enviado', corto: 'otro número' },
+  { v: 'wa_grupo',   l: 'Grupo de WhatsApp',          tipo: 'whatsapp_enviado', corto: 'grupo' },
+  { v: 'llamada',    l: 'Llamada',                    tipo: 'llamada',          corto: 'llamada' },
+  { v: 'presencial', l: 'Presencial',                 tipo: 'nota',             corto: 'presencial' },
+  { v: 'correo',     l: 'Correo personal',            tipo: 'email_enviado',    corto: 'correo' },
+  { v: 'otro',       l: 'Otro',                       tipo: 'nota',             corto: 'otro' },
+];
+
+export const medioFuera = (v?: string | null) => MEDIOS_FUERA.find(m => m.v === v) || MEDIOS_FUERA[5];
+
+/** ¿Esta actividad se registró como conversación de fuera del CRM? */
+export const esFueraCrm = (a: any) => !!a?.metadata?.fuera_crm;
+
 /* ── La línea de tiempo ───────────────────────────────────────────────────
  * Dos historias del mismo lead que vivían en pestañas distintas: la que
  * escribe una persona (Actividad) y la que se escribe sola (Señales). Juntas

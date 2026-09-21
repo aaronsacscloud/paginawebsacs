@@ -1050,3 +1050,15 @@ Para descongelar uno: se mueve otra vez arriba, con su fecha.
 - [x] 15 criterios «WOW» adicionales (28 → 43) aplicables a todo el contenido → `CRITERIOS_WOW` en calidad.ts, tercer nivel del referee (puntúan, no bloquean); PLAN-NOVIAS-DOMINIO.md
 - [x] Estrategia de linkbuilding hub/cluster → PLAN-NOVIAS-DOMINIO.md + artifact; código: listaPorGiro, es_hub, «Mapa del tema», check «spoke enlaza al hub», GuiasDelGiro en la landing de novias
 - [x] (22-sep-2026) «el call to action debe ser más visual como el home: en grande "Agenda una demo en línea" con la disponibilidad ahí mismo para agendar al momento, o "envíanos WhatsApp"; más notorio y con mucho más diseño» → cierre de las páginas del motor (ContenidoMotor)
+
+## 21-sep-2026 · reporte para el lead (PENDIENTE — prototipos primero)
+
+> «Necesito que este reporte se pueda hacer como tenemos los reportes de
+> entrega que maneje el mismo diseño solo que enfocado en un lead que entienda
+> que entendemos lo que busca adicional que se vea tecnológico y que tenga
+> frases como para impulsar el cierre y mencionar por atender a la reunión
+> tienes el 35% de descuento en la licencia anual de nuestros planes. quiero
+> que me des prototipos»
+
+Sale de la minuta de descubrimiento (cómo opera hoy · qué le duele · qué le
+interesó · qué le mostramos · objeciones · quién decide · siguiente paso).

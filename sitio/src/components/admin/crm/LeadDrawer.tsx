@@ -30,7 +30,7 @@ import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } fr
 import { pintaEstatus } from '../../../lib/crm/estatus-lead';
 import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
-import { CANALES, RESULTADOS, resultadoDe, tipoActividad, tituloToque, quienLoHizo, esRuido, type Canal } from '../../../lib/crm/lead-toques';
+import { CANALES, RESULTADOS, resultadoDe, tipoActividad, tituloToque, quienLoHizo, esRuido, MEDIOS_FUERA, medioFuera, esFueraCrm, type Canal } from '../../../lib/crm/lead-toques';
 import { confirmar } from '../../../lib/ui/confirmar';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '').replace('-', ' ') : '';
@@ -171,7 +171,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
   // Actividad dejó de ser pestaña: registrar el toque y la historia van DENTRO
   // de Seguimiento, porque son la misma conversación. Verlas aparte obligaba a
   // cambiar de pestaña para contestar "¿ya le hablé?" mientras leías la etapa.
-  const [tab, setTab] = useState<'info' | 'seguimiento' | 'reuniones' | 'cotizaciones' | 'senales'>('info');
+  const [tab, setTab] = useState<'info' | 'seguimiento' | 'reuniones' | 'conversaciones' | 'cotizaciones' | 'llegada' | 'senales'>('info');
   // La minuta que se está levantando o consultando. Vive aquí y no dentro del
   // renglón para que al guardar se pueda refrescar la ficha entera.
   const [minutaDe, setMinutaDe] = useState<any>(null);
@@ -334,7 +334,16 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
               ['info', 'Info general', null],
               ['seguimiento', 'Seguimiento', null],
               ['reuniones', 'Reuniones', (c.bookings || []).length],
+              /* Lo que se habló por fuera. Va pegado a Reuniones porque las dos
+                 contestan lo mismo —qué se le dijo y qué quedó— y no al final
+                 con lo que se consulta una vez. */
+              ['conversaciones', 'Conversaciones', (c.activities || []).filter(esFueraCrm).length],
               ['cotizaciones', 'Cotizaciones', (c.quotes || []).length],
+              /* CÓMO LLEGÓ. Es de lectura única: se mira antes de la primera
+                 llamada y casi nunca más. Vivía dentro de Info general, que es
+                 la pestaña que se abre cada vez, y ahí competía con lo que sí
+                 se consulta a diario. */
+              ['llegada', 'Cómo llegó', null],
               ['senales', 'Señales', null],
             ] as const).map(([k, l, n]) => (
               <button key={k} style={D.tab(tab === k)} onClick={() => irA(k)}>
@@ -401,12 +410,18 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
                 <Personas c={c} flash={flash} recargar={cargar} onChanged={onChanged} />
               </div>
               <div>
-                <DeDondeLlego c={c} />
+                {/* «De dónde llegó» se mudó a su pestaña: aquí estorbaba. */}
                 <SiguientePaso c={c} guardar={guardar} guardando={guardando} />
                 <LoUltimo c={c} />
               </div>
             </div>
           )}
+
+          {/* ── Cómo llegó: todo lo de adquisición, junto ── */}
+          {tab === 'llegada' && <ComoLlego c={c} />}
+
+          {/* ── Lo que se habló fuera del CRM ── */}
+          {tab === 'conversaciones' && <Conversaciones c={c} recargar={cargar} flash={flash} />}
 
           {/* Señales: el puntaje de intención y la historia completa de las
               cinco fuentes. Es lo que se lee antes de llamar. */}
@@ -1347,7 +1362,172 @@ function LoUltimo({ c }: any) {
   );
 }
 
-function DeDondeLlego({ c }: any) {
+/* La pastilla de «esto pasó fuera del CRM»: el degradado lila→rosa de la casa,
+   el mismo de «sin fecha» en el taller. No es una alarma —que una conversación
+   haya pasado por otro teléfono no tiene nada de malo—, es una marca de
+   procedencia. */
+const SIN_CRM = {
+  background: 'linear-gradient(100deg,#EEECFE,rgba(244,168,205,.42))',
+  color: '#9c3d70',
+  border: '1px solid rgba(217,83,142,.16)',
+} as const;
+
+/* ── CÓMO LLEGÓ ───────────────────────────────────────────────────────────
+   Todo lo de adquisición, junto y en su pestaña: de dónde vino, cuánto miró
+   antes de escribir, y con qué puntaje entró.
+   Estaba partido en dos sitios —la tarjeta «De dónde llegó» dentro de Info
+   general y la franja del héroe— y ninguno de los dos es donde se busca: esto
+   se lee UNA vez, antes de la primera llamada, y después estorba en la pestaña
+   que se abre cada día. */
+function ComoLlego({ c }: any) {
+  const a = c?.propiedades?.atribucion;
+  const paginas = c.page_count || a?.paginas_vistas || 0;
+  const cifra = (l: string, v: any, sub?: string, color?: string) => (
+    <div style={{ minWidth: 92 }}>
+      <div style={{ fontSize: '1.35rem', fontWeight: 750, lineHeight: 1.1, color: color || '#4b4560' }}>{v}</div>
+      <div style={{ fontSize: '0.62rem', color: '#8a8796', letterSpacing: '.04em', textTransform: 'uppercase' }}>{l}</div>
+      {sub && <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+  const min = Math.round(Number(c.total_time_on_site || 0) / 60);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14, alignItems: 'start' }}>
+      <div>
+        <DeDondeLlego c={c} forzar />
+      </div>
+      <div>
+        <div style={D.cardA}>
+          <div style={D.h}>Lo que miró antes de escribir</div>
+          <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+            {cifra('Señal web', c.lead_score ? `${c.lead_score}/100` : '—', 'qué tan caliente entró', c.lead_score >= 60 ? '#1E8A63' : c.lead_score ? '#5B4BD6' : undefined)}
+            {cifra('Páginas', paginas || '—', paginas ? 'del sitio, antes de dejar sus datos' : undefined)}
+            {min > 0 && cifra('En el sitio', `${min} min`)}
+          </div>
+          {/* El puntaje se explica: «50/100» sin contexto no le dice nada a
+              quien va a llamar, y es el número que más se mira aquí. */}
+          <div style={{ fontSize: '0.73rem', color: '#8a8796', lineHeight: 1.55, marginTop: 11, paddingTop: 10, borderTop: '1px solid #f5f4f8' }}>
+            La señal web sube con lo que hizo solo: páginas de producto, precios, volver al sitio, abrir un correo.
+            Lo que hacemos nosotros —llamarle, escribirle— no la mueve. El detalle de las cinco fuentes está en <b>Señales</b>.
+          </div>
+        </div>
+        <div style={D.cardA}>
+          <div style={D.h}>Cómo nos encontró</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 11 }}>
+            {([['Fuente', c.utm_source], ['Medio', c.utm_medium], ['Campaña', c.utm_campaign],
+               ['Contenido', c.utm_content], ['Cómo se dio de alta', c.origen_alta], ['Partner', c.referrer_partner_id ? 'sí' : null]] as [string, any][])
+              .map(([l, v]) => (
+                <div key={l} style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#a5a2af' }}>{l}</div>
+                  <div title={v ? String(v) : 'sin dato'} style={{ fontSize: '0.82rem', fontWeight: v ? 700 : 500, marginTop: 2, color: v ? '#241d43' : '#c9c7d0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v || '—'}</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── CONVERSACIONES FUERA DEL CRM ─────────────────────────────────────────
+   Lo que se habló desde el celular de alguien, un grupo o un número que no
+   está conectado. Antes se perdía en ese teléfono y seis semanas después nadie
+   podía reconstruir por qué el lead dijo que sí o que no.
+   Se guarda como una actividad más —mismo `tipo` del canal—, así que cuenta
+   como toque para la etapa y para el esfuerzo. No es una gestión paralela: es
+   la misma gestión, hecha por otro teléfono. */
+function Conversaciones({ c, recargar, flash }: any) {
+  const [medio, setMedio] = useState('wa_otro');
+  const [cuando, setCuando] = useState(new Date().toISOString().slice(0, 10));
+  const [donde, setDonde] = useState('');
+  const [nota, setNota] = useState('');
+  const [yendo, setYendo] = useState(false);
+
+  const lista = (c.activities || []).filter(esFueraCrm)
+    .sort((x: any, y: any) => String(y.metadata?.ocurrio || y.created_at).localeCompare(String(x.metadata?.ocurrio || x.created_at)));
+
+  async function guardar() {
+    if (!nota.trim()) return;
+    setYendo(true);
+    const m = medioFuera(medio);
+    const ocurrio = new Date(cuando + 'T12:00:00').toISOString();
+    const r = await fetch('/api/crm/activities', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contact_id: c.id, company_id: c.company_id || null,
+        tipo: m.tipo,
+        titulo: `${m.l}${donde.trim() ? ' · ' + donde.trim() : ''}`,
+        descripcion: nota.trim(),
+        metadata: { fuera_crm: true, medio, donde: donde.trim() || null, ocurrio },
+      }),
+    }).then(x => x.json()).catch(() => null);
+    setYendo(false);
+    if (!r || r.error) { flash?.(r?.error || 'No se pudo guardar'); return; }
+    // El último contacto se mueve solo desde el API con los tipos de toque;
+    // aquí solo se refresca para que la ficha lo muestre al instante.
+    setNota(''); setDonde('');
+    flash?.('Queda registrada · cuenta como contacto');
+    await recargar?.();
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' }}>
+      <div style={D.cardA}>
+        <div style={D.h}>Conversaciones<span style={D.hr}>{lista.length}</span></div>
+        {lista.length === 0 && (
+          <div style={{ fontSize: '0.78rem', color: '#8a8590', lineHeight: 1.55 }}>
+            Nada registrado todavía. Aquí va lo que se habló por fuera —el celular de alguien, un grupo,
+            un número que no está conectado—, para que la siguiente gestión no arranque a ciegas.
+          </div>
+        )}
+        {lista.map((a: any) => {
+          const m = medioFuera(a.metadata?.medio);
+          return (
+            <div key={a.id} style={{ padding: '10px 0', borderTop: '1px solid #f5f4f8' }}>
+              <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                <span style={{ ...SIN_CRM, borderRadius: 20, padding: '2px 9px', fontSize: '0.64rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{m.corto}</span>
+                <b style={{ fontSize: '0.82rem' }}>{fmtDate(a.metadata?.ocurrio || a.created_at)} · {m.l}</b>
+                {a.metadata?.donde && <span style={{ fontSize: '0.72rem', color: '#8a8796' }}>{a.metadata.donde}</span>}
+                {a.created_by && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#a5a2af' }}>lo registró {a.created_by}</span>}
+              </div>
+              {a.descripcion && <div style={{ fontSize: '0.8rem', color: '#3f3b4d', lineHeight: 1.55, marginTop: 4 }}>{a.descripcion}</div>}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={D.cardA}>
+        <div style={D.h}>Registrar una conversación</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+          <div><div style={D.fl}>Cuándo</div><input type="date" style={D.fi} value={cuando} onChange={e => setCuando(e.target.value)} /></div>
+          <div><div style={D.fl}>Por dónde</div>
+            <select style={D.fi} value={medio} onChange={e => setMedio(e.target.value)}>
+              {MEDIOS_FUERA.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div style={D.fl}>Número o medio</div>
+          <input style={D.fi} value={donde} onChange={e => setDonde(e.target.value)} placeholder="55 1234 5678 · grupo «Sacs · Jeen»" />
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div style={D.fl}>Qué se habló</div>
+          <textarea style={{ ...D.fi, minHeight: 74, resize: 'vertical' }} value={nota} onChange={e => setNota(e.target.value)}
+            placeholder="Lo que hay que recordar para la siguiente gestión." />
+        </div>
+        <div style={{ display: 'flex', gap: 9, alignItems: 'center', marginTop: 11, flexWrap: 'wrap' }}>
+          <button style={{ ...D.btnP, opacity: yendo || !nota.trim() ? .5 : 1 }} disabled={yendo || !nota.trim()} onClick={guardar}>
+            {yendo ? 'Guardando…' : 'Guardar'}
+          </button>
+          <span style={{ fontSize: '0.72rem', color: '#8a8796' }}>
+            Queda en «Lo último» y en la línea de tiempo, marcada como fuera del CRM, y cuenta como contacto.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeDondeLlego({ c, forzar }: any) {
   const a = c?.propiedades?.atribucion;
   const oBase = origenDe(origenDeRegistro(c));
   // Mismo problema que en el chip de Reuniones: si el utm_source no está
@@ -1385,7 +1565,7 @@ function DeDondeLlego({ c }: any) {
   // En móvil, si el origen es "Sin definir" y no hay campaña ni actividad,
   // la card entera es redundante: los chips de arriba ya lo dicen.
   const esMovilO = useIsMobile();
-  if (esMovilO && o.l === 'Sin definir' && !hayCampana && !a?.paginas_vistas) return null;
+  if (!forzar && esMovilO && o.l === 'Sin definir' && !hayCampana && !a?.paginas_vistas) return null;
   return (
     /* Azul: nada de esto se captura, todo lo escribió la atribución al llegar. */
     <div style={D.cardA}>
@@ -1601,28 +1781,66 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
           {dato('Toques', toques || '—')}
           {dato('Reuniones', (c.bookings || []).length || '—')}
           {dato('Cotizaciones', (c.quotes || []).length || '—')}
-          {c.lead_score ? dato('Señal web', `${c.lead_score}/100`, '#5B4BD6', c.page_count ? `${c.page_count} páginas vistas` : undefined) : null}
+          {/* La señal web y las páginas vistas se mudaron a «Cómo llegó»: son
+              de adquisición y se leen una vez, no cada que abres la ficha. */}
         </div>
 
         {/* ── Los datos, ESCRITOS (los inputs salen al Editar) ── */}
         {!editando ? (() => {
-          // En móvil los campos en "—" se colapsan: pantalla para lo que SÍ hay.
-          const pares: [string, any][] = [
-            ['Teléfono', c.telefono], ['Puesto', c.rol || c.puesto], ['Empresa', c.companies?.nombre],
-            ['Sucursales', c.sucursales_interes || c.companies?.sucursales], ['Giro', giroTxt],
-            ['Sistema actual', etiqueta('sistema_actual', prop('sistema_actual'))],
-            ['Urgencia', etiqueta('urgencia', prop('urgencia'))], ['Dueño', dueno],
-          ];
-          const vacios = pares.filter(x => !x[1]);
-          const visibles = (esMovilC && !verVacios) ? pares.filter(x => x[1]) : pares;
+          /* ── TRES TARJETAS, LAS MISMAS DE LA FICHA DEL CLIENTE ──
+             El negocio · Quién decide · Qué necesita. Antes era una rejilla
+             plana de diez campos donde el correo, el giro y la urgencia pesaban
+             igual, y ninguno era el que le pedimos a un cliente. Así, lo que se
+             captura de lead sirve tal cual el día que compra: no se recaptura
+             nada y las dos fichas se leen igual.
+             La tercera es la de «Facturación» del cliente cambiada por lo que
+             sí aplica antes de comprar: qué plan quiere, para cuándo y con
+             cuánto. */
+          const tarjeta = (titulo: string, campos: [string, any, any?][]) => {
+            const hay = campos.filter(x => x[1]);
+            // En móvil solo se pintan los que tienen algo: nueve guiones en
+            // una columna son nueve renglones de nada.
+            const ver = (esMovilC && !verVacios) ? (hay.length ? hay : campos.slice(0, 1)) : campos;
+            return (
+              /* `minWidth: 0` o las tres tarjetas no caben: un correo largo le
+                 impone al track su ancho mínimo de contenido y la rejilla se
+                 rompe a dos columnas aunque el espacio alcance. */
+              <div style={{ background: '#fff', border: '1px solid #efedf5', borderRadius: 12, padding: '13px 15px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: '#a5a2af', marginBottom: 9 }}>{titulo}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: '10px 14px' }}>
+                  {ver.map(([l2, v2, extra]) => <span key={l2} style={{ minWidth: 0 }}>{leido(l2, v2, extra)}</span>)}
+                </div>
+              </div>
+            );
+          };
+          const vacios = [c.companies?.nombre, giroTxt, c.sucursales_interes, c.telefono, c.rol || c.puesto, dueno].filter(x => !x).length;
           return (
-          <div style={{ ...separador, ...rejilla }}>
-            <div style={{ gridColumn: 'span 2', minWidth: 0 }}>{leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}</div>
-            <div style={{ gridColumn: esMovilC ? 'span 2' : undefined, minWidth: 0 }}>{leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}</div>
-            {visibles.map(([l2, v2]) => <span key={l2}>{l2 === 'Teléfono' ? leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel')) : leido(l2, v2)}</span>)}
-            {esMovilC && vacios.length > 0 && (
-              <button onClick={() => setVerVacios(x => !x)} style={{ gridColumn: 'span 2', border: 'none', background: 'none', padding: '6px 0', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
-                {verVacios ? 'Ocultar campos vacíos' : `Mostrar campos vacíos (${vacios.length})`}
+          <div style={separador}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12, alignItems: 'stretch' }}>
+              {tarjeta('El negocio', [
+                ['Empresa', c.companies?.nombre],
+                ['Giro', giroTxt],
+                ['Sucursales', c.sucursales_interes || c.companies?.sucursales],
+                ['Modelo', c.modelo_negocio],
+                ['Sistema actual', etiqueta('sistema_actual', prop('sistema_actual'))],
+              ])}
+              {tarjeta('Quién decide', [
+                ['Correo', c.email, c.email && btnCopiar(c.email, 'email')],
+                ['WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>],
+                ['Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel')],
+                ['Puesto', c.rol || c.puesto],
+                ['Dueño en el CRM', dueno],
+              ])}
+              {tarjeta('Qué necesita', [
+                ['Plan de interés', c.plan_interes],
+                ['Urgencia', etiqueta('urgencia', prop('urgencia'))],
+                ['Presupuesto', etiqueta('presupuesto', prop('presupuesto')) || prop('presupuesto')],
+                ['Qué sigue', c.proximo_paso],
+              ])}
+            </div>
+            {esMovilC && vacios > 0 && (
+              <button onClick={() => setVerVacios(x => !x)} style={{ border: 'none', background: 'none', padding: '8px 0 0', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {verVacios ? 'Ocultar campos vacíos' : `Mostrar campos vacíos (${vacios})`}
               </button>
             )}
           </div>
@@ -2060,6 +2278,24 @@ function RenglonReunion({ b, onMinuta, onCambio }: any) {
   const esFutura = String(b.fecha || '') > new Date().toISOString().slice(0, 10);
   const tieneMinuta = minutaLlena(b.minuta);
 
+  /* Demo o consultoría. Se lee del nombre del tipo de evento, que es donde de
+     verdad está: «Demo personalizada», «Consultoría», «Descubrimiento». Lo que
+     no cae en ninguno se queda como «reunión» y no se inventa una categoría. */
+  const nom = `${b.event_types?.nombre || ''} ${b.asunto || ''}`.toLowerCase();
+  const clase = /demo|demostra/.test(nom) ? { l: 'Demo', bg: '#EEECFE', fg: '#5B4BD6' }
+    : /consultor|descubr|diagn/.test(nom) ? { l: 'Consultoría', bg: '#E3EDFD', fg: '#2C5FC4' }
+    : /entrega|seguimiento/.test(nom) ? { l: 'Seguimiento', bg: '#EAF8F2', fg: '#1E8A63' }
+    : { l: 'Reunión', bg: '#f4f4f6', fg: '#6B7280' };
+
+  /* De la minuta: `acuerdos` y `siguiente` son los dos campos que se llenan
+     siempre (45 y 37 de las 45 minutas guardadas los traen). */
+  const corta = (t: any, max = 150) => {
+    const x = String(t || '').replace(/\s*\n+\s*/g, ' · ').replace(/\s{2,}/g, ' ').trim();
+    return x ? (x.length > max ? x.slice(0, max - 1).trimEnd() + '…' : x) : '';
+  };
+  const acuerdos = corta(b.minuta?.acuerdos);
+  const siguiente = corta(b.minuta?.siguiente, 110);
+
   async function marcar(nuevo: string) {
     setGuardando(true);
     try {
@@ -2074,10 +2310,28 @@ function RenglonReunion({ b, onMinuta, onCambio }: any) {
   return (
     <div style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start', flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
-        <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+          {/* DE QUÉ FUE. Una demo y una consultoría no se trabajan igual, y
+              hasta hoy el renglón decía la fecha y poco más. Sale del tipo de
+              evento que ya se agenda; no hay que capturar nada. */}
+          <span style={D.chip(clase.bg, clase.fg)}>{clase.l}</span>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
+        </div>
+        <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>
           {fmtLargo(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}{b.event_types?.nombre ? ` · ${b.event_types.nombre}` : ''}
         </div>
+        {/* QUÉ QUEDÓ. Lo acordado y el siguiente paso salen de la minuta que ya
+            se guarda; sin esto había que abrirla para saber en qué quedó. */}
+        {acuerdos && (
+          <div style={{ fontSize: '0.75rem', color: '#3f3b4d', lineHeight: 1.5, marginTop: 5 }}>
+            <b style={{ color: '#55505f' }}>Se acordó:</b> {acuerdos}
+          </div>
+        )}
+        {siguiente && (
+          <div style={{ fontSize: '0.75rem', color: '#3f3b4d', lineHeight: 1.5, marginTop: 2 }}>
+            <b style={{ color: '#55505f' }}>Siguiente:</b> {siguiente}
+          </div>
+        )}
         {tieneMinuta && Array.isArray(b.minuta?.requerimientos) && b.minuta.requerimientos.length > 0 && (
           <div style={{ fontSize: '0.69rem', color: '#5B4BD6', fontWeight: 700, marginTop: 5 }}>
             {b.minuta.requerimientos.filter((r: any) => r.incluir).length} concepto(s) para cotizar
