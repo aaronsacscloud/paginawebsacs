@@ -369,6 +369,11 @@ export function comprobacionesDuras(p: { titulo: string; meta_desc: string; h1: 
     if (!preciosOk.has(n) && /\bsacs\b/i.test(ctx) && /\bplan(es)?\b|vende|controla|fideliza|automatiza|mensualidad|al mes por tienda/i.test(ctx))
       f.push(`precio presentado como de Sacs que no está en la lista: $${m[1]}`);
   }
+  /* Reparto de módulos por plan: la ficha solo dice qué trae Vende. «Fideliza
+     cuando ya ocupas CRM y portal» es una promesa de empaque que la dueña
+     descubre al contratar; el juez de gpt-5 la dejó pasar en novias. */
+  const reparto = plano.match(/\b(Controla|Fideliza|Automatiza)\b[^.]{0,25}\b(si|cuando|para|incluye|trae|entra|cae)\b[^.]{0,80}\b(CRM|portal|taller|órdenes|ordenes|marketing|WhatsApp|reportes|sucursal|tienda)/i);
+  if (reparto) f.push(`reparte módulos por plan sin respaldo en la ficha: «${reparto[0].slice(0, 90)}» — la ficha solo dice qué incluye Vende; el resto se confirma en la demo`);
   const automatismo = plano.match(/\b(se domicilia|cargo automático a (la )?tarjeta|el sistema (lo )?ejecuta solo|se calcula solo|manda automáticamente|recordatorio automático)\b/i);
   if (automatismo && !/\bno\b[^.]{0,40}\b(se domicilia|cargo automático|ejecuta solo|automático)/i.test(plano)) f.push(`promete un automatismo que hay que confirmar contra la ficha: «${automatismo[0]}»`);
 
@@ -564,7 +569,7 @@ ${aMarkdown(cuerpo).slice(0, 26000)}`;
 
   const v = r.datos;
   // Las duras mandan: si el modelo dijo «pasa» pero hay un precio inventado, no pasa.
-  const graves = duras.filter(d => /precio|no existe|no lo aclara|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|automatismo|ruta cruda/.test(d));
+  const graves = duras.filter(d => /precio|no existe|no lo aclara|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|automatismo|ruta cruda|reparte módulos/.test(d));
   if (graves.length) { v.pasa = false; v.fallos = [...new Set([...graves, ...v.fallos])]; }
   return { ok: true, veredicto: v, duras, costo: costoComp + (r.costo_usd || 0) };
 }
