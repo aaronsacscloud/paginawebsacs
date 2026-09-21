@@ -58,7 +58,7 @@ export const COPY: Record<string, CopyGiro> = {
       'El pedido al proveedor por corrida, con su tiempo de entrega, para no volver a quedarse sin los números que sí se venden.',
       'Un catálogo con existencias reales por número, igual en tienda que en WhatsApp.',
     ],
-    dolorWa: 'el modelo que la clienta quiere sí está, pero no en su número — y esa venta se va a la tienda de enfrente.',
+    dolorWa: 'el modelo que el cliente quiere sí está, pero no en su número — y esa venta se va a la tienda de enfrente.',
     solucion: 'ver el número exacto que hay en cada sucursal desde el mostrador, y trasladarlo sin llamar a nadie.',
     pesa: 'perder ventas por un número que sí estaba, pero en otra sucursal',
     suyo: 'sus corridas', cierre: '¿Se lo muestro, o le paso primero cómo se ve el inventario por número?',
@@ -72,7 +72,7 @@ export const COPY: Record<string, CopyGiro> = {
       'Qué combinación se vende sola y cuál lleva meses colgada, con el dinero que representa cada una.',
       'Apartado con abonos, que en boutique es la mitad de la venta de temporada.',
       'El catálogo en línea con el mismo inventario de la tienda, para no vender lo que ya no está.',
-      'Traslado entre sucursales sin llamadas, cuando una clienta quiere la talla que está en la otra tienda.',
+      'Traslado entre sucursales sin llamadas, cuando un cliente quiere la talla que está en la otra tienda.',
       'Cierre de caja y comisión de la vendedora, calculadas solas.',
     ],
     dolorWa: 'el inventario no son piezas sino tallas y colores, y el sistema genérico los cuenta a todos como si fueran lo mismo.',
@@ -151,7 +151,7 @@ export const COPY: Record<string, CopyGiro> = {
 
   tallas: {
     plural: 'las tiendas de ropa de bebé, maternidad y tallas extra', singular: 'ropa de bebé, maternidad y tallas extra',
-    quiebre: 'En este giro eso no alcanza, porque la talla lo es todo: la clienta que no encuentra la suya no compra otra cosa, se va.',
+    quiebre: 'En este giro eso no alcanza, porque la talla lo es todo: el cliente que no encuentra la suya no compra otra cosa, se va.',
     funciones: [
       'Inventario por talla y edad, con la curva completa a la vista.',
       'Qué tallas se agotan primero y cuáles se quedan, temporada tras temporada.',
@@ -160,7 +160,7 @@ export const COPY: Record<string, CopyGiro> = {
       'Traslado entre sucursales cuando la talla está en la otra tienda.',
       'Catálogo con existencias reales por talla, igual en tienda que en WhatsApp.',
     ],
-    dolorWa: 'la clienta que no encuentra su talla no compra otra cosa: se va, y casi nunca vuelve.',
+    dolorWa: 'el cliente que no encuentra su talla no compra otra cosa: se va, y casi nunca vuelve.',
     solucion: 'ver la curva de tallas completa y pedir al proveedor por curva, no por bulto.',
     pesa: 'quedarse sin las tallas que sí se venden',
     suyo: 'sus curvas de tallas', cierre: '¿Se lo muestro, o le paso primero cómo se ve la curva de tallas?',

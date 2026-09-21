@@ -144,7 +144,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     texto:
       'La frase que más escuchas. El cambio se resuelve en segundos, sin ticket físico, aunque lo haya comprado en otra sucursal, aunque lo haya pedido en línea y aunque hoy atienda otra vendedora.',
     bullets: [
-      'Buscas por teléfono de la clienta y aparece lo que se llevó, del canal que sea',
+      'Buscas por teléfono del cliente y aparece lo que se llevó, del canal que sea',
       'Cambio de M a L del mismo modelo, con la diferencia si aplica',
       'Si no hay su talla aquí, ves en qué sucursal sí y la apartas',
     ],
@@ -171,7 +171,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     texto:
       'Dejas de llamarle a la otra tienda para preguntar si hay. Ves el inventario de todas tus sucursales desde el punto de venta, y decides de dónde sale la prenda.',
     bullets: [
-      'La clienta quiere el vestido en S y aquí se acabó: en Satélite hay 3',
+      'El cliente quiere el vestido en S y aquí se acabó: en Satélite hay 3',
       'Se lo apartas o pides el traspaso sin salir de la venta',
       'Cada sucursal con su existencia real, descontando lo ya apartado',
     ],
@@ -258,7 +258,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     tag: 'Reposición',
     titulo: 'Te avisa antes de quedarte sin la talla que sí vende',
     texto:
-      'No todas las prendas rotan igual. El sistema detecta cuál se está agotando más rápido de lo normal y te sugiere reponer antes de que la clienta se vaya con las manos vacías.',
+      'No todas las prendas rotan igual. El sistema detecta cuál se está agotando más rápido de lo normal y te sugiere reponer antes de que el cliente se vaya con las manos vacías.',
     bullets: [
       'La M del jean recto se va al doble de velocidad que las demás',
       'Sugerencia de resurtido por talla, color y sucursal',
@@ -278,7 +278,7 @@ export const seccionesRopa: SuiteSeccion[] = [
   {
     id: 'clientas',
     tag: 'Fidelización',
-    titulo: 'Sabes qué talla usa cada clienta',
+    titulo: 'Sabes qué talla usa cada cliente',
     texto:
       'El historial no es solo cuánto gastó: es qué talla, qué colores y qué marcas se lleva. Con eso le avisas cuando llega algo de su talla, no un mensaje genérico a toda tu base.',
     bullets: [
@@ -287,7 +287,7 @@ export const seccionesRopa: SuiteSeccion[] = [
       'Puntos y cashback que la traen de vuelta la próxima temporada',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Ficha de clienta</p>
+      <p style="${est.h}">Ficha de cliente</p>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
         <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--azul-fondo),#BFDBFE);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--color-primary);">MR</div>
         <div><div style="font-size:14px;font-weight:800;color:var(--color-text-primary);">Mariana R.</div>
@@ -312,10 +312,10 @@ export const seccionesRopa: SuiteSeccion[] = [
     tag: 'Agentes de IA',
     titulo: 'Agentes de IA que tú programas',
     texto:
-      'No es un chatbot cerrado que te vendemos ya hecho. Tú defines qué vigila cada agente, cada cuándo lo hace y hasta dónde puede actuar: revisar las tallas críticas cada mañana, contestar el WhatsApp de la clienta, armar el pedido al proveedor o avisarte cuando una colección se está quedando parada.',
+      'No es un chatbot cerrado que te vendemos ya hecho. Tú defines qué vigila cada agente, cada cuándo lo hace y hasta dónde puede actuar: revisar las tallas críticas cada mañana, contestar el WhatsApp del cliente, armar el pedido al proveedor o avisarte cuando una colección se está quedando parada.',
     bullets: [
       'La instrucción se escribe en español; no hay que programar nada',
-      'Trabajan sobre tus datos reales: tu inventario, tus ventas, tus clientas',
+      'Trabajan sobre tus datos reales: tu inventario, tus ventas, tus clientes',
       'Tú decides si el agente solo te avisa o si ya ejecuta la acción',
     ],
     visual: `<div style="${est.wrap}">

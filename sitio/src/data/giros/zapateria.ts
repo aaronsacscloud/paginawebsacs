@@ -489,7 +489,7 @@ export const casosZapateria = [
       'La vendedora está hincada junto al probador, con el pie del cliente en la mano. Ahí mismo ve si ese número existe — y si aquí no, en qué tienda sí y lo aparta.',
     remate: 'Cada viaje a la bodega son cinco minutos con otros dos clientes esperando.',
     img: '/images/caso-zap-mostrador.webp',
-    alt: 'Vendedora hincada junto al banco del probador calzando a una clienta con calzador, con tres cajas abiertas en el piso',
+    alt: 'Vendedora hincada junto al banco del probador calzando a un cliente con calzador, con tres cajas abiertas en el piso',
   },
   {
     id: 'quincena',

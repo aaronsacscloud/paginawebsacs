@@ -389,7 +389,7 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
     /* ══ RESCATE DE LA CONFIRMACIÓN DE CITA ════════════════════════════════
        Caso real (Grecia, 15-sep-2026): se agendó la reunión, salió el mensaje
        con su liga de Meet… y NUNCA le llegó. En el inbox quedó en rojo con
-       «Ventana de 24 h cerrada», pero nadie lo vio: la clienta se enteraría el
+       «Ventana de 24 h cerrada», pero nadie lo vio: el cliente se enteraría el
        día de la junta, o no.
 
        `confirmacion-cita.ts` YA tiene el respaldo por plantilla, pero solo se

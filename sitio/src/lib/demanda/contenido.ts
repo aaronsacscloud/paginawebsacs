@@ -399,7 +399,7 @@ Escribe la página.`;
     agente: 'contenido_borrador', trabajo: 'estrategia',
     /* 20000: con 10000 una página de 2,500 palabras llegaba «entera» al JSON con el
        último FAQ cortado a media frase — y el referee la devolvía por eso. */
-    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 28000,
+    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 48000, pensar: false, // con capturas y glosario el JSON pasa de 28k (22-sep-2026)
   });
   if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin datos', costo: r.costo_usd || 0 };
 

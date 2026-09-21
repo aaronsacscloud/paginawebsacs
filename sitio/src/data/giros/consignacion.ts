@@ -11,7 +11,7 @@
  *
  * Padrón de la página: la tienda tiene UNA sucursal (así opera el ramo) y las
  * consignantes de ejemplo son Ana, Regina y Sofía. Comisión de ejemplo: 40% la
- * tienda / 60% la clienta (se pacta por contrato, pieza por pieza).
+ * tienda / 60% el cliente (se pacta por contrato, pieza por pieza).
  */
 import type { SuiteSeccion } from '../suite-ropa';
 
@@ -32,12 +32,12 @@ export const cortinaConsigna = {
 export const casosConsigna = [
   {
     id: 'maletas',
-    titulo: 'Llega una clienta con dos maletas',
+    titulo: 'Llega un cliente con dos maletas',
     texto:
       'Se valúa pieza por pieza, se pacta la comisión y el contrato sale con todo congelado: piezas, precios y porcentajes. Firma ahí mismo — o desde su casa, con un link que dura 48 horas.',
     remate: 'Sin contrato firmado no hay custodia: la pieza que se pierde sin papel se paga dos veces, en dinero y en confianza.',
     img: '/images/caso-consig-maletas.webp',
-    alt: 'Clienta entregando prendas de sus maletas a la dueña de la tienda sobre el mostrador de recepción',
+    alt: 'Cliente entregando prendas de sus maletas a la dueña de la tienda sobre el mostrador de recepción',
   },
   {
     id: 'live',
@@ -121,7 +121,7 @@ export const seccionesConsigna: SuiteSeccion[] = [
     tag: 'Alta y contrato',
     titulo: 'El clóset entra con contrato, no con confianza',
     texto:
-      'Valúas pieza por pieza y el contrato sale con todo congelado: piezas, precios, comisiones y vigencia. Tu clienta firma en el mostrador o desde su casa, con un link que caduca a las 48 horas. Es la Suite de Consignación y se cotiza aparte de tu plan.',
+      'Valúas pieza por pieza y el contrato sale con todo congelado: piezas, precios, comisiones y vigencia. Tu cliente firma en el mostrador o desde su casa, con un link que caduca a las 48 horas. Es la Suite de Consignación y se cotiza aparte de tu plan.',
     bullets: [
       'El contrato en PDF, con las piezas y su comisión — pareja o pieza por pieza',
       'Firma presencial o remota — sin perseguir a nadie con papeles',
@@ -185,7 +185,7 @@ export const seccionesConsigna: SuiteSeccion[] = [
   {
     id: 'cuenta',
     tag: 'La cuenta clara',
-    titulo: 'La cuenta se le rinde sola a cada clienta',
+    titulo: 'La cuenta se le rinde sola a cada cliente',
     texto:
       'La consignante ve su estado de cuenta en su portal: qué sigue en piso, qué se vendió y cuánto tiene a favor. Y al liquidar, la mayoría prefiere dejarlo como saldo — dinero que se queda en tu tienda.',
     bullets: [
@@ -217,7 +217,7 @@ export const seccionesConsigna: SuiteSeccion[] = [
     tag: 'Retiros',
     titulo: 'Lo que no se vendió se regresa sin pleito',
     texto:
-      'Cuando vence la vigencia, armas la lista de retiro en un clic: qué piezas son, dónde están y en qué estado. La clienta recibe sus piezas con lista en mano y su cuenta queda cerrada — o el contrato se renueva y las piezas siguen.',
+      'Cuando vence la vigencia, armas la lista de retiro en un clic: qué piezas son, dónde están y en qué estado. El cliente recibe sus piezas con lista en mano y su cuenta queda cerrada — o el contrato se renueva y las piezas siguen.',
     bullets: [
       'Lista de retiro por consignante, pieza por pieza',
       'La pieza retirada sale de custodia con constancia',

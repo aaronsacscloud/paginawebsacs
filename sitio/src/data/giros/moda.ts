@@ -43,7 +43,7 @@ export const casosModa = [
     id: 'evento',
     titulo: 'Se llenó la tienda y nadie sabe qué se probó',
     texto:
-      'El 10 de mayo o el Buen Fin se vende en tres días lo de tres semanas. La caja cobra aunque se caiga el internet, y la vendedora ve desde el probador si esa talla está en otra tienda antes de que la clienta se vaya.',
+      'El 10 de mayo o el Buen Fin se vende en tres días lo de tres semanas. La caja cobra aunque se caiga el internet, y la vendedora ve desde el probador si esa talla está en otra tienda antes de que el cliente se vaya.',
     remate: 'Al lunes te enteras de qué talla se acabó, cuando ya no hay a quién pedírsela.',
     img: '/images/caso-moda-evento.webp',
     alt: 'Tienda grande un sábado: tres vendedoras uniformadas atendiendo el piso, los probadores y el mostrador',
@@ -64,7 +64,7 @@ export const casosModa = [
       'El cambio se hace aunque la prenda venga de otra sucursal: la diferencia se cobra o se abona al monedero, y queda registrado quién lo autorizó.',
     remate: 'Una de cada seis prendas vuelve, y casi siempre por talla. Ahí se decide si haces una segunda venta o devuelves el dinero.',
     img: '/images/caso-moda-cambio.webp',
-    alt: 'Vendedora uniformada entregando una prenda a una clienta en el mostrador, junto a los probadores',
+    alt: 'Vendedora uniformada entregando una prenda a un cliente en el mostrador, junto a los probadores',
   },
 ];
 
@@ -117,7 +117,7 @@ export const etapasModa = [
       'Cambio exprés de talla, aunque la prenda venga de otra tienda (desde Controla)',
       'Apartado con anticipo, y abonos por parcialidades',
       'Cotizaciones, pedidos y ventas a crédito',
-      'Listas de precios: la clienta frecuente y el mayoreo',
+      'Listas de precios: el cliente frecuente y el mayoreo',
       'Tienda en línea con el mismo inventario del piso',
       'WhatsApp, Instagram, Facebook y TikTok Shop',
       'Ticket por WhatsApp, y la caja cobra sin internet',
@@ -139,7 +139,7 @@ export const etapasModa = [
   },
   {
     id: 'fidelizar', nombre: 'Fidelizar',
-    resumen: 'Tu clienta ya te dijo su talla y su color. El sistema lo recuerda mejor que tú.',
+    resumen: 'Tu cliente ya te dijo su talla y su color. El sistema lo recuerda mejor que tú.',
     puntos: [
       'Perfil con lo que compró, en qué talla y en qué color',
       'Segmentación por comportamiento de compra',
@@ -196,11 +196,11 @@ export const planoModa = [
     simbolo: 'probadores',
     foto: '/images/plano-moda-probador.webp',
     alt: 'Probadores de una boutique con cortinas de lino, banca de terciopelo y espejo de latón',
-    pie: 'Aquí se decide la venta: la talla que falta se busca sin dejar a la clienta.',
+    pie: 'Aquí se decide la venta: la talla que falta se busca sin dejar al cliente.',
     pregunta: '«Le quedó chica. ¿La tienes en M?»',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
-      { t: 'Consulta de existencia de las otras tiendas sin dejar a la clienta' },
+      { t: 'Consulta de existencia de las otras tiendas sin dejar al cliente' },
       { t: 'Apartado con anticipo; los abonos, desde Controla', plan: 'Controla' },
       { t: 'Cambio de talla o color, aunque la prenda venga de otra tienda', plan: 'Controla' },
       { t: 'Vale a favor cuando no está su talla', plan: 'Controla' },
@@ -256,7 +256,7 @@ export const planoModa = [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
       { t: 'Un solo inventario para todos los canales' },
-      { t: 'Perfil de la clienta con lo que compró y en qué talla', plan: 'Fideliza' },
+      { t: 'Perfil del cliente con lo que compró y en qué talla', plan: 'Fideliza' },
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
     ],
   },

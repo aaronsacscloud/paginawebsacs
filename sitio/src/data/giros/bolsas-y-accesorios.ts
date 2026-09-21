@@ -41,12 +41,12 @@ export const bannerBO = {
 export const manifiestoBO = {
   intro: 'Sabemos cómo se vende la piel',
   frases: [
-    'Te piden la Tote en <b>camel</b> y no sabes si el que te queda es del lote nuevo o del viejo. Son dos cafés distintos y la clienta lo caza en la foto.',
+    'Te piden la Tote en <b>camel</b> y no sabes si el que te queda es del lote nuevo o del viejo. Son dos cafés distintos y el cliente lo caza en la foto.',
     'La piel subió tres veces este año y el <b>herraje</b> te lo cobran en dólares. Sigues vendiendo la bolsa al mismo precio y no sabes a cuánto te sale de verdad.',
     'Mandaste <b>3 docenas a maquila</b> con piel tuya y te regresaron 34 bolsas y ni un pedazo de piel. Nadie sabe dónde quedó lo demás.',
     'Te quedan <b>60 decímetros</b> del camel 17 y ese lote ya se acabó. ¿Cortas la última Tote o guardas para carteras? Si le erras, ese color se te muere en la pared.',
     'Tienes 60 bolsas del <b>lila</b> que se puso de moda hace dos años. La piel está perfecta. Se te clavaron.',
-    'La clienta trajo su bolsa a reparar hace tres semanas y te pregunta por WhatsApp si ya está. No sabes si está en el taller o en la caja de la <b>trastienda</b>.',
+    'El cliente trajo su bolsa a reparar hace tres semanas y te pregunta por WhatsApp si ya está. No sabes si está en el taller o en la caja de la <b>trastienda</b>.',
     'En diciembre la <b>prensa de grabado</b> se vuelve un desastre: apartados con iniciales, envíos con iniciales, y una bolsa grabada con las letras equivocadas ya no la vendes.',
     'Subiste la foto del <b>verde</b> a Instagram, te pidieron doce, y en tienda tenías tres. Vendiste lo que no tenías.',
   ],
@@ -102,7 +102,7 @@ export const casosBO = [
     texto: 'En cuatro días se define cuánto va a fabricar la marca los siguientes seis meses. El pedido se levanta por cliente, modelo y color, con lo ya comprometido, los decímetros de piel que implica y quién quedó a crédito o a consignación la temporada pasada. Prometer de más quiebra al taller; prometer de menos deja la temporada corta.',
     remate: 'Intermoda es Guadalajara y es venta. SAPICA es León en marzo y en agosto. ANPIC es donde se compra la piel, y es otra feria.',
     img: `${IMG}/caso-feria.webp`,
-    alt: 'Estand de una marca mexicana de bolsas en la feria de Guadalajara, con cueros colgados atrás y la compradora de una boutique levantando el pedido de temporada',
+    alt: 'Estand de una marca mexicana de bolsas en la feria de Guadalajara, con cueros colgados atrás y el comprador de una boutique levantando el pedido de temporada',
   },
   {
     id: 'diez-de-mayo',
@@ -118,7 +118,7 @@ export const casosBO = [
     texto: 'Dos cosas el mismo mes. El negro y el camel se acaban el 15 de diciembre si no se pidieron en noviembre, y cada Tote negra que falta en diciembre es una venta que no vuelve en enero. Y el descuento hay que ponerlo donde no queme: con el costo real de cada modelo × color según su lote, el sistema enseña el piso de precio al que ya no conviene bajar.',
     remate: 'La misma Tote, del mismo lote irrepetible, sale a $2,146 en piso y a $1,073 a la boutique, ambos sin IVA. Con el lote caro ese pedido se vende $66 abajo del costo.',
     img: `${IMG}/caso-mayoreo.webp`,
-    alt: 'Showroom de mayoreo de una marca de bolsas en León con medias docenas surtidas por color y la compradora de una boutique escogiendo',
+    alt: 'Showroom de mayoreo de una marca de bolsas en León con medias docenas surtidas por color y el comprador de una boutique escogiendo',
   },
   {
     id: 'enero',
@@ -126,7 +126,7 @@ export const casosBO = [
     texto: 'Entra el cambio del regalo, entra la reparación de lo que se estrenó y hay que sacar lo que sobró antes de que llegue la primavera y estorbe. La lista de modelo × color con más de 120 días sin salir dice cuánto dinero está parado en cada uno y a qué precio conviene rematar sin vender abajo del costo real de su lote.',
     remate: 'La piel no caduca, pero el color sí. Cada mes que pasa ese lila vale menos aunque el cuero esté perfecto.',
     img: `${IMG}/caso-reparacion.webp`,
-    alt: 'Mostrador de reparaciones de una tienda de bolsas de piel en enero, con la clienta entregando una bolsa de cierre roto y la encargada levantando la nota con foto',
+    alt: 'Mostrador de reparaciones de una tienda de bolsas de piel en enero, con el cliente entregando una bolsa de cierre roto y la encargada levantando la nota con foto',
   },
 ];
 
@@ -155,8 +155,8 @@ export const seccionesBO: SuiteSeccion[] = [
   {
     id: 'servicio', tag: 'Servicio',
     titulo: 'Grabado de iniciales y nota de reparación con estatus',
-    texto: 'El grabado en caliente con foil entra como un renglón del ticket, con sus letras y su fecha de entrega, para que en diciembre nadie grabe las iniciales equivocadas. Y la bolsa que la clienta trae a componer se recibe con foto, con su falla, con si es garantía o con costo y con la fecha en que se le entrega.',
-    bullets: ['“Tote camel + grabado M.G.R. en dorado, sale el jueves”, en el mismo ticket', 'Se recibió, se revisó, está en el taller, ya está lista, se avisó: la clienta pregunta y hay respuesta', 'Garantía por pieza con su nota: el sistema dice si esa bolsa todavía la tiene'],
+    texto: 'El grabado en caliente con foil entra como un renglón del ticket, con sus letras y su fecha de entrega, para que en diciembre nadie grabe las iniciales equivocadas. Y la bolsa que el cliente trae a componer se recibe con foto, con su falla, con si es garantía o con costo y con la fecha en que se le entrega.',
+    bullets: ['“Tote camel + grabado M.G.R. en dorado, sale el jueves”, en el mismo ticket', 'Se recibió, se revisó, está en el taller, ya está lista, se avisó: el cliente pregunta y hay respuesta', 'Garantía por pieza con su nota: el sistema dice si esa bolsa todavía la tiene'],
     visual: mockCalendario('Prensa de grabado · entregas comprometidas', 'Diciembre', 31, { 5: 'ok', 8: 'ok', 11: 'aviso', 12: 'lleno', 13: 'lleno', 14: 'lleno', 15: 'aviso', 18: 'lleno', 19: 'lleno', 20: 'aviso', 22: 'ok', 23: 'lleno' }, 'El 18 cierra el envío y el 24 el recoge en tienda. El taller ya no toma reparaciones: se dan a tres semanas'),
   },
   {
@@ -164,7 +164,7 @@ export const seccionesBO: SuiteSeccion[] = [
     titulo: '“Lo tengo en camel y en negro, ¿cuál te mando?”',
     texto: 'Cada color tiene su foto y esa es la que se manda, con lo que hay detrás. Del chat se cierra con link de pago y meses sin intereses, y la pieza se descuenta del piso en ese momento. La tienda en línea y los marketplaces venden del mismo inventario, que es el que más se descuadra.',
     bullets: ['Foto por color en el catálogo, con la existencia de ese color al lado', 'Link de pago con MSI y la comisión del banco cargada a esa pieza, no a un gasto general', 'Tienda en línea y marketplaces con el mismo inventario, y envíos con guía y estatus'],
-    visual: mockLista('Instagram y WhatsApp · hoy', [['Tote camel · única pieza del lote 17 · apartada con anticipo', 'Apartado', 'ok'], ['Cruzada verde · doce pedidas · quedan 3 · foto pausada', 'Aviso', 'aviso'], ['Cartera hueso + grabado · link de pago a 6 MSI', 'Pagado', 'ok'], ['Pedido en línea · Bucket cognac · Monterrey', 'Guía lista', 'gris']], 'Cada chat queda en la ficha de la clienta: se llevó la Tote en 2024 y la cartera en 2025'),
+    visual: mockLista('Instagram y WhatsApp · hoy', [['Tote camel · única pieza del lote 17 · apartada con anticipo', 'Apartado', 'ok'], ['Cruzada verde · doce pedidas · quedan 3 · foto pausada', 'Aviso', 'aviso'], ['Cartera hueso + grabado · link de pago a 6 MSI', 'Pagado', 'ok'], ['Pedido en línea · Bucket cognac · Monterrey', 'Guía lista', 'gris']], 'Cada chat queda en la ficha del cliente: se llevó la Tote en 2024 y la cartera en 2025'),
   },
   {
     id: 'mayoreo', tag: 'Mayoreo y córner',
@@ -226,7 +226,7 @@ export const planoBO = [
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Nota de reparación con foto, falla, si es garantía o con costo y fecha de entrega', plan: 'Fideliza' },
-      { t: 'Estatus que la clienta puede preguntar: se recibió, está en el taller, ya está lista, se avisó', plan: 'Automatiza' },
+      { t: 'Estatus que el cliente puede preguntar: se recibió, está en el taller, ya está lista, se avisó', plan: 'Automatiza' },
       { t: 'Refacciones con existencia: cierres YKK por largo y color, asas, correas, argollas y tinta de canto' },
       { t: 'Repisa de apartados con nombre, anticipo, saldo y fecha: se llena en octubre y noviembre' },
       { t: 'Mesa de empaque con guía impresa y la tabla de “sale hoy / sale mañana” para línea y marketplaces' },
@@ -251,8 +251,8 @@ export const planoBO = [
 export const pasosBO = [
   { cuando: 'Día 1', titulo: 'Tus modelos y tus lotes, cargados', texto: 'Nos das tu lista o tu sistema actual y lo subimos nosotros. No capturas nada.', detalle: 'Modelo con sus colores y sus pieles, el consumo de cada uno en decímetros, los lotes que tienes abiertos con su precio, y la existencia real de cada tienda.', img: `${IMG}/proceso-recibir.webp`, alt: 'Recepción de una entrega de maquila en la bodega de una marca de bolsas, contando pieza por pieza y etiquetando con su lote' },
   { cuando: 'Día 2', titulo: 'Tu operación, configurada', texto: 'Queda como ya trabajas: tus pieleros, tus maquilas, tus tiendas y tus reglas.', detalle: 'El consumo pactado de cada modelo, quién puede cerrar abajo del piso de precio, la comisión del córner, el escalón de mayoreo y la ventana de garantía.', img: `${IMG}/proceso-lote.webp`, alt: 'Comprador de piel midiendo y registrando una partida de vaqueta camel con su número de lote en la mesa del taller' },
-  { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión con tu equipo antes de abrir. Escanear la etiqueta y levantar la nota de reparación se aprende en media hora.', detalle: 'Y se practica lo de todos los días: el grabado en el ticket, el apartado con anticipo, el ajuste del cinturón y la foto por color para Instagram.', img: `${IMG}/proceso-grabado.webp`, alt: 'Vendedora grabando las iniciales de una clienta en una cartera de piel con la prensa de calor y el rollo de foil dorado' },
-  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados y las reparaciones ya migrados: ninguna clienta llega por su bolsa y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-corte.webp`, alt: 'Maestro cortador acomodando los suajes sobre una banda de camel, esquivando las cicatrices y la garrapata' },
+  { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión con tu equipo antes de abrir. Escanear la etiqueta y levantar la nota de reparación se aprende en media hora.', detalle: 'Y se practica lo de todos los días: el grabado en el ticket, el apartado con anticipo, el ajuste del cinturón y la foto por color para Instagram.', img: `${IMG}/proceso-grabado.webp`, alt: 'Vendedora grabando las iniciales de un cliente en una cartera de piel con la prensa de calor y el rollo de foil dorado' },
+  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados y las reparaciones ya migrados: ningún cliente llega por su bolsa y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-corte.webp`, alt: 'Maestro cortador acomodando los suajes sobre una banda de camel, esquivando las cicatrices y la garrapata' },
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de colores entre tiendas ya corre desde el primer fin de semana, con su guía y con el lote anotado.', img: `${IMG}/proceso-armado.webp`, alt: 'Artesanos armando el cuerpo de una bucket sobre la horma y las correas terminadas colgadas en el taller' },
 ];
 export const ticketBO = { lineas: [{ n: 'Tote camel · vaqueta · lote 17', p: '$2,490' }, { n: 'Grabado de iniciales · M.G.R. en dorado', p: '$250' }, { n: 'Cartera hueso · del retazo del mismo lote', p: '$690' }], total: '$3,430' };

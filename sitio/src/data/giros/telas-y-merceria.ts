@@ -49,13 +49,13 @@ export const bannerTM = {
 export const manifiestoTM = {
   intro: 'Sabemos cómo se vende la tela',
   frases: [
-    'El sistema dice que hay <b>12 metros de vino</b> y son tres saldos de cinco, cuatro y tres, de tres baños distintos. La clienta ocupa seis de un solo tono y no le puedes dar ninguno.',
+    'El sistema dice que hay <b>12 metros de vino</b> y son tres saldos de cinco, cuatro y tres, de tres baños distintos. El cliente ocupa seis de un solo tono y no le puedes dar ninguno.',
     'La pieza decía <b>50</b> y trajo 47 y medio. Lo descubriste tres meses después, cuando ya no tenías a quién reclamarle.',
     'Vendiste <b>metro y cuarto</b> y el sistema no te deja poner .25; tienes que hacer trampa con la nota.',
-    'Se te acabó el vino en pleno diciembre, llegó el nuevo y es <b>otro baño</b>. La clienta lo notó y te lo regresó hecho vestido.',
+    'Se te acabó el vino en pleno diciembre, llegó el nuevo y es <b>otro baño</b>. El cliente lo notó y te lo regresó hecho vestido.',
     'La costurera viene <b>por la tela y los avíos</b>, la de mostrador tarda veinte minutos en la nota y siempre se le olvida cobrar el hilo.',
     'Tienes tres cajones de <b>retazo</b> que valen dinero y nadie sabe cuánto es ni cuándo se vendió.',
-    'Te piden foto por <b>WhatsApp</b>, la mandas desde el centro, y cuando llega la clienta a la del norte ya no había ese tono.',
+    'Te piden foto por <b>WhatsApp</b>, la mandas desde el centro, y cuando llega el cliente a la del norte ya no había ese tono.',
     'Compraste <b>treinta piezas</b> de terciopelo rojo para Navidad y en marzo todavía tienes once; no supiste cuánto vendiste el año pasado.',
   ],
   cierre: 'Ningún sistema entiende que aquí las existencias no se suman: que el corte sale de una sola pieza y de un solo baño, y que cada corte deja la pieza más chica hasta que un día ya no es tela, es retazo. Sacs sí: cada pantalla que sigue funciona igual en la mesa de corte, en la mercería y en el WhatsApp. Y encima puedes poner agentes de IA para que hagan el trabajo repetitivo: el aviso de último saldo, el reclamo del faltante al proveedor y el pedido de temporada antes de que se encarezca.',
@@ -83,12 +83,12 @@ export const variantesTM = {
   genero: 'm' as const,
   umbralBajo: 1,
   leyendas: ['De aquí sale un corte', 'Último saldo', 'De ese baño no hay'] as [string, string, string],
-  remate: 'La clienta pedía seis metros de vino para un corte de vestido. Hay cinco, cuatro y tres —doce— y son tres baños distintos: doce metros, y ninguna venta. En telas las existencias no se suman.',
+  remate: 'El cliente pedía seis metros de vino para un corte de vestido. Hay cinco, cuatro y tres —doce— y son tres baños distintos: doce metros, y ninguna venta. En telas las existencias no se suman.',
 };
 
 export const cortinaTM = {
   titulo: '“¿Cuánto te queda del vino?”',
-  pieAntes: 'La pieza medio desenrollada<br />y la clienta esperando.',
+  pieAntes: 'La pieza medio desenrollada<br />y el cliente esperando.',
   fotoAntes: `${IMG}/cortina-antes.webp`,
   fotoDespues: `${IMG}/cortina-despues.webp`,
   altAntes: 'Empleada de una tienda de telas desenrollando una pieza de gabardina sobre el mostrador para contar a mano lo que queda',
@@ -100,7 +100,7 @@ export const cortinaTM = {
     { que: '¿En cuál tienda está el marino?', donde: 'Existencias por sucursal, pieza por pieza', dato: 'En la del norte hay 6 piezas cerradas del mismo tono; traspaso con folio, no “de ese color”' },
     { que: '¿Ya es retazo o todavía sale un corte?', donde: 'El aviso de último saldo', dato: '0.80 m de popelina: abajo del mínimo de su familia. Descuento de último saldo con clave, o pasa a retazo por kilo' },
   ],
-  pieDespues: 'La misma empleada, la misma clienta. Ya no desenrolla para contar: escanea.',
+  pieDespues: 'La misma empleada, el mismo cliente. Ya no desenrolla para contar: escanea.',
 };
 
 export const casosTM = [
@@ -144,7 +144,7 @@ export const seccionesTM: SuiteSeccion[] = [
     titulo: 'La pieza, con su folio, su tono y sus metros',
     texto: 'El mismo artículo vive en varias piezas físicas y cada una es su propia existencia. No hay “12 metros de popelina vino”: hay la pieza 4517 con 4.40 del tono C aquí, y la 4488 cerrada de 50 del tono B en el centro. Cada corte baja esa pieza, no el artículo, y el saldo se queda con su folio y sus metros a la vista.',
     bullets: ['Folio, tono, ancho y metros por pieza; las cerradas contadas aparte de los saldos', 'Etiqueta con código de barras en la tabla: la de mostrador escanea la pieza y no teclea el color', 'Dos piezas del mismo color y distinto baño no se ofrecen juntas para un mismo corte'],
-    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'La clienta pide 6 m de un solo tono: de las tres abiertas no sale, aunque entre las tres sumen 12.40. La cerrada sí da, pero es del baño B y está en el centro: o se traspasa, o no empata con lo que ya compró'),
+    visual: mockBarras('Popelina vino · lo que queda, pieza por pieza', [['4502 · tono A', '5.00 m', 10], ['4517 · tono C', '4.40 m', 9], ['4531 · tono A', '3.00 m', 6], ['4488 · tono B', '50 m · cerrada', 100]], 'El cliente pide 6 m de un solo tono: de las tres abiertas no sale, aunque entre las tres sumen 12.40. La cerrada sí da, pero es del baño B y está en el centro: o se traspasa, o no empata con lo que ya compró'),
   },
   {
     id: 'mostrador', tag: 'Mesa de corte',
@@ -215,7 +215,7 @@ export const planoTM = [
   {
     id: 'merceria', nombre: 'La mercería: los avíos', simbolo: 'gondolas' as const,
     foto: `${IMG}/zona-merceria.webp`, alt: 'Mostrador de mercería con cajoneras de botones, la pared de conos de hilo por color y las varillas de listón',
-    pie: 'Si no hay el hilo del color, se cae la venta de la tela: la clienta se la lleva a la tienda de enfrente.',
+    pie: 'Si no hay el hilo del color, se cae la venta de la tela: el cliente se la lleva a la tienda de enfrente.',
     pregunta: '¿Tengo el hilo de ese color?',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
@@ -260,7 +260,7 @@ export const pasosTM = [
   { cuando: 'Día 1', titulo: 'Tus telas y tus avíos, cargados', texto: 'Nos das tu lista o tu sistema actual y lo subimos nosotros. No capturas nada.', detalle: 'Cada tela con sus colores y anchos, cada pieza física con su folio, su tono y sus metros reales, las piezas cerradas aparte de los saldos, y la mercería con sus unidades.', img: `${IMG}/proceso-recibir.webp`, alt: 'Recepción de piezas de tela envueltas en plástico en la bodega de una tienda de telas' },
   { cuando: 'Día 2', titulo: 'Tu operación, configurada', texto: 'Queda como ya trabajas: tus proveedores, tus escalones de precio, tus sucursales y tus reglas.', detalle: 'Los cuatro escalones —menudeo, medio mayoreo desde 10 metros, mayoreo y pieza cerrada—, la conversión de gruesa a pieza, el mínimo de cada familia para el último saldo y quién autoriza el descuento.', img: `${IMG}/proceso-merceria.webp`, alt: 'Empleada de mercería sacando un cartón de botones de la cajonera frente a la pared de conos de hilo' },
   { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión con tu equipo antes de abrir. Escanear la pieza y cobrar metro y cuarto se aprende en media hora.', detalle: 'Y se practica lo de todos los días: la venta con avíos en una sola nota, el apartado con fecha y el aviso de último saldo.', img: `${IMG}/proceso-corte.webp`, alt: 'Manos midiendo popelina contra el metro clavado de la mesa de corte antes de rasgarla' },
-  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados ya migrados: ninguna modista llega por su pieza y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-luz.webp`, alt: 'Clienta y empleada sacando un tramo de tela a la luz de la puerta para ver el tono de verdad' },
+  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados ya migrados: ninguna modista llega por su pieza y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-luz.webp`, alt: 'Cliente y empleada sacando un tramo de tela a la luz de la puerta para ver el tono de verdad' },
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de piezas del mismo tono entre la del centro y la del norte ya corre desde el primer fin de semana.', img: `${IMG}/proceso-conteo.webp`, alt: 'Conteo de enero en una tienda de telas: se miden los saldos contra el metro clavado y se capturan en la tablet' },
 ];
 export const ticketTM = { lineas: [{ n: 'Chifón vino · 2.50 m · pieza 4471', p: '$350' }, { n: 'Forro · 2.50 m', p: '$162' }, { n: 'Cierre invisible 50 · color 415', p: '$28' }, { n: 'Hilo · 2 carretes · botones · listón', p: '$80' }], total: '$620' };

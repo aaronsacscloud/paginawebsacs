@@ -95,7 +95,7 @@ export async function calcular(corte = new Date()): Promise<Edicion> {
   const generales: Metrica[] = n < MIN_EMPRESAS ? [] : [
     {
       clave: 'ticket', titulo: 'Ticket promedio', unidad: 'pesos',
-      que_es: 'Lo que gasta una clienta en una compra. Mediana entre las tiendas que operan, no promedio del mercado: unas cuantas tiendas caras mueven un promedio y no mueven una mediana.',
+      que_es: 'Lo que gasta un cliente en una compra. Mediana entre las tiendas que operan, no promedio del mercado: unas cuantas tiendas caras mueven un promedio y no mueven una mediana.',
       valor: aDecena(cuantil(tickets, 0.5)), p25: aDecena(cuantil(tickets, 0.25)), p75: aDecena(cuantil(tickets, 0.75)), n,
     },
     {

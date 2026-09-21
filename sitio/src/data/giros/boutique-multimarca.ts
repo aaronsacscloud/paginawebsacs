@@ -56,7 +56,7 @@ export const casosMulti = [
   },
   {
     id: 'look',
-    titulo: 'La clienta se lleva el look de tres marcas',
+    titulo: 'El cliente se lleva el look de tres marcas',
     texto:
       'El vestido es de una marca, el bolso de otra y los aretes de una tercera. Un solo ticket, y cada venta le abona a la cuenta de su marca y de su proveedor.',
     remate: 'La multimarca vende combinaciones que ninguna marca sola puede armar. Ese es el negocio.',
@@ -267,7 +267,7 @@ export const planoMulti = [
     pregunta: '«Le quedó chica. ¿La tienes de otra marca?»',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
-      { t: 'La misma prenda en tus otras marcas, sin dejar a la clienta' },
+      { t: 'La misma prenda en tus otras marcas, sin dejar al cliente' },
       { t: 'Apartado con anticipo; los abonos, desde Controla', plan: 'Controla' },
       { t: 'Cambio de talla o color, aunque venga de otra tienda', plan: 'Controla' },
       { t: 'Vale a favor cuando no está su talla', plan: 'Controla' },
@@ -323,7 +323,7 @@ export const planoMulti = [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
       { t: 'La venta en línea también abona a la cuenta de su proveedor', suite: true },
-      { t: 'Perfil de la clienta con lo que compró, de qué marca y en qué talla', plan: 'Fideliza' },
+      { t: 'Perfil del cliente con lo que compró, de qué marca y en qué talla', plan: 'Fideliza' },
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
     ],
   },

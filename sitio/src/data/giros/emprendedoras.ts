@@ -17,7 +17,7 @@
  *
  * Los números del oficio están verificados por la referee y NO se mueven: margen real de $230 por
  * pieza (ya con flete, viaje y empaque, sobre una de $450); de 100 apartados al mes se caen 45; de
- * esas, una de cada cinco traía otra clienta detrás (9); de esas 9, el 55 % sí habría pagado (5);
+ * esas, una de cada cinco traía otro cliente detrás (9); de esas 9, el 55 % sí habría pagado (5);
  * ventas perdidas de verdad, $1,150 al mes; con vencimiento de 24 horas se ganan unos $1,265 al
  * mes, unos $15,000 al año; y 45 piezas × 3 días son 135 días de rack muertos al mes, como 4.5
  * piezas colgadas sin venderse todo el mes.
@@ -50,7 +50,7 @@ export const manifiestoEM = {
   intro: 'Sabemos cómo se vende cuando no hay tienda',
   frases: [
     'Le apartaste la blusa, se la guardaste <b>tres días</b>, nunca te depositó — y a la que sí iba a pagar ya le dijiste que no había.',
-    'Se te <a href="/producto/inventario-omnicanal"><b>encimó</b></a>: vendiste dos veces la misma pieza porque la traías publicada en tres lados, y tuviste que pedirle perdón a la clienta.',
+    'Se te <a href="/producto/inventario-omnicanal"><b>encimó</b></a>: vendiste dos veces la misma pieza porque la traías publicada en tres lados, y tuviste que pedirle perdón al cliente.',
     'Contestaste dos horas después y te dijo <b>“gracias, ya la conseguí”</b>. La venta se murió en el chat.',
     'Hiciste el live, apartaste <b>40 piezas</b> en una hora, y te quedaste hasta la una de la mañana cobrando y armando paquetes con un papel.',
     'Te mandó la foto del comprobante, la viste de reojo, <b>mandaste el paquete</b> y nunca te cayó el dinero.',
@@ -130,7 +130,7 @@ export const casosEM = [
   {
     id: 'enero',
     titulo: 'Enero: cambios, devoluciones y el remate',
-    texto: 'Regresa medio diciembre por talla. Cada pieza que vuelve son dos envíos, semana y media fuera de venta y, muchas veces, una pieza que ya no se vende a precio lleno. Aquí están los cambios con el saldo a favor de cada clienta, las piezas marcadas “viene de regreso” que todavía no se pueden vender y las que hay que bajar de precio porque volvieron usadas.',
+    texto: 'Regresa medio diciembre por talla. Cada pieza que vuelve son dos envíos, semana y media fuera de venta y, muchas veces, una pieza que ya no se vende a precio lleno. Aquí están los cambios con el saldo a favor de cada cliente, las piezas marcadas “viene de regreso” que todavía no se pueden vender y las que hay que bajar de precio porque volvieron usadas.',
     remate: 'Lo que se queda en una bolsa atrás del rack se remata en marzo, y ya nadie se acuerda de cuánto costó.',
     img: `${IMG}/caso-devolucion.webp`,
     alt: 'Ella abriendo un paquete que regresó por cambio de talla y revisando la prenda usada en la mesa de empaque',
@@ -169,16 +169,16 @@ export const seccionesEM: SuiteSeccion[] = [
   {
     id: 'live', tag: 'El live',
     titulo: '40 piezas en una hora, sin soltar el teléfono',
-    texto: 'Apartas por número gritado mientras transmites, sin dejar de hablar: “el 8, morado, talla M, $380”. Todo lo que apartó cada clienta se junta solo: un total, un cobro y un paquete al final, en vez de cinco mensajes por clienta cuando ya se acabó el live.',
-    bullets: ['Cada pieza con su número y su fila, aunque se aparten cuarenta en una hora', 'Lo que lleva cada clienta, junto: un solo cobro y un solo paquete', 'Quién contestó y quién vendió, para pagarle su comisión a la que te ayuda'],
+    texto: 'Apartas por número gritado mientras transmites, sin dejar de hablar: “el 8, morado, talla M, $380”. Todo lo que apartó cada cliente se junta solo: un total, un cobro y un paquete al final, en vez de cinco mensajes por cliente cuando ya se acabó el live.',
+    bullets: ['Cada pieza con su número y su fila, aunque se aparten cuarenta en una hora', 'Lo que lleva cada cliente, junto: un solo cobro y un solo paquete', 'Quién contestó y quién vendió, para pagarle su comisión a la que te ayuda'],
     visual: mockLista('Live del martes · 8 de la noche', [['Karla · lleva 4 piezas · $1,740 · link enviado', 'Pagó', 'ok'], ['Mayra · lleva 2 piezas · $860 · vence mañana a las 8', 'Esperando', 'aviso'], ['Dulce · lleva 1 pieza · $450 · dejó la mitad', 'Al corriente', 'ok'], ['El 12, morado M · se liberó · aviso a las 2 de la fila', 'Se reapartó', 'ok']], '40 piezas apartadas en una hora, 25 paquetes — y ninguna anotada en un papel'),
   },
   {
-    id: 'clientas', tag: 'Tus clientas',
+    id: 'clientas', tag: 'Tus clientes',
     titulo: 'Su talla, su domicilio y si abona puntual',
-    texto: 'La ficha de cada clienta: qué talla usa, a dónde le mandas, cómo paga, si va al corriente con sus abonos y si ya te quedó mal dos veces. Y lo que te preguntaron y no tenías —“este mes me pidieron 14 veces la G de ese vestido y traía 3”— que es justo lo que decide qué traes del próximo viaje.',
+    texto: 'La ficha de cada cliente: qué talla usa, a dónde le mandas, cómo paga, si va al corriente con sus abonos y si ya te quedó mal dos veces. Y lo que te preguntaron y no tenías —“este mes me pidieron 14 veces la G de ese vestido y traía 3”— que es justo lo que decide qué traes del próximo viaje.',
     bullets: ['“Llegó tu talla”: aviso de un jalón a las que usan esa talla cuando entra', 'Lista de precios aparte para tus revendedoras, que piden por docena y pagan distinto', 'La misma foto sirve para la tienda en línea, el catálogo y el chat: la subes una vez'],
-    visual: mockLista('Esta semana', [['Vestido terracota · me la pidieron 14 veces en G · traía 3', 'Al próximo viaje', 'aviso'], ['Entró la G del vestido · aviso a 40 clientas que usan G', 'Enviado', 'ok'], ['Mayoreo · Lupita revende · docena surtida a su precio', 'Su lista', 'ok'], ['Sandra · dos apartados caídos · solo link de pago', 'Marcada', 'gris']], 'Cada chat queda pegado a su ficha, aunque conteste otra persona'),
+    visual: mockLista('Esta semana', [['Vestido terracota · me la pidieron 14 veces en G · traía 3', 'Al próximo viaje', 'aviso'], ['Entró la G del vestido · aviso a 40 clientes que usan G', 'Enviado', 'ok'], ['Mayoreo · Lupita revende · docena surtida a su precio', 'Su lista', 'ok'], ['Sandra · dos apartados caídos · solo link de pago', 'Marcada', 'gris']], 'Cada chat queda pegado a su ficha, aunque conteste otra persona'),
   },
   {
     id: 'dinero', tag: 'Tu dinero',
@@ -266,7 +266,7 @@ export const pasosEM = [
   { cuando: 'Día 1', titulo: 'Tus piezas, cargadas', texto: 'Nos pasas tu libreta, tu hoja o tus fotos y lo subimos nosotros. No capturas nada.', detalle: 'Modelo, color y talla con lo que de verdad queda de cada docena, y la foto pegada a cada pieza para que sirva en la tienda en línea, en el catálogo y en el chat.', img: `${IMG}/proceso-foto.webp`, alt: 'Esquina de fotos de la casa: el aro de luz, el fondo liso y el maniquí con un vestido' },
   { cuando: 'Día 2', titulo: 'Tus reglas, configuradas', texto: 'Queda como ya trabajas: tus canales, tus formas de cobro y tus reglas de apartado.', detalle: 'Apartado de 24 horas sin anticipo, una semana con la mitad, abonos cada ocho días, el envío gratis a partir de $X y a quién sí y a quién no se le aparta.', img: `${IMG}/proceso-chat.webp`, alt: 'El pedido armándose dentro de la conversación, con el total y el link listos para mandar' },
   { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión contigo y con la que te ayuda a contestar. Todo desde el celular, en media hora.', detalle: 'Y se practica lo de todos los días: apartar con reloj, pegar el comprobante, pesar, sacar la guía del pedido y mandarle el número.', img: `${IMG}/proceso-empaque.webp`, alt: 'Mesa de empaque de la casa con la báscula, los sobres y los paquetes sellados' },
-  { cuando: 'Día 4', titulo: 'Arranca el chat', texto: 'Empiezas a vender con Sacs por donde más vendes: la conversación.', detalle: 'Con los apartados de hoy ya migrados: ninguna clienta escribe “¿y mi blusa?” y se encuentra con que su apartado no existe.', img: `${IMG}/proceso-envio.webp`, alt: 'La salida del día con los paquetes sellados y la guía pegada, lista para dejar en sucursal' },
+  { cuando: 'Día 4', titulo: 'Arranca el chat', texto: 'Empiezas a vender con Sacs por donde más vendes: la conversación.', detalle: 'Con los apartados de hoy ya migrados: ningún cliente escribe “¿y mi blusa?” y se encuentra con que su apartado no existe.', img: `${IMG}/proceso-envio.webp`, alt: 'La salida del día con los paquetes sellados y la guía pegada, lista para dejar en sucursal' },
   { cuando: 'Día 5', titulo: 'Arrancan los demás canales', texto: 'Con el chat resuelto entran la tienda en línea, el marketplace y el rack del bazar.', detalle: 'Ya sobre el mismo inventario: lo que se vende en cualquiera se baja en todos, y el corte del día te dice qué entró por dónde.', img: `${IMG}/proceso-corte.webp`, alt: 'Ella revisando el corte del día en la laptop, con los pedidos por estado de envío' },
 ];
 export const ticketEM = { lineas: [{ n: 'Blusa floreada · M', p: '$450' }, { n: 'Vestido terracota · G', p: '$620' }, { n: 'Envío a Mérida · 1.1 kg', p: '$99' }], total: '$1,169' };
@@ -318,7 +318,7 @@ export const problemasEM = {
     { que: 'Apartado con reloj, con anticipo y con abonos', generico: 'No existe', medida: 'Rara vez', sacs: 'Incluido' },
     { que: 'La fila: quién más la quería y el aviso cuando se libera', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
     { que: 'El envío cotizado por código postal, con el sobrepeso y el rechazo', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
-    { que: 'Modo live y el pedido completo de cada clienta', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
+    { que: 'Modo live y el pedido completo de cada cliente', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
     { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
     { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
   ],

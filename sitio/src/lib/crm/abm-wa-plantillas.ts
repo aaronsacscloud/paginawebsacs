@@ -159,7 +159,7 @@ La demo por videollamada sigue en pie: 20 minutos, gratis y sin compromiso. ¿Le
       'casas de novia',
       'todo cuelga de una fecha: el vestido que se pide al proveedor, las pruebas, el anticipo y la liquidación. Si una se recorre, se recorren todas.',
       'casas de novia',
-      'cada clienta con su fecha, sus abonos y sus pruebas en un solo lugar, y el sistema avisando antes, no cuando ya se pasó.',
+      'cada cliente con su fecha, sus abonos y sus pruebas en un solo lugar, y el sistema avisando antes, no cuando ya se pasó.',
     ],
   },
   {

@@ -40,7 +40,7 @@ export const manifiestoTB = {
   frases: [
     'Tienes cuarenta tops <b>M</b> y ni un bottom M del mismo estampado. Se te <b>descompletó</b> y ni cuenta te diste.',
     'Tu temporada son <b>diez semanas</b>. La reposición que pides en abril llega en junio.',
-    'La de <b>Instagram</b> apartó una pieza que la de la tienda ya había vendido. Dos clientas enojadas por el mismo bikini.',
+    'La de <b>Instagram</b> apartó una pieza que la de la tienda ya había vendido. Dos clientes enojados por el mismo bikini.',
     'En septiembre te quedas con <b>doscientas piezas</b> de un estampado que el año que entra nadie quiere.',
     'El maquilero te entregó <b>96 de 100</b> y dice que la tela no alcanzó. No tienes cómo saberlo.',
     'La del <b>hotel</b> siempre se queda sin L mientras la de la plaza tiene doce. Lo ves hasta que la vendedora te marca.',
@@ -139,15 +139,15 @@ export const seccionesTB: SuiteSeccion[] = [
   {
     id: 'set', tag: 'Caja',
     titulo: 'El set descuenta dos piezas',
-    texto: 'Se cobra un set y bajan el top y el bottom por separado. Y si la clienta arma su propio set con dos sueltas —top M, bottom L, dos estampados— la caja aplica sola el precio de set.',
+    texto: 'Se cobra un set y bajan el top y el bottom por separado. Y si el cliente arma su propio set con dos sueltas —top M, bottom L, dos estampados— la caja aplica sola el precio de set.',
     bullets: ['Un código de set, dos existencias descontadas', 'Promo “dos sueltas = precio de set” automática', 'El inventario cuadra el día que lo cuentas'],
     visual: mockTicket('Ticket · Caja 1', [['Top triángulo coral · M', '$590'], ['Bottom cheeky animal · L', '$490'], ['Precio de set aplicado', '−$130']], ['Total', '$950'], 'Bajaron una pieza de cada matriz; el set no existe como “un producto”'),
   },
   {
     id: 'apartados', tag: 'Instagram y WhatsApp',
     titulo: 'Un apartado que todos ven',
-    texto: 'La clienta escribe “¿tienen en M?”, se le manda la foto del color, deja anticipo por link y la pieza queda bloqueada para la tienda, la web y el chat. Nadie vende dos veces el mismo bikini.',
-    bullets: ['Apartado con anticipo desde el chat, con la pieza bloqueada', 'Foto por color lista para mandar, la misma que en la tienda en línea', 'La conversación queda en la ficha de la clienta, con su talla de top y de bottom'],
+    texto: 'El cliente escribe “¿tienen en M?”, se le manda la foto del color, deja anticipo por link y la pieza queda bloqueada para la tienda, la web y el chat. Nadie vende dos veces el mismo bikini.',
+    bullets: ['Apartado con anticipo desde el chat, con la pieza bloqueada', 'Foto por color lista para mandar, la misma que en la tienda en línea', 'La conversación queda en la ficha del cliente, con su talla de top y de bottom'],
     visual: mockLista('Apartados de hoy', [['Top negro M · Fernanda · anticipo $300', 'Bloqueado', 'ok'], ['Set salvia S/M · Instagram · link enviado', 'Por pagar', 'aviso'], ['Entero negro M · tienda · recoge mañana', 'Bloqueado', 'ok'], ['Bottom coral L · web · cambio de talla', 'Cambio', 'gris']], 'Tienda, web y chat ven la misma lista'),
   },
   {
@@ -206,7 +206,7 @@ export const planoTB = [
   {
     id: 'probador', nombre: 'El probador', simbolo: 'probadores' as const,
     foto: `${IMG}/zona-probador.webp`, alt: 'Pasillo de probadores con cortinas de lino en una boutique de playa',
-    pie: 'Aquí se decide la venta: la talla que falta se aparta sin dejar a la clienta.',
+    pie: 'Aquí se decide la venta: la talla que falta se aparta sin dejar al cliente.',
     pregunta: '¿Cómo tallea este modelo?',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
@@ -214,7 +214,7 @@ export const planoTB = [
       { t: 'Apartado con anticipo desde el probador, bloqueado en todos los canales' },
       { t: 'La compra en línea se cambia de talla aquí mismo, sin devolver dinero' },
       { t: '“No hay devoluciones, solo cambio con el protector puesto” en el ticket y en el sistema' },
-      { t: 'La clienta queda en el CRM con su talla de top y de bottom', plan: 'Fideliza' },
+      { t: 'El cliente queda en el CRM con su talla de top y de bottom', plan: 'Fideliza' },
     ],
   },
   {

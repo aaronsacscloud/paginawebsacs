@@ -4,14 +4,14 @@
  * emprendedoras que venden en digital (17-sep-2026).
  *
  * Esto solo pasa aquí, y por eso no se pisa con ningún otro giro del sitio: en una tienda con
- * local, la clienta que aparta está parada enfrente, deja un anticipo y firma un papel. Aquí el
+ * local, el cliente que aparta está parado enfrente, deja un anticipo y firma un papel. Aquí el
  * apartado es una frase escrita a las once de la noche, sin dinero, sin fecha y sin testigo. La
  * pieza se congela dentro de una conversación y ahí se queda hasta que alguien se acuerde. No hay
  * caja que cierre la venta: hay un chat que se queda en visto.
  *
  * Y el costo no es la venta que no se hizo. Es la venta que SÍ se iba a hacer y que ella rechazó
- * al decirle a la segunda clienta «ya está apartada». Por eso, debajo de cada pieza muerta, se
- * dibuja la clienta que se dio la vuelta.
+ * al decirle al segundo cliente «ya está apartada». Por eso, debajo de cada pieza muerta, se
+ * dibuja quien se dio la vuelta.
  *
  * La cuenta la puede correr con sus propios datos: cambia el precio y el costo de la pieza en los
  * dos campos de abajo y el número deja de ser el del ejemplo.
@@ -105,19 +105,19 @@ import BloqueProducto from '../BloqueProducto.astro';
     const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
     const APARTADOS = 100; // al mes, el ejemplo de la ficha; el resto se escala con sus números
     const CON_FILA = 0.2;  // de las que se caen, una de cada cinco traía a alguien preguntando
-    const PAGA = 0.55;     // y esa segunda clienta paga como cualquier otra, no con certeza
+    const PAGA = 0.55;     // y ese segundo cliente paga como cualquier otro, no con certeza
     let dias = 3;
     const pinta = () => {
       const pagan = Number(($('em-pagan') as HTMLInputElement).value);
       const precio = Math.max(50, Number(($('em-precio') as HTMLInputElement).value) || 450);
       const costo = Math.max(10, Number(($('em-costo') as HTMLInputElement).value) || 220);
       const margen = Math.max(0, precio - costo);
-      // De las que no pagan, unas se caen con otra clienta detrás esperando y otras no. Mientras
+      // De las que no pagan, unas se caen con otro cliente detrás esperando y otras no. Mientras
       // más días la guardes, más veces le dices «ya está apartada» a alguien que sí iba a pagar.
       const mueren = (10 - pagan) / 10 * APARTADOS;
       // De las que se cayeron, una de cada cinco traía a alguien preguntando por esa misma pieza y
       // esa segunda paga como cualquier otra, no con certeza. Los días NO cambian cuántas había
-      // atrás: eso sería hacer aparecer clientas. Lo que cambia con los días es el rack muerto, y
+      // atrás: eso sería hacer aparecer clientes. Lo que cambia con los días es el rack muerto, y
       // por eso ese es el número grande.
       const enFila = Math.round(mueren * CON_FILA);
       const perdidas = Math.floor(mueren * CON_FILA * PAGA);

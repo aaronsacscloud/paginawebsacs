@@ -28,7 +28,7 @@ export const PLANES: { id: PlanId; nombre: string; mensual: number; anualMes: nu
       'Qué talla hay en cada tienda al momento; reparto desde tu CEDIS; traspasos entre tiendas; resurtido por curva; aviso de corrida rota y de prenda colgada',
       'Conteo físico por corrida sin cerrar la tienda; kardex; faltantes y diferencias',
       'Pedidos a proveedor y lo que le debes; recepción contra pedido; gastos; complementos de pago y notas de crédito',
-      'Clientas con lo que se han llevado; metas y comisiones por vendedor; permisos por persona y tienda',
+      'Clientes con lo que se han llevado; metas y comisiones por vendedor; permisos por persona y tienda',
       '50+ reportes; ABC, rotación y sell-through por modelo, talla y tienda; costo y utilidad por prenda; comparativa contra la misma temporada del año pasado',
       'Temporada, colección y drop como etiqueta de cada modelo',
     ],
@@ -36,13 +36,13 @@ export const PLANES: { id: PlanId; nombre: string; mensual: number; anualMes: nu
   },
   {
     id: 'fideliza', nombre: 'Fideliza y Multiplica', mensual: 1890, anualMes: 1229, anualTotal: 14742,
-    paraQuien: 'La clienta que vuelve cada temporada: ficha de clienta, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientas, membresías. Es el más popular.',
+    paraQuien: 'El cliente que vuelve cada temporada: ficha de cliente, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientes, membresías. Es el más popular.',
     agrega: [
-      'Ficha de la clienta con lo que compró en tienda y en línea; grupos por lo que compran; notas y seguimientos',
-      'Monedero electrónico y puntos; niveles de clienta y premios; valen en mostrador y en línea',
-      'Portal con tu marca donde la clienta ve sus compras y se autofactura; tarjetas de regalo físicas y digitales',
-      'Correos a grupos de clientas (hasta 1,000 contactos); avisos y campañas por WhatsApp (hasta 200 contactos activos)',
-      'Membresía mensual de clienta frecuente con cobro automático',
+      'Ficha del cliente con lo que compró en tienda y en línea; grupos por lo que compran; notas y seguimientos',
+      'Monedero electrónico y puntos; niveles de cliente y premios; valen en mostrador y en línea',
+      'Portal con tu marca donde el cliente ve sus compras y se autofactura; tarjetas de regalo físicas y digitales',
+      'Correos a grupos de clientes (hasta 1,000 contactos); avisos y campañas por WhatsApp (hasta 200 contactos activos)',
+      'Membresía mensual de cliente frecuente con cobro automático',
     ],
     servicios: ['Multi-sucursal', 'Reunión mensual', 'Soporte 9 AM–5 PM', 'Tickets en 15–30 min', 'Implementación y migración prioritaria (valor $9,500; sin costo solo con la promoción vigente)'],
   },
@@ -75,7 +75,7 @@ CÓMO SE COBRA (lo que el agente SÍ dice)
 - Los planes: Vende $810 · Controla $1,215 · Fideliza y Multiplica $1,890 (el más popular) · Automatiza $3,780 — al mes por sucursal.
   En anual: $527 · $790 · $1,229 · $2,457 al mes por sucursal.
 - Cuando pregunten «¿cuánto cuesta?» SIN que sepamos giro y número de tiendas: el marco («planes desde $527 al mes por sucursal en anual hasta el más completo; cuál te queda depende de lo que necesites; según el caso suele haber distintos tipos de descuento y eso lo ve el consultor en la demo») y regresa a entender el negocio.
-- Cuando ya sabes giro y tiendas: el precio de lista del plan que le queda (una tienda → Vende; varias → Controla; quiere clientas que vuelvan → Fideliza) y la demo para aterrizarlo. Nunca el monto de un descuento.
+- Cuando ya sabes giro y tiendas: el precio de lista del plan que le queda (una tienda → Vende; varias → Controla; quiere clientes que vuelvan → Fideliza) y la demo para aterrizarlo. Nunca el monto de un descuento.
 
 LO QUE VA CON EL PLAN SEGÚN EL GIRO (no se vende aparte)
 - Las suites son segmentación por giro: consignación para tiendas de consignación (y boutiques que la trabajan), joyería para joyería fina, torre de control para giras, órdenes de servicio para taller de novias/joyería. Se instalan por ser de ese giro.

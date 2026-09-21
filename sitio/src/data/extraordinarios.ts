@@ -34,7 +34,7 @@ export const extraordinarios: ModuloExtraordinario[] = [
     corto: 'Probador',
     gancho: 'Se lo prueba sin quitarse nada.',
     descripcion:
-      'Una pantalla en tu piso de venta donde tu clienta se ve con la prenda en otro color, en otra talla o con el outfit completo. Lo que no cabe en el probador, cabe en la pantalla.',
+      'Una pantalla en tu piso de venta donde tu cliente se ve con la prenda en otro color, en otra talla o con el outfit completo. Lo que no cabe en el probador, cabe en la pantalla.',
     puntos: [
       'Cambia color y talla en pantalla, sin ir por la pieza',
       'Arma el look completo con lo que sí tienes en existencia',
@@ -112,9 +112,9 @@ export const extraordinarios: ModuloExtraordinario[] = [
     num: '05',
     nombre: 'Lookbooks digitales',
     corto: 'Lookbooks',
-    gancho: 'La colección, en el WhatsApp de tu clienta.',
+    gancho: 'La colección, en el WhatsApp de tu cliente.',
     descripcion:
-      'El catálogo de la temporada armado como lookbook: tus looks, tus fotos, tu marca. La vendedora lo manda a su cartera y la clienta compra desde ahí.',
+      'El catálogo de la temporada armado como lookbook: tus looks, tus fotos, tu marca. La vendedora lo manda a su cartera y el cliente compra desde ahí.',
     puntos: [
       'Los looks de la colección en un catálogo con tu marca',
       'Se manda por WhatsApp a la cartera de cada vendedora',
@@ -134,10 +134,10 @@ export const extraordinarios: ModuloExtraordinario[] = [
     corto: 'Pre-órdenes',
     gancho: 'Vendida antes de llegar.',
     descripcion:
-      'Tus clientas de siempre apartan la pieza de la colección nueva antes del drop, con anticipo. Tú sabes cuánto vas a vender antes de recibir el pedido del proveedor.',
+      'Tus clientes de siempre apartan la pieza de la colección nueva antes del drop, con anticipo. Tú sabes cuánto vas a vender antes de recibir el pedido del proveedor.',
     puntos: [
       'Aparta con anticipo antes de que llegue la mercancía',
-      'Aviso automático a la clienta cuando su pieza entra',
+      'Aviso automático al cliente cuando su pieza entra',
       'Sabes qué se va a vender antes de pagar el pedido',
     ],
     precio: 'Desde $6,900 por tienda/año',

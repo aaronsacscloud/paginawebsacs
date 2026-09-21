@@ -164,7 +164,7 @@ export const seccionesUN: SuiteSeccion[] = [
     titulo: '“Ya está listo tu apartado”',
     texto: 'Cuando la prenda cambia a lista, el aviso sale solo por WhatsApp con la liga para liquidar el saldo. La mamá paga sin ir y recoge en el módulo. Y el recordatorio de saldo con fecha llega antes de que empiecen las clases.',
     bullets: ['Aviso automático por estatus del apartado', 'Liga de pago para el saldo; recordatorio con fecha', 'La conversación queda en la ficha de la mamá con la escuela y las tallas de sus hijos'],
-    visual: mockLista('WhatsApp · avisos de hoy', [['Sra. López · Primaria 4º · listo · liga de saldo $900', 'Pagado', 'ok'], ['Sr. Ramos · Secundaria 1º · listo · recoge en módulo', 'Enviado', 'ok'], ['Sra. Ortiz · saldo $420 · vence el 10', 'Recordatorio', 'aviso'], ['Clínica · 36 filipinas con nombre · listas', 'Enviado', 'gris']], 'Cada aviso queda en la ficha de la clienta'),
+    visual: mockLista('WhatsApp · avisos de hoy', [['Sra. López · Primaria 4º · listo · liga de saldo $900', 'Pagado', 'ok'], ['Sr. Ramos · Secundaria 1º · listo · recoge en módulo', 'Enviado', 'ok'], ['Sra. Ortiz · saldo $420 · vence el 10', 'Recordatorio', 'aviso'], ['Clínica · 36 filipinas con nombre · listas', 'Enviado', 'gris']], 'Cada aviso queda en la ficha del cliente'),
   },
 ];
 

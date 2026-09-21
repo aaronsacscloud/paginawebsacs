@@ -9,9 +9,9 @@
  * Los siete puntos del oficio que lo sostienen:
  * · Cuándo se decide: al recibir el clóset — precio y comisión se pactan ahí,
  *   por contrato, y ya no se mueven.
- * · Quién decide: la dueña valúa; la clienta acepta y firma.
+ * · Quién decide: la dueña valúa; el cliente acepta y firma.
  * · Qué se mueve primero: la pieza vendida dispara DOS cuentas a la vez — lo
- *   de la clienta y tu comisión. Ninguna espera a fin de mes.
+ *   del cliente y tu comisión. Ninguna espera a fin de mes.
  * · Cuánto cuesta no llevarla: cada "déjame revisar y te aviso" es un clóset
  *   que la próxima vez se va a otra tienda.
  * · El criterio: % vendido de la temporada × comisión pactada.
@@ -28,7 +28,7 @@ const defaults = { piezas: 40, precio: 950, comision: 40, vendido: 60 };
 <BloqueProducto
   encabezado="La cuenta que rinde este negocio."
   titulo="Tu ingreso no es lo que vendes. Es tu comisión."
-  descripcion="Mueve los números de un clóset típico — piezas, precio, comisión pactada y qué tanto se vende antes del retiro — y mira las dos cuentas que el sistema lleva solas: la de tu clienta y la tuya."
+  descripcion="Mueve los números de un clóset típico — piezas, precio, comisión pactada y qué tanto se vende antes del retiro — y mira las dos cuentas que el sistema lleva solas: la de tu cliente y la tuya."
   vinetas={[
     { label: 'Dos cuentas por cada venta', detail: 'La pieza vendida abona a la vez lo de la consignante y tu comisión. Ninguna de las dos espera a que alguien pase la libreta a Excel. (Es la Suite de Consignación; se cotiza aparte.)' },
     { label: 'La comisión se pacta por contrato', detail: 'El porcentaje queda congelado al firmar, pieza por pieza. Aquí lo mueves solo para simular tu política.' },
@@ -61,7 +61,7 @@ const defaults = { piezas: 40, precio: 950, comision: 40, vendido: 60 };
 
     <div class="cq-cuentas">
       <div class="cq-cuenta">
-        <span class="cq-rot">La cuenta de tu clienta</span>
+        <span class="cq-rot">La cuenta de tu cliente</span>
         <b class="cq-n" id="cqClienta">$0</b>
         <span class="cq-sub" id="cqClientaSub"></span>
       </div>
@@ -150,7 +150,7 @@ const defaults = { piezas: 40, precio: 950, comision: 40, vendido: 60 };
       el('cqTuyaSub').textContent = `el ${comision}% de ${fmt(venta)} vendidos en la vigencia`;
       el('cqRegresa').textContent = regresan > 0
         ? `Y las otras ${regresan} piezas no son ingreso: se regresan a su dueña al vencer la vigencia — o se rebajan solo con la regla firmada en su contrato.`
-        : 'Se vendió el clóset completo — pasa poco, y cuando pasa, la clienta trae el siguiente.';
+        : 'Se vendió el clóset completo — pasa poco, y cuando pasa, el cliente trae el siguiente.';
 
       const cta = el('cqCta') as HTMLAnchorElement;
       const u = new URL(cta.getAttribute('href')!.split('#')[0], location.origin);

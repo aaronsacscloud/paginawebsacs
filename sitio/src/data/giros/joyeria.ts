@@ -300,7 +300,7 @@ export const casosJoyeria = [
       'En joyería el apartado es largo —medio año o más, abonado cada mes— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
     remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
     img: '/images/caso-joy-apartado.webp',
-    alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
+    alt: 'Vendedor entregando el comprobante de un apartado a un cliente en el mostrador',
   },
   {
     id: 'vitrina',
@@ -443,7 +443,7 @@ export const planoJoyeria = [
     foto: '/images/plano-joy-linea.webp',
     alt: 'Rincón de fotografía de una joyería con tripié, aro de luz y cadenas sobre el paño',
     pie: 'La foto se manda con el peso escrito encima. Y sale del mismo inventario.',
-    pregunta: '«La aparté por WhatsApp y Plaza ya la había vendido. ¿Ahora quién le llama a la clienta?»',
+    pregunta: '«La aparté por WhatsApp y Plaza ya la había vendido. ¿Ahora quién le llama al cliente?»',
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },

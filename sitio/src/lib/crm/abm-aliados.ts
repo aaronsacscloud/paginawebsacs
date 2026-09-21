@@ -103,7 +103,7 @@ export const ALIADOS: Record<string, TipoAliado> = {
     gancho: 'Entrega diagnósticos de inventario y surtido que el cliente después no ejecuta. Sacs es donde su plan se vuelve operación.',
     apertura: 'Usted entrega el diagnóstico y el criterio; lo que casi siempre no pasa después es que alguien lo mida todos los días',
     suGente: 'Dueñas de boutique y marcas que la contratan para ordenar compras y surtido',
-    dolor: 'Entrega el diagnóstico, la clienta lo aprueba y a la tercera temporada está igual que antes',
+    dolor: 'Entrega el diagnóstico, el cliente lo aprueba y a la tercera temporada está igual que antes',
   },
   consultora_retail: {
     familia: 'asesora', perfil: 'orquestador',

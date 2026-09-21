@@ -118,7 +118,7 @@ export const pillars: Pillar[] = [
         pillarId: 'vende',
         label: 'Facturación electrónica',
         title: 'Facturación Electrónica para tu Tienda de Ropa — Sacs',
-        description: 'CFDI desde la misma caja, factura global del día, autofacturación para la clienta y complementos de pago. Sin salir del punto de venta.',
+        description: 'CFDI desde la misma caja, factura global del día, autofacturación para el cliente y complementos de pago. Sin salir del punto de venta.',
         hero: {
           eyebrow: 'Vende',
           headline: 'Facturación electrónica sin fricción',
@@ -240,7 +240,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Clientes y CRM',
         title: 'CRM de Clientes para tu Tienda de Ropa — Sacs',
-        description: 'La ficha de cada clienta con sus tallas, lo que compró y por dónde te escribe. La conversación es de la tienda, no del teléfono del vendedor.',
+        description: 'La ficha de cada cliente con sus tallas, lo que compró y por dónde te escribe. La conversación es de la tienda, no del teléfono del vendedor.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Conoce a cada cliente como si fuera el único',
@@ -253,7 +253,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Programa de lealtad',
         title: 'Programa de Lealtad para tu Boutique — Sacs',
-        description: 'Monedero, puntos y niveles que se aplican desde la caja sin apps ni tarjetas. La clienta lo usa en su siguiente compra, en cualquier sucursal.',
+        description: 'Monedero, puntos y niveles que se aplican desde la caja sin apps ni tarjetas. El cliente lo usa en su siguiente compra, en cualquier sucursal.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Premia a tus mejores clientes',
@@ -266,7 +266,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Portal de clientes',
         title: 'Portal de Clientes para tu Marca de Moda — Sacs',
-        description: 'Portal con tu marca para que tu clienta consulte puntos y saldo, autofacture su ticket y compre otra vez sin escribirle a nadie.',
+        description: 'Portal con tu marca para que tu cliente consulte puntos y saldo, autofacture su ticket y compre otra vez sin escribirle a nadie.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Un portal con tu marca para tus clientes',
@@ -292,7 +292,7 @@ export const pillars: Pillar[] = [
         pillarId: 'fideliza',
         label: 'Marketing por correo',
         title: 'Email Marketing para Marcas de Moda — Sacs',
-        description: 'Campañas segmentadas por lo que cada clienta compró y por su talla. El correo del restock le llega a quien preguntó por esa prenda, no a la lista entera.',
+        description: 'Campañas segmentadas por lo que cada cliente compró y por su talla. El correo del restock le llega a quien preguntó por esa prenda, no a la lista entera.',
         hero: {
           eyebrow: 'Fideliza',
           headline: 'Emails que tus clientes sí abren',
@@ -366,7 +366,7 @@ export const pillars: Pillar[] = [
         pillarId: 'automatiza',
         label: 'Workflows',
         title: 'Automatizaciones para tu Tienda de Moda — Sacs',
-        description: 'Reglas que corren solas: si una talla baja de tres piezas, pide reabasto; si una clienta cumple años, avísale. Se arman sin programar nada.',
+        description: 'Reglas que corren solas: si una talla baja de tres piezas, pide reabasto; si un cliente cumple años, avísale. Se arman sin programar nada.',
         hero: {
           eyebrow: 'Automatiza',
           headline: 'Automatiza lo que se repite',

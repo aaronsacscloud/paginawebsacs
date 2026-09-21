@@ -55,7 +55,7 @@ export const variantesRE = {
   eyebrow: 'Un solo modelo',
   titulo: 'Esto es lo que de verdad hay detrás de',
   resalte: '“el azul de la foto”.',
-  sub: 'Aquí no hay curva: cada vestido es una pieza con su talla, su tipo de espalda y su calendario. El azul rey de la foto son seis piezas, y la 7 con corsé cubre de la 5 a la 9 sin costurera. Lo que la clienta pregunta no es “¿lo tienes?”, es “¿lo tienes libre el 24?”.',
+  sub: 'Aquí no hay curva: cada vestido es una pieza con su talla, su tipo de espalda y su calendario. El azul rey de la foto son seis piezas, y la 7 con corsé cubre de la 5 a la 9 sin costurera. Lo que el cliente pregunta no es “¿lo tienes?”, es “¿lo tienes libre el 24?”.',
   ejeA: ['3', '5', '7', '9', '11', '13'],
   filas: [
     { nombre: 'Azul rey · corsé', img: `${IMG}/prod-azul.webp`, alt: 'Vestido largo azul rey con corsé de agujetas, en funda' },
@@ -78,7 +78,7 @@ export const variantesRE = {
 
 export const cortinaRE = {
   titulo: '“¿Está disponible el 24?”',
-  pieAntes: 'La libreta, el calendario de la pared<br />y la clienta esperando en el chat.',
+  pieAntes: 'La libreta, el calendario de la pared<br />y el cliente esperando en el chat.',
   fotoAntes: `${IMG}/cortina-antes.webp`,
   fotoDespues: `${IMG}/cortina-despues.webp`,
   altAntes: 'Encargada de una boutique de renta buscando en la libreta y en el calendario de la pared si el vestido azul está libre',
@@ -114,15 +114,15 @@ export const casosRE = [
     id: 'diciembre',
     titulo: 'Octubre: cuando se aparta diciembre',
     texto: 'Diciembre se llena en octubre. Las foráneas apartan por WhatsApp con transferencia. El anticipo queda amarrado a la fecha y al vestido, con recordatorio de liquidación y de cita de prueba, y la que no liquida a tiempo libera el vestido.',
-    remate: 'Si el anticipo no está amarrado, en diciembre aparecen dos clientas con el mismo comprobante.',
+    remate: 'Si el anticipo no está amarrado, en diciembre aparecen dos clientes con el mismo comprobante.',
     img: `${IMG}/caso-foranea.webp`,
     alt: 'Encargada empacando un vestido en funda para enviarlo por paquetería a una clienta de otra ciudad, con la guía en el celular',
   },
   {
     id: 'lunes',
     titulo: 'El lunes de devolución',
-    texto: 'Se abre la funda enfrente de la clienta y hay que decidir: se regresa el depósito, se descuenta o se cobra reposición. Con la foto de cómo salió, el contrato y la lista de revisión en la ficha, el cargo sale del mismo depósito y no hay pleito.',
-    remate: 'Sin foto de salida, la dueña pierde la discusión o pierde a la clienta.',
+    texto: 'Se abre la funda enfrente del cliente y hay que decidir: se regresa el depósito, se descuenta o se cobra reposición. Con la foto de cómo salió, el contrato y la lista de revisión en la ficha, el cargo sale del mismo depósito y no hay pleito.',
+    remate: 'Sin foto de salida, la dueña pierde la discusión o pierde al cliente.',
     img: `${IMG}/proceso-devolucion.webp`,
     alt: 'Revisión de un vestido devuelto sobre el mostrador de una boutique de renta, con la foto de entrega en la tablet',
   },
@@ -162,7 +162,7 @@ export const seccionesRE: SuiteSeccion[] = [
     titulo: '“¿Está disponible el 24?”, contestado al momento',
     texto: 'La foto del aparador es la que más preguntan. Desde el chat se ve el calendario de esa pieza y se contesta con la fecha; si no está, se ofrece otro del mismo color. El apartado por transferencia queda amarrado a la fecha, y a la foránea le sale la guía de ida y de regreso.',
     bullets: ['Calendario del vestido desde el celular', 'Apartado desde el chat con anticipo y fecha', 'Envío a foránea con guía y bloqueo de nueve días'],
-    visual: mockLista('WhatsApp · hoy', [['¿Está el azul libre el 24? · no, el 27 sí · verde libre el 24', 'Contestado', 'ok'], ['Foránea Tijuana · verde dama 11 · envío miércoles', 'Guía lista', 'ok'], ['Graduación jueves 25 · dorado 9 · anticipo por transferencia', 'Apartado', 'aviso'], ['Recordatorio: devolver el lunes · 12 clientas', 'Enviado', 'gris']], 'Cada chat queda en la ficha de la clienta'),
+    visual: mockLista('WhatsApp · hoy', [['¿Está el azul libre el 24? · no, el 27 sí · verde libre el 24', 'Contestado', 'ok'], ['Foránea Tijuana · verde dama 11 · envío miércoles', 'Guía lista', 'ok'], ['Graduación jueves 25 · dorado 9 · anticipo por transferencia', 'Apartado', 'aviso'], ['Recordatorio: devolver el lunes · 12 clientas', 'Enviado', 'gris']], 'Cada chat queda en la ficha del cliente'),
   },
   {
     id: 'rentas', tag: 'Rentas acumuladas',
@@ -205,7 +205,7 @@ export const planoRE = [
   {
     id: 'vestidores', nombre: 'Vestidores y espejo', simbolo: 'probadores' as const,
     foto: `${IMG}/zona-vestidores.webp`, alt: 'Vestidores con cortina y espejo de tres hojas en una boutique de renta, con la familia en la banca',
-    pie: 'Primera prueba, segunda prueba con el ajuste hecho y la foto que la clienta manda al grupo de la familia.',
+    pie: 'Primera prueba, segunda prueba con el ajuste hecho y la foto que se manda al grupo de la familia.',
     pregunta: '¿Cuándo es la segunda prueba?',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
@@ -219,7 +219,7 @@ export const planoRE = [
   {
     id: 'mostrador', nombre: 'Mostrador y caja', simbolo: 'mostrador' as const,
     foto: `${IMG}/zona-mostrador.webp`, alt: 'Mostrador de una boutique de renta con la tablet del calendario, la impresora del contrato y el cajón de depósitos',
-    pie: 'Aquí se aparta enfrente de la clienta, se firma el contrato, se deja el depósito y el lunes se revisa la devolución.',
+    pie: 'Aquí se aparta enfrente del cliente, se firma el contrato, se deja el depósito y el lunes se revisa la devolución.',
     pregunta: '¿Cuánto dinero ajeno tengo en la caja?',
     caja: { x: 68, y: 264, w: 216, h: 104 },
     items: [

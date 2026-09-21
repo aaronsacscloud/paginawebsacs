@@ -1,6 +1,6 @@
 ---
 /**
- * RiCrece — "El niño crece, la clienta regresa", el bloque propio de ropa infantil (17-sep-2026,
+ * RiCrece — "El niño crece, el cliente regresa", el bloque propio de ropa infantil (17-sep-2026,
  * con el dictamen del referee de oficio: una sola idea; deslizador de edad → la talla de hoy en
  * grande → "La siguiente le toca en [mes]. Ese día le escribimos a la mamá." + botón "fue regalo";
  * la última talla y cuándo mandan, la edad solo empuja; el sistema propone, la vendedora confirma).
@@ -28,7 +28,7 @@
 import BloqueProducto from '../BloqueProducto.astro';
 ---
 <BloqueProducto
-  encabezado="El niño crece, la clienta regresa."
+  encabezado="El niño crece, el cliente regresa."
   titulo="Ponle la edad y mira cuándo le toca la siguiente."
   descripcion="Solo aquí la talla es del hijo y cambia sola. La última talla que se llevó y cuándo mandan; la edad solo empuja. El sistema propone la que sigue, la vendedora confirma en el mostrador, y el día que le toca, le escribe a la mamá con una foto en su talla."
   vinetas={[
@@ -52,7 +52,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       <p class="ri-frase" id="ri-frase">La siguiente le toca en <b>marzo</b>. Ese día le escribimos a la mamá con una foto en talla 8.</p>
       <p class="ri-extra" id="ri-extra" hidden>…y a la abuela, el mismo día del año que entra.</p>
       <p class="ri-fijo">Del recién nacido al 12 son <b>12 tallas</b> y de 25 a 30 compras por hijo. ¿Cuántas te va a comprar a ti?</p>
-      <a class="ri-cta" href="/contacto">Verlo con mis clientas</a>
+      <a class="ri-cta" href="/contacto">Verlo con mis clientes</a>
     </div>
   </div>
 </BloqueProducto>
@@ -93,7 +93,7 @@ import BloqueProducto from '../BloqueProducto.astro';
       document.getElementById('ri-talla')!.textContent = TALLAS[i].n;
       tira.innerHTML = TALLAS.map((t, k) => `<span class="${k === i ? 'is-on' : k === sig && sig !== i ? 'is-next' : ''}">${t.n}</span>`).join('');
       const faltan = Math.max(1, TALLAS[i].h - m); const mes = MESES[(new Date().getMonth() + faltan) % 12];
-      document.getElementById('ri-frase')!.innerHTML = sig === i ? 'Ya va en talla de adulto: la ficha pasa a la mamá como clienta de ropa.' : `La siguiente le toca en <b>${mes}</b>. Ese día le escribimos a la mamá con una foto en talla ${TALLAS[sig].n}.`;
+      document.getElementById('ri-frase')!.innerHTML = sig === i ? 'Ya va en talla de adulto: la ficha pasa al adulto de la casa como cliente de ropa.' : `La siguiente le toca en <b>${mes}</b>. Ese día le escribimos a la mamá con una foto en talla ${TALLAS[sig].n}.`;
       (window as any).sacsPH?.('giro_ri_edad', { meses: m });
     };
     sl.addEventListener('input', pinta);

@@ -15,8 +15,8 @@
  *
  * Funciones prometidas que NO están construidas hoy (decisión del dueño 17-sep: se muestran como
  * parte del sistema; se construyen si el cliente las pide): alerta del centro de la corrida
- * descompletado, ficha de medidas por modelo y recomendador "tu talla en este modelo", medidas de
- * la clienta en su ficha, motivo del cambio en dos toques, cambio por talla en línea, paquetería
+ * descompletado, ficha de medidas por modelo y recomendador "tu talla en este modelo", medidas
+ * del cliente en su ficha, motivo del cambio en dos toques, cambio por talla en línea, paquetería
  * con guía de retorno, venta en vivo con apartado por comentario, orden de arreglo, orden de
  * maquila con los dos bloques de patrón, costeo por talla y consumo del trazo, escalón de precio
  * de la 48 para arriba, etiqueta por variante con reimpresión al correr el tallaje, mayoreo con
@@ -49,10 +49,10 @@ export const manifiestoTG = {
     'Vendes un vestido en el vivo, lo apartas en comentarios, y a los veinte minutos lo vendes otra vez en el piso. <b>Quedaste mal con las dos.</b>',
     'En línea <b>de cada diez pedidos te regresan tres o cuatro</b>. No es que no les guste: es que nadie sabe qué talla es en <i>ese</i> modelo.',
     'El taller te escala el patrón de la 38 y te saca una 48 que aprieta de sisa y <b>se le abomba de la cadera</b>. Se te regresa toda la corrida alta: un tercio del modelo.',
-    'Llega una clienta que no encontró nada en tres tiendas, se prueba, le queda y se lleva cuatro cosas. Esa clienta <b>vale oro</b> y ni sabes cómo se llama.',
+    'Llega un cliente que no encontró nada en tres tiendas, se prueba, le queda y se lleva cuatro cosas. Ese cliente <b>vale oro</b> y ni sabes cómo se llama.',
     'Tienes la <b>46</b> en la otra sucursal y no te enteras. Le dices que no hay y se va a comprarla en línea a otro lado.',
     'Lo que más te piden es vestido de fiesta <b>de la 46 para arriba</b>, y es justo lo que nadie te surte y lo que más te tardas en mandar hacer.',
-    'Te enseña el teléfono: <b>“allá me sale en $180 y sí hay 5XL”</b>. De precio no le compites, y ella tampoco quiere esperar tres semanas para que le llegue algo que no sabe si le va a quedar. Le compites con que aquí se la prueba hoy, aquí le queda y aquí se la ajustas.',
+    'Te enseña el teléfono: <b>“allá me sale en $180 y sí hay 5XL”</b>. De precio no le compites, y tampoco quiere esperar tres semanas para que le llegue algo que no sabe si le va a quedar. Le compites con que aquí se la prueba hoy, aquí le queda y aquí se la ajustas.',
   ],
   cierre: 'Ningún sistema de ropa entiende que aquí la corrida empieza donde las demás la terminan, que la venta está en las de en medio y que de la 46 para arriba cambia la proporción y no el tamaño. Sacs sí: cada pantalla que sigue funciona igual en el mostrador, en el probador, en el vivo y en el WhatsApp. Y encima puedes poner agentes de IA para que hagan el trabajo repetitivo: el aviso de la talla que se está acabando, el resurtido del centro de la corrida y el mensaje de “ya llegó en 48” a quien la estaba esperando.',
 };
@@ -78,7 +78,7 @@ export const variantesTG = {
   unidad: 'piezas',
   genero: 'f' as const,
   leyendas: ['Con existencia', 'Quedan pocas', 'Agotada'] as [string, string, string],
-  remate: 'Las de en medio se fueron en diez días y se quedaron las orillas. La clienta de 44 caminó el riel completo y no encontró nada, y el reporte decía que “el vestido negro” tenía 22 piezas.',
+  remate: 'Las de en medio se fueron en diez días y se quedaron las orillas. El cliente de 44 caminó el riel completo y no encontró nada, y el reporte decía que “el vestido negro” tenía 22 piezas.',
 };
 
 export const cortinaTG = {
@@ -95,7 +95,7 @@ export const cortinaTG = {
     { que: '¿Por qué se me regresó?', donde: 'El motivo del cambio', dato: 'Nueve “apretó de sisa” en el mismo modelo de la 46 para arriba: no es la talla, es tu patrón del bloque alto' },
     { que: '¿Cuánto falta del apartado?', donde: 'El apartado con abonos y reloj', dato: 'Anticipo, tres quincenas, saldo y la posada del 14; si no se termina, la prenda regresa al piso sola' },
   ],
-  pieDespues: 'La misma vendedora, la misma clienta. Ya no adivina la talla: la lee.',
+  pieDespues: 'La misma vendedora, el mismo cliente. Ya no adivina la talla: la lee.',
 };
 
 export const casosTG = [
@@ -110,15 +110,15 @@ export const casosTG = [
   {
     id: 'temporada',
     titulo: 'Del 1 al 10 de mayo y del 10 al 24 de diciembre',
-    texto: 'El 60 % del mes cae en diez días y lo que se descompleta el primer fin de semana ya no se repone. La alerta diaria de las de en medio por debajo de mínimo llega al celular con el traspaso sugerido de la sucursal que sí las tiene, y el vestido de ocasión se aparta con abonos porque la clienta compra cuando le pagan.',
-    remate: 'Cada “no hay tu talla” en esos diez días es una clienta que se va justo cuando traía dinero.',
+    texto: 'El 60 % del mes cae en diez días y lo que se descompleta el primer fin de semana ya no se repone. La alerta diaria de las de en medio por debajo de mínimo llega al celular con el traspaso sugerido de la sucursal que sí las tiene, y el vestido de ocasión se aparta con abonos porque el cliente compra cuando le pagan.',
+    remate: 'Cada “no hay tu talla” en esos diez días es un cliente que se va justo cuando traía dinero.',
     img: `${IMG}/caso-ocasion.webp`,
-    alt: 'Vitrina de vestidos de ocasión de talla extra en temporada alta, con los apartados etiquetados con el nombre de la clienta',
+    alt: 'Vitrina de vestidos de ocasión de talla extra en temporada alta, con los apartados etiquetados con el nombre del cliente',
   },
   {
     id: 'vivo',
     titulo: 'El Buen Fin y el vivo grande',
-    texto: 'Vender lo mismo en piso, en línea, en el WhatsApp y en el vivo al mismo tiempo, con una sola existencia. La clienta comenta “mía la 46”, la prenda se aparta al instante con reloj de 24 horas y se le manda el link de cobro; si no paga, regresa sola al piso. El mismo número lo ven la caja, la tienda en línea y quien está transmitiendo.',
+    texto: 'Vender lo mismo en piso, en línea, en el WhatsApp y en el vivo al mismo tiempo, con una sola existencia. El cliente comenta “mía la 46”, la prenda se aparta al instante con reloj de 24 horas y se le manda el link de cobro; si no paga, regresa sola al piso. El mismo número lo ven la caja, la tienda en línea y quien está transmitiendo.',
     remate: 'Vender tres veces la misma 46 se paga con dinero devuelto y con reputación.',
     img: `${IMG}/caso-vivo.webp`,
     alt: 'Transmisión en vivo desde el cuarto de atrás de una boutique de tallas grandes, con la modelo diciendo qué talla trae puesta',
@@ -151,29 +151,29 @@ export const seccionesTG: SuiteSeccion[] = [
   {
     id: 'medidas', tag: 'Medidas',
     titulo: 'La ficha de medidas, modelo por modelo',
-    texto: 'La talla de la etiqueta no dice nada: la misma clienta es 44 en un modelo, 46 en otro y 42 en el de al lado. Por eso cada modelo lleva sus medidas en plano —busto, cintura, cadera, largo y sisa— medidas con cinta de costura y regla de patronaje sobre las dos muestras, la del bloque bajo y la del alto. La tienda en línea publica esa tabla y la vendedora la ve en el celular dentro del probador.',
-    bullets: ['Medidas en centímetros por modelo, no una tabla genérica para toda la tienda', 'Las medidas de la clienta y la talla que sí le quedó, guardadas en su ficha', '“Tu talla en este modelo”: mete tres medidas y el sistema le dice 46 en el vestido y 44 en la blusa'],
+    texto: 'La talla de la etiqueta no dice nada: el mismo cliente es 44 en un modelo, 46 en otro y 42 en el de al lado. Por eso cada modelo lleva sus medidas en plano —busto, cintura, cadera, largo y sisa— medidas con cinta de costura y regla de patronaje sobre las dos muestras, la del bloque bajo y la del alto. La tienda en línea publica esa tabla y la vendedora la ve en el celular dentro del probador.',
+    bullets: ['Medidas en centímetros por modelo, no una tabla genérica para toda la tienda', 'Las medidas del cliente y la talla que sí le quedó, guardadas en su ficha', '“Tu talla en este modelo”: mete tres medidas y el sistema le dice 46 en el vestido y 44 en la blusa'],
     visual: mockTicket('Vestido de punto · talla 46 · medidas en plano', [['Ancho de busto', '56 cm'], ['Cintura', '50 cm'], ['Cadera', '60 cm'], ['Largo total', '112 cm'], ['Sisa', '27 cm']], ['Su talla aquí', '46'], 'La misma tabla la ve la tienda en línea y el celular de la vendedora en el probador'),
   },
   {
     id: 'cambio', tag: 'Cambios',
     titulo: 'El motivo del cambio es un diagnóstico de patrón',
-    texto: 'El cambio por talla es el 70-80 % de todo lo que se regresa: la prenda estaba bien, la talla no. Quien recibe el paquete toca dos veces —apretó de busto, apretó de sisa, grande de cintura, corto de largo, se abomba de la cadera— y ahí se acaba la adivinanza. Si el motivo se reparte parejo, es la clienta que pidió dos tallas; si un modelo concentra “apretó de sisa” de la 46 para arriba, es tu patrón del bloque alto.',
+    texto: 'El cambio por talla es el 70-80 % de todo lo que se regresa: la prenda estaba bien, la talla no. Quien recibe el paquete toca dos veces —apretó de busto, apretó de sisa, grande de cintura, corto de largo, se abomba de la cadera— y ahí se acaba la adivinanza. Si el motivo se reparte parejo, es el cliente que pidió dos tallas; si un modelo concentra “apretó de sisa” de la 46 para arriba, es tu patrón del bloque alto.',
     bullets: ['Cambio por talla sin volver a cobrar: entra la nueva, regresa la vieja al inventario', 'Guía de envío y guía de retorno, con el flete cargado al pedido para ver qué se come el margen', 'Tablero de motivos por modelo: cada punto que le bajas al porcentaje de cambios se ve en la caja'],
-    visual: mockLista('Motivos del cambio · últimas cuatro semanas', [['Vestido de lino · 48 y 50 · “apretó de sisa” · 9 de 11', 'Es el patrón', 'aviso'], ['Pantalón recto · “grande de cintura” · 42 y 44', 'Correr el tallaje', 'aviso'], ['Blusa satinada · repartido entre tallas · pidió dos', 'Medidas publicadas', 'ok'], ['Conjunto de punto · un cambio en el mes', 'Sano', 'gris']], 'Nueve clientas diciendo lo mismo del mismo modelo no son nueve tallas: son un patrón que hay que corregir'),
+    visual: mockLista('Motivos del cambio · últimas cuatro semanas', [['Vestido de lino · 48 y 50 · “apretó de sisa” · 9 de 11', 'Es el patrón', 'aviso'], ['Pantalón recto · “grande de cintura” · 42 y 44', 'Correr el tallaje', 'aviso'], ['Blusa satinada · repartido entre tallas · pidió dos', 'Medidas publicadas', 'ok'], ['Conjunto de punto · un cambio en el mes', 'Sano', 'gris']], 'Nueve clientes diciendo lo mismo del mismo modelo no son nueve tallas: son un patrón que hay que corregir'),
   },
   {
     id: 'vivo', tag: 'Vivo, WhatsApp y línea',
     titulo: '“Mía la 46” y se aparta sola',
-    texto: 'Una sola existencia para el piso, la tienda en línea, el WhatsApp y el vivo. Lo apartado en comentarios baja del inventario al instante y genera link de cobro con vencimiento; lo que no se paga en 24 horas regresa al piso. La lista de clientas se avisa por el mismo hilo —“ya llegó en 48”— y las afiliadas traen sus pedidos, su comisión y su cartera en la misma pantalla.',
+    texto: 'Una sola existencia para el piso, la tienda en línea, el WhatsApp y el vivo. Lo apartado en comentarios baja del inventario al instante y genera link de cobro con vencimiento; lo que no se paga en 24 horas regresa al piso. La lista de clientes se avisa por el mismo hilo —“ya llegó en 48”— y las afiliadas traen sus pedidos, su comisión y su cartera en la misma pantalla.',
     bullets: ['Apartado por comentario en el vivo que descuenta la pieza en piso, con reloj de 24 horas', 'WhatsApp con catálogo, cobro y confirmación en el mismo hilo', 'Mayoreo con media docena surtida 42-48 en un clic y docena de una sola talla para el que recompra'],
     visual: mockLista('Vivo del jueves · 118 piezas', [['Vestido rojo · “mía la 46” · link enviado', 'Apartado 24 h', 'ok'], ['Blusa manga tres cuartos · 48 · última pieza · pagada', 'Vendida', 'ok'], ['Conjunto de punto · 50 · no hay · se anota en la lista', 'Aviso al llegar', 'aviso'], ['Mayoreo · tienda de Uriangato · media docena 42-48', 'Estado de cuenta', 'gris']], 'La misma existencia que ve la caja: no se vende dos veces la misma 46'),
   },
   {
     id: 'arreglos', tag: 'Apartados y arreglos',
     titulo: 'El apartado en tres quincenas y el arreglo con fecha',
-    texto: 'La clienta compra cuando le pagan: el vestido de posada se abona el 15 y el 30, con saldo a la vista y regreso automático al piso si no se termina. Y casi ninguna prenda sale como se compró —se sube la bastilla, se entra de cintura, se ajusta el de fiesta—: el arreglo es una orden con fecha de entrega, de prenda ya cobrada que sigue en la tienda y que ya no cuenta como inventario.',
-    bullets: ['Apartado con anticipo, abonos, saldo y reloj; aviso una semana antes del evento', 'Orden de arreglo con fecha: en ocasión va incluida en el precio, y es lo que trae de regreso a la clienta', 'Agenda de la costurera cargada en mayo y en diciembre, a la vista antes de prometer el jueves'],
+    texto: 'El cliente compra cuando le pagan: el vestido de posada se abona el 15 y el 30, con saldo a la vista y regreso automático al piso si no se termina. Y casi ninguna prenda sale como se compró —se sube la bastilla, se entra de cintura, se ajusta el de fiesta—: el arreglo es una orden con fecha de entrega, de prenda ya cobrada que sigue en la tienda y que ya no cuenta como inventario.',
+    bullets: ['Apartado con anticipo, abonos, saldo y reloj; aviso una semana antes del evento', 'Orden de arreglo con fecha: en ocasión va incluida en el precio, y es lo que trae de regreso al cliente', 'Agenda de la costurera cargada en mayo y en diciembre, a la vista antes de prometer el jueves'],
     visual: mockCalendario('Apartados y arreglos comprometidos', 'Diciembre', 31, { 5: 'ok', 9: 'aviso', 12: 'lleno', 13: 'lleno', 14: 'lleno', 15: 'aviso', 17: 'lleno', 18: 'lleno', 19: 'lleno', 20: 'aviso', 22: 'ok', 23: 'lleno' }, 'El 15 y el 30 son quincena: ahí se termina de abonar. Del 26 en adelante ya es puro cambio de talla'),
   },
 ];
@@ -188,7 +188,7 @@ export const planoTG = [
     items: [
       { t: 'Existencia por variante y mínimo por talla, con la corrida completa a la vista' },
       { t: 'Alerta de las de en medio descompletadas, con traspaso desde la sucursal que sí las tiene', plan: 'Controla' },
-      { t: 'Nada de mesas de puras 38 y 52: eso espanta a la clienta del centro' },
+      { t: 'Nada de mesas de puras 38 y 52: eso espanta al cliente del centro' },
       { t: 'Conteo cíclico por talla cada semana; la 46 se descuadra sola' },
       { t: 'Rotación por talla y por modelo: qué se acaba primero en esta tienda y no en las otras', plan: 'Controla' },
     ],
@@ -217,7 +217,7 @@ export const planoTG = [
       { t: 'Se compra por pieza, no en corrida: nadie quiere ir igual a la boda' },
       { t: 'Apartado con anticipo, abonos, saldo y fecha del evento; aviso una semana antes' },
       { t: 'El arreglo va incluido en el precio y con fecha de entrega' },
-      { t: 'La etiqueta lleva el nombre de la clienta escrito a mano y la fecha' },
+      { t: 'La etiqueta lleva el nombre del cliente escrito a mano y la fecha' },
       { t: 'Se planea con seis meses: lo de diciembre se manda en agosto', plan: 'Controla' },
     ],
   },
@@ -232,7 +232,7 @@ export const planoTG = [
       { t: 'Apartado con reloj y regreso automático al piso; factura con RFC para oficina y mayoreo' },
       { t: 'Orden de arreglo con fecha: prenda cobrada, todavía en la tienda, fuera del inventario' },
       { t: 'El motivo del cambio capturado en dos toques y la prenda de vuelta al inventario', plan: 'Controla' },
-      { t: 'La clienta con su talla, sus medidas y lo que se ha llevado en cuatro años', plan: 'Fideliza' },
+      { t: 'El cliente con su talla, sus medidas y lo que se ha llevado en cuatro años', plan: 'Fideliza' },
     ],
   },
   {
@@ -255,13 +255,13 @@ export const pasosTG = [
   { cuando: 'Día 1', titulo: 'Tu corrida, cargada', texto: 'Nos das tu lista o tu sistema actual y lo subimos nosotros. No capturas nada.', detalle: 'Modelo, color y talla de la 36 a la 52, con el tallaje de cada proveedor —par, non o letra—, lo que hay que correr de tallaje y la existencia real de cada tienda.', img: `${IMG}/proceso-recibir.webp`, alt: 'Recepción de la corrida de maquila contando pieza por talla en la trastienda de una boutique de tallas grandes' },
   { cuando: 'Día 2', titulo: 'Tu operación, configurada', texto: 'Queda como ya trabajas: tus proveedores, tu maquila, tus sucursales y tus reglas.', detalle: 'Tu curva por tienda, los dos bloques de patrón en la orden de maquila, el escalón de precio de la 48 para arriba si lo cobras, y quién puede dar descuento.', img: `${IMG}/proceso-patron.webp`, alt: 'Patronista corrigiendo la sisa del patrón base del bloque alto junto a la fit de talla 48 en manta' },
   { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión con tu equipo antes de abrir. Leer las medidas del modelo y capturar el motivo del cambio se aprende en media hora.', detalle: 'Y se practica lo de todos los días: medir en plano, apartar desde el vivo, levantar el arreglo con fecha y marcar “no había su talla” en dos toques.', img: `${IMG}/proceso-medidas.webp`, alt: 'Encargada midiendo en plano la muestra del bloque alto con cinta de costura y regla de patronaje' },
-  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados ya migrados: ninguna clienta llega por su vestido de posada y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-cambio.webp`, alt: 'Cambio por talla resuelto en el mostrador, con el motivo capturado en el celular' },
-  { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de las de en medio entre la tienda del centro y la de la plaza ya corre desde el primer fin de semana.', img: `${IMG}/caso-encontro.webp`, alt: 'Clienta de talla extra viéndose al espejo con un vestido que le queda, y la vendedora un paso atrás' },
+  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados ya migrados: ningún cliente llega por su vestido de posada y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-cambio.webp`, alt: 'Cambio por talla resuelto en el mostrador, con el motivo capturado en el celular' },
+  { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el traspaso de las de en medio entre la tienda del centro y la de la plaza ya corre desde el primer fin de semana.', img: `${IMG}/caso-encontro.webp`, alt: 'Cliente de talla extra viéndose al espejo con un vestido que le queda, y la vendedora un paso atrás' },
 ];
 export const ticketTG = { lineas: [{ n: 'Vestido de punto negro · 46', p: '$1,290' }, { n: 'Blusa manga tres cuartos · 48', p: '$690' }, { n: 'Arreglo · bastilla para el jueves', p: 'Incluido' }], total: '$1,980' };
 
 export const escalaTG = [
-  { n: '1 tienda', nombre: 'La boutique del barrio', cambia: ['La dueña compra, vende, hace el vivo, contesta el WhatsApp y manda la maquila', 'Sabe de memoria qué le falta; el riesgo no es el inventario, es el flujo: todo está en tela y en anticipos al taller', 'El apartado, el arreglo y la talla de cada clienta van en libreta'], sistema: ['Inventario único para piso y vivo, apartado con reloj y ficha de la clienta con su talla', 'Cuentas por pagar de maquila y proveedores: cuánto hay comprometido en tela', 'Conteo cíclico por talla desde el día uno'], dato: { valor: '1,500 a 4,000', rotulo: 'piezas de inventario, con ocho a doce tallas por modelo' } },
+  { n: '1 tienda', nombre: 'La boutique del barrio', cambia: ['La dueña compra, vende, hace el vivo, contesta el WhatsApp y manda la maquila', 'Sabe de memoria qué le falta; el riesgo no es el inventario, es el flujo: todo está en tela y en anticipos al taller', 'El apartado, el arreglo y la talla de cada cliente van en libreta'], sistema: ['Inventario único para piso y vivo, apartado con reloj y ficha del cliente con su talla', 'Cuentas por pagar de maquila y proveedores: cuánto hay comprometido en tela', 'Conteo cíclico por talla desde el día uno'], dato: { valor: '1,500 a 4,000', rotulo: 'piezas de inventario, con ocho a doce tallas por modelo' } },
   { n: '5 tiendas', nombre: 'Las tiendas de la zona', cambia: ['Encargada por tienda; aparece la pregunta “¿quién tiene la 46?” y con ella los traspasos', 'Cada tienda desarrolla su propia curva: la del centro no pesa como la de la plaza', 'La maquila se vuelve seria: mínimos de 80 a 150 por color y patronista de confianza'], sistema: ['Traspasos con acuse, mínimos por variante y por sucursal, corte por tienda', 'Etiqueta por variante con reimpresión cuando se corre el tallaje', 'Los dos patrones base dejan de ser opcionales: en 300 piezas, 108 son del bloque alto'], dato: { valor: '108 de 300', rotulo: 'piezas de cada corrida son de la 46 para arriba' } },
   { n: '50 tiendas', nombre: 'La cadena con almacén central', cambia: ['Ya no compra la dueña: compra un equipo con presupuesto por temporada', 'La curva se calcula por grupo de tiendas —norte, bajío, sureste— y por tipo de plaza', 'El vivo tiene su propio inventario apartado y el cuarto de arreglos se vuelve proveedor con fecha comprometida'], sistema: ['Distribución inicial por curva y rebalanceo a las tres semanas con lo que de verdad se vendió', 'Precios y promociones por grupo de tiendas, comisiones del piso y control de mermas', 'Paquetería con cuenta corporativa, guías de retorno y costo del flete por pedido'], dato: { valor: '3 semanas', rotulo: 'para rebalancear la corrida con la venta real, antes del remate' } },
   { n: '150 tiendas', nombre: 'La empresa de moda de talla extra', cambia: ['Marca propia con calendario de colecciones, dos o tres maquilas fijas y una de emergencia', 'La curva por talla deja de ser opinión de compra y se vuelve decisión financiera', 'Hace falta gobierno del tallaje: que la 46 de este año sea la 46 del año pasado y la misma en los tres talleres'], sistema: ['Pronóstico por talla y por región, tablero de faltantes por talla y auditoría por corrida', 'IA de surtido que lee la corrida de cada tienda, no el promedio de la cadena', 'Tienda en línea con el inventario de los 150 puntos y las medidas de cada modelo'], dato: { valor: '20,000 piezas', rotulo: 'son 2 puntos de error en la curva de la 44 al comprar un millón al año' } },
@@ -305,7 +305,7 @@ export const problemasTG = {
   filas: [
     { que: 'Matriz de nueve a doce tallas por color, legible', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
     { que: 'Curva de compra invertida por tienda', generico: 'No existe', medida: 'Rara vez', sacs: 'Incluido' },
-    { que: 'Ficha de medidas por modelo y la talla de la clienta', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
+    { que: 'Ficha de medidas por modelo y la talla del cliente', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
     { que: 'El motivo del cambio y el tablero por modelo', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
     { que: 'Apartado desde el vivo con reloj e inventario único', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
     { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },

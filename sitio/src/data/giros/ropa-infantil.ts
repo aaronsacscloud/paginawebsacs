@@ -7,7 +7,7 @@
  * bebé y en diciembre, 12 tallas del RN al 12 y 25-30 compras por hijo, comunión se guarda
  * enfundada, "del Buen Fin al 24: el mes del año", y el mecanismo del bloque: la última talla que se
  * llevó y cuándo mandan, la edad solo empuja, el sistema propone y la vendedora confirma. Bloque
- * propio: "El niño crece, la clienta regresa" (ficha del hijo, ticket de regalo, talla siguiente);
+ * propio: "El niño crece, el cliente regresa" (ficha del hijo, ticket de regalo, talla siguiente);
  * no repite matriz, curva, set, remate, lista de escuela ni talla hermana.
  *
  * Funciones prometidas que NO están construidas hoy (decisión del dueño 17-sep: se muestran como
@@ -143,7 +143,7 @@ export const seccionesRI: SuiteSeccion[] = [
     visual: mockTicket('Cambio de regalo · enero', [['Conjunto fiesta rojo · talla 4 · regalo de la abuela', 'pagado'], ['Cambio por talla 6 · misma sucursal', '1 pieza'], ['Diferencia', '$0']], ['Listo en', '2 minutos'], 'El precio no se enseña; el 4 regresa al inventario'),
   },
   {
-    id: 'hijo', tag: 'Clientas',
+    id: 'hijo', tag: 'Clientes',
     titulo: 'La ficha del hijo: nombre, edad y la última talla',
     texto: 'En el primer ticket se apunta el hijo: nombre, cuántos meses o años y la talla que se llevó. La última talla y cuándo se la llevó mandan; la edad solo empuja. Cuando le toca, el sistema propone la que sigue y la vendedora confirma. La abuela y la mamá quedan ligadas al mismo niño.',
     bullets: ['Regina, 3 años, se llevó 4 en diciembre: el sistema propone 6 en marzo', 'Aviso de talla siguiente por WhatsApp con una foto en su talla; bebé cada tres meses, niño cada temporada', 'Cumpleaños, Día del Niño y Navidad: un mensaje, una talla, una foto, a la mamá y a quien regaló'],
@@ -159,7 +159,7 @@ export const seccionesRI: SuiteSeccion[] = [
   {
     id: 'ocasion', tag: 'Ocasión',
     titulo: 'El ropón, la comunión y el charro, apartados con fecha',
-    texto: 'Bautizo, presentación, comunión, 15 de septiembre y 20 de noviembre: pocas piezas, tallas exactas, apartado con anticipo y abonos, nombre de la clienta y fecha del evento, y aviso una semana antes. Lo de comunión que sobró no se remata: se guarda enfundado para mayo del año que entra.',
+    texto: 'Bautizo, presentación, comunión, 15 de septiembre y 20 de noviembre: pocas piezas, tallas exactas, apartado con anticipo y abonos, nombre del cliente y fecha del evento, y aviso una semana antes. Lo de comunión que sobró no se remata: se guarda enfundado para mayo del año que entra.',
     bullets: ['Apartado con anticipo, abonos, saldo y fecha del evento', 'Canastilla y ajuar como paquete armado que descuenta cada pieza', 'Lista de baby shower: las amigas compran de la lista y lo comprado se descuenta'],
     visual: mockLista('Apartados de ocasión', [['Ropón bautizo · Sra. Mora · 14 de junio · saldo $600', 'Aviso el 7', 'aviso'], ['Vestido comunión · talla 10 · 24 de mayo · liquidado', 'Listo', 'ok'], ['Charro · talla 6 · 15 de septiembre · anticipo', 'Al corriente', 'ok'], ['Canastilla · baby shower Sra. Ruiz · 8 de 12 piezas compradas', 'Lista abierta', 'gris']], 'Cada apartado con su fecha; el sistema avisa una semana antes'),
   },
@@ -209,7 +209,7 @@ export const planoRI = [
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Apartado con anticipo, abonos, saldo y fecha del evento; aviso una semana antes' },
-      { t: 'La etiqueta lleva el nombre de la clienta y la fecha' },
+      { t: 'La etiqueta lleva el nombre del cliente y la fecha' },
       { t: 'Se prueba en piso con la mamá, nunca en probador con el niño solo' },
       { t: 'Charro, china poblana, adelita y disfraz del festival: pedidos con un mes de anticipación' },
       { t: 'Lo de comunión que sobró se guarda enfundado para mayo, con su costo a la vista', plan: 'Controla' },
@@ -226,7 +226,7 @@ export const planoRI = [
       { t: 'Ticket de regalo sin precio; cambio por talla desde el ticket; vale con vigencia' },
       { t: 'Cobra con y sin internet; factura para la que compra para la oficina y para el mayoreo' },
       { t: 'Envoltura como cargo o como costo; la foto para Instagram con la pared lisa de fondo' },
-      { t: 'La abuela y la mamá ligadas al mismo niño: dos clientas por un regalo', plan: 'Fideliza' },
+      { t: 'La abuela y la mamá ligadas al mismo niño: dos clientes por un regalo', plan: 'Fideliza' },
     ],
   },
   {
@@ -275,7 +275,7 @@ export const problemasRI = {
     notas: [
       'Te dice que hay <b>22</b>. No te dice que el 2, el 4 y el 6 ya se fueron.',
       'Ordena las tallas por letra: <b>12 antes que 2</b>, y 6-9 meses se pierde entre el 6 y el 9.',
-      'No sabe quién compró para quién: la abuela y la mamá son <b>dos clientas</b> que se fueron.',
+      'No sabe quién compró para quién: la abuela y la mamá son <b>dos clientes</b> que se fueron.',
       'Abres la segunda tienda y el cambio de regalo ya no se puede leer allá.',
     ],
   },

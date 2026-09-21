@@ -81,7 +81,7 @@ export const CRITERIOS_WOW: { clave: string; nombre: string; que: string }[] = [
   { clave: 'calculadora_costo', nombre: 'Calculadora del costo de no tenerlo', que: '¿Enlaza o incluye una calculadora que convierte los números del lector en pérdida en pesos y manda el resultado por WhatsApp?' },
   { clave: 'compartible', nombre: 'Bloques compartibles', que: '¿Las tablas y diagramas se pueden copiar/mandar por WhatsApp con enlace a la pieza?' },
   { clave: 'revisado_experto', nombre: 'Revisado por un experto con nombre', que: '¿Lo legal-fiscal lleva «revisado por [contador/abogado], cédula, fecha»?' },
-  { clave: 'gemela', nombre: 'Página gemela para la clienta final', que: '¿Existe (o se propone) la misma pregunta desde el lado de la clienta, enlazada?' },
+  { clave: 'gemela', nombre: 'Página gemela para el cliente final', que: '¿Existe (o se propone) la misma pregunta desde el lado del cliente, enlazada?' },
   { clave: 'foros', nombre: 'Lo que dicen los foros', que: '¿Cita 3 hilos reales (con enlace) y les contesta?' },
   { clave: 'serie', nombre: 'Serie por correo/WhatsApp', que: '¿Ofrece recibir las piezas del tema una por semana?' },
   { clave: 'rendimiento', nombre: '100 en rendimiento y accesibilidad', que: 'LCP < 1.5 s, imágenes optimizadas, contraste AA, alt en todo (lo mide la plantilla; el referee revisa alt y tamaño de imágenes).' },

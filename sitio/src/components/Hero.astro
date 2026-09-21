@@ -31,7 +31,7 @@ const steps = [
       { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra por talla y color desde iPad, celular o computadora, con o sin internet. La vendedora ve al instante si esa talla o ese número está en el piso, en bodega o en otra sucursal, y el ticket sale por WhatsApp.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
       { id: 'pos-cambios', label: 'Cambios de talla', desc: '"No me quedó" se resuelve en un minuto: cambio de talla, número o color con ticket o sin él, vale a favor o monedero. La prenda o el par regresa a su talla en el inventario, no a un limbo.', href: '/producto/punto-de-venta', image: null },
       { id: 'pos-movil', label: 'Cobro en el piso', desc: 'La vendedora escanea la prenda o la caja de zapatos junto al probador, cobra y manda el ticket por WhatsApp desde su celular. En hora pico y en el día del drop nadie se va por la fila.', href: '/producto/punto-de-venta', image: null },
-      { id: 'pos-apartados', label: 'Apartados con anticipo', desc: 'La clienta aparta la prenda o el par en su talla con un anticipo: esa pieza se bloquea en todos los canales, se cobra a plazos y se vuelve venta al liquidar. Recordatorios por WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
+      { id: 'pos-apartados', label: 'Apartados con anticipo', desc: 'Se aparta la prenda o el par en la talla con un anticipo: esa pieza se bloquea en todos los canales, se cobra a plazos y se vuelve venta al liquidar. Recordatorios por WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
       { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea vende sobre el mismo inventario que el piso: cuando se vende la última pieza de una talla o un número en la sucursal, se apaga en línea al segundo. Sin sobreventa, sin cancelar pedidos.', href: '/producto/tienda-en-linea', image: null },
       { id: 'pos-social', label: 'Instagram, Facebook y TikTok Shop', desc: 'Publica el drop una sola vez y véndelo en Instagram, Facebook y TikTok Shop con las mismas tallas, precios y existencias. Cada venta baja del inventario correcto.', href: '/producto/social-commerce', image: null },
     ],
@@ -53,16 +53,16 @@ const steps = [
     id: 'crm',
     step: 3,
     verb: 'Fideliza',
-    title: 'Fideliza a cada clienta',
+    title: 'Fideliza a cada cliente',
     subtitle: 'Su talla, sus marcas y sus compras, reconocidas en cada visita.',
     bgKey: 'crm',
     subs: [
       { id: 'crm-lealtad', label: 'Monedero electrónico', desc: 'Cashback en cada compra, guardado en su monedero y canjeable en el piso o en línea. Sin tarjetas ni apps: con su número de teléfono.', href: '/producto/programa-de-lealtad', image: null },
-      { id: 'crm-seguimiento', label: 'Recomendaciones por talla', desc: 'Sugiere a cada clienta prendas o calzado que existen en su talla o número y combinan con lo que ya compró, desde el punto de venta y en la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
-      { id: 'crm-omnicanal', label: 'Una ficha por clienta', desc: 'Talla, marcas favoritas y compras en tienda, en línea y por WhatsApp en una sola ficha. Segmentos que se arman solos: quien compra cada temporada, quien no volvió, quien siempre aparta.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-seguimiento', label: 'Recomendaciones por talla', desc: 'Sugiere a cada cliente prendas o calzado que existen en su talla o número y combinan con lo que ya compró, desde el punto de venta y en la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-omnicanal', label: 'Una ficha por cliente', desc: 'Talla, marcas favoritas y compras en tienda, en línea y por WhatsApp en una sola ficha. Segmentos que se arman solos: quien compra cada temporada, quien no volvió, quien siempre aparta.', href: '/producto/clientes-y-crm', image: null },
       { id: 'crm-email', label: 'Email marketing', desc: 'Campañas de nueva colección, rebajas de temporada y "llegó tu talla" con editor visual y resultados medidos en ventas reales, no en aperturas.', href: '/producto/marketing-por-correo', image: null },
-      { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Avisos a segmentos con plantillas aprobadas por Meta: la clienta que compra tu marca recibe el drop antes que nadie. Conectado al CRM, con pedidos que caen al mismo inventario.', href: '/producto/marketing-por-whatsapp', image: null },
-      { id: 'crm-momentos', label: 'Cumpleaños, aniversarios y reactivación', desc: 'Mensajes automáticos en el momento clave: cumpleaños, primer aniversario o baja de actividad. Recupera clientas dormidas y premia a las leales sin que muevas un dedo.', href: '/producto/programa-de-lealtad' },
+      { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Avisos a segmentos con plantillas aprobadas por Meta: quien compra tu marca recibe el drop antes que nadie. Conectado al CRM, con pedidos que caen al mismo inventario.', href: '/producto/marketing-por-whatsapp', image: null },
+      { id: 'crm-momentos', label: 'Cumpleaños, aniversarios y reactivación', desc: 'Mensajes automáticos en el momento clave: cumpleaños, primer aniversario o baja de actividad. Recupera clientes dormidos y premia a los leales sin que muevas un dedo.', href: '/producto/programa-de-lealtad' },
     ],
   },
   {
@@ -291,7 +291,7 @@ const useCases = [
 </section>
 
 
-<!-- ═══ BLOQUE 1b: el recorrido de la clienta — del post a su WhatsApp, con scroll ═══ -->
+<!-- ═══ BLOQUE 1b: el recorrido del cliente — del post a su WhatsApp, con scroll ═══ -->
 <section class="recorrido flujo" id="recorrido" aria-label="Del live a la venta">
   <div class="flujo-sticky">
     <div class="flujo-inner container">
@@ -986,7 +986,7 @@ const useCases = [
 
                     <div class="apt3-bottom-status">
                       <span class="apt3-bottom-status-dot"></span>
-                      <span class="apt3-bottom-status-txt"><strong>Stock apartado con éxito</strong> · cliente notificada por WhatsApp</span>
+                      <span class="apt3-bottom-status-txt"><strong>Stock apartado con éxito</strong> · cliente notificado por WhatsApp</span>
                     </div>
                   </div>
                 </div>
@@ -1294,7 +1294,7 @@ const useCases = [
     <div class="sq-features-header sq-header-reveal">
       <span class="sc-eyebrow">WhatsApp Commerce</span>
       <h2 class="sc-title">Vende por WhatsApp.<br>Con tallas reales.</h2>
-      <p class="sc-subtitle">La clienta pregunta por una prenda, Sacs responde con el catálogo, le enseña las tallas que sí hay, cobra y confirma la entrega. Directo en WhatsApp, sin capturar nada.</p>
+      <p class="sc-subtitle">El cliente pregunta por una prenda, Sacs responde con el catálogo, le enseña las tallas que sí hay, cobra y confirma la entrega. Directo en WhatsApp, sin capturar nada.</p>
     </div>
     <div class="sq-features-inner">
       <div class="sq-features-media sq-media-reveal">
@@ -1312,7 +1312,7 @@ const useCases = [
       </div>
       <div class="sq-features-content">
         <div class="sq-feature-block sq-feature-block--sc active" data-sq-idx="0" data-sq-img="/images/wa-chat-step1.webp">
-          <h3 class="sq-feature-title">Tu clienta te escribe</h3>
+          <h3 class="sq-feature-title">Tu cliente te escribe</h3>
           <p class="sq-feature-desc">Pregunta por la prenda o los zapatos que vio en Instagram. Sacs contesta al momento con el catálogo y las tallas disponibles.</p>
         </div>
         <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.5" data-sq-img="/images/wa-chat-step2.webp">
@@ -1353,7 +1353,7 @@ const useCases = [
             <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>Elige tu modelo.</b><small>Edad, cuerpo, estilo y escenario. La misma toda la temporada.</small></div>
             <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Que se mueva.</b><small>Un clic y camina. Otro clic y la tela cae más suave.</small></div>
             <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Un clic: en todas tus redes.</b><small>Reels en Instagram, Facebook y TikTok al mismo tiempo.</small></div>
-            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y por WhatsApp, a cada clienta por su nombre.</b><small>Un envío masivo, pero personal: su nombre, su talla y su tienda. A las 312 que lo buscaban.</small></div>
+            <div class="flujo-paso" data-paso="6"><span class="flujo-n">07</span><b>Y por WhatsApp, a cada cliente por su nombre.</b><small>Un envío masivo, pero personal: su nombre, su talla y su tienda. A las 312 que lo buscaban.</small></div>
             <div class="flujo-paso" data-paso="7"><span class="flujo-n">08</span><b>Otro clic: anuncios y tienda.</b><small>Meta Ads, TikTok Ads y TikTok Shop, con tallas y precio.</small></div>
             <div class="flujo-paso" data-paso="8"><span class="flujo-n">09</span><b>Lo ve, lo paga, lo recibe.</b><small>En otra ciudad, esa misma tarde. La venta cae a Sacs y baja del inventario.</small></div>
           </div>
@@ -1365,7 +1365,7 @@ const useCases = [
         </div>
         <div class="flujo-video" id="creativoVideo">
           <img class="flujo-still" src="/tienda/101-foto-celular-900.webp" alt="" decoding="async" loading="lazy" width="1280" height="852" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/reel.vtt?v=3" srclang="es" label="Español" /></video>
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/reel.vtt?v=4" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
@@ -2109,7 +2109,7 @@ const useCases = [
               <div class="loyalty-split">
                 {/* Left: lifestyle photo */}
                 <div class="loyalty-photo">
-                  <img src="/images/fideliza-loyalty.webp" alt="Empleada entregando bolsa de compra a clienta en tienda de ropa" loading="lazy" width="1024" height="1536" />
+                  <img src="/images/fideliza-loyalty.webp" alt="Empleada entregando bolsa de compra a cliente en tienda de ropa" loading="lazy" width="1024" height="1536" />
                   <div class="loyalty-cashback-badge" aria-hidden="true">
                     <div class="loyalty-cashback-icon">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -3284,7 +3284,7 @@ const useCases = [
     <div class="mc-step" id="mc-step-3" data-mc-step="3">
       <div class="mc-step-header">
         <div class="mc-step-num">3</div>
-        <h2 class="mc-step-title">Fideliza a cada clienta</h2>
+        <h2 class="mc-step-title">Fideliza a cada cliente</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
@@ -3327,7 +3327,7 @@ const useCases = [
 
 
   <!-- ── Pillar 2: Controla ── -->
-  <!-- ═══ El inventario que decide: del CEDIS a la tienda, a los canales y a la clienta ═══ -->
+  <!-- ═══ El inventario que decide: del CEDIS a la tienda, a los canales y al cliente ═══ -->
   <section class="recorrido flujo flujo--inv" id="inventario" aria-label="Del análisis a la venta">
     <div class="flujo-sticky">
       <div class="flujo-inner container">
@@ -3337,13 +3337,13 @@ const useCases = [
             <div class="flujo-paso" data-paso="1"><span class="flujo-n">02</span><b>Un clic: el porqué.</b><small>Ventas de 7 días, sell-through, apartados que esperan esa talla y lo que está parado en otra tienda.</small></div>
             <div class="flujo-paso" data-paso="2"><span class="flujo-n">03</span><b>Otro clic: se ejecuta.</b><small>Orden de compra, traspasos y surtidos generados. Nadie captura nada.</small></div>
             <div class="flujo-paso" data-paso="3"><span class="flujo-n">04</span><b>El CEDIS surte; las tiendas se traspasan entre sí.</b><small>Al proveedor, solo lo que la red no tiene.</small></div>
-            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientas piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
+            <div class="flujo-paso" data-paso="4"><span class="flujo-n">05</span><b>Cada tienda recibe la curva que sus clientes piden.</b><small>Vestidos, calzado y básicos: la talla exacta en el rack exacto.</small></div>
             <div class="flujo-paso" data-paso="5"><span class="flujo-n">06</span><b>Y lo que pidieron se vende.</b><small>La talla que fueron a buscar, en su tienda. Un inventario bien llevado también vende.</small></div>
           </div>
           <div class="flujo-final">
             <span class="flujo-eyebrow">Controla</span>
             <h2 class="flujo-h2">Controla.</h2>
-            <p class="flujo-p">Del análisis de la noche a la clienta que recoge su pedido. Sin hojas de cálculo y sin adivinar.</p>
+            <p class="flujo-p">Del análisis de la noche al cliente que recoge su pedido. Sin hojas de cálculo y sin adivinar.</p>
             <a href="#pilar-stock" class="flujo-cta" data-evento="inventario_cta">Ver cómo funciona
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
             </a>
@@ -3351,7 +3351,7 @@ const useCases = [
         </div>
         <div class="flujo-video" id="inventarioVideo">
           <img class="flujo-still" src="/tienda/96-oficina-moda-900.webp" alt="" decoding="async" loading="lazy" width="1280" height="852" />
-          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/inventario.vtt?v=7" srclang="es" label="Español" /></video>
+          <video class="flujo-clip" muted playsinline webkit-playsinline preload="none"><track kind="captions" src="/tienda/inventario.vtt?v=8" srclang="es" label="Español" /></video>
           <button class="flujo-replay" type="button" aria-label="Ver la historia de nuevo">↻ Ver de nuevo</button>
           <button class="flujo-play" type="button" aria-label="Reproducir la historia"><span>▶</span>Ver la historia</button>
         </div>
@@ -4826,7 +4826,7 @@ const useCases = [
     transition: opacity 0.24s ease;
   }
 
-  /* ─── El recorrido de la clienta (bajo el hero): el video entra por la derecha y crece con el scroll ─── */
+  /* ─── El recorrido del cliente (bajo el hero): el video entra por la derecha y crece con el scroll ─── */
   .flujo { position: relative; height: 230vh; background: #0E0D0C; color: #fff; }
   .flujo-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; padding: 72px 0 110px; }
   .flujo-inner { display: grid; grid-template-columns: 0.75fr 1.55fr; gap: clamp(24px, 4vw, 64px); align-items: center; width: 100%; }
@@ -18329,7 +18329,7 @@ const useCases = [
   }
 
 
-  // ─── El recorrido de la clienta ───
+  // ─── El recorrido del cliente ───
   // 1) el marco entra chico por la derecha y crece con el scroll (pista corta);
   // 2) al crecer, UN solo video corre de principio a fin sin detenerse: los textos
   //    cambian en sus tiempos (cuando la cámara llega a cada escena). Timeline abajo.

@@ -51,10 +51,10 @@ export const casosActive = [
     id: 'cambio',
     titulo: '"Me quedó chico el top" — y su talla ya voló',
     texto:
-      'El cambio de talla se hace en tienda o por paquetería, contra el inventario real. Si su talla ya no está, vale a favor o monedero — y la clienta no se va enojada con la marca.',
-    remate: 'En compresión, una de cada cinco compras cambia de talla. Ahí se decide si la clienta repite.',
+      'El cambio de talla se hace en tienda o por paquetería, contra el inventario real. Si su talla ya no está, vale a favor o monedero — y el cliente no se va enojado con la marca.',
+    remate: 'En compresión, una de cada cinco compras cambia de talla. Ahí se decide si el cliente repite.',
     img: '/images/caso-active-cambio.webp',
-    alt: 'Clienta probándose un top deportivo frente al espejo del showroom mientras la vendedora consulta la talla',
+    alt: 'Cliente probándose un top deportivo frente al espejo del showroom mientras la vendedora consulta la talla',
   },
   {
     id: 'restock',
@@ -160,7 +160,7 @@ export const seccionesActive: SuiteSeccion[] = [
     tag: 'La talla real',
     titulo: 'El cambio de talla sin drama',
     texto:
-      'La compresión engaña y el cambio es parte del negocio. Se hace en tienda o a distancia contra el inventario real; si su talla ya no está, vale a favor o monedero — la clienta se queda con la marca.',
+      'La compresión engaña y el cambio es parte del negocio. Se hace en tienda o a distancia contra el inventario real; si su talla ya no está, vale a favor o monedero — el cliente se queda con la marca.',
     bullets: [
       'Cambio de talla en tienda o por paquetería',
       'Vale a favor cuando la talla ya voló',
@@ -168,7 +168,7 @@ export const seccionesActive: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio · pedido 1284</p>
-      ${[['Top Salvia S → M','En camino a la clienta','ok'],['Top S regresa','Vuelve a inventario al recibirse','ok'],['Diferencia','$0 — mismo precio','ok']]
+      ${[['Top Salvia S → M','En camino al cliente','ok'],['Top S regresa','Vuelve a inventario al recibirse','ok'],['Diferencia','$0 — mismo precio','ok']]
         .map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:6px;background:#fff;">
           <span style="font-size:12px;font-weight:700;color:var(--color-text-primary);">${k}</span>
           <span style="font-size:11px;color:var(--color-text-secondary);">${v}</span>
@@ -179,16 +179,16 @@ export const seccionesActive: SuiteSeccion[] = [
   {
     id: 'comunidad',
     tag: 'La comunidad',
-    titulo: 'La clienta del primer drop sigue aquí',
+    titulo: 'El cliente del primer drop sigue aquí',
     texto:
-      'El perfil guarda sus tallas, sus colorways y sus compras. El monedero y los puntos la traen de vuelta — y las campañas por WhatsApp le avisan del restock de SU talla.',
+      'El perfil guarda sus tallas, sus colorways y sus compras. El monedero y los puntos lo traen de vuelta — y las campañas por WhatsApp le avisan del restock de SU talla.',
     bullets: [
-      'Perfil con tallas y colorways de cada clienta',
-      'Monedero, puntos y niveles para la que compra cada drop',
+      'Perfil con tallas y colorways de cada cliente',
+      'Monedero, puntos y niveles para quien compra cada drop',
       'Campañas por WhatsApp y correo segmentadas por comportamiento',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Clienta · Fer</p>
+      <p style="${est.h}">Cliente · Fer</p>
       ${[['Drop Lila','top S + legging S · kit'],['Drop Negro','legging S suelto'],['Hoy','avísame: Salvia S']]
         .map(([a,e])=>`<div style="display:flex;gap:10px;padding:7px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:5px;background:#fff;">
           <b style="font-size:11px;color:var(--color-text-tertiary);min-width:70px;">${a}</b>
@@ -261,7 +261,7 @@ export const planoActive = [
       { t: 'Cambio exprés de talla o color', plan: 'Controla' },
       { t: 'Vale a favor cuando la talla ya voló', plan: 'Controla' },
       { t: 'El cambio se bonifica a monedero, sin sacar efectivo', plan: 'Fideliza' },
-      { t: 'Perfil de la clienta con sus tallas', plan: 'Fideliza' },
+      { t: 'Perfil del cliente con sus tallas', plan: 'Fideliza' },
     ],
   },
   {

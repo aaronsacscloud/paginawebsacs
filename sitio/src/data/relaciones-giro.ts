@@ -74,7 +74,7 @@ export const GIRO_RELACIONES: Record<string, GiroRelaciones> = {
       { slug: 'conteo-fisico', ancla: 'Contar el inventario de varias marcas y proveedores sin mezclar lo de cada quién' },
       { slug: 'reportes-y-analitica', ancla: 'Ver qué marca deja margen y cuál solo ocupa percha' },
       { slug: 'cuentas-por-pagar', ancla: 'La liquidación a cada proveedor de una boutique multimarca, sin la calculadora' },
-      { slug: 'programa-de-lealtad', ancla: 'Un monedero con puntos para la clienta que compra de varias marcas en tu tienda' },
+      { slug: 'programa-de-lealtad', ancla: 'Un monedero con puntos para el cliente que compra de varias marcas en tu tienda' },
     ],
     herramienta: { slug: 'nivelar-entre-tiendas', ancla: 'Calcula gratis qué mover entre tus sucursales con la herramienta de nivelación' },
     comparativa: { slug: 'sacs-vs-managementpro', ancla: 'Sacs vs ManagementPro: dos sistemas que dicen ser para boutiques, qué gana cada uno' },
@@ -204,7 +204,7 @@ export const GIRO_RELACIONES: Record<string, GiroRelaciones> = {
     nombre: 'las tiendas de renta de vestidos',
     funciones: [
       { slug: 'apartados-y-pedidos', ancla: 'El calendario de cada vestido: quién lo tiene, cuándo regresa y cuándo va a tintorería' },
-      { slug: 'clientes-y-crm', ancla: 'El historial de eventos y tallas de la clienta que renta cada temporada' },
+      { slug: 'clientes-y-crm', ancla: 'El historial de eventos y tallas de quien renta cada temporada' },
       { slug: 'marketing-por-whatsapp', ancla: 'Recordatorios automáticos de entrega y devolución por WhatsApp' },
       { slug: 'inventario-omnicanal', ancla: 'Saber qué vestido está disponible, cuál en tintorería y cuál ya se rentó' },
     ],
@@ -273,9 +273,9 @@ export const GIRO_RELACIONES: Record<string, GiroRelaciones> = {
     nombre: 'las tiendas de tallas grandes',
     funciones: [
       { slug: 'inventario-omnicanal', ancla: 'Curvas extendidas hasta la 5XL, sin que la 2XL se quede sin existencia' },
-      { slug: 'clientes-y-crm', ancla: 'La ficha con la talla exacta de cada clienta, para no repetir el error' },
+      { slug: 'clientes-y-crm', ancla: 'La ficha con la talla exacta de cada cliente, para no repetir el error' },
       { slug: 'reportes-y-analitica', ancla: 'Qué talla extendida se vende de verdad y cuál solo ocupa percha' },
-      { slug: 'programa-de-lealtad', ancla: 'Un monedero para la clienta que siempre encuentra su talla en tu tienda' },
+      { slug: 'programa-de-lealtad', ancla: 'Un monedero para el cliente que siempre encuentra su talla en tu tienda' },
     ],
     herramienta: { slug: 'curva-de-tallas', ancla: 'Audita gratis tu curva extendida de tallas con esta herramienta' },
     comparativa: { slug: 'software-de-moda-talla-color-temporada', ancla: 'Software de moda para curvas que no se detienen en la L' },
@@ -398,7 +398,7 @@ export const FUNCION_GIROS: Record<string, EnlaceRel[]> = {
     { slug: 'maternidad', ancla: 'El historial de compras por etapa del embarazo en una tienda de maternidad' },
   ],
   'programa-de-lealtad': [
-    { slug: 'tallas-grandes', ancla: 'Cómo fidelizar a la clienta que siempre encuentra su talla en una tienda de tallas grandes' },
+    { slug: 'tallas-grandes', ancla: 'Cómo fidelizar al cliente que siempre encuentra su talla en una tienda de tallas grandes' },
     { slug: 'ropa-infantil', ancla: 'El monedero y los puntos que hacen que la mamá regrese a una tienda de ropa infantil' },
   ],
   'portal-de-clientes': [
@@ -419,7 +419,7 @@ export const FUNCION_GIROS: Record<string, EnlaceRel[]> = {
   ],
   'membresias-y-suscripciones': [
     { slug: 'activewear', ancla: 'La comunidad que paga por acceso anticipado a cada drop de una marca de activewear' },
-    { slug: 'tallas-grandes', ancla: 'Una membresía para la clienta frecuente de una tienda de tallas grandes' },
+    { slug: 'tallas-grandes', ancla: 'Una membresía para el cliente frecuente de una tienda de tallas grandes' },
   ],
   'especialista-ia': [
     { slug: 'emprendedoras', ancla: 'El copiloto de IA que ayuda a una emprendedora a decidir qué comprar y qué liquidar' },

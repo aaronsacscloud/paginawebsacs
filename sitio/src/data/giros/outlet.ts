@@ -57,7 +57,7 @@ export const manifiestoOU = {
     'En la lista venían 1,200 y contaste <b>1,174</b>. Esas 26 las pagaste y nadie te volvió a sacar el costo.',
     'Tienes ropa colgada de hace <b>ocho meses</b> y nadie te avisa: se te hizo vieja en el gancho.',
     'Le bajas <b>cuando te acuerdas</b>, y te acuerdas tarde: sale en $99 lo que pudo salir en $209.',
-    'Cada pieza es una sola: la vendes en el piso, sigue en la <b>tienda en línea</b> y quedas mal con la clienta.',
+    'Cada pieza es una sola: la vendes en el piso, sigue en la <b>tienda en línea</b> y quedas mal con el cliente.',
     'La marca te pide <b>quitarle la etiqueta</b> y no bajar de cierto precio, y eso no se controla en cinco tiendas.',
     'En el <b>Buen Fin</b> las tiendas de línea ponen 60 % y tú, que eres el barato, te quedas sin argumento.',
   ],
@@ -128,12 +128,12 @@ export const casosOU = [
     texto: 'Las tiendas de línea ponen 50 y 60 %, o sea el precio de aquí, y arriba las departamentales meten ventas nocturnas que se llevan un sábado completo. Se gana con mercancía fresca y un escalón más abajo: precio plano por rack y por mesa, promoción por monto y por cantidad, y lo que lleva dejado el lote a la vista para no vender abajo de costo sin darte cuenta.',
     remate: 'Es el mes más grande del año. Llegar con el piso lleno de cosa vieja y sin nada nuevo que enseñar es perderlo.',
     img: `${IMG}/caso-sabado.webp`,
-    alt: 'Caja rápida de un outlet en sábado, con la fila de clientas cargando montones de piezas y la encargada escaneando etiquetas',
+    alt: 'Caja rápida de un outlet en sábado, con la fila de clientes cargando montones de piezas y la encargada escaneando etiquetas',
   },
   {
     id: 'reyes',
     titulo: 'Del 26 de diciembre al 6 de enero',
-    texto: 'Once días que pagan el arranque del año: aguinaldo, regalo barato y Reyes. Se gana avisando a tiempo y teniendo el piso lleno —el mensaje de “llegó lote nuevo” a la lista de clientas por talla, y el vivo del viernes con su lista de apartados— y se pierde con la caja lenta y la bodega llena de cosa sin etiquetar.',
+    texto: 'Once días que pagan el arranque del año: aguinaldo, regalo barato y Reyes. Se gana avisando a tiempo y teniendo el piso lleno —el mensaje de “llegó lote nuevo” a la lista de clientes por talla, y el vivo del viernes con su lista de apartados— y se pierde con la caja lenta y la bodega llena de cosa sin etiquetar.',
     remate: 'Lo que no sale ahí se queda hasta marzo: después del 6 viene la cuesta y el piso se muere.',
     img: `${IMG}/caso-vivo.webp`,
     alt: 'Vivo por redes desde la bodega de un outlet: la encargada enseñando pieza por pieza y el compañero anotando los números apartados',
@@ -172,9 +172,9 @@ export const seccionesOU: SuiteSeccion[] = [
   {
     id: 'canales', tag: 'Caja, vivo y en línea',
     titulo: 'Una sola pieza, en tres lugares al mismo tiempo',
-    texto: 'Lo que se vende en el piso se baja solo del vivo y de la tienda en línea en el mismo minuto: con existencia 1, la clienta que pagó y no hay pieza no regresa. La caja rápida escanea la etiqueta del precio y cobra sin buscar talla ni modelo, con efectivo, tarjeta y transferencia, y sigue cobrando aunque se vaya el internet.',
-    bullets: ['Apartados del vivo por el número que gritaron en el comentario, liberados solos a las 24 horas', 'Apartado a abonos con fecha: lo vencido se libera el mismo día y la pieza regresa al rack', 'WhatsApp a la lista de clientas por talla: “llegó lote nuevo”, con las fotos de lo que se acaba de colgar'],
-    visual: mockLista('Vivo del viernes · apartados', [['Pieza 47 · mezclilla talla 30 · transferencia recibida', 'Pagada', 'ok'], ['Pieza 112 · chamarra talla M · vence a las 9 de la noche', 'Se libera hoy', 'aviso'], ['Pieza 205 · vestido talla 34 · dos clientas en lista de espera', 'Apartada', 'ok'], ['Pieza 83 · blusa talla 32 · no pagó en 24 horas', 'Regresó al rack', 'gris']], 'Lo que se vende en el piso se baja del vivo y de la tienda en línea en el mismo minuto'),
+    texto: 'Lo que se vende en el piso se baja solo del vivo y de la tienda en línea en el mismo minuto: con existencia 1, el cliente que pagó y no hay pieza no regresa. La caja rápida escanea la etiqueta del precio y cobra sin buscar talla ni modelo, con efectivo, tarjeta y transferencia, y sigue cobrando aunque se vaya el internet.',
+    bullets: ['Apartados del vivo por el número que gritaron en el comentario, liberados solos a las 24 horas', 'Apartado a abonos con fecha: lo vencido se libera el mismo día y la pieza regresa al rack', 'WhatsApp a la lista de clientes por talla: “llegó lote nuevo”, con las fotos de lo que se acaba de colgar'],
+    visual: mockLista('Vivo del viernes · apartados', [['Pieza 47 · mezclilla talla 30 · transferencia recibida', 'Pagada', 'ok'], ['Pieza 112 · chamarra talla M · vence a las 9 de la noche', 'Se libera hoy', 'aviso'], ['Pieza 205 · vestido talla 34 · dos clientes en lista de espera', 'Apartada', 'ok'], ['Pieza 83 · blusa talla 32 · no pagó en 24 horas', 'Regresó al rack', 'gris']], 'Lo que se vende en el piso se baja del vivo y de la tienda en línea en el mismo minuto'),
   },
   {
     id: 'cierre', tag: 'Lo que dejó el lote',
@@ -202,7 +202,7 @@ export const planoOU = [
   },
   {
     id: 'revoltura', nombre: 'La revoltura y el rack de defecto', simbolo: 'exhibidores' as const,
-    foto: `${IMG}/zona-revoltura.webp`, alt: 'Mesa central de la revoltura en un outlet, con clientas escarbando y el rack de piezas con defecto aparte',
+    foto: `${IMG}/zona-revoltura.webp`, alt: 'Mesa central de la revoltura en un outlet, con clientes escarbando y el rack de piezas con defecto aparte',
     pie: '“Todo a $199”, “todo a $99”: aquí baja el ticket y sube el número de piezas por venta.',
     pregunta: '¿Qué se va al tendido?',
     caja: { x: 298, y: 82, w: 128, h: 112 },
@@ -262,7 +262,7 @@ export const pasosOU = [
   { cuando: 'Día 1', titulo: 'Tus lotes, cargados', texto: 'Nos das lo que tienes colgado y lo subimos nosotros, por lote y por tanda. No capturas nada.', detalle: 'Con su número de lote, su fecha de entrada, su calidad y su escalón, para que la bajada empiece a correr con los días que ya llevan.', img: `${IMG}/proceso-recibir.webp`, alt: 'Recepción de cajas de cartón selladas con el número de lote escrito con marcador en la bodega de un outlet' },
   { cuando: 'Día 2', titulo: 'Tu operación, configurada', texto: 'Queda como ya trabajas: tus montones, tu escalera, tus sucursales y lo que te obliga cada marca.', detalle: 'Los cuatro montones con su precio, los 21, 45 y 75 días, el precio mínimo y el desmarque de cada proveedor, y quién puede bajar un precio.', img: `${IMG}/proceso-clasificar.webp`, alt: 'Mesa de clasificación de un outlet con los cuatro botes: primera, segunda, con defecto y para remate' },
   { cuando: 'Día 3', titulo: 'Capacitación', texto: 'Una sesión con tu equipo antes de abrir. Dar de alta un montón e imprimir las etiquetas se aprende en media hora.', detalle: 'Y se practica lo de todos los días: la caja rápida por etiqueta, el apartado del vivo y el cambio de etiquetas del lunes.', img: `${IMG}/proceso-etiquetar.webp`, alt: 'Estación de etiquetado de un outlet con la pistola y la impresora sacando la tira de etiquetas de dos precios' },
-  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados y los abonos ya migrados: ninguna clienta llega por su pieza y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-caja.webp`, alt: 'Caja rápida de un outlet cobrando un montón de piezas escaneando la etiqueta del precio' },
+  { cuando: 'Día 4', titulo: 'Arranca una tienda', texto: 'La primera sucursal vende con Sacs. El sistema viejo sigue en pie por si acaso.', detalle: 'Con los apartados y los abonos ya migrados: ningún cliente llega por su pieza y se encuentra con que su papelito no existe.', img: `${IMG}/proceso-caja.webp`, alt: 'Caja rápida de un outlet cobrando un montón de piezas escaneando la etiqueta del precio' },
   { cuando: 'Día 5', titulo: 'Arrancan las demás', texto: 'Con la primera resuelta, las otras entran el mismo día.', detalle: 'Y el lunes siguiente la bajada ya corre sola en todas: cada tanda pasa de verde a amarilla sin que nadie recorra los racks.', img: `${IMG}/proceso-bajada.webp`, alt: 'Encargada de un outlet cambiando las etiquetas verdes por amarillas en un rack antes de abrir' },
 ];
 export const ticketOU = { lineas: [{ n: 'Blusa satinada · 32 · etiqueta verde', p: '$299' }, { n: 'Mezclilla recta · 30 · etiqueta amarilla', p: '$209' }, { n: 'Revoltura · todo a $99', p: '$99' }], total: '$607' };

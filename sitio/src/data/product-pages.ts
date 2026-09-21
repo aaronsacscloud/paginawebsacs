@@ -41,7 +41,7 @@ export const pageContent: Record<string, any> = {
         "title": "Atiende al cliente, no a la caja.",
         "description": "El POS se mueve contigo — tableta, teléfono o PC. Consulta stock, muestra fotos, recomienda y cobra desde cualquier punto de la tienda, sin regresar a la caja.",
         "image": "/images/pos-boutique-atencion.webp",
-        "imageAlt": "Vendedora atendiendo a clienta con Sacs POS en tablet dentro de boutique",
+        "imageAlt": "Vendedora atendiendo a cliente con Sacs POS en tablet dentro de boutique",
         "link": null,
         "featured": true,
         "variant": "checkout",
@@ -64,7 +64,7 @@ export const pageContent: Record<string, any> = {
         "title": "Cada sucursal, un centro de pickup inteligente.",
         "description": "Tu tienda en línea y tus sucursales son el mismo sistema — el pedido aparece en el POS correcto y el cliente recoge con un QR, sin llamadas ni capturas a mano.",
         "image": "/images/pos-pickup-qr.webp",
-        "imageAlt": "Vendedora entregando paquete a clienta que muestra QR de pickup en tienda",
+        "imageAlt": "Vendedora entregando paquete a cliente que muestra QR de pickup en tienda",
         "link": {
           "label": "Ver apartados y pedidos",
           "href": "/producto/apartados-y-pedidos"
@@ -1147,7 +1147,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Antes una clienta pedía la talla 4 y si no estaba en piso, perdíamos la venta. Ahora aparto, cobro el anticipo y la traemos desde la sucursal que la tenga. Recuperamos ventas que se iban por no tener surtido completo en cada tienda.",
+      "quote": "Antes un cliente pedía la talla 4 y si no estaba en piso, perdíamos la venta. Ahora aparto, cobro el anticipo y la traemos desde la sucursal que la tenga. Recuperamos ventas que se iban por no tener surtido completo en cada tienda.",
       "name": "Lucía Salgado",
       "role": "Gerente de Operaciones",
       "company": "Boutique Atalaya",
@@ -1302,7 +1302,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/lucia-salgado.webp",
         "initials": "LS",
         "color": "#b47a3a",
-        "quote": "Antes una clienta pedía la talla 4 y si no estaba en piso, perdíamos la venta. Ahora aparto, cobro el anticipo y la traemos desde la sucursal que la tenga. Recuperamos ventas que se nos iban por no tener surtido completo en cada tienda.",
+        "quote": "Antes un cliente pedía la talla 4 y si no estaba en piso, perdíamos la venta. Ahora aparto, cobro el anticipo y la traemos desde la sucursal que la tenga. Recuperamos ventas que se nos iban por no tener surtido completo en cada tienda.",
         "name": "Lucía Salgado",
         "business": "Boutique Atalaya",
         "location": "México"
@@ -1322,7 +1322,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/andrea-campos.webp",
         "initials": "AC",
         "color": "#5a8a5f",
-        "quote": "En novias el apartado con abonos es el pan de cada día. Registrar los pagos a mano era un infierno — discusiones con clientas sobre cuánto debían. Ahora cada abono queda con recibo, y al final del plazo se cierra la venta con un clic.",
+        "quote": "En novias el apartado con abonos es el pan de cada día. Registrar los pagos a mano era un infierno — discusiones con clientes sobre cuánto debían. Ahora cada abono queda con recibo, y al final del plazo se cierra la venta con un clic.",
         "name": "Andrea Campos",
         "business": "Novias Condesa",
         "location": "México"
@@ -5017,7 +5017,7 @@ export const pageContent: Record<string, any> = {
       "title": "Cada cliente, con nombre. Cada visita, con su historia.",
       "subtitle": "Un perfil que junta sus compras, apartados, puntos, saldo a favor y crédito de todas tus sucursales. Cuando vuelve a la tienda, tu vendedor ya sabe quién es, cuánto vale y qué le debe la casa.",
       "image": "/images/clientes-crm-hero.webp",
-      "imageAlt": "Vendedora consultando perfil de clienta en tablet Sacs antes de atenderla"
+      "imageAlt": "Vendedora consultando perfil de cliente en tablet Sacs antes de atender"
     },
     "features": [
       {
@@ -5047,7 +5047,7 @@ export const pageContent: Record<string, any> = {
         "title": "Identifica al cliente al cobrar — sin interrogatorios.",
         "description": "Teléfono, RFC o correo basta para que el cajero lo reconozca al instante. El sistema muestra su historial, su ticket promedio, su última visita y lo que dejó apartado. El vendedor atiende sabiendo con quién está hablando.",
         "image": "/images/clientes-crm-identificacion.webp",
-        "imageAlt": "Cajero identificando a clienta en POS Sacs al iniciar venta",
+        "imageAlt": "Cajero identificando a cliente en POS Sacs al iniciar venta",
         "link": null,
         "featured": true,
         "variant": "crm-identify"
@@ -5100,7 +5100,7 @@ export const pageContent: Record<string, any> = {
         "title": "Todo lo que sabes del cliente, en una pantalla.",
         "description": "Datos básicos editables, KPIs de Total gastado y Ticket promedio, historial de Compras, Pedidos y Facturas, Saldo a favor, Puntos de lealtad y Notas del vendedor — sin refrescar y sin capturar dos veces.",
         "image": "/images/clientes-crm-hero.webp",
-        "imageAlt": "Perfil 360 de clienta con cabecera de KPIs (gastado, ticket, frecuencia), historial de compras, notas del equipo, apartados, saldo a favor y segmentos activos",
+        "imageAlt": "Perfil 360 de cliente con cabecera de KPIs (gastado, ticket, frecuencia), historial de compras, notas del equipo, apartados, saldo a favor y segmentos activos",
         "link": null,
         "details": [
           {
@@ -6064,7 +6064,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/valeria-chavez.webp",
         "initials": "VC",
         "color": "#b47a3a",
-        "quote": "En piloto con Sacs arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — la clienta canjea donde quiera, y para nosotros eso es oro.",
+        "quote": "En piloto con Sacs arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — el cliente canjea donde quiera, y para nosotros eso es oro.",
         "name": "Valeria Chávez",
         "business": "Atelier Chávez",
         "location": "México"
@@ -6210,7 +6210,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Mandábamos el mismo correo a toda la lista y cada vez funcionaba peor. Con Sacs armamos tres segmentos — recurrentes, dormidos y VIP — y cada uno recibe algo distinto. El último correo a dormidos recuperó 37 clientas que no pasaban hace 8 meses.",
+      "quote": "Mandábamos el mismo correo a toda la lista y cada vez funcionaba peor. Con Sacs armamos tres segmentos — recurrentes, dormidos y VIP — y cada uno recibe algo distinto. El último correo a dormidos recuperó 37 clientes que no pasaban hace 8 meses.",
       "name": "Regina Meléndez",
       "role": "Directora de Marketing",
       "company": "Casa Ámbar",
@@ -6347,7 +6347,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/regina-melendez.webp",
         "initials": "RM",
         "color": "#b47a3a",
-        "quote": "Pasamos de un solo blast a tres segmentos: recurrentes, dormidas y VIP. Notamos regresos de clientas dormidas que llevaban meses sin pasar — algo que con el blast único no pasaba.",
+        "quote": "Pasamos de un solo blast a tres segmentos: recurrentes, dormidas y VIP. Notamos regresos de clientes dormidos que llevaban meses sin pasar — algo que con el blast único no pasaba.",
         "name": "Regina Meléndez",
         "business": "Casa Ámbar",
         "location": "México"
@@ -6464,7 +6464,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Campañas segmentadas. No blast a todos.",
-        "description": "Elige el segmento (dormidos de 90 días, top 10% de ticket, clientes de una sucursal, compradoras de la temporada pasada) y dispara la campaña. WhatsApp es un canal íntimo — mandar lo mismo a todos te hace perder suscriptores rápido. Segmenta, personaliza y envía cuando tenga sentido.",
+        "description": "Elige el segmento (dormidos de 90 días, top 10% de ticket, clientes de una sucursal, compradores de la temporada pasada) y dispara la campaña. WhatsApp es un canal íntimo — mandar lo mismo a todos te hace perder suscriptores rápido. Segmenta, personaliza y envía cuando tenga sentido.",
         "image": "/images/marketing-whatsapp-segmento.webp",
         "imageAlt": "Pantalla de segmento de clientes para campaña de WhatsApp",
         "link": {
@@ -7282,7 +7282,7 @@ export const pageContent: Record<string, any> = {
     "blocks": [
       {
         "title": "La pregunta que le harías a tu contador, a las 11 de la noche.",
-        "description": "\"¿Qué margen dejó la colección de invierno?\" \"¿Cuál sucursal bajó más este mes?\" \"¿Qué clienta no compra desde octubre?\" AXO contesta con el dato y el link al reporte. Ya no dependes de que tu analista esté despierto.",
+        "description": "\"¿Qué margen dejó la colección de invierno?\" \"¿Cuál sucursal bajó más este mes?\" \"¿Qué cliente no compra desde octubre?\" AXO contesta con el dato y el link al reporte. Ya no dependes de que tu analista esté despierto.",
         "image": "/images/axo-copiloto-ia-pregunta.webp",
         "imageAlt": "Dueña de retail preguntándole a AXO desde celular en su casa",
         "link": null,
@@ -7353,7 +7353,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
             "title": "Preguntas sobre clientes",
-            "description": "\"¿Quiénes son mis top 10 de este trimestre?\", \"¿Qué clienta VIP no vino en 90 días?\". Contesta con nombre, ticket y link al perfil."
+            "description": "\"¿Quiénes son mis top 10 de este trimestre?\", \"¿Qué cliente VIP no vino en 90 días?\". Contesta con nombre, ticket y link al perfil."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
@@ -7598,7 +7598,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "Armé el flujo de recordatorio de apartados por vencer en la sesión con el especialista. Lo prueba él, lo apruebo yo, lo activa el lunes. Corrió 142 veces la primera semana — y cuando una clienta me reclamó que no le llegó el mail, la bitácora me mostró que el trigger sí disparó pero el email rebotó. Le cambiamos la dirección y listo.",
+      "quote": "Armé el flujo de recordatorio de apartados por vencer en la sesión con el especialista. Lo prueba él, lo apruebo yo, lo activa el lunes. Corrió 142 veces la primera semana — y cuando un cliente me reclamó que no le llegó el mail, la bitácora me mostró que el trigger sí disparó pero el email rebotó. Le cambiamos la dirección y listo.",
       "name": "Pilar Schenone",
       "role": "Gerenta General",
       "company": "Schenone Casa",
@@ -7735,7 +7735,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/pilar-schenone.webp",
         "initials": "PS",
         "color": "#b47a3a",
-        "quote": "Armé el flujo de recordatorio de apartados por vencer en la sesión con el especialista. Lo prueba él, lo apruebo yo, lo activa el lunes. Corrió 142 veces la primera semana — y cuando una clienta me reclamó que no le llegó el mail, la bitácora me mostró que el trigger sí disparó pero el email rebotó. Le cambiamos la dirección y listo.",
+        "quote": "Armé el flujo de recordatorio de apartados por vencer en la sesión con el especialista. Lo prueba él, lo apruebo yo, lo activa el lunes. Corrió 142 veces la primera semana — y cuando un cliente me reclamó que no le llegó el mail, la bitácora me mostró que el trigger sí disparó pero el email rebotó. Le cambiamos la dirección y listo.",
         "name": "Pilar Schenone",
         "business": "Schenone Casa",
         "location": "Argentina"
@@ -7855,7 +7855,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Clientes VIP que dejaron de venir, visibles a tiempo.",
-        "description": "Una clienta que compraba cada 45 días no vino este mes. Otra gastaba $8.000 y ahora $1.200. El sistema lo nota antes de que el gerente lo sienta en el pasillo. La alerta llega con el histórico al lado — contexto, no solo aviso.",
+        "description": "Un cliente que compraba cada 45 días no vino este mes. Otro gastaba $8.000 y ahora $1.200. El sistema lo nota antes de que el gerente lo sienta en el pasillo. La alerta llega con el histórico al lado — contexto, no solo aviso.",
         "image": "/images/alertas-inteligentes-vip.webp",
         "imageAlt": "Alerta de cliente VIP con baja recurrencia y historial de compras",
         "link": null,
@@ -7864,7 +7864,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "title": "Acción sugerida con botón de ejecutar.",
-        "description": "Ninguna alerta te deja sin qué hacer. Si el stock está bajo, el botón dice \"generar traspaso\". Si la clienta se fue, dice \"asignar tarea de recupero a su vendedora\". Un click para ejecutar, o marcar como \"visto y descartado\" si no aplica.",
+        "description": "Ninguna alerta te deja sin qué hacer. Si el stock está bajo, el botón dice \"generar traspaso\". Si el cliente se fue, dice \"asignar tarea de recupero a su vendedora\". Un click para ejecutar, o marcar como \"visto y descartado\" si no aplica.",
         "image": "/images/alertas-inteligentes-accion.webp",
         "imageAlt": "Alerta con botones de acción sugerida directa",
         "link": {
@@ -7877,7 +7877,7 @@ export const pageContent: Record<string, any> = {
       }
     ],
     "testimonial": {
-      "quote": "En piloto recibimos tres o cuatro alertas al día por sucursal, no treinta. Y las que llegan son reales: la semana pasada una marcó que una clienta que gastaba fuerte no volvía desde marzo. Le escribimos y resultó que se había mudado. Igual — la sensación de que el sistema mira por uno, eso cambió.",
+      "quote": "En piloto recibimos tres o cuatro alertas al día por sucursal, no treinta. Y las que llegan son reales: la semana pasada una marcó que un cliente que gastaba fuerte no volvía desde marzo. Le escribimos y resultó que se había mudado. Igual — la sensación de que el sistema mira por uno, eso cambió.",
       "name": "Rafael Ochotorena",
       "role": "Director Comercial",
       "company": "Ochotorena Hogar",
@@ -8014,7 +8014,7 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/rafael-ochotorena.webp",
         "initials": "RO",
         "color": "#b47a3a",
-        "quote": "En piloto recibimos tres o cuatro alertas al día por sucursal, no treinta. Y las que llegan son reales: la semana pasada una marcó que una clienta que gastaba fuerte no volvía desde marzo. Le escribimos y resultó que se había mudado. Igual — la sensación de que el sistema mira por uno, eso cambió.",
+        "quote": "En piloto recibimos tres o cuatro alertas al día por sucursal, no treinta. Y las que llegan son reales: la semana pasada una marcó que un cliente que gastaba fuerte no volvía desde marzo. Le escribimos y resultó que se había mudado. Igual — la sensación de que el sistema mira por uno, eso cambió.",
         "name": "Rafael Ochotorena",
         "business": "Ochotorena Hogar",
         "location": "Argentina"

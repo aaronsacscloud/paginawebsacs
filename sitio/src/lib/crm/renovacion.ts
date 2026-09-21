@@ -117,7 +117,7 @@ const ESCALERA: Record<string, { siguiente: string; nombre: string; puntos: stri
     'Reportes por sucursal, para comparar cuál vende qué y no un total que no dice nada.',
   ] },
   controla: { siguiente: 'fideliza', nombre: 'Fideliza', puntos: [
-    'Programa de lealtad y monedero: que la clienta vuelva porque le conviene, no porque se acordó.',
+    'Programa de lealtad y monedero: que el cliente vuelva porque le conviene, no porque se acordó.',
     'Campañas a tus clientes desde el mismo sistema donde están sus compras.',
     'Tienda en línea conectada a tu inventario real, sin capturar nada dos veces.',
   ] },

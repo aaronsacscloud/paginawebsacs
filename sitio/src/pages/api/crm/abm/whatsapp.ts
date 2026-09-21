@@ -6,7 +6,7 @@
 // funciona hoy, con los 327 números que tenemos, sin permiso de nadie.
 //
 // Y hay una razón de fondo para que lo mande una persona: el número es el de
-// la TIENDA. Contesta una vendedora atendiendo clientas. Un mensaje automático
+// la TIENDA. Contesta una vendedora atendiendo clientes. Un mensaje automático
 // con pitch ahí es la forma más rápida de perder el número.
 //
 // GET  /api/crm/abm/whatsapp?cuenta_id=&paso=abre|sigue|cierra

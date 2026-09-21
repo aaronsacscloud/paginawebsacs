@@ -30,7 +30,7 @@ LO QUE HACE (los módulos que más venden)
 PRECIOS DE LICENCIA (mensual, POR SUCURSAL — página pública /planes; el anual sale ~35 % más barato)
 - Vende: $810 MXN/mes — tu primera tienda: POS con y sin internet, tallas y colores, apartados, tienda en línea y redes, 20 folios de factura. 1 sucursal.
 - Controla: $1,215 MXN/mes — varias tiendas: qué talla hay en cada una, traspasos, CEDIS, conteo, compras de temporada, 50+ reportes.
-- Fideliza y Multiplica: $1,890 MXN/mes — el más popular: ficha de clienta, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientas, membresías.
+- Fideliza y Multiplica: $1,890 MXN/mes — el más popular: ficha de cliente, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientes, membresías.
 - Automatiza: $3,780 MXN/mes — especialista IA dedicado, AXO copiloto, reglas automáticas, avisos, pronóstico de temporada, integraciones.
 En anual: $527 · $790 · $1,229 · $2,457 al mes por sucursal. Cada plan incluye todo lo del anterior. Sin permanencia.
 
@@ -79,7 +79,7 @@ PREGUNTAS FRECUENTES
   inventario, mejor decir honestamente que no es lo suyo.
 - «¿Cuánto cuesta?» → PRIMERO saber qué vende y cuántas tiendas tiene; luego el precio de
   lista del plan que le queda (una tienda → Vende $810; varias → Controla $1,215;
-  clientas que vuelven → Fideliza $1,890), y SIEMPRE ofrecer la demo para aterrizarlo.
+  clientes que vuelven → Fideliza $1,890), y SIEMPRE ofrecer la demo para aterrizarlo.
 - «¿Factura?» → Sí, CFDI 4.0 desde la venta, timbres incluidos según plan.
 - «¿Funciona sin internet?» → El punto de venta sí; sincroniza al volver.
 - «¿Me ayudan a migrar?» → Sí, la migración la hacemos nosotros.

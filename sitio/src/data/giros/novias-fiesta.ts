@@ -8,7 +8,7 @@
  *
  * Verdades del producto que sostienen la página: apartados con anticipo y
  * abonos + recordatorios (core), pedidos con fecha, Órdenes de Servicio con
- * procesos por etapas (el taller), perfil de clienta (Fideliza). NADA de
+ * procesos por etapas (el taller), perfil de cliente (Fideliza). NADA de
  * renta: no está verificado en el producto y no se promete.
  *
  * Padrón: la casa tiene un piso de muestras y un taller. Personajes: Valeria
@@ -65,7 +65,7 @@ export const casosNovias = [
       'La semana antes del evento todo converge: último abono, prueba final y entrega con funda. El sistema junta las tres fechas en una sola vista para que nada caiga en viernes a las 8.',
     remate: 'En este giro no hay devoluciones que valgan: la fecha pasó o no pasó.',
     img: '/images/caso-novia-entrega.webp',
-    alt: 'Entrega de un vestido de novia enfundado a la clienta y su mamá en el mostrador',
+    alt: 'Entrega de un vestido de novia enfundado a quien se casa y su mamá en el mostrador',
   },
 ];
 
@@ -142,9 +142,9 @@ export const seccionesNovias: SuiteSeccion[] = [
     tag: 'Piso y pedido',
     titulo: 'La muestra se prueba; su talla se pide',
     texto:
-      'El piso vive de muestras por talla y el vestido de cada clienta se pide sobre pedido. El sistema distingue las dos cosas: la muestra marcada como muestra — fuera de la tienda en línea — y el pedido que tiene que llegar a tiempo.',
+      'El piso vive de muestras por talla y el vestido de cada cliente se pide sobre pedido. El sistema distingue las dos cosas: la muestra marcada como muestra — fuera de la tienda en línea — y el pedido que tiene que llegar a tiempo.',
     bullets: [
-      'Muestras marcadas como muestra, aparte del pedido de cada clienta',
+      'Muestras marcadas como muestra, aparte del pedido de cada cliente',
       'El pedido con su fecha de llegada, amarrada a la fecha del evento',
       'El pedido que va tarde contra su boda se ve en rojo — y el aviso llega solo desde Automatiza',
     ],
@@ -181,10 +181,10 @@ export const seccionesNovias: SuiteSeccion[] = [
   },
   {
     id: 'clienta',
-    tag: 'La clienta',
-    titulo: 'La clienta que vuelve: XV, boda, bautizo',
+    tag: 'El cliente',
+    titulo: 'El cliente que vuelve: XV, boda, bautizo',
     texto:
-      'La familia que compró los XV vuelve por la boda. El perfil guarda qué se llevó, sus tallas y sus fechas — y la casa le habla por WhatsApp con nombre y apellido, no con "estimada clienta".',
+      'La familia que compró los XV vuelve por la boda. El perfil guarda qué se llevó, sus tallas y sus fechas — y la casa le habla por WhatsApp con nombre y apellido, no con "estimado cliente".',
     bullets: [
       'Perfil con compras, tallas y eventos de cada familia',
       'Recordatorios y avisos por WhatsApp',
@@ -243,7 +243,7 @@ export const planoNovias = [
       { t: 'Muestras marcadas por modelo y talla, aparte de los pedidos' },
       { t: 'El pedido sobre pedido con su fecha de llegada', plan: 'Controla' },
       { t: 'Apartado con anticipo desde el probador' },
-      { t: 'Perfil de la clienta con tallas y fechas', plan: 'Fideliza' },
+      { t: 'Perfil del cliente con tallas y fechas', plan: 'Fideliza' },
       { t: 'Etiquetas con código de barras por modelo y talla' },
     ],
   },

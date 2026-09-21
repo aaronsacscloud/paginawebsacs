@@ -2,7 +2,7 @@
 /**
  * Landing ROPA INFANTIL Y BEBÉS (17-sep-2026). Misma estructura que marcas-de-ropa.astro; el contenido
  * vive en src/data/giros/ropa-infantil.ts y el bloque propio es RiCrece ("El niño crece, la
- * clienta regresa").
+ * cliente regresa").
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GiroEnlaces from '../../components/giros/GiroEnlaces.astro';
@@ -59,11 +59,11 @@ import { bannerRI, manifiestoRI, variantesRI, cortinaRI, casosRI, seccionesRI, p
 
   <SuitePlano titulo="Tu tienda, por dentro." sub="Entra la abuela, pasa por la sección de bebé, recorre el piso del 2 al 16, ve la vitrina de ocasión, paga y se lleva su ticket de regalo. Detrás está la trastienda donde llega la maquila y salen los pedidos en línea. Toca cada zona y mira qué hace Sacs ahí." proyecto="Tu tienda infantil — planta baja" zonas={planoRI} todoRot="Ropa infantil y bebés" />
 
-  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre o el Día del Niño encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosRI} lineas={ticketRI.lineas} total={ticketRI.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: modelos con su escalera de tallas, existencias por tienda, apartados de ocasión y las clientas con sus hijos si ya los tienes. Nunca te pedimos empezar de cero antes de diciembre." />
+  <SuiteProceso titulo="Cambiar de sistema" resalte="sin cerrar la tienda." sub="Tienes diciembre o el Día del Niño encima y no puedes parar una semana. Así se hace, y lo hacemos nosotros: no te dejamos un manual y suerte." pasos={pasosRI} lineas={ticketRI.lineas} total={ticketRI.total} remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve: modelos con su escalera de tallas, existencias por tienda, apartados de ocasión y los clientes con sus hijos si ya los tienes. Nunca te pedimos empezar de cero antes de diciembre." />
 
-  <SuitePlanes suite="Suite de Moda" />
+  <SuitePlanes suite="Suite de Moda" giroPlural="tiendas de ropa infantil" />
 
-  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver la ficha de tus propias clientas con sus hijos en pantalla." cta="Agenda una demo" />
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver la ficha de tus propios clientes con sus hijos en pantalla." cta="Agenda una demo" />
 
   <GiroEnlaces giro="ropa-infantil" />
 

@@ -3,10 +3,12 @@ import { plans, type PlanPrice } from '../../data/plans';
 /**
  * SuitePlanes — cómo se paga la Suite del giro, y qué trae cada plan.
  *
- * Dos trabajos. El primero: dejar claro que la Suite no cuesta aparte — va
- * DENTRO del plan a partir de Fideliza. El segundo: que el visitante entienda
- * de verdad que incluye cada escalon, porque de eso depende que sepa cual
- * pedir en la llamada.
+ * Dos trabajos. El primero: dejar claro que Sacs está hecho de principio a fin
+ * para el giro de la página (no un ERP generico con una etiqueta de moda
+ * encima) — ese es el diferenciador, y el sitio entero ya es Fashion Commerce
+ * asi que no hace falta aclarar que "la Suite no se paga aparte". El segundo:
+ * que el visitante entienda de verdad que incluye cada escalon, porque de eso
+ * depende que sepa cual pedir en la llamada.
  *
  * Sobre la direccion de arte: la primera version eran cuatro tarjetas de precio
  * con esquinas redondeadas, pastilla de "Mas popular" y borde azul en la
@@ -37,6 +39,13 @@ interface Props {
   notaComplemento?: string;
   /** Por qué se cotiza aparte, en las palabras del giro. */
   porQue?: string;
+  /** El giro en plural y como habla la gente del ramo en México
+      ("zapaterías", "joyerías", "boutiques multimarca", "casas de novias"…).
+      Nombra al giro de la página en el encabezado y el párrafo de esta
+      sección: es lo que demuestra que Sacs está hecho para ESE giro y no es
+      un sistema genérico. Sin ella, el texto cae a "tu giro" — nunca un
+      hueco ni un "undefined". */
+  giroPlural?: string;
   /** La moneda de los precios: la llave de PlanPrice en data/plans.ts
       (mxn, cop, clp, usd…). Las páginas por país (giros/novias-y-fiesta/<pais>)
       la mandan; sin ella, los precios en pesos mexicanos de siempre. */
@@ -48,9 +57,10 @@ const {
   articulo = 'la',
   porQue = 'no es un módulo estándar sino una forma completa de costear',
   notaComplemento,
+  giroPlural = 'tu giro',
   moneda = 'mxn',
-  /** Frase de Fideliza; los giros de caballero pasan 'Para que el cliente regrese'. */
-  paraFideliza = 'Para que la clienta regrese',
+  /** Frase de Fideliza. */
+  paraFideliza = 'Para que tu cliente regrese',
 } = Astro.props;
 
 // El precio en la moneda pedida, con el mismo símbolo que /planes. Los
@@ -144,20 +154,26 @@ const planes = [
       <p class="pl-eyebrow">Y lo que cuesta</p>
       <!-- h3 a propósito: los bloques de trámite no compiten por el mismo
            nivel que los que nombran el problema del giro. -->
-      <h3 class="pl-h">{comoSeVende === 'incluida' ? `La ${suite} no se paga aparte.` : `Los planes, y dónde entra ${articulo} ${suite}.`}</h3>
+      <h3 class="pl-h">{comoSeVende === 'incluida'
+        ? `Sacs: software especializado para ${giroPlural}, de principio a fin.`
+        : `Sacs, de principio a fin para ${giroPlural} — y dónde entra${articulo === 'las' ? 'n' : ''} ${articulo} ${suite}.`}</h3>
       {comoSeVende === 'incluida' ? (
         <Fragment>
           <p class="pl-sub">
-            No es un módulo con precio propio ni una implementación a cotizar. Los planes son
-            acumulativos —cada uno trae todo el anterior— y a partir del tercero
-            <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
+            No es un sistema genérico con una etiqueta de moda encima: el catálogo con variantes
+            de talla y color, el punto de venta, el inventario multisucursal y los reportes de
+            rotación están pensados para cómo se compra y se vende en {giroPlural}. Los planes son
+            acumulativos —cada uno trae todo el anterior— y a partir del tercero, Fideliza y
+            Multiplica, <b>ya tienes completa</b> la parte pensada para {giroPlural}, sin plan
+            aparte que pedir. Lo que corre con IA —agentes, predicción de demanda y
             planificador— vive en el cuarto, y se dice en cada punto donde aparece.
           </p>
           {notaComplemento && <p class="pl-sub pl-sub-nota"><b>La excepción:</b> {notaComplemento}</p>}
         </Fragment>
       ) : (
         <p class="pl-sub">
-          Los planes son acumulativos: cada uno trae todo el anterior. {articulo === 'las' ? 'Las' : 'La'} <b>{suite}</b> {articulo === 'las' ? 'son' : 'es'}
+          Los planes son acumulativos: cada uno trae todo el anterior, y ya vienen pensados para
+          {' '}{giroPlural} de punta a punta, del punto de venta al reporte. {articulo === 'las' ? 'Las' : 'La'} <b>{suite}</b> {articulo === 'las' ? 'son' : 'es'}
           distint{articulo === 'las' ? 'as' : 'a'} — se cotiza{articulo === 'las' ? 'n' : ''} como complemento sobre los dos planes que
           {articulo === 'las' ? ' las' : ' la'} soportan, porque {porQue}. Te {articulo === 'las' ? 'las' : 'la'} cotizamos con tu catálogo en la mesa, no después.
         </p>
@@ -174,10 +190,16 @@ const planes = [
             <h3>{p.nombre}</h3>
             <p class="pl-para">{p.para}</p>
 
+            {/* En grande va el precio mensual PAGANDO ANUAL, que es el que
+                de verdad paga la mayoría y el mismo que muestra /planes: con el
+                mensual arriba, la escalera se veía 35% más cara que la página
+                de precios del propio sitio. El «pagando anual» va pegado al
+                número y no en letra chica escondida: si la condición no se lee
+                igual de claro que el precio, es un engaño, no un descuento. */}
             <p class="pl-precio">
-              <b>{p.precio}</b><span>/mes por sucursal</span>
+              <b>{p.anual}</b><span>/mes por sucursal, pagando anual</span>
             </p>
-            <p class="pl-anual">{p.anual} si pagas anual (35% de descuento)</p>
+            <p class="pl-anual">O {p.precio} al mes, sin compromiso anual.</p>
 
             {p.popular && comoSeVende === 'incluida' && <p class="pl-popular">El primero que trae la suite completa</p>}
             {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para ${articulo} ${suite}`}</p>}

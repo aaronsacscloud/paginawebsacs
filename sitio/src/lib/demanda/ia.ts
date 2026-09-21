@@ -163,6 +163,11 @@ export type Peticion = {
   contexto?: Record<string, any>;
   /** Fuerza un proveedor concreto (para comparar calidad entre ellos). */
   proveedor?: Proveedor;
+  /** false = sin razonamiento previo. Opus 5 piensa por defecto y esos tokens
+   *  salen del MISMO max_tokens: en una página de 3,000 palabras el
+   *  razonamiento se comía 20-30k y la respuesta llegaba cortada (22-sep-2026).
+   *  Escribir con un encargo explícito no necesita pensar; juzgar sí. */
+  pensar?: boolean;
 };
 
 export type Respuesta<T = any> = {
@@ -241,6 +246,7 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
        en «desconocido». El proxy la lee y la borra antes de salir a la API. */
     const cuerpo: any = { proposito: `demanda:${p.agente || trabajoDe(p)}`, model: modelo, max_tokens: max, system: p.sistema, messages: [{ role: 'user', content: usuario }] };
     if (p.esquema) cuerpo.output_config = { format: { type: 'json_schema', schema: p.esquema } };
+    if (p.pensar === false) cuerpo.thinking = { type: 'disabled' };
     const r: any = await anthropic.messages.create(cuerpo);
     return {
       texto: (r.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join(''),
@@ -340,6 +346,8 @@ export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
            respuesta se cortó por el tope de tokens —lo más común, y se arregla
            partiendo el lote— o que el modelo declinó. */
         const corto = /max_tokens|length|MAX_TOKENS/i.test(String(r.stop));
+        // Para diagnosticar QUÉ se cortó (¿contenido real o el modelo dando vueltas?).
+        if (corto && process.env.IA_DUMP_CORTES) { try { (await import('node:fs')).writeFileSync(`${process.env.IA_DUMP_CORTES}/corte-${p.agente}-${Date.now()}.txt`, r.texto || ''); } catch {} }
         const porque = corto
           ? `la respuesta se cortó en ${p.max_tokens || 4000} tokens: manda menos elementos por lote`
           : `la respuesta no es JSON válido (fin: ${r.stop})`;

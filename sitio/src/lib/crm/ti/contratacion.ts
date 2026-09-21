@@ -34,7 +34,7 @@ export type PlanClave = 'vende' | 'controla' | 'fideliza' | 'automatiza';
 export const PLANES: { clave: PlanClave; nombre: string; mensual: number; anual: number; para: string }[] = [
   { clave: 'vende', nombre: 'Vende', mensual: 810, anual: 527, para: 'una sola tienda' },
   { clave: 'controla', nombre: 'Controla', mensual: 1215, anual: 790, para: 'varias tiendas: existencias por sucursal, traspasos, CEDIS' },
-  { clave: 'fideliza', nombre: 'Fideliza y Multiplica', mensual: 1890, anual: 1229, para: 'clientas, monedero, puntos, campañas por correo y WhatsApp' },
+  { clave: 'fideliza', nombre: 'Fideliza y Multiplica', mensual: 1890, anual: 1229, para: 'clientes, monedero, puntos, campañas por correo y WhatsApp' },
   { clave: 'automatiza', nombre: 'Automatiza', mensual: 3780, anual: 2457, para: 'IA, reglas automáticas, pronóstico, integraciones' },
 ];
 export const planPorNombre = (s: string | null | undefined): typeof PLANES[number] | null => {
@@ -162,7 +162,7 @@ export async function contratacionAntesDelTurno(contactId: string, textoLead: st
     if (st.cuenta) st.acceso_at = ahora;
   } else if (st.fase === 'plan' && !plan) {
     const sug = !st.sucursales ? null : st.sucursales >= 2 ? PLANES[1] : PLANES[0];
-    nota = `EL LEAD QUIERE CONTRATAR. Fase PLAN. ${st.sucursales ? `Tiene ${st.sucursales} tienda(s).` : 'No sabemos cuántas tiendas tiene: pregúntalo en la misma línea.'} Pregúntale qué plan quiere y, si no lo tiene claro, recomiéndale uno por lo que sabes de él${sug ? ` (por número de tiendas le queda ${sug.nombre}: ${sug.para}; si ya habló de clientas, monedero o campañas, Fideliza y Multiplica)` : ''}. Nada de listas de funciones: una línea por qué ese plan y el precio por tienda al mes (mensual y anual). No lo mandes a demo ni a llamada: ya quiere comprar. ${reporta} Una sola pregunta al final.`;
+    nota = `EL LEAD QUIERE CONTRATAR. Fase PLAN. ${st.sucursales ? `Tiene ${st.sucursales} tienda(s).` : 'No sabemos cuántas tiendas tiene: pregúntalo en la misma línea.'} Pregúntale qué plan quiere y, si no lo tiene claro, recomiéndale uno por lo que sabes de él${sug ? ` (por número de tiendas le queda ${sug.nombre}: ${sug.para}; si ya habló de clientes, monedero o campañas, Fideliza y Multiplica)` : ''}. Nada de listas de funciones: una línea por qué ese plan y el precio por tienda al mes (mensual y anual). No lo mandes a demo ni a llamada: ya quiere comprar. ${reporta} Una sola pregunta al final.`;
     st.fase = 'plan';
   } else if (!st.via && plan && tot) {
     st.fase = 'pago';

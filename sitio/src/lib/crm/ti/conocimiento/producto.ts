@@ -21,9 +21,9 @@ export type Modulo = {
 export const MODULOS: Modulo[] = [
   // ── VENDE ──
   { id: 'pos', nombre: 'Punto de venta', area: 'vende', plan: 'vende', giros: [], claves: ['cobrar', 'caja', 'ticket', 'sin internet', 'offline', 'terminal', 'punto de venta', 'pos'],
-    queHace: 'Cobra con y sin internet (sincroniza al volver), varias cajas a la vez, pausa la venta mientras la clienta se prueba otra talla, cortes y arqueos, ticket impreso o por WhatsApp, efectivo/tarjeta/transferencia y divisas.' },
+    queHace: 'Cobra con y sin internet (sincroniza al volver), varias cajas a la vez, pausa la venta mientras se prueba otra talla, cortes y arqueos, ticket impreso o por WhatsApp, efectivo/tarjeta/transferencia y divisas.' },
   { id: 'cambios', nombre: 'Cambios de talla y devoluciones', area: 'vende', plan: 'controla', giros: ['ropa', 'multimarca', 'activewear', 'zapateria'], claves: ['cambio', 'devolución', 'vale', 'reembolso', 'talla', 'número'],
-    queHace: 'Cambio de talla o color desde el mostrador aunque haya comprado en otra tienda, vale de cambio automático, reembolso al método original, sin ticket físico gracias al QR y a la ficha de la clienta.' },
+    queHace: 'Cambio de talla o color desde el mostrador aunque haya comprado en otra tienda, vale de cambio automático, reembolso al método original, sin ticket físico gracias al QR y a la ficha del cliente.' },
   { id: 'apartados', nombre: 'Apartados y pedidos', area: 'vende', plan: 'vende', giros: [], claves: ['apartado', 'abono', 'anticipo', 'quincena', 'pedido', 'sobre pedido'],
     queHace: 'Apartado con anticipo y abonos (largos si hace falta), recordatorios, la pieza apartada se bloquea de verdad en todos los canales; pedidos sobre pedido con fecha de entrega.' },
   { id: 'tienda-linea', nombre: 'Tienda en línea y canales', area: 'vende', plan: 'vende', giros: [], claves: ['tienda en línea', 'ecommerce', 'página', 'instagram', 'facebook', 'tiktok', 'shopify', 'mercado libre', 'whatsapp', 'catálogo'],
@@ -34,7 +34,7 @@ export const MODULOS: Modulo[] = [
   { id: 'cotizaciones', nombre: 'Cotizaciones', area: 'vende', plan: 'vende', giros: [], claves: ['cotización', 'presupuesto', 'mayoreo'],
     queHace: 'Cotizaciones que se convierten en venta o pedido; listas de precio menudeo y mayoreo y precio de mayoreo por cantidad.' },
   { id: 'facturacion', nombre: 'Facturación electrónica', area: 'vende', plan: 'vende', giros: [], claves: ['factura', 'cfdi', 'sat', 'timbre', 'complemento de pago', 'nota de crédito'],
-    queHace: 'CFDI 4.0 desde la venta o desde el portal de autofacturación de la clienta; complementos de pago y notas de crédito. Vende incluye 20 folios; los demás planes, según plan.' },
+    queHace: 'CFDI 4.0 desde la venta o desde el portal de autofacturación del cliente; complementos de pago y notas de crédito. Vende incluye 20 folios; los demás planes, según plan.' },
   { id: 'metas', nombre: 'Metas y comisiones', area: 'vende', plan: 'controla', giros: [], claves: ['comisión', 'meta', 'vendedora', 'vendedor'],
     queHace: 'Metas por tienda y vendedora, comisiones calculadas solas, permisos por persona y por tienda.' },
 
@@ -59,16 +59,16 @@ export const MODULOS: Modulo[] = [
     queHace: 'La mercancía entra con su marca, proveedor y costo; etiquetado al recibir; ventas y margen por marca y por proveedor.' },
 
   // ── FIDELIZA ──
-  { id: 'clientas', nombre: 'Ficha de clienta y CRM', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['cliente', 'clienta', 'ficha', 'historial', 'seguimiento', 'crm'],
-    queHace: 'La ficha de la clienta con lo que compró en tienda y en línea, sus tallas y colores, grupos por lo que compran, notas y seguimientos.' },
+  { id: 'clientas', nombre: 'Ficha de cliente y CRM', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['cliente', 'clienta', 'ficha', 'historial', 'seguimiento', 'crm'],
+    queHace: 'La ficha del cliente con lo que compró en tienda y en línea, sus tallas y colores, grupos por lo que compran, notas y seguimientos.' },
   { id: 'lealtad', nombre: 'Monedero y programa de lealtad', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['puntos', 'monedero', 'lealtad', 'cashback', 'niveles', 'recompensa'],
-    queHace: 'Monedero electrónico y puntos por compra, niveles de clienta con premios; valen en mostrador y en línea; cashback también en apartados al liquidar.' },
-  { id: 'portal', nombre: 'Portal de clientas y tarjetas de regalo', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['portal', 'autofactura', 'tarjeta de regalo', 'gift card'],
-    queHace: 'Portal con tu marca donde la clienta ve compras, puntos y se autofactura; tarjetas de regalo físicas y digitales.' },
-  { id: 'marketing', nombre: 'Correo y WhatsApp a tus clientas', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['correo', 'email', 'campaña', 'whatsapp masivo', 'avisar', 'restock', 'newsletter'],
-    queHace: 'Correos a grupos de clientas con plantillas de tu marca (1,000 contactos incluidos) y avisos/campañas por WhatsApp (200 contactos activos incluidos): el drop, la rebaja, el restock.' },
+    queHace: 'Monedero electrónico y puntos por compra, niveles de cliente con premios; valen en mostrador y en línea; cashback también en apartados al liquidar.' },
+  { id: 'portal', nombre: 'Portal de clientes y tarjetas de regalo', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['portal', 'autofactura', 'tarjeta de regalo', 'gift card'],
+    queHace: 'Portal con tu marca donde el cliente ve compras, puntos y se autofactura; tarjetas de regalo físicas y digitales.' },
+  { id: 'marketing', nombre: 'Correo y WhatsApp a tus clientes', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['correo', 'email', 'campaña', 'whatsapp masivo', 'avisar', 'restock', 'newsletter'],
+    queHace: 'Correos a grupos de clientes con plantillas de tu marca (1,000 contactos incluidos) y avisos/campañas por WhatsApp (200 contactos activos incluidos): el drop, la rebaja, el restock.' },
   { id: 'membresias', nombre: 'Membresías y suscripciones', area: 'fideliza', plan: 'fideliza', giros: [], claves: ['membresía', 'suscripción', 'cobro automático', 'vip'],
-    queHace: 'Membresía mensual de clienta frecuente con cobro automático, renovación y beneficios por nivel.' },
+    queHace: 'Membresía mensual de cliente frecuente con cobro automático, renovación y beneficios por nivel.' },
 
   // ── AUTOMATIZA ──
   { id: 'axo', nombre: 'AXO, copiloto IA y especialista dedicado', area: 'automatiza', plan: 'automatiza', giros: [], claves: ['ia', 'inteligencia artificial', 'copiloto', 'automatizar', 'workflow', 'alertas', 'pronóstico', 'forecast'],
@@ -82,7 +82,7 @@ export const MODULOS: Modulo[] = [
   { id: 'torre-evento', nombre: 'Torre de Control del Evento', area: 'complemento', plan: 'giro', giros: ['merch'], claves: ['torre', 'semáforo', 'módulo', 'reabasto en vivo', 'evento'],
     queHace: 'Semáforo de venta y existencia por módulo con el reabasto propuesto en vivo durante el show.' },
   { id: 'ordenes-servicio', nombre: 'Órdenes de servicio (taller y reparaciones)', area: 'complemento', plan: 'giro', giros: ['novias', 'joyeria', 'zapateria'], claves: ['taller', 'reparación', 'ajuste', 'prueba', 'arreglo', 'orden de servicio'],
-    queHace: 'Órdenes de servicio con etapas y fechas (primera prueba, ajuste, entrega; reparación con foto antes/después), ligadas al ticket y a la clienta.' },
+    queHace: 'Órdenes de servicio con etapas y fechas (primera prueba, ajuste, entrega; reparación con foto antes/después), ligadas al ticket y al cliente.' },
   { id: 'extraordinarios', nombre: 'Módulos extraordinarios de moda', area: 'complemento', plan: 'aparte', giros: ['ropa', 'multimarca', 'activewear'], claves: ['probador virtual', 'fotografía', 'foto con ia', 'video', 'lookbook', 'pre-orden', 'preventa'],
     queHace: 'Probador virtual en tienda, fotografía y video de producto con IA, sugerencia de outfits con IA, lookbooks digitales y pre-órdenes de colección. Son extras: se mencionan si pregunta y el consultor los ve en la reunión.' },
   { id: 'otros-plugins', nombre: 'Otros complementos', area: 'complemento', plan: 'aparte', giros: [], claves: ['rfid', 'empleados', 'recursos humanos', 'asistencia', 'renta', 'kiosko', 'lotes', 'racks', 'kueski', 'aplazo', 'meses sin intereses'],
