@@ -1,0 +1,95 @@
+---
+/**
+ * CierreArticulo — el cierre de las páginas del motor, con el mismo gesto que
+ * el home: en grande «Agenda una demo en línea», y la disponibilidad AHÍ
+ * MISMO para reservar sin salir de la página; o WhatsApp, para quien prefiere
+ * preguntar. Pedido del dueño (22-sep-2026): «debe ser más visual como el
+ * home… que el usuario pueda hacer click y agendar al momento… o envíanos
+ * WhatsApp… más notorio y con mucho más diseño».
+ *
+ * La agenda es el embed real de /agendar/embed/demo (BookingPage): mismos
+ * horarios, mismas preguntas, misma reunión en el CRM. Se carga diferida para
+ * no pesar en el LCP del artículo.
+ */
+import { WHATSAPP_LEGIBLE, waLink } from '../lib/whatsapp';
+interface Props { titulo: string; giro?: string | null; url?: string }
+const { titulo, giro, url } = Astro.props;
+const mensaje = `Hola, leí «${titulo}»${giro ? ` (${giro})` : ''} en sacscloud.com y tengo dudas.`;
+const wa = waLink(mensaje);
+const embed = `/agendar/embed/demo?origen=${encodeURIComponent(url || 'articulo')}`;
+---
+<section class="cierre" id="agenda">
+  <div class="cierre-in">
+    <div class="cierre-texto">
+      <p class="cierre-eyebrow">Sin compromiso · 30 minutos · en línea</p>
+      <h2 class="cierre-h">Agenda una<br/>demo en línea</h2>
+      <p class="cierre-p">Elige el día y la hora aquí mismo. Te enseñamos Sacs con {giro ? `tu ${giro.toLowerCase()}` : 'tu catálogo'}: tus modelos, tus tallas y tus apartados de verdad, no una demo genérica.</p>
+      <ul class="cierre-lista">
+        <li>Ves en pantalla lo que acabas de leer, con tus datos</li>
+        <li>Te decimos qué plan te toca y qué se arma en la configuración</li>
+        <li>Si no te convence, te vas con la guía y ya</li>
+      </ul>
+      <a class="cierre-wa" href={wa} target="_blank" rel="noopener">
+        <span class="cierre-wa-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.3-.6-.4zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+        </span>
+        <span>
+          <strong>¿Prefieres preguntar por WhatsApp?</strong>
+          <span class="cierre-wa-sub">Escríbenos al {WHATSAPP_LEGIBLE} y te respondemos todas tus dudas hoy mismo.</span>
+        </span>
+      </a>
+    </div>
+    <div class="cierre-agenda">
+      <div class="cierre-agenda-cab">
+        <span class="cierre-punto" aria-hidden="true"></span>
+        Disponibilidad real · elige tu horario
+      </div>
+      <iframe
+        src={embed}
+        title="Agenda tu demo de Sacs"
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
+      <p class="cierre-agenda-pie">Si no ves horarios, <a href="/agendar/demo">ábrelo en pantalla completa</a>.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* A todo lo ancho: el artículo mide 760px, la agenda necesita más. Se sale
+     del contenedor con el truco de 100vw centrado. */
+  .cierre {
+    position: relative; width: 100vw; left: 50%; transform: translateX(-50%);
+    margin: var(--space-16) 0 calc(-1 * var(--space-24));
+    padding: clamp(40px, 6vw, 72px) clamp(20px, 4vw, 48px);
+    background: #0E0D0C; color: #fff;
+  }
+  @media (max-width: 640px) { .cierre { margin-top: var(--space-12); margin-bottom: calc(-1 * var(--space-16)); } }
+  .cierre-in { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(28px, 4vw, 56px); align-items: start; }
+  @media (max-width: 900px) { .cierre-in { grid-template-columns: 1fr; } }
+
+  .cierre-eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: #B8A7FF; margin: 0 0 var(--space-3); }
+  .cierre-h { font-family: var(--font-display); font-weight: 800; letter-spacing: -.04em; line-height: .95; font-size: clamp(2.6rem, 6.5vw, 5rem); margin: 0 0 var(--space-5); color: #fff; text-wrap: balance; }
+  .cierre-p { font-size: 1.125rem; line-height: 1.6; color: rgba(255,255,255,.78); margin: 0 0 var(--space-5); max-width: 46ch; }
+  .cierre-lista { margin: 0 0 var(--space-8); padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+  .cierre-lista li { position: relative; padding-left: 28px; color: rgba(255,255,255,.88); font-size: 1rem; }
+  .cierre-lista li::before { content: '✓'; position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #4470D8; color: #fff; font-size: .7rem; font-weight: 800; display: grid; place-items: center; }
+
+  .cierre-wa {
+    display: flex; gap: 14px; align-items: center; padding: 18px 20px; border-radius: 18px;
+    background: rgba(37, 211, 102, .1); border: 1px solid rgba(37, 211, 102, .35); color: #fff; text-decoration: none;
+    transition: background .2s, transform .2s;
+  }
+  .cierre-wa:hover { background: rgba(37, 211, 102, .18); transform: translateY(-2px); }
+  .cierre-wa-ico { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #25D366; color: #fff; display: grid; place-items: center; }
+  .cierre-wa strong { display: block; font-size: 1.05rem; }
+  .cierre-wa-sub { display: block; font-size: .9rem; color: rgba(255,255,255,.75); margin-top: 2px; }
+
+  .cierre-agenda { background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .cierre-agenda-cab { display: flex; align-items: center; gap: 10px; padding: 14px 18px; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #1b1a2e; border-bottom: 1px solid #ecebf3; }
+  .cierre-punto { width: 10px; height: 10px; border-radius: 50%; background: #1E8A63; box-shadow: 0 0 0 4px rgba(30,138,99,.18); }
+  .cierre-agenda iframe { display: block; width: 100%; height: 720px; border: 0; background: #fff; }
+  @media (max-width: 640px) { .cierre-agenda iframe { height: 640px; } }
+  .cierre-agenda-pie { margin: 0; padding: 10px 18px 14px; font-size: .8rem; color: #6b6985; }
+  .cierre-agenda-pie a { color: #4470D8; }
+</style>

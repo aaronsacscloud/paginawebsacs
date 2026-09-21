@@ -11,6 +11,7 @@
 //     que responde la pregunta, no la página entera;
 //   · la fecha de actualización visible, porque la frescura verificable es de
 //     las pocas señales que un modelo puede comprobar por su cuenta.
+import CierreArticulo from './CierreArticulo.astro';
 interface Props { pieza: any }
 const { pieza } = Astro.props;
 
@@ -89,12 +90,10 @@ const fecha = (s: string | null) => s
         </div>
       </div>
     </footer>
-  ) : (
-    <footer class="cm-pie">
-      <p>Esto lo escribimos en <strong>Sacs</strong>, el sistema para marcas y tiendas de moda en México.</p>
-      <a class="cm-boton" href="/contacto">Ver cómo funciona con tu catálogo</a>
-    </footer>
-  )}
+  ) : null}
+
+  {/* El cierre grande, como el home: agenda con disponibilidad ahí mismo o WhatsApp. */}
+  <CierreArticulo titulo={pieza.titulo} giro={pieza.giro?.label || null} url={`/${pieza.seccion}/${pieza.slug}/`} />
 </article>
 
 <style>
