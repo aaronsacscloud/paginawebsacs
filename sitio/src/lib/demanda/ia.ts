@@ -35,7 +35,7 @@ const LLAVE: Record<Proveedor, string> = {
 const MODELOS: Record<Proveedor, Record<Trabajo, string>> = {
   anthropic: { volumen: 'claude-haiku-4-5', trabajo: 'claude-sonnet-5', estrategia: 'claude-opus-5' },
   gemini:    { volumen: 'gemini-2.5-flash', trabajo: 'gemini-2.5-flash', estrategia: 'gemini-2.5-pro' },
-  openai:    { volumen: 'gpt-5', trabajo: 'gpt-5', estrategia: 'gpt-5-pro' },
+  openai:    { volumen: 'gpt-5', trabajo: 'gpt-5', estrategia: 'gpt-5' }, // gpt-5-pro solo existe en /v1/responses: 404 en chat/completions (21-sep-2026)
   groq:      { volumen: 'openai/gpt-oss-120b', trabajo: 'openai/gpt-oss-120b', estrategia: 'openai/gpt-oss-120b' },
 };
 

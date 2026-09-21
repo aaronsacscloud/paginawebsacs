@@ -20,6 +20,11 @@ const fecha = (s: string | null) => s
 ---
 
 <article class="cm">
+  {pieza.vista_previa && (
+    <div class="cm-previa" role="status">
+      <strong>Vista previa</strong> · esta página no está publicada ({pieza.estado}). Solo la ves tú por tu sesión del CRM; los buscadores no la indexan.
+    </div>
+  )}
   <header class="cm-cab">
     <a class="cm-volver" href={`/${pieza.seccion}`}>← {pieza.seccion === 'comparar' ? 'Comparativas' : pieza.seccion === 'software-para' ? 'Software para tu negocio' : 'Recursos'}</a>
     <h1>{pieza.h1}</h1>
@@ -27,7 +32,7 @@ const fecha = (s: string | null) => s
     <p class="cm-meta">
       {pieza.publicado_at && <time datetime={pieza.publicado_at}>Publicado el {fecha(pieza.publicado_at)}</time>}
       {pieza.actualizado_at && pieza.actualizado_at !== pieza.publicado_at &&
-        <> · <time datetime={pieza.actualizado_at}>Actualizado el {fecha(pieza.actualizado_at)}</time></>}
+        <>{pieza.publicado_at ? ' · ' : ''}<time datetime={pieza.actualizado_at}>Actualizado el {fecha(pieza.actualizado_at)}</time></>}
       {pieza.palabras > 0 && <> · {Math.max(1, Math.round(pieza.palabras / 220))} min de lectura</>}
     </p>
   </header>
@@ -75,6 +80,8 @@ const fecha = (s: string | null) => s
 <style>
   .cm { max-width: 760px; margin: 0 auto; padding: var(--space-16) var(--space-6) var(--space-24); }
   @media (max-width: 640px) { .cm { padding: var(--space-10) var(--space-4) var(--space-16); } }
+
+  .cm-previa { margin: 0 0 var(--space-6); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: #FFF4E5; color: #7a5208; border: 1px solid #f3d9a4; font-size: .875rem; }
 
   .cm-volver { font-size: .875rem; color: var(--color-text-secondary); text-decoration: none; }
   .cm-volver:hover { color: var(--color-primary-texto); }
@@ -157,6 +164,32 @@ const fecha = (s: string | null) => s
   .cm-cuerpo :global(.de-dato-v) { font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; line-height: 1; }
   .cm-cuerpo :global(.de-dato-e) { font-size: .9375rem; color: var(--color-text-secondary); }
   .cm-cuerpo :global(.de-dato-f) { font-size: .75rem; color: var(--color-text-secondary); opacity: .75; }
+
+  /* «En corto»: la respuesta que una IA puede citar sin leer más. */
+  .cm-cuerpo :global(.de-resumen) {
+    margin: 0 0 var(--space-8); padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--color-border-light); border-left: 4px solid var(--color-primary-btn, #4470D8);
+    border-radius: var(--radius-md); background: var(--color-bg-secondary);
+  }
+  .cm-cuerpo :global(.de-resumen-t) { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin: 0 0 var(--space-2); color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-resumen ul) { margin: 0; gap: var(--space-1); }
+  .cm-cuerpo :global(.de-resumen li) { font-size: 1rem; }
+
+  .cm-cuerpo :global(.de-glosario) { margin: var(--space-6) 0; display: grid; gap: var(--space-3); }
+  .cm-cuerpo :global(.de-glosario > div) { display: grid; grid-template-columns: minmax(120px, 180px) 1fr; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border-light); }
+  @media (max-width: 560px) { .cm-cuerpo :global(.de-glosario > div) { grid-template-columns: 1fr; gap: var(--space-1); } }
+  .cm-cuerpo :global(.de-glosario dt) { font-weight: 650; color: var(--color-text-primary); }
+  .cm-cuerpo :global(.de-glosario dd) { margin: 0; color: var(--color-text-secondary); font-size: .9375rem; }
+
+  .cm-cuerpo :global(.de-diagrama) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-diagrama img) { display: block; width: 100%; height: auto; border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); }
+  .cm-cuerpo :global(.de-diagrama figcaption), .cm-cuerpo :global(.de-diagrama-t) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
+  .cm-cuerpo :global(.de-diagrama-t) { margin: 0 0 var(--space-2); font-weight: 600; }
+
+  .cm-cuerpo :global(.de-video) { margin: var(--space-8) 0; }
+  .cm-cuerpo :global(.de-video-marco) { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
+  .cm-cuerpo :global(.de-video-marco iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .cm-cuerpo :global(.de-video figcaption) { margin-top: var(--space-2); font-size: .8125rem; color: var(--color-text-secondary); }
 
   .cm-cuerpo :global(.de-imagen) { margin: var(--space-8) 0; }
   .cm-cuerpo :global(.de-imagen img) { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); }

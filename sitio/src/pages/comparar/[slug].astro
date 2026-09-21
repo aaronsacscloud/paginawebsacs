@@ -10,22 +10,28 @@
 // hace mejor. Una comparativa que solo gana es una que nadie cita.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ContenidoMotor from '../../components/ContenidoMotor.astro';
-import { leerPublicado } from '../../lib/demanda/publicar';
+import { leerPublicado, leerPieza } from '../../lib/demanda/publicar';
+import { getCurrentUser } from '../../lib/auth/scope';
 
 export const prerender = false;
 
 const { slug } = Astro.params;
-const pieza = slug ? await leerPublicado('comparar', slug) : null;
+/* `?borrador=1` con sesión del CRM: la vista previa real de una pieza que aún
+   no está publicada. Sin sesión se ignora y se sirve solo lo publicado. */
+const quierePrevia = Astro.url.searchParams.get('borrador') === '1';
+const previa = quierePrevia && !!(await getCurrentUser(Astro.request).catch(() => null));
+const pieza = slug ? (previa ? await leerPieza('comparar', slug, true) : await leerPublicado('comparar', slug)) : null;
 
 if (!pieza) return new Response(null, { status: 404, statusText: 'No encontrado' });
 
-Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+Astro.response.headers.set('Cache-Control', previa ? 'private, no-store' : 'public, s-maxage=3600, stale-while-revalidate=86400');
 ---
 <BaseLayout
   title={pieza.titulo}
   description={pieza.meta_desc || pieza.titulo}
   type="article"
   image={pieza.portada?.url}
+  noindex={previa}
   structuredData={pieza.schema}
 >
   <ContenidoMotor pieza={pieza} />

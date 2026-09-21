@@ -1521,3 +1521,26 @@ bandeja enseña veredicto, competencia, portada y giro; solo lista lo aprobado
 y lo atascado. Primera pieza que pasó: `/software-para/tienda-de-novias/`
 (8.4/10 tras 2 reescrituras, $1.27). El flujo completo y lo aprendido están
 en `FLUJO-CONTENIDO.md`.
+
+## 21-sep-2026 · Referee v2: 18 criterios, investigación con agentes, preview real
+
+El referee pasó de 6 ejes a **18 criterios** (7 de los «flujos SEO/GEO» que
+circulan + 11 propios: glosario, lenguaje del ramo, fotos, **diagrama con el
+dato** —la imagen que enseña un AI Overview—, datos con fuente verificada, CTA a
+mitad de camino, entidad, respuesta corta, frescura, legibilidad, video). Devuelve
+además elementos mantener/cambiar, probabilidad de cita 0-100 con su primera
+corrección, prompts de IA cubiertos/sin cubrir, video sugerido y
+`necesita_del_dueno` (lo que el motor no puede generar). Bloques nuevos en
+`bloques.ts`: `resumen` (speakable), `glosario` (DefinedTermSet), `diagrama`
+(SVG→PNG con sharp, ImageObject), `imagen` intermedia (placeholder que llena
+`contenido.imagen`), `video` (VideoObject). `contenido.competencia` ahora
+puntúa competidores (respuesta/profundidad/prueba/frescura), marca si una IA ya
+los cita, y busca fuentes verificadas. **Preview real**:
+`/{seccion}/{slug}/?borrador=1` con sesión del CRM (noindex, sin caché), botón
+en la bandeja. Investigación profunda con 3 agentes en `scripts/investigacion/`
+(+ `inyectar-brief.mjs`). Todo documentado en `GUIA-CONTENIDO-REPLICABLE.md`.
+
+Tropiezos: `import` de JSON en Node pide `type: json` (los datos van en .ts);
+Anthropic exige streaming para salidas > 8k tokens (se hace en el proxy de
+`ai/client.ts`); «Schema is too complex» y «additionalProperties must be false»
+en el esquema del borrador (se dejó laxo y se normaliza al leer).

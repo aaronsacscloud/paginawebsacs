@@ -63,6 +63,18 @@ export type Brief = {
   correcciones?: string[];   // lo que el referee mandó cambiar en la última ronda
   reescrituras?: number;     // cuántas rondas lleva
   portada?: { url: string; alt: string };
+  /* Investigación (agentes o contenido.competencia): lo que hace que la
+     página gane y suene al ramo. Todo opcional; el borrador usa lo que haya. */
+  fuentes?: any[];
+  para_ganar?: string[];
+  preguntas_sin_contestar?: string[];
+  glosario?: { termino: string; definicion: string; tambien_llamado?: string[] }[];
+  evitar?: string[];
+  frases_del_mostrador?: string[];
+  politicas_comunes?: string[];
+  palabras_que_rankean?: string[];
+  preguntas_reales?: string[];
+  video?: { youtube_id: string; titulo: string };
 };
 
 const ESQUEMA_BRIEF = {
@@ -237,6 +249,11 @@ registrar('contenido.brief', async (a): Promise<ResultadoHandler> => {
 // ── el borrador ─────────────────────────────────────────────────────────────
 
 const ESQUEMA_BORRADOR = {
+  /* DIEZ propiedades por bloque, ni una más: Anthropic rechaza con «Schema is
+     too complex» a partir de ~11 (medido 21-sep-2026: 10 pasa, 14 no). Por eso
+     varios tipos de bloque reutilizan campos —imagen lleva el alt en «texto» y
+     la escena en «nota»; cta lleva el botón en «titulo»; video lleva el id en
+     «url»— y se normalizan al leer la respuesta. */
   type: 'object', additionalProperties: false,
   properties: {
     titulo: { type: 'string' }, h1: { type: 'string' }, meta_desc: { type: 'string' },
@@ -245,20 +262,16 @@ const ESQUEMA_BORRADOR = {
       items: {
         type: 'object', additionalProperties: false,
         properties: {
-          t: { type: 'string', enum: ['h2', 'h3', 'p', 'lista', 'tabla', 'faq', 'pasos', 'cita', 'cta'] },
+          t: { type: 'string' },
           texto: { type: 'string' },
+          titulo: { type: 'string' },
           lista_items: { type: 'array', items: { type: 'string' } },
           encabezados: { type: 'array', items: { type: 'string' } },
           filas: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+          items: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { p: { type: 'string' }, r: { type: 'string' }, titulo: { type: 'string' }, texto: { type: 'string' } } } },
           nota: { type: 'string' },
-          items: {
-            type: 'array',
-            items: {
-              type: 'object', additionalProperties: false,
-              properties: { p: { type: 'string' }, r: { type: 'string' }, titulo: { type: 'string' }, texto: { type: 'string' } },
-            },
-          },
-          fuente: { type: 'string' }, boton: { type: 'string' }, url: { type: 'string' },
+          fuente: { type: 'string' },
+          url: { type: 'string' },
         },
         required: ['t'],
       },
@@ -288,25 +301,32 @@ CÓMO SE ESCRIBE
 - Español de México, llano, como habla un dueño de tienda. El vocabulario del ramo: corrida, curva, talla, apartado, temporada, sucursal, sell-through.
 - Nada de «potencia tu negocio», «solución integral», «revoluciona», «en el mundo actual». Si una frase podría estar en el folleto de cualquier software, sobra.
 - Empieza CONTESTANDO. El primer párrafo da la respuesta corta; el resto la sostiene.
-- 1,200 a 2,000 palabras. Una guía que contesta de verdad necesita espacio; lo que sobra no son palabras, son párrafos que no dicen nada. TERMINA la página: el último bloque es la cta, y antes el faq completo. Una página cortada a media frase no pasa.
+- 1,800 a 3,000 palabras, NUNCA más de 3,000: se tiene que leer en 10 minutos en el celular. Si sobra, sobra el párrafo que menos enseña, no el glosario ni el faq. Una guía que contesta de verdad necesita espacio; lo que sobra no son palabras, son párrafos que no dicen nada. TERMINA la página: el último bloque es la cta, y antes el faq completo. Una página cortada a media frase no pasa.
 - Si no sabes algo con certeza, DILO y manda a preguntarlo en la demo. Una página que reconoce su límite se cita; una que promete de más se desmiente en la primera llamada.
 - «titulo» máximo 53 caracteres (la plantilla agrega « | Sacs»). «meta_desc» máximo 150, y que termine en punto: si se corta, Google enseña una frase a medias.
 - Negritas con **…** dentro de los párrafos, con criterio.
 
 LOS BLOQUES
+- «resumen» → lista_items: 3-5 líneas «En corto», cada una una afirmación completa y citable. VA PRIMERO, antes de todo.
 - «p» párrafo · «h2»/«h3» encabezados (usa los del encargo)
 - «lista» → campo lista_items
 - «pasos» → items con titulo y texto, cuando de verdad hay un orden
 - «tabla» → encabezados + filas (+ nota), cuando se comparan cosas
-- «faq» → items con p y r; usa las preguntas del encargo y contéstalas de verdad
-- «cta» → texto, boton, url; una sola al final, a una herramienta gratis o a /contacto
-- «cita» solo si citas algo real que venga en el encargo
+- «diagrama» → titulo + encabezados + filas (+ nota; el alt va en «texto»): LA IMAGEN DE REFERENCIA con el dato de la página (un calendario de abonos con fechas y montos, una ficha de medidas, una curva de tallas). Se dibuja como imagen y es lo que Google enseña junto a la respuesta. Exactamente UNA, con datos reales de la página, ≥ 3 filas.
+- «imagen» → el alt en «texto» (en español, lo que se ve) y la escena en «nota» (en inglés, ≥ 40 caracteres, documental: una persona real haciendo eso en una tienda de México, sin pantallas). UNA o DOS, junto a los pasos o la tabla. La foto se genera después; tú describes la escena.
+- «cita» → texto, fuente, url: SOLO de la lista FUENTES VERIFICADAS del encargo, con su url tal cual. Mínimo 2 datos con fuente (cita o enlace [texto](https://…) a una fuente de la lista).
+- «glosario» → items con titulo (el término) y texto (la definición): 6-10 términos del ramo definidos como los dice la gente del giro, ANTES del faq. Usa los términos del encargo.
+- «faq» → items con p y r: 6-8 preguntas que la gente hace de verdad (las del encargo y las «sin contestar»), contestadas de verdad.
+- «video» → el id de YouTube en «url» + titulo, solo si el encargo trae un video del canal que encaje.
+- «cta» → texto, el botón en «titulo», url. DOS: una A MITAD DE CAMINO (antes del faq, justo después de la sección donde aparece el módulo o el giro, a /giros/<giro>, /producto/<módulo> o una herramienta) y una al FINAL (última de la página, a /agendar).
 
-ESTRUCTURA MÍNIMA: párrafo de respuesta, las secciones del encargo, el faq, y la cta.`;
+ENCABEZADOS: «h2»/«h3» llevan el texto en «texto». Mínimo 5 h2. NADA va después de la cta final (ni fecha de actualización ni lista de fuentes: la plantilla pone la fecha y las fuentes ya están enlazadas donde se citan).
+ORDEN: resumen → párrafo de respuesta (≤ 80 palabras) → secciones del encargo (con tabla/pasos, diagrama, imagen, cita, cta intermedia donde toquen) → glosario → faq → cta final.
+ENLACES INTERNOS: ≥ 3 rutas distintas de las permitidas, con anchor natural (nunca la ruta cruda), y una a /giros/<giro>.`;
 
 export async function escribirBorrador(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number }> {
   const { data: c } = await supabase.from('de_contenido')
-    .select('id, slug, seccion, brief, estado').eq('id', contenidoId).maybeSingle();
+    .select('id, slug, seccion, brief, estado, cuerpo, titulo, h1, meta_desc').eq('id', contenidoId).maybeSingle();
   if (!c) return { ok: false, error: 'no existe ese contenido', costo: 0 };
   if (!c.brief || !(c.brief as any).pregunta) return { ok: false, error: 'no tiene brief', costo: 0 };
 
@@ -323,13 +343,31 @@ ${comp.paginas.map((p: any, i: number) => `  ${i + 1}. ${p.titulo} (${p.tipo}, ~
   EL HUECO QUE NINGUNA CUBRE — la página va sobre esto: ${comp.hueco_comun}
 `
     : '';
+  const investigacion = [
+    b.para_ganar?.length ? `LO QUE HARÍA QUE LA NUESTRA GANE A TODAS (lectura completa de la competencia):\n${b.para_ganar.map((x: string) => `  - ${x}`).join('\n')}` : '',
+    b.preguntas_sin_contestar?.length ? `PREGUNTAS QUE LA GENTE HACE Y NINGUNA PÁGINA CONTESTA (contesta las que quepan, en el cuerpo o en el faq):\n${b.preguntas_sin_contestar.map((x: string) => `  - ${x}`).join('\n')}` : '',
+    b.fuentes?.length ? `FUENTES VERIFICADAS (las únicas que puedes citar; usa la url tal cual):\n${b.fuentes.map((f: any) => `  - ${f.dato} — ${f.fuente} (${f.fecha}) ${f.url}${f.como_usarlo ? ` · cómo usarla: ${f.como_usarlo}` : ''}`).join('\n')}` : '',
+    b.glosario?.length ? `LENGUAJE DEL RAMO — glosario (defínelos así, úsalos así):\n${b.glosario.map((g: any) => `  - ${g.termino}: ${g.definicion}${g.tambien_llamado?.length ? ` (también: ${g.tambien_llamado.slice(0, 3).join(', ')})` : ''}`).join('\n')}` : '',
+    b.evitar?.length ? `PALABRAS QUE NO SE DICEN EN MÉXICO (no las uses): ${b.evitar.join(', ')}` : '',
+    b.frases_del_mostrador?.length ? `FRASES TAL CUAL DEL MOSTRADOR (para que suene real):\n${b.frases_del_mostrador.slice(0, 10).map((x: string) => `  - ${x}`).join('\n')}` : '',
+    b.politicas_comunes?.length ? `POLÍTICAS HABITUALES DEL RAMO (con fuente; cítalas como práctica de mercado, no como regla):\n${b.politicas_comunes.slice(0, 8).map((x: string) => `  - ${x}`).join('\n')}` : '',
+    b.palabras_que_rankean?.length ? `PALABRAS QUE RANKEAN (úsalas en título, h1, primer párrafo y encabezados): ${b.palabras_que_rankean.slice(0, 8).join(' · ')}` : '',
+    b.video?.youtube_id ? `VIDEO DEL CANAL QUE ENCAJA: youtube_id ${b.video.youtube_id} — «${b.video.titulo}» (ponlo con bloque «video» donde ayude)` : '',
+  ].filter(Boolean).join('\n\n');
+
+  /* Reescribir NO es volver a escribir. La primera versión regeneraba la
+     página entera desde el brief en cada ronda, y una página de 9.2 que solo
+     tenía un párrafo sin punto volvía como una de 8.0 con otros fallos. Ahora
+     la versión anterior viaja completa y la instrucción es EDITARLA. */
+  const anterior = (c as any).cuerpo as Bloque[] | undefined;
   const correcciones = b.correcciones?.length
-    ? `ESTA ES UNA REESCRITURA (ronda ${b.reescrituras || 1}). El referee NO aprobó la versión anterior. Aplica EXACTAMENTE estas correcciones, en este orden de importancia, y conserva lo que no se menciona:
+    ? `ESTA ES UNA CORRECCIÓN (ronda ${b.reescrituras || 1}), NO UNA PÁGINA NUEVA. El referee no aprobó la versión anterior por lo siguiente. Aplica EXACTAMENTE estas correcciones y CONSERVA TODO LO DEMÁS tal cual (mismos bloques, mismo orden, mismos ejemplos, mismas cifras): quien juzga ya dio por bueno el resto y cada cambio no pedido es un riesgo nuevo.
 ${b.correcciones.map((x: string, i: number) => `  ${i + 1}. ${x}`).join('\n')}
+${anterior?.length ? `\nLA VERSIÓN ANTERIOR (devuélvela completa, con las correcciones aplicadas; los bloques «imagen» y «diagrama» conservan su «url» si la tienen):\nTítulo: ${(c as any).titulo}\nH1: ${(c as any).h1}\nMeta: ${(c as any).meta_desc}\n${JSON.stringify(anterior)}\n` : ''}
 `
     : '';
 
-  const usuario = `${correcciones}${competencia}EL ENCARGO
+  const usuario = `${correcciones}${competencia}${investigacion ? investigacion + '\n\n' : ''}EL ENCARGO
 Pregunta que hay que contestar: ${b.pregunta}
 Quién pregunta y en qué momento: ${b.quien}
 Qué se lleva al terminar de leer: ${b.promesa}
@@ -357,20 +395,40 @@ Escribe la página.`;
     agente: 'contenido_borrador', trabajo: 'estrategia',
     /* 20000: con 10000 una página de 2,500 palabras llegaba «entera» al JSON con el
        último FAQ cortado a media frase — y el referee la devolvía por eso. */
-    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 20000,
+    sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 28000,
   });
   if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin datos', costo: r.costo_usd || 0 };
 
   // Normalizar al formato de bloques del motor.
   const cuerpo: Bloque[] = (r.datos.cuerpo || []).map((x: any) => {
     if (x.t === 'lista') return { t: 'lista', items: x.lista_items || [] };
+    if (x.t === 'resumen') return { t: 'resumen', items: x.lista_items || (x.items || []).map((i: any) => i.texto || i.p).filter(Boolean) };
+    if (x.t === 'glosario') return { t: 'glosario', items: (x.items || []).map((i: any) => ({ termino: i.termino || i.titulo || i.p, definicion: i.definicion || i.texto || i.r })).filter((i: any) => i.termino && i.definicion) };
+    if (x.t === 'imagen') return { t: 'imagen', url: x.url && /^https:\/\//.test(x.url) ? x.url : '', alt: x.alt || x.texto || '', escena: x.escena || x.nota || '', ...(x.ancho ? { ancho: x.ancho, alto: x.alto } : {}) };
+    if (x.t === 'diagrama') return { t: 'diagrama', titulo: x.titulo || '', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}), ...((x.alt || x.texto) ? { alt: x.alt || x.texto } : {}), ...(x.url && /^https:\/\//.test(x.url) ? { url: x.url, ancho: x.ancho, alto: x.alto } : {}) };
+    if (x.t === 'video') return { t: 'video', youtube_id: (x.youtube_id || x.url || '').replace(/^.*[?&]v=|^.*youtu\.be\//, ''), titulo: x.titulo || x.texto || '' };
     if (x.t === 'faq') return { t: 'faq', items: (x.items || []).map((i: any) => ({ p: i.p, r: i.r })) };
     if (x.t === 'pasos') return { t: 'pasos', items: (x.items || []).map((i: any) => ({ titulo: i.titulo, texto: i.texto })) };
     if (x.t === 'tabla') return { t: 'tabla', encabezados: x.encabezados || [], filas: x.filas || [], ...(x.nota ? { nota: x.nota } : {}) };
-    if (x.t === 'cita') return { t: 'cita', texto: x.texto, fuente: x.fuente || '' };
-    if (x.t === 'cta') return { t: 'cta', texto: x.texto, boton: x.boton || 'Ver más', url: x.url || '/contacto' };
-    return { t: x.t, texto: x.texto || '' };
-  }).filter((x: any) => x.items || x.filas || x.texto);
+    if (x.t === 'cita') return { t: 'cita', texto: x.texto, fuente: x.fuente || '', ...(x.url ? { url: x.url } : {}) };
+    if (x.t === 'cta') return { t: 'cta', texto: x.texto, boton: x.boton || x.titulo || 'Ver más', url: x.url || '/contacto' };
+    /* gpt-5 manda los encabezados en «titulo» y no en «texto»; sin este
+       respaldo se perdían TODOS los h2 y el referee tumbaba la página por
+       «0 secciones h2» tres rondas seguidas (21-sep-2026). */
+    const texto = String(x.texto || x.titulo || '');
+    // gpt-5 numera los encabezados («1) …», «2. …»); el índice ya numera solo.
+    return { t: x.t, texto: /^h[23]$/.test(x.t) ? texto.replace(/^\s*\d{1,2}[).:-]\s*/, '') : texto };
+  }).filter((x: any) => x.items?.length || x.filas?.length || x.texto || x.escena || x.youtube_id);
+
+  /* Nada después de la cta final: la fecha de actualización y las fuentes las
+     pone la plantilla. Un «Última actualización: …» suelto al final tumbaba la
+     página por «termina en p». */
+  while (cuerpo.length > 1) {
+    const u = cuerpo[cuerpo.length - 1] as any;
+    const hayCtaAntes = cuerpo.slice(0, -1).some(b => b.t === 'cta');
+    if (u.t === 'p' && hayCtaAntes && /^(última actualización|actualizado|fuentes?:)/i.test(u.texto.trim())) cuerpo.pop();
+    else break;
+  }
 
   const { error } = await supabase.from('de_contenido').update({
     titulo: String(r.datos.titulo || '').slice(0, 80),

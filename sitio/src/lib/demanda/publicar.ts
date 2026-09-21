@@ -32,18 +32,32 @@ export function giroDe(brief: any): Publicado['giro'] {
 
 /** Lo que la ruta necesita para pintar la página, ya listo. */
 export async function leerPublicado(seccion: string, slug: string): Promise<Publicado | null> {
-  const { data } = await supabase
+  return leerPieza(seccion, slug, false);
+}
+
+/**
+ * La misma lectura, pero admitiendo lo NO publicado. Es lo que hace posible el
+ * preview real: la página tal cual va a salir, con su plantilla, su portada y
+ * su cierre por giro — no el HTML suelto dentro del CRM. La ruta solo lo pide
+ * cuando hay sesión del CRM, y la respuesta sale con noindex.
+ */
+export async function leerPieza(seccion: string, slug: string, incluirBorrador: boolean): Promise<(Publicado & { estado: string; vista_previa: boolean }) | null> {
+  let q = supabase
     .from('de_contenido')
-    .select('id, titulo, h1, meta_desc, seccion, slug, tipo, cuerpo, brief, publicado_at, actualizado_at, cluster_id')
-    .eq('seccion', seccion).eq('slug', slug).eq('estado', 'publicado')
-    .maybeSingle();
+    .select('id, titulo, h1, meta_desc, seccion, slug, tipo, cuerpo, brief, publicado_at, actualizado_at, cluster_id, estado')
+    .eq('seccion', seccion).eq('slug', slug);
+  if (!incluirBorrador) q = q.eq('estado', 'publicado');
+  const { data } = await q.order('estado', { ascending: false }).limit(1).maybeSingle();
   if (!data) return null;
 
   const cuerpo = (data.cuerpo || []) as Bloque[];
   const url = `${SITIO}/${seccion}/${slug}/`;
   const portada = (data.brief as any)?.portada?.url ? { url: (data.brief as any).portada.url, alt: (data.brief as any).portada.alt || data.titulo } : null;
 
+  const resumen = cuerpo.find(b => b.t === 'resumen');
   return {
+    estado: data.estado,
+    vista_previa: data.estado !== 'publicado',
     portada,
     giro: giroDe(data.brief),
     id: data.id,
@@ -76,6 +90,8 @@ export async function leerPublicado(seccion: string, slug: string): Promise<Publ
         // La imagen en el schema es lo que Discover y los resultados enriquecidos
         // enseñan; sin ella el artículo compite en texto plano.
         ...(portada ? { image: { '@type': 'ImageObject', url: portada.url, width: 1200, height: 630 } } : {}),
+        // `speakable`: le dice a un asistente qué parte leer en voz alta / citar.
+        ...(resumen ? { speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.de-resumen', 'h1'] } } : {}),
       },
       ...schemaDeCuerpo(cuerpo),
     ],

@@ -22,6 +22,11 @@ import { Seccion, Tarjeta, btn, haceRato } from './ui';
 type Referee = {
   pasa: boolean; promedio: number; puntajes: Record<string, number>; ronda: number;
   por_que: string; fallos: string[]; mejor_que_competencia: boolean; cuando: string | null;
+  probabilidad_cita?: number; primera_correccion?: string;
+  criterios?: { clave: string; ok: boolean; nota: string }[];
+  elementos?: { elemento: string; veredicto: 'mantener' | 'cambiar'; confianza: number; propuesta: string }[];
+  preguntas_ia_cubiertas?: string[]; preguntas_ia_sin_cubrir?: string[];
+  video_sugerido?: string; necesita_del_dueno?: string[];
 };
 type Resumen = {
   id: string; seccion: string; slug: string; titulo: string; meta_desc: string;
@@ -31,10 +36,18 @@ type Resumen = {
 };
 type Similar = { url: string; titulo: string; tipo: string; palabras_aprox: number; tiene_faq: boolean; tiene_tabla_o_pasos: boolean; cubre_bien: string[]; le_falta: string[]; por_que_rankea: string };
 type Pieza = Omit<Resumen, 'portada' | 'giro'> & {
-  html: string; cuerpo: any[]; brief: any; url: string;
+  html: string; cuerpo: any[]; brief: any; url: string; preview: string;
   portada: { url: string; alt: string } | null;
   giro: { label: string; href: string } | null;
   competencia: { paginas: Similar[]; hueco: string | null };
+};
+
+const NOMBRE_CRITERIO: Record<string, string> = {
+  competencia_superada: 'Mejor que lo que rankea', elementos_seo: 'Título, meta, H1, FAQ, schema', preguntas_ia: 'Contesta lo que se le pregunta a la IA',
+  probabilidad_cita: 'Probabilidad de ser citada', intencion_compradora: 'Términos que convierten', enlaces_internos: 'Enlaces internos con razón',
+  checks_duros: 'Comprobaciones sí/no', glosario: 'Glosario del ramo', lenguaje_ramo: 'Lenguaje del ramo', fotos: 'Fotos', diagrama: 'Imagen con el dato',
+  datos_con_fuente: 'Datos con fuente', cta_mitad: 'CTA a mitad de camino', entidad: 'Entidad / E-E-A-T', respuesta_corta: 'Respuesta corta arriba',
+  frescura: 'Frescura', legibilidad: 'Se lee en el celular', video_media: 'Video u otro medio',
 };
 
 const EJES: Record<string, string> = {
@@ -66,6 +79,36 @@ function VeredictoReferee({ r }: { r: Referee }) {
         ))}
       </div>
       <p style={{ margin: '.8rem 0 0', fontSize: '.88rem', lineHeight: 1.6, color: P.texto }}>{r.por_que}</p>
+      {typeof r.probabilidad_cita === 'number' && r.probabilidad_cita > 0 && (
+        <p style={{ margin: '.6rem 0 0', fontSize: '.85rem', color: P.texto }}>
+          <strong>Probabilidad de que una IA la cite: {r.probabilidad_cita}%.</strong>{r.primera_correccion ? ` Lo que más la subiría: ${r.primera_correccion}` : ''}
+        </p>
+      )}
+      {r.criterios && r.criterios.length > 0 && (
+        <details style={{ marginTop: 10 }}>
+          <summary style={{ cursor: 'pointer', fontSize: '.85rem', fontWeight: 600, color: P.texto }}>
+            {r.criterios.filter(k => k.ok).length} de {r.criterios.length} criterios en orden
+          </summary>
+          <div style={{ display: 'grid', gap: 4, marginTop: 8 }}>
+            {r.criterios.map(k => (
+              <div key={k.clave} style={{ display: 'grid', gridTemplateColumns: '18px 190px 1fr', gap: 8, fontSize: '.82rem', lineHeight: 1.5, alignItems: 'baseline' }}>
+                <span style={{ color: k.ok ? P.verdeTinta : P.rojoTinta, fontWeight: 700 }}>{k.ok ? '✓' : '✗'}</span>
+                <span style={{ fontWeight: 600, color: P.texto }}>{NOMBRE_CRITERIO[k.clave] || k.clave}</span>
+                <span style={{ color: P.suave }}>{k.nota}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+      {r.necesita_del_dueno && r.necesita_del_dueno.length > 0 && (
+        <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: P.papel, border: `1px solid ${P.linea}` }}>
+          <div style={{ fontSize: 11.5, color: P.ambarTinta, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Lo que el motor no puede generar y te pide</div>
+          <ul style={{ margin: '.4rem 0 0', paddingLeft: '1.1rem', fontSize: '.85rem', lineHeight: 1.6, color: P.texto }}>
+            {r.necesita_del_dueno.map((x, i) => <li key={i}>{x}</li>)}
+            {r.video_sugerido && r.video_sugerido.startsWith('grabar') && <li>Video: {r.video_sugerido}</li>}
+          </ul>
+        </div>
+      )}
       {!r.pasa && r.fallos.length > 0 && (
         <ul style={{ margin: '.6rem 0 0', paddingLeft: '1.1rem', fontSize: '.85rem', lineHeight: 1.6, color: P.texto }}>
           {r.fallos.map((f, i) => <li key={i}>{f}</li>)}
@@ -125,7 +168,13 @@ export default function DemandaBandeja() {
   if (abierta) {
     return (
       <div style={WRAP}>
-        <button style={{ ...btn(), marginBottom: 14 }} onClick={() => { setAbierta(null); setAviso(null); }}>← Volver a la bandeja</button>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button style={btn()} onClick={() => { setAbierta(null); setAviso(null); }}>← Volver a la bandeja</button>
+          <a href={abierta.preview} target="_blank" rel="noopener noreferrer" style={{ ...btn(true), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            Ver la página real (preview) ↗
+          </a>
+          <span style={{ fontSize: '.8rem', color: P.suave }}>Tal cual va a salir: plantilla, portada, diagrama y cierre por giro. Solo la ves tú.</span>
+        </div>
 
         <Tarjeta>
           <div style={{ fontSize: 11.5, color: P.tenue, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 600 }}>

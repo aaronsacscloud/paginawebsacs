@@ -24,7 +24,22 @@ export type Bloque =
   | { t: 'cta'; texto: string; boton: string; url: string }
   /* Una imagen con su pie. La URL viene de storage (la genera el motor), nunca
      del texto del modelo: el bloque lo agrega el pipeline, no el redactor. */
-  | { t: 'imagen'; url: string; alt: string; pie?: string; ancho?: number; alto?: number };
+  /* `url` vacía = pendiente: el redactor pide la foto describiendo la escena y
+     el pipeline la genera después de que la página pasó el referee. */
+  | { t: 'imagen'; url: string; alt: string; pie?: string; ancho?: number; alto?: number; escena?: string }
+  /* La respuesta corta arriba de todo: 3-5 líneas que una IA puede citar sin
+     leer la página. Va a `speakable` en el schema. */
+  | { t: 'resumen'; items: string[] }
+  /* Los términos del ramo definidos como los dice la gente del giro. Se vuelve
+     DefinedTermSet: una IA que busca «qué es una muestra de piso» encuentra la
+     definición suelta. */
+  | { t: 'glosario'; items: { termino: string; definicion: string }[] }
+  /* La imagen de referencia CON el dato: una tabla que se dibuja como PNG
+     (calendario de abonos, curva de tallas, ficha de medidas). Es lo que un AI
+     Overview enseña al lado de la respuesta. Sin url se pinta como tabla. */
+  | { t: 'diagrama'; titulo: string; encabezados: string[]; filas: string[][]; nota?: string; alt?: string; url?: string; ancho?: number; alto?: number }
+  /* Un video del canal, con su ficha. VideoObject en el schema. */
+  | { t: 'video'; youtube_id: string; titulo: string; descripcion?: string; duracion_seg?: number; subido_at?: string };
 
 const esc = (s: string) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -109,9 +124,33 @@ export function aHtml(bloques: Bloque[]): string {
         out.push(`<div class="de-cta"><p>${enLinea(b.texto)}</p><a class="de-cta-b" href="${esc(u)}">${esc(b.boton)}</a></div>`);
         break;
       }
+      case 'diagrama': {
+        const u = b.url ? urlSegura(b.url) : null;
+        if (u) {
+          out.push(`<figure class="de-diagrama"><img src="${esc(u)}" alt="${esc(b.alt || b.titulo)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 800}"><figcaption>${esc(b.titulo)}${b.nota ? ` — ${enLinea(b.nota)}` : ''}</figcaption></figure>`);
+        } else {
+          out.push(`<div class="de-tabla de-diagrama-tabla"><p class="de-diagrama-t">${esc(b.titulo)}</p><table><thead><tr>${(b.encabezados || []).map(e => `<th>${esc(e)}</th>`).join('')}</tr></thead>` +
+            `<tbody>${(b.filas || []).map(f => `<tr>${f.map(c => `<td>${enLinea(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` + (b.nota ? `<p class="de-nota">${enLinea(b.nota)}</p>` : '') + `</div>`);
+        }
+        break;
+      }
+      case 'resumen':
+        out.push(`<div class="de-resumen"><p class="de-resumen-t">En corto</p><ul>${(b.items || []).map(i => `<li>${enLinea(i)}</li>`).join('')}</ul></div>`);
+        break;
+      case 'glosario':
+        out.push(`<dl class="de-glosario">${(b.items || []).map(i => `<div><dt>${esc(i.termino)}</dt><dd>${enLinea(i.definicion)}</dd></div>`).join('')}</dl>`);
+        break;
+      case 'video': {
+        const id = String(b.youtube_id || '').replace(/[^A-Za-z0-9_-]/g, '');
+        if (!id) break;
+        // youtube-nocookie y sin autoplay: no carga nada hasta que se pulsa.
+        out.push(`<figure class="de-video"><div class="de-video-marco"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="${esc(b.titulo)}" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>` +
+          `<figcaption>${esc(b.titulo)}${b.descripcion ? ` — ${enLinea(b.descripcion)}` : ''}</figcaption></figure>`);
+        break;
+      }
       case 'imagen': {
         const u = urlSegura(b.url);
-        if (!u) break;
+        if (!u) break; // pendiente de generar: no se pinta un hueco
         // width/height explícitos: sin ellos la página salta al cargar (CLS), y
         // eso Google lo mide. `loading="lazy"` porque la portada va aparte.
         out.push(`<figure class="de-imagen"><img src="${esc(u)}" alt="${esc(b.alt)}" loading="lazy" decoding="async" width="${b.ancho || 1200}" height="${b.alto || 630}">` +
@@ -143,7 +182,10 @@ export function aTexto(bloques: Bloque[]): string {
     else if (b?.t === 'pasos') for (const i of b.items || []) p.push(i.titulo, i.texto);
     else if (b?.t === 'cita') p.push(b.texto);
     else if (b?.t === 'tabla') for (const f of b.filas || []) p.push(...f);
-    // 'imagen' y 'dato' no cuentan como texto: son apoyo, no prosa.
+    else if (b?.t === 'resumen') p.push(...(b.items || []));
+    else if (b?.t === 'diagrama') { p.push(b.titulo); for (const f of b.filas || []) p.push(...f); }
+    else if (b?.t === 'glosario') for (const i of b.items || []) p.push(i.termino, i.definicion);
+    // 'imagen', 'video' y 'dato' no cuentan como texto: son apoyo, no prosa.
   }
   return p.join(' ').replace(/\s+/g, ' ').trim();
 }
@@ -172,7 +214,11 @@ export function aMarkdown(bloques: Bloque[]): string {
       case 'pasos': out.push(`[PASOS]\n` + (b.items || []).map((i, n) => `${n + 1}. **${i.titulo}** ${i.texto}`).join('\n')); break;
       case 'dato': out.push(`[DATO] ${b.valor} — ${b.etiqueta} (${b.fuente})`); break;
       case 'cta': out.push(`[CTA] ${b.texto} → [${b.boton}](${b.url})`); break;
-      case 'imagen': out.push(`[IMAGEN: ${b.alt}]`); break;
+      case 'imagen': out.push(`[IMAGEN${b.url ? '' : ' pendiente de generar'}: ${b.alt}${b.escena ? ` · escena: ${b.escena}` : ''}]`); break;
+      case 'diagrama': out.push(`[DIAGRAMA → imagen${b.url ? '' : ' pendiente'}: ${b.titulo}]\n| ${(b.encabezados || []).join(' | ')} |\n` + (b.filas || []).map(f => `| ${f.join(' | ')} |`).join('\n')); break;
+      case 'resumen': out.push(`[RESUMEN «En corto»]\n` + (b.items || []).map(i => `- ${i}`).join('\n')); break;
+      case 'glosario': out.push(`[GLOSARIO]\n` + (b.items || []).map(i => `**${i.termino}**: ${i.definicion}`).join('\n')); break;
+      case 'video': out.push(`[VIDEO youtube:${b.youtube_id}] ${b.titulo}`); break;
     }
   }
   return out.join('\n\n').trim();
@@ -201,6 +247,33 @@ export function schemaDeCuerpo(bloques: Bloque[]): Record<string, any>[] {
         '@type': 'Question', name: i.p,
         acceptedAnswer: { '@type': 'Answer', text: i.r },
       })),
+    });
+  }
+
+  const glos = (bloques || []).find(b => b?.t === 'glosario') as Extract<Bloque, { t: 'glosario' }> | undefined;
+  if (glos?.items?.length) {
+    out.push({
+      '@context': 'https://schema.org', '@type': 'DefinedTermSet',
+      name: 'Términos del ramo',
+      hasDefinedTerm: glos.items.map(i => ({ '@type': 'DefinedTerm', name: i.termino, description: i.definicion })),
+    });
+  }
+
+  for (const d of (bloques || []).filter(b => b?.t === 'diagrama' && (b as any).url) as Extract<Bloque, { t: 'diagrama' }>[]) {
+    out.push({ '@context': 'https://schema.org', '@type': 'ImageObject', contentUrl: d.url, url: d.url, name: d.titulo, caption: d.alt || d.titulo, width: d.ancho || 1200, height: d.alto || 800 });
+  }
+
+  for (const v of (bloques || []).filter(b => b?.t === 'video') as Extract<Bloque, { t: 'video' }>[]) {
+    const id = String(v.youtube_id || '').replace(/[^A-Za-z0-9_-]/g, '');
+    if (!id) continue;
+    out.push({
+      '@context': 'https://schema.org', '@type': 'VideoObject',
+      name: v.titulo, description: v.descripcion || v.titulo,
+      thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
+      contentUrl: `https://www.youtube.com/watch?v=${id}`,
+      ...(v.subido_at ? { uploadDate: v.subido_at } : {}),
+      ...(v.duracion_seg ? { duration: `PT${Math.floor(v.duracion_seg / 60)}M${v.duracion_seg % 60}S` } : {}),
     });
   }
 

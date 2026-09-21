@@ -1,5 +1,11 @@
 # El flujo de una página, de la pregunta a la bandeja
 
+> **v2 (21-sep-2026):** el referee ahora juzga 18 criterios (SEO + IA + uso real),
+> hay investigación con harness de agentes, bloques `resumen`/`glosario`/`diagrama`/
+> `imagen`/`video`, CTA a mitad de camino y preview real. La guía completa y
+> replicable está en **`GUIA-CONTENIDO-REPLICABLE.md`**; este archivo describe el
+> esqueleto del flujo.
+
 Cómo llega una página del motor a la bandeja del dueño, y por qué **nada
 llega sin haber pasado por el referee**. Código: `src/lib/demanda/contenido.ts`
 (brief y borrador) y `src/lib/demanda/calidad.ts` (competencia, referee,

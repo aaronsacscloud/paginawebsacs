@@ -34,6 +34,14 @@ function resumenReferee(auditorias: any) {
     fallos: r.fallos || [],
     mejor_que_competencia: !!r.mejor_que_competencia,
     cuando: r.cuando || null,
+    probabilidad_cita: Number(r.probabilidad_cita) || 0,
+    primera_correccion: r.primera_correccion || '',
+    criterios: r.criterios || [],
+    elementos: r.elementos || [],
+    preguntas_ia_cubiertas: r.preguntas_ia_cubiertas || [],
+    preguntas_ia_sin_cubrir: r.preguntas_ia_sin_cubrir || [],
+    video_sugerido: r.video_sugerido || '',
+    necesita_del_dueno: r.necesita_del_dueno || [],
   };
 }
 
@@ -63,6 +71,9 @@ export const GET: APIRoute = async ({ url }) => {
         html: aHtml(data.cuerpo as any),
         palabras: contarPalabras(data.cuerpo as any),
         url: `https://www.sacscloud.com/${data.seccion}/${data.slug}/`,
+        // El preview REAL: la página con su plantilla, portada y cierre por giro.
+        // Solo funciona con la sesión del CRM (misma cookie, mismo dominio).
+        preview: `/${data.seccion}/${data.slug}/?borrador=1`,
         referee: resumenReferee(data.auditorias),
         portada: (data.brief as any)?.portada || null,
         giro: giroDe(data.brief),

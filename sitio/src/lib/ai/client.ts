@@ -112,7 +112,15 @@ export const anthropic = new Proxy(anthropicRaw, {
           // Fusible abierto: se falla aquí, sin gastar la llamada ni la espera.
           if (Date.now() < sinSaldoHasta) throw new Error(ERROR_SIN_SALDO);
           try {
-            const r: any = await (fn as any).apply(mTarget, args);
+            /* Salidas largas (una guía de 2,500 palabras en JSON son ~25k
+               tokens) exigen streaming: el SDK rechaza `create` con
+               «Streaming is required for operations that may take longer than
+               10 minutes». Se abre el stream y se espera el mensaje final: para
+               quien llama es la misma respuesta. */
+            const largo = arg0 && typeof arg0 === 'object' && Number((arg0 as any).max_tokens) > 8000;
+            const r: any = largo
+              ? await (mTarget as any).stream(arg0).finalMessage()
+              : await (fn as any).apply(mTarget, args);
             registrarUso({ modelo, usage: r?.usage, ok: true, ms: Date.now() - t0, desde });
             return r;
           } catch (e: any) {
