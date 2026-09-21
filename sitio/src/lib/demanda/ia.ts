@@ -48,6 +48,8 @@ const PRECIOS: Record<string, { in: number; out: number }> = {
   'claude-opus-5': { in: 5, out: 25 },
   'gemini-2.5-flash': { in: 0.30, out: 2.50 },
   'gemini-2.5-pro': { in: 1.25, out: 10 },
+  'gemini-3.1-pro-preview': { in: 2, out: 12 },   // aproximado (21-sep-2026): ajustar cuando Google publique la tarifa
+  'gemini-3.5-flash': { in: 0.30, out: 2.50 },   // aproximado
   'gemini-flash-lite-latest': { in: 0.10, out: 0.40 },
   'gpt-5': { in: 1.25, out: 10 },
   'gpt-5-pro': { in: 15, out: 120 },

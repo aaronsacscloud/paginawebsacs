@@ -383,6 +383,12 @@ export function comprobacionesDuras(p: { titulo: string; meta_desc: string; h1: 
     if (!niega) f.push('el brief avisó de algo que no podemos afirmar y la página no lo aclara');
   }
 
+  // ── Marcadores sin resolver ──
+  // «Descarga la plantilla aquí: [ENLACE]» pasó el referee de novias; un
+  // especialista lo vio después. Ningún corchete-marcador llega a la bandeja.
+  const marcador = plano.match(/\[(ENLACE|URL|LINK|TODO|PENDIENTE|INSERTAR[^\]]*|CAPTURA[^\]]*)\]|lorem ipsum/i);
+  if (marcador) f.push(`marcador sin resolver en el texto: «${marcador[0]}»`);
+
   // ── Cortada ──
   const ultimo = cuerpo[cuerpo.length - 1];
   if (ultimo && ultimo.t !== 'cta') f.push(`la página termina en un bloque «${ultimo.t}», no en la cta: parece cortada`);
@@ -569,7 +575,7 @@ ${aMarkdown(cuerpo).slice(0, 26000)}`;
 
   const v = r.datos;
   // Las duras mandan: si el modelo dijo «pasa» pero hay un precio inventado, no pasa.
-  const graves = duras.filter(d => /precio|no existe|no lo aclara|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|automatismo|ruta cruda|reparte módulos/.test(d));
+  const graves = duras.filter(d => /precio|no existe|no lo aclara|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|automatismo|ruta cruda|reparte módulos|marcador sin resolver/.test(d));
   if (graves.length) { v.pasa = false; v.fallos = [...new Set([...graves, ...v.fallos])]; }
   return { ok: true, veredicto: v, duras, costo: costoComp + (r.costo_usd || 0) };
 }
