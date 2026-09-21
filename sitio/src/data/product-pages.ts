@@ -586,7 +586,7 @@ export const pageContent: Record<string, any> = {
         "title": "Códigos que se queman al usarse.",
         "description": "Un cliente, un uso. Ideal para campañas de reactivación, influencers o email marketing. Sacs bloquea el código cuando ya se usó — no más cupones circulando sin control.",
         "image": "/images/promo-codigos.webp",
-        "imageAlt": "Clienta mostrando código de promoción en celular en tienda",
+        "imageAlt": "Cliente mostrando código de promoción en celular en tienda",
         "link": null,
         "featured": true,
         "variant": "promo-code",
@@ -609,7 +609,7 @@ export const pageContent: Record<string, any> = {
         "title": "La promo te da puntos, no solo descuento.",
         "description": "Gasta $500, llévate 200 puntos extra. Promos que alimentan tu programa de lealtad y traen al cliente de vuelta — no solo bajan el ticket de hoy.",
         "image": "/images/promo-lealtad.webp",
-        "imageAlt": "Clienta y vendedora en boutique de lujo aplicando promo que abona puntos al programa de lealtad",
+        "imageAlt": "Cliente y vendedora en boutique de lujo aplicando promo que abona puntos al programa de lealtad",
         "link": {
           "label": "Ver clientes y lealtad",
           "href": "/producto/clientes-y-crm"

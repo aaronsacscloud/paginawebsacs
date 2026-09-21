@@ -788,7 +788,7 @@ export const navLinks: NavLink[] = [
         description: 'Quien vuelve cada temporada',
         href: '/producto/clientes-y-crm',
         items: [
-          { label: 'Clientas y CRM', href: '/producto/clientes-y-crm' },
+          { label: 'Clientes y CRM', href: '/producto/clientes-y-crm' },
           { label: 'Monedero y lealtad', href: '/producto/programa-de-lealtad' },
           { label: 'Portal de clientes', href: '/producto/portal-de-clientes' },
           { label: 'Tarjetas de regalo', href: '/producto/tarjetas-de-regalo' },
@@ -847,7 +847,7 @@ export const footerLinks = {
     { label: 'Sell-through, ABC y reportes', href: '/producto/reportes-y-analitica' },
   ],
   fideliza: [
-    { label: 'Clientas y CRM', href: '/producto/clientes-y-crm' },
+    { label: 'Clientes y CRM', href: '/producto/clientes-y-crm' },
     { label: 'Monedero y lealtad', href: '/producto/programa-de-lealtad' },
     { label: 'Portal de clientes', href: '/producto/portal-de-clientes' },
     { label: 'Tarjetas de regalo', href: '/producto/tarjetas-de-regalo' },

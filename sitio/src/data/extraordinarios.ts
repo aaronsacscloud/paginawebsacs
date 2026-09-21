@@ -42,7 +42,7 @@ export const extraordinarios: ModuloExtraordinario[] = [
     ],
     precio: 'Desde $19,900 por tienda/año',
     imagen: '/images/extraordinarios/probador.webp',
-    alt: 'Clienta frente a una pantalla vertical en una boutique, viéndose con un vestido de otro color',
+    alt: 'Cliente frente a una pantalla vertical en una boutique, viéndose con un vestido de otro color',
     color: '#7C3AED',
     color2: '#C026D3',
     tinta: '#F5F3FF',

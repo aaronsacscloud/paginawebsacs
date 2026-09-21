@@ -321,7 +321,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Asesora de WhatsApp · en vivo</p>
       <div class="mk-chat">
-        <div class="mk-burb mk-burb-cli"><div class="mk-rot">Clienta</div>Hola, vi el vestido verde en su historia. ¿Lo tienen en chica?</div>
+        <div class="mk-burb mk-burb-cli"><div class="mk-rot">Cliente</div>Hola, vi el vestido verde en su historia. ¿Lo tienen en chica?</div>
         <div class="mk-burb mk-burb-ia"><div class="mk-rot">Agente de IA</div><span class="mk-txt-ia">Sí, nos queda una en chica. Está en Satélite y ya te la aparté aquí en Centro</span><span class="mk-teclea"></span></div>
       </div>
       <div class="mk-accion" style="margin-top:10px;">
