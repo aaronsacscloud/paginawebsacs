@@ -107,13 +107,6 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   const [cargando, setCargando] = useState(true);
   const [elegida, setElegida] = useState<Lista | null>(null);
   const [tel, setTel] = useState<{ ok: boolean; faltantes: string[] } | null>(null);
-  /* A qué hora contesta ESTA gente, medido de tus propias llamadas. Llamar a la
-     hora buena es lo más barato que existe para subir la contactabilidad: no
-     cuesta una función nueva, cuesta mirar el reloj antes de empezar.
-     Sale del MISMO sitio que el tablero (`/informe`) y no de una segunda cuenta
-     en el endpoint de la lista: dos pantallas preguntando lo mismo a dos sitios
-     distintos terminan contradiciéndose. */
-  const [horas, setHoras] = useState<any[]>([]);
   const [verSesion, setVerSesion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,12 +124,9 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
     fetch('/api/crm/telefonia/marcador?lista=1', { cache: 'no-store' })
       .then(r => r.json()).then(j => { if (vivo) setTel({ ok: !!j.telefonia, faltantes: j.faltantes || [] }); })
       .catch(() => {});
-    /* De `/informe` ya sólo se usa UNA cosa: a qué hora contesta esta gente.
-       El resto de ese endpoint —las seis cifras de treinta días— dejó de
-       pintarse aquí el 21-sep-2026; el endpoint sigue vivo porque de él come
-       Reportes. */
-    fetch('/api/crm/telefonia/informe?dias=30', { cache: 'no-store' })
-      .then(r => r.json()).then(j => { if (vivo && !j?.error) setHoras(j.horas || []); }).catch(() => {});
+    /* Ya no se pide `/informe`: lo último que quedaba de él aquí era la línea
+       de «a qué hora contestan», que el dueño quitó por saturar. Una petición
+       menos en la carga de esta pantalla. */
     return () => { vivo = false; };
   }, []);
 
@@ -170,40 +160,32 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   return (
     <div style={{ ...WRAP, ...(esMovil ? { padding: '10px 12px' } : { paddingTop: 22 }) }}>
       <style>{CSS_CHISPAS + CSS_SELLO}</style>
-      <div className="chispas-cab" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-        <Chispas />
-        <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes <Sello>La voz que las enciende</Sello></h1>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', margin: '0 0 18px' }}>
-        <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55, flex: '1 1 380px' }}>
-          Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
-          llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
-          {/* ══ LA HORA A LA QUE SÍ CONTESTAN ═══════════════════════════════
-              Medido de tus propias llamadas de los últimos tres meses, no de un
-              estudio de otro país. Es lo más barato que hay para subir la
-              contactabilidad: no cuesta una función nueva, cuesta mirar el
-              reloj antes de empezar. Se calla si no hay suficientes llamadas
-              para que el porcentaje signifique algo. */}
-          {horas.length > 0 && (
-            <span style={{ display: 'block', marginTop: 8, fontSize: 12.5, color: '#5B4BD6', fontWeight: 700 }}>
-              A esta gente le contestan más de {horas[0].franja.replace('-', ' a ')} h
-              ({horas[0].tasa}% de {horas[0].total} llamadas)
-              {horas.length > 1 && horas[horas.length - 1].tasa < horas[0].tasa && (
-                <span style={{ color: '#9a6a10', fontWeight: 600 }}> · la peor es de {horas[horas.length - 1].franja.replace('-', ' a ')} h ({horas[horas.length - 1].tasa}%)</span>
-              )}
-            </span>
-          )}
-        </p>
-        {/* EL BOTÓN, NO UNA TARJETA MÁS. Como sexto recuadro de la fila se leía
-            igual que las cinco listas fijas —o sea, como una lista más— cuando
-            en realidad es la ACCIÓN de la pantalla. Arriba y en morado sólido:
-            uno por pantalla, la regla de la casa. */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-          {/* ══ LAS GRABACIONES, EN SU PROPIA PUERTA (19-sep-2026) ══════════
-              El audio existía y no se podía alcanzar: sólo salía desde la
-              tarjeta de la llamada que tenías delante. El dueño lo quiere para
-              clonar su voz con su pitch en ElevenLabs, y para eso hace falta
-              elegir VARIAS grabaciones buenas de días distintos. */}
+      {/* ── EL ENCABEZADO: TÍTULO A LA IZQUIERDA, ACCIONES A LA DERECHA ──────
+          Decisión del dueño (21-sep-2026), dos cosas de la misma línea:
+
+          · «esto ponlo bien arriba a la derecha» (los botones). Estaban debajo
+            del párrafo, a la altura de su última línea: en una pantalla ancha
+            el ojo tenía que bajar para encontrar la acción principal. Arriba,
+            en el renglón del título, es donde se buscan.
+          · «quita eso, lo satura» — la línea de «a esta gente le contestan más
+            de 13 a 15 h». Era un dato medido de sus propias llamadas, pero en
+            morado y negritas debajo del párrafo competía con el título y con
+            los botones. El cálculo sigue vivo en `/api/crm/telefonia/informe`,
+            que es de donde come Reportes; sólo deja de gritar aquí. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
+        <div style={{ flex: '1 1 380px', minWidth: 0 }}>
+          <div className="chispas-cab" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+            <Chispas />
+            <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes <Sello>La voz que las enciende</Sello></h1>
+          </div>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55 }}>
+            Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
+            llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
+          </p>
+        </div>
+        {/* EL BOTÓN, NO UNA TARJETA MÁS: uno por pantalla, en morado sólido, y
+            arriba del todo. */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', marginLeft: 'auto' }}>
           <button onClick={() => setVerGrabaciones(true)}
             style={{ border: `1.5px solid ${P.violeta}`, borderRadius: 11, padding: '10px 16px', fontSize: 13.5, fontWeight: 700,
               fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: P.violetaTinta }}>

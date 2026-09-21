@@ -103,6 +103,10 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [tab, setTab] = useState<'reuniones' | 'seguimientos' | 'oportunidades' | 'listas'>('reuniones');
+  /* Los seguimientos vencidos NO se mezclan con los de hoy: la pestaña es para
+     decidir a quién le toca ahora. Pero tampoco se esconden — un botón los
+     trae, con su número siempre a la vista. */
+  const [verVencidos, setVerVencidos] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -147,7 +151,23 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
           : <span style={pill(P.ambarAgua, P.ambar)}>⚠️ No le va a sonar a nadie</span>}</td>
       ),
     },
-    { key: 'estado', label: 'Estado', ftype: 'select', val: (r: any) => r.estado, render: (r: any) => <td style={{ ...TD, color: P.gris }}>{r.estado}</td> },
+    {
+      key: 'estado', label: 'Estado', ftype: 'select', val: (r: any) => r.estado,
+      render: (r: any) => (
+        <td style={{ ...TD, color: P.gris }}>
+          {r.estado}
+          {/* «A mano» = se habló por la cabina y la cita se agendó aparte.
+              Cuenta igual, pero si empiezan a salir muchas es señal de que el
+              cierre con IA está fallando — que es justo lo que pasó con la
+              demo de Maela Sport. */}
+          {r.atribucion === 'a_mano' && (
+            <div style={{ marginTop: 3 }}>
+              <span title="Se habló por la cabina y la cita se agendó a mano" style={pill(P.agua, P.violetaTinta)}>agendada a mano</span>
+            </div>
+          )}
+        </td>
+      ),
+    },
   ], []);
 
   const colsSeguimientos: ColDef[] = useMemo(() => [
@@ -271,7 +291,7 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
   const c = d.conteos;
   const TABS = [
     { id: 'reuniones' as const, label: 'Reuniones', n: c.reuniones, pie: 'Las citas que salieron de llamar y todavía no pasan.', alerta: 0 },
-    { id: 'seguimientos' as const, label: 'Seguimientos', n: c.seguimientos, pie: 'Lo que prometiste al hablar y sigue sin hacerse.', alerta: c.seguimientos_vencidos },
+    { id: 'seguimientos' as const, label: 'Seguimientos', n: c.seguimientos, pie: 'Lo que prometiste al hablar, de hoy y de los días que vienen.', alerta: c.seguimientos_vencidos },
     { id: 'oportunidades' as const, label: 'Oportunidades', n: c.oportunidades, pie: 'Quién avanzó después de que le llamaras, y qué dijo.', alerta: 0 },
     { id: 'listas' as const, label: 'Listas', n: c.listas, pie: 'Cada jornada y qué le falta por marcar.', alerta: c.listas_reanudables },
   ];
@@ -320,8 +340,19 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
           onRowClick={(r: any) => irAlContacto(r.contact_id)}
           emptyMsg="Ninguna cita próxima salió de una llamada. Las que agendes desde la cabina aparecen aquí." />
       )}
+      {tab === 'seguimientos' && c.seguimientos_vencidos > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: verVencidos ? P.rojoAgua : '#fff', border: `1px solid ${verVencidos ? '#f0c4bd' : '#e6e4ec'}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10 }}>
+          <span style={{ fontSize: 12.5, color: verVencidos ? P.rojo : '#4B5563', flex: 1, minWidth: 180 }}>
+            <b>{c.seguimientos_vencidos}</b> {c.seguimientos_vencidos === 1 ? 'se pasó de fecha' : 'se pasaron de fecha'} y {c.seguimientos_vencidos === 1 ? 'sigue' : 'siguen'} sin hacerse.
+          </span>
+          <button onClick={() => setVerVencidos(v => !v)}
+            style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#fff', border: `1.5px solid ${verVencidos ? P.rojo : P.violeta}`, color: verVencidos ? P.rojo : P.violetaTinta, borderRadius: 8, padding: '5px 11px' }}>
+            {verVencidos ? 'Ver solo lo de hoy' : 'Ver las vencidas'}
+          </button>
+        </div>
+      )}
       {tab === 'seguimientos' && (
-        <TablaEnterprise tabla="tel_seguimientos" data={d.seguimientos} cols={colsSeguimientos} vistasBase={VISTA_UNICA} sinVistas
+        <TablaEnterprise tabla="tel_seguimientos" data={verVencidos ? d.vencidos : d.seguimientos} cols={colsSeguimientos} vistasBase={VISTA_UNICA} sinVistas
           searchText={(r: any) => `${r.quien || ''} ${r.que} ${r.duenio}`}
           searchPlaceholder="Buscar por nombre o por lo prometido…" minWidth={860}
           mobileCard={(r: any) => (
@@ -333,7 +364,7 @@ export default function TableroLlamadas({ onAbrirSesion }: Props) {
               </>} />
           )}
           onRowClick={(r: any) => irAlContacto(r.contact_id)}
-          emptyMsg="No debes ninguna llamada de vuelta. Lo que prometas al colgar aparece aquí." />
+          emptyMsg={verVencidos ? 'Nada vencido.' : 'Nada que devolver hoy ni en los próximos días. Lo que prometas al colgar aparece aquí.'} />
       )}
       {tab === 'oportunidades' && (
         /* `rowKey` explícito: estas filas son de CONTACTOS y no traen `id`

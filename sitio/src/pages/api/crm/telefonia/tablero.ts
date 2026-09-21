@@ -49,14 +49,20 @@ export const GET: APIRoute = async ({ request }) => {
   const [{ data: equipo }, { data: citas }, { data: tareas }, { data: hablados }, { data: sesiones }] = await Promise.all([
     supabase.from('team_members').select('id, nombre').limit(80),
 
-    /* ① REUNIONES · las que NACIERON de una llamada y todavía no pasan.
-       `origen = 'llamada'` lo pone el cierre con IA al agendar desde la cabina:
-       es la marca que separa «salió de llamar» de «se agendó desde la web». */
+    /* ① REUNIONES · las que salieron de llamar y todavía no pasan.
+       ⚠️ NO basta con `origen = 'llamada'`. Esa marca la pone el cierre con IA
+       al agendar solo desde la cabina, y se pierde justo en el caso que más
+       importa: la demo de Maela Sport salió de una llamada de 19 minutos, pero
+       como la minuta falló se agendó A MANO desde la página pública y quedó
+       como `origen = 'publico'`. En la pantalla no aparecía — la cita más
+       trabajada del día, invisible en la pestaña que existe para verlas.
+       Se traen TODAS las próximas y se filtra después por evidencia: quién
+       habló de verdad con la cabina antes de que se agendara. */
     supabase.from('bookings')
-      .select('id, fecha, hora_inicio, invitee_nombre, invitee_empresa, invitee_whatsapp, estado, google_event_id, host_id, contact_id, asunto, event_types(nombre)')
-      .eq('origen', 'llamada').gte('fecha', hoy)
+      .select('id, fecha, hora_inicio, invitee_nombre, invitee_empresa, invitee_whatsapp, estado, google_event_id, host_id, contact_id, asunto, origen, created_at, event_types(nombre)')
+      .gte('fecha', hoy)
       .not('estado', 'in', '("cancelada","no_asistio","reagendada")')
-      .order('fecha').order('hora_inicio').limit(200),
+      .order('fecha').order('hora_inicio').limit(400),
 
     /* ② SEGUIMIENTOS · lo prometido al hablar y todavía sin hacer.
        Entran TAMBIÉN las vencidas, y salen primero. Una pestaña de «próximas»
@@ -66,13 +72,20 @@ export const GET: APIRoute = async ({ request }) => {
     supabase.from('ti_tareas')
       .select('id, tipo, vence_at, estado, owner_id, contact_id, payload')
       .eq('estado', 'pendiente').eq('payload->>de_llamada', 'true')
-      .order('vence_at').limit(200),
+      .order('vence_at').limit(300),
 
-    /* ③ OPORTUNIDADES · con quién se HABLÓ de verdad (`en_linea_at`), no a
-       quién se marcó. La etapa la filtramos después, ya con el contacto. */
+    /* ③ CON QUIÉN SE HABLÓ DE VERDAD. Alimenta a la vez las oportunidades y la
+       atribución de las reuniones.
+       ⚠️ `en_linea_at` NO alcanza: se pone al descolgar. Con esa regla entraba
+       tetetlán | Concept store, que fue una llamada de SIETE SEGUNDOS —colgó—,
+       y el dueño lo cazó: «sí es una oportunidad, pero no salió del sistema de
+       llamadas inteligentes». Se usa el mismo criterio que el resto del CRM
+       (`informe.ts`): más de 20 segundos y que no haya contestado una máquina.
+       Dos definiciones de «contestó» darían dos pantallas que se desmienten. */
     supabase.from('tel_sesion_items')
-      .select('contact_id, en_linea_at, duracion_seg, nota, nombre, empresa, telefono')
+      .select('contact_id, en_linea_at, duracion_seg, nota, nombre, empresa, telefono, answered_by')
       .not('contact_id', 'is', null).not('en_linea_at', 'is', null)
+      .gt('duracion_seg', 20)
       .gte('en_linea_at', desde).order('en_linea_at', { ascending: false }).limit(1000),
 
     /* ④ LISTAS · las jornadas, con lo que falta de cada una. */
@@ -83,8 +96,32 @@ export const GET: APIRoute = async ({ request }) => {
 
   const nombreDe = (id?: string | null) => (equipo || []).find(e => e.id === id)?.nombre || null;
 
+  /* Con quién se habló de verdad, y CUÁNDO fue la primera vez. La fecha importa
+     para las reuniones: una cita agendada ANTES de la llamada no salió de la
+     llamada, salió de otra cosa. */
+  const maquina = (x: any) => /^machine_/.test(String(x?.answered_by || ''));
+  const hablo = new Map<string, string>();   // contact_id → primera conversación
+  for (const i of hablados || []) {
+    if (maquina(i)) continue;
+    const k = String(i.contact_id);
+    const t = String(i.en_linea_at);
+    if (!hablo.has(k) || t < hablo.get(k)!) hablo.set(k, t);
+  }
+
   // ── ① Reuniones ───────────────────────────────────────────────────────────
-  const reuniones = (citas || []).map((b: any) => ({
+  const reuniones = (citas || [])
+    /* LA ATRIBUCIÓN, POR EVIDENCIA Y NO POR UNA MARCA. Entra si el sistema la
+       agendó (`origen = 'llamada'`) O si con esa persona se habló por la cabina
+       ANTES de que la cita existiera. Lo segundo es lo que rescata la demo de
+       Maela Sport, agendada a mano porque la minuta falló. */
+    .map((b: any) => {
+      const t = hablo.get(String(b.contact_id || ''));
+      const porLlamada = b.origen === 'llamada';
+      const trasLlamada = !!t && !!b.created_at && t <= String(b.created_at);
+      return { b, porLlamada, trasLlamada };
+    })
+    .filter(x => x.porLlamada || x.trasLlamada)
+    .map(({ b, porLlamada }: any) => ({
     id: b.id,
     fecha: b.fecha,
     hora: String(b.hora_inicio || '').slice(0, 5),
@@ -99,10 +136,21 @@ export const GET: APIRoute = async ({ request }) => {
     en_google: !!b.google_event_id,
     contact_id: b.contact_id || null,
     es_hoy: b.fecha === hoy,
+    /* De dónde salió, dicho en pantalla: una agendada a mano después de hablar
+       cuenta igual, pero no es lo mismo — y si aparecen muchas «a mano» es que
+       el cierre con IA está fallando, que es justo lo que pasó esta semana. */
+    atribucion: porLlamada ? 'automatica' : 'a_mano',
   }));
 
-  // ── ② Seguimientos ────────────────────────────────────────────────────────
-  const seguimientos = (tareas || []).map((t: any) => {
+  /* ── ② SEGUIMIENTOS · SÓLO LO ACCIONABLE ─────────────────────────────────
+     Regla del dueño (21-sep-2026): «las de llamadas de seguimiento solo debe
+     mostrarme las que son del mismo día o los días siguientes, para ver
+     únicamente info accionable».
+     Lo vencido NO se borra —sería perderlo—: sale del listado y se cuenta
+     aparte, para poder mirarlo cuando uno quiera y no cuando estorba. La
+     pantalla lo enseña con un botón, no escondido. */
+  const finVentana = new Date(Date.now() + 7 * 86400e3).toISOString();
+  const todas = (tareas || []).map((t: any) => {
     const p = t.payload || {};
     return {
       id: t.id,
@@ -116,6 +164,8 @@ export const GET: APIRoute = async ({ request }) => {
       contact_id: t.contact_id || null,
     };
   });
+  const seguimientos = todas.filter(s => !s.vencida && String(s.cuando || '') <= finVentana);
+  const vencidos = todas.filter(s => s.vencida);
 
   // ── ③ Oportunidades ───────────────────────────────────────────────────────
   /* Un contacto puede haber hablado tres veces: nos quedamos con la ÚLTIMA
@@ -213,13 +263,13 @@ export const GET: APIRoute = async ({ request }) => {
 
   return json({
     ok: true, hoy,
-    reuniones, seguimientos, oportunidades, listas,
+    reuniones, seguimientos, vencidos, oportunidades, listas,
     /* Los contadores de las pestañas salen de aquí y no de `array.length` en
        el navegador, para que el número y la tabla no se puedan contradecir. */
     conteos: {
       reuniones: reuniones.length,
       seguimientos: seguimientos.length,
-      seguimientos_vencidos: seguimientos.filter(s => s.vencida).length,
+      seguimientos_vencidos: vencidos.length,
       oportunidades: oportunidades.length,
       listas: listas.length,
       listas_reanudables: listas.filter(l => l.reanudable).length,
