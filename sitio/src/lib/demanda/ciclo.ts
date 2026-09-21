@@ -66,6 +66,7 @@ const FASES: { tipo: string; prioridad: number; solo?: TipoCiclo[] }[] = [
      lo que le falta en de_contenido_pendientes; ya publicada, «autoridad» mide
      y propone cada semana, y «ángulos» saca las piezas hermanas del tema. */
   { tipo: 'contenido.especialista', prioridad: 47 },
+  { tipo: 'contenido.ejecutar',     prioridad: 46 },   // lo que es del motor se hace solo
   { tipo: 'contenido.autoridad',    prioridad: 46 },
   { tipo: 'contenido.angulos',      prioridad: 45 },
   { tipo: 'metricas.calcular',     prioridad: 52 },

@@ -190,6 +190,12 @@ ${aMarkdown(cuerpo).slice(0, 20000)}`;
 
 async function guardarPendientes(contenidoId: string, origen: string, lista: any[]) {
   let n = 0;
+  /* Lo que el especialista YA NO ve en esta revisión se da por hecho: la lista
+     vieja se quedaba abierta aunque la página ya no tuviera el problema
+     (el «[ENLACE] roto» de novias seguía pendiente tres versiones después). */
+  const clavesNuevas = new Set((lista || []).filter(p => p?.clave).map(p => `${origen}:${String(p.clave).toLowerCase().replace(/[^a-z0-9_]+/g, '_').slice(0, 60)}`));
+  const { data: abiertos } = await supabase.from('de_contenido_pendientes').select('id, clave').eq('contenido_id', contenidoId).eq('origen', origen).eq('estado', 'pendiente');
+  for (const a of abiertos || []) if (!clavesNuevas.has(a.clave)) await supabase.from('de_contenido_pendientes').update({ estado: 'hecho', hecho_at: new Date().toISOString(), impacto: 'cerrado solo: el especialista ya no lo ve' }).eq('id', a.id);
   for (const p of lista || []) {
     if (!p?.clave || !p?.titulo) continue;
     const clave = `${origen}:${String(p.clave).toLowerCase().replace(/[^a-z0-9_]+/g, '_').slice(0, 60)}`;
@@ -253,6 +259,83 @@ registrar('contenido.especialista', async (a): Promise<ResultadoHandler> => {
     hechas++; nuevos += r.nuevos;
   }
   return { ok: fallos.length === 0, resumen: `${hechas} pieza(s) revisadas · ${nuevos} pendiente(s) nuevo(s)${fallos.length ? ` · ${fallos.length} fallaron` : ''}`, datos: { hechas, nuevos, fallos }, costo_usd: costo };
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1b · EJECUTAR lo que es del motor: parche → referee → republicar
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Un pendiente «motor» se aplica como corrección por parches sobre la pieza,
+ * se vuelve a juzgar y, si sigue pasando, se republica como versión nueva. Si
+ * el parche no aplica a ESTA página (p. ej. «enlazar desde /producto/…» es
+ * cambiar otra página) el modelo no devuelve parches y el pendiente pasa al
+ * dueño con la nota. Si el referee lo tumba, se revierte el cuerpo.
+ */
+export async function ejecutarPendiente(pendienteId: string): Promise<{ ok: boolean; resultado: string; costo: number }> {
+  const { data: p } = await supabase.from('de_contenido_pendientes').select('*').eq('id', pendienteId).maybeSingle();
+  if (!p) return { ok: false, resultado: 'no existe', costo: 0 };
+  if (p.estado !== 'pendiente') return { ok: true, resultado: `ya está ${p.estado}`, costo: 0 };
+  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, estado, cuerpo, titulo, h1, meta_desc, brief, version').eq('id', p.contenido_id).maybeSingle();
+  if (!c) return { ok: false, resultado: 'la pieza no existe', costo: 0 };
+  if (!['aprobado', 'publicado'].includes(c.estado)) return { ok: false, resultado: `la pieza está en «${c.estado}»`, costo: 0 };
+
+  const { aplicarParches } = await import('./contenido');
+  const { juzgar } = await import('./calidad');
+  const respaldo = { cuerpo: c.cuerpo, titulo: c.titulo, h1: c.h1, meta_desc: c.meta_desc, estado: c.estado };
+  const marca = async (estado: string, nota: string) => supabase.from('de_contenido_pendientes').update({ estado, hecho_at: estado === 'pendiente' ? null : new Date().toISOString(), impacto: nota, ...(estado === 'pendiente' ? { quien: 'dueno' } : {}) }).eq('id', p.id);
+
+  // 1) el pendiente como corrección
+  await supabase.from('de_contenido').update({ brief: { ...(c.brief as any), correcciones: [`${p.titulo}: ${p.detalle}`] } }).eq('id', c.id);
+  const r = await aplicarParches(c.id);
+  let costo = r.costo;
+  if (!r.ok || !r.parches) {
+    await supabase.from('de_contenido').update({ estado: respaldo.estado, brief: { ...(c.brief as any), correcciones: undefined } }).eq('id', c.id);
+    await marca('pendiente', `el motor no pudo aplicarlo sobre esta página (${r.error || 'sin parches: probablemente hay que cambiar OTRA página o hace falta una persona'})`);
+    return { ok: true, resultado: 'no aplica en esta página: pasó al dueño', costo };
+  }
+
+  // 2) vuelve a juzgar: si el cambio rompió algo, se revierte
+  const j = await juzgar(c.id);
+  costo += j.costo;
+  const pasa = j.ok && j.veredicto?.pasa;
+  if (!pasa) {
+    await supabase.from('de_contenido').update({ ...respaldo }).eq('id', c.id);
+    await marca('pendiente', `aplicado y revertido: el referee lo tumbó (${(j.veredicto?.fallos || [j.error]).slice(0, 2).join(' | ').slice(0, 200)})`);
+    return { ok: true, resultado: 'aplicado pero el referee lo tumbó: revertido', costo };
+  }
+
+  // 3) se queda; si estaba publicada, versión nueva en línea
+  let republicada = '';
+  if (respaldo.estado === 'publicado') {
+    const { publicar } = await import('./publicar');
+    try { const pub = await publicar(c.id, `pendiente del motor aplicado: ${p.titulo}`); republicada = pub.simulado ? ` (simulado: ${pub.simulado})` : ` · versión ${pub.version} en línea`; }
+    catch (e: any) { await supabase.from('de_contenido').update({ ...respaldo }).eq('id', c.id); await marca('pendiente', `no se pudo republicar: ${String(e?.message || e).slice(0, 160)}`); return { ok: false, resultado: 'no se pudo republicar; revertido', costo }; }
+  } else {
+    await supabase.from('de_contenido').update({ estado: respaldo.estado, auditorias: { referee: { ...j.veredicto, duras: j.duras, cuando: new Date().toISOString() } } }).eq('id', c.id);
+  }
+  await marca('hecho', `hecho por el motor: ${r.parches} parche(s), referee ${Object.values(j.veredicto!.puntajes).map(Number).reduce((a, b) => a + b, 0) / 6}${republicada}`);
+  return { ok: true, resultado: `hecho: ${r.parches} parche(s)${republicada}`, costo };
+}
+
+registrar('contenido.ejecutar', async (a): Promise<ResultadoHandler> => {
+  const limite = Number(a.payload?.limite) || 3;
+  let ids: string[] = a.payload?.pendiente_id ? [a.payload.pendiente_id] : [];
+  if (!ids.length) {
+    let q = supabase.from('de_contenido_pendientes').select('id, contenido_id').eq('estado', 'pendiente').eq('quien', 'motor').order('prioridad').order('created_at').limit(limite * 3);
+    if (a.payload?.contenido_id) q = q.eq('contenido_id', a.payload.contenido_id);
+    const { data } = await q;
+    // Uno por pieza por corrida: dos parches seguidos sobre la misma página se pisan.
+    const vistas = new Set<string>();
+    for (const p of data || []) { if (vistas.has(p.contenido_id)) continue; vistas.add(p.contenido_id); ids.push(p.id); if (ids.length >= limite) break; }
+  }
+  if (!ids.length) return { ok: true, resumen: 'no hay pendientes del motor' };
+  let hechos = 0, costo = 0; const notas: string[] = [];
+  for (const id of ids) {
+    const r = await ejecutarPendiente(id);
+    costo += r.costo; if (r.ok && /^hecho/.test(r.resultado)) hechos++;
+    notas.push(`${id.slice(0, 8)}: ${r.resultado}`);
+  }
+  return { ok: true, resumen: `${hechos}/${ids.length} pendiente(s) del motor hechos`, datos: { notas }, costo_usd: costo };
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

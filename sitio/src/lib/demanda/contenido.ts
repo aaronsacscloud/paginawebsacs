@@ -408,7 +408,7 @@ const ESQUEMA_PARCHES = {
  * resto de la página no se toca y las imágenes ya generadas se quedan.
  */
 export async function aplicarParches(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number; parches?: number }> {
-  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, brief, cuerpo, titulo, h1, meta_desc').eq('id', contenidoId).maybeSingle();
+  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, brief, cuerpo, titulo, h1, meta_desc, estado').eq('id', contenidoId).maybeSingle();
   if (!c) return { ok: false, error: 'no existe', costo: 0 };
   const b = c.brief as any as Brief;
   const cuerpo = ((c.cuerpo || []) as Bloque[]).slice();
@@ -448,7 +448,8 @@ Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_i
     ...(datos.titulo ? { titulo: String(datos.titulo).slice(0, 80) } : {}),
     ...(datos.h1 ? { h1: datos.h1 } : {}),
     ...(datos.meta_desc ? { meta_desc: recortar(String(datos.meta_desc), 158) } : {}),
-    cuerpo: partirParrafosLargos(nuevo), estado: 'borrador',
+    // Una pieza publicada/aprobada que se parcha desde Seguimiento conserva su estado.
+    cuerpo: partirParrafosLargos(nuevo), estado: ['publicado', 'aprobado'].includes((c as any).estado) ? (c as any).estado : 'borrador',
     brief: { ...(c.brief as any), correcciones: undefined },
     actualizado_at: new Date().toISOString(),
   }).eq('id', contenidoId);

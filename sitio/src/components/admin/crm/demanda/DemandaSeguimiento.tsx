@@ -54,9 +54,13 @@ export default function DemandaSeguimiento() {
     if (!r.ok) { setAviso(r.error || 'no se pudo'); return; }
     await cargar();
   };
-  const pedir = async (id: string, accion: 'especialista' | 'autoridad' | 'angulos') => {
+  const pedir = async (id: string, accion: 'especialista' | 'autoridad' | 'angulos' | 'ejecutar_todo') => {
     const r = await fetch('/api/crm/demanda/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, accion }) }).then(x => x.json());
-    setAviso(r.ok ? `Encolado: el motor lo corre en minutos (${accion}).` : r.error || 'no se pudo');
+    setAviso(r.ok ? (accion === 'ejecutar_todo' ? 'Encolado: el motor aplica cada pendiente, lo vuelve a juzgar y republica si pasa. Los verás tachados en minutos.' : `Encolado: el motor lo corre en minutos (${accion}).`) : r.error || 'no se pudo');
+  };
+  const hacerConIA = async (p: Pendiente) => {
+    const r = await fetch('/api/crm/demanda/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pendiente_id: p.id, accion: 'ejecutar' }) }).then(x => x.json());
+    setAviso(r.ok ? `Encolado «${p.titulo}»: el motor lo aplica por parches, lo juzga y republica si pasa.` : r.error || 'no se pudo');
   };
 
   if (!piezas || !totales) return <Cargando />;
@@ -153,6 +157,7 @@ export default function DemandaSeguimiento() {
                                 <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                                   {x.estado === 'pendiente' ? (
                                     <>
+                                      <button style={{ ...btn(true), padding: '4px 10px', minHeight: 30, fontSize: 12 }} onClick={() => hacerConIA(x)}>Hacerlo con IA</button>
                                       <button style={{ ...btn(), padding: '4px 10px', minHeight: 30, fontSize: 12, color: P.verdeTinta }} onClick={() => marcar(x, 'hecho')}>Hecho</button>
                                       <button style={{ ...btn(), padding: '4px 10px', minHeight: 30, fontSize: 12, color: P.suave }} onClick={() => marcar(x, 'descartado')}>Descartar</button>
                                     </>
@@ -194,6 +199,7 @@ export default function DemandaSeguimiento() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {p.pendientes.some(x => x.estado === 'pendiente' && x.quien === 'motor') && <button style={btn(true)} onClick={() => pedir(p.id, 'ejecutar_todo')}>Hacer todo lo del motor con IA</button>}
                         <button style={btn()} onClick={() => pedir(p.id, 'especialista')}>Revisar con especialistas ahora</button>
                         {p.estado === 'publicado' && <button style={btn()} onClick={() => pedir(p.id, 'autoridad')}>Medir autoridad ahora</button>}
                         {p.estado === 'publicado' && !p.angulos_generados && <button style={btn()} onClick={() => pedir(p.id, 'angulos')}>Proponer ángulos ahora</button>}
@@ -213,7 +219,8 @@ export default function DemandaSeguimiento() {
             <li><strong>Antes de publicar:</strong> además del referee, dos especialistas (SEO para Google/Bing; IA y agentes para ChatGPT, Perplexity, Gemini, Claude y los AI Overviews) dejan aquí lo que aún falta y a quién le toca.</li>
             <li><strong>Ya publicada:</strong> cada semana se mide su autoridad —indexada, clics, posición, citas en IA, enlaces internos— y el especialista propone qué hacer para ganarla (desde qué páginas enlazarla, qué mención conseguir, si cambiar el título).</li>
             <li><strong>El loop:</strong> de cada pieza publicada salen 3-5 ángulos (comparativa, paso a paso, plantilla, error común, caso) que entran como oportunidades al brief y se vuelven piezas hermanas enlazadas entre sí. Así el sitio se vuelve la referencia del tema, no una página suelta.</li>
-            <li><strong>Lo que dice «te toca»</strong> es lo único que el motor no puede hacer: grabar, subir capturas, conseguir una mención, confirmar un dato. Táchalo cuando esté; lo del motor se tacha solo.</li>
+            <li><strong>«Hacerlo con IA»</strong> aplica ese pendiente por parches sobre la página, la vuelve a pasar por el referee y, si sigue pasando, la republica como versión nueva; si el referee la tumba, se revierte y te lo dice. Lo del motor también se hace solo en el ciclo diario.</li>
+            <li><strong>Lo que dice «te toca»</strong> es lo único que el motor no puede hacer: grabar, conseguir una mención, confirmar un dato. Táchalo cuando esté.</li>
           </ul>
         </Tarjeta>
       </Seccion>

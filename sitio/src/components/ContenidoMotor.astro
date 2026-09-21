@@ -97,8 +97,10 @@ const fecha = (s: string | null) => s
 </article>
 
 <style>
-  .cm { max-width: 760px; margin: 0 auto; padding: var(--space-16) var(--space-6) var(--space-24); }
-  @media (max-width: 640px) { .cm { padding: var(--space-10) var(--space-4) var(--space-16); } }
+  /* El nav es FIJO y no empuja nada: el hueco de arriba lo deja la página
+     (nav + aire), si no el título queda pegado al header. */
+  .cm { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-alto) + var(--space-16)) var(--space-6) var(--space-24); }
+  @media (max-width: 640px) { .cm { padding: calc(var(--nav-alto) + var(--space-10)) var(--space-4) var(--space-16); } }
 
   .cm-previa { margin: 0 0 var(--space-6); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: #FFF4E5; color: #7a5208; border: 1px solid #f3d9a4; font-size: .875rem; }
 

@@ -22,3 +22,4 @@ insert into de_politicas (tipo_accion, nivel, riesgo, requiere_aprobacion, tope_
   ('contenido.autoridad',    2, 'LOW', false, 10, 2, false, 'Para lo publicado: mide indexación, citas en IA, enlaces y tráfico, y propone qué falta para darle autoridad (enlaces internos, menciones, ángulos).'),
   ('contenido.angulos',      2, 'LOW', false, 5,  2, false, 'Para lo publicado: propone 3-5 ángulos derivados (comparativa, paso a paso, plantilla, error común) y los mete como oportunidades para el brief.')
 on conflict (tipo_accion) do update set notas = excluded.notas, tope_dia = excluded.tope_dia, actualizado_at = now();
+insert into de_politicas (tipo_accion, nivel, riesgo, requiere_aprobacion, tope_dia, max_intentos, inmutable, notas) values ('contenido.ejecutar', 3, 'MEDIUM', false, 10, 1, false, 'Aplica pendientes «motor» por parches, re-juzga y republica si pasa; revierte si no.') on conflict (tipo_accion) do update set notas = excluded.notas;

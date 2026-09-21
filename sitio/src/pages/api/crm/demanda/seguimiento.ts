@@ -80,6 +80,14 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true });
   }
 
+  if (b.pendiente_id && b.accion === 'ejecutar') {
+    const r = await encolar({ tipo: 'contenido.ejecutar', clave_idem: `contenido.ejecutar:${b.pendiente_id}`, payload: { pendiente_id: b.pendiente_id, limite: 1 }, prioridad: 65, creada_por: `bandeja:${user.id}`, motivo: 'pedido desde Seguimiento' });
+    return json({ ok: true, encolada: r });
+  }
+  if (b.id && b.accion === 'ejecutar_todo') {
+    const r = await encolar({ tipo: 'contenido.ejecutar', clave_idem: `contenido.ejecutar:pieza:${b.id}:${new Date().toISOString().slice(0, 13)}`, payload: { contenido_id: b.id, limite: 6 }, prioridad: 65, creada_por: `bandeja:${user.id}`, motivo: 'pedido desde Seguimiento' });
+    return json({ ok: true, encolada: r });
+  }
   if (b.id && ['especialista', 'autoridad', 'angulos'].includes(b.accion)) {
     /* Se ENCOLA, no se corre aquí: cada revisión son dos llamadas largas al
        modelo y una API de Vercel no vive tanto. El worker la toma en minutos. */
