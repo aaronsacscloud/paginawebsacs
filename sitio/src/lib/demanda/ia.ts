@@ -296,8 +296,10 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
   const cuerpo: any = {
     model: modelo,
     messages: [{ role: 'system', content: p.sistema }, { role: 'user', content: usuario }],
-    max_completion_tokens: max,
+    // gpt-5 también razona dentro del tope: mismo margen que Anthropic.
+    max_completion_tokens: prov === 'openai' ? (p.pensar === false ? max : Math.min(64000, max * 2 + 4000)) : max,
   };
+  if (prov === 'openai' && p.pensar === false) cuerpo.reasoning_effort = 'low';
   if (p.esquema) cuerpo.response_format = { type: 'json_schema', json_schema: { name: 'respuesta', schema: p.esquema, strict: false } };
   const r = await fetch(`${base}/chat/completions`, {
     method: 'POST', headers: { Authorization: `Bearer ${env(LLAVE[prov])}`, 'Content-Type': 'application/json' },
