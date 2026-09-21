@@ -1062,3 +1062,15 @@ Para descongelar uno: se mueve otra vez arriba, con su fecha.
 
 Sale de la minuta de descubrimiento (cómo opera hoy · qué le duele · qué le
 interesó · qué le mostramos · objeciones · quién decide · siguiente paso).
+
+## 21-sep-2026 · link de consultoría para que el cliente agende solo (PENDIENTE)
+
+> «necesito que en esta sección puedas darme la opción para mandar a los
+> clientes al link de consultoría para que lo puedan agendar y aparezca en mi
+> calendario de lunandreajagmail.com, necesito configurar los horarios de
+> atención y tiene que estar ligado a mi calendario para que no agende en las
+> cosas que ya tengo temas que hacer»
+
+La sección es Reuniones (las tarjetas por tipo). Hay que revisar qué tanto de
+esto ya existe: event_types, la página pública de agenda y la conexión de
+Google Calendar por host_id (ver memoria `crm-agenda-identidad-google`).
