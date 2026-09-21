@@ -88,9 +88,14 @@ export const GET: APIRoute = async ({ request }) => {
       .gt('duracion_seg', 20)
       .gte('en_linea_at', desde).order('en_linea_at', { ascending: false }).limit(1000),
 
-    /* ④ LISTAS · las jornadas, con lo que falta de cada una. */
+    /* ④ LISTAS · las jornadas, con lo que falta de cada una.
+       Las archivadas no salen: son las de prueba que el dueño quiso fuera de la
+       vista (21-sep-2026). Archivadas y no borradas porque guardan ~130
+       llamadas reales de las que cuelgan las minutas, las grabaciones y lo que
+       leen las otras pestañas — ver la migración `jornadas-archivar`. */
     supabase.from('tel_sesiones')
       .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, costo_usd, created_at, iniciada_at, terminada_at, owner_id, pausa_motivo, modo')
+      .is('archivada_at', null)
       .order('created_at', { ascending: false }).limit(40),
   ]);
 

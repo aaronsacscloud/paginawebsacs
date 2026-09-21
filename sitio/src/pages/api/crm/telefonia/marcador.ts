@@ -47,6 +47,10 @@ export const GET: APIRoute = async ({ request, url }) => {
     const { data } = await supabase.from('tel_sesiones')
       .select('id, nombre, estado, total, contestadas, buzon, sin_contestar, porteros, invalidos, segundos_hablados, iniciada_at, terminada_at, created_at, origen, presentacion_nombre, presentacion_motivo, modo')
       .eq('owner_id', user.id).not('origen', 'cs', '{"suelta":true}')
+      // Las archivadas tampoco aquí: si la pestaña de Listas las esconde y la
+      // cabina las sigue ofreciendo, el dueño las ve reaparecer donde menos lo
+      // espera y deja de creerle a las dos pantallas.
+      .is('archivada_at', null)
       .order('created_at', { ascending: false }).limit(30);
     return json({ sesiones: data || [], telefonia: telefoniaConfigurada(), faltantes: telefoniaFaltantes(), identity: identidadDe(user.id), fernanda: vozConfigurada() });
   }
