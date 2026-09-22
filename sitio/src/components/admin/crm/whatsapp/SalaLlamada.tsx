@@ -39,6 +39,7 @@ import { C } from './estilo';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import AccionesLlamada, { type Accion } from './AccionesLlamada';
+import SelectorHorarios from './SelectorHorarios';
 
 type Props = {
   telefono: string;
@@ -161,8 +162,13 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   /* Los horarios REALES, no un «te mando la liga». Se piden al abrir la agenda
      y no al abrir la sala: la mayoría de las llamadas no acaban en cita, y
      traerlos siempre sería pagar una consulta por cada timbrazo. */
-  const verHorarios = async () => {
+  /* El tipo de reunión decide los horarios (22-sep-2026): una discovery de 15
+     min y una demo de 30 no tienen los mismos huecos ni la misma agenda. */
+  const [tipos, setTipos] = useState<any[]>([]);
+  const [tipo, setTipo] = useState<string>(() => { try { return JSON.parse(localStorage.getItem('cabina.tipocita') || '"demo"'); } catch { return 'demo'; } });
+  const verHorarios = async (slug: string = tipo) => {
     setHorarios([]); setMsg('');
+    if (!tipos.length) fetch('/api/scheduling/event-types?activo=true').then(r => r.json()).then(j => setTipos(Array.isArray(j) ? j : [])).catch(() => {});
     /* `available-slots` y NO `availability`: el segundo devuelve la
        CONFIGURACIÓN de tu agenda (horarios semanales y excepciones), no huecos
        libres. Empecé pidiéndole slots y siempre devolvía la lista vacía sin
@@ -170,16 +176,16 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
        preguntando a la puerta equivocada». Éste sí cruza tu agenda con Google
        y devuelve los huecos de verdad. */
     const hoy = new Date().toISOString().slice(0, 10);
-    const hasta = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    const j = await fetch(`/api/scheduling/available-slots?slug=demo&from=${hoy}&to=${hasta}`)
+    const hasta = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const j = await fetch(`/api/scheduling/available-slots?slug=${encodeURIComponent(slug)}&from=${hoy}&to=${hasta}`)
       .then(r => r.json()).catch(() => null);
     if (j?.error) { setMsg(`No se pudieron traer los horarios: ${j.error}`); setHorarios([]); return; }
     /* La forma que devuelve es `{dates: {"2026-09-18": ["13:00","15:00"]}}`.
        Medido contra el endpoint, no supuesto: la primera versión buscaba
        `slots` y siempre pintaba vacío. */
-    const slots = Object.entries(j?.dates || {})
-      .flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora })));
-    setHorarios(slots.slice(0, 12));
+    const slots = Object.entries(j?.dates || {}).sort(([a], [b]) => a.localeCompare(b))
+      .flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora: String(hora).slice(0, 5) })));
+    setHorarios(slots);   // todos: el selector enseña hasta 7 días, día por día
   };
 
   /* «TE MANDO LA LIGA» DESDE AQUÍ, no después. El «después» es media hora más
@@ -567,7 +573,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 <div style={ROT}>Agendar</div>
                 {horarios === null ? (
                   <>
-                    <button onClick={verHorarios} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
+                    <button onClick={() => verHorarios()} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
                       Ver los horarios que tengo libres
                     </button>
                     <button onClick={mandarLiga} disabled={ligaEnviada}
@@ -575,16 +581,19 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                       {ligaEnviada ? 'Liga enviada por WhatsApp' : 'O mándale la liga por WhatsApp ahora'}
                     </button>
                   </>
-                ) : !horarios.length ? (
-                  <div style={{ fontSize: 12.5, color: C.g500 }}>No hay horarios libres en los próximos días. Queda como «volver a llamar» y lo cuadras después.</div>
                 ) : (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {horarios.map((h: any, i: number) => (
-                      <span key={i} style={{ background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '6px 11px', fontSize: 12, fontWeight: 700 }}>
-                        {new Date(`${h.fecha}T${h.hora}:00`).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    ))}
-                  </div>
+                  <>
+                    <select value={tipo} onChange={e => { setTipo(e.target.value); try { localStorage.setItem('cabina.tipocita', JSON.stringify(e.target.value)); } catch { /* privado */ } verHorarios(e.target.value); }}
+                      style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 9px', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 700, color: C.moradoTinta, marginBottom: 9, maxWidth: '100%' }}>
+                      {(tipos.length ? tipos : [{ slug: 'demo', nombre: 'Demo personalizada', duracion_minutos: 30 }]).map((t: any) => (
+                        <option key={t.slug} value={t.slug}>{t.nombre} · {t.duracion_minutos} min</option>
+                      ))}
+                    </select>
+                    {!horarios.length
+                      ? <div style={{ fontSize: 12.5, color: C.g500 }}>No hay horarios libres de este tipo en las próximas dos semanas. Prueba otro tipo o queda como «volver a llamar».</div>
+                      : <SelectorHorarios huecos={horarios} movil={esMovil} />}
+                    <div style={{ fontSize: 11, color: C.g500, marginTop: 7 }}>Léeselos tal cual: son los huecos reales. La cita la agenda el cierre con lo que acuerden.</div>
+                  </>
                 )}
               </div>
             )}

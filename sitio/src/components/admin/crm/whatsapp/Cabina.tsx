@@ -18,6 +18,7 @@ import { confirmar } from '../../../../lib/ui/confirmar';
 import { S } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { IcoTelefono, IcoMic, IcoReloj, IcoUsuario, IcoX } from './Iconos';
+import SelectorHorarios from './SelectorHorarios';
 import { telefonoLegible } from '../../../../lib/telefono';
 
 type Props = {
@@ -105,18 +106,20 @@ const leerSesion = (k: string, d: string): string => { try { return sessionStora
    los libres de verdad). Se piden al TOCAR el botón y no al abrir el cierre:
    la mayoría de las llamadas no acaban en cita, y pedirlos siempre sería pagar
    una consulta por cada una que no lleva a nada. */
-function AgendarEnCierre({ contactId, nombre, telefono }: { contactId?: string | null; nombre?: string | null; telefono?: string | null }) {
+function AgendarEnCierre({ contactId, nombre, telefono, tipos, movil }: { contactId?: string | null; nombre?: string | null; telefono?: string | null; tipos?: any[]; movil?: boolean }) {
   const [slots, setSlots] = useState<any[] | null>(null);
   const [puesto, setPuesto] = useState('');
   const [yendo, setYendo] = useState(false);
   const [err, setErr] = useState('');
-  const traer = async () => {
+  // De qué tipo es la cita: antes siempre «demo», aunque en la llamada se acordara otra cosa.
+  const [tipo, setTipo] = useState<string>(() => leerLocal('cabina.tipocita', 'demo'));
+  const traer = async (slug = tipo) => {
     setSlots([]);
     const hoy = new Date().toISOString().slice(0, 10);
-    const hasta = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    const j = await fetch(`/api/scheduling/available-slots?slug=demo&from=${hoy}&to=${hasta}`).then(r => r.json()).catch(() => null);
-    const l = Object.entries(j?.dates || {}).flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora })));
-    setSlots(l.slice(0, 10));
+    const hasta = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const j = await fetch(`/api/scheduling/available-slots?slug=${encodeURIComponent(slug)}&from=${hoy}&to=${hasta}`).then(r => r.json()).catch(() => null);
+    const l = Object.entries(j?.dates || {}).sort(([a], [b]) => a.localeCompare(b)).flatMap(([fecha, horas]: any) => (horas || []).map((hora: string) => ({ fecha, hora: String(hora).slice(0, 5) })));
+    setSlots(l);
   };
   const agendar = async (h: any) => {
     setYendo(true);
@@ -129,7 +132,7 @@ function AgendarEnCierre({ contactId, nombre, telefono }: { contactId?: string |
     const r = await fetch('/api/scheduling/book', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        event_type_slug: 'demo', fecha: h.fecha, hora_inicio: h.hora,
+        event_type_slug: tipo, fecha: h.fecha, hora_inicio: h.hora,
         nombre: nombre || 'Contacto', whatsapp: telefono || undefined,
         notas: 'Quedó en la llamada', timezone: 'America/Mexico_City',
       }),
@@ -150,7 +153,7 @@ function AgendarEnCierre({ contactId, nombre, telefono }: { contactId?: string |
       </div>
       {err && <div style={{ fontSize: 12, color: '#C0554E', fontWeight: 700, marginBottom: 7 }}>{err}</div>}
       {slots === null ? (
-        <button onClick={traer} style={{ border: '1px solid #e0c99a', background: '#fff', color: '#9a6a10', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>
+        <button onClick={() => traer()} style={{ border: '1px solid #e0c99a', background: '#fff', color: '#9a6a10', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>
           Ponerle una ahora
         </button>
       ) : !slots.length ? (
@@ -1654,27 +1657,17 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                       <div style={{ fontSize: 11.5, color: C.g500 }}>Mirando la agenda…</div>
                     ) : huecos.length ? (
                       <>
-                        {/* En el teléfono los huecos van en una tira que se
-                            desliza: envueltos en cuatro renglones empujaban el
-                            resto de la tarjeta fuera de la pantalla, y son
-                            justo lo que se lee EN VOZ ALTA mientras hablas. */}
-                        <div className="wa-scroll" style={movil
-                          ? { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollSnapType: 'x proximity' }
-                          : { display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {huecos.slice(0, 8).map((h: any) => (
-                            <button key={`${h.fecha}-${h.hora}`} onClick={() => agendarHueco(h)} disabled={!!ocupado}
-                              style={{ border: `1.5px solid ${C.g200}`, background: '#fff', color: C.g900, borderRadius: 999, padding: movil ? '8px 13px' : '5px 11px', fontSize: movil ? 13 : 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, scrollSnapAlign: 'start' }}>
-                              {ocupado === 'agendar' ? '…' : `${new Date(`${h.fecha}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).replace('.', '')} · ${h.hora}`}
-                            </button>
-                          ))}
-                        </div>
+                        {/* Día → hora, hasta 7 días (22-sep-2026). En el teléfono
+                            las dos filas se deslizan de lado: envueltas empujaban
+                            el resto de la tarjeta fuera de la pantalla. */}
+                        <SelectorHorarios huecos={huecos} onElegir={agendarHueco} movil={movil} deshabilitado={!!ocupado} texto={ocupado === 'agendar' ? '…' : undefined} />
                         <div style={{ fontSize: 10.5, color: C.g500, marginTop: 6 }}>
                           Léelos tal cual: son los huecos reales de tu agenda. Al picar uno queda agendado con su invitación y su recordatorio.
                         </div>
                       </>
                     ) : (
                       <div style={{ fontSize: 11.5, color: '#9a6a10' }}>
-                        No hay huecos de «{(tiposCita.find((t: any) => t.slug === tipoCita)?.nombre) || tipoCita}» en los próximos 14 días. Prueba otro tipo de reunión o abre tu disponibilidad en Agenda.
+                        No hay huecos de «{(tiposCita.find((t: any) => t.slug === tipoCita)?.nombre) || tipoCita}» en las próximas dos semanas. Prueba otro tipo de reunión o abre tu disponibilidad en Agenda.
                       </div>
                     )}
                   </div>

@@ -396,7 +396,10 @@ export const POST: APIRoute = async ({ request }) => {
         const esLlamada = slug === 'llamada-discovery' || slug === 'seguimiento';
         const [tipos, huecos] = await Promise.all([
           tiposDeReunion(),
-          huecosProximos(slug, 14, 12, 'America/Mexico_City', esLlamada ? user.id : null),
+          /* Todos los huecos de los próximos días, no los 12 primeros (22-sep-2026):
+             con 12 sólo alcanzaba para hoy y mañana, y el dueño pidió poder
+             ofrecer hasta 7 días. La pantalla los agrupa por día. */
+          huecosProximos(slug, 14, 400, 'America/Mexico_City', esLlamada ? user.id : null),
         ]);
         return json({ ok: true, tipo: slug, tipos, huecos, de_quien: esLlamada ? 'tuya' : 'de quien la da' });
       }

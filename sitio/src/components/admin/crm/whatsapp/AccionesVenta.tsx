@@ -11,6 +11,8 @@
 // Los precios salen del MISMO catálogo que la cotización grande (PLAN_PRICES);
 // los envíos van por los MISMOS endpoints del inbox — cero caminos paralelos.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import SelectorHorarios from './SelectorHorarios';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { C } from './estilo';
 import { Corazones } from '../ui/Cargando';
 import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
@@ -529,18 +531,38 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [ruta, setRuta] = useState<null | 'reservar' | 'lista' | 'auto'>(null);
   /* Cuántos días entran en la lista. «Hoy» sirve para cerrar el mismo día;
      7 días es para quien anda ocupado y necesita opciones. */
-  const [rango, setRango] = useState<1 | 3 | 7>(3);
+  const [rango, setRango] = useState<1 | 3 | 5 | 7>(3);
 
+  /* ══ PRIMERO: ¿QUÉ REUNIÓN? (22-sep-2026) ═════════════════════════════════
+     Pedido del dueño: «me debe primero preguntar qué tipo de reunión es la que
+     deseo agendar y, basado en el tipo, son los horarios que ya me aparecen».
+     Antes todo salía de la DEMO: una discovery de 15 min o una reunión de
+     cotización se ofrecían con los huecos de otra agenda y otra duración. El
+     tipo decide los huecos, lo que dice el mensaje y la cita que se crea. */
+  const [tipos, setTipos] = useState<any[] | null>(null);
+  const [tipo, setTipo] = useState<any>(null);
   useEffect(() => {
+    fetch('/api/scheduling/event-types?activo=true').then(r => r.json())
+      /* Las dos que más se agendan desde el inbox van primero; el resto por nombre. */
+      .then(j => {
+        const orden = (t: any) => t.slug === 'demo' ? 0 : t.slug === 'llamada-discovery' ? 1 : 2;
+        setTipos((Array.isArray(j) ? j : []).filter((t: any) => t.activo !== false)
+          .sort((a: any, b: any) => orden(a) - orden(b) || String(a.nombre).localeCompare(String(b.nombre), 'es')));
+      })
+      .catch(() => setTipos([]));
+    cargarProxima();
+  }, [contacto?.id, empresa?.id]);
+  useEffect(() => {
+    if (!tipo?.slug) return;
+    setSlots(null); setFecha(''); setHora('');
     /* Desde HOY, no desde mañana. «Mándale los horarios de hoy» era imposible
        porque la consulta empezaba el día siguiente: quien contesta a las 10 de
        la mañana con hueco a las 5 de la tarde no podía cerrar el mismo día. */
     const from = new Date().toISOString().slice(0, 10);
-    const to = new Date(Date.now() + 11 * 86400000).toISOString().slice(0, 10);
-    fetch(`/api/scheduling/available-slots?slug=demo&from=${from}&to=${to}`)
+    const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    fetch(`/api/scheduling/available-slots?slug=${encodeURIComponent(tipo.slug)}&from=${from}&to=${to}`)
       .then(r => r.json()).then(j => setSlots(j.dates || {})).catch(() => setSlots({}));
-    cargarProxima();
-  }, [contacto?.id, empresa?.id]);
+  }, [tipo?.slug]);
 
   /* ══ LA REUNIÓN QUE YA TIENE (22-sep-2026) ═══════════════════════════════
      Pedido del dueño: «cuando el prospecto ya tiene una reunión agendada, me
@@ -573,6 +595,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
      con la hora y la liga nuevas. Los huecos salen del tipo de SU reunión
      (demo, discovery…), no siempre de la demo. */
   const [reagendando, setReagendando] = useState(false);
+  const esMovilAcc = useIsMobile();
   const [slotsR, setSlotsR] = useState<Record<string, string[]> | null>(null);
   const [fechaR, setFechaR] = useState('');
   const [horaR, setHoraR] = useState('');
@@ -638,7 +661,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     setOcupado(true);
     const r = await fetch('/api/scheduling/book', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type_slug: 'demo', fecha, hora_inicio: hora, nombre: nombre || primerNombre, email: email.trim(), whatsapp: telefono || undefined, empresa: empresa?.nombre_comercial || empresa?.nombre || undefined, notas: nota.trim() || 'Agendada desde el inbox por el equipo', wa_conv_id: conv?.id || undefined, timezone: 'America/Mexico_City', utm_source: 'inbox' }),
+      body: JSON.stringify({ event_type_slug: tipo?.slug || 'demo', fecha, hora_inicio: hora, nombre: nombre || primerNombre, email: email.trim(), whatsapp: telefono || undefined, empresa: empresa?.nombre_comercial || empresa?.nombre || undefined, notas: nota.trim() || 'Agendada desde el inbox por el equipo', wa_conv_id: conv?.id || undefined, timezone: 'America/Mexico_City', utm_source: 'inbox' }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setOcupado(false);
     if (r?.error) { setMsg(r.error); return; }
@@ -657,11 +680,12 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
       .map(f => ({ fecha: f, horas: ((slots as any)[f] as string[]).slice(0, 4) }));
   }, [slots, rango]);
 
+  const nombreTipo = String(tipo?.nombre || 'sesión consultiva').toLowerCase();
   const textoHorarios = porDiaDelRango.length
-    ? `${primerNombre}, estos son los horarios disponibles para tu sesión consultiva (30-60 min, sin costo):\n\n`
+    ? `${primerNombre}, estos son los horarios disponibles para tu ${nombreTipo} (${tipo?.duracion_minutos || 30} min, sin costo):\n\n`
       + porDiaDelRango.map(d => `${fechaHumana(d.fecha)}: ${d.horas.map(horaHumana).join(', ')}`).join('\n')
       + `\n\n¿Cuál te queda mejor? Con que me digas el día y la hora, yo la agendo.`
-    : `${primerNombre}, ¿qué día te queda bien para tu sesión consultiva? La agendo y te llega la invitación.`;
+    : `${primerNombre}, ¿qué día te queda bien para tu ${nombreTipo}? La agendo y te llega la invitación.`;
   const enviarFechasWA = async () => {
     setMsg('');
     const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conv?.id || undefined, telefono: conv?.id ? undefined : telefono, texto: textoHorarios }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -670,7 +694,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   };
   const enviarFechasCorreo = async () => {
     setMsg('');
-    const r = await fetch('/api/crm/whatsapp/enviar-correo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contacto?.id, para: email.trim() || contacto?.email, asunto: 'Horarios para tu sesión consultiva con Sacs', texto: textoHorarios }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    const r = await fetch('/api/crm/whatsapp/enviar-correo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contacto?.id, para: email.trim() || contacto?.email, asunto: `Horarios para tu ${nombreTipo} con Sacs`, texto: textoHorarios }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setMsg(`Correo: ${r.error}`); return; }
     setHecho('enviado_correo');
   };
@@ -689,7 +713,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         conversation_id: conv?.id || undefined, telefono: conv?.id ? undefined : telefono,
-        dias: rango, email: email.trim(), nombre: nombre || primerNombre,
+        slug: tipo?.slug || 'demo', dias: rango, email: email.trim(), nombre: nombre || primerNombre,
         empresa: empresa?.nombre_comercial || empresa?.nombre || undefined,
       }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -737,24 +761,13 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
               {slotsR !== null && !Object.keys(slotsR).some(f => (slotsR[f] || []).length) && (
                 <div style={{ fontSize: 11.5, color: C.ambar700 }}>No hay horarios libres en las próximas dos semanas para este tipo de reunión.</div>
               )}
-              {slotsR !== null && (
+              {slotsR !== null && Object.keys(slotsR).some(f => (slotsR[f] || []).length) && (
                 <>
-                  <span style={lbl}>Nuevo día</span>
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                    {Object.keys(slotsR).sort().filter(f => (slotsR[f] || []).length).slice(0, 10).map(f => (
-                      <button key={f} onClick={() => { setFechaR(f); setHoraR(''); }} style={pill(fechaR === f)}>{fechaHumana(f)}</button>
-                    ))}
-                  </div>
-                  {fechaR && (
-                    <>
-                      <span style={{ ...lbl, marginTop: 8 }}>Nueva hora</span>
-                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                        {(slotsR[fechaR] || []).map(h => (
-                          <button key={h} onClick={() => setHoraR(h)} style={pill(horaR === h)}>{horaHumana(h)}</button>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  <span style={lbl}>Nuevo día y hora · hasta 7 días</span>
+                  <SelectorHorarios movil={esMovilAcc}
+                    huecos={Object.keys(slotsR).sort().flatMap(f => (slotsR[f] || []).map(h => ({ fecha: f, hora: String(h).slice(0, 5) })))}
+                    elegida={fechaR && horaR ? { fecha: fechaR, hora: horaR } : null}
+                    onElegir={h => { setFechaR(h.fecha); setHoraR(h.hora); }} />
                 </>
               )}
               <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
@@ -787,7 +800,30 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           escondido en el pie. Pero cuando el cliente todavía no dijo cuándo
           puede —que es la mitad de las veces— reservar por él es adivinar.
           Se pregunta primero qué quieres hacer, y cada ruta enseña solo lo suyo. */}
-      {!ruta && slots !== null && (
+      {/* Paso 0 · el tipo. Se elige antes de ver cualquier horario. */}
+      {!tipo && (
+        <div style={{ marginTop: 2 }}>
+          <span style={lbl}>¿Qué reunión quieres agendar?</span>
+          {tipos === null && <div style={{ fontSize: 12, color: C.g500 }}>Cargando los tipos de reunión…</div>}
+          <div style={{ display: 'grid', gap: 6 }}>
+            {(tipos || []).map((t: any) => (
+              <button key={t.slug} onClick={() => { setTipo(t); setRuta(null); }}
+                style={{ ...btnG, minHeight: 44, textAlign: 'left', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8, ...(t.slug === 'demo' ? { borderColor: '#c9bcf7', background: '#F6F4FF' } : {}) }}>
+                <span style={{ flex: 1, minWidth: 0 }}>{t.nombre}</span>
+                <span style={{ fontSize: 11, color: C.g500, fontWeight: 600, flexShrink: 0 }}>{t.duracion_minutos} min</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {tipo && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '2px 0 10px', padding: '8px 11px', borderRadius: 10, background: '#F6F4FF', border: '1px solid #ddd6fb' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#5B4BD6' }}>{tipo.nombre} · {tipo.duracion_minutos} min</span>
+          <button onClick={() => { setTipo(null); setRuta(null); }} style={{ border: 'none', background: 'none', color: C.g500, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 4 }}>Cambiar</button>
+        </div>
+      )}
+      {tipo && slots === null && <div style={{ fontSize: 12, color: C.g500 }}>Buscando los horarios libres de {tipo.nombre.toLowerCase()}…</div>}
+      {tipo && !ruta && slots !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           <button onClick={() => setRuta('auto')} disabled={!ventanaAbierta}
             title={!ventanaAbierta ? 'Ventana de 24 h cerrada: primero manda una plantilla desde el composer' : ''}
@@ -822,7 +858,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         <div style={{ marginTop: 4 }}>
           <span style={lbl}>Cuántos días ofrecerle</span>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
+            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [5, 'Próximos 5 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
               <button key={d} onClick={() => setRango(d)} style={pill(rango === d)}>{l}</button>
             ))}
           </div>
@@ -857,7 +893,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         <div style={{ marginTop: 4 }}>
           <span style={lbl}>Qué tanto abarcar</span>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
+            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [5, 'Próximos 5 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
               <button key={d} onClick={() => setRango(d)} style={pill(rango === d)}>{l}</button>
             ))}
           </div>
