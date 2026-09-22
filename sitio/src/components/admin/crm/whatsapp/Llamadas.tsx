@@ -134,14 +134,20 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
     try { a.pc.close(); a.stream.getTracks().forEach(t => t.stop()); a.actx?.close(); } catch { /* nada */ }
     setActiva(null);
     if (avisar) await fetch('/api/crm/whatsapp/llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'terminar', call_id: a.call_id }) }).catch(() => {});
-    // Minuta automática: solo si de verdad se habló (≥20 s y hay audio).
+    /* La grabación se sube si de verdad se habló (≥20 s y hay audio); la
+       minuta sólo sale en llamadas de MÁS de 3:00 (Mejora #2) y eso lo decide
+       el servidor con la duración real. Aquí sólo se evita enseñar «Generando
+       la minuta…» cuando ya se sabe que no va a haber. */
     if (blob && blob.size > 12_000 && duro >= 20) {
-      setMinutando(a.call_id);
+      const conMinuta = duro > 180;
+      if (conMinuta) setMinutando(a.call_id);
       const fd = new FormData();
       fd.append('audio', new File([blob], `${a.call_id}.webm`, { type: 'audio/webm' }));
       fd.append('call_id', a.call_id);
+      fd.append('duracion_seg', String(duro));
       const r = await fetch('/api/crm/whatsapp/minuta', { method: 'POST', body: fd }).then(x => x.json()).catch(e => ({ error: String(e) }));
       setMinutando(null);
+      if (r?.omitida) return;
       if (r?.error) setError(`La llamada terminó bien, pero la minuta falló: ${r.error}`);
       else { setMinutaLista(true); setTimeout(() => setMinutaLista(false), 6000); document.dispatchEvent(new CustomEvent('wa-refrescar-hilo')); }
     }

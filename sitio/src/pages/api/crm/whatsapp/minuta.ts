@@ -31,7 +31,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (audio.size < 12_000) return json({ error: 'La grabación es demasiado corta para una minuta' }, 400);
   if (audio.size > 50 * 1024 * 1024) return json({ error: 'Grabación mayor a 50 MB' }, 400);
 
-  const r = await generarMinutaDesdeAudio(callId, await audio.arrayBuffer(), audio.type || 'audio/webm');
+  const seg = Number(form.get('duracion_seg'));
+  const r = await generarMinutaDesdeAudio(callId, await audio.arrayBuffer(), audio.type || 'audio/webm', { duracionSeg: Number.isFinite(seg) && seg > 0 ? seg : null });
+  // Llamada de 3:00 o menos: no es un error, es la regla (Mejora #2). La grabación sí quedó.
+  if (!r.ok && r.omitida) return json({ ok: true, omitida: true, motivo: r.error });
   if (!r.ok) return json({ error: r.error, ...(r.transcript !== undefined ? { transcript: r.transcript } : {}) }, r.status);
   return json({ ok: true, minuta: r.minuta, siguiente_paso: r.siguiente_paso, transcript_len: r.transcript_len });
 };

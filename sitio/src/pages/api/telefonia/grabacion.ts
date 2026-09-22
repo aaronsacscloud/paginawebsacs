@@ -38,6 +38,10 @@ export const POST: APIRoute = async ({ request }) => {
      a la IA, y de veinte segundos no sale nada que leer. */
   try {
     const buf = await descargarGrabacion(p.RecordingUrl);
+    /* Mejora #2 (22-sep): el umbral de la minuta ya no es 20 s sino «más de
+       3:00» y lo decide `generarMinutaDesdeAudio` con la duración real de la
+       llamada. Aquí sólo se ahorra el paso por esa función cuando ni siquiera
+       la grabación llega a 20 s. */
     if (dur < 20) {
       // Mismo bucket y misma forma de ruta que la minuta: `wa-media` + `llamadas/<sid>.mp3`.
       const path = `llamadas/${callId}.mp3`;
@@ -45,8 +49,8 @@ export const POST: APIRoute = async ({ request }) => {
       if (!error) await supabase.from('wa_llamadas').update({ grabacion_path: path }).eq('call_id', callId);
       return json({ ok: true, motivo: 'guardada; muy corta para minuta' });
     }
-    const r = await generarMinutaDesdeAudio(callId, buf, 'audio/mpeg');
-    return json({ ok: r.ok, ...(r.ok ? {} : { motivo: r.error }) });
+    const r = await generarMinutaDesdeAudio(callId, buf, 'audio/mpeg', { duracionSeg: dur || null });
+    return json({ ok: r.ok || !!(r as any).omitida, ...(r.ok ? {} : { motivo: r.error }) });
   } catch (e: any) {
     return json({ ok: false, motivo: String(e?.message || e) });
   }

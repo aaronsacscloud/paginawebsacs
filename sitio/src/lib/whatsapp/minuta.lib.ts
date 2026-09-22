@@ -11,18 +11,42 @@ const GROQ_KEY = ((import.meta as any).env?.GROQ_API_KEY || process.env.GROQ_API
 
 export type ResultadoMinuta =
   | { ok: true; minuta: string; siguiente_paso: string; transcript_len: number; pdf?: string | null }
-  | { ok: false; error: string; status: number; transcript?: string };
+  | { ok: false; error: string; status: number; transcript?: string; omitida?: boolean };
 
-export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, mime: string): Promise<ResultadoMinuta> {
-  if (!GROQ_KEY) return { ok: false, error: 'Falta GROQ_API_KEY en el entorno', status: 503 };
+/* ══ MEJORA CRM #2 · MINUTA SÓLO EN LLAMADAS DE MÁS DE 3 MINUTOS (22-sep-2026) ══
+   Regla del dueño: duración > 3:00 → minuta; ≤ 3:00 → no. Aplica a TODAS las
+   llamadas que procesa el sistema —centro de llamadas, llamada normal desde la
+   ficha, entrantes, WhatsApp— porque todas pasan por esta función.
+   La llamada se sigue registrando igual (bitácora, ficha, inbox) y la
+   grabación se sigue guardando (el dueño la quiere para el corpus de voz); lo
+   que no corre es Whisper ni Claude. */
+export const MINUTA_MIN_SEG = 180;
+export const llevaMinuta = (seg: number | null | undefined) => seg == null || !Number.isFinite(Number(seg)) ? null : Number(seg) > MINUTA_MIN_SEG;
+const mmss = (seg: number) => `${Math.floor(seg / 60)}:${String(Math.round(seg) % 60).padStart(2, '0')}`;
+
+export async function generarMinutaDesdeAudio(callId: string, buf: ArrayBuffer, mime: string, o: { duracionSeg?: number | null } = {}): Promise<ResultadoMinuta> {
   const { data: ll } = await supabase.from('wa_llamadas').select('*').eq('call_id', callId).maybeSingle();
   if (!ll) return { ok: false, error: 'Llamada no encontrada', status: 404 };
 
-  // 1) Guardar la grabación (evidencia y re-procesos futuros).
+  // 1) Guardar la grabación (evidencia y re-procesos futuros). Va ANTES del umbral: el audio se guarda siempre.
   const ext = /mpeg|mp3/.test(mime) ? 'mp3' : 'webm';
   const path = `llamadas/${callId}.${ext}`;
   await supabase.storage.createBucket(BUCKET, { public: true }).catch(() => {});
   await supabase.storage.from(BUCKET).upload(path, buf, { contentType: mime, upsert: true });
+
+  /* La duración REAL registrada de la llamada (`wa_llamadas.duracion_seg`, la
+     que escriben Twilio y el cierre de WhatsApp). Si todavía no llegó —el aviso
+     de la grabación a veces se adelanta al del estado—, la que trae quien
+     llama (la de la grabación o la que midió el navegador). Si no se sabe de
+     ninguna forma, se hace la minuta: perder la de una llamada larga cuesta
+     más que redactar una corta. */
+  const durSeg = ll.duracion_seg != null ? Number(ll.duracion_seg) : (o.duracionSeg ?? null);
+  if (llevaMinuta(durSeg) === false) {
+    const motivo = `La llamada duró ${mmss(durSeg!)}: la minuta se hace sólo en llamadas de más de ${mmss(MINUTA_MIN_SEG)}.`;
+    await supabase.from('wa_llamadas').update({ grabacion_path: path, minuta_omitida: motivo }).eq('call_id', callId);
+    return { ok: false, omitida: true, error: motivo, status: 200 };
+  }
+  if (!GROQ_KEY) return { ok: false, error: 'Falta GROQ_API_KEY en el entorno', status: 503 };
 
   // 2) Whisper (Groq): transcripción en español.
   const wf = new FormData();
