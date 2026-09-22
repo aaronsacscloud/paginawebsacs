@@ -318,6 +318,88 @@ const ETAPA_CLIENTE: Record<string, { l: string; orden: number }> = {
   recibida:   { l: 'Por arrancar', orden: 6 },
 };
 
+/* ── EL REPORTE DEL LEAD ────────────────────────────────────────────────────
+ * El tercer documento de la casa. Los otros dos le cuentan a un CLIENTE qué se
+ * le hizo y qué se le está haciendo; este le contesta a alguien que todavía no
+ * compra una pregunta distinta: «¿nos entendieron?».
+ *
+ * Todo sale de la minuta de descubrimiento que ya se levanta después de la
+ * junta —`bookings.minuta`—, así que no hay nada nuevo que capturar. Lo único
+ * que se decide al generarlo es el descuento: cuánto y hasta cuándo.
+ *
+ * Se guarda la FOTO igual que los otros: la liga tiene que decir en diciembre
+ * lo mismo que decía el día que se mandó, aunque el lead cambie de etapa, se
+ * vuelva cliente o se archive.
+ */
+const ENTRE = /\s*(?:\n+|·|;|(?:^|\s)-\s)\s*/g;
+
+/** Un bloque de la minuta partido en renglones limpios. La gente escribe la
+ *  minuta como le sale: con guiones, con saltos, con puntos y comas. */
+function renglones(txt?: string | null, tope = 6): string[] {
+  return String(txt || '')
+    .split(/\n+|\s·\s/)
+    .map(x => x.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(x => x.length > 2)
+    .slice(0, tope);
+}
+
+export async function reunirLead(bookingId: string, opciones?: { descuento?: number; vigencia?: string | null }) {
+  const { data: b } = await supabase.from('bookings')
+    .select('id, fecha, hora_inicio, asunto, minuta, contact_id, company_id, invitee_nombre, invitee_empresa, event_types(nombre)')
+    .eq('id', bookingId).maybeSingle();
+  if (!b || !b.minuta) return null;
+  const m: any = b.minuta || {};
+
+  const { data: c } = b.contact_id
+    ? await supabase.from('contacts')
+        .select('id, nombre, apellido, email, whatsapp, company_id, plan_interes, sucursales_interes, companies(nombre, nombre_comercial)')
+        .eq('id', b.contact_id).maybeSingle()
+    : { data: null as any };
+
+  /* Lo que pidió. `requerimientos` es la lista que el consultor marcó para
+     cotizar; si no la hay —las minutas viejas no la traen— se cae a «qué le
+     interesó», que es el mismo contenido en texto corrido. */
+  const reqs = Array.isArray(m.requerimientos) ? m.requerimientos.filter((r: any) => r?.titulo) : [];
+  const pedidos = reqs.length
+    ? reqs.map((r: any) => ({ titulo: String(r.titulo).trim(), detalle: String(r.detalle || r.descripcion || '').trim() || null, existe: r.existe !== false }))
+    : renglones(m.intereso).map(t => ({ titulo: t, detalle: null, existe: true }));
+
+  const hoy = [...renglones(m.opera, 3), ...renglones(m.duele, 3)].slice(0, 5);
+  const conSacs = [...renglones(m.sacs, 3), ...renglones(m.intereso, 3)].slice(0, 5);
+
+  const nombre = [c?.nombre, c?.apellido].filter(Boolean).join(' ') || b.invitee_nombre || 'ahí';
+  const empresa = (c as any)?.companies?.nombre_comercial || (c as any)?.companies?.nombre || b.invitee_empresa || null;
+
+  const pct = Math.min(60, Math.max(0, Number(opciones?.descuento ?? 35)));
+  // La vigencia por defecto son dos semanas: el tiempo que de verdad dura
+  // caliente una junta. Sin fecha, un descuento no apura a nadie.
+  const vigencia = opciones?.vigencia
+    || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+
+  return {
+    lead: nombre,
+    empresa,
+    contacto: { email: c?.email || null, whatsapp: c?.whatsapp || null },
+    sesion: {
+      fecha: b.fecha,
+      hora: String(b.hora_inicio || '').slice(0, 5) || null,
+      tipo: (b as any).event_types?.nombre || b.asunto || 'Sesión',
+    },
+    hoy,
+    con_sacs: conSacs,
+    pedidos,
+    // Las tres cifras del ancla. «0 hay que desarrollar» es el mejor argumento
+    // que tiene el documento, y sale de contar, no de escribir.
+    total_pedidos: pedidos.length,
+    ya_existen: pedidos.filter((x: any) => x.existe).length,
+    por_desarrollar: pedidos.filter((x: any) => !x.existe).length,
+    objeciones: renglones(m.objeciones, 4),
+    decide: String(m.decide || '').trim() || null,
+    siguiente: String(m.siguiente || m.acuerdos || '').trim() || null,
+    descuento: { pct, vigencia },
+  };
+}
+
 export async function reunirEnCurso(companyId: string, desde: string, hasta: string) {
   const { data: co } = await supabase.from('companies')
     .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();

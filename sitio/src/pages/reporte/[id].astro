@@ -13,6 +13,7 @@ import CSS from './_estilos';
 import JS from './_guion';
 import Entregas from './_Entregas.astro';
 import Curso from './_Curso.astro';
+import Lead from './_Lead.astro';
 
 export const prerender = false;
 
@@ -37,6 +38,7 @@ if (!rep) return new Response('Reporte no encontrado', { status: 404 });
    maquinaria y tres lugares donde arreglar el rastreo el día que cambie. */
 const esEntregas = rep.tipo === 'entregas';
 const esCurso = rep.tipo === 'curso';
+const esLead = rep.tipo === 'lead';
 
 const h = rep.hechos || {};
 const n = rep.narrativa || null;
@@ -67,7 +69,7 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{`${esEntregas ? 'Entregas' : esCurso ? 'Trabajo en curso' : 'Reporte'} ${rep.folio} · ${h.cliente || ''}`}</title>
+  <title>{`${esEntregas ? 'Entregas' : esCurso ? 'Trabajo en curso' : esLead ? 'Tu sesión' : 'Reporte'} ${rep.folio} · ${h.cliente || h.lead || ''}`}</title>
   <meta name="robots" content="noindex" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -79,10 +81,10 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
   <div class="bar"><b>{h.cliente}</b>
     <button class="btn" onclick="window.print()">Descargar PDF</button></div>
 
-  <div class={`doc${esEntregas ? ' doc-entregas' : ''}${esCurso ? ' doc-curso' : ''}`}>
+  <div class={`doc${esEntregas ? ' doc-entregas' : ''}${esCurso ? ' doc-curso' : ''}${esLead ? ' doc-lead' : ''}`}>
     <div class="cinta"></div>
 
-    {esEntregas ? <Entregas rep={rep} /> : esCurso ? <Curso rep={rep} /> : (<>
+    {esEntregas ? <Entregas rep={rep} /> : esCurso ? <Curso rep={rep} /> : esLead ? <Lead rep={rep} /> : (<>
 
     <div class="hero">
       <div class="top">

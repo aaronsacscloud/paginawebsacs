@@ -1544,3 +1544,34 @@ Tropiezos: `import` de JSON en Node pide `type: json` (los datos van en .ts);
 Anthropic exige streaming para salidas > 8k tokens (se hace en el proxy de
 `ai/client.ts`); «Schema is too complex» y «additionalProperties must be false»
 en el esquema del borrador (se dejó laxo y se normaliza al leer).
+
+## 21/22-sep-2026 · Sesión: referee v2, especialistas, ejecutor, URLs por giro y la plantilla del blog
+
+**Dónde quedó todo** (código en `main`, desplegado y verificado en producción):
+
+| Qué | Dónde |
+|---|---|
+| Gate de calidad: competencia + referee (18 criterios + 15 WOW) + imágenes | `lib/demanda/calidad.ts` |
+| Brief, borrador y **correcciones por parches** | `lib/demanda/contenido.ts` (`aplicarParches`, `normalizarBloque`, `partirParrafosLargos`) |
+| Especialistas SEO + IA/agentes, autoridad, ángulos y **ejecutor** | `lib/demanda/especialista.ts` (`contenido.especialista/autoridad/angulos/ejecutar`) |
+| Bloques nuevos: resumen, glosario, diagrama, captura, imagen, video | `lib/demanda/bloques.ts` |
+| Plantilla del blog (temario fijo, tarjeta discreta, 10 mejoras UI) | `components/ContenidoMotor.astro` + `CierreArticulo.astro` |
+| URLs por giro `/guias/<giro>/<slug>/` + índice + 301 | `lib/demanda/publicar.ts` (`GIRO_URL`, `seccionPara`, `destinoSiMovida`), `pages/guias/[giro]/` |
+| Pestaña «Seguimiento» del CRM | `components/admin/crm/demanda/DemandaSeguimiento.tsx`, `api/crm/demanda/seguimiento.ts` |
+| Guías para humanos | `GUIA-CONTENIDO-REPLICABLE.md`, `PLAN-NOVIAS-DOMINIO.md`, `FLUJO-CONTENIDO.md` |
+| Correr a mano | `scripts/calidad-correr.mjs`, `scripts/especialistas-correr.mjs`, `scripts/ejecutar-pendientes.mjs`, `scripts/investigacion/` |
+
+**Estado al cerrar:** novias publicada en `/guias/novias/apartado-vestido-de-novia-6-meses/`
+(hub del giro, versión 2, 70 bloques, referee 9.0, probabilidad de cita 84%).
+128 pendientes abiertos (68 del motor, 60 del dueño), 39 ángulos en cola para el brief.
+Gasto de IA en 24 h: $11.37.
+
+**Lo que hay que saber antes de tocar nada** (todo esto costó horas):
+1. **Opus 5 y gpt-5 razonan dentro de `max_tokens`.** Ya se compensa en `ia.ts` (el doble de tope, hasta 64k) y el borrador va con `pensar: false`. Si algo «se corta», mira esto primero.
+2. **Anthropic rechaza esquemas con > ~10 propiedades por objeto** («Schema is too complex»): el esquema del borrador reutiliza campos y se normaliza al leer.
+3. **Reescribir NO es regenerar**: las correcciones van por parches sobre bloques numerados, o se pierden capturas y resumen en cada ronda.
+4. **El modelo puede degenerar en bucle** (`/*x*/;` ×228): `preguntar()` lo detecta y salta de proveedor.
+5. **Solo se aceptan imágenes de nuestro storage** (`ES_MEDIA_NUESTRA`): el modelo puso la URL de la fuente en un diagrama y salió un cuadro roto en producción.
+6. **La honestidad del referee es solo para precios, planes, datos externos y ley.** Las funciones se presentan como existentes (regla del dueño); lo prometido queda en `funciones_prometidas` para ventas.
+
+**Lo siguiente, en orden:** (a) saldo de Anthropic —se agotó dos veces—; (b) «Hacer todo lo del motor con IA» sobre los 68 pendientes; (c) los 39 ángulos pasan por brief → referee; (d) lo del dueño: video de 3 min, plantilla de nota de apartado, menciones externas.

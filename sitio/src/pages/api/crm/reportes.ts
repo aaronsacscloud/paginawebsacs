@@ -14,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { reunirHechos, reunirEntregas, reunirEnCurso } from '../../../lib/crm/reporte-hechos';
+import { reunirHechos, reunirEntregas, reunirEnCurso, reunirLead } from '../../../lib/crm/reporte-hechos';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -55,14 +55,45 @@ export const POST: APIRoute = async ({ request }) => {
   if (!user) return json({ error: 'No autenticado' }, 401);
 
   const b = await request.json().catch(() => ({} as any));
+  const pedido = String(b?.tipo || 'trabajo');
+  const tipo = pedido === 'entregas' ? 'entregas' : pedido === 'curso' ? 'curso'
+    : pedido === 'lead' ? 'lead' : 'trabajo';
+
+  /* ── El reporte de un LEAD ──
+     No lleva periodo ni empresa: lleva una JUNTA. Sale antes del bloque de
+     abajo porque ahí todo se ordena alrededor de `company_id` y de un rango de
+     fechas, y este documento no tiene ninguno de los dos: tiene la minuta de
+     una sesión y el nombre de quien la tomó. */
+  if (tipo === 'lead') {
+    const booking_id = String(b?.booking_id || '');
+    if (!booking_id) return json({ error: 'Falta la reunión.' }, 400);
+    const hechos = await reunirLead(booking_id, {
+      descuento: b?.descuento != null ? Number(b.descuento) : undefined,
+      vigencia: b?.vigencia || null,
+    });
+    if (!hechos) return json({ error: 'Esa reunión no tiene minuta. El reporte sale de lo que se levantó en la junta.' }, 400);
+    if (!hechos.hoy.length && !hechos.pedidos.length) {
+      return json({ error: 'La minuta está vacía: sin «cómo opera hoy» ni «qué le interesó» no hay nada que enseñarle.' }, 400);
+    }
+    const { data: bk } = await supabase.from('bookings').select('contact_id, company_id, fecha').eq('id', booking_id).maybeSingle();
+    const { data, error } = await supabase.from('reportes_trabajo').insert({
+      company_id: bk?.company_id || null, contact_id: bk?.contact_id || null,
+      // Un reporte de lead no tiene rango: la sesión es el día y punto.
+      desde: bk?.fecha, hasta: bk?.fecha, tipo,
+      hechos, creado_por: (user as any)?.email || (user as any)?.nombre || null,
+    }).select('id, tipo, folio').single();
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, id: data.id, tipo: data.tipo, folio: data.folio, hechos });
+  }
+
+  /* Los otros tres documentos sí son de un cliente y de un periodo. La guardia
+     va DESPUÉS de la rama del lead y no antes, porque ese no tiene ninguno de
+     los dos y con ella arriba nunca llegaba a su rama. */
   const companyId = String(b?.company_id || '');
   const desde = String(b?.desde || '').slice(0, 10);
   const hasta = String(b?.hasta || '').slice(0, 10);
   if (!UUID.test(companyId) || !desde || !hasta) return json({ error: 'Falta el cliente o el periodo.' }, 400);
   if (desde > hasta) return json({ error: 'El periodo está al revés.' }, 400);
-
-  const pedido = String(b?.tipo || 'trabajo');
-  const tipo = pedido === 'entregas' ? 'entregas' : pedido === 'curso' ? 'curso' : 'trabajo';
 
   const modulos = Array.isArray(b?.modulos) ? b.modulos.map(String).slice(0, 40) : null;
   const hechos = tipo === 'entregas' ? await reunirEntregas(companyId, desde, hasta, modulos)

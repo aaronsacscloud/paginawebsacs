@@ -4,7 +4,7 @@ export default `
 :root{
   --violeta:#9B8CFA;--tinta:#5B4BD6;--hondo:#4536BE;--agua:#EEECFE;
   --verde:#4FBF95;--verde-t:#1E8A63;--verde-a:#EAF8F2;
-  --rosa:#D9538E;--ambar:#E8A838;--ambar-t:#9a6a10;--ambar-a:#FFF4E5;
+  --rosa:#D9538E;--rosa-s:#EFA6CA;--rosa-t:#9c3d70;--ambar:#E8A838;--ambar-t:#9a6a10;--ambar-a:#FFF4E5;
   --azul-t:#2C5FC4;--azul-a:#E3EDFD;
   --papel:#fff;--tono:#faf9fe;--borde:#ecebf3;--ink:#231d40;--ink-2:#514c63;--ink-3:#928da4;
 }
@@ -247,6 +247,60 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .sello svg{flex:none}
 .doc-entregas .sello{background:rgba(255,255,255,.72);border:1px solid #d8ece2;color:#1E8A63}
 .doc-curso .sello{background:rgba(255,255,255,.72);border:1px solid #f3dbe7;color:#9c3d70}
+
+/* ── EL REPORTE DEL LEAD ──
+   El tercero. Entregas va en verde —lo que ya entró—, trabajo en curso en rosa
+   —lo que está en camino—, y este los CRUZA: un degradado de verde a rosa, que
+   es exactamente lo que cuenta —lo que ya existe y lo que viene—.
+   Su pieza es el espejo «hoy → con Sacs», y el cupón del cierre. */
+.doc-lead .cinta{background:linear-gradient(90deg,#4FBF95,#EFA6CA 55%,#D9538E)}
+.doc-lead .hero{background:linear-gradient(150deg,#EAF8F2 0%,#fdfbfc 52%,rgba(244,168,205,.30) 100%)}
+.doc-lead .hero:after{background:radial-gradient(circle,rgba(79,191,149,.22),transparent 65%)}
+.doc-lead .wm{background:linear-gradient(100deg,#1E8A63,#4FBF95 32%,#D9538E);-webkit-background-clip:text;background-clip:text;color:transparent}
+.doc-lead .folio .f{color:var(--verde-t)}
+.doc-lead .sello{background:rgba(255,255,255,.75);border:1px solid #d8ece2;color:var(--verde-t)}
+.doc-lead .ancla{background:linear-gradient(180deg,#fbfdfc,#fff 70%)}
+.doc-lead .ancla .n{color:var(--verde-t)}
+.doc-lead .ancla .n.r{color:var(--rosa-t)}
+.doc-lead .st .x{color:var(--verde-t)}
+
+/* El espejo: sus palabras a la izquierda, la respuesta a la derecha. */
+.espejo{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-top:12px}
+.espejo.solo{grid-template-columns:1fr}
+.espejo .c{border:1px solid var(--borde);border-radius:12px;padding:14px 16px}
+.espejo .c.hoy{background:#fbfafc}
+.espejo .c.con{background:linear-gradient(135deg,#EAF8F2,rgba(244,168,205,.22));border-color:#d8ece2}
+.espejo .k{font-size:.56rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.espejo .c.con .k{color:var(--verde-t)}
+.espejo ul{margin:0;padding-left:16px}
+.espejo li{font-size:.83rem;line-height:1.65;color:var(--ink-2);margin-bottom:4px}
+.espejo .fl{display:grid;place-items:center;font-size:1.1rem;color:var(--verde)}
+
+/* Lo que pidió, en tarjetas. El «ya existe» es el mejor argumento que tiene
+   el documento y por eso se pinta, no se explica. */
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px;margin-top:11px}
+.mod{border:1px solid var(--borde);border-radius:12px;padding:13px 15px}
+.mod .t{font-size:.86rem;font-weight:800;letter-spacing:-.01em}
+.mod .d{font-size:.78rem;color:var(--ink-2);line-height:1.6;margin-top:4px}
+.mod .tag{display:inline-block;margin-top:8px;font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;background:var(--verde-a);color:var(--verde-t)}
+.mod .tag.nu{background:var(--agua);color:var(--tinta)}
+
+.paso{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid #f5f4fa}
+.paso .num{flex:none;width:24px;height:24px;border-radius:8px;background:var(--verde-a);color:var(--verde-t);display:grid;place-items:center;font-size:.7rem;font-weight:800}
+.paso .t{font-size:.86rem;font-weight:700}
+.paso .d{font-size:.79rem;color:var(--ink-2);line-height:1.6}
+.p.decide{margin-top:12px;font-size:.82rem}
+
+/* El cupón, al cierre. Más chico que el título del documento a propósito: es
+   lo último que se lee, no lo primero que grita. */
+.oferta{margin-top:24px;border-radius:15px;padding:20px 24px;border:1px solid #e8f0ec;
+  background:linear-gradient(120deg,#EAF8F2,rgba(255,255,255,.6) 45%,rgba(244,168,205,.30))}
+.oferta .k{font-size:.58rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--verde-t)}
+.oferta .big{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-top:4px;line-height:1.12}
+.oferta .d{font-size:.85rem;color:var(--ink-2);line-height:1.65;margin-top:7px;max-width:62ch}
+.oferta .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.oferta .chip{font-size:.66rem;font-weight:700;border-radius:20px;padding:3px 10px;background:#fff;color:var(--rosa-t);border:1px solid rgba(217,83,142,.2)}
+@media(max-width:760px){.espejo{grid-template-columns:1fr}.espejo .fl{transform:rotate(90deg)}}
 
 /* ── LA PIEL DEL REPORTE DE TRABAJO EN CURSO ──
    El tercero en discordia. El de entregas se pintó de verde —lo que ya entró—;

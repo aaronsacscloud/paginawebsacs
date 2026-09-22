@@ -1,0 +1,142 @@
+---
+// El REPORTE que recibe un LEAD después de su sesión.
+//
+// El tercero de la casa. Los otros dos le cuentan a un CLIENTE qué se le hizo
+// y qué se le está haciendo; este le contesta a alguien que todavía no compra
+// una pregunta distinta: «¿nos entendieron?».
+//
+// Su pieza central es el ESPEJO —cómo opera hoy contra cómo operaría— escrito
+// con las palabras que él mismo usó en la junta. Nada convence más que oírse
+// citado bien; una lista de funciones, en cambio, la manda cualquiera.
+//
+// El cupón va AL FINAL, después de lo que se habló y de lo que sigue. Puesto a
+// media lectura nubla el trabajo de la sesión y convierte el documento en un
+// anuncio; al cierre es lo último que se lee, que es donde un botón sirve.
+//
+// Tono verde → rosa, para que se distinga de los otros dos de un vistazo: el
+// de entregas es verde, el de trabajo en curso rosa, y este los cruza —lo que
+// se viene y lo que está en camino—.
+//
+// Lee la FOTO guardada: la liga tiene que decir en diciembre lo mismo que decía
+// el día que se mandó, aunque el lead ya sea cliente o se haya archivado.
+import Chispas from '../../components/reporte/ChispasDoc.astro';
+import Sello from '../../components/reporte/SelloChispa.astro';
+const { rep } = Astro.props;
+const h = rep.hechos || {};
+
+const dLarga = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '';
+const dCorta = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '')
+  : '';
+
+const pedidos = (h.pedidos || []) as any[];
+const hoy = (h.hoy || []) as string[];
+const conSacs = (h.con_sacs || []) as string[];
+const pct = h.descuento?.pct ?? 35;
+const vence = h.descuento?.vigencia || null;
+---
+
+<div class="hero">
+  <Chispas capa="hero" color="#4FBF95" />
+  <div class="top">
+    <div><div class="wm">Sacscloud</div><div class="wsub">Resumen de tu sesión</div></div>
+    <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
+  </div>
+  <h1>Esto fue lo que entendimos de tu operación</h1>
+  <p class="sub">
+    {h.lead}{h.empresa ? ` · ${h.empresa}` : ''} · {h.sesion?.tipo} del {dLarga(h.sesion?.fecha)}
+  </p>
+  <div class="sello"><Sello color="#4FBF95" /> Aquí se pule cada estrella</div>
+</div>
+
+<div class="ancla">
+  <Chispas capa="ancla" color="#9ad9be" />
+  <div><div class="n" data-n={h.total_pedidos}>0</div><div class="l">cosas que pediste</div></div>
+  <div><div class="n v" data-n={h.ya_existen}>0</div><div class="l">ya existen en Sacs</div></div>
+  <div><div class="n r" data-n={h.por_desarrollar}>0</div><div class="l">hay que desarrollar</div></div>
+  <div><div class="n" data-n={pct}>0</div><div class="l">% en tu licencia anual</div></div>
+</div>
+
+<div class="cuerpo">
+  {(hoy.length > 0 || conSacs.length > 0) && (
+    <>
+      <div class="st"><span class="x">Cómo operas hoy, y qué cambia</span><span class="ln"></span></div>
+      {/* El espejo. A la izquierda sus palabras, a la derecha la respuesta.
+          Si solo hay un lado se pinta ese: media tabla vacía se lee como que
+          no entendimos la mitad. */}
+      <div class={`espejo${hoy.length && conSacs.length ? '' : ' solo'}`}>
+        {hoy.length > 0 && (
+          <div class="c hoy"><div class="k">Hoy</div>
+            <ul>{hoy.map((x: string) => <li>{x}</li>)}</ul>
+          </div>
+        )}
+        {hoy.length > 0 && conSacs.length > 0 && <div class="fl">→</div>}
+        {conSacs.length > 0 && (
+          <div class="c con"><div class="k">Con Sacs</div>
+            <ul>{conSacs.map((x: string) => <li>{x}</li>)}</ul>
+          </div>
+        )}
+      </div>
+    </>
+  )}
+
+  {pedidos.length > 0 && (
+    <>
+      <div class="st"><span class="x">Lo que pediste, y dónde vive</span><span class="ln"></span></div>
+      <div class="mods">
+        {pedidos.map((p: any) => (
+          <div class="mod">
+            <div class="t">{p.titulo}</div>
+            {p.detalle && <div class="d">{p.detalle}</div>}
+            <span class={`tag ${p.existe ? '' : 'nu'}`}>{p.existe ? 'ya existe' : 'se construye para ti'}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )}
+
+  {(h.siguiente || h.decide) && (
+    <>
+      <div class="st"><span class="x">Lo que sigue</span><span class="ln"></span></div>
+      {h.siguiente && (
+        <div class="paso"><span class="num">1</span><div>
+          <div class="t">{h.siguiente}</div>
+          <div class="d">Es lo que quedamos en la sesión.</div>
+        </div></div>
+      )}
+      <div class="paso"><span class="num">{h.siguiente ? '2' : '1'}</span><div>
+        <div class="t">Tu cotización</div>
+        <div class="d">Con el {pct}% ya aplicado. No hay que pedirlo.</div>
+      </div></div>
+      <div class="paso"><span class="num">{h.siguiente ? '3' : '2'}</span><div>
+        <div class="t">Arrancas</div>
+        <div class="d">Cargamos tu catálogo y dejamos tu operación configurada.</div>
+      </div></div>
+      {h.decide && <p class="p decide"><b>Quién decide:</b> {h.decide}</p>}
+    </>
+  )}
+
+  {/* EL CUPÓN, AL CIERRE. Después de lo que se habló y de lo que sigue: puesto
+      antes nubla el trabajo de la sesión y el documento se vuelve un anuncio. */}
+  <div class="oferta">
+    <div class="k">Por haber tomado la sesión</div>
+    <div class="big">{pct}% de descuento en tu licencia anual</div>
+    <div class="d">
+      Se aplica a cualquiera de nuestros planes. Es por haber tomado la sesión: no se pide, ya es tuyo.
+      {vence && <> Vigente <b>hasta el {dLarga(vence)}</b>.</>}
+    </div>
+    <div class="chips">
+      <span class="chip">Pago anual</span>
+      {vence && <span class="chip">Vence el {dCorta(vence)}</span>}
+    </div>
+  </div>
+</div>
+
+<div class="pieE">
+  <div class="fw">Sacscloud</div>
+  <p>
+    ¿Algo no quedó como lo platicamos? Contesta este mismo documento y lo corregimos. Folio {rep.folio}.
+  </p>
+</div>
