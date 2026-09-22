@@ -163,6 +163,8 @@ export type Peticion = {
   contexto?: Record<string, any>;
   /** Fuerza un proveedor concreto (para comparar calidad entre ellos). */
   proveedor?: Proveedor;
+  /** Va primero si está disponible; los demás quedan de respaldo (a diferencia de `proveedor`, que es exclusivo). */
+  preferir?: Proveedor;
   /** false = sin razonamiento previo. Opus 5 piensa por defecto y esos tokens
    *  salen del MISMO max_tokens: en una página de 3,000 palabras el
    *  razonamiento se comía 20-30k y la respuesta llegaba cortada (22-sep-2026).
@@ -316,7 +318,8 @@ async function pedirA(prov: Proveedor, modelo: string, p: Peticion, usuario: str
 
 export async function preguntar<T = any>(p: Peticion): Promise<Respuesta<T>> {
   const trabajo = p.trabajo || 'volumen';
-  const orden = p.proveedor ? [p.proveedor] : await ordenDeProveedores(trabajo);
+  let orden = p.proveedor ? [p.proveedor] : await ordenDeProveedores(trabajo);
+  if (!p.proveedor && p.preferir && orden.includes(p.preferir)) orden = [p.preferir, ...orden.filter(x => x !== p.preferir)];
   if (!orden.length) return { ok: false, datos: null, texto: '', costo_usd: 0, run_id: null, error: 'no hay ninguna llave de IA configurada', definitivo: true };
 
   let usuario = p.usuario;

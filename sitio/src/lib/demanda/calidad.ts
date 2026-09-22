@@ -619,6 +619,12 @@ ${aMarkdown(cuerpo).slice(0, 90000)}`; // 26k cortaba el hub (72 bloques) y el j
 
   const r = await preguntar<Veredicto>({ agente: 'contenido_referee', trabajo: 'estrategia', sistema: SISTEMA_REFEREE, usuario, esquema: ESQUEMA_VEREDICTO, max_tokens: 32000 }); // el referee sí razona y esos tokens cuentan aquí
   if (!r.ok || !r.datos) return { ok: false, error: r.error, duras, costo: costoComp + (r.costo_usd || 0) };
+  /* El referee es la puerta de calidad: solo lo juzga un modelo fuerte. Sin saldo
+     en Anthropic y OpenAI el failover caía en Gemini, que dio 10/10 a páginas con
+     cinco fallas duras y aprobó seis piezas el 22-sep-2026. Mejor detenerse. */
+  if (!['anthropic', 'openai'].includes(String(r.proveedor))) {
+    return { ok: false, error: `el referee solo corre con Opus o gpt-5 (contestó ${r.proveedor}: sin saldo en los dos)`, duras, costo: costoComp + (r.costo_usd || 0) };
+  }
 
   const v = r.datos;
   // Las duras mandan: si el modelo dijo «pasa» pero hay un precio inventado, no pasa.

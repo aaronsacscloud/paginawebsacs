@@ -413,6 +413,38 @@ const ESQUEMA_PARCHES = {
  * Aquí el modelo devuelve solo las operaciones sobre bloques numerados; el
  * resto de la página no se toca y las imágenes ya generadas se quedan.
  */
+/* Las rutas internas REALES de un encargo: cada slug de `enlaces` con la sección
+   donde de verdad está publicado (ya no todo vive en /recursos/: el hub de novias
+   está en /guias/novias/…), y el hub del giro. Sin el hub en la lista, el modelo
+   no podía cumplir «todo spoke enlaza al hub» y el referee tumbaba cada spoke. */
+async function rutasInternas(b: any): Promise<{ enlaces: string[]; hub: string | null; hubTitulo?: string }> {
+  const slugs: string[] = b?.enlaces || [];
+  const { data: pub } = slugs.length
+    ? await supabase.from('de_contenido').select('seccion, slug').eq('estado', 'publicado').in('slug', slugs)
+    : { data: [] as any[] };
+  const donde = new Map((pub || []).map((x: any) => [x.slug, `/${x.seccion}/${x.slug}/`]));
+  let hub: string | null = null, hubTitulo: string | undefined;
+  if (b?.giro && !b?.es_hub) {
+    const { data: h } = await supabase.from('de_contenido').select('seccion, slug, titulo').eq('estado', 'publicado')
+      .filter('brief->>giro', 'eq', b.giro).filter('brief->>es_hub', 'eq', 'true').limit(1).maybeSingle();
+    if (h) { hub = `/${h.seccion}/${h.slug}/`; hubTitulo = h.titulo; }
+  }
+  const enlaces = slugs.map(sl => donde.get(sl) || `/recursos/${sl}/`).filter(r => r !== hub);
+  return { enlaces, hub, hubTitulo };
+}
+
+/* Si el spoke no enlaza al hub, se inserta la línea tras el primer párrafo. El
+   modelo recibía la ruta y la corrección y aun así no la ponía (22-sep-2026:
+   tres rondas seguidas); esto es una regla, no una opinión: va en código. */
+function asegurarHub(cuerpo: Bloque[], rutas: { hub: string | null; hubTitulo?: string }): Bloque[] {
+  if (!rutas.hub || JSON.stringify(cuerpo).includes(rutas.hub.replace(/\/$/, ''))) return cuerpo;
+  const i = cuerpo.findIndex(bl => bl.t === 'p');
+  const linea = { t: 'p', texto: `Esta guía es parte de una más amplia: [${(rutas.hubTitulo || 'la guía completa del tema').replace(/[\[\]]/g, '')}](${rutas.hub}), donde está el proceso completo de punta a punta.` } as Bloque;
+  const nuevo = cuerpo.slice();
+  nuevo.splice(i >= 0 ? i + 1 : 1, 0, linea);
+  return nuevo;
+}
+
 export async function aplicarParches(contenidoId: string): Promise<{ ok: boolean; error?: string; costo: number; palabras?: number; parches?: number }> {
   const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, brief, cuerpo, titulo, h1, meta_desc, estado').eq('id', contenidoId).maybeSingle();
   if (!c) return { ok: false, error: 'no existe', costo: 0 };
@@ -420,6 +452,7 @@ export async function aplicarParches(contenidoId: string): Promise<{ ok: boolean
   const cuerpo = ((c.cuerpo || []) as Bloque[]).slice();
   if (!b.correcciones?.length) return { ok: false, error: 'no hay correcciones', costo: 0 };
 
+  const rutas = await rutasInternas(b);
   const numerado = cuerpo.map((bl, i) => `[#${i}] ` + aMarkdown([bl]).replace(/\n/g, '\n      ')).join('\n\n');
   const usuario = `CORRECCIONES DEL REFEREE (aplica TODAS, nada más):
 ${b.correcciones.map((x: string, i: number) => `  ${i + 1}. ${x}`).join('\n')}
@@ -431,7 +464,7 @@ Meta: ${c.meta_desc}
 
 ${numerado}
 
-RUTAS INTERNAS PERMITIDAS: ${(b.enlaces || []).map(s => `/recursos/${s}/`).join(', ')}, /agendar, /giros/${b.giro || ''}${b.fuentes?.length ? `\nFUENTES VERIFICADAS (solo estas urls): ${b.fuentes.map((f: any) => f.url).join(' · ')}` : ''}
+RUTAS INTERNAS PERMITIDAS: ${[...(rutas.hub ? [rutas.hub] : []), ...rutas.enlaces].join(', ')}, /agendar, /giros/${b.giro || ''}${rutas.hub ? `\nHUB DEL GIRO: ${rutas.hub} — la guía completa del tema; esta página lo enlaza en su primer tercio con anchor natural.` : ''}${b.fuentes?.length ? `\nFUENTES VERIFICADAS (solo estas urls): ${b.fuentes.map((f: any) => f.url).join(' · ')}` : ''}
 
 Devuelve SOLO las operaciones necesarias, como JSON: {"titulo", "h1", "meta_desc" (cadena vacía "" si ninguna corrección los cambia), "parches":[{"op":"reemplazar|insertar_despues|insertar_antes|eliminar","i":<índice del bloque de referencia>,"bloque":{...}}]}.
 Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_items, encabezados, filas, items{p,r,titulo,texto}, nota, fuente, url); «captura»: titulo, nota=migas, items{p,r}=campos, texto=alt; «imagen»: texto=alt, nota=escena. Para partir un párrafo: «reemplazar» el [#i] por la primera mitad e «insertar_despues» del mismo i la segunda. Índices siempre referidos a la numeración de arriba.`;
@@ -455,7 +488,7 @@ Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_i
     ...(datos.h1 ? { h1: datos.h1 } : {}),
     ...(datos.meta_desc ? { meta_desc: recortar(String(datos.meta_desc), 158) } : {}),
     // Una pieza publicada/aprobada que se parcha desde Seguimiento conserva su estado.
-    cuerpo: partirParrafosLargos(nuevo), estado: ['publicado', 'aprobado'].includes((c as any).estado) ? (c as any).estado : 'borrador',
+    cuerpo: asegurarHub(partirParrafosLargos(nuevo), rutas), estado: ['publicado', 'aprobado'].includes((c as any).estado) ? (c as any).estado : 'borrador',
     brief: { ...(c.brief as any), correcciones: undefined },
     actualizado_at: new Date().toISOString(),
   }).eq('id', contenidoId);
@@ -480,7 +513,8 @@ export async function escribirBorrador(contenidoId: string): Promise<{ ok: boole
     if (pr.ok) return pr;
     // si los parches fallan, se cae a la reescritura completa de abajo
   }
-  const enlaces = (b.enlaces || []).map(s => `  /recursos/${s}/`).join('\n') || '  (ninguno)';
+  const rutas = await rutasInternas(b);
+  const enlaces = rutas.enlaces.map(r => `  ${r}`).join('\n') || '  (ninguno)';
 
   /* Lo que hoy rankea (lo trajo contenido.competencia) y lo que el referee
      mandó corregir (si esto es una reescritura). Las dos cosas van ARRIBA del
@@ -533,7 +567,7 @@ ${(b.faq || []).map(x => `  - ${x}`).join('\n')}
 Enlaces propios que encajan (úsalos dentro del texto con [texto](/ruta/) o en la cta):
 ${enlaces}
   /agendar — para pedir una demo (texto ancla natural, nunca la ruta pegada)
-${b.giro ? `  /giros/${b.giro} — la sección de Sacs para este giro; enlázala una vez en el cuerpo` : ''}
+${rutas.hub ? `  ${rutas.hub} — EL HUB: la guía completa del tema; enlázalo en el primer tercio de la página con anchor natural\n` : ''}${b.giro ? `  /giros/${b.giro} — la sección de Sacs para este giro; enlázala una vez en el cuerpo` : ''}
 ${b.nota_honestidad ? `\nCUIDADO — lo que NO podemos afirmar (precios, planes, datos, ley):\n  ${b.nota_honestidad}` : ''}
 ${b.funciones_a_prometer?.length ? `\nFUNCIONES QUE LA PÁGINA PRESENTA COMO DE SACS (descríbelas con detalle, como existentes):\n${b.funciones_a_prometer.map((x: string) => `  - ${x}`).join('\n')}` : ''}
 
@@ -545,6 +579,10 @@ Escribe la página.`;
     agente: 'contenido_borrador', trabajo: 'estrategia',
     /* 20000: con 10000 una página de 2,500 palabras llegaba «entera» al JSON con el
        último FAQ cortado a media frase — y el referee la devolvía por eso. */
+    /* gpt-5 primero: Opus 5 sin razonar cerraba el JSON a las 1,000-1,500 palabras
+       (hasta con un «## placeholder»), y razonando se iba a 48k de basura. gpt-5
+       entrega 7-17k tokens completos (22-sep-2026). Opus queda de respaldo. */
+    preferir: 'openai',
     sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_BORRADOR, max_tokens: 48000, pensar: false, // con capturas y glosario el JSON pasa de 28k (22-sep-2026)
   });
   if (!r.ok || !r.datos) return { ok: false, error: r.error || 'sin datos', costo: r.costo_usd || 0 };
@@ -574,7 +612,7 @@ Escribe la página.`;
     else break;
   }
 
-  const cuerpoFinal = partirParrafosLargos(cuerpo);
+  const cuerpoFinal = asegurarHub(partirParrafosLargos(cuerpo), rutas);
   const { error } = await supabase.from('de_contenido').update({
     titulo: String(r.datos.titulo || '').slice(0, 80),
     h1: r.datos.h1 || r.datos.titulo,
