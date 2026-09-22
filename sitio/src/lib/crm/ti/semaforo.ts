@@ -20,12 +20,24 @@ export async function puedeAutomatico(contactId: string, o: { telefono?: string 
   const q = cfg.silencio_automaticos || { desde: 21, hasta: 8 };
   if (!o.aprobadoHumano && (hCdmx >= Number(q.desde) || hCdmx < Number(q.hasta))) return { ok: false, motivo: 'horas_silenciosas' };
   const [{ data: k }, { data: pf }] = await Promise.all([
-    supabase.from('contacts').select('wa_optout, whatsapp, archived_at').eq('id', contactId).maybeSingle(),
+    supabase.from('contacts').select('wa_optout, whatsapp, archived_at, descalificado_at, descalificado_levantado_at').eq('id', contactId).maybeSingle(),
     supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
   ]);
   if (!k || k.archived_at || k.wa_optout) return { ok: false, motivo: 'optout_o_archivado' };
   if ((pf as any)?.silenciar_ia || (pf as any)?.agente_estado?.cerrado) return { ok: false, motivo: 'agente_apagado_en_este_lead' };
   const tel = dig(o.telefono || k.whatsapp);
+  /* Mejora #1 (22-sep-2026): el que se descalificó ALGUNA VEZ no recibe
+     seguimientos automáticos, aunque su etapa ya diga otra cosa. Sólo pasan
+     (a) lo que aprobó una persona y (b) si ÉL volvió a escribirnos después de
+     descalificarse: ahí ya no es contacto no deseado, es una conversación. */
+  if ((k as any).descalificado_at && !(k as any).descalificado_levantado_at && !o.aprobadoHumano) {
+    const { data: cs } = await supabase.from('wa_conversaciones').select('id').eq('contact_id', contactId).limit(5);
+    const cids = (cs || []).map(c => c.id);
+    const { data: volvio } = cids.length
+      ? await supabase.from('wa_mensajes').select('id').in('conversation_id', cids).eq('direccion', 'entrante').gt('created_at', (k as any).descalificado_at).limit(1)
+      : { data: [] as any[] };
+    if (!(volvio || []).length) return { ok: false, motivo: 'descalificado_previo' };
+  }
   // Humano escribió hace < 4 h en alguna conversación del contacto.
   const { data: convs } = await supabase.from('wa_conversaciones').select('id').eq('contact_id', contactId).limit(5);
   const ids = (convs || []).map(c => c.id);

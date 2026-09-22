@@ -185,7 +185,8 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
   const familia = (o.familia || cfgP.reactivacion_familia || 'reactivacion') as Familia;
   const par = await parListoPara(familia);
   if (!par) return { error: 'No hay plantilla aprobada por Meta todavía (ni la de reactivación ni la de seguimiento).' };
-  const sem = await puedeAutomatico(r.contact_id, { telefono: r.telefono, origen: 'reactivacion', aprobadoHumano: true });
+  // La que sale sola por la rampa NO es aprobación humana: el semáforo la trata como automática (descalificados incluidos).
+  const sem = await puedeAutomatico(r.contact_id, { telefono: r.telefono, origen: 'reactivacion', aprobadoHumano: !o.automatica });
   if (!sem.ok && !['horas_silenciosas'].includes(sem.motivo)) return { error: `El semáforo lo detiene: ${sem.motivo.replace(/_/g, ' ')}. Se puede volver a intentar mañana.` };
   const { data: k } = await supabase.from('contacts').select('nombre').eq('id', r.contact_id).maybeSingle();
   const nombreK = String(k?.nombre || '').trim();

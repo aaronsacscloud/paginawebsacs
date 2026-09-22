@@ -26,12 +26,16 @@
  * que enterarse de dónde salió cada fila.
  *
  * LO QUE NUNCA SE PUEDE APAGAR DESDE LA PANTALLA: sin teléfono no entra, los
- * `no_llamar` del CRM no entran, y los de la lista de bloqueo del ABM tampoco
- * (eso lo hace la vista). Un filtro que se pueda desmarcar acaba desmarcado.
+ * `no_llamar` del CRM no entran, los que se DESCALIFICARON ALGUNA VEZ tampoco
+ * (Mejora #1, 22-sep: por el sello `descalificado_at`, no por la etapa de hoy),
+ * y los de la lista de bloqueo del ABM tampoco (eso lo hace la vista, que
+ * además tacha los números de esos descalificados). Un filtro que se pueda
+ * desmarcar acaba desmarcado.
  */
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
+import { cargarVetos, vetoDe } from '../../../../lib/telefonia/veto';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -141,6 +145,12 @@ export const GET: APIRoute = async ({ request, url }) => {
      servidor, que es el único que sabe cuánto pidió a cada lado. */
   const offsetFuente = offset;
 
+  /* Los vetados por número: el mismo teléfono puede estar en un contacto
+     duplicado que nunca se descalificó. Falla cerrado (lanza). */
+  let vetos: Awaited<ReturnType<typeof cargarVetos>>;
+  try { vetos = await cargarVetos(); } catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
+  let vetadosPorNumero = 0;
+
   const crmFilas: any[] = [];
   const abmFilas: any[] = [];
   let total = 0;
@@ -153,7 +163,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       // Sin teléfono no hay llamada. Va aquí y no en el navegador para que el
       // número que se enseña sea el número al que se va a marcar.
       .or('telefono.not.is.null,whatsapp.not.is.null')
-      .not('no_llamar', 'is', true);
+      .not('no_llamar', 'is', true)
+      // Descalificado ALGUNA VEZ = fuera, diga lo que diga su etapa hoy. Sólo
+      // entra si una persona levantó el veto a propósito desde la ficha.
+      .or('descalificado_at.is.null,descalificado_levantado_at.not.is.null');
 
     const etapas = lista(q.get('etapa'));
     if (etapas.length) sel = sel.in('lifecycle_stage', etapas);
@@ -189,6 +202,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (!tel || /@/.test(tel)) continue;
       if (quemadosSet.has(tel)) continue;
       if (conReunion.has(String(c.id))) continue;
+      if (vetoDe(vetos, { contact_id: c.id, telefono: tel })) { vetadosPorNumero++; continue; }
       crmFilas.push({
         id: `crm:${c.id}`, fuente: 'crm', virtual: true, wa_id: null,
         contact_id: c.id, company_id: c.company_id || null, telefono: tel,
@@ -247,6 +261,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       const tel = String((a as any).marcar || '');
       if (!tel) continue;
       if (quemadosSet.has(tel)) continue;
+      if (vetoDe(vetos, { telefono: tel })) { vetadosPorNumero++; continue; }
       abmFilas.push({
         id: `abm:${a.id}`, fuente: 'abm', virtual: true, wa_id: null,
         contact_id: null, company_id: null, telefono: tel,
@@ -278,9 +293,9 @@ export const GET: APIRoute = async ({ request, url }) => {
     ok: true,
     conversaciones: filas,
     total_filtrado: total,
-    aprox: quemadosSet.size > 0 || conReunion.size > 0,
+    aprox: quemadosSet.size > 0 || conReunion.size > 0 || vetadosPorNumero > 0,
     hay_mas: (crmFilas.length >= porFuente) || (abmFilas.length >= porFuente),
     siguiente_offset: offsetFuente + porFuente,
-    descartados: { quemados: quemadosSet.size, con_reunion: conReunion.size },
+    descartados: { quemados: quemadosSet.size, con_reunion: conReunion.size, descalificados: vetadosPorNumero },
   });
 };

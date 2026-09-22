@@ -12,6 +12,7 @@
 //   resultado: contesto | no_contesto | volver_llamar | dieron_datos | no_interesa
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { cargarVetos, vetoDe } from '../../../../lib/telefonia/veto';
 import { json, quien, esUuid, limpiar, apuntar, repuntuar, GIROS } from '../../../../lib/crm/abm.lib';
 
 export const prerender = false;
@@ -56,6 +57,8 @@ export const GET: APIRoute = async ({ request, url }) => {
   const SEL = 'id, nombre, giro, subgiro, ciudad, sucursales, google_rating, google_resenas, plataforma_web, contexto, senal_expansion, puntaje, etapa, tiene_email, tiene_wa, pausa_motivo';
   let q = supabase.from('abm_cuentas').select(SEL)
     .neq('etapa', 'no_contactar').is('ya_es_cliente', null)
+    // Mejora #1 (22-sep): la que ya dijo «no le interesa» una vez no vuelve a la cola, aunque cambie de etapa.
+    .is('descalificada_at', null)
     .or('tiene_email.eq.false,pausa_motivo.eq.abre y no contesta: toca llamada')
     .order('puntaje', { ascending: false }).limit(limite * 3);
   if (giro) q = q.eq('giro', giro);
@@ -71,8 +74,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   for (const c of canales || []) (porCuenta[c.cuenta_id] ||= []).push(c);
   const yaLlamadas = new Set((tocadas || []).map((a: any) => a.cuenta_id));
 
+  // Y ningún número de un lead del CRM que se descalificó (o pidió que no se le llame).
+  const vetos = await cargarVetos();
+  const vetada = (id: string) => (porCuenta[id] || []).some(x => (x.tipo === 'telefono' || x.tipo === 'whatsapp_tienda') && vetoDe(vetos, { telefono: x.valor }));
   const cola = cuentas
     .filter(c => (porCuenta[c.id] || []).some(x => x.tipo === 'telefono' || x.tipo === 'whatsapp_tienda'))
+    .filter(c => !vetada(c.id))
     .filter(c => !yaLlamadas.has(c.id))          // primero los que nadie ha llamado
     .slice(0, limite)
     .map(c => ({

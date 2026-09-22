@@ -21,6 +21,7 @@ import { callerIdSaliente } from './caller-id';
 import { juzgar, textoOido, dialogoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
+import { cargarVetos, vetoDe, vetoDeUno } from './veto';
 import { ladaDe, zonaDeLada, horaLocal, fechaHoraEn, instanteEnZona } from './zonas';
 // Fernanda al teléfono: el aviso a la central de voz se carga aparte (solo lo usan las sesiones con IA).
 const voz = () => import('./voz');
@@ -188,13 +189,11 @@ export async function crearSesion(ownerId: string | null, o: {
   const filas: any[] = [];
   const excluidos: { nombre: string; telefono: string; motivo: string }[] = [];
 
-  // Teléfonos de «no me llames» y los que ya se marcaron 3 veces esta semana.
-  const ids = o.items.map(i => i.contact_id).filter(Boolean) as string[];
-  const noLlamar = new Set<string>();
-  for (let i = 0; i < ids.length; i += 150) {
-    const { data } = await supabase.from('contacts').select('id').in('id', ids.slice(i, i + 150)).eq('no_llamar', true);
-    (data || []).forEach(c => noLlamar.add(c.id));
-  }
+  /* Los «no me llames» y los DESCALIFICADOS ALGUNA VEZ (Mejora #1, 22-sep).
+     Aquí es donde nace toda lista de llamadas —la del armador, la del inbox,
+     «volver a llamar a los que faltan», la de Fernanda— así que la regla se
+     aplica al generarla, no escondiendo después. Por contacto y por número. */
+  const vetos = await cargarVetos();
   const tels = Array.from(new Set(o.items.map(i => telefonoWhatsApp(i.telefono)).filter(Boolean))) as string[];
   /* El tope cuenta solo los INTENTOS sin conversación (buzón, no contestó,
      portero). Si en la semana ya se habló con él y pidió que se le vuelva a
@@ -223,7 +222,7 @@ export async function crearSesion(ownerId: string | null, o: {
     if (!e164) motivo = 'teléfono inválido';
     else if (e164 === NUMERO) motivo = 'es el número del negocio';
     else if (vistos.has(e164)) motivo = 'repetido en la lista';
-    else if (it.contact_id && noLlamar.has(it.contact_id)) motivo = 'pidió que no se le llame';
+    else if (vetoDe(vetos, { contact_id: it.contact_id, telefono: e164 })) motivo = vetoDe(vetos, { contact_id: it.contact_id, telefono: e164 })!.texto;
     else if (dijoNo.has(e164) && !pidioLlamada.has(e164)) motivo = `dijo que no le interesa el ${dijoNo.get(e164)}`;
     else if ((intentosSemana.get(e164) || 0) >= config.tope_intentos) motivo = `ya se le marcó ${intentosSemana.get(e164)} veces sin contestar en 7 días`;
     if (e164) vistos.add(e164);
@@ -260,6 +259,8 @@ export async function crearSesion(ownerId: string | null, o: {
   for (const t of promesas || []) {
     const tel = telefonoWhatsApp(String((t.payload as any)?.whatsapp || ''));
     if (!tel) continue;
+    // Una promesa vieja no revive a un descalificado (ni a un «no me llames»).
+    if (vetoDe(vetos, { contact_id: t.contact_id, telefono: tel })) continue;
     const hora = new Date(String(t.vence_at)).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
     /* ⚠️ UN TELÉFONO, UN RENGLÓN. Medido al probarlo: Emilio Achar tenía DOS
        promesas vivas (una de las 14:26 y otra de las 17:43) y entró dos veces
@@ -540,6 +541,16 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
       const proximo = futuros.map(c => String(c.volver_at)).sort()[0];
       if (!dentroDeHoy(proximo, s.config?.horario)) { await agotarSesion(sesionId); return { ok: false, motivo: 'la lista terminó; el compromiso queda en la agenda' }; }
       return { ok: false, motivo: 'esperando un compromiso con hora' };
+    }
+
+    /* Último candado, justo antes de marcar: la lista pudo armarse en la
+       mañana y el lead descalificarse a mediodía (en otra llamada, en el chat,
+       desde la ficha). Si ya no se le puede llamar, sale de la lista con su
+       motivo y se sigue con el siguiente. */
+    const veto = await vetoDeUno({ contact_id: it.contact_id, telefono: it.telefono });
+    if (veto) {
+      await supabase.from('tel_sesion_items').update({ estado: 'excluido', motivo_exclusion: veto.texto, updated_at: ahora() }).eq('id', it.id).eq('estado', 'pendiente');
+      continue;
     }
 
     // Reclamar el item y el turno de la sesión: si alguien más ganó, no pasa nada.
