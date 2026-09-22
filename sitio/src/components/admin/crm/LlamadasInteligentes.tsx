@@ -102,7 +102,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   const esMovil = useIsMobile();
   const [verGrabaciones, setVerGrabaciones] = useState(false);
   const [armando, setArmando] = useState(false);
-  const [aMedida, setAMedida] = useState<{ titulo: string; qs: string } | null>(null);
+  const [aMedida, setAMedida] = useState<{ titulo: string; qs: string; total?: number } | null>(null);
   const [counts, setCounts] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [elegida, setElegida] = useState<Lista | null>(null);
@@ -144,10 +144,10 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
           <Suspense fallback={<Cargando texto="Abriendo la cabina…" alto={260} />}>
             <Cabina qs={aMedida?.qs || elegida?.qs || 'filtro=todas'}
               descripcion={aMedida?.titulo || elegida?.titulo || 'Jornada anterior'}
-              /* La lista a medida entra con total 0: el número real lo cuenta la
-                 cabina al leer la lista, y adivinarlo aquí sólo serviría para
-                 desmentirse dos segundos después. */
-              total={aMedida ? 0 : n} yo={yo} movil={esMovil}
+              /* La lista a medida entra con el número que el armador ya contó
+                 (el mismo de «Llamar a estos N»). Con 0 la cabina decía «Sin
+                 filas con los filtros de ahora» sobre una lista de 82 (22-sep). */
+              total={aMedida ? Number(aMedida.total || 0) : n} yo={yo} movil={esMovil}
               sesionInicial={verSesion}
               onCerrar={() => { setElegida(null); setVerSesion(null); setAMedida(null); }}
               onAbrirConversacion={id => { window.location.href = `/admin/crm?tab=whatsapp&wa_conv=${id}`; }} />

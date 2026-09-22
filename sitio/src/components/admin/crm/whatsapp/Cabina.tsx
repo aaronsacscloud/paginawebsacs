@@ -170,7 +170,24 @@ function AgendarEnCierre({ contactId, nombre, telefono }: { contactId?: string |
 }
 
 export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAbrirConversacion, onCerrar, movil }: Props) {
-  const [sesionId, setSesionId] = useState<string | null>(() => sesionInicial || leerLocal('cabina.sesion', null));
+  /* 🔴 BUG (22-sep-2026, reportado por el dueño): armaba una lista nueva con
+     filtros, le daba «Llamar a estos 82» y la cabina abría OTRA jornada — la
+     última que había usado («Vista Nuevo lead · segunda vuelta…»), guardada en
+     este navegador. La cabina siempre llega con una lista nueva (`qs`), así que
+     la jornada guardada sólo se retoma sola si está MARCANDO ahora mismo
+     (`activa`: una recarga a media jornada no puede tirar la sala). Una
+     pausada, lista o terminada queda en «Sesiones anteriores», con su botón. */
+  const [sesionId, setSesionId] = useState<string | null>(() => sesionInicial || null);
+  useEffect(() => {
+    if (sesionInicial) return;
+    const guardada = leerLocal<string | null>('cabina.sesion', null);
+    if (!guardada) return;
+    let vivo = true;
+    fetch(`/api/crm/telefonia/marcador?id=${guardada}`, { cache: 'no-store' }).then(r => r.json())
+      .then(j => { if (vivo && j?.sesion?.estado === 'activa') setSesionId(id => id || guardada); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const [est, setEst] = useState<any>(null);           // { sesion, actual, pendientes, ahora }
   const [items, setItems] = useState<any[]>([]);
   const [previas, setPrevias] = useState<any[]>([]);
@@ -961,7 +978,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               <div style={{ fontSize: 15, fontWeight: 700, color: C.g900 }}>{descripcion}</div>
               <div style={{ fontSize: 12.5, color: C.g500, marginTop: 2 }}>
                 {total > 0 ? `${total} ${total === 1 ? 'contacto' : 'contactos'} con los filtros de ahora` : 'Sin filas con los filtros de ahora'}{total > 500 ? ' · se toman los primeros 500' : ''}.
-                Se quitan solos los que no tienen teléfono, los marcados «no llamar» y los que ya se intentaron 3 veces esta semana.
+                Se quitan solos los que no tienen teléfono, los marcados «no llamar», los que se descalificaron alguna vez, los que ya tuvieron una acción (salvo que lo quites en el armador) y los que ya se intentaron 3 veces esta semana.
               </div>
               {armando && <div style={{ marginTop: 8, fontSize: 12, color: C.moradoTinta, fontWeight: 600 }}>Leyendo la lista… {armando.leidas}{armando.total ? ` de ${armando.total}` : ''}</div>}
             </div>

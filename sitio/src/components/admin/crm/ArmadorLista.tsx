@@ -189,7 +189,7 @@ function Palomita({ on, onCambio, texto, porque }: { on: boolean; onCambio: (v: 
 
 export default function ArmadorLista({ etapas, onListo, onCerrar }: {
   etapas: { id: string; label: string }[];
-  onListo: (l: { titulo: string; qs: string }) => void;
+  onListo: (l: { titulo: string; qs: string; total?: number }) => void;
   onCerrar: () => void;
 }) {
   const esMovil = useIsMobile();
@@ -454,7 +454,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
         <div style={{ padding: esMovil ? '12px 16px' : '14px 22px', borderTop: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
           <div style={{ flex: 1 }} />
-          <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs })} disabled={!n || cargando}
+          <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs, total: n })} disabled={!n || cargando}
             style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
               cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: '#fff' }}>
             {n ? `Llamar a estos ${Math.min(n, 500).toLocaleString('es-MX')}` : 'Llamar a estos'}

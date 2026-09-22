@@ -1640,7 +1640,14 @@ export async function relanzar(sesionId: string, ownerId: string | null, cuales?
   const otra = items.filter(i => (i.estado === 'hecho' || i.estado === 'saltado') && base.has(String(i.resultado)) || (i.estado === 'pendiente'));
   if (!otra.length) throw new Error('No hay a quién volver a llamar');
   return crearSesion(ownerId, {
-    nombre: `${s.nombre} · segunda vuelta`, origen: { relanzar_de: sesionId, ...(s.origen || {}) },
+    /* «segunda vuelta · segunda vuelta · segunda vuelta» (22-sep): cada relanzar
+       pegaba otra. Se quita la marca vieja y se numera la vuelta. */
+    nombre: (() => {
+      const base = String(s.nombre || 'Sesión').replace(/(\s·\s(segunda vuelta|vuelta \d+))+$/i, '');
+      const num = String(s.nombre || '').match(/vuelta (\d+)\s*$/i);
+      const vuelta = num ? Number(num[1]) + 1 : (String(s.nombre || '').match(/·\ssegunda vuelta/gi) || []).length + 2;
+      return `${base} · ${vuelta === 2 ? 'segunda vuelta' : `vuelta ${vuelta}`}`;
+    })(), origen: { relanzar_de: sesionId, ...(s.origen || {}) },
     items: otra.map(i => ({ contact_id: i.contact_id, conversation_id: i.conversation_id, nombre: i.nombre, empresa: i.empresa, telefono: i.telefono })),
     presentacion_nombre: s.presentacion_nombre, presentacion_motivo: s.presentacion_motivo, buzon_dejar_mensaje: s.buzon_dejar_mensaje, config: s.config,
   });
