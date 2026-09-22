@@ -10,7 +10,7 @@ export const GET: APIRoute = async ({ url }) => {
   const search = `%${q}%`;
 
   const [contacts, companies, deals, quotes] = await Promise.all([
-    supabase.from('contacts').select('id, nombre, email, tipo, lifecycle_stage').or(`nombre.ilike.${search},email.ilike.${search},whatsapp.ilike.${search}`).limit(5),
+    supabase.from('contacts').select('id, nombre, apellido, email, whatsapp, company_id, tipo, lifecycle_stage').or(`nombre.ilike.${search},email.ilike.${search},whatsapp.ilike.${search}`).limit(5),
     supabase.from('companies').select('id, nombre, plan, estado_cuenta').ilike('nombre', search).limit(5),
     supabase.from('deals').select('id, nombre, stage, valor_total').ilike('nombre', search).limit(5),
     supabase.from('quotes').select('id, numero, empresa, total, estado').or(`empresa.ilike.${search},numero.ilike.${search}`).limit(5),

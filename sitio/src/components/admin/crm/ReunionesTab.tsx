@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import LinkConsultoria from './LinkConsultoria';
 import { WRAP } from '../../../lib/crm/layout';
 import { ESTADOS, normalizaEstado } from '../../../lib/crm/reuniones';
 import KpiCard from './ui/KpiCard';
@@ -177,6 +178,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   // hay que andar borrando. Elegido el cliente, se abre su ficha en Reuniones,
   // que es donde el alta ya existe y funciona.
   const [eligiendoCliente, setEligiendoCliente] = useState(false);
+  const [linkConsultoria, setLinkConsultoria] = useState(false);
   const [buscaCliente, setBuscaCliente] = useState('');
   const [resCliente, setResCliente] = useState<any[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -508,6 +510,12 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
               cambio, así que era un botón que no hacía falta apretar— y los tipos
               de reunión y la disponibilidad viven en Configuración → Reuniones:
               son ajustes que se tocan una vez, no trabajo del día. */}
+          {/* El link para que el cliente agende solo, con los horarios propios
+              de la consultoría (pedido del 21-sep-2026). */}
+          <button onClick={() => setLinkConsultoria(true)}
+            style={{ border: '1px solid #dcd8ea', background: '#fff', color: '#3d3752', borderRadius: 10, padding: '9px 16px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Link de consultoría
+          </button>
           <button onClick={() => setEligiendoCliente(true)}
             style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             + Agendar reunión
@@ -778,6 +786,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
       {reagendar && <ReagendarModal booking={reagendar} onClose={() => setReagendar(null)} onDone={() => { setReagendar(null); avisar('Reunión reagendada ✓'); load(); }} onError={(m) => avisar('Error: ' + m)} />}
 
+      {linkConsultoria && <LinkConsultoria onCerrar={() => setLinkConsultoria(false)} avisar={avisar} />}
       {toast && (
         <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: '0.8125rem', zIndex: 3000, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>
       )}

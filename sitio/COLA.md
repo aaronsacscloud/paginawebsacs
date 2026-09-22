@@ -1081,3 +1081,13 @@ Google Calendar por host_id (ver memoria `crm-agenda-identidad-google`).
 Hoy el modal de ReporteLead.tsx trae un campo libre con 35 por defecto. Lo que pide:
 que al darle «Generar reporte» lo primero sea elegir 35 % o 40 % (sin valor puesto),
 y que no se genere hasta elegir.
+
+## 22-sep-2026 · minuta de descubrimiento más enfocada a vender (PENDIENTE — prototipos primero)
+> «De la minuta de descubrimiento, necesito que los campos estén más enfocados en sí, en lo que se habló en la reunión, pero en los beneficios que tiene lo que se habló en la cuenta del cliente y lo que sí tenemos que preguntar. Entonces, básicamente, esta minuta tiene que ser más llamativa para que sí adquiera el sistema.»
+
+Captura: MinutaLead.tsx (Estefany · NifaluStyle · demo 22/09). Hoy son 6 campos
+(Cómo opera hoy · Qué le duele · Qué le interesó · Qué le mostramos · Objeciones
+y riesgos · Quién decide). Lo que pide: que cada cosa hablada se traduzca al
+BENEFICIO en su cuenta, que diga lo que falta preguntar, y que se vea más
+llamativa. Ojo: la minuta alimenta reunirLead() y el reporte del lead
+(campos opera/duele/intereso/sacs/objeciones/decide/siguiente): no romper esas llaves.
