@@ -4,6 +4,9 @@ Esta carpeta es el estado del trabajo de posicionamiento. Vive en el repo y no
 en una carpeta temporal a propósito: cualquier sesión o cualquier persona del
 equipo tiene que poder retomarlo sin depender de una conversación.
 
+> **Para retomar: empieza por [`DONDE-NOS-QUEDAMOS.md`](DONDE-NOS-QUEDAMOS.md).**
+> Ahí está el estado al 22-sep-2026 y qué sigue, por orden de impacto.
+
 ## Para retomar el trabajo
 
 Empieza por este archivo, luego `geo.md`, que es el diagnóstico más reciente.
