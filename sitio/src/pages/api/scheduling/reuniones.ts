@@ -31,6 +31,12 @@ const _GET: APIRoute = async ({ request, url }) => {
   // Una sola reunión por id: lo usa el cotizador para traer los conceptos que
   // salieron en la minuta sin volver a capturarlos.
   const soloId = url.searchParams.get('id');
+  /* Las de UNA persona (22-sep-2026): el panel de Agendar del inbox necesita
+     saber si este prospecto ya tiene cita, aunque no tenga empresa. Por
+     contacto o por su WhatsApp (últimos 10 dígitos): las citas que agenda el
+     propio cliente a veces llegan sin contact_id. */
+  const contactId = url.searchParams.get('contact_id');
+  const tel10 = String(url.searchParams.get('telefono') || '').replace(/\D/g, '').slice(-10);
 
   let query = supabase
     .from('bookings')
@@ -57,6 +63,10 @@ const _GET: APIRoute = async ({ request, url }) => {
   const { data: bookings, error } = await query;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   let rows = bookings || [];
+  if (contactId || tel10.length === 10) {
+    rows = rows.filter((b: any) => (contactId && b.contact_id === contactId)
+      || (tel10.length === 10 && String(b.invitee_whatsapp || '').replace(/\D/g, '').slice(-10) === tel10));
+  }
   if (companyId) {
     rows = rows.filter((b: any) => b.company_id === companyId
       || (b.contact_id && companyContactIds.includes(b.contact_id))

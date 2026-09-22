@@ -539,14 +539,66 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     const to = new Date(Date.now() + 11 * 86400000).toISOString().slice(0, 10);
     fetch(`/api/scheduling/available-slots?slug=demo&from=${from}&to=${to}`)
       .then(r => r.json()).then(j => setSlots(j.dates || {})).catch(() => setSlots({}));
-    if (empresa?.id) {
-      const hoy = new Date().toISOString().slice(0, 10);
-      fetch(`/api/scheduling/reuniones?company_id=${empresa.id}&from=${hoy}`).then(r => r.json())
-        .then(j => setProxima((j.reuniones || j.bookings || j.data || [])
-          .find((b: any) => b.estado === 'confirmada' && (!contacto?.id || !b.contact_id || b.contact_id === contacto.id)) || null))
-        .catch(() => {});
-    }
+    cargarProxima();
   }, [contacto?.id, empresa?.id]);
+
+  /* ══ LA REUNIÓN QUE YA TIENE (22-sep-2026) ═══════════════════════════════
+     Pedido del dueño: «cuando el prospecto ya tiene una reunión agendada, me
+     debe aparecer ahí mismo, y con un clic reagendarla, con el flujo de
+     reagenda que se hace solo cuando el cliente la mueve».
+     Antes se buscaba sólo por EMPRESA y sólo las `confirmada`: un prospecto
+     sin empresa, o una cita `agendada` (las que agenda el equipo o el cierre
+     con IA — la mayoría), no aparecía. Ahora por contacto o por su WhatsApp. */
+  const cargarProxima = () => {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const qs = new URLSearchParams({ from: hoy });
+    if (contacto?.id) qs.set('contact_id', contacto.id);
+    if (telefono) qs.set('telefono', String(telefono));
+    if (!contacto?.id && !telefono && empresa?.id) qs.set('company_id', empresa.id);
+    if (!contacto?.id && !telefono && !empresa?.id) return;
+    fetch(`/api/scheduling/reuniones?${qs}`).then(r => r.json())
+      .then(j => {
+        // La próxima que TODAVÍA NO PASA (hoy a las 12 ya no cuenta si son las 5).
+        const ahora = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' }).format(new Date()).replace(' ', 'T');
+        setProxima((j.reuniones || j.bookings || j.data || [])
+          .filter((b: any) => ['confirmada', 'agendada'].includes(b.estado) && `${b.fecha}T${String(b.hora_inicio).slice(0, 5)}` > ahora)
+          .sort((a: any, b: any) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`))[0] || null);
+      })
+      .catch(() => {});
+  };
+
+  /* REAGENDAR POR ÉL: el mismo endpoint que usa la liga del cliente
+     (`/api/scheduling/reschedule`), así que corre el flujo entero — la cita
+     nueva, el evento de Google Calendar con su Meet, el correo y el WhatsApp
+     con la hora y la liga nuevas. Los huecos salen del tipo de SU reunión
+     (demo, discovery…), no siempre de la demo. */
+  const [reagendando, setReagendando] = useState(false);
+  const [slotsR, setSlotsR] = useState<Record<string, string[]> | null>(null);
+  const [fechaR, setFechaR] = useState('');
+  const [horaR, setHoraR] = useState('');
+  const [reagendada, setReagendada] = useState<{ fecha: string; hora: string } | null>(null);
+  const abrirReagendar = () => {
+    setReagendando(true); setMsg(''); setFechaR(''); setHoraR(''); setSlotsR(null);
+    const slug = proxima?.event_types?.slug || 'demo';
+    const from = new Date().toISOString().slice(0, 10);
+    const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    fetch(`/api/scheduling/available-slots?slug=${encodeURIComponent(slug)}&from=${from}&to=${to}`)
+      .then(r => r.json()).then(j => setSlotsR(j.dates || {})).catch(() => setSlotsR({}));
+  };
+  const reagendar = async () => {
+    if (!proxima || !fechaR || !horaR) return;
+    setOcupado(true); setMsg('');
+    const r = await fetch('/api/scheduling/reschedule', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: proxima.id, nueva_fecha: fechaR, nueva_hora: horaR, timezone: proxima.timezone_invitado || 'America/Mexico_City' }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r?.error) { setMsg(r.error); return; }
+    setReagendada({ fecha: fechaR, hora: horaR });
+    setReagendando(false);
+    cargarProxima();
+    refrescar?.();
+  };
 
   const dias = useMemo(() => Object.keys(slots || {}).filter(f => (slots as any)[f]?.length).slice(0, 8), [slots]);
   const primeros = useMemo(() => {
@@ -661,11 +713,65 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   return (
     <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo="Agendar reunión" />
-      {proxima && (
-        <div style={{ border: `1px solid ${C.ambar200}`, background: C.ambar50, borderRadius: 10, padding: '8px 11px', fontSize: 11, color: C.ambar700, marginBottom: 10 }}>
-          Ya tiene reunión el <b>{fechaHumana(String(proxima.fecha))} · {horaHumana(String(proxima.hora_inicio).slice(0, 5))}</b>. Antes de duplicar, mejor reagendar esa.
+      {reagendada && (
+        <div style={{ border: `1px solid #A7F3D0`, background: C.emerald50, borderRadius: 10, padding: '9px 11px', fontSize: 11.5, color: C.emerald700, marginBottom: 10, lineHeight: 1.5 }}>
+          <b>Reagendada ✓ {fechaHumana(reagendada.fecha)} · {horaHumana(reagendada.hora)}</b><br />
+          Le llegó por WhatsApp y correo la nueva hora con su liga, y el evento de Google Calendar se movió. La anterior quedó como reagendada.
         </div>
       )}
+      {proxima && (
+        <div style={{ border: `1px solid #ddd6fb`, background: '#F6F4FF', borderRadius: 12, padding: '11px 12px', marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#5B4BD6' }}>Ya tiene reunión agendada</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.g900, marginTop: 4 }}>
+            {fechaHumana(String(proxima.fecha))} · {horaHumana(String(proxima.hora_inicio).slice(0, 5))}
+          </div>
+          <div style={{ fontSize: 11.5, color: C.g500, marginTop: 2, lineHeight: 1.5 }}>
+            {[proxima.event_types?.nombre || proxima.asunto || 'Reunión', proxima.host_nombre ? `con ${proxima.host_nombre}` : null, proxima.estado === 'confirmada' ? 'confirmada' : 'agendada', proxima.google_meet_link ? 'con liga de Meet' : null].filter(Boolean).join(' · ')}
+          </div>
+          {!reagendando && (
+            <button onClick={abrirReagendar} style={{ ...btnP, marginTop: 9, width: '100%', minHeight: 38 }}>Reagendar</button>
+          )}
+          {reagendando && (
+            <div style={{ marginTop: 10 }}>
+              {slotsR === null && <div style={{ fontSize: 11.5, color: C.g500 }}>Buscando horarios libres…</div>}
+              {slotsR !== null && !Object.keys(slotsR).some(f => (slotsR[f] || []).length) && (
+                <div style={{ fontSize: 11.5, color: C.ambar700 }}>No hay horarios libres en las próximas dos semanas para este tipo de reunión.</div>
+              )}
+              {slotsR !== null && (
+                <>
+                  <span style={lbl}>Nuevo día</span>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {Object.keys(slotsR).sort().filter(f => (slotsR[f] || []).length).slice(0, 10).map(f => (
+                      <button key={f} onClick={() => { setFechaR(f); setHoraR(''); }} style={pill(fechaR === f)}>{fechaHumana(f)}</button>
+                    ))}
+                  </div>
+                  {fechaR && (
+                    <>
+                      <span style={{ ...lbl, marginTop: 8 }}>Nueva hora</span>
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                        {(slotsR[fechaR] || []).map(h => (
+                          <button key={h} onClick={() => setHoraR(h)} style={pill(horaR === h)}>{horaHumana(h)}</button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+              <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                <button onClick={() => setReagendando(false)} style={{ ...btnG, flex: 0, padding: '0 12px' }}>Cancelar</button>
+                <button onClick={reagendar} disabled={!fechaR || !horaR || ocupado}
+                  style={{ ...btnP, flex: 1, ...(!fechaR || !horaR || ocupado ? { opacity: .5, cursor: 'default' } : {}) }}>
+                  {ocupado ? 'Reagendando…' : fechaR && horaR ? `Mover al ${fechaHumana(fechaR)} · ${horaHumana(horaR)}` : 'Elige el nuevo horario'}
+                </button>
+              </div>
+              <div style={{ fontSize: 10.5, color: C.g500, marginTop: 6, lineHeight: 1.45 }}>
+                Se le avisa solo por WhatsApp y correo con la nueva hora y la liga, y se mueve el evento de Google Calendar: lo mismo que pasa cuando él la reagenda.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {msg && reagendando && <div style={{ fontSize: 11.5, color: C.rojo700, marginBottom: 8 }}>{msg}</div>}
       {hecho === 'oferta' && (
         <div style={{ border: `1px solid #A7F3D0`, background: C.emerald50, borderRadius: 10, padding: '8px 11px', fontSize: 11, color: C.emerald700, marginBottom: 10, lineHeight: 1.5 }}>
           {ofertaMsg} Cuando toque uno, la reunión se agenda sola y le llega la confirmación por WhatsApp y correo. Aquí verás la línea en la conversación.

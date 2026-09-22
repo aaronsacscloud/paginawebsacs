@@ -111,8 +111,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
-  // Check booking is reschedulable
-  if (oldBooking.estado !== 'confirmada') {
+  /* Se puede mover una cita VIVA: `confirmada` (la agendó el cliente) o
+     `agendada` (la agendó el equipo o el cierre con IA). Antes sólo pasaba la
+     primera, y el 22-sep-2026 eran 9 de las 11 citas futuras las que no se
+     podían reagendar ni desde el CRM ni desde la liga del cliente. */
+  const REAGENDABLES = ['confirmada', 'agendada'];
+  if (!REAGENDABLES.includes(String(oldBooking.estado))) {
     return new Response(
       JSON.stringify({ error: `Booking cannot be rescheduled (current status: ${oldBooking.estado})` }),
       { status: 400 },
@@ -145,13 +149,26 @@ export const POST: APIRoute = async ({ request }) => {
      alguien más ya reagendó y aquí no hay nada que hacer. */
   const { data: gano } = await supabase.from('bookings')
     .update({ estado: 'reagendada' })
-    .eq('id', booking_id).eq('estado', 'confirmada')
+    .eq('id', booking_id).eq('estado', oldBooking.estado)
     .select('id');
   if (!gano?.length) {
     return new Response(JSON.stringify({
       error: 'Esa reunión ya se movió (o se canceló) hace un momento. Recarga para ver cómo quedó.',
       code: 'ya_reagendada',
     }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  /* Las citas que agenda el equipo o el cierre con IA (`agendada`) nacen SIN
+     `invitee_whatsapp` —y a veces sin correo—: el dato vive en el contacto.
+     Sin esto, reagendarlas movía la hora pero el cliente no se enteraba por
+     WhatsApp, que es justo el aviso que importa (22-sep-2026). */
+  if (oldBooking.contact_id && (!oldBooking.invitee_whatsapp || !oldBooking.invitee_email || !oldBooking.invitee_nombre)) {
+    const { data: ct } = await supabase.from('contacts').select('nombre, apellido, whatsapp, telefono, email').eq('id', oldBooking.contact_id).maybeSingle();
+    if (ct) {
+      oldBooking.invitee_whatsapp = oldBooking.invitee_whatsapp || (ct as any).whatsapp || (ct as any).telefono || null;
+      oldBooking.invitee_email = oldBooking.invitee_email || (ct as any).email || null;
+      oldBooking.invitee_nombre = oldBooking.invitee_nombre || [(ct as any).nombre, (ct as any).apellido].filter(Boolean).join(' ') || null;
+    }
   }
 
   // Create new booking FIRST — si el insert falla, la reunión vieja debe
@@ -176,7 +193,12 @@ export const POST: APIRoute = async ({ request }) => {
       invitee_whatsapp: oldBooking.invitee_whatsapp,
       invitee_empresa: oldBooking.invitee_empresa,
       notas: oldBooking.notas,
-      estado: 'confirmada',
+      // La nueva nace en el mismo estado que la vieja y con su mismo origen, empresa y asunto:
+      // moverla de hora no cambia quién la agendó ni de qué es.
+      estado: oldBooking.estado,
+      ...(oldBooking.company_id ? { company_id: oldBooking.company_id } : {}),
+      ...(oldBooking.asunto ? { asunto: oldBooking.asunto } : {}),
+      ...(oldBooking.origen ? { origen: oldBooking.origen } : {}),
       token_cancelar,
       token_reagendar,
       reagendada_desde_id: booking_id,
@@ -190,7 +212,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (nbErr) {
     /* La vieja ya está en 'reagendada' por el candado: si la nueva no nació,
        hay que devolverla a 'confirmada' o el lead se queda SIN ninguna cita. */
-    await supabase.from('bookings').update({ estado: 'confirmada' }).eq('id', booking_id);
+    await supabase.from('bookings').update({ estado: oldBooking.estado }).eq('id', booking_id);
     return new Response(JSON.stringify({ error: nbErr.message }), { status: 500 });
   }
 
@@ -357,7 +379,12 @@ export const POST: APIRoute = async ({ request }) => {
         const vieja = etiquetaHorario(String(oldBooking.fecha), String(oldBooking.hora_inicio).slice(0, 5));
         const nueva = etiquetaHorario(String(nueva_fecha), String(nueva_hora).slice(0, 5));
         const texto = [
-          `Vi que moviste la reunión${nombreInv ? `, ${nombreInv}` : ''}: queda el ${nueva} (hora de CDMX) y la del ${vieja} ya está cancelada.`,
+          /* Quién la movió cambia la frase: si fue él (liga con token), «vi que
+             moviste»; si la movimos nosotros desde el CRM (22-sep-2026), decirle
+             «vi que moviste» sería contarle algo que no hizo. */
+          hasValidToken
+            ? `Vi que moviste la reunión${nombreInv ? `, ${nombreInv}` : ''}: queda el ${nueva} (hora de CDMX) y la del ${vieja} ya está cancelada.`
+            : `${nombreInv ? `${nombreInv}, ` : ''}te moví la reunión como quedamos: ahora es el ${nueva} (hora de CDMX) y la del ${vieja} ya quedó cancelada.`,
           newBooking.google_meet_link ? `Es por Google Meet, esta es la liga: ${newBooking.google_meet_link}` : '',
           `${oldBooking.invitee_email ? `La invitación actualizada ya te llegó a ${oldBooking.invitee_email} y los ` : 'Los '}recordatorios van con la fecha nueva. Si vuelve a cambiar algo, dime por aquí y lo movemos.`,
         ].filter(Boolean).join('\n');

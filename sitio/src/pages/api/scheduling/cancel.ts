@@ -95,8 +95,9 @@ export const POST: APIRoute = async ({ request }) => {
     canceledByDefault = user!.role === 'partner' ? 'partner' : 'admin';
   }
 
-  // Check booking is still cancellable
-  if (booking.estado !== 'confirmada') {
+  // Check booking is still cancellable. `agendada` también: es una cita viva
+  // (la agendó el equipo o el cierre con IA) y el cliente la tiene que poder cancelar (22-sep-2026).
+  if (!['confirmada', 'agendada'].includes(String(booking.estado))) {
     return new Response(
       JSON.stringify({ error: `Booking cannot be cancelled (current status: ${booking.estado})` }),
       { status: 400 },
