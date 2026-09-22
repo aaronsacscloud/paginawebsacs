@@ -43,7 +43,12 @@ const { featureLabel, plan, inheritedPlanName, featureGroups } = Astro.props;
             <span class="pl-price">${plan.monthly.mxn.toLocaleString('en-US')}</span>
             <span class="pl-period">MXN /mes por sucursal</span>
           </div>
-          <p class="pl-annual">Pago anual: <strong>${plan.annual.mxn.toLocaleString('en-US')}/mes</strong> · ${plan.annualTotal.mxn.toLocaleString('en-US')}/año <span class="pl-save">Ahorra 2 meses</span></p>
+          {/* 22-sep-2026: el dueño pidió quitar toda referencia mensual del
+              precio anual con descuento. Se muestra el total sin descuento
+              tachado (mensual × 12, calculado, nunca a mano — nunca "antes":
+              ese precio nunca se cobró) y luego el total del año ya con el
+              35% aplicado (plan.annualTotal, verificado en data/plans.ts). */}
+          <p class="pl-annual">Pago anual: <span class="pl-annual-strike">${(plan.monthly.mxn * 12).toLocaleString('en-US')}</span> <strong>${plan.annualTotal.mxn.toLocaleString('en-US')}/año</strong> <span class="pl-save">35% de descuento</span></p>
         </div>
         <div class="pl-ctas">
           <a href="/prueba-gratis" class="pl-cta pl-cta--solid">Prueba 7 días gratis</a>
@@ -190,6 +195,11 @@ const { featureLabel, plan, inheritedPlanName, featureGroups } = Astro.props;
 
   .pl-annual strong {
     color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .pl-annual-strike {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
   }
 
   .pl-save {

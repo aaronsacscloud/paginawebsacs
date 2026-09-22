@@ -103,6 +103,7 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
           <span class="price-strip-price price-dynamic"
             data-monthly={JSON.stringify(plan.monthly)}
             data-annual={JSON.stringify(plan.annual)}
+            data-annual-total={JSON.stringify(plan.annualTotal)}
           ></span>
         </button>
       ))}
@@ -119,13 +120,21 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
           <p class="plan-desc">{plan.description}</p>
 
           <div class="plan-price" aria-live="polite">
+            {/* 22-sep-2026: el dueño pidió quitar toda referencia mensual del
+                estado anual. Ya no se muestra el precio dividido entre 12:
+                en anual, el número grande es el TOTAL DEL AÑO con el 35% de
+                descuento aplicado, con el total SIN descuento tachado arriba
+                (nunca "antes": nunca se cobró ese precio, es la lista sin el
+                trato anual). En mensual, sigue exactamente como antes. Todo
+                se calcula en updatePrices() desde plan.monthly/annualTotal
+                — nunca a mano — para que cuadre si cambian precios o moneda. */}
+            <span class="plan-price-strike price-strike-dynamic" style="display:none;"></span>
             <span class="plan-price-amount price-dynamic"
               data-monthly={JSON.stringify(plan.monthly)}
               data-annual={JSON.stringify(plan.annual)}
               data-annual-total={JSON.stringify(plan.annualTotal)}
             ></span>
-            <span class="plan-price-period">/mes por sucursal</span>
-            <span class="plan-price-annual-total price-annual-total-dynamic" style="display:none;">/año por sucursal</span>
+            <span class="plan-price-period price-period-dynamic">/mes por sucursal</span>
           </div>
 
           <a
@@ -1087,11 +1096,14 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
   margin-top: var(--space-1);
 }
 
-.plan-price-annual-total {
-  font-size: 0.8125rem;
+.plan-price-strike {
+  display: block;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-secondary-texto);
-  margin-top: 4px;
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  margin-bottom: 4px;
 }
 
 /* CTA */
@@ -3078,29 +3090,40 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
 
     document.querySelectorAll('.price-dynamic').forEach(el => {
       const monthlyData = el.getAttribute('data-monthly');
-      const annualData = el.getAttribute('data-annual');
       const annualTotalData = el.getAttribute('data-annual-total');
+      const priceBlock = el.closest('.plan-price');
+      const strikeEl = priceBlock?.querySelector('.price-strike-dynamic') as HTMLElement | null;
+      const periodEl = priceBlock?.querySelector('.price-period-dynamic') as HTMLElement | null;
 
       if (billing === 'monthly' && monthlyData) {
+        // Mensual: exactamente como siempre — el precio mensual real, "/mes por sucursal".
         const prices = JSON.parse(monthlyData);
         const amount = prices[currency] ?? prices['usd'];
         el.textContent = `${formatAmount(amount, currency)} ${label}`;
-      } else if (billing === 'annual' && annualData) {
-        const prices = JSON.parse(annualData);
-        const amount = prices[currency] ?? prices['usd'];
-        el.textContent = `${formatAmount(amount, currency)} ${label}`;
-      }
+        if (strikeEl) strikeEl.style.display = 'none';
+        if (periodEl) {
+          periodEl.textContent = '/mes por sucursal';
+          periodEl.style.display = 'block';
+        }
+      } else if (billing === 'annual' && annualTotalData) {
+        // Anual: el número grande es el TOTAL DEL AÑO con el 35% de descuento
+        // ya aplicado (plan.annualTotal). Nada de precio mensual ni de "/mes".
+        const totalPrices = JSON.parse(annualTotalData);
+        const totalAmount = totalPrices[currency] ?? totalPrices['usd'];
+        el.textContent = `${formatAmount(totalAmount, currency)} ${label}`;
 
-      // Show annual total
-      if (annualTotalData) {
-        const totalEl = el.closest('.plan-price')?.querySelector('.price-annual-total-dynamic') as HTMLElement;
-        if (totalEl && billing === 'annual') {
-          const totalPrices = JSON.parse(annualTotalData);
-          const totalAmount = totalPrices[currency] ?? totalPrices['usd'];
-          totalEl.textContent = `${formatAmount(totalAmount, currency)} ${label} /año por sucursal`;
-          totalEl.style.display = 'block';
-        } else if (totalEl) {
-          totalEl.style.display = 'none';
+        // El total SIN descuento se calcula (mensual × 12), nunca a mano,
+        // para que siga cuadrando si cambian los precios o la moneda.
+        if (strikeEl && monthlyData) {
+          const monthlyPrices = JSON.parse(monthlyData);
+          const monthlyAmount = monthlyPrices[currency] ?? monthlyPrices['usd'];
+          const sinDescuento = monthlyAmount * 12;
+          strikeEl.textContent = `${formatAmount(sinDescuento, currency)} ${label} sin descuento`;
+          strikeEl.style.display = 'block';
+        }
+        if (periodEl) {
+          periodEl.textContent = 'al año por sucursal';
+          periodEl.style.display = 'block';
         }
       }
     });

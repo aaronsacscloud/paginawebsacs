@@ -4586,7 +4586,12 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                   <span class="pf-plan-price">${activePlan.monthly.mxn.toLocaleString('en-US')}</span>
                   <span class="pf-plan-period">MXN /mes por sucursal</span>
                 </div>
-                <p class="pf-plan-annual">Pago anual: <strong>${activePlan.annual.mxn.toLocaleString('en-US')}/mes</strong> · ${activePlan.annualTotal.mxn.toLocaleString('en-US')}/año <span class="pf-plan-save">Ahorra 2 meses</span></p>
+                {/* 22-sep-2026: el dueño pidió quitar toda referencia mensual del
+                    precio anual con descuento. Total sin descuento tachado
+                    (mensual × 12, calculado, nunca a mano — nunca "antes": ese
+                    precio nunca se cobró) y el total del año ya con el 35%
+                    aplicado (activePlan.annualTotal, verificado en data/plans.ts). */}
+                <p class="pf-plan-annual">Pago anual: <span class="pf-plan-annual-strike">${(activePlan.monthly.mxn * 12).toLocaleString('en-US')}</span> <strong>${activePlan.annualTotal.mxn.toLocaleString('en-US')}/año</strong> <span class="pf-plan-save">35% de descuento</span></p>
               </div>
               <div class="pf-plan-single-ctas">
                 <a href="/prueba-gratis" class="pf-plan-cta pf-plan-cta--solid">Prueba 7 días gratis</a>
@@ -11331,6 +11336,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   .pf-plan-annual strong {
     color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .pf-plan-annual-strike {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
   }
 
   .pf-plan-save {

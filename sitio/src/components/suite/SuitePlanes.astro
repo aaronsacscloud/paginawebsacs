@@ -67,11 +67,23 @@ const {
 // planes de esta lista van en el mismo orden que `plans` (Vende, Controla,
 // Fideliza y Multiplica, Automatiza): se leen por posición.
 const ETIQUETA: Record<string, string> = { mxn: 'MXN', usd: 'USD', eur: 'EUR', gbp: 'GBP', brl: 'BRL', cop: 'COP', ars: 'ARS', clp: 'CLP', pen: 'PEN' };
-const precioEn = (i: number, cual: 'monthly' | 'annual') => {
-  const v = plans[i]?.[cual]?.[moneda];
-  if (v == null) return '';
+const formatoMoneda = (v: number) => {
   const simbolo = moneda === 'eur' ? '€' : moneda === 'gbp' ? '£' : moneda === 'pen' ? 'S/' : moneda === 'brl' ? 'R$' : '$';
   return `${simbolo}${v.toLocaleString('es-MX')}${moneda === 'mxn' ? '' : ` ${ETIQUETA[moneda] || String(moneda).toUpperCase()}`}`;
+};
+const precioEn = (i: number, cual: 'monthly' | 'annual' | 'annualTotal') => {
+  const v = plans[i]?.[cual]?.[moneda];
+  if (v == null) return '';
+  return formatoMoneda(v);
+};
+// 22-sep-2026: el dueño pidió quitar toda referencia mensual del precio anual
+// con descuento. El "sin descuento" se calcula (mensual × 12) — nunca a mano —
+// para que cuadre si cambian los precios o la moneda, y NUNCA se llama "antes":
+// nunca se cobró ese precio, es la lista sin el trato anual.
+const sinDescuentoEn = (i: number) => {
+  const v = plans[i]?.monthly?.[moneda];
+  if (v == null) return '';
+  return formatoMoneda(v * 12);
 };
 
 const planes = [
@@ -81,6 +93,8 @@ const planes = [
     para: 'Para tu primera tienda',
     precio: precioEn(0, 'monthly') || '$810',
     anual: precioEn(0, 'annual') || '$527',
+    anualTotal: precioEn(0, 'annualTotal') || '$6,318',
+    sinDescuento: sinDescuentoEn(0) || '$9,720',
     hereda: '',
     areas: [
       { a: 'Venta en tienda', i: 'Punto de venta con y sin internet · Cortes de caja y arqueos · Cambios, devoluciones y cancelaciones · Apartados y pedidos · Cotizaciones · Ventas a crédito · Listas de precios' },
@@ -97,6 +111,8 @@ const planes = [
     para: 'Para varias sucursales con orden',
     precio: precioEn(1, 'monthly') || '$1,215',
     anual: precioEn(1, 'annual') || '$790',
+    anualTotal: precioEn(1, 'annualTotal') || '$9,477',
+    sinDescuento: sinDescuentoEn(1) || '$14,580',
     hereda: 'Vende',
     areas: [
       { a: 'Inventario multisucursal', i: 'Existencias en tiempo real · Gestión de CEDIS · Traspasos entre tiendas · Reabasto sugerido · Alertas de stock bajo o exceso' },
@@ -114,6 +130,8 @@ const planes = [
     para: paraFideliza,
     precio: precioEn(2, 'monthly') || '$1,890',
     anual: precioEn(2, 'annual') || '$1,229',
+    anualTotal: precioEn(2, 'annualTotal') || '$14,742',
+    sinDescuento: sinDescuentoEn(2) || '$22,680',
     hereda: 'Controla',
     areas: [
       { a: 'Clientes y CRM', i: 'Perfil 360° con historial omnicanal · Segmentación por comportamiento de compra · Notas y seguimientos' },
@@ -132,6 +150,8 @@ const planes = [
     para: 'Para que la operación corra sola',
     precio: precioEn(3, 'monthly') || '$3,780',
     anual: precioEn(3, 'annual') || '$2,457',
+    anualTotal: precioEn(3, 'annualTotal') || '$29,484',
+    sinDescuento: sinDescuentoEn(3) || '$45,360',
     hereda: 'Fideliza',
     areas: [
       { a: 'Especialista de IA', i: 'Una persona real que diseña tus automatizaciones contigo · Sesión mensual de optimización · Onboarding completo' },
@@ -190,16 +210,18 @@ const planes = [
             <h3>{p.nombre}</h3>
             <p class="pl-para">{p.para}</p>
 
-            {/* En grande va el precio mensual PAGANDO ANUAL, que es el que
-                de verdad paga la mayoría y el mismo que muestra /planes: con el
-                mensual arriba, la escalera se veía 35% más cara que la página
-                de precios del propio sitio. El «pagando anual» va pegado al
-                número y no en letra chica escondida: si la condición no se lee
-                igual de claro que el precio, es un engaño, no un descuento. */}
+            {/* 22-sep-2026: el dueño pidió quitar toda referencia mensual de
+                donde se muestra el precio anual con descuento. En grande va
+                el TOTAL DEL AÑO ya con el 35% aplicado — el mismo número que
+                el estado "Anual" de /planes — con el total sin descuento
+                tachado arriba. Nunca "antes": ese precio nunca se cobró, es
+                la lista sin el trato anual, y "sin descuento" dice lo mismo
+                sin mentir. Ambos se calculan en el frontmatter desde
+                plans.ts, nunca a mano. */}
             <p class="pl-precio">
-              <b>{p.anual}</b><span>/mes por sucursal, pagando anual</span>
+              <span class="pl-precio-tachado">{p.sinDescuento} sin descuento</span>
+              <b>{p.anualTotal}</b><span>al año por sucursal</span>
             </p>
-            <p class="pl-anual">O {p.precio} al mes, sin compromiso anual.</p>
 
             {p.popular && comoSeVende === 'incluida' && <p class="pl-popular">El primero que trae la suite completa</p>}
             {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para ${articulo} ${suite}`}</p>}
@@ -284,7 +306,10 @@ const planes = [
     font-variant-numeric: tabular-nums; line-height: 1;
   }
   .pl-precio span { font-size: 12.5px; color: var(--claro-apunte); font-weight: 600; }
-  .pl-anual { margin: 0; font-size: 12.5px; color: var(--claro-apunte); }
+  .pl-precio-tachado {
+    flex-basis: 100%; font-size: 13px; color: var(--claro-apunte); font-weight: 600;
+    text-decoration: line-through; text-decoration-thickness: 1.5px;
+  }
 
   .pl-popular {
     margin: 18px 0 0; font-size: 12px; font-weight: 700; color: var(--claro-apunte);
