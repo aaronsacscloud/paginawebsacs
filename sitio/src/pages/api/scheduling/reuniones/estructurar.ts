@@ -79,7 +79,7 @@ Los planes de SACS, de menor a mayor, y cada uno incluye al anterior:
 - fideliza ($1,890): monedero y puntos, niveles, portal del cliente, tarjetas de regalo, membresías, campañas por correo y WhatsApp, CRM 360.
 - automatiza ($3,780): AXO copiloto de IA, workflows, alertas, reportes predictivos, agentes, API.
 
-Extraes tres cosas:
+Extraes estas cosas:
 
 1) La MINUTA, en siete campos:
    opera: cómo opera hoy (tiendas, canales, con qué sistema, volumen).
@@ -104,7 +104,23 @@ Extraes tres cosas:
 
 Y plan_sugerido: el plan mínimo que cubre lo que pidió, o null si no alcanza para decidirlo.
 
-4) LA DECISIÓN (qué sigue, en una de cuatro): "cotizar" si mostró interés y toca mandar propuesta; "segunda_reunion" si
+4) LOS BENEFICIOS: lo que SACS le cambia, uno por cada cosa que le duele o que pidió (máximo 6). La minuta es para VENDER:
+   cada beneficio traduce lo que se habló a lo que gana en SU cuenta, en su negocio, no una lista de funciones.
+   - cifra: 1 a 3 palabras que se lean de un vistazo. Un número que SALIÓ de la conversación («2 tiendas», «Noviembre»,
+     «3 sucursales») o un resultado sin número inventado («Sin huecos», «Tienda abierta», «Un solo inventario»).
+     PROHIBIDO inventar porcentajes, ahorros, horas o dinero que nadie dijo.
+   - titulo: 3-7 palabras, el beneficio.
+   - detalle: una línea, cómo lo resuelve SACS en su caso concreto.
+   - cita: su frase textual, recortada, que origina el beneficio. "" si no la hay.
+   - plan: "vende"|"controla"|"fideliza"|"automatiza" o null.
+
+5) LO QUE FALTA PREGUNTAR para poder cotizar y cerrar (máximo 6): solo lo que NO quedó claro en la conversación.
+   Piensa en: cuántas personas lo usarán, sucursales, canales de venta (mostrador, en línea, redes), volumen de productos,
+   quién decide y si ya vio la demo, fecha en que lo necesita, presupuesto, facturación.
+   - pregunta: tal como se la harías, en segunda persona o sobre el negocio, corta.
+   - para: "precio"|"plan"|"decide"|"fecha"|"arranque" — qué destraba la respuesta.
+
+6) LA DECISIÓN (qué sigue, en una de cuatro): "cotizar" si mostró interés y toca mandar propuesta; "segunda_reunion" si
    quedó pendiente otra junta (con fecha si se dijo); "retomar" si dijo que no es el momento y dio o se infiere un plazo
    (fecha = cuándo retomar); "sin_interes" si quedó claro que no. Si dudas entre cotizar y segunda_reunion, elige cotizar.
 
@@ -113,6 +129,8 @@ Responde ÚNICAMENTE con este JSON:
   "minuta": { "opera":"", "duele":"", "intereso":"", "mostramos":"", "objeciones":"", "decide":"", "siguiente":"" },
   "requerimientos": [ { "titulo":"", "cita":"", "plan":null, "categoria":"plan", "incluido":false, "deducido":false, "valor":0 } ],
   "ficha": { "sucursales":"", "giro":"", "sistema_actual":"", "urgencia":"", "presupuesto":"", "usuarios":"" },
+  "beneficios": [ { "cifra":"", "titulo":"", "detalle":"", "cita":"", "plan":null } ],
+  "preguntas": [ { "pregunta":"", "para":"precio" } ],
   "plan_sugerido": null,
   "decision": { "tipo": "cotizar", "fecha": null, "motivo": "" }
 }`;
@@ -158,7 +176,28 @@ export const POST: APIRoute = async ({ request }) => {
       const plan_sugerido = PLANES.includes(out?.plan_sugerido) ? out.plan_sugerido : null;
       const d = out?.decision || {};
       const decision = { tipo: ['cotizar', 'segunda_reunion', 'retomar', 'sin_interes'].includes(d.tipo) ? d.tipo : 'cotizar', fecha: /^\d{4}-\d{2}-\d{2}$/.test(String(d.fecha || '')) ? d.fecha : null, motivo: typeof d.motivo === 'string' ? d.motivo.trim().slice(0, 200) : '' };
-      return json({ minuta, requerimientos, ficha, plan_sugerido, decision, modelo: modeloEnUso() });
+      // Lo que SACS le cambia y lo que falta preguntar (minuta opción C,
+      // 22-sep-2026). Se normalizan igual que lo demás: nada de confiar en la
+      // forma que devolvió el modelo.
+      const beneficios = (Array.isArray(out?.beneficios) ? out.beneficios : [])
+        .filter((x: any) => x && typeof x.titulo === 'string' && x.titulo.trim())
+        .slice(0, 6)
+        .map((x: any) => ({
+          cifra: typeof x.cifra === 'string' ? x.cifra.trim().slice(0, 28) : '',
+          titulo: String(x.titulo).trim().slice(0, 90),
+          detalle: typeof x.detalle === 'string' ? x.detalle.trim().slice(0, 220) : '',
+          cita: typeof x.cita === 'string' ? x.cita.trim().slice(0, 200) : '',
+          plan: PLANES.includes(x.plan) ? x.plan : null,
+        }));
+      const preguntas = (Array.isArray(out?.preguntas) ? out.preguntas : [])
+        .filter((x: any) => x && typeof x.pregunta === 'string' && x.pregunta.trim())
+        .slice(0, 6)
+        .map((x: any) => ({
+          pregunta: String(x.pregunta).trim().slice(0, 160),
+          para: ['precio', 'plan', 'decide', 'fecha', 'arranque'].includes(x.para) ? x.para : 'precio',
+          respondida: false,
+        }));
+      return json({ minuta, requerimientos, ficha, plan_sugerido, decision, beneficios, preguntas, modelo: modeloEnUso() });
     }
 
     // Se recorta a 60k caracteres: más que eso es una transcripción de horas y

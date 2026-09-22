@@ -13,10 +13,17 @@
 //  · Los datos de la ficha —sucursales, giro, sistema actual— que hoy nadie
 //    captura a mano y que después le hacen falta al embudo.
 //
+// Opción C del dueño (22-sep-2026): la minuta es para VENDER. Va por pasos —su
+// operación, lo que le duele, lo que Sacs le cambia, lo que falta para cerrar y
+// el siguiente paso—, con los beneficios en tarjetas grandes (una cifra, qué
+// gana, y su frase) y la lista de lo que falta preguntarle. Las siete llaves de
+// siempre (opera, duele, intereso, mostramos, objeciones, decide, siguiente) no
+// cambian: las leen el reporte del lead, la descarga y el agente.
+//
 // Regla que no se rompe: lo DEDUCIDO entra apagado. Un supuesto no sube de
 // categoría a requerimiento sin que lo confirme alguien que estuvo en la junta.
 import { useState } from 'react';
-import { MINUTA_LEAD_CAMPOS, minutaLeadVacia, minutaLlena } from '../../../lib/crm/reuniones';
+import { minutaLeadVacia, minutaLlena } from '../../../lib/crm/reuniones';
 
 const PLANES: Record<string, { nombre: string; precio: number }> = {
   vende: { nombre: 'Vende', precio: 600 },
@@ -29,14 +36,26 @@ const FICHA: { k: string; label: string }[] = [
   { k: 'sistema_actual', label: 'Sistema actual' }, { k: 'urgencia', label: 'Urgencia' },
   { k: 'presupuesto', label: 'Presupuesto' }, { k: 'usuarios', label: 'Usuarios' },
 ];
+const PASOS = ['Su operación hoy', 'Lo que le duele', 'Lo que Sacs le cambia', 'Lo que falta para cerrar', 'Siguiente paso'];
+
+function Tarjeta({ titulo, sub, rosa, children }: { titulo: string; sub: string; rosa?: boolean; children: any }) {
+  return (
+    <div style={{ border: '1px solid ' + (rosa ? '#f3dbe7' : '#eeecf4'), borderRadius: 14, padding: '15px 16px' }}>
+      <div style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-.01em', color: rosa ? '#9c3d70' : '#1a1a1a' }}>{titulo}</div>
+      <div style={{ fontSize: '0.74rem', color: '#9c99a6', margin: '2px 0 11px' }}>{sub}</div>
+      {children}
+    </div>
+  );
+}
 const money = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 
 const S = {
   velo: { position: 'fixed', inset: 0, background: 'rgba(23,21,31,.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 70 } as const,
-  caja: { background: '#fff', borderRadius: 16, width: 'min(940px,100%)', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 70px rgba(23,21,31,.24)' } as const,
+  caja: { background: '#fff', borderRadius: 16, width: 'min(1060px,100%)', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 70px rgba(23,21,31,.24)' } as const,
   cab: { padding: '18px 22px', borderBottom: '1px solid #f4f3f7', position: 'sticky' as const, top: 0, background: '#fff', zIndex: 2, display: 'flex', gap: 12, alignItems: 'flex-start' },
   h3: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.1em', color: '#a5a2af', display: 'flex', alignItems: 'center', gap: 9, margin: '0 0 4px' },
   der: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, letterSpacing: 0, textTransform: 'none' as const, color: '#a5a2af' },
+  inp: { width: '100%', border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', outline: 'none' } as const,
   hint: { fontSize: '0.73rem', color: '#8a8590', margin: '0 0 12px', lineHeight: 1.55 },
   ta: { width: '100%', border: '1px solid #e4dffb', background: '#fdfcff', borderRadius: 11, padding: '11px 13px', fontSize: '0.85rem', lineHeight: 1.55, fontFamily: 'inherit', color: '#3F3A52', resize: 'vertical' as const },
   btn: { border: 'none', borderRadius: 9, padding: '11px 20px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', background: '#9B8CFA', color: '#fff', fontFamily: 'inherit' } as const,
@@ -51,6 +70,10 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
   const [ficha, setFicha] = useState<Record<string, string>>(() => guardada?.ficha || {});
   const [planSug, setPlanSug] = useState<string | null>(guardada?.plan_sugerido || null);
   const [crudo, setCrudo] = useState<string>(guardada?.raw || '');
+  const [beneficios, setBeneficios] = useState<any[]>(() => Array.isArray(guardada?.beneficios) ? guardada.beneficios : []);
+  const [preguntas, setPreguntas] = useState<any[]>(() => Array.isArray(guardada?.preguntas) ? guardada.preguntas : []);
+  // Arranca en «Lo que Sacs le cambia» si ya hay minuta: es lo que se viene a ver.
+  const [paso, setPaso] = useState<number>(() => (minutaLlena(guardada) ? 2 : 0));
   // QUÉ SIGUE (decisión del dueño 2026-09-03): la minuta le dice al sistema y al agente qué pasa después.
   const [decision, setDecision] = useState<{ tipo: string; fecha: string; motivo: string }>(() => ({ tipo: guardada?.decision?.tipo || '', fecha: guardada?.decision?.fecha || '', motivo: guardada?.decision?.motivo || '' }));
   const [pegando, setPegando] = useState(!soloLectura && !minutaLlena(guardada));
@@ -67,6 +90,22 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
   const planCobrado = planSug && PLANES[planSug] ? PLANES[planSug].precio * sucursales : 0;
   const unicos = activos.filter(r => !r.incluido && r.categoria !== 'plan').reduce((a, r) => a + Number(r.valor || 0), 0);
 
+  /* Cómo va cada paso. «falta» (rosa) es solo el de cerrar: con preguntas
+     sin contestar o sin saber quién decide, no está listo. */
+  const lleno = (t: any) => !!String(t || '').trim();
+  const pendientes = preguntas.filter(q => !q.respondida && lleno(q.pregunta)).length;
+  const estadoPaso = (i: number): 'ok' | 'falta' | 'vacio' => {
+    if (i === 0) return lleno(m.opera) ? 'ok' : 'vacio';
+    if (i === 1) return lleno(m.duele) ? 'ok' : 'vacio';
+    if (i === 2) return beneficios.length || lleno(m.intereso) ? 'ok' : 'vacio';
+    if (i === 3) return pendientes || !lleno(m.decide) ? (preguntas.length || lleno(m.decide) || lleno(m.objeciones) ? 'falta' : 'vacio') : 'ok';
+    return lleno(m.siguiente) ? 'ok' : 'vacio';
+  };
+  // Qué tan listo está para cotizar: seis señales, cada una pesa lo mismo.
+  // Las mismas reglas que las palomitas de los pasos, para que no se contradigan.
+  const senales = [lleno(m.opera), lleno(m.duele), beneficios.length > 0 || lleno(m.intereso), lleno(m.decide), !pendientes, lleno(m.siguiente)];
+  const listo = Math.round(senales.filter(Boolean).length / senales.length * 100);
+
   async function ordenar() {
     if (crudo.trim().length < 40) { setError('Pega la conversación completa: con tan poco texto no hay nada que acomodar.'); return; }
     setIa(true); setError('');
@@ -81,7 +120,10 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
       setFicha(r.ficha || {});
       setPlanSug(r.plan_sugerido || null);
       if (r.decision?.tipo) setDecision({ tipo: r.decision.tipo, fecha: r.decision.fecha || '', motivo: r.decision.motivo || '' });
+      setBeneficios(r.beneficios || []);
+      setPreguntas(r.preguntas || []);
       setPegando(false);
+      setPaso(2);
     } catch { setError('No se pudo acomodar la conversación.'); }
     finally { setIa(false); }
   }
@@ -95,7 +137,10 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
     const pestana = irACotizar ? window.open('', '_blank') : null;
     setGuardando(true); setError('');
     try {
-      const minuta = { ...m, tipo: 'lead', raw: crudo || undefined, requerimientos: reqs, ficha, plan_sugerido: planSug, decision: { ...decision, at: new Date().toISOString() } };
+      const minuta = { ...m, tipo: 'lead', raw: crudo || undefined, requerimientos: reqs, ficha, plan_sugerido: planSug,
+        beneficios: beneficios.filter(b => String(b.titulo || '').trim()),
+        preguntas: preguntas.filter(q => String(q.pregunta || '').trim()),
+        decision: { ...decision, at: new Date().toISOString() } };
       const r = await fetch('/api/scheduling/reuniones', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: reunion.id, minuta }),
@@ -156,67 +201,173 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
             </button>
           ))}
 
-          {/* ── los siete campos ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16 }}>
-            {MINUTA_LEAD_CAMPOS.map(c => (
-              <div key={c.k}>
-                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>{c.label}</label>
-                <div style={{ fontSize: '0.69rem', color: '#a5a2af', marginBottom: 7, lineHeight: 1.45 }}>{c.hint}</div>
-                <textarea rows={3} value={m[c.k] || ''} readOnly={soloLectura}
-                  onChange={e => setM(v => ({ ...v, [c.k]: e.target.value }))} style={S.ta} />
-              </div>
-            ))}
-          </div>
-
-          {/* ── datos de la ficha ── */}
-          {Object.values(ficha).some(Boolean) && (
-            <div style={{ marginTop: 22 }}>
-              <div style={S.h3}>Datos que salieron solos<span style={S.der}>se guardan con la minuta</span></div>
-              <p style={S.hint}>Estos campos casi nunca se llenan a mano. Salieron de la conversación: corrige lo que haga falta.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
-                {FICHA.filter(f => ficha[f.k]).map(f => (
-                  <div key={f.k} style={{ border: '1px solid #ececf1', borderRadius: 11, padding: '10px 12px', background: '#fdfcff' }}>
-                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em' }}>{f.label}</div>
-                    <input value={ficha[f.k]} readOnly={soloLectura} onChange={e => setFicha(v => ({ ...v, [f.k]: e.target.value }))}
-                      style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '0.9rem', fontWeight: 800, color: '#1a1a1a', marginTop: 4, padding: 0, fontFamily: 'inherit' }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── requerimientos ── */}
-          {reqs.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div style={S.h3}>Lo que necesita<span style={S.der}>{activos.length} de {reqs.length} para cotizar</span></div>
-              <p style={S.hint}>Cada punto trae la frase con la que lo pidió y a qué se traduce en SACS. Desmarca lo que no vaya.</p>
-              {reqs.map((r, i) => (
-                <div key={i} style={{ border: '1px solid #ececf1', borderRadius: 13, padding: '13px 15px', marginBottom: 9, display: 'flex', gap: 12, alignItems: 'flex-start', opacity: r.incluir ? 1 : .48 }}>
-                  <button aria-label={r.incluir ? 'Quitar de la cotización' : 'Incluir en la cotización'} disabled={soloLectura}
-                    onClick={() => setReqs(v => v.map((x, k) => k === i ? { ...x, incluir: !x.incluir } : x))}
-                    style={{ width: 19, height: 19, borderRadius: 6, border: '2px solid ' + (r.incluir ? '#9B8CFA' : '#d8d4e4'), background: r.incluir ? '#9B8CFA' : '#fff', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '0.62rem', fontWeight: 900, flex: '0 0 auto', marginTop: 2, cursor: soloLectura ? 'default' : 'pointer' }}>
-                    {r.incluir ? '✓' : ''}
+          {/* ── EL CAMINO AL CIERRE (opción C) ──
+              A la izquierda los pasos y cuáles ya tienen algo; a la derecha el
+              paso abierto. «Lo que Sacs le cambia» es el centro: ahí se vende. */}
+          <div className="minuta-c" style={{ display: 'grid', gridTemplateColumns: 'minmax(190px,220px) 1fr', gap: 20, alignItems: 'start' }}>
+            <div style={{ borderRight: '1px solid #f1eff7', paddingRight: 14, position: 'sticky', top: 84 }}>
+              {PASOS.map((p, i) => {
+                const est = estadoPaso(i);
+                const on = paso === i;
+                return (
+                  <button key={p} onClick={() => setPaso(i)}
+                    style={{ display: 'flex', gap: 9, alignItems: 'center', width: '100%', textAlign: 'left', border: 'none', borderRadius: 10, padding: '8px 9px', marginBottom: 3, cursor: 'pointer', fontFamily: 'inherit',
+                      background: on ? '#EEECFE' : 'transparent', color: on ? '#5B4BD6' : '#6b6776', fontSize: '0.8rem', fontWeight: 700 }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.66rem', fontWeight: 800, flex: 'none',
+                      background: on ? '#5B4BD6' : est === 'ok' ? '#1E8A63' : est === 'falta' ? '#D9538E' : '#efedf5',
+                      color: on || est !== 'vacio' ? '#fff' : '#8a8596' }}>
+                      {on ? i + 1 : est === 'ok' ? '✓' : est === 'falta' ? '!' : i + 1}
+                    </span>
+                    {p}
                   </button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.35 }}>{r.titulo}</div>
-                    {r.cita
-                      ? <div style={{ fontSize: '0.76rem', color: '#8a8590', fontStyle: 'italic', marginTop: 5, lineHeight: 1.5, borderLeft: '2px solid #ececf1', paddingLeft: 9 }}>“{r.cita}”</div>
-                      : <div style={{ fontSize: '0.76rem', color: '#a5a2af', marginTop: 5, lineHeight: 1.5 }}>No lo pidió: se dedujo de la conversación.</div>}
-                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 9 }}>
-                      {r.plan && <span style={S.chip('#EEECFE', '#5B4BD6')}>Licencia {PLANES[r.plan]?.nombre || r.plan}</span>}
-                      {r.incluido && <span style={S.chip('#EAF8F2', '#1E8A63')}>Ya viene incluido</span>}
-                      {r.deducido && <span style={S.chip('#FBEAF2', '#D9538E')}>Deducido, no dicho</span>}
-                      {!r.plan && !r.incluido && <span style={S.chip('#f4f3f7', '#8a8590')}>{r.categoria}</span>}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <b style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1a1a1a' }}>{r.incluido ? 'Incluido' : r.valor ? money(r.valor) : '—'}</b>
-                    <div style={{ fontSize: '0.65rem', color: '#a5a2af', marginTop: 2 }}>{r.incluido ? 'no suma al total' : r.valor ? 'precio de lista' : 'por definir'}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              <div style={{ height: 8, borderRadius: 5, background: '#efedf5', overflow: 'hidden', margin: '12px 0 4px' }}>
+                <i style={{ display: 'block', height: '100%', width: `${listo}%`, background: 'linear-gradient(90deg,#7C6BF0,#D9538E)', transition: 'width .3s' }} />
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#8a8596' }}>{listo} % listo para cotizar</div>
             </div>
-          )}
+
+            <div style={{ minWidth: 0 }}>
+              {paso === 0 && (
+                <Tarjeta titulo="Su operación hoy" sub="Tiendas, canales, con qué lo hace hoy y qué volumen mueve.">
+                  <textarea rows={5} value={m.opera || ''} readOnly={soloLectura} onChange={e => setM(v => ({ ...v, opera: e.target.value }))} style={S.ta} />
+                  {Object.values(ficha).some(Boolean) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 9, marginTop: 14 }}>
+                      {FICHA.filter(f => ficha[f.k]).map(f => (
+                        <div key={f.k} style={{ border: '1px solid #ececf1', borderRadius: 11, padding: '9px 11px', background: '#fdfcff' }}>
+                          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em' }}>{f.label}</div>
+                          <input value={ficha[f.k]} readOnly={soloLectura} onChange={e => setFicha(v => ({ ...v, [f.k]: e.target.value }))}
+                            style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '0.88rem', fontWeight: 800, color: '#1a1a1a', marginTop: 3, padding: 0, fontFamily: 'inherit' }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Tarjeta>
+              )}
+
+              {paso === 1 && (
+                <Tarjeta titulo="Lo que le duele" sub="El problema concreto con el que llegó, en sus palabras.">
+                  <textarea rows={6} value={m.duele || ''} readOnly={soloLectura} onChange={e => setM(v => ({ ...v, duele: e.target.value }))} style={S.ta} />
+                </Tarjeta>
+              )}
+
+              {paso === 2 && (<>
+                <Tarjeta titulo="Lo que Sacs le cambia" sub="Un beneficio por cosa que dijo: lo que gana en su cuenta, no una lista de funciones.">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: 10 }}>
+                    {beneficios.map((b, i) => (
+                      <div key={i} style={{ borderRadius: 13, padding: '12px 13px', background: 'linear-gradient(150deg,#f7f5ff,#fff)', border: '1px solid #ece8fb', position: 'relative' }}>
+                        {!soloLectura && <button aria-label="Quitar" onClick={() => setBeneficios(v => v.filter((_, k) => k !== i))}
+                          style={{ position: 'absolute', top: 6, right: 8, border: 'none', background: 'none', color: '#b5b2bf', cursor: 'pointer', fontSize: '0.95rem' }}>×</button>}
+                        <input value={b.cifra || ''} readOnly={soloLectura} placeholder="Cifra o resultado" onChange={e => setBeneficios(v => v.map((x, k) => k === i ? { ...x, cifra: e.target.value } : x))}
+                          style={{ ...S.inp, fontSize: '1.35rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em' }} />
+                        <input value={b.titulo || ''} readOnly={soloLectura} placeholder="Qué gana" onChange={e => setBeneficios(v => v.map((x, k) => k === i ? { ...x, titulo: e.target.value } : x))}
+                          style={{ ...S.inp, fontSize: '0.86rem', fontWeight: 700, color: '#1a1a1a', marginTop: 2 }} />
+                        <textarea rows={2} value={b.detalle || ''} readOnly={soloLectura} placeholder="Cómo lo resuelve Sacs en su caso" onChange={e => setBeneficios(v => v.map((x, k) => k === i ? { ...x, detalle: e.target.value } : x))}
+                          style={{ ...S.inp, fontSize: '0.78rem', color: '#6b6776', lineHeight: 1.45, resize: 'none' as const, marginTop: 2 }} />
+                        <div style={{ borderTop: '1px solid #efedf5', marginTop: 6, paddingTop: 5, display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input value={b.cita || ''} readOnly={soloLectura} placeholder="«su frase»" onChange={e => setBeneficios(v => v.map((x, k) => k === i ? { ...x, cita: e.target.value } : x))}
+                            style={{ ...S.inp, fontSize: '0.74rem', color: '#8a8596', fontStyle: 'italic', flex: 1 }} />
+                          {b.plan && <span style={S.chip('#EEECFE', '#5B4BD6')}>{PLANES[b.plan]?.nombre || b.plan}</span>}
+                        </div>
+                      </div>
+                    ))}
+                    {!soloLectura && (
+                      <button onClick={() => setBeneficios(v => [...v, { cifra: '', titulo: '', detalle: '', cita: '', plan: null }])}
+                        style={{ borderRadius: 13, border: '1.5px dashed #d8d1fb', background: '#fff', color: '#5B4BD6', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', minHeight: 120, fontFamily: 'inherit' }}>
+                        + Agregar beneficio
+                      </button>
+                    )}
+                  </div>
+                  {!beneficios.length && soloLectura && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Esta minuta es de antes: no trae beneficios.</div>}
+                </Tarjeta>
+
+                {/* Lo que pidió y lo que se le enseñó siguen: alimentan la
+                    cotización y el reporte. Van debajo y más chicos. */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, marginTop: 12 }}>
+                  {[['intereso', 'Qué le interesó', 'Lo que pidió por su nombre: se cotiza sí o sí.'], ['mostramos', 'Qué le mostramos', 'Lo que se enseñó y se prometió.']].map(([k, l, h]) => (
+                    <div key={k}>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>{l}</label>
+                      <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginBottom: 6 }}>{h}</div>
+                      <textarea rows={3} value={m[k] || ''} readOnly={soloLectura} onChange={e => setM(v => ({ ...v, [k]: e.target.value }))} style={S.ta} />
+                    </div>
+                  ))}
+                </div>
+
+                {reqs.length > 0 && (
+                  <div style={{ marginTop: 18 }}>
+                    <div style={S.h3}>Para la cotización<span style={S.der}>{activos.length} de {reqs.length} conceptos</span></div>
+                    <p style={S.hint}>Cada punto trae la frase con la que lo pidió. Desmarca lo que no vaya.</p>
+                    {reqs.map((r, i) => (
+                      <div key={i} style={{ border: '1px solid #ececf1', borderRadius: 12, padding: '11px 13px', marginBottom: 8, display: 'flex', gap: 11, alignItems: 'flex-start', opacity: r.incluir ? 1 : .48 }}>
+                        <button aria-label={r.incluir ? 'Quitar de la cotización' : 'Incluir en la cotización'} disabled={soloLectura}
+                          onClick={() => setReqs(v => v.map((x, k) => k === i ? { ...x, incluir: !x.incluir } : x))}
+                          style={{ width: 19, height: 19, borderRadius: 6, border: '2px solid ' + (r.incluir ? '#9B8CFA' : '#d8d4e4'), background: r.incluir ? '#9B8CFA' : '#fff', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '0.62rem', fontWeight: 900, flex: '0 0 auto', marginTop: 2, cursor: soloLectura ? 'default' : 'pointer' }}>
+                          {r.incluir ? '✓' : ''}
+                        </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.35 }}>{r.titulo}</div>
+                          {r.cita
+                            ? <div style={{ fontSize: '0.74rem', color: '#8a8590', fontStyle: 'italic', marginTop: 4, lineHeight: 1.5 }}>“{r.cita}”</div>
+                            : <div style={{ fontSize: '0.74rem', color: '#a5a2af', marginTop: 4 }}>No lo pidió: se dedujo de la conversación.</div>}
+                          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 7 }}>
+                            {r.plan && <span style={S.chip('#EEECFE', '#5B4BD6')}>Licencia {PLANES[r.plan]?.nombre || r.plan}</span>}
+                            {r.incluido && <span style={S.chip('#EAF8F2', '#1E8A63')}>Ya viene incluido</span>}
+                            {r.deducido && <span style={S.chip('#FBEAF2', '#D9538E')}>Deducido, no dicho</span>}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <b style={{ fontSize: '0.9rem', fontWeight: 800 }}>{r.incluido ? 'Incluido' : r.valor ? money(r.valor) : '—'}</b>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>)}
+
+              {paso === 3 && (<>
+                <Tarjeta titulo="Lo que falta para cerrar" sub="Llévalo a la siguiente llamada. Palomea lo que ya te contestó." rosa>
+                  {preguntas.map((q, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'center', padding: '7px 10px', borderRadius: 10, background: q.respondida ? '#f6fbf8' : '#fff7fb', border: '1px solid ' + (q.respondida ? '#d5eee2' : '#f6dfeb'), marginBottom: 6 }}>
+                      <button aria-label={q.respondida ? 'Marcar sin responder' : 'Marcar respondida'} disabled={soloLectura}
+                        onClick={() => setPreguntas(v => v.map((x, k) => k === i ? { ...x, respondida: !x.respondida } : x))}
+                        style={{ width: 18, height: 18, borderRadius: 5, border: '2px solid ' + (q.respondida ? '#1E8A63' : '#e7b9cf'), background: q.respondida ? '#1E8A63' : '#fff', color: '#fff', fontSize: '0.6rem', fontWeight: 900, display: 'grid', placeItems: 'center', flex: 'none', cursor: 'pointer' }}>
+                        {q.respondida ? '✓' : ''}
+                      </button>
+                      <input value={q.pregunta} readOnly={soloLectura} onChange={e => setPreguntas(v => v.map((x, k) => k === i ? { ...x, pregunta: e.target.value } : x))}
+                        style={{ ...S.inp, fontSize: '0.84rem', flex: 1, textDecoration: q.respondida ? 'line-through' : 'none', color: q.respondida ? '#8a8596' : '#1a1a1a' }} />
+                      <span style={S.chip('rgba(244,168,205,.3)', '#9c3d70')}>{q.para}</span>
+                      {!soloLectura && <button aria-label="Quitar" onClick={() => setPreguntas(v => v.filter((_, k) => k !== i))}
+                        style={{ border: 'none', background: 'none', color: '#b5b2bf', cursor: 'pointer', fontSize: '0.95rem' }}>×</button>}
+                    </div>
+                  ))}
+                  {!soloLectura && (
+                    <button onClick={() => setPreguntas(v => [...v, { pregunta: '', para: 'precio', respondida: false }])}
+                      style={{ border: 'none', background: 'none', color: '#9c3d70', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>+ Agregar pregunta</button>
+                  )}
+                </Tarjeta>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, marginTop: 12 }}>
+                  {[['objeciones', 'Lo que puede frenar el cierre', 'Precio, socio, otro sistema, tiempos.'], ['decide', 'Quién decide y para cuándo', 'Nombre y fecha. Sin eso no hay pronóstico.']].map(([k, l, h]) => (
+                    <div key={k}>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>{l}</label>
+                      <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginBottom: 6 }}>{h}</div>
+                      <textarea rows={3} value={m[k] || ''} readOnly={soloLectura} onChange={e => setM(v => ({ ...v, [k]: e.target.value }))} style={S.ta} />
+                    </div>
+                  ))}
+                </div>
+              </>)}
+
+              {paso === 4 && (
+                <Tarjeta titulo="Siguiente paso" sub="Si no hay fecha, no hay siguiente paso. Abajo eliges qué sigue para el sistema y el agente.">
+                  <textarea rows={4} value={m.siguiente || ''} readOnly={soloLectura} onChange={e => setM(v => ({ ...v, siguiente: e.target.value }))} style={S.ta} />
+                </Tarjeta>
+              )}
+
+              {paso < PASOS.length - 1 && (
+                <button onClick={() => setPaso(paso + 1)} style={{ ...S.btnSec, marginTop: 14, padding: '8px 16px' }}>{PASOS[paso + 1]} →</button>
+              )}
+            </div>
+          </div>
 
           {error && <div style={{ marginTop: 14, color: '#C0554E', fontSize: '0.82rem' }}>{error}</div>}
         </div>

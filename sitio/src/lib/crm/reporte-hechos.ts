@@ -365,7 +365,13 @@ export async function reunirLead(bookingId: string, opciones?: { descuento?: num
     : renglones(m.intereso).map(t => ({ titulo: t, detalle: null, existe: true }));
 
   const hoy = [...renglones(m.opera, 3), ...renglones(m.duele, 3)].slice(0, 5);
-  const conSacs = [...renglones(m.sacs, 3), ...renglones(m.intereso, 3)].slice(0, 5);
+  /* Si la minuta ya trae BENEFICIOS (la minuta por pasos, 22-sep-2026), la
+     columna «Con Sacs» los usa: están escritos como lo que gana en su cuenta,
+     que es justo lo que ese lado del espejo tiene que decir. */
+  const bens = Array.isArray(m.beneficios) ? m.beneficios.filter((x: any) => x?.titulo) : [];
+  const conSacs = bens.length
+    ? bens.slice(0, 5).map((x: any) => String(x.titulo).trim() + (x.detalle ? ': ' + String(x.detalle).trim() : '') + (/[.!?]$/.test(String(x.detalle || x.titulo).trim()) ? '' : '.'))
+    : [...renglones(m.sacs, 3), ...renglones(m.intereso, 3)].slice(0, 5);
 
   const nombre = [c?.nombre, c?.apellido].filter(Boolean).join(' ') || b.invitee_nombre || 'ahí';
   const empresa = (c as any)?.companies?.nombre_comercial || (c as any)?.companies?.nombre || b.invitee_empresa || null;

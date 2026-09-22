@@ -1082,7 +1082,9 @@ Hoy el modal de ReporteLead.tsx trae un campo libre con 35 por defecto. Lo que p
 que al darle «Generar reporte» lo primero sea elegir 35 % o 40 % (sin valor puesto),
 y que no se genere hasta elegir.
 
-## 22-sep-2026 · minuta de descubrimiento más enfocada a vender (PENDIENTE — prototipos primero)
+## 22-sep-2026 · minuta de descubrimiento más enfocada a vender (HECHO 22-sep, opción C)
+> Decisión del dueño: «el c y que tenga para pegar la conversacion para que la IA acomode los campos».
+> Prototipos: https://code.sacscloud.com/shots/a8668ca6c2cec74e.png (C) · A 4fcacaa935459f58 · B 9196e2cc513c2a14
 > «De la minuta de descubrimiento, necesito que los campos estén más enfocados en sí, en lo que se habló en la reunión, pero en los beneficios que tiene lo que se habló en la cuenta del cliente y lo que sí tenemos que preguntar. Entonces, básicamente, esta minuta tiene que ser más llamativa para que sí adquiera el sistema.»
 
 Captura: MinutaLead.tsx (Estefany · NifaluStyle · demo 22/09). Hoy son 6 campos
@@ -1091,3 +1093,13 @@ y riesgos · Quién decide). Lo que pide: que cada cosa hablada se traduzca al
 BENEFICIO en su cuenta, que diga lo que falta preguntar, y que se vea más
 llamativa. Ojo: la minuta alimenta reunirLead() y el reporte del lead
 (campos opera/duele/intereso/sacs/objeciones/decide/siguiente): no romper esas llaves.
+
+## 22-sep-2026 · presentación «Programa de consultoría y desarrollo de flujos empresariales en SACS» (ELEGIDA la B — falta construir)
+> Decisión del dueño: «El b solo considera poner movimientos e imagenes para que quede mas claro el caso».
+> Prototipos: B https://code.sacscloud.com/shots/971672f040a8f1b9.png · A fccad8f66de42773 · C f52f1230a78fb018
+> «Cuando termines quiero que hagas lo siguiente plan: …» (texto completo en `docs/PEDIDO-2026-09-22-programa-consultoria-flujos.md`)
+
+Formato como la consultoría de VTC (dinámico, animado), branding del CRM con estrellas, método
+escuchar → mapear → mejorar → construir → dar visibilidad; cierre: 10 días hábiles / 2 semanas,
+3 espacios, $32,890 → $21,378.50 (35 %) hasta el 28-sep-2026, siguiente apertura enero 2027.
+Ojo: la oferta vence el 28-sep → va con prisa.
