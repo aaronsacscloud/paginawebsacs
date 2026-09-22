@@ -414,6 +414,20 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
     }
 
     // ── Envíos listos → PDF + WhatsApp ────────────────────────────────────
+    /* «LA PÁGINA WEB» NO ES UN TEMA QUE HAYA QUE PREGUNTAR (22-sep-2026).
+       Caso Samantha: la IA prometió «PDF informativo», «precios» y «página
+       web»; la tercera se quedó esperando a que el vendedor dijera qué mandar
+       y acabó en tarea manual — para una liga que es siempre la misma. Ahora
+       se resuelve al PDF informativo, cuyo mensaje ya lleva la liga; y como
+       va el mismo PDF que otro envío, sale una sola vez (ver `mandarEnvio`). */
+    {
+      const { data: faltan } = await supabase.from('tel_envios').select('id, tema').eq('item_id', itemId).eq('estado', 'falta');
+      const web = (faltan || []).filter((f: any) => /p[aá]gina|\bweb\b|sitio|\bliga\b|\blink\b/i.test(String(f.tema || '')));
+      if (web.length) {
+        const { data: info } = await supabase.from('tel_conocimiento').select('id').eq('tema', 'la información de Sacs').eq('estado', 'activo').maybeSingle();
+        if (info?.id) await supabase.from('tel_envios').update({ estado: 'listo', conocimiento_id: info.id, updated_at: t }).in('id', web.map((w: any) => w.id));
+      }
+    }
     const { data: envios } = await supabase.from('tel_envios').select('*').eq('item_id', itemId).in('estado', ['listo', 'falta']);
     for (const e of envios || []) {
       if (yaSeMando(e.tema)) {
@@ -902,6 +916,20 @@ export async function mandarEnvio(envioId: string): Promise<string | null> {
       }
       await supabase.from('tel_envios').update({ pdf_url: url, updated_at: t }).eq('id', envioId);
     }
+    /* ══ UN PDF, UNA VEZ (22-sep-2026) ════════════════════════════════════
+       Caso Samantha: «PDF informativo» y «precios» apuntaban al MISMO archivo
+       y le llegó dos veces. Si otro envío de esta llamada ya lleva este PDF,
+       éste se da por incluido y no sale. */
+    if (e.item_id) {
+      const { data: gemelo } = await supabase.from('tel_envios').select('id, tema')
+        .eq('item_id', e.item_id).neq('id', envioId).eq('pdf_url', url)
+        .in('estado', ['enviado', 'enviando', 'pendiente_ventana']).limit(1).maybeSingle();
+      if (gemelo) {
+        await supabase.from('tel_envios').update({ estado: 'enviado', motivo: `va en el mismo PDF que «${gemelo.tema}»`, enviado_at: t, updated_at: t }).eq('id', envioId);
+        if (e.item_id) await marcarEnvioEnItem(e.item_id, envioId, 'enviado');
+        return `${e.tema}: va junto con «${gemelo.tema}» (es el mismo PDF)`;
+      }
+    }
     const tel = telefonoWhatsApp(conv?.telefono || e.telefono);
     if (!tel) {
       await supabase.from('tel_envios').update({ estado: 'sin_via', motivo: 'el teléfono no sirve para WhatsApp', updated_at: t }).eq('id', envioId);
@@ -911,7 +939,10 @@ export async function mandarEnvio(envioId: string): Promise<string | null> {
     }
     const primer = primerNombre(nombre) || 'qué tal';
     const archivo = `${String(k.tema || e.tema).replace(/[^\wáéíóúñÁÉÍÓÚÑ ]+/g, '').slice(0, 60).trim() || 'Informacion'} - Sacscloud.pdf`;
-    const mensaje = e.texto || `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(k.tema || e.tema).toLowerCase()}. Cualquier duda, con gusto.`;
+    const esInfo = /\/info\/sacs-informacion\.pdf$/.test(url);
+    const mensaje = e.texto || (esInfo
+      ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo la información de Sacs. Todo a detalle en https://www.sacscloud.com — cualquier duda, con gusto.`
+      : `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(k.tema || e.tema).toLowerCase()}. Cualquier duda, con gusto.`);
     const ventana = conv ? ventanaEnLinea(conv, conv.phone_number_id) : { abierta: false, expira_at: null };
     let estado = 'enviado', motivo = 'se mandó por WhatsApp';
     // La línea se fija solo para este envío (conLinea restaura el contexto: el webhook que nos llama sigue con el suyo).
@@ -920,18 +951,29 @@ export async function mandarEnvio(envioId: string): Promise<string | null> {
         await enviarMediaLink(tel, 'document', url, archivo, mensaje);
         return;
       }
-      const { data: cfg } = await supabase.from('wa_config').select('minuta_envio_plantilla_doc, minuta_envio_plantilla_aviso').eq('id', 1).maybeSingle();
-      const aprobada = async (n?: string | null) => { if (!n) return false; const { data } = await supabase.from('wa_plantillas').select('status').eq('nombre', n).order('status').limit(1).maybeSingle(); return String((data as any)?.status || '').toUpperCase() === 'APPROVED'; };
-      if (await aprobada(cfg?.minuta_envio_plantilla_doc)) {
-        await enviarPlantilla(tel, String(cfg!.minuta_envio_plantilla_doc), 'es_MX', [primer], { headerMedia: { tipo: 'document', link: url, filename: archivo } });
-        motivo = 'se mandó con plantilla (fuera de la ventana de 24 h)';
-      } else if (e.estado !== 'pendiente_ventana' && await aprobada(cfg?.minuta_envio_plantilla_aviso)) {
-        await enviarPlantilla(tel, String(cfg!.minuta_envio_plantilla_aviso), 'es_MX', [primer]);
-        estado = 'pendiente_ventana'; motivo = 'se le avisó con plantilla; el PDF sale en cuanto conteste';
-      } else if (e.estado === 'pendiente_ventana') {
-        estado = 'pendiente_ventana'; motivo = 'sigue esperando a que escriba';
+      /* 🔴 NUNCA CON LA PLANTILLA DE LA MINUTA (22-sep-2026). Antes, fuera de
+         la ventana, cualquier PDF prometido salía con `minuta_llamada_doc_v1`,
+         cuyo texto dice «te comparto el resumen de la llamada»: Samantha
+         recibió el PDF informativo DOS veces presentado como «la minuta» (tres
+         minutas en su chat). Ahora:
+           · el PDF informativo de Sacs → su propia familia (`ti_info_*`,
+             marketing → utility), espejada en el inbox;
+           · cualquier otro PDF → espera a que conteste (la minuta que ya le
+             llegó lo invita a hacerlo) y sale en cuanto se abra la ventana. */
+      const { PDF_INFO_SACS, parListoPara, paramAngulo } = await import('../crm/ti/plantillas-agente');
+      const par = url === PDF_INFO_SACS.url ? await parListoPara('info').catch(() => null) : null;
+      if (par?.familia === 'info' && (par.marketing || par.utility)) {
+        const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
+        const hdr = { tipo: 'document' as const, link: url, filename: PDF_INFO_SACS.archivo };
+        const params = [primer, paramAngulo('como quedamos en la llamada, aquí tienes la información de Sacs.')];
+        const r = await mandarPlantilla({ telefono: tel, plantilla: (par.marketing || par.utility)!, params, headerMedia: hdr, autor: vendedor || 'Llamada',
+          respaldo: par.marketing && par.utility ? { plantilla: par.utility, params, headerMedia: hdr } : null,
+          metadata: { envio_llamada: envioId, tema: e.tema } });
+        if (!r.enviado) throw new Error(r.motivo || 'la plantilla de información no salió');
+        motivo = `se mandó con la plantilla de información${r.via === 'respaldo' ? ' (utility)' : ''} (fuera de la ventana de 24 h)`;
       } else {
-        estado = 'sin_via'; motivo = 'fuera de la ventana de 24 h y sin plantilla aprobada: hay que mandarlo a mano';
+        estado = 'pendiente_ventana';
+        motivo = e.estado === 'pendiente_ventana' ? 'sigue esperando a que escriba' : 'fuera de la ventana de 24 h: sale en cuanto conteste';
       }
     });
     if (estado === 'pendiente_ventana' && e.estado === 'pendiente_ventana') {
