@@ -1063,7 +1063,7 @@ Para descongelar uno: se mueve otra vez arriba, con su fecha.
 Sale de la minuta de descubrimiento (cómo opera hoy · qué le duele · qué le
 interesó · qué le mostramos · objeciones · quién decide · siguiente paso).
 
-## 21-sep-2026 · link de consultoría para que el cliente agende solo (HECHO 22-sep, opción A · falta correr migration-2026-09-22-horario-por-tipo.sql)
+## 21-sep-2026 · link de consultoría para que el cliente agende solo (HECHO 22-sep, opción A · migración corrida y probada 22-sep)
 
 > «necesito que en esta sección puedas darme la opción para mandar a los
 > clientes al link de consultoría para que lo puedan agendar y aparezca en mi
