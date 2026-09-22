@@ -615,7 +615,7 @@ Título: ${c.titulo}
 H1: ${c.h1}
 Meta: ${c.meta_desc}
 Cuerpo (${contarPalabras(cuerpo)} palabras; los bloques [RESUMEN], [TABLA], [PASOS], [FAQ], [GLOSARIO], [DIAGRAMA], [IMAGEN], [VIDEO] y [CTA] se renderizan con su propio diseño — no son texto corrido):
-${aMarkdown(cuerpo).slice(0, 26000)}`;
+${aMarkdown(cuerpo).slice(0, 90000)}`; // 26k cortaba el hub (72 bloques) y el juez lo tumbaba por «termina a media frase» (22-sep-2026)
 
   const r = await preguntar<Veredicto>({ agente: 'contenido_referee', trabajo: 'estrategia', sistema: SISTEMA_REFEREE, usuario, esquema: ESQUEMA_VEREDICTO, max_tokens: 32000 }); // el referee sí razona y esos tokens cuentan aquí
   if (!r.ok || !r.datos) return { ok: false, error: r.error, duras, costo: costoComp + (r.costo_usd || 0) };

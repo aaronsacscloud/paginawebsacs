@@ -385,6 +385,9 @@ export function partirParrafosLargos(cuerpo: Bloque[]): Bloque[] {
 export const limpiaSalida = (v: any): any => typeof v === 'string' ? v.replace(/<\/?script[^>]*>/gi, '').replace(/\/\*x\*\/;?/g, '').trim() : Array.isArray(v) ? v.map(limpiaSalida) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, w]) => [k, limpiaSalida(w)])) : v;
 
 const ESQUEMA_PARCHES = {
+  /* titulo/h1/meta_desc van REQUERIDOS («» = no cambia): opcionales, junto al
+     bloque anidado, Anthropic los rechaza con «Schema is too complex» (medido
+     22-sep-2026: los tres opcionales fallan, requeridos pasan). */
   type: 'object', additionalProperties: false,
   properties: {
     titulo: { type: 'string' }, h1: { type: 'string' }, meta_desc: { type: 'string' },
@@ -400,7 +403,7 @@ const ESQUEMA_PARCHES = {
       }, required: ['t'] },
     }, required: ['op', 'i'] } },
   },
-  required: ['parches'],
+  required: ['titulo', 'h1', 'meta_desc', 'parches'],
 };
 
 /**
@@ -430,7 +433,7 @@ ${numerado}
 
 RUTAS INTERNAS PERMITIDAS: ${(b.enlaces || []).map(s => `/recursos/${s}/`).join(', ')}, /agendar, /giros/${b.giro || ''}${b.fuentes?.length ? `\nFUENTES VERIFICADAS (solo estas urls): ${b.fuentes.map((f: any) => f.url).join(' · ')}` : ''}
 
-Devuelve SOLO las operaciones necesarias, como JSON: {"titulo"?, "h1"?, "meta_desc"? (solo si una corrección los cambia), "parches":[{"op":"reemplazar|insertar_despues|insertar_antes|eliminar","i":<índice del bloque de referencia>,"bloque":{...}}]}.
+Devuelve SOLO las operaciones necesarias, como JSON: {"titulo", "h1", "meta_desc" (cadena vacía "" si ninguna corrección los cambia), "parches":[{"op":"reemplazar|insertar_despues|insertar_antes|eliminar","i":<índice del bloque de referencia>,"bloque":{...}}]}.
 Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_items, encabezados, filas, items{p,r,titulo,texto}, nota, fuente, url); «captura»: titulo, nota=migas, items{p,r}=campos, texto=alt; «imagen»: texto=alt, nota=escena. Para partir un párrafo: «reemplazar» el [#i] por la primera mitad e «insertar_despues» del mismo i la segunda. Índices siempre referidos a la numeración de arriba.`;
 
   const r = await preguntar<any>({ agente: 'contenido_parches', trabajo: 'estrategia', pensar: false, sistema: SISTEMA_BORRADOR, usuario, esquema: ESQUEMA_PARCHES, max_tokens: 16000 });
@@ -457,7 +460,10 @@ Los bloques nuevos usan los mismos campos que siempre (t, texto, titulo, lista_i
     actualizado_at: new Date().toISOString(),
   }).eq('id', contenidoId);
   if (error) return { ok: false, error: error.message, costo: r.costo_usd || 0 };
-  return { ok: true, costo: r.costo_usd || 0, palabras: aTextoPalabras(nuevo), parches: parches.length };
+  // Un título/h1/meta nuevo cuenta como cambio: sin esto, una corrección que solo toca la
+  // cabecera salía como «sin parches» y se le pasaba al dueño ya aplicada.
+  const cabecera = ['titulo', 'h1', 'meta_desc'].filter(k => datos[k]).length;
+  return { ok: true, costo: r.costo_usd || 0, palabras: aTextoPalabras(nuevo), parches: parches.length + cabecera };
 }
 const aTextoPalabras = (bl: Bloque[]) => JSON.stringify(bl).split(/\s+/).length;
 

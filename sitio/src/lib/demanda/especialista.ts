@@ -275,7 +275,7 @@ export async function ejecutarPendiente(pendienteId: string): Promise<{ ok: bool
   const { data: p } = await supabase.from('de_contenido_pendientes').select('*').eq('id', pendienteId).maybeSingle();
   if (!p) return { ok: false, resultado: 'no existe', costo: 0 };
   if (p.estado !== 'pendiente') return { ok: true, resultado: `ya está ${p.estado}`, costo: 0 };
-  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, estado, cuerpo, titulo, h1, meta_desc, brief, version').eq('id', p.contenido_id).maybeSingle();
+  const { data: c } = await supabase.from('de_contenido').select('id, slug, seccion, estado, cuerpo, titulo, h1, meta_desc, brief, version, auditorias').eq('id', p.contenido_id).maybeSingle();
   if (!c) return { ok: false, resultado: 'la pieza no existe', costo: 0 };
   if (!['aprobado', 'publicado'].includes(c.estado)) return { ok: false, resultado: `la pieza está en «${c.estado}»`, costo: 0 };
 
@@ -284,10 +284,31 @@ export async function ejecutarPendiente(pendienteId: string): Promise<{ ok: bool
   const respaldo = { cuerpo: c.cuerpo, titulo: c.titulo, h1: c.h1, meta_desc: c.meta_desc, estado: c.estado };
   const marca = async (estado: string, nota: string) => supabase.from('de_contenido_pendientes').update({ estado, hecho_at: estado === 'pendiente' ? null : new Date().toISOString(), impacto: nota, ...(estado === 'pendiente' ? { quien: 'dueno' } : {}) }).eq('id', p.id);
 
+  /* Línea base. Una página publicada ANTES del referee v2 (sin resumen, sin
+     diagrama…) no lo pasa con ningún pendiente encima, y exigirle «pasa» hacía
+     que TODO se revirtiera aunque la mejorara (22-sep-2026: 5 de 6 piezas).
+     Si la página nunca pasó, se juzga una vez como está y el cambio se queda
+     si no la deja peor: promedio ≥ al de antes y ninguna falla grave nueva. */
+  const promedio = (v: any) => { const n = Object.values(v?.puntajes || {}).map(Number); return n.length ? n.reduce((a, b) => a + b, 0) / n.length : 0; };
+  const GRAVE = /precio|no existe|sin bloque|sin foto|sin cta|cortad|mínimo|no enlaza|fuentes verificadas|ruta cruda|marcador sin resolver|Sacs no tiene|hub de su giro/;
+  const aud = (c.auditorias || {}) as any;
+  let base: { promedio: number; graves: number } | null = null;
+  let costo = 0;
+  if (!aud.referee?.pasa) {
+    base = aud.referee_base || null;
+    if (!base) {
+      const j0 = await juzgar(c.id);
+      costo += j0.costo;
+      if (!j0.ok) return { ok: false, resultado: `no se pudo juzgar la página como está: ${j0.error}`, costo };
+      base = { promedio: promedio(j0.veredicto), graves: (j0.duras || []).filter(d => GRAVE.test(d)).length };
+      await supabase.from('de_contenido').update({ auditorias: { ...aud, referee_base: { ...base, cuando: new Date().toISOString() } } }).eq('id', c.id);
+    }
+  }
+
   // 1) el pendiente como corrección
   await supabase.from('de_contenido').update({ brief: { ...(c.brief as any), correcciones: [`${p.titulo}: ${p.detalle}`] } }).eq('id', c.id);
   const r = await aplicarParches(c.id);
-  let costo = r.costo;
+  costo += r.costo;
   if (!r.ok || !r.parches) {
     await supabase.from('de_contenido').update({ estado: respaldo.estado, brief: { ...(c.brief as any), correcciones: undefined } }).eq('id', c.id);
     await marca('pendiente', `el motor no pudo aplicarlo sobre esta página (${r.error || 'sin parches: probablemente hay que cambiar OTRA página o hace falta una persona'})`);
@@ -297,12 +318,16 @@ export async function ejecutarPendiente(pendienteId: string): Promise<{ ok: bool
   // 2) vuelve a juzgar: si el cambio rompió algo, se revierte
   const j = await juzgar(c.id);
   costo += j.costo;
-  const pasa = j.ok && j.veredicto?.pasa;
+  const noEmpeora = !!base && j.ok && promedio(j.veredicto) >= base.promedio && (j.duras || []).filter(d => GRAVE.test(d)).length <= base.graves;
+  const pasa = j.ok && (j.veredicto?.pasa || noEmpeora);
   if (!pasa) {
     await supabase.from('de_contenido').update({ ...respaldo }).eq('id', c.id);
     await marca('pendiente', `aplicado y revertido: el referee lo tumbó (${(j.veredicto?.fallos || [j.error]).slice(0, 2).join(' | ').slice(0, 200)})`);
     return { ok: true, resultado: 'aplicado pero el referee lo tumbó: revertido', costo };
   }
+
+  // La base sube con cada cambio que se queda: el siguiente no puede bajarla.
+  if (base) await supabase.from('de_contenido').update({ auditorias: { ...aud, referee_base: { promedio: promedio(j.veredicto), graves: (j.duras || []).filter(d => GRAVE.test(d)).length, cuando: new Date().toISOString() } } }).eq('id', c.id);
 
   // 3) se queda; si estaba publicada, versión nueva en línea
   let republicada = '';
