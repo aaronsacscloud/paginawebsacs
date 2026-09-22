@@ -1094,7 +1094,7 @@ BENEFICIO en su cuenta, que diga lo que falta preguntar, y que se vea más
 llamativa. Ojo: la minuta alimenta reunirLead() y el reporte del lead
 (campos opera/duele/intereso/sacs/objeciones/decide/siguiente): no romper esas llaves.
 
-## 22-sep-2026 · presentación «Programa de consultoría y desarrollo de flujos empresariales en SACS» (ELEGIDA la B — falta construir)
+## 22-sep-2026 · presentación «Programa de consultoría y desarrollo de flujos empresariales en SACS» (HECHO 22-sep, opción B → https://code.sacscloud.com/programa-flujos/ · vive en /opt/sacs/presentaciones/programa-flujos/)
 > Decisión del dueño: «El b solo considera poner movimientos e imagenes para que quede mas claro el caso».
 > Prototipos: B https://code.sacscloud.com/shots/971672f040a8f1b9.png · A fccad8f66de42773 · C f52f1230a78fb018
 > «Cuando termines quiero que hagas lo siguiente plan: …» (texto completo en `docs/PEDIDO-2026-09-22-programa-consultoria-flujos.md`)
@@ -1103,3 +1103,13 @@ Formato como la consultoría de VTC (dinámico, animado), branding del CRM con e
 escuchar → mapear → mejorar → construir → dar visibilidad; cierre: 10 días hábiles / 2 semanas,
 3 espacios, $32,890 → $21,378.50 (35 %) hasta el 28-sep-2026, siguiente apertura enero 2027.
 Ojo: la oferta vence el 28-sep → va con prisa.
+
+## 22-sep-2026 · «Enviar email» en la ficha del cliente, con documentos adjuntables (PENDIENTE — prototipos primero)
+> «Puedes agregar dento de esta seccion como enviar email! esto lo voy a usar para poder enviar un correo ejacutivo con los correos que tenga de la cuenta en el cual pueda escribir lo que requiera pero quiero que pueda enviar reportes den entregas, en talles y reporte ejecutivo adicional que me pueda dar la copiin de generar un reporte con recomendaciones de la cuenta como cosas que veo que faltan y que no estan cerrando los flujos de trabajo de las cuentas y ahi es donde podemos agregar el tema de los flujos de trabajo como el documento que estas haciendo. es importante que estos documentos que estas creando puedan guardarse en la configuracion del CRM, cuando te diga guardalo en el crm para que cuando quiera enviar un correo me permita ver los documentos que tenga activos»
+
+Captura: ficha de la cuenta (ClienteDrawer360), Artik, pestaña Outbound. Lo que pide, en piezas:
+1. «Enviar email» en la ficha: correo ejecutivo a los contactos de la cuenta, texto libre (vía el sistema de correo del CRM).
+2. Adjuntar como liga: reporte de entregas, trabajo en curso (taller), reporte ejecutivo.
+3. NUEVO documento: reporte de RECOMENDACIONES de la cuenta — qué falta, qué flujos no se están cerrando — y ahí ofrecer el programa de flujos.
+4. Una biblioteca de DOCUMENTOS en Configuración del CRM: cuando el dueño diga «guárdalo en el CRM», el documento (p. ej. la presentación del programa de flujos) queda ahí, activo/inactivo, y al enviar un correo se eligen de los activos.
+Orden sugerido: 4 (biblioteca) + 1–2 primero; 3 después.
