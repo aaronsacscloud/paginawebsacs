@@ -23,7 +23,10 @@ const S = {
 };
 
 export default function ReporteLead({ reunion, lead, onCerrar }: any) {
-  const [pct, setPct] = useState(35);
+  /* 35 o 40, según el caso, y SIN valor puesto: el dueño pidió que se lo
+     pregunte antes de generarlo (22-sep-2026). Con un default ya marcado se
+     iba el 35 aunque ese lead mereciera el 40. */
+  const [pct, setPct] = useState<number | null>(null);
   const [vigencia, setVigencia] = useState(iso(new Date(Date.now() + 14 * 86400000)));
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -37,6 +40,7 @@ export default function ReporteLead({ reunion, lead, onCerrar }: any) {
   const wa = ((d: string) => d.length === 10 ? '52' + d : d)(String(lead?.whatsapp || lead?.telefono || '').replace(/\D/g, ''));
 
   async function generar() {
+    if (pct == null) return;
     setBusy('generando'); setError(''); setAviso(''); setRep(null);
     const r = await fetch('/api/crm/reportes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -84,11 +88,17 @@ export default function ReporteLead({ reunion, lead, onCerrar }: any) {
         <div style={{ padding: '14px 18px', display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap', borderBottom: '1px solid #f6f5fa' }}>
           <div>
             <div style={S.fl}>Descuento</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <input type="number" min={0} max={60} value={pct} disabled={!!rep}
-                onChange={e => setPct(Math.min(60, Math.max(0, Number(e.target.value) || 0)))}
-                style={{ ...S.input, width: 70 }} />
-              <span style={{ fontSize: '0.8rem', color: '#6b6776', fontWeight: 700 }}>%</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {[35, 40].map(n => {
+                const on = pct === n;
+                return (
+                  <button key={n} disabled={!!rep} onClick={() => setPct(n)} aria-pressed={on}
+                    style={{ padding: '7px 16px', borderRadius: 9, fontSize: '0.9rem', fontWeight: 800, fontFamily: 'inherit', cursor: rep ? 'default' : 'pointer',
+                      border: on ? 'none' : '1.5px solid #e4dffb', background: on ? GRAD : '#fdfcff', color: on ? '#fff' : '#6b6776' }}>
+                    {n}%
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>
@@ -97,7 +107,8 @@ export default function ReporteLead({ reunion, lead, onCerrar }: any) {
               onChange={e => setVigencia(e.target.value)} style={S.input} />
           </div>
           {!rep && (
-            <button style={{ ...S.btn, marginLeft: 'auto', opacity: busy ? .7 : 1 }} onClick={generar} disabled={!!busy}>
+            <button style={{ ...S.btn, marginLeft: 'auto', opacity: busy || pct == null ? .5 : 1, cursor: pct == null ? 'not-allowed' : 'pointer' }}
+              onClick={generar} disabled={!!busy || pct == null} title={pct == null ? 'Elige primero el descuento' : undefined}>
               {busy === 'generando' ? 'Generando…' : 'Generar'}
             </button>
           )}
@@ -110,7 +121,9 @@ export default function ReporteLead({ reunion, lead, onCerrar }: any) {
           {!rep && !busy && !error && (
             <div style={{ padding: '18px 0 6px', color: '#9c99a6', fontSize: '0.8rem', lineHeight: 1.65 }}>
               El documento repite lo que te dijo —cómo opera hoy, qué le duele, qué le interesó— y al lado
-              cómo lo resuelve Sacs. El <b>{pct}%</b> en la licencia anual va al cierre, con su fecha límite.
+              cómo lo resuelve Sacs. {pct == null
+                ? <b style={{ color: '#D9538E' }}>Elige primero el descuento: 35 % o 40 %.</b>
+                : <>El <b>{pct}%</b> en la licencia anual va al cierre, con su fecha límite.</>}
             </div>
           )}
           {busy === 'generando' && <div style={{ padding: '22px 0', color: '#9c99a6', fontSize: '0.85rem' }}>Leyendo la minuta…</div>}

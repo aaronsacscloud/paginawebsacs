@@ -1063,7 +1063,7 @@ Para descongelar uno: se mueve otra vez arriba, con su fecha.
 Sale de la minuta de descubrimiento (cómo opera hoy · qué le duele · qué le
 interesó · qué le mostramos · objeciones · quién decide · siguiente paso).
 
-## 21-sep-2026 · link de consultoría para que el cliente agende solo (PENDIENTE)
+## 21-sep-2026 · link de consultoría para que el cliente agende solo (HECHO 22-sep, opción A · falta correr migration-2026-09-22-horario-por-tipo.sql)
 
 > «necesito que en esta sección puedas darme la opción para mandar a los
 > clientes al link de consultoría para que lo puedan agendar y aparezca en mi
@@ -1075,7 +1075,7 @@ La sección es Reuniones (las tarjetas por tipo). Hay que revisar qué tanto de
 esto ya existe: event_types, la página pública de agenda y la conexión de
 Google Calendar por host_id (ver memoria `crm-agenda-identidad-google`).
 
-## 22-sep-2026 · descuento del reporte del lead: 35 % o 40 %, preguntando antes (PENDIENTE)
+## 22-sep-2026 · descuento del reporte del lead: 35 % o 40 %, preguntando antes (HECHO 22-sep)
 > «ahora de estas reuniones es importante que pueda configurar el 35% de descuento o el 40% dependiendo el caso que me lo preguntee antes de hacerlo»
 
 Hoy el modal de ReporteLead.tsx trae un campo libre con 35 por defecto. Lo que pide:

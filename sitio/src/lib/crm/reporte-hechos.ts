@@ -395,7 +395,12 @@ export async function reunirLead(bookingId: string, opciones?: { descuento?: num
     por_desarrollar: pedidos.filter((x: any) => !x.existe).length,
     objeciones: renglones(m.objeciones, 4),
     decide: String(m.decide || '').trim() || null,
-    siguiente: String(m.siguiente || m.acuerdos || '').trim() || null,
+    /* La minuta suele traer el descuento escrito («…y descuento anual del
+       35%»). Si al generar se eligió otro, el documento decía los dos: el de
+       la minuta arriba y el elegido en el cupón. Manda el elegido. */
+    siguiente: (String(m.siguiente || m.acuerdos || '').trim()
+      .replace(/(descuento[^.%\d]{0,40}?)\d{1,2}\s?%/gi, `$1${pct}%`)
+      .replace(/\d{1,2}\s?%(\s*de\s+descuento)/gi, `${pct}%$1`)) || null,
     descuento: { pct, vigencia },
   };
 }
