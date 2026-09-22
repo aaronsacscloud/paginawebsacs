@@ -58,6 +58,12 @@ const PORTERO = [
   /esta usando un asistente/, /usa un asistente/, /la persona a la que llama/, /para que (le|lo) pueda atender/,
   /despues de la senal, diga/, /quien llama y por que/, /para pasar su llamada/, /le pasare su mensaje/,
   /call screening/, /who is calling and why/, /say your name/, /state your name/,
+  /* El filtro de llamadas del teléfono (22-sep-2026, jornada del dueño: Sandra,
+     Fernando, Miriam): «Hola, si dejas tu nombre y el motivo de tu llamada,
+     revisaré si esta persona está disponible» … «Gracias, permanece en la
+     línea». Después, silencio mientras el dueño del teléfono decide. */
+  /si (me )?(dejas|deja|das|da) (tu|su) nombre/, /revisare si (esta persona|el|ella|la persona) (esta|puede)/,
+  /permanec(e|er|a) en la linea/, /espera en la linea mientras/,
 ];
 
 /* La PERSONA: lo primero que dice alguien que descuelga en México. Corto y
@@ -116,7 +122,13 @@ export function juzgar(oidoTodo: Oido[], ms: number, amd?: string | null, extra?
   /* Un parcial que arranca como persona ya vale desde 1.5 s: esperar el final
      (1–2 s más) es lo que producía el «hola» tardío. Un «¿bueno?» a medias
      sigue siendo un «¿bueno?». */
-  if (!finales && ultimoParcial && PERSONA_INICIO.test(ultimoParcial) && ms >= 1500 && !amdMaquina) return { veredicto: 'persona', motivo: `se oye «${ultimoParcial.slice(0, 30)}»` };
+  /* ⚠️ Sin «hola» (22-sep-2026): el filtro de llamadas del teléfono arranca
+     con «Hola, si dejas tu nombre…», y este atajo lo daba por persona a los
+     1.5 s, antes de que llegara la frase que lo delata. Al vendedor se le
+     pasaba la llamada y se quedaba oyendo el silencio de la espera. Un «hola»
+     se espera a que termine la frase (un segundo más); «bueno», «diga»,
+     «mande», «sí» siguen decidiendo al instante. */
+  if (!finales && ultimoParcial && PERSONA_INICIO.test(ultimoParcial) && !/^(hola|hey)\b/.test(ultimoParcial) && ms >= 1500 && !amdMaquina) return { veredicto: 'persona', motivo: `se oye «${ultimoParcial.slice(0, 30)}»` };
 
   /* Un monólogo largo sin nada humano dentro es una grabación. Se exige el
      AMD de acuerdo O un párrafo de verdad, para no confundir a una
