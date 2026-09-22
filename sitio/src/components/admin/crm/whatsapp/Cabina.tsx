@@ -256,7 +256,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   // La etapa que se tocó en ESTE cierre; se limpia al pasar al siguiente.
   const [etapaTocada, setEtapaTocada] = useState('');
   const notaItem = useRef<string | null>(null);
-  const [tab, setTab] = useState<'lista' | 'hechas' | 'compromisos'>('lista');
+  const [tab, setTab] = useState<'lista' | 'hechas' | 'compromisos' | 'quitados'>('lista');
   /* ══ LOS COMPROMISOS DE LA JORNADA ══════════════════════════════════════
      Pedido del dueño (18-sep-2026): «una pestaña específica que diga
      compromisos, con las agendas que se generaron al hablar… que sea fácil ver
@@ -608,6 +608,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
 
   // ── Cálculos de pantalla ──────────────────────────────────────────────
   const hechos = useMemo(() => items.filter(i => ['hecho', 'saltado'].includes(i.estado)), [items]);
+  /* Los que salieron de la lista: los que quitaste tú (o cancelaste mientras
+     timbraban) primero, y luego los que el sistema quitó solo. Antes no se
+     veían en ningún lado: «Por marcar» los esconde y «Hechas» no los cuenta. */
+  const quitados = useMemo(() => {
+    const porTi = (i: any) => /cancelaste|quitaste/i.test(String(i.motivo_exclusion || ''));
+    return items.filter(i => i.estado === 'excluido').sort((a, b) => Number(porTi(b)) - Number(porTi(a)) || a.orden - b.orden);
+  }, [items]);
   const pendientes = useMemo(() => items.filter(i => i.estado === 'pendiente'), [items]);
   const excluidos = useMemo(() => items.filter(i => i.estado === 'excluido'), [items]);
   const segCierre = actual?.estado === 'cierre' && actual.terminado_at && est?.ahora
@@ -701,6 +708,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     const r = await accion('cierre_respuesta', { envio: envioId, texto });
     if (r && !r.ok) setError(r.motivo || 'No se pudo mandar');
   };
+  const [cancelando, setCancelando] = useState<string | null>(null);
+  const cancelarLinea = async (itemId: string) => {
+    setCancelando(itemId);
+    const r = await accion('cancelar', { item: itemId });
+    setCancelando(null);
+    if (r?.error) setError(r.error);
+  };
   /* ══ LAS LÍNEAS QUE ESTÁN MARCANDO ═══════════════════════════════════════
      Se pinta en DOS sitios y por eso vive aquí: dentro de la tarjeta de la
      llamada cuando ya hay alguien, y en el hueco del centro mientras nadie ha
@@ -730,6 +744,16 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             {v.veredicto === 'buzon' ? 'Buzón' : ETIQUETA_ITEM[v.estado] || v.estado}
             {['marcando', 'timbrando'].includes(v.estado) && v.segundos > 0 ? ` · ${v.segundos}s` : ''}
           </span>
+          {/* ✕ = cancelar ESTA llamada y sacarla de la lista (22-sep-2026).
+              Queda en la pestaña «Quitados», con por qué había entrado, y se
+              puede volver a meter. Con alguien ya en línea no sale: se cuelga. */}
+          {['marcando', 'timbrando', 'escuchando', 'portero'].includes(v.estado) && (
+            <button onClick={() => cancelarLinea(v.id)} disabled={cancelando === v.id}
+              title="Cancelar esta llamada y quitarla de la lista" aria-label={`Cancelar la llamada a ${v.nombre || 'este contacto'}`}
+              style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.g200}`, background: '#fff', color: '#C0554E', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: cancelando === v.id ? 0.5 : 1 }}>
+              <IcoX size={14} />
+            </button>
+          )}
         </div>
       ))}
       <span style={{ fontSize: 11, color: C.g400, lineHeight: 1.5 }}>
@@ -2149,15 +2173,56 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             </div>
           )}
           <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.g200}`, position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-            {(['lista', 'hechas', 'compromisos'] as const).map(t => (
+            {(['lista', 'hechas', 'quitados', 'compromisos'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={{
                 flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 10px', fontSize: 12.5,
                 background: tab === t ? C.moradoAgua : 'transparent', color: tab === t ? C.moradoTinta : '#4B5563', fontWeight: tab === t ? 800 : 500,
                 borderBottom: tab === t ? '2px solid #9B8CFA' : '2px solid transparent',
-              }}>{t === 'lista' ? `Por marcar (${pendientes.length})` : t === 'hechas' ? `Hechas (${hechos.length})` : `Compromisos${compromisos.length ? ` (${compromisos.length})` : ''}`}</button>
+              }}>{t === 'lista' ? `Por marcar (${pendientes.length})` : t === 'hechas' ? `Hechas (${hechos.length})` : t === 'quitados' ? `Quitados (${quitados.length})` : `Compromisos${compromisos.length ? ` (${compromisos.length})` : ''}`}</button>
             ))}
           </div>
-          {tab !== 'compromisos' && (tab === 'lista' ? items.filter(i => !['hecho', 'saltado', 'excluido'].includes(i.estado)) : hechos).map(i => filaItem(i, tab === 'lista', true))}
+          {(tab === 'lista' || tab === 'hechas') && (tab === 'lista' ? items.filter(i => !['hecho', 'saltado', 'excluido'].includes(i.estado)) : hechos).map(i => filaItem(i, tab === 'lista', true))}
+          {/* ══ QUITADOS (22-sep-2026) ════════════════════════════════════════
+              «Si cancelo a alguien, ponme una tab o algo que yo vea a quién
+              cancelé, para ver por qué aparecieron en primera instancia.»
+              Cada renglón dice quién lo quitó (tú o el sistema, y por qué) y
+              POR QUÉ HABÍA ENTRADO: la lista de la que salió y lo que el CRM
+              sabía de él al armarla (etapa, giro, último mensaje, última
+              llamada). Se puede volver a meter. */}
+          {tab === 'quitados' && (
+            <>
+              {quitados.length > 0 && (
+                <div style={{ padding: '10px 12px', fontSize: 11.5, color: C.g500, lineHeight: 1.5, borderBottom: `1px solid ${C.g100}` }}>
+                  Entraron por la lista <b style={{ color: C.g700 }}>{sesion?.origen?.descripcion || sesion?.nombre || descripcion}</b>.
+                </div>
+              )}
+              {quitados.length === 0 && <div style={{ padding: 18, fontSize: 12, color: C.g400 }}>No has quitado a nadie de esta lista.</div>}
+              {quitados.map(i => {
+                const porTi = /cancelaste|quitaste/i.test(String(i.motivo_exclusion || ''));
+                // La primera línea de la ficha es «nombre · empresa»: ya está arriba en negritas.
+                const quien = [i.nombre, i.empresa].filter(Boolean).join(' · ');
+                const porQue = [i.nota, ...String(i.resumen || '').split('\n').filter(l => l.trim() && l.trim() !== quien && l.trim() !== i.nombre)].filter(Boolean).join('\n')
+                  || 'La trajo el filtro de la lista; el CRM no tenía más historial de este número.';
+                return (
+                  <div key={i.id} style={{ padding: '9px 12px', borderBottom: `1px solid ${C.g100}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {i.nombre || telefonoLegible(i.telefono)}{i.empresa ? <span style={{ fontWeight: 400, color: C.g500 }}> · {i.empresa}</span> : null}
+                      </div>
+                      <button onClick={() => accion('incluir', { item: i.id })} style={{ ...btnT, padding: '3px 8px', fontSize: 11, flexShrink: 0 }}>Volver a meter</button>
+                    </div>
+                    <div style={{ fontSize: 11.5, marginTop: 2, fontWeight: 700, color: porTi ? '#C0554E' : C.g500 }}>
+                      {porTi ? 'Tú: ' : 'Solo: '}{i.motivo_exclusion || 'quitado'}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.g500, marginTop: 2 }}>{telefonoLegible(i.telefono)}</div>
+                    <div style={{ fontSize: 11.5, color: '#4B5563', marginTop: 4, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: C.g50, borderRadius: 8, padding: '6px 8px' }}>
+                      <span style={{ fontWeight: 700 }}>Por qué estaba: </span>{porQue}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
           {tab === 'hechas' && hechos.length === 0 && <div style={{ padding: 18, fontSize: 12, color: C.g400 }}>Aún no hay llamadas hechas.</div>}
 
           {/* ══ COMPROMISOS ══════════════════════════════════════════════════

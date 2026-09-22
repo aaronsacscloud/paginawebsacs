@@ -1466,6 +1466,37 @@ export async function saltar(sesionId: string) {
   return siguiente(sesionId);
 }
 
+/* ══ CANCELAR UNA LÍNEA MIENTRAS TIMBRA (22-sep-2026) ═══════════════════════
+   Pedido del dueño: «mientras está aquí timbrando ponme igual una X para
+   cancelar esa llamada y cancelarla de la lista».
+
+   El orden importa: PRIMERO se marca el item como quitado y DESPUÉS se cuelga.
+   `procesarEstado` sólo cierra un item si sigue en el estado en que lo dejó
+   (`.eq('estado', previo)`), así que el «completed» que manda Twilio al colgar
+   ya no lo encuentra: no se reprograma, no cuenta como «no contestó» y no le
+   sale el WhatsApp de buzón a alguien a quien tú decidiste no llamar.
+   En línea ya no se cancela aquí: con alguien al teléfono se cuelga. */
+export async function cancelarItem(sesionId: string, itemId: string): Promise<{ ok: boolean; motivo?: string }> {
+  const it = await getItem(itemId);
+  if (!it || it.sesion_id !== sesionId) return { ok: false, motivo: 'no existe en esta lista' };
+  const timbrando = ['marcando', 'timbrando', 'escuchando', 'portero'].includes(String(it.estado));
+  if (!timbrando && it.estado !== 'pendiente') return { ok: false, motivo: it.estado === 'en_linea' ? 'ya contestó: cuélgale' : 'ya no está por marcar' };
+  const motivo = timbrando ? 'la cancelaste mientras timbraba' : 'la quitaste de la lista';
+  const { data: gane } = await supabase.from('tel_sesion_items').update({
+    estado: 'excluido', motivo_exclusion: motivo, updated_at: ahora(),
+    ...(timbrando ? { resultado: 'cancelado', terminado_at: ahora() } : {}),
+  }).eq('id', itemId).eq('estado', it.estado).select('id');
+  if (!gane?.length) return { ok: false, motivo: 'cambió de estado justo ahora; vuelve a intentarlo' };
+  if (timbrando && it.call_sid) {
+    try { await twilioRest(`/Calls/${it.call_sid}.json`, { Status: 'completed' }); } catch { /* ya colgó */ }
+    await supabase.from('wa_llamadas').update({ estado: 'perdida', resultado: 'cancelado', motivo: 'La cancelaste mientras timbraba', ended_at: ahora() }).eq('call_id', it.call_sid);
+  }
+  // Si era la línea «del vendedor» (una a la vez), se libera el turno para que siga el siguiente.
+  await supabase.from('tel_sesiones').update({ item_actual: null, updated_at: ahora() }).eq('id', sesionId).eq('item_actual', itemId);
+  await recontar(sesionId);
+  return { ok: true };
+}
+
 /** «Hablar yo»: el vendedor toma la llamada aunque los oídos no hayan decidido. */
 export async function tomar(sesionId: string) {
   const s = await getSesion(sesionId);

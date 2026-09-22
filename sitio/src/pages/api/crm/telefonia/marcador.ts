@@ -12,6 +12,7 @@ import { getCurrentUser } from '../../../../lib/auth/scope';
 import { twilioRest, telefoniaConfigurada, telefoniaFaltantes } from '../../../../lib/telefonia/twilio';
 import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, compromisosDeSesion, relanzar, recontar, getSesion,
+  cancelarItem,
 } from '../../../../lib/telefonia/marcador';
 import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, agendarDesdeLlamada, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
 import { tiposDeReunion, huecosProximos } from '../../../../lib/telefonia/agenda-huecos';
@@ -160,6 +161,12 @@ export const POST: APIRoute = async ({ request }) => {
         }
         await recontar(s.id);
         return json({ ok: true });
+      }
+      case 'cancelar': {
+        const itemId = String(b.item || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        const r = await cancelarItem(s.id, itemId);
+        return json(r.ok ? { ok: true } : { error: r.motivo || 'No se pudo cancelar' }, r.ok ? 200 : 409);
       }
       case 'excluir':
       case 'incluir': {
