@@ -21,7 +21,7 @@ import { callerIdSaliente } from './caller-id';
 import { juzgar, textoOido, dialogoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
-import { cargarVetos, vetoDe, vetoDeUno } from './veto';
+import { cargarVetos, vetoDe, vetoDeUno, cargarConAccion, accionDe, incluyeConAccion } from './veto';
 import { ladaDe, zonaDeLada, horaLocal, fechaHoraEn, instanteEnZona } from './zonas';
 // Fernanda al teléfono: el aviso a la central de voz se carga aparte (solo lo usan las sesiones con IA).
 const voz = () => import('./voz');
@@ -194,6 +194,12 @@ export async function crearSesion(ownerId: string | null, o: {
      «volver a llamar a los que faltan», la de Fernanda— así que la regla se
      aplica al generarla, no escondiendo después. Por contacto y por número. */
   const vetos = await cargarVetos();
+  /* Y los que YA TUVIERON UNA ACCIÓN (reunión, seguimiento, oportunidad,
+     descalificado — 22-sep): fuera de toda lista por omisión. Sólo entran si
+     la lista lo pidió a propósito (palomita del armador → `incluir_con_accion`)
+     o si es el «Llamar ahora» de un seguimiento, que ES esa acción. */
+  const origen: any = o.origen || {};
+  const conAccion = origen.seguimiento || incluyeConAccion(origen.qs) ? null : await cargarConAccion();
   const tels = Array.from(new Set(o.items.map(i => telefonoWhatsApp(i.telefono)).filter(Boolean))) as string[];
   /* El tope cuenta solo los INTENTOS sin conversación (buzón, no contestó,
      portero). Si en la semana ya se habló con él y pidió que se le vuelva a
@@ -223,6 +229,7 @@ export async function crearSesion(ownerId: string | null, o: {
     else if (e164 === NUMERO) motivo = 'es el número del negocio';
     else if (vistos.has(e164)) motivo = 'repetido en la lista';
     else if (vetoDe(vetos, { contact_id: it.contact_id, telefono: e164 })) motivo = vetoDe(vetos, { contact_id: it.contact_id, telefono: e164 })!.texto;
+    else if (conAccion && accionDe(conAccion, { contact_id: it.contact_id, telefono: e164 })) motivo = accionDe(conAccion, { contact_id: it.contact_id, telefono: e164 });
     else if (dijoNo.has(e164) && !pidioLlamada.has(e164)) motivo = `dijo que no le interesa el ${dijoNo.get(e164)}`;
     else if ((intentosSemana.get(e164) || 0) >= config.tope_intentos) motivo = `ya se le marcó ${intentosSemana.get(e164)} veces sin contestar en 7 días`;
     if (e164) vistos.add(e164);

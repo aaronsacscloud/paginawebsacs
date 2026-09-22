@@ -48,6 +48,7 @@ export type Filtros = {
   quemados: string; sin_tocar_dias: string;
   nunca_llamados: boolean; excluir_clientes: boolean;
   excluir_en_cadencia: boolean; excluir_con_reunion: boolean;
+  excluir_con_accion: boolean;
   owner: '' | 'mias' | 'sin_asignar';
   orden: 'puntaje' | 'sucursales' | 'rating';
 };
@@ -63,6 +64,9 @@ export const FILTROS_INICIALES: Filtros = {
   quemados: '3', sin_tocar_dias: '',
   nunca_llamados: false, excluir_clientes: true,
   excluir_en_cadencia: false, excluir_con_reunion: true,
+  /* 22-sep: los que ya tuvieron una acción (reunión, seguimiento, oportunidad,
+     descalificado) no se vuelven a marcar. De fábrica, puesta. */
+  excluir_con_accion: true,
   owner: '', orden: 'puntaje',
 };
 
@@ -86,6 +90,8 @@ export function qsDeFiltros(f: Filtros): string {
   if (f.excluir_clientes) p.set('excluir_clientes', '1');
   if (f.excluir_en_cadencia) p.set('excluir_en_cadencia', '1');
   if (f.excluir_con_reunion) p.set('excluir_con_reunion', '1');
+  // Al revés que las demás: excluirlos es lo de siempre (también en el servidor); sólo se avisa cuando se QUIEREN incluir.
+  if (!f.excluir_con_accion) p.set('incluir_con_accion', '1');
   if (f.owner) p.set('owner', f.owner);
   if (f.orden) p.set('orden', f.orden);
   return p.toString();
@@ -351,6 +357,13 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
                   </span>
                 )}
               </label>
+              <Palomita on={f.excluir_con_accion} onCambio={v => set('excluir_con_accion', v)}
+                texto="Los que ya tuvieron una acción" porque="Reunión, seguimiento, oportunidad o descalificado: con ellos ya hay un proceso en marcha." />
+              {previa?.descartados?.con_accion > 0 && f.excluir_con_accion && (
+                <span style={{ fontSize: 11, color: '#9a6a10', display: 'block', margin: '-4px 0 8px' }}>
+                  Se quitan {previa?.descartados?.con_accion} por esta regla.
+                </span>
+              )}
               <Palomita on={f.excluir_clientes} onCambio={v => set('excluir_clientes', v)}
                 texto="Los que ya son clientes" porque="Venderle otra vez a quien ya compró se hace por otro camino." />
               <Palomita on={f.excluir_con_reunion} onCambio={v => set('excluir_con_reunion', v)}
@@ -387,7 +400,8 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
 
             <p style={{ fontSize: 11.5, color: '#a5a2af', lineHeight: 1.55, margin: 0 }}>
               Siempre se quitan solos, elijas lo que elijas: los que no tienen teléfono,
-              los marcados «no llamar» y los que están en la lista de bloqueo.
+              los marcados «no llamar», los que se descalificaron alguna vez y los que
+              están en la lista de bloqueo.
             </p>
           </div>
 

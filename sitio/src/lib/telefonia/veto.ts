@@ -70,3 +70,65 @@ export async function vetoDeUno(o: { contact_id?: string | null; telefono?: stri
   const f = (data || []).find(x => x.motivo === 'descalificado') || (data || [])[0];
   return f ? { motivo: f.motivo, texto: texto(f.motivo, f.descalificado_at) } : null;
 }
+
+/* ══ LOS QUE YA TUVIERON UNA ACCIÓN (22-sep-2026) ═══════════════════════════
+ *
+ * Pedido del dueño, señalando las pestañas de Llamadas inteligentes: «los que
+ * ya tuvieron una acción de cualquier tipo se deben excluir en automático de
+ * cualquier lista automática de llamada […] porque con ellos ya generé una
+ * acción específica para dicho proceso».
+ *
+ * «Acción» = lo mismo que cuentan esas pestañas, pero SIN exigir que haya
+ * salido de la cabina (si ya tiene cita, da igual si la agendó la llamada o la
+ * página: marcarle otra vez es gastar el contacto):
+ *   · Reunión próxima (cualquier cita que todavía no pasa y no se canceló).
+ *   · Seguimiento pendiente (tarea prometida al hablar, vencida o no). Ese se
+ *     llama por SU camino —la promesa entra sola a su hora—, no en la lista.
+ *   · Oportunidad: ya avanzó (oportunidad, cotización, conciliación, prueba,
+ *     cliente).
+ *   · Descalificado: ya lo cubre el veto de arriba; aquí se repite para que el
+ *     motivo que se enseña sea el mismo que la pestaña.
+ * Se apaga por lista con `incluir_con_accion=1` (la palomita del armador).
+ */
+const ETAPAS_CON_ACCION: Record<string, string> = {
+  oportunidad: 'ya es oportunidad', en_cotizacion: 'ya tiene cotización', en_conciliacion: 'ya está en conciliación',
+  prueba_gratis: 'ya está en prueba', cliente: 'ya es cliente', descalificado: 'ya se descalificó', perdido_definitivo: 'ya se dio por perdido',
+};
+
+export type ConAccion = { porContacto: Map<string, string>; porTelefono: Map<string, string> };
+
+export async function cargarConAccion(): Promise<ConAccion> {
+  const porContacto = new Map<string, string>();
+  const porTelefono = new Map<string, string>();
+  const poner = (cid: string | null | undefined, tels: (string | null | undefined)[], motivo: string) => {
+    if (cid && !porContacto.has(cid)) porContacto.set(cid, motivo);
+    for (const t of tels) { const k = tel10(t); if (k && !porTelefono.has(k)) porTelefono.set(k, motivo); }
+  };
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const [citas, tareas] = await Promise.all([
+    supabase.from('bookings').select('contact_id, invitee_whatsapp, fecha').gte('fecha', hoy)
+      .not('estado', 'in', '("cancelada","no_asistio","reagendada")').limit(2000),
+    supabase.from('ti_tareas').select('contact_id, payload').eq('estado', 'pendiente').eq('payload->>de_llamada', 'true').limit(2000),
+  ]);
+  if (citas.error) throw new Error(`No se pudieron leer las citas: ${citas.error.message}`);
+  if (tareas.error) throw new Error(`No se pudieron leer los seguimientos: ${tareas.error.message}`);
+  for (const b of citas.data || []) poner(b.contact_id, [b.invitee_whatsapp], `ya tiene reunión el ${b.fecha}`);
+  for (const t of tareas.data || []) poner(t.contact_id, [(t.payload as any)?.whatsapp, (t.payload as any)?.telefono], 'ya tiene un seguimiento pendiente');
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await supabase.from('contacts').select('id, whatsapp, telefono, lifecycle_stage')
+      .in('lifecycle_stage', Object.keys(ETAPAS_CON_ACCION)).order('id').range(desde, desde + 999);
+    if (error) throw new Error(`No se pudieron leer las etapas: ${error.message}`);
+    for (const c of data || []) poner(c.id, [c.whatsapp, c.telefono], ETAPAS_CON_ACCION[c.lifecycle_stage] || 'ya tuvo una acción');
+    if ((data || []).length < 1000) break;
+  }
+  return { porContacto, porTelefono };
+}
+
+export function accionDe(a: ConAccion, o: { contact_id?: string | null; telefono?: string | null }): string | null {
+  if (o.contact_id && a.porContacto.has(o.contact_id)) return a.porContacto.get(o.contact_id)!;
+  const t = tel10(o.telefono);
+  return t ? a.porTelefono.get(t) || null : null;
+}
+
+/** ¿La lista pidió incluirlos? Sólo si lo dice explícito; por omisión se excluyen. */
+export const incluyeConAccion = (qs?: string | null) => /(^|&)incluir_con_accion=1(&|$)/.test(String(qs || ''));

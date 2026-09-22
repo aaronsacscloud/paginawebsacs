@@ -281,7 +281,9 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
 
       <p style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 14, maxWidth: 620, lineHeight: 1.55 }}>
         De cualquier lista se quitan solos los que no tienen teléfono, los marcados
-        «no llamar» y los que ya se intentaron tres veces esta semana. Vas a poder
+        «no llamar», los que se descalificaron alguna vez, los que ya tuvieron una
+        acción (reunión, seguimiento, oportunidad) y los que ya se intentaron tres
+        veces esta semana. Vas a poder
         revisar la lista completa antes de que suene el primer timbre.
       </p>
     </div>

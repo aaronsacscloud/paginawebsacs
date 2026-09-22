@@ -35,7 +35,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
-import { cargarVetos, vetoDe } from '../../../../lib/telefonia/veto';
+import { cargarVetos, vetoDe, cargarConAccion, accionDe } from '../../../../lib/telefonia/veto';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -150,6 +150,14 @@ export const GET: APIRoute = async ({ request, url }) => {
   let vetos: Awaited<ReturnType<typeof cargarVetos>>;
   try { vetos = await cargarVetos(); } catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
   let vetadosPorNumero = 0;
+  /* Los que ya tuvieron una acción (reunión, seguimiento, oportunidad,
+     descalificado): fuera POR OMISIÓN (22-sep). Sólo entran si la palomita del
+     armador se quita (`incluir_con_accion=1`). */
+  let conAccion: Awaited<ReturnType<typeof cargarConAccion>> | null = null;
+  if (q.get('incluir_con_accion') !== '1') {
+    try { conAccion = await cargarConAccion(); } catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
+  }
+  let conAccionQuitados = 0;
 
   const crmFilas: any[] = [];
   const abmFilas: any[] = [];
@@ -203,6 +211,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (quemadosSet.has(tel)) continue;
       if (conReunion.has(String(c.id))) continue;
       if (vetoDe(vetos, { contact_id: c.id, telefono: tel })) { vetadosPorNumero++; continue; }
+      if (conAccion && accionDe(conAccion, { contact_id: c.id, telefono: tel })) { conAccionQuitados++; continue; }
       crmFilas.push({
         id: `crm:${c.id}`, fuente: 'crm', virtual: true, wa_id: null,
         contact_id: c.id, company_id: c.company_id || null, telefono: tel,
@@ -262,6 +271,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (!tel) continue;
       if (quemadosSet.has(tel)) continue;
       if (vetoDe(vetos, { telefono: tel })) { vetadosPorNumero++; continue; }
+      if (conAccion && accionDe(conAccion, { telefono: tel })) { conAccionQuitados++; continue; }
       abmFilas.push({
         id: `abm:${a.id}`, fuente: 'abm', virtual: true, wa_id: null,
         contact_id: null, company_id: null, telefono: tel,
@@ -293,9 +303,9 @@ export const GET: APIRoute = async ({ request, url }) => {
     ok: true,
     conversaciones: filas,
     total_filtrado: total,
-    aprox: quemadosSet.size > 0 || conReunion.size > 0 || vetadosPorNumero > 0,
+    aprox: quemadosSet.size > 0 || conReunion.size > 0 || vetadosPorNumero > 0 || conAccionQuitados > 0,
     hay_mas: (crmFilas.length >= porFuente) || (abmFilas.length >= porFuente),
     siguiente_offset: offsetFuente + porFuente,
-    descartados: { quemados: quemadosSet.size, con_reunion: conReunion.size, descalificados: vetadosPorNumero },
+    descartados: { quemados: quemadosSet.size, con_reunion: conReunion.size, descalificados: vetadosPorNumero, con_accion: conAccionQuitados },
   });
 };
