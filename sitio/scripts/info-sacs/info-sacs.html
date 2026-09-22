@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Sacs · El sistema para tiendas y marcas de moda</title>
+<style>
+  @font-face { font-family: 'Clash Display'; font-weight: 700; src: url('../../public/fonts/ClashDisplay-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 400; src: url('../../public/fonts/PlusJakartaSans-Regular.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 500; src: url('../../public/fonts/PlusJakartaSans-Medium.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 600; src: url('../../public/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 700; src: url('../../public/fonts/PlusJakartaSans-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 800; src: url('../../public/fonts/PlusJakartaSans-ExtraBold.woff2') format('woff2'); }
+
+  /* Tokens tomados de src/styles/global.css */
+  :root {
+    --ink: #1A1A1A;
+    --ink-2: #4A4A4A;
+    --ink-3: #6E6E6D;
+    --paper: #FAFAF8;
+    --paper-2: #F5F3EE;
+    --line: #D4D4D4;
+    --azul: #4B7BE5;
+    --azul-texto: #3A62C4;
+    --azul-claro: #7FA3F0;
+    --ambar: #E8A838;
+    --teal: #2AB5A0;
+    --on-dark: rgba(255,255,255,.88);
+    --on-dark-2: rgba(255,255,255,.62);
+    --m: 16mm; /* margen lateral */
+  }
+
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; }
+  body { font-family: 'Jakarta', sans-serif; font-size: 13pt; line-height: 1.45; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; }
+
+  .page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: var(--paper); page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @media screen { .page { margin: 0 auto 8mm; } }
+
+  .wm { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--ink); }
+  .display { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.02; }
+  .kicker { font-size: 10.5pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--azul-texto); }
+  .folio { position: absolute; bottom: 9mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; font-size: 9.5pt; color: var(--ink-3); letter-spacing: .02em; }
+  .folio .wm { font-size: 13pt; color: var(--ink); }
+  .dark .folio { color: var(--on-dark-2); }
+  .dark .folio .wm { color: #fff; }
+  .foto { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---------- 1 · Portada ---------- */
+  .p1 .hero { position: absolute; inset: 0 0 auto 0; height: 186mm; }
+  .p1 .hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 30mm; background: linear-gradient(to bottom, rgba(250,250,248,0), var(--paper)); }
+  .p1 .tag { position: absolute; top: 12mm; left: var(--m); background: rgba(250,250,248,.92); padding: 2.2mm 4mm; border-radius: 99px; font-size: 10pt; font-weight: 600; letter-spacing: .04em; }
+  .p1 .bloque { position: absolute; left: var(--m); right: var(--m); top: 172mm; }
+  .p1 .wm { font-size: 92pt; }
+  .p1 h1 { margin-top: 5mm; font-size: 33pt; max-width: 178mm; }
+  .p1 .sub { margin-top: 5mm; font-size: 14.5pt; color: var(--ink-2); max-width: 165mm; line-height: 1.45; }
+  .p1 .sub b { color: var(--ink); font-weight: 700; }
+  .p1 .pie { position: absolute; bottom: 12mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; align-items: baseline; font-size: 11pt; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 4mm; }
+  .p1 .pie a { color: var(--ink); font-weight: 700; }
+
+  /* ---------- 2 · Lo que resolvemos ---------- */
+  .p2 .banda { position: absolute; top: 0; left: 0; right: 0; height: 64mm; }
+  .p2 .head { position: absolute; top: 72mm; left: var(--m); right: var(--m); }
+  .p2 .head h2 { margin-top: 2.5mm; font-size: 30pt; }
+      .p2 .lista { position: absolute; top: 109mm; left: var(--m); right: var(--m); }
+  .p2 .cab { display: grid; grid-template-columns: 9mm 78mm 1fr; column-gap: 5mm; font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); padding-bottom: 2mm; }
+  .p2 .fila { display: grid; grid-template-columns: 9mm 78mm 1fr; column-gap: 5mm; padding: 3.3mm 0; border-top: 1px solid var(--line); align-items: start; }
+  .p2 .n { font-family: 'Clash Display'; font-weight: 700; font-size: 13pt; color: var(--ambar); padding-top: .6mm; }
+  .p2 .q { font-weight: 700; font-size: 13pt; line-height: 1.32; }
+  .p2 .s { font-size: 13pt; line-height: 1.38; color: var(--ink-2); }
+  .p2 .s b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- 3 · Una sola verdad ---------- */
+  .dark { background: var(--ink); color: #fff; }
+  .p3 .top { position: absolute; top: 16mm; left: var(--m); right: var(--m); }
+  .p3 .kicker { color: var(--azul-claro); }
+  .p3 h2 { margin-top: 3mm; font-size: 33pt; }
+  .p3 .lead { margin-top: 5mm; font-size: 14pt; color: var(--on-dark); max-width: 172mm; }
+  .p3 .diag { position: absolute; top: 84mm; left: 0; width: 210mm; height: 158mm; }
+  .p3 .diag svg { position: absolute; inset: 0; width: 210mm; height: 158mm; }
+  .p3 .centro { position: absolute; left: 75mm; top: 49mm; width: 60mm; height: 60mm; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2.2mm rgba(255,255,255,.08), 0 0 0 .5mm var(--ambar); }
+  .p3 .pill { position: absolute; left: 105mm; top: 107mm; transform: translateX(-50%); background: var(--ambar); color: var(--ink); font-family: 'Clash Display'; font-size: 13pt; padding: 1.6mm 4.5mm; border-radius: 99px; white-space: nowrap; }
+  .p3 .centro-label b { display: block; font-family: 'Clash Display'; font-size: 17pt; letter-spacing: -0.01em; }
+  .p3 .centro-label span { font-size: 11.5pt; color: var(--on-dark-2); }
+  .p3 .c { position: absolute; width: 56mm; }
+  .p3 .c .num { font-family: 'Clash Display'; font-size: 11pt; color: var(--ambar); letter-spacing: .06em; }
+  .p3 .c b { display: block; font-family: 'Clash Display'; font-weight: 700; font-size: 16pt; line-height: 1.1; margin-top: 1mm; letter-spacing: -0.005em; }
+  .p3 .c p { margin-top: 1.6mm; font-size: 12.5pt; line-height: 1.38; color: var(--on-dark); }
+  .p3 .c.der { text-align: left; }
+  .p3 .c.izq { text-align: right; }
+  .p3 .cierre { position: absolute; left: var(--m); right: var(--m); bottom: 22mm; font-size: 13pt; color: var(--on-dark-2); border-top: 1px solid rgba(255,255,255,.14); padding-top: 4mm; }
+  .p3 .cierre b { color: #fff; }
+
+  /* ---------- 4 y 5 · Módulos ---------- */
+  .mod .top { position: absolute; top: 15mm; left: var(--m); right: var(--m); }
+  .mod h2 { margin-top: 2.5mm; font-size: 30pt; }
+  .mod .filas { position: absolute; left: var(--m); right: var(--m); top: 48mm; }
+  .mod .m { display: grid; grid-template-columns: 70mm 1fr; column-gap: 7mm; height: 50mm; margin-bottom: 4.5mm; }
+  .mod .m.alt { grid-template-columns: 1fr 70mm; }
+  .mod .m.alt .ph { order: 2; }
+  .mod .ph { border-radius: 3mm; overflow: hidden; height: 50mm; }
+  .p4 .filas { top: 58mm; }
+  .mod .tx { align-self: center; }
+  .mod .tx .kicker { font-size: 9.5pt; }
+  .mod .tx h3 { margin-top: 1.5mm; font-family: 'Clash Display'; font-weight: 700; font-size: 19pt; line-height: 1.05; letter-spacing: -0.01em; }
+  .mod .tx p { margin-top: 2.2mm; font-size: 12.8pt; line-height: 1.4; color: var(--ink-2); }
+  .mod .tx p b { color: var(--ink); }
+
+  .p5 .axo { position: absolute; left: 0; right: 0; bottom: 0; height: 134mm; background: var(--ink); color: #fff; }
+  .p5 .axo .ph { position: absolute; right: 0; top: 0; bottom: 0; width: 84mm; height: auto; border-radius: 0; }
+  .p5 .axo p b { color: #fff; }
+  .p5 .axo .ph::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, var(--ink) 0%, rgba(26,26,26,0) 35%); }
+  .p5 .axo .tx { position: absolute; left: var(--m); top: 16mm; width: 118mm; }
+  .p5 .axo .kicker { color: var(--ambar); }
+  .p5 .axo h3 { margin-top: 2.5mm; white-space: nowrap; font-family: 'Clash Display'; font-size: 28pt; line-height: 1.02; letter-spacing: -0.01em; }
+  .p5 .axo .preg { margin-top: 5mm; display: inline-block; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 5mm; padding: 2.8mm 4.2mm; font-size: 12.8pt; font-weight: 600; color: #fff; }
+  .p5 .axo p { margin-top: 5mm; font-size: 13.5pt; line-height: 1.42; color: var(--on-dark); }
+  .p5 .axo p.nota { margin-top: 5mm; padding-top: 4mm; border-top: 1px solid rgba(255,255,255,.14); font-size: 12pt; color: var(--on-dark-2); }
+  .p5 .axo .folio { bottom: 8mm; right: 94mm; color: var(--on-dark-2); }
+  .p5 .axo .folio .wm { color: #fff; }
+
+  /* ---------- 6 · Giros ---------- */
+  .p6 .top { position: absolute; top: 15mm; left: var(--m); right: var(--m); }
+  .p6 h2 { margin-top: 2.5mm; font-size: 30pt; }
+  .p6 .lead { margin-top: 3mm; font-size: 13.5pt; color: var(--ink-2); max-width: 178mm; }
+  .p6 .grid { position: absolute; left: var(--m); right: var(--m); top: 55mm; display: grid; grid-template-columns: 1fr 1fr; column-gap: 7mm; row-gap: 5.5mm; }
+  .p6 .g .ph { height: 33mm; border-radius: 3mm; overflow: hidden; }
+  .p6 .g h3 { margin-top: 3mm; font-family: 'Clash Display'; font-size: 16.5pt; line-height: 1.05; letter-spacing: -0.01em; }
+  .p6 .g .sub { margin-top: 3mm; font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--azul-texto); }
+  .p6 .g .sub + h3 { margin-top: 1mm; }
+  .p6 .g p { margin-top: 1.2mm; font-size: 12.5pt; line-height: 1.38; color: var(--ink-2); }
+
+  /* ---------- 7 · Cierre ---------- */
+  .p7 .hero { position: absolute; top: 0; left: 0; right: 0; height: 106mm; }
+  .p7 .bloque { position: absolute; left: var(--m); right: var(--m); top: 116mm; }
+  .p7 h2 { font-size: 38pt; line-height: 1; max-width: 176mm; }
+  .p7 .lead { margin-top: 4.5mm; font-size: 14pt; color: var(--ink-2); max-width: 168mm; }
+  .p7 .ctas { margin-top: 8mm; display: grid; grid-template-columns: 1fr; row-gap: 3.2mm; }
+  .p7 .cta { display: flex; justify-content: space-between; align-items: center; border-radius: 3.5mm; padding: 4.4mm 6mm; border: 1.5px solid var(--ink); }
+  .p7 .cta.prim { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .p7 .cta .l { font-size: 10pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .p7 .cta .v { font-family: 'Clash Display'; font-size: 17pt; letter-spacing: -0.005em; line-height: 1.1; margin-top: .8mm; }
+  .p7 .cta .flecha { font-family: 'Clash Display'; font-size: 22pt; }
+  .p7 .hechos { margin-top: 8mm; display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 6mm; border-top: 1px solid var(--line); padding-top: 4.5mm; }
+  .p7 .hechos b { display: block; font-size: 12.5pt; font-weight: 700; line-height: 1.25; }
+  .p7 .hechos span { display: block; margin-top: 1mm; font-size: 11pt; color: var(--ink-3); line-height: 1.35; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · PORTADA ============ -->
+<section class="page p1">
+  <div class="hero"><img class="foto" src="../../public/images/hero-moda-boutique.webp?w=1600" style="object-position: 50% 38%" alt=""></div>
+  <div class="tag">Software para moda · Hecho en México</div>
+  <div class="bloque">
+    <div class="wm">Sacs</div>
+    <h1 class="display">El sistema para tiendas<br>y marcas de moda</h1>
+    <p class="sub">Inventario <b>por talla y color</b>, punto de venta, tienda en línea, mayoreo y WhatsApp <b>sobre una sola base</b>.</p>
+  </div>
+  <div class="pie"><span>Todo lo que necesitas saber, en 7 páginas.</span><a href="https://www.sacscloud.com">www.sacscloud.com</a></div>
+</section>
+
+<!-- ============ 2 · LO QUE RESOLVEMOS ============ -->
+<section class="page p2">
+  <div class="banda"><img class="foto" src="../../public/images/suite-moda-hoy.webp?w=1500" style="object-position: 50% 30%" alt="">
+  </div>
+  <div class="head">
+    <div class="kicker">Lo que resolvemos</div>
+    <h2 class="display">Lo que te pasa en la tienda,<br>y cómo se resuelve.</h2>
+  </div>
+  <div class="lista">
+    <div class="cab"><span></span><span>Lo que pasa hoy</span><span>Con Sacs</span></div>
+    <div class="fila"><span class="n">01</span><span class="q">«¿Tendrás esta en chica?» …y a llamar a la otra tienda.</span><span class="s">Ves <b>qué talla hay en cada sucursal</b> al momento, desde el mostrador.</span></div>
+    <div class="fila"><span class="n">02</span><span class="q">Vendiste en línea la última pieza, que ya se había ido en tienda.</span><span class="s"><b>Un solo inventario</b> para piso, tienda en línea y WhatsApp: la talla agotada se apaga sola en todos lados.</span></div>
+    <div class="fila"><span class="n">03</span><span class="q">El modelo tiene veinte piezas, pero puras tallas de las orillas.</span><span class="s">Te avisa de la <b>corrida rota</b> a tiempo, cuando todavía se puede completar.</span></div>
+    <div class="fila"><span class="n">04</span><span class="q">«¿Cuánto debo?» …y a buscar la libreta de apartados.</span><span class="s"><b>Apartados con anticipo y abonos</b>; la pieza se bloquea en todos los canales.</span></div>
+    <div class="fila"><span class="n">05</span><span class="q">Compraste parejo de todas las tallas «porque así se ha hecho».</span><span class="s"><b>Resurtido por curva</b>: qué talla se agotó antes y cuál sigue colgada.</span></div>
+    <div class="fila"><span class="n">06</span><span class="q">El corte de caja no cuadra y nadie sabe por qué.</span><span class="s"><b>Cortes y arqueos por caja</b>, con permisos por persona y por tienda.</span></div>
+    <div class="fila"><span class="n">07</span><span class="q">La M sobra en una tienda y falta en la otra.</span><span class="s"><b>Traspasos con escáner</b>; la nivelación te dice qué mover y tú apruebas.</span></div>
+  </div>
+  <div class="folio"><span class="wm">Sacs</span><span>Lo que resolvemos · 2</span></div>
+</section>
+
+<!-- ============ 3 · UNA SOLA VERDAD ============ -->
+<section class="page p3 dark">
+  <div class="top">
+    <div class="kicker">Un solo sistema, una sola verdad</div>
+    <h2 class="display">No se sincroniza nada, porque no hay nada que sincronizar.</h2>
+    <p class="lead">Piso, tienda en línea, mayoreo, compras, clientes y personal viven en la misma base. Vendes una blusa M negra y, <b>en ese mismo momento</b>:</p>
+  </div>
+
+  <div class="diag">
+    <svg viewBox="0 0 210 158" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <g stroke="rgba(255,255,255,.35)" stroke-width=".35">
+        <!-- izquierda -->
+        <path d="M76 69 C 70 50, 66 24, 60 20" />
+        <path d="M75 79 L 60 79" />
+        <path d="M76 89 C 70 108, 66 134, 60 138" />
+        <!-- derecha -->
+        <path d="M134 69 C 140 50, 144 24, 150 20" />
+        <path d="M135 79 L 150 79" />
+        <path d="M134 89 C 140 108, 144 134, 150 138" />
+      </g>
+      <g fill="#E8A838">
+        <circle cx="60" cy="20" r="1.1"/><circle cx="60" cy="79" r="1.1"/><circle cx="60" cy="138" r="1.1"/>
+        <circle cx="150" cy="20" r="1.1"/><circle cx="150" cy="79" r="1.1"/><circle cx="150" cy="138" r="1.1"/>
+      </g>
+    </svg>
+
+    <div class="centro"><img class="foto" src="../../public/images/suite-moda-resuelto.webp?w=700" style="object-position: 38% 50%" alt=""></div>
+    <div class="pill">Una venta</div>
+
+    <div class="c izq" style="left:1mm; top:9mm"><span class="num">01</span><b>Inventario</b><p>Baja la existencia de esa talla, en esa sucursal.</p></div>
+    <div class="c izq" style="left:1mm; top:66mm"><span class="num">02</span><b>Tienda en línea</b><p>Si era la última, deja de ofrecerla sola.</p></div>
+    <div class="c izq" style="left:1mm; top:121mm"><span class="num">03</span><b>Tus números</b><p>El costo y la utilidad de la prenda entran a tus reportes.</p></div>
+
+    <div class="c der" style="left:153mm; top:9mm"><span class="num">04</span><b>Comisión</b><p>La de tu vendedora se calcula sola.</p></div>
+    <div class="c der" style="left:153mm; top:66mm"><span class="num">05</span><b>Puntos</b><p>Tu clienta los suma a su monedero.</p></div>
+    <div class="c der" style="left:153mm; top:121mm"><span class="num">06</span><b>Ticket</b><p>Le llega por WhatsApp.</p></div>
+  </div>
+
+  <p class="cierre"><b>Sin exportar ni importar nada:</b> lo que ves en el sistema es lo que hay en tu tienda.</p>
+  <div class="folio"><span class="wm">Sacs</span><span>Una sola verdad · 3</span></div>
+</section>
+
+<!-- ============ 4 · MÓDULOS (1) ============ -->
+<section class="page mod p4">
+  <div class="top">
+    <div class="kicker">Qué hace</div>
+    <h2 class="display">Todo tu negocio,<br>en un solo sistema.</h2>
+  </div>
+  <div class="filas">
+    <div class="m">
+      <div class="ph"><img class="foto" src="../../public/images/plan-fideliza.jpg" style="object-position: 50% 60%" alt=""></div>
+      <div class="tx"><div class="kicker">Punto de venta</div><h3>Cobra con y sin internet</h3>
+        <p>Si se va la señal sigues vendiendo, y se sincroniza al volver. Varias cajas a la vez, <b>cambios de talla</b> aunque lo haya comprado en otra tienda, cortes y arqueos, ticket impreso o por WhatsApp.</p></div>
+    </div>
+    <div class="m alt">
+      <div class="ph"><img class="foto" src="../../public/images/caso-moda-entrega.webp" style="object-position: 50% 40%" alt=""></div>
+      <div class="tx"><div class="kicker">Inventario y sucursales</div><h3>Cada talla, en cada tienda</h3>
+        <p>Cada combinación con su existencia. <b>Traspasos</b> con escáner, reparto desde tu CEDIS, conteo desde el celular y <b>nivelación</b>: mueve lo que sobra a donde falta.</p></div>
+    </div>
+    <div class="m">
+      <div class="ph"><img class="foto" src="../../public/images/flujo/06-clientes.webp" style="object-position: 40% 40%" alt=""></div>
+      <div class="tx"><div class="kicker">Tienda en línea</div><h3>El mismo inventario del piso</h3>
+        <p>Tu tienda en línea, más <b>Facebook, Instagram, WhatsApp y TikTok Shop</b>. Tus prendas visibles en Google y ChatGPT. La talla agotada se apaga sola en todos lados.</p></div>
+    </div>
+    <div class="m alt">
+      <div class="ph"><img class="foto" src="../../public/images/suite-moda-cedis.webp" style="object-position: 50% 55%" alt=""></div>
+      <div class="tx"><div class="kicker">Mayoreo</div><h3>Precio amarrado al cliente</h3>
+        <p><b>Listas de precio</b> de menudeo y mayoreo sobre el mismo inventario, precio por cantidad, cotizaciones que se vuelven pedido y ventas a crédito. Nadie teclea el precio en caja.</p></div>
+    </div>
+  </div>
+  <div class="folio"><span class="wm">Sacs</span><span>Qué hace · 4</span></div>
+</section>
+
+<!-- ============ 5 · MÓDULOS (2) + AXO ============ -->
+<section class="page mod p5">
+  <div class="top">
+    <div class="kicker">Qué hace</div>
+    <h2 class="display">Y lo que hace que tu clienta vuelva.</h2>
+  </div>
+  <div class="filas">
+    <div class="m">
+      <div class="ph"><img class="foto" src="../../public/images/apartados-abonos.webp" style="object-position: 50% 50%" alt=""></div>
+      <div class="tx"><div class="kicker">Apartados y abonos</div><h3>Adiós a la libreta</h3>
+        <p>Anticipo y abonos, largos si hace falta, con recordatorios. <b>La pieza apartada se bloquea</b> de verdad en todos los canales.</p></div>
+    </div>
+    <div class="m alt">
+      <div class="ph"><img class="foto" src="../../public/images/caso-moda-corazon.webp" style="object-position: 50% 40%" alt=""></div>
+      <div class="tx"><div class="kicker">Clientes y WhatsApp</div><h3>Sabes qué talla usa</h3>
+        <p>Su ficha con lo que compró en tienda y en línea. <b>Monedero y puntos</b>, tarjetas de regalo y avisos por <b>WhatsApp</b> y correo: el drop, la rebaja, el restock.</p></div>
+    </div>
+  </div>
+  <div class="axo">
+    <div class="ph"><img class="foto" src="../../public/images/hero-moda.webp" style="object-position: 45% 40%" alt=""></div>
+    <div class="tx">
+      <div class="kicker">Reportes y AXO, tu copiloto de IA</div>
+      <h3>Pregúntale a tu tienda.</h3>
+      <div class="preg">«¿Cuánto llevo vendido del modelo nuevo?»</div>
+      <p>AXO te responde con <b>tus ventas y tu inventario reales</b>, te avisa de la talla que se va a agotar y propone el traspaso que completa la corrida.</p>
+      <p class="nota"><b>Reportes:</b> desde el plan Controla, más de 50, con sell-through por modelo, talla y tienda y utilidad por prenda. <b>AXO</b> viene en Automatiza, el plan más completo.</p>
+    </div>
+    <div class="folio"><span class="wm">Sacs</span><span>Qué hace · 5</span></div>
+  </div>
+</section>
+
+<!-- ============ 6 · GIROS ============ -->
+<section class="page p6">
+  <div class="top">
+    <div class="kicker">Hecho para tu giro</div>
+    <h2 class="display">Habla como habla tu tienda.</h2>
+    <p class="lead">No basta con capturar tallas: importa lo que el sistema hace después.</p>
+  </div>
+  <div class="grid">
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/giros/tiendas-de-ropa.webp" style="object-position: 50% 35%" alt=""></div>
+      <div class="sub">tallas y curva</div><h3>Tiendas de ropa</h3><p>Una blusa en seis tallas y cuatro colores son 24 existencias. Sacs te dice cuál reponer.</p></div>
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/caso-zap-mostrador.webp" style="object-position: 50% 45%" alt=""></div>
+      <div class="sub">corrida y pares</div><h3>Zapaterías</h3><p>Numeración con medios números, cambio de número en el mostrador y apartados por quincena.</p></div>
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/caso-joy-pesar.webp" style="object-position: 50% 40%" alt=""></div>
+      <div class="sub">gramaje y quilates</div><h3>Joyerías</h3><p>Tu precio del gramo y el factor por quilataje; reprecias la vitrina cuando sube el oro.</p></div>
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/suite-multi-tienda.webp" style="object-position: 50% 50%" alt=""></div>
+      <div class="sub">marca y consigna</div><h3>Boutique multimarca</h3><p>Cada prenda con su marca y su proveedor, en firme o en consigna; sabes qué marca te deja dinero.</p></div>
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/hero-novia.webp" style="object-position: 50% 30%" alt=""></div>
+      <div class="sub">fecha del evento</div><h3>Novias y fiesta</h3><p>El apartado con la fecha de la boda, abonos largos, el pedido al proveedor y las pruebas del taller.</p></div>
+    <div class="g"><div class="ph"><img class="foto" src="../../public/images/proc-moda-3.webp" style="object-position: 50% 40%" alt=""></div>
+      <div class="sub">temporada y drop</div><h3>Marcas y mayoristas</h3><p>Cada modelo por temporada, colección y drop; vendes a tiendas con tu lista de precios y tu corrida.</p></div>
+  </div>
+  <div class="folio"><span class="wm">Sacs</span><span>Hecho para tu giro · 6</span></div>
+</section>
+
+<!-- ============ 7 · CIERRE ============ -->
+<section class="page p7">
+  <div class="hero"><img class="foto" src="../../public/images/suite-zap-resuelto.webp?w=1500" style="object-position: 50% 35%" alt=""></div>
+  <div class="bloque">
+    <div class="kicker">Siguiente paso</div>
+    <h2 class="display" style="margin-top:2.5mm">Te lo enseñamos con tus productos en 15 minutos.</h2>
+    <p class="lead">Una videollamada corta: nos cuentas cómo vendes y te mostramos tu operación en Sacs, con tus tallas, tus tiendas y tus canales.</p>
+    <div class="ctas">
+      <a class="cta prim" href="https://www.sacscloud.com/agendar/demo"><div><div class="l">Agenda tu demo</div><div class="v">sacscloud.com/agendar/demo</div></div><span class="flecha">→</span></a>
+      <a class="cta" href="https://wa.me/525593027234"><div><div class="l">WhatsApp de ventas</div><div class="v">+52 55 9302 7234</div></div><span class="flecha">→</span></a>
+      <a class="cta" href="https://www.sacscloud.com"><div><div class="l">Conoce más</div><div class="v">www.sacscloud.com</div></div><span class="flecha">→</span></a>
+    </div>
+    <div class="hechos">
+      <div><b>Sin contratos de permanencia</b><span>Pagas mes a mes o anual.</span></div>
+      <div><b>Corre en el navegador</b><span>PC, laptop, tablet o celular.</span></div>
+      <div><b>Mexicano</b><span>Hecho para la moda en México.</span></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

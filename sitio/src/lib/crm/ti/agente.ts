@@ -30,6 +30,9 @@ import { bloqueSistemaBase } from './guion-datos';
 import { nombreUsable, limpiarHilo, bloqueNombre, bloqueSaludo, sinEmojis, bloqueEmpresa, bloqueSinGiro, saludoParaPlantilla, pulirRegistro, moderarEmojis, moderarAdmiraciones } from './nombre-y-bots';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 import { parcharConfig } from './config-parche';
+import { pideInformacion, yaSeLeMandoInfo, notaInfo, adjuntoInfo, conLiga } from './info-sacs';
+import { permitido } from '../../whatsapp/permisos';
+import { PDF_INFO_SACS } from './plantillas-agente';
 
 const MS_MIN = 60e3;
 
@@ -83,6 +86,8 @@ export type SalidaAgente = {
   interes?: { nivel: 'alto' | 'medio' | 'bajo'; razon?: string };
   siguiente_toque?: { en_horas: number | null; angulo?: string };
   ultimo_mensaje?: string;
+  /** Mejora #3: el lead pidió información general de Sacs (lo marca el modelo; la regla de frases es la otra red). */
+  pide_info?: boolean;
 };
 
 /** Etapas que atiende el SDR (un lead calificado de la web también escribe por WhatsApp). */
@@ -960,7 +965,12 @@ export async function proponerRespuestas(): Promise<any> {
       try { const { contratacionAntesDelTurno } = await import('./contratacion'); notaContratacion = await contratacionAntesDelTurno(cid, txtBaja || ''); } catch (e: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `contratacion: ${e?.message || e}` }); }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
       const notaAg = !notaContratacion && nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto y con criterio de consultor. Luego, en UNA oración amable y como consecuencia de lo que ya platicaron (cita algo que él dijo), pregúntale si le gustaría que un consultor se lo enseñe con sus propios productos, en 15 minutos. SIN horarios: los horarios van hasta que diga que sí. Sin «aprovecho para», sin justificar, sin adjetivos de venta. Una sola pregunta al final.` : undefined;
-      const d = await decidirTurno(cid, [notaContratacion, notaContratacion ? null : notaCompromiso, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
+      /* MEJORA #3 (22-sep): «¿me mandan más información?» → mensaje personalizado + liga + PDF, sin que nadie intervenga.
+         La regla de frases entra ANTES del modelo para que escriba ya contando con el PDF; si la intención vino dicha de
+         otra forma, el modelo la marca con `pide_info` y el PDF sale igual (abajo). Una vez cada 72 h por lead. */
+      const infoPermitida = !notaContratacion && await permitido('info_sacs').catch(() => false) && !(await yaSeLeMandoInfo(cid).catch(() => false));
+      const notaInfoSacs = infoPermitida && pideInformacion(txtBaja) ? notaInfo(String(txtBaja || '')) : null;
+      const d = await decidirTurno(cid, [notaContratacion, notaContratacion ? null : notaCompromiso, notaInfoSacs, notaWeb, notaAg].filter(Boolean).join('\n\n') || undefined);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
       const s = d.salida;
       await registrarDatos(cid, s.datos, s.interes);
@@ -983,12 +993,21 @@ export async function proponerRespuestas(): Promise<any> {
       // de 30 min, sale de inmediato.
       const minsDesdeSuMensaje = (ahora.getTime() - Date.parse(ultimoPor[cid])) / 60000;
       const ventana = minsDesdeSuMensaje <= 30 ? 0 : Math.max(0, Number(cfg.agente_veto_min ?? 10));
+      // El PDF de «más información» va primero (texto → PDF → lo que el agente haya elegido de la galería, máx. dos piezas).
+      const conInfo = infoPermitida && (!!notaInfoSacs || (s as any).pide_info === true);
+      if (conInfo) {
+        s.adjuntos = [adjuntoInfo(), ...(s.adjuntos || []).filter(a => a.url !== PDF_INFO_SACS.url)].slice(0, 2);
+        s.mensaje = conLiga(s.mensaje);
+        await log({ accion: 'info_sacs', contact_id: cid, razon: notaInfoSacs ? 'pidió más información (frase detectada)' : 'pidió más información (lo detectó el agente)', contenido: String(txtBaja || '').slice(0, 300) });
+      }
       const { error: eIns } = await supabase.from('ti_envios').insert({
         contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta',
         // EN VIVO (decisión del dueño, 5-sep): si el lead escribió hace menos de 30 min, se le contesta SOLO, las 24 h,
         // aunque el agente esté en entrenamiento. Todo lo demás sigue pasando por revisión. cfg.auto_en_vivo=false lo apaga.
-        estado: (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) ? 'pendiente' : nace(cfg, d.telefono),
-        mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: { ...s, auto_vivo: (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) || undefined }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+        /* Mejora #3: «más información» sale SOLA aunque el agente esté en sombra — pedido del dueño: «sin requerir que un
+           asesor intervenga». Tiene su propio interruptor (`info_sacs` en wa_automatizaciones) para apagarla si molesta. */
+        estado: conInfo || (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) ? 'pendiente' : nace(cfg, d.telefono),
+        mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: { ...s, auto_vivo: conInfo || (minsDesdeSuMensaje <= 30 && cfg.auto_en_vivo !== false) || undefined, info_sacs: conInfo || undefined }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
       });
       if (eIns) {
         // Índice único «un pendiente por lead»: otro tick se adelantó. No es error: se descarta esta copia.
@@ -1282,7 +1301,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         const abierta = await ventanaAbierta(e.contact_id).catch(() => true);
         if (!abierta) {
           const { data: kc } = await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle();
-          const fam = e.origen === 'cita' ? 'no_show' : e.origen === 'preparacion' ? 'preparacion' : ['reactivacion', 'reenganche'].includes(String(e.origen)) ? 'promo' : 'seguimiento';
+          const fam = (e.salida as any)?.info_sacs ? 'info' : e.origen === 'cita' ? 'no_show' : e.origen === 'preparacion' ? 'preparacion' : ['reactivacion', 'reenganche'].includes(String(e.origen)) ? 'promo' : 'seguimiento';
           const pl = await plantillaSiVentanaCerrada(e.contact_id, fam as any, mensaje, kc?.nombre).catch(() => null);
           if (pl) {
             (e as any).plantilla = pl;
@@ -1313,14 +1332,16 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
           await supabase.from('ti_envios').update({ plantilla: pl }).eq('id', e.id);
         }
         plantillaUsada = pl.marketing || pl.utility;
-        r = await enviarPlantilla(e.telefono, plantillaUsada!, 'es_MX', pl.params || []);
+        // Familia `info` (Mejora #3): el PDF viaja como encabezado de documento, en la marketing y en su respaldo.
+        const headerInfo = pl.familia === 'info' ? { tipo: 'document' as const, link: PDF_INFO_SACS.url, filename: PDF_INFO_SACS.archivo } : null;
+        r = await enviarPlantilla(e.telefono, plantillaUsada!, 'es_MX', pl.params || [], headerInfo ? { headerMedia: headerInfo } : undefined);
         mensaje = `[plantilla ${plantillaUsada}] ${pl.params?.[1] || mensaje}`;
         // RESPALDO INMEDIATO (7-sep): si sale la de marketing y hay utility, el espejo lleva el plan de respaldo. Cuando Meta
         // reporte el fallo (131049 «limitó marketing a este número»), respaldoPorFallo manda la utility EN ESE MOMENTO, no a
         // los 10 minutos. El puente (mensaje completo) queda guardado para cuando conteste.
         if (plantillaUsada === pl.marketing && pl.utility && e.contact_id) {
           const { params: pu } = await paramsUtility(e, pl, mensaje);
-          (e as any)._respaldo_plan = { plantilla: pl.utility, params: pu, envio_id: e.id };
+          (e as any)._respaldo_plan = { plantilla: pl.utility, params: pu, envio_id: e.id, ...(headerInfo ? { header_media: headerInfo } : {}) };
         }
       } else if (((e as any).adjuntos || []).length || (e as any).imagen_url) {
         // Con adjuntos (imagen / PDF / video, máximo dos). El texto va como pie del primero si cabe (≤1024) y el
@@ -1389,6 +1410,29 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       await agenteTomaHilo(e.conversation_id).catch(() => {});
       res.enviados++;
     } catch (err: any) {
+      /* MEJORA #3 · RESPALDO DE «MÁS INFORMACIÓN»: si la versión principal (texto + PDF con la ventana abierta) no
+         pudo salir, se intenta la plantilla Marketing con el PDF de encabezado y, si Meta no la acepta, la Utility
+         con el mismo PDF (`mandarPlantilla` hace ese segundo paso). Sólo si las dos fallan queda como fallido. */
+      if ((e.salida as any)?.info_sacs && !e.plantilla) {
+        try {
+          const par = await parListoPara('info');
+          if (par?.familia === 'info' && (par.marketing || par.utility)) {
+            const { mandarPlantilla } = await import('../../whatsapp/plantilla-espejo');
+            const { data: kn } = e.contact_id ? await supabase.from('contacts').select('nombre').eq('id', e.contact_id).maybeSingle() : { data: null as any };
+            const params = [saludoParaPlantilla(kn?.nombre), paramAngulo(e.mensaje)];
+            const hdr = { tipo: 'document' as const, link: PDF_INFO_SACS.url, filename: PDF_INFO_SACS.archivo };
+            const r2 = await mandarPlantilla({ telefono: e.telefono, plantilla: (par.marketing || par.utility)!, params, headerMedia: hdr, autor: 'Agente Sacs',
+              respaldo: par.marketing && par.utility ? { plantilla: par.utility, params, headerMedia: hdr } : null,
+              metadata: { origen: 'agente', envio_id: e.id, info_sacs: true } });
+            if (r2.enviado) {
+              await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: r2.wamid, updated_at: ahora.toISOString(), error: `principal falló: ${String(err?.message || err).slice(0, 200)}`, salida: { ...((e.salida as any) || {}), plantilla_usada: r2.via === 'respaldo' ? par.utility : (par.marketing || par.utility), respaldo_info: r2.via || 'principal' } }).eq('id', e.id);
+              await log({ accion: 'plantilla_fallback', contact_id: e.contact_id, razon: `más información: el texto no salió (${String(err?.message || err).slice(0, 80)}) → plantilla ${r2.via === 'respaldo' ? 'utility' : 'marketing'} con el PDF`, detalle: { envio_id: e.id } });
+              res.enviados++;
+              continue;
+            }
+          }
+        } catch { /* cae al fallido de abajo con el error original */ }
+      }
       await supabase.from('ti_envios').update({ estado: 'fallido', error: String(err?.message || err).slice(0, 300), updated_at: ahora.toISOString() }).eq('id', e.id);
       await log({ accion: 'agente_error', contact_id: e.contact_id, razon: `envío: ${err?.message || err}`, contenido: e.mensaje });
       res.fallidos++;
@@ -1920,7 +1964,7 @@ export async function ventanaAbierta(contactId: string): Promise<boolean> {
   return (data || []).length > 0 && Date.now() - Date.parse(data![0].ocurrio_at) < 24 * H;
 }
 
-export async function plantillaSiVentanaCerrada(cid: string, familia: 'preparacion' | 'no_show' | 'seguimiento' | 'promo' | 'cierre', mensaje: string, nombre?: string | null) {
+export async function plantillaSiVentanaCerrada(cid: string, familia: 'preparacion' | 'no_show' | 'seguimiento' | 'promo' | 'cierre' | 'info', mensaje: string, nombre?: string | null) {
   const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
   const abierta = (ult || []).length > 0 && Date.now() - Date.parse(ult![0].ocurrio_at) < 24 * H;
   if (abierta) return null;
@@ -2077,7 +2121,7 @@ export async function revisarFallbacks(): Promise<any> {
     // manda el mensaje completo con todo el contexto (guardado en agente_estado.puente_pendiente). Así se lee de verdad.
     const { params, esRecuperacion } = await paramsUtility(e, pl, (e as any).mensaje);
     try {
-      const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', params);
+      const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', params, pl.familia === 'info' ? { headerMedia: { tipo: 'document', link: PDF_INFO_SACS.url, filename: PDF_INFO_SACS.archivo } } : undefined);
       const wamid = r?.messages?.[0]?.id || null;
       // La utility pasa a ser la pieza vigente del envío: el intento cuenta cuando ELLA se entrega (la marketing falló).
       if (wamid) await supabase.from('ti_envios').update({ kapso_message_id: wamid, salida: { ...((e as any).salida || {}), marketing_wamid: e.kapso_message_id, plantilla_usada: pl.utility, puente: esRecuperacion ? { texto: params[1], mensaje_completo: (e as any).mensaje } : undefined } }).eq('id', e.id);

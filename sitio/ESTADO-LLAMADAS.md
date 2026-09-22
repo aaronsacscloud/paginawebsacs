@@ -69,6 +69,48 @@ Si algo falla, el motivo se guarda en `wa_llamadas.minuta_error` y la ficha del
 contacto lo enseña con un botón para regenerar. Los nombres propios se corrigen
 en `lib/telefonia/terminos.ts` (Whisper oye «Sax» por Sacs y «Odo» por Odoo).
 
+## 5 · Mejoras CRM del 22-sep-2026 (#1 descalificados, #2 minuta >3 min, #3 más información)
+
+**#1 · A quien se descalificó UNA VEZ no se le vuelve a llamar en automático**,
+diga lo que diga su etapa hoy. La regla vive en un sello que pone la base y
+que nada borra: `contacts.descalificado_at` (trigger `trg_sellar_descalificado`;
+en el ABM, `abm_cuentas.descalificada_at` al pasar a `perdida`). Se aplica al
+GENERAR, no al pintar:
+- `crearSesion` (toda lista: armador, inbox, «volver a llamar», Fernanda) y las
+  promesas del día — una promesa vieja NO revive a un descalificado.
+- `marcarSiguiente`: último candado justo antes de marcar (si se descalificó
+  después de armar la lista, el item pasa a `excluido` con su motivo).
+- `candidatos` (armador) y `v_abm_llamables` / cola del ABM: por contacto y por
+  NÚMERO (últimos 10 dígitos, vista `v_tel_vetados`), porque el mismo teléfono
+  llega como cuenta del ABM o como contacto duplicado.
+- `ti_tareas` tipo `llamada`: el trigger `trg_vetar_llamada_descalificado` las
+  recibe y las deja `retirada` / `descalificado_previo` (salvo `origen='manual'`).
+  Al descalificar se retiran las pendientes. Así da igual cuál de los ocho
+  lugares que crean tareas de llamada lo intente.
+- Semáforo de WhatsApp (`puedeAutomatico`): bloquea `descalificado_previo`
+  salvo aprobación humana o si ÉL volvió a escribir después.
+- Levantar el veto = una persona, a propósito: `descalificado_levantado_at`
+  (todavía sin botón en la ficha; hoy es por SQL).
+- Helper: `lib/telefonia/veto.ts` (`cargarVetos`, `vetoDe`, `vetoDeUno`). Falla
+  CERRADO: si no puede leer los vetos, no arma la lista.
+
+**#2 · Minuta sólo si la llamada dura MÁS de 3:00** (`MINUTA_MIN_SEG` en
+`lib/whatsapp/minuta.lib.ts`). Aplica a todo lo que pasa por
+`generarMinutaDesdeAudio`: Twilio (centro de llamadas, llamada normal,
+entrantes) y WhatsApp. Duración = `wa_llamadas.duracion_seg`; si aún no llegó,
+la de la grabación / la que midió el navegador. La grabación se guarda SIEMPRE;
+lo que no corre es Whisper ni Claude. El porqué queda en
+`wa_llamadas.minuta_omitida`. El «rehacer minuta» manual no tiene umbral.
+
+**#3 · «¿Me mandan más información?»** → `lib/crm/ti/info-sacs.ts`. Regla de
+frases antes del modelo + `pide_info` en la salida del agente. Sale mensaje
+personalizado + liga + `public/info/sacs-informacion.pdf`, SOLO aunque el
+agente esté en sombra (interruptor propio `info_sacs`), una vez cada 72 h.
+Ventana cerrada → familia de plantillas `info` (Marketing con el PDF de
+encabezado → Utility con el mismo PDF). En llamadas, el tema «la información
+de Sacs» de `tel_conocimiento` apunta al mismo PDF. Fuente del PDF:
+`scripts/info-sacs/` (`node scripts/info-sacs/generar.mjs`).
+
 ---
 
 ## LO QUE FALTA

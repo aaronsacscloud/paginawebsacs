@@ -32,7 +32,7 @@ Cierra preguntando cuál de las dos le acomoda. Nada de precios ni de folleto aq
 3) Menciona en un renglón que la demo con el especialista dura menos de una hora y ahí se ve todo funcionando con lo suyo; y que si prefiere empezar probándolo por su cuenta, también se le puede dejar la prueba lista.
 Cierra preguntando qué prefiere, o proponiendo dos horarios concretos si ya sabes qué vende y cuántas tiendas tiene.` },
   info: { label: 'Pide información',
-    secuencia: 'Pidió información desde la web. No le sueltes el folleto: pregúntale qué vende y qué es lo que más le está costando hoy, y con eso dale UNA respuesta que le sirva.' },
+    secuencia: 'Pidió información desde la web. Con este mensaje le sale solo el PDF de Sacs y la liga (Mejora #3, 22-sep): no le pegues el folleto en el texto. Pregúntale qué vende y qué es lo que más le está costando hoy, para que la siguiente respuesta ya sea sobre lo suyo.' },
   precios: { label: 'Pregunta precios',
     secuencia: 'Llega preguntando precio. Dáselo, pero el que le aplica: pregunta primero cuántas tiendas maneja si no lo sabes, y da el plan que le toca, no la lista completa.' },
   partners: { label: 'Programa de partners',

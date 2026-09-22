@@ -16,8 +16,11 @@ type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechaz
 /* FAMILIAS POR MOMENTO (F7, decisión S4.1): el agente crea solo estas plantillas (Meta aprueba). Cada familia
    trae su par marketing → utility; el ángulo del momento viaja en {{2}}. Si una familia aún no está aprobada,
    se usa la de seguimiento. */
-export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre' | 'reactivacion';
-export const FAMILIAS: Record<Familia, { marketing: { nombre: string; anterior?: string; cuerpo: string; ejemplos: string[]; botones: any[] }; utility: { nombre: string; cuerpo: string; ejemplos: string[]; botones: any[] } }> = {
+export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre' | 'reactivacion' | 'info';
+/** El PDF con lo que resuelve Sacs (Mejora CRM #3). Va como ENCABEZADO de las plantillas de la familia `info`. */
+export const PDF_INFO_SACS = { url: 'https://www.sacscloud.com/info/sacs-informacion.pdf', archivo: 'Sacs - lo que resolvemos.pdf' };
+type DefPlantilla = { nombre: string; anterior?: string; cuerpo: string; ejemplos: string[]; botones: any[]; header?: { tipo: 'DOCUMENT'; url: string; archivo: string } };
+export const FAMILIAS: Record<Familia, { marketing: DefPlantilla; utility: DefPlantilla }> = {
   seguimiento: {
     marketing: { nombre: 'ti_seguimiento_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si quieres, lo vemos en 15 minutos con un consultor y con tus productos en pantalla. ¿Te queda esta semana?', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada una de tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, cuéntame' }, { tipo: 'QUICK_REPLY', texto: 'Ahora no' }] },
     utility: { nombre: 'ti_seguimiento_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs. Si prefieres que lo dejemos aquí, con que me digas basta.', ejemplos: ['Ana', 'te quedé a deber cómo se ve la existencia por talla en cada tienda.'], botones: [] },
@@ -37,6 +40,16 @@ export const FAMILIAS: Record<Familia, { marketing: { nombre: string; anterior?:
   reactivacion: {
     marketing: { nombre: 'ti_reactivacion_marketing_v2', anterior: 'ti_reactivacion_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Si te parece bien retomarlo, lo vemos en 15 minutos con un consultor y con tus productos en pantalla; y si no es el momento, con que me digas lo dejo aquí.', ejemplos: ['Ana', 'hace unos meses me preguntaste por el control de tallas entre tus dos tiendas y se nos quedó a medias; desde entonces salió el traspaso automático entre sucursales, que era justo lo tuyo. ¿Sigues con las dos tiendas?'], botones: [] },
     utility: { nombre: 'ti_reactivacion_utility_v1', cuerpo: 'Hola {{1}}, {{2}} Es sobre la solicitud que dejaste con Sacs hace un tiempo; si prefieres que no te escriba, dímelo por aquí.', ejemplos: ['Ana', 'te escribo porque tu pregunta sobre el control de tallas quedó sin cerrar.'], botones: [] },
+  },
+  /* ══ MEJORA CRM #3 · EL PROSPECTO PIDE MÁS INFORMACIÓN (22-sep-2026) ═══
+     Dentro de la ventana de 24 h no hace falta plantilla: sale el mensaje
+     personalizado del agente + el PDF + la liga. Estas dos son para cuando la
+     respuesta sale con la ventana ya cerrada. El PDF viaja como ENCABEZADO
+     (documento), así que llega aunque sea plantilla. Marketing primero; si
+     Meta no la acepta o no la entrega, la Utility con el mismo PDF. */
+  info: {
+    marketing: { nombre: 'ti_info_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Aquí te comparto el PDF con lo que resuelve Sacs en tiendas y marcas de moda: inventario por talla y color, punto de venta, tienda en línea, mayoreo y todas tus sucursales en un solo sistema. Todo a detalle en www.sacscloud.com. ¿Lo vemos 15 minutos con tus productos en pantalla?', ejemplos: ['Ana', 'me pediste más información de Sacs para tu tienda de ropa en Puebla.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, agendemos' }, { tipo: 'QUICK_REPLY', texto: 'Primero lo leo' }], header: { tipo: 'DOCUMENT', url: PDF_INFO_SACS.url, archivo: PDF_INFO_SACS.archivo } },
+    utility: { nombre: 'ti_info_utility_v1', cuerpo: 'Hola {{1}}, te comparto la información de Sacs que solicitaste. {{2}} Adjunto el PDF con el detalle; también la puedes consultar en www.sacscloud.com. Si tienes alguna duda, respóndeme por aquí.', ejemplos: ['Ana', 'Es el resumen de lo que hace el sistema para tu tienda.'], botones: [], header: { tipo: 'DOCUMENT', url: PDF_INFO_SACS.url, archivo: PDF_INFO_SACS.archivo } },
   },
   cierre: {
     marketing: { nombre: 'ti_cierre_marketing_v1', cuerpo: 'Hola {{1}}, {{2}} Es mi último mensaje sobre esto: si no es el momento, lo dejamos aquí sin problema; si sí, dime y buscamos 15 minutos esta semana.', ejemplos: ['Ana', 'te escribí un par de veces sobre el control de tallas en tus tiendas.'], botones: [{ tipo: 'QUICK_REPLY', texto: 'Sí, esta semana' }, { tipo: 'QUICK_REPLY', texto: 'Lo dejamos' }] },
@@ -99,7 +112,7 @@ export async function asegurarPlantillas(): Promise<Registro> {
   }
   // 1b) Las demás FAMILIAS por momento (no_show, preparacion, promo, cierre), con el mismo tope diario.
   reg.familias = reg.familias || {};
-  for (const fam of ['no_show', 'preparacion', 'promo', 'cierre', 'reactivacion'] as Familia[]) {
+  for (const fam of ['no_show', 'preparacion', 'promo', 'cierre', 'reactivacion', 'info'] as Familia[]) {
     reg.familias[fam] = reg.familias[fam] || {};
     for (const k of ['marketing', 'utility'] as const) {
       const def = FAMILIAS[fam][k] as any;
@@ -108,7 +121,9 @@ export async function asegurarPlantillas(): Promise<Registro> {
       if (reg.familias[fam][k] && reg.familias[fam][k]!.nombre !== def.nombre) { (reg.familias[fam] as any)[k + '_anterior'] = reg.familias[fam][k]; reg.familias[fam][k] = undefined; cambios = true; }
       if (apagadoCreacion || reg.familias[fam][k] || n >= 3) continue;
       try {
-        await crearPlantillaMeta({ nombre: def.nombre, idioma: 'es_MX', categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', cuerpo: def.cuerpo, ejemplos: def.ejemplos, botones: def.botones as any });
+        // Con encabezado de documento (familia `info`): Meta pide una muestra del archivo, que se sube primero.
+        const hdr = def.header ? { headerTipo: 'DOCUMENT' as const, headerHandle: await (await import('../../whatsapp/kapso-api')).ingestarHandle(def.header.url, 'application/pdf', def.header.archivo) } : {};
+        await crearPlantillaMeta({ nombre: def.nombre, idioma: 'es_MX', categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', cuerpo: def.cuerpo, ejemplos: def.ejemplos, botones: def.botones as any, ...hdr });
         reg.familias[fam][k] = { nombre: def.nombre, categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', estado: 'PENDING', creada_at: new Date().toISOString() };
         n++; cambios = true;
         await supabase.from('ia_log').insert({ accion: 'plantilla_creada', razon: `${fam} ${def.nombre}`, contenido: def.cuerpo });
@@ -199,6 +214,7 @@ export const paramAngulo = (texto: string) => String(texto || '').replace(/\s+/g
 export const FAMILIA_L: Record<Familia, string> = {
   seguimiento: 'Seguimiento', no_show: 'No llegó a la demo', preparacion: 'Antes de la demo',
   promo: 'Promoción vigente', cierre: 'Último mensaje', reactivacion: 'Retomar después de meses',
+  info: 'Pidió más información',
 };
 /** La familia que le toca a cada tipo de mensaje del agente. */
 export const familiaDe = (origen?: string | null): Familia =>

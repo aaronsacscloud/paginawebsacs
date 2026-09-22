@@ -67,7 +67,9 @@ const MIME: Record<string, string> = { IMAGE: 'image/jpeg', VIDEO: 'video/mp4', 
  * Vive aquí, en el camino común, y no repetida en cada llamador: una regla
  * copiada en cinco lugares se cumple en cuatro.
  */
-export type Respaldo = { plantilla: string; params?: string[]; textoRespaldo?: string };
+export type Respaldo = { plantilla: string; params?: string[]; textoRespaldo?: string;
+  /** El archivo de encabezado de la gemela, si lo lleva (el PDF de «más información», Mejora #3). */
+  headerMedia?: { tipo: 'image' | 'video' | 'document'; link: string; filename?: string } | null };
 
 /**
  * Manda la plantilla y la espeja. No lanza por el espejo: si el mensaje ya
@@ -146,6 +148,7 @@ export async function mandarPlantilla(o: {
         telefono: o.telefono, plantilla: rp.nombre, idioma, pl: rp,
         params: paramsRespaldo,
         autor: o.autor, textoRespaldo: o.respaldo?.textoRespaldo,
+        ...(o.respaldo?.headerMedia ? { headerMedia: o.respaldo.headerMedia } : {}),
         /* Queda anotado de quién es respaldo: en el inbox se tiene que poder
            ver que salió la segunda, no la que se pidió. */
         metadata: { ...(o.metadata || {}), respaldo_de: o.plantilla, respaldo_motivo: motivo },
@@ -248,6 +251,8 @@ export async function respaldoPorFallo(kapsoMessageId: string, motivo?: string |
     telefono: conv.telefono, plantilla: String(plan.plantilla),
     params: Array.isArray(plan.params) ? plan.params : [],
     textoRespaldo: plan.texto || undefined,
+    // El PDF de «más información» (Mejora #3) viaja también en la utility de respaldo.
+    headerMedia: plan.header_media || null,
     metadata: { respaldo_de: (m as any).metadata?.plantilla || null, respaldo_motivo: motivo || 'Meta no lo entregó' },
   }).catch(() => ({ enviado: false }) as any);
 

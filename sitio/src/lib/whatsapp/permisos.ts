@@ -28,7 +28,10 @@ export type ClaveWA =
      distintos a dos personas distintas: uno a quien llamamos por nuestra
      cuenta, otro a quien nos pidió que le llamáramos. Poder apagar uno sin el
      otro es justo lo que hace falta si uno de los dos empieza a molestar. */
-  | 'seguimiento_llamada';
+  | 'seguimiento_llamada'
+  /* Mejora CRM #3 (22-sep-2026): cuando el prospecto pide más información,
+     el agente le manda mensaje personalizado + liga + el PDF de Sacs. */
+  | 'info_sacs';
 
 let cache: { v: Record<string, boolean>; hasta: number } | null = null;
 let cacheCfg: { v: Record<string, any>; hasta: number } | null = null;
