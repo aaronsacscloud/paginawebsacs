@@ -6,6 +6,7 @@ import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
 import PlanesConfig from './crm/PlanesConfig';
+import DocumentosConfig from './crm/DocumentosConfig';
 import { ComisionesModelo, ComisionesAtribucion, ComisionesCiclo } from './crm/ComisionesConfig';
 import { swrGet } from '../../lib/crm/swr';
 import VistaRapida from './crm/ui/VistaRapida';
@@ -4352,6 +4353,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             { g: 'Acompañamiento', mods: [
               { id: 'consultoria', nom: 'Consultoría', sub: 'Los compromisos que se pactan con el cliente.', items: [] },
               { id: 'radar', nom: 'Radar de ventas', sub: 'Qué cuentas se marcan como oportunidad.', items: [] },
+              /* La biblioteca del correo ejecutivo (22-sep-2026): lo que se le
+                 puede adjuntar a una cuenta desde su ficha. */
+              { id: 'documentos', nom: 'Documentos', sub: 'Lo que se le puede mandar a una cuenta desde su ficha.', items: [
+                { id: 'biblioteca', ico: 'marca', t: 'Biblioteca de documentos',
+                  d: 'Presentaciones, PDFs y ligas. Solo los activos y vigentes aparecen al mandar un correo desde la ficha, y cada uno dice a cuántas cuentas se mandó y cuántas lo abrieron.',
+                  editor: <DocumentosConfig /> },
+              ]},
             ]},
             /* WhatsApp: sus ajustes vivían en una pantalla aparte colgada
                del menú del canal. Que ESTE módulo guardara su configuración en

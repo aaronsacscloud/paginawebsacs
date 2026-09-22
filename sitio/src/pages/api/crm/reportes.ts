@@ -14,7 +14,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { reunirHechos, reunirEntregas, reunirEnCurso, reunirLead } from '../../../lib/crm/reporte-hechos';
+import { reunirLead } from '../../../lib/crm/reporte-hechos';
+import { generarReporteCuenta, type TipoReporteCuenta } from '../../../lib/crm/reporte-generar';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -96,32 +97,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (desde > hasta) return json({ error: 'El periodo está al revés.' }, 400);
 
   const modulos = Array.isArray(b?.modulos) ? b.modulos.map(String).slice(0, 40) : null;
-  const hechos = tipo === 'entregas' ? await reunirEntregas(companyId, desde, hasta, modulos)
-    : tipo === 'curso' ? await reunirEnCurso(companyId, desde, hasta)
-    : await reunirHechos(companyId, desde, hasta);
-  if (!hechos) return json({ error: 'Ese cliente ya no existe.' }, 404);
-
-  /* Un reporte de entregas VACÍO no se publica. La liga existiría, el cliente
-     la abriría y encontraría un documento que dice «se te entregaron 0 cosas»
-     — que es peor que no mandarlo. El de trabajo sí puede ir vacío de entregas:
-     trae soporte, uso y oportunidades. */
-  if (tipo === 'entregas' && !(hechos as any).total) {
-    return json({ error: 'En ese periodo no hay ninguna entrega visible para el cliente. Cambia las fechas o revisa que estén marcadas como «se le puede mostrar al cliente».' }, 400);
-  }
-  /* Y uno EN CURSO vacío tampoco: «no te estamos construyendo nada» es un
-     documento que no se manda, se conversa. */
-  if (tipo === 'curso' && !(hechos as any).total) {
-    return json({ error: 'Esta cuenta no tiene nada vivo en el taller. Un reporte de trabajo en curso sin trabajos no se manda.' }, 400);
-  }
-
-  const { data, error } = await supabase.from('reportes_trabajo').insert({
-    company_id: companyId, desde, hasta, tipo,
-    hechos, narrativa: b?.narrativa || null,
-    creado_por: (user as any)?.email || (user as any)?.nombre || null,
-  }).select('id, tipo, folio').single();
-  if (error) return json({ error: error.message }, 500);
-
-  return json({ ok: true, id: data.id, tipo: data.tipo, folio: data.folio, hechos });
+  const r = await generarReporteCuenta({
+    tipo: tipo as TipoReporteCuenta, companyId, desde, hasta, modulos,
+    narrativa: b?.narrativa || null, creadoPor: (user as any)?.email || (user as any)?.nombre || null,
+  });
+  if ('error' in r) return json({ error: r.error }, r.status);
+  return json({ ok: true, ...r });
 };
 
 export const DELETE: APIRoute = async ({ request, url }) => {

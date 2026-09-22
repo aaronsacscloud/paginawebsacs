@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import EnviarCorreo from './EnviarCorreo';
 import Etiquetas from './Etiquetas';
 import CuentaSacs from './CuentaSacs';
 import CuentaCliente from './CuentaCliente';
@@ -144,6 +145,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   tabInicial?: string }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
+  const [correo, setCorreo] = useState(false);
   const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'taller' | 'act' | 'outbound' | 'soporte' | 'whatsapp' | 'renovacion'>((tabInicial as any) || 'resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
@@ -390,6 +392,12 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                 {principal?.whatsapp && (
                   <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>
                 )}
+                {/* El correo ejecutivo a la cuenta, con sus reportes y lo de la
+                    biblioteca (opción A del dueño, 22-sep-2026). */}
+                <button onClick={() => setCorreo(true)}
+                  style={{ ...D.btnG, background: '#9B8CFA', color: '#fff', borderColor: '#9B8CFA', fontWeight: 700, minHeight: 44, flexShrink: 0 }}>
+                  ✉{isMobile ? '' : ' Enviar email'}
+                </button>
                 {/* Eliminar cliente: visible en todas las pestañas (no escondido en
                     un menú), pero en rojo "outline" para que no compita con las
                     acciones normales. El modal es el que exige la confirmación. */}
@@ -575,6 +583,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
           </>
         )}
       </div>
+      {correo && co && (
+        <EnviarCorreo companyId={companyId} cliente={co.nombre_comercial || co.sacs_account || co.nombre}
+          contactos={contactos} onCerrar={() => setCorreo(false)} onEnviado={() => { flash('Correo enviado'); load(); }} />
+      )}
       {borrar && co && (
         <EliminarClienteModal companyId={companyId} co={co} onCancel={() => setBorrar(false)}
           onDeleted={() => { setBorrar(false); onChanged(); onClose(); }} />

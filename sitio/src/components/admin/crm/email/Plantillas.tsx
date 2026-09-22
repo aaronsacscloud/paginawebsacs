@@ -22,6 +22,7 @@ const TIPOS: Array<{ id: string; label: string; base: any }> = [
   { id: 'cita', label: 'Cita', base: { texto: 'Lo que dijo un cliente.', autor: 'Nombre' } },
   { id: 'dos_columnas', label: 'Dos columnas', base: { izquierda: { titulo: '', texto: '' }, derecha: { titulo: '', texto: '' } } },
   { id: 'planes', label: 'Planes', base: { planes: [{ nombre: 'Plan', precio: '$0', detalle: '' }] } },
+  { id: 'documento', label: 'Documento (tarjeta con liga)', base: { etiqueta: 'Reporte', titulo: 'Nombre del documento', texto: 'Una línea con lo que trae.', href: 'https://www.sacscloud.com', boton: 'Ver', tono: 'lila', variante: 'claro' } },
   { id: 'separador', label: 'Separador', base: {} },
   { id: 'espaciador', label: 'Espacio', base: { alto: 20 } },
   { id: 'firma', label: 'Firma', base: { puesto: '' } },
@@ -268,7 +269,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               </div>
             </div>
 
-            {['etiqueta', 'titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'imagen', 'alt', 'pie', 'sub', 'ancho', 'puesto', 'nombre'].map(k => (
+            {['etiqueta', 'titulo', 'subtitulo', 'texto', 'autor', 'href', 'boton', 'src', 'imagen', 'alt', 'pie', 'sub', 'ancho', 'puesto', 'nombre'].map(k => (
               k in b ? (
                 <div key={k} style={{ marginBottom: 10 }}>
                   <span style={S.lbl}>{ETIQ_CAMPO[k] || k}</span>
@@ -289,6 +290,19 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
                   </div>
                 ))}
                 <button style={{ ...S.btnG, fontSize: '0.72rem' }} onClick={() => setB(sel!, { items: [...b.items, 'Nuevo punto'] })}>+ Agregar punto</button>
+              </div>
+            )}
+
+            {b.tipo === 'documento' && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <label style={{ flex: 1 }}><span style={S.lbl}>Color de la etiqueta</span>
+                  <select value={b.tono || 'lila'} onChange={e => setB(sel!, { tono: e.target.value })} style={inp}>
+                    <option value="lila">Lila</option><option value="verde">Verde</option><option value="rosa">Rosa</option><option value="ambar">Ámbar</option>
+                  </select></label>
+                <label style={{ flex: 1 }}><span style={S.lbl}>Tarjeta</span>
+                  <select value={b.variante || 'claro'} onChange={e => setB(sel!, { variante: e.target.value })} style={inp}>
+                    <option value="claro">Clara</option><option value="noche">Noche con estrella</option>
+                  </select></label>
               </div>
             )}
 
@@ -336,6 +350,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
 }
 
 const ETIQ_CAMPO: Record<string, string> = {
+  boton: 'Texto del botón',
   titulo: 'Título', subtitulo: 'Subtítulo', texto: 'Texto', autor: 'Autor',
   href: 'Liga (URL)', src: 'URL de la imagen', alt: 'Texto alternativo',
   puesto: 'Puesto', nombre: 'Nombre',

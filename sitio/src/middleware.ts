@@ -158,6 +158,9 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
   { pre: '/api/crm/taller', sec: 'acompanamiento' },
   { pre: '/api/crm/soporte', sec: 'acompanamiento' },
   { pre: '/api/crm/reportes', sec: 'acompanamiento' },
+  // El correo ejecutivo a una cuenta y la biblioteca de lo que se le adjunta.
+  { pre: '/api/crm/correo-cuenta', sec: 'acompanamiento' },
+  { pre: '/api/crm/documentos', sec: 'acompanamiento' },
   // Aprobar las etapas del brief de un proyecto es entrega, no configuración:
   // sin esta línea quien lleva la implementación no podría cerrar una etapa.
   { pre: '/api/proyecto/', sec: 'acompanamiento' },

@@ -20,7 +20,7 @@ import type { Tenant } from './tenant';
 export type TipoBloque =
   | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
   | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes'
-  | 'cuenta' | 'aviso' | 'metricas' | 'portada';
+  | 'cuenta' | 'aviso' | 'metricas' | 'portada' | 'documento';
 
 /**
  * El DISEÑO de página, que es distinto del contenido.
@@ -265,6 +265,38 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
         <table role="presentation" cellpadding="0" cellspacing="0">${renglones}</table>
       </td></tr></table>`);
     }
+    case 'documento': {
+      /* Un DOCUMENTO adjunto como tarjeta: etiqueta de color, título, una línea
+         de resumen y su botón. Nació con el correo ejecutivo a una cuenta
+         (22-sep-2026) —reportes de entregas, trabajo en curso, recomendaciones
+         y lo de la biblioteca— pero es un bloque más del sistema: cualquier
+         plantilla o campaña lo puede usar. Va como liga y no como archivo para
+         saber cuándo lo abrieron.
+         `variante: 'noche'` es la tarjeta oscura con la estrella, para lo que
+         se quiere que resalte (una presentación de la biblioteca). */
+      const TONOS: Record<string, [string, string]> = {
+        verde: ['#EAF8F2', '#1E8A63'], rosa: ['#FBEAF2', '#9c3d70'],
+        ambar: ['#FFF4E5', '#9a6a10'], lila: ['#EEECFE', '#5B4BD6'],
+      };
+      const noche = b.variante === 'noche';
+      const [cf, ct] = TONOS[b.tono] || TONOS.lila;
+      const chip = b.etiqueta
+        ? `<span style="${FA}display:inline-block;font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px;background:${noche ? '#EFA6CA' : cf};color:${noche ? '#1d1545' : ct};">${noche ? '&#10022; ' : ''}${txt(b.etiqueta, ctx)}</span>`
+        : '';
+      const titulo = b.titulo ? `<div style="${FA}font-size:15px;font-weight:800;line-height:1.35;color:${noche ? '#ffffff' : '#1a1633'};padding-top:${chip ? 6 : 0}px;">${txt(b.titulo, ctx)}</div>` : '';
+      const sub = b.texto ? `<div style="${FA}font-size:13px;line-height:1.5;color:${noche ? '#d9d3ff' : '#6a6577'};padding-top:3px;">${rico(b.texto, ctx)}</div>` : '';
+      const boton = `<table role="presentation" cellpadding="0" cellspacing="0" align="right"><tr><td style="background:${noche ? '#EFA6CA' : acento};border-radius:8px;">
+          <a href="${url(b.href, ctx)}" style="${FA}display:inline-block;padding:9px 16px;font-size:13px;font-weight:700;text-decoration:none;color:${noche ? '#1d1545' : '#ffffff'};white-space:nowrap;">${txt(b.boton || 'Ver', ctx)}</a>
+        </td></tr></table>`;
+      const fondo = noche ? 'background:#1d1545;background-image:linear-gradient(110deg,#1d1545,#3a2466);' : 'background:#ffffff;border:1px solid #ecebf3;';
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
+        <td style="${fondo}border-radius:12px;padding:14px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:middle;">${chip}${titulo}${sub}</td>
+            <td style="vertical-align:middle;width:1%;padding-left:12px;">${boton}</td>
+          </tr></table>
+        </td></tr></table>`);
+    }
     case 'firma': {
       // La firma sale del INQUILINO: un partner firma con su nombre, no el nuestro.
       // La foto va en circulito y es la MISMA en todas las cadencias (la del
@@ -437,6 +469,7 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto, t?: Tenant | nul
         }
         break;
       }
+      case 'documento': p.push(`${b.etiqueta ? '[' + i(b.etiqueta) + '] ' : ''}${i(b.titulo || '')}${b.texto ? ' — ' + i(b.texto) : ''}: ${i(b.href || '')}`); break;
       case 'firma': p.push('', i(b.nombre || t?.firma_nombre || t?.from_nombre || ''), i(b.puesto || t?.firma_puesto || '')); break;
       case 'separador': p.push('—'); break;
     }
