@@ -301,9 +301,14 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       // La firma sale del INQUILINO: un partner firma con su nombre, no el nuestro.
       // La foto va en circulito y es la MISMA en todas las cadencias (la del
       // inquilino), aunque el nombre cambie según quién firma esa plantilla.
-      const foto = b.foto_url || t.firma_foto_url || t.logo_url;
+      /* `propia: true` — firma de UNA persona (el correo ejecutivo de la ficha,
+         22-sep-2026): solo sus datos. Sin esto, un correo de Aaron salía con
+         el nombre de él y la foto y el puesto de Andrea («Tu consultora en
+         Sacs»), que son los del inquilino. Sin foto propia, va sin foto. */
+      const propia = b.propia === true;
+      const foto = propia ? (b.foto_url || '') : (b.foto_url || t.firma_foto_url || t.logo_url);
       const nombre = b.nombre || t.firma_nombre || t.from_nombre;
-      const puesto = b.puesto || t.firma_puesto || '';
+      const puesto = propia ? (b.puesto || '') : (b.puesto || t.firma_puesto || '');
       const sitio = t.sitio_url ? `<div style="font-size:12px;margin-top:3px;"><a href="${escapar(t.sitio_url)}" style="color:#5B4BD6;text-decoration:none;font-weight:700;">${escapar(t.sitio_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div>` : '';
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;"><tr>
         ${foto ? `<td width="62" valign="middle"><img src="${escapar(foto)}" width="50" height="50" alt="" style="border-radius:50%;display:block;border:2px solid #EEECFE;"></td>` : ''}

@@ -132,7 +132,11 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   const tenant = await resolverTenant().catch(() => null);
   if (!tenant) return json({ error: 'El correo del CRM no está configurado.' }, 500);
   const origen = new URL(request.url).origin;
-  const firma: Bloque = { id: 'firma', tipo: 'firma', ...(user?.nombre ? { nombre: user.nombre } : {}), ...(user?.foto_url ? { foto_url: user.foto_url } : {}) };
+  // Firma de QUIEN lo manda, con sus datos y nada del inquilino (ver el bloque
+  // 'firma' en plantillas.ts). La foto es la de su perfil del CRM.
+  const { data: yo } = await supabase.from('team_members').select('nombre, foto_url').eq('email', user?.email || '').maybeSingle();
+  const firma: Bloque = { id: 'firma', tipo: 'firma', propia: true,
+    nombre: yo?.nombre || user?.nombre || user?.email || 'Sacs', foto_url: yo?.foto_url || user?.foto_url || null };
   const cuerpo = (tarjetas: Bloque[]): Bloque[] => [
     ...(mensaje ? [{ id: 'msg', tipo: 'texto', texto: mensaje } as Bloque] : []),
     ...tarjetas,
