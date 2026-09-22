@@ -365,6 +365,18 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 Allá son las {ctx.hora_local.hora}
               </span>
             )}
+            {/* Lo mismo que la cabina dice en grande (22-sep-2026): que esta
+                llamada cumple una promesa, o que el lead ya se había descartado. */}
+            {ctx?.seguimiento && (
+              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 800, background: '#EEECFE', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px' }}>
+                Llamada de seguimiento: le prometiste llamarle ({ctx.seguimiento.hora}). Al colgar queda cumplida.
+              </span>
+            )}
+            {ctx?.descalificado && (
+              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 800, background: '#FDEDEB', color: '#C0554E', borderRadius: 10, padding: '6px 11px' }}>
+                Ojo: este lead se descalificó el {ctx.descalificado}. Las listas automáticas ya no lo incluyen.
+              </span>
+            )}
           </span>
           <span style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {/* En el teléfono, Colgar y Silenciar NO viven aquí arriba: se van a

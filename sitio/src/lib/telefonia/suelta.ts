@@ -156,11 +156,31 @@ export async function cerrarLlamadaSuelta(callSid: string, o: { userId?: string 
     const { data: fila } = await supabase.from('tel_sesion_items').select('estado, contestado_at, oido, cierre_estado').eq('id', it.id).maybeSingle();
     if (!fila || fila.estado === 'hecho') return { ok: true, itemId: it.id };
     const seg = fila.contestado_at ? Math.max(0, Math.round((Date.now() - new Date(fila.contestado_at).getTime()) / 1000)) : 0;
+    /* ══ LA PROMESA SE CUMPLE AUNQUE SE LLAME A MANO (22-sep-2026) ════════
+       Si había un seguimiento prometido para hoy (o vencido) y se le llamó
+       desde la ficha, la tarea se cierra como en la cabina. Si no, la sala
+       del día la recogía y le volvía a marcar a la hora prometida: dos
+       llamadas al mismo prospecto el mismo día. Aquí siempre hubo persona al
+       teléfono (un item suelto sólo nace cuando alguien contesta). */
+    const tel10 = String(it.telefono || '').replace(/\D/g, '').slice(-10);
+    const finHoy = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date())}T23:59:59-06:00`);   // fin del día en CDMX
+    const filtro = [it.contact_id ? `contact_id.eq.${it.contact_id}` : null, tel10.length === 10 ? `payload->>whatsapp.like.%${tel10}` : null].filter(Boolean).join(',');
+    const { data: prom } = filtro ? await supabase.from('ti_tareas').select('id')
+      .eq('estado', 'pendiente').eq('tipo', 'llamada').eq('payload->>de_llamada', 'true')
+      .or(filtro).lte('vence_at', finHoy.toISOString()).order('vence_at').limit(1) : { data: [] as any[] };
+    const promesa = (prom || [])[0]?.id || null;
     await supabase.from('tel_sesion_items').update({
       estado: 'hecho', terminado_at: ahora(), duracion_seg: seg, updated_at: ahora(),
       ...(o.resultado ? { resultado: o.resultado } : {}),
       ...(o.nota ? { nota: o.nota } : {}),
+      ...(promesa ? { compromiso_tarea_id: promesa } : {}),
     }).eq('id', it.id);
+    if (promesa) {
+      await supabase.from('ti_tareas').update({
+        estado: 'hecha', hecho_at: ahora(), hecho_por: o.userId || null, seguimiento_desenlace: 'contesto',
+        resultado: String(o.resultado || 'contesto'), resultado_detalle: 'se le llamó a mano (fuera de la cabina)', updated_at: ahora(),
+      }).eq('id', promesa).eq('estado', 'pendiente');
+    }
     return { ok: true, itemId: it.id };
   } catch { return { ok: false, itemId: null }; }
 }

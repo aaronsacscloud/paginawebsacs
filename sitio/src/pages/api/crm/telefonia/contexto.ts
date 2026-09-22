@@ -66,9 +66,30 @@ export const GET: APIRoute = async ({ request, url }) => {
   const emp: any = (ficha as any)?.companies || null;
 
   const u: any = ultima;
+  /* ══ LO QUE LA CABINA SABE Y LA LLAMADA MANUAL NO (22-sep-2026) ═════════
+     · El seguimiento prometido: la cabina dice en grande «Llamando por
+       seguimiento previo de X»; a mano no se enteraba nadie, y la sala del día
+       le volvía a marcar a la hora prometida (dos llamadas).
+     · El descalificado: a mano SÍ se le puede llamar (es una persona que lo
+       decide), pero tiene que saber que ese lead ya se había descartado. */
+  const finHoy = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date())}T23:59:59-06:00`);   // fin del día en CDMX
+  const [{ data: prom }, { data: desc }] = await Promise.all([
+    supabase.from('ti_tareas').select('id, vence_at').eq('estado', 'pendiente').eq('tipo', 'llamada').eq('payload->>de_llamada', 'true')
+      .or(cid ? `contact_id.eq.${cid},payload->>whatsapp.like.%${limpio}` : `payload->>whatsapp.like.%${limpio}`)
+      .lte('vence_at', finHoy.toISOString()).order('vence_at').limit(1),
+    cid ? supabase.from('contacts').select('descalificado_at, descalificado_levantado_at').eq('id', cid).maybeSingle() : Promise.resolve({ data: null as any }),
+  ]);
+  const seguimiento = (prom || [])[0]
+    ? { id: prom![0].id, hora: new Date(String(prom![0].vence_at)).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', hour: '2-digit', minute: '2-digit' }) }
+    : null;
+  const descalificado = (desc as any)?.descalificado_at && !(desc as any)?.descalificado_levantado_at
+    ? new Date((desc as any).descalificado_at).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short' })
+    : null;
+
   return json({
     hay: true,
     contactId: cid || null,
+    seguimiento, descalificado,
     /* La marca en grande es lo primero que pidió: es lo que dice en voz alta
        quien contesta, y equivocarla en el saludo cuesta la llamada. */
     marca: (ficha as any)?.marca || emp?.nombre_comercial || emp?.nombre || null,

@@ -111,6 +111,23 @@ encabezado → Utility con el mismo PDF). En llamadas, el tema «la información
 de Sacs» de `tel_conocimiento` apunta al mismo PDF. Fuente del PDF:
 `scripts/info-sacs/` (`node scripts/info-sacs/generar.mjs`).
 
+## 6 · La llamada manual = la cabina (22-sep-2026)
+
+Llamada desde la ficha o cualquier `tel:` (`Telefonia.tsx` + `SalaLlamada.tsx`,
+item en la sesión fantasma de `suelta.ts`):
+- La sala va en un **portal a `document.body`**: dentro de la barra (que lleva
+  `transform`) el `fixed` salía pegado arriba y sin ✕ visible.
+- Al colgar (quien sea) arranca **solo** el cierre con IA —el mismo
+  `proponerCierre`/`aplicarCierre` de la cabina—; elegir «qué pasó» es
+  opcional y se traduce al vocabulario del cierre (`volver`→`volver_llamar`…:
+  antes un «Volver a llamar» manual nunca programaba la vuelta). Si nadie
+  aplica, `rescatarCierres` lo aplica a los 2 min.
+- Si había un **seguimiento prometido** de hoy (o vencido), la llamada manual lo
+  cumple (`cerrarLlamadaSuelta` cierra la tarea): antes la sala del día le
+  volvía a marcar. La sala lo avisa arriba, y también si el lead **se
+  descalificó** (a mano sí se le puede llamar).
+- **Todavía NO está probado con una llamada real** (el dev local marca de verdad).
+
 ---
 
 ## LO QUE FALTA
