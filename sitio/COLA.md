@@ -1104,7 +1104,7 @@ escuchar → mapear → mejorar → construir → dar visibilidad; cierre: 10 d�
 3 espacios, $32,890 → $21,378.50 (35 %) hasta el 28-sep-2026, siguiente apertura enero 2027.
 Ojo: la oferta vence el 28-sep → va con prisa.
 
-## 22-sep-2026 · «Enviar email» en la ficha del cliente, con documentos adjuntables (ELEGIDA la A · correo + biblioteca HECHOS 22-sep · falta el reporte de recomendaciones)
+## 22-sep-2026 · «Enviar email» en la ficha del cliente, con documentos adjuntables (HECHO 22-sep, opción A: correo + biblioteca + reporte de recomendaciones RR-)
 > Prototipos: A ventana con vista previa https://code.sacscloud.com/shots/19eaf798eaf80724.png · B pestaña «Correo» con historial 5ec4c593ae4ea195 · recomendaciones d2e415eba6cd64eb · biblioteca 35f0a68e1646a143
 > «Puedes agregar dento de esta seccion como enviar email! esto lo voy a usar para poder enviar un correo ejacutivo con los correos que tenga de la cuenta en el cual pueda escribir lo que requiera pero quiero que pueda enviar reportes den entregas, en talles y reporte ejecutivo adicional que me pueda dar la copiin de generar un reporte con recomendaciones de la cuenta como cosas que veo que faltan y que no estan cerrando los flujos de trabajo de las cuentas y ahi es donde podemos agregar el tema de los flujos de trabajo como el documento que estas haciendo. es importante que estos documentos que estas creando puedan guardarse en la configuracion del CRM, cuando te diga guardalo en el crm para que cuando quiera enviar un correo me permita ver los documentos que tenga activos»
 

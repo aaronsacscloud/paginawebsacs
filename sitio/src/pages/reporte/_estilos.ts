@@ -361,4 +361,33 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
   .ent .mas{display:block!important}
   .ent .it{break-inside:avoid}
 }
+
+/* ── EL REPORTE DE RECOMENDACIONES (22-sep-2026) ──
+   Lila de la casa, porque es la voz del consultor y no un corte de caja. Cada
+   flujo es una cadena y el eslabón que se rompe va punteado en rosa. */
+.doc-rec .ancla .n.r{color:var(--rosa-t)}
+.doc-rec .p.intro{font-size:.95rem;margin:0 0 20px}
+.doc-rec .cuerpo .st{margin-top:22px}
+.doc-rec .cuerpo .st:first-of-type{margin-top:0}
+.fl{border:1px solid var(--borde);border-radius:14px;padding:14px 16px;margin-bottom:11px;background:#fff}
+.fl-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fl h3{margin:0;font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.est{font-size:.62rem;font-weight:800;border-radius:20px;padding:3px 10px;white-space:nowrap}
+.est.medio{background:rgba(244,168,205,.3);color:var(--rosa-t)}
+.est.sinuso{background:#FFF4E5;color:#9a6a10}
+.est.ok{background:var(--verde-a);color:var(--verde-t)}
+.fl .cad{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:11px 0 8px}
+.fl .cad span{font-size:.74rem;font-weight:700;border-radius:8px;padding:5px 10px;background:#f4f2fb;color:#5b5670}
+.fl .cad span.x{background:#fff4f8;color:var(--rosa-t);border:1px dashed #EFA6CA}
+.fl .cad em{color:#b5b2bf;font-style:normal}
+.fl .ev{font-size:.84rem;color:var(--ink-2);line-height:1.6;margin:0}
+.fl .rec{margin-top:9px;font-size:.85rem;line-height:1.55;background:var(--verde-a);border-radius:10px;padding:9px 12px;color:#1E6B4E}
+.fl-ok{border-style:dashed;padding:11px 16px}
+.fl-ok .ev{margin-top:6px}
+.prog{display:flex;gap:16px;align-items:center;margin-top:22px;border-radius:16px;padding:18px 20px;text-decoration:none;color:#fff;
+  background:#1d1545;background-image:linear-gradient(120deg,#1d1545,#2a1d5c 60%,#5a2a6a)}
+.prog .pt{flex:1}.prog .pt b{display:block;font-size:1rem}.prog .pt span{display:block;font-size:.84rem;color:#d9d3ff;margin-top:3px}
+.prog .pb{background:#EFA6CA;color:#1d1545;border-radius:10px;padding:9px 15px;font-weight:800;font-size:.84rem;white-space:nowrap}
+@media(max-width:720px){.prog{flex-wrap:wrap}.prog .pb{width:100%;text-align:center}}
+@media print{.prog{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 `;

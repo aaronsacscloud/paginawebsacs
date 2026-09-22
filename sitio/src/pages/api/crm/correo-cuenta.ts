@@ -55,6 +55,7 @@ function tarjetaReporte(tipo: TipoReporteCuenta, h: any, desde: string, hasta: s
     texto: `${ent} mejoras entregadas · ${folios} folios de soporte · ${periodo(desde, hasta)}`, href, boton: 'Ver' };
 }
 
+const origenDe = (r: Request) => new URL(r.url).origin;
 const TIPO_DOC: Record<string, string> = { presentacion: 'Presentación', pdf: 'PDF', liga: 'Documento' };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -110,6 +111,15 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
     .filter((r: any) => TIPOS.includes(r?.tipo))
     .map((r: any) => ({ tipo: r.tipo as TipoReporteCuenta, desde: String(r.desde || '').slice(0, 10), hasta: String(r.hasta || '').slice(0, 10) }))
     .filter((r: any, i: number, a: any[]) => a.findIndex(x => x.tipo === r.tipo) === i);
+  const recId = UUID.test(String(b?.recomendacion_id || '')) ? String(b.recomendacion_id) : null;
+  const { data: rec } = recId
+    ? await supabase.from('reportes_trabajo').select('id, folio, hechos').eq('id', recId).eq('company_id', companyId).eq('tipo', 'recomendaciones').maybeSingle()
+    : { data: null as any };
+  const tarjetaRec = (): Bloque | null => rec ? {
+    id: 'r-rec', tipo: 'documento', etiqueta: 'Recomendaciones', tono: 'ambar', titulo: 'Lo que vemos en tu cuenta',
+    texto: `${Number(rec.hechos?.resumen?.a_medias || 0)} flujos por cerrar · ${Number(rec.hechos?.resumen?.recomendaciones || 0)} recomendaciones`,
+    href: origenDe(request) + '/reporte/' + rec.id, boton: 'Ver',
+  } : null;
   const docIds = (Array.isArray(b?.documentos) ? b.documentos : []).map(String).filter((x: string) => UUID.test(x)).slice(0, 10);
 
   const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
@@ -142,6 +152,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
       }
       tarjetas.push(tarjetaReporte(r.tipo, h, r.desde, r.hasta, origen + '/reporte/…'));
     }
+    const tr = tarjetaRec(); if (tr) tarjetas.push(tr);
     for (const d of vivos) {
       tarjetas.push({ id: 'd-' + d.id, tipo: 'documento', variante: 'noche', etiqueta: TIPO_DOC[d.tipo] || 'Documento', titulo: d.titulo, texto: d.descripcion || '', href: d.url, boton: 'Ver' });
     }
@@ -152,7 +163,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   /* ── ENVIAR ── */
   if (!para.length) return json({ error: 'Elige al menos a una persona con correo.' }, 400);
   if (!asunto) return json({ error: 'Ponle asunto al correo.' }, 400);
-  if (!mensaje && !reportes.length && !vivos.length) return json({ error: 'El correo va vacío: escribe algo o adjunta un documento.' }, 400);
+  if (!mensaje && !reportes.length && !vivos.length && !rec) return json({ error: 'El correo va vacío: escribe algo o adjunta un documento.' }, 400);
 
   // 1) Los reportes se generan UNA vez; todos los destinatarios ven el mismo folio.
   const generados: { tipo: TipoReporteCuenta; id: string; folio: string; hechos: any; desde: string; hasta: string }[] = [];
@@ -169,6 +180,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   for (const dest of para) {
     const ct: any = porCorreo.get(dest) || null;
     const tarjetas: Bloque[] = generados.map(g => tarjetaReporte(g.tipo, g.hechos, g.desde, g.hasta, origen + '/reporte/' + g.id));
+    const tr = tarjetaRec(); if (tr) tarjetas.push(tr);
     for (const d of vivos) {
       const { data: env } = await supabase.from('crm_documento_envios').insert({
         documento_id: d.id, company_id: companyId, contact_id: ct?.id || null, para: dest,
@@ -192,14 +204,15 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   }
 
   const enviados = resultados.filter(r => r.ok).map(r => r.para);
-  if (enviados.length && generados.length) {
+  const idsEnviados = [...generados.map(g => g.id), ...(rec ? [rec.id] : [])];
+  if (enviados.length && idsEnviados.length) {
     await supabase.from('reportes_trabajo').update({ estado: 'enviado', enviado_at: new Date().toISOString(), enviado_a: enviados.join(', ') })
-      .in('id', generados.map(g => g.id));
+      .in('id', idsEnviados);
   }
   await supabase.from('activities').insert({
     company_id: companyId, tipo: 'correo_ejecutivo', automatico: false,
     titulo: 'Correo: ' + asunto,
-    descripcion: [mensaje.slice(0, 400), generados.length ? 'Reportes: ' + generados.map(g => g.folio).join(', ') : '', vivos.length ? 'Documentos: ' + vivos.map((d: any) => d.titulo).join(', ') : ''].filter(Boolean).join('\n'),
+    descripcion: [mensaje.slice(0, 400), [...generados.map(g => g.folio), ...(rec ? [rec.folio] : [])].length ? 'Reportes: ' + [...generados.map(g => g.folio), ...(rec ? [rec.folio] : [])].join(', ') : '', vivos.length ? 'Documentos: ' + vivos.map((d: any) => d.titulo).join(', ') : ''].filter(Boolean).join('\n'),
     metadata: { para: enviados, fallaron: resultados.filter(r => !r.ok), reportes: generados.map(g => ({ id: g.id, folio: g.folio, tipo: g.tipo })), documentos: vivos.map((d: any) => d.id), por: user?.email || null },
   }).then(() => {}, () => {});
 

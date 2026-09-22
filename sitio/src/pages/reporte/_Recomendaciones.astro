@@ -1,0 +1,98 @@
+---
+// El REPORTE DE RECOMENDACIONES que recibe una cuenta: «Lo que vemos en tu
+// cuenta».
+//
+// El cuarto de la casa. Los otros cuentan lo que se hizo (entregas), lo que se
+// está haciendo (en curso) y lo que se entendió de un lead; este dice lo que
+// FALTA: los flujos de trabajo que se quedan a medias dentro de SACS.
+//
+// Cada flujo es una CADENA de pasos y se pinta el eslabón que se rompe. Es la
+// misma idea que la presentación del Programa de flujos —la ficha que no llega
+// a dirección—, así que el documento y la invitación del final hablan el mismo
+// idioma. Primero lo que no se cierra; lo que funciona va al final y chico.
+//
+// Lee la FOTO guardada: lo que el consultor revisó y aprobó, no el dato vivo.
+import Chispas from '../../components/reporte/ChispasDoc.astro';
+import Sello from '../../components/reporte/SelloChispa.astro';
+const { rep } = Astro.props;
+const h = rep.hechos || {};
+const dLarga = (d?: string | null) => d
+  ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+  : '';
+const EST: Record<string, { l: string; c: string }> = {
+  medio: { l: 'se queda a medias', c: 'medio' },
+  sin_usar: { l: 'sin usar', c: 'sinuso' },
+  completo: { l: 'se cierra completo', c: 'ok' },
+};
+const flujos = (h.flujos || []) as any[];
+const abiertos = flujos.filter(f => f.estado !== 'completo');
+const cerrados = flujos.filter(f => f.estado === 'completo');
+const r = h.resumen || {};
+---
+<div class="hero">
+  <Chispas capa="hero" color="#9B8CFA" />
+  <div class="top">
+    <div><div class="wm">Sacscloud</div><div class="wsub">Recomendaciones de la cuenta</div></div>
+    <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
+  </div>
+  <h1>Lo que vemos en tu cuenta</h1>
+  <p class="sub">{h.cliente} · {dLarga(rep.desde)}{h.preparado_por ? ` · preparado por ${h.preparado_por}` : ''}</p>
+  <div class="sello"><Sello color="#9B8CFA" /> Ninguna estrella brilla sola</div>
+</div>
+
+<div class="ancla">
+  <Chispas capa="ancla" color="#cfc7fb" />
+  <div><div class="n" data-n={r.revisados || flujos.length}>0</div><div class="l">flujos revisados</div></div>
+  <div><div class="n v" data-n={r.completos || 0}>0</div><div class="l">se cierran completos</div></div>
+  <div><div class="n r" data-n={r.a_medias || 0}>0</div><div class="l">se quedan a medias</div></div>
+  <div><div class="n" data-n={r.recomendaciones || 0}>0</div><div class="l">recomendaciones</div></div>
+</div>
+
+<div class="cuerpo">
+  {h.intro && <p class="p intro">{h.intro}</p>}
+
+  {abiertos.length > 0 && (
+    <>
+      <div class="st"><span class="x">Lo que se queda a medias</span><span class="ln"></span></div>
+      {abiertos.map((f: any) => (
+        <div class="fl">
+          <div class="fl-top"><span class={`est ${EST[f.estado]?.c || 'medio'}`}>{EST[f.estado]?.l || 'se queda a medias'}</span><h3>{f.nombre}</h3></div>
+          {(f.cadena || []).length > 0 && (
+            <div class="cad">
+              {(f.cadena || []).map((e: any, i: number) => (
+                <>{i > 0 && <em>→</em>}<span class={e.ok ? '' : 'x'}>{e.paso}</span></>
+              ))}
+            </div>
+          )}
+          {f.evidencia && <p class="ev">{f.evidencia}</p>}
+          {f.recomendacion && <div class="rec"><b>Recomendamos:</b> {f.recomendacion}</div>}
+        </div>
+      ))}
+    </>
+  )}
+
+  {cerrados.length > 0 && (
+    <>
+      <div class="st"><span class="x">Lo que ya funciona de punta a punta</span><span class="ln"></span></div>
+      {cerrados.map((f: any) => (
+        <div class="fl fl-ok">
+          <div class="fl-top"><span class="est ok">se cierra completo</span><h3>{f.nombre}</h3></div>
+          {f.evidencia && <p class="ev">{f.evidencia}</p>}
+        </div>
+      ))}
+    </>
+  )}
+
+  {h.programa?.url && (
+    <a class="prog" href={h.programa.url} target="_blank" rel="noopener">
+      <svg width="38" height="38" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gprog" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9adff"/><stop offset="1" stop-color="#EFA6CA"/></linearGradient></defs><path fill="url(#gprog)" d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z"/></svg>
+      <span class="pt"><b>¿Quieres cerrarlos juntos?</b><span>{h.programa.titulo}{h.programa.texto ? ` · ${h.programa.texto}` : ''}</span></span>
+      <span class="pb">Ver el programa</span>
+    </a>
+  )}
+</div>
+
+<div class="pieE">
+  <div class="fw">Sacscloud</div>
+  <p>¿Ves algo distinto en tu operación? Contesta este documento y lo revisamos juntos. Folio {rep.folio}.</p>
+</div>

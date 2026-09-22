@@ -6,6 +6,7 @@
 // generan al mandar, y lo de la biblioteca sale con una liga propia por
 // persona para saber quién lo abrió.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ReporteRecomendaciones from './ReporteRecomendaciones';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 type Rep = { tipo: 'entregas' | 'curso' | 'trabajo'; on: boolean; desde: string; hasta: string };
@@ -50,6 +51,9 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [listo, setListo] = useState<any>(null);
+  // El reporte de recomendaciones preparado para este correo (se genera aparte).
+  const [recom, setRecom] = useState<any>(null);
+  const [prepRec, setPrepRec] = useState(false);
 
   useEffect(() => {
     fetch('/api/crm/documentos?activos=1').then(r => r.json()).then(j => setBiblio(j?.documentos || [])).catch(() => setBiblio([]));
@@ -59,7 +63,8 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
     company_id: companyId, para: [...para, ...extra], asunto, mensaje,
     reportes: reps.filter(r => r.on).map(r => ({ tipo: r.tipo, desde: r.desde, hasta: r.hasta })),
     documentos: docs,
-  }), [companyId, para, extra, asunto, mensaje, reps, docs]);
+    recomendacion_id: recom?.on ? recom.id : null,
+  }), [companyId, para, extra, asunto, mensaje, reps, docs, recom]);
 
   /* La vista previa se pide al servidor con una pausa: si se pidiera en cada
      tecla, el reporte ejecutivo —que junta todo el periodo— se calcularía
@@ -105,7 +110,7 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
     setListo(r); onEnviado?.(r);
   }
 
-  const nDocs = reps.filter(r => r.on).length + docs.length;
+  const nDocs = reps.filter(r => r.on).length + docs.length + (recom?.on ? 1 : 0);
 
   return (
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -193,10 +198,16 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
                   </div>
                 );
               })}
-              <div style={{ border: '1px dashed #ecebf3', borderRadius: 12, padding: '9px 11px', marginBottom: 7, display: 'flex', gap: 10, alignItems: 'center', opacity: .6 }}>
-                <span style={{ width: 16 }} />
-                <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: '#FFF4E5' }}>✦</span>
-                <span style={{ flex: 1 }}><b style={{ fontSize: '0.82rem', display: 'block' }}>Recomendaciones de la cuenta</b><small style={{ fontSize: '0.72rem', color: '#9c99a6' }}>Los flujos que no se están cerrando · en construcción</small></span>
+              {/* Recomendaciones: no se genera en automático como los otros tres —
+                  se prepara y se revisa— y por eso trae su propio botón. */}
+              <div style={{ border: '1px solid ' + (recom?.on ? '#c9c1f5' : '#ecebf3'), background: recom?.on ? '#faf9ff' : '#fff', borderRadius: 12, padding: '9px 11px', marginBottom: 7, display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input type="checkbox" disabled={!recom} checked={!!recom?.on} onChange={e => setRecom((r: any) => r ? { ...r, on: e.target.checked } : r)} style={{ width: 16, height: 16, accentColor: '#9B8CFA' }} />
+                <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: '#FFF4E5', flex: 'none' }}>✦</span>
+                <span style={{ flex: 1 }}><b style={{ fontSize: '0.82rem', display: 'block' }}>Recomendaciones de la cuenta</b>
+                  <small style={{ fontSize: '0.72rem', color: '#9c99a6' }}>{recom ? `${recom.folio} · ${recom.resumen?.a_medias || 0} flujos por cerrar` : 'Los flujos que no se están cerrando. Se prepara y se revisa antes.'}</small></span>
+                <button onClick={() => setPrepRec(true)} style={{ border: '1.5px solid #9B8CFA', borderRadius: 8, padding: '5px 10px', background: '#fff', color: '#5B4BD6', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {recom ? 'Rehacer' : 'Preparar'}
+                </button>
               </div>
 
               <div style={{ ...S.lb, marginTop: 12 }}>De la biblioteca</div>
@@ -227,6 +238,8 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
           </>)}
         </div>
 
+        {prepRec && <ReporteRecomendaciones companyId={companyId} cliente={cliente} onCerrar={() => setPrepRec(false)}
+          onGenerado={(r: any) => { setRecom({ ...r, on: true }); setPrepRec(false); }} />}
         {/* ── Derecha: así le llega ── */}
         <div className="correo-vista" style={{ background: '#f7f6fb', padding: '14px 16px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={S.lb}>Así le llega</div>
