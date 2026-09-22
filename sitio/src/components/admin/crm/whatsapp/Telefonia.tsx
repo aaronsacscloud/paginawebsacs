@@ -12,6 +12,7 @@
 // lo mismo «no te dio el micrófono» que «el cliente no contestó», y antes las
 // dos se veían igual (la barra simplemente desaparecía).
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /* La sala grande de la llamada: vive en su propio chunk porque la mayoría de
    las sesiones del CRM no hacen ni una llamada, y no tiene por qué viajar en
@@ -366,7 +367,7 @@ export default function Telefonia() {
     const base: Resumen = {
       sid: v.sid, telefono: v.telefono, nombre: v.nombre, seg: segFinales, direccion: v.direccion,
       desenlace: segFinales > 0 ? 'Llamada terminada' : 'Terminada sin conversación',
-      conversationId: null, minuta: segFinales >= 20 ? 'esperando' : 'no-aplica', verificado: false,
+      conversationId: null, minuta: segFinales > 180 ? 'esperando' : 'no-aplica', verificado: false,
     };
     setResumen(base);
     if (!v.sid) return;   // sin CallSid no hay a qué preguntarle
@@ -467,7 +468,12 @@ export default function Telefonia() {
          hablado: ahí no hay una ficha al lado que mirar, y el resumen completo
          es justo lo que se pidió — «al momento de que yo responda, me tiene que
          mostrar una pantalla completa con toda esta información». */
-      const conSala = !!v.desde && (esMovilRef.current || salaAbiertaRef.current);
+      /* 22-sep-2026: en el escritorio también SIEMPRE que se haya hablado.
+         Pedido del dueño: la llamada manual tiene que cerrar como la cabina
+         —la IA propone y tú confirmas—, y ese cierre vive en la sala. Si la
+         escondiste durante la llamada, al colgar vuelve: es el momento en que
+         hace falta. */
+      const conSala = !!v.desde;
       if (conSala) setFinSala({ sid: v.sid || call?.parameters?.CallSid || null, telefono: v.telefono, nombre: v.nombre, seg: segFinales });
       /* MEJORA 3 · EL APUNTE NO SE PIERDE AL COLGAR.
          Lo que se escribe mientras se habla es lo más valioso de la llamada y
@@ -843,7 +849,7 @@ export default function Telefonia() {
             {listo && <span style={{ color: C.emerald300, fontWeight: 700 }}>Minuta lista · quedó en la conversación</span>}
             {resumen.minuta === 'no-aplica' && (
               <span style={{ color: '#b6b2c6' }}>
-                {resumen.seg >= 20 ? 'Sin minuta: no hubo conversación grabada.' : 'Muy corta para minuta — se transcriben de 20 segundos en adelante.'}
+                {resumen.seg > 180 ? 'Sin minuta: no hubo conversación grabada.' : 'Sin minuta: se hace sólo en llamadas de más de 3 minutos.'}
               </span>
             )}
             {resumen.minuta === 'falló' && <span style={{ color: C.ambar300 }}>La minuta no llegó. La grabación sí quedó guardada.</span>}
@@ -1039,7 +1045,14 @@ export default function Telefonia() {
           hasta aquí. Llevar la sala al móvil es otra tarea, anotada en COLA.md.
           La misma pantalla sirve para las dos mitades: `fin` la convierte en
           el resumen en vez de desmontarla. */}
-      {((salaAbierta && viva?.fase === 'en-linea') || finSala) && laSala()}
+      {/* 🔴 EN UN PORTAL (22-sep-2026). La sala es un modal centrado con
+          `position: fixed`, pero se pintaba DENTRO de este contenedor, que
+          lleva `transform: translateX(-50%)`. Un `fixed` dentro de un padre
+          con `transform` se posiciona respecto al padre, no a la pantalla: el
+          modal salía pegado arriba, descentrado, con la ✕ fuera de la vista
+          (reportado por el dueño: «no puedo ver lo que sucede y no puedo
+          cerrarlo»). Montado en `document.body` vuelve a centrarse. */}
+      {((salaAbierta && viva?.fase === 'en-linea') || finSala) && typeof document !== 'undefined' && createPortal(laSala(), document.body)}
 
       {viva && (
         <div style={tarjeta}>
@@ -1110,7 +1123,7 @@ export default function Telefonia() {
                 los 20 s; al cliente sólo se le manda si de verdad hubo
                 conversación (minuto y medio). Decir sólo lo primero hacía creer
                 que al cliente le llega un PDF por cualquier llamadita. */}
-            Se está grabando. Al colgar queda la minuta aquí adentro; al cliente sólo se le manda si hablan más de minuto y medio.
+            Se está grabando. Si la llamada pasa de 3 minutos, al colgar queda la minuta aquí adentro.
           </div>
         </div>
       )}
@@ -1154,9 +1167,9 @@ export default function Telefonia() {
             )}
             {resumen.minuta === 'no-aplica' && (
               <span style={{ color: C.g500 }}>
-                {resumen.seg >= 20
+                {resumen.seg > 180
                   ? 'Sin minuta: no llegó a haber conversación grabada.'
-                  : 'Muy corta para minuta: se transcriben las llamadas de 20 segundos en adelante.'}
+                  : 'Sin minuta: se hace sólo en llamadas de más de 3 minutos.'}
               </span>
             )}
             {resumen.minuta === 'falló' && (

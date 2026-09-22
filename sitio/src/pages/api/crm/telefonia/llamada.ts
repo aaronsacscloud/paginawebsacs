@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     // Si habló menos de 20 s no habrá minuta NUNCA (la grabación ni se manda a
     // transcribir). Decirlo explícito evita dejar al usuario esperando una
     // barra de progreso que no va a llegar a ningún lado.
-    minuta_esperada: !viva && dur >= 20,
+    minuta_esperada: !viva && dur > 180,   // minuta sólo en llamadas de más de 3:00 (Mejora #2)
     minuta_lista: !!data.minuta,
   });
 };

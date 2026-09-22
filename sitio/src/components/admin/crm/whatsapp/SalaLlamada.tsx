@@ -66,6 +66,18 @@ const RESULTADOS: { id: string; l: string; tono: string }[] = [
   { id: 'no_era', l: 'No era él', tono: '#74727F' },
 ];
 
+/* ══ EL MISMO VOCABULARIO QUE LA CABINA (22-sep-2026) ═══════════════════
+   Estos chips guardaban `volver`, `interesado`, `agendado`… y el cierre con IA
+   (el mismo de Llamadas inteligentes) habla `volver_llamar`, `contesto`,
+   `no_interesa`. Como lo que elige el vendedor MANDA sobre lo que propone la
+   IA, un «Volver a llamar» hecho a mano nunca dejaba la llamada de vuelta
+   programada. Aquí se traduce al salir; los chips se quedan como están. */
+const A_CIERRE: Record<string, string> = { interesado: 'contesto', agendado: 'contesto', volver: 'volver_llamar', no_interesa: 'no_interesa', no_era: 'contesto' };
+const DE_CIERRE: Record<string, string> = { contesto: 'Contestó', volver_llamar: 'Volver a llamar', dieron_datos: 'Dio datos', no_interesa: 'No le interesa', buzon: 'Era buzón' };
+const aCierre = (r: string) => A_CIERRE[r] || r || '';
+const notaCon = (r: string, nota: string) => r === 'no_era' ? `No era la persona que buscábamos.${nota ? `\n${nota}` : ''}` : nota;
+const ETAPA_L: Record<string, string> = { lead_calificado: 'Lead calificado', descalificado: 'Descalificado' };
+
 const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 /* «+52 56 1035 3669» NO es un nombre. Quien llama de fuera llega sin nombre y
    en el camino alguien lo sustituye por el teléfono legible; si eso gana, la
@@ -200,25 +212,43 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
      Se cuelga el audio PRIMERO —el cliente no tiene por qué esperar a que el
      CRM escriba— y después se cierra la llamada en el servidor: item cerrado y
      cierre con IA pedido. La pantalla se queda enseñando el resultado. */
+  /* ══ COLGAR Y CERRAR, IGUAL QUE LA CABINA (22-sep-2026) ═══════════════
+     Pedido del dueño: «al terminar la llamada, en vez de sugerirme las
+     acciones como la salida de llamada inteligente, lo tengo que hacer
+     manual». Antes no se podía colgar sin elegir «qué pasó», y la IA sólo
+     leía la llamada DESPUÉS de eso. Ahora es como en la cabina: se cuelga
+     cuando quieras, la IA lee la llamada y PROPONE el resultado, el apunte,
+     la etapa, los compromisos y los envíos; tú confirmas o corriges. Elegir
+     «qué pasó» sigue sirviendo, pero ya no es un requisito. */
+  const pedido = useRef(false);
   const cerrarLlamada = async () => {
-    if (!resultado) { setMsg('Di qué pasó antes de colgar: es lo que alimenta todo lo demás.'); return; }
+    if (pedido.current) return;
+    pedido.current = true;
     setMsg(''); setCerrando(true);
     onColgar();
     if (callId) {
-      await fetch('/api/crm/telefonia/nota', {
+      if (nota.trim() || resultado) await fetch('/api/crm/telefonia/nota', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ call_id: callId, texto: nota, resultado, volver_el: volverEl || null }),
+        body: JSON.stringify({ call_id: callId, texto: notaCon(resultado, nota), resultado: aCierre(resultado) || undefined, volver_el: volverEl || null }),
       }).catch(() => {});
-      const j = await api({ accion: 'cerrar', resultado, nota });
+      const j = await api({ accion: 'cerrar', resultado: aCierre(resultado) || null, nota: notaCon(resultado, nota) || null });
       if (j?.item_id) setItemId(j.item_id);
       if (j?.cierre) setCierre(j.cierre);
+      else if (!j?.ok) setCierre({ estado: null, propuesta: null, motivo: j?.error || null });
     }
     setCerrando(false);
   };
+  /* Colgó el cliente (lo normal): el cierre arranca solo, sin esperar a que
+     alguien elija nada. Es la mitad que faltaba para que la llamada manual
+     haga lo mismo que la de la lista. */
+  useEffect(() => {
+    if (fin && callId && !cierre && !aplicado) cerrarLlamada();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fin, callId]);
 
   const aplicarCierre = async () => {
     setCerrando(true);
-    const j = await api({ accion: 'aplicar', item_id: itemId, resultado, nota });
+    const j = await api({ accion: 'aplicar', item_id: itemId, resultado: aCierre(resultado) || undefined, nota: notaCon(resultado, nota) || undefined });
     setCerrando(false);
     if (j?.hecho) setAplicado(j.hecho);
     else setMsg(j?.error || 'No se pudo aplicar el cierre');
@@ -439,16 +469,10 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                     latido la cierra solo a los dos minutos: esto es para que lo
                     haga quien estuvo en la llamada, que sabe más que la IA. */}
                 {!cerrando && !aplicado && !cierre && (
-                  <>
-                    <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6, marginBottom: 9 }}>
-                      La llamada terminó. Dime qué pasó y la cierro: apunte, compromisos y lo que quedó de mandar.
-                    </div>
-                    {quePaso}
-                    <button onClick={cerrarLlamada} disabled={!resultado}
-                      style={{ ...BTN, marginTop: 9, background: resultado ? C.morado : C.g100, color: resultado ? '#fff' : C.g500, border: 'none', width: '100%', cursor: resultado ? 'pointer' : 'default' }}>
-                      {resultado ? 'Cerrar la llamada' : 'Elige qué pasó para cerrarla'}
-                    </button>
-                  </>
+                  <button onClick={() => { pedido.current = false; cerrarLlamada(); }}
+                    style={{ ...BTN, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>
+                    Leer la llamada y proponer el cierre
+                  </button>
                 )}
                 {!cerrando && aplicado && (
                   <div style={{ fontSize: 12.5, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
@@ -457,6 +481,13 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 )}
                 {!cerrando && !aplicado && cierre && p && (
                   <>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: '#EEECFE', color: C.moradoTinta }}>
+                        {resultado ? `Tú: ${RESULTADOS.find(r => r.id === resultado)?.l || resultado}` : `La IA dice: ${DE_CIERRE[p.resultado] || p.resultado}`}
+                      </span>
+                      {p.etapa && <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: p.etapa === 'descalificado' ? '#FDEDEB' : '#EAF8F2', color: p.etapa === 'descalificado' ? '#C0554E' : '#1E8A63' }}>Etapa → {ETAPA_L[p.etapa] || p.etapa}</span>}
+                      {p.no_llamar && <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: '#FDEDEB', color: '#C0554E' }}>No volver a llamar</span>}
+                    </div>
                     <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
                     {p.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {p.siguiente_paso}</div>}
                     {!!(p.compromisos || []).length && (
@@ -470,6 +501,10 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                       ))}</div>
                     )}
                     {!!(p.datos || []).length && <div style={{ fontSize: 12.5, marginTop: 6 }}>✍️ Datos: {p.datos.map((d: any) => `${d.campo} = ${d.valor}`).join(' · ')}</div>}
+                    <details style={{ marginTop: 9 }}>
+                      <summary style={{ fontSize: 12, color: C.g500, cursor: 'pointer', fontWeight: 700 }}>¿La IA se equivocó en qué pasó? Corrígelo</summary>
+                      <div style={{ marginTop: 8 }}>{quePaso}</div>
+                    </details>
                     <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>
                   </>
                 )}
@@ -548,8 +583,8 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 Cuando colgó el otro, estos mismos chips viven arriba, dentro
                 del bloque de cierre. */}
             {!fin && (
-              <div style={{ ...CAJA, borderColor: resultado ? C.g200 : '#f0c4bd' }}>
-                <div style={ROT}>¿Qué pasó? · hace falta para colgar</div>
+              <div style={{ ...CAJA, borderColor: C.g200 }}>
+                <div style={ROT}>¿Qué pasó? · opcional: si no lo eliges, lo propone la IA al colgar</div>
                 {quePaso}
               </div>
             )}
