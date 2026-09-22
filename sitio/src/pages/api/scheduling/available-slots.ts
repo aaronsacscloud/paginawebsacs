@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getFreeBusy } from '../../../lib/google-calendar';
+import { horarioDelTipo, ESTADOS_OCUPAN } from '../../../lib/scheduling/horario';
 
 export const prerender = false;
 
@@ -163,14 +164,11 @@ export const GET: APIRoute = async ({ url }) => {
   const hostsData = new Map<string, HostData>();
 
   for (const hostId of hostIds) {
-    // Load schedule
-    const { data: schedules } = await supabase
-      .from('availability_schedules')
-      .select('*')
-      .eq('team_member_id', hostId)
-      .eq('activo', true)
-      .order('es_default', { ascending: false })
-      .limit(1);
+    /* Load schedule. Un tipo puede traer su PROPIO horario (schedule_id): la
+       consultoría se atiende en otras horas que las demos. Sólo si ese
+       horario es de este anfitrión; si no, o sin schedule_id, el default. */
+    const horario = await horarioDelTipo(eventType, hostId);
+    const schedules = horario ? [horario] : null;
 
     if (!schedules || schedules.length === 0) continue;
 
@@ -196,7 +194,7 @@ export const GET: APIRoute = async ({ url }) => {
       .from('bookings')
       .select('fecha, hora_inicio, hora_fin, event_type_id')
       .eq('host_id', hostId)
-      .eq('estado', 'confirmada')
+      .in('estado', ESTADOS_OCUPAN)
       .gte('fecha', from)
       .lte('fecha', to);
 

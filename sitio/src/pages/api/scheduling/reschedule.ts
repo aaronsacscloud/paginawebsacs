@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { horarioDelTipo, ESTADOS_OCUPAN } from '../../../lib/scheduling/horario';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
 import { sendEmail as enviarCorreo } from '../../../lib/email';
@@ -444,14 +445,9 @@ async function validateSlotForReschedule(
     max_dias_adelanto,
   } = eventType;
 
-  // Load host schedule
-  const { data: schedules } = await supabase
-    .from('availability_schedules')
-    .select('*')
-    .eq('team_member_id', owner_id)
-    .eq('activo', true)
-    .order('es_default', { ascending: false })
-    .limit(1);
+  // Load host schedule (el propio del tipo si lo tiene; ver lib/scheduling/horario.ts)
+  const horario = await horarioDelTipo(eventType, owner_id);
+  const schedules = horario ? [horario] : null;
 
   if (!schedules || schedules.length === 0) {
     return { available: false, reason: 'No availability schedule' };
@@ -539,7 +535,7 @@ async function validateSlotForReschedule(
     .select('hora_inicio, hora_fin')
     .eq('host_id', owner_id)
     .eq('fecha', fecha)
-    .eq('estado', 'confirmada')
+    .in('estado', ESTADOS_OCUPAN)
     .neq('id', excludeBookingId);
 
   if (dayBookings) {
