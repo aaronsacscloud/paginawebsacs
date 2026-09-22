@@ -137,7 +137,7 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 
 @media(max-width:720px){
   .shell{padding:12px 8px 50px}
-  .hero{padding:22px}.folio{margin-left:0;text-align:left;width:100%;margin-top:10px}
+  .hero{padding:22px}.hero .top{flex-wrap:wrap}.folio{margin-left:0;text-align:left;width:100%;margin-top:10px}
   .ancla{grid-template-columns:repeat(2,1fr)}.ancla>div:nth-child(3){border-left:none}
   .panel{padding:20px}.cta,.reac{margin-left:20px;margin-right:20px}
   .firmas{flex-direction:column;gap:16px;padding:22px 20px 4px}.pie{padding:13px 20px}
@@ -290,6 +290,9 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .paso .t{font-size:.86rem;font-weight:700}
 .paso .d{font-size:.79rem;color:var(--ink-2);line-height:1.6}
 .p.decide{margin-top:12px;font-size:.82rem}
+/* Cada bloque del reporte del lead necesita aire antes del siguiente título:
+   sin esto «Lo que pediste» quedaba pegado a la tabla de arriba. */
+.doc-lead .espejo + .st,.doc-lead .mods + .st{margin-top:28px}
 
 /* El cupón, al cierre. Más chico que el título del documento a propósito: es
    lo último que se lee, no lo primero que grita. */

@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { lifecycleDe } from '../../../lib/crm/lifecycle';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { minutaLlena, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
+import ReporteLead from './ReporteLead';
 import MinutaLead from './MinutaLead';
 import CuentaSacs from './CuentaSacs';
 import Cargando, { Corazones } from './ui/Cargando';
@@ -175,6 +176,8 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
   // La minuta que se está levantando o consultando. Vive aquí y no dentro del
   // renglón para que al guardar se pueda refrescar la ficha entera.
   const [minutaDe, setMinutaDe] = useState<any>(null);
+  // La junta de la que se está sacando el reporte para el lead.
+  const [reporteDe, setReporteDe] = useState<any>(null);
   const [c, setC] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -461,7 +464,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
                 <div style={D.h}>Las que ya hubo<span style={D.hr}>{(c.bookings || []).length}</span></div>
                 {(c.bookings || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Ninguna todavía.</div>}
                 {(c.bookings || []).map((b: any) => (
-                  <RenglonReunion key={b.id} b={b} onMinuta={() => setMinutaDe(b)} onCambio={cargar} />
+                  <RenglonReunion key={b.id} b={b} onMinuta={() => setMinutaDe(b)} onReporte={() => setReporteDe(b)} onCambio={cargar} />
                 ))}
               </div>
             </>
@@ -502,6 +505,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
             onClose={() => setMinutaDe(null)}
             onGuardado={() => { setMinutaDe(null); cargar(); }} />
         )}
+        {reporteDe && <ReporteLead reunion={reporteDe} lead={c} onCerrar={() => setReporteDe(null)} />}
         {registrando && (
           <ReunionPasada c={c} onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); flash('Reunión registrada'); cargar(); }} />
         )}
@@ -2272,7 +2276,7 @@ function LineaDeTiempo({ c }: any) {
  *
  * En cuanto se marca "se presentó" aparece el botón de levantar la minuta:
  * es el momento en que la persona todavía se acuerda de qué se habló. */
-function RenglonReunion({ b, onMinuta, onCambio }: any) {
+function RenglonReunion({ b, onMinuta, onReporte, onCambio }: any) {
   const [guardando, setGuardando] = useState(false);
   const e = normalizaEstado(b.estado);
   const esFutura = String(b.fecha || '') > new Date().toISOString().slice(0, 10);
@@ -2356,6 +2360,11 @@ function RenglonReunion({ b, onMinuta, onCambio }: any) {
         )}
         {tieneMinuta && (
           <button style={{ ...D.btnA, padding: '5px 11px', fontSize: '0.7rem' }} onClick={onMinuta}>Ver minuta</button>
+        )}
+        {/* El reporte para el lead sale de la minuta: sin ella no hay qué
+            devolverle. Verde → rosa, la piel del documento. */}
+        {tieneMinuta && (
+          <button style={{ ...D.btnP, padding: '5px 11px', fontSize: '0.7rem', background: 'linear-gradient(100deg,#1E8A63,#4FBF95 40%,#D9538E)' }} onClick={onReporte}>Generar reporte</button>
         )}
       </div>
     </div>

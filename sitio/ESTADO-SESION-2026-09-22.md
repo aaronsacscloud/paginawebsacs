@@ -29,7 +29,7 @@ Para retomar sin releer nada. Todo lo de abajo es del CRM (`sitio/`).
 
 ---
 
-## 2. Lo que está COMMITEADO Y SIN SUBIR
+## 2. Lo que estaba COMMITEADO Y SIN SUBIR (ya subió: está en origin/main)
 
 ```
 ffaca6f9  El reporte del lead: la migración, los hechos, el API y el documento
@@ -47,7 +47,10 @@ c7540441  Cola: el link de consultoría con horarios y calendario
 
 ## 3. LO QUE FALTA — por aquí se retoma
 
-### 3.1 · Terminar el reporte del lead  ← lo primero
+### 3.1 · Terminar el reporte del lead  ✅ HECHO (22-sep, commit local)
+Botón «Generar reporte» en cada junta con minuta (Reuniones del lead) → `ReporteLead.tsx` (descuento + vigencia → liga, copiar, WhatsApp, correo). `reportes/enviar.ts` ya sabe mandar el del lead (a su correo, actividad en su ficha). QA con Jeen hecho y borrado. **El correo real no se probó** (hubiera salido a la clienta).
+
+_Lo de abajo queda como registro:_
 Está hecho: la migración (corrida y verificada), `reunirLead()`, el API (`tipo:'lead'` + `booking_id`) y `_Lead.astro` con su piel `.doc-lead` verde→rosa.
 
 **Falta:**
