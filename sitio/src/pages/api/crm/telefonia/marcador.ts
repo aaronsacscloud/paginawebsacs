@@ -14,7 +14,7 @@ import {
   crearSesion, iniciarSesion, pausarSesion, terminarSesion, siguiente, saltar, tomar, latir, estadoSesion, listarItems, compromisosDeSesion, relanzar, recontar, getSesion,
   cancelarItem,
 } from '../../../../lib/telefonia/marcador';
-import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, agendarDesdeLlamada, RESULTADOS_CIERRE } from '../../../../lib/telefonia/cierre';
+import { aplicarCierre, responderEnvio, omitirEnvio, proponerCierre, agendarDesdeLlamada, RESULTADOS_CIERRE, opcionesCierre } from '../../../../lib/telefonia/cierre';
 import { tiposDeReunion, huecosProximos } from '../../../../lib/telefonia/agenda-huecos';
 import { vozConfigurada, configVoz, MODOS, type Modo } from '../../../../lib/telefonia/voz';
 
@@ -206,6 +206,11 @@ export const POST: APIRoute = async ({ request }) => {
          las 4 y era a las 5, o la dejabas mal o la hacías a mano después, con
          el siguiente ya timbrando. Aquí se cambia la hora, se quita lo que
          sobra y se aplica lo que queda. */
+      case 'cierre_opciones': {
+        const itemId = String(b.item || s.item_actual || '');
+        if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
+        return json({ ok: true, ...(await opcionesCierre(itemId)) });
+      }
       case 'cierre_editar': {
         const itemId = String(b.item || s.item_actual || '');
         if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);
@@ -226,6 +231,22 @@ export const POST: APIRoute = async ({ request }) => {
         }
         if (Array.isArray(c.quitar_datos)) p0.datos = (p0.datos || []).filter((_: any, i: number) => !c.quitar_datos.includes(i));
         if (c.etapa === null || c.etapa === 'null') p0.etapa = null;
+        /* «Mandarle también» (22-sep-2026): un contenido guardado más (nace
+           como cualquier envío de la IA: `listo`, y sale con su PDF) y las
+           plantillas extra, que se guardan en la propuesta y salen al aplicar. */
+        if (c.agregar_envio && UUID.test(String(c.agregar_envio))) {
+          const { data: k } = await supabase.from('tel_conocimiento').select('id, tema').eq('id', String(c.agregar_envio)).eq('estado', 'activo').maybeSingle();
+          const ya = (p0.envios || []).some((e: any) => e.conocimiento_id === k?.id && e.estado !== 'omitido');
+          if (k && !ya) {
+            const { data: its } = await supabase.from('tel_sesion_items').select('contact_id, conversation_id, telefono').eq('id', itemId).maybeSingle();
+            const { data: nuevo } = await supabase.from('tel_envios').insert({ item_id: itemId, contact_id: its?.contact_id || null, conversation_id: its?.conversation_id || null, telefono: its?.telefono || null, tema: k.tema, detalle: 'lo agregó el vendedor', conocimiento_id: k.id, estado: 'listo' }).select('id, tema, estado, conocimiento_id').maybeSingle();
+            if (nuevo) p0.envios = [...(p0.envios || []), { id: nuevo.id, tema: nuevo.tema, estado: nuevo.estado, conocimiento_id: nuevo.conocimiento_id, agregado: true }];
+          }
+        }
+        if (Array.isArray(c.extras)) {
+          p0.extras = c.extras.filter((x: any) => x && /^[a-z0-9_]{1,80}$/.test(String(x.nombre)))
+            .slice(0, 3).map((x: any) => ({ nombre: String(x.nombre), params: (Array.isArray(x.params) ? x.params : []).slice(0, 5).map((v: any) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, 300)) }));
+        }
         if (Array.isArray(c.quitar_envios)) {
           for (const id of c.quitar_envios) if (UUID.test(String(id))) await omitirEnvio(String(id));
           p0.envios = (p0.envios || []).map((e: any) => (c.quitar_envios.includes(e.id) ? { ...e, estado: 'omitido' } : e));

@@ -105,6 +105,8 @@ export type Propuesta = {
   resultado: string; nota: string; siguiente_paso: string; no_llamar?: boolean; no_llamar_evidencia?: string;
   objeciones?: Objecion[];
   compromisos: Compromiso[]; datos: DatoLead[]; envios: Envio[]; etapa?: string | null;
+  /** Lo que el vendedor agregó a mano al cierre (22-sep-2026): plantillas aprobadas que salen después de lo demás. */
+  extras?: { nombre: string; params: string[] }[];
 };
 
 const primerNombre = (n?: string | null) => String(n || '').trim().split(/\s+/)[0] || '';
@@ -470,6 +472,27 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
             });
           }
         } catch { /* apuntar el hueco no puede tumbar el cierre */ }
+      }
+    }
+
+    /* ══ LO QUE EL VENDEDOR AGREGÓ: «MANDARLE TAMBIÉN» (22-sep-2026) ════════
+       Pedido del dueño: además de lo que decidió la IA, poder sumar una o
+       varias plantillas del caso (seguimiento, «¿viste la info?», el PDF…) y
+       ver antes cómo le van a llegar. Salen AL FINAL, después de la
+       confirmación de la cita y de los PDF, en el orden en que se eligieron.
+       Por `mandarPlantilla`: espejadas en el inbox y con su respaldo de
+       utilidad si Meta no acepta la principal. */
+    if (Array.isArray(p.extras) && p.extras.length) {
+      const tel = telefonoWhatsApp(it.telefono);
+      if (!tel) hecho.push('las plantillas extra no salieron: el teléfono no sirve para WhatsApp');
+      else {
+        const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
+        for (const x of p.extras.slice(0, 3)) {
+          try {
+            const r = await mandarPlantilla({ telefono: tel, plantilla: x.nombre, params: (x.params || []).map(String), autor: o.autor || 'Llamada', metadata: { cierre_llamada: itemId, extra: true } });
+            hecho.push(r.enviado ? `plantilla «${x.nombre}»${r.via === 'respaldo' ? ' (salió su respaldo de utilidad)' : ''}` : `plantilla «${x.nombre}» no salió: ${r.motivo || 'sin motivo'}`);
+          } catch (err: any) { hecho.push(`plantilla «${x.nombre}» no salió: ${String(err?.message || err).slice(0, 100)}`); }
+        }
       }
     }
 
@@ -1024,4 +1047,32 @@ export async function entregarEnviosPendientes(conversationId: string): Promise<
     }
     return n;
   } catch { return 0; }
+}
+
+
+/* ══ «MANDARLE TAMBIÉN» · EL CATÁLOGO Y CÓMO SALDRÍA CADA COSA (22-sep-2026) ══
+   Lo que la cabina ofrece para sumar al cierre: el contenido guardado (con su
+   PDF) y las plantillas APROBADAS que tienen que ver con una llamada de venta
+   —no las de cobranza, ABM, winback, prueba o recordatorios automáticos—, con
+   su texto ya armado. Y si la ventana de 24 h está abierta, que decide si un
+   PDF va directo o con plantilla. */
+const PLANTILLA_DEL_CASO = /^(ti_info_|seguimiento_vio_info|solicitud_informacion_seguimiento|seguimiento_reunion|seguimiento_sigue_buscando|pendiente_retomar|demo_preparacion|demo_pregunta|contacto_seguimiento|llamada_saliente_|ti_seguimiento_|seguimiento_cotizacion$|cotizacion_lista)/;
+export async function opcionesCierre(itemId: string): Promise<{ conocimientos: any[]; plantillas: any[]; ventana_abierta: boolean; primer_nombre: string }> {
+  const { data: it } = await supabase.from('tel_sesion_items').select('id, nombre, telefono, conversation_id, contact_id').eq('id', itemId).maybeSingle();
+  const [{ data: kn }, { data: pls }] = await Promise.all([
+    supabase.from('tel_conocimiento').select('id, tema, pdf_url, texto').eq('estado', 'activo').order('veces_usado', { ascending: false }).limit(20),
+    supabase.from('wa_plantillas').select('nombre, categoria, grupo, cuerpo, header_tipo, header_media_url').eq('status', 'APPROVED').limit(300),
+  ]);
+  let conv: any = null;
+  if (it?.conversation_id) conv = (await supabase.from('wa_conversaciones').select('id, ventanas, ultimo_entrante_at, phone_number_id').eq('id', it.conversation_id).maybeSingle()).data;
+  else if (it?.contact_id) conv = (await supabase.from('wa_conversaciones').select('id, ventanas, ultimo_entrante_at, phone_number_id').eq('contact_id', it.contact_id).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle()).data;
+  const ventana = conv ? ventanaEnLinea(conv, conv.phone_number_id) : { abierta: false };
+  const vistas = new Set<string>();
+  const plantillas = (pls || []).filter((x: any) => PLANTILLA_DEL_CASO.test(String(x.nombre)) && !vistas.has(x.nombre) && vistas.add(x.nombre))
+    .map((x: any) => ({ nombre: x.nombre, categoria: x.categoria, cuerpo: x.cuerpo, variables: (String(x.cuerpo || '').match(/\{\{\d+\}\}/g) || []).length, con_documento: x.header_tipo === 'DOCUMENT' || x.header_tipo === 'IMAGE' }))
+    .sort((a: any, b: any) => Number(/^ti_info_/.test(b.nombre)) - Number(/^ti_info_/.test(a.nombre)) || a.nombre.localeCompare(b.nombre));
+  return {
+    conocimientos: (kn || []).map((k: any) => ({ id: k.id, tema: k.tema, pdf: !!k.pdf_url || !!k.texto })),
+    plantillas, ventana_abierta: !!ventana.abierta, primer_nombre: primerNombre(it?.nombre) || '',
+  };
 }

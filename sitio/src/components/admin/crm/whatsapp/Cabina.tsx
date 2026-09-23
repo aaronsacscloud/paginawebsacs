@@ -172,6 +172,120 @@ function AgendarEnCierre({ contactId, nombre, telefono, tipos, movil }: { contac
   );
 }
 
+
+/* ══ «MANDARLE TAMBIÉN» Y «ASÍ LE VAN A LLEGAR» (22-sep-2026) ═══════════════
+   Pedido del dueño: «sobre lo que ya decides que vas a enviar, poder agregar
+   algo extra —el PDF, una plantilla relacionada al caso— y que se vea cómo el
+   sistema va a enviar los mensajes una vez que acepte». Lo agregado se guarda
+   en la propuesta (`cierre_editar`) y sale al aplicar el cierre, después de lo
+   que decidió la IA. La vista previa es la MISMA lógica que el envío: ventana
+   abierta → directo; cerrada → plantilla (y un PDF sin plantilla espera). */
+const PARAM_INFO = 'como quedamos en la llamada, aquí tienes la información de Sacs.';
+const armarPlantilla = (cuerpo: string, primer: string, params: string[]) =>
+  String(cuerpo || '').replace(/\{\{(\d+)\}\}/g, (_m, n) => Number(n) === 1 ? (primer || 'qué tal') : (params[Number(n) - 2] || `[dato ${n}]`));
+function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, params, setParams, editar, ocupado }: any) {
+  useEffect(() => { if (propuesta) cargar(); }, [item?.id, !!propuesta]);
+  if (!propuesta) return null;
+  const primer = opc?.primer_nombre || String(item?.nombre || '').split(' ')[0] || '';
+  const extras: { nombre: string; params: string[] }[] = propuesta.extras || [];
+  const pl = (n: string) => (opc?.plantillas || []).find((x: any) => x.nombre === n);
+  const envios = (propuesta.envios || []).filter((e: any) => ['listo', 'pendiente_ventana'].includes(String(e.estado)));
+  const kInfo = (opc?.conocimientos || []).find((k: any) => /informaci/i.test(k.tema));
+  const infoPl = pl('ti_info_marketing_v1') || pl('ti_info_utility_v1');
+  // Vista previa: un renglón por mensaje, en el orden en que salen.
+  const pasos: { que: string; como: string; texto?: string }[] = [];
+  for (const cp of propuesta.compromisos || []) {
+    if (cp.tipo === 'reunion') pasos.push({ que: `Confirmación de la reunión (${cp.reunion_tipo || 'reunión'}) · ${cp.fecha} ${cp.hora}`, como: 'WhatsApp con la liga de Meet + invitación de calendario por correo' });
+  }
+  const vistos = new Set<string>();
+  for (const e of envios) {
+    const clave = e.conocimiento_id || e.id;
+    if (vistos.has(clave)) continue; vistos.add(clave);
+    const esInfo = kInfo && e.conocimiento_id === kInfo.id;
+    if (opc?.ventana_abierta) pasos.push({ que: `PDF «${e.tema}»`, como: 'por WhatsApp, directo (la ventana de 24 h está abierta)', texto: esInfo ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo la información de Sacs. Todo a detalle en https://www.sacscloud.com — cualquier duda, con gusto.` : `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(e.tema).toLowerCase()}. Cualquier duda, con gusto.` });
+    else if (esInfo && infoPl) pasos.push({ que: `PDF «${e.tema}»`, como: `con la plantilla ${infoPl.nombre} (ventana cerrada), el PDF va adjunto`, texto: armarPlantilla(infoPl.cuerpo, primer, [PARAM_INFO]) });
+    else pasos.push({ que: `PDF «${e.tema}»`, como: 'espera: sale en cuanto conteste (ventana cerrada y sin plantilla para este contenido)' });
+  }
+  for (const x of extras) { const p0 = pl(x.nombre); pasos.push({ que: `Plantilla ${x.nombre}`, como: p0?.con_documento ? 'plantilla con su archivo' : 'plantilla', texto: p0 ? armarPlantilla(p0.cuerpo, primer, x.params) : undefined }); }
+  const hayLlamada = (propuesta.compromisos || []).some((c: any) => c.tipo === 'llamada');
+
+  const ponerExtras = (lista: { nombre: string; params: string[] }[]) => editar({ extras: lista });
+  const agregarPlantilla = (n: string) => {
+    const p0 = pl(n); const nv = Math.max(0, (p0?.variables || 1) - 1);
+    const vals = Array.from({ length: nv }, (_, i) => params[`${n}:${i}`] || (/^ti_info_/.test(n) ? PARAM_INFO : ''));
+    ponerExtras([...extras.filter(x => x.nombre !== n), { nombre: n, params: vals }].slice(0, 3));
+  };
+  const chip: any = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: C.g700 };
+
+  return (
+    <div style={{ display: 'grid', gap: 8, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: C.g500, flex: 1 }}>Así le van a llegar los mensajes</span>
+        <button onClick={() => setAbierto(!abierto)} disabled={ocupado} style={{ ...chip, background: abierto ? C.moradoAgua : '#fff', color: C.moradoTinta, borderColor: '#ddd6fb' }}>{abierto ? 'Listo' : '＋ Mandarle también'}</button>
+      </div>
+      {!opc && <div style={{ fontSize: 11.5, color: C.g400 }}>Revisando la ventana de WhatsApp…</div>}
+      {opc && !pasos.length && (
+        <div style={{ fontSize: 12, color: C.g500 }}>{hayLlamada ? 'Con esto no le llega ningún mensaje: la llamada de vuelta queda en tu agenda y en la lista de ese día.' : 'Con esto no le llega ningún mensaje.'}</div>
+      )}
+      {pasos.map((p, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '22px 1fr', gap: 8, alignItems: 'start' }}>
+          <span style={{ width: 22, height: 22, borderRadius: 999, background: C.moradoAgua, color: C.moradoTinta, fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.g900 }}>{p.que}</div>
+            <div style={{ fontSize: 11, color: C.g500 }}>{p.como}</div>
+            {p.texto && <div style={{ marginTop: 4, fontSize: 12, color: C.g700, background: '#E7F6EE', borderRadius: '10px 10px 10px 2px', padding: '7px 10px', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{p.texto}</div>}
+          </div>
+        </div>
+      ))}
+      {hayLlamada && pasos.length > 0 && <div style={{ fontSize: 11, color: C.g400 }}>La llamada de vuelta no le manda mensaje: queda en tu agenda y en la lista de ese día.</div>}
+      {extras.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {extras.map(x => <button key={x.nombre} onClick={() => ponerExtras(extras.filter(y => y.nombre !== x.nombre))} disabled={ocupado} style={{ ...chip, color: '#C0554E' }}>Quitar {x.nombre}</button>)}
+        </div>
+      )}
+      {abierto && opc && (
+        <div style={{ display: 'grid', gap: 8, borderTop: `1px solid ${C.g100}`, paddingTop: 8 }}>
+          {(opc.conocimientos || []).length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Contenido con PDF</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {opc.conocimientos.map((k: any) => {
+                  const ya = envios.some((e: any) => e.conocimiento_id === k.id);
+                  return <button key={k.id} disabled={ya || ocupado} onClick={() => editar({ agregar_envio: k.id })} style={{ ...chip, opacity: ya ? .5 : 1 }}>{ya ? '✓ ' : '＋ '}{k.tema}</button>;
+                })}
+              </div>
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Plantillas del caso (máximo 3)</div>
+            <div style={{ display: 'grid', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
+              {(opc.plantillas || []).map((t: any) => {
+                const ya = extras.some(x => x.nombre === t.nombre);
+                const nv = Math.max(0, t.variables - 1);
+                return (
+                  <div key={t.nombre} style={{ border: `1px solid ${ya ? '#c9bcf7' : C.g200}`, background: ya ? '#F6F4FF' : '#fff', borderRadius: 9, padding: '7px 9px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <b style={{ fontSize: 12, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nombre}</b>
+                      <span style={{ fontSize: 10, color: C.g400 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}</span>
+                      <button disabled={ocupado || (!ya && extras.length >= 3)} onClick={() => ya ? ponerExtras(extras.filter(x => x.nombre !== t.nombre)) : agregarPlantilla(t.nombre)} style={{ ...chip, padding: '3px 9px', color: ya ? '#C0554E' : C.moradoTinta }}>{ya ? 'Quitar' : 'Agregar'}</button>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.g500, marginTop: 3, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{armarPlantilla(t.cuerpo, primer, Array.from({ length: nv }, (_, i) => params[`${t.nombre}:${i}`] || (/^ti_info_/.test(t.nombre) ? PARAM_INFO : '')))}</div>
+                    {nv > 0 && !ya && Array.from({ length: nv }, (_, i) => (
+                      <input key={i} value={params[`${t.nombre}:${i}`] ?? (/^ti_info_/.test(t.nombre) ? PARAM_INFO : '')} placeholder={`Dato ${i + 2} de la plantilla`}
+                        onChange={e => setParams((v: any) => ({ ...v, [`${t.nombre}:${i}`]: e.target.value }))}
+                        style={{ marginTop: 5, width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 7, padding: '5px 8px', fontSize: 12, fontFamily: 'inherit' }} />
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAbrirConversacion, onCerrar, movil }: Props) {
   /* 🔴 BUG (22-sep-2026, reportado por el dueño): armaba una lista nueva con
      filtros, le daba «Llamar a estos 82» y la cabina abría OTRA jornada — la
@@ -805,6 +919,11 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     return rapida('volver_a_llamar', { fecha, hora });
   };
   const editarCierre = (cambios: any) => accion('cierre_editar', { item: actual?.id, cambios });
+  /* «Mandarle también» + «Así le van a llegar» (22-sep-2026). El catálogo se
+     pide una vez por llamada, cuando ya hay propuesta que ampliar. */
+  const [opcCierre, setOpcCierre] = useState<{ item: string; conocimientos: any[]; plantillas: any[]; ventana_abierta: boolean; primer_nombre: string } | null>(null);
+  const [extrasAbierto, setExtrasAbierto] = useState(false);
+  const [paramsExtra, setParamsExtra] = useState<Record<string, string>>({});
   const descartarPropuesta = async () => {
     if (!(await confirmar('¿Tirar lo que propuso la IA? Se cierra la llamada con lo que tú digas.'))) return;
     await accion('cierre_descartar', { item: actual?.id });
@@ -1913,6 +2032,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                             ))}
                           </div>
                         )}
+                        <ExtrasCierre propuesta={propuesta} item={actual} opc={opcCierre?.item === actual?.id ? opcCierre : null}
+                          cargar={async () => { if (opcCierre?.item === actual?.id) return; const r = await post({ accion: 'cierre_opciones', id: sesionId, item: actual?.id }); if (r?.ok) setOpcCierre({ item: actual.id, ...r }); }}
+                          abierto={extrasAbierto} setAbierto={setExtrasAbierto} params={paramsExtra} setParams={setParamsExtra}
+                          editar={editarCierre} ocupado={!!ocupado} />
                         {enviosAbiertos.map((e: any) => (
                           <div key={e.id} style={{ background: '#fff', border: '1px solid #f3d9a4', borderRadius: 9, padding: '10px 12px', display: 'grid', gap: 6 }}>
                             <b style={{ fontSize: 12.5, color: '#9a6a10' }}>Quedaste de mandarle {e.tema}. ¿Qué le mandamos?</b>
