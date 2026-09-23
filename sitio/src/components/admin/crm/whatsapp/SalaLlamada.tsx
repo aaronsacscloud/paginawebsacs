@@ -373,6 +373,12 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             )}
             {/* Lo mismo que la cabina dice en grande (22-sep-2026): que esta
                 llamada cumple una promesa, o que el lead ya se había descartado. */}
+            {/* Lo primero que pregunta casi todo el mundo: «¿de dónde?». */}
+            {ctx?.origen?.detalle && (
+              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 700, background: '#F6F4FF', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px', lineHeight: 1.45 }}>
+                ¿De dónde nos conoce? {ctx.origen.detalle}
+              </span>
+            )}
             {ctx?.seguimiento && (
               <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 800, background: '#EEECFE', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px' }}>
                 Llamada de seguimiento: le prometiste llamarle ({ctx.seguimiento.hora}). Al colgar queda cumplida.

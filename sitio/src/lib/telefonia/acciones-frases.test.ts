@@ -27,6 +27,10 @@ const caza = (f: string, id: string) => es(ids(f).includes(id), true, `«${f}» 
 const noCaza = (f: string, id: string) => es(ids(f).includes(id), false, `«${f}» NO debe ser ${id}`);
 
 // ══ 1 · «Mándame la info» — el caso que reportó el dueño ═══════════════════
+// «¿De dónde?» / «yo no me registré»: 20 de 68 llamadas reales (22-sep-2026).
+caza('de donde perdon', 'quien_soy');
+caza('este no, yo no me registre', 'quien_soy');
+caza('de parte de quien', 'quien_soy');
 caza('mandame la informacion por whatsapp', 'mandar_info');
 caza('me puedes mandar la info', 'mandar_info');
 caza('si, pasame la informacion', 'mandar_info');

@@ -90,6 +90,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     hay: true,
     contactId: cid || null,
     seguimiento, descalificado,
+    /* «¿De dónde nos conoce?» también en la llamada manual (22-sep-2026). */
+    origen: await (async () => { try { const { origenDelLead } = await import('../../../../lib/telefonia/origen'); return await origenDelLead({ contact_id: cid, telefono: `+52${limpio}` }); } catch { return null; } })(),
     /* La marca en grande es lo primero que pidió: es lo que dice en voz alta
        quien contesta, y equivocarla en el saludo cuesta la llamada. */
     marca: (ficha as any)?.marca || emp?.nombre_comercial || emp?.nombre || null,

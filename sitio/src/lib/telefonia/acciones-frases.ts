@@ -16,7 +16,7 @@ import { sinAcentos } from './oidos';
 
 export type AccionId =
   | 'mandar_cotizacion' | 'mandar_material' | 'mandar_info' | 'volver_a_llamar'
-  | 'agendar_demo' | 'ahorita_no' | 'soporte' | 'otro_contacto' | 'corregir_dato' | 'no_llamar';
+  | 'agendar_demo' | 'ahorita_no' | 'soporte' | 'otro_contacto' | 'corregir_dato' | 'no_llamar' | 'quien_soy';
 
 /** «El jueves a las 4», «en una hora», «mañana temprano» → fecha y hora reales.
  *  Sin esto, «volver a llamar» es una promesa sin fecha: la que ya nos costó
@@ -101,6 +101,20 @@ export const PATRONES: { id: AccionId; res: RegExp[] }[] = [
     res: [
       /(mandame|enviame|pasame|mandeme|envieme).{0,25}(el |la |los |las )?(catalogo|video|manual|demo grabada|presentacion|ficha tecnica|folleto)/,
       /me (puedes|podrias) (mandar|enviar|pasar).{0,25}(el |la )?(catalogo|video|manual|presentacion|liga|link)/,
+    ],
+  },
+  /* «¿De dónde? / yo no me registré»: el caso más común en las llamadas
+     reales (22-sep-2026, 20 de 68). Se SUGIERE mandarle quién eres por
+     WhatsApp mientras hablas; no sale solo (auto: false en acciones.ts). */
+  {
+    id: 'quien_soy',
+    res: [
+      // «¿De dónde, perdón?» es LA frase (se oye en casi todas): sólo sugiere un botón, no manda nada.
+      /\bde donde\b/,
+      /(yo )?no (me )?(registre|solicite|pedi|hice ningun registro)/,
+      /como (consiguio|obtuvo|consiguieron|tiene|tienen) mi (numero|telefono)/,
+      /(de que|que) empresa (es|son|dice)/,
+      /de parte de quien/,
     ],
   },
   {

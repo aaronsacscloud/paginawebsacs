@@ -362,8 +362,14 @@ export async function prepararFichas(sesionId: string) {
           partes.push(`Última llamada (${String(ll.started_at).slice(0, 10)}): ${buzon ? 'cayó al buzón' : ll.estado === 'terminada' && Number(ll.duracion_seg) > 0 ? `hablaron ${Math.round(Number(ll.duracion_seg) / 60)} min` : 'no contestó'}${ll.siguiente_paso ? ` · siguiente paso: ${ll.siguiente_paso}` : ''}`);
         }
       }
+      /* «¿DE DÓNDE NOS CONOCE?» (22-sep-2026): el caso más común en las
+         llamadas reales (29 %) es «¿de dónde?» / «yo no me registré». Va
+         PRIMERO en la ficha y DENTRO del saludo, con fecha y sus palabras. */
+      let origen: any = null;
+      try { const { origenDelLead } = await import('./origen'); origen = await origenDelLead({ contact_id: it.contact_id, telefono: it.telefono }); } catch { /* sin origen, ficha igual */ }
+      if (origen?.detalle) partes.unshift(`De dónde viene: ${origen.detalle}`);
       const primer = String(it.nombre || ct?.nombre || '').trim().split(/\s+/)[0];
-      const apertura = `${primer ? `Hola ${primer}, ` : 'Hola, '}${s?.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamo de Sacscloud'}${s?.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}.`;
+      const apertura = `${primer ? `Hola ${primer}, ` : 'Hola, '}${s?.presentacion_nombre ? `soy ${s.presentacion_nombre}` : 'le llamo de Sacscloud'}${s?.presentacion_motivo ? `, ${s.presentacion_motivo}` : ''}.${origen?.corta ? ` Te llamo porque ${origen.corta}${origen.primer_mensaje?.texto ? `: «${origen.primer_mensaje.texto.slice(0, 70)}»` : ''}.` : ''}`;
       await supabase.from('tel_sesion_items').update({ resumen: partes.join('\n') || 'Sin historial en el CRM.', apertura }).eq('id', it.id);
     } catch { /* una ficha que falle no detiene la lista */ }
   }

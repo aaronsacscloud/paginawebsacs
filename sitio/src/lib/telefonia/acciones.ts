@@ -80,6 +80,41 @@ type Accion = {
  *  hay ni una ni otra deja la tarea con el PDF listo. Y dice cuál de las tres
  *  pasó, que es justo lo que el dueño pidió saber: «el cliente ve cosas
  *  distintas del otro lado». */
+/* ══ «¿QUIÉN ME HABLA?» → UN WHATSAPP CON QUIÉN ERES (22-sep-2026) ═════════
+   Mientras hablas le llega tu nombre, Sacs, la liga y POR QUÉ le llamas —con
+   la fecha y sus palabras si las hay («el 23 de agosto nos escribiste…»)—.
+   Con la ventana de 24 h abierta va como texto; cerrada, con la plantilla
+   aprobada de «te marcamos para dar seguimiento» (y su respaldo). */
+async function mandarQuienSoy(ctx: Ctx): Promise<{ ok: boolean; dicho: string }> {
+  const { telefonoWhatsApp } = await import('../telefono');
+  const tel = telefonoWhatsApp(ctx.telefono);
+  if (!tel) return { ok: false, dicho: 'el teléfono no sirve para WhatsApp' };
+  const { origenDelLead } = await import('./origen');
+  const origen = await origenDelLead({ contact_id: ctx.contactId, telefono: tel }).catch(() => null);
+  let vendedor = '';
+  if (ctx.itemId) {
+    const { data: it } = await supabase.from('tel_sesion_items').select('tel_sesiones(presentacion_nombre)').eq('id', ctx.itemId).maybeSingle();
+    vendedor = String((it as any)?.tel_sesiones?.presentacion_nombre || '').replace(/ de sacs(cloud)?$/i, '');
+  }
+  if (!vendedor && ctx.userId) vendedor = String((await supabase.from('team_members').select('nombre').eq('id', ctx.userId).maybeSingle()).data?.nombre || '').split(' ')[0];
+  const primer = String(ctx.nombre || '').trim().split(/\s+/)[0];
+  const texto = `Hola${primer ? ` ${primer}` : ''}, soy ${vendedor || 'del equipo'} de Sacs, el sistema para tiendas y marcas de moda (www.sacscloud.com).${origen?.corta ? ` Te estoy llamando porque ${origen.corta}${origen.primer_mensaje?.texto ? `: «${origen.primer_mensaje.texto.slice(0, 80)}»` : ''}.` : ''} Este es mi WhatsApp, por si prefieres seguir por aquí.`;
+  const { data: conv } = await supabase.from('wa_conversaciones').select('id, ventanas, ultimo_entrante_at, phone_number_id')
+    .or([ctx.contactId ? `contact_id.eq.${ctx.contactId}` : null, `telefono.like.%${tel.replace(/\D/g, '').slice(-10)}`].filter(Boolean).join(',')).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+  const { ventanaEnLinea } = await import('../whatsapp/linea');
+  if (conv && ventanaEnLinea(conv as any, (conv as any).phone_number_id).abierta) {
+    const { enviarTexto } = await import('../whatsapp/kapso-api');
+    const { registrarMensaje } = await import('../whatsapp/espejo');
+    const r: any = await enviarTexto(tel, texto);
+    const wamid = r?.messages?.[0]?.id || null;
+    if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: tel, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'sent', autor: vendedor || 'Llamada', metadata: { origen: 'llamada', quien_soy: true } });
+    return { ok: !!wamid, dicho: wamid ? 'le llegó por WhatsApp quién eres y por qué le llamas' : 'no salió el WhatsApp' };
+  }
+  const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
+  const r = await mandarPlantilla({ telefono: tel, plantilla: 'llamada_saliente_util_v3', params: [primer || 'qué tal'], autor: vendedor || 'Llamada', metadata: { origen: 'llamada', quien_soy: true } });
+  return { ok: r.enviado, dicho: r.enviado ? 'le llegó por WhatsApp (plantilla, la ventana estaba cerrada)' : `no salió: ${r.motivo || 'sin motivo'}` };
+}
+
 async function mandarMaterial(ctx: Ctx, tema: string, detalle: string): Promise<{ ok: boolean; dicho: string; params?: any }> {
   const { telefonoWhatsApp } = await import('../telefono');
   const tel = telefonoWhatsApp(ctx.telefono) || ctx.telefono;
@@ -167,6 +202,13 @@ const CATALOGO: Accion[] = [
     para: 'Pidió algo concreto: el catálogo, un video, el manual, el precio de algo.',
     auto: true,
     ejecutar: (ctx, p) => mandarMaterial(ctx, p?.tema || 'lo que pidió en la llamada', p?.detalle || 'lo pidió en la llamada'),
+  },
+  {
+    id: 'quien_soy',
+    etiqueta: 'Mandarle quién soy por WhatsApp',
+    para: '«¿De dónde?» / «yo no me registré»: le llega tu nombre, Sacs, la liga y por qué le llamas.',
+    auto: false,
+    ejecutar: (ctx) => mandarQuienSoy(ctx),
   },
   {
     id: 'mandar_info',

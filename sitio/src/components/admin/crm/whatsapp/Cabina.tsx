@@ -2159,6 +2159,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button onClick={() => rapida('quien_soy')} disabled={!!ocupado} title="Le llega tu nombre, Sacs, la liga y por qué le llamas (con la fecha en que nos escribió)" style={btnS}>Mandarle quién soy</button>
                           <button onClick={() => rapida('mandar_info')} disabled={!!ocupado} style={btnS}>Mandarle la info</button>
                           <button onClick={() => rapida('soporte')} disabled={!!ocupado} style={btnS}>Es cliente: soporte</button>
                           {/* Sale de la lista Y no se le vuelve a llamar: las dos
