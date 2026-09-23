@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Sacs · Planes y precios</title>
+<style>
+  @font-face { font-family: 'Clash Display'; font-weight: 700; src: url('../../public/fonts/ClashDisplay-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 400; src: url('../../public/fonts/PlusJakartaSans-Regular.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 500; src: url('../../public/fonts/PlusJakartaSans-Medium.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 600; src: url('../../public/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 700; src: url('../../public/fonts/PlusJakartaSans-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 800; src: url('../../public/fonts/PlusJakartaSans-ExtraBold.woff2') format('woff2'); }
+
+  /* Tokens tomados de src/styles/global.css (los mismos de info-sacs.html) */
+  :root {
+    --ink: #1A1A1A; --ink-2: #4A4A4A; --ink-3: #6E6E6D;
+    --paper: #FAFAF8; --paper-2: #F5F3EE; --line: #D4D4D4;
+    --azul: #4B7BE5; --azul-texto: #3A62C4; --azul-claro: #7FA3F0;
+    --ambar: #E8A838; --teal: #2AB5A0;
+    --on-dark: rgba(255,255,255,.88); --on-dark-2: rgba(255,255,255,.62);
+    --m: 16mm;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; }
+  body { font-family: 'Jakarta', sans-serif; font-size: 13pt; line-height: 1.45; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; }
+  .page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: var(--paper); page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @media screen { .page { margin: 0 auto 8mm; } }
+  .wm { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--ink); }
+  .display { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.02; }
+  .kicker { font-size: 10.5pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--azul-texto); }
+  .folio { position: absolute; bottom: 9mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; font-size: 9.5pt; color: var(--ink-3); letter-spacing: .02em; }
+  .folio .wm { font-size: 13pt; color: var(--ink); }
+  .dark { background: var(--ink); color: #fff; }
+  .dark .folio { color: var(--on-dark-2); }
+  .dark .folio .wm { color: #fff; }
+  .foto { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---------- 1 · Portada ---------- */
+  .p1 .hero { position: absolute; inset: 0 0 auto 0; height: 170mm; }
+  .p1 .hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 30mm; background: linear-gradient(to bottom, rgba(250,250,248,0), var(--paper)); }
+  .p1 .tag { position: absolute; top: 12mm; left: var(--m); background: rgba(250,250,248,.92); padding: 2.2mm 4mm; border-radius: 99px; font-size: 10pt; font-weight: 600; letter-spacing: .04em; }
+  .p1 .bloque { position: absolute; left: var(--m); right: var(--m); top: 150mm; }
+  .p1 .wm { font-size: 80pt; }
+  .p1 h1 { margin-top: 4mm; font-size: 36pt; }
+  .p1 .precio { margin-top: 6mm; display: flex; align-items: baseline; gap: 4mm; flex-wrap: wrap; }
+  .p1 .precio .desde { font-size: 14pt; font-weight: 600; color: var(--ink-2); }
+  .p1 .precio .cifra { font-family: 'Clash Display'; font-size: 44pt; line-height: 1; color: var(--azul-texto); letter-spacing: -0.02em; }
+  .p1 .precio .per { font-size: 14pt; font-weight: 600; color: var(--ink-2); }
+  .p1 .sub { margin-top: 5mm; font-size: 14pt; color: var(--ink-2); max-width: 170mm; line-height: 1.45; }
+  .p1 .sub b { color: var(--ink); font-weight: 700; }
+  .p1 .pie { position: absolute; bottom: 12mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; align-items: baseline; font-size: 11pt; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 4mm; }
+  .p1 .pie a { color: var(--ink); font-weight: 700; }
+
+  /* ---------- 2 · Los cuatro planes ---------- */
+  .p2 .top { position: absolute; top: 14mm; left: var(--m); right: var(--m); }
+  .p2 h2 { margin-top: 2.5mm; font-size: 28pt; }
+  .p2 .guia { margin-top: 3mm; font-size: 13pt; line-height: 1.4; color: var(--ink-2); }
+  .p2 .guia b { color: var(--ink); }
+  .p2 .grid { position: absolute; left: var(--m); right: var(--m); top: 55mm; display: grid; grid-template-columns: 1fr 1fr; column-gap: 6mm; row-gap: 5mm; }
+  .plan { position: relative; height: 102mm; border-radius: 3.5mm; overflow: hidden; background: #fff; border: 1px solid var(--line); display: flex; flex-direction: column; }
+  .plan .ph { height: 29mm; flex: none; }
+  .plan .cuerpo { padding: 3.6mm 5mm 0; }
+  .plan .para { font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--azul-texto); }
+  .plan h3 { margin-top: 1mm; font-family: 'Clash Display'; font-size: 20pt; line-height: 1.02; letter-spacing: -0.01em; }
+  .plan .pr { margin-top: 2.4mm; display: flex; align-items: baseline; gap: 2mm; }
+  .plan .pr .cifra { font-family: 'Clash Display'; font-size: 24pt; line-height: 1; letter-spacing: -0.01em; }
+  .plan .pr .per { font-size: 11pt; color: var(--ink-3); font-weight: 600; }
+  .plan .anual { margin-top: 1.2mm; font-size: 11pt; font-weight: 600; color: var(--ink-2); }
+  .plan .anual b { color: var(--azul-texto); font-weight: 800; }
+  .plan p.inc { margin-top: 2.6mm; padding-top: 2.4mm; border-top: 1px solid var(--line); font-size: 12.6pt; line-height: 1.36; color: var(--ink-2); }
+  .plan p.inc b { color: var(--ink); }
+  .plan.pop { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .plan.pop .para { color: var(--ambar); }
+  .plan.pop .pr .per, .plan.pop .anual { color: var(--on-dark-2); }
+  .plan.pop .anual b { color: var(--ambar); }
+  .plan.pop p.inc { color: var(--on-dark); border-top-color: rgba(255,255,255,.16); }
+  .plan.pop p.inc b { color: #fff; }
+  .plan .badge { position: absolute; top: 3mm; right: 3mm; background: var(--ambar); color: var(--ink); font-family: 'Clash Display'; font-size: 11pt; padding: 1.2mm 3.4mm; border-radius: 99px; }
+  .p2 .nota { position: absolute; left: var(--m); right: var(--m); bottom: 17mm; font-size: 11.5pt; color: var(--ink-3); }
+  .p2 .nota b { color: var(--ink); }
+
+  /* ---------- 3 · Cómo se cuenta ---------- */
+  .p3 .top { position: absolute; top: 16mm; left: var(--m); right: var(--m); }
+  .p3 .kicker { color: var(--azul-claro); }
+  .p3 h2 { margin-top: 3mm; font-size: 31pt; }
+  .p3 .lead { margin-top: 4mm; font-size: 14pt; color: var(--on-dark); max-width: 176mm; }
+  .p3 .lead b { color: #fff; }
+  .p3 .cuenta { position: absolute; top: 76mm; left: var(--m); right: var(--m); }
+  .p3 .fichas { display: flex; align-items: center; gap: 2.4mm; }
+  .p3 .ficha { flex: 1; height: 26mm; border-radius: 3mm; overflow: hidden; position: relative; }
+  .p3 .ficha span { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.4mm 2mm; font-size: 10pt; font-weight: 700; background: linear-gradient(to top, rgba(26,26,26,.9), rgba(26,26,26,0)); }
+  .p3 .igual { font-family: 'Clash Display'; font-size: 22pt; color: var(--ambar); padding: 0 1mm; }
+  .p3 .total { flex: none; width: 34mm; height: 26mm; border-radius: 3mm; background: var(--ambar); color: var(--ink); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .p3 .total b { font-family: 'Clash Display'; font-size: 30pt; line-height: 1; }
+  .p3 .total span { font-size: 10.5pt; font-weight: 700; }
+  .p3 .ej { margin-top: 3.5mm; font-size: 12.5pt; color: var(--on-dark-2); }
+  .p3 .ej b { color: #fff; }
+  .p3 .reglas { position: absolute; top: 132mm; left: var(--m); right: var(--m); display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; row-gap: 7mm; }
+  .p3 .r .num { font-family: 'Clash Display'; font-size: 11pt; color: var(--ambar); letter-spacing: .06em; }
+  .p3 .r b { display: block; margin-top: 1mm; font-family: 'Clash Display'; font-size: 17pt; line-height: 1.08; letter-spacing: -0.005em; }
+  .p3 .r p { margin-top: 1.8mm; font-size: 13pt; line-height: 1.4; color: var(--on-dark); }
+  .p3 .todos { position: absolute; left: var(--m); right: var(--m); bottom: 22mm; border-top: 1px solid rgba(255,255,255,.14); padding-top: 4mm; font-size: 13pt; color: var(--on-dark); line-height: 1.45; }
+  .p3 .todos b { color: #fff; }
+
+  /* ---------- 4 · Contratar ---------- */
+  .p4 .hero { position: absolute; top: 0; left: 0; right: 0; height: 84mm; }
+  .p4 .bloque { position: absolute; left: var(--m); right: var(--m); top: 93mm; }
+  .p4 h2 { font-size: 30pt; margin-top: 2.5mm; }
+  .p4 .formas { margin-top: 5mm; display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 5mm; }
+  .p4 .f { border-top: 2px solid var(--ink); padding-top: 3mm; }
+  .p4 .f .num { font-family: 'Clash Display'; font-size: 11pt; color: var(--ambar); }
+  .p4 .f b { display: block; margin-top: .8mm; font-family: 'Clash Display'; font-size: 15.5pt; line-height: 1.1; }
+  .p4 .f p { margin-top: 1.6mm; font-size: 12.5pt; line-height: 1.38; color: var(--ink-2); }
+  .p4 .f p a { color: var(--azul-texto); font-weight: 700; }
+  .p4 .cierre { margin-top: 9mm; }
+  .p4 .cierre h3 { font-family: 'Clash Display'; font-size: 24pt; line-height: 1.04; letter-spacing: -0.01em; }
+  .p4 .cierre p { margin-top: 2.5mm; font-size: 13.5pt; color: var(--ink-2); }
+  .p4 .ctas { margin-top: 5mm; display: grid; row-gap: 3mm; }
+  .p4 .cta { display: flex; justify-content: space-between; align-items: center; border-radius: 3.5mm; padding: 3.8mm 6mm; border: 1.5px solid var(--ink); }
+  .p4 .cta.prim { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .p4 .cta .l { font-size: 10pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .p4 .cta .v { font-family: 'Clash Display'; font-size: 17pt; letter-spacing: -0.005em; line-height: 1.1; margin-top: .8mm; }
+  .p4 .cta .flecha { font-family: 'Clash Display'; font-size: 22pt; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · PORTADA ============ -->
+<section class="page p1">
+  <div class="hero"><img class="foto" src="../../public/images/proc-moda-5.webp?w=1600" style="object-position: 50% 35%" alt=""></div>
+  <div class="tag">Planes y precios · en pesos mexicanos</div>
+  <div class="bloque">
+    <div class="wm">Sacs</div>
+    <h1 class="display">Planes y precios de Sacs</h1>
+    <div class="precio"><span class="desde">Desde</span><span class="cifra">$527</span><span class="per">al mes por sucursal (plan anual)</span></div>
+    <p class="sub">Cuatro planes, y <b>cada uno incluye todo lo del anterior</b>. Pagas por tienda, no por usuario ni por canal. <b>Sin contratos de permanencia.</b></p>
+  </div>
+  <div class="pie"><span>Precios en MXN por sucursal, al mes.</span><a href="https://www.sacscloud.com/planes">www.sacscloud.com/planes</a></div>
+</section>
+
+<!-- ============ 2 · LOS CUATRO PLANES ============ -->
+<section class="page p2">
+  <div class="top">
+    <div class="kicker">Los cuatro planes</div>
+    <h2 class="display">Empieza con lo que necesitas hoy.</h2>
+    <p class="guia">¿Una tienda? <b>Vende.</b> ¿Varias? <b>Controla.</b> ¿Clientes que vuelven? <b>Fideliza.</b> ¿Que la IA trabaje contigo? <b>Automatiza.</b></p>
+  </div>
+  <div class="grid">
+    <div class="plan">
+      <div class="ph"><img class="foto" src="../../public/images/plan-vende.jpg?w=800" style="object-position: 50% 40%" alt=""></div>
+      <div class="cuerpo">
+        <div class="para">Tu primera tienda</div>
+        <h3>Vende</h3>
+        <div class="pr"><span class="cifra">$810</span><span class="per">/mes por sucursal</span></div>
+        <div class="anual">En plan anual: <b>$527/mes</b></div>
+        <p class="inc">Punto de venta <b>con y sin internet</b>, tallas y colores, apartados, tienda en línea y redes, y <b>20 folios de factura</b>. Para 1 sucursal.</p>
+      </div>
+    </div>
+    <div class="plan">
+      <div class="ph"><img class="foto" src="../../public/images/plan-controla.jpg?w=800" style="object-position: 50% 45%" alt=""></div>
+      <div class="cuerpo">
+        <div class="para">Varias tiendas</div>
+        <h3>Controla</h3>
+        <div class="pr"><span class="cifra">$1,215</span><span class="per">/mes por sucursal</span></div>
+        <div class="anual">En plan anual: <b>$790/mes</b></div>
+        <p class="inc">Todo Vende, más: <b>qué talla hay en cada tienda</b>, traspasos, CEDIS, conteo sin cerrar, compras de temporada y <b>50+ reportes</b>.</p>
+      </div>
+    </div>
+    <div class="plan pop">
+      <span class="badge">El más popular</span>
+      <div class="ph"><img class="foto" src="../../public/images/plan-fideliza.jpg?w=800" style="object-position: 50% 55%" alt=""></div>
+      <div class="cuerpo">
+        <div class="para">Clientes que vuelven</div>
+        <h3>Fideliza y Multiplica</h3>
+        <div class="pr"><span class="cifra">$1,890</span><span class="per">/mes por sucursal</span></div>
+        <div class="anual">En plan anual: <b>$1,229/mes</b></div>
+        <p class="inc">Todo Controla, más: <b>ficha de cliente</b>, monedero y puntos, portal, tarjetas de regalo, <b>correo y WhatsApp</b> a tus clientes y membresías.</p>
+      </div>
+    </div>
+    <div class="plan">
+      <div class="ph"><img class="foto" src="../../public/images/plan-automatiza.jpg?w=800" style="object-position: 50% 40%" alt=""></div>
+      <div class="cuerpo">
+        <div class="para">La IA trabaja contigo</div>
+        <h3>Automatiza</h3>
+        <div class="pr"><span class="cifra">$3,780</span><span class="per">/mes por sucursal</span></div>
+        <div class="anual">En plan anual: <b>$2,457/mes</b></div>
+        <p class="inc">Todo Fideliza, más: <b>especialista IA dedicado</b>, AXO copiloto, reglas automáticas, avisos, pronóstico de temporada e integraciones.</p>
+      </div>
+    </div>
+  </div>
+  <p class="nota"><b>Precios en pesos, por sucursal.</b> Pagando el año sale alrededor de <b>35 % más barato</b>.</p>
+  <div class="folio"><span class="wm">Sacs</span><span>Los cuatro planes · 2</span></div>
+</section>
+
+<!-- ============ 3 · CÓMO SE CUENTA ============ -->
+<section class="page p3 dark">
+  <div class="top">
+    <div class="kicker">Cómo se cuenta</div>
+    <h2 class="display">Pagas por cada lugar donde tienes inventario.</h2>
+    <p class="lead">Una tienda o un almacén con inventario es <b>una licencia</b>. Los usuarios, las cajas y los canales de venta no se cobran aparte.</p>
+  </div>
+
+  <div class="cuenta">
+    <div class="fichas">
+      <div class="ficha"><img class="foto" src="../../public/images/suite-moda-tienda.webp?w=500" style="object-position: 40% 50%" alt=""><span>Tienda 1</span></div>
+      <div class="ficha"><img class="foto" src="../../public/images/suite-multi-tienda.webp?w=500" style="object-position: 50% 50%" alt=""><span>Tienda 2</span></div>
+      <div class="ficha"><img class="foto" src="../../public/images/caso-moda-cambio.webp?w=500" style="object-position: 50% 50%" alt=""><span>Tienda 3</span></div>
+      <div class="ficha"><img class="foto" src="../../public/images/caso-moda-evento.webp?w=500" style="object-position: 50% 50%" alt=""><span>Tienda 4</span></div>
+      <div class="ficha"><img class="foto" src="../../public/images/suite-moda-cedis.webp?w=500" style="object-position: 50% 55%" alt=""><span>Almacén</span></div>
+      <span class="igual">=</span>
+      <div class="total"><b>5</b><span>licencias</span></div>
+    </div>
+    <p class="ej">Ejemplo: 4 tiendas y 1 almacén en <b>Controla anual</b> son 5 × $790 = <b>$3,950 al mes</b>.</p>
+  </div>
+
+  <div class="reglas">
+    <div class="r"><span class="num">01</span><b>Anual, cerca de 35 % menos</b><p>Mismo plan, mismo sistema. Si pagas el año, cada mes te sale más barato: Vende baja de $810 a $527.</p></div>
+    <div class="r"><span class="num">02</span><b>Sin contratos de permanencia</b><p>No firmas plazos forzosos. Te quedas porque te sirve.</p></div>
+    <div class="r"><span class="num">03</span><b>Tu precio se respeta</b><p>El precio que contratas se mantiene año con año. Solo cambia si creces: más sucursales o un plan más arriba.</p></div>
+    <div class="r"><span class="num">04</span><b>La migración la hacemos nosotros</b><p>Tu Excel o tu sistema anterior: tus modelos con tallas y colores, tus clientes y tu historial. Tú solo validas.</p></div>
+  </div>
+
+  <p class="todos"><b>En todos los planes:</b> usuarios y dispositivos ilimitados, modelos ilimitados con todas sus tallas y colores, espacio ilimitado para tus fotos, actualizaciones mensuales y soporte por chat de Sacs y WhatsApp.</p>
+  <div class="folio"><span class="wm">Sacs</span><span>Cómo se cuenta · 3</span></div>
+</section>
+
+<!-- ============ 4 · CÓMO CONTRATAR ============ -->
+<section class="page p4">
+  <div class="hero"><img class="foto" src="../../public/images/suite-multi-resuelto.webp?w=1500" style="object-position: 50% 40%" alt=""></div>
+  <div class="bloque">
+    <div class="kicker">Cómo contratar</div>
+    <h2 class="display">Tres formas de pagar. Eliges tú.</h2>
+    <div class="formas">
+      <div class="f"><span class="num">01</span><b>Con tarjeta</b><p>En <a href="https://www.sacscloud.com/planes">sacscloud.com/planes</a>. El acceso te llega a tu correo.</p></div>
+      <div class="f"><span class="num">02</span><b>Transferencia</b><p>Para el plan anual. Pídenos los datos por WhatsApp.</p></div>
+      <div class="f"><span class="num">03</span><b>Mercado Pago</b><p>Te enviamos una liga de pago de Mercado Pago.</p></div>
+    </div>
+    <div class="cierre">
+      <h3>Te lo aterrizamos a tu operación en 15 minutos.</h3>
+      <p>Nos cuentas cuántas tiendas tienes y cómo vendes, y te decimos qué plan te toca y cuánto pagarías.</p>
+      <div class="ctas">
+        <a class="cta prim" href="https://www.sacscloud.com/agendar/demo"><div><div class="l">Agenda tu demo</div><div class="v">sacscloud.com/agendar/demo</div></div><span class="flecha">→</span></a>
+        <a class="cta" href="https://wa.me/525593027234"><div><div class="l">WhatsApp de ventas</div><div class="v">+52 55 9302 7234</div></div><span class="flecha">→</span></a>
+        <a class="cta" href="https://www.sacscloud.com/planes"><div><div class="l">Todos los detalles</div><div class="v">www.sacscloud.com/planes</div></div><span class="flecha">→</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="folio"><span class="wm">Sacs</span><span>Cómo contratar · 4</span></div>
+</section>
+
+</body>
+</html>

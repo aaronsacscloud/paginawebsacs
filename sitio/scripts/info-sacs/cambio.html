@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Sacs · Cámbiate sin empezar de cero</title>
+<style>
+  @font-face { font-family: 'Clash Display'; font-weight: 700; src: url('../../public/fonts/ClashDisplay-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 400; src: url('../../public/fonts/PlusJakartaSans-Regular.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 500; src: url('../../public/fonts/PlusJakartaSans-Medium.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 600; src: url('../../public/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 700; src: url('../../public/fonts/PlusJakartaSans-Bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 800; src: url('../../public/fonts/PlusJakartaSans-ExtraBold.woff2') format('woff2'); }
+
+  /* Tokens tomados de src/styles/global.css (los mismos de info-sacs.html) */
+  :root {
+    --ink: #1A1A1A; --ink-2: #4A4A4A; --ink-3: #6E6E6D;
+    --paper: #FAFAF8; --paper-2: #F5F3EE; --line: #D4D4D4;
+    --azul: #4B7BE5; --azul-texto: #3A62C4; --azul-claro: #7FA3F0;
+    --ambar: #E8A838; --teal: #2AB5A0;
+    --on-dark: rgba(255,255,255,.88); --on-dark-2: rgba(255,255,255,.62);
+    --m: 16mm;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; }
+  body { font-family: 'Jakarta', sans-serif; font-size: 13pt; line-height: 1.45; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; }
+  .page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: var(--paper); page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @media screen { .page { margin: 0 auto 8mm; } }
+  .wm { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--ink); }
+  .display { font-family: 'Clash Display', sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.02; }
+  .kicker { font-size: 10.5pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--azul-texto); }
+  .folio { position: absolute; bottom: 9mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; font-size: 9.5pt; color: var(--ink-3); letter-spacing: .02em; }
+  .folio .wm { font-size: 13pt; color: var(--ink); }
+  .dark { background: var(--ink); color: #fff; }
+  .dark .folio { color: var(--on-dark-2); }
+  .dark .folio .wm { color: #fff; }
+  .foto { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ---------- 1 · Portada ---------- */
+  .p1 .hero { position: absolute; inset: 0 0 auto 0; height: 176mm; }
+  .p1 .hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 32mm; background: linear-gradient(to bottom, rgba(250,250,248,0), var(--paper)); }
+  .p1 .tag { position: absolute; top: 12mm; left: var(--m); background: rgba(250,250,248,.92); padding: 2.2mm 4mm; border-radius: 99px; font-size: 10pt; font-weight: 600; letter-spacing: .04em; }
+  .p1 .bloque { position: absolute; left: var(--m); right: var(--m); top: 156mm; }
+  .p1 .wm { font-size: 72pt; }
+  .p1 h1 { margin-top: 5mm; font-size: 34pt; max-width: 178mm; }
+  .p1 h1 span { color: var(--azul-texto); }
+  .p1 .sub { margin-top: 5mm; font-size: 14.5pt; color: var(--ink-2); max-width: 170mm; line-height: 1.45; }
+  .p1 .sub b { color: var(--ink); font-weight: 700; }
+  .p1 .pie { position: absolute; bottom: 12mm; left: var(--m); right: var(--m); display: flex; justify-content: space-between; align-items: baseline; font-size: 11pt; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 4mm; }
+  .p1 .pie a { color: var(--ink); font-weight: 700; }
+
+  /* ---------- 2 · La diferencia ---------- */
+  .p2 .banda { position: absolute; top: 0; left: 0; right: 0; height: 58mm; }
+  .p2 .head { position: absolute; top: 66mm; left: var(--m); right: var(--m); }
+  .p2 h2 { margin-top: 2.5mm; font-size: 28pt; }
+  .p2 .lead { margin-top: 3.5mm; font-size: 13.5pt; color: var(--ink-2); max-width: 178mm; }
+  .p2 .lead b { color: var(--ink); }
+  .p2 .dec { position: absolute; top: 128mm; left: var(--m); right: var(--m); display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; row-gap: 5.5mm; }
+  .p2 .d { border-top: 1px solid var(--line); padding-top: 3mm; }
+  .p2 .d .num { font-family: 'Clash Display'; font-size: 11pt; color: var(--ambar); letter-spacing: .06em; }
+  .p2 .d b { display: block; margin-top: .6mm; font-family: 'Clash Display'; font-size: 16.5pt; line-height: 1.08; }
+  .p2 .d p { margin-top: 1.6mm; font-size: 13pt; line-height: 1.38; color: var(--ink-2); }
+  .p2 .d p em { font-style: normal; color: var(--ink); font-weight: 700; }
+  .p2 .basta { position: absolute; left: var(--m); right: var(--m); bottom: 20mm; background: var(--paper-2); border-radius: 3.5mm; padding: 4mm 5.5mm; font-size: 12.8pt; line-height: 1.42; color: var(--ink-2); }
+  .p2 .basta b { color: var(--ink); }
+
+  /* ---------- 3 · Tabla ---------- */
+  .p3 .top { position: absolute; top: 15mm; left: var(--m); right: var(--m); }
+  .p3 h2 { margin-top: 2.5mm; font-size: 26pt; white-space: nowrap; }
+  .p3 .tabla { position: absolute; top: 38mm; left: var(--m); right: var(--m); }
+  .p3 .cab, .p3 .fila { display: grid; grid-template-columns: 34mm 1fr 1.12fr; column-gap: 5mm; }
+  .p3 .cab { font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); padding-bottom: 2mm; }
+  .p3 .cab .s { color: var(--azul-texto); }
+  .p3 .fila { border-top: 1px solid var(--line); padding: 2.6mm 0; align-items: start; }
+  .p3 .fila .t { font-family: 'Clash Display'; font-size: 13.5pt; line-height: 1.15; padding-top: .3mm; }
+  .p3 .fila .g { font-size: 12.8pt; line-height: 1.36; color: var(--ink-3); }
+  .p3 .fila .s { font-size: 12.8pt; line-height: 1.36; color: var(--ink); position: relative; padding-left: 4mm; }
+  .p3 .fila .s::before { content: ''; position: absolute; left: 0; top: 2mm; width: 1.8mm; height: 1.8mm; border-radius: 50%; background: var(--ambar); }
+  .p3 .fila .s b { font-weight: 700; }
+  .p3 .compara { position: absolute; left: var(--m); right: var(--m); bottom: 18mm; display: flex; justify-content: space-between; align-items: center; gap: 6mm; background: var(--ink); color: #fff; border-radius: 3.5mm; padding: 4.5mm 6mm; }
+  .p3 .compara .l { font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar); }
+  .p3 .compara p { margin-top: 1mm; font-size: 12.8pt; line-height: 1.38; color: var(--on-dark); }
+  .p3 .compara p b { color: #fff; }
+  .p3 .compara a { flex: none; font-family: 'Clash Display'; font-size: 14pt; color: #fff; border-bottom: 2px solid var(--ambar); padding-bottom: .5mm; }
+
+  /* ---------- 4 · Tres pasos ---------- */
+  .p4 .top { position: absolute; top: 15mm; left: var(--m); right: var(--m); }
+  .p4 .kicker { color: var(--azul-claro); }
+  .p4 h2 { margin-top: 2.5mm; font-size: 30pt; }
+  .p4 .lead { margin-top: 3.5mm; font-size: 13.5pt; color: var(--on-dark); max-width: 178mm; }
+  .p4 .lead b { color: #fff; }
+  .p4 .pasos { position: absolute; top: 69mm; left: var(--m); right: var(--m); }
+  .p4 .paso { display: grid; grid-template-columns: 58mm 1fr; column-gap: 7mm; height: 52mm; margin-bottom: 5mm; }
+  .p4 .paso .ph { border-radius: 3mm; overflow: hidden; position: relative; }
+  .p4 .paso .ph span { position: absolute; top: 2.5mm; left: 2.5mm; width: 11mm; height: 11mm; border-radius: 50%; background: var(--ambar); color: var(--ink); font-family: 'Clash Display'; font-size: 16pt; display: flex; align-items: center; justify-content: center; }
+  .p4 .paso .tx { align-self: center; }
+  .p4 .paso .cuando { font-size: 9.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar); }
+  .p4 .paso h3 { margin-top: 1.2mm; font-family: 'Clash Display'; font-size: 19pt; line-height: 1.05; letter-spacing: -0.01em; }
+  .p4 .paso p { margin-top: 2mm; font-size: 13pt; line-height: 1.4; color: var(--on-dark); }
+  .p4 .paso p b { color: #fff; }
+  .p4 .nota { position: absolute; left: var(--m); right: var(--m); bottom: 20mm; border-top: 1px solid rgba(255,255,255,.14); padding-top: 4mm; font-size: 12.5pt; color: var(--on-dark-2); }
+  .p4 .nota b { color: #fff; }
+
+  /* ---------- 5 · Cierre ---------- */
+  .p5 .hero { position: absolute; top: 0; left: 0; right: 0; height: 104mm; }
+  .p5 .bloque { position: absolute; left: var(--m); right: var(--m); top: 114mm; }
+  .p5 h2 { font-size: 36pt; line-height: 1; max-width: 176mm; margin-top: 2.5mm; }
+  .p5 .lead { margin-top: 4.5mm; font-size: 14pt; color: var(--ink-2); max-width: 170mm; }
+  .p5 .ctas { margin-top: 7mm; display: grid; row-gap: 3.2mm; }
+  .p5 .cta { display: flex; justify-content: space-between; align-items: center; border-radius: 3.5mm; padding: 4.2mm 6mm; border: 1.5px solid var(--ink); }
+  .p5 .cta.prim { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .p5 .cta .l { font-size: 10pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .p5 .cta .v { font-family: 'Clash Display'; font-size: 17pt; letter-spacing: -0.005em; line-height: 1.1; margin-top: .8mm; }
+  .p5 .cta .flecha { font-family: 'Clash Display'; font-size: 22pt; }
+  .p5 .hechos { margin-top: 7mm; display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 6mm; border-top: 1px solid var(--line); padding-top: 4.5mm; }
+  .p5 .hechos b { display: block; font-size: 12.5pt; font-weight: 700; line-height: 1.25; }
+  .p5 .hechos span { display: block; margin-top: 1mm; font-size: 11pt; color: var(--ink-3); line-height: 1.35; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · PORTADA ============ -->
+<section class="page p1">
+  <div class="hero"><img class="foto" src="../../public/images/suite-multi-hoy.webp?w=1600" style="object-position: 50% 35%" alt=""></div>
+  <div class="tag">Para quien ya tiene sistema (o Excel)</div>
+  <div class="bloque">
+    <div class="wm">Sacs</div>
+    <h1 class="display">¿Ya tienes sistema? <span>Cámbiate a Sacs</span> sin empezar de cero.</h1>
+    <p class="sub">Excel, Odoo, SICAR, Shopify o el que uses hoy: <b>tu catálogo, tus clientes y tu historial los pasamos nosotros</b>. Tú sigues vendiendo mientras tanto.</p>
+  </div>
+  <div class="pie"><span>Qué cambia, qué ganas y cómo es el cambio.</span><a href="https://www.sacscloud.com/comparar">www.sacscloud.com/comparar</a></div>
+</section>
+
+<!-- ============ 2 · LA DIFERENCIA ============ -->
+<section class="page p2">
+  <div class="banda"><img class="foto" src="../../public/images/proc-multi-1.webp?w=1500" style="object-position: 50% 45%" alt=""></div>
+  <div class="head">
+    <div class="kicker">La diferencia</div>
+    <h2 class="display">No está en capturar tallas, sino en lo que el sistema hace después.</h2>
+    <p class="lead">Casi todos los sistemas ya manejan tallas y colores. Un genérico te da el dato —vendiste tres M y una L— y <b>te deja a ti las decisiones</b>. Uno de moda te ayuda a tomarlas:</p>
+  </div>
+  <div class="dec">
+    <div class="d"><span class="num">01</span><b>Qué tallas recomprar</b><p>La talla que se agotó en la semana tres no «vendió poco»: vendió todo. Sacs lee la <em>curva de tallas</em>, no solo la venta.</p></div>
+    <div class="d"><span class="num">02</span><b>Qué mover entre tiendas</b><p>La talla que falta en una sucursal y sobra en otra: <em>traspasos</em> con escáner y nivelación entre tiendas.</p></div>
+    <div class="d"><span class="num">03</span><b>Qué no se está vendiendo</b><p>Veinte piezas pueden estar muertas si son puras tallas de las orillas. Sacs ve la <em>corrida</em>, no la cantidad.</p></div>
+    <div class="d"><span class="num">04</span><b>Cuándo rebajar</b><p>Sell-through por modelo, talla y tienda, y <em>utilidad por prenda</em> antes y después de remarcar.</p></div>
+  </div>
+  <p class="basta"><b>Siendo honestos: a veces un genérico te basta.</b> Si tienes una sola tienda sin planes de abrir otra, pocos estilos sin temporada o vendes casi todo en línea. Si tienes varias tiendas, compras por temporada, haces apartados o vendes mayoreo, ya te está costando dinero.</p>
+  <div class="folio"><span class="wm">Sacs</span><span>La diferencia · 2</span></div>
+</section>
+
+<!-- ============ 3 · TABLA ============ -->
+<section class="page p3">
+  <div class="top">
+    <div class="kicker">Lado a lado</div>
+    <h2 class="display">Sistema genérico vs. Sacs para moda</h2>
+  </div>
+  <div class="tabla">
+    <div class="cab"><span></span><span>Un sistema genérico</span><span class="s">Sacs, hecho para moda</span></div>
+    <div class="fila"><span class="t">Tallas y colores</span><span class="g">Los captura como variantes del producto.</span><span class="s"><b>Matriz talla × color</b> por modelo, con existencia de cada combinación.</span></div>
+    <div class="fila"><span class="t">Curva de tallas</span><span class="g">Te da la venta por talla; decidir qué recomprar es tuyo.</span><span class="s"><b>Resurtido por curva:</b> detecta el hueco en el núcleo de tallas.</span></div>
+    <div class="fila"><span class="t">Corridas</span><span class="g">Cuenta piezas: veinte piezas parecen inventario sano.</span><span class="s"><b>Aviso de corrida rota</b> y de prenda colgada, a tiempo.</span></div>
+    <div class="fila"><span class="t">Varias sucursales</span><span class="g">Hace el traspaso que tú le indiques.</span><span class="s"><b>Qué talla hay en cada tienda</b>; traspasos con escáner y reparto desde tu CEDIS.</span></div>
+    <div class="fila"><span class="t">Apartados</span><span class="g">Si no reserva la talla exacta, se puede vender dos veces.</span><span class="s"><b>Anticipo y abonos;</b> la pieza apartada se bloquea en todos los canales.</span></div>
+    <div class="fila"><span class="t">Piso y en línea</span><span class="g">Dos inventarios, o una integración que los sincroniza.</span><span class="s"><b>Un solo inventario</b> para piso, tienda en línea y WhatsApp.</span></div>
+    <div class="fila"><span class="t">Mayoreo</span><span class="g">Descuentos a mano en la caja.</span><span class="s"><b>Listas de precio</b> de menudeo y mayoreo sobre la misma existencia.</span></div>
+    <div class="fila"><span class="t">Factura CFDI</span><span class="g">Según el sistema; a veces con otra app aparte.</span><span class="s"><b>CFDI desde el punto de venta</b> y factura global.</span></div>
+  </div>
+  <div class="compara">
+    <div><div class="l">Compárate</div><p>Odoo, SICAR, Shopify POS, Pulpos, Loyverse, Square… <b>con lo que cada uno hace mejor.</b></p></div>
+    <a href="https://www.sacscloud.com/comparar">sacscloud.com/comparar →</a>
+  </div>
+  <div class="folio"><span class="wm">Sacs</span><span>Lado a lado · 3</span></div>
+</section>
+
+<!-- ============ 4 · TRES PASOS ============ -->
+<section class="page p4 dark">
+  <div class="top">
+    <div class="kicker">El cambio, en tres pasos</div>
+    <h2 class="display">No empiezas de cero, y no cierras la tienda.</h2>
+    <p class="lead">Mientras migramos tu información, <b>sigues vendiendo con tu sistema actual</b>. No pierdes un día de venta.</p>
+  </div>
+  <div class="pasos">
+    <div class="paso">
+      <div class="ph"><img class="foto" src="../../public/images/proc-moda-2.webp?w=700" style="object-position: 45% 40%" alt=""><span>1</span></div>
+      <div class="tx"><div class="cuando">15 minutos, en línea</div><h3>Una demo con tus productos</h3>
+        <p>Nos cuentas cómo vendes hoy y te enseñamos <b>tu operación en Sacs</b>: tus tallas, tus tiendas y tus canales. Te decimos qué plan te toca.</p></div>
+    </div>
+    <div class="paso">
+      <div class="ph"><img class="foto" src="../../public/images/proc-multi-2.webp?w=700" style="object-position: 50% 40%" alt=""><span>2</span></div>
+      <div class="tx"><div class="cuando">Lo hacemos nosotros</div><h3>Migramos tu información</h3>
+        <p>Excel, CSV o tu sistema actual. Cargamos <b>cada modelo con sus tallas y colores</b>, precios, clientes, apartados, proveedores e historial de venta. Tú solo validas.</p></div>
+    </div>
+    <div class="paso">
+      <div class="ph"><img class="foto" src="../../public/images/proc-multi-3.webp?w=700" style="object-position: 50% 40%" alt=""><span>3</span></div>
+      <div class="tx"><div class="cuando">Acompañado</div><h3>Arrancas con alguien al lado</h3>
+        <p>Sesión de arranque con un consultor y capacitación de tu equipo. Después, la <b>Academia</b> paso a paso dentro de Sacs y <b>soporte en la plataforma</b> por chat y WhatsApp.</p></div>
+    </div>
+  </div>
+  <p class="nota"><b>Y si un día te vas:</b> tu información sigue disponible 90 días y exportas tus modelos, tus clientes y tu historial cuando quieras.</p>
+  <div class="folio"><span class="wm">Sacs</span><span>El cambio · 4</span></div>
+</section>
+
+<!-- ============ 5 · CIERRE ============ -->
+<section class="page p5">
+  <div class="hero"><img class="foto" src="../../public/images/proc-moda-4.webp?w=1500" style="object-position: 50% 40%" alt=""></div>
+  <div class="bloque">
+    <div class="kicker">Siguiente paso</div>
+    <h2 class="display">Te lo aterrizamos a tu operación en 15 minutos.</h2>
+    <p class="lead">Trae lo que usas hoy —tu sistema o tu Excel— y te enseñamos cómo se vería tu tienda en Sacs, con tus productos.</p>
+    <div class="ctas">
+      <a class="cta prim" href="https://www.sacscloud.com/agendar/demo"><div><div class="l">Agenda tu demo</div><div class="v">sacscloud.com/agendar/demo</div></div><span class="flecha">→</span></a>
+      <a class="cta" href="https://wa.me/525593027234"><div><div class="l">WhatsApp de ventas</div><div class="v">+52 55 9302 7234</div></div><span class="flecha">→</span></a>
+      <a class="cta" href="https://www.sacscloud.com/comparar"><div><div class="l">Compara con tu sistema</div><div class="v">www.sacscloud.com/comparar</div></div><span class="flecha">→</span></a>
+    </div>
+    <div class="hechos">
+      <div><b>Sin contratos de permanencia</b><span>Pagas mes a mes o anual.</span></div>
+      <div><b>Migración incluida</b><span>La hacemos nosotros.</span></div>
+      <div><b>Corre en el navegador</b><span>PC, laptop, tablet o celular.</span></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

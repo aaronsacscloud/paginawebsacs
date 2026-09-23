@@ -40,7 +40,7 @@ select v.atajo, v.titulo, 'ventas', v.texto, v.media_url, 'document'
      'Hola {{primer_nombre}}, te comparto cómo es cambiarte a Sacs desde el sistema que ya usas: nosotros pasamos tus productos con tallas y colores, tus clientes y tu inventario, y no se detiene la venta.' || chr(10) || chr(10) || '¿Qué sistema usas hoy? Te digo exactamente qué migramos.',
      'https://www.sacscloud.com/info/sacs-cambiate.pdf'),
     ('demo', 'Tu demo y tu arranque con Sacs (PDF)',
-     'Hola {{primer_nombre}}, te comparto cómo es la demo de Sacs y cómo arrancas: la vemos con tus productos en pantalla, y después migramos tu información y capacitamos a tu equipo.' || chr(10) || chr(10) || '¿Qué día te acomoda para verla 30 minutos?',
+     'Hola {{primer_nombre}}, te comparto cómo es la demo de Sacs y cómo arrancas: la vemos con tus productos en pantalla, y después migramos tu información y capacitamos a tu equipo.' || chr(10) || chr(10) || '¿Qué día te acomoda para verla 15 minutos?',
      'https://www.sacscloud.com/info/sacs-demo-arranque.pdf')
   ) as v(atajo, titulo, texto, media_url)
  where not exists (select 1 from wa_respuestas r where r.atajo = v.atajo);
