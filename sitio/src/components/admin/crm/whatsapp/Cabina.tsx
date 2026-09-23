@@ -19,6 +19,7 @@ import { S } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { IcoTelefono, IcoMic, IcoReloj, IcoUsuario, IcoX } from './Iconos';
 import SelectorHorarios from './SelectorHorarios';
+import ResumenLista from './ResumenLista';
 import { telefonoLegible } from '../../../../lib/telefono';
 
 type Props = {
@@ -1348,6 +1349,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? '14px 14px 110px' : 22 }}>
           <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {errorBox}
+            {/* La lista como tablero (22-sep-2026): quién sigue sin contestar a
+                través de las rondas, «Ejecutar ronda N+1» y acciones masivas. */}
+            {sesionId && <ResumenLista sesionId={sesionId} post={post} movil={movil} confirmar={confirmar}
+              onRondaCreada={(id: string) => { setSesionId(id); setTab('lista'); cargarPrevias(); }} />}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {kpi('#4FBF95', 'Contestaron', s.contestadas, '#1E8A63', `${fmt(s.segundos_hablados || 0)} hablados`)}
               {kpi('#E8A838', 'Buzón', s.buzon, '#9a6a10')}

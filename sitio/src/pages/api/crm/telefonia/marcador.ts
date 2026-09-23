@@ -206,6 +206,30 @@ export const POST: APIRoute = async ({ request }) => {
          las 4 y era a las 5, o la dejabas mal o la hacías a mano después, con
          el siguiente ya timbrando. Aquí se cambia la hora, se quita lo que
          sobra y se aplica lo que queda. */
+      /* ── La lista como tablero (22-sep-2026): resumen por persona a través
+         de las rondas, ronda N+1 con los grupos elegidos y acciones masivas. */
+      case 'lista_resumen': {
+        const { resumenLista, plantillasDeLista } = await import('../../../../lib/telefonia/lista-resumen');
+        const [r, plantillas] = await Promise.all([resumenLista(s.id), plantillasDeLista()]);
+        return json({ ok: true, ...r, plantillas });
+      }
+      case 'lista_ronda': {
+        const { nuevaRonda } = await import('../../../../lib/telefonia/lista-resumen');
+        const grupos = (Array.isArray(b.grupos) ? b.grupos : ['nunca']).filter((g: any) => ['nunca', 'buzon', 'contestadora', 'sin_marcar', 'contesto'].includes(String(g)));
+        try {
+          const r = await nuevaRonda(s.id, user.id, grupos, Array.isArray(b.claves) ? b.claves.map(String).slice(0, 500) : undefined);
+          return json({ ok: true, ...r });
+        } catch (e: any) { return json({ error: String(e?.message || e) }, 400); }
+      }
+      case 'lista_masivo': {
+        const { accionMasiva } = await import('../../../../lib/telefonia/lista-resumen');
+        const accionM = String(b.que || '');
+        if (!['descalificar', 'no_llamar', 'plantilla'].includes(accionM)) return json({ error: 'Acción desconocida' }, 400);
+        try {
+          const r = await accionMasiva({ accion: accionM as any, personas: Array.isArray(b.personas) ? b.personas : [], plantilla: b.plantilla ? String(b.plantilla) : undefined, motivo: b.motivo ? String(b.motivo).slice(0, 200) : undefined, autor: (user as any)?.nombre || null });
+          return json({ ok: true, hechos: r.ok, fallas: r.fallas });
+        } catch (e: any) { return json({ error: String(e?.message || e) }, 400); }
+      }
       case 'cierre_opciones': {
         const itemId = String(b.item || s.item_actual || '');
         if (!UUID.test(itemId)) return json({ error: 'Falta el item' }, 400);

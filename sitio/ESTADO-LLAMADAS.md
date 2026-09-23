@@ -128,6 +128,18 @@ item en la sesión fantasma de `suelta.ts`):
   descalificó** (a mano sí se le puede llamar).
 - **Todavía NO está probado con una llamada real** (el dev local marca de verdad).
 
+## 7 · La lista como tablero: rondas y acciones masivas (22-sep-2026)
+
+`lib/telefonia/lista-resumen.ts` + `ResumenLista.tsx` (arriba de la pantalla
+final de la cabina). UNA LISTA = la sesión raíz + sus rondas (sesiones con
+`origen.lista_raiz` o, en las viejas, `origen.relanzar_de` = raíz). Por
+persona (mismo número) junta lo que pasó en cada ronda y la pone en UN grupo:
+acción > descalificado > contestó > buzón > contestadora > nunca > sin marcar
+> fuera. Acciones (`api/crm/telefonia/marcador`): `lista_resumen`,
+`lista_ronda` (sesión nueva «· ronda N» → pasa por todos los candados de
+`crearSesion`), `lista_masivo` (descalificar vía `aplicarRechazo`, no_llamar,
+plantilla de una variable con `mandarPlantilla`).
+
 ---
 
 ## LO QUE FALTA
