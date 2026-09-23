@@ -180,8 +180,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
      tres pantallas. Si el contacto YA tiene empresa, no se pregunta nada. */
   const [pideCuenta, setPideCuenta] = useState(false);
   const cambiarEtapa = async (nueva: string, companyId?: string) => {
-    if (!nueva || nueva === etapaId) return;
-    if (nueva === 'cliente' && !companyId && !(conv as any)?.contacts?.company_id && !(conv as any)?.company_id) { setPideCuenta(true); return; }
+    /* 🔴 22-sep-2026 (caso Miriam): antes sólo preguntaba si el contacto NO
+       tenía empresa. Pero a casi todo lead se le crea una al llegar —con su
+       propio nombre, sin plan ni suscripción— y entonces se marcaba cliente
+       colgado de esa cuenta vacía, no de la del cliente real. Ahora «Cliente»
+       pregunta SIEMPRE de qué cuenta es (la que ya tiene sale como opción), y
+       se puede volver a preguntar aunque ya esté en Cliente, para religarlo. */
+    if (!nueva) return;
+    if (nueva === 'cliente' && !companyId) { setPideCuenta(true); return; }
+    if (nueva === etapaId && nueva !== 'cliente') return;
     setEtapaOcupada(true);
     const r = await fetch('/api/crm/whatsapp/etapa', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -719,6 +726,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             </option>
           ))}
         </select>}
+        {/* Ya es cliente: se puede religar a otra cuenta (caso Miriam). */}
+        {conv.id && conv.contact_id && !mobile && etapaId === 'cliente' && (
+          <button onClick={() => setPideCuenta(true)} title="Ligar a otra cuenta de cliente"
+            style={{ border: 'none', background: 'none', color: C.g500, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '0 4px', textDecoration: 'underline' }}>
+            Cambiar cuenta
+          </button>
+        )}
         {(conv.id || conv.email_only_id) && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
@@ -1123,6 +1137,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       )}
       {pideCuenta && (
         <LigarCuenta nombre={nombre} onCerrar={() => setPideCuenta(false)}
+          actual={(conv as any)?.contacts?.company_id || (conv as any)?.company_id ? { id: (conv as any)?.contacts?.company_id || (conv as any)?.company_id, nombre: (conv as any)?.companies?.nombre_comercial || (conv as any)?.companies?.nombre || null } : null}
           onElegida={(id: string) => { setPideCuenta(false); cambiarEtapa('cliente', id); }} />
       )}
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string, forzar?: boolean) => {
@@ -1279,7 +1294,7 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
    solo sitio donde se busca una cuenta en todo el CRM. Dos buscadores con
    criterios distintos terminan encontrando cosas distintas para la misma
    palabra, y ahí es donde nacen los duplicados. */
-function LigarCuenta({ nombre, onCerrar, onElegida }: { nombre: string | null; onCerrar: () => void; onElegida: (companyId: string) => void }) {
+function LigarCuenta({ nombre, onCerrar, onElegida, actual }: { nombre: string | null; onCerrar: () => void; onElegida: (companyId: string) => void; actual?: { id: string; nombre: string | null } | null }) {
   const [q, setQ] = useState('');
   const [res, setRes] = useState<any[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -1326,6 +1341,15 @@ function LigarCuenta({ nombre, onCerrar, onElegida }: { nombre: string | null; o
           Un cliente sin cuenta no aparece en el ARR. Relaciónalo con la que ya existe —lo normal— o crea una nueva.
         </p>
 
+        {/* La cuenta que YA tiene, como una opción más y no como decisión tomada:
+            casi siempre es la que se le creó al llegar como lead, con su nombre. */}
+        {actual?.id && (
+          <button onClick={() => onElegida(actual.id)}
+            style={{ width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#F9FAFB', border: `1px dashed ${C.g200}`, borderRadius: 9, padding: '9px 11px', marginBottom: 12 }}>
+            <span style={{ fontSize: 12.5 }}>Dejarlo en su cuenta actual: <b>{actual.nombre || 'sin nombre'}</b></span>
+            <span style={{ display: 'block', fontSize: 11, color: C.g500, marginTop: 2 }}>Sólo si ésa ES la del cliente. Si es la que se le creó al llegar como lead, búscale abajo la cuenta real.</span>
+          </button>
+        )}
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#999' }}>Buscar la cuenta</span>
         <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Nombre de la tienda o del cliente…" style={{ ...campo, marginTop: 5 }} />
         <div style={{ display: 'grid', gap: 5, marginTop: 8 }}>
