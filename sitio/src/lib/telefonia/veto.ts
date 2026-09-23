@@ -132,3 +132,27 @@ export function accionDe(a: ConAccion, o: { contact_id?: string | null; telefono
 
 /** ¿La lista pidió incluirlos? Sólo si lo dice explícito; por omisión se excluyen. */
 export const incluyeConAccion = (qs?: string | null) => /(^|&)incluir_con_accion=1(&|$)/.test(String(qs || ''));
+
+/** Lo mismo que `cargarConAccion`, para UNA persona, justo antes de marcarle.
+ *  Pedido del dueño (22-sep-2026): «cuando existe una llamada de seguimiento o
+ *  una agenda, no debe aparecer en las siguientes rondas… ni en la actual; ya
+ *  no debe volverlo a llamar hasta esa fecha». Lista armada en la mañana y cita
+ *  puesta a mediodía: sin esto le volvía a sonar esa misma tarde. */
+export async function accionDeUno(o: { contact_id?: string | null; telefono?: string | null }): Promise<string | null> {
+  const t = tel10(o.telefono);
+  if (!o.contact_id && !t) return null;
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const porContacto = o.contact_id ? `contact_id.eq.${o.contact_id}` : null;
+  const [citas, tareas, etapa] = await Promise.all([
+    supabase.from('bookings').select('fecha').gte('fecha', hoy).not('estado', 'in', '("cancelada","no_asistio","reagendada")')
+      .or([porContacto, t ? `invitee_whatsapp.like.%${t}` : null].filter(Boolean).join(',')).order('fecha').limit(1),
+    supabase.from('ti_tareas').select('vence_at').eq('estado', 'pendiente').eq('payload->>de_llamada', 'true')
+      .or([porContacto, t ? `payload->>whatsapp.like.%${t}` : null].filter(Boolean).join(',')).order('vence_at').limit(1),
+    o.contact_id ? supabase.from('contacts').select('lifecycle_stage').eq('id', o.contact_id).maybeSingle() : Promise.resolve({ data: null as any, error: null }),
+  ]);
+  if (citas.error || tareas.error) throw new Error('No se pudo revisar si ya tiene una acción');
+  if ((citas.data || [])[0]) return `ya tiene reunión el ${(citas.data as any)[0].fecha}`;
+  if ((tareas.data || [])[0]) return `ya tiene un seguimiento para el ${String((tareas.data as any)[0].vence_at).slice(0, 10)}`;
+  const e = (etapa.data as any)?.lifecycle_stage;
+  return e && ETAPAS_CON_ACCION[e] ? ETAPAS_CON_ACCION[e] : null;
+}

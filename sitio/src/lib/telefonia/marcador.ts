@@ -21,7 +21,7 @@ import { callerIdSaliente } from './caller-id';
 import { juzgar, textoOido, dialogoOido, fraseClave, compilarReglas, type Oido, type ReglasExtra } from './oidos';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { registrarBitacoraLlamada } from './bitacora';
-import { cargarVetos, vetoDe, vetoDeUno, cargarConAccion, accionDe, incluyeConAccion } from './veto';
+import { cargarVetos, vetoDe, vetoDeUno, cargarConAccion, accionDe, incluyeConAccion, accionDeUno } from './veto';
 import { ladaDe, zonaDeLada, horaLocal, fechaHoraEn, instanteEnZona } from './zonas';
 // Fernanda al teléfono: el aviso a la central de voz se carga aparte (solo lo usan las sesiones con IA).
 const voz = () => import('./voz');
@@ -558,6 +558,18 @@ export async function marcarSiguiente(sesionId: string): Promise<{ ok: boolean; 
     if (veto) {
       await supabase.from('tel_sesion_items').update({ estado: 'excluido', motivo_exclusion: veto.texto, updated_at: ahora() }).eq('id', it.id).eq('estado', 'pendiente');
       continue;
+    }
+    /* Y si mientras tanto ya se le puso una ACCIÓN (seguimiento, cita,
+       oportunidad), tampoco: se le llama en SU fecha, no en esta ronda
+       (22-sep-2026). Pasan sólo las llamadas que SON esa promesa —la que
+       vuelve con su hora (`volver_at`) o la que trae su tarea— y las listas
+       que pidieron incluirlos a propósito. */
+    if (!it.volver_at && !it.compromiso_tarea_id && !(s.origen as any)?.seguimiento && !incluyeConAccion((s.origen as any)?.qs)) {
+      const accionYa = await accionDeUno({ contact_id: it.contact_id, telefono: it.telefono }).catch(() => null);
+      if (accionYa) {
+        await supabase.from('tel_sesion_items').update({ estado: 'excluido', motivo_exclusion: accionYa, updated_at: ahora() }).eq('id', it.id).eq('estado', 'pendiente');
+        continue;
+      }
     }
 
     // Reclamar el item y el turno de la sesión: si alguien más ganó, no pasa nada.
