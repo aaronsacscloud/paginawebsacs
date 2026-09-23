@@ -191,7 +191,7 @@ async function itemParaCompromiso(ctx: Ctx) {
 const CATALOGO: Accion[] = [
   {
     id: 'mandar_cotizacion',
-    etiqueta: 'Mandarle la cotización por WhatsApp',
+    etiqueta: 'Mandarle planes y precios (PDF)',
     para: 'Pidió precios o una cotización.',
     auto: true,
     ejecutar: (ctx, p) => mandarMaterial(ctx, p?.tema || 'la cotización de Sacs', p?.detalle || 'lo pidió en la llamada'),
@@ -209,6 +209,20 @@ const CATALOGO: Accion[] = [
     para: '«¿De dónde?» / «yo no me registré»: le llega tu nombre, Sacs, la liga y por qué le llamas.',
     auto: false,
     ejecutar: (ctx) => mandarQuienSoy(ctx),
+  },
+  {
+    id: 'mandar_cambio',
+    etiqueta: 'Mandarle «Cámbiate a Sacs» (PDF)',
+    para: '«Ya tengo sistema»: cómo se pasa sin empezar de cero, qué migramos y en cuánto.',
+    auto: false,
+    ejecutar: (ctx, p) => mandarMaterial(ctx, p?.tema || 'cómo cambiarte a Sacs desde tu sistema actual', p?.detalle || 'ya tiene sistema'),
+  },
+  {
+    id: 'mandar_demo',
+    etiqueta: 'Mandarle «Tu demo y tu arranque» (PDF)',
+    para: '«¿Cómo funciona?»: qué verá en la demo y cómo es el arranque paso a paso.',
+    auto: false,
+    ejecutar: (ctx, p) => mandarMaterial(ctx, p?.tema || 'cómo es la demo y cómo arrancas con Sacs', p?.detalle || 'preguntó cómo funciona'),
   },
   {
     id: 'mandar_info',

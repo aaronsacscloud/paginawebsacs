@@ -16,7 +16,8 @@ import { sinAcentos } from './oidos';
 
 export type AccionId =
   | 'mandar_cotizacion' | 'mandar_material' | 'mandar_info' | 'volver_a_llamar'
-  | 'agendar_demo' | 'ahorita_no' | 'soporte' | 'otro_contacto' | 'corregir_dato' | 'no_llamar' | 'quien_soy';
+  | 'agendar_demo' | 'ahorita_no' | 'soporte' | 'otro_contacto' | 'corregir_dato' | 'no_llamar' | 'quien_soy'
+  | 'mandar_cambio' | 'mandar_demo';
 
 /** «El jueves a las 4», «en una hora», «mañana temprano» → fecha y hora reales.
  *  Sin esto, «volver a llamar» es una promesa sin fecha: la que ya nos costó
@@ -117,6 +118,26 @@ export const PATRONES: { id: AccionId; res: RegExp[] }[] = [
       /de parte de quien/,
     ],
   },
+  /* «Ya tengo sistema» (4 de 68 llamadas) y «¿cómo funciona?» (13 de 68):
+     cada uno tiene su PDF (cámbiate / demo y arranque). Sólo SUGIEREN el
+     botón; no salen solos (auto: false en acciones.ts). */
+  {
+    id: 'mandar_cambio',
+    res: [
+      /ya (tengo|tenemos|uso|usamos|manejo|manejamos|trabajo con|trabajamos con) (un |una |el |otro )?(sistema|programa|software|punto de venta|odoo|sicar|shopify|aspel|microsip|eleventa|excel)/,
+      /(tengo|tenemos|uso|usamos) (odoo|sicar|shopify|aspel|microsip|eleventa|square|clip|loyverse|bind)\b/,
+      /(estoy|estamos) (contento|contentos|a gusto|bien) con (mi|nuestro|el) (sistema|programa)/,
+      /(cambiar|cambiarme|migrar|pasar) (de|mi) (sistema|programa|informacion)/,
+    ],
+  },
+  {
+    id: 'mandar_demo',
+    res: [
+      /como (funciona|trabaja|es el sistema|se usa|le hago|seria)/,
+      /(cuanto|que tanto) (tarda|tardan|se tarda) (la |en la )?(implementacion|instalacion|arrancar|empezar)/,
+      /(hay|dan|incluye|tienen) (capacitacion|soporte|implementacion)/,
+    ],
+  },
   {
     id: 'mandar_info',
     res: [
@@ -197,6 +218,8 @@ export const PATRONES: { id: AccionId; res: RegExp[] }[] = [
 export const LEER: Partial<Record<AccionId, (frase: string) => Record<string, any>>> = {
   mandar_cotizacion: () => ({ tema: 'la cotización de Sacs' }),
   mandar_info: () => ({ tema: 'la información de Sacs' }),
+  mandar_cambio: () => ({ tema: 'cómo cambiarte a Sacs desde tu sistema actual' }),
+  mandar_demo: () => ({ tema: 'cómo es la demo y cómo arrancas con Sacs' }),
   mandar_material: (f) => {
     const m = sinAcentos(f).match(/(catalogo|video|manual|presentacion|ficha tecnica|folleto|demo grabada)/);
     return { tema: m ? `el ${m[1]}` : 'lo que pidió en la llamada' };

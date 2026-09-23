@@ -181,7 +181,13 @@ function AgendarEnCierre({ contactId, nombre, telefono, tipos, movil }: { contac
    en la propuesta (`cierre_editar`) y sale al aplicar el cierre, después de lo
    que decidió la IA. La vista previa es la MISMA lógica que el envío: ventana
    abierta → directo; cerrada → plantilla (y un PDF sin plantilla espera). */
-const PARAM_INFO = 'como quedamos en la llamada, aquí tienes la información de Sacs.';
+const PARAM_CASO: Record<string, string> = {
+  info: 'como quedamos en la llamada, aquí tienes la información de Sacs.',
+  precios: 'como quedamos en la llamada, aquí tienes los planes y precios.',
+  cambio: 'como quedamos en la llamada, aquí tienes cómo te cambias a Sacs.',
+  demo: 'como quedamos en la llamada, aquí tienes cómo es la demo.',
+};
+const paramDe = (n: string) => PARAM_CASO[(/^ti_(info|precios|cambio|demo)_/.exec(n) || [])[1] || ''] || '';
 const armarPlantilla = (cuerpo: string, primer: string, params: string[]) =>
   String(cuerpo || '').replace(/\{\{(\d+)\}\}/g, (_m, n) => Number(n) === 1 ? (primer || 'qué tal') : (params[Number(n) - 2] || `[dato ${n}]`));
 function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, params, setParams, editar, ocupado }: any) {
@@ -191,8 +197,8 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
   const extras: { nombre: string; params: string[] }[] = propuesta.extras || [];
   const pl = (n: string) => (opc?.plantillas || []).find((x: any) => x.nombre === n);
   const envios = (propuesta.envios || []).filter((e: any) => ['listo', 'pendiente_ventana'].includes(String(e.estado)));
-  const kInfo = (opc?.conocimientos || []).find((k: any) => /informaci/i.test(k.tema));
-  const infoPl = pl('ti_info_marketing_v1') || pl('ti_info_utility_v1');
+  // Cada contenido con PDF propio (info, precios, cambio, demo) trae su plantilla y su liga.
+  const kDe = (id: string) => (opc?.conocimientos || []).find((k: any) => k.id === id);
   // Vista previa: un renglón por mensaje, en el orden en que salen.
   const pasos: { que: string; como: string; texto?: string }[] = [];
   for (const cp of propuesta.compromisos || []) {
@@ -202,9 +208,9 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
   for (const e of envios) {
     const clave = e.conocimiento_id || e.id;
     if (vistos.has(clave)) continue; vistos.add(clave);
-    const esInfo = kInfo && e.conocimiento_id === kInfo.id;
-    if (opc?.ventana_abierta) pasos.push({ que: `PDF «${e.tema}»`, como: 'por WhatsApp, directo (la ventana de 24 h está abierta)', texto: esInfo ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo la información de Sacs. Todo a detalle en https://www.sacscloud.com — cualquier duda, con gusto.` : `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(e.tema).toLowerCase()}. Cualquier duda, con gusto.` });
-    else if (esInfo && infoPl) pasos.push({ que: `PDF «${e.tema}»`, como: `con la plantilla ${infoPl.nombre} (ventana cerrada), el PDF va adjunto`, texto: armarPlantilla(infoPl.cuerpo, primer, [PARAM_INFO]) });
+    const k = kDe(e.conocimiento_id);
+    if (opc?.ventana_abierta) pasos.push({ que: `PDF «${e.tema}»`, como: 'por WhatsApp, directo (la ventana de 24 h está abierta)', texto: k?.param ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${k.tema}. Todo a detalle en ${k.liga} — cualquier duda, con gusto.` : `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(e.tema).toLowerCase()}. Cualquier duda, con gusto.` });
+    else if (k?.plantilla) pasos.push({ que: `PDF «${e.tema}»`, como: `con la plantilla ${k.plantilla.nombre} (ventana cerrada), el PDF va adjunto`, texto: armarPlantilla(k.plantilla.cuerpo, primer, [k.param]) });
     else pasos.push({ que: `PDF «${e.tema}»`, como: 'espera: sale en cuanto conteste (ventana cerrada y sin plantilla para este contenido)' });
   }
   for (const x of extras) { const p0 = pl(x.nombre); pasos.push({ que: `Plantilla ${x.nombre}`, como: p0?.con_documento ? 'plantilla con su archivo' : 'plantilla', texto: p0 ? armarPlantilla(p0.cuerpo, primer, x.params) : undefined }); }
@@ -213,7 +219,7 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
   const ponerExtras = (lista: { nombre: string; params: string[] }[]) => editar({ extras: lista });
   const agregarPlantilla = (n: string) => {
     const p0 = pl(n); const nv = Math.max(0, (p0?.variables || 1) - 1);
-    const vals = Array.from({ length: nv }, (_, i) => params[`${n}:${i}`] || (/^ti_info_/.test(n) ? PARAM_INFO : ''));
+    const vals = Array.from({ length: nv }, (_, i) => params[`${n}:${i}`] || paramDe(n));
     ponerExtras([...extras.filter(x => x.nombre !== n), { nombre: n, params: vals }].slice(0, 3));
   };
   const chip: any = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: C.g700 };
@@ -270,9 +276,9 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
                       <span style={{ fontSize: 10, color: C.g400 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}</span>
                       <button disabled={ocupado || (!ya && extras.length >= 3)} onClick={() => ya ? ponerExtras(extras.filter(x => x.nombre !== t.nombre)) : agregarPlantilla(t.nombre)} style={{ ...chip, padding: '3px 9px', color: ya ? '#C0554E' : C.moradoTinta }}>{ya ? 'Quitar' : 'Agregar'}</button>
                     </div>
-                    <div style={{ fontSize: 11.5, color: C.g500, marginTop: 3, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{armarPlantilla(t.cuerpo, primer, Array.from({ length: nv }, (_, i) => params[`${t.nombre}:${i}`] || (/^ti_info_/.test(t.nombre) ? PARAM_INFO : '')))}</div>
+                    <div style={{ fontSize: 11.5, color: C.g500, marginTop: 3, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{armarPlantilla(t.cuerpo, primer, Array.from({ length: nv }, (_, i) => params[`${t.nombre}:${i}`] || paramDe(t.nombre)))}</div>
                     {nv > 0 && !ya && Array.from({ length: nv }, (_, i) => (
-                      <input key={i} value={params[`${t.nombre}:${i}`] ?? (/^ti_info_/.test(t.nombre) ? PARAM_INFO : '')} placeholder={`Dato ${i + 2} de la plantilla`}
+                      <input key={i} value={params[`${t.nombre}:${i}`] ?? paramDe(t.nombre)} placeholder={`Dato ${i + 2} de la plantilla`}
                         onChange={e => setParams((v: any) => ({ ...v, [`${t.nombre}:${i}`]: e.target.value }))}
                         style={{ marginTop: 5, width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 7, padding: '5px 8px', fontSize: 12, fontFamily: 'inherit' }} />
                     ))}

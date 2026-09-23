@@ -489,9 +489,16 @@ export async function aplicarCierre(itemId: string, o: { userId?: string | null;
       if (!tel) hecho.push('las plantillas extra no salieron: el teléfono no sirve para WhatsApp');
       else {
         const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
+        const { CONTENIDOS_PDF } = await import('../crm/ti/plantillas-agente');
         for (const x of p.extras.slice(0, 3)) {
           try {
-            const r = await mandarPlantilla({ telefono: tel, plantilla: x.nombre, params: (x.params || []).map(String), autor: o.autor || 'Llamada', metadata: { cierre_llamada: itemId, extra: true } });
+            // Las de un caso con PDF (ti_precios_*, ti_cambio_*…) llevan su PDF con nombre y, si es la de marketing, su utility de respaldo.
+            const c = CONTENIDOS_PDF.find(k => k.marketing === x.nombre || k.utility === x.nombre);
+            const hdr = c ? { tipo: 'document' as const, link: c.url, filename: c.archivo } : null;
+            const params = (x.params || []).map(String);
+            const r = await mandarPlantilla({ telefono: tel, plantilla: x.nombre, params, autor: o.autor || 'Llamada', metadata: { cierre_llamada: itemId, extra: true },
+              ...(hdr ? { headerMedia: hdr } : {}),
+              ...(c && c.marketing === x.nombre ? { respaldo: { plantilla: c.utility, params, headerMedia: hdr } } : {}) });
             hecho.push(r.enviado ? `plantilla «${x.nombre}»${r.via === 'respaldo' ? ' (salió su respaldo de utilidad)' : ''}` : `plantilla «${x.nombre}» no salió: ${r.motivo || 'sin motivo'}`);
           } catch (err: any) { hecho.push(`plantilla «${x.nombre}» no salió: ${String(err?.message || err).slice(0, 100)}`); }
         }
@@ -964,9 +971,10 @@ export async function mandarEnvio(envioId: string): Promise<string | null> {
     }
     const primer = primerNombre(nombre) || 'qué tal';
     const archivo = `${String(k.tema || e.tema).replace(/[^\wáéíóúñÁÉÍÓÚÑ ]+/g, '').slice(0, 60).trim() || 'Informacion'} - Sacscloud.pdf`;
-    const esInfo = /\/info\/sacs-informacion\.pdf$/.test(url);
-    const mensaje = e.texto || (esInfo
-      ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo la información de Sacs. Todo a detalle en https://www.sacscloud.com — cualquier duda, con gusto.`
+    const { contenidoPorUrl, parAprobado, paramAngulo } = await import('../crm/ti/plantillas-agente');
+    const contenido = contenidoPorUrl(url);
+    const mensaje = e.texto || (contenido
+      ? `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${contenido.tema}. Todo a detalle en https://www.sacscloud.com${contenido.clave === 'precios' ? '/planes' : ''} — cualquier duda, con gusto.`
       : `Hola ${primer}, como quedamos en la llamada, aquí te dejo ${String(k.tema || e.tema).toLowerCase()}. Cualquier duda, con gusto.`);
     const ventana = conv ? ventanaEnLinea(conv, conv.phone_number_id) : { abierta: false, expira_at: null };
     let estado = 'enviado', motivo = 'se mandó por WhatsApp';
@@ -985,17 +993,19 @@ export async function mandarEnvio(envioId: string): Promise<string | null> {
              marketing → utility), espejada en el inbox;
            · cualquier otro PDF → espera a que conteste (la minuta que ya le
              llegó lo invita a hacerlo) y sale en cuanto se abra la ventana. */
-      const { PDF_INFO_SACS, parListoPara, paramAngulo } = await import('../crm/ti/plantillas-agente');
-      const par = url === PDF_INFO_SACS.url ? await parListoPara('info').catch(() => null) : null;
-      if (par?.familia === 'info' && (par.marketing || par.utility)) {
+      /* Cada contenido con PDF tiene su par propio (CONTENIDOS_PDF): precios con
+         la de precios, «ya tengo sistema» con la de cambio, etc. Marketing con
+         el PDF de encabezado → si Meta no la acepta, la utility con el mismo. */
+      const par = contenido ? await parAprobado(contenido).catch(() => ({ principal: null, respaldo: null })) : { principal: null, respaldo: null };
+      if (contenido && par.principal) {
         const { mandarPlantilla } = await import('../whatsapp/plantilla-espejo');
-        const hdr = { tipo: 'document' as const, link: url, filename: PDF_INFO_SACS.archivo };
-        const params = [primer, paramAngulo('como quedamos en la llamada, aquí tienes la información de Sacs.')];
-        const r = await mandarPlantilla({ telefono: tel, plantilla: (par.marketing || par.utility)!, params, headerMedia: hdr, autor: vendedor || 'Llamada',
-          respaldo: par.marketing && par.utility ? { plantilla: par.utility, params, headerMedia: hdr } : null,
+        const hdr = { tipo: 'document' as const, link: url, filename: contenido.archivo };
+        const params = [primer, paramAngulo(contenido.param)];
+        const r = await mandarPlantilla({ telefono: tel, plantilla: par.principal, params, headerMedia: hdr, autor: vendedor || 'Llamada',
+          respaldo: par.respaldo ? { plantilla: par.respaldo, params, headerMedia: hdr } : null,
           metadata: { envio_llamada: envioId, tema: e.tema } });
-        if (!r.enviado) throw new Error(r.motivo || 'la plantilla de información no salió');
-        motivo = `se mandó con la plantilla de información${r.via === 'respaldo' ? ' (utility)' : ''} (fuera de la ventana de 24 h)`;
+        if (!r.enviado) throw new Error(r.motivo || `la plantilla de «${contenido.tema}» no salió`);
+        motivo = `se mandó con la plantilla de ${contenido.clave}${r.via === 'respaldo' ? ' (utility)' : ''} (fuera de la ventana de 24 h)`;
       } else {
         estado = 'pendiente_ventana';
         motivo = e.estado === 'pendiente_ventana' ? 'sigue esperando a que escriba' : 'fuera de la ventana de 24 h: sale en cuanto conteste';
@@ -1058,7 +1068,7 @@ export async function entregarEnviosPendientes(conversationId: string): Promise<
    —no las de cobranza, ABM, winback, prueba o recordatorios automáticos—, con
    su texto ya armado. Y si la ventana de 24 h está abierta, que decide si un
    PDF va directo o con plantilla. */
-const PLANTILLA_DEL_CASO = /^(ti_info_|seguimiento_vio_info|solicitud_informacion_seguimiento|seguimiento_reunion|seguimiento_sigue_buscando|pendiente_retomar|demo_preparacion|demo_pregunta|contacto_seguimiento|llamada_saliente_|ti_seguimiento_|seguimiento_cotizacion$|cotizacion_lista)/;
+const PLANTILLA_DEL_CASO = /^(ti_info_|ti_precios_|ti_cambio_|ti_demo_|seguimiento_vio_info|solicitud_informacion_seguimiento|seguimiento_reunion|seguimiento_sigue_buscando|pendiente_retomar|demo_preparacion|demo_pregunta|contacto_seguimiento|llamada_saliente_|ti_seguimiento_|seguimiento_cotizacion$|cotizacion_lista)/;
 export async function opcionesCierre(itemId: string): Promise<{ conocimientos: any[]; plantillas: any[]; ventana_abierta: boolean; primer_nombre: string }> {
   const { data: it } = await supabase.from('tel_sesion_items').select('id, nombre, telefono, conversation_id, contact_id').eq('id', itemId).maybeSingle();
   const [{ data: kn }, { data: pls }] = await Promise.all([
@@ -1073,8 +1083,14 @@ export async function opcionesCierre(itemId: string): Promise<{ conocimientos: a
   const plantillas = (pls || []).filter((x: any) => PLANTILLA_DEL_CASO.test(String(x.nombre)) && !vistas.has(x.nombre) && vistas.add(x.nombre))
     .map((x: any) => ({ nombre: x.nombre, categoria: x.categoria, cuerpo: x.cuerpo, variables: (String(x.cuerpo || '').match(/\{\{\d+\}\}/g) || []).length, con_documento: x.header_tipo === 'DOCUMENT' || x.header_tipo === 'IMAGE' }))
     .sort((a: any, b: any) => Number(/^ti_info_/.test(b.nombre)) - Number(/^ti_info_/.test(a.nombre)) || a.nombre.localeCompare(b.nombre));
+  const { contenidoPorUrl } = await import('../crm/ti/plantillas-agente');
   return {
-    conocimientos: (kn || []).map((k: any) => ({ id: k.id, tema: k.tema, pdf: !!k.pdf_url || !!k.texto })),
+    conocimientos: (kn || []).map((k: any) => {
+      const c = contenidoPorUrl(k.pdf_url);
+      // La plantilla con la que sale fuera de la ventana, para la vista previa («Así le van a llegar»).
+      const pm = c ? (pls || []).find((x: any) => x.nombre === c.marketing) || (pls || []).find((x: any) => x.nombre === c.utility) : null;
+      return { id: k.id, tema: k.tema, pdf: !!k.pdf_url || !!k.texto, plantilla: pm ? { nombre: pm.nombre, cuerpo: pm.cuerpo } : null, param: c?.param || null, liga: c?.clave === 'precios' ? 'https://www.sacscloud.com/planes' : 'https://www.sacscloud.com' };
+    }),
     plantillas, ventana_abierta: !!ventana.abierta, primer_nombre: primerNombre(it?.nombre) || '',
   };
 }

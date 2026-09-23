@@ -31,6 +31,11 @@ const noCaza = (f: string, id: string) => es(ids(f).includes(id), false, `«${f}
 caza('de donde perdon', 'quien_soy');
 caza('este no, yo no me registre', 'quien_soy');
 caza('de parte de quien', 'quien_soy');
+caza('no fijate que ya tenemos un sistema', 'mandar_cambio');
+caza('nosotros usamos sicar desde hace anos', 'mandar_cambio');
+caza('y como funciona', 'mandar_demo');
+caza('cuanto tarda la implementacion', 'mandar_demo');
+es(detectarCatalogo('pasame los precios')[0]?.accion, 'mandar_cotizacion', 'precios sigue siendo cotización');
 caza('mandame la informacion por whatsapp', 'mandar_info');
 caza('me puedes mandar la info', 'mandar_info');
 caza('si, pasame la informacion', 'mandar_info');

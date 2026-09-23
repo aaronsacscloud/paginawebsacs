@@ -19,6 +19,30 @@ type Registro = { marketing?: EstadoPlantilla; utility?: EstadoPlantilla; rechaz
 export type Familia = 'seguimiento' | 'no_show' | 'preparacion' | 'promo' | 'cierre' | 'reactivacion' | 'info';
 /** El PDF con lo que resuelve Sacs (Mejora CRM #3). Va como ENCABEZADO de las plantillas de la familia `info`. */
 export const PDF_INFO_SACS = { url: 'https://www.sacscloud.com/info/sacs-informacion.pdf', archivo: 'Sacs - lo que resolvemos.pdf' };
+
+/* ══ UN PDF POR CASO, CADA UNO CON SU PAR DE PLANTILLAS (22-sep-2026) ═══════
+   Pedido del dueño: lo que se manda en cada caso de las llamadas va en un PDF
+   como el de «más información», con su plantilla de MARKETING (el PDF de
+   encabezado) respaldada por una de UTILITY con el mismo contexto. Los casos
+   salieron de 68 llamadas reales: «¿cuánto cuesta?», «ya tengo sistema»,
+   «¿cómo funciona / cómo es la demo?» y «mándame información».
+   `tema` = el tema de `tel_conocimiento` que apunta a ese PDF. `param` = la
+   línea {{2}} cuando sale desde una llamada. */
+export type ContenidoPDF = { clave: string; tema: string; url: string; archivo: string; marketing: string; utility: string; param: string };
+export const CONTENIDOS_PDF: ContenidoPDF[] = [
+  { clave: 'info', tema: 'la información de Sacs', url: PDF_INFO_SACS.url, archivo: PDF_INFO_SACS.archivo, marketing: 'ti_info_marketing_v1', utility: 'ti_info_utility_v1', param: 'como quedamos en la llamada, aquí tienes la información de Sacs.' },
+  { clave: 'precios', tema: 'los planes y precios de Sacs', url: 'https://www.sacscloud.com/info/sacs-precios.pdf', archivo: 'Sacs - planes y precios.pdf', marketing: 'ti_precios_marketing_v1', utility: 'ti_precios_utility_v1', param: 'como quedamos en la llamada, aquí tienes los planes y precios.' },
+  { clave: 'cambio', tema: 'cómo cambiarte a Sacs desde tu sistema actual', url: 'https://www.sacscloud.com/info/sacs-cambiate.pdf', archivo: 'Sacs - cambiate sin empezar de cero.pdf', marketing: 'ti_cambio_marketing_v1', utility: 'ti_cambio_utility_v1', param: 'como quedamos en la llamada, aquí tienes cómo te cambias a Sacs.' },
+  { clave: 'demo', tema: 'cómo es la demo y cómo arrancas con Sacs', url: 'https://www.sacscloud.com/info/sacs-demo-arranque.pdf', archivo: 'Sacs - tu demo y tu arranque.pdf', marketing: 'ti_demo_marketing_v1', utility: 'ti_demo_utility_v1', param: 'como quedamos en la llamada, aquí tienes cómo es la demo.' },
+];
+export const contenidoPorUrl = (url?: string | null) => CONTENIDOS_PDF.find(c => c.url === url) || null;
+/** ¿Qué plantilla del par está aprobada ahora? (marketing primero). */
+export async function parAprobado(c: ContenidoPDF): Promise<{ principal: string | null; respaldo: string | null }> {
+  const { data } = await supabase.from('wa_plantillas').select('nombre, status').in('nombre', [c.marketing, c.utility]);
+  const ok = (n: string) => (data || []).some((x: any) => x.nombre === n && String(x.status).toUpperCase() === 'APPROVED');
+  const m = ok(c.marketing) ? c.marketing : null, u = ok(c.utility) ? c.utility : null;
+  return { principal: m || u, respaldo: m && u ? u : null };
+}
 type DefPlantilla = { nombre: string; anterior?: string; cuerpo: string; ejemplos: string[]; botones: any[]; header?: { tipo: 'DOCUMENT'; url: string; archivo: string } };
 export const FAMILIAS: Record<Familia, { marketing: DefPlantilla; utility: DefPlantilla }> = {
   seguimiento: {
