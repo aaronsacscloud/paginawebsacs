@@ -493,7 +493,7 @@ export default function InboxPro() {
       }
     }
     prevNoLeidas.current = n;
-    document.title = n > 0 ? `(${n}) Inbox — Sacs CRM` : 'Sacs CRM';
+    document.title = n > 0 ? `(${n}) Inbox — Amby CRM` : 'Amby CRM';
     // E7.2 · El número en el ícono de la PWA: se ve sin abrir la app.
     try {
       const nav: any = navigator;

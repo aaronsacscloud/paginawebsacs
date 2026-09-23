@@ -10,7 +10,7 @@ const gate = await requireFounder(Astro);
 if (gate) return gate;
 ---
 
-<BaseLayout title="CRM — Sacs" description="CRM interno de Sacs" noindex={true}>
+<BaseLayout title="Amby CRM" description="Amby CRM by Andy Araujo" noindex={true}>
 <script is:inline>
 // ── Los parámetros de llegada, guardados ANTES de que corra nada ──
 // El CRM reescribe la barra de direcciones al resolver la pestaña, y para
@@ -37,7 +37,7 @@ try { window.__crmParams = window.location.search || ''; } catch (e) { /* sin wi
   mk('meta', { name: 'theme-color', content: '#5B4BD6' });
   mk('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
   mk('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' });
-  mk('meta', { name: 'apple-mobile-web-app-title', content: 'SACS CRM' });
+  mk('meta', { name: 'apple-mobile-web-app-title', content: 'Amby' });
   mk('link', { rel: 'apple-touch-icon', href: '/crm-icon-192.png' });
   // Multi-plataforma: notch/safe-areas (iPhone y Android con cámara) y color
   // de la barra del sistema acorde al tema del CRM.

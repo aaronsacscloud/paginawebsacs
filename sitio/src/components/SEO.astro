@@ -28,7 +28,8 @@ const imageUrl = new URL(image, siteUrl).toString();
    identificar; el título lleva el nombre corto, que es el que la gente lee. */
 // Y si el título YA dice la marca, no se repite: «Todo lo que hace Sacs | Sacs»
 // gasta en la coletilla los caracteres que el buscador sí recorta.
-const fullTitle = /\bsacs(cloud)?\b/i.test(title) ? title : `${title} | Sacs`;
+// Amby es el CRM (23-sep-2026): su pestaña dice «Amby CRM», sin «| Sacs» detrás.
+const fullTitle = /\b(sacs(cloud)?|amby)\b/i.test(title) ? title : `${title} | Sacs`;
 ---
 
 <!-- Primary Meta Tags -->

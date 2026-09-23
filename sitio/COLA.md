@@ -1114,3 +1114,22 @@ Captura: ficha de la cuenta (ClienteDrawer360), Artik, pestaña Outbound. Lo que
 3. NUEVO documento: reporte de RECOMENDACIONES de la cuenta — qué falta, qué flujos no se están cerrando — y ahí ofrecer el programa de flujos.
 4. Una biblioteca de DOCUMENTOS en Configuración del CRM: cuando el dueño diga «guárdalo en el CRM», el documento (p. ej. la presentación del programa de flujos) queda ahí, activo/inactivo, y al enviar un correo se eligen de los activos.
 Orden sugerido: 4 (biblioteca) + 1–2 primero; 3 después.
+
+## 23-sep-2026 · video vertical del CRM para celular (BORRADOR HECHO, sin música — falta pagar ElevenLabs)
+> «me puedes generar un video para mobile de el CRM mostrando el inicio cuando te registras el tema "Nadie crece solo: cada persona a la que ayudas a avanzar termina abriéndote el camino.", que muestre el dashboard el crecimiento de las cuentas, los clientes como se pueden enviar los correos como se ven las cotizaciones como puedes ver que cosas le falta hacer a tu cuenta el inbox basicamente quiero un video que muestre lo poderoso del CRM y como consultora la buena presentacion que te da dame propuestas antes de hacerlo»
+
+Propuestas: https://code.sacscloud.com/shots/6f19997c19ffaaa1.png — A «Una constelación que crece» (45 s, emocional, voz de consultora), B «Un día con tu CRM» (60-75 s, grabación real tipo video-guía), C «Lo que ve tu cliente» (30 s, pantalla partida CRM ↔ cliente).
+Pendiente de decidir: cuenta demo con datos ficticios (recomendado) vs difuminar; voz femenina vs Jesús Hernández.
+> 23-sep: «me gustaría que sea algo que no sature la pantalla, que sea sutil» → versión sutil https://code.sacscloud.com/shots/825153da72e6976f.png (un teléfono al centro, una frase por escena, fondo blanco lila→rosa, piano, ≈45 s).
+
+## 23-sep-2026 · centro de llamadas mobile-first (EN COLA — tras el análisis de PDFs)
+> «Al terminar eso, haz un análisis completo del sistema telefónico en cuestión de la visualización de móvil. Cuando generas una lista y aparece y ya estás en el proceso de marcación, desde que generas la lista debe de ser un diseño móvil primero. Al momento de crear los filtros también, al momento de estar en el centro de llamadas, también deben de verse bien la información y debe ser fácil apretar cualquier tipo de botón en ese proceso. Ejecuta un arnés completo de agentes de interfaz y experiencia de usuario que visualicen, optimicen y utilicen un referí, y considerando un 10 de 10 únicamente para pasar de pantalla a pantalla hasta que quede optimizado para que se vea mobile first.»
+> 23-sep: «solo música y texto». Borrador sutil de 55 s: https://code.sacscloud.com/guias/crm-nadie-crece-solo-borrador.mp4 · fuentes en /opt/sacs/videos/crm-nadie-crece-solo/ (LEEME.md). Datos ficticios solo en pantalla. Música pendiente: ElevenLabs 402 payment_issue.
+
+## 23-sep-2026 · el CRM se llama AMBY (HECHO: opción 1 «Amby» en Clash Display con la estrella de siempre; documentos al cliente siguen «Sacscloud»)
+> «El CRM va a tener el siguiente nombre, ya no será Sacs CRM, es AMBY. Te dejo la imagen del logo, cámbialo en las secciones que está el logo y muéstrame el prototipo de cómo lo dejarías.»
+
+Logo redibujado en vector (fiel al PNG del dueño): /opt/sacs/videos/amby-logo/logo.svg (original: logo-original.webp).
+Lugares: menú lateral (CrmDashboard.tsx ~796), menú plegado (el símbolo), login (login.astro:35 y :75, versión en blanco), PWA (public/crm-manifest.json «SACS CRM» + crm-icon-*.png), título de pestaña (admin/crm.astro «CRM — Sacs»), favicon del CRM.
+Pregunta abierta: documentos/correos al cliente (dicen «Sacscloud») y el video («Sacs · CRM by Andy Araujo») — ¿cambian a Amby?
+> 23-sep: «que se quede la estrella como está actualmente y solo cambie el AMBY, en la tipografía de Sacs» → prototipo v2 https://code.sacscloud.com/shots/05f1de59d17afb77.png (chispa actual + «Amby» en Clash Display 700 + chip CRM + by Andy Araujo; ícono de la app igual; opciones Amby / AMBY).

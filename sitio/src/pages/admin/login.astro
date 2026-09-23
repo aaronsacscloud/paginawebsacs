@@ -19,7 +19,7 @@ if (user) {
   return Astro.redirect(user.role === 'partner' ? '/partner/portal' : safeNext);
 }
 ---
-<BaseLayout title="Acceso administrador — SACS" description="Panel interno de SACS" noindex={true} bareLayout={true}>
+<BaseLayout title="Amby CRM · acceso" description="Panel interno de SACS" noindex={true} bareLayout={true}>
   <div class="auth-wrap">
     <!-- Panel de marca: el mensaje del día y quién firma esto. -->
     <aside class="auth-marca">
@@ -31,7 +31,7 @@ if (user) {
       <div class="auth-brand">
         <svg class="auth-chispa" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#fff"/></svg>
         <span>
-          <span class="auth-brand-nm">Sacs <b>CRM</b></span>
+          <span class="auth-brand-nm">Amby <b>CRM</b></span>
           <span class="auth-brand-fm">by Andy Araujo</span>
         </span>
       </div>
@@ -59,7 +59,7 @@ if (user) {
     <main class="auth-lado">
       <form id="login-form" class="auth-card">
         <div class="auth-eyebrow">Acceso</div>
-        <h1 class="auth-title">Entra a tu CRM</h1>
+        <h1 class="auth-title">Entra a Amby</h1>
         <p class="auth-sub">Solo el equipo de SACS. Los partners entran en <a href="/partner/login">su portal</a>.</p>
 
         <label class="auth-label" for="email">Correo</label>
@@ -72,7 +72,7 @@ if (user) {
 
         <button id="submit-btn" type="submit" class="auth-btn">Entrar</button>
         <div class="auth-foot"><a href="/partner/forgot-password">¿Olvidaste tu contraseña?</a></div>
-        <span class="auth-firma">Sacs CRM · by Andy Araujo</span>
+        <span class="auth-firma">Amby CRM · by Andy Araujo</span>
       </form>
     </main>
 
@@ -126,7 +126,7 @@ if (user) {
     /* La chispa de la marca. Antes era un círculo con nada adentro: ocupaba
        el lugar de un logo sin serlo. */
     .auth-chispa { display: block; flex-shrink: 0; filter: drop-shadow(0 2px 10px rgba(0,0,0,.18)); }
-    .auth-brand-nm { display: block; font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
+    .auth-brand-nm { display: block; font-family: 'Clash Display', sans-serif; font-size: 1.12rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
     .auth-brand-nm b { font-size: .52rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: rgba(255,255,255,.22); padding: 3px 6px; border-radius: 5px; vertical-align: middle; }
     .auth-brand-fm { display: block; font-size: .56rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #FBD3E5; margin-top: 3px; }
 

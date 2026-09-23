@@ -793,7 +793,7 @@ export default function CrmDashboard() {
           {!sidebarCollapsed && (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '0.98rem', fontWeight: 700, color: '#241d43', lineHeight: 1.1 }}>
-                Sacs <span style={{ fontSize: '0.47rem', fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', padding: '2px 5px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.09em', verticalAlign: 'middle' }}>CRM</span>
+                Amby <span style={{ fontSize: '0.47rem', fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', padding: '2px 5px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.09em', verticalAlign: 'middle' }}>CRM</span>
               </div>
               {/* La firma lleva el degradado del contador de la cotización,
                   pero saltándose el tramo azul claro: a 8 px en mayúsculas ese
